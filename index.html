@@ -3,197 +3,972 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guia Rápido Telessaúde MS - Teleinterconsulta</title>
+    <title>Portal de Guias da Regulação - Eldorado/MS</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
     <style>
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: #f0fdfa; /* Light teal background */
-            color: #134e4a;
-        }
-
-        .accordion-content {
-            transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-        }
-
-        .accordion-content.open {
-            max-height: 1200px;
-            opacity: 1;
-        }
-
-        .icon-unicode {
-            font-size: 1.25rem;
-            line-height: 1;
-            display: inline-block;
-        }
+        body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #0f172a; }
+        .glass { background: rgba(255,255,255,.92); backdrop-filter: blur(10px); }
+        .answer-card { animation: fadeUp .18s ease-out; }
+        @keyframes fadeUp { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+        .soft-scroll { scroll-margin-top: 96px; }
+        mark { background: #fef3c7; padding: 0 .15rem; border-radius: .25rem; }
     </style>
 </head>
-<body class="antialiased min-h-screen flex flex-col relative">
-
-    <header class="bg-teal-700 text-white shadow-md sticky top-0 z-40">
-        <div class="max-w-6xl mx-auto px-4 py-4 md:py-6 flex flex-col md:flex-row items-center justify-between gap-4">
+<body class="min-h-screen antialiased">
+    <header class="bg-slate-950 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-4 md:py-5 flex flex-col md:flex-row justify-between gap-4 md:items-center">
             <div class="flex items-center gap-3">
-                <span class="icon-unicode text-3xl">💻</span>
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-teal-400 grid place-items-center text-2xl shadow-md">🏥</div>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-bold leading-tight">Guia Prático Telessaúde MS</h1>
-                    <p class="text-teal-100 text-sm">Atenção Primária - Eldorado/MS</p>
+                    <h1 class="text-xl md:text-2xl font-black leading-tight">Portal de Guias da Regulação</h1>
+                    <p class="text-slate-300 text-sm">SISREG/CORE + Telessaúde/DIGSUS · Eldorado/MS</p>
                 </div>
             </div>
-            <div class="w-full md:w-1/3 relative">
-                <span class="icon-unicode absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                <input type="text" id="searchInput" placeholder="Pesquisar especialidade no Telessaúde..." 
-                       class="w-full pl-10 pr-4 py-2 rounded-full border-none text-teal-900 focus:ring-2 focus:ring-emerald-400 shadow-inner outline-none transition-all">
-            </div>
+            <nav class="flex flex-wrap gap-2 text-sm">
+                <a href="#assistente" class="px-4 py-2 rounded-full bg-white text-slate-950 font-bold hover:bg-slate-100 transition-colors">🔎 Pergunte ao Guia</a>
+                <a href="sisreg-core/index.html" class="px-4 py-2 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-500 transition-colors">SISREG/CORE</a>
+                <a href="digsus/index.html" class="px-4 py-2 rounded-full bg-teal-600 text-white font-bold hover:bg-teal-500 transition-colors">DIGSUS</a>
+            </nav>
         </div>
     </header>
 
-    <nav class="bg-teal-50 border-b border-teal-200 sticky top-[88px] md:top-[88px] z-30">
-        <div class="max-w-6xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
-            <a href="../index.html" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white text-teal-700 border border-teal-200 hover:bg-teal-100 transition-colors font-semibold shadow-sm">← Voltar ao portal</a>
-            <a href="../index.html#assistente" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white text-teal-700 border border-teal-200 hover:bg-teal-100 transition-colors font-semibold shadow-sm">🔎 Pergunte ao Guia</a>
-        </div>
-    </nav>
-
-
-    <main class="flex-grow max-w-6xl mx-auto px-4 py-8 w-full flex flex-col gap-6">
-
-        <!-- Painel de Engajamento Melhorado -->
-        <section class="bg-blue-50 rounded-xl shadow-sm border border-blue-200 p-6 relative overflow-hidden">
-            <div class="absolute -right-10 -top-10 opacity-10">
-                <span class="icon-unicode text-9xl">💡</span>
-            </div>
-            <div class="relative z-10">
-                <h2 class="text-lg font-bold text-blue-800 mb-4 flex items-center gap-2">
-                    <span class="icon-unicode">🚀</span> Por que a Teleinterconsulta é fundamental?
-                </h2>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm text-blue-900 leading-relaxed">
-                    
-                    <!-- Vantagens para o Paciente -->
-                    <div class="bg-white/60 p-4 rounded-lg border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
-                        <h3 class="font-bold text-blue-700 mb-3 flex items-center gap-2 text-base border-b border-blue-100 pb-2"><span class="icon-unicode">👤</span> Para o Paciente</h3>
-                        <ul class="space-y-3">
-                            <li class="flex items-start gap-2">
-                                <span class="icon-unicode text-blue-500 mt-0.5">🛣️</span>
-                                <span><strong class="text-blue-800">Sem Estrada e Mais Economia:</strong> Evita viagens cansativas de madrugada, horas de estrada e gastos com alimentação. O cuidado acontece na própria cidade.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="icon-unicode text-blue-500 mt-0.5">🏥</span>
-                                <span><strong class="text-blue-800">Segurança e Suporte Local:</strong> Tudo é feito dentro da unidade de saúde de Eldorado. A equipe afere pressão, peso e organiza os exames antes da chamada.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="icon-unicode text-blue-500 mt-0.5">🩺</span>
-                                <span><strong class="text-blue-800">Consulta de Verdade:</strong> O especialista acessa laudos digitalizados, ajusta medicações e conversa olhando nos olhos, seguindo normas do Ministério da Saúde.</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <!-- Vantagens para o Médico e a Rede -->
-                    <div class="bg-white/60 p-4 rounded-lg border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
-                        <h3 class="font-bold text-blue-700 mb-3 flex items-center gap-2 text-base border-b border-blue-100 pb-2"><span class="icon-unicode">👨‍⚕️</span> Para o Médico e a Rede</h3>
-                        <ul class="space-y-3">
-                            <li class="flex items-start gap-2">
-                                <span class="icon-unicode text-blue-500 mt-0.5">⚡</span>
-                                <span><strong class="text-blue-800">Agilidade (O "Fura Fila"):</strong> Acesso muito mais rápido ao especialista. Evita que o paciente espere meses na fila presencial só para checar um exame e ajustar a receita.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="icon-unicode text-blue-500 mt-0.5">📉</span>
-                                <span><strong class="text-blue-800">Menos Sobrecarga no Posto:</strong> O paciente recebe a conduta especializada mais rápido e tem seu problema resolvido. Isso acelera a melhora clínica e reduz naturalmente a necessidade de retornos frequentes à unidade pela mesma queixa.</span>
-                            </li>
-                            <li class="flex items-start gap-2">
-                                <span class="icon-unicode text-blue-500 mt-0.5">⭐</span>
-                                <span><strong class="text-blue-800">Encaminhamento Qualificado:</strong> Se o teleconsultor achar necessário o atendimento presencial, esse encaminhamento entra com muito mais peso na fila de prioridades do SISREG/CORE.</span>
-                            </li>
-                        </ul>
-                    </div>
-
+    <main class="max-w-7xl mx-auto px-4 py-8 md:py-10 space-y-8">
+        <section class="grid grid-cols-1 lg:grid-cols-[1.1fr_.9fr] gap-6 items-stretch">
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm relative overflow-hidden">
+                <div class="absolute -right-12 -top-12 w-44 h-44 bg-blue-100 rounded-full blur-2xl"></div>
+                <div class="relative">
+                    <p class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 mb-4">🧭 Entrada única</p>
+                    <h2 class="text-2xl md:text-4xl font-black text-slate-950 leading-tight mb-3">Consulte rapidamente o protocolo correto antes de solicitar a especialidade.</h2>
+                    <p class="text-slate-600 leading-relaxed max-w-3xl">Use os botões abaixo para abrir os guias completos ou use o assistente para localizar, em linguagem natural, quais informações, exames e anexos devem constar na solicitação.</p>
                 </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                <a href="sisreg-core/index.html" class="group block bg-blue-700 text-white rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <div class="text-3xl mb-3">📂</div>
+                            <h3 class="text-xl font-black">Guia SISREG/CORE</h3>
+                            <p class="text-blue-100 text-sm mt-2">Consultas, exames, procedimentos e critérios para encaminhamento regulado.</p>
+                        </div>
+                        <span class="text-blue-100 group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                </a>
+                <a href="digsus/index.html" class="group block bg-teal-700 text-white rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <div class="text-3xl mb-3">💻</div>
+                            <h3 class="text-xl font-black">Guia Telessaúde/DIGSUS</h3>
+                            <p class="text-teal-100 text-sm mt-2">Teleinterconsultas, teleconsultorias, apoio matricial e anexos necessários.</p>
+                        </div>
+                        <span class="text-teal-100 group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                </a>
             </div>
         </section>
 
-        <!-- Botão de Regras Gerais com Tooltip Hover -->
-        <div class="relative group z-30 w-max">
-            <div class="inline-flex items-center gap-2 text-teal-800 bg-teal-100 border border-teal-200 px-5 py-2.5 rounded-full cursor-help shadow-sm hover:bg-teal-200 transition-colors">
-                <span class="icon-unicode text-xl">ℹ️</span>
-                <span class="font-bold text-sm">Regras Gerais e Fluxo Municipal</span>
-            </div>
-
-            <!-- Conteúdo do Tooltip -->
-            <div class="absolute left-0 top-full mt-2 w-[calc(100vw-2rem)] md:w-[700px] bg-white rounded-xl shadow-2xl border border-teal-200 p-6 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-left group-hover:scale-100 scale-95 z-50">
-                <p class="text-teal-700 mb-4 text-sm leading-relaxed border-b border-teal-100 pb-3">
-                    O <strong>Sistema de Teleatendimento (Telessaúde MS)</strong> foca no <strong>apoio matricial</strong>. O especialista de fora orienta o médico de Eldorado sobre como conduzir o caso na Atenção Primária.
-                </p>
-                
-                <div class="space-y-4 text-sm text-teal-800">
-                    <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
-                        <h3 class="font-bold text-emerald-800 mb-2 flex items-center gap-1"><span class="icon-unicode">✅</span> Papel do Médico Solicitante:</h3>
-                        <ul class="list-disc pl-5 space-y-1 text-emerald-900">
-                            <li><strong>Dúvida Clínica Clara:</strong> Formule uma pergunta direta. O que você quer que o especialista responda? (Ex: "Paciente refratário a metformina e NPH. Solicito auxílio para novo esquema insulínico").</li>
-                            <li><strong>Histórico detalhado:</strong> Relate a evolução, comorbidades e medicações com doses exatas.</li>
-                            <li><strong>Indicação dos exames:</strong> Descreva no encaminhamento os exames pertinentes ao caso.</li>
-                        </ul>
-                    </div>
-
-                    <div class="bg-teal-50 border border-teal-200 p-4 rounded-lg">
-                        <h3 class="font-bold text-teal-800 mb-2 flex items-center gap-1"><span class="icon-unicode">📂</span> Papel da Regulação Municipal:</h3>
-                        <ul class="list-disc pl-5 space-y-1 text-teal-900">
-                            <li><strong>Anexos e Digitalização:</strong> <strong class="text-teal-950 bg-teal-200 px-1 rounded">O médico não precisa anexar os exames no sistema.</strong> O paciente entregará os laudos e imagens físicas na Regulação Municipal, que fará a digitalização e o anexo técnico no Sistema de Teleatendimento.</li>
-                        </ul>
-                    </div>
+        <section id="assistente" class="soft-scroll bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+            <div class="bg-slate-900 text-white p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-black flex items-center gap-2">🔎 Pergunte ao Guia</h2>
+                    <p class="text-slate-300 text-sm mt-1">Assistente de protocolo por regras: busca nos critérios cadastrados e responde sem gerar conteúdo fora da base.</p>
+                </div>
+                <div class="text-xs text-slate-300 bg-slate-800 rounded-2xl px-4 py-3 border border-slate-700 max-w-xl">
+                    Apoio à consulta do protocolo. A decisão clínica, a conduta e a classificação final seguem responsabilidade do profissional e avaliação da regulação.
                 </div>
             </div>
-        </div>
 
-        <section id="protocolos" class="flex flex-col gap-4 mt-2">
-            <div class="flex items-center justify-between border-b border-teal-200 pb-2 mb-2">
-                <h2 class="text-lg font-bold text-teal-800 flex items-center gap-2">
-                    <span class="icon-unicode text-teal-600">📂</span> Protocolos de Especialidades
-                </h2>
-            </div>
-            
-            <div id="resultsCount" class="text-sm font-medium text-teal-600 mb-2"></div>
-            
-            <div id="protocolGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            </div>
-            
-            <div id="noResults" class="hidden text-center py-12 bg-white rounded-xl border border-dashed border-teal-300">
-                <span class="icon-unicode text-4xl text-teal-300 mb-2">🤷</span>
-                <p class="text-teal-600">Nenhum item encontrado no Telessaúde para a sua pesquisa.</p>
-                <button onclick="document.getElementById('searchInput').value=''; document.getElementById('searchInput').dispatchEvent(new Event('input'));" class="mt-4 px-4 py-2 bg-teal-50 text-teal-700 rounded-lg hover:bg-teal-100 transition-colors text-sm font-medium">Limpar Pesquisa</button>
-            </div>
-        </section>
-
-        <section id="erros-comuns" class="bg-amber-50 rounded-xl shadow-sm border border-amber-200 p-6 mt-4">
-            <h2 class="text-lg font-bold text-amber-800 mb-2 border-b border-amber-200 pb-2 flex items-center gap-2">
-                <span class="icon-unicode">⚠️</span> Motivos de Devolução no Telessaúde
-            </h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-amber-900">
-                <div class="bg-white/60 p-4 rounded-lg">
-                    <span class="font-bold block mb-1">Falta de Pergunta Clínica</span>
-                    Se colocar apenas "Encaminho para avaliação", o teleconsultor irá devolver. O Telessaúde exige que você, médico da APS, formule uma dúvida direta ao especialista (Apoio Matricial).
+            <div class="p-5 md:p-6 space-y-5">
+                <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">⌨️</span>
+                        <input id="assistantInput" type="text" class="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-300 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none text-slate-900 shadow-inner" placeholder="Ex.: paciente com diabetes usando insulina e HbA1c alta, o que precisa para endocrino?">
+                    </div>
+                    <button id="askButton" class="px-6 py-4 rounded-2xl bg-slate-950 text-white font-black hover:bg-slate-800 transition-colors shadow-sm">Consultar protocolo</button>
                 </div>
-                <div class="bg-white/60 p-4 rounded-lg">
-                    <span class="font-bold block mb-1">Ausência de Exames Base</span>
-                    Mesmo que a Regulação Municipal anexe as imagens, se o paciente não tiver realizado os exames básicos exigidos pela especialidade (verifique nos cards abaixo), a avaliação não poderá prosseguir.
+
+                <section class="bg-slate-50 border border-slate-200 rounded-3xl p-4 md:p-5">
+                    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-4">
+                        <div>
+                            <h3 class="text-base md:text-lg font-black text-slate-900 flex items-center gap-2">💬 Perguntas frequentes</h3>
+                            <p class="text-sm text-slate-600 mt-1">Atalhos para o médico começar a consulta mesmo sem saber exatamente o que perguntar.</p>
+                        </div>
+                        <p class="text-xs text-slate-500">Clique em uma pergunta para preencher e consultar automaticamente.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="text-xs font-black uppercase tracking-wider text-blue-700 mb-2">SISREG/CORE</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 text-xs">
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Quais informações gerais todo encaminhamento do SISREG/CORE precisa ter?">📋 Informações obrigatórias gerais</button>
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Paciente com dor lombar crônica sem melhora, precisa de ortopedia e quais exames informar?">🦴 Dor lombar / Ortopedia</button>
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Paciente com TFG baixa, creatinina alta ou proteinúria, quando encaminhar para nefrologia?">🧪 Nefrologia / TFG baixa</button>
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Paciente com dor torácica, arritmia ou pressão de difícil controle, o que precisa para cardiologia?">❤️ Cardiologia</button>
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Paciente com lesão de pele suspeita, quando encaminhar para dermatologia e o que descrever?">🧴 Dermatologia</button>
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Paciente com suspeita de TEA, atraso do desenvolvimento ou convulsões na infância, qual protocolo usar?">🧠 Neuropediatria / TEA</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-black uppercase tracking-wider text-teal-700 mb-2">Telessaúde/DIGSUS</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 text-xs">
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="O que precisa para solicitar dermatologia no Telessaúde por lesão de pele?">📸 Tele-Dermatologia com foto</button>
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="Paciente com HbA1c alta mesmo usando insulina, quais exames para tele-endocrinologia?">💉 Diabetes / Tele-Endocrino</button>
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="Paciente idoso usando muitos remédios e com quedas, quando acionar tele-geriatria?">👴 Polifarmácia / Geriatria</button>
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="Paciente com cefaleia crônica, epilepsia ou tremores, o que informar para tele-neurologia?">⚡ Tele-Neurologia</button>
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="Paciente com asma, DPOC ou tosse crônica, quais dados e exames para tele-pneumologia?">🫁 Tele-Pneumologia</button>
+                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="Quando usar tele-psiquiatria e quais casos não devem ir para telessaúde?">🧩 Tele-Psiquiatria</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div id="assistantResult" class="min-h-[80px] bg-slate-50 border border-dashed border-slate-300 rounded-3xl p-5 text-slate-600">
+                    Digite uma dúvida acima ou clique em uma pergunta frequente. O assistente vai sugerir o protocolo mais compatível e mostrar o que informar, exames/anexos e alertas.
                 </div>
             </div>
         </section>
-
     </main>
 
-    <footer class="bg-teal-900 text-teal-400 py-6 text-center text-xs mt-auto">
-        <div class="max-w-6xl mx-auto px-4">
-            <p>Guia Interativo Telessaúde MS - Eldorado/MS</p>
-            <p class="mt-1">Focado em Teleinterconsultas e Apoio Matricial.</p>
-            <p class="mt-4 text-teal-500 font-medium">Criado e desenvolvido por Wellyton Ritter Honorato</p>
-        </div>
+    <footer class="mt-8 bg-slate-950 text-slate-400 py-6 text-center text-xs">
+        <p>Portal de Guias da Regulação · Eldorado/MS</p>
+        <p class="mt-1">Conteúdo de apoio baseado nos protocolos fornecidos e nos guias internos do projeto.</p>
     </footer>
 
     <script>
-        const protocols = [
+        const sisregProtocols = [
+            { 
+                name: "Alergista imunologista", 
+                category: "Clínica", 
+                when: "Asma grave refratária, rinite alérgica s/ resposta a corticoide nasal, alergia a medicamentos/alimentos grave, picadas de inseto com reação sistêmica, urticária crônica espontânea (>6 semanas), suspeita de imunodeficiência primária (infecções de repetição anormais).", 
+                info: "Frequência e gravidade das crises, fatores desencadeantes suspeitos, lista exata de anti-histamínicos ou corticoides (com dose e tempo de uso) que já falharam na APS.", 
+                requiredExams: "Hemograma completo com contagem de eosinófilos, IgE total, Parasitológico de fezes (descartar parasitose).", 
+                optionalExams: "Espirometria (se houver queixa respiratória), testes cutâneos ou IgE específica (caso o paciente já possua).", 
+                noteTitle: "Urgência", 
+                notes: "Casos de anafilaxia ativa, edema de glote ou angioedema devem ser enviados diretamente ao pronto-socorro (Fundação Hospitalar)." 
+            },
+            { 
+                name: "Angioressonância", 
+                category: "Exame", 
+                when: "Investigação avançada de aneurismas cerebrais/aórticos, malformações arteriovenosas (MAVs), avaliação de estenoses carotídeas ou renais severas, especialmente indicada para pacientes com alergia grave a contraste iodado (usado na Tomo) ou com insuficiência renal leve.", 
+                info: "Justificativa clínica indicando sinais neurológicos focais, sopros vasculares, ou suspeita vascular não resolvida por ultrassom com Doppler.", 
+                requiredExams: "Laudo de Ultrassom Doppler ou Tomografia sem contraste prévia.", 
+                optionalExams: "Creatinina recente (se for necessário uso de Gadolínio).", 
+                noteTitle: "Regulação CORE", 
+                notes: "Exame de altíssimo custo. Informar se o paciente possui marca-passo ou clipes metálicos (contraindicação absoluta para RM)." 
+            },
+            { 
+                name: "Angiotomografia", 
+                category: "Exame", 
+                when: "Investigação de aneurismas da aorta abdominal/torácica, dissecção aórtica subaguda/crônica, Tromboembolismo Pulmonar (TEP) subagudo, estenoses de artérias coronárias, carótidas ou renais, e malformações vasculares complexas.", 
+                info: "Sintomas isquêmicos do paciente, relato de dor atípica e histórico de HAS grave ou tabagismo intenso. Qual vaso específico deve ser estudado?", 
+                requiredExams: "Creatinina recente (obrigatório, pois o exame usa contraste iodado em alto volume), RX ou USG basal.", 
+                optionalExams: "Ureia.", 
+                noteTitle: "Urgência (Atenção)", 
+                notes: "Suspeita de Dissecção Aórtica aguda (dor torácica rasgando para as costas) ou TEP agudo são EMERGÊNCIAS de Vaga Zero hospitalar, não de ambulatório." 
+            },
+            { 
+                name: "Audiometria", 
+                category: "Exame", 
+                when: "Suspeita clínica de perda auditiva (hipoacusia), acompanhamento de zumbido crônico, tontura/vertigem persistente, ou exames exigidos para fins ocupacionais/escolares quando indicados por queixa clínica.", 
+                info: "Relato de otoscopia prévia limpa (sem rolha de cerume ou infecção ativa), tempo de evolução da surdez/zumbido e impacto na comunicação.", 
+                requiredExams: "Solicitação médica com justificativa clínica detalhada.", 
+                optionalExams: "Impedanciometria (se suspeita de disfunção tubária ou problemas na orelha média).", 
+                noteTitle: "Fluxo", 
+                notes: "Exame regulado para centros regionais. Certifique-se de que não há rolha de cerume antes de encaminhar, pois isso inviabiliza o exame." 
+            },
+            { 
+                name: "Bariátrica", 
+                category: "Cirúrgica", 
+                when: "Pacientes com IMC ≥ 40 kg/m² ou IMC ≥ 35 kg/m² com comorbidades associadas (DM2, HAS, SAOS, dislipidemia grave), que sejam refratários a tratamento clínico multidisciplinar por pelo menos 2 anos ininterruptos.", 
+                info: "Peso atual, altura, IMC, registro detalhado das tentativas prévias de perda de peso (acompanhamento nutricional e endocrinológico na APS), e lista das comorbidades compensadas.", 
+                requiredExams: "Glicemia de jejum, HbA1c, Perfil Lipídico, Função Renal, USG de Abdome Total.", 
+                optionalExams: "Endoscopia Digestiva Alta (EDA), Avaliação Psicológica prévia.", 
+                noteTitle: "Critérios CORE", 
+                notes: "A regulação é rigorosa. Pacientes com instabilidade psiquiátrica grave, alcoolismo ou dependência química ativa não são elegíveis." 
+            },
+            { 
+                name: "BERA (PEATE)", 
+                category: "Exame", 
+                when: "Investigação de surdez em bebês/crianças que falharam no Teste da Orelhinha, avaliação de perdas auditivas neurossensoriais assimétricas, suspeita de tumores no nervo acústico (neurinoma), investigação de atrasos de linguagem severos ou suspeita de TEA (para descartar déficit auditivo central).", 
+                info: "Relato de falha no rastreio auditivo neonatal, histórico de infecções congênitas (rubéola, toxoplasmose, CMV), atraso de fala, ou tontura/zumbido unilateral em adultos.", 
+                requiredExams: "Encaminhamento fundamentado justificando a necessidade do potencial evocado.", 
+                optionalExams: "Emissões Otoacústicas (Teste da Orelhinha prévio), Audiometria Tonal (se paciente colaborativo).", 
+                noteTitle: "Preparo Infantil", 
+                notes: "Em crianças pequenas, o exame exige que o paciente durma profundamente. Pode ser necessário jejum e agendamento para sedação leve." 
+            },
+            { 
+                name: "Biópsia", 
+                category: "Exame", 
+                when: "Necessidade de estudo histopatológico de lesões suspeitas, como nódulos superficiais, massas cutâneas/subcutâneas de crescimento rápido, lesões pigmentadas suspeitas de malignidade ou linfonodomegalias crônicas não inflamatórias.", 
+                info: "Localização anatômica exata da lesão, tamanho em cm, cor, consistência, mobilidade, tempo de evolução e se há presença de dor ou secreção.", 
+                requiredExams: "Nenhum exame laboratorial é obrigatório para solicitar a biópsia ambulatorial simples.", 
+                optionalExams: "USG da região afetada (ajuda a definir se a lesão é cística ou sólida antes da biópsia).", 
+                noteTitle: "Fluxo", 
+                notes: "Biópsias de órgãos internos (ex: próstata, mama, tireoide) são solicitadas pelos respectivos especialistas, não como 'Biópsia' geral na APS." 
+            },
+            { 
+                name: "Buco Maxilo", 
+                category: "Cirúrgica", 
+                when: "Deformidades faciais com repercussão funcional, DTM (Disfunção Temporomandibular) grave e refratária a medidas conservadoras, cistos ou tumores maxilofaciais, dentes retidos/inclusos causando compressão neurológica ou dor crônica.", 
+                info: "Grau de limitação de abertura da boca, localização exata da dor, sintomas de compressão, falha de tratamento odontológico básico prévio.", 
+                requiredExams: "Raio-X Panorâmico de mandíbula/face.", 
+                optionalExams: "Tomografia Computadorizada de Face (TC).", 
+                noteTitle: "Urgência", 
+                notes: "Traumas faciais agudos (fraturas de mandíbula/maxila) com risco de via aérea devem ir direto para a urgência hospitalar." 
+            },
+            { 
+                name: "Cabeça e pescoço", 
+                category: "Cirúrgica", 
+                when: "Nódulos tireoidianos suspeitos (TIRADS 4 ou 5) ou maiores que 3cm, massas cervicais a esclarecer de crescimento progressivo, lesões crônicas suspeitas de câncer em cavidade oral, faringe ou laringe.", 
+                info: "Tamanho da lesão, presença de rouquidão associada, disfagia, perda de peso, tabagismo/etilismo, exame físico de linfonodos cervicais.", 
+                requiredExams: "USG Cervical/Tireoide (obrigatório para nódulos), TSH, T4 Livre.", 
+                optionalExams: "PAAF (Punção Aspirativa por Agulha Fina) do nódulo tireoidiano, Laringoscopia prévia.", 
+                noteTitle: "Prioridade CORE", 
+                notes: "Suspeitas confirmadas de malignidade (neoplasia) na região de cabeça e pescoço entram em fila de alta prioridade estadual." 
+            },
+            { 
+                name: "Cardiologia", 
+                category: "Clínica", 
+                when: "Insuficiência Cardíaca Congestiva (ICC) sintomática, arritmias graves a esclarecer (FA, flutter, bloqueios), HAS refratária (não controlada com 3+ drogas em dose otimizada, incluindo diurético), valvulopatias severas, acompanhamento pós-IAM/Stent.", 
+                info: "Níveis pressóricos recentes aferidos, presença de edema de membros inferiores, grau de dispneia (NYHA), relato de dor torácica (tipo, irradiação), lista exata de medicações anti-hipertensivas em uso.", 
+                requiredExams: "ECG com laudo, Raio-X de Tórax (PA e Perfil), Creatinina, Eletrólitos (Na, K), Perfil Lipídico, Glicemia.", 
+                optionalExams: "Ecocardiograma Transtorácico, Holter 24h.", 
+                noteTitle: "Urgência", 
+                notes: "Angina instável, suspeita de infarto agudo (IAM) ou crise hipertensiva com lesão de órgão-alvo são encaminhamentos de pronto-socorro imediato." 
+            },
+            { 
+                name: "Cardiologia Pediátrica", 
+                category: "Pediatria", 
+                when: "Sopro cardíaco patológico detectado na infância (com sinais de alarme), episódios de cianose (lábios/dedos roxos ao chorar), baixo ganho de peso associado a sudorese excessiva nas mamadas, arritmias infantis, história de síncope/desmaio durante esforço físico.", 
+                info: "Registrar a intensidade e localização do sopro no exame físico, desenvolvimento pôndero-estatural (peso/altura) da criança, presença de cansaço extremo nas atividades normais.", 
+                requiredExams: "Eletrocardiograma (ECG) infantil, Raio-X de Tórax.", 
+                optionalExams: "Ecocardiograma infantil prévio (se já houver na rede).", 
+                noteTitle: "Fluxo Neonatal Grave", 
+                notes: "Recém-nascidos que não passam no Teste do Coraçãozinho ou com cardiopatia congênita cianótica grave não devem aguardar SISREG ambulatorial, mas sim Vaga Zero." 
+            },
+            { 
+                name: "Cateterismo", 
+                category: "Exame", 
+                when: "Doença Arterial Coronariana (DAC) com sintomas limitantes refratários ao tratamento clínico, isquemia documentada em teste ergométrico/cintilografia com critérios de alto risco, ou avaliação pré-operatória de cirurgia valvar em pacientes específicos.", 
+                info: "Descrição da dor torácica típica ao esforço, relato do tratamento clínico otimizado anti-isquêmico que o paciente já está fazendo, resultados dos testes funcionais não invasivos.", 
+                requiredExams: "ECG, Teste Ergométrico ou Cintilografia Miocárdica prévios, Creatinina recente, Coagulograma completo.", 
+                optionalExams: "Ecocardiograma.", 
+                noteTitle: "Fluxo", 
+                notes: "Exame de altíssimo custo e complexidade. A regulação exige comprovação documental (laudos) de que houve isquemia em exames anteriores." 
+            },
+            { 
+                name: "Cintilografia", 
+                category: "Exame", 
+                when: "Cintilografia óssea (para pesquisa de metástases em pacientes oncológicos), cintilografia miocárdica (para investigação de isquemia em quem não pode fazer ergométrico), ou cintilografia renal (funcional para avaliação de função renal dividida).", 
+                info: "Justificativa clínica muito bem fundamentada. Se for para pesquisa de metástase óssea, informar o câncer de base e os níveis de PSA/marcadores.", 
+                requiredExams: "Laudo de exame de imagem base da região (RX, USG, TC ou RM).", 
+                optionalExams: "Nenhum laboratorial obrigatório específico, depende da indicação.", 
+                noteTitle: "Aprovação", 
+                notes: "Procedimento sujeito a auditoria rigorosa do CORE. Envie todos os anexos comprobatórios da necessidade funcional." 
+            },
+            { 
+                name: "Cirurgia geral", 
+                category: "Cirúrgica", 
+                when: "Colelitíase sintomática (pedras na vesícula com cólica biliar), hérnias da parede abdominal (umbilical, inguinal, epigástrica, incisional) que sejam redutíveis mas causem dor/limitação, cisto pilonidal crônico, nódulos não dermatológicos.", 
+                info: "Localização do abaulamento, se a hérnia é redutível ao repouso, frequência das crises de dor biliar, ocorrência de febre, comorbidades cirúrgicas do paciente.", 
+                requiredExams: "USG da região afetada (Abdome Total para via biliar, ou USG de Parede Abdominal para hérnias).", 
+                optionalExams: "Hemograma, Glicemia, Coagulograma (exames pré-operatórios básicos).", 
+                noteTitle: "Urgência", 
+                notes: "Hérnias encarceradas/estranguladas (que não voltam e doem muito), abdome agudo ou colecistite aguda com febre/icterícia vão direto ao hospital local." 
+            },
+            { 
+                name: "Cirurgia Oncológica", 
+                category: "Cirúrgica", 
+                when: "Diagnóstico confirmado por biópsia de tumores malignos sólidos (aparelho digestivo, pele e partes moles, ginecológico, urológico) que têm indicação primária de ressecção cirúrgica curativa.", 
+                info: "Localização exata da neoplasia, presença de linfonodos palpáveis, grau de perda de peso (caquexia) e se já fez quimioterapia neoadjuvante prévia.", 
+                requiredExams: "Laudo Histopatológico positivo (Obrigatório), Exames de imagem de estadiamento (USG, TC, RM).", 
+                optionalExams: "Marcadores tumorais sanguíneos, Risco Cirúrgico (ECG/Laboratoriais).", 
+                noteTitle: "Lei dos 60 Dias", 
+                notes: "Pacientes com diagnóstico confirmado de câncer têm direito legal a tratamento em até 60 dias. Marque máxima prioridade no CORE estadual." 
+            },
+            { 
+                name: "Cirurgia pediátrica", 
+                category: "Pediatria", 
+                when: "Fimose patológica (pós-falha de tratamento conservador com corticoide tópico por meses), criptorquidia (testículo não descido após o primeiro ano de vida), hérnias inguinais/umbilicais na infância, malformações congênitas do trato gastrointestinal ou urinário.", 
+                info: "Idade da criança, peso atual, descrição dos achados no exame físico (se a hérnia engolfa, se o prepúcio tem anel fibrótico), tentativas clínicas prévias.", 
+                requiredExams: "Hemograma (básico).", 
+                optionalExams: "USG de bolsa escrotal ou parede abdominal (dependendo da queixa).", 
+                noteTitle: "Fluxo Pediátrico", 
+                notes: "Hérnias umbilicais pequenas em menores de 2 anos tendem a fechar espontaneamente; evite encaminhar precocemente sem dor associada." 
+            },
+            { 
+                name: "Cirurgia plástica", 
+                category: "Cirúrgica", 
+                when: "Reconstrução funcional pós-ressecção oncológica (câncer de mama, pele), sequelas limitantes de queimaduras graves, gigantomastia com repercussão ortopédica (dor na coluna documentada), retirada de excesso de pele abdominal pós-bariátrica (abdome em avental).", 
+                info: "Descrição funcional da deformidade (como isso impede o paciente de viver normalmente, andar, higienizar-se). O SISREG não regula cirurgias estéticas puras.", 
+                requiredExams: "Relatório detalhado justificando o impacto na saúde (ex: laudo ortopédico para gigantomastia).", 
+                optionalExams: "Fotografias nítidas das lesões/sequelas.", 
+                noteTitle: "Pós-Bariátrica", 
+                notes: "A cirurgia de contorno corporal pós-bariátrica só é aceita no mínimo 18 a 24 meses após a cirurgia original e com peso estabilizado." 
+            },
+            { 
+                name: "Cirurgia Torácica", 
+                category: "Cirúrgica", 
+                when: "Nódulos pulmonares suspeitos (>8mm) de crescimento confirmado, massas mediastinais, hiperidrose palmar/axilar grave limitante (indicação de simpatectomia), derrames pleurais de repetição a esclarecer, pneumotórax recidivante.", 
+                info: "Carga tabágica do paciente, perda de peso, sintomas associados como hemoptise (escarro com sangue) ou sudorese extrema e impacto na vida laboral.", 
+                requiredExams: "Tomografia Computadorizada (TC) de Tórax com laudo.", 
+                optionalExams: "Raio-X de Tórax anterior (para comparar a evolução da massa).", 
+                noteTitle: "Apoio Pneumológico", 
+                notes: "Frequentemente, o paciente primeiro passa pelo Pneumologista e este faz o encaminhamento cirúrgico." 
+            },
+            { 
+                name: "Colonoscopia", 
+                category: "Exame", 
+                when: "Sangramento retal inexplicado, teste de sangue oculto nas fezes positivo, alteração do hábito intestinal recente em pacientes > 45 anos, rastreamento de CA colorretal (histórico familiar positivo), suspeita de Doença Inflamatória Intestinal (Crohn/RCU).", 
+                info: "Padrão evacuatório detalhado (diarreia, constipação, muco, pus), perda de peso inexplicada, uso de medicações que possam escurecer as fezes (ferro).", 
+                requiredExams: "Hemograma completo.", 
+                optionalExams: "Teste de sangue oculto nas fezes, Calprotectina fecal.", 
+                noteTitle: "Preparação", 
+                notes: "Exame invasivo que exige preparo intestinal rigoroso. Pacientes idosos frágeis podem necessitar de avaliação de risco antes da regulação." 
+            },
+            { 
+                name: "Densitometria", 
+                category: "Exame", 
+                when: "Mulheres > 65 anos ou homens > 70 anos para rastreio, ou pacientes < 65 anos com fatores de risco maiores (menopausa precoce não tratada, uso crônico de corticoide, artrite reumatoide, histórico de fratura por fragilidade).", 
+                info: "Informar explicitamente os fatores de risco do paciente, idade de menopausa, histórico de tabagismo grave ou comorbidades ósseas.", 
+                requiredExams: "Nenhum exame laboratorial é obrigatório antes.", 
+                optionalExams: "Dosagem de Cálcio, Fósforo, Vitamina D e PTH.", 
+                noteTitle: "Intervalo", 
+                notes: "O intervalo padrão para repetição do exame no SUS é de 1 a 2 anos, a menos que haja perda de massa óssea acelerada em tratamento." 
+            },
+            { 
+                name: "Dermatologia", 
+                category: "Clínica", 
+                when: "Lesões cutâneas suspeitas de malignidade (critérios ABCDE alterados - melanoma ou não-melanoma), dermatoses inflamatórias crônicas severas (psoríase generalizada, dermatite atópica grave, pênfigo), acne grau III ou IV não responsiva a antibióticos orais sistêmicos na APS, alopecias cicatriciais.", 
+                info: "Descrição detalhada da lesão (tamanho em cm, cor, bordas, se há ulceração, prurido, sangramento), tempo de evolução, tratamentos tópicos e sistêmicos prévios que falharam.", 
+                requiredExams: "Hemograma.", 
+                optionalExams: "Biópsia prévia (se já realizada por pequeno cirurgião).", 
+                noteTitle: "Alta Prioridade", 
+                notes: "Suspeita forte de Melanoma ou Carcinoma Espinocelular de crescimento rápido deve ser sinalizada como altíssima prioridade no encaminhamento." 
+            },
+            { 
+                name: "Doppler", 
+                category: "Exame", 
+                when: "Suspeita de trombose venosa profunda (TVP) subaguda/crônica, insuficiência venosa crônica avançada (CEAP > 3, úlceras de estase), suspeita de Doença Arterial Obstrutiva Periférica (DAOP) com claudicação intermitente, rastreio de aneurisma ou doppler de carótidas em pacientes pós-AIT/AVC.", 
+                info: "Informar obrigatoriamente se a solicitação é VENOSA ou ARTERIAL. Relatar pulsação (pulsos pediosos, tibiais), presença de edema assimétrico, claudicação e distância percorrida até a dor.", 
+                requiredExams: "Nenhum laboratorial exigido.", 
+                optionalExams: "D-Dímero (se suspeita de TVP recente, embora TVP aguda deva ir para urgência).", 
+                noteTitle: "Atenção ao Tipo", 
+                notes: "Encaminhamentos devolvidos frequentemente por esquecimento de especificar qual sistema (arterial ou venoso) ou qual membro deve ser avaliado." 
+            },
+            { 
+                name: "Ecocardiograma", 
+                category: "Exame", 
+                when: "Sopro cardíaco patológico ou novo a esclarecer, investigação e classificação funcional de Insuficiência Cardíaca, avaliação de função ventricular pós-IAM, cardiomegalia diagnosticada no Raio-X de Tórax, acompanhamento de valvulopatias moderadas/graves.", 
+                info: "Classe funcional do paciente (NYHA I a IV), ausculta cardíaca descrita (foco do sopro), sintomas limitantes e comorbidades de base.", 
+                requiredExams: "Eletrocardiograma (ECG) recente com laudo.", 
+                optionalExams: "Raio-X de Tórax.", 
+                noteTitle: "Risco Cirúrgico", 
+                notes: "Apenas agende como pré-operatório se houver alteração grave no ECG basal ou suspeita clínica forte de cardiopatia. Não é exame de rotina para cirurgias pequenas." 
+            },
+            { 
+                name: "Eletrocardiograma", 
+                category: "Exame", 
+                when: "Avaliação cardiológica de rotina em pacientes hipertensos/diabéticos crônicos, rastreio pré-operatório eletivo, episódios de palpitações ou dores torácicas atípicas sem instabilidade hemodinâmica.", 
+                info: "Indicação clínica exata (ex: HAS crônica > 10 anos, pré-operatório de colecistectomia, rastreio de arritmia).", 
+                requiredExams: "Nenhum.", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Laudos", 
+                notes: "Pode ser realizado e laudado localmente ou via plataformas de telemedicina cardiológica ligadas à APS local, garantindo maior agilidade." 
+            },
+            { 
+                name: "Eletroencefalograma", 
+                category: "Exame", 
+                when: "Investigação de síndromes epilépticas, síncopes ou crises convulsivas a esclarecer sem causa cardíaca, avaliação de atraso no desenvolvimento neuropsicomotor severo, ou diagnóstico de morte encefálica (ambiente hospitalar).", 
+                info: "Descrição detalhada da crise: se houve perda de consciência, liberação esfincteriana, movimentos tônico-clônicos, aura prévia e tempo de recuperação (período pós-ictal).", 
+                requiredExams: "Nenhum.", 
+                optionalExams: "TC de Crânio prévia (ajuda a descartar causas estruturais).", 
+                noteTitle: "Preparo (Privação de Sono)", 
+                notes: "Exames agendados em privação de sono têm maior sensibilidade para detectar focos epilépticos. Orientar o paciente caso o pedido especifique isso." 
+            },
+            { 
+                name: "Eletroneuromiografia", 
+                category: "Exame", 
+                when: "Investigação de neuropatias periféricas (diabética, alcoólica, tóxica), suspeita de miopatias, síndrome do túnel do carpo grave com indicação cirúrgica, radiculopatias compressivas cervicais/lombares não esclarecidas por ressonância.", 
+                info: "Descrever detalhadamente a perda de força, reflexos tendíneos, áreas de formigamento/dormência e se há atrofia muscular visível.", 
+                requiredExams: "Nenhum.", 
+                optionalExams: "Dosagem de CPK (se suspeita de miopatia), Glicemia (se suspeita de neuropatia diabética).", 
+                noteTitle: "Exame Desconfortável", 
+                notes: "É um exame que utiliza estímulos elétricos e agulhas, portanto, encaminhar apenas quando o resultado for mudar a conduta terapêutica ou cirúrgica." 
+            },
+            { 
+                name: "Endocrinologia", 
+                category: "Clínica", 
+                when: "Diabetes Mellitus tipo 1, LADA (fase adulta tardia), DM tipo 2 descompensado grave (HbA1c > 8.5%) refratário a insulinização plena na APS, nódulos de tireoide com função alterada ou com indicação de punção, distúrbios de hipófise/adrenal, obesidade grau III.", 
+                info: "Peso, altura, IMC, mapa glicêmico recente, registro completo das doses exatas de Insulina NPH e Regular/Rápida em uso (ex: 20UI manhã, 10UI noite), relatos de hipoglicemia severa.", 
+                requiredExams: "HbA1c recente, Glicemia de jejum, TSH, T4 Livre, Creatinina, EAS.", 
+                optionalExams: "USG de Tireoide (obrigatório se a queixa for nódulo).", 
+                noteTitle: "Apoio da APS", 
+                notes: "Casos estáveis de hipotireoidismo simples e diabetes tipo 2 bem controlados com hipoglicemiantes orais devem ser seguidos exclusivamente no posto de saúde em Eldorado." 
+            },
+            { 
+                name: "Endocrinologia Pediátrica", 
+                category: "Pediatria", 
+                when: "Aparecimento de caracteres sexuais secundários precocemente (meninas <8 anos, meninos <9 anos), baixa estatura patológica (curva de crescimento caindo ou bem abaixo do percentil 3), obesidade infantil severa com sinais de resistência à insulina, suspeita de hipotireoidismo congênito, DM1.", 
+                info: "Apresentar sempre as medidas de peso/estatura atuais plotadas na curva da caderneta. Descrever sinais como mamas precoces, pelos pubianos ou escurecimento cervical (acantose).", 
+                requiredExams: "Raio-X de Idade Óssea (Mão e Punho não dominante), TSH, T4 Livre.", 
+                optionalExams: "FSH, LH, Testosterona/Estradiol (dependendo do caso).", 
+                noteTitle: "Avaliação Local Prévia", 
+                notes: "A criança deve ser avaliada inicialmente pelo pediatra local do município antes de ir para a capital buscar a subespecialidade." 
+            },
+            { 
+                name: "Endoscopia", 
+                category: "Exame", 
+                when: "Dispepsia (dor de estômago) refratária a IBP crônico por mais de 2 meses, presença de sinais de alarme (perda de peso progressiva, anemia ferropriva inexplicada, disfagia severa), rastreio de varizes esofágicas em cirróticos, pacientes com mais de 45 anos com sintomas gástricos novos.", 
+                info: "Descrever o tempo de dor, relação com a alimentação, ocorrência de vômitos, uso crônico de anti-inflamatórios (AINEs) e se houve eliminação de fezes escuras (melena).", 
+                requiredExams: "Hemograma completo recente.", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Biópsia e H. Pylori", 
+                notes: "A pesquisa do Helicobacter Pylori e pequenas biópsias geralmente já estão incluídas no protocolo do procedimento durante o exame." 
+            },
+            { 
+                name: "Espirometria", 
+                category: "Exame", 
+                when: "Confirmação diagnóstica de Asma ou Doença Pulmonar Obstrutiva Crônica (DPOC), avaliação e estadiamento da gravidade dessas doenças, ou como avaliação de risco cirúrgico para grandes cirurgias torácicas/abdominais em pacientes fumantes graves.", 
+                info: "Histórico de tabagismo (calcular carga tabágica em anos/maço), frequência de falta de ar, sibilos noturnos, histórico de internações prévias por exacerbação pulmonar.", 
+                requiredExams: "Raio-X de Tórax (para descartar causas estruturais prévias).", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Prova Broncodilatadora", 
+                notes: "Exija que o exame seja feito 'com prova broncodilatadora' para avaliar a reversibilidade da obstrução (diferencial chave entre Asma e DPOC)." 
+            },
+            { 
+                name: "Estudo Urodinâmico", 
+                category: "Exame", 
+                when: "Investigação detalhada de Incontinência Urinária refratária (esforço ou urgência) que falhou ao tratamento clínico, suspeita de bexiga neurogênica (pós-trauma raquimedular, mielomeningocele), avaliação pré-operatória de próstata (HPB) com sintomas dúbios.", 
+                info: "Padrão de perda de urina (se tosse e perde, ou se tem vontade incontrolável súbita), uso de medicações para incontinência prévias, histórico de cirurgias pélvicas.", 
+                requiredExams: "EAS (Urina tipo 1) e Urocultura negativa recente.", 
+                optionalExams: "USG de Vias Urinárias prévia.", 
+                noteTitle: "Exame Invasivo", 
+                notes: "O procedimento usa sondas uretrais. O paciente NÃO pode estar com infecção urinária ativa no momento do exame (motivo comum de suspensão na hora)." 
+            },
+            { 
+                name: "Fisioterapia", 
+                category: "Apoio", 
+                when: "Reabilitação pós-operatória ortopédica, sequelas neurológicas motoras (pós-AVC recente), dores articulares/coluna crônicas sem indicação cirúrgica, reabilitação pulmonar pós-doença grave, disfunções pélvicas (incontinência).", 
+                info: "Diagnóstico funcional (qual o movimento o paciente perdeu), número de sessões prévias já realizadas (se houver), e o grau de incapacidade para atividades de vida diária.", 
+                requiredExams: "Relatório clínico ou de alta hospitalar/cirúrgica detalhado.", 
+                optionalExams: "Raio-X ou ressonância da área afetada (para orientar o fisioterapeuta).", 
+                noteTitle: "Fluxo de Oportunidade", 
+                notes: "Pós-operatórios recentes e sequelas agudas de AVC têm janela terapêutica de recuperação e devem ter regulação prioritária em relação às dores crônicas leves." 
+            },
+            { 
+                name: "Fonoaudiologia", 
+                category: "Apoio", 
+                when: "Atraso significativo no desenvolvimento da fala na infância, distúrbios da deglutição (disfagia pós-AVC ou em idosos), disfonia crônica limitante para profissionais da voz, fissura labiopalatina, ou reabilitação de implante coclear.", 
+                info: "Impacto social e escolar do atraso de fala, episódios de engasgos (risco de broncoaspiração), e tempo de rouquidão.", 
+                requiredExams: "Solicitação médica ou pedagógica fundamentada com observações do comportamento.", 
+                optionalExams: "Audiometria (para descartar surdez como causa do atraso da fala).", 
+                noteTitle: "Abordagem Multidisciplinar", 
+                notes: "Para crianças com suspeita de Transtorno do Espectro Autista (TEA), a fonoaudiologia deve ser solicitada em conjunto com a Neuropediatria e Psicologia." 
+            },
+            { 
+                name: "Gastrologia", 
+                category: "Clínica", 
+                when: "Doença do Refluxo Gastroesofágico (DRGE) refratária a IBP em dose plena por mais de 8 semanas, suspeita de Doença Inflamatória Intestinal crônica (Crohn/Retocolite), hepatites virais crônicas complexas, cirrose hepática em acompanhamento, pancreatites de repetição.", 
+                info: "Hábito intestinal detalhado, perda de peso associada, histórico de alcoolismo, presença de fezes com sangue/muco crônico.", 
+                requiredExams: "Hemograma, Função Hepática (TGO, TGP, GGT, FA), Bilirrubinas.", 
+                optionalExams: "Endoscopia, Colonoscopia ou USG Abdome prévios (cruciais para agilizar a conduta do especialista).", 
+                noteTitle: "Sinais de Alerta", 
+                notes: "Quadros de hemorragia digestiva alta (vômitos com sangue) ou baixa maciça com instabilidade da pressão são casos de urgência imediata." 
+            },
+            { 
+                name: "Genética Médica", 
+                category: "Clínica", 
+                when: "Crianças com múltiplas malformações congênitas (fenda palatina, defeito cardíaco) não explicadas, atraso global do desenvolvimento profundo associado a dismorfismos faciais, histórico familiar forte de doenças raras/hereditárias, genodermatoses (ex: neurofibromatose).", 
+                info: "Relatório com a lista minuciosa de todas as alterações fenotípicas (ex: orelha de implantação baixa, prega palmar única, hipotonia grave), histórico de consanguinidade dos pais.", 
+                requiredExams: "Laudos de avaliação clínica prévia por pediatria ou neuropediatria, Ecocardiograma (se houver sopro).", 
+                optionalExams: "USG Abdominal/Transfontanela, Teste do Pezinho expandido.", 
+                noteTitle: "Centros Especializados", 
+                notes: "Especialidade muito escassa, regulada fortemente para centros de referência universitários no estado." 
+            },
+            { 
+                name: "Geriatria", 
+                category: "Clínica", 
+                when: "Idoso considerado frágil (múltiplas quedas anuais), uso de polifarmácia complexa (>5 a 10 medicamentos contínuos) precisando de desprescrição, investigação de síndromes demenciais (Alzheimer, Vascular), incontinências novas e perda abrupta de autonomia.", 
+                info: "Relato da independência para atividades de vida diárias (AVDs), lista exata de todos os remédios em uso, pontuação do Mini-Mental ou MoCA realizados pela equipe de saúde.", 
+                requiredExams: "Hemograma, Função Renal (Creatinina), TSH, Vitamina B12, Cálcio Sérico.", 
+                optionalExams: "Tomografia de Crânio prévia (se queixa for de memória).", 
+                noteTitle: "Atenção ao Objetivo", 
+                notes: "Idosos robustos com um problema isolado (ex: apenas dor no joelho) devem ir para a especialidade foco (ortopedia). A Geriatria gere a complexidade do idoso como um todo." 
+            },
+            { 
+                name: "Ginecologia", 
+                category: "Local", 
+                when: "Atendimentos de rotina da mulher, acompanhamento de pré-natal (baixo e médio risco), corrimentos recorrentes, distúrbios menstruais comuns, aconselhamento contraceptivo, sintomas do climatério/menopausa.", 
+                info: "Data da Última Menstruação (DUM), padrão e fluxo do ciclo menstrual, paridade (G P A), métodos contraceptivos que já tentou e histórico de DSTs.", 
+                requiredExams: "Colpocitologia Oncótica (Preventivo) atualizado, se aplicável à idade.", 
+                optionalExams: "USG Transvaginal, Exames hormonais (FSH, LH).", 
+                noteTitle: "Atendimento em Eldorado", 
+                notes: "Eldorado dispõe de ginecologista local. Casos oncológicos ou de altíssima complexidade serão reencaminhados para a capital após avaliação primária deste especialista." 
+            },
+            { 
+                name: "Ginecologia (Procedimentos)", 
+                category: "Exame", 
+                when: "Resultado de preventivo (Papanicolau) alterado com indicação de Colposcopia ou Biópsia de colo de útero (NIC II, NIC III, ASC-H), inserção de DIU (após regulação local), cauterização de colo uterino.", 
+                info: "Descrever o laudo exato da alteração citológica do preventivo. Não encaminhar casos de processo inflamatório inespecífico que resolvem com tratamento na APS.", 
+                requiredExams: "Laudo original da Citologia Oncótica.", 
+                optionalExams: "Sorologias (HIV, VDRL, Hepatites) atualizadas.", 
+                noteTitle: "Pré-requisito", 
+                notes: "Infecções cervicovaginais agudas (candidíase, vaginose) devem ser tratadas pelo clínico geral antes do encaminhamento para colposcopia." 
+            },
+            { 
+                name: "Hematologia", 
+                category: "Clínica", 
+                when: "Anemias refratárias ao uso de ferro sem causa obvia, citopenias isoladas persistentes (plaquetopenia < 100 mil, leucopenia < 3.500) ou bicitopenias, suspeita de leucemias/linfomas, distúrbios da coagulação a investigar.", 
+                info: "Presença de sintomas B (febre de origem indeterminada, sudorese noturna intensa, perda de peso não intencional de 10%), relato de linfonodos aumentados e dolorosos ou sinais de sangramento fácil.", 
+                requiredExams: "Hemograma completo com contagem de reticulócitos, Perfil de Ferro (Ferro Sérico, Ferritina, TIBC).", 
+                optionalExams: "Desidrogenase Lática (LDH), Sorologias (HIV, Hepatites).", 
+                noteTitle: "Riscos Graves", 
+                notes: "Plaquetas abaixo de 20.000 ou sangramentos mucosos/epistaxe não controláveis exigem encaminhamento emergencial hospitalar, não SISREG." 
+            },
+            { 
+                name: "Holter 24 horas", 
+                category: "Exame", 
+                when: "Episódios recorrentes de palpitações que o ECG basal não flagrou, avaliação de síncope ou pré-síncope de repetição de provável origem cardíaca, controle e ajuste de medicações antiarrítmicas, rastreio de Fibrilação Atrial paroxística.", 
+                info: "Descrição da frequência dos episódios, relação com o esforço ou estresse, tempo que dura a palpitação.", 
+                requiredExams: "ECG basal com laudo (essencial para comparar).", 
+                optionalExams: "Ecocardiograma.", 
+                noteTitle: "Diário de Sintomas", 
+                notes: "O paciente deve ser orientado pela equipe a anotar num diário qualquer sintoma que tiver durante as 24h de gravação do exame para cruzar com o traçado." 
+            },
+            { 
+                name: "Impedanciometria", 
+                category: "Exame", 
+                when: "Avaliação de otite média secretora crônica, disfunção da tuba auditiva (sensação de ouvido tampado constante), investigação de perdas auditivas condutivas, ou triagem de reflexos estapedianos neurológicos.", 
+                info: "Histórico de otites de repetição, relato de sensação de plenitude aural (ouvido tampado), resultado da otoscopia prévia feita na APS revelando líquido/bolhas na orelha média ou retração timpânica.", 
+                requiredExams: "Otoscopia prévia garantindo que o conduto auditivo está limpo.", 
+                optionalExams: "Audiometria (geralmente são exames complementares solicitados em conjunto).", 
+                noteTitle: "Causa de Devolução", 
+                notes: "É essencial garantir e relatar que o paciente não possui rolha de cerume. A presença de cera impactada inviabiliza totalmente a realização do exame." 
+            },
+            { 
+                name: "Infectologia", 
+                category: "Clínica", 
+                when: "HIV/AIDS (início de terapia TARV, falha terapêutica, infecções oportunistas), Hepatites B e C crônicas, Sífilis latente/terciária refratária a penicilina (ou neurossífilis), TB extrapulmonar, Leishmaniose, acompanhamento de acidentes com material biológico pós-urgência.", 
+                info: "Data provável do contágio ou do diagnóstico, esquemas de antimicrobianos já utilizados e titulações anteriores de VDRL (para sífilis).", 
+                requiredExams: "Sorologias específicas confirmatórias atualizadas, Hemograma, Função Hepática.", 
+                optionalExams: "CD4 e Carga Viral (se HIV), PCR para Hepatite C.", 
+                noteTitle: "Urgências Relacionadas", 
+                notes: "Acidentes perfurocortantes imediatos e suspeita de meningite meningocócica aguda são quadros de pronto-socorro." 
+            },
+            { 
+                name: "Laqueadura- Vasectomia", 
+                category: "Saúde da Mulher", 
+                when: "Desejo de esterilização cirúrgica definitiva no âmbito do Planejamento Familiar, de acordo com as diretrizes da Lei Federal nº 14.443/2022 (maiores de 21 anos OU com pelo menos 2 filhos vivos).", 
+                info: "Registrar em prontuário a idade exata do paciente, número de filhos vivos, e a participação em reuniões prévias de planejamento familiar na unidade básica.", 
+                requiredExams: "Coagulograma completo, Hemograma, Glicemia.", 
+                optionalExams: "Beta-HCG (para laqueadura, descartar gestação no momento da avaliação).", 
+                noteTitle: "Prazo Legal Obrigatório", 
+                notes: "A lei exige um intervalo mínimo de 60 dias entre a assinatura do termo de manifestação de vontade e o ato cirúrgico. Não pode ser feito de imediato." 
+            },
+            { 
+                name: "Mamografia", 
+                category: "Exame", 
+                when: "Rastreio populacional padrão bianual (mulheres de 50 a 69 anos), ou rastreio diagnóstico em mulheres de qualquer idade com achados suspeitos (nódulos palpáveis duros, secreção sanguinolenta, retração de mamilo) ou alto risco familiar (parentes de 1º grau com CA mama precoce).", 
+                info: "Descrever detalhadamente a palpação das mamas, quadrante da lesão, tamanho estimado, histórico familiar e uso prévio de reposição hormonal.", 
+                requiredExams: "Nenhum exame inicial para rastreio básico de idade.", 
+                optionalExams: "Ultrassom de Mamas (excelente complementar, especialmente em mamas densas de mulheres jovens).", 
+                noteTitle: "Acesso Mastologia", 
+                notes: "É praticamente obrigatório ter um laudo de mamografia (ou USG mamário) recente classificando a lesão (BI-RADS) para conseguir aprovação de consulta na Mastologia." 
+            },
+            { 
+                name: "Mapa 24 horas", 
+                category: "Exame", 
+                when: "Suspeita de 'hipertensão do avental branco' (pressão alta apenas no consultório), diagnóstico de HAS mascarada, avaliação da eficácia da medicação em pacientes com HAS resistente, suspeita de ausência de descenso pressórico noturno.", 
+                info: "Apresentar histórico de medidas de pressão arterial de consultório vs. domiciliares e os medicamentos atualmente em uso.", 
+                requiredExams: "Nenhum exame laboratorial exigido.", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Avaliação Noturna", 
+                notes: "É o exame padrão ouro para avaliar o comportamento da pressão durante o sono, indicando o risco real de eventos cardiovasculares." 
+            },
+            { 
+                name: "Mastologia", 
+                category: "Saúde da Mulher", 
+                when: "Pacientes com laudos de mamografia ou ultrassonografia classificados como BI-RADS 4 ou 5 (altamente suspeitos), cistos complexos, presença de secreção papilar sanguinolenta não relacionada à amamentação, alterações cutâneas na mama (aspecto casca de laranja).", 
+                info: "Descrever o achado do exame físico mamário e reproduzir o laudo de imagem que originou a suspeita.", 
+                requiredExams: "Mamografia ou Ultrassom Mamário com laudo (imprescindível para aprovação).", 
+                optionalExams: "Biópsia de agulha grossa (Core Biopsy) se já tiver sido solicitada e realizada.", 
+                noteTitle: "Alta Prioridade CORE", 
+                notes: "A especialidade atua fortemente sob a 'Lei dos 60 Dias' para câncer. Exames BI-RADS 4 e 5 são colocados no topo da regulação estadual." 
+            },
+            { 
+                name: "Nefrologia", 
+                category: "Clínica", 
+                when: "Doença Renal Crônica (DRC) em estágios 4 ou 5 (Taxa de Filtração Glomerular < 30 ml/min), declínio rápido e inexplicado da função renal, proteinúria de fita maciça persistente (> 1g/dia), hematúria microscópica dismórfica, litíase renal obstrutiva recorrente.", 
+                info: "Informar obrigatoriamente o cálculo estimado da Taxa de Filtração Glomerular (TFG), presença de diabetes/hipertensão prolongada e controle pressórico atual.", 
+                requiredExams: "Ureia, Creatinina recente, EQU (Urina tipo 1), Relação Proteína/Creatinina urinária.", 
+                optionalExams: "USG de Vias Urinárias/Rins, Urocultura.", 
+                noteTitle: "Filtro Crítico", 
+                notes: "Pacientes com anúria súbita, hipercalemia grave (>6.5) ou uremia com náuseas/confusão requerem diálise de urgência via Fundação Hospitalar." 
+            },
+            { 
+                name: "Neurocirurgia", 
+                category: "Cirúrgica", 
+                when: "Hérnia de disco documentada com déficit motor progressivo (perda de força nas pernas/braços) ou Síndrome da Cauda Equina (incontinência), tumores cerebrais e medulares radiológicos, hidrocefalia não compensada, aneurismas cerebrais detectados não rotos.", 
+                info: "Exame neurológico de força detalhado (grau 0 a 5), relato de formigamento contínuo, incontinência urinária/fecal recente, perda de peso.", 
+                requiredExams: "Relatório clínico detalhado por neurologista ou ortopedista, exames de imagem base.", 
+                optionalExams: "Tomografia ou Ressonância Magnética com laudo.", 
+                noteTitle: "Urgências Neurológicas", 
+                notes: "Traumatismo craniano agudo grave (TCE) ou ruptura de aneurisma (hemorragia subaracnoide) devem ser evacuados via vaga zero urgência." 
+            },
+            { 
+                name: "Neurologia", 
+                category: "Clínica", 
+                when: "Epilepsia refratária de difícil controle na APS, doença de Parkinson e outros distúrbios do movimento limitantes, investigação de demências graves (Doença de Alzheimer), cefaleias crônicas diárias resistentes a tratamento profilático comum, neuropatias periféricas complexas.", 
+                info: "Descrição da crise convulsiva e medicações já testadas, pontuação do Mini-Mental/MoCA para demências, diário de frequência de dores de cabeça.", 
+                requiredExams: "Relatório clínico completo das tentativas terapêuticas frustradas locais.", 
+                optionalExams: "Eletroencefalograma (EEG) prévio, Tomografia de Crânio, Hemograma, Função Renal, Eletrólitos.", 
+                noteTitle: "Alertas de Risco", 
+                notes: "Suspeita de Acidente Vascular Cerebral (AVC) isquêmico ou hemorrágico agudo é emergência médica e vai direto para a unidade de pronto atendimento." 
+            },
+            { 
+                name: "Neuropediatria", 
+                category: "Pediatria", 
+                when: "Forte suspeita de Transtorno do Espectro Autista (TEA), TDAH com repercussão social e escolar severa, paralisia cerebral, epilepsia/convulsões na infância, atrasos neuropsicomotores globais, síndromes genéticas a esclarecer.", 
+                info: "Histórico da gestação e parto, marcos do desenvolvimento detalhados (idade que andou, sentou, falou), resultados das escalas aplicadas na APS (M-CHAT-R, SNAP-IV), comportamentos repetitivos relatados pelos pais.", 
+                requiredExams: "Relatório Escolar/Pedagógico (Fundamental para regulação de casos cognitivos > 3 anos).", 
+                optionalExams: "BERA (para descartar déficit auditivo subjacente), Teste do Pezinho alterado.", 
+                noteTitle: "Prioridade Inclusiva", 
+                notes: "A rede estadual costuma ter vagas e trilhas de avaliação prioritárias para diagnóstico precoce de TEA e atrasos severos na primeira infância." 
+            },
+            { 
+                name: "Nutrologia", 
+                category: "Local", 
+                when: "Desnutrição calórico-proteica avançada, obesidade refratária com alto risco metabólico, carências vitamínicas graves, necessidade de suporte e terapia nutricional especializada crônica, transtornos alimentares acompanhados (anorexia).", 
+                info: "Registro de peso atual e anterior (para cálculo de velocidade de perda ponderal), IMC atual, padrão da ingesta alimentar, histórico de cirurgias intestinais prévias.", 
+                requiredExams: "Hemograma, Glicemia de Jejum, Perfil Lipídico, Ureia, Creatinina, Eletrólitos.", 
+                optionalExams: "Dosagem de Albumina sérica, TSH, Vitamina B12 e D.", 
+                noteTitle: "Atendimento Municipal", 
+                notes: "Especialidade disponível para atendimento direto no município de Eldorado, servindo como suporte essencial ao tratamento endocrinológico." 
+            },
+            { 
+                name: "Odontologia", 
+                category: "Apoio", 
+                when: "Necessidade de tratamentos de alta complexidade que ultrapassam a estrutura da APS, como endodontia (canal) complexa, periodontia severa com risco de perda dental maciça, próteses reguladas pelo estado, ou cirurgias orais menores especializadas.", 
+                info: "Justificativa clara do limite clínico da unidade básica e o motivo da necessidade do especialista (ex: canais calcificados, lesões apicais crônicas).", 
+                requiredExams: "Avaliação inicial pelo odontologista do posto de saúde.", 
+                optionalExams: "Raio-X periapical ou panorâmico prévio evidenciando a lesão.", 
+                noteTitle: "Atendimentos Agudos", 
+                notes: "Quadros de celulite facial por infecção dentária (abscessos com febre e inchaço do rosto) devem procurar pronto-atendimento hospitalar pela gravidade." 
+            },
+            { 
+                name: "Oftalmologia", 
+                category: "Clínica", 
+                when: "Qualquer alteração ocular ou de visão crônica não resolvida na APS (ex: catarata limitante, suspeita de glaucoma crônico, pterígio incômodo, estrabismo não tratado, retinopatia diabética ou hipertensiva, baixa acuidade visual severa mesmo com óculos).", 
+                info: "Realizar o Teste de Snellen (se tabela disponível no posto) e relatar as linhas lidas, tempo de sintomas de visão turva, dores oculares, controle glicêmico e pressórico do paciente.", 
+                requiredExams: "Acuidade visual descrita no encaminhamento.", 
+                optionalExams: "Glicemia e HbA1c (se o paciente for sabidamente diabético).", 
+                noteTitle: "Triagem Ocular Grave", 
+                notes: "Traumas perfurantes no olho, queimaduras químicas, ou perda visual totalmente súbita ('apagão' no olho) são emergências oftalmológicas de hospital." 
+            },
+            { 
+                name: "Oncologia", 
+                category: "Clínica", 
+                when: "Diagnóstico histopatológico confirmado (biópsia positiva) para neoplasia maligna, ou forte suspeita radiológica/clínica consistente de câncer avançado que necessite estadiamento urgente (PET-Scan) e planejamento terapêutico (Quimioterapia/Radioterapia).", 
+                info: "Localização anatômica do tumor, tamanho, tempo de evolução, histórico oncológico familiar, e sintomas de consumpção (perda de peso drástica).", 
+                requiredExams: "Laudo da Biópsia/Histopatológico ou Laudo de Imagem conclusivo (RM, TC) indicando a massa.", 
+                optionalExams: "Marcadores tumorais específicos (PSA, CEA, CA-125), Imuno-histoquímica.", 
+                noteTitle: "Trâmite Legal Máximo", 
+                notes: "O acesso é garantido de forma acelerada pela Lei dos 60 dias. Se houver biópsia positiva, insira todos os laudos no SISREG como PRIORIDADE ABSOLUTA." 
+            },
+            { 
+                name: "Órteses e prótese", 
+                category: "Apoio", 
+                when: "Prescrição e fornecimento de OPM (Órteses, Próteses e Materiais Especiais) pelo SUS, incluindo cadeiras de rodas adaptadas, cadeiras de banho, próteses para amputados, coletes para escoliose severa e calçados especiais para deformidades ou pé diabético.", 
+                info: "Relato detalhado da causa da deficiência motora, nível da amputação (se houver), independência nas AVDs, e qual exatamente o material requerido.", 
+                requiredExams: "Laudo médico oficial prescrevendo o material com o CID-10 da deficiência.", 
+                optionalExams: "Raio-X da deformidade estrutural.", 
+                noteTitle: "Processo Administrativo", 
+                notes: "Frequentemente requer passagem pelo serviço de assistência social municipal de Eldorado para abertura de processo de concessão junto ao estado." 
+            },
+            { 
+                name: "Ortopedia", 
+                category: "Cirúrgica", 
+                when: "Osteoartrite/artrose de graus avançados com provável indicação cirúrgica, dores crônicas articulares ou na coluna (>6 meses) sem resposta a meses de tratamento conservador (fisioterapia, AINEs), deformidades musculoesqueléticas incapacitantes, tratamento de sequelas crônicas de fraturas.", 
+                info: "Descrever o local exato da dor, grau de limitação de movimento, tratamentos fisioterápicos ou medicamentosos já exauridos sem sucesso.", 
+                requiredExams: "Raio-X atual da área afetada (AP e Perfil). Sem imagem, o pedido costuma ser devolvido.", 
+                optionalExams: "Ressonância Magnética (RM) ou Tomografia prévias (se paciente já possuir).", 
+                noteTitle: "Filtro de Traumas", 
+                notes: "Fraturas agudas de extremidades, luxações completas não reduzidas e suspeita de infecção óssea profunda (osteomielite aguda) vão para a emergência." 
+            },
+            { 
+                name: "Ortopedia retorno", 
+                category: "Cirúrgica", 
+                when: "Revisão e reavaliação ambulatorial pós-cirúrgica (ortopédica) ou para dar continuidade a um tratamento prolongado que já havia sido iniciado e acompanhado pelo serviço especializado fora do município.", 
+                info: "Informar a data exata da cirurgia ou do último atendimento no hospital/clínica especializada, o nome do procedimento realizado e a queixa residual atual.", 
+                requiredExams: "Nenhum inicial, exceto se solicitado pelo especialista na alta.", 
+                optionalExams: "Imagem de controle (Raio-X pós-operatório) da consolidação.", 
+                noteTitle: "Critério de Inserção", 
+                notes: "Protocolo exclusivo para pacientes que já estão inseridos no banco de dados do serviço externo. Não usar para primeiras avaliações." 
+            },
+            { 
+                name: "Otorrinolaringologista", 
+                category: "Clínica", 
+                when: "Dificuldades complexas não resolvidas na APS (aquelas que não exigem diretamente um exame como a laringoscopia no primeiro momento): otites de repetição com indicação de tubo de ventilação, desvio de septo causando prejuízo funcional severo, avaliação cirúrgica de amígdalas gigantes.", 
+                info: "Sempre descrever o resultado da otoscopia feita na APS (normal, hiperemiada, opaca). Frequência das infecções e uso indiscriminado de ATBs.", 
+                requiredExams: "Relatório de exame físico da garganta e otoscopia.", 
+                optionalExams: "Audiometria prévia (se queixa de zumbido/surdez), Raio-X de Cavum.", 
+                noteTitle: "Atenção a Estranhos", 
+                notes: "A presença de corpo estranho no nariz, ouvido ou garganta de crianças ou adultos não é caso ambulatorial, devendo ir à Fundação Hospitalar." 
+            },
+            { 
+                name: "Outros exames", 
+                category: "Exame", 
+                when: "Solicitação de exames diagnósticos específicos de média ou alta complexidade que não possuam um protocolo ou categoria própria pré-definida na lista do sistema SISREG.", 
+                info: "Justificativa clínica técnica extremamente bem fundamentada. O regulador precisa entender por que aquele exame raro ou não listado é vital para o paciente.", 
+                requiredExams: "Nenhum pré-definido, depende da patologia a ser rastreada.", 
+                optionalExams: "Laudos anteriores que justifiquentem a progressão da investigação.", 
+                noteTitle: "Crivo da Auditoria", 
+                notes: "Por ser uma categoria 'genérica', é a que sofre maior escrutínio (análise) por parte do médico regulador e auditor do Estado para evitar gastos desnecessários." 
+            },
+            { 
+                name: "Pediatria", 
+                category: "Local", 
+                when: "Acompanhamento de puericultura de casos com intercorrências leves, asma infantil não severa, dificuldades de ganho de peso/estatura limítrofes, alergias alimentares comuns, investigação inicial de patologias gerais da infância.", 
+                info: "Registro de peso atual e estatura marcados na curva de crescimento da caderneta, histórico vacinal e marcos do desenvolvimento básicos.", 
+                requiredExams: "Nenhum exame laboratorial inicial é exigido para uma primeira avaliação.", 
+                optionalExams: "Hemograma, Exame Parasitológico de Fezes, Urina 1.", 
+                noteTitle: "Apoio Estratégico Local", 
+                notes: "Atendimento realizado diretamente na rede municipal de Eldorado, servindo de filtro qualificado antes de enviar crianças para centros maiores." 
+            },
+            { 
+                name: "Pequena cirurgia", 
+                category: "Cirúrgica", 
+                when: "Remoção ambulatorial sob anestesia local de tumorações benignas (lipomas, cistos sebáceos sintomáticos), cantoplastia para unha encravada crônica e refratária, remoção de nevos (pintas) não suspeitos que geram trauma local.", 
+                info: "Identificação anatômica exata do local do corpo, tamanho estimado da lesão em centímetros, se apresenta inflamação/infecção recorrente.", 
+                requiredExams: "Nenhum exame de sangue inicial (geralmente pacientes sadios).", 
+                optionalExams: "Ultrassom de Partes Moles (se houver dúvida se a lesão é sólida, cística ou vascular).", 
+                noteTitle: "Foco Oncológico", 
+                notes: "Se a lesão (nevo) tiver características malignas (crescimento rápido, sangramento, assimetria), priorizar envio direto à Dermatologia ou Cirurgia Oncológica." 
+            },
+            { 
+                name: "PET-Scan", 
+                category: "Exame", 
+                when: "Estadiamento preciso de tumores sólidos malignos confirmados (ex: câncer de pulmão, linfomas, câncer colorretal, melanoma), avaliação de resposta à quimioterapia, ou investigação de forte suspeita de recidiva tumoral com aumento de marcadores.", 
+                info: "Nome do tumor primário, data do diagnóstico, histórico de cirurgias ou quimioterapias prévias, justificativa de que o exame mudará a decisão de tratamento.", 
+                requiredExams: "Biópsia/Anatomopatológico com diagnóstico de câncer (Obrigatório), Laudo de TC ou RM prévio sugerindo a lesão.", 
+                optionalExams: "Marcadores tumorais recentes.", 
+                noteTitle: "Regulação Rigorosa", 
+                notes: "Exame oncológico caríssimo e altamente restrito. Deve sempre ser solicitado sob o crivo do médico oncologista." 
+            },
+            { 
+                name: "Pneumologia", 
+                category: "Clínica", 
+                when: "Doença Pulmonar Obstrutiva Crônica (DPOC) com exacerbações frequentes (>2/ano), asma grave sem controle na APS (passo 4 ou 5), investigação de nódulos ou massas pulmonares suspeitas de neoplasia, fibrose pulmonar, tosse crônica prolongada a esclarecer, SAOS severa.", 
+                info: "Tempo de tabagismo em anos/maço, frequência de uso de bombinhas de resgate, necessidade de oxigênio domiciliar, presença de secreção e febre.", 
+                requiredExams: "Raio-X de Tórax (imagem e laudo).", 
+                optionalExams: "Espirometria prévia, BAAR (se suspeita de Tuberculose crônica).", 
+                noteTitle: "Emergências Respiratórias", 
+                notes: "Hemoptise ativa (escarro com sangue vivo contínuo) e insuficiência respiratória com saturação baixa exigem atendimento hospitalar." 
+            },
+            { 
+                name: "Polissonografia", 
+                category: "Exame", 
+                when: "Suspeita clínica de Síndrome da Apneia Obstrutiva do Sono (SAOS) grave, narcolepsia, investigação de sonolência diurna excessiva inexplicada ou distúrbios motores do sono severos (sonambulismo com risco).", 
+                info: "Informar o resultado do Questionário de Epworth (se pontuação > 10), IMC do paciente, histórico de roncos altos com pausas respiratórias (relatados pelo cônjuge).", 
+                requiredExams: "Avaliação clínica prévia de alto risco para apneia do sono.", 
+                optionalExams: "Videonasofibroscopia (para descartar hipertrofia estrutural antes).", 
+                noteTitle: "Exame do Sono", 
+                notes: "O paciente precisará dormir no laboratório do sono para a realização do exame com monitoramento contínuo." 
+            },
+            { 
+                name: "Proctologia", 
+                category: "Cirúrgica", 
+                when: "Doença hemorroidária graus III e IV (com prolapso que não reduz sozinho ou sangramento recorrente), fissuras anais crônicas, rastreio cirúrgico de câncer colorretal inferior, fístulas perianais supurativas recorrentes.", 
+                info: "Descrever se há prolapso ao evacuar, intensidade do sangramento, dor associada e, se possível, o resultado de um toque retal básico feito na APS.", 
+                requiredExams: "Avaliação do orifício anal documentada.", 
+                optionalExams: "Colonoscopia prévia, Teste de Sangue Oculto nas Fezes.", 
+                noteTitle: "Abscessos Agudos", 
+                notes: "Abscessos perianais tensos, com vermelhidão, calor, febre e dor intensa insuportável devem ser drenados de urgência na Fundação Hospitalar." 
+            },
+            { 
+                name: "Psicologia", 
+                category: "Local", 
+                when: "Apoio a pacientes com sofrimento psíquico leve a moderado, transtornos de ansiedade generalizada (TAG), quadros depressivos sem risco iminente, apoio em lutos prolongados patológicos e dificuldades graves de ajustamento psicossocial.", 
+                info: "Relato do contexto familiar, queixa emocional principal, tempo de evolução dos sintomas e impacto nas atividades laborais e de rotina.", 
+                requiredExams: "Nenhum.", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Vínculo no Município", 
+                notes: "O atendimento ocorre na rede de Eldorado. Pacientes com ideação suicida estruturada e plano ativo devem ir imediatamente para urgência e CAPS." 
+            },
+            { 
+                name: "Psicologia Pediatra", 
+                category: "Local", 
+                when: "Crianças com dificuldades intensas de aprendizagem não explicadas, comportamento desafiador ou agressivo persistente na escola, desconfiança ou diagnóstico de TEA (Autismo) necessitando de estimulação cognitiva, acompanhamento de traumas.", 
+                info: "Como o problema afeta o aprendizado e a interação com outras crianças, dinâmica da família, relato do professor (se aplicável).", 
+                requiredExams: "Nenhum laboratorial. Relatório ou parecer da escola é muito útil.", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Parceria Terapêutica", 
+                notes: "Atua em conjunto indispensável com a Neuropediatria para fechar diagnósticos de neurodivergências." 
+            },
+            { 
+                name: "Psiquiatria", 
+                category: "Saúde Mental", 
+                when: "Transtorno Bipolar não compensado, Esquizofrenia ou quadros psicóticos produtivos, Depressão Maior grave e refratária ao uso de mais de 2 antidepressivos diferentes na APS, TOC limitante, histórico de automutilação.", 
+                info: "Avaliação do risco de suicídio atual (ausente, ideias passivas ou ativas), histórico de psicofármacos já prescritos pela unidade de saúde e motivos de falha.", 
+                requiredExams: "Nenhum exame de sangue é obrigatório para iniciar a fila de espera.", 
+                optionalExams: "TSH, Vitamina B12, Sorologia VDRL (para descartar causas orgânicas simulando psiquiatria).", 
+                noteTitle: "Foco Agudo vs Crônico", 
+                notes: "Um paciente no meio de um surto psicótico violento ou agressivo é caso de SAMU/Polícia e regulação de vaga hospitalar psiquiátrica de urgência." 
+            },
+            { 
+                name: "Psiquiatria pediatra", 
+                category: "Saúde Mental", 
+                when: "Apoio farmacológico para Transtorno do Espectro Autista (TEA) com grave agitação psicomotora/agressividade infantil, TDAH com impacto avassalador não responsivo a psicoterapia isolada, depressão/ansiedade clínica em crianças e adolescentes.", 
+                info: "Relato detalhado e diário dos pais sobre crises de fúria, insônia infantil, histórico familiar de patologias mentais e medicação já em uso (se houver).", 
+                requiredExams: "Avaliação prévia e relatório descritivo por psicólogo ou médico clínico do posto.", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Critério de Cuidado", 
+                notes: "O foco deste especialista é quase sempre a introdução e ajuste fino de medicação (psicofármacos) para cérebros em desenvolvimento." 
+            },
+            { 
+                name: "Psiquiatria retorno", 
+                category: "Saúde Mental", 
+                when: "Pacientes psiquiátricos que já foram estabilizados e necessitam de consultas periódicas para reavaliação de quadros crônicos ou exclusivamente para renovação programada do receituário de controle especial (psicotrópicos).", 
+                info: "Condição atual de humor (melhora/estável/piora), nível de adesão (se está tomando os remédios direito) e lista atualizada das prescrições a renovar.", 
+                requiredExams: "Nenhum.", 
+                optionalExams: "Litemia (nível de Lítio no sangue) se o paciente for usuário crônico de carbonato de lítio.", 
+                noteTitle: "Continuidade de Tratamento", 
+                notes: "Garante que o paciente com diagnóstico severo não sofra descontinuação abrupta dos seus tratamentos na rede CAPS/Especializada." 
+            },
+            { 
+                name: "Raio x", 
+                category: "Exame", 
+                when: "Acompanhamento crônico de afecções ósseas, planejamento ou revisão de cirurgias ortopédicas (consolidação), investigação basal inicial de tosse crônica (Tórax), avaliação de cardiomegalia crônica, acompanhamento de artroses avançadas.", 
+                info: "Informar precisamente qual segmento anatômico deve ser radiografado (ex: Joelho Esquerdo AP e Perfil, Tórax PA e Perfil). Justificar o pedido clínico.", 
+                requiredExams: "Nenhum.", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Diferenciação Urgência", 
+                notes: "Raio-X para casos de fratura por queda recente, entorses agudas ou suspeita de pneumonia aguda na infância devem ser feitos em contexto de urgência." 
+            },
+            { 
+                name: "Ressonância", 
+                category: "Exame", 
+                when: "Investigação avançada de hérnias discais com sinais de radiculopatia não resolvidas e não vistas na TC, tumores do sistema nervoso central ou medula espinhal, lesões complexas de partes moles ou lesões ligamentares articulares complexas (ex: cruzado do joelho).", 
+                info: "Descrever os sinais neurológicos focais presentes (ex: perda de força grau 3) ou qual a suspeita tumoral/ligamentar embasada pelo exame de base.", 
+                requiredExams: "Obrigatório o laudo de um exame de imagem mais simples prévio (Raio-X ou Tomografia).", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Protocolo de Segurança", 
+                notes: "Checar e anotar estritamente se o paciente não tem contraindicações magnéticas absolutas (marca-passos antigos, clipes de aneurisma ferromagnéticos)." 
+            },
+            { 
+                name: "Retirada de órtese", 
+                category: "Cirúrgica", 
+                when: "Procedimento cirúrgico programado para remoção de materiais de osteossíntese (fios de Kirschner, placas, parafusos, hastes) após a consolidação total da fratura original, ou caso o material esteja causando irritação/dor proeminente sob a pele.", 
+                info: "Relatar a data aproximada e o local da cirurgia de colocação do material, qual osso foi operado, e se há sinais de infecção local na pele sobre as placas.", 
+                requiredExams: "Raio-X recente demonstrando a consolidação óssea completa e a posição dos materiais.", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Prazos Médicos", 
+                notes: "É necessário respeitar o tempo mínimo de permanência do material no osso (frequentemente de 1 a 2 anos dependendo da fratura) antes de pedir a retirada." 
+            },
+            { 
+                name: "Reumatologia", 
+                category: "Clínica", 
+                when: "Forte suspeita de Doenças Autoimunes Sistêmicas (Lúpus Eritematoso Sistêmico, Artrite Reumatoide), Espondilite Anquilosante, gota crônica refratária com formação de tofos e múltiplas crises, fibromialgia refratária acompanhada de psiquiatria.", 
+                info: "Padrão exato da dor (se piora no repouso e melhora no movimento = inflamatória), duração em minutos da rigidez matinal nas mãos, presença de rash cutâneo ou fotossensibilidade.", 
+                requiredExams: "Marcadores inflamatórios: VHS (Velocidade de Hemossedimentação), PCR (Proteína C Reativa), Hemograma.", 
+                optionalExams: "Fator Antinúcleo (FAN), Fator Reumatoide, Ácido Úrico, Raio-X das articulações deformadas.", 
+                noteTitle: "Alerta Séptico", 
+                notes: "Uma única articulação subitamente muito inchada, vermelha e quente com febre é emergência ortopédica (Artrite Séptica), não ambulatório." 
+            },
+            { 
+                name: "Risco cirúrgico", 
+                category: "Clínica", 
+                when: "Avaliação pré-operatória clínica/cardiológica formal para pacientes agendados para cirurgias eletivas (geralmente pacientes classificados como ASA II ou ASA III, com comorbidades crônicas como diabetes, hipertensão ou idade avançada).", 
+                info: "Informar obrigatoriamente para QUAL cirurgia o paciente está se preparando, se há uso de anticoagulantes, e a capacidade funcional (consegue subir 2 lances de escada sem parar?).", 
+                requiredExams: "Eletrocardiograma (ECG) basal, Coagulograma (TAP, PTTa), Ureia, Creatinina, Glicemia.", 
+                optionalExams: "Raio-X de Tórax (para maiores de 40 anos ou tabagistas).", 
+                noteTitle: "Data Limite", 
+                notes: "A data provável ou agendada da cirurgia deve constar no encaminhamento para que a regulação tente priorizar a consulta antes de vencer o prazo." 
+            },
+            { 
+                name: "Teste ergométrico", 
+                category: "Exame", 
+                when: "Investigação ambulatorial de dor torácica atípica sob esforço, estratificação do risco cardiovascular para DAC (Doença Arterial Coronariana), avaliação de resposta cronotrópica, ou liberação/capacidade funcional para grandes cirurgias/atletas.", 
+                info: "Histórico completo dos fatores de risco do paciente (tabagismo, obesidade, hipertensão, dislipidemia). Informar se o paciente deambula normalmente.", 
+                requiredExams: "Eletrocardiograma (ECG) basal recente em repouso sem bloqueios de ramo que impeçam a análise.", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Limitação Física", 
+                notes: "O paciente precisa ter capacidade física motora (caminhar na esteira). Pacientes com artrose de joelho severa ou amputados não podem fazer este teste." 
+            },
+            { 
+                name: "Tomografia", 
+                category: "Exame", 
+                when: "Estadiamento e acompanhamento de tumores malignos, investigação aprofundada de nódulos pulmonares, massas abdominais obscuras no USG, avaliação detalhada de traumas ósseos complexos crônicos, rastreio de aneurismas dissecantes crônicos.", 
+                info: "Suspeita diagnóstica clínica muito clara com os sinais que originaram o pedido. Se for de tórax, relatar carga tabágica e emagrecimento.", 
+                requiredExams: "Laudo de imagem base prévia demonstrando o achado (Raio-X alterado ou Ultrassom suspeito).", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Uso de Contraste e Rins", 
+                notes: "Se houver probabilidade do protocolo pedir uso de Contraste Iodado, é prudente anexar ou solicitar um exame de Creatinina atualizado para segurança renal." 
+            },
+            { 
+                name: "Ultrassom", 
+                category: "Exame", 
+                when: "Avaliação morfológica de órgãos maciços (fígado, rins, pâncreas, baço), investigação de litíase biliar (pedra na vesícula) ou renal, massas e dores pélvicas, acompanhamento do desenvolvimento fetal obstétrico de rotina, patologias testiculares benignas.", 
+                info: "Localização precisa da dor e tempo de evolução. Se for ultrassom obstétrico, informar a DUM e a provável Idade Gestacional.", 
+                requiredExams: "Nenhum.", 
+                optionalExams: "Nenhum.", 
+                noteTitle: "Exame Base Universal", 
+                notes: "Atua como o exame de triagem principal para a maioria dos problemas de abdome e pelve no município de Eldorado, orientando se o caso é cirúrgico ou clínico." 
+            },
+            { 
+                name: "Ultrassom articulação", 
+                category: "Exame", 
+                when: "Investigação detalhada de lesões tendíneas (ex: tendinopatia do manguito rotador no ombro, tendão de Aquiles), suspeita de bursites e derrames articulares localizados, cistos sinoviais e outras alterações de partes moles periféricas não vistas no RX.", 
+                info: "Identificar a articulação específica exata (ex: Ombro Direito), onde a dor foca, se houve estalo agudo ou se é dor crônica por esforço repetitivo.", 
+                requiredExams: "Nenhum exigido, mas um exame simples prévio é recomendado.", 
+                optionalExams: "Raio-X prévio (para descartar problemas ósseos como artrose profunda antes de ver os tendões).", 
+                noteTitle: "Auxiliar Direto", 
+                notes: "Exame fundamental e de baixo custo que deve anteceder qualquer encaminhamento crônico para Ortopedia focado em queixa músculo-tendínea." 
+            },
+            { 
+                name: "Urologia", 
+                category: "Cirúrgica", 
+                when: "Hiperplasia Prostática Benigna (HPB) com sintomas moderados/graves limitantes, suspeita oncológica (nódulos palpáveis no testículo ou próstata), PSA alterado de forma progressiva, cálculos renais/ureterais maiores que 5-7mm sintomáticos, disfunção erétil refratária.", 
+                info: "Relato de sintomas do trato urinário inferior (jato fraco, urgência miccional, gotejamento), frequência noturna de micções, histórico de cólicas prévias. Resultado de toque retal se realizado.", 
+                requiredExams: "Urina tipo 1 (EQU), Creatinina.", 
+                optionalExams: "PSA (Homens na faixa de rastreio/sintomas), USG Vias Urinárias/Próstata prévia.", 
+                noteTitle: "Risco Agudo Oculto", 
+                notes: "Retenção urinária aguda (incapacidade dolorosa e súbita de urinar = 'bexigoma') ou priapismo doloroso são casos urgentes de sondagem e avaliação hospitalar." 
+            },
+            { 
+                name: "Vascular", 
+                category: "Cirúrgica", 
+                when: "Úlceras varicosas (de perna) crônicas que não cicatrizam em meses de curativo, insuficiência venosa grau CEAP 4 a 6, Doença Arterial Obstrutiva (DAOP) com dor incapacitante/claudicação ao caminhar pequenas distâncias, acompanhamento de aneurismas pequenos detectados.", 
+                info: "Palpação dos pulsos arteriais documentada (ex: ausência de pulso pedioso), relato do aspecto da ferida e secreções, descrição do escurecimento/espessamento da pele (dermatite ocre).", 
+                requiredExams: "Nenhum inicial ambulatorial obrigatório.", 
+                optionalExams: "USG Doppler venoso/arterial do membro afetado prévio ajuda a agilizar o protocolo cirúrgico.", 
+                noteTitle: "Isquemia Crítica", 
+                notes: "Membro subitamente frio, pálido/arroxeado e sem pulso (oclusão arterial aguda) ou TVP com inchaço abrupto panturrilha são emergências com risco de amputação ou tromboembolismo." 
+            },
+            { 
+                name: "Videolaringoscopia", 
+                category: "Exame", 
+                when: "Investigação obrigatória de rouquidão persistente (> 2 a 3 semanas), suspeita de nódulos ou pólipos nas pregas vocais, Doença do Refluxo Laringofaríngeo severa, sensação constante de corpo estranho na garganta (globus faríngeo).", 
+                info: "Descrever o tempo exato de evolução da disfonia, se há dor associada, histórico crônico de tabagismo ou etilismo e tratamentos vocais prévios.", 
+                requiredExams: "Avaliação clínica prévia justificando a queixa.", 
+                optionalExams: "Nenhum exame laboratorial exigido.", 
+                noteTitle: "Suspeita Oncológica", 
+                notes: "Rouquidão arrastada em pacientes idosos, fumantes e etilistas deve ser tratada como forte suspeita de Câncer de Laringe, exigindo prioridade na regulação." 
+            },
+            { 
+                name: "Videonasofibroscopia", 
+                category: "Exame", 
+                when: "Obstrução nasal crônica severa não responsiva a corticoide tópico na APS, suspeita de hipertrofia de adenoide limitante (crianças que respiram apenas pela boca), sinusite crônica recorrente com suspeita de polipose nasal, ou apneia obstrutiva do sono.", 
+                info: "Frequência do uso de descongestionantes nasais tópicos (Neosoro/Sorine), intensidade do ronco noturno e se há perda crônica do olfato (anosmia).", 
+                requiredExams: "Nenhum laboratorial exigido.", 
+                optionalExams: "Raio-X de Cavum (para avaliar o tamanho da adenoide em crianças).", 
+                noteTitle: "Apoio Cirúrgico", 
+                notes: "Exame essencial para o otorrinolaringologista avaliar a necessidade real de cirurgia de desvio de septo ou adenoidectomia." 
+            }
+        ];
+        const digsusProtocols = [
             { 
                 name: "Tele-Cardiologia", 
                 category: "Clínica", 
@@ -381,121 +1156,287 @@
             }
         ];
 
-        // Ordenar alfabeticamente
-        protocols.sort((a, b) => a.name.localeCompare(b.name));
+        const allProtocols = [
+            ...sisregProtocols.map(p => ({ ...p, source: 'SISREG/CORE', sourceColor: 'blue', path: 'sisreg-core/index.html' })),
+            ...digsusProtocols.map(p => ({ ...p, source: 'Telessaúde/DIGSUS', sourceColor: 'teal', path: 'digsus/index.html' }))
+        ].sort((a,b) => a.name.localeCompare(b.name));
 
-        const gridElement = document.getElementById('protocolGrid');
-        const searchInput = document.getElementById('searchInput');
-        const noResults = document.getElementById('noResults');
-        const resultsCount = document.getElementById('resultsCount');
+        const stopWords = new Set('a o os as um uma uns umas de da do das dos e em para por com sem ao aos na no nas nos que qual quais quando como onde porque precisa precisar solicito solicitar encaminhar encaminhamento paciente medico médica doutor doutora exame exames consulta especialidade especialista favor sobre tenho tem esta está esse essa isso aquele aquela seria deve devem quero queria preciso quais apenas la lá se ja já ou muito mais menos'.split(' '));
 
-        let openCardIndex = null;
+        const phraseExpansions = [
+            ['dor de cabeça', 'cefaleia enxaqueca neurologia'],
+            ['dor no estomago', 'epigastralgia gastrite gastroenterologia endoscopia'],
+            ['dor no estômago', 'epigastralgia gastrite gastroenterologia endoscopia'],
+            ['pressao alta', 'hipertensao has cardiologia nefrologia'],
+            ['pressão alta', 'hipertensao has cardiologia nefrologia'],
+            ['falta de ar', 'dispneia pneumologia cardiologia asma dpoc'],
+            ['dor no peito', 'dor toracica precordial cardiologia ecg teste ergometrico'],
+            ['xixi', 'urina urinaria urologia nefrologia'],
+            ['rim', 'renal creatinina tfg nefrologia urologia'],
+            ['pele', 'dermatologia lesao prurido mancha foto'],
+            ['pinta', 'dermatologia lesao melanoma cancer pele foto'],
+            ['mancha', 'dermatologia lesao pele foto'],
+            ['coceira', 'prurido dermatologia alergista urticaria'],
+            ['convulsao', 'convulsao epilepsia neurologia neuropediatria eeg'],
+            ['convulsão', 'convulsao epilepsia neurologia neuropediatria eeg'],
+            ['autismo', 'tea neuropediatria psicologia reabilitacao desenvolvimento'],
+            ['tdah', 'neuropediatria psiquiatria psicologia aprendizagem comportamento'],
+            ['sangue na urina', 'hematuria urologia nefrologia'],
+            ['colesterol', 'dislipidemia endocrinologia cardiologia ldl triglicerideos'],
+            ['diabetes', 'diabetes endocrinologia hba1c insulina glicemia nefrologia'],
+            ['tireoide', 'tireoidopatia endocrinologia tsh t4 tireoide nodulo'],
+            ['vesicula', 'colelitiase cirurgia geral ultrassom'],
+            ['vesícula', 'colelitiase cirurgia geral ultrassom'],
+            ['hernia', 'hernia cirurgia geral'],
+            ['hérnia', 'hernia cirurgia geral'],
+            ['varizes', 'vascular angiologia doppler ceap'],
+            ['idoso', 'geriatria fragilidade polifarmacia demencia queda'],
+            ['queda', 'geriatria ortopedia fragilidade'],
+            ['ferida na perna', 'ulcera vascular angiologia diabetes doppler'],
+            ['zumbido', 'otorrinolaringologia audiometria hipoacusia'],
+            ['rouquidao', 'rouquidao disfonia otorrinolaringologia videolaringoscopia'],
+            ['rouquidão', 'rouquidao disfonia otorrinolaringologia videolaringoscopia']
+        ];
 
-        function renderCards(data) {
-            gridElement.innerHTML = '';
-            if (data.length === 0) {
-                gridElement.classList.add('hidden');
-                noResults.classList.remove('hidden');
-                resultsCount.innerText = "0 itens encontrados.";
-                return;
-            }
-            gridElement.classList.remove('hidden');
-            noResults.classList.add('hidden');
-            resultsCount.innerText = `${data.length} especialidade(s) encontrada(s).`;
-
-            data.forEach((protocol, index) => {
-                const card = document.createElement('div');
-                card.className = 'bg-white rounded-xl shadow-sm border border-teal-100 overflow-hidden transition-all duration-200 hover:shadow-md hover:border-teal-300';
-                
-                const comingSoonBadge = protocol.comingSoon ? 
-                    `<span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded uppercase font-bold whitespace-nowrap ml-1">Em breve</span>` : '';
-
-                card.innerHTML = `
-                    <div class="px-5 py-4 cursor-pointer flex justify-between items-center bg-teal-50/50 hover:bg-teal-50 transition-colors" onclick="window.toggleCard(${index})">
-                        <div class="flex items-center flex-wrap gap-2 w-full pr-4">
-                            <span class="text-teal-700 font-bold text-sm md:text-base">${protocol.name}</span>
-                            ${comingSoonBadge}
-                        </div>
-                        <span id="icon-${index}" class="icon-unicode text-teal-400 transform transition-transform duration-300">🔽</span>
-                    </div>
-                    <div id="content-${index}" class="accordion-content bg-white">
-                        <div class="p-5 space-y-4 border-t border-teal-50">
-                            <div>
-                                <h4 class="text-xs font-bold text-teal-600 uppercase tracking-wider mb-1 flex items-center gap-1">🎯 Quando Acionar</h4>
-                                <p class="text-sm text-teal-900">${protocol.when}</p>
-                            </div>
-                            <div>
-                                <h4 class="text-xs font-bold text-teal-600 uppercase tracking-wider mb-1 flex items-center gap-1">📝 O que informar na Pergunta</h4>
-                                <p class="text-sm text-teal-900 bg-teal-50/50 p-3 rounded-lg border border-teal-100">${protocol.info}</p>
-                            </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <h4 class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1 flex items-center gap-1">🔬 Exames Obrigatórios</h4>
-                                    <p class="text-sm text-teal-900 bg-emerald-50 p-3 rounded-lg border border-emerald-100 h-full">${protocol.requiredExams}</p>
-                                </div>
-                                <div>
-                                    <h4 class="text-xs font-bold text-teal-500 uppercase tracking-wider mb-1 flex items-center gap-1">🧪 Opcionais / Complementares</h4>
-                                    <p class="text-sm text-teal-700 bg-slate-50 p-3 rounded-lg border border-slate-100 h-full italic">${protocol.optionalExams || 'Nenhum sugerido.'}</p>
-                                </div>
-                            </div>
-                            ${protocol.notes ? `
-                            <div class="bg-amber-50 border border-amber-100 p-3 rounded-lg mt-2">
-                                <h4 class="text-xs font-bold text-amber-800 uppercase tracking-wider mb-1 flex items-center gap-1">⚡ ${protocol.noteTitle}</h4>
-                                <p class="text-sm text-amber-900">${protocol.notes}</p>
-                            </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-                gridElement.appendChild(card);
-            });
-        }
-
-        window.toggleCard = function(index) {
-            const content = document.getElementById(`content-${index}`);
-            const icon = document.getElementById(`icon-${index}`);
-            
-            if (openCardIndex !== null && openCardIndex !== index) {
-                const prevContent = document.getElementById(`content-${openCardIndex}`);
-                const prevIcon = document.getElementById(`icon-${openCardIndex}`);
-                if (prevContent) {
-                    prevContent.classList.remove('open');
-                    prevIcon.style.transform = 'rotate(0deg)';
-                }
-            }
-
-            if (content.classList.contains('open')) {
-                content.classList.remove('open');
-                icon.style.transform = 'rotate(0deg)';
-                openCardIndex = null;
-            } else {
-                content.classList.add('open');
-                icon.style.transform = 'rotate(180deg)';
-                openCardIndex = index;
-            }
+        const sourceHints = {
+            sisreg: ['sisreg', 'core', 'presencial', 'regulação', 'regulacao', 'consulta presencial', 'exame', 'procedimento', 'vaga'],
+            digsus: ['digsus', 'digsaude', 'digsaúde', 'telessaude', 'telessaúde', 'tele', 'teleconsulta', 'teleinterconsulta', 'teleconsultoria', 'stt']
         };
 
-        searchInput.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = protocols.filter(p => 
-                p.name.toLowerCase().includes(term) ||
-                p.when.toLowerCase().includes(term) ||
-                p.info.toLowerCase().includes(term) ||
-                p.requiredExams.toLowerCase().includes(term)
-            );
-            renderCards(filtered);
-            openCardIndex = null; 
-        });
+        function normalize(text) {
+            return (text || '')
+                .toString()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[̀-ͯ]/g, '')
+                .replace(/[^a-z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            renderCards(protocols);
-            const urlParams = new URLSearchParams(window.location.search);
-            const initialQuery = urlParams.get('q');
-            if (initialQuery) {
-                searchInput.value = initialQuery;
-                searchInput.dispatchEvent(new Event('input'));
-                setTimeout(() => document.getElementById('protocolos')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+        function expandQuery(raw) {
+            let q = normalize(raw);
+            let expanded = q;
+            phraseExpansions.forEach(([phrase, add]) => {
+                if (q.includes(normalize(phrase))) expanded += ' ' + normalize(add);
+            });
+            return expanded;
+        }
+
+        function tokenize(text) {
+            return normalize(text).split(' ').filter(t => t.length > 2 && !stopWords.has(t));
+        }
+
+        function protocolText(p) {
+            return [p.name, p.category, p.when, p.info, p.requiredExams, p.optionalExams, p.noteTitle, p.notes].filter(Boolean).join(' ');
+        }
+
+        function scoreProtocol(p, rawQuery) {
+            const expanded = expandQuery(rawQuery);
+            const tokens = tokenize(expanded);
+            const name = normalize(p.name);
+            const when = normalize(p.when);
+            const info = normalize(p.info);
+            const required = normalize(p.requiredExams);
+            const optional = normalize(p.optionalExams);
+            const notes = normalize(p.notes);
+            const category = normalize(p.category);
+            const all = normalize(protocolText(p));
+            let score = 0;
+            let matched = new Set();
+
+            tokens.forEach(t => {
+                if (name.includes(t)) { score += 12; matched.add(t); }
+                if (category.includes(t)) { score += 4; matched.add(t); }
+                if (when.includes(t)) { score += 5; matched.add(t); }
+                if (info.includes(t)) { score += 4; matched.add(t); }
+                if (required.includes(t)) { score += 3; matched.add(t); }
+                if (optional.includes(t)) { score += 2; matched.add(t); }
+                if (notes.includes(t)) { score += 2; matched.add(t); }
+                if (all.includes(t)) { score += 1; matched.add(t); }
+            });
+
+            // boosts by source hint
+            const normRaw = normalize(rawQuery);
+            if (sourceHints.digsus.some(h => normRaw.includes(normalize(h))) && p.source === 'Telessaúde/DIGSUS') score += 10;
+            if (sourceHints.sisreg.some(h => normRaw.includes(normalize(h))) && p.source === 'SISREG/CORE') score += 8;
+
+            // exact specialty-ish boosts
+            const specialtyAliases = [
+                ['cardio', 'cardiologia'], ['coraçao', 'cardiologia'], ['coracao', 'cardiologia'], ['ecg', 'eletrocardiograma'],
+                ['neuro', 'neurologia'], ['neuropediatria', 'neuropediatria'], ['convulsao', 'neurologia'],
+                ['dermato', 'dermatologia'], ['pele', 'dermatologia'],
+                ['endo', 'endocrinologia'], ['diabetes', 'endocrinologia'], ['tireoide', 'endocrinologia'],
+                ['nefro', 'nefrologia'], ['renal', 'nefrologia'], ['creatinina', 'nefrologia'],
+                ['uro', 'urologia'], ['prostata', 'urologia'], ['psa', 'urologia'],
+                ['orto', 'ortopedia'], ['coluna', 'ortopedia'], ['joelho', 'ortopedia'],
+                ['psiquiatria', 'psiquiatria'], ['psicologia', 'psicologia'],
+                ['otorrino', 'otorrinolaringologia'], ['ouvido', 'otorrinolaringologia'],
+                ['pneumo', 'pneumologia'], ['asma', 'pneumologia'], ['dpoc', 'pneumologia'],
+                ['gastro', 'gastrologia'], ['gastroenterologia', 'gastroenterologia'],
+                ['geriatria', 'geriatria'], ['idoso', 'geriatria'],
+                ['reumato', 'reumatologia'], ['lupus', 'reumatologia'], ['fibromialgia', 'reumatologia'],
+                ['vascular', 'vascular'], ['angiologia', 'angiologia'], ['varizes', 'vascular'],
+                ['mamografia', 'mamografia'], ['mama', 'mastologia'], ['mastologia', 'mastologia']
+            ];
+            specialtyAliases.forEach(([term, target]) => {
+                if (normRaw.includes(term) && name.includes(normalize(target))) score += 14;
+            });
+
+            // Tele prefix normalization
+            const plainName = name.replace(/^tele\s*/, '').replace(/^tele-/, '');
+            tokens.forEach(t => { if (plainName.includes(t)) score += 6; });
+
+            return { protocol: p, score, matched: Array.from(matched).slice(0, 8) };
+        }
+
+        function searchProtocols(rawQuery) {
+            return allProtocols
+                .map(p => scoreProtocol(p, rawQuery))
+                .filter(r => r.score > 0)
+                .sort((a,b) => b.score - a.score)
+                .slice(0, 6);
+        }
+
+        function escapeHtml(s) {
+            return (s || '').toString().replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+        }
+
+        function fmt(text) {
+            if (!text) return '<span class="text-slate-400 italic">Não informado no card.</span>';
+            return escapeHtml(text);
+        }
+
+        function sourceBadge(p) {
+            const color = p.sourceColor === 'teal'
+                ? 'bg-teal-50 text-teal-700 border-teal-200'
+                : 'bg-blue-50 text-blue-700 border-blue-200';
+            return `<span class="inline-flex items-center px-2.5 py-1 rounded-full border ${color} text-xs font-black">${escapeHtml(p.source)}</span>`;
+        }
+
+        function buildChecklist(p) {
+            const isTele = p.source === 'Telessaúde/DIGSUS';
+            const parts = [
+                'Identificação completa do paciente e CID compatível;',
+                'tempo de evolução, exame físico e evolução do quadro;',
+                'tratamentos já realizados e medicamentos em uso;',
+                'exames/anexos disponíveis relacionados ao caso.'
+            ];
+            if (isTele) parts.splice(1, 0, 'pergunta clínica objetiva para o especialista responder;');
+            return parts.map(item => `<li class="flex gap-2"><span class="text-emerald-600">✅</span><span>${item}</span></li>`).join('');
+        }
+
+        function renderResult(rawQuery) {
+            const box = document.getElementById('assistantResult');
+            const query = rawQuery.trim();
+            if (!query) {
+                box.innerHTML = 'Digite uma dúvida acima. O assistente vai sugerir o protocolo mais compatível e mostrar o que informar, exames/anexos e alertas.';
+                return;
             }
+            const results = searchProtocols(query);
+            if (!results.length || results[0].score < 8) {
+                box.innerHTML = `
+                    <div class="answer-card bg-white rounded-2xl border border-amber-200 p-5">
+                        <h3 class="font-black text-amber-800 text-lg mb-2">Não identifiquei um protocolo com segurança.</h3>
+                        <p class="text-slate-700 text-sm leading-relaxed">Tente informar a especialidade desejada ou inclua dados como idade, queixa principal, tempo de evolução, exames já feitos e tratamentos tentados.</p>
+                        <div class="mt-4 bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm text-amber-900">
+                            Exemplo melhor: <strong>“Paciente com diabetes tipo 2 usando NPH e HbA1c 9,2%, quais exames para Tele-Endocrinologia?”</strong>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            const top = results[0].protocol;
+            const alternatives = results.slice(1).filter(r => r.score >= Math.max(8, results[0].score * 0.48)).slice(0,3);
+            const guideLink = `${top.path}?q=${encodeURIComponent(top.name)}`;
+            const copyText = `Paciente: [idade/sexo]. Queixa/hipótese: [descrever]. Início e evolução: [tempo]. Exame físico: [achados]. Tratamentos realizados: [medicações/doses/tempo]. Medicamentos em uso: [listar]. Exames/anexos: [listar]. Objetivo da solicitação/pergunta clínica: [descrever].`;
+            box.innerHTML = `
+                <div class="answer-card bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-5 md:p-6 border-b border-slate-100 bg-slate-50">
+                        <div class="flex flex-wrap items-center gap-2 mb-3">
+                            ${sourceBadge(top)}
+                            ${top.category ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full border bg-white text-slate-700 border-slate-200 text-xs font-black">${escapeHtml(top.category)}</span>` : ''}
+                            ${top.comingSoon ? '<span class="inline-flex items-center px-2.5 py-1 rounded-full border bg-amber-50 text-amber-800 border-amber-200 text-xs font-black">Em breve</span>' : ''}
+                        </div>
+                        <h3 class="text-xl md:text-2xl font-black text-slate-950">${escapeHtml(top.name)}</h3>
+                        <p class="text-sm text-slate-500 mt-1">Protocolo mais compatível com a pergunta digitada.</p>
+                    </div>
+
+                    <div class="p-5 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        <section class="space-y-2">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-slate-500">🎯 Quando solicitar / acionar</h4>
+                            <p class="text-sm text-slate-800 leading-relaxed bg-white border border-slate-100 rounded-2xl p-4">${fmt(top.when)}</p>
+                        </section>
+                        <section class="space-y-2">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-slate-500">📝 O que informar</h4>
+                            <p class="text-sm text-slate-800 leading-relaxed bg-blue-50/60 border border-blue-100 rounded-2xl p-4">${fmt(top.info)}</p>
+                        </section>
+                        <section class="space-y-2">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-red-600">🔬 Exames / anexos necessários</h4>
+                            <p class="text-sm text-slate-800 leading-relaxed bg-red-50 border border-red-100 rounded-2xl p-4">${fmt(top.requiredExams)}</p>
+                        </section>
+                        <section class="space-y-2">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-slate-500">🧪 Complementares</h4>
+                            <p class="text-sm text-slate-700 leading-relaxed bg-slate-50 border border-slate-100 rounded-2xl p-4 italic">${fmt(top.optionalExams)}</p>
+                        </section>
+                        ${top.notes ? `
+                        <section class="lg:col-span-2 space-y-2">
+                            <h4 class="text-xs font-black uppercase tracking-wider text-amber-700">⚠️ ${escapeHtml(top.noteTitle || 'Atenção')}</h4>
+                            <p class="text-sm text-amber-950 leading-relaxed bg-amber-50 border border-amber-100 rounded-2xl p-4">${fmt(top.notes)}</p>
+                        </section>` : ''}
+                        <section class="lg:col-span-2 bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                            <h4 class="text-sm font-black text-emerald-900 mb-2">Checklist mínimo antes de inserir a solicitação</h4>
+                            <ul class="text-sm text-emerald-950 space-y-1">${buildChecklist(top)}</ul>
+                        </section>
+                    </div>
+
+                    <div class="p-5 md:p-6 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
+                        <div class="flex flex-wrap gap-2">
+                            <a href="${guideLink}" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-slate-950 text-white font-bold hover:bg-slate-800 transition-colors text-sm">Abrir no guia completo →</a>
+                            <button id="copyModelButton" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white text-slate-800 border border-slate-200 font-bold hover:bg-slate-100 transition-colors text-sm">Copiar modelo de justificativa</button>
+                        </div>
+                        <p class="text-xs text-slate-500">Resultado por busca de termos e sinônimos. Não substitui avaliação clínica.</p>
+                    </div>
+                </div>
+                ${alternatives.length ? `
+                <div class="answer-card mt-4 bg-white border border-slate-200 rounded-2xl p-4">
+                    <h4 class="font-black text-slate-800 mb-3">Outros protocolos que também podem ter relação</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        ${alternatives.map(r => `
+                            <a href="${r.protocol.path}?q=${encodeURIComponent(r.protocol.name)}" class="block rounded-xl border border-slate-200 p-3 hover:bg-slate-50 transition-colors">
+                                <div class="text-xs mb-1">${sourceBadge(r.protocol)}</div>
+                                <div class="font-bold text-sm text-slate-900">${escapeHtml(r.protocol.name)}</div>
+                            </a>`).join('')}
+                    </div>
+                </div>` : ''}
+            `;
+
+            setTimeout(() => {
+                const btn = document.getElementById('copyModelButton');
+                if (btn) {
+                    btn.addEventListener('click', async () => {
+                        try {
+                            await navigator.clipboard.writeText(copyText);
+                            btn.textContent = 'Modelo copiado ✅';
+                            setTimeout(() => btn.textContent = 'Copiar modelo de justificativa', 1800);
+                        } catch (e) {
+                            btn.textContent = 'Copie manualmente: ' + copyText;
+                        }
+                    });
+                }
+            }, 50);
+        }
+
+        const input = document.getElementById('assistantInput');
+        const button = document.getElementById('askButton');
+        button.addEventListener('click', () => renderResult(input.value));
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') renderResult(input.value); });
+        document.querySelectorAll('.exampleChip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                input.value = chip.dataset.q;
+                renderResult(input.value);
+                document.getElementById('assistente').scrollIntoView({ behavior:'smooth', block:'start' });
+            });
         });
     </script>
 </body>
