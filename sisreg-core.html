@@ -3,140 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Guias da Regulação - Eldorado/MS</title>
+    <title>Guia Rápido de Encaminhamentos Médicos - SISREG</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
-        body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #0f172a; }
-        .glass { background: rgba(255,255,255,.92); backdrop-filter: blur(10px); }
-        .answer-card { animation: fadeUp .18s ease-out; }
-        @keyframes fadeUp { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
-        .soft-scroll { scroll-margin-top: 96px; }
-        mark { background: #fef3c7; padding: 0 .15rem; border-radius: .25rem; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc; 
+            color: #1e293b;
+        }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+
+        .accordion-content {
+            transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .accordion-content.open {
+            max-height: 2000px;
+            opacity: 1;
+        }
+
+        .icon-unicode {
+            font-size: 1.25rem;
+            line-height: 1;
+            display: inline-block;
+        }
     </style>
 </head>
-<body class="min-h-screen antialiased">
-    <header class="bg-slate-950 text-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 py-4 md:py-5 flex flex-col md:flex-row justify-between gap-4 md:items-center">
+<body class="antialiased min-h-screen flex flex-col relative pb-20">
+
+    <header class="bg-blue-700 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-4 md:py-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-teal-400 grid place-items-center text-2xl shadow-md">🏥</div>
+                <span class="icon-unicode text-3xl">🏥</span>
                 <div>
-                    <h1 class="text-xl md:text-2xl font-black leading-tight">Portal de Guias da Regulação</h1>
-                    <p class="text-slate-300 text-sm">SISREG/CORE + Telessaúde/DIGSUS · Eldorado/MS</p>
+                    <h1 class="text-xl md:text-2xl font-bold leading-tight">Guia Prático SISREG/CORE</h1>
+                    <p class="text-blue-100 text-sm">Atenção Primária - Eldorado/MS</p>
                 </div>
             </div>
-            <nav class="flex flex-wrap gap-2 text-sm">
-                <a href="#assistente" class="px-4 py-2 rounded-full bg-white text-slate-950 font-bold hover:bg-slate-100 transition-colors">🔎 Pergunte ao Guia</a>
-                <a href="sisreg-core.html" class="px-4 py-2 rounded-full bg-blue-600 text-white font-bold hover:bg-blue-500 transition-colors">SISREG/CORE</a>
-                <a href="digsus.html" class="px-4 py-2 rounded-full bg-teal-600 text-white font-bold hover:bg-teal-500 transition-colors">DIGSUS</a>
-            </nav>
+            <div class="w-full md:w-1/3 relative">
+                <span class="icon-unicode absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                <input type="text" id="searchInput" placeholder="Buscar especialidade, sintoma, exame..." 
+                       class="w-full pl-10 pr-4 py-2 rounded-full border-none text-slate-800 focus:ring-2 focus:ring-amber-400 shadow-inner outline-none transition-all">
+            </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 py-8 md:py-10 space-y-8">
-        <section class="grid grid-cols-1 lg:grid-cols-[1.1fr_.9fr] gap-6 items-stretch">
-            <div class="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-sm relative overflow-hidden">
-                <div class="absolute -right-12 -top-12 w-44 h-44 bg-blue-100 rounded-full blur-2xl"></div>
-                <div class="relative">
-                    <p class="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 mb-4">🧭 Entrada única</p>
-                    <h2 class="text-2xl md:text-4xl font-black text-slate-950 leading-tight mb-3">Consulte rapidamente o protocolo correto antes de solicitar a especialidade.</h2>
-                    <p class="text-slate-600 leading-relaxed max-w-3xl">Use os botões abaixo para abrir os guias completos ou use o assistente para localizar, em linguagem natural, quais informações, exames e anexos devem constar na solicitação.</p>
-                </div>
-            </div>
+    <nav class="bg-blue-50 border-b border-blue-200 sticky top-[88px] md:top-[88px] z-30">
+        <div class="max-w-6xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+            <a href="index.html" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors font-semibold shadow-sm">← Voltar ao portal</a>
+            <a href="index.html#assistente" class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors font-semibold shadow-sm">🔎 Pergunte ao Guia</a>
+        </div>
+    </nav>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-                <a href="sisreg-core.html" class="group block bg-blue-700 text-white rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5">
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <div class="text-3xl mb-3">📂</div>
-                            <h3 class="text-xl font-black">Guia SISREG/CORE</h3>
-                            <p class="text-blue-100 text-sm mt-2">Consultas, exames, procedimentos e critérios para encaminhamento regulado.</p>
-                        </div>
-                        <span class="text-blue-100 group-hover:translate-x-1 transition-transform">→</span>
-                    </div>
-                </a>
-                <a href="digsus.html" class="group block bg-teal-700 text-white rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all hover:-translate-y-0.5">
-                    <div class="flex items-start justify-between gap-4">
-                        <div>
-                            <div class="text-3xl mb-3">💻</div>
-                            <h3 class="text-xl font-black">Guia Telessaúde/DIGSUS</h3>
-                            <p class="text-teal-100 text-sm mt-2">Teleinterconsultas, teleconsultorias, apoio matricial e anexos necessários.</p>
-                        </div>
-                        <span class="text-teal-100 group-hover:translate-x-1 transition-transform">→</span>
-                    </div>
-                </a>
-            </div>
-        </section>
 
-        <section id="assistente" class="soft-scroll bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-            <div class="bg-slate-900 text-white p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <main class="flex-grow max-w-6xl mx-auto px-4 py-8 w-full flex flex-col gap-6">
+
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg shadow-sm">
+            <div class="flex items-start gap-3">
+                <span class="icon-unicode text-blue-500 mt-0.5">🔄</span>
                 <div>
-                    <h2 class="text-xl md:text-2xl font-black flex items-center gap-2">🔎 Pergunte ao Guia</h2>
-                    <p class="text-slate-300 text-sm mt-1">Assistente de protocolo por regras: busca nos critérios cadastrados e responde sem gerar conteúdo fora da base.</p>
-                </div>
-                <div class="text-xs text-slate-300 bg-slate-800 rounded-2xl px-4 py-3 border border-slate-700 max-w-xl">
-                    Apoio à consulta do protocolo. A decisão clínica, a conduta e a classificação final seguem responsabilidade do profissional e avaliação da regulação.
+                    <h3 class="text-sm font-bold text-blue-800">Última Atualização: 19 de Março de 2026</h3>
+                    <ul class="mt-1 text-xs text-blue-700 list-disc list-inside space-y-1">
+                        <li><strong>Animação do Gráfico Interativo:</strong> Ao passar o mouse, o gráfico se preenche totalmente com a cor da especialidade. Ao clicar, o filtro e a cor são mantidos!</li>
+                        <li><strong>Inclusão de 11 novos protocolos do CORE:</strong> Adicionados exames de alta complexidade (Angiotomografia, Angioressonância, PET-Scan, Polissonografia, Urodinâmica).</li>
+                        <li><strong>Novas Especialidades Clínico/Cirúrgicas:</strong> Adicionadas Geriatria, Genética Médica, Cirurgia Oncológica, Cirurgia Torácica, Cardiologia Pediátrica e Endocrinologia Pediátrica. Total ampliado para 83 protocolos.</li>
+                    </ul>
                 </div>
             </div>
+        </div>
 
-            <div class="p-5 md:p-6 space-y-5">
-                <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
-                    <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">⌨️</span>
-                        <input id="assistantInput" type="text" class="w-full pl-12 pr-4 py-4 rounded-2xl border border-slate-300 focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none text-slate-900 shadow-inner" placeholder="Ex.: paciente com diabetes usando insulina e HbA1c alta, o que precisa para endocrino?">
-                    </div>
-                    <button id="askButton" class="px-6 py-4 rounded-2xl bg-slate-950 text-white font-black hover:bg-slate-800 transition-colors shadow-sm">Consultar protocolo</button>
+        <section id="regras-gerais" class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-bold text-slate-800 mb-2 border-b pb-2 flex items-center gap-2">
+                <span class="icon-unicode text-blue-600">📋</span> Regras Gerais de Encaminhamento
+            </h2>
+            <p class="text-slate-600 mb-4 text-sm leading-relaxed">
+                Esta seção apresenta as diretrizes universais que devem ser seguidas em todas as solicitações via SISREG/CORE. O cumprimento destas regras básicas é essencial para garantir a fluidez do processo regulatório e evitar devoluções desnecessárias.
+            </p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div class="space-y-3 text-sm text-slate-700">
+                    <p><strong>Atenção:</strong> Todo encaminhamento deve conter obrigatoriamente:</p>
+                    <ul class="list-none space-y-2">
+                        <li class="flex items-start gap-2"><span class="icon-unicode text-green-500">✅</span> <span>Identificação completa do paciente e CID-10 mais específico possível.</span></li>
+                        <li class="flex items-start gap-2"><span class="icon-unicode text-green-500">✅</span> <span>Histórico clínico detalhado (início, fatores de melhora/piora, evolução).</span></li>
+                        <li class="flex items-start gap-2"><span class="icon-unicode text-green-500">✅</span> <span>Tratamentos já realizados na Atenção Primária (descrever doses e tempo de uso).</span></li>
+                        <li class="flex items-start gap-2"><span class="icon-unicode text-green-500">✅</span> <span>Justificativa clínica clara: O que se espera da avaliação do especialista?</span></li>
+                        <li class="flex items-start gap-2"><span class="icon-unicode text-green-500">✅</span> <span>Exames recentes anexados (geralmente realizados nos últimos 3 a 6 meses).</span></li>
+                    </ul>
                 </div>
-
-                <section class="bg-slate-50 border border-slate-200 rounded-3xl p-4 md:p-5">
-                    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-2 mb-4">
-                        <div>
-                            <h3 class="text-base md:text-lg font-black text-slate-900 flex items-center gap-2">💬 Perguntas frequentes</h3>
-                            <p class="text-sm text-slate-600 mt-1">Atalhos para o médico começar a consulta mesmo sem saber exatamente o que perguntar.</p>
-                        </div>
-                        <p class="text-xs text-slate-500">Clique em uma pergunta para preencher e consultar automaticamente.</p>
+                
+                <div class="flex flex-col items-center border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 pl-0 md:pl-4">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 text-center">Distribuição dos Protocolos por Área</p>
+                    <div class="chart-container">
+                        <canvas id="specialtyChart"></canvas>
                     </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <h4 class="text-xs font-black uppercase tracking-wider text-blue-700 mb-2">SISREG/CORE</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 text-xs">
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Quais informações gerais todo encaminhamento do SISREG/CORE precisa ter?">📋 Informações obrigatórias gerais</button>
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Paciente com dor lombar crônica sem melhora, precisa de ortopedia e quais exames informar?">🦴 Dor lombar / Ortopedia</button>
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Paciente com TFG baixa, creatinina alta ou proteinúria, quando encaminhar para nefrologia?">🧪 Nefrologia / TFG baixa</button>
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Paciente com dor torácica, arritmia ou pressão de difícil controle, o que precisa para cardiologia?">❤️ Cardiologia</button>
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Paciente com lesão de pele suspeita, quando encaminhar para dermatologia e o que descrever?">🧴 Dermatologia</button>
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-colors" data-q="Paciente com suspeita de TEA, atraso do desenvolvimento ou convulsões na infância, qual protocolo usar?">🧠 Neuropediatria / TEA</button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 class="text-xs font-black uppercase tracking-wider text-teal-700 mb-2">Telessaúde/DIGSUS</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 text-xs">
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="O que precisa para solicitar dermatologia no Telessaúde por lesão de pele?">📸 Tele-Dermatologia com foto</button>
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="Paciente com HbA1c alta mesmo usando insulina, quais exames para tele-endocrinologia?">💉 Diabetes / Tele-Endocrino</button>
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="Paciente idoso usando muitos remédios e com quedas, quando acionar tele-geriatria?">👴 Polifarmácia / Geriatria</button>
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="Paciente com cefaleia crônica, epilepsia ou tremores, o que informar para tele-neurologia?">⚡ Tele-Neurologia</button>
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="Paciente com asma, DPOC ou tosse crônica, quais dados e exames para tele-pneumologia?">🫁 Tele-Pneumologia</button>
-                                <button class="exampleChip text-left px-3 py-2 rounded-2xl bg-white text-slate-800 border border-slate-200 hover:border-teal-300 hover:bg-teal-50 transition-colors" data-q="Quando usar tele-psiquiatria e quais casos não devem ir para telessaúde?">🧩 Tele-Psiquiatria</button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <div id="assistantResult" class="min-h-[80px] bg-slate-50 border border-dashed border-slate-300 rounded-3xl p-5 text-slate-600">
-                    Digite uma dúvida acima ou clique em uma pergunta frequente. O assistente vai sugerir o protocolo mais compatível e mostrar o que informar, exames/anexos e alertas.
                 </div>
             </div>
         </section>
+
+        <section id="protocolos" class="flex flex-col gap-4">
+            <div class="flex items-center justify-between border-b border-slate-200 pb-2 mb-2">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <span class="icon-unicode text-blue-600">📂</span> Protocolos por Especialidade (83)
+                </h2>
+            </div>
+            <p class="text-slate-600 mb-2 text-sm leading-relaxed">
+                Abaixo estão os critérios detalhados para cada especialidade médica ou exame de alto custo. Utilize a barra de busca no topo para filtrar por sintomas, nome do exame ou área desejada.
+            </p>
+            
+            <div id="resultsCount" class="text-sm font-medium text-slate-500 mb-2"></div>
+            
+            <div id="protocolGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </div>
+            
+            <div id="noResults" class="hidden text-center py-12 bg-white rounded-xl border border-dashed border-slate-300">
+                <span class="icon-unicode text-4xl text-slate-300 mb-2">🤷</span>
+                <p class="text-slate-500">Nenhum protocolo encontrado para sua busca.</p>
+                <button onclick="document.getElementById('searchInput').value=''; document.getElementById('searchInput').dispatchEvent(new Event('input'));" class="mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium">Limpar Busca</button>
+            </div>
+        </section>
+
+        <section id="erros-comuns" class="bg-amber-50 rounded-xl shadow-sm border border-amber-200 p-6 mt-4">
+            <h2 class="text-lg font-bold text-amber-800 mb-2 border-b border-amber-200 pb-2 flex items-center gap-2">
+                <span class="icon-unicode">⚠️</span> Erros Mais Comuns (Causas de Devolução)
+            </h2>
+            <p class="text-amber-700 mb-4 text-sm leading-relaxed">
+                Esta seção destaca as falhas mais frequentes que resultam na devolução do encaminhamento pelo médico regulador. Evitar estes pontos garante que o paciente chegue ao especialista de forma mais rápida.
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-amber-900">
+                <div class="bg-white/60 p-4 rounded-lg">
+                    <span class="font-bold block mb-1">1. Falta de descrição clínica</span>
+                    Colocar apenas "Solicito avaliação do especialista" ou "A pedido do paciente". O regulador não tem como classificar o risco sem a história da doença atual e os sintomas.
+                </div>
+                <div class="bg-white/60 p-4 rounded-lg">
+                    <span class="font-bold block mb-1">2. Exames ausentes ou desatualizados</span>
+                    Anexar exames com mais de 6 meses (ou 1 ano, dependendo da patologia crônica) ou solicitar exames de alto custo sem enviar os exames prévios (imagens base) obrigatórios.
+                </div>
+                <div class="bg-white/60 p-4 rounded-lg">
+                    <span class="font-bold block mb-1">3. Pular a Atenção Primária</span>
+                    Encaminhar quadros leves (ex: dor lombar de 1 semana, cefaleia tensional comum) sem antes prescrever analgésicos, fisioterapia ou mudança de hábitos por um tempo razoável.
+                </div>
+                <div class="bg-white/60 p-4 rounded-lg">
+                    <span class="font-bold block mb-1">4. CID Incorreto ou Genérico</span>
+                    Utilizar CIDs de rotina ou sintomas muito inespecíficos (ex: Z00.0 ou R52) para investigar patologias que já possuem suspeita clínica ou sinais locais evidentes.
+                </div>
+            </div>
+        </section>
+
     </main>
 
-    <footer class="mt-8 bg-slate-950 text-slate-400 py-6 text-center text-xs">
-        <p>Portal de Guias da Regulação · Eldorado/MS</p>
-        <p class="mt-1">Conteúdo de apoio baseado nos protocolos fornecidos e nos guias internos do projeto.</p>
+    <footer class="bg-slate-800 text-slate-400 py-6 text-center text-xs mt-auto">
+        <div class="max-w-6xl mx-auto px-4">
+            <p>Guia Interativo de Encaminhamentos - Baseado nos Protocolos Oficiais (SESAU/CORE MS).</p>
+            <p class="mt-1">Desenvolvido para uso exclusivo de profissionais médicos da Atenção Primária de Eldorado/MS.</p>
+        </div>
     </footer>
 
-    <script>
-        const sisregProtocols = [
+    <script id="mainScript">
+        const protocols = [
             { 
                 name: "Alergista imunologista", 
                 category: "Clínica", 
@@ -968,476 +1006,279 @@
                 notes: "Exame essencial para o otorrinolaringologista avaliar a necessidade real de cirurgia de desvio de septo ou adenoidectomia." 
             }
         ];
-        const digsusProtocols = [
-            { 
-                name: "Tele-Cardiologia", 
-                category: "Clínica", 
-                when: "Dúvidas no manejo de HAS resistente, IC crônica, análise de ECG com arritmias, dislipidemia refratária.", 
-                info: "Dúvida clínica clara, medicações e doses exatas em uso, PA aferida recente.", 
-                requiredExams: "ECG, Função Renal, Perfil Lipídico.", 
-                optionalExams: "Ecocardiograma, Raio-X de Tórax.", 
-                noteTitle: "Foco Telessaúde", 
-                notes: "O objetivo é ajustar a medicação na APS. Casos agudos (ex: supra de ST) não devem ir para o Telessaúde, mas sim para a Fundação Hospitalar.",
-                comingSoon: true
-            },
-            { 
-                name: "Tele-Dermatologia", 
-                category: "Clínica", 
-                when: "Lesões de pele a esclarecer, acompanhamento de psoríase, acne não responsiva a antibióticos locais.", 
-                info: "Tempo de evolução da lesão, sintomas associados (prurido/dor), tratamentos prévios testados.", 
-                requiredExams: "O paciente deverá apresentar a lesão na Regulação para registro fotográfico ou levar fotos nítidas (macro e micro).", 
-                optionalExams: "Hemograma.", 
-                noteTitle: "Exigência de Anexos", 
-                notes: "A Regulação Municipal providenciará o anexo das fotos. Sem imagens, o pedido é devolvido." 
-            },
-            { 
-                name: "Tele-Endocrinologia", 
-                category: "Clínica", 
-                when: "Dificuldade em atingir meta de HbA1c, dúvidas na insulinização, tireopatias subclínicas, obesidade.", 
-                info: "Mapa glicêmico (se usuário de insulina), peso, IMC.", 
-                requiredExams: "HbA1c recente, Glicemia de jejum, TSH, Creatinina.", 
-                optionalExams: "USG de Tireoide (se nódulo).", 
-                noteTitle: "Ajuste Terapêutico", 
-                notes: "Especifique qual esquema de insulina o paciente já usa e qual a dúvida sobre o ajuste." 
-            },
-            { 
-                name: "Tele-Gastroenterologia", 
-                category: "Clínica", 
-                when: "Manejo de dispepsia não ulcerosa, DRGE refratária a IBP, alteração isolada de TGO/TGP sem sinais de alerta.", 
-                info: "Hábitos de vida (álcool/tabagismo), uso crônico de AINEs, padrão evacuatório.", 
-                requiredExams: "TGO, TGP, Hemograma.", 
-                optionalExams: "Endoscopia (se já realizada), Sorologias hepáticas.", 
-                noteTitle: "Limitação", 
-                notes: "Não utilizar para sinais de alerta como sangramento digestivo, perda de peso severa ou disfagia.",
-                comingSoon: true
-            },
-            { 
-                name: "Tele-Geriatria", 
-                category: "Clínica", 
-                when: "Revisão de polifarmácia (>5 medicações), dúvidas no manejo inicial de síndromes demenciais, avaliação de fragilidade.", 
-                info: "Lista completa de medicações, relato de quedas, independência para AVDs.", 
-                requiredExams: "Hemograma, Função Renal, Eletrólitos, TSH, B12.", 
-                optionalExams: "Testes cognitivos (Mini-Mental) se possível.", 
-                noteTitle: "Desprescrição", 
-                notes: "Excelente canal para pedir ajuda ao geriatra sobre quais medicamentos retirar do paciente idoso." 
-            },
-            { 
-                name: "Tele-Ginecologia e Obstetrícia", 
-                category: "Saúde da Mulher", 
-                when: "Dúvidas na interpretação de laudos de preventivo, manejo de sangramento uterino, candidíase de repetição, dúvidas pré-natais.", 
-                info: "DUM, padrão do ciclo menstrual, tratamentos vaginais já tentados, IG se gestante.", 
-                requiredExams: "Colpocitologia (Preventivo), USG Transvaginal ou Obstétrico.", 
-                optionalExams: "Hemograma (se sangramento).", 
-                noteTitle: "Complemento Local", 
-                notes: "Como Eldorado tem Ginecologia, use para discutir casos difíceis com a equipe de referência estadual." 
-            },
-            { 
-                name: "Tele-Infectologia", 
-                category: "Clínica", 
-                when: "Dúvida no esquema de sífilis (VDRL cicatricial vs reinfecção), interpretação de sorologias complexas, profilaxias.", 
-                info: "Data provável de infecção, esquemas de antibiótico já feitos e titulação anterior do VDRL.", 
-                requiredExams: "Sorologias pertinentes atualizadas.", 
-                optionalExams: "Hemograma, Função Hepática.", 
-                noteTitle: "Esclarecimento de Dúvidas", 
-                notes: "Muitos casos de sífilis com VDRL baixo são apenas cicatriz sorológica; a teleconsulta evita encaminhamentos desnecessários.",
-                comingSoon: true
-            },
-            { 
-                name: "Tele-Nefrologia", 
-                category: "Clínica", 
-                when: "Manejo de Doença Renal Crônica (DRC) estágios 1 a 3, proteinúria leve, litíase renal não obstrutiva.", 
-                info: "Cálculo da Taxa de Filtração Glomerular (TFG), controle pressórico e glicêmico.", 
-                requiredExams: "Ureia, Creatinina, EQU (Urina 1).", 
-                optionalExams: "Relação Proteína/Creatinina urinária, USG de Vias Urinárias.", 
-                noteTitle: "Prevenção", 
-                notes: "O nefrologista ajuda a otimizar nefroprotetores (iECA/BRA) e ajustar doses de outras medicações na APS." 
-            },
-            { 
-                name: "Tele-Neurologia Adulto", 
-                category: "Clínica", 
-                when: "Manejo de cefaleias crônicas, dúvidas em otimização de anticonvulsivantes, investigação de declínio cognitivo leve.", 
-                info: "Frequência e tipo de crise (cefaleia ou epilepsia), exame físico neurológico básico descrito.", 
-                requiredExams: "Nenhum inicial obrigatório.", 
-                optionalExams: "Tomografia de Crânio, EEG.", 
-                noteTitle: "Apoio Matricial", 
-                notes: "Utilize para discutir troca de medicações controladas. Sinais focais agudos vão para urgência." 
-            },
-            { 
-                name: "Tele-Neuropediatria", 
-                category: "Pediatria", 
-                when: "Orientação inicial em atrasos de desenvolvimento, suspeita de TDAH ou TEA, epilepsia infantil controlada.", 
-                info: "Relato dos pais, marcos do desenvolvimento, comportamento escolar.", 
-                requiredExams: "Relatório Escolar anexado (essencial para TEA/TDAH).", 
-                optionalExams: "Nenhum.", 
-                noteTitle: "Foco Telessaúde", 
-                notes: "O especialista pode orientar testes e condutas na APS enquanto o paciente aguarda a regulação presencial.",
-                comingSoon: true
-            },
-            { 
-                name: "Tele-Nutrologia", 
-                category: "Clínica", 
-                when: "Dúvidas na suplementação de deficiências vitamínicas complexas, orientações dietéticas específicas para síndromes.", 
-                info: "Padrão alimentar, IMC, alergias ou intolerâncias diagnosticadas.", 
-                requiredExams: "Hemograma, Glicemia, Perfil Lipídico.", 
-                optionalExams: "Dosagens vitamínicas (D, B12, Cálcio).", 
-                noteTitle: "Apoio Nutricional", 
-                notes: "Discussão de casos atípicos com a rede estadual para alinhar a conduta com a nutrição local." 
-            },
-            { 
-                name: "Tele-Ortopedia", 
-                category: "Cirúrgica", 
-                when: "Avaliação de laudos de Raio-X ou RNM de coluna/joelho, conduta para lombalgia crônica refratária a analgésicos simples.", 
-                info: "Sinais de alarme (red flags), irradiação da dor, testes provocativos básicos.", 
-                requiredExams: "Raio-X (laudo e imagem em PDF/foto).", 
-                optionalExams: "Ressonância Magnética.", 
-                noteTitle: "Evitar Fila Branca", 
-                notes: "Ideal para saber se o paciente precisa mesmo de cirurgião de coluna ou se fisioterapia intensa é o melhor caminho." 
-            },
-            { 
-                name: "Tele-Otorrinolaringologia", 
-                category: "Clínica", 
-                when: "Conduta em sinusites crônicas, avaliação de indicação cirúrgica para amigdalites de repetição, zumbido crônico.", 
-                info: "Frequência de uso de antibióticos por ano, relato da otoscopia (fundamental).", 
-                requiredExams: "Nenhum inicial obrigatório.", 
-                optionalExams: "Audiometria, RX de Seios da Face.", 
-                noteTitle: "Descrição Clínica", 
-                notes: "A descrição precisa da cor do tímpano ou presença de secreção faríngea é crucial para a orientação à distância.",
-                comingSoon: true
-            },
-            { 
-                name: "Tele-Pediatria", 
-                category: "Pediatria", 
-                when: "Dúvidas de puericultura complexa, asma infantil, alergias alimentares não graves.", 
-                info: "Curva de crescimento (peso/estatura anexados), histórico vacinal e alimentar.", 
-                requiredExams: "Nenhum inicial.", 
-                optionalExams: "Hemograma, exames de fezes.", 
-                noteTitle: "Complemento Local", 
-                notes: "Como Eldorado tem Pediatria local, use este recurso apenas para discutir casos onde o pediatra deseje uma segunda opinião." 
-            },
-            { 
-                name: "Tele-Pneumologia", 
-                category: "Clínica", 
-                when: "Ajuste de broncodilatadores em DPOC/Asma, interpretação de espirometria, tosse crônica a esclarecer.", 
-                info: "Carga tabágica (anos/maço), saturação de O2 em ar ambiente, frequência de exacerbações.", 
-                requiredExams: "Raio-X de Tórax (imagem ou laudo).", 
-                optionalExams: "Espirometria, BAAR.", 
-                noteTitle: "Interpretação de Exames", 
-                notes: "Excelente canal para enviar laudos de espirometria ou RX duvidosos para interpretação do especialista." 
-            },
-            { 
-                name: "Tele-Psicologia", 
-                category: "Saúde Mental", 
-                when: "Dúvidas no manejo de sofrimento psíquico, orientação para abordagens terapêuticas breves na APS.", 
-                info: "Contexto familiar, impacto nas atividades diárias, queixa emocional principal.", 
-                requiredExams: "Nenhum.", 
-                optionalExams: "Nenhum.", 
-                noteTitle: "Foco Telessaúde", 
-                notes: "Ideal para discutir abordagens e condutas em saúde mental. Casos com ideação suicida grave vão para urgência." 
-            },
-            { 
-                name: "Tele-Psiquiatria", 
-                category: "Saúde Mental", 
-                when: "Dúvida no desmame de benzodiazepínicos, ajuste de antidepressivos refratários, insônia crônica.", 
-                info: "Risco de suicídio (ausente no momento), histórico de psicofármacos já testados na unidade.", 
-                requiredExams: "Nenhum inicial.", 
-                optionalExams: "TSH, T4 Livre, B12 (para descartar causas orgânicas).", 
-                noteTitle: "Segurança", 
-                notes: "Pacientes em surto agudo, agressivos ou com risco iminente de suicídio NÃO devem entrar no Telessaúde." 
-            },
-            { 
-                name: "Tele-Reumatologia", 
-                category: "Clínica", 
-                when: "Dúvidas na interpretação de FAN ou Fator Reumatoide positivo, manejo inicial de gota, fibromialgia.", 
-                info: "Padrão da dor (mecânica vs. inflamatória), duração da rigidez matinal.", 
-                requiredExams: "VHS, PCR, Hemograma.", 
-                optionalExams: "FAN, Fator Reumatoide, Ácido Úrico.", 
-                noteTitle: "Triagem Laboratorial", 
-                notes: "Evite encaminhar presencialmente apenas por 'FAN positivo' sem clínica. O teleconsultor orientará a conduta." 
+
+        protocols.sort((a, b) => a.name.localeCompare(b.name));
+
+        const gridElement = document.getElementById('protocolGrid');
+        const searchInput = document.getElementById('searchInput');
+        const noResults = document.getElementById('noResults');
+        const resultsCount = document.getElementById('resultsCount');
+
+        let openCardIndex = null;
+
+        function renderCards(data) {
+            gridElement.innerHTML = '';
+            
+            if (data.length === 0) {
+                gridElement.classList.add('hidden');
+                noResults.classList.remove('hidden');
+                resultsCount.innerText = "0 protocolos encontrados.";
+                return;
             }
-        ];
 
-        const allProtocols = [
-            ...sisregProtocols.map(p => ({ ...p, source: 'SISREG/CORE', sourceColor: 'blue', path: 'sisreg-core.html' })),
-            ...digsusProtocols.map(p => ({ ...p, source: 'Telessaúde/DIGSUS', sourceColor: 'teal', path: 'digsus.html' }))
-        ].sort((a,b) => a.name.localeCompare(b.name));
+            gridElement.classList.remove('hidden');
+            noResults.classList.add('hidden');
+            resultsCount.innerText = `${data.length} protocolo(s) encontrado(s).`;
 
-        const stopWords = new Set('a o os as um uma uns umas de da do das dos e em para por com sem ao aos na no nas nos que qual quais quando como onde porque precisa precisar solicito solicitar encaminhar encaminhamento paciente medico médica doutor doutora exame exames consulta especialidade especialista favor sobre tenho tem esta está esse essa isso aquele aquela seria deve devem quero queria preciso quais apenas la lá se ja já ou muito mais menos'.split(' '));
+            data.forEach((protocol, index) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-200 hover:shadow-md';
+                
+                card.innerHTML = `
+                    <div class="px-5 py-4 cursor-pointer flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors" onclick="window.toggleCard(${index})">
+                        <div class="flex items-center flex-wrap gap-2 w-full pr-4">
+                            <span class="text-blue-600 font-bold text-sm md:text-base">${protocol.name}</span>
+                            <span class="bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded uppercase font-bold">${protocol.category}</span>
+                        </div>
+                        <span id="icon-${index}" class="icon-unicode text-slate-400 transform transition-transform duration-300">🔽</span>
+                    </div>
+                    <div id="content-${index}" class="accordion-content bg-white">
+                        <div class="p-5 space-y-4 border-t border-slate-100">
+                            
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                    <span class="icon-unicode">🎯</span> Quando Encaminhar
+                                </h4>
+                                <p class="text-sm text-slate-700 leading-relaxed">${protocol.when}</p>
+                            </div>
+                            
+                            <div>
+                                <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                    <span class="icon-unicode">📝</span> Anamnese / Justificativa
+                                </h4>
+                                <p class="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100 leading-relaxed">${protocol.info}</p>
+                            </div>
 
-        const phraseExpansions = [
-            ['dor de cabeça', 'cefaleia enxaqueca neurologia'],
-            ['dor no estomago', 'epigastralgia gastrite gastroenterologia endoscopia'],
-            ['dor no estômago', 'epigastralgia gastrite gastroenterologia endoscopia'],
-            ['pressao alta', 'hipertensao has cardiologia nefrologia'],
-            ['pressão alta', 'hipertensao has cardiologia nefrologia'],
-            ['falta de ar', 'dispneia pneumologia cardiologia asma dpoc'],
-            ['dor no peito', 'dor toracica precordial cardiologia ecg teste ergometrico'],
-            ['xixi', 'urina urinaria urologia nefrologia'],
-            ['rim', 'renal creatinina tfg nefrologia urologia'],
-            ['pele', 'dermatologia lesao prurido mancha foto'],
-            ['pinta', 'dermatologia lesao melanoma cancer pele foto'],
-            ['mancha', 'dermatologia lesao pele foto'],
-            ['coceira', 'prurido dermatologia alergista urticaria'],
-            ['convulsao', 'convulsao epilepsia neurologia neuropediatria eeg'],
-            ['convulsão', 'convulsao epilepsia neurologia neuropediatria eeg'],
-            ['autismo', 'tea neuropediatria psicologia reabilitacao desenvolvimento'],
-            ['tdah', 'neuropediatria psiquiatria psicologia aprendizagem comportamento'],
-            ['sangue na urina', 'hematuria urologia nefrologia'],
-            ['colesterol', 'dislipidemia endocrinologia cardiologia ldl triglicerideos'],
-            ['diabetes', 'diabetes endocrinologia hba1c insulina glicemia nefrologia'],
-            ['tireoide', 'tireoidopatia endocrinologia tsh t4 tireoide nodulo'],
-            ['vesicula', 'colelitiase cirurgia geral ultrassom'],
-            ['vesícula', 'colelitiase cirurgia geral ultrassom'],
-            ['hernia', 'hernia cirurgia geral'],
-            ['hérnia', 'hernia cirurgia geral'],
-            ['varizes', 'vascular angiologia doppler ceap'],
-            ['idoso', 'geriatria fragilidade polifarmacia demencia queda'],
-            ['queda', 'geriatria ortopedia fragilidade'],
-            ['ferida na perna', 'ulcera vascular angiologia diabetes doppler'],
-            ['zumbido', 'otorrinolaringologia audiometria hipoacusia'],
-            ['rouquidao', 'rouquidao disfonia otorrinolaringologia videolaringoscopia'],
-            ['rouquidão', 'rouquidao disfonia otorrinolaringologia videolaringoscopia']
-        ];
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <h4 class="text-xs font-bold text-red-600 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                        <span class="icon-unicode">🔬</span> Exames Obrigatórios
+                                    </h4>
+                                    <p class="text-sm text-slate-700 bg-red-50 p-3 rounded-lg border border-red-100 h-full leading-relaxed">${protocol.requiredExams}</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                        <span class="icon-unicode">🧪</span> Exames Opcionais
+                                    </h4>
+                                    <p class="text-sm text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-100 h-full italic leading-relaxed">${protocol.optionalExams || 'Nenhum exame opcional sugerido.'}</p>
+                                </div>
+                            </div>
+                            
+                            ${protocol.notes ? `
+                            <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-lg mt-2">
+                                <h4 class="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                    <span class="icon-unicode">⚡</span> ${protocol.noteTitle || 'Nota Importante'}
+                                </h4>
+                                <p class="text-sm text-indigo-900 leading-relaxed">${protocol.notes}</p>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                gridElement.appendChild(card);
+            });
+        }
 
-        const sourceHints = {
-            sisreg: ['sisreg', 'core', 'presencial', 'regulação', 'regulacao', 'consulta presencial', 'exame', 'procedimento', 'vaga'],
-            digsus: ['digsus', 'digsaude', 'digsaúde', 'telessaude', 'telessaúde', 'tele', 'teleconsulta', 'teleinterconsulta', 'teleconsultoria', 'stt']
+        window.toggleCard = function(index) {
+            const content = document.getElementById(`content-${index}`);
+            const icon = document.getElementById(`icon-${index}`);
+            
+            if (openCardIndex !== null && openCardIndex !== index) {
+                const prevContent = document.getElementById(`content-${openCardIndex}`);
+                const prevIcon = document.getElementById(`icon-${openCardIndex}`);
+                if (prevContent) {
+                    prevContent.classList.remove('open');
+                    prevIcon.style.transform = 'rotate(0deg)';
+                }
+            }
+
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                icon.style.transform = 'rotate(0deg)';
+                openCardIndex = null;
+            } else {
+                content.classList.add('open');
+                icon.style.transform = 'rotate(180deg)';
+                openCardIndex = index;
+            }
         };
 
-        function normalize(text) {
-            return (text || '')
-                .toString()
-                .toLowerCase()
-                .normalize('NFD')
-                .replace(/[̀-ͯ]/g, '')
-                .replace(/[^a-z0-9\s]/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
+        let chartInstance = null;
+        let activeCategoryIndex = null;
+        const originalColors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#ef4444', '#64748b'];
 
-        function expandQuery(raw) {
-            let q = normalize(raw);
-            let expanded = q;
-            phraseExpansions.forEach(([phrase, add]) => {
-                if (q.includes(normalize(phrase))) expanded += ' ' + normalize(add);
-            });
-            return expanded;
-        }
-
-        function tokenize(text) {
-            return normalize(text).split(' ').filter(t => t.length > 2 && !stopWords.has(t));
-        }
-
-        function protocolText(p) {
-            return [p.name, p.category, p.when, p.info, p.requiredExams, p.optionalExams, p.noteTitle, p.notes].filter(Boolean).join(' ');
-        }
-
-        function scoreProtocol(p, rawQuery) {
-            const expanded = expandQuery(rawQuery);
-            const tokens = tokenize(expanded);
-            const name = normalize(p.name);
-            const when = normalize(p.when);
-            const info = normalize(p.info);
-            const required = normalize(p.requiredExams);
-            const optional = normalize(p.optionalExams);
-            const notes = normalize(p.notes);
-            const category = normalize(p.category);
-            const all = normalize(protocolText(p));
-            let score = 0;
-            let matched = new Set();
-
-            tokens.forEach(t => {
-                if (name.includes(t)) { score += 12; matched.add(t); }
-                if (category.includes(t)) { score += 4; matched.add(t); }
-                if (when.includes(t)) { score += 5; matched.add(t); }
-                if (info.includes(t)) { score += 4; matched.add(t); }
-                if (required.includes(t)) { score += 3; matched.add(t); }
-                if (optional.includes(t)) { score += 2; matched.add(t); }
-                if (notes.includes(t)) { score += 2; matched.add(t); }
-                if (all.includes(t)) { score += 1; matched.add(t); }
-            });
-
-            // boosts by source hint
-            const normRaw = normalize(rawQuery);
-            if (sourceHints.digsus.some(h => normRaw.includes(normalize(h))) && p.source === 'Telessaúde/DIGSUS') score += 10;
-            if (sourceHints.sisreg.some(h => normRaw.includes(normalize(h))) && p.source === 'SISREG/CORE') score += 8;
-
-            // exact specialty-ish boosts
-            const specialtyAliases = [
-                ['cardio', 'cardiologia'], ['coraçao', 'cardiologia'], ['coracao', 'cardiologia'], ['ecg', 'eletrocardiograma'],
-                ['neuro', 'neurologia'], ['neuropediatria', 'neuropediatria'], ['convulsao', 'neurologia'],
-                ['dermato', 'dermatologia'], ['pele', 'dermatologia'],
-                ['endo', 'endocrinologia'], ['diabetes', 'endocrinologia'], ['tireoide', 'endocrinologia'],
-                ['nefro', 'nefrologia'], ['renal', 'nefrologia'], ['creatinina', 'nefrologia'],
-                ['uro', 'urologia'], ['prostata', 'urologia'], ['psa', 'urologia'],
-                ['orto', 'ortopedia'], ['coluna', 'ortopedia'], ['joelho', 'ortopedia'],
-                ['psiquiatria', 'psiquiatria'], ['psicologia', 'psicologia'],
-                ['otorrino', 'otorrinolaringologia'], ['ouvido', 'otorrinolaringologia'],
-                ['pneumo', 'pneumologia'], ['asma', 'pneumologia'], ['dpoc', 'pneumologia'],
-                ['gastro', 'gastrologia'], ['gastroenterologia', 'gastroenterologia'],
-                ['geriatria', 'geriatria'], ['idoso', 'geriatria'],
-                ['reumato', 'reumatologia'], ['lupus', 'reumatologia'], ['fibromialgia', 'reumatologia'],
-                ['vascular', 'vascular'], ['angiologia', 'angiologia'], ['varizes', 'vascular'],
-                ['mamografia', 'mamografia'], ['mama', 'mastologia'], ['mastologia', 'mastologia']
-            ];
-            specialtyAliases.forEach(([term, target]) => {
-                if (normRaw.includes(term) && name.includes(normalize(target))) score += 14;
-            });
-
-            // Tele prefix normalization
-            const plainName = name.replace(/^tele\s*/, '').replace(/^tele-/, '');
-            tokens.forEach(t => { if (plainName.includes(t)) score += 6; });
-
-            return { protocol: p, score, matched: Array.from(matched).slice(0, 8) };
-        }
-
-        function searchProtocols(rawQuery) {
-            return allProtocols
-                .map(p => scoreProtocol(p, rawQuery))
-                .filter(r => r.score > 0)
-                .sort((a,b) => b.score - a.score)
-                .slice(0, 6);
-        }
-
-        function escapeHtml(s) {
-            return (s || '').toString().replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-        }
-
-        function fmt(text) {
-            if (!text) return '<span class="text-slate-400 italic">Não informado no card.</span>';
-            return escapeHtml(text);
-        }
-
-        function sourceBadge(p) {
-            const color = p.sourceColor === 'teal'
-                ? 'bg-teal-50 text-teal-700 border-teal-200'
-                : 'bg-blue-50 text-blue-700 border-blue-200';
-            return `<span class="inline-flex items-center px-2.5 py-1 rounded-full border ${color} text-xs font-black">${escapeHtml(p.source)}</span>`;
-        }
-
-        function buildChecklist(p) {
-            const isTele = p.source === 'Telessaúde/DIGSUS';
-            const parts = [
-                'Identificação completa do paciente e CID compatível;',
-                'tempo de evolução, exame físico e evolução do quadro;',
-                'tratamentos já realizados e medicamentos em uso;',
-                'exames/anexos disponíveis relacionados ao caso.'
-            ];
-            if (isTele) parts.splice(1, 0, 'pergunta clínica objetiva para o especialista responder;');
-            return parts.map(item => `<li class="flex gap-2"><span class="text-emerald-600">✅</span><span>${item}</span></li>`).join('');
-        }
-
-        function renderResult(rawQuery) {
-            const box = document.getElementById('assistantResult');
-            const query = rawQuery.trim();
-            if (!query) {
-                box.innerHTML = 'Digite uma dúvida acima. O assistente vai sugerir o protocolo mais compatível e mostrar o que informar, exames/anexos e alertas.';
-                return;
+        window.resetFilter = function() {
+            activeCategoryIndex = null;
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchInput').dispatchEvent(new Event('input'));
+            
+            // Restaura a aparência original do gráfico
+            if (chartInstance) {
+                chartInstance.data.datasets[0].backgroundColor = [...originalColors];
+                chartInstance.data.datasets[0].borderColor = '#ffffff';
+                chartInstance.options.cutout = '65%';
+                chartInstance.update();
             }
-            const results = searchProtocols(query);
-            if (!results.length || results[0].score < 8) {
-                box.innerHTML = `
-                    <div class="answer-card bg-white rounded-2xl border border-amber-200 p-5">
-                        <h3 class="font-black text-amber-800 text-lg mb-2">Não identifiquei um protocolo com segurança.</h3>
-                        <p class="text-slate-700 text-sm leading-relaxed">Tente informar a especialidade desejada ou inclua dados como idade, queixa principal, tempo de evolução, exames já feitos e tratamentos tentados.</p>
-                        <div class="mt-4 bg-amber-50 border border-amber-100 rounded-xl p-4 text-sm text-amber-900">
-                            Exemplo melhor: <strong>“Paciente com diabetes tipo 2 usando NPH e HbA1c 9,2%, quais exames para Tele-Endocrinologia?”</strong>
-                        </div>
-                    </div>`;
-                return;
-            }
+        };
 
-            const top = results[0].protocol;
-            const alternatives = results.slice(1).filter(r => r.score >= Math.max(8, results[0].score * 0.48)).slice(0,3);
-            const guideLink = `${top.path}?q=${encodeURIComponent(top.name)}`;
-            const copyText = `Paciente: [idade/sexo]. Queixa/hipótese: [descrever]. Início e evolução: [tempo]. Exame físico: [achados]. Tratamentos realizados: [medicações/doses/tempo]. Medicamentos em uso: [listar]. Exames/anexos: [listar]. Objetivo da solicitação/pergunta clínica: [descrever].`;
-            box.innerHTML = `
-                <div class="answer-card bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div class="p-5 md:p-6 border-b border-slate-100 bg-slate-50">
-                        <div class="flex flex-wrap items-center gap-2 mb-3">
-                            ${sourceBadge(top)}
-                            ${top.category ? `<span class="inline-flex items-center px-2.5 py-1 rounded-full border bg-white text-slate-700 border-slate-200 text-xs font-black">${escapeHtml(top.category)}</span>` : ''}
-                            ${top.comingSoon ? '<span class="inline-flex items-center px-2.5 py-1 rounded-full border bg-amber-50 text-amber-800 border-amber-200 text-xs font-black">Em breve</span>' : ''}
-                        </div>
-                        <h3 class="text-xl md:text-2xl font-black text-slate-950">${escapeHtml(top.name)}</h3>
-                        <p class="text-sm text-slate-500 mt-1">Protocolo mais compatível com a pergunta digitada.</p>
-                    </div>
-
-                    <div class="p-5 md:p-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
-                        <section class="space-y-2">
-                            <h4 class="text-xs font-black uppercase tracking-wider text-slate-500">🎯 Quando solicitar / acionar</h4>
-                            <p class="text-sm text-slate-800 leading-relaxed bg-white border border-slate-100 rounded-2xl p-4">${fmt(top.when)}</p>
-                        </section>
-                        <section class="space-y-2">
-                            <h4 class="text-xs font-black uppercase tracking-wider text-slate-500">📝 O que informar</h4>
-                            <p class="text-sm text-slate-800 leading-relaxed bg-blue-50/60 border border-blue-100 rounded-2xl p-4">${fmt(top.info)}</p>
-                        </section>
-                        <section class="space-y-2">
-                            <h4 class="text-xs font-black uppercase tracking-wider text-red-600">🔬 Exames / anexos necessários</h4>
-                            <p class="text-sm text-slate-800 leading-relaxed bg-red-50 border border-red-100 rounded-2xl p-4">${fmt(top.requiredExams)}</p>
-                        </section>
-                        <section class="space-y-2">
-                            <h4 class="text-xs font-black uppercase tracking-wider text-slate-500">🧪 Complementares</h4>
-                            <p class="text-sm text-slate-700 leading-relaxed bg-slate-50 border border-slate-100 rounded-2xl p-4 italic">${fmt(top.optionalExams)}</p>
-                        </section>
-                        ${top.notes ? `
-                        <section class="lg:col-span-2 space-y-2">
-                            <h4 class="text-xs font-black uppercase tracking-wider text-amber-700">⚠️ ${escapeHtml(top.noteTitle || 'Atenção')}</h4>
-                            <p class="text-sm text-amber-950 leading-relaxed bg-amber-50 border border-amber-100 rounded-2xl p-4">${fmt(top.notes)}</p>
-                        </section>` : ''}
-                        <section class="lg:col-span-2 bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
-                            <h4 class="text-sm font-black text-emerald-900 mb-2">Checklist mínimo antes de inserir a solicitação</h4>
-                            <ul class="text-sm text-emerald-950 space-y-1">${buildChecklist(top)}</ul>
-                        </section>
-                    </div>
-
-                    <div class="p-5 md:p-6 bg-slate-50 border-t border-slate-100 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-                        <div class="flex flex-wrap gap-2">
-                            <a href="${guideLink}" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-slate-950 text-white font-bold hover:bg-slate-800 transition-colors text-sm">Abrir no guia completo →</a>
-                            <button id="copyModelButton" class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white text-slate-800 border border-slate-200 font-bold hover:bg-slate-100 transition-colors text-sm">Copiar modelo de justificativa</button>
-                        </div>
-                        <p class="text-xs text-slate-500">Resultado por busca de termos e sinônimos. Não substitui avaliação clínica.</p>
-                    </div>
-                </div>
-                ${alternatives.length ? `
-                <div class="answer-card mt-4 bg-white border border-slate-200 rounded-2xl p-4">
-                    <h4 class="font-black text-slate-800 mb-3">Outros protocolos que também podem ter relação</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        ${alternatives.map(r => `
-                            <a href="${r.protocol.path}?q=${encodeURIComponent(r.protocol.name)}" class="block rounded-xl border border-slate-200 p-3 hover:bg-slate-50 transition-colors">
-                                <div class="text-xs mb-1">${sourceBadge(r.protocol)}</div>
-                                <div class="font-bold text-sm text-slate-900">${escapeHtml(r.protocol.name)}</div>
-                            </a>`).join('')}
-                    </div>
-                </div>` : ''}
-            `;
-
-            setTimeout(() => {
-                const btn = document.getElementById('copyModelButton');
-                if (btn) {
-                    btn.addEventListener('click', async () => {
-                        try {
-                            await navigator.clipboard.writeText(copyText);
-                            btn.textContent = 'Modelo copiado ✅';
-                            setTimeout(() => btn.textContent = 'Copiar modelo de justificativa', 1800);
-                        } catch (e) {
-                            btn.textContent = 'Copie manualmente: ' + copyText;
-                        }
-                    });
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            
+            // Se o usuário digitar algo na barra, limpa o filtro visual do gráfico
+            if (activeCategoryIndex !== null && term.length > 0) {
+                activeCategoryIndex = null;
+                if (chartInstance) {
+                    chartInstance.data.datasets[0].backgroundColor = [...originalColors];
+                    chartInstance.data.datasets[0].borderColor = '#ffffff';
+                    chartInstance.options.cutout = '65%';
+                    chartInstance.update();
                 }
-            }, 50);
+            }
+
+            const filtered = protocols.filter(p => 
+                p.name.toLowerCase().includes(term) ||
+                p.when.toLowerCase().includes(term) ||
+                p.info.toLowerCase().includes(term) ||
+                p.requiredExams.toLowerCase().includes(term) ||
+                (p.notes && p.notes.toLowerCase().includes(term))
+            );
+            renderCards(filtered);
+            openCardIndex = null; 
+        });
+
+        function initChart() {
+            const container = document.querySelector('.chart-container');
+            // Removemos o Canvas antigo e criamos um novo para garantir que não haja eventos duplicados
+            container.innerHTML = '<canvas id="specialtyChart" style="transition: all 0.3s ease;"></canvas>';
+            const ctx = document.getElementById('specialtyChart').getContext('2d');
+            
+            const categoriesCount = {};
+            protocols.forEach(p => {
+                categoriesCount[p.category] = (categoriesCount[p.category] || 0) + 1;
+            });
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categoriesCount),
+                    datasets: [{
+                        data: Object.values(categoriesCount),
+                        backgroundColor: [...originalColors],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 350 // Suaviza a transição de preenchimento
+                    },
+                    onHover: (event, elements, chart) => {
+                        // O evento mouseleave cuida da saída do canvas. Aqui apenas tratamos o movimento interno.
+                        if (event.native.type === 'mouseleave') return;
+
+                        event.native.target.style.cursor = elements[0] ? 'pointer' : 'default';
+                        
+                        if (elements.length > 0) {
+                            // PREENCHER TODO: Usuário está com o mouse em cima de uma fatia
+                            const hoveredIndex = elements[0].index;
+                            const hoveredColor = originalColors[hoveredIndex % originalColors.length];
+                            
+                            // Define todas as fatias e bordas para a mesma cor para dar o efeito de círculo sólido
+                            chart.data.datasets[0].backgroundColor = originalColors.map(() => hoveredColor);
+                            chart.data.datasets[0].borderColor = originalColors.map(() => hoveredColor);
+                            chart.options.cutout = '0%'; // Transforma o anel numa "pizza" preenchida
+                            chart.update();
+                        } else {
+                            // VOLTA COMO ERA: Usuário moveu o mouse para fora das fatias (mas ainda no canvas)
+                            chart.data.datasets[0].backgroundColor = [...originalColors];
+                            chart.data.datasets[0].borderColor = '#ffffff';
+                            chart.options.cutout = '65%';
+                            chart.update();
+                        }
+                    },
+                    onClick: (event, elements, chart) => {
+                        if (elements.length > 0) {
+                            activeCategoryIndex = elements[0].index;
+                            const category = chart.data.labels[activeCategoryIndex];
+                            
+                            const searchInput = document.getElementById('searchInput');
+                            searchInput.value = ''; // Limpa a busca textual para não conflitar
+                            
+                            const filtered = protocols.filter(p => p.category === category);
+                            renderCards(filtered);
+                            openCardIndex = null;
+                            
+                            // Adiciona a tag de filtro ativo com botão de limpar
+                            document.getElementById('resultsCount').innerHTML = `
+                                Filtrando por: <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-[10px] uppercase font-bold ml-1 mr-2">${category}</span> 
+                                (${filtered.length} protocolos)
+                                <button onclick="window.resetFilter()" class="text-blue-500 hover:text-blue-700 underline text-xs ml-2 cursor-pointer focus:outline-none">Mostrar todos</button>
+                            `;
+                            
+                            // Rola a tela até os resultados
+                            document.getElementById('protocolos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { boxWidth: 12, padding: 15, font: { family: "'Inter', sans-serif", size: 11 } }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            titleFont: { family: "'Inter', sans-serif", size: 13 },
+                            bodyFont: { family: "'Inter', sans-serif", size: 13 },
+                            padding: 10,
+                            cornerRadius: 8,
+                            callbacks: { label: function(context) { return ` ${context.label}: ${context.raw} especialidades (Clique para filtrar)`; } }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+
+            // Lógica de Manter Preenchido quando o mouse sai totalmente do gráfico
+            document.getElementById('specialtyChart').addEventListener('mouseleave', () => {
+                if (activeCategoryIndex !== null) {
+                    // Mantém o gráfico como um círculo sólido da cor do filtro escolhido
+                    const activeColor = originalColors[activeCategoryIndex % originalColors.length];
+                    chartInstance.data.datasets[0].backgroundColor = originalColors.map(() => activeColor);
+                    chartInstance.data.datasets[0].borderColor = originalColors.map(() => activeColor);
+                    chartInstance.options.cutout = '0%';
+                } else {
+                    // Se não houver filtro ativo, volta ao anel colorido normal
+                    chartInstance.data.datasets[0].backgroundColor = [...originalColors];
+                    chartInstance.data.datasets[0].borderColor = '#ffffff';
+                    chartInstance.options.cutout = '65%';
+                }
+                chartInstance.update();
+            });
         }
 
-        const input = document.getElementById('assistantInput');
-        const button = document.getElementById('askButton');
-        button.addEventListener('click', () => renderResult(input.value));
-        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') renderResult(input.value); });
-        document.querySelectorAll('.exampleChip').forEach(chip => {
-            chip.addEventListener('click', () => {
-                input.value = chip.dataset.q;
-                renderResult(input.value);
-                document.getElementById('assistente').scrollIntoView({ behavior:'smooth', block:'start' });
-            });
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCards(protocols);
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialQuery = urlParams.get('q');
+            if (initialQuery) {
+                searchInput.value = initialQuery;
+                searchInput.dispatchEvent(new Event('input'));
+                setTimeout(() => document.getElementById('protocolos')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+            }
+            initChart();
         });
+
     </script>
 </body>
 </html>
