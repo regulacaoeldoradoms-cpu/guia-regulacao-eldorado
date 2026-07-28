@@ -24,6 +24,7 @@ jobs:
           node --check js/institutional-print.js
           node --check js/ai-config.js
           node --check js/ai-assistant.js
+          node --check js/ai-markdown.js
           node --check worker/gemini-assistant.js
 
       - name: Conferir arquivos referenciados
@@ -40,6 +41,7 @@ jobs:
           test -f js/institutional-print.js
           test -f js/ai-config.js
           test -f js/ai-assistant.js
+          test -f js/ai-markdown.js
           test -f worker/gemini-assistant.js
           test -f worker/wrangler.toml
           test -f worker/package.json
@@ -55,6 +57,7 @@ jobs:
           grep -q 'js/institutional-print.js' index.html
           grep -q 'js/ai-config.js' index.html
           grep -q 'js/ai-assistant.js' index.html
+          grep -q 'js/ai-markdown.js' index.html
 
       - name: Conferir assistente dos protocolos
         run: |
@@ -62,6 +65,8 @@ jobs:
           grep -q 'Consulta local' js/ai-assistant.js
           grep -q 'Gemini conectado' js/ai-assistant.js
           grep -q 'Não informe nome, CPF, Cartão SUS' js/ai-assistant.js
+          grep -q 'appendInlineFormatting' js/ai-markdown.js
+          grep -q 'textContent = match' js/ai-markdown.js
           grep -q 'Fonte consultada:' worker/gemini-assistant.js
           grep -q 'GEMINI_API_KEY' worker/gemini-assistant.js
           grep -q 'ALLOWED_ORIGINS' worker/wrangler.toml
@@ -92,7 +97,7 @@ jobs:
 
       - name: Impedir emojis na interface principal
         run: |
-          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/learning-mode.css css/institutional-print.css css/ai-assistant.css js/medical-app.js js/dermatology-status.js js/learning-mode.js js/institutional-print.js js/ai-config.js js/ai-assistant.js worker/gemini-assistant.js; then
+          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/learning-mode.css css/institutional-print.css css/ai-assistant.css js/medical-app.js js/dermatology-status.js js/learning-mode.js js/institutional-print.js js/ai-config.js js/ai-assistant.js js/ai-markdown.js worker/gemini-assistant.js; then
             echo 'Foram encontrados emojis nos arquivos da interface médica.'
             exit 1
           fi
