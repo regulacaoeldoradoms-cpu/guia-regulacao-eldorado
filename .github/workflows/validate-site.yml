@@ -19,6 +19,7 @@ jobs:
         run: |
           node --check js/app.js
           node --check js/medical-app.js
+          node --check js/dermatology-status.js
           node --check js/learning-mode.js
           node --check js/institutional-print.js
 
@@ -30,6 +31,7 @@ jobs:
           test -f css/learning-mode.css
           test -f css/institutional-print.css
           test -f js/medical-app.js
+          test -f js/dermatology-status.js
           test -f js/learning-mode.js
           test -f js/institutional-print.js
           test -f protocolo/index.html
@@ -37,8 +39,15 @@ jobs:
           grep -q 'css/learning-mode.css' index.html
           grep -q 'css/institutional-print.css' index.html
           grep -q 'js/medical-app.js' index.html
+          grep -q 'js/dermatology-status.js' index.html
           grep -q 'js/learning-mode.js' index.html
           grep -q 'js/institutional-print.js' index.html
+
+      - name: Conferir disponibilidade da Dermatologia
+        run: |
+          grep -q "digsusStatus: 'indisponivel_local'" js/dermatology-status.js
+          grep -q 'Teleconsulta de Dermatologia indisponível no momento' js/dermatology-status.js
+          grep -q 'SISREG/CORE' js/dermatology-status.js
 
       - name: Conferir modo de aprendizagem
         run: |
@@ -56,7 +65,7 @@ jobs:
 
       - name: Impedir emojis na interface principal
         run: |
-          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/learning-mode.css css/institutional-print.css js/medical-app.js js/learning-mode.js js/institutional-print.js; then
+          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/learning-mode.css css/institutional-print.css js/medical-app.js js/dermatology-status.js js/learning-mode.js js/institutional-print.js; then
             echo 'Foram encontrados emojis nos arquivos da interface médica.'
             exit 1
           fi
