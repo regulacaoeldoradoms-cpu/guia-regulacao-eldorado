@@ -1,9 +1,7 @@
 'use strict';
 
 window.REGULATION_AI_CONFIG = Object.freeze({
-  // Após publicar o Worker, informe aqui a URL completa, por exemplo:
-  // https://guia-regulacao-ia.seu-subdominio.workers.dev/api/ia
-  endpoint: '',
+  endpoint: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/ia',
   provider: 'Gemini',
   maxQuestionLength: 800,
   maxHistoryMessages: 6
