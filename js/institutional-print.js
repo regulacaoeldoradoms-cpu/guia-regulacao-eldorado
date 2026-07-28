@@ -87,7 +87,7 @@ function printInstitutionalOrientation(protocol) {
       </section>
 
       <footer class="institutional-footer">
-        <img src="${INSTITUTIONAL_IMAGE}" alt="Identificação institucional do Município de Eldorado/MS" crossorigin="anonymous">
+        <img src="${INSTITUTIONAL_IMAGE}" alt="Identificação institucional do Município de Eldorado/MS">
         <div class="institutional-validation">
           <strong>Setor de Regulação de Saúde — Eldorado/MS</strong>
           <span>Documento institucional de orientação para complementação de solicitação.</span>
