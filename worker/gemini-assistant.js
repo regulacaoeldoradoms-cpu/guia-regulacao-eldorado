@@ -67,7 +67,9 @@ function cleanArray(value, maximumItems, maximumItemLength) {
   if (!Array.isArray(value)) return [];
   return value.slice(0, maximumItems).map((item) => {
     if (typeof item === 'string') return item.slice(0, maximumItemLength);
-    return JSON.parse(JSON.stringify(item).slice(0, maximumItemLength));
+    const serialized = JSON.stringify(item);
+    if (!serialized) return '';
+    return serialized.length <= maximumItemLength ? item : serialized.slice(0, maximumItemLength);
   }).filter(Boolean);
 }
 
@@ -199,7 +201,7 @@ export default {
       const body = await request.json();
       const question = boundedString(body.question, 800);
       if (!question) return jsonResponse({ error: 'Informe uma pergunta.' }, 400, origin, true);
-      if (hasSensitiveData(question)) {
+      if (hasSensitiveData(question) || hasSensitiveData(JSON.stringify(body.history || []))) {
         return jsonResponse({
           error: 'Não envie dados pessoais identificáveis. Reformule a pergunta de forma anônima.'
         }, 400, origin, true);
