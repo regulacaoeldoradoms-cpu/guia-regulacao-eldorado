@@ -22,6 +22,9 @@ jobs:
           node --check js/dermatology-status.js
           node --check js/learning-mode.js
           node --check js/institutional-print.js
+          node --check js/ai-config.js
+          node --check js/ai-assistant.js
+          node --check worker/gemini-assistant.js
 
       - name: Conferir arquivos referenciados
         run: |
@@ -30,18 +33,42 @@ jobs:
           test -f css/medical.css
           test -f css/learning-mode.css
           test -f css/institutional-print.css
+          test -f css/ai-assistant.css
           test -f js/medical-app.js
           test -f js/dermatology-status.js
           test -f js/learning-mode.js
           test -f js/institutional-print.js
+          test -f js/ai-config.js
+          test -f js/ai-assistant.js
+          test -f worker/gemini-assistant.js
+          test -f worker/wrangler.toml
+          test -f worker/package.json
+          test -f CONFIGURAR-ASSISTENTE-GEMINI.md
           test -f protocolo/index.html
           grep -q 'css/medical.css' index.html
           grep -q 'css/learning-mode.css' index.html
           grep -q 'css/institutional-print.css' index.html
+          grep -q 'css/ai-assistant.css' index.html
           grep -q 'js/medical-app.js' index.html
           grep -q 'js/dermatology-status.js' index.html
           grep -q 'js/learning-mode.js' index.html
           grep -q 'js/institutional-print.js' index.html
+          grep -q 'js/ai-config.js' index.html
+          grep -q 'js/ai-assistant.js' index.html
+
+      - name: Conferir assistente dos protocolos
+        run: |
+          grep -q 'Assistente dos Protocolos' js/ai-assistant.js
+          grep -q 'Consulta local' js/ai-assistant.js
+          grep -q 'Gemini conectado' js/ai-assistant.js
+          grep -q 'Não informe nome, CPF, Cartão SUS' js/ai-assistant.js
+          grep -q 'Fonte consultada:' worker/gemini-assistant.js
+          grep -q 'GEMINI_API_KEY' worker/gemini-assistant.js
+          grep -q 'ALLOWED_ORIGINS' worker/wrangler.toml
+          if grep -R -E 'AIza[0-9A-Za-z_-]{20,}' js worker index.html; then
+            echo 'Possível chave da API exposta no repositório.'
+            exit 1
+          fi
 
       - name: Conferir disponibilidade da Dermatologia
         run: |
@@ -65,7 +92,7 @@ jobs:
 
       - name: Impedir emojis na interface principal
         run: |
-          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/learning-mode.css css/institutional-print.css js/medical-app.js js/dermatology-status.js js/learning-mode.js js/institutional-print.js; then
+          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/learning-mode.css css/institutional-print.css css/ai-assistant.css js/medical-app.js js/dermatology-status.js js/learning-mode.js js/institutional-print.js js/ai-config.js js/ai-assistant.js worker/gemini-assistant.js; then
             echo 'Foram encontrados emojis nos arquivos da interface médica.'
             exit 1
           fi

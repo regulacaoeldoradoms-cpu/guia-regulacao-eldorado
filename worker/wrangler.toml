@@ -1,0 +1,12 @@
+name = "guia-regulacao-ia"
+main = "gemini-assistant.js"
+compatibility_date = "2026-07-28"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://regulacaoeldoradoms.com.br,https://www.regulacaoeldoradoms.com.br"
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+
+# A chave nunca deve ser colocada neste arquivo.
+# Cadastre-a como segredo:
+# npx wrangler secret put GEMINI_API_KEY
