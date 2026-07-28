@@ -21,13 +21,10 @@
     'precisa', 'necessario', 'necessaria', 'solicitar', 'encaminhar', 'encaminhamento', 'paciente'
   ]);
 
-  function normalizeText(value) {
-    return (value ?? '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  }
-
-  function getProtocols() {
-    return typeof state !== 'undefined' && Array.isArray(state.protocols) ? state.protocols : [];
-  }
+  const normalizeText = (value) => (value ?? '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const protocols = () => typeof state !== 'undefined' && Array.isArray(state.protocols) ? state.protocols : [];
+  const asArray = (value) => Array.isArray(value) ? value : value ? [value] : [];
+  const textItems = (value, limit = 16, length = 700) => asArray(value).slice(0, limit).map((item) => String(item).slice(0, length));
 
   function routeFor(protocol) {
     if (typeof accessRoute === 'function') return accessRoute(protocol);
@@ -50,36 +47,30 @@
   }
 
   function containsSensitiveData(value) {
-    const text = value.trim();
-    const patterns = [
+    const text = String(value || '').trim();
+    return [
       /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/,
       /\b\d{15}\b/,
       /\(?\d{2}\)?\s*9?\d{4}[-\s]?\d{4}\b/,
       /[^\s@]+@[^\s@]+\.[^\s@]+/,
       /\b(?:cpf|cns|cart[aã]o\s+sus|telefone|celular|prontu[aá]rio|endere[cç]o)\b\s*[:\-]?\s*[\dA-Za-z]/i,
       /\b(?:paciente|nome)\s*:\s*[A-Za-zÀ-ÿ]{2,}(?:\s+[A-Za-zÀ-ÿ]{2,})+/i
-    ];
-    return patterns.some((pattern) => pattern.test(text));
+    ].some((pattern) => pattern.test(text));
   }
 
-  function questionTerms(question) {
-    return normalizeText(question)
-      .split(/[^a-z0-9]+/)
-      .filter((term) => term.length > 2 && !STOP_WORDS.has(term));
+  function termsFor(question) {
+    return normalizeText(question).split(/[^a-z0-9]+/).filter((term) => term.length > 2 && !STOP_WORDS.has(term));
   }
 
   function rankProtocols(question) {
-    const protocols = getProtocols();
-    const terms = questionTerms(question);
+    const terms = termsFor(question);
     const selectedId = typeof state !== 'undefined' ? state.selected?.id : null;
-
-    return protocols.map((protocol) => {
+    return protocols().map((protocol) => {
       const name = normalizeText(protocol.nome);
       const category = normalizeText(protocol.categoria);
-      const tags = normalizeText((protocol.tags || []).join(' '));
+      const tags = normalizeText(asArray(protocol.tags).join(' '));
       const searchText = protocol._searchText || normalizeText(JSON.stringify(protocol));
       let score = protocol.id === selectedId ? 18 : 0;
-
       for (const term of terms) {
         if (name === term) score += 20;
         else if (name.includes(term)) score += 12;
@@ -87,13 +78,19 @@
         if (tags.includes(term)) score += 8;
         if (searchText.includes(term)) score += 2;
       }
-
       return { protocol, score };
     }).sort((a, b) => b.score - a.score || (a.protocol.prioridade || 99) - (b.protocol.prioridade || 99));
   }
 
-  function trimArray(value, limit = 16) {
-    return (Array.isArray(value) ? value : value ? [value] : []).slice(0, limit).map((item) => String(item).slice(0, 700));
+  function subprotocolContext(value) {
+    return asArray(value).slice(0, 10).map((subprotocol) => ({
+      titulo: String(subprotocol.titulo || 'Condição específica').slice(0, 300),
+      criterios: textItems(subprotocol.quando, 14),
+      informacoesObrigatorias: textItems(subprotocol.obrigatorias, 16),
+      examesObrigatorios: textItems(subprotocol.examesObrigatorios, 16),
+      examesCondicionais: textItems(subprotocol.condicionais, 16),
+      recomendadosQuandoDisponiveis: textItems(subprotocol.complementares, 16)
+    }));
   }
 
   function protocolContext(protocol) {
@@ -106,75 +103,88 @@
       situacaoTeleconsulta: teleconsultStatus(protocol),
       resumo: protocol.resumo,
       fluxoLocal: protocol.fluxoLocal,
-      criteriosParaEncaminhar: trimArray(protocol.quandoSolicitar),
-      informacoesClinicasObrigatorias: trimArray(protocol.informacoesObrigatorias),
-      examesObrigatorios: trimArray(protocol.examesObrigatorios),
-      examesCondicionais: trimArray(protocol.examesCondicionais),
-      recomendadosQuandoDisponiveis: trimArray(protocol.complementares),
-      elementosPriorizacao: trimArray(protocol.ajudaPriorizacao),
-      alertas: trimArray(protocol.alertas),
-      subprotocolos: trimArray(protocol.subprotocolos, 8).map((subprotocol) => typeof subprotocol === 'string' ? subprotocol : subprotocol),
-      fontes: trimArray(protocol.fontes, 8),
+      criteriosParaEncaminhar: textItems(protocol.quandoSolicitar),
+      informacoesClinicasObrigatorias: textItems(protocol.informacoesObrigatorias),
+      examesObrigatorios: textItems(protocol.examesObrigatorios),
+      examesCondicionais: textItems(protocol.examesCondicionais),
+      recomendadosQuandoDisponiveis: textItems(protocol.complementares),
+      elementosPriorizacao: textItems(protocol.ajudaPriorizacao),
+      alertas: textItems(protocol.alertas),
+      subprotocolos: subprotocolContext(protocol.subprotocolos),
+      fontes: textItems(protocol.fontes, 8, 500),
       ultimaConferencia: protocol.ultimaConferencia || '28/07/2026'
     };
   }
 
-  function buildRequestContext(question) {
+  function requestContext(question) {
     const ranked = rankProtocols(question);
     let selected = ranked.filter((item) => item.score > 0).slice(0, 4).map((item) => item.protocol);
-    if (!selected.length && ranked.length) selected = ranked.slice(0, 2).map((item) => item.protocol);
-
-    const catalog = getProtocols().map((protocol) => ({
-      nome: protocol.nome,
-      faixaEtaria: protocol.faixaEtaria,
-      viaAcesso: routeFor(protocol),
-      situacaoTeleconsulta: teleconsultStatus(protocol),
-      ultimaConferencia: protocol.ultimaConferencia || '28/07/2026'
-    }));
-
+    if (!selected.length) selected = ranked.slice(0, 2).map((item) => item.protocol);
     return {
       protocols: selected.map(protocolContext),
-      catalog,
+      catalog: protocols().map((protocol) => ({
+        nome: protocol.nome,
+        faixaEtaria: protocol.faixaEtaria,
+        viaAcesso: routeFor(protocol),
+        situacaoTeleconsulta: teleconsultStatus(protocol),
+        ultimaConferencia: protocol.ultimaConferencia || '28/07/2026'
+      })),
       selectedProtocolId: typeof state !== 'undefined' ? state.selected?.id || null : null
     };
   }
 
   function bulletSection(title, values) {
-    if (!Array.isArray(values) || !values.length) return '';
-    return `\n\n${title}\n${values.map((item) => `- ${item}`).join('\n')}`;
+    return values.length ? `\n\n${title}\n${values.map((item) => `- ${item}`).join('\n')}` : '';
   }
 
-  function localAnswer(question) {
+  function matchingSubprotocols(protocol, question) {
+    const terms = termsFor(question);
+    const ranked = asArray(protocol.subprotocolos).map((subprotocol) => {
+      const text = normalizeText(JSON.stringify(subprotocol));
+      const score = terms.reduce((total, term) => total + (text.includes(term) ? 1 : 0), 0);
+      return { subprotocol, score };
+    }).sort((a, b) => b.score - a.score);
+    const matched = ranked.filter((item) => item.score > 0).slice(0, 3);
+    return matched.length ? matched.map((item) => item.subprotocol) : ranked.slice(0, 3).map((item) => item.subprotocol);
+  }
+
+  function localAnswer(question, connectionMissing = !CONFIG.endpoint) {
     const ranked = rankProtocols(question);
     const match = ranked.find((item) => item.score > 0)?.protocol || ranked[0]?.protocol;
     if (!match) return 'Os protocolos ainda estão carregando. Tente novamente em alguns segundos.';
 
     const normalizedQuestion = normalizeText(question);
     let answer = `${match.nome}\n`;
-
     if (/dispon|teleconsulta|digsus|via|sistema/.test(normalizedQuestion)) {
       answer += `Situação da teleconsulta: ${teleconsultStatus(match)}.\nVia de acesso: ${routeFor(match)}.`;
     } else if (/idade|etaria|anos|faixa/.test(normalizedQuestion)) {
       answer += `Faixa etária: ${match.faixaEtaria || 'não informada no protocolo'}.\nVia de acesso: ${routeFor(match)}.`;
-    } else if (/exame|laudo|imagem|radiografia|ultrassom|ressonancia|tomografia/.test(normalizedQuestion)) {
-      answer += `Via de acesso: ${routeFor(match)}.`;
-      answer += bulletSection('Exames obrigatórios', trimArray(match.examesObrigatorios));
-      answer += bulletSection('Exames condicionais, somente quando aplicável', trimArray(match.examesCondicionais));
-      answer += bulletSection('Recomendados quando disponíveis', trimArray(match.complementares));
     } else {
       answer += `${match.resumo || ''}\nVia de acesso: ${routeFor(match)}.\nFaixa etária: ${match.faixaEtaria || 'não informada'}.`;
-      answer += bulletSection('Informações clínicas obrigatórias', trimArray(match.informacoesObrigatorias, 8));
-      answer += bulletSection('Exames obrigatórios', trimArray(match.examesObrigatorios, 8));
-      answer += bulletSection('Exames condicionais', trimArray(match.examesCondicionais, 6));
+      if (/exame|laudo|imagem|radiografia|ultrassom|ressonancia|tomografia/.test(normalizedQuestion)) {
+        answer += bulletSection('Exames obrigatórios', textItems(match.examesObrigatorios));
+        answer += bulletSection('Exames condicionais, somente quando aplicável', textItems(match.examesCondicionais));
+        answer += bulletSection('Recomendados quando disponíveis', textItems(match.complementares));
+      } else {
+        answer += bulletSection('Informações clínicas obrigatórias', textItems(match.informacoesObrigatorias, 8));
+        answer += bulletSection('Exames obrigatórios', textItems(match.examesObrigatorios, 8));
+        answer += bulletSection('Exames condicionais', textItems(match.examesCondicionais, 6));
+      }
+
+      for (const subprotocol of matchingSubprotocols(match, question)) {
+        const details = [
+          ...textItems(subprotocol.obrigatorias, 8),
+          ...textItems(subprotocol.examesObrigatorios, 8),
+          ...textItems(subprotocol.condicionais, 6)
+        ];
+        if (details.length) answer += bulletSection(subprotocol.titulo || 'Condição específica', details);
+      }
     }
 
-    if (Array.isArray(match.alertas) && match.alertas.length) {
-      answer += bulletSection('Atenção: situações que não devem aguardar fila ambulatorial', trimArray(match.alertas, 4));
-    }
-
-    const sources = trimArray(match.fontes, 4).join(' · ') || 'base de protocolos do guia';
+    answer += bulletSection('Atenção: situações que não devem aguardar fila ambulatorial', textItems(match.alertas, 4));
+    const sources = textItems(match.fontes, 4, 500).join(' · ') || 'base de protocolos do guia';
     answer += `\n\nFonte consultada: ${sources}. Última conferência: ${match.ultimaConferencia || '28/07/2026'}.`;
-    answer += '\n\nResposta local automática. A conexão com o Gemini ainda não está ativada.';
+    if (connectionMissing) answer += '\n\nResposta local automática. A conexão com o Gemini ainda não está ativada.';
     return answer.trim();
   }
 
@@ -200,8 +210,6 @@
   async function askGemini(question, context) {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 30000);
-    const previousMessages = history.slice(-MAX_HISTORY_MESSAGES);
-
     try {
       const response = await fetch(CONFIG.endpoint, {
         method: 'POST',
@@ -212,10 +220,9 @@
           protocols: context.protocols,
           catalog: context.catalog,
           selectedProtocolId: context.selectedProtocolId,
-          history: previousMessages
+          history: history.slice(-MAX_HISTORY_MESSAGES)
         })
       });
-
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload.error || `Falha na consulta (${response.status}).`);
       if (!payload.answer) throw new Error('A IA não retornou uma resposta válida.');
@@ -227,9 +234,8 @@
 
   async function submitQuestion(question) {
     if (busy) return;
-    const cleanQuestion = question.trim().slice(0, MAX_QUESTION_LENGTH);
+    const cleanQuestion = String(question || '').trim().slice(0, MAX_QUESTION_LENGTH);
     if (!cleanQuestion) return;
-
     if (containsSensitiveData(cleanQuestion)) {
       addMessage('assistant', 'Não envie nome, CPF, Cartão SUS, telefone, endereço, prontuário ou outros dados que identifiquem o paciente. Reformule a pergunta de forma anônima.', 'error');
       return;
@@ -239,16 +245,15 @@
     history.push({ role: 'user', text: cleanQuestion });
     setBusy(true);
     const loading = addMessage('assistant', CONFIG.endpoint ? 'Consultando os protocolos com o Gemini...' : 'Consultando os protocolos locais...', 'loading');
-
     try {
-      const context = buildRequestContext(cleanQuestion);
-      const answer = CONFIG.endpoint ? await askGemini(cleanQuestion, context) : localAnswer(cleanQuestion);
+      const context = requestContext(cleanQuestion);
+      const answer = CONFIG.endpoint ? await askGemini(cleanQuestion, context) : localAnswer(cleanQuestion, true);
       loading?.remove();
       addMessage('assistant', answer);
       history.push({ role: 'assistant', text: answer.slice(0, 4000) });
     } catch (error) {
       loading?.remove();
-      const fallback = localAnswer(cleanQuestion);
+      const fallback = localAnswer(cleanQuestion, false);
       addMessage('assistant', `${fallback}\n\nA conexão com o Gemini falhou: ${error.message}`, 'error');
     } finally {
       setBusy(false);
@@ -258,18 +263,17 @@
 
   function openChat() {
     const chat = document.getElementById('aiChat');
-    const launcher = document.getElementById('aiLauncher');
     if (!chat) return;
     chat.hidden = false;
-    launcher?.setAttribute('aria-expanded', 'true');
+    document.getElementById('aiLauncher')?.setAttribute('aria-expanded', 'true');
     document.getElementById('aiInput')?.focus();
   }
 
   function closeChat() {
     const chat = document.getElementById('aiChat');
-    const launcher = document.getElementById('aiLauncher');
     if (!chat) return;
     chat.hidden = true;
+    const launcher = document.getElementById('aiLauncher');
     launcher?.setAttribute('aria-expanded', 'false');
     launcher?.focus();
   }
@@ -277,12 +281,9 @@
   function createInterface() {
     if (initialized) return;
     initialized = true;
-
     const wrapper = document.createElement('div');
     wrapper.innerHTML = `
-      <button class="ai-launcher" id="aiLauncher" type="button" aria-label="Abrir assistente dos protocolos" aria-controls="aiChat" aria-expanded="false">
-        ${SVG.chat}<span>Consultar protocolos</span>
-      </button>
+      <button class="ai-launcher" id="aiLauncher" type="button" aria-label="Abrir assistente dos protocolos" aria-controls="aiChat" aria-expanded="false">${SVG.chat}<span>Consultar protocolos</span></button>
       <section class="ai-chat" id="aiChat" role="dialog" aria-modal="false" aria-labelledby="aiChatTitle" hidden>
         <header class="ai-chat-header">
           <div class="ai-chat-title">${SVG.assistant}<div><h2 id="aiChatTitle">Assistente dos Protocolos</h2><p>Respostas limitadas à base técnica cadastrada</p></div></div>
@@ -305,11 +306,9 @@
           <button class="ai-send" id="aiSend" type="submit" aria-label="Enviar pergunta">${SVG.send}</button>
         </form>
       </section>`;
-
     document.body.append(...wrapper.children);
 
     addMessage('assistant', 'Consulte requisitos, exames, faixa etária, disponibilidade e via de acesso. As respostas não substituem avaliação clínica nem análise regulatória.');
-
     document.getElementById('aiLauncher')?.addEventListener('click', openChat);
     document.getElementById('aiClose')?.addEventListener('click', closeChat);
     document.getElementById('aiSuggestions')?.addEventListener('click', (event) => {
@@ -330,7 +329,6 @@
         document.getElementById('aiForm')?.requestSubmit();
       }
     });
-
     document.getElementById('aiForm')?.addEventListener('submit', (event) => {
       event.preventDefault();
       if (!input) return;
@@ -339,21 +337,20 @@
       input.dispatchEvent(new Event('input'));
       submitQuestion(question);
     });
-
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && !document.getElementById('aiChat')?.hidden) closeChat();
     });
   }
 
-  function initializeWhenReady() {
+  function initialize() {
     createInterface();
     let attempts = 0;
     const timer = window.setInterval(() => {
       attempts += 1;
-      if (getProtocols().length || attempts > 150) window.clearInterval(timer);
+      if (protocols().length || attempts > 150) window.clearInterval(timer);
     }, 100);
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initializeWhenReady, { once: true });
-  else initializeWhenReady();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialize, { once: true });
+  else initialize();
 })();
