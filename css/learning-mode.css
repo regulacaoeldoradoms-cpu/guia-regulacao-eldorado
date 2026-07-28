@@ -1,0 +1,21 @@
+/* O guia deve apoiar aprendizagem e conferência clínica, não copiar e colar. */
+#copyModelButton,
+#copyChecklistButton,
+.model-box {
+  display: none !important;
+}
+
+.learning-note {
+  margin: 0 0 12px;
+  padding: 11px 13px;
+  border-left: 4px solid var(--info-700);
+  border-radius: var(--radius-sm);
+  background: var(--info-100);
+  color: #234b70;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.checklist-actions {
+  justify-content: flex-end;
+}
