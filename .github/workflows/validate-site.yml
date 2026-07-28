@@ -19,20 +19,31 @@ jobs:
         run: |
           node --check js/app.js
           node --check js/medical-app.js
+          node --check js/learning-mode.js
 
       - name: Conferir arquivos referenciados
         run: |
           test -f index.html
           test -f css/site.css
           test -f css/medical.css
+          test -f css/learning-mode.css
           test -f js/medical-app.js
+          test -f js/learning-mode.js
           test -f protocolo/index.html
           grep -q 'css/medical.css' index.html
+          grep -q 'css/learning-mode.css' index.html
           grep -q 'js/medical-app.js' index.html
+          grep -q 'js/learning-mode.js' index.html
+
+      - name: Conferir modo de aprendizagem
+        run: |
+          grep -q 'Conferência durante o preenchimento' js/learning-mode.js
+          grep -q 'observer.disconnect()' js/learning-mode.js
+          grep -q 'observer.observe(detailPanel' js/learning-mode.js
 
       - name: Impedir emojis na interface principal
         run: |
-          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css js/medical-app.js; then
+          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/learning-mode.css js/medical-app.js js/learning-mode.js; then
             echo 'Foram encontrados emojis nos arquivos da interface médica.'
             exit 1
           fi
