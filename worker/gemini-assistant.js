@@ -144,8 +144,6 @@ async function callGemini(env, prompt) {
       systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: {
-        temperature: 0.1,
-        topP: 0.8,
         maxOutputTokens: 900,
         responseMimeType: 'text/plain'
       }
