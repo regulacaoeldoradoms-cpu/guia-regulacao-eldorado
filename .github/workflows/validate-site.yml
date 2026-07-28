@@ -20,6 +20,7 @@ jobs:
           node --check js/app.js
           node --check js/medical-app.js
           node --check js/learning-mode.js
+          node --check js/institutional-print.js
 
       - name: Conferir arquivos referenciados
         run: |
@@ -27,23 +28,35 @@ jobs:
           test -f css/site.css
           test -f css/medical.css
           test -f css/learning-mode.css
+          test -f css/institutional-print.css
           test -f js/medical-app.js
           test -f js/learning-mode.js
+          test -f js/institutional-print.js
           test -f protocolo/index.html
           grep -q 'css/medical.css' index.html
           grep -q 'css/learning-mode.css' index.html
+          grep -q 'css/institutional-print.css' index.html
           grep -q 'js/medical-app.js' index.html
           grep -q 'js/learning-mode.js' index.html
+          grep -q 'js/institutional-print.js' index.html
 
       - name: Conferir modo de aprendizagem
         run: |
           grep -q 'Conferência durante o preenchimento' js/learning-mode.js
+          grep -q 'Imprimir orientação ao paciente' js/learning-mode.js
           grep -q 'observer.disconnect()' js/learning-mode.js
           grep -q 'observer.observe(detailPanel' js/learning-mode.js
 
+      - name: Conferir documento institucional
+        run: |
+          grep -q 'ORIENTAÇÃO PARA COMPLEMENTAÇÃO DE SOLICITAÇÃO' js/institutional-print.js
+          grep -q 'logo-agenda.png' js/institutional-print.js
+          grep -q 'Setor de Regulação de Saúde' js/institutional-print.js
+          grep -q 'institutional-document' css/institutional-print.css
+
       - name: Impedir emojis na interface principal
         run: |
-          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/learning-mode.css js/medical-app.js js/learning-mode.js; then
+          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/learning-mode.css css/institutional-print.css js/medical-app.js js/learning-mode.js js/institutional-print.js; then
             echo 'Foram encontrados emojis nos arquivos da interface médica.'
             exit 1
           fi
