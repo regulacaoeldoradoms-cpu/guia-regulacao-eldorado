@@ -1,0 +1,187 @@
+/* Documento institucional entregue ao paciente para apresentação ao médico. */
+@media print {
+  .institutional-document {
+    display: block;
+    color: #111827;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.38;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .institutional-header {
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    text-align: center;
+    border-bottom: 2px solid #12304d;
+  }
+
+  .institutional-government {
+    font-size: 11pt;
+    font-weight: 800;
+    letter-spacing: .05em;
+  }
+
+  .institutional-department {
+    margin-top: 2px;
+    font-size: 9pt;
+    font-weight: 700;
+    color: #334155;
+  }
+
+  .institutional-header h1 {
+    margin: 10px 0 3px;
+    font-size: 15pt;
+    line-height: 1.15;
+  }
+
+  .institutional-header p {
+    margin: 0;
+    font-size: 9.5pt;
+    color: #475569;
+  }
+
+  .institutional-identification {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    margin-bottom: 12px;
+    padding: 10px;
+    border: 1px solid #64748b;
+  }
+
+  .institutional-field {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: end;
+    gap: 6px;
+    min-height: 22px;
+  }
+
+  .institutional-field.wide {
+    grid-column: 1 / -1;
+  }
+
+  .institutional-field strong {
+    font-size: 9pt;
+    white-space: nowrap;
+  }
+
+  .institutional-field span {
+    display: block;
+    min-height: 18px;
+    padding: 0 3px 2px;
+    border-bottom: 1px solid #111827;
+  }
+
+  .institutional-field span.filled {
+    font-weight: 700;
+  }
+
+  .institutional-introduction {
+    margin-bottom: 12px;
+  }
+
+  .institutional-introduction p {
+    margin: 5px 0;
+    text-align: justify;
+  }
+
+  .institutional-section,
+  .institutional-subprotocol,
+  .institutional-return-guidance {
+    margin-top: 10px;
+    border: 1px solid #64748b;
+    break-inside: avoid;
+  }
+
+  .institutional-section h2,
+  .institutional-subprotocol > h2,
+  .institutional-return-guidance h2 {
+    margin: 0;
+    padding: 6px 8px;
+    background: #e8eef4;
+    border-bottom: 1px solid #64748b;
+    font-size: 10.5pt;
+    line-height: 1.25;
+  }
+
+  .institutional-section ul,
+  .institutional-section p,
+  .institutional-return-guidance p {
+    margin: 7px 10px;
+  }
+
+  .institutional-section ul {
+    padding-left: 18px;
+  }
+
+  .institutional-section li + li {
+    margin-top: 4px;
+  }
+
+  .institutional-section.required {
+    border-left: 4px solid #991b1b;
+  }
+
+  .institutional-section.conditional {
+    border-left: 4px solid #92400e;
+  }
+
+  .institutional-section.optional {
+    border-left: 4px solid #275b8b;
+  }
+
+  .institutional-section.warning {
+    border-left: 4px solid #a23030;
+  }
+
+  .institutional-section.warning h2 {
+    background: #fae9e9;
+  }
+
+  .institutional-subprotocol {
+    padding-bottom: 8px;
+  }
+
+  .institutional-subprotocol .institutional-section {
+    margin: 8px;
+  }
+
+  .institutional-return-guidance {
+    border-left: 4px solid #0f6b68;
+  }
+
+  .institutional-return-guidance h2 {
+    background: #dff5f2;
+  }
+
+  .institutional-footer {
+    margin-top: 16px;
+    padding-top: 10px;
+    border-top: 1px solid #64748b;
+    text-align: center;
+    break-inside: avoid;
+  }
+
+  .institutional-footer img {
+    display: block;
+    width: 100%;
+    max-width: 680px;
+    max-height: 95px;
+    margin: 0 auto 8px;
+    object-fit: contain;
+  }
+
+  .institutional-validation {
+    display: grid;
+    gap: 2px;
+    font-size: 8.5pt;
+    color: #475569;
+  }
+
+  .institutional-validation strong {
+    color: #111827;
+  }
+}
