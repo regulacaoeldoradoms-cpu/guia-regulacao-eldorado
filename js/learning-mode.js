@@ -1,19 +1,20 @@
 'use strict';
 
-function applyLearningMode() {
-  const detailPanel = document.getElementById('detailPanel');
-  if (!detailPanel) return;
-
+function applyLearningMode(detailPanel) {
   detailPanel.querySelectorAll('#copyModelButton, #copyChecklistButton, .model-box').forEach((element) => element.remove());
 
   const checklistSection = detailPanel.querySelector('.clinical-section');
   if (!checklistSection) return;
 
   const title = checklistSection.querySelector('h3');
-  if (title) title.innerHTML = '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>Conferência durante o preenchimento';
+  const expectedTitle = 'Conferência durante o preenchimento';
+  if (title && title.textContent.trim() !== expectedTitle) {
+    title.innerHTML = '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>Conferência durante o preenchimento';
+  }
 
   const intro = checklistSection.querySelector('.section-intro');
-  if (intro) intro.textContent = 'Marque os itens enquanto redige o encaminhamento. A finalidade é conferir e incorporar os requisitos ao raciocínio clínico, sem gerar texto pronto.';
+  const expectedIntro = 'Marque os itens enquanto redige o encaminhamento. A finalidade é conferir e incorporar os requisitos ao raciocínio clínico, sem gerar texto pronto.';
+  if (intro && intro.textContent !== expectedIntro) intro.textContent = expectedIntro;
 
   if (!checklistSection.querySelector('.learning-note')) {
     const note = document.createElement('p');
@@ -24,7 +25,7 @@ function applyLearningMode() {
   }
 
   const clearButton = checklistSection.querySelector('#clearChecklistButton');
-  if (clearButton) clearButton.textContent = 'Desmarcar todos';
+  if (clearButton && clearButton.textContent !== 'Desmarcar todos') clearButton.textContent = 'Desmarcar todos';
 
   const actionBar = detailPanel.querySelector('.action-bar');
   if (actionBar && !actionBar.querySelector('button')) actionBar.remove();
@@ -32,6 +33,19 @@ function applyLearningMode() {
 
 const detailPanel = document.getElementById('detailPanel');
 if (detailPanel) {
-  new MutationObserver(applyLearningMode).observe(detailPanel, { childList: true, subtree: true });
-  applyLearningMode();
+  let applying = false;
+  const observer = new MutationObserver(() => {
+    if (applying) return;
+    applying = true;
+    observer.disconnect();
+    try {
+      applyLearningMode(detailPanel);
+    } finally {
+      observer.observe(detailPanel, { childList: true, subtree: true });
+      applying = false;
+    }
+  });
+
+  observer.observe(detailPanel, { childList: true, subtree: true });
+  applyLearningMode(detailPanel);
 }
