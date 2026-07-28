@@ -4,9 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#12304d">
-  <meta name="description" content="Guia técnico de apoio às solicitações reguladas de Eldorado/MS.">
-  <title>Guia Unificado da Regulação em Saúde</title>
+  <meta name="description" content="Guia médico para qualificação de encaminhamentos regulados de Eldorado/MS.">
+  <title>Guia Médico de Encaminhamentos Regulados</title>
   <link rel="stylesheet" href="css/site.css">
+  <link rel="stylesheet" href="css/medical.css">
 </head>
 <body data-page="guide">
   <header class="site-header">
@@ -16,13 +17,13 @@
           <svg class="icon" viewBox="0 0 24 24"><path d="M8 3h8v5h5v8h-5v5H8v-5H3V8h5z"/></svg>
         </div>
         <div>
-          <h1>Guia Unificado da Regulação em Saúde</h1>
-          <p>Apoio técnico para solicitações presenciais e teleatendimentos de Eldorado/MS</p>
+          <h1>Guia Médico de Encaminhamentos Regulados</h1>
+          <p>Critérios clínicos, exames e requisitos para solicitações em Eldorado/MS</p>
         </div>
       </div>
       <nav class="top-nav" aria-label="Filtros por via de acesso">
         <button class="nav-button active" type="button" data-filter="todos">Todos</button>
-        <button class="nav-button" type="button" data-filter="sisreg">Presencial</button>
+        <button class="nav-button" type="button" data-filter="sisreg">SISREG/CORE</button>
         <button class="nav-button" type="button" data-filter="digsus">DigSaúde</button>
         <button class="nav-button" type="button" data-filter="assincrona">Discussão de conduta</button>
         <button class="nav-button" type="button" data-filter="ambos">Múltiplas vias</button>
@@ -36,42 +37,51 @@
   </header>
 
   <main class="container">
-    <section class="hero">
-      <h2>Consulta técnica por especialidade, exame ou condição clínica</h2>
-      <p>Pesquise o protocolo e confira faixa etária, via de acesso, informações obrigatórias, exames e fluxo operacional do município.</p>
+    <section class="hero medical-hero">
+      <div class="hero-copy">
+        <span class="eyebrow">Apoio à decisão de encaminhamento</span>
+        <h2>Confira o protocolo antes de enviar a solicitação</h2>
+        <p>Pesquise por especialidade, exame, sintoma ou condição clínica. O guia reúne faixa etária, via de acesso, critérios de encaminhamento, informações obrigatórias, exames e sinais que não devem aguardar a fila ambulatorial.</p>
+      </div>
+      <div class="hero-steps" aria-label="Etapas para conferir o encaminhamento">
+        <div class="hero-step"><strong>1</strong><span>Confirme a elegibilidade e a faixa etária.</span></div>
+        <div class="hero-step"><strong>2</strong><span>Revise as informações clínicas e os exames.</span></div>
+        <div class="hero-step"><strong>3</strong><span>Copie o modelo e qualifique o encaminhamento.</span></div>
+      </div>
       <div class="legend" aria-label="Legenda das exigências">
-        <span class="legend-item"><span class="legend-mark required"></span>Obrigatório</span>
-        <span class="legend-item"><span class="legend-mark conditional"></span>Condicional</span>
-        <span class="legend-item"><span class="legend-mark complementary"></span>Complementar</span>
-        <span class="legend-item"><span class="legend-mark priority"></span>Priorização</span>
+        <span class="legend-item"><span class="legend-mark required"></span>Obrigatório para solicitar</span>
+        <span class="legend-item"><span class="legend-mark conditional"></span>Obrigatório conforme o caso</span>
+        <span class="legend-item"><span class="legend-mark complementary"></span>Recomendado quando disponível</span>
+        <span class="legend-item"><span class="legend-mark priority"></span>Critério de priorização</span>
       </div>
     </section>
 
     <section class="workspace">
-      <aside class="panel sidebar" aria-label="Pesquisa de protocolos">
+      <aside class="panel sidebar" aria-label="Pesquisa de especialidades e exames">
         <div class="sidebar-heading">
           <div>
-            <h3>Protocolos</h3>
+            <h3>Especialidades e exames</h3>
             <div id="resultCount" class="result-count">Carregando...</div>
           </div>
-          <button class="button primary" type="button" id="generalBtn">Regras gerais</button>
+          <button class="button primary" type="button" id="generalBtn">Orientações gerais</button>
         </div>
 
         <div class="field-group">
-          <label class="field-label" for="categoryFilter">Categoria</label>
+          <label class="field-label" for="categoryFilter">Área clínica</label>
           <select id="categoryFilter">
-            <option value="todos">Todas as categorias</option>
+            <option value="todos">Todas as áreas</option>
           </select>
         </div>
 
         <div class="field-group">
-          <label class="field-label" for="sideSearchInput">Pesquisa</label>
+          <label class="field-label" for="sideSearchInput">Pesquisa clínica</label>
           <div class="search-field">
             <span class="search-icon" aria-hidden="true">
               <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
             </span>
-            <input id="sideSearchInput" type="search" autocomplete="off" placeholder="Especialidade, exame, sintoma ou condição">
+            <input id="sideSearchInput" type="search" autocomplete="off" placeholder="Ex.: convulsão infantil, ombro, tomografia">
           </div>
+          <p class="field-help">A busca considera nomes, sintomas, diagnósticos, exames e termos equivalentes.</p>
         </div>
 
         <div id="protocolList" class="protocol-list"></div>
@@ -84,10 +94,10 @@
   </main>
 
   <footer class="container site-footer">
-    Guia de apoio à qualificação das solicitações. A conduta clínica e a classificação final dependem do profissional solicitante e da regulação.
+    Guia destinado a médicos da Atenção Primária. A conduta clínica, a classificação de risco e a decisão regulatória permanecem sob responsabilidade dos profissionais envolvidos.
   </footer>
 
   <div id="printArea" class="print-only"></div>
-  <script src="js/app.js" defer></script>
+  <script src="js/medical-app.js" defer></script>
 </body>
 </html>

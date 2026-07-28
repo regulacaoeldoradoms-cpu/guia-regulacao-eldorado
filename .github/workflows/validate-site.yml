@@ -1,0 +1,38 @@
+name: Validar site
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Validar sintaxe JavaScript
+        run: |
+          node --check js/app.js
+          node --check js/medical-app.js
+
+      - name: Conferir arquivos referenciados
+        run: |
+          test -f index.html
+          test -f css/site.css
+          test -f css/medical.css
+          test -f js/medical-app.js
+          test -f protocolo/index.html
+          grep -q 'css/medical.css' index.html
+          grep -q 'js/medical-app.js' index.html
+
+      - name: Impedir emojis na interface principal
+        run: |
+          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css js/medical-app.js; then
+            echo 'Foram encontrados emojis nos arquivos da interface médica.'
+            exit 1
+          fi
