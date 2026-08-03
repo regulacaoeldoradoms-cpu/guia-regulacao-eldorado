@@ -56,10 +56,22 @@ jobs:
           test -f worker/package.json
           test -f CONFIGURAR-ASSISTENTE-GEMINI.md
           test -f protocolo/index.html
+          grep -q 'css/medical.css' index.html
           grep -q 'css/referral-workbench.css' index.html
+          grep -q 'css/learning-mode.css' index.html
+          grep -q 'css/institutional-print.css' index.html
+          grep -q 'css/ai-assistant.css' index.html
+          grep -q 'css/ai-gemini-theme.css' index.html
           grep -q 'js/referral-practice-data.js' index.html
+          grep -q 'js/medical-app.js' index.html
+          grep -q 'js/dermatology-status.js' index.html
+          grep -q 'js/learning-mode.js' index.html
           grep -q 'js/referral-workbench.js' index.html
           grep -q 'js/institutional-print.js' index.html
+          grep -q 'js/ai-config.js' index.html
+          grep -q 'js/ai-assistant.js' index.html
+          grep -q 'js/ai-markdown.js' index.html
+          grep -q 'js/ai-gemini-theme.js' index.html
 
       - name: Conferir ferramenta de formulação
         run: |
@@ -85,8 +97,11 @@ jobs:
           grep -q 'appendInlineFormatting' js/ai-markdown.js
           grep -q 'textContent = match' js/ai-markdown.js
           grep -q 'Assistente com base nos protocolos' js/ai-gemini-theme.js
+          grep -q 'createGeminiLogo' js/ai-gemini-theme.js
+          grep -q 'ai-protocol-seal' css/ai-gemini-theme.css
           grep -q 'Fonte consultada:' worker/gemini-assistant.js
           grep -q 'GEMINI_API_KEY' worker/gemini-assistant.js
+          grep -q 'ALLOWED_ORIGINS' worker/wrangler.toml
           if grep -R -E 'AIza[0-9A-Za-z_-]{20,}' js worker index.html; then
             echo 'Possível chave da API exposta no repositório.'
             exit 1
