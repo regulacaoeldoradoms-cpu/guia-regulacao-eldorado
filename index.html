@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#12304d">
-  <meta name="description" content="Ferramenta médica para formulação e qualificação de encaminhamentos regulados em Eldorado/MS.">
+  <meta name="description" content="Ferramenta médica para consulta de protocolos e qualificação de encaminhamentos regulados em Eldorado/MS.">
   <title>Guia Médico de Encaminhamentos Regulados</title>
   <link rel="preload" as="image" href="https://i.ibb.co/fd23T1tv/logo-agenda.png">
   <link rel="stylesheet" href="css/site.css">
   <link rel="stylesheet" href="css/medical.css">
-  <link rel="stylesheet" href="css/referral-workbench.css?v=20260803-2">
+  <link rel="stylesheet" href="css/referral-workbench.css?v=20260803-3">
   <link rel="stylesheet" href="css/learning-mode.css">
   <link rel="stylesheet" href="css/institutional-print.css?v=20260803-1">
   <link rel="stylesheet" href="css/ai-assistant.css?v=20260728-4">
@@ -24,7 +24,7 @@
         </div>
         <div>
           <h1>Guia Médico de Encaminhamentos Regulados</h1>
-          <p>Checklist clínico, protocolo e apoio do Gemini</p>
+          <p>Protocolo oficial visível e orientação prática pelo Gemini</p>
         </div>
       </div>
       <nav class="top-nav" aria-label="Filtros por via de acesso">
@@ -45,14 +45,14 @@
   <main class="container">
     <section class="hero medical-hero">
       <div class="hero-copy">
-        <span class="eyebrow">Guia rápido + inteligência artificial</span>
-        <h2>Confira o essencial. Pergunte os detalhes ao Gemini.</h2>
-        <p>Selecione a especialidade, revise seis pontos e abra o protocolo completo somente quando necessário.</p>
+        <span class="eyebrow">Protocolo na tela + prática sob demanda</span>
+        <h2>Veja o que o protocolo exige. Pergunte a prática ao Gemini.</h2>
+        <p>Selecione a especialidade para consultar critérios, informações obrigatórias, exames, documentos, priorização e alertas. Use o Gemini para dúvidas pontuais baseadas nas devoluções reais analisadas.</p>
       </div>
       <div class="hero-steps" aria-label="Como usar o guia">
         <div class="hero-step"><strong>1</strong><span>Escolha a especialidade ou o exame.</span></div>
-        <div class="hero-step"><strong>2</strong><span>Marque o checklist rápido de seis pontos.</span></div>
-        <div class="hero-step"><strong>3</strong><span>Use o Gemini para dúvidas e situações específicas.</span></div>
+        <div class="hero-step"><strong>2</strong><span>Consulte visualmente os requisitos do protocolo oficial.</span></div>
+        <div class="hero-step"><strong>3</strong><span>Pergunte ao Gemini como aplicar os requisitos na prática.</span></div>
       </div>
       <div class="legend" aria-label="Legenda das exigências">
         <span class="legend-item"><span class="legend-mark required"></span>Obrigatório</span>
@@ -85,7 +85,7 @@
             </span>
             <input id="sideSearchInput" type="search" autocomplete="off" placeholder="Ex.: convulsão infantil, ombro, relatório escolar">
           </div>
-          <p class="field-help">A busca considera protocolo, exames e padrões de devolução.</p>
+          <p class="field-help">A busca considera os protocolos e termos observados nas devoluções. A orientação prática detalhada é respondida pelo Gemini.</p>
         </div>
 
         <div id="protocolList" class="protocol-list"></div>
@@ -98,7 +98,7 @@
   </main>
 
   <footer class="container site-footer">
-    Apoio destinado a médicos da Atenção Primária. A decisão clínica e regulatória permanece sob responsabilidade dos profissionais envolvidos.
+    O conteúdo exibido na página corresponde à base protocolar cadastrada. A experiência prática das devoluções é fornecida pelo assistente e não substitui avaliação clínica nem decisão regulatória.
   </footer>
 
   <div id="printArea" class="print-only"></div>
@@ -106,8 +106,8 @@
   <script src="js/medical-app.js" defer></script>
   <script src="js/dermatology-status.js" defer></script>
   <script src="js/learning-mode.js" defer></script>
-  <script src="js/referral-workbench.js?v=20260803-2" defer></script>
-  <script src="js/institutional-print.js?v=20260803-1" defer></script>
+  <script src="js/referral-workbench.js?v=20260803-3" defer></script>
+  <script src="js/institutional-print.js?v=20260803-2" defer></script>
   <script src="js/ai-config.js?v=20260728-4" defer></script>
   <script src="js/ai-assistant.js?v=20260728-4" defer></script>
   <script src="js/ai-markdown.js?v=20260728-4" defer></script>

@@ -73,20 +73,24 @@ jobs:
           grep -q 'js/ai-markdown.js' index.html
           grep -q 'js/ai-gemini-theme.js' index.html
 
-      - name: Conferir experiência compacta
+      - name: Conferir separação entre protocolo e prática
         run: |
           grep -q 'REFERRAL_PRACTICE_GUIDANCE' js/referral-practice-data.js
           grep -q 'Síntese qualitativa e anonimizada' js/referral-practice-data.js
-          grep -q 'Checklist rápido' js/referral-workbench.js
-          grep -q 'Encaminhamento em 6 pontos' js/referral-workbench.js
-          grep -q 'O Gemini recebeu o protocolo' js/referral-workbench.js
-          grep -q 'Ver protocolo completo, exames e documentos' js/referral-workbench.js
-          grep -q 'Aplicação prática das devoluções analisadas' js/referral-workbench.js
-          grep -q 'compact-referral-guide' css/referral-workbench.css
-          grep -q 'gemini-question-chips' css/referral-workbench.css
-          grep -q 'official-protocol-details' css/referral-workbench.css
-          grep -q 'Guia rápido + inteligência artificial' index.html
+          grep -q 'Estas estruturas alimentam o Gemini' js/referral-workbench.js
+          grep -q 'Protocolo oficial' js/referral-workbench.js
+          grep -q 'Converse com o Gemini sobre devoluções reais' js/referral-workbench.js
+          grep -q 'A experiência regulatória fica na IA' js/referral-workbench.js
+          grep -q 'Nenhum item prático é classificado como requisito oficial' js/referral-workbench.js
+          grep -q 'official-protocol-heading' css/referral-workbench.css
+          grep -q 'official-protocol-nav' css/referral-workbench.css
+          grep -q 'practical-ai-card' css/referral-workbench.css
+          grep -q 'Veja o que o protocolo exige. Pergunte a prática ao Gemini.' index.html
           grep -q 'Uma exigência isolada não é transformada automaticamente em regra universal' docs/METODOLOGIA-CAMADA-PRATICA.md
+          if grep -q 'collapseOfficialContent' js/referral-workbench.js; then
+            echo 'O protocolo oficial não pode ser recolhido pela camada prática.'
+            exit 1
+          fi
 
       - name: Conferir assistente dos protocolos
         run: |
@@ -125,9 +129,12 @@ jobs:
           grep -q 'ORIENTAÇÃO PARA COMPLEMENTAÇÃO DE SOLICITAÇÃO' js/institutional-print.js
           grep -q 'logo-agenda.png' js/institutional-print.js
           grep -q 'Setor de Regulação de Saúde' js/institutional-print.js
-          grep -q 'Pontos que frequentemente impedem a análise regulatória' js/institutional-print.js
+          grep -q 'Fonte protocolar:' js/institutional-print.js
           grep -q 'institutional-document' css/institutional-print.css
-          grep -q 'institutional-practical-note' css/institutional-print.css
+          if grep -q 'Pontos que frequentemente impedem a análise regulatória' js/institutional-print.js; then
+            echo 'A impressão institucional deve conter somente requisitos protocolares.'
+            exit 1
+          fi
 
       - name: Impedir emojis na interface principal
         run: |
