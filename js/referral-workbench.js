@@ -175,12 +175,17 @@
       : ['.general-intro-grid', '.notice', '.general-rule'];
 
     const nodes = selectors.flatMap((selector) => [...article.querySelectorAll(selector)])
-      .filter((node, index, all) => all.indexOf(node) === index && !node.closest('.official-protocol-details'));
+      .filter((node, index, all) => {
+        if (all.indexOf(node) !== index || node.closest('.official-protocol-details')) return false;
+        // A grade interna de um subprotocolo deve permanecer dentro do respectivo acordeão.
+        if (node.matches('.content-grid') && node.closest('.subprotocols')) return false;
+        return true;
+      });
 
     if (!nodes.length) return;
 
     const details = document.createElement('details');
-    details.className = 'official-protocol-details referral-enhancement';
+    details.className = 'official-protocol-details';
     details.innerHTML = `<summary><span>${svg(ICON.chevron)}Ver protocolo completo, exames e documentos</span><small>Abra somente quando precisar consultar o detalhamento técnico.</small></summary><div class="official-protocol-body"></div>`;
 
     nodes[0].before(details);
