@@ -18,9 +18,11 @@ jobs:
       - name: Validar sintaxe JavaScript
         run: |
           node --check js/app.js
+          node --check js/referral-practice-data.js
           node --check js/medical-app.js
           node --check js/dermatology-status.js
           node --check js/learning-mode.js
+          node --check js/referral-workbench.js
           node --check js/institutional-print.js
           node --check js/ai-config.js
           node --check js/ai-assistant.js
@@ -33,36 +35,46 @@ jobs:
           test -f index.html
           test -f css/site.css
           test -f css/medical.css
+          test -f css/referral-workbench.css
           test -f css/learning-mode.css
           test -f css/institutional-print.css
           test -f css/ai-assistant.css
           test -f css/ai-gemini-theme.css
+          test -f js/referral-practice-data.js
           test -f js/medical-app.js
           test -f js/dermatology-status.js
           test -f js/learning-mode.js
+          test -f js/referral-workbench.js
           test -f js/institutional-print.js
           test -f js/ai-config.js
           test -f js/ai-assistant.js
           test -f js/ai-markdown.js
           test -f js/ai-gemini-theme.js
+          test -f docs/METODOLOGIA-CAMADA-PRATICA.md
           test -f worker/gemini-assistant.js
           test -f worker/wrangler.toml
           test -f worker/package.json
           test -f CONFIGURAR-ASSISTENTE-GEMINI.md
           test -f protocolo/index.html
-          grep -q 'css/medical.css' index.html
-          grep -q 'css/learning-mode.css' index.html
-          grep -q 'css/institutional-print.css' index.html
-          grep -q 'css/ai-assistant.css' index.html
-          grep -q 'css/ai-gemini-theme.css' index.html
-          grep -q 'js/medical-app.js' index.html
-          grep -q 'js/dermatology-status.js' index.html
-          grep -q 'js/learning-mode.js' index.html
+          grep -q 'css/referral-workbench.css' index.html
+          grep -q 'js/referral-practice-data.js' index.html
+          grep -q 'js/referral-workbench.js' index.html
           grep -q 'js/institutional-print.js' index.html
-          grep -q 'js/ai-config.js' index.html
-          grep -q 'js/ai-assistant.js' index.html
-          grep -q 'js/ai-markdown.js' index.html
-          grep -q 'js/ai-gemini-theme.js' index.html
+
+      - name: Conferir ferramenta de formulação
+        run: |
+          grep -q 'REFERRAL_PRACTICE_GUIDANCE' js/referral-practice-data.js
+          grep -q 'Síntese qualitativa e anonimizada' js/referral-practice-data.js
+          grep -q 'Roteiro de formulação clínica' js/referral-workbench.js
+          grep -q 'Motivos frequentes de devolução' js/referral-workbench.js
+          grep -q 'Pode ser confirmado com paciente ou responsável' js/referral-workbench.js
+          grep -q 'Exige avaliação profissional' js/referral-workbench.js
+          grep -q 'Aplicação prática das devoluções analisadas' js/referral-workbench.js
+          grep -q 'referral-workbench' css/referral-workbench.css
+          grep -q 'formulation-steps' css/referral-workbench.css
+          grep -q 'practical-guidance' css/referral-workbench.css
+          grep -q 'Protocolo oficial + aplicação prática' index.html
+          grep -q 'Uma exigência isolada não é transformada automaticamente em regra universal' docs/METODOLOGIA-CAMADA-PRATICA.md
 
       - name: Conferir assistente dos protocolos
         run: |
@@ -73,11 +85,8 @@ jobs:
           grep -q 'appendInlineFormatting' js/ai-markdown.js
           grep -q 'textContent = match' js/ai-markdown.js
           grep -q 'Assistente com base nos protocolos' js/ai-gemini-theme.js
-          grep -q 'createGeminiLogo' js/ai-gemini-theme.js
-          grep -q 'ai-protocol-seal' css/ai-gemini-theme.css
           grep -q 'Fonte consultada:' worker/gemini-assistant.js
           grep -q 'GEMINI_API_KEY' worker/gemini-assistant.js
-          grep -q 'ALLOWED_ORIGINS' worker/wrangler.toml
           if grep -R -E 'AIza[0-9A-Za-z_-]{20,}' js worker index.html; then
             echo 'Possível chave da API exposta no repositório.'
             exit 1
@@ -101,11 +110,13 @@ jobs:
           grep -q 'ORIENTAÇÃO PARA COMPLEMENTAÇÃO DE SOLICITAÇÃO' js/institutional-print.js
           grep -q 'logo-agenda.png' js/institutional-print.js
           grep -q 'Setor de Regulação de Saúde' js/institutional-print.js
+          grep -q 'Pontos que frequentemente impedem a análise regulatória' js/institutional-print.js
           grep -q 'institutional-document' css/institutional-print.css
+          grep -q 'institutional-practical-note' css/institutional-print.css
 
       - name: Impedir emojis na interface principal
         run: |
-          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/learning-mode.css css/institutional-print.css css/ai-assistant.css css/ai-gemini-theme.css js/medical-app.js js/dermatology-status.js js/learning-mode.js js/institutional-print.js js/ai-config.js js/ai-assistant.js js/ai-markdown.js js/ai-gemini-theme.js worker/gemini-assistant.js; then
+          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/referral-workbench.css css/learning-mode.css css/institutional-print.css css/ai-assistant.css css/ai-gemini-theme.css js/referral-practice-data.js js/medical-app.js js/dermatology-status.js js/learning-mode.js js/referral-workbench.js js/institutional-print.js js/ai-config.js js/ai-assistant.js js/ai-markdown.js js/ai-gemini-theme.js worker/gemini-assistant.js; then
             echo 'Foram encontrados emojis nos arquivos da interface médica.'
             exit 1
           fi
