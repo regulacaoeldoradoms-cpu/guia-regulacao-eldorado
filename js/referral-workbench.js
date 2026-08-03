@@ -3,7 +3,7 @@
 (() => {
   const DATA = window.REFERRAL_PRACTICE_GUIDANCE;
   const PANEL_ID = 'detailPanel';
-  const PRACTICE_TITLE = 'Aplicação prática das devoluções analisadas — uso exclusivo do assistente';
+  const PRACTICE_PREFIX = 'Aplicação prática das devoluções analisadas';
   if (!DATA) return;
 
   let observer;
@@ -57,22 +57,45 @@
     if (!protocol || protocol.__practiceEnriched) return;
     const guidance = guidanceFor(protocol);
     protocol.practicalGuidance = guidance;
-    protocol.subprotocolos = arr(protocol.subprotocolos).filter((item) => item?.titulo !== PRACTICE_TITLE);
+    const officialSubprotocols = arr(protocol.subprotocolos).filter((item) => !String(item?.titulo || '').startsWith(PRACTICE_PREFIX));
 
-    // Esta estrutura alimenta o Gemini, mas é removida da apresentação visual do protocolo.
-    protocol.subprotocolos.push({
-      titulo: PRACTICE_TITLE,
-      quando: unique([...guidance.history, ...guidance.safety]).slice(0, 16),
-      obrigatorias: unique([...guidance.returns, ...guidance.professionalOnly]).slice(0, 18),
-      examesObrigatorios: guidance.investigations.slice(0, 16),
-      condicionais: guidance.caseDependent.slice(0, 12),
-      complementares: unique([
-        guidance.methodology.limitation,
-        ...guidance.patientReportable,
-        ...guidance.examination,
-        ...guidance.treatment
-      ]).slice(0, 18)
-    });
+    // Estas estruturas alimentam o Gemini, mas são removidas da apresentação visual do protocolo.
+    // Nenhum item prático é classificado como requisito oficial ou exame obrigatório.
+    const practicalSubprotocols = [
+      {
+        titulo: `${PRACTICE_PREFIX} — padrões de devolução e formulação (não normativo)`,
+        quando: guidance.returns.slice(0, 8).map((item) => `Padrão prático observado: ${item}`),
+        obrigatorias: [],
+        examesObrigatorios: [],
+        condicionais: [],
+        complementares: guidance.history.slice(0, 6).map((item) => `Orientação prática de formulação: ${item}`)
+      },
+      {
+        titulo: `${PRACTICE_PREFIX} — avaliação e origem da informação (não normativo)`,
+        quando: guidance.professionalOnly.slice(0, 6).map((item) => `Exige avaliação profissional: ${item}`),
+        obrigatorias: [],
+        examesObrigatorios: [],
+        condicionais: [],
+        complementares: unique([
+          ...guidance.patientReportable.slice(0, 6).map((item) => `Pode ser confirmado com paciente ou responsável: ${item}`),
+          ...guidance.examination.slice(0, 5).map((item) => `Foco prático do exame: ${item}`),
+          ...guidance.treatment.slice(0, 5).map((item) => `Foco prático do tratamento: ${item}`)
+        ])
+      },
+      {
+        titulo: `${PRACTICE_PREFIX} — exames, segurança e pontos condicionais (não normativo)`,
+        quando: guidance.safety.slice(0, 6).map((item) => `Alerta prático de segurança: ${item}`),
+        obrigatorias: [],
+        examesObrigatorios: [],
+        condicionais: guidance.caseDependent.slice(0, 6).map((item) => `Depende do caso: ${item}`),
+        complementares: unique([
+          guidance.methodology.limitation,
+          ...guidance.investigations.slice(0, 8).map((item) => `Ponto prático sobre exames e documentos: ${item}`)
+        ])
+      }
+    ];
+
+    protocol.subprotocolos = [...practicalSubprotocols, ...officialSubprotocols];
 
     protocol._searchText = norm([
       protocol._searchText,
@@ -97,10 +120,12 @@
 
   function removePracticeDetails(article) {
     article.querySelectorAll('.subprotocols details').forEach((details) => {
-      if (details.querySelector('summary')?.textContent.trim() === PRACTICE_TITLE) details.remove();
+      if (details.querySelector('summary')?.textContent.trim().startsWith(PRACTICE_PREFIX)) details.remove();
     });
     article.querySelectorAll('.subprotocols').forEach((container) => {
-      if (!container.querySelector('details')) container.remove();
+      const remaining = [...container.querySelectorAll('details')];
+      if (!remaining.length) container.remove();
+      else if (!remaining.some((details) => details.open)) remaining[0].open = true;
     });
   }
 
