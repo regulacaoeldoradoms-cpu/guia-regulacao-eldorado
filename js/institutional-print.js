@@ -1,41 +1,52 @@
 'use strict';
 
 const INSTITUTIONAL_IMAGE = 'https://i.ibb.co/fd23T1tv/logo-agenda.png';
-
-function institutionalArray(value) {
-  return Array.isArray(value) ? value : (value ? [value] : []);
-}
-
-function institutionalEscape(value) {
-  return (value ?? '').toString().replace(/[&<>"']/g, (character) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[character]));
-}
+const institutionalArray = (value) => Array.isArray(value) ? value : (value ? [value] : []);
+const institutionalEscape = (value) => (value ?? '').toString().replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+const institutionalUnique = (value, limit = Infinity) => [...new Set(institutionalArray(value).filter(Boolean).map((item) => String(item).trim()).filter(Boolean))].slice(0, limit);
 
 function institutionalList(items) {
   const values = institutionalArray(items);
-  if (!values.length) return '';
-  return `<ul>${values.map((item) => `<li>${institutionalEscape(item)}</li>`).join('')}</ul>`;
+  return values.length ? `<ul>${values.map((item) => `<li>${institutionalEscape(item)}</li>`).join('')}</ul>` : '';
 }
 
 function institutionalSection(title, items, className = '') {
   const values = institutionalArray(items);
-  if (!values.length) return '';
-  return `<section class="institutional-section ${className}"><h2>${institutionalEscape(title)}</h2>${institutionalList(values)}</section>`;
+  return values.length ? `<section class="institutional-section ${className}"><h2>${institutionalEscape(title)}</h2>${institutionalList(values)}</section>` : '';
 }
 
 function institutionalSubprotocols(protocol) {
-  return institutionalArray(protocol.subprotocolos).map((subprotocol) => {
-    const content = [
-      institutionalSection('Informações clínicas necessárias', subprotocol.obrigatorias),
-      institutionalSection('Exames obrigatórios', subprotocol.examesObrigatorios),
-      institutionalSection('Exames condicionais — somente quando aplicável', subprotocol.condicionais, 'conditional'),
-      institutionalSection('Documentos e exames já realizados — se disponíveis', subprotocol.complementares, 'optional')
-    ].join('');
+  return institutionalArray(protocol.subprotocolos)
+    .filter((subprotocol) => !String(subprotocol?.titulo || '').startsWith('Aplicação prática das devoluções'))
+    .map((subprotocol) => {
+      const content = [
+        institutionalSection('Informações clínicas necessárias', subprotocol.obrigatorias),
+        institutionalSection('Exames obrigatórios', subprotocol.examesObrigatorios),
+        institutionalSection('Exames condicionais — somente quando aplicável', subprotocol.condicionais, 'conditional'),
+        institutionalSection('Documentos e exames já realizados — se disponíveis', subprotocol.complementares, 'optional')
+      ].join('');
+      return content ? `<section class="institutional-subprotocol"><h2>${institutionalEscape(subprotocol.titulo || 'Condição específica')}</h2>${content}</section>` : '';
+    }).join('');
+}
 
-    if (!content) return '';
-    return `<section class="institutional-subprotocol"><h2>${institutionalEscape(subprotocol.titulo || 'Condição específica')}</h2>${content}</section>`;
-  }).join('');
+function institutionalPracticalGuidance(protocol) {
+  if (protocol?.practicalGuidance) return protocol.practicalGuidance;
+  if (typeof window.getReferralPracticalGuidance === 'function') return window.getReferralPracticalGuidance(protocol);
+  return null;
+}
+
+function institutionalPracticalSections(protocol) {
+  const guidance = institutionalPracticalGuidance(protocol);
+  if (!guidance) return '';
+  return `<section class="institutional-practical-note">
+      <h2>Pontos que frequentemente impedem a análise regulatória</h2>
+      <p>Os itens abaixo foram observados em devoluções regulatórias reais e anonimizadas. Eles auxiliam a revisão do encaminhamento, mas não substituem nem ampliam automaticamente os requisitos do protocolo oficial.</p>
+      ${institutionalList(institutionalUnique(guidance.returns, 6))}
+    </section>
+    <div class="institutional-source-grid">
+      <section class="institutional-section patient-source"><h2>Informações que podem ser confirmadas com paciente ou responsável</h2>${institutionalList(institutionalUnique(guidance.patientReportable, 5))}</section>
+      <section class="institutional-section professional-source"><h2>Informações que exigem avaliação profissional</h2>${institutionalList(institutionalUnique(guidance.professionalOnly, 5))}</section>
+    </div>`;
 }
 
 function printInstitutionalOrientation(protocol) {
@@ -49,9 +60,13 @@ function printInstitutionalOrientation(protocol) {
   const conditionalExams = institutionalArray(protocol.examesCondicionais);
   const availableDocuments = institutionalArray(protocol.complementares);
   const alerts = institutionalArray(protocol.alertas);
+  const practicalGuidance = institutionalPracticalGuidance(protocol);
+  const protocolSources = institutionalArray(protocol.fontes).filter((source) => {
+    const value = String(source).toLowerCase();
+    return !value.includes('camada prática') && !value.includes('estudo operacional anonimizado');
+  });
 
-  printArea.innerHTML = `
-    <article class="institutional-document">
+  printArea.innerHTML = `<article class="institutional-document">
       <header class="institutional-header">
         <div class="institutional-government">PREFEITURA MUNICIPAL DE ELDORADO — MS</div>
         <div class="institutional-department">SECRETARIA MUNICIPAL DE SAÚDE · SETOR DE REGULAÇÃO DE SAÚDE</div>
@@ -79,6 +94,7 @@ function printInstitutionalOrientation(protocol) {
       ${institutionalSection('Exames condicionais — realizar ou informar somente quando a condição se aplicar', conditionalExams, 'conditional')}
       ${institutionalSection('Laudos, imagens e documentos já realizados — apresentar se disponíveis', availableDocuments, 'optional')}
       ${institutionalSubprotocols(protocol)}
+      ${institutionalPracticalSections(protocol)}
       ${alerts.length ? `<section class="institutional-section warning"><h2>Atenção clínica</h2><p>As situações abaixo não devem aguardar a fila ambulatorial:</p>${institutionalList(alerts)}</section>` : ''}
 
       <section class="institutional-return-guidance">
@@ -91,39 +107,29 @@ function printInstitutionalOrientation(protocol) {
         <div class="institutional-validation">
           <strong>Setor de Regulação de Saúde — Eldorado/MS</strong>
           <span>Documento institucional de orientação para complementação de solicitação.</span>
-          <span>Fonte: ${institutionalEscape(institutionalArray(protocol.fontes).join(' · ') || 'protocolo vigente')} · Última conferência: ${institutionalEscape(protocol.ultimaConferencia || '28/07/2026')}</span>
+          <span>Fonte protocolar: ${institutionalEscape(protocolSources.join(' · ') || 'protocolo vigente')} · Última conferência: ${institutionalEscape(protocol.ultimaConferencia || '28/07/2026')}</span>
+          ${practicalGuidance ? `<span>Camada prática anonimizada: versão 1.0 · atualização ${institutionalEscape(practicalGuidance.updatedAt || '03/08/2026')}</span>` : ''}
         </div>
       </footer>
     </article>`;
 
   const image = printArea.querySelector('.institutional-footer img');
   let printed = false;
-  const triggerPrint = () => {
-    if (printed) return;
-    printed = true;
-    window.setTimeout(() => window.print(), 120);
-  };
-
+  const triggerPrint = () => { if (!printed) { printed = true; window.setTimeout(() => window.print(), 120); } };
   if (image && !image.complete) {
     image.addEventListener('load', triggerPrint, { once: true });
     image.addEventListener('error', triggerPrint, { once: true });
     window.setTimeout(triggerPrint, 1800);
-  } else {
-    triggerPrint();
-  }
+  } else triggerPrint();
 }
 
-// O listener em captura impede que a impressão técnica antiga seja executada.
 document.addEventListener('click', (event) => {
   const button = event.target.closest('#printGuidanceButton');
   if (!button) return;
-
   event.preventDefault();
   event.stopImmediatePropagation();
-
   const protocol = typeof state !== 'undefined' ? state.selected : null;
   printInstitutionalOrientation(protocol);
 }, true);
 
-// Mantém compatibilidade com chamadas diretas existentes.
 window.printProtocol = printInstitutionalOrientation;
