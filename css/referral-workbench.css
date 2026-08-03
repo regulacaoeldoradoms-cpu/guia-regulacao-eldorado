@@ -1,199 +1,166 @@
-/* Camada prática compacta: o essencial na tela; a profundidade fica no Gemini. */
-.legend-mark.practical { background: #6b5bb5; }
+/* Separação visual: protocolo oficial na página; aplicação prática no Gemini. */
 
-.compact-referral-guide {
-  margin: 14px 0 16px;
-  padding: 16px;
-  border: 1px solid #cbdce8;
-  border-radius: 16px;
-  background: linear-gradient(145deg, #f8fbfd, #ffffff 58%, #f7f5ff);
-  box-shadow: 0 8px 22px rgba(11, 31, 51, .07);
+.official-protocol-heading {
+  margin: 16px 0 11px;
+  padding: 15px 16px;
+  border: 1px solid #c8d9e5;
+  border-left: 5px solid var(--navy-800);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f7fafc, #ffffff);
+  box-shadow: 0 5px 16px rgba(11, 31, 51, .05);
 }
 
-.compact-guide-heading {
+.official-protocol-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 12px;
+  gap: 11px;
 }
 
-.compact-guide-heading span {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--teal-700);
-  font-size: .65rem;
-  font-weight: 850;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.compact-guide-heading h3 {
-  margin: 0;
-  color: var(--navy-950);
-  font-size: 1.06rem;
-  letter-spacing: -.015em;
-}
-
-.compact-guide-heading > strong {
+.official-protocol-title > span {
   display: grid;
-  min-width: 48px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
   place-items: center;
-  border: 1px solid #c8d7e2;
-  border-radius: 999px;
-  background: #fff;
-  color: var(--navy-900);
-  font-size: .78rem;
-}
-
-.compact-referral-guide.is-complete .compact-guide-heading > strong {
-  border-color: #afd2ba;
-  background: #eef9f1;
-  color: var(--success-700);
-}
-
-.compact-step-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.compact-step {
-  display: grid;
-  grid-template-columns: 22px 30px minmax(0, 1fr);
-  gap: 8px;
-  align-items: center;
-  min-height: 64px;
-  padding: 9px 10px;
-  border: 1px solid var(--slate-200);
   border-radius: 11px;
-  background: rgba(255, 255, 255, .95);
-  cursor: pointer;
-  transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
-}
-
-.compact-step:hover {
-  border-color: #a9bcc9;
-  transform: translateY(-1px);
-}
-
-.compact-step.is-complete {
-  border-color: #afd2ba;
-  background: #f1faf4;
-}
-
-.compact-step input {
-  width: 18px;
-  min-height: 18px;
-  margin: 0;
-  accent-color: var(--success-700);
-}
-
-.compact-step-number {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  border-radius: 9px;
-  background: #edf3f7;
-  color: var(--navy-900);
-  font-size: .72rem;
-  font-weight: 850;
-}
-
-.compact-step.is-complete .compact-step-number {
-  background: var(--success-700);
+  background: var(--navy-900);
   color: #fff;
 }
 
-.compact-step-copy {
-  min-width: 0;
+.official-protocol-title > span svg {
+  width: 21px;
+  height: 21px;
 }
 
-.compact-step-copy b {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--navy-950);
-  font-size: .79rem;
-}
-
-.compact-step-copy b svg {
-  width: .95rem;
-  height: .95rem;
-  color: var(--teal-700);
-}
-
-.compact-step-copy small {
+.official-protocol-title small {
   display: block;
-  margin-top: 2px;
+  color: var(--teal-700);
+  font-size: .66rem;
+  font-weight: 850;
+  letter-spacing: .085em;
+  text-transform: uppercase;
+}
+
+.official-protocol-title h3 {
+  margin: 1px 0 0;
+  color: var(--navy-950);
+  font-size: 1.05rem;
+  letter-spacing: -.015em;
+}
+
+.official-protocol-heading > p {
+  margin: 8px 0 0;
   color: var(--slate-600);
-  font-size: .69rem;
-  line-height: 1.35;
+  font-size: .76rem;
+  line-height: 1.45;
 }
 
-.gemini-guidance-card {
-  display: grid;
-  grid-template-columns: minmax(210px, .8fr) minmax(0, 1.2fr);
-  gap: 12px;
+.official-protocol-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.official-protocol-nav a {
+  display: inline-flex;
+  min-height: 32px;
   align-items: center;
-  margin-top: 12px;
-  padding: 12px;
-  border: 1px solid #d8d0f0;
-  border-radius: 13px;
-  background: linear-gradient(115deg, #f7f5ff, #f7fbff 56%, #f3faf6);
+  padding: 6px 9px;
+  border: 1px solid #cddae4;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--navy-800);
+  font-size: .69rem;
+  font-weight: 780;
+  text-decoration: none;
 }
 
-.gemini-guidance-copy {
+.official-protocol-nav a:hover {
+  border-color: var(--navy-800);
+  background: #f1f6fa;
+}
+
+.official-protocol-section,
+#protocolCriteria,
+#protocolClinicalInfo,
+#protocolMandatoryExams,
+#protocolConditionalExams,
+#protocolDocuments,
+#protocolPriority,
+#protocolAlerts {
+  scroll-margin-top: 108px;
+}
+
+.practical-ai-card {
+  display: grid;
+  grid-template-columns: minmax(230px, .85fr) minmax(0, 1.15fr);
+  gap: 13px;
+  align-items: center;
+  margin: 14px 0;
+  padding: 13px 14px;
+  border: 1px solid #d8d1ef;
+  border-radius: 14px;
+  background: linear-gradient(115deg, #f7f5ff, #f7fbff 55%, #f3faf6);
+}
+
+.practical-ai-copy {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.gemini-guidance-copy > span {
+.practical-ai-copy > span {
   display: grid;
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 12px;
+  border-radius: 13px;
   background: linear-gradient(145deg, #3b82f6, #7c3aed);
   color: #fff;
-  box-shadow: 0 7px 15px rgba(79, 70, 229, .18);
+  box-shadow: 0 7px 16px rgba(79, 70, 229, .18);
 }
 
-.gemini-guidance-copy > span svg {
-  width: 20px;
-  height: 20px;
+.practical-ai-copy > span svg {
+  width: 22px;
+  height: 22px;
 }
 
-.gemini-guidance-copy strong {
+.practical-ai-copy small {
   display: block;
+  color: #6654a8;
+  font-size: .64rem;
+  font-weight: 850;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+.practical-ai-copy strong {
+  display: block;
+  margin-top: 1px;
   color: var(--navy-950);
-  font-size: .82rem;
+  font-size: .84rem;
 }
 
-.gemini-guidance-copy small {
-  display: block;
-  margin-top: 2px;
+.practical-ai-copy p {
+  margin: 3px 0 0;
   color: var(--slate-600);
-  font-size: .68rem;
-  line-height: 1.35;
+  font-size: .69rem;
+  line-height: 1.4;
 }
 
-.gemini-question-chips {
+.practical-ai-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
   justify-content: flex-end;
+  gap: 6px;
 }
 
-.gemini-question-chips button,
-.compact-ai-link {
+.practical-ai-actions button {
   min-height: 34px;
   padding: 7px 9px;
-  border: 1px solid #cfd7ea;
+  border: 1px solid #cfd5e9;
   border-radius: 999px;
   background: #fff;
   color: #334c72;
@@ -201,171 +168,75 @@
   font-weight: 760;
 }
 
-.gemini-question-chips button:hover,
-.compact-ai-link:hover {
+.practical-ai-actions button:hover {
   border-color: #8d8ad1;
   background: #f7f5ff;
 }
 
-.compact-return-details,
-.official-protocol-details {
-  margin-top: 10px;
-  border: 1px solid var(--slate-200);
-  border-radius: 11px;
-  background: #fff;
-}
-
-.compact-return-details > summary,
-.official-protocol-details > summary {
-  cursor: pointer;
-  list-style: none;
-}
-
-.compact-return-details > summary::-webkit-details-marker,
-.official-protocol-details > summary::-webkit-details-marker {
-  display: none;
-}
-
-.compact-return-details > summary {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 11px;
-  color: var(--slate-700);
-  font-size: .73rem;
-  font-weight: 780;
-}
-
-.compact-return-details[open] > summary svg,
-.official-protocol-details[open] > summary svg {
-  transform: rotate(180deg);
-}
-
-.compact-return-details > summary svg,
-.official-protocol-details > summary svg {
-  transition: transform 140ms ease;
-}
-
-.compact-return-details ul {
-  margin: 0 12px 9px 30px;
-  padding: 0;
-  color: var(--slate-700);
-  font-size: .73rem;
-}
-
-.compact-return-details li + li {
-  margin-top: 4px;
-}
-
-.compact-ai-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 10px 10px;
-}
-
-.official-protocol-details {
-  margin: 14px 0;
+.final-clinical-check {
+  margin-top: 16px;
+  border-style: dashed;
   background: #fbfcfd;
 }
 
-.official-protocol-details > summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 13px;
-}
-
-.official-protocol-details > summary > span {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--navy-950);
-  font-size: .82rem;
-  font-weight: 820;
-}
-
-.official-protocol-details > summary > small {
+.final-clinical-check::before {
+  content: 'Conferência final';
+  display: inline-flex;
+  margin-bottom: 8px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--slate-100);
   color: var(--slate-600);
-  font-size: .68rem;
-  text-align: right;
-}
-
-.official-protocol-body {
-  padding: 0 12px 12px;
-  border-top: 1px solid var(--slate-200);
-}
-
-.official-protocol-body > *:first-child {
-  margin-top: 12px;
-}
-
-.official-protocol-body .content-grid,
-.official-protocol-body .clinical-section,
-.official-protocol-body .subprotocols,
-.official-protocol-body .protocol-metadata,
-.official-protocol-body .general-intro-grid,
-.official-protocol-body .notice,
-.official-protocol-body .general-rule {
-  scroll-margin-top: 110px;
+  font-size: .62rem;
+  font-weight: 850;
+  letter-spacing: .06em;
+  text-transform: uppercase;
 }
 
 @media (max-width: 900px) {
-  .compact-step-grid,
-  .gemini-guidance-card {
+  .practical-ai-card {
     grid-template-columns: 1fr;
   }
 
-  .gemini-question-chips {
+  .practical-ai-actions {
     justify-content: flex-start;
   }
 }
 
 @media (max-width: 560px) {
-  .compact-referral-guide {
+  .official-protocol-heading,
+  .practical-ai-card {
     margin-left: -8px;
     margin-right: -8px;
     padding: 13px;
     border-radius: 12px;
   }
 
-  .compact-step-grid {
-    grid-template-columns: 1fr;
+  .official-protocol-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 3px;
   }
 
-  .compact-step {
-    grid-template-columns: 20px 28px minmax(0, 1fr);
+  .official-protocol-nav a {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
-  .gemini-question-chips {
+  .practical-ai-actions {
     display: grid;
   }
 
-  .gemini-question-chips button {
+  .practical-ai-actions button {
     width: 100%;
     border-radius: 9px;
-    text-align: left;
-  }
-
-  .official-protocol-details > summary {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .official-protocol-details > summary > small {
     text-align: left;
   }
 }
 
 @media print {
-  .compact-referral-guide,
-  .official-protocol-details > summary {
+  .official-protocol-heading,
+  .practical-ai-card {
     display: none !important;
-  }
-
-  .official-protocol-details,
-  .official-protocol-body {
-    display: contents !important;
   }
 }
