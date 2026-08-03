@@ -77,10 +77,11 @@ jobs:
         run: |
           grep -q 'REFERRAL_PRACTICE_GUIDANCE' js/referral-practice-data.js
           grep -q 'Síntese qualitativa e anonimizada' js/referral-practice-data.js
-          grep -q 'Esta estrutura alimenta o Gemini' js/referral-workbench.js
+          grep -q 'Estas estruturas alimentam o Gemini' js/referral-workbench.js
           grep -q 'Protocolo oficial' js/referral-workbench.js
           grep -q 'Converse com o Gemini sobre devoluções reais' js/referral-workbench.js
           grep -q 'A experiência regulatória fica na IA' js/referral-workbench.js
+          grep -q 'Nenhum item prático é classificado como requisito oficial' js/referral-workbench.js
           grep -q 'official-protocol-heading' css/referral-workbench.css
           grep -q 'official-protocol-nav' css/referral-workbench.css
           grep -q 'practical-ai-card' css/referral-workbench.css
