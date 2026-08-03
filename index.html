@@ -9,7 +9,7 @@
   <link rel="preload" as="image" href="https://i.ibb.co/fd23T1tv/logo-agenda.png">
   <link rel="stylesheet" href="css/site.css">
   <link rel="stylesheet" href="css/medical.css">
-  <link rel="stylesheet" href="css/referral-workbench.css?v=20260803-1">
+  <link rel="stylesheet" href="css/referral-workbench.css?v=20260803-2">
   <link rel="stylesheet" href="css/learning-mode.css">
   <link rel="stylesheet" href="css/institutional-print.css?v=20260803-1">
   <link rel="stylesheet" href="css/ai-assistant.css?v=20260728-4">
@@ -19,8 +19,13 @@
   <header class="site-header">
     <div class="container header-inner">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M8 3h8v5h5v8h-5v5H8v-5H3V8h5z"/></svg></div>
-        <div><h1>Guia Médico de Encaminhamentos Regulados</h1><p>Protocolo oficial, formulação clínica e prevenção de devoluções</p></div>
+        <div class="brand-mark" aria-hidden="true">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M8 3h8v5h5v8h-5v5H8v-5H3V8h5z"/></svg>
+        </div>
+        <div>
+          <h1>Guia Médico de Encaminhamentos Regulados</h1>
+          <p>Checklist clínico, protocolo e apoio do Gemini</p>
+        </div>
       </div>
       <nav class="top-nav" aria-label="Filtros por via de acesso">
         <button class="nav-button active" type="button" data-filter="todos">Todos</button>
@@ -29,7 +34,10 @@
         <button class="nav-button" type="button" data-filter="assincrona">Discussão de conduta</button>
         <button class="nav-button" type="button" data-filter="ambos">Múltiplas vias</button>
         <button class="nav-button" type="button" data-filter="indisponivel">Indisponíveis</button>
-        <a class="nav-button" href="protocolo/"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg>Fontes técnicas</a>
+        <a class="nav-button" href="protocolo/">
+          <svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg>
+          Fontes técnicas
+        </a>
       </nav>
     </div>
   </header>
@@ -37,48 +45,68 @@
   <main class="container">
     <section class="hero medical-hero">
       <div class="hero-copy">
-        <span class="eyebrow">Protocolo oficial + aplicação prática</span>
-        <h2>Formule o encaminhamento para que ele possa ser analisado e classificado</h2>
-        <p>Pesquise a especialidade e use o roteiro clínico para revisar indicação, história, exame, tratamento, documentos e segurança. Além dos requisitos formais, o guia mostra padrões anonimizados de devoluções reais para explicar o que costuma faltar na prática.</p>
+        <span class="eyebrow">Guia rápido + inteligência artificial</span>
+        <h2>Confira o essencial. Pergunte os detalhes ao Gemini.</h2>
+        <p>Selecione a especialidade, revise seis pontos e abra o protocolo completo somente quando necessário.</p>
       </div>
-      <div class="hero-steps" aria-label="Etapas para formular o encaminhamento">
-        <div class="hero-step"><strong>1</strong><span>Confirme especialidade, faixa etária e via de acesso.</span></div>
-        <div class="hero-step"><strong>2</strong><span>Construa história clínica e avaliação profissional dirigida.</span></div>
-        <div class="hero-step"><strong>3</strong><span>Documente tratamentos, medicamentos, exames e resultados.</span></div>
-        <div class="hero-step"><strong>4</strong><span>Revise sinais de gravidade e justifique a necessidade atual.</span></div>
+      <div class="hero-steps" aria-label="Como usar o guia">
+        <div class="hero-step"><strong>1</strong><span>Escolha a especialidade ou o exame.</span></div>
+        <div class="hero-step"><strong>2</strong><span>Marque o checklist rápido de seis pontos.</span></div>
+        <div class="hero-step"><strong>3</strong><span>Use o Gemini para dúvidas e situações específicas.</span></div>
       </div>
       <div class="legend" aria-label="Legenda das exigências">
-        <span class="legend-item"><span class="legend-mark required"></span>Obrigatório para solicitar</span>
-        <span class="legend-item"><span class="legend-mark conditional"></span>Obrigatório conforme o caso</span>
-        <span class="legend-item"><span class="legend-mark complementary"></span>Recomendado quando disponível</span>
-        <span class="legend-item"><span class="legend-mark priority"></span>Critério de priorização</span>
-        <span class="legend-item"><span class="legend-mark practical"></span>Achado da prática regulatória</span>
+        <span class="legend-item"><span class="legend-mark required"></span>Obrigatório</span>
+        <span class="legend-item"><span class="legend-mark conditional"></span>Conforme o caso</span>
+        <span class="legend-item"><span class="legend-mark complementary"></span>Quando disponível</span>
+        <span class="legend-item"><span class="legend-mark priority"></span>Ajuda na priorização</span>
       </div>
     </section>
 
     <section class="workspace">
       <aside class="panel sidebar" aria-label="Pesquisa de especialidades e exames">
-        <div class="sidebar-heading"><div><h3>Especialidades e exames</h3><div id="resultCount" class="result-count">Carregando...</div></div><button class="button primary" type="button" id="generalBtn">Como formular</button></div>
-        <div class="field-group"><label class="field-label" for="categoryFilter">Área clínica</label><select id="categoryFilter"><option value="todos">Todas as áreas</option></select></div>
+        <div class="sidebar-heading">
+          <div>
+            <h3>Especialidades e exames</h3>
+            <div id="resultCount" class="result-count">Carregando...</div>
+          </div>
+          <button class="button primary" type="button" id="generalBtn">Como formular</button>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="categoryFilter">Área clínica</label>
+          <select id="categoryFilter"><option value="todos">Todas as áreas</option></select>
+        </div>
+
         <div class="field-group">
           <label class="field-label" for="sideSearchInput">Pesquisa clínica</label>
-          <div class="search-field"><span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span><input id="sideSearchInput" type="search" autocomplete="off" placeholder="Ex.: convulsão infantil, relatório escolar, ombro"></div>
-          <p class="field-help">A busca considera especialidades, sintomas, exames, requisitos do protocolo e motivos práticos de devolução.</p>
+          <div class="search-field">
+            <span class="search-icon" aria-hidden="true">
+              <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            </span>
+            <input id="sideSearchInput" type="search" autocomplete="off" placeholder="Ex.: convulsão infantil, ombro, relatório escolar">
+          </div>
+          <p class="field-help">A busca considera protocolo, exames e padrões de devolução.</p>
         </div>
+
         <div id="protocolList" class="protocol-list"></div>
       </aside>
-      <section id="detailPanel" class="panel detail-panel" aria-live="polite"><div class="loading">Carregando base técnica...</div></section>
+
+      <section id="detailPanel" class="panel detail-panel" aria-live="polite">
+        <div class="loading">Carregando base técnica...</div>
+      </section>
     </section>
   </main>
 
-  <footer class="container site-footer">Ferramenta destinada a médicos da Atenção Primária. A camada prática é anonimizada e complementa o protocolo; não substitui avaliação clínica, classificação de risco nem decisão regulatória.</footer>
+  <footer class="container site-footer">
+    Apoio destinado a médicos da Atenção Primária. A decisão clínica e regulatória permanece sob responsabilidade dos profissionais envolvidos.
+  </footer>
 
   <div id="printArea" class="print-only"></div>
   <script src="js/referral-practice-data.js?v=20260803-1" defer></script>
   <script src="js/medical-app.js" defer></script>
   <script src="js/dermatology-status.js" defer></script>
   <script src="js/learning-mode.js" defer></script>
-  <script src="js/referral-workbench.js?v=20260803-1" defer></script>
+  <script src="js/referral-workbench.js?v=20260803-2" defer></script>
   <script src="js/institutional-print.js?v=20260803-1" defer></script>
   <script src="js/ai-config.js?v=20260728-4" defer></script>
   <script src="js/ai-assistant.js?v=20260728-4" defer></script>

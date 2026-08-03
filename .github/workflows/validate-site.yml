@@ -73,19 +73,19 @@ jobs:
           grep -q 'js/ai-markdown.js' index.html
           grep -q 'js/ai-gemini-theme.js' index.html
 
-      - name: Conferir ferramenta de formulação
+      - name: Conferir experiência compacta
         run: |
           grep -q 'REFERRAL_PRACTICE_GUIDANCE' js/referral-practice-data.js
           grep -q 'Síntese qualitativa e anonimizada' js/referral-practice-data.js
-          grep -q 'Roteiro de formulação clínica' js/referral-workbench.js
-          grep -q 'Motivos frequentes de devolução' js/referral-workbench.js
-          grep -q 'Pode ser confirmado com paciente ou responsável' js/referral-workbench.js
-          grep -q 'Exige avaliação profissional' js/referral-workbench.js
+          grep -q 'Checklist rápido' js/referral-workbench.js
+          grep -q 'Encaminhamento em 6 pontos' js/referral-workbench.js
+          grep -q 'O Gemini recebeu o protocolo' js/referral-workbench.js
+          grep -q 'Ver protocolo completo, exames e documentos' js/referral-workbench.js
           grep -q 'Aplicação prática das devoluções analisadas' js/referral-workbench.js
-          grep -q 'referral-workbench' css/referral-workbench.css
-          grep -q 'formulation-steps' css/referral-workbench.css
-          grep -q 'practical-guidance' css/referral-workbench.css
-          grep -q 'Protocolo oficial + aplicação prática' index.html
+          grep -q 'compact-referral-guide' css/referral-workbench.css
+          grep -q 'gemini-question-chips' css/referral-workbench.css
+          grep -q 'official-protocol-details' css/referral-workbench.css
+          grep -q 'Guia rápido + inteligência artificial' index.html
           grep -q 'Uma exigência isolada não é transformada automaticamente em regra universal' docs/METODOLOGIA-CAMADA-PRATICA.md
 
       - name: Conferir assistente dos protocolos
