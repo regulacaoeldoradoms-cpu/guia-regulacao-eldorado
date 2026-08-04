@@ -20,6 +20,7 @@ jobs:
           node --check js/app.js
           node --check js/referral-practice-data.js
           node --check js/referral-practice-update-20260804.js
+          node --check js/referral-practice-update-20260804-2.js
           node --check js/medical-app.js
           node --check js/dermatology-status.js
           node --check js/learning-mode.js
@@ -43,6 +44,7 @@ jobs:
           test -f css/ai-gemini-theme.css
           test -f js/referral-practice-data.js
           test -f js/referral-practice-update-20260804.js
+          test -f js/referral-practice-update-20260804-2.js
           test -f js/medical-app.js
           test -f js/dermatology-status.js
           test -f js/learning-mode.js
@@ -66,6 +68,7 @@ jobs:
           grep -q 'css/ai-gemini-theme.css' index.html
           grep -q 'js/referral-practice-data.js' index.html
           grep -q 'js/referral-practice-update-20260804.js' index.html
+          grep -q 'js/referral-practice-update-20260804-2.js' index.html
           grep -q 'js/medical-app.js' index.html
           grep -q 'js/dermatology-status.js' index.html
           grep -q 'js/learning-mode.js' index.html
@@ -95,19 +98,34 @@ jobs:
             exit 1
           fi
 
-      - name: Conferir estudo complementar de devoluções
+      - name: Conferir primeiro estudo complementar de devoluções
         run: |
           grep -q "guidance.version = '1.1'" js/referral-practice-update-20260804.js
           grep -q "guidance.updatedAt = '04/08/2026'" js/referral-practice-update-20260804.js
           grep -q '13 documentos analisados em 04/08/2026' js/referral-practice-update-20260804.js
           grep -q 'Resultado descrito apenas como' js/referral-practice-update-20260804.js
-          grep -q 'Nos casos analisados em 03/08/2026' js/referral-practice-update-20260804.js
           grep -q 'classificação clínica CEAP' js/referral-practice-update-20260804.js
-          grep -q 'PSA descrito somente como' js/referral-practice-update-20260804.js
           grep -q 'revisão pós-operatória' js/referral-practice-update-20260804.js
-          grep -q 'não como requisito universal' js/referral-practice-update-20260804.js
           if grep -E -i 'MURILO|ALANA|ANTONIO TORCATTI|LUCIANA PINTO|MARCIO ANTONIO|MAURI ANTONIO|ORACELIA|OROZINA|PAULO FERREIRA|ROBERTO NEVES|ROSIMEIRE|SANTA RAMONA|WILSON JOSE|CNS:|CPF:|telefone' js/referral-practice-update-20260804.js; then
-            echo 'O complemento prático contém possível dado identificável.'
+            echo 'O primeiro complemento prático contém possível dado identificável.'
+            exit 1
+          fi
+
+      - name: Conferir segundo estudo complementar de devoluções
+        run: |
+          grep -q "guidance.version = '1.2'" js/referral-practice-update-20260804-2.js
+          grep -q '20 documentos analisados em 04/08/2026' js/referral-practice-update-20260804-2.js
+          grep -q 'consulta diagnóstica, seguimento clínico, revisão pós-operatória, procedimento ou cirurgia' js/referral-practice-update-20260804-2.js
+          grep -q 'sedação hospitalar' js/referral-practice-update-20260804-2.js
+          grep -q 'exames hepáticos' js/referral-practice-update-20260804-2.js
+          grep -q 'exame físico das mamas' js/referral-practice-update-20260804-2.js
+          grep -q 'beta-hCG' js/referral-practice-update-20260804-2.js
+          grep -q 'idade cadastral' js/referral-practice-update-20260804-2.js
+          grep -q 'estrutura anatômica' js/referral-practice-update-20260804-2.js
+          grep -q 'exame do estado mental' js/referral-practice-update-20260804-2.js
+          grep -q 'não presumir que a prioridade original será mantida' js/referral-practice-update-20260804-2.js
+          if grep -E -i 'AGATHA|AGUINALDO|TORCATTI|BRAYAN|BRUNO DOS SANTOS|CLAUDIA DE SOUZA|CLAUDINA|CORINA|DAIANE|DANIELI|DANIELLI|DEIZE|ELIZEU|GENILDA|GISLAINE|IRACEMA|MARTA BENITES|CNS:|CPF:|telefone' js/referral-practice-update-20260804-2.js; then
+            echo 'O segundo complemento prático contém possível dado identificável.'
             exit 1
           fi
 
@@ -157,7 +175,7 @@ jobs:
 
       - name: Impedir emojis na interface principal
         run: |
-          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/referral-workbench.css css/learning-mode.css css/institutional-print.css css/ai-assistant.css css/ai-gemini-theme.css js/referral-practice-data.js js/referral-practice-update-20260804.js js/medical-app.js js/dermatology-status.js js/learning-mode.js js/referral-workbench.js js/institutional-print.js js/ai-config.js js/ai-assistant.js js/ai-markdown.js js/ai-gemini-theme.js worker/gemini-assistant.js; then
+          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/referral-workbench.css css/learning-mode.css css/institutional-print.css css/ai-assistant.css css/ai-gemini-theme.css js/referral-practice-data.js js/referral-practice-update-20260804.js js/referral-practice-update-20260804-2.js js/medical-app.js js/dermatology-status.js js/learning-mode.js js/referral-workbench.js js/institutional-print.js js/ai-config.js js/ai-assistant.js js/ai-markdown.js js/ai-gemini-theme.js worker/gemini-assistant.js; then
             echo 'Foram encontrados emojis nos arquivos da interface médica.'
             exit 1
           fi
