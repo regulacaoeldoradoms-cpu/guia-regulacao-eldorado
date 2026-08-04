@@ -1,0 +1,46 @@
+name: Validar complemento prático 4
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-practice-update-4:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Validar sintaxe e carregamento
+        run: |
+          node --check js/referral-practice-update-20260804-4.js
+          test -f js/referral-practice-update-20260804-4.js
+          grep -q 'js/referral-practice-update-20260804-4.js' index.html
+
+      - name: Conferir conteúdo do quarto estudo
+        run: |
+          grep -q "guidance.version = '1.4'" js/referral-practice-update-20260804-4.js
+          grep -q '19 documentos' js/referral-practice-update-20260804-4.js
+          grep -q '18 continham justificativa regulatória utilizável' js/referral-practice-update-20260804-4.js
+          grep -q 'Não inferir o motivo de uma devolução apenas pelo status' js/referral-practice-update-20260804-4.js
+          grep -q 'advertência de que a solicitação poderá ser negada' js/referral-practice-update-20260804-4.js
+          grep -q 'data do exame anterior' js/referral-practice-update-20260804-4.js
+          grep -q 'história remota' js/referral-practice-update-20260804-4.js
+          grep -q 'clearance ou taxa de filtração' js/referral-practice-update-20260804-4.js
+          grep -q 'Cartão SUS' js/referral-practice-update-20260804-4.js
+          grep -q 'pequena cirurgia oncológica' js/referral-practice-update-20260804-4.js
+
+      - name: Conferir anonimização
+        run: |
+          if grep -E -i 'Nome do Paciente|Nome da Mãe|Data de Nascimento|CNS:|CPF:|Telefone\(s\)|Código da Solicitação' js/referral-practice-update-20260804-4.js; then
+            echo 'O quarto complemento contém possível campo identificável.'
+            exit 1
+          fi
+          if grep -E '[0-9]{11,15}' js/referral-practice-update-20260804-4.js; then
+            echo 'O quarto complemento contém possível identificador numérico.'
+            exit 1
+          fi
