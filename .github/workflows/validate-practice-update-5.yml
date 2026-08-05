@@ -1,0 +1,52 @@
+name: Validar complemento prático 5
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-practice-update-5:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Validar sintaxe e carregamento
+        run: |
+          node --check js/referral-practice-update-20260805.js
+          test -f js/referral-practice-update-20260805.js
+          grep -q 'js/referral-practice-update-20260805.js' index.html
+
+      - name: Conferir conteúdo do quinto estudo
+        run: |
+          grep -q "guidance.version = '1.5'" js/referral-practice-update-20260805.js
+          grep -q '4 documentos' js/referral-practice-update-20260805.js
+          grep -q 'sistema, a central reguladora e o protocolo aplicável' js/referral-practice-update-20260805.js
+          grep -q 'não deve ser transferida automaticamente para o DigSaúde' js/referral-practice-update-20260805.js
+          grep -q 'Analisar o histórico em ordem cronológica' js/referral-practice-update-20260805.js
+          grep -q 'profissional solicitante não aceito' js/referral-practice-update-20260805.js
+          grep -q 'Neurologia Pediátrica versus Psiquiatria' js/referral-practice-update-20260805.js || grep -q 'Neurologia Pediátrica, Psiquiatria Pediátrica e linguagem' js/referral-practice-update-20260805.js
+          grep -q 'Ressonância de coluna lombossacra' js/referral-practice-update-20260805.js
+          grep -q 'A devolução por tempo decorrido não invalida a classificação anterior' js/referral-practice-update-20260805.js
+          grep -q 'não aplicar automaticamente ao DigSaúde' js/referral-practice-update-20260805.js
+
+      - name: Conferir anonimização
+        run: |
+          if grep -E -i 'VERONICA|JANE RAIMUNDA|DAVI OLIVEIRA|DAIANE JESSICA|Nome do Paciente|Nome da Mãe|Data de Nascimento|CNS:|CPF:|Telefone\(s\)|Código da Solicitação' js/referral-practice-update-20260805.js; then
+            echo 'O quinto complemento contém possível dado identificável.'
+            exit 1
+          fi
+          if grep -E '[0-9]{11,15}' js/referral-practice-update-20260805.js; then
+            echo 'O quinto complemento contém possível identificador numérico.'
+            exit 1
+          fi
+
+      - name: Conferir separação entre protocolo e prática
+        run: |
+          grep -q 'Camada prática não normativa' js/referral-practice-update-20260805.js
+          grep -q 'não se tornam automaticamente obrigatórios' js/referral-practice-update-20260805.js
+          grep -q 'conferir protocolo e fluxo' js/referral-practice-update-20260805.js
