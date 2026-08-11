@@ -18,4 +18,5 @@ database_name = "portal-regulacao-users"
 # Segredos: nunca colocar valores reais neste arquivo ou no GitHub.
 # GEMINI_API_KEY, AUTH_SESSION_SECRET e AUTH_USERS_JSON permanecem no painel da Cloudflare.
 # AUTH_USERS_JSON funciona como conta/bootstrap de emergência e é migrado para o D1 após login/troca de senha.
+# Exemplo documental sem credencial real: [{"username":"usuario.medico","password":"SENHA_FORTE","role":"medico"}]
 # Perfis aceitos: medico, recepcao e admin. O perfil admin é o nível máximo/desenvolvedor.
