@@ -1,0 +1,47 @@
+name: Validar gestão de usuários
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-users:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar sintaxe
+        run: |
+          node --check worker/auth-management.js
+          node --check worker/index.js
+          node --check js/auth-client.js
+          node --check js/account.js
+          node --check js/admin-users.js
+          node --check js/home.js
+          node --check js/login.js
+      - name: Conferir arquivos e rotas
+        run: |
+          test -f conta/index.html
+          test -f admin/usuarios/index.html
+          test -f css/account-admin.css
+          grep -q '/api/auth/change-password' worker/auth-management.js
+          grep -q '/api/admin/users' worker/auth-management.js
+          grep -q 'PBKDF2' worker/auth-management.js
+          grep -q 'AUTH_DB' worker/auth-management.js
+          grep -q 'session_version' worker/auth-management.js
+          grep -q 'must_change_password' worker/auth-management.js
+          grep -q 'enforcement: true' js/auth-config.js
+          grep -q 'AUTH_ENFORCE_AI = "true"' worker/wrangler.toml
+          grep -q 'binding = "AUTH_DB"' worker/wrangler.toml
+          grep -q 'database_name = "portal-regulacao-users"' worker/wrangler.toml
+          grep -q 'Usuários e acessos' admin/usuarios/index.html
+          grep -q 'Alterar senha' conta/index.html
+      - name: Impedir credenciais reais no repositório
+        run: |
+          if grep -R -E '"password"\s*:\s*"[0-9]{6,}"' worker js admin conta; then
+            echo 'Possível senha real encontrada no repositório.'
+            exit 1
+          fi
