@@ -7,6 +7,9 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://127.0.0.1:8000'
 ];
 
+const AUTH_ROLES = new Set(['medico', 'recepcao', 'admin']);
+const SESSION_TTL_SECONDS = 8 * 60 * 60;
+
 const SYSTEM_PROMPT = `Você é o simulador de pré-regulação do Guia Médico de Encaminhamentos Regulados de Eldorado/MS.
 
 FUNÇÃO:
@@ -58,6 +61,10 @@ function allowedOrigins(env) {
   return configured.length ? configured : DEFAULT_ALLOWED_ORIGINS;
 }
 
+function boundedString(value, maximum) {
+  return String(value || '').trim().slice(0, maximum);
+}
+
 function hasSensitiveData(value) {
   const text = String(value || '');
   const patterns = [
@@ -69,10 +76,6 @@ function hasSensitiveData(value) {
     /\b(?:paciente|nome)\s*:\s*[A-Za-zÀ-ÿ]{2,}(?:\s+[A-Za-zÀ-ÿ]{2,})+/i
   ];
   return patterns.some((pattern) => pattern.test(text));
-}
-
-function boundedString(value, maximum) {
-  return String(value || '').trim().slice(0, maximum);
 }
 
 function cleanArray(value, maximumItems, maximumItemLength) {
@@ -155,6 +158,142 @@ function buildPrompt(question, protocols, catalog, history, mode) {
   ].join('\n').slice(0, 80000);
 }
 
+function normalizeUsername(value) {
+  return boundedString(value, 80).toLowerCase();
+}
+
+function configuredUsers(env) {
+  if (!env.AUTH_USERS_JSON) return [];
+  let parsed;
+  try { parsed = JSON.parse(env.AUTH_USERS_JSON); }
+  catch (_) { throw new Error('AUTH_USERS_JSON inválido.'); }
+  if (!Array.isArray(parsed)) throw new Error('AUTH_USERS_JSON deve ser uma lista.');
+  return parsed.map((user) => ({
+    username: normalizeUsername(user.username),
+    password: String(user.password || ''),
+    name: boundedString(user.name || user.username, 120),
+    role: AUTH_ROLES.has(user.role) ? user.role : '',
+    active: user.active !== false
+  })).filter((user) => user.username && user.password && user.role && user.active);
+}
+
+function publicUser(user) {
+  return { username: user.username, name: user.name, role: user.role };
+}
+
+function utf8(value) {
+  return new TextEncoder().encode(String(value));
+}
+
+function base64UrlEncodeBytes(bytes) {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function base64UrlEncodeJson(value) {
+  return base64UrlEncodeBytes(utf8(JSON.stringify(value)));
+}
+
+function base64UrlDecodeJson(value) {
+  const padded = value.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((value.length + 3) % 4);
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+async function hmacKey(secret) {
+  if (!secret) throw new Error('AUTH_SESSION_SECRET não configurado.');
+  return crypto.subtle.importKey('raw', utf8(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+}
+
+async function createSessionToken(user, env) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64UrlEncodeJson({ alg: 'HS256', typ: 'JWT' });
+  const payload = base64UrlEncodeJson({
+    sub: user.username,
+    name: user.name,
+    role: user.role,
+    iat: now,
+    exp: now + SESSION_TTL_SECONDS
+  });
+  const unsigned = `${header}.${payload}`;
+  const key = await hmacKey(env.AUTH_SESSION_SECRET);
+  const signature = new Uint8Array(await crypto.subtle.sign('HMAC', key, utf8(unsigned)));
+  return `${unsigned}.${base64UrlEncodeBytes(signature)}`;
+}
+
+async function verifySessionToken(token, env) {
+  const parts = String(token || '').split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const key = await hmacKey(env.AUTH_SESSION_SECRET);
+    const unsigned = `${parts[0]}.${parts[1]}`;
+    const padded = parts[2].replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((parts[2].length + 3) % 4);
+    const binary = atob(padded);
+    const signature = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    const valid = await crypto.subtle.verify('HMAC', key, signature, utf8(unsigned));
+    if (!valid) return null;
+    const payload = base64UrlDecodeJson(parts[1]);
+    const now = Math.floor(Date.now() / 1000);
+    if (!payload.exp || payload.exp <= now || !AUTH_ROLES.has(payload.role)) return null;
+    return { username: normalizeUsername(payload.sub), name: boundedString(payload.name, 120), role: payload.role };
+  } catch (_) {
+    return null;
+  }
+}
+
+function bearerToken(request) {
+  const header = request.headers.get('Authorization') || '';
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1].trim() : '';
+}
+
+async function authenticatedUser(request, env, allowedRoles = []) {
+  const user = await verifySessionToken(bearerToken(request), env);
+  if (!user) return null;
+  if (allowedRoles.length && user.role !== 'admin' && !allowedRoles.includes(user.role)) return null;
+  return user;
+}
+
+async function handleAuth(request, env, url, origin, originAllowed) {
+  if (!originAllowed) return jsonResponse({ error: 'Origem não autorizada.' }, 403, origin, false);
+
+  if (url.pathname === '/api/auth/status' && request.method === 'GET') {
+    return jsonResponse({ configured: Boolean(env.AUTH_USERS_JSON && env.AUTH_SESSION_SECRET) }, 200, origin, true);
+  }
+
+  if (url.pathname === '/api/auth/login' && request.method === 'POST') {
+    if (!env.AUTH_USERS_JSON || !env.AUTH_SESSION_SECRET) {
+      return jsonResponse({ error: 'Autenticação ainda não configurada no servidor.' }, 503, origin, true);
+    }
+    const body = await request.json().catch(() => ({}));
+    const username = normalizeUsername(body.username);
+    const password = String(body.password || '').slice(0, 160);
+    if (!username || !password) return jsonResponse({ error: 'Informe usuário e senha.' }, 400, origin, true);
+    const user = configuredUsers(env).find((item) => item.username === username);
+    if (!user || user.password !== password) {
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      return jsonResponse({ error: 'Usuário ou senha inválidos.' }, 401, origin, true);
+    }
+    const token = await createSessionToken(user, env);
+    return jsonResponse({ token, user: publicUser(user), expiresIn: SESSION_TTL_SECONDS }, 200, origin, true);
+  }
+
+  if (url.pathname === '/api/auth/me' && request.method === 'GET') {
+    const user = await authenticatedUser(request, env);
+    return user
+      ? jsonResponse({ user }, 200, origin, true)
+      : jsonResponse({ error: 'Sessão inválida ou expirada.' }, 401, origin, true);
+  }
+
+  if (url.pathname === '/api/auth/logout' && request.method === 'POST') {
+    return jsonResponse({ ok: true }, 200, origin, true);
+  }
+
+  return jsonResponse({ error: 'Rota de autenticação não encontrada.' }, 404, origin, true);
+}
+
 async function callGemini(env, prompt) {
   if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY não configurada no Worker.');
   const model = env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
@@ -169,10 +308,7 @@ async function callGemini(env, prompt) {
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        maxOutputTokens: 1300,
-        responseMimeType: 'text/plain'
-      }
+      generationConfig: { maxOutputTokens: 1300, responseMimeType: 'text/plain' }
     })
   });
 
@@ -184,11 +320,7 @@ async function callGemini(env, prompt) {
     throw error;
   }
 
-  const answer = payload?.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text || '')
-    .join('')
-    .trim();
-
+  const answer = payload?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim();
   if (!answer) throw new Error('A API Gemini não retornou conteúdo textual.');
   return { answer, model };
 }
@@ -205,8 +337,8 @@ export default {
         status: 204,
         headers: {
           'Access-Control-Allow-Origin': origin,
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
           'Access-Control-Max-Age': '86400',
           'Vary': 'Origin'
         }
@@ -214,9 +346,19 @@ export default {
     }
 
     const url = new URL(request.url);
+    if (url.pathname.startsWith('/api/auth/')) {
+      try { return await handleAuth(request, env, url, origin, originAllowed); }
+      catch (error) { return jsonResponse({ error: error.message || 'Falha na autenticação.' }, 500, origin, originAllowed); }
+    }
+
     if (url.pathname !== '/api/ia') return jsonResponse({ error: 'Rota não encontrada.' }, 404, origin, originAllowed);
     if (request.method !== 'POST') return jsonResponse({ error: 'Método não permitido.' }, 405, origin, originAllowed);
     if (!originAllowed) return jsonResponse({ error: 'Origem não autorizada.' }, 403, origin, false);
+
+    if (String(env.AUTH_ENFORCE_AI || '').toLowerCase() === 'true') {
+      const user = await authenticatedUser(request, env, ['medico']);
+      if (!user) return jsonResponse({ error: 'Acesso médico necessário para utilizar a pré-regulação.' }, 403, origin, true);
+    }
 
     const contentLength = Number(request.headers.get('Content-Length') || 0);
     if (contentLength > 150000) return jsonResponse({ error: 'Solicitação muito grande.' }, 413, origin, true);
@@ -226,9 +368,7 @@ export default {
       const question = boundedString(body.originalQuestion || body.question, 3000);
       if (!question) return jsonResponse({ error: 'Informe uma pergunta.' }, 400, origin, true);
       if (hasSensitiveData(question) || hasSensitiveData(JSON.stringify(body.history || []))) {
-        return jsonResponse({
-          error: 'Não envie dados pessoais identificáveis. Reformule a pergunta de forma anônima.'
-        }, 400, origin, true);
+        return jsonResponse({ error: 'Não envie dados pessoais identificáveis. Reformule a pergunta de forma anônima.' }, 400, origin, true);
       }
 
       const protocols = cleanProtocols(body.protocols);
@@ -240,18 +380,10 @@ export default {
       const mode = boundedString(body.assistantMode || 'pre_regulation_simulator', 80);
       const prompt = buildPrompt(question, protocols, catalog, body.history, mode);
       const result = await callGemini(env, prompt);
-      return jsonResponse({
-        answer: result.answer,
-        provider: 'Gemini',
-        model: result.model,
-        assistantMode: mode,
-        groundedInProtocols: true
-      }, 200, origin, true);
+      return jsonResponse({ answer: result.answer, provider: 'Gemini', model: result.model, assistantMode: mode, groundedInProtocols: true }, 200, origin, true);
     } catch (error) {
       const status = Number(error.status) || 500;
-      const message = status === 429
-        ? 'O limite gratuito do Gemini foi atingido. Tente novamente mais tarde.'
-        : error.message || 'Falha ao consultar o assistente.';
+      const message = status === 429 ? 'O limite gratuito do Gemini foi atingido. Tente novamente mais tarde.' : error.message || 'Falha ao consultar o assistente.';
       return jsonResponse({ error: message }, status, origin, true);
     }
   }
