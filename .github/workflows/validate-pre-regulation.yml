@@ -18,6 +18,7 @@ jobs:
       - name: Validar sintaxe JavaScript
         run: |
           node --check js/ai-config.js
+          node --check js/pre-regulation-bridge.js
           node --check js/ai-assistant.js
 
       - name: Conferir modo conversacional
@@ -36,6 +37,21 @@ jobs:
           grep -q 'Conferir fluxo/procedimento' js/ai-assistant.js
           grep -q 'Atenção clínica' js/ai-assistant.js
 
+      - name: Conferir compatibilidade com Worker atual
+        run: |
+          grep -q 'PRE_REGULATION_BRIDGE' js/pre-regulation-bridge.js
+          grep -q 'CASO ATUAL' js/pre-regulation-bridge.js
+          grep -q 'no máximo 3 perguntas objetivas' js/pre-regulation-bridge.js
+          grep -q 'behaviorSubprotocol' js/pre-regulation-bridge.js
+          grep -q 'historyForWorker' js/pre-regulation-bridge.js
+          grep -q 'originalQuestion' js/pre-regulation-bridge.js
+          grep -q 'pre-regulation-bridge.js?v=20260811-1' index.html
+          python - <<'PY'
+          from pathlib import Path
+          html = Path('index.html').read_text(encoding='utf-8')
+          assert html.index('js/ai-config.js') < html.index('js/pre-regulation-bridge.js') < html.index('js/ai-assistant.js')
+          PY
+
       - name: Conferir interface e cache
         run: |
           grep -q 'Pré-regulação com Gemini' js/ai-assistant.js
@@ -50,4 +66,5 @@ jobs:
           grep -q 'nunca se apresente como regulador oficial' js/ai-assistant.js
           grep -q 'nunca emita autorização, negativa oficial ou classificação de risco real' js/ai-assistant.js
           grep -q 'Não recomende cancelamento e reinserção automaticamente' js/ai-assistant.js
+          grep -q 'sem se apresentar como regulador oficial' js/pre-regulation-bridge.js
           grep -q 'não substitui avaliação clínica, classificação de risco nem decisão do regulador responsável' index.html
