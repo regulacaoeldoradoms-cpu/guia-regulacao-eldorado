@@ -22,10 +22,18 @@
     status.className = `login-status visible ${type}`;
   }
 
+  function destinationFor(user) {
+    if (user?.mustChangePassword) return '/conta/?primeiro-acesso=1';
+    const params = new URLSearchParams(location.search);
+    const requested = params.get('next');
+    const safeNext = requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : null;
+    return safeNext || config.homePath || '/home/';
+  }
+
   async function redirectIfAuthenticated() {
     if (!window.RegulationAuth?.enforcementEnabled) return;
     const user = await window.RegulationAuth.me().catch(() => null);
-    if (user) location.replace(config.homePath || '/home/');
+    if (user) location.replace(destinationFor(user));
   }
 
   if (!window.RegulationAuth?.enforcementEnabled) {
@@ -39,10 +47,7 @@
     status.className = 'login-status';
     try {
       const user = await window.RegulationAuth.login(username.value, password.value, remember.checked);
-      const params = new URLSearchParams(location.search);
-      const requested = params.get('next');
-      const safeNext = requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : null;
-      location.replace(safeNext || config.homePath || '/home/');
+      location.replace(destinationFor(user));
     } catch (error) {
       let message;
       if (error.status === 404) {
