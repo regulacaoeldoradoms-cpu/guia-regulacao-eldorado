@@ -6,7 +6,14 @@ workers_dev = true
 [vars]
 ALLOWED_ORIGINS = "https://regulacaoeldoradoms.com.br,https://www.regulacaoeldoradoms.com.br"
 GEMINI_MODEL = "gemini-3.5-flash-lite"
+AUTH_ENFORCE_AI = "false"
 
-# A chave nunca deve ser colocada neste arquivo.
-# Cadastre-a como segredo:
+# Segredos: nunca colocar valores reais neste arquivo ou no GitHub.
 # npx wrangler secret put GEMINI_API_KEY
+# npx wrangler secret put AUTH_SESSION_SECRET
+# npx wrangler secret put AUTH_USERS_JSON
+#
+# AUTH_USERS_JSON deve ser uma lista JSON, por exemplo:
+# [{"username":"usuario.medico","password":"SENHA_FORTE","name":"Nome do médico","role":"medico"},{"username":"recepcao01","password":"SENHA_FORTE","name":"Recepção","role":"recepcao"}]
+# Perfis aceitos: medico, recepcao e admin.
+# Depois que login e páginas protegidas estiverem validados, altere AUTH_ENFORCE_AI para "true".

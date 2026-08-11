@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d3157">
+  <title>Login | Regulação de Saúde</title>
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/portal.css?v=20260811-1">
+</head>
+<body class="portal-page">
+  <main class="login-layout">
+    <section class="login-visual" aria-label="Portal da Regulação de Saúde">
+      <div class="portal-brand">
+        <img src="/assets/app-icon.svg" alt="">
+        <div>
+          <h1>Portal da Regulação de Saúde</h1>
+          <p>Eldorado/MS</p>
+        </div>
+      </div>
+      <div class="login-message">
+        <span class="portal-eyebrow">Acesso por perfil profissional</span>
+        <h1>Uma entrada. Ferramentas diferentes para cada função.</h1>
+        <p>Médicos acessam o Guia Médico completo e a pré-regulação com Gemini. A recepção acessa a conferência de documentos, exames e materiais necessários para protocolar a solicitação.</p>
+      </div>
+      <small>Setor de Regulação de Saúde · Eldorado/MS</small>
+    </section>
+
+    <section class="login-panel">
+      <form class="login-card" id="loginForm" autocomplete="on">
+        <h2>Entrar no portal</h2>
+        <p>Use o acesso fornecido pelo Setor de Regulação.</p>
+
+        <div class="portal-field">
+          <label for="loginUsername">Usuário</label>
+          <input id="loginUsername" name="username" autocomplete="username" required maxlength="80" autofocus>
+        </div>
+        <div class="portal-field">
+          <label for="loginPassword">Senha</label>
+          <input id="loginPassword" name="password" type="password" autocomplete="current-password" required maxlength="160">
+        </div>
+        <label style="display:flex;gap:9px;align-items:center;font-size:.84rem;color:#516b82;margin:4px 0 16px">
+          <input id="loginRemember" type="checkbox"> Manter acesso neste computador
+        </label>
+
+        <button class="portal-button primary login-submit" id="loginSubmit" type="submit">Entrar</button>
+        <div id="loginStatus" class="login-status" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+  </main>
+
+  <script src="/js/auth-config.js?v=20260811-1"></script>
+  <script src="/js/auth-client.js?v=20260811-1"></script>
+  <script src="/js/login.js?v=20260811-1"></script>
+</body>
+</html>

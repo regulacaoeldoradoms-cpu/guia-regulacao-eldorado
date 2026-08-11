@@ -31,11 +31,22 @@ jobs:
           node --check js/ai-assistant.js
           node --check js/ai-markdown.js
           node --check js/ai-gemini-theme.js
+          node --check js/auth-config.js
+          node --check js/auth-client.js
+          node --check js/access-control.js
+          node --check js/auth-fetch-bridge.js
+          node --check js/login.js
+          node --check js/home.js
+          node --check js/medical-portal-nav.js
+          node --check js/reception-app.js
           node --check worker/gemini-assistant.js
 
       - name: Conferir arquivos referenciados
         run: |
           test -f index.html
+          test -f login/index.html
+          test -f home/index.html
+          test -f recepcao/index.html
           test -f css/site.css
           test -f css/medical.css
           test -f css/referral-workbench.css
@@ -43,6 +54,8 @@ jobs:
           test -f css/institutional-print.css
           test -f css/ai-assistant.css
           test -f css/ai-gemini-theme.css
+          test -f css/portal.css
+          test -f css/reception.css
           test -f js/referral-practice-data.js
           test -f js/referral-practice-update-20260804.js
           test -f js/referral-practice-update-20260804-2.js
@@ -56,6 +69,14 @@ jobs:
           test -f js/ai-assistant.js
           test -f js/ai-markdown.js
           test -f js/ai-gemini-theme.js
+          test -f js/auth-config.js
+          test -f js/auth-client.js
+          test -f js/access-control.js
+          test -f js/auth-fetch-bridge.js
+          test -f js/login.js
+          test -f js/home.js
+          test -f js/medical-portal-nav.js
+          test -f js/reception-app.js
           test -f docs/METODOLOGIA-CAMADA-PRATICA.md
           test -f worker/gemini-assistant.js
           test -f worker/wrangler.toml
@@ -65,7 +86,6 @@ jobs:
           grep -q 'css/medical.css' index.html
           grep -q 'css/referral-workbench.css' index.html
           grep -q 'css/learning-mode.css' index.html
-          grep -q 'css/institutional-print.css' index.html
           grep -q 'css/ai-assistant.css' index.html
           grep -q 'css/ai-gemini-theme.css' index.html
           grep -q 'js/referral-practice-data.js' index.html
@@ -76,11 +96,55 @@ jobs:
           grep -q 'js/dermatology-status.js' index.html
           grep -q 'js/learning-mode.js' index.html
           grep -q 'js/referral-workbench.js' index.html
-          grep -q 'js/institutional-print.js' index.html
+          grep -q 'js/auth-config.js' index.html
+          grep -q 'js/auth-client.js' index.html
+          grep -q 'js/access-control.js' index.html
+          grep -q 'js/auth-fetch-bridge.js' index.html
           grep -q 'js/ai-config.js' index.html
           grep -q 'js/ai-assistant.js' index.html
           grep -q 'js/ai-markdown.js' index.html
           grep -q 'js/ai-gemini-theme.js' index.html
+          grep -q 'js/medical-portal-nav.js' index.html
+
+      - name: Conferir portal e separação por perfil
+        run: |
+          grep -q 'data-role-view="medico"' index.html
+          grep -q 'data-required-role="medico"' index.html
+          grep -q 'Área destinada ao perfil médico' index.html
+          grep -q 'Portal da Regulação de Saúde' login/index.html
+          grep -q 'HUB de trabalho' home/index.html
+          grep -q 'Conferência da Recepção' recepcao/index.html
+          grep -q 'documentos, laudos, imagens e exames' recepcao/index.html
+          grep -q "enforcement: false" js/auth-config.js
+          grep -q "requireRole(\['recepcao', 'admin'\])" js/reception-app.js
+          grep -q "requireRole(\['medico', 'recepcao', 'admin'\])" js/home.js
+          grep -q 'documentaryPattern' js/reception-app.js
+          grep -q 'conditionalPattern' js/reception-app.js
+          grep -q 'Limite da recepção' js/reception-app.js
+          grep -q 'Imprimir orientação do que falta' js/reception-app.js
+          grep -q 'printMissing' js/reception-app.js
+          grep -q "dataset?.roleView === 'medico'" js/learning-mode.js
+          if grep -q 'js/institutional-print.js' index.html; then
+            echo 'A impressão institucional antiga não deve ficar carregada na área médica.'
+            exit 1
+          fi
+
+      - name: Conferir autenticação no Worker sem segredos expostos
+        run: |
+          grep -q "AUTH_ROLES = new Set(\['medico', 'recepcao', 'admin'\])" worker/gemini-assistant.js
+          grep -q '/api/auth/login' worker/gemini-assistant.js
+          grep -q '/api/auth/me' worker/gemini-assistant.js
+          grep -q '/api/auth/logout' worker/gemini-assistant.js
+          grep -q 'AUTH_SESSION_SECRET' worker/gemini-assistant.js
+          grep -q 'AUTH_USERS_JSON' worker/gemini-assistant.js
+          grep -q 'AUTH_ENFORCE_AI' worker/gemini-assistant.js
+          grep -q 'Authorization' worker/gemini-assistant.js
+          grep -q 'SESSION_TTL_SECONDS' worker/gemini-assistant.js
+          grep -q 'SENHA_FORTE' worker/wrangler.toml
+          if grep -R -E 'AIza[0-9A-Za-z_-]{20,}' js worker index.html login home recepcao; then
+            echo 'Possível chave da API exposta no repositório.'
+            exit 1
+          fi
 
       - name: Conferir separação entre protocolo e prática
         run: |
@@ -165,10 +229,6 @@ jobs:
           grep -q 'Fonte consultada:' worker/gemini-assistant.js
           grep -q 'GEMINI_API_KEY' worker/gemini-assistant.js
           grep -q 'ALLOWED_ORIGINS' worker/wrangler.toml
-          if grep -R -E 'AIza[0-9A-Za-z_-]{20,}' js worker index.html; then
-            echo 'Possível chave da API exposta no repositório.'
-            exit 1
-          fi
 
       - name: Conferir disponibilidade da Dermatologia
         run: |
@@ -179,11 +239,11 @@ jobs:
       - name: Conferir modo de aprendizagem
         run: |
           grep -q 'Conferência durante o preenchimento' js/learning-mode.js
-          grep -q 'Imprimir orientação ao paciente' js/learning-mode.js
           grep -q 'observer.disconnect()' js/learning-mode.js
           grep -q 'observer.observe(detailPanel' js/learning-mode.js
+          grep -q 'printButton?.remove()' js/learning-mode.js
 
-      - name: Conferir documento institucional
+      - name: Conferir documento institucional legado
         run: |
           grep -q 'ORIENTAÇÃO PARA COMPLEMENTAÇÃO DE SOLICITAÇÃO' js/institutional-print.js
           grep -q 'logo-agenda.png' js/institutional-print.js
@@ -197,8 +257,8 @@ jobs:
 
       - name: Impedir emojis decorativos na interface principal
         run: |
-          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html css/medical.css css/referral-workbench.css css/learning-mode.css css/institutional-print.css css/ai-assistant.css css/ai-gemini-theme.css js/referral-practice-data.js js/referral-practice-update-20260804.js js/referral-practice-update-20260804-2.js js/referral-practice-update-20260804-3.js js/medical-app.js js/dermatology-status.js js/learning-mode.js js/referral-workbench.js js/institutional-print.js js/ai-config.js js/ai-markdown.js js/ai-gemini-theme.js worker/gemini-assistant.js; then
-            echo 'Foram encontrados emojis decorativos nos arquivos da interface médica.'
+          if grep -P '[\x{1F300}-\x{1FAFF}]' index.html login/index.html home/index.html recepcao/index.html css/medical.css css/referral-workbench.css css/learning-mode.css css/institutional-print.css css/ai-assistant.css css/ai-gemini-theme.css css/portal.css css/reception.css js/referral-practice-data.js js/referral-practice-update-20260804.js js/referral-practice-update-20260804-2.js js/referral-practice-update-20260804-3.js js/medical-app.js js/dermatology-status.js js/learning-mode.js js/referral-workbench.js js/institutional-print.js js/ai-config.js js/ai-markdown.js js/ai-gemini-theme.js js/auth-config.js js/auth-client.js js/access-control.js js/auth-fetch-bridge.js js/login.js js/home.js js/medical-portal-nav.js js/reception-app.js worker/gemini-assistant.js; then
+            echo 'Foram encontrados emojis decorativos nos arquivos da interface médica/portal.'
             exit 1
           fi
           if grep -P '[\x{1F300}-\x{1FAFF}]' js/ai-assistant.js | grep -v -E '🟢|🟡|🟠|🔴'; then

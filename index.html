@@ -17,11 +17,10 @@
   <link rel="stylesheet" href="css/medical.css">
   <link rel="stylesheet" href="css/referral-workbench.css?v=20260803-3">
   <link rel="stylesheet" href="css/learning-mode.css">
-  <link rel="stylesheet" href="css/institutional-print.css?v=20260803-1">
   <link rel="stylesheet" href="css/ai-assistant.css?v=20260728-4">
   <link rel="stylesheet" href="css/ai-gemini-theme.css?v=20260804-5">
 </head>
-<body data-page="guide">
+<body data-page="guide" data-role-view="medico" data-required-role="medico">
   <header class="site-header">
     <div class="container header-inner">
       <div class="brand">
@@ -51,7 +50,7 @@
   <main class="container">
     <section class="hero medical-hero">
       <div class="hero-copy">
-        <span class="eyebrow">Protocolo na tela + pré-regulação sob demanda</span>
+        <span class="eyebrow">Área médica · protocolo + pré-regulação</span>
         <h2>Veja o protocolo. Converse com o Gemini como em uma pré-regulação.</h2>
         <p>Consulte critérios, informações obrigatórias, exames, documentos, priorização e alertas. Depois descreva o caso de forma anônima: o Gemini reconhece o que já está adequado, usa as devoluções reais como experiência prática e pergunta somente o que ainda falta.</p>
       </div>
@@ -104,10 +103,12 @@
   </main>
 
   <footer class="container site-footer">
-    O conteúdo exibido na página corresponde à base protocolar cadastrada. A pré-regulação com IA é uma simulação de apoio à formulação e não substitui avaliação clínica, classificação de risco nem decisão do regulador responsável.
+    Área destinada ao perfil médico. O conteúdo exibido corresponde à base protocolar cadastrada. A pré-regulação com IA é uma simulação de apoio à formulação e não substitui avaliação clínica, classificação de risco nem decisão do regulador responsável.
   </footer>
 
-  <div id="printArea" class="print-only"></div>
+  <script src="js/auth-config.js?v=20260811-1" defer></script>
+  <script src="js/auth-client.js?v=20260811-1" defer></script>
+  <script src="js/access-control.js?v=20260811-1" defer></script>
   <script src="js/referral-practice-data.js?v=20260803-1" defer></script>
   <script src="js/referral-practice-update-20260804.js?v=20260804-1" defer></script>
   <script src="js/referral-practice-update-20260804-2.js?v=20260804-1" defer></script>
@@ -117,13 +118,14 @@
   <script src="js/referral-practice-update-20260811.js?v=20260811-1" defer></script>
   <script src="js/medical-app.js" defer></script>
   <script src="js/dermatology-status.js" defer></script>
-  <script src="js/learning-mode.js" defer></script>
+  <script src="js/learning-mode.js?v=20260811-2" defer></script>
   <script src="js/referral-workbench.js?v=20260803-3" defer></script>
-  <script src="js/institutional-print.js?v=20260803-2" defer></script>
   <script src="js/ai-config.js?v=20260811-1" defer></script>
+  <script src="js/auth-fetch-bridge.js?v=20260811-1" defer></script>
   <script src="js/pre-regulation-bridge.js?v=20260811-2" defer></script>
   <script src="js/ai-assistant.js?v=20260811-1" defer></script>
   <script src="js/ai-markdown.js?v=20260728-4" defer></script>
   <script src="js/ai-gemini-theme.js?v=20260811-1" defer></script>
+  <script src="js/medical-portal-nav.js?v=20260811-1" defer></script>
 </body>
 </html>
