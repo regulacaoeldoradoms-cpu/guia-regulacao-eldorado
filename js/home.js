@@ -11,7 +11,11 @@
   const logout = document.getElementById('portalLogout');
 
   if (name) name.textContent = user.name || user.username || 'Usuário';
-  if (role) role.textContent = user.preview ? 'modo de configuração' : ({ medico: 'Médico', recepcao: 'Recepção', admin: 'Administrador' }[user.role] || user.role);
+  if (role) {
+    role.textContent = user.preview
+      ? 'modo de configuração'
+      : ({ medico: 'Médico', recepcao: 'Recepção', admin: 'Desenvolvedor · acesso total' }[user.role] || user.role);
+  }
 
   const cards = [];
   if (user.role === 'medico' || user.role === 'admin' || user.preview) {
@@ -38,6 +42,20 @@
         </span>
         <span class="hub-card-arrow">Abrir conferência →</span>
       </a>`);
+  }
+
+  if (user.role === 'admin' && !user.preview) {
+    cards.push(`
+      <section class="hub-card hub-card-system" data-module="developer-access" aria-label="Acesso de desenvolvimento">
+        <span class="hub-card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/></svg>
+        </span>
+        <span>
+          <h3>Perfil de Desenvolvimento</h3>
+          <p>Conta com acesso integral aos módulos existentes e preparada para receber automaticamente novos módulos administrativos no HUB.</p>
+        </span>
+        <span class="hub-card-arrow">Acesso total</span>
+      </section>`);
   }
 
   grid.innerHTML = cards.join('');
