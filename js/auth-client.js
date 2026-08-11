@@ -18,6 +18,11 @@
     } catch (_) { return null; }
   }
 
+  function persistentSession() {
+    try { return Boolean(localStorage.getItem(tokenKey)); }
+    catch (_) { return false; }
+  }
+
   function saveSession(token, user, persistent = false) {
     clearSession();
     const storage = persistent ? localStorage : sessionStorage;
@@ -64,10 +69,7 @@
     if (!token) return null;
     try {
       const payload = await api('/api/auth/me', { method: 'GET' });
-      if (payload.user) {
-        const persistent = Boolean(localStorage.getItem(tokenKey));
-        saveSession(token, payload.user, persistent);
-      }
+      if (payload.user) saveSession(token, payload.user, persistentSession());
       return payload.user || null;
     } catch (error) {
       if (error.status === 401 || error.status === 403) clearSession();
@@ -80,6 +82,38 @@
     try { if (getToken()) await api('/api/auth/logout', { method: 'POST', body: '{}' }); }
     catch (_) {}
     clearSession();
+  }
+
+  async function changePassword(currentPassword, newPassword) {
+    const payload = await api('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+    if (!payload.token || !payload.user) throw new Error('Não foi possível renovar a sessão após a troca de senha.');
+    saveSession(payload.token, payload.user, persistentSession());
+    return payload.user;
+  }
+
+  async function listUsers() {
+    const payload = await api('/api/admin/users', { method: 'GET' });
+    return Array.isArray(payload.users) ? payload.users : [];
+  }
+
+  async function createUser(input) {
+    const payload = await api('/api/admin/users', { method: 'POST', body: JSON.stringify(input) });
+    return payload.user;
+  }
+
+  async function updateUser(username, input) {
+    const payload = await api(`/api/admin/users/${encodeURIComponent(username)}`, { method: 'PATCH', body: JSON.stringify(input) });
+    return payload.user;
+  }
+
+  async function resetUserPassword(username, password, mustChangePassword = true) {
+    return api(`/api/admin/users/${encodeURIComponent(username)}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ password, mustChangePassword })
+    });
   }
 
   function roleAllowed(user, allowedRoles) {
@@ -121,6 +155,11 @@
     getCachedUser,
     clearSession,
     authorizationHeader,
+    changePassword,
+    listUsers,
+    createUser,
+    updateUser,
+    resetUserPassword,
     enforcementEnabled: CONFIG.enforcement === true
   });
 })();

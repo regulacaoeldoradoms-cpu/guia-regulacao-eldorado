@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d3157">
+  <title>Minha conta | Portal da Regulação</title>
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/portal.css?v=20260811-2">
+  <link rel="stylesheet" href="/css/account-admin.css?v=20260811-1">
+</head>
+<body class="portal-page">
+  <div class="portal-shell">
+    <header class="portal-topbar">
+      <div class="portal-topbar-inner">
+        <div class="portal-brand">
+          <img src="/assets/app-icon.svg" alt="">
+          <div><h1>Minha conta</h1><p>Portal da Regulação de Saúde · Eldorado/MS</p></div>
+        </div>
+        <div class="portal-user">
+          <a class="portal-button ghost linklike" href="/home/">← HUB</a>
+          <div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div>
+          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
+        </div>
+      </div>
+    </header>
+    <main class="portal-main">
+      <section class="portal-hero">
+        <div class="portal-hero-copy">
+          <span class="portal-eyebrow">Segurança da conta</span>
+          <h2>Altere sua senha sem acessar a Cloudflare.</h2>
+          <p>A nova senha passa a valer imediatamente e as sessões anteriores da sua conta deixam de ser válidas.</p>
+        </div>
+      </section>
+      <section class="account-layout" style="margin-top:24px">
+        <article class="account-card">
+          <h2>Alterar senha</h2>
+          <p>Use pelo menos 8 caracteres. Não compartilhe sua senha com outras pessoas.</p>
+          <form id="changePasswordForm" class="account-form" autocomplete="off">
+            <div class="portal-field"><label for="currentPassword">Senha atual</label><input id="currentPassword" type="password" autocomplete="current-password" required maxlength="160"></div>
+            <div class="portal-field"><label for="newPassword">Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="160"><div class="password-meter">Mínimo de 8 caracteres.</div></div>
+            <div class="portal-field"><label for="confirmPassword">Confirmar nova senha</label><input id="confirmPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="160"></div>
+            <div class="account-actions"><button class="portal-button primary" id="changePasswordButton" type="submit">Salvar nova senha</button></div>
+            <div class="account-status" id="accountStatus" role="status" aria-live="polite"></div>
+          </form>
+        </article>
+      </section>
+    </main>
+  </div>
+  <script src="/js/auth-config.js?v=20260811-2"></script>
+  <script src="/js/auth-client.js?v=20260811-2"></script>
+  <script src="/js/account.js?v=20260811-1"></script>
+</body>
+</html>
