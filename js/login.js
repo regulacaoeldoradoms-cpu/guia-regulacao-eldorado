@@ -1,6 +1,14 @@
 'use strict';
 
 (() => {
+  const isLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
+  if (!isLocal && location.protocol !== 'https:') {
+    const secureUrl = new URL(location.href);
+    secureUrl.protocol = 'https:';
+    location.replace(secureUrl.toString());
+    return;
+  }
+
   const form = document.getElementById('loginForm');
   const username = document.getElementById('loginUsername');
   const password = document.getElementById('loginPassword');
@@ -21,7 +29,7 @@
   }
 
   if (!window.RegulationAuth?.enforcementEnabled) {
-    showStatus('A interface do portal está pronta, mas a autenticação ainda não foi ativada no servidor. O guia atual continua acessível durante esta etapa de configuração.', 'info');
+    showStatus('A autenticação está em fase final de configuração. O acesso por perfil ainda não foi tornado obrigatório.', 'info');
   }
 
   form?.addEventListener('submit', async (event) => {
@@ -36,9 +44,14 @@
       const safeNext = requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : null;
       location.replace(safeNext || config.homePath || '/home/');
     } catch (error) {
-      const message = error.status === 404
-        ? 'O serviço de login ainda não está publicado no Worker da Cloudflare.'
-        : error.message || 'Não foi possível entrar.';
+      let message;
+      if (error.status === 404) {
+        message = 'O serviço de login ainda não está publicado no Worker da Cloudflare.';
+      } else if (error instanceof TypeError || /failed to fetch/i.test(String(error?.message || ''))) {
+        message = 'Não foi possível conectar ao servidor de autenticação. Confirme que o portal abriu em HTTPS e tente novamente.';
+      } else {
+        message = error.message || 'Não foi possível entrar.';
+      }
       showStatus(message, 'error');
     } finally {
       submit.disabled = false;
