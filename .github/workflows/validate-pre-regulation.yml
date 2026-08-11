@@ -1,0 +1,53 @@
+name: Validar pré-regulação conversacional
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-pre-regulation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Validar sintaxe JavaScript
+        run: |
+          node --check js/ai-config.js
+          node --check js/ai-assistant.js
+
+      - name: Conferir modo conversacional
+        run: |
+          grep -q "mode: 'pre_regulation_simulator'" js/ai-config.js
+          grep -q 'maxQuestionLength: 3000' js/ai-config.js
+          grep -q 'maxHistoryMessages: 12' js/ai-config.js
+          grep -q 'MODO DE PRÉ-REGULAÇÃO CONVERSACIONAL' js/ai-assistant.js
+          grep -q 'no máximo 3 perguntas objetivas' js/ai-assistant.js
+          grep -q 'Mantenha continuidade entre as mensagens' js/ai-assistant.js
+          grep -q 'praticaRegulatoria: practicalContext' js/ai-assistant.js
+          grep -q 'motivosRecorrentesDeDevolucao' js/ai-assistant.js
+          grep -q 'exigeProfissionalHabilitado' js/ai-assistant.js
+          grep -q 'Encaminhamento bem qualificado' js/ai-assistant.js
+          grep -q 'Necessita complementação' js/ai-assistant.js
+          grep -q 'Conferir fluxo/procedimento' js/ai-assistant.js
+          grep -q 'Atenção clínica' js/ai-assistant.js
+
+      - name: Conferir interface e cache
+        run: |
+          grep -q 'Pré-regulação com Gemini' js/ai-assistant.js
+          grep -q 'Pré-regulação com IA' js/ai-assistant.js
+          grep -q 'Descreva o caso ou cole o encaminhamento anonimizado' js/ai-assistant.js
+          grep -q 'Protocolo oficial + pré-regulação conversacional com Gemini' index.html
+          grep -q 'ai-config.js?v=20260811-1' index.html
+          grep -q 'ai-assistant.js?v=20260811-1' index.html
+
+      - name: Conferir limites de segurança
+        run: |
+          grep -q 'nunca se apresente como regulador oficial' js/ai-assistant.js
+          grep -q 'nunca emita autorização, negativa oficial ou classificação de risco real' js/ai-assistant.js
+          grep -q 'Não recomende cancelamento e reinserção automaticamente' js/ai-assistant.js
+          grep -q 'não substitui avaliação clínica, classificação de risco nem decisão do regulador responsável' index.html
