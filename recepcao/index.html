@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d3157">
+  <title>Conferência da Recepção | Regulação</title>
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/portal.css?v=20260811-1">
+  <link rel="stylesheet" href="/css/reception.css?v=20260811-1">
+</head>
+<body class="portal-page">
+  <div class="portal-shell">
+    <header class="portal-topbar">
+      <div class="portal-topbar-inner">
+        <div class="portal-brand">
+          <img src="/assets/app-icon.svg" alt="">
+          <div>
+            <h1>Conferência da Recepção</h1>
+            <p>Documentos, exames, laudos e materiais para solicitação</p>
+          </div>
+        </div>
+        <div class="portal-user">
+          <a class="portal-button ghost" href="/home/" style="text-decoration:none">HUB</a>
+          <div class="portal-user-meta">
+            <strong id="portalUserName">Carregando...</strong>
+            <span id="portalUserRole"></span>
+          </div>
+          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="portal-main">
+      <section class="portal-hero">
+        <div class="portal-hero-copy">
+          <span class="portal-eyebrow">Conferência antes da solicitação</span>
+          <h2>Confira o que o paciente trouxe sem entrar na avaliação clínica.</h2>
+          <p>Selecione a especialidade ou exame. Marque relatórios, laudos, imagens e exames apresentados. Quando algo necessário estiver faltando, gere uma orientação objetiva para o paciente providenciar apenas aquele item.</p>
+        </div>
+      </section>
+
+      <section class="reception-layout">
+        <aside class="reception-sidebar">
+          <h2>Especialidades e exames</h2>
+          <p id="receptionResultCount">Carregando protocolos...</p>
+          <input class="portal-search" id="receptionSearch" type="search" placeholder="Ex.: neuropediatria, joelho, audiometria" autocomplete="off">
+          <div class="reception-list" id="receptionProtocolList"><div class="reception-loading">Carregando...</div></div>
+        </aside>
+        <section class="reception-detail" id="receptionDetail" aria-live="polite">
+          <div class="reception-loading">Carregando base técnica...</div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div id="printReceptionArea"></div>
+
+  <script src="/js/auth-config.js?v=20260811-1"></script>
+  <script src="/js/auth-client.js?v=20260811-1"></script>
+  <script src="/js/reception-app.js?v=20260811-1"></script>
+</body>
+</html>
