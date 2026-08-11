@@ -6,7 +6,7 @@ workers_dev = true
 [vars]
 ALLOWED_ORIGINS = "https://regulacaoeldoradoms.com.br,https://www.regulacaoeldoradoms.com.br"
 GEMINI_MODEL = "gemini-3.5-flash-lite"
-AUTH_ENFORCE_AI = "false"
+AUTH_ENFORCE_AI = "true"
 
 # Integração GitHub -> Cloudflare ativa. Commits na branch main disparam o deploy do Worker.
 # O Wrangler 4 provisiona automaticamente esta base D1 no primeiro deploy.
