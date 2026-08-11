@@ -1,5 +1,5 @@
 name = "yellow-wave-d0a1guia-regulacao-ia"
-main = "gemini-assistant.js"
+main = "index.js"
 compatibility_date = "2026-07-28"
 workers_dev = true
 
@@ -9,12 +9,13 @@ GEMINI_MODEL = "gemini-3.5-flash-lite"
 AUTH_ENFORCE_AI = "false"
 
 # Integração GitHub -> Cloudflare ativa. Commits na branch main disparam o deploy do Worker.
+# O Wrangler 4 provisiona automaticamente esta base D1 no primeiro deploy.
+# Ela armazena apenas contas de acesso do portal; não armazena dados de pacientes.
+[[d1_databases]]
+binding = "AUTH_DB"
+database_name = "portal-regulacao-users"
+
 # Segredos: nunca colocar valores reais neste arquivo ou no GitHub.
-# npx wrangler secret put GEMINI_API_KEY
-# npx wrangler secret put AUTH_SESSION_SECRET
-# npx wrangler secret put AUTH_USERS_JSON
-#
-# AUTH_USERS_JSON deve ser uma lista JSON, por exemplo:
-# [{"username":"usuario.medico","password":"SENHA_FORTE","name":"Nome do médico","role":"medico"},{"username":"recepcao01","password":"SENHA_FORTE","name":"Recepção","role":"recepcao"}]
-# Perfis aceitos atualmente: medico, recepcao e admin. O perfil admin é o nível máximo/desenvolvedor no HUB.
-# Depois que login e páginas protegidas estiverem validados, altere AUTH_ENFORCE_AI para "true".
+# GEMINI_API_KEY, AUTH_SESSION_SECRET e AUTH_USERS_JSON permanecem no painel da Cloudflare.
+# AUTH_USERS_JSON funciona como conta/bootstrap de emergência e é migrado para o D1 após login/troca de senha.
+# Perfis aceitos: medico, recepcao e admin. O perfil admin é o nível máximo/desenvolvedor.
