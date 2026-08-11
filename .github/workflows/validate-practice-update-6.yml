@@ -1,0 +1,51 @@
+name: Validar complemento prático 6
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-practice-update-6:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Validar sintaxe e carregamento
+        run: |
+          node --check js/referral-practice-update-20260811.js
+          test -f js/referral-practice-update-20260811.js
+          grep -q 'js/referral-practice-update-20260811.js' index.html
+
+      - name: Conferir conteúdo do sexto estudo
+        run: |
+          grep -q "guidance.version = '1.6'" js/referral-practice-update-20260811.js
+          grep -q '5 documentos' js/referral-practice-update-20260811.js
+          grep -q 'qual foi a justificativa regulatória mais recente' js/referral-practice-update-20260811.js
+          grep -q 'escolha objetiva entre dois fluxos' js/referral-practice-update-20260811.js
+          grep -q 'critério de elegibilidade do protocolo' js/referral-practice-update-20260811.js
+          grep -q 'relatório escolar atualizado' js/referral-practice-update-20260811.js
+          grep -q 'tratamento clínico prévio' js/referral-practice-update-20260811.js
+          grep -q 'avaliação clínica ou cirurgia de catarata' js/referral-practice-update-20260811.js
+          grep -q 'Perda visual progressiva' js/referral-practice-update-20260811.js
+
+      - name: Conferir anonimização
+        run: |
+          if grep -E -i 'DAVI MIGUEL|RODRIGO APARECIDO|ILDA DOS SANTOS|CATIA SIQUEIRA|WIDE AWAKE|Nome do Paciente|Nome da Mãe|CNS:|CPF:|Telefone\(s\)|Código da Solicitação' js/referral-practice-update-20260811.js; then
+            echo 'O sexto complemento contém possível dado identificável.'
+            exit 1
+          fi
+          if grep -E '[0-9]{11,15}' js/referral-practice-update-20260811.js; then
+            echo 'O sexto complemento contém possível identificador numérico.'
+            exit 1
+          fi
+
+      - name: Conferir separação entre protocolo e prática
+        run: |
+          grep -q 'Camada prática não normativa' js/referral-practice-update-20260811.js
+          grep -q 'não escolher automaticamente um subprotocolo' js/referral-practice-update-20260811.js
+          grep -q 'não limitar a resposta à burocracia da devolução' js/referral-practice-update-20260811.js
