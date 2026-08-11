@@ -1,4 +1,4 @@
-name = "guia-regulacao-ia"
+name = "yellow-wave-d0a1guia-regulacao-ia"
 main = "gemini-assistant.js"
 compatibility_date = "2026-07-28"
 workers_dev = true
@@ -15,5 +15,5 @@ AUTH_ENFORCE_AI = "false"
 #
 # AUTH_USERS_JSON deve ser uma lista JSON, por exemplo:
 # [{"username":"usuario.medico","password":"SENHA_FORTE","name":"Nome do médico","role":"medico"},{"username":"recepcao01","password":"SENHA_FORTE","name":"Recepção","role":"recepcao"}]
-# Perfis aceitos: medico, recepcao e admin.
+# Perfis aceitos atualmente: medico, recepcao e admin. O perfil admin é o nível máximo/desenvolvedor no HUB.
 # Depois que login e páginas protegidas estiverem validados, altere AUTH_ENFORCE_AI para "true".
