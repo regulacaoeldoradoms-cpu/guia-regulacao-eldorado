@@ -2,8 +2,8 @@
 
 (() => {
   const CONFIG = window.REGULATION_AI_CONFIG || {};
-  const MAX_QUESTION_LENGTH = Number(CONFIG.maxQuestionLength) || 800;
-  const MAX_HISTORY_MESSAGES = Number(CONFIG.maxHistoryMessages) || 6;
+  const MAX_QUESTION_LENGTH = Number(CONFIG.maxQuestionLength) || 3000;
+  const MAX_HISTORY_MESSAGES = Number(CONFIG.maxHistoryMessages) || 12;
   const history = [];
   let initialized = false;
   let busy = false;
@@ -12,8 +12,27 @@
     chat: '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg>',
     close: '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>',
     send: '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>',
-    assistant: '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="13" rx="3"/><path d="M9 10h.01M15 10h.01M8 15h8M12 3v3"/></svg>'
+    assistant: '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3c.7 4.5 3.5 7.3 8 8-4.5.7-7.3 3.5-8 8-.7-4.5-3.5-7.3-8-8 4.5-.7 7.3-3.5 8-8z"/></svg>'
   };
+
+  const REGULATOR_MODE_INSTRUCTION = [
+    'MODO DE PRÉ-REGULAÇÃO CONVERSACIONAL DO GUIA MÉDICO.',
+    'Você é um SIMULADOR DE RACIOCÍNIO REGULATÓRIO para apoiar médicos na qualificação de encaminhamentos. Converse como um médico regulador experiente faria durante uma pré-análise, mas nunca se apresente como regulador oficial e nunca emita autorização, negativa oficial ou classificação de risco real.',
+    'Use prioritariamente a base protocolar oficial enviada no contexto. A experiência de devoluções reais aparece como práticaRegulatoria ou em blocos identificados como aplicação prática/não normativa: use-a para antecipar dúvidas e devoluções, mas nunca transforme uma exigência isolada em regra universal.',
+    'Antes de perguntar qualquer coisa, reconheça o que o médico JÁ informou. Não repita perguntas respondidas na mensagem atual ou no histórico da conversa.',
+    'Se o médico trouxer um caso ou encaminhamento: identifique especialidade/procedimento e sistema quando possível; verifique elegibilidade, suficiência clínica, exames/documentos, fluxo correto e segurança clínica. Se o sistema fizer diferença e não estiver claro, pergunte qual é.',
+    'Conduza a conversa em etapas. Quando faltarem dados essenciais, faça no máximo 3 perguntas objetivas por resposta e aguarde. Não despeje uma lista longa de requisitos de uma vez.',
+    'Separe sempre: (1) protocolo oficial; (2) prática regulatória observada; (3) informação que pode ser relatada pelo paciente/responsável; (4) informação que exige avaliação profissional, quando isso for relevante.',
+    'Informações como exame físico/neurológico, estado mental formal, hipótese diagnóstica, lesão elementar, medida precisa, suspeita de câncer, indicação cirúrgica, interpretação de exames, mudança de tratamento e classificação de risco exigem profissional habilitado. Não invente nem peça que o paciente produza esses dados.',
+    'Se houver sinal potencialmente incompatível com fila eletiva, destaque ATENÇÃO CLÍNICA e diga que a segurança de aguardar precisa ser avaliada imediatamente pela equipe responsável. Não determine sozinho uma classificação de risco.',
+    'Em solicitações devolvidas, leia a cronologia: a justificativa mais recente prevalece; pendências anteriores já corrigidas não devem reaparecer como faltantes, salvo nova exigência.',
+    'Não recomende cancelamento e reinserção automaticamente. Se houver troca de fluxo, lembre que é preciso verificar perda de data, posição ou classificação.',
+    'Quando houver informação suficiente para uma síntese, use um PARECER SIMULADO com apenas uma destas categorias: 🟢 Encaminhamento bem qualificado; 🟡 Necessita complementação; 🟠 Conferir fluxo/procedimento; 🔴 Atenção clínica. Nunca escreva APROVADO, AUTORIZADO, NEGADO ou RECUSADO como decisão da IA.',
+    'Se o caso estiver bem qualificado, diga apenas que não identificou pendência evidente na base consultada; não garanta que o regulador real aceitará.',
+    'Se a pergunta for apenas factual (idade, disponibilidade, exame obrigatório, via de acesso), responda diretamente e de forma curta, sem forçar uma entrevista.',
+    'Mantenha continuidade entre as mensagens: trate respostas curtas do médico como complementação do caso em andamento e não reinicie a análise.',
+    'Não exponha dados identificáveis. Se houver dado pessoal, oriente a anonimizar.'
+  ].join('\n');
 
   const STOP_WORDS = new Set([
     'para', 'com', 'sem', 'uma', 'uns', 'das', 'dos', 'que', 'qual', 'quais', 'como', 'pelo', 'pela',
@@ -70,7 +89,7 @@
       const category = normalizeText(protocol.categoria);
       const tags = normalizeText(asArray(protocol.tags).join(' '));
       const searchText = protocol._searchText || normalizeText(JSON.stringify(protocol));
-      let score = protocol.id === selectedId ? 18 : 0;
+      let score = protocol.id === selectedId ? 30 : 0;
       for (const term of terms) {
         if (name === term) score += 20;
         else if (name.includes(term)) score += 12;
@@ -83,14 +102,38 @@
   }
 
   function subprotocolContext(value) {
-    return asArray(value).slice(0, 10).map((subprotocol) => ({
+    return asArray(value).slice(0, 12).map((subprotocol) => ({
       titulo: String(subprotocol.titulo || 'Condição específica').slice(0, 300),
-      criterios: textItems(subprotocol.quando, 14),
-      informacoesObrigatorias: textItems(subprotocol.obrigatorias, 16),
-      examesObrigatorios: textItems(subprotocol.examesObrigatorios, 16),
-      examesCondicionais: textItems(subprotocol.condicionais, 16),
-      recomendadosQuandoDisponiveis: textItems(subprotocol.complementares, 16)
+      criterios: textItems(subprotocol.quando, 16),
+      informacoesObrigatorias: textItems(subprotocol.obrigatorias, 18),
+      examesObrigatorios: textItems(subprotocol.examesObrigatorios, 18),
+      examesCondicionais: textItems(subprotocol.condicionais, 18),
+      recomendadosQuandoDisponiveis: textItems(subprotocol.complementares, 18)
     }));
+  }
+
+  function practicalContext(protocol) {
+    let guidance = protocol?.practicalGuidance;
+    if (!guidance && typeof window.getReferralPracticalGuidance === 'function') {
+      try { guidance = window.getReferralPracticalGuidance(protocol); } catch (_) { guidance = null; }
+    }
+    if (!guidance) return null;
+    return {
+      natureza: 'Camada prática não normativa derivada de devoluções regulatórias anonimizadas.',
+      perfisRelacionados: textItems(guidance.labels, 10, 300),
+      motivosRecorrentesDeDevolucao: textItems(guidance.returns, 14),
+      qualificacaoDaHistoria: textItems(guidance.history, 12),
+      exameEAvaliacaoProfissional: textItems(guidance.examination, 10),
+      tratamentoEMedicamentos: textItems(guidance.treatment, 10),
+      examesEDocumentosNaPratica: textItems(guidance.investigations, 12),
+      alertasDeSeguranca: textItems(guidance.safety, 10),
+      podeVirDoPacienteOuResponsavel: textItems(guidance.patientReportable, 10),
+      exigeProfissionalHabilitado: textItems(guidance.professionalOnly, 10),
+      dependeDoCasoNaoUniversalizar: textItems(guidance.caseDependent, 12),
+      politicaDeResposta: textItems(guidance.methodology?.responsePolicy, 14),
+      limitacao: String(guidance.methodology?.limitation || '').slice(0, 1000),
+      atualizadaEm: guidance.updatedAt || null
+    };
   }
 
   function protocolContext(protocol) {
@@ -111,6 +154,7 @@
       elementosPriorizacao: textItems(protocol.ajudaPriorizacao),
       alertas: textItems(protocol.alertas),
       subprotocolos: subprotocolContext(protocol.subprotocolos),
+      praticaRegulatoria: practicalContext(protocol),
       fontes: textItems(protocol.fontes, 8, 500),
       ultimaConferencia: protocol.ultimaConferencia || '28/07/2026'
     };
@@ -118,8 +162,11 @@
 
   function requestContext(question) {
     const ranked = rankProtocols(question);
+    const current = typeof state !== 'undefined' ? state.selected : null;
     let selected = ranked.filter((item) => item.score > 0).slice(0, 4).map((item) => item.protocol);
+    if (current && !selected.some((protocol) => protocol.id === current.id)) selected.unshift(current);
     if (!selected.length) selected = ranked.slice(0, 2).map((item) => item.protocol);
+    selected = selected.slice(0, 4);
     return {
       protocols: selected.map(protocolContext),
       catalog: protocols().map((protocol) => ({
@@ -129,7 +176,9 @@
         situacaoTeleconsulta: teleconsultStatus(protocol),
         ultimaConferencia: protocol.ultimaConferencia || '28/07/2026'
       })),
-      selectedProtocolId: typeof state !== 'undefined' ? state.selected?.id || null : null
+      selectedProtocolId: current?.id || null,
+      selectedProtocolName: current?.nome || null,
+      practiceKnowledgeVersion: window.REFERRAL_PRACTICE_GUIDANCE?.version || null
     };
   }
 
@@ -181,6 +230,11 @@
       }
     }
 
+    const practical = practicalContext(match);
+    if (/devol|regulad|analise|análise|qualificar|falt/.test(normalizedQuestion) && practical) {
+      answer += bulletSection('Prática regulatória observada — não normativa', practical.motivosRecorrentesDeDevolucao.slice(0, 5));
+    }
+
     answer += bulletSection('Atenção: situações que não devem aguardar fila ambulatorial', textItems(match.alertas, 4));
     const sources = textItems(match.fontes, 4, 500).join(' · ') || 'base de protocolos do guia';
     answer += `\n\nFonte consultada: ${sources}. Última conferência: ${match.ultimaConferencia || '28/07/2026'}.`;
@@ -207,19 +261,28 @@
     if (input) input.disabled = value;
   }
 
+  function regulatorQuestion(question, context) {
+    const selected = context.selectedProtocolName ? `\nPROTOCOLO ATUALMENTE ABERTO NO GUIA: ${context.selectedProtocolName}.` : '';
+    return `${REGULATOR_MODE_INSTRUCTION}${selected}\n\nMENSAGEM DO MÉDICO:\n${question}`;
+  }
+
   async function askGemini(question, context) {
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 30000);
+    const timeout = window.setTimeout(() => controller.abort(), 45000);
     try {
       const response = await fetch(CONFIG.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal,
         body: JSON.stringify({
-          question,
+          question: regulatorQuestion(question, context),
+          originalQuestion: question,
+          assistantMode: CONFIG.mode || 'pre_regulation_simulator',
           protocols: context.protocols,
           catalog: context.catalog,
           selectedProtocolId: context.selectedProtocolId,
+          selectedProtocolName: context.selectedProtocolName,
+          practiceKnowledgeVersion: context.practiceKnowledgeVersion,
           history: history.slice(-MAX_HISTORY_MESSAGES)
         })
       });
@@ -237,20 +300,20 @@
     const cleanQuestion = String(question || '').trim().slice(0, MAX_QUESTION_LENGTH);
     if (!cleanQuestion) return;
     if (containsSensitiveData(cleanQuestion)) {
-      addMessage('assistant', 'Não envie nome, CPF, Cartão SUS, telefone, endereço, prontuário ou outros dados que identifiquem o paciente. Reformule a pergunta de forma anônima.', 'error');
+      addMessage('assistant', 'Não envie nome, CPF, Cartão SUS, telefone, endereço, prontuário ou outros dados que identifiquem o paciente. Remova os identificadores e envie apenas o conteúdo clínico necessário.', 'error');
       return;
     }
 
     addMessage('user', cleanQuestion);
     history.push({ role: 'user', text: cleanQuestion });
     setBusy(true);
-    const loading = addMessage('assistant', CONFIG.endpoint ? 'Consultando os protocolos com o Gemini...' : 'Consultando os protocolos locais...', 'loading');
+    const loading = addMessage('assistant', CONFIG.endpoint ? 'Fazendo a pré-análise regulatória com o Gemini...' : 'Consultando os protocolos locais...', 'loading');
     try {
       const context = requestContext(cleanQuestion);
       const answer = CONFIG.endpoint ? await askGemini(cleanQuestion, context) : localAnswer(cleanQuestion, true);
       loading?.remove();
       addMessage('assistant', answer);
-      history.push({ role: 'assistant', text: answer.slice(0, 4000) });
+      history.push({ role: 'assistant', text: answer.slice(0, 7000) });
     } catch (error) {
       loading?.remove();
       const fallback = localAnswer(cleanQuestion, false);
@@ -283,32 +346,32 @@
     initialized = true;
     const wrapper = document.createElement('div');
     wrapper.innerHTML = `
-      <button class="ai-launcher" id="aiLauncher" type="button" aria-label="Abrir assistente dos protocolos" aria-controls="aiChat" aria-expanded="false">${SVG.chat}<span>Consultar protocolos</span></button>
+      <button class="ai-launcher" id="aiLauncher" type="button" aria-label="Abrir pré-regulação com inteligência artificial" aria-controls="aiChat" aria-expanded="false">${SVG.chat}<span>Pré-regulação com IA</span></button>
       <section class="ai-chat" id="aiChat" role="dialog" aria-modal="false" aria-labelledby="aiChatTitle" hidden>
         <header class="ai-chat-header">
-          <div class="ai-chat-title">${SVG.assistant}<div><h2 id="aiChatTitle">Assistente dos Protocolos</h2><p>Respostas limitadas à base técnica cadastrada</p></div></div>
+          <div class="ai-chat-title">${SVG.assistant}<div><h2 id="aiChatTitle">Pré-regulação com Gemini</h2><p>Simulação baseada em protocolo + prática regulatória</p></div></div>
           <button class="ai-close" id="aiClose" type="button" aria-label="Fechar assistente">${SVG.close}</button>
         </header>
-        <div class="ai-privacy-note">Não informe nome, CPF, Cartão SUS, telefone, endereço ou número de prontuário. Use somente perguntas gerais ou casos anonimizados.</div>
-        <span class="ai-mode ${CONFIG.endpoint ? 'connected' : ''}" id="aiMode">${CONFIG.endpoint ? 'Gemini conectado' : 'Consulta local'}</span>
+        <div class="ai-privacy-note">Use casos anonimizados. Não informe nome, CPF, Cartão SUS, telefone, endereço, prontuário ou outro identificador.</div>
+        <span class="ai-mode ${CONFIG.endpoint ? 'connected' : ''}" id="aiMode">${CONFIG.endpoint ? 'Gemini · modo pré-regulação' : 'Consulta local'}</span>
         <div class="ai-messages" id="aiMessages" aria-live="polite">
           <div class="ai-suggestions" id="aiSuggestions">
-            <button class="ai-suggestion" type="button">Dermatologia está disponível por teleconsulta?</button>
-            <button class="ai-suggestion" type="button">Qual a idade máxima para Neuropediatria?</button>
-            <button class="ai-suggestion" type="button">Quais exames são exigidos para Ortopedia de ombro?</button>
+            <button class="ai-suggestion" type="button">Quero fazer uma pré-análise de um encaminhamento. Me conduza como regulador.</button>
+            <button class="ai-suggestion" type="button">Vou colar um encaminhamento anonimizado. Analise o que já está adequado e pergunte só o que faltar.</button>
+            <button class="ai-suggestion" type="button">Quero conferir se escolhi a especialidade e o fluxo corretos.</button>
           </div>
         </div>
         <form class="ai-form" id="aiForm">
           <div class="ai-input-wrap">
-            <textarea class="ai-input" id="aiInput" rows="1" maxlength="${MAX_QUESTION_LENGTH}" placeholder="Pergunte sobre especialidade, idade, exames ou via de acesso" aria-label="Pergunta para o assistente"></textarea>
+            <textarea class="ai-input" id="aiInput" rows="1" maxlength="${MAX_QUESTION_LENGTH}" placeholder="Descreva o caso ou cole o encaminhamento anonimizado" aria-label="Mensagem para a pré-regulação"></textarea>
             <div class="ai-counter"><span id="aiCounter">0</span>/${MAX_QUESTION_LENGTH}</div>
           </div>
-          <button class="ai-send" id="aiSend" type="submit" aria-label="Enviar pergunta">${SVG.send}</button>
+          <button class="ai-send" id="aiSend" type="submit" aria-label="Enviar mensagem">${SVG.send}</button>
         </form>
       </section>`;
     document.body.append(...wrapper.children);
 
-    addMessage('assistant', 'Consulte requisitos, exames, faixa etária, disponibilidade e via de acesso. As respostas não substituem avaliação clínica nem análise regulatória.');
+    addMessage('assistant', 'Posso fazer uma pré-análise como um regulador faria: reconheço o que já está adequado, confiro protocolo e fluxo, uso as devoluções reais como experiência prática e faço poucas perguntas por vez sobre o que realmente faltar. A decisão regulatória oficial continua sendo do profissional responsável.');
     document.getElementById('aiLauncher')?.addEventListener('click', openChat);
     document.getElementById('aiClose')?.addEventListener('click', closeChat);
     document.getElementById('aiSuggestions')?.addEventListener('click', (event) => {
@@ -321,7 +384,7 @@
       const counter = document.getElementById('aiCounter');
       if (counter) counter.textContent = String(input.value.length);
       input.style.height = 'auto';
-      input.style.height = `${Math.min(input.scrollHeight, 112)}px`;
+      input.style.height = `${Math.min(input.scrollHeight, 160)}px`;
     });
     input?.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
