@@ -51,14 +51,14 @@
 
     launcher.querySelector('svg')?.remove();
     launcher.prepend(createGeminiLogo('ai-gemini-launcher-logo'));
-    launcher.setAttribute('aria-label', 'Abrir assistente com base nos protocolos');
+    launcher.setAttribute('aria-label', 'Abrir pré-regulação com Gemini');
 
     titleContainer.querySelector('svg')?.remove();
     titleContainer.prepend(createGeminiLogo('ai-gemini-header-logo'));
-    title.textContent = 'Assistente de Protocolos';
+    title.textContent = 'Pré-regulação com Gemini';
 
     const subtitle = titleContainer.querySelector('p');
-    if (subtitle) subtitle.textContent = 'Integração Gemini para consulta da base técnica';
+    if (subtitle) subtitle.textContent = 'Simulação baseada em protocolo + prática regulatória';
 
     const provider = document.createElement('span');
     provider.className = 'ai-provider-status';
