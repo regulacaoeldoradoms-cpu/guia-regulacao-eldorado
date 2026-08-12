@@ -66,7 +66,9 @@
   function checkboxControl(type, checked) {
     const label = document.createElement('label');
     label.className = `fast-check ${type === 'mandatory' ? 'fast-check-primary' : 'fast-check-optional'}`;
-    label.title = type === 'mandatory' ? 'Marcar quando o paciente trouxe este item' : 'Marcar quando o paciente já tiver este item';
+    if (type === 'mandatory') label.title = 'Marcar quando este item obrigatório está presente';
+    else if (type === 'conditional') label.title = 'Marcar quando este item se aplica ao caso e foi apresentado';
+    else label.title = 'Marcar quando este item complementar estiver disponível';
 
     const input = document.createElement('input');
     input.type = 'checkbox';
@@ -125,6 +127,20 @@
     });
   }
 
+  function ensureLegend() {
+    if (detail.querySelector('.reception-checklist-legend') || !detail.querySelector('.reception-title')) return;
+    const legend = document.createElement('div');
+    legend.className = 'reception-checklist-legend';
+    legend.setAttribute('aria-label', 'Legenda do checklist');
+    legend.innerHTML = `
+      <span data-kind="mandatory">Obrigatório por padrão</span>
+      <span data-kind="conditional">Depende do caso</span>
+      <span data-kind="available">Complementar</span>`;
+    const guide = detail.querySelector('.reception-simple-guide');
+    if (guide) guide.insertAdjacentElement('afterend', legend);
+    else detail.querySelector('.reception-meta')?.insertAdjacentElement('afterend', legend);
+  }
+
   function simplifyInterface() {
     setText(detail.querySelector('.reception-kicker'), 'Conferência na recepção');
 
@@ -135,20 +151,20 @@
 
     const mandatory = detail.querySelector('.reception-group[data-group="mandatory"]');
     if (mandatory) {
-      setText(mandatory.querySelector('h3'), 'O que precisa estar junto');
-      setText(mandatory.querySelector('header p'), 'Marque a caixinha quando o paciente trouxe o item ou quando ele já está anexado no pedido.');
+      setText(mandatory.querySelector('h3'), 'Exames e documentos obrigatórios por padrão');
+      setText(mandatory.querySelector('header p'), 'Estes itens são exigidos de forma padrão para esta solicitação. Marque quando o paciente apresentou ou quando já estiverem anexados.');
     }
 
     const conditional = detail.querySelector('.reception-group[data-group="conditional"]');
     if (conditional) {
-      setText(conditional.querySelector('h3'), 'Só se for para este caso');
-      setText(conditional.querySelector('header p'), 'Marque somente se esse item tiver relação com o motivo do encaminhamento e o paciente já tiver apresentado.');
+      setText(conditional.querySelector('h3'), 'Itens que dependem do caso');
+      setText(conditional.querySelector('header p'), 'Só devem ser cobrados quando a condição descrita no protocolo realmente se aplicar ao paciente.');
     }
 
     const available = detail.querySelector('.reception-group[data-group="available"]');
     if (available) {
-      setText(available.querySelector('h3'), 'Se o paciente já tiver');
-      setText(available.querySelector('header p'), 'Se ele já tiver esse documento ou exame, marque. Não precisa mandar buscar só por aparecer nesta parte.');
+      setText(available.querySelector('h3'), 'Itens complementares');
+      setText(available.querySelector('header p'), 'São úteis quando já existem ou estão disponíveis, mas não devem ser tratados como obrigatórios por padrão.');
     }
 
     detail.querySelectorAll('.reception-group').forEach((group) => {
@@ -157,20 +173,22 @@
 
     const scope = detail.querySelector('.reception-scope-note');
     if (scope) {
-      const html = '<strong>Importante:</strong> aqui você só confere se o papel, exame, laudo, imagem ou relatório foi apresentado. <strong>Não precisa entender o resultado, avaliar o paciente ou decidir se o caso é urgente.</strong> Se tiver dúvida, peça ajuda ao Setor de Regulação.';
+      const html = '<strong>Importante:</strong> a recepção confere se as informações exigidas estão escritas no encaminhamento e se os documentos, exames, laudos ou imagens foram apresentados. <strong>Não precisa interpretar o conteúdo, avaliar o paciente ou decidir se o caso é urgente.</strong> Se tiver dúvida, peça ajuda ao Setor de Regulação.';
       if (scope.innerHTML !== html) scope.innerHTML = html;
     }
 
     if (!detail.querySelector('.reception-simple-guide') && detail.querySelector('.reception-title')) {
       const guide = document.createElement('div');
       guide.className = 'portal-note info reception-simple-guide';
-      guide.innerHTML = '<strong>Como usar:</strong> 1) escolha a especialidade; 2) marque o que o paciente trouxe; 3) se faltar alguma coisa, imprima a orientação para ele providenciar.';
+      guide.innerHTML = '<strong>Como usar:</strong> 1) escolha a especialidade e, quando houver, o motivo; 2) confira primeiro os itens vermelhos, que são obrigatórios; 3) depois verifique os itens que dependem do caso e os complementares; 4) marque o que já está presente e imprima a orientação se faltar algo obrigatório.';
       detail.querySelector('.reception-meta')?.insertAdjacentElement('afterend', guide);
     }
 
+    ensureLegend();
+
     const top = document.getElementById('clearReceptionChecklist');
     const bottom = document.getElementById('clearReceptionChecklistBottom');
-    setText(top, '✓ Marcar tudo que precisa');
+    setText(top, '✓ Marcar obrigatórios presentes');
     setText(bottom, 'Desmarcar tudo');
   }
 
@@ -211,8 +229,8 @@
     }
 
     if (state.missingMandatory.length) {
-      setText(title, `${state.missingMandatory.length} item(ns) ainda não apresentado(s)`);
-      setText(text, `${state.presentedMandatory} de ${state.mandatory.length} item(ns) principais já foram marcados.`);
+      setText(title, `${state.missingMandatory.length} item(ns) obrigatório(s) ainda não apresentado(s)`);
+      setText(text, `${state.presentedMandatory} de ${state.mandatory.length} item(ns) obrigatório(s) já foram marcados.`);
       if (printButton) {
         printButton.disabled = false;
         setText(printButton, 'Imprimir o que falta');
@@ -220,11 +238,11 @@
       return;
     }
 
-    setText(title, 'Tudo certo');
-    setText(text, 'Todos os itens principais foram marcados como apresentados.');
+    setText(title, 'Obrigatórios conferidos');
+    setText(text, 'Todos os itens obrigatórios por padrão foram marcados como presentes. Confira separadamente os itens que dependem do caso.');
     if (printButton) {
       printButton.disabled = true;
-      setText(printButton, 'Nada faltando');
+      setText(printButton, 'Nada obrigatório faltando');
     }
   }
 
