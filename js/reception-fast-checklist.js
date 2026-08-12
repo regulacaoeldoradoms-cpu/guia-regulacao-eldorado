@@ -68,9 +68,9 @@
     const mandatory = detail.querySelector('.reception-group[data-group="mandatory"] > header p');
     const conditional = detail.querySelector('.reception-group[data-group="conditional"] > header p');
     const available = detail.querySelector('.reception-group[data-group="available"] > header p');
-    if (mandatory) mandatory.textContent = 'Marque a caixa somente quando o paciente trouxe o item ou ele já está anexado.';
-    if (conditional) conditional.textContent = 'Marque somente quando o item se aplicar ao caso e tiver sido apresentado. Desmarcado não gera pendência automática.';
-    if (available) available.textContent = 'Marque somente se o paciente já possuir ou tiver apresentado. Estes itens não são cobrados automaticamente.';
+    if (mandatory) mandatory.textContent = 'Marque a caixinha quando o paciente trouxe o item ou quando ele já está anexado no pedido.';
+    if (conditional) conditional.textContent = 'Confira somente se esse item tiver relação com o motivo escrito no encaminhamento.';
+    if (available) available.textContent = 'Se o paciente já tiver esse documento ou exame, marque. Não precisa mandar buscar só por aparecer nesta parte.';
   }
 
   function buttonLabels() {
@@ -107,30 +107,30 @@
     summary.classList.toggle('has-missing', state.anyMarked && state.missingMandatory.length > 0);
 
     if (!state.anyMarked) {
-      title.textContent = 'Orientação completa disponível';
-      text.textContent = 'Nenhum item marcado. A impressão incluirá a lista completa para conferência, separando obrigatórios e itens conforme o caso.';
+      title.textContent = 'Pode imprimir a lista completa';
+      text.textContent = 'Nenhuma caixinha marcada. A impressão mostrará tudo o que o paciente pode precisar levar.';
       if (printButton) {
         printButton.disabled = false;
-        printButton.textContent = 'Imprimir orientação completa';
+        printButton.textContent = 'Imprimir lista completa';
       }
       return;
     }
 
     if (state.missingMandatory.length) {
-      title.textContent = `${state.missingMandatory.length} item(ns) obrigatório(s) ainda não marcado(s)`;
-      text.textContent = `${state.presentedMandatory} de ${state.mandatory.length} item(ns) obrigatório(s) apresentados.`;
+      title.textContent = `${state.missingMandatory.length} item(ns) ainda sem marcar`;
+      text.textContent = 'Esses são os itens obrigatórios que ainda não foram marcados como apresentados.';
       if (printButton) {
         printButton.disabled = false;
-        printButton.textContent = 'Imprimir orientação do que falta';
+        printButton.textContent = 'Imprimir o que está faltando';
       }
       return;
     }
 
-    title.textContent = 'Conferência concluída';
-    text.textContent = 'Todos os itens obrigatórios foram marcados como apresentados.';
+    title.textContent = 'Tudo certo';
+    text.textContent = 'Os itens obrigatórios foram marcados como apresentados.';
     if (printButton) {
       printButton.disabled = true;
-      printButton.textContent = 'Nenhum obrigatório faltando';
+      printButton.textContent = 'Nada obrigatório faltando';
     }
   }
 
