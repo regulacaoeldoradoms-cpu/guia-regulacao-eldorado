@@ -7,7 +7,7 @@
   <title>Minha conta | Portal da Regulação</title>
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/portal.css?v=20260811-2">
-  <link rel="stylesheet" href="/css/account-admin.css?v=20260811-1">
+  <link rel="stylesheet" href="/css/account-admin.css?v=20260812-2">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
@@ -27,15 +27,38 @@
     <main class="portal-main">
       <section class="portal-hero">
         <div class="portal-hero-copy">
-          <span class="portal-eyebrow">Segurança da conta</span>
-          <h2>Altere sua senha sem acessar a Cloudflare.</h2>
-          <p>A nova senha passa a valer imediatamente e as sessões anteriores da sua conta deixam de ser válidas.</p>
+          <span class="portal-eyebrow">Sua conta</span>
+          <h2>Gerencie seu perfil e sua senha.</h2>
+          <p>Você pode trocar sua senha por aqui sempre que precisar e também adicionar uma foto ao seu perfil.</p>
         </div>
       </section>
+
+      <div class="portal-note info first-access-note" id="firstAccessNotice" hidden>
+        <strong>Primeiro acesso:</strong> escolha sua nova senha. Depois de salvar, você será levado automaticamente para o HUB.
+      </div>
+
       <section class="account-layout" style="margin-top:24px">
+        <article class="account-card profile-card">
+          <div class="profile-editor">
+            <div class="profile-avatar-preview" id="profileAvatarPreview" aria-label="Foto de perfil">
+              <span id="profileAvatarInitials">?</span>
+            </div>
+            <div class="profile-editor-copy">
+              <h2>Foto do perfil</h2>
+              <p>Escolha uma foto sua. Ela aparecerá ao lado do seu nome nas páginas do portal.</p>
+              <input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+              <div class="account-actions">
+                <button class="portal-button secondary" id="chooseProfilePhoto" type="button">Escolher foto</button>
+                <button class="portal-button danger" id="removeProfilePhoto" type="button" hidden>Remover foto</button>
+              </div>
+              <div class="account-status" id="profileStatus" role="status" aria-live="polite"></div>
+            </div>
+          </div>
+        </article>
+
         <article class="account-card">
           <h2>Alterar senha</h2>
-          <p>Escolha a senha que preferir. O sistema não exige combinação de letras, números ou símbolos.</p>
+          <p>Escolha a senha que preferir. A nova senha passa a valer assim que for salva.</p>
           <form id="changePasswordForm" class="account-form" autocomplete="off">
             <div class="portal-field"><label for="currentPassword">Senha atual</label><input id="currentPassword" type="password" autocomplete="current-password" required maxlength="160"></div>
             <div class="portal-field"><label for="newPassword">Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" required maxlength="160"></div>
@@ -48,7 +71,7 @@
     </main>
   </div>
   <script src="/js/auth-config.js?v=20260811-2"></script>
-  <script src="/js/auth-client.js?v=20260811-2"></script>
-  <script src="/js/account.js?v=20260812-1"></script>
+  <script src="/js/auth-client.js?v=20260812-3"></script>
+  <script src="/js/account.js?v=20260812-2"></script>
 </body>
 </html>
