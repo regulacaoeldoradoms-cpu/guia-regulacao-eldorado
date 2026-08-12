@@ -16,6 +16,13 @@
       script.dataset.portalChatScript = 'true';
       document.body.appendChild(script);
     }
+    if (!document.querySelector('script[data-portal-chat-switch-optimizer]')) {
+      const optimizer = document.createElement('script');
+      optimizer.src = '/js/portal-chat-switch-optimizer.js?v=20260812-1';
+      optimizer.defer = true;
+      optimizer.dataset.portalChatSwitchOptimizer = 'true';
+      document.body.appendChild(optimizer);
+    }
   }
 
   function applyPortalNav() {
