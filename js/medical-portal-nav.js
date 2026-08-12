@@ -5,13 +5,13 @@
     if (!document.querySelector('link[data-portal-chat-style]')) {
       const style = document.createElement('link');
       style.rel = 'stylesheet';
-      style.href = '/css/portal-chat.css?v=20260812-1';
+      style.href = '/css/portal-chat.css?v=20260812-2';
       style.dataset.portalChatStyle = 'true';
       document.head.appendChild(style);
     }
     if (!document.querySelector('script[data-portal-chat-script]')) {
       const script = document.createElement('script');
-      script.src = '/js/portal-chat.js?v=20260812-1';
+      script.src = '/js/portal-chat.js?v=20260812-2';
       script.defer = true;
       script.dataset.portalChatScript = 'true';
       document.body.appendChild(script);
