@@ -1,6 +1,38 @@
 'use strict';
 
 (() => {
+  let chatRootObserver = null;
+  let chatInsertObserver = null;
+
+  function syncFloatingTools() {
+    const root = document.getElementById('portalChatRoot');
+    document.body.classList.toggle('portal-chat-present', Boolean(root));
+    document.body.classList.toggle('portal-chat-open', Boolean(root?.classList.contains('open')));
+  }
+
+  function attachChatRootObserver() {
+    const root = document.getElementById('portalChatRoot');
+    if (!root) return false;
+
+    syncFloatingTools();
+    if (chatRootObserver) chatRootObserver.disconnect();
+    chatRootObserver = new MutationObserver(syncFloatingTools);
+    chatRootObserver.observe(root, { attributes: true, attributeFilter: ['class'] });
+    return true;
+  }
+
+  function watchFloatingTools() {
+    if (attachChatRootObserver()) return;
+
+    if (chatInsertObserver) chatInsertObserver.disconnect();
+    chatInsertObserver = new MutationObserver(() => {
+      if (!attachChatRootObserver()) return;
+      chatInsertObserver.disconnect();
+      chatInsertObserver = null;
+    });
+    chatInsertObserver.observe(document.body, { childList: true });
+  }
+
   function ensureChatAssets() {
     if (!document.querySelector('link[data-portal-chat-style]')) {
       const style = document.createElement('link');
@@ -48,6 +80,7 @@
       }
     }
     ensureChatAssets();
+    watchFloatingTools();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyPortalNav, { once: true });
