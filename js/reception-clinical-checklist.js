@@ -57,7 +57,7 @@
 
   function loadProtocols() {
     if (!protocolsPromise) {
-      protocolsPromise = fetch(`${DATA_SOURCE}?reception-clinical-checklist=2.0`, { cache: 'no-store' })
+      protocolsPromise = fetch(`${DATA_SOURCE}?reception-clinical-checklist=2.1`, { cache: 'no-store' })
         .then((response) => {
           if (!response.ok) throw new Error(`Falha ao carregar protocolos (${response.status}).`);
           return response.text();
@@ -107,8 +107,8 @@
           <option value="ok">Consta no encaminhamento</option>
         </select>
         <div class="fast-check-controls">
-          <label class="fast-check fast-check-primary" title="Marcar quando esta informação consta no encaminhamento">
-            <input type="checkbox" aria-label="Marcar quando esta informação consta no encaminhamento">
+          <label class="fast-check fast-check-primary" title="Marcar quando esta informação obrigatória consta no encaminhamento">
+            <input type="checkbox" aria-label="Marcar quando esta informação obrigatória consta no encaminhamento">
             <span class="fast-check-mark" aria-hidden="true"></span>
           </label>
         </div>
@@ -139,7 +139,7 @@
 
     const guide = detail.querySelector('.reception-simple-guide');
     if (guide) {
-      const html = '<strong>Como usar:</strong> 1) escolha a especialidade e, quando houver, o motivo do encaminhamento; 2) marque o que já consta no encaminhamento e o que o paciente apresentou; 3) se faltar alguma informação ou documento, imprima a orientação.';
+      const html = '<strong>Como usar:</strong> 1) escolha a especialidade e, quando houver, o motivo do encaminhamento; 2) confira primeiro os itens vermelhos, que são obrigatórios por padrão; 3) depois verifique o que depende do caso e o que é complementar; 4) marque o que já consta ou foi apresentado e imprima a orientação se faltar algo obrigatório.';
       if (guide.innerHTML !== html) guide.innerHTML = html;
     }
   }
@@ -163,14 +163,14 @@
       return;
     }
     if (missing.length) {
-      if (title) title.textContent = `${missing.length} item(ns) ainda não conferido(s)`;
-      if (text) text.textContent = `${principal.length - missing.length} de ${principal.length} item(ns) principais já constam ou foram apresentados.`;
+      if (title) title.textContent = `${missing.length} item(ns) obrigatório(s) ainda não conferido(s)`;
+      if (text) text.textContent = `${principal.length - missing.length} de ${principal.length} item(ns) obrigatório(s) já constam ou foram apresentados.`;
       if (button) { button.disabled = false; button.textContent = 'Imprimir o que falta'; }
       return;
     }
-    if (title) title.textContent = 'Tudo certo';
-    if (text) text.textContent = 'Todas as informações e itens principais foram marcados como presentes.';
-    if (button) { button.disabled = true; button.textContent = 'Nada faltando'; }
+    if (title) title.textContent = 'Obrigatórios conferidos';
+    if (text) text.textContent = 'Todas as informações e itens obrigatórios por padrão foram marcados como presentes. Confira separadamente os itens que dependem do caso.';
+    if (button) { button.disabled = true; button.textContent = 'Nada obrigatório faltando'; }
   }
 
   function bindClinicalRows(section) {
@@ -219,8 +219,8 @@
       section.dataset.signature = signature;
       section.innerHTML = `
         <header>
-          <h3>O que precisa estar escrito no encaminhamento</h3>
-          <p>Marque a caixinha quando a informação já estiver registrada. A recepção confere a presença da informação, sem interpretar ou avaliar clinicamente.</p>
+          <h3>Informações obrigatórias por padrão no encaminhamento</h3>
+          <p>Os itens desta seção devem constar no encaminhamento. Marque quando a informação estiver registrada; a recepção confere apenas a presença, sem interpretar ou avaliar clinicamente.</p>
         </header>
         <div class="reception-items">${items.map(rowHtml).join('')}</div>`;
 
