@@ -4,9 +4,8 @@ import { validatePortalSession } from './auth-management-flex.js';
 
 const MAX_AVATAR_DATA_URL = 220000;
 
-function jsonResponse(body, status, origin, allowed = true) {
+function baseHeaders(origin, allowed = true) {
   const headers = {
-    'Content-Type': 'application/json; charset=utf-8',
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'no-referrer'
@@ -15,7 +14,21 @@ function jsonResponse(body, status, origin, allowed = true) {
     headers['Access-Control-Allow-Origin'] = origin;
     headers.Vary = 'Origin';
   }
+  return headers;
+}
+
+function jsonResponse(body, status, origin, allowed = true) {
+  const headers = { ...baseHeaders(origin, allowed), 'Content-Type': 'application/json; charset=utf-8' };
   return new Response(JSON.stringify(body), { status, headers });
+}
+
+function preflight(origin, allowed) {
+  if (!allowed) return jsonResponse({ error: 'Origem não autorizada.' }, 403, origin, false);
+  const headers = baseHeaders(origin, true);
+  headers['Access-Control-Allow-Methods'] = 'GET, PATCH, OPTIONS';
+  headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type';
+  headers['Access-Control-Max-Age'] = '600';
+  return new Response(null, { status: 204, headers });
 }
 
 async function ensureAvatarColumn(env) {
@@ -46,6 +59,9 @@ export function isProfileApi(pathname) {
 }
 
 export async function handleProfileRoute(request, env, origin, originAllowed = true) {
+  if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
+  if (!originAllowed) return jsonResponse({ error: 'Origem não autorizada.' }, 403, origin, false);
+
   const user = await validatePortalSession(request, env, []);
   if (!user) return jsonResponse({ error: 'Sessão inválida ou expirada.' }, 401, origin, originAllowed);
   if (!env.AUTH_DB) return jsonResponse({ error: 'Banco de usuários ainda não disponível.' }, 503, origin, originAllowed);
