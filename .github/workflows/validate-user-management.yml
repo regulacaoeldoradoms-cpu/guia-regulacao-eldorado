@@ -16,6 +16,8 @@ jobs:
       - name: Validar sintaxe
         run: |
           node --check worker/auth-management.js
+          node --check worker/auth-management-flex.js
+          node --check worker/profile-photo.js
           node --check worker/index.js
           node --check js/auth-client.js
           node --check js/account.js
@@ -27,12 +29,24 @@ jobs:
           test -f conta/index.html
           test -f admin/usuarios/index.html
           test -f css/account-admin.css
+          test -f worker/profile-photo.js
           grep -q '/api/auth/change-password' worker/auth-management.js
           grep -q '/api/admin/users' worker/auth-management.js
           grep -q 'PBKDF2' worker/auth-management.js
           grep -q 'AUTH_DB' worker/auth-management.js
           grep -q 'session_version' worker/auth-management.js
           grep -q 'must_change_password' worker/auth-management.js
+          grep -q '/api/auth/profile' worker/profile-photo.js
+          grep -q 'avatar_data' worker/profile-photo.js
+          grep -q 'Access-Control-Allow-Methods' worker/profile-photo.js
+          grep -q 'updateProfilePhoto' js/auth-client.js
+          grep -q 'mountPortalAvatar' js/auth-client.js
+          grep -q "location.replace('/home/')" js/account.js
+          grep -q 'primeiro-acesso' js/account.js
+          grep -q 'Foto do perfil' conta/index.html
+          grep -q 'profilePhotoInput' conta/index.html
+          ! grep -qi 'Cloudflare' conta/index.html
+          grep -q 'auth-client.js?v=20260812-3' conta/index.html
           grep -q 'enforcement: true' js/auth-config.js
           grep -q 'AUTH_ENFORCE_AI = "true"' worker/wrangler.toml
           grep -q 'binding = "AUTH_DB"' worker/wrangler.toml
