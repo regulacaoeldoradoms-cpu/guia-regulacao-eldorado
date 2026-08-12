@@ -35,11 +35,11 @@
       <section class="account-layout" style="margin-top:24px">
         <article class="account-card">
           <h2>Alterar senha</h2>
-          <p>Use pelo menos 8 caracteres. Não compartilhe sua senha com outras pessoas.</p>
+          <p>Escolha a senha que preferir. O sistema não exige combinação de letras, números ou símbolos.</p>
           <form id="changePasswordForm" class="account-form" autocomplete="off">
             <div class="portal-field"><label for="currentPassword">Senha atual</label><input id="currentPassword" type="password" autocomplete="current-password" required maxlength="160"></div>
-            <div class="portal-field"><label for="newPassword">Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="160"><div class="password-meter">Mínimo de 8 caracteres.</div></div>
-            <div class="portal-field"><label for="confirmPassword">Confirmar nova senha</label><input id="confirmPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="160"></div>
+            <div class="portal-field"><label for="newPassword">Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" required maxlength="160"></div>
+            <div class="portal-field"><label for="confirmPassword">Confirmar nova senha</label><input id="confirmPassword" type="password" autocomplete="new-password" required maxlength="160"></div>
             <div class="account-actions"><button class="portal-button primary" id="changePasswordButton" type="submit">Salvar nova senha</button></div>
             <div class="account-status" id="accountStatus" role="status" aria-live="polite"></div>
           </form>
@@ -49,6 +49,6 @@
   </div>
   <script src="/js/auth-config.js?v=20260811-2"></script>
   <script src="/js/auth-client.js?v=20260811-2"></script>
-  <script src="/js/account.js?v=20260811-1"></script>
+  <script src="/js/account.js?v=20260812-1"></script>
 </body>
 </html>
