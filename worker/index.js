@@ -55,7 +55,14 @@ export default {
       }
     }
 
-    if (url.pathname === '/api/ia' && String(env.AUTH_ENFORCE_AI || '').toLowerCase() === 'true') {
+    // O navegador faz um preflight OPTIONS porque a chamada da IA usa Authorization.
+    // Esse preflight não carrega o Bearer token e precisa chegar ao aiWorker, que devolve
+    // os cabeçalhos CORS (Allow-Origin / Allow-Headers / Allow-Methods) corretamente.
+    if (
+      url.pathname === '/api/ia'
+      && request.method !== 'OPTIONS'
+      && String(env.AUTH_ENFORCE_AI || '').toLowerCase() === 'true'
+    ) {
       const user = await validatePortalSession(request, env, ['medico']);
       if (!user) return jsonError('Acesso médico necessário para utilizar a pré-regulação.', 403, origin, originAllowed);
     }
