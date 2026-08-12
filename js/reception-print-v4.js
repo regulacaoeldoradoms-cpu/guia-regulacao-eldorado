@@ -44,9 +44,18 @@
     return text.includes('neurologia pediatrica') || text.includes('neuroped') ? 'Neuropediatria' : (protocol?.nome || 'Solicitação regulada');
   }
 
+  function routeFor(protocol) {
+    const systems = protocol?.sistemas || {};
+    const routes = [];
+    if (systems.sisreg) routes.push('SISREG/CORE');
+    if (systems.digsus && systems.digsusStatus === 'disponivel') routes.push('DigSaúde MS');
+    if (systems.digsus && systems.digsusStatus === 'assincrona') routes.push('Discussão de conduta');
+    return routes.join(' · ') || 'Conferir fluxo';
+  }
+
   function loadProtocols() {
     if (!protocolsPromise) {
-      protocolsPromise = fetch(`${DATA_SOURCE}?patient-orientation=4.0`, { cache: 'no-store' })
+      protocolsPromise = fetch(`${DATA_SOURCE}?patient-orientation=4.1`, { cache: 'no-store' })
         .then((response) => {
           if (!response.ok) throw new Error(`Falha ao carregar protocolos (${response.status}).`);
           return response.text();
@@ -77,7 +86,7 @@
     const select = document.getElementById('receptionSubprotocol');
     const selectedIndex = select ? Number(select.value) : -1;
     const subprotocol = Number.isInteger(selectedIndex) && selectedIndex >= 0 ? arr(protocol.subprotocolos)[selectedIndex] || null : null;
-    return { protocol, subprotocol };
+    return { protocol, subprotocol, selectedIndex };
   }
 
   function officialData(protocol, subprotocol) {
@@ -106,19 +115,21 @@
     const universal = data.universal || {};
 
     const core = unique([
-      arr(universal.history).slice(0, 4),
-      arr(universal.treatment).slice(0, 3),
-      arr(universal.investigations).slice(0, 3)
+      arr(universal.history).slice(0, 5),
+      arr(universal.treatment).slice(0, 4),
+      arr(universal.investigations).slice(0, 4)
     ]);
 
     return {
       labels: unique(profiles.map((profile) => profile.label)),
+      observedReturns: profileField('returns').slice(0, 12),
       core,
       specific: unique([
         profileField('history'),
         profileField('examination'),
         profileField('treatment'),
-        profileField('investigations')
+        profileField('investigations'),
+        profileField('caseDependent')
       ]),
       patientReportable: unique([arr(universal.patientReportable), profileField('patientReportable')]),
       professionalOnly: unique([arr(universal.professionalOnly), profileField('professionalOnly')]),
@@ -140,13 +151,14 @@
   function practiceHtml(practice) {
     if (!practice) return '';
     const practicalPoints = unique([practice.core, practice.specific]);
-    if (!practicalPoints.length && !practice.patientReportable.length && !practice.professionalOnly.length) return '';
+    if (!practice.observedReturns.length && !practicalPoints.length && !practice.patientReportable.length && !practice.professionalOnly.length) return '';
     const profileText = practice.labels.length ? ` Áreas relacionadas identificadas no estudo: ${practice.labels.join(', ')}.` : '';
     return `
       <section class="practice-box">
         <h2>Pontos observados nas devoluções reais</h2>
         <p class="practice-warning"><strong>Importante:</strong> estes pontos vêm do estudo prático anonimizado de devoluções e ajudam a qualificar o encaminhamento. Eles não transformam uma exigência isolada em requisito oficial e devem ser aplicados somente quando fizerem sentido para o caso.${escapeHtml(profileText)}</p>
-        ${practicalPoints.length ? `<h3>Para reduzir risco de nova devolução</h3>${listHtml(practicalPoints)}` : ''}
+        ${practice.observedReturns.length ? `<h3>Devoluções observadas nesta área</h3>${listHtml(practice.observedReturns)}` : ''}
+        ${practicalPoints.length ? `<h3>Como qualificar para reduzir nova devolução</h3>${listHtml(practicalPoints)}` : ''}
         ${practice.patientReportable.length ? `<h3>Informações que o paciente ou responsável pode relatar</h3>${listHtml(practice.patientReportable)}` : ''}
         ${practice.professionalOnly.length ? `<h3>Informações que exigem avaliação profissional</h3>${listHtml(practice.professionalOnly)}` : ''}
       </section>`;
@@ -180,7 +192,7 @@
     .meta p { margin: 4px 0; font-size: 12px; line-height: 1.45; }
     .intro { margin: 14px 0 18px; padding: 13px 14px; border-left: 4px solid #0f7881; background: #f2fbfb; border-radius: 8px; font-size: 12px; line-height: 1.55; }
     .section { break-inside: avoid; margin: 18px 0 0; }
-    .section h2, .practice-box h2 { margin: 0 0 7px; color: #0d3157; font-size: 15px; }
+    .section h2, .practice-box h2, .safety h2 { margin: 0 0 7px; color: #0d3157; font-size: 15px; }
     .section-note { margin: 0 0 7px; color: #657c8d; font-size: 11px; line-height: 1.45; }
     ul { margin: 0; padding-left: 21px; }
     li { margin: 6px 0; font-size: 12.4px; line-height: 1.48; }
@@ -206,6 +218,7 @@
 
     <section class="meta">
       <p><strong>Especialidade/exame:</strong> ${escapeHtml(displayName(protocol))}</p>
+      <p><strong>Via de acesso:</strong> ${escapeHtml(routeFor(protocol))}</p>
       ${subprotocol?.titulo ? `<p><strong>Motivo/condição:</strong> ${escapeHtml(subprotocol.titulo)}</p>` : ''}
       ${protocol.faixaEtaria ? `<p><strong>Faixa etária do protocolo:</strong> ${escapeHtml(protocol.faixaEtaria)}</p>` : ''}
       ${protocol.solicitante ? `<p><strong>Profissional solicitante:</strong> ${escapeHtml(protocol.solicitante)}</p>` : ''}
@@ -215,6 +228,7 @@
     <div class="intro"><strong>Como usar esta orientação:</strong> leve ou mostre este documento na unidade de saúde responsável pelo encaminhamento. O profissional deve conferir os critérios, registrar as informações clínicas necessárias e solicitar os exames obrigatórios que se aplicarem. O paciente não precisa preencher exame físico, hipótese diagnóstica, interpretação de exames ou classificação de risco. A impressão não é obrigatória: o documento também pode ser mostrado na tela do celular.</div>
 
     ${!fullMode && missing.length ? sectionHtml('O que ainda precisa ser apresentado', missing.map((row) => row.item), 'Itens marcados pela recepção como ainda não apresentados.', 'missing') : ''}
+    ${protocol.fluxoLocal ? sectionHtml('Fluxo da solicitação', [protocol.fluxoLocal], 'Orientação operacional cadastrada para esta via de acesso.') : ''}
     ${sectionHtml('Critérios que o profissional deve confirmar', official.criteria, 'Confirme se o caso se enquadra nos critérios da especialidade ou do procedimento antes de enviar a solicitação.')}
     ${sectionHtml('Informações que devem constar no encaminhamento', official.clinical, 'Essas informações devem ser registradas pelo profissional solicitante; dados relatados pelo paciente devem ser identificados como relato.', 'mandatory')}
     ${sectionHtml('Exames e documentos obrigatórios', official.mandatoryExams, 'Devem acompanhar a solicitação quando o protocolo os classifica como obrigatórios.', 'mandatory')}
@@ -293,6 +307,10 @@
     const fullMode = button.id === COMPLETE_BUTTON_ID || !rows.some((row) => row.checked);
     try {
       const { protocol, subprotocol } = await currentProtocolContext();
+      if (arr(protocol.subprotocolos).length && !subprotocol) {
+        showError('Selecione primeiro o motivo / condição do encaminhamento. Assim a orientação inclui os requisitos específicos do caso sem pedir exames de outras condições.');
+        return;
+      }
       const html = printableHtml(protocol, subprotocol, rows, fullMode);
       try { printInPopup(html); }
       catch (_) {
