@@ -54,9 +54,15 @@ jobs:
           grep -q "portal-chat.css?v=20260812-2" conta/index.html
           grep -q "portal-chat.css?v=20260812-2" admin/usuarios/index.html
           grep -q "ensureChatAssets" js/medical-portal-nav.js
+          grep -q "watchFloatingTools" js/medical-portal-nav.js
+          grep -q "portal-chat-present" js/medical-portal-nav.js
+          grep -q "portal-chat-open" js/medical-portal-nav.js
           grep -q "portal-chat.js?v=20260812-2" js/medical-portal-nav.js
           grep -q "portal-chat.css?v=20260812-2" js/medical-portal-nav.js
           grep -q "portal-chat-switch-optimizer.js?v=20260812-1" js/medical-portal-nav.js
-          grep -q "medical-portal-nav.js?v=20260812-3" index.html
+          grep -q "portal-chat-present .ai-launcher" css/ai-assistant.css
+          grep -q "portal-chat-open .ai-launcher" css/ai-assistant.css
+          grep -q "ai-assistant.css?v=20260812-1" index.html
+          grep -q "medical-portal-nav.js?v=20260812-4" index.html
           grep -q 'M8 3h8v5h5v8h-5v5H8v-5H3V8h5z' index.html
           ! grep -q "portal-chat.js" login/index.html
