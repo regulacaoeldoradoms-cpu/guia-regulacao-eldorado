@@ -27,8 +27,8 @@
       show('A confirmação não corresponde à nova senha.', 'error');
       return;
     }
-    if (next.value.length < 8) {
-      show('A nova senha deve ter pelo menos 8 caracteres.', 'error');
+    if (!next.value.length) {
+      show('Informe a nova senha.', 'error');
       return;
     }
     button.disabled = true;
