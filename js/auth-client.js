@@ -39,6 +39,30 @@
     } catch (_) {}
   }
 
+  function initialsFor(user) {
+    const source = String(user?.name || user?.username || '?').trim();
+    const parts = source.split(/\s+/).filter(Boolean);
+    return ((parts[0]?.[0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || '?';
+  }
+
+  function mountPortalAvatar(user) {
+    const container = document.querySelector('.portal-user');
+    if (!container || !user) return;
+    let avatar = container.querySelector('.portal-profile-avatar');
+    if (!avatar) {
+      avatar = document.createElement('div');
+      avatar.className = 'portal-profile-avatar';
+      avatar.setAttribute('aria-label', `Foto de perfil de ${user.name || user.username || 'usuário'}`);
+      avatar.style.cssText = 'width:40px;height:40px;flex:0 0 40px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.55);box-shadow:0 4px 12px rgba(0,0,0,.16);font-size:.78rem;font-weight:900;color:#fff;background-size:cover;background-position:center;';
+      const meta = container.querySelector('.portal-user-meta');
+      if (meta) container.insertBefore(avatar, meta);
+      else container.prepend(avatar);
+    }
+    const photo = String(user.avatarDataUrl || '');
+    avatar.textContent = photo ? '' : initialsFor(user);
+    avatar.style.backgroundImage = photo ? `url("${photo}")` : 'none';
+  }
+
   async function api(path, options = {}) {
     if (!endpoint) throw new Error('Servidor de autenticação não configurado.');
     const token = getToken();
@@ -69,11 +93,25 @@
     if (!token) return null;
     try {
       const payload = await api('/api/auth/me', { method: 'GET' });
-      if (payload.user) saveSession(token, payload.user, persistentSession());
-      return payload.user || null;
+      let user = payload.user || null;
+      if (user) {
+        const profile = await api('/api/auth/profile', { method: 'GET' }).catch(() => null);
+        if (profile && Object.prototype.hasOwnProperty.call(profile, 'avatarDataUrl')) {
+          user = { ...user, avatarDataUrl: String(profile.avatarDataUrl || '') };
+        } else {
+          user = { ...user, avatarDataUrl: String(getCachedUser()?.avatarDataUrl || '') };
+        }
+        saveSession(token, user, persistentSession());
+        mountPortalAvatar(user);
+      }
+      return user;
     } catch (error) {
       if (error.status === 401 || error.status === 403) clearSession();
-      if (allowCached && error.status !== 401 && error.status !== 403) return getCachedUser();
+      if (allowCached && error.status !== 401 && error.status !== 403) {
+        const cached = getCachedUser();
+        if (cached) mountPortalAvatar(cached);
+        return cached;
+      }
       throw error;
     }
   }
@@ -85,13 +123,29 @@
   }
 
   async function changePassword(currentPassword, newPassword) {
+    const previous = getCachedUser() || {};
     const payload = await api('/api/auth/change-password', {
       method: 'POST',
       body: JSON.stringify({ currentPassword, newPassword })
     });
     if (!payload.token || !payload.user) throw new Error('Não foi possível renovar a sessão após a troca de senha.');
-    saveSession(payload.token, payload.user, persistentSession());
-    return payload.user;
+    const user = { ...payload.user, avatarDataUrl: String(previous.avatarDataUrl || '') };
+    saveSession(payload.token, user, persistentSession());
+    mountPortalAvatar(user);
+    return user;
+  }
+
+  async function updateProfilePhoto(avatarDataUrl) {
+    const payload = await api('/api/auth/profile', {
+      method: 'PATCH',
+      body: JSON.stringify({ avatarDataUrl: String(avatarDataUrl || '') })
+    });
+    const current = getCachedUser();
+    if (!current) return payload;
+    const user = { ...current, avatarDataUrl: String(payload.avatarDataUrl || '') };
+    saveSession(getToken(), user, persistentSession());
+    mountPortalAvatar(user);
+    return user;
   }
 
   async function listUsers() {
@@ -125,7 +179,9 @@
   async function requireRole(allowedRoles, options = {}) {
     const enforce = CONFIG.enforcement === true;
     if (!enforce) {
-      return getCachedUser() || { username: 'configuracao', name: 'Modo de configuração', role: 'admin', preview: true };
+      const preview = getCachedUser() || { username: 'configuracao', name: 'Modo de configuração', role: 'admin', preview: true };
+      mountPortalAvatar(preview);
+      return preview;
     }
     const user = await me({ allowCached: false }).catch(() => null);
     if (!user) {
@@ -133,6 +189,7 @@
       location.replace(`${CONFIG.loginPath || '/login/'}?next=${next}`);
       return null;
     }
+    mountPortalAvatar(user);
     if (!roleAllowed(user, allowedRoles)) {
       location.replace(options.deniedPath || CONFIG.homePath || '/home/');
       return null;
@@ -156,6 +213,8 @@
     clearSession,
     authorizationHeader,
     changePassword,
+    updateProfilePhoto,
+    mountPortalAvatar,
     listUsers,
     createUser,
     updateUser,
