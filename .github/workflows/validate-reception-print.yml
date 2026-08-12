@@ -18,15 +18,24 @@ jobs:
           node --check js/reception-app.js
           node --check js/reception-ux.js
           node --check js/reception-psychology-checklist.js
-          node --check js/reception-print-v3.js
+          node --check js/reception-print-v4.js
       - name: Conferir integração da impressão
         run: |
-          test -f js/reception-print-v3.js
-          grep -q 'reception-print-v3.js?v=20260812-1' recepcao/index.html
-          grep -q "PRINT_BUTTON_ID = 'printMissingItems'" js/reception-print-v3.js
-          grep -q 'printInPopup' js/reception-print-v3.js
-          grep -q 'printInFrame' js/reception-print-v3.js
-          grep -qi 'impressão não é obrigatória' js/reception-print-v3.js
-          grep -q 'Ctrl+P' js/reception-print-v3.js
-          grep -q 'Bairro Jardim das Grevílias' js/reception-print-v3.js
-          grep -q '07:00 às 11:00' js/reception-print-v3.js
+          test -f js/reception-print-v4.js
+          grep -q 'reception-print-v4.js?v=20260812-1' recepcao/index.html
+          grep -q 'referral-practice-data.js?v=20260812-1' recepcao/index.html
+          grep -q 'referral-practice-update-20260811.js?v=20260812-1' recepcao/index.html
+          grep -q "COMPLETE_BUTTON_ID = 'printCompleteOrientation'" js/reception-print-v4.js
+          grep -q "MISSING_BUTTON_ID = 'printMissingItems'" js/reception-print-v4.js
+          grep -q 'Informações que devem constar no encaminhamento' js/reception-print-v4.js
+          grep -q 'Exames e documentos obrigatórios' js/reception-print-v4.js
+          grep -q 'Pontos observados nas devoluções reais' js/reception-print-v4.js
+          grep -q 'Informações que o paciente ou responsável pode relatar' js/reception-print-v4.js
+          grep -q 'Informações que exigem avaliação profissional' js/reception-print-v4.js
+          grep -q 'não transformam uma exigência isolada em requisito oficial' js/reception-print-v4.js
+          grep -q 'printInPopup' js/reception-print-v4.js
+          grep -q 'printInFrame' js/reception-print-v4.js
+          grep -qi 'impressão não é obrigatória' js/reception-print-v4.js
+          grep -q 'Ctrl+P' js/reception-print-v4.js
+          grep -q 'Bairro Jardim das Grevílias' js/reception-print-v4.js
+          grep -q '07:00 às 11:00' js/reception-print-v4.js
