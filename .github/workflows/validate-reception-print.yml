@@ -17,12 +17,12 @@ jobs:
         run: |
           node --check js/reception-app.js
           node --check js/reception-ux.js
-          node --check js/reception-psychology-checklist.js
+          node --check js/reception-clinical-checklist.js
           node --check js/reception-print-v5.js
       - name: Conferir integração da impressão
         run: |
           test -f js/reception-print-v5.js
-          grep -q 'reception-print-v5.js?v=20260812-1' recepcao/index.html
+          grep -q 'reception-print-v5.js?v=20260812-2' recepcao/index.html
           ! grep -q 'referral-practice-data.js' recepcao/index.html
           ! grep -q 'referral-practice-update-' recepcao/index.html
           grep -q "COMPLETE_BUTTON_ID = 'printCompleteOrientation'" js/reception-print-v5.js
@@ -31,6 +31,9 @@ jobs:
           grep -q 'Exames e documentos obrigatórios' js/reception-print-v5.js
           grep -q 'Obrigatórios somente quando se aplicarem ao caso' js/reception-print-v5.js
           grep -q 'Se já possuir / quando disponível' js/reception-print-v5.js
+          ! grep -q 'Via de acesso' js/reception-print-v5.js
+          ! grep -q 'Como esta solicitação deve ser feita' js/reception-print-v5.js
+          ! grep -q 'fluxoLocal' js/reception-print-v5.js
           ! grep -q 'Pontos observados nas devoluções reais' js/reception-print-v5.js
           ! grep -q 'Devoluções observadas nesta área' js/reception-print-v5.js
           ! grep -q 'Experiência prática' js/reception-print-v5.js
