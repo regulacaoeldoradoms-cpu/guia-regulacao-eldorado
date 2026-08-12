@@ -1,0 +1,28 @@
+name: Validar checklist rápido da recepção
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-reception-fast-checklist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar sintaxe
+        run: |
+          node --check js/reception-fast-checklist.js
+          node --check js/reception-print-fix.js
+          node --check js/reception-app.js
+      - name: Conferir integração
+        run: |
+          grep -q 'reception-fast-checklist.css' recepcao/index.html
+          grep -q 'reception-fast-checklist.js' recepcao/index.html
+          grep -q "Trouxe / anexado" js/reception-fast-checklist.js
+          grep -q "Aplica-se" js/reception-fast-checklist.js
+          grep -q "missing" js/reception-fast-checklist.js
+          grep -q 'printMissingItems' js/reception-print-fix.js
