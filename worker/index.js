@@ -2,6 +2,7 @@
 
 import aiWorker from './gemini-assistant.js';
 import { handlePortalRoute, isPortalApi, validatePortalSession } from './auth-management-flex.js';
+import { handleProfileRoute, isProfileApi } from './profile-photo.js';
 
 function allowedOrigins(env) {
   const configured = String(env.ALLOWED_ORIGINS || '')
@@ -28,6 +29,14 @@ export default {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin') || '';
     const originAllowed = !origin || allowedOrigins(env).includes(origin);
+
+    if (isProfileApi(url.pathname)) {
+      try {
+        return await handleProfileRoute(request, env, origin, originAllowed);
+      } catch (error) {
+        return jsonError(error?.message || 'Falha ao atualizar o perfil.', 500, origin, originAllowed);
+      }
+    }
 
     if (isPortalApi(url.pathname)) {
       try {
