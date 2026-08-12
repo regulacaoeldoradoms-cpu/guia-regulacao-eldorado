@@ -22,6 +22,7 @@ jobs:
           node --check js/ai-assistant.js
           node --check js/ai-gemini-theme.js
           node --check worker/gemini-assistant.js
+          node --check worker/index.js
 
       - name: Conferir modo conversacional
         run: |
@@ -67,6 +68,19 @@ jobs:
           grep -q 'boundedString(item.text, 3000)' worker/gemini-assistant.js
           grep -q 'maxOutputTokens: 1300' worker/gemini-assistant.js
           grep -q 'assistantMode' worker/gemini-assistant.js
+
+      - name: Conferir CORS autenticado da IA
+        run: |
+          grep -q "url.pathname === '/api/ia'" worker/index.js
+          grep -q "request.method !== 'OPTIONS'" worker/index.js
+          grep -q "Access-Control-Allow-Headers': 'Content-Type, Authorization'" worker/gemini-assistant.js
+          grep -q "request.method === 'OPTIONS'" worker/gemini-assistant.js
+          python - <<'PY'
+          from pathlib import Path
+          text = Path('worker/index.js').read_text(encoding='utf-8')
+          guard = text.index("url.pathname === '/api/ia'")
+          assert "request.method !== 'OPTIONS'" in text[guard:guard+450]
+          PY
 
       - name: Conferir interface e cache
         run: |
