@@ -7,13 +7,13 @@
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[char]));
 
-  function getMissingItems() {
-    return [...document.querySelectorAll('#receptionDetail .reception-item')]
-      .map((row) => ({
-        item: row.dataset.item || row.querySelector('.reception-item-text')?.childNodes?.[0]?.textContent || '',
-        state: row.querySelector('.reception-status')?.value || 'pending'
-      }))
-      .filter((row) => row.state === 'missing' && row.item.trim());
+  function allRows() {
+    return [...document.querySelectorAll('#receptionDetail .reception-item')].map((row) => ({
+      type: row.dataset.type || 'mandatory',
+      item: row.dataset.item || row.querySelector('.reception-item-text')?.childNodes?.[0]?.textContent || '',
+      state: row.querySelector('.reception-status')?.value || 'pending',
+      checked: Boolean(row.querySelector('.fast-check input')?.checked)
+    })).filter((row) => row.item.trim());
   }
 
   function currentContext() {
@@ -24,17 +24,40 @@
     return { specialty, condition };
   }
 
-  function printableHtml(missing) {
+  function listHtml(items) {
+    if (!items.length) return '';
+    return `<ul>${items.map((row) => `<li>${escapeHtml(row.item)}</li>`).join('')}</ul>`;
+  }
+
+  function fullSections(rows) {
+    const mandatory = rows.filter((row) => row.type === 'mandatory');
+    const conditional = rows.filter((row) => row.type === 'conditional');
+    const available = rows.filter((row) => row.type === 'available');
+
+    return `
+      ${mandatory.length ? `<section><h2>Itens que devem acompanhar a solicitação</h2>${listHtml(mandatory)}</section>` : ''}
+      ${conditional.length ? `<section><h2>Conforme o caso</h2><p class="section-note">Providenciar somente quando a condição se aplicar ao caso.</p>${listHtml(conditional)}</section>` : ''}
+      ${available.length ? `<section><h2>Quando já disponível</h2><p class="section-note">Apresentar se o paciente já possuir. Estes itens não devem ser tratados automaticamente como obrigatórios.</p>${listHtml(available)}</section>` : ''}`;
+  }
+
+  function missingSections(rows) {
+    const missing = rows.filter((row) => row.state === 'missing');
+    return `<section><h2>Itens que precisam ser providenciados</h2>${listHtml(missing)}</section>`;
+  }
+
+  function printableHtml(rows, fullMode) {
     const { specialty, condition } = currentContext();
     const today = new Intl.DateTimeFormat('pt-BR').format(new Date());
-    const items = missing.map((row) => `<li>${escapeHtml(row.item)}</li>`).join('');
+    const heading = fullMode
+      ? 'ORIENTAÇÃO COMPLETA PARA CONFERÊNCIA DE DOCUMENTOS'
+      : 'ORIENTAÇÃO PARA COMPLEMENTAÇÃO DE DOCUMENTOS';
 
     return `<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Orientação para complementação</title>
+  <title>${fullMode ? 'Orientação completa' : 'Orientação para complementação'}</title>
   <style>
     @page { size: A4; margin: 14mm; }
     * { box-sizing: border-box; }
@@ -46,9 +69,10 @@
     .header p { margin: 0; color: #537087; font-size: 12px; }
     .meta { margin: 20px 0 18px; padding: 14px 16px; border: 1px solid #d5e3ed; border-radius: 12px; background: #f7fbfd; }
     .meta p { margin: 5px 0; font-size: 12px; line-height: 1.45; }
-    h2 { margin: 19px 0 9px; color: #0d3157; font-size: 16px; }
+    h2 { margin: 20px 0 8px; color: #0d3157; font-size: 16px; }
     ul { margin: 0; padding-left: 22px; }
-    li { margin: 9px 0; color: #243e53; font-size: 13px; line-height: 1.5; }
+    li { margin: 8px 0; color: #243e53; font-size: 13px; line-height: 1.5; }
+    .section-note { margin: -2px 0 9px; color: #667d8f; font-size: 11px; line-height: 1.45; }
     .note { margin-top: 22px; padding: 14px 15px; border-left: 4px solid #0f7881; border-radius: 8px; background: #f2fbfb; color: #36586a; font-size: 11px; line-height: 1.55; }
     .footer { margin-top: 30px; padding-top: 12px; border-top: 1px solid #bccbd6; color: #536a7c; font-size: 10.5px; line-height: 1.55; }
     @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
@@ -59,7 +83,7 @@
     <header class="header">
       <img src="${location.origin}/assets/app-icon.svg" alt="">
       <div>
-        <h1>ORIENTAÇÃO PARA COMPLEMENTAÇÃO DE DOCUMENTOS</h1>
+        <h1>${heading}</h1>
         <p>Setor de Regulação de Saúde · Eldorado/MS</p>
       </div>
     </header>
@@ -70,11 +94,13 @@
       <p><strong>Data da orientação:</strong> ${today}</p>
     </section>
 
-    <h2>Itens que precisam ser providenciados</h2>
-    <ul>${items}</ul>
+    ${fullMode ? fullSections(rows) : missingSections(rows)}
 
     <div class="note">
-      Apresente os itens acima para continuidade da solicitação. Este documento pode ser impresso ou mostrado diretamente na tela do celular. A impressão não é obrigatória. O documento não substitui avaliação profissional e não representa autorização de consulta ou procedimento.
+      ${fullMode
+        ? 'Esta orientação apresenta a conferência documental completa disponível para esta solicitação. Os itens da seção “Conforme o caso” devem ser providenciados somente quando realmente se aplicarem. O documento pode ser impresso ou mostrado diretamente na tela do celular; a impressão não é obrigatória.'
+        : 'Apresente os itens acima para continuidade da solicitação. Este documento pode ser impresso ou mostrado diretamente na tela do celular; a impressão não é obrigatória.'}
+      O documento não substitui avaliação profissional e não representa autorização de consulta ou procedimento.
     </div>
 
     <footer class="footer">
@@ -161,13 +187,21 @@
     event.preventDefault();
     event.stopImmediatePropagation();
 
-    const missing = getMissingItems();
-    if (!missing.length) {
-      showPrintError('Marque pelo menos um item como faltando antes de imprimir a orientação.');
+    const rows = allRows();
+    if (!rows.length) {
+      showPrintError('Não há itens de conferência disponíveis para imprimir neste protocolo.');
       return;
     }
 
-    const html = printableHtml(missing);
+    const fullMode = !rows.some((row) => row.checked);
+    const missing = rows.filter((row) => row.state === 'missing');
+
+    if (!fullMode && !missing.length) {
+      showPrintError('Não há item obrigatório faltando para imprimir.');
+      return;
+    }
+
+    const html = printableHtml(rows, fullMode);
     try {
       printInFrame(html);
     } catch (frameError) {
