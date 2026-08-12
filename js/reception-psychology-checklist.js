@@ -42,12 +42,24 @@
       </div>`;
   }
 
+  function ensureSummary(afterElement) {
+    let summary = detail.querySelector('.reception-summary');
+    if (summary) return summary;
+    summary = document.createElement('div');
+    summary.className = 'reception-summary';
+    summary.id = 'receptionSummary';
+    summary.innerHTML = `
+      <div><strong id="receptionSummaryTitle">Conferência em andamento</strong><span id="receptionSummaryText">Marque o que já consta no encaminhamento.</span></div>
+      <div class="reception-actions">
+        <button class="portal-button primary" id="printMissingItems" type="button">Imprimir orientação</button>
+      </div>`;
+    afterElement.insertAdjacentElement('afterend', summary);
+    return summary;
+  }
+
   function ensurePsychologyChecklist() {
     if (!isPsychology()) return;
     if (detail.querySelector('[data-psychology-reception-checklist="1"]')) return;
-
-    const summary = detail.querySelector('.reception-summary');
-    if (!summary) return;
 
     const section = document.createElement('section');
     section.className = 'reception-group reception-psychology-checklist';
@@ -62,7 +74,13 @@
         ${ITEMS.map(rowHtml).join('')}
       </div>`;
 
-    summary.insertAdjacentElement('beforebegin', section);
+    const summary = detail.querySelector('.reception-summary');
+    const scope = detail.querySelector('.reception-scope-note');
+    if (summary) summary.insertAdjacentElement('beforebegin', section);
+    else if (scope) scope.insertAdjacentElement('beforebegin', section);
+    else detail.appendChild(section);
+
+    ensureSummary(section);
   }
 
   let queued = false;
