@@ -1,7 +1,7 @@
 'use strict';
 
 import aiWorker from './gemini-assistant.js';
-import { handlePortalRoute, isPortalApi, validatePortalSession } from './auth-management-fixed.js';
+import { handlePortalRoute, isPortalApi, validatePortalSession } from './auth-management-flex.js';
 
 function allowedOrigins(env) {
   const configured = String(env.ALLOWED_ORIGINS || '')
