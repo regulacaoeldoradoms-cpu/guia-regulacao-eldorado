@@ -14,6 +14,9 @@
   let contactsTimer = null;
   let heartbeatTimer = null;
   let mounted = false;
+  let contactsInitialized = false;
+  let notificationWorker = null;
+  const unreadSnapshot = new Map();
 
   const escapeText = (value) => String(value || '');
 
@@ -63,6 +66,139 @@
     showStatus.timer = window.setTimeout(() => box.classList.remove('visible'), 3200);
   }
 
+  function notificationSupported() {
+    return 'Notification' in window;
+  }
+
+  async function ensureNotificationWorker() {
+    if (!('serviceWorker' in navigator)) return null;
+    if (notificationWorker) return notificationWorker;
+    try {
+      notificationWorker = await navigator.serviceWorker.register('/portal-sw.js', { scope: '/' });
+      await navigator.serviceWorker.ready;
+      return notificationWorker;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function updateNotificationUi() {
+    const card = document.getElementById('portalChatNotificationCard');
+    const text = document.getElementById('portalChatNotificationText');
+    const button = document.getElementById('portalChatEnableNotifications');
+    if (!card || !text || !button) return;
+
+    if (!notificationSupported()) {
+      card.hidden = true;
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      card.hidden = true;
+      return;
+    }
+
+    card.hidden = false;
+    if (Notification.permission === 'denied') {
+      card.classList.add('blocked');
+      text.textContent = 'As notificações estão bloqueadas neste navegador. Para receber alertas, permita notificações nas configurações deste site.';
+      button.hidden = true;
+      return;
+    }
+
+    card.classList.remove('blocked');
+    text.textContent = 'Ative para receber avisos de novas mensagens quando o portal estiver em outra aba ou janela.';
+    button.hidden = false;
+  }
+
+  async function requestNotificationPermission() {
+    if (!notificationSupported()) return 'unsupported';
+    if (Notification.permission === 'granted') {
+      await ensureNotificationWorker();
+      updateNotificationUi();
+      return 'granted';
+    }
+    if (Notification.permission === 'denied') {
+      updateNotificationUi();
+      return 'denied';
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        await ensureNotificationWorker();
+        showStatus('Notificações de mensagens ativadas.');
+      } else if (permission === 'denied') {
+        showStatus('Notificações bloqueadas pelo navegador.');
+      }
+      updateNotificationUi();
+      return permission;
+    } catch (_) {
+      updateNotificationUi();
+      return 'default';
+    }
+  }
+
+  async function showMessageNotification(contact, amount) {
+    if (!notificationSupported() || Notification.permission !== 'granted') return;
+
+    const root = document.getElementById('portalChatRoot');
+    const conversationVisible = !document.hidden
+      && root?.classList.contains('open')
+      && activeContact?.username === contact.username;
+    if (conversationVisible) return;
+
+    const title = `Nova mensagem de ${contact.name || contact.username}`;
+    const body = amount > 1
+      ? `${amount} novas mensagens no chat interno.`
+      : 'Você recebeu uma nova mensagem no chat interno.';
+    const options = {
+      body,
+      icon: '/assets/app-icon.svg',
+      tag: `portal-chat-${contact.username}`,
+      renotify: true,
+      data: { chatUser: contact.username, url: `/home/?chat=${encodeURIComponent(contact.username)}` }
+    };
+
+    try {
+      const registration = await ensureNotificationWorker();
+      if (registration?.showNotification) {
+        await registration.showNotification(title, options);
+        return;
+      }
+    } catch (_) {}
+
+    try {
+      const notification = new Notification(title, options);
+      notification.onclick = () => {
+        window.focus();
+        openChatByUsername(contact.username);
+        notification.close();
+      };
+    } catch (_) {}
+  }
+
+  function processUnreadChanges(nextContacts) {
+    const firstLoad = !contactsInitialized;
+    const seen = new Set();
+
+    nextContacts.forEach((contact) => {
+      const username = contact.username;
+      const unread = Number(contact.unread || 0);
+      const previous = unreadSnapshot.has(username) ? Number(unreadSnapshot.get(username) || 0) : unread;
+      seen.add(username);
+      unreadSnapshot.set(username, unread);
+      if (!firstLoad && unread > previous) {
+        showMessageNotification(contact, unread - previous);
+      }
+    });
+
+    Array.from(unreadSnapshot.keys()).forEach((username) => {
+      if (!seen.has(username)) unreadSnapshot.delete(username);
+    });
+    contactsInitialized = true;
+  }
+
   function totalUnread() {
     return contacts.reduce((sum, item) => sum + Number(item.unread || 0), 0);
   }
@@ -99,12 +235,15 @@
     if (summary) summary.textContent = `${online} online · ${contacts.length} usuário(s)`;
     list.innerHTML = filtered.length ? filtered.map(contactHtml).join('') : '<div class="portal-chat-empty">Nenhum usuário encontrado.</div>';
     updateLauncher();
+    updateNotificationUi();
   }
 
   async function loadContacts() {
     try {
       const payload = await api('/api/chat/users', { method: 'GET' });
-      contacts = Array.isArray(payload.users) ? payload.users : [];
+      const nextContacts = Array.isArray(payload.users) ? payload.users : [];
+      processUnreadChanges(nextContacts);
+      contacts = nextContacts;
       if (activeContact) {
         const refreshed = contacts.find((item) => item.username === activeContact.username);
         if (refreshed) {
@@ -163,7 +302,10 @@
       const messages = Array.isArray(payload.messages) ? payload.messages : [];
       appendMessages(messages, initial);
       const contact = contacts.find((item) => item.username === username);
-      if (contact) contact.unread = 0;
+      if (contact) {
+        contact.unread = 0;
+        unreadSnapshot.set(username, 0);
+      }
       renderContacts();
     } catch (error) {
       showStatus(error.message || 'Não foi possível carregar as mensagens.');
@@ -185,6 +327,7 @@
   function openConversation(contact) {
     activeContact = contact;
     lastMessageId = 0;
+    document.getElementById('portalChatRoot')?.classList.add('open');
     document.getElementById('portalChatContactsView')?.classList.remove('active');
     document.getElementById('portalChatConversationView')?.classList.add('active');
     document.getElementById('portalChatBack').hidden = false;
@@ -192,6 +335,14 @@
     loadMessages(true);
     startMessagePolling();
     document.getElementById('portalChatInput')?.focus();
+  }
+
+  async function openChatByUsername(username) {
+    const normalized = String(username || '').trim();
+    if (!normalized) return;
+    if (!contacts.length) await loadContacts();
+    const contact = contacts.find((item) => item.username === normalized);
+    if (contact) openConversation(contact);
   }
 
   function closeConversation() {
@@ -248,7 +399,14 @@
         </header>
         <div class="portal-chat-body">
           <div class="portal-chat-view portal-chat-contacts active" id="portalChatContactsView">
-            <div class="portal-chat-search-wrap"><input class="portal-chat-search" id="portalChatSearch" type="search" placeholder="Procurar usuário" autocomplete="off"><div class="portal-chat-note" id="portalChatSummary">Carregando usuários...</div></div>
+            <div class="portal-chat-search-wrap">
+              <input class="portal-chat-search" id="portalChatSearch" type="search" placeholder="Procurar usuário" autocomplete="off">
+              <div class="portal-chat-note" id="portalChatSummary">Carregando usuários...</div>
+              <div class="portal-chat-notification-card" id="portalChatNotificationCard" hidden>
+                <div><strong>🔔 Notificações de mensagens</strong><span id="portalChatNotificationText"></span></div>
+                <button type="button" id="portalChatEnableNotifications">Ativar notificações</button>
+              </div>
+            </div>
             <div class="portal-chat-list" id="portalChatList"><div class="portal-chat-empty">Carregando...</div></div>
           </div>
           <div class="portal-chat-view portal-chat-conversation" id="portalChatConversationView">
@@ -262,6 +420,8 @@
 
     document.getElementById('portalChatLauncher')?.addEventListener('click', () => {
       root.classList.add('open');
+      updateNotificationUi();
+      if (notificationSupported() && Notification.permission === 'default') requestNotificationPermission();
       loadContacts();
     });
     document.getElementById('portalChatClose')?.addEventListener('click', () => {
@@ -269,6 +429,7 @@
       closeConversation();
     });
     document.getElementById('portalChatBack')?.addEventListener('click', closeConversation);
+    document.getElementById('portalChatEnableNotifications')?.addEventListener('click', requestNotificationPermission);
     document.getElementById('portalChatSearch')?.addEventListener('input', renderContacts);
     document.getElementById('portalChatList')?.addEventListener('click', (event) => {
       const button = event.target.closest('[data-chat-user]');
@@ -295,10 +456,13 @@
     currentUser = await auth.me({ allowCached: true }).catch(() => auth.getCachedUser?.() || null);
     if (!currentUser) return;
     mount();
+    if (notificationSupported() && Notification.permission === 'granted') await ensureNotificationWorker();
     await heartbeat();
     await loadContacts();
-    heartbeatTimer = window.setInterval(() => { if (!document.hidden) heartbeat(); }, 25000);
-    contactsTimer = window.setInterval(() => { if (!document.hidden) loadContacts(); }, 12000);
+
+    heartbeatTimer = window.setInterval(heartbeat, 25000);
+    contactsTimer = window.setInterval(loadContacts, 12000);
+
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
         heartbeat();
@@ -306,6 +470,22 @@
         if (activeContact) loadMessages(false);
       }
     });
+
+    navigator.serviceWorker?.addEventListener('message', (event) => {
+      if (event.data?.type === 'OPEN_PORTAL_CHAT' && event.data.chatUser) {
+        openChatByUsername(event.data.chatUser);
+      }
+    });
+
+    const chatFromUrl = new URLSearchParams(location.search).get('chat');
+    if (chatFromUrl) {
+      openChatByUsername(chatFromUrl);
+      try {
+        const url = new URL(location.href);
+        url.searchParams.delete('chat');
+        history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+      } catch (_) {}
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
