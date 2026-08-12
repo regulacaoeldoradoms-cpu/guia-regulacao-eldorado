@@ -1,21 +1,19 @@
 .reception-status.fast-check-hidden { display: none !important; }
-.fast-check-controls { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; align-items: center; min-width: 190px; }
-.fast-check { position: relative; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; border: 1px solid #cad9e5; background: #fff; border-radius: 12px; padding: 9px 11px; min-height: 42px; transition: .15s ease; font-size: .8rem; font-weight: 750; color: #36526a; }
-.fast-check:hover { border-color: #7dbbe9; background: #f5fbff; }
+.fast-check-controls { display: flex; justify-content: flex-end; align-items: center; min-width: 48px; }
+.fast-check { position: relative; display: inline-grid; place-items: center; width: 42px; height: 42px; cursor: pointer; user-select: none; border: 0; background: transparent; padding: 0; border-radius: 10px; transition: .15s ease; }
+.fast-check:hover { background: #f2f8fd; }
 .fast-check input { position: absolute; opacity: 0; pointer-events: none; }
-.fast-check-mark { width: 22px; height: 22px; flex: 0 0 22px; border: 2px solid #adc2d3; border-radius: 7px; background: #fff; display: grid; place-items: center; }
-.fast-check input:checked + .fast-check-mark { border-color: #07866f; background: #07866f; }
-.fast-check input:checked + .fast-check-mark::after { content: '✓'; color: #fff; font-size: 15px; line-height: 1; font-weight: 900; }
-.fast-check:has(input:checked) { border-color: #9cd8c6; background: #effaf6; color: #24634f; }
-.fast-check-secondary:has(input:checked) { border-color: #e4bf6a; background: #fff9e8; color: #76591c; }
-.fast-check-secondary input:checked + .fast-check-mark { border-color: #a6791e; background: #a6791e; }
-.fast-check-optional { opacity: .92; }
-.reception-item:has(.fast-check-primary input:checked) { background: #fbfffd; }
-.reception-item[data-type="mandatory"]:not(:has(.fast-check-primary input:checked)) { background: #fffafa; }
-.reception-item[data-type="conditional"]:has(.fast-check-secondary input:checked):not(:has(.fast-check-primary input:checked)) { background: #fffafa; }
-.reception-item[data-type="mandatory"]:not(:has(.fast-check-primary input:checked)) .reception-item-text::after,
-.reception-item[data-type="conditional"]:has(.fast-check-secondary input:checked):not(:has(.fast-check-primary input:checked)) .reception-item-text::after { content: 'Faltando'; display: inline-flex; margin-top: 7px; padding: 3px 7px; border-radius: 999px; background: #fff0f0; border: 1px solid #efc1c4; color: #9a3b43; font-size: .7rem; font-weight: 800; }
+.fast-check-mark { width: 25px; height: 25px; border: 2px solid #a9bfd1; border-radius: 7px; background: #fff; display: grid; place-items: center; transition: .15s ease; }
+.fast-check input:checked + .fast-check-mark { border-color: #07866f; background: #07866f; box-shadow: 0 0 0 3px rgba(7,134,111,.10); }
+.fast-check input:checked + .fast-check-mark::after { content: '✓'; color: #fff; font-size: 17px; line-height: 1; font-weight: 900; }
+.fast-check:focus-within .fast-check-mark { outline: 3px solid rgba(37,126,196,.22); outline-offset: 2px; }
+.reception-item { grid-template-columns: minmax(0, 1fr) 54px !important; }
+.reception-item:has(.fast-check input:checked) { background: #fbfffd; }
+.reception-item[data-type="mandatory"]:not(:has(.fast-check input:checked)) { background: #fff; }
+.reception-item[data-type="conditional"]:not(:has(.fast-check input:checked)),
+.reception-item[data-type="available"]:not(:has(.fast-check input:checked)) { background: #fff; }
+.reception-item-text::after { content: none !important; display: none !important; }
 @media (max-width: 720px) {
-  .fast-check-controls { justify-content: flex-start; min-width: 0; }
-  .fast-check { flex: 1 1 auto; justify-content: flex-start; }
+  .fast-check-controls { min-width: 42px; justify-content: center; }
+  .reception-item { grid-template-columns: minmax(0, 1fr) 46px !important; gap: 8px; }
 }
