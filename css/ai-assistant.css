@@ -17,11 +17,16 @@
   font-weight: 800;
   box-shadow: 0 14px 32px rgba(18, 48, 77, .28);
   cursor: pointer;
+  transition: right .18s ease, opacity .18s ease, transform .18s ease, background .18s ease;
 }
 
 .ai-launcher:hover { background: #0c2741; }
 .ai-launcher:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
 .ai-launcher .icon { width: 22px; height: 22px; }
+
+/* No Guia Médico, o botão do Gemini detecta o chat interno e ocupa a posição ao lado dele. */
+.portal-chat-present .ai-launcher { right: 250px; }
+.portal-chat-open .ai-launcher { right: 402px; }
 
 .ai-chat {
   position: fixed;
@@ -203,6 +208,8 @@
 @media (max-width: 600px) {
   .ai-launcher { right: 14px; bottom: 14px; min-width: 52px; padding: 0 15px; }
   .ai-launcher span { display: none; }
+  .portal-chat-present .ai-launcher { right: 210px; }
+  .portal-chat-open .ai-launcher { opacity: 0; pointer-events: none; transform: translateY(8px); }
   .ai-chat {
     right: 0;
     bottom: 0;
