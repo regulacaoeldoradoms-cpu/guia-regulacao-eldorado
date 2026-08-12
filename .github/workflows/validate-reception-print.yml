@@ -1,0 +1,29 @@
+name: Validar impressão da recepção
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-reception-print:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar sintaxe
+        run: |
+          node --check js/reception-app.js
+          node --check js/reception-print-fix.js
+      - name: Conferir integração da impressão
+        run: |
+          test -f js/reception-print-fix.js
+          grep -q 'reception-print-fix.js?v=20260812-1' recepcao/index.html
+          grep -q "PRINT_BUTTON_ID = 'printMissingItems'" js/reception-print-fix.js
+          grep -q 'printInFrame' js/reception-print-fix.js
+          grep -q 'printFallback' js/reception-print-fix.js
+          grep -q 'A impressão não é obrigatória' js/reception-print-fix.js
+          grep -q 'Bairro Jardim das Grevílias' js/reception-print-fix.js
+          grep -q '07:00 às 11:00' js/reception-print-fix.js
