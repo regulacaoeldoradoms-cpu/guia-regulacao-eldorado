@@ -18,7 +18,7 @@
           <img src="/assets/app-icon.svg" alt="">
           <div>
             <h1>Conferência da Recepção</h1>
-            <p>Documentos, exames, laudos e materiais para solicitação</p>
+            <p>Confira o que o paciente trouxe para fazer a solicitação</p>
           </div>
         </div>
         <div class="portal-user">
@@ -36,21 +36,21 @@
     <main class="portal-main">
       <section class="portal-hero">
         <div class="portal-hero-copy">
-          <span class="portal-eyebrow">Conferência antes da solicitação</span>
-          <h2>Confira o que o paciente trouxe sem entrar na avaliação clínica.</h2>
-          <p>Selecione a especialidade ou exame e marque rapidamente o que foi apresentado. Se nenhuma caixa for marcada, a impressão gera a orientação completa para aquela solicitação.</p>
+          <span class="portal-eyebrow">Conferência rápida</span>
+          <h2>Veja o que o paciente precisa trazer.</h2>
+          <p>Escolha a especialidade ou exame e marque as caixinhas do que o paciente trouxe. Você não precisa entender o resultado dos exames nem avaliar o caso. Se faltar alguma coisa, imprima a orientação.</p>
         </div>
       </section>
 
       <section class="reception-layout">
         <aside class="reception-sidebar">
-          <h2>Especialidades e exames</h2>
-          <p id="receptionResultCount">Carregando protocolos...</p>
-          <input class="portal-search" id="receptionSearch" type="search" placeholder="Ex.: neuropediatria, joelho, audiometria" autocomplete="off">
+          <h2>Procure a especialidade ou exame</h2>
+          <p id="receptionResultCount">Carregando lista...</p>
+          <input class="portal-search" id="receptionSearch" type="search" placeholder="Ex.: reumatologia, joelho, audiometria" autocomplete="off">
           <div class="reception-list" id="receptionProtocolList"><div class="reception-loading">Carregando...</div></div>
         </aside>
         <section class="reception-detail" id="receptionDetail" aria-live="polite">
-          <div class="reception-loading">Carregando base técnica...</div>
+          <div class="reception-loading">Carregando informações...</div>
         </section>
       </section>
     </main>
@@ -62,6 +62,7 @@
   <script src="/js/auth-client.js?v=20260811-2"></script>
   <script src="/js/reception-app.js?v=20260812-1"></script>
   <script src="/js/reception-fast-checklist.js?v=20260812-2"></script>
+  <script src="/js/reception-simple-language.js?v=20260812-1"></script>
   <script src="/js/reception-print-fix.js?v=20260812-2"></script>
 </body>
 </html>
