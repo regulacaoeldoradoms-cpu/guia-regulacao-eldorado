@@ -15,14 +15,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validar sintaxe
         run: |
-          node --check js/reception-fast-checklist.js
-          node --check js/reception-print-fix.js
           node --check js/reception-app.js
+          node --check js/reception-ux.js
+          node --check js/reception-psychology-checklist.js
+          node --check js/reception-print-v3.js
       - name: Conferir integração
         run: |
           grep -q 'reception-fast-checklist.css' recepcao/index.html
-          grep -q 'reception-fast-checklist.js' recepcao/index.html
-          grep -q "Trouxe / anexado" js/reception-fast-checklist.js
-          grep -q "Aplica-se" js/reception-fast-checklist.js
-          grep -q "missing" js/reception-fast-checklist.js
-          grep -q 'printMissingItems' js/reception-print-fix.js
+          grep -q 'reception-ux.js' recepcao/index.html
+          grep -q 'reception-psychology-checklist.js' recepcao/index.html
+          grep -q 'reception-print-v3.js' recepcao/index.html
+          grep -q 'fast-check' js/reception-ux.js
+          grep -q 'missing' js/reception-ux.js
+          grep -q 'Informações obrigatórias no encaminhamento de Psicologia' js/reception-psychology-checklist.js
+          grep -q 'histórico clínico' js/reception-psychology-checklist.js
+          grep -q 'qualidade de vida' js/reception-psychology-checklist.js
+          grep -q 'diagnóstico psiquiátrico' js/reception-psychology-checklist.js
+          grep -q 'medicações' js/reception-psychology-checklist.js
+          grep -q 'substâncias psicoativas' js/reception-psychology-checklist.js
+          grep -q 'printMissingItems' js/reception-print-v3.js
