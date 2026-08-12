@@ -42,10 +42,10 @@
         <form id="createUserForm" style="padding:22px">
           <div class="admin-form-grid">
             <div class="portal-field"><label for="newName">Nome completo</label><input id="newName" required maxlength="120" placeholder="Nome do profissional"></div>
-            <div class="portal-field"><label for="newUsername">Usuário</label><input id="newUsername" required maxlength="40" pattern="[a-zA-Z0-9._-]{3,40}" placeholder="ex.: maria.silva"></div>
+            <div class="portal-field"><label for="newUsername">Usuário</label><input id="newUsername" required maxlength="40" placeholder="Ex.: Paola Dourado"><div class="password-meter">Pode digitar normalmente. O sistema converte, por exemplo, “Paola Dourado” em “paola.dourado”.</div></div>
             <div class="portal-field"><label for="newJobTitle">Cargo/função</label><input id="newJobTitle" maxlength="120" placeholder="ex.: Médica ESF Centro"></div>
             <div class="portal-field"><label for="newRole">Perfil de acesso</label><select id="newRole" required><option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option><option value="admin">Administrador/Desenvolvedor — acesso total</option></select></div>
-            <div class="portal-field"><label for="newPassword">Senha inicial</label><input id="newPassword" type="password" required minlength="8" maxlength="160" autocomplete="new-password" placeholder="Mínimo 8 caracteres"></div>
+            <div class="portal-field"><label for="newPassword">Senha inicial</label><input id="newPassword" type="password" required maxlength="160" autocomplete="new-password" placeholder="Digite a senha que quiser"></div>
             <div class="portal-field"><label>&nbsp;</label><label style="display:flex;gap:9px;align-items:center;padding:13px 0"><input id="newMustChange" type="checkbox" checked> Exigir troca de senha no primeiro acesso</label></div>
             <div class="full account-actions"><button class="portal-button primary" id="createUserButton" type="submit">Criar acesso</button><div class="account-status" id="createUserStatus" role="status" aria-live="polite"></div></div>
           </div>
@@ -80,7 +80,7 @@
     <form class="portal-modal" id="resetPasswordForm">
       <div class="portal-modal-header"><div><h2>Redefinir senha</h2><div class="user-meta" id="resetUsernameLabel"></div></div><button class="portal-modal-close" type="button" data-close-modal="resetPasswordModal">×</button></div>
       <div class="account-form">
-        <div class="portal-field"><label for="resetPassword">Nova senha temporária</label><input id="resetPassword" type="password" required minlength="8" maxlength="160" autocomplete="new-password"></div>
+        <div class="portal-field"><label for="resetPassword">Nova senha temporária</label><input id="resetPassword" type="password" required maxlength="160" autocomplete="new-password" placeholder="Digite a senha que quiser"></div>
         <label style="display:flex;gap:9px;align-items:center"><input id="resetMustChange" type="checkbox" checked> Exigir que a pessoa altere a senha no próximo acesso</label>
         <div class="account-actions"><button class="portal-button primary" type="submit">Redefinir senha</button><button class="portal-button secondary" type="button" data-close-modal="resetPasswordModal">Cancelar</button></div>
         <div class="account-status" id="resetStatus"></div>
@@ -90,6 +90,7 @@
 
   <script src="/js/auth-config.js?v=20260811-2"></script>
   <script src="/js/auth-client.js?v=20260811-2"></script>
+  <script src="/js/credential-input.js?v=20260812-1"></script>
   <script src="/js/admin-users.js?v=20260811-1"></script>
 </body>
 </html>
