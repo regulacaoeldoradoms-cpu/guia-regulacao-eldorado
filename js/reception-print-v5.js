@@ -44,18 +44,9 @@
     return text.includes('neurologia pediatrica') || text.includes('neuroped') ? 'Neuropediatria' : (protocol?.nome || 'Solicitação regulada');
   }
 
-  function routeFor(protocol) {
-    const systems = protocol?.sistemas || {};
-    const routes = [];
-    if (systems.sisreg) routes.push('SISREG/CORE');
-    if (systems.digsus && systems.digsusStatus === 'disponivel') routes.push('DigSaúde MS');
-    if (systems.digsus && systems.digsusStatus === 'assincrona') routes.push('Discussão de conduta');
-    return routes.join(' · ') || 'Conferir fluxo';
-  }
-
   function loadProtocols() {
     if (!protocolsPromise) {
-      protocolsPromise = fetch(`${DATA_SOURCE}?patient-orientation=5.0`, { cache: 'no-store' })
+      protocolsPromise = fetch(`${DATA_SOURCE}?patient-orientation=5.1`, { cache: 'no-store' })
         .then((response) => {
           if (!response.ok) throw new Error(`Falha ao carregar protocolos (${response.status}).`);
           return response.text();
@@ -156,7 +147,6 @@
 
     <section class="meta">
       <p><strong>Especialidade/exame:</strong> ${escapeHtml(displayName(protocol))}</p>
-      <p><strong>Via de acesso:</strong> ${escapeHtml(routeFor(protocol))}</p>
       ${subprotocol?.titulo ? `<p><strong>Motivo/condição:</strong> ${escapeHtml(subprotocol.titulo)}</p>` : ''}
       ${protocol.faixaEtaria ? `<p><strong>Faixa etária do protocolo:</strong> ${escapeHtml(protocol.faixaEtaria)}</p>` : ''}
       ${protocol.solicitante ? `<p><strong>Profissional solicitante:</strong> ${escapeHtml(protocol.solicitante)}</p>` : ''}
@@ -166,7 +156,6 @@
     <div class="intro"><strong>Orientação ao paciente:</strong> leve ou mostre este documento na unidade de saúde responsável pelo encaminhamento. O médico ou profissional solicitante deve conferir as informações abaixo e registrar no encaminhamento o que for necessário para o seu caso. Você não precisa preencher exame físico, hipótese diagnóstica, interpretação de exames ou classificação de risco. A impressão não é obrigatória: este documento também pode ser mostrado na tela do celular.</div>
 
     ${!fullMode && missing.length ? sectionHtml('O que ainda precisa ser apresentado', missing.map((row) => row.item), 'Itens que foram marcados como faltantes na conferência.', 'missing') : ''}
-    ${protocol.fluxoLocal ? sectionHtml('Como esta solicitação deve ser feita', [protocol.fluxoLocal]) : ''}
     ${sectionHtml('Quando este encaminhamento é indicado', official.criteria, 'O profissional da unidade deve confirmar se o caso se enquadra nestes critérios.')}
     ${sectionHtml('Informações que precisam constar no encaminhamento', official.clinical, 'Essas informações devem ser registradas pelo profissional solicitante conforme a avaliação do paciente.', 'mandatory')}
     ${sectionHtml('Exames e documentos obrigatórios', official.mandatoryExams, 'Providenciar quando o protocolo os exige para realizar a solicitação.', 'mandatory')}
