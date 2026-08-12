@@ -213,13 +213,13 @@ export function isChatApi(pathname) {
 export async function handleChatRoute(request, env, origin, originAllowed = true) {
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
-  if (!(await ensureSchema(env))) return json({ error: 'Banco do chat ainda não disponível.' }, 503, origin);
 
   const user = await validatePortalSession(request, env, []);
   if (!user) return json({ error: 'Sessão inválida ou expirada.' }, 401, origin);
+  if (!(await ensureSchema(env))) return json({ error: 'Banco do chat ainda não disponível.' }, 503, origin);
+
   const username = normalizeUsername(user.username);
   await touchPresence(env, username);
-
   const url = new URL(request.url);
 
   if (url.pathname === '/api/chat/presence' && request.method === 'POST') {
