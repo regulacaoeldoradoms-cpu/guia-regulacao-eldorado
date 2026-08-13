@@ -49,8 +49,8 @@
   if (user.role === 'recepcao' || user.role === 'admin' || user.preview) {
     cards.push(`
       <a class="hub-card" href="/recepcao/" data-module="reception-check">
-        <span class="hub-card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M8 10h8M8 14h5M8 18h4"/></svg>
+        <span class="hub-card-icon">
+          <img src="/assets/recepcao-icon.png" alt="Ícone da Conferência da Recepção">
         </span>
         <span>
           <h3>Conferência da Recepção</h3>
