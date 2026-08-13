@@ -37,6 +37,18 @@
 .reception-scope-note { margin-top: 18px; padding: 15px 16px; border-left: 4px solid #9b6f17; background: #fff9e9; border-radius: 10px; color: #6e541e; font-size: .83rem; line-height: 1.5; }
 .reception-loading { padding: 36px; text-align: center; color: var(--portal-muted); }
 
+/* Identidade visual própria da Conferência da Recepção no cabeçalho. */
+.portal-topbar .portal-brand > img { display: none; }
+.portal-topbar .portal-brand::before {
+  content: "";
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  border-radius: 15px;
+  background: url('/assets/recepcao-icon.png') center / cover no-repeat;
+  box-shadow: 0 6px 18px rgba(0,0,0,.2);
+}
+
 #printReceptionArea { display: none; }
 @media print {
   body > *:not(#printReceptionArea) { display: none !important; }
@@ -61,4 +73,7 @@
 @media (max-width: 620px) {
   .reception-item { grid-template-columns: 1fr; }
   .reception-controls { grid-template-columns: 1fr; }
+}
+@media (max-width: 580px) {
+  .portal-topbar .portal-brand::before { width: 46px; height: 46px; flex-basis: 46px; }
 }
