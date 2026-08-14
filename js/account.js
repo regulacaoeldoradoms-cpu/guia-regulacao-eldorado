@@ -150,7 +150,7 @@
       form.reset();
       if (firstAccess) {
         show(status, 'Senha alterada com sucesso. Abrindo o HUB...', 'success');
-        window.setTimeout(() => location.replace('/home/'), 550);
+        window.setTimeout(() => location.replace('/'), 550);
         return;
       }
       show(status, 'Senha alterada com sucesso. As sessões anteriores desta conta foram invalidadas.', 'success');
