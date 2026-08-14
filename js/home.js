@@ -36,7 +36,7 @@
   const cards = [];
   if (user.role === 'medico' || user.role === 'admin' || user.preview) {
     cards.push(`
-      <a class="hub-card" href="/" data-module="medical-guide">
+      <a class="hub-card" href="/medico/" data-module="medical-guide">
         <span class="hub-card-icon"><img src="/assets/app-icon.svg" alt=""></span>
         <span>
           <h3>Guia Médico de Encaminhamentos</h3>
