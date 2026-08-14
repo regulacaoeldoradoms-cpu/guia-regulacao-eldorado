@@ -14,23 +14,12 @@
   const role = document.getElementById('portalUserRole');
   const grid = document.getElementById('hubGrid');
   const logout = document.getElementById('portalLogout');
-  const userBar = logout?.parentElement;
 
   if (name) name.textContent = user.name || user.username || 'Usuário';
   if (role) {
     role.textContent = user.preview
       ? 'modo de configuração'
       : ({ medico: 'Médico', recepcao: 'Recepção', admin: 'Desenvolvedor · acesso total' }[user.role] || user.role);
-  }
-
-  if (userBar && !document.getElementById('portalAccountLink')) {
-    const account = document.createElement('a');
-    account.id = 'portalAccountLink';
-    account.className = 'portal-button ghost';
-    account.href = '/conta/';
-    account.style.textDecoration = 'none';
-    account.textContent = 'Minha conta';
-    userBar.insertBefore(account, logout);
   }
 
   const cards = [];
