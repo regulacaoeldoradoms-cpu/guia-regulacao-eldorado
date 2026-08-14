@@ -61,7 +61,7 @@
     const nav = document.querySelector('.top-nav');
     if (nav && !nav.querySelector('[data-portal-home]')) {
       const link = document.createElement('a');
-      link.href = '/home/';
+      link.href = '/';
       link.className = 'nav-button';
       link.dataset.portalHome = 'true';
       link.textContent = 'HUB';
