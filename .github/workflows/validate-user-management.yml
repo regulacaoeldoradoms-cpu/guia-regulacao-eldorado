@@ -29,6 +29,7 @@ jobs:
           test -f conta/index.html
           test -f admin/usuarios/index.html
           test -f css/account-admin.css
+          test -f css/profile-account-link.css
           test -f worker/profile-photo.js
           grep -q '/api/auth/change-password' worker/auth-management.js
           grep -q '/api/admin/users' worker/auth-management.js
@@ -41,12 +42,17 @@ jobs:
           grep -q 'Access-Control-Allow-Methods' worker/profile-photo.js
           grep -q 'updateProfilePhoto' js/auth-client.js
           grep -q 'mountPortalAvatar' js/auth-client.js
+          grep -q 'ensurePortalAccountArea' js/auth-client.js
+          grep -q "area.href = '/conta/'" js/auth-client.js
+          grep -q 'portal-account-area' css/profile-account-link.css
           grep -q "location.replace('/')" js/account.js
           grep -q 'primeiro-acesso' js/account.js
           grep -q 'Foto do perfil' conta/index.html
           grep -q 'profilePhotoInput' conta/index.html
           ! grep -qi 'Cloudflare' conta/index.html
-          grep -q 'account.js?v=20260814-2' conta/index.html
+          grep -q 'account.js?v=20260814-3' conta/index.html
+          grep -q 'auth-client.js?v=20260814-3' conta/index.html
+          grep -q 'profile-account-link.css?v=20260814-1' conta/index.html
           grep -q 'enforcement: true' js/auth-config.js
           grep -q "homePath: '/'" js/auth-config.js
           grep -q 'AUTH_ENFORCE_AI = "true"' worker/wrangler.toml
@@ -54,6 +60,10 @@ jobs:
           grep -q 'database_name = "portal-regulacao-users"' worker/wrangler.toml
           grep -q 'Usuários e acessos' admin/usuarios/index.html
           grep -q 'Alterar senha' conta/index.html
+          ! grep -q '>Minha conta</a>' index.html
+          ! grep -q '>Minha conta</a>' recepcao/index.html
+          ! grep -q '>Minha conta</a>' admin/usuarios/index.html
+          ! grep -q '>Minha conta</a>' admin/monitoramento/index.html
       - name: Impedir credenciais reais no repositório
         run: |
           if grep -R -E '"password"\s*:\s*"[0-9]{6,}"' worker js admin conta; then
