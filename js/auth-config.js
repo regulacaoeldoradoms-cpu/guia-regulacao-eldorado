@@ -7,5 +7,5 @@ window.REGULATION_AUTH_CONFIG = Object.freeze({
   tokenStorageKey: 'regulacao.portal.session',
   userStorageKey: 'regulacao.portal.user',
   loginPath: '/login/',
-  homePath: '/home/'
+  homePath: '/'
 });
