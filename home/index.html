@@ -3,57 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0d3157">
-  <title>Início | Portal da Regulação</title>
-  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/portal.css?v=20260811-2">
-  <link rel="stylesheet" href="/css/portal-chat.css?v=20260814-1">
+  <meta name="robots" content="noindex">
+  <title>Redirecionando | Portal da Regulação</title>
+  <link rel="canonical" href="/">
+  <script>
+    (() => {
+      const target = `/${location.search || ''}${location.hash || ''}`;
+      location.replace(target);
+    })();
+  </script>
 </head>
-<body class="portal-page">
-  <div class="portal-shell">
-    <header class="portal-topbar">
-      <div class="portal-topbar-inner">
-        <div class="portal-brand">
-          <img src="/assets/app-icon.svg" alt="">
-          <div>
-            <h1>Portal da Regulação de Saúde</h1>
-            <p>Ferramentas internas · Eldorado/MS</p>
-          </div>
-        </div>
-        <div class="portal-user">
-          <div class="portal-user-meta">
-            <strong id="portalUserName">Carregando...</strong>
-            <span id="portalUserRole"></span>
-          </div>
-          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
-        </div>
-      </div>
-    </header>
-
-    <main class="portal-main">
-      <section class="portal-hero">
-        <div class="portal-hero-copy">
-          <span class="portal-eyebrow">HUB de trabalho</span>
-          <h2>Escolha a ferramenta adequada ao seu perfil.</h2>
-          <p>O portal separa a formulação clínica do encaminhamento da conferência operacional feita na Regulação. Cada profissional vê somente as ferramentas compatíveis com sua função.</p>
-        </div>
-      </section>
-
-      <section class="portal-section" aria-labelledby="toolsTitle">
-        <div class="portal-section-heading">
-          <h2 id="toolsTitle">Ferramentas disponíveis</h2>
-        </div>
-        <div class="portal-grid" id="hubGrid">
-          <div class="portal-note info">Carregando ferramentas...</div>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <script src="/js/auth-config.js?v=20260811-2"></script>
-  <script src="/js/auth-client.js?v=20260812-3"></script>
-  <script src="/js/home.js?v=20260814-1"></script>
-  <script src="/js/portal-chat.js?v=20260814-1"></script>
-  <script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>
+<body>
+  <p>Redirecionando para o Portal da Regulação...</p>
+  <p><a href="/">Abrir o HUB</a></p>
 </body>
 </html>
