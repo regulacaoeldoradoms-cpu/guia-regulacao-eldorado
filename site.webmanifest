@@ -2,7 +2,7 @@
   "name": "Guia Médico de Encaminhamentos Regulados",
   "short_name": "Guia Médico",
   "description": "Protocolos e orientação para qualificação de encaminhamentos regulados em Eldorado/MS.",
-  "start_url": "/",
+  "start_url": "/medico/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#12304d",
