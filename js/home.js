@@ -68,9 +68,21 @@
         </span>
         <span>
           <h3>Usuários e acessos</h3>
-          <p>Crie contas, defina o perfil profissional, desative acessos e redefina senhas sem usar o painel da Cloudflare.</p>
+          <p>Crie contas, defina o perfil profissional, desative acessos e redefina senhas pelo próprio portal.</p>
         </span>
         <span class="hub-card-arrow">Gerenciar acessos →</span>
+      </a>`);
+
+    cards.push(`
+      <a class="hub-card" href="/admin/monitoramento/" data-module="usage-monitoring">
+        <span class="hub-card-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/><path d="M2 19h22"/></svg>
+        </span>
+        <span>
+          <h3>Monitoramento de uso</h3>
+          <p>Acompanhe médicos online, último acesso e histórico de utilização do Guia por dia, semana e mês.</p>
+        </span>
+        <span class="hub-card-arrow">Abrir monitoramento →</span>
       </a>`);
 
     cards.push(`
