@@ -55,7 +55,7 @@ function safePath(value) {
 
 function isMedicalGuidePath(path) {
   const normalized = safePath(path).replace(/\?.*$/, '').replace(/#.*$/, '');
-  return normalized === '/' || normalized === '/index.html';
+  return normalized === '/medico/' || normalized === '/medico' || normalized === '/medico/index.html';
 }
 
 function localDateString(date = new Date()) {
@@ -145,8 +145,6 @@ export async function recordUsageHeartbeat(env, username, input = {}) {
 
   const previousDate = parseSqlUtc(previous.lastSeen);
   const elapsedSeconds = previousDate ? Math.max(0, Math.round((now.getTime() - previousDate.getTime()) / 1000)) : 0;
-  // Só soma tempo enquanto os batimentos permanecem próximos. Assim, deixar uma aba
-  // abandonada por horas não vira tempo de uso artificial.
   const activeIncrement = elapsedSeconds > 0 && elapsedSeconds <= 90 ? elapsedSeconds : 0;
 
   await env.AUTH_DB.prepare(`UPDATE portal_usage_daily SET
