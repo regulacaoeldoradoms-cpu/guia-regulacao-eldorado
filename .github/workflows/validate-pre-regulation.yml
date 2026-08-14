@@ -51,11 +51,11 @@ jobs:
           grep -q 'pre_regulation_compact_v2' js/pre-regulation-bridge.js
           grep -q 'CASO ATUAL' js/pre-regulation-bridge.js
           grep -q 'no máximo 3 perguntas objetivas' js/pre-regulation-bridge.js
-          grep -q 'pre-regulation-bridge.js?v=20260811-2' index.html
+          grep -q 'pre-regulation-bridge.js?v=20260811-2' medico/index.html
           python - <<'PY'
           from pathlib import Path
-          html = Path('index.html').read_text(encoding='utf-8')
-          assert html.index('js/ai-config.js') < html.index('js/pre-regulation-bridge.js') < html.index('js/ai-assistant.js')
+          html = Path('medico/index.html').read_text(encoding='utf-8')
+          assert html.index('/js/ai-config.js') < html.index('/js/pre-regulation-bridge.js') < html.index('/js/ai-assistant.js')
           PY
 
       - name: Conferir Worker nativo atualizado
@@ -90,10 +90,10 @@ jobs:
           grep -q "title.textContent = 'Pré-regulação com Gemini'" js/ai-gemini-theme.js
           grep -q 'Simulação baseada em protocolo + prática regulatória' js/ai-gemini-theme.js
           grep -q 'Assistente com base nos protocolos' js/ai-gemini-theme.js
-          grep -q 'Protocolo oficial + pré-regulação conversacional com Gemini' index.html
-          grep -q 'ai-config.js?v=20260811-1' index.html
-          grep -q 'ai-assistant.js?v=20260811-1' index.html
-          grep -q 'ai-gemini-theme.js?v=20260811-1' index.html
+          grep -q 'Protocolo oficial + pré-regulação conversacional com Gemini' medico/index.html
+          grep -q 'ai-config.js?v=20260811-1' medico/index.html
+          grep -q 'ai-assistant.js?v=20260811-1' medico/index.html
+          grep -q 'ai-gemini-theme.js?v=20260811-1' medico/index.html
 
       - name: Conferir limites de segurança
         run: |
@@ -102,4 +102,4 @@ jobs:
           grep -q 'Não recomende cancelamento e reinserção automaticamente' js/ai-assistant.js
           grep -q 'sem se apresentar como regulador oficial' js/pre-regulation-bridge.js
           grep -q 'Você NÃO é o regulador oficial' worker/gemini-assistant.js
-          grep -q 'não substitui avaliação clínica, classificação de risco nem decisão do regulador responsável' index.html
+          grep -q 'não substitui avaliação clínica, classificação de risco nem decisão do regulador responsável' medico/index.html
