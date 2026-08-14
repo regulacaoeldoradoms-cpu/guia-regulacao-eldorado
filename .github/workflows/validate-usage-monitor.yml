@@ -38,10 +38,12 @@ jobs:
           grep -q 'Monitoramento de uso' js/home.js
           grep -q '/admin/monitoramento/' js/home.js
 
-      - name: Conferir presença e histórico
+      - name: Conferir presença, histórico e rota médica
         run: |
           grep -q 'portal_usage_daily' worker/usage-monitor.js
           grep -q 'guide_visits' worker/usage-monitor.js
+          grep -q "normalized === '/medico/'" worker/usage-monitor.js
+          grep -q "normalized === '/medico/index.html'" worker/usage-monitor.js
           grep -q 'recordUsageHeartbeat' worker/portal-chat.js
           grep -q "path: location.pathname" js/portal-chat.js
           grep -q 'formatLastSeen' js/portal-chat.js
@@ -50,3 +52,4 @@ jobs:
           grep -q 'Por semana' admin/monitoramento/index.html
           grep -q 'Por mês' admin/monitoramento/index.html
           grep -q 'não registra conteúdo de encaminhamentos' admin/monitoramento/index.html
+          grep -q 'href="/medico/"' js/home.js
