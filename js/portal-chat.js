@@ -41,11 +41,33 @@
     });
   }
 
-  function formatTime(value) {
-    if (!value) return '';
+  function parseServerDate(value) {
+    if (!value) return null;
     const parsed = new Date(`${String(value).replace(' ', 'T')}Z`);
-    if (Number.isNaN(parsed.getTime())) return '';
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  function formatTime(value) {
+    const parsed = parseServerDate(value);
+    if (!parsed) return '';
     return parsed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function formatLastSeen(value) {
+    const parsed = parseServerDate(value);
+    if (!parsed) return 'ainda não esteve online';
+
+    const now = new Date();
+    const time = parsed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const today = now.toLocaleDateString('pt-BR');
+    const date = parsed.toLocaleDateString('pt-BR');
+    if (date === today) return `visto hoje às ${time}`;
+
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date === yesterday.toLocaleDateString('pt-BR')) return `visto ontem às ${time}`;
+
+    return `visto em ${date} às ${time}`;
   }
 
   function roleLabel(role) {
@@ -213,12 +235,13 @@
 
   function contactHtml(contact) {
     const unread = Number(contact.unread || 0);
+    const presenceText = contact.online ? 'online' : formatLastSeen(contact.lastSeen);
     return `<button class="portal-chat-contact" type="button" data-chat-user="${encodeURIComponent(contact.username)}">
       <span class="portal-chat-avatar" style="${avatarStyle(contact)}">${contact.avatarDataUrl ? '' : initials(contact.name || contact.username)}</span>
       <span class="portal-chat-contact-main">
         <strong>${escapeText(contact.name || contact.username).replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</strong>
         <small>${escapeText(contact.jobTitle || roleLabel(contact.role)).replace(/[&<>]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</small>
-        <span class="portal-chat-presence ${contact.online ? 'online' : ''}"><span class="portal-chat-presence-dot"></span>${contact.online ? 'online' : 'offline'}</span>
+        <span class="portal-chat-presence ${contact.online ? 'online' : ''}"><span class="portal-chat-presence-dot"></span>${escapeText(presenceText)}</span>
       </span>
       ${unread ? `<span class="portal-chat-unread">${unread > 99 ? '99+' : unread}</span>` : '<span></span>'}
     </button>`;
@@ -261,7 +284,7 @@
     const name = document.getElementById('portalChatHeaderName');
     const status = document.getElementById('portalChatHeaderStatus');
     if (name) name.textContent = activeContact?.name || activeContact?.username || 'Conversa';
-    if (status) status.textContent = activeContact?.online ? 'online agora' : 'offline';
+    if (status) status.textContent = activeContact?.online ? 'online agora' : formatLastSeen(activeContact?.lastSeen);
   }
 
   function messageElement(message) {
@@ -447,9 +470,17 @@
     });
   }
 
-  async function heartbeat() {
-    try { await api('/api/chat/presence', { method: 'POST', body: '{}' }); }
-    catch (_) {}
+  async function heartbeat(visit = false) {
+    try {
+      await api('/api/chat/presence', {
+        method: 'POST',
+        body: JSON.stringify({
+          path: location.pathname || '/',
+          visit: Boolean(visit),
+          active: !document.hidden
+        })
+      });
+    } catch (_) {}
   }
 
   async function start() {
@@ -457,15 +488,15 @@
     if (!currentUser) return;
     mount();
     if (notificationSupported() && Notification.permission === 'granted') await ensureNotificationWorker();
-    await heartbeat();
+    await heartbeat(true);
     await loadContacts();
 
-    heartbeatTimer = window.setInterval(heartbeat, 25000);
+    heartbeatTimer = window.setInterval(() => heartbeat(false), 25000);
     contactsTimer = window.setInterval(loadContacts, 12000);
 
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
-        heartbeat();
+        heartbeat(false);
         loadContacts();
         if (activeContact) loadMessages(false);
       }
