@@ -110,13 +110,20 @@ async function dbContacts(env, currentUsername) {
       COALESCE(u.avatar_data, '') AS avatarDataUrl,
       p.last_seen AS lastSeen,
       CASE WHEN p.last_seen IS NOT NULL AND p.last_seen >= datetime('now', '-' || ? || ' seconds') THEN 1 ELSE 0 END AS online,
+      COALESCE((SELECT MAX(m2.sent_at) FROM portal_chat_messages m2
+        WHERE (m2.from_user = ? AND m2.to_user = u.username)
+           OR (m2.from_user = u.username AND m2.to_user = ?)), '') AS lastMessageAt,
       COALESCE((SELECT COUNT(*) FROM portal_chat_messages m
         WHERE m.to_user = ? AND m.from_user = u.username AND m.read_at IS NULL), 0) AS unread
     FROM auth_users u
     LEFT JOIN portal_chat_presence p ON p.username = u.username
     WHERE u.active = 1 AND u.username <> ?
-    ORDER BY online DESC, lower(u.name), u.username`)
-    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername)
+    ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END,
+      lastMessageAt DESC,
+      online DESC,
+      lower(u.name),
+      u.username`)
+    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername)
     .all();
   return result.results || [];
 }
@@ -127,6 +134,15 @@ async function unreadFrom(env, currentUsername, otherUsername) {
     .bind(currentUsername, otherUsername)
     .first();
   return Number(row?.total || 0);
+}
+
+async function lastMessageWith(env, currentUsername, otherUsername) {
+  const row = await env.AUTH_DB.prepare(`SELECT MAX(sent_at) AS lastMessageAt
+    FROM portal_chat_messages
+    WHERE (from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?)`)
+    .bind(currentUsername, otherUsername, otherUsername, currentUsername)
+    .first();
+  return row?.lastMessageAt || null;
 }
 
 async function listContacts(env, currentUsername) {
@@ -148,12 +164,23 @@ async function listContacts(env, currentUsername) {
       avatarDataUrl: '',
       lastSeen: presence?.lastSeen || null,
       online: online ? 1 : 0,
+      lastMessageAt: await lastMessageWith(env, currentUsername, item.username),
       unread: await unreadFrom(env, currentUsername, item.username)
     });
   }
 
-  contacts.sort((a, b) => Number(b.online) - Number(a.online)
-    || String(a.name || a.username).localeCompare(String(b.name || b.username), 'pt-BR'));
+  contacts.sort((a, b) => {
+    const aMessage = String(a.lastMessageAt || '');
+    const bMessage = String(b.lastMessageAt || '');
+    if (aMessage || bMessage) {
+      if (!aMessage) return 1;
+      if (!bMessage) return -1;
+      const recent = bMessage.localeCompare(aMessage);
+      if (recent) return recent;
+    }
+    return Number(b.online) - Number(a.online)
+      || String(a.name || a.username).localeCompare(String(b.name || b.username), 'pt-BR');
+  });
 
   return contacts.map((item) => ({
     username: item.username,
@@ -163,6 +190,7 @@ async function listContacts(env, currentUsername) {
     avatarDataUrl: item.avatarDataUrl || '',
     online: Number(item.online) === 1,
     lastSeen: item.lastSeen || null,
+    lastMessageAt: item.lastMessageAt || null,
     unread: Number(item.unread || 0)
   }));
 }
