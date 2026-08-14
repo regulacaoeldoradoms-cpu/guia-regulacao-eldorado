@@ -3,129 +3,58 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#12304d">
-  <meta name="description" content="Ferramenta médica para consulta de protocolos e qualificação de encaminhamentos regulados em Eldorado/MS.">
-  <title>Guia Médico de Encaminhamentos Regulados</title>
+  <meta name="theme-color" content="#0d3157">
+  <meta name="description" content="Portal interno da Regulação de Saúde de Eldorado/MS.">
+  <title>Início | Portal da Regulação</title>
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/assets/app-icon.svg">
-  <link rel="manifest" href="/site.webmanifest">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Guia Médico">
-  <link rel="preload" as="image" href="https://i.ibb.co/fd23T1tv/logo-agenda.png">
-  <link rel="stylesheet" href="css/site.css">
-  <link rel="stylesheet" href="css/medical.css">
-  <link rel="stylesheet" href="css/referral-workbench.css?v=20260803-3">
-  <link rel="stylesheet" href="css/learning-mode.css">
-  <link rel="stylesheet" href="css/ai-assistant.css?v=20260812-1">
-  <link rel="stylesheet" href="css/ai-gemini-theme.css?v=20260804-5">
+  <link rel="stylesheet" href="/css/portal.css?v=20260811-2">
+  <link rel="stylesheet" href="/css/portal-chat.css?v=20260814-1">
 </head>
-<body data-page="guide" data-role-view="medico" data-required-role="medico">
-  <header class="site-header">
-    <div class="container header-inner">
-      <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <svg class="icon" viewBox="0 0 24 24"><path d="M8 3h8v5h5v8h-5v5H8v-5H3V8h5z"/></svg>
-        </div>
-        <div>
-          <h1>Guia Médico de Encaminhamentos Regulados</h1>
-          <p>Protocolo oficial + pré-regulação conversacional com Gemini</p>
-        </div>
-      </div>
-      <nav class="top-nav" aria-label="Filtros por via de acesso">
-        <button class="nav-button active" type="button" data-filter="todos">Todos</button>
-        <button class="nav-button" type="button" data-filter="sisreg">SISREG/CORE</button>
-        <button class="nav-button" type="button" data-filter="digsus">DigSaúde</button>
-        <button class="nav-button" type="button" data-filter="assincrona">Discussão de conduta</button>
-        <button class="nav-button" type="button" data-filter="ambos">Múltiplas vias</button>
-        <button class="nav-button" type="button" data-filter="indisponivel">Indisponíveis</button>
-        <a class="nav-button" href="protocolo/">
-          <svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg>
-          Fontes técnicas
-        </a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="container">
-    <section class="hero medical-hero">
-      <div class="hero-copy">
-        <span class="eyebrow">Área médica · protocolo + pré-regulação</span>
-        <h2>Veja o protocolo. Converse com o Gemini como em uma pré-regulação.</h2>
-        <p>Consulte critérios, informações obrigatórias, exames, documentos, priorização e alertas. Depois descreva o caso de forma anônima: o Gemini reconhece o que já está adequado, usa as devoluções reais como experiência prática e pergunta somente o que ainda falta.</p>
-      </div>
-      <div class="hero-steps" aria-label="Como usar o guia">
-        <div class="hero-step"><strong>1</strong><span>Escolha a especialidade ou o exame.</span></div>
-        <div class="hero-step"><strong>2</strong><span>Confira visualmente os requisitos do protocolo oficial.</span></div>
-        <div class="hero-step"><strong>3</strong><span>Faça a pré-regulação com o Gemini e refine o encaminhamento em conversa.</span></div>
-      </div>
-      <div class="legend" aria-label="Legenda das exigências">
-        <span class="legend-item"><span class="legend-mark required"></span>Obrigatório</span>
-        <span class="legend-item"><span class="legend-mark conditional"></span>Conforme o caso</span>
-        <span class="legend-item"><span class="legend-mark complementary"></span>Quando disponível</span>
-        <span class="legend-item"><span class="legend-mark priority"></span>Ajuda na priorização</span>
-      </div>
-    </section>
-
-    <section class="workspace">
-      <aside class="panel sidebar" aria-label="Pesquisa de especialidades e exames">
-        <div class="sidebar-heading">
+<body class="portal-page">
+  <div class="portal-shell">
+    <header class="portal-topbar">
+      <div class="portal-topbar-inner">
+        <div class="portal-brand">
+          <img src="/assets/app-icon.svg" alt="">
           <div>
-            <h3>Especialidades e exames</h3>
-            <div id="resultCount" class="result-count">Carregando...</div>
+            <h1>Portal da Regulação de Saúde</h1>
+            <p>Ferramentas internas · Eldorado/MS</p>
           </div>
-          <button class="button primary" type="button" id="generalBtn">Como formular</button>
         </div>
-
-        <div class="field-group">
-          <label class="field-label" for="categoryFilter">Área clínica</label>
-          <select id="categoryFilter"><option value="todos">Todas as áreas</option></select>
-        </div>
-
-        <div class="field-group">
-          <label class="field-label" for="sideSearchInput">Pesquisa clínica</label>
-          <div class="search-field">
-            <span class="search-icon" aria-hidden="true">
-              <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-            </span>
-            <input id="sideSearchInput" type="search" autocomplete="off" placeholder="Ex.: convulsão infantil, ombro, relatório escolar">
+        <div class="portal-user">
+          <div class="portal-user-meta">
+            <strong id="portalUserName">Carregando...</strong>
+            <span id="portalUserRole"></span>
           </div>
-          <p class="field-help">A busca considera os protocolos e termos observados nas devoluções. A aplicação prática é discutida na pré-regulação com o Gemini.</p>
+          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
         </div>
+      </div>
+    </header>
 
-        <div id="protocolList" class="protocol-list"></div>
-      </aside>
-
-      <section id="detailPanel" class="panel detail-panel" aria-live="polite">
-        <div class="loading">Carregando base técnica...</div>
+    <main class="portal-main">
+      <section class="portal-hero">
+        <div class="portal-hero-copy">
+          <span class="portal-eyebrow">HUB de trabalho</span>
+          <h2>Escolha a ferramenta adequada ao seu perfil.</h2>
+          <p>O portal separa a formulação clínica do encaminhamento da conferência operacional feita na Regulação. Cada profissional vê somente as ferramentas compatíveis com sua função.</p>
+        </div>
       </section>
-    </section>
-  </main>
 
-  <footer class="container site-footer">
-    Área destinada ao perfil médico. O conteúdo exibido corresponde à base protocolar cadastrada. A pré-regulação com IA é uma simulação de apoio à formulação e não substitui avaliação clínica, classificação de risco nem decisão do regulador responsável.
-  </footer>
+      <section class="portal-section" aria-labelledby="toolsTitle">
+        <div class="portal-section-heading">
+          <h2 id="toolsTitle">Ferramentas disponíveis</h2>
+        </div>
+        <div class="portal-grid" id="hubGrid">
+          <div class="portal-note info">Carregando ferramentas...</div>
+        </div>
+      </section>
+    </main>
+  </div>
 
-  <script src="js/auth-config.js?v=20260811-1" defer></script>
-  <script src="js/auth-client.js?v=20260812-3" defer></script>
-  <script src="js/access-control.js?v=20260811-1" defer></script>
-  <script src="js/referral-practice-data.js?v=20260803-1" defer></script>
-  <script src="js/referral-practice-update-20260804.js?v=20260804-1" defer></script>
-  <script src="js/referral-practice-update-20260804-2.js?v=20260804-1" defer></script>
-  <script src="js/referral-practice-update-20260804-3.js?v=20260804-1" defer></script>
-  <script src="js/referral-practice-update-20260804-4.js?v=20260804-1" defer></script>
-  <script src="js/referral-practice-update-20260805.js?v=20260805-1" defer></script>
-  <script src="js/referral-practice-update-20260811.js?v=20260811-1" defer></script>
-  <script src="js/medical-app.js" defer></script>
-  <script src="js/dermatology-status.js" defer></script>
-  <script src="js/learning-mode.js?v=20260811-2" defer></script>
-  <script src="js/referral-workbench.js?v=20260803-3" defer></script>
-  <script src="js/ai-config.js?v=20260811-1" defer></script>
-  <script src="js/auth-fetch-bridge.js?v=20260811-1" defer></script>
-  <script src="js/pre-regulation-bridge.js?v=20260811-2" defer></script>
-  <script src="js/ai-assistant.js?v=20260811-1" defer></script>
-  <script src="js/ai-markdown.js?v=20260728-4" defer></script>
-  <script src="js/ai-gemini-theme.js?v=20260811-1" defer></script>
-  <script src="js/medical-portal-nav.js?v=20260814-1" defer></script>
+  <script src="/js/auth-config.js?v=20260814-2"></script>
+  <script src="/js/auth-client.js?v=20260814-2"></script>
+  <script src="/js/home.js?v=20260814-2"></script>
+  <script src="/js/portal-chat.js?v=20260814-1"></script>
+  <script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>
 </body>
 </html>
