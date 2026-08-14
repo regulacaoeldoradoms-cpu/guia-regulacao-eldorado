@@ -11,7 +11,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const chatUser = String(event.notification?.data?.chatUser || '');
-  const fallbackUrl = event.notification?.data?.url || (chatUser ? `/home/?chat=${encodeURIComponent(chatUser)}` : '/home/');
+  const fallbackUrl = event.notification?.data?.url || (chatUser ? `/?chat=${encodeURIComponent(chatUser)}` : '/');
 
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
