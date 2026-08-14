@@ -4,6 +4,7 @@ import aiWorker from './gemini-assistant.js';
 import { handlePortalRoute, isPortalApi, validatePortalSession } from './auth-management-flex.js';
 import { handleProfileRoute, isProfileApi } from './profile-photo.js';
 import { handleChatRoute, isChatApi } from './portal-chat.js';
+import { handleUsageRoute, isUsageApi } from './usage-monitor.js';
 
 function allowedOrigins(env) {
   const configured = String(env.ALLOWED_ORIGINS || '')
@@ -44,6 +45,14 @@ export default {
         return await handleProfileRoute(request, env, origin, originAllowed);
       } catch (error) {
         return jsonError(error?.message || 'Falha ao atualizar o perfil.', 500, origin, originAllowed);
+      }
+    }
+
+    if (isUsageApi(url.pathname)) {
+      try {
+        return await handleUsageRoute(request, env, origin, originAllowed);
+      } catch (error) {
+        return jsonError(error?.message || 'Falha no monitoramento de uso.', 500, origin, originAllowed);
       }
     }
 
