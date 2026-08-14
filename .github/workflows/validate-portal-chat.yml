@@ -26,6 +26,7 @@ jobs:
           test -f css/portal-chat.css
           test -f portal-sw.js
           test -f js/portal-chat-switch-optimizer.js
+          test -f medico/index.html
           grep -q "import { handleChatRoute, isChatApi } from './portal-chat.js'" worker/index.js
           grep -q "portal_chat_messages" worker/portal-chat.js
           grep -q "portal_chat_presence" worker/portal-chat.js
@@ -45,15 +46,15 @@ jobs:
           grep -q "Carregando conversa" js/portal-chat-switch-optimizer.js
           grep -q "notificationclick" portal-sw.js
           grep -q "OPEN_PORTAL_CHAT" portal-sw.js
-          grep -q "portal-chat.js?v=20260814-1" home/index.html
+          grep -q "portal-chat.js?v=20260814-1" index.html
           grep -q "portal-chat.js?v=20260814-1" recepcao/index.html
           grep -q "portal-chat.js?v=20260814-1" conta/index.html
           grep -q "portal-chat.js?v=20260814-1" admin/usuarios/index.html
-          grep -q "portal-chat-switch-optimizer.js?v=20260812-1" home/index.html
+          grep -q "portal-chat-switch-optimizer.js?v=20260812-1" index.html
           grep -q "portal-chat-switch-optimizer.js?v=20260812-1" recepcao/index.html
           grep -q "portal-chat-switch-optimizer.js?v=20260812-1" conta/index.html
           grep -q "portal-chat-switch-optimizer.js?v=20260812-1" admin/usuarios/index.html
-          grep -q "portal-chat.css?v=20260814-1" home/index.html
+          grep -q "portal-chat.css?v=20260814-1" index.html
           grep -q "portal-chat.css?v=20260814-1" recepcao/index.html
           grep -q "portal-chat.css?v=20260814-1" conta/index.html
           grep -q "portal-chat.css?v=20260814-1" admin/usuarios/index.html
@@ -66,7 +67,8 @@ jobs:
           grep -q "portal-chat-switch-optimizer.js?v=20260812-1" js/medical-portal-nav.js
           grep -q "portal-chat-present .ai-launcher" css/ai-assistant.css
           grep -q "portal-chat-open .ai-launcher" css/ai-assistant.css
-          grep -q "ai-assistant.css?v=20260812-1" index.html
-          grep -q "medical-portal-nav.js?v=20260814-1" index.html
-          grep -q 'M8 3h8v5h5v8h-5v5H8v-5H3V8h5z' index.html
+          grep -q "ai-assistant.css?v=20260812-1" medico/index.html
+          grep -q "medical-portal-nav.js?v=20260814-2" medico/index.html
+          grep -q 'M8 3h8v5h5v8h-5v5H8v-5H3V8h5z' medico/index.html
+          grep -q "fallbackUrl.*chat" portal-sw.js
           ! grep -q "portal-chat.js" login/index.html
