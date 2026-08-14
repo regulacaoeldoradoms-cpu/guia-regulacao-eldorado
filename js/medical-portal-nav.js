@@ -64,7 +64,7 @@
       link.href = '/';
       link.className = 'nav-button';
       link.dataset.portalHome = 'true';
-      link.textContent = 'HUB';
+      link.textContent = 'Início';
       nav.prepend(link);
 
       if (window.RegulationAuth?.enforcementEnabled) {
