@@ -19,7 +19,8 @@ jobs:
         run: |
           node --check js/referral-practice-update-20260805.js
           test -f js/referral-practice-update-20260805.js
-          grep -q 'js/referral-practice-update-20260805.js' index.html
+          test -f medico/index.html
+          grep -q 'js/referral-practice-update-20260805.js' medico/index.html
 
       - name: Conferir conteúdo do quinto estudo
         run: |
