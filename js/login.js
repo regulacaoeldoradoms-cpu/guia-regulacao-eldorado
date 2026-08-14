@@ -27,7 +27,7 @@
     const params = new URLSearchParams(location.search);
     const requested = params.get('next');
     const safeNext = requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : null;
-    return safeNext || config.homePath || '/home/';
+    return safeNext || config.homePath || '/';
   }
 
   async function redirectIfAuthenticated() {
