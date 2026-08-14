@@ -1,6 +1,7 @@
 'use strict';
 
 import { validatePortalSession } from './auth-management-flex.js';
+import { recordUsageHeartbeat } from './usage-monitor.js';
 
 const MESSAGE_LIMIT = 2000;
 const ONLINE_WINDOW_SECONDS = 75;
@@ -223,6 +224,8 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   const url = new URL(request.url);
 
   if (url.pathname === '/api/chat/presence' && request.method === 'POST') {
+    const body = await request.json().catch(() => ({}));
+    await recordUsageHeartbeat(env, username, body).catch(() => {});
     return json({ ok: true }, 200, origin);
   }
 
