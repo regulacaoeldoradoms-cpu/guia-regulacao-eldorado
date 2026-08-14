@@ -1,0 +1,52 @@
+name: Validar monitoramento de uso
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Validar sintaxe
+        run: |
+          node --check js/usage-monitor.js
+          node --check js/portal-chat.js
+          node --check js/home.js
+          node --check js/medical-portal-nav.js
+          node --check worker/usage-monitor.js
+          node --check worker/portal-chat.js
+          node --check worker/index.js
+
+      - name: Conferir painel exclusivo do desenvolvedor
+        run: |
+          test -f admin/monitoramento/index.html
+          test -f css/usage-monitor.css
+          test -f js/usage-monitor.js
+          test -f worker/usage-monitor.js
+          grep -q "requireRole(\['admin'\])" js/usage-monitor.js
+          grep -q "developer.role !== 'admin'" worker/usage-monitor.js
+          grep -q '/api/admin/usage' worker/usage-monitor.js
+          grep -q 'handleUsageRoute' worker/index.js
+          grep -q 'Monitoramento de uso' js/home.js
+          grep -q '/admin/monitoramento/' js/home.js
+
+      - name: Conferir presença e histórico
+        run: |
+          grep -q 'portal_usage_daily' worker/usage-monitor.js
+          grep -q 'guide_visits' worker/usage-monitor.js
+          grep -q 'recordUsageHeartbeat' worker/portal-chat.js
+          grep -q "path: location.pathname" js/portal-chat.js
+          grep -q 'formatLastSeen' js/portal-chat.js
+          grep -q 'lastSeen' js/portal-chat.js
+          grep -q 'Por dia' admin/monitoramento/index.html
+          grep -q 'Por semana' admin/monitoramento/index.html
+          grep -q 'Por mês' admin/monitoramento/index.html
+          grep -q 'não registra conteúdo de encaminhamentos' admin/monitoramento/index.html
