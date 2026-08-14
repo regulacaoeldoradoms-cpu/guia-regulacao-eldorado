@@ -149,7 +149,7 @@
       user = await auth.changePassword(current.value, next.value);
       form.reset();
       if (firstAccess) {
-        show(status, 'Senha alterada com sucesso. Abrindo o HUB...', 'success');
+        show(status, 'Senha alterada com sucesso. Abrindo o Início...', 'success');
         window.setTimeout(() => location.replace('/'), 550);
         return;
       }
