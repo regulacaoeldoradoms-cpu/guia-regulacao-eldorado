@@ -45,22 +45,53 @@
     return ((parts[0]?.[0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || '?';
   }
 
+  function ensurePortalAccountArea(container) {
+    let area = container.querySelector('.portal-account-area');
+    const meta = container.querySelector('.portal-user-meta');
+
+    if (!area) {
+      area = document.createElement('a');
+      area.className = 'portal-account-area';
+      area.href = '/conta/';
+      area.setAttribute('aria-label', 'Abrir minha conta');
+      area.title = 'Minha conta';
+
+      if (meta) {
+        container.insertBefore(area, meta);
+        area.appendChild(meta);
+      } else {
+        const logout = container.querySelector('#portalLogout');
+        if (logout) container.insertBefore(area, logout);
+        else container.prepend(area);
+      }
+    } else if (meta && meta.parentElement !== area) {
+      area.appendChild(meta);
+    }
+
+    return area;
+  }
+
   function mountPortalAvatar(user) {
     const container = document.querySelector('.portal-user');
     if (!container || !user) return;
+
+    const accountArea = ensurePortalAccountArea(container);
     let avatar = container.querySelector('.portal-profile-avatar');
     if (!avatar) {
       avatar = document.createElement('div');
       avatar.className = 'portal-profile-avatar';
-      avatar.setAttribute('aria-label', `Foto de perfil de ${user.name || user.username || 'usuário'}`);
       avatar.style.cssText = 'width:40px;height:40px;flex:0 0 40px;border-radius:50%;display:grid;place-items:center;overflow:hidden;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.55);box-shadow:0 4px 12px rgba(0,0,0,.16);font-size:.78rem;font-weight:900;color:#fff;background-size:cover;background-position:center;';
-      const meta = container.querySelector('.portal-user-meta');
-      if (meta) container.insertBefore(avatar, meta);
-      else container.prepend(avatar);
     }
+
+    avatar.setAttribute('aria-hidden', 'true');
+    if (avatar.parentElement !== accountArea) {
+      accountArea.insertBefore(avatar, accountArea.querySelector('.portal-user-meta'));
+    }
+
     const photo = String(user.avatarDataUrl || '');
     avatar.textContent = photo ? '' : initialsFor(user);
     avatar.style.backgroundImage = photo ? `url("${photo}")` : 'none';
+    accountArea.setAttribute('aria-label', `Abrir minha conta: ${user.name || user.username || 'usuário'}`);
   }
 
   async function api(path, options = {}) {
@@ -191,7 +222,7 @@
     }
     mountPortalAvatar(user);
     if (!roleAllowed(user, allowedRoles)) {
-      location.replace(options.deniedPath || CONFIG.homePath || '/home/');
+      location.replace(options.deniedPath || CONFIG.homePath || '/');
       return null;
     }
     return user;
