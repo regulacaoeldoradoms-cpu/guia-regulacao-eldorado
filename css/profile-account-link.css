@@ -1,0 +1,33 @@
+.portal-account-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 14px;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.portal-account-area:hover {
+  background: rgba(255, 255, 255, .12);
+  transform: translateY(-1px);
+}
+
+.portal-account-area:focus-visible {
+  outline: none;
+  background: rgba(255, 255, 255, .14);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .26);
+}
+
+.portal-account-area .portal-user-meta {
+  color: inherit;
+}
+
+@media (max-width: 860px) {
+  .portal-account-area {
+    gap: 0;
+    padding: 5px;
+  }
+}
