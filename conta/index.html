@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0d3157">
   <title>Minha conta | Portal da Regulação</title>
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/portal.css?v=20260811-2">
+  <link rel="stylesheet" href="/css/portal.css?v=20260815-1">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/account-admin.css?v=20260812-2">
   <link rel="stylesheet" href="/css/portal-chat.css?v=20260814-1">
@@ -15,66 +15,61 @@
   <div class="portal-shell">
     <header class="portal-topbar">
       <div class="portal-topbar-inner">
-        <div class="portal-brand">
-          <img src="/assets/app-icon.svg" alt="">
-          <div><h1>Minha conta</h1><p>Portal da Regulação de Saúde · Eldorado/MS</p></div>
-        </div>
-        <div class="portal-user">
-          <a class="portal-button ghost linklike" href="/">← Início</a>
-          <div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div>
-          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
-        </div>
+        <div class="portal-brand"><img src="/assets/app-icon.svg" alt=""><div><h1>Minha conta</h1><p>Portal da Regulação de Saúde · Eldorado/MS</p></div></div>
+        <div class="portal-user"><a class="portal-button ghost linklike" id="accountHomeLink" href="/">← Início</a><div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div><button class="portal-button ghost" id="portalLogout" type="button">Sair</button></div>
       </div>
     </header>
+
     <main class="portal-main">
       <section class="portal-hero">
-        <div class="portal-hero-copy">
-          <span class="portal-eyebrow">Sua conta</span>
-          <h2>Gerencie seu perfil e sua senha.</h2>
-          <p>Você pode trocar sua senha por aqui sempre que precisar e também adicionar uma foto ao seu perfil.</p>
-        </div>
+        <div class="portal-hero-copy"><span class="portal-eyebrow">Sua conta</span><h2>Perfil, senha e segurança em um só lugar.</h2><p>O e-mail de segurança fica separado do conteúdo das manifestações e não é exibido no painel do Conselho Municipal de Saúde.</p></div>
       </section>
 
-      <div class="portal-note info first-access-note" id="firstAccessNotice" hidden>
-        <strong>Primeiro acesso:</strong> escolha sua nova senha. Depois de salvar, você será levado automaticamente para o Início.
-      </div>
+      <div class="portal-note info first-access-note" id="firstAccessNotice" hidden><strong>Primeiro acesso:</strong> escolha sua nova senha. Depois de salvar, você será levado automaticamente ao seu ambiente.</div>
 
       <section class="account-layout" style="margin-top:24px">
         <article class="account-card profile-card">
           <div class="profile-editor">
-            <div class="profile-avatar-preview" id="profileAvatarPreview" aria-label="Foto de perfil">
-              <span id="profileAvatarInitials">?</span>
-            </div>
-            <div class="profile-editor-copy">
-              <h2>Foto do perfil</h2>
-              <p>Escolha uma foto sua. Ela aparecerá ao lado do seu nome nas páginas do portal.</p>
-              <input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-              <div class="account-actions">
-                <button class="portal-button secondary" id="chooseProfilePhoto" type="button">Escolher foto</button>
-                <button class="portal-button danger" id="removeProfilePhoto" type="button" hidden>Remover foto</button>
-              </div>
-              <div class="account-status" id="profileStatus" role="status" aria-live="polite"></div>
-            </div>
+            <div class="profile-avatar-preview" id="profileAvatarPreview" aria-label="Foto de perfil"><span id="profileAvatarInitials">?</span></div>
+            <div class="profile-editor-copy"><h2>Foto do perfil</h2><p>Escolha uma foto sua. Ela aparecerá ao lado do seu nome nas áreas em que seu perfil é exibido.</p><input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="account-actions"><button class="portal-button secondary" id="chooseProfilePhoto" type="button">Escolher foto</button><button class="portal-button danger" id="removeProfilePhoto" type="button" hidden>Remover foto</button></div><div class="account-status" id="profileStatus" role="status" aria-live="polite"></div></div>
           </div>
         </article>
 
         <article class="account-card">
           <h2>Alterar senha</h2>
-          <p>Escolha a senha que preferir. A nova senha passa a valer assim que for salva.</p>
+          <p>Use pelo menos 8 caracteres. A nova senha passa a valer assim que for salva.</p>
           <form id="changePasswordForm" class="account-form" autocomplete="off">
             <div class="portal-field"><label for="currentPassword">Senha atual</label><input id="currentPassword" type="password" autocomplete="current-password" required maxlength="160"></div>
-            <div class="portal-field"><label for="newPassword">Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" required maxlength="160"></div>
-            <div class="portal-field"><label for="confirmPassword">Confirmar nova senha</label><input id="confirmPassword" type="password" autocomplete="new-password" required maxlength="160"></div>
-            <div class="account-actions"><button class="portal-button primary" id="changePasswordButton" type="submit">Salvar nova senha</button></div>
-            <div class="account-status" id="accountStatus" role="status" aria-live="polite"></div>
+            <div class="portal-field"><label for="newPassword">Nova senha</label><input id="newPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="160"></div>
+            <div class="portal-field"><label for="confirmPassword">Confirmar nova senha</label><input id="confirmPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="160"></div>
+            <div class="account-actions"><button class="portal-button primary" id="changePasswordButton" type="submit">Salvar nova senha</button></div><div class="account-status" id="accountStatus" role="status" aria-live="polite"></div>
           </form>
+        </article>
+
+        <article class="account-card">
+          <h2>E-mail de segurança</h2>
+          <p>Serve para verificação e recuperação da conta. Para cidadãos ele é opcional. As contas profissionais também serão protegidas por e-mail verificado quando a etapa de migração for ativada.</p>
+          <form id="securityEmailForm" class="account-form">
+            <div class="portal-field"><label for="securityEmail">E-mail</label><input id="securityEmail" type="email" autocomplete="email" maxlength="254" placeholder="seuemail@exemplo.com"></div>
+            <div><span class="user-badge" id="emailStatusBadge">Verificando...</span></div>
+            <div class="account-actions"><button class="portal-button primary" type="submit">Salvar e-mail</button><button class="portal-button secondary" id="sendEmailVerification" type="button" hidden>Enviar verificação</button></div>
+          </form>
+          <div class="portal-note info" id="privacyStatus" style="margin-top:16px;display:grid;gap:5px"><span>Verificando privacidade...</span></div>
+          <div class="account-status" id="securityStatus" role="status" aria-live="polite"></div>
+        </article>
+
+        <article class="account-card">
+          <h2>Preferências de contato</h2>
+          <p>O portal não permite que cidadãos localizem ou iniciem chat direto com profissionais. A opção abaixo já deixa sua conta preparada para uma futura função de amizade, sem ativá-la agora.</p>
+          <label style="display:flex;gap:10px;align-items:flex-start;margin-top:16px"><input id="acceptFriendRequests" type="checkbox" style="margin-top:3px"><span><strong>Permitir pedidos de amizade</strong><br><small style="color:#6c8293">Quando essa função existir, você poderá decidir se aceita novos pedidos.</small></span></label>
         </article>
       </section>
     </main>
   </div>
-  <script src="/js/auth-config.js?v=20260814-2"></script>
-  <script src="/js/auth-client.js?v=20260814-3"></script>
-  <script src="/js/account.js?v=20260814-3"></script>
+
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260815-1"></script>
+  <script src="/js/account.js?v=20260815-1"></script>
   <script src="/js/portal-chat.js?v=20260814-1"></script>
   <script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>
 </body>
