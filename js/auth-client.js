@@ -80,7 +80,7 @@
     }
     avatar.setAttribute('aria-hidden', 'true');
     if (avatar.parentElement !== accountArea) accountArea.insertBefore(avatar, accountArea.querySelector('.portal-user-meta'));
-    const photo = String(user.avatarDataUrl || '');
+    const photo = user.role === 'cidadao' ? '' : String(user.avatarDataUrl || '');
     avatar.textContent = photo ? '' : initialsFor(user);
     avatar.style.backgroundImage = photo ? `url("${photo}")` : 'none';
     accountArea.setAttribute('aria-label', `Abrir minha conta: ${user.name || user.username || 'usuário'}`);
@@ -99,6 +99,7 @@
       const error = new Error(payload?.error || `Falha no portal (${response.status}).`);
       error.status = response.status;
       error.code = payload?.code || '';
+      error.verificationPath = payload?.verificationPath || '';
       error.retryAfterSeconds = Number(payload?.retryAfterSeconds || 0);
       throw error;
     }
@@ -114,9 +115,9 @@
     return payload.user;
   }
 
-  async function registerCitizen(username, password, displayName = '') {
+  async function registerCitizen(username, password) {
     const payload = await api('/api/auth/register', {
-      method: 'POST', body: JSON.stringify({ username: String(username || '').trim(), password: String(password || ''), displayName: String(displayName || '').trim() })
+      method: 'POST', body: JSON.stringify({ username: String(username || '').trim(), password: String(password || '') })
     });
     if (!payload?.token || !payload?.user) throw new Error('Não foi possível concluir o cadastro.');
     saveSession(payload.token, payload.user, false);
@@ -130,15 +131,22 @@
       const payload = await api('/api/auth/me', { method: 'GET' });
       let user = payload?.user || null;
       if (user) {
-        const profile = await api('/api/auth/profile', { method: 'GET' }).catch(() => null);
-        user = { ...user, avatarDataUrl: profile && Object.prototype.hasOwnProperty.call(profile, 'avatarDataUrl') ? String(profile.avatarDataUrl || '') : String(getCachedUser()?.avatarDataUrl || '') };
+        const profile = user.role === 'cidadao' ? null : await api('/api/auth/profile', { method: 'GET' }).catch(() => null);
+        user = {
+          ...user,
+          avatarDataUrl: user.role === 'cidadao'
+            ? ''
+            : profile && Object.prototype.hasOwnProperty.call(profile, 'avatarDataUrl')
+              ? String(profile.avatarDataUrl || '')
+              : String(getCachedUser()?.avatarDataUrl || '')
+        };
         saveSession(token, user, persistentSession());
         mountPortalAvatar(user);
       }
       return user;
     } catch (error) {
-      if (error.status === 401 || error.status === 403) clearSession();
-      if (allowCached && error.status !== 401 && error.status !== 403) {
+      if (error.status === 401) clearSession();
+      if (allowCached && error.status !== 401) {
         const cached = getCachedUser();
         if (cached) mountPortalAvatar(cached);
         return cached;
@@ -157,15 +165,20 @@
     const previous = getCachedUser() || {};
     const payload = await api('/api/auth/change-password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) });
     if (!payload?.token || !payload?.user) throw new Error('Não foi possível renovar a sessão após a troca de senha.');
-    const user = { ...payload.user, avatarDataUrl: String(previous.avatarDataUrl || '') };
+    const user = {
+      ...payload.user,
+      avatarDataUrl: payload.user.role === 'cidadao' ? '' : String(previous.avatarDataUrl || ''),
+      emailVerificationRequired: Boolean(previous.emailVerificationRequired && !payload.user.emailVerified)
+    };
     saveSession(payload.token, user, persistentSession());
     mountPortalAvatar(user);
     return user;
   }
 
   async function updateProfilePhoto(avatarDataUrl) {
-    const payload = await api('/api/auth/profile', { method: 'PATCH', body: JSON.stringify({ avatarDataUrl: String(avatarDataUrl || '') }) });
     const current = getCachedUser();
+    if (current?.role === 'cidadao') throw new Error('Contas de cidadão não utilizam foto de perfil nesta versão do portal.');
+    const payload = await api('/api/auth/profile', { method: 'PATCH', body: JSON.stringify({ avatarDataUrl: String(avatarDataUrl || '') }) });
     if (!current) return payload;
     const user = { ...current, avatarDataUrl: String(payload.avatarDataUrl || '') };
     saveSession(getToken(), user, persistentSession());
@@ -183,7 +196,14 @@
     const security = payload?.security || {};
     const current = getCachedUser();
     if (current) {
-      const user = { ...current, emailConfigured: Boolean(security.email), emailVerified: Boolean(security.emailVerified), privacyMode: security.privacyMode || current.privacyMode, acceptFriendRequests: Boolean(security.acceptFriendRequests) };
+      const user = {
+        ...current,
+        emailConfigured: Boolean(security.email),
+        emailVerified: Boolean(security.emailVerified),
+        emailVerificationRequired: Boolean(current.emailVerificationRequired && !security.emailVerified),
+        privacyMode: security.privacyMode || current.privacyMode,
+        acceptFriendRequests: Boolean(security.acceptFriendRequests)
+      };
       saveSession(getToken(), user, persistentSession());
     }
     return security;
@@ -223,6 +243,11 @@
     return user.role === 'coordenacao' && allowed.some((role) => role === 'medico' || role === 'recepcao');
   }
 
+  function verificationDestination() {
+    const next = encodeURIComponent(location.pathname + location.search + location.hash);
+    return `/conta/?verificar-email=1&next=${next}`;
+  }
+
   async function requireRole(allowedRoles, options = {}) {
     if (CONFIG.enforcement !== true) {
       const preview = getCachedUser() || { username: 'configuracao', name: 'Modo de configuração', role: 'admin', councilRole: 'membro', preview: true };
@@ -236,6 +261,10 @@
       return null;
     }
     mountPortalAvatar(user);
+    if (user.emailVerificationRequired && location.pathname !== '/conta/' && !location.pathname.startsWith('/conta/')) {
+      location.replace(verificationDestination());
+      return null;
+    }
     if (!roleAllowed(user, allowedRoles)) {
       location.replace(options.deniedPath || (user.role === 'cidadao' ? '/cidadao/' : CONFIG.homePath || '/'));
       return null;
