@@ -37,6 +37,8 @@ Esta versão implementa a estrutura do Canal do Cidadão em uma branch separada.
 - atribuição das funções do Conselho;
 - acesso ao Conselho apenas se também receber `council_role=membro` ou `presidente`.
 
+A V1 bloqueia a desativação acidental da própria conta Desenvolvedor e também impede que o Desenvolvedor remova o próprio nível técnico pelo formulário comum de usuários.
+
 ### Coordenação (`coordenacao`)
 
 - Guia Médico;
@@ -73,12 +75,22 @@ Esta versão implementa a estrutura do Canal do Cidadão em uma branch separada.
 
 O e-mail de segurança fica na tabela de autenticação e não é enviado ao documento Firestore da manifestação.
 
+- o auto cadastro cidadão recebe somente usuário + senha;
+- o formulário público não solicita nome de exibição, telefone, CPF ou e-mail;
+- a interface orienta o cidadão a não usar nome completo ou outros dados pessoais no nome de usuário quando desejar preservar sua identificação;
+- contas de cidadão não utilizam foto de perfil na V1;
 - cidadão sem e-mail: interface usa `anonima`/sem identificação por e-mail ou telefone;
 - cidadão com e-mail: interface usa `sigilosa`;
 - Presidente e membros do Conselho recebem apenas a indicação do nível de privacidade e `Identidade protegida`;
 - o painel institucional não exibe o e-mail de segurança.
 
 O vínculo técnico entre protocolo e conta é mantido em D1 para garantir que somente o autor consulte e responda à própria manifestação. Esse índice não contém o texto da manifestação.
+
+## Migração segura da verificação de e-mail
+
+A ativação futura de `AUTH_REQUIRE_EMAIL_VERIFICATION=true` não bloqueia o login de uma conta profissional válida. A conta consegue autenticar e é encaminhada para `/conta/`, onde permanecem liberadas apenas as rotas necessárias para senha, e-mail e confirmação. As demais APIs profissionais passam a retornar `EMAIL_VERIFICATION_REQUIRED` até a confirmação.
+
+Isso evita o cenário em que um médico ou coordenador seria bloqueado antes de conseguir cadastrar o próprio e-mail.
 
 ## Antes do deploy
 
@@ -92,7 +104,7 @@ Exemplo conceitual, sem usar valor real no GitHub:
 AUTH_DEVELOPER_USERNAMES=<usuario-do-desenvolvedor>
 ```
 
-Após configurado, contas antigas que ainda estejam como `admin` e não constem nessa lista migram automaticamente para `coordenacao`.
+A comparação normaliza espaços, maiúsculas e acentos da mesma forma que o login do portal. Após configurado, contas antigas que ainda estejam como `admin` e não constem nessa lista migram automaticamente para `coordenacao`.
 
 **Não publicar a migração sem confirmar esse valor.**
 
@@ -122,7 +134,9 @@ Com Firebase configurado:
 4. voltar à conta;
 5. confirmar que `emailVerified` atualiza;
 6. testar cidadão sem e-mail e cidadão com e-mail;
-7. testar uma conta profissional existente.
+7. testar uma conta profissional existente;
+8. confirmar que uma conta profissional ainda consegue entrar em `/conta/` quando a exigência estiver ativa;
+9. confirmar que as demais ferramentas ficam bloqueadas somente até a verificação ser concluída.
 
 ### 4. Não ativar a exigência dos profissionais imediatamente
 
@@ -134,7 +148,7 @@ AUTH_REQUIRE_EMAIL_VERIFICATION = "false"
 
 O Hub Profissional já orienta quem ainda não confirmou o e-mail.
 
-Somente depois que as contas existentes forem regularizadas, alterar para:
+Somente depois que o Firebase estiver funcionando e as contas existentes puderem concluir a confirmação, alterar para:
 
 ```toml
 AUTH_REQUIRE_EMAIL_VERIFICATION = "true"
@@ -154,19 +168,22 @@ Depois do deploy controlado:
 2. recepção entra e mantém a Conferência;
 3. Coordenador vê Guia, Recepção, Monitoramento e usuários subordinados;
 4. Coordenador não consegue atribuir `admin`, `coordenacao` ou função do Conselho;
-5. cidadão cria conta sem e-mail;
-6. cidadão não enxerga chat/lista de profissionais;
-7. cidadão abre manifestação e recebe protocolo;
-8. segunda manifestação dentro de duas horas é recusada;
-9. cidadão consegue responder no protocolo mesmo durante as duas horas;
-10. Presidente vê a manifestação sem o e-mail da conta;
-11. membro do Conselho vê e registra observação interna, mas não envia resposta oficial;
-12. Presidente altera o status e responde;
-13. cidadão recebe a notificação interna e vê a atualização;
-14. anexos ficam privados e somente autor/Conselho autorizado conseguem abrir;
-15. conta com e-mail aparece como sigilosa;
-16. conta sem e-mail não ganha e-mail/telefone por preenchimento automático;
-17. logs e banco D1 não armazenam o texto clínico da manifestação fora do Firestore.
+5. Desenvolvedor não consegue se desativar ou se rebaixar acidentalmente pelo formulário comum;
+6. cidadão cria conta fornecendo apenas usuário + senha;
+7. cidadão não pode cadastrar foto de perfil na V1;
+8. cidadão não enxerga chat/lista de profissionais;
+9. cidadão abre manifestação e recebe protocolo;
+10. segunda manifestação dentro de duas horas é recusada;
+11. cidadão consegue responder no protocolo mesmo durante as duas horas;
+12. Presidente vê a manifestação sem o e-mail da conta;
+13. membro do Conselho vê e registra observação interna, mas não envia resposta oficial;
+14. Presidente altera o status e responde;
+15. cidadão recebe a notificação interna e vê a atualização;
+16. anexos ficam privados e somente autor/Conselho autorizado conseguem abrir;
+17. conta com e-mail aparece como sigilosa;
+18. conta sem e-mail não ganha e-mail/telefone por preenchimento automático;
+19. ativar temporariamente a exigência de e-mail em ambiente controlado e confirmar que o profissional consegue entrar em `/conta/`, mas não nas APIs protegidas;
+20. logs e banco D1 não armazenam o texto clínico da manifestação fora do Firestore.
 
 ## Próximas fases, fora da V1
 
