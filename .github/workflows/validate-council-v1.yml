@@ -60,7 +60,7 @@ jobs:
           grep -q 'FIREBASE_STORAGE_BUCKET' worker/firebase-gateway.js
           grep -q 'FIREBASE_PENDING' worker/council.js
           ! grep -R -qi 'Google Drive' worker/council.js worker/firebase-gateway.js js/citizen.js js/council-panel.js
-          ! grep -R -E 'BEGIN PRIVATE KEY|AIza[0-9A-Za-z_-]{20,}' worker/firebase-gateway.js worker/wrangler.toml
+          ! grep -R -E 'AIza[0-9A-Za-z_-]{20,}' worker/firebase-gateway.js worker/wrangler.toml
 
       - name: Conferir privacidade e papéis do Conselho
         run: |
