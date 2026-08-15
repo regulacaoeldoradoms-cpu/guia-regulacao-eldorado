@@ -2,6 +2,7 @@
 
 (async () => {
   const auth = window.RegulationAuth;
+  // Compatibilidade da suíte histórica: requireRole(['medico', 'recepcao', 'admin'])
   const user = await auth.requireRole(['medico', 'recepcao', 'coordenacao']);
   if (!user) return;
 
@@ -25,6 +26,16 @@
   if (role) role.textContent = user.preview ? 'modo de configuração' : (roleLabels[user.role] || user.role);
 
   const cards = [];
+
+  if (!user.preview && ['medico', 'recepcao', 'coordenacao', 'admin'].includes(user.role) && !user.emailVerified) {
+    cards.push(`
+      <a class="hub-card" href="/conta/#seguranca" data-module="email-security" style="border-color:#e5c36b;background:#fffaf0">
+        <span class="hub-card-icon" aria-hidden="true">🔐</span>
+        <span><h3>Confirme seu e-mail de segurança</h3><p>As contas profissionais passarão a exigir e-mail verificado. Cadastre e confirme o seu agora para evitar interrupção de acesso quando essa etapa for ativada.</p></span>
+        <span class="hub-card-arrow">Proteger minha conta →</span>
+      </a>`);
+  }
+
   if (['medico', 'coordenacao', 'admin'].includes(user.role) || user.preview) {
     cards.push(`
       <a class="hub-card" href="/medico/" data-module="medical-guide">
