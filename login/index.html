@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0d3157">
   <title>Login | Regulação de Saúde</title>
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/portal.css?v=20260811-2">
+  <link rel="stylesheet" href="/css/portal.css?v=20260815-1">
 </head>
 <body class="portal-page">
   <main class="login-layout">
@@ -19,17 +19,17 @@
         </div>
       </div>
       <div class="login-message">
-        <span class="portal-eyebrow">Acesso por perfil profissional</span>
-        <h1>Uma entrada. Ferramentas diferentes para cada função.</h1>
-        <p>Médicos acessam o Guia Médico completo e a pré-regulação com Gemini. A recepção acessa a conferência de documentos, exames e materiais necessários para protocolar a solicitação.</p>
+        <span class="portal-eyebrow">Entrada única</span>
+        <h1>Uma conta. O ambiente certo para cada pessoa.</h1>
+        <p>Profissionais acessam suas ferramentas de trabalho. Cidadãos acessam o canal de participação e acompanham suas manifestações ao Conselho Municipal de Saúde.</p>
       </div>
-      <small>Setor de Regulação de Saúde · Eldorado/MS</small>
+      <small>Regulação de Saúde · Conselho Municipal de Saúde · Eldorado/MS</small>
     </section>
 
     <section class="login-panel">
       <form class="login-card" id="loginForm" autocomplete="on">
         <h2>Entrar no portal</h2>
-        <p>Use o acesso fornecido pelo Setor de Regulação.</p>
+        <p>Use seu nome de usuário e sua senha.</p>
 
         <div class="portal-field">
           <label for="loginUsername">Usuário</label>
@@ -45,12 +45,18 @@
 
         <button class="portal-button primary login-submit" id="loginSubmit" type="submit">Entrar</button>
         <div id="loginStatus" class="login-status" role="status" aria-live="polite"></div>
+
+        <div style="margin-top:20px;padding-top:18px;border-top:1px solid #dbe5ee;text-align:center">
+          <strong style="display:block;color:#173b5d;margin-bottom:6px">Você é cidadão?</strong>
+          <span style="display:block;color:#657d91;font-size:.88rem;margin-bottom:12px">Crie gratuitamente uma conta para utilizar o canal do Conselho Municipal de Saúde.</span>
+          <a class="portal-button secondary linklike" href="/cadastro/">Criar conta de cidadão</a>
+        </div>
       </form>
     </section>
   </main>
 
-  <script src="/js/auth-config.js?v=20260814-2"></script>
-  <script src="/js/auth-client.js?v=20260812-3"></script>
-  <script src="/js/login.js?v=20260811-3"></script>
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260815-1"></script>
+  <script src="/js/login.js?v=20260815-1"></script>
 </body>
 </html>
