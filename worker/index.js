@@ -3,8 +3,9 @@
 import aiWorker from './gemini-assistant.js';
 import { handlePortalRoute, isPortalApi, validatePortalSession } from './auth-management-flex.js';
 import { handleProfileRoute, isProfileApi } from './profile-photo.js';
-import { handleChatRoute, isChatApi } from './portal-chat.js';
-import { handleUsageRoute, isUsageApi } from './usage-monitor.js';
+import { handleChatRoute, isChatApi } from './portal-chat-v2.js';
+import { handleUsageRoute, isUsageApi } from './usage-monitor-v2.js';
+import { handleCouncilRoute, isCouncilApi } from './council.js';
 
 function allowedOrigins(env) {
   const configured = String(env.ALLOWED_ORIGINS || '')
@@ -31,6 +32,14 @@ export default {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin') || '';
     const originAllowed = !origin || allowedOrigins(env).includes(origin);
+
+    if (isCouncilApi(url.pathname)) {
+      try {
+        return await handleCouncilRoute(request, env, origin, originAllowed);
+      } catch (error) {
+        return jsonError(error?.message || 'Falha no módulo do Conselho.', 500, origin, originAllowed);
+      }
+    }
 
     if (isChatApi(url.pathname)) {
       try {
@@ -64,16 +73,13 @@ export default {
       }
     }
 
-    // O navegador faz um preflight OPTIONS porque a chamada da IA usa Authorization.
-    // Esse preflight não carrega o Bearer token e precisa chegar ao aiWorker, que devolve
-    // os cabeçalhos CORS (Allow-Origin / Allow-Headers / Allow-Methods) corretamente.
     if (
       url.pathname === '/api/ia'
       && request.method !== 'OPTIONS'
       && String(env.AUTH_ENFORCE_AI || '').toLowerCase() === 'true'
     ) {
       const user = await validatePortalSession(request, env, ['medico']);
-      if (!user) return jsonError('Acesso médico necessário para utilizar a pré-regulação.', 403, origin, originAllowed);
+      if (!user) return jsonError('Acesso profissional necessário para utilizar a pré-regulação.', 403, origin, originAllowed);
     }
 
     return aiWorker.fetch(request, env, ctx);
