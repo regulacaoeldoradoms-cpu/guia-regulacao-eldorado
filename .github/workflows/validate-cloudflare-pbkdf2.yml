@@ -15,11 +15,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validar autenticação usada pelo Worker
         run: |
-          node --check worker/auth-management-fixed.js
+          node --check worker/auth-management-v2.js
+          node --check worker/auth-management-flex.js
           node --check worker/index.js
-          grep -q "auth-management-fixed.js" worker/index.js
-          grep -q "const PBKDF2_ITERATIONS = 100000;" worker/auth-management-fixed.js
-          if grep -E "PBKDF2_ITERATIONS = (1[0-9]{5,}|[2-9][0-9]{5,});" worker/auth-management-fixed.js; then
-            echo 'PBKDF2 acima de 100000 não é compatível com Cloudflare Workers.'
+          grep -q "auth-management-flex.js" worker/index.js
+          grep -q "PBKDF2_ITERATIONS = 100000" worker/auth-management-v2.js
+          if grep -E "PBKDF2_ITERATIONS = (1[0-9]{5,}|[2-9][0-9]{5,});" worker/auth-management-v2.js; then
+            echo 'PBKDF2 acima de 100000 não é compatível com o limite definido para este Worker.'
             exit 1
           fi
