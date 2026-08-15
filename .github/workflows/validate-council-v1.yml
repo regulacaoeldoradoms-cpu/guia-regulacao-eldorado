@@ -1,0 +1,102 @@
+name: Validar Canal do Conselho V1
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-council:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar sintaxe dos módulos novos
+        run: |
+          node --check worker/firebase-gateway.js
+          node --check worker/auth-management-v2.js
+          node --check worker/role-migration.js
+          node --check worker/council.js
+          node --check worker/portal-chat-v2.js
+          node --check worker/usage-monitor-v2.js
+          node --check worker/index.js
+          node --check js/auth-client.js
+          node --check js/login.js
+          node --check js/signup.js
+          node --check js/citizen.js
+          node --check js/council-panel.js
+          node --check js/admin-users.js
+          node --check js/account.js
+          node --check js/home.js
+          node --check js/usage-monitor-v2.js
+
+      - name: Conferir páginas e arquitetura
+        run: |
+          test -f conselho/index.html
+          test -f conselho/painel/index.html
+          test -f cadastro/index.html
+          test -f cidadao/index.html
+          test -f css/citizen.css
+          test -f css/council.css
+          test -f PORTAL-ARQUITETURA.md
+          grep -q 'Canal do Cidadão' cidadao/index.html
+          grep -q 'Conselho Municipal de Saúde' conselho/index.html
+          grep -q 'Painel institucional' conselho/painel/index.html
+          grep -q 'Nova manifestação' cidadao/index.html
+          grep -q 'Minhas manifestações' cidadao/index.html
+          grep -q 'Notificações' cidadao/index.html
+          grep -q 'Entrada única' login/index.html
+          grep -q 'Criar conta de cidadão' login/index.html
+
+      - name: Conferir Firebase sem fallback para Google Drive
+        run: |
+          grep -q 'firestoreCreate' worker/council.js
+          grep -q 'storageUpload' worker/council.js
+          grep -q 'FIREBASE_PROJECT_ID' worker/firebase-gateway.js
+          grep -q 'FIREBASE_PRIVATE_KEY' worker/firebase-gateway.js
+          grep -q 'FIREBASE_STORAGE_BUCKET' worker/firebase-gateway.js
+          grep -q 'FIREBASE_PENDING' worker/council.js
+          ! grep -R -qi 'Google Drive' worker/council.js worker/firebase-gateway.js js/citizen.js js/council-panel.js
+          ! grep -R -E 'BEGIN PRIVATE KEY|AIza[0-9A-Za-z_-]{20,}' worker/firebase-gateway.js worker/wrangler.toml
+
+      - name: Conferir privacidade e papéis do Conselho
+        run: |
+          grep -q "COUNCIL_ROLES = new Set(\['', 'membro', 'presidente'\])" worker/auth-management-v2.js
+          grep -q "user.councilRole === 'presidente'" worker/council.js
+          grep -q 'authorLabel' worker/council.js
+          grep -q "const { authorUsername, ...safe }" worker/council.js
+          grep -q "privacyMode = user.email ? 'sigilosa' : 'anonima'" worker/council.js
+          grep -q 'emailConfigured' worker/auth-management-v2.js
+          grep -q 'Dados de autenticação' conselho/painel/index.html
+          ! grep -q 'email:' worker/council.js
+
+      - name: Conferir limites antiabuso
+        run: |
+          grep -q 'NEW_MANIFESTATION_INTERVAL_SECONDS = 2 \* 60 \* 60' worker/council.js
+          grep -q 'É permitido abrir uma nova manifestação a cada 2 horas' worker/council.js
+          grep -q 'MAX_ATTACHMENTS = 5' worker/council.js
+          grep -q 'MAX_ATTACHMENT_BYTES = 5 \* 1024 \* 1024' worker/council.js
+          grep -q "ATTACHMENT_TYPES = new Set(\['image/jpeg', 'image/png', 'application/pdf'\])" worker/council.js
+          grep -q 'SELF_REGISTER_LIMIT_PER_DAY = 5' worker/auth-management-v2.js
+
+      - name: Conferir isolamento do chat
+        run: |
+          grep -q 'PROFESSIONAL_ROLES' worker/portal-chat-v2.js
+          ! grep -q "'cidadao'" worker/portal-chat-v2.js
+          ! grep -q 'portal-chat.js' cidadao/index.html
+          ! grep -q 'portal-chat.js' cadastro/index.html
+          ! grep -q 'portal-chat.js' conselho/index.html
+          ! grep -q 'portal-chat.js' conselho/painel/index.html
+          ! grep -q 'portal-chat.js' conta/index.html
+
+      - name: Conferir hierarquia e migração dos administradores legados
+        run: |
+          grep -q "actorRole === 'coordenacao'" worker/auth-management-v2.js
+          grep -q "new Set(\['medico', 'recepcao'\])" worker/auth-management-v2.js
+          grep -q 'AUTH_DEVELOPER_USERNAMES' worker/role-migration.js
+          grep -q "SET role = 'coordenacao'" worker/role-migration.js
+          grep -q 'AUTH_REQUIRE_EMAIL_VERIFICATION = "false"' worker/wrangler.toml
+          grep -q 'AUTH_DEVELOPER_USERNAMES' worker/wrangler.toml
