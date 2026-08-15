@@ -81,11 +81,11 @@
 
   if (user.role === 'admin' && !user.preview) {
     cards.push(`
-      <section class="hub-card hub-card-system" data-module="developer-access" aria-label="Acesso de desenvolvimento">
-        <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/></svg></span>
-        <span><h3>Perfil de Desenvolvimento</h3><p>Administração técnica do Portal da Regulação. Esse nível não é utilizado para funções de coordenação.</p></span>
-        <span class="hub-card-arrow">Acesso técnico</span>
-      </section>`);
+      <a class="hub-card hub-card-system" href="/admin/configuracao/" data-module="developer-readiness">
+        <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg></span>
+        <span><h3>Configuração técnica</h3><p>Confira se Cloudflare, Firebase, segredos e flags de migração estão prontos sem exibir os valores sensíveis.</p></span>
+        <span class="hub-card-arrow">Ver diagnóstico →</span>
+      </a>`);
   }
 
   grid.innerHTML = cards.join('');
