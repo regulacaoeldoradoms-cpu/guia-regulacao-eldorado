@@ -2,6 +2,17 @@
 
 const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'admin']);
 const COUNCIL_ROLES_REQUIRING_VERIFICATION = new Set(['membro', 'presidente']);
+const RESERVED_CITIZEN_USERNAMES = new Set([
+  'admin', 'administrador', 'administracao', 'developer', 'desenvolvedor',
+  'coordenacao', 'coordenador', 'coordenadora', 'medico', 'medica', 'recepcao',
+  'regulacao', 'regulador', 'reguladora', 'saude', 'sms', 'sesau', 'secretaria',
+  'prefeitura', 'eldorado', 'conselho', 'cms', 'presidente', 'oficial', 'sistema',
+  'suporte', 'atendimento', 'moderacao', 'moderador', 'moderadora'
+]);
+const RESERVED_CITIZEN_PREFIXES = [
+  'admin.', 'administracao.', 'conselho.', 'cms.', 'prefeitura.', 'regulacao.',
+  'saude.', 'secretaria.', 'sistema.', 'suporte.', 'oficial.'
+];
 const EMAIL_GATE_EXEMPT_PATHS = new Set([
   '/api/auth/login',
   '/api/auth/me',
@@ -50,8 +61,6 @@ export function professionalEmailVerificationEnabled(env) {
 }
 
 export function portalEnvForAuthRoute(env, pathname) {
-  // A etapa obrigatória nunca deve impedir o usuário de autenticar e chegar à própria
-  // página de segurança. O bloqueio é feito depois da criação válida da sessão.
   if (pathname !== '/api/auth/login' || !professionalEmailVerificationEnabled(env)) return env;
   return { ...env, AUTH_REQUIRE_EMAIL_VERIFICATION: 'false' };
 }
@@ -121,13 +130,26 @@ export async function guardDeveloperSelfMutation(request, env, validatePortalSes
   return null;
 }
 
+export async function guardCitizenRegistrationUsername(request, origin, originAllowed = true) {
+  const url = new URL(request.url);
+  if (url.pathname !== '/api/auth/register' || request.method !== 'POST') return null;
+  const body = await request.clone().json().catch(() => ({}));
+  const username = normalizeUsername(body.username);
+  const reserved = RESERVED_CITIZEN_USERNAMES.has(username)
+    || RESERVED_CITIZEN_PREFIXES.some((prefix) => username.startsWith(prefix));
+  if (!reserved) return null;
+
+  return json({
+    error: 'Este nome de usuário é reservado para identificação institucional do portal. Escolha outro.',
+    code: 'USERNAME_RESERVED'
+  }, 409, origin, originAllowed);
+}
+
 export async function sanitizeCitizenRegistrationRequest(request) {
   const url = new URL(request.url);
   if (url.pathname !== '/api/auth/register' || request.method !== 'POST') return request;
   const body = await request.clone().json().catch(() => ({}));
 
-  // O auto cadastro cidadão não aceita nome, e-mail, telefone, cargo ou qualquer papel
-  // privilegiado. A conta nasce apenas com o identificador de login escolhido pelo cidadão.
   const cleanBody = {
     username: body.username,
     password: body.password
