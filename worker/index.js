@@ -10,6 +10,7 @@ import { enforceDeveloperSeparation } from './role-migration.js';
 import {
   augmentAuthResponse,
   enforceProfessionalEmailGate,
+  guardCitizenRegistrationUsername,
   guardDeveloperSelfMutation,
   portalEnvForAuthRoute,
   sanitizeCitizenRegistrationRequest
@@ -42,11 +43,16 @@ function jsonError(message, status, origin, allowed, code = '') {
 export default {
   async fetch(request, env, ctx) {
     await enforceDeveloperSeparation(env);
-    request = await sanitizeCitizenRegistrationRequest(request);
 
-    const url = new URL(request.url);
+    let url = new URL(request.url);
     const origin = request.headers.get('Origin') || '';
     const originAllowed = !origin || allowedOrigins(env).includes(origin);
+
+    const reservedUsernameBlock = await guardCitizenRegistrationUsername(request, origin, originAllowed);
+    if (reservedUsernameBlock) return reservedUsernameBlock;
+
+    request = await sanitizeCitizenRegistrationRequest(request);
+    url = new URL(request.url);
     const securityPatchSnapshot = url.pathname === '/api/auth/security' && request.method === 'PATCH' ? request.clone() : null;
 
     const selfMutationBlock = await guardDeveloperSelfMutation(request, env, validatePortalSession, origin, originAllowed);
