@@ -3,7 +3,6 @@
 (() => {
   const form = document.getElementById('signupForm');
   const username = document.getElementById('signupUsername');
-  const displayName = document.getElementById('signupDisplayName');
   const password = document.getElementById('signupPassword');
   const confirm = document.getElementById('signupConfirm');
   const submit = document.getElementById('signupSubmit');
@@ -28,7 +27,7 @@
     submit.textContent = 'Criando conta...';
     status.className = 'login-status';
     try {
-      await window.RegulationAuth.registerCitizen(username.value, password.value, displayName.value);
+      await window.RegulationAuth.registerCitizen(username.value, password.value);
       show('Conta criada. Abrindo o Canal do Cidadão...', 'success');
       window.setTimeout(() => location.replace('/cidadao/'), 450);
     } catch (error) {
