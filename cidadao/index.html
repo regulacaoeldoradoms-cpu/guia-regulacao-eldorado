@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d3157">
+  <title>Canal do Cidadão | Eldorado/MS</title>
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/portal.css?v=20260815-1">
+  <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
+  <link rel="stylesheet" href="/css/citizen.css?v=20260815-1">
+</head>
+<body class="portal-page">
+  <div class="portal-shell">
+    <header class="portal-topbar">
+      <div class="portal-topbar-inner">
+        <div class="portal-brand">
+          <img src="/assets/app-icon.svg" alt="">
+          <div><h1>Canal do Cidadão</h1><p>Conselho Municipal de Saúde · Eldorado/MS</p></div>
+        </div>
+        <div class="portal-user">
+          <div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole">Cidadão</span></div>
+          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="portal-main">
+      <section class="portal-hero">
+        <div class="portal-hero-copy">
+          <span class="portal-eyebrow">Sua participação importa</span>
+          <h2>Acompanhe sua manifestação do início ao fim por aqui.</h2>
+          <p>Envie sugestões, reclamações, elogios ou denúncias ao Conselho Municipal de Saúde. As atualizações e respostas ficam registradas no próprio portal.</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="privacy-chip" id="privacyChip">Verificando privacidade...</span>
+          <a class="portal-button secondary linklike" href="/conta/">Segurança da conta</a>
+        </div>
+      </section>
+
+      <div class="portal-note warning" id="firebaseNotice" hidden></div>
+
+      <section class="citizen-actions" aria-label="Atalhos do cidadão">
+        <button class="citizen-action" id="openNewManifestation" type="button"><span class="icon">➕</span><strong>Nova manifestação</strong><span>Envie uma nova solicitação ao Conselho.</span></button>
+        <button class="citizen-action" id="focusManifestations" type="button"><span class="icon">📂</span><strong>Minhas manifestações</strong><span>Veja protocolos, andamento e respostas.</span></button>
+        <button class="citizen-action" id="focusNotifications" type="button"><span class="icon">🔔</span><strong>Notificações <b class="count-badge" id="notificationCount" hidden>0</b></strong><span>Confira movimentações recentes.</span></button>
+        <a class="citizen-action" href="/conta/"><span class="icon">👤</span><strong>Minha conta</strong><span>Senha, e-mail de segurança e privacidade.</span></a>
+      </section>
+
+      <section class="citizen-grid">
+        <article class="citizen-card" id="manifestationsCard">
+          <div class="citizen-card-head"><h2>Minhas manifestações</h2><button class="portal-button secondary" id="refreshManifestations" type="button">Atualizar</button></div>
+          <div class="citizen-card-body"><div id="manifestationList" class="manifestation-list"><div class="portal-note info">Carregando manifestações...</div></div></div>
+        </article>
+
+        <article class="citizen-card" id="notificationsCard">
+          <div class="citizen-card-head"><h2>Notificações</h2><button class="portal-button secondary" id="markNotificationsRead" type="button">Marcar como lidas</button></div>
+          <div class="citizen-card-body"><div id="notificationList" class="notification-list"><div class="portal-note info">Carregando notificações...</div></div></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="citizen-modal" id="newManifestationModal" aria-hidden="true">
+    <div class="citizen-modal-panel">
+      <div class="citizen-modal-head"><div><h2>Nova manifestação</h2><small>É permitido abrir uma nova manifestação a cada 2 horas.</small></div><button class="citizen-modal-close" type="button" data-close-modal="newManifestationModal">×</button></div>
+      <form class="citizen-modal-content" id="newManifestationForm">
+        <div class="citizen-form-grid">
+          <div class="portal-field"><label for="manifestationType">Tipo</label><select id="manifestationType" required><option value="">Selecione</option><option value="sugestao">Sugestão</option><option value="reclamacao">Reclamação</option><option value="elogio">Elogio</option><option value="denuncia">Denúncia</option></select></div>
+          <div class="portal-field"><label for="manifestationService">Serviço ou unidade relacionada <span style="font-weight:400">(opcional)</span></label><input id="manifestationService" maxlength="160" placeholder="Ex.: unidade de saúde, transporte, regulação"></div>
+          <div class="portal-field full"><label for="manifestationSubject">Assunto</label><input id="manifestationSubject" required minlength="3" maxlength="180" placeholder="Resuma o assunto em poucas palavras"></div>
+          <div class="portal-field full"><label for="manifestationDescription">Descreva sua manifestação</label><textarea id="manifestationDescription" required minlength="10" maxlength="8000" rows="8" placeholder="Conte o que aconteceu ou explique sua sugestão com as informações que considerar importantes."></textarea></div>
+          <div class="full portal-note info" id="newPrivacyNotice"></div>
+          <div class="full account-actions"><button class="portal-button primary" id="submitManifestation" type="submit">Enviar manifestação</button><button class="portal-button secondary" type="button" data-close-modal="newManifestationModal">Cancelar</button></div>
+          <div class="full account-status" id="newManifestationStatus" role="status" aria-live="polite"></div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="citizen-modal" id="manifestationDetailModal" aria-hidden="true">
+    <div class="citizen-modal-panel">
+      <div class="citizen-modal-head"><div><h2 id="detailProtocol">Manifestação</h2><small id="detailMeta"></small></div><button class="citizen-modal-close" type="button" data-close-modal="manifestationDetailModal">×</button></div>
+      <div class="citizen-modal-content">
+        <div id="detailLoading" class="portal-note info">Carregando...</div>
+        <div id="detailContent" hidden>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"><span class="status-chip" id="detailStatus"></span><span class="privacy-chip" id="detailPrivacy"></span></div>
+          <h3 id="detailSubject" style="color:#173b5d;margin-bottom:6px"></h3>
+          <p id="detailDescription" style="white-space:pre-wrap;color:#3d5568"></p>
+
+          <h3 style="margin-top:24px;color:#173b5d">Anexos</h3>
+          <div id="attachmentList" class="attachment-list"></div>
+          <form id="attachmentForm" style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:10px">
+            <input id="attachmentFile" type="file" accept="image/jpeg,image/png,application/pdf">
+            <button class="portal-button secondary" id="uploadAttachment" type="submit">Adicionar anexo</button>
+            <small>JPG, PNG ou PDF · até 5 MB · máximo de 5 anexos.</small>
+          </form>
+
+          <h3 style="margin-top:24px;color:#173b5d">Conversa com o Conselho</h3>
+          <div id="messageThread" class="thread"></div>
+          <form id="replyForm" style="margin-top:12px">
+            <div class="portal-field"><label for="replyText">Responder</label><textarea id="replyText" rows="4" maxlength="8000" required></textarea></div>
+            <button class="portal-button primary" id="replyButton" type="submit">Enviar resposta</button>
+            <div class="account-status" id="replyStatus"></div>
+          </form>
+
+          <h3 style="margin-top:24px;color:#173b5d">Histórico</h3>
+          <div id="timeline" class="timeline"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260815-1"></script>
+  <script src="/js/citizen.js?v=20260815-1"></script>
+</body>
+</html>
