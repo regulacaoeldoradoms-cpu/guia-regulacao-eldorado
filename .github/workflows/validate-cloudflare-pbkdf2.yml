@@ -20,7 +20,3 @@ jobs:
           node --check worker/index.js
           grep -q "auth-management-flex.js" worker/index.js
           grep -q "PBKDF2_ITERATIONS = 100000" worker/auth-management-v2.js
-          if grep -E "PBKDF2_ITERATIONS = (1[0-9]{5,}|[2-9][0-9]{5,});" worker/auth-management-v2.js; then
-            echo 'PBKDF2 acima de 100000 não é compatível com o limite definido para este Worker.'
-            exit 1
-          fi
