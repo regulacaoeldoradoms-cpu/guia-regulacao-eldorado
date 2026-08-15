@@ -59,10 +59,11 @@ function clean(value, max) {
   return String(value || '').trim().slice(0, max);
 }
 
-function sanitizeFileName(value) {
-  const name = String(value || 'arquivo').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9._-]/g, '_').replace(/_+/g, '_').slice(0, 100);
-  return name || 'arquivo';
+function extensionForContentType(contentType) {
+  if (contentType === 'image/jpeg') return 'jpg';
+  if (contentType === 'image/png') return 'png';
+  if (contentType === 'application/pdf') return 'pdf';
+  return 'bin';
 }
 
 async function ensureSchema(env) {
@@ -110,7 +111,6 @@ function presidentAccess(user) {
 
 function protectedManifestation(doc) {
   if (!doc) return null;
-  // Remove também o campo legado caso exista em algum documento de teste antigo.
   const { authorUsername, ...safe } = doc;
   return {
     ...safe,
@@ -120,8 +120,11 @@ function protectedManifestation(doc) {
 
 function protectedAttachment(doc) {
   if (!doc) return null;
-  const { objectName, ...safe } = doc;
-  return safe;
+  const { objectName, fileName, ...safe } = doc;
+  return {
+    ...safe,
+    displayName: `Anexo ${String(doc.id || '').slice(-6).toUpperCase() || ''}`.trim()
+  };
 }
 
 function protectedInternalNote(doc) {
@@ -196,9 +199,6 @@ async function createManifestation(request, env, user, origin) {
   const protocol = await nextProtocol(env);
   const createdAt = nowIso();
   const privacyMode = user.email ? 'sigilosa' : 'anonima';
-
-  // O documento da manifestação não carrega o username do cidadão. O vínculo técnico
-  // necessário para “Minhas manifestações” fica exclusivamente no índice D1 separado.
   const doc = {
     protocol,
     privacyMode,
@@ -358,19 +358,22 @@ async function uploadAttachment(request, env, user, protocol, origin) {
   if (!(file instanceof File)) return json({ error: 'Selecione um arquivo.' }, 400, origin);
   if (!ATTACHMENT_TYPES.has(file.type)) return json({ error: 'Use arquivo JPG, PNG ou PDF.' }, 400, origin);
   if (file.size > MAX_ATTACHMENT_BYTES) return json({ error: 'Cada arquivo pode ter no máximo 5 MB.' }, 400, origin);
+
   const id = randomId('att');
-  const safeName = sanitizeFileName(file.name);
-  const objectName = `conselho/${protocol}/${id}-${safeName}`;
+  const extension = extensionForContentType(file.type);
+  const objectName = `conselho/${protocol}/${id}.${extension}`;
   const stored = await storageUpload(env, objectName, await file.arrayBuffer(), file.type);
   const attachment = {
-    id, fileName: safeName, contentType: file.type, size: file.size,
+    id,
+    contentType: file.type,
+    size: file.size,
     objectName: stored.name || objectName,
     senderType: isCouncil ? 'council' : 'citizen',
     createdAt: nowIso()
   };
   await firestoreCreate(env, `council_manifestations/${protocol}/attachments`, id, attachment);
   await firestorePatch(env, `council_manifestations/${protocol}`, { attachmentCount: (await attachmentCount(env, protocol)), updatedAt: nowIso() });
-  await addEvent(env, protocol, { type: 'attachment', actorType: attachment.senderType, detail: `Anexo incluído: ${safeName}` });
+  await addEvent(env, protocol, { type: 'attachment', actorType: attachment.senderType, detail: 'Novo anexo incluído.' });
   if (isCouncil) await audit(env, user, 'attachment.upload', protocol);
   return json({ attachment: protectedAttachment(attachment) }, 201, origin);
 }
@@ -387,7 +390,8 @@ async function downloadAttachment(env, user, protocol, attachmentId, origin) {
   const h = headers(origin, true);
   h['Content-Type'] = attachment.contentType || 'application/octet-stream';
   const disposition = attachment.contentType === 'application/pdf' ? 'attachment' : 'inline';
-  h['Content-Disposition'] = `${disposition}; filename="${sanitizeFileName(attachment.fileName)}"`;
+  const extension = extensionForContentType(attachment.contentType);
+  h['Content-Disposition'] = `${disposition}; filename="anexo-${String(attachmentId).slice(-6)}.${extension}"`;
   return new Response(upstream.body, { status: 200, headers: h });
 }
 
