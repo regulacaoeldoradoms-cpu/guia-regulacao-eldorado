@@ -1,6 +1,7 @@
 'use strict';
 
 const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'admin']);
+const COUNCIL_ROLES_REQUIRING_VERIFICATION = new Set(['membro', 'presidente']);
 const EMAIL_GATE_EXEMPT_PATHS = new Set([
   '/api/auth/login',
   '/api/auth/me',
@@ -21,6 +22,13 @@ function normalizeUsername(value) {
     .replace(/[._-]{2,}/g, '.')
     .replace(/^[._-]+|[._-]+$/g, '')
     .slice(0, 40);
+}
+
+function accountRequiresVerifiedEmail(user) {
+  return Boolean(user && (
+    PROFESSIONAL_ROLES.has(user.role)
+    || COUNCIL_ROLES_REQUIRING_VERIFICATION.has(user.councilRole)
+  ));
 }
 
 function json(body, status, origin, originAllowed = true) {
@@ -55,7 +63,7 @@ export async function augmentAuthResponse(response, env) {
 
   const payload = await response.clone().json().catch(() => null);
   const user = payload?.user;
-  if (!user || !PROFESSIONAL_ROLES.has(user.role)) return response;
+  if (!accountRequiresVerifiedEmail(user)) return response;
 
   payload.user = {
     ...user,
@@ -77,7 +85,7 @@ export async function enforceProfessionalEmailGate(request, env, validatePortalS
   if (EMAIL_GATE_EXEMPT_PATHS.has(url.pathname)) return null;
 
   const user = await validatePortalSession(request, env, []).catch(() => null);
-  if (!user || !PROFESSIONAL_ROLES.has(user.role) || user.emailVerified) return null;
+  if (!accountRequiresVerifiedEmail(user) || user.emailVerified) return null;
 
   return json({
     error: 'Confirme o e-mail de segurança da sua conta para continuar.',
