@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Os anexos são servidos exclusivamente pelo Worker após validar sessão,
+    // autoria ou função no Conselho. Clientes Firebase não acessam o bucket
+    // diretamente na V1.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
