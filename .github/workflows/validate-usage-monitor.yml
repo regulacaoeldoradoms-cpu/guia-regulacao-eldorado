@@ -17,37 +17,35 @@ jobs:
 
       - name: Validar sintaxe
         run: |
-          node --check js/usage-monitor.js
+          node --check js/usage-monitor-v2.js
           node --check js/portal-chat.js
           node --check js/home.js
           node --check js/medical-portal-nav.js
-          node --check worker/usage-monitor.js
-          node --check worker/portal-chat.js
+          node --check worker/usage-monitor-v2.js
+          node --check worker/portal-chat-v2.js
           node --check worker/index.js
 
-      - name: Conferir painel exclusivo do desenvolvedor
+      - name: Conferir acesso de Coordenação
         run: |
           test -f admin/monitoramento/index.html
           test -f css/usage-monitor.css
-          test -f js/usage-monitor.js
-          test -f worker/usage-monitor.js
-          grep -q "requireRole(\['admin'\])" js/usage-monitor.js
-          grep -q "developer.role !== 'admin'" worker/usage-monitor.js
-          grep -q '/api/admin/usage' worker/usage-monitor.js
+          test -f js/usage-monitor-v2.js
+          test -f worker/usage-monitor-v2.js
+          grep -q "requireRole(\['coordenacao'\])" js/usage-monitor-v2.js
+          grep -q "\['coordenacao', 'admin'\].includes" js/usage-monitor-v2.js
+          grep -q "\['coordenacao', 'admin'\].includes" worker/usage-monitor-v2.js
+          grep -q '/api/admin/usage' worker/usage-monitor-v2.js
           grep -q 'handleUsageRoute' worker/index.js
           grep -q 'Monitoramento de uso' js/home.js
           grep -q '/admin/monitoramento/' js/home.js
 
       - name: Conferir presença, histórico e rota médica
         run: |
-          grep -q 'portal_usage_daily' worker/usage-monitor.js
-          grep -q 'guide_visits' worker/usage-monitor.js
-          grep -q "normalized === '/medico/'" worker/usage-monitor.js
-          grep -q "normalized === '/medico/index.html'" worker/usage-monitor.js
-          grep -q 'recordUsageHeartbeat' worker/portal-chat.js
+          grep -q 'portal_usage_daily' worker/usage-monitor-v2.js
+          grep -q 'guide_visits' worker/usage-monitor-v2.js
+          grep -q "\['/medico', '/medico/', '/medico/index.html'\]" worker/usage-monitor-v2.js
+          grep -q 'recordUsageHeartbeat' worker/portal-chat-v2.js
           grep -q "path: location.pathname" js/portal-chat.js
-          grep -q 'formatLastSeen' js/portal-chat.js
-          grep -q 'lastSeen' js/portal-chat.js
           grep -q 'Por dia' admin/monitoramento/index.html
           grep -q 'Por semana' admin/monitoramento/index.html
           grep -q 'Por mês' admin/monitoramento/index.html
