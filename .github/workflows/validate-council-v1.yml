@@ -23,6 +23,7 @@ jobs:
           node --check worker/citizen-privacy.js
           node --check worker/profile-photo.js
           node --check worker/attachment-safety.js
+          node --check worker/system-readiness.js
           node --check worker/council.js
           node --check worker/portal-chat-v2.js
           node --check worker/usage-monitor-v2.js
@@ -36,6 +37,7 @@ jobs:
           node --check js/account.js
           node --check js/home.js
           node --check js/usage-monitor-v2.js
+          node --check js/system-readiness.js
 
       - name: Conferir páginas e arquitetura
         run: |
@@ -43,6 +45,7 @@ jobs:
           test -f conselho/painel/index.html
           test -f cadastro/index.html
           test -f cidadao/index.html
+          test -f admin/configuracao/index.html
           test -f css/citizen.css
           test -f css/council.css
           test -f PORTAL-ARQUITETURA.md
@@ -54,6 +57,8 @@ jobs:
           grep -q 'Notificações' cidadao/index.html
           grep -q 'Entrada única' login/index.html
           grep -q 'Criar conta de cidadão' login/index.html
+          grep -q 'Configuração técnica' admin/configuracao/index.html
+          grep -q '/admin/configuracao/' js/home.js
 
       - name: Conferir Firebase sem fallback para Google Drive
         run: |
@@ -95,6 +100,7 @@ jobs:
           grep -q 'user.emailVerificationRequired' js/council-panel.js
           grep -q 'Atenção à sua identificação' cidadao/index.html
           grep -q 'fotos, laudos e PDFs podem conter nome' cidadao/index.html
+          grep -q 'não realiza agendamento' conselho/index.html
 
       - name: Conferir proteção dos anexos
         run: |
@@ -120,7 +126,7 @@ jobs:
           grep -q 'action TEXT NOT NULL' worker/council.js
           grep -q 'protocol TEXT NOT NULL' worker/council.js
 
-      - name: Conferir limites antiabuso
+      - name: Conferir limites antiabuso e impersonação
         run: |
           grep -q 'NEW_MANIFESTATION_INTERVAL_SECONDS = 2 \* 60 \* 60' worker/council.js
           grep -q 'É permitido abrir uma nova manifestação a cada 2 horas' worker/council.js
@@ -130,6 +136,9 @@ jobs:
           grep -q 'SELF_REGISTER_LIMIT_PER_DAY = 5' worker/auth-management-v2.js
           grep -q 'sanitizeCitizenRegistrationRequest' worker/index.js
           grep -q 'const cleanBody' worker/portal-safety.js
+          grep -q 'RESERVED_CITIZEN_USERNAMES' worker/portal-safety.js
+          grep -q 'USERNAME_RESERVED' worker/portal-safety.js
+          grep -q 'guardCitizenRegistrationUsername' worker/index.js
 
       - name: Conferir isolamento do chat
         run: |
@@ -146,12 +155,14 @@ jobs:
           grep -q "actorRole === 'coordenacao'" worker/auth-management-v2.js
           grep -q "new Set(\['medico', 'recepcao'\])" worker/auth-management-v2.js
           grep -q 'AUTH_DEVELOPER_USERNAMES' worker/role-migration.js
+          grep -q 'AUTH_MIGRATE_LEGACY_ADMINS' worker/role-migration.js
+          grep -q 'migrationEnabled' worker/role-migration.js
           grep -q "SET role = 'coordenacao'" worker/role-migration.js
           grep -q 'guardDeveloperSelfMutation' worker/index.js
           grep -q 'DEVELOPER_SELF_DEMOTION_BLOCKED' worker/portal-safety.js
           grep -q 'DEVELOPER_SELF_DISABLE_BLOCKED' worker/portal-safety.js
           grep -q 'AUTH_REQUIRE_EMAIL_VERIFICATION = "false"' worker/wrangler.toml
-          grep -q 'AUTH_DEVELOPER_USERNAMES' worker/wrangler.toml
+          grep -q 'AUTH_MIGRATE_LEGACY_ADMINS = "false"' worker/wrangler.toml
 
       - name: Conferir migração de e-mail sem bloqueio de login
         run: |
@@ -164,3 +175,15 @@ jobs:
           grep -q 'user.emailVerificationRequired' js/auth-client.js
           grep -q 'verificar-email=1' js/login.js
           grep -q 'emailVerificationNotice' conta/index.html
+
+      - name: Conferir diagnóstico técnico sem exposição de segredos
+        run: |
+          grep -q '/api/admin/readiness' worker/system-readiness.js
+          grep -q "user.role !== 'admin'" worker/system-readiness.js
+          grep -q 'readyForControlledDeploy' worker/system-readiness.js
+          grep -q 'FIREBASE_PROJECT_ID' worker/system-readiness.js
+          grep -q 'AUTH_DEVELOPER_USERNAMES' worker/system-readiness.js
+          grep -q 'AUTH_RATE_LIMIT_SECRET' worker/system-readiness.js
+          grep -q 'handleSystemReadinessRoute' worker/index.js
+          grep -q '/api/admin/readiness' js/system-readiness.js
+          ! grep -q 'privateKey:' js/system-readiness.js
