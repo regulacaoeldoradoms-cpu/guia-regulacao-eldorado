@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0d3157">
   <title>Criar conta | Portal da Regulação</title>
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/portal.css?v=20260815-1">
+  <link rel="stylesheet" href="/css/portal.css?v=20260815-2">
 </head>
 <body class="portal-page">
   <main class="login-layout">
@@ -27,16 +27,16 @@
       <form class="login-card" id="signupForm" autocomplete="off">
         <a href="/login/" style="display:inline-block;margin-bottom:16px;color:#275d88;text-decoration:none">← Voltar ao login</a>
         <h2>Criar conta de cidadão</h2>
-        <p>Escolha um usuário e uma senha. Não use CPF, telefone ou e-mail como nome de usuário se quiser preservar sua identificação.</p>
+        <p>Você precisa informar somente um nome de usuário e uma senha.</p>
+
+        <div class="portal-note info" style="margin-bottom:16px">
+          <strong>Se quiser preservar sua identificação:</strong> não use seu nome completo, CPF, telefone, e-mail, data de nascimento ou outro dado pessoal como nome de usuário.
+        </div>
 
         <div class="portal-field">
           <label for="signupUsername">Nome de usuário</label>
           <input id="signupUsername" autocomplete="username" required minlength="3" maxlength="40" placeholder="Ex.: ipelima23">
-          <small>Use de 3 a 40 caracteres. O sistema aceita letras, números, ponto, hífen e sublinhado.</small>
-        </div>
-        <div class="portal-field">
-          <label for="signupDisplayName">Como deseja aparecer na sua conta <span style="font-weight:400">(opcional)</span></label>
-          <input id="signupDisplayName" maxlength="60" placeholder="Pode deixar em branco">
+          <small>Use de 3 a 40 caracteres. São aceitos letras, números, ponto, hífen e sublinhado.</small>
         </div>
         <div class="portal-field">
           <label for="signupPassword">Senha</label>
@@ -59,7 +59,7 @@
   </main>
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
-  <script src="/js/auth-client.js?v=20260815-1"></script>
-  <script src="/js/signup.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260815-2"></script>
+  <script src="/js/signup.js?v=20260815-2"></script>
 </body>
 </html>
