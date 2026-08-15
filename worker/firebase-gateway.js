@@ -204,20 +204,47 @@ export async function firestoreDelete(env, documentPath) {
   return true;
 }
 
-async function identityRequest(env, path, body, method = 'POST') {
+function identityBase(env) {
   if (!env.FIREBASE_PROJECT_ID || !env.FIREBASE_WEB_API_KEY) {
     throw new Error('Firebase Authentication ainda não configurado.');
   }
+  return `https://identitytoolkit.googleapis.com/v1`;
+}
+
+async function identityAdminRequest(env, path, body, method = 'POST') {
+  const base = identityBase(env);
   const token = await googleAccessToken(env, IDENTITY_SCOPE);
   const separator = path.includes('?') ? '&' : '?';
-  const response = await fetch(`https://identitytoolkit.googleapis.com/v1/${path}${separator}key=${encodeURIComponent(env.FIREBASE_WEB_API_KEY)}`, {
+  const response = await fetch(`${base}/${path}${separator}key=${encodeURIComponent(env.FIREBASE_WEB_API_KEY)}`, {
     method,
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json; charset=utf-8', 'X-Firebase-Locale': 'pt-BR' },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json; charset=utf-8',
+      'X-Firebase-Locale': 'pt-BR'
+    },
     body: body === undefined ? undefined : JSON.stringify(body)
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = payload?.error?.message || payload?.error || `Falha na verificação de e-mail (${response.status}).`;
+    const message = payload?.error?.message || payload?.error || `Falha no Firebase Authentication (${response.status}).`;
+    const error = new Error(String(message));
+    error.status = response.status;
+    throw error;
+  }
+  return payload;
+}
+
+async function identityPublicRequest(env, path, body) {
+  const base = identityBase(env);
+  const separator = path.includes('?') ? '&' : '?';
+  const response = await fetch(`${base}/${path}${separator}key=${encodeURIComponent(env.FIREBASE_WEB_API_KEY)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'X-Firebase-Locale': 'pt-BR' },
+    body: JSON.stringify(body || {})
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload?.error?.message || payload?.error || `Falha no Firebase Authentication (${response.status}).`;
     const error = new Error(String(message));
     error.status = response.status;
     throw error;
@@ -236,59 +263,79 @@ function randomPassword() {
   return `${base64UrlBytes(bytes)}A9!`;
 }
 
-export async function ensureFirebaseEmailIdentity(env, username, email) {
+async function lookupFirebaseUsers(env, criteria) {
   const project = encodeURIComponent(env.FIREBASE_PROJECT_ID || '');
-  const lookup = await identityRequest(env, `projects/${project}/accounts:lookup`, {
-    targetProjectId: env.FIREBASE_PROJECT_ID,
-    initialEmail: [String(email)]
-  }).catch((error) => {
-    if (error.status === 404) return { users: [] };
-    throw error;
-  });
-  const existing = Array.isArray(lookup.users) ? lookup.users[0] : null;
-  if (existing) return { localId: existing.localId, emailVerified: Boolean(existing.emailVerified) };
-
-  const localId = await stableFirebaseUid(username);
-  try {
-    const created = await identityRequest(env, `projects/${project}/accounts`, {
-      targetProjectId: env.FIREBASE_PROJECT_ID,
-      localId,
-      email: String(email),
-      password: randomPassword(),
-      emailVerified: false,
-      displayName: `Portal ${username}`
-    });
-    return { localId: created.localId || localId, emailVerified: Boolean(created.emailVerified) };
-  } catch (error) {
-    if (!/EMAIL_EXISTS/i.test(error.message)) throw error;
-    const retry = await identityRequest(env, `projects/${project}/accounts:lookup`, {
-      targetProjectId: env.FIREBASE_PROJECT_ID,
-      initialEmail: [String(email)]
-    });
-    const user = Array.isArray(retry.users) ? retry.users[0] : null;
-    if (!user) throw error;
-    return { localId: user.localId, emailVerified: Boolean(user.emailVerified) };
-  }
+  const payload = await identityAdminRequest(env, `projects/${project}/accounts:lookup`, criteria);
+  return Array.isArray(payload.users) ? payload.users : [];
 }
 
-export async function sendFirebaseVerificationEmail(env, email) {
+export async function ensureFirebaseEmailIdentity(env, username, email) {
   const project = encodeURIComponent(env.FIREBASE_PROJECT_ID || '');
-  return identityRequest(env, `projects/${project}/accounts:sendOobCode`, {
-    requestType: 'VERIFY_EMAIL',
+  const localId = await stableFirebaseUid(username);
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+  const byUid = await lookupFirebaseUsers(env, { localId: [localId] });
+  const existing = byUid[0] || null;
+
+  if (existing) {
+    const sameEmail = String(existing.email || '').toLowerCase() === normalizedEmail;
+    if (sameEmail && Boolean(existing.emailVerified)) {
+      return { localId, emailVerified: true, verificationPassword: '' };
+    }
+    const verificationPassword = randomPassword();
+    const updated = await identityAdminRequest(env, `projects/${project}/accounts:update`, {
+      localId,
+      email: normalizedEmail,
+      password: verificationPassword,
+      emailVerified: sameEmail ? Boolean(existing.emailVerified) : false
+    });
+    return {
+      localId: updated.localId || localId,
+      emailVerified: Boolean(updated.emailVerified),
+      verificationPassword
+    };
+  }
+
+  const byEmail = await lookupFirebaseUsers(env, { email: [normalizedEmail] });
+  if (byEmail.length) {
+    const error = new Error('Este e-mail já está vinculado a outra conta de segurança.');
+    error.status = 409;
+    throw error;
+  }
+
+  const verificationPassword = randomPassword();
+  const created = await identityAdminRequest(env, `projects/${project}/accounts`, {
+    localId,
+    email: normalizedEmail,
+    password: verificationPassword,
+    emailVerified: false,
+    displayName: `Portal ${username}`
+  });
+  return {
+    localId: created.localId || localId,
+    emailVerified: Boolean(created.emailVerified),
+    verificationPassword
+  };
+}
+
+export async function sendFirebaseVerificationEmail(env, email, verificationPassword) {
+  if (!verificationPassword) throw new Error('Não foi possível preparar a verificação deste e-mail.');
+  const signIn = await identityPublicRequest(env, 'accounts:signInWithPassword', {
     email: String(email),
-    targetProjectId: env.FIREBASE_PROJECT_ID,
+    password: verificationPassword,
+    returnSecureToken: true
+  });
+  if (!signIn.idToken) throw new Error('O Firebase não retornou o token necessário para a verificação.');
+  return identityPublicRequest(env, 'accounts:sendOobCode', {
+    requestType: 'VERIFY_EMAIL',
+    idToken: signIn.idToken,
     continueUrl: 'https://regulacaoeldoradoms.com.br/conta/?email-verificado=1',
     canHandleCodeInApp: false
   });
 }
 
 export async function firebaseEmailStatus(env, email) {
-  const project = encodeURIComponent(env.FIREBASE_PROJECT_ID || '');
-  const payload = await identityRequest(env, `projects/${project}/accounts:lookup`, {
-    targetProjectId: env.FIREBASE_PROJECT_ID,
-    initialEmail: [String(email)]
-  });
-  const user = Array.isArray(payload.users) ? payload.users[0] : null;
+  const users = await lookupFirebaseUsers(env, { email: [String(email).trim().toLowerCase()] });
+  const user = users[0] || null;
   return user ? { localId: user.localId || '', emailVerified: Boolean(user.emailVerified) } : null;
 }
 
@@ -303,7 +350,12 @@ export async function storageUpload(env, objectName, bytes, contentType) {
   });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload?.error?.message || `Falha ao armazenar anexo (${response.status}).`);
-  return { name: payload.name || objectName, bucket: payload.bucket || env.FIREBASE_STORAGE_BUCKET, size: Number(payload.size || 0), contentType: payload.contentType || contentType || '' };
+  return {
+    name: payload.name || objectName,
+    bucket: payload.bucket || env.FIREBASE_STORAGE_BUCKET,
+    size: Number(payload.size || 0),
+    contentType: payload.contentType || contentType || ''
+  };
 }
 
 export async function storageDownload(env, objectName) {
