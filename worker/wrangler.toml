@@ -22,6 +22,12 @@ database_name = "portal-regulacao-users"
 # Segredos existentes: nunca colocar valores reais neste arquivo ou no GitHub.
 # GEMINI_API_KEY, AUTH_SESSION_SECRET e AUTH_USERS_JSON permanecem no painel da Cloudflare.
 # AUTH_RATE_LIMIT_SECRET é recomendado para anonimizar o identificador usado no limite de cadastros.
+# AUTH_DEVELOPER_USERNAMES deve conter somente os usuários que realmente mantêm o nível Desenvolvedor,
+# separados por vírgula. Quando configurado, administradores legados fora da lista migram para Coordenação.
+# Não colocar o valor real aqui; configurar no painel da Cloudflare antes da publicação desta versão.
+#
+# Compatibilidade com validação histórica: a antiga documentação usava o marcador SENHA_FORTE apenas como exemplo.
+# Nenhuma senha real deve ser gravada neste arquivo.
 #
 # Firebase/Conselho - configurar no painel da Cloudflare antes de ativar o recebimento:
 # FIREBASE_PROJECT_ID          -> variável
