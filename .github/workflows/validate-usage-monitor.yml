@@ -32,7 +32,7 @@ jobs:
           test -f js/usage-monitor-v2.js
           test -f worker/usage-monitor-v2.js
           grep -q "requireRole(\['coordenacao'\])" js/usage-monitor-v2.js
-          grep -q "\['coordenacao', 'admin'\].includes" js/usage-monitor-v2.js
+          grep -q "\['admin', 'coordenacao'\].includes" js/usage-monitor-v2.js
           grep -q "\['coordenacao', 'admin'\].includes" worker/usage-monitor-v2.js
           grep -q '/api/admin/usage' worker/usage-monitor-v2.js
           grep -q 'handleUsageRoute' worker/index.js
