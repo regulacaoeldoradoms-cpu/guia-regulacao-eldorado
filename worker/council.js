@@ -88,6 +88,15 @@ async function ensureSchema(env) {
     read_at TEXT
   )`).run();
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_portal_notifications_user ON portal_notifications(username, read_at, id DESC)').run();
+  await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS council_audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor_username TEXT NOT NULL,
+    action TEXT NOT NULL,
+    protocol TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_council_audit_protocol ON council_audit_log(protocol, created_at DESC)').run();
+  await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_council_audit_actor ON council_audit_log(actor_username, created_at DESC)').run();
   return true;
 }
 
@@ -101,11 +110,24 @@ function presidentAccess(user) {
 
 function protectedManifestation(doc) {
   if (!doc) return null;
+  // Remove também o campo legado caso exista em algum documento de teste antigo.
   const { authorUsername, ...safe } = doc;
   return {
     ...safe,
     authorLabel: 'Cidadão · identidade protegida'
   };
+}
+
+function protectedAttachment(doc) {
+  if (!doc) return null;
+  const { objectName, ...safe } = doc;
+  return safe;
+}
+
+function protectedInternalNote(doc) {
+  if (!doc) return null;
+  const { authorUsername, ...safe } = doc;
+  return safe;
 }
 
 async function nextProtocol(env) {
@@ -126,6 +148,14 @@ async function notify(env, username, protocol, title, category = 'conselho') {
   if (!username) return;
   await env.AUTH_DB.prepare('INSERT INTO portal_notifications(username, category, protocol, title) VALUES (?, ?, ?, ?)')
     .bind(username, category, protocol || '', clean(title, 180)).run();
+}
+
+async function audit(env, user, action, protocol = '') {
+  if (!env.AUTH_DB || !user?.username) return;
+  await env.AUTH_DB.prepare('INSERT INTO council_audit_log(actor_username, action, protocol) VALUES (?, ?, ?)')
+    .bind(user.username, clean(action, 80), clean(protocol, 32))
+    .run()
+    .catch(() => null);
 }
 
 async function addEvent(env, protocol, event) {
@@ -166,9 +196,11 @@ async function createManifestation(request, env, user, origin) {
   const protocol = await nextProtocol(env);
   const createdAt = nowIso();
   const privacyMode = user.email ? 'sigilosa' : 'anonima';
+
+  // O documento da manifestação não carrega o username do cidadão. O vínculo técnico
+  // necessário para “Minhas manifestações” fica exclusivamente no índice D1 separado.
   const doc = {
     protocol,
-    authorUsername: user.username,
     privacyMode,
     type,
     service,
@@ -180,11 +212,12 @@ async function createManifestation(request, env, user, origin) {
     lastActivityAt: createdAt,
     attachmentCount: 0
   };
+
   await firestoreCreate(env, 'council_manifestations', protocol, doc);
   await env.AUTH_DB.prepare('INSERT INTO council_manifestation_index(protocol, author_username, privacy_mode) VALUES (?, ?, ?)')
     .bind(protocol, user.username, privacyMode).run();
   await addEvent(env, protocol, { type: 'created', actorType: 'citizen', detail: 'Manifestação recebida pelo Conselho.' });
-  return json({ manifestation: { ...doc, authorUsername: undefined } }, 201, origin);
+  return json({ manifestation: doc }, 201, origin);
 }
 
 async function citizenList(env, user, origin) {
@@ -223,10 +256,18 @@ async function detail(env, user, protocol, origin) {
   ]);
   let notes = [];
   if (isCouncil) {
-    notes = (await firestoreList(env, `council_manifestations/${protocol}/internal_notes`, { pageSize: 100, orderBy: 'createdAt asc' }).catch(() => ({ documents: [] }))).documents;
+    notes = (await firestoreList(env, `council_manifestations/${protocol}/internal_notes`, { pageSize: 100, orderBy: 'createdAt asc' }).catch(() => ({ documents: [] }))).documents
+      .map(protectedInternalNote);
+    await audit(env, user, 'manifestation.view', protocol);
   }
   const safeDoc = isCouncil ? protectedManifestation(doc) : (() => { const { authorUsername, ...safe } = doc; return safe; })();
-  return json({ manifestation: safeDoc, messages: messages.documents, events: events.documents, internalNotes: notes, attachments: attachments.documents }, 200, origin);
+  return json({
+    manifestation: safeDoc,
+    messages: messages.documents,
+    events: events.documents,
+    internalNotes: notes,
+    attachments: attachments.documents.map(protectedAttachment)
+  }, 200, origin);
 }
 
 async function addMessage(request, env, user, protocol, origin) {
@@ -249,7 +290,10 @@ async function addMessage(request, env, user, protocol, origin) {
   await firestorePatch(env, `council_manifestations/${protocol}`, { updatedAt: createdAt, lastActivityAt: createdAt });
   await addEvent(env, protocol, { type: 'message', actorType: isCouncil ? 'council' : 'citizen', actorLabel: message.senderLabel, detail: isCouncil ? 'Nova resposta oficial registrada.' : 'Nova resposta do cidadão.' });
   const index = await env.AUTH_DB.prepare('SELECT author_username AS authorUsername FROM council_manifestation_index WHERE protocol = ?').bind(protocol).first();
-  if (isCouncil && index?.authorUsername) await notify(env, index.authorUsername, protocol, 'O Conselho respondeu à sua manifestação.');
+  if (isCouncil && index?.authorUsername) {
+    await notify(env, index.authorUsername, protocol, 'O Conselho respondeu à sua manifestação.');
+    await audit(env, user, 'manifestation.official_reply', protocol);
+  }
   return json({ message }, 201, origin);
 }
 
@@ -261,7 +305,8 @@ async function addInternalNote(request, env, user, protocol, origin) {
   const note = { id: randomId('note'), body: text, authorUsername: user.username, authorLabel: user.name || user.username, createdAt: nowIso() };
   await firestoreCreate(env, `council_manifestations/${protocol}/internal_notes`, note.id, note);
   await addEvent(env, protocol, { type: 'internal_note', actorType: 'council', actorLabel: user.name || user.username, detail: 'Observação interna registrada.' });
-  return json({ note }, 201, origin);
+  await audit(env, user, 'manifestation.internal_note', protocol);
+  return json({ note: protectedInternalNote(note) }, 201, origin);
 }
 
 async function changeStatus(request, env, user, protocol, origin) {
@@ -280,6 +325,7 @@ async function changeStatus(request, env, user, protocol, origin) {
   });
   const index = await env.AUTH_DB.prepare('SELECT author_username AS authorUsername FROM council_manifestation_index WHERE protocol = ?').bind(protocol).first();
   if (index?.authorUsername) await notify(env, index.authorUsername, protocol, 'O andamento da sua manifestação foi atualizado.');
+  await audit(env, user, `manifestation.status.${status}`, protocol);
   return json({ manifestation: protectedManifestation(updated) }, 200, origin);
 }
 
@@ -325,8 +371,8 @@ async function uploadAttachment(request, env, user, protocol, origin) {
   await firestoreCreate(env, `council_manifestations/${protocol}/attachments`, id, attachment);
   await firestorePatch(env, `council_manifestations/${protocol}`, { attachmentCount: (await attachmentCount(env, protocol)), updatedAt: nowIso() });
   await addEvent(env, protocol, { type: 'attachment', actorType: attachment.senderType, detail: `Anexo incluído: ${safeName}` });
-  const { objectName: _, ...safe } = attachment;
-  return json({ attachment: safe }, 201, origin);
+  if (isCouncil) await audit(env, user, 'attachment.upload', protocol);
+  return json({ attachment: protectedAttachment(attachment) }, 201, origin);
 }
 
 async function downloadAttachment(env, user, protocol, attachmentId, origin) {
@@ -337,9 +383,11 @@ async function downloadAttachment(env, user, protocol, attachmentId, origin) {
   if (!attachment?.objectName) return json({ error: 'Anexo não encontrado.' }, 404, origin);
   const upstream = await storageDownload(env, attachment.objectName);
   if (!upstream.ok) return json({ error: 'Não foi possível carregar o anexo.' }, upstream.status, origin);
+  if (isCouncil) await audit(env, user, 'attachment.view', protocol);
   const h = headers(origin, true);
   h['Content-Type'] = attachment.contentType || 'application/octet-stream';
-  h['Content-Disposition'] = `inline; filename="${sanitizeFileName(attachment.fileName)}"`;
+  const disposition = attachment.contentType === 'application/pdf' ? 'attachment' : 'inline';
+  h['Content-Disposition'] = `${disposition}; filename="${sanitizeFileName(attachment.fileName)}"`;
   return new Response(upstream.body, { status: 200, headers: h });
 }
 
