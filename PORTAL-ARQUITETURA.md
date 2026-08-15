@@ -47,12 +47,13 @@ Uma conta pode ser, por exemplo, `admin + membro` ou `cidadao + presidente`.
 - Coordenação pode criar/atribuir somente Médico e Recepção.
 - Médico, Recepção e Cidadão não concedem cargos.
 - Auto cadastro sempre cria exclusivamente `cidadao`; o cliente nunca escolhe um cargo privilegiado.
+- A conta Desenvolvedor não pode se desativar ou remover o próprio nível técnico pelo formulário comum.
 
 A validação é executada no backend. Esconder opções no frontend não é considerado controle de acesso.
 
 ## Separação dos administradores legados
 
-Antes da publicação desta versão deve ser configurada a variável `AUTH_DEVELOPER_USERNAMES` no Worker com o(s) usuário(s) que realmente são Desenvolvedores. Contas antigas com `role=admin` que não estiverem nessa lista serão migradas automaticamente para `coordenacao`.
+Antes da publicação desta versão deve ser configurada a variável `AUTH_DEVELOPER_USERNAMES` no Worker com o(s) usuário(s) que realmente são Desenvolvedores. O valor é normalizado da mesma forma que o login. Contas antigas com `role=admin` que não estiverem nessa lista serão migradas automaticamente para `coordenacao`.
 
 Isso corrige o uso anterior do perfil Desenvolvedor para liberar ferramentas de Coordenação.
 
@@ -62,18 +63,29 @@ O conteúdo das manifestações não é armazenado no Google Drive e não possui
 
 - Cloud Firestore: manifestação, mensagens, andamento, observações internas e metadados de anexos.
 - Cloud Storage/Firebase Storage: JPG, PNG e PDF privados.
-- D1: apenas autenticação do portal, índice técnico protocolo↔conta, contador de protocolo, rate limit e notificações genéricas.
+- D1: autenticação do portal, índice técnico protocolo↔conta, contador de protocolo, rate limit, notificações genéricas e auditoria sem conteúdo da manifestação.
+- O documento principal da manifestação no Firestore não contém o nome de usuário do cidadão.
 - O acesso ao Firestore/Storage é intermediado pelo Worker. O navegador não recebe credencial de conta de serviço.
+- As regras versionadas em `firebase/firestore.rules` e `firebase/storage.rules` negam todo acesso direto por clientes Firebase na V1; o Worker usa IAM/conta de serviço.
 
 Sem a configuração Firebase, o portal profissional continua funcionando e o módulo do Conselho informa que aguarda conexão do armazenamento.
 
 ## Privacidade da conta do cidadão
 
-- Cadastro inicial não exige e-mail ou telefone.
+- Cadastro inicial pede apenas usuário + senha; não pede nome de exibição, e-mail, telefone ou CPF.
+- A tela orienta a não usar nome completo ou outro dado pessoal no nome de usuário quando a pessoa quiser preservar a identificação.
+- Contas de cidadão não utilizam foto de perfil na V1.
 - Sem e-mail: interface identifica a conta como sem identificação por e-mail/telefone e a manifestação como `anonima` no contexto do painel do Conselho.
-- Com e-mail: a manifestação passa automaticamente para `sigilosa`.
+- Ao vincular e-mail: a conta passa para `sigilosa` e manifestações anteriores daquela conta também são promovidas para `sigilosa`.
+- Na V1, um e-mail já vinculado não pode simplesmente ser apagado para fazer o histórico parecer anônimo novamente; ele pode ser substituído e confirmado.
 - O e-mail de segurança não é incluído no documento da manifestação e não é exibido à Presidente nem aos membros do Conselho.
 - O e-mail é usado para segurança/recuperação da conta e futura verificação em novo dispositivo.
+
+## Migração de e-mail profissional
+
+Quando `AUTH_REQUIRE_EMAIL_VERIFICATION` for ativado, credenciais profissionais válidas continuam conseguindo autenticar. O usuário é direcionado para `/conta/`, onde pode cadastrar/confirmar o e-mail. As demais APIs profissionais permanecem bloqueadas até a confirmação.
+
+Isso evita bloquear uma conta antes que ela tenha como regularizar o próprio e-mail.
 
 ## Comunicação das manifestações
 
@@ -87,6 +99,18 @@ O portal é o canal normal de comunicação:
 - respostas oficiais pela Presidência.
 
 Não há dependência de WhatsApp ou e-mail para informar cada movimentação.
+
+## Auditoria institucional
+
+Ações do Conselho geram registros técnicos separados, sem copiar o texto da manifestação:
+
+- visualização de manifestação por membro autorizado;
+- resposta oficial;
+- alteração de andamento;
+- observação interna;
+- acesso/envio de anexo pelo Conselho.
+
+O objetivo é permitir rastreabilidade sem duplicar conteúdo sensível em logs administrativos.
 
 ## Limites e proteção contra abuso
 
@@ -105,4 +129,4 @@ A arquitetura de conta já contém `accept_friend_requests`, mas amizade, busca 
 
 ## Repositório público
 
-O repositório é público. Portanto, nenhuma credencial, chave privada, e-mail protegido ou conteúdo de manifestação pode ser salvo no GitHub. Dados protegidos ficam em serviços autenticados no backend. Segredos permanecem no painel da Cloudflare.
+O repositório é público. Portanto, nenhuma credencial, chave privada, e-mail protegido ou conteúdo de manifestação pode ser salvo no GitHub. Dados protegidos ficam em serviços autenticados no backend. Segredos permanecem no painel da Cloudflare. O `.gitignore` bloqueia arquivos locais comuns de segredo, e `worker/.dev.vars.example` contém somente placeholders.
