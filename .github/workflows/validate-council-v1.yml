@@ -20,6 +20,7 @@ jobs:
           node --check worker/auth-management-v2.js
           node --check worker/role-migration.js
           node --check worker/portal-safety.js
+          node --check worker/citizen-privacy.js
           node --check worker/profile-photo.js
           node --check worker/council.js
           node --check worker/portal-chat-v2.js
@@ -63,14 +64,20 @@ jobs:
           grep -q 'FIREBASE_PENDING' worker/council.js
           ! grep -R -qi 'Google Drive' worker/council.js worker/firebase-gateway.js js/citizen.js js/council-panel.js
           ! grep -R -E 'AIza[0-9A-Za-z_-]{20,}' worker/firebase-gateway.js worker/wrangler.toml
+          test -f firebase/firestore.rules
+          test -f firebase/storage.rules
+          test -f firebase.json
+          grep -q 'allow read, write: if false' firebase/firestore.rules
+          grep -q 'allow read, write: if false' firebase/storage.rules
 
       - name: Conferir privacidade e papéis do Conselho
         run: |
           grep -q "COUNCIL_ROLES = new Set(\['', 'membro', 'presidente'\])" worker/auth-management-v2.js
           grep -q "user.councilRole === 'presidente'" worker/council.js
           grep -q 'authorLabel' worker/council.js
-          grep -q "const { authorUsername, ...safe }" worker/council.js
+          grep -q 'O documento da manifestação não carrega o username do cidadão' worker/council.js
           grep -q "privacyMode = user.email ? 'sigilosa' : 'anonima'" worker/council.js
+          grep -q 'protectedAttachment' worker/council.js
           grep -q 'emailConfigured' worker/auth-management-v2.js
           grep -q 'Dados de autenticação' conselho/painel/index.html
           ! grep -q 'email:' worker/council.js
@@ -79,6 +86,21 @@ jobs:
           grep -q 'não use seu nome completo' cadastro/index.html
           grep -q 'CITIZEN_PROFILE_PHOTO_DISABLED' worker/profile-photo.js
           grep -q "profilePhotoCard.hidden = user.role === 'cidadao'" js/account.js
+          grep -q 'guardSecurityEmailRemoval' worker/index.js
+          grep -q 'SECURITY_EMAIL_REMOVAL_BLOCKED' worker/citizen-privacy.js
+          grep -q "privacy_mode = 'sigilosa'" worker/citizen-privacy.js
+          grep -q "privacyMode: 'sigilosa'" worker/citizen-privacy.js
+
+      - name: Conferir auditoria sem copiar o conteúdo
+        run: |
+          grep -q 'CREATE TABLE IF NOT EXISTS council_audit_log' worker/council.js
+          grep -q "'manifestation.view'" worker/council.js
+          grep -q "'manifestation.official_reply'" worker/council.js
+          grep -q "'manifestation.internal_note'" worker/council.js
+          grep -q "'attachment.view'" worker/council.js
+          grep -q 'actor_username TEXT NOT NULL' worker/council.js
+          grep -q 'action TEXT NOT NULL' worker/council.js
+          grep -q 'protocol TEXT NOT NULL' worker/council.js
 
       - name: Conferir limites antiabuso
         run: |
