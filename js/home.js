@@ -30,7 +30,7 @@
   if (!user.preview && ['medico', 'recepcao', 'coordenacao', 'admin'].includes(user.role) && !user.emailVerified) {
     cards.push(`
       <a class="hub-card" href="/conta/#seguranca" data-module="email-security" style="border-color:#e5c36b;background:#fffaf0">
-        <span class="hub-card-icon" aria-hidden="true">🔐</span>
+        <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
         <span><h3>Confirme seu e-mail de segurança</h3><p>As contas profissionais passarão a exigir e-mail verificado. Cadastre e confirme o seu agora para evitar interrupção de acesso quando essa etapa for ativada.</p></span>
         <span class="hub-card-arrow">Proteger minha conta →</span>
       </a>`);
@@ -73,7 +73,7 @@
   if (auth.hasCouncilAccess(user)) {
     cards.push(`
       <a class="hub-card" href="/conselho/painel/" data-module="council-panel">
-        <span class="hub-card-icon" aria-hidden="true">🏛️</span>
+        <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 9h18M5 9v9M9 9v9M15 9v9M19 9v9M3 18h18M12 3l9 4H3z"/></svg></span>
         <span><h3>Conselho Municipal de Saúde</h3><p>${user.councilRole === 'presidente' ? 'Gerencie manifestações, respostas e andamento institucional.' : 'Acompanhe manifestações e registre observações internas do Conselho.'}</p></span>
         <span class="hub-card-arrow">Abrir Conselho →</span>
       </a>`);
