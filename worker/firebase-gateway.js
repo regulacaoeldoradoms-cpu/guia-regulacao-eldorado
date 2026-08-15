@@ -208,7 +208,7 @@ function identityBase(env) {
   if (!env.FIREBASE_PROJECT_ID || !env.FIREBASE_WEB_API_KEY) {
     throw new Error('Firebase Authentication ainda não configurado.');
   }
-  return `https://identitytoolkit.googleapis.com/v1`;
+  return 'https://identitytoolkit.googleapis.com/v1';
 }
 
 async function identityAdminRequest(env, path, body, method = 'POST') {
@@ -317,11 +317,24 @@ export async function ensureFirebaseEmailIdentity(env, username, email) {
   };
 }
 
-export async function sendFirebaseVerificationEmail(env, email, verificationPassword) {
-  if (!verificationPassword) throw new Error('Não foi possível preparar a verificação deste e-mail.');
+export async function sendFirebaseVerificationEmail(env, email, verificationPassword = '') {
+  let password = String(verificationPassword || '');
+  if (!password) {
+    const users = await lookupFirebaseUsers(env, { email: [String(email).trim().toLowerCase()] });
+    const user = users[0] || null;
+    if (!user?.localId) throw new Error('Conta de segurança do Firebase não encontrada para este e-mail.');
+    password = randomPassword();
+    const project = encodeURIComponent(env.FIREBASE_PROJECT_ID || '');
+    await identityAdminRequest(env, `projects/${project}/accounts:update`, {
+      localId: user.localId,
+      password,
+      emailVerified: Boolean(user.emailVerified)
+    });
+  }
+
   const signIn = await identityPublicRequest(env, 'accounts:signInWithPassword', {
     email: String(email),
-    password: verificationPassword,
+    password,
     returnSecureToken: true
   });
   if (!signIn.idToken) throw new Error('O Firebase não retornou o token necessário para a verificação.');
