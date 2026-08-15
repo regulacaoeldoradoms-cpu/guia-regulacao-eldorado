@@ -1,0 +1,13 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // A V1 não expõe o Firebase diretamente ao navegador.
+    // Todo acesso às manifestações passa pelo Cloudflare Worker autenticado,
+    // usando IAM/conta de serviço. Portanto, clientes Firebase não recebem
+    // permissão direta de leitura ou escrita.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
