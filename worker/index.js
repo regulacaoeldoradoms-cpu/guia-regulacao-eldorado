@@ -11,6 +11,7 @@ import { enforceDeveloperSeparation } from './role-migration.js';
 import {
   augmentAuthResponse,
   enforceProfessionalEmailGate,
+  guardCitizenRegistrationBasics,
   guardCitizenRegistrationUsername,
   guardDeveloperSelfMutation,
   portalEnvForAuthRoute,
@@ -48,6 +49,9 @@ export default {
     let url = new URL(request.url);
     const origin = request.headers.get('Origin') || '';
     const originAllowed = !origin || allowedOrigins(env).includes(origin);
+
+    const invalidRegistrationBlock = await guardCitizenRegistrationBasics(request, origin, originAllowed);
+    if (invalidRegistrationBlock) return invalidRegistrationBlock;
 
     const reservedUsernameBlock = await guardCitizenRegistrationUsername(request, origin, originAllowed);
     if (reservedUsernameBlock) return reservedUsernameBlock;
