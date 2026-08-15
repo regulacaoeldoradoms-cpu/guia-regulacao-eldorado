@@ -7,16 +7,34 @@ workers_dev = true
 ALLOWED_ORIGINS = "https://regulacaoeldoradoms.com.br,https://www.regulacaoeldoradoms.com.br"
 GEMINI_MODEL = "gemini-3.5-flash-lite"
 AUTH_ENFORCE_AI = "true"
+# A exigência de e-mail verificado para profissionais fica desligada durante a migração.
+# Ativar somente depois que as contas existentes tiverem e-mail confirmado.
+AUTH_REQUIRE_EMAIL_VERIFICATION = "false"
 
 # Integração GitHub -> Cloudflare ativa. Commits na branch main disparam o deploy do Worker.
 # O Wrangler 4 provisiona automaticamente esta base D1 no primeiro deploy.
-# Ela armazena apenas contas de acesso do portal; não armazena dados de pacientes.
+# O D1 mantém autenticação, permissões, índices técnicos, rate limits e notificações.
+# O conteúdo das manifestações do Conselho é armazenado no Firebase/Firestore.
 [[d1_databases]]
 binding = "AUTH_DB"
 database_name = "portal-regulacao-users"
 
-# Segredos: nunca colocar valores reais neste arquivo ou no GitHub.
+# Segredos existentes: nunca colocar valores reais neste arquivo ou no GitHub.
 # GEMINI_API_KEY, AUTH_SESSION_SECRET e AUTH_USERS_JSON permanecem no painel da Cloudflare.
-# AUTH_USERS_JSON funciona como conta/bootstrap de emergência e é migrado para o D1 após login/troca de senha.
-# Exemplo documental sem credencial real: [{"username":"usuario.medico","password":"SENHA_FORTE","role":"medico"}]
-# Perfis aceitos: medico, recepcao e admin. O perfil admin é o nível máximo/desenvolvedor.
+# AUTH_RATE_LIMIT_SECRET é recomendado para anonimizar o identificador usado no limite de cadastros.
+#
+# Firebase/Conselho - configurar no painel da Cloudflare antes de ativar o recebimento:
+# FIREBASE_PROJECT_ID          -> variável
+# FIREBASE_CLIENT_EMAIL        -> variável/segredo da conta de serviço
+# FIREBASE_PRIVATE_KEY         -> SEGREDO; chave privada PEM da conta de serviço
+# FIREBASE_WEB_API_KEY         -> variável usada pela API do Firebase Authentication
+# FIREBASE_STORAGE_BUCKET      -> variável do bucket privado de anexos
+#
+# A conta de serviço deve possuir somente as permissões necessárias para Firestore,
+# Firebase Authentication/Identity Platform e Storage utilizados por este Worker.
+# Sem essas variáveis, o portal profissional continua funcionando e o módulo do Conselho
+# informa que aguarda a conexão do Firebase, sem gravar manifestações em outro local.
+#
+# Perfis primários aceitos: medico, recepcao, coordenacao, cidadao e admin.
+# admin = Desenvolvedor (nível técnico máximo). coordenacao = gestão operacional sem acesso técnico máximo.
+# Funções do Conselho são independentes: membro e presidente.
