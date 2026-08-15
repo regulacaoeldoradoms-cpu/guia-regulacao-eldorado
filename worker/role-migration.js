@@ -22,8 +22,12 @@ function developerUsernames(env) {
     .filter(Boolean);
 }
 
+function migrationEnabled(env) {
+  return String(env.AUTH_MIGRATE_LEGACY_ADMINS || '').toLowerCase() === 'true';
+}
+
 export async function enforceDeveloperSeparation(env) {
-  if (!env.AUTH_DB) return;
+  if (!env.AUTH_DB || !migrationEnabled(env)) return;
   const developers = developerUsernames(env);
   if (!developers.length) return;
   if (Date.now() - lastRun < 60000) return;
@@ -39,6 +43,6 @@ export async function enforceDeveloperSeparation(env) {
       .bind(...developers)
       .run();
   } catch (_) {
-    // Migração defensiva: nunca deve impedir o restante do portal de responder.
+    // A migração nunca deve impedir o restante do portal de responder.
   }
 }
