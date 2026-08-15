@@ -22,12 +22,20 @@
     status.className = `login-status visible ${type}`;
   }
 
+  function defaultDestination(user) {
+    if (user?.role === 'cidadao') {
+      if (user?.councilRole === 'presidente') return '/conselho/painel/';
+      return '/cidadao/';
+    }
+    return config.homePath || '/';
+  }
+
   function destinationFor(user) {
     if (user?.mustChangePassword) return '/conta/?primeiro-acesso=1';
     const params = new URLSearchParams(location.search);
     const requested = params.get('next');
     const safeNext = requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : null;
-    return safeNext || config.homePath || '/';
+    return safeNext || defaultDestination(user);
   }
 
   async function redirectIfAuthenticated() {
@@ -50,7 +58,9 @@
       location.replace(destinationFor(user));
     } catch (error) {
       let message;
-      if (error.status === 404) {
+      if (error.code === 'EMAIL_VERIFICATION_REQUIRED') {
+        message = 'Esta conta profissional precisa confirmar o e-mail de segurança antes de continuar.';
+      } else if (error.status === 404) {
         message = 'O serviço de login ainda não está publicado no Worker da Cloudflare.';
       } else if (error instanceof TypeError || /failed to fetch/i.test(String(error?.message || ''))) {
         message = 'Não foi possível conectar ao servidor de autenticação. Confirme que o portal abriu em HTTPS e tente novamente.';
