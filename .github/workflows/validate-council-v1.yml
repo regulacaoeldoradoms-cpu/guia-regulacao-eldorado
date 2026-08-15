@@ -19,6 +19,8 @@ jobs:
           node --check worker/firebase-gateway.js
           node --check worker/auth-management-v2.js
           node --check worker/role-migration.js
+          node --check worker/portal-safety.js
+          node --check worker/profile-photo.js
           node --check worker/council.js
           node --check worker/portal-chat-v2.js
           node --check worker/usage-monitor-v2.js
@@ -72,6 +74,11 @@ jobs:
           grep -q 'emailConfigured' worker/auth-management-v2.js
           grep -q 'Dados de autenticação' conselho/painel/index.html
           ! grep -q 'email:' worker/council.js
+          ! grep -q 'signupDisplayName' cadastro/index.html
+          ! grep -q 'displayName.value' js/signup.js
+          grep -q 'não use seu nome completo' cadastro/index.html
+          grep -q 'CITIZEN_PROFILE_PHOTO_DISABLED' worker/profile-photo.js
+          grep -q "profilePhotoCard.hidden = user.role === 'cidadao'" js/account.js
 
       - name: Conferir limites antiabuso
         run: |
@@ -81,6 +88,8 @@ jobs:
           grep -q 'MAX_ATTACHMENT_BYTES = 5 \* 1024 \* 1024' worker/council.js
           grep -q "ATTACHMENT_TYPES = new Set(\['image/jpeg', 'image/png', 'application/pdf'\])" worker/council.js
           grep -q 'SELF_REGISTER_LIMIT_PER_DAY = 5' worker/auth-management-v2.js
+          grep -q 'sanitizeCitizenRegistrationRequest' worker/index.js
+          grep -q 'const cleanBody' worker/portal-safety.js
 
       - name: Conferir isolamento do chat
         run: |
@@ -98,5 +107,20 @@ jobs:
           grep -q "new Set(\['medico', 'recepcao'\])" worker/auth-management-v2.js
           grep -q 'AUTH_DEVELOPER_USERNAMES' worker/role-migration.js
           grep -q "SET role = 'coordenacao'" worker/role-migration.js
+          grep -q 'guardDeveloperSelfMutation' worker/index.js
+          grep -q 'DEVELOPER_SELF_DEMOTION_BLOCKED' worker/portal-safety.js
+          grep -q 'DEVELOPER_SELF_DISABLE_BLOCKED' worker/portal-safety.js
           grep -q 'AUTH_REQUIRE_EMAIL_VERIFICATION = "false"' worker/wrangler.toml
           grep -q 'AUTH_DEVELOPER_USERNAMES' worker/wrangler.toml
+
+      - name: Conferir migração de e-mail sem bloqueio de login
+        run: |
+          grep -q 'portalEnvForAuthRoute' worker/index.js
+          grep -q "AUTH_REQUIRE_EMAIL_VERIFICATION: 'false'" worker/portal-safety.js
+          grep -q 'emailVerificationRequired' worker/portal-safety.js
+          grep -q 'enforceProfessionalEmailGate' worker/index.js
+          grep -q "'/api/auth/security'" worker/portal-safety.js
+          grep -q "'/api/auth/email/send-verification'" worker/portal-safety.js
+          grep -q 'user.emailVerificationRequired' js/auth-client.js
+          grep -q 'verificar-email=1' js/login.js
+          grep -q 'emailVerificationNotice' conta/index.html
