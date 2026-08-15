@@ -14,6 +14,10 @@ import {
   portalEnvForAuthRoute,
   sanitizeCitizenRegistrationRequest
 } from './portal-safety.js';
+import {
+  guardSecurityEmailRemoval,
+  syncCitizenPrivacyAfterSecurityPatch
+} from './citizen-privacy.js';
 
 function allowedOrigins(env) {
   const configured = String(env.ALLOWED_ORIGINS || '')
@@ -43,9 +47,13 @@ export default {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin') || '';
     const originAllowed = !origin || allowedOrigins(env).includes(origin);
+    const securityPatchSnapshot = url.pathname === '/api/auth/security' && request.method === 'PATCH' ? request.clone() : null;
 
     const selfMutationBlock = await guardDeveloperSelfMutation(request, env, validatePortalSession, origin, originAllowed);
     if (selfMutationBlock) return selfMutationBlock;
+
+    const emailRemovalBlock = await guardSecurityEmailRemoval(request, env, validatePortalSession, origin, originAllowed);
+    if (emailRemovalBlock) return emailRemovalBlock;
 
     const emailGate = await enforceProfessionalEmailGate(request, env, validatePortalSession, origin, originAllowed);
     if (emailGate) return emailGate;
@@ -71,6 +79,9 @@ export default {
         const response = await handlePortalRoute(request, portalEnvForAuthRoute(env, url.pathname), origin, originAllowed);
         if (url.pathname === '/api/auth/login' || url.pathname === '/api/auth/me') {
           return augmentAuthResponse(response, env);
+        }
+        if (securityPatchSnapshot) {
+          return syncCitizenPrivacyAfterSecurityPatch(securityPatchSnapshot, response, env, validatePortalSession);
         }
         return response;
       } catch (error) {
