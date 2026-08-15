@@ -7,6 +7,13 @@ import { handleChatRoute, isChatApi } from './portal-chat-v2.js';
 import { handleUsageRoute, isUsageApi } from './usage-monitor-v2.js';
 import { handleCouncilRoute, isCouncilApi } from './council.js';
 import { enforceDeveloperSeparation } from './role-migration.js';
+import {
+  augmentAuthResponse,
+  enforceProfessionalEmailGate,
+  guardDeveloperSelfMutation,
+  portalEnvForAuthRoute,
+  sanitizeCitizenRegistrationRequest
+} from './portal-safety.js';
 
 function allowedOrigins(env) {
   const configured = String(env.ALLOWED_ORIGINS || '')
@@ -19,21 +26,29 @@ function allowedOrigins(env) {
   ];
 }
 
-function jsonError(message, status, origin, allowed) {
+function jsonError(message, status, origin, allowed, code = '') {
   const headers = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
   if (allowed && origin) {
     headers['Access-Control-Allow-Origin'] = origin;
     headers.Vary = 'Origin';
   }
-  return new Response(JSON.stringify({ error: message }), { status, headers });
+  return new Response(JSON.stringify({ error: message, ...(code ? { code } : {}) }), { status, headers });
 }
 
 export default {
   async fetch(request, env, ctx) {
     await enforceDeveloperSeparation(env);
+    request = await sanitizeCitizenRegistrationRequest(request);
+
     const url = new URL(request.url);
     const origin = request.headers.get('Origin') || '';
     const originAllowed = !origin || allowedOrigins(env).includes(origin);
+
+    const selfMutationBlock = await guardDeveloperSelfMutation(request, env, validatePortalSession, origin, originAllowed);
+    if (selfMutationBlock) return selfMutationBlock;
+
+    const emailGate = await enforceProfessionalEmailGate(request, env, validatePortalSession, origin, originAllowed);
+    if (emailGate) return emailGate;
 
     if (isCouncilApi(url.pathname)) {
       try { return await handleCouncilRoute(request, env, origin, originAllowed); }
@@ -52,8 +67,15 @@ export default {
       catch (error) { return jsonError(error?.message || 'Falha no monitoramento de uso.', 500, origin, originAllowed); }
     }
     if (isPortalApi(url.pathname)) {
-      try { return await handlePortalRoute(request, env, origin, originAllowed); }
-      catch (error) { return jsonError(error?.message || 'Falha no serviço de autenticação.', 500, origin, originAllowed); }
+      try {
+        const response = await handlePortalRoute(request, portalEnvForAuthRoute(env, url.pathname), origin, originAllowed);
+        if (url.pathname === '/api/auth/login' || url.pathname === '/api/auth/me') {
+          return augmentAuthResponse(response, env);
+        }
+        return response;
+      } catch (error) {
+        return jsonError(error?.message || 'Falha no serviço de autenticação.', 500, origin, originAllowed);
+      }
     }
 
     if (url.pathname === '/api/ia' && request.method !== 'OPTIONS' && String(env.AUTH_ENFORCE_AI || '').toLowerCase() === 'true') {
