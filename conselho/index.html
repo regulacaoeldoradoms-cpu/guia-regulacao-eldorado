@@ -12,10 +12,11 @@
     .public-council{min-height:100vh;background:linear-gradient(180deg,#eef5f9 0,#fff 58%)}
     .public-nav{max-width:1120px;margin:auto;padding:22px;display:flex;align-items:center;justify-content:space-between;gap:16px}
     .public-brand{display:flex;gap:12px;align-items:center;color:#173b5d}.public-brand img{width:46px;height:46px}.public-brand strong{display:block}.public-brand span{font-size:.8rem;color:#6d8292}
-    .public-hero{max-width:1120px;margin:auto;padding:70px 22px 55px;display:grid;grid-template-columns:1.3fr .8fr;gap:44px;align-items:center}.public-hero h1{font-size:clamp(2.1rem,5vw,4rem);line-height:1.02;color:#143a59;margin:12px 0 18px}.public-hero p{font-size:1.08rem;line-height:1.7;color:#536d80}.public-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
+    .public-hero{max-width:1120px;margin:auto;padding:70px 22px 35px;display:grid;grid-template-columns:1.3fr .8fr;gap:44px;align-items:center}.public-hero h1{font-size:clamp(2.1rem,5vw,4rem);line-height:1.02;color:#143a59;margin:12px 0 18px}.public-hero p{font-size:1.08rem;line-height:1.7;color:#536d80}.public-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}
     .public-card{background:#fff;border:1px solid #dbe7ee;border-radius:22px;padding:24px;box-shadow:0 20px 50px rgba(21,55,82,.1)}.public-card h2{color:#173b5d;margin-top:0}.public-card ul{padding-left:20px;color:#4f687a;line-height:1.8}
+    .public-warning{max-width:1076px;margin:0 auto 30px;padding:16px 18px;border:1px solid #ead69d;background:#fff8e7;border-radius:14px;color:#604b16;line-height:1.55}.public-warning strong{color:#4d3a0d}
     .public-types{max-width:1120px;margin:auto;padding:0 22px 70px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.public-type{background:#fff;border:1px solid #dbe7ee;border-radius:16px;padding:18px}.public-type b{display:block;color:#173b5d;margin:8px 0}.public-type span{font-size:.86rem;color:#6a8091;line-height:1.5}
-    @media(max-width:800px){.public-hero{grid-template-columns:1fr;padding-top:35px}.public-types{grid-template-columns:1fr 1fr}.public-nav{align-items:flex-start}}@media(max-width:520px){.public-types{grid-template-columns:1fr}.public-nav{flex-direction:column}.public-hero{padding-bottom:35px}}
+    @media(max-width:800px){.public-hero{grid-template-columns:1fr;padding-top:35px}.public-types{grid-template-columns:1fr 1fr}.public-nav{align-items:flex-start}.public-warning{margin-left:22px;margin-right:22px}}@media(max-width:520px){.public-types{grid-template-columns:1fr}.public-nav{flex-direction:column}.public-hero{padding-bottom:25px}}
   </style>
 </head>
 <body class="public-council">
@@ -43,6 +44,8 @@
         <p style="font-size:.82rem;color:#6c8293;margin-bottom:0">O e-mail é opcional para contas de cidadão. Quando informado, é utilizado como recurso de segurança da conta e não é exibido no painel do Conselho.</p>
       </aside>
     </section>
+
+    <div class="public-warning" role="note"><strong>Este é um canal de participação e controle social.</strong> Ele não realiza agendamento, marcação de consulta ou exame, alteração de solicitação na Regulação nem atendimento de urgência ou emergência. Situações assistenciais devem seguir o serviço de saúde adequado.</div>
 
     <section class="public-types" aria-label="Tipos de manifestação">
       <article class="public-type"><span style="font-size:1.5rem">💡</span><b>Sugestão</b><span>Ideias e propostas para melhorar serviços e ações de saúde.</span></article>
