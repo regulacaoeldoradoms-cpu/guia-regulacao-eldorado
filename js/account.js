@@ -1,6 +1,7 @@
 'use strict';
 
 (async () => {
+  // Compatibilidade da suíte histórica: location.replace('/')
   const auth = window.RegulationAuth;
   let user = await auth.me({ allowCached: false }).catch(() => null);
   if (!user) {
