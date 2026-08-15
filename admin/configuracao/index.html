@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d3157">
+  <title>Configuração técnica | Portal da Regulação</title>
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/portal.css?v=20260815-2">
+  <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
+  <style>
+    .readiness-grid{display:grid;gap:12px;margin-top:20px}.readiness-item{display:grid;grid-template-columns:auto 1fr;gap:12px;padding:16px;border:1px solid #dce7ef;border-radius:14px;background:#fff}.readiness-mark{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:900;background:#eef3f7;color:#557087}.readiness-item.ok .readiness-mark{background:#e6f5eb;color:#276a3e}.readiness-item.blocker .readiness-mark{background:#fff1e8;color:#9a4b24}.readiness-item h3{margin:0 0 4px;color:#173b5d;font-size:.96rem}.readiness-item p{margin:0;color:#657d90;line-height:1.5;font-size:.86rem}.readiness-summary{padding:18px;border-radius:16px;margin-top:20px}.readiness-summary.ready{background:#eaf7ee;border:1px solid #bddfc8;color:#235f37}.readiness-summary.pending{background:#fff6e8;border:1px solid #e8d3a4;color:#6b4c12}.readiness-summary strong{display:block;font-size:1.05rem;margin-bottom:5px}.readiness-meta{margin-top:18px;font-size:.8rem;color:#718697}.readiness-secret{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.78rem;background:#eef3f7;padding:2px 6px;border-radius:6px}
+  </style>
+</head>
+<body class="portal-page">
+  <div class="portal-shell">
+    <header class="portal-topbar">
+      <div class="portal-topbar-inner">
+        <div class="portal-brand"><img src="/assets/app-icon.svg" alt=""><div><h1>Configuração técnica</h1><p>Prontidão da implantação · Desenvolvedor</p></div></div>
+        <div class="portal-user"><a class="portal-button ghost linklike" href="/">← Início</a><div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span>Desenvolvedor</span></div><button class="portal-button ghost" id="portalLogout" type="button">Sair</button></div>
+      </div>
+    </header>
+
+    <main class="portal-main">
+      <section class="portal-hero">
+        <div class="portal-hero-copy"><span class="portal-eyebrow">Diagnóstico seguro</span><h2>Veja exatamente o que ainda falta configurar.</h2><p>Este painel mostra apenas se cada variável ou serviço está configurado. Nenhum segredo, chave privada ou valor sensível é exibido no navegador.</p></div>
+      </section>
+
+      <section class="portal-section" style="margin-top:24px;padding:20px">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><h2 style="margin:0;color:#173b5d">Prontidão do Canal do Conselho</h2><p style="margin:5px 0 0;color:#687f91">Use esta tela quando estiver no computador para configurar Cloudflare e Firebase.</p></div><button class="portal-button secondary" id="refreshReadiness" type="button">Verificar novamente</button></div>
+        <div id="readinessSummary" class="readiness-summary pending"><strong>Verificando...</strong><span>Consultando a configuração do Worker.</span></div>
+        <div id="readinessList" class="readiness-grid"><div class="portal-note info">Carregando diagnóstico...</div></div>
+        <div class="readiness-meta" id="readinessMeta"></div>
+      </section>
+
+      <section class="portal-section" style="padding:20px">
+        <h2 style="margin-top:0;color:#173b5d">Ordem segura de implantação</h2>
+        <ol style="color:#516b7e;line-height:1.75;padding-left:22px">
+          <li>Configurar <span class="readiness-secret">AUTH_DEVELOPER_USERNAMES</span> e <span class="readiness-secret">AUTH_RATE_LIMIT_SECRET</span>.</li>
+          <li>Conectar Firestore, Storage e Firebase Authentication ao Worker.</li>
+          <li>Publicar as regras privadas do Firebase e conferir IAM.</li>
+          <li>Testar o Canal do Cidadão com as duas flags de migração ainda desligadas.</li>
+          <li>Só então migrar os antigos Desenvolvedores para Coordenação.</li>
+          <li>Depois de validar o envio de e-mail, iniciar a migração das contas profissionais para e-mail verificado.</li>
+        </ol>
+        <div class="portal-note warning"><strong>Este painel não altera nenhuma configuração externa.</strong> Ele existe para confirmar o estado do ambiente sem expor segredos e evitar ativar uma migração na ordem errada.</div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260815-2"></script>
+  <script src="/js/system-readiness.js?v=20260815-1"></script>
+</body>
+</html>
