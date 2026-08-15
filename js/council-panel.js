@@ -11,6 +11,11 @@
     location.replace(user.role === 'cidadao' ? '/cidadao/' : '/');
     return;
   }
+  if (user.emailVerificationRequired) {
+    const next = encodeURIComponent('/conselho/painel/');
+    location.replace(`/conta/?verificar-email=1&next=${next}`);
+    return;
+  }
 
   const endpoint = String((window.REGULATION_AUTH_CONFIG || {}).endpoint || '').replace(/\/$/, '');
   const state = { manifestations: [], selectedProtocol: '', detail: null };
@@ -101,6 +106,10 @@
       renderRows();
       document.getElementById('firebaseNotice').hidden = true;
     } catch (error) {
+      if (error.code === 'EMAIL_VERIFICATION_REQUIRED') {
+        location.replace(error.verificationPath || `/conta/?verificar-email=1&next=${encodeURIComponent('/conselho/painel/')}`);
+        return;
+      }
       if (error.code === 'FIREBASE_PENDING' || error.status === 503) {
         const notice = document.getElementById('firebaseNotice');
         notice.textContent = 'O painel já está instalado, mas o projeto Firebase do Conselho ainda precisa ser conectado para começar a armazenar manifestações.';
@@ -182,6 +191,10 @@
       document.getElementById('detailLoading').hidden = true;
       document.getElementById('detailContent').hidden = false;
     } catch (error) {
+      if (error.code === 'EMAIL_VERIFICATION_REQUIRED') {
+        location.replace(error.verificationPath || `/conta/?verificar-email=1&next=${encodeURIComponent('/conselho/painel/')}`);
+        return;
+      }
       document.getElementById('detailLoading').textContent = error.message || 'Não foi possível abrir a manifestação.';
     }
   }
@@ -207,6 +220,7 @@
       showStatus(status, 'Observação interna registrada.', 'success');
       await openDetail(state.selectedProtocol);
     } catch (error) {
+      if (error.code === 'EMAIL_VERIFICATION_REQUIRED') return location.replace(error.verificationPath || '/conta/?verificar-email=1');
       showStatus(status, error.message || 'Não foi possível registrar.', 'error');
     }
   });
@@ -221,6 +235,7 @@
       showStatus(statusEl, 'Andamento atualizado.', 'success');
       await Promise.all([openDetail(state.selectedProtocol), loadAll()]);
     } catch (error) {
+      if (error.code === 'EMAIL_VERIFICATION_REQUIRED') return location.replace(error.verificationPath || '/conta/?verificar-email=1');
       showStatus(statusEl, error.message || 'Não foi possível atualizar.', 'error');
     }
   });
@@ -239,6 +254,7 @@
       showStatus(statusEl, 'Resposta enviada ao cidadão.', 'success');
       await Promise.all([openDetail(state.selectedProtocol), loadAll()]);
     } catch (error) {
+      if (error.code === 'EMAIL_VERIFICATION_REQUIRED') return location.replace(error.verificationPath || '/conta/?verificar-email=1');
       showStatus(statusEl, error.message || 'Não foi possível enviar.', 'error');
     } finally {
       button.disabled = false;
@@ -255,6 +271,10 @@
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
+        if (payload.code === 'EMAIL_VERIFICATION_REQUIRED') {
+          location.replace(payload.verificationPath || '/conta/?verificar-email=1');
+          return;
+        }
         throw new Error(payload.error || 'Não foi possível abrir o anexo.');
       }
       const blob = await response.blob();
