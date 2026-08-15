@@ -1,0 +1,136 @@
+'use strict';
+
+const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'admin']);
+const EMAIL_GATE_EXEMPT_PATHS = new Set([
+  '/api/auth/login',
+  '/api/auth/me',
+  '/api/auth/logout',
+  '/api/auth/security',
+  '/api/auth/email/send-verification',
+  '/api/auth/change-password'
+]);
+
+function normalizeUsername(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '.')
+    .replace(/[^a-z0-9._-]/g, '')
+    .replace(/[._-]{2,}/g, '.')
+    .replace(/^[._-]+|[._-]+$/g, '')
+    .slice(0, 40);
+}
+
+function json(body, status, origin, originAllowed = true) {
+  const headers = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'no-referrer'
+  };
+  if (originAllowed && origin) {
+    headers['Access-Control-Allow-Origin'] = origin;
+    headers.Vary = 'Origin';
+  }
+  return new Response(JSON.stringify(body), { status, headers });
+}
+
+export function professionalEmailVerificationEnabled(env) {
+  return String(env.AUTH_REQUIRE_EMAIL_VERIFICATION || '').toLowerCase() === 'true';
+}
+
+export function portalEnvForAuthRoute(env, pathname) {
+  // A etapa obrigatória nunca deve impedir o usuário de autenticar e chegar à própria
+  // página de segurança. O bloqueio é feito depois da criação válida da sessão.
+  if (pathname !== '/api/auth/login' || !professionalEmailVerificationEnabled(env)) return env;
+  return { ...env, AUTH_REQUIRE_EMAIL_VERIFICATION: 'false' };
+}
+
+export async function augmentAuthResponse(response, env) {
+  if (!professionalEmailVerificationEnabled(env) || !response || !response.ok) return response;
+  const type = response.headers.get('Content-Type') || '';
+  if (!type.includes('application/json')) return response;
+
+  const payload = await response.clone().json().catch(() => null);
+  const user = payload?.user;
+  if (!user || !PROFESSIONAL_ROLES.has(user.role)) return response;
+
+  payload.user = {
+    ...user,
+    emailVerificationRequired: !Boolean(user.emailVerified)
+  };
+
+  const headers = new Headers(response.headers);
+  headers.set('Content-Type', 'application/json; charset=utf-8');
+  headers.set('Cache-Control', 'no-store');
+  return new Response(JSON.stringify(payload), { status: response.status, headers });
+}
+
+export async function enforceProfessionalEmailGate(request, env, validatePortalSession, origin, originAllowed = true) {
+  if (!professionalEmailVerificationEnabled(env)) return null;
+  if (request.method === 'OPTIONS') return null;
+
+  const url = new URL(request.url);
+  if (!url.pathname.startsWith('/api/')) return null;
+  if (EMAIL_GATE_EXEMPT_PATHS.has(url.pathname)) return null;
+
+  const user = await validatePortalSession(request, env, []).catch(() => null);
+  if (!user || !PROFESSIONAL_ROLES.has(user.role) || user.emailVerified) return null;
+
+  return json({
+    error: 'Confirme o e-mail de segurança da sua conta para continuar.',
+    code: 'EMAIL_VERIFICATION_REQUIRED',
+    verificationPath: '/conta/?verificar-email=1'
+  }, 403, origin, originAllowed);
+}
+
+export async function guardDeveloperSelfMutation(request, env, validatePortalSession, origin, originAllowed = true) {
+  if (request.method !== 'PATCH') return null;
+  const url = new URL(request.url);
+  const match = url.pathname.match(/^\/api\/admin\/users\/([a-z0-9._-]+)$/);
+  if (!match) return null;
+
+  const actor = await validatePortalSession(request, env, []).catch(() => null);
+  if (!actor || actor.role !== 'admin') return null;
+  const target = normalizeUsername(match[1]);
+  if (target !== normalizeUsername(actor.username)) return null;
+
+  const body = await request.clone().json().catch(() => ({}));
+  if (Object.prototype.hasOwnProperty.call(body, 'role') && String(body.role || '') !== 'admin') {
+    return json({
+      error: 'A conta Desenvolvedor não pode remover o próprio nível técnico. A alteração deve ser feita por outro procedimento administrativo controlado.',
+      code: 'DEVELOPER_SELF_DEMOTION_BLOCKED'
+    }, 409, origin, originAllowed);
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'active') && body.active === false) {
+    return json({
+      error: 'A conta Desenvolvedor não pode desativar a si própria.',
+      code: 'DEVELOPER_SELF_DISABLE_BLOCKED'
+    }, 409, origin, originAllowed);
+  }
+  return null;
+}
+
+export async function sanitizeCitizenRegistrationRequest(request) {
+  const url = new URL(request.url);
+  if (url.pathname !== '/api/auth/register' || request.method !== 'POST') return request;
+  const body = await request.clone().json().catch(() => ({}));
+
+  // O auto cadastro cidadão não aceita nome, e-mail, telefone, cargo ou qualquer papel
+  // privilegiado. A conta nasce apenas com o identificador de login escolhido pelo cidadão.
+  const cleanBody = {
+    username: body.username,
+    password: body.password
+  };
+
+  const headers = new Headers(request.headers);
+  headers.set('Content-Type', 'application/json; charset=utf-8');
+  return new Request(request.url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(cleanBody),
+    redirect: request.redirect
+  });
+}
