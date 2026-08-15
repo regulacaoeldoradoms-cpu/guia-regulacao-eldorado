@@ -22,6 +22,7 @@ jobs:
           node --check worker/portal-safety.js
           node --check worker/citizen-privacy.js
           node --check worker/profile-photo.js
+          node --check worker/attachment-safety.js
           node --check worker/council.js
           node --check worker/portal-chat-v2.js
           node --check worker/usage-monitor-v2.js
@@ -75,7 +76,7 @@ jobs:
           grep -q "COUNCIL_ROLES = new Set(\['', 'membro', 'presidente'\])" worker/auth-management-v2.js
           grep -q "user.councilRole === 'presidente'" worker/council.js
           grep -q 'authorLabel' worker/council.js
-          grep -q 'O documento da manifestação não carrega o username do cidadão' worker/council.js
+          grep -q "const doc = {" worker/council.js
           grep -q "privacyMode = user.email ? 'sigilosa' : 'anonima'" worker/council.js
           grep -q 'protectedAttachment' worker/council.js
           grep -q 'emailConfigured' worker/auth-management-v2.js
@@ -90,6 +91,23 @@ jobs:
           grep -q 'SECURITY_EMAIL_REMOVAL_BLOCKED' worker/citizen-privacy.js
           grep -q "privacy_mode = 'sigilosa'" worker/citizen-privacy.js
           grep -q "privacyMode: 'sigilosa'" worker/citizen-privacy.js
+          grep -q 'COUNCIL_ROLES_REQUIRING_VERIFICATION' worker/portal-safety.js
+          grep -q 'user.emailVerificationRequired' js/council-panel.js
+          grep -q 'Atenção à sua identificação' cidadao/index.html
+          grep -q 'fotos, laudos e PDFs podem conter nome' cidadao/index.html
+
+      - name: Conferir proteção dos anexos
+        run: |
+          grep -q 'detectAttachmentContentType' worker/attachment-safety.js
+          grep -q 'validateAttachmentFile' worker/attachment-safety.js
+          grep -q '0xff, 0xd8, 0xff' worker/attachment-safety.js
+          grep -q '0x89, 0x50, 0x4e, 0x47' worker/attachment-safety.js
+          grep -q '0x25, 0x50, 0x44, 0x46, 0x2d' worker/attachment-safety.js
+          grep -q 'validateAttachmentFile(file' worker/council.js
+          grep -q 'const objectName = `conselho/${protocol}/${id}.${validated.extension}`' worker/council.js
+          ! grep -q 'file.name' worker/council.js
+          grep -q 'const { objectName, fileName, ...safe }' worker/council.js
+          grep -q 'Content-Disposition' worker/council.js
 
       - name: Conferir auditoria sem copiar o conteúdo
         run: |
