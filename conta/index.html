@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0d3157">
   <title>Minha conta | Portal da Regulação</title>
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/portal.css?v=20260815-1">
+  <link rel="stylesheet" href="/css/portal.css?v=20260815-2">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/account-admin.css?v=20260812-2">
 </head>
@@ -25,12 +25,13 @@
       </section>
 
       <div class="portal-note info first-access-note" id="firstAccessNotice" hidden><strong>Primeiro acesso:</strong> escolha sua nova senha. Depois de salvar, você será levado automaticamente ao seu ambiente.</div>
+      <div class="portal-note warning" id="emailVerificationNotice" hidden style="margin-top:14px"><strong>Confirmação de segurança necessária:</strong> esta conta profissional precisa confirmar um e-mail antes de acessar as demais ferramentas. Você continua com acesso a esta página para concluir a verificação.</div>
 
       <section class="account-layout" style="margin-top:24px">
-        <article class="account-card profile-card">
+        <article class="account-card profile-card" id="profilePhotoCard">
           <div class="profile-editor">
             <div class="profile-avatar-preview" id="profileAvatarPreview" aria-label="Foto de perfil"><span id="profileAvatarInitials">?</span></div>
-            <div class="profile-editor-copy"><h2>Foto do perfil</h2><p>Escolha uma foto sua. Ela aparecerá ao lado do seu nome nas áreas em que seu perfil é exibido.</p><input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="account-actions"><button class="portal-button secondary" id="chooseProfilePhoto" type="button">Escolher foto</button><button class="portal-button danger" id="removeProfilePhoto" type="button" hidden>Remover foto</button></div><div class="account-status" id="profileStatus" role="status" aria-live="polite"></div></div>
+            <div class="profile-editor-copy"><h2>Foto do perfil</h2><p>Escolha uma foto sua. Ela aparecerá ao lado do seu nome nas áreas profissionais em que seu perfil é exibido.</p><input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="account-actions"><button class="portal-button secondary" id="chooseProfilePhoto" type="button">Escolher foto</button><button class="portal-button danger" id="removeProfilePhoto" type="button" hidden>Remover foto</button></div><div class="account-status" id="profileStatus" role="status" aria-live="polite"></div></div>
           </div>
         </article>
 
@@ -45,9 +46,9 @@
           </form>
         </article>
 
-        <article class="account-card">
+        <article class="account-card" id="seguranca">
           <h2>E-mail de segurança</h2>
-          <p>Serve para verificação e recuperação da conta. Para cidadãos ele é opcional. As contas profissionais também serão protegidas por e-mail verificado quando a etapa de migração for ativada.</p>
+          <p>Serve para confirmação e recuperação da conta. Para cidadãos ele é opcional. Para contas profissionais, a confirmação poderá ser exigida como etapa de segurança.</p>
           <form id="securityEmailForm" class="account-form">
             <div class="portal-field"><label for="securityEmail">E-mail</label><input id="securityEmail" type="email" autocomplete="email" maxlength="254" placeholder="seuemail@exemplo.com"></div>
             <div><span class="user-badge" id="emailStatusBadge">Verificando...</span></div>
@@ -59,7 +60,7 @@
 
         <article class="account-card">
           <h2>Preferências de contato</h2>
-          <p>O portal não permite que cidadãos localizem ou iniciem chat direto com profissionais. A opção abaixo já deixa sua conta preparada para uma futura função de amizade, sem ativá-la agora.</p>
+          <p>O portal não permite que cidadãos localizem ou iniciem chat direto com profissionais. A opção abaixo apenas prepara sua conta para uma futura função de amizade; nenhum chat social é ativado na V1.</p>
           <label style="display:flex;gap:10px;align-items:flex-start;margin-top:16px"><input id="acceptFriendRequests" type="checkbox" style="margin-top:3px"><span><strong>Permitir pedidos de amizade</strong><br><small style="color:#6c8293">Quando essa função existir, você poderá decidir se aceita novos pedidos.</small></span></label>
         </article>
       </section>
@@ -67,7 +68,7 @@
   </div>
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
-  <script src="/js/auth-client.js?v=20260815-1"></script>
-  <script src="/js/account.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260815-2"></script>
+  <script src="/js/account.js?v=20260815-2"></script>
 </body>
 </html>
