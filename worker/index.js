@@ -6,6 +6,7 @@ import { handleProfileRoute, isProfileApi } from './profile-photo.js';
 import { handleChatRoute, isChatApi } from './portal-chat-v2.js';
 import { handleUsageRoute, isUsageApi } from './usage-monitor-v2.js';
 import { handleCouncilRoute, isCouncilApi } from './council.js';
+import { handleSystemReadinessRoute, isSystemReadinessApi } from './system-readiness.js';
 import { enforceDeveloperSeparation } from './role-migration.js';
 import {
   augmentAuthResponse,
@@ -64,6 +65,10 @@ export default {
     const emailGate = await enforceProfessionalEmailGate(request, env, validatePortalSession, origin, originAllowed);
     if (emailGate) return emailGate;
 
+    if (isSystemReadinessApi(url.pathname)) {
+      try { return await handleSystemReadinessRoute(request, env, origin, originAllowed); }
+      catch (error) { return jsonError(error?.message || 'Falha no diagnóstico técnico.', 500, origin, originAllowed); }
+    }
     if (isCouncilApi(url.pathname)) {
       try { return await handleCouncilRoute(request, env, origin, originAllowed); }
       catch (error) { return jsonError(error?.message || 'Falha no módulo do Conselho.', 500, origin, originAllowed); }
