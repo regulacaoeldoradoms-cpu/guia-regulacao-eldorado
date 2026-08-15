@@ -71,6 +71,7 @@
           <div class="portal-field full"><label for="manifestationSubject">Assunto</label><input id="manifestationSubject" required minlength="3" maxlength="180" placeholder="Resuma o assunto em poucas palavras"></div>
           <div class="portal-field full"><label for="manifestationDescription">Descreva sua manifestação</label><textarea id="manifestationDescription" required minlength="10" maxlength="8000" rows="8" placeholder="Conte o que aconteceu ou explique sua sugestão com as informações que considerar importantes."></textarea></div>
           <div class="full portal-note info" id="newPrivacyNotice"></div>
+          <div class="full portal-note warning"><strong>Atenção à sua identificação:</strong> mesmo em uma conta sem e-mail ou telefone, o próprio texto pode revelar quem você é. Se quiser preservar sua identidade, evite informar nome, CPF, telefone, endereço ou outros detalhes pessoais que não sejam necessários para o Conselho compreender a situação.</div>
           <div class="full account-actions"><button class="portal-button primary" id="submitManifestation" type="submit">Enviar manifestação</button><button class="portal-button secondary" type="button" data-close-modal="newManifestationModal">Cancelar</button></div>
           <div class="full account-status" id="newManifestationStatus" role="status" aria-live="polite"></div>
         </div>
@@ -90,6 +91,7 @@
 
           <h3 style="margin-top:24px;color:#173b5d">Anexos</h3>
           <div id="attachmentList" class="attachment-list"></div>
+          <div class="portal-note warning" style="margin-top:10px"><strong>Antes de anexar:</strong> fotos, laudos e PDFs podem conter nome, rosto, CPF, número do Cartão SUS ou outros dados que permitam sua identificação. Se sua manifestação estiver marcada como anônima e você quiser manter essa condição na prática, confira o arquivo antes do envio.</div>
           <form id="attachmentForm" style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:10px">
             <input id="attachmentFile" type="file" accept="image/jpeg,image/png,application/pdf">
             <button class="portal-button secondary" id="uploadAttachment" type="submit">Adicionar anexo</button>
@@ -112,7 +114,7 @@
   </div>
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
-  <script src="/js/auth-client.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260815-2"></script>
   <script src="/js/citizen.js?v=20260815-1"></script>
 </body>
 </html>
