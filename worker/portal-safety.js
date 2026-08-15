@@ -130,6 +130,22 @@ export async function guardDeveloperSelfMutation(request, env, validatePortalSes
   return null;
 }
 
+export async function guardCitizenRegistrationBasics(request, origin, originAllowed = true) {
+  const url = new URL(request.url);
+  if (url.pathname !== '/api/auth/register' || request.method !== 'POST') return null;
+  const body = await request.clone().json().catch(() => ({}));
+  const username = normalizeUsername(body.username);
+  const password = String(body.password || '');
+
+  if (!/^[a-z0-9._-]{3,40}$/.test(username)) {
+    return json({ error: 'O usuário deve ter entre 3 e 40 caracteres válidos.', code: 'INVALID_USERNAME' }, 400, origin, originAllowed);
+  }
+  if (password.length < 8 || password.length > 160) {
+    return json({ error: 'A senha deve ter entre 8 e 160 caracteres.', code: 'INVALID_PASSWORD' }, 400, origin, originAllowed);
+  }
+  return null;
+}
+
 export async function guardCitizenRegistrationUsername(request, origin, originAllowed = true) {
   const url = new URL(request.url);
   if (url.pathname !== '/api/auth/register' || request.method !== 'POST') return null;
