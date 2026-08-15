@@ -18,15 +18,20 @@
 
   const params = new URLSearchParams(location.search);
   const firstAccess = user.mustChangePassword === true || params.get('primeiro-acesso') === '1';
+  const verificationFlow = params.get('verificar-email') === '1' || Boolean(user.emailVerificationRequired);
   const firstAccessNotice = document.getElementById('firstAccessNotice');
+  const emailVerificationNotice = document.getElementById('emailVerificationNotice');
   if (firstAccessNotice) firstAccessNotice.hidden = !firstAccess;
+  if (emailVerificationNotice) emailVerificationNotice.hidden = !verificationFlow || Boolean(user.emailVerified);
 
+  const profilePhotoCard = document.getElementById('profilePhotoCard');
   const profileInput = document.getElementById('profilePhotoInput');
   const choosePhoto = document.getElementById('chooseProfilePhoto');
   const removePhoto = document.getElementById('removeProfilePhoto');
   const profilePreview = document.getElementById('profileAvatarPreview');
   const profileInitials = document.getElementById('profileAvatarInitials');
   const profileStatus = document.getElementById('profileStatus');
+  if (profilePhotoCard) profilePhotoCard.hidden = user.role === 'cidadao';
 
   const passwordForm = document.getElementById('changePasswordForm');
   const current = document.getElementById('currentPassword');
@@ -55,7 +60,13 @@
     element.className = `account-status visible ${type}`;
   }
 
+  function safeNext() {
+    const value = params.get('next');
+    return value && value.startsWith('/') && !value.startsWith('//') ? value : '';
+  }
+
   function renderProfilePhoto(dataUrl) {
+    if (user.role === 'cidadao') return;
     const photo = String(dataUrl || '');
     if (profilePreview) {
       profilePreview.style.backgroundImage = photo ? `url("${photo}")` : 'none';
@@ -111,19 +122,41 @@
     emailInput.value = security.email || '';
     emailStatusBadge.textContent = !security.email ? 'Nenhum e-mail cadastrado' : security.emailVerified ? '✓ E-mail verificado' : 'E-mail ainda não verificado';
     emailStatusBadge.className = `user-badge ${security.emailVerified ? '' : 'inactive'}`;
-    privacyStatus.innerHTML = security.privacyMode === 'sigilosa'
-      ? '<strong>🔒 Privacidade sigilosa</strong><span>Existe um e-mail de segurança vinculado à conta. Ele não é exibido no painel do Conselho.</span>'
-      : '<strong>🕶️ Conta sem identificação por e-mail/telefone</strong><span>Nenhum e-mail ou telefone de identificação está vinculado à conta.</span>';
+
+    if (user.role === 'cidadao') {
+      privacyStatus.innerHTML = security.privacyMode === 'sigilosa'
+        ? '<strong>🔒 Privacidade sigilosa</strong><span>Existe um e-mail de segurança vinculado à conta. Ele não é exibido no painel do Conselho nem gravado no documento da manifestação.</span>'
+        : '<strong>🕶️ Sem e-mail ou telefone vinculado</strong><span>Esta conta não possui esses identificadores cadastrados. Para preservar sua identificação, o nome de usuário também não deve revelar seu nome real ou outro dado pessoal.</span>';
+    } else {
+      privacyStatus.innerHTML = security.emailVerified
+        ? '<strong>✓ Conta protegida por e-mail verificado</strong><span>O endereço é usado para segurança da conta e não integra o conteúdo das manifestações do Conselho.</span>'
+        : '<strong>Segurança da conta</strong><span>Cadastre e confirme um e-mail para proteger e recuperar seu acesso.</span>';
+    }
+
     verificationButton.hidden = !security.email || security.emailVerified;
     verificationButton.disabled = !security.firebaseReady;
     verificationButton.title = security.firebaseReady ? '' : 'Aguardando conexão do Firebase';
     friendRequests.checked = Boolean(security.acceptFriendRequests);
   }
 
+  async function refreshVerificationState() {
+    const refreshed = await auth.me({ allowCached: false }).catch(() => null);
+    if (refreshed) user = refreshed;
+    if (!user.emailVerificationRequired && user.emailVerified) {
+      if (emailVerificationNotice) emailVerificationNotice.hidden = true;
+      if (params.get('verificar-email') === '1') {
+        show(securityStatus, 'E-mail confirmado. Sua conta está liberada.', 'success');
+        const destination = safeNext();
+        if (destination) window.setTimeout(() => location.replace(destination), 900);
+      }
+    }
+  }
+
   async function loadSecurity() {
     try {
       security = await auth.getSecurity();
       renderSecurity();
+      if (security.emailVerified) await refreshVerificationState();
       if (params.get('email-verificado') === '1' && security.emailVerified) show(securityStatus, 'E-mail confirmado com sucesso.', 'success');
     } catch (error) {
       show(securityStatus, error.message || 'Não foi possível carregar a segurança da conta.', 'error');
@@ -131,41 +164,43 @@
   }
 
   renderProfilePhoto(user.avatarDataUrl || '');
-  choosePhoto?.addEventListener('click', () => profileInput?.click());
-  profileInput?.addEventListener('change', async () => {
-    const file = profileInput.files?.[0];
-    if (!file) return;
-    choosePhoto.disabled = true;
-    if (removePhoto) removePhoto.disabled = true;
-    show(profileStatus, 'Preparando a foto...', 'success');
-    try {
-      const avatarDataUrl = await prepareAvatar(file);
-      user = await auth.updateProfilePhoto(avatarDataUrl);
-      renderProfilePhoto(user.avatarDataUrl);
-      show(profileStatus, 'Foto de perfil atualizada.', 'success');
-    } catch (error) {
-      show(profileStatus, error.message || 'Não foi possível atualizar a foto.', 'error');
-    } finally {
-      profileInput.value = '';
-      choosePhoto.disabled = false;
-      if (removePhoto) removePhoto.disabled = false;
-    }
-  });
+  if (user.role !== 'cidadao') {
+    choosePhoto?.addEventListener('click', () => profileInput?.click());
+    profileInput?.addEventListener('change', async () => {
+      const file = profileInput.files?.[0];
+      if (!file) return;
+      choosePhoto.disabled = true;
+      if (removePhoto) removePhoto.disabled = true;
+      show(profileStatus, 'Preparando a foto...', 'success');
+      try {
+        const avatarDataUrl = await prepareAvatar(file);
+        user = await auth.updateProfilePhoto(avatarDataUrl);
+        renderProfilePhoto(user.avatarDataUrl);
+        show(profileStatus, 'Foto de perfil atualizada.', 'success');
+      } catch (error) {
+        show(profileStatus, error.message || 'Não foi possível atualizar a foto.', 'error');
+      } finally {
+        profileInput.value = '';
+        choosePhoto.disabled = false;
+        if (removePhoto) removePhoto.disabled = false;
+      }
+    });
 
-  removePhoto?.addEventListener('click', async () => {
-    choosePhoto.disabled = true;
-    removePhoto.disabled = true;
-    try {
-      user = await auth.updateProfilePhoto('');
-      renderProfilePhoto('');
-      show(profileStatus, 'Foto de perfil removida.', 'success');
-    } catch (error) {
-      show(profileStatus, error.message || 'Não foi possível remover a foto.', 'error');
-    } finally {
-      choosePhoto.disabled = false;
-      removePhoto.disabled = false;
-    }
-  });
+    removePhoto?.addEventListener('click', async () => {
+      choosePhoto.disabled = true;
+      removePhoto.disabled = true;
+      try {
+        user = await auth.updateProfilePhoto('');
+        renderProfilePhoto('');
+        show(profileStatus, 'Foto de perfil removida.', 'success');
+      } catch (error) {
+        show(profileStatus, error.message || 'Não foi possível remover a foto.', 'error');
+      } finally {
+        choosePhoto.disabled = false;
+        removePhoto.disabled = false;
+      }
+    });
+  }
 
   passwordForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -176,6 +211,11 @@
       user = await auth.changePassword(current.value, next.value);
       passwordForm.reset();
       if (firstAccess) {
+        if (user.emailVerificationRequired) {
+          show(passwordStatus, 'Senha alterada. Agora confirme seu e-mail de segurança para concluir o acesso.', 'success');
+          document.getElementById('seguranca')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          return;
+        }
         show(passwordStatus, 'Senha alterada com sucesso. Abrindo seu ambiente...', 'success');
         const destination = user.role === 'cidadao' ? '/cidadao/' : '/';
         window.setTimeout(() => location.replace(destination), 550);
@@ -195,7 +235,11 @@
     try {
       security = await auth.updateSecurity({ email: emailInput.value.trim() });
       renderSecurity();
-      show(securityStatus, security.email ? 'E-mail de segurança salvo. Agora solicite a verificação.' : 'E-mail removido da conta.', 'success');
+      if (security.email) {
+        show(securityStatus, security.emailVerified ? 'E-mail de segurança confirmado.' : 'E-mail salvo. Agora solicite a verificação.', 'success');
+      } else {
+        show(securityStatus, 'E-mail removido da conta.', 'success');
+      }
     } catch (error) {
       show(securityStatus, error.message || 'Não foi possível salvar o e-mail.', 'error');
     }
