@@ -12,7 +12,13 @@ AUTH_DEVELOPER_USERNAMES=Wellyton Ritter Honorato
 
 O Worker normaliza o valor para o mesmo formato usado internamente pelo login (`wellyton.ritter.honorato`).
 
-Antes de publicar a migração, confirmar que a conta de Wellyton entra normalmente e mantém `role=admin`.
+A migração dos administradores antigos fica **desligada por padrão**:
+
+```text
+AUTH_MIGRATE_LEGACY_ADMINS=false
+```
+
+Primeiro confirmar que a conta de Wellyton entra normalmente e mantém `role=admin`. Somente depois disso a migração poderá ser ativada deliberadamente.
 
 ## 2. Cloudflare Worker — segredo do rate limit
 
@@ -68,25 +74,44 @@ Evitar papéis amplos de proprietário/editor quando não forem necessários.
 
 ## 6. Teste controlado antes da migração dos cargos
 
-Com `AUTH_REQUIRE_EMAIL_VERIFICATION=false`:
+Com:
+
+```text
+AUTH_REQUIRE_EMAIL_VERIFICATION=false
+AUTH_MIGRATE_LEGACY_ADMINS=false
+```
+
+realizar:
 
 1. entrar como Wellyton;
 2. confirmar que Guia, Recepção, Monitoramento e administração continuam disponíveis;
 3. criar uma conta cidadã de teste;
-4. confirmar que o cidadão não vê chat nem profissionais;
-5. testar manifestação, protocolo, resposta, histórico, notificação e anexos;
-6. testar manifestação sem e-mail;
-7. vincular e-mail à conta cidadã e confirmar mudança para `Sigilosa` inclusive em protocolos anteriores;
-8. testar envio e confirmação real de e-mail;
-9. confirmar que o painel do Conselho não mostra e-mail nem nome de usuário do cidadão.
+4. confirmar que nomes institucionais reservados não podem ser usados no auto cadastro;
+5. confirmar que o cidadão não vê chat nem profissionais;
+6. testar manifestação, protocolo, resposta, histórico, notificação e anexos;
+7. testar manifestação sem e-mail;
+8. vincular e-mail à conta cidadã e confirmar mudança para `Sigilosa` inclusive em protocolos anteriores;
+9. testar envio e confirmação real de e-mail;
+10. confirmar que o painel do Conselho não mostra e-mail nem nome de usuário do cidadão;
+11. confirmar que o nome original do arquivo anexado não aparece no painel nem no caminho do objeto novo;
+12. tentar enviar arquivo com extensão/MIME incompatível e confirmar que o Worker rejeita pela assinatura real do conteúdo;
+13. confirmar que PDF é entregue como download e que JPG/PNG são servidos apenas após autorização.
 
 ## 7. Migrar os cargos antigos
 
-Somente depois que `AUTH_DEVELOPER_USERNAMES` estiver confirmado:
+Somente depois que `AUTH_DEVELOPER_USERNAMES` estiver confirmado e o passo anterior estiver concluído, alterar deliberadamente:
+
+```text
+AUTH_MIGRATE_LEGACY_ADMINS=true
+```
+
+Então:
 
 - Wellyton permanece `admin` / Desenvolvedor;
-- contas antigas que estavam como Desenvolvedor apenas para acesso operacional podem migrar para `coordenacao`;
+- contas antigas que estavam como Desenvolvedor apenas para acesso operacional migram para `coordenacao`;
 - Coordenação mantém Guia, Conferência da Recepção, Monitoramento e gestão apenas de médicos/recepção.
+
+Depois de conferir a migração, a flag pode voltar para `false`; as contas já migradas permanecem com o novo perfil.
 
 ## 8. Funções do Conselho
 
@@ -112,7 +137,7 @@ Depois de testar o fluxo e garantir que todos conseguem chegar à tela `/conta/`
 AUTH_REQUIRE_EMAIL_VERIFICATION=true
 ```
 
-Quando ativado, o login continua funcionando, mas as demais ferramentas ficam bloqueadas até a confirmação. A tela da conta permanece acessível para regularização.
+Quando ativado, o login continua funcionando, mas as demais ferramentas ficam bloqueadas até a confirmação. A tela da conta permanece acessível para regularização. Isso vale também para contas com função `membro` ou `presidente` no Conselho.
 
 ## 10. Validação institucional antes de abrir ao público
 
@@ -124,6 +149,8 @@ Revisar com o Conselho/gestão municipal:
 - política de retenção/arquivamento;
 - aviso de privacidade e orientações ao cidadão;
 - fluxo para situações que não devem ser tratadas apenas como manifestação administrativa.
+
+O site já diferencia o Canal do Conselho de atendimento assistencial e informa que ele não realiza agendamento, não altera solicitação da Regulação e não substitui atendimento de urgência/emergência. O texto institucional final ainda deve ser validado antes da abertura pública.
 
 ## Não fazer na primeira publicação
 
