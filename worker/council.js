@@ -1,6 +1,7 @@
 'use strict';
 
 import { validatePortalSession } from './auth-management-flex.js';
+import { validateAttachmentFile, extensionForAttachment } from './attachment-safety.js';
 import {
   firebaseConfigured,
   firestoreCreate,
@@ -57,13 +58,6 @@ function randomId(prefix = 'id') {
 
 function clean(value, max) {
   return String(value || '').trim().slice(0, max);
-}
-
-function extensionForContentType(contentType) {
-  if (contentType === 'image/jpeg') return 'jpg';
-  if (contentType === 'image/png') return 'png';
-  if (contentType === 'application/pdf') return 'pdf';
-  return 'bin';
 }
 
 async function ensureSchema(env) {
@@ -356,16 +350,25 @@ async function uploadAttachment(request, env, user, protocol, origin) {
   const form = await request.formData();
   const file = form.get('file');
   if (!(file instanceof File)) return json({ error: 'Selecione um arquivo.' }, 400, origin);
-  if (!ATTACHMENT_TYPES.has(file.type)) return json({ error: 'Use arquivo JPG, PNG ou PDF.' }, 400, origin);
+  if (file.type && !ATTACHMENT_TYPES.has(file.type)) return json({ error: 'Use arquivo JPG, PNG ou PDF.' }, 400, origin);
   if (file.size > MAX_ATTACHMENT_BYTES) return json({ error: 'Cada arquivo pode ter no máximo 5 MB.' }, 400, origin);
 
+  let validated;
+  try {
+    validated = await validateAttachmentFile(file, MAX_ATTACHMENT_BYTES);
+  } catch (error) {
+    const message = error?.message === 'ATTACHMENT_TOO_LARGE'
+      ? 'Cada arquivo pode ter no máximo 5 MB.'
+      : error?.message || 'O arquivo enviado não é válido.';
+    return json({ error: message }, 400, origin);
+  }
+
   const id = randomId('att');
-  const extension = extensionForContentType(file.type);
-  const objectName = `conselho/${protocol}/${id}.${extension}`;
-  const stored = await storageUpload(env, objectName, await file.arrayBuffer(), file.type);
+  const objectName = `conselho/${protocol}/${id}.${validated.extension}`;
+  const stored = await storageUpload(env, objectName, validated.buffer, validated.contentType);
   const attachment = {
     id,
-    contentType: file.type,
+    contentType: validated.contentType,
     size: file.size,
     objectName: stored.name || objectName,
     senderType: isCouncil ? 'council' : 'citizen',
@@ -390,7 +393,7 @@ async function downloadAttachment(env, user, protocol, attachmentId, origin) {
   const h = headers(origin, true);
   h['Content-Type'] = attachment.contentType || 'application/octet-stream';
   const disposition = attachment.contentType === 'application/pdf' ? 'attachment' : 'inline';
-  const extension = extensionForContentType(attachment.contentType);
+  const extension = extensionForAttachment(attachment.contentType);
   h['Content-Disposition'] = `${disposition}; filename="anexo-${String(attachmentId).slice(-6)}.${extension}"`;
   return new Response(upstream.body, { status: 200, headers: h });
 }
