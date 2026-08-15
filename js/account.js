@@ -2,12 +2,18 @@
 
 (async () => {
   const auth = window.RegulationAuth;
-  let user = await auth.requireRole(['medico', 'recepcao', 'admin']);
-  if (!user) return;
+  let user = await auth.me({ allowCached: false }).catch(() => null);
+  if (!user) {
+    location.replace(`/login/?next=${encodeURIComponent(location.pathname + location.search)}`);
+    return;
+  }
 
-  const roleLabels = { medico: 'Médico', recepcao: 'Recepção', admin: 'Desenvolvedor · acesso total' };
+  const roleLabels = {
+    medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', cidadao: 'Cidadão', admin: 'Desenvolvedor · acesso técnico'
+  };
   document.getElementById('portalUserName').textContent = user.name || user.username;
-  document.getElementById('portalUserRole').textContent = roleLabels[user.role] || user.role;
+  document.getElementById('portalUserRole').textContent = `${roleLabels[user.role] || user.role}${user.councilRole ? ` · Conselho: ${user.councilRole === 'presidente' ? 'Presidente' : 'Membro'}` : ''}`;
+  document.getElementById('accountHomeLink').href = user.role === 'cidadao' ? '/cidadao/' : '/';
 
   const params = new URLSearchParams(location.search);
   const firstAccess = user.mustChangePassword === true || params.get('primeiro-acesso') === '1';
@@ -21,12 +27,21 @@
   const profileInitials = document.getElementById('profileAvatarInitials');
   const profileStatus = document.getElementById('profileStatus');
 
-  const form = document.getElementById('changePasswordForm');
+  const passwordForm = document.getElementById('changePasswordForm');
   const current = document.getElementById('currentPassword');
   const next = document.getElementById('newPassword');
   const confirm = document.getElementById('confirmPassword');
-  const button = document.getElementById('changePasswordButton');
-  const status = document.getElementById('accountStatus');
+  const passwordButton = document.getElementById('changePasswordButton');
+  const passwordStatus = document.getElementById('accountStatus');
+
+  const emailForm = document.getElementById('securityEmailForm');
+  const emailInput = document.getElementById('securityEmail');
+  const emailStatusBadge = document.getElementById('emailStatusBadge');
+  const privacyStatus = document.getElementById('privacyStatus');
+  const verificationButton = document.getElementById('sendEmailVerification');
+  const securityStatus = document.getElementById('securityStatus');
+  const friendRequests = document.getElementById('acceptFriendRequests');
+  let security = {};
 
   function initialsFor(value) {
     const parts = String(value || '?').trim().split(/\s+/).filter(Boolean);
@@ -72,11 +87,8 @@
 
   async function prepareAvatar(file) {
     if (!file) throw new Error('Escolha uma imagem.');
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      throw new Error('Use uma foto JPG, PNG ou WebP.');
-    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('Use uma foto JPG, PNG ou WebP.');
     if (file.size > 10 * 1024 * 1024) throw new Error('A imagem original pode ter no máximo 10 MB.');
-
     const source = await readImage(file);
     const image = await loadImage(source);
     const size = Math.min(image.naturalWidth, image.naturalHeight);
@@ -94,10 +106,31 @@
     return avatar;
   }
 
+  function renderSecurity() {
+    emailInput.value = security.email || '';
+    emailStatusBadge.textContent = !security.email ? 'Nenhum e-mail cadastrado' : security.emailVerified ? '✓ E-mail verificado' : 'E-mail ainda não verificado';
+    emailStatusBadge.className = `user-badge ${security.emailVerified ? '' : 'inactive'}`;
+    privacyStatus.innerHTML = security.privacyMode === 'sigilosa'
+      ? '<strong>🔒 Privacidade sigilosa</strong><span>Existe um e-mail de segurança vinculado à conta. Ele não é exibido no painel do Conselho.</span>'
+      : '<strong>🕶️ Conta sem identificação por e-mail/telefone</strong><span>Nenhum e-mail ou telefone de identificação está vinculado à conta.</span>';
+    verificationButton.hidden = !security.email || security.emailVerified;
+    verificationButton.disabled = !security.firebaseReady;
+    verificationButton.title = security.firebaseReady ? '' : 'Aguardando conexão do Firebase';
+    friendRequests.checked = Boolean(security.acceptFriendRequests);
+  }
+
+  async function loadSecurity() {
+    try {
+      security = await auth.getSecurity();
+      renderSecurity();
+      if (params.get('email-verificado') === '1' && security.emailVerified) show(securityStatus, 'E-mail confirmado com sucesso.', 'success');
+    } catch (error) {
+      show(securityStatus, error.message || 'Não foi possível carregar a segurança da conta.', 'error');
+    }
+  }
+
   renderProfilePhoto(user.avatarDataUrl || '');
-
   choosePhoto?.addEventListener('click', () => profileInput?.click());
-
   profileInput?.addEventListener('change', async () => {
     const file = profileInput.files?.[0];
     if (!file) return;
@@ -133,32 +166,61 @@
     }
   });
 
-  form.addEventListener('submit', async (event) => {
+  passwordForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    if (next.value !== confirm.value) {
-      show(status, 'A confirmação não corresponde à nova senha.', 'error');
-      return;
-    }
-    if (!next.value.length) {
-      show(status, 'Informe a nova senha.', 'error');
-      return;
-    }
-    button.disabled = true;
-    button.textContent = 'Salvando...';
+    if (next.value !== confirm.value) return show(passwordStatus, 'A confirmação não corresponde à nova senha.', 'error');
+    passwordButton.disabled = true;
+    passwordButton.textContent = 'Salvando...';
     try {
       user = await auth.changePassword(current.value, next.value);
-      form.reset();
+      passwordForm.reset();
       if (firstAccess) {
-        show(status, 'Senha alterada com sucesso. Abrindo o Início...', 'success');
-        window.setTimeout(() => location.replace('/'), 550);
+        show(passwordStatus, 'Senha alterada com sucesso. Abrindo seu ambiente...', 'success');
+        const destination = user.role === 'cidadao' ? '/cidadao/' : '/';
+        window.setTimeout(() => location.replace(destination), 550);
         return;
       }
-      show(status, 'Senha alterada com sucesso. As sessões anteriores desta conta foram invalidadas.', 'success');
+      show(passwordStatus, 'Senha alterada com sucesso. As sessões anteriores foram invalidadas.', 'success');
     } catch (error) {
-      show(status, error.message || 'Não foi possível alterar a senha.', 'error');
+      show(passwordStatus, error.message || 'Não foi possível alterar a senha.', 'error');
     } finally {
-      button.disabled = false;
-      button.textContent = 'Salvar nova senha';
+      passwordButton.disabled = false;
+      passwordButton.textContent = 'Salvar nova senha';
+    }
+  });
+
+  emailForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    try {
+      security = await auth.updateSecurity({ email: emailInput.value.trim() });
+      renderSecurity();
+      show(securityStatus, security.email ? 'E-mail de segurança salvo. Agora solicite a verificação.' : 'E-mail removido da conta.', 'success');
+    } catch (error) {
+      show(securityStatus, error.message || 'Não foi possível salvar o e-mail.', 'error');
+    }
+  });
+
+  verificationButton.addEventListener('click', async () => {
+    verificationButton.disabled = true;
+    try {
+      const result = await auth.sendEmailVerification();
+      show(securityStatus, result.message || 'Verificação enviada. Confira sua caixa de entrada.', 'success');
+      await loadSecurity();
+    } catch (error) {
+      show(securityStatus, error.message || 'Não foi possível enviar a verificação.', 'error');
+    } finally {
+      verificationButton.disabled = !security.firebaseReady;
+    }
+  });
+
+  friendRequests.addEventListener('change', async () => {
+    try {
+      security = await auth.updateSecurity({ acceptFriendRequests: friendRequests.checked });
+      renderSecurity();
+      show(securityStatus, friendRequests.checked ? 'Pedidos de amizade poderão ser recebidos quando essa função for ativada.' : 'Pedidos de amizade estão desativados.', 'success');
+    } catch (error) {
+      friendRequests.checked = !friendRequests.checked;
+      show(securityStatus, error.message || 'Não foi possível salvar a preferência.', 'error');
     }
   });
 
@@ -166,4 +228,6 @@
     await auth.logout();
     location.replace('/login/');
   });
+
+  await loadSecurity();
 })();
