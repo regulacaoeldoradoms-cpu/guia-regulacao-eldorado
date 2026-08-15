@@ -2,10 +2,23 @@
 
 let lastRun = 0;
 
+function normalizeUsername(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '.')
+    .replace(/[^a-z0-9._-]/g, '')
+    .replace(/[._-]{2,}/g, '.')
+    .replace(/^[._-]+|[._-]+$/g, '')
+    .slice(0, 40);
+}
+
 function developerUsernames(env) {
   return String(env.AUTH_DEVELOPER_USERNAMES || '')
     .split(',')
-    .map((value) => value.trim().toLowerCase())
+    .map(normalizeUsername)
     .filter(Boolean);
 }
 
