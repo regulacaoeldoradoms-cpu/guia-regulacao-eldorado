@@ -1,0 +1,22 @@
+# Segredos e configuração local
+.env
+.env.*
+!.env.example
+.dev.vars
+worker/.dev.vars
+*.pem
+*.key
+service-account*.json
+firebase-adminsdk*.json
+
+# Dependências e ferramentas
+node_modules/
+worker/node_modules/
+.wrangler/
+.firebase/
+
+# Sistema/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
