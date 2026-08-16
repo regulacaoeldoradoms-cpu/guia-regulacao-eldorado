@@ -43,6 +43,13 @@ function jsonError(message, status, origin, allowed, code = '') {
   return new Response(JSON.stringify({ error: message, ...(code ? { code } : {}) }), { status, headers });
 }
 
+const AUTH_RESPONSES_WITH_USER = new Set([
+  '/api/auth/login',
+  '/api/auth/me',
+  '/api/auth/register',
+  '/api/auth/change-password'
+]);
+
 export default {
   async fetch(request, env, ctx) {
     await enforceDeveloperSeparation(env);
@@ -96,7 +103,7 @@ export default {
     if (isPortalApi(url.pathname)) {
       try {
         const response = await handlePortalRoute(request, portalEnvForAuthRoute(env, url.pathname), origin, originAllowed);
-        if (url.pathname === '/api/auth/login' || url.pathname === '/api/auth/me') {
+        if (AUTH_RESPONSES_WITH_USER.has(url.pathname)) {
           return augmentAuthResponse(response, env);
         }
         if (securityPatchSnapshot) {
