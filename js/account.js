@@ -3,18 +3,20 @@
 (async () => {
   // Compatibilidade da suíte histórica: location.replace('/')
   const auth = window.RegulationAuth;
+  const levels = window.AccountLevels;
   let user = await auth.me({ allowCached: false }).catch(() => null);
   if (!user) {
     location.replace(`/login/?next=${encodeURIComponent(location.pathname + location.search)}`);
     return;
   }
 
+  const isCitizen = user.role === 'cidadao';
   const roleLabels = {
     medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', cidadao: 'Cidadão', admin: 'Desenvolvedor · acesso técnico'
   };
   document.getElementById('portalUserName').textContent = user.name || user.username;
   document.getElementById('portalUserRole').textContent = `${roleLabels[user.role] || user.role}${user.councilRole ? ` · Conselho: ${user.councilRole === 'presidente' ? 'Presidente' : 'Membro'}` : ''}`;
-  document.getElementById('accountHomeLink').href = user.role === 'cidadao' ? '/cidadao/' : '/';
+  document.getElementById('accountHomeLink').href = isCitizen ? '/cidadao/' : '/';
 
   const params = new URLSearchParams(location.search);
   const firstAccess = user.mustChangePassword === true || params.get('primeiro-acesso') === '1';
@@ -24,14 +26,16 @@
   if (firstAccessNotice) firstAccessNotice.hidden = !firstAccess;
   if (emailVerificationNotice) emailVerificationNotice.hidden = !verificationFlow || Boolean(user.emailVerified);
 
+  const accountLevelPanel = document.getElementById('accountLevelPanel');
   const profilePhotoCard = document.getElementById('profilePhotoCard');
+  const profilePhotoLevelLock = document.getElementById('profilePhotoLevelLock');
+  const friendRequestLevelLock = document.getElementById('friendRequestLevelLock');
   const profileInput = document.getElementById('profilePhotoInput');
   const choosePhoto = document.getElementById('chooseProfilePhoto');
   const removePhoto = document.getElementById('removeProfilePhoto');
   const profilePreview = document.getElementById('profileAvatarPreview');
   const profileInitials = document.getElementById('profileAvatarInitials');
   const profileStatus = document.getElementById('profileStatus');
-  if (profilePhotoCard) profilePhotoCard.hidden = user.role === 'cidadao';
 
   const passwordForm = document.getElementById('changePasswordForm');
   const current = document.getElementById('currentPassword');
@@ -65,8 +69,32 @@
     return value && value.startsWith('/') && !value.startsWith('//') ? value : '';
   }
 
+  function citizenHasSilver() {
+    return !isCitizen || levels?.minimumMet(user, 'prata') || user.emailVerified === true;
+  }
+
+  function syncLevelUI() {
+    if (!isCitizen) {
+      if (accountLevelPanel) accountLevelPanel.hidden = true;
+      if (profilePhotoLevelLock) profilePhotoLevelLock.classList.remove('locked');
+      if (friendRequestLevelLock) friendRequestLevelLock.classList.remove('locked');
+      return;
+    }
+
+    if (accountLevelPanel) {
+      accountLevelPanel.hidden = false;
+      levels?.renderProgress(accountLevelPanel, user);
+    }
+    const silver = citizenHasSilver();
+    profilePhotoLevelLock?.classList.toggle('locked', !silver);
+    friendRequestLevelLock?.classList.toggle('locked', !silver);
+    if (choosePhoto) choosePhoto.disabled = !silver;
+    if (profileInput) profileInput.disabled = !silver;
+    if (friendRequests) friendRequests.disabled = !silver;
+    if (!silver && removePhoto) removePhoto.hidden = true;
+  }
+
   function renderProfilePhoto(dataUrl) {
-    if (user.role === 'cidadao') return;
     const photo = String(dataUrl || '');
     if (profilePreview) {
       profilePreview.style.backgroundImage = photo ? `url("${photo}")` : 'none';
@@ -76,7 +104,7 @@
       profileInitials.textContent = initialsFor(user.name || user.username);
       profileInitials.hidden = Boolean(photo);
     }
-    if (removePhoto) removePhoto.hidden = !photo;
+    if (removePhoto) removePhoto.hidden = !photo || (isCitizen && !citizenHasSilver());
   }
 
   function readImage(file) {
@@ -123,7 +151,7 @@
     emailStatusBadge.textContent = !security.email ? 'Nenhum e-mail cadastrado' : security.emailVerified ? '✓ E-mail verificado' : 'E-mail ainda não verificado';
     emailStatusBadge.className = `user-badge ${security.emailVerified ? '' : 'inactive'}`;
 
-    if (user.role === 'cidadao') {
+    if (isCitizen) {
       privacyStatus.innerHTML = security.privacyMode === 'sigilosa'
         ? '<strong>🔒 Privacidade sigilosa</strong><span>Existe um e-mail de segurança vinculado à conta. Ele não é exibido no painel do Conselho nem gravado no documento da manifestação.</span>'
         : '<strong>🕶️ Sem e-mail ou telefone vinculado</strong><span>Esta conta não possui esses identificadores cadastrados. Para preservar sua identificação, o nome de usuário também não deve revelar seu nome real ou outro dado pessoal.</span>';
@@ -137,15 +165,18 @@
     verificationButton.disabled = !security.firebaseReady;
     verificationButton.title = security.firebaseReady ? '' : 'Aguardando conexão do Firebase';
     friendRequests.checked = Boolean(security.acceptFriendRequests);
+    syncLevelUI();
   }
 
   async function refreshVerificationState() {
     const refreshed = await auth.me({ allowCached: false }).catch(() => null);
     if (refreshed) user = refreshed;
+    syncLevelUI();
+    renderProfilePhoto(user.avatarDataUrl || '');
     if (!user.emailVerificationRequired && user.emailVerified) {
       if (emailVerificationNotice) emailVerificationNotice.hidden = true;
       if (params.get('verificar-email') === '1') {
-        show(securityStatus, 'E-mail confirmado. Sua conta está liberada.', 'success');
+        show(securityStatus, isCitizen ? 'E-mail confirmado. Parabéns: sua conta agora é Prata.' : 'E-mail confirmado. Sua conta está liberada.', 'success');
         const destination = safeNext();
         if (destination) window.setTimeout(() => location.replace(destination), 900);
       }
@@ -157,50 +188,60 @@
       security = await auth.getSecurity();
       renderSecurity();
       if (security.emailVerified) await refreshVerificationState();
-      if (params.get('email-verificado') === '1' && security.emailVerified) show(securityStatus, 'E-mail confirmado com sucesso.', 'success');
+      if (params.get('email-verificado') === '1' && security.emailVerified) {
+        show(securityStatus, isCitizen ? 'E-mail confirmado. Conquista desbloqueada: Conta Prata.' : 'E-mail confirmado com sucesso.', 'success');
+      }
     } catch (error) {
       show(securityStatus, error.message || 'Não foi possível carregar a segurança da conta.', 'error');
     }
   }
 
+  syncLevelUI();
   renderProfilePhoto(user.avatarDataUrl || '');
-  if (user.role !== 'cidadao') {
-    choosePhoto?.addEventListener('click', () => profileInput?.click());
-    profileInput?.addEventListener('change', async () => {
-      const file = profileInput.files?.[0];
-      if (!file) return;
-      choosePhoto.disabled = true;
-      if (removePhoto) removePhoto.disabled = true;
-      show(profileStatus, 'Preparando a foto...', 'success');
-      try {
-        const avatarDataUrl = await prepareAvatar(file);
-        user = await auth.updateProfilePhoto(avatarDataUrl);
-        renderProfilePhoto(user.avatarDataUrl);
-        show(profileStatus, 'Foto de perfil atualizada.', 'success');
-      } catch (error) {
-        show(profileStatus, error.message || 'Não foi possível atualizar a foto.', 'error');
-      } finally {
-        profileInput.value = '';
-        choosePhoto.disabled = false;
-        if (removePhoto) removePhoto.disabled = false;
-      }
-    });
 
-    removePhoto?.addEventListener('click', async () => {
-      choosePhoto.disabled = true;
-      removePhoto.disabled = true;
-      try {
-        user = await auth.updateProfilePhoto('');
-        renderProfilePhoto('');
-        show(profileStatus, 'Foto de perfil removida.', 'success');
-      } catch (error) {
-        show(profileStatus, error.message || 'Não foi possível remover a foto.', 'error');
-      } finally {
-        choosePhoto.disabled = false;
-        removePhoto.disabled = false;
-      }
-    });
-  }
+  choosePhoto?.addEventListener('click', () => {
+    if (isCitizen && !citizenHasSilver()) {
+      document.getElementById('seguranca')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      show(profileStatus, 'A foto de perfil é uma conquista da Conta Prata. Confirme seu e-mail para desbloquear.', 'error');
+      return;
+    }
+    profileInput?.click();
+  });
+
+  profileInput?.addEventListener('change', async () => {
+    const file = profileInput.files?.[0];
+    if (!file) return;
+    choosePhoto.disabled = true;
+    if (removePhoto) removePhoto.disabled = true;
+    show(profileStatus, 'Preparando a foto...', 'success');
+    try {
+      const avatarDataUrl = await prepareAvatar(file);
+      user = await auth.updateProfilePhoto(avatarDataUrl);
+      renderProfilePhoto(user.avatarDataUrl);
+      show(profileStatus, 'Foto de perfil atualizada.', 'success');
+    } catch (error) {
+      show(profileStatus, error.message || 'Não foi possível atualizar a foto.', 'error');
+    } finally {
+      profileInput.value = '';
+      choosePhoto.disabled = isCitizen && !citizenHasSilver();
+      if (removePhoto) removePhoto.disabled = false;
+    }
+  });
+
+  removePhoto?.addEventListener('click', async () => {
+    choosePhoto.disabled = true;
+    removePhoto.disabled = true;
+    try {
+      user = await auth.updateProfilePhoto('');
+      renderProfilePhoto('');
+      show(profileStatus, 'Foto de perfil removida.', 'success');
+    } catch (error) {
+      show(profileStatus, error.message || 'Não foi possível remover a foto.', 'error');
+    } finally {
+      choosePhoto.disabled = isCitizen && !citizenHasSilver();
+      removePhoto.disabled = false;
+    }
+  });
 
   passwordForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -210,6 +251,7 @@
     try {
       user = await auth.changePassword(current.value, next.value);
       passwordForm.reset();
+      syncLevelUI();
       if (firstAccess) {
         if (user.emailVerificationRequired) {
           show(passwordStatus, 'Senha alterada. Agora confirme seu e-mail de segurança para concluir o acesso.', 'success');
@@ -217,7 +259,7 @@
           return;
         }
         show(passwordStatus, 'Senha alterada com sucesso. Abrindo seu ambiente...', 'success');
-        const destination = user.role === 'cidadao' ? '/cidadao/' : '/';
+        const destination = isCitizen ? '/cidadao/' : '/';
         window.setTimeout(() => location.replace(destination), 550);
         return;
       }
@@ -235,8 +277,9 @@
     try {
       security = await auth.updateSecurity({ email: emailInput.value.trim() });
       renderSecurity();
+      await refreshVerificationState();
       if (security.email) {
-        show(securityStatus, security.emailVerified ? 'E-mail de segurança confirmado.' : 'E-mail salvo. Agora solicite a verificação.', 'success');
+        show(securityStatus, security.emailVerified ? 'E-mail de segurança confirmado.' : 'E-mail salvo. Agora solicite a verificação para evoluir a conta.', 'success');
       } else {
         show(securityStatus, 'E-mail removido da conta.', 'success');
       }
@@ -259,10 +302,16 @@
   });
 
   friendRequests.addEventListener('change', async () => {
+    if (isCitizen && !citizenHasSilver()) {
+      friendRequests.checked = false;
+      document.getElementById('seguranca')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      show(securityStatus, 'Esta preferência é desbloqueada no nível Prata.', 'error');
+      return;
+    }
     try {
       security = await auth.updateSecurity({ acceptFriendRequests: friendRequests.checked });
       renderSecurity();
-      show(securityStatus, friendRequests.checked ? 'Pedidos de amizade poderão ser recebidos quando essa função for ativada.' : 'Pedidos de amizade estão desativados.', 'success');
+      show(securityStatus, friendRequests.checked ? 'Preferência salva. Ela só terá efeito quando a função de amizade for ativada.' : 'Pedidos de amizade estão desativados.', 'success');
     } catch (error) {
       friendRequests.checked = !friendRequests.checked;
       show(securityStatus, error.message || 'Não foi possível salvar a preferência.', 'error');
