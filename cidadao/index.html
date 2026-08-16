@@ -6,9 +6,10 @@
   <meta name="theme-color" content="#0d3157">
   <title>Canal do Cidadão | Eldorado/MS</title>
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/portal.css?v=20260815-1">
+  <link rel="stylesheet" href="/css/portal.css?v=20260816-1">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/citizen.css?v=20260815-1">
+  <link rel="stylesheet" href="/css/account-level.css?v=20260816-1">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
@@ -33,18 +34,20 @@
           <p>Envie sugestões, reclamações, elogios ou denúncias ao Conselho Municipal de Saúde. As atualizações e respostas ficam registradas no próprio portal.</p>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="level-mini-badge bronze" id="accountLevelBadge">🥉 Conta Bronze</span>
           <span class="privacy-chip" id="privacyChip">Verificando privacidade...</span>
-          <a class="portal-button secondary linklike" href="/conta/">Segurança da conta</a>
+          <a class="portal-button secondary linklike" href="/conta/" id="accountEvolutionLink">Minha conta</a>
         </div>
       </section>
 
+      <div class="portal-note info" id="accountEvolutionNotice" hidden></div>
       <div class="portal-note warning" id="firebaseNotice" hidden></div>
 
       <section class="citizen-actions" aria-label="Atalhos do cidadão">
         <button class="citizen-action" id="openNewManifestation" type="button"><span class="icon">➕</span><strong>Nova manifestação</strong><span>Envie uma nova solicitação ao Conselho.</span></button>
         <button class="citizen-action" id="focusManifestations" type="button"><span class="icon">📂</span><strong>Minhas manifestações</strong><span>Veja protocolos, andamento e respostas.</span></button>
         <button class="citizen-action" id="focusNotifications" type="button"><span class="icon">🔔</span><strong>Notificações <b class="count-badge" id="notificationCount" hidden>0</b></strong><span>Confira movimentações recentes.</span></button>
-        <a class="citizen-action" href="/conta/"><span class="icon">👤</span><strong>Minha conta</strong><span>Senha, e-mail de segurança e privacidade.</span></a>
+        <a class="citizen-action" href="/conta/"><span class="icon">🏅</span><strong>Evolução da conta</strong><span id="accountActionText">Veja seu nível, segurança e conquistas.</span></a>
       </section>
 
       <section class="citizen-grid">
@@ -115,7 +118,8 @@
   </div>
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
-  <script src="/js/auth-client.js?v=20260815-2"></script>
-  <script src="/js/citizen.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260816-1"></script>
+  <script src="/js/account-levels.js?v=20260816-1"></script>
+  <script src="/js/citizen.js?v=20260816-1"></script>
 </body>
 </html>
