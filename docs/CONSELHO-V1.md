@@ -6,9 +6,10 @@ Esta versão implementa a estrutura do Canal do Cidadão em uma branch separada.
 
 ## Entregas da V1
 
-- Login único em `/login/`.
+- Login único em `/login/`, apresentado como porta de entrada do portal.
 - Auto cadastro de cidadão por usuário + senha em `/cadastro/`.
 - Hub do Cidadão em `/cidadao/`.
+- Evolução da conta cidadã em Bronze, Prata e Ouro.
 - Página pública do Conselho em `/conselho/`.
 - Painel institucional em `/conselho/painel/`.
 - Tipos de manifestação: sugestão, reclamação, elogio e denúncia.
@@ -62,6 +63,7 @@ A V1 bloqueia a desativação acidental da própria conta Desenvolvedor e també
 - manifestações próprias;
 - notificações próprias;
 - conta e segurança;
+- evolução Bronze/Prata/Ouro;
 - sem listagem/chat com profissionais na V1.
 
 ### Conselho
@@ -71,6 +73,39 @@ A V1 bloqueia a desativação acidental da própria conta Desenvolvedor e també
 - `presidente`: lê manifestações, responde oficialmente, altera andamento e registra observações internas.
 - `membro`: lê manifestações, histórico e registra observações internas.
 
+## Evolução da conta do cidadão
+
+Os níveis são internos deste portal e não têm relação com os níveis oficiais da conta Gov.br. Eles não alteram prioridade, credibilidade ou força de uma manifestação.
+
+### Bronze
+
+Requisito: criar a conta com usuário + senha.
+
+Já libera:
+
+- manifestações ao Conselho;
+- protocolos;
+- acompanhamento e conversa vinculada ao protocolo;
+- notificações internas.
+
+### Prata
+
+Requisito: confirmar o e-mail de segurança.
+
+Além do Bronze, libera:
+
+- foto de perfil;
+- preparação do perfil social;
+- preferência para receber pedidos de amizade quando a camada social for ativada.
+
+### Ouro
+
+Requisito planejado: proteção reforçada em novo dispositivo / segunda etapa de autenticação.
+
+O Ouro ainda não pode ser alcançado na V1. A arquitetura já possui o nível e os gates correspondentes para futura liberação de dispositivos confiáveis e recursos sociais mais sensíveis.
+
+Mesmo no Ouro, o cidadão não ganha acesso automático aos profissionais. A relação social continuará dependendo de amizade/autorização e da configuração de privacidade de cada usuário.
+
 ## Privacidade
 
 O e-mail de segurança fica na tabela de autenticação e não é enviado ao documento Firestore da manifestação.
@@ -78,9 +113,11 @@ O e-mail de segurança fica na tabela de autenticação e não é enviado ao doc
 - o auto cadastro cidadão recebe somente usuário + senha;
 - o formulário público não solicita nome de exibição, telefone, CPF ou e-mail;
 - a interface orienta o cidadão a não usar nome completo ou outros dados pessoais no nome de usuário quando desejar preservar sua identificação;
-- contas de cidadão não utilizam foto de perfil na V1;
+- a foto de perfil fica bloqueada no Bronze e é liberada no Prata;
+- a foto pertence ao perfil da conta e não é mostrada ao Conselho dentro da manifestação;
 - cidadão sem e-mail: interface usa `anonima`/sem identificação por e-mail ou telefone;
 - cidadão com e-mail: interface usa `sigilosa`;
+- o nível Bronze/Prata/Ouro é separado do rótulo de privacidade da manifestação;
 - Presidente e membros do Conselho recebem apenas a indicação do nível de privacidade e `Identidade protegida`;
 - o painel institucional não exibe o e-mail de segurança.
 
@@ -104,9 +141,9 @@ Exemplo conceitual, sem usar valor real no GitHub:
 AUTH_DEVELOPER_USERNAMES=<usuario-do-desenvolvedor>
 ```
 
-A comparação normaliza espaços, maiúsculas e acentos da mesma forma que o login do portal. Após configurado, contas antigas que ainda estejam como `admin` e não constem nessa lista migram automaticamente para `coordenacao`.
+A comparação normaliza espaços, maiúsculas e acentos da mesma forma que o login do portal.
 
-**Não publicar a migração sem confirmar esse valor.**
+A migração dos administradores legados também exige `AUTH_MIGRATE_LEGACY_ADMINS=true`. Essa flag permanece `false` por padrão e só deve ser ligada temporariamente depois de confirmar a conta Desenvolvedor correta.
 
 ### 2. Criar/conectar o projeto Firebase
 
@@ -128,15 +165,18 @@ A conta de serviço deve receber somente os privilégios necessários para os re
 
 Com Firebase configurado:
 
-1. cadastrar e-mail em `/conta/`;
-2. solicitar verificação;
-3. abrir o link recebido;
-4. voltar à conta;
-5. confirmar que `emailVerified` atualiza;
-6. testar cidadão sem e-mail e cidadão com e-mail;
-7. testar uma conta profissional existente;
-8. confirmar que uma conta profissional ainda consegue entrar em `/conta/` quando a exigência estiver ativa;
-9. confirmar que as demais ferramentas ficam bloqueadas somente até a verificação ser concluída.
+1. criar uma Conta Bronze de cidadão;
+2. confirmar que a foto de perfil permanece bloqueada;
+3. cadastrar e-mail em `/conta/`;
+4. solicitar verificação;
+5. abrir o link recebido;
+6. voltar à conta;
+7. confirmar que `emailVerified` atualiza e a conta passa para Prata;
+8. confirmar que a foto de perfil é desbloqueada;
+9. testar cidadão sem e-mail e cidadão com e-mail;
+10. testar uma conta profissional existente;
+11. confirmar que uma conta profissional ainda consegue entrar em `/conta/` quando a exigência estiver ativa;
+12. confirmar que as demais ferramentas ficam bloqueadas somente até a verificação ser concluída.
 
 ### 4. Não ativar a exigência dos profissionais imediatamente
 
@@ -169,27 +209,29 @@ Depois do deploy controlado:
 3. Coordenador vê Guia, Recepção, Monitoramento e usuários subordinados;
 4. Coordenador não consegue atribuir `admin`, `coordenacao` ou função do Conselho;
 5. Desenvolvedor não consegue se desativar ou se rebaixar acidentalmente pelo formulário comum;
-6. cidadão cria conta fornecendo apenas usuário + senha;
-7. cidadão não pode cadastrar foto de perfil na V1;
-8. cidadão não enxerga chat/lista de profissionais;
-9. cidadão abre manifestação e recebe protocolo;
-10. segunda manifestação dentro de duas horas é recusada;
-11. cidadão consegue responder no protocolo mesmo durante as duas horas;
-12. Presidente vê a manifestação sem o e-mail da conta;
-13. membro do Conselho vê e registra observação interna, mas não envia resposta oficial;
-14. Presidente altera o status e responde;
-15. cidadão recebe a notificação interna e vê a atualização;
-16. anexos ficam privados e somente autor/Conselho autorizado conseguem abrir;
-17. conta com e-mail aparece como sigilosa;
-18. conta sem e-mail não ganha e-mail/telefone por preenchimento automático;
-19. ativar temporariamente a exigência de e-mail em ambiente controlado e confirmar que o profissional consegue entrar em `/conta/`, mas não nas APIs protegidas;
-20. logs e banco D1 não armazenam o texto clínico da manifestação fora do Firestore.
+6. cidadão cria conta fornecendo apenas usuário + senha e recebe nível Bronze;
+7. foto de perfil permanece bloqueada no Bronze;
+8. cidadão confirma e-mail, passa a Prata e desbloqueia a foto;
+9. cidadão Bronze não consegue ativar a preferência futura de pedidos de amizade;
+10. cidadão Prata consegue salvar essa preferência, embora a rede social continue desativada;
+11. cidadão não enxerga chat/lista de profissionais;
+12. cidadão abre manifestação e recebe protocolo;
+13. segunda manifestação dentro de duas horas é recusada;
+14. cidadão consegue responder no protocolo mesmo durante as duas horas;
+15. Presidente vê a manifestação sem o e-mail da conta e sem foto social;
+16. membro do Conselho vê e registra observação interna, mas não envia resposta oficial;
+17. Presidente altera o status e responde;
+18. cidadão recebe a notificação interna e vê a atualização;
+19. anexos ficam privados e somente autor/Conselho autorizado conseguem abrir;
+20. conta com e-mail aparece como sigilosa;
+21. conta sem e-mail não ganha e-mail/telefone por preenchimento automático;
+22. ativar temporariamente a exigência de e-mail em ambiente controlado e confirmar que o profissional consegue entrar em `/conta/`, mas não nas APIs protegidas;
+23. logs e banco D1 não armazenam o texto clínico da manifestação fora do Firestore.
 
 ## Próximas fases, fora da V1
 
-- desafio adicional quando a conta entrar em dispositivo novo;
+- desafio adicional quando a conta entrar em dispositivo novo e consequente liberação do nível Ouro;
 - App Check/reCAPTCHA Enterprise depois que o Firebase estiver conectado;
 - recuperação de conta sem e-mail por chave de recuperação;
 - amizade e chat cidadão↔profissional somente mediante relação autorizada;
-- preferência para receber pedidos de amizade já preparada no modelo;
 - feed/comunidade pública somente após definição institucional e de moderação.
