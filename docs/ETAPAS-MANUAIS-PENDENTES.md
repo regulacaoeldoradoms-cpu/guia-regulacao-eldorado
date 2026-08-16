@@ -85,17 +85,26 @@ realizar:
 
 1. entrar como Wellyton;
 2. confirmar que Guia, Recepção, Monitoramento e administração continuam disponíveis;
-3. criar uma conta cidadã de teste;
-4. confirmar que nomes institucionais reservados não podem ser usados no auto cadastro;
-5. confirmar que o cidadão não vê chat nem profissionais;
-6. testar manifestação, protocolo, resposta, histórico, notificação e anexos;
-7. testar manifestação sem e-mail;
-8. vincular e-mail à conta cidadã e confirmar mudança para `Sigilosa` inclusive em protocolos anteriores;
-9. testar envio e confirmação real de e-mail;
-10. confirmar que o painel do Conselho não mostra e-mail nem nome de usuário do cidadão;
-11. confirmar que o nome original do arquivo anexado não aparece no painel nem no caminho do objeto novo;
-12. tentar enviar arquivo com extensão/MIME incompatível e confirmar que o Worker rejeita pela assinatura real do conteúdo;
-13. confirmar que PDF é entregue como download e que JPG/PNG são servidos apenas após autorização.
+3. abrir `/login/` e conferir a nova mensagem de porta de entrada e o botão de autocadastro;
+4. criar uma conta cidadã de teste e confirmar que ela nasce como **Conta Bronze**;
+5. confirmar que nomes institucionais reservados não podem ser usados no auto cadastro;
+6. confirmar que o cidadão Bronze já consegue usar manifestações, protocolos e notificações;
+7. confirmar que a foto de perfil permanece bloqueada no Bronze;
+8. confirmar que o cidadão Bronze não consegue ativar a preferência futura de pedidos de amizade;
+9. confirmar que o cidadão não vê chat nem profissionais;
+10. testar manifestação, protocolo, resposta, histórico, notificação e anexos;
+11. testar manifestação sem e-mail;
+12. vincular e-mail à conta cidadã e confirmar mudança para `Sigilosa` inclusive em protocolos anteriores;
+13. testar envio e confirmação real de e-mail;
+14. confirmar que, depois da confirmação, a conta passa para **Prata**;
+15. confirmar que a foto de perfil é desbloqueada no Prata e não aparece dentro da manifestação no painel do Conselho;
+16. confirmar que a preferência futura de pedidos de amizade pode ser salva no Prata, embora a rede social continue desativada;
+17. confirmar que o painel do Conselho não mostra e-mail nem nome de usuário do cidadão;
+18. confirmar que o nome original do arquivo anexado não aparece no painel nem no caminho do objeto novo;
+19. tentar enviar arquivo com extensão/MIME incompatível e confirmar que o Worker rejeita pela assinatura real do conteúdo;
+20. confirmar que PDF é entregue como download e que JPG/PNG são servidos apenas após autorização.
+
+O nível **Ouro** não deve aparecer como atingível na V1; ele permanece mostrado apenas como próxima etapa futura ligada à autenticação reforçada em novo dispositivo.
 
 ## 7. Migrar os cargos antigos
 
@@ -148,6 +157,7 @@ Revisar com o Conselho/gestão municipal:
 - quem pode responder oficialmente;
 - política de retenção/arquivamento;
 - aviso de privacidade e orientações ao cidadão;
+- nomenclatura interna Bronze/Prata/Ouro e texto explicando que ela não tem relação com a classificação oficial do Gov.br;
 - fluxo para situações que não devem ser tratadas apenas como manifestação administrativa.
 
 O site já diferencia o Canal do Conselho de atendimento assistencial e informa que ele não realiza agendamento, não altera solicitação da Regulação e não substitui atendimento de urgência/emergência. O texto institucional final ainda deve ser validado antes da abertura pública.
@@ -159,7 +169,7 @@ Deixar desativados até fase posterior:
 - feed social;
 - amizade/chat cidadão-profissional;
 - descoberta pública de profissionais;
-- autenticação adicional por novo dispositivo;
+- nível Ouro efetivo / autenticação adicional por novo dispositivo;
 - recuperação por chave sem e-mail;
 - App Check/reCAPTCHA Enterprise até o projeto Firebase estar conectado e testado.
 
