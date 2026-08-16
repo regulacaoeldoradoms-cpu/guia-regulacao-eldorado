@@ -1,0 +1,18 @@
+{
+  "name": "Conferência da Recepção | Regulação de Saúde",
+  "short_name": "Recepção",
+  "description": "Conferência documental da Recepção do Portal da Regulação de Saúde de Eldorado/MS.",
+  "id": "/recepcao/",
+  "start_url": "/recepcao/",
+  "scope": "/recepcao/",
+  "display": "standalone",
+  "background_color": "#0d3157",
+  "theme_color": "#0d3157",
+  "icons": [
+    {
+      "src": "/assets/recepcao-icon.png",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
