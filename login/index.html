@@ -6,29 +6,32 @@
   <meta name="theme-color" content="#0d3157">
   <meta name="description" content="Portal da Regulação de Saúde de Eldorado/MS: acesso de profissionais e cidadãos.">
   <title>Portal da Regulação de Saúde | Eldorado/MS</title>
-  <link rel="icon" href="/assets/portal-regulacao-icon.webp?v=20260816-2" type="image/webp">
-  <link rel="apple-touch-icon" href="/assets/portal-regulacao-icon.webp?v=20260816-2">
+  <link rel="icon" href="/assets/portal-regulacao-icon.webp?v=20260816-3" type="image/webp">
+  <link rel="apple-touch-icon" href="/assets/portal-regulacao-icon.webp?v=20260816-3">
   <link rel="stylesheet" href="/css/portal.css?v=20260816-1">
   <style>
-    .login-portal-brand{display:flex;align-items:center;max-width:760px;min-height:120px;padding:12px 16px;border-radius:20px;background:rgba(255,255,255,.94);box-shadow:0 14px 34px rgba(0,0,0,.18)}
-    .login-portal-logo{display:block;width:min(680px,100%);height:auto;max-height:210px;object-fit:contain;object-position:left center}
-    .login-portal-fallback{display:none;color:#0d3157;font-weight:900;font-size:clamp(1.2rem,3vw,2rem);line-height:1.05}
-    .login-portal-fallback small{display:block;margin-top:8px;font-size:.65em;font-weight:700;color:#0f9f74;letter-spacing:.06em}
-    @media(max-width:860px){.login-portal-brand{min-height:96px}.login-portal-logo{width:min(560px,100%);max-height:170px}.login-message{padding-top:24px}}
-    @media(max-width:580px){.login-portal-brand{min-height:84px;padding:10px 12px;border-radius:16px}.login-portal-logo{width:100%;max-height:140px}.login-visual{padding-top:22px}.login-message{padding-top:22px}}
+    .login-portal-brand{display:flex;align-items:center;gap:18px;max-width:760px;min-height:120px;padding:14px 20px;border-radius:20px;background:rgba(255,255,255,.96);box-shadow:0 14px 34px rgba(0,0,0,.18)}
+    .login-portal-symbol{display:block;width:105px;height:105px;object-fit:contain;flex:0 0 105px}
+    .login-portal-wordmark{min-width:0;color:#073672;line-height:.92}
+    .login-portal-wordmark .small-top{display:block;font-size:clamp(.7rem,1.5vw,1.05rem);font-weight:900;letter-spacing:.28em;margin-bottom:6px;white-space:nowrap}
+    .login-portal-wordmark .main{display:block;font-size:clamp(1.45rem,3.3vw,2.65rem);font-weight:950;letter-spacing:-.035em;white-space:nowrap}
+    .login-portal-wordmark .health{display:block;color:#0aa53c;font-size:clamp(1.05rem,2.6vw,2rem);font-weight:950;letter-spacing:.015em;margin-top:5px;white-space:nowrap}
+    .login-portal-wordmark .city{display:block;font-size:clamp(.66rem,1.4vw,.95rem);font-weight:800;letter-spacing:.28em;margin-top:7px;white-space:nowrap}
+    @media(max-width:860px){.login-portal-brand{min-height:102px;gap:14px}.login-portal-symbol{width:88px;height:88px;flex-basis:88px}.login-message{padding-top:24px}}
+    @media(max-width:580px){.login-portal-brand{min-height:92px;padding:10px 12px;gap:10px;border-radius:16px}.login-portal-symbol{width:78px;height:78px;flex-basis:78px}.login-portal-wordmark .small-top{font-size:.56rem;letter-spacing:.19em}.login-portal-wordmark .main{font-size:1.18rem}.login-portal-wordmark .health{font-size:.92rem}.login-portal-wordmark .city{font-size:.53rem;letter-spacing:.19em}.login-visual{padding-top:22px}.login-message{padding-top:22px}}
   </style>
 </head>
 <body class="portal-page">
   <main class="login-layout">
     <section class="login-visual" aria-label="Portal da Regulação de Saúde">
-      <div class="login-portal-brand">
-        <img
-          class="login-portal-logo"
-          src="/assets/portal-regulacao-logo.webp?v=20260816-2"
-          alt="Portal da Regulação de Saúde de Eldorado/MS"
-          onerror="if(!this.dataset.fallback){this.dataset.fallback='1';this.src='https://raw.githubusercontent.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/main/assets/portal-regulacao-logo.webp';}else{this.style.display='none';this.nextElementSibling.style.display='block';}"
-        >
-        <div class="login-portal-fallback" aria-hidden="true">PORTAL DA REGULAÇÃO DE SAÚDE<small>ELDORADO/MS</small></div>
+      <div class="login-portal-brand" aria-label="Portal da Regulação de Saúde de Eldorado/MS">
+        <img class="login-portal-symbol" src="/assets/portal-regulacao-icon.webp?v=20260816-3" alt="Símbolo do Portal da Regulação de Saúde">
+        <div class="login-portal-wordmark" aria-hidden="true">
+          <span class="small-top">PORTAL DA</span>
+          <span class="main">REGULAÇÃO</span>
+          <span class="health">DE SAÚDE</span>
+          <span class="city">ELDORADO/MS</span>
+        </div>
       </div>
       <div class="login-message">
         <span class="portal-eyebrow">Sua porta de entrada</span>
