@@ -45,6 +45,11 @@
     return ((parts[0]?.[0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || '?';
   }
 
+  function accountRank(user) {
+    const level = String(user?.accountLevel || user?.accountProgress?.level || 'bronze').toLowerCase();
+    return level === 'ouro' ? 3 : level === 'prata' ? 2 : 1;
+  }
+
   function ensurePortalAccountArea(container) {
     let area = container.querySelector('.portal-account-area');
     const meta = container.querySelector('.portal-user-meta');
@@ -80,7 +85,7 @@
     }
     avatar.setAttribute('aria-hidden', 'true');
     if (avatar.parentElement !== accountArea) accountArea.insertBefore(avatar, accountArea.querySelector('.portal-user-meta'));
-    const photo = user.role === 'cidadao' ? '' : String(user.avatarDataUrl || '');
+    const photo = String(user.avatarDataUrl || '');
     avatar.textContent = photo ? '' : initialsFor(user);
     avatar.style.backgroundImage = photo ? `url("${photo}")` : 'none';
     accountArea.setAttribute('aria-label', `Abrir minha conta: ${user.name || user.username || 'usuário'}`);
@@ -100,6 +105,7 @@
       error.status = response.status;
       error.code = payload?.code || '';
       error.verificationPath = payload?.verificationPath || '';
+      error.requiredLevel = payload?.requiredLevel || '';
       error.retryAfterSeconds = Number(payload?.retryAfterSeconds || 0);
       throw error;
     }
@@ -131,14 +137,14 @@
       const payload = await api('/api/auth/me', { method: 'GET' });
       let user = payload?.user || null;
       if (user) {
-        const profile = user.role === 'cidadao' ? null : await api('/api/auth/profile', { method: 'GET' }).catch(() => null);
+        const profile = await api('/api/auth/profile', { method: 'GET' }).catch(() => null);
         user = {
           ...user,
-          avatarDataUrl: user.role === 'cidadao'
-            ? ''
-            : profile && Object.prototype.hasOwnProperty.call(profile, 'avatarDataUrl')
-              ? String(profile.avatarDataUrl || '')
-              : String(getCachedUser()?.avatarDataUrl || '')
+          avatarDataUrl: profile && Object.prototype.hasOwnProperty.call(profile, 'avatarDataUrl')
+            ? String(profile.avatarDataUrl || '')
+            : String(getCachedUser()?.avatarDataUrl || ''),
+          profilePhotoLocked: Boolean(profile?.locked),
+          profilePhotoRequiredLevel: profile?.requiredLevel || ''
         };
         saveSession(token, user, persistentSession());
         mountPortalAvatar(user);
@@ -167,7 +173,11 @@
     if (!payload?.token || !payload?.user) throw new Error('Não foi possível renovar a sessão após a troca de senha.');
     const user = {
       ...payload.user,
-      avatarDataUrl: payload.user.role === 'cidadao' ? '' : String(previous.avatarDataUrl || ''),
+      avatarDataUrl: String(previous.avatarDataUrl || ''),
+      profilePhotoLocked: Boolean(previous.profilePhotoLocked),
+      profilePhotoRequiredLevel: previous.profilePhotoRequiredLevel || '',
+      accountLevel: payload.user.accountLevel || previous.accountLevel || 'bronze',
+      accountProgress: payload.user.accountProgress || previous.accountProgress || null,
       emailVerificationRequired: Boolean(previous.emailVerificationRequired && !payload.user.emailVerified)
     };
     saveSession(payload.token, user, persistentSession());
@@ -177,10 +187,15 @@
 
   async function updateProfilePhoto(avatarDataUrl) {
     const current = getCachedUser();
-    if (current?.role === 'cidadao') throw new Error('Contas de cidadão não utilizam foto de perfil nesta versão do portal.');
+    if (current?.role === 'cidadao' && accountRank(current) < 2) {
+      const error = new Error('Confirme seu e-mail para alcançar o nível Prata e desbloquear a foto de perfil.');
+      error.code = 'ACCOUNT_LEVEL_REQUIRED';
+      error.requiredLevel = 'prata';
+      throw error;
+    }
     const payload = await api('/api/auth/profile', { method: 'PATCH', body: JSON.stringify({ avatarDataUrl: String(avatarDataUrl || '') }) });
     if (!current) return payload;
-    const user = { ...current, avatarDataUrl: String(payload.avatarDataUrl || '') };
+    const user = { ...current, avatarDataUrl: String(payload.avatarDataUrl || ''), profilePhotoLocked: false, profilePhotoRequiredLevel: '' };
     saveSession(getToken(), user, persistentSession());
     mountPortalAvatar(user);
     return user;
@@ -196,13 +211,17 @@
     const security = payload?.security || {};
     const current = getCachedUser();
     if (current) {
+      const level = current.role === 'cidadao'
+        ? (security.emailVerified ? (current.accountLevel === 'ouro' ? 'ouro' : 'prata') : 'bronze')
+        : (security.emailVerified && current.accountLevel !== 'ouro' ? 'prata' : current.accountLevel || 'bronze');
       const user = {
         ...current,
         emailConfigured: Boolean(security.email),
         emailVerified: Boolean(security.emailVerified),
         emailVerificationRequired: Boolean(current.emailVerificationRequired && !security.emailVerified),
         privacyMode: security.privacyMode || current.privacyMode,
-        acceptFriendRequests: Boolean(security.acceptFriendRequests)
+        acceptFriendRequests: Boolean(security.acceptFriendRequests),
+        accountLevel: level
       };
       saveSession(getToken(), user, persistentSession());
     }
