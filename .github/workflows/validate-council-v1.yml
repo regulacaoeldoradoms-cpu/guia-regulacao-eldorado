@@ -1,0 +1,211 @@
+name: Validar Canal do Conselho V1
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-council:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar sintaxe dos módulos novos
+        run: |
+          node --check worker/firebase-gateway.js
+          node --check worker/auth-management-v2.js
+          node --check worker/account-levels.js
+          node --check worker/role-migration.js
+          node --check worker/portal-safety.js
+          node --check worker/citizen-privacy.js
+          node --check worker/profile-photo.js
+          node --check worker/attachment-safety.js
+          node --check worker/system-readiness.js
+          node --check worker/council.js
+          node --check worker/portal-chat-v2.js
+          node --check worker/usage-monitor-v2.js
+          node --check worker/index.js
+          node --check js/auth-client.js
+          node --check js/account-levels.js
+          node --check js/login.js
+          node --check js/signup.js
+          node --check js/citizen.js
+          node --check js/citizen-account-level.js
+          node --check js/council-panel.js
+          node --check js/admin-users.js
+          node --check js/account.js
+          node --check js/home.js
+          node --check js/usage-monitor-v2.js
+          node --check js/system-readiness.js
+
+      - name: Conferir páginas e arquitetura
+        run: |
+          test -f conselho/index.html
+          test -f conselho/painel/index.html
+          test -f cadastro/index.html
+          test -f cidadao/index.html
+          test -f admin/configuracao/index.html
+          test -f css/citizen.css
+          test -f css/council.css
+          test -f css/account-level.css
+          test -f PORTAL-ARQUITETURA.md
+          grep -q 'Canal do Cidadão' cidadao/index.html
+          grep -q 'Conselho Municipal de Saúde' conselho/index.html
+          grep -q 'Painel institucional' conselho/painel/index.html
+          grep -q 'Nova manifestação' cidadao/index.html
+          grep -q 'Minhas manifestações' cidadao/index.html
+          grep -q 'Notificações' cidadao/index.html
+          grep -q 'Sua porta de entrada' login/index.html
+          grep -q 'Criar minha conta' login/index.html
+          grep -q 'Configuração técnica' admin/configuracao/index.html
+          grep -q '/admin/configuracao/' js/home.js
+
+      - name: Conferir níveis Bronze Prata Ouro
+        run: |
+          grep -q "const LEVEL_ORDER = Object.freeze({ bronze: 1, prata: 2, ouro: 3 })" worker/account-levels.js
+          grep -q "if (user?.emailVerified === true) return 'prata'" worker/account-levels.js
+          grep -q "profilePhoto: !isCitizen || rank >= LEVEL_ORDER.prata" worker/account-levels.js
+          grep -q 'accountProgressFor' worker/portal-safety.js
+          grep -q 'accountLevel: progress.level' worker/portal-safety.js
+          grep -q 'ACCOUNT_LEVEL_REQUIRED' worker/profile-photo.js
+          grep -q "minimumLevelMet(user, 'prata')" worker/profile-photo.js
+          grep -q 'guardCitizenLevelMutation' worker/index.js
+          grep -q 'requiredLevel: .prata.' worker/portal-safety.js
+          grep -q 'Conta Bronze' cadastro/index.html
+          grep -q 'Conta Prata' conta/index.html
+          grep -q 'Conta Ouro' conta/index.html
+          grep -q 'não têm relação com os níveis oficiais da conta Gov.br' conta/index.html
+          grep -q 'account-levels.js' conta/index.html
+          grep -q 'citizen-account-level.js' cidadao/index.html
+
+      - name: Conferir Firebase sem fallback para Google Drive
+        run: |
+          grep -q 'firestoreCreate' worker/council.js
+          grep -q 'storageUpload' worker/council.js
+          grep -q 'FIREBASE_PROJECT_ID' worker/firebase-gateway.js
+          grep -q 'FIREBASE_PRIVATE_KEY' worker/firebase-gateway.js
+          grep -q 'FIREBASE_STORAGE_BUCKET' worker/firebase-gateway.js
+          grep -q 'FIREBASE_PENDING' worker/council.js
+          ! grep -R -qi 'Google Drive' worker/council.js worker/firebase-gateway.js js/citizen.js js/council-panel.js
+          ! grep -R -E 'AIza[0-9A-Za-z_-]{20,}' worker/firebase-gateway.js worker/wrangler.toml
+          test -f firebase/firestore.rules
+          test -f firebase/storage.rules
+          test -f firebase.json
+          grep -q 'allow read, write: if false' firebase/firestore.rules
+          grep -q 'allow read, write: if false' firebase/storage.rules
+
+      - name: Conferir privacidade e papéis do Conselho
+        run: |
+          grep -q "COUNCIL_ROLES = new Set(\['', 'membro', 'presidente'\])" worker/auth-management-v2.js
+          grep -q "user.councilRole === 'presidente'" worker/council.js
+          grep -q 'authorLabel' worker/council.js
+          grep -q "const doc = {" worker/council.js
+          grep -q "privacyMode = user.email ? 'sigilosa' : 'anonima'" worker/council.js
+          grep -q 'protectedAttachment' worker/council.js
+          grep -q 'emailConfigured' worker/auth-management-v2.js
+          grep -q 'Dados de autenticação' conselho/painel/index.html
+          ! grep -q 'email:' worker/council.js
+          ! grep -q 'signupDisplayName' cadastro/index.html
+          ! grep -q 'displayName.value' js/signup.js
+          grep -q 'não use seu nome completo' cadastro/index.html
+          grep -q 'requiredLevel: .prata.' worker/profile-photo.js
+          grep -q 'profilePhotoLevelLock' js/account.js
+          grep -q 'guardSecurityEmailRemoval' worker/index.js
+          grep -q 'SECURITY_EMAIL_REMOVAL_BLOCKED' worker/citizen-privacy.js
+          grep -q "privacy_mode = 'sigilosa'" worker/citizen-privacy.js
+          grep -q "privacyMode: 'sigilosa'" worker/citizen-privacy.js
+          grep -q 'COUNCIL_ROLES_REQUIRING_VERIFICATION' worker/portal-safety.js
+          grep -q 'user.emailVerificationRequired' js/council-panel.js
+          grep -q 'Atenção à sua identificação' cidadao/index.html
+          grep -q 'fotos, laudos e PDFs podem conter nome' cidadao/index.html
+          grep -q 'não realiza agendamento' conselho/index.html
+
+      - name: Conferir proteção dos anexos
+        run: |
+          grep -q 'detectAttachmentContentType' worker/attachment-safety.js
+          grep -q 'validateAttachmentFile' worker/attachment-safety.js
+          grep -q '0xff, 0xd8, 0xff' worker/attachment-safety.js
+          grep -q '0x89, 0x50, 0x4e, 0x47' worker/attachment-safety.js
+          grep -q '0x25, 0x50, 0x44, 0x46, 0x2d' worker/attachment-safety.js
+          grep -q 'validateAttachmentFile(file' worker/council.js
+          grep -q 'const objectName = `conselho/${protocol}/${id}.${validated.extension}`' worker/council.js
+          ! grep -q 'file.name' worker/council.js
+          grep -q 'const { objectName, fileName, ...safe }' worker/council.js
+          grep -q 'Content-Disposition' worker/council.js
+
+      - name: Conferir auditoria sem copiar o conteúdo
+        run: |
+          grep -q 'CREATE TABLE IF NOT EXISTS council_audit_log' worker/council.js
+          grep -q "'manifestation.view'" worker/council.js
+          grep -q "'manifestation.official_reply'" worker/council.js
+          grep -q "'manifestation.internal_note'" worker/council.js
+          grep -q "'attachment.view'" worker/council.js
+          grep -q 'actor_username TEXT NOT NULL' worker/council.js
+          grep -q 'action TEXT NOT NULL' worker/council.js
+          grep -q 'protocol TEXT NOT NULL' worker/council.js
+
+      - name: Conferir limites antiabuso e impersonação
+        run: |
+          grep -q 'NEW_MANIFESTATION_INTERVAL_SECONDS = 2 \* 60 \* 60' worker/council.js
+          grep -q 'É permitido abrir uma nova manifestação a cada 2 horas' worker/council.js
+          grep -q 'MAX_ATTACHMENTS = 5' worker/council.js
+          grep -q 'MAX_ATTACHMENT_BYTES = 5 \* 1024 \* 1024' worker/council.js
+          grep -q "ATTACHMENT_TYPES = new Set(\['image/jpeg', 'image/png', 'application/pdf'\])" worker/council.js
+          grep -q 'SELF_REGISTER_LIMIT_PER_DAY = 5' worker/auth-management-v2.js
+          grep -q 'sanitizeCitizenRegistrationRequest' worker/index.js
+          grep -q 'const cleanBody' worker/portal-safety.js
+          grep -q 'RESERVED_CITIZEN_USERNAMES' worker/portal-safety.js
+          grep -q 'USERNAME_RESERVED' worker/portal-safety.js
+          grep -q 'guardCitizenRegistrationUsername' worker/index.js
+
+      - name: Conferir isolamento do chat
+        run: |
+          grep -q 'PROFESSIONAL_ROLES' worker/portal-chat-v2.js
+          ! grep -q "'cidadao'" worker/portal-chat-v2.js
+          ! grep -q 'portal-chat.js' cidadao/index.html
+          ! grep -q 'portal-chat.js' cadastro/index.html
+          ! grep -q 'portal-chat.js' conselho/index.html
+          ! grep -q 'portal-chat.js' conselho/painel/index.html
+          ! grep -q 'portal-chat.js' conta/index.html
+
+      - name: Conferir hierarquia e migração dos administradores legados
+        run: |
+          grep -q "actorRole === 'coordenacao'" worker/auth-management-v2.js
+          grep -q "new Set(\['medico', 'recepcao'\])" worker/auth-management-v2.js
+          grep -q 'AUTH_DEVELOPER_USERNAMES' worker/role-migration.js
+          grep -q 'AUTH_MIGRATE_LEGACY_ADMINS' worker/role-migration.js
+          grep -q 'migrationEnabled' worker/role-migration.js
+          grep -q "SET role = 'coordenacao'" worker/role-migration.js
+          grep -q 'guardDeveloperSelfMutation' worker/index.js
+          grep -q 'DEVELOPER_SELF_DEMOTION_BLOCKED' worker/portal-safety.js
+          grep -q 'DEVELOPER_SELF_DISABLE_BLOCKED' worker/portal-safety.js
+          grep -q 'AUTH_REQUIRE_EMAIL_VERIFICATION = "false"' worker/wrangler.toml
+          grep -q 'AUTH_MIGRATE_LEGACY_ADMINS = "false"' worker/wrangler.toml
+
+      - name: Conferir migração de e-mail sem bloqueio de login
+        run: |
+          grep -q 'portalEnvForAuthRoute' worker/index.js
+          grep -q "AUTH_REQUIRE_EMAIL_VERIFICATION: 'false'" worker/portal-safety.js
+          grep -q 'emailVerificationRequired' worker/portal-safety.js
+          grep -q 'enforceProfessionalEmailGate' worker/index.js
+          grep -q "'/api/auth/security'" worker/portal-safety.js
+          grep -q "'/api/auth/email/send-verification'" worker/portal-safety.js
+          grep -q 'user.emailVerificationRequired' js/auth-client.js
+          grep -q 'verificar-email=1' js/login.js
+          grep -q 'emailVerificationNotice' conta/index.html
+
+      - name: Conferir diagnóstico técnico sem exposição de segredos
+        run: |
+          grep -q '/api/admin/readiness' worker/system-readiness.js
+          grep -q "user.role !== 'admin'" worker/system-readiness.js
+          grep -q 'readyForControlledDeploy' worker/system-readiness.js
+          grep -q 'FIREBASE_PROJECT_ID' worker/system-readiness.js
+          grep -q 'AUTH_DEVELOPER_USERNAMES' worker/system-readiness.js
+          grep -q 'AUTH_RATE_LIMIT_SECRET' worker/system-readiness.js
+          grep -q 'handleSystemReadinessRoute' worker/index.js
+          grep -q '/api/admin/readiness' js/system-readiness.js
+          ! grep -q 'privateKey:' js/system-readiness.js

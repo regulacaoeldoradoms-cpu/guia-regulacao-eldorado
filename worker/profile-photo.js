@@ -1,6 +1,7 @@
 'use strict';
 
 import { validatePortalSession } from './auth-management-flex.js';
+import { accountProgressFor, minimumLevelMet } from './account-levels.js';
 
 const MAX_AVATAR_DATA_URL = 220000;
 
@@ -66,11 +67,27 @@ export async function handleProfileRoute(request, env, origin, originAllowed = t
   if (!user) return jsonResponse({ error: 'Sessão inválida ou expirada.' }, 401, origin, originAllowed);
   if (!env.AUTH_DB) return jsonResponse({ error: 'Banco de usuários ainda não disponível.' }, 503, origin, originAllowed);
 
+  const progress = accountProgressFor(user);
+  const citizenPhotoUnlocked = user.role !== 'cidadao' || minimumLevelMet(user, 'prata');
+
   if (request.method === 'GET') {
-    return jsonResponse({ avatarDataUrl: await avatarFor(env, user.username) }, 200, origin, originAllowed);
+    return jsonResponse({
+      avatarDataUrl: citizenPhotoUnlocked ? await avatarFor(env, user.username) : '',
+      locked: !citizenPhotoUnlocked,
+      requiredLevel: !citizenPhotoUnlocked ? 'prata' : '',
+      accountLevel: progress.level
+    }, 200, origin, originAllowed);
   }
 
   if (request.method === 'PATCH') {
+    if (!citizenPhotoUnlocked) {
+      return jsonResponse({
+        error: 'Confirme seu e-mail para alcançar o nível Prata e desbloquear a foto de perfil.',
+        code: 'ACCOUNT_LEVEL_REQUIRED',
+        requiredLevel: 'prata'
+      }, 403, origin, originAllowed);
+    }
+
     const body = await request.json().catch(() => ({}));
     const avatarDataUrl = String(body.avatarDataUrl || '');
     if (!validAvatar(avatarDataUrl)) {
@@ -80,7 +97,7 @@ export async function handleProfileRoute(request, env, origin, originAllowed = t
     await env.AUTH_DB.prepare('UPDATE auth_users SET avatar_data = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?')
       .bind(avatarDataUrl, user.username)
       .run();
-    return jsonResponse({ ok: true, avatarDataUrl }, 200, origin, originAllowed);
+    return jsonResponse({ ok: true, avatarDataUrl, accountLevel: progress.level }, 200, origin, originAllowed);
   }
 
   return jsonResponse({ error: 'Método não permitido.' }, 405, origin, originAllowed);

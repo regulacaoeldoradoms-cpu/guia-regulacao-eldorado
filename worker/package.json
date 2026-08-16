@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check gemini-assistant.js",
+    "check": "node --check index.js && node --check auth-management-v2.js && node --check account-levels.js && node --check firebase-gateway.js && node --check council.js && node --check attachment-safety.js && node --check portal-chat-v2.js && node --check usage-monitor-v2.js && node --check role-migration.js && node --check portal-safety.js && node --check citizen-privacy.js && node --check profile-photo.js && node --check system-readiness.js && node --check gemini-assistant.js",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

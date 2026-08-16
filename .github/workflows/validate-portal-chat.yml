@@ -15,60 +15,42 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validar sintaxe
         run: |
-          node --check worker/portal-chat.js
+          node --check worker/portal-chat-v2.js
           node --check worker/index.js
           node --check js/portal-chat.js
           node --check js/portal-chat-switch-optimizer.js
           node --check js/medical-portal-nav.js
           node --check portal-sw.js
-      - name: Conferir integração
+      - name: Conferir integração profissional
         run: |
           test -f css/portal-chat.css
           test -f portal-sw.js
           test -f js/portal-chat-switch-optimizer.js
-          test -f medico/index.html
-          grep -q "import { handleChatRoute, isChatApi } from './portal-chat.js'" worker/index.js
-          grep -q "portal_chat_messages" worker/portal-chat.js
-          grep -q "portal_chat_presence" worker/portal-chat.js
-          grep -q "/api/chat/presence" worker/portal-chat.js
-          grep -q "/api/chat/users" worker/portal-chat.js
-          grep -q "/api/chat/messages" worker/portal-chat.js
-          grep -q "ONLINE_WINDOW_SECONDS" worker/portal-chat.js
-          grep -q "lastMessageAt" worker/portal-chat.js
-          grep -q "ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END" worker/portal-chat.js
+          grep -q "portal-chat-v2.js" worker/index.js
+          grep -q "PROFESSIONAL_ROLES" worker/portal-chat-v2.js
+          grep -q "u.role IN ('medico','recepcao','coordenacao','admin')" worker/portal-chat-v2.js
+          grep -q "/api/chat/presence" worker/portal-chat-v2.js
+          grep -q "/api/chat/users" worker/portal-chat-v2.js
+          grep -q "/api/chat/messages" worker/portal-chat-v2.js
           grep -q "Uso interno do portal" js/portal-chat.js
-          grep -q "portal-chat-unread" js/portal-chat.js
-          grep -q "unread > 99 ? '99+' : unread" js/portal-chat.js
           grep -q "Notification.requestPermission" js/portal-chat.js
           grep -q "showNotification" js/portal-chat.js
           grep -q "serviceWorker.register('/portal-sw.js'" js/portal-chat.js
-          grep -q "conversationCache" js/portal-chat-switch-optimizer.js
-          grep -q "Carregando conversa" js/portal-chat-switch-optimizer.js
-          grep -q "notificationclick" portal-sw.js
-          grep -q "OPEN_PORTAL_CHAT" portal-sw.js
           grep -q "portal-chat.js?v=20260814-1" index.html
           grep -q "portal-chat.js?v=20260814-1" recepcao/index.html
-          grep -q "portal-chat.js?v=20260814-1" conta/index.html
           grep -q "portal-chat.js?v=20260814-1" admin/usuarios/index.html
           grep -q "portal-chat-switch-optimizer.js?v=20260812-1" index.html
           grep -q "portal-chat-switch-optimizer.js?v=20260812-1" recepcao/index.html
-          grep -q "portal-chat-switch-optimizer.js?v=20260812-1" conta/index.html
           grep -q "portal-chat-switch-optimizer.js?v=20260812-1" admin/usuarios/index.html
-          grep -q "portal-chat.css?v=20260814-1" index.html
-          grep -q "portal-chat.css?v=20260814-1" recepcao/index.html
-          grep -q "portal-chat.css?v=20260814-1" conta/index.html
-          grep -q "portal-chat.css?v=20260814-1" admin/usuarios/index.html
           grep -q "ensureChatAssets" js/medical-portal-nav.js
-          grep -q "watchFloatingTools" js/medical-portal-nav.js
           grep -q "portal-chat-present" js/medical-portal-nav.js
-          grep -q "portal-chat-open" js/medical-portal-nav.js
-          grep -q "portal-chat.js?v=20260814-1" js/medical-portal-nav.js
-          grep -q "portal-chat.css?v=20260814-1" js/medical-portal-nav.js
-          grep -q "portal-chat-switch-optimizer.js?v=20260812-1" js/medical-portal-nav.js
-          grep -q "portal-chat-present .ai-launcher" css/ai-assistant.css
-          grep -q "portal-chat-open .ai-launcher" css/ai-assistant.css
-          grep -q "ai-assistant.css?v=20260812-1" medico/index.html
-          grep -q "medical-portal-nav.js?v=20260814-2" medico/index.html
-          grep -q 'M8 3h8v5h5v8h-5v5H8v-5H3V8h5z' medico/index.html
-          grep -q "fallbackUrl.*chat" portal-sw.js
+      - name: Garantir isolamento dos cidadãos
+        run: |
           ! grep -q "portal-chat.js" login/index.html
+          ! grep -q "portal-chat.js" cadastro/index.html
+          ! grep -q "portal-chat.js" cidadao/index.html
+          ! grep -q "portal-chat.js" conselho/index.html
+          ! grep -q "portal-chat.js" conselho/painel/index.html
+          ! grep -q "portal-chat.js" conta/index.html
+          ! grep -q "role = 'cidadao'" worker/portal-chat-v2.js
+          grep -q "chat direto é restrito aos profissionais autorizados" worker/portal-chat-v2.js

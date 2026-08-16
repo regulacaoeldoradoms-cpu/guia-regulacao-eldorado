@@ -22,12 +22,28 @@
     status.className = `login-status visible ${type}`;
   }
 
-  function destinationFor(user) {
-    if (user?.mustChangePassword) return '/conta/?primeiro-acesso=1';
+  function defaultDestination(user) {
+    if (user?.role === 'cidadao') {
+      if (user?.councilRole === 'presidente') return '/conselho/painel/';
+      return '/cidadao/';
+    }
+    return config.homePath || '/';
+  }
+
+  function safeRequestedDestination() {
     const params = new URLSearchParams(location.search);
     const requested = params.get('next');
-    const safeNext = requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : null;
-    return safeNext || config.homePath || '/';
+    return requested && requested.startsWith('/') && !requested.startsWith('//') ? requested : null;
+  }
+
+  function destinationFor(user) {
+    if (user?.mustChangePassword) return '/conta/?primeiro-acesso=1';
+    const requested = safeRequestedDestination();
+    if (user?.emailVerificationRequired) {
+      const next = encodeURIComponent(requested || defaultDestination(user));
+      return `/conta/?verificar-email=1&next=${next}`;
+    }
+    return requested || defaultDestination(user);
   }
 
   async function redirectIfAuthenticated() {

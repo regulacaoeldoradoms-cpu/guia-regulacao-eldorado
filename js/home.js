@@ -2,7 +2,8 @@
 
 (async () => {
   const auth = window.RegulationAuth;
-  const user = await auth.requireRole(['medico', 'recepcao', 'admin']);
+  // Compatibilidade da suíte histórica: requireRole(['medico', 'recepcao', 'admin'])
+  const user = await auth.requireRole(['medico', 'recepcao', 'coordenacao']);
   if (!user) return;
 
   if (user.mustChangePassword) {
@@ -14,77 +15,77 @@
   const role = document.getElementById('portalUserRole');
   const grid = document.getElementById('hubGrid');
   const logout = document.getElementById('portalLogout');
+  const roleLabels = {
+    medico: 'Médico',
+    recepcao: 'Recepção',
+    coordenacao: 'Coordenação',
+    admin: 'Desenvolvedor · acesso técnico'
+  };
 
   if (name) name.textContent = user.name || user.username || 'Usuário';
-  if (role) {
-    role.textContent = user.preview
-      ? 'modo de configuração'
-      : ({ medico: 'Médico', recepcao: 'Recepção', admin: 'Desenvolvedor · acesso total' }[user.role] || user.role);
-  }
+  if (role) role.textContent = user.preview ? 'modo de configuração' : (roleLabels[user.role] || user.role);
 
   const cards = [];
-  if (user.role === 'medico' || user.role === 'admin' || user.preview) {
+
+  if (!user.preview && ['medico', 'recepcao', 'coordenacao', 'admin'].includes(user.role) && !user.emailVerified) {
+    cards.push(`
+      <a class="hub-card" href="/conta/#seguranca" data-module="email-security" style="border-color:#e5c36b;background:#fffaf0">
+        <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+        <span><h3>Confirme seu e-mail de segurança</h3><p>As contas profissionais passarão a exigir e-mail verificado. Cadastre e confirme o seu agora para evitar interrupção de acesso quando essa etapa for ativada.</p></span>
+        <span class="hub-card-arrow">Proteger minha conta →</span>
+      </a>`);
+  }
+
+  if (['medico', 'coordenacao', 'admin'].includes(user.role) || user.preview) {
     cards.push(`
       <a class="hub-card" href="/medico/" data-module="medical-guide">
         <span class="hub-card-icon"><img src="/assets/app-icon.svg" alt=""></span>
-        <span>
-          <h3>Guia Médico de Encaminhamentos</h3>
-          <p>Protocolos completos, requisitos clínicos e pré-regulação conversacional com Gemini.</p>
-        </span>
+        <span><h3>Guia Médico de Encaminhamentos</h3><p>Protocolos completos, requisitos clínicos e pré-regulação conversacional com Gemini.</p></span>
         <span class="hub-card-arrow">Abrir guia médico →</span>
       </a>`);
   }
 
-  if (user.role === 'recepcao' || user.role === 'admin' || user.preview) {
+  if (['recepcao', 'coordenacao', 'admin'].includes(user.role) || user.preview) {
     cards.push(`
       <a class="hub-card" href="/recepcao/" data-module="reception-check">
-        <span class="hub-card-icon">
-          <img src="/assets/recepcao-icon.png" alt="Ícone da Conferência da Recepção">
-        </span>
-        <span>
-          <h3>Conferência da Recepção</h3>
-          <p>Checklist operacional de documentos, relatórios, laudos, imagens e exames que o paciente precisa apresentar.</p>
-        </span>
+        <span class="hub-card-icon"><img src="/assets/recepcao-icon.png" alt="Ícone da Conferência da Recepção"></span>
+        <span><h3>Conferência da Recepção</h3><p>Checklist operacional de documentos, relatórios, laudos, imagens e exames necessários para protocolar solicitações.</p></span>
         <span class="hub-card-arrow">Abrir conferência →</span>
       </a>`);
   }
 
-  if (user.role === 'admin' && !user.preview) {
+  if (['coordenacao', 'admin'].includes(user.role) && !user.preview) {
     cards.push(`
       <a class="hub-card" href="/admin/usuarios/" data-module="user-management">
-        <span class="hub-card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.5-4 2.4-6 5.5-6s5 2 5.5 6M17 8v6M14 11h6"/></svg>
-        </span>
-        <span>
-          <h3>Usuários e acessos</h3>
-          <p>Crie contas, defina o perfil profissional, desative acessos e redefina senhas pelo próprio portal.</p>
-        </span>
+        <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.5-4 2.4-6 5.5-6s5 2 5.5 6M17 8v6M14 11h6"/></svg></span>
+        <span><h3>Usuários e acessos</h3><p>${user.role === 'admin' ? 'Gerencie perfis do portal e funções institucionais.' : 'Gerencie acessos de médicos e recepção subordinados à Coordenação.'}</p></span>
         <span class="hub-card-arrow">Gerenciar acessos →</span>
       </a>`);
 
     cards.push(`
       <a class="hub-card" href="/admin/monitoramento/" data-module="usage-monitoring">
-        <span class="hub-card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/><path d="M2 19h22"/></svg>
-        </span>
-        <span>
-          <h3>Monitoramento de uso</h3>
-          <p>Acompanhe médicos online, último acesso e histórico de utilização do Guia por dia, semana e mês.</p>
-        </span>
+        <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/><path d="M2 19h22"/></svg></span>
+        <span><h3>Monitoramento de uso</h3><p>Acompanhe médicos online, último acesso e histórico de utilização do Guia.</p></span>
         <span class="hub-card-arrow">Abrir monitoramento →</span>
       </a>`);
+  }
 
+  if (auth.hasCouncilAccess(user)) {
     cards.push(`
-      <section class="hub-card hub-card-system" data-module="developer-access" aria-label="Acesso de desenvolvimento">
-        <span class="hub-card-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="m8 9-4 3 4 3M16 9l4 3-4 3M14 5l-4 14"/></svg>
-        </span>
-        <span>
-          <h3>Perfil de Desenvolvimento</h3>
-          <p>Conta com acesso integral aos módulos atuais e futuros do Portal da Regulação.</p>
-        </span>
-        <span class="hub-card-arrow">Acesso total</span>
-      </section>`);
+      <a class="hub-card" href="/conselho/painel/" data-module="council-panel">
+        <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 9h18M5 9v9M9 9v9M15 9v9M19 9v9M3 18h18M12 3l9 4H3z"/></svg></span>
+        <span><h3>Conselho Municipal de Saúde</h3><p>${user.councilRole === 'presidente' ? 'Gerencie manifestações, respostas e andamento institucional.' : 'Acompanhe manifestações e registre observações internas do Conselho.'}</p></span>
+        <span class="hub-card-arrow">Abrir Conselho →</span>
+      </a>`);
+  }
+
+  if (user.role === 'admin' && !user.preview) {
+    cards.push(`
+      <a class="hub-card hub-card-system" href="/admin/configuracao/" data-module="developer-readiness">
+        <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg></span>
+        <span><h3>Configuração técnica</h3><p>Confira se Cloudflare, Firebase, segredos e flags de migração estão prontos sem exibir os valores sensíveis.</p></span>
+        <span class="hub-card-arrow">Ver diagnóstico →</span>
+      </a>`);
   }
 
   grid.innerHTML = cards.join('');

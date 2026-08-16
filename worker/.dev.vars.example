@@ -1,0 +1,13 @@
+# MODELO APENAS. Nunca coloque valores reais neste arquivo versionado.
+# Copie para .dev.vars apenas no ambiente local ou configure diretamente
+# as variáveis/Secrets no painel do Cloudflare Worker.
+
+AUTH_SESSION_SECRET=<segredo-longo-e-aleatorio>
+AUTH_RATE_LIMIT_SECRET=<segredo-diferente-e-aleatorio>
+AUTH_DEVELOPER_USERNAMES=<usuario-do-desenvolvedor>
+
+FIREBASE_PROJECT_ID=<project-id>
+FIREBASE_CLIENT_EMAIL=<service-account-email>
+FIREBASE_PRIVATE_KEY=<private-key-pem>
+FIREBASE_WEB_API_KEY=<web-api-key>
+FIREBASE_STORAGE_BUCKET=<bucket-name>

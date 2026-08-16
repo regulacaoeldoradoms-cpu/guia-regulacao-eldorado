@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d3157">
+  <title>Painel do Conselho Municipal de Saúde | Eldorado/MS</title>
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/portal.css?v=20260815-1">
+  <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
+  <link rel="stylesheet" href="/css/citizen.css?v=20260815-1">
+  <link rel="stylesheet" href="/css/council.css?v=20260815-1">
+</head>
+<body class="portal-page">
+  <div class="portal-shell">
+    <header class="portal-topbar">
+      <div class="portal-topbar-inner">
+        <div class="portal-brand">
+          <img src="/assets/app-icon.svg" alt="">
+          <div><h1>Conselho Municipal de Saúde</h1><p>Painel institucional · Eldorado/MS</p></div>
+        </div>
+        <div class="portal-user">
+          <a class="portal-button ghost linklike" id="backHome" href="/">← Início</a>
+          <div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div>
+          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="portal-main">
+      <section class="portal-hero">
+        <div class="portal-hero-copy">
+          <span class="portal-eyebrow">Controle social</span>
+          <h2>Manifestações recebidas pelo Conselho.</h2>
+          <p>Consulte o conteúdo, acompanhe o histórico e registre as providências. Dados de autenticação, como e-mail de segurança, não são exibidos neste painel.</p>
+        </div>
+        <span class="council-role-badge" id="councilRoleBadge">Verificando função...</span>
+      </section>
+
+      <div class="portal-note warning" id="firebaseNotice" hidden></div>
+
+      <section class="council-metrics" aria-label="Resumo das manifestações">
+        <div class="council-metric"><strong id="metricTotal">0</strong><span>Total carregado</span></div>
+        <div class="council-metric"><strong id="metricNew">0</strong><span>Recebidas</span></div>
+        <div class="council-metric"><strong id="metricAnalysis">0</strong><span>Em análise</span></div>
+        <div class="council-metric"><strong id="metricWaiting">0</strong><span>Aguardando retorno</span></div>
+        <div class="council-metric"><strong id="metricDone">0</strong><span>Concluídas</span></div>
+      </section>
+
+      <section class="citizen-card">
+        <div class="citizen-card-head"><h2>Manifestações</h2><button class="portal-button secondary" id="refreshCouncil" type="button">Atualizar</button></div>
+        <div class="council-toolbar">
+          <input id="councilSearch" type="search" placeholder="Buscar protocolo, assunto, serviço ou texto">
+          <select id="councilType"><option value="">Todos os tipos</option><option value="sugestao">Sugestões</option><option value="reclamacao">Reclamações</option><option value="elogio">Elogios</option><option value="denuncia">Denúncias</option></select>
+          <select id="councilStatus"><option value="">Todos os status</option><option value="recebida">Recebida</option><option value="em_analise">Em análise</option><option value="aguardando_cidadao">Aguardando cidadão</option><option value="encaminhada">Encaminhada</option><option value="aguardando_retorno">Aguardando retorno</option><option value="respondida">Respondida</option><option value="concluida">Concluída</option><option value="arquivada">Arquivada</option></select>
+        </div>
+        <div style="overflow:auto"><table class="council-table"><thead><tr><th>Protocolo</th><th>Manifestação</th><th>Tipo</th><th>Status</th><th>Atualização</th></tr></thead><tbody id="councilRows"><tr><td colspan="5">Carregando...</td></tr></tbody></table></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="citizen-modal" id="councilDetailModal" aria-hidden="true">
+    <div class="citizen-modal-panel" style="max-width:1050px">
+      <div class="citizen-modal-head"><div><h2 id="detailProtocol">Manifestação</h2><small id="detailMeta"></small></div><button class="citizen-modal-close" type="button" data-close-modal="councilDetailModal">×</button></div>
+      <div class="citizen-modal-content">
+        <div id="detailLoading" class="portal-note info">Carregando...</div>
+        <div id="detailContent" class="council-detail-grid" hidden>
+          <div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"><span class="status-chip" id="detailStatus"></span><span class="privacy-chip" id="detailPrivacy"></span><span class="privacy-chip">👤 Identidade protegida</span></div>
+            <h3 id="detailSubject" style="color:#173b5d;margin-bottom:6px"></h3>
+            <div id="detailService" style="font-size:.83rem;color:#6f8495;margin-bottom:12px"></div>
+            <p id="detailDescription" style="white-space:pre-wrap;color:#3d5568"></p>
+
+            <h3 style="margin-top:24px;color:#173b5d">Anexos</h3>
+            <div id="attachmentList" class="attachment-list"></div>
+
+            <h3 style="margin-top:24px;color:#173b5d">Conversa institucional</h3>
+            <div id="messageThread" class="thread"></div>
+            <form id="officialReplyForm" class="president-only" style="margin-top:12px">
+              <div class="portal-field"><label for="officialReply">Resposta oficial ao cidadão</label><textarea id="officialReply" rows="4" maxlength="8000" required></textarea></div>
+              <button class="portal-button primary" id="officialReplyButton" type="submit">Enviar resposta</button>
+              <div class="account-status" id="officialReplyStatus"></div>
+            </form>
+
+            <h3 style="margin-top:24px;color:#173b5d">Histórico</h3>
+            <div id="timeline" class="timeline"></div>
+          </div>
+
+          <aside class="council-side">
+            <div class="council-box president-only" id="statusBox">
+              <h3>Andamento oficial</h3>
+              <div class="portal-field"><label for="statusSelect">Status</label><select id="statusSelect"><option value="recebida">Recebida</option><option value="em_analise">Em análise</option><option value="aguardando_cidadao">Aguardando cidadão</option><option value="encaminhada">Encaminhada</option><option value="aguardando_retorno">Aguardando retorno</option><option value="respondida">Respondida</option><option value="concluida">Concluída</option><option value="arquivada">Arquivada</option></select></div>
+              <div class="portal-field"><label for="statusDetail">Observação da movimentação <span style="font-weight:400">(opcional)</span></label><textarea id="statusDetail" rows="3" maxlength="500"></textarea></div>
+              <button class="portal-button primary" id="saveStatus" type="button">Atualizar andamento</button>
+              <div class="account-status" id="statusUpdateMessage"></div>
+            </div>
+
+            <div class="council-box">
+              <h3>Observações internas do Conselho</h3>
+              <div id="internalNotes"></div>
+              <form id="internalNoteForm">
+                <div class="portal-field"><textarea id="internalNoteText" rows="3" maxlength="8000" required placeholder="Registro interno; não aparece para o cidadão."></textarea></div>
+                <button class="portal-button secondary" type="submit">Registrar observação</button>
+                <div class="account-status" id="internalNoteStatus"></div>
+              </form>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260815-2"></script>
+  <script src="/js/council-panel.js?v=20260815-2"></script>
+</body>
+</html>

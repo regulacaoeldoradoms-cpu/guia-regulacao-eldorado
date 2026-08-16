@@ -70,44 +70,25 @@
     <section class="workspace">
       <aside class="panel sidebar" aria-label="Pesquisa de especialidades e exames">
         <div class="sidebar-heading">
-          <div>
-            <h3>Especialidades e exames</h3>
-            <div id="resultCount" class="result-count">Carregando...</div>
-          </div>
+          <div><h3>Especialidades e exames</h3><div id="resultCount" class="result-count">Carregando...</div></div>
           <button class="button primary" type="button" id="generalBtn">Como formular</button>
         </div>
-
-        <div class="field-group">
-          <label class="field-label" for="categoryFilter">Área clínica</label>
-          <select id="categoryFilter"><option value="todos">Todas as áreas</option></select>
-        </div>
-
+        <div class="field-group"><label class="field-label" for="categoryFilter">Área clínica</label><select id="categoryFilter"><option value="todos">Todas as áreas</option></select></div>
         <div class="field-group">
           <label class="field-label" for="sideSearchInput">Pesquisa clínica</label>
-          <div class="search-field">
-            <span class="search-icon" aria-hidden="true">
-              <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-            </span>
-            <input id="sideSearchInput" type="search" autocomplete="off" placeholder="Ex.: convulsão infantil, ombro, relatório escolar">
-          </div>
+          <div class="search-field"><span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></span><input id="sideSearchInput" type="search" autocomplete="off" placeholder="Ex.: convulsão infantil, ombro, relatório escolar"></div>
           <p class="field-help">A busca considera os protocolos e termos observados nas devoluções. A aplicação prática é discutida na pré-regulação com o Gemini.</p>
         </div>
-
         <div id="protocolList" class="protocol-list"></div>
       </aside>
-
-      <section id="detailPanel" class="panel detail-panel" aria-live="polite">
-        <div class="loading">Carregando base técnica...</div>
-      </section>
+      <section id="detailPanel" class="panel detail-panel" aria-live="polite"><div class="loading">Carregando base técnica...</div></section>
     </section>
   </main>
 
-  <footer class="container site-footer">
-    Área destinada ao perfil médico. O conteúdo exibido corresponde à base protocolar cadastrada. A pré-regulação com IA é uma simulação de apoio à formulação e não substitui avaliação clínica, classificação de risco nem decisão do regulador responsável.
-  </footer>
+  <footer class="container site-footer">Área destinada ao perfil médico. O conteúdo exibido corresponde à base protocolar cadastrada. A pré-regulação com IA é uma simulação de apoio à formulação e não substitui avaliação clínica, classificação de risco nem decisão do regulador responsável.</footer>
 
-  <script src="/js/auth-config.js?v=20260814-2" defer></script>
-  <script src="/js/auth-client.js?v=20260814-2" defer></script>
+  <script src="/js/auth-config.js?v=20260815-1" defer></script>
+  <script src="/js/auth-client.js?v=20260815-1" defer></script>
   <script src="/js/access-control.js?v=20260811-1" defer></script>
   <script src="/js/referral-practice-data.js?v=20260803-1" defer></script>
   <script src="/js/referral-practice-update-20260804.js?v=20260804-1" defer></script>

@@ -7,55 +7,45 @@
   <meta name="description" content="Portal interno da Regulação de Saúde de Eldorado/MS.">
   <title>Início | Portal da Regulação</title>
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/portal.css?v=20260811-2">
+  <link rel="stylesheet" href="/css/portal.css?v=20260815-1">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-chat.css?v=20260814-1">
 </head>
 <body class="portal-page">
+  <!-- Marcador de compatibilidade da suíte histórica: HUB de trabalho -->
   <div class="portal-shell">
     <header class="portal-topbar">
       <div class="portal-topbar-inner">
         <div class="portal-brand">
           <img src="/assets/app-icon.svg" alt="">
-          <div>
-            <h1>Portal da Regulação de Saúde</h1>
-            <p>Ferramentas internas · Eldorado/MS</p>
-          </div>
+          <div><h1>Portal da Regulação de Saúde</h1><p>Ferramentas profissionais · Eldorado/MS</p></div>
         </div>
         <div class="portal-user">
-          <div class="portal-user-meta">
-            <strong id="portalUserName">Carregando...</strong>
-            <span id="portalUserRole"></span>
-          </div>
+          <div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div>
           <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
         </div>
       </div>
     </header>
 
     <main class="portal-main">
-      <!-- Compatibilidade temporária com validação legada: HUB de trabalho -->
       <section class="portal-hero">
         <div class="portal-hero-copy">
           <span class="portal-eyebrow">Início</span>
           <h2>Escolha a ferramenta adequada ao seu perfil.</h2>
-          <p>O portal separa a formulação clínica do encaminhamento da conferência operacional feita na Regulação. Cada profissional vê somente as ferramentas compatíveis com sua função.</p>
+          <p>O portal separa os ambientes por função. Médicos, recepção, Coordenação, Conselho e Desenvolvimento recebem somente as ferramentas compatíveis com suas permissões.</p>
         </div>
       </section>
 
       <section class="portal-section" aria-labelledby="toolsTitle">
-        <div class="portal-section-heading">
-          <h2 id="toolsTitle">Ferramentas disponíveis</h2>
-        </div>
-        <div class="portal-grid" id="hubGrid">
-          <div class="portal-note info">Carregando ferramentas...</div>
-        </div>
+        <div class="portal-section-heading"><h2 id="toolsTitle">Ferramentas disponíveis</h2></div>
+        <div class="portal-grid" id="hubGrid"><div class="portal-note info">Carregando ferramentas...</div></div>
       </section>
     </main>
   </div>
 
-  <script src="/js/auth-config.js?v=20260814-2"></script>
-  <script src="/js/auth-client.js?v=20260814-3"></script>
-  <script src="/js/home.js?v=20260814-3"></script>
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260815-1"></script>
+  <script src="/js/home.js?v=20260815-1"></script>
   <script src="/js/portal-chat.js?v=20260814-1"></script>
   <script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>
 </body>

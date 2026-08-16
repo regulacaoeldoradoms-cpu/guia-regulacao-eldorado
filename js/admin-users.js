@@ -2,14 +2,18 @@
 
 (async () => {
   const auth = window.RegulationAuth;
-  const currentUser = await auth.requireRole(['admin']);
-  if (!currentUser) return;
+  const currentUser = await auth.requireRole(['coordenacao']);
+  if (!currentUser || !['admin', 'coordenacao'].includes(currentUser.role)) return;
 
-  const roleLabels = { medico: 'Médico', recepcao: 'Recepção', admin: 'Administrador/Desenvolvedor' };
+  const isDeveloper = currentUser.role === 'admin';
+  const roleLabels = {
+    medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', cidadao: 'Cidadão', admin: 'Desenvolvedor'
+  };
+  const councilLabels = { presidente: 'Presidente do Conselho', membro: 'Membro do Conselho', '': 'Sem função no Conselho' };
   const state = { users: [], editing: null, resetting: null };
 
   document.getElementById('portalUserName').textContent = currentUser.name || currentUser.username;
-  document.getElementById('portalUserRole').textContent = 'Desenvolvedor · acesso total';
+  document.getElementById('portalUserRole').textContent = isDeveloper ? 'Desenvolvedor · nível técnico máximo' : 'Coordenação · gestão operacional';
 
   const listEl = document.getElementById('usersList');
   const countEl = document.getElementById('usersCount');
@@ -17,6 +21,17 @@
   const createForm = document.getElementById('createUserForm');
   const createStatus = document.getElementById('createUserStatus');
   const createButton = document.getElementById('createUserButton');
+  const newRole = document.getElementById('newRole');
+  const editRole = document.getElementById('editRole');
+  const editCouncilWrap = document.getElementById('editCouncilWrap');
+  const editCouncil = document.getElementById('editCouncilRole');
+
+  if (isDeveloper) {
+    newRole.innerHTML = '<option value="coordenacao">Coordenação — Guia + Recepção + Monitoramento + usuários subordinados</option><option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option><option value="cidadao">Cidadão — Canal do Conselho</option>';
+  } else {
+    newRole.innerHTML = '<option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option>';
+  }
+  editCouncilWrap.hidden = !isDeveloper;
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
@@ -42,33 +57,34 @@
   function filteredUsers() {
     const q = searchEl.value.trim().toLowerCase();
     if (!q) return state.users;
-    return state.users.filter((user) => [user.name, user.username, user.jobTitle, roleLabels[user.role], user.role].some((value) => String(value || '').toLowerCase().includes(q)));
+    return state.users.filter((user) => [user.name, user.username, user.jobTitle, roleLabels[user.role], councilLabels[user.councilRole]].some((value) => String(value || '').toLowerCase().includes(q)));
   }
 
   function render() {
     const users = filteredUsers();
-    countEl.textContent = `${state.users.length} conta(s) cadastrada(s) · ${state.users.filter((user) => user.active).length} ativa(s)`;
+    countEl.textContent = `${state.users.length} conta(s) visível(is) · ${state.users.filter((user) => user.active).length} ativa(s)`;
     if (!users.length) {
       listEl.innerHTML = '<div class="portal-note info">Nenhuma conta encontrada para esta busca.</div>';
       return;
     }
     listEl.innerHTML = users.map((user) => {
       const isSelf = user.username === currentUser.username;
-      const managed = user.managed !== false;
+      const canEdit = isDeveloper ? (user.role !== 'admin' || isSelf) : ['medico', 'recepcao'].includes(user.role);
       return `<article class="user-row" data-username="${escapeHtml(user.username)}">
         <div class="user-main">
           <strong>${escapeHtml(user.name || user.username)}</strong>
           <small>@${escapeHtml(user.username)}${user.jobTitle ? ` · ${escapeHtml(user.jobTitle)}` : ''}</small>
           <div class="user-badges">
             <span class="user-badge">${escapeHtml(roleLabels[user.role] || user.role)}</span>
+            ${user.councilRole ? `<span class="user-badge">${escapeHtml(councilLabels[user.councilRole] || user.councilRole)}</span>` : ''}
             <span class="user-badge ${user.active ? '' : 'inactive'}">${user.active ? 'Ativo' : 'Desativado'}</span>
             ${user.mustChangePassword ? '<span class="user-badge">Troca de senha pendente</span>' : ''}
-            ${managed ? '' : '<span class="user-badge bootstrap">Conta de emergência</span>'}
+            ${user.emailConfigured ? `<span class="user-badge">E-mail ${user.emailVerified ? 'verificado' : 'não verificado'}</span>` : '<span class="user-badge">Sem e-mail</span>'}
           </div>
         </div>
-        <div class="user-meta">${isSelf ? 'Sua conta' : managed ? 'Gerenciada pelo portal' : 'Ainda armazenada no segredo inicial da Cloudflare'}</div>
+        <div class="user-meta">${isSelf ? 'Sua conta' : user.selfRegistered ? 'Cadastro do cidadão' : 'Conta gerenciada pelo portal'}</div>
         <div class="user-actions">
-          ${managed ? `<button class="portal-button secondary" type="button" data-action="edit">Editar</button><button class="portal-button secondary" type="button" data-action="reset">Redefinir senha</button>` : isSelf ? '<a class="portal-button secondary linklike" href="/conta/">Migrar ao trocar senha</a>' : ''}
+          ${canEdit ? '<button class="portal-button secondary" type="button" data-action="edit">Editar</button><button class="portal-button secondary" type="button" data-action="reset">Redefinir senha</button>' : ''}
         </div>
       </article>`;
     }).join('');
@@ -94,7 +110,7 @@
         name: document.getElementById('newName').value.trim(),
         username: document.getElementById('newUsername').value.trim().toLowerCase(),
         jobTitle: document.getElementById('newJobTitle').value.trim(),
-        role: document.getElementById('newRole').value,
+        role: newRole.value,
         password: document.getElementById('newPassword').value,
         mustChangePassword: document.getElementById('newMustChange').checked,
         active: true
@@ -116,14 +132,17 @@
     const row = event.target.closest('[data-username]');
     if (!button || !row) return;
     const user = state.users.find((item) => item.username === row.dataset.username);
-    if (!user || user.managed === false) return;
+    if (!user) return;
 
     if (button.dataset.action === 'edit') {
       state.editing = user.username;
       document.getElementById('editUsernameLabel').textContent = `@${user.username}`;
       document.getElementById('editName').value = user.name || '';
       document.getElementById('editJobTitle').value = user.jobTitle || '';
-      document.getElementById('editRole').value = user.role;
+      const available = isDeveloper ? ['admin', 'coordenacao', 'medico', 'recepcao', 'cidadao'] : ['medico', 'recepcao'];
+      editRole.innerHTML = available.map((role) => `<option value="${role}">${roleLabels[role]}</option>`).join('');
+      editRole.value = user.role;
+      if (isDeveloper) editCouncil.value = user.councilRole || '';
       document.getElementById('editActive').checked = Boolean(user.active);
       document.getElementById('editStatus').className = 'account-status full';
       openModal('editUserModal');
@@ -143,12 +162,14 @@
     event.preventDefault();
     const status = document.getElementById('editStatus');
     try {
-      await auth.updateUser(state.editing, {
+      const input = {
         name: document.getElementById('editName').value.trim(),
         jobTitle: document.getElementById('editJobTitle').value.trim(),
-        role: document.getElementById('editRole').value,
+        role: editRole.value,
         active: document.getElementById('editActive').checked
-      });
+      };
+      if (isDeveloper) input.councilRole = editCouncil.value;
+      await auth.updateUser(state.editing, input);
       showStatus(status, 'Alterações salvas.', 'success');
       await loadUsers();
       setTimeout(() => closeModal('editUserModal'), 500);
@@ -160,9 +181,8 @@
   document.getElementById('resetPasswordForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     const status = document.getElementById('resetStatus');
-    const password = document.getElementById('resetPassword').value;
     try {
-      await auth.resetUserPassword(state.resetting, password, document.getElementById('resetMustChange').checked);
+      await auth.resetUserPassword(state.resetting, document.getElementById('resetPassword').value, document.getElementById('resetMustChange').checked);
       showStatus(status, 'Senha redefinida. Sessões anteriores dessa conta foram invalidadas.', 'success');
       await loadUsers();
       setTimeout(() => closeModal('resetPasswordModal'), 650);
@@ -174,11 +194,7 @@
   searchEl.addEventListener('input', render);
   document.querySelectorAll('[data-close-modal]').forEach((button) => button.addEventListener('click', () => closeModal(button.dataset.closeModal)));
   document.querySelectorAll('.modal-backdrop').forEach((modal) => modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(modal.id); }));
-
-  document.getElementById('portalLogout')?.addEventListener('click', async () => {
-    await auth.logout();
-    location.replace('/login/');
-  });
+  document.getElementById('portalLogout')?.addEventListener('click', async () => { await auth.logout(); location.replace('/login/'); });
 
   await loadUsers();
 })();

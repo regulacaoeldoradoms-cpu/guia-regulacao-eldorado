@@ -18,13 +18,13 @@ jobs:
           node --check js/reception-app.js
           node --check js/reception-ux.js
           node --check js/reception-clinical-checklist.js
-          node --check js/reception-print-v5.js
+          node --check js/reception-print-v6.js
       - name: Conferir integração
         run: |
           grep -q 'reception-fast-checklist.css?v=20260812-3' recepcao/index.html
           grep -q 'reception-ux.js?v=20260812-2' recepcao/index.html
           grep -q 'reception-clinical-checklist.js?v=20260812-2' recepcao/index.html
-          grep -q 'reception-print-v5.js?v=20260812-2' recepcao/index.html
+          grep -q 'reception-print-v6.js?v=20260813-1' recepcao/index.html
           ! grep -q 'reception-psychology-checklist.js' recepcao/index.html
           grep -q 'informacoesObrigatorias' js/reception-clinical-checklist.js
           grep -q 'subprotocol?.obrigatorias' js/reception-clinical-checklist.js
@@ -41,4 +41,4 @@ jobs:
           grep -q "content: 'OBRIGATÓRIO'" css/reception-fast-checklist.css
           grep -q "content: 'DEPENDE DO CASO'" css/reception-fast-checklist.css
           grep -q "content: 'COMPLEMENTAR'" css/reception-fast-checklist.css
-          grep -q 'printMissingItems' js/reception-print-v5.js
+          grep -q 'printMissingItems' js/reception-print-v6.js

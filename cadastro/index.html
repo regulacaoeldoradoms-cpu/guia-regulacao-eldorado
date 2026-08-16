@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d3157">
+  <title>Criar conta | Portal da Regulação</title>
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/portal.css?v=20260816-1">
+</head>
+<body class="portal-page">
+  <main class="login-layout">
+    <section class="login-visual" aria-label="Canal do cidadão">
+      <div class="portal-brand">
+        <img src="/assets/app-icon.svg" alt="">
+        <div><h1>Canal do Cidadão</h1><p>Conselho Municipal de Saúde · Eldorado/MS</p></div>
+      </div>
+      <div class="login-message">
+        <span class="portal-eyebrow">Sua conta começa aqui</span>
+        <h1>Crie seu acesso com usuário e senha.</h1>
+        <p>Você começa com uma <strong>Conta Bronze</strong> e já pode usar o Canal do Cidadão. Depois, se quiser, confirme um e-mail e evolua para Prata para desbloquear novas funções.</p>
+        <div style="display:grid;gap:8px;margin-top:20px;font-size:.84rem">
+          <div style="padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.13)">🥉 <strong>Bronze:</strong> manifestações, protocolos e notificações.</div>
+          <div style="padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.13)">🥈 <strong>Prata:</strong> e-mail confirmado, foto de perfil e preparação social.</div>
+          <div style="padding:9px 11px;border-radius:12px;background:rgba(255,255,255,.13)">🥇 <strong>Ouro:</strong> proteção reforçada e recursos avançados futuros.</div>
+        </div>
+      </div>
+      <small>Os níveis são internos deste portal e não têm relação com os níveis da conta Gov.br.</small>
+    </section>
+
+    <section class="login-panel">
+      <form class="login-card" id="signupForm" autocomplete="off">
+        <a href="/login/" style="display:inline-block;margin-bottom:16px;color:#275d88;text-decoration:none">← Voltar ao login</a>
+        <h2>Criar conta de cidadão</h2>
+        <p>Você precisa informar somente um nome de usuário e uma senha.</p>
+
+        <div class="portal-note info" style="margin-bottom:16px">
+          <strong>Se quiser preservar sua identificação:</strong> não use seu nome completo, CPF, telefone, e-mail, data de nascimento ou outro dado pessoal como nome de usuário.
+        </div>
+
+        <div class="portal-field">
+          <label for="signupUsername">Nome de usuário</label>
+          <input id="signupUsername" autocomplete="username" required minlength="3" maxlength="40" placeholder="Ex.: ipelima23">
+          <small>Use de 3 a 40 caracteres. São aceitos letras, números, ponto, hífen e sublinhado.</small>
+        </div>
+        <div class="portal-field">
+          <label for="signupPassword">Senha</label>
+          <input id="signupPassword" type="password" autocomplete="new-password" required minlength="8" maxlength="160">
+        </div>
+        <div class="portal-field">
+          <label for="signupConfirm">Confirmar senha</label>
+          <input id="signupConfirm" type="password" autocomplete="new-password" required minlength="8" maxlength="160">
+        </div>
+
+        <div class="portal-note info" style="margin:4px 0 16px"><strong>🥉 Você começará como Conta Bronze.</strong><br>Não é preciso informar e-mail agora. A evolução para Prata será opcional e poderá ser feita depois em <em>Minha conta</em>.</div>
+
+        <label style="display:flex;gap:10px;align-items:flex-start;font-size:.84rem;color:#516b82;margin:8px 0 18px">
+          <input id="signupTerms" type="checkbox" required style="margin-top:3px">
+          <span>Entendo que esta conta será usada para o canal do Conselho Municipal de Saúde e que manifestações devem ser feitas com responsabilidade.</span>
+        </label>
+
+        <button class="portal-button primary login-submit" id="signupSubmit" type="submit">Criar minha Conta Bronze</button>
+        <div id="signupStatus" class="login-status" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+  </main>
+
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260816-1"></script>
+  <script src="/js/signup.js?v=20260815-2"></script>
+</body>
+</html>
