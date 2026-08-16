@@ -17,12 +17,14 @@ jobs:
         run: |
           node --check worker/auth-management-v2.js
           node --check worker/auth-management-flex.js
+          node --check worker/account-levels.js
           node --check worker/profile-photo.js
           node --check worker/role-migration.js
           node --check worker/portal-safety.js
           node --check worker/citizen-privacy.js
           node --check worker/index.js
           node --check js/auth-client.js
+          node --check js/account-levels.js
           node --check js/account.js
           node --check js/admin-users.js
           node --check js/home.js
@@ -36,6 +38,7 @@ jobs:
           test -f admin/usuarios/index.html
           test -f css/account-admin.css
           test -f css/profile-account-link.css
+          test -f css/account-level.css
           test -f worker/profile-photo.js
           grep -q '/api/auth/change-password' worker/auth-management-v2.js
           grep -q '/api/auth/register' worker/auth-management-v2.js
@@ -47,6 +50,7 @@ jobs:
           grep -q 'must_change_password' worker/auth-management-v2.js
           grep -q '/api/auth/profile' worker/profile-photo.js
           grep -q 'avatar_data' worker/profile-photo.js
+          grep -q 'ACCOUNT_LEVEL_REQUIRED' worker/profile-photo.js
           grep -q 'updateProfilePhoto' js/auth-client.js
           grep -q 'mountPortalAvatar' js/auth-client.js
           grep -q 'ensurePortalAccountArea' js/auth-client.js
@@ -55,7 +59,11 @@ jobs:
           grep -q 'primeiro-acesso' js/account.js
           grep -q 'Foto do perfil' conta/index.html
           grep -q 'E-mail de segurança' conta/index.html
-          grep -q 'auth-client.js?v=20260815-2' conta/index.html
+          grep -q 'Conta Bronze' conta/index.html
+          grep -q 'Conta Prata' conta/index.html
+          grep -q 'Conta Ouro' conta/index.html
+          grep -q 'auth-client.js?v=20260816-1' conta/index.html
+          grep -q 'account-levels.js?v=20260816-1' conta/index.html
           grep -q 'enforcement: true' js/auth-config.js
           grep -q "homePath: '/'" js/auth-config.js
           grep -q 'AUTH_ENFORCE_AI = "true"' worker/wrangler.toml
@@ -75,6 +83,7 @@ jobs:
           grep -q "SET role = 'coordenacao'" worker/role-migration.js
           grep -q 'DEVELOPER_SELF_DEMOTION_BLOCKED' worker/portal-safety.js
           grep -q 'DEVELOPER_SELF_DISABLE_BLOCKED' worker/portal-safety.js
+          grep -q 'guardCitizenLevelMutation' worker/portal-safety.js
           grep -q 'Coordenação' admin/usuarios/index.html
           grep -q 'Presidente do Conselho' admin/usuarios/index.html
       - name: Impedir credenciais reais no repositório
