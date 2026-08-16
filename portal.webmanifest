@@ -1,0 +1,19 @@
+{
+  "name": "Portal da Regulação de Saúde de Eldorado/MS",
+  "short_name": "Portal Regulação",
+  "description": "Portal da Regulação de Saúde de Eldorado/MS para acesso de profissionais e cidadãos.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d3157",
+  "theme_color": "#0d3157",
+  "icons": [
+    {
+      "src": "/assets/portal-regulacao-header.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
