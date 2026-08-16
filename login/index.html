@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0d3157">
   <title>Login | Regulação de Saúde</title>
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/css/portal.css?v=20260815-2">
+  <link rel="stylesheet" href="/css/portal.css?v=20260816-1">
 </head>
 <body class="portal-page">
   <main class="login-layout">
@@ -19,9 +19,14 @@
         </div>
       </div>
       <div class="login-message">
-        <span class="portal-eyebrow">Entrada única</span>
-        <h1>Uma conta. O ambiente certo para cada pessoa.</h1>
-        <p>Profissionais acessam suas ferramentas de trabalho. Cidadãos acessam o canal de participação e acompanham suas manifestações ao Conselho Municipal de Saúde.</p>
+        <span class="portal-eyebrow">Sua porta de entrada</span>
+        <h1>Entre no portal ou crie sua própria conta.</h1>
+        <p>Profissionais acessam as ferramentas correspondentes às suas funções. Cidadãos podem criar a própria conta, acessar o Canal do Cidadão e acompanhar manifestações ao Conselho Municipal de Saúde.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;font-size:.82rem;font-weight:800">
+          <span style="padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.14)">🥉 Bronze · conta criada</span>
+          <span style="padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.14)">🥈 Prata · e-mail confirmado</span>
+          <span style="padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.14)">🥇 Ouro · proteção reforçada</span>
+        </div>
       </div>
       <small>Regulação de Saúde · Conselho Municipal de Saúde · Eldorado/MS</small>
     </section>
@@ -47,16 +52,17 @@
         <div id="loginStatus" class="login-status" role="status" aria-live="polite"></div>
 
         <div style="margin-top:20px;padding-top:18px;border-top:1px solid #dbe5ee;text-align:center">
-          <strong style="display:block;color:#173b5d;margin-bottom:6px">Você é cidadão?</strong>
-          <span style="display:block;color:#657d91;font-size:.88rem;margin-bottom:12px">Crie gratuitamente uma conta para utilizar o canal do Conselho Municipal de Saúde.</span>
-          <a class="portal-button secondary linklike" href="/cadastro/">Criar conta de cidadão</a>
+          <strong style="display:block;color:#173b5d;margin-bottom:6px">Ainda não tem conta?</strong>
+          <span style="display:block;color:#657d91;font-size:.88rem;margin-bottom:12px">Se você é cidadão, não precisa esperar que alguém crie seu acesso. Faça seu próprio cadastro com usuário e senha.</span>
+          <a class="portal-button secondary linklike" href="/cadastro/">Criar minha conta</a>
+          <small style="display:block;margin-top:10px;color:#7b8f9f">Cargos profissionais e institucionais continuam sendo concedidos somente por usuários autorizados.</small>
         </div>
       </form>
     </section>
   </main>
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
-  <script src="/js/auth-client.js?v=20260815-2"></script>
+  <script src="/js/auth-client.js?v=20260816-1"></script>
   <script src="/js/login.js?v=20260815-2"></script>
 </body>
 </html>
