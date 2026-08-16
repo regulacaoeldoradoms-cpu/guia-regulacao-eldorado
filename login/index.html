@@ -4,19 +4,23 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d3157">
-  <title>Login | Regulação de Saúde</title>
-  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <meta name="description" content="Portal da Regulação de Saúde de Eldorado/MS: acesso de profissionais e cidadãos.">
+  <title>Portal da Regulação de Saúde | Eldorado/MS</title>
+  <link rel="icon" href="/assets/portal-regulacao-icon.webp" type="image/webp">
+  <link rel="apple-touch-icon" href="/assets/portal-regulacao-icon.webp">
   <link rel="stylesheet" href="/css/portal.css?v=20260816-1">
+  <style>
+    .login-portal-brand{display:flex;align-items:flex-start;max-width:760px}
+    .login-portal-logo{display:block;width:min(720px,100%);height:auto;object-fit:contain;object-position:left center;filter:drop-shadow(0 12px 26px rgba(0,0,0,.24))}
+    @media(max-width:860px){.login-portal-logo{width:min(560px,100%)}.login-message{padding-top:24px}}
+    @media(max-width:580px){.login-portal-logo{width:100%}.login-visual{padding-top:22px}.login-message{padding-top:22px}}
+  </style>
 </head>
 <body class="portal-page">
   <main class="login-layout">
     <section class="login-visual" aria-label="Portal da Regulação de Saúde">
-      <div class="portal-brand">
-        <img src="/assets/app-icon.svg" alt="">
-        <div>
-          <h1>Portal da Regulação de Saúde</h1>
-          <p>Eldorado/MS</p>
-        </div>
+      <div class="login-portal-brand">
+        <img class="login-portal-logo" src="/assets/portal-regulacao-logo.webp" alt="Portal da Regulação de Saúde de Eldorado/MS">
       </div>
       <div class="login-message">
         <span class="portal-eyebrow">Sua porta de entrada</span>
