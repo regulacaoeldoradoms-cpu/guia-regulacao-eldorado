@@ -18,6 +18,7 @@ jobs:
         run: |
           node --check worker/firebase-gateway.js
           node --check worker/auth-management-v2.js
+          node --check worker/account-levels.js
           node --check worker/role-migration.js
           node --check worker/portal-safety.js
           node --check worker/citizen-privacy.js
@@ -29,9 +30,11 @@ jobs:
           node --check worker/usage-monitor-v2.js
           node --check worker/index.js
           node --check js/auth-client.js
+          node --check js/account-levels.js
           node --check js/login.js
           node --check js/signup.js
           node --check js/citizen.js
+          node --check js/citizen-account-level.js
           node --check js/council-panel.js
           node --check js/admin-users.js
           node --check js/account.js
@@ -48,6 +51,7 @@ jobs:
           test -f admin/configuracao/index.html
           test -f css/citizen.css
           test -f css/council.css
+          test -f css/account-level.css
           test -f PORTAL-ARQUITETURA.md
           grep -q 'Canal do Cidadão' cidadao/index.html
           grep -q 'Conselho Municipal de Saúde' conselho/index.html
@@ -55,10 +59,28 @@ jobs:
           grep -q 'Nova manifestação' cidadao/index.html
           grep -q 'Minhas manifestações' cidadao/index.html
           grep -q 'Notificações' cidadao/index.html
-          grep -q 'Entrada única' login/index.html
-          grep -q 'Criar conta de cidadão' login/index.html
+          grep -q 'Sua porta de entrada' login/index.html
+          grep -q 'Criar minha conta' login/index.html
           grep -q 'Configuração técnica' admin/configuracao/index.html
           grep -q '/admin/configuracao/' js/home.js
+
+      - name: Conferir níveis Bronze Prata Ouro
+        run: |
+          grep -q "const LEVEL_ORDER = Object.freeze({ bronze: 1, prata: 2, ouro: 3 })" worker/account-levels.js
+          grep -q "if (user?.emailVerified === true) return 'prata'" worker/account-levels.js
+          grep -q "profilePhoto: !isCitizen || rank >= LEVEL_ORDER.prata" worker/account-levels.js
+          grep -q 'accountProgressFor' worker/portal-safety.js
+          grep -q 'accountLevel: progress.level' worker/portal-safety.js
+          grep -q 'ACCOUNT_LEVEL_REQUIRED' worker/profile-photo.js
+          grep -q "minimumLevelMet(user, 'prata')" worker/profile-photo.js
+          grep -q 'guardCitizenLevelMutation' worker/index.js
+          grep -q 'requiredLevel: .prata.' worker/portal-safety.js
+          grep -q 'Conta Bronze' cadastro/index.html
+          grep -q 'Conta Prata' conta/index.html
+          grep -q 'Conta Ouro' conta/index.html
+          grep -q 'não têm relação com os níveis oficiais da conta Gov.br' conta/index.html
+          grep -q 'account-levels.js' conta/index.html
+          grep -q 'citizen-account-level.js' cidadao/index.html
 
       - name: Conferir Firebase sem fallback para Google Drive
         run: |
@@ -90,8 +112,8 @@ jobs:
           ! grep -q 'signupDisplayName' cadastro/index.html
           ! grep -q 'displayName.value' js/signup.js
           grep -q 'não use seu nome completo' cadastro/index.html
-          grep -q 'CITIZEN_PROFILE_PHOTO_DISABLED' worker/profile-photo.js
-          grep -q "profilePhotoCard.hidden = user.role === 'cidadao'" js/account.js
+          grep -q 'requiredLevel: .prata.' worker/profile-photo.js
+          grep -q 'profilePhotoLevelLock' js/account.js
           grep -q 'guardSecurityEmailRemoval' worker/index.js
           grep -q 'SECURITY_EMAIL_REMOVAL_BLOCKED' worker/citizen-privacy.js
           grep -q "privacy_mode = 'sigilosa'" worker/citizen-privacy.js
