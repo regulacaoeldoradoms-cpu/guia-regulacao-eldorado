@@ -1,5 +1,7 @@
 'use strict';
 
+import { accountProgressFor, minimumLevelMet } from './account-levels.js';
+
 const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'admin']);
 const COUNCIL_ROLES_REQUIRING_VERIFICATION = new Set(['membro', 'presidente']);
 const RESERVED_CITIZEN_USERNAMES = new Set([
@@ -19,7 +21,8 @@ const EMAIL_GATE_EXEMPT_PATHS = new Set([
   '/api/auth/logout',
   '/api/auth/security',
   '/api/auth/email/send-verification',
-  '/api/auth/change-password'
+  '/api/auth/change-password',
+  '/api/auth/profile'
 ]);
 
 function normalizeUsername(value) {
@@ -66,17 +69,24 @@ export function portalEnvForAuthRoute(env, pathname) {
 }
 
 export async function augmentAuthResponse(response, env) {
-  if (!professionalEmailVerificationEnabled(env) || !response || !response.ok) return response;
+  if (!response || !response.ok) return response;
   const type = response.headers.get('Content-Type') || '';
   if (!type.includes('application/json')) return response;
 
   const payload = await response.clone().json().catch(() => null);
   const user = payload?.user;
-  if (!accountRequiresVerifiedEmail(user)) return response;
+  if (!user) return response;
 
+  const progress = accountProgressFor(user);
   payload.user = {
     ...user,
-    emailVerificationRequired: !Boolean(user.emailVerified)
+    accountLevel: progress.level,
+    accountProgress: progress,
+    emailVerificationRequired: Boolean(
+      professionalEmailVerificationEnabled(env)
+      && accountRequiresVerifiedEmail(user)
+      && !user.emailVerified
+    )
   };
 
   const headers = new Headers(response.headers);
@@ -159,6 +169,24 @@ export async function guardCitizenRegistrationUsername(request, origin, originAl
     error: 'Este nome de usuário é reservado para identificação institucional do portal. Escolha outro.',
     code: 'USERNAME_RESERVED'
   }, 409, origin, originAllowed);
+}
+
+export async function guardCitizenLevelMutation(request, env, validatePortalSession, origin, originAllowed = true) {
+  const url = new URL(request.url);
+  if (url.pathname !== '/api/auth/security' || request.method !== 'PATCH') return null;
+
+  const actor = await validatePortalSession(request, env, []).catch(() => null);
+  if (!actor || actor.role !== 'cidadao') return null;
+  const body = await request.clone().json().catch(() => ({}));
+
+  if (body.acceptFriendRequests === true && !minimumLevelMet(actor, 'prata')) {
+    return json({
+      error: 'Confirme seu e-mail para alcançar o nível Prata e desbloquear esta preferência.',
+      code: 'ACCOUNT_LEVEL_REQUIRED',
+      requiredLevel: 'prata'
+    }, 403, origin, originAllowed);
+  }
+  return null;
 }
 
 export async function sanitizeCitizenRegistrationRequest(request) {
