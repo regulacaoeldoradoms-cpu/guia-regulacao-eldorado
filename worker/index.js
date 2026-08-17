@@ -9,6 +9,11 @@ import { handleCouncilRoute, isCouncilApi } from './council.js';
 import { handleSystemReadinessRoute, isSystemReadinessApi } from './system-readiness.js';
 import { enforceDeveloperSeparation } from './role-migration.js';
 import {
+  handleCitizenIdentityRoute,
+  isCitizenIdentityApi,
+  prepareCitizenHandleLogin
+} from './citizen-identity.js';
+import {
   augmentAuthResponse,
   enforceProfessionalEmailGate,
   guardCitizenLevelMutation,
@@ -58,6 +63,11 @@ export default {
     const origin = request.headers.get('Origin') || '';
     const originAllowed = !origin || allowedOrigins(env).includes(origin);
 
+    const preparedLogin = await prepareCitizenHandleLogin(request, env, origin, originAllowed);
+    if (preparedLogin instanceof Response) return preparedLogin;
+    request = preparedLogin;
+    url = new URL(request.url);
+
     const invalidRegistrationBlock = await guardCitizenRegistrationBasics(request, origin, originAllowed);
     if (invalidRegistrationBlock) return invalidRegistrationBlock;
 
@@ -91,6 +101,10 @@ export default {
     if (isChatApi(url.pathname)) {
       try { return await handleChatRoute(request, env, origin, originAllowed); }
       catch (error) { return jsonError(error?.message || 'Falha no chat interno.', 500, origin, originAllowed); }
+    }
+    if (isCitizenIdentityApi(url.pathname)) {
+      try { return await handleCitizenIdentityRoute(request, env, origin, originAllowed); }
+      catch (error) { return jsonError(error?.message || 'Falha ao atualizar a identidade do perfil.', 500, origin, originAllowed); }
     }
     if (isProfileApi(url.pathname)) {
       try { return await handleProfileRoute(request, env, origin, originAllowed); }
