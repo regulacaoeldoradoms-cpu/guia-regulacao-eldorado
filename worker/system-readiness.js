@@ -37,12 +37,24 @@ function enabled(value) {
   return String(value || '').trim().toLowerCase() === 'true';
 }
 
+function normalizeUsername(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '.')
+    .replace(/[^a-z0-9._-]/g, '')
+    .replace(/[._-]{2,}/g, '.')
+    .replace(/^[._-]+|[._-]+$/g, '')
+    .slice(0, 40);
+}
+
 function normalizedDeveloperList(value) {
   return String(value || '')
     .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .map((item) => item.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '.'));
+    .map(normalizeUsername)
+    .filter(Boolean);
 }
 
 export function isSystemReadinessApi(pathname) {
@@ -58,6 +70,7 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
   if (!user || user.role !== 'admin') return json({ error: 'Acesso de Desenvolvedor necessário.' }, 403, origin);
 
   const developerList = normalizedDeveloperList(env.AUTH_DEVELOPER_USERNAMES);
+  const currentDeveloperUsername = normalizeUsername(user.username);
   const firebase = {
     projectId: present(env.FIREBASE_PROJECT_ID),
     clientEmail: present(env.FIREBASE_CLIENT_EMAIL),
@@ -66,7 +79,7 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
     storageBucket: present(env.FIREBASE_STORAGE_BUCKET)
   };
   const firebaseReady = Object.values(firebase).every(Boolean);
-  const developerProtected = developerList.includes(String(user.username || '').toLowerCase());
+  const developerProtected = developerList.includes(currentDeveloperUsername);
   const rateLimitSecretReady = present(env.AUTH_RATE_LIMIT_SECRET);
   const sessionSecretReady = present(env.AUTH_SESSION_SECRET);
   const emailVerificationRequired = enabled(env.AUTH_REQUIRE_EMAIL_VERIFICATION);
@@ -80,7 +93,9 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
       requiredBeforeDeploy: true,
       detail: developerProtected
         ? 'Sua conta consta na lista protegida de Desenvolvedores.'
-        : 'Configure AUTH_DEVELOPER_USERNAMES antes de qualquer migração de administradores.'
+        : developerList.length
+          ? `A lista está configurada, mas não corresponde ao usuário atual (${currentDeveloperUsername || 'não identificado'}).`
+          : 'Configure AUTH_DEVELOPER_USERNAMES antes de qualquer migração de administradores.'
     },
     {
       id: 'rate-secret',
