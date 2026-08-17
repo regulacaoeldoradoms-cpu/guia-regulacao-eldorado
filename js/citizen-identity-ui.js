@@ -1,5 +1,9 @@
 'use strict';
 
+// A página /conta/ é compartilhada por todos os perfis. Carrega a identidade
+// visual correspondente ao usuário antes de aplicar as funções exclusivas do cidadão.
+import('/js/account-brand.js?v=20260817-1').catch(() => {});
+
 (async () => {
   const auth = window.RegulationAuth;
   const card = document.getElementById('citizenIdentityCard');
