@@ -46,10 +46,11 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           text = Path('js/protocol-source-resilience.js').read_text(encoding='utf-8')
-          local = text.index("tryTextSource(LOCAL_SOURCE, 'site-local'")
-          cache = text.index('const cached = cachedSource()')
-          cdn = text.index("tryTextSource(CDN_SOURCE, 'jsdelivr')")
-          raw = text.index("tryTextSource(RAW_SOURCE, 'github-raw')")
-          api = text.index('tryGitHubApi()')
+          runtime = text[text.index('async function resilientProtocolFetch()'):]
+          local = runtime.index("tryTextSource(LOCAL_SOURCE, 'site-local'")
+          cache = runtime.index('const cached = cachedSource()')
+          cdn = runtime.index("tryTextSource(CDN_SOURCE, 'jsdelivr')")
+          raw = runtime.index("tryTextSource(RAW_SOURCE, 'github-raw')")
+          api = runtime.index('() => tryGitHubApi()')
           assert local < cache < cdn < raw < api, 'ordem de redundância da base protocolar foi alterada'
           PY
