@@ -1,0 +1,40 @@
+name: Validar carregamento resiliente dos protocolos
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-protocol-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar sintaxe e arquivos
+        run: |
+          test -f js/protocol-source-resilience.js
+          node --check js/protocol-source-resilience.js
+          node --check js/medical-app.js
+          node --check js/reception-app.js
+      - name: Conferir integração antes dos aplicativos
+        run: |
+          grep -q '/js/protocol-source-resilience.js?v=20260817-1' medico/index.html
+          grep -q '/js/protocol-source-resilience.js?v=20260817-1' recepcao/index.html
+          python - <<'PY'
+          from pathlib import Path
+          for path, app in [('medico/index.html', '/js/medical-app.js'), ('recepcao/index.html', '/js/reception-app.js')]:
+              text = Path(path).read_text(encoding='utf-8')
+              assert text.index('/js/protocol-source-resilience.js') < text.index(app), f'fallback deve carregar antes de {app} em {path}'
+          PY
+      - name: Conferir fontes alternativas e cache local
+        run: |
+          grep -q 'cdn.jsdelivr.net/gh/' js/protocol-source-resilience.js
+          grep -q 'api.github.com/repos/' js/protocol-source-resilience.js
+          grep -q 'raw.githubusercontent.com/' js/protocol-source-resilience.js
+          grep -q 'localStorage.getItem' js/protocol-source-resilience.js
+          grep -q 'localStorage.setItem' js/protocol-source-resilience.js
+          grep -q 'const PROTOCOLOS' js/protocol-source-resilience.js
+          grep -q 'const FOOTER_IMG' js/protocol-source-resilience.js
