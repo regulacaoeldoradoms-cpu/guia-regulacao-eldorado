@@ -70,6 +70,29 @@
           </div>
         </article>
 
+        <article class="account-card" id="citizenIdentityCard" hidden>
+          <h2>Nome e nome de usuário</h2>
+          <p>Seu <strong>nome de exibição</strong> pode ser alterado quando quiser. O <strong>@nome de usuário</strong> é único e pode ser trocado uma vez a cada 30 dias.</p>
+          <form id="citizenIdentityForm" class="account-form" autocomplete="off">
+            <div class="portal-field">
+              <label for="citizenDisplayName">Nome de exibição</label>
+              <input id="citizenDisplayName" maxlength="60" placeholder="Como você quer aparecer no portal">
+              <small>Não precisa ser seu nome civil. Se quiser preservar sua identidade, use um nome que não revele quem você é.</small>
+            </div>
+            <div class="portal-field">
+              <label for="citizenHandle">Nome de usuário</label>
+              <div style="display:flex;align-items:center;border:1px solid #cfdce8;border-radius:12px;background:#fff;overflow:hidden">
+                <span style="padding-left:14px;color:#62798e;font-weight:800">@</span>
+                <input id="citizenHandle" maxlength="40" style="border:0;box-shadow:none;padding-left:4px" placeholder="seu.usuario">
+              </div>
+              <small id="citizenHandleHelp">Carregando disponibilidade...</small>
+            </div>
+            <div class="portal-note info" style="margin-bottom:16px"><strong>Privacidade:</strong> seu nome de exibição e seu @ pertencem ao perfil da conta. Eles não são mostrados ao Conselho dentro de manifestações com identidade protegida.</div>
+            <div class="account-actions"><button class="portal-button primary" id="saveCitizenIdentity" type="submit">Salvar perfil</button></div>
+            <div class="account-status" id="citizenIdentityStatus" role="status" aria-live="polite"></div>
+          </form>
+        </article>
+
         <article class="account-card">
           <h2>Alterar senha</h2>
           <p>Use pelo menos 8 caracteres. A nova senha passa a valer assim que for salva.</p>
@@ -112,5 +135,6 @@
   <script src="/js/auth-client.js?v=20260816-1"></script>
   <script src="/js/account-levels.js?v=20260816-1"></script>
   <script src="/js/account.js?v=20260816-1"></script>
+  <script src="/js/citizen-identity-ui.js?v=20260817-1"></script>
 </body>
 </html>
