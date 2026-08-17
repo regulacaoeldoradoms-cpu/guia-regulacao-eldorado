@@ -1,0 +1,56 @@
+name: Sincronizar base local de protocolos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sync-local-protocol-source.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-local-protocol-source
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar histórico completo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gerar espelho local da base protocolar
+        env:
+          SOURCE_COMMIT: 3c09e13f343ddb4995910d02b349fb164dc08256
+        run: |
+          set -euo pipefail
+          git cat-file -e "${SOURCE_COMMIT}:index.html"
+          mkdir -p data
+          git show "${SOURCE_COMMIT}:index.html" > data/protocol-source.html
+          python - <<'PY'
+          from pathlib import Path
+          source = Path('data/protocol-source.html').read_text(encoding='utf-8')
+          required = ('const PROTOCOLOS', 'const FOOTER_IMG')
+          missing = [item for item in required if item not in source]
+          if missing:
+              raise SystemExit(f'Base local inválida; marcadores ausentes: {missing}')
+          print(f'Base local validada: {len(source):,} caracteres')
+          PY
+
+      - name: Publicar espelho no próprio site
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain -- data/protocol-source.html)" ]; then
+            echo 'Espelho local já está atualizado.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/protocol-source.html
+          git commit -m 'Adicionar espelho local da base de protocolos'
+          git push
