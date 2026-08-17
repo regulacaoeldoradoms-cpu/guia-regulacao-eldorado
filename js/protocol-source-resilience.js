@@ -5,6 +5,7 @@
 
   const COMMIT = '3c09e13f343ddb4995910d02b349fb164dc08256';
   const REPOSITORY = 'regulacaoeldoradoms-cpu/guia-regulacao-eldorado';
+  const LOCAL_SOURCE = '/data/protocol-source.html';
   const RAW_SOURCE = `https://raw.githubusercontent.com/${REPOSITORY}/${COMMIT}/index.html`;
   const CDN_SOURCE = `https://cdn.jsdelivr.net/gh/${REPOSITORY}@${COMMIT}/index.html`;
   const API_SOURCE = `https://api.github.com/repos/${REPOSITORY}/contents/index.html?ref=${COMMIT}`;
@@ -17,8 +18,15 @@
     return input?.url || '';
   }
 
-  function isPinnedProtocolRequest(input) {
-    return String(requestedUrl(input) || '').startsWith(RAW_SOURCE);
+  function isProtocolRequest(input) {
+    const requested = String(requestedUrl(input) || '');
+    if (requested.startsWith(RAW_SOURCE)) return true;
+    try {
+      const url = new URL(requested, window.location.origin);
+      return url.origin === window.location.origin && url.pathname === LOCAL_SOURCE;
+    } catch (_) {
+      return false;
+    }
   }
 
   function validSource(text) {
@@ -61,8 +69,8 @@
     }
   }
 
-  async function tryTextSource(url, label) {
-    const response = await fetchWithTimeout(url, { headers: { Accept: 'text/html,*/*;q=0.8' } });
+  async function tryTextSource(url, label, timeoutMs = 9000) {
+    const response = await fetchWithTimeout(url, { headers: { Accept: 'text/html,*/*;q=0.8' } }, timeoutMs);
     if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`);
     const text = await response.text();
     if (!validSource(text)) throw new Error(`${label}: conteúdo inválido`);
@@ -92,10 +100,17 @@
   }
 
   async function resilientProtocolFetch() {
+    const failures = [];
+
+    try {
+      return await tryTextSource(LOCAL_SOURCE, 'site-local', 5000);
+    } catch (error) {
+      failures.push(error?.message || String(error));
+    }
+
     const cached = cachedSource();
     if (cached) return sourceResponse(cached, 'browser-cache');
 
-    const failures = [];
     for (const candidate of [
       () => tryTextSource(CDN_SOURCE, 'jsdelivr'),
       () => tryTextSource(RAW_SOURCE, 'github-raw'),
@@ -112,7 +127,7 @@
   }
 
   window.fetch = function regulationProtocolSourceFetch(input, init = {}) {
-    if (!isPinnedProtocolRequest(input)) return nativeFetch(input, init);
+    if (!isProtocolRequest(input)) return nativeFetch(input, init);
     return resilientProtocolFetch();
   };
 
