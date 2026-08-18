@@ -7,14 +7,27 @@
 
   function render() {
     const user = auth.getCachedUser();
-    if (!user || user.role !== 'cidadao') return;
+    if (!user) return;
 
     const badge = document.getElementById('accountLevelBadge');
     const notice = document.getElementById('accountEvolutionNotice');
     const actionText = document.getElementById('accountActionText');
-    const meta = levels.metaFor(user);
+    const actionTitle = document.getElementById('accountActionTitle');
 
-    levels.renderMiniBadge(badge, user);
+    if (user.role !== 'cidadao') {
+      if (badge) badge.hidden = true;
+      if (notice) notice.hidden = true;
+      if (actionTitle) actionTitle.textContent = 'Minha conta e segurança';
+      if (actionText) actionText.textContent = 'Gerencie senha, e-mail de segurança e foto do seu perfil.';
+      return;
+    }
+
+    const meta = levels.metaFor(user);
+    if (badge) {
+      badge.hidden = false;
+      levels.renderMiniBadge(badge, user);
+    }
+    if (actionTitle) actionTitle.textContent = 'Evolução da conta';
     if (actionText) {
       actionText.textContent = meta.level === 'bronze'
         ? 'Você está no Bronze. Confirme o e-mail para chegar ao Prata.'
