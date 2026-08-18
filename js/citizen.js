@@ -2,7 +2,7 @@
 
 (async () => {
   const auth = window.RegulationAuth;
-  const user = await auth.requireRole(['cidadao'], { deniedPath: '/' });
+  const user = await auth.requireRole([], { deniedPath: '/' });
   if (!user) return;
 
   const endpoint = String((window.REGULATION_AUTH_CONFIG || {}).endpoint || '').replace(/\/$/, '');
@@ -13,9 +13,31 @@
     concluida: 'Concluída', arquivada: 'Arquivada'
   };
   const typeLabels = { sugestao: 'Sugestão', reclamacao: 'Reclamação', elogio: 'Elogio', denuncia: 'Denúncia' };
+  const roleLabels = {
+    medico: 'Médico',
+    recepcao: 'Recepção',
+    coordenacao: 'Coordenação',
+    admin: 'Desenvolvedor',
+    cidadao: 'Cidadão'
+  };
+  const isPrimaryCitizen = user.role === 'cidadao';
 
   document.getElementById('portalUserName').textContent = user.name || user.username;
-  document.getElementById('portalUserRole').textContent = user.councilRole === 'presidente' ? 'Cidadão · Presidente do Conselho' : 'Cidadão';
+  document.getElementById('portalUserRole').textContent = isPrimaryCitizen
+    ? (user.councilRole === 'presidente' ? 'Cidadão · Presidente do Conselho' : 'Cidadão')
+    : `${roleLabels[user.role] || 'Profissional'} · modo cidadão`;
+
+  const professionalHomeLink = document.getElementById('professionalHomeLink');
+  if (professionalHomeLink) professionalHomeLink.hidden = isPrimaryCitizen;
+
+  const contextNotice = document.getElementById('citizenContextNotice');
+  if (contextNotice && !isPrimaryCitizen) {
+    const councilExtra = auth.hasCouncilAccess(user)
+      ? ' Nesta área, suas manifestações próprias são tratadas em modo cidadão; as ações institucionais continuam separadas no painel do Conselho.'
+      : '';
+    contextNotice.innerHTML = `<strong>Você está usando sua conta profissional como cidadão.</strong> Seu perfil profissional, cargo, @usuário e foto não são exibidos automaticamente ao Conselho dentro da manifestação.${councilExtra} O texto e os anexos ainda podem revelar sua identidade se você incluir dados pessoais.`;
+    contextNotice.hidden = false;
+  }
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
@@ -25,6 +47,11 @@
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return String(value || '');
     return date.toLocaleString('pt-BR', { timeZone: 'America/Campo_Grande', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function citizenContextPath(path) {
+    const separator = path.includes('?') ? '&' : '?';
+    return `${path}${separator}as=citizen`;
   }
 
   function openModal(id) {
@@ -142,7 +169,7 @@
       list.innerHTML = '<span style="color:#73889a;font-size:.84rem">Nenhum anexo.</span>';
       return;
     }
-    list.innerHTML = items.map((item) => `<button class="attachment-link" type="button" data-attachment="${escapeHtml(item.id)}">📎 ${escapeHtml(item.fileName || 'Anexo')}</button>`).join('');
+    list.innerHTML = items.map((item) => `<button class="attachment-link" type="button" data-attachment="${escapeHtml(item.id)}">📎 ${escapeHtml(item.displayName || 'Anexo')}</button>`).join('');
   }
 
   async function openDetail(protocol) {
@@ -151,7 +178,8 @@
     document.getElementById('detailLoading').hidden = false;
     document.getElementById('detailContent').hidden = true;
     try {
-      const payload = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}`, { method: 'GET' });
+      const path = citizenContextPath(`/api/council/manifestations/${encodeURIComponent(protocol)}`);
+      const payload = await auth.api(path, { method: 'GET' });
       const item = payload.manifestation;
       document.getElementById('detailProtocol').textContent = item.protocol;
       document.getElementById('detailMeta').textContent = `${typeLabels[item.type] || item.type} · ${formatDate(item.createdAt)}`;
@@ -238,7 +266,8 @@
     const status = document.getElementById('replyStatus');
     button.disabled = true;
     try {
-      await auth.api(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/messages`, {
+      const path = citizenContextPath(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/messages`);
+      await auth.api(path, {
         method: 'POST', body: JSON.stringify({ body: document.getElementById('replyText').value })
       });
       document.getElementById('replyText').value = '';
@@ -261,7 +290,8 @@
     try {
       const form = new FormData();
       form.append('file', file);
-      await auth.api(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/attachments`, { method: 'POST', body: form });
+      const path = citizenContextPath(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/attachments`);
+      await auth.api(path, { method: 'POST', body: form });
       document.getElementById('attachmentFile').value = '';
       await openDetail(state.selectedProtocol);
     } catch (error) {
@@ -276,7 +306,8 @@
     if (!button || !state.selectedProtocol) return;
     button.disabled = true;
     try {
-      const response = await fetch(`${endpoint}/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/attachments/${encodeURIComponent(button.dataset.attachment)}`, {
+      const path = citizenContextPath(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/attachments/${encodeURIComponent(button.dataset.attachment)}`);
+      const response = await fetch(`${endpoint}${path}`, {
         headers: auth.authorizationHeader(), cache: 'no-store'
       });
       if (!response.ok) {
