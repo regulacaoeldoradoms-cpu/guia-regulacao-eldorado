@@ -1,7 +1,5 @@
 'use strict';
 
-import { firebaseConfigured, firestorePatch } from './firebase-gateway.js';
-
 function normalizeEmail(value) {
   return String(value || '').trim().toLowerCase().slice(0, 254);
 }
@@ -20,12 +18,6 @@ function json(body, status, origin, originAllowed = true) {
   return new Response(JSON.stringify(body), { status, headers });
 }
 
-async function councilIndexExists(env) {
-  if (!env.AUTH_DB) return false;
-  const row = await env.AUTH_DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='council_manifestation_index'").first();
-  return Boolean(row);
-}
-
 export async function guardSecurityEmailRemoval(request, env, validatePortalSession, origin, originAllowed = true) {
   const url = new URL(request.url);
   if (url.pathname !== '/api/auth/security' || request.method !== 'PATCH') return null;
@@ -36,45 +28,36 @@ export async function guardSecurityEmailRemoval(request, env, validatePortalSess
   if (requestedEmail) return null;
 
   const user = await validatePortalSession(request, env, []).catch(() => null);
-  if (!user?.email) return null;
+  if (!user?.email || !user.emailVerified) return null;
 
-  // Depois que um e-mail é vinculado, a conta/protocolos podem ter sido associados a
-  // esse identificador. Na V1 não fingimos que o histórico volta a ser anônimo.
+  // Depois de confirmado, o e-mail passa a compor a segurança permanente da conta.
+  // A remoção simples poderia reduzir a proteção e criar ambiguidade sobre a identidade já verificada.
   return json({
-    error: 'Depois de vinculado, o e-mail de segurança não pode ser simplesmente removido pela conta. Você pode substituí-lo por outro endereço e confirmá-lo.',
+    error: 'Depois de confirmado, o e-mail de segurança não pode ser simplesmente removido. Você pode substituí-lo por outro endereço e confirmá-lo.',
     code: 'SECURITY_EMAIL_REMOVAL_BLOCKED'
   }, 409, origin, originAllowed);
 }
 
-export async function syncCitizenPrivacyAfterSecurityPatch(requestSnapshot, response, env, validatePortalSession) {
-  if (!requestSnapshot || !response?.ok) return response;
-  const url = new URL(requestSnapshot.url);
-  if (url.pathname !== '/api/auth/security' || requestSnapshot.method !== 'PATCH') return response;
+export async function normalizeSecurityPrivacyResponse(response) {
+  if (!response?.ok) return response;
+  const type = response.headers.get('Content-Type') || '';
+  if (!type.includes('application/json')) return response;
 
-  const body = await requestSnapshot.clone().json().catch(() => ({}));
-  const email = normalizeEmail(body.email);
-  if (!email) return response;
+  const payload = await response.clone().json().catch(() => null);
+  if (!payload?.security) return response;
 
-  const user = await validatePortalSession(requestSnapshot, env, []).catch(() => null);
-  if (!user || !(await councilIndexExists(env))) return response;
+  payload.security.privacyMode = payload.security.emailVerified ? 'sigilosa' : 'anonima';
+  const headers = new Headers(response.headers);
+  headers.set('Content-Type', 'application/json; charset=utf-8');
+  headers.set('Cache-Control', 'no-store');
+  return new Response(JSON.stringify(payload), { status: response.status, headers });
+}
 
-  // O Canal do Cidadão é transversal. Se uma conta profissional já tiver manifestações
-  // próprias e depois vincular e-mail, os protocolos anteriores também passam a sigilosos.
-  await env.AUTH_DB.prepare("UPDATE council_manifestation_index SET privacy_mode = 'sigilosa' WHERE author_username = ?")
-    .bind(user.username)
-    .run();
+export async function syncCitizenPrivacyAfterSecurityPatch(requestSnapshot, response) {
+  if (!requestSnapshot) return normalizeSecurityPrivacyResponse(response);
 
-  const result = await env.AUTH_DB.prepare('SELECT protocol FROM council_manifestation_index WHERE author_username = ?')
-    .bind(user.username)
-    .all();
-
-  if (firebaseConfigured(env)) {
-    for (const row of result.results || []) {
-      const protocol = String(row.protocol || '');
-      if (!/^CMS-\d{4}-\d{6}$/.test(protocol)) continue;
-      await firestorePatch(env, `council_manifestations/${protocol}`, { privacyMode: 'sigilosa' }).catch(() => null);
-    }
-  }
-
-  return response;
+  // O rótulo de privacidade é fixado no momento em que cada manifestação é criada.
+  // Adicionar ou confirmar e-mail depois não converte retroativamente protocolos que
+  // foram enviados como anônimos. A partir da confirmação, novas manifestações serão sigilosas.
+  return normalizeSecurityPrivacyResponse(response);
 }
