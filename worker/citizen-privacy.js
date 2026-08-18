@@ -56,8 +56,10 @@ export async function syncCitizenPrivacyAfterSecurityPatch(requestSnapshot, resp
   if (!email) return response;
 
   const user = await validatePortalSession(requestSnapshot, env, []).catch(() => null);
-  if (!user || user.role !== 'cidadao' || !(await councilIndexExists(env))) return response;
+  if (!user || !(await councilIndexExists(env))) return response;
 
+  // O Canal do Cidadão é transversal. Se uma conta profissional já tiver manifestações
+  // próprias e depois vincular e-mail, os protocolos anteriores também passam a sigilosos.
   await env.AUTH_DB.prepare("UPDATE council_manifestation_index SET privacy_mode = 'sigilosa' WHERE author_username = ?")
     .bind(user.username)
     .run();
