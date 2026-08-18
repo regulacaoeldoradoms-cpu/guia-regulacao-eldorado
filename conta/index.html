@@ -22,7 +22,7 @@
 
     <main class="portal-main">
       <section class="portal-hero">
-        <div class="portal-hero-copy"><span class="portal-eyebrow">Sua conta</span><h2>Perfil, senha e segurança em um só lugar.</h2><p>Contas de cidadão evoluem de Bronze para Prata e, futuramente, Ouro. Cada nível representa segurança adicional e pode desbloquear novas funções sem alterar a prioridade das manifestações.</p></div>
+        <div class="portal-hero-copy"><span class="portal-eyebrow">Sua conta</span><h2>Perfil, senha e segurança em um só lugar.</h2><p>Todas as contas do portal evoluem de Bronze para Prata e, futuramente, Ouro. O nível pertence à mesma conta usada em todos os módulos e não altera o cargo nem a prioridade das manifestações.</p></div>
       </section>
 
       <div class="portal-note info first-access-note" id="firstAccessNotice" hidden><strong>Primeiro acesso:</strong> escolha sua nova senha. Depois de salvar, você será levado automaticamente ao seu ambiente.</div>
@@ -48,7 +48,7 @@
           <div class="account-level-unlocks">
             <h3>O que cada nível desbloqueia</h3>
             <div class="account-level-unlock-list">
-              <div class="account-level-unlock"><span class="state">🥉</span><span><strong>Bronze:</strong> manifestações ao Conselho, protocolos, histórico e notificações.</span></div>
+              <div class="account-level-unlock"><span class="state">🥉</span><span><strong>Bronze:</strong> acesso básico à conta e aos recursos liberados para o seu perfil.</span></div>
               <div class="account-level-unlock"><span class="state">🥈</span><span><strong>Prata:</strong> foto de perfil e preparação do perfil social e de pedidos de amizade.</span></div>
               <div class="account-level-unlock"><span class="state">🥇</span><span><strong>Ouro:</strong> recursos sociais avançados e dispositivos confiáveis quando a proteção reforçada for implantada.</span></div>
             </div>
@@ -64,7 +64,7 @@
             <div class="level-lock-content">
               <div class="profile-editor">
                 <div class="profile-avatar-preview" id="profileAvatarPreview" aria-label="Foto de perfil"><span id="profileAvatarInitials">?</span></div>
-                <div class="profile-editor-copy"><h2>Foto do perfil</h2><p>Escolha uma foto sua. Para contas de cidadão, esta função é desbloqueada no nível Prata. A foto pertence ao perfil da conta e não é exibida ao Conselho dentro de uma manifestação.</p><input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="account-actions"><button class="portal-button secondary" id="chooseProfilePhoto" type="button">Escolher foto</button><button class="portal-button danger" id="removeProfilePhoto" type="button" hidden>Remover foto</button></div><div class="account-status" id="profileStatus" role="status" aria-live="polite"></div></div>
+                <div class="profile-editor-copy"><h2>Foto do perfil</h2><p>Esta é a foto única do seu perfil no portal. Ela acompanha a mesma conta nos diferentes módulos e não é copiada para dentro de uma manifestação sigilosa do Conselho.</p><input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="account-actions"><button class="portal-button secondary" id="chooseProfilePhoto" type="button">Escolher foto</button><button class="portal-button danger" id="removeProfilePhoto" type="button" hidden>Remover foto</button></div><div class="account-status" id="profileStatus" role="status" aria-live="polite"></div></div>
               </div>
             </div>
           </div>
@@ -106,7 +106,7 @@
 
         <article class="account-card" id="seguranca">
           <h2>E-mail de segurança</h2>
-          <p>Para o cidadão, confirmar o e-mail transforma a conta Bronze em Prata. O endereço também prepara recuperação de acesso e proteção adicional. No Conselho, uma conta que possui e-mail é tratada como <strong>sigilosa</strong>, e o endereço não aparece no painel institucional.</p>
+          <p>Confirmar o e-mail transforma a conta Bronze em Prata e protege o acesso. Nas manifestações do Conselho, contas com e-mail são tratadas como <strong>sigilosas</strong>, e o endereço não aparece no painel institucional.</p>
           <form id="securityEmailForm" class="account-form">
             <div class="portal-field"><label for="securityEmail">E-mail</label><input id="securityEmail" type="email" autocomplete="email" maxlength="254" placeholder="seuemail@exemplo.com"></div>
             <div><span class="user-badge" id="emailStatusBadge">Verificando...</span></div>
@@ -119,7 +119,7 @@
 
         <article class="account-card" id="socialPreferencesCard">
           <h2>Recursos sociais futuros</h2>
-          <p>A camada social ainda não está ativa. O portal já prepara as preferências para quando amizade e outras funções forem implantadas.</p>
+          <p>A camada social ainda não está ativa. O portal já prepara as preferências para quando amizade e outras funções forem implantadas. Contas profissionais continuarão aparecendo pelo cargo/função de saúde, não como “Cidadão”.</p>
           <div class="level-lock" id="friendRequestLevelLock">
             <div class="level-lock-overlay"><strong>🥈 Recurso de Conta Prata.</strong><br>Confirme o e-mail para liberar a preferência de pedidos de amizade. Isso não ativa a rede social agora.</div>
             <div class="level-lock-content">
@@ -136,6 +136,6 @@
   <script src="/js/auth-client.js?v=20260816-1"></script>
   <script src="/js/account-levels.js?v=20260818-2"></script>
   <script src="/js/account.js?v=20260817-2"></script>
-  <script src="/js/citizen-identity-ui.js?v=20260817-2"></script>
+  <script src="/js/citizen-identity-ui.js?v=20260818-3"></script>
 </body>
 </html>
