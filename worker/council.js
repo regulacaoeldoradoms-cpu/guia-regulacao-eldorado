@@ -20,7 +20,6 @@ const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const TYPES = new Set(['sugestao', 'reclamacao', 'elogio', 'denuncia']);
 const STATUSES = new Set(['recebida', 'em_analise', 'aguardando_cidadao', 'encaminhada', 'aguardando_retorno', 'respondida', 'concluida', 'arquivada']);
 const ATTACHMENT_TYPES = new Set(['image/jpeg', 'image/png', 'application/pdf']);
-const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'admin']);
 
 function headers(origin, allowed = true) {
   const result = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
@@ -108,6 +107,10 @@ function citizenContext(url) {
   return String(url?.searchParams?.get('as') || '').toLowerCase() === 'citizen';
 }
 
+function manifestationPrivacyMode(user) {
+  return user?.emailVerified === true ? 'sigilosa' : 'anonima';
+}
+
 function protectedManifestation(doc) {
   if (!doc) return null;
   const { authorUsername, ...safe } = doc;
@@ -175,15 +178,14 @@ async function addEvent(env, protocol, event) {
 }
 
 async function createManifestation(request, env, user, origin) {
-  if (!firebaseConfigured(env)) return json({ error: 'O módulo do Conselho está pronto, mas o Firebase ainda precisa ser conectado pelo desenvolvedor.', code: 'FIREBASE_PENDING' }, 503, origin);
-
-  if (PROFESSIONAL_ROLES.has(user.role) && !user.emailVerified) {
+  if (presidentAccess(user)) {
     return json({
-      error: 'Para usar o Canal do Cidadão com uma conta profissional, confirme primeiro o e-mail de segurança. Assim, sua manifestação será tratada como sigilosa.',
-      code: 'EMAIL_VERIFICATION_REQUIRED',
-      verificationPath: '/conta/?verificar-email=1'
+      error: 'A Presidência do Conselho não pode abrir manifestação enquanto estiver exercendo essa função institucional.',
+      code: 'COUNCIL_PRESIDENT_CANNOT_SUBMIT'
     }, 403, origin);
   }
+
+  if (!firebaseConfigured(env)) return json({ error: 'O módulo do Conselho está pronto, mas o Firebase ainda precisa ser conectado pelo desenvolvedor.', code: 'FIREBASE_PENDING' }, 503, origin);
 
   await ensureSchema(env);
   const last = await env.AUTH_DB.prepare("SELECT created_at AS createdAt FROM council_manifestation_index WHERE author_username = ? AND created_at >= datetime('now', '-2 hours') ORDER BY created_at DESC LIMIT 1")
@@ -205,7 +207,7 @@ async function createManifestation(request, env, user, origin) {
 
   const protocol = await nextProtocol(env);
   const createdAt = nowIso();
-  const privacyMode = PROFESSIONAL_ROLES.has(user.role) ? 'sigilosa' : (user.email ? 'sigilosa' : 'anonima');
+  const privacyMode = manifestationPrivacyMode(user);
   const doc = {
     protocol,
     privacyMode,
@@ -429,7 +431,14 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   const asCitizen = citizenContext(url);
 
   if (url.pathname === '/api/council/config' && request.method === 'GET') {
-    return json({ enabled: firebaseConfigured(env), councilRole: user.councilRole || '', role: user.role, citizenAccess: true, newManifestationIntervalSeconds: NEW_MANIFESTATION_INTERVAL_SECONDS }, 200, origin);
+    return json({
+      enabled: firebaseConfigured(env),
+      councilRole: user.councilRole || '',
+      role: user.role,
+      citizenAccess: true,
+      canCreateManifestation: !presidentAccess(user),
+      newManifestationIntervalSeconds: NEW_MANIFESTATION_INTERVAL_SECONDS
+    }, 200, origin);
   }
   if (url.pathname === '/api/council/manifestations' && request.method === 'POST') return createManifestation(request, env, user, origin);
   if (url.pathname === '/api/council/my' && request.method === 'GET') return citizenList(env, user, origin);
