@@ -55,6 +55,74 @@ const AUTH_RESPONSES_WITH_USER = new Set([
   '/api/auth/change-password'
 ]);
 
+const TRANSIENT_AI_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function geminiModels(env) {
+  const primary = String(env.GEMINI_MODEL || 'gemini-3.5-flash-lite').trim();
+  const fallbacks = String(env.GEMINI_FALLBACK_MODELS || 'gemini-3.6-flash')
+    .split(',')
+    .map((model) => model.trim())
+    .filter(Boolean);
+  return [...new Set([primary, ...fallbacks].filter(Boolean))];
+}
+
+function envForGeminiModel(env, model) {
+  return new Proxy(env, {
+    get(target, property, receiver) {
+      if (property === 'GEMINI_MODEL') return model;
+      return Reflect.get(target, property, receiver);
+    }
+  });
+}
+
+async function isTransientAiResponse(response) {
+  if (!TRANSIENT_AI_STATUSES.has(response.status)) return false;
+  if (response.status === 408 || response.status === 429 || response.status >= 502) return true;
+
+  const payload = await response.clone().json().catch(() => ({}));
+  const message = String(payload?.error || '').toLowerCase();
+  return /gemini|high demand|temporar|unavailable|overload|capacity|timeout|timed out/.test(message);
+}
+
+async function fetchAiResilient(request, env, ctx, origin, originAllowed) {
+  const models = geminiModels(env);
+  let lastResponse = null;
+
+  for (let modelIndex = 0; modelIndex < models.length; modelIndex += 1) {
+    const model = models[modelIndex];
+    const modelEnv = envForGeminiModel(env, model);
+    const attempts = 2;
+
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const response = await aiWorker.fetch(request.clone(), modelEnv, ctx);
+      if (!(await isTransientAiResponse(response))) return response;
+
+      lastResponse = response;
+      if (attempt < attempts - 1) {
+        const baseDelay = 500 * (2 ** attempt);
+        const jitter = Math.floor(Math.random() * 250);
+        await wait(baseDelay + jitter);
+      }
+    }
+  }
+
+  if (lastResponse) {
+    return jsonError(
+      'O Gemini está temporariamente sobrecarregado ou indisponível. O sistema já repetiu a tentativa e testou um modelo de contingência. Tente novamente em instantes.',
+      503,
+      origin,
+      originAllowed,
+      'GEMINI_TEMPORARILY_UNAVAILABLE'
+    );
+  }
+
+  return jsonError('Falha ao consultar o assistente.', 502, origin, originAllowed, 'GEMINI_ERROR');
+}
+
 export default {
   async fetch(request, env, ctx) {
     await enforceDeveloperSeparation(env);
@@ -133,6 +201,11 @@ export default {
       const user = await validatePortalSession(request, env, ['medico', 'coordenacao']);
       if (!user) return jsonError('Acesso médico ou de coordenação necessário para utilizar a pré-regulação.', 403, origin, originAllowed);
     }
+
+    if (url.pathname === '/api/ia' && request.method === 'POST') {
+      return fetchAiResilient(request, env, ctx, origin, originAllowed);
+    }
+
     return aiWorker.fetch(request, env, ctx);
   }
 };
