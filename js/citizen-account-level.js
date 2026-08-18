@@ -13,16 +13,9 @@
     const notice = document.getElementById('accountEvolutionNotice');
     const actionText = document.getElementById('accountActionText');
     const actionTitle = document.getElementById('accountActionTitle');
-
-    if (user.role !== 'cidadao') {
-      if (badge) badge.hidden = true;
-      if (notice) notice.hidden = true;
-      if (actionTitle) actionTitle.textContent = 'Minha conta e segurança';
-      if (actionText) actionText.textContent = 'Gerencie senha, e-mail de segurança e foto do seu perfil.';
-      return;
-    }
-
     const meta = levels.metaFor(user);
+    const isPrimaryCitizen = user.role === 'cidadao';
+
     if (badge) {
       badge.hidden = false;
       levels.renderMiniBadge(badge, user);
@@ -32,17 +25,19 @@
       actionText.textContent = meta.level === 'bronze'
         ? 'Você está no Bronze. Confirme o e-mail para chegar ao Prata.'
         : meta.level === 'prata'
-          ? 'Conta Prata: foto de perfil desbloqueada.'
+          ? 'Conta Prata: e-mail de segurança confirmado.'
           : 'Conta Ouro: nível máximo de proteção.';
     }
 
     if (!notice) return;
     if (meta.level === 'bronze') {
       notice.hidden = false;
-      notice.innerHTML = '<strong>🥉 Sua conta é Bronze.</strong> Você já pode usar normalmente o Canal do Cidadão. Se quiser desbloquear foto de perfil e preparar os recursos sociais futuros, <a href="/conta/#seguranca">confirme um e-mail e evolua para Prata</a>.';
+      notice.innerHTML = '<strong>🥉 Sua conta é Bronze.</strong> Confirme um e-mail de segurança para evoluir para Prata.';
     } else if (meta.level === 'prata') {
       notice.hidden = false;
-      notice.innerHTML = '<strong>🥈 Conta Prata desbloqueada.</strong> Sua foto de perfil já está disponível. O nível Ouro chegará futuramente com proteção reforçada em novos dispositivos.';
+      notice.innerHTML = isPrimaryCitizen
+        ? '<strong>🥈 Conta Prata.</strong> Seu e-mail de segurança está confirmado. O nível Ouro chegará futuramente com proteção reforçada em novos dispositivos.'
+        : '<strong>🥈 Conta Prata.</strong> Seu e-mail de segurança está confirmado. Seu perfil profissional continua separado do uso pessoal do Canal do Cidadão.';
     } else {
       notice.hidden = false;
       notice.innerHTML = '<strong>🥇 Conta Ouro.</strong> Sua conta atingiu o nível máximo de proteção previsto no portal.';
