@@ -23,9 +23,10 @@
   const isPrimaryCitizen = user.role === 'cidadao';
 
   document.getElementById('portalUserName').textContent = user.name || user.username;
-  document.getElementById('portalUserRole').textContent = isPrimaryCitizen
-    ? (user.councilRole === 'presidente' ? 'Cidadão · Presidente do Conselho' : 'Cidadão')
-    : `${roleLabels[user.role] || 'Profissional'} · modo cidadão`;
+  const roleBase = roleLabels[user.role] || user.role || 'Usuário';
+  const roleJob = !isPrimaryCitizen && user.jobTitle ? ` · ${user.jobTitle}` : '';
+  const roleCouncil = user.councilRole ? ` · Conselho: ${user.councilRole === 'presidente' ? 'Presidente' : 'Membro'}` : '';
+  document.getElementById('portalUserRole').textContent = `${roleBase}${roleJob}${roleCouncil}`;
 
   const professionalHomeLink = document.getElementById('professionalHomeLink');
   if (professionalHomeLink) professionalHomeLink.hidden = isPrimaryCitizen;
@@ -33,9 +34,9 @@
   const contextNotice = document.getElementById('citizenContextNotice');
   if (contextNotice && !isPrimaryCitizen) {
     const councilExtra = auth.hasCouncilAccess(user)
-      ? ' Nesta área, suas manifestações próprias são tratadas em modo cidadão; as ações institucionais continuam separadas no painel do Conselho.'
+      ? ' Se você também integra o Conselho, suas ações institucionais continuam disponíveis somente no painel institucional.'
       : '';
-    contextNotice.innerHTML = `<strong>Você está usando sua conta profissional como cidadão.</strong> Seu perfil profissional, cargo, @usuário e foto não são exibidos automaticamente ao Conselho dentro da manifestação.${councilExtra} O texto e os anexos ainda podem revelar sua identidade se você incluir dados pessoais.`;
+    contextNotice.innerHTML = `<strong>Uma conta, o mesmo perfil.</strong> Você continua identificado no portal pelo seu cargo profissional. O Canal do Cidadão é apenas mais um módulo da mesma conta.${councilExtra} Nas manifestações, seu e-mail não é exibido ao Conselho; o texto e os anexos podem revelar sua identidade se você próprio incluir esses dados.`;
     contextNotice.hidden = false;
   }
 
@@ -49,6 +50,8 @@
     return date.toLocaleString('pt-BR', { timeZone: 'America/Campo_Grande', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
+  // O parâmetro existe apenas para autorização da operação quando a mesma conta também
+  // possui função no Conselho. Ele não representa uma segunda identidade ou um segundo perfil.
   function citizenContextPath(path) {
     const separator = path.includes('?') ? '&' : '?';
     return `${path}${separator}as=citizen`;
@@ -72,6 +75,11 @@
   }
 
   function privacyText() {
+    if (!isPrimaryCitizen) {
+      return state.security?.emailVerified
+        ? '🔒 Sigilosa · e-mail de segurança protegido'
+        : '⚠️ Confirme o e-mail de segurança para enviar manifestações';
+    }
     return state.security?.privacyMode === 'sigilosa'
       ? '🔒 Sigilosa · seu e-mail de segurança não é exibido ao Conselho'
       : '🕶️ Anônima · esta conta não possui e-mail ou telefone de identificação';
@@ -80,7 +88,9 @@
   async function loadSecurity() {
     state.security = await auth.getSecurity().catch(() => ({ privacyMode: user.privacyMode || 'anonima', emailVerified: user.emailVerified }));
     document.getElementById('privacyChip').textContent = privacyText();
-    document.getElementById('newPrivacyNotice').textContent = `Privacidade desta manifestação: ${privacyText().replace(/^[^ ]+ /, '')}.`;
+    document.getElementById('newPrivacyNotice').textContent = !isPrimaryCitizen && !state.security?.emailVerified
+      ? 'Para enviar uma manifestação com sua conta profissional, confirme primeiro o e-mail de segurança. Depois disso, o protocolo será tratado como sigiloso.'
+      : `Privacidade desta manifestação: ${privacyText().replace(/^[^ ]+ /, '')}.`;
   }
 
   function renderManifestations() {
@@ -144,10 +154,13 @@
       el.innerHTML = '<div class="empty-state">Ainda não há mensagens adicionais neste protocolo.</div>';
       return;
     }
-    el.innerHTML = messages.map((message) => `<div class="thread-message ${message.senderType === 'council' ? 'council' : ''}">
-      <strong>${escapeHtml(message.senderLabel || (message.senderType === 'council' ? 'Conselho Municipal de Saúde' : 'Você'))} · ${escapeHtml(formatDate(message.createdAt))}</strong>
-      <p>${escapeHtml(message.body)}</p>
-    </div>`).join('');
+    el.innerHTML = messages.map((message) => {
+      const label = message.senderType === 'council' ? 'Conselho Municipal de Saúde' : 'Você';
+      return `<div class="thread-message ${message.senderType === 'council' ? 'council' : ''}">
+        <strong>${escapeHtml(label)} · ${escapeHtml(formatDate(message.createdAt))}</strong>
+        <p>${escapeHtml(message.body)}</p>
+      </div>`;
+    }).join('');
   }
 
   function renderTimeline(events) {
@@ -231,6 +244,9 @@
       if (error.status === 429 && error.retryAfterSeconds) {
         const minutes = Math.ceil(error.retryAfterSeconds / 60);
         message += ` Tente novamente em aproximadamente ${minutes} minuto(s).`;
+      }
+      if (error.code === 'EMAIL_VERIFICATION_REQUIRED') {
+        message += ' Abra Minha conta para confirmar o e-mail de segurança.';
       }
       showStatus(status, message, 'error');
     } finally {
