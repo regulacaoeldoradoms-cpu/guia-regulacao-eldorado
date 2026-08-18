@@ -72,20 +72,20 @@ function geminiModels(env) {
 
 function envForGeminiModel(env, model) {
   return new Proxy(env, {
-    get(target, property, receiver) {
+    get(target, property) {
       if (property === 'GEMINI_MODEL') return model;
-      return Reflect.get(target, property, receiver);
+      return target[property];
     }
   });
 }
 
 async function isTransientAiResponse(response) {
   if (!TRANSIENT_AI_STATUSES.has(response.status)) return false;
-  if (response.status === 408 || response.status === 429 || response.status >= 502) return true;
+  if (response.status === 408 || response.status === 429 || [502, 503, 504].includes(response.status)) return true;
 
   const payload = await response.clone().json().catch(() => ({}));
   const message = String(payload?.error || '').toLowerCase();
-  return /gemini|high demand|temporar|unavailable|overload|capacity|timeout|timed out/.test(message);
+  return /high demand|temporar|unavailable|overload|capacity|timeout|timed out|service unavailable/.test(message);
 }
 
 async function fetchAiResilient(request, env, ctx, origin, originAllowed) {
