@@ -27,7 +27,6 @@
   if (emailVerificationNotice) emailVerificationNotice.hidden = !verificationFlow || Boolean(user.emailVerified);
 
   const accountLevelPanel = document.getElementById('accountLevelPanel');
-  const profilePhotoCard = document.getElementById('profilePhotoCard');
   const profilePhotoLevelLock = document.getElementById('profilePhotoLevelLock');
   const friendRequestLevelLock = document.getElementById('friendRequestLevelLock');
   const profileInput = document.getElementById('profilePhotoInput');
@@ -69,23 +68,16 @@
     return value && value.startsWith('/') && !value.startsWith('//') ? value : '';
   }
 
-  function citizenHasSilver() {
-    return !isCitizen || levels?.minimumMet(user, 'prata') || user.emailVerified === true;
+  function hasSilver() {
+    return levels?.minimumMet(user, 'prata') || user.emailVerified === true;
   }
 
   function syncLevelUI() {
-    if (!isCitizen) {
-      if (accountLevelPanel) accountLevelPanel.hidden = true;
-      if (profilePhotoLevelLock) profilePhotoLevelLock.classList.remove('locked');
-      if (friendRequestLevelLock) friendRequestLevelLock.classList.remove('locked');
-      return;
-    }
-
     if (accountLevelPanel) {
       accountLevelPanel.hidden = false;
       levels?.renderProgress(accountLevelPanel, user);
     }
-    const silver = citizenHasSilver();
+    const silver = hasSilver();
     profilePhotoLevelLock?.classList.toggle('locked', !silver);
     friendRequestLevelLock?.classList.toggle('locked', !silver);
     if (choosePhoto) choosePhoto.disabled = !silver;
@@ -104,7 +96,7 @@
       profileInitials.textContent = initialsFor(user.name || user.username);
       profileInitials.hidden = Boolean(photo);
     }
-    if (removePhoto) removePhoto.hidden = !photo || (isCitizen && !citizenHasSilver());
+    if (removePhoto) removePhoto.hidden = !photo || !hasSilver();
   }
 
   function readImage(file) {
@@ -151,14 +143,12 @@
     emailStatusBadge.textContent = !security.email ? 'Nenhum e-mail cadastrado' : security.emailVerified ? '✓ E-mail verificado' : 'E-mail ainda não verificado';
     emailStatusBadge.className = `user-badge ${security.emailVerified ? '' : 'inactive'}`;
 
-    if (isCitizen) {
-      privacyStatus.innerHTML = security.privacyMode === 'sigilosa'
-        ? '<strong>🔒 Privacidade sigilosa</strong><span>Existe um e-mail de segurança vinculado à conta. Ele não é exibido no painel do Conselho nem gravado no documento da manifestação.</span>'
-        : '<strong>🕶️ Sem e-mail ou telefone vinculado</strong><span>Esta conta não possui esses identificadores cadastrados. Para preservar sua identificação, o nome de usuário também não deve revelar seu nome real ou outro dado pessoal.</span>';
+    if (isCitizen && security.privacyMode !== 'sigilosa') {
+      privacyStatus.innerHTML = '<strong>🕶️ Sem e-mail ou telefone vinculado</strong><span>Esta conta não possui esses identificadores cadastrados. Para preservar sua identificação, o nome de usuário também não deve revelar seu nome real ou outro dado pessoal.</span>';
+    } else if (security.emailVerified) {
+      privacyStatus.innerHTML = '<strong>🔒 Conta Prata · e-mail verificado</strong><span>O endereço protege a mesma conta usada em todos os módulos. Em manifestações do Conselho, ele permanece sigiloso e não é exibido no painel institucional.</span>';
     } else {
-      privacyStatus.innerHTML = security.emailVerified
-        ? '<strong>✓ Conta protegida por e-mail verificado</strong><span>O endereço é usado para segurança da conta e não integra o conteúdo das manifestações do Conselho.</span>'
-        : '<strong>Segurança da conta</strong><span>Cadastre e confirme um e-mail para proteger e recuperar seu acesso.</span>';
+      privacyStatus.innerHTML = '<strong>Segurança da conta</strong><span>Cadastre e confirme um e-mail para alcançar o nível Prata, proteger o acesso e liberar os recursos associados a esse nível.</span>';
     }
 
     verificationButton.hidden = !security.email || security.emailVerified;
@@ -176,7 +166,7 @@
     if (!user.emailVerificationRequired && user.emailVerified) {
       if (emailVerificationNotice) emailVerificationNotice.hidden = true;
       if (params.get('verificar-email') === '1') {
-        show(securityStatus, isCitizen ? 'E-mail confirmado. Parabéns: sua conta agora é Prata.' : 'E-mail confirmado. Sua conta está liberada.', 'success');
+        show(securityStatus, 'E-mail confirmado. Parabéns: sua conta agora é Prata.', 'success');
         const destination = safeNext();
         if (destination) window.setTimeout(() => location.replace(destination), 900);
       }
@@ -189,7 +179,7 @@
       renderSecurity();
       if (security.emailVerified) await refreshVerificationState();
       if (params.get('email-verificado') === '1' && security.emailVerified) {
-        show(securityStatus, isCitizen ? 'E-mail confirmado. Conquista desbloqueada: Conta Prata.' : 'E-mail confirmado com sucesso.', 'success');
+        show(securityStatus, 'E-mail confirmado. Conquista desbloqueada: Conta Prata.', 'success');
       }
     } catch (error) {
       show(securityStatus, error.message || 'Não foi possível carregar a segurança da conta.', 'error');
@@ -200,7 +190,7 @@
   renderProfilePhoto(user.avatarDataUrl || '');
 
   choosePhoto?.addEventListener('click', () => {
-    if (isCitizen && !citizenHasSilver()) {
+    if (!hasSilver()) {
       document.getElementById('seguranca')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       show(profileStatus, 'A foto de perfil é uma conquista da Conta Prata. Confirme seu e-mail para desbloquear.', 'error');
       return;
@@ -223,7 +213,7 @@
       show(profileStatus, error.message || 'Não foi possível atualizar a foto.', 'error');
     } finally {
       profileInput.value = '';
-      choosePhoto.disabled = isCitizen && !citizenHasSilver();
+      choosePhoto.disabled = !hasSilver();
       if (removePhoto) removePhoto.disabled = false;
     }
   });
@@ -238,7 +228,7 @@
     } catch (error) {
       show(profileStatus, error.message || 'Não foi possível remover a foto.', 'error');
     } finally {
-      choosePhoto.disabled = isCitizen && !citizenHasSilver();
+      choosePhoto.disabled = !hasSilver();
       removePhoto.disabled = false;
     }
   });
@@ -302,7 +292,7 @@
   });
 
   friendRequests.addEventListener('change', async () => {
-    if (isCitizen && !citizenHasSilver()) {
+    if (!hasSilver()) {
       friendRequests.checked = false;
       document.getElementById('seguranca')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       show(securityStatus, 'Esta preferência é desbloqueada no nível Prata.', 'error');
