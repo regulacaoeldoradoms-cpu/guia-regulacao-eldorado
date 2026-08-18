@@ -1,0 +1,148 @@
+name: Proteger integridade das especialidades
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  protocol-integrity:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Corrigir identidade da Neuropediatria e atualizar cache
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          old = """function isNeuropediatrics(protocol) {
+            const value = normalize(`${protocol.id || ''} ${protocol.nome || ''} ${arr(protocol.tags).join(' ')}`);
+            return value.includes('neurologia pediatrica') || value.includes('neuropediatria') || value.includes('neuroped');
+          }"""
+
+          new = """function isNeuropediatrics(protocol) {
+            const id = normalize(protocol.id || '').trim();
+            const name = normalize(protocol.nome || '').trim();
+            return id === 'neuropediatria'
+              || id === 'neurologia-pediatrica'
+              || name === 'neuropediatria'
+              || name === 'neurologia pediatrica';
+          }"""
+
+          for filename in ['js/medical-app.js', 'js/app.js']:
+              path = Path(filename)
+              text = path.read_text(encoding='utf-8')
+              if old in text:
+                  text = text.replace(old, new, 1)
+                  path.write_text(text, encoding='utf-8')
+              elif new not in text:
+                  raise SystemExit(f'{filename}: função isNeuropediatrics em formato inesperado; revisão manual necessária')
+
+          medico = Path('medico/index.html')
+          text = medico.read_text(encoding='utf-8')
+          text = text.replace('/js/medical-app.js?v=20260817-1', '/js/medical-app.js?v=20260818-1')
+          medico.write_text(text, encoding='utf-8')
+
+          protocolo = Path('protocolo/index.html')
+          text = protocolo.read_text(encoding='utf-8')
+          text = text.replace('<script src="/js/app.js" defer></script>', '<script src="/js/app.js?v=20260818-1" defer></script>')
+          protocolo.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Verificar todas as especialidades e exames
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          import unicodedata
+          from collections import defaultdict
+          from pathlib import Path
+
+          def norm(value):
+              value = unicodedata.normalize('NFD', str(value or ''))
+              value = ''.join(ch for ch in value if unicodedata.category(ch) != 'Mn')
+              return value.lower().strip()
+
+          source = Path('data/protocol-source.html').read_text(encoding='utf-8')
+          match = re.search(r'const PROTOCOLOS = (\[.*?\]);\s*const FOOTER_IMG', source, re.S)
+          if not match:
+              raise SystemExit('Não foi possível extrair a base PROTOCOLOS de data/protocol-source.html')
+          protocols = json.loads(match.group(1))
+
+          by_id = defaultdict(list)
+          by_name = defaultdict(list)
+          for item in protocols:
+              by_id[norm(item.get('id'))].append(item)
+              by_name[norm(item.get('nome'))].append(item)
+
+          duplicate_ids = {key: items for key, items in by_id.items() if key and len(items) > 1}
+          duplicate_names = {key: items for key, items in by_name.items() if key and len(items) > 1}
+          if duplicate_ids:
+              details = '; '.join(f'{key}: {[x.get("nome") for x in items]}' for key, items in duplicate_ids.items())
+              raise SystemExit(f'IDs duplicados na base: {details}')
+          if duplicate_names:
+              details = '; '.join(f'{key}: {[x.get("id") for x in items]}' for key, items in duplicate_names.items())
+              raise SystemExit(f'Nomes duplicados na base: {details}')
+
+          canonical = [item for item in protocols if norm(item.get('id')) in {'neuropediatria', 'neurologia-pediatrica'} or norm(item.get('nome')) in {'neuropediatria', 'neurologia pediatrica'}]
+          if len(canonical) != 1:
+              raise SystemExit(f'Esperado exatamente 1 protocolo canônico de Neuropediatria; encontrados {len(canonical)}')
+
+          aliases = ('neuropediatria', 'neurologia pediatrica', 'neuroped')
+          mentions = []
+          for item in protocols:
+              tags = norm(' '.join(str(x) for x in (item.get('tags') or [])))
+              if any(alias in tags for alias in aliases):
+                  mentions.append((item.get('id'), item.get('nome')))
+
+          app = Path('js/medical-app.js').read_text(encoding='utf-8')
+          app_sources = Path('js/app.js').read_text(encoding='utf-8')
+          forbidden = "arr(protocol.tags).join(' ')"
+          if forbidden in app[app.index('function isNeuropediatrics'):app.index('function applyOperationalOverrides')]:
+              raise SystemExit('medical-app.js ainda usa tags para identificar Neuropediatria')
+          if forbidden in app_sources[app_sources.index('function isNeuropediatrics'):app_sources.index('function applyOperationalOverrides')]:
+              raise SystemExit('app.js ainda usa tags para identificar Neuropediatria')
+
+          extra_names = []
+          extra_match = re.search(r'const EXTRA_PROTOCOLS = \[(.*?)\];\s*\n\nconst ICONS', app, re.S)
+          if extra_match:
+              extra_names = re.findall(r"\bnome:\s*'([^']+)'", extra_match.group(1))
+
+          final_names = defaultdict(list)
+          for item in protocols:
+              final_names[norm(item.get('nome'))].append(item.get('id'))
+          for name in extra_names:
+              final_names[norm(name)].append(f'extra:{name}')
+
+          collisions = {key: ids for key, ids in final_names.items() if key and len(ids) > 1}
+          if collisions:
+              details = '; '.join(f'{key}: {ids}' for key, ids in collisions.items())
+              raise SystemExit(f'Colisão de nomes visíveis após combinar a base: {details}')
+
+          print(f'OK: {len(protocols)} protocolos oficiais verificados; {len(extra_names)} protocolo(s) complementar(es).')
+          print('Menções textuais a Neuropediatria em outros protocolos (permitidas, sem renomear):')
+          for protocol_id, name in mentions:
+              print(f' - {protocol_id}: {name}')
+          print('OK: IDs e nomes visíveis únicos; somente o protocolo canônico recebe o override de Neuropediatria.')
+          PY
+
+      - name: Validar sintaxe JavaScript
+        run: |
+          node --check js/medical-app.js
+          node --check js/app.js
+
+      - name: Publicar correção quando necessária
+        run: |
+          if git diff --quiet; then
+            echo 'Nenhuma correção automática necessária.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/medical-app.js js/app.js medico/index.html protocolo/index.html
+          git commit -m 'Corrigir duplicação de especialidades na pesquisa'
+          git push
