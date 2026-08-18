@@ -12,9 +12,9 @@ AUTH_ENFORCE_AI = "true"
 # A exigência de e-mail verificado fica desligada durante a migração.
 # Ativar somente depois que o fluxo de confirmação estiver funcionando em produção controlada.
 AUTH_REQUIRE_EMAIL_VERIFICATION = "false"
-# Migração controlada ativada: usuários admin que não constam em AUTH_DEVELOPER_USERNAMES
-# serão rebaixados automaticamente para Coordenação. Após confirmar a migração, voltar para false.
-AUTH_MIGRATE_LEGACY_ADMINS = "true"
+# Migração controlada concluída. Manter desligada no uso normal.
+# Só ligar novamente de forma deliberada se houver uma nova migração de administradores legados.
+AUTH_MIGRATE_LEGACY_ADMINS = "false"
 
 # Integração GitHub -> Cloudflare ativa. Commits na branch main disparam o deploy do Worker.
 # O Wrangler 4 provisiona automaticamente esta base D1 no primeiro deploy.
@@ -42,11 +42,12 @@ database_name = "portal-regulacao-users"
 # FIREBASE_WEB_API_KEY         -> variável usada pela API do Firebase Authentication
 # FIREBASE_STORAGE_BUCKET      -> variável do bucket privado de anexos
 #
-# A conta de serviço deve possuir somente as permissões necessárias para Firestore,
-# Firebase Authentication/Identity Platform e Storage utilizados por este Worker.
+# A conta de serviço deve possuir somente as permissões necessárias para os recursos utilizados.
 # Sem essas variáveis, o portal profissional continua funcionando e o módulo do Conselho
 # informa que aguarda a conexão do Firebase, sem gravar manifestações em outro local.
 #
 # Perfis primários aceitos: medico, recepcao, coordenacao, cidadao e admin.
 # admin = Desenvolvedor (nível técnico máximo). coordenacao = gestão operacional sem acesso técnico máximo.
 # Funções do Conselho são independentes: membro e presidente.
+# O Canal do Cidadão é uma capacidade transversal: toda conta ativa pode utilizá-lo em caráter pessoal,
+# sem substituir o perfil profissional principal nem conceder permissões institucionais adicionais.
