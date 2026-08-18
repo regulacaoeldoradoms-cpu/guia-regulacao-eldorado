@@ -15,7 +15,6 @@ export function accountLevelRank(level) {
 export function accountProgressFor(user) {
   const level = accountLevelFor(user);
   const rank = accountLevelRank(level);
-  const isCitizen = user?.role === 'cidadao';
   const nextLevel = level === 'bronze' ? 'prata' : level === 'prata' ? 'ouro' : '';
 
   return {
@@ -31,13 +30,13 @@ export function accountProgressFor(user) {
       ouro: ['Proteção reforçada em novo dispositivo / segunda etapa de autenticação (fase futura)']
     },
     features: {
-      councilManifestations: isCitizen,
-      councilTracking: isCitizen,
-      internalNotifications: isCitizen,
-      profilePhoto: !isCitizen || rank >= LEVEL_ORDER.prata,
-      socialProfile: isCitizen && rank >= LEVEL_ORDER.prata,
-      friendRequestPreference: isCitizen && rank >= LEVEL_ORDER.prata,
-      socialMessagingEligibility: isCitizen && rank >= LEVEL_ORDER.ouro,
+      councilManifestations: true,
+      councilTracking: true,
+      internalNotifications: true,
+      profilePhoto: rank >= LEVEL_ORDER.prata,
+      socialProfile: rank >= LEVEL_ORDER.prata,
+      friendRequestPreference: rank >= LEVEL_ORDER.prata,
+      socialMessagingEligibility: rank >= LEVEL_ORDER.ouro,
       trustedDevices: rank >= LEVEL_ORDER.ouro
     }
   };
