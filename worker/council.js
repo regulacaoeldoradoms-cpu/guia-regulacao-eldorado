@@ -20,6 +20,7 @@ const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const TYPES = new Set(['sugestao', 'reclamacao', 'elogio', 'denuncia']);
 const STATUSES = new Set(['recebida', 'em_analise', 'aguardando_cidadao', 'encaminhada', 'aguardando_retorno', 'respondida', 'concluida', 'arquivada']);
 const ATTACHMENT_TYPES = new Set(['image/jpeg', 'image/png', 'application/pdf']);
+const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'admin']);
 
 function headers(origin, allowed = true) {
   const result = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
@@ -112,7 +113,7 @@ function protectedManifestation(doc) {
   const { authorUsername, ...safe } = doc;
   return {
     ...safe,
-    authorLabel: 'Cidadão · identidade protegida'
+    authorLabel: 'Usuário · identidade protegida'
   };
 }
 
@@ -175,6 +176,15 @@ async function addEvent(env, protocol, event) {
 
 async function createManifestation(request, env, user, origin) {
   if (!firebaseConfigured(env)) return json({ error: 'O módulo do Conselho está pronto, mas o Firebase ainda precisa ser conectado pelo desenvolvedor.', code: 'FIREBASE_PENDING' }, 503, origin);
+
+  if (PROFESSIONAL_ROLES.has(user.role) && !user.emailVerified) {
+    return json({
+      error: 'Para usar o Canal do Cidadão com uma conta profissional, confirme primeiro o e-mail de segurança. Assim, sua manifestação será tratada como sigilosa.',
+      code: 'EMAIL_VERIFICATION_REQUIRED',
+      verificationPath: '/conta/?verificar-email=1'
+    }, 403, origin);
+  }
+
   await ensureSchema(env);
   const last = await env.AUTH_DB.prepare("SELECT created_at AS createdAt FROM council_manifestation_index WHERE author_username = ? AND created_at >= datetime('now', '-2 hours') ORDER BY created_at DESC LIMIT 1")
     .bind(user.username).first();
@@ -195,7 +205,7 @@ async function createManifestation(request, env, user, origin) {
 
   const protocol = await nextProtocol(env);
   const createdAt = nowIso();
-  const privacyMode = user.email ? 'sigilosa' : 'anonima';
+  const privacyMode = PROFESSIONAL_ROLES.has(user.role) ? 'sigilosa' : (user.email ? 'sigilosa' : 'anonima');
   const doc = {
     protocol,
     privacyMode,
@@ -213,7 +223,7 @@ async function createManifestation(request, env, user, origin) {
   await firestoreCreate(env, 'council_manifestations', protocol, doc);
   await env.AUTH_DB.prepare('INSERT INTO council_manifestation_index(protocol, author_username, privacy_mode) VALUES (?, ?, ?)')
     .bind(protocol, user.username, privacyMode).run();
-  await addEvent(env, protocol, { type: 'created', actorType: 'citizen', detail: 'Manifestação recebida pelo Conselho.' });
+  await addEvent(env, protocol, { type: 'created', actorType: 'user', detail: 'Manifestação recebida pelo Conselho.' });
   return json({ manifestation: doc }, 201, origin);
 }
 
@@ -272,7 +282,7 @@ async function addMessage(request, env, user, protocol, origin, asCitizen = fals
   const isCouncil = !asCitizen && councilAccess(user);
   if (asCitizen && !own) return json({ error: 'Sem permissão para responder a esta manifestação.' }, 403, origin);
   if (!isCouncil && !own) return json({ error: 'Sem permissão para responder a esta manifestação.' }, 403, origin);
-  if (isCouncil && !presidentAccess(user)) return json({ error: 'Na V1, somente a Presidência registra respostas oficiais ao cidadão.' }, 403, origin);
+  if (isCouncil && !presidentAccess(user)) return json({ error: 'Na V1, somente a Presidência registra respostas oficiais ao usuário.' }, 403, origin);
   const body = await request.json().catch(() => ({}));
   const text = clean(body.body, MAX_TEXT);
   if (!text) return json({ error: 'Digite a mensagem.' }, 400, origin);
@@ -281,12 +291,12 @@ async function addMessage(request, env, user, protocol, origin, asCitizen = fals
     id: randomId('msg'),
     body: text,
     senderType: isCouncil ? 'council' : 'citizen',
-    senderLabel: isCouncil ? 'Conselho Municipal de Saúde' : 'Cidadão',
+    senderLabel: isCouncil ? 'Conselho Municipal de Saúde' : 'Usuário',
     createdAt
   };
   await firestoreCreate(env, `council_manifestations/${protocol}/messages`, message.id, message);
   await firestorePatch(env, `council_manifestations/${protocol}`, { updatedAt: createdAt, lastActivityAt: createdAt });
-  await addEvent(env, protocol, { type: 'message', actorType: isCouncil ? 'council' : 'citizen', actorLabel: message.senderLabel, detail: isCouncil ? 'Nova resposta oficial registrada.' : 'Nova resposta do cidadão.' });
+  await addEvent(env, protocol, { type: 'message', actorType: isCouncil ? 'council' : 'user', actorLabel: message.senderLabel, detail: isCouncil ? 'Nova resposta oficial registrada.' : 'Nova resposta do usuário.' });
   const index = await env.AUTH_DB.prepare('SELECT author_username AS authorUsername FROM council_manifestation_index WHERE protocol = ?').bind(protocol).first();
   if (isCouncil && index?.authorUsername) {
     await notify(env, index.authorUsername, protocol, 'O Conselho respondeu à sua manifestação.');
@@ -381,7 +391,7 @@ async function uploadAttachment(request, env, user, protocol, origin, asCitizen 
   };
   await firestoreCreate(env, `council_manifestations/${protocol}/attachments`, id, attachment);
   await firestorePatch(env, `council_manifestations/${protocol}`, { attachmentCount: (await attachmentCount(env, protocol)), updatedAt: nowIso() });
-  await addEvent(env, protocol, { type: 'attachment', actorType: attachment.senderType, detail: 'Novo anexo incluído.' });
+  await addEvent(env, protocol, { type: 'attachment', actorType: isCouncil ? 'council' : 'user', detail: 'Novo anexo incluído.' });
   if (isCouncil) await audit(env, user, 'attachment.upload', protocol);
   return json({ attachment: protectedAttachment(attachment) }, 201, origin);
 }
@@ -424,7 +434,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   if (url.pathname === '/api/council/manifestations' && request.method === 'POST') return createManifestation(request, env, user, origin);
   if (url.pathname === '/api/council/my' && request.method === 'GET') return citizenList(env, user, origin);
   if (url.pathname === '/api/council/all' && request.method === 'GET') {
-    if (asCitizen) return json({ error: 'A listagem institucional do Conselho não está disponível no modo cidadão.' }, 403, origin);
+    if (asCitizen) return json({ error: 'A listagem institucional do Conselho não está disponível na área de acompanhamento das próprias manifestações.' }, 403, origin);
     return councilList(env, user, origin);
   }
   if (url.pathname === '/api/council/notifications' && (request.method === 'GET' || request.method === 'PATCH')) return notifications(request, env, user, origin);
@@ -432,7 +442,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   let match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})$/);
   if (match && request.method === 'GET') return detail(env, user, match[1], origin, asCitizen);
   if (match && request.method === 'PATCH') {
-    if (asCitizen) return json({ error: 'Ações institucionais não estão disponíveis no modo cidadão.' }, 403, origin);
+    if (asCitizen) return json({ error: 'Ações institucionais não estão disponíveis na área de acompanhamento das próprias manifestações.' }, 403, origin);
     return changeStatus(request, env, user, match[1], origin);
   }
 
@@ -441,7 +451,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
 
   match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})\/internal-notes$/);
   if (match && request.method === 'POST') {
-    if (asCitizen) return json({ error: 'Observações internas não estão disponíveis no modo cidadão.' }, 403, origin);
+    if (asCitizen) return json({ error: 'Observações internas pertencem ao painel institucional do Conselho.' }, 403, origin);
     return addInternalNote(request, env, user, match[1], origin);
   }
 
