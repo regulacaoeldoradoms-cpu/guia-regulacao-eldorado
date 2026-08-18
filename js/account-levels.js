@@ -62,17 +62,24 @@
       if (nextText) nextText.textContent = 'Confirme um e-mail de segurança. A foto de perfil e a personalização social ficam disponíveis quando a conta chega ao nível Prata.';
       if (nextAction) {
         nextAction.hidden = false;
+        nextAction.style.removeProperty('display');
         nextAction.textContent = 'Evoluir para Prata';
         nextAction.href = '#seguranca';
       }
     } else if (current.level === 'prata') {
       if (nextTitle) nextTitle.textContent = 'Próxima conquista: Conta Ouro';
       if (nextText) nextText.textContent = 'O nível Ouro ficará disponível quando a proteção reforçada em novos dispositivos e a segunda etapa de autenticação forem ativadas no portal.';
-      if (nextAction) nextAction.hidden = true;
+      if (nextAction) {
+        nextAction.hidden = true;
+        nextAction.style.display = 'none';
+      }
     } else {
       if (nextTitle) nextTitle.textContent = 'Conta no nível máximo';
       if (nextText) nextText.textContent = 'Sua conta possui o nível máximo de proteção previsto no portal.';
-      if (nextAction) nextAction.hidden = true;
+      if (nextAction) {
+        nextAction.hidden = true;
+        nextAction.style.display = 'none';
+      }
     }
 
     const achievement = root.querySelector('[data-level-achievement]');
