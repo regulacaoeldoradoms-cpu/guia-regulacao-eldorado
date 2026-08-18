@@ -25,6 +25,7 @@ import {
 } from './portal-safety.js';
 import {
   guardSecurityEmailRemoval,
+  normalizeSecurityPrivacyResponse,
   syncCitizenPrivacyAfterSecurityPatch
 } from './citizen-privacy.js';
 
@@ -188,8 +189,11 @@ export default {
         if (AUTH_RESPONSES_WITH_USER.has(url.pathname)) {
           return augmentAuthResponse(response, env);
         }
-        if (securityPatchSnapshot) {
-          return syncCitizenPrivacyAfterSecurityPatch(securityPatchSnapshot, response, env, validatePortalSession);
+        if (url.pathname === '/api/auth/security') {
+          if (securityPatchSnapshot) {
+            return syncCitizenPrivacyAfterSecurityPatch(securityPatchSnapshot, response, env, validatePortalSession);
+          }
+          return normalizeSecurityPrivacyResponse(response);
         }
         return response;
       } catch (error) {
