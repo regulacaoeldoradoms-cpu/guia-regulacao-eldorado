@@ -107,11 +107,11 @@ jobs:
         run: |
           grep -q "COUNCIL_ROLES = new Set(\['', 'membro', 'presidente'\])" worker/auth-management-v2.js
           grep -q "user.councilRole === 'presidente'" worker/council.js
-          grep -q 'PROFESSIONAL_ROLES' worker/council.js
+          grep -q 'COUNCIL_PRESIDENT_CANNOT_SUBMIT' worker/council.js
+          grep -q 'canCreateManifestation: !presidentAccess(user)' worker/council.js
           grep -q 'authorLabel' worker/council.js
           grep -q "const doc = {" worker/council.js
-          grep -q "PROFESSIONAL_ROLES.has(user.role) ? 'sigilosa'" worker/council.js
-          grep -q 'EMAIL_VERIFICATION_REQUIRED' worker/council.js
+          grep -q "return user?.emailVerified === true ? 'sigilosa' : 'anonima'" worker/council.js
           grep -q 'protectedAttachment' worker/council.js
           grep -q 'emailConfigured' worker/auth-management-v2.js
           grep -q 'Dados de autenticação' conselho/painel/index.html
@@ -123,10 +123,13 @@ jobs:
           grep -q 'profilePhotoLevelLock' js/account.js
           grep -q 'guardSecurityEmailRemoval' worker/index.js
           grep -q 'SECURITY_EMAIL_REMOVAL_BLOCKED' worker/citizen-privacy.js
-          grep -q "privacy_mode = 'sigilosa'" worker/citizen-privacy.js
-          grep -q "privacyMode: 'sigilosa'" worker/citizen-privacy.js
+          grep -q "payload.security.emailVerified ? 'sigilosa' : 'anonima'" worker/citizen-privacy.js
+          grep -q 'não converte retroativamente' worker/citizen-privacy.js
+          grep -q 'normalizeSecurityPrivacyResponse' worker/index.js
           grep -q 'COUNCIL_ROLES_REQUIRING_VERIFICATION' worker/portal-safety.js
           grep -q 'user.emailVerificationRequired' js/council-panel.js
+          grep -q 'Presidência do Conselho' js/citizen-account-level.js
+          grep -q 'Anônima · e-mail ainda não verificado' js/citizen-account-level.js
           grep -q 'Atenção à sua identificação' cidadao/index.html
           grep -q 'fotos, laudos e PDFs podem conter nome' cidadao/index.html
           grep -q 'não realiza agendamento' conselho/index.html
