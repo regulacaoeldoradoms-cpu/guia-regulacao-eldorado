@@ -32,17 +32,26 @@
       roleNode.textContent = `${role}${job}${council}`;
     }
 
+    const createButton = document.getElementById('openNewManifestation');
+    if (createButton && user.councilRole === 'presidente') {
+      createButton.hidden = true;
+      createButton.disabled = true;
+    }
+
     const contextNotice = document.getElementById('citizenContextNotice');
-    if (contextNotice && user.role !== 'cidadao') {
-      contextNotice.innerHTML = '<strong>Uma conta, o mesmo perfil.</strong> Você continua identificado no portal pelo seu cargo profissional. O Canal do Cidadão é apenas mais um módulo da mesma conta. Nas manifestações, seu e-mail permanece protegido e não é exibido ao Conselho; o conteúdo e os anexos podem revelar sua identidade se você próprio incluir esses dados.';
+    if (contextNotice && user.councilRole === 'presidente') {
+      contextNotice.innerHTML = '<strong>Presidência do Conselho:</strong> esta conta pode acompanhar manifestações próprias já existentes, mas não pode abrir uma nova manifestação enquanto estiver exercendo a função de Presidente do Conselho.';
+      contextNotice.hidden = false;
+    } else if (contextNotice && user.role !== 'cidadao') {
+      contextNotice.innerHTML = '<strong>Uma conta, o mesmo perfil.</strong> Você continua identificado no portal pelo seu cargo profissional. O Canal do Cidadão é apenas mais um módulo da mesma conta. O conteúdo e os anexos podem revelar sua identidade se você próprio incluir dados pessoais.';
       contextNotice.hidden = false;
     }
 
     const privacyChip = document.getElementById('privacyChip');
-    if (privacyChip && user.role !== 'cidadao') {
+    if (privacyChip) {
       privacyChip.textContent = user.emailVerified
-        ? '🔒 Sigilosa · e-mail de segurança protegido'
-        : '⚠️ Confirme o e-mail de segurança';
+        ? '🔒 Sigilosa · e-mail de segurança confirmado'
+        : '🕶️ Anônima · e-mail ainda não verificado';
     }
   }
 
@@ -66,7 +75,7 @@
     if (actionTitle) actionTitle.textContent = 'Evolução da conta';
     if (actionText) {
       actionText.textContent = meta.level === 'bronze'
-        ? 'Você está no Bronze. Confirme o e-mail para chegar ao Prata.'
+        ? 'Você está no Bronze. Sem e-mail confirmado, manifestações podem ser anônimas.'
         : meta.level === 'prata'
           ? 'Conta Prata: e-mail de segurança confirmado.'
           : 'Conta Ouro: nível máximo de proteção.';
@@ -75,12 +84,12 @@
     if (!notice) return;
     if (meta.level === 'bronze') {
       notice.hidden = false;
-      notice.innerHTML = '<strong>🥉 Sua conta é Bronze.</strong> Confirme um e-mail de segurança para evoluir para Prata.';
+      notice.innerHTML = '<strong>🥉 Sua conta é Bronze.</strong> Você pode usar o Canal do Cidadão. Sem e-mail confirmado, novas manifestações podem ser registradas como anônimas; ao confirmar o e-mail, novas manifestações passam a ser sigilosas.';
     } else if (meta.level === 'prata') {
       notice.hidden = false;
       notice.innerHTML = isPrimaryCitizen
-        ? '<strong>🥈 Conta Prata.</strong> Seu e-mail de segurança está confirmado. O nível Ouro chegará futuramente com proteção reforçada em novos dispositivos.'
-        : '<strong>🥈 Conta Prata.</strong> Seu e-mail de segurança está confirmado. O mesmo perfil, foto e nível de segurança acompanham sua conta em todos os módulos do portal.';
+        ? '<strong>🥈 Conta Prata.</strong> Seu e-mail de segurança está confirmado. Novas manifestações são tratadas como sigilosas. O nível Ouro chegará futuramente com proteção reforçada em novos dispositivos.'
+        : '<strong>🥈 Conta Prata.</strong> Seu e-mail de segurança está confirmado. O mesmo perfil, foto e nível de segurança acompanham sua conta em todos os módulos do portal; novas manifestações são sigilosas.';
     } else {
       notice.hidden = false;
       notice.innerHTML = '<strong>🥇 Conta Ouro.</strong> Sua conta atingiu o nível máximo de proteção previsto no portal.';
