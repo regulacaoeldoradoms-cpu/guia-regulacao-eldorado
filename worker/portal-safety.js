@@ -176,7 +176,7 @@ export async function guardCitizenLevelMutation(request, env, validatePortalSess
   if (url.pathname !== '/api/auth/security' || request.method !== 'PATCH') return null;
 
   const actor = await validatePortalSession(request, env, []).catch(() => null);
-  if (!actor || actor.role !== 'cidadao') return null;
+  if (!actor) return null;
   const body = await request.clone().json().catch(() => ({}));
 
   if (body.acceptFriendRequests === true && !minimumLevelMet(actor, 'prata')) {
