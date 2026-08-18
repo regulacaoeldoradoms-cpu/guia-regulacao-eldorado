@@ -96,8 +96,12 @@ function extractProtocolArray(source) {
 }
 
 function isNeuropediatrics(protocol) {
-  const value = normalize(`${protocol.id || ''} ${protocol.nome || ''} ${arr(protocol.tags).join(' ')}`);
-  return value.includes('neurologia pediatrica') || value.includes('neuropediatria') || value.includes('neuroped');
+  const id = normalize(protocol.id || '').trim();
+  const name = normalize(protocol.nome || '').trim();
+  return id === 'neuropediatria'
+    || id === 'neurologia-pediatrica'
+    || name === 'neuropediatria'
+    || name === 'neurologia pediatrica';
 }
 
 function applyOperationalOverrides(protocol) {
