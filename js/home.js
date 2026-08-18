@@ -36,6 +36,15 @@
       </a>`);
   }
 
+  if (!user.preview) {
+    cards.push(`
+      <a class="hub-card" href="/cidadao/" data-module="citizen-channel">
+        <span class="hub-card-icon"><img src="/assets/canal-cidadao-icon.png?v=20260817-1" alt=""></span>
+        <span><h3>Canal do Cidadão</h3><p>Use sua conta também em caráter pessoal para enviar manifestações e acompanhar protocolos. Seu perfil profissional não é exibido automaticamente ao Conselho dentro da manifestação.</p></span>
+        <span class="hub-card-arrow">Entrar como cidadão →</span>
+      </a>`);
+  }
+
   if (['medico', 'coordenacao', 'admin'].includes(user.role) || user.preview) {
     cards.push(`
       <a class="hub-card" href="/medico/" data-module="medical-guide">
