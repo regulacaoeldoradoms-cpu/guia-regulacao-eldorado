@@ -5,8 +5,18 @@
   const levels = window.AccountLevels;
   if (!auth || !levels) return;
 
-  function render() {
-    const user = auth.getCachedUser();
+  async function resolvedUser() {
+    let user = auth.getCachedUser();
+    try {
+      // Esta leitura atualiza no portal o estado de confirmação já existente no Firebase.
+      await auth.getSecurity();
+      user = await auth.me({ allowCached: false }) || user;
+    } catch (_) {}
+    return user;
+  }
+
+  async function render() {
+    const user = await resolvedUser();
     if (!user) return;
 
     const badge = document.getElementById('accountLevelBadge');
