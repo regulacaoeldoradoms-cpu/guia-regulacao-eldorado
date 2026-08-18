@@ -130,8 +130,8 @@ export default {
     }
 
     if (url.pathname === '/api/ia' && request.method !== 'OPTIONS' && String(env.AUTH_ENFORCE_AI || '').toLowerCase() === 'true') {
-      const user = await validatePortalSession(request, env, ['medico']);
-      if (!user) return jsonError('Acesso profissional necessário para utilizar a pré-regulação.', 403, origin, originAllowed);
+      const user = await validatePortalSession(request, env, ['medico', 'coordenacao']);
+      if (!user) return jsonError('Acesso médico ou de coordenação necessário para utilizar a pré-regulação.', 403, origin, originAllowed);
     }
     return aiWorker.fetch(request, env, ctx);
   }
