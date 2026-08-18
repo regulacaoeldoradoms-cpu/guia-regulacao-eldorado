@@ -1,58 +1,25 @@
 # Etapas manuais pendentes — Canal do Cidadão / Conselho V1
 
-Este checklist reúne somente o que exige acesso aos painéis externos ou validação institucional. O código correspondente já deve estar preparado antes dessas etapas.
+Este checklist registra somente o que ainda exige painel externo, teste real no navegador ou validação institucional. O código correspondente deve ficar preparado antes dessas etapas.
 
-## 1. Cloudflare Worker — identificar o Desenvolvedor
+## Estado já concluído
 
-Criar/configurar a variável:
+- ✅ `AUTH_DEVELOPER_USERNAMES` configurado e conta Desenvolvedor reconhecida.
+- ✅ `AUTH_RATE_LIMIT_SECRET` independente configurado.
+- ✅ Projeto Firebase criado e conectado ao Worker.
+- ✅ Firestore criado.
+- ✅ Storage criado.
+- ✅ Firebase Authentication com E-mail/senha habilitado para verificação.
+- ✅ Envio e confirmação real de e-mail testados.
+- ✅ Domínio de e-mail do Firebase configurado no DNS do Registro.br.
+- ✅ Conta cidadã testada em Bronze → Prata.
+- ✅ Foto de perfil desbloqueada no Prata.
+- ✅ Profissionais e Coordenação mantêm perfis próprios e agora também podem usar o Canal do Cidadão em caráter pessoal.
+- ✅ Migração de administradores legados concluída e `AUTH_MIGRATE_LEGACY_ADMINS=false` restaurado como estado normal.
 
-```text
-AUTH_DEVELOPER_USERNAMES=Wellyton Ritter Honorato
-```
+## 1. Firebase — confirmar/publicar regras privadas
 
-O Worker normaliza o valor para o mesmo formato usado internamente pelo login (`wellyton.ritter.honorato`).
-
-A migração dos administradores antigos fica **desligada por padrão**:
-
-```text
-AUTH_MIGRATE_LEGACY_ADMINS=false
-```
-
-Primeiro confirmar que a conta de Wellyton entra normalmente e mantém `role=admin`. Somente depois disso a migração poderá ser ativada deliberadamente.
-
-## 2. Cloudflare Worker — segredo do rate limit
-
-Criar um segredo aleatório independente:
-
-```text
-AUTH_RATE_LIMIT_SECRET=<valor-aleatorio-longo>
-```
-
-Não reutilizar senha pessoal, chave Firebase ou `AUTH_SESSION_SECRET`.
-
-## 3. Firebase — criar/conectar o projeto
-
-Habilitar:
-
-- Cloud Firestore;
-- Cloud Storage;
-- Firebase Authentication / Identity Platform com provedor E-mail/senha para o espelho de verificação.
-
-Configurar no Worker:
-
-```text
-FIREBASE_PROJECT_ID
-FIREBASE_CLIENT_EMAIL
-FIREBASE_PRIVATE_KEY
-FIREBASE_WEB_API_KEY
-FIREBASE_STORAGE_BUCKET
-```
-
-A chave privada deve ficar como Secret no Cloudflare, nunca no GitHub.
-
-## 4. Firebase — publicar regras privadas
-
-O repositório já contém:
+O repositório contém:
 
 ```text
 firebase/firestore.rules
@@ -60,79 +27,85 @@ firebase/storage.rules
 firebase.json
 ```
 
-Publicar essas regras no projeto Firebase correspondente. Na V1 elas negam leitura/escrita direta por clientes Firebase; o acesso do portal ocorre pelo Worker/conta de serviço.
+Confirmar no console Firebase que as regras em produção negam leitura/escrita direta por clientes Firebase. Na V1, o acesso ao conteúdo do Conselho ocorre pelo Worker/conta de serviço.
 
-## 5. IAM da conta de serviço
+Não liberar regra ampla de cliente para facilitar teste.
 
-Conceder somente as permissões necessárias para o Worker utilizar:
+## 2. IAM da conta de serviço
+
+Revisar no Google Cloud os papéis da conta de serviço usada pelo Worker.
+
+Ela deve ter somente o necessário para:
 
 - documentos do Firestore usados pelo módulo do Conselho;
 - objetos do bucket de anexos;
-- operações de Identity Platform/Firebase Authentication necessárias à verificação de e-mail.
+- operações de Identity Platform/Firebase Authentication usadas pela verificação de e-mail.
 
-Evitar papéis amplos de proprietário/editor quando não forem necessários.
+Evitar `Owner`, `Editor` ou outros papéis amplos quando não forem necessários.
 
-## 6. Teste controlado antes da migração dos cargos
+## 3. Teste controlado do Canal do Cidadão
 
-Com:
+Manter durante os testes:
 
 ```text
 AUTH_REQUIRE_EMAIL_VERIFICATION=false
 AUTH_MIGRATE_LEGACY_ADMINS=false
 ```
 
-realizar:
+Já validado:
 
-1. entrar como Wellyton;
-2. confirmar que Guia, Recepção, Monitoramento e administração continuam disponíveis;
-3. abrir `/login/` e conferir a nova mensagem de porta de entrada e o botão de autocadastro;
-4. criar uma conta cidadã de teste e confirmar que ela nasce como **Conta Bronze**;
-5. confirmar que nomes institucionais reservados não podem ser usados no auto cadastro;
-6. confirmar que o cidadão Bronze já consegue usar manifestações, protocolos e notificações;
-7. confirmar que a foto de perfil permanece bloqueada no Bronze;
-8. confirmar que o cidadão Bronze não consegue ativar a preferência futura de pedidos de amizade;
-9. confirmar que o cidadão não vê chat nem profissionais;
-10. testar manifestação, protocolo, resposta, histórico, notificação e anexos;
-11. testar manifestação sem e-mail;
-12. vincular e-mail à conta cidadã e confirmar mudança para `Sigilosa` inclusive em protocolos anteriores;
-13. testar envio e confirmação real de e-mail;
-14. confirmar que, depois da confirmação, a conta passa para **Prata**;
-15. confirmar que a foto de perfil é desbloqueada no Prata e não aparece dentro da manifestação no painel do Conselho;
-16. confirmar que a preferência futura de pedidos de amizade pode ser salva no Prata, embora a rede social continue desativada;
-17. confirmar que o painel do Conselho não mostra e-mail nem nome de usuário do cidadão;
-18. confirmar que o nome original do arquivo anexado não aparece no painel nem no caminho do objeto novo;
-19. tentar enviar arquivo com extensão/MIME incompatível e confirmar que o Worker rejeita pela assinatura real do conteúdo;
-20. confirmar que PDF é entregue como download e que JPG/PNG são servidos apenas após autorização.
+- ✅ cadastro cidadão por usuário + senha;
+- ✅ Conta Bronze;
+- ✅ confirmação real de e-mail;
+- ✅ Conta Prata;
+- ✅ foto de perfil;
+- ✅ preferência futura de amizade desbloqueada no Prata;
+- ✅ aviso de Spam/Lixo eletrônico/Lixeira;
+- ✅ perfis profissionais preservados após a separação Desenvolvedor/Coordenação.
 
-O nível **Ouro** não deve aparecer como atingível na V1; ele permanece mostrado apenas como próxima etapa futura ligada à autenticação reforçada em novo dispositivo.
+Ainda testar no navegador:
 
-## 7. Migrar os cargos antigos
+1. abrir uma manifestação com conta primariamente cidadã e receber protocolo;
+2. confirmar listagem em **Minhas manifestações**;
+3. abrir a mesma manifestação no painel do Conselho;
+4. confirmar que Conselho não recebe e-mail, @usuário, foto ou perfil profissional do autor;
+5. Presidente alterar andamento;
+6. Presidente enviar resposta oficial;
+7. autor receber notificação e visualizar resposta/histórico;
+8. autor responder ao Conselho dentro do protocolo;
+9. testar manifestação sem e-mail;
+10. vincular e-mail depois e confirmar mudança dos protocolos anteriores para `Sigilosa`;
+11. testar manifestação criada por Médico/Recepção/Coordenação/Desenvolvedor em **modo cidadão**;
+12. se essa conta também possuir função no Conselho, confirmar que no `/cidadao/` sua resposta própria é registrada como cidadão e não como resposta oficial;
+13. testar JPG, PNG e PDF válidos;
+14. confirmar que o nome original do arquivo não aparece no painel nem no caminho do objeto novo;
+15. tentar arquivo com extensão/MIME incompatível e confirmar rejeição pela assinatura real do conteúdo;
+16. confirmar que PDF é entregue como download e JPG/PNG somente após autorização;
+17. confirmar limite de 5 anexos e 5 MB por arquivo;
+18. confirmar limite de uma nova manifestação a cada 2 horas, sem bloquear respostas em protocolos existentes.
 
-Somente depois que `AUTH_DEVELOPER_USERNAMES` estiver confirmado e o passo anterior estiver concluído, alterar deliberadamente:
+O nível **Ouro** não deve ser atingível na V1.
 
-```text
-AUTH_MIGRATE_LEGACY_ADMINS=true
-```
+## 4. Funções do Conselho durante o teste
 
-Então:
+Para validação completa, pode-se manter temporariamente:
 
-- Wellyton permanece `admin` / Desenvolvedor;
-- contas antigas que estavam como Desenvolvedor apenas para acesso operacional migram para `coordenacao`;
-- Coordenação mantém Guia, Conferência da Recepção, Monitoramento e gestão apenas de médicos/recepção.
+- Wellyton: `Desenvolvedor + Presidente do Conselho`, para testar todas as ações institucionais;
+- outra conta institucional: `Membro do Conselho`, para testar as restrições do membro.
 
-Depois de conferir a migração, a flag pode voltar para `false`; as contas já migradas permanecem com o novo perfil.
+Validar que o membro:
 
-## 8. Funções do Conselho
+- lê manifestações;
+- lê histórico e anexos;
+- registra observação interna;
+- **não** envia resposta oficial;
+- **não** altera andamento oficial.
 
-Após o deploy controlado:
+Depois dos testes, aplicar a composição institucional definitiva. A Presidência real deve ser atribuída à conta definida pelo Conselho.
 
-- Wellyton: manter Desenvolvedor e atribuir `council_role=membro`;
-- Elizabete: atribuir `council_role=presidente`;
-- demais usuários não recebem função do Conselho automaticamente.
+## 5. Migração do e-mail dos profissionais/institucionais
 
-## 9. Migração do e-mail dos profissionais/institucionais
-
-Primeiro manter:
+Por enquanto manter:
 
 ```text
 AUTH_REQUIRE_EMAIL_VERIFICATION=false
@@ -140,39 +113,40 @@ AUTH_REQUIRE_EMAIL_VERIFICATION=false
 
 Pedir que médicos, Recepção, Coordenação, Desenvolvedor e contas com função no Conselho cadastrem e confirmem e-mail.
 
-Depois de testar o fluxo e garantir que todos conseguem chegar à tela `/conta/`, alterar para:
+Somente depois de testar todas as contas existentes, alterar deliberadamente para:
 
 ```text
 AUTH_REQUIRE_EMAIL_VERIFICATION=true
 ```
 
-Quando ativado, o login continua funcionando, mas as demais ferramentas ficam bloqueadas até a confirmação. A tela da conta permanece acessível para regularização. Isso vale também para contas com função `membro` ou `presidente` no Conselho.
+Quando ativado, o login continua possível para regularização, mas as demais ferramentas ficam bloqueadas até a confirmação. A tela `/conta/` permanece acessível.
 
-## 10. Validação institucional antes de abrir ao público
+## 6. Validação institucional antes de abrir ao público
 
-Revisar com o Conselho/gestão municipal:
+Revisar com Conselho/gestão municipal:
 
 - texto público do canal;
 - tipos de manifestação;
 - quem pode responder oficialmente;
 - política de retenção/arquivamento;
 - aviso de privacidade e orientações ao cidadão;
-- nomenclatura interna Bronze/Prata/Ouro e texto explicando que ela não tem relação com a classificação oficial do Gov.br;
-- fluxo para situações que não devem ser tratadas apenas como manifestação administrativa.
+- nomenclatura Bronze/Prata/Ouro e explicação de que não tem relação com os níveis oficiais do Gov.br;
+- fluxo para situações que não devem ser tratadas apenas como manifestação administrativa;
+- regra interna para conflito de interesse quando membro do Conselho também for autor de uma manifestação.
 
-O site já diferencia o Canal do Conselho de atendimento assistencial e informa que ele não realiza agendamento, não altera solicitação da Regulação e não substitui atendimento de urgência/emergência. O texto institucional final ainda deve ser validado antes da abertura pública.
+O portal já informa que o Canal do Conselho não realiza agendamento, não altera solicitação da Regulação e não substitui atendimento de urgência/emergência.
 
-## Não fazer na primeira publicação
+## Não ativar ainda
 
-Deixar desativados até fase posterior:
+Deixar para fase posterior:
 
 - feed social;
 - amizade/chat cidadão-profissional;
 - descoberta pública de profissionais;
 - nível Ouro efetivo / autenticação adicional por novo dispositivo;
 - recuperação por chave sem e-mail;
-- App Check/reCAPTCHA Enterprise até o projeto Firebase estar conectado e testado.
+- App Check/reCAPTCHA Enterprise até o fluxo atual estar completamente validado.
 
 ## Regra de segurança da publicação
 
-Não mesclar/publicar o PR enquanto Firebase/Cloudflare não estiverem configurados e o teste controlado acima não tiver sido concluído. O PR deve permanecer em rascunho até lá.
+Não abrir o Canal do Cidadão ao público até concluir os testes de autorização, privacidade, anexos e Conselho e revisar os itens institucionais acima.
