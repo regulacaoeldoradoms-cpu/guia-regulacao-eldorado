@@ -11,9 +11,9 @@ AUTH_ENFORCE_AI = "true"
 # A exigência de e-mail verificado fica desligada durante a migração.
 # Ativar somente depois que o fluxo de confirmação estiver funcionando em produção controlada.
 AUTH_REQUIRE_EMAIL_VERIFICATION = "false"
-# A migração de administradores antigos para Coordenação exige ativação explícita.
-# Primeiro configure e confira AUTH_DEVELOPER_USERNAMES; só depois altere esta flag para true.
-AUTH_MIGRATE_LEGACY_ADMINS = "false"
+# Migração controlada ativada: usuários admin que não constam em AUTH_DEVELOPER_USERNAMES
+# serão rebaixados automaticamente para Coordenação. Após confirmar a migração, voltar para false.
+AUTH_MIGRATE_LEGACY_ADMINS = "true"
 
 # Integração GitHub -> Cloudflare ativa. Commits na branch main disparam o deploy do Worker.
 # O Wrangler 4 provisiona automaticamente esta base D1 no primeiro deploy.
@@ -28,7 +28,7 @@ database_name = "portal-regulacao-users"
 # AUTH_RATE_LIMIT_SECRET é recomendado para anonimizar o identificador usado no limite de cadastros.
 # AUTH_DEVELOPER_USERNAMES deve conter somente os usuários que realmente mantêm o nível Desenvolvedor,
 # separados por vírgula. O valor é normalizado da mesma forma que o login do portal.
-# Administradores legados só migram quando AUTH_MIGRATE_LEGACY_ADMINS também estiver true.
+# Enquanto AUTH_MIGRATE_LEGACY_ADMINS estiver true, qualquer admin fora dessa lista migra para Coordenação.
 # Não colocar o valor real aqui; configurar no painel da Cloudflare antes da publicação desta versão.
 #
 # Compatibilidade com validação histórica: a antiga documentação usava o marcador SENHA_FORTE apenas como exemplo.
