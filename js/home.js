@@ -40,8 +40,8 @@
     cards.push(`
       <a class="hub-card" href="/cidadao/" data-module="citizen-channel">
         <span class="hub-card-icon"><img src="/assets/canal-cidadao-icon.png?v=20260817-1" alt=""></span>
-        <span><h3>Canal do Cidadão</h3><p>Use sua conta também em caráter pessoal para enviar manifestações e acompanhar protocolos. Seu perfil profissional não é exibido automaticamente ao Conselho dentro da manifestação.</p></span>
-        <span class="hub-card-arrow">Entrar como cidadão →</span>
+        <span><h3>Canal do Cidadão</h3><p>Envie manifestações ao Conselho e acompanhe seus protocolos usando a mesma conta do portal. Seu perfil, foto e nível de segurança continuam sendo os mesmos em todos os módulos.</p></span>
+        <span class="hub-card-arrow">Abrir Canal do Cidadão →</span>
       </a>`);
   }
 
