@@ -2,14 +2,15 @@
 
 ## Situação
 
-Esta versão implementa a estrutura do Canal do Cidadão em uma branch separada. Ela não deve ser incorporada à `main` antes da configuração dos itens marcados em **Antes do deploy**.
+Esta versão implementa o Canal do Cidadão integrado ao Portal da Regulação, com implantação controlada de autenticação, Firebase e funções do Conselho antes da abertura pública.
 
 ## Entregas da V1
 
 - Login único em `/login/`, apresentado como porta de entrada do portal.
 - Auto cadastro de cidadão por usuário + senha em `/cadastro/`.
 - Hub do Cidadão em `/cidadao/`.
-- Evolução da conta cidadã em Bronze, Prata e Ouro.
+- Canal do Cidadão como capacidade transversal de toda conta ativa, sem substituir o perfil profissional principal.
+- Evolução da conta cidadã em Bronze, Prata e Ouro para contas primariamente cidadãs.
 - Página pública do Conselho em `/conselho/`.
 - Painel institucional em `/conselho/painel/`.
 - Tipos de manifestação: sugestão, reclamação, elogio e denúncia.
@@ -23,10 +24,24 @@ Esta versão implementa a estrutura do Canal do Cidadão em uma branch separada.
 - D1 somente para autenticação, índice técnico de propriedade, contador de protocolo, notificações genéricas e rate limits.
 - Perfil `coordenacao` separado de `admin`/Desenvolvedor.
 - Funções independentes do Conselho: `membro` e `presidente`.
-- Cidadãos isolados do chat e do diretório profissional.
+- Contas primariamente cidadãs isoladas do chat e do diretório profissional.
 - Preferência `accept_friend_requests` criada somente para preparar uma função futura; amizade e feed não fazem parte da V1.
 
 ## Perfis e permissões
+
+### Capacidade transversal: Canal do Cidadão
+
+O perfil primário continua definindo as permissões profissionais. Em paralelo, toda conta ativa pode entrar em `/cidadao/` em caráter pessoal para:
+
+- abrir manifestação própria;
+- acompanhar protocolo próprio;
+- conversar dentro do próprio protocolo;
+- receber notificações próprias;
+- anexar arquivos próprios.
+
+Isso não transforma Médico, Recepção, Coordenação ou Desenvolvedor em perfil `cidadao`. O perfil profissional continua intacto e o modo cidadão não concede permissões institucionais extras.
+
+Quando uma conta que também possui função no Conselho entra pelo `/cidadao/`, as próprias manifestações são tratadas em contexto cidadão. Resposta oficial, alteração de andamento e observações internas continuam separadas no painel institucional do Conselho.
 
 ### Desenvolvedor (`admin`)
 
@@ -36,28 +51,35 @@ Esta versão implementa a estrutura do Canal do Cidadão em uma branch separada.
 - Monitoramento;
 - gestão de perfis subordinados;
 - atribuição das funções do Conselho;
-- acesso ao Conselho apenas se também receber `council_role=membro` ou `presidente`.
+- acesso ao Conselho apenas se também receber `council_role=membro` ou `presidente`;
+- acesso pessoal ao Canal do Cidadão.
 
 A V1 bloqueia a desativação acidental da própria conta Desenvolvedor e também impede que o Desenvolvedor remova o próprio nível técnico pelo formulário comum de usuários.
 
 ### Coordenação (`coordenacao`)
 
 - Guia Médico;
+- pré-regulação com IA para testes e apoio operacional dentro dos limites profissionais definidos pelo sistema;
 - Conferência da Recepção;
 - Monitoramento;
 - criação/gestão somente de contas `medico` e `recepcao`;
 - não recebe automaticamente acesso ao Conselho;
-- não pode promover a si própria nem terceiros a Desenvolvedor.
+- não pode promover a si própria nem terceiros a Desenvolvedor;
+- acesso pessoal ao Canal do Cidadão.
 
 ### Médico (`medico`)
 
-- Guia Médico e recursos profissionais correspondentes.
+- Guia Médico e recursos profissionais correspondentes;
+- acesso pessoal ao Canal do Cidadão.
 
 ### Recepção (`recepcao`)
 
-- Conferência da Recepção e chat profissional autorizado.
+- Conferência da Recepção e chat profissional autorizado;
+- acesso pessoal ao Canal do Cidadão.
 
 ### Cidadão (`cidadao`)
+
+O perfil `cidadao` representa a conta que não possui função profissional no portal.
 
 - Hub do Cidadão;
 - manifestações próprias;
@@ -76,6 +98,8 @@ A V1 bloqueia a desativação acidental da própria conta Desenvolvedor e també
 ## Evolução da conta do cidadão
 
 Os níveis são internos deste portal e não têm relação com os níveis oficiais da conta Gov.br. Eles não alteram prioridade, credibilidade ou força de uma manifestação.
+
+Na V1, a progressão visual Bronze/Prata/Ouro é apresentada às contas primariamente `cidadao`. Contas profissionais usam o mesmo e-mail de segurança e as mesmas proteções da conta, mas mantêm a identidade visual e funcional do perfil profissional.
 
 ### Bronze
 
@@ -115,13 +139,17 @@ O e-mail de segurança fica na tabela de autenticação e não é enviado ao doc
 - a interface orienta o cidadão a não usar nome completo ou outros dados pessoais no nome de usuário quando desejar preservar sua identificação;
 - a foto de perfil fica bloqueada no Bronze e é liberada no Prata;
 - a foto pertence ao perfil da conta e não é mostrada ao Conselho dentro da manifestação;
-- cidadão sem e-mail: interface usa `anonima`/sem identificação por e-mail ou telefone;
-- cidadão com e-mail: interface usa `sigilosa`;
+- conta sem e-mail: interface usa `anonima`/sem identificação por e-mail ou telefone;
+- conta com e-mail: interface usa `sigilosa`;
 - o nível Bronze/Prata/Ouro é separado do rótulo de privacidade da manifestação;
 - Presidente e membros do Conselho recebem apenas a indicação do nível de privacidade e `Identidade protegida`;
-- o painel institucional não exibe o e-mail de segurança.
+- o painel institucional não exibe o e-mail de segurança;
+- quando uma conta profissional usa o Canal do Cidadão, perfil profissional, cargo, @usuário e foto não são enviados automaticamente ao documento da manifestação nem exibidos no painel institucional;
+- texto e anexos ainda podem revelar identidade se o próprio usuário inserir informações pessoais.
 
 O vínculo técnico entre protocolo e conta é mantido em D1 para garantir que somente o autor consulte e responda à própria manifestação. Esse índice não contém o texto da manifestação.
+
+Para contas que acumulam função profissional e função no Conselho, o frontend usa explicitamente o contexto `as=citizen` no Hub do Cidadão. Assim, as próprias respostas e anexos são registrados como cidadão, enquanto ações institucionais continuam restritas ao painel do Conselho.
 
 ## Migração segura da verificação de e-mail
 
@@ -129,23 +157,19 @@ A ativação futura de `AUTH_REQUIRE_EMAIL_VERIFICATION=true` não bloqueia o lo
 
 Isso evita o cenário em que um médico ou coordenador seria bloqueado antes de conseguir cadastrar o próprio e-mail.
 
-## Antes do deploy
+## Configuração controlada
 
-### 1. Identificar o Desenvolvedor real
+### 1. Desenvolvedor real
 
-No Worker, configurar `AUTH_DEVELOPER_USERNAMES` com o nome de usuário do Wellyton no portal.
+No Worker, `AUTH_DEVELOPER_USERNAMES` deve conter somente o nome de usuário do Desenvolvedor autorizado.
 
-Exemplo conceitual, sem usar valor real no GitHub:
+A migração dos administradores legados usa `AUTH_MIGRATE_LEGACY_ADMINS=true` apenas temporariamente. Depois de confirmar a migração, o estado normal é:
 
 ```text
-AUTH_DEVELOPER_USERNAMES=<usuario-do-desenvolvedor>
+AUTH_MIGRATE_LEGACY_ADMINS=false
 ```
 
-A comparação normaliza espaços, maiúsculas e acentos da mesma forma que o login do portal.
-
-A migração dos administradores legados também exige `AUTH_MIGRATE_LEGACY_ADMINS=true`. Essa flag permanece `false` por padrão e só deve ser ligada temporariamente depois de confirmar a conta Desenvolvedor correta.
-
-### 2. Criar/conectar o projeto Firebase
+### 2. Firebase
 
 Configurar no Worker:
 
@@ -161,7 +185,7 @@ FIREBASE_STORAGE_BUCKET
 
 A conta de serviço deve receber somente os privilégios necessários para os recursos utilizados.
 
-### 3. Testar verificação de e-mail
+### 3. Verificação de e-mail
 
 Com Firebase configurado:
 
@@ -175,10 +199,12 @@ Com Firebase configurado:
 8. confirmar que a foto de perfil é desbloqueada;
 9. testar cidadão sem e-mail e cidadão com e-mail;
 10. testar uma conta profissional existente;
-11. confirmar que uma conta profissional ainda consegue entrar em `/conta/` quando a exigência estiver ativa;
-12. confirmar que as demais ferramentas ficam bloqueadas somente até a verificação ser concluída.
+11. confirmar que uma conta profissional consegue entrar em `/cidadao/` sem perder suas permissões profissionais;
+12. confirmar que manifestação criada por profissional não exibe cargo, perfil, @usuário ou foto ao Conselho;
+13. confirmar que uma conta profissional ainda consegue entrar em `/conta/` quando a exigência de e-mail estiver ativa;
+14. confirmar que as demais ferramentas ficam bloqueadas somente até a verificação ser concluída.
 
-### 4. Não ativar a exigência dos profissionais imediatamente
+### 4. Exigência de e-mail dos profissionais
 
 Durante a migração:
 
@@ -194,13 +220,15 @@ Somente depois que o Firebase estiver funcionando e as contas existentes puderem
 AUTH_REQUIRE_EMAIL_VERIFICATION = "true"
 ```
 
-### 5. Definir funções do Conselho
+### 5. Funções do Conselho
 
-Depois do deploy controlado:
+Em produção institucional:
 
-- Wellyton: manter perfil Desenvolvedor e atribuir `council_role=membro`;
+- Wellyton: manter perfil Desenvolvedor e atribuir a função de Conselho definida institucionalmente;
 - Elizabete: atribuir `council_role=presidente`;
 - Coordenação não recebe função do Conselho automaticamente.
+
+Durante os testes, a conta Desenvolvedor pode receber temporariamente `council_role=presidente` para validar todas as ações da Presidência.
 
 ## Testes mínimos antes de liberar ao público
 
@@ -209,24 +237,28 @@ Depois do deploy controlado:
 3. Coordenador vê Guia, Recepção, Monitoramento e usuários subordinados;
 4. Coordenador não consegue atribuir `admin`, `coordenacao` ou função do Conselho;
 5. Desenvolvedor não consegue se desativar ou se rebaixar acidentalmente pelo formulário comum;
-6. cidadão cria conta fornecendo apenas usuário + senha e recebe nível Bronze;
-7. foto de perfil permanece bloqueada no Bronze;
-8. cidadão confirma e-mail, passa a Prata e desbloqueia a foto;
-9. cidadão Bronze não consegue ativar a preferência futura de pedidos de amizade;
-10. cidadão Prata consegue salvar essa preferência, embora a rede social continue desativada;
-11. cidadão não enxerga chat/lista de profissionais;
-12. cidadão abre manifestação e recebe protocolo;
-13. segunda manifestação dentro de duas horas é recusada;
-14. cidadão consegue responder no protocolo mesmo durante as duas horas;
-15. Presidente vê a manifestação sem o e-mail da conta e sem foto social;
-16. membro do Conselho vê e registra observação interna, mas não envia resposta oficial;
-17. Presidente altera o status e responde;
-18. cidadão recebe a notificação interna e vê a atualização;
-19. anexos ficam privados e somente autor/Conselho autorizado conseguem abrir;
-20. conta com e-mail aparece como sigilosa;
-21. conta sem e-mail não ganha e-mail/telefone por preenchimento automático;
-22. ativar temporariamente a exigência de e-mail em ambiente controlado e confirmar que o profissional consegue entrar em `/conta/`, mas não nas APIs protegidas;
-23. logs e banco D1 não armazenam o texto clínico da manifestação fora do Firestore.
+6. médico, recepção, Coordenação e Desenvolvedor enxergam o cartão do Canal do Cidadão no Hub profissional;
+7. profissional entra no Canal do Cidadão e consegue voltar à área profissional;
+8. cidadão cria conta fornecendo apenas usuário + senha e recebe nível Bronze;
+9. foto de perfil permanece bloqueada no Bronze;
+10. cidadão confirma e-mail, passa a Prata e desbloqueia a foto;
+11. cidadão Bronze não consegue ativar a preferência futura de pedidos de amizade;
+12. cidadão Prata consegue salvar essa preferência, embora a rede social continue desativada;
+13. conta primariamente cidadã não enxerga chat/lista de profissionais;
+14. qualquer conta ativa abre manifestação própria e recebe protocolo;
+15. segunda manifestação dentro de duas horas é recusada;
+16. autor consegue responder no protocolo mesmo durante as duas horas;
+17. profissional que também integra o Conselho consegue responder à própria manifestação em modo cidadão sem transformar a resposta em resposta oficial;
+18. Presidente vê a manifestação sem e-mail da conta, @usuário, cargo profissional ou foto social;
+19. membro do Conselho vê e registra observação interna, mas não envia resposta oficial;
+20. Presidente altera o status e responde;
+21. autor recebe a notificação interna e vê a atualização;
+22. anexos ficam privados e somente autor/Conselho autorizado conseguem abrir;
+23. conta com e-mail aparece como sigilosa;
+24. conta sem e-mail não ganha e-mail/telefone por preenchimento automático;
+25. ao vincular e-mail depois de já possuir protocolos, o histórico próprio passa a `sigilosa`, inclusive para conta profissional;
+26. ativar temporariamente a exigência de e-mail em ambiente controlado e confirmar que o profissional consegue entrar em `/conta/`, mas não nas APIs protegidas;
+27. logs e banco D1 não armazenam o texto da manifestação fora do Firestore.
 
 ## Próximas fases, fora da V1
 
