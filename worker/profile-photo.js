@@ -68,19 +68,19 @@ export async function handleProfileRoute(request, env, origin, originAllowed = t
   if (!env.AUTH_DB) return jsonResponse({ error: 'Banco de usuários ainda não disponível.' }, 503, origin, originAllowed);
 
   const progress = accountProgressFor(user);
-  const citizenPhotoUnlocked = user.role !== 'cidadao' || minimumLevelMet(user, 'prata');
+  const photoUnlocked = minimumLevelMet(user, 'prata');
 
   if (request.method === 'GET') {
     return jsonResponse({
-      avatarDataUrl: citizenPhotoUnlocked ? await avatarFor(env, user.username) : '',
-      locked: !citizenPhotoUnlocked,
-      requiredLevel: !citizenPhotoUnlocked ? 'prata' : '',
+      avatarDataUrl: photoUnlocked ? await avatarFor(env, user.username) : '',
+      locked: !photoUnlocked,
+      requiredLevel: !photoUnlocked ? 'prata' : '',
       accountLevel: progress.level
     }, 200, origin, originAllowed);
   }
 
   if (request.method === 'PATCH') {
-    if (!citizenPhotoUnlocked) {
+    if (!photoUnlocked) {
       return jsonResponse({
         error: 'Confirme seu e-mail para alcançar o nível Prata e desbloquear a foto de perfil.',
         code: 'ACCOUNT_LEVEL_REQUIRED',
