@@ -103,6 +103,10 @@ function presidentAccess(user) {
   return user && user.councilRole === 'presidente';
 }
 
+function citizenContext(url) {
+  return String(url?.searchParams?.get('as') || '').toLowerCase() === 'citizen';
+}
+
 function protectedManifestation(doc) {
   if (!doc) return null;
   const { authorUsername, ...safe } = doc;
@@ -170,7 +174,6 @@ async function addEvent(env, protocol, event) {
 }
 
 async function createManifestation(request, env, user, origin) {
-  if (user.role !== 'cidadao') return json({ error: 'A abertura de manifestação está disponível no ambiente do cidadão.' }, 403, origin);
   if (!firebaseConfigured(env)) return json({ error: 'O módulo do Conselho está pronto, mas o Firebase ainda precisa ser conectado pelo desenvolvedor.', code: 'FIREBASE_PENDING' }, 503, origin);
   await ensureSchema(env);
   const last = await env.AUTH_DB.prepare("SELECT created_at AS createdAt FROM council_manifestation_index WHERE author_username = ? AND created_at >= datetime('now', '-2 hours') ORDER BY created_at DESC LIMIT 1")
@@ -215,7 +218,6 @@ async function createManifestation(request, env, user, origin) {
 }
 
 async function citizenList(env, user, origin) {
-  if (user.role !== 'cidadao') return json({ error: 'Área disponível para contas de cidadão.' }, 403, origin);
   await ensureSchema(env);
   const result = await env.AUTH_DB.prepare('SELECT protocol FROM council_manifestation_index WHERE author_username = ? ORDER BY created_at DESC LIMIT 100')
     .bind(user.username).all();
@@ -237,9 +239,10 @@ async function councilList(env, user, origin) {
   return json({ manifestations: result.documents.map(protectedManifestation), nextPageToken: result.nextPageToken }, 200, origin);
 }
 
-async function detail(env, user, protocol, origin) {
-  const isCouncil = councilAccess(user);
-  const own = user.role === 'cidadao' ? await ownership(env, protocol, user.username) : null;
+async function detail(env, user, protocol, origin, asCitizen = false) {
+  const own = await ownership(env, protocol, user.username);
+  const isCouncil = !asCitizen && councilAccess(user);
+  if (asCitizen && !own) return json({ error: 'Manifestação não encontrada ou sem permissão de acesso.' }, 404, origin);
   if (!isCouncil && !own) return json({ error: 'Manifestação não encontrada ou sem permissão de acesso.' }, 404, origin);
   const doc = await firestoreGet(env, `council_manifestations/${protocol}`);
   if (!doc) return json({ error: 'Manifestação não encontrada.' }, 404, origin);
@@ -264,9 +267,10 @@ async function detail(env, user, protocol, origin) {
   }, 200, origin);
 }
 
-async function addMessage(request, env, user, protocol, origin) {
-  const isCouncil = councilAccess(user);
-  const own = user.role === 'cidadao' ? await ownership(env, protocol, user.username) : null;
+async function addMessage(request, env, user, protocol, origin, asCitizen = false) {
+  const own = await ownership(env, protocol, user.username);
+  const isCouncil = !asCitizen && councilAccess(user);
+  if (asCitizen && !own) return json({ error: 'Sem permissão para responder a esta manifestação.' }, 403, origin);
   if (!isCouncil && !own) return json({ error: 'Sem permissão para responder a esta manifestação.' }, 403, origin);
   if (isCouncil && !presidentAccess(user)) return json({ error: 'Na V1, somente a Presidência registra respostas oficiais ao cidadão.' }, 403, origin);
   const body = await request.json().catch(() => ({}));
@@ -342,9 +346,10 @@ async function attachmentCount(env, protocol) {
   return result.documents.length;
 }
 
-async function uploadAttachment(request, env, user, protocol, origin) {
-  const isCouncil = councilAccess(user);
-  const own = user.role === 'cidadao' ? await ownership(env, protocol, user.username) : null;
+async function uploadAttachment(request, env, user, protocol, origin, asCitizen = false) {
+  const own = await ownership(env, protocol, user.username);
+  const isCouncil = !asCitizen && councilAccess(user);
+  if (asCitizen && !own) return json({ error: 'Sem permissão para anexar arquivo.' }, 403, origin);
   if (!isCouncil && !own) return json({ error: 'Sem permissão para anexar arquivo.' }, 403, origin);
   if ((await attachmentCount(env, protocol)) >= MAX_ATTACHMENTS) return json({ error: `Cada manifestação pode ter no máximo ${MAX_ATTACHMENTS} anexos.` }, 400, origin);
   const form = await request.formData();
@@ -381,9 +386,10 @@ async function uploadAttachment(request, env, user, protocol, origin) {
   return json({ attachment: protectedAttachment(attachment) }, 201, origin);
 }
 
-async function downloadAttachment(env, user, protocol, attachmentId, origin) {
-  const isCouncil = councilAccess(user);
-  const own = user.role === 'cidadao' ? await ownership(env, protocol, user.username) : null;
+async function downloadAttachment(env, user, protocol, attachmentId, origin, asCitizen = false) {
+  const own = await ownership(env, protocol, user.username);
+  const isCouncil = !asCitizen && councilAccess(user);
+  if (asCitizen && !own) return json({ error: 'Sem permissão para acessar o anexo.' }, 403, origin);
   if (!isCouncil && !own) return json({ error: 'Sem permissão para acessar o anexo.' }, 403, origin);
   const attachment = await firestoreGet(env, `council_manifestations/${protocol}/attachments/${attachmentId}`);
   if (!attachment?.objectName) return json({ error: 'Anexo não encontrado.' }, 404, origin);
@@ -410,30 +416,40 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   if (!env.AUTH_DB) return json({ error: 'Banco do portal ainda não disponível.' }, 503, origin);
   await ensureSchema(env);
   const url = new URL(request.url);
+  const asCitizen = citizenContext(url);
 
   if (url.pathname === '/api/council/config' && request.method === 'GET') {
-    return json({ enabled: firebaseConfigured(env), councilRole: user.councilRole || '', role: user.role, newManifestationIntervalSeconds: NEW_MANIFESTATION_INTERVAL_SECONDS }, 200, origin);
+    return json({ enabled: firebaseConfigured(env), councilRole: user.councilRole || '', role: user.role, citizenAccess: true, newManifestationIntervalSeconds: NEW_MANIFESTATION_INTERVAL_SECONDS }, 200, origin);
   }
   if (url.pathname === '/api/council/manifestations' && request.method === 'POST') return createManifestation(request, env, user, origin);
   if (url.pathname === '/api/council/my' && request.method === 'GET') return citizenList(env, user, origin);
-  if (url.pathname === '/api/council/all' && request.method === 'GET') return councilList(env, user, origin);
+  if (url.pathname === '/api/council/all' && request.method === 'GET') {
+    if (asCitizen) return json({ error: 'A listagem institucional do Conselho não está disponível no modo cidadão.' }, 403, origin);
+    return councilList(env, user, origin);
+  }
   if (url.pathname === '/api/council/notifications' && (request.method === 'GET' || request.method === 'PATCH')) return notifications(request, env, user, origin);
 
   let match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})$/);
-  if (match && request.method === 'GET') return detail(env, user, match[1], origin);
-  if (match && request.method === 'PATCH') return changeStatus(request, env, user, match[1], origin);
+  if (match && request.method === 'GET') return detail(env, user, match[1], origin, asCitizen);
+  if (match && request.method === 'PATCH') {
+    if (asCitizen) return json({ error: 'Ações institucionais não estão disponíveis no modo cidadão.' }, 403, origin);
+    return changeStatus(request, env, user, match[1], origin);
+  }
 
   match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})\/messages$/);
-  if (match && request.method === 'POST') return addMessage(request, env, user, match[1], origin);
+  if (match && request.method === 'POST') return addMessage(request, env, user, match[1], origin, asCitizen);
 
   match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})\/internal-notes$/);
-  if (match && request.method === 'POST') return addInternalNote(request, env, user, match[1], origin);
+  if (match && request.method === 'POST') {
+    if (asCitizen) return json({ error: 'Observações internas não estão disponíveis no modo cidadão.' }, 403, origin);
+    return addInternalNote(request, env, user, match[1], origin);
+  }
 
   match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})\/attachments$/);
-  if (match && request.method === 'POST') return uploadAttachment(request, env, user, match[1], origin);
+  if (match && request.method === 'POST') return uploadAttachment(request, env, user, match[1], origin, asCitizen);
 
   match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})\/attachments\/([A-Za-z0-9_-]+)$/);
-  if (match && request.method === 'GET') return downloadAttachment(env, user, match[1], match[2], origin);
+  if (match && request.method === 'GET') return downloadAttachment(env, user, match[1], match[2], origin, asCitizen);
 
   return json({ error: 'Rota do Conselho não encontrada.' }, 404, origin);
 }
