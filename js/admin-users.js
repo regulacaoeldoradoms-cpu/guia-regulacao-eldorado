@@ -27,7 +27,7 @@
   const editCouncil = document.getElementById('editCouncilRole');
 
   if (isDeveloper) {
-    newRole.innerHTML = '<option value="coordenacao">Coordenação — Guia + Recepção + Monitoramento + usuários subordinados</option><option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option><option value="cidadao">Cidadão — Canal do Conselho</option>';
+    newRole.innerHTML = '<option value="coordenacao">Coordenação — Guia + Recepção + Monitoramento + usuários subordinados</option><option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option><option value="cidadao">Cidadão — conta sem função profissional</option>';
   } else {
     newRole.innerHTML = '<option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option>';
   }
@@ -57,7 +57,7 @@
   function filteredUsers() {
     const q = searchEl.value.trim().toLowerCase();
     if (!q) return state.users;
-    return state.users.filter((user) => [user.name, user.username, user.jobTitle, roleLabels[user.role], councilLabels[user.councilRole]].some((value) => String(value || '').toLowerCase().includes(q)));
+    return state.users.filter((user) => [user.name, user.username, user.jobTitle, roleLabels[user.role], councilLabels[user.councilRole], 'Canal do Cidadão'].some((value) => String(value || '').toLowerCase().includes(q)));
   }
 
   function render() {
@@ -76,6 +76,7 @@
           <small>@${escapeHtml(user.username)}${user.jobTitle ? ` · ${escapeHtml(user.jobTitle)}` : ''}</small>
           <div class="user-badges">
             <span class="user-badge">${escapeHtml(roleLabels[user.role] || user.role)}</span>
+            ${user.role !== 'cidadao' ? '<span class="user-badge">Canal do Cidadão</span>' : ''}
             ${user.councilRole ? `<span class="user-badge">${escapeHtml(councilLabels[user.councilRole] || user.councilRole)}</span>` : ''}
             <span class="user-badge ${user.active ? '' : 'inactive'}">${user.active ? 'Ativo' : 'Desativado'}</span>
             ${user.mustChangePassword ? '<span class="user-badge">Troca de senha pendente</span>' : ''}
