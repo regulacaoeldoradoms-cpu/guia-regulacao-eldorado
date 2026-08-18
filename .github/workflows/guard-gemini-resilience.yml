@@ -1,0 +1,165 @@
+name: Proteger resiliência do Gemini
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  gemini-resilience:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aplicar retry e fallback de modelo
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('worker/gemini-assistant.js')
+          text = path.read_text(encoding='utf-8')
+
+          if 'GEMINI_RESILIENCE_V1' not in text:
+              pattern = re.compile(r"async function callGemini\(env, prompt\) \{.*?\n\}\n\nexport default", re.S)
+              replacement = r'''// GEMINI_RESILIENCE_V1
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function isTransientGeminiStatus(status) {
+  const value = Number(status) || 0;
+  return value === 408 || value === 429 || value >= 500;
+}
+
+function configuredGeminiModels(env) {
+  const primary = String(env.GEMINI_MODEL || 'gemini-3.5-flash-lite').trim();
+  const fallbacks = String(env.GEMINI_FALLBACK_MODELS || 'gemini-3.6-flash')
+    .split(',')
+    .map((model) => model.trim())
+    .filter(Boolean);
+  return [...new Set([primary, ...fallbacks].filter(Boolean))];
+}
+
+async function callGeminiModel(env, prompt, model) {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': env.GEMINI_API_KEY
+    },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 1300, responseMimeType: 'text/plain' }
+    })
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload?.error?.message || `Erro da API Gemini (${response.status}).`;
+    const error = new Error(message);
+    error.status = response.status;
+    error.model = model;
+    throw error;
+  }
+
+  const answer = payload?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim();
+  if (!answer) {
+    const error = new Error('A API Gemini não retornou conteúdo textual.');
+    error.status = 502;
+    error.model = model;
+    throw error;
+  }
+  return { answer, model };
+}
+
+async function callGemini(env, prompt) {
+  if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY não configurada no Worker.');
+
+  const models = configuredGeminiModels(env);
+  let lastError = null;
+
+  for (let modelIndex = 0; modelIndex < models.length; modelIndex += 1) {
+    const model = models[modelIndex];
+    const attempts = modelIndex === 0 ? 3 : 2;
+
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      try {
+        return await callGeminiModel(env, prompt, model);
+      } catch (error) {
+        lastError = error;
+        if (!isTransientGeminiStatus(error.status)) throw error;
+        if (attempt >= attempts - 1) break;
+
+        const baseDelay = 450 * (2 ** attempt);
+        const jitter = Math.floor(Math.random() * 250);
+        await wait(baseDelay + jitter);
+      }
+    }
+  }
+
+  const error = lastError || new Error('O Gemini não respondeu após as tentativas automáticas.');
+  error.allModelsFailed = true;
+  throw error;
+}
+
+export default'''
+              text, count = pattern.subn(replacement, text, count=1)
+              if count != 1:
+                  raise SystemExit('Não foi possível localizar com segurança o bloco callGemini para atualização.')
+              path.write_text(text, encoding='utf-8')
+
+          wrangler = Path('worker/wrangler.toml')
+          config = wrangler.read_text(encoding='utf-8')
+          if 'GEMINI_FALLBACK_MODELS' not in config:
+              config = config.replace('GEMINI_MODEL = "gemini-3.5-flash-lite"', 'GEMINI_MODEL = "gemini-3.5-flash-lite"\nGEMINI_FALLBACK_MODELS = "gemini-3.6-flash"', 1)
+              wrangler.write_text(config, encoding='utf-8')
+          PY
+
+      - name: Melhorar mensagem de indisponibilidade
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('worker/gemini-assistant.js')
+          text = path.read_text(encoding='utf-8')
+          old = """      const status = Number(error.status) || 500;
+      const message = status === 429 ? 'O limite gratuito do Gemini foi atingido. Tente novamente mais tarde.' : error.message || 'Falha ao consultar o assistente.';
+      return jsonResponse({ error: message }, status, origin, true);"""
+          new = """      const upstreamStatus = Number(error.status) || 500;
+      const transient = isTransientGeminiStatus(upstreamStatus);
+      const status = transient ? 503 : upstreamStatus;
+      const message = transient
+        ? 'O Gemini está temporariamente sobrecarregado ou indisponível. O sistema já repetiu a tentativa e testou o modelo de contingência; tente novamente em instantes.'
+        : error.message || 'Falha ao consultar o assistente.';
+      return jsonResponse({ error: message, code: transient ? 'GEMINI_TEMPORARILY_UNAVAILABLE' : 'GEMINI_ERROR' }, status, origin, true);"""
+          if old in text:
+              text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+          elif new not in text:
+              raise SystemExit('Bloco de tratamento de erro do Gemini está em formato inesperado.')
+          PY
+
+      - name: Validar implementação
+        run: |
+          node --check worker/gemini-assistant.js
+          grep -q 'GEMINI_RESILIENCE_V1' worker/gemini-assistant.js
+          grep -q 'GEMINI_FALLBACK_MODELS = "gemini-3.6-flash"' worker/wrangler.toml
+          grep -q 'GEMINI_TEMPORARILY_UNAVAILABLE' worker/gemini-assistant.js
+
+      - name: Publicar correção quando necessária
+        run: |
+          if git diff --quiet; then
+            echo 'Resiliência do Gemini já está aplicada.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add worker/gemini-assistant.js worker/wrangler.toml
+          git commit -m 'Torna pré-regulação resiliente a sobrecarga do Gemini'
+          git push
