@@ -1,11 +1,56 @@
 'use strict';
 
-// A página /conta/ é compartilhada por todos os perfis. Carrega a identidade
-// visual correspondente ao usuário antes de aplicar as funções exclusivas do cidadão.
+// A página /conta/ é compartilhada por todos os perfis. A identidade da conta é única:
+// o perfil profissional apenas acrescenta função e permissões, sem criar uma segunda persona cidadã.
 import('/js/account-brand.js?v=20260817-1').catch(() => {});
 
 (async () => {
   const auth = window.RegulationAuth;
+  const levels = window.AccountLevels;
+  if (!auth) return;
+
+  async function syncUnifiedAccountExperience(sourceUser = null) {
+    const user = sourceUser || await auth.me({ allowCached: false }).catch(() => auth.getCachedUser());
+    if (!user) return;
+
+    const panel = document.getElementById('accountLevelPanel');
+    const profileLock = document.getElementById('profilePhotoLevelLock');
+    const friendLock = document.getElementById('friendRequestLevelLock');
+    const choosePhoto = document.getElementById('chooseProfilePhoto');
+    const profileInput = document.getElementById('profilePhotoInput');
+    const friendRequests = document.getElementById('acceptFriendRequests');
+    const silver = levels?.minimumMet(user, 'prata') || user.emailVerified === true;
+
+    if (panel) {
+      panel.hidden = false;
+      levels?.renderProgress(panel, user);
+    }
+    profileLock?.classList.toggle('locked', !silver);
+    friendLock?.classList.toggle('locked', !silver);
+    if (choosePhoto) choosePhoto.disabled = !silver;
+    if (profileInput) profileInput.disabled = !silver;
+    if (friendRequests) friendRequests.disabled = !silver;
+
+    const heroText = document.querySelector('.portal-hero-copy p');
+    if (heroText) heroText.textContent = 'Todas as contas do portal evoluem de Bronze para Prata e, futuramente, Ouro. O nível representa a segurança da mesma conta usada em todos os módulos, sem alterar o cargo ou a prioridade de manifestações.';
+
+    const profileCopy = document.querySelector('#profilePhotoCard .profile-editor-copy p');
+    if (profileCopy) profileCopy.textContent = 'Esta é a foto única do seu perfil no portal. Ela é usada nos ambientes em que sua identidade pode aparecer e nunca é copiada para dentro de uma manifestação sigilosa do Conselho.';
+
+    const securityCopy = document.querySelector('#seguranca > p');
+    if (securityCopy) securityCopy.innerHTML = 'Confirmar o e-mail de segurança transforma a conta Bronze em Prata e protege o acesso. Nas manifestações do Conselho, contas com e-mail são tratadas como <strong>sigilosas</strong>; o endereço não aparece no painel institucional.';
+  }
+
+  await syncUnifiedAccountExperience();
+  window.addEventListener('pageshow', () => syncUnifiedAccountExperience());
+
+  const emailBadge = document.getElementById('emailStatusBadge');
+  if (emailBadge) {
+    new MutationObserver(() => {
+      window.setTimeout(() => syncUnifiedAccountExperience(), 0);
+    }).observe(emailBadge, { childList: true, subtree: true, characterData: true });
+  }
+
   const card = document.getElementById('citizenIdentityCard');
   const form = document.getElementById('citizenIdentityForm');
   const displayNameInput = document.getElementById('citizenDisplayName');
@@ -13,7 +58,7 @@ import('/js/account-brand.js?v=20260817-1').catch(() => {});
   const handleHelp = document.getElementById('citizenHandleHelp');
   const status = document.getElementById('citizenIdentityStatus');
   const saveButton = document.getElementById('saveCitizenIdentity');
-  if (!auth || !card || !form || !displayNameInput || !handleInput) return;
+  if (!card || !form || !displayNameInput || !handleInput) return;
 
   let user = await auth.me({ allowCached: false }).catch(() => null);
   if (!user || user.role !== 'cidadao') return;
