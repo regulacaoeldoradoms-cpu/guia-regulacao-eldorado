@@ -142,25 +142,25 @@
         align-items:center;
         justify-content:center;
         gap:8px;
-        background:#556b2f;
-        border-color:#4b5f29;
+        background:#465a3a;
+        border-color:#394b30;
         color:#fff;
-        box-shadow:0 4px 12px rgba(67,84,39,.18);
+        box-shadow:0 4px 12px rgba(52,68,45,.20);
         font-weight:800;
       }
       #issueManifestationDeclaration:hover:not(:disabled){
-        background:#465925;
-        border-color:#3f5121;
+        background:#35462d;
+        border-color:#2f3e28;
         color:#fff;
-        box-shadow:0 6px 16px rgba(67,84,39,.24);
+        box-shadow:0 6px 16px rgba(45,59,39,.26);
       }
       #issueManifestationDeclaration:focus-visible{
-        outline:3px solid rgba(85,107,47,.30);
+        outline:3px solid rgba(70,90,58,.32);
         outline-offset:2px;
       }
       #issueManifestationDeclaration:disabled{
-        background:#7f8b68;
-        border-color:#74805e;
+        background:#778273;
+        border-color:#697466;
         color:#fff;
         opacity:.78;
       }
