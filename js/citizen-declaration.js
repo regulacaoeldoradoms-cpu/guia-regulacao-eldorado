@@ -113,29 +113,41 @@
 </html>`;
   }
 
-  function openDeclaration(item) {
-    const target = window.open('', '_blank');
-    if (!target) {
-      window.alert('O navegador bloqueou a abertura da declaração. Permita pop-ups para este site e tente novamente.');
-      return;
-    }
+  function loadingHtml(protocol) {
+    return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gerando declaração</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#eef3f7;font-family:Arial,sans-serif;color:#294a62}.box{background:#fff;border:1px solid #dbe5ec;border-radius:14px;padding:28px;max-width:420px;text-align:center;box-shadow:0 12px 36px rgba(22,53,77,.12)}strong{display:block;font-size:18px;margin-bottom:8px}span{font-size:13px;color:#6a8091}</style></head><body><div class="box"><strong>Gerando declaração...</strong><span>Protocolo ${escapeHtml(protocol)}</span></div></body></html>`;
+  }
+
+  function errorHtml(message) {
+    return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Declaração indisponível</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#eef3f7;font-family:Arial,sans-serif;color:#294a62}.box{background:#fff;border:1px solid #e0caca;border-radius:14px;padding:28px;max-width:460px;text-align:center}button{margin-top:16px;border:1px solid #b9c9d6;border-radius:9px;padding:10px 14px;background:#fff;color:#17364f;font-weight:700}</style></head><body><div class="box"><strong>Não foi possível gerar a declaração.</strong><p>${escapeHtml(message)}</p><button type="button" onclick="window.close()">Fechar</button></div></body></html>`;
+  }
+
+  function writeDocument(target, html) {
     target.document.open();
-    target.document.write(declarationHtml(item));
+    target.document.write(html);
     target.document.close();
   }
 
   async function issueDeclaration(button) {
     const protocol = currentProtocol();
     if (!protocol) return;
+
+    const target = window.open('', '_blank');
+    if (!target) {
+      window.alert('O navegador bloqueou a abertura da declaração. Permita pop-ups para este site e tente novamente.');
+      return;
+    }
+    writeDocument(target, loadingHtml(protocol));
+
     const originalText = button.textContent;
     button.disabled = true;
     button.textContent = 'Gerando declaração...';
     try {
       const payload = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}?as=citizen`, { method: 'GET' });
       if (!payload?.manifestation) throw new Error('Manifestação não encontrada.');
-      openDeclaration(payload.manifestation);
+      writeDocument(target, declarationHtml(payload.manifestation));
+      target.focus();
     } catch (error) {
-      window.alert(error.message || 'Não foi possível gerar a declaração.');
+      writeDocument(target, errorHtml(error.message || 'Não foi possível consultar os dados do protocolo.'));
     } finally {
       button.disabled = false;
       button.textContent = originalText;
