@@ -84,25 +84,30 @@ A foto de perfil é única para a conta e acompanha os diferentes módulos.
 
 ## Privacidade das manifestações
 
-A privacidade é definida no momento em que cada manifestação é criada.
+A privacidade é definida no momento em que cada manifestação é criada e fica congelada naquele protocolo.
 
 ### Anônima
 
-Se o e-mail da conta **ainda não estiver verificado**, a nova manifestação pode ser registrada como `anonima`, inclusive quando a conta pertence a Médico, Recepção, Coordenação ou Desenvolvedor.
+Se o e-mail da conta **ainda não estiver verificado**, a nova manifestação é registrada como `anonima`, inclusive quando a conta pertence a Médico, Recepção, Coordenação ou Desenvolvedor.
 
 Ter uma conta profissional, por si só, não força a manifestação a ser sigilosa.
 
-### Sigilosa
+### Conta verificada: escolha entre sigilosa e identificada
 
-Quando `emailVerified=true`, novas manifestações são registradas como `sigilosa`.
+Quando `emailVerified=true`, o autor escolhe a modalidade de cada nova manifestação:
 
-O e-mail continua restrito à camada de autenticação e não é incluído no documento da manifestação nem exibido no painel do Conselho.
+- `sigilosa`: o Conselho recebe o conteúdo, mas nome, @ e perfil do autor não são exibidos na manifestação;
+- `identificada`: o Conselho recebe também uma identificação segura do perfil no momento do envio, contendo nome de perfil, @ e cargo/função quando houver.
+
+A opção padrão para conta verificada é `sigilosa`. Se o cliente omitir ou enviar um valor inválido, o backend mantém a manifestação como sigilosa.
+
+O e-mail de segurança nunca é incluído no documento da manifestação e continua restrito à camada de autenticação, inclusive quando o autor escolhe se identificar.
 
 ### Sem alteração retroativa
 
-Uma manifestação criada como anônima permanece com esse rótulo mesmo se o usuário confirmar um e-mail posteriormente. A confirmação passa a afetar **as novas manifestações**, não converte retroativamente protocolos antigos.
+Uma manifestação criada como anônima permanece anônima mesmo se o usuário confirmar um e-mail posteriormente. Da mesma forma, uma manifestação criada como sigilosa ou identificada mantém sua modalidade original.
 
-Da mesma forma, uma manifestação já criada como sigilosa não volta a anônima por troca posterior de e-mail.
+Alterações posteriores no e-mail não convertem retroativamente protocolos antigos.
 
 O texto e os anexos podem revelar identidade se o próprio usuário incluir dados pessoais.
 
@@ -112,7 +117,7 @@ Médico, Recepção, Coordenação e Desenvolvedor usam a mesma conta no Canal d
 
 Uma conta profissional sem e-mail verificado continua Bronze e pode abrir manifestação anônima, salvo se possuir a função de Presidente do Conselho.
 
-Depois da confirmação do e-mail, a mesma conta passa a Prata e suas novas manifestações passam a ser sigilosas.
+Depois da confirmação do e-mail, a mesma conta passa a Prata e pode escolher, em cada novo envio, entre manifestação sigilosa e manifestação identificada.
 
 ## Usuário que também integra o Conselho
 
@@ -149,18 +154,20 @@ FIREBASE_STORAGE_BUCKET
 3. Conta sem e-mail verificado aparece como Bronze.
 4. Conta com e-mail verificado aparece como Prata.
 5. Conta profissional sem e-mail verificado consegue criar manifestação anônima.
-6. Conta verificada cria nova manifestação sigilosa.
-7. Manifestação anônima não muda retroativamente depois da verificação do e-mail.
-8. Presidente do Conselho não vê ação para nova manifestação.
-9. Tentativa direta da Presidência de criar manifestação recebe bloqueio do backend.
-10. Membro do Conselho pode visualizar e registrar observação interna, mas não responder oficialmente nem alterar andamento.
-11. Presidente pode responder oficialmente e alterar andamento.
-12. O Conselho não recebe e-mail de segurança nem identificadores técnicos de autenticação na manifestação.
-13. Segunda manifestação em menos de duas horas é recusada.
-14. Autor continua podendo responder dentro de protocolo existente.
-15. Anexos permanecem privados e acessíveis apenas aos autorizados.
-16. PDF é entregue como download e JPG/PNG somente após autorização.
-17. D1 e logs não armazenam o texto integral da manifestação fora do Firestore.
+6. Conta verificada visualiza as opções Sigilosa e Identificada antes do envio.
+7. Conta verificada que não altera a opção padrão cria manifestação sigilosa.
+8. Conta verificada que escolhe Identificada exibe ao Conselho nome de perfil, @ e cargo/função quando houver, sem expor e-mail.
+9. Manifestação anônima não muda retroativamente depois da verificação do e-mail.
+10. Presidente do Conselho não vê ação para nova manifestação.
+11. Tentativa direta da Presidência de criar manifestação recebe bloqueio do backend.
+12. Membro do Conselho pode visualizar e registrar observação interna, mas não responder oficialmente nem alterar andamento.
+13. Presidente pode responder oficialmente e alterar andamento.
+14. O Conselho não recebe e-mail de segurança nem identificadores técnicos de autenticação na manifestação.
+15. Segunda manifestação em menos de duas horas é recusada.
+16. Autor continua podendo responder dentro de protocolo existente.
+17. Anexos permanecem privados e acessíveis apenas aos autorizados.
+18. PDF é entregue como download e JPG/PNG somente após autorização.
+19. D1 e logs não armazenam o texto integral da manifestação fora do Firestore.
 
 ## Próximas fases
 
