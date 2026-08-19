@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="Canal do Cidadão">
   <link rel="stylesheet" href="/css/portal.css?v=20260816-1">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
-  <link rel="stylesheet" href="/css/citizen.css?v=20260819-1">
+  <link rel="stylesheet" href="/css/citizen.css?v=20260819-2">
   <link rel="stylesheet" href="/css/account-level.css?v=20260816-1">
 </head>
 <body class="portal-page">
@@ -124,8 +124,25 @@
             <div><strong>Adicionar arquivos</strong><span>JPG, PNG ou PDF · até 5 MB por arquivo · máximo de 5 arquivos</span></div>
           </div>
           <div id="manifestationFileList" class="selected-file-list" hidden></div>
+
+          <div class="privacy-choice" id="verifiedPrivacyOptions" hidden>
+            <div class="privacy-choice-head"><strong>Como você deseja enviar esta manifestação?</strong><span>Como seu e-mail está confirmado, você pode manter sua identidade protegida ou se identificar para o Conselho.</span></div>
+            <div class="privacy-choice-grid">
+              <label class="privacy-option">
+                <input type="radio" name="manifestationPrivacy" value="sigilosa" checked>
+                <span class="privacy-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+                <span><strong>Manter sigilosa</strong><small>O Conselho recebe o relato, mas seu nome, @ e perfil não são exibidos na manifestação.</small></span>
+              </label>
+              <label class="privacy-option">
+                <input type="radio" name="manifestationPrivacy" value="identificada">
+                <span class="privacy-option-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+                <span><strong>Quero me identificar</strong><small>O Conselho verá seu nome de perfil, @ e cargo ou função quando houver. Seu e-mail continua protegido.</small></span>
+              </label>
+            </div>
+          </div>
+
           <div class="privacy-summary" id="newPrivacyNotice"></div>
-          <div class="form-alert"><strong>Atenção à identificação.</strong><span>Mesmo em manifestação anônima, o texto, a imagem ou um PDF podem revelar seu nome, rosto, CPF, Cartão SUS ou outros dados. Envie apenas o que for necessário.</span></div>
+          <div class="form-alert"><strong>Atenção à identificação.</strong><span>Mesmo em manifestação anônima ou sigilosa, o texto, a imagem ou um PDF podem revelar seu nome, rosto, CPF, Cartão SUS ou outros dados. Envie apenas o que for necessário.</span></div>
           <div class="form-alert form-alert--neutral"><strong>Este canal não é atendimento assistencial.</strong><span>Ele não agenda consulta ou exame, não altera solicitação da Regulação e não substitui serviço de urgência ou emergência.</span></div>
           <label class="form-confirm"><input id="manifestationConfirm" type="checkbox" required><span>Revisei o relato e os anexos e confirmo que as informações enviadas são as necessárias para análise pelo Conselho.</span></label>
         </section>
@@ -176,7 +193,7 @@
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260816-1"></script>
   <script src="/js/account-levels.js?v=20260819-1"></script>
-  <script src="/js/citizen.js?v=20260819-2"></script>
+  <script src="/js/citizen.js?v=20260819-3"></script>
   <script src="/js/citizen-account-level.js?v=20260819-1"></script>
 </body>
 </html>
