@@ -8,7 +8,7 @@
   <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/portal.css?v=20260815-1">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
-  <link rel="stylesheet" href="/css/citizen.css?v=20260815-1">
+  <link rel="stylesheet" href="/css/citizen.css?v=20260819-1">
   <link rel="stylesheet" href="/css/council.css?v=20260815-1">
 </head>
 <body class="portal-page">
@@ -61,28 +61,28 @@
 
   <div class="citizen-modal" id="councilDetailModal" aria-hidden="true">
     <div class="citizen-modal-panel" style="max-width:1050px">
-      <div class="citizen-modal-head"><div><h2 id="detailProtocol">Manifestação</h2><small id="detailMeta"></small></div><button class="citizen-modal-close" type="button" data-close-modal="councilDetailModal">×</button></div>
+      <div class="citizen-modal-head"><div><h2 id="detailProtocol">Manifestação</h2><small id="detailMeta"></small></div><button class="citizen-modal-close" type="button" data-close-modal="councilDetailModal" aria-label="Fechar">×</button></div>
       <div class="citizen-modal-content">
         <div id="detailLoading" class="portal-note info">Carregando...</div>
         <div id="detailContent" class="council-detail-grid" hidden>
           <div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"><span class="status-chip" id="detailStatus"></span><span class="privacy-chip" id="detailPrivacy"></span><span class="privacy-chip">👤 Identidade protegida</span></div>
-            <h3 id="detailSubject" style="color:#173b5d;margin-bottom:6px"></h3>
+            <div class="detail-chips"><span class="status-chip" id="detailStatus"></span><span class="privacy-chip" id="detailPrivacy"></span><span class="privacy-chip">Identidade protegida</span></div>
+            <h3 id="detailSubject" class="detail-title"></h3>
             <div id="detailService" style="font-size:.83rem;color:#6f8495;margin-bottom:12px"></div>
-            <p id="detailDescription" style="white-space:pre-wrap;color:#3d5568"></p>
+            <p id="detailDescription" class="detail-description"></p>
 
-            <h3 style="margin-top:24px;color:#173b5d">Anexos</h3>
+            <h3 class="detail-section-title">Anexos</h3>
             <div id="attachmentList" class="attachment-list"></div>
 
-            <h3 style="margin-top:24px;color:#173b5d">Conversa institucional</h3>
+            <h3 class="detail-section-title">Conversa institucional</h3>
             <div id="messageThread" class="thread"></div>
-            <form id="officialReplyForm" class="president-only" style="margin-top:12px">
+            <form id="officialReplyForm" class="president-only reply-form">
               <div class="portal-field"><label for="officialReply">Resposta oficial ao cidadão</label><textarea id="officialReply" rows="4" maxlength="8000" required></textarea></div>
               <button class="portal-button primary" id="officialReplyButton" type="submit">Enviar resposta</button>
               <div class="account-status" id="officialReplyStatus"></div>
             </form>
 
-            <h3 style="margin-top:24px;color:#173b5d">Histórico</h3>
+            <h3 class="detail-section-title">Histórico</h3>
             <div id="timeline" class="timeline"></div>
           </div>
 
@@ -112,6 +112,6 @@
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260815-2"></script>
-  <script src="/js/council-panel.js?v=20260815-2"></script>
+  <script src="/js/council-panel.js?v=20260819-1"></script>
 </body>
 </html>
