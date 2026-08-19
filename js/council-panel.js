@@ -29,7 +29,7 @@
 
   document.getElementById('portalUserName').textContent = user.name || user.username;
   document.getElementById('portalUserRole').textContent = isPresident ? 'Presidente do Conselho' : 'Membro do Conselho';
-  document.getElementById('councilRoleBadge').textContent = isPresident ? '🏛️ Presidência do Conselho' : '🏛️ Membro do Conselho';
+  document.getElementById('councilRoleBadge').textContent = isPresident ? 'Presidência do Conselho' : 'Membro do Conselho';
   document.getElementById('backHome').href = user.role === 'cidadao' ? '/cidadao/' : '/';
   document.querySelectorAll('.president-only').forEach((element) => { element.hidden = !isPresident; });
 
@@ -153,13 +153,17 @@
     el.innerHTML = notes.map((note) => `<div class="internal-note"><strong>${escapeHtml(note.authorLabel || 'Conselho')} · ${escapeHtml(formatDate(note.createdAt))}</strong><p>${escapeHtml(note.body)}</p></div>`).join('');
   }
 
+  function attachmentIcon() {
+    return '<span class="attachment-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 12.5l6.7-6.7a3 3 0 0 1 4.3 4.2l-8.6 8.6a5 5 0 0 1-7.1-7.1l8-8"/></svg></span>';
+  }
+
   function renderAttachments(items) {
     const list = document.getElementById('attachmentList');
     if (!items.length) {
       list.innerHTML = '<span style="color:#73889a;font-size:.84rem">Nenhum anexo.</span>';
       return;
     }
-    list.innerHTML = items.map((item) => `<button class="attachment-link" type="button" data-attachment="${escapeHtml(item.id)}">📎 ${escapeHtml(item.fileName || 'Anexo')}</button>`).join('');
+    list.innerHTML = items.map((item) => `<button class="attachment-link" type="button" data-attachment="${escapeHtml(item.id)}">${attachmentIcon()}${escapeHtml(item.displayName || 'Anexo')}</button>`).join('');
   }
 
   async function openDetail(protocol) {
@@ -178,7 +182,7 @@
       const chip = document.getElementById('detailStatus');
       chip.textContent = statusLabels[item.status] || item.status;
       chip.className = `status-chip ${item.status}`;
-      document.getElementById('detailPrivacy').textContent = item.privacyMode === 'sigilosa' ? '🔒 Sigilosa' : '🕶️ Anônima';
+      document.getElementById('detailPrivacy').textContent = item.privacyMode === 'sigilosa' ? 'Sigilosa' : 'Anônima';
       document.getElementById('detailSubject').textContent = item.subject || '';
       document.getElementById('detailService').textContent = item.service ? `Serviço/unidade informado: ${item.service}` : 'Serviço/unidade não informado.';
       document.getElementById('detailDescription').textContent = item.description || '';
@@ -282,7 +286,7 @@
       window.open(url, '_blank', 'noopener');
       window.setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (error) {
-      alert(error.message || 'Não foi possível abrir o anexo.');
+      window.alert(error.message || 'Não foi possível abrir o anexo.');
     } finally {
       button.disabled = false;
     }
