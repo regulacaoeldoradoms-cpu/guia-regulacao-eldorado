@@ -46,6 +46,8 @@ export async function normalizeSecurityPrivacyResponse(response) {
   const payload = await response.clone().json().catch(() => null);
   if (!payload?.security) return response;
 
+  // Este campo mantém o estado-base da conta por compatibilidade. A modalidade efetiva
+  // de cada nova manifestação é decidida no endpoint do Conselho no momento do envio.
   payload.security.privacyMode = payload.security.emailVerified ? 'sigilosa' : 'anonima';
   const headers = new Headers(response.headers);
   headers.set('Content-Type', 'application/json; charset=utf-8');
@@ -57,7 +59,7 @@ export async function syncCitizenPrivacyAfterSecurityPatch(requestSnapshot, resp
   if (!requestSnapshot) return normalizeSecurityPrivacyResponse(response);
 
   // O rótulo de privacidade é fixado no momento em que cada manifestação é criada.
-  // Adicionar ou confirmar e-mail depois não converte retroativamente protocolos que
-  // foram enviados como anônimos. A partir da confirmação, novas manifestações serão sigilosas.
+  // Adicionar ou confirmar e-mail depois não converte retroativamente protocolos anônimos.
+  // A partir da confirmação, novas manifestações podem ser enviadas como sigilosas ou identificadas.
   return normalizeSecurityPrivacyResponse(response);
 }
