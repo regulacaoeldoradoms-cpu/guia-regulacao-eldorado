@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="Canal do Cidadão">
   <link rel="stylesheet" href="/css/portal.css?v=20260816-1">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
-  <link rel="stylesheet" href="/css/citizen.css?v=20260815-1">
+  <link rel="stylesheet" href="/css/citizen.css?v=20260819-1">
   <link rel="stylesheet" href="/css/account-level.css?v=20260816-1">
 </head>
 <body class="portal-page">
@@ -39,8 +39,8 @@
           <h2>Acompanhe sua manifestação do início ao fim por aqui.</h2>
           <p>Envie sugestões, reclamações, elogios ou denúncias ao Conselho Municipal de Saúde. As atualizações e respostas ficam registradas no próprio portal.</p>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span class="level-mini-badge bronze" id="accountLevelBadge" hidden>🥉 Conta Bronze</span>
+        <div class="citizen-hero-status">
+          <span class="level-mini-badge bronze" id="accountLevelBadge" hidden>Conta Bronze</span>
           <span class="privacy-chip" id="privacyChip">Verificando privacidade...</span>
           <a class="portal-button secondary linklike" href="/conta/" id="accountEvolutionLink">Minha conta</a>
         </div>
@@ -51,10 +51,22 @@
       <div class="portal-note warning" id="firebaseNotice" hidden></div>
 
       <section class="citizen-actions" aria-label="Atalhos do Canal do Cidadão">
-        <button class="citizen-action" id="openNewManifestation" type="button"><span class="icon">➕</span><strong>Nova manifestação</strong><span>Envie uma nova solicitação ao Conselho.</span></button>
-        <button class="citizen-action" id="focusManifestations" type="button"><span class="icon">📂</span><strong>Minhas manifestações</strong><span>Veja protocolos, andamento e respostas.</span></button>
-        <button class="citizen-action" id="focusNotifications" type="button"><span class="icon">🔔</span><strong>Notificações <b class="count-badge" id="notificationCount" hidden>0</b></strong><span>Confira movimentações recentes.</span></button>
-        <a class="citizen-action" href="/conta/"><span class="icon">🏅</span><strong id="accountActionTitle">Evolução da conta</strong><span id="accountActionText">Veja seu nível, segurança e conquistas.</span></a>
+        <button class="citizen-action" id="openNewManifestation" type="button">
+          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
+          <strong>Nova manifestação</strong><span>Registre uma sugestão, reclamação, elogio ou denúncia.</span>
+        </button>
+        <button class="citizen-action" id="focusManifestations" type="button">
+          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7.5h6l2 2H20v9H4z"/><path d="M4 7.5v-2h6l2 2"/></svg></span>
+          <strong>Minhas manifestações</strong><span>Veja protocolos, andamento, anexos e respostas.</span>
+        </button>
+        <button class="citizen-action" id="focusNotifications" type="button">
+          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 9a5.5 5.5 0 0 1 11 0c0 6 2 6.5 2 6.5h-15S6.5 15 6.5 9z"/><path d="M10 19h4"/></svg></span>
+          <strong>Notificações <b class="count-badge" id="notificationCount" hidden>0</b></strong><span>Confira movimentações e respostas recentes.</span>
+        </button>
+        <a class="citizen-action" href="/conta/">
+          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.7-2.8 8-7 10-4.2-2-7-5.3-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <strong id="accountActionTitle">Segurança da conta</strong><span id="accountActionText">Veja seu nível, e-mail e configurações.</span>
+        </a>
       </section>
 
       <section class="citizen-grid">
@@ -72,52 +84,89 @@
   </div>
 
   <div class="citizen-modal" id="newManifestationModal" aria-hidden="true">
-    <div class="citizen-modal-panel">
-      <div class="citizen-modal-head"><div><h2>Nova manifestação</h2><small>É permitido abrir uma nova manifestação a cada 2 horas.</small></div><button class="citizen-modal-close" type="button" data-close-modal="newManifestationModal">×</button></div>
-      <form class="citizen-modal-content" id="newManifestationForm">
-        <div class="citizen-form-grid">
-          <div class="portal-field"><label for="manifestationType">Tipo</label><select id="manifestationType" required><option value="">Selecione</option><option value="sugestao">Sugestão</option><option value="reclamacao">Reclamação</option><option value="elogio">Elogio</option><option value="denuncia">Denúncia</option></select></div>
-          <div class="portal-field"><label for="manifestationService">Serviço ou unidade relacionada <span style="font-weight:400">(opcional)</span></label><input id="manifestationService" maxlength="160" placeholder="Ex.: unidade de saúde, transporte, regulação"></div>
-          <div class="portal-field full"><label for="manifestationSubject">Assunto</label><input id="manifestationSubject" required minlength="3" maxlength="180" placeholder="Resuma o assunto em poucas palavras"></div>
-          <div class="portal-field full"><label for="manifestationDescription">Descreva sua manifestação</label><textarea id="manifestationDescription" required minlength="10" maxlength="8000" rows="8" placeholder="Conte o que aconteceu ou explique sua sugestão com as informações que considerar importantes."></textarea></div>
-          <div class="full portal-note info" id="newPrivacyNotice"></div>
-          <div class="full portal-note warning"><strong>Atenção à sua identificação:</strong> mesmo em uma conta sem e-mail ou telefone, o próprio texto pode revelar quem você é. Se quiser preservar sua identidade, evite informar nome, CPF, telefone, endereço ou outros detalhes pessoais que não sejam necessários para o Conselho compreender a situação.</div>
-          <div class="full portal-note warning"><strong>Este formulário não é atendimento assistencial.</strong> Ele não agenda consulta ou exame, não altera solicitação da Regulação e não substitui atendimento de urgência ou emergência. Para essas situações, utilize o serviço de saúde adequado.</div>
-          <div class="full account-actions"><button class="portal-button primary" id="submitManifestation" type="submit">Enviar manifestação</button><button class="portal-button secondary" type="button" data-close-modal="newManifestationModal">Cancelar</button></div>
-          <div class="full account-status" id="newManifestationStatus" role="status" aria-live="polite"></div>
+    <div class="citizen-modal-panel citizen-modal-panel--form">
+      <div class="citizen-modal-head">
+        <div><span class="modal-kicker">Registro de manifestação</span><h2>Nova manifestação</h2><small>Preencha somente o que for necessário para o Conselho compreender e encaminhar o assunto.</small></div>
+        <button class="citizen-modal-close" type="button" data-close-modal="newManifestationModal" aria-label="Fechar">×</button>
+      </div>
+      <form class="citizen-modal-content manifestation-form" id="newManifestationForm">
+        <section class="form-section">
+          <div class="form-section-head"><span class="form-step">1</span><div><h3>Classifique a manifestação</h3><p>Escolha a opção que melhor representa o objetivo do seu relato.</p></div></div>
+          <div class="manifestation-type-grid">
+            <label class="manifestation-type-card"><input type="radio" name="manifestationType" value="sugestao" required><span class="type-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M8.2 14.5A6 6 0 1 1 15.8 14.5C14.8 15.3 14.5 16 14.5 17h-5c0-1-.3-1.7-1.3-2.5z"/></svg></span><span><strong>Sugestão</strong><small>Ideia ou proposta para melhorar um serviço.</small></span></label>
+            <label class="manifestation-type-card"><input type="radio" name="manifestationType" value="reclamacao"><span class="type-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M12 8v4M12 14h.01"/></svg></span><span><strong>Reclamação</strong><small>Insatisfação com atendimento, serviço ou funcionamento.</small></span></label>
+            <label class="manifestation-type-card"><input type="radio" name="manifestationType" value="elogio"><span class="type-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/></svg></span><span><strong>Elogio</strong><small>Reconhecimento de um atendimento, equipe ou serviço.</small></span></label>
+            <label class="manifestation-type-card"><input type="radio" name="manifestationType" value="denuncia"><span class="type-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.7-2.8 8-7 10-4.2-2-7-5.3-7-10V6z"/><path d="M12 8v5M12 16h.01"/></svg></span><span><strong>Denúncia</strong><small>Relato de possível irregularidade que merece apuração.</small></span></label>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="form-section-head"><span class="form-step">2</span><div><h3>Contexto</h3><p>Estas informações ajudam a localizar o fato e reduzem pedidos de complementação.</p></div></div>
+          <div class="citizen-form-grid">
+            <div class="portal-field"><label for="manifestationService">Serviço ou unidade relacionada <span class="field-optional">opcional</span></label><input id="manifestationService" maxlength="160" placeholder="Ex.: ESF, hospital, transporte, regulação"></div>
+            <div class="portal-field"><label for="manifestationLocation">Local específico <span class="field-optional">opcional</span></label><input id="manifestationLocation" maxlength="160" placeholder="Ex.: recepção, sala de espera, veículo, setor"></div>
+            <div class="portal-field"><label for="manifestationDate">Data do fato <span class="field-optional">opcional</span></label><input id="manifestationDate" type="date"></div>
+            <div class="portal-field"><label for="manifestationPriorContact">Já procurou o serviço sobre isso? <span class="field-optional">opcional</span></label><select id="manifestationPriorContact"><option value="">Prefiro não informar</option><option value="nao">Não</option><option value="sim_sem_resolucao">Sim, mas não foi resolvido</option><option value="sim_parcial">Sim, houve solução parcial</option><option value="nao_se_aplica">Não se aplica</option></select></div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <div class="form-section-head"><span class="form-step">3</span><div><h3>Relato</h3><p>Explique o que aconteceu de forma objetiva. Você pode usar parágrafos e incluir uma sequência dos fatos.</p></div></div>
+          <div class="portal-field"><label for="manifestationSubject">Assunto</label><input id="manifestationSubject" required minlength="3" maxlength="180" placeholder="Resuma o assunto em uma frase"></div>
+          <div class="portal-field"><label for="manifestationDescription">Descreva a manifestação</label><textarea id="manifestationDescription" required minlength="10" maxlength="6500" rows="9" placeholder="Ex.: o que aconteceu, quando percebeu o problema, quem ou qual serviço estava envolvido e quais consequências ocorreram."></textarea><div class="field-footer"><small>Não inclua CPF, Cartão SUS, telefone ou endereço se esses dados não forem necessários.</small><span id="descriptionCounter">0/6500</span></div></div>
+          <div class="portal-field"><label for="manifestationDesiredOutcome">O que você espera do Conselho? <span class="field-optional">opcional</span></label><textarea id="manifestationDesiredOutcome" maxlength="1200" rows="4" placeholder="Ex.: esclarecimento, análise da situação, encaminhamento ao setor responsável ou proposta de melhoria."></textarea></div>
+        </section>
+
+        <section class="form-section">
+          <div class="form-section-head"><span class="form-step">4</span><div><h3>Anexos e privacidade</h3><p>Você pode enviar documentos ou imagens que ajudem a análise. Revise os arquivos antes de anexar.</p></div></div>
+          <div class="file-drop">
+            <input id="manifestationFiles" type="file" accept="image/jpeg,image/png,application/pdf" multiple>
+            <div><strong>Adicionar arquivos</strong><span>JPG, PNG ou PDF · até 5 MB por arquivo · máximo de 5 arquivos</span></div>
+          </div>
+          <div id="manifestationFileList" class="selected-file-list" hidden></div>
+          <div class="privacy-summary" id="newPrivacyNotice"></div>
+          <div class="form-alert"><strong>Atenção à identificação.</strong><span>Mesmo em manifestação anônima, o texto, a imagem ou um PDF podem revelar seu nome, rosto, CPF, Cartão SUS ou outros dados. Envie apenas o que for necessário.</span></div>
+          <div class="form-alert form-alert--neutral"><strong>Este canal não é atendimento assistencial.</strong><span>Ele não agenda consulta ou exame, não altera solicitação da Regulação e não substitui serviço de urgência ou emergência.</span></div>
+          <label class="form-confirm"><input id="manifestationConfirm" type="checkbox" required><span>Revisei o relato e os anexos e confirmo que as informações enviadas são as necessárias para análise pelo Conselho.</span></label>
+        </section>
+
+        <div class="manifestation-form-footer">
+          <div><strong>Após o envio</strong><span>Você receberá um protocolo e poderá acompanhar respostas, andamento e histórico nesta mesma conta. É permitido abrir uma nova manifestação a cada 2 horas.</span></div>
+          <div class="account-actions"><button class="portal-button secondary" type="button" data-close-modal="newManifestationModal">Cancelar</button><button class="portal-button primary" id="submitManifestation" type="submit">Enviar manifestação</button></div>
         </div>
+        <div class="account-status" id="newManifestationStatus" role="status" aria-live="polite"></div>
       </form>
     </div>
   </div>
 
   <div class="citizen-modal" id="manifestationDetailModal" aria-hidden="true">
     <div class="citizen-modal-panel">
-      <div class="citizen-modal-head"><div><h2 id="detailProtocol">Manifestação</h2><small id="detailMeta"></small></div><button class="citizen-modal-close" type="button" data-close-modal="manifestationDetailModal">×</button></div>
+      <div class="citizen-modal-head"><div><h2 id="detailProtocol">Manifestação</h2><small id="detailMeta"></small></div><button class="citizen-modal-close" type="button" data-close-modal="manifestationDetailModal" aria-label="Fechar">×</button></div>
       <div class="citizen-modal-content">
         <div id="detailLoading" class="portal-note info">Carregando...</div>
         <div id="detailContent" hidden>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"><span class="status-chip" id="detailStatus"></span><span class="privacy-chip" id="detailPrivacy"></span></div>
-          <h3 id="detailSubject" style="color:#173b5d;margin-bottom:6px"></h3>
-          <p id="detailDescription" style="white-space:pre-wrap;color:#3d5568"></p>
+          <div class="detail-chips"><span class="status-chip" id="detailStatus"></span><span class="privacy-chip" id="detailPrivacy"></span></div>
+          <h3 id="detailSubject" class="detail-title"></h3>
+          <p id="detailDescription" class="detail-description"></p>
 
-          <h3 style="margin-top:24px;color:#173b5d">Anexos</h3>
+          <h3 class="detail-section-title">Anexos</h3>
           <div id="attachmentList" class="attachment-list"></div>
-          <div class="portal-note warning" style="margin-top:10px"><strong>Antes de anexar:</strong> fotos, laudos e PDFs podem conter nome, rosto, CPF, número do Cartão SUS ou outros dados que permitam sua identificação. Se sua manifestação estiver marcada como anônima e você quiser manter essa condição na prática, confira o arquivo antes do envio.</div>
-          <form id="attachmentForm" style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:10px">
+          <div class="form-alert form-alert--compact"><strong>Revise antes de anexar.</strong><span>Arquivos podem conter dados que permitam sua identificação.</span></div>
+          <form id="attachmentForm" class="attachment-form">
             <input id="attachmentFile" type="file" accept="image/jpeg,image/png,application/pdf">
             <button class="portal-button secondary" id="uploadAttachment" type="submit">Adicionar anexo</button>
             <small>JPG, PNG ou PDF · até 5 MB · máximo de 5 anexos.</small>
           </form>
 
-          <h3 style="margin-top:24px;color:#173b5d">Conversa com o Conselho</h3>
+          <h3 class="detail-section-title">Conversa com o Conselho</h3>
           <div id="messageThread" class="thread"></div>
-          <form id="replyForm" style="margin-top:12px">
+          <form id="replyForm" class="reply-form">
             <div class="portal-field"><label for="replyText">Responder</label><textarea id="replyText" rows="4" maxlength="8000" required></textarea></div>
             <button class="portal-button primary" id="replyButton" type="submit">Enviar resposta</button>
             <div class="account-status" id="replyStatus"></div>
           </form>
 
-          <h3 style="margin-top:24px;color:#173b5d">Histórico</h3>
+          <h3 class="detail-section-title">Histórico</h3>
           <div id="timeline" class="timeline"></div>
         </div>
       </div>
@@ -126,8 +175,8 @@
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260816-1"></script>
-  <script src="/js/account-levels.js?v=20260818-2"></script>
-  <script src="/js/citizen.js?v=20260818-1"></script>
-  <script src="/js/citizen-account-level.js?v=20260818-3"></script>
+  <script src="/js/account-levels.js?v=20260819-1"></script>
+  <script src="/js/citizen.js?v=20260819-1"></script>
+  <script src="/js/citizen-account-level.js?v=20260819-1"></script>
 </body>
 </html>
