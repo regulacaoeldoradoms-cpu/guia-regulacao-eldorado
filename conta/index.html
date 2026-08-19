@@ -31,12 +31,12 @@
       <section class="account-level-panel" id="accountLevelPanel" hidden aria-labelledby="accountLevelTitle">
         <div class="account-level-head">
           <div><span class="portal-eyebrow">Evolução da conta</span><h2 id="accountLevelTitle">Suas conquistas de segurança</h2><p>Os níveis Bronze, Prata e Ouro são uma classificação interna deste portal. Eles servem para segurança e desbloqueio de recursos; não têm relação com os níveis oficiais da conta Gov.br.</p></div>
-          <div class="account-level-current bronze" data-level-current><span class="medal">🥉</span><span>Conta Bronze</span></div>
+          <div class="account-level-current bronze" data-level-current>Conta Bronze</div>
         </div>
         <div class="account-level-track" aria-label="Progressão Bronze, Prata e Ouro">
-          <div class="account-level-step current" data-level-step="bronze"><div class="account-level-medal">🥉</div><strong>Bronze</strong><span>Usuário + senha</span></div>
-          <div class="account-level-step locked" data-level-step="prata"><div class="account-level-medal">🥈</div><strong>Prata</strong><span>E-mail confirmado</span></div>
-          <div class="account-level-step locked" data-level-step="ouro"><div class="account-level-medal">🥇</div><strong>Ouro</strong><span>Proteção reforçada</span></div>
+          <div class="account-level-step current" data-level-step="bronze"><div class="account-level-medal">B</div><strong>Bronze</strong><span>Usuário + senha</span></div>
+          <div class="account-level-step locked" data-level-step="prata"><div class="account-level-medal">P</div><strong>Prata</strong><span>E-mail confirmado</span></div>
+          <div class="account-level-step locked" data-level-step="ouro"><div class="account-level-medal">O</div><strong>Ouro</strong><span>Proteção reforçada</span></div>
         </div>
         <div class="account-level-body">
           <div class="account-level-next">
@@ -48,9 +48,9 @@
           <div class="account-level-unlocks">
             <h3>O que cada nível desbloqueia</h3>
             <div class="account-level-unlock-list">
-              <div class="account-level-unlock"><span class="state">🥉</span><span><strong>Bronze:</strong> acesso básico à conta e aos recursos liberados para o seu perfil.</span></div>
-              <div class="account-level-unlock"><span class="state">🥈</span><span><strong>Prata:</strong> foto de perfil e preparação do perfil social e de pedidos de amizade.</span></div>
-              <div class="account-level-unlock"><span class="state">🥇</span><span><strong>Ouro:</strong> recursos sociais avançados e dispositivos confiáveis quando a proteção reforçada for implantada.</span></div>
+              <div class="account-level-unlock"><span class="state">B</span><span><strong>Bronze:</strong> acesso básico à conta e aos recursos liberados para o seu perfil.</span></div>
+              <div class="account-level-unlock"><span class="state">P</span><span><strong>Prata:</strong> foto de perfil e preparação do perfil social e de pedidos de amizade.</span></div>
+              <div class="account-level-unlock"><span class="state">O</span><span><strong>Ouro:</strong> recursos sociais avançados e dispositivos confiáveis quando a proteção reforçada for implantada.</span></div>
             </div>
           </div>
         </div>
@@ -60,7 +60,7 @@
       <section class="account-layout" style="margin-top:24px">
         <article class="account-card profile-card" id="profilePhotoCard">
           <div class="level-lock" id="profilePhotoLevelLock">
-            <div class="level-lock-overlay" id="profilePhotoLockedMessage"><strong>🥈 Conquista bloqueada: foto de perfil.</strong><br>Confirme seu e-mail para chegar ao nível Prata e liberar esta função.</div>
+            <div class="level-lock-overlay" id="profilePhotoLockedMessage"><strong>Conquista bloqueada: foto de perfil.</strong><br>Confirme seu e-mail para chegar ao nível Prata e liberar esta função.</div>
             <div class="level-lock-content">
               <div class="profile-editor">
                 <div class="profile-avatar-preview" id="profileAvatarPreview" aria-label="Foto de perfil"><span id="profileAvatarInitials">?</span></div>
@@ -106,13 +106,13 @@
 
         <article class="account-card" id="seguranca">
           <h2>E-mail de segurança</h2>
-          <p>Confirmar o e-mail transforma a conta Bronze em Prata e protege o acesso. Nas manifestações do Conselho, contas com e-mail são tratadas como <strong>sigilosas</strong>, e o endereço não aparece no painel institucional.</p>
+          <p>Confirmar o e-mail transforma a conta Bronze em Prata e protege o acesso. Enquanto o endereço ainda não estiver verificado, novas manifestações podem ser anônimas; depois da confirmação, novas manifestações passam a ser <strong>sigilosas</strong>. O endereço de e-mail não aparece no painel institucional do Conselho.</p>
           <form id="securityEmailForm" class="account-form">
             <div class="portal-field"><label for="securityEmail">E-mail</label><input id="securityEmail" type="email" autocomplete="email" maxlength="254" placeholder="seuemail@exemplo.com"></div>
             <div><span class="user-badge" id="emailStatusBadge">Verificando...</span></div>
             <div class="account-actions"><button class="portal-button primary" type="submit">Salvar e-mail</button><button class="portal-button secondary" id="sendEmailVerification" type="button" hidden>Enviar verificação</button></div>
           </form>
-          <div class="portal-note warning" style="margin-top:16px"><strong>⚠️ Não encontrou o e-mail?</strong> A mensagem de verificação pode ser direcionada para <strong>Spam</strong>, <strong>Lixo eletrônico</strong> ou <strong>Lixeira</strong>. Verifique essas pastas antes de solicitar um novo envio.</div>
+          <div class="portal-note warning" style="margin-top:16px"><strong>Não encontrou o e-mail?</strong> A mensagem de verificação pode ser direcionada para <strong>Spam</strong>, <strong>Lixo eletrônico</strong> ou <strong>Lixeira</strong>. Verifique essas pastas antes de solicitar um novo envio.</div>
           <div class="portal-note info" id="privacyStatus" style="margin-top:16px;display:grid;gap:5px"><span>Verificando privacidade...</span></div>
           <div class="account-status" id="securityStatus" role="status" aria-live="polite"></div>
         </article>
@@ -121,7 +121,7 @@
           <h2>Recursos sociais futuros</h2>
           <p>A camada social ainda não está ativa. O portal já prepara as preferências para quando amizade e outras funções forem implantadas. Contas profissionais continuarão aparecendo pelo cargo/função de saúde, não como “Cidadão”.</p>
           <div class="level-lock" id="friendRequestLevelLock">
-            <div class="level-lock-overlay"><strong>🥈 Recurso de Conta Prata.</strong><br>Confirme o e-mail para liberar a preferência de pedidos de amizade. Isso não ativa a rede social agora.</div>
+            <div class="level-lock-overlay"><strong>Recurso de Conta Prata.</strong><br>Confirme o e-mail para liberar a preferência de pedidos de amizade. Isso não ativa a rede social agora.</div>
             <div class="level-lock-content">
               <label style="display:flex;gap:10px;align-items:flex-start;margin-top:16px"><input id="acceptFriendRequests" type="checkbox" style="margin-top:3px"><span><strong>Permitir pedidos de amizade</strong><br><small style="color:#6c8293">Quando a função existir, você poderá decidir se aceita novos pedidos. Profissionais continuarão protegidos pelas regras específicas de relacionamento.</small></span></label>
             </div>
@@ -134,8 +134,8 @@
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260816-1"></script>
-  <script src="/js/account-levels.js?v=20260818-2"></script>
-  <script src="/js/account.js?v=20260817-2"></script>
+  <script src="/js/account-levels.js?v=20260819-1"></script>
+  <script src="/js/account.js?v=20260819-1"></script>
   <script src="/js/citizen-identity-ui.js?v=20260818-3"></script>
 </body>
 </html>
