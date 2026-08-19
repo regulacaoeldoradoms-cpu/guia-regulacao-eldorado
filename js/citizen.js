@@ -294,6 +294,7 @@
 
   document.getElementById('newManifestationForm').addEventListener('submit', async (event) => {
     event.preventDefault();
+    const submittedForm = event.currentTarget;
     const button = document.getElementById('submitManifestation');
     const status = document.getElementById('newManifestationStatus');
     if (isPresident) return showStatus(status, 'A Presidência do Conselho não pode abrir nova manifestação.', 'error');
@@ -319,7 +320,7 @@
       const protocol = payload.manifestation.protocol;
       button.textContent = files.length ? 'Enviando anexos...' : 'Finalizando...';
       const failedUploads = files.length ? await uploadFiles(protocol, files) : 0;
-      event.currentTarget.reset();
+      submittedForm.reset();
       if (descriptionCounter) descriptionCounter.textContent = '0/6500';
       if (manifestationFileList) { manifestationFileList.hidden = true; manifestationFileList.innerHTML = ''; }
       const attachmentMessage = failedUploads ? ` ${failedUploads} anexo(s) não puderam ser enviados e podem ser adicionados depois no protocolo.` : '';
