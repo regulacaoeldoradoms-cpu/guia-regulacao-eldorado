@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-1">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/citizen.css?v=20260819-2">
+  <link rel="stylesheet" href="/css/citizen-dashboard.css?v=20260819-1">
   <link rel="stylesheet" href="/css/account-level.css?v=20260816-1">
 </head>
 <body class="portal-page">
@@ -50,23 +51,13 @@
       <div class="portal-note info" id="accountEvolutionNotice" hidden></div>
       <div class="portal-note warning" id="firebaseNotice" hidden></div>
 
-      <section class="citizen-actions" aria-label="Atalhos do Canal do Cidadão">
+      <section class="citizen-actions" aria-label="Ação principal do Canal do Cidadão">
         <button class="citizen-action" id="openNewManifestation" type="button">
           <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>
-          <strong>Nova manifestação</strong><span>Registre uma sugestão, reclamação, elogio ou denúncia.</span>
+          <span><strong>Nova manifestação</strong><span>Registre uma sugestão, reclamação, elogio ou denúncia.</span></span>
         </button>
-        <button class="citizen-action" id="focusManifestations" type="button">
-          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7.5h6l2 2H20v9H4z"/><path d="M4 7.5v-2h6l2 2"/></svg></span>
-          <strong>Minhas manifestações</strong><span>Veja protocolos, andamento, anexos e respostas.</span>
-        </button>
-        <button class="citizen-action" id="focusNotifications" type="button">
-          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 9a5.5 5.5 0 0 1 11 0c0 6 2 6.5 2 6.5h-15S6.5 15 6.5 9z"/><path d="M10 19h4"/></svg></span>
-          <strong>Notificações <b class="count-badge" id="notificationCount" hidden>0</b></strong><span>Confira movimentações e respostas recentes.</span>
-        </button>
-        <a class="citizen-action" href="/conta/">
-          <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.7-2.8 8-7 10-4.2-2-7-5.3-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
-          <strong id="accountActionTitle">Segurança da conta</strong><span id="accountActionText">Veja seu nível, e-mail e configurações.</span>
-        </a>
+        <button class="citizen-action" id="focusManifestations" type="button" hidden aria-hidden="true" tabindex="-1"></button>
+        <button class="citizen-action" id="focusNotifications" type="button" hidden aria-hidden="true" tabindex="-1"><b class="count-badge" id="notificationCount" hidden>0</b></button>
       </section>
 
       <section class="citizen-grid">
