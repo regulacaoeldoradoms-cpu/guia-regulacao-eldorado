@@ -243,7 +243,7 @@
     const list = Array.from(files || []);
     if (list.length > 5) return 'Selecione no máximo 5 anexos.';
     for (const file of list) {
-      if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) return `O arquivo ${file.name} não está em formato JPG, PNG ou PDF.`;
+      if (file.type && !['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) return `O arquivo ${file.name} não está em formato JPG, PNG ou PDF.`;
       if (file.size > 5 * 1024 * 1024) return `O arquivo ${file.name} ultrapassa 5 MB.`;
     }
     return '';
@@ -268,7 +268,7 @@
   descriptionInput?.addEventListener('input', () => { if (descriptionCounter) descriptionCounter.textContent = `${descriptionInput.value.length}/6500`; });
 
   const dateInput = document.getElementById('manifestationDate');
-  if (dateInput) dateInput.max = new Date().toISOString().slice(0, 10);
+  if (dateInput) dateInput.max = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Campo_Grande' }).format(new Date());
 
   const manifestationFiles = document.getElementById('manifestationFiles');
   const manifestationFileList = document.getElementById('manifestationFileList');
