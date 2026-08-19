@@ -60,6 +60,7 @@ jobs:
           grep -q 'Nova manifestação' cidadao/index.html
           grep -q 'Classifique a manifestação' cidadao/index.html
           grep -q 'O que você espera do Conselho' cidadao/index.html
+          grep -q 'Quero me identificar' cidadao/index.html
           grep -q 'Minhas manifestações' cidadao/index.html
           grep -q 'Notificações' cidadao/index.html
           grep -q 'Sua porta de entrada' login/index.html
@@ -112,10 +113,17 @@ jobs:
           grep -q "user.councilRole === 'presidente'" worker/council.js
           grep -q 'COUNCIL_PRESIDENT_CANNOT_SUBMIT' worker/council.js
           grep -q 'canCreateManifestation: !presidentAccess(user)' worker/council.js
+          grep -q 'canIdentifyManifestation: user.emailVerified === true' worker/council.js
+          grep -q "if (user?.emailVerified !== true) return 'anonima'" worker/council.js
+          grep -q "requestedMode.*identificada" worker/council.js
+          grep -q 'identifiedAuthorSnapshot' worker/council.js
+          grep -q 'authorIdentity' worker/council.js
           grep -q 'authorLabel' worker/council.js
           grep -q "const doc = {" worker/council.js
-          grep -q "return user?.emailVerified === true ? 'sigilosa' : 'anonima'" worker/council.js
           grep -q 'protectedAttachment' worker/council.js
+          grep -q 'manifestationPrivacy' cidadao/index.html
+          grep -q 'selectedPrivacyMode' js/citizen.js
+          grep -q 'identitySummary' js/council-panel.js
           grep -q 'emailConfigured' worker/auth-management-v2.js
           grep -q 'Dados de autenticação' conselho/painel/index.html
           ! grep -q 'email:' worker/council.js
