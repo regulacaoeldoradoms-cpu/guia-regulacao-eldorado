@@ -64,7 +64,7 @@
             <div class="level-lock-content">
               <div class="profile-editor">
                 <div class="profile-avatar-preview" id="profileAvatarPreview" aria-label="Foto de perfil"><span id="profileAvatarInitials">?</span></div>
-                <div class="profile-editor-copy"><h2>Foto do perfil</h2><p>Esta é a foto única do seu perfil no portal. Ela acompanha a mesma conta nos diferentes módulos e não é copiada para dentro de uma manifestação sigilosa do Conselho.</p><input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="account-actions"><button class="portal-button secondary" id="chooseProfilePhoto" type="button">Escolher foto</button><button class="portal-button danger" id="removeProfilePhoto" type="button" hidden>Remover foto</button></div><div class="account-status" id="profileStatus" role="status" aria-live="polite"></div></div>
+                <div class="profile-editor-copy"><h2>Foto do perfil</h2><p>Esta é a foto única do seu perfil no portal. Ela acompanha a mesma conta nos diferentes módulos. A foto não é copiada para o conteúdo das manifestações do Conselho.</p><input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp" hidden><div class="account-actions"><button class="portal-button secondary" id="chooseProfilePhoto" type="button">Escolher foto</button><button class="portal-button danger" id="removeProfilePhoto" type="button" hidden>Remover foto</button></div><div class="account-status" id="profileStatus" role="status" aria-live="polite"></div></div>
               </div>
             </div>
           </div>
@@ -87,7 +87,7 @@
               </div>
               <small id="citizenHandleHelp">Carregando disponibilidade...</small>
             </div>
-            <div class="portal-note info" style="margin-bottom:16px"><strong>Privacidade:</strong> seu nome de exibição e seu @ pertencem ao perfil da conta. Eles não são mostrados ao Conselho dentro de manifestações com identidade protegida.</div>
+            <div class="portal-note info" style="margin-bottom:16px"><strong>Privacidade:</strong> seu nome de exibição e seu @ pertencem ao perfil da conta. Eles só são mostrados ao Conselho quando você escolher enviar uma manifestação identificada.</div>
             <div class="account-actions"><button class="portal-button primary" id="saveCitizenIdentity" type="submit">Salvar perfil</button></div>
             <div class="account-status" id="citizenIdentityStatus" role="status" aria-live="polite"></div>
           </form>
@@ -106,7 +106,7 @@
 
         <article class="account-card" id="seguranca">
           <h2>E-mail de segurança</h2>
-          <p>Confirmar o e-mail transforma a conta Bronze em Prata e protege o acesso. Enquanto o endereço ainda não estiver verificado, novas manifestações podem ser anônimas; depois da confirmação, novas manifestações passam a ser <strong>sigilosas</strong>. O endereço de e-mail não aparece no painel institucional do Conselho.</p>
+          <p>Confirmar o e-mail transforma a conta Bronze em Prata e protege o acesso. Enquanto o endereço ainda não estiver verificado, novas manifestações são anônimas. Depois da confirmação, você escolhe em cada envio entre <strong>sigilosa</strong> e <strong>identificada</strong>. O endereço de e-mail nunca aparece no painel institucional do Conselho.</p>
           <form id="securityEmailForm" class="account-form">
             <div class="portal-field"><label for="securityEmail">E-mail</label><input id="securityEmail" type="email" autocomplete="email" maxlength="254" placeholder="seuemail@exemplo.com"></div>
             <div><span class="user-badge" id="emailStatusBadge">Verificando...</span></div>
@@ -135,7 +135,7 @@
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260816-1"></script>
   <script src="/js/account-levels.js?v=20260819-1"></script>
-  <script src="/js/account.js?v=20260819-1"></script>
+  <script src="/js/account.js?v=20260819-2"></script>
   <script src="/js/citizen-identity-ui.js?v=20260818-3"></script>
 </body>
 </html>
