@@ -143,9 +143,9 @@
     emailStatusBadge.className = `user-badge ${security.emailVerified ? '' : 'inactive'}`;
 
     if (security.emailVerified) {
-      privacyStatus.innerHTML = '<strong>Conta Prata · e-mail verificado</strong><span>O endereço protege a mesma conta usada em todos os módulos. Novas manifestações do Conselho são sigilosas e o e-mail não é exibido no painel institucional.</span>';
+      privacyStatus.innerHTML = '<strong>Conta Prata · e-mail verificado</strong><span>O endereço protege a mesma conta usada em todos os módulos. Em cada nova manifestação, você pode manter sua identidade sigilosa ou optar por se identificar ao Conselho. O e-mail não é exibido no painel institucional.</span>';
     } else {
-      privacyStatus.innerHTML = '<strong>Privacidade das manifestações: anônima</strong><span>Enquanto o e-mail não estiver verificado, novas manifestações podem ser registradas como anônimas. Se você confirmar o e-mail depois, os protocolos já enviados permanecem com a privacidade registrada no momento do envio.</span>';
+      privacyStatus.innerHTML = '<strong>Privacidade das manifestações: anônima</strong><span>Enquanto o e-mail não estiver verificado, novas manifestações são registradas como anônimas. Se você confirmar o e-mail depois, os protocolos já enviados permanecem com a privacidade registrada no momento do envio.</span>';
     }
 
     verificationButton.hidden = !security.email || security.emailVerified;
