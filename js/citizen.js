@@ -19,6 +19,7 @@
     sim_parcial: 'Sim, houve solução parcial',
     nao_se_aplica: 'Não se aplica'
   };
+  const privacyLabels = { anonima: 'Anônima', sigilosa: 'Sigilosa', identificada: 'Identificada' };
   const roleLabels = {
     medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', admin: 'Desenvolvedor', cidadao: 'Cidadão'
   };
@@ -46,7 +47,7 @@
     const councilExtra = auth.hasCouncilAccess(user)
       ? ' As ações institucionais do Conselho permanecem disponíveis somente no painel institucional.'
       : '';
-    contextNotice.innerHTML = `<strong>Uma conta, o mesmo perfil.</strong> Você continua identificado no portal pelo seu cargo profissional. O Canal do Cidadão é mais um módulo da mesma conta.${councilExtra} A privacidade da manifestação depende da verificação do e-mail no momento do envio.`;
+    contextNotice.innerHTML = `<strong>Uma conta, o mesmo perfil.</strong> Você continua identificado no portal pelo seu cargo profissional. O Canal do Cidadão é mais um módulo da mesma conta.${councilExtra} A privacidade é definida no momento de cada envio.`;
     contextNotice.hidden = false;
   }
 
@@ -85,22 +86,45 @@
     el.className = `account-status visible ${type}`;
   }
 
+  function selectedPrivacyMode() {
+    if (!state.security?.emailVerified) return 'anonima';
+    return document.querySelector('input[name="manifestationPrivacy"]:checked')?.value === 'identificada'
+      ? 'identificada'
+      : 'sigilosa';
+  }
+
   function privacyText() {
     return state.security?.emailVerified
-      ? 'Sigilosa · e-mail de segurança confirmado'
+      ? 'Privacidade à escolha · e-mail de segurança confirmado'
       : 'Anônima · e-mail de segurança ainda não verificado';
+  }
+
+  function renderPrivacyNotice() {
+    const notice = document.getElementById('newPrivacyNotice');
+    if (!notice) return;
+    const mode = selectedPrivacyMode();
+    if (mode === 'identificada') {
+      notice.innerHTML = '<strong>Manifestação identificada.</strong> O Conselho verá seu nome de perfil, @ e cargo ou função quando houver. Seu e-mail de segurança continua protegido e não é exibido na manifestação.';
+      return;
+    }
+    if (mode === 'sigilosa') {
+      notice.innerHTML = '<strong>Manifestação sigilosa.</strong> Sua identidade de perfil não será exibida ao Conselho nesta manifestação. Seu e-mail de segurança permanece protegido.';
+      return;
+    }
+    notice.innerHTML = '<strong>Manifestação anônima.</strong> Como o e-mail desta conta ainda não foi verificado, esta nova manifestação será registrada como anônima. O texto e os anexos ainda podem revelar sua identidade.';
   }
 
   async function loadSecurity() {
     state.security = await auth.getSecurity().catch(() => ({ emailVerified: user.emailVerified, privacyMode: user.privacyMode || 'anonima' }));
     const privacyChip = document.getElementById('privacyChip');
-    const newPrivacyNotice = document.getElementById('newPrivacyNotice');
+    const verifiedOptions = document.getElementById('verifiedPrivacyOptions');
     if (privacyChip) privacyChip.textContent = privacyText();
-    if (newPrivacyNotice) {
-      newPrivacyNotice.innerHTML = state.security?.emailVerified
-        ? '<strong>Manifestação sigilosa.</strong> Seu e-mail está confirmado e permanece protegido; o endereço não é exibido ao Conselho no conteúdo da manifestação.'
-        : '<strong>Manifestação anônima.</strong> Como o e-mail desta conta ainda não foi verificado, esta nova manifestação será registrada como anônima. O texto e os anexos ainda podem revelar sua identidade.';
+    if (verifiedOptions) verifiedOptions.hidden = !state.security?.emailVerified;
+    if (state.security?.emailVerified) {
+      const sigilosa = document.querySelector('input[name="manifestationPrivacy"][value="sigilosa"]');
+      if (sigilosa && !document.querySelector('input[name="manifestationPrivacy"]:checked')) sigilosa.checked = true;
     }
+    renderPrivacyNotice();
   }
 
   function renderManifestations() {
@@ -210,7 +234,9 @@
       const chip = document.getElementById('detailStatus');
       chip.textContent = statusLabels[item.status] || item.status;
       chip.className = `status-chip ${item.status}`;
-      document.getElementById('detailPrivacy').textContent = item.privacyMode === 'sigilosa' ? 'Sigilosa' : 'Anônima';
+      const privacyChip = document.getElementById('detailPrivacy');
+      privacyChip.textContent = privacyLabels[item.privacyMode] || item.privacyMode || 'Privacidade não informada';
+      privacyChip.classList.toggle('identified', item.privacyMode === 'identificada');
       document.getElementById('detailSubject').textContent = item.subject || '';
       document.getElementById('detailDescription').textContent = item.description || '';
       renderThread(payload.messages || []);
@@ -286,6 +312,8 @@
     manifestationFileList.innerHTML = files.map((file) => `<div class="selected-file"><span>${escapeHtml(file.name)}</span><span>${(file.size / 1024 / 1024).toFixed(2)} MB</span></div>`).join('');
   });
 
+  document.querySelectorAll('input[name="manifestationPrivacy"]').forEach((input) => input.addEventListener('change', renderPrivacyNotice));
+
   createButton?.addEventListener('click', () => { if (!isPresident) openModal('newManifestationModal'); });
   document.getElementById('focusManifestations').addEventListener('click', () => document.getElementById('manifestationsCard').scrollIntoView({ behavior: 'smooth' }));
   document.getElementById('focusNotifications').addEventListener('click', () => document.getElementById('notificationsCard').scrollIntoView({ behavior: 'smooth' }));
@@ -304,6 +332,7 @@
     const description = buildDescription();
     if (description.length > 8000) return showStatus(status, 'O conteúdo total ficou muito extenso. Reduza um pouco o relato ou o campo sobre o que espera do Conselho.', 'error');
     const selectedType = document.querySelector('input[name="manifestationType"]:checked')?.value || '';
+    const privacyMode = selectedPrivacyMode();
     button.disabled = true;
     button.textContent = 'Enviando...';
     status.className = 'account-status';
@@ -314,13 +343,19 @@
           type: selectedType,
           service: document.getElementById('manifestationService').value,
           subject: document.getElementById('manifestationSubject').value,
-          description
+          description,
+          privacyMode
         })
       });
       const protocol = payload.manifestation.protocol;
       button.textContent = files.length ? 'Enviando anexos...' : 'Finalizando...';
       const failedUploads = files.length ? await uploadFiles(protocol, files) : 0;
       submittedForm.reset();
+      if (state.security?.emailVerified) {
+        const sigilosa = document.querySelector('input[name="manifestationPrivacy"][value="sigilosa"]');
+        if (sigilosa) sigilosa.checked = true;
+      }
+      renderPrivacyNotice();
       if (descriptionCounter) descriptionCounter.textContent = '0/6500';
       if (manifestationFileList) { manifestationFileList.hidden = true; manifestationFileList.innerHTML = ''; }
       const attachmentMessage = failedUploads ? ` ${failedUploads} anexo(s) não puderam ser enviados e podem ser adicionados depois no protocolo.` : '';
