@@ -127,6 +127,60 @@
     target.document.close();
   }
 
+  function declarationButtonHtml(label = 'Emitir declaração') {
+    return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.5 3.5h7l4 4v13h-11z"/><path d="M13.5 3.5v4h4"/><path d="M9 12h6M9 15h6M9 18h4"/></svg><span>${escapeHtml(label)}</span>`;
+  }
+
+  function ensureDeclarationButtonStyle() {
+    if (document.getElementById('declarationButtonStyle')) return;
+    const style = document.createElement('style');
+    style.id = 'declarationButtonStyle';
+    style.textContent = `
+      #issueManifestationDeclaration{
+        margin-left:auto;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        background:#556b2f;
+        border-color:#4b5f29;
+        color:#fff;
+        box-shadow:0 4px 12px rgba(67,84,39,.18);
+        font-weight:800;
+      }
+      #issueManifestationDeclaration:hover:not(:disabled){
+        background:#465925;
+        border-color:#3f5121;
+        color:#fff;
+        box-shadow:0 6px 16px rgba(67,84,39,.24);
+      }
+      #issueManifestationDeclaration:focus-visible{
+        outline:3px solid rgba(85,107,47,.30);
+        outline-offset:2px;
+      }
+      #issueManifestationDeclaration:disabled{
+        background:#7f8b68;
+        border-color:#74805e;
+        color:#fff;
+        opacity:.78;
+      }
+      #issueManifestationDeclaration svg{
+        width:18px;
+        height:18px;
+        flex:0 0 18px;
+        fill:none;
+        stroke:currentColor;
+        stroke-width:1.8;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+      }
+      @media(max-width:560px){
+        #issueManifestationDeclaration{margin-left:0;width:100%;}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   async function issueDeclaration(button) {
     const protocol = currentProtocol();
     if (!protocol) return;
@@ -138,9 +192,9 @@
     }
     writeDocument(target, loadingHtml(protocol));
 
-    const originalText = button.textContent;
+    const originalHtml = button.innerHTML;
     button.disabled = true;
-    button.textContent = 'Gerando declaração...';
+    button.innerHTML = declarationButtonHtml('Gerando declaração...');
     try {
       const payload = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}?as=citizen`, { method: 'GET' });
       if (!payload?.manifestation) throw new Error('Manifestação não encontrada.');
@@ -150,21 +204,21 @@
       writeDocument(target, errorHtml(error.message || 'Não foi possível consultar os dados do protocolo.'));
     } finally {
       button.disabled = false;
-      button.textContent = originalText;
+      button.innerHTML = originalHtml;
     }
   }
 
   function ensureDeclarationButton() {
     const chips = document.querySelector('#manifestationDetailModal .detail-chips');
     if (!chips) return;
+    ensureDeclarationButtonStyle();
     let button = document.getElementById('issueManifestationDeclaration');
     if (!button) {
       button = document.createElement('button');
       button.id = 'issueManifestationDeclaration';
       button.type = 'button';
-      button.className = 'portal-button secondary';
-      button.textContent = 'Emitir declaração';
-      button.style.marginLeft = 'auto';
+      button.className = 'portal-button declaration-action';
+      button.innerHTML = declarationButtonHtml();
       button.addEventListener('click', () => issueDeclaration(button));
       chips.appendChild(button);
     }
