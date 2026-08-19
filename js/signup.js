@@ -28,7 +28,7 @@
     status.className = 'login-status';
     try {
       await window.RegulationAuth.registerCitizen(username.value, password.value);
-      show('🥉 Conta Bronze criada! Abrindo o Canal do Cidadão...', 'success');
+      show('Conta Bronze criada. Abrindo o Canal do Cidadão...', 'success');
       window.setTimeout(() => location.replace('/cidadao/'), 550);
     } catch (error) {
       show(error.message || 'Não foi possível criar a conta.');
