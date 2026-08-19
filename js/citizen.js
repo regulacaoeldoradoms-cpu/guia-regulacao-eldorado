@@ -13,14 +13,17 @@
     concluida: 'Concluída', arquivada: 'Arquivada'
   };
   const typeLabels = { sugestao: 'Sugestão', reclamacao: 'Reclamação', elogio: 'Elogio', denuncia: 'Denúncia' };
+  const priorContactLabels = {
+    nao: 'Não',
+    sim_sem_resolucao: 'Sim, mas não foi resolvido',
+    sim_parcial: 'Sim, houve solução parcial',
+    nao_se_aplica: 'Não se aplica'
+  };
   const roleLabels = {
-    medico: 'Médico',
-    recepcao: 'Recepção',
-    coordenacao: 'Coordenação',
-    admin: 'Desenvolvedor',
-    cidadao: 'Cidadão'
+    medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', admin: 'Desenvolvedor', cidadao: 'Cidadão'
   };
   const isPrimaryCitizen = user.role === 'cidadao';
+  const isPresident = user.councilRole === 'presidente';
 
   document.getElementById('portalUserName').textContent = user.name || user.username;
   const roleBase = roleLabels[user.role] || user.role || 'Usuário';
@@ -32,11 +35,18 @@
   if (professionalHomeLink) professionalHomeLink.hidden = isPrimaryCitizen;
 
   const contextNotice = document.getElementById('citizenContextNotice');
-  if (contextNotice && !isPrimaryCitizen) {
+  const createButton = document.getElementById('openNewManifestation');
+  if (isPresident) {
+    if (createButton) createButton.hidden = true;
+    if (contextNotice) {
+      contextNotice.innerHTML = '<strong>Presidência do Conselho.</strong> Enquanto esta conta estiver vinculada à Presidência, ela pode acompanhar protocolos próprios anteriores, mas não pode abrir nova manifestação.';
+      contextNotice.hidden = false;
+    }
+  } else if (contextNotice && !isPrimaryCitizen) {
     const councilExtra = auth.hasCouncilAccess(user)
-      ? ' Se você também integra o Conselho, suas ações institucionais continuam disponíveis somente no painel institucional.'
+      ? ' As ações institucionais do Conselho permanecem disponíveis somente no painel institucional.'
       : '';
-    contextNotice.innerHTML = `<strong>Uma conta, o mesmo perfil.</strong> Você continua identificado no portal pelo seu cargo profissional. O Canal do Cidadão é apenas mais um módulo da mesma conta.${councilExtra} Nas manifestações, seu e-mail não é exibido ao Conselho; o texto e os anexos podem revelar sua identidade se você próprio incluir esses dados.`;
+    contextNotice.innerHTML = `<strong>Uma conta, o mesmo perfil.</strong> Você continua identificado no portal pelo seu cargo profissional. O Canal do Cidadão é mais um módulo da mesma conta.${councilExtra} A privacidade da manifestação depende da verificação do e-mail no momento do envio.`;
     contextNotice.hidden = false;
   }
 
@@ -50,8 +60,6 @@
     return date.toLocaleString('pt-BR', { timeZone: 'America/Campo_Grande', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
-  // O parâmetro existe apenas para autorização da operação quando a mesma conta também
-  // possui função no Conselho. Ele não representa uma segunda identidade ou um segundo perfil.
   function citizenContextPath(path) {
     const separator = path.includes('?') ? '&' : '?';
     return `${path}${separator}as=citizen`;
@@ -59,38 +67,40 @@
 
   function openModal(id) {
     const modal = document.getElementById(id);
+    if (!modal) return;
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
   }
 
   function closeModal(id) {
     const modal = document.getElementById(id);
+    if (!modal) return;
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
   }
 
   function showStatus(el, message, type = 'error') {
+    if (!el) return;
     el.textContent = message;
     el.className = `account-status visible ${type}`;
   }
 
   function privacyText() {
-    if (!isPrimaryCitizen) {
-      return state.security?.emailVerified
-        ? '🔒 Sigilosa · e-mail de segurança protegido'
-        : '⚠️ Confirme o e-mail de segurança para enviar manifestações';
-    }
-    return state.security?.privacyMode === 'sigilosa'
-      ? '🔒 Sigilosa · seu e-mail de segurança não é exibido ao Conselho'
-      : '🕶️ Anônima · esta conta não possui e-mail ou telefone de identificação';
+    return state.security?.emailVerified
+      ? 'Sigilosa · e-mail de segurança confirmado'
+      : 'Anônima · e-mail de segurança ainda não verificado';
   }
 
   async function loadSecurity() {
-    state.security = await auth.getSecurity().catch(() => ({ privacyMode: user.privacyMode || 'anonima', emailVerified: user.emailVerified }));
-    document.getElementById('privacyChip').textContent = privacyText();
-    document.getElementById('newPrivacyNotice').textContent = !isPrimaryCitizen && !state.security?.emailVerified
-      ? 'Para enviar uma manifestação com sua conta profissional, confirme primeiro o e-mail de segurança. Depois disso, o protocolo será tratado como sigiloso.'
-      : `Privacidade desta manifestação: ${privacyText().replace(/^[^ ]+ /, '')}.`;
+    state.security = await auth.getSecurity().catch(() => ({ emailVerified: user.emailVerified, privacyMode: user.privacyMode || 'anonima' }));
+    const privacyChip = document.getElementById('privacyChip');
+    const newPrivacyNotice = document.getElementById('newPrivacyNotice');
+    if (privacyChip) privacyChip.textContent = privacyText();
+    if (newPrivacyNotice) {
+      newPrivacyNotice.innerHTML = state.security?.emailVerified
+        ? '<strong>Manifestação sigilosa.</strong> Seu e-mail está confirmado e permanece protegido; o endereço não é exibido ao Conselho no conteúdo da manifestação.'
+        : '<strong>Manifestação anônima.</strong> Como o e-mail desta conta ainda não foi verificado, esta nova manifestação será registrada como anônima. O texto e os anexos ainda podem revelar sua identidade.';
+    }
   }
 
   function renderManifestations() {
@@ -116,7 +126,7 @@
     } catch (error) {
       if (error.code === 'FIREBASE_PENDING' || error.status === 503) {
         const notice = document.getElementById('firebaseNotice');
-        notice.textContent = 'O Canal do Conselho já está instalado no portal, mas o armazenamento Firebase ainda precisa ser conectado para começar a receber manifestações.';
+        notice.textContent = 'O Canal do Conselho está instalado, mas o armazenamento Firebase ainda não está disponível.';
         notice.hidden = false;
       }
       list.innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível carregar as manifestações.')}</div>`;
@@ -156,10 +166,7 @@
     }
     el.innerHTML = messages.map((message) => {
       const label = message.senderType === 'council' ? 'Conselho Municipal de Saúde' : 'Você';
-      return `<div class="thread-message ${message.senderType === 'council' ? 'council' : ''}">
-        <strong>${escapeHtml(label)} · ${escapeHtml(formatDate(message.createdAt))}</strong>
-        <p>${escapeHtml(message.body)}</p>
-      </div>`;
+      return `<div class="thread-message ${message.senderType === 'council' ? 'council' : ''}"><strong>${escapeHtml(label)} · ${escapeHtml(formatDate(message.createdAt))}</strong><p>${escapeHtml(message.body)}</p></div>`;
     }).join('');
   }
 
@@ -176,13 +183,17 @@
     }).join('');
   }
 
+  function attachmentIcon() {
+    return '<span class="attachment-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 12.5l6.7-6.7a3 3 0 0 1 4.3 4.2l-8.6 8.6a5 5 0 0 1-7.1-7.1l8-8"/></svg></span>';
+  }
+
   function renderAttachments(items) {
     const list = document.getElementById('attachmentList');
     if (!items.length) {
       list.innerHTML = '<span style="color:#73889a;font-size:.84rem">Nenhum anexo.</span>';
       return;
     }
-    list.innerHTML = items.map((item) => `<button class="attachment-link" type="button" data-attachment="${escapeHtml(item.id)}">📎 ${escapeHtml(item.displayName || 'Anexo')}</button>`).join('');
+    list.innerHTML = items.map((item) => `<button class="attachment-link" type="button" data-attachment="${escapeHtml(item.id)}">${attachmentIcon()}${escapeHtml(item.displayName || 'Anexo')}</button>`).join('');
   }
 
   async function openDetail(protocol) {
@@ -199,7 +210,7 @@
       const chip = document.getElementById('detailStatus');
       chip.textContent = statusLabels[item.status] || item.status;
       chip.className = `status-chip ${item.status}`;
-      document.getElementById('detailPrivacy').textContent = item.privacyMode === 'sigilosa' ? '🔒 Sigilosa' : '🕶️ Anônima';
+      document.getElementById('detailPrivacy').textContent = item.privacyMode === 'sigilosa' ? 'Sigilosa' : 'Anônima';
       document.getElementById('detailSubject').textContent = item.subject || '';
       document.getElementById('detailDescription').textContent = item.description || '';
       renderThread(payload.messages || []);
@@ -212,7 +223,70 @@
     }
   }
 
-  document.getElementById('openNewManifestation').addEventListener('click', () => openModal('newManifestationModal'));
+  function buildDescription() {
+    const main = document.getElementById('manifestationDescription').value.trim();
+    const locationValue = document.getElementById('manifestationLocation').value.trim();
+    const dateValue = document.getElementById('manifestationDate').value;
+    const priorValue = document.getElementById('manifestationPriorContact').value;
+    const desired = document.getElementById('manifestationDesiredOutcome').value.trim();
+    const sections = [main];
+    const context = [];
+    if (dateValue) context.push(`Data do fato: ${dateValue.split('-').reverse().join('/')}`);
+    if (locationValue) context.push(`Local específico: ${locationValue}`);
+    if (priorValue) context.push(`Contato prévio com o serviço: ${priorContactLabels[priorValue] || priorValue}`);
+    if (context.length) sections.push(`Informações complementares:\n${context.join('\n')}`);
+    if (desired) sections.push(`O que espera do Conselho:\n${desired}`);
+    return sections.filter(Boolean).join('\n\n');
+  }
+
+  function validateFiles(files) {
+    const list = Array.from(files || []);
+    if (list.length > 5) return 'Selecione no máximo 5 anexos.';
+    for (const file of list) {
+      if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) return `O arquivo ${file.name} não está em formato JPG, PNG ou PDF.`;
+      if (file.size > 5 * 1024 * 1024) return `O arquivo ${file.name} ultrapassa 5 MB.`;
+    }
+    return '';
+  }
+
+  async function uploadFiles(protocol, files) {
+    let failed = 0;
+    for (const file of Array.from(files || [])) {
+      try {
+        const form = new FormData();
+        form.append('file', file);
+        await auth.api(citizenContextPath(`/api/council/manifestations/${encodeURIComponent(protocol)}/attachments`), { method: 'POST', body: form });
+      } catch (_) {
+        failed += 1;
+      }
+    }
+    return failed;
+  }
+
+  const descriptionInput = document.getElementById('manifestationDescription');
+  const descriptionCounter = document.getElementById('descriptionCounter');
+  descriptionInput?.addEventListener('input', () => { if (descriptionCounter) descriptionCounter.textContent = `${descriptionInput.value.length}/6500`; });
+
+  const dateInput = document.getElementById('manifestationDate');
+  if (dateInput) dateInput.max = new Date().toISOString().slice(0, 10);
+
+  const manifestationFiles = document.getElementById('manifestationFiles');
+  const manifestationFileList = document.getElementById('manifestationFileList');
+  manifestationFiles?.addEventListener('change', () => {
+    const files = Array.from(manifestationFiles.files || []);
+    const error = validateFiles(files);
+    if (error) {
+      manifestationFiles.value = '';
+      manifestationFileList.hidden = true;
+      manifestationFileList.innerHTML = '';
+      showStatus(document.getElementById('newManifestationStatus'), error, 'error');
+      return;
+    }
+    manifestationFileList.hidden = files.length === 0;
+    manifestationFileList.innerHTML = files.map((file) => `<div class="selected-file"><span>${escapeHtml(file.name)}</span><span>${(file.size / 1024 / 1024).toFixed(2)} MB</span></div>`).join('');
+  });
+
+  createButton?.addEventListener('click', () => { if (!isPresident) openModal('newManifestationModal'); });
   document.getElementById('focusManifestations').addEventListener('click', () => document.getElementById('manifestationsCard').scrollIntoView({ behavior: 'smooth' }));
   document.getElementById('focusNotifications').addEventListener('click', () => document.getElementById('notificationsCard').scrollIntoView({ behavior: 'smooth' }));
   document.querySelectorAll('[data-close-modal]').forEach((button) => button.addEventListener('click', () => closeModal(button.dataset.closeModal)));
@@ -222,6 +296,13 @@
     event.preventDefault();
     const button = document.getElementById('submitManifestation');
     const status = document.getElementById('newManifestationStatus');
+    if (isPresident) return showStatus(status, 'A Presidência do Conselho não pode abrir nova manifestação.', 'error');
+    const files = Array.from(manifestationFiles?.files || []);
+    const fileError = validateFiles(files);
+    if (fileError) return showStatus(status, fileError, 'error');
+    const description = buildDescription();
+    if (description.length > 8000) return showStatus(status, 'O conteúdo total ficou muito extenso. Reduza um pouco o relato ou o campo sobre o que espera do Conselho.', 'error');
+    const selectedType = document.querySelector('input[name="manifestationType"]:checked')?.value || '';
     button.disabled = true;
     button.textContent = 'Enviando...';
     status.className = 'account-status';
@@ -229,25 +310,26 @@
       const payload = await auth.api('/api/council/manifestations', {
         method: 'POST',
         body: JSON.stringify({
-          type: document.getElementById('manifestationType').value,
+          type: selectedType,
           service: document.getElementById('manifestationService').value,
           subject: document.getElementById('manifestationSubject').value,
-          description: document.getElementById('manifestationDescription').value
+          description
         })
       });
+      const protocol = payload.manifestation.protocol;
+      button.textContent = files.length ? 'Enviando anexos...' : 'Finalizando...';
+      const failedUploads = files.length ? await uploadFiles(protocol, files) : 0;
       event.currentTarget.reset();
-      showStatus(status, `Manifestação enviada. Protocolo: ${payload.manifestation.protocol}`, 'success');
+      if (descriptionCounter) descriptionCounter.textContent = '0/6500';
+      if (manifestationFileList) { manifestationFileList.hidden = true; manifestationFileList.innerHTML = ''; }
+      const attachmentMessage = failedUploads ? ` ${failedUploads} anexo(s) não puderam ser enviados e podem ser adicionados depois no protocolo.` : '';
+      showStatus(status, `Manifestação enviada. Protocolo: ${protocol}.${attachmentMessage}`, failedUploads ? 'error' : 'success');
       await Promise.all([loadManifestations(), loadNotifications()]);
-      window.setTimeout(() => { closeModal('newManifestationModal'); openDetail(payload.manifestation.protocol); }, 650);
+      window.setTimeout(() => { closeModal('newManifestationModal'); openDetail(protocol); }, failedUploads ? 1800 : 700);
     } catch (error) {
       let message = error.message || 'Não foi possível enviar.';
-      if (error.status === 429 && error.retryAfterSeconds) {
-        const minutes = Math.ceil(error.retryAfterSeconds / 60);
-        message += ` Tente novamente em aproximadamente ${minutes} minuto(s).`;
-      }
-      if (error.code === 'EMAIL_VERIFICATION_REQUIRED') {
-        message += ' Abra Minha conta para confirmar o e-mail de segurança.';
-      }
+      if (error.status === 429 && error.retryAfterSeconds) message += ` Tente novamente em aproximadamente ${Math.ceil(error.retryAfterSeconds / 60)} minuto(s).`;
+      if (error.code === 'COUNCIL_PRESIDENT_CANNOT_SUBMIT' && createButton) createButton.hidden = true;
       showStatus(status, message, 'error');
     } finally {
       button.disabled = false;
@@ -273,7 +355,7 @@
     loadNotifications();
   });
 
-  document.getElementById('refreshManifestations').addEventListener('click', () => loadManifestations());
+  document.getElementById('refreshManifestations').addEventListener('click', loadManifestations);
 
   document.getElementById('replyForm').addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -282,8 +364,7 @@
     const status = document.getElementById('replyStatus');
     button.disabled = true;
     try {
-      const path = citizenContextPath(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/messages`);
-      await auth.api(path, {
+      await auth.api(citizenContextPath(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/messages`), {
         method: 'POST', body: JSON.stringify({ body: document.getElementById('replyText').value })
       });
       document.getElementById('replyText').value = '';
@@ -301,17 +382,18 @@
     if (!state.selectedProtocol) return;
     const file = document.getElementById('attachmentFile').files?.[0];
     if (!file) return;
+    const fileError = validateFiles([file]);
+    if (fileError) return window.alert(fileError);
     const button = document.getElementById('uploadAttachment');
     button.disabled = true;
     try {
       const form = new FormData();
       form.append('file', file);
-      const path = citizenContextPath(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/attachments`);
-      await auth.api(path, { method: 'POST', body: form });
+      await auth.api(citizenContextPath(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/attachments`), { method: 'POST', body: form });
       document.getElementById('attachmentFile').value = '';
       await openDetail(state.selectedProtocol);
     } catch (error) {
-      alert(error.message || 'Não foi possível enviar o anexo.');
+      window.alert(error.message || 'Não foi possível enviar o anexo.');
     } finally {
       button.disabled = false;
     }
@@ -323,9 +405,7 @@
     button.disabled = true;
     try {
       const path = citizenContextPath(`/api/council/manifestations/${encodeURIComponent(state.selectedProtocol)}/attachments/${encodeURIComponent(button.dataset.attachment)}`);
-      const response = await fetch(`${endpoint}${path}`, {
-        headers: auth.authorizationHeader(), cache: 'no-store'
-      });
+      const response = await fetch(`${endpoint}${path}`, { headers: auth.authorizationHeader(), cache: 'no-store' });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
         throw new Error(payload.error || 'Não foi possível abrir o anexo.');
@@ -335,7 +415,7 @@
       window.open(url, '_blank', 'noopener');
       window.setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (error) {
-      alert(error.message || 'Não foi possível abrir o anexo.');
+      window.alert(error.message || 'Não foi possível abrir o anexo.');
     } finally {
       button.disabled = false;
     }
