@@ -141,15 +141,302 @@
       }
     }
 
+    /* Mobile: a entrada deixa de ser uma versão miniaturizada do desktop.
+       O conteúdo passa a usar a largura inteira da tela e os alvos de toque ficam maiores. */
     @media(max-width:860px){
-      body.login-page{overflow:auto}
-      .login-portal-logo{width:min(560px,100%)}
-      .login-message{padding-top:24px}
+      body.login-page{
+        height:auto;
+        min-height:100vh;
+        min-height:100dvh;
+        overflow:auto;
+      }
+      .login-page .login-layout{
+        display:block;
+        height:auto;
+        min-height:100vh;
+        min-height:100dvh;
+        overflow:visible;
+      }
+      .login-page .login-visual{
+        min-height:0;
+        padding:24px 20px 26px;
+        gap:18px;
+        justify-content:flex-start;
+      }
+      .login-page .login-portal-brand{
+        max-width:none;
+        margin:0 auto;
+        justify-content:center;
+        position:static;
+        top:auto;
+      }
+      .login-page .login-portal-logo{
+        width:min(360px,88vw);
+        max-height:none;
+        object-position:center;
+      }
+      .login-page .login-message{
+        width:100%;
+        max-width:680px;
+        margin:0 auto;
+        padding:0;
+      }
+      .login-page .portal-eyebrow{
+        font-size:.78rem;
+      }
+      .login-page .login-message h1{
+        margin:0 0 12px;
+        font-size:clamp(1.9rem,7.4vw,2.35rem);
+        line-height:1.06;
+      }
+      .login-page .login-message p{
+        max-width:none;
+        font-size:1rem;
+        line-height:1.55;
+        opacity:.92;
+      }
+      .login-page .login-message > div{
+        margin-top:16px !important;
+        gap:7px !important;
+        font-size:.78rem !important;
+      }
+      .login-page .login-message > div span{
+        padding:7px 9px !important;
+      }
+      .login-page .login-visual > small{
+        width:100%;
+        max-width:680px;
+        margin:0 auto;
+        font-size:.72rem;
+        line-height:1.4;
+        opacity:.88;
+      }
+      .login-page .login-panel{
+        display:block;
+        min-height:0;
+        padding:20px 16px 32px;
+      }
+      .login-page .login-card{
+        width:min(680px,100%);
+        margin:0 auto;
+        padding:26px 22px;
+        border-radius:20px;
+      }
+      .login-page .login-card h2{
+        font-size:1.5rem;
+      }
+      .login-page .login-card > p{
+        margin-bottom:22px;
+        font-size:.98rem;
+      }
+      .login-page .portal-field{
+        margin-bottom:16px;
+      }
+      .login-page .portal-field label{
+        font-size:.9rem;
+      }
+      .login-page .portal-field input{
+        min-height:50px;
+        padding:13px 14px;
+        font-size:1rem;
+      }
+      .login-page .login-card > label{
+        font-size:.9rem !important;
+        margin-bottom:18px !important;
+      }
+      .login-page #loginRemember{
+        width:18px;
+        height:18px;
+        flex:0 0 18px;
+      }
+      .login-page .login-submit{
+        min-height:50px;
+        font-size:1rem;
+      }
+      .login-page .login-card > div:last-child{
+        margin-top:22px !important;
+        padding-top:20px !important;
+      }
+      .login-page .login-card > div:last-child strong{
+        margin-bottom:8px !important;
+        font-size:1rem;
+      }
+      .login-page .login-card > div:last-child span{
+        margin-bottom:14px !important;
+        font-size:.95rem !important;
+        line-height:1.45;
+      }
+      .login-page .login-card > div:last-child .portal-button{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        min-height:44px;
+        padding:11px 16px;
+      }
+      .login-page .login-card > div:last-child small{
+        font-size:.78rem;
+        line-height:1.4;
+      }
     }
-    @media(max-width:580px){
-      .login-portal-logo{width:100%}
-      .login-visual{padding-top:22px}
-      .login-message{padding-top:22px}
+
+    /* Alguns navegadores Android podem abrir um telefone com viewport próximo ao desktop.
+       A combinação de tela até 1100px + ponteiro de toque garante a experiência mobile
+       sem atingir notebooks e computadores convencionais. */
+    @media(min-width:861px) and (max-width:1100px) and (hover:none) and (pointer:coarse){
+      body.login-page{
+        height:auto;
+        min-height:100vh;
+        min-height:100dvh;
+        overflow:auto;
+      }
+      .login-page .login-layout{
+        display:block;
+        height:auto;
+        min-height:100vh;
+        min-height:100dvh;
+        overflow:visible;
+      }
+      .login-page .login-visual{
+        min-height:0;
+        padding:34px 42px 38px;
+        gap:24px;
+        justify-content:flex-start;
+      }
+      .login-page .login-portal-brand{
+        max-width:none;
+        margin:0 auto;
+        justify-content:center;
+        position:static;
+        top:auto;
+      }
+      .login-page .login-portal-logo{
+        width:min(460px,68vw);
+        max-height:none;
+        object-position:center;
+      }
+      .login-page .login-message{
+        width:100%;
+        max-width:760px;
+        margin:0 auto;
+        padding:0;
+      }
+      .login-page .portal-eyebrow{
+        font-size:.95rem;
+      }
+      .login-page .login-message h1{
+        margin:0 0 16px;
+        font-size:2.75rem;
+        line-height:1.06;
+      }
+      .login-page .login-message p{
+        max-width:none;
+        font-size:1.2rem;
+        line-height:1.55;
+        opacity:.92;
+      }
+      .login-page .login-message > div{
+        margin-top:20px !important;
+        gap:9px !important;
+        font-size:.96rem !important;
+      }
+      .login-page .login-message > div span{
+        padding:9px 12px !important;
+      }
+      .login-page .login-visual > small{
+        width:100%;
+        max-width:760px;
+        margin:0 auto;
+        font-size:.9rem;
+        line-height:1.4;
+        opacity:.88;
+      }
+      .login-page .login-panel{
+        display:block;
+        min-height:0;
+        padding:30px 36px 46px;
+      }
+      .login-page .login-card{
+        width:min(720px,100%);
+        margin:0 auto;
+        padding:38px 36px;
+        border-radius:24px;
+      }
+      .login-page .login-card h2{
+        font-size:1.85rem;
+      }
+      .login-page .login-card > p{
+        margin-bottom:28px;
+        font-size:1.15rem;
+      }
+      .login-page .portal-field{
+        margin-bottom:20px;
+      }
+      .login-page .portal-field label{
+        font-size:1.02rem;
+      }
+      .login-page .portal-field input{
+        min-height:58px;
+        padding:15px 16px;
+        font-size:1.2rem;
+      }
+      .login-page .login-card > label{
+        font-size:1.05rem !important;
+        margin-bottom:22px !important;
+      }
+      .login-page #loginRemember{
+        width:21px;
+        height:21px;
+        flex:0 0 21px;
+      }
+      .login-page .login-submit{
+        min-height:58px;
+        font-size:1.15rem;
+      }
+      .login-page .login-card > div:last-child{
+        margin-top:28px !important;
+        padding-top:24px !important;
+      }
+      .login-page .login-card > div:last-child strong{
+        margin-bottom:9px !important;
+        font-size:1.18rem;
+      }
+      .login-page .login-card > div:last-child span{
+        margin-bottom:16px !important;
+        font-size:1.08rem !important;
+        line-height:1.5;
+      }
+      .login-page .login-card > div:last-child .portal-button{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        min-height:50px;
+        padding:12px 20px;
+        font-size:1.05rem;
+      }
+      .login-page .login-card > div:last-child small{
+        font-size:.92rem;
+        line-height:1.45;
+      }
+    }
+
+    @media(max-width:380px){
+      .login-page .login-visual{
+        padding-left:16px;
+        padding-right:16px;
+      }
+      .login-page .login-portal-logo{
+        width:min(330px,94vw);
+      }
+      .login-page .login-message h1{
+        font-size:1.78rem;
+      }
+      .login-page .login-panel{
+        padding-left:10px;
+        padding-right:10px;
+      }
+      .login-page .login-card{
+        padding:24px 18px;
+      }
     }
   </style>
 </head>
