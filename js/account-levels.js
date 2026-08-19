@@ -2,9 +2,9 @@
 
 (() => {
   const LEVELS = Object.freeze({
-    bronze: { rank: 1, label: 'Bronze', medal: '🥉' },
-    prata: { rank: 2, label: 'Prata', medal: '🥈' },
-    ouro: { rank: 3, label: 'Ouro', medal: '🥇' }
+    bronze: { rank: 1, label: 'Bronze' },
+    prata: { rank: 2, label: 'Prata' },
+    ouro: { rank: 3, label: 'Ouro' }
   });
 
   function normalizeLevel(value) {
@@ -37,7 +37,7 @@
     if (!element) return;
     const meta = metaFor(user);
     element.className = `level-mini-badge ${meta.level}`;
-    element.textContent = `${meta.medal} Conta ${meta.label}`;
+    element.textContent = `Conta ${meta.label}`;
   }
 
   function renderProgress(root, user) {
@@ -46,7 +46,7 @@
     const currentBadge = root.querySelector('[data-level-current]');
     if (currentBadge) {
       currentBadge.className = `account-level-current ${current.level}`;
-      currentBadge.innerHTML = `<span class="medal">${current.medal}</span><span>Conta ${current.label}</span>`;
+      currentBadge.textContent = `Conta ${current.label}`;
     }
 
     root.querySelectorAll('[data-level-step]').forEach((step) => {
@@ -72,26 +72,20 @@
     } else if (current.level === 'prata') {
       if (nextTitle) nextTitle.textContent = 'Próxima conquista: Conta Ouro';
       if (nextText) nextText.textContent = 'O nível Ouro ficará disponível quando a proteção reforçada em novos dispositivos e a segunda etapa de autenticação forem ativadas no portal.';
-      if (nextAction) {
-        nextAction.hidden = true;
-        nextAction.style.display = 'none';
-      }
+      if (nextAction) { nextAction.hidden = true; nextAction.style.display = 'none'; }
     } else {
       if (nextTitle) nextTitle.textContent = 'Conta no nível máximo';
       if (nextText) nextText.textContent = 'Sua conta possui o nível máximo de proteção previsto no portal.';
-      if (nextAction) {
-        nextAction.hidden = true;
-        nextAction.style.display = 'none';
-      }
+      if (nextAction) { nextAction.hidden = true; nextAction.style.display = 'none'; }
     }
 
     const achievement = root.querySelector('[data-level-achievement]');
     if (achievement) {
       achievement.innerHTML = current.level === 'bronze'
-        ? '<span class="achievement-icon">🎯</span><div><strong>Falta só uma confirmação</strong><span>Adicionar e confirmar o e-mail leva sua conta ao nível Prata.</span></div>'
+        ? '<div><strong>Falta uma confirmação</strong><span>Adicionar e confirmar o e-mail leva sua conta ao nível Prata.</span></div>'
         : current.level === 'prata'
-          ? '<span class="achievement-icon">🎉</span><div><strong>E-mail confirmado</strong><span>Sua conta está no nível Prata e preparada para os recursos que dependem de identificação de segurança verificada.</span></div>'
-          : '<span class="achievement-icon">🏆</span><div><strong>Conta Ouro</strong><span>Proteção reforçada e acesso aos recursos avançados previstos para a camada social.</span></div>';
+          ? '<div><strong>E-mail confirmado</strong><span>Sua conta está no nível Prata e preparada para os recursos que dependem de identificação de segurança verificada.</span></div>'
+          : '<div><strong>Conta Ouro</strong><span>Proteção reforçada e acesso aos recursos avançados previstos para a camada social.</span></div>';
     }
   }
 
