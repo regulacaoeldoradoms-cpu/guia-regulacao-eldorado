@@ -1,7 +1,6 @@
 'use strict';
 
 (async () => {
-  // Compatibilidade da suíte histórica: location.replace('/')
   const auth = window.RegulationAuth;
   const levels = window.AccountLevels;
   let user = await auth.me({ allowCached: false }).catch(() => null);
@@ -140,15 +139,13 @@
 
   function renderSecurity() {
     emailInput.value = security.email || '';
-    emailStatusBadge.textContent = !security.email ? 'Nenhum e-mail cadastrado' : security.emailVerified ? '✓ E-mail verificado' : 'E-mail ainda não verificado';
+    emailStatusBadge.textContent = !security.email ? 'Nenhum e-mail cadastrado' : security.emailVerified ? 'E-mail verificado' : 'E-mail ainda não verificado';
     emailStatusBadge.className = `user-badge ${security.emailVerified ? '' : 'inactive'}`;
 
-    if (isCitizen && security.privacyMode !== 'sigilosa') {
-      privacyStatus.innerHTML = '<strong>🕶️ Sem e-mail ou telefone vinculado</strong><span>Esta conta não possui esses identificadores cadastrados. Para preservar sua identificação, o nome de usuário também não deve revelar seu nome real ou outro dado pessoal.</span>';
-    } else if (security.emailVerified) {
-      privacyStatus.innerHTML = '<strong>🔒 Conta Prata · e-mail verificado</strong><span>O endereço protege a mesma conta usada em todos os módulos. Em manifestações do Conselho, ele permanece sigiloso e não é exibido no painel institucional.</span>';
+    if (security.emailVerified) {
+      privacyStatus.innerHTML = '<strong>Conta Prata · e-mail verificado</strong><span>O endereço protege a mesma conta usada em todos os módulos. Novas manifestações do Conselho são sigilosas e o e-mail não é exibido no painel institucional.</span>';
     } else {
-      privacyStatus.innerHTML = '<strong>Segurança da conta</strong><span>Cadastre e confirme um e-mail para alcançar o nível Prata, proteger o acesso e liberar os recursos associados a esse nível.</span>';
+      privacyStatus.innerHTML = '<strong>Privacidade das manifestações: anônima</strong><span>Enquanto o e-mail não estiver verificado, novas manifestações podem ser registradas como anônimas. Se você confirmar o e-mail depois, os protocolos já enviados permanecem com a privacidade registrada no momento do envio.</span>';
     }
 
     verificationButton.hidden = !security.email || security.emailVerified;
@@ -166,7 +163,7 @@
     if (!user.emailVerificationRequired && user.emailVerified) {
       if (emailVerificationNotice) emailVerificationNotice.hidden = true;
       if (params.get('verificar-email') === '1') {
-        show(securityStatus, 'E-mail confirmado. Parabéns: sua conta agora é Prata.', 'success');
+        show(securityStatus, 'E-mail confirmado. Sua conta agora é Prata.', 'success');
         const destination = safeNext();
         if (destination) window.setTimeout(() => location.replace(destination), 900);
       }
@@ -179,7 +176,7 @@
       renderSecurity();
       if (security.emailVerified) await refreshVerificationState();
       if (params.get('email-verificado') === '1' && security.emailVerified) {
-        show(securityStatus, 'E-mail confirmado. Conquista desbloqueada: Conta Prata.', 'success');
+        show(securityStatus, 'E-mail confirmado. Conta Prata liberada.', 'success');
       }
     } catch (error) {
       show(securityStatus, error.message || 'Não foi possível carregar a segurança da conta.', 'error');
@@ -192,7 +189,7 @@
   choosePhoto?.addEventListener('click', () => {
     if (!hasSilver()) {
       document.getElementById('seguranca')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      show(profileStatus, 'A foto de perfil é uma conquista da Conta Prata. Confirme seu e-mail para desbloquear.', 'error');
+      show(profileStatus, 'A foto de perfil é liberada no nível Prata. Confirme seu e-mail para desbloquear.', 'error');
       return;
     }
     profileInput?.click();
