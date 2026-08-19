@@ -26,6 +26,7 @@
     concluida: 'Concluída', arquivada: 'Arquivada'
   };
   const typeLabels = { sugestao: 'Sugestão', reclamacao: 'Reclamação', elogio: 'Elogio', denuncia: 'Denúncia' };
+  const privacyLabels = { anonima: 'Anônima', sigilosa: 'Sigilosa', identificada: 'Identificada' };
 
   document.getElementById('portalUserName').textContent = user.name || user.username;
   document.getElementById('portalUserRole').textContent = isPresident ? 'Presidente do Conselho' : 'Membro do Conselho';
@@ -60,6 +61,16 @@
     modal.setAttribute('aria-hidden', 'true');
   }
 
+  function identitySummary(item) {
+    if (item?.privacyMode !== 'identificada' || !item.authorIdentity) return '';
+    const identity = item.authorIdentity;
+    const parts = [identity.displayName];
+    if (identity.handle) parts.push(`@${identity.handle}`);
+    if (identity.jobTitle) parts.push(identity.jobTitle);
+    else if (identity.roleLabel) parts.push(identity.roleLabel);
+    return parts.filter(Boolean).join(' · ');
+  }
+
   function filtered() {
     const query = document.getElementById('councilSearch').value.trim().toLowerCase();
     const type = document.getElementById('councilType').value;
@@ -68,7 +79,7 @@
       if (type && item.type !== type) return false;
       if (status && item.status !== status) return false;
       if (!query) return true;
-      return `${item.protocol} ${item.subject} ${item.service} ${item.description}`.toLowerCase().includes(query);
+      return `${item.protocol} ${item.subject} ${item.service} ${item.description} ${item.authorLabel || ''} ${identitySummary(item)}`.toLowerCase().includes(query);
     });
   }
 
@@ -88,13 +99,16 @@
       rows.innerHTML = '<tr><td colspan="5">Nenhuma manifestação corresponde aos filtros.</td></tr>';
       return;
     }
-    rows.innerHTML = items.map((item) => `<tr data-protocol="${escapeHtml(item.protocol)}">
+    rows.innerHTML = items.map((item) => {
+      const secondary = item.service || identitySummary(item) || item.authorLabel || 'Identidade protegida';
+      return `<tr data-protocol="${escapeHtml(item.protocol)}">
       <td><strong>${escapeHtml(item.protocol)}</strong><small>${escapeHtml(formatDate(item.createdAt))}</small></td>
-      <td><strong>${escapeHtml(item.subject || 'Sem assunto')}</strong><small>${escapeHtml(item.service || item.authorLabel || 'Identidade protegida')}</small></td>
+      <td><strong>${escapeHtml(item.subject || 'Sem assunto')}</strong><small>${escapeHtml(secondary)}</small></td>
       <td>${escapeHtml(typeLabels[item.type] || item.type)}</td>
       <td><span class="status-chip ${escapeHtml(item.status)}">${escapeHtml(statusLabels[item.status] || item.status)}</span></td>
       <td>${escapeHtml(formatDate(item.lastActivityAt || item.updatedAt || item.createdAt))}</td>
-    </tr>`).join('');
+    </tr>`;
+    }).join('');
   }
 
   async function loadAll() {
@@ -177,12 +191,18 @@
       const payload = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}`, { method: 'GET' });
       state.detail = payload;
       const item = payload.manifestation;
+      const identity = identitySummary(item);
       document.getElementById('detailProtocol').textContent = item.protocol;
       document.getElementById('detailMeta').textContent = `${typeLabels[item.type] || item.type} · ${formatDate(item.createdAt)} · ${item.authorLabel || 'Identidade protegida'}`;
       const chip = document.getElementById('detailStatus');
       chip.textContent = statusLabels[item.status] || item.status;
       chip.className = `status-chip ${item.status}`;
-      document.getElementById('detailPrivacy').textContent = item.privacyMode === 'sigilosa' ? 'Sigilosa' : 'Anônima';
+      const privacyChip = document.getElementById('detailPrivacy');
+      privacyChip.textContent = privacyLabels[item.privacyMode] || item.privacyMode || 'Privacidade não informada';
+      privacyChip.classList.toggle('identified', item.privacyMode === 'identificada');
+      const identityChip = document.getElementById('detailIdentity');
+      identityChip.textContent = identity || 'Identidade protegida';
+      identityChip.classList.toggle('identified', Boolean(identity));
       document.getElementById('detailSubject').textContent = item.subject || '';
       document.getElementById('detailService').textContent = item.service ? `Serviço/unidade informado: ${item.service}` : 'Serviço/unidade não informado.';
       document.getElementById('detailDescription').textContent = item.description || '';
