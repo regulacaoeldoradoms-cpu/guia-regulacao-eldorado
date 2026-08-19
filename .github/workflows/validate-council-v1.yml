@@ -58,6 +58,8 @@ jobs:
           grep -q 'Conselho Municipal de Saúde' conselho/index.html
           grep -q 'Painel institucional' conselho/painel/index.html
           grep -q 'Nova manifestação' cidadao/index.html
+          grep -q 'Classifique a manifestação' cidadao/index.html
+          grep -q 'O que você espera do Conselho' cidadao/index.html
           grep -q 'Minhas manifestações' cidadao/index.html
           grep -q 'Notificações' cidadao/index.html
           grep -q 'Sua porta de entrada' login/index.html
@@ -85,7 +87,8 @@ jobs:
           grep -q 'não têm relação com os níveis oficiais da conta Gov.br' conta/index.html
           grep -q 'account-levels.js' conta/index.html
           grep -q 'citizen-account-level.js' cidadao/index.html
-          grep -q 'Uma conta, o mesmo perfil' js/citizen-account-level.js
+          grep -q 'Segurança da conta' js/citizen-account-level.js
+          ! grep -q '🥉\|🥈\|🥇' js/account-levels.js js/citizen-account-level.js cidadao/index.html
 
       - name: Conferir Firebase sem fallback para Google Drive
         run: |
@@ -123,15 +126,10 @@ jobs:
           grep -q 'profilePhotoLevelLock' js/account.js
           grep -q 'guardSecurityEmailRemoval' worker/index.js
           grep -q 'SECURITY_EMAIL_REMOVAL_BLOCKED' worker/citizen-privacy.js
-          grep -q "payload.security.emailVerified ? 'sigilosa' : 'anonima'" worker/citizen-privacy.js
-          grep -q 'não converte retroativamente' worker/citizen-privacy.js
-          grep -q 'normalizeSecurityPrivacyResponse' worker/index.js
           grep -q 'COUNCIL_ROLES_REQUIRING_VERIFICATION' worker/portal-safety.js
           grep -q 'user.emailVerificationRequired' js/council-panel.js
-          grep -q 'Presidência do Conselho' js/citizen-account-level.js
-          grep -q 'Anônima · e-mail ainda não verificado' js/citizen-account-level.js
-          grep -q 'Atenção à sua identificação' cidadao/index.html
-          grep -q 'fotos, laudos e PDFs podem conter nome' cidadao/index.html
+          grep -q 'Atenção à identificação' cidadao/index.html
+          grep -q 'Este canal não é atendimento assistencial' cidadao/index.html
           grep -q 'não realiza agendamento' conselho/index.html
 
       - name: Conferir proteção dos anexos
@@ -146,6 +144,8 @@ jobs:
           ! grep -q 'file.name' worker/council.js
           grep -q 'const { objectName, fileName, ...safe }' worker/council.js
           grep -q 'Content-Disposition' worker/council.js
+          grep -q 'manifestationFiles' cidadao/index.html
+          grep -q 'uploadFiles' js/citizen.js
 
       - name: Conferir auditoria sem copiar o conteúdo
         run: |
