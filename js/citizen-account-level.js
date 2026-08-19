@@ -62,9 +62,9 @@
     if (!notice) return;
     notice.hidden = false;
     notice.innerHTML = meta.level === 'bronze'
-      ? '<strong>Sua conta está no nível Bronze.</strong> Você pode usar o Canal do Cidadão. Sem e-mail verificado, novas manifestações podem ser registradas como anônimas; após a confirmação, as novas manifestações passam a ser sigilosas.'
+      ? '<strong>Sua conta está no nível Bronze.</strong> Você pode usar o Canal do Cidadão. Sem e-mail verificado, novas manifestações são registradas como anônimas; após a confirmação, você poderá escolher entre envio sigiloso ou identificado.'
       : meta.level === 'prata'
-        ? '<strong>Conta Prata.</strong> Seu e-mail de segurança está confirmado. Novas manifestações são registradas como sigilosas, sem exibir o endereço de e-mail ao Conselho.'
+        ? '<strong>Conta Prata.</strong> Seu e-mail de segurança está confirmado. Em cada nova manifestação, você pode manter sua identidade sigilosa ou optar por se identificar ao Conselho. O endereço de e-mail continua protegido.'
         : '<strong>Conta Ouro.</strong> Sua conta atingiu o nível máximo de proteção previsto no portal.';
   }
 
