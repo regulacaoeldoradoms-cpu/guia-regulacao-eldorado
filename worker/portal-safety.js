@@ -80,6 +80,7 @@ export async function augmentAuthResponse(response, env) {
   const progress = accountProgressFor(user);
   payload.user = {
     ...user,
+    privacyMode: user.emailVerified === true ? 'sigilosa' : 'anonima',
     accountLevel: progress.level,
     accountProgress: progress,
     emailVerificationRequired: Boolean(
