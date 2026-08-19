@@ -1,0 +1,40 @@
+/* Refinamento visual do dashboard do Canal do Cidadão */
+body.portal-page{background:#eaf2f6}
+.portal-main .portal-hero{background:linear-gradient(135deg,#eef8fb 0%,#e5f3f0 100%);border-color:#c7dfe8;box-shadow:0 10px 28px rgba(22,58,82,.07)}
+.portal-main .portal-hero-copy p{color:#587287}
+.citizen-hero-status{align-content:center}
+#accountEvolutionLink{display:none!important}
+#accountEvolutionNotice{background:#e7f3f8;border-color:#bedbea;color:#214e68}
+#citizenContextNotice{background:#edf5f7;border-color:#ccdee5;color:#2d5366}
+
+/* O único atalho necessário no topo é a criação de uma nova manifestação. */
+.citizen-actions{display:block;margin:20px 0 24px}
+.citizen-actions>.citizen-action:not(#openNewManifestation){display:none!important}
+#openNewManifestation{width:100%;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:16px;border:1px solid #0c657c;background:linear-gradient(135deg,#0d6f88 0%,#0c7a78 100%);color:#fff;border-radius:16px;padding:19px 22px;box-shadow:0 10px 24px rgba(9,91,111,.18);text-align:left}
+#openNewManifestation:hover{transform:translateY(-1px);border-color:#084f63;background:linear-gradient(135deg,#0b637b 0%,#096d6b 100%);box-shadow:0 14px 30px rgba(9,91,111,.24)}
+#openNewManifestation:focus-visible{outline:3px solid rgba(14,120,139,.28);outline-offset:3px}
+#openNewManifestation .icon{width:48px;height:48px;margin:0;border-radius:14px;background:rgba(255,255,255,.16);color:#fff;display:grid;place-items:center}
+#openNewManifestation .icon svg{width:25px;height:25px}
+#openNewManifestation strong{color:#fff;font-size:1.08rem;margin:0 0 4px}
+#openNewManifestation>span:not(.icon){color:rgba(255,255,255,.88);font-size:.86rem;line-height:1.45}
+.citizen-primary-action:has(#openNewManifestation[hidden]),.citizen-actions:has(#openNewManifestation[hidden]){display:none}
+
+/* Superfícies distintas para separar visualmente cada função. */
+#manifestationsCard{background:#f2f8fb;border-color:#c7dce8;box-shadow:0 9px 24px rgba(24,69,96,.07)}
+#manifestationsCard .citizen-card-head{background:#dfeef6;border-bottom-color:#c7dce8}
+#manifestationsCard .citizen-card-body{background:#f3f8fb}
+#notificationsCard{background:#f6f3fa;border-color:#d8cfe7;box-shadow:0 9px 24px rgba(73,55,103,.07)}
+#notificationsCard .citizen-card-head{background:#ebe5f3;border-bottom-color:#d8cfe7}
+#notificationsCard .citizen-card-body{background:#f7f5fa}
+#manifestationsCard .citizen-card-head h2,#notificationsCard .citizen-card-head h2{font-weight:800}
+.manifestation-item{border-color:#cadce7;box-shadow:0 2px 7px rgba(21,53,80,.035)}
+.manifestation-item:hover{background:#fff;transform:translateY(-1px);box-shadow:0 6px 14px rgba(21,53,80,.08)}
+.notification{border-color:#d9d3e3;box-shadow:0 2px 7px rgba(73,55,103,.03)}
+.notification:hover{border-color:#bfb3d2;background:#fff}
+.notification.unread{background:#f1f8fc;border-left-color:#2677a6}
+
+@media(max-width:700px){
+  #openNewManifestation{padding:17px 18px;gap:13px}
+  #openNewManifestation .icon{width:44px;height:44px}
+  .portal-main .portal-hero{background:linear-gradient(160deg,#eef8fb 0%,#e6f3f0 100%)}
+}
