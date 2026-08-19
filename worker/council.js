@@ -20,6 +20,13 @@ const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const TYPES = new Set(['sugestao', 'reclamacao', 'elogio', 'denuncia']);
 const STATUSES = new Set(['recebida', 'em_analise', 'aguardando_cidadao', 'encaminhada', 'aguardando_retorno', 'respondida', 'concluida', 'arquivada']);
 const ATTACHMENT_TYPES = new Set(['image/jpeg', 'image/png', 'application/pdf']);
+const ROLE_LABELS = Object.freeze({
+  medico: 'Médico',
+  recepcao: 'Recepção',
+  coordenacao: 'Coordenação',
+  admin: 'Desenvolvedor',
+  cidadao: 'Cidadão'
+});
 
 function headers(origin, allowed = true) {
   const result = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
@@ -107,16 +114,62 @@ function citizenContext(url) {
   return String(url?.searchParams?.get('as') || '').toLowerCase() === 'citizen';
 }
 
-function manifestationPrivacyMode(user) {
-  return user?.emailVerified === true ? 'sigilosa' : 'anonima';
+function manifestationPrivacyMode(user, requestedMode = '') {
+  if (user?.emailVerified !== true) return 'anonima';
+  return String(requestedMode || '').toLowerCase() === 'identificada' ? 'identificada' : 'sigilosa';
+}
+
+function safeAuthorIdentity(identity) {
+  if (!identity || typeof identity !== 'object') return null;
+  const role = clean(identity.role, 30);
+  return {
+    displayName: clean(identity.displayName, 80),
+    handle: clean(identity.handle, 40),
+    role,
+    roleLabel: clean(identity.roleLabel || ROLE_LABELS[role] || 'Usuário', 80),
+    jobTitle: clean(identity.jobTitle, 120)
+  };
+}
+
+async function identifiedAuthorSnapshot(env, user) {
+  let row = null;
+  try {
+    const columns = await env.AUTH_DB.prepare('PRAGMA table_info(auth_users)').all();
+    const names = new Set((columns.results || []).map((item) => String(item.name || '')));
+    if (names.has('public_handle')) {
+      row = await env.AUTH_DB.prepare(`SELECT name, job_title AS jobTitle, role,
+        COALESCE(public_handle, '') AS publicHandle
+        FROM auth_users WHERE username = ?`).bind(user.username).first();
+    } else {
+      row = await env.AUTH_DB.prepare(`SELECT name, job_title AS jobTitle, role
+        FROM auth_users WHERE username = ?`).bind(user.username).first();
+    }
+  } catch (_) {}
+
+  const role = clean(row?.role || user?.role, 30);
+  return safeAuthorIdentity({
+    displayName: row?.name || user?.name || user?.username,
+    handle: row?.publicHandle || user?.username,
+    role,
+    roleLabel: ROLE_LABELS[role] || 'Usuário',
+    jobTitle: row?.jobTitle || user?.jobTitle || ''
+  });
 }
 
 function protectedManifestation(doc) {
   if (!doc) return null;
-  const { authorUsername, ...safe } = doc;
+  const { authorUsername, authorIdentity, ...safe } = doc;
+  if (safe.privacyMode === 'identificada' && authorIdentity) {
+    const identity = safeAuthorIdentity(authorIdentity);
+    return {
+      ...safe,
+      authorIdentity: identity,
+      authorLabel: identity?.displayName || 'Usuário identificado'
+    };
+  }
   return {
     ...safe,
-    authorLabel: 'Usuário · identidade protegida'
+    authorLabel: safe.privacyMode === 'anonima' ? 'Usuário anônimo' : 'Usuário · identidade protegida'
   };
 }
 
@@ -201,13 +254,15 @@ async function createManifestation(request, env, user, origin) {
   const subject = clean(body.subject, MAX_SUBJECT);
   const description = clean(body.description, MAX_TEXT);
   const service = clean(body.service, 160);
+  const requestedPrivacyMode = clean(body.privacyMode, 20);
   if (!TYPES.has(type)) return json({ error: 'Escolha um tipo de manifestação válido.' }, 400, origin);
   if (subject.length < 3) return json({ error: 'Informe um assunto para a manifestação.' }, 400, origin);
   if (description.length < 10) return json({ error: 'Descreva a situação com um pouco mais de detalhe.' }, 400, origin);
 
   const protocol = await nextProtocol(env);
   const createdAt = nowIso();
-  const privacyMode = manifestationPrivacyMode(user);
+  const privacyMode = manifestationPrivacyMode(user, requestedPrivacyMode);
+  const authorIdentity = privacyMode === 'identificada' ? await identifiedAuthorSnapshot(env, user) : null;
   const doc = {
     protocol,
     privacyMode,
@@ -221,6 +276,7 @@ async function createManifestation(request, env, user, origin) {
     lastActivityAt: createdAt,
     attachmentCount: 0
   };
+  if (authorIdentity) doc.authorIdentity = authorIdentity;
 
   await firestoreCreate(env, 'council_manifestations', protocol, doc);
   await env.AUTH_DB.prepare('INSERT INTO council_manifestation_index(protocol, author_username, privacy_mode) VALUES (?, ?, ?)')
@@ -437,6 +493,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
       role: user.role,
       citizenAccess: true,
       canCreateManifestation: !presidentAccess(user),
+      canIdentifyManifestation: user.emailVerified === true,
       newManifestationIntervalSeconds: NEW_MANIFESTATION_INTERVAL_SECONDS
     }, 200, origin);
   }
