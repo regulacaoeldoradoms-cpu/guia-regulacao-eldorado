@@ -1,197 +1,244 @@
-/* Refinamento da hierarquia visual do Canal do Cidadão no mobile.
-   Carregado depois de citizen-mobile.css e aplicado somente a .mobile-citizen-mode. */
+/* Canal do Cidadão — painel mobile v2.
+   Este arquivo altera apenas a hierarquia visual da tela inicial.
+   O formulário e os modais continuam usando citizen-mobile.css.
+*/
 
+body.mobile-citizen-mode .portal-main{
+  padding:0 12px 46px !important;
+  margin:0 !important;
+}
+
+/* Cabeçalho: continua legível, porém com menos sensação de duas barras pesadas. */
 body.mobile-citizen-mode .portal-topbar-inner{
-  padding:14px 16px 13px !important;
+  padding:13px 16px 12px !important;
+  gap:10px !important;
+}
+body.mobile-citizen-mode .portal-brand{
   gap:11px !important;
 }
-
-body.mobile-citizen-mode .portal-brand{
-  gap:12px !important;
-}
-
 body.mobile-citizen-mode .portal-brand img{
-  width:66px !important;
-  height:66px !important;
-  flex-basis:66px !important;
+  width:64px !important;
+  height:64px !important;
+  flex-basis:64px !important;
 }
-
 body.mobile-citizen-mode .portal-brand h1{
-  font-size:clamp(26px,3.6vw,33px) !important;
+  font-size:clamp(27px,3.7vw,34px) !important;
 }
-
 body.mobile-citizen-mode .portal-brand p{
   font-size:clamp(16px,2.2vw,20px) !important;
 }
-
 body.mobile-citizen-mode .portal-user{
-  padding-top:10px !important;
-  gap:10px !important;
+  padding-top:9px !important;
+  gap:9px !important;
 }
-
+body.mobile-citizen-mode .portal-user-meta strong{
+  font-size:clamp(20px,2.75vw,25px) !important;
+}
+body.mobile-citizen-mode .portal-user-meta span{
+  font-size:clamp(16px,2.15vw,20px) !important;
+}
 body.mobile-citizen-mode #professionalHomeLink,
 body.mobile-citizen-mode #portalLogout{
   min-height:50px !important;
+  padding:10px 15px !important;
+  border-radius:14px !important;
 }
 
-body.mobile-citizen-mode .portal-main{
-  padding:14px 10px 0 !important;
-  margin-bottom:42px !important;
+/* Remove visualmente a seta do botão Portal sem alterar o desktop. */
+body.mobile-citizen-mode #professionalHomeLink{
+  font-size:0 !important;
+}
+body.mobile-citizen-mode #professionalHomeLink::after{
+  content:"Portal";
+  font-size:clamp(17px,2.25vw,21px) !important;
+  font-weight:800 !important;
 }
 
-/* Hero vira uma abertura clara, sem parecer outro painel administrativo. */
+/* A abertura deixa de ser um card. Passa a funcionar como cabeçalho da página. */
 body.mobile-citizen-mode .portal-hero{
-  padding:23px 20px 20px !important;
+  margin:0 -12px !important;
+  width:auto !important;
+  padding:25px 24px 20px !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:linear-gradient(180deg,#f7fcfd 0%,rgba(247,252,253,.36) 100%) !important;
+  box-shadow:none !important;
   gap:16px !important;
-  border-radius:22px !important;
-  background:linear-gradient(150deg,#f4fbfc 0%,#edf8f5 100%) !important;
-  box-shadow:0 8px 22px rgba(22,58,82,.07) !important;
 }
-
 body.mobile-citizen-mode .portal-eyebrow{
   font-size:clamp(16px,2.15vw,20px) !important;
+  letter-spacing:.12em !important;
 }
-
 body.mobile-citizen-mode .portal-hero h2{
+  max-width:680px !important;
   margin:8px 0 10px !important;
-  font-size:clamp(35px,5vw,46px) !important;
-  line-height:1.08 !important;
+  font-size:clamp(37px,5.2vw,48px) !important;
+  line-height:1.07 !important;
 }
-
 body.mobile-citizen-mode .portal-hero p{
-  font-size:clamp(20px,2.7vw,26px) !important;
-  line-height:1.5 !important;
+  max-width:680px !important;
+  margin:0 !important;
+  font-size:clamp(20px,2.75vw,26px) !important;
+  line-height:1.48 !important;
 }
 
-/* Os estados da conta passam a funcionar como uma linha de contexto, e não outro bloco. */
+/* Status de segurança funciona como faixa informativa compacta. */
 body.mobile-citizen-mode .citizen-hero-status{
-  gap:8px !important;
+  width:100% !important;
+  display:flex !important;
   flex-wrap:wrap !important;
-  align-items:center !important;
+  gap:8px !important;
+  padding-top:3px !important;
 }
-
 body.mobile-citizen-mode .level-mini-badge,
 body.mobile-citizen-mode .privacy-chip{
   min-height:42px !important;
   padding:9px 13px !important;
   font-size:clamp(16px,2.1vw,20px) !important;
+  box-shadow:none !important;
 }
 
-/* O aviso de evolução da conta repete o que os selos já informam no mobile. */
+/* Informação de Conta Prata já está nos selos do topo: não repetimos no mobile. */
 body.mobile-citizen-mode #accountEvolutionNotice{
   display:none !important;
 }
 
-/* Contextos realmente importantes ficam como alertas únicos, mais leves. */
+/* Contexto de Presidência é importante, mas não deve parecer outro painel principal. */
 body.mobile-citizen-mode #citizenContextNotice,
 body.mobile-citizen-mode #firebaseNotice{
-  margin:10px 2px 0 !important;
-  padding:15px 16px !important;
-  border-radius:14px !important;
-  border-left-width:5px !important;
-  background:#f5fafc !important;
-  font-size:clamp(18px,2.4vw,23px) !important;
+  position:relative !important;
+  margin:13px 0 17px !important;
+  padding:16px 17px 16px 50px !important;
+  border:1px solid #bdd7e1 !important;
+  border-left:5px solid #3184a2 !important;
+  border-radius:15px !important;
+  background:#f7fbfc !important;
+  color:#294f63 !important;
+  font-size:clamp(18px,2.45vw,23px) !important;
   line-height:1.48 !important;
   box-shadow:none !important;
 }
-
-body.mobile-citizen-mode #citizenContextNotice{
-  border-color:#83b8cc !important;
-  color:#294f63 !important;
+body.mobile-citizen-mode #citizenContextNotice::before{
+  content:"i";
+  position:absolute;
+  left:16px;
+  top:16px;
+  width:24px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#3184a2;
+  color:#fff;
+  font-weight:900;
+  font-size:16px;
 }
 
-/* Se houver Nova manifestação, ela vira a ação primária visual da página. */
+/* Se a ação existir, vira o elemento principal logo antes do histórico. */
 body.mobile-citizen-mode .citizen-actions{
-  margin:14px 2px 18px !important;
+  margin:0 0 18px !important;
 }
-
 body.mobile-citizen-mode #openNewManifestation{
   min-height:104px !important;
-  border-radius:18px !important;
-  box-shadow:0 8px 20px rgba(9,91,111,.16) !important;
+  padding:20px !important;
+  border-radius:19px !important;
+  box-shadow:0 9px 22px rgba(9,91,111,.18) !important;
 }
 
-/* Áreas principais: menos "caixa dentro de caixa", mais painel de atividade. */
+/* Painel de atividade: uma única coluna. */
 body.mobile-citizen-mode .citizen-grid{
-  gap:14px !important;
-  margin-top:14px !important;
+  display:block !important;
+  margin:0 !important;
 }
-
 body.mobile-citizen-mode .citizen-card{
-  border-radius:18px !important;
-  border-width:1px !important;
+  width:100% !important;
+  margin:0 !important;
+  overflow:hidden !important;
+  border:1px solid #d4e1e8 !important;
+  border-radius:20px !important;
   background:#fff !important;
-  box-shadow:0 7px 18px rgba(21,53,80,.06) !important;
+  box-shadow:0 10px 25px rgba(21,53,80,.07) !important;
 }
 
-body.mobile-citizen-mode #manifestationsCard,
-body.mobile-citizen-mode #notificationsCard{
-  background:#fff !important;
-  border-color:#d5e1e8 !important;
+/* Manifestações é o painel principal da página. */
+body.mobile-citizen-mode #manifestationsCard{
+  border-top:6px solid #237fa6 !important;
 }
-
-body.mobile-citizen-mode #manifestationsCard .citizen-card-head,
-body.mobile-citizen-mode #notificationsCard .citizen-card-head{
-  background:#fff !important;
-  border-bottom:1px solid #e2ebf0 !important;
-}
-
 body.mobile-citizen-mode #manifestationsCard .citizen-card-head{
-  border-left:6px solid #2783aa !important;
+  padding:19px 18px 16px !important;
+  border:0 !important;
+  border-bottom:1px solid #e4edf2 !important;
+  background:#fff !important;
 }
-
-body.mobile-citizen-mode #notificationsCard .citizen-card-head{
-  border-left:6px solid #8067a6 !important;
+body.mobile-citizen-mode #manifestationsCard .citizen-card-head h2{
+  font-size:clamp(29px,3.9vw,36px) !important;
+  font-weight:900 !important;
 }
-
-body.mobile-citizen-mode .citizen-card-head{
-  padding:17px 17px 16px !important;
-}
-
-body.mobile-citizen-mode .citizen-card-head h2{
-  font-size:clamp(28px,3.75vw,35px) !important;
-}
-
-body.mobile-citizen-mode .citizen-card-head .portal-button{
+body.mobile-citizen-mode #manifestationsCard .citizen-card-head .portal-button{
   min-height:48px !important;
   padding:9px 14px !important;
-  background:#f6f9fb !important;
-  border-color:#d7e2e9 !important;
   font-size:clamp(16px,2.15vw,20px) !important;
+  background:#f4f8fa !important;
+  border-color:#d6e2e9 !important;
 }
-
-body.mobile-citizen-mode .citizen-card-body{
+body.mobile-citizen-mode #manifestationsCard .citizen-card-body{
   padding:0 !important;
   background:#fff !important;
 }
-
-/* Estado vazio simples: mantém leitura grande sem ocupar um painel inteiro. */
-body.mobile-citizen-mode .empty-state{
-  min-height:0 !important;
-  padding:30px 20px 32px !important;
-  color:#657d8f !important;
-  font-size:clamp(19px,2.55vw,24px) !important;
-  line-height:1.45 !important;
+body.mobile-citizen-mode #manifestationsCard .empty-state{
+  min-height:190px !important;
+  padding:36px 22px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  align-items:center !important;
+  color:#647d8e !important;
+  font-size:clamp(20px,2.7vw,25px) !important;
+  line-height:1.48 !important;
+}
+body.mobile-citizen-mode #manifestationsCard .empty-state strong{
+  margin-bottom:10px !important;
+  color:#405f73 !important;
+  font-size:clamp(23px,3.05vw,29px) !important;
 }
 
-body.mobile-citizen-mode .empty-state strong{
-  margin-bottom:8px !important;
-  color:#4b667a !important;
-  font-size:clamp(22px,2.9vw,27px) !important;
+/* Notificações vazias não precisam ocupar um segundo painel inteiro.
+   Assim que houver uma notificação, o cartão volta a aparecer normalmente. */
+body.mobile-citizen-mode #notificationsCard:has(.empty-state){
+  display:none !important;
+}
+body.mobile-citizen-mode #notificationsCard{
+  margin-top:18px !important;
+  border-top:6px solid #8269a6 !important;
+}
+body.mobile-citizen-mode #notificationsCard .citizen-card-head{
+  padding:18px !important;
+  background:#fff !important;
+  border-bottom:1px solid #e7e1ee !important;
+}
+body.mobile-citizen-mode #notificationsCard .citizen-card-head h2{
+  font-size:clamp(28px,3.75vw,35px) !important;
+}
+body.mobile-citizen-mode #notificationsCard .citizen-card-head .portal-button{
+  min-height:48px !important;
+  padding:9px 13px !important;
+  font-size:clamp(16px,2.1vw,20px) !important;
+}
+body.mobile-citizen-mode #notificationsCard .citizen-card-body{
+  padding:14px !important;
+  background:#fff !important;
 }
 
-body.mobile-citizen-mode .manifestation-list,
-body.mobile-citizen-mode .notification-list{
+body.mobile-citizen-mode .manifestation-list{
   padding:14px !important;
 }
-
 body.mobile-citizen-mode .manifestation-item,
 body.mobile-citizen-mode .notification{
-  background:#f9fbfc !important;
-  border-color:#dce6ec !important;
+  border-radius:15px !important;
+  background:#f8fbfc !important;
 }
 
-/* O modal continua grande e acessível, mas o topo ganha uma hierarquia mais limpa. */
+/* Mantém o modal acessível do arquivo base, só limpa o cabeçalho. */
 body.mobile-citizen-mode .citizen-modal-head{
   background:#fff !important;
   box-shadow:0 4px 12px rgba(20,55,90,.06) !important;
@@ -199,16 +246,17 @@ body.mobile-citizen-mode .citizen-modal-head{
 
 @media(max-width:390px){
   body.mobile-citizen-mode .portal-main{
-    padding-left:8px !important;
-    padding-right:8px !important;
+    padding-left:9px !important;
+    padding-right:9px !important;
   }
-
   body.mobile-citizen-mode .portal-hero{
-    padding:21px 17px 18px !important;
+    margin-left:-9px !important;
+    margin-right:-9px !important;
+    padding-left:18px !important;
+    padding-right:18px !important;
   }
-
-  body.mobile-citizen-mode .citizen-card-head{
-    padding-left:14px !important;
-    padding-right:14px !important;
+  body.mobile-citizen-mode #citizenContextNotice,
+  body.mobile-citizen-mode #firebaseNotice{
+    padding-left:47px !important;
   }
 }
