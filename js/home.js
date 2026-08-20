@@ -98,6 +98,14 @@
   }
 
   grid.innerHTML = cards.join('');
+
+  // No launcher mobile, os rótulos de ação ficam mais limpos sem a seta final.
+  if (document.body.classList.contains('mobile-home-mode')) {
+    grid.querySelectorAll('.hub-card-arrow').forEach((item) => {
+      item.textContent = item.textContent.replace(/\s*→\s*$/, '');
+    });
+  }
+
   logout?.addEventListener('click', async () => {
     await auth.logout();
     location.replace('/login/');
