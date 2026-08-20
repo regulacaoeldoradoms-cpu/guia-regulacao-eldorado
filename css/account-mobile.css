@@ -1,0 +1,510 @@
+/* Minha conta — layout mobile acessível.
+   Ativado apenas quando o body recebe .mobile-account-mode.
+   Desktop permanece sob os estilos originais. */
+
+body.mobile-account-mode{
+  min-height:100dvh;
+  overflow-x:hidden;
+  background:linear-gradient(180deg,#eaf2f6 0%,#f5f9fb 52%,#edf4f7 100%) !important;
+}
+
+body.mobile-account-mode .portal-shell{
+  min-height:100dvh;
+}
+
+/* Barra superior: identidade da página e conta na mesma faixa, com alvos grandes. */
+body.mobile-account-mode .portal-topbar{
+  border-bottom-width:4px !important;
+}
+
+body.mobile-account-mode .portal-topbar-inner{
+  width:100% !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:14px 16px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:14px !important;
+  flex-wrap:nowrap !important;
+}
+
+body.mobile-account-mode .portal-brand{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  gap:11px !important;
+}
+
+body.mobile-account-mode .portal-brand img{
+  width:56px !important;
+  height:56px !important;
+  flex:0 0 56px !important;
+  border-radius:15px !important;
+}
+
+body.mobile-account-mode .portal-brand > div{
+  min-width:0 !important;
+}
+
+body.mobile-account-mode .portal-brand h1{
+  margin:0 !important;
+  font-size:clamp(25px,3.45vw,32px) !important;
+  font-weight:900 !important;
+  line-height:1.08 !important;
+  white-space:nowrap !important;
+}
+
+body.mobile-account-mode .portal-brand p{
+  display:block !important;
+  margin:4px 0 0 !important;
+  max-width:290px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  font-size:clamp(15px,2vw,19px) !important;
+  line-height:1.25 !important;
+  opacity:.9 !important;
+}
+
+body.mobile-account-mode .portal-user{
+  flex:0 0 auto !important;
+  min-width:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:9px !important;
+}
+
+body.mobile-account-mode #accountHomeLink{
+  min-height:46px !important;
+  padding:9px 13px !important;
+  border-radius:13px !important;
+  font-size:clamp(16px,2.1vw,20px) !important;
+  font-weight:850 !important;
+  white-space:nowrap !important;
+}
+
+body.mobile-account-mode .portal-account-area{
+  min-width:0 !important;
+  max-width:210px !important;
+  padding:4px 5px !important;
+  gap:8px !important;
+}
+
+body.mobile-account-mode .portal-profile-avatar{
+  width:40px !important;
+  height:40px !important;
+  flex:0 0 40px !important;
+}
+
+body.mobile-account-mode .portal-user-meta{
+  min-width:0 !important;
+  text-align:left !important;
+}
+
+body.mobile-account-mode .portal-user-meta strong{
+  display:block !important;
+  max-width:140px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  font-size:clamp(16px,2.15vw,20px) !important;
+  line-height:1.15 !important;
+}
+
+body.mobile-account-mode .portal-user-meta span{
+  display:block !important;
+  max-width:140px !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  margin-top:2px !important;
+  font-size:clamp(13px,1.75vw,17px) !important;
+  line-height:1.2 !important;
+  opacity:.88 !important;
+}
+
+body.mobile-account-mode #portalLogout{
+  min-height:46px !important;
+  padding:9px 13px !important;
+  border-radius:13px !important;
+  font-size:clamp(16px,2.1vw,20px) !important;
+  font-weight:850 !important;
+}
+
+/* Conteúdo principal: usa toda a largura útil. */
+body.mobile-account-mode .portal-main{
+  width:100% !important;
+  margin:0 auto 54px !important;
+  padding:14px 10px 0 !important;
+}
+
+/* Hero vira abertura de página, não um card desktop gigante. */
+body.mobile-account-mode .portal-hero{
+  width:100% !important;
+  padding:24px 21px 23px !important;
+  border-radius:22px !important;
+  background:linear-gradient(145deg,#f7fcfd 0%,#eef8f6 100%) !important;
+  box-shadow:0 8px 22px rgba(22,58,82,.07) !important;
+}
+
+body.mobile-account-mode .portal-eyebrow{
+  font-size:clamp(16px,2.15vw,20px) !important;
+  font-weight:900 !important;
+  letter-spacing:.09em !important;
+}
+
+body.mobile-account-mode .portal-hero h2{
+  margin:9px 0 11px !important;
+  max-width:none !important;
+  font-size:clamp(38px,5.25vw,49px) !important;
+  line-height:1.07 !important;
+  font-weight:900 !important;
+  letter-spacing:-.025em !important;
+}
+
+body.mobile-account-mode .portal-hero p{
+  margin:0 !important;
+  max-width:none !important;
+  font-size:clamp(20px,2.7vw,26px) !important;
+  line-height:1.5 !important;
+  color:#536f82 !important;
+}
+
+body.mobile-account-mode .first-access-note,
+body.mobile-account-mode #emailVerificationNotice{
+  margin-top:13px !important;
+  padding:17px 18px !important;
+  border-radius:16px !important;
+  font-size:clamp(18px,2.4vw,23px) !important;
+  line-height:1.48 !important;
+}
+
+/* Evolução da conta: painel principal com hierarquia grande. */
+body.mobile-account-mode .account-level-panel{
+  margin-top:16px !important;
+  border-radius:22px !important;
+  border-width:1.5px !important;
+  box-shadow:0 10px 26px rgba(22,55,82,.07) !important;
+}
+
+body.mobile-account-mode .account-level-head{
+  padding:21px 20px 18px !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  gap:12px !important;
+  align-items:start !important;
+}
+
+body.mobile-account-mode .account-level-head h2{
+  margin:6px 0 8px !important;
+  font-size:clamp(28px,3.8vw,36px) !important;
+  line-height:1.15 !important;
+  font-weight:900 !important;
+}
+
+body.mobile-account-mode .account-level-head p{
+  margin:0 !important;
+  max-width:none !important;
+  font-size:clamp(18px,2.4vw,23px) !important;
+  line-height:1.48 !important;
+}
+
+body.mobile-account-mode .account-level-current{
+  min-height:46px !important;
+  padding:9px 13px !important;
+  font-size:clamp(17px,2.2vw,21px) !important;
+}
+
+/* Medalhas grandes e fáceis de distinguir. */
+body.mobile-account-mode .account-level-track{
+  padding:23px 14px 25px !important;
+  gap:8px !important;
+}
+
+body.mobile-account-mode .account-level-track::before{
+  top:58px !important;
+  height:4px !important;
+}
+
+body.mobile-account-mode .account-level-medal{
+  width:78px !important;
+  height:78px !important;
+  margin-bottom:12px !important;
+  border-width:4px !important;
+  box-shadow:0 0 0 7px #fff !important;
+  font-size:2rem !important;
+}
+
+body.mobile-account-mode .account-level-step strong{
+  font-size:clamp(20px,2.7vw,25px) !important;
+  line-height:1.15 !important;
+}
+
+body.mobile-account-mode .account-level-step span{
+  margin-top:6px !important;
+  font-size:clamp(15px,2vw,19px) !important;
+  line-height:1.35 !important;
+}
+
+body.mobile-account-mode .account-level-body{
+  padding:0 16px 18px !important;
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:13px !important;
+}
+
+body.mobile-account-mode .account-level-next,
+body.mobile-account-mode .account-level-unlocks{
+  padding:18px !important;
+  border-radius:17px !important;
+}
+
+body.mobile-account-mode .account-level-next h3,
+body.mobile-account-mode .account-level-unlocks h3{
+  margin-bottom:9px !important;
+  font-size:clamp(22px,2.95vw,28px) !important;
+  line-height:1.2 !important;
+}
+
+body.mobile-account-mode .account-level-next p,
+body.mobile-account-mode .account-level-unlocks p,
+body.mobile-account-mode .account-level-unlock{
+  font-size:clamp(17px,2.25vw,21px) !important;
+  line-height:1.48 !important;
+}
+
+body.mobile-account-mode .account-level-unlock-list{
+  gap:12px !important;
+  margin-top:13px !important;
+}
+
+body.mobile-account-mode .account-level-unlock .state{
+  min-width:28px !important;
+  font-size:19px !important;
+}
+
+body.mobile-account-mode .account-level-cta .portal-button{
+  min-height:54px !important;
+  padding:12px 17px !important;
+  font-size:clamp(18px,2.35vw,22px) !important;
+}
+
+body.mobile-account-mode .account-achievement{
+  padding:16px !important;
+  border-radius:15px !important;
+}
+
+body.mobile-account-mode .account-achievement strong{
+  font-size:clamp(19px,2.5vw,23px) !important;
+}
+
+body.mobile-account-mode .account-achievement span{
+  font-size:clamp(16px,2.1vw,20px) !important;
+  line-height:1.4 !important;
+}
+
+body.mobile-account-mode .account-level-footnote{
+  padding:0 18px 20px !important;
+  font-size:clamp(15px,2vw,19px) !important;
+  line-height:1.5 !important;
+}
+
+/* Cards da conta: tipografia e áreas de toque grandes. */
+body.mobile-account-mode .account-layout{
+  margin-top:16px !important;
+  gap:15px !important;
+}
+
+body.mobile-account-mode .account-card,
+body.mobile-account-mode .profile-card{
+  padding:22px 20px !important;
+  border-radius:20px !important;
+  border-width:1.5px !important;
+  box-shadow:0 8px 22px rgba(20,55,90,.06) !important;
+}
+
+body.mobile-account-mode .account-card h2,
+body.mobile-account-mode .account-card h3{
+  margin-bottom:9px !important;
+  font-size:clamp(28px,3.75vw,35px) !important;
+  line-height:1.15 !important;
+  font-weight:900 !important;
+}
+
+body.mobile-account-mode .account-card > p,
+body.mobile-account-mode .profile-editor-copy p{
+  margin-bottom:18px !important;
+  font-size:clamp(18px,2.45vw,23px) !important;
+  line-height:1.52 !important;
+}
+
+/* Foto de perfil: vira uma seção clara e centralizada. */
+body.mobile-account-mode .profile-editor{
+  display:grid !important;
+  grid-template-columns:150px minmax(0,1fr) !important;
+  gap:22px !important;
+  align-items:center !important;
+}
+
+body.mobile-account-mode .profile-avatar-preview{
+  width:150px !important;
+  height:150px !important;
+  flex-basis:150px !important;
+  font-size:2.3rem !important;
+  border-width:5px !important;
+}
+
+body.mobile-account-mode .profile-editor-copy{
+  max-width:none !important;
+}
+
+body.mobile-account-mode .account-actions{
+  gap:10px !important;
+}
+
+body.mobile-account-mode .account-actions .portal-button{
+  min-height:54px !important;
+  padding:12px 17px !important;
+  border-radius:14px !important;
+  font-size:clamp(18px,2.35vw,22px) !important;
+  font-weight:850 !important;
+}
+
+/* Formulários: labels, campos e textos auxiliares grandes. */
+body.mobile-account-mode .account-form{
+  max-width:none !important;
+  gap:18px !important;
+}
+
+body.mobile-account-mode .portal-field{
+  margin:0 !important;
+}
+
+body.mobile-account-mode .portal-field label{
+  display:block !important;
+  margin-bottom:8px !important;
+  font-size:clamp(19px,2.55vw,24px) !important;
+  line-height:1.3 !important;
+  font-weight:850 !important;
+}
+
+body.mobile-account-mode .portal-field input,
+body.mobile-account-mode .portal-field select,
+body.mobile-account-mode .portal-field textarea{
+  min-height:62px !important;
+  padding:15px 16px !important;
+  border-radius:14px !important;
+  font-size:clamp(20px,2.65vw,25px) !important;
+  line-height:1.3 !important;
+}
+
+body.mobile-account-mode .portal-field small,
+body.mobile-account-mode #citizenHandleHelp{
+  display:block !important;
+  margin-top:7px !important;
+  font-size:clamp(15px,2vw,19px) !important;
+  line-height:1.45 !important;
+}
+
+body.mobile-account-mode #citizenIdentityForm .portal-field > div{
+  min-height:62px !important;
+  border-radius:14px !important;
+}
+
+body.mobile-account-mode #citizenIdentityForm .portal-field > div > span{
+  padding-left:16px !important;
+  font-size:clamp(20px,2.65vw,25px) !important;
+}
+
+body.mobile-account-mode .portal-note{
+  padding:16px 17px !important;
+  border-radius:15px !important;
+  font-size:clamp(17px,2.25vw,21px) !important;
+  line-height:1.48 !important;
+}
+
+body.mobile-account-mode .user-badge{
+  min-height:38px !important;
+  padding:8px 12px !important;
+  font-size:clamp(15px,2vw,19px) !important;
+}
+
+body.mobile-account-mode .level-lock-overlay{
+  padding:15px 16px !important;
+  border-radius:14px !important;
+  font-size:clamp(17px,2.25vw,21px) !important;
+  line-height:1.48 !important;
+}
+
+body.mobile-account-mode #socialPreferencesCard label{
+  gap:12px !important;
+  font-size:clamp(18px,2.4vw,22px) !important;
+  line-height:1.42 !important;
+}
+
+body.mobile-account-mode #socialPreferencesCard input[type="checkbox"]{
+  width:27px !important;
+  height:27px !important;
+  flex:0 0 27px !important;
+}
+
+body.mobile-account-mode #socialPreferencesCard small{
+  font-size:clamp(16px,2.1vw,20px) !important;
+  line-height:1.42 !important;
+}
+
+body.mobile-account-mode .account-status{
+  padding:14px 16px !important;
+  border-radius:14px !important;
+  font-size:clamp(17px,2.25vw,21px) !important;
+}
+
+@media(max-width:560px){
+  body.mobile-account-mode .portal-brand p,
+  body.mobile-account-mode .portal-user-meta span{
+    display:none !important;
+  }
+
+  body.mobile-account-mode .portal-brand img{
+    width:48px !important;
+    height:48px !important;
+    flex-basis:48px !important;
+  }
+
+  body.mobile-account-mode .portal-brand h1{
+    font-size:22px !important;
+  }
+
+  body.mobile-account-mode .portal-account-area{
+    max-width:155px !important;
+  }
+
+  body.mobile-account-mode .portal-user-meta strong{
+    max-width:92px !important;
+  }
+
+  body.mobile-account-mode #accountHomeLink{
+    padding-left:10px !important;
+    padding-right:10px !important;
+  }
+
+  body.mobile-account-mode .account-level-head{
+    grid-template-columns:1fr !important;
+  }
+
+  body.mobile-account-mode .account-level-current{
+    justify-self:start !important;
+  }
+
+  body.mobile-account-mode .profile-editor{
+    grid-template-columns:1fr !important;
+    text-align:left !important;
+  }
+
+  body.mobile-account-mode .profile-avatar-preview{
+    width:132px !important;
+    height:132px !important;
+    justify-self:center !important;
+  }
+}
