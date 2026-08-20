@@ -21,24 +21,24 @@ body.mobile-home-mode .portal-topbar-inner{
   width:100% !important;
   min-height:0 !important;
   margin:0 !important;
-  padding:12px 16px !important;
+  padding:14px 18px !important;
   display:flex !important;
   align-items:center !important;
   justify-content:space-between !important;
-  gap:12px !important;
+  gap:14px !important;
 }
 
 body.mobile-home-mode .portal-brand--portal-identity{
   flex:1 1 auto !important;
   width:auto !important;
   min-width:0 !important;
-  gap:10px !important;
+  gap:11px !important;
 }
 
 body.mobile-home-mode .portal-brand--portal-identity .portal-symbol{
-  width:54px !important;
-  height:54px !important;
-  flex:0 0 54px !important;
+  width:62px !important;
+  height:62px !important;
+  flex:0 0 62px !important;
 }
 
 body.mobile-home-mode .portal-brand-copy{
@@ -49,7 +49,7 @@ body.mobile-home-mode .portal-brand-copy{
 body.mobile-home-mode .portal-brand-copy h1{
   display:block !important;
   margin:0 !important;
-  font-size:clamp(18px,2.8vw,24px) !important;
+  font-size:clamp(20px,3vw,27px) !important;
   line-height:1.12 !important;
   white-space:normal !important;
   overflow:visible !important;
@@ -66,15 +66,15 @@ body.mobile-home-mode .portal-user{
   width:auto !important;
   display:flex !important;
   align-items:center !important;
-  gap:8px !important;
+  gap:9px !important;
   padding:0 !important;
   border:0 !important;
 }
 
 body.mobile-home-mode .portal-account-area{
-  max-width:190px;
-  padding:4px 6px !important;
-  gap:7px !important;
+  max-width:220px;
+  padding:5px 7px !important;
+  gap:8px !important;
 }
 
 body.mobile-home-mode .portal-user-meta{
@@ -85,8 +85,8 @@ body.mobile-home-mode .portal-user-meta{
 
 body.mobile-home-mode .portal-user-meta strong{
   display:block !important;
-  max-width:132px;
-  font-size:clamp(14px,2vw,18px) !important;
+  max-width:150px;
+  font-size:clamp(15px,2.15vw,19px) !important;
   line-height:1.2 !important;
   white-space:nowrap !important;
   overflow:hidden !important;
@@ -99,24 +99,24 @@ body.mobile-home-mode .portal-user-meta span{
 
 body.mobile-home-mode #portalLogout{
   flex:0 0 auto !important;
-  min-height:42px !important;
-  padding:9px 12px !important;
-  border-radius:12px !important;
-  font-size:clamp(14px,1.9vw,17px) !important;
+  min-height:46px !important;
+  padding:10px 14px !important;
+  border-radius:13px !important;
+  font-size:clamp(15px,2vw,18px) !important;
 }
 
 /* Conteúdo principal. */
 body.mobile-home-mode .portal-main{
   width:100% !important;
-  margin:0 auto 44px !important;
-  padding:14px 12px 0 !important;
+  margin:0 auto 48px !important;
+  padding:16px 14px 0 !important;
 }
 
 /* Hero curto: contextualiza sem dominar a tela. */
 body.mobile-home-mode .portal-hero{
   width:100% !important;
-  padding:20px 20px 21px !important;
-  border-radius:22px !important;
+  padding:24px 23px 25px !important;
+  border-radius:23px !important;
   gap:0 !important;
   box-shadow:0 12px 30px rgba(22,56,91,.09) !important;
 }
@@ -127,12 +127,12 @@ body.mobile-home-mode .portal-hero-copy{
 }
 
 body.mobile-home-mode .portal-eyebrow{
-  font-size:clamp(13px,1.8vw,17px) !important;
+  font-size:clamp(15px,2vw,19px) !important;
 }
 
 body.mobile-home-mode .portal-hero h2{
-  margin:7px 0 9px !important;
-  font-size:clamp(29px,4.3vw,39px) !important;
+  margin:8px 0 11px !important;
+  font-size:clamp(33px,4.7vw,44px) !important;
   line-height:1.08 !important;
   letter-spacing:-.025em !important;
 }
@@ -144,13 +144,13 @@ body.mobile-home-mode .portal-hero p{
   overflow:hidden !important;
   -webkit-line-clamp:3 !important;
   -webkit-box-orient:vertical !important;
-  font-size:clamp(16px,2.2vw,20px) !important;
-  line-height:1.48 !important;
+  font-size:clamp(18px,2.45vw,23px) !important;
+  line-height:1.5 !important;
 }
 
 /* A seção vira apenas o invólucro do launcher; o grande painel branco some. */
 body.mobile-home-mode .portal-section{
-  margin-top:16px !important;
+  margin-top:19px !important;
   overflow:visible !important;
   border:0 !important;
   border-radius:0 !important;
@@ -159,13 +159,13 @@ body.mobile-home-mode .portal-section{
 }
 
 body.mobile-home-mode .portal-section-heading{
-  padding:3px 3px 12px !important;
+  padding:4px 4px 14px !important;
   border:0 !important;
 }
 
 body.mobile-home-mode .portal-section-heading h2,
 body.mobile-home-mode .portal-section-heading h3{
-  font-size:clamp(22px,3vw,28px) !important;
+  font-size:clamp(25px,3.35vw,32px) !important;
   font-weight:800 !important;
 }
 
@@ -173,7 +173,7 @@ body.mobile-home-mode .portal-section-heading h3{
 body.mobile-home-mode .portal-grid{
   display:grid !important;
   grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-  gap:12px !important;
+  gap:14px !important;
   padding:0 !important;
 }
 
@@ -181,18 +181,18 @@ body.mobile-home-mode .hub-card{
   position:relative !important;
   width:100% !important;
   min-width:0 !important;
-  min-height:184px !important;
-  padding:18px 14px 15px !important;
+  min-height:210px !important;
+  padding:22px 16px 18px !important;
   border:1px solid #d9e6f1 !important;
-  border-radius:21px !important;
+  border-radius:23px !important;
   background:linear-gradient(180deg,#fff 0%,#f8fbfd 100%) !important;
   display:flex !important;
   flex-direction:column !important;
   align-items:center !important;
   justify-content:flex-start !important;
-  gap:10px !important;
+  gap:12px !important;
   text-align:center !important;
-  box-shadow:0 8px 22px rgba(20,55,90,.075) !important;
+  box-shadow:0 9px 24px rgba(20,55,90,.085) !important;
   -webkit-tap-highlight-color:transparent;
 }
 
@@ -202,21 +202,21 @@ body.mobile-home-mode .hub-card:active{
 
 body.mobile-home-mode .hub-card > .hub-card-icon{
   flex:0 0 auto !important;
-  width:72px !important;
-  height:72px !important;
+  width:84px !important;
+  height:84px !important;
   margin:0 auto !important;
-  border-radius:20px !important;
+  border-radius:22px !important;
 }
 
 body.mobile-home-mode .hub-card-icon img{
-  width:64px !important;
-  height:64px !important;
-  border-radius:17px !important;
+  width:76px !important;
+  height:76px !important;
+  border-radius:19px !important;
 }
 
 body.mobile-home-mode .hub-card-icon svg{
-  width:43px !important;
-  height:43px !important;
+  width:50px !important;
+  height:50px !important;
 }
 
 body.mobile-home-mode .hub-card > span:not(.hub-card-icon):not(.hub-card-arrow){
@@ -231,7 +231,7 @@ body.mobile-home-mode .hub-card > span:not(.hub-card-icon):not(.hub-card-arrow){
 body.mobile-home-mode .hub-card h3{
   width:100% !important;
   margin:0 !important;
-  font-size:clamp(18px,2.55vw,23px) !important;
+  font-size:clamp(21px,2.9vw,27px) !important;
   line-height:1.2 !important;
   text-align:center !important;
 }
@@ -246,7 +246,7 @@ body.mobile-home-mode .hub-card-arrow{
   width:100% !important;
   margin-top:auto !important;
   color:#1265c8 !important;
-  font-size:clamp(14px,1.95vw,17px) !important;
+  font-size:clamp(16px,2.15vw,20px) !important;
   line-height:1.25 !important;
   text-align:center !important;
 }
@@ -254,21 +254,21 @@ body.mobile-home-mode .hub-card-arrow{
 /* Avisos que não são cards continuam legíveis em largura total. */
 body.mobile-home-mode .portal-note{
   grid-column:1 / -1 !important;
-  font-size:clamp(16px,2.2vw,20px) !important;
+  font-size:clamp(17px,2.3vw,21px) !important;
   line-height:1.5 !important;
 }
 
 /* O chat deixa de cobrir os cards e vira um FAB circular. */
 body.mobile-home-mode .portal-chat{
-  right:14px !important;
-  bottom:14px !important;
+  right:15px !important;
+  bottom:15px !important;
 }
 
 body.mobile-home-mode .portal-chat-launcher{
   position:relative !important;
-  width:58px !important;
-  min-width:58px !important;
-  height:58px !important;
+  width:64px !important;
+  min-width:64px !important;
+  height:64px !important;
   padding:0 !important;
   border-radius:50% !important;
   justify-content:center !important;
@@ -278,7 +278,7 @@ body.mobile-home-mode .portal-chat-launcher{
 
 body.mobile-home-mode .portal-chat-launcher::before{
   content:"💬";
-  font-size:22px;
+  font-size:25px;
   line-height:1;
 }
 
@@ -288,10 +288,10 @@ body.mobile-home-mode .portal-chat-launcher .chat-launcher-text{
 
 body.mobile-home-mode .portal-chat-launcher .chat-online-dot{
   position:absolute !important;
-  right:4px !important;
-  bottom:4px !important;
-  width:11px !important;
-  height:11px !important;
+  right:5px !important;
+  bottom:5px !important;
+  width:12px !important;
+  height:12px !important;
   border:2px solid #1498c2 !important;
 }
 
@@ -303,63 +303,72 @@ body.mobile-home-mode .portal-chat-count.visible{
 
 @media(max-width:390px){
   body.mobile-home-mode .portal-topbar-inner{
-    padding-left:12px !important;
-    padding-right:12px !important;
+    padding-left:13px !important;
+    padding-right:13px !important;
   }
 
   body.mobile-home-mode .portal-brand--portal-identity .portal-symbol{
-    width:48px !important;
-    height:48px !important;
-    flex-basis:48px !important;
+    width:54px !important;
+    height:54px !important;
+    flex-basis:54px !important;
   }
 
   body.mobile-home-mode .portal-brand-copy h1{
-    font-size:17px !important;
+    font-size:18px !important;
   }
 
   body.mobile-home-mode .portal-account-area{
-    max-width:145px !important;
+    max-width:150px !important;
   }
 
   body.mobile-home-mode .portal-user-meta strong{
-    max-width:88px !important;
-    font-size:13px !important;
+    max-width:92px !important;
+    font-size:14px !important;
   }
 
   body.mobile-home-mode #portalLogout{
-    min-height:38px !important;
+    min-height:40px !important;
     padding:8px 10px !important;
   }
 
   body.mobile-home-mode .portal-main{
-    padding-left:9px !important;
-    padding-right:9px !important;
+    padding-left:10px !important;
+    padding-right:10px !important;
   }
 
   body.mobile-home-mode .portal-hero{
-    padding:18px 17px !important;
+    padding:20px 18px !important;
   }
 
   body.mobile-home-mode .portal-grid{
-    gap:9px !important;
+    gap:10px !important;
   }
 
   body.mobile-home-mode .hub-card{
-    min-height:170px !important;
-    padding:15px 10px 13px !important;
+    min-height:194px !important;
+    padding:18px 11px 16px !important;
   }
 
   body.mobile-home-mode .hub-card > .hub-card-icon{
-    width:64px !important;
-    height:64px !important;
+    width:74px !important;
+    height:74px !important;
   }
 
   body.mobile-home-mode .hub-card-icon img{
-    width:57px !important;
-    height:57px !important;
+    width:67px !important;
+    height:67px !important;
+  }
+
+  body.mobile-home-mode .hub-card-icon svg{
+    width:45px !important;
+    height:45px !important;
   }
 
   body.mobile-home-mode .hub-card h3{
-    font-size:17px !important;
+    font-size:19px !important;
+  }
+
+  body.mobile-home-mode .hub-card-arrow{
+    font-size:15px !important;
   }
 }
