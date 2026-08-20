@@ -10,8 +10,20 @@
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/account-admin.css?v=20260812-2">
   <link rel="stylesheet" href="/css/account-level.css?v=20260816-1">
+  <link rel="stylesheet" href="/css/account-mobile.css?v=20260820-1826">
 </head>
 <body class="portal-page">
+  <script>
+    (() => {
+      const ua = navigator.userAgent || '';
+      const mobileUA = /Android|iPhone|iPad|iPod|Mobile|webOS|IEMobile|Opera Mini/i.test(ua);
+      const compactTouch = navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) <= 700;
+      const compactViewport = window.matchMedia('(max-width: 860px)').matches;
+      if (mobileUA || compactTouch || compactViewport) {
+        document.body.classList.add('mobile-account-mode');
+      }
+    })();
+  </script>
   <div class="portal-shell">
     <header class="portal-topbar">
       <div class="portal-topbar-inner">
