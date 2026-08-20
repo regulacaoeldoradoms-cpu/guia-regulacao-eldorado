@@ -22,24 +22,24 @@ body.mobile-home-mode .portal-topbar-inner{
   width:100% !important;
   min-height:0 !important;
   margin:0 !important;
-  padding:16px 18px !important;
+  padding:18px 20px !important;
   display:flex !important;
   align-items:center !important;
   justify-content:space-between !important;
-  gap:14px !important;
+  gap:15px !important;
 }
 
 body.mobile-home-mode .portal-brand--portal-identity{
   flex:1 1 auto !important;
   width:auto !important;
   min-width:0 !important;
-  gap:13px !important;
+  gap:14px !important;
 }
 
 body.mobile-home-mode .portal-brand--portal-identity .portal-symbol{
-  width:72px !important;
-  height:72px !important;
-  flex:0 0 72px !important;
+  width:80px !important;
+  height:80px !important;
+  flex:0 0 80px !important;
 }
 
 body.mobile-home-mode .portal-brand-copy{
@@ -50,8 +50,8 @@ body.mobile-home-mode .portal-brand-copy{
 body.mobile-home-mode .portal-brand-copy h1{
   display:block !important;
   margin:0 !important;
-  font-size:clamp(23px,3.5vw,31px) !important;
-  font-weight:800 !important;
+  font-size:clamp(25px,3.8vw,34px) !important;
+  font-weight:850 !important;
   line-height:1.12 !important;
   white-space:normal !important;
   overflow:visible !important;
@@ -88,7 +88,7 @@ body.mobile-home-mode .portal-user-meta{
 body.mobile-home-mode .portal-user-meta strong{
   display:block !important;
   max-width:154px;
-  font-size:clamp(17px,2.45vw,22px) !important;
+  font-size:clamp(18px,2.55vw,23px) !important;
   line-height:1.2 !important;
   white-space:nowrap !important;
   overflow:hidden !important;
@@ -101,26 +101,26 @@ body.mobile-home-mode .portal-user-meta span{
 
 body.mobile-home-mode #portalLogout{
   flex:0 0 auto !important;
-  min-height:52px !important;
-  padding:11px 16px !important;
-  border-radius:14px !important;
-  font-size:clamp(17px,2.25vw,21px) !important;
+  min-height:56px !important;
+  padding:12px 18px !important;
+  border-radius:15px !important;
+  font-size:clamp(18px,2.4vw,22px) !important;
 }
 
 /* Conteúdo principal. */
 body.mobile-home-mode .portal-main{
   width:100% !important;
-  margin:0 auto 56px !important;
+  margin:0 auto 62px !important;
   padding:18px 14px 0 !important;
 }
 
-/* Hero: texto maior e com alto contraste. */
+/* Hero: informação essencial, grande e sem excesso de texto. */
 body.mobile-home-mode .portal-hero{
   width:100% !important;
   padding:28px 25px 29px !important;
-  border-radius:24px !important;
+  border-radius:25px !important;
   gap:0 !important;
-  box-shadow:0 12px 30px rgba(22,56,91,.10) !important;
+  box-shadow:0 14px 34px rgba(22,56,91,.11) !important;
 }
 
 body.mobile-home-mode .portal-hero-copy{
@@ -129,15 +129,15 @@ body.mobile-home-mode .portal-hero-copy{
 }
 
 body.mobile-home-mode .portal-eyebrow{
-  font-size:clamp(17px,2.3vw,22px) !important;
+  font-size:clamp(18px,2.4vw,23px) !important;
   font-weight:900 !important;
 }
 
 body.mobile-home-mode .portal-hero h2{
   margin:9px 0 13px !important;
-  font-size:clamp(38px,5.4vw,50px) !important;
-  font-weight:800 !important;
-  line-height:1.08 !important;
+  font-size:clamp(42px,5.8vw,55px) !important;
+  font-weight:850 !important;
+  line-height:1.07 !important;
   letter-spacing:-.025em !important;
 }
 
@@ -146,15 +146,16 @@ body.mobile-home-mode .portal-hero p{
   max-width:none !important;
   margin:0 !important;
   overflow:hidden !important;
-  -webkit-line-clamp:4 !important;
+  -webkit-line-clamp:3 !important;
   -webkit-box-orient:vertical !important;
-  font-size:clamp(21px,2.9vw,28px) !important;
+  font-size:clamp(23px,3.1vw,30px) !important;
   line-height:1.5 !important;
+  font-weight:500 !important;
 }
 
 /* A seção vira somente o invólucro do launcher. */
 body.mobile-home-mode .portal-section{
-  margin-top:22px !important;
+  margin-top:24px !important;
   overflow:visible !important;
   border:0 !important;
   border-radius:0 !important;
@@ -163,22 +164,22 @@ body.mobile-home-mode .portal-section{
 }
 
 body.mobile-home-mode .portal-section-heading{
-  padding:4px 4px 16px !important;
+  padding:4px 4px 18px !important;
   border:0 !important;
 }
 
 body.mobile-home-mode .portal-section-heading h2,
 body.mobile-home-mode .portal-section-heading h3{
-  font-size:clamp(30px,4vw,38px) !important;
+  font-size:clamp(32px,4.25vw,41px) !important;
   font-weight:900 !important;
   line-height:1.15 !important;
 }
 
-/* Launcher em duas colunas, porém com cards e elementos muito maiores. */
+/* Launcher em duas colunas, priorizando reconhecimento visual e toque. */
 body.mobile-home-mode .portal-grid{
   display:grid !important;
   grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-  gap:16px !important;
+  gap:18px !important;
   padding:0 !important;
 }
 
@@ -186,42 +187,42 @@ body.mobile-home-mode .hub-card{
   position:relative !important;
   width:100% !important;
   min-width:0 !important;
-  min-height:270px !important;
-  padding:26px 18px 22px !important;
-  border:2px solid #d9e6f1 !important;
-  border-radius:25px !important;
-  background:linear-gradient(180deg,#fff 0%,#f8fbfd 100%) !important;
+  min-height:305px !important;
+  padding:28px 20px 24px !important;
+  border:2px solid #cfddea !important;
+  border-radius:27px !important;
+  background:linear-gradient(180deg,#fff 0%,#f7fbfe 100%) !important;
   display:flex !important;
   flex-direction:column !important;
   align-items:center !important;
   justify-content:flex-start !important;
-  gap:14px !important;
+  gap:16px !important;
   text-align:center !important;
-  box-shadow:0 10px 26px rgba(20,55,90,.09) !important;
+  box-shadow:0 12px 30px rgba(20,55,90,.10) !important;
   -webkit-tap-highlight-color:transparent;
 }
 
 body.mobile-home-mode .hub-card:active{
-  transform:scale(.985) !important;
+  transform:scale(.982) !important;
 }
 
 body.mobile-home-mode .hub-card > .hub-card-icon{
   flex:0 0 auto !important;
-  width:108px !important;
-  height:108px !important;
+  width:126px !important;
+  height:126px !important;
   margin:0 auto !important;
-  border-radius:27px !important;
+  border-radius:30px !important;
 }
 
 body.mobile-home-mode .hub-card-icon img{
-  width:98px !important;
-  height:98px !important;
-  border-radius:23px !important;
+  width:114px !important;
+  height:114px !important;
+  border-radius:26px !important;
 }
 
 body.mobile-home-mode .hub-card-icon svg{
-  width:64px !important;
-  height:64px !important;
+  width:76px !important;
+  height:76px !important;
 }
 
 body.mobile-home-mode .hub-card > span:not(.hub-card-icon):not(.hub-card-arrow){
@@ -236,32 +237,78 @@ body.mobile-home-mode .hub-card > span:not(.hub-card-icon):not(.hub-card-arrow){
 body.mobile-home-mode .hub-card h3{
   width:100% !important;
   margin:0 !important;
-  font-size:clamp(25px,3.5vw,33px) !important;
-  font-weight:800 !important;
-  line-height:1.18 !important;
+  font-size:clamp(29px,3.9vw,38px) !important;
+  font-weight:850 !important;
+  line-height:1.16 !important;
   text-align:center !important;
 }
 
-/* As descrições continuam disponíveis no desktop; no launcher mobile são ocultadas. */
 body.mobile-home-mode .hub-card p{
   display:none !important;
 }
 
+/* A ação vira um botão visual claro, mas o card inteiro continua clicável. */
 body.mobile-home-mode .hub-card-arrow{
-  display:block !important;
-  width:100% !important;
+  display:inline-flex !important;
+  width:auto !important;
+  min-height:54px !important;
   margin-top:auto !important;
-  color:#0d61b3 !important;
-  font-size:clamp(19px,2.65vw,25px) !important;
-  font-weight:800 !important;
-  line-height:1.25 !important;
+  padding:11px 18px !important;
+  align-items:center !important;
+  justify-content:center !important;
+  color:#0b5ca8 !important;
+  background:#eaf4ff !important;
+  border:1px solid #c9e2f7 !important;
+  border-radius:999px !important;
+  font-size:clamp(21px,2.85vw,27px) !important;
+  font-weight:850 !important;
+  line-height:1.2 !important;
   text-align:center !important;
+}
+
+/* Quando há quantidade ímpar de módulos, o último ocupa a largura inteira. */
+body.mobile-home-mode .portal-grid > .hub-card:last-child:nth-child(odd){
+  grid-column:1 / -1 !important;
+  min-height:230px !important;
+  padding:26px 30px !important;
+  display:grid !important;
+  grid-template-columns:140px minmax(0,1fr) !important;
+  grid-template-rows:1fr auto !important;
+  column-gap:26px !important;
+  row-gap:12px !important;
+  align-items:center !important;
+  text-align:left !important;
+}
+
+body.mobile-home-mode .portal-grid > .hub-card:last-child:nth-child(odd) > .hub-card-icon{
+  grid-column:1 !important;
+  grid-row:1 / 3 !important;
+  width:124px !important;
+  height:124px !important;
+}
+
+body.mobile-home-mode .portal-grid > .hub-card:last-child:nth-child(odd) > span:not(.hub-card-icon):not(.hub-card-arrow){
+  grid-column:2 !important;
+  grid-row:1 !important;
+  align-items:flex-end !important;
+  justify-content:flex-start !important;
+}
+
+body.mobile-home-mode .portal-grid > .hub-card:last-child:nth-child(odd) h3{
+  text-align:left !important;
+}
+
+body.mobile-home-mode .portal-grid > .hub-card:last-child:nth-child(odd) .hub-card-arrow{
+  grid-column:2 !important;
+  grid-row:2 !important;
+  justify-self:start !important;
+  margin-top:0 !important;
 }
 
 /* Avisos que não são cards continuam legíveis em largura total. */
 body.mobile-home-mode .portal-note{
   grid-column:1 / -1 !important;
-  font-size:clamp(19px,2.6vw,25px) !important;
+  font-size:clamp(20px,2.7vw,26px) !important;
   line-height:1.5 !important;
 }
 
@@ -273,9 +320,9 @@ body.mobile-home-mode .portal-chat{
 
 body.mobile-home-mode .portal-chat-launcher{
   position:relative !important;
-  width:72px !important;
-  min-width:72px !important;
-  height:72px !important;
+  width:76px !important;
+  min-width:76px !important;
+  height:76px !important;
   padding:0 !important;
   border-radius:50% !important;
   justify-content:center !important;
@@ -285,7 +332,7 @@ body.mobile-home-mode .portal-chat-launcher{
 
 body.mobile-home-mode .portal-chat-launcher::before{
   content:"💬";
-  font-size:29px;
+  font-size:31px;
   line-height:1;
 }
 
@@ -297,8 +344,8 @@ body.mobile-home-mode .portal-chat-launcher .chat-online-dot{
   position:absolute !important;
   right:5px !important;
   bottom:5px !important;
-  width:13px !important;
-  height:13px !important;
+  width:14px !important;
+  height:14px !important;
   border:2px solid #1498c2 !important;
 }
 
@@ -308,7 +355,7 @@ body.mobile-home-mode .portal-chat-count.visible{
   right:-5px !important;
 }
 
-/* Em telas muito estreitas não reduzimos drasticamente a tipografia: baixa visão tem prioridade. */
+/* Em telas muito estreitas, a acessibilidade continua acima da compactação. */
 @media(max-width:390px){
   body.mobile-home-mode .portal-topbar-inner{
     padding-left:12px !important;
@@ -317,26 +364,26 @@ body.mobile-home-mode .portal-chat-count.visible{
   }
 
   body.mobile-home-mode .portal-brand--portal-identity .portal-symbol{
-    width:62px !important;
-    height:62px !important;
-    flex-basis:62px !important;
+    width:66px !important;
+    height:66px !important;
+    flex-basis:66px !important;
   }
 
   body.mobile-home-mode .portal-brand-copy h1{
-    font-size:20px !important;
+    font-size:21px !important;
   }
 
   body.mobile-home-mode .portal-account-area{
-    max-width:150px !important;
+    max-width:145px !important;
   }
 
   body.mobile-home-mode .portal-user-meta strong{
-    max-width:82px !important;
+    max-width:78px !important;
     font-size:15px !important;
   }
 
   body.mobile-home-mode #portalLogout{
-    min-height:46px !important;
+    min-height:48px !important;
     padding:9px 11px !important;
     font-size:16px !important;
   }
@@ -350,35 +397,57 @@ body.mobile-home-mode .portal-chat-count.visible{
     padding:24px 20px !important;
   }
 
+  body.mobile-home-mode .portal-hero h2{
+    font-size:36px !important;
+  }
+
+  body.mobile-home-mode .portal-hero p{
+    font-size:21px !important;
+  }
+
   body.mobile-home-mode .portal-grid{
-    gap:11px !important;
+    gap:12px !important;
   }
 
   body.mobile-home-mode .hub-card{
-    min-height:248px !important;
-    padding:22px 12px 19px !important;
+    min-height:280px !important;
+    padding:24px 13px 21px !important;
   }
 
   body.mobile-home-mode .hub-card > .hub-card-icon{
-    width:94px !important;
-    height:94px !important;
+    width:108px !important;
+    height:108px !important;
   }
 
   body.mobile-home-mode .hub-card-icon img{
-    width:86px !important;
-    height:86px !important;
+    width:98px !important;
+    height:98px !important;
   }
 
   body.mobile-home-mode .hub-card-icon svg{
-    width:58px !important;
-    height:58px !important;
+    width:66px !important;
+    height:66px !important;
   }
 
   body.mobile-home-mode .hub-card h3{
-    font-size:22px !important;
+    font-size:24px !important;
   }
 
   body.mobile-home-mode .hub-card-arrow{
-    font-size:18px !important;
+    min-height:48px !important;
+    padding:9px 13px !important;
+    font-size:19px !important;
+  }
+
+  body.mobile-home-mode .portal-grid > .hub-card:last-child:nth-child(odd){
+    min-height:210px !important;
+    grid-template-columns:112px minmax(0,1fr) !important;
+    column-gap:18px !important;
+    padding:22px 18px !important;
+  }
+
+  body.mobile-home-mode .portal-grid > .hub-card:last-child:nth-child(odd) > .hub-card-icon{
+    width:104px !important;
+    height:104px !important;
   }
 }
