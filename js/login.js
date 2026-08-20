@@ -9,7 +9,7 @@
     return;
   }
 
-  /* Ajustes exclusivamente mobile. O desktop permanece intocado. */
+  /* Ajustes exclusivamente mobile. O desktop não recebe estas regras. */
   if (document.body.classList.contains('mobile-login-mode')) {
     const style = document.createElement('style');
     style.id = 'mobile-login-height-fill';
@@ -19,13 +19,14 @@
         min-height:100dvh !important;
       }
 
+      /* Mantém o topo azul na escala já aprovada. */
       body.mobile-login-mode .login-visual{
         padding:clamp(22px,3vw,34px) clamp(20px,4.5vw,46px) clamp(26px,3.5vw,38px) !important;
-        gap:clamp(14px,1.8vw,20px) !important;
+        gap:clamp(12px,1.6vw,18px) !important;
       }
 
       body.mobile-login-mode .login-portal-logo{
-        width:min(560px,72vw) !important;
+        width:min(540px,70vw) !important;
       }
 
       body.mobile-login-mode .login-message{
@@ -34,24 +35,24 @@
       }
 
       body.mobile-login-mode .portal-eyebrow{
-        font-size:clamp(18px,2.15vw,24px) !important;
+        font-size:clamp(16px,1.95vw,21px) !important;
       }
 
       body.mobile-login-mode .login-message h1{
-        margin:0 0 clamp(12px,1.6vw,18px) !important;
-        font-size:clamp(40px,5.2vw,56px) !important;
+        margin:0 0 clamp(10px,1.4vw,15px) !important;
+        font-size:clamp(36px,4.8vw,50px) !important;
         line-height:1.07 !important;
       }
 
       body.mobile-login-mode .login-message p{
-        font-size:clamp(22px,2.85vw,30px) !important;
-        line-height:1.58 !important;
+        font-size:clamp(20px,2.55vw,27px) !important;
+        line-height:1.55 !important;
       }
 
       body.mobile-login-mode .login-message > div{
-        margin-top:clamp(16px,2vw,22px) !important;
+        margin-top:clamp(14px,1.8vw,20px) !important;
         gap:clamp(8px,1.2vw,13px) !important;
-        font-size:clamp(16px,2vw,21px) !important;
+        font-size:clamp(14px,1.8vw,19px) !important;
       }
 
       body.mobile-login-mode .login-message > div span{
@@ -61,28 +62,28 @@
       body.mobile-login-mode .login-visual > small{
         width:94vw !important;
         max-width:none !important;
-        font-size:clamp(15px,1.9vw,20px) !important;
-        line-height:1.45 !important;
+        font-size:clamp(14px,1.7vw,18px) !important;
+        line-height:1.4 !important;
       }
 
+      /* Área branca do login: tipografia propositalmente grande para celular. */
       body.mobile-login-mode .login-panel{
-        flex:1 0 auto !important;
         display:block !important;
         width:100vw !important;
         min-height:0 !important;
-        padding:0 1.5vw max(30px,env(safe-area-inset-bottom)) !important;
+        padding:0 1.2vw max(34px,env(safe-area-inset-bottom)) !important;
         background:#f3f7fb !important;
       }
 
       body.mobile-login-mode .login-card{
         position:relative !important;
         z-index:2 !important;
-        width:97vw !important;
+        width:97.6vw !important;
         max-width:none !important;
         min-height:0 !important;
         height:auto !important;
         margin:-16px auto 0 !important;
-        padding:clamp(34px,4.6vw,50px) clamp(28px,4.4vw,48px) clamp(30px,4.2vw,44px) !important;
+        padding:clamp(38px,5vw,56px) clamp(30px,4.6vw,50px) clamp(34px,4.5vw,48px) !important;
         display:block !important;
         border-radius:clamp(24px,3vw,32px) !important;
         box-shadow:0 18px 44px rgba(22,56,91,.14) !important;
@@ -90,52 +91,58 @@
 
       body.mobile-login-mode .login-card h2{
         margin:0 !important;
-        font-size:clamp(44px,5.5vw,58px) !important;
-        line-height:1.1 !important;
+        font-size:clamp(48px,6.1vw,64px) !important;
+        font-weight:800 !important;
+        line-height:1.06 !important;
+        letter-spacing:-.025em !important;
       }
 
       body.mobile-login-mode .login-card > p{
-        margin:clamp(12px,1.7vw,18px) 0 clamp(30px,3.7vw,40px) !important;
-        font-size:clamp(24px,3vw,32px) !important;
-        line-height:1.55 !important;
+        margin:clamp(16px,2vw,22px) 0 clamp(34px,4.2vw,46px) !important;
+        font-size:clamp(26px,3.3vw,36px) !important;
+        line-height:1.5 !important;
       }
 
       body.mobile-login-mode .portal-field{
-        margin-bottom:clamp(24px,3.1vw,34px) !important;
+        margin-bottom:clamp(28px,3.7vw,40px) !important;
       }
 
       body.mobile-login-mode .portal-field label{
         display:block !important;
-        margin-bottom:clamp(9px,1.3vw,13px) !important;
-        font-size:clamp(21px,2.7vw,28px) !important;
+        margin-bottom:clamp(11px,1.5vw,16px) !important;
+        font-size:clamp(24px,3vw,32px) !important;
+        font-weight:800 !important;
+        line-height:1.25 !important;
       }
 
       body.mobile-login-mode .portal-field input{
-        min-height:clamp(72px,9vw,92px) !important;
-        padding:clamp(17px,2.2vw,22px) clamp(18px,2.6vw,27px) !important;
-        font-size:clamp(24px,3vw,32px) !important;
-        border-radius:clamp(15px,2vw,20px) !important;
+        min-height:clamp(80px,10vw,106px) !important;
+        padding:clamp(19px,2.5vw,26px) clamp(21px,2.8vw,30px) !important;
+        font-size:clamp(25px,3.2vw,35px) !important;
+        line-height:1.2 !important;
+        border-radius:clamp(16px,2.2vw,22px) !important;
       }
 
       body.mobile-login-mode .login-card > label{
-        margin:0 0 clamp(26px,3.3vw,36px) !important;
-        gap:clamp(11px,1.5vw,16px) !important;
-        font-size:clamp(21px,2.65vw,28px) !important;
-        line-height:1.5 !important;
+        margin:2px 0 clamp(30px,3.8vw,42px) !important;
+        gap:clamp(12px,1.7vw,18px) !important;
+        font-size:clamp(22px,2.8vw,30px) !important;
+        line-height:1.4 !important;
       }
 
       body.mobile-login-mode #loginRemember{
-        width:clamp(25px,3.1vw,33px) !important;
-        height:clamp(25px,3.1vw,33px) !important;
-        flex:0 0 clamp(25px,3.1vw,33px) !important;
+        width:clamp(28px,3.5vw,38px) !important;
+        height:clamp(28px,3.5vw,38px) !important;
+        flex:0 0 clamp(28px,3.5vw,38px) !important;
       }
 
       body.mobile-login-mode .login-submit{
         width:100% !important;
-        min-height:clamp(72px,9vw,92px) !important;
+        min-height:clamp(80px,10vw,106px) !important;
         margin:0 !important;
-        font-size:clamp(24px,3.05vw,32px) !important;
-        border-radius:clamp(15px,2vw,20px) !important;
+        font-size:clamp(25px,3.25vw,36px) !important;
+        font-weight:800 !important;
+        border-radius:clamp(16px,2.2vw,22px) !important;
       }
 
       body.mobile-login-mode .login-status:not(.visible){
@@ -145,37 +152,43 @@
       }
 
       body.mobile-login-mode .login-card > div:last-child{
-        margin-top:clamp(30px,4vw,42px) !important;
-        padding-top:clamp(28px,3.7vw,40px) !important;
+        margin-top:clamp(36px,4.6vw,50px) !important;
+        padding-top:clamp(32px,4.2vw,46px) !important;
         border-top:1px solid #dbe5ee !important;
       }
 
       body.mobile-login-mode .login-card > div:last-child strong{
-        margin-bottom:clamp(11px,1.5vw,15px) !important;
-        font-size:clamp(25px,3.05vw,32px) !important;
+        display:block !important;
+        margin-bottom:clamp(13px,1.8vw,19px) !important;
+        font-size:clamp(28px,3.55vw,38px) !important;
+        font-weight:800 !important;
+        line-height:1.2 !important;
       }
 
       body.mobile-login-mode .login-card > div:last-child span{
-        max-width:90vw !important;
-        margin:0 auto clamp(20px,2.7vw,28px) !important;
-        font-size:clamp(22px,2.75vw,28px) !important;
-        line-height:1.6 !important;
+        display:block !important;
+        max-width:92vw !important;
+        margin:0 auto clamp(24px,3.1vw,34px) !important;
+        font-size:clamp(23px,2.95vw,32px) !important;
+        line-height:1.55 !important;
       }
 
       body.mobile-login-mode .login-card > div:last-child .portal-button{
         display:flex !important;
         width:100% !important;
-        min-height:clamp(62px,7.6vw,78px) !important;
-        padding:clamp(14px,1.9vw,19px) clamp(22px,3vw,32px) !important;
-        font-size:clamp(22px,2.75vw,28px) !important;
-        border-radius:clamp(14px,1.9vw,18px) !important;
+        min-height:clamp(70px,8.7vw,92px) !important;
+        padding:clamp(16px,2.2vw,22px) clamp(24px,3.2vw,36px) !important;
+        font-size:clamp(23px,2.95vw,32px) !important;
+        font-weight:800 !important;
+        border-radius:clamp(15px,2vw,20px) !important;
         text-decoration:none !important;
       }
 
       body.mobile-login-mode .login-card > div:last-child small{
-        max-width:90vw !important;
-        margin:clamp(16px,2.2vw,22px) auto 0 !important;
-        font-size:clamp(17px,2.1vw,22px) !important;
+        display:block !important;
+        max-width:92vw !important;
+        margin:clamp(20px,2.6vw,28px) auto 0 !important;
+        font-size:clamp(18px,2.25vw,25px) !important;
         line-height:1.5 !important;
       }
 
@@ -191,12 +204,8 @@
       @media(max-height:760px){
         body.mobile-login-mode .login-card{
           margin-top:-10px !important;
-          padding-top:26px !important;
-          padding-bottom:26px !important;
-        }
-        body.mobile-login-mode .portal-field input,
-        body.mobile-login-mode .login-submit{
-          min-height:64px !important;
+          padding-top:30px !important;
+          padding-bottom:30px !important;
         }
       }
     `;
