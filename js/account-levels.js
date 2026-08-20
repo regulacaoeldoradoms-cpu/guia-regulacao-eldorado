@@ -7,6 +7,12 @@
     ouro: { rank: 3, label: 'Ouro' }
   });
 
+  const LEVEL_ASSETS = Object.freeze({
+    bronze: '/assets/nivel-bronze.png?v=20260820-1',
+    prata: '/assets/nivel-prata.png?v=20260820-1',
+    ouro: '/assets/nivel-ouro.png?v=20260820-1'
+  });
+
   function normalizeLevel(value) {
     const level = String(value || '').toLowerCase();
     return LEVELS[level] ? level : 'bronze';
@@ -33,6 +39,63 @@
     return rankFor(user) >= rankFor(minimum);
   }
 
+  function ensureMedalStyles() {
+    if (document.getElementById('accountLevelMedalArtworkStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'accountLevelMedalArtworkStyles';
+    style.textContent = `
+      .account-level-track:before{top:63px}
+      .account-level-medal{
+        width:82px;
+        height:82px;
+        margin:0 auto 11px;
+        padding:0;
+        border:1px solid rgba(26,48,65,.16)!important;
+        border-radius:18px;
+        overflow:hidden;
+        background:#080a0c!important;
+        box-shadow:0 7px 18px rgba(21,45,62,.13)!important;
+        transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease,filter .18s ease;
+      }
+      .account-level-medal img{
+        width:100%;
+        height:100%;
+        display:block;
+        object-fit:cover;
+      }
+      .account-level-step.current .account-level-medal{
+        transform:scale(1.07);
+        box-shadow:0 10px 24px rgba(22,61,86,.2),0 0 0 3px rgba(54,112,149,.13)!important;
+      }
+      .account-level-step.completed .account-level-medal{opacity:.94}
+      .account-level-step.locked .account-level-medal{opacity:.58;filter:saturate(.55) grayscale(.22)}
+      @media(max-width:760px){
+        .account-level-track:before{top:56px}
+        .account-level-medal{width:68px;height:68px;border-radius:15px;margin-bottom:9px}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function renderLevelArtwork(root = document) {
+    ensureMedalStyles();
+    root.querySelectorAll?.('[data-level-step]').forEach((step) => {
+      const level = normalizeLevel(step.dataset.levelStep);
+      const medal = step.querySelector('.account-level-medal');
+      if (!medal) return;
+      const expected = LEVEL_ASSETS[level];
+      const currentImage = medal.querySelector('img');
+      if (currentImage?.dataset.levelArtwork === level) return;
+      medal.textContent = '';
+      const image = document.createElement('img');
+      image.src = expected;
+      image.alt = `Medalha do nível ${LEVELS[level].label}`;
+      image.dataset.levelArtwork = level;
+      image.decoding = 'async';
+      medal.appendChild(image);
+    });
+  }
+
   function renderMiniBadge(element, user) {
     if (!element) return;
     const meta = metaFor(user);
@@ -42,6 +105,7 @@
 
   function renderProgress(root, user) {
     if (!root) return;
+    renderLevelArtwork(root);
     const current = metaFor(user);
     const currentBadge = root.querySelector('[data-level-current]');
     if (currentBadge) {
@@ -89,5 +153,5 @@
     }
   }
 
-  window.AccountLevels = Object.freeze({ levelFor, rankFor, metaFor, minimumMet, renderMiniBadge, renderProgress });
+  window.AccountLevels = Object.freeze({ levelFor, rankFor, metaFor, minimumMet, renderMiniBadge, renderProgress, renderLevelArtwork });
 })();
