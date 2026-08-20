@@ -1,0 +1,635 @@
+/* Canal do Cidadão — experiência exclusiva para celulares.
+   Ativada apenas quando o body recebe .mobile-citizen-mode.
+   O desktop permanece sob responsabilidade dos estilos existentes.
+   Prioridade: baixa visão, leitura confortável e alvos de toque amplos. */
+
+body.mobile-citizen-mode{
+  min-height:100dvh;
+  overflow-x:hidden;
+  background:linear-gradient(180deg,#eaf2f6 0%,#f5f9fb 55%,#edf4f7 100%) !important;
+}
+
+body.mobile-citizen-mode .portal-shell{
+  min-height:100dvh;
+}
+
+/* Cabeçalho mobile em duas faixas: identidade primeiro, conta e navegação depois. */
+body.mobile-citizen-mode .portal-topbar{
+  border-bottom-width:4px !important;
+}
+
+body.mobile-citizen-mode .portal-topbar-inner{
+  width:100% !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:16px 18px !important;
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:14px !important;
+}
+
+body.mobile-citizen-mode .portal-brand{
+  width:100% !important;
+  min-width:0 !important;
+  gap:14px !important;
+}
+
+body.mobile-citizen-mode .portal-brand img{
+  width:74px !important;
+  height:74px !important;
+  flex:0 0 74px !important;
+  border-radius:18px !important;
+}
+
+body.mobile-citizen-mode .portal-brand > div{
+  min-width:0 !important;
+}
+
+body.mobile-citizen-mode .portal-brand h1{
+  margin:0 !important;
+  font-size:clamp(27px,3.9vw,35px) !important;
+  font-weight:850 !important;
+  line-height:1.12 !important;
+}
+
+body.mobile-citizen-mode .portal-brand p{
+  display:block !important;
+  margin:5px 0 0 !important;
+  font-size:clamp(17px,2.35vw,22px) !important;
+  line-height:1.35 !important;
+  opacity:.9 !important;
+}
+
+body.mobile-citizen-mode .portal-user{
+  width:100% !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+  padding-top:13px !important;
+  border-top:1px solid rgba(255,255,255,.2) !important;
+}
+
+body.mobile-citizen-mode .portal-account-area{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  padding:5px 6px !important;
+  gap:10px !important;
+}
+
+body.mobile-citizen-mode .portal-user-meta{
+  display:block !important;
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  text-align:left !important;
+}
+
+body.mobile-citizen-mode .portal-user-meta strong{
+  display:block !important;
+  font-size:clamp(20px,2.8vw,26px) !important;
+  line-height:1.2 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+body.mobile-citizen-mode .portal-user-meta span{
+  display:block !important;
+  margin-top:3px !important;
+  font-size:clamp(16px,2.15vw,21px) !important;
+  line-height:1.3 !important;
+  opacity:.9 !important;
+  white-space:normal !important;
+}
+
+body.mobile-citizen-mode #professionalHomeLink,
+body.mobile-citizen-mode #portalLogout{
+  flex:0 0 auto !important;
+  min-height:52px !important;
+  padding:11px 16px !important;
+  border-radius:14px !important;
+  font-size:clamp(17px,2.25vw,21px) !important;
+  font-weight:800 !important;
+}
+
+/* Conteúdo principal ocupa a largura útil do telefone. */
+body.mobile-citizen-mode .portal-main{
+  width:100% !important;
+  margin:0 auto 48px !important;
+  padding:16px 12px 0 !important;
+}
+
+/* Hero vertical: leitura antes dos selos de conta. */
+body.mobile-citizen-mode .portal-hero{
+  width:100% !important;
+  padding:27px 23px 25px !important;
+  border-radius:24px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  gap:20px !important;
+  box-shadow:0 12px 30px rgba(22,58,82,.10) !important;
+}
+
+body.mobile-citizen-mode .portal-hero-copy{
+  width:100% !important;
+  max-width:none !important;
+}
+
+body.mobile-citizen-mode .portal-eyebrow{
+  font-size:clamp(17px,2.3vw,22px) !important;
+  font-weight:900 !important;
+}
+
+body.mobile-citizen-mode .portal-hero h2{
+  margin:10px 0 13px !important;
+  font-size:clamp(39px,5.6vw,52px) !important;
+  font-weight:850 !important;
+  line-height:1.08 !important;
+  letter-spacing:-.025em !important;
+}
+
+body.mobile-citizen-mode .portal-hero p{
+  max-width:none !important;
+  margin:0 !important;
+  font-size:clamp(21px,2.9vw,28px) !important;
+  line-height:1.55 !important;
+  color:#4d6a7e !important;
+}
+
+body.mobile-citizen-mode .citizen-hero-status{
+  width:100% !important;
+  display:flex !important;
+  align-items:stretch !important;
+  gap:10px !important;
+}
+
+body.mobile-citizen-mode .level-mini-badge,
+body.mobile-citizen-mode .privacy-chip{
+  min-height:46px !important;
+  padding:11px 14px !important;
+  border-radius:999px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  font-size:clamp(17px,2.25vw,21px) !important;
+  line-height:1.25 !important;
+  font-weight:850 !important;
+}
+
+/* Avisos deixam de ser faixas finas e viram blocos legíveis. */
+body.mobile-citizen-mode .portal-main > .portal-note{
+  margin-top:12px !important;
+  padding:17px 18px !important;
+  border-radius:16px !important;
+  border-width:1.5px !important;
+  font-size:clamp(18px,2.45vw,23px) !important;
+  line-height:1.5 !important;
+}
+
+body.mobile-citizen-mode .portal-main > .portal-note strong{
+  font-weight:900 !important;
+}
+
+/* Ação principal grande e óbvia quando disponível. */
+body.mobile-citizen-mode .citizen-actions{
+  margin:18px 0 !important;
+}
+
+body.mobile-citizen-mode #openNewManifestation{
+  min-height:108px !important;
+  padding:20px 21px !important;
+  gap:17px !important;
+  border-radius:20px !important;
+}
+
+body.mobile-citizen-mode #openNewManifestation .icon{
+  width:68px !important;
+  height:68px !important;
+  flex:0 0 68px !important;
+  border-radius:18px !important;
+}
+
+body.mobile-citizen-mode #openNewManifestation .icon svg{
+  width:36px !important;
+  height:36px !important;
+}
+
+body.mobile-citizen-mode #openNewManifestation strong{
+  font-size:clamp(27px,3.7vw,34px) !important;
+  line-height:1.18 !important;
+  margin-bottom:5px !important;
+}
+
+body.mobile-citizen-mode #openNewManifestation > span:not(.icon){
+  font-size:clamp(18px,2.45vw,23px) !important;
+  line-height:1.45 !important;
+}
+
+/* Manifestações e notificações passam a ser uma coluna única. */
+body.mobile-citizen-mode .citizen-grid{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:18px !important;
+  align-items:start !important;
+}
+
+body.mobile-citizen-mode .citizen-card{
+  width:100% !important;
+  border-radius:20px !important;
+  border-width:1.5px !important;
+  overflow:hidden !important;
+}
+
+body.mobile-citizen-mode .citizen-card-head{
+  padding:19px 20px !important;
+  gap:12px !important;
+  align-items:center !important;
+}
+
+body.mobile-citizen-mode .citizen-card-head h2{
+  margin:0 !important;
+  font-size:clamp(27px,3.65vw,34px) !important;
+  line-height:1.16 !important;
+  font-weight:900 !important;
+}
+
+body.mobile-citizen-mode .citizen-card-head .portal-button{
+  min-height:50px !important;
+  padding:10px 15px !important;
+  border-radius:13px !important;
+  font-size:clamp(17px,2.25vw,21px) !important;
+  white-space:nowrap !important;
+}
+
+body.mobile-citizen-mode .citizen-card-body{
+  padding:20px !important;
+}
+
+body.mobile-citizen-mode .empty-state{
+  min-height:126px !important;
+  padding:30px 12px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  justify-content:center !important;
+  font-size:clamp(19px,2.55vw,24px) !important;
+  line-height:1.5 !important;
+}
+
+body.mobile-citizen-mode .empty-state strong{
+  font-size:clamp(21px,2.8vw,26px) !important;
+}
+
+body.mobile-citizen-mode .manifestation-list,
+body.mobile-citizen-mode .notification-list{
+  gap:12px !important;
+}
+
+body.mobile-citizen-mode .manifestation-item{
+  padding:17px 18px !important;
+  border-radius:15px !important;
+  grid-template-columns:1fr !important;
+  gap:10px !important;
+}
+
+body.mobile-citizen-mode .manifestation-item strong{
+  font-size:clamp(20px,2.7vw,25px) !important;
+  line-height:1.3 !important;
+}
+
+body.mobile-citizen-mode .manifestation-item small{
+  font-size:clamp(17px,2.25vw,21px) !important;
+  line-height:1.4 !important;
+}
+
+body.mobile-citizen-mode .status-chip{
+  width:max-content !important;
+  padding:8px 12px !important;
+  font-size:clamp(16px,2.1vw,20px) !important;
+}
+
+body.mobile-citizen-mode .notification{
+  padding:16px 17px !important;
+  border-radius:15px !important;
+}
+
+body.mobile-citizen-mode .notification strong{
+  font-size:clamp(20px,2.65vw,25px) !important;
+  line-height:1.3 !important;
+}
+
+body.mobile-citizen-mode .notification small{
+  font-size:clamp(17px,2.25vw,21px) !important;
+  line-height:1.4 !important;
+}
+
+/* MODAIS E FORMULÁRIO: acessibilidade também no fluxo de envio. */
+body.mobile-citizen-mode .citizen-modal{
+  padding:0 !important;
+  align-items:stretch !important;
+}
+
+body.mobile-citizen-mode .citizen-modal-panel{
+  width:100% !important;
+  max-width:none !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  border-radius:0 !important;
+}
+
+body.mobile-citizen-mode .citizen-modal-head{
+  padding:17px 18px !important;
+  gap:12px !important;
+  align-items:flex-start !important;
+}
+
+body.mobile-citizen-mode .modal-kicker{
+  font-size:clamp(15px,2vw,19px) !important;
+}
+
+body.mobile-citizen-mode .citizen-modal-head h2{
+  font-size:clamp(31px,4.2vw,40px) !important;
+  line-height:1.15 !important;
+  margin:4px 0 5px !important;
+}
+
+body.mobile-citizen-mode .citizen-modal-head small{
+  font-size:clamp(17px,2.25vw,21px) !important;
+  line-height:1.45 !important;
+}
+
+body.mobile-citizen-mode .citizen-modal-close{
+  width:52px !important;
+  height:52px !important;
+  flex:0 0 52px !important;
+  font-size:1.7rem !important;
+}
+
+body.mobile-citizen-mode .citizen-modal-content{
+  padding:0 !important;
+  scrollbar-gutter:auto !important;
+}
+
+body.mobile-citizen-mode .form-section{
+  padding:24px 18px !important;
+}
+
+body.mobile-citizen-mode .form-section-head{
+  gap:13px !important;
+  margin-bottom:19px !important;
+}
+
+body.mobile-citizen-mode .form-step{
+  width:44px !important;
+  height:44px !important;
+  flex:0 0 44px !important;
+  border-radius:12px !important;
+  font-size:19px !important;
+}
+
+body.mobile-citizen-mode .form-section-head h3{
+  font-size:clamp(25px,3.4vw,32px) !important;
+  line-height:1.2 !important;
+}
+
+body.mobile-citizen-mode .form-section-head p{
+  font-size:clamp(18px,2.4vw,23px) !important;
+  line-height:1.45 !important;
+}
+
+body.mobile-citizen-mode .manifestation-type-grid,
+body.mobile-citizen-mode .citizen-form-grid,
+body.mobile-citizen-mode .privacy-choice-grid{
+  grid-template-columns:1fr !important;
+  gap:12px !important;
+}
+
+body.mobile-citizen-mode .manifestation-type-card,
+body.mobile-citizen-mode .privacy-option{
+  padding:17px !important;
+  border-radius:16px !important;
+  gap:13px !important;
+}
+
+body.mobile-citizen-mode .type-icon,
+body.mobile-citizen-mode .privacy-option-icon{
+  width:52px !important;
+  height:52px !important;
+  flex:0 0 52px !important;
+  border-radius:14px !important;
+}
+
+body.mobile-citizen-mode .type-icon svg,
+body.mobile-citizen-mode .privacy-option-icon svg{
+  width:29px !important;
+  height:29px !important;
+}
+
+body.mobile-citizen-mode .manifestation-type-card strong,
+body.mobile-citizen-mode .privacy-option strong{
+  font-size:clamp(21px,2.8vw,26px) !important;
+  line-height:1.25 !important;
+}
+
+body.mobile-citizen-mode .manifestation-type-card small,
+body.mobile-citizen-mode .privacy-option small{
+  font-size:clamp(17px,2.25vw,21px) !important;
+  line-height:1.42 !important;
+}
+
+body.mobile-citizen-mode .portal-field{
+  margin-bottom:17px !important;
+}
+
+body.mobile-citizen-mode .portal-field label{
+  margin-bottom:8px !important;
+  font-size:clamp(19px,2.55vw,24px) !important;
+  line-height:1.35 !important;
+}
+
+body.mobile-citizen-mode .field-optional{
+  font-size:clamp(15px,2vw,19px) !important;
+}
+
+body.mobile-citizen-mode .portal-field input,
+body.mobile-citizen-mode .portal-field select,
+body.mobile-citizen-mode .portal-field textarea{
+  min-height:58px !important;
+  padding:14px 15px !important;
+  border-radius:13px !important;
+  font-size:clamp(19px,2.55vw,24px) !important;
+  line-height:1.4 !important;
+}
+
+body.mobile-citizen-mode .portal-field textarea{
+  min-height:150px !important;
+}
+
+body.mobile-citizen-mode .field-footer,
+body.mobile-citizen-mode .privacy-choice-head span,
+body.mobile-citizen-mode .file-drop span{
+  font-size:clamp(16px,2.1vw,20px) !important;
+  line-height:1.4 !important;
+}
+
+body.mobile-citizen-mode .privacy-choice-head strong,
+body.mobile-citizen-mode .file-drop strong{
+  font-size:clamp(20px,2.65vw,25px) !important;
+}
+
+body.mobile-citizen-mode .file-drop{
+  padding:17px !important;
+  border-radius:16px !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+}
+
+body.mobile-citizen-mode .file-drop input{
+  width:100% !important;
+  max-width:none !important;
+  font-size:18px !important;
+}
+
+body.mobile-citizen-mode .privacy-summary,
+body.mobile-citizen-mode .form-alert,
+body.mobile-citizen-mode .form-confirm{
+  padding:15px 16px !important;
+  border-radius:14px !important;
+  font-size:clamp(17px,2.25vw,21px) !important;
+  line-height:1.5 !important;
+}
+
+body.mobile-citizen-mode .form-confirm{
+  padding:0 !important;
+  gap:12px !important;
+}
+
+body.mobile-citizen-mode .form-confirm input{
+  width:24px !important;
+  height:24px !important;
+  flex:0 0 24px !important;
+}
+
+body.mobile-citizen-mode .manifestation-form-footer{
+  padding:20px 18px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  gap:17px !important;
+}
+
+body.mobile-citizen-mode .manifestation-form-footer strong{
+  font-size:clamp(20px,2.65vw,25px) !important;
+}
+
+body.mobile-citizen-mode .manifestation-form-footer span{
+  font-size:clamp(17px,2.25vw,21px) !important;
+  line-height:1.45 !important;
+}
+
+body.mobile-citizen-mode .manifestation-form-footer .account-actions{
+  width:100% !important;
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:10px !important;
+}
+
+body.mobile-citizen-mode .manifestation-form-footer .portal-button,
+body.mobile-citizen-mode #replyButton,
+body.mobile-citizen-mode #uploadAttachment{
+  width:100% !important;
+  min-height:58px !important;
+  padding:13px 17px !important;
+  font-size:clamp(19px,2.55vw,24px) !important;
+  border-radius:14px !important;
+}
+
+body.mobile-citizen-mode .detail-title,
+body.mobile-citizen-mode .detail-section-title{
+  font-size:clamp(24px,3.25vw,31px) !important;
+}
+
+body.mobile-citizen-mode .detail-description,
+body.mobile-citizen-mode .thread-message p,
+body.mobile-citizen-mode .timeline-item strong,
+body.mobile-citizen-mode .timeline-item small{
+  font-size:clamp(18px,2.4vw,23px) !important;
+  line-height:1.5 !important;
+}
+
+body.mobile-citizen-mode .thread-message{
+  max-width:96% !important;
+  padding:14px 15px !important;
+}
+
+@media(max-width:390px){
+  body.mobile-citizen-mode .portal-topbar-inner{
+    padding-left:13px !important;
+    padding-right:13px !important;
+  }
+
+  body.mobile-citizen-mode .portal-brand img{
+    width:66px !important;
+    height:66px !important;
+    flex-basis:66px !important;
+  }
+
+  body.mobile-citizen-mode .portal-brand h1{
+    font-size:24px !important;
+  }
+
+  body.mobile-citizen-mode .portal-brand p{
+    font-size:16px !important;
+  }
+
+  body.mobile-citizen-mode .portal-user{
+    gap:8px !important;
+  }
+
+  body.mobile-citizen-mode .portal-user-meta strong{
+    font-size:18px !important;
+  }
+
+  body.mobile-citizen-mode .portal-user-meta span{
+    font-size:15px !important;
+  }
+
+  body.mobile-citizen-mode #professionalHomeLink,
+  body.mobile-citizen-mode #portalLogout{
+    min-height:46px !important;
+    padding:9px 11px !important;
+    font-size:16px !important;
+  }
+
+  body.mobile-citizen-mode .portal-main{
+    padding-left:9px !important;
+    padding-right:9px !important;
+  }
+
+  body.mobile-citizen-mode .portal-hero{
+    padding:23px 19px !important;
+  }
+
+  body.mobile-citizen-mode .portal-hero h2{
+    font-size:34px !important;
+  }
+
+  body.mobile-citizen-mode .portal-hero p{
+    font-size:19px !important;
+  }
+
+  body.mobile-citizen-mode .citizen-card-head{
+    padding:17px 16px !important;
+  }
+
+  body.mobile-citizen-mode .citizen-card-head h2{
+    font-size:24px !important;
+  }
+
+  body.mobile-citizen-mode .citizen-card-head .portal-button{
+    font-size:16px !important;
+    padding:9px 11px !important;
+  }
+}
