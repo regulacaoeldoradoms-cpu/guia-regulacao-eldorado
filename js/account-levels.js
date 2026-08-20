@@ -8,9 +8,9 @@
   });
 
   const LEVEL_ASSETS = Object.freeze({
-    bronze: '/assets/nivel-bronze.png?v=20260820-1',
-    prata: '/assets/nivel-prata.png?v=20260820-1',
-    ouro: '/assets/nivel-ouro.png?v=20260820-1'
+    bronze: '/assets/nivel-bronze.png?v=20260820-2',
+    prata: '/assets/nivel-prata.png?v=20260820-2',
+    ouro: '/assets/nivel-ouro.png?v=20260820-2'
   });
 
   function normalizeLevel(value) {
@@ -50,28 +50,32 @@
         height:82px;
         margin:0 auto 11px;
         padding:0;
-        border:1px solid rgba(26,48,65,.16)!important;
-        border-radius:18px;
-        overflow:hidden;
-        background:#080a0c!important;
-        box-shadow:0 7px 18px rgba(21,45,62,.13)!important;
-        transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease,filter .18s ease;
+        border:0!important;
+        border-radius:0;
+        overflow:visible;
+        background:transparent!important;
+        box-shadow:none!important;
+        transition:transform .18s ease,opacity .18s ease,filter .18s ease;
       }
       .account-level-medal img{
         width:100%;
         height:100%;
         display:block;
-        object-fit:cover;
+        object-fit:contain;
+        background:transparent;
+        filter:drop-shadow(0 7px 8px rgba(21,45,62,.16));
       }
       .account-level-step.current .account-level-medal{
-        transform:scale(1.07);
-        box-shadow:0 10px 24px rgba(22,61,86,.2),0 0 0 3px rgba(54,112,149,.13)!important;
+        transform:scale(1.08);
       }
-      .account-level-step.completed .account-level-medal{opacity:.94}
+      .account-level-step.current .account-level-medal img{
+        filter:drop-shadow(0 9px 10px rgba(22,61,86,.24));
+      }
+      .account-level-step.completed .account-level-medal{opacity:.96}
       .account-level-step.locked .account-level-medal{opacity:.58;filter:saturate(.55) grayscale(.22)}
       @media(max-width:760px){
         .account-level-track:before{top:56px}
-        .account-level-medal{width:68px;height:68px;border-radius:15px;margin-bottom:9px}
+        .account-level-medal{width:68px;height:68px;margin-bottom:9px}
       }
     `;
     document.head.appendChild(style);
@@ -85,7 +89,7 @@
       if (!medal) return;
       const expected = LEVEL_ASSETS[level];
       const currentImage = medal.querySelector('img');
-      if (currentImage?.dataset.levelArtwork === level) return;
+      if (currentImage?.dataset.levelArtwork === level && currentImage.src.includes('20260820-2')) return;
       medal.textContent = '';
       const image = document.createElement('img');
       image.src = expected;
