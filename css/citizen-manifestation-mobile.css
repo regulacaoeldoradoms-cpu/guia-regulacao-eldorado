@@ -1,0 +1,460 @@
+/* Nova manifestação — refinamento visual exclusivo para mobile.
+   Carregado depois dos demais estilos do Canal do Cidadão.
+   Objetivos: leitura confortável, baixa visão, cores semânticas e alvos de toque amplos. */
+
+body.mobile-citizen-mode #newManifestationModal{
+  background:#edf3f7 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-panel{
+  background:#f5f8fa !important;
+}
+
+/* Cabeçalho forte e sempre identificável. */
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-head{
+  position:sticky !important;
+  top:0 !important;
+  z-index:20 !important;
+  padding:18px 18px 17px !important;
+  background:linear-gradient(135deg,#ffffff 0%,#eef7fb 100%) !important;
+  border-bottom:2px solid #cfe0e9 !important;
+  box-shadow:0 5px 16px rgba(24,61,88,.09) !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .modal-kicker{
+  display:block !important;
+  color:#147681 !important;
+  font-size:17px !important;
+  line-height:1.2 !important;
+  font-weight:900 !important;
+  letter-spacing:.09em !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-head h2{
+  margin:5px 0 6px !important;
+  color:#173b5d !important;
+  font-size:36px !important;
+  line-height:1.08 !important;
+  font-weight:900 !important;
+  letter-spacing:-.02em !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-head small{
+  display:block !important;
+  max-width:620px !important;
+  color:#5f7789 !important;
+  font-size:20px !important;
+  line-height:1.45 !important;
+}
+
+/* Fechar = vermelho, sinal semântico óbvio. */
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-close{
+  width:58px !important;
+  height:58px !important;
+  flex:0 0 58px !important;
+  display:grid !important;
+  place-items:center !important;
+  border:2px solid #e7a6b0 !important;
+  border-radius:17px !important;
+  background:linear-gradient(180deg,#fff2f4 0%,#ffdfe4 100%) !important;
+  color:#b4233d !important;
+  font-size:31px !important;
+  line-height:1 !important;
+  font-weight:900 !important;
+  box-shadow:0 6px 14px rgba(180,35,61,.13) !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-close:active{
+  transform:scale(.96) !important;
+  background:#ffd7de !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-content{
+  background:#f3f7fa !important;
+}
+
+/* Cada etapa tem uma família cromática própria para facilitar orientação. */
+body.mobile-citizen-mode #newManifestationForm > .form-section{
+  margin:0 !important;
+  padding:27px 18px 29px !important;
+  border:0 !important;
+  border-bottom:5px solid #e2eaf0 !important;
+}
+
+body.mobile-citizen-mode #newManifestationForm > .form-section:nth-of-type(1){
+  background:linear-gradient(180deg,#f5faff 0%,#edf7fd 100%) !important;
+  border-bottom-color:#b9dceb !important;
+}
+
+body.mobile-citizen-mode #newManifestationForm > .form-section:nth-of-type(2){
+  background:linear-gradient(180deg,#fffdf7 0%,#fff8e9 100%) !important;
+  border-bottom-color:#eed9a3 !important;
+}
+
+body.mobile-citizen-mode #newManifestationForm > .form-section:nth-of-type(3){
+  background:linear-gradient(180deg,#faf8ff 0%,#f4f0ff 100%) !important;
+  border-bottom-color:#d6c9ee !important;
+}
+
+body.mobile-citizen-mode #newManifestationForm > .form-section:nth-of-type(4){
+  background:linear-gradient(180deg,#f5fcf8 0%,#edf9f3 100%) !important;
+  border-bottom-color:#bfe1cf !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-section-head{
+  gap:14px !important;
+  margin-bottom:21px !important;
+  align-items:flex-start !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-step{
+  width:48px !important;
+  height:48px !important;
+  flex:0 0 48px !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:14px !important;
+  font-size:21px !important;
+  font-weight:900 !important;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.05) !important;
+}
+
+body.mobile-citizen-mode #newManifestationForm > .form-section:nth-of-type(1) .form-step{
+  background:#d9eff9 !important;
+  color:#176a8a !important;
+}
+body.mobile-citizen-mode #newManifestationForm > .form-section:nth-of-type(2) .form-step{
+  background:#fae9bd !important;
+  color:#78550e !important;
+}
+body.mobile-citizen-mode #newManifestationForm > .form-section:nth-of-type(3) .form-step{
+  background:#e5dcf7 !important;
+  color:#5c4385 !important;
+}
+body.mobile-citizen-mode #newManifestationForm > .form-section:nth-of-type(4) .form-step{
+  background:#d7efe2 !important;
+  color:#23684b !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-section-head h3{
+  margin:0 0 6px !important;
+  color:#203f59 !important;
+  font-size:30px !important;
+  line-height:1.16 !important;
+  font-weight:900 !important;
+  letter-spacing:-.015em !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-section-head p{
+  margin:0 !important;
+  color:#647d8f !important;
+  font-size:20px !important;
+  line-height:1.45 !important;
+}
+
+/* Classificação: uma cor por intenção. */
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-grid{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:13px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card{
+  min-height:98px !important;
+  padding:17px 18px !important;
+  gap:15px !important;
+  border-width:2px !important;
+  border-radius:18px !important;
+  box-shadow:0 5px 13px rgba(28,55,76,.05) !important;
+  transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="sugestao"]){
+  background:#eef9ff !important;
+  border-color:#b9ddec !important;
+}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="reclamacao"]){
+  background:#fff7e8 !important;
+  border-color:#ebd39b !important;
+}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="elogio"]){
+  background:#eef9f1 !important;
+  border-color:#bfdfc8 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="denuncia"]){
+  background:#fff0f2 !important;
+  border-color:#e9b9c1 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input:checked){
+  transform:translateY(-1px) !important;
+  box-shadow:0 0 0 3px rgba(24,101,145,.16),0 9px 20px rgba(28,55,76,.10) !important;
+}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="sugestao"]:checked){border-color:#2788b2 !important;}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="reclamacao"]:checked){border-color:#c58a16 !important;}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="elogio"]:checked){border-color:#3f9960 !important;}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="denuncia"]:checked){border-color:#c54a5c !important;}
+
+body.mobile-citizen-mode #newManifestationModal .type-icon{
+  width:58px !important;
+  height:58px !important;
+  flex:0 0 58px !important;
+  display:grid !important;
+  place-items:center !important;
+  border-radius:16px !important;
+}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="sugestao"]) .type-icon{background:#d5effa !important;color:#1a789b !important;}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="reclamacao"]) .type-icon{background:#f8e5b9 !important;color:#8b6419 !important;}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="elogio"]) .type-icon{background:#d8efdf !important;color:#337b50 !important;}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card:has(input[value="denuncia"]) .type-icon{background:#f5d7dc !important;color:#a63b4c !important;}
+
+body.mobile-citizen-mode #newManifestationModal .type-icon svg{
+  width:32px !important;
+  height:32px !important;
+  stroke-width:1.9 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card strong{
+  display:block !important;
+  margin-bottom:5px !important;
+  color:#213f59 !important;
+  font-size:24px !important;
+  line-height:1.2 !important;
+  font-weight:900 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card small{
+  display:block !important;
+  color:#62798a !important;
+  font-size:19px !important;
+  line-height:1.42 !important;
+}
+
+/* Formulário em uma coluna e com leitura confortável. */
+body.mobile-citizen-mode #newManifestationModal .citizen-form-grid{
+  grid-template-columns:1fr !important;
+  gap:2px !important;
+}
+body.mobile-citizen-mode #newManifestationModal .portal-field{
+  margin-bottom:19px !important;
+}
+body.mobile-citizen-mode #newManifestationModal .portal-field label{
+  display:block !important;
+  margin-bottom:9px !important;
+  color:#29465e !important;
+  font-size:21px !important;
+  line-height:1.3 !important;
+  font-weight:850 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .field-optional{
+  color:#7d8f9c !important;
+  font-size:17px !important;
+  font-weight:650 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .portal-field input,
+body.mobile-citizen-mode #newManifestationModal .portal-field select,
+body.mobile-citizen-mode #newManifestationModal .portal-field textarea{
+  width:100% !important;
+  min-height:66px !important;
+  padding:16px 17px !important;
+  border:2px solid #d2dee6 !important;
+  border-radius:16px !important;
+  background:#fff !important;
+  color:#274258 !important;
+  font-size:21px !important;
+  line-height:1.4 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75) !important;
+}
+body.mobile-citizen-mode #newManifestationModal .portal-field input:focus,
+body.mobile-citizen-mode #newManifestationModal .portal-field select:focus,
+body.mobile-citizen-mode #newManifestationModal .portal-field textarea:focus{
+  border-color:#4b9ec2 !important;
+  box-shadow:0 0 0 4px rgba(75,158,194,.14) !important;
+  outline:none !important;
+}
+body.mobile-citizen-mode #newManifestationModal .portal-field textarea{
+  min-height:190px !important;
+  resize:vertical !important;
+}
+body.mobile-citizen-mode #newManifestationModal #manifestationDesiredOutcome{
+  min-height:145px !important;
+}
+body.mobile-citizen-mode #newManifestationModal .field-footer{
+  gap:10px !important;
+  color:#728897 !important;
+  font-size:16px !important;
+  line-height:1.4 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .field-footer small{
+  font-size:16px !important;
+  line-height:1.4 !important;
+}
+
+/* Arquivos: área de ação visualmente clara. */
+body.mobile-citizen-mode #newManifestationModal .file-drop{
+  min-height:108px !important;
+  padding:19px !important;
+  border:2px dashed #7fb4c9 !important;
+  border-radius:18px !important;
+  background:#edf8fc !important;
+}
+body.mobile-citizen-mode #newManifestationModal .file-drop strong{
+  color:#1d5872 !important;
+  font-size:22px !important;
+}
+body.mobile-citizen-mode #newManifestationModal .file-drop span{
+  color:#607b8c !important;
+  font-size:17px !important;
+  line-height:1.4 !important;
+}
+
+/* Privacidade: cartões grandes e seleção verde/azul. */
+body.mobile-citizen-mode #newManifestationModal .privacy-choice{
+  margin-top:20px !important;
+  padding:18px !important;
+  border:2px solid #d3c9e9 !important;
+  border-radius:19px !important;
+  background:#f8f5ff !important;
+}
+body.mobile-citizen-mode #newManifestationModal .privacy-choice-head strong{
+  color:#4d3f74 !important;
+  font-size:23px !important;
+  line-height:1.25 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .privacy-choice-head span{
+  margin-top:5px !important;
+  color:#6f6486 !important;
+  font-size:18px !important;
+  line-height:1.43 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .privacy-choice-grid{
+  grid-template-columns:1fr !important;
+  gap:12px !important;
+  margin-top:15px !important;
+}
+body.mobile-citizen-mode #newManifestationModal .privacy-option{
+  padding:17px !important;
+  gap:14px !important;
+  border:2px solid #d9d1e8 !important;
+  border-radius:17px !important;
+  background:#fff !important;
+}
+body.mobile-citizen-mode #newManifestationModal .privacy-option:has(input:checked){
+  border-color:#8064b3 !important;
+  background:#f4efff !important;
+  box-shadow:0 0 0 3px rgba(128,100,179,.12) !important;
+}
+body.mobile-citizen-mode #newManifestationModal .privacy-option-icon{
+  width:55px !important;
+  height:55px !important;
+  flex:0 0 55px !important;
+  border-radius:15px !important;
+  background:#e9e0f7 !important;
+  color:#654d91 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .privacy-option strong{
+  font-size:22px !important;
+}
+body.mobile-citizen-mode #newManifestationModal .privacy-option small{
+  font-size:18px !important;
+  line-height:1.42 !important;
+}
+
+/* Alertas com semântica cromática clara. */
+body.mobile-citizen-mode #newManifestationModal .form-alert{
+  margin-top:16px !important;
+  padding:17px 18px !important;
+  border:2px solid #edce8a !important;
+  border-radius:17px !important;
+  background:#fff7df !important;
+  color:#66501d !important;
+  font-size:18px !important;
+  line-height:1.45 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .form-alert strong{
+  color:#6c4f0c !important;
+  font-size:20px !important;
+}
+body.mobile-citizen-mode #newManifestationModal .form-alert--neutral{
+  border-color:#bdd7e6 !important;
+  background:#eef7fc !important;
+  color:#35566c !important;
+}
+body.mobile-citizen-mode #newManifestationModal .form-alert--neutral strong{
+  color:#28546e !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-confirm{
+  margin-top:18px !important;
+  padding:17px !important;
+  gap:13px !important;
+  border:2px solid #bddfca !important;
+  border-radius:17px !important;
+  background:#eef9f2 !important;
+  color:#2e5b43 !important;
+  font-size:19px !important;
+  line-height:1.45 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .form-confirm input{
+  width:29px !important;
+  height:29px !important;
+  flex:0 0 29px !important;
+  margin-top:1px !important;
+}
+
+/* Rodapé: conclusão destacada e botões grandes. */
+body.mobile-citizen-mode #newManifestationModal .manifestation-form-footer{
+  padding:23px 18px max(24px,env(safe-area-inset-bottom)) !important;
+  gap:18px !important;
+  background:linear-gradient(180deg,#eef5f8 0%,#e7f0f4 100%) !important;
+  border-top:2px solid #cddde6 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .manifestation-form-footer > div:first-child strong{
+  color:#254760 !important;
+  font-size:22px !important;
+}
+body.mobile-citizen-mode #newManifestationModal .manifestation-form-footer > div:first-child span{
+  color:#60798a !important;
+  font-size:18px !important;
+  line-height:1.45 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .manifestation-form-footer .account-actions{
+  display:grid !important;
+  grid-template-columns:1fr 1.4fr !important;
+  gap:12px !important;
+  width:100% !important;
+}
+body.mobile-citizen-mode #newManifestationModal .manifestation-form-footer .portal-button{
+  min-height:64px !important;
+  padding:14px 17px !important;
+  border-radius:16px !important;
+  font-size:20px !important;
+  line-height:1.2 !important;
+  font-weight:900 !important;
+}
+body.mobile-citizen-mode #newManifestationModal .manifestation-form-footer .portal-button.secondary{
+  border:2px solid #e0a5ae !important;
+  background:#fff0f2 !important;
+  color:#a33143 !important;
+}
+body.mobile-citizen-mode #newManifestationModal #submitManifestation{
+  border:2px solid #247a5a !important;
+  background:linear-gradient(180deg,#36a273 0%,#23815a 100%) !important;
+  color:#fff !important;
+  box-shadow:0 8px 18px rgba(35,129,90,.18) !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .account-status{
+  margin:0 18px 20px !important;
+  padding:15px 16px !important;
+  border-radius:15px !important;
+  font-size:18px !important;
+  line-height:1.45 !important;
+}
+
+@media(max-width:390px){
+  body.mobile-citizen-mode #newManifestationModal .citizen-modal-head h2{font-size:32px !important;}
+  body.mobile-citizen-mode #newManifestationModal .citizen-modal-head small{font-size:18px !important;}
+  body.mobile-citizen-mode #newManifestationModal .form-section-head h3{font-size:27px !important;}
+  body.mobile-citizen-mode #newManifestationModal .form-section-head p{font-size:18px !important;}
+  body.mobile-citizen-mode #newManifestationModal .manifestation-form-footer .account-actions{grid-template-columns:1fr !important;}
+}
