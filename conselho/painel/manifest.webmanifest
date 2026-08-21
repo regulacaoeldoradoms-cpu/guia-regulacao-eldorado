@@ -10,7 +10,8 @@
   "theme_color": "#0d3157",
   "icons": [
     {
-      "src": "/assets/conselho-municipal-saude-eldorado.png?v=20260821-1",
+      "src": "/assets/Conselho-de-saude-contornado.png?v=20260821-2",
+      "sizes": "1280x1280",
       "type": "image/png",
       "purpose": "any"
     }
