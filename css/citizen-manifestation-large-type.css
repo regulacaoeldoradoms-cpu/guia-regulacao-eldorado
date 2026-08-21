@@ -1,0 +1,212 @@
+/* Nova manifestação — reforço tipográfico para baixa visão no mobile.
+   Carregado depois de citizen-manifestation-mobile.css para preservar a paleta aprovada. */
+
+body.mobile-citizen-mode #newManifestationModal .modal-kicker{
+  font-size:20px !important;
+  line-height:1.25 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-head h2{
+  font-size:42px !important;
+  line-height:1.07 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-head small{
+  font-size:24px !important;
+  line-height:1.5 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-close{
+  width:62px !important;
+  height:62px !important;
+  flex-basis:62px !important;
+  font-size:34px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-step{
+  width:54px !important;
+  height:54px !important;
+  flex-basis:54px !important;
+  font-size:24px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-section-head h3{
+  font-size:34px !important;
+  line-height:1.16 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-section-head p{
+  font-size:24px !important;
+  line-height:1.5 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card{
+  min-height:112px !important;
+  padding:19px 20px !important;
+  gap:17px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .type-icon{
+  width:64px !important;
+  height:64px !important;
+  flex-basis:64px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .type-icon svg{
+  width:35px !important;
+  height:35px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card strong{
+  font-size:28px !important;
+  line-height:1.2 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .manifestation-type-card small{
+  font-size:23px !important;
+  line-height:1.45 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .portal-field label{
+  font-size:25px !important;
+  line-height:1.35 !important;
+  margin-bottom:10px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .field-optional{
+  font-size:20px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .portal-field input,
+body.mobile-citizen-mode #newManifestationModal .portal-field select,
+body.mobile-citizen-mode #newManifestationModal .portal-field textarea{
+  min-height:72px !important;
+  padding:17px 18px !important;
+  font-size:24px !important;
+  line-height:1.45 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .portal-field textarea{
+  min-height:220px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal #manifestationDesiredOutcome{
+  min-height:165px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .field-footer,
+body.mobile-citizen-mode #newManifestationModal .field-footer small{
+  font-size:19px !important;
+  line-height:1.45 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .file-drop{
+  min-height:122px !important;
+  padding:21px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .file-drop strong{
+  font-size:26px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .file-drop span{
+  font-size:21px !important;
+  line-height:1.45 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .privacy-choice-head strong{
+  font-size:27px !important;
+  line-height:1.3 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .privacy-choice-head span{
+  font-size:22px !important;
+  line-height:1.5 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .privacy-option{
+  padding:19px !important;
+  gap:16px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .privacy-option-icon{
+  width:62px !important;
+  height:62px !important;
+  flex-basis:62px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .privacy-option strong{
+  font-size:26px !important;
+  line-height:1.25 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .privacy-option small{
+  font-size:22px !important;
+  line-height:1.48 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .privacy-summary{
+  font-size:21px !important;
+  line-height:1.5 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-alert{
+  font-size:22px !important;
+  line-height:1.5 !important;
+  padding:19px 20px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-alert strong{
+  font-size:24px !important;
+  line-height:1.3 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-confirm{
+  font-size:22px !important;
+  line-height:1.5 !important;
+  padding:19px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .form-confirm input{
+  width:32px !important;
+  height:32px !important;
+  flex-basis:32px !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .manifestation-form-footer > div:first-child strong{
+  font-size:26px !important;
+  line-height:1.3 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .manifestation-form-footer > div:first-child span{
+  font-size:22px !important;
+  line-height:1.5 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .manifestation-form-footer .portal-button{
+  min-height:70px !important;
+  font-size:23px !important;
+  line-height:1.25 !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .account-status{
+  font-size:21px !important;
+  line-height:1.5 !important;
+}
+
+/* Mesmo em celulares estreitos, não reduzimos a tipografia a níveis difíceis para baixa visão. */
+@media(max-width:390px){
+  body.mobile-citizen-mode #newManifestationModal .modal-kicker{font-size:18px !important;}
+  body.mobile-citizen-mode #newManifestationModal .citizen-modal-head h2{font-size:37px !important;}
+  body.mobile-citizen-mode #newManifestationModal .citizen-modal-head small{font-size:21px !important;}
+  body.mobile-citizen-mode #newManifestationModal .form-section-head h3{font-size:31px !important;}
+  body.mobile-citizen-mode #newManifestationModal .form-section-head p{font-size:21px !important;}
+  body.mobile-citizen-mode #newManifestationModal .manifestation-type-card strong{font-size:26px !important;}
+  body.mobile-citizen-mode #newManifestationModal .manifestation-type-card small{font-size:21px !important;}
+  body.mobile-citizen-mode #newManifestationModal .portal-field label{font-size:23px !important;}
+  body.mobile-citizen-mode #newManifestationModal .portal-field input,
+  body.mobile-citizen-mode #newManifestationModal .portal-field select,
+  body.mobile-citizen-mode #newManifestationModal .portal-field textarea{font-size:22px !important;}
+  body.mobile-citizen-mode #newManifestationModal .form-alert,
+  body.mobile-citizen-mode #newManifestationModal .form-confirm{font-size:20px !important;}
+}
