@@ -1,0 +1,18 @@
+{
+  "id": "/conselho/painel/",
+  "name": "Conselho Municipal de Saúde de Eldorado/MS",
+  "short_name": "Conselho Saúde",
+  "description": "Painel institucional do Conselho Municipal de Saúde de Eldorado/MS",
+  "start_url": "/conselho/painel/",
+  "scope": "/conselho/painel/",
+  "display": "standalone",
+  "background_color": "#f3f7fb",
+  "theme_color": "#0d3157",
+  "icons": [
+    {
+      "src": "/assets/conselho-municipal-saude-eldorado.png?v=20260821-1",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
