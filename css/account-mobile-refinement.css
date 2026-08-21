@@ -1,0 +1,372 @@
+/* Minha conta — refinamento visual mobile.
+   Camada posterior a account-mobile.css: hierarquia cromática, separação de módulos
+   e acabamento sem alterar o desktop. */
+
+body.mobile-account-mode{
+  background:linear-gradient(180deg,#e8f1f6 0%,#f2f7fa 42%,#eaf2f6 100%) !important;
+}
+
+body.mobile-account-mode .portal-main{
+  padding-bottom:56px !important;
+}
+
+/* Topo: uma faixa única, limpa e com separação suficiente entre as áreas. */
+body.mobile-account-mode .portal-topbar{
+  box-shadow:0 5px 16px rgba(4,42,73,.16) !important;
+}
+
+body.mobile-account-mode .portal-topbar-inner{
+  padding-top:12px !important;
+  padding-bottom:12px !important;
+}
+
+body.mobile-account-mode .portal-brand img{
+  box-shadow:0 3px 10px rgba(0,0,0,.14) !important;
+}
+
+body.mobile-account-mode #accountHomeLink,
+body.mobile-account-mode #portalLogout{
+  background:rgba(255,255,255,.12) !important;
+  border:1px solid rgba(255,255,255,.16) !important;
+}
+
+/* Abertura: ganha identidade própria, sem competir com os módulos abaixo. */
+body.mobile-account-mode .portal-hero{
+  border:1px solid #cfe3e7 !important;
+  border-left:6px solid #28a5ad !important;
+  background:linear-gradient(140deg,#f8fdfe 0%,#edf8f8 56%,#e5f3f5 100%) !important;
+  box-shadow:0 12px 28px rgba(19,65,88,.09) !important;
+}
+
+body.mobile-account-mode .portal-hero .portal-eyebrow{
+  color:#0b7c83 !important;
+}
+
+body.mobile-account-mode .portal-hero h2{
+  color:#123854 !important;
+}
+
+body.mobile-account-mode .portal-hero p{
+  color:#526d7e !important;
+}
+
+/* Notas gerais. */
+body.mobile-account-mode .portal-note.info{
+  background:#edf7fd !important;
+  border-color:#c9e0ef !important;
+  color:#294b63 !important;
+}
+
+body.mobile-account-mode .portal-note.warning{
+  background:#fff8e9 !important;
+  border-color:#ead39b !important;
+  color:#6b511d !important;
+}
+
+/* Evolução da conta: painel próprio, visualmente separado do restante. */
+body.mobile-account-mode .account-level-panel{
+  overflow:hidden !important;
+  border-color:#cadce8 !important;
+  background:linear-gradient(180deg,#f8fbfd 0%,#f0f6fa 100%) !important;
+  box-shadow:0 14px 32px rgba(25,63,91,.10) !important;
+}
+
+body.mobile-account-mode .account-level-head{
+  background:linear-gradient(180deg,#fafdff 0%,#edf5fa 100%) !important;
+  border-bottom:1px solid #d6e4ed !important;
+}
+
+body.mobile-account-mode .account-level-head .portal-eyebrow{
+  color:#16808b !important;
+}
+
+body.mobile-account-mode .account-level-head h2{
+  color:#173d5c !important;
+}
+
+body.mobile-account-mode .account-level-head p{
+  color:#5d7486 !important;
+}
+
+body.mobile-account-mode .account-level-current{
+  box-shadow:0 3px 9px rgba(39,69,91,.08) !important;
+}
+
+body.mobile-account-mode .account-level-track{
+  background:linear-gradient(180deg,#ffffff 0%,#f7fafc 100%) !important;
+  border-bottom:1px solid #dce7ee !important;
+}
+
+body.mobile-account-mode .account-level-track::before{
+  background:linear-gradient(90deg,#b98a64 0%,#aeb9c4 50%,#d9c774 100%) !important;
+  opacity:.34 !important;
+}
+
+body.mobile-account-mode .account-level-step strong{
+  color:#254a67 !important;
+}
+
+body.mobile-account-mode .account-level-step span{
+  color:#74899a !important;
+}
+
+/* Próxima conquista e desbloqueios passam a ser claramente dois assuntos diferentes. */
+body.mobile-account-mode .account-level-next{
+  border:1px solid #d4e5f0 !important;
+  border-top:5px solid #5fa6d3 !important;
+  background:linear-gradient(180deg,#ffffff 0%,#f1f9fe 100%) !important;
+  box-shadow:0 5px 14px rgba(40,93,129,.05) !important;
+}
+
+body.mobile-account-mode .account-level-next h3{
+  color:#1c4c70 !important;
+}
+
+body.mobile-account-mode .account-level-unlocks{
+  border:1px solid #eadfc8 !important;
+  border-top:5px solid #d8a857 !important;
+  background:linear-gradient(180deg,#fffefa 0%,#fff7ec 100%) !important;
+  box-shadow:0 5px 14px rgba(116,86,30,.04) !important;
+}
+
+body.mobile-account-mode .account-level-unlocks h3{
+  color:#644b20 !important;
+}
+
+body.mobile-account-mode .account-level-unlock{
+  color:#526878 !important;
+}
+
+body.mobile-account-mode .account-level-unlock .state{
+  color:#355a75 !important;
+}
+
+body.mobile-account-mode .account-achievement{
+  background:linear-gradient(180deg,#f5fbff 0%,#eaf6fd 100%) !important;
+  border-color:#d1e4f0 !important;
+}
+
+body.mobile-account-mode .account-level-footnote{
+  margin-top:1px !important;
+  padding-top:16px !important;
+  border-top:1px solid #d9e5ec !important;
+  background:#f2f6f9 !important;
+  color:#6d8190 !important;
+}
+
+/* Espaçamento entre módulos: mais leitura, menos sensação de bloco único. */
+body.mobile-account-mode .account-layout{
+  gap:22px !important;
+}
+
+body.mobile-account-mode .account-card,
+body.mobile-account-mode .profile-card{
+  position:relative !important;
+  overflow:hidden !important;
+  border-color:#d4e0e8 !important;
+  box-shadow:0 12px 28px rgba(20,55,90,.085) !important;
+}
+
+/* Foto do perfil — ciano. */
+body.mobile-account-mode #profilePhotoCard{
+  border-top:6px solid #42b4c4 !important;
+  background:linear-gradient(180deg,#ffffff 0%,#eefafc 100%) !important;
+}
+
+body.mobile-account-mode #profilePhotoCard h2{
+  color:#15536a !important;
+}
+
+body.mobile-account-mode #profilePhotoCard p{
+  color:#5e7687 !important;
+}
+
+body.mobile-account-mode .profile-avatar-preview{
+  background-color:#fff !important;
+  box-shadow:0 0 0 1px #cbdfe9,0 15px 32px rgba(18,66,91,.18) !important;
+}
+
+/* Identidade — azul. */
+body.mobile-account-mode #citizenIdentityCard{
+  border-top:6px solid #5b93d0 !important;
+  background:linear-gradient(180deg,#ffffff 0%,#f1f7fd 100%) !important;
+}
+
+body.mobile-account-mode #citizenIdentityCard h2{
+  color:#214f79 !important;
+}
+
+/* Senha — violeta-azulado. */
+body.mobile-account-mode .account-layout > .account-card:has(#changePasswordForm){
+  border-top:6px solid #7b8fd9 !important;
+  background:linear-gradient(180deg,#ffffff 0%,#f5f5fd 100%) !important;
+}
+
+body.mobile-account-mode .account-layout > .account-card:has(#changePasswordForm) h2{
+  color:#3f5387 !important;
+}
+
+/* Segurança — verde. */
+body.mobile-account-mode #seguranca{
+  border-top:6px solid #4bad82 !important;
+  background:linear-gradient(180deg,#ffffff 0%,#effaf5 100%) !important;
+}
+
+body.mobile-account-mode #seguranca h2{
+  color:#225f4a !important;
+}
+
+/* Recursos sociais — lilás. */
+body.mobile-account-mode #socialPreferencesCard{
+  border-top:6px solid #917fc4 !important;
+  background:linear-gradient(180deg,#ffffff 0%,#f6f3fb 100%) !important;
+}
+
+body.mobile-account-mode #socialPreferencesCard h2{
+  color:#57457f !important;
+}
+
+/* Títulos e textos internos ganham contraste consistente. */
+body.mobile-account-mode .account-card h2,
+body.mobile-account-mode .account-card h3{
+  letter-spacing:-.015em !important;
+}
+
+body.mobile-account-mode .account-card > p,
+body.mobile-account-mode .profile-editor-copy p{
+  color:#5e7485 !important;
+}
+
+/* Inputs continuam brancos: são a área de interação e devem se destacar do card colorido. */
+body.mobile-account-mode .portal-field input,
+body.mobile-account-mode .portal-field textarea,
+body.mobile-account-mode .portal-field select{
+  background:#fff !important;
+  border:1.5px solid #cbd9e4 !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7) !important;
+  color:#173951 !important;
+}
+
+body.mobile-account-mode .portal-field input:focus,
+body.mobile-account-mode .portal-field textarea:focus,
+body.mobile-account-mode .portal-field select:focus{
+  outline:none !important;
+  border-color:#3e9fc4 !important;
+  box-shadow:0 0 0 4px rgba(62,159,196,.13) !important;
+}
+
+body.mobile-account-mode .portal-field label{
+  color:#27475e !important;
+}
+
+body.mobile-account-mode .portal-field small,
+body.mobile-account-mode #citizenHandleHelp{
+  color:#6b8090 !important;
+}
+
+body.mobile-account-mode #citizenIdentityForm .portal-field > div{
+  background:#fff !important;
+  border-color:#cbd9e4 !important;
+}
+
+/* Botões: ação principal bem clara; secundários menos pesados. */
+body.mobile-account-mode .portal-button.primary{
+  box-shadow:0 8px 18px rgba(27,112,177,.16) !important;
+}
+
+body.mobile-account-mode .portal-button.secondary{
+  background:#f1f7fb !important;
+  border-color:#cedce7 !important;
+  color:#244d6d !important;
+}
+
+body.mobile-account-mode .portal-button.danger{
+  background:#fff0f2 !important;
+  border-color:#efc3ca !important;
+  color:#933845 !important;
+}
+
+body.mobile-account-mode .account-status.success{
+  background:#edf9f3 !important;
+  border-color:#cbe8d8 !important;
+  color:#23634b !important;
+}
+
+body.mobile-account-mode .account-status.error{
+  background:#fff1f3 !important;
+  border-color:#f0c9cf !important;
+  color:#8d2f3b !important;
+}
+
+body.mobile-account-mode .user-badge{
+  background:#eaf4ff !important;
+  color:#225a8c !important;
+}
+
+body.mobile-account-mode .level-lock-overlay{
+  background:#fff7e5 !important;
+  border-color:#e8ca82 !important;
+  color:#70531d !important;
+}
+
+/* Em telas menores, a barra superior fica realmente em uma linha sem textos redundantes. */
+@media(max-width:560px){
+  body.mobile-account-mode .portal-topbar-inner{
+    gap:8px !important;
+    padding-left:11px !important;
+    padding-right:11px !important;
+  }
+
+  body.mobile-account-mode .portal-brand{
+    gap:8px !important;
+  }
+
+  body.mobile-account-mode .portal-brand p,
+  body.mobile-account-mode .portal-user-meta span{
+    display:none !important;
+  }
+
+  body.mobile-account-mode #accountHomeLink{
+    font-size:0 !important;
+    min-width:58px !important;
+    padding-left:10px !important;
+    padding-right:10px !important;
+  }
+
+  body.mobile-account-mode #accountHomeLink::after{
+    content:"Início";
+    font-size:16px !important;
+    font-weight:850 !important;
+  }
+
+  body.mobile-account-mode .portal-brand h1{
+    font-size:23px !important;
+  }
+
+  body.mobile-account-mode .portal-user-meta strong{
+    max-width:96px !important;
+    font-size:16px !important;
+  }
+
+  body.mobile-account-mode #portalLogout{
+    min-width:56px !important;
+    padding-left:9px !important;
+    padding-right:9px !important;
+  }
+
+  body.mobile-account-mode .account-level-track{
+    padding-left:8px !important;
+    padding-right:8px !important;
+  }
+
+  body.mobile-account-mode .account-level-medal{
+    width:72px !important;
+    height:72px !important;
+  }
+
+  body.mobile-account-mode .account-card,
+  body.mobile-account-mode .profile-card{
+    padding-left:18px !important;
+    padding-right:18px !important;
+  }
+}
