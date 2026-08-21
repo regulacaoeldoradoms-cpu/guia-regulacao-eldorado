@@ -210,3 +210,36 @@ body.mobile-citizen-mode #newManifestationModal .account-status{
   body.mobile-citizen-mode #newManifestationModal .form-alert,
   body.mobile-citizen-mode #newManifestationModal .form-confirm{font-size:20px !important;}
 }
+
+/* Botão de fechar: usa o asset profissional enviado para assets/Fechar-icon.png. */
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-close{
+  width:66px !important;
+  height:66px !important;
+  flex:0 0 66px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:18px !important;
+  background-color:transparent !important;
+  background-image:url('/assets/Fechar-icon.png?v=20260821-1125') !important;
+  background-repeat:no-repeat !important;
+  background-position:center !important;
+  background-size:contain !important;
+  box-shadow:none !important;
+  color:transparent !important;
+  font-size:0 !important;
+  line-height:0 !important;
+  overflow:hidden !important;
+  appearance:none !important;
+  -webkit-appearance:none !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-close:active{
+  transform:scale(.94) !important;
+  background-color:transparent !important;
+  background-image:url('/assets/Fechar-icon.png?v=20260821-1125') !important;
+}
+
+body.mobile-citizen-mode #newManifestationModal .citizen-modal-close:focus-visible{
+  outline:4px solid rgba(180,35,61,.28) !important;
+  outline-offset:3px !important;
+}
