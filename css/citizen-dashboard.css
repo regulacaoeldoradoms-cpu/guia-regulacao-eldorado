@@ -33,6 +33,81 @@ body.portal-page{background:#eaf2f6}
 .notification:hover{border-color:#bfb3d2;background:#fff}
 .notification.unread{background:#f1f8fc;border-left-color:#2677a6}
 
+/* Nova manifestação no desktop: hierarquia cromática e leitura intuitiva. */
+body:not(.mobile-citizen-mode) #newManifestationModal{background:rgba(7,27,43,.68);backdrop-filter:blur(4px)}
+body:not(.mobile-citizen-mode) #newManifestationModal .citizen-modal-panel--form{max-width:1050px;border:1px solid rgba(188,211,224,.9);box-shadow:0 30px 80px rgba(5,32,49,.32)}
+body:not(.mobile-citizen-mode) #newManifestationModal .citizen-modal-head{padding:20px 24px;background:linear-gradient(135deg,#ffffff 0%,#edf8fb 100%);border-bottom:2px solid #c7e0e9;box-shadow:0 4px 14px rgba(25,69,91,.07)}
+body:not(.mobile-citizen-mode) #newManifestationModal .modal-kicker{color:#0b7482;font-weight:900;letter-spacing:.12em}
+body:not(.mobile-citizen-mode) #newManifestationModal .citizen-modal-head h2{color:#123d60;font-size:1.45rem;font-weight:850}
+body:not(.mobile-citizen-mode) #newManifestationModal .citizen-modal-head small{color:#58758a;font-size:.82rem}
+body:not(.mobile-citizen-mode) #newManifestationModal .citizen-modal-close{width:42px;height:42px;flex-basis:42px;border:1px solid #efc1c8;background:#fff1f3;color:#b02e44;font-weight:900;box-shadow:0 4px 10px rgba(176,46,68,.08)}
+body:not(.mobile-citizen-mode) #newManifestationModal .citizen-modal-close:hover{background:#ffe3e8;border-color:#df9da8;transform:translateY(-1px)}
+body:not(.mobile-citizen-mode) #newManifestationModal .citizen-modal-content{background:#f5f8fa}
+body:not(.mobile-citizen-mode) #newManifestationForm>.form-section{padding:25px 28px;border-bottom-width:4px;border-bottom-style:solid}
+body:not(.mobile-citizen-mode) #newManifestationForm>.form-section:nth-of-type(1){background:linear-gradient(180deg,#f7fcff 0%,#eef8fd 100%);border-bottom-color:#b9ddea}
+body:not(.mobile-citizen-mode) #newManifestationForm>.form-section:nth-of-type(2){background:linear-gradient(180deg,#fffdf8 0%,#fff8e9 100%);border-bottom-color:#ead8a8}
+body:not(.mobile-citizen-mode) #newManifestationForm>.form-section:nth-of-type(3){background:linear-gradient(180deg,#fbfaff 0%,#f5f1ff 100%);border-bottom-color:#d5cae9}
+body:not(.mobile-citizen-mode) #newManifestationForm>.form-section:nth-of-type(4){background:linear-gradient(180deg,#f7fcf9 0%,#eef9f3 100%);border-bottom-color:#c0dfcf}
+body:not(.mobile-citizen-mode) #newManifestationModal .form-section-head{gap:14px;margin-bottom:20px}
+body:not(.mobile-citizen-mode) #newManifestationModal .form-step{width:34px;height:34px;flex-basis:34px;border-radius:10px;font-size:.86rem;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04)}
+body:not(.mobile-citizen-mode) #newManifestationForm>.form-section:nth-of-type(1) .form-step{background:#d9eff8;color:#176a88}
+body:not(.mobile-citizen-mode) #newManifestationForm>.form-section:nth-of-type(2) .form-step{background:#f8e7bc;color:#76540f}
+body:not(.mobile-citizen-mode) #newManifestationForm>.form-section:nth-of-type(3) .form-step{background:#e5ddf5;color:#5e4685}
+body:not(.mobile-citizen-mode) #newManifestationForm>.form-section:nth-of-type(4) .form-step{background:#d8eee2;color:#27694d}
+body:not(.mobile-citizen-mode) #newManifestationModal .form-section-head h3{color:#183f5d;font-size:1.08rem;font-weight:850}
+body:not(.mobile-citizen-mode) #newManifestationModal .form-section-head p{color:#617c8f}
+
+/* Uma cor semântica por tipo de manifestação. */
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-grid{gap:12px}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card{min-height:104px;padding:15px;border-width:2px;border-radius:16px;box-shadow:0 4px 12px rgba(22,55,75,.045)}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="sugestao"]){background:#edf9ff;border-color:#b7ddea}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="reclamacao"]){background:#fff7e8;border-color:#ead39d}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="elogio"]){background:#eef9f1;border-color:#bfdec8}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="denuncia"]){background:#fff0f2;border-color:#e7bac1}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(22,55,75,.09)}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="sugestao"]:checked){border-color:#2687b1;box-shadow:0 0 0 3px rgba(38,135,177,.14),0 8px 18px rgba(22,55,75,.09)}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="reclamacao"]:checked){border-color:#c58a16;box-shadow:0 0 0 3px rgba(197,138,22,.14),0 8px 18px rgba(22,55,75,.09)}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="elogio"]:checked){border-color:#3e985e;box-shadow:0 0 0 3px rgba(62,152,94,.14),0 8px 18px rgba(22,55,75,.09)}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="denuncia"]:checked){border-color:#c44b5c;box-shadow:0 0 0 3px rgba(196,75,92,.14),0 8px 18px rgba(22,55,75,.09)}
+body:not(.mobile-citizen-mode) #newManifestationModal .type-icon{width:42px;height:42px;flex-basis:42px;border-radius:12px}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="sugestao"]) .type-icon{background:#d6eff9;color:#197796}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="reclamacao"]) .type-icon{background:#f7e4b7;color:#896116}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="elogio"]) .type-icon{background:#d8eddf;color:#337b50}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value="denuncia"]) .type-icon{background:#f3d7dc;color:#a73c4d}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card strong{font-size:.93rem;font-weight:850}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card small{font-size:.76rem;color:#617b8d;line-height:1.42}
+
+/* Campos ganham contraste e foco coerente com a etapa. */
+body:not(.mobile-citizen-mode) #newManifestationModal .portal-field label{color:#29485f;font-weight:800}
+body:not(.mobile-citizen-mode) #newManifestationModal .portal-field input,
+body:not(.mobile-citizen-mode) #newManifestationModal .portal-field select,
+body:not(.mobile-citizen-mode) #newManifestationModal .portal-field textarea{border:1.5px solid #cbd9e3;background:rgba(255,255,255,.94);box-shadow:0 2px 7px rgba(24,60,82,.025)}
+body:not(.mobile-citizen-mode) #newManifestationModal .portal-field input:hover,
+body:not(.mobile-citizen-mode) #newManifestationModal .portal-field select:hover,
+body:not(.mobile-citizen-mode) #newManifestationModal .portal-field textarea:hover{border-color:#aac5d6}
+body:not(.mobile-citizen-mode) #newManifestationModal .portal-field input:focus,
+body:not(.mobile-citizen-mode) #newManifestationModal .portal-field select:focus,
+body:not(.mobile-citizen-mode) #newManifestationModal .portal-field textarea:focus{border-color:#3e94b6;box-shadow:0 0 0 3px rgba(62,148,182,.13)}
+
+/* Anexos e privacidade também recebem sinalização própria. */
+body:not(.mobile-citizen-mode) #newManifestationModal .file-drop{border:2px dashed #78aec4;background:#edf8fc;border-radius:15px}
+body:not(.mobile-citizen-mode) #newManifestationModal .file-drop strong{color:#1e5b75;font-weight:850}
+body:not(.mobile-citizen-mode) #newManifestationModal .privacy-choice{padding:16px;border:1px solid #d4cbe6;border-radius:16px;background:#f8f5ff}
+body:not(.mobile-citizen-mode) #newManifestationModal .privacy-choice-head strong{color:#514276;font-weight:850}
+body:not(.mobile-citizen-mode) #newManifestationModal .privacy-choice-head span{color:#71678a}
+body:not(.mobile-citizen-mode) #newManifestationModal .privacy-option{border-width:2px;border-color:#d8d0e6}
+body:not(.mobile-citizen-mode) #newManifestationModal .privacy-option:has(input:checked){border-color:#8166b0;background:#f3eeff;box-shadow:0 0 0 3px rgba(129,102,176,.11)}
+body:not(.mobile-citizen-mode) #newManifestationModal .privacy-option-icon{background:#e8e0f5;color:#66508e}
+body:not(.mobile-citizen-mode) #newManifestationModal .privacy-summary{border-color:#bedee9;background:#ecf8fb;color:#23566b}
+body:not(.mobile-citizen-mode) #newManifestationModal .form-alert{border-color:#e8d39a;background:#fff5d9;color:#705218}
+body:not(.mobile-citizen-mode) #newManifestationModal .form-alert--neutral{border-color:#cddde7;background:#eef5f8;color:#425f72}
+body:not(.mobile-citizen-mode) #newManifestationModal .form-confirm{padding:12px 14px;border:1px solid #c7dfd2;border-radius:12px;background:#f1faf5;color:#365f4b}
+body:not(.mobile-citizen-mode) #newManifestationModal .form-confirm input{accent-color:#2f8b61}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-form-footer{background:linear-gradient(135deg,#edf7fa 0%,#eef8f3 100%);border-top:1px solid #cbdfe5}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-form-footer strong{color:#214e67;font-weight:850}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-form-footer .portal-button.primary{background:linear-gradient(135deg,#0d6f88 0%,#0c7a78 100%);box-shadow:0 8px 18px rgba(9,91,111,.18)}
+body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-form-footer .portal-button.primary:hover{background:linear-gradient(135deg,#0b637b 0%,#096d6b 100%)}
+
 @media(max-width:700px){
   #openNewManifestation{padding:17px 18px;gap:13px}
   #openNewManifestation .icon{width:44px;height:44px}
