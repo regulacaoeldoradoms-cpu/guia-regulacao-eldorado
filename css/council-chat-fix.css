@@ -1,10 +1,16 @@
 /* Correção final do botão de envio do chat institucional no mobile.
-   Mantém apenas o texto real do HTML, sem pseudo-elementos duplicados. */
+   Oculta o texto legado do HTML e exibe somente “Enviar mensagem”. */
 body.mobile-council-mode #councilDetailModal #officialReplyButton{
-  font-size:20px !important;
+  font-size:0 !important;
   line-height:1.2 !important;
 }
-body.mobile-council-mode #councilDetailModal #officialReplyButton::before,
+body.mobile-council-mode #councilDetailModal #officialReplyButton::before{
+  content:"Enviar mensagem" !important;
+  display:inline !important;
+  font-size:20px !important;
+  line-height:1.2 !important;
+  font-weight:900 !important;
+}
 body.mobile-council-mode #councilDetailModal #officialReplyButton::after{
   content:none !important;
   display:none !important;
