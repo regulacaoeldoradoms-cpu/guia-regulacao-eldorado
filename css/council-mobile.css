@@ -1,0 +1,547 @@
+/* Painel do Conselho — experiência exclusiva para celulares.
+   Ativado somente quando o body recebe .mobile-council-mode.
+   Desktop permanece sob responsabilidade dos estilos existentes. */
+
+body.mobile-council-mode{
+  min-height:100dvh;
+  overflow-x:hidden;
+  background:linear-gradient(180deg,#eaf2f6 0%,#f5f9fb 58%,#edf4f7 100%) !important;
+}
+
+body.mobile-council-mode .portal-shell{min-height:100dvh !important;}
+
+/* Cabeçalho compacto, legível e em uma única faixa. */
+body.mobile-council-mode .portal-topbar{
+  border-bottom:4px solid #25b8c7 !important;
+}
+body.mobile-council-mode .portal-topbar-inner{
+  width:100% !important;
+  min-height:0 !important;
+  margin:0 !important;
+  padding:12px 13px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:10px !important;
+  flex-wrap:nowrap !important;
+}
+body.mobile-council-mode .portal-brand{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+}
+body.mobile-council-mode .portal-brand img{
+  width:52px !important;
+  height:52px !important;
+  flex:0 0 52px !important;
+  border-radius:14px !important;
+}
+body.mobile-council-mode .portal-brand > div{min-width:0 !important;}
+body.mobile-council-mode .portal-brand h1{
+  margin:0 !important;
+  font-size:clamp(21px,3.4vw,28px) !important;
+  line-height:1.1 !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+body.mobile-council-mode .portal-brand p{display:none !important;}
+
+body.mobile-council-mode .portal-user{
+  flex:0 0 auto !important;
+  min-width:0 !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:8px !important;
+  padding:0 !important;
+  border:0 !important;
+}
+body.mobile-council-mode .portal-account-area{
+  min-width:0 !important;
+  max-width:31vw !important;
+  padding:0 !important;
+  gap:7px !important;
+}
+body.mobile-council-mode .portal-account-area img,
+body.mobile-council-mode .portal-account-area .profile-avatar,
+body.mobile-council-mode .portal-account-area .portal-account-avatar{
+  width:38px !important;
+  height:38px !important;
+  flex:0 0 38px !important;
+}
+body.mobile-council-mode .portal-user-meta{
+  min-width:0 !important;
+  text-align:left !important;
+}
+body.mobile-council-mode .portal-user-meta strong{
+  display:block !important;
+  max-width:22vw !important;
+  font-size:clamp(15px,2.25vw,19px) !important;
+  line-height:1.15 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+body.mobile-council-mode .portal-user-meta span{display:none !important;}
+body.mobile-council-mode #backHome,
+body.mobile-council-mode #portalLogout{
+  min-height:46px !important;
+  padding:9px 12px !important;
+  border-radius:13px !important;
+  font-size:16px !important;
+  font-weight:850 !important;
+  flex:0 0 auto !important;
+}
+body.mobile-council-mode #backHome{
+  font-size:0 !important;
+}
+body.mobile-council-mode #backHome::after{
+  content:"Início";
+  font-size:16px !important;
+  font-weight:850 !important;
+}
+
+/* Conteúdo principal. */
+body.mobile-council-mode .portal-main{
+  width:100% !important;
+  margin:0 !important;
+  padding:14px 10px 48px !important;
+}
+
+/* Hero mais parecido com cabeçalho de painel do que com banner desktop. */
+body.mobile-council-mode .portal-hero{
+  width:100% !important;
+  padding:24px 20px 21px !important;
+  border-radius:22px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  align-items:stretch !important;
+  gap:15px !important;
+  background:linear-gradient(135deg,#ffffff 0%,#eef9f9 100%) !important;
+  border:1px solid #d6e8e9 !important;
+  box-shadow:0 10px 26px rgba(18,53,79,.08) !important;
+}
+body.mobile-council-mode .portal-hero-copy{max-width:none !important;}
+body.mobile-council-mode .portal-eyebrow{
+  font-size:17px !important;
+  line-height:1.2 !important;
+  letter-spacing:.11em !important;
+  font-weight:900 !important;
+  color:#167b81 !important;
+}
+body.mobile-council-mode .portal-hero h2{
+  margin:8px 0 10px !important;
+  max-width:none !important;
+  font-size:clamp(35px,5.3vw,45px) !important;
+  line-height:1.08 !important;
+  letter-spacing:-.025em !important;
+  font-weight:900 !important;
+  color:#163650 !important;
+}
+body.mobile-council-mode .portal-hero p{
+  margin:0 !important;
+  max-width:none !important;
+  font-size:clamp(20px,2.8vw,25px) !important;
+  line-height:1.5 !important;
+  color:#587184 !important;
+}
+body.mobile-council-mode .council-role-badge{
+  align-self:flex-start !important;
+  min-height:44px !important;
+  padding:10px 14px !important;
+  border-radius:999px !important;
+  background:#dff0f5 !important;
+  border:1px solid #c1dee8 !important;
+  color:#235c78 !important;
+  font-size:17px !important;
+  line-height:1.25 !important;
+  font-weight:900 !important;
+}
+
+/* Métricas viram cartões de leitura rápida, com diferenciação cromática. */
+body.mobile-council-mode .council-metrics{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:10px !important;
+  margin:15px 0 !important;
+}
+body.mobile-council-mode .council-metric{
+  min-height:112px !important;
+  padding:16px !important;
+  border-radius:18px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+  border:1.5px solid #d6e2e9 !important;
+  box-shadow:0 6px 16px rgba(20,50,76,.05) !important;
+}
+body.mobile-council-mode .council-metric:first-child{
+  grid-column:1 / -1 !important;
+  min-height:104px !important;
+  background:linear-gradient(135deg,#e9f7fb 0%,#f6fcfe 100%) !important;
+  border-color:#bddce7 !important;
+}
+body.mobile-council-mode .council-metric:nth-child(2){background:#eef7ff !important;border-color:#c9dff1 !important;}
+body.mobile-council-mode .council-metric:nth-child(3){background:#f7f3ff !important;border-color:#d9cdf0 !important;}
+body.mobile-council-mode .council-metric:nth-child(4){background:#fff8e9 !important;border-color:#ead8aa !important;}
+body.mobile-council-mode .council-metric:nth-child(5){background:#eef9f2 !important;border-color:#c9e5d3 !important;}
+body.mobile-council-mode .council-metric strong{
+  font-size:36px !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  color:#173b5d !important;
+}
+body.mobile-council-mode .council-metric span{
+  margin-top:9px !important;
+  font-size:18px !important;
+  line-height:1.3 !important;
+  font-weight:750 !important;
+  color:#60798b !important;
+}
+
+/* Card principal. */
+body.mobile-council-mode .portal-main > .citizen-card{
+  border:1px solid #d5e1e8 !important;
+  border-top:6px solid #2583a5 !important;
+  border-radius:21px !important;
+  overflow:hidden !important;
+  background:#fff !important;
+  box-shadow:0 10px 28px rgba(18,53,79,.08) !important;
+}
+body.mobile-council-mode .portal-main > .citizen-card .citizen-card-head{
+  padding:18px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+  background:#f8fbfc !important;
+  border-bottom:1px solid #e0eaef !important;
+}
+body.mobile-council-mode .portal-main > .citizen-card .citizen-card-head h2{
+  margin:0 !important;
+  font-size:31px !important;
+  line-height:1.15 !important;
+  font-weight:900 !important;
+  color:#183b58 !important;
+}
+body.mobile-council-mode #refreshCouncil{
+  min-height:50px !important;
+  padding:10px 15px !important;
+  border-radius:14px !important;
+  font-size:18px !important;
+  font-weight:850 !important;
+}
+
+/* Filtros: busca em largura total e selects grandes. */
+body.mobile-council-mode .council-toolbar{
+  padding:15px !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+  background:#f3f8fb !important;
+  border-bottom:1px solid #dfe9ef !important;
+}
+body.mobile-council-mode .council-toolbar input,
+body.mobile-council-mode .council-toolbar select{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:58px !important;
+  padding:13px 14px !important;
+  border:1.5px solid #cbd9e2 !important;
+  border-radius:14px !important;
+  background:#fff !important;
+  color:#284a64 !important;
+  font-size:20px !important;
+  line-height:1.3 !important;
+}
+body.mobile-council-mode .council-toolbar input{
+  grid-column:1 / -1 !important;
+}
+body.mobile-council-mode .council-toolbar input:focus,
+body.mobile-council-mode .council-toolbar select:focus{
+  outline:none !important;
+  border-color:#3b92b5 !important;
+  box-shadow:0 0 0 4px rgba(59,146,181,.13) !important;
+}
+
+/* A tabela deixa de ser tabela e vira lista de cartões clicáveis. */
+body.mobile-council-mode .council-table,
+body.mobile-council-mode .council-table tbody{
+  display:block !important;
+  width:100% !important;
+}
+body.mobile-council-mode .council-table thead{display:none !important;}
+body.mobile-council-mode .council-table tbody{
+  padding:12px !important;
+  background:#eef4f7 !important;
+}
+body.mobile-council-mode .council-table tbody tr{
+  position:relative !important;
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:12px 14px !important;
+  width:100% !important;
+  margin:0 0 12px !important;
+  padding:18px !important;
+  border:1.5px solid #d4e1e8 !important;
+  border-left:6px solid #3187a8 !important;
+  border-radius:18px !important;
+  background:#fff !important;
+  box-shadow:0 6px 16px rgba(21,52,77,.06) !important;
+}
+body.mobile-council-mode .council-table tbody tr:last-child{margin-bottom:0 !important;}
+body.mobile-council-mode .council-table td{
+  display:block !important;
+  width:auto !important;
+  padding:0 !important;
+  border:0 !important;
+  color:#35556c !important;
+  font-size:19px !important;
+  line-height:1.4 !important;
+}
+body.mobile-council-mode .council-table td:nth-child(1),
+body.mobile-council-mode .council-table td:nth-child(2){grid-column:1 / -1 !important;}
+body.mobile-council-mode .council-table td:nth-child(1)::before,
+body.mobile-council-mode .council-table td:nth-child(2)::before,
+body.mobile-council-mode .council-table td:nth-child(3)::before,
+body.mobile-council-mode .council-table td:nth-child(4)::before,
+body.mobile-council-mode .council-table td:nth-child(5)::before{
+  display:block !important;
+  margin-bottom:4px !important;
+  color:#768b9a !important;
+  font-size:14px !important;
+  line-height:1.2 !important;
+  font-weight:900 !important;
+  text-transform:uppercase !important;
+  letter-spacing:.06em !important;
+}
+body.mobile-council-mode .council-table td:nth-child(1)::before{content:"Protocolo";}
+body.mobile-council-mode .council-table td:nth-child(2)::before{content:"Manifestação";}
+body.mobile-council-mode .council-table td:nth-child(3)::before{content:"Tipo";}
+body.mobile-council-mode .council-table td:nth-child(4)::before{content:"Status";}
+body.mobile-council-mode .council-table td:nth-child(5)::before{content:"Atualização";}
+body.mobile-council-mode .council-table td:nth-child(5){grid-column:1 / -1 !important;}
+body.mobile-council-mode .council-table strong{
+  display:block !important;
+  color:#173b5d !important;
+  font-size:23px !important;
+  line-height:1.28 !important;
+  font-weight:900 !important;
+}
+body.mobile-council-mode .council-table small{
+  margin-top:5px !important;
+  color:#708797 !important;
+  font-size:17px !important;
+  line-height:1.4 !important;
+}
+body.mobile-council-mode .council-table .status-chip{
+  display:inline-flex !important;
+  min-height:38px !important;
+  align-items:center !important;
+  padding:7px 11px !important;
+  border-radius:999px !important;
+  font-size:16px !important;
+  font-weight:850 !important;
+}
+body.mobile-council-mode .council-table tbody tr td[colspan]{
+  grid-column:1 / -1 !important;
+  padding:22px !important;
+  text-align:center !important;
+  font-size:20px !important;
+}
+body.mobile-council-mode .council-table tbody tr td[colspan]::before{display:none !important;}
+
+/* Modal institucional: tela inteira no mobile, com leitura grande. */
+body.mobile-council-mode #councilDetailModal{
+  padding:0 !important;
+  align-items:stretch !important;
+}
+body.mobile-council-mode #councilDetailModal .citizen-modal-panel{
+  width:100% !important;
+  max-width:none !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  border-radius:0 !important;
+  background:#f1f6f9 !important;
+}
+body.mobile-council-mode #councilDetailModal .citizen-modal-head{
+  position:sticky !important;
+  top:0 !important;
+  z-index:20 !important;
+  padding:17px !important;
+  background:linear-gradient(135deg,#fff 0%,#edf8fa 100%) !important;
+  border-bottom:2px solid #cbdfe6 !important;
+  box-shadow:0 5px 14px rgba(17,53,79,.08) !important;
+}
+body.mobile-council-mode #councilDetailModal .citizen-modal-head h2{
+  margin:0 0 5px !important;
+  font-size:31px !important;
+  line-height:1.15 !important;
+  color:#173b5d !important;
+}
+body.mobile-council-mode #councilDetailModal .citizen-modal-head small{
+  font-size:18px !important;
+  line-height:1.4 !important;
+  color:#61798a !important;
+}
+body.mobile-council-mode #councilDetailModal .citizen-modal-close{
+  width:62px !important;
+  height:62px !important;
+  flex:0 0 62px !important;
+  border:0 !important;
+  border-radius:16px !important;
+  padding:0 !important;
+  font-size:0 !important;
+  background-color:transparent !important;
+  background-image:url('/assets/Fechar-icon.png?v=20260822-1') !important;
+  background-size:contain !important;
+  background-position:center !important;
+  background-repeat:no-repeat !important;
+  box-shadow:none !important;
+}
+body.mobile-council-mode #councilDetailModal .citizen-modal-content{
+  padding:17px !important;
+  background:#f1f6f9 !important;
+}
+body.mobile-council-mode .council-detail-grid{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:18px !important;
+}
+body.mobile-council-mode #councilDetailModal .detail-chips{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:8px !important;
+}
+body.mobile-council-mode #councilDetailModal .detail-chips > span{
+  min-height:40px !important;
+  padding:8px 11px !important;
+  font-size:16px !important;
+}
+body.mobile-council-mode #councilDetailModal .detail-title{
+  margin:20px 0 10px !important;
+  font-size:31px !important;
+  line-height:1.2 !important;
+  color:#173b5d !important;
+}
+body.mobile-council-mode #detailService{
+  font-size:19px !important;
+  line-height:1.45 !important;
+  color:#61798a !important;
+}
+body.mobile-council-mode #councilDetailModal .detail-description{
+  font-size:21px !important;
+  line-height:1.58 !important;
+  color:#35556b !important;
+}
+body.mobile-council-mode #councilDetailModal .detail-section-title{
+  margin-top:26px !important;
+  font-size:26px !important;
+  line-height:1.25 !important;
+  color:#183b58 !important;
+}
+body.mobile-council-mode #councilDetailModal .thread-message,
+body.mobile-council-mode #councilDetailModal .timeline-item,
+body.mobile-council-mode #councilDetailModal .internal-note{
+  padding:15px !important;
+  border-radius:15px !important;
+  font-size:19px !important;
+  line-height:1.5 !important;
+}
+body.mobile-council-mode #councilDetailModal .thread-message strong,
+body.mobile-council-mode #councilDetailModal .timeline-item strong,
+body.mobile-council-mode #councilDetailModal .internal-note strong{
+  font-size:18px !important;
+  line-height:1.35 !important;
+}
+body.mobile-council-mode #councilDetailModal .thread-message p,
+body.mobile-council-mode #councilDetailModal .internal-note p{
+  font-size:20px !important;
+  line-height:1.5 !important;
+}
+
+/* Painel lateral vira sequência de módulos coloridos. */
+body.mobile-council-mode .council-side{
+  display:grid !important;
+  gap:15px !important;
+}
+body.mobile-council-mode .council-box{
+  padding:18px !important;
+  border-radius:18px !important;
+  border:1.5px solid #d6e2e9 !important;
+  background:#fff !important;
+  box-shadow:0 6px 16px rgba(20,50,76,.05) !important;
+}
+body.mobile-council-mode #statusBox{
+  border-top:6px solid #3f8eb0 !important;
+  background:linear-gradient(180deg,#f8fcff 0%,#eef8fc 100%) !important;
+}
+body.mobile-council-mode .council-side .council-box:not(#statusBox){
+  border-top:6px solid #d4a33f !important;
+  background:linear-gradient(180deg,#fffef9 0%,#fff8e8 100%) !important;
+}
+body.mobile-council-mode .council-box h3{
+  margin:0 0 14px !important;
+  font-size:25px !important;
+  line-height:1.25 !important;
+  color:#173b5d !important;
+}
+body.mobile-council-mode #councilDetailModal .portal-field label{
+  display:block !important;
+  margin-bottom:8px !important;
+  font-size:20px !important;
+  line-height:1.35 !important;
+  font-weight:850 !important;
+  color:#29485f !important;
+}
+body.mobile-council-mode #councilDetailModal .portal-field input,
+body.mobile-council-mode #councilDetailModal .portal-field select,
+body.mobile-council-mode #councilDetailModal .portal-field textarea{
+  width:100% !important;
+  min-height:60px !important;
+  padding:14px 15px !important;
+  border:1.5px solid #cad9e2 !important;
+  border-radius:14px !important;
+  background:#fff !important;
+  color:#29485f !important;
+  font-size:20px !important;
+  line-height:1.45 !important;
+}
+body.mobile-council-mode #councilDetailModal .portal-field textarea{min-height:135px !important;}
+body.mobile-council-mode #councilDetailModal .portal-button{
+  min-height:56px !important;
+  padding:12px 16px !important;
+  border-radius:14px !important;
+  font-size:19px !important;
+  font-weight:850 !important;
+}
+body.mobile-council-mode #councilDetailModal .attachment-link{
+  min-height:54px !important;
+  padding:11px 14px !important;
+  font-size:18px !important;
+}
+body.mobile-council-mode #councilDetailModal .empty-state{
+  padding:22px 14px !important;
+  font-size:19px !important;
+  line-height:1.5 !important;
+}
+
+@media(max-width:390px){
+  body.mobile-council-mode .portal-brand h1{font-size:20px !important;}
+  body.mobile-council-mode .portal-brand img{width:46px !important;height:46px !important;flex-basis:46px !important;}
+  body.mobile-council-mode #backHome{display:none !important;}
+  body.mobile-council-mode .portal-account-area{max-width:35vw !important;}
+  body.mobile-council-mode .portal-user-meta strong{max-width:25vw !important;font-size:14px !important;}
+  body.mobile-council-mode .portal-hero h2{font-size:33px !important;}
+  body.mobile-council-mode .portal-hero p{font-size:19px !important;}
+  body.mobile-council-mode .council-toolbar{grid-template-columns:1fr !important;}
+  body.mobile-council-mode .council-toolbar input{grid-column:auto !important;}
+  body.mobile-council-mode .council-table tbody tr{grid-template-columns:1fr !important;}
+  body.mobile-council-mode .council-table td:nth-child(1),
+  body.mobile-council-mode .council-table td:nth-child(2),
+  body.mobile-council-mode .council-table td:nth-child(5){grid-column:auto !important;}
+}
