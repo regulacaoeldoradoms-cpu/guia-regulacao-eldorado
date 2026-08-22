@@ -1,0 +1,48 @@
+/* Exportação institucional de manifestações — botão e ações do painel. */
+.council-export-actions{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+  margin:14px 0 4px;
+}
+.council-export-button{
+  min-height:46px;
+  padding:10px 15px;
+  border:1px solid #c8d9e4;
+  border-radius:13px;
+  background:linear-gradient(180deg,#f8fbfd 0%,#edf5f9 100%);
+  color:#234d68;
+  font-weight:850;
+  cursor:pointer;
+  box-shadow:0 5px 13px rgba(24,68,96,.07);
+}
+.council-export-button:hover{border-color:#8eb5c9;background:#eef8fc;}
+.council-export-button.is-praise{
+  border-color:#d7bd70;
+  background:linear-gradient(180deg,#fff9df 0%,#fff2bf 100%);
+  color:#6b5011;
+  box-shadow:0 6px 15px rgba(158,116,20,.12);
+}
+.council-export-button.is-praise::before{content:"★ ";}
+.council-export-hint{font-size:.82rem;color:#718696;line-height:1.4;}
+
+body.mobile-council-mode .council-export-actions{
+  margin:14px 0 6px !important;
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:8px !important;
+}
+body.mobile-council-mode .council-export-button{
+  width:100% !important;
+  min-height:58px !important;
+  padding:13px 16px !important;
+  border-radius:16px !important;
+  font-size:19px !important;
+  line-height:1.25 !important;
+}
+body.mobile-council-mode .council-export-hint{
+  font-size:16px !important;
+  line-height:1.45 !important;
+  color:#6b8293 !important;
+}
