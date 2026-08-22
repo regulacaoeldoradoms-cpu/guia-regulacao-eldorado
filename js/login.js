@@ -151,6 +151,33 @@
         padding:0 !important;
       }
 
+      body.mobile-login-mode .login-status.visible{
+        display:flex !important;
+        align-items:center !important;
+        width:100% !important;
+        min-height:clamp(68px,8.5vw,90px) !important;
+        margin:clamp(18px,2.4vw,26px) 0 0 !important;
+        padding:clamp(16px,2.1vw,22px) clamp(18px,2.5vw,28px) !important;
+        border-radius:clamp(13px,1.8vw,18px) !important;
+        font-size:clamp(22px,2.8vw,30px) !important;
+        font-weight:800 !important;
+        line-height:1.35 !important;
+        letter-spacing:0 !important;
+      }
+
+      body.mobile-login-mode .login-status.visible.error{
+        color:#8f1824 !important;
+        background:#fff0f1 !important;
+        border:2px solid #e8a7ad !important;
+        box-shadow:0 7px 18px rgba(153,35,48,.10) !important;
+      }
+
+      body.mobile-login-mode .login-status.visible.info{
+        color:#174b73 !important;
+        background:#eef8ff !important;
+        border:2px solid #b9dcec !important;
+      }
+
       body.mobile-login-mode .login-card > div:last-child{
         margin-top:clamp(36px,4.6vw,50px) !important;
         padding-top:clamp(32px,4.2vw,46px) !important;
