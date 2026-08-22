@@ -1,0 +1,11 @@
+/* Correção final do botão de envio do chat institucional no mobile.
+   Mantém apenas o texto real do HTML, sem pseudo-elementos duplicados. */
+body.mobile-council-mode #councilDetailModal #officialReplyButton{
+  font-size:20px !important;
+  line-height:1.2 !important;
+}
+body.mobile-council-mode #councilDetailModal #officialReplyButton::before,
+body.mobile-council-mode #councilDetailModal #officialReplyButton::after{
+  content:none !important;
+  display:none !important;
+}
