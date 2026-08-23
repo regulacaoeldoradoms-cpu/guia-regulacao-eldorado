@@ -79,8 +79,8 @@ function protectManifestationForMember(item) {
   const safe = { ...item };
   delete safe.authorIdentity;
   delete safe.authorUsername;
-  safe.authorLabel = 'Identidade protegida';
-  safe.privacyMode = 'sigilosa';
+  safe.authorLabel = 'Manifestante anônimo';
+  safe.privacyMode = 'anonima';
   return safe;
 }
 
@@ -96,12 +96,12 @@ function protectMemberPayload(payload) {
   }
   if (Array.isArray(safe.messages)) {
     safe.messages = safe.messages.map((message) => message?.senderType === 'citizen'
-      ? { ...message, senderLabel: 'Manifestante' }
+      ? { ...message, senderLabel: 'Manifestante anônimo' }
       : message);
   }
   if (Array.isArray(safe.events)) {
     safe.events = safe.events.map((event) => event?.actorType === 'user'
-      ? { ...event, actorLabel: event.actorLabel ? 'Manifestante' : '' }
+      ? { ...event, actorLabel: event.actorLabel ? 'Manifestante anônimo' : '' }
       : event);
   }
 
