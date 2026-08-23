@@ -47,7 +47,7 @@
     notice.style.marginTop = '12px';
     notice.style.fontSize = '1rem';
     notice.style.lineHeight = '1.55';
-    notice.innerHTML = '<strong>Acesso de leitura.</strong> Como Membro do Conselho, você pode consultar o conteúdo e o histórico das manifestações. A identidade do manifestante permanece protegida e nenhuma resposta, alteração de status, observação interna ou anexo fica disponível neste perfil.';
+    notice.innerHTML = '<strong>Acesso de leitura.</strong> Como Membro do Conselho, você pode consultar o conteúdo e o histórico das manifestações. Para este perfil, todas as manifestações são apresentadas como anônimas: nome, @, cargo e demais dados de identidade do manifestante não são exibidos. O membro também não pode responder, alterar status, registrar observações internas ou acessar anexos.';
     hero.insertAdjacentElement('afterend', notice);
   }
 
@@ -60,7 +60,7 @@
     if (badge) badge.textContent = 'Membro · somente leitura';
     const heroText = document.querySelector('.portal-hero-copy p');
     if (heroText) {
-      heroText.textContent = 'Consulte o conteúdo e acompanhe o histórico das manifestações. Neste perfil, todas as identidades permanecem protegidas e não há permissão para responder ou alterar o andamento.';
+      heroText.textContent = 'Consulte o conteúdo e acompanhe o histórico das manifestações. Para membros, todas as manifestações são apresentadas como anônimas e não há permissão para responder ou alterar o andamento.';
     }
     ensureMemberNotice();
 
@@ -79,12 +79,12 @@
 
     const privacy = document.getElementById('detailPrivacy');
     if (privacy) {
-      privacy.textContent = 'Sigilosa';
+      privacy.textContent = 'Anônima';
       privacy.classList.remove('identified');
     }
     const identity = document.getElementById('detailIdentity');
     if (identity) {
-      identity.textContent = 'Identidade protegida';
+      identity.textContent = 'Manifestante anônimo';
       identity.classList.remove('identified');
     }
 
