@@ -178,6 +178,22 @@ body.mobile-citizen-mode.citizen-mobile-app .notification-list{
   gap:11px !important;
 }
 
+/* Estados de carregamento: leitura confortável, inclusive para baixa visão. */
+body.mobile-citizen-mode.citizen-mobile-app #manifestationList > .portal-note,
+body.mobile-citizen-mode.citizen-mobile-app #notificationList > .portal-note{
+  min-height:72px !important;
+  margin:0 !important;
+  padding:18px 20px !important;
+  display:flex !important;
+  align-items:center !important;
+  border-radius:15px !important;
+  border-width:1px !important;
+  font-size:clamp(20px,2.8vw,25px) !important;
+  font-weight:750 !important;
+  line-height:1.35 !important;
+  color:#31546b !important;
+}
+
 body.mobile-citizen-mode.citizen-mobile-app .manifestation-item,
 body.mobile-citizen-mode.citizen-mobile-app .notification{
   padding:17px !important;
