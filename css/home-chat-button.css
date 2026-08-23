@@ -1,0 +1,79 @@
+/* Home mobile — botão flutuante de chat mais legível e intuitivo. */
+body.mobile-home-mode .portal-chat{
+  right:14px !important;
+  bottom:14px !important;
+}
+
+body.mobile-home-mode .portal-chat-launcher{
+  position:relative !important;
+  width:auto !important;
+  min-width:154px !important;
+  height:76px !important;
+  min-height:76px !important;
+  padding:0 24px 0 20px !important;
+  border-radius:999px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:11px !important;
+  font-size:0 !important;
+  box-shadow:0 12px 28px rgba(10,71,125,.24) !important;
+}
+
+body.mobile-home-mode .portal-chat-launcher::before{
+  content:"💬" !important;
+  display:block !important;
+  font-size:32px !important;
+  line-height:1 !important;
+  flex:0 0 auto !important;
+}
+
+body.mobile-home-mode .portal-chat-launcher .chat-launcher-text{
+  display:inline-block !important;
+  font-size:25px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+  letter-spacing:-.01em !important;
+  color:inherit !important;
+}
+
+body.mobile-home-mode .portal-chat-launcher .chat-online-dot{
+  position:absolute !important;
+  right:8px !important;
+  bottom:7px !important;
+  width:15px !important;
+  height:15px !important;
+  border:2px solid #1498c2 !important;
+}
+
+body.mobile-home-mode .portal-chat-count.visible{
+  position:absolute !important;
+  top:-6px !important;
+  right:-5px !important;
+  min-width:27px !important;
+  height:27px !important;
+  padding:0 7px !important;
+  display:grid !important;
+  place-items:center !important;
+  font-size:14px !important;
+  font-weight:900 !important;
+}
+
+@media(max-width:390px){
+  body.mobile-home-mode .portal-chat-launcher{
+    min-width:142px !important;
+    height:70px !important;
+    min-height:70px !important;
+    padding-left:18px !important;
+    padding-right:22px !important;
+    gap:9px !important;
+  }
+
+  body.mobile-home-mode .portal-chat-launcher::before{
+    font-size:29px !important;
+  }
+
+  body.mobile-home-mode .portal-chat-launcher .chat-launcher-text{
+    font-size:23px !important;
+  }
+}
