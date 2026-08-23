@@ -79,11 +79,16 @@
       </a>`);
   }
 
-  if (auth.hasCouncilAccess(user)) {
+  if (user.role === 'admin' || auth.hasCouncilAccess(user)) {
+    const councilDescription = user.role === 'admin'
+      ? 'Acesso integral às manifestações, inclusive identificação autorizada e ações institucionais.'
+      : user.councilRole === 'presidente'
+        ? 'Gerencie manifestações, respostas e andamento institucional.'
+        : 'Consulte as manifestações em modo somente leitura, sempre com a identidade do manifestante protegida.';
     cards.push(`
       <a class="hub-card" href="/conselho/painel/" data-module="council-panel">
         <span class="hub-card-icon"><img src="/assets/conselho-municipal-saude-eldorado.png?v=20260819-1" alt="Logo do Conselho Municipal de Saúde de Eldorado/MS"></span>
-        <span><h3>Conselho Municipal de Saúde</h3><p>${user.councilRole === 'presidente' ? 'Gerencie manifestações, respostas e andamento institucional.' : 'Acompanhe manifestações e registre observações internas do Conselho.'}</p></span>
+        <span><h3>Conselho Municipal de Saúde</h3><p>${councilDescription}</p></span>
         <span class="hub-card-arrow">Abrir Conselho →</span>
       </a>`);
   }
