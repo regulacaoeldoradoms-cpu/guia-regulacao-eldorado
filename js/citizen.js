@@ -87,16 +87,16 @@
   }
 
   function selectedPrivacyMode() {
-    if (!state.security?.emailVerified) return 'anonima';
-    return document.querySelector('input[name="manifestationPrivacy"]:checked')?.value === 'identificada'
-      ? 'identificada'
-      : 'sigilosa';
+    const requested = document.querySelector('input[name="manifestationPrivacy"]:checked')?.value || '';
+    if (requested === 'identificada') return 'identificada';
+    if (requested === 'sigilosa' && state.security?.emailVerified) return 'sigilosa';
+    return 'anonima';
   }
 
   function privacyText() {
     return state.security?.emailVerified
       ? 'Privacidade à escolha · e-mail de segurança confirmado'
-      : 'Anônima · e-mail de segurança ainda não verificado';
+      : 'Privacidade à escolha · identificação opcional';
   }
 
   function renderPrivacyNotice() {
@@ -104,14 +104,17 @@
     if (!notice) return;
     const mode = selectedPrivacyMode();
     if (mode === 'identificada') {
-      notice.innerHTML = '<strong>Manifestação identificada.</strong> O Conselho verá seu nome de perfil, @ e cargo ou função quando houver. Seu e-mail de segurança continua protegido e não é exibido na manifestação.';
+      const verificationNote = state.security?.emailVerified
+        ? 'Seu e-mail de segurança continua protegido e não é exibido na manifestação.'
+        : 'Seu e-mail de segurança ainda não está confirmado e continua protegido; a identificação exibida será a do seu perfil no portal.';
+      notice.innerHTML = `<strong>Manifestação identificada.</strong> O Conselho verá seu nome de perfil, @ e cargo ou função quando houver. ${verificationNote}`;
       return;
     }
     if (mode === 'sigilosa') {
       notice.innerHTML = '<strong>Manifestação sigilosa.</strong> Sua identidade de perfil não será exibida ao Conselho nesta manifestação. Seu e-mail de segurança permanece protegido.';
       return;
     }
-    notice.innerHTML = '<strong>Manifestação anônima.</strong> Como o e-mail desta conta ainda não foi verificado, esta nova manifestação será registrada como anônima. O texto e os anexos ainda podem revelar sua identidade.';
+    notice.innerHTML = '<strong>Manifestação anônima.</strong> Seu nome, @ e perfil não serão exibidos ao Conselho nesta manifestação. O texto e os anexos ainda podem revelar sua identidade, então envie apenas o necessário.';
   }
 
   async function loadSecurity() {
@@ -119,11 +122,33 @@
     const privacyChip = document.getElementById('privacyChip');
     const verifiedOptions = document.getElementById('verifiedPrivacyOptions');
     if (privacyChip) privacyChip.textContent = privacyText();
-    if (verifiedOptions) verifiedOptions.hidden = !state.security?.emailVerified;
-    if (state.security?.emailVerified) {
-      const sigilosa = document.querySelector('input[name="manifestationPrivacy"][value="sigilosa"]');
-      if (sigilosa && !document.querySelector('input[name="manifestationPrivacy"]:checked')) sigilosa.checked = true;
+    if (verifiedOptions) verifiedOptions.hidden = false;
+
+    const protectedInput = document.querySelector('input[name="manifestationPrivacy"][value="sigilosa"], input[name="manifestationPrivacy"][value="anonima"]');
+    const protectedOption = protectedInput?.closest('.privacy-option');
+    const protectedTitle = protectedOption?.querySelector('strong');
+    const protectedDescription = protectedOption?.querySelector('small');
+
+    if (protectedInput) {
+      if (state.security?.emailVerified) {
+        protectedInput.value = 'sigilosa';
+        if (protectedTitle) protectedTitle.textContent = 'Manter sigilosa';
+        if (protectedDescription) protectedDescription.textContent = 'O Conselho recebe o relato, mas seu nome, @ e perfil não são exibidos na manifestação.';
+      } else {
+        protectedInput.value = 'anonima';
+        if (protectedTitle) protectedTitle.textContent = 'Enviar anonimamente';
+        if (protectedDescription) protectedDescription.textContent = 'O Conselho recebe o relato, mas seu nome, @ e perfil não são exibidos. Você pode optar por se identificar ao lado.';
+      }
+      if (!document.querySelector('input[name="manifestationPrivacy"]:checked')) protectedInput.checked = true;
     }
+
+    const choiceHead = verifiedOptions?.querySelector('.privacy-choice-head span');
+    if (choiceHead) {
+      choiceHead.textContent = state.security?.emailVerified
+        ? 'Escolha se prefere manter sua identidade protegida ou se identificar para o Conselho.'
+        : 'Escolha se prefere enviar anonimamente ou se identificar usando os dados do seu perfil no portal.';
+    }
+
     renderPrivacyNotice();
   }
 
@@ -351,10 +376,8 @@
       button.textContent = files.length ? 'Enviando anexos...' : 'Finalizando...';
       const failedUploads = files.length ? await uploadFiles(protocol, files) : 0;
       submittedForm.reset();
-      if (state.security?.emailVerified) {
-        const sigilosa = document.querySelector('input[name="manifestationPrivacy"][value="sigilosa"]');
-        if (sigilosa) sigilosa.checked = true;
-      }
+      const protectedMode = document.querySelector(`input[name="manifestationPrivacy"][value="${state.security?.emailVerified ? 'sigilosa' : 'anonima'}"]`);
+      if (protectedMode) protectedMode.checked = true;
       renderPrivacyNotice();
       if (descriptionCounter) descriptionCounter.textContent = '0/6500';
       if (manifestationFileList) { manifestationFileList.hidden = true; manifestationFileList.innerHTML = ''; }
