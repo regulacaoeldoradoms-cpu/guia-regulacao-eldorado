@@ -1,35 +1,35 @@
-/* Informações compactas de privacidade — mobile.
-   Três botões grandes e semânticos que abrem conteúdo sob demanda. */
+/* Informações compactas de privacidade — desktop e mobile.
+   Três botões semânticos abrem o conteúdo somente quando solicitado. */
 
-body.mobile-citizen-mode .privacy-compact-help{
+.privacy-compact-help{
   width:100%;
   margin:14px 0 16px;
 }
 
-body.mobile-citizen-mode .privacy-help-actions{
+.privacy-help-actions{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:8px;
+  gap:10px;
   width:100%;
 }
 
-body.mobile-citizen-mode .privacy-help-button{
+.privacy-help-button{
   min-width:0;
-  min-height:76px;
-  padding:10px 7px;
+  min-height:58px;
+  padding:10px 14px;
   border:2px solid #d5e0e8;
-  border-radius:16px;
+  border-radius:15px;
   background:#fff;
   color:#29455f;
   display:flex;
-  flex-direction:column;
+  flex-direction:row;
   align-items:center;
   justify-content:center;
-  gap:6px;
+  gap:9px;
   font:inherit;
-  font-size:clamp(15px,2.05vw,19px);
+  font-size:15px;
   font-weight:850;
-  line-height:1.12;
+  line-height:1.15;
   text-align:center;
   cursor:pointer;
   box-shadow:0 4px 12px rgba(24,57,84,.06);
@@ -37,16 +37,21 @@ body.mobile-citizen-mode .privacy-help-button{
   transition:transform .12s ease,box-shadow .12s ease,background .12s ease,border-color .12s ease,color .12s ease;
 }
 
-body.mobile-citizen-mode .privacy-help-button:active{
-  transform:scale(.98);
+.privacy-help-button:hover{
+  transform:translateY(-1px);
+  box-shadow:0 7px 16px rgba(24,57,84,.09);
 }
 
-body.mobile-citizen-mode .privacy-help-button:focus-visible{
+.privacy-help-button:active{
+  transform:scale(.985);
+}
+
+.privacy-help-button:focus-visible{
   outline:4px solid rgba(25,103,150,.23);
   outline-offset:2px;
 }
 
-body.mobile-citizen-mode .privacy-help-icon{
+.privacy-help-icon{
   width:32px;
   height:32px;
   flex:0 0 32px;
@@ -56,7 +61,7 @@ body.mobile-citizen-mode .privacy-help-icon{
   background:#eef3f7;
 }
 
-body.mobile-citizen-mode .privacy-help-icon svg{
+.privacy-help-icon svg{
   width:22px;
   height:22px;
   fill:none;
@@ -67,86 +72,80 @@ body.mobile-citizen-mode .privacy-help-icon svg{
 }
 
 /* Privacidade */
-body.mobile-citizen-mode .privacy-help-button[data-help="privacy"]{
+.privacy-help-button[data-help="privacy"]{
   border-color:#d9cbed;
   color:#604486;
   background:#fcfaff;
 }
-body.mobile-citizen-mode .privacy-help-button[data-help="privacy"] .privacy-help-icon{
+.privacy-help-button[data-help="privacy"] .privacy-help-icon{
   background:#eee4fa;
 }
-body.mobile-citizen-mode .privacy-help-button[data-help="privacy"][aria-expanded="true"]{
+.privacy-help-button[data-help="privacy"][aria-expanded="true"]{
   background:#6f5298;
   border-color:#6f5298;
   color:#fff;
   box-shadow:0 7px 16px rgba(111,82,152,.20);
 }
-body.mobile-citizen-mode .privacy-help-button[data-help="privacy"][aria-expanded="true"] .privacy-help-icon{
+.privacy-help-button[data-help="privacy"][aria-expanded="true"] .privacy-help-icon{
   background:rgba(255,255,255,.18);
 }
 
 /* Atenção */
-body.mobile-citizen-mode .privacy-help-button[data-help="warning"]{
+.privacy-help-button[data-help="warning"]{
   border-color:#ead49a;
   color:#765818;
   background:#fffdf6;
 }
-body.mobile-citizen-mode .privacy-help-button[data-help="warning"] .privacy-help-icon{
+.privacy-help-button[data-help="warning"] .privacy-help-icon{
   background:#fff0bf;
 }
-body.mobile-citizen-mode .privacy-help-button[data-help="warning"][aria-expanded="true"]{
+.privacy-help-button[data-help="warning"][aria-expanded="true"]{
   background:#a87918;
   border-color:#a87918;
   color:#fff;
   box-shadow:0 7px 16px rgba(168,121,24,.20);
 }
-body.mobile-citizen-mode .privacy-help-button[data-help="warning"][aria-expanded="true"] .privacy-help-icon{
+.privacy-help-button[data-help="warning"][aria-expanded="true"] .privacy-help-icon{
   background:rgba(255,255,255,.18);
 }
 
 /* Canal */
-body.mobile-citizen-mode .privacy-help-button[data-help="channel"]{
+.privacy-help-button[data-help="channel"]{
   border-color:#bddce9;
   color:#225f78;
   background:#f8fdff;
 }
-body.mobile-citizen-mode .privacy-help-button[data-help="channel"] .privacy-help-icon{
+.privacy-help-button[data-help="channel"] .privacy-help-icon{
   background:#def2fa;
 }
-body.mobile-citizen-mode .privacy-help-button[data-help="channel"][aria-expanded="true"]{
+.privacy-help-button[data-help="channel"][aria-expanded="true"]{
   background:#287f9d;
   border-color:#287f9d;
   color:#fff;
   box-shadow:0 7px 16px rgba(40,127,157,.20);
 }
-body.mobile-citizen-mode .privacy-help-button[data-help="channel"][aria-expanded="true"] .privacy-help-icon{
+.privacy-help-button[data-help="channel"][aria-expanded="true"] .privacy-help-icon{
   background:rgba(255,255,255,.18);
 }
 
-body.mobile-citizen-mode .privacy-help-panels{
+.privacy-help-panels{
   width:100%;
   margin-top:10px;
 }
 
-body.mobile-citizen-mode .privacy-help-panel[hidden]{
+.privacy-help-panel[hidden]{
   display:none !important;
 }
 
-body.mobile-citizen-mode .privacy-help-panel{
+.privacy-help-panel{
   animation:privacyHelpOpen .16s ease-out;
 }
 
-body.mobile-citizen-mode .privacy-help-panel > .privacy-summary,
-body.mobile-citizen-mode .privacy-help-panel > .form-alert{
+.privacy-help-panel > .privacy-summary,
+.privacy-help-panel > .form-alert{
   margin:0 !important;
   border-radius:16px !important;
-  font-size:clamp(18px,2.45vw,22px) !important;
   line-height:1.46 !important;
-}
-
-body.mobile-citizen-mode .privacy-help-panel > .privacy-summary strong,
-body.mobile-citizen-mode .privacy-help-panel > .form-alert strong{
-  font-size:clamp(19px,2.55vw,23px) !important;
 }
 
 @keyframes privacyHelpOpen{
@@ -154,8 +153,32 @@ body.mobile-citizen-mode .privacy-help-panel > .form-alert strong{
   to{opacity:1;transform:translateY(0)}
 }
 
+/* No mobile, alvos maiores e ícones acima do texto para leitura/toque fácil. */
+body.mobile-citizen-mode .privacy-help-actions{
+  gap:8px;
+}
+
+body.mobile-citizen-mode .privacy-help-button{
+  min-height:76px;
+  padding:10px 7px;
+  flex-direction:column;
+  gap:6px;
+  border-radius:16px;
+  font-size:clamp(15px,2.05vw,19px);
+}
+
+body.mobile-citizen-mode .privacy-help-panel > .privacy-summary,
+body.mobile-citizen-mode .privacy-help-panel > .form-alert{
+  font-size:clamp(18px,2.45vw,22px) !important;
+}
+
+body.mobile-citizen-mode .privacy-help-panel > .privacy-summary strong,
+body.mobile-citizen-mode .privacy-help-panel > .form-alert strong{
+  font-size:clamp(19px,2.55vw,23px) !important;
+}
+
 @media(max-width:390px){
-  body.mobile-citizen-mode .privacy-help-actions{
+  .privacy-help-actions{
     gap:6px;
   }
   body.mobile-citizen-mode .privacy-help-button{
