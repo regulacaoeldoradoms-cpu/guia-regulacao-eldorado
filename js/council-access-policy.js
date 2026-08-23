@@ -78,7 +78,7 @@
     if (detailGrid) detailGrid.style.gridTemplateColumns = 'minmax(0, 1fr)';
 
     const privacy = document.getElementById('detailPrivacy');
-    if (privacy && !privacy.hidden) {
+    if (privacy) {
       privacy.textContent = 'Sigilosa';
       privacy.classList.remove('identified');
     }
@@ -124,9 +124,6 @@
     }
     if (realUser.councilRole === 'membro') {
       applyMemberUi();
-      const observer = new MutationObserver(() => applyMemberUi());
-      const modal = document.getElementById('councilDetailModal');
-      if (modal) observer.observe(modal, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
     }
   }
 
