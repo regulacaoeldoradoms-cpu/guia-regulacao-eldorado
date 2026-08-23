@@ -5,7 +5,7 @@ import { handlePortalRoute, isPortalApi, validatePortalSession } from './auth-ma
 import { handleProfileRoute, isProfileApi } from './profile-photo.js';
 import { handleChatRoute, isChatApi } from './portal-chat-v2.js';
 import { handleUsageRoute, isUsageApi } from './usage-monitor-v2.js';
-import { handleCouncilRoute, isCouncilApi } from './council.js';
+import { handleCouncilRoute, isCouncilApi } from './council-access-policy.js';
 import { handleSystemReadinessRoute, isSystemReadinessApi } from './system-readiness.js';
 import { enforceDeveloperSeparation } from './role-migration.js';
 import {
