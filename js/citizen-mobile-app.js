@@ -2,6 +2,69 @@
 (() => {
   if (!document.body.classList.contains('mobile-citizen-mode')) return;
 
+  const privacyStyles = document.createElement('link');
+  privacyStyles.rel = 'stylesheet';
+  privacyStyles.href = '/css/citizen-privacy-accordion.css?v=20260822-2317';
+  privacyStyles.dataset.citizenPrivacyAccordion = 'true';
+  document.head.appendChild(privacyStyles);
+
+  const setupPrivacyCompactHelp = () => {
+    const privacyNotice = document.getElementById('newPrivacyNotice');
+    if (!privacyNotice || document.getElementById('privacyCompactHelp')) return;
+
+    const warningNotice = privacyNotice.nextElementSibling;
+    const channelNotice = warningNotice?.nextElementSibling;
+    if (!warningNotice?.classList.contains('form-alert') || !channelNotice?.classList.contains('form-alert')) return;
+
+    const shell = document.createElement('div');
+    shell.className = 'privacy-compact-help';
+    shell.id = 'privacyCompactHelp';
+    shell.innerHTML = `
+      <div class="privacy-help-actions" role="group" aria-label="Informações importantes sobre o envio">
+        <button type="button" class="privacy-help-button" data-help="privacy" aria-expanded="false" aria-controls="privacyHelpPrivacy">
+          <span class="privacy-help-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <span>Privacidade</span>
+        </button>
+        <button type="button" class="privacy-help-button" data-help="warning" aria-expanded="false" aria-controls="privacyHelpWarning">
+          <span class="privacy-help-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3z"/><path d="M12 9v5M12 17h.01"/></svg></span>
+          <span>Atenção</span>
+        </button>
+        <button type="button" class="privacy-help-button" data-help="channel" aria-expanded="false" aria-controls="privacyHelpChannel">
+          <span class="privacy-help-icon" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span>
+          <span>Canal</span>
+        </button>
+      </div>
+      <div class="privacy-help-panels" aria-live="polite">
+        <div class="privacy-help-panel" id="privacyHelpPrivacy" hidden></div>
+        <div class="privacy-help-panel" id="privacyHelpWarning" hidden></div>
+        <div class="privacy-help-panel" id="privacyHelpChannel" hidden></div>
+      </div>`;
+
+    privacyNotice.parentNode.insertBefore(shell, privacyNotice);
+    shell.querySelector('#privacyHelpPrivacy').appendChild(privacyNotice);
+    shell.querySelector('#privacyHelpWarning').appendChild(warningNotice);
+    shell.querySelector('#privacyHelpChannel').appendChild(channelNotice);
+
+    const buttons = Array.from(shell.querySelectorAll('.privacy-help-button'));
+    const panels = Array.from(shell.querySelectorAll('.privacy-help-panel'));
+
+    const closeAll = () => {
+      buttons.forEach((button) => button.setAttribute('aria-expanded', 'false'));
+      panels.forEach((panel) => { panel.hidden = true; });
+    };
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const wasOpen = button.getAttribute('aria-expanded') === 'true';
+        const target = document.getElementById(button.getAttribute('aria-controls'));
+        closeAll();
+        if (wasOpen || !target) return;
+        button.setAttribute('aria-expanded', 'true');
+        target.hidden = false;
+      });
+    });
+  };
+
   const waitForCitizen = () => {
     const role = document.getElementById('portalUserRole');
     const homeLink = document.getElementById('professionalHomeLink');
@@ -84,13 +147,17 @@
       const shortenPrivacy = () => {
         if (/e-mail de segurança confirmado/i.test(privacyChip.textContent || '')) {
           privacyChip.textContent = 'E-mail confirmado · privacidade à escolha';
+        } else if (/identificação opcional/i.test(privacyChip.textContent || '')) {
+          privacyChip.textContent = 'Privacidade à escolha';
         } else if (/e-mail de segurança ainda não verificado/i.test(privacyChip.textContent || '')) {
-          privacyChip.textContent = 'Privacidade anônima · e-mail não confirmado';
+          privacyChip.textContent = 'Privacidade à escolha';
         }
       };
       new MutationObserver(shortenPrivacy).observe(privacyChip, { childList: true, subtree: true, characterData: true });
       shortenPrivacy();
     }
+
+    setupPrivacyCompactHelp();
   };
 
   waitForCitizen();
