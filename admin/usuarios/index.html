@@ -47,6 +47,15 @@
             <div class="portal-field"><label for="newUsername">Usuário</label><input id="newUsername" required maxlength="40" placeholder="Ex.: Paola Dourado"><div class="password-meter">O sistema normaliza o usuário, por exemplo “Paola Dourado” para “paola.dourado”.</div></div>
             <div class="portal-field"><label for="newJobTitle">Cargo/função</label><input id="newJobTitle" maxlength="120" placeholder="ex.: Médica ESF Centro"></div>
             <div class="portal-field"><label for="newRole">Perfil de acesso</label><select id="newRole" required></select></div>
+            <div class="portal-field full" id="newCouncilWrap" hidden>
+              <label for="newCouncilRole">Função no Conselho Municipal de Saúde</label>
+              <select id="newCouncilRole">
+                <option value="">Sem função no Conselho</option>
+                <option value="membro">Membro do Conselho</option>
+                <option value="presidente">Presidente do Conselho</option>
+              </select>
+              <div class="password-meter">A função no Conselho é independente do perfil profissional. Somente o Desenvolvedor pode conceder ou alterar esta permissão.</div>
+            </div>
             <div class="portal-field"><label for="newPassword">Senha inicial</label><input id="newPassword" type="password" required minlength="8" maxlength="160" autocomplete="new-password"></div>
             <div class="portal-field"><label>&nbsp;</label><label style="display:flex;gap:9px;align-items:center;padding:13px 0"><input id="newMustChange" type="checkbox" checked> Exigir troca de senha no primeiro acesso</label></div>
             <div class="full account-actions"><button class="portal-button primary" id="createUserButton" type="submit">Criar acesso</button><div class="account-status" id="createUserStatus" role="status" aria-live="polite"></div></div>
@@ -68,7 +77,7 @@
         <div class="portal-field full"><label for="editName">Nome completo</label><input id="editName" required maxlength="120"></div>
         <div class="portal-field"><label for="editJobTitle">Cargo/função</label><input id="editJobTitle" maxlength="120"></div>
         <div class="portal-field"><label for="editRole">Perfil de acesso</label><select id="editRole"></select></div>
-        <div class="portal-field full" id="editCouncilWrap" hidden><label for="editCouncilRole">Função no Conselho Municipal de Saúde</label><select id="editCouncilRole"><option value="">Sem função no Conselho</option><option value="membro">Membro do Conselho</option><option value="presidente">Presidente do Conselho</option></select><div class="password-meter">Funções do Conselho são independentes do perfil técnico/profissional.</div></div>
+        <div class="portal-field full" id="editCouncilWrap" hidden><label for="editCouncilRole">Função no Conselho Municipal de Saúde</label><select id="editCouncilRole"><option value="">Sem função no Conselho</option><option value="membro">Membro do Conselho</option><option value="presidente">Presidente do Conselho</option></select><div class="password-meter">Funções do Conselho são independentes do perfil técnico/profissional e só podem ser administradas pelo Desenvolvedor.</div></div>
         <div class="portal-field full"><label style="display:flex;gap:9px;align-items:center"><input id="editActive" type="checkbox"> Acesso ativo</label></div>
         <div class="full account-actions"><button class="portal-button primary" type="submit">Salvar alterações</button><button class="portal-button secondary" type="button" data-close-modal="editUserModal">Cancelar</button></div>
         <div class="account-status full" id="editStatus"></div>
@@ -91,7 +100,7 @@
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260815-1"></script>
   <script src="/js/credential-input.js?v=20260812-1"></script>
-  <script src="/js/admin-users.js?v=20260818-1"></script>
+  <script src="/js/admin-users.js?v=20260823-0045"></script>
   <script src="/js/portal-chat.js?v=20260814-1"></script>
   <script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>
 </body>
