@@ -115,8 +115,10 @@ function citizenContext(url) {
 }
 
 function manifestationPrivacyMode(user, requestedMode = '') {
-  if (user?.emailVerified !== true) return 'anonima';
-  return String(requestedMode || '').toLowerCase() === 'identificada' ? 'identificada' : 'sigilosa';
+  const mode = String(requestedMode || '').toLowerCase();
+  if (mode === 'identificada') return 'identificada';
+  if (mode === 'sigilosa') return user?.emailVerified === true ? 'sigilosa' : 'anonima';
+  return 'anonima';
 }
 
 function safeAuthorIdentity(identity) {
@@ -493,7 +495,8 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
       role: user.role,
       citizenAccess: true,
       canCreateManifestation: !presidentAccess(user),
-      canIdentifyManifestation: user.emailVerified === true,
+      canIdentifyManifestation: true,
+      canUseConfidentialManifestation: user.emailVerified === true,
       newManifestationIntervalSeconds: NEW_MANIFESTATION_INTERVAL_SECONDS
     }, 200, origin);
   }
