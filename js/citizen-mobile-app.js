@@ -1,13 +1,5 @@
-/* Navegação mobile do Canal do Cidadão. Mantém desktop intacto. */
+/* Canal do Cidadão — recursos de interface compartilhados e navegação mobile. */
 (() => {
-  if (!document.body.classList.contains('mobile-citizen-mode')) return;
-
-  const privacyStyles = document.createElement('link');
-  privacyStyles.rel = 'stylesheet';
-  privacyStyles.href = '/css/citizen-privacy-accordion.css?v=20260822-2317';
-  privacyStyles.dataset.citizenPrivacyAccordion = 'true';
-  document.head.appendChild(privacyStyles);
-
   const setupPrivacyCompactHelp = () => {
     const privacyNotice = document.getElementById('newPrivacyNotice');
     if (!privacyNotice || document.getElementById('privacyCompactHelp')) return;
@@ -64,6 +56,12 @@
       });
     });
   };
+
+  /* Este acordeão faz parte do formulário em qualquer tamanho de tela. */
+  setupPrivacyCompactHelp();
+
+  /* A partir daqui, somente a navegação tipo aplicativo é exclusiva do mobile. */
+  if (!document.body.classList.contains('mobile-citizen-mode')) return;
 
   const waitForCitizen = () => {
     const role = document.getElementById('portalUserRole');
@@ -156,8 +154,6 @@
       new MutationObserver(shortenPrivacy).observe(privacyChip, { childList: true, subtree: true, characterData: true });
       shortenPrivacy();
     }
-
-    setupPrivacyCompactHelp();
   };
 
   waitForCitizen();
