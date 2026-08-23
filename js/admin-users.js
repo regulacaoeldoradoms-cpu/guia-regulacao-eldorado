@@ -22,6 +22,8 @@
   const createStatus = document.getElementById('createUserStatus');
   const createButton = document.getElementById('createUserButton');
   const newRole = document.getElementById('newRole');
+  const newCouncilWrap = document.getElementById('newCouncilWrap');
+  const newCouncil = document.getElementById('newCouncilRole');
   const editRole = document.getElementById('editRole');
   const editCouncilWrap = document.getElementById('editCouncilWrap');
   const editCouncil = document.getElementById('editCouncilRole');
@@ -31,6 +33,7 @@
   } else {
     newRole.innerHTML = '<option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option>';
   }
+  if (newCouncilWrap) newCouncilWrap.hidden = !isDeveloper;
   editCouncilWrap.hidden = !isDeveloper;
 
   function escapeHtml(value) {
@@ -112,12 +115,14 @@
         username: document.getElementById('newUsername').value.trim().toLowerCase(),
         jobTitle: document.getElementById('newJobTitle').value.trim(),
         role: newRole.value,
+        councilRole: isDeveloper && newCouncil ? newCouncil.value : '',
         password: document.getElementById('newPassword').value,
         mustChangePassword: document.getElementById('newMustChange').checked,
         active: true
       });
       createForm.reset();
       document.getElementById('newMustChange').checked = true;
+      if (newCouncil) newCouncil.value = '';
       showStatus(createStatus, 'Acesso criado com sucesso.', 'success');
       await loadUsers();
     } catch (error) {
