@@ -1,0 +1,218 @@
+/* Refinamento mobile — Usuários e acessos.
+   Complementa admin-users-mobile.css sem alterar o desktop. */
+
+body.mobile-admin-users-mode .portal-topbar-inner{
+  width:100% !important;
+  min-height:82px !important;
+  margin:0 !important;
+  padding:11px 12px !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:space-between !important;
+  gap:12px !important;
+}
+
+/* Identidade: logo oficial + nome da área na mesma linha. */
+body.mobile-admin-users-mode .portal-brand{
+  flex:1 1 auto !important;
+  width:auto !important;
+  min-width:0 !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  gap:10px !important;
+}
+
+body.mobile-admin-users-mode .portal-brand img{
+  width:56px !important;
+  height:56px !important;
+  flex:0 0 56px !important;
+  object-fit:contain !important;
+}
+
+body.mobile-admin-users-mode .portal-brand > div{
+  min-width:0 !important;
+}
+
+body.mobile-admin-users-mode .portal-brand h1{
+  margin:0 !important;
+  max-width:210px !important;
+  font-size:22px !important;
+  line-height:1.08 !important;
+  font-weight:900 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+body.mobile-admin-users-mode .portal-brand p{
+  display:none !important;
+}
+
+/* Navegação e conta à direita, na mesma faixa da identidade. */
+body.mobile-admin-users-mode .portal-user{
+  flex:0 1 auto !important;
+  width:auto !important;
+  min-width:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  display:flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:8px !important;
+}
+
+body.mobile-admin-users-mode .portal-user > .portal-button,
+body.mobile-admin-users-mode .portal-user > .linklike{
+  flex:0 0 auto !important;
+  min-height:48px !important;
+  padding:9px 12px !important;
+  border-radius:13px !important;
+  font-size:16px !important;
+  line-height:1 !important;
+  font-weight:850 !important;
+  white-space:nowrap !important;
+}
+
+body.mobile-admin-users-mode .portal-account-area{
+  flex:0 1 auto !important;
+  min-width:0 !important;
+  max-width:210px !important;
+  gap:8px !important;
+  padding:4px 6px !important;
+  display:flex !important;
+  align-items:center !important;
+}
+
+body.mobile-admin-users-mode .portal-profile-avatar{
+  width:44px !important;
+  height:44px !important;
+  flex:0 0 44px !important;
+  border-width:2px !important;
+}
+
+body.mobile-admin-users-mode .portal-user-meta{
+  min-width:0 !important;
+  max-width:145px !important;
+  text-align:left !important;
+}
+
+body.mobile-admin-users-mode .portal-user-meta strong{
+  display:block !important;
+  max-width:100% !important;
+  font-size:16px !important;
+  line-height:1.15 !important;
+  font-weight:850 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+body.mobile-admin-users-mode .portal-user-meta span{
+  display:none !important;
+}
+
+/* Pequeno refinamento de hierarquia para reduzir a sensação de blocos iguais. */
+body.mobile-admin-users-mode .portal-hero{
+  border:1px solid #d7e8f3 !important;
+  background:linear-gradient(135deg,#ffffff 0%,#f4fbff 70%,#eefcfb 100%) !important;
+}
+
+body.mobile-admin-users-mode .portal-section:first-of-type .portal-section-heading{
+  background:linear-gradient(180deg,#eef7ff 0%,#f8fbfe 100%) !important;
+  border-bottom:1px solid #d9e8f3 !important;
+}
+
+body.mobile-admin-users-mode .portal-section:nth-of-type(2) .portal-section-heading{
+  background:linear-gradient(180deg,#f4f7fb 0%,#fff 100%) !important;
+  border-bottom:1px solid #e1e9f0 !important;
+}
+
+body.mobile-admin-users-mode .user-row:nth-child(even){
+  background:linear-gradient(180deg,#fbfdff 0%,#f3f8fc 100%) !important;
+}
+
+@media(max-width:520px){
+  body.mobile-admin-users-mode .portal-topbar-inner{
+    min-height:74px !important;
+    padding:9px 8px !important;
+    gap:7px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-brand{
+    gap:7px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-brand img{
+    width:48px !important;
+    height:48px !important;
+    flex-basis:48px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-brand h1{
+    max-width:130px !important;
+    font-size:18px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-user{
+    gap:5px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-user > .portal-button,
+  body.mobile-admin-users-mode .portal-user > .linklike{
+    min-height:44px !important;
+    padding:8px 9px !important;
+    border-radius:12px !important;
+    font-size:14px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-account-area{
+    max-width:125px !important;
+    gap:5px !important;
+    padding:3px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-profile-avatar{
+    width:38px !important;
+    height:38px !important;
+    flex-basis:38px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-user-meta{
+    max-width:78px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-user-meta strong{
+    font-size:14px !important;
+  }
+}
+
+@media(max-width:380px){
+  body.mobile-admin-users-mode .portal-brand h1{
+    max-width:105px !important;
+    font-size:16px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-brand img{
+    width:44px !important;
+    height:44px !important;
+    flex-basis:44px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-user > .portal-button,
+  body.mobile-admin-users-mode .portal-user > .linklike{
+    padding-left:7px !important;
+    padding-right:7px !important;
+    font-size:13px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-account-area{
+    max-width:105px !important;
+  }
+
+  body.mobile-admin-users-mode .portal-user-meta{
+    max-width:60px !important;
+  }
+}
