@@ -26,8 +26,10 @@ function workerEnv(overrides = {}) {
     GEMINI_REQUEST_TIMEOUT_MS: '1000',
     GEMINI_TOTAL_TIMEOUT_MS: '2500',
     CLOUDFLARE_AI_FALLBACK_ENABLED: 'true',
-    CLOUDFLARE_AI_MODEL: '@cf/zai-org/glm-4.7-flash',
+    CLOUDFLARE_AI_MODEL: '@cf/meta/llama-3.1-8b-instruct-fast',
+    CLOUDFLARE_AI_FALLBACK_MODELS: '@cf/zai-org/glm-4.7-flash',
     CLOUDFLARE_AI_TIMEOUT_MS: '2000',
+    CLOUDFLARE_AI_TOTAL_TIMEOUT_MS: '4000',
     ...overrides
   };
 }
@@ -94,11 +96,12 @@ test('usa a Cloudflare como segundo provedor quando os dois modelos Gemini falha
       AI: {
         async run(model, input, options) {
           cloudflareCalls += 1;
-          assert.equal(model, '@cf/zai-org/glm-4.7-flash');
+          assert.equal(model, '@cf/meta/llama-3.1-8b-instruct-fast');
           assert.equal(input.messages[0].role, 'system');
           assert.equal(input.messages[1].role, 'user');
+          assert.equal(input.max_tokens, 1300);
           assert.ok(options.signal instanceof AbortSignal);
-          return { choices: [{ message: { content: 'Resposta da contingência independente.' } }] };
+          return { response: 'Resposta da contingência independente.' };
         }
       }
     }), {});
@@ -106,12 +109,49 @@ test('usa a Cloudflare como segundo provedor quando os dois modelos Gemini falha
     assert.equal(response.status, 200);
     assert.equal(payload.answer, 'Resposta da contingência independente.');
     assert.equal(payload.provider, 'Cloudflare Workers AI');
-    assert.equal(payload.model, '@cf/zai-org/glm-4.7-flash');
+    assert.equal(payload.model, '@cf/meta/llama-3.1-8b-instruct-fast');
     assert.equal(payload.groundedInProtocols, true);
     assert.equal(cloudflareCalls, 1);
     assert.equal(upstreamUrls.length, 2);
     assert.equal(upstreamUrls.filter((url) => url.includes('/primary-model:')).length, 1);
     assert.equal(upstreamUrls.filter((url) => url.includes('/fallback-model:')).length, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.warn = originalConsoleWarn;
+    console.error = originalConsoleError;
+  }
+});
+
+test('tenta um segundo modelo Cloudflare quando o modelo rápido falha', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalConsoleWarn = console.warn;
+  const originalConsoleError = console.error;
+  globalThis.fetch = async () => Response.json({ error: { message: 'temporarily unavailable' } }, { status: 503 });
+  console.warn = () => {};
+  console.error = () => {};
+  const models = [];
+
+  try {
+    const response = await portalWorker.fetch(aiRequest(), workerEnv({
+      GEMINI_FALLBACK_MODELS: '',
+      AI: {
+        async run(model, input) {
+          models.push(model);
+          if (model.includes('/llama-')) throw new Error('Modelo rápido indisponível');
+          assert.equal(input.max_completion_tokens, 1800);
+          assert.equal(input.reasoning_effort, 'low');
+          return { choices: [{ message: { content: 'Resposta do segundo modelo Cloudflare.' } }] };
+        }
+      }
+    }), {});
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.answer, 'Resposta do segundo modelo Cloudflare.');
+    assert.equal(payload.model, '@cf/zai-org/glm-4.7-flash');
+    assert.deepEqual(models, [
+      '@cf/meta/llama-3.1-8b-instruct-fast',
+      '@cf/zai-org/glm-4.7-flash'
+    ]);
   } finally {
     globalThis.fetch = originalFetch;
     console.warn = originalConsoleWarn;
@@ -148,15 +188,17 @@ test('retorna contingência local somente quando ambos os provedores falham', as
   console.error = () => {};
 
   try {
+    let cloudflareCalls = 0;
     const response = await portalWorker.fetch(aiRequest(), workerEnv({
       GEMINI_MODEL: 'primary-model',
       GEMINI_FALLBACK_MODELS: 'fallback-model',
-      AI: { async run() { throw new Error('Cloudflare indisponível'); } }
+      AI: { async run() { cloudflareCalls += 1; throw new Error('Cloudflare indisponível'); } }
     }), {});
     const payload = await response.json();
     assert.equal(response.status, 503);
     assert.equal(payload.code, 'AI_PROVIDERS_TEMPORARILY_UNAVAILABLE');
     assert.match(payload.error, /protocolos locais continuam disponíveis/);
+    assert.equal(cloudflareCalls, 2);
   } finally {
     globalThis.fetch = originalFetch;
     console.warn = originalConsoleWarn;

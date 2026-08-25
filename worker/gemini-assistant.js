@@ -10,8 +10,10 @@ const DEFAULT_ALLOWED_ORIGINS = [
 const AUTH_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'admin']);
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
 const DEFAULT_GEMINI_REQUEST_TIMEOUT_MS = 5000;
-const DEFAULT_CLOUDFLARE_AI_TIMEOUT_MS = 14000;
-const DEFAULT_CLOUDFLARE_AI_MODEL = '@cf/zai-org/glm-4.7-flash';
+const DEFAULT_CLOUDFLARE_AI_TIMEOUT_MS = 16000;
+const DEFAULT_CLOUDFLARE_AI_TOTAL_TIMEOUT_MS = 30000;
+const DEFAULT_CLOUDFLARE_AI_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
+const DEFAULT_CLOUDFLARE_AI_FALLBACK_MODELS = '@cf/zai-org/glm-4.7-flash';
 
 const SYSTEM_PROMPT = `Você é o simulador de pré-regulação do Guia Médico de Encaminhamentos Regulados de Eldorado/MS.
 
@@ -379,51 +381,73 @@ async function callCloudflareAi(env, prompt) {
     throw error;
   }
 
-  const model = env.CLOUDFLARE_AI_MODEL || DEFAULT_CLOUDFLARE_AI_MODEL;
+  const primaryModel = String(env.CLOUDFLARE_AI_MODEL || DEFAULT_CLOUDFLARE_AI_MODEL).trim();
+  const fallbackModels = String(env.CLOUDFLARE_AI_FALLBACK_MODELS || DEFAULT_CLOUDFLARE_AI_FALLBACK_MODELS)
+    .split(',')
+    .map((model) => model.trim())
+    .filter(Boolean);
+  const models = [...new Set([primaryModel, ...fallbackModels].filter(Boolean))];
   const timeoutMs = boundedInteger(env.CLOUDFLARE_AI_TIMEOUT_MS, DEFAULT_CLOUDFLARE_AI_TIMEOUT_MS, 1000, 20000);
+  const totalTimeoutMs = boundedInteger(
+    env.CLOUDFLARE_AI_TOTAL_TIMEOUT_MS,
+    DEFAULT_CLOUDFLARE_AI_TOTAL_TIMEOUT_MS,
+    timeoutMs,
+    40000
+  );
   const startedAt = Date.now();
-  const signal = AbortSignal.timeout(timeoutMs);
-  let payload;
+  let lastStatus = 502;
 
-  try {
-    payload = await env.AI.run(model, {
+  for (const model of models) {
+    const remainingMs = totalTimeoutMs - (Date.now() - startedAt);
+    if (remainingMs < 1000) break;
+    const attemptTimeoutMs = Math.min(timeoutMs, remainingMs);
+    const signal = AbortSignal.timeout(attemptTimeoutMs);
+    const modelInput = {
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: prompt }
       ],
-      max_completion_tokens: 1300,
-      temperature: 0.15
-    }, {
-      signal,
-      tags: ['regulacao:pre-regulacao', 'provider:contingency']
-    });
-  } catch (cause) {
-    const timedOut = signal.aborted || ['AbortError', 'TimeoutError'].includes(cause?.name);
-    logAiEvent('error', timedOut ? 'cloudflare_ai_timeout' : 'cloudflare_ai_error', {
-      model,
-      durationMs: Date.now() - startedAt,
-      timeoutMs
-    });
-    const error = new Error(timedOut
-      ? 'A IA de contingência demorou além do limite de segurança nesta tentativa.'
-      : 'Não foi possível consultar a IA de contingência nesta tentativa.');
-    error.status = timedOut ? 504 : Number(cause?.status) || 502;
-    error.code = timedOut ? 'CLOUDFLARE_AI_TIMEOUT' : 'CLOUDFLARE_AI_ERROR';
-    throw error;
+      temperature: 0.15,
+      ...(model.includes('/glm-')
+        ? { max_completion_tokens: 1800, reasoning_effort: 'low' }
+        : { max_tokens: 1300 })
+    };
+
+    try {
+      const payload = await env.AI.run(model, modelInput, { signal });
+      const answer = String(
+        payload?.choices?.[0]?.message?.content
+          || payload?.response
+          || ''
+      ).trim();
+      if (answer) {
+        logAiEvent('warn', 'cloudflare_ai_model_succeeded', {
+          model,
+          durationMs: Date.now() - startedAt
+        });
+        return { answer, model, provider: 'Cloudflare Workers AI' };
+      }
+      logAiEvent('error', 'cloudflare_ai_empty_response', {
+        model,
+        durationMs: Date.now() - startedAt
+      });
+    } catch (cause) {
+      const timedOut = signal.aborted || ['AbortError', 'TimeoutError'].includes(cause?.name);
+      lastStatus = timedOut ? 504 : Number(cause?.status) || 502;
+      logAiEvent('error', timedOut ? 'cloudflare_ai_model_timeout' : 'cloudflare_ai_model_error', {
+        model,
+        status: lastStatus,
+        errorCode: Number(cause?.code) || 0,
+        durationMs: Date.now() - startedAt,
+        timeoutMs: attemptTimeoutMs
+      });
+    }
   }
 
-  const answer = String(
-    payload?.choices?.[0]?.message?.content
-      || payload?.response
-      || ''
-  ).trim();
-  if (!answer) {
-    const error = new Error('A IA de contingência não retornou conteúdo textual.');
-    error.status = 502;
-    error.code = 'CLOUDFLARE_AI_EMPTY_RESPONSE';
-    throw error;
-  }
-  return { answer, model, provider: 'Cloudflare Workers AI' };
+  const error = new Error('Os modelos da IA de contingência estão temporariamente indisponíveis.');
+  error.status = lastStatus;
+  error.code = 'CLOUDFLARE_AI_MODELS_EXHAUSTED';
+  throw error;
 }
 
 export default {

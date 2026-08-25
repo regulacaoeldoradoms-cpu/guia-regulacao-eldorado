@@ -4,7 +4,7 @@
   const CONFIG = window.REGULATION_AI_CONFIG || {};
   const MAX_QUESTION_LENGTH = Number(CONFIG.maxQuestionLength) || 3000;
   const MAX_HISTORY_MESSAGES = Number(CONFIG.maxHistoryMessages) || 12;
-  const REMOTE_AI_REQUEST_TIMEOUT_MS = 35000;
+  const REMOTE_AI_REQUEST_TIMEOUT_MS = 50000;
   const REMOTE_AI_COOLDOWN_MS = 2 * 60 * 1000;
   const history = [];
   let initialized = false;

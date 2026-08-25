@@ -104,13 +104,18 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
     binding: Boolean(env.AI && typeof env.AI.run === 'function'),
     enabled: enabled(env.CLOUDFLARE_AI_FALLBACK_ENABLED),
     model: present(env.CLOUDFLARE_AI_MODEL),
-    timeoutMs: integer(env.CLOUDFLARE_AI_TIMEOUT_MS)
+    fallbackModels: present(env.CLOUDFLARE_AI_FALLBACK_MODELS),
+    timeoutMs: integer(env.CLOUDFLARE_AI_TIMEOUT_MS),
+    totalTimeoutMs: integer(env.CLOUDFLARE_AI_TOTAL_TIMEOUT_MS)
   };
   const cloudflareAiReady = cloudflareAi.binding
     && cloudflareAi.enabled
     && cloudflareAi.model
+    && cloudflareAi.fallbackModels
     && cloudflareAi.timeoutMs >= 1000
-    && cloudflareAi.timeoutMs <= 20000;
+    && cloudflareAi.timeoutMs <= 20000
+    && cloudflareAi.totalTimeoutMs >= cloudflareAi.timeoutMs
+    && cloudflareAi.totalTimeoutMs <= 40000;
 
   const checks = [
     {
@@ -175,8 +180,8 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
       ok: cloudflareAiReady,
       requiredBeforeDeploy: true,
       detail: cloudflareAiReady
-        ? `Workers AI está conectado como contingência, com limite de ${cloudflareAi.timeoutMs} ms.`
-        : 'Configure o binding AI, o modelo e o limite de tempo da contingência Cloudflare.'
+        ? `Workers AI está conectado com dois modelos, tentativas de ${cloudflareAi.timeoutMs} ms e orçamento total de ${cloudflareAi.totalTimeoutMs} ms.`
+        : 'Configure o binding AI, dois modelos e limites de tempo seguros para a contingência Cloudflare.'
     },
     {
       id: 'legacy-migration',
