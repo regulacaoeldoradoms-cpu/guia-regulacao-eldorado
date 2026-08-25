@@ -5,12 +5,12 @@ import portalWorker from '../index.js';
 
 const origin = 'https://regulacaoeldoradoms.com.br';
 
-function aiRequest() {
+function aiRequest(question = 'Quais informações clínicas são obrigatórias?') {
   return new Request('https://worker.example/api/ia', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Origin: origin },
     body: JSON.stringify({
-      originalQuestion: 'Quais informações clínicas são obrigatórias?',
+      originalQuestion: question,
       assistantMode: 'pre_regulation_simulator',
       catalog: [{ nome: 'Neurologia', faixaEtaria: 'Todas as idades', viaAcesso: 'SISREG/CORE' }]
     })
@@ -23,7 +23,11 @@ function workerEnv(overrides = {}) {
     AUTH_ENFORCE_AI: 'false',
     GEMINI_API_KEY: 'test-only-key',
     GEMINI_MODEL: 'test-model',
-    GEMINI_REQUEST_TIMEOUT_MS: '25',
+    GEMINI_REQUEST_TIMEOUT_MS: '1000',
+    GEMINI_TOTAL_TIMEOUT_MS: '2500',
+    CLOUDFLARE_AI_FALLBACK_ENABLED: 'true',
+    CLOUDFLARE_AI_MODEL: '@cf/zai-org/glm-4.7-flash',
+    CLOUDFLARE_AI_TIMEOUT_MS: '2000',
     ...overrides
   };
 }
@@ -62,12 +66,13 @@ test('mantém a resposta normal quando o Gemini responde dentro do prazo', async
     assert.equal(response.status, 200);
     assert.equal(payload.answer, 'Resposta fundamentada no protocolo.');
     assert.equal(payload.model, 'test-model');
+    assert.equal(payload.provider, 'Gemini');
   } finally {
     globalThis.fetch = originalFetch;
   }
 });
 
-test('limita a contingência a duas tentativas no modelo principal e uma no alternativo', async () => {
+test('usa a Cloudflare como segundo provedor quando os dois modelos Gemini falham', async () => {
   const originalFetch = globalThis.fetch;
   const originalConsoleWarn = console.warn;
   const originalConsoleError = console.error;
@@ -80,21 +85,106 @@ test('limita a contingência a duas tentativas no modelo principal e uma no alte
   console.error = () => {};
 
   try {
+    let cloudflareCalls = 0;
     const response = await portalWorker.fetch(aiRequest(), workerEnv({
       GEMINI_MODEL: 'primary-model',
       GEMINI_FALLBACK_MODELS: 'fallback-model',
       GEMINI_REQUEST_TIMEOUT_MS: '1000',
-      GEMINI_TOTAL_TIMEOUT_MS: '5000'
+      GEMINI_TOTAL_TIMEOUT_MS: '2500',
+      AI: {
+        async run(model, input, options) {
+          cloudflareCalls += 1;
+          assert.equal(model, '@cf/zai-org/glm-4.7-flash');
+          assert.equal(input.messages[0].role, 'system');
+          assert.equal(input.messages[1].role, 'user');
+          assert.ok(options.signal instanceof AbortSignal);
+          return { choices: [{ message: { content: 'Resposta da contingência independente.' } }] };
+        }
+      }
     }), {});
     const payload = await response.json();
-    assert.equal(response.status, 503);
-    assert.equal(payload.code, 'GEMINI_TEMPORARILY_UNAVAILABLE');
-    assert.equal(upstreamUrls.length, 3);
-    assert.equal(upstreamUrls.filter((url) => url.includes('/primary-model:')).length, 2);
+    assert.equal(response.status, 200);
+    assert.equal(payload.answer, 'Resposta da contingência independente.');
+    assert.equal(payload.provider, 'Cloudflare Workers AI');
+    assert.equal(payload.model, '@cf/zai-org/glm-4.7-flash');
+    assert.equal(payload.groundedInProtocols, true);
+    assert.equal(cloudflareCalls, 1);
+    assert.equal(upstreamUrls.length, 2);
+    assert.equal(upstreamUrls.filter((url) => url.includes('/primary-model:')).length, 1);
     assert.equal(upstreamUrls.filter((url) => url.includes('/fallback-model:')).length, 1);
   } finally {
     globalThis.fetch = originalFetch;
     console.warn = originalConsoleWarn;
     console.error = originalConsoleError;
+  }
+});
+
+test('não consulta a contingência quando o Gemini responde', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({
+    candidates: [{ content: { parts: [{ text: 'Resposta do provedor principal.' }] } }]
+  });
+  let cloudflareCalls = 0;
+
+  try {
+    const response = await portalWorker.fetch(aiRequest(), workerEnv({
+      AI: { async run() { cloudflareCalls += 1; return {}; } }
+    }), {});
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.provider, 'Gemini');
+    assert.equal(cloudflareCalls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('retorna contingência local somente quando ambos os provedores falham', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalConsoleWarn = console.warn;
+  const originalConsoleError = console.error;
+  globalThis.fetch = async () => Response.json({ error: { message: 'temporarily unavailable' } }, { status: 503 });
+  console.warn = () => {};
+  console.error = () => {};
+
+  try {
+    const response = await portalWorker.fetch(aiRequest(), workerEnv({
+      GEMINI_MODEL: 'primary-model',
+      GEMINI_FALLBACK_MODELS: 'fallback-model',
+      AI: { async run() { throw new Error('Cloudflare indisponível'); } }
+    }), {});
+    const payload = await response.json();
+    assert.equal(response.status, 503);
+    assert.equal(payload.code, 'AI_PROVIDERS_TEMPORARILY_UNAVAILABLE');
+    assert.match(payload.error, /protocolos locais continuam disponíveis/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.warn = originalConsoleWarn;
+    console.error = originalConsoleError;
+  }
+});
+
+test('bloqueia dados identificáveis antes de consultar qualquer provedor', async () => {
+  const originalFetch = globalThis.fetch;
+  let geminiCalls = 0;
+  let cloudflareCalls = 0;
+  globalThis.fetch = async () => {
+    geminiCalls += 1;
+    return Response.json({});
+  };
+
+  try {
+    const response = await portalWorker.fetch(
+      aiRequest('Paciente: Maria da Silva, CPF 123.456.789-09.'),
+      workerEnv({ AI: { async run() { cloudflareCalls += 1; return {}; } } }),
+      {}
+    );
+    const payload = await response.json();
+    assert.equal(response.status, 400);
+    assert.match(payload.error, /dados pessoais identificáveis/);
+    assert.equal(geminiCalls, 0);
+    assert.equal(cloudflareCalls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });

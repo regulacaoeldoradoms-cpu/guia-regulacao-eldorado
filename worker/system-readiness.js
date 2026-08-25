@@ -100,6 +100,17 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
     && gemini.requestTimeoutMs <= 15000
     && gemini.totalTimeoutMs >= gemini.requestTimeoutMs
     && gemini.totalTimeoutMs <= 40000;
+  const cloudflareAi = {
+    binding: Boolean(env.AI && typeof env.AI.run === 'function'),
+    enabled: enabled(env.CLOUDFLARE_AI_FALLBACK_ENABLED),
+    model: present(env.CLOUDFLARE_AI_MODEL),
+    timeoutMs: integer(env.CLOUDFLARE_AI_TIMEOUT_MS)
+  };
+  const cloudflareAiReady = cloudflareAi.binding
+    && cloudflareAi.enabled
+    && cloudflareAi.model
+    && cloudflareAi.timeoutMs >= 1000
+    && cloudflareAi.timeoutMs <= 20000;
 
   const checks = [
     {
@@ -159,6 +170,15 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
         : 'Configure modelo primário, modelo alternativo e limites de tempo seguros para a IA.'
     },
     {
+      id: 'cloudflare-ai-fallback',
+      label: 'Segundo provedor independente de IA',
+      ok: cloudflareAiReady,
+      requiredBeforeDeploy: true,
+      detail: cloudflareAiReady
+        ? `Workers AI está conectado como contingência, com limite de ${cloudflareAi.timeoutMs} ms.`
+        : 'Configure o binding AI, o modelo e o limite de tempo da contingência Cloudflare.'
+    },
+    {
       id: 'legacy-migration',
       label: 'Migração de administradores legados',
       ok: !legacyMigrationEnabled,
@@ -189,6 +209,7 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
       ready: firebaseReady
     },
     gemini,
+    cloudflareAi,
     flags: {
       legacyMigrationEnabled,
       emailVerificationRequired

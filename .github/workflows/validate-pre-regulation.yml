@@ -24,7 +24,7 @@ jobs:
           node --check worker/gemini-assistant.js
           node --check worker/index.js
 
-      - name: Testar tolerância a timeout do Gemini
+      - name: Testar resiliência dos provedores de IA
         run: npm --prefix worker test
 
       - name: Conferir modo conversacional
@@ -73,11 +73,18 @@ jobs:
           grep -q 'assistantMode' worker/gemini-assistant.js
           grep -q 'AbortSignal.timeout' worker/gemini-assistant.js
           grep -q 'GEMINI_UPSTREAM_TIMEOUT' worker/gemini-assistant.js
+          grep -q 'Cloudflare Workers AI' worker/gemini-assistant.js
+          grep -q 'max_completion_tokens: 1300' worker/gemini-assistant.js
           grep -q 'GEMINI_TOTAL_TIMEOUT_MS' worker/index.js
-          grep -q "modelIndex === 0 ? 2 : 1" worker/index.js
           grep -q 'gemini_resilience_exhausted' worker/index.js
-          grep -q 'GEMINI_REQUEST_TIMEOUT_MS = "8000"' worker/wrangler.toml
-          grep -q 'GEMINI_TOTAL_TIMEOUT_MS = "26000"' worker/wrangler.toml
+          grep -q 'cloudflare_ai_fallback_succeeded' worker/index.js
+          grep -q 'AI_PROVIDERS_TEMPORARILY_UNAVAILABLE' worker/index.js
+          grep -q 'GEMINI_REQUEST_TIMEOUT_MS = "5000"' worker/wrangler.toml
+          grep -q 'GEMINI_TOTAL_TIMEOUT_MS = "11000"' worker/wrangler.toml
+          grep -q 'CLOUDFLARE_AI_FALLBACK_ENABLED = "true"' worker/wrangler.toml
+          grep -q 'CLOUDFLARE_AI_MODEL = "@cf/zai-org/glm-4.7-flash"' worker/wrangler.toml
+          grep -q 'CLOUDFLARE_AI_TIMEOUT_MS = "14000"' worker/wrangler.toml
+          grep -q 'binding = "AI"' worker/wrangler.toml
           grep -q 'enabled = true' worker/wrangler.toml
 
       - name: Conferir CORS autenticado da IA
@@ -95,21 +102,22 @@ jobs:
 
       - name: Conferir interface e cache
         run: |
-          grep -q 'Pré-regulação com Gemini' js/ai-assistant.js
           grep -q 'Pré-regulação com IA' js/ai-assistant.js
           grep -q 'Descreva o caso ou cole o encaminhamento anonimizado' js/ai-assistant.js
-          grep -q "title.textContent = 'Pré-regulação com Gemini'" js/ai-gemini-theme.js
+          grep -q "title.textContent = 'Pré-regulação com IA'" js/ai-gemini-theme.js
           grep -q 'Simulação baseada em protocolo + prática regulatória' js/ai-gemini-theme.js
           grep -q 'Assistente com base nos protocolos' js/ai-gemini-theme.js
-          grep -q 'Protocolo oficial + pré-regulação conversacional com Gemini' medico/index.html
-          grep -q 'ai-config.js?v=20260811-1' medico/index.html
-          grep -q 'ai-assistant.js?v=20260825-1' medico/index.html
-          grep -q 'ai-gemini-theme.js?v=20260825-1' medico/index.html
+          grep -q 'Protocolo oficial + pré-regulação conversacional com IA' medico/index.html
+          grep -q 'ai-config.js?v=20260825-2' medico/index.html
+          grep -q 'referral-workbench.js?v=20260825-2' medico/index.html
+          grep -q 'ai-assistant.js?v=20260825-2' medico/index.html
+          grep -q 'ai-gemini-theme.js?v=20260825-2' medico/index.html
           grep -q 'ai-assistant.css?v=20260825-1' medico/index.html
           grep -q 'ai-gemini-theme.css?v=20260825-1' medico/index.html
-          grep -q 'GEMINI_COOLDOWN_MS' js/ai-assistant.js
+          grep -q 'REMOTE_AI_COOLDOWN_MS' js/ai-assistant.js
           grep -q 'Contingência local' js/ai-assistant.js
-          grep -q 'Gemini configurado' js/ai-gemini-theme.js
+          grep -q 'IA configurada' js/ai-gemini-theme.js
+          grep -q 'IA de contingência conectada' js/ai-assistant.js
           ! grep -q 'A conexão com o Gemini falhou:' js/ai-assistant.js
 
       - name: Conferir limites de segurança

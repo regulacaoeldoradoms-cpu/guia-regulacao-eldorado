@@ -166,15 +166,15 @@ jobs:
         run: |
           grep -q 'REFERRAL_PRACTICE_GUIDANCE' js/referral-practice-data.js
           grep -q 'Síntese qualitativa e anonimizada' js/referral-practice-data.js
-          grep -q 'Estas estruturas alimentam o Gemini' js/referral-workbench.js
+          grep -q 'Estas estruturas alimentam a IA' js/referral-workbench.js
           grep -q 'Protocolo oficial' js/referral-workbench.js
-          grep -q 'Converse com o Gemini sobre devoluções reais' js/referral-workbench.js
+          grep -q 'Converse com a IA sobre devoluções reais' js/referral-workbench.js
           grep -q 'A experiência regulatória fica na IA' js/referral-workbench.js
           grep -q 'Nenhum item prático é classificado como requisito oficial' js/referral-workbench.js
           grep -q 'official-protocol-heading' css/referral-workbench.css
           grep -q 'official-protocol-nav' css/referral-workbench.css
           grep -q 'practical-ai-card' css/referral-workbench.css
-          grep -q 'Veja o protocolo. Converse com o Gemini como em uma pré-regulação.' medico/index.html
+          grep -q 'Veja o protocolo. Converse com a IA como em uma pré-regulação.' medico/index.html
           grep -q 'Uma exigência isolada não é transformada automaticamente em regra universal' docs/METODOLOGIA-CAMADA-PRATICA.md
           if grep -q 'collapseOfficialContent' js/referral-workbench.js; then
             echo 'O protocolo oficial não pode ser recolhido pela camada prática.'
@@ -231,9 +231,8 @@ jobs:
 
       - name: Conferir assistente dos protocolos
         run: |
-          grep -q 'Pré-regulação com Gemini' js/ai-assistant.js
           grep -q 'Consulta local' js/ai-assistant.js
-          grep -q 'Gemini · modo pré-regulação' js/ai-assistant.js
+          grep -q 'Pré-regulação com IA' js/ai-assistant.js
           grep -q 'Use casos anonimizados' js/ai-assistant.js
           grep -q 'MODO DE PRÉ-REGULAÇÃO CONVERSACIONAL' js/ai-assistant.js
           grep -q 'praticaRegulatoria: practicalContext' js/ai-assistant.js

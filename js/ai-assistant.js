@@ -4,12 +4,12 @@
   const CONFIG = window.REGULATION_AI_CONFIG || {};
   const MAX_QUESTION_LENGTH = Number(CONFIG.maxQuestionLength) || 3000;
   const MAX_HISTORY_MESSAGES = Number(CONFIG.maxHistoryMessages) || 12;
-  const GEMINI_REQUEST_TIMEOUT_MS = 35000;
-  const GEMINI_COOLDOWN_MS = 2 * 60 * 1000;
+  const REMOTE_AI_REQUEST_TIMEOUT_MS = 35000;
+  const REMOTE_AI_COOLDOWN_MS = 2 * 60 * 1000;
   const history = [];
   let initialized = false;
   let busy = false;
-  let geminiUnavailableUntil = 0;
+  let remoteAiUnavailableUntil = 0;
 
   const SVG = {
     chat: '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg>',
@@ -241,7 +241,7 @@
     answer += bulletSection('Atenção: situações que não devem aguardar fila ambulatorial', textItems(match.alertas, 4));
     const sources = textItems(match.fontes, 4, 500).join(' · ') || 'base de protocolos do guia';
     answer += `\n\nFonte consultada: ${sources}. Última conferência: ${match.ultimaConferencia || '28/07/2026'}.`;
-    if (connectionMissing) answer += '\n\nResposta local automática. A conexão com o Gemini ainda não está ativada.';
+    if (connectionMissing) answer += '\n\nResposta local automática. A conexão com os provedores de IA ainda não está ativada.';
     return answer.trim();
   }
 
@@ -272,7 +272,7 @@
     providerLabel.textContent = label;
   }
 
-  function shouldPauseGemini(error) {
+  function shouldPauseRemoteAi(error) {
     const status = Number(error?.status) || 0;
     const message = String(error?.message || '').toLowerCase();
     return ['AbortError', 'TimeoutError'].includes(error?.name)
@@ -280,18 +280,18 @@
       || [408, 429, 500, 502, 503, 504].includes(status);
   }
 
-  function friendlyGeminiFailure(error) {
+  function friendlyAiFailure(error) {
     const status = Number(error?.status) || 0;
     const message = String(error?.message || '');
     if (['AbortError', 'TimeoutError'].includes(error?.name) || /abort|timeout|signal/i.test(message)) {
-      return 'O Gemini demorou além do limite de segurança. Os protocolos locais continuam disponíveis.';
+      return 'Os provedores de IA demoraram além do limite de segurança. Os protocolos locais continuam disponíveis.';
     }
-    if (status === 429) return 'O Gemini atingiu um limite temporário. Os protocolos locais continuam disponíveis.';
-    if (status === 401 || status === 403) return 'Não foi possível validar a sessão para consultar o Gemini. Entre novamente se o problema continuar.';
-    if (status >= 500 || error?.code === 'GEMINI_TEMPORARILY_UNAVAILABLE') {
-      return 'O Gemini está temporariamente indisponível. Os protocolos locais continuam disponíveis.';
+    if (status === 429) return 'Os provedores de IA atingiram um limite temporário. Os protocolos locais continuam disponíveis.';
+    if (status === 401 || status === 403) return 'Não foi possível validar a sessão para consultar a IA. Entre novamente se o problema continuar.';
+    if (status >= 500 || error?.code === 'AI_PROVIDERS_TEMPORARILY_UNAVAILABLE') {
+      return 'Os provedores de IA estão temporariamente indisponíveis. Os protocolos locais continuam disponíveis.';
     }
-    return 'Não foi possível consultar o Gemini agora. Os protocolos locais continuam disponíveis.';
+    return 'Não foi possível consultar a IA agora. Os protocolos locais continuam disponíveis.';
   }
 
   function regulatorQuestion(question, context) {
@@ -299,9 +299,9 @@
     return `${REGULATOR_MODE_INSTRUCTION}${selected}\n\nMENSAGEM DO MÉDICO:\n${question}`;
   }
 
-  async function askGemini(question, context) {
+  async function askAssistant(question, context) {
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), GEMINI_REQUEST_TIMEOUT_MS);
+    const timeout = window.setTimeout(() => controller.abort(), REMOTE_AI_REQUEST_TIMEOUT_MS);
     try {
       const response = await fetch(CONFIG.endpoint, {
         method: 'POST',
@@ -327,7 +327,11 @@
         throw error;
       }
       if (!payload.answer) throw new Error('A IA não retornou uma resposta válida.');
-      return payload.answer;
+      return {
+        answer: payload.answer,
+        provider: String(payload.provider || 'IA'),
+        model: String(payload.model || '')
+      };
     } finally {
       window.clearTimeout(timeout);
     }
@@ -345,33 +349,39 @@
     addMessage('user', cleanQuestion);
     history.push({ role: 'user', text: cleanQuestion });
     setBusy(true);
-    const geminiReadyForAttempt = Boolean(CONFIG.endpoint) && Date.now() >= geminiUnavailableUntil;
-    const loading = addMessage('assistant', geminiReadyForAttempt ? 'Fazendo a pré-análise regulatória com o Gemini...' : 'Consultando os protocolos locais...', 'loading');
+    const remoteAiReadyForAttempt = Boolean(CONFIG.endpoint) && Date.now() >= remoteAiUnavailableUntil;
+    const loading = addMessage('assistant', remoteAiReadyForAttempt ? 'Fazendo a pré-análise regulatória com IA...' : 'Consultando os protocolos locais...', 'loading');
     try {
       const context = requestContext(cleanQuestion);
-      if (CONFIG.endpoint && !geminiReadyForAttempt) {
+      if (CONFIG.endpoint && !remoteAiReadyForAttempt) {
         const answer = localAnswer(cleanQuestion, false);
         loading?.remove();
-        addMessage('assistant', `${answer}\n\nModo de contingência local: o Gemini será testado novamente automaticamente em alguns minutos.`, 'contingency');
+        addMessage('assistant', `${answer}\n\nModo de contingência local: os provedores de IA serão testados novamente automaticamente em alguns minutos.`, 'contingency');
         history.push({ role: 'assistant', text: answer.slice(0, 7000) });
         setProviderStatus('contingency', 'Contingência local');
         return;
       }
 
-      if (CONFIG.endpoint) setProviderStatus('checking', 'Consultando Gemini');
-      const answer = CONFIG.endpoint ? await askGemini(cleanQuestion, context) : localAnswer(cleanQuestion, true);
+      if (CONFIG.endpoint) setProviderStatus('checking', 'Consultando IA');
+      const result = CONFIG.endpoint
+        ? await askAssistant(cleanQuestion, context)
+        : { answer: localAnswer(cleanQuestion, true), provider: 'Local', model: '' };
       loading?.remove();
-      addMessage('assistant', answer);
-      history.push({ role: 'assistant', text: answer.slice(0, 7000) });
+      addMessage('assistant', result.answer);
+      history.push({ role: 'assistant', text: result.answer.slice(0, 7000) });
       if (CONFIG.endpoint) {
-        geminiUnavailableUntil = 0;
-        setProviderStatus('connected', 'Gemini conectado');
+        remoteAiUnavailableUntil = 0;
+        if (result.provider === 'Cloudflare Workers AI') {
+          setProviderStatus('connected', 'IA de contingência conectada');
+        } else {
+          setProviderStatus('connected', 'Gemini conectado');
+        }
       }
     } catch (error) {
       loading?.remove();
       const fallback = localAnswer(cleanQuestion, false);
-      if (shouldPauseGemini(error)) geminiUnavailableUntil = Date.now() + GEMINI_COOLDOWN_MS;
-      addMessage('assistant', `${fallback}\n\nModo de contingência local: ${friendlyGeminiFailure(error)}`, 'contingency');
+      if (shouldPauseRemoteAi(error)) remoteAiUnavailableUntil = Date.now() + REMOTE_AI_COOLDOWN_MS;
+      addMessage('assistant', `${fallback}\n\nModo de contingência local: ${friendlyAiFailure(error)}`, 'contingency');
       history.push({ role: 'assistant', text: fallback.slice(0, 7000) });
       setProviderStatus('contingency', 'Contingência local');
     } finally {
@@ -405,11 +415,11 @@
       <button class="ai-launcher" id="aiLauncher" type="button" aria-label="Abrir pré-regulação com inteligência artificial" aria-controls="aiChat" aria-expanded="false">${SVG.chat}<span>Pré-regulação com IA</span></button>
       <section class="ai-chat" id="aiChat" role="dialog" aria-modal="false" aria-labelledby="aiChatTitle" hidden>
         <header class="ai-chat-header">
-          <div class="ai-chat-title">${SVG.assistant}<div><h2 id="aiChatTitle">Pré-regulação com Gemini</h2><p>Simulação baseada em protocolo + prática regulatória</p></div></div>
+          <div class="ai-chat-title">${SVG.assistant}<div><h2 id="aiChatTitle">Pré-regulação com IA</h2><p>Simulação baseada em protocolo + prática regulatória</p></div></div>
           <button class="ai-close" id="aiClose" type="button" aria-label="Fechar assistente">${SVG.close}</button>
         </header>
         <div class="ai-privacy-note">Use casos anonimizados. Não informe nome, CPF, Cartão SUS, telefone, endereço, prontuário ou outro identificador.</div>
-        <span class="ai-mode ${CONFIG.endpoint ? 'connected' : ''}" id="aiMode">${CONFIG.endpoint ? 'Gemini · modo pré-regulação' : 'Consulta local'}</span>
+        <span class="ai-mode ${CONFIG.endpoint ? 'connected' : ''}" id="aiMode">${CONFIG.endpoint ? 'Assistente com base nos protocolos' : 'Consulta local'}</span>
         <div class="ai-messages" id="aiMessages" aria-live="polite">
           <div class="ai-suggestions" id="aiSuggestions">
             <button class="ai-suggestion" type="button">Quero fazer uma pré-análise de um encaminhamento. Me conduza como regulador.</button>

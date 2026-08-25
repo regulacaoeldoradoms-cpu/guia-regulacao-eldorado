@@ -59,7 +59,7 @@
     protocol.practicalGuidance = guidance;
     const officialSubprotocols = arr(protocol.subprotocolos).filter((item) => !String(item?.titulo || '').startsWith(PRACTICE_PREFIX));
 
-    // Estas estruturas alimentam o Gemini, mas são removidas da apresentação visual do protocolo.
+    // Estas estruturas alimentam a IA, mas são removidas da apresentação visual do protocolo.
     // Nenhum item prático é classificado como requisito oficial ou exame obrigatório.
     const practicalSubprotocols = [
       {
@@ -201,7 +201,7 @@
     return `<aside class="practical-ai-card referral-enhancement">
       <div class="practical-ai-copy">
         <span>${svg(ICON.ai)}</span>
-        <div><small>Aplicação prática</small><strong>Converse com o Gemini sobre devoluções reais</strong><p>A experiência regulatória fica na IA para não misturar prática local com requisito oficial na tela.</p></div>
+        <div><small>Aplicação prática</small><strong>Converse com a IA sobre devoluções reais</strong><p>A experiência regulatória fica na IA para não misturar prática local com requisito oficial na tela.</p></div>
       </div>
       <div class="practical-ai-actions">
         <button type="button" data-ai-prefill="O que costuma causar devolução em ${name} na prática regulatória e como posso evitar?">O que costuma devolver?</button>

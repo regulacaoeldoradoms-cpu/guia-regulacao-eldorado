@@ -57,12 +57,8 @@ const AUTH_RESPONSES_WITH_USER = new Set([
 ]);
 
 const TRANSIENT_AI_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
-const DEFAULT_GEMINI_REQUEST_TIMEOUT_MS = 8000;
-const DEFAULT_GEMINI_TOTAL_TIMEOUT_MS = 26000;
-
-function wait(milliseconds) {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
-}
+const DEFAULT_GEMINI_REQUEST_TIMEOUT_MS = 5000;
+const DEFAULT_GEMINI_TOTAL_TIMEOUT_MS = 11000;
 
 function boundedInteger(value, fallback, minimum, maximum) {
   const number = Number.parseInt(String(value || ''), 10);
@@ -94,13 +90,17 @@ function envForGeminiModel(env, model, requestTimeoutMs) {
   });
 }
 
-async function isTransientAiResponse(response) {
-  if (!TRANSIENT_AI_STATUSES.has(response.status)) return false;
-  if (response.status === 408 || response.status === 429 || [502, 503, 504].includes(response.status)) return true;
+function envForCloudflareAi(env) {
+  return new Proxy(env, {
+    get(target, property) {
+      if (property === 'AI_PROVIDER') return 'cloudflare';
+      return target[property];
+    }
+  });
+}
 
-  const payload = await response.clone().json().catch(() => ({}));
-  const message = String(payload?.error || '').toLowerCase();
-  return /high demand|temporar|unavailable|overload|capacity|timeout|timed out|service unavailable/.test(message);
+function isTransientAiResponse(response) {
+  return TRANSIENT_AI_STATUSES.has(response.status);
 }
 
 async function fetchAiResilient(request, env, ctx, origin, originAllowed) {
@@ -110,51 +110,53 @@ async function fetchAiResilient(request, env, ctx, origin, originAllowed) {
   const startedAt = Date.now();
   let lastResponse = null;
 
-  modelLoop:
-  for (let modelIndex = 0; modelIndex < models.length; modelIndex += 1) {
-    const model = models[modelIndex];
-    const attempts = modelIndex === 0 ? 2 : 1;
+  for (const model of models) {
+    const remainingMs = totalTimeoutMs - (Date.now() - startedAt);
+    if (remainingMs < 1000) break;
 
-    for (let attempt = 0; attempt < attempts; attempt += 1) {
-      const remainingMs = totalTimeoutMs - (Date.now() - startedAt);
-      if (remainingMs < 1000) break modelLoop;
+    const modelEnv = envForGeminiModel(env, model, Math.min(requestTimeoutMs, remainingMs));
+    const response = await aiWorker.fetch(request.clone(), modelEnv, ctx);
+    if (!(await isTransientAiResponse(response))) return response;
 
-      const modelEnv = envForGeminiModel(env, model, Math.min(requestTimeoutMs, remainingMs));
-      const response = await aiWorker.fetch(request.clone(), modelEnv, ctx);
-      if (!(await isTransientAiResponse(response))) return response;
+    lastResponse = response;
+    logAiEvent('warn', 'gemini_model_failed', {
+      model,
+      status: response.status,
+      elapsedMs: Date.now() - startedAt
+    });
+  }
 
-      lastResponse = response;
-      logAiEvent('warn', 'gemini_retry_scheduled', {
-        model,
-        attempt: attempt + 1,
-        status: response.status,
+  logAiEvent('warn', 'gemini_resilience_exhausted', {
+    status: lastResponse?.status || 0,
+    elapsedMs: Date.now() - startedAt,
+    modelsAttempted: models.length
+  });
+
+  if (String(env.CLOUDFLARE_AI_FALLBACK_ENABLED || '').toLowerCase() === 'true') {
+    logAiEvent('warn', 'cloudflare_ai_fallback_started', {
+      elapsedMs: Date.now() - startedAt
+    });
+    const cloudflareResponse = await aiWorker.fetch(request.clone(), envForCloudflareAi(env), ctx);
+    if (cloudflareResponse.ok) {
+      logAiEvent('warn', 'cloudflare_ai_fallback_succeeded', {
         elapsedMs: Date.now() - startedAt
       });
-      if (attempt < attempts - 1) {
-        const baseDelay = 500 * (2 ** attempt);
-        const jitter = Math.floor(Math.random() * 250);
-        const delay = Math.min(baseDelay + jitter, Math.max(0, totalTimeoutMs - (Date.now() - startedAt)));
-        if (delay) await wait(delay);
-      }
+      return cloudflareResponse;
     }
-  }
-
-  if (lastResponse) {
-    logAiEvent('error', 'gemini_resilience_exhausted', {
-      status: lastResponse.status,
-      elapsedMs: Date.now() - startedAt,
-      modelsAttempted: models.length
+    lastResponse = cloudflareResponse;
+    logAiEvent('error', 'cloudflare_ai_fallback_failed', {
+      status: cloudflareResponse.status,
+      elapsedMs: Date.now() - startedAt
     });
-    return jsonError(
-      'O Gemini está temporariamente sobrecarregado ou indisponível. O sistema já repetiu a tentativa e testou um modelo de contingência. Tente novamente em instantes.',
-      503,
-      origin,
-      originAllowed,
-      'GEMINI_TEMPORARILY_UNAVAILABLE'
-    );
   }
 
-  return jsonError('Falha ao consultar o assistente.', 502, origin, originAllowed, 'GEMINI_ERROR');
+  return jsonError(
+    'Os provedores de IA estão temporariamente indisponíveis. Os protocolos locais continuam disponíveis.',
+    503,
+    origin,
+    originAllowed,
+    'AI_PROVIDERS_TEMPORARILY_UNAVAILABLE'
+  );
 }
 
 export default {

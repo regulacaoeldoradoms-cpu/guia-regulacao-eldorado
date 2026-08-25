@@ -51,11 +51,11 @@
 
     launcher.querySelector('svg')?.remove();
     launcher.prepend(createGeminiLogo('ai-gemini-launcher-logo'));
-    launcher.setAttribute('aria-label', 'Abrir pré-regulação com Gemini');
+    launcher.setAttribute('aria-label', 'Abrir pré-regulação com inteligência artificial');
 
     titleContainer.querySelector('svg')?.remove();
     titleContainer.prepend(createGeminiLogo('ai-gemini-header-logo'));
-    title.textContent = 'Pré-regulação com Gemini';
+    title.textContent = 'Pré-regulação com IA';
 
     const subtitle = titleContainer.querySelector('p');
     if (subtitle) subtitle.textContent = 'Simulação baseada em protocolo + prática regulatória';
@@ -68,7 +68,7 @@
     providerDot.setAttribute('aria-hidden', 'true');
     const providerLabel = document.createElement('span');
     providerLabel.className = 'ai-provider-label';
-    providerLabel.textContent = window.REGULATION_AI_CONFIG?.endpoint ? 'Gemini configurado' : 'Consulta local';
+    providerLabel.textContent = window.REGULATION_AI_CONFIG?.endpoint ? 'IA configurada' : 'Consulta local';
     provider.append(providerDot, providerLabel);
     header.appendChild(provider);
 

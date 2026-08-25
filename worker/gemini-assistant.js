@@ -9,7 +9,9 @@ const DEFAULT_ALLOWED_ORIGINS = [
 
 const AUTH_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'admin']);
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
-const DEFAULT_GEMINI_REQUEST_TIMEOUT_MS = 8000;
+const DEFAULT_GEMINI_REQUEST_TIMEOUT_MS = 5000;
+const DEFAULT_CLOUDFLARE_AI_TIMEOUT_MS = 14000;
+const DEFAULT_CLOUDFLARE_AI_MODEL = '@cf/zai-org/glm-4.7-flash';
 
 const SYSTEM_PROMPT = `Você é o simulador de pré-regulação do Guia Médico de Encaminhamentos Regulados de Eldorado/MS.
 
@@ -72,7 +74,7 @@ function boundedInteger(value, fallback, minimum, maximum) {
   return Number.isFinite(number) ? Math.min(maximum, Math.max(minimum, number)) : fallback;
 }
 
-function logGeminiEvent(level, event, details = {}) {
+function logAiEvent(level, event, details = {}) {
   const entry = JSON.stringify({ event, ...details });
   if (level === 'error') console.error(entry);
   else console.warn(entry);
@@ -308,7 +310,12 @@ async function handleAuth(request, env, url, origin, originAllowed) {
 }
 
 async function callGemini(env, prompt) {
-  if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY não configurada no Worker.');
+  if (!env.GEMINI_API_KEY) {
+    const error = new Error('O provedor Gemini não está configurado no Worker.');
+    error.status = 503;
+    error.code = 'GEMINI_NOT_CONFIGURED';
+    throw error;
+  }
   const model = env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
   const timeoutMs = boundedInteger(env.GEMINI_REQUEST_TIMEOUT_MS, DEFAULT_GEMINI_REQUEST_TIMEOUT_MS, 1000, 15000);
@@ -332,7 +339,7 @@ async function callGemini(env, prompt) {
     });
   } catch (cause) {
     const timedOut = signal.aborted || ['AbortError', 'TimeoutError'].includes(cause?.name);
-    logGeminiEvent('error', timedOut ? 'gemini_upstream_timeout' : 'gemini_upstream_network_error', {
+    logAiEvent('error', timedOut ? 'gemini_upstream_timeout' : 'gemini_upstream_network_error', {
       model,
       durationMs: Date.now() - startedAt,
       timeoutMs
@@ -347,7 +354,7 @@ async function callGemini(env, prompt) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    logGeminiEvent('error', 'gemini_upstream_http_error', {
+    logAiEvent('error', 'gemini_upstream_http_error', {
       model,
       status: response.status,
       durationMs: Date.now() - startedAt
@@ -361,7 +368,62 @@ async function callGemini(env, prompt) {
 
   const answer = payload?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim();
   if (!answer) throw new Error('A API Gemini não retornou conteúdo textual.');
-  return { answer, model };
+  return { answer, model, provider: 'Gemini' };
+}
+
+async function callCloudflareAi(env, prompt) {
+  if (!env.AI || typeof env.AI.run !== 'function') {
+    const error = new Error('A IA de contingência da Cloudflare não está configurada no Worker.');
+    error.status = 503;
+    error.code = 'CLOUDFLARE_AI_NOT_CONFIGURED';
+    throw error;
+  }
+
+  const model = env.CLOUDFLARE_AI_MODEL || DEFAULT_CLOUDFLARE_AI_MODEL;
+  const timeoutMs = boundedInteger(env.CLOUDFLARE_AI_TIMEOUT_MS, DEFAULT_CLOUDFLARE_AI_TIMEOUT_MS, 1000, 20000);
+  const startedAt = Date.now();
+  const signal = AbortSignal.timeout(timeoutMs);
+  let payload;
+
+  try {
+    payload = await env.AI.run(model, {
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: prompt }
+      ],
+      max_completion_tokens: 1300,
+      temperature: 0.15
+    }, {
+      signal,
+      tags: ['regulacao:pre-regulacao', 'provider:contingency']
+    });
+  } catch (cause) {
+    const timedOut = signal.aborted || ['AbortError', 'TimeoutError'].includes(cause?.name);
+    logAiEvent('error', timedOut ? 'cloudflare_ai_timeout' : 'cloudflare_ai_error', {
+      model,
+      durationMs: Date.now() - startedAt,
+      timeoutMs
+    });
+    const error = new Error(timedOut
+      ? 'A IA de contingência demorou além do limite de segurança nesta tentativa.'
+      : 'Não foi possível consultar a IA de contingência nesta tentativa.');
+    error.status = timedOut ? 504 : Number(cause?.status) || 502;
+    error.code = timedOut ? 'CLOUDFLARE_AI_TIMEOUT' : 'CLOUDFLARE_AI_ERROR';
+    throw error;
+  }
+
+  const answer = String(
+    payload?.choices?.[0]?.message?.content
+      || payload?.response
+      || ''
+  ).trim();
+  if (!answer) {
+    const error = new Error('A IA de contingência não retornou conteúdo textual.');
+    error.status = 502;
+    error.code = 'CLOUDFLARE_AI_EMPTY_RESPONSE';
+    throw error;
+  }
+  return { answer, model, provider: 'Cloudflare Workers AI' };
 }
 
 export default {
@@ -418,11 +480,14 @@ export default {
 
       const mode = boundedString(body.assistantMode || 'pre_regulation_simulator', 80);
       const prompt = buildPrompt(question, protocols, catalog, body.history, mode);
-      const result = await callGemini(env, prompt);
-      return jsonResponse({ answer: result.answer, provider: 'Gemini', model: result.model, assistantMode: mode, groundedInProtocols: true }, 200, origin, true);
+      const providerMode = String(env.AI_PROVIDER || 'gemini').trim().toLowerCase();
+      const result = providerMode === 'cloudflare'
+        ? await callCloudflareAi(env, prompt)
+        : await callGemini(env, prompt);
+      return jsonResponse({ answer: result.answer, provider: result.provider, model: result.model, assistantMode: mode, groundedInProtocols: true }, 200, origin, true);
     } catch (error) {
       const status = Number(error.status) || 500;
-      const message = status === 429 ? 'O limite gratuito do Gemini foi atingido. Tente novamente mais tarde.' : error.message || 'Falha ao consultar o assistente.';
+      const message = status === 429 ? 'O provedor de IA atingiu um limite temporário. Tente novamente mais tarde.' : error.message || 'Falha ao consultar o assistente.';
       return jsonResponse({ error: message, ...(error.code ? { code: error.code } : {}) }, status, origin, true);
     }
   }
