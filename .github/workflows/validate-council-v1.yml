@@ -114,8 +114,8 @@ jobs:
           grep -q 'COUNCIL_PRESIDENT_CANNOT_SUBMIT' worker/council.js
           grep -q 'canCreateManifestation: !presidentAccess(user)' worker/council.js
           grep -q 'canIdentifyManifestation: true' worker/council.js
-          grep -q "if (user?.emailVerified !== true) return 'anonima'" worker/council.js
-          grep -q "requestedMode.*identificada" worker/council.js
+          grep -q "if (mode === 'identificada') return 'identificada'" worker/council.js
+          grep -q "user?.emailVerified === true ? 'sigilosa' : 'anonima'" worker/council.js
           grep -q 'identifiedAuthorSnapshot' worker/council.js
           grep -q 'authorIdentity' worker/council.js
           grep -q 'authorLabel' worker/council.js

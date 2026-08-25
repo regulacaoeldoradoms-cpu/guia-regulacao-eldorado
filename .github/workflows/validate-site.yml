@@ -147,7 +147,7 @@ jobs:
 
       - name: Conferir autenticação no Worker sem segredos expostos
         run: |
-          grep -q "AUTH_ROLES = new Set(\['medico', 'recepcao', 'admin'\])" worker/gemini-assistant.js
+          grep -q "AUTH_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'admin'\])" worker/gemini-assistant.js
           grep -q '/api/auth/login' worker/gemini-assistant.js
           grep -q '/api/auth/me' worker/gemini-assistant.js
           grep -q '/api/auth/logout' worker/gemini-assistant.js

@@ -31,6 +31,7 @@ function workerEnv(overrides = {}) {
 test('interrompe uma chamada Gemini pendente e retorna um erro estruturado', async () => {
   const originalFetch = globalThis.fetch;
   const originalConsoleError = console.error;
+  const keepEventLoopAlive = setTimeout(() => {}, 1500);
   globalThis.fetch = (_url, options) => new Promise((_resolve, reject) => {
     options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true });
   });
@@ -43,6 +44,7 @@ test('interrompe uma chamada Gemini pendente e retorna um erro estruturado', asy
     assert.equal(payload.code, 'GEMINI_UPSTREAM_TIMEOUT');
     assert.match(payload.error, /limite de segurança/);
   } finally {
+    clearTimeout(keepEventLoopAlive);
     globalThis.fetch = originalFetch;
     console.error = originalConsoleError;
   }
