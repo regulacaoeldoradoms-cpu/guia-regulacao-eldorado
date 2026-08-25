@@ -63,7 +63,7 @@ jobs:
           grep -q 'Conta Prata' conta/index.html
           grep -q 'Conta Ouro' conta/index.html
           grep -q 'auth-client.js?v=20260816-1' conta/index.html
-          grep -q 'account-levels.js?v=20260816-1' conta/index.html
+          grep -q 'account-levels.js?v=20260819-1' conta/index.html
           grep -q 'enforcement: true' js/auth-config.js
           grep -q "homePath: '/'" js/auth-config.js
           grep -q 'AUTH_ENFORCE_AI = "true"' worker/wrangler.toml

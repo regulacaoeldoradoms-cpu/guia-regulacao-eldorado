@@ -113,7 +113,7 @@ jobs:
           grep -q "user.councilRole === 'presidente'" worker/council.js
           grep -q 'COUNCIL_PRESIDENT_CANNOT_SUBMIT' worker/council.js
           grep -q 'canCreateManifestation: !presidentAccess(user)' worker/council.js
-          grep -q 'canIdentifyManifestation: user.emailVerified === true' worker/council.js
+          grep -q 'canIdentifyManifestation: true' worker/council.js
           grep -q "if (user?.emailVerified !== true) return 'anonima'" worker/council.js
           grep -q "requestedMode.*identificada" worker/council.js
           grep -q 'identifiedAuthorSnapshot' worker/council.js
@@ -224,6 +224,8 @@ jobs:
           grep -q 'FIREBASE_PROJECT_ID' worker/system-readiness.js
           grep -q 'AUTH_DEVELOPER_USERNAMES' worker/system-readiness.js
           grep -q 'AUTH_RATE_LIMIT_SECRET' worker/system-readiness.js
+          grep -q 'GEMINI_API_KEY' worker/system-readiness.js
+          grep -q 'GEMINI_REQUEST_TIMEOUT_MS' worker/system-readiness.js
           grep -q 'handleSystemReadinessRoute' worker/index.js
           grep -q '/api/admin/readiness' js/system-readiness.js
           ! grep -q 'privateKey:' js/system-readiness.js

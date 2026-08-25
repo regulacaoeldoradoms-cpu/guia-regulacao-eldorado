@@ -4,9 +4,12 @@
   const CONFIG = window.REGULATION_AI_CONFIG || {};
   const MAX_QUESTION_LENGTH = Number(CONFIG.maxQuestionLength) || 3000;
   const MAX_HISTORY_MESSAGES = Number(CONFIG.maxHistoryMessages) || 12;
+  const GEMINI_REQUEST_TIMEOUT_MS = 35000;
+  const GEMINI_COOLDOWN_MS = 2 * 60 * 1000;
   const history = [];
   let initialized = false;
   let busy = false;
+  let geminiUnavailableUntil = 0;
 
   const SVG = {
     chat: '<svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M8 9h8M8 13h5"/></svg>',
@@ -261,6 +264,36 @@
     if (input) input.disabled = value;
   }
 
+  function setProviderStatus(state, label) {
+    const provider = document.getElementById('aiProviderStatus');
+    const providerLabel = provider?.querySelector('.ai-provider-label');
+    if (!provider || !providerLabel) return;
+    provider.dataset.state = state;
+    providerLabel.textContent = label;
+  }
+
+  function shouldPauseGemini(error) {
+    const status = Number(error?.status) || 0;
+    const message = String(error?.message || '').toLowerCase();
+    return ['AbortError', 'TimeoutError'].includes(error?.name)
+      || /abort|timeout|tempo limite|demorou além/.test(message)
+      || [408, 429, 500, 502, 503, 504].includes(status);
+  }
+
+  function friendlyGeminiFailure(error) {
+    const status = Number(error?.status) || 0;
+    const message = String(error?.message || '');
+    if (['AbortError', 'TimeoutError'].includes(error?.name) || /abort|timeout|signal/i.test(message)) {
+      return 'O Gemini demorou além do limite de segurança. Os protocolos locais continuam disponíveis.';
+    }
+    if (status === 429) return 'O Gemini atingiu um limite temporário. Os protocolos locais continuam disponíveis.';
+    if (status === 401 || status === 403) return 'Não foi possível validar a sessão para consultar o Gemini. Entre novamente se o problema continuar.';
+    if (status >= 500 || error?.code === 'GEMINI_TEMPORARILY_UNAVAILABLE') {
+      return 'O Gemini está temporariamente indisponível. Os protocolos locais continuam disponíveis.';
+    }
+    return 'Não foi possível consultar o Gemini agora. Os protocolos locais continuam disponíveis.';
+  }
+
   function regulatorQuestion(question, context) {
     const selected = context.selectedProtocolName ? `\nPROTOCOLO ATUALMENTE ABERTO NO GUIA: ${context.selectedProtocolName}.` : '';
     return `${REGULATOR_MODE_INSTRUCTION}${selected}\n\nMENSAGEM DO MÉDICO:\n${question}`;
@@ -268,7 +301,7 @@
 
   async function askGemini(question, context) {
     const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 45000);
+    const timeout = window.setTimeout(() => controller.abort(), GEMINI_REQUEST_TIMEOUT_MS);
     try {
       const response = await fetch(CONFIG.endpoint, {
         method: 'POST',
@@ -287,7 +320,12 @@
         })
       });
       const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || `Falha na consulta (${response.status}).`);
+      if (!response.ok) {
+        const error = new Error(payload.error || `Falha na consulta (${response.status}).`);
+        error.status = response.status;
+        error.code = payload.code || '';
+        throw error;
+      }
       if (!payload.answer) throw new Error('A IA não retornou uma resposta válida.');
       return payload.answer;
     } finally {
@@ -307,17 +345,35 @@
     addMessage('user', cleanQuestion);
     history.push({ role: 'user', text: cleanQuestion });
     setBusy(true);
-    const loading = addMessage('assistant', CONFIG.endpoint ? 'Fazendo a pré-análise regulatória com o Gemini...' : 'Consultando os protocolos locais...', 'loading');
+    const geminiReadyForAttempt = Boolean(CONFIG.endpoint) && Date.now() >= geminiUnavailableUntil;
+    const loading = addMessage('assistant', geminiReadyForAttempt ? 'Fazendo a pré-análise regulatória com o Gemini...' : 'Consultando os protocolos locais...', 'loading');
     try {
       const context = requestContext(cleanQuestion);
+      if (CONFIG.endpoint && !geminiReadyForAttempt) {
+        const answer = localAnswer(cleanQuestion, false);
+        loading?.remove();
+        addMessage('assistant', `${answer}\n\nModo de contingência local: o Gemini será testado novamente automaticamente em alguns minutos.`, 'contingency');
+        history.push({ role: 'assistant', text: answer.slice(0, 7000) });
+        setProviderStatus('contingency', 'Contingência local');
+        return;
+      }
+
+      if (CONFIG.endpoint) setProviderStatus('checking', 'Consultando Gemini');
       const answer = CONFIG.endpoint ? await askGemini(cleanQuestion, context) : localAnswer(cleanQuestion, true);
       loading?.remove();
       addMessage('assistant', answer);
       history.push({ role: 'assistant', text: answer.slice(0, 7000) });
+      if (CONFIG.endpoint) {
+        geminiUnavailableUntil = 0;
+        setProviderStatus('connected', 'Gemini conectado');
+      }
     } catch (error) {
       loading?.remove();
       const fallback = localAnswer(cleanQuestion, false);
-      addMessage('assistant', `${fallback}\n\nA conexão com o Gemini falhou: ${error.message}`, 'error');
+      if (shouldPauseGemini(error)) geminiUnavailableUntil = Date.now() + GEMINI_COOLDOWN_MS;
+      addMessage('assistant', `${fallback}\n\nModo de contingência local: ${friendlyGeminiFailure(error)}`, 'contingency');
+      history.push({ role: 'assistant', text: fallback.slice(0, 7000) });
+      setProviderStatus('contingency', 'Contingência local');
     } finally {
       setBusy(false);
       document.getElementById('aiInput')?.focus();

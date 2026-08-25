@@ -57,9 +57,22 @@ const AUTH_RESPONSES_WITH_USER = new Set([
 ]);
 
 const TRANSIENT_AI_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+const DEFAULT_GEMINI_REQUEST_TIMEOUT_MS = 8000;
+const DEFAULT_GEMINI_TOTAL_TIMEOUT_MS = 26000;
 
 function wait(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function boundedInteger(value, fallback, minimum, maximum) {
+  const number = Number.parseInt(String(value || ''), 10);
+  return Number.isFinite(number) ? Math.min(maximum, Math.max(minimum, number)) : fallback;
+}
+
+function logAiEvent(level, event, details = {}) {
+  const entry = JSON.stringify({ event, ...details });
+  if (level === 'error') console.error(entry);
+  else console.warn(entry);
 }
 
 function geminiModels(env) {
@@ -71,10 +84,11 @@ function geminiModels(env) {
   return [...new Set([primary, ...fallbacks].filter(Boolean))];
 }
 
-function envForGeminiModel(env, model) {
+function envForGeminiModel(env, model, requestTimeoutMs) {
   return new Proxy(env, {
     get(target, property) {
       if (property === 'GEMINI_MODEL') return model;
+      if (property === 'GEMINI_REQUEST_TIMEOUT_MS') return String(requestTimeoutMs);
       return target[property];
     }
   });
@@ -91,27 +105,46 @@ async function isTransientAiResponse(response) {
 
 async function fetchAiResilient(request, env, ctx, origin, originAllowed) {
   const models = geminiModels(env);
+  const requestTimeoutMs = boundedInteger(env.GEMINI_REQUEST_TIMEOUT_MS, DEFAULT_GEMINI_REQUEST_TIMEOUT_MS, 1000, 15000);
+  const totalTimeoutMs = boundedInteger(env.GEMINI_TOTAL_TIMEOUT_MS, DEFAULT_GEMINI_TOTAL_TIMEOUT_MS, requestTimeoutMs, 40000);
+  const startedAt = Date.now();
   let lastResponse = null;
 
+  modelLoop:
   for (let modelIndex = 0; modelIndex < models.length; modelIndex += 1) {
     const model = models[modelIndex];
-    const modelEnv = envForGeminiModel(env, model);
-    const attempts = 2;
+    const attempts = modelIndex === 0 ? 2 : 1;
 
     for (let attempt = 0; attempt < attempts; attempt += 1) {
+      const remainingMs = totalTimeoutMs - (Date.now() - startedAt);
+      if (remainingMs < 1000) break modelLoop;
+
+      const modelEnv = envForGeminiModel(env, model, Math.min(requestTimeoutMs, remainingMs));
       const response = await aiWorker.fetch(request.clone(), modelEnv, ctx);
       if (!(await isTransientAiResponse(response))) return response;
 
       lastResponse = response;
+      logAiEvent('warn', 'gemini_retry_scheduled', {
+        model,
+        attempt: attempt + 1,
+        status: response.status,
+        elapsedMs: Date.now() - startedAt
+      });
       if (attempt < attempts - 1) {
         const baseDelay = 500 * (2 ** attempt);
         const jitter = Math.floor(Math.random() * 250);
-        await wait(baseDelay + jitter);
+        const delay = Math.min(baseDelay + jitter, Math.max(0, totalTimeoutMs - (Date.now() - startedAt)));
+        if (delay) await wait(delay);
       }
     }
   }
 
   if (lastResponse) {
+    logAiEvent('error', 'gemini_resilience_exhausted', {
+      status: lastResponse.status,
+      elapsedMs: Date.now() - startedAt,
+      modelsAttempted: models.length
+    });
     return jsonError(
       'O Gemini está temporariamente sobrecarregado ou indisponível. O sistema já repetiu a tentativa e testou um modelo de contingência. Tente novamente em instantes.',
       503,

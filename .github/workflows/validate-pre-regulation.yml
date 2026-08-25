@@ -24,6 +24,9 @@ jobs:
           node --check worker/gemini-assistant.js
           node --check worker/index.js
 
+      - name: Testar tolerância a timeout do Gemini
+        run: npm --prefix worker test
+
       - name: Conferir modo conversacional
         run: |
           grep -q "mode: 'pre_regulation_simulator'" js/ai-config.js
@@ -68,6 +71,14 @@ jobs:
           grep -q 'boundedString(item.text, 3000)' worker/gemini-assistant.js
           grep -q 'maxOutputTokens: 1300' worker/gemini-assistant.js
           grep -q 'assistantMode' worker/gemini-assistant.js
+          grep -q 'AbortSignal.timeout' worker/gemini-assistant.js
+          grep -q 'GEMINI_UPSTREAM_TIMEOUT' worker/gemini-assistant.js
+          grep -q 'GEMINI_TOTAL_TIMEOUT_MS' worker/index.js
+          grep -q "modelIndex === 0 ? 2 : 1" worker/index.js
+          grep -q 'gemini_resilience_exhausted' worker/index.js
+          grep -q 'GEMINI_REQUEST_TIMEOUT_MS = "8000"' worker/wrangler.toml
+          grep -q 'GEMINI_TOTAL_TIMEOUT_MS = "26000"' worker/wrangler.toml
+          grep -q 'enabled = true' worker/wrangler.toml
 
       - name: Conferir CORS autenticado da IA
         run: |
@@ -92,8 +103,14 @@ jobs:
           grep -q 'Assistente com base nos protocolos' js/ai-gemini-theme.js
           grep -q 'Protocolo oficial + pré-regulação conversacional com Gemini' medico/index.html
           grep -q 'ai-config.js?v=20260811-1' medico/index.html
-          grep -q 'ai-assistant.js?v=20260811-1' medico/index.html
-          grep -q 'ai-gemini-theme.js?v=20260811-1' medico/index.html
+          grep -q 'ai-assistant.js?v=20260825-1' medico/index.html
+          grep -q 'ai-gemini-theme.js?v=20260825-1' medico/index.html
+          grep -q 'ai-assistant.css?v=20260825-1' medico/index.html
+          grep -q 'ai-gemini-theme.css?v=20260825-1' medico/index.html
+          grep -q 'GEMINI_COOLDOWN_MS' js/ai-assistant.js
+          grep -q 'Contingência local' js/ai-assistant.js
+          grep -q 'Gemini configurado' js/ai-gemini-theme.js
+          ! grep -q 'A conexão com o Gemini falhou:' js/ai-assistant.js
 
       - name: Conferir limites de segurança
         run: |

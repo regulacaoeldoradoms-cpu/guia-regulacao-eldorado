@@ -124,6 +124,12 @@
   color: #991b1b;
 }
 
+.ai-message.contingency {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #78350f;
+}
+
 .ai-message.loading { color: #475569; font-style: italic; }
 
 .ai-suggestions {

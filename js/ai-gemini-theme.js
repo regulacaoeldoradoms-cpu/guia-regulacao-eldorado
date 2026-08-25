@@ -62,9 +62,14 @@
 
     const provider = document.createElement('span');
     provider.className = 'ai-provider-status';
+    provider.id = 'aiProviderStatus';
+    provider.dataset.state = window.REGULATION_AI_CONFIG?.endpoint ? 'configured' : 'offline';
     const providerDot = document.createElement('span');
     providerDot.setAttribute('aria-hidden', 'true');
-    provider.append(providerDot, document.createTextNode('Gemini conectado'));
+    const providerLabel = document.createElement('span');
+    providerLabel.className = 'ai-provider-label';
+    providerLabel.textContent = window.REGULATION_AI_CONFIG?.endpoint ? 'Gemini configurado' : 'Consulta local';
+    provider.append(providerDot, providerLabel);
     header.appendChild(provider);
 
     mode.textContent = 'Assistente com base nos protocolos';

@@ -127,7 +127,7 @@ jobs:
           grep -q "homePath: '/'" js/auth-config.js
           grep -q 'href="/medico/"' js/home.js
           grep -q "link.href = '/'" js/medical-portal-nav.js
-          grep -q "location.replace('/')" js/account.js
+          grep -q "location.replace('/login/')" js/account.js
           grep -q "normalized === '/medico/'" worker/usage-monitor.js
           grep -q '"start_url": "/medico/"' site.webmanifest
           grep -q 'href="/medico/"' protocolo/index.html

@@ -115,6 +115,31 @@
   box-shadow: 0 0 0 3px rgba(26,162,96,.13);
 }
 
+.ai-provider-status > .ai-provider-label {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ai-provider-status[data-state="configured"] > span:first-child,
+.ai-provider-status[data-state="checking"] > span:first-child {
+  background: #f9ab00;
+  box-shadow: 0 0 0 3px rgba(249,171,0,.15);
+}
+
+.ai-provider-status[data-state="connected"] > span:first-child {
+  background: #1aa260;
+  box-shadow: 0 0 0 3px rgba(26,162,96,.13);
+}
+
+.ai-provider-status[data-state="contingency"] > span:first-child,
+.ai-provider-status[data-state="offline"] > span:first-child {
+  background: #d97706;
+  box-shadow: 0 0 0 3px rgba(217,119,6,.14);
+}
+
 .ai-close {
   position: relative;
   z-index: 3;

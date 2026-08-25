@@ -37,6 +37,11 @@ function enabled(value) {
   return String(value || '').trim().toLowerCase() === 'true';
 }
 
+function integer(value) {
+  const number = Number.parseInt(String(value || ''), 10);
+  return Number.isFinite(number) ? number : 0;
+}
+
 function normalizeUsername(value) {
   return String(value || '')
     .normalize('NFD')
@@ -84,6 +89,17 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
   const sessionSecretReady = present(env.AUTH_SESSION_SECRET);
   const emailVerificationRequired = enabled(env.AUTH_REQUIRE_EMAIL_VERIFICATION);
   const legacyMigrationEnabled = enabled(env.AUTH_MIGRATE_LEGACY_ADMINS);
+  const gemini = {
+    apiKey: present(env.GEMINI_API_KEY),
+    primaryModel: present(env.GEMINI_MODEL),
+    fallbackModels: present(env.GEMINI_FALLBACK_MODELS),
+    requestTimeoutMs: integer(env.GEMINI_REQUEST_TIMEOUT_MS),
+    totalTimeoutMs: integer(env.GEMINI_TOTAL_TIMEOUT_MS)
+  };
+  const geminiTimeoutsReady = gemini.requestTimeoutMs >= 1000
+    && gemini.requestTimeoutMs <= 15000
+    && gemini.totalTimeoutMs >= gemini.requestTimeoutMs
+    && gemini.totalTimeoutMs <= 40000;
 
   const checks = [
     {
@@ -125,6 +141,24 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
         : 'O segredo de sessão não foi detectado no ambiente.'
     },
     {
+      id: 'gemini-key',
+      label: 'Chave do Gemini no Worker',
+      ok: gemini.apiKey,
+      requiredBeforeDeploy: true,
+      detail: gemini.apiKey
+        ? 'GEMINI_API_KEY está configurada como segredo.'
+        : 'Configure GEMINI_API_KEY como segredo no painel da Cloudflare.'
+    },
+    {
+      id: 'gemini-resilience',
+      label: 'Limites de tempo e modelo de contingência da IA',
+      ok: gemini.primaryModel && gemini.fallbackModels && geminiTimeoutsReady,
+      requiredBeforeDeploy: true,
+      detail: gemini.primaryModel && gemini.fallbackModels && geminiTimeoutsReady
+        ? `Tentativas limitadas a ${gemini.requestTimeoutMs} ms, com orçamento total de ${gemini.totalTimeoutMs} ms e modelo alternativo.`
+        : 'Configure modelo primário, modelo alternativo e limites de tempo seguros para a IA.'
+    },
+    {
       id: 'legacy-migration',
       label: 'Migração de administradores legados',
       ok: !legacyMigrationEnabled,
@@ -154,6 +188,7 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
       ...firebase,
       ready: firebaseReady
     },
+    gemini,
     flags: {
       legacyMigrationEnabled,
       emailVerificationRequired

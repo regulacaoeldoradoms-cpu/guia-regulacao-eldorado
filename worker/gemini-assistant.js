@@ -9,6 +9,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
 
 const AUTH_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'admin']);
 const SESSION_TTL_SECONDS = 8 * 60 * 60;
+const DEFAULT_GEMINI_REQUEST_TIMEOUT_MS = 8000;
 
 const SYSTEM_PROMPT = `Você é o simulador de pré-regulação do Guia Médico de Encaminhamentos Regulados de Eldorado/MS.
 
@@ -64,6 +65,17 @@ function allowedOrigins(env) {
 
 function boundedString(value, maximum) {
   return String(value || '').trim().slice(0, maximum);
+}
+
+function boundedInteger(value, fallback, minimum, maximum) {
+  const number = Number.parseInt(String(value || ''), 10);
+  return Number.isFinite(number) ? Math.min(maximum, Math.max(minimum, number)) : fallback;
+}
+
+function logGeminiEvent(level, event, details = {}) {
+  const entry = JSON.stringify({ event, ...details });
+  if (level === 'error') console.error(entry);
+  else console.warn(entry);
 }
 
 function hasSensitiveData(value) {
@@ -299,25 +311,51 @@ async function callGemini(env, prompt) {
   if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY não configurada no Worker.');
   const model = env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const timeoutMs = boundedInteger(env.GEMINI_REQUEST_TIMEOUT_MS, DEFAULT_GEMINI_REQUEST_TIMEOUT_MS, 1000, 15000);
+  const startedAt = Date.now();
+  const signal = AbortSignal.timeout(timeoutMs);
+  let response;
 
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-goog-api-key': env.GEMINI_API_KEY
-    },
-    body: JSON.stringify({
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: 1300, responseMimeType: 'text/plain' }
-    })
-  });
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': env.GEMINI_API_KEY
+      },
+      signal,
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 1300, responseMimeType: 'text/plain' }
+      })
+    });
+  } catch (cause) {
+    const timedOut = signal.aborted || ['AbortError', 'TimeoutError'].includes(cause?.name);
+    logGeminiEvent('error', timedOut ? 'gemini_upstream_timeout' : 'gemini_upstream_network_error', {
+      model,
+      durationMs: Date.now() - startedAt,
+      timeoutMs
+    });
+    const error = new Error(timedOut
+      ? 'O Gemini demorou além do limite de segurança nesta tentativa.'
+      : 'Não foi possível estabelecer conexão com o Gemini nesta tentativa.');
+    error.status = timedOut ? 504 : 502;
+    error.code = timedOut ? 'GEMINI_UPSTREAM_TIMEOUT' : 'GEMINI_UPSTREAM_NETWORK_ERROR';
+    throw error;
+  }
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
+    logGeminiEvent('error', 'gemini_upstream_http_error', {
+      model,
+      status: response.status,
+      durationMs: Date.now() - startedAt
+    });
     const message = payload?.error?.message || `Erro da API Gemini (${response.status}).`;
     const error = new Error(message);
-    error.status = response.status === 429 ? 429 : 502;
+    error.status = [408, 429, 500, 502, 503, 504].includes(response.status) ? response.status : 502;
+    error.code = 'GEMINI_UPSTREAM_HTTP_ERROR';
     throw error;
   }
 
@@ -385,7 +423,7 @@ export default {
     } catch (error) {
       const status = Number(error.status) || 500;
       const message = status === 429 ? 'O limite gratuito do Gemini foi atingido. Tente novamente mais tarde.' : error.message || 'Falha ao consultar o assistente.';
-      return jsonResponse({ error: message }, status, origin, true);
+      return jsonResponse({ error: message, ...(error.code ? { code: error.code } : {}) }, status, origin, true);
     }
   }
 };
