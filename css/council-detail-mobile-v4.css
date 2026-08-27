@@ -1,0 +1,625 @@
+/* Conselho Municipal de Saúde — detalhe da manifestação no mobile v4.
+   Camada final de experiência para Presidente/Desenvolvedor e leitura do Membro.
+   Objetivos: leitura confortável, navegação curta, controles grandes e remoção
+   de conflitos visuais herdados das versões anteriores. */
+
+body.mobile-council-mode #councilDetailModal{
+  --cd-blue:#103f61;
+  --cd-blue-2:#176889;
+  --cd-cyan:#2188a7;
+  --cd-page:#edf4f7;
+  --cd-card:#ffffff;
+  --cd-border:#cfdee7;
+  --cd-text:#29475b;
+  --cd-muted:#657d8e;
+  background:var(--cd-page) !important;
+}
+
+/* O modal vira uma área de trabalho móvel, sem margens desperdiçadas. */
+body.mobile-council-mode #councilDetailModal{
+  padding:0 !important;
+  align-items:stretch !important;
+}
+body.mobile-council-mode #councilDetailModal .citizen-modal-panel{
+  width:100% !important;
+  max-width:none !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  margin:0 !important;
+  border-radius:0 !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  background:linear-gradient(180deg,#f5f9fb 0%,#edf4f7 100%) !important;
+  overscroll-behavior:contain !important;
+}
+
+/* Cabeçalho fixo e compacto o suficiente para não roubar a tela. */
+body.mobile-council-mode #councilDetailModal .citizen-modal-head{
+  position:sticky !important;
+  top:0 !important;
+  z-index:50 !important;
+  min-height:84px !important;
+  padding:11px 10px 11px 12px !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  border-bottom:1px solid #cedde5 !important;
+  background:rgba(255,255,255,.985) !important;
+  backdrop-filter:blur(12px) !important;
+  box-shadow:0 5px 16px rgba(17,52,76,.10) !important;
+}
+body.mobile-council-mode #councilDetailModal .citizen-modal-head > div{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+}
+body.mobile-council-mode #councilDetailModal #detailProtocol{
+  margin:0 0 3px !important;
+  color:var(--cd-blue) !important;
+  font-size:clamp(27px,6.8vw,34px) !important;
+  line-height:1.08 !important;
+  font-weight:950 !important;
+  overflow-wrap:anywhere !important;
+}
+body.mobile-council-mode #councilDetailModal #detailMeta{
+  display:block !important;
+  color:#60798b !important;
+  font-size:clamp(16px,4vw,20px) !important;
+  line-height:1.3 !important;
+  overflow-wrap:anywhere !important;
+}
+body.mobile-council-mode #councilDetailModal .citizen-modal-close{
+  width:54px !important;
+  height:54px !important;
+  min-width:54px !important;
+  flex:0 0 54px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:14px !important;
+  background:#f3f7f9 url('/assets/Fechar-icon.png?v=20260827-1') center/42px 42px no-repeat !important;
+  color:transparent !important;
+  font-size:0 !important;
+  box-shadow:0 3px 10px rgba(22,54,78,.10) !important;
+}
+body.mobile-council-mode #councilDetailModal .citizen-modal-close::before,
+body.mobile-council-mode #councilDetailModal .citizen-modal-close::after{
+  content:none !important;
+  display:none !important;
+}
+
+body.mobile-council-mode #councilDetailModal .citizen-modal-content{
+  width:100% !important;
+  padding:8px 5px max(42px,env(safe-area-inset-bottom)) !important;
+  background:transparent !important;
+}
+body.mobile-council-mode #councilDetailModal #detailLoading{
+  min-height:90px !important;
+  margin:8px 3px !important;
+  padding:20px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  border-radius:16px !important;
+  font-size:22px !important;
+  font-weight:850 !important;
+}
+body.mobile-council-mode #councilDetailModal #detailContent{
+  width:100% !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding:0 !important;
+}
+
+/* Navegação curta dentro da manifestação. */
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav{
+  position:sticky !important;
+  top:84px !important;
+  z-index:40 !important;
+  width:calc(100% + 10px) !important;
+  margin:0 -5px 9px !important;
+  padding:7px 6px !important;
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:5px !important;
+  border-bottom:1px solid #cedde5 !important;
+  background:rgba(238,246,249,.97) !important;
+  backdrop-filter:blur(10px) !important;
+  box-shadow:0 4px 11px rgba(21,55,79,.07) !important;
+}
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav[hidden]{display:none !important;}
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button{
+  min-width:0 !important;
+  min-height:50px !important;
+  padding:8px 5px !important;
+  border:1px solid #c9dbe5 !important;
+  border-radius:12px !important;
+  background:#fff !important;
+  color:#244d67 !important;
+  font:inherit !important;
+  font-size:clamp(14px,3.55vw,17px) !important;
+  line-height:1.15 !important;
+  font-weight:900 !important;
+  text-align:center !important;
+  box-shadow:0 2px 6px rgba(22,55,79,.04) !important;
+}
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button:active{
+  transform:scale(.97) !important;
+  background:#eaf4f8 !important;
+}
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[hidden]{display:none !important;}
+
+/* Reordena a página no celular: gestão vem antes do histórico. */
+body.mobile-council-mode #councilDetailModal .council-detail-grid{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) !important;
+  gap:0 !important;
+  width:100% !important;
+}
+body.mobile-council-mode #councilDetailModal .council-detail-grid > div:first-child,
+body.mobile-council-mode #councilDetailModal .council-side{
+  display:contents !important;
+}
+body.mobile-council-mode #councilDetailModal .detail-chips{order:10 !important;}
+body.mobile-council-mode #councilDetailModal .council-export-actions{order:20 !important;}
+body.mobile-council-mode #councilDetailModal #detailSubject{order:30 !important;}
+body.mobile-council-mode #councilDetailModal #detailService{order:31 !important;}
+body.mobile-council-mode #councilDetailModal #detailDescription{order:32 !important;}
+body.mobile-council-mode #councilDetailModal h3.detail-section-title:has(+ #attachmentList){order:40 !important;}
+body.mobile-council-mode #councilDetailModal #attachmentList{order:41 !important;}
+body.mobile-council-mode #councilDetailModal #memberAttachmentRestriction{order:42 !important;}
+body.mobile-council-mode #councilDetailModal h3.detail-section-title:has(+ #messageThread){order:50 !important;}
+body.mobile-council-mode #councilDetailModal #messageThread{order:51 !important;}
+body.mobile-council-mode #councilDetailModal #officialReplyForm{order:52 !important;}
+body.mobile-council-mode #councilDetailModal #statusBox{order:60 !important;}
+body.mobile-council-mode #councilDetailModal h3.detail-section-title:has(+ #timeline){order:70 !important;}
+body.mobile-council-mode #councilDetailModal #timeline{order:71 !important;}
+body.mobile-council-mode #councilDetailModal .council-side .council-box:not(#statusBox){order:80 !important;}
+
+body.mobile-council-mode #councilDetailModal #detailSubject,
+body.mobile-council-mode #councilDetailModal #messageThread,
+body.mobile-council-mode #councilDetailModal #statusBox,
+body.mobile-council-mode #councilDetailModal #timeline{
+  scroll-margin-top:150px !important;
+}
+
+/* Chips com leitura rápida. */
+body.mobile-council-mode #councilDetailModal .detail-chips{
+  width:100% !important;
+  margin:4px 2px 10px !important;
+  padding:0 2px !important;
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:7px !important;
+}
+body.mobile-council-mode #councilDetailModal .detail-chips > span{
+  min-height:40px !important;
+  padding:8px 12px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  border-radius:999px !important;
+  font-size:clamp(16px,4vw,19px) !important;
+  line-height:1.15 !important;
+  font-weight:900 !important;
+}
+
+/* PDF / declaração. */
+body.mobile-council-mode #councilDetailModal .council-export-actions{
+  width:100% !important;
+  margin:0 0 12px !important;
+  padding:0 2px !important;
+  display:grid !important;
+  gap:6px !important;
+}
+body.mobile-council-mode #councilDetailModal .council-export-button{
+  width:100% !important;
+  min-height:62px !important;
+  padding:12px 14px !important;
+  border-radius:15px !important;
+  font-size:clamp(19px,4.7vw,23px) !important;
+  line-height:1.2 !important;
+  font-weight:950 !important;
+}
+body.mobile-council-mode #councilDetailModal .council-export-hint{
+  padding:0 4px !important;
+  color:#708391 !important;
+  font-size:clamp(15px,3.8vw,18px) !important;
+  line-height:1.4 !important;
+}
+
+/* Relato principal, usando quase toda a largura. */
+body.mobile-council-mode #councilDetailModal .detail-title{
+  width:100% !important;
+  margin:0 !important;
+  padding:18px 14px 9px !important;
+  border:1px solid var(--cd-border) !important;
+  border-bottom:0 !important;
+  border-radius:17px 17px 0 0 !important;
+  background:#fff !important;
+  color:var(--cd-blue) !important;
+  font-size:clamp(27px,6.7vw,33px) !important;
+  line-height:1.15 !important;
+  font-weight:950 !important;
+  letter-spacing:-.015em !important;
+  box-shadow:0 6px 17px rgba(21,53,77,.06) !important;
+}
+body.mobile-council-mode #councilDetailModal .detail-title::before{
+  content:"MANIFESTAÇÃO" !important;
+  display:block !important;
+  width:max-content !important;
+  margin:0 0 7px !important;
+  padding:5px 8px !important;
+  border-radius:999px !important;
+  background:#e8f3f7 !important;
+  color:#2a647f !important;
+  font-size:13px !important;
+  line-height:1 !important;
+  font-weight:950 !important;
+  letter-spacing:.07em !important;
+}
+body.mobile-council-mode #councilDetailModal #detailService{
+  width:100% !important;
+  margin:0 !important;
+  padding:0 14px 10px !important;
+  border-left:1px solid var(--cd-border) !important;
+  border-right:1px solid var(--cd-border) !important;
+  background:#fff !important;
+  color:#617a8c !important;
+  font-size:clamp(17px,4.25vw,20px) !important;
+  line-height:1.4 !important;
+}
+body.mobile-council-mode #councilDetailModal .detail-description{
+  width:100% !important;
+  margin:0 0 16px !important;
+  padding:4px 14px 18px !important;
+  border:1px solid var(--cd-border) !important;
+  border-top:0 !important;
+  border-radius:0 0 17px 17px !important;
+  background:#fff !important;
+  color:var(--cd-text) !important;
+  font-size:clamp(20px,5vw,24px) !important;
+  line-height:1.58 !important;
+  white-space:pre-wrap !important;
+  overflow-wrap:anywhere !important;
+  box-shadow:0 7px 18px rgba(21,53,77,.06) !important;
+}
+
+/* Títulos de seção consistentes. */
+body.mobile-council-mode #councilDetailModal .detail-section-title{
+  width:100% !important;
+  margin:18px 0 8px !important;
+  padding:0 4px 8px !important;
+  border-bottom:2px solid #d3e2e9 !important;
+  color:var(--cd-blue) !important;
+  font-size:clamp(25px,6.2vw,30px) !important;
+  line-height:1.16 !important;
+  font-weight:950 !important;
+}
+
+/* Corrige definitivamente o cabeçalho da conversa, que antes quebrava em colunas. */
+body.mobile-council-mode #councilDetailModal h3.detail-section-title:has(+ #messageThread){
+  display:block !important;
+  font-size:0 !important;
+}
+body.mobile-council-mode #councilDetailModal h3.detail-section-title:has(+ #messageThread)::before{
+  content:"Conversa com o manifestante" !important;
+  display:block !important;
+  width:100% !important;
+  color:var(--cd-blue) !important;
+  font-size:clamp(25px,6.2vw,30px) !important;
+  line-height:1.16 !important;
+  font-weight:950 !important;
+}
+body.mobile-council-mode #councilDetailModal h3.detail-section-title:has(+ #messageThread)::after{
+  content:"Canal institucional para troca de mensagens sobre esta manifestação." !important;
+  display:block !important;
+  width:100% !important;
+  margin-top:5px !important;
+  color:#6a8192 !important;
+  font-size:clamp(15px,3.8vw,18px) !important;
+  line-height:1.38 !important;
+  font-weight:600 !important;
+}
+
+/* Anexos. */
+body.mobile-council-mode #councilDetailModal .attachment-list{
+  width:100% !important;
+  min-height:56px !important;
+  padding:12px !important;
+  border:1px solid var(--cd-border) !important;
+  border-radius:14px !important;
+  background:#fff !important;
+  color:#667e8f !important;
+  font-size:clamp(18px,4.5vw,21px) !important;
+  line-height:1.4 !important;
+  box-shadow:0 3px 10px rgba(21,53,77,.04) !important;
+}
+body.mobile-council-mode #councilDetailModal .attachment-list span[style]{
+  font-size:inherit !important;
+}
+body.mobile-council-mode #councilDetailModal .attachment-link{
+  width:100% !important;
+  min-height:58px !important;
+  padding:11px 13px !important;
+  border-radius:12px !important;
+  font-size:clamp(18px,4.5vw,22px) !important;
+  font-weight:850 !important;
+}
+
+/* Chat. */
+body.mobile-council-mode #councilDetailModal #messageThread.thread{
+  width:100% !important;
+  min-height:160px !important;
+  margin:0 !important;
+  padding:54px 9px 12px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:12px !important;
+  border:1px solid var(--cd-border) !important;
+  border-radius:17px !important;
+  background:linear-gradient(180deg,#edf6fa 0%,#f8fbfc 100%) !important;
+  box-shadow:0 5px 14px rgba(21,53,77,.05) !important;
+}
+body.mobile-council-mode #councilDetailModal #messageThread.thread::before{
+  min-height:42px !important;
+  padding:9px 11px !important;
+  font-size:15px !important;
+}
+body.mobile-council-mode #councilDetailModal #messageThread .thread-message{
+  width:auto !important;
+  max-width:91% !important;
+  margin:0 !important;
+  padding:12px 13px !important;
+  border-radius:5px 16px 16px 16px !important;
+}
+body.mobile-council-mode #councilDetailModal #messageThread .thread-message.council{
+  margin-left:auto !important;
+  border-radius:16px 5px 16px 16px !important;
+}
+body.mobile-council-mode #councilDetailModal #messageThread .thread-message::before{
+  min-height:27px !important;
+  margin-bottom:6px !important;
+  padding:4px 8px !important;
+  font-size:12px !important;
+}
+body.mobile-council-mode #councilDetailModal #messageThread .thread-message strong{
+  margin:0 0 5px !important;
+  font-size:clamp(15px,3.8vw,18px) !important;
+  line-height:1.3 !important;
+}
+body.mobile-council-mode #councilDetailModal #messageThread .thread-message p{
+  font-size:clamp(19px,4.75vw,23px) !important;
+  line-height:1.48 !important;
+}
+
+/* Resposta institucional: elimina textos duplicados e deixa só o essencial. */
+body.mobile-council-mode #councilDetailModal #officialReplyForm.reply-form{
+  width:100% !important;
+  margin:10px 0 0 !important;
+  padding:14px 11px !important;
+  border:1px solid #c8dce6 !important;
+  border-top:5px solid var(--cd-cyan) !important;
+  border-radius:17px !important;
+  background:#fff !important;
+  box-shadow:0 6px 16px rgba(21,70,96,.06) !important;
+}
+body.mobile-council-mode #councilDetailModal #officialReplyForm.reply-form::before{
+  content:"Responder ao manifestante" !important;
+  margin:0 0 10px !important;
+  color:var(--cd-blue) !important;
+  font-size:clamp(24px,6vw,29px) !important;
+  line-height:1.18 !important;
+  font-weight:950 !important;
+}
+body.mobile-council-mode #councilDetailModal #officialReplyForm.reply-form::after{
+  content:"A mensagem ficará registrada no histórico da manifestação." !important;
+  margin-top:8px !important;
+  color:#718797 !important;
+  font-size:clamp(14px,3.55vw,17px) !important;
+  line-height:1.4 !important;
+}
+body.mobile-council-mode #councilDetailModal #officialReplyForm .portal-field{
+  margin:0 !important;
+}
+body.mobile-council-mode #councilDetailModal #officialReplyForm .portal-field label{
+  margin:0 !important;
+  font-size:0 !important;
+}
+body.mobile-council-mode #councilDetailModal #officialReplyForm .portal-field label::after{
+  content:"Mensagem" !important;
+  display:block !important;
+  margin:0 0 7px !important;
+  color:#365a70 !important;
+  font-size:clamp(18px,4.5vw,21px) !important;
+  line-height:1.25 !important;
+  font-weight:900 !important;
+}
+body.mobile-council-mode #councilDetailModal #officialReply{
+  width:100% !important;
+  min-height:145px !important;
+  padding:13px !important;
+  border:2px solid #c6d9e4 !important;
+  border-radius:13px !important;
+  background:#fff !important;
+  color:#29475b !important;
+  font-size:clamp(19px,4.75vw,23px) !important;
+  line-height:1.5 !important;
+  resize:vertical !important;
+}
+body.mobile-council-mode #councilDetailModal #officialReplyButton{
+  width:100% !important;
+  min-height:68px !important;
+  margin-top:10px !important;
+  padding:13px 16px !important;
+  border:0 !important;
+  border-radius:14px !important;
+  background:linear-gradient(180deg,#278faf 0%,#167999 100%) !important;
+  color:#fff !important;
+  font-size:0 !important;
+  font-weight:950 !important;
+  box-shadow:0 7px 16px rgba(24,121,153,.20) !important;
+}
+body.mobile-council-mode #councilDetailModal #officialReplyButton::before{
+  content:"Enviar mensagem" !important;
+  display:inline !important;
+  font-size:clamp(20px,5vw,24px) !important;
+  line-height:1.2 !important;
+  font-weight:950 !important;
+}
+body.mobile-council-mode #councilDetailModal #officialReplyButton::after{
+  content:none !important;
+  display:none !important;
+}
+
+/* Gestão do andamento vem antes do histórico no mobile. */
+body.mobile-council-mode #councilDetailModal .council-box{
+  width:100% !important;
+  margin:16px 0 0 !important;
+  padding:15px 11px !important;
+  border:1px solid #cbdce5 !important;
+  border-radius:17px !important;
+  background:#fff !important;
+  box-shadow:0 6px 16px rgba(21,53,77,.05) !important;
+}
+body.mobile-council-mode #councilDetailModal #statusBox{
+  border-top:5px solid var(--cd-cyan) !important;
+  background:linear-gradient(180deg,#fff 0%,#f3fafc 100%) !important;
+}
+body.mobile-council-mode #councilDetailModal .council-box > h3{
+  margin:0 0 12px !important;
+  color:var(--cd-blue) !important;
+  font-size:clamp(24px,6vw,29px) !important;
+  line-height:1.18 !important;
+  font-weight:950 !important;
+}
+body.mobile-council-mode #councilDetailModal .council-box .portal-field{
+  margin:0 0 12px !important;
+}
+body.mobile-council-mode #councilDetailModal .council-box label{
+  display:block !important;
+  margin:0 0 6px !important;
+  color:#2d5269 !important;
+  font-size:clamp(17px,4.25vw,20px) !important;
+  line-height:1.3 !important;
+  font-weight:900 !important;
+}
+body.mobile-council-mode #councilDetailModal #statusSelect,
+body.mobile-council-mode #councilDetailModal #statusDetail,
+body.mobile-council-mode #councilDetailModal #internalNoteText{
+  width:100% !important;
+  padding:12px 13px !important;
+  border:2px solid #c7d9e4 !important;
+  border-radius:13px !important;
+  background:#fff !important;
+  color:#29475b !important;
+  font-size:clamp(18px,4.5vw,22px) !important;
+  line-height:1.45 !important;
+}
+body.mobile-council-mode #councilDetailModal #statusSelect{
+  min-height:62px !important;
+}
+body.mobile-council-mode #councilDetailModal #statusDetail,
+body.mobile-council-mode #councilDetailModal #internalNoteText{
+  min-height:125px !important;
+  resize:vertical !important;
+}
+body.mobile-council-mode #councilDetailModal #saveStatus,
+body.mobile-council-mode #councilDetailModal #internalNoteForm .portal-button{
+  width:100% !important;
+  min-height:66px !important;
+  padding:13px 15px !important;
+  border-radius:14px !important;
+  font-size:clamp(19px,4.75vw,23px) !important;
+  line-height:1.2 !important;
+  font-weight:950 !important;
+}
+body.mobile-council-mode #councilDetailModal #saveStatus{
+  border:0 !important;
+  background:linear-gradient(180deg,#2387aa 0%,#176887 100%) !important;
+  color:#fff !important;
+  box-shadow:0 7px 16px rgba(23,105,137,.18) !important;
+}
+
+/* Histórico. */
+body.mobile-council-mode #councilDetailModal .timeline{
+  width:100% !important;
+  margin:0 !important;
+  padding:14px 10px 14px 23px !important;
+  display:grid !important;
+  gap:15px !important;
+  border:1px solid var(--cd-border) !important;
+  border-radius:16px !important;
+  background:#fff !important;
+  box-shadow:0 4px 13px rgba(21,53,77,.04) !important;
+}
+body.mobile-council-mode #councilDetailModal .timeline-item strong{
+  display:block !important;
+  color:#244f6c !important;
+  font-size:clamp(18px,4.5vw,22px) !important;
+  line-height:1.38 !important;
+  font-weight:900 !important;
+}
+body.mobile-council-mode #councilDetailModal .timeline-item small{
+  display:block !important;
+  margin-top:3px !important;
+  color:#6c8291 !important;
+  font-size:clamp(15px,3.8vw,18px) !important;
+  line-height:1.35 !important;
+}
+
+/* Observações internas: claramente separadas do chat do cidadão. */
+body.mobile-council-mode #councilDetailModal .council-side .council-box:not(#statusBox){
+  border-top:5px solid #75629e !important;
+  background:linear-gradient(180deg,#fff 0%,#faf8ff 100%) !important;
+}
+body.mobile-council-mode #councilDetailModal #internalNotes{
+  margin:0 0 10px !important;
+  color:#4a536a !important;
+  font-size:clamp(17px,4.25vw,20px) !important;
+  line-height:1.45 !important;
+}
+body.mobile-council-mode #councilDetailModal #internalNotes > div[style]{
+  font-size:inherit !important;
+}
+body.mobile-council-mode #councilDetailModal .internal-note{
+  margin:0 0 8px !important;
+  padding:11px 12px !important;
+  border-radius:12px !important;
+}
+body.mobile-council-mode #councilDetailModal .internal-note strong{
+  font-size:clamp(15px,3.8vw,18px) !important;
+  line-height:1.3 !important;
+}
+body.mobile-council-mode #councilDetailModal .internal-note p{
+  font-size:clamp(17px,4.25vw,20px) !important;
+  line-height:1.45 !important;
+}
+
+/* Mensagens de confirmação/erro também precisam ser legíveis. */
+body.mobile-council-mode #councilDetailModal .account-status.visible{
+  margin-top:9px !important;
+  padding:12px !important;
+  border-radius:12px !important;
+  font-size:clamp(17px,4.25vw,20px) !important;
+  line-height:1.4 !important;
+}
+
+/* Estado de Membro: o painel lateral é escondido pela política existente. */
+body.mobile-council-mode.council-member-readonly #councilDetailModal .council-mobile-detail-nav{
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+}
+
+@media(max-width:390px){
+  body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav{
+    gap:4px !important;
+    padding-left:4px !important;
+    padding-right:4px !important;
+  }
+  body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button{
+    min-height:48px !important;
+    padding-left:3px !important;
+    padding-right:3px !important;
+    font-size:13.5px !important;
+  }
+  body.mobile-council-mode #councilDetailModal #messageThread .thread-message{
+    max-width:94% !important;
+  }
+}
