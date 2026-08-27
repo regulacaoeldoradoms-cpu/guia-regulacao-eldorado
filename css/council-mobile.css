@@ -545,3 +545,23 @@ body.mobile-council-mode #councilDetailModal .empty-state{
   body.mobile-council-mode .council-table td:nth-child(2),
   body.mobile-council-mode .council-table td:nth-child(5){grid-column:auto !important;}
 }
+
+
+/* A barra do Presidente ocupa a largura disponível sem herdar o estilo de etiqueta textual. */
+body.mobile-council-mode .council-role-badge.is-president-image{
+  align-self:stretch !important;
+  width:100% !important;
+  max-width:560px !important;
+  min-height:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:inherit !important;
+}
+body.mobile-council-mode .council-role-badge.is-president-image .council-role-image{
+  display:block !important;
+  width:100% !important;
+  height:auto !important;
+  object-fit:contain !important;
+}
