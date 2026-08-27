@@ -30,7 +30,15 @@
 
   document.getElementById('portalUserName').textContent = user.name || user.username;
   document.getElementById('portalUserRole').textContent = isPresident ? 'Presidente do Conselho' : 'Membro do Conselho';
-  document.getElementById('councilRoleBadge').textContent = isPresident ? 'Presidência do Conselho' : 'Membro do Conselho';
+  const councilRoleBadge = document.getElementById('councilRoleBadge');
+  councilRoleBadge.classList.toggle('is-president-image', isPresident);
+  if (isPresident) {
+    councilRoleBadge.innerHTML = '<img class="council-role-image" src="/assets/barra-presidente-conselho-2.png?v=20260827-1" alt="Presidente do Conselho">';
+    councilRoleBadge.setAttribute('aria-label', 'Presidente do Conselho');
+  } else {
+    councilRoleBadge.textContent = 'Membro do Conselho';
+    councilRoleBadge.removeAttribute('aria-label');
+  }
   document.getElementById('backHome').href = user.role === 'cidadao' ? '/cidadao/' : '/';
   document.querySelectorAll('.president-only').forEach((element) => { element.hidden = !isPresident; });
 
