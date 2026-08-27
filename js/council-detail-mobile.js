@@ -7,10 +7,17 @@
     const modal = document.getElementById('councilDetailModal');
     const panel = modal?.querySelector('.citizen-modal-panel');
     const detailContent = document.getElementById('detailContent');
+    const main = detailContent?.querySelector('.council-detail-main');
     const statusBox = document.getElementById('statusBox');
+    const historySection = document.getElementById('historySection');
+    const notesSection = document.getElementById('internalNotesSection');
     const replyButton = document.getElementById('officialReplyButton');
     const saveStatus = document.getElementById('saveStatus');
     if (!modal || !panel || !detailContent) return;
+
+    /* No celular, ações de gestão entram no fluxo principal. Desktop permanece em duas colunas. */
+    if (main && statusBox && historySection) main.insertBefore(statusBox, historySection);
+    if (main && notesSection && historySection) historySection.insertAdjacentElement('afterend', notesSection);
 
     /* Texto real dos botões: evita duplicações causadas por CSS legado. */
     if (replyButton) replyButton.textContent = 'Enviar mensagem';
@@ -78,7 +85,7 @@
     if ('IntersectionObserver' in window && sections.length) {
       const sectionObserver = new IntersectionObserver((entries) => {
         const visible = entries
-          .filter((entry) => entry.isIntersecting)
+          .filter((entry) => entry.isIntersecting && !entry.target.hidden)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
         if (!visible) return;
         buttons.forEach((button) => button.classList.toggle('is-active', button.dataset.councilScroll === visible.target.id));
