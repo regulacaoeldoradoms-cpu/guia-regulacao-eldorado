@@ -549,9 +549,10 @@ body.mobile-council-mode #councilDetailModal .empty-state{
 
 /* A barra do Presidente ocupa a largura disponível sem herdar o estilo de etiqueta textual. */
 body.mobile-council-mode .council-role-badge.is-president-image{
-  align-self:stretch !important;
-  width:100% !important;
-  max-width:560px !important;
+  align-self:flex-start !important;
+  flex:0 0 auto !important;
+  width:clamp(165px,45vw,190px) !important;
+  max-width:190px !important;
   min-height:0 !important;
   padding:0 !important;
   border:0 !important;
