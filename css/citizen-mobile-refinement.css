@@ -247,6 +247,406 @@ body.mobile-citizen-mode .citizen-modal-head{
   box-shadow:0 4px 12px rgba(20,55,90,.06) !important;
 }
 
+/* ================================================================
+   ACOMPANHAMENTO DA MANIFESTAÇÃO — MOBILE
+   V3: leitura grande, hierarquia clara e conversa com aparência de chat.
+   Atua somente no modal de acompanhamento do cidadão.
+   ================================================================ */
+
+body.mobile-citizen-mode #manifestationDetailModal{
+  background:#eef4f7 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-panel{
+  width:100% !important;
+  max-width:none !important;
+  height:100dvh !important;
+  max-height:100dvh !important;
+  border-radius:0 !important;
+  background:#eef4f7 !important;
+  box-shadow:none !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-head{
+  min-height:104px !important;
+  padding:18px 18px 16px !important;
+  align-items:center !important;
+  gap:14px !important;
+  background:#fff !important;
+  border-bottom:1px solid #d8e4eb !important;
+  box-shadow:0 5px 16px rgba(20,55,90,.08) !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-head > div{
+  min-width:0 !important;
+  flex:1 1 auto !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal #detailProtocol{
+  margin:0 0 5px !important;
+  font-size:clamp(30px,8vw,36px) !important;
+  line-height:1.08 !important;
+  font-weight:900 !important;
+  letter-spacing:-.02em !important;
+  color:#173f5f !important;
+  overflow-wrap:anywhere !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal #detailMeta{
+  display:block !important;
+  font-size:clamp(18px,4.7vw,22px) !important;
+  line-height:1.4 !important;
+  color:#647d8e !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-close{
+  width:54px !important;
+  height:54px !important;
+  flex:0 0 54px !important;
+  border:1px solid #d9e4eb !important;
+  border-radius:17px !important;
+  background:#f2f6f8 !important;
+  color:#234a66 !important;
+  font-size:0 !important;
+  box-shadow:none !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-close::before{
+  content:"×";
+  font-size:32px !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-content{
+  padding:18px 16px max(34px,env(safe-area-inset-bottom)) !important;
+  background:#eef4f7 !important;
+  scroll-padding-bottom:32px !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal #detailLoading{
+  min-height:110px !important;
+  padding:24px !important;
+  border-radius:18px !important;
+  font-size:clamp(22px,5.4vw,27px) !important;
+  font-weight:800 !important;
+  line-height:1.35 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal #detailContent{
+  width:100% !important;
+  max-width:760px !important;
+  margin:0 auto !important;
+}
+
+/* Situação e privacidade ficam evidentes logo no topo. */
+body.mobile-citizen-mode #manifestationDetailModal .detail-chips{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:10px !important;
+  margin:0 0 14px !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .detail-chips .status-chip,
+body.mobile-citizen-mode #manifestationDetailModal .detail-chips .privacy-chip{
+  min-height:44px !important;
+  padding:9px 14px !important;
+  border-radius:999px !important;
+  font-size:clamp(17px,4.25vw,20px) !important;
+  font-weight:900 !important;
+  line-height:1.2 !important;
+}
+
+/* Assunto + relato formam um único cartão de leitura. */
+body.mobile-citizen-mode #manifestationDetailModal .detail-title{
+  margin:0 !important;
+  padding:20px 19px 10px !important;
+  border:1px solid #d8e4eb !important;
+  border-bottom:0 !important;
+  border-radius:19px 19px 0 0 !important;
+  background:#fff !important;
+  color:#173f5f !important;
+  font-size:clamp(29px,7vw,35px) !important;
+  font-weight:900 !important;
+  line-height:1.18 !important;
+  letter-spacing:-.015em !important;
+  overflow-wrap:anywhere !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .detail-description{
+  min-height:96px !important;
+  margin:0 0 26px !important;
+  padding:8px 19px 20px !important;
+  border:1px solid #d8e4eb !important;
+  border-top:0 !important;
+  border-radius:0 0 19px 19px !important;
+  background:#fff !important;
+  color:#334f63 !important;
+  font-size:clamp(21px,5.3vw,25px) !important;
+  line-height:1.62 !important;
+  white-space:pre-wrap !important;
+  overflow-wrap:anywhere !important;
+}
+
+/* Títulos de seção parecem divisores de etapa, não texto perdido. */
+body.mobile-citizen-mode #manifestationDetailModal .detail-section-title{
+  margin:28px 0 12px !important;
+  padding:0 2px 10px !important;
+  border-bottom:3px solid #d6e5ec !important;
+  color:#163f5d !important;
+  font-size:clamp(27px,6.6vw,33px) !important;
+  font-weight:900 !important;
+  line-height:1.2 !important;
+}
+
+/* Anexos: área própria, com texto e controles grandes. */
+body.mobile-citizen-mode #manifestationDetailModal .attachment-list{
+  min-height:62px !important;
+  padding:15px !important;
+  display:flex !important;
+  align-items:center !important;
+  gap:10px !important;
+  border:1px solid #d9e4eb !important;
+  border-radius:16px !important;
+  background:#fff !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .attachment-list > span{
+  font-size:clamp(19px,4.8vw,23px) !important;
+  line-height:1.4 !important;
+  color:#667d8e !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .attachment-link{
+  min-height:52px !important;
+  padding:11px 14px !important;
+  border-radius:13px !important;
+  font-size:clamp(18px,4.6vw,22px) !important;
+  font-weight:800 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .form-alert--compact{
+  margin:12px 0 0 !important;
+  padding:15px 16px !important;
+  border-radius:15px !important;
+  gap:5px !important;
+  font-size:clamp(18px,4.55vw,22px) !important;
+  line-height:1.48 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .form-alert--compact strong{
+  font-size:clamp(20px,5vw,24px) !important;
+  font-weight:900 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .attachment-form{
+  margin:12px 0 0 !important;
+  padding:15px !important;
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:11px !important;
+  border:1px solid #d9e4eb !important;
+  border-radius:16px !important;
+  background:#fff !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .attachment-form input[type="file"]{
+  width:100% !important;
+  min-height:52px !important;
+  padding:8px !important;
+  border:1px solid #d4e0e8 !important;
+  border-radius:12px !important;
+  background:#f8fafb !important;
+  font-size:17px !important;
+  color:#405b6e !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal #uploadAttachment{
+  width:100% !important;
+  min-height:58px !important;
+  padding:13px 16px !important;
+  border-radius:14px !important;
+  font-size:clamp(20px,5vw,24px) !important;
+  font-weight:900 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .attachment-form small{
+  font-size:clamp(16px,4.1vw,19px) !important;
+  line-height:1.45 !important;
+  color:#708596 !important;
+}
+
+/* Conversa: caixa de chat e balões realmente distinguíveis. */
+body.mobile-citizen-mode #manifestationDetailModal .thread{
+  min-height:118px !important;
+  padding:15px !important;
+  display:grid !important;
+  gap:13px !important;
+  border:1px solid #d8e4eb !important;
+  border-radius:18px !important;
+  background:#f8fbfc !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .thread .empty-state{
+  min-height:92px !important;
+  padding:18px !important;
+  font-size:clamp(19px,4.8vw,23px) !important;
+  line-height:1.48 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .thread-message{
+  width:auto !important;
+  max-width:88% !important;
+  margin:0 auto 0 0 !important;
+  padding:14px 16px 15px !important;
+  border:1px solid #dce6ec !important;
+  border-radius:17px 17px 17px 6px !important;
+  background:#fff !important;
+  box-shadow:0 3px 10px rgba(25,54,76,.05) !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .thread-message.council{
+  margin:0 0 0 auto !important;
+  border-color:#c7ddec !important;
+  border-radius:17px 17px 6px 17px !important;
+  background:#e6f1fa !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .thread-message strong{
+  margin-bottom:6px !important;
+  font-size:clamp(16px,4vw,19px) !important;
+  font-weight:900 !important;
+  line-height:1.35 !important;
+  color:#35617d !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .thread-message p{
+  margin:0 !important;
+  font-size:clamp(21px,5.3vw,25px) !important;
+  line-height:1.5 !important;
+  color:#263f52 !important;
+  overflow-wrap:anywhere !important;
+}
+
+/* Resposta: painel separado do histórico e botão dominante. */
+body.mobile-citizen-mode #manifestationDetailModal .reply-form{
+  margin:14px 0 0 !important;
+  padding:17px !important;
+  border:1px solid #d8e4eb !important;
+  border-radius:18px !important;
+  background:#fff !important;
+  box-shadow:0 5px 14px rgba(22,53,77,.05) !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .reply-form .portal-field{
+  margin:0 0 12px !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .reply-form label{
+  display:block !important;
+  margin:0 0 9px !important;
+  color:#244b67 !important;
+  font-size:clamp(22px,5.6vw,27px) !important;
+  font-weight:900 !important;
+  line-height:1.25 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal #replyText{
+  width:100% !important;
+  min-height:154px !important;
+  padding:15px 16px !important;
+  border:2px solid #cbdbe6 !important;
+  border-radius:15px !important;
+  background:#fff !important;
+  font-size:clamp(21px,5.2vw,25px) !important;
+  line-height:1.5 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal #replyText:focus{
+  border-color:#2684c6 !important;
+  box-shadow:0 0 0 4px rgba(38,132,198,.13) !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal #replyButton{
+  width:100% !important;
+  min-height:62px !important;
+  padding:14px 18px !important;
+  border-radius:15px !important;
+  font-size:clamp(21px,5.3vw,25px) !important;
+  font-weight:900 !important;
+  box-shadow:0 7px 16px rgba(20,104,184,.18) !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .account-status.visible{
+  margin-top:12px !important;
+  padding:14px 15px !important;
+  border-radius:14px !important;
+  font-size:clamp(18px,4.5vw,22px) !important;
+  line-height:1.45 !important;
+}
+
+/* Histórico: cartão de linha do tempo com eventos e datas maiores. */
+body.mobile-citizen-mode #manifestationDetailModal .timeline{
+  margin:0 !important;
+  padding:18px 17px 18px 31px !important;
+  display:grid !important;
+  gap:20px !important;
+  border:1px solid #d8e4eb !important;
+  border-left:1px solid #d8e4eb !important;
+  border-radius:18px !important;
+  background:#fff !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .timeline-item{
+  position:relative !important;
+  padding-left:16px !important;
+  border-left:3px solid #d5e4ec !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .timeline-item::before{
+  left:-9px !important;
+  top:4px !important;
+  width:14px !important;
+  height:14px !important;
+  border:3px solid #fff !important;
+  background:#337da2 !important;
+  box-shadow:0 0 0 2px #bcd4e0 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .timeline-item strong{
+  display:block !important;
+  color:#244f70 !important;
+  font-size:clamp(20px,5vw,24px) !important;
+  font-weight:850 !important;
+  line-height:1.42 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .timeline-item small{
+  display:block !important;
+  margin-top:4px !important;
+  color:#6b8191 !important;
+  font-size:clamp(17px,4.35vw,20px) !important;
+  line-height:1.4 !important;
+}
+
+/* Declaração: deixa de parecer botão minúsculo solto no canto. */
+body.mobile-citizen-mode #manifestationDetailModal #issueManifestationDeclaration{
+  width:100% !important;
+  min-height:56px !important;
+  margin:0 0 16px !important;
+  padding:12px 15px !important;
+  border-radius:14px !important;
+  gap:9px !important;
+  font-size:clamp(19px,4.8vw,23px) !important;
+  font-weight:900 !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal #issueManifestationDeclaration svg{
+  width:22px !important;
+  height:22px !important;
+  flex-basis:22px !important;
+}
+
 @media(max-width:390px){
   body.mobile-citizen-mode .portal-main{
     padding-left:9px !important;
@@ -261,5 +661,24 @@ body.mobile-citizen-mode .citizen-modal-head{
   body.mobile-citizen-mode #citizenContextNotice,
   body.mobile-citizen-mode #firebaseNotice{
     padding-left:47px !important;
+  }
+
+  body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-content{
+    padding-left:12px !important;
+    padding-right:12px !important;
+  }
+
+  body.mobile-citizen-mode #manifestationDetailModal .detail-title{
+    padding-left:16px !important;
+    padding-right:16px !important;
+  }
+
+  body.mobile-citizen-mode #manifestationDetailModal .detail-description{
+    padding-left:16px !important;
+    padding-right:16px !important;
+  }
+
+  body.mobile-citizen-mode #manifestationDetailModal .thread-message{
+    max-width:92% !important;
   }
 }
