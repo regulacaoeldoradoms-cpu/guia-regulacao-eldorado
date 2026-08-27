@@ -57,7 +57,11 @@
     const userRole = document.getElementById('portalUserRole');
     if (userRole) userRole.textContent = 'Membro do Conselho · somente leitura';
     const badge = document.getElementById('councilRoleBadge');
-    if (badge) badge.textContent = 'Membro · somente leitura';
+    if (badge) {
+      badge.classList.remove('is-president-image');
+      badge.textContent = 'Membro · somente leitura';
+      badge.removeAttribute('aria-label');
+    }
     const heroText = document.querySelector('.portal-hero-copy p');
     if (heroText) {
       heroText.textContent = 'Consulte o conteúdo e acompanhe o histórico das manifestações. Para membros, todas as manifestações são apresentadas como anônimas e não há permissão para responder ou alterar o andamento.';
@@ -110,7 +114,11 @@
     const userRole = document.getElementById('portalUserRole');
     if (userRole) userRole.textContent = 'Desenvolvedor · acesso integral ao Conselho';
     const badge = document.getElementById('councilRoleBadge');
-    if (badge) badge.textContent = 'Desenvolvedor';
+    if (badge) {
+      badge.classList.remove('is-president-image');
+      badge.textContent = 'Desenvolvedor';
+      badge.removeAttribute('aria-label');
+    }
   }
 
   async function applyPolicyUi() {
