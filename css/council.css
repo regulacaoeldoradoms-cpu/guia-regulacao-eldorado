@@ -38,3 +38,13 @@
 @media (prefers-reduced-motion:reduce){
   .council-role-badge.is-president-image::after{animation:none;opacity:0}
 }
+
+.portal-hero-heading-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.portal-hero-heading-row .council-role-badge{
+  margin:0;
+}
