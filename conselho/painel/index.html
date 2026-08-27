@@ -16,9 +16,8 @@
   <link rel="stylesheet" href="/css/citizen.css?v=20260819-2">
   <link rel="stylesheet" href="/css/council.css?v=20260827-4">
   <link rel="stylesheet" href="/css/council-mobile.css?v=20260827-2">
-  <link rel="stylesheet" href="/css/council-detail-mobile-v3.css?v=20260827-1804">
   <link rel="stylesheet" href="/css/council-export.css?v=20260822-0958">
-  <link rel="stylesheet" href="/css/council-detail-mobile-v4.css?v=20260827-1818">
+  <link rel="stylesheet" href="/css/council-detail-mobile-v5.css?v=20260827-1848">
 </head>
 <body class="portal-page">
   <script>
@@ -84,53 +83,115 @@
 
   <div class="citizen-modal" id="councilDetailModal" aria-hidden="true">
     <div class="citizen-modal-panel" style="max-width:1050px">
-      <div class="citizen-modal-head"><div><h2 id="detailProtocol">Manifestação</h2><small id="detailMeta"></small></div><button class="citizen-modal-close" type="button" data-close-modal="councilDetailModal" aria-label="Fechar">×</button></div>
+      <div class="citizen-modal-head">
+        <div><h2 id="detailProtocol">Manifestação</h2><small id="detailMeta"></small></div>
+        <button class="citizen-modal-close" type="button" data-close-modal="councilDetailModal" aria-label="Fechar">×</button>
+      </div>
+
       <div class="citizen-modal-content">
         <div id="detailLoading" class="portal-note info">Carregando...</div>
+
         <div id="detailContent" class="council-detail-grid" hidden>
-          <div>
-            <div class="detail-chips"><span class="status-chip" id="detailStatus"></span><span class="privacy-chip" id="detailPrivacy"></span><span class="privacy-chip" id="detailIdentity">Identidade protegida</span></div>
-            <div class="council-export-actions president-only">
-              <button class="council-export-button" id="exportManifestationPdf" type="button">Salvar manifestação em PDF</button>
-              <span class="council-export-hint" id="exportManifestationHint">Gera um documento institucional sem expor a identidade protegida do cidadão.</span>
-            </div>
-            <h3 id="detailSubject" class="detail-title"></h3>
-            <div id="detailService" style="font-size:.83rem;color:#6f8495;margin-bottom:12px"></div>
-            <p id="detailDescription" class="detail-description"></p>
+          <div class="council-detail-main">
+            <section class="council-detail-summary" id="detailOverview">
+              <div class="detail-chips">
+                <span class="status-chip" id="detailStatus"></span>
+                <span class="privacy-chip" id="detailPrivacy"></span>
+                <span class="privacy-chip" id="detailIdentity">Identidade protegida</span>
+              </div>
+              <div class="council-export-actions president-only">
+                <button class="council-export-button" id="exportManifestationPdf" type="button">Salvar manifestação em PDF</button>
+                <span class="council-export-hint" id="exportManifestationHint">Gera um documento institucional sem expor a identidade protegida do cidadão.</span>
+              </div>
+            </section>
 
-            <h3 class="detail-section-title">Anexos</h3>
-            <div id="attachmentList" class="attachment-list"></div>
+            <section class="council-detail-card council-detail-story" id="detailStory">
+              <div class="council-section-kicker">Relato do cidadão</div>
+              <h3 id="detailSubject" class="detail-title"></h3>
+              <div id="detailService"></div>
+              <p id="detailDescription" class="detail-description"></p>
+            </section>
 
-            <h3 class="detail-section-title">Conversa institucional</h3>
-            <div id="messageThread" class="thread"></div>
-            <form id="officialReplyForm" class="president-only reply-form">
-              <div class="portal-field"><label for="officialReply">Resposta oficial ao cidadão</label><textarea id="officialReply" rows="4" maxlength="8000" required></textarea></div>
-              <button class="portal-button primary" id="officialReplyButton" type="submit">Enviar mensagem</button>
-              <div class="account-status" id="officialReplyStatus"></div>
-            </form>
+            <section class="council-detail-card council-detail-attachments" id="detailAttachmentsSection">
+              <div class="council-section-head">
+                <h3 class="detail-section-title">Anexos</h3>
+                <p>Arquivos enviados junto à manifestação.</p>
+              </div>
+              <div id="attachmentList" class="attachment-list"></div>
+            </section>
 
-            <h3 class="detail-section-title">Histórico</h3>
-            <div id="timeline" class="timeline"></div>
+            <section class="council-detail-card council-detail-conversation" id="detailConversation">
+              <div class="council-section-head">
+                <h3 class="detail-section-title">Conversa com o manifestante</h3>
+                <p>Mensagens trocadas sobre esta manifestação.</p>
+              </div>
+              <div id="messageThread" class="thread"></div>
+
+              <form id="officialReplyForm" class="president-only reply-form">
+                <div class="council-reply-heading">
+                  <strong>Responder ao manifestante</strong>
+                  <span>A resposta ficará registrada no histórico da manifestação.</span>
+                </div>
+                <div class="portal-field">
+                  <label for="officialReply">Mensagem</label>
+                  <textarea id="officialReply" rows="5" maxlength="8000" required></textarea>
+                </div>
+                <button class="portal-button primary" id="officialReplyButton" type="submit">Enviar mensagem</button>
+                <div class="account-status" id="officialReplyStatus"></div>
+              </form>
+            </section>
+
+            <section class="council-detail-card council-detail-history" id="historySection">
+              <div class="council-section-head">
+                <h3 class="detail-section-title">Histórico</h3>
+                <p>Registro cronológico das movimentações desta manifestação.</p>
+              </div>
+              <div id="timeline" class="timeline"></div>
+            </section>
           </div>
 
           <aside class="council-side">
-            <div class="council-box president-only" id="statusBox">
-              <h3>Andamento oficial</h3>
-              <div class="portal-field"><label for="statusSelect">Status</label><select id="statusSelect"><option value="recebida">Recebida</option><option value="em_analise">Em análise</option><option value="aguardando_cidadao">Aguardando cidadão</option><option value="encaminhada">Encaminhada</option><option value="aguardando_retorno">Aguardando retorno</option><option value="respondida">Respondida</option><option value="concluida">Concluída</option><option value="arquivada">Arquivada</option></select></div>
-              <div class="portal-field"><label for="statusDetail">Observação da movimentação <span style="font-weight:400">(opcional)</span></label><textarea id="statusDetail" rows="3" maxlength="500"></textarea></div>
+            <section class="council-detail-card council-box president-only" id="statusBox">
+              <div class="council-section-head">
+                <h3>Andamento oficial</h3>
+                <p>Atualize a situação e registre uma observação quando necessário.</p>
+              </div>
+              <div class="portal-field">
+                <label for="statusSelect">Status</label>
+                <select id="statusSelect">
+                  <option value="recebida">Recebida</option>
+                  <option value="em_analise">Em análise</option>
+                  <option value="aguardando_cidadao">Aguardando cidadão</option>
+                  <option value="encaminhada">Encaminhada</option>
+                  <option value="aguardando_retorno">Aguardando retorno</option>
+                  <option value="respondida">Respondida</option>
+                  <option value="concluida">Concluída</option>
+                  <option value="arquivada">Arquivada</option>
+                </select>
+              </div>
+              <div class="portal-field">
+                <label for="statusDetail">Observação da movimentação <span style="font-weight:400">(opcional)</span></label>
+                <textarea id="statusDetail" rows="4" maxlength="500"></textarea>
+              </div>
               <button class="portal-button primary" id="saveStatus" type="button">Atualizar andamento</button>
               <div class="account-status" id="statusUpdateMessage"></div>
-            </div>
+            </section>
 
-            <div class="council-box">
-              <h3>Observações internas do Conselho</h3>
+            <section class="council-detail-card council-box council-detail-notes president-only" id="internalNotesSection">
+              <div class="council-section-head">
+                <h3>Observações internas do Conselho</h3>
+                <p>Registros internos não são exibidos ao cidadão.</p>
+              </div>
               <div id="internalNotes"></div>
               <form id="internalNoteForm">
-                <div class="portal-field"><textarea id="internalNoteText" rows="3" maxlength="8000" required placeholder="Registro interno; não aparece para o cidadão."></textarea></div>
+                <div class="portal-field">
+                  <label for="internalNoteText">Nova observação interna</label>
+                  <textarea id="internalNoteText" rows="4" maxlength="8000" required placeholder="Registre aqui uma informação interna do Conselho."></textarea>
+                </div>
                 <button class="portal-button secondary" type="submit">Registrar observação</button>
                 <div class="account-status" id="internalNoteStatus"></div>
               </form>
-            </div>
+            </section>
           </aside>
         </div>
       </div>
@@ -142,6 +203,6 @@
   <script src="/js/council-access-policy.js?v=20260827-1"></script>
   <script src="/js/council-panel.js?v=20260827-1"></script>
   <script src="/js/council-export.js?v=20260822-0958"></script>
-  <script src="/js/council-detail-mobile.js?v=20260827-1818"></script>
+  <script src="/js/council-detail-mobile.js?v=20260827-1848"></script>
 </body>
 </html>
