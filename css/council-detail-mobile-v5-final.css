@@ -1,0 +1,31 @@
+/* Ajustes finais da revisão v5. Carregado por último. */
+body.mobile-council-mode #councilDetailModal .council-detail-main{
+  width:100% !important;
+  min-width:0 !important;
+}
+body.mobile-council-mode #councilDetailModal .council-side:empty{
+  display:none !important;
+}
+
+/* Dock sempre visível: atalhos importantes ao alcance do polegar. */
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav{
+  position:fixed !important;
+  left:8px !important;
+  right:8px !important;
+  bottom:calc(8px + env(safe-area-inset-bottom)) !important;
+  width:auto !important;
+  margin:0 !important;
+  z-index:999 !important;
+}
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button{
+  min-height:60px !important;
+  font-size:15px !important;
+}
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button::before{
+  font-size:22px !important;
+}
+
+/* O último conteúdo não fica escondido atrás do dock. */
+body.mobile-council-mode #councilDetailModal .citizen-modal-content{
+  padding-bottom:calc(116px + env(safe-area-inset-bottom)) !important;
+}
