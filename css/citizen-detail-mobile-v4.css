@@ -1,423 +1,575 @@
-/* Acompanhamento de manifestação — refinamento mobile v4.
-   Camada exclusivamente visual sobre #manifestationDetailModal.
-   Prioridades: baixa visão, hierarquia, conversa intuitiva e alvos de toque amplos. */
+/* Acompanhamento da manifestação — mobile v5
+   Override visual do modal #manifestationDetailModal.
+   Prioridades: largura útil máxima, baixa visão, botões robustos e leitura por blocos. */
 
 body.mobile-citizen-mode #manifestationDetailModal{
   --detail-blue:#174f78;
   --detail-blue-strong:#103f65;
-  --detail-blue-soft:#e8f2f9;
-  --detail-border:#d5e2ea;
+  --detail-blue-soft:#e7f2f9;
+  --detail-border:#cfdee7;
   --detail-text:#263f52;
-  --detail-muted:#627b8d;
-  --detail-surface:#ffffff;
+  --detail-muted:#60798b;
   --detail-page:#edf4f7;
-  background:var(--detail-page) !important;
+  background:var(--detail-page)!important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal,
+body.mobile-citizen-mode #manifestationDetailModal *{
+  box-sizing:border-box;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-panel{
-  background:linear-gradient(180deg,#f4f8fa 0%,#edf4f7 100%) !important;
+  width:100%!important;
+  max-width:none!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  margin:0!important;
+  border-radius:0!important;
+  background:linear-gradient(180deg,#f4f8fa 0%,#edf4f7 100%)!important;
+  box-shadow:none!important;
 }
 
-/* Cabeçalho sempre visível: o protocolo continua identificável durante a rolagem. */
+/* Cabeçalho */
 body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-head{
-  position:sticky !important;
-  top:0 !important;
-  z-index:20 !important;
-  min-height:96px !important;
-  padding:15px 16px !important;
-  border-bottom:1px solid #d6e2e9 !important;
-  background:rgba(255,255,255,.98) !important;
-  backdrop-filter:blur(12px) !important;
-  box-shadow:0 6px 18px rgba(15,57,86,.09) !important;
+  position:sticky!important;
+  top:0!important;
+  z-index:30!important;
+  min-height:104px!important;
+  padding:17px 14px!important;
+  gap:12px!important;
+  background:rgba(255,255,255,.985)!important;
+  border-bottom:1px solid #d6e2e9!important;
+  box-shadow:0 5px 16px rgba(17,58,86,.09)!important;
+  backdrop-filter:blur(12px)!important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-head>div{
+  min-width:0!important;
+  flex:1 1 auto!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal #detailProtocol{
-  font-size:clamp(29px,7.6vw,35px) !important;
-  color:var(--detail-blue-strong) !important;
+  margin:0 0 5px!important;
+  color:var(--detail-blue-strong)!important;
+  font-size:clamp(31px,8.2vw,38px)!important;
+  line-height:1.05!important;
+  font-weight:950!important;
+  letter-spacing:-.02em!important;
+  overflow-wrap:anywhere!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal #detailMeta{
-  font-size:clamp(18px,4.55vw,21px) !important;
-  color:#587287 !important;
+  display:block!important;
+  color:#526e82!important;
+  font-size:clamp(20px,5.1vw,24px)!important;
+  line-height:1.35!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-close{
-  width:56px !important;
-  height:56px !important;
-  flex-basis:56px !important;
-  border:2px solid #d8e4eb !important;
-  border-radius:16px !important;
-  background:#f1f6f9 !important;
-  color:#173f5f !important;
-  box-shadow:0 3px 9px rgba(25,59,84,.06) !important;
+  width:60px!important;
+  height:60px!important;
+  flex:0 0 60px!important;
+  border:2px solid #d2e0e8!important;
+  border-radius:17px!important;
+  background:#f2f7fa!important;
+  color:#123f61!important;
+  font-size:0!important;
+  box-shadow:0 3px 10px rgba(23,61,88,.07)!important;
 }
 
-body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-close:active{
-  transform:scale(.96) !important;
+body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-close::before{
+  content:"×";
+  font-size:36px!important;
+  line-height:1!important;
+  font-weight:600!important;
 }
 
+/* Usa quase toda a largura real da tela. */
 body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-content{
-  padding:18px 14px max(42px,env(safe-area-inset-bottom)) !important;
-  background:transparent !important;
+  width:100%!important;
+  max-width:none!important;
+  padding:16px 7px max(48px,env(safe-area-inset-bottom))!important;
+  background:transparent!important;
+  overflow-x:hidden!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal #detailContent{
-  max-width:700px !important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
 }
 
-/* Estado + privacidade viram etiquetas grandes e independentes. */
+body.mobile-citizen-mode #manifestationDetailModal #detailContent>*{
+  max-width:none!important;
+}
+
+/* Estado e privacidade */
 body.mobile-citizen-mode #manifestationDetailModal .detail-chips{
-  gap:9px !important;
-  margin-bottom:12px !important;
+  width:100%!important;
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:10px!important;
+  margin:0 0 13px!important;
+  padding:0 4px!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .detail-chips .status-chip,
 body.mobile-citizen-mode #manifestationDetailModal .detail-chips .privacy-chip{
-  min-height:42px !important;
-  padding:9px 14px !important;
-  border:1px solid rgba(35,74,104,.08) !important;
-  box-shadow:0 2px 6px rgba(28,62,86,.04) !important;
+  min-height:48px!important;
+  padding:10px 16px!important;
+  border-radius:999px!important;
+  font-size:clamp(19px,4.9vw,23px)!important;
+  font-weight:900!important;
+  line-height:1.15!important;
+  box-shadow:0 2px 7px rgba(24,59,84,.05)!important;
 }
 
-/* Declaração é uma ação institucional importante. */
+/* Botão declaração */
 body.mobile-citizen-mode #manifestationDetailModal #issueManifestationDeclaration{
-  min-height:62px !important;
-  margin:0 0 20px !important;
-  border:0 !important;
-  border-radius:16px !important;
-  background:linear-gradient(135deg,#49673a,#3d5b31) !important;
-  color:#fff !important;
-  font-size:clamp(20px,5vw,24px) !important;
-  box-shadow:0 7px 17px rgba(54,82,42,.22) !important;
+  width:100%!important;
+  min-height:74px!important;
+  margin:0 0 18px!important;
+  padding:15px 20px!important;
+  border:0!important;
+  border-radius:17px!important;
+  background:linear-gradient(135deg,#4c6b3b,#3c5b2f)!important;
+  color:#fff!important;
+  font-size:clamp(23px,5.8vw,28px)!important;
+  font-weight:900!important;
+  box-shadow:0 8px 19px rgba(54,82,42,.23)!important;
 }
 
-body.mobile-citizen-mode #manifestationDetailModal #issueManifestationDeclaration:active{
-  transform:translateY(1px) scale(.995) !important;
+body.mobile-citizen-mode #manifestationDetailModal #issueManifestationDeclaration svg{
+  width:25px!important;
+  height:25px!important;
+  flex:0 0 25px!important;
 }
 
-/* Relato principal: cartão forte, com título e corpo visualmente conectados. */
+/* Relato principal */
+body.mobile-citizen-mode #manifestationDetailModal .detail-title,
+body.mobile-citizen-mode #manifestationDetailModal .detail-description{
+  width:100%!important;
+}
+
 body.mobile-citizen-mode #manifestationDetailModal .detail-title{
-  position:relative !important;
-  padding:22px 20px 13px !important;
-  border:1px solid var(--detail-border) !important;
-  border-bottom:0 !important;
-  border-radius:20px 20px 0 0 !important;
-  background:var(--detail-surface) !important;
-  box-shadow:0 -1px 0 rgba(255,255,255,.8),0 7px 18px rgba(21,53,80,.07) !important;
+  position:relative!important;
+  margin:0!important;
+  padding:22px 17px 12px!important;
+  border:1px solid var(--detail-border)!important;
+  border-bottom:0!important;
+  border-radius:20px 20px 0 0!important;
+  background:#fff!important;
+  color:var(--detail-blue-strong)!important;
+  font-size:clamp(31px,7.8vw,38px)!important;
+  line-height:1.15!important;
+  font-weight:950!important;
+  letter-spacing:-.015em!important;
+  overflow-wrap:anywhere!important;
+  box-shadow:0 -1px 0 rgba(255,255,255,.9),0 8px 20px rgba(21,53,80,.07)!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .detail-title::before{
-  content:"Manifestação" !important;
-  display:block !important;
-  width:max-content !important;
-  margin-bottom:8px !important;
-  padding:5px 9px !important;
-  border-radius:999px !important;
-  background:#e8f2f8 !important;
-  color:#27617f !important;
-  font-size:14px !important;
-  font-weight:900 !important;
-  letter-spacing:.04em !important;
-  text-transform:uppercase !important;
+  content:"Manifestação"!important;
+  display:block!important;
+  width:max-content!important;
+  margin:0 0 9px!important;
+  padding:6px 10px!important;
+  border-radius:999px!important;
+  background:#e6f1f7!important;
+  color:#27617f!important;
+  font-size:16px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  letter-spacing:.05em!important;
+  text-transform:uppercase!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .detail-description{
-  padding:4px 20px 23px !important;
-  margin-bottom:23px !important;
-  border:1px solid var(--detail-border) !important;
-  border-top:0 !important;
-  border-radius:0 0 20px 20px !important;
-  background:var(--detail-surface) !important;
-  color:var(--detail-text) !important;
-  font-size:clamp(21px,5.25vw,25px) !important;
-  line-height:1.62 !important;
-  box-shadow:0 10px 22px rgba(21,53,80,.07) !important;
+  min-height:110px!important;
+  margin:0 0 22px!important;
+  padding:8px 17px 23px!important;
+  border:1px solid var(--detail-border)!important;
+  border-top:0!important;
+  border-radius:0 0 20px 20px!important;
+  background:#fff!important;
+  color:var(--detail-text)!important;
+  font-size:clamp(23px,5.8vw,28px)!important;
+  line-height:1.58!important;
+  white-space:pre-wrap!important;
+  overflow-wrap:anywhere!important;
+  box-shadow:0 10px 22px rgba(21,53,80,.07)!important;
 }
 
-/* Seções: ícone + título + divisor sutil. */
+/* Títulos das seções */
 body.mobile-citizen-mode #manifestationDetailModal .detail-section-title{
-  display:flex !important;
-  align-items:center !important;
-  gap:11px !important;
-  margin:26px 0 12px !important;
-  padding:0 2px 11px !important;
-  border-bottom:2px solid #d3e2e9 !important;
-  color:var(--detail-blue-strong) !important;
-  font-size:clamp(27px,6.6vw,32px) !important;
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:11px!important;
+  margin:25px 0 12px!important;
+  padding:0 4px 11px!important;
+  border-bottom:3px solid #d2e1e8!important;
+  color:var(--detail-blue-strong)!important;
+  font-size:clamp(30px,7.4vw,36px)!important;
+  line-height:1.18!important;
+  font-weight:950!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .detail-title + .detail-description + .detail-section-title::before,
 body.mobile-citizen-mode #manifestationDetailModal .attachment-form + .detail-section-title::before,
 body.mobile-citizen-mode #manifestationDetailModal .reply-form + .detail-section-title::before{
-  width:42px !important;
-  height:42px !important;
-  flex:0 0 42px !important;
-  display:grid !important;
-  place-items:center !important;
-  border-radius:13px !important;
-  background:#e2eef6 !important;
-  color:#18577f !important;
-  font-size:23px !important;
-  line-height:1 !important;
+  width:46px!important;
+  height:46px!important;
+  flex:0 0 46px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:14px!important;
+  background:#e2eef6!important;
+  color:#18577f!important;
+  font-size:25px!important;
+  line-height:1!important;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-title + .detail-description + .detail-section-title::before{content:"📎"!important;}
+body.mobile-citizen-mode #manifestationDetailModal .attachment-form + .detail-section-title::before{content:"💬"!important;}
+body.mobile-citizen-mode #manifestationDetailModal .reply-form + .detail-section-title::before{content:"◷"!important;font-family:Arial,sans-serif!important;font-weight:900!important;}
+
+/* Anexos */
+body.mobile-citizen-mode #manifestationDetailModal .attachment-list,
+body.mobile-citizen-mode #manifestationDetailModal .form-alert--compact,
+body.mobile-citizen-mode #manifestationDetailModal .attachment-form,
+body.mobile-citizen-mode #manifestationDetailModal .thread,
+body.mobile-citizen-mode #manifestationDetailModal .reply-form,
+body.mobile-citizen-mode #manifestationDetailModal .timeline{
+  width:100%!important;
 }
 
-body.mobile-citizen-mode #manifestationDetailModal .detail-title + .detail-description + .detail-section-title::before{
-  content:"📎" !important;
-}
-
-body.mobile-citizen-mode #manifestationDetailModal .attachment-form + .detail-section-title::before{
-  content:"💬" !important;
-}
-
-body.mobile-citizen-mode #manifestationDetailModal .reply-form + .detail-section-title::before{
-  content:"◷" !important;
-  font-family:Arial,sans-serif !important;
-  font-weight:900 !important;
-}
-
-/* Anexos em um conjunto visual único. */
 body.mobile-citizen-mode #manifestationDetailModal .attachment-list{
-  min-height:60px !important;
-  padding:14px 15px !important;
-  border:1px solid var(--detail-border) !important;
-  border-radius:16px !important;
-  background:#fff !important;
-  box-shadow:0 4px 12px rgba(21,53,80,.04) !important;
+  min-height:68px!important;
+  padding:16px!important;
+  border:1px solid var(--detail-border)!important;
+  border-radius:17px!important;
+  background:#fff!important;
+  font-size:clamp(21px,5.3vw,25px)!important;
+  color:var(--detail-muted)!important;
+  box-shadow:0 4px 12px rgba(21,53,80,.04)!important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .attachment-link{
+  min-height:58px!important;
+  padding:12px 15px!important;
+  border-radius:13px!important;
+  font-size:clamp(20px,5vw,24px)!important;
+  font-weight:850!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .form-alert--compact{
-  position:relative !important;
-  margin-top:10px !important;
-  padding:15px 15px 15px 54px !important;
-  border:1px solid #efd493 !important;
-  border-radius:16px !important;
-  background:#fff8e7 !important;
-  color:#6b511a !important;
+  position:relative!important;
+  margin:11px 0 0!important;
+  padding:17px 16px 17px 58px!important;
+  border:1px solid #efd493!important;
+  border-radius:17px!important;
+  background:#fff8e7!important;
+  color:#6b511a!important;
+  font-size:clamp(20px,5.1vw,24px)!important;
+  line-height:1.45!important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .form-alert--compact strong{
+  font-size:clamp(22px,5.5vw,26px)!important;
+  font-weight:900!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .form-alert--compact::before{
-  content:"!" !important;
-  position:absolute !important;
-  left:15px !important;
-  top:16px !important;
-  width:28px !important;
-  height:28px !important;
-  display:grid !important;
-  place-items:center !important;
-  border-radius:50% !important;
-  background:#b77e13 !important;
-  color:#fff !important;
-  font-size:19px !important;
-  font-weight:900 !important;
+  content:"!"!important;
+  position:absolute!important;
+  left:16px!important;
+  top:18px!important;
+  width:30px!important;
+  height:30px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  background:#b77e13!important;
+  color:#fff!important;
+  font-size:20px!important;
+  font-weight:900!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .attachment-form{
-  margin-top:10px !important;
-  padding:13px !important;
-  border:2px dashed #c4d5df !important;
-  border-radius:17px !important;
-  background:#fbfdfe !important;
-  box-shadow:none !important;
+  margin:11px 0 0!important;
+  padding:14px!important;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:12px!important;
+  border:2px dashed #bfd2dd!important;
+  border-radius:18px!important;
+  background:#fbfdfe!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .attachment-form input[type="file"]{
-  min-height:58px !important;
-  padding:7px !important;
-  border:1px solid #d6e2e9 !important;
-  border-radius:12px !important;
-  background:#fff !important;
-  font-size:17px !important;
+  width:100%!important;
+  min-height:66px!important;
+  padding:8px!important;
+  border:1px solid #d2e0e8!important;
+  border-radius:13px!important;
+  background:#fff!important;
+  color:#405b6e!important;
+  font-size:19px!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .attachment-form input[type="file"]::file-selector-button{
-  min-height:42px !important;
-  margin-right:10px !important;
-  padding:8px 12px !important;
-  border:1px solid #bed0db !important;
-  border-radius:10px !important;
-  background:#edf4f8 !important;
-  color:#244b67 !important;
-  font-size:16px !important;
-  font-weight:800 !important;
+  min-height:48px!important;
+  margin-right:10px!important;
+  padding:9px 13px!important;
+  border:1px solid #b9ceda!important;
+  border-radius:10px!important;
+  background:#edf4f8!important;
+  color:#244b67!important;
+  font-size:18px!important;
+  font-weight:850!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal #uploadAttachment{
-  position:relative !important;
-  min-height:60px !important;
-  border:1px solid #c9d9e3 !important;
-  background:#fff !important;
-  color:#174f78 !important;
-  box-shadow:none !important;
+  width:100%!important;
+  min-height:72px!important;
+  padding:14px 18px!important;
+  border:2px solid #c5d7e1!important;
+  border-radius:15px!important;
+  background:#fff!important;
+  color:#174f78!important;
+  font-size:clamp(22px,5.6vw,27px)!important;
+  font-weight:900!important;
+  box-shadow:none!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal #uploadAttachment::before{
-  content:"↑" !important;
-  margin-right:9px !important;
-  font-size:26px !important;
-  line-height:1 !important;
-  font-weight:900 !important;
+  content:"↑"!important;
+  margin-right:9px!important;
+  font-size:29px!important;
+  line-height:1!important;
+  font-weight:900!important;
 }
 
-/* Conversa com aparência de mensageiro: cartão, avatares e balões. */
+body.mobile-citizen-mode #manifestationDetailModal .attachment-form small{
+  color:#657e90!important;
+  font-size:clamp(18px,4.5vw,21px)!important;
+  line-height:1.4!important;
+}
+
+/* Conversa */
 body.mobile-citizen-mode #manifestationDetailModal .thread{
-  min-height:140px !important;
-  padding:17px 15px !important;
-  gap:17px !important;
-  border:1px solid var(--detail-border) !important;
-  border-radius:20px !important;
-  background:linear-gradient(180deg,#fbfdfe,#f3f8fb) !important;
-  box-shadow:0 6px 16px rgba(21,53,80,.05) !important;
+  min-height:155px!important;
+  padding:17px 12px!important;
+  display:grid!important;
+  gap:18px!important;
+  border:1px solid var(--detail-border)!important;
+  border-radius:20px!important;
+  background:linear-gradient(180deg,#fbfdfe,#f2f7fa)!important;
+  box-shadow:0 6px 16px rgba(21,53,80,.05)!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .thread-message{
-  position:relative !important;
-  max-width:78% !important;
-  margin-left:49px !important;
-  padding:14px 15px !important;
-  border-radius:17px 17px 17px 6px !important;
-  background:#fff !important;
-  box-shadow:0 4px 12px rgba(23,56,80,.08) !important;
+  position:relative!important;
+  width:auto!important;
+  max-width:84%!important;
+  margin:0 auto 0 48px!important;
+  padding:15px 17px!important;
+  border:1px solid #d8e4eb!important;
+  border-radius:18px 18px 18px 7px!important;
+  background:#fff!important;
+  box-shadow:0 4px 12px rgba(23,56,80,.08)!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .thread-message::before{
-  content:"●" !important;
-  position:absolute !important;
-  left:-48px !important;
-  bottom:0 !important;
-  width:38px !important;
-  height:38px !important;
-  display:grid !important;
-  place-items:center !important;
-  border:2px solid #bcd3e1 !important;
-  border-radius:50% !important;
-  background:#e9f3f9 !important;
-  color:#315d78 !important;
-  font-size:17px !important;
-  box-shadow:0 2px 7px rgba(21,53,80,.08) !important;
+  content:"●"!important;
+  position:absolute!important;
+  left:-46px!important;
+  bottom:0!important;
+  width:38px!important;
+  height:38px!important;
+  display:grid!important;
+  place-items:center!important;
+  border:2px solid #bcd3e1!important;
+  border-radius:50%!important;
+  background:#e9f3f9!important;
+  color:#315d78!important;
+  font-size:17px!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .thread-message.council{
-  max-width:82% !important;
-  margin-left:auto !important;
-  margin-right:49px !important;
-  border-color:#bfd7e7 !important;
-  border-radius:17px 17px 6px 17px !important;
-  background:#e4f0f9 !important;
+  max-width:86%!important;
+  margin:0 48px 0 auto!important;
+  border-color:#bcd5e5!important;
+  border-radius:18px 18px 7px 18px!important;
+  background:#e2eff9!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .thread-message.council::before{
-  content:"C" !important;
-  left:auto !important;
-  right:-48px !important;
-  border-color:#9ebfd3 !important;
-  background:#15577f !important;
-  color:#fff !important;
-  font-size:18px !important;
-  font-weight:900 !important;
+  content:"C"!important;
+  left:auto!important;
+  right:-46px!important;
+  border-color:#9ebfd3!important;
+  background:#15577f!important;
+  color:#fff!important;
+  font-size:18px!important;
+  font-weight:900!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .thread-message strong{
-  margin-bottom:6px !important;
-  color:#35617d !important;
-  font-size:clamp(16px,4vw,19px) !important;
+  display:block!important;
+  margin-bottom:7px!important;
+  color:#35617d!important;
+  font-size:clamp(18px,4.5vw,22px)!important;
+  line-height:1.35!important;
+  font-weight:900!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .thread-message p{
-  color:#263f52 !important;
-  font-size:clamp(21px,5.15vw,24px) !important;
-  line-height:1.5 !important;
+  margin:0!important;
+  color:#263f52!important;
+  font-size:clamp(23px,5.8vw,28px)!important;
+  line-height:1.48!important;
+  overflow-wrap:anywhere!important;
 }
 
-/* Resposta: cartão com acento azul e CTA forte. */
+/* Resposta */
 body.mobile-citizen-mode #manifestationDetailModal .reply-form{
-  margin-top:14px !important;
-  padding:17px !important;
-  border:1px solid var(--detail-border) !important;
-  border-top:5px solid #2476a8 !important;
-  border-radius:18px !important;
-  background:#fff !important;
-  box-shadow:0 7px 18px rgba(21,53,80,.06) !important;
+  margin:14px 0 0!important;
+  padding:17px!important;
+  border:1px solid var(--detail-border)!important;
+  border-top:6px solid #2476a8!important;
+  border-radius:19px!important;
+  background:#fff!important;
+  box-shadow:0 7px 18px rgba(21,53,80,.06)!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .reply-form label{
-  display:flex !important;
-  align-items:center !important;
-  gap:9px !important;
-  margin-bottom:10px !important;
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+  margin:0 0 11px!important;
+  color:#244b67!important;
+  font-size:clamp(26px,6.5vw,31px)!important;
+  line-height:1.2!important;
+  font-weight:950!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .reply-form label::before{
-  content:"✎" !important;
-  width:34px !important;
-  height:34px !important;
-  display:grid !important;
-  place-items:center !important;
-  border-radius:10px !important;
-  background:#e5f0f7 !important;
-  color:#17608d !important;
-  font-size:22px !important;
+  content:"✎"!important;
+  width:39px!important;
+  height:39px!important;
+  flex:0 0 39px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:11px!important;
+  background:#e5f0f7!important;
+  color:#17608d!important;
+  font-size:24px!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal #replyText{
-  min-height:150px !important;
-  border:2px solid #c8dae5 !important;
-  border-radius:14px !important;
-  background:#fcfeff !important;
+  width:100%!important;
+  min-height:178px!important;
+  padding:16px!important;
+  border:2px solid #c6d9e4!important;
+  border-radius:15px!important;
+  background:#fcfeff!important;
+  color:#233e52!important;
+  font-size:clamp(23px,5.7vw,27px)!important;
+  line-height:1.5!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal #replyButton{
-  min-height:64px !important;
-  border:0 !important;
-  border-radius:15px !important;
-  background:linear-gradient(135deg,#1768a8,#155a91) !important;
-  color:#fff !important;
-  box-shadow:0 8px 18px rgba(21,95,151,.22) !important;
+  width:100%!important;
+  min-height:76px!important;
+  margin-top:12px!important;
+  padding:15px 20px!important;
+  border:0!important;
+  border-radius:16px!important;
+  background:linear-gradient(135deg,#1768a8,#155a91)!important;
+  color:#fff!important;
+  font-size:clamp(23px,5.8vw,28px)!important;
+  font-weight:950!important;
+  box-shadow:0 8px 18px rgba(21,95,151,.22)!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal #replyButton::before{
-  content:"➤" !important;
-  margin-right:9px !important;
-  font-size:21px !important;
+  content:"➤"!important;
+  margin-right:10px!important;
+  font-size:25px!important;
 }
 
-/* Histórico com mais respiro e menos aparência de lista técnica. */
+/* Histórico */
 body.mobile-citizen-mode #manifestationDetailModal .timeline{
-  padding:18px 17px 20px 30px !important;
-  gap:22px !important;
-  border-radius:20px !important;
-  box-shadow:0 5px 14px rgba(21,53,80,.04) !important;
+  margin:0!important;
+  padding:19px 16px 19px 30px!important;
+  display:grid!important;
+  gap:22px!important;
+  border:1px solid var(--detail-border)!important;
+  border-radius:19px!important;
+  background:#fff!important;
 }
 
 body.mobile-citizen-mode #manifestationDetailModal .timeline-item{
-  padding:0 0 0 17px !important;
+  position:relative!important;
+  padding-left:17px!important;
+  border-left:3px solid #d4e3eb!important;
 }
 
-/* Em telefones estreitos, mantém balões confortáveis sem esmagar texto. */
+body.mobile-citizen-mode #manifestationDetailModal .timeline-item::before{
+  left:-9px!important;
+  top:5px!important;
+  width:14px!important;
+  height:14px!important;
+  border:3px solid #fff!important;
+  background:#337da2!important;
+  box-shadow:0 0 0 2px #bcd4e0!important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .timeline-item strong{
+  display:block!important;
+  color:#244f70!important;
+  font-size:clamp(21px,5.3vw,25px)!important;
+  line-height:1.4!important;
+  font-weight:900!important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .timeline-item small{
+  display:block!important;
+  margin-top:5px!important;
+  color:#657d8e!important;
+  font-size:clamp(18px,4.6vw,22px)!important;
+  line-height:1.4!important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .account-status.visible{
+  margin-top:12px!important;
+  padding:15px 16px!important;
+  border-radius:14px!important;
+  font-size:clamp(19px,4.8vw,23px)!important;
+  line-height:1.45!important;
+}
+
 @media(max-width:390px){
   body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-content{
-    padding-left:10px !important;
-    padding-right:10px !important;
+    padding-left:5px!important;
+    padding-right:5px!important;
+  }
+
+  body.mobile-citizen-mode #manifestationDetailModal .thread{
+    padding-left:9px!important;
+    padding-right:9px!important;
   }
 
   body.mobile-citizen-mode #manifestationDetailModal .thread-message{
-    max-width:78% !important;
-    margin-left:43px !important;
+    max-width:87%!important;
+    margin-left:44px!important;
   }
 
   body.mobile-citizen-mode #manifestationDetailModal .thread-message.council{
-    max-width:80% !important;
-    margin-left:auto !important;
-    margin-right:43px !important;
-  }
-
-  body.mobile-citizen-mode #manifestationDetailModal .thread-message::before{
-    left:-42px !important;
-    width:34px !important;
-    height:34px !important;
-  }
-
-  body.mobile-citizen-mode #manifestationDetailModal .thread-message.council::before{
-    left:auto !important;
-    right:-42px !important;
+    max-width:88%!important;
+    margin-right:44px!important;
+    margin-left:auto!important;
   }
 }
