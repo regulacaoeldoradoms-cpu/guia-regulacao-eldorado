@@ -29,6 +29,9 @@
   function attachmentHeading() {
     const list = document.getElementById('attachmentList');
     if (!list) return null;
+    const section = list.closest?.('#detailAttachmentsSection, .council-detail-attachments');
+    const sectionHeading = section?.querySelector?.('.detail-section-title, h3');
+    if (sectionHeading) return sectionHeading;
     let node = list.previousElementSibling;
     while (node) {
       if (node.matches?.('.detail-section-title')) return node;
@@ -102,7 +105,7 @@
         const note = document.createElement('div');
         note.id = 'memberAttachmentRestriction';
         note.className = 'portal-note info';
-        note.style.margin = '6px 0 18px';
+        note.style.margin = '6px 0 0';
         note.textContent = 'Os anexos não são exibidos para membros, pois podem conter dados capazes de identificar o manifestante.';
         list.insertAdjacentElement('afterend', note);
       }
