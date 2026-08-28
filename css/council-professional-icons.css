@@ -1,0 +1,64 @@
+/* Conselho Municipal de Saúde — iconografia institucional.
+   Remove emojis da experiência mobile e usa pictogramas vetoriais lineares.
+   Carregado por último para vencer símbolos legados. */
+
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button::before{
+  content:"" !important;
+  display:block !important;
+  width:24px !important;
+  height:24px !important;
+  margin:0 auto 5px !important;
+  background:currentColor !important;
+  font-size:0 !important;
+  line-height:0 !important;
+  -webkit-mask-repeat:no-repeat !important;
+  -webkit-mask-position:center !important;
+  -webkit-mask-size:contain !important;
+  mask-repeat:no-repeat !important;
+  mask-position:center !important;
+  mask-size:contain !important;
+}
+
+/* Relato — documento com linhas. */
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[data-council-scroll="detailStory"]::before{
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M6.5 2.75h7.2l3.8 3.8v14.7h-11zM13.7 2.75v3.8h3.8M9 11h6M9 14.5h6M9 18h4.2'/%3E%3C/svg%3E") !important;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M6.5 2.75h7.2l3.8 3.8v14.7h-11zM13.7 2.75v3.8h3.8M9 11h6M9 14.5h6M9 18h4.2'/%3E%3C/svg%3E") !important;
+}
+
+/* Conversa — balão de diálogo. */
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[data-council-scroll="detailConversation"]::before{
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M4 5.5h16v10.3H9.2L5 19.4v-3.6H4zM8 9.3h8M8 12.4h5.5'/%3E%3C/svg%3E") !important;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M4 5.5h16v10.3H9.2L5 19.4v-3.6H4zM8 9.3h8M8 12.4h5.5'/%3E%3C/svg%3E") !important;
+}
+
+/* Andamento — confirmação dentro de círculo. */
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[data-council-scroll="statusBox"]::before{
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M21 12a9 9 0 1 1-3.1-6.8M8.4 12.1l2.2 2.2 5.3-5.5'/%3E%3C/svg%3E") !important;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M21 12a9 9 0 1 1-3.1-6.8M8.4 12.1l2.2 2.2 5.3-5.5'/%3E%3C/svg%3E") !important;
+}
+
+/* Histórico — relógio. */
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[data-council-scroll="historySection"]::before{
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M12 3.25a8.75 8.75 0 1 1-8.2 5.7M3.8 4.6v4.35h4.35M12 7.4v5.1l3.45 2.05'/%3E%3C/svg%3E") !important;
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M12 3.25a8.75 8.75 0 1 1-8.2 5.7M3.8 4.6v4.35h4.35M12 7.4v5.1l3.45 2.05'/%3E%3C/svg%3E") !important;
+}
+
+/* Faixa da conversa protegida: cadeado vetorial, sem emoji. */
+body.mobile-council-mode #councilDetailModal #messageThread.thread::before{
+  content:"Conversa protegida" !important;
+  padding-left:43px !important;
+  background-color:rgba(255,255,255,.9) !important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23446779' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M7.5 10V7.7a4.5 4.5 0 0 1 9 0V10M6 10h12v10H6zM12 14v2.4'/%3E%3C/svg%3E") !important;
+  background-repeat:no-repeat !important;
+  background-position:13px center !important;
+  background-size:21px 21px !important;
+}
+
+/* Garante que pseudo-elementos legados não reintroduzam símbolos tipográficos. */
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[data-council-scroll="detailStory"]::after,
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[data-council-scroll="detailConversation"]::after,
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[data-council-scroll="statusBox"]::after,
+body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[data-council-scroll="historySection"]::after{
+  content:none !important;
+  display:none !important;
+}
