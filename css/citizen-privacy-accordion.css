@@ -199,3 +199,198 @@ body.mobile-citizen-mode .privacy-help-panel > .form-alert strong{
     height:20px;
   }
 }
+
+/* Acompanhamento da manifestação — anexos realmente utilizáveis no celular. */
+body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-close{
+  width:60px !important;
+  height:60px !important;
+  min-width:60px !important;
+  flex:0 0 60px !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:15px !important;
+  background:transparent url('/assets/Fechar-icon.png?v=20260828-1317') center/52px 52px no-repeat !important;
+  color:transparent !important;
+  font-size:0 !important;
+  box-shadow:none !important;
+}
+body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-close::before,
+body.mobile-citizen-mode #manifestationDetailModal .citizen-modal-close::after{
+  content:none !important;
+  display:none !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .attachment-form .detail-attachment-native-input,
+body.mobile-citizen-mode #manifestationDetailModal .attachment-form .detail-attachment-native-input[hidden]{
+  display:none !important;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-actions{
+  width:100%;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-button{
+  width:100%;
+  min-width:0;
+  min-height:82px;
+  padding:12px 10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  border:2px solid #bdd2de;
+  border-radius:16px;
+  background:#fff;
+  color:#174f78;
+  font:inherit;
+  text-align:left;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(21,53,80,.06);
+  -webkit-tap-highlight-color:transparent;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-button:active{
+  transform:scale(.985);
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-button:focus-visible{
+  outline:4px solid rgba(24,109,153,.22);
+  outline-offset:2px;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-button--camera{
+  border-color:#9fcfd0;
+  background:#f1fbfb;
+  color:#176b70;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-button--device{
+  border-color:#b9d1df;
+  background:#f7fbfd;
+  color:#174f78;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-icon{
+  width:42px;
+  height:42px;
+  flex:0 0 42px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:rgba(255,255,255,.84);
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-icon svg,
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection-icon svg{
+  width:27px;
+  height:27px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.9;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-button strong{
+  display:block;
+  font-size:clamp(18px,4.6vw,22px);
+  line-height:1.15;
+  font-weight:900;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-button small{
+  display:block;
+  margin-top:4px;
+  color:#688092;
+  font-size:clamp(14px,3.6vw,17px);
+  line-height:1.25;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection[hidden],
+body.mobile-citizen-mode #manifestationDetailModal #uploadAttachment[hidden]{
+  display:none !important;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection{
+  width:100%;
+  min-height:76px;
+  padding:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  border:2px solid #b9d8c8;
+  border-radius:15px;
+  background:#f4fbf6;
+  color:#244c3c;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection-copy{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection-icon{
+  width:40px;
+  height:40px;
+  flex:0 0 40px;
+  display:grid;
+  place-items:center;
+  border-radius:11px;
+  background:#e4f3e9;
+  color:#2f6d50;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection-copy strong{
+  display:block;
+  max-width:100%;
+  color:#264a3b;
+  font-size:clamp(17px,4.3vw,21px);
+  line-height:1.2;
+  font-weight:900;
+  overflow-wrap:anywhere;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection-copy small{
+  display:block;
+  margin-top:4px;
+  color:#5f796e;
+  font-size:clamp(14px,3.6vw,17px);
+  line-height:1.25;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-remove{
+  min-height:46px;
+  padding:8px 11px;
+  flex:0 0 auto;
+  border:1px solid #debfc2;
+  border-radius:11px;
+  background:#fff7f7;
+  color:#9b3d45;
+  font:inherit;
+  font-size:16px;
+  font-weight:850;
+}
+
+body.mobile-citizen-mode #manifestationDetailModal #uploadAttachment{
+  min-height:70px !important;
+  border:0 !important;
+  background:linear-gradient(135deg,#187aa1,#176b91) !important;
+  color:#fff !important;
+  font-size:clamp(21px,5.4vw,26px) !important;
+  box-shadow:0 7px 16px rgba(23,107,145,.18) !important;
+}
+body.mobile-citizen-mode #manifestationDetailModal #uploadAttachment::before{
+  content:none !important;
+  display:none !important;
+}
+body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-status.visible{
+  margin-top:0;
+  padding:12px 14px;
+  border-radius:13px;
+  font-size:clamp(17px,4.3vw,21px);
+  line-height:1.35;
+  font-weight:800;
+}
+
+@media(max-width:410px){
+  body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-actions{
+    grid-template-columns:1fr;
+  }
+  body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-button{
+    justify-content:flex-start;
+    min-height:76px;
+    padding:11px 14px;
+  }
+}
