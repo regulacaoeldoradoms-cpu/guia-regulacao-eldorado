@@ -75,14 +75,15 @@
 }
 .council-row-select input{margin:0}
 .council-update-cell{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  min-width:180px;
+  position:relative;
+  min-width:190px;
+  padding-right:68px!important;
 }
 .council-row-delete{
-  flex:0 0 42px;
+  position:absolute;
+  right:14px;
+  top:50%;
+  transform:translateY(-50%);
   width:42px;
   height:42px;
   display:grid;
@@ -92,13 +93,13 @@
   background:#fff3f4;
   color:#b4232d;
   cursor:pointer;
-  transition:background .15s ease,color .15s ease,border-color .15s ease,transform .15s ease;
+  transition:background .15s ease,color .15s ease,border-color .15s ease,box-shadow .15s ease;
 }
 .council-row-delete:hover{
   background:#b4232d;
   border-color:#b4232d;
   color:#fff;
-  transform:translateY(-1px);
+  box-shadow:0 4px 12px rgba(180,35,45,.2);
 }
 .council-table tr.is-selected-for-delete td{background:#fff8f8}
 .council-table tr.is-selected-for-delete td:first-child{box-shadow:inset 4px 0 #b4232d}
@@ -240,8 +241,8 @@
   .council-delete-selected{width:100%;min-height:52px;font-size:1rem}
   .council-protocol-cell{padding-left:52px!important}
   .council-row-select{left:12px;width:28px;height:42px}
-  .council-update-cell{min-width:170px;gap:8px}
-  .council-row-delete{width:50px;height:50px;flex-basis:50px;border-radius:12px}
+  .council-update-cell{min-width:190px;padding-right:74px!important}
+  .council-row-delete{right:10px;width:50px;height:50px;border-radius:12px}
   .council-row-delete svg{width:23px;height:23px}
   .council-delete-dialog-backdrop{padding:14px;align-items:end}
   .council-delete-dialog{
