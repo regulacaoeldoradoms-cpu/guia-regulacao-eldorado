@@ -22,7 +22,7 @@
           <span>Atenção</span>
         </button>
         <button type="button" class="privacy-help-button" data-help="channel" aria-expanded="false" aria-controls="privacyHelpChannel">
-          <span class="privacy-help-icon" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span>
+          <span class="privacy-help-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg></span>
           <span>Canal</span>
         </button>
       </div>
@@ -62,6 +62,181 @@
 
   /* A partir daqui, somente a navegação tipo aplicativo é exclusiva do mobile. */
   if (!document.body.classList.contains('mobile-citizen-mode')) return;
+
+  const setupDetailAttachmentMobile = () => {
+    const form = document.getElementById('attachmentForm');
+    const pickerInput = document.getElementById('attachmentFile');
+    const uploadButton = document.getElementById('uploadAttachment');
+    const attachmentList = document.getElementById('attachmentList');
+    if (!form || !pickerInput || !uploadButton || !attachmentList || form.dataset.mobileAttachmentReady === 'true') return;
+
+    form.dataset.mobileAttachmentReady = 'true';
+    pickerInput.classList.add('detail-attachment-native-input');
+    pickerInput.hidden = true;
+    pickerInput.tabIndex = -1;
+
+    const cameraInput = document.createElement('input');
+    cameraInput.type = 'file';
+    cameraInput.id = 'attachmentCamera';
+    cameraInput.accept = 'image/jpeg,image/png';
+    cameraInput.setAttribute('capture', 'environment');
+    cameraInput.className = 'detail-attachment-native-input';
+    cameraInput.hidden = true;
+    cameraInput.tabIndex = -1;
+
+    const sourceActions = document.createElement('div');
+    sourceActions.className = 'detail-attachment-source-actions';
+    sourceActions.setAttribute('role', 'group');
+    sourceActions.setAttribute('aria-label', 'Escolha como adicionar o anexo');
+    sourceActions.innerHTML = `
+      <button class="detail-attachment-source-button detail-attachment-source-button--camera" id="takeAttachmentPhoto" type="button">
+        <span class="detail-attachment-source-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5a2 2 0 0 1 2-2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </span>
+        <span><strong>Tirar foto</strong><small>Usar a câmera agora</small></span>
+      </button>
+      <button class="detail-attachment-source-button detail-attachment-source-button--device" id="chooseAttachmentFile" type="button">
+        <span class="detail-attachment-source-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M3 6.5h7l2 2h9v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 9h18"/></svg>
+        </span>
+        <span><strong>Escolher do dispositivo</strong><small>Foto, imagem ou PDF</small></span>
+      </button>`;
+
+    const selection = document.createElement('div');
+    selection.className = 'detail-attachment-selection';
+    selection.id = 'detailAttachmentSelection';
+    selection.hidden = true;
+
+    const status = document.createElement('div');
+    status.className = 'account-status detail-attachment-status';
+    status.id = 'detailAttachmentStatus';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+
+    form.insertBefore(cameraInput, pickerInput);
+    form.insertBefore(sourceActions, pickerInput);
+    form.insertBefore(selection, uploadButton);
+    uploadButton.insertAdjacentElement('afterend', status);
+
+    uploadButton.textContent = 'Enviar anexo';
+    uploadButton.hidden = true;
+    uploadButton.disabled = true;
+
+    let selectedFile = null;
+
+    const showStatus = (message, type = 'error') => {
+      status.textContent = message;
+      status.className = `account-status detail-attachment-status visible ${type}`;
+    };
+
+    const clearStatus = () => {
+      status.textContent = '';
+      status.className = 'account-status detail-attachment-status';
+    };
+
+    const validateFile = (file) => {
+      if (!file) return 'Escolha um arquivo ou tire uma foto primeiro.';
+      if (file.type && !['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) return 'Use uma imagem JPG/PNG ou um arquivo PDF.';
+      if (file.size > 5 * 1024 * 1024) return 'O arquivo ultrapassa o limite de 5 MB.';
+      return '';
+    };
+
+    const resetSelection = () => {
+      selectedFile = null;
+      pickerInput.value = '';
+      cameraInput.value = '';
+      selection.hidden = true;
+      selection.innerHTML = '';
+      uploadButton.hidden = true;
+      uploadButton.disabled = true;
+    };
+
+    const selectFile = (file, sourceLabel) => {
+      clearStatus();
+      const error = validateFile(file);
+      if (error) {
+        resetSelection();
+        showStatus(error, 'error');
+        return;
+      }
+      selectedFile = file;
+      const sizeMb = (file.size / 1024 / 1024).toFixed(2);
+      selection.innerHTML = `
+        <div class="detail-attachment-selection-copy">
+          <span class="detail-attachment-selection-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 12.5l6.7-6.7a3 3 0 0 1 4.3 4.2l-8.6 8.6a5 5 0 0 1-7.1-7.1l8-8"/></svg></span>
+          <span><strong>${String(file.name || 'Arquivo selecionado').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}</strong><small>${sourceLabel} · ${sizeMb} MB</small></span>
+        </div>
+        <button type="button" class="detail-attachment-remove" id="removeSelectedAttachment">Remover</button>`;
+      selection.hidden = false;
+      uploadButton.hidden = false;
+      uploadButton.disabled = false;
+      selection.querySelector('#removeSelectedAttachment')?.addEventListener('click', resetSelection, { once: true });
+    };
+
+    sourceActions.querySelector('#takeAttachmentPhoto')?.addEventListener('click', () => {
+      clearStatus();
+      cameraInput.value = '';
+      cameraInput.click();
+    });
+
+    sourceActions.querySelector('#chooseAttachmentFile')?.addEventListener('click', () => {
+      clearStatus();
+      pickerInput.value = '';
+      pickerInput.click();
+    });
+
+    cameraInput.addEventListener('change', () => selectFile(cameraInput.files?.[0], 'Foto tirada agora'));
+    pickerInput.addEventListener('change', () => selectFile(pickerInput.files?.[0], 'Arquivo do dispositivo'));
+
+    const attachmentIcon = () => '<span class="attachment-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 12.5l6.7-6.7a3 3 0 0 1 4.3 4.2l-8.6 8.6a5 5 0 0 1-7.1-7.1l8-8"/></svg></span>';
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+
+    const renderAttachments = (items) => {
+      if (!Array.isArray(items) || !items.length) {
+        attachmentList.innerHTML = '<span style="color:#73889a">Nenhum anexo.</span>';
+        return;
+      }
+      attachmentList.innerHTML = items.map((item) => `<button class="attachment-link" type="button" data-attachment="${escapeHtml(item.id)}">${attachmentIcon()}${escapeHtml(item.displayName || 'Anexo')}</button>`).join('');
+    };
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      clearStatus();
+
+      const protocol = String(document.getElementById('detailProtocol')?.textContent || '').trim();
+      if (!protocol || protocol === 'Manifestação') return showStatus('Não foi possível identificar o protocolo desta manifestação.', 'error');
+      if (!selectedFile) return showStatus('Escolha um arquivo ou tire uma foto primeiro.', 'error');
+      if (attachmentList.querySelectorAll('[data-attachment]').length >= 5) return showStatus('Esta manifestação já possui o máximo de 5 anexos.', 'error');
+
+      const fileError = validateFile(selectedFile);
+      if (fileError) return showStatus(fileError, 'error');
+
+      const auth = window.RegulationAuth;
+      if (!auth?.api) return showStatus('Não foi possível acessar o serviço de anexos.', 'error');
+
+      uploadButton.disabled = true;
+      uploadButton.textContent = 'Enviando anexo...';
+      try {
+        const payload = new FormData();
+        payload.append('file', selectedFile);
+        await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}/attachments?as=citizen`, { method: 'POST', body: payload });
+
+        const detail = await auth.api(`/api/council/manifestations/${encodeURIComponent(protocol)}?as=citizen`, { method: 'GET' });
+        renderAttachments(detail?.attachments || []);
+        resetSelection();
+        showStatus('Anexo enviado com sucesso.', 'success');
+      } catch (error) {
+        showStatus(error?.message || 'Não foi possível enviar o anexo.', 'error');
+        uploadButton.disabled = false;
+      } finally {
+        uploadButton.textContent = 'Enviar anexo';
+        if (selectedFile) uploadButton.disabled = false;
+      }
+    }, true);
+  };
+
+  setupDetailAttachmentMobile();
 
   const waitForCitizen = () => {
     const role = document.getElementById('portalUserRole');
