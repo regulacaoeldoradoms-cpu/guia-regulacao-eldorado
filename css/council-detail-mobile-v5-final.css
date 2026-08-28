@@ -9,6 +9,17 @@ body.mobile-council-mode #councilDetailModal .council-side:empty{
   display:none !important;
 }
 
+/* Estado dos anexos: texto suficientemente grande para leitura no celular. */
+body.mobile-council-mode #councilDetailModal #attachmentList.attachment-list{
+  font-size:23px !important;
+  line-height:1.45 !important;
+  font-weight:700 !important;
+  min-height:68px !important;
+  display:flex !important;
+  align-items:center !important;
+  padding:15px 16px !important;
+}
+
 /* Dock sempre visível: atalhos importantes ao alcance do polegar. */
 body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav{
   position:fixed !important;
