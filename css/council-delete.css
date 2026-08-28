@@ -88,18 +88,19 @@
   height:42px;
   display:grid;
   place-items:center;
-  border:1px solid #e0a4aa;
+  border:1px solid #a51d28;
   border-radius:10px;
-  background:#fff3f4;
-  color:#b4232d;
+  background:#b4232d;
+  color:#fff;
   cursor:pointer;
-  transition:background .15s ease,color .15s ease,border-color .15s ease,box-shadow .15s ease;
+  box-shadow:0 3px 9px rgba(180,35,45,.18);
+  transition:background .15s ease,border-color .15s ease,box-shadow .15s ease;
 }
 .council-row-delete:hover{
-  background:#b4232d;
-  border-color:#b4232d;
+  background:#8f1720;
+  border-color:#7e141c;
   color:#fff;
-  box-shadow:0 4px 12px rgba(180,35,45,.2);
+  box-shadow:0 5px 14px rgba(180,35,45,.28);
 }
 .council-table tr.is-selected-for-delete td{background:#fff8f8}
 .council-table tr.is-selected-for-delete td:first-child{box-shadow:inset 4px 0 #b4232d}
