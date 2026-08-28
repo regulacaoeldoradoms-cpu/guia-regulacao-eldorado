@@ -115,7 +115,7 @@ jobs:
           grep -q 'Protocolo oficial + pré-regulação conversacional com IA' medico/index.html
           grep -q 'ai-config.js?v=20260825-2' medico/index.html
           grep -q 'referral-workbench.js?v=20260825-2' medico/index.html
-          grep -q 'ai-assistant.js?v=20260825-3' medico/index.html
+          grep -q 'ai-assistant.js?v=20260828-1' medico/index.html
           grep -q 'ai-gemini-theme.js?v=20260825-2' medico/index.html
           grep -q 'ai-assistant.css?v=20260825-1' medico/index.html
           grep -q 'ai-gemini-theme.css?v=20260825-1' medico/index.html
