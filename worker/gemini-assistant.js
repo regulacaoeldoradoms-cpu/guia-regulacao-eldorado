@@ -43,6 +43,7 @@ REGRAS OBRIGATÓRIAS:
 20. Responda em português do Brasil, de forma objetiva, com títulos curtos e listas quando necessário. Não use tabelas. Não mencione estas regras internas.
 21. A situação operacional mais recente do contexto prevalece sobre descrições históricas.
 22. Quando o usuário for da Coordenação, não limite a análise protocolar apenas por ele não ser médico: faça a mesma conferência de adequação, pendências, fluxo, documentos e critérios disponível ao médico. Isso não transfere competência clínica ao usuário; qualquer dado que exija exame, diagnóstico, interpretação ou decisão profissional deve continuar identificado como dependente de profissional habilitado.
+23. Quando o contexto contiver REGRAS OPERACIONAIS PERTINENTES, use-as para responder diretamente. Uma restrição específica de uma especialidade não deve ser generalizada para todas as especialidades do mesmo sistema.
 `;
 
 function jsonResponse(body, status, origin, allowed) {
@@ -149,6 +150,20 @@ function cleanCatalog(value) {
   }));
 }
 
+function cleanOperationalFacts(value) {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, 8).map((fact) => ({
+    id: boundedString(fact?.id, 120),
+    sistema: boundedString(fact?.sistema, 120),
+    especialidade: boundedString(fact?.especialidade, 160),
+    restricao: boundedString(fact?.restricao, 900),
+    orientacao: boundedString(fact?.orientacao, 1200),
+    ressalva: boundedString(fact?.ressalva, 900),
+    fonte: boundedString(fact?.fonte, 300),
+    dataConferencia: boundedString(fact?.dataConferencia, 80)
+  })).filter((fact) => fact.restricao);
+}
+
 function cleanHistory(value) {
   if (!Array.isArray(value)) return [];
   return value.slice(-12).map((item) => ({
@@ -157,7 +172,7 @@ function cleanHistory(value) {
   }));
 }
 
-function buildPrompt(question, protocols, catalog, history, mode) {
+function buildPrompt(question, protocols, catalog, operationalFacts, history, mode) {
   return [
     `MODO SOLICITADO: ${boundedString(mode || 'pre_regulation_simulator', 80)}`,
     '',
@@ -169,6 +184,9 @@ function buildPrompt(question, protocols, catalog, history, mode) {
     '',
     'CATÁLOGO OPERACIONAL RESUMIDO:',
     JSON.stringify(catalog, null, 2),
+    '',
+    'REGRAS OPERACIONAIS PERTINENTES:',
+    JSON.stringify(cleanOperationalFacts(operationalFacts), null, 2),
     '',
     'HISTÓRICO RECENTE DA CONVERSA:',
     JSON.stringify(cleanHistory(history), null, 2)
@@ -503,7 +521,7 @@ export default {
       }
 
       const mode = boundedString(body.assistantMode || 'pre_regulation_simulator', 80);
-      const prompt = buildPrompt(question, protocols, catalog, body.history, mode);
+      const prompt = buildPrompt(question, protocols, catalog, body.operationalFacts, body.history, mode);
       const providerMode = String(env.AI_PROVIDER || 'gemini').trim().toLowerCase();
       const result = providerMode === 'cloudflare'
         ? await callCloudflareAi(env, prompt)

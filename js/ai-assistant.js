@@ -6,6 +6,16 @@
   const MAX_HISTORY_MESSAGES = Number(CONFIG.maxHistoryMessages) || 12;
   const REMOTE_AI_REQUEST_TIMEOUT_MS = 50000;
   const REMOTE_AI_COOLDOWN_MS = 2 * 60 * 1000;
+  const PSYCHOLOGY_AUTISM_OPERATIONAL_RULE = Object.freeze({
+    id: 'digsus-psicologia-tea',
+    sistema: 'DigSaúde MS',
+    especialidade: 'Psicologia',
+    restricao: 'A teleconsulta de Psicologia do DigSaúde MS não aceita pacientes com TEA/autismo.',
+    orientacao: 'Para atendimento psicológico, seguir o fluxo psicológico municipal/local aplicável. Não relançar automaticamente no SISREG ou em outro município sem confirmação de referência e pactuação.',
+    ressalva: 'A restrição é específica da Psicologia e não deve ser generalizada para todas as especialidades do DigSaúde MS.',
+    fonte: 'Confirmação operacional do suporte DigSaúde MS',
+    dataConferencia: '28/08/2026'
+  });
   const history = [];
   let initialized = false;
   let busy = false;
@@ -34,7 +44,8 @@
     'Se o caso estiver bem qualificado, diga apenas que não identificou pendência evidente na base consultada; não garanta que o regulador real aceitará.',
     'Se a pergunta for apenas factual (idade, disponibilidade, exame obrigatório, via de acesso), responda diretamente e de forma curta, sem forçar uma entrevista.',
     'Mantenha continuidade entre as mensagens: trate respostas curtas do médico como complementação do caso em andamento e não reinicie a análise.',
-    'Não exponha dados identificáveis. Se houver dado pessoal, oriente a anonimizar.'
+    'Não exponha dados identificáveis. Se houver dado pessoal, oriente a anonimizar.',
+    'Quando houver REGRAS OPERACIONAIS PERTINENTES no contexto, responda objetivamente com elas e não generalize uma restrição de uma especialidade para todo o sistema.'
   ].join('\n');
 
   const STOP_WORDS = new Set([
@@ -84,6 +95,32 @@
     return normalizeText(question).split(/[^a-z0-9]+/).filter((term) => term.length > 2 && !STOP_WORDS.has(term));
   }
 
+  function isPsychologyProtocol(protocol) {
+    const id = normalizeText(protocol?.id).trim();
+    const name = normalizeText(protocol?.nome).trim();
+    return id === 'psicologia' || name === 'psicologia';
+  }
+
+  function isNeuropediatricsProtocol(protocol) {
+    const id = normalizeText(protocol?.id).trim();
+    const name = normalizeText(protocol?.nome).trim();
+    return id === 'neuropediatria'
+      || id === 'neurologia-pediatrica'
+      || name === 'neuropediatria'
+      || name === 'neurologia pediatrica';
+  }
+
+  function isAutismTelehealthQuestion(question) {
+    const text = normalizeText(question);
+    const mentionsAutism = /\bautismo\b|\btea\b|transtorno do espectro autista/.test(text);
+    const mentionsTelehealth = /digsus|digsaude|teleconsulta|teleatendimento/.test(text);
+    return mentionsAutism && mentionsTelehealth;
+  }
+
+  function operationalFactsFor(question) {
+    return isAutismTelehealthQuestion(question) ? [PSYCHOLOGY_AUTISM_OPERATIONAL_RULE] : [];
+  }
+
   function rankProtocols(question) {
     const terms = termsFor(question);
     const selectedId = typeof state !== 'undefined' ? state.selected?.id : null;
@@ -93,6 +130,8 @@
       const tags = normalizeText(asArray(protocol.tags).join(' '));
       const searchText = protocol._searchText || normalizeText(JSON.stringify(protocol));
       let score = protocol.id === selectedId ? 30 : 0;
+      if (isAutismTelehealthQuestion(question) && isPsychologyProtocol(protocol)) score += 100;
+      if (isAutismTelehealthQuestion(question) && isNeuropediatricsProtocol(protocol)) score += 35;
       for (const term of terms) {
         if (name === term) score += 20;
         else if (name.includes(term)) score += 12;
@@ -167,6 +206,12 @@
     const ranked = rankProtocols(question);
     const current = typeof state !== 'undefined' ? state.selected : null;
     let selected = ranked.filter((item) => item.score > 0).slice(0, 4).map((item) => item.protocol);
+    if (isAutismTelehealthQuestion(question)) {
+      const psychology = protocols().find(isPsychologyProtocol);
+      const neuropediatrics = protocols().find(isNeuropediatricsProtocol);
+      selected = [psychology, neuropediatrics, ...selected].filter(Boolean)
+        .filter((protocol, index, values) => values.findIndex((item) => item.id === protocol.id) === index);
+    }
     if (current && !selected.some((protocol) => protocol.id === current.id)) selected.unshift(current);
     if (!selected.length) selected = ranked.slice(0, 2).map((item) => item.protocol);
     selected = selected.slice(0, 4);
@@ -181,7 +226,8 @@
       })),
       selectedProtocolId: current?.id || null,
       selectedProtocolName: current?.nome || null,
-      practiceKnowledgeVersion: window.REFERRAL_PRACTICE_GUIDANCE?.version || null
+      practiceKnowledgeVersion: window.REFERRAL_PRACTICE_GUIDANCE?.version || null,
+      operationalFacts: operationalFactsFor(question)
     };
   }
 
@@ -201,6 +247,22 @@
   }
 
   function localAnswer(question, connectionMissing = !CONFIG.endpoint) {
+    if (isAutismTelehealthQuestion(question)) {
+      let answer = [
+        'Psicologia no DigSaúde e TEA/autismo',
+        '',
+        'Não. Conforme confirmação operacional do suporte do DigSaúde MS em 28/08/2026, a teleconsulta de Psicologia não aceita pacientes com TEA/autismo.',
+        '',
+        'Essa restrição é específica da Psicologia. Ela não significa que todo o DigSaúde recuse pacientes com TEA; outras especialidades, como Neuropediatria, possuem critérios próprios.',
+        '',
+        'Para atendimento psicológico, seguir o fluxo psicológico municipal/local aplicável. Não relançar automaticamente no SISREG ou em outro município sem confirmar referência e pactuação.',
+        '',
+        'Fonte consultada: confirmação operacional do suporte DigSaúde MS — 28/08/2026; protocolo de Teleconsulta/Telessaúde cadastrado no guia.'
+      ].join('\n');
+      if (connectionMissing) answer += '\n\nResposta local automática. A conexão com os provedores de IA ainda não está ativada.';
+      return answer;
+    }
+
     const ranked = rankProtocols(question);
     const match = ranked.find((item) => item.score > 0)?.protocol || ranked[0]?.protocol;
     if (!match) return 'Os protocolos ainda estão carregando. Tente novamente em alguns segundos.';
@@ -316,6 +378,7 @@
           selectedProtocolId: context.selectedProtocolId,
           selectedProtocolName: context.selectedProtocolName,
           practiceKnowledgeVersion: context.practiceKnowledgeVersion,
+          operationalFacts: context.operationalFacts,
           history: history.slice(-MAX_HISTORY_MESSAGES)
         })
       });

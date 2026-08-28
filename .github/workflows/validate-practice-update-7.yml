@@ -1,0 +1,48 @@
+name: Validar atualização operacional de Psicologia e TEA
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-psychology-autism-rule:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Validar JavaScript e testes do Worker
+        working-directory: worker
+        run: |
+          npm test
+          npm run check
+
+      - name: Conferir carregamento e atualização de cache
+        run: |
+          grep -q 'referral-practice-update-20260828.js?v=20260828-1' medico/index.html
+          grep -q 'medical-app.js?v=20260828-1' medico/index.html
+          grep -q 'ai-assistant.js?v=20260828-1' medico/index.html
+          grep -q 'app.js?v=20260828-1' protocolo/index.html
+
+      - name: Conferir fonte, escopo e resposta direta
+        run: |
+          grep -q "guidance.version = '1.7'" js/referral-practice-update-20260828.js
+          grep -q 'suporte do DigSaúde MS em 28/08/2026' js/referral-practice-update-20260828.js
+          grep -q 'não aceita pacientes com TEA/autismo' js/medical-app.js
+          grep -q 'não significa que todo o DigSaúde recuse pacientes com TEA' js/ai-assistant.js
+          grep -q 'REGRAS OPERACIONAIS PERTINENTES' worker/gemini-assistant.js
+
+      - name: Conferir anonimização
+        run: |
+          if grep -E -i 'Nome do Paciente|Nome da Mãe|CNS:|CPF:|Telefone\(s\)|Código da Solicitação' js/referral-practice-update-20260828.js; then
+            echo 'A atualização contém possível dado identificável.'
+            exit 1
+          fi
+          if grep -E '[0-9]{11,15}' js/referral-practice-update-20260828.js; then
+            echo 'A atualização contém possível identificador numérico.'
+            exit 1
+          fi

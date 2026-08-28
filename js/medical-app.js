@@ -104,6 +104,12 @@ function isNeuropediatrics(protocol) {
     || name === 'neurologia pediatrica';
 }
 
+function isPsychology(protocol) {
+  const id = normalize(protocol.id || '').trim();
+  const name = normalize(protocol.nome || '').trim();
+  return id === 'psicologia' || name === 'psicologia';
+}
+
 function applyOperationalOverrides(protocol) {
   const updated = {
     ...protocol,
@@ -124,6 +130,23 @@ function applyOperationalOverrides(protocol) {
     updated.fluxoLocal = 'Solicitar pelo DigSaúde MS. Registrar o quadro clínico atual, anexar ou descrever os documentos exigidos e orientar a presença de familiar ou responsável no atendimento.';
     updated.fontes = [...new Set([...arr(updated.fontes), 'Atualização operacional do Setor de Regulação de Eldorado/MS — julho de 2026'])];
     updated.tags = [...new Set([...arr(updated.tags), 'neuropediatria', 'neurologia pediatrica', 'neuroped', 'tea', 'tdah', 'convulsao infantil', 'atraso do desenvolvimento'])];
+  }
+
+  if (isPsychology(updated)) {
+    updated.fluxoLocal = 'Psicologia permanece disponível no DigSaúde MS somente para os critérios de inclusão da especialidade. Restrição operacional confirmada em 28/08/2026: a teleconsulta de Psicologia não aceita pacientes com TEA/autismo. Para atendimento psicológico desses pacientes, seguir o fluxo psicológico municipal/local aplicável; não relançar automaticamente no SISREG ou em outro município sem confirmação de referência e pactuação.';
+    updated.alertas = [...new Set([
+      ...arr(updated.alertas),
+      'Psicologia via DigSaúde MS não aceita pacientes com TEA/autismo. Esta restrição é específica da Psicologia e não significa que todas as especialidades do DigSaúde excluam pacientes com TEA.'
+    ])];
+    updated.fontes = [...new Set([
+      ...arr(updated.fontes),
+      'Confirmação operacional do suporte DigSaúde MS — 28/08/2026'
+    ])];
+    updated.tags = [...new Set([
+      ...arr(updated.tags),
+      'autismo', 'tea', 'transtorno do espectro autista', 'psicologia digsaude', 'psicologia não aceita autismo'
+    ])];
+    updated.ultimaConferencia = '28/08/2026';
   }
 
   updated._searchText = buildSearchText(updated);

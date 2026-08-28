@@ -5,14 +5,15 @@ import portalWorker from '../index.js';
 
 const origin = 'https://regulacaoeldoradoms.com.br';
 
-function aiRequest(question = 'Quais informações clínicas são obrigatórias?') {
+function aiRequest(question = 'Quais informações clínicas são obrigatórias?', additions = {}) {
   return new Request('https://worker.example/api/ia', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Origin: origin },
     body: JSON.stringify({
       originalQuestion: question,
       assistantMode: 'pre_regulation_simulator',
-      catalog: [{ nome: 'Neurologia', faixaEtaria: 'Todas as idades', viaAcesso: 'SISREG/CORE' }]
+      catalog: [{ nome: 'Neurologia', faixaEtaria: 'Todas as idades', viaAcesso: 'SISREG/CORE' }],
+      ...additions
     })
   });
 }
@@ -69,6 +70,44 @@ test('mantém a resposta normal quando o Gemini responde dentro do prazo', async
     assert.equal(payload.answer, 'Resposta fundamentada no protocolo.');
     assert.equal(payload.model, 'test-model');
     assert.equal(payload.provider, 'Gemini');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('envia a restrição de Psicologia para TEA como regra operacional pertinente', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, options) => {
+    const requestBody = JSON.parse(options.body);
+    const systemPrompt = requestBody.systemInstruction.parts[0].text;
+    const userPrompt = requestBody.contents[0].parts[0].text;
+    assert.match(systemPrompt, /REGRAS OPERACIONAIS PERTINENTES/);
+    assert.match(systemPrompt, /não deve ser generalizada/);
+    assert.match(userPrompt, /Psicologia/);
+    assert.match(userPrompt, /não aceita pacientes com TEA\/autismo/);
+    assert.match(userPrompt, /28\/08\/2026/);
+    assert.match(userPrompt, /restrição é específica da Psicologia/);
+    return Response.json({
+      candidates: [{ content: { parts: [{ text: 'Psicologia no DigSaúde não aceita TEA.' }] } }]
+    });
+  };
+
+  try {
+    const response = await aiWorker.fetch(aiRequest('DigSaúde aceita autismo?', {
+      operationalFacts: [{
+        id: 'digsus-psicologia-tea',
+        sistema: 'DigSaúde MS',
+        especialidade: 'Psicologia',
+        restricao: 'A teleconsulta de Psicologia do DigSaúde MS não aceita pacientes com TEA/autismo.',
+        orientacao: 'Seguir o fluxo psicológico municipal/local aplicável.',
+        ressalva: 'A restrição é específica da Psicologia.',
+        fonte: 'Confirmação operacional do suporte DigSaúde MS',
+        dataConferencia: '28/08/2026'
+      }]
+    }), workerEnv());
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.answer, 'Psicologia no DigSaúde não aceita TEA.');
   } finally {
     globalThis.fetch = originalFetch;
   }
