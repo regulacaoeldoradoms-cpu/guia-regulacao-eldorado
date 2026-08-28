@@ -1,3 +1,5 @@
+@import url('/css/council-professional-icons.css?v=20260827-2124');
+
 /* Ajustes finais da revisão v5. Carregado por último. */
 body.mobile-council-mode #councilDetailModal .council-detail-main{
   width:100% !important;
