@@ -1,0 +1,259 @@
+.council-delete-toolbar{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:12px 16px;
+  margin:0 0 2px;
+  border-top:1px solid #e0e8ef;
+  border-bottom:1px solid #e0e8ef;
+  background:#f8fafc;
+}
+.council-select-all{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  font-size:.86rem;
+  font-weight:800;
+  color:#294a62;
+  cursor:pointer;
+  user-select:none;
+}
+.council-select-all input,
+.council-row-select input{
+  width:20px;
+  height:20px;
+  accent-color:#176f9d;
+  cursor:pointer;
+}
+.council-selected-count{
+  color:#697f90;
+  font-size:.82rem;
+  font-weight:700;
+}
+.council-delete-selected{
+  margin-left:auto;
+  min-height:42px;
+  padding:9px 14px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border:1px solid #a51d28;
+  border-radius:10px;
+  background:#b4232d;
+  color:#fff;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 4px 12px rgba(180,35,45,.16);
+}
+.council-delete-selected:hover:not(:disabled){background:#921a23;border-color:#82151d}
+.council-delete-selected:disabled{opacity:.42;cursor:not-allowed;box-shadow:none}
+.council-delete-selected svg,
+.council-row-delete svg,
+.council-delete-confirm svg,
+.council-delete-danger svg{
+  width:20px;
+  height:20px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.9;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.council-protocol-cell{position:relative;padding-left:48px!important}
+.council-row-select{
+  position:absolute;
+  left:16px;
+  top:50%;
+  transform:translateY(-50%);
+  display:grid;
+  place-items:center;
+  width:24px;
+  height:32px;
+  cursor:pointer;
+}
+.council-row-select input{margin:0}
+.council-update-cell{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  min-width:180px;
+}
+.council-row-delete{
+  flex:0 0 42px;
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border:1px solid #e0a4aa;
+  border-radius:10px;
+  background:#fff3f4;
+  color:#b4232d;
+  cursor:pointer;
+  transition:background .15s ease,color .15s ease,border-color .15s ease,transform .15s ease;
+}
+.council-row-delete:hover{
+  background:#b4232d;
+  border-color:#b4232d;
+  color:#fff;
+  transform:translateY(-1px);
+}
+.council-table tr.is-selected-for-delete td{background:#fff8f8}
+.council-table tr.is-selected-for-delete td:first-child{box-shadow:inset 4px 0 #b4232d}
+
+.council-delete-dialog-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:5000;
+  display:grid;
+  place-items:center;
+  padding:22px;
+  background:rgba(12,29,43,.56);
+  backdrop-filter:blur(3px);
+  opacity:0;
+  transition:opacity .16s ease;
+}
+.council-delete-dialog-backdrop[hidden]{display:none!important}
+.council-delete-dialog-backdrop.open{opacity:1}
+.council-delete-dialog{
+  width:min(500px,100%);
+  padding:28px;
+  border:1px solid #e6c7ca;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 24px 70px rgba(18,39,55,.28);
+  color:#17364f;
+  transform:translateY(8px) scale(.985);
+  transition:transform .16s ease;
+}
+.council-delete-dialog-backdrop.open .council-delete-dialog{transform:none}
+.council-delete-danger{
+  width:58px;
+  height:58px;
+  display:grid;
+  place-items:center;
+  margin:0 auto 16px;
+  border-radius:50%;
+  background:#fff0f1;
+  color:#b4232d;
+}
+.council-delete-danger svg{width:31px;height:31px}
+.council-delete-dialog h2{
+  margin:0 0 10px;
+  text-align:center;
+  font-size:1.35rem;
+  color:#7e1720;
+}
+.council-delete-dialog>p{
+  margin:0 auto 16px;
+  max-width:410px;
+  text-align:center;
+  color:#526b7d;
+  font-size:.96rem;
+  line-height:1.55;
+}
+.council-delete-protocols{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:7px;
+  margin:16px 0;
+}
+.council-delete-protocols span{
+  padding:6px 9px;
+  border:1px solid #e2e9ef;
+  border-radius:999px;
+  background:#f6f8fa;
+  color:#294a62;
+  font-size:.78rem;
+  font-weight:800;
+}
+.council-delete-audit{
+  padding:11px 13px;
+  border-radius:10px;
+  background:#f5f7f9;
+  color:#617787;
+  font-size:.79rem;
+  line-height:1.45;
+  text-align:center;
+}
+.council-delete-dialog-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:20px;
+}
+.council-delete-cancel,
+.council-delete-confirm{
+  min-height:48px;
+  border-radius:11px;
+  font:inherit;
+  font-weight:800;
+  cursor:pointer;
+}
+.council-delete-cancel{
+  border:1px solid #cbd8e1;
+  background:#fff;
+  color:#27465d;
+}
+.council-delete-confirm{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  border:1px solid #a51d28;
+  background:#b4232d;
+  color:#fff;
+}
+.council-delete-confirm:hover:not(:disabled){background:#921a23}
+.council-delete-confirm:disabled,.council-delete-cancel:disabled{opacity:.55;cursor:wait}
+.council-delete-toast{
+  position:fixed;
+  z-index:5200;
+  right:22px;
+  bottom:22px;
+  max-width:min(420px,calc(100vw - 32px));
+  padding:13px 17px;
+  border-radius:11px;
+  background:#1f684d;
+  color:#fff;
+  font-weight:800;
+  box-shadow:0 10px 28px rgba(19,47,64,.22);
+}
+.council-delete-toast.error{background:#a51d28}
+.council-delete-toast[hidden]{display:none!important}
+
+@media(max-width:860px){
+  .council-delete-toolbar{
+    position:sticky;
+    top:0;
+    z-index:8;
+    flex-wrap:wrap;
+    gap:10px 12px;
+    padding:12px;
+  }
+  .council-select-all{font-size:1rem}
+  .council-select-all input,.council-row-select input{width:24px;height:24px}
+  .council-selected-count{font-size:.92rem}
+  .council-delete-selected{width:100%;min-height:52px;font-size:1rem}
+  .council-protocol-cell{padding-left:52px!important}
+  .council-row-select{left:12px;width:28px;height:42px}
+  .council-update-cell{min-width:170px;gap:8px}
+  .council-row-delete{width:50px;height:50px;flex-basis:50px;border-radius:12px}
+  .council-row-delete svg{width:23px;height:23px}
+  .council-delete-dialog-backdrop{padding:14px;align-items:end}
+  .council-delete-dialog{
+    width:100%;
+    max-width:none;
+    padding:24px 18px 20px;
+    border-radius:20px 20px 12px 12px;
+  }
+  .council-delete-dialog h2{font-size:1.45rem}
+  .council-delete-dialog>p{font-size:1.05rem}
+  .council-delete-audit{font-size:.9rem}
+  .council-delete-dialog-actions{grid-template-columns:1fr}
+  .council-delete-cancel,.council-delete-confirm{min-height:56px;font-size:1rem}
+  .council-delete-toast{right:12px;bottom:12px;left:12px;max-width:none;text-align:center;font-size:1rem}
+}
