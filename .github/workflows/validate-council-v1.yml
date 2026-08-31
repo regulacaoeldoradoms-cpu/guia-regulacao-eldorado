@@ -26,6 +26,7 @@ jobs:
           node --check worker/attachment-safety.js
           node --check worker/system-readiness.js
           node --check worker/council.js
+          node --check worker/council-access-policy.js
           node --check worker/portal-chat-v2.js
           node --check worker/usage-monitor-v2.js
           node --check worker/index.js
@@ -36,12 +37,16 @@ jobs:
           node --check js/citizen.js
           node --check js/citizen-account-level.js
           node --check js/council-panel.js
+          node --check js/council-access-policy.js
           node --check js/admin-users.js
           node --check js/account.js
           node --check js/citizen-identity-ui.js
           node --check js/home.js
           node --check js/usage-monitor-v2.js
           node --check js/system-readiness.js
+
+      - name: Executar testes de privacidade e autorização do Conselho
+        run: node --test worker/tests/council-policy.test.mjs
 
       - name: Conferir páginas e arquitetura
         run: |
@@ -113,9 +118,12 @@ jobs:
           grep -q "user.councilRole === 'presidente'" worker/council.js
           grep -q 'COUNCIL_PRESIDENT_CANNOT_SUBMIT' worker/council.js
           grep -q 'canCreateManifestation: !presidentAccess(user)' worker/council.js
-          grep -q 'canIdentifyManifestation: true' worker/council.js
+          grep -q 'canIdentifyManifestation: user.emailVerified === true' worker/council.js
+          grep -q "if (user?.emailVerified !== true) return 'anonima'" worker/council.js
           grep -q "if (mode === 'identificada') return 'identificada'" worker/council.js
-          grep -q "user?.emailVerified === true ? 'sigilosa' : 'anonima'" worker/council.js
+          grep -q "return 'sigilosa'" worker/council.js
+          grep -q "identifiedInput.disabled = !verified" js/citizen.js
+          grep -q 'id="verifiedPrivacyOptions" hidden' cidadao/index.html
           grep -q 'identifiedAuthorSnapshot' worker/council.js
           grep -q 'authorIdentity' worker/council.js
           grep -q 'authorLabel' worker/council.js
