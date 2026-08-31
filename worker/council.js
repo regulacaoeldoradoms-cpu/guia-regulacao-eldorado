@@ -114,11 +114,11 @@ function citizenContext(url) {
   return String(url?.searchParams?.get('as') || '').toLowerCase() === 'citizen';
 }
 
-function manifestationPrivacyMode(user, requestedMode = '') {
+export function manifestationPrivacyMode(user, requestedMode = '') {
+  if (user?.emailVerified !== true) return 'anonima';
   const mode = String(requestedMode || '').toLowerCase();
   if (mode === 'identificada') return 'identificada';
-  if (mode === 'sigilosa') return user?.emailVerified === true ? 'sigilosa' : 'anonima';
-  return 'anonima';
+  return 'sigilosa';
 }
 
 function safeAuthorIdentity(identity) {
@@ -495,7 +495,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
       role: user.role,
       citizenAccess: true,
       canCreateManifestation: !presidentAccess(user),
-      canIdentifyManifestation: true,
+      canIdentifyManifestation: user.emailVerified === true,
       canUseConfidentialManifestation: user.emailVerified === true,
       newManifestationIntervalSeconds: NEW_MANIFESTATION_INTERVAL_SECONDS
     }, 200, origin);
