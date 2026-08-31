@@ -8,6 +8,10 @@ function citizenContext(url) {
   return String(url?.searchParams?.get('as') || '').toLowerCase() === 'citizen';
 }
 
+function isCouncilMemberReadOnly(user, institutional) {
+  return Boolean(institutional && user?.role !== 'admin' && user?.councilRole === 'membro');
+}
+
 function responseHeaders(origin, allowed = true) {
   const headers = {
     'Content-Type': 'application/json; charset=utf-8',
@@ -255,7 +259,7 @@ function isInstitutionalAttachmentDownload(url, request) {
     && /^\/api\/council\/manifestations\/CMS-\d{4}-\d{6}\/attachments\/[A-Za-z0-9_-]+$/.test(url.pathname);
 }
 
-export { isCouncilApi };
+export { isCouncilApi, protectMemberPayload, canDeleteManifestations, isCouncilMemberReadOnly };
 
 export async function handleCouncilRoute(request, env, origin, originAllowed = true) {
   if (request.method === 'OPTIONS') {
@@ -265,7 +269,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   const url = new URL(request.url);
   const user = await validatePortalSession(request, env, []);
   const institutional = !citizenContext(url);
-  const isMember = institutional && user?.councilRole === 'membro';
+  const isMember = isCouncilMemberReadOnly(user, institutional);
   const isDeveloper = institutional && user?.role === 'admin';
 
   if (isMember && isInstitutionalManifestationMutation(url, request)) {

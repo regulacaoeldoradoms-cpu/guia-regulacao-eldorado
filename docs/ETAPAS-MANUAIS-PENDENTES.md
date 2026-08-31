@@ -15,9 +15,11 @@ Este checklist registra somente o que ainda exige painel externo, teste real no 
 - ✅ A conta passou a ser tratada como identidade única em todos os módulos.
 - ✅ Médico, Recepção, Coordenação e Desenvolvedor mantêm o próprio cargo dentro do Canal do Cidadão.
 - ✅ O mesmo avatar e o mesmo nível Bronze/Prata/Ouro pertencem à conta inteira.
-- ✅ Conta sem e-mail verificado pode criar manifestação anônima, inclusive se for profissional.
-- ✅ Conta com e-mail verificado cria novas manifestações como sigilosas.
+- ✅ O backend e a interface normalizam toda nova manifestação sem e-mail verificado para anônima, inclusive se a conta for profissional.
+- ✅ Conta com e-mail verificado escolhe entre sigilosa e identificada; padrão/fallback permanecem sigilosos.
 - ✅ Protocolos anônimos não são convertidos retroativamente após futura verificação de e-mail.
+- ✅ Membro possui acesso anônimo e somente leitura, sem anexos ou observações internas.
+- ✅ Desenvolvedor possui capacidade institucional equivalente à Presidência sem alteração do cargo salvo.
 - ✅ `council_role=presidente` está bloqueado de abrir nova manifestação no backend.
 
 ## 1. Firebase — confirmar/publicar regras privadas
@@ -76,7 +78,7 @@ Se existir e-mail cadastrado, mas ele ainda não estiver confirmado, a manifesta
 
 ### Com e-mail verificado
 
-Confirmar que a nova manifestação é `Sigilosa` e que o Conselho não recebe o endereço de e-mail nem identificadores técnicos de autenticação no documento da manifestação.
+Confirmar que a opção padrão cria manifestação `Sigilosa`; depois escolher `Identificada` e confirmar que somente nome de perfil, @ e cargo/função autorizados aparecem. Em ambos os casos, o Conselho não recebe endereço de e-mail nem identificadores técnicos de autenticação.
 
 ### Histórico
 
@@ -106,12 +108,11 @@ Confirmar:
 
 Confirmar:
 
-- leitura das manifestações;
-- histórico e anexos;
-- observação interna;
-- ausência de permissão para resposta oficial;
-- ausência de permissão para alterar andamento;
-- possibilidade de abrir manifestação própria, desde que não seja Presidente.
+- leitura anônima do conteúdo e do histórico;
+- ausência de identidade, anexos e observações internas;
+- ausência de permissão para resposta oficial, alteração de andamento ou qualquer outra interação;
+- bloqueio equivalente quando a tentativa é feita diretamente pela API;
+- possibilidade de abrir manifestação própria no contexto cidadão, desde que não seja Presidente.
 
 ## 7. Conta que também integra o Conselho
 
@@ -130,15 +131,15 @@ Depois de resposta/status pelo Conselho, voltar à conta autora e confirmar:
 
 ## 9. Ativação futura do e-mail obrigatório profissional
 
-Por enquanto manter:
+Decisão da V1:
 
 ```text
 AUTH_REQUIRE_EMAIL_VERIFICATION=false
 ```
 
-A possibilidade de manifestação anônima por conta profissional existe enquanto o e-mail ainda não estiver verificado.
+A exigência geral de e-mail profissional não será ativada nesta versão. A possibilidade de manifestação anônima por conta profissional existe enquanto o e-mail ainda não estiver verificado.
 
-Antes de ativar `AUTH_REQUIRE_EMAIL_VERIFICATION=true`, repetir os testes porque essa flag afeta o acesso às ferramentas profissionais, embora a regra de privacidade das manifestações continue baseada no estado de verificação no momento da criação.
+Qualquer mudança para `AUTH_REQUIRE_EMAIL_VERIFICATION=true` exige nova decisão institucional, atualização do dossiê e repetição dos testes em ambiente controlado, porque essa flag afeta o acesso às ferramentas profissionais. A regra de privacidade das manifestações continua baseada no estado de verificação no momento da criação.
 
 ## 10. Validação institucional antes de abrir ao público
 

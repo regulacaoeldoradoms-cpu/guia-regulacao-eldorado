@@ -65,7 +65,7 @@ O painel do Conselho não recebe o e-mail de segurança.
 - O documento principal da manifestação não contém e-mail nem nome de usuário do cidadão.
 - O caminho interno do objeto no Storage não é devolvido pela API ao navegador.
 
-Quando uma conta de cidadão vincula e-mail, manifestações anteriores são promovidas para `sigilosa`. A V1 não permite simplesmente apagar o e-mail vinculado e fazer o histórico voltar a aparecer como anônimo; é possível substituí-lo por outro endereço e confirmá-lo.
+A modalidade de privacidade é congelada na criação. E-mail não verificado produz nova manifestação `anonima`; após a confirmação, o autor pode escolher `sigilosa` ou `identificada`, com padrão/fallback `sigilosa`. Vincular, confirmar ou substituir e-mail não altera protocolos anteriores. A V1 não permite simplesmente apagar um e-mail já confirmado; é possível substituí-lo por outro endereço e confirmá-lo.
 
 ## Teste de ativação
 
@@ -77,11 +77,13 @@ Quando uma conta de cidadão vincula e-mail, manifestações anteriores são pro
 6. Solicitar verificação.
 7. Abrir o link recebido.
 8. Voltar à página da conta e confirmar que o e-mail aparece como verificado.
-9. Criar manifestação e confirmar que o painel do Conselho mostra apenas `Sigilosa`, sem endereço de e-mail ou nome de usuário da conta.
-10. Criar uma manifestação antes de vincular e-mail, depois vincular um e-mail e confirmar que o protocolo anterior muda para `Sigilosa`.
-11. Testar uma conta profissional existente.
-12. Ativar a exigência de e-mail apenas em teste e confirmar que o profissional consegue entrar em `/conta/` para regularizar o acesso.
-13. Somente depois de validar o fluxo, considerar `AUTH_REQUIRE_EMAIL_VERIFICATION=true` em produção.
+9. Sem e-mail verificado, tentar solicitar `sigilosa` e `identificada` diretamente pela API e confirmar que ambas resultam em `anonima`.
+10. Confirmar o e-mail e criar uma manifestação com a opção padrão; o resultado deve ser `sigilosa`, sem endereço de e-mail ou nome de usuário da conta.
+11. Criar outra manifestação escolhendo `identificada` e confirmar que somente nome de perfil, @ e cargo/função autorizados aparecem.
+12. Confirmar que o protocolo anônimo criado antes da verificação permanece `anonima`.
+13. Testar uma conta profissional existente.
+14. Manter `AUTH_REQUIRE_EMAIL_VERIFICATION=false` na V1 até concluir todos os testes controlados de acesso profissional.
+15. Somente após nova decisão institucional e validação em ambiente controlado considerar a ativação em produção.
 
 ## Itens deliberadamente posteriores
 
