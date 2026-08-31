@@ -39,7 +39,7 @@ O Canal do Cidadão é um módulo da mesma conta, não uma troca de perfil. Em r
 
 ### Desenvolvedor (`admin`)
 
-Mantém administração técnica e os módulos profissionais autorizados. Só acessa o painel do Conselho se também possuir função `membro` ou `presidente`.
+Mantém administração técnica e os módulos profissionais autorizados. No painel institucional do Conselho, recebe capacidade operacional equivalente à Presidência sem alterar a função `council_role` salva na conta. Essa equivalência não transforma ações pessoais no Canal do Cidadão em ações institucionais.
 
 ### Coordenação (`coordenacao`)
 
@@ -61,8 +61,9 @@ Representa a conta sem função profissional no portal.
 
 `council_role` é independente do perfil principal:
 
-- `membro`: lê manifestações, histórico, anexos e registra observações internas;
-- `presidente`: possui as funções do membro e também responde oficialmente e altera o andamento.
+- `membro`: consulta conteúdo e histórico em modo anônimo e somente leitura; não vê identidade, anexos ou observações internas e não pode responder nem alterar andamento;
+- `presidente`: consulta o conteúdo integral autorizado, abre anexos, registra observações internas, responde oficialmente e altera o andamento;
+- `admin` (Desenvolvedor): no contexto institucional, possui a capacidade operacional da Presidência sem mudança do cargo salvo.
 
 ### Regra da Presidência
 
@@ -160,14 +161,15 @@ FIREBASE_STORAGE_BUCKET
 9. Manifestação anônima não muda retroativamente depois da verificação do e-mail.
 10. Presidente do Conselho não vê ação para nova manifestação.
 11. Tentativa direta da Presidência de criar manifestação recebe bloqueio do backend.
-12. Membro do Conselho pode visualizar e registrar observação interna, mas não responder oficialmente nem alterar andamento.
-13. Presidente pode responder oficialmente e alterar andamento.
-14. O Conselho não recebe e-mail de segurança nem identificadores técnicos de autenticação na manifestação.
-15. Segunda manifestação em menos de duas horas é recusada.
-16. Autor continua podendo responder dentro de protocolo existente.
-17. Anexos permanecem privados e acessíveis apenas aos autorizados.
-18. PDF é entregue como download e JPG/PNG somente após autorização.
-19. D1 e logs não armazenam o texto integral da manifestação fora do Firestore.
+12. Membro do Conselho visualiza conteúdo e histórico como anônimos, sem anexos ou observações internas, e não consegue interagir nem por chamada direta à API.
+13. Desenvolvedor mantém capacidade institucional equivalente à Presidência mesmo se o `council_role` salvo for `membro`.
+14. Presidente e Desenvolvedor podem responder oficialmente, alterar andamento, registrar observações internas e abrir anexos.
+15. O Conselho não recebe e-mail de segurança nem identificadores técnicos de autenticação na manifestação.
+16. Segunda manifestação em menos de duas horas é recusada.
+17. Autor continua podendo responder dentro de protocolo existente.
+18. Anexos permanecem privados e acessíveis apenas ao autor, à Presidência e ao Desenvolvedor conforme o contexto autorizado.
+19. PDF é entregue como download e JPG/PNG somente após autorização.
+20. D1 e logs não armazenam o texto integral da manifestação fora do Firestore.
 
 ## Próximas fases
 
