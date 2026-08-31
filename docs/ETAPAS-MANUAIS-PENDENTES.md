@@ -22,6 +22,17 @@ Este checklist registra somente o que ainda exige painel externo, teste real no 
 - ✅ Desenvolvedor possui capacidade institucional equivalente à Presidência sem alteração do cargo salvo.
 - ✅ `council_role=presidente` está bloqueado de abrir nova manifestação no backend.
 
+## 0. GitHub — proteger a branch main
+
+Ativar um ruleset da branch `main` no painel do GitHub com:
+
+- mudanças por pull request;
+- verificações de CI obrigatórias, incluindo `validate-council`, `validate` e `protocol-integrity`;
+- bloqueio de exclusão e force push;
+- aplicação também ao proprietário, mantendo apenas um procedimento explícito de emergência.
+
+Até essa configuração ser ativada no painel, continuar adotando branch isolada, PR e validações verdes antes de cada merge.
+
 ## 1. Firebase — confirmar/publicar regras privadas
 
 Confirmar no console Firebase que as regras em produção negam leitura/escrita direta por clientes Firebase. Na V1, o acesso ao conteúdo do Conselho ocorre pelo Worker/conta de serviço.
