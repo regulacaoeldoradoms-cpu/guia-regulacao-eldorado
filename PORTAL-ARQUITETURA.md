@@ -38,11 +38,11 @@ O perfil primário não deve ser confundido com a função no Conselho nem com o
 
 Campo independente `council_role`:
 
-- `presidente`: visualiza manifestações, responde oficialmente, altera andamento, conclui e registra observações internas.
-- `membro`: visualiza manifestações e histórico e registra observações internas.
+- `presidente`: visualiza manifestações, responde oficialmente, altera andamento, conclui, acessa anexos e registra observações internas.
+- `membro`: acesso anônimo e somente leitura ao conteúdo e ao histórico; não vê identidade, anexos ou observações internas e não pode interagir.
 - vazio: sem acesso ao painel institucional.
 
-Uma conta pode ser, por exemplo, `admin + membro` ou `cidadao + presidente`.
+No painel institucional, o perfil `admin` (Desenvolvedor) recebe capacidade operacional equivalente à Presidência sem alteração do `council_role` salvo na conta. Uma conta pode ser, por exemplo, `admin + membro` ou `cidadao + presidente`; a precedência técnica do Desenvolvedor vale somente no contexto institucional do Conselho.
 
 ## Hierarquia para concessão de acessos
 
@@ -120,11 +120,13 @@ Sem a configuração Firebase, o portal profissional continua funcionando e o m�
 - Cadastro inicial pede apenas usuário + senha; não pede nome de exibição, e-mail, telefone ou CPF.
 - A tela orienta a não usar nome completo ou outro dado pessoal no nome de usuário quando a pessoa quiser preservar a identificação.
 - A foto de perfil fica bloqueada enquanto a conta estiver Bronze e é liberada apenas após confirmação do e-mail/nível Prata.
-- Sem e-mail: interface identifica a conta como sem identificação por e-mail/telefone e a manifestação como `anonima` no contexto do painel do Conselho.
-- Ao vincular e-mail: a conta passa para `sigilosa` e manifestações anteriores daquela conta também são promovidas para `sigilosa`.
-- O nível da conta e o rótulo de privacidade são conceitos diferentes: uma conta pode permanecer Bronze enquanto um e-mail ainda não confirmado já torna o histórico sigiloso.
-- Na V1, um e-mail já vinculado não pode simplesmente ser apagado para fazer o histórico parecer anônimo novamente; ele pode ser substituído e confirmado.
-- O e-mail de segurança não é incluído no documento da manifestação e não é exibido à Presidente nem aos membros do Conselho.
+- Sem e-mail confirmado, toda nova manifestação é `anonima`, mesmo que o cliente solicite outra modalidade.
+- Com `emailVerified=true`, o autor escolhe entre `sigilosa` e `identificada`; valor ausente ou inválido resulta em `sigilosa`.
+- Em manifestação sigilosa, nome, @, foto, e-mail e função do autor não são exibidos ao Conselho.
+- Em manifestação identificada, o Conselho recebe nome de perfil, @ e cargo/função quando houver; o e-mail continua protegido.
+- A modalidade fica congelada no momento da criação. Vincular, confirmar ou substituir e-mail depois não altera protocolos anteriores.
+- Na V1, um e-mail já confirmado não pode simplesmente ser apagado; ele pode ser substituído e novamente confirmado.
+- O nível da conta e o rótulo de privacidade são conceitos diferentes, mas apenas e-mail confirmado permite escolher sigilosa ou identificada.
 - O e-mail é usado para segurança/recuperação da conta e futura verificação em novo dispositivo.
 
 ## Migração de e-mail profissional
