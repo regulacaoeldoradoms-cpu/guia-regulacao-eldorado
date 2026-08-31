@@ -82,19 +82,21 @@ São conceitos independentes.
 - conta: Bronze;
 - manifestação: Anônima no modelo do portal, sem e-mail/telefone vinculado.
 
-### Exemplo 2 — Bronze + Sigilosa
+### Exemplo 2 — Bronze + Anônima com e-mail ainda não verificado
 
 - cidadão adicionou um e-mail, mas ainda não confirmou;
 - conta continua Bronze porque o requisito do Prata ainda não foi concluído;
-- manifestação passa a Sigilosa porque o sistema já possui um identificador vinculado à conta.
+- toda nova manifestação continua Anônima;
+- solicitações diretas de modalidade Sigilosa ou Identificada são normalizadas pelo backend para Anônima.
 
-### Exemplo 3 — Prata + Sigilosa
+### Exemplo 3 — Prata + escolha por manifestação
 
 - e-mail confirmado;
 - conta passa para Prata;
 - foto de perfil é desbloqueada;
-- manifestação permanece Sigilosa;
-- Conselho não recebe e-mail nem foto do perfil.
+- em cada nova manifestação, o autor escolhe Sigilosa ou Identificada;
+- a opção padrão e o fallback são Sigilosa;
+- o Conselho nunca recebe o e-mail de segurança nem a foto do perfil como identificação da manifestação.
 
 ## Níveis de profissionais
 
