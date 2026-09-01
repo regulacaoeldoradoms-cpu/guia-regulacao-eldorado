@@ -6,10 +6,14 @@ on:
       - 'telemedicina/**'
       - 'css/telemedicina.css'
       - 'js/telemedicina.js'
+      - 'js/telemedicina-business-day.js'
       - 'js/home.js'
       - 'js/admin-users.js'
+      - 'index.html'
+      - 'admin/usuarios/index.html'
       - 'worker/telemedicine*.js'
       - 'worker/auth-management-flex.js'
+      - 'worker/portal-safety.js'
       - 'worker/index.js'
       - 'worker/tests/telemedicine-rules.test.mjs'
       - 'docs/TELEMEDICINA.md'
@@ -21,10 +25,14 @@ on:
       - 'telemedicina/**'
       - 'css/telemedicina.css'
       - 'js/telemedicina.js'
+      - 'js/telemedicina-business-day.js'
       - 'js/home.js'
       - 'js/admin-users.js'
+      - 'index.html'
+      - 'admin/usuarios/index.html'
       - 'worker/telemedicine*.js'
       - 'worker/auth-management-flex.js'
+      - 'worker/portal-safety.js'
       - 'worker/index.js'
       - 'worker/tests/telemedicine-rules.test.mjs'
       - 'docs/TELEMEDICINA.md'
@@ -46,16 +54,19 @@ jobs:
           test -f telemedicina/index.html
           test -f css/telemedicina.css
           test -f js/telemedicina.js
+          test -f js/telemedicina-business-day.js
           test -f worker/telemedicine.js
           test -f worker/telemedicine-access.js
           test -f worker/telemedicine-rules.js
           node --check js/telemedicina.js
+          node --check js/telemedicina-business-day.js
           node --check js/home.js
           node --check js/admin-users.js
           node --input-type=module --check < worker/telemedicine.js
           node --input-type=module --check < worker/telemedicine-access.js
           node --input-type=module --check < worker/telemedicine-rules.js
           node --input-type=module --check < worker/auth-management-flex.js
+          node --input-type=module --check < worker/portal-safety.js
           node --input-type=module --check < worker/index.js
       - name: Testar regra dos retornos
         shell: bash
@@ -72,16 +83,18 @@ jobs:
           grep -q "Somente o Desenvolvedor pode executar a migração inicial" worker/telemedicine.js
           grep -q "Somente o Desenvolvedor pode conceder o perfil Técnico em Telemedicina" worker/auth-management-flex.js
           grep -q "perfil Técnico em Telemedicina é gerenciado somente pelo Desenvolvedor" worker/auth-management-flex.js
+          grep -q "'telemedicina'" worker/portal-safety.js
           grep -q "telemedicine_patients" worker/telemedicine.js
           grep -q "telemedicine_followups" worker/telemedicine.js
           grep -q "telemedicine_events" worker/telemedicine.js
           grep -q "href=\"/telemedicina/\"" js/home.js
           grep -q "Técnico em Telemedicina" js/admin-users.js
+          grep -q "telemedicina-business-day.js" telemedicina/index.html
           if find . -iname '*migracao_privada*' -o -iname '*telemedicina*migracao*.json' | grep -q .; then
             echo 'Arquivo privado de migração não pode ser versionado.' >&2
             exit 1
           fi
-          if grep -R -n -E '\b(CNS|CPF)\b' telemedicina js/telemedicina.js worker/telemedicine.js worker/telemedicine-rules.js worker/telemedicine-access.js; then
+          if grep -R -n -E '\b(CNS|CPF)\b' telemedicina js/telemedicina.js js/telemedicina-business-day.js worker/telemedicine.js worker/telemedicine-rules.js worker/telemedicine-access.js; then
             echo 'Identificador pessoal proibido no módulo versionado.' >&2
             exit 1
           fi
