@@ -120,7 +120,7 @@ Sem a configuração Firebase, o portal profissional continua funcionando e o m�
 - Cadastro inicial pede apenas usuário + senha; não pede nome de exibição, e-mail, telefone ou CPF.
 - A tela orienta a não usar nome completo ou outro dado pessoal no nome de usuário quando a pessoa quiser preservar a identificação.
 - A foto de perfil fica bloqueada enquanto a conta estiver Bronze e é liberada apenas após confirmação do e-mail/nível Prata.
-- Sem e-mail confirmado, toda nova manifestação é `anonima`, mesmo que o cliente solicite outra modalidade.
+- Sem e-mail confirmado, o autor escolhe em cada nova manifestação entre `anonima` e `identificada`; valor ausente, inválido ou pedido de `sigilosa` resulta em `anonima`.
 - Com `emailVerified=true`, o autor escolhe entre `sigilosa` e `identificada`; valor ausente ou inválido resulta em `sigilosa`.
 - Em manifestação sigilosa, nome, @, foto, e-mail e função do autor não são exibidos ao Conselho.
 - Em manifestação identificada, o Conselho recebe nome de perfil, @ e cargo/função quando houver; o e-mail continua protegido.
