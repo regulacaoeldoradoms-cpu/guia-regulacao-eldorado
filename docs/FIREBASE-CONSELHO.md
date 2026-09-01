@@ -65,7 +65,7 @@ O painel do Conselho não recebe o e-mail de segurança.
 - O documento principal da manifestação não contém e-mail nem nome de usuário do cidadão.
 - O caminho interno do objeto no Storage não é devolvido pela API ao navegador.
 
-A modalidade de privacidade é congelada na criação. E-mail não verificado produz nova manifestação `anonima`; após a confirmação, o autor pode escolher `sigilosa` ou `identificada`, com padrão/fallback `sigilosa`. Vincular, confirmar ou substituir e-mail não altera protocolos anteriores. A V1 não permite simplesmente apagar um e-mail já confirmado; é possível substituí-lo por outro endereço e confirmá-lo.
+A modalidade de privacidade é congelada na criação. Sem e-mail verificado, o autor escolhe `anonima` ou `identificada`, com padrão/fallback `anonima`; após a confirmação, escolhe `sigilosa` ou `identificada`, com padrão/fallback `sigilosa`. Vincular, confirmar ou substituir e-mail não altera protocolos anteriores. A V1 não permite simplesmente apagar um e-mail já confirmado; é possível substituí-lo por outro endereço e confirmá-lo.
 
 ## Teste de ativação
 
@@ -77,7 +77,7 @@ A modalidade de privacidade é congelada na criação. E-mail não verificado pr
 6. Solicitar verificação.
 7. Abrir o link recebido.
 8. Voltar à página da conta e confirmar que o e-mail aparece como verificado.
-9. Sem e-mail verificado, tentar solicitar `sigilosa` e `identificada` diretamente pela API e confirmar que ambas resultam em `anonima`.
+9. Sem e-mail verificado, confirmar pela interface e pela API que `anonima` resulta em `anonima`, `identificada` resulta em `identificada` e pedido de `sigilosa` usa o fallback `anonima`.
 10. Confirmar o e-mail e criar uma manifestação com a opção padrão; o resultado deve ser `sigilosa`, sem endereço de e-mail ou nome de usuário da conta.
 11. Criar outra manifestação escolhendo `identificada` e confirmar que somente nome de perfil, @ e cargo/função autorizados aparecem.
 12. Confirmar que o protocolo anônimo criado antes da verificação permanece `anonima`.
