@@ -5,6 +5,7 @@ on:
     paths:
       - 'telemedicina/**'
       - 'css/telemedicina.css'
+      - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-business-day.js'
       - 'js/home.js'
@@ -26,6 +27,7 @@ on:
     paths:
       - 'telemedicina/**'
       - 'css/telemedicina.css'
+      - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-business-day.js'
       - 'js/home.js'
@@ -57,6 +59,7 @@ jobs:
           set -euo pipefail
           test -f telemedicina/index.html
           test -f css/telemedicina.css
+          test -f css/account-admin.css
           test -f js/telemedicina.js
           test -f js/telemedicina-business-day.js
           test -f worker/telemedicine.js
@@ -79,7 +82,7 @@ jobs:
           set -euo pipefail
           cp worker/telemedicine-rules.js /tmp/telemedicine-rules.mjs
           node worker/tests/telemedicine-rules.test.mjs /tmp/telemedicine-rules.mjs
-      - name: Conferir autorização e privacidade
+      - name: Conferir autorização, interface e privacidade
         shell: bash
         run: |
           set -euo pipefail
@@ -99,6 +102,9 @@ jobs:
           grep -q "anônima</strong> e <strong>identificada" conta/index.html
           grep -q "admin-users.js?v=20260901-1" admin/usuarios/index.html
           grep -q "telemedicina-business-day.js" telemedicina/index.html
+          grep -q "account-admin.css" telemedicina/index.html
+          grep -q "modal-backdrop.open" css/account-admin.css
+          grep -q "account-status.visible" css/account-admin.css
           if find . -iname '*migracao_privada*' -o -iname '*telemedicina*migracao*.json' | grep -q .; then
             echo 'Arquivo privado de migração não pode ser versionado.' >&2
             exit 1
