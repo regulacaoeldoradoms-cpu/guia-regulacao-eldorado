@@ -38,15 +38,21 @@ export function isBusinessDay(value) {
   return weekday !== 0 && weekday !== 6;
 }
 
-function nextBusinessDay(value) {
+export function nextBusinessDay(value) {
   let cursor = value;
   while (!isBusinessDay(cursor)) cursor = addDays(cursor, 1);
   return cursor;
 }
 
+export function normalizeReturnDueDate(value) {
+  if (!dateValid(value)) return '';
+  return nextBusinessDay(value);
+}
+
 export function threeBusinessReminders(returnDueDate) {
   if (!dateValid(returnDueDate)) return [];
-  const target = addDays(returnDueDate, -15);
+  const normalizedDueDate = normalizeReturnDueDate(returnDueDate);
+  const target = addDays(normalizedDueDate, -15);
   const reminders = [];
   let cursor = nextBusinessDay(target);
   while (reminders.length < 3) {
@@ -111,8 +117,8 @@ export function explicitReturnDays(resolution) {
 }
 
 export function returnDueFromRecord(date, resolution, explicitDueDate = '') {
-  if (dateValid(explicitDueDate)) return explicitDueDate;
+  if (dateValid(explicitDueDate)) return normalizeReturnDueDate(explicitDueDate);
   if (!dateValid(date)) return '';
   const days = explicitReturnDays(resolution);
-  return days ? addDays(date, days) : '';
+  return days ? normalizeReturnDueDate(addDays(date, days)) : '';
 }
