@@ -1,0 +1,109 @@
+name: Validar Telemedicina
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/**'
+      - 'css/telemedicina.css'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-business-day.js'
+      - 'js/home.js'
+      - 'js/admin-users.js'
+      - 'js/account.js'
+      - 'index.html'
+      - 'conta/index.html'
+      - 'admin/usuarios/index.html'
+      - 'worker/telemedicine*.js'
+      - 'worker/auth-management-flex.js'
+      - 'worker/portal-safety.js'
+      - 'worker/index.js'
+      - 'worker/tests/telemedicine-rules.test.mjs'
+      - 'docs/TELEMEDICINA.md'
+      - 'PORTAL-ARQUITETURA.md'
+      - '.github/workflows/validate-telemedicine.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/**'
+      - 'css/telemedicina.css'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-business-day.js'
+      - 'js/home.js'
+      - 'js/admin-users.js'
+      - 'js/account.js'
+      - 'index.html'
+      - 'conta/index.html'
+      - 'admin/usuarios/index.html'
+      - 'worker/telemedicine*.js'
+      - 'worker/auth-management-flex.js'
+      - 'worker/portal-safety.js'
+      - 'worker/index.js'
+      - 'worker/tests/telemedicine-rules.test.mjs'
+      - 'docs/TELEMEDICINA.md'
+      - 'PORTAL-ARQUITETURA.md'
+      - '.github/workflows/validate-telemedicine.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir arquivos e sintaxe
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f telemedicina/index.html
+          test -f css/telemedicina.css
+          test -f js/telemedicina.js
+          test -f js/telemedicina-business-day.js
+          test -f worker/telemedicine.js
+          test -f worker/telemedicine-access.js
+          test -f worker/telemedicine-rules.js
+          node --check js/telemedicina.js
+          node --check js/telemedicina-business-day.js
+          node --check js/home.js
+          node --check js/admin-users.js
+          node --check js/account.js
+          node --input-type=module --check < worker/telemedicine.js
+          node --input-type=module --check < worker/telemedicine-access.js
+          node --input-type=module --check < worker/telemedicine-rules.js
+          node --input-type=module --check < worker/auth-management-flex.js
+          node --input-type=module --check < worker/portal-safety.js
+          node --input-type=module --check < worker/index.js
+      - name: Testar regra dos retornos
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp worker/telemedicine-rules.js /tmp/telemedicine-rules.mjs
+          node worker/tests/telemedicine-rules.test.mjs /tmp/telemedicine-rules.mjs
+      - name: Conferir autorização e privacidade
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "isTelemedicineApi" worker/index.js
+          grep -q "Acesso exclusivo da Telemedicina ou do Desenvolvedor" worker/telemedicine.js
+          grep -q "Somente o Desenvolvedor pode executar a migração inicial" worker/telemedicine.js
+          grep -q "Somente o Desenvolvedor pode conceder o perfil Técnico em Telemedicina" worker/auth-management-flex.js
+          grep -q "perfil Técnico em Telemedicina é gerenciado somente pelo Desenvolvedor" worker/auth-management-flex.js
+          grep -q "'telemedicina'" worker/portal-safety.js
+          grep -q "telemedicine_patients" worker/telemedicine.js
+          grep -q "telemedicine_followups" worker/telemedicine.js
+          grep -q "telemedicine_events" worker/telemedicine.js
+          grep -q "href=\"/telemedicina/\"" js/home.js
+          grep -q "Técnico em Telemedicina" js/admin-users.js
+          grep -q "telemedicina: 'Técnico em Telemedicina'" js/account.js
+          grep -q "Privacidade à escolha · conta Bronze" js/account.js
+          grep -q "anônima</strong> e <strong>identificada" conta/index.html
+          grep -q "admin-users.js?v=20260901-1" admin/usuarios/index.html
+          grep -q "telemedicina-business-day.js" telemedicina/index.html
+          if find . -iname '*migracao_privada*' -o -iname '*telemedicina*migracao*.json' | grep -q .; then
+            echo 'Arquivo privado de migração não pode ser versionado.' >&2
+            exit 1
+          fi
+          if grep -R -n -E '\b(CNS|CPF)\b' telemedicina js/telemedicina.js js/telemedicina-business-day.js worker/telemedicine.js worker/telemedicine-rules.js worker/telemedicine-access.js; then
+            echo 'Identificador pessoal proibido no módulo versionado.' >&2
+            exit 1
+          fi

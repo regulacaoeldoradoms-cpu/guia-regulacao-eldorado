@@ -11,7 +11,7 @@
 
   const isCitizen = user.role === 'cidadao';
   const roleLabels = {
-    medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', cidadao: 'Cidadão', admin: 'Desenvolvedor · acesso técnico'
+    medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', telemedicina: 'Técnico em Telemedicina', cidadao: 'Cidadão', admin: 'Desenvolvedor · acesso técnico'
   };
   document.getElementById('portalUserName').textContent = user.name || user.username;
   document.getElementById('portalUserRole').textContent = `${roleLabels[user.role] || user.role}${user.councilRole ? ` · Conselho: ${user.councilRole === 'presidente' ? 'Presidente' : 'Membro'}` : ''}`;
@@ -145,7 +145,7 @@
     if (security.emailVerified) {
       privacyStatus.innerHTML = '<strong>Conta Prata · e-mail verificado</strong><span>O endereço protege a mesma conta usada em todos os módulos. Em cada nova manifestação, você pode manter sua identidade sigilosa ou optar por se identificar ao Conselho. O e-mail não é exibido no painel institucional.</span>';
     } else {
-      privacyStatus.innerHTML = '<strong>Privacidade das manifestações: anônima</strong><span>Enquanto o e-mail não estiver verificado, novas manifestações são registradas como anônimas. Se você confirmar o e-mail depois, os protocolos já enviados permanecem com a privacidade registrada no momento do envio.</span>';
+      privacyStatus.innerHTML = '<strong>Privacidade à escolha · conta Bronze</strong><span>Mesmo sem e-mail verificado, em cada nova manifestação você escolhe entre envio anônimo e identificado. Se optar por se identificar, o Conselho recebe apenas os dados seguros do seu perfil; o e-mail, quando cadastrado, continua protegido. O fallback permanece anônimo.</span>';
     }
 
     verificationButton.hidden = !security.email || security.emailVerified;

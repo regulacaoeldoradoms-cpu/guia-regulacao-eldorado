@@ -1,6 +1,6 @@
 # Portal de acesso por perfil
 
-Arquitetura revisada em 16/08/2026.
+Arquitetura revisada em 01/09/2026.
 
 ## Entrada única
 
@@ -16,6 +16,7 @@ Arquitetura revisada em 16/08/2026.
 - `/`: Início profissional.
 - `/medico/`: Guia Médico e pré-regulação Gemini.
 - `/recepcao/`: Conferência da Recepção.
+- `/telemedicina/`: acompanhamento longitudinal de teleconsultas, retornos e lembretes operacionais.
 - `/admin/usuarios/`: gestão de usuários conforme hierarquia.
 - `/admin/monitoramento/`: monitoramento disponível para Coordenação e Desenvolvedor.
 - `/admin/configuracao/`: diagnóstico técnico exclusivo do Desenvolvedor.
@@ -30,9 +31,18 @@ Arquitetura revisada em 16/08/2026.
 2. `coordenacao` — **Coordenação**. Guia, Recepção, Monitoramento e gestão apenas de médicos/recepção.
 3. `medico` — **Médico**. Ambiente médico.
 4. `recepcao` — **Recepção**. Conferência operacional.
-5. `cidadao` — **Cidadão**. Hub do Cidadão.
+5. `telemedicina` — **Técnico em Telemedicina**. Acompanhamento de teleconsultas e retornos; concedido apenas pelo Desenvolvedor.
+6. `cidadao` — **Cidadão**. Hub do Cidadão.
 
 O perfil primário não deve ser confundido com a função no Conselho nem com o nível Bronze/Prata/Ouro.
+
+### Implementação do perfil de Telemedicina
+
+Para preservar compatibilidade com o mecanismo de sessão já implantado, `telemedicina` é um perfil lógico da camada flexível de autenticação. No registro-base do D1 a conta utiliza `recepcao`, enquanto a tabela `auth_telemedicine_access` registra a capacidade exclusiva. `worker/auth-management-flex.js` expõe e valida a conta como `telemedicina` para o restante do portal.
+
+Essa composição não concede acesso à Conferência da Recepção: módulos que usam a validação flexível recebem o perfil lógico `telemedicina`, não `recepcao`. A Coordenação também não recebe essas contas na sua lista de subordinados e não pode administrá-las.
+
+A decisão detalhada está em `docs/TELEMEDICINA.md`.
 
 ## Funções do Conselho
 
@@ -46,13 +56,27 @@ No painel institucional, o perfil `admin` (Desenvolvedor) recebe capacidade oper
 
 ## Hierarquia para concessão de acessos
 
-- Desenvolvedor pode criar/atribuir: Coordenação, Médico, Recepção e Cidadão. Funções do Conselho também são atribuídas pelo Desenvolvedor.
+- Desenvolvedor pode criar/atribuir: Coordenação, Médico, Recepção, Técnico em Telemedicina e Cidadão. Funções do Conselho também são atribuídas pelo Desenvolvedor.
 - Coordenação pode criar/atribuir somente Médico e Recepção.
-- Médico, Recepção e Cidadão não concedem cargos.
+- O perfil Técnico em Telemedicina é administrado exclusivamente pelo Desenvolvedor e fica fora da lista de subordinados da Coordenação.
+- Médico, Recepção, Técnico em Telemedicina e Cidadão não concedem cargos.
 - Auto cadastro sempre cria exclusivamente `cidadao`; o cliente nunca escolhe um cargo privilegiado.
 - A conta Desenvolvedor não pode se desativar ou remover o próprio nível técnico pelo formulário comum.
 
 A validação é executada no backend. Esconder opções no frontend não é considerado controle de acesso.
+
+## Telemedicina e dados sensíveis
+
+O módulo de Telemedicina usa o Worker como única porta para leitura e escrita dos dados assistenciais operacionais. O navegador não acessa o Firestore diretamente.
+
+- Firestore `telemedicine_patients`: cadastro agrupador do paciente.
+- Firestore `telemedicine_followups`: situação operacional atual por paciente + especialidade.
+- Firestore `telemedicine_events`: linha do tempo de consultas, programações e confirmações de solicitação.
+- D1 `auth_telemedicine_access`: capacidade do perfil Técnico em Telemedicina.
+
+O histórico é organizado por paciente, eliminando a dependência de uma lista cronológica com nomes repetidos. O CNS não integra o fluxo migrado. Arquivos privados de migração e conteúdo nominal de pacientes não são versionados.
+
+A janela operacional inicia 15 dias antes da data-alvo do retorno e contém três avisos em dias úteis consecutivos. Após o terceiro aviso, a pendência passa a `ATRASADO` e permanece até confirmação. Retornos vagos ou condicionais não recebem data inventada.
 
 ## Evolução da conta do cidadão
 
@@ -106,14 +130,14 @@ Isso corrige o uso anterior do perfil Desenvolvedor para liberar ferramentas de 
 
 O conteúdo das manifestações não é armazenado no Google Drive e não possui fallback para Drive ou D1.
 
-- Cloud Firestore: manifestação, mensagens, andamento, observações internas e metadados de anexos.
+- Cloud Firestore: manifestação, mensagens, andamento, observações internas e metadados de anexos; também armazena as coleções protegidas de Telemedicina.
 - Cloud Storage/Firebase Storage: JPG, PNG e PDF privados.
-- D1: autenticação do portal, índice técnico protocolo↔conta, contador de protocolo, rate limit, notificações genéricas e auditoria sem conteúdo da manifestação.
+- D1: autenticação do portal, capacidades técnicas, índice protocolo↔conta, contador de protocolo, rate limit, notificações genéricas e auditoria sem conteúdo da manifestação.
 - O documento principal da manifestação no Firestore não contém o nome de usuário do cidadão.
 - O acesso ao Firestore/Storage é intermediado pelo Worker. O navegador não recebe credencial de conta de serviço.
 - As regras versionadas em `firebase/firestore.rules` e `firebase/storage.rules` negam todo acesso direto por clientes Firebase na V1; o Worker usa IAM/conta de serviço.
 
-Sem a configuração Firebase, o portal profissional continua funcionando e o módulo do Conselho informa que aguarda conexão do armazenamento.
+Sem a configuração Firebase, o portal profissional continua funcionando e os módulos dependentes do Firestore informam que aguardam conexão do armazenamento.
 
 ## Privacidade da conta do cidadão
 
@@ -171,7 +195,7 @@ O objetivo é permitir rastreabilidade sem duplicar conteúdo sensível em logs 
 
 ## Chat e futura camada social
 
-Na V1, cidadãos não possuem acesso ao chat profissional nem à lista de médicos, recepcionistas, coordenadores ou desenvolvedores.
+Na V1, cidadãos não possuem acesso ao chat profissional nem à lista de médicos, recepcionistas, coordenadores ou desenvolvedores. O Técnico em Telemedicina também não recebe acesso ao chat profissional apenas por possuir esse perfil; qualquer integração futura deve ser decidida explicitamente.
 
 A arquitetura de conta já contém `accept_friend_requests` e gates de nível:
 
@@ -181,6 +205,8 @@ A arquitetura de conta já contém `accept_friend_requests` e gates de nível:
 
 Amizade, busca social, feed, seguidores e chat cidadão↔profissional ficam fora da V1. Quando implementados, o chat só poderá existir após relação autorizada. Cada usuário poderá escolher se aceita pedidos, e o nível da conta nunca contornará as regras de privacidade do profissional.
 
-## Repositório público
+## Repositório e proteção de dados
 
-O repositório é público. Portanto, nenhuma credencial, chave privada, e-mail protegido ou conteúdo de manifestação pode ser salvo no GitHub. Dados protegidos ficam em serviços autenticados no backend. Segredos permanecem no painel da Cloudflare. O `.gitignore` bloqueia arquivos locais comuns de segredo, e `worker/.dev.vars.example` contém somente placeholders.
+Em 01/09/2026 o repositório foi alterado para **privado**. Essa mudança reduz a exposição do código, mas não transforma o GitHub em banco de dados assistencial.
+
+Nenhuma credencial, chave privada, e-mail protegido, conteúdo de manifestação, nome de paciente, arquivo de migração de Telemedicina ou outro dado sensível deve ser salvo no repositório. Dados protegidos ficam em serviços autenticados no backend. Segredos permanecem no painel da Cloudflare. O `.gitignore` bloqueia arquivos locais comuns de segredo, e `worker/.dev.vars.example` contém somente placeholders.

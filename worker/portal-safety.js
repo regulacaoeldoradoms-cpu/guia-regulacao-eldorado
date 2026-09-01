@@ -2,18 +2,19 @@
 
 import { accountProgressFor, minimumLevelMet } from './account-levels.js';
 
-const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'admin']);
+const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin']);
 const COUNCIL_ROLES_REQUIRING_VERIFICATION = new Set(['membro', 'presidente']);
 const RESERVED_CITIZEN_USERNAMES = new Set([
   'admin', 'administrador', 'administracao', 'developer', 'desenvolvedor',
   'coordenacao', 'coordenador', 'coordenadora', 'medico', 'medica', 'recepcao',
+  'telemedicina', 'tecnico.telemedicina', 'tecnica.telemedicina',
   'regulacao', 'regulador', 'reguladora', 'saude', 'sms', 'sesau', 'secretaria',
   'prefeitura', 'eldorado', 'conselho', 'cms', 'presidente', 'oficial', 'sistema',
   'suporte', 'atendimento', 'moderacao', 'moderador', 'moderadora'
 ]);
 const RESERVED_CITIZEN_PREFIXES = [
   'admin.', 'administracao.', 'conselho.', 'cms.', 'prefeitura.', 'regulacao.',
-  'saude.', 'secretaria.', 'sistema.', 'suporte.', 'oficial.'
+  'saude.', 'secretaria.', 'sistema.', 'suporte.', 'oficial.', 'telemedicina.'
 ];
 const EMAIL_GATE_EXEMPT_PATHS = new Set([
   '/api/auth/login',

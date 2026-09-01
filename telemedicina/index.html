@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d3157">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Telemedicina | Portal da Regulação</title>
+  <link rel="icon" href="/assets/portal-regulacao-header.png?v=20260823-1" type="image/png">
+  <link rel="stylesheet" href="/css/portal.css?v=20260815-1">
+  <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
+  <link rel="stylesheet" href="/css/telemedicina.css?v=20260901-2">
+</head>
+<body class="portal-page telemedicine-page">
+  <div class="portal-shell">
+    <header class="portal-topbar">
+      <div class="portal-topbar-inner">
+        <div class="portal-brand">
+          <img src="/assets/portal-regulacao-header.png?v=20260823-1" alt="Portal da Regulação de Saúde">
+          <div><h1>Telemedicina</h1><p>Acompanhamento de retornos</p></div>
+        </div>
+        <div class="portal-user">
+          <a class="portal-button ghost linklike" href="/">Início</a>
+          <div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div>
+          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="portal-main telemedicine-main">
+      <section class="portal-hero telemedicine-hero">
+        <div class="portal-hero-copy">
+          <span class="portal-eyebrow">Gestão de teleconsultas</span>
+          <h2>Retornos organizados por paciente, com lembretes no prazo certo.</h2>
+          <p>O sistema mantém o histórico longitudinal, calcula a janela de solicitação 15 dias antes do retorno e conserva a pendência visível até a confirmação de que o pedido foi feito.</p>
+        </div>
+        <div class="telemedicine-today"><span>Data operacional</span><strong id="todayLabel">—</strong><small id="todayAlerts">Carregando alertas...</small></div>
+      </section>
+
+      <div class="portal-note info" id="systemNotice" hidden></div>
+
+      <section class="telemedicine-stats" aria-label="Resumo dos retornos">
+        <button class="telemedicine-stat urgent" type="button" data-status-filter="SOLICITAR"><span>Solicitar agora</span><strong id="statSolicitar">0</strong><small>Dentro dos 3 dias úteis</small></button>
+        <button class="telemedicine-stat danger" type="button" data-status-filter="ATRASADO"><span>Atrasados</span><strong id="statAtrasado">0</strong><small>Continuam pendentes</small></button>
+        <button class="telemedicine-stat waiting" type="button" data-status-filter="EM AGUARDO"><span>Em aguardo</span><strong id="statAguardo">0</strong><small>Já programados</small></button>
+        <button class="telemedicine-stat review" type="button" data-status-filter="SEM PROGRAMAÇÃO"><span>Sem programação</span><strong id="statSemProgramacao">0</strong><small>Precisam de revisão</small></button>
+      </section>
+
+      <section class="portal-section telemedicine-workspace">
+        <div class="telemedicine-toolbar">
+          <div class="telemedicine-search-wrap">
+            <label for="telemedicineSearch">Buscar paciente ou especialidade</label>
+            <input class="portal-search" id="telemedicineSearch" type="search" placeholder="Digite o nome do paciente ou a especialidade" autocomplete="off">
+          </div>
+          <div class="telemedicine-toolbar-actions">
+            <select id="statusFilter" aria-label="Filtrar situação">
+              <option value="">Todas as situações</option>
+              <option value="SOLICITAR">Solicitar agora</option>
+              <option value="ATRASADO">Atrasados</option>
+              <option value="EM AGUARDO">Em aguardo</option>
+              <option value="SEM PROGRAMAÇÃO">Sem programação</option>
+              <option value="SOLICITADO">Solicitados</option>
+            </select>
+            <button class="portal-button secondary" id="enableNotifications" type="button">Ativar notificações</button>
+            <button class="portal-button secondary" id="openImport" type="button" hidden>Importar histórico</button>
+            <button class="portal-button primary" id="openConsultation" type="button">Registrar consulta</button>
+          </div>
+        </div>
+        <div class="telemedicine-filter-summary" id="filterSummary"></div>
+        <div class="telemedicine-list" id="followupList"><div class="portal-note info">Carregando acompanhamentos...</div></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="patientModal" aria-hidden="true">
+    <section class="portal-modal telemedicine-modal telemedicine-patient-modal" role="dialog" aria-modal="true" aria-labelledby="patientModalTitle">
+      <div class="portal-modal-header"><div><h2 id="patientModalTitle">Histórico do paciente</h2><div class="user-meta" id="patientModalMeta"></div></div><button class="portal-modal-close" type="button" data-close-modal="patientModal">×</button></div>
+      <div id="patientDetail"><div class="portal-note info">Carregando histórico...</div></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="consultationModal" aria-hidden="true">
+    <form class="portal-modal telemedicine-modal" id="consultationForm">
+      <div class="portal-modal-header"><div><h2>Registrar teleconsulta</h2><div class="user-meta">Um novo registro entra automaticamente no histórico do paciente.</div></div><button class="portal-modal-close" type="button" data-close-modal="consultationModal">×</button></div>
+      <div class="telemedicine-form-grid">
+        <div class="portal-field full"><label for="consultPatient">Paciente</label><input id="consultPatient" required maxlength="160" list="patientSuggestions" autocomplete="off" placeholder="Nome completo"><datalist id="patientSuggestions"></datalist><small>Pesquise antes de cadastrar para evitar duplicidade por grafia.</small></div>
+        <div class="portal-field"><label for="consultDate">Data da consulta</label><input id="consultDate" required type="date"></div>
+        <div class="portal-field"><label for="consultSpecialty">Especialidade</label><input id="consultSpecialty" required maxlength="120" list="specialtySuggestions" placeholder="Ex.: Psiquiatria"><datalist id="specialtySuggestions"></datalist></div>
+        <div class="portal-field full"><label for="consultResolution">Resolutividade / conduta</label><textarea id="consultResolution" required maxlength="2500" rows="4" placeholder="Ex.: RETORNO COM 60 DIAS"></textarea></div>
+        <div class="portal-field full"><label class="telemedicine-check"><input id="consultNeedsReturn" type="checkbox" checked> Necessita acompanhamento/retorno</label></div>
+        <div class="portal-field"><label for="consultReturnDays">Prazo em dias</label><input id="consultReturnDays" type="number" min="1" max="730" placeholder="Ex.: 60"><small>Use quando o prazo for numérico. Se cair no fim de semana, o retorno passa ao próximo dia útil.</small></div>
+        <div class="portal-field"><label for="consultReturnDate">Ou data-alvo do retorno</label><input id="consultReturnDate" type="date"><small>Use para retorno já definido por data.</small></div>
+        <div class="portal-field full"><label for="consultNotes">Observação operacional</label><textarea id="consultNotes" maxlength="1500" rows="3" placeholder="Opcional"></textarea></div>
+        <div class="full telemedicine-preview" id="consultPreview">O sistema calculará os 3 dias úteis de lembrete quando houver uma data-alvo válida.</div>
+        <div class="full account-actions"><button class="portal-button primary" id="saveConsultation" type="submit">Salvar consulta</button><button class="portal-button secondary" type="button" data-close-modal="consultationModal">Cancelar</button></div>
+        <div class="account-status full" id="consultationStatus"></div>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="scheduleModal" aria-hidden="true">
+    <form class="portal-modal telemedicine-modal compact" id="scheduleForm">
+      <div class="portal-modal-header"><div><h2>Programar retorno</h2><div class="user-meta" id="scheduleMeta"></div></div><button class="portal-modal-close" type="button" data-close-modal="scheduleModal">×</button></div>
+      <div class="telemedicine-form-grid one-column">
+        <div class="portal-field"><label for="scheduleReturnDate">Data-alvo do retorno</label><input id="scheduleReturnDate" required type="date"></div>
+        <div class="telemedicine-preview" id="schedulePreview"></div>
+        <div class="account-actions"><button class="portal-button primary" type="submit">Programar lembretes</button><button class="portal-button secondary" type="button" data-close-modal="scheduleModal">Cancelar</button></div>
+        <div class="account-status" id="scheduleStatus"></div>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="requestedModal" aria-hidden="true">
+    <form class="portal-modal telemedicine-modal compact" id="requestedForm">
+      <div class="portal-modal-header"><div><h2>Confirmar solicitação</h2><div class="user-meta" id="requestedMeta"></div></div><button class="portal-modal-close" type="button" data-close-modal="requestedModal">×</button></div>
+      <div class="telemedicine-form-grid one-column">
+        <div class="portal-field"><label for="requestedDate">Data da solicitação no DigSUS</label><input id="requestedDate" required type="date"></div>
+        <div class="portal-field"><label for="requestedNote">Observação</label><textarea id="requestedNote" maxlength="1200" rows="3" placeholder="Opcional"></textarea></div>
+        <div class="account-actions"><button class="portal-button primary" type="submit">Marcar como solicitado</button><button class="portal-button secondary" type="button" data-close-modal="requestedModal">Cancelar</button></div>
+        <div class="account-status" id="requestedStatus"></div>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-backdrop" id="importModal" aria-hidden="true">
+    <form class="portal-modal telemedicine-modal" id="importForm">
+      <div class="portal-modal-header"><div><h2>Importação inicial</h2><div class="user-meta">Exclusiva do Desenvolvedor. O arquivo é enviado diretamente ao Worker e não é armazenado como arquivo do site.</div></div><button class="portal-modal-close" type="button" data-close-modal="importModal">×</button></div>
+      <div class="telemedicine-form-grid one-column">
+        <div class="portal-note warning"><strong>Use apenas o arquivo privado de migração.</strong> A importação é idempotente: registros já importados são ignorados.</div>
+        <div class="portal-field"><label for="importFile">Arquivo JSON</label><input id="importFile" type="file" accept="application/json,.json" required></div>
+        <div class="telemedicine-import-progress" id="importProgress" hidden><div><span id="importProgressText">Preparando...</span><strong id="importProgressPercent">0%</strong></div><progress id="importProgressBar" max="100" value="0"></progress></div>
+        <div class="account-actions"><button class="portal-button primary" id="runImport" type="submit">Importar histórico</button><button class="portal-button secondary" type="button" data-close-modal="importModal">Cancelar</button></div>
+        <div class="account-status" id="importStatus"></div>
+      </div>
+    </form>
+  </div>
+
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260816-1"></script>
+  <script src="/js/telemedicina.js?v=20260901-2"></script>
+  <script src="/js/telemedicina-business-day.js?v=20260901-1"></script>
+</body>
+</html>
