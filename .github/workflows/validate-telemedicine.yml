@@ -82,7 +82,7 @@ jobs:
           set -euo pipefail
           cp worker/telemedicine-rules.js /tmp/telemedicine-rules.mjs
           node worker/tests/telemedicine-rules.test.mjs /tmp/telemedicine-rules.mjs
-      - name: Conferir autorização, interface e privacidade
+      - name: Conferir autorização, interface, importação e privacidade
         shell: bash
         run: |
           set -euo pipefail
@@ -95,6 +95,11 @@ jobs:
           grep -q "telemedicine_patients" worker/telemedicine.js
           grep -q "telemedicine_followups" worker/telemedicine.js
           grep -q "telemedicine_events" worker/telemedicine.js
+          grep -q "const IMPORT_BATCH_LIMIT = 5;" worker/telemedicine.js
+          grep -q "const batchSize = 5;" js/telemedicina.js
+          grep -q "const existingEvent = await firestoreGet" worker/telemedicine.js
+          grep -q "if (!existingEvent)" worker/telemedicine.js
+          grep -q "telemedicina.js?v=20260901-3" telemedicina/index.html
           grep -q "href=\"/telemedicina/\"" js/home.js
           grep -q "Técnico em Telemedicina" js/admin-users.js
           grep -q "telemedicina: 'Técnico em Telemedicina'" js/account.js
