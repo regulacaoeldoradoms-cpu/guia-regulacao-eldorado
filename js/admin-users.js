@@ -7,7 +7,7 @@
 
   const isDeveloper = currentUser.role === 'admin';
   const roleLabels = {
-    medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', cidadao: 'Cidadão', admin: 'Desenvolvedor'
+    medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', telemedicina: 'Técnico em Telemedicina', cidadao: 'Cidadão', admin: 'Desenvolvedor'
   };
   const councilLabels = { presidente: 'Presidente do Conselho', membro: 'Membro do Conselho', '': 'Sem função no Conselho' };
   const state = { users: [], editing: null, resetting: null };
@@ -29,7 +29,7 @@
   const editCouncil = document.getElementById('editCouncilRole');
 
   if (isDeveloper) {
-    newRole.innerHTML = '<option value="coordenacao">Coordenação — Guia + Recepção + Monitoramento + usuários subordinados</option><option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option><option value="cidadao">Cidadão — conta sem função profissional</option>';
+    newRole.innerHTML = '<option value="coordenacao">Coordenação — Guia + Recepção + Monitoramento + usuários subordinados</option><option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option><option value="telemedicina">Técnico em Telemedicina — acompanhamento de teleconsultas e retornos</option><option value="cidadao">Cidadão — conta sem função profissional</option>';
   } else {
     newRole.innerHTML = '<option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option>';
   }
@@ -80,6 +80,7 @@
           <div class="user-badges">
             <span class="user-badge">${escapeHtml(roleLabels[user.role] || user.role)}</span>
             ${user.role !== 'cidadao' ? '<span class="user-badge">Canal do Cidadão</span>' : ''}
+            ${user.role === 'telemedicina' ? '<span class="user-badge">Módulo Telemedicina</span>' : ''}
             ${user.councilRole ? `<span class="user-badge">${escapeHtml(councilLabels[user.councilRole] || user.councilRole)}</span>` : ''}
             <span class="user-badge ${user.active ? '' : 'inactive'}">${user.active ? 'Ativo' : 'Desativado'}</span>
             ${user.mustChangePassword ? '<span class="user-badge">Troca de senha pendente</span>' : ''}
@@ -110,11 +111,12 @@
     createButton.textContent = 'Criando...';
     createStatus.className = 'account-status';
     try {
+      const selectedRole = newRole.value;
       await auth.createUser({
         name: document.getElementById('newName').value.trim(),
         username: document.getElementById('newUsername').value.trim().toLowerCase(),
-        jobTitle: document.getElementById('newJobTitle').value.trim(),
-        role: newRole.value,
+        jobTitle: document.getElementById('newJobTitle').value.trim() || (selectedRole === 'telemedicina' ? 'Técnico em Telemedicina' : ''),
+        role: selectedRole,
         councilRole: isDeveloper && newCouncil ? newCouncil.value : '',
         password: document.getElementById('newPassword').value,
         mustChangePassword: document.getElementById('newMustChange').checked,
@@ -145,7 +147,7 @@
       document.getElementById('editUsernameLabel').textContent = `@${user.username}`;
       document.getElementById('editName').value = user.name || '';
       document.getElementById('editJobTitle').value = user.jobTitle || '';
-      const available = isDeveloper ? ['admin', 'coordenacao', 'medico', 'recepcao', 'cidadao'] : ['medico', 'recepcao'];
+      const available = isDeveloper ? ['admin', 'coordenacao', 'medico', 'recepcao', 'telemedicina', 'cidadao'] : ['medico', 'recepcao'];
       editRole.innerHTML = available.map((role) => `<option value="${role}">${roleLabels[role]}</option>`).join('');
       editRole.value = user.role;
       if (isDeveloper) editCouncil.value = user.councilRole || '';
