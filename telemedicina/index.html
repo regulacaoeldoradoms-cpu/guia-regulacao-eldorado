@@ -9,7 +9,7 @@
   <link rel="icon" href="/assets/portal-regulacao-header.png?v=20260823-1" type="image/png">
   <link rel="stylesheet" href="/css/portal.css?v=20260815-1">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
-  <link rel="stylesheet" href="/css/telemedicina.css?v=20260901-1">
+  <link rel="stylesheet" href="/css/telemedicina.css?v=20260901-2">
 </head>
 <body class="portal-page telemedicine-page">
   <div class="portal-shell">
@@ -88,7 +88,7 @@
         <div class="portal-field"><label for="consultSpecialty">Especialidade</label><input id="consultSpecialty" required maxlength="120" list="specialtySuggestions" placeholder="Ex.: Psiquiatria"><datalist id="specialtySuggestions"></datalist></div>
         <div class="portal-field full"><label for="consultResolution">Resolutividade / conduta</label><textarea id="consultResolution" required maxlength="2500" rows="4" placeholder="Ex.: RETORNO COM 60 DIAS"></textarea></div>
         <div class="portal-field full"><label class="telemedicine-check"><input id="consultNeedsReturn" type="checkbox" checked> Necessita acompanhamento/retorno</label></div>
-        <div class="portal-field"><label for="consultReturnDays">Prazo em dias</label><input id="consultReturnDays" type="number" min="1" max="730" placeholder="Ex.: 60"><small>Use quando o prazo for numérico.</small></div>
+        <div class="portal-field"><label for="consultReturnDays">Prazo em dias</label><input id="consultReturnDays" type="number" min="1" max="730" placeholder="Ex.: 60"><small>Use quando o prazo for numérico. Se cair no fim de semana, o retorno passa ao próximo dia útil.</small></div>
         <div class="portal-field"><label for="consultReturnDate">Ou data-alvo do retorno</label><input id="consultReturnDate" type="date"><small>Use para retorno já definido por data.</small></div>
         <div class="portal-field full"><label for="consultNotes">Observação operacional</label><textarea id="consultNotes" maxlength="1500" rows="3" placeholder="Opcional"></textarea></div>
         <div class="full telemedicine-preview" id="consultPreview">O sistema calculará os 3 dias úteis de lembrete quando houver uma data-alvo válida.</div>
@@ -124,7 +124,7 @@
 
   <div class="modal-backdrop" id="importModal" aria-hidden="true">
     <form class="portal-modal telemedicine-modal" id="importForm">
-      <div class="portal-modal-header"><div><h2>Importação inicial</h2><div class="user-meta">Exclusiva do Desenvolvedor. O arquivo é enviado diretamente ao Worker e não é armazenado como arquivo público.</div></div><button class="portal-modal-close" type="button" data-close-modal="importModal">×</button></div>
+      <div class="portal-modal-header"><div><h2>Importação inicial</h2><div class="user-meta">Exclusiva do Desenvolvedor. O arquivo é enviado diretamente ao Worker e não é armazenado como arquivo do site.</div></div><button class="portal-modal-close" type="button" data-close-modal="importModal">×</button></div>
       <div class="telemedicine-form-grid one-column">
         <div class="portal-note warning"><strong>Use apenas o arquivo privado de migração.</strong> A importação é idempotente: registros já importados são ignorados.</div>
         <div class="portal-field"><label for="importFile">Arquivo JSON</label><input id="importFile" type="file" accept="application/json,.json" required></div>
@@ -137,6 +137,7 @@
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260816-1"></script>
-  <script src="/js/telemedicina.js?v=20260901-1"></script>
+  <script src="/js/telemedicina.js?v=20260901-2"></script>
+  <script src="/js/telemedicina-business-day.js?v=20260901-1"></script>
 </body>
 </html>
