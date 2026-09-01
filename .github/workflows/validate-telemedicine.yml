@@ -9,7 +9,9 @@ on:
       - 'js/telemedicina-business-day.js'
       - 'js/home.js'
       - 'js/admin-users.js'
+      - 'js/account.js'
       - 'index.html'
+      - 'conta/index.html'
       - 'admin/usuarios/index.html'
       - 'worker/telemedicine*.js'
       - 'worker/auth-management-flex.js'
@@ -28,7 +30,9 @@ on:
       - 'js/telemedicina-business-day.js'
       - 'js/home.js'
       - 'js/admin-users.js'
+      - 'js/account.js'
       - 'index.html'
+      - 'conta/index.html'
       - 'admin/usuarios/index.html'
       - 'worker/telemedicine*.js'
       - 'worker/auth-management-flex.js'
@@ -62,6 +66,7 @@ jobs:
           node --check js/telemedicina-business-day.js
           node --check js/home.js
           node --check js/admin-users.js
+          node --check js/account.js
           node --input-type=module --check < worker/telemedicine.js
           node --input-type=module --check < worker/telemedicine-access.js
           node --input-type=module --check < worker/telemedicine-rules.js
@@ -89,6 +94,10 @@ jobs:
           grep -q "telemedicine_events" worker/telemedicine.js
           grep -q "href=\"/telemedicina/\"" js/home.js
           grep -q "Técnico em Telemedicina" js/admin-users.js
+          grep -q "telemedicina: 'Técnico em Telemedicina'" js/account.js
+          grep -q "Privacidade à escolha · conta Bronze" js/account.js
+          grep -q "anônima</strong> e <strong>identificada" conta/index.html
+          grep -q "admin-users.js?v=20260901-1" admin/usuarios/index.html
           grep -q "telemedicina-business-day.js" telemedicina/index.html
           if find . -iname '*migracao_privada*' -o -iname '*telemedicina*migracao*.json' | grep -q .; then
             echo 'Arquivo privado de migração não pode ser versionado.' >&2
