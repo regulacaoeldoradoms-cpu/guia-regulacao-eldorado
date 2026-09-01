@@ -1,9 +1,17 @@
 import assert from 'node:assert/strict';
-import { pathToFileURL } from 'node:url';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
+let moduleUrl = '';
 const source = process.argv[2];
-if (!source) throw new Error('Informe o caminho do módulo de regras copiado para .mjs.');
-const rules = await import(pathToFileURL(source).href);
+if (source) {
+  moduleUrl = pathToFileURL(source).href;
+} else {
+  const sourcePath = fileURLToPath(new URL('../telemedicine-rules.js', import.meta.url));
+  const sourceCode = await readFile(sourcePath, 'utf8');
+  moduleUrl = `data:text/javascript;base64,${Buffer.from(sourceCode).toString('base64')}`;
+}
+const rules = await import(moduleUrl);
 
 const {
   addDays,
