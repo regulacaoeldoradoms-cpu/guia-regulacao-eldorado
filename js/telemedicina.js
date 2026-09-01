@@ -27,7 +27,7 @@
   const specialtySuggestions = document.getElementById('specialtySuggestions');
 
   function escapeHtml(value) {
-    return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
+    return String(value ?? '').replace(/[&<>'\"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '\"': '&quot;' }[char]));
   }
 
   function normalize(value) {
@@ -399,7 +399,7 @@
       const textEl = document.getElementById('importProgressText');
       progress.hidden = false;
       const total = { imported: 0, duplicates: 0, invalid: 0, needsReview: 0 };
-      const batchSize = 60;
+      const batchSize = 5;
       for (let offset = 0; offset < records.length; offset += batchSize) {
         const batch = records.slice(offset, offset + batchSize);
         const payload = await auth.api('/api/telemedicina/import', { method: 'POST', body: JSON.stringify({ records: batch }) });
