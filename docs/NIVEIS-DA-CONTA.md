@@ -82,12 +82,12 @@ São conceitos independentes.
 - conta: Bronze;
 - manifestação: Anônima no modelo do portal, sem e-mail/telefone vinculado.
 
-### Exemplo 2 — Bronze + Anônima com e-mail ainda não verificado
+### Exemplo 2 — Bronze + escolha por manifestação
 
-- cidadão adicionou um e-mail, mas ainda não confirmou;
+- cidadão pode não ter e-mail ou ter adicionado um endereço ainda não confirmado;
 - conta continua Bronze porque o requisito do Prata ainda não foi concluído;
-- toda nova manifestação continua Anônima;
-- solicitações diretas de modalidade Sigilosa ou Identificada são normalizadas pelo backend para Anônima.
+- em cada nova manifestação, escolhe Anônima ou Identificada;
+- modalidade ausente ou inválida e solicitação de Sigilosa usam o fallback Anônima.
 
 ### Exemplo 3 — Prata + escolha por manifestação
 

@@ -118,11 +118,11 @@ jobs:
           grep -q "user.councilRole === 'presidente'" worker/council.js
           grep -q 'COUNCIL_PRESIDENT_CANNOT_SUBMIT' worker/council.js
           grep -q 'canCreateManifestation: !presidentAccess(user)' worker/council.js
-          grep -q 'canIdentifyManifestation: user.emailVerified === true' worker/council.js
-          grep -q "if (user?.emailVerified !== true) return 'anonima'" worker/council.js
+          grep -q 'canIdentifyManifestation: true' worker/council.js
           grep -q "if (mode === 'identificada') return 'identificada'" worker/council.js
-          grep -q "return 'sigilosa'" worker/council.js
-          grep -q "identifiedInput.disabled = !verified" js/citizen.js
+          grep -q "return user?.emailVerified === true ? 'sigilosa' : 'anonima'" worker/council.js
+          grep -q "identifiedInput.disabled = false" js/citizen.js
+          grep -q "verifiedOptions.hidden = false" js/citizen.js
           grep -q 'id="verifiedPrivacyOptions" hidden' cidadao/index.html
           grep -q 'identifiedAuthorSnapshot' worker/council.js
           grep -q 'authorIdentity' worker/council.js

@@ -10,11 +10,12 @@ import {
   protectMemberPayload
 } from '../council-access-policy.js';
 
-test('conta sem e-mail verificado só cria manifestação anônima', () => {
+test('conta sem e-mail verificado escolhe entre anônima e identificada', () => {
   const user = { emailVerified: false };
   assert.equal(manifestationPrivacyMode(user, ''), 'anonima');
+  assert.equal(manifestationPrivacyMode(user, 'valor-invalido'), 'anonima');
   assert.equal(manifestationPrivacyMode(user, 'sigilosa'), 'anonima');
-  assert.equal(manifestationPrivacyMode(user, 'identificada'), 'anonima');
+  assert.equal(manifestationPrivacyMode(user, 'identificada'), 'identificada');
 });
 
 test('conta verificada usa sigilosa como padrão e pode optar por identificada', () => {

@@ -15,7 +15,7 @@ Este checklist registra somente o que ainda exige painel externo, teste real no 
 - ✅ A conta passou a ser tratada como identidade única em todos os módulos.
 - ✅ Médico, Recepção, Coordenação e Desenvolvedor mantêm o próprio cargo dentro do Canal do Cidadão.
 - ✅ O mesmo avatar e o mesmo nível Bronze/Prata/Ouro pertencem à conta inteira.
-- ✅ O backend e a interface normalizam toda nova manifestação sem e-mail verificado para anônima, inclusive se a conta for profissional.
+- ✅ O backend e a interface permitem que a conta sem e-mail verificado escolha entre anônima e identificada em cada novo envio; o fallback permanece anônimo.
 - ✅ Conta com e-mail verificado escolhe entre sigilosa e identificada; padrão/fallback permanecem sigilosos.
 - ✅ Protocolos anônimos não são convertidos retroativamente após futura verificação de e-mail.
 - ✅ Membro possui acesso anônimo e somente leitura, sem anexos ou observações internas.
@@ -83,9 +83,9 @@ Testar:
 
 ### Sem e-mail verificado
 
-Confirmar que qualquer conta elegível para criar manifestação — inclusive Médico, Recepção, Coordenação e Desenvolvedor — pode gerar uma nova manifestação marcada como `Anônima`.
+Confirmar que qualquer conta elegível para criar manifestação — inclusive Médico, Recepção, Coordenação e Desenvolvedor — pode escolher, em cada novo envio, entre `Anônima` e `Identificada`.
 
-Se existir e-mail cadastrado, mas ele ainda não estiver confirmado, a manifestação nova continua anônima.
+Validar que a opção `Anônima` não expõe nome, @ ou perfil; que a opção `Identificada` mostra somente o retrato seguro do perfil; e que o e-mail nunca é exibido. Pedido de `Sigilosa` usa o fallback `Anônima` enquanto o e-mail não estiver confirmado.
 
 ### Com e-mail verificado
 
