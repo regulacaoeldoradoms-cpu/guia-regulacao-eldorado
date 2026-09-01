@@ -74,21 +74,30 @@ Uma tarefa atrasada nunca desaparece por causa da passagem do tempo.
 
 ## Cálculo dos lembretes
 
-Quando existe data-alvo válida:
+Quando existe retorno calculável:
 
-1. subtrair 15 dias corridos da data-alvo do retorno;
-2. se essa data cair em sábado ou domingo, avançar para a próxima segunda-feira;
-3. usar essa data como primeiro aviso;
-4. gerar mais dois avisos nos dois dias úteis seguintes.
+1. calcular a data nominal do retorno a partir da última teleconsulta e do prazo informado, ou usar a data-alvo explicitamente registrada;
+2. se a própria data de retorno cair em sábado ou domingo, avançá-la para o próximo dia útil;
+3. subtrair 15 dias corridos dessa data-alvo já ajustada;
+4. se a data do primeiro aviso cair em sábado ou domingo, avançar para a próxima segunda-feira;
+5. usar essa data como primeiro aviso e gerar mais dois avisos nos dois dias úteis seguintes.
 
-Exemplo:
+Exemplo histórico reproduzido pelo módulo:
+
+- teleconsulta: 14/08/2026;
+- retorno em 30 dias: data nominal 13/09/2026, domingo;
+- retorno-alvo ajustado: 14/09/2026, segunda-feira;
+- 15 dias antes: 30/08/2026, domingo;
+- avisos: 31/08, 01/09 e 02/09.
+
+Outro caso simples:
 
 - teleconsulta: 01/08/2026;
-- retorno em 30 dias: 31/08/2026;
+- retorno em 30 dias: 31/08/2026, segunda-feira;
 - 15 dias antes: 16/08/2026, domingo;
 - avisos: 17/08, 18/08 e 19/08.
 
-A regra atual trata fim de semana. Feriados municipais/estaduais/nacionais ainda não são consultados por calendário próprio do módulo; quando essa camada for adicionada, a regra deve preservar a intenção de três dias úteis reais.
+A regra atual trata sábado e domingo. Feriados municipais, estaduais e nacionais ainda não são consultados por calendário próprio do módulo; quando essa camada for adicionada, a regra deve preservar a intenção de três dias úteis reais e do retorno estimado em dia útil.
 
 ## Regras de interpretação
 
@@ -146,6 +155,7 @@ Frontend:
 - `telemedicina/index.html`
 - `css/telemedicina.css`
 - `js/telemedicina.js`
+- `js/telemedicina-business-day.js`
 
 Backend:
 
