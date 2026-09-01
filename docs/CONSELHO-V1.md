@@ -87,11 +87,14 @@ A foto de perfil é única para a conta e acompanha os diferentes módulos.
 
 A privacidade é definida no momento em que cada manifestação é criada e fica congelada naquele protocolo.
 
-### Anônima
+### Conta sem e-mail verificado: escolha entre anônima e identificada
 
-Se o e-mail da conta **ainda não estiver verificado**, a nova manifestação é registrada como `anonima`, inclusive quando a conta pertence a Médico, Recepção, Coordenação ou Desenvolvedor.
+Quando `emailVerified` não é `true`, o autor escolhe a modalidade de cada nova manifestação:
 
-Ter uma conta profissional, por si só, não força a manifestação a ser sigilosa.
+- `anonima`: o Conselho recebe o conteúdo, mas nome, @ e perfil do autor não são exibidos;
+- `identificada`: o Conselho recebe também uma identificação segura do perfil no momento do envio, contendo nome de perfil, @ e cargo/função quando houver.
+
+Valor ausente ou inválido, assim como pedido de `sigilosa`, resulta em `anonima`. Ter uma conta profissional, por si só, não força nenhuma modalidade.
 
 ### Conta verificada: escolha entre sigilosa e identificada
 
@@ -116,9 +119,9 @@ O texto e os anexos podem revelar identidade se o próprio usuário incluir dado
 
 Médico, Recepção, Coordenação e Desenvolvedor usam a mesma conta no Canal do Cidadão. Não existe perfil cidadão paralelo.
 
-Uma conta profissional sem e-mail verificado continua Bronze e pode abrir manifestação anônima, salvo se possuir a função de Presidente do Conselho.
+Uma conta profissional sem e-mail verificado continua Bronze e pode escolher, em cada novo envio, entre manifestação anônima e manifestação identificada, salvo se possuir a função de Presidente do Conselho.
 
-Depois da confirmação do e-mail, a mesma conta passa a Prata e pode escolher, em cada novo envio, entre manifestação sigilosa e manifestação identificada.
+Depois da confirmação do e-mail, a mesma conta passa a Prata e passa a ter também a opção sigilosa; em cada novo envio, escolhe entre manifestação sigilosa e manifestação identificada.
 
 ## Usuário que também integra o Conselho
 
