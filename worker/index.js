@@ -7,6 +7,7 @@ import { handleChatRoute, isChatApi } from './portal-chat-v2.js';
 import { handleUsageRoute, isUsageApi } from './usage-monitor-v2.js';
 import { handleCouncilRoute, isCouncilApi } from './council-access-policy.js';
 import { handleSystemReadinessRoute, isSystemReadinessApi } from './system-readiness.js';
+import { handleTelemedicineRoute, isTelemedicineApi } from './telemedicine.js';
 import { enforceDeveloperSeparation } from './role-migration.js';
 import {
   handleCitizenIdentityRoute,
@@ -197,6 +198,10 @@ export default {
     if (isSystemReadinessApi(url.pathname)) {
       try { return await handleSystemReadinessRoute(request, env, origin, originAllowed); }
       catch (error) { return jsonError(error?.message || 'Falha no diagnóstico técnico.', 500, origin, originAllowed); }
+    }
+    if (isTelemedicineApi(url.pathname)) {
+      try { return await handleTelemedicineRoute(request, env, origin, originAllowed); }
+      catch (error) { return jsonError(error?.message || 'Falha no módulo de Telemedicina.', 500, origin, originAllowed); }
     }
     if (isCouncilApi(url.pathname)) {
       try { return await handleCouncilRoute(request, env, origin, originAllowed); }
