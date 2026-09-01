@@ -25,7 +25,7 @@ import {
 const PATIENTS = 'telemedicine_patients';
 const FOLLOWUPS = 'telemedicine_followups';
 const EVENTS = 'telemedicine_events';
-const IMPORT_BATCH_LIMIT = 80;
+const IMPORT_BATCH_LIMIT = 5;
 
 function headers(origin, allowed = true) {
   const value = {
@@ -331,7 +331,7 @@ async function importRecord(env, user, record) {
   const followupId = await followupIdFor(patientId, specialty);
   const sourceKey = clean(record.sourceKey, 500) || `${consultationDate}|${normalizePatientName(patientName)}|${normalizeSpecialty(specialty)}|${normalizeText(resolution)}|${normalizeText(comment)}`;
   const eventId = await eventIdFor(`legacy|${sourceKey}`);
-  if (await firestoreGet(env, `${EVENTS}/${eventId}`)) return { imported: false, reason: 'duplicate', eventId };
+  const existingEvent = await firestoreGet(env, `${EVENTS}/${eventId}`);
 
   const now = new Date().toISOString();
   const due = returnDueFromRecord(consultationDate, resolution, clean(record.returnDueDate, 10));
@@ -357,19 +357,15 @@ async function importRecord(env, user, record) {
     source: existingPatient?.source || 'legacy'
   });
 
-  await firestoreCreate(env, EVENTS, eventId, {
-    patientId, patientName, followupId, eventType: 'consulta', eventDate: consultationDate,
-    specialty, resolution, notes: comment, needsReturn: active, returnDueDate: due,
-    reminderDates, source: 'legacy', sourceKey, createdAt: now, createdBy: user.username,
-    legacyOperationalStatus: clean(record.operationalStatus, 120),
-    sourceRow: Number(record.sourceRow || 0) || 0, sourceDate, dateInferred, needsReview
-  });
-
   const existingFollowup = await firestoreGet(env, `${FOLLOWUPS}/${followupId}`);
   const newer = !existingFollowup
     || (!existingFollowup.lastConsultationDate && dateKnown)
     || (dateKnown && consultationDate >= String(existingFollowup.lastConsultationDate || ''));
-  if (newer) {
+  const duplicateNeedsRepair = Boolean(existingEvent) && (
+    !existingFollowup
+    || (String(existingEvent.createdAt || '') && String(existingFollowup.updatedAt || '') < String(existingEvent.createdAt || ''))
+  );
+  if (newer && (!existingEvent || duplicateNeedsRepair)) {
     await upsert(env, FOLLOWUPS, followupId, {
       patientId,
       patientName,
@@ -390,7 +386,25 @@ async function importRecord(env, user, record) {
       createdBy: user.username
     });
   }
-  return { imported: true, patientId, followupId, eventId, needsReview };
+
+  if (!existingEvent) {
+    await firestoreCreate(env, EVENTS, eventId, {
+      patientId, patientName, followupId, eventType: 'consulta', eventDate: consultationDate,
+      specialty, resolution, notes: comment, needsReturn: active, returnDueDate: due,
+      reminderDates, source: 'legacy', sourceKey, createdAt: now, createdBy: user.username,
+      legacyOperationalStatus: clean(record.operationalStatus, 120),
+      sourceRow: Number(record.sourceRow || 0) || 0, sourceDate, dateInferred, needsReview
+    });
+  }
+
+  return {
+    imported: !existingEvent,
+    reason: existingEvent ? 'duplicate' : '',
+    patientId,
+    followupId,
+    eventId,
+    needsReview
+  };
 }
 
 async function importBatch(env, user, input) {
