@@ -74,7 +74,7 @@ export function reminderMetaFor(followup, today) {
   const reminders = Array.isArray(followup?.reminderDates) ? followup.reminderDates : [];
   const exact = reminders.indexOf(today);
   return {
-    alertToday: exact >= 0 && !followup?.requestedAt,
+    alertToday: exact >= 0 && !followup?.requestedAt && followup?.requestedHistorical !== true,
     reminderNumber: exact >= 0 ? exact + 1 : 0,
     remindersRemaining: reminders.filter((date) => date >= today).length,
     reminderDates: reminders
@@ -84,10 +84,11 @@ export function reminderMetaFor(followup, today) {
 export function looksClosed(resolution) {
   const text = normalizeText(resolution);
   if (!text) return false;
-  return /\bCONCLUID[AO]\b|\bALTA\b|RETORNO SE NECESSARIO|NAO NECESSITA RETORNO|ENCAMINHAD[AO].*PRESENCIAL/.test(text);
+  return /\bCONCLUID[AO]\b|\bALTA\b|RETORNO SE NECESSARIO|NAO NECESSITA RETORNO|TRATAMENTO FINALIZADO|FINALIZOU TRATAMENTO|ENCAMINHAD[AO].*PRESENCIAL/.test(text);
 }
 
 export function looksRequested(resolution, comment = '') {
+  if (looksClosed(resolution)) return false;
   const text = `${normalizeText(resolution)} ${normalizeText(comment)}`;
   return /\bSOLICITAD[AO]\b|REALIZADA NOVA SOLICITACAO|REAGENDAMENTO SOLICITADO/.test(text);
 }
