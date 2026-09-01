@@ -3,7 +3,7 @@
 (async () => {
   const auth = window.RegulationAuth;
   // Compatibilidade da suíte histórica: requireRole(['medico', 'recepcao', 'admin'])
-  const user = await auth.requireRole(['medico', 'recepcao', 'coordenacao']);
+  const user = await auth.requireRole(['medico', 'recepcao', 'coordenacao', 'telemedicina']);
   if (!user) return;
 
   if (user.mustChangePassword) {
@@ -19,6 +19,7 @@
     medico: 'Médico',
     recepcao: 'Recepção',
     coordenacao: 'Coordenação',
+    telemedicina: 'Técnico em Telemedicina',
     admin: 'Desenvolvedor · acesso técnico'
   };
 
@@ -27,7 +28,7 @@
 
   const cards = [];
 
-  if (!user.preview && ['medico', 'recepcao', 'coordenacao', 'admin'].includes(user.role) && !user.emailVerified) {
+  if (!user.preview && ['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin'].includes(user.role) && !user.emailVerified) {
     cards.push(`
       <a class="hub-card" href="/conta/#seguranca" data-module="email-security" style="border-color:#e5c36b;background:#fffaf0">
         <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
@@ -42,6 +43,15 @@
         <span class="hub-card-icon"><img src="/assets/canal-cidadao-icon.png?v=20260817-1" alt=""></span>
         <span><h3>Canal do Cidadão</h3><p>Envie manifestações ao Conselho e acompanhe seus protocolos usando a mesma conta do portal. Seu perfil, foto e nível de segurança continuam sendo os mesmos em todos os módulos.</p></span>
         <span class="hub-card-arrow">Abrir Canal do Cidadão →</span>
+      </a>`);
+  }
+
+  if (['telemedicina', 'admin'].includes(user.role) && !user.preview) {
+    cards.push(`
+      <a class="hub-card" href="/telemedicina/" data-module="telemedicine">
+        <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v12H4z"/><path d="M8 21h8M12 17v4M9 9h6M12 6v6"/></svg></span>
+        <span><h3>Telemedicina</h3><p>Acompanhe o histórico dos pacientes, programe retornos e receba os três lembretes úteis iniciando 15 dias antes da data-alvo.</p></span>
+        <span class="hub-card-arrow">Abrir Telemedicina →</span>
       </a>`);
   }
 
