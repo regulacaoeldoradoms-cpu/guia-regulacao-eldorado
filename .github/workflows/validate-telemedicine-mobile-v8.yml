@@ -1,0 +1,43 @@
+name: Validar Telemedicina Mobile V8
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v8.css'
+      - 'docs/TELEMEDICINA-MOBILE-V8.md'
+      - '.github/workflows/validate-telemedicine-mobile-v8.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v8.css'
+      - 'docs/TELEMEDICINA-MOBILE-V8.md'
+      - '.github/workflows/validate-telemedicine-mobile-v8.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Conferir V8 mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f css/telemedicina-mobile-v8.css
+          test -f docs/TELEMEDICINA-MOBILE-V8.md
+          grep -q 'telemedicina-mobile-v8.css?v=20260902-1' telemedicina/index.html
+          grep -q 'data-mobile-refinement="v8"' telemedicina/index.html
+          grep -q -- '--tm-v8-max: 920px' css/telemedicina-mobile-v8.css
+          grep -q 'height: 82px' css/telemedicina-mobile-v8.css
+          grep -q 'tm-view-grid .telemedicine-list' css/telemedicina-mobile-v8.css
+          grep -q 'grid-template-columns: repeat(2' css/telemedicina-mobile-v8.css
+          grep -q 'font-size: 2.2rem' css/telemedicina-mobile-v8.css
+          if grep -q 'min-width: 861px' css/telemedicina-mobile-v8.css; then
+            echo 'A V8 não pode introduzir regras desktop.' >&2
+            exit 1
+          fi
+          if grep -R -n -E '\b(CNS|CPF)\b' css/telemedicina-mobile-v8.css docs/TELEMEDICINA-MOBILE-V8.md; then
+            echo 'O refinamento visual não deve introduzir identificadores pessoais.' >&2
+            exit 1
+          fi
