@@ -1,0 +1,41 @@
+name: Validar Telemedicina Mobile V6
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v6.css'
+      - 'docs/TELEMEDICINA-MOBILE-V6.md'
+      - '.github/workflows/validate-telemedicine-mobile-v6.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v6.css'
+      - 'docs/TELEMEDICINA-MOBILE-V6.md'
+      - '.github/workflows/validate-telemedicine-mobile-v6.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Conferir escala mobile V6
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f css/telemedicina-mobile-v6.css
+          test -f docs/TELEMEDICINA-MOBILE-V6.md
+          grep -q 'telemedicina-mobile-v6.css?v=20260902-1' telemedicina/index.html
+          grep -q 'data-mobile-design="v6"' telemedicina/index.html
+          grep -q 'font-size: 1.22rem' css/telemedicina-mobile-v6.css
+          grep -q 'font-size: 1rem' css/telemedicina-mobile-v6.css
+          grep -q 'Marcar solicitado' css/telemedicina-mobile-v6.css
+          if grep -q 'min-width: 861px' css/telemedicina-mobile-v6.css; then
+            echo 'A V6 não pode introduzir regras desktop.' >&2
+            exit 1
+          fi
+          if grep -R -n -E '\b(CNS|CPF)\b' css/telemedicina-mobile-v6.css docs/TELEMEDICINA-MOBILE-V6.md; then
+            echo 'O refinamento visual não deve introduzir identificadores pessoais.' >&2
+            exit 1
+          fi
