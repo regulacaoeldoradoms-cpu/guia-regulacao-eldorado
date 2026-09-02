@@ -1,0 +1,55 @@
+name: Validar Telemedicina Mobile V3
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v3.css'
+      - 'docs/TELEMEDICINA-MOBILE-V3.md'
+      - '.github/workflows/validate-telemedicine-mobile-v3.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v3.css'
+      - 'docs/TELEMEDICINA-MOBILE-V3.md'
+      - '.github/workflows/validate-telemedicine-mobile-v3.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Conferir escopo mobile e cache busting
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f css/telemedicina-mobile-v3.css
+          test -f telemedicina/index.html
+          test -f docs/TELEMEDICINA-MOBILE-V3.md
+          grep -q 'telemedicina-mobile-v3.css?v=20260902-1' telemedicina/index.html
+          grep -q 'data-mobile-ui="v3"' telemedicina/index.html
+          grep -q '@media (max-width: 860px)' css/telemedicina-mobile-v3.css
+          grep -q '#openConsultation' css/telemedicina-mobile-v3.css
+          grep -q '#openImport' css/telemedicina-mobile-v3.css
+          grep -q 'bottom sheet' css/telemedicina-mobile-v3.css
+          if grep -R -n -E '\b(CNS|CPF)\b' css/telemedicina-mobile-v3.css docs/TELEMEDICINA-MOBILE-V3.md; then
+            echo 'O refinamento visual não deve introduzir identificadores pessoais.' >&2
+            exit 1
+          fi
+      - name: Garantir que o CSS novo seja exclusivamente responsivo
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          css = Path('css/telemedicina-mobile-v3.css').read_text(encoding='utf-8')
+          stripped = css.lstrip()
+          if not stripped.startswith('/* Telemedicina - harmonizacao exclusiva para mobile.'):
+              raise SystemExit('Cabeçalho de escopo mobile ausente.')
+          if '@media (max-width: 860px)' not in css:
+              raise SystemExit('Breakpoint mobile principal ausente.')
+          if 'min-width: 861px' in css:
+              raise SystemExit('O arquivo mobile não deve criar regras desktop.')
+          print('Escopo responsivo mobile validado.')
+          PY
