@@ -1,0 +1,54 @@
+name: Validar Telemedicina Mobile V5
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v5.css'
+      - 'docs/TELEMEDICINA-MOBILE-V5.md'
+      - '.github/workflows/validate-telemedicine-mobile-v5.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v5.css'
+      - 'docs/TELEMEDICINA-MOBILE-V5.md'
+      - '.github/workflows/validate-telemedicine-mobile-v5.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Conferir arquivos, versão e escopo
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f telemedicina/index.html
+          test -f css/telemedicina-mobile-v5.css
+          test -f docs/TELEMEDICINA-MOBILE-V5.md
+          grep -q 'telemedicina-mobile-v5.css?v=20260902-1' telemedicina/index.html
+          grep -q 'data-mobile-design="v5"' telemedicina/index.html
+          grep -q '@media (max-width: 860px), (pointer: coarse) and (max-device-width: 900px)' css/telemedicina-mobile-v5.css
+          grep -q -- '--tm-mobile-max: 760px' css/telemedicina-mobile-v5.css
+          grep -q 'Marcar solicitado' css/telemedicina-mobile-v5.css
+          grep -q 'preservado' docs/TELEMEDICINA-MOBILE-V5.md
+          if grep -R -n -E '\b(CNS|CPF)\b' css/telemedicina-mobile-v5.css docs/TELEMEDICINA-MOBILE-V5.md; then
+            echo 'O refinamento visual não pode introduzir identificadores pessoais.' >&2
+            exit 1
+          fi
+      - name: Garantir que o V5 não crie regras desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          css = Path('css/telemedicina-mobile-v5.css').read_text(encoding='utf-8')
+          if 'min-width: 861px' in css:
+              raise SystemExit('O V5 não deve conter regras direcionadas ao desktop.')
+          if css.count('@media') < 2:
+              raise SystemExit('Esperadas regras mobile geral e para tela estreita.')
+          if 'width: min(calc(100% - 24px), var(--tm-mobile-max))' not in css:
+              raise SystemExit('Controle de largura visual mobile ausente.')
+          print('Telemedicina Mobile V5 validada.')
+          PY
