@@ -100,6 +100,12 @@ jobs:
           grep -q "const existingEvent = await firestoreGet" worker/telemedicine.js
           grep -q "if (!existingEvent)" worker/telemedicine.js
           grep -q "telemedicina.js?v=20260901-3" telemedicina/index.html
+          grep -q "telemedicina.css?v=20260901-4" telemedicina/index.html
+          grep -q "telemedicine-title-mobile" telemedicina/index.html
+          grep -q "Mobile UX v2" css/telemedicina.css
+          grep -q "@media(max-width:860px)" css/telemedicina.css
+          grep -q "#openConsultation{position:fixed" css/telemedicina.css
+          grep -q "Experiência mobile" docs/TELEMEDICINA.md
           grep -q "href=\"/telemedicina/\"" js/home.js
           grep -q "Técnico em Telemedicina" js/admin-users.js
           grep -q "telemedicina: 'Técnico em Telemedicina'" js/account.js
