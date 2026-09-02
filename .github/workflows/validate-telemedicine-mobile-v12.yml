@@ -1,0 +1,54 @@
+name: Validar Telemedicina Mobile V12
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v12.css'
+      - 'docs/TELEMEDICINA-MOBILE-V12.md'
+      - '.github/workflows/validate-telemedicine-mobile-v12.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v12.css'
+      - 'docs/TELEMEDICINA-MOBILE-V12.md'
+      - '.github/workflows/validate-telemedicine-mobile-v12.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Conferir correção do botão e identidade mobile V12
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f css/telemedicina-mobile-v12.css
+          test -f docs/TELEMEDICINA-MOBILE-V12.md
+          grep -q 'telemedicina-mobile-v12.css?v=20260902-1' telemedicina/index.html
+          grep -q 'data-mobile-visual="v12"' telemedicina/index.html
+          grep -q 'Telemedicina Mobile V12' css/telemedicina-mobile-v12.css
+          grep -Fq '.telemedicine-page .telemedicine-actions [data-action="requested"]' css/telemedicina-mobile-v12.css
+          grep -q 'text-indent: 0 !important' css/telemedicina-mobile-v12.css
+          grep -q 'writing-mode: horizontal-tb !important' css/telemedicina-mobile-v12.css
+          grep -Fq '.telemedicine-page .telemedicine-actions [data-action="requested"]::before' css/telemedicina-mobile-v12.css
+          grep -q 'content: none !important' css/telemedicina-mobile-v12.css
+          grep -q 'telemedicine-workspace' css/telemedicina-mobile-v12.css
+          grep -q 'telemedicine-stat.urgent' css/telemedicina-mobile-v12.css
+          grep -q 'telemedicine-stat.danger' css/telemedicina-mobile-v12.css
+          grep -q 'telemedicine-stat.waiting' css/telemedicina-mobile-v12.css
+          grep -q 'telemedicine-stat.review' css/telemedicina-mobile-v12.css
+          grep -q 'telemedicine-status.em-aguardo' css/telemedicina-mobile-v12.css
+          grep -q 'telemedicine-status.sem-programacao' css/telemedicina-mobile-v12.css
+          grep -q 'telemedicine-status.atrasado' css/telemedicina-mobile-v12.css
+          grep -q 'pseudo-elemento' docs/TELEMEDICINA-MOBILE-V12.md
+          grep -q 'desktop permanece inalterado' docs/TELEMEDICINA-MOBILE-V12.md
+          if grep -q 'min-width: 861px' css/telemedicina-mobile-v12.css; then
+            echo 'A V12 não pode introduzir regras desktop.' >&2
+            exit 1
+          fi
+          if grep -R -n -E '\b(CNS|CPF)\b' docs/TELEMEDICINA-MOBILE-V12.md; then
+            echo 'A V12 não deve introduzir identificadores pessoais.' >&2
+            exit 1
+          fi
