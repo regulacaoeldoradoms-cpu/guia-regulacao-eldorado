@@ -1,0 +1,51 @@
+name: Validar Telemedicina Mobile V7
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v7.css'
+      - 'js/telemedicina-mobile-v7.js'
+      - 'docs/TELEMEDICINA-MOBILE-V7.md'
+      - '.github/workflows/validate-telemedicine-mobile-v7.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v7.css'
+      - 'js/telemedicina-mobile-v7.js'
+      - 'docs/TELEMEDICINA-MOBILE-V7.md'
+      - '.github/workflows/validate-telemedicine-mobile-v7.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir V7 mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f css/telemedicina-mobile-v7.css
+          test -f js/telemedicina-mobile-v7.js
+          test -f docs/TELEMEDICINA-MOBILE-V7.md
+          node --check js/telemedicina-mobile-v7.js
+          grep -q 'telemedicina-mobile-v7.css?v=20260902-1' telemedicina/index.html
+          grep -q 'telemedicina-mobile-v7.js?v=20260902-1' telemedicina/index.html
+          grep -q 'data-mobile-layout="v7"' telemedicina/index.html
+          grep -q 'tm-view-grid' css/telemedicina-mobile-v7.css
+          grep -q 'tm-view-list' css/telemedicina-mobile-v7.css
+          grep -q 'grid-template-columns: repeat(2' css/telemedicina-mobile-v7.css
+          grep -q 'telemedicine-mobile-view-v7' js/telemedicina-mobile-v7.js
+          grep -q 'Grade 2×2' js/telemedicina-mobile-v7.js
+          if grep -q 'min-width: 861px' css/telemedicina-mobile-v7.css; then
+            echo 'A V7 não pode introduzir regras desktop.' >&2
+            exit 1
+          fi
+          if grep -R -n -E '\b(CNS|CPF)\b' css/telemedicina-mobile-v7.css js/telemedicina-mobile-v7.js docs/TELEMEDICINA-MOBILE-V7.md; then
+            echo 'O refinamento visual não deve introduzir identificadores pessoais.' >&2
+            exit 1
+          fi
