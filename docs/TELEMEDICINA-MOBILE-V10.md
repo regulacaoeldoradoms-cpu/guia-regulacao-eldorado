@@ -24,6 +24,8 @@ A mudança existe para aproveitar o espaço horizontal sem criar áreas vazias d
 
 ## Implementação
 
-A V10 é aplicada como camada de CSS posterior às regras mobile anteriores, dentro de `css/telemedicina-mobile-v9.css`, sem criar regras para viewport desktop.
+A V10 posiciona `telemedicine-stats` à esquerda e `telemedicine-today` à direita, preservando `systemNotice` e `telemedicine-workspace` em largura total abaixo do resumo.
 
-No mobile, `telemedicine-main` torna-se uma grade de duas colunas apenas para posicionar o resumo superior. O `telemedicine-hero-copy` é ocultado, enquanto `telemedicine-today` ocupa a coluna direita. `telemedicine-stats` ocupa a coluna esquerda e mantém a grade interna 2x2. `systemNotice` e `telemedicine-workspace` permanecem em largura total abaixo do resumo.
+Como guarda permanente contra regressão visual, no mobile todo filho direto de `telemedicine-hero` que não seja `.telemedicine-today` deve permanecer oculto. Isso garante que o título, eyebrow, texto explicativo ou qualquer conteúdo legado do hero não possa reaparecer sobre o card de Data operacional, mesmo que regras mobile anteriores continuem presentes.
+
+Essa guarda é aplicada apenas dentro dos breakpoints mobile e não altera a composição desktop.

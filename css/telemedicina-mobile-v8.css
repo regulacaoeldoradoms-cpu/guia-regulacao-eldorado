@@ -162,6 +162,14 @@
   .telemedicine-page.tm-view-grid .portal-note {
     grid-column: 1 / -1 !important;
   }
+
+  /* Guarda de regressão V10: no resumo operacional mobile, o único conteúdo
+     permitido dentro do hero é o card Data operacional. Isso elimina qualquer
+     reaparecimento do título por regras mobile legadas. */
+  .telemedicine-page .telemedicine-hero > :not(.telemedicine-today) {
+    display: none !important;
+    visibility: hidden !important;
+  }
 }
 
 @media (max-width: 430px) {

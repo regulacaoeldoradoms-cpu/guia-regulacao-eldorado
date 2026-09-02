@@ -3,12 +3,14 @@ name: Validar Telemedicina Mobile V10
 on:
   pull_request:
     paths:
+      - 'css/telemedicina-mobile-v8.css'
       - 'css/telemedicina-mobile-v9.css'
       - 'docs/TELEMEDICINA-MOBILE-V10.md'
       - '.github/workflows/validate-telemedicine-mobile-v10.yml'
   push:
     branches: [main]
     paths:
+      - 'css/telemedicina-mobile-v8.css'
       - 'css/telemedicina-mobile-v9.css'
       - 'docs/TELEMEDICINA-MOBILE-V10.md'
       - '.github/workflows/validate-telemedicine-mobile-v10.yml'
@@ -22,6 +24,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test -f css/telemedicina-mobile-v8.css
           test -f css/telemedicina-mobile-v9.css
           test -f docs/TELEMEDICINA-MOBILE-V10.md
           grep -q 'Telemedicina Mobile V10' css/telemedicina-mobile-v9.css
@@ -31,10 +34,13 @@ jobs:
           grep -q 'grid-column: 2 !important' css/telemedicina-mobile-v9.css
           grep -q 'telemedicine-stats' css/telemedicina-mobile-v9.css
           grep -q 'grid-template-columns: repeat(2, minmax(0, 1fr))' css/telemedicina-mobile-v9.css
+          grep -Fq '.telemedicine-page .telemedicine-hero > :not(.telemedicine-today)' css/telemedicina-mobile-v8.css
+          grep -q 'visibility: hidden !important' css/telemedicina-mobile-v8.css
           grep -q 'Data operacional' docs/TELEMEDICINA-MOBILE-V10.md
           grep -q 'linha 1: `Solicitar agora` | `Atrasados`' docs/TELEMEDICINA-MOBILE-V10.md
           grep -q 'linha 2: `Em aguardo` | `Sem programação`' docs/TELEMEDICINA-MOBILE-V10.md
-          if grep -q 'min-width: 861px' css/telemedicina-mobile-v9.css; then
+          grep -q 'todo filho direto de `telemedicine-hero` que não seja `.telemedicine-today`' docs/TELEMEDICINA-MOBILE-V10.md
+          if grep -q 'min-width: 861px' css/telemedicina-mobile-v8.css css/telemedicina-mobile-v9.css; then
             echo 'A V10 não pode introduzir regras desktop.' >&2
             exit 1
           fi
