@@ -138,6 +138,23 @@ A V1 também usa a Web Notifications API quando o usuário autoriza e está com 
 
 Para notificações verdadeiramente em segundo plano será necessária uma etapa posterior com Web Push/FCM, assinatura do navegador e serviço de envio. Essa capacidade não deve ser simulada com timers locais não confiáveis.
 
+## Experiência mobile
+
+A Telemedicina deve ser operável prioritariamente por toque no celular, sem modificar a composição desktop quando a solicitação for apenas de harmonização mobile.
+
+Decisão de interface registrada em 01/09/2026:
+
+- até 860 px, o cabeçalho e o hero ficam compactos e o texto introdutório longo deixa de ocupar a primeira dobra;
+- o resumo operacional permanece em grade 2 × 2 e cada card continua filtrando a lista;
+- busca e filtro ficam concentrados no topo do bloco de trabalho;
+- `Registrar consulta` vira uma ação flutuante `+ Consulta`, sempre acessível durante a rolagem;
+- cada acompanhamento deixa de usar aparência de tabela comprimida e passa a ser um card vertical, com nome, conduta, especialidade, status, retorno e ações em blocos separados;
+- `SOLICITAR` e `ATRASADO` mantêm destaque visual, e a ação primária de confirmar `Solicitado` recebe prioridade no card;
+- a data-alvo e os três avisos voltam a ficar visíveis no card mobile quando existirem;
+- formulários e histórico abrem como painel inferior no celular, com cabeçalho fixo dentro do modal;
+- áreas de toque devem permanecer confortáveis e o conteúdo não pode ser truncado por colunas de desktop;
+- regras mobile ficam restritas ao breakpoint responsivo do módulo e não devem alterar o desktop.
+
 ## Privacidade e logs
 
 - não enviar pacientes ou dados clínicos para a IA do Guia Médico;
