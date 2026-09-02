@@ -6,7 +6,9 @@ Decisão permanente registrada em 02/09/2026.
 
 Esta alteração é exclusivamente de experiência mobile da rota `/telemedicina/`.
 
-O desktop deve permanecer visual e funcionalmente preservado. Por isso, o refinamento foi implementado em um stylesheet separado, `css/telemedicina-mobile-v3.css`, carregado depois do CSS principal e restrito ao breakpoint de até 860 px.
+O desktop deve permanecer visual e funcionalmente preservado. Por isso, o refinamento foi implementado em um stylesheet separado, `css/telemedicina-mobile-v3.css`, carregado depois do CSS principal.
+
+A detecção mobile considera tanto viewport de até 860 px quanto dispositivo físico compacto com ponteiro `coarse`. Isso evita que celulares Android que estejam renderizando com viewport de desktop deixem de receber a interface mobile, sem atingir desktops reais.
 
 ## Objetivos de usabilidade
 
@@ -31,7 +33,7 @@ A V3 estabelece:
 
 ## Cache e publicação
 
-O HTML da Telemedicina carrega o arquivo com versão explícita `telemedicina-mobile-v3.css?v=20260902-1` e marca o `body` com `data-mobile-ui="v3"`.
+O HTML da Telemedicina carrega o arquivo com versão explícita `telemedicina-mobile-v3.css?v=20260902-2` e marca o `body` com `data-mobile-ui="v3"`.
 
 Além de evitar reaproveitamento do CSS antigo pelo navegador, esses marcadores permitem conferir com facilidade se a versão publicada corresponde à V3.
 
