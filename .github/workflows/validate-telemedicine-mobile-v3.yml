@@ -27,9 +27,9 @@ jobs:
           test -f css/telemedicina-mobile-v3.css
           test -f telemedicina/index.html
           test -f docs/TELEMEDICINA-MOBILE-V3.md
-          grep -q 'telemedicina-mobile-v3.css?v=20260902-1' telemedicina/index.html
+          grep -q 'telemedicina-mobile-v3.css?v=20260902-2' telemedicina/index.html
           grep -q 'data-mobile-ui="v3"' telemedicina/index.html
-          grep -q '@media (max-width: 860px)' css/telemedicina-mobile-v3.css
+          grep -q '@media (max-width: 860px), (pointer: coarse) and (max-device-width: 900px)' css/telemedicina-mobile-v3.css
           grep -q '#openConsultation' css/telemedicina-mobile-v3.css
           grep -q '#openImport' css/telemedicina-mobile-v3.css
           grep -q 'bottom sheet' css/telemedicina-mobile-v3.css
@@ -47,8 +47,8 @@ jobs:
           stripped = css.lstrip()
           if not stripped.startswith('/* Telemedicina - harmonizacao exclusiva para mobile.'):
               raise SystemExit('Cabeçalho de escopo mobile ausente.')
-          if '@media (max-width: 860px)' not in css:
-              raise SystemExit('Breakpoint mobile principal ausente.')
+          if '@media (max-width: 860px), (pointer: coarse) and (max-device-width: 900px)' not in css:
+              raise SystemExit('Detecção mobile robusta ausente.')
           if 'min-width: 861px' in css:
               raise SystemExit('O arquivo mobile não deve criar regras desktop.')
           print('Escopo responsivo mobile validado.')
