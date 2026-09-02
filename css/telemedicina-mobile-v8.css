@@ -1,0 +1,193 @@
+/* Telemedicina Mobile V8
+   Refino exclusivo para celulares.
+   Objetivos: aproveitar melhor a largura útil da tela, reduzir a altura do painel-resumo
+   e manter tipografia e áreas de toque confortáveis sem alterar o desktop. */
+@media (max-width: 860px), (pointer: coarse) and (max-device-width: 900px) {
+  body.telemedicine-page {
+    --tm-v8-max: 920px;
+    --tm-v8-edge: 8px;
+  }
+
+  /* Abre a área útil no mobile. A V5 limitava o conteúdo a 760 px, o que deixava
+     grandes faixas laterais em celulares Android renderizados com viewport amplo. */
+  .telemedicine-page .portal-main.telemedicine-main {
+    width: min(calc(100% - (var(--tm-v8-edge) * 2)), var(--tm-v8-max)) !important;
+    max-width: var(--tm-v8-max) !important;
+    margin-inline: auto !important;
+  }
+
+  /* Hero mais enxuto para preservar a primeira dobra. */
+  .telemedicine-page .telemedicine-hero {
+    min-height: 0 !important;
+    padding: 12px 14px !important;
+    border-radius: 15px !important;
+  }
+  .telemedicine-page .telemedicine-hero h2 {
+    font-size: 1.28rem !important;
+  }
+  .telemedicine-page .telemedicine-today {
+    min-width: 118px !important;
+    padding: 8px 10px !important;
+  }
+
+  /* Painel-resumo: baixo, legível e proporcional. */
+  .telemedicine-page .telemedicine-stats {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .telemedicine-page .telemedicine-stat {
+    aspect-ratio: auto !important;
+    min-height: 82px !important;
+    height: 82px !important;
+    padding: 10px 13px !important;
+    border-radius: 14px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto !important;
+    grid-template-areas: "label number" "hint number" !important;
+    align-items: center !important;
+    gap: 2px 12px !important;
+  }
+  .telemedicine-page .telemedicine-stat span {
+    grid-area: label !important;
+    font-size: 1rem !important;
+    line-height: 1.12 !important;
+    font-weight: 900 !important;
+  }
+  .telemedicine-page .telemedicine-stat strong {
+    grid-area: number !important;
+    align-self: center !important;
+    font-size: 2.2rem !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+  }
+  .telemedicine-page .telemedicine-stat small {
+    grid-area: hint !important;
+    align-self: end !important;
+    font-size: .78rem !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Toolbar e seletor continuam compactos, mas passam a acompanhar a largura maior. */
+  .telemedicine-page .telemedicine-toolbar {
+    padding: 9px !important;
+    gap: 7px !important;
+  }
+  .telemedicine-page .telemedicine-view-switch {
+    margin-top: 7px !important;
+  }
+
+  /* LISTA: mantém leitura confortável e aproveita a nova largura sem ficar esticada. */
+  .telemedicine-page.tm-view-list .telemedicine-row {
+    padding: 17px !important;
+  }
+
+  /* GRADE 2x2: usa toda a largura útil e reduz espaço morto entre cards. */
+  .telemedicine-page.tm-view-grid .telemedicine-workspace {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-list {
+    width: 100% !important;
+    max-width: none !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+    align-items: stretch !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-row {
+    min-width: 0 !important;
+    min-height: 286px !important;
+    height: 100% !important;
+    padding: 14px 15px !important;
+    gap: 9px !important;
+    border-radius: 16px !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-patient button {
+    font-size: 1.12rem !important;
+    line-height: 1.18 !important;
+    min-height: 2.35em !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-patient small {
+    font-size: .82rem !important;
+    line-height: 1.28 !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-specialty-block {
+    gap: 7px !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-specialty-block strong {
+    font-size: 1rem !important;
+    line-height: 1.15 !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-specialty-block small {
+    font-size: .81rem !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-status {
+    font-size: .76rem !important;
+    padding: 6px 9px !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-date-block {
+    padding: 10px 11px !important;
+    border-radius: 11px !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-date-block strong {
+    font-size: .94rem !important;
+    line-height: 1.2 !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-date-block small {
+    font-size: .77rem !important;
+    line-height: 1.3 !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-actions .portal-button {
+    min-height: 44px !important;
+    padding: 8px 7px !important;
+    font-size: .84rem !important;
+    line-height: 1.15 !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-actions [data-action="requested"] {
+    grid-column: 1 / -1 !important;
+    min-height: 46px !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-actions [data-action="requested"]::before {
+    font-size: .86rem !important;
+  }
+
+  /* O resumo da lista continua fora da grade de pacientes. */
+  .telemedicine-page.tm-view-grid .telemedicine-empty,
+  .telemedicine-page.tm-view-grid .portal-note {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 430px) {
+  /* Em telas realmente estreitas, preserva 2 colunas porque a grade é escolha explícita,
+     mas usa margens mínimas e tipografia ainda legível. */
+  .telemedicine-page .portal-main.telemedicine-main {
+    width: calc(100% - 8px) !important;
+  }
+  .telemedicine-page .telemedicine-stat {
+    height: 78px !important;
+    min-height: 78px !important;
+    padding: 9px 11px !important;
+  }
+  .telemedicine-page .telemedicine-stat span {
+    font-size: .96rem !important;
+  }
+  .telemedicine-page .telemedicine-stat strong {
+    font-size: 2.05rem !important;
+  }
+  .telemedicine-page .telemedicine-stat small {
+    font-size: .72rem !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-row {
+    padding: 12px !important;
+  }
+  .telemedicine-page.tm-view-grid .telemedicine-patient button {
+    font-size: 1.04rem !important;
+  }
+}
