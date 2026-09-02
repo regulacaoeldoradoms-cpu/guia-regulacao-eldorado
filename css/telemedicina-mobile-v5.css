@@ -1,0 +1,474 @@
+/* Telemedicina Mobile V5
+   Harmonizacao exclusiva para celulares.
+   Objetivo: legibilidade, hierarquia e largura visual coerente sem alterar desktop. */
+@media (max-width: 860px), (pointer: coarse) and (max-device-width: 900px) {
+  body.telemedicine-page {
+    --tm-mobile-max: 760px;
+    --tm-text: #173a59;
+    --tm-muted: #6f8293;
+    --tm-line: #dfe8ef;
+    --tm-soft: #f4f8fb;
+    background: #edf3f7 !important;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Largura visual controlada: evita o efeito de interface esticada em Chrome Android
+     quando o navegador usa viewport amplo/desktop. */
+  .telemedicine-page .portal-topbar-inner,
+  .telemedicine-page .portal-main.telemedicine-main {
+    width: min(calc(100% - 24px), var(--tm-mobile-max)) !important;
+    max-width: var(--tm-mobile-max) !important;
+    margin-inline: auto !important;
+  }
+
+  .telemedicine-page .portal-topbar-inner {
+    min-height: 56px !important;
+    padding: 7px 2px !important;
+  }
+
+  .telemedicine-page .portal-brand {
+    gap: 9px !important;
+  }
+
+  .telemedicine-page .portal-brand img {
+    width: 36px !important;
+    height: 36px !important;
+    flex: 0 0 36px !important;
+  }
+
+  .telemedicine-page .portal-brand h1 {
+    font-size: 1.05rem !important;
+    line-height: 1.1 !important;
+    letter-spacing: -.01em !important;
+  }
+
+  .telemedicine-page .portal-user .portal-button {
+    min-height: 38px !important;
+    padding: 7px 11px !important;
+    border-radius: 11px !important;
+    font-size: .78rem !important;
+  }
+
+  .telemedicine-page .portal-main.telemedicine-main {
+    gap: 12px !important;
+    padding-top: 12px !important;
+  }
+
+  /* Cabeçalho operacional compacto, mas com presença visual. */
+  .telemedicine-page .telemedicine-hero {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    min-height: 0 !important;
+    padding: 15px 16px !important;
+    gap: 14px !important;
+    border: 1px solid #dbe6ee !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    box-shadow: 0 4px 14px rgba(20, 58, 89, .055) !important;
+  }
+
+  .telemedicine-page .telemedicine-hero .portal-eyebrow,
+  .telemedicine-page .telemedicine-hero .portal-hero-copy > p,
+  .telemedicine-page .telemedicine-hero .portal-hero-copy p {
+    display: none !important;
+  }
+
+  .telemedicine-page .telemedicine-hero h2 {
+    margin: 0 !important;
+    color: var(--tm-text) !important;
+    font-size: 1.22rem !important;
+    line-height: 1.12 !important;
+    font-weight: 900 !important;
+    letter-spacing: -.025em !important;
+  }
+
+  .telemedicine-page .telemedicine-title-desktop {
+    display: none !important;
+  }
+
+  .telemedicine-page .telemedicine-title-mobile {
+    display: inline !important;
+  }
+
+  .telemedicine-page .telemedicine-today {
+    min-width: 126px !important;
+    padding: 9px 11px !important;
+    gap: 2px !important;
+    border: 1px solid #dbe8f0 !important;
+    border-radius: 12px !important;
+    background: #f5f9fc !important;
+    color: var(--tm-text) !important;
+  }
+
+  .telemedicine-page .telemedicine-today span {
+    font-size: .66rem !important;
+    font-weight: 800 !important;
+    opacity: .72 !important;
+  }
+
+  .telemedicine-page .telemedicine-today strong {
+    font-size: 1.05rem !important;
+    line-height: 1.1 !important;
+  }
+
+  .telemedicine-page .telemedicine-today small {
+    max-width: 128px !important;
+    font-size: .64rem !important;
+    line-height: 1.2 !important;
+    opacity: .78 !important;
+  }
+
+  /* Indicadores: cards de dashboard, não faixas horizontais. */
+  .telemedicine-page .telemedicine-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+  }
+
+  .telemedicine-page .telemedicine-stat {
+    min-height: 74px !important;
+    padding: 12px 14px !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas: "label number" "hint number" !important;
+    align-items: center !important;
+    gap: 3px 10px !important;
+    border-radius: 15px !important;
+    box-shadow: 0 4px 14px rgba(20, 58, 89, .05) !important;
+  }
+
+  .telemedicine-page .telemedicine-stat span {
+    grid-area: label !important;
+    color: #38536c !important;
+    font-size: .84rem !important;
+    line-height: 1.12 !important;
+    font-weight: 850 !important;
+  }
+
+  .telemedicine-page .telemedicine-stat strong {
+    grid-area: number !important;
+    font-size: 1.75rem !important;
+    line-height: 1 !important;
+  }
+
+  .telemedicine-page .telemedicine-stat small {
+    display: block !important;
+    grid-area: hint !important;
+    margin: 0 !important;
+    color: #8191a0 !important;
+    font-size: .65rem !important;
+    line-height: 1.15 !important;
+  }
+
+  /* Área operacional com largura e ritmo consistentes. */
+  .telemedicine-page .telemedicine-workspace {
+    overflow: visible !important;
+    border-radius: 16px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .telemedicine-page .telemedicine-toolbar {
+    position: sticky !important;
+    top: 56px !important;
+    z-index: 40 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    padding: 10px !important;
+    border: 1px solid #dce6ee !important;
+    border-radius: 14px !important;
+    background: rgba(255,255,255,.97) !important;
+    box-shadow: 0 8px 22px rgba(20, 58, 89, .08) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+
+  .telemedicine-page .telemedicine-search-wrap {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .telemedicine-page .telemedicine-search-wrap label {
+    display: none !important;
+  }
+
+  .telemedicine-page .telemedicine-search-wrap .portal-search {
+    width: 100% !important;
+    min-height: 46px !important;
+    padding: 0 14px !important;
+    border-radius: 12px !important;
+    border-color: #cbd8e2 !important;
+    background: #f8fafc !important;
+    font-size: .94rem !important;
+  }
+
+  .telemedicine-page .telemedicine-toolbar-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto !important;
+    gap: 7px !important;
+    width: 100% !important;
+  }
+
+  .telemedicine-page .telemedicine-toolbar-actions select {
+    min-height: 42px !important;
+    padding: 0 11px !important;
+    border-radius: 11px !important;
+    font-size: .82rem !important;
+  }
+
+  .telemedicine-page #enableNotifications,
+  .telemedicine-page #openConsultation {
+    position: static !important;
+    min-height: 42px !important;
+    padding: 0 13px !important;
+    border-radius: 11px !important;
+    font-size: .78rem !important;
+    box-shadow: none !important;
+  }
+
+  .telemedicine-page #enableNotifications {
+    min-width: 82px !important;
+    font-size: 0 !important;
+  }
+
+  .telemedicine-page #enableNotifications::before {
+    content: "Avisos" !important;
+    font-size: .78rem !important;
+    font-weight: 850 !important;
+  }
+
+  .telemedicine-page #openConsultation {
+    min-width: 112px !important;
+    font-size: 0 !important;
+  }
+
+  .telemedicine-page #openConsultation::before {
+    content: "+ Consulta" !important;
+    font-size: .78rem !important;
+    font-weight: 900 !important;
+  }
+
+  .telemedicine-page #openImport {
+    display: none !important;
+  }
+
+  .telemedicine-page .telemedicine-filter-summary {
+    margin: 8px 2px 4px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #718496 !important;
+    font-size: .74rem !important;
+  }
+
+  .telemedicine-page .telemedicine-list {
+    gap: 10px !important;
+    padding: 0 !important;
+  }
+
+  /* Card de paciente com hierarquia consistente. */
+  .telemedicine-page .telemedicine-row {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    padding: 15px !important;
+    border: 1px solid var(--tm-line) !important;
+    border-left-width: 4px !important;
+    border-radius: 15px !important;
+    background: #fff !important;
+    box-shadow: 0 3px 12px rgba(20, 58, 89, .045) !important;
+  }
+
+  .telemedicine-page .telemedicine-patient {
+    display: block !important;
+    min-width: 0 !important;
+  }
+
+  .telemedicine-page .telemedicine-patient button {
+    display: inline !important;
+    width: auto !important;
+    max-width: 100% !important;
+    color: #143d60 !important;
+    font-size: 1.06rem !important;
+    line-height: 1.18 !important;
+    font-weight: 900 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-break: normal !important;
+  }
+
+  .telemedicine-page .telemedicine-patient small {
+    display: -webkit-box !important;
+    margin-top: 5px !important;
+    color: #65798a !important;
+    font-size: .76rem !important;
+    line-height: 1.28 !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+
+  .telemedicine-page .telemedicine-row .telemedicine-specialty-block {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+    align-items: center !important;
+    padding: 10px 0 0 !important;
+    border-top: 1px solid #edf2f6 !important;
+  }
+
+  .telemedicine-page .telemedicine-specialty-block strong {
+    color: #294861 !important;
+    font-size: .86rem !important;
+    line-height: 1.15 !important;
+  }
+
+  .telemedicine-page .telemedicine-specialty-block small {
+    margin-top: 3px !important;
+    color: #778999 !important;
+    font-size: .72rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .telemedicine-page .telemedicine-status {
+    min-width: 94px !important;
+    max-width: 150px !important;
+    padding: 6px 10px !important;
+    font-size: .66rem !important;
+    line-height: 1.05 !important;
+    white-space: normal !important;
+  }
+
+  .telemedicine-page .telemedicine-row .telemedicine-date-block {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 8px 12px !important;
+    padding: 10px 11px !important;
+    border: 1px solid #e2ebf2 !important;
+    border-radius: 11px !important;
+    background: var(--tm-soft) !important;
+  }
+
+  .telemedicine-page .telemedicine-date-block strong {
+    color: #294a64 !important;
+    font-size: .80rem !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+
+  .telemedicine-page .telemedicine-date-block small {
+    margin: 0 !important;
+    color: #718496 !important;
+    font-size: .70rem !important;
+    line-height: 1.22 !important;
+  }
+
+  /* Ações deixam de ocupar a largura inteira. O botão principal fica claro,
+     mas todos mantêm largura coerente com o conteúdo. */
+  .telemedicine-page .telemedicine-actions {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    gap: 7px !important;
+    flex-wrap: wrap !important;
+    margin-top: 1px !important;
+  }
+
+  .telemedicine-page .telemedicine-actions .portal-button,
+  .telemedicine-page .telemedicine-actions .portal-button.primary {
+    flex: 0 0 auto !important;
+    min-width: 100px !important;
+    min-height: 40px !important;
+    padding: 8px 13px !important;
+    border-radius: 10px !important;
+    font-size: .76rem !important;
+    white-space: nowrap !important;
+  }
+
+  .telemedicine-page .telemedicine-actions [data-action="requested"] {
+    order: 3 !important;
+    min-width: 132px !important;
+    font-size: 0 !important;
+    font-weight: 900 !important;
+  }
+
+  .telemedicine-page .telemedicine-actions [data-action="requested"]::before {
+    content: "Marcar solicitado" !important;
+    font-size: .76rem !important;
+  }
+
+  .telemedicine-page .telemedicine-actions [data-action="schedule"] {
+    order: 1 !important;
+  }
+
+  .telemedicine-page .telemedicine-actions [data-action="patient"] {
+    order: 2 !important;
+  }
+
+  .telemedicine-page .telemedicine-alert-marker {
+    padding: 3px 7px !important;
+    font-size: .62rem !important;
+  }
+
+  /* Bottom sheets continuam ergonomicos, mas com tipografia maior. */
+  .telemedicine-page .portal-modal.telemedicine-modal,
+  .telemedicine-page .portal-modal.telemedicine-patient-modal,
+  .telemedicine-page .portal-modal.telemedicine-modal.compact {
+    font-size: .94rem !important;
+  }
+
+  .telemedicine-page .telemedicine-form-grid {
+    gap: 14px !important;
+    padding: 17px !important;
+  }
+}
+
+/* Em celulares realmente estreitos, as ações ocupam duas linhas de forma deliberada,
+   sem comprimir a tipografia. */
+@media (max-width: 430px) {
+  .telemedicine-page .portal-topbar-inner,
+  .telemedicine-page .portal-main.telemedicine-main {
+    width: calc(100% - 18px) !important;
+  }
+
+  .telemedicine-page .telemedicine-hero {
+    grid-template-columns: 1fr !important;
+  }
+
+  .telemedicine-page .telemedicine-today {
+    min-width: 0 !important;
+  }
+
+  .telemedicine-page .telemedicine-toolbar-actions {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .telemedicine-page #openConsultation {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+  }
+
+  .telemedicine-page .telemedicine-row .telemedicine-date-block {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+  }
+
+  .telemedicine-page .telemedicine-date-block strong {
+    white-space: normal !important;
+  }
+
+  .telemedicine-page .telemedicine-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .telemedicine-page .telemedicine-actions .portal-button,
+  .telemedicine-page .telemedicine-actions .portal-button.primary {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .telemedicine-page .telemedicine-actions [data-action="requested"] {
+    grid-column: 1 / -1 !important;
+  }
+}
