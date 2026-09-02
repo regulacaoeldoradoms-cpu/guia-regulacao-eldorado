@@ -1,0 +1,46 @@
+name: Validar Telemedicina Mobile V11
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v11.css'
+      - 'docs/TELEMEDICINA-MOBILE-V11.md'
+      - '.github/workflows/validate-telemedicine-mobile-v11.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v11.css'
+      - 'docs/TELEMEDICINA-MOBILE-V11.md'
+      - '.github/workflows/validate-telemedicine-mobile-v11.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Conferir centralização dos cards mobile V11
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f css/telemedicina-mobile-v11.css
+          test -f docs/TELEMEDICINA-MOBILE-V11.md
+          grep -q 'telemedicina-mobile-v11.css?v=20260902-1' telemedicina/index.html
+          grep -q 'data-mobile-card-align="v11"' telemedicina/index.html
+          grep -q 'Telemedicina Mobile V11' css/telemedicina-mobile-v11.css
+          grep -q 'text-align: center !important' css/telemedicina-mobile-v11.css
+          grep -q 'justify-items: center !important' css/telemedicina-mobile-v11.css
+          grep -q 'telemedicine-status' css/telemedicina-mobile-v11.css
+          grep -q 'telemedicine-date-block' css/telemedicina-mobile-v11.css
+          grep -q 'telemedicine-actions' css/telemedicina-mobile-v11.css
+          grep -q 'formulários sanfonados' docs/TELEMEDICINA-MOBILE-V11.md
+          grep -q 'desktop permanece inalterado' docs/TELEMEDICINA-MOBILE-V11.md
+          if grep -q 'min-width: 861px' css/telemedicina-mobile-v11.css; then
+            echo 'A V11 não pode introduzir regras desktop.' >&2
+            exit 1
+          fi
+          if grep -R -n -E '\b(CNS|CPF)\b' docs/TELEMEDICINA-MOBILE-V11.md; then
+            echo 'A V11 não deve introduzir identificadores pessoais.' >&2
+            exit 1
+          fi
