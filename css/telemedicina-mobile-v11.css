@@ -1,0 +1,57 @@
+/* Telemedicina Mobile V11
+   Centraliza o conteúdo textual dos cards de acompanhamento no mobile.
+   Mantém formulários sanfonados e desktop fora desta regra. */
+@media (max-width: 860px), (pointer: coarse) and (max-device-width: 900px) {
+  .telemedicine-page .telemedicine-row > .telemedicine-patient,
+  .telemedicine-page .telemedicine-row > .telemedicine-specialty-block,
+  .telemedicine-page .telemedicine-row > .telemedicine-date-block {
+    text-align: center !important;
+  }
+
+  .telemedicine-page .telemedicine-row > .telemedicine-patient > button,
+  .telemedicine-page .telemedicine-row > .telemedicine-patient > small,
+  .telemedicine-page .telemedicine-row > .telemedicine-specialty-block > div,
+  .telemedicine-page .telemedicine-row > .telemedicine-specialty-block > div > strong,
+  .telemedicine-page .telemedicine-row > .telemedicine-specialty-block > div > small,
+  .telemedicine-page .telemedicine-row > .telemedicine-date-block > strong,
+  .telemedicine-page .telemedicine-row > .telemedicine-date-block > small {
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  .telemedicine-page .telemedicine-row > .telemedicine-specialty-block {
+    grid-template-columns: 1fr !important;
+    justify-items: center !important;
+    align-items: center !important;
+  }
+
+  .telemedicine-page .telemedicine-row > .telemedicine-specialty-block > div {
+    display: grid !important;
+    justify-items: center !important;
+  }
+
+  .telemedicine-page .telemedicine-row .telemedicine-status {
+    justify-self: center !important;
+    margin-inline: auto !important;
+    text-align: center !important;
+  }
+
+  .telemedicine-page .telemedicine-row > .telemedicine-date-block {
+    justify-items: center !important;
+    align-items: center !important;
+  }
+
+  .telemedicine-page .telemedicine-row > .telemedicine-actions {
+    justify-content: center !important;
+    justify-items: center !important;
+    text-align: center !important;
+  }
+
+  .telemedicine-page .telemedicine-row > .telemedicine-actions .portal-button {
+    text-align: center !important;
+  }
+
+  .telemedicine-page .telemedicine-row .telemedicine-alert-marker {
+    margin-inline: auto !important;
+  }
+}
