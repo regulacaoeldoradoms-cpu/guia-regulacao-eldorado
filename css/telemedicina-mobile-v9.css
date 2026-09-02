@@ -1,0 +1,315 @@
+/* Telemedicina Mobile V9
+   Operação sanfonada inline no celular.
+   Desktop permanece com o comportamento existente. */
+@media (max-width: 860px), (pointer: coarse) and (max-device-width: 900px) {
+  body.telemedicine-page.tm-inline-mobile-v9 {
+    --tm-inline-border: #d7e3ec;
+    --tm-inline-bg: #f7fafc;
+    --tm-inline-text: #173a59;
+    --tm-inline-muted: #6f8293;
+  }
+
+  /* Os modais de operação diária ficam desativados apenas no mobile V9. */
+  body.telemedicine-page.tm-inline-mobile-v9 #patientModal,
+  body.telemedicine-page.tm-inline-mobile-v9 #consultationModal,
+  body.telemedicine-page.tm-inline-mobile-v9 #scheduleModal,
+  body.telemedicine-page.tm-inline-mobile-v9 #requestedModal {
+    display: none !important;
+  }
+
+  body.telemedicine-page.tm-inline-mobile-v9 .telemedicine-row.tm-inline-open {
+    overflow: visible !important;
+    box-shadow: 0 8px 24px rgba(20, 58, 89, .10) !important;
+  }
+
+  body.telemedicine-page.tm-inline-mobile-v9.tm-view-grid .telemedicine-row.tm-inline-open {
+    grid-column: 1 / -1 !important;
+    min-height: 0 !important;
+  }
+
+  .tm-inline-panel,
+  .tm-inline-consultation {
+    width: 100% !important;
+    border: 1px solid var(--tm-inline-border) !important;
+    border-radius: 15px !important;
+    background: #fff !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 5px 16px rgba(20,58,89,.06) !important;
+    animation: tm-inline-open .16s ease-out both;
+  }
+
+  .tm-inline-panel {
+    margin-top: 4px !important;
+  }
+
+  .tm-inline-consultation {
+    margin: 10px 0 4px !important;
+  }
+
+  .tm-inline-panel-head {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 13px 14px !important;
+    border-bottom: 1px solid #e5edf3 !important;
+    background: #f8fbfd !important;
+    border-radius: 14px 14px 0 0 !important;
+  }
+
+  .tm-inline-panel-head > div {
+    min-width: 0 !important;
+    display: grid !important;
+    gap: 3px !important;
+  }
+
+  .tm-inline-panel-head strong {
+    color: var(--tm-inline-text) !important;
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+    font-weight: 900 !important;
+  }
+
+  .tm-inline-panel-head span {
+    color: var(--tm-inline-muted) !important;
+    font-size: .80rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .tm-inline-close {
+    flex: 0 0 auto !important;
+    min-height: 36px !important;
+    padding: 7px 10px !important;
+    border: 1px solid #cfdce6 !important;
+    border-radius: 9px !important;
+    background: #fff !important;
+    color: #36546d !important;
+    font: inherit !important;
+    font-size: .76rem !important;
+    font-weight: 850 !important;
+  }
+
+  .tm-inline-panel-body {
+    padding: 14px !important;
+  }
+
+  .tm-inline-form {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .tm-inline-form > label {
+    min-width: 0 !important;
+    display: grid !important;
+    gap: 6px !important;
+    color: #36536b !important;
+    font-size: .84rem !important;
+    font-weight: 800 !important;
+  }
+
+  .tm-inline-form input,
+  .tm-inline-form textarea,
+  .tm-inline-form select {
+    width: 100% !important;
+    min-height: 46px !important;
+    padding: 10px 12px !important;
+    border: 1px solid #cad8e3 !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    color: #173a59 !important;
+    font: inherit !important;
+    font-size: .94rem !important;
+    line-height: 1.3 !important;
+    box-sizing: border-box !important;
+  }
+
+  .tm-inline-form textarea {
+    min-height: 92px !important;
+    resize: vertical !important;
+  }
+
+  .tm-inline-form input:focus,
+  .tm-inline-form textarea:focus,
+  .tm-inline-form select:focus {
+    outline: 3px solid rgba(17, 117, 188, .12) !important;
+    border-color: #6ca9d1 !important;
+  }
+
+  .tm-span-2 {
+    grid-column: 1 / -1 !important;
+  }
+
+  .tm-inline-check {
+    display: flex !important;
+    grid-template-columns: none !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 9px !important;
+    min-height: 42px !important;
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+    background: #f4f8fb !important;
+  }
+
+  .tm-inline-check input {
+    width: 20px !important;
+    min-height: 20px !important;
+    height: 20px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .tm-inline-preview {
+    grid-column: 1 / -1 !important;
+    padding: 10px 12px !important;
+    border: 1px solid #dce7ef !important;
+    border-radius: 10px !important;
+    background: var(--tm-inline-bg) !important;
+    color: #476176 !important;
+    font-size: .82rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .tm-inline-form-actions {
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .tm-inline-form-actions .portal-button {
+    min-height: 44px !important;
+    padding: 9px 15px !important;
+    font-size: .86rem !important;
+    border-radius: 10px !important;
+  }
+
+  .tm-inline-status {
+    grid-column: 1 / -1 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    color: #5f7486 !important;
+    font-size: .80rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .tm-inline-status.success,
+  .tm-inline-status.error {
+    padding: 9px 11px !important;
+    border-radius: 9px !important;
+    font-weight: 750 !important;
+  }
+
+  .tm-inline-status.success {
+    color: #17623d !important;
+    background: #edf8f2 !important;
+    border: 1px solid #ccebd9 !important;
+  }
+
+  .tm-inline-status.error {
+    color: #8c2830 !important;
+    background: #fff0f1 !important;
+    border: 1px solid #f3ced1 !important;
+  }
+
+  .tm-inline-loading {
+    padding: 12px !important;
+    border-radius: 10px !important;
+    background: #f5f9fc !important;
+    color: #61778a !important;
+    font-size: .84rem !important;
+  }
+
+  .tm-inline-current {
+    display: grid !important;
+    gap: 9px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .tm-inline-current > strong {
+    color: var(--tm-inline-text) !important;
+    font-size: .92rem !important;
+  }
+
+  .tm-inline-current-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .tm-inline-current-grid > div {
+    display: grid !important;
+    gap: 3px !important;
+    padding: 10px !important;
+    border: 1px solid #dce7ef !important;
+    border-radius: 10px !important;
+    background: #f7fafc !important;
+  }
+
+  .tm-inline-current-grid small,
+  .tm-inline-current-grid span {
+    color: #718496 !important;
+    font-size: .72rem !important;
+  }
+
+  .tm-inline-current-grid strong {
+    color: #244863 !important;
+    font-size: .86rem !important;
+  }
+
+  .tm-inline-timeline {
+    display: grid !important;
+    gap: 8px !important;
+  }
+
+  .tm-inline-timeline article {
+    padding: 11px !important;
+    border-left: 3px solid #7aa7c6 !important;
+    border-radius: 8px !important;
+    background: #f7fafc !important;
+  }
+
+  .tm-inline-timeline h4 {
+    margin: 4px 0 6px !important;
+    color: #244863 !important;
+    font-size: .88rem !important;
+  }
+
+  .tm-inline-timeline p {
+    margin: 4px 0 !important;
+    color: #4d6578 !important;
+    font-size: .80rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .tm-inline-timeline small {
+    color: #748797 !important;
+    font-size: .70rem !important;
+  }
+
+  body.telemedicine-page.tm-inline-mobile-v9 #openConsultation[aria-expanded="true"],
+  body.telemedicine-page.tm-inline-mobile-v9 .telemedicine-actions [aria-expanded="true"] {
+    outline: 3px solid rgba(17,117,188,.13) !important;
+    outline-offset: 1px !important;
+  }
+
+  @keyframes tm-inline-open {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@media (max-width: 480px) {
+  body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-form,
+  body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-current-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.telemedicine-page.tm-inline-mobile-v9 .tm-span-2,
+  body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-preview,
+  body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-form-actions,
+  body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-status {
+    grid-column: 1 !important;
+  }
+}
