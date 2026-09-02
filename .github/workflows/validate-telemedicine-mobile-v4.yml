@@ -1,0 +1,54 @@
+name: Validar Telemedicina Mobile V4
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v4.css'
+      - 'docs/TELEMEDICINA-MOBILE-V4.md'
+      - '.github/workflows/validate-telemedicine-mobile-v4.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-mobile-v4.css'
+      - 'docs/TELEMEDICINA-MOBILE-V4.md'
+      - '.github/workflows/validate-telemedicine-mobile-v4.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Conferir carregamento e escopo V4
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f css/telemedicina-mobile-v4.css
+          test -f telemedicina/index.html
+          test -f docs/TELEMEDICINA-MOBILE-V4.md
+          grep -q 'telemedicina-mobile-v4.css?v=20260902-1' telemedicina/index.html
+          grep -q 'data-mobile-density="v4"' telemedicina/index.html
+          grep -q '@media (max-width: 860px), (pointer: coarse) and (max-device-width: 900px)' css/telemedicina-mobile-v4.css
+          grep -q 'grid-template-columns: minmax(0, 1fr) auto auto' css/telemedicina-mobile-v4.css
+          grep -q 'position: static !important' css/telemedicina-mobile-v4.css
+          grep -q 'flex-wrap: nowrap !important' css/telemedicina-mobile-v4.css
+      - name: Garantir que a V4 nao introduza dados sensiveis nem regras desktop
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          css = Path('css/telemedicina-mobile-v4.css').read_text(encoding='utf-8')
+          docs = Path('docs/TELEMEDICINA-MOBILE-V4.md').read_text(encoding='utf-8')
+          if not css.lstrip().startswith('/* Telemedicina - refinamento V4 exclusivamente mobile.'):
+              raise SystemExit('Cabecalho de escopo V4 ausente.')
+          if 'min-width: 901px' in css or 'min-width: 861px' in css:
+              raise SystemExit('A V4 nao deve criar regras para desktop.')
+          forbidden = ['CNS', 'CPF', 'patientName', 'sourceKey']
+          combined = css + '\n' + docs
+          for token in forbidden:
+              if token in combined:
+                  raise SystemExit(f'Dado ou identificador proibido encontrado: {token}')
+          print('V4 mobile validada.')
+          PY
