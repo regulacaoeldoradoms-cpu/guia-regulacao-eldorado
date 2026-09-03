@@ -5,6 +5,7 @@ on:
     paths:
       - 'telemedicina/index.html'
       - 'js/telemedicina-edit.js'
+      - 'css/telemedicina-mobile-v13.css'
       - 'worker/telemedicine-router-v2.js'
       - 'worker/index.js'
       - 'docs/TELEMEDICINA.md'
@@ -14,6 +15,7 @@ on:
     paths:
       - 'telemedicina/index.html'
       - 'js/telemedicina-edit.js'
+      - 'css/telemedicina-mobile-v13.css'
       - 'worker/telemedicine-router-v2.js'
       - 'worker/index.js'
       - 'docs/TELEMEDICINA.md'
@@ -32,6 +34,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f js/telemedicina-edit.js
+          test -f css/telemedicina-mobile-v13.css
           test -f worker/telemedicine-router-v2.js
           node --check js/telemedicina-edit.js
           node --input-type=module --check < worker/telemedicine-router-v2.js
@@ -49,9 +52,12 @@ jobs:
           grep -Fq "correctionHistory" worker/telemedicine-router-v2.js
           grep -Fq "firestoreDelete" worker/telemedicine-router-v2.js
           grep -Fq "telemedicina-edit.js?v=20260902-1" telemedicina/index.html
+          grep -Fq "telemedicina-mobile-v13.css?v=20260902-1" telemedicina/index.html
           grep -Fq "data-telemedicine-edit" js/telemedicina-edit.js
           grep -Fq "REUMATOLOGIA" js/telemedicina-edit.js
           grep -Fq "line-clamp: unset" js/telemedicina-edit.js
+          grep -Fq "data-telemedicine-edit=\"patient\"" css/telemedicina-mobile-v13.css
+          grep -Fq "width: 24px" css/telemedicina-mobile-v13.css
           grep -Fq "Correção de nome e especialidade" docs/TELEMEDICINA.md
       - name: Conferir privacidade do código versionado
         shell: bash
