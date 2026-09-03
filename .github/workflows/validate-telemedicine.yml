@@ -99,9 +99,17 @@ jobs:
           grep -q "const batchSize = 5;" js/telemedicina.js
           grep -q "const existingEvent = await firestoreGet" worker/telemedicine.js
           grep -q "if (!existingEvent)" worker/telemedicine.js
-          grep -q "telemedicina.js?v=20260901-3" telemedicina/index.html
-          grep -q "telemedicina.css?v=20260901-4" telemedicina/index.html
+          grep -q "telemedicina.js?v=20260903-1" telemedicina/index.html
+          grep -q "telemedicina.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicine-title-mobile" telemedicina/index.html
+          grep -q "Data da última consulta" telemedicina/index.html
+          grep -q "Paciente recebeu alta deste episódio" telemedicina/index.html
+          grep -q "consultFollowupFields" telemedicina/index.html
+          grep -q "launchDischargeCelebration" js/telemedicina.js
+          grep -q "prefers-reduced-motion:reduce" css/telemedicina.css
+          grep -q "const discharged = input.discharged === true" worker/telemedicine.js
+          grep -q "ALTA DO EPISÓDIO" worker/telemedicine.js
+          grep -q "Registro objetivo de alta" docs/TELEMEDICINA.md
           grep -q "Mobile UX v2" css/telemedicina.css
           grep -q "@media(max-width:860px)" css/telemedicina.css
           grep -q "#openConsultation{position:fixed" css/telemedicina.css
