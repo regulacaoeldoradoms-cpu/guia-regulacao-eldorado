@@ -51,6 +51,12 @@
     return day !== 0 && day !== 6;
   }
 
+  function nextBusinessDay(value) {
+    let cursor = value;
+    while (!isBusinessDay(cursor)) cursor = addDays(cursor, 1);
+    return cursor;
+  }
+
   function reminderDates(returnDate) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(returnDate || ''))) return [];
     let cursor = addDays(returnDate, -15);
@@ -338,6 +344,7 @@
       preview.textContent = 'Sem data-alvo definida. O acompanhamento ficará em “SEM PROGRAMAÇÃO” até a data ser informada.';
       return;
     }
+    target = nextBusinessDay(target);
     const dates = reminderDates(target);
     preview.innerHTML = `<strong>Retorno-alvo:</strong> ${escapeHtml(formatDate(target))}<br><strong>Lembretes:</strong> ${dates.map(formatDate).join(' · ')}`;
   }
@@ -387,6 +394,10 @@
   });
   document.getElementById('consultReturnDate').addEventListener('input', (event) => {
     if (event.target.value) document.getElementById('consultReturnDays').value = '';
+    updateConsultPreview();
+  });
+  document.getElementById('consultReturnDate').addEventListener('change', (event) => {
+    if (event.target.value) event.target.value = nextBusinessDay(event.target.value);
     updateConsultPreview();
   });
   document.querySelectorAll('input[name="consultOutcome"]').forEach((input) => input.addEventListener('change', (event) => {
