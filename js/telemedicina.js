@@ -237,16 +237,60 @@
     openModal('requestedModal');
   }
 
+  function launchDischargeCelebration() {
+    const layer = document.getElementById('dischargeCelebration');
+    if (!layer) return;
+    layer.replaceChildren();
+    layer.classList.remove('active');
+    void layer.offsetWidth;
+    layer.classList.add('active');
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const colors = ['#0d8f87', '#17a8d4', '#ffd166', '#ef476f', '#7b61ff', '#43aa8b'];
+      for (let index = 0; index < 54; index += 1) {
+        const piece = document.createElement('i');
+        piece.className = 'telemedicine-confetti';
+        piece.style.setProperty('--x', `${5 + Math.random() * 90}vw`);
+        piece.style.setProperty('--delay', `${Math.random() * 0.35}s`);
+        piece.style.setProperty('--duration', `${1.45 + Math.random() * 1.1}s`);
+        piece.style.setProperty('--drift', `${-90 + Math.random() * 180}px`);
+        piece.style.setProperty('--color', colors[index % colors.length]);
+        layer.appendChild(piece);
+      }
+      for (let burst = 0; burst < 3; burst += 1) {
+        const firework = document.createElement('b');
+        firework.className = 'telemedicine-firework';
+        firework.style.setProperty('--fx', `${22 + burst * 28}vw`);
+        firework.style.setProperty('--fy', `${18 + (burst % 2) * 14}vh`);
+        firework.style.setProperty('--firework-color', colors[(burst + 2) % colors.length]);
+        layer.appendChild(firework);
+      }
+    }
+    window.setTimeout(() => {
+      layer.classList.remove('active');
+      layer.replaceChildren();
+    }, 3000);
+  }
+
+  function syncConsultOutcome({ celebrate = false } = {}) {
+    const discharged = document.getElementById('consultDischarged').checked;
+    const fields = document.getElementById('consultFollowupFields');
+    fields.hidden = discharged;
+    fields.setAttribute('aria-hidden', discharged ? 'true' : 'false');
+    if (discharged) {
+      document.getElementById('consultReturnDays').value = '';
+      document.getElementById('consultReturnDate').value = '';
+      document.getElementById('consultNotes').value = '';
+      if (celebrate) launchDischargeCelebration();
+    }
+    updateConsultPreview();
+  }
+
   function updateConsultPreview() {
     const consultDate = document.getElementById('consultDate').value;
     const days = Number(document.getElementById('consultReturnDays').value || 0);
     let target = document.getElementById('consultReturnDate').value;
     if (!target && consultDate && Number.isInteger(days) && days > 0) target = addDays(consultDate, days);
     const preview = document.getElementById('consultPreview');
-    if (!document.getElementById('consultNeedsReturn').checked) {
-      preview.textContent = 'Este registro será salvo sem acompanhamento pendente.';
-      return;
-    }
     if (!target) {
       preview.textContent = 'Sem data-alvo definida. O acompanhamento ficará em “SEM PROGRAMAÇÃO” até a data ser informada.';
       return;
@@ -286,14 +330,15 @@
 
   document.getElementById('openConsultation').addEventListener('click', () => {
     document.getElementById('consultationForm').reset();
-    document.getElementById('consultNeedsReturn').checked = true;
+    document.getElementById('consultDischarged').checked = false;
     document.getElementById('consultDate').value = state.today || new Date().toISOString().slice(0, 10);
     document.getElementById('consultationStatus').className = 'account-status full';
-    updateConsultPreview();
+    syncConsultOutcome();
     openModal('consultationModal');
   });
 
-  ['consultDate', 'consultReturnDays', 'consultReturnDate', 'consultNeedsReturn'].forEach((id) => document.getElementById(id).addEventListener('input', updateConsultPreview));
+  ['consultDate', 'consultReturnDays', 'consultReturnDate'].forEach((id) => document.getElementById(id).addEventListener('input', updateConsultPreview));
+  document.getElementById('consultDischarged').addEventListener('change', (event) => syncConsultOutcome({ celebrate: event.target.checked }));
   document.getElementById('scheduleReturnDate').addEventListener('input', updateSchedulePreview);
 
   document.getElementById('consultationForm').addEventListener('submit', async (event) => {
@@ -302,17 +347,28 @@
     const button = document.getElementById('saveConsultation');
     button.disabled = true;
     try {
+      const discharged = document.getElementById('consultDischarged').checked;
+      const returnDays = Number(document.getElementById('consultReturnDays').value || 0);
+      const returnDueDate = document.getElementById('consultReturnDate').value;
+      const resolution = discharged
+        ? 'ALTA DO EPISÓDIO'
+        : returnDays > 0
+          ? `RETORNO COM ${returnDays} DIAS`
+          : returnDueDate
+            ? `RETORNO PROGRAMADO PARA ${formatDate(returnDueDate)}`
+            : 'ACOMPANHAMENTO SEM DATA DEFINIDA';
       await auth.api('/api/telemedicina/consultations', {
         method: 'POST',
         body: JSON.stringify({
           patientName: document.getElementById('consultPatient').value.trim(),
           consultationDate: document.getElementById('consultDate').value,
           specialty: document.getElementById('consultSpecialty').value.trim(),
-          resolution: document.getElementById('consultResolution').value.trim(),
-          needsReturn: document.getElementById('consultNeedsReturn').checked,
-          returnDays: Number(document.getElementById('consultReturnDays').value || 0),
-          returnDueDate: document.getElementById('consultReturnDate').value,
-          notes: document.getElementById('consultNotes').value.trim()
+          resolution,
+          discharged,
+          needsReturn: !discharged,
+          returnDays: discharged ? 0 : returnDays,
+          returnDueDate: discharged ? '' : returnDueDate,
+          notes: discharged ? '' : document.getElementById('consultNotes').value.trim()
         })
       });
       showStatus(status, 'Teleconsulta registrada no histórico do paciente.', 'success');
