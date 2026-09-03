@@ -7,9 +7,11 @@ on:
       - 'css/telemedicina.css'
       - 'css/telemedicina-outcome-v14.css'
       - 'css/telemedicina-mobile-v15.css'
+      - 'css/telemedicina-desktop-v16.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-business-day.js'
+      - 'js/telemedicina-mobile-v7.js'
       - 'js/home.js'
       - 'js/admin-users.js'
       - 'js/account.js'
@@ -22,6 +24,7 @@ on:
       - 'worker/index.js'
       - 'worker/tests/telemedicine-rules.test.mjs'
       - 'docs/TELEMEDICINA.md'
+      - 'docs/TELEMEDICINA-DESKTOP-V16.md'
       - 'PORTAL-ARQUITETURA.md'
       - '.github/workflows/validate-telemedicine.yml'
   push:
@@ -31,9 +34,11 @@ on:
       - 'css/telemedicina.css'
       - 'css/telemedicina-outcome-v14.css'
       - 'css/telemedicina-mobile-v15.css'
+      - 'css/telemedicina-desktop-v16.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-business-day.js'
+      - 'js/telemedicina-mobile-v7.js'
       - 'js/home.js'
       - 'js/admin-users.js'
       - 'js/account.js'
@@ -46,6 +51,7 @@ on:
       - 'worker/index.js'
       - 'worker/tests/telemedicine-rules.test.mjs'
       - 'docs/TELEMEDICINA.md'
+      - 'docs/TELEMEDICINA-DESKTOP-V16.md'
       - 'PORTAL-ARQUITETURA.md'
       - '.github/workflows/validate-telemedicine.yml'
 
@@ -65,14 +71,18 @@ jobs:
           test -f css/telemedicina.css
           test -f css/telemedicina-outcome-v14.css
           test -f css/telemedicina-mobile-v15.css
+          test -f css/telemedicina-desktop-v16.css
           test -f css/account-admin.css
           test -f js/telemedicina.js
           test -f js/telemedicina-business-day.js
+          test -f js/telemedicina-mobile-v7.js
+          test -f docs/TELEMEDICINA-DESKTOP-V16.md
           test -f worker/telemedicine.js
           test -f worker/telemedicine-access.js
           test -f worker/telemedicine-rules.js
           node --check js/telemedicina.js
           node --check js/telemedicina-business-day.js
+          node --check js/telemedicina-mobile-v7.js
           node --check js/home.js
           node --check js/admin-users.js
           node --check js/account.js
@@ -115,12 +125,19 @@ jobs:
           grep -q "consultConditionType" telemedicina/index.html
           grep -q "telemedicina-outcome-v14.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicina-mobile-v15.css?v=20260903-3" telemedicina/index.html
+          grep -q "telemedicina-desktop-v16.css?v=20260903-1" telemedicina/index.html
+          grep -q "telemedicina-mobile-v7.js?v=20260903-1" telemedicina/index.html
+          grep -q 'data-desktop-design="v16"' telemedicina/index.html
           grep -q 'data-mobile-readability="v15"' telemedicina/index.html
           grep -q "min-height: 82px" css/telemedicina-mobile-v15.css
           grep -q "flex-flow: row nowrap !important" css/telemedicina-mobile-v15.css
           grep -q "font-size: 1.28rem !important" css/telemedicina-mobile-v15.css
           grep -q "font-size: .9rem !important" css/telemedicina-mobile-v15.css
           grep -q "min-height: 350px !important" css/telemedicina-mobile-v15.css
+          grep -q "grid-template-columns: repeat(3, minmax(0, 1fr))" css/telemedicina-desktop-v16.css
+          grep -q "tm-context-desktop" css/telemedicina-desktop-v16.css
+          grep -q "telemedicine-desktop-view-v16" js/telemedicina-mobile-v7.js
+          grep -q "Grade 3×3" js/telemedicina-mobile-v7.js
           grep -q "consultFollowupFields" telemedicina/index.html
           grep -q "launchDischargeCelebration" js/telemedicina.js
           grep -q "telemedicine:celebrate-discharge" js/telemedicina.js
@@ -137,6 +154,9 @@ jobs:
           grep -q "@media(max-width:860px)" css/telemedicina.css
           grep -q "#openConsultation{position:fixed" css/telemedicina.css
           grep -q "Experiência mobile" docs/TELEMEDICINA.md
+          grep -q "Experiência desktop V16" docs/TELEMEDICINA.md
+          grep -q "três cartões por linha" docs/TELEMEDICINA-DESKTOP-V16.md
+          grep -q "Não há limite de nove cartões" docs/TELEMEDICINA-DESKTOP-V16.md
           grep -q "camada V15" docs/TELEMEDICINA.md
           grep -q "textos operacionais secundários próximos de 14 px" docs/TELEMEDICINA.md
           grep -q "uma única linha horizontal" docs/TELEMEDICINA.md
