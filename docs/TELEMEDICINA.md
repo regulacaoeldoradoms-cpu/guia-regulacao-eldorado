@@ -218,7 +218,7 @@ Regras obrigatórias:
 - como os identificadores técnicos de paciente e acompanhamento derivam da forma normalizada do nome e da especialidade, uma correção que altere essa forma migra de modo controlado os documentos relacionados para os novos identificadores;
 - colisão de **nome de paciente** continua bloqueada: o sistema não funde automaticamente pacientes apenas porque o nome corrigido coincide com outro cadastro;
 - colisão de **especialidade do mesmo paciente** tem comportamento diferente: quando o operador corrige explicitamente uma abreviação/grafia para uma especialidade que já existe naquele mesmo paciente, o backend executa a unificação controlada dos dois acompanhamentos em vez de bloquear a correção;
-- a correção manual nunca usa semelhança aproximada ou IA. A padronização em lote usa somente um dicionário fechado, auditado e versionado de equivalências exatas, evitando unir especialidades diferentes por engano;
+- a unificação nunca é inferida por semelhança de texto, aproximação ou IA. A padronização em lote usa somente um dicionário fechado, auditado e versionado de equivalências exatas, evitando unir especialidades diferentes por engano;
 - na unificação, permanece um único acompanhamento para o paciente + especialidade; o estado operacional atual é preservado a partir do registro com teleconsulta mais recente, usando a atualização mais recente como desempate;
 - o documento canônico é substituído integralmente pelo estado escolhido, impedindo que campos operacionais antigos do outro acompanhamento sobrevivam e alterem indevidamente a situação exibida;
 - os históricos de correção são ordenados por data antes de manter as doze entradas mais recentes, preservando a auditoria mais atual;
