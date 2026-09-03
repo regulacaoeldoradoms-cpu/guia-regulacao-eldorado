@@ -51,6 +51,10 @@ jobs:
           grep -Fq "status: 409" worker/telemedicine-router-v2.js
           grep -Fq "correctionHistory" worker/telemedicine-router-v2.js
           grep -Fq "firestoreDelete" worker/telemedicine-router-v2.js
+          grep -Fq "async function mergeSpecialtyFollowups" worker/telemedicine-router-v2.js
+          grep -Fq "function newerFollowup" worker/telemedicine-router-v2.js
+          grep -Fq "mergedFromFollowups" worker/telemedicine-router-v2.js
+          grep -Fq "return mergeSpecialtyFollowups" worker/telemedicine-router-v2.js
           grep -Fq "telemedicina-edit.js?v=20260902-1" telemedicina/index.html
           grep -Fq "telemedicina-mobile-v13.css?v=20260903-2" telemedicina/index.html
           grep -Fq "data-telemedicine-edit" js/telemedicina-edit.js
@@ -63,6 +67,8 @@ jobs:
           grep -Fq ".telemedicine-page .telemedicine-row[hidden]" css/telemedicina-mobile-v13.css
           grep -Fq "display: none !important" css/telemedicina-mobile-v13.css
           grep -Fq "Correção de nome e especialidade" docs/TELEMEDICINA.md
+          grep -Fq "unificação controlada" docs/TELEMEDICINA.md
+          grep -Fq "nunca é inferida por semelhança de texto" docs/TELEMEDICINA.md
       - name: Conferir privacidade do código versionado
         shell: bash
         run: |
