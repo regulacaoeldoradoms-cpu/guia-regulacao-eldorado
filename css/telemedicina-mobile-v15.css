@@ -1,6 +1,6 @@
 /* Telemedicina Mobile V15
-   Reforça a legibilidade e mantém todo o cabeçalho em uma única linha no celular.
-   Mantém o desktop inalterado. */
+   Amplia a escala tipográfica para leitura confortável no celular e mantém
+   todo o cabeçalho em uma única linha. Mantém o desktop inalterado. */
 @media (max-width: 860px), (pointer: coarse) and (max-device-width: 900px) {
   /* Uma única linha: usa quase toda a largura e reserva mais altura para os itens. */
   .telemedicine-page .portal-topbar-inner {
@@ -35,7 +35,7 @@
 
   .telemedicine-page .portal-brand h1 {
     overflow: hidden !important;
-    font-size: 1.08rem !important;
+    font-size: 1.14rem !important;
     line-height: 1.15 !important;
     white-space: nowrap !important;
     text-overflow: ellipsis !important;
@@ -50,7 +50,7 @@
     gap: 5px !important;
     align-items: center !important;
     justify-content: flex-end !important;
-    font-size: .9rem !important;
+    font-size: .96rem !important;
   }
 
   .telemedicine-page .portal-account-area {
@@ -77,7 +77,7 @@
   .telemedicine-page .portal-account-area .portal-user-meta strong {
     display: -webkit-box !important;
     overflow: hidden !important;
-    font-size: .88rem !important;
+    font-size: .96rem !important;
     font-weight: 850 !important;
     line-height: 1.14 !important;
     white-space: normal !important;
@@ -90,7 +90,7 @@
     display: block !important;
     overflow: hidden !important;
     margin-top: 2px !important;
-    font-size: .69rem !important;
+    font-size: .76rem !important;
     line-height: 1.12 !important;
     white-space: nowrap !important;
     text-overflow: ellipsis !important;
@@ -100,7 +100,7 @@
     width: 38px !important;
     height: 38px !important;
     flex: 0 0 38px !important;
-    font-size: .78rem !important;
+    font-size: .84rem !important;
   }
 
   .telemedicine-page .portal-user > .portal-button {
@@ -109,27 +109,27 @@
     flex: 0 0 auto !important;
     padding: 7px 8px !important;
     border-radius: 10px !important;
-    font-size: .82rem !important;
+    font-size: .9rem !important;
   }
 
   /* Resumo operacional e comandos principais. */
   .telemedicine-page .telemedicine-stat {
-    min-height: 78px !important;
+    min-height: 86px !important;
     height: auto !important;
-    padding: 11px 12px !important;
+    padding: 12px 13px !important;
   }
 
   .telemedicine-page .telemedicine-stat span {
-    font-size: 1rem !important;
+    font-size: 1.1rem !important;
     line-height: 1.16 !important;
   }
 
   .telemedicine-page .telemedicine-stat strong {
-    font-size: 2.08rem !important;
+    font-size: 2.22rem !important;
   }
 
   .telemedicine-page .telemedicine-stat small {
-    font-size: .76rem !important;
+    font-size: .88rem !important;
     line-height: 1.25 !important;
     white-space: normal !important;
     overflow: visible !important;
@@ -137,63 +137,63 @@
   }
 
   .telemedicine-page .telemedicine-today span {
-    font-size: .82rem !important;
+    font-size: .92rem !important;
   }
 
   .telemedicine-page .telemedicine-today strong {
-    font-size: 1.38rem !important;
+    font-size: 1.55rem !important;
   }
 
   .telemedicine-page .telemedicine-today small {
-    font-size: .75rem !important;
+    font-size: .86rem !important;
     line-height: 1.28 !important;
   }
 
   .telemedicine-page .telemedicine-search-wrap .portal-search {
-    min-height: 52px !important;
-    font-size: 1rem !important;
+    min-height: 54px !important;
+    font-size: 1.08rem !important;
   }
 
   .telemedicine-page .telemedicine-toolbar-actions select {
-    min-height: 48px !important;
-    font-size: .94rem !important;
+    min-height: 50px !important;
+    font-size: 1.02rem !important;
   }
 
   .telemedicine-page .telemedicine-toolbar-actions .portal-button,
   .telemedicine-page #openConsultation::before {
-    font-size: .92rem !important;
+    font-size: 1rem !important;
   }
 
   .telemedicine-page .telemedicine-view-switch button {
-    font-size: .98rem !important;
+    font-size: 1.06rem !important;
   }
 
   .telemedicine-page .telemedicine-filter-summary {
-    font-size: .84rem !important;
+    font-size: .94rem !important;
     line-height: 1.3 !important;
   }
 
   /* Formulários sanfonados: rótulos, campos, ajuda e opções de conduta. */
   body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-panel-head strong {
-    font-size: 1.08rem !important;
+    font-size: 1.18rem !important;
     line-height: 1.2 !important;
   }
 
   body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-panel-head span {
-    font-size: .82rem !important;
+    font-size: .92rem !important;
     line-height: 1.3 !important;
   }
 
   body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-form > label {
-    font-size: .94rem !important;
+    font-size: 1.04rem !important;
     line-height: 1.25 !important;
   }
 
   body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-form input,
   body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-form select,
   body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-form textarea {
-    min-height: 48px !important;
-    font-size: 1rem !important;
+    min-height: 50px !important;
+    font-size: 1.08rem !important;
     line-height: 1.35 !important;
   }
 
@@ -204,92 +204,92 @@
   body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-form label small,
   body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-preview,
   body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-status {
-    font-size: .8rem !important;
+    font-size: .9rem !important;
     line-height: 1.4 !important;
   }
 
   body.telemedicine-page.tm-inline-mobile-v9 .telemedicine-outcome-picker legend {
     margin-bottom: 11px !important;
-    font-size: 1rem !important;
+    font-size: 1.1rem !important;
   }
 
   body.telemedicine-page.tm-inline-mobile-v9 .telemedicine-choice strong {
-    font-size: .86rem !important;
+    font-size: .98rem !important;
     line-height: 1.22 !important;
   }
 
   body.telemedicine-page.tm-inline-mobile-v9 .telemedicine-choice small {
-    font-size: .76rem !important;
+    font-size: .88rem !important;
     line-height: 1.32 !important;
   }
 
   body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-form-actions .portal-button {
     min-height: 48px !important;
-    font-size: .94rem !important;
+    font-size: 1.02rem !important;
   }
 
   /* Cartões dos pacientes em lista e grade. */
   .telemedicine-page.tm-view-list .telemedicine-patient button {
-    font-size: 1.4rem !important;
+    font-size: 1.5rem !important;
   }
 
   .telemedicine-page.tm-view-list .telemedicine-patient small {
-    font-size: 1rem !important;
+    font-size: 1.08rem !important;
   }
 
   .telemedicine-page.tm-view-list .telemedicine-specialty-block strong {
-    font-size: 1.13rem !important;
+    font-size: 1.22rem !important;
   }
 
   .telemedicine-page.tm-view-list .telemedicine-specialty-block small,
   .telemedicine-page.tm-view-list .telemedicine-date-block small {
-    font-size: .92rem !important;
+    font-size: 1rem !important;
   }
 
   .telemedicine-page.tm-view-list .telemedicine-date-block strong {
-    font-size: 1.06rem !important;
+    font-size: 1.14rem !important;
   }
 
   .telemedicine-page.tm-view-list .telemedicine-actions .portal-button {
     min-height: 48px !important;
-    font-size: .98rem !important;
+    font-size: 1.04rem !important;
   }
 
   .telemedicine-page.tm-view-grid .telemedicine-row {
-    min-height: 306px !important;
+    min-height: 350px !important;
   }
 
   .telemedicine-page.tm-view-grid .telemedicine-patient button {
-    font-size: 1.18rem !important;
+    font-size: 1.28rem !important;
   }
 
   .telemedicine-page.tm-view-grid .telemedicine-patient small {
-    font-size: .87rem !important;
+    font-size: .96rem !important;
   }
 
   .telemedicine-page.tm-view-grid .telemedicine-specialty-block strong {
-    font-size: 1.05rem !important;
+    font-size: 1.14rem !important;
   }
 
   .telemedicine-page.tm-view-grid .telemedicine-specialty-block small {
-    font-size: .85rem !important;
+    font-size: .94rem !important;
   }
 
   .telemedicine-page.tm-view-grid .telemedicine-status {
-    font-size: .8rem !important;
+    font-size: .9rem !important;
   }
 
   .telemedicine-page.tm-view-grid .telemedicine-date-block strong {
-    font-size: .98rem !important;
+    font-size: 1.08rem !important;
   }
 
   .telemedicine-page.tm-view-grid .telemedicine-date-block small {
-    font-size: .81rem !important;
+    font-size: .9rem !important;
   }
 
   .telemedicine-page.tm-view-grid .telemedicine-actions .portal-button {
-    min-height: 46px !important;
-    font-size: .88rem !important;
+    min-height: 48px !important;
+    font-size: .98rem !important;
   }
 }
 
@@ -323,7 +323,7 @@
   .telemedicine-page .portal-user > .portal-button {
     min-height: 40px !important;
     padding-inline: 6px !important;
-    font-size: .78rem !important;
+    font-size: .86rem !important;
   }
 
   .telemedicine-page .portal-account-area {
@@ -339,28 +339,28 @@
   }
 
   .telemedicine-page .portal-account-area .portal-user-meta strong {
-    font-size: .82rem !important;
+    font-size: .92rem !important;
   }
 
   .telemedicine-page .portal-account-area .portal-user-meta span {
-    font-size: .65rem !important;
+    font-size: .72rem !important;
   }
 
   .telemedicine-page .telemedicine-stat {
-    min-height: 80px !important;
-    padding: 10px !important;
+    min-height: 88px !important;
+    padding: 11px !important;
   }
 
   .telemedicine-page .telemedicine-stat span {
-    font-size: .96rem !important;
+    font-size: 1.06rem !important;
   }
 
   .telemedicine-page .telemedicine-stat strong {
-    font-size: 2rem !important;
+    font-size: 2.16rem !important;
   }
 
   .telemedicine-page .telemedicine-stat small {
-    font-size: .73rem !important;
+    font-size: .86rem !important;
   }
 
   body.telemedicine-page.tm-inline-mobile-v9 .telemedicine-choice-grid {
@@ -368,16 +368,16 @@
   }
 
   body.telemedicine-page.tm-inline-mobile-v9 .telemedicine-choice {
-    min-height: 74px !important;
+    min-height: 82px !important;
   }
 
   body.telemedicine-page.tm-inline-mobile-v9 .telemedicine-choice strong {
-    font-size: .96rem !important;
+    font-size: 1.04rem !important;
   }
 
   body.telemedicine-page.tm-inline-mobile-v9 .telemedicine-choice small {
     display: block !important;
-    font-size: .8rem !important;
+    font-size: .9rem !important;
   }
 }
 
