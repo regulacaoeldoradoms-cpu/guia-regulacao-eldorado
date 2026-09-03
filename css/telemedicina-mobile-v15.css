@@ -342,7 +342,7 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: reduce) and (max-width: 860px) {
   .telemedicine-page .portal-account-area,
   .telemedicine-page .portal-user > .portal-button {
     transition: none !important;
