@@ -99,13 +99,15 @@ jobs:
           grep -q "const batchSize = 5;" js/telemedicina.js
           grep -q "const existingEvent = await firestoreGet" worker/telemedicine.js
           grep -q "if (!existingEvent)" worker/telemedicine.js
-          grep -q "telemedicina.js?v=20260903-1" telemedicina/index.html
+          grep -q "telemedicina.js?v=20260903-2" telemedicina/index.html
           grep -q "telemedicina.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicine-title-mobile" telemedicina/index.html
           grep -q "Data da última consulta" telemedicina/index.html
           grep -q "Paciente recebeu alta deste episódio" telemedicina/index.html
           grep -q "consultFollowupFields" telemedicina/index.html
           grep -q "launchDischargeCelebration" js/telemedicina.js
+          grep -q "telemedicine:celebrate-discharge" js/telemedicina.js
+          grep -q "telemedicina-mobile-v9.js?v=20260903-1" telemedicina/index.html
           grep -q "prefers-reduced-motion:reduce" css/telemedicina.css
           grep -q "const discharged = input.discharged === true" worker/telemedicine.js
           grep -q "ALTA DO EPISÓDIO" worker/telemedicine.js
