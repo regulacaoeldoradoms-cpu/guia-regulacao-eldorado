@@ -13,6 +13,7 @@ import {
   clean,
   normalizeText,
   dateValid,
+  normalizeReturnDueDate,
   threeBusinessReminders,
   deriveFollowupStatus,
   reminderMetaFor,
@@ -199,8 +200,9 @@ async function recordConsultation(env, user, input) {
   const inputResolution = clean(input.resolution, 2500);
   const notes = discharged ? '' : clean(input.notes, 1500);
   const needsReturn = hasExplicitMode ? !discharged : (discharged ? false : input.needsReturn !== false);
-  const explicitDue = followupMode === 'scheduled' ? clean(input.returnDueDate, 10) : '';
-  const returnDays = followupMode === 'scheduled' && !dateValid(explicitDue) ? Number(input.returnDays || 0) : 0;
+  const explicitDueInput = followupMode === 'scheduled' ? clean(input.returnDueDate, 10) : '';
+  const explicitDue = dateValid(explicitDueInput) ? normalizeReturnDueDate(explicitDueInput) : '';
+  const returnDays = followupMode === 'scheduled' && !explicitDue ? Number(input.returnDays || 0) : 0;
   const returnConditionType = conditional ? clean(input.conditionType, 40).toLowerCase() : '';
   const returnConditionDetail = conditional ? clean(input.conditionDetail, 300) : '';
   const conditionalResolution = conditional
@@ -314,8 +316,9 @@ async function markRequested(env, user, followupId, input = {}) {
 async function updateSchedule(env, user, followupId, input = {}) {
   const current = await firestoreGet(env, `${FOLLOWUPS}/${followupId}`);
   if (!current) throw Object.assign(new Error('Acompanhamento não encontrado.'), { status: 404 });
-  const returnDueDate = clean(input.returnDueDate, 10);
-  if (!dateValid(returnDueDate)) throw Object.assign(new Error('Informe uma data válida para o retorno.'), { status: 400 });
+  const requestedReturnDueDate = clean(input.returnDueDate, 10);
+  if (!dateValid(requestedReturnDueDate)) throw Object.assign(new Error('Informe uma data válida para o retorno.'), { status: 400 });
+  const returnDueDate = normalizeReturnDueDate(requestedReturnDueDate);
   const now = new Date().toISOString();
   const reminderDates = threeBusinessReminders(returnDueDate);
   await firestorePatch(env, `${FOLLOWUPS}/${followupId}`, {
