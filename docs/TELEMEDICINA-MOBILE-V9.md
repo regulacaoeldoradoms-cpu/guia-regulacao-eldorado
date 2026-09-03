@@ -40,8 +40,8 @@ Decisão permanente registrada em 03/09/2026:
 - a ordem horizontal é **Telemedicina**, **Início**, foto com nome/cargo do usuário e **Sair**;
 - o nome permanece visível ao lado da foto e pode ocupar até duas linhas dentro do bloco da conta;
 - em telas de até 380 px, somente o cargo pode ser ocultado para preservar o nome e os comandos na mesma linha;
-- indicadores, busca, filtros, formulário, opções de conduta e cartões de pacientes usam tipografia ampliada e áreas de toque confortáveis;
-- o modo Grade 2×2 continua disponível e recebe altura adicional nos cartões para acomodar o texto maior;
+- indicadores, busca, filtros, formulário, opções de conduta e cartões de pacientes usam uma escala tipográfica ampliada, com controles próximos de 16 px e textos operacionais secundários próximos de 14 px;
+- o modo Grade 2×2 continua disponível e seus cartões usam altura mínima de 350 px para acomodar o texto maior sem cortes;
 - todas essas regras ficam isoladas em `css/telemedicina-mobile-v15.css` e não alteram o desktop.
 
 ## Concorrência de trabalho
