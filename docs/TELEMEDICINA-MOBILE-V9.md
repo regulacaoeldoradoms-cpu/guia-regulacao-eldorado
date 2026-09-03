@@ -31,6 +31,18 @@ O desktop preserva o comportamento anterior com modais.
 - No retorno condicionado, o painel oferece exames, fisioterapia, procedimento/cirurgia, conclusão do tratamento e outra condição; não calcula data nem lembretes.
 - O arquivo mobile não pode reintroduzir os campos antigos de texto livre de resolutividade ou de marcação “Necessita acompanhamento/retorno”.
 
+## Legibilidade móvel e cabeçalho V15
+
+Decisão permanente registrada em 03/09/2026:
+
+- a barra azul superior usa duas linhas no celular e não deve voltar à altura comprimida de 58 px;
+- a primeira linha identifica o módulo **Telemedicina**;
+- a segunda linha distribui **Início**, foto e nome do usuário, cargo e **Sair**, mantendo o nome visível ao lado da foto;
+- nomes longos podem ocupar até duas linhas e o cargo usa truncamento apenas quando não houver espaço suficiente;
+- indicadores, busca, filtros, formulário, opções de conduta e cartões de pacientes usam tipografia ampliada e áreas de toque confortáveis;
+- o modo Grade 2×2 continua disponível e recebe altura adicional nos cartões para acomodar o texto maior;
+- todas essas regras ficam isoladas em `css/telemedicina-mobile-v15.css` e não alteram o desktop.
+
 ## Concorrência de trabalho
 
 A V9 prioriza o fluxo operacional em sequência rápida. Requisições de salvamento são independentes no navegador: uma chamada ainda pendente não cria overlay, modal global ou bloqueio de interação nos demais cards.

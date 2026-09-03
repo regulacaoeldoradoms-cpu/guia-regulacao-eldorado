@@ -6,6 +6,7 @@ on:
       - 'telemedicina/**'
       - 'css/telemedicina.css'
       - 'css/telemedicina-outcome-v14.css'
+      - 'css/telemedicina-mobile-v15.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-business-day.js'
@@ -29,6 +30,7 @@ on:
       - 'telemedicina/**'
       - 'css/telemedicina.css'
       - 'css/telemedicina-outcome-v14.css'
+      - 'css/telemedicina-mobile-v15.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-business-day.js'
@@ -62,6 +64,7 @@ jobs:
           test -f telemedicina/index.html
           test -f css/telemedicina.css
           test -f css/telemedicina-outcome-v14.css
+          test -f css/telemedicina-mobile-v15.css
           test -f css/account-admin.css
           test -f js/telemedicina.js
           test -f js/telemedicina-business-day.js
@@ -111,6 +114,8 @@ jobs:
           grep -q "Retorno após uma condição" telemedicina/index.html
           grep -q "consultConditionType" telemedicina/index.html
           grep -q "telemedicina-outcome-v14.css?v=20260903-1" telemedicina/index.html
+          grep -q "telemedicina-mobile-v15.css?v=20260903-1" telemedicina/index.html
+          grep -q 'data-mobile-readability="v15"' telemedicina/index.html
           grep -q "consultFollowupFields" telemedicina/index.html
           grep -q "launchDischargeCelebration" js/telemedicina.js
           grep -q "telemedicine:celebrate-discharge" js/telemedicina.js
@@ -127,6 +132,7 @@ jobs:
           grep -q "@media(max-width:860px)" css/telemedicina.css
           grep -q "#openConsultation{position:fixed" css/telemedicina.css
           grep -q "Experiência mobile" docs/TELEMEDICINA.md
+          grep -q "camada V15" docs/TELEMEDICINA.md
           grep -q "href=\"/telemedicina/\"" js/home.js
           grep -q "Técnico em Telemedicina" js/admin-users.js
           grep -q "telemedicina: 'Técnico em Telemedicina'" js/account.js
