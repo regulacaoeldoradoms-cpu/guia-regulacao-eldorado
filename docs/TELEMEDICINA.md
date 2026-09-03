@@ -157,6 +157,20 @@ Decisão de interface registrada em 01/09/2026:
 - a tipografia dos indicadores, filtros, formulários e cartões é ampliada na camada V15: controles ficam próximos de 16 px, textos operacionais secundários próximos de 14 px e os cartões da Grade 2×2 usam altura mínima de 350 px para evitar cortes;
 - o nome do usuário permanece visível ao lado da foto e pode ocupar até duas linhas dentro do bloco da conta; somente o cargo pode ser ocultado em telas de até 380 px.
 
+## Experiência desktop V16
+
+Decisão permanente registrada em 03/09/2026.
+
+A interface desktop passa a usar a mesma linguagem visual já aprovada no celular, com superfícies coloridas, tipografia ampliada, blocos operacionais bem separados e respostas visuais a foco e passagem do ponteiro. O cabeçalho permanece em uma única linha e recebe mais espaço para exibir módulo, navegação, foto, nome, cargo e saída.
+
+- a partir de 861 px, o conteúdo aproveita a largura do monitor sem alterar o layout mobile;
+- **Lista** continua disponível e é o padrão inicial, exibindo cada acompanhamento em um cartão horizontal independente;
+- **Grade 3×3** significa três cartões por linha; a lista continua nas linhas seguintes e não existe limite de nove pacientes;
+- a preferência de visualização do desktop é salva separadamente da preferência mobile;
+- paciente, conduta, especialidade, situação, data de retorno, avisos e ações permanecem visíveis nos dois modos;
+- os estados usam cores semânticas: âmbar para solicitar, vermelho para atraso, verde-azulado para aguardo, cinza-azulado para ausência de programação e azul para solicitado;
+- formulários, histórico e cartões de conduta recebem a mesma hierarquia de cores e tipografia, sem qualquer mudança nas regras de negócio;
+- interações respeitam `prefers-reduced-motion` e não dependem apenas de cor para comunicar estado.
 ## Três condutas de retorno
 
 Decisão permanente registrada em 03/09/2026.
