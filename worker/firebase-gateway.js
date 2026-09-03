@@ -178,6 +178,15 @@ export async function firestorePatch(env, documentPath, data) {
   return { id, ...fromFsFields(payload.fields || {}) };
 }
 
+export async function firestoreReplace(env, documentPath, data) {
+  const payload = await firestoreRequest(env, documentPath, {
+    method: 'PATCH',
+    body: JSON.stringify({ fields: fsFields(data) })
+  });
+  const id = String(payload.name || '').split('/').pop();
+  return { id, ...fromFsFields(payload.fields || {}) };
+}
+
 export async function firestoreList(env, collectionPath, options = {}) {
   const params = new URLSearchParams();
   params.set('pageSize', String(Math.min(100, Math.max(1, Number(options.pageSize || 50)))));
