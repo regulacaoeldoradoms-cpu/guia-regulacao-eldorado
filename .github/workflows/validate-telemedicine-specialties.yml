@@ -1,0 +1,70 @@
+name: Validar padronização de especialidades
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-specialties-v17.js'
+      - 'worker/telemedicine.js'
+      - 'worker/telemedicine-router-v2.js'
+      - 'worker/telemedicine-rules.js'
+      - 'worker/tests/telemedicine-rules.test.mjs'
+      - 'docs/TELEMEDICINA.md'
+      - '.github/workflows/validate-telemedicine-specialties.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-specialties-v17.js'
+      - 'worker/telemedicine.js'
+      - 'worker/telemedicine-router-v2.js'
+      - 'worker/telemedicine-rules.js'
+      - 'worker/tests/telemedicine-rules.test.mjs'
+      - 'docs/TELEMEDICINA.md'
+      - '.github/workflows/validate-telemedicine-specialties.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar sintaxe e regras
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check js/telemedicina.js
+          node --check js/telemedicina-specialties-v17.js
+          node --input-type=module --check < worker/telemedicine.js
+          node --input-type=module --check < worker/telemedicine-router-v2.js
+          node --input-type=module --check < worker/telemedicine-rules.js
+          cp worker/telemedicine-rules.js /tmp/telemedicine-rules.mjs
+          node worker/tests/telemedicine-rules.test.mjs /tmp/telemedicine-rules.mjs
+      - name: Conferir segurança da unificação
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "canonicalSpecialtyName" worker/telemedicine-rules.js
+          grep -q "REUMATOLOGIA" worker/telemedicine-rules.js
+          grep -q "ORTOPEDIA" worker/telemedicine-rules.js
+          grep -q "NUTRIÇÃO" worker/telemedicine-rules.js
+          grep -q "NUTROLOGIA" worker/telemedicine-rules.js
+          grep -q "NEUROPEDIATRIA" worker/telemedicine-rules.js
+          grep -q "NEUROLOGIA ADULTO" worker/telemedicine-rules.js
+          grep -q "specialtyMaintenanceAudit" worker/telemedicine-router-v2.js
+          grep -q "normalizeSpecialtiesBatch" worker/telemedicine-router-v2.js
+          grep -q "Math.min(10" worker/telemedicine-router-v2.js
+          grep -q "Array.isArray(options.events)" worker/telemedicine-router-v2.js
+          grep -q "Somente o Desenvolvedor pode unificar todas as especialidades" worker/telemedicine-router-v2.js
+          grep -q "id=\"normalizeSpecialties\"" telemedicina/index.html
+          grep -q "telemedicina-specialties-v17.js?v=20260903-1" telemedicina/index.html
+          grep -q "dicionário fechado" docs/TELEMEDICINA.md
+          grep -q "idempotente" docs/TELEMEDICINA.md
+          if grep -R -n -E '\b(CNS|CPF)\b' js/telemedicina-specialties-v17.js worker/telemedicine-router-v2.js worker/telemedicine-rules.js; then
+            echo 'Identificador pessoal proibido na manutenção de especialidades.' >&2
+            exit 1
+          fi

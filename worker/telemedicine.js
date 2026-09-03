@@ -12,6 +12,7 @@ import { telemedicineAccessFor } from './telemedicine-access.js';
 import {
   clean,
   normalizeText,
+  canonicalSpecialtyName,
   dateValid,
   normalizeReturnDueDate,
   threeBusinessReminders,
@@ -190,7 +191,7 @@ async function patientDetail(env, patientId) {
 
 async function recordConsultation(env, user, input) {
   const patientName = clean(input.patientName, 160);
-  const specialty = clean(input.specialty, 120);
+  const specialty = canonicalSpecialtyName(input.specialty);
   const consultationDate = clean(input.consultationDate, 10);
   const requestedMode = clean(input.followupMode, 20).toLowerCase();
   const hasExplicitMode = ['discharge', 'scheduled', 'conditional'].includes(requestedMode);
@@ -351,7 +352,7 @@ async function updateSchedule(env, user, followupId, input = {}) {
 async function importRecord(env, user, record) {
   const patientName = clean(record.patientName || record.patient, 160);
   const consultationDate = clean(record.consultationDate || record.date, 10);
-  const specialty = clean(record.specialty, 120);
+  const specialty = canonicalSpecialtyName(record.specialty);
   const resolution = clean(record.resolution || record.observation, 2500);
   const comment = clean(record.comment || record.operationalComment, 1500);
   if (patientName.length < 3) {

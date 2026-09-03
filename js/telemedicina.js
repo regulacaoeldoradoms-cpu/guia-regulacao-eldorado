@@ -18,6 +18,7 @@
   document.getElementById('portalUserName').textContent = user.name || user.username;
   document.getElementById('portalUserRole').textContent = roleLabels[user.role] || user.role;
   document.getElementById('openImport').hidden = !state.isAdmin;
+  document.getElementById('normalizeSpecialties').hidden = !state.isAdmin;
 
   const listEl = document.getElementById('followupList');
   const searchEl = document.getElementById('telemedicineSearch');
@@ -189,6 +190,7 @@
       state.followups = Array.isArray(payload.followups) ? payload.followups : [];
       state.isAdmin = Boolean(payload.actor?.admin) || user.role === 'admin';
       document.getElementById('openImport').hidden = !state.isAdmin;
+      document.getElementById('normalizeSpecialties').hidden = !state.isAdmin;
       document.getElementById('todayLabel').textContent = formatDate(state.today);
       renderStats(payload.counts || {});
       renderSuggestions();

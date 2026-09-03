@@ -24,7 +24,8 @@ const {
   returnDueFromRecord,
   looksClosed,
   looksRequested,
-  returnConditionResolution
+  returnConditionResolution,
+  canonicalSpecialtyName
 } = rules;
 
 assert.equal(addDays('2026-08-01', 30), '2026-08-31');
@@ -79,4 +80,16 @@ assert.equal(returnConditionResolution('other', 'avaliação da equipe'), 'RETOR
 assert.equal(returnConditionResolution('other'), '');
 assert.equal(returnConditionResolution('desconhecido', 'texto'), '');
 
-console.log('Telemedicina: regras de retorno e lembretes validadas.');
+assert.equal(canonicalSpecialtyName('REUMATO'), 'REUMATOLOGIA');
+assert.equal(canonicalSpecialtyName('rematologia'), 'REUMATOLOGIA');
+assert.equal(canonicalSpecialtyName('ORTO'), 'ORTOPEDIA');
+assert.equal(canonicalSpecialtyName('ortopedista'), 'ORTOPEDIA');
+assert.equal(canonicalSpecialtyName('ENDOCRINOLLOGISTA'), 'ENDOCRINOLOGIA');
+assert.equal(canonicalSpecialtyName('NUTRI'), 'NUTRIÇÃO');
+assert.equal(canonicalSpecialtyName('nutrologia'), 'NUTROLOGIA');
+assert.equal(canonicalSpecialtyName('NEUROPED'), 'NEUROPEDIATRIA');
+assert.equal(canonicalSpecialtyName('neurologia'), 'NEUROLOGIA ADULTO');
+assert.equal(canonicalSpecialtyName('PSIQ'), 'PSIQUIATRIA');
+assert.equal(canonicalSpecialtyName('especialidade futura'), 'especialidade futura');
+
+console.log('Telemedicina: regras de retorno, lembretes e especialidades validadas.');

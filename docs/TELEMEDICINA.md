@@ -218,7 +218,7 @@ Regras obrigatórias:
 - como os identificadores técnicos de paciente e acompanhamento derivam da forma normalizada do nome e da especialidade, uma correção que altere essa forma migra de modo controlado os documentos relacionados para os novos identificadores;
 - colisão de **nome de paciente** continua bloqueada: o sistema não funde automaticamente pacientes apenas porque o nome corrigido coincide com outro cadastro;
 - colisão de **especialidade do mesmo paciente** tem comportamento diferente: quando o operador corrige explicitamente uma abreviação/grafia para uma especialidade que já existe naquele mesmo paciente, o backend executa a unificação controlada dos dois acompanhamentos em vez de bloquear a correção;
-- a unificação de especialidades nunca é inferida por semelhança de texto, dicionário ou IA. Ela somente ocorre depois da ação explícita do operador escolhendo exatamente o nome canônico já existente, evitando unir especialidades diferentes por engano;
+- a correção manual nunca usa semelhança aproximada ou IA. A padronização em lote usa somente um dicionário fechado, auditado e versionado de equivalências exatas, evitando unir especialidades diferentes por engano;
 - na unificação, permanece um único acompanhamento para o paciente + especialidade; o estado operacional atual é preservado a partir do registro com teleconsulta mais recente, usando a atualização mais recente como desempate;
 - o documento canônico é substituído integralmente pelo estado escolhido, impedindo que campos operacionais antigos do outro acompanhamento sobrevivam e alterem indevidamente a situação exibida;
 - os históricos de correção são ordenados por data antes de manter as doze entradas mais recentes, preservando a auditoria mais atual;
@@ -231,7 +231,23 @@ Exemplo operacional: se o mesmo paciente tiver acompanhamentos separados como `E
 Endpoints:
 
 - `PATCH /api/telemedicina/patients/{patientId}/name`;
-- `PATCH /api/telemedicina/followups/{followupId}/specialty`.
+- `PATCH /api/telemedicina/followups/{followupId}/specialty`;
+- `GET /api/telemedicina/maintenance/specialties` para auditar, sem alterar dados;
+- `POST /api/telemedicina/maintenance/specialties` para executar um lote limitado a dez correções.
+
+### Padronização e unificação automática das especialidades
+
+Decisão complementar registrada em 03/09/2026.
+
+- novos lançamentos, importações técnicas e correções manuais são convertidos no Worker para o nome canônico antes da gravação;
+- o Desenvolvedor dispõe da ação **Unificar especialidades**, precedida por uma auditoria que mostra apenas grafias, destinos e quantidades, sem nomes de pacientes;
+- a operação global é exclusiva do Desenvolvedor, idempotente e executada em lotes de no máximo dez documentos para respeitar os limites do Worker e do Firestore;
+- quando aliases do mesmo paciente convergem, permanece o acompanhamento com a consulta mais recente, os eventos dos dois registros são preservados e passam a apontar para o identificador canônico;
+- as equivalências são exatas e versionadas; não há comparação aproximada, decisão por IA ou união de textos apenas parecidos;
+- `NUTRIÇÃO` permanece distinta de `NUTROLOGIA`;
+- `NEUROPEDIATRIA` permanece distinta de `NEUROLOGIA ADULTO`;
+- entre as equivalências auditadas estão `REUMATO → REUMATOLOGIA`, `ORTO → ORTOPEDIA`, `ENDOCRINO → ENDOCRINOLOGIA`, `PSIQ/PSIQUIATRA → PSIQUIATRIA` e `NUTRI/NUTRICIONISTA → NUTRIÇÃO`;
+- eventos históricos isolados também são corrigidos após a conclusão dos acompanhamentos, mantendo a consulta do histórico coerente.
 
 O roteador `worker/telemedicine-router-v2.js` intercepta apenas essas correções e delega todas as demais rotas ao módulo original, reduzindo o risco de regressão no fluxo de consultas, programação, solicitação e importação.
 

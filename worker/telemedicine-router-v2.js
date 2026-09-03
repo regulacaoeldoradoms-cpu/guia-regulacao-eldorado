@@ -11,7 +11,7 @@ import {
   firestoreReplace
 } from './firebase-gateway.js';
 import { telemedicineAccessFor } from './telemedicine-access.js';
-import { clean, normalizeText } from './telemedicine-rules.js';
+import { clean, normalizeText, canonicalSpecialtyName } from './telemedicine-rules.js';
 import {
   handleTelemedicineRoute as handleLegacyTelemedicineRoute,
   isTelemedicineApi as isLegacyTelemedicineApi
@@ -251,7 +251,7 @@ async function correctPatientName(env, user, patientId, input = {}) {
   };
 }
 
-async function mergeSpecialtyFollowups(env, user, sourceId, targetId, source, target, newSpecialty, newSpecialtyKey, correction) {
+async function mergeSpecialtyFollowups(env, user, sourceId, targetId, source, target, newSpecialty, newSpecialtyKey, correction, eventsOverride = null) {
   const now = correction.correctedAt;
   const current = newerFollowup(source, target);
   const createdAt = earliestCreatedAt(source, target) || String(current?.createdAt || now);
@@ -275,13 +275,15 @@ async function mergeSpecialtyFollowups(env, user, sourceId, targetId, source, ta
     mergedFromFollowups
   });
 
-  const events = await listAll(env, EVENTS);
+  const events = Array.isArray(eventsOverride) ? eventsOverride : await listAll(env, EVENTS);
   for (const event of events) {
     if (event.followupId !== sourceId && event.followupId !== targetId) continue;
     await firestorePatch(env, `${EVENTS}/${event.id}`, {
       followupId: targetId,
       specialty: newSpecialty
     });
+    event.followupId = targetId;
+    event.specialty = newSpecialty;
   }
 
   await firestorePatch(env, `${FOLLOWUPS}/${sourceId}`, {
@@ -303,11 +305,11 @@ async function mergeSpecialtyFollowups(env, user, sourceId, targetId, source, ta
   };
 }
 
-async function correctSpecialty(env, user, followupId, input = {}) {
-  const followup = await firestoreGet(env, `${FOLLOWUPS}/${followupId}`);
+async function correctSpecialty(env, user, followupId, input = {}, options = {}) {
+  const followup = options.followup || await firestoreGet(env, `${FOLLOWUPS}/${followupId}`);
   if (!followup) throw Object.assign(new Error('Acompanhamento não encontrado.'), { status: 404 });
 
-  const newSpecialty = clean(input.specialty, 120);
+  const newSpecialty = canonicalSpecialtyName(input.specialty);
   if (newSpecialty.length < 3) throw Object.assign(new Error('Informe o nome da especialidade por extenso.'), { status: 400 });
 
   const oldSpecialty = clean(followup.specialty, 120);
@@ -336,7 +338,8 @@ async function correctSpecialty(env, user, followupId, input = {}) {
         collision,
         newSpecialty,
         newSpecialtyKey,
-        correction
+        correction,
+        options.events
       );
     }
   }
@@ -351,13 +354,15 @@ async function correctSpecialty(env, user, followupId, input = {}) {
     correctionHistory: appendCorrectionHistory(followup.correctionHistory, correction)
   });
 
-  const events = await listAll(env, EVENTS);
+  const events = Array.isArray(options.events) ? options.events : await listAll(env, EVENTS);
   for (const event of events) {
     if (event.followupId !== followupId) continue;
     await firestorePatch(env, `${EVENTS}/${event.id}`, {
       followupId: targetFollowupId,
       specialty: newSpecialty
     });
+    event.followupId = targetFollowupId;
+    event.specialty = newSpecialty;
   }
 
   if (targetFollowupId !== followupId) {
@@ -379,6 +384,136 @@ async function correctSpecialty(env, user, followupId, input = {}) {
   };
 }
 
+
+function specialtyCandidate(document) {
+  const previous = clean(document?.specialty, 120);
+  const canonical = canonicalSpecialtyName(previous);
+  if (!document?.id || !previous || canonical === previous) return null;
+  return { document, previous, canonical };
+}
+
+function summarizeSpecialtyCandidates(candidates) {
+  const groups = new Map();
+  for (const candidate of candidates) {
+    const key = `${candidate.previous}\u0000${candidate.canonical}`;
+    const current = groups.get(key) || {
+      previous: candidate.previous,
+      canonical: candidate.canonical,
+      count: 0
+    };
+    current.count += 1;
+    groups.set(key, current);
+  }
+  return Array.from(groups.values()).sort((first, second) =>
+    second.count - first.count
+    || first.canonical.localeCompare(second.canonical, 'pt-BR')
+    || first.previous.localeCompare(second.previous, 'pt-BR')
+  );
+}
+
+async function specialtyMaintenanceAudit(env) {
+  const [followups, events] = await Promise.all([
+    listAll(env, FOLLOWUPS),
+    listAll(env, EVENTS)
+  ]);
+  const followupCandidates = followups.map(specialtyCandidate).filter(Boolean);
+  const eventCandidates = events.map(specialtyCandidate).filter(Boolean);
+  return {
+    complete: followupCandidates.length === 0 && eventCandidates.length === 0,
+    followups: {
+      total: followups.length,
+      needsNormalization: followupCandidates.length,
+      groups: summarizeSpecialtyCandidates(followupCandidates)
+    },
+    events: {
+      total: events.length,
+      needsNormalization: eventCandidates.length,
+      groups: summarizeSpecialtyCandidates(eventCandidates)
+    }
+  };
+}
+
+async function normalizeSpecialtiesBatch(env, user, input = {}) {
+  const requestedLimit = Number(input.limit);
+  const limit = Number.isInteger(requestedLimit)
+    ? Math.min(10, Math.max(1, requestedLimit))
+    : 8;
+  const [followups, events] = await Promise.all([
+    listAll(env, FOLLOWUPS),
+    listAll(env, EVENTS)
+  ]);
+  const followupCandidates = followups.map(specialtyCandidate).filter(Boolean);
+
+  if (followupCandidates.length) {
+    const selected = followupCandidates.slice(0, limit);
+    let changed = 0;
+    let merged = 0;
+    const errors = [];
+
+    for (const candidate of selected) {
+      try {
+        const result = await correctSpecialty(
+          env,
+          user,
+          candidate.document.id,
+          { specialty: candidate.canonical },
+          { followup: candidate.document, events }
+        );
+        changed += 1;
+        if (result.merged) merged += 1;
+      } catch (error) {
+        errors.push({
+          previous: candidate.previous,
+          canonical: candidate.canonical,
+          error: error?.message || 'Falha ao padronizar a especialidade.'
+        });
+      }
+    }
+
+    return {
+      phase: 'followups',
+      changed,
+      merged,
+      eventsChanged: 0,
+      remaining: Math.max(0, followupCandidates.length - changed),
+      complete: false,
+      errors
+    };
+  }
+
+  const eventCandidates = events.map(specialtyCandidate).filter(Boolean);
+  const selectedEvents = eventCandidates.slice(0, limit);
+  let eventsChanged = 0;
+  const errors = [];
+
+  for (const candidate of selectedEvents) {
+    try {
+      await firestorePatch(env, `${EVENTS}/${candidate.document.id}`, {
+        specialty: candidate.canonical
+      });
+      candidate.document.specialty = candidate.canonical;
+      eventsChanged += 1;
+    } catch (error) {
+      errors.push({
+        previous: candidate.previous,
+        canonical: candidate.canonical,
+        error: error?.message || 'Falha ao padronizar o evento histórico.'
+      });
+    }
+  }
+
+  const remaining = Math.max(0, eventCandidates.length - eventsChanged);
+  return {
+    phase: 'events',
+    changed: 0,
+    merged: 0,
+    eventsChanged,
+    remaining,
+    complete: remaining === 0 && errors.length === 0,
+    errors
+  };
+}
+
 export function isTelemedicineApi(pathname) {
   return isLegacyTelemedicineApi(pathname);
 }
@@ -391,8 +526,11 @@ export async function handleTelemedicineRoute(request, env, origin, originAllowe
   const url = new URL(request.url);
   const patientNameMatch = url.pathname.match(/^\/api\/telemedicina\/patients\/([a-f0-9]{20,64})\/name$/);
   const specialtyMatch = url.pathname.match(/^\/api\/telemedicina\/followups\/([a-f0-9]{20,64})\/specialty$/);
+  const specialtyMaintenance = url.pathname === '/api/telemedicina/maintenance/specialties';
+  const correctionRoute = Boolean(patientNameMatch || specialtyMatch) && request.method === 'PATCH';
+  const maintenanceRoute = specialtyMaintenance && (request.method === 'GET' || request.method === 'POST');
 
-  if ((!patientNameMatch && !specialtyMatch) || request.method !== 'PATCH') {
+  if (!correctionRoute && !maintenanceRoute) {
     return handleLegacyTelemedicineRoute(request, env, origin, originAllowed);
   }
 
@@ -404,6 +542,17 @@ export async function handleTelemedicineRoute(request, env, origin, originAllowe
   }
 
   try {
+    if (specialtyMaintenance) {
+      if (!user.telemedicineAdmin) {
+        return json({ error: 'Somente o Desenvolvedor pode unificar todas as especialidades.' }, 403, origin);
+      }
+      if (request.method === 'GET') {
+        return json(await specialtyMaintenanceAudit(env), 200, origin);
+      }
+      const body = await request.json().catch(() => ({}));
+      return json(await normalizeSpecialtiesBatch(env, user, body), 200, origin);
+    }
+
     const body = await request.json().catch(() => ({}));
     if (patientNameMatch) {
       return json({ patient: await correctPatientName(env, user, patientNameMatch[1], body) }, 200, origin);
