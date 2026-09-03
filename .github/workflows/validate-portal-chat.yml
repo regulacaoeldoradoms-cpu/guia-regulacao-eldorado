@@ -27,7 +27,10 @@ jobs:
           test -f portal-sw.js
           test -f js/portal-chat-switch-optimizer.js
           grep -q "portal-chat-v2.js" worker/index.js
-          grep -q "PROFESSIONAL_ROLES" worker/portal-chat-v2.js
+          grep -q "PROFESSIONAL_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin'\])" worker/portal-chat-v2.js
+          grep -q "decorateTelemedicineUser" worker/portal-chat-v2.js
+          grep -q "decorateTelemedicineUsers" worker/portal-chat-v2.js
+          grep -q "validatePortalSession(request, env, \['medico', 'recepcao', 'telemedicina'\])" worker/portal-chat-v2.js
           grep -q "u.role IN ('medico','recepcao','coordenacao','admin')" worker/portal-chat-v2.js
           grep -q "/api/chat/presence" worker/portal-chat-v2.js
           grep -q "/api/chat/users" worker/portal-chat-v2.js
