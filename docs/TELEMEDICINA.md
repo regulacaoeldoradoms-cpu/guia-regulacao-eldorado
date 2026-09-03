@@ -155,6 +155,22 @@ Decisão de interface registrada em 01/09/2026:
 - áreas de toque devem permanecer confortáveis e o conteúdo não pode ser truncado por colunas de desktop;
 - regras mobile ficam restritas ao breakpoint responsivo do módulo e não devem alterar o desktop.
 
+## Três condutas de retorno
+
+Decisão permanente registrada em 03/09/2026.
+
+O formulário de nova teleconsulta apresenta três alternativas mutuamente exclusivas:
+
+1. **Alta do episódio**: encerra o acompanhamento, remove dados de retorno e aciona a celebração visual.
+2. **Retorno com prazo ou data**: aceita dias ou uma data-alvo, nunca os dois simultaneamente, e calcula os três lembretes úteis.
+3. **Retorno após uma condição**: registra retorno após exames, fisioterapia, procedimento/cirurgia, conclusão do tratamento ou outra condição descrita pelo operador.
+
+Retorno condicionado não recebe uma data artificial, não cria lembretes e permanece no histórico como `SEM PROGRAMAÇÃO`, com a condição escrita na conduta. Quando uma data concreta for conhecida, o botão **Programar** pode iniciar os lembretes normalmente.
+
+A interface usa cartões com ícones e cores semânticas: verde para alta, azul para retorno programável e âmbar para condição pendente. Somente os campos pertinentes à alternativa selecionada permanecem visíveis. As transições respeitam `prefers-reduced-motion`.
+
+O Worker recebe `followupMode`, valida e padroniza a conduta, ignora campos incompatíveis com o modo escolhido e armazena separadamente o tipo e o detalhe da condição. O cliente não define sozinho a regra operacional.
+
 ## Registro objetivo de alta
 
 Decisão permanente registrada em 03/09/2026.
