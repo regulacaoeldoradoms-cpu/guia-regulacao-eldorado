@@ -122,3 +122,21 @@ export function returnDueFromRecord(date, resolution, explicitDueDate = '') {
   const days = explicitReturnDays(resolution);
   return days ? normalizeReturnDueDate(addDays(date, days)) : '';
 }
+
+
+const RETURN_CONDITION_LABELS = Object.freeze({
+  exams: 'EXAMES',
+  physiotherapy: 'FISIOTERAPIA',
+  procedure: 'PROCEDIMENTO OU CIRURGIA',
+  treatment: 'CONCLUSÃO DO TRATAMENTO',
+  other: ''
+});
+
+export function returnConditionResolution(type, detail = '') {
+  const key = clean(type, 40).toLowerCase();
+  if (!Object.prototype.hasOwnProperty.call(RETURN_CONDITION_LABELS, key)) return '';
+  const extra = clean(detail, 300);
+  if (key === 'other') return extra ? `RETORNO APÓS ${extra}` : '';
+  const base = `RETORNO APÓS ${RETURN_CONDITION_LABELS[key]}`;
+  return extra ? `${base} - ${extra}` : base;
+}
