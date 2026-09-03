@@ -154,7 +154,7 @@ Decisão de interface registrada em 01/09/2026:
 - formulários e histórico abrem como painel inferior no celular, com cabeçalho fixo dentro do modal;
 - áreas de toque devem permanecer confortáveis e o conteúdo não pode ser truncado por colunas de desktop;
 - regras mobile ficam restritas ao breakpoint responsivo do módulo e não devem alterar o desktop.
-- a tipografia dos indicadores, filtros, formulários e cartões é ampliada na camada V15, com altura adicional para não cortar textos no modo Grade 2×2;
+- a tipografia dos indicadores, filtros, formulários e cartões é ampliada na camada V15: controles ficam próximos de 16 px, textos operacionais secundários próximos de 14 px e os cartões da Grade 2×2 usam altura mínima de 350 px para evitar cortes;
 - o nome do usuário permanece visível ao lado da foto e pode ocupar até duas linhas dentro do bloco da conta; somente o cargo pode ser ocultado em telas de até 380 px.
 
 ## Três condutas de retorno

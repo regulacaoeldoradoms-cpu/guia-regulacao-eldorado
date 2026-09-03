@@ -114,10 +114,13 @@ jobs:
           grep -q "Retorno após uma condição" telemedicina/index.html
           grep -q "consultConditionType" telemedicina/index.html
           grep -q "telemedicina-outcome-v14.css?v=20260903-1" telemedicina/index.html
-          grep -q "telemedicina-mobile-v15.css?v=20260903-2" telemedicina/index.html
+          grep -q "telemedicina-mobile-v15.css?v=20260903-3" telemedicina/index.html
           grep -q 'data-mobile-readability="v15"' telemedicina/index.html
           grep -q "min-height: 82px" css/telemedicina-mobile-v15.css
           grep -q "flex-flow: row nowrap !important" css/telemedicina-mobile-v15.css
+          grep -q "font-size: 1.28rem !important" css/telemedicina-mobile-v15.css
+          grep -q "font-size: .9rem !important" css/telemedicina-mobile-v15.css
+          grep -q "min-height: 350px !important" css/telemedicina-mobile-v15.css
           grep -q "consultFollowupFields" telemedicina/index.html
           grep -q "launchDischargeCelebration" js/telemedicina.js
           grep -q "telemedicine:celebrate-discharge" js/telemedicina.js
@@ -135,6 +138,7 @@ jobs:
           grep -q "#openConsultation{position:fixed" css/telemedicina.css
           grep -q "Experiência mobile" docs/TELEMEDICINA.md
           grep -q "camada V15" docs/TELEMEDICINA.md
+          grep -q "textos operacionais secundários próximos de 14 px" docs/TELEMEDICINA.md
           grep -q "uma única linha horizontal" docs/TELEMEDICINA.md
           if grep -q "cabeçalho usa duas linhas" docs/TELEMEDICINA.md; then
             echo 'A documentação não pode reintroduzir o cabeçalho móvel em duas linhas.' >&2
