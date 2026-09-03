@@ -271,6 +271,8 @@
     }, 3000);
   }
 
+  document.addEventListener('telemedicine:celebrate-discharge', launchDischargeCelebration);
+
   function syncConsultOutcome({ celebrate = false } = {}) {
     const discharged = document.getElementById('consultDischarged').checked;
     const fields = document.getElementById('consultFollowupFields');
