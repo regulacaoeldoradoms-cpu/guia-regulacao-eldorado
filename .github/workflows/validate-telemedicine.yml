@@ -10,6 +10,7 @@ on:
       - 'css/telemedicina-desktop-v16.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
+      - 'js/telemedicina-specialties-v17.js'
       - 'js/telemedicina-business-day.js'
       - 'js/telemedicina-mobile-v7.js'
       - 'js/home.js'
@@ -37,6 +38,7 @@ on:
       - 'css/telemedicina-desktop-v16.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
+      - 'js/telemedicina-specialties-v17.js'
       - 'js/telemedicina-business-day.js'
       - 'js/telemedicina-mobile-v7.js'
       - 'js/home.js'
@@ -74,6 +76,7 @@ jobs:
           test -f css/telemedicina-desktop-v16.css
           test -f css/account-admin.css
           test -f js/telemedicina.js
+          test -f js/telemedicina-specialties-v17.js
           test -f js/telemedicina-business-day.js
           test -f js/telemedicina-mobile-v7.js
           test -f docs/TELEMEDICINA-DESKTOP-V16.md
@@ -81,12 +84,14 @@ jobs:
           test -f worker/telemedicine-access.js
           test -f worker/telemedicine-rules.js
           node --check js/telemedicina.js
+          node --check js/telemedicina-specialties-v17.js
           node --check js/telemedicina-business-day.js
           node --check js/telemedicina-mobile-v7.js
           node --check js/home.js
           node --check js/admin-users.js
           node --check js/account.js
           node --input-type=module --check < worker/telemedicine.js
+          node --input-type=module --check < worker/telemedicine-router-v2.js
           node --input-type=module --check < worker/telemedicine-access.js
           node --input-type=module --check < worker/telemedicine-rules.js
           node --input-type=module --check < worker/auth-management-flex.js
@@ -115,7 +120,7 @@ jobs:
           grep -q "const batchSize = 5;" js/telemedicina.js
           grep -q "const existingEvent = await firestoreGet" worker/telemedicine.js
           grep -q "if (!existingEvent)" worker/telemedicine.js
-          grep -q "telemedicina.js?v=20260903-3" telemedicina/index.html
+          grep -q "telemedicina.js?v=20260903-4" telemedicina/index.html
           grep -q "telemedicina.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicine-title-mobile" telemedicina/index.html
           grep -q "Data da última consulta" telemedicina/index.html
@@ -123,7 +128,7 @@ jobs:
           grep -q "Retorno com prazo ou data" telemedicina/index.html
           grep -q "Retorno após uma condição" telemedicina/index.html
           grep -q "consultConditionType" telemedicina/index.html
-          grep -q "telemedicina-outcome-v14.css?v=20260903-1" telemedicina/index.html
+          grep -q "telemedicina-outcome-v14.css?v=20260903-2" telemedicina/index.html
           grep -q "telemedicina-mobile-v15.css?v=20260903-3" telemedicina/index.html
           grep -q "telemedicina-desktop-v16.css?v=20260903-2" telemedicina/index.html
           grep -q "telemedicina-mobile-v7.js?v=20260903-1" telemedicina/index.html
@@ -149,6 +154,13 @@ jobs:
           grep -q "const requestedMode" worker/telemedicine.js
           grep -q "returnConditionResolution" worker/telemedicine.js
           grep -q "returnConditionResolution" worker/telemedicine-rules.js
+          grep -q "canonicalSpecialtyName" worker/telemedicine-rules.js
+          grep -q "canonicalSpecialtyName" worker/telemedicine.js
+          grep -q "normalizeSpecialtiesBatch" worker/telemedicine-router-v2.js
+          grep -q "Somente o Desenvolvedor pode unificar todas as especialidades" worker/telemedicine-router-v2.js
+          grep -q "Math.min(10" worker/telemedicine-router-v2.js
+          grep -q "normalizeSpecialties" telemedicina/index.html
+          grep -q "telemedicina-specialties-v17.js?v=20260903-1" telemedicina/index.html
           grep -q "followupMode" worker/telemedicine.js
           grep -q "ALTA DO EPISÓDIO" worker/telemedicine.js
           grep -q "Registro objetivo de alta" docs/TELEMEDICINA.md
