@@ -25,8 +25,10 @@ O desktop preserva o comportamento anterior com modais.
 - Busca e filtros mobile devem ocultar/exibir os cards existentes sem reconstruir toda a lista, evitando perda de formulários em andamento.
 - Nova teleconsulta usa um painel inline no bloco de trabalho; após salvar, o formulário continua disponível para o próximo registro.
 - O formulário sanfonado possui implementação própria em `js/telemedicina-mobile-v9.js`; toda mudança funcional no formulário desktop correspondente deve ser reproduzida e validada nele enquanto essa duplicação existir.
-- A data é exibida como **Data da última consulta** e a resolutividade usa a opção objetiva **Paciente recebeu alta deste episódio**.
-- Ao marcar alta, prazo, data-alvo, observação e prévia desaparecem imediatamente; o painel envia `discharged: true`, encerra o retorno e aciona a mesma celebração visual da versão desktop.
+- A data é exibida como **Data da última consulta** e a resolutividade usa três cartões exclusivos: **Alta do episódio**, **Retorno com prazo ou data** e **Retorno após uma condição**.
+- Os cartões usam ícones e cores semânticas — verde, azul e âmbar — e revelam apenas os campos aplicáveis à escolha.
+- Ao selecionar alta, prazo, data-alvo, condição, observação e prévia desaparecem imediatamente; o painel envia `followupMode: discharge`, encerra o retorno e aciona a mesma celebração visual da versão desktop.
+- No retorno condicionado, o painel oferece exames, fisioterapia, procedimento/cirurgia, conclusão do tratamento e outra condição; não calcula data nem lembretes.
 - O arquivo mobile não pode reintroduzir os campos antigos de texto livre de resolutividade ou de marcação “Necessita acompanhamento/retorno”.
 
 ## Concorrência de trabalho

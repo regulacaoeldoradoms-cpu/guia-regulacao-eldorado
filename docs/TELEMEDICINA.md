@@ -155,6 +155,22 @@ Decisão de interface registrada em 01/09/2026:
 - áreas de toque devem permanecer confortáveis e o conteúdo não pode ser truncado por colunas de desktop;
 - regras mobile ficam restritas ao breakpoint responsivo do módulo e não devem alterar o desktop.
 
+## Três condutas de retorno
+
+Decisão permanente registrada em 03/09/2026.
+
+O formulário de nova teleconsulta apresenta três alternativas mutuamente exclusivas:
+
+1. **Alta do episódio**: encerra o acompanhamento, remove dados de retorno e aciona a celebração visual.
+2. **Retorno com prazo ou data**: aceita dias ou uma data-alvo, nunca os dois simultaneamente, e calcula os três lembretes úteis.
+3. **Retorno após uma condição**: registra retorno após exames, fisioterapia, procedimento/cirurgia, conclusão do tratamento ou outra condição descrita pelo operador.
+
+Retorno condicionado não recebe uma data artificial, não cria lembretes e permanece no histórico como `SEM PROGRAMAÇÃO`, com a condição escrita na conduta. Quando uma data concreta for conhecida, o botão **Programar** pode iniciar os lembretes normalmente.
+
+A interface usa cartões com ícones e cores semânticas: verde para alta, azul para retorno programável e âmbar para condição pendente. Somente os campos pertinentes à alternativa selecionada permanecem visíveis. As transições respeitam `prefers-reduced-motion`.
+
+O Worker recebe `followupMode`, valida e padroniza a conduta, ignora campos incompatíveis com o modo escolhido e armazena separadamente o tipo e o detalhe da condição. O cliente não define sozinho a regra operacional.
+
 ## Registro objetivo de alta
 
 Decisão permanente registrada em 03/09/2026.
@@ -162,13 +178,12 @@ Decisão permanente registrada em 03/09/2026.
 No formulário `+ Consulta`:
 
 - o campo de data é identificado como **Data da última consulta**;
-- a resolutividade deixa de ser um texto livre e passa a ser a opção objetiva **Paciente recebeu alta deste episódio**;
-- desmarcada, a opção significa que o paciente continua em acompanhamento e mantém visíveis o prazo, a data-alvo e a observação operacional;
-- marcada, a alta encerra o acompanhamento, oculta todas as opções de retorno e descarta no backend qualquer prazo ou observação de retorno residual;
+- **Alta do episódio** é uma das três condutas exclusivas e deve ser escolhida somente quando o problema acompanhado foi resolvido;
+- ao selecionar alta, o formulário oculta todas as opções de retorno e descarta no backend qualquer prazo, condição ou observação residual;
 - o histórico registra a conduta padronizada `ALTA DO EPISÓDIO`;
-- ao marcar a alta, a interface apresenta confetes e fogos breves como reconhecimento da vitória do paciente, sem som e sem bloquear o formulário;
+- a seleção apresenta confetes e fogos breves como reconhecimento da vitória do paciente, sem som e sem bloquear o formulário;
 - a preferência do sistema operacional por movimento reduzido é respeitada e desativa os efeitos animados;
-- quando não há alta, a conduta histórica é formada automaticamente a partir do prazo, da data-alvo ou da ausência de programação, sem exigir digitação livre.
+- ao selecionar outra conduta, a interface revela somente os campos compatíveis, sem exigir texto livre de resolutividade.
 
 A regra de alta é validada no Worker, não apenas ocultada na interface.
 

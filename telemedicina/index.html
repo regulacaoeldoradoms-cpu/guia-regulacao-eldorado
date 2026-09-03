@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="/css/telemedicina-mobile-v11.css?v=20260902-1">
   <link rel="stylesheet" href="/css/telemedicina-mobile-v12.css?v=20260902-1">
   <link rel="stylesheet" href="/css/telemedicina-mobile-v13.css?v=20260903-2">
+  <link rel="stylesheet" href="/css/telemedicina-outcome-v14.css?v=20260903-1">
 </head>
 <body class="portal-page telemedicine-page" data-mobile-ui="v3" data-mobile-density="v4" data-mobile-design="v5" data-mobile-scale="v6" data-mobile-layout="v7" data-mobile-refinement="v8" data-mobile-interaction="v9" data-mobile-card-align="v11" data-mobile-visual="v12">
   <div class="portal-shell">
@@ -97,18 +98,36 @@
         <div class="portal-field full"><label for="consultPatient">Paciente</label><input id="consultPatient" required maxlength="160" list="patientSuggestions" autocomplete="off" placeholder="Nome completo"><datalist id="patientSuggestions"></datalist><small>Pesquise antes de cadastrar para evitar duplicidade por grafia.</small></div>
         <div class="portal-field"><label for="consultDate">Data da última consulta</label><input id="consultDate" required type="date"></div>
         <div class="portal-field"><label for="consultSpecialty">Especialidade</label><input id="consultSpecialty" required maxlength="120" list="specialtySuggestions" placeholder="Ex.: Psiquiatria"><datalist id="specialtySuggestions"></datalist></div>
-        <div class="portal-field full telemedicine-outcome">
-          <span class="telemedicine-outcome-title">Resolutividade</span>
-          <label class="telemedicine-discharge-check" for="consultDischarged">
-            <input id="consultDischarged" type="checkbox" aria-describedby="consultDischargedHelp">
-            <span class="telemedicine-discharge-box" aria-hidden="true">✓</span>
-            <span><strong>Paciente recebeu alta deste episódio</strong><small id="consultDischargedHelp">Marque somente quando o problema acompanhado foi resolvido e não haverá retorno.</small></span>
-          </label>
-        </div>
+        <fieldset class="telemedicine-outcome-picker full">
+          <legend>Qual foi a conduta desta consulta?</legend>
+          <div class="telemedicine-choice-grid">
+            <label class="telemedicine-choice success">
+              <input id="consultOutcomeDischarge" type="radio" name="consultOutcome" value="discharge">
+              <span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.4-8.35C.55 9.22 2.1 5 6.15 5c2.08 0 3.22 1.22 3.85 2.18C10.63 6.22 11.77 5 13.85 5c4.05 0 5.6 4.22 3.55 7.65C15 16.65 12 21 12 21Z"/><path d="m8.2 12.1 2.15 2.15 4.1-4.35"/></svg></span>
+              <span><strong>Alta do episódio</strong><small>Problema resolvido, sem retorno.</small></span>
+            </label>
+            <label class="telemedicine-choice schedule">
+              <input id="consultOutcomeScheduled" type="radio" name="consultOutcome" value="scheduled" checked>
+              <span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4.5h14a2 2 0 0 1 2 2v13H3v-13a2 2 0 0 1 2-2Z"/><path d="M7 2v5M17 2v5M3 9h18M12 12v3l2 1"/></svg></span>
+              <span><strong>Retorno com prazo ou data</strong><small>Calcula a data e os três avisos.</small></span>
+            </label>
+            <label class="telemedicine-choice condition">
+              <input id="consultOutcomeConditional" type="radio" name="consultOutcome" value="conditional">
+              <span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-5 9a2.5 2.5 0 0 0 2.2 3.7h9.6A2.5 2.5 0 0 0 19 17l-5-9V3"/><path d="M7.4 16h9.2M9.2 12h5.6"/></svg></span>
+              <span><strong>Retorno após uma condição</strong><small>Exames, fisioterapia ou tratamento.</small></span>
+            </label>
+          </div>
+        </fieldset>
         <div class="telemedicine-followup-fields full" id="consultFollowupFields">
-          <div class="portal-field"><label for="consultReturnDays">Prazo para retorno em dias</label><input id="consultReturnDays" type="number" min="1" max="730" placeholder="Ex.: 60"><small>Se cair no fim de semana, o retorno passa ao próximo dia útil.</small></div>
-          <div class="portal-field"><label for="consultReturnDate">Ou data-alvo do retorno</label><input id="consultReturnDate" type="date"><small>Use quando o retorno já tiver uma data definida.</small></div>
-          <div class="portal-field full"><label for="consultNotes">Observação operacional</label><textarea id="consultNotes" maxlength="1500" rows="3" placeholder="Opcional"></textarea></div>
+          <div class="telemedicine-mode-panel scheduled" id="consultScheduledFields">
+            <div class="portal-field"><label for="consultReturnDays">Prazo para retorno em dias</label><input id="consultReturnDays" type="number" min="1" max="730" placeholder="Ex.: 60"><small>Ao preencher, a data manual será limpa.</small></div>
+            <div class="portal-field"><label for="consultReturnDate">Ou data-alvo do retorno</label><input id="consultReturnDate" type="date"><small>Ao preencher, o prazo em dias será limpo.</small></div>
+          </div>
+          <div class="telemedicine-mode-panel conditional" id="consultConditionalFields" hidden>
+            <div class="portal-field"><label for="consultConditionType">Retornar após</label><select id="consultConditionType"><option value="exams">Exames</option><option value="physiotherapy">Fisioterapia</option><option value="procedure">Procedimento ou cirurgia</option><option value="treatment">Conclusão do tratamento</option><option value="other">Outra condição</option></select></div>
+            <div class="portal-field"><label for="consultConditionDetail">Detalhe da condição</label><input id="consultConditionDetail" maxlength="300" placeholder="Ex.: ressonância da coluna"><small>Opcional, exceto quando escolher “Outra condição”.</small></div>
+          </div>
+          <div class="portal-field full telemedicine-notes-field"><label for="consultNotes">Observação operacional</label><textarea id="consultNotes" maxlength="1500" rows="3" placeholder="Opcional"></textarea></div>
           <div class="full telemedicine-preview" id="consultPreview">Sem data-alvo definida. O acompanhamento ficará em “SEM PROGRAMAÇÃO” até a data ser informada.</div>
         </div>
         <div class="full account-actions"><button class="portal-button primary" id="saveConsultation" type="submit">Salvar consulta</button><button class="portal-button secondary" type="button" data-close-modal="consultationModal">Cancelar</button></div>
@@ -158,10 +177,10 @@
   <script src="/js/auth-client.js?v=20260816-1"></script>
   <div class="telemedicine-celebration" id="dischargeCelebration" aria-hidden="true"></div>
 
-  <script src="/js/telemedicina.js?v=20260903-2"></script>
+  <script src="/js/telemedicina.js?v=20260903-3"></script>
   <script src="/js/telemedicina-business-day.js?v=20260901-1"></script>
   <script src="/js/telemedicina-mobile-v7.js?v=20260902-1"></script>
-  <script src="/js/telemedicina-mobile-v9.js?v=20260903-1"></script>
+  <script src="/js/telemedicina-mobile-v9.js?v=20260903-2"></script>
   <script src="/js/telemedicina-edit.js?v=20260902-1"></script>
 </body>
 </html>

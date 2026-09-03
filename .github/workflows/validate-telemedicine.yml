@@ -5,6 +5,7 @@ on:
     paths:
       - 'telemedicina/**'
       - 'css/telemedicina.css'
+      - 'css/telemedicina-outcome-v14.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-business-day.js'
@@ -27,6 +28,7 @@ on:
     paths:
       - 'telemedicina/**'
       - 'css/telemedicina.css'
+      - 'css/telemedicina-outcome-v14.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-business-day.js'
@@ -59,6 +61,7 @@ jobs:
           set -euo pipefail
           test -f telemedicina/index.html
           test -f css/telemedicina.css
+          test -f css/telemedicina-outcome-v14.css
           test -f css/account-admin.css
           test -f js/telemedicina.js
           test -f js/telemedicina-business-day.js
@@ -99,19 +102,27 @@ jobs:
           grep -q "const batchSize = 5;" js/telemedicina.js
           grep -q "const existingEvent = await firestoreGet" worker/telemedicine.js
           grep -q "if (!existingEvent)" worker/telemedicine.js
-          grep -q "telemedicina.js?v=20260903-2" telemedicina/index.html
+          grep -q "telemedicina.js?v=20260903-3" telemedicina/index.html
           grep -q "telemedicina.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicine-title-mobile" telemedicina/index.html
           grep -q "Data da última consulta" telemedicina/index.html
-          grep -q "Paciente recebeu alta deste episódio" telemedicina/index.html
+          grep -q "Alta do episódio" telemedicina/index.html
+          grep -q "Retorno com prazo ou data" telemedicina/index.html
+          grep -q "Retorno após uma condição" telemedicina/index.html
+          grep -q "consultConditionType" telemedicina/index.html
+          grep -q "telemedicina-outcome-v14.css?v=20260903-1" telemedicina/index.html
           grep -q "consultFollowupFields" telemedicina/index.html
           grep -q "launchDischargeCelebration" js/telemedicina.js
           grep -q "telemedicine:celebrate-discharge" js/telemedicina.js
-          grep -q "telemedicina-mobile-v9.js?v=20260903-1" telemedicina/index.html
+          grep -q "telemedicina-mobile-v9.js?v=20260903-2" telemedicina/index.html
           grep -q "prefers-reduced-motion:reduce" css/telemedicina.css
-          grep -q "const discharged = input.discharged === true" worker/telemedicine.js
+          grep -q "const requestedMode" worker/telemedicine.js
+          grep -q "returnConditionResolution" worker/telemedicine.js
+          grep -q "returnConditionResolution" worker/telemedicine-rules.js
+          grep -q "followupMode" worker/telemedicine.js
           grep -q "ALTA DO EPISÓDIO" worker/telemedicine.js
           grep -q "Registro objetivo de alta" docs/TELEMEDICINA.md
+          grep -q "Três condutas de retorno" docs/TELEMEDICINA.md
           grep -q "Mobile UX v2" css/telemedicina.css
           grep -q "@media(max-width:860px)" css/telemedicina.css
           grep -q "#openConsultation{position:fixed" css/telemedicina.css
