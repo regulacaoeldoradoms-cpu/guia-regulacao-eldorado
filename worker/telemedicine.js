@@ -13,7 +13,6 @@ import {
   clean,
   normalizeText,
   dateValid,
-  addDays,
   threeBusinessReminders,
   deriveFollowupStatus,
   reminderMetaFor,
@@ -229,7 +228,7 @@ async function recordConsultation(env, user, input) {
   let returnDueDate = '';
   if (needsReturn) {
     if (dateValid(explicitDue)) returnDueDate = explicitDue;
-    else if (Number.isInteger(returnDays) && returnDays > 0 && returnDays <= 730) returnDueDate = addDays(consultationDate, returnDays);
+    else if (Number.isInteger(returnDays) && returnDays > 0 && returnDays <= 730) returnDueDate = returnDueFromRecord(consultationDate, `RETORNO COM ${returnDays} DIAS`);
     else returnDueDate = returnDueFromRecord(consultationDate, resolution);
   }
   const reminderDates = needsReturn && returnDueDate ? threeBusinessReminders(returnDueDate) : [];
