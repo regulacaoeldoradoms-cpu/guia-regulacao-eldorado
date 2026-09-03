@@ -360,11 +360,11 @@
   }
 
   function consultationPreview(form) {
+    if (form.elements.discharged.checked) return '';
     const consultDate = form.elements.consultationDate.value;
     const days = Number(form.elements.returnDays.value || 0);
     let target = form.elements.returnDueDate.value;
     if (!target && consultDate && Number.isInteger(days) && days > 0) target = nextBusinessDay(addDays(consultDate, days));
-    if (!form.elements.needsReturn.checked) return 'Este registro será salvo sem acompanhamento pendente.';
     if (!target) return 'Sem data-alvo definida. O acompanhamento ficará em “SEM PROGRAMAÇÃO” até a data ser informada.';
     target = nextBusinessDay(target);
     return `<strong>Retorno-alvo:</strong> ${escapeHtml(formatDate(target))}<br><strong>Lembretes:</strong> ${reminderDates(target).map(formatDate).join(' · ')}`;
@@ -386,14 +386,16 @@
     panel.className = 'tm-inline-consultation';
     panel.innerHTML = `<div class="tm-inline-panel-head"><div><strong>Registrar teleconsulta</strong><span>O formulário fica aberto sem bloquear os demais pacientes.</span></div><button type="button" class="tm-inline-close" data-tm-consult-close>Recolher</button></div><form class="tm-inline-form tm-inline-consult-form">
       <label class="tm-span-2">Paciente<input name="patientName" required maxlength="160" list="patientSuggestions" autocomplete="off" placeholder="Nome completo"></label>
-      <label>Data da consulta<input name="consultationDate" required type="date" value="${escapeHtml(cache.today || new Date().toISOString().slice(0, 10))}"></label>
+      <label>Data da última consulta<input name="consultationDate" required type="date" value="${escapeHtml(cache.today || new Date().toISOString().slice(0, 10))}"></label>
       <label>Especialidade<input name="specialty" required maxlength="120" list="specialtySuggestions" placeholder="Ex.: Psiquiatria"></label>
-      <label class="tm-span-2">Resolutividade / conduta<textarea name="resolution" required maxlength="2500" rows="4" placeholder="Ex.: RETORNO COM 60 DIAS"></textarea></label>
-      <label class="tm-span-2 tm-inline-check"><input name="needsReturn" type="checkbox" checked> Necessita acompanhamento/retorno</label>
-      <label>Prazo em dias<input name="returnDays" type="number" min="1" max="730" placeholder="Ex.: 60"></label>
-      <label>Ou data-alvo do retorno<input name="returnDueDate" type="date"></label>
-      <label class="tm-span-2">Observação operacional<textarea name="notes" maxlength="1500" rows="3" placeholder="Opcional"></textarea></label>
-      <div class="tm-span-2 tm-inline-preview"></div>
+      <div class="tm-span-2 tm-inline-outcome">
+        <span>Resolutividade</span>
+        <label class="tm-discharge-check"><input name="discharged" type="checkbox"><span class="tm-discharge-box" aria-hidden="true">✓</span><span><strong>Paciente recebeu alta deste episódio</strong><small>Marque somente quando o problema acompanhado foi resolvido e não haverá retorno.</small></span></label>
+      </div>
+      <label data-tm-return-field>Prazo para retorno em dias<input name="returnDays" type="number" min="1" max="730" placeholder="Ex.: 60"></label>
+      <label data-tm-return-field>Ou data-alvo do retorno<input name="returnDueDate" type="date"></label>
+      <label class="tm-span-2" data-tm-return-field>Observação operacional<textarea name="notes" maxlength="1500" rows="3" placeholder="Opcional"></textarea></label>
+      <div class="tm-span-2 tm-inline-preview" data-tm-return-field></div>
       <div class="tm-span-2 tm-inline-form-actions"><button class="portal-button primary" type="submit">Salvar consulta</button></div>
       <div class="tm-span-2 tm-inline-status" aria-live="polite"></div>
     </form>`;
@@ -404,17 +406,40 @@
     const preview = panel.querySelector('.tm-inline-preview');
     const status = panel.querySelector('.tm-inline-status');
     const updatePreview = () => { preview.innerHTML = consultationPreview(form); };
-    ['consultationDate', 'returnDays', 'returnDueDate', 'needsReturn'].forEach((name) => form.elements[name].addEventListener('input', updatePreview));
+    const syncOutcome = ({ celebrate = false } = {}) => {
+      const discharged = form.elements.discharged.checked;
+      form.querySelectorAll('[data-tm-return-field]').forEach((field) => {
+        field.hidden = discharged;
+        field.setAttribute('aria-hidden', discharged ? 'true' : 'false');
+      });
+      if (discharged) {
+        form.elements.returnDays.value = '';
+        form.elements.returnDueDate.value = '';
+        form.elements.notes.value = '';
+        if (celebrate) document.dispatchEvent(new CustomEvent('telemedicine:celebrate-discharge'));
+      }
+      updatePreview();
+    };
+    ['consultationDate', 'returnDays', 'returnDueDate'].forEach((name) => form.elements[name].addEventListener('input', updatePreview));
+    form.elements.discharged.addEventListener('change', (event) => syncOutcome({ celebrate: event.target.checked }));
     form.elements.returnDueDate.addEventListener('change', () => { if (form.elements.returnDueDate.value) form.elements.returnDueDate.value = nextBusinessDay(form.elements.returnDueDate.value); updatePreview(); });
-    updatePreview();
+    syncOutcome();
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       const button = form.querySelector('button[type="submit"]');
       const patientName = form.elements.patientName.value.trim();
-      let due = form.elements.returnDueDate.value;
-      const days = Number(form.elements.returnDays.value || 0);
-      if (!due && form.elements.consultationDate.value && Number.isInteger(days) && days > 0) due = nextBusinessDay(addDays(form.elements.consultationDate.value, days));
+      const discharged = form.elements.discharged.checked;
+      let due = discharged ? '' : form.elements.returnDueDate.value;
+      const days = discharged ? 0 : Number(form.elements.returnDays.value || 0);
+      if (!due && !discharged && form.elements.consultationDate.value && Number.isInteger(days) && days > 0) due = nextBusinessDay(addDays(form.elements.consultationDate.value, days));
       if (due) due = nextBusinessDay(due);
+      const resolution = discharged
+        ? 'ALTA DO EPISÓDIO'
+        : days > 0
+          ? `RETORNO COM ${days} DIAS`
+          : due
+            ? `RETORNO PROGRAMADO PARA ${formatDate(due)}`
+            : 'ACOMPANHAMENTO SEM DATA DEFINIDA';
       button.disabled = true;
       button.textContent = 'Salvando…';
       setInlineStatus(status, 'Salvando em segundo plano…');
@@ -425,11 +450,12 @@
             patientName,
             consultationDate: form.elements.consultationDate.value,
             specialty: form.elements.specialty.value.trim(),
-            resolution: form.elements.resolution.value.trim(),
-            needsReturn: form.elements.needsReturn.checked,
+            resolution,
+            discharged,
+            needsReturn: !discharged,
             returnDays: days,
             returnDueDate: due,
-            notes: form.elements.notes.value.trim()
+            notes: discharged ? '' : form.elements.notes.value.trim()
           })
         });
         const updated = payload.followup;
@@ -438,12 +464,11 @@
         setInlineStatus(status, `Consulta de ${patientName} salva. O formulário continua disponível para o próximo registro.`, 'success');
         form.elements.patientName.value = '';
         form.elements.specialty.value = '';
-        form.elements.resolution.value = '';
         form.elements.returnDays.value = '';
         form.elements.returnDueDate.value = '';
         form.elements.notes.value = '';
-        form.elements.needsReturn.checked = true;
-        updatePreview();
+        form.elements.discharged.checked = false;
+        syncOutcome();
         form.elements.patientName.focus({ preventScroll: true });
       } catch (error) {
         setInlineStatus(status, error.message || 'Não foi possível salvar a consulta.', 'error');
