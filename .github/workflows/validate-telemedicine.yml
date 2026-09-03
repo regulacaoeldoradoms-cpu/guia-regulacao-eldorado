@@ -125,7 +125,7 @@ jobs:
           grep -q "consultConditionType" telemedicina/index.html
           grep -q "telemedicina-outcome-v14.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicina-mobile-v15.css?v=20260903-3" telemedicina/index.html
-          grep -q "telemedicina-desktop-v16.css?v=20260903-1" telemedicina/index.html
+          grep -q "telemedicina-desktop-v16.css?v=20260903-2" telemedicina/index.html
           grep -q "telemedicina-mobile-v7.js?v=20260903-1" telemedicina/index.html
           grep -q 'data-desktop-design="v16"' telemedicina/index.html
           grep -q 'data-mobile-readability="v15"' telemedicina/index.html
@@ -136,6 +136,9 @@ jobs:
           grep -q "min-height: 350px !important" css/telemedicina-mobile-v15.css
           grep -q "grid-template-columns: repeat(3, minmax(0, 1fr))" css/telemedicina-desktop-v16.css
           grep -q "tm-context-desktop" css/telemedicina-desktop-v16.css
+          grep -q -- "--tm-desktop-action-height: 48px" css/telemedicina-desktop-v16.css
+          grep -q "grid-template-columns: 1fr" css/telemedicina-desktop-v16.css
+          grep -q "Programar.*Solicitado.*Histórico" docs/TELEMEDICINA-DESKTOP-V16.md
           grep -q "telemedicine-desktop-view-v16" js/telemedicina-mobile-v7.js
           grep -q "Grade 3×3" js/telemedicina-mobile-v7.js
           grep -q "consultFollowupFields" telemedicina/index.html

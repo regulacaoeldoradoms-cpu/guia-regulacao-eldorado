@@ -19,6 +19,7 @@ Nos dois modos permanecem visíveis paciente, conduta, especialidade, situação
 - superfícies em azul suave e verde-azulado separam cabeçalho, resumo, filtros, cartões e formulários;
 - âmbar identifica solicitação próxima, vermelho identifica atraso, verde-azulado identifica aguardo, cinza-azulado identifica ausência de programação e azul identifica solicitação já registrada;
 - cartões reagem a foco e passagem do ponteiro, e botões apresentam foco visível;
+- `Programar`, `Solicitado` e `Histórico` ocupam toda a largura do bloco de ações e usam a mesma altura nos modos Lista e Grade, mantendo os cartões simétricos;
 - nome, cargo e foto continuam juntos no cabeçalho horizontal, que recebe largura e tipografia adequadas ao desktop;
 - formulários, opções de conduta, histórico e mensagens preservam a hierarquia visual aprovada no mobile;
 - `prefers-reduced-motion` remove deslocamentos e transições não essenciais.
