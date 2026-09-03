@@ -52,12 +52,14 @@ jobs:
           grep -Fq "correctionHistory" worker/telemedicine-router-v2.js
           grep -Fq "firestoreDelete" worker/telemedicine-router-v2.js
           grep -Fq "telemedicina-edit.js?v=20260902-1" telemedicina/index.html
-          grep -Fq "telemedicina-mobile-v13.css?v=20260902-1" telemedicina/index.html
+          grep -Fq "telemedicina-mobile-v13.css?v=20260903-1" telemedicina/index.html
           grep -Fq "data-telemedicine-edit" js/telemedicina-edit.js
           grep -Fq "REUMATOLOGIA" js/telemedicina-edit.js
           grep -Fq "line-clamp: unset" js/telemedicina-edit.js
           grep -Fq "data-telemedicine-edit=\"patient\"" css/telemedicina-mobile-v13.css
           grep -Fq "width: 24px" css/telemedicina-mobile-v13.css
+          grep -Fq "flex-wrap: wrap" css/telemedicina-mobile-v13.css
+          grep -Fq "position: static" css/telemedicina-mobile-v13.css
           grep -Fq "Correção de nome e especialidade" docs/TELEMEDICINA.md
       - name: Conferir privacidade do código versionado
         shell: bash
