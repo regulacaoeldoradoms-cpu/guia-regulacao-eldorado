@@ -114,6 +114,30 @@ function appendCorrectionHistory(current, entry) {
   return [...previous.slice(-(MAX_CORRECTION_HISTORY - 1)), entry];
 }
 
+function mergeCorrectionHistory(first, second, entry) {
+  const combined = [
+    ...(Array.isArray(first) ? first : []),
+    ...(Array.isArray(second) ? second : []),
+    entry
+  ];
+  return combined.slice(-MAX_CORRECTION_HISTORY);
+}
+
+function newerFollowup(first, second) {
+  const firstDate = String(first?.lastConsultationDate || '');
+  const secondDate = String(second?.lastConsultationDate || '');
+  if (firstDate !== secondDate) return firstDate > secondDate ? first : second;
+
+  const firstUpdated = String(first?.updatedAt || first?.createdAt || '');
+  const secondUpdated = String(second?.updatedAt || second?.createdAt || '');
+  return firstUpdated >= secondUpdated ? first : second;
+}
+
+function earliestCreatedAt(first, second) {
+  const values = [first?.createdAt, second?.createdAt].filter(Boolean).map(String).sort();
+  return values[0] || '';
+}
+
 async function correctPatientName(env, user, patientId, input = {}) {
   const patient = await firestoreGet(env, `${PATIENTS}/${patientId}`);
   if (!patient) throw Object.assign(new Error('Paciente não encontrado.'), { status: 404 });
@@ -225,6 +249,58 @@ async function correctPatientName(env, user, patientId, input = {}) {
   };
 }
 
+async function mergeSpecialtyFollowups(env, user, sourceId, targetId, source, target, newSpecialty, newSpecialtyKey, correction) {
+  const now = correction.correctedAt;
+  const current = newerFollowup(source, target);
+  const createdAt = earliestCreatedAt(source, target) || String(current?.createdAt || now);
+  const mergedFromFollowups = Array.from(new Set([
+    ...(Array.isArray(target.mergedFromFollowups) ? target.mergedFromFollowups : []),
+    ...(Array.isArray(source.mergedFromFollowups) ? source.mergedFromFollowups : []),
+    sourceId
+  ])).filter((id) => id && id !== targetId).slice(-20);
+
+  await upsert(env, FOLLOWUPS, targetId, {
+    ...withoutId(current),
+    patientId: source.patientId,
+    patientName: current.patientName || target.patientName || source.patientName,
+    specialty: newSpecialty,
+    specialtyKey: newSpecialtyKey,
+    createdAt,
+    updatedAt: now,
+    correctedAt: now,
+    correctedBy: user.username,
+    correctionHistory: mergeCorrectionHistory(target.correctionHistory, source.correctionHistory, correction),
+    mergedFromFollowups
+  });
+
+  const events = await listAll(env, EVENTS);
+  for (const event of events) {
+    if (event.followupId !== sourceId && event.followupId !== targetId) continue;
+    await firestorePatch(env, `${EVENTS}/${event.id}`, {
+      followupId: targetId,
+      specialty: newSpecialty
+    });
+  }
+
+  await firestorePatch(env, `${FOLLOWUPS}/${sourceId}`, {
+    active: false,
+    replacedBy: targetId,
+    mergedInto: targetId,
+    updatedAt: now
+  });
+  await firestoreDelete(env, `${FOLLOWUPS}/${sourceId}`).catch(() => false);
+
+  return {
+    followupId: targetId,
+    patientId: source.patientId,
+    specialty: newSpecialty,
+    previousSpecialty: clean(source.specialty, 120),
+    merged: true,
+    mergedFromFollowupId: sourceId,
+    correctedAt: now
+  };
+}
+
 async function correctSpecialty(env, user, followupId, input = {}) {
   const followup = await firestoreGet(env, `${FOLLOWUPS}/${followupId}`);
   if (!followup) throw Object.assign(new Error('Acompanhamento não encontrado.'), { status: 404 });
@@ -236,14 +312,6 @@ async function correctSpecialty(env, user, followupId, input = {}) {
   const newSpecialtyKey = normalizeSpecialty(newSpecialty);
   if (!newSpecialtyKey) throw Object.assign(new Error('Informe uma especialidade válida.'), { status: 400 });
 
-  const targetFollowupId = await followupIdFor(followup.patientId, newSpecialty);
-  if (targetFollowupId !== followupId) {
-    const collision = await firestoreGet(env, `${FOLLOWUPS}/${targetFollowupId}`);
-    if (collision) {
-      throw Object.assign(new Error('Já existe acompanhamento deste paciente com essa especialidade. Abra o histórico antes de corrigir para evitar duplicidade.'), { status: 409 });
-    }
-  }
-
   const now = new Date().toISOString();
   const correction = {
     field: 'specialty',
@@ -252,6 +320,24 @@ async function correctSpecialty(env, user, followupId, input = {}) {
     correctedAt: now,
     correctedBy: user.username
   };
+
+  const targetFollowupId = await followupIdFor(followup.patientId, newSpecialty);
+  if (targetFollowupId !== followupId) {
+    const collision = await firestoreGet(env, `${FOLLOWUPS}/${targetFollowupId}`);
+    if (collision) {
+      return mergeSpecialtyFollowups(
+        env,
+        user,
+        followupId,
+        targetFollowupId,
+        followup,
+        collision,
+        newSpecialty,
+        newSpecialtyKey,
+        correction
+      );
+    }
+  }
 
   await upsert(env, FOLLOWUPS, targetFollowupId, {
     ...withoutId(followup),
@@ -286,6 +372,7 @@ async function correctSpecialty(env, user, followupId, input = {}) {
     patientId: followup.patientId,
     specialty: newSpecialty,
     previousSpecialty: oldSpecialty,
+    merged: false,
     correctedAt: now
   };
 }
