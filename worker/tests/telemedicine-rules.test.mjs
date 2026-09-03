@@ -23,7 +23,8 @@ const {
   explicitReturnDays,
   returnDueFromRecord,
   looksClosed,
-  looksRequested
+  looksRequested,
+  returnConditionResolution
 } = rules;
 
 assert.equal(addDays('2026-08-01', 30), '2026-08-31');
@@ -69,5 +70,13 @@ assert.equal(looksClosed('PACIENTE TEVE ALTA DO EPISÓDIO'), true);
 assert.equal(looksClosed('TRATAMENTO FINALIZADO'), true);
 assert.equal(looksRequested('RETORNO COM 30 DIAS', 'EM AGUARDO / SOLICITADO'), true);
 assert.equal(looksRequested('SIM, ALTA DO EPISÓDIO', 'SOLICITADO'), false);
+
+assert.equal(returnConditionResolution('exams'), 'RETORNO APÓS EXAMES');
+assert.equal(returnConditionResolution('physiotherapy'), 'RETORNO APÓS FISIOTERAPIA');
+assert.equal(returnConditionResolution('procedure', 'após liberação médica'), 'RETORNO APÓS PROCEDIMENTO OU CIRURGIA - após liberação médica');
+assert.equal(returnConditionResolution('treatment'), 'RETORNO APÓS CONCLUSÃO DO TRATAMENTO');
+assert.equal(returnConditionResolution('other', 'avaliação da equipe'), 'RETORNO APÓS avaliação da equipe');
+assert.equal(returnConditionResolution('other'), '');
+assert.equal(returnConditionResolution('desconhecido', 'texto'), '');
 
 console.log('Telemedicina: regras de retorno e lembretes validadas.');
