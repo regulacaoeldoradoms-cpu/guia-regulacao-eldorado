@@ -142,6 +142,9 @@
 }
 
 .telemedicine-followup-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
   padding: 15px;
   border: 1px solid #d8e7ef;
   border-radius: 15px;
@@ -152,7 +155,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-  margin-bottom: 14px;
+  margin: 0;
   padding: 13px;
   border-radius: 13px;
   animation: telemedicine-mode-reveal .22s ease-out both;
