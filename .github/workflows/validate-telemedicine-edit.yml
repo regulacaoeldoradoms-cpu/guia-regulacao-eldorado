@@ -40,24 +40,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q "telemedicine-router-v2.js" worker/index.js
-          grep -q "user.role === 'admin'" worker/telemedicine-router-v2.js
-          grep -q "user.role === 'recepcao' && await telemedicineAccessFor" worker/telemedicine-router-v2.js
-          grep -q "/patients\\/.*\\/name" worker/telemedicine-router-v2.js
-          grep -q "/followups\\/.*\\/specialty" worker/telemedicine-router-v2.js
-          grep -q "status: 409" worker/telemedicine-router-v2.js
-          grep -q "correctionHistory" worker/telemedicine-router-v2.js
-          grep -q "firestoreDelete" worker/telemedicine-router-v2.js
-          grep -q "telemedicina-edit.js?v=20260902-1" telemedicina/index.html
-          grep -q "data-telemedicine-edit" js/telemedicina-edit.js
-          grep -q "REUMATOLOGIA" js/telemedicina-edit.js
-          grep -q "line-clamp: unset" js/telemedicina-edit.js
-          grep -q "Correção de nome e especialidade" docs/TELEMEDICINA.md
+          grep -Fq "telemedicine-router-v2.js" worker/index.js
+          grep -Fq "user.role === 'admin'" worker/telemedicine-router-v2.js
+          grep -Fq "user.role === 'recepcao' && await telemedicineAccessFor" worker/telemedicine-router-v2.js
+          grep -Fq "const patientNameMatch = url.pathname.match" worker/telemedicine-router-v2.js
+          grep -Fq "const specialtyMatch = url.pathname.match" worker/telemedicine-router-v2.js
+          grep -Fq "status: 409" worker/telemedicine-router-v2.js
+          grep -Fq "correctionHistory" worker/telemedicine-router-v2.js
+          grep -Fq "firestoreDelete" worker/telemedicine-router-v2.js
+          grep -Fq "telemedicina-edit.js?v=20260902-1" telemedicina/index.html
+          grep -Fq "data-telemedicine-edit" js/telemedicina-edit.js
+          grep -Fq "REUMATOLOGIA" js/telemedicina-edit.js
+          grep -Fq "line-clamp: unset" js/telemedicina-edit.js
+          grep -Fq "Correção de nome e especialidade" docs/TELEMEDICINA.md
       - name: Conferir privacidade do código versionado
         shell: bash
         run: |
           set -euo pipefail
-          if grep -R -n -E '\\b(CNS|CPF)\\b' js/telemedicina-edit.js worker/telemedicine-router-v2.js; then
+          if grep -R -n -E '\b(CNS|CPF)\b' js/telemedicina-edit.js worker/telemedicine-router-v2.js; then
             echo 'Identificador pessoal proibido no código da edição cadastral.' >&2
             exit 1
           fi
