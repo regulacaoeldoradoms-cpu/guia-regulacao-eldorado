@@ -492,7 +492,6 @@
       const conditional = followupMode === 'conditional';
       let due = followupMode === 'scheduled' ? form.elements.returnDueDate.value : '';
       const days = followupMode === 'scheduled' && !due ? Number(form.elements.returnDays.value || 0) : 0;
-      if (!due && followupMode === 'scheduled' && form.elements.consultationDate.value && Number.isInteger(days) && days > 0) due = nextBusinessDay(addDays(form.elements.consultationDate.value, days));
       if (due) due = nextBusinessDay(due);
       const conditionType = conditional ? form.elements.conditionType.value : '';
       const conditionDetail = conditional ? form.elements.conditionDetail.value.trim() : '';
