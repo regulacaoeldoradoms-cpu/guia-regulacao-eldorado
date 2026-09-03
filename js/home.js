@@ -49,7 +49,7 @@
   if (['telemedicina', 'admin'].includes(user.role) && !user.preview) {
     cards.push(`
       <a class="hub-card" href="/telemedicina/" data-module="telemedicine">
-        <span class="hub-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v12H4z"/><path d="M8 21h8M12 17v4M9 9h6M12 6v6"/></svg></span>
+        <span class="hub-card-icon"><img src="/assets/Telemedicina.png?v=20260903-1" alt=""></span>
         <span><h3>Telemedicina</h3><p>Acompanhe o histórico dos pacientes, programe retornos e receba os três lembretes úteis iniciando 15 dias antes da data-alvo.</p></span>
         <span class="hub-card-arrow">Abrir Telemedicina →</span>
       </a>`);
