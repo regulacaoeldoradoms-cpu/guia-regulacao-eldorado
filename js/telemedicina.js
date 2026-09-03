@@ -350,12 +350,13 @@
   }
 
   function updateSchedulePreview() {
-    const value = document.getElementById('scheduleReturnDate').value;
+    let value = document.getElementById('scheduleReturnDate').value;
     const preview = document.getElementById('schedulePreview');
     if (!value) {
       preview.textContent = 'Informe a data-alvo para calcular os lembretes.';
       return;
     }
+    value = nextBusinessDay(value);
     const dates = reminderDates(value);
     preview.innerHTML = `<strong>Retorno:</strong> ${escapeHtml(formatDate(value))}<br><strong>3 avisos úteis:</strong> ${dates.map(formatDate).join(' · ')}`;
   }
@@ -409,6 +410,10 @@
   });
   document.getElementById('consultConditionDetail').addEventListener('input', updateConsultPreview);
   document.getElementById('scheduleReturnDate').addEventListener('input', updateSchedulePreview);
+  document.getElementById('scheduleReturnDate').addEventListener('change', (event) => {
+    if (event.target.value) event.target.value = nextBusinessDay(event.target.value);
+    updateSchedulePreview();
+  });
 
   document.getElementById('consultationForm').addEventListener('submit', async (event) => {
     event.preventDefault();
