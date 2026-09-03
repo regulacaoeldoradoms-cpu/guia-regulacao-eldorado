@@ -7,6 +7,7 @@ on:
       - 'js/telemedicina-edit.js'
       - 'css/telemedicina-mobile-v13.css'
       - 'worker/telemedicine-router-v2.js'
+      - 'worker/firebase-gateway.js'
       - 'worker/index.js'
       - 'docs/TELEMEDICINA.md'
       - '.github/workflows/validate-telemedicine-edit.yml'
@@ -17,6 +18,7 @@ on:
       - 'js/telemedicina-edit.js'
       - 'css/telemedicina-mobile-v13.css'
       - 'worker/telemedicine-router-v2.js'
+      - 'worker/firebase-gateway.js'
       - 'worker/index.js'
       - 'docs/TELEMEDICINA.md'
       - '.github/workflows/validate-telemedicine-edit.yml'
@@ -38,6 +40,7 @@ jobs:
           test -f worker/telemedicine-router-v2.js
           node --check js/telemedicina-edit.js
           node --input-type=module --check < worker/telemedicine-router-v2.js
+          node --input-type=module --check < worker/firebase-gateway.js
           node --input-type=module --check < worker/index.js
       - name: Conferir autorização e integridade das correções
         shell: bash
@@ -55,6 +58,9 @@ jobs:
           grep -Fq "function newerFollowup" worker/telemedicine-router-v2.js
           grep -Fq "mergedFromFollowups" worker/telemedicine-router-v2.js
           grep -Fq "return mergeSpecialtyFollowups" worker/telemedicine-router-v2.js
+          grep -Fq "firestoreReplace(env" worker/telemedicine-router-v2.js
+          grep -Fq "combined.sort" worker/telemedicine-router-v2.js
+          grep -Fq "export async function firestoreReplace" worker/firebase-gateway.js
           grep -Fq "telemedicina-edit.js?v=20260902-1" telemedicina/index.html
           grep -Fq "telemedicina-mobile-v13.css?v=20260903-2" telemedicina/index.html
           grep -Fq "data-telemedicine-edit" js/telemedicina-edit.js
@@ -69,6 +75,8 @@ jobs:
           grep -Fq "Correção de nome e especialidade" docs/TELEMEDICINA.md
           grep -Fq "unificação controlada" docs/TELEMEDICINA.md
           grep -Fq "nunca é inferida por semelhança de texto" docs/TELEMEDICINA.md
+          grep -Fq "substituído integralmente" docs/TELEMEDICINA.md
+          grep -Fq "ordenados por data" docs/TELEMEDICINA.md
       - name: Conferir privacidade do código versionado
         shell: bash
         run: |

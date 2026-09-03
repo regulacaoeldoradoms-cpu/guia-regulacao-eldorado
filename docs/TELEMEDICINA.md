@@ -172,6 +172,8 @@ Regras obrigatórias:
 - colisão de **especialidade do mesmo paciente** tem comportamento diferente: quando o operador corrige explicitamente uma abreviação/grafia para uma especialidade que já existe naquele mesmo paciente, o backend executa a unificação controlada dos dois acompanhamentos em vez de bloquear a correção;
 - a unificação de especialidades nunca é inferida por semelhança de texto, dicionário ou IA. Ela somente ocorre depois da ação explícita do operador escolhendo exatamente o nome canônico já existente, evitando unir especialidades diferentes por engano;
 - na unificação, permanece um único acompanhamento para o paciente + especialidade; o estado operacional atual é preservado a partir do registro com teleconsulta mais recente, usando a atualização mais recente como desempate;
+- o documento canônico é substituído integralmente pelo estado escolhido, impedindo que campos operacionais antigos do outro acompanhamento sobrevivam e alterem indevidamente a situação exibida;
+- os históricos de correção são ordenados por data antes de manter as doze entradas mais recentes, preservando a auditoria mais atual;
 - todos os eventos longitudinais dos dois acompanhamentos são preservados e passam a apontar para o identificador canônico da especialidade, para que o histórico continue completo;
 - a correção e a unificação registram data, usuário responsável, valor anterior e valor novo dentro do armazenamento protegido do módulo; nomes não são enviados para logs técnicos;
 - na grade 2 × 2 mobile, o nome completo deixa de ser ocultado artificialmente por `...`; nomes longos podem quebrar em mais linhas.

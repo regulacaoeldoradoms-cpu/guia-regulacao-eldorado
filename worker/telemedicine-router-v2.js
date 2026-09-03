@@ -7,7 +7,8 @@ import {
   firestoreDelete,
   firestoreGet,
   firestoreList,
-  firestorePatch
+  firestorePatch,
+  firestoreReplace
 } from './firebase-gateway.js';
 import { telemedicineAccessFor } from './telemedicine-access.js';
 import { clean, normalizeText } from './telemedicine-rules.js';
@@ -120,6 +121,7 @@ function mergeCorrectionHistory(first, second, entry) {
     ...(Array.isArray(second) ? second : []),
     entry
   ];
+  combined.sort((a, b) => String(a?.correctedAt || '').localeCompare(String(b?.correctedAt || '')));
   return combined.slice(-MAX_CORRECTION_HISTORY);
 }
 
@@ -259,7 +261,7 @@ async function mergeSpecialtyFollowups(env, user, sourceId, targetId, source, ta
     sourceId
   ])).filter((id) => id && id !== targetId).slice(-20);
 
-  await upsert(env, FOLLOWUPS, targetId, {
+  await firestoreReplace(env, `${FOLLOWUPS}/${targetId}`, {
     ...withoutId(current),
     patientId: source.patientId,
     patientName: current.patientName || target.patientName || source.patientName,
