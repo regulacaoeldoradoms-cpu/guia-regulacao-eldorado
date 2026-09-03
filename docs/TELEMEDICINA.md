@@ -157,7 +157,7 @@ Decisão de interface registrada em 01/09/2026:
 
 ## Correção de nome e especialidade
 
-Decisão permanente registrada em 02/09/2026.
+Decisão permanente registrada em 02/09/2026. Decisão complementar de unificação controlada registrada em 03/09/2026.
 
 O Técnico em Telemedicina e o Desenvolvedor podem corrigir diretamente no módulo erros cadastrais de digitação, abreviação ou grafia do **nome do paciente** e da **especialidade**. A interface exibe um lápis ao lado desses dois campos.
 
@@ -168,10 +168,15 @@ Regras obrigatórias:
 - o nome do paciente deve ser corrigido de forma longitudinal, preservando o agrupamento do histórico;
 - a especialidade deve ser registrada por extenso quando a abreviação puder gerar ambiguidade, evitando formas como `REUMATO` quando o correto for `REUMATOLOGIA`;
 - como os identificadores técnicos de paciente e acompanhamento derivam da forma normalizada do nome e da especialidade, uma correção que altere essa forma migra de modo controlado os documentos relacionados para os novos identificadores;
-- antes da migração, o backend verifica colisões. Se já existir outro paciente com o mesmo nome normalizado ou outro acompanhamento do mesmo paciente com a especialidade corrigida, a operação é bloqueada com conflito para impedir fusão silenciosa de históricos;
-- eventos históricos relacionados recebem os novos identificadores e a especialidade corrigida quando aplicável;
-- a correção registra data, usuário responsável, valor anterior e valor novo dentro do armazenamento protegido do módulo; nomes não são enviados para logs técnicos;
+- colisão de **nome de paciente** continua bloqueada: o sistema não funde automaticamente pacientes apenas porque o nome corrigido coincide com outro cadastro;
+- colisão de **especialidade do mesmo paciente** tem comportamento diferente: quando o operador corrige explicitamente uma abreviação/grafia para uma especialidade que já existe naquele mesmo paciente, o backend executa a unificação controlada dos dois acompanhamentos em vez de bloquear a correção;
+- a unificação de especialidades nunca é inferida por semelhança de texto, dicionário ou IA. Ela somente ocorre depois da ação explícita do operador escolhendo exatamente o nome canônico já existente, evitando unir especialidades diferentes por engano;
+- na unificação, permanece um único acompanhamento para o paciente + especialidade; o estado operacional atual é preservado a partir do registro com teleconsulta mais recente, usando a atualização mais recente como desempate;
+- todos os eventos longitudinais dos dois acompanhamentos são preservados e passam a apontar para o identificador canônico da especialidade, para que o histórico continue completo;
+- a correção e a unificação registram data, usuário responsável, valor anterior e valor novo dentro do armazenamento protegido do módulo; nomes não são enviados para logs técnicos;
 - na grade 2 × 2 mobile, o nome completo deixa de ser ocultado artificialmente por `...`; nomes longos podem quebrar em mais linhas.
+
+Exemplo operacional: se o mesmo paciente tiver acompanhamentos separados como `ENDOC`, `ENDOCRINO` e `ENDOCRINOLOGIA`, o operador pode corrigir cada abreviação para `ENDOCRINOLOGIA`. A primeira colisão encontrada passa a consolidar o acompanhamento na especialidade canônica; repetindo a correção no outro alias, o painel termina com um único acompanhamento de `ENDOCRINOLOGIA`, sem perder os eventos históricos anteriores.
 
 Endpoints:
 
