@@ -76,7 +76,7 @@
               <option value="SOLICITADO">Solicitados</option>
             </select>
             <button class="portal-button secondary" id="enableNotifications" type="button">Ativar notificações</button>
-            <button class="portal-button secondary" id="openImport" type="button" hidden>Importar histórico</button>
+            <span id="openImport" hidden aria-hidden="true" style="display:none"></span>
             <button class="portal-button primary" id="openConsultation" type="button" aria-expanded="false">Registrar consulta</button>
           </div>
         </div>
@@ -137,7 +137,6 @@
       </div>
     </form>
   </div>
-
   <div class="modal-backdrop" id="scheduleModal" aria-hidden="true">
     <form class="portal-modal telemedicine-modal compact" id="scheduleForm">
       <div class="portal-modal-header"><div><h2>Programar retorno</h2><div class="user-meta" id="scheduleMeta"></div></div><button class="portal-modal-close" type="button" data-close-modal="scheduleModal">×</button></div>
