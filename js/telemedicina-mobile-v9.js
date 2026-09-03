@@ -359,8 +359,23 @@
     }
   }
 
+  const conditionLabels = {
+    exams: 'exames',
+    physiotherapy: 'fisioterapia',
+    procedure: 'procedimento ou cirurgia',
+    treatment: 'conclusão do tratamento',
+    other: 'outra condição'
+  };
+
   function consultationPreview(form) {
-    if (form.elements.discharged.checked) return '';
+    const mode = form.elements.followupMode.value || 'scheduled';
+    if (mode === 'discharge') return '';
+    if (mode === 'conditional') {
+      const type = form.elements.conditionType.value;
+      const detail = form.elements.conditionDetail.value.trim();
+      const condition = type === 'other' && detail ? detail : conditionLabels[type] || 'uma condição';
+      return `<strong>Retorno sem data definida:</strong> após ${escapeHtml(condition)}.<br>Nenhum lembrete será criado; o registro ficará no histórico como “SEM PROGRAMAÇÃO”.`;
+    }
     const consultDate = form.elements.consultationDate.value;
     const days = Number(form.elements.returnDays.value || 0);
     let target = form.elements.returnDueDate.value;
@@ -388,14 +403,20 @@
       <label class="tm-span-2">Paciente<input name="patientName" required maxlength="160" list="patientSuggestions" autocomplete="off" placeholder="Nome completo"></label>
       <label>Data da última consulta<input name="consultationDate" required type="date" value="${escapeHtml(cache.today || new Date().toISOString().slice(0, 10))}"></label>
       <label>Especialidade<input name="specialty" required maxlength="120" list="specialtySuggestions" placeholder="Ex.: Psiquiatria"></label>
-      <div class="tm-span-2 tm-inline-outcome">
-        <span>Resolutividade</span>
-        <label class="tm-discharge-check"><input name="discharged" type="checkbox"><span class="tm-discharge-box" aria-hidden="true">✓</span><span><strong>Paciente recebeu alta deste episódio</strong><small>Marque somente quando o problema acompanhado foi resolvido e não haverá retorno.</small></span></label>
-      </div>
-      <label data-tm-return-field>Prazo para retorno em dias<input name="returnDays" type="number" min="1" max="730" placeholder="Ex.: 60"></label>
-      <label data-tm-return-field>Ou data-alvo do retorno<input name="returnDueDate" type="date"></label>
-      <label class="tm-span-2" data-tm-return-field>Observação operacional<textarea name="notes" maxlength="1500" rows="3" placeholder="Opcional"></textarea></label>
-      <div class="tm-span-2 tm-inline-preview" data-tm-return-field></div>
+      <fieldset class="tm-span-2 telemedicine-outcome-picker">
+        <legend>Qual foi a conduta desta consulta?</legend>
+        <div class="telemedicine-choice-grid">
+          <label class="telemedicine-choice success"><input name="followupMode" type="radio" value="discharge"><span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.4-8.35C.55 9.22 2.1 5 6.15 5c2.08 0 3.22 1.22 3.85 2.18C10.63 6.22 11.77 5 13.85 5c4.05 0 5.6 4.22 3.55 7.65C15 16.65 12 21 12 21Z"/><path d="m8.2 12.1 2.15 2.15 4.1-4.35"/></svg></span><span><strong>Alta do episódio</strong><small>Problema resolvido, sem retorno.</small></span></label>
+          <label class="telemedicine-choice schedule"><input name="followupMode" type="radio" value="scheduled" checked><span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4.5h14a2 2 0 0 1 2 2v13H3v-13a2 2 0 0 1 2-2Z"/><path d="M7 2v5M17 2v5M3 9h18M12 12v3l2 1"/></svg></span><span><strong>Retorno com prazo ou data</strong><small>Calcula a data e os três avisos.</small></span></label>
+          <label class="telemedicine-choice condition"><input name="followupMode" type="radio" value="conditional"><span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-5 9a2.5 2.5 0 0 0 2.2 3.7h9.6A2.5 2.5 0 0 0 19 17l-5-9V3"/><path d="M7.4 16h9.2M9.2 12h5.6"/></svg></span><span><strong>Retorno após uma condição</strong><small>Exames, fisioterapia ou tratamento.</small></span></label>
+        </div>
+      </fieldset>
+      <label data-tm-scheduled-field>Prazo para retorno em dias<input name="returnDays" type="number" min="1" max="730" placeholder="Ex.: 60"><small>Preencher limpa a data manual.</small></label>
+      <label data-tm-scheduled-field>Ou data-alvo do retorno<input name="returnDueDate" type="date"><small>Preencher limpa o prazo em dias.</small></label>
+      <label data-tm-conditional-field hidden>Retornar após<select name="conditionType"><option value="exams">Exames</option><option value="physiotherapy">Fisioterapia</option><option value="procedure">Procedimento ou cirurgia</option><option value="treatment">Conclusão do tratamento</option><option value="other">Outra condição</option></select></label>
+      <label data-tm-conditional-field hidden>Detalhe da condição<input name="conditionDetail" maxlength="300" placeholder="Ex.: ressonância da coluna"><small>Opcional, exceto em “Outra condição”.</small></label>
+      <label class="tm-span-2" data-tm-active-field>Observação operacional<textarea name="notes" maxlength="1500" rows="3" placeholder="Opcional"></textarea></label>
+      <div class="tm-span-2 tm-inline-preview" data-tm-active-field></div>
       <div class="tm-span-2 tm-inline-form-actions"><button class="portal-button primary" type="submit">Salvar consulta</button></div>
       <div class="tm-span-2 tm-inline-status" aria-live="polite"></div>
     </form>`;
@@ -406,40 +427,89 @@
     const preview = panel.querySelector('.tm-inline-preview');
     const status = panel.querySelector('.tm-inline-status');
     const updatePreview = () => { preview.innerHTML = consultationPreview(form); };
+    const syncConditionRequirement = () => {
+      form.elements.conditionDetail.required = form.elements.followupMode.value === 'conditional' && form.elements.conditionType.value === 'other';
+      form.elements.conditionDetail.placeholder = form.elements.conditionType.value === 'other'
+        ? 'Descreva a condição necessária'
+        : 'Ex.: ressonância da coluna';
+    };
     const syncOutcome = ({ celebrate = false } = {}) => {
-      const discharged = form.elements.discharged.checked;
-      form.querySelectorAll('[data-tm-return-field]').forEach((field) => {
+      const mode = form.elements.followupMode.value || 'scheduled';
+      const discharged = mode === 'discharge';
+      form.querySelectorAll('[data-tm-active-field]').forEach((field) => {
         field.hidden = discharged;
         field.setAttribute('aria-hidden', discharged ? 'true' : 'false');
+      });
+      form.querySelectorAll('[data-tm-scheduled-field]').forEach((field) => {
+        field.hidden = mode !== 'scheduled';
+        field.setAttribute('aria-hidden', mode === 'scheduled' ? 'false' : 'true');
+      });
+      form.querySelectorAll('[data-tm-conditional-field]').forEach((field) => {
+        field.hidden = mode !== 'conditional';
+        field.setAttribute('aria-hidden', mode === 'conditional' ? 'false' : 'true');
       });
       if (discharged) {
         form.elements.returnDays.value = '';
         form.elements.returnDueDate.value = '';
+        form.elements.conditionDetail.value = '';
         form.elements.notes.value = '';
         if (celebrate) document.dispatchEvent(new CustomEvent('telemedicine:celebrate-discharge'));
+      } else if (mode === 'conditional') {
+        form.elements.returnDays.value = '';
+        form.elements.returnDueDate.value = '';
       }
+      syncConditionRequirement();
       updatePreview();
     };
-    ['consultationDate', 'returnDays', 'returnDueDate'].forEach((name) => form.elements[name].addEventListener('input', updatePreview));
-    form.elements.discharged.addEventListener('change', (event) => syncOutcome({ celebrate: event.target.checked }));
-    form.elements.returnDueDate.addEventListener('change', () => { if (form.elements.returnDueDate.value) form.elements.returnDueDate.value = nextBusinessDay(form.elements.returnDueDate.value); updatePreview(); });
+    form.elements.consultationDate.addEventListener('input', updatePreview);
+    form.elements.returnDays.addEventListener('input', () => {
+      if (form.elements.returnDays.value) form.elements.returnDueDate.value = '';
+      updatePreview();
+    });
+    form.elements.returnDueDate.addEventListener('input', () => {
+      if (form.elements.returnDueDate.value) form.elements.returnDays.value = '';
+      updatePreview();
+    });
+    form.elements.returnDueDate.addEventListener('change', () => {
+      if (form.elements.returnDueDate.value) form.elements.returnDueDate.value = nextBusinessDay(form.elements.returnDueDate.value);
+      updatePreview();
+    });
+    [...form.elements.followupMode].forEach((input) => input.addEventListener('change', (event) => {
+      syncOutcome({ celebrate: event.target.value === 'discharge' && event.target.checked });
+    }));
+    form.elements.conditionType.addEventListener('change', () => {
+      syncConditionRequirement();
+      updatePreview();
+    });
+    form.elements.conditionDetail.addEventListener('input', updatePreview);
     syncOutcome();
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       const button = form.querySelector('button[type="submit"]');
       const patientName = form.elements.patientName.value.trim();
-      const discharged = form.elements.discharged.checked;
-      let due = discharged ? '' : form.elements.returnDueDate.value;
-      const days = discharged ? 0 : Number(form.elements.returnDays.value || 0);
-      if (!due && !discharged && form.elements.consultationDate.value && Number.isInteger(days) && days > 0) due = nextBusinessDay(addDays(form.elements.consultationDate.value, days));
+      const followupMode = form.elements.followupMode.value || 'scheduled';
+      const discharged = followupMode === 'discharge';
+      const conditional = followupMode === 'conditional';
+      let due = followupMode === 'scheduled' ? form.elements.returnDueDate.value : '';
+      const days = followupMode === 'scheduled' && !due ? Number(form.elements.returnDays.value || 0) : 0;
+      if (!due && followupMode === 'scheduled' && form.elements.consultationDate.value && Number.isInteger(days) && days > 0) due = nextBusinessDay(addDays(form.elements.consultationDate.value, days));
       if (due) due = nextBusinessDay(due);
+      const conditionType = conditional ? form.elements.conditionType.value : '';
+      const conditionDetail = conditional ? form.elements.conditionDetail.value.trim() : '';
+      if (conditional && conditionType === 'other' && !conditionDetail) {
+        form.elements.conditionDetail.focus();
+        setInlineStatus(status, 'Descreva a condição necessária para o retorno.', 'error');
+        return;
+      }
       const resolution = discharged
         ? 'ALTA DO EPISÓDIO'
-        : days > 0
-          ? `RETORNO COM ${days} DIAS`
+        : conditional
+          ? `RETORNO APÓS ${conditionType === 'other' ? conditionDetail : conditionLabels[conditionType].toUpperCase()}`
           : due
             ? `RETORNO PROGRAMADO PARA ${formatDate(due)}`
-            : 'ACOMPANHAMENTO SEM DATA DEFINIDA';
+            : days > 0
+              ? `RETORNO COM ${days} DIAS`
+              : 'ACOMPANHAMENTO SEM DATA DEFINIDA';
       button.disabled = true;
       button.textContent = 'Salvando…';
       setInlineStatus(status, 'Salvando em segundo plano…');
@@ -451,10 +521,13 @@
             consultationDate: form.elements.consultationDate.value,
             specialty: form.elements.specialty.value.trim(),
             resolution,
+            followupMode,
             discharged,
             needsReturn: !discharged,
             returnDays: days,
             returnDueDate: due,
+            conditionType,
+            conditionDetail,
             notes: discharged ? '' : form.elements.notes.value.trim()
           })
         });
@@ -467,7 +540,9 @@
         form.elements.returnDays.value = '';
         form.elements.returnDueDate.value = '';
         form.elements.notes.value = '';
-        form.elements.discharged.checked = false;
+        form.elements.conditionType.value = 'exams';
+        form.elements.conditionDetail.value = '';
+        form.elements.followupMode.value = 'scheduled';
         syncOutcome();
         form.elements.patientName.focus({ preventScroll: true });
       } catch (error) {
