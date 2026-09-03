@@ -191,11 +191,17 @@ async function recordConsultation(env, user, input) {
   const patientName = clean(input.patientName, 160);
   const specialty = clean(input.specialty, 120);
   const consultationDate = clean(input.consultationDate, 10);
-  const resolution = clean(input.resolution, 2500);
-  const notes = clean(input.notes, 1500);
-  const needsReturn = input.needsReturn !== false;
-  const explicitDue = clean(input.returnDueDate, 10);
-  const returnDays = Number(input.returnDays || 0);
+  const discharged = input.discharged === true;
+  const inputResolution = clean(input.resolution, 2500);
+  const notes = discharged ? '' : clean(input.notes, 1500);
+  const needsReturn = discharged ? false : input.needsReturn !== false;
+  const explicitDue = discharged ? '' : clean(input.returnDueDate, 10);
+  const returnDays = discharged ? 0 : Number(input.returnDays || 0);
+  const resolution = discharged
+    ? 'ALTA DO EPISÓDIO'
+    : inputResolution || (Number.isInteger(returnDays) && returnDays > 0
+      ? `RETORNO COM ${returnDays} DIAS`
+      : dateValid(explicitDue) ? `RETORNO PROGRAMADO PARA ${explicitDue}` : 'ACOMPANHAMENTO SEM DATA DEFINIDA');
 
   if (patientName.length < 3) throw Object.assign(new Error('Informe o nome do paciente.'), { status: 400 });
   if (!dateValid(consultationDate)) throw Object.assign(new Error('Informe a data da consulta.'), { status: 400 });
@@ -225,7 +231,7 @@ async function recordConsultation(env, user, input) {
 
   const event = {
     patientId, patientName, followupId, eventType: 'consulta', eventDate: consultationDate,
-    specialty, resolution, notes, needsReturn, returnDueDate, returnDays: Number.isInteger(returnDays) ? returnDays : 0,
+    specialty, resolution, notes, discharged, needsReturn, returnDueDate, returnDays: Number.isInteger(returnDays) ? returnDays : 0,
     reminderDates, source: 'manual', createdAt: now, createdBy: user.username
   };
   await firestoreCreate(env, EVENTS, eventId, event);
@@ -238,6 +244,7 @@ async function recordConsultation(env, user, input) {
     lastConsultationDate: consultationDate,
     resolution,
     notes,
+    discharged,
     returnDueDate,
     reminderDates,
     requestedAt: '',
