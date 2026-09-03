@@ -155,6 +155,31 @@ Decisão de interface registrada em 01/09/2026:
 - áreas de toque devem permanecer confortáveis e o conteúdo não pode ser truncado por colunas de desktop;
 - regras mobile ficam restritas ao breakpoint responsivo do módulo e não devem alterar o desktop.
 
+## Correção de nome e especialidade
+
+Decisão permanente registrada em 02/09/2026.
+
+O Técnico em Telemedicina e o Desenvolvedor podem corrigir diretamente no módulo erros cadastrais de digitação, abreviação ou grafia do **nome do paciente** e da **especialidade**. A interface exibe um lápis ao lado desses dois campos.
+
+Regras obrigatórias:
+
+- a permissão é validada no Worker; o lápis não é apenas uma liberação de frontend;
+- o perfil `telemedicina` pode corrigir os próprios lançamentos e também registros históricos do módulo, sem depender do Desenvolvedor para pequenos ajustes cadastrais;
+- o nome do paciente deve ser corrigido de forma longitudinal, preservando o agrupamento do histórico;
+- a especialidade deve ser registrada por extenso quando a abreviação puder gerar ambiguidade, evitando formas como `REUMATO` quando o correto for `REUMATOLOGIA`;
+- como os identificadores técnicos de paciente e acompanhamento derivam da forma normalizada do nome e da especialidade, uma correção que altere essa forma migra de modo controlado os documentos relacionados para os novos identificadores;
+- antes da migração, o backend verifica colisões. Se já existir outro paciente com o mesmo nome normalizado ou outro acompanhamento do mesmo paciente com a especialidade corrigida, a operação é bloqueada com conflito para impedir fusão silenciosa de históricos;
+- eventos históricos relacionados recebem os novos identificadores e a especialidade corrigida quando aplicável;
+- a correção registra data, usuário responsável, valor anterior e valor novo dentro do armazenamento protegido do módulo; nomes não são enviados para logs técnicos;
+- na grade 2 × 2 mobile, o nome completo deixa de ser ocultado artificialmente por `...`; nomes longos podem quebrar em mais linhas.
+
+Endpoints:
+
+- `PATCH /api/telemedicina/patients/{patientId}/name`;
+- `PATCH /api/telemedicina/followups/{followupId}/specialty`.
+
+O roteador `worker/telemedicine-router-v2.js` intercepta apenas essas correções e delega todas as demais rotas ao módulo original, reduzindo o risco de regressão no fluxo de consultas, programação, solicitação e importação.
+
 ## Privacidade e logs
 
 - não enviar pacientes ou dados clínicos para a IA do Guia Médico;
@@ -173,10 +198,12 @@ Frontend:
 - `css/telemedicina.css`
 - `js/telemedicina.js`
 - `js/telemedicina-business-day.js`
+- `js/telemedicina-edit.js`
 
 Backend:
 
 - `worker/telemedicine.js`
+- `worker/telemedicine-router-v2.js`
 - `worker/telemedicine-rules.js`
 - `worker/telemedicine-access.js`
 - `worker/auth-management-flex.js`
@@ -185,3 +212,4 @@ Validação:
 
 - `worker/tests/telemedicine-rules.test.mjs`
 - `.github/workflows/validate-telemedicine.yml`
+- `.github/workflows/validate-telemedicine-edit.yml`
