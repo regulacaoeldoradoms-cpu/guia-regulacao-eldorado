@@ -273,26 +273,67 @@
 
   document.addEventListener('telemedicine:celebrate-discharge', launchDischargeCelebration);
 
+  const conditionLabels = {
+    exams: 'exames',
+    physiotherapy: 'fisioterapia',
+    procedure: 'procedimento ou cirurgia',
+    treatment: 'conclusão do tratamento',
+    other: 'outra condição'
+  };
+
+  function selectedConsultMode() {
+    return document.querySelector('input[name="consultOutcome"]:checked')?.value || 'scheduled';
+  }
+
+  function syncConditionDetailRequirement() {
+    const type = document.getElementById('consultConditionType').value;
+    const detail = document.getElementById('consultConditionDetail');
+    detail.required = selectedConsultMode() === 'conditional' && type === 'other';
+    detail.placeholder = type === 'other' ? 'Descreva a condição necessária' : 'Ex.: ressonância da coluna';
+  }
+
   function syncConsultOutcome({ celebrate = false } = {}) {
-    const discharged = document.getElementById('consultDischarged').checked;
+    const mode = selectedConsultMode();
+    const discharged = mode === 'discharge';
     const fields = document.getElementById('consultFollowupFields');
+    const scheduled = document.getElementById('consultScheduledFields');
+    const conditional = document.getElementById('consultConditionalFields');
     fields.hidden = discharged;
     fields.setAttribute('aria-hidden', discharged ? 'true' : 'false');
+    scheduled.hidden = mode !== 'scheduled';
+    conditional.hidden = mode !== 'conditional';
     if (discharged) {
       document.getElementById('consultReturnDays').value = '';
       document.getElementById('consultReturnDate').value = '';
+      document.getElementById('consultConditionDetail').value = '';
       document.getElementById('consultNotes').value = '';
       if (celebrate) launchDischargeCelebration();
+    } else if (mode === 'conditional') {
+      document.getElementById('consultReturnDays').value = '';
+      document.getElementById('consultReturnDate').value = '';
     }
+    syncConditionDetailRequirement();
     updateConsultPreview();
   }
 
   function updateConsultPreview() {
+    const mode = selectedConsultMode();
+    const preview = document.getElementById('consultPreview');
+    if (mode === 'conditional') {
+      const type = document.getElementById('consultConditionType').value;
+      const detail = document.getElementById('consultConditionDetail').value.trim();
+      const condition = type === 'other' && detail ? detail : conditionLabels[type] || 'uma condição';
+      preview.innerHTML = `<strong>Retorno sem data definida:</strong> após ${escapeHtml(condition)}.<br>Nenhum lembrete será criado; o registro ficará no histórico como “SEM PROGRAMAÇÃO”.`;
+      return;
+    }
+    if (mode === 'discharge') {
+      preview.textContent = '';
+      return;
+    }
     const consultDate = document.getElementById('consultDate').value;
     const days = Number(document.getElementById('consultReturnDays').value || 0);
     let target = document.getElementById('consultReturnDate').value;
     if (!target && consultDate && Number.isInteger(days) && days > 0) target = addDays(consultDate, days);
-    const preview = document.getElementById('consultPreview');
     if (!target) {
       preview.textContent = 'Sem data-alvo definida. O acompanhamento ficará em “SEM PROGRAMAÇÃO” até a data ser informada.';
       return;
@@ -332,15 +373,30 @@
 
   document.getElementById('openConsultation').addEventListener('click', () => {
     document.getElementById('consultationForm').reset();
-    document.getElementById('consultDischarged').checked = false;
+    document.getElementById('consultOutcomeScheduled').checked = true;
     document.getElementById('consultDate').value = state.today || new Date().toISOString().slice(0, 10);
     document.getElementById('consultationStatus').className = 'account-status full';
     syncConsultOutcome();
     openModal('consultationModal');
   });
 
-  ['consultDate', 'consultReturnDays', 'consultReturnDate'].forEach((id) => document.getElementById(id).addEventListener('input', updateConsultPreview));
-  document.getElementById('consultDischarged').addEventListener('change', (event) => syncConsultOutcome({ celebrate: event.target.checked }));
+  document.getElementById('consultDate').addEventListener('input', updateConsultPreview);
+  document.getElementById('consultReturnDays').addEventListener('input', (event) => {
+    if (event.target.value) document.getElementById('consultReturnDate').value = '';
+    updateConsultPreview();
+  });
+  document.getElementById('consultReturnDate').addEventListener('input', (event) => {
+    if (event.target.value) document.getElementById('consultReturnDays').value = '';
+    updateConsultPreview();
+  });
+  document.querySelectorAll('input[name="consultOutcome"]').forEach((input) => input.addEventListener('change', (event) => {
+    syncConsultOutcome({ celebrate: event.target.value === 'discharge' && event.target.checked });
+  }));
+  document.getElementById('consultConditionType').addEventListener('change', () => {
+    syncConditionDetailRequirement();
+    updateConsultPreview();
+  });
+  document.getElementById('consultConditionDetail').addEventListener('input', updateConsultPreview);
   document.getElementById('scheduleReturnDate').addEventListener('input', updateSchedulePreview);
 
   document.getElementById('consultationForm').addEventListener('submit', async (event) => {
@@ -349,16 +405,28 @@
     const button = document.getElementById('saveConsultation');
     button.disabled = true;
     try {
-      const discharged = document.getElementById('consultDischarged').checked;
-      const returnDays = Number(document.getElementById('consultReturnDays').value || 0);
-      const returnDueDate = document.getElementById('consultReturnDate').value;
+      const followupMode = selectedConsultMode();
+      const discharged = followupMode === 'discharge';
+      const conditional = followupMode === 'conditional';
+      const returnDueDate = followupMode === 'scheduled' ? document.getElementById('consultReturnDate').value : '';
+      const returnDays = followupMode === 'scheduled' && !returnDueDate
+        ? Number(document.getElementById('consultReturnDays').value || 0)
+        : 0;
+      const conditionType = conditional ? document.getElementById('consultConditionType').value : '';
+      const conditionDetail = conditional ? document.getElementById('consultConditionDetail').value.trim() : '';
+      if (conditional && conditionType === 'other' && !conditionDetail) {
+        document.getElementById('consultConditionDetail').focus();
+        throw new Error('Descreva a condição necessária para o retorno.');
+      }
       const resolution = discharged
         ? 'ALTA DO EPISÓDIO'
-        : returnDays > 0
-          ? `RETORNO COM ${returnDays} DIAS`
+        : conditional
+          ? `RETORNO APÓS ${conditionType === 'other' ? conditionDetail : conditionLabels[conditionType].toUpperCase()}`
           : returnDueDate
             ? `RETORNO PROGRAMADO PARA ${formatDate(returnDueDate)}`
-            : 'ACOMPANHAMENTO SEM DATA DEFINIDA';
+            : returnDays > 0
+              ? `RETORNO COM ${returnDays} DIAS`
+              : 'ACOMPANHAMENTO SEM DATA DEFINIDA';
       await auth.api('/api/telemedicina/consultations', {
         method: 'POST',
         body: JSON.stringify({
@@ -366,10 +434,13 @@
           consultationDate: document.getElementById('consultDate').value,
           specialty: document.getElementById('consultSpecialty').value.trim(),
           resolution,
+          followupMode,
           discharged,
           needsReturn: !discharged,
-          returnDays: discharged ? 0 : returnDays,
-          returnDueDate: discharged ? '' : returnDueDate,
+          returnDays,
+          returnDueDate,
+          conditionType,
+          conditionDetail,
           notes: discharged ? '' : document.getElementById('consultNotes').value.trim()
         })
       });
