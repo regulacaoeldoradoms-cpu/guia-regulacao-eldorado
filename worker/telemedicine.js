@@ -199,7 +199,7 @@ async function recordConsultation(env, user, input) {
   const conditional = followupMode === 'conditional';
   const inputResolution = clean(input.resolution, 2500);
   const notes = discharged ? '' : clean(input.notes, 1500);
-  const needsReturn = !discharged;
+  const needsReturn = hasExplicitMode ? !discharged : (discharged ? false : input.needsReturn !== false);
   const explicitDue = followupMode === 'scheduled' ? clean(input.returnDueDate, 10) : '';
   const returnDays = followupMode === 'scheduled' && !dateValid(explicitDue) ? Number(input.returnDays || 0) : 0;
   const returnConditionType = conditional ? clean(input.conditionType, 40).toLowerCase() : '';
