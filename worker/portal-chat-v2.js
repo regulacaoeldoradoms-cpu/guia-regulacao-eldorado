@@ -1,11 +1,12 @@
 'use strict';
 
 import { validatePortalSession } from './auth-management-flex.js';
+import { decorateTelemedicineUser, decorateTelemedicineUsers } from './telemedicine-access.js';
 import { recordUsageHeartbeat } from './usage-monitor.js';
 
 const MESSAGE_LIMIT = 2000;
 const ONLINE_WINDOW_SECONDS = 75;
-const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'admin']);
+const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin']);
 
 function headers(origin, allowed = true) {
   const result = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
@@ -62,8 +63,10 @@ async function professionalContact(env, username) {
   const row = await env.AUTH_DB.prepare(`SELECT username, name, job_title AS jobTitle, role, active,
       COALESCE(avatar_data, '') AS avatarDataUrl
     FROM auth_users WHERE username = ?`).bind(username).first();
-  if (!row || Number(row.active) !== 1 || !PROFESSIONAL_ROLES.has(row.role)) return null;
-  return row;
+  if (!row || Number(row.active) !== 1) return null;
+  const user = await decorateTelemedicineUser(env, row);
+  if (!PROFESSIONAL_ROLES.has(user.role)) return null;
+  return user;
 }
 
 async function contacts(env, currentUsername) {
@@ -81,7 +84,8 @@ async function contacts(env, currentUsername) {
     WHERE u.active = 1 AND u.username <> ? AND u.role IN ('medico','recepcao','coordenacao','admin')
     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
     .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername).all();
-  return (result.results || []).map((item) => ({
+  const users = await decorateTelemedicineUsers(env, result.results || []);
+  return users.filter((item) => PROFESSIONAL_ROLES.has(item.role)).map((item) => ({
     username: item.username,
     name: item.name || item.username,
     jobTitle: item.jobTitle || '',
@@ -117,7 +121,7 @@ export function isChatApi(pathname) {
 export async function handleChatRoute(request, env, origin, originAllowed = true) {
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
-  const user = await validatePortalSession(request, env, ['medico', 'recepcao']);
+  const user = await validatePortalSession(request, env, ['medico', 'recepcao', 'telemedicina']);
   if (!user || !PROFESSIONAL_ROLES.has(user.role)) {
     return json({ error: 'O chat direto é restrito aos profissionais autorizados.' }, 403, origin);
   }
