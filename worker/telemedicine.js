@@ -19,7 +19,8 @@ import {
   reminderMetaFor,
   looksClosed,
   looksRequested,
-  returnDueFromRecord
+  returnDueFromRecord,
+  returnConditionResolution
 } from './telemedicine-rules.js';
 
 const PATIENTS = 'telemedicine_patients';
@@ -191,17 +192,34 @@ async function recordConsultation(env, user, input) {
   const patientName = clean(input.patientName, 160);
   const specialty = clean(input.specialty, 120);
   const consultationDate = clean(input.consultationDate, 10);
-  const discharged = input.discharged === true;
+  const requestedMode = clean(input.followupMode, 20).toLowerCase();
+  const hasExplicitMode = ['discharge', 'scheduled', 'conditional'].includes(requestedMode);
+  const followupMode = hasExplicitMode ? requestedMode : (input.discharged === true ? 'discharge' : 'scheduled');
+  const discharged = followupMode === 'discharge';
+  const conditional = followupMode === 'conditional';
   const inputResolution = clean(input.resolution, 2500);
   const notes = discharged ? '' : clean(input.notes, 1500);
-  const needsReturn = discharged ? false : input.needsReturn !== false;
-  const explicitDue = discharged ? '' : clean(input.returnDueDate, 10);
-  const returnDays = discharged ? 0 : Number(input.returnDays || 0);
-  const resolution = discharged
+  const needsReturn = !discharged;
+  const explicitDue = followupMode === 'scheduled' ? clean(input.returnDueDate, 10) : '';
+  const returnDays = followupMode === 'scheduled' && !dateValid(explicitDue) ? Number(input.returnDays || 0) : 0;
+  const returnConditionType = conditional ? clean(input.conditionType, 40).toLowerCase() : '';
+  const returnConditionDetail = conditional ? clean(input.conditionDetail, 300) : '';
+  const conditionalResolution = conditional
+    ? returnConditionResolution(returnConditionType, returnConditionDetail)
+    : '';
+  if (conditional && !conditionalResolution) {
+    throw Object.assign(new Error('Informe a condição necessária para o retorno.'), { status: 400 });
+  }
+  const generatedResolution = discharged
     ? 'ALTA DO EPISÓDIO'
-    : inputResolution || (Number.isInteger(returnDays) && returnDays > 0
-      ? `RETORNO COM ${returnDays} DIAS`
-      : dateValid(explicitDue) ? `RETORNO PROGRAMADO PARA ${explicitDue}` : 'ACOMPANHAMENTO SEM DATA DEFINIDA');
+    : conditional
+      ? conditionalResolution
+      : dateValid(explicitDue)
+        ? `RETORNO PROGRAMADO PARA ${explicitDue}`
+        : Number.isInteger(returnDays) && returnDays > 0
+          ? `RETORNO COM ${returnDays} DIAS`
+          : 'ACOMPANHAMENTO SEM DATA DEFINIDA';
+  const resolution = hasExplicitMode ? generatedResolution : (inputResolution || generatedResolution);
 
   if (patientName.length < 3) throw Object.assign(new Error('Informe o nome do paciente.'), { status: 400 });
   if (!dateValid(consultationDate)) throw Object.assign(new Error('Informe a data da consulta.'), { status: 400 });
@@ -231,7 +249,9 @@ async function recordConsultation(env, user, input) {
 
   const event = {
     patientId, patientName, followupId, eventType: 'consulta', eventDate: consultationDate,
-    specialty, resolution, notes, discharged, needsReturn, returnDueDate, returnDays: Number.isInteger(returnDays) ? returnDays : 0,
+    specialty, resolution, notes, followupMode, discharged, needsReturn, returnDueDate,
+    returnDays: Number.isInteger(returnDays) ? returnDays : 0,
+    returnConditionType, returnConditionDetail,
     reminderDates, source: 'manual', createdAt: now, createdBy: user.username
   };
   await firestoreCreate(env, EVENTS, eventId, event);
@@ -244,7 +264,10 @@ async function recordConsultation(env, user, input) {
     lastConsultationDate: consultationDate,
     resolution,
     notes,
+    followupMode,
     discharged,
+    returnConditionType,
+    returnConditionDetail,
     returnDueDate,
     reminderDates,
     requestedAt: '',
