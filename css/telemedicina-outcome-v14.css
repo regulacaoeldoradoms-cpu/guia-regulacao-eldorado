@@ -342,3 +342,48 @@
     animation: none !important;
   }
 }
+
+/* Desktop: a moldura do modal permanece fixa e somente o conteúdo interno rola.
+   Isso mantém a barra de rolagem visualmente contida dentro da janela. */
+@media (min-width: 861px) {
+  .telemedicine-page.tm-context-desktop #consultationForm {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .telemedicine-page.tm-context-desktop #consultationForm > .portal-modal-header {
+    flex: 0 0 auto;
+  }
+
+  .telemedicine-page.tm-context-desktop #consultationForm > .telemedicine-form-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: #7ca8c2 transparent;
+  }
+
+  .telemedicine-page.tm-context-desktop #consultationForm > .telemedicine-form-grid::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .telemedicine-page.tm-context-desktop #consultationForm > .telemedicine-form-grid::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .telemedicine-page.tm-context-desktop #consultationForm > .telemedicine-form-grid::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: #7ca8c2;
+    background-clip: padding-box;
+  }
+
+  .telemedicine-page.tm-context-desktop #consultationForm > .telemedicine-form-grid::-webkit-scrollbar-thumb:hover {
+    background: #5f8da9;
+    background-clip: padding-box;
+  }
+}
