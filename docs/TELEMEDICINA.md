@@ -155,6 +155,23 @@ Decisão de interface registrada em 01/09/2026:
 - áreas de toque devem permanecer confortáveis e o conteúdo não pode ser truncado por colunas de desktop;
 - regras mobile ficam restritas ao breakpoint responsivo do módulo e não devem alterar o desktop.
 
+## Registro objetivo de alta
+
+Decisão permanente registrada em 03/09/2026.
+
+No formulário `+ Consulta`:
+
+- o campo de data é identificado como **Data da última consulta**;
+- a resolutividade deixa de ser um texto livre e passa a ser a opção objetiva **Paciente recebeu alta deste episódio**;
+- desmarcada, a opção significa que o paciente continua em acompanhamento e mantém visíveis o prazo, a data-alvo e a observação operacional;
+- marcada, a alta encerra o acompanhamento, oculta todas as opções de retorno e descarta no backend qualquer prazo ou observação de retorno residual;
+- o histórico registra a conduta padronizada `ALTA DO EPISÓDIO`;
+- ao marcar a alta, a interface apresenta confetes e fogos breves como reconhecimento da vitória do paciente, sem som e sem bloquear o formulário;
+- a preferência do sistema operacional por movimento reduzido é respeitada e desativa os efeitos animados;
+- quando não há alta, a conduta histórica é formada automaticamente a partir do prazo, da data-alvo ou da ausência de programação, sem exigir digitação livre.
+
+A regra de alta é validada no Worker, não apenas ocultada na interface.
+
 ## Correção de nome e especialidade
 
 Decisão permanente registrada em 02/09/2026. Decisão complementar de unificação controlada registrada em 03/09/2026.
