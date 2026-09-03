@@ -35,10 +35,11 @@ O desktop preserva o comportamento anterior com modais.
 
 Decisão permanente registrada em 03/09/2026:
 
-- a barra azul superior usa duas linhas no celular e não deve voltar à altura comprimida de 58 px;
-- a primeira linha identifica o módulo **Telemedicina**;
-- a segunda linha distribui **Início**, foto e nome do usuário, cargo e **Sair**, mantendo o nome visível ao lado da foto;
-- nomes longos podem ocupar até duas linhas e o cargo usa truncamento apenas quando não houver espaço suficiente;
+- a barra azul superior permanece em uma única linha horizontal no celular;
+- o cabeçalho usa 82 px de altura e praticamente toda a largura disponível, sem voltar à composição comprimida de 58 px;
+- a ordem horizontal é **Telemedicina**, **Início**, foto com nome/cargo do usuário e **Sair**;
+- o nome permanece visível ao lado da foto e pode ocupar até duas linhas dentro do bloco da conta;
+- em telas de até 380 px, somente o cargo pode ser ocultado para preservar o nome e os comandos na mesma linha;
 - indicadores, busca, filtros, formulário, opções de conduta e cartões de pacientes usam tipografia ampliada e áreas de toque confortáveis;
 - o modo Grade 2×2 continua disponível e recebe altura adicional nos cartões para acomodar o texto maior;
 - todas essas regras ficam isoladas em `css/telemedicina-mobile-v15.css` e não alteram o desktop.
