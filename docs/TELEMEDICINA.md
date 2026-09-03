@@ -144,7 +144,7 @@ A Telemedicina deve ser operável prioritariamente por toque no celular, sem mod
 
 Decisão de interface registrada em 01/09/2026:
 
-- até 860 px, o cabeçalho e o hero ficam compactos e o texto introdutório longo deixa de ocupar a primeira dobra;
+- até 860 px, o cabeçalho usa duas linhas: identificação do módulo acima e navegação com foto, nome e cargo do usuário abaixo; o texto introdutório longo continua fora da primeira dobra;
 - o resumo operacional permanece em grade 2 × 2 e cada card continua filtrando a lista;
 - busca e filtro ficam concentrados no topo do bloco de trabalho;
 - `Registrar consulta` vira uma ação flutuante `+ Consulta`, sempre acessível durante a rolagem;
@@ -154,6 +154,8 @@ Decisão de interface registrada em 01/09/2026:
 - formulários e histórico abrem como painel inferior no celular, com cabeçalho fixo dentro do modal;
 - áreas de toque devem permanecer confortáveis e o conteúdo não pode ser truncado por colunas de desktop;
 - regras mobile ficam restritas ao breakpoint responsivo do módulo e não devem alterar o desktop.
+- a tipografia dos indicadores, filtros, formulários e cartões é ampliada na camada V15, com altura adicional para não cortar textos no modo Grade 2×2;
+- o nome do usuário permanece visível ao lado da foto no celular e pode ocupar até duas linhas.
 
 ## Três condutas de retorno
 
