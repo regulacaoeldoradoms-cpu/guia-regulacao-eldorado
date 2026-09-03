@@ -6,6 +6,7 @@ on:
       - 'telemedicina/index.html'
       - 'css/telemedicina-mobile-v9.css'
       - 'css/telemedicina-outcome-v14.css'
+      - 'css/telemedicina-mobile-v15.css'
       - 'js/telemedicina-mobile-v9.js'
       - 'docs/TELEMEDICINA-MOBILE-V9.md'
       - '.github/workflows/validate-telemedicine-mobile-v9.yml'
@@ -15,6 +16,7 @@ on:
       - 'telemedicina/index.html'
       - 'css/telemedicina-mobile-v9.css'
       - 'css/telemedicina-outcome-v14.css'
+      - 'css/telemedicina-mobile-v15.css'
       - 'js/telemedicina-mobile-v9.js'
       - 'docs/TELEMEDICINA-MOBILE-V9.md'
       - '.github/workflows/validate-telemedicine-mobile-v9.yml'
@@ -33,11 +35,14 @@ jobs:
           set -euo pipefail
           test -f css/telemedicina-mobile-v9.css
           test -f css/telemedicina-outcome-v14.css
+          test -f css/telemedicina-mobile-v15.css
           test -f js/telemedicina-mobile-v9.js
           test -f docs/TELEMEDICINA-MOBILE-V9.md
           node --check js/telemedicina-mobile-v9.js
           grep -q 'telemedicina-mobile-v9.css?v=20260903-1' telemedicina/index.html
           grep -q 'telemedicina-mobile-v9.js?v=20260903-2' telemedicina/index.html
+          grep -q 'telemedicina-mobile-v15.css?v=20260903-1' telemedicina/index.html
+          grep -q 'data-mobile-readability="v15"' telemedicina/index.html
           grep -q 'data-mobile-interaction="v9"' telemedicina/index.html
           grep -q 'tm-inline-mobile-v9' css/telemedicina-mobile-v9.css
           grep -q 'tm-inline-open' css/telemedicina-mobile-v9.css
@@ -58,6 +63,10 @@ jobs:
           grep -q 'value="conditional"' js/telemedicina-mobile-v9.js
           grep -q 'conditionType' js/telemedicina-mobile-v9.js
           grep -q 'telemedicine-choice-grid' css/telemedicina-outcome-v14.css
+          grep -q 'min-height: 116px' css/telemedicina-mobile-v15.css
+          grep -q 'portal-account-area .portal-user-meta' css/telemedicina-mobile-v15.css
+          grep -q 'display: block !important' css/telemedicina-mobile-v15.css
+          grep -q 'tm-view-grid .telemedicine-patient button' css/telemedicina-mobile-v15.css
           grep -q 'telemedicine:celebrate-discharge' js/telemedicina-mobile-v9.js
           grep -q 'data-tm-scheduled-field' js/telemedicina-mobile-v9.js
           grep -q 'data-tm-conditional-field' js/telemedicina-mobile-v9.js
@@ -68,6 +77,7 @@ jobs:
             exit 1
           fi
           grep -q 'não deve executar recarga global da lista' docs/TELEMEDICINA-MOBILE-V9.md
+          grep -q 'Legibilidade móvel e cabeçalho V15' docs/TELEMEDICINA-MOBILE-V9.md
           if grep -q 'min-width: 861px' css/telemedicina-mobile-v9.css; then
             echo 'A V9 não pode introduzir regras desktop.' >&2
             exit 1
