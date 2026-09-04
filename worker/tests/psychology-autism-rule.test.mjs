@@ -46,7 +46,7 @@ test('interfaces profissional e médica aplicam a mesma atualização operaciona
   const medicalHtml = read('medico/index.html');
   assert.match(medicalHtml, /referral-practice-update-20260828\.js/);
   assert.match(medicalHtml, /medical-app\.js\?v=20260828-1/);
-  assert.match(medicalHtml, /ai-assistant\.js\?v=20260828-1/);
+  assert.match(medicalHtml, /ai-assistant\.js\?v=20260904-2/);
 });
 
 test('assistente prioriza Psicologia e fornece resposta local determinística', () => {

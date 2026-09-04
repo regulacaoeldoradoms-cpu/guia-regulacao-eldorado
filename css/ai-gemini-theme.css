@@ -58,7 +58,6 @@
 
 .ai-chat-header {
   position: relative;
-  min-height: 82px;
   align-items: center;
   padding: 14px 15px;
   overflow: hidden;
@@ -88,28 +87,28 @@
 .ai-chat-title p { color: #53657d; opacity: 1; }
 
 .ai-gemini-header-logo {
-  width: 46px;
-  height: 46px;
+  width: 36px;
+  height: 36px;
   flex: 0 0 auto;
   filter: drop-shadow(0 6px 12px rgba(66,133,244,.18));
 }
 
 .ai-provider-status {
-  position: absolute;
-  right: 50px;
-  top: 10px;
+  position: relative;
   z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   color: #49617d;
-  font-size: .62rem;
+  font-size: .68rem;
   font-weight: 800;
+  min-width: 0;
 }
 
 .ai-provider-status > span {
   width: 7px;
   height: 7px;
+  flex-shrink: 0;
   border-radius: 50%;
   background: #1aa260;
   box-shadow: 0 0 0 3px rgba(26,162,96,.13);
@@ -121,6 +120,7 @@
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+  flex-shrink: 1;
 }
 
 .ai-provider-status[data-state="configured"] > span:first-child,
@@ -149,16 +149,14 @@
 .ai-close:hover { background: rgba(43, 72, 111, .14); }
 
 .ai-privacy-note {
-  padding: 11px 14px 34px;
+  padding: 11px 14px;
   border-bottom-color: #e7ecf4;
   background: linear-gradient(90deg, #fffaf1, #fff7f5);
   color: #7b3a24;
 }
 
 .ai-mode.ai-protocol-seal {
-  top: 112px;
-  right: 14px;
-  max-width: calc(100% - 28px);
+  max-width: 100%;
   padding: 5px 10px;
   border: 1px solid rgba(66,133,244,.16);
   background: linear-gradient(90deg, #eef4ff, #f5efff);
@@ -208,8 +206,23 @@
 @media (max-width: 600px) {
   .ai-launcher { width: 58px; min-width: 58px; height: 58px; padding: 6px; }
   .ai-gemini-launcher-logo { width: 46px; height: 46px; }
-  .ai-provider-status { right: 49px; top: 9px; }
-  .ai-mode.ai-protocol-seal { top: 113px; }
+}
+
+@media (min-width: 601px) {
+  .ai-chat { width: min(480px, calc(100vw - 44px)); height: min(720px, calc(100dvh - 116px)); }
+  .ai-chat-header { padding: 16px 18px; }
+  .ai-messages { padding: 18px; }
+  .ai-message { max-width: 94%; }
+  .ai-form { padding: 14px 18px; }
+  .ai-input { min-height: 74px; font-size: .9rem; line-height: 1.5; }
+  .ai-send { width: 46px; height: 46px; }
+}
+
+@media (min-width: 601px) and (max-height: 520px) {
+  .ai-chat { bottom: 12px; height: calc(100dvh - 24px); }
+  .ai-chat-header { padding: 10px 14px; gap: 8px; }
+  .ai-form { padding: 10px 14px; gap: 6px; }
+  .ai-input { min-height: 64px; max-height: 80px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
