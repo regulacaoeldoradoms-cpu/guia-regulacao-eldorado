@@ -39,10 +39,10 @@
   font-size: 0 !important;
   line-height: 0 !important;
   background-color: #edf4fa !important;
-  background-image: url('/assets/Fechar-icon.png') !important;
+  background-image: url('/assets/Fechar-icon.png?v=20260904-2') !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
-  background-size: 24px 24px !important;
+  background-size: 32px 32px !important;
 }
 
 .telemedicine-page .portal-modal-close:hover,
