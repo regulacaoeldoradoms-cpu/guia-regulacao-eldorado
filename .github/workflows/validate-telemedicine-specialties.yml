@@ -51,7 +51,7 @@ jobs:
           grep -q "canonicalSpecialtyName" worker/telemedicine-rules.js
           grep -q "REUMATOLOGIA" worker/telemedicine-rules.js
           grep -q "ORTOPEDIA" worker/telemedicine-rules.js
-          grep -q "NUTRIÇÃO" worker/telemedicine-rules.js
+          grep -q "NUTRICAO: 'NUTROLOGIA'" worker/telemedicine-rules.js
           grep -q "NUTROLOGIA" worker/telemedicine-rules.js
           grep -q "NEUROPEDIATRIA" worker/telemedicine-rules.js
           grep -q "NEUROLOGIA ADULTO" worker/telemedicine-rules.js

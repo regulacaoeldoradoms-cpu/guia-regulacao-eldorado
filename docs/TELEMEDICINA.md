@@ -244,9 +244,9 @@ Decisão complementar registrada em 03/09/2026.
 - a operação global é exclusiva do Desenvolvedor, idempotente e executada em lotes de no máximo dez documentos para respeitar os limites do Worker e do Firestore;
 - quando aliases do mesmo paciente convergem, permanece o acompanhamento com a consulta mais recente, os eventos dos dois registros são preservados e passam a apontar para o identificador canônico;
 - as equivalências são exatas e versionadas; não há comparação aproximada, decisão por IA ou união de textos apenas parecidos;
-- `NUTRIÇÃO` permanece distinta de `NUTROLOGIA`;
+- por decisão operacional do módulo, `NUTRI`, `NUTRIÇÃO` e `NUTRICIONISTA` representam a especialidade canônica `NUTROLOGIA`;
 - `NEUROPEDIATRIA` permanece distinta de `NEUROLOGIA ADULTO`;
-- entre as equivalências auditadas estão `REUMATO → REUMATOLOGIA`, `ORTO → ORTOPEDIA`, `ENDOCRINO → ENDOCRINOLOGIA`, `PSIQ/PSIQUIATRA → PSIQUIATRIA` e `NUTRI/NUTRICIONISTA → NUTRIÇÃO`;
+- entre as equivalências auditadas estão `REUMATO → REUMATOLOGIA`, `ORTO → ORTOPEDIA`, `ENDOCRINO → ENDOCRINOLOGIA`, `PSIQ/PSIQUIATRA → PSIQUIATRIA` e `NUTRI/NUTRIÇÃO/NUTRICIONISTA → NUTROLOGIA`;
 - eventos históricos isolados também são corrigidos após a conclusão dos acompanhamentos, mantendo a consulta do histórico coerente.
 
 O roteador `worker/telemedicine-router-v2.js` intercepta apenas essas correções e delega todas as demais rotas ao módulo original, reduzindo o risco de regressão no fluxo de consultas, programação, solicitação e importação.
