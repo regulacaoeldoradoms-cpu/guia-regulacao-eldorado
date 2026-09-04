@@ -11,11 +11,16 @@
 
   // Dentro do painel institucional, o Desenvolvedor recebe acesso integral
   // sem precisar acumular formalmente o cargo de Presidente do Conselho.
+  // O Vice-Presidente é apresentado aos scripts operacionais como equivalente
+  // à Presidência, preservando seu cargo real para a identificação visual.
   if (originalMe) {
     auth.me = async (...args) => {
       const user = await originalMe(...args);
       if (user?.role === 'admin' && user.councilRole !== 'presidente') {
         return { ...user, councilRole: 'presidente', developerCouncilOverride: true };
+      }
+      if (user?.councilRole === 'vice_presidente') {
+        return { ...user, councilRole: 'presidente', vicePresidentCouncilOverride: true };
       }
       return user;
     };
@@ -23,7 +28,9 @@
 
   auth.hasCouncilAccess = (user) => Boolean(
     user?.role === 'admin'
-    || (originalHasCouncilAccess ? originalHasCouncilAccess(user) : ['membro', 'presidente'].includes(user?.councilRole))
+    || (originalHasCouncilAccess
+      ? originalHasCouncilAccess(user)
+      : ['membro', 'presidente', 'vice_presidente'].includes(user?.councilRole))
   );
 
   function attachmentHeading() {
@@ -124,6 +131,18 @@
     }
   }
 
+  function applyVicePresidentUi() {
+    document.body.classList.add('council-vice-president-access');
+    const userRole = document.getElementById('portalUserRole');
+    if (userRole) userRole.textContent = 'Vice-Presidente do Conselho · acesso integral';
+    const badge = document.getElementById('councilRoleBadge');
+    if (badge) {
+      badge.classList.remove('is-president-image');
+      badge.textContent = 'Vice-Presidente';
+      badge.setAttribute('aria-label', 'Vice-Presidente do Conselho Municipal de Saúde');
+    }
+  }
+
   async function applyPolicyUi() {
     if (!originalMe) return;
     const realUser = await originalMe({ allowCached: false }).catch(() => null);
@@ -131,6 +150,10 @@
 
     if (realUser.role === 'admin') {
       applyDeveloperUi();
+      return;
+    }
+    if (realUser.councilRole === 'vice_presidente') {
+      applyVicePresidentUi();
       return;
     }
     if (realUser.councilRole === 'membro') {
