@@ -251,7 +251,7 @@ async function correctPatientName(env, user, patientId, input = {}) {
   };
 }
 
-async function mergeSpecialtyFollowups(env, user, sourceId, targetId, source, target, newSpecialty, newSpecialtyKey, correction, eventsOverride = null) {
+async function mergeSpecialtyFollowups(env, user, sourceId, targetId, source, target, newSpecialty, newSpecialtyKey, correction, eventsOverride = null, deferEvents = false) {
   const now = correction.correctedAt;
   const current = newerFollowup(source, target);
   const createdAt = earliestCreatedAt(source, target) || String(current?.createdAt || now);
@@ -275,15 +275,17 @@ async function mergeSpecialtyFollowups(env, user, sourceId, targetId, source, ta
     mergedFromFollowups
   });
 
-  const events = Array.isArray(eventsOverride) ? eventsOverride : await listAll(env, EVENTS);
-  for (const event of events) {
-    if (event.followupId !== sourceId && event.followupId !== targetId) continue;
-    await firestorePatch(env, `${EVENTS}/${event.id}`, {
-      followupId: targetId,
-      specialty: newSpecialty
-    });
-    event.followupId = targetId;
-    event.specialty = newSpecialty;
+  if (!deferEvents) {
+    const events = Array.isArray(eventsOverride) ? eventsOverride : await listAll(env, EVENTS);
+    for (const event of events) {
+      if (event.followupId !== sourceId && event.followupId !== targetId) continue;
+      await firestorePatch(env, `${EVENTS}/${event.id}`, {
+        followupId: targetId,
+        specialty: newSpecialty
+      });
+      event.followupId = targetId;
+      event.specialty = newSpecialty;
+    }
   }
 
   await firestorePatch(env, `${FOLLOWUPS}/${sourceId}`, {
@@ -339,7 +341,8 @@ async function correctSpecialty(env, user, followupId, input = {}, options = {})
         newSpecialty,
         newSpecialtyKey,
         correction,
-        options.events
+        options.events,
+        Boolean(options.deferEvents)
       );
     }
   }
@@ -354,15 +357,17 @@ async function correctSpecialty(env, user, followupId, input = {}, options = {})
     correctionHistory: appendCorrectionHistory(followup.correctionHistory, correction)
   });
 
-  const events = Array.isArray(options.events) ? options.events : await listAll(env, EVENTS);
-  for (const event of events) {
-    if (event.followupId !== followupId) continue;
-    await firestorePatch(env, `${EVENTS}/${event.id}`, {
-      followupId: targetFollowupId,
-      specialty: newSpecialty
-    });
-    event.followupId = targetFollowupId;
-    event.specialty = newSpecialty;
+  if (!options.deferEvents) {
+    const events = Array.isArray(options.events) ? options.events : await listAll(env, EVENTS);
+    for (const event of events) {
+      if (event.followupId !== followupId) continue;
+      await firestorePatch(env, `${EVENTS}/${event.id}`, {
+        followupId: targetFollowupId,
+        specialty: newSpecialty
+      });
+      event.followupId = targetFollowupId;
+      event.specialty = newSpecialty;
+    }
   }
 
   if (targetFollowupId !== followupId) {
@@ -392,6 +397,37 @@ function specialtyCandidate(document) {
   return { document, previous, canonical };
 }
 
+async function specialtyEventCandidates(documents, validFollowupIds) {
+  const candidates = [];
+  for (const document of documents) {
+    const previous = clean(document?.specialty, 120);
+    const canonical = canonicalSpecialtyName(previous);
+    if (!document?.id || !previous) continue;
+
+    let targetFollowupId = clean(document.followupId, 64);
+    if (document.patientId) {
+      const canonicalFollowupId = await followupIdFor(document.patientId, canonical);
+      if (validFollowupIds.has(canonicalFollowupId)) {
+        targetFollowupId = canonicalFollowupId;
+      }
+    }
+
+    const referenceChanged = Boolean(
+      targetFollowupId
+      && targetFollowupId !== clean(document.followupId, 64)
+    );
+    if (canonical === previous && !referenceChanged) continue;
+    candidates.push({
+      document,
+      previous,
+      canonical,
+      targetFollowupId,
+      referenceChanged
+    });
+  }
+  return candidates;
+}
+
 function summarizeSpecialtyCandidates(candidates) {
   const groups = new Map();
   for (const candidate of candidates) {
@@ -417,7 +453,8 @@ async function specialtyMaintenanceAudit(env) {
     listAll(env, EVENTS)
   ]);
   const followupCandidates = followups.map(specialtyCandidate).filter(Boolean);
-  const eventCandidates = events.map(specialtyCandidate).filter(Boolean);
+  const validFollowupIds = new Set(followups.map((item) => item.id).filter(Boolean));
+  const eventCandidates = await specialtyEventCandidates(events, validFollowupIds);
   return {
     complete: followupCandidates.length === 0 && eventCandidates.length === 0,
     followups: {
@@ -433,15 +470,11 @@ async function specialtyMaintenanceAudit(env) {
   };
 }
 
-async function normalizeSpecialtiesBatch(env, user, input = {}) {
-  const requestedLimit = Number(input.limit);
-  const limit = Number.isInteger(requestedLimit)
-    ? Math.min(10, Math.max(1, requestedLimit))
-    : 8;
-  const [followups, events] = await Promise.all([
-    listAll(env, FOLLOWUPS),
-    listAll(env, EVENTS)
-  ]);
+async function normalizeSpecialtiesBatch(env, user, _input = {}) {
+  // Uma única correção por chamada mantém cada invocação bem abaixo do
+  // limite de subrequisições do Cloudflare, mesmo quando há unificação.
+  const limit = 1;
+  const followups = await listAll(env, FOLLOWUPS);
   const followupCandidates = followups.map(specialtyCandidate).filter(Boolean);
 
   if (followupCandidates.length) {
@@ -457,7 +490,7 @@ async function normalizeSpecialtiesBatch(env, user, input = {}) {
           user,
           candidate.document.id,
           { specialty: candidate.canonical },
-          { followup: candidate.document, events }
+          { followup: candidate.document, deferEvents: true }
         );
         changed += 1;
         if (result.merged) merged += 1;
@@ -481,17 +514,20 @@ async function normalizeSpecialtiesBatch(env, user, input = {}) {
     };
   }
 
-  const eventCandidates = events.map(specialtyCandidate).filter(Boolean);
+  const events = await listAll(env, EVENTS);
+  const validFollowupIds = new Set(followups.map((item) => item.id).filter(Boolean));
+  const eventCandidates = await specialtyEventCandidates(events, validFollowupIds);
   const selectedEvents = eventCandidates.slice(0, limit);
   let eventsChanged = 0;
   const errors = [];
 
   for (const candidate of selectedEvents) {
     try {
-      await firestorePatch(env, `${EVENTS}/${candidate.document.id}`, {
-        specialty: candidate.canonical
-      });
-      candidate.document.specialty = candidate.canonical;
+      const update = { specialty: candidate.canonical };
+      if (candidate.referenceChanged) {
+        update.followupId = candidate.targetFollowupId;
+      }
+      await firestorePatch(env, `${EVENTS}/${candidate.document.id}`, update);
       eventsChanged += 1;
     } catch (error) {
       errors.push({
