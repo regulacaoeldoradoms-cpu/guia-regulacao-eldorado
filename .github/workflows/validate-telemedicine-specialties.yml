@@ -57,15 +57,17 @@ jobs:
           grep -q "NEUROLOGIA ADULTO" worker/telemedicine-rules.js
           grep -q "specialtyMaintenanceAudit" worker/telemedicine-router-v2.js
           grep -q "normalizeSpecialtiesBatch" worker/telemedicine-router-v2.js
-          grep -q "const limit = 1;" worker/telemedicine-router-v2.js
+          grep -q "const SPECIALTY_FOLLOWUP_BATCH_LIMIT = 4;" worker/telemedicine-router-v2.js
+          grep -q "const SPECIALTY_EVENT_BATCH_LIMIT = 8;" worker/telemedicine-router-v2.js
           grep -q "deferEvents: true" worker/telemedicine-router-v2.js
           grep -q "specialtyEventCandidates" worker/telemedicine-router-v2.js
-          grep -q "body: JSON.stringify({ limit: 1 })" js/telemedicina-specialties-v17.js
-          grep -q "while (attempts < 1000)" js/telemedicina-specialties-v17.js
+          grep -q "const TRANSIENT_RETRY_LIMIT = 5;" js/telemedicina-specialties-v17.js
+          grep -q "withTransientRetry" js/telemedicina-specialties-v17.js
+          grep -q "const safetyLimit = Math.max(200, totalDocuments + 100);" js/telemedicina-specialties-v17.js
           grep -q "Array.isArray(options.events)" worker/telemedicine-router-v2.js
           grep -q "Somente o Desenvolvedor pode unificar todas as especialidades" worker/telemedicine-router-v2.js
           grep -q "id=\"normalizeSpecialties\"" telemedicina/index.html
-          grep -q "telemedicina-specialties-v17.js?v=20260904-1" telemedicina/index.html
+          grep -q "telemedicina-specialties-v17.js?v=20260904-2" telemedicina/index.html
           grep -q "dicionário fechado" docs/TELEMEDICINA.md
           grep -q "idempotente" docs/TELEMEDICINA.md
           if grep -R -n -E '\b(CNS|CPF)\b' js/telemedicina-specialties-v17.js worker/telemedicine-router-v2.js worker/telemedicine-rules.js; then
