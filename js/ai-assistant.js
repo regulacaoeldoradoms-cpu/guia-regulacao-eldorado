@@ -453,10 +453,20 @@
     }
   }
 
+  function resizeInput() {
+    const input = document.getElementById('aiInput');
+    if (!input || document.getElementById('aiChat')?.hidden) return;
+    input.style.height = 'auto';
+    const style = window.getComputedStyle(input);
+    const borderHeight = parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
+    input.style.height = `${Math.min(input.scrollHeight + borderHeight, parseFloat(style.maxHeight))}px`;
+  }
+
   function openChat() {
     const chat = document.getElementById('aiChat');
     if (!chat) return;
     chat.hidden = false;
+    resizeInput();
     document.getElementById('aiLauncher')?.setAttribute('aria-expanded', 'true');
     document.getElementById('aiInput')?.focus();
   }
@@ -480,22 +490,24 @@
         <header class="ai-chat-header">
           <div class="ai-chat-title">${SVG.assistant}<div><h2 id="aiChatTitle">Pré-regulação com IA</h2><p>Simulação baseada em protocolo + prática regulatória</p></div></div>
           <button class="ai-close" id="aiClose" type="button" aria-label="Fechar assistente">${SVG.close}</button>
+          <div class="ai-chat-meta"><span class="ai-mode ${CONFIG.endpoint ? 'connected' : ''}" id="aiMode">${CONFIG.endpoint ? 'Assistente com base nos protocolos' : 'Consulta local'}</span></div>
         </header>
         <div class="ai-privacy-note">Use casos anonimizados. Não informe nome, CPF, Cartão SUS, telefone, endereço, prontuário ou outro identificador.</div>
-        <span class="ai-mode ${CONFIG.endpoint ? 'connected' : ''}" id="aiMode">${CONFIG.endpoint ? 'Assistente com base nos protocolos' : 'Consulta local'}</span>
         <div class="ai-messages" id="aiMessages" aria-live="polite">
-          <div class="ai-suggestions" id="aiSuggestions">
-            <button class="ai-suggestion" type="button">Quero fazer uma pré-análise de um encaminhamento. Me conduza como regulador.</button>
-            <button class="ai-suggestion" type="button">Vou colar um encaminhamento anonimizado. Analise o que já está adequado e pergunte só o que faltar.</button>
-            <button class="ai-suggestion" type="button">Quero conferir se escolhi a especialidade e o fluxo corretos.</button>
+          <div class="ai-suggestions" id="aiSuggestions" role="group" aria-labelledby="aiSuggestionsLabel">
+            <span class="ai-suggestions-label" id="aiSuggestionsLabel">Como posso ajudar?</span>
+            <button class="ai-suggestion" type="button" data-question="Quero fazer uma pré-análise de um encaminhamento. Me conduza como regulador.">Iniciar pré-análise</button>
+            <button class="ai-suggestion" type="button" data-question="Vou colar um encaminhamento anonimizado. Analise o que já está adequado e pergunte só o que faltar.">Revisar encaminhamento</button>
+            <button class="ai-suggestion" type="button" data-question="Quero conferir se escolhi a especialidade e o fluxo corretos.">Conferir especialidade e fluxo</button>
           </div>
         </div>
         <form class="ai-form" id="aiForm">
+          <label class="ai-input-label" for="aiInput">Sua mensagem</label>
           <div class="ai-input-wrap">
-            <textarea class="ai-input" id="aiInput" rows="1" maxlength="${MAX_QUESTION_LENGTH}" placeholder="Descreva o caso ou cole o encaminhamento anonimizado" aria-label="Mensagem para a pré-regulação"></textarea>
-            <div class="ai-counter"><span id="aiCounter">0</span>/${MAX_QUESTION_LENGTH}</div>
+            <textarea class="ai-input" id="aiInput" rows="2" maxlength="${MAX_QUESTION_LENGTH}" placeholder="Descreva o caso ou cole o encaminhamento anonimizado" aria-label="Mensagem para a pré-regulação" aria-describedby="aiInputHint"></textarea>
           </div>
           <button class="ai-send" id="aiSend" type="submit" aria-label="Enviar mensagem">${SVG.send}</button>
+          <div class="ai-form-footer"><span id="aiInputHint">Enter envia · Shift + Enter quebra a linha</span><span class="ai-counter"><span id="aiCounter">0</span>/${MAX_QUESTION_LENGTH}</span></div>
         </form>
       </section>`;
     document.body.append(...wrapper.children);
@@ -505,16 +517,16 @@
     document.getElementById('aiClose')?.addEventListener('click', closeChat);
     document.getElementById('aiSuggestions')?.addEventListener('click', (event) => {
       const button = event.target.closest('.ai-suggestion');
-      if (button) submitQuestion(button.textContent || '');
+      if (button) submitQuestion(button.dataset.question || button.textContent || '');
     });
 
     const input = document.getElementById('aiInput');
     input?.addEventListener('input', () => {
       const counter = document.getElementById('aiCounter');
       if (counter) counter.textContent = String(input.value.length);
-      input.style.height = 'auto';
-      input.style.height = `${Math.min(input.scrollHeight, 160)}px`;
+      resizeInput();
     });
+    window.addEventListener('resize', resizeInput);
     input?.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();

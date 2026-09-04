@@ -70,7 +70,7 @@
     providerLabel.className = 'ai-provider-label';
     providerLabel.textContent = window.REGULATION_AI_CONFIG?.endpoint ? 'IA configurada' : 'Consulta local';
     provider.append(providerDot, providerLabel);
-    header.appendChild(provider);
+    header.querySelector('.ai-chat-meta').appendChild(provider);
 
     mode.textContent = 'Assistente com base nos protocolos';
     mode.classList.add('connected', 'ai-protocol-seal');

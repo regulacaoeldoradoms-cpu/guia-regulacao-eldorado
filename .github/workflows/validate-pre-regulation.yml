@@ -120,10 +120,10 @@ jobs:
           grep -q 'ai-config.js?v=20260825-2' medico/index.html
           grep -q 'referral-workbench.js?v=20260904-1' medico/index.html
           grep -q 'pre-regulation-bridge.js?v=20260904-1' medico/index.html
-          grep -q 'ai-assistant.js?v=20260828-1' medico/index.html
-          grep -q 'ai-gemini-theme.js?v=20260825-2' medico/index.html
-          grep -q 'ai-assistant.css?v=20260825-1' medico/index.html
-          grep -q 'ai-gemini-theme.css?v=20260825-1' medico/index.html
+          grep -q 'ai-assistant.js?v=20260904-2' medico/index.html
+          grep -q 'ai-gemini-theme.js?v=20260904-2' medico/index.html
+          grep -q 'ai-assistant.css?v=20260904-2' medico/index.html
+          grep -q 'ai-gemini-theme.css?v=20260904-2' medico/index.html
           grep -q 'REMOTE_AI_COOLDOWN_MS' js/ai-assistant.js
           grep -q 'Contingência local' js/ai-assistant.js
           grep -q 'IA configurada' js/ai-gemini-theme.js
