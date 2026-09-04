@@ -31,3 +31,21 @@
     padding: 5px;
   }
 }
+
+/* Telemedicina: o mesmo ativo de fechamento é usado em todos os modais,
+   inclusive nos modais criados dinamicamente pelo editor de cadastro. */
+.telemedicine-page .portal-modal-close {
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  background-color: #edf4fa !important;
+  background-image: url('/assets/Fechar-icon.png') !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 24px 24px !important;
+}
+
+.telemedicine-page .portal-modal-close:hover,
+.telemedicine-page .portal-modal-close:focus-visible {
+  background-color: #e3eef8 !important;
+}
