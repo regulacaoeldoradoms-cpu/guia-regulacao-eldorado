@@ -49,12 +49,16 @@ jobs:
           grep -q 'compactPractice' js/pre-regulation-bridge.js
           grep -q 'practiceSubprotocol' js/pre-regulation-bridge.js
           grep -q 'compactOfficialSubprotocol' js/pre-regulation-bridge.js
+          grep -q 'SUBPROTOCOL_CONTEXT_RULE' js/pre-regulation-bridge.js
+          grep -q 'parentRequirements' js/pre-regulation-bridge.js
+          grep -q 'campo geral vazio não significa ausência de requisitos' js/pre-regulation-bridge.js
+          grep -q 'Não existe uma lista única no nível geral' js/pre-regulation-bridge.js
           grep -q 'fitPayload' js/pre-regulation-bridge.js
           grep -q 'byteSize' js/pre-regulation-bridge.js
-          grep -q 'pre_regulation_compact_v2' js/pre-regulation-bridge.js
+          grep -q 'pre_regulation_compact_v3' js/pre-regulation-bridge.js
           grep -q 'CASO ATUAL' js/pre-regulation-bridge.js
           grep -q 'no máximo 3 perguntas objetivas' js/pre-regulation-bridge.js
-          grep -q 'pre-regulation-bridge.js?v=20260811-2' medico/index.html
+          grep -q 'pre-regulation-bridge.js?v=20260904-1' medico/index.html
           python - <<'PY'
           from pathlib import Path
           html = Path('medico/index.html').read_text(encoding='utf-8')
@@ -114,7 +118,8 @@ jobs:
           grep -q 'Assistente com base nos protocolos' js/ai-gemini-theme.js
           grep -q 'Protocolo oficial + pré-regulação conversacional com IA' medico/index.html
           grep -q 'ai-config.js?v=20260825-2' medico/index.html
-          grep -q 'referral-workbench.js?v=20260825-2' medico/index.html
+          grep -q 'referral-workbench.js?v=20260904-1' medico/index.html
+          grep -q 'pre-regulation-bridge.js?v=20260904-1' medico/index.html
           grep -q 'ai-assistant.js?v=20260828-1' medico/index.html
           grep -q 'ai-gemini-theme.js?v=20260825-2' medico/index.html
           grep -q 'ai-assistant.css?v=20260825-1' medico/index.html
@@ -124,6 +129,13 @@ jobs:
           grep -q 'IA configurada' js/ai-gemini-theme.js
           grep -q 'IA de contingência conectada' js/ai-assistant.js
           ! grep -q 'A conexão com o Gemini falhou:' js/ai-assistant.js
+
+      - name: Conferir tratamento visual de subprotocolos
+        run: |
+          grep -q 'removeRedundantParentBlocks' js/referral-workbench.js
+          grep -q "'protocolMandatoryExams', 'examesObrigatorios', 'examesObrigatorios'" js/referral-workbench.js
+          grep -q "'protocolConditionalExams', 'examesCondicionais', 'condicionais'" js/referral-workbench.js
+          grep -q 'removeRedundantParentBlocks(article, selected)' js/referral-workbench.js
 
       - name: Conferir limites de segurança
         run: |
