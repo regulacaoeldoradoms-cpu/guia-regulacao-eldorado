@@ -9,29 +9,33 @@
     ? auth.hasCouncilAccess.bind(auth)
     : null;
 
-  // Dentro do painel institucional, o Desenvolvedor recebe acesso integral
-  // sem precisar acumular formalmente o cargo de Presidente do Conselho.
-  // O Vice-Presidente é apresentado aos scripts operacionais como equivalente
-  // à Presidência, preservando seu cargo real para a identificação visual.
-  if (originalMe) {
-    auth.me = async (...args) => {
-      const user = await originalMe(...args);
-      if (user?.role === 'admin' && user.councilRole !== 'presidente') {
-        return { ...user, councilRole: 'presidente', developerCouncilOverride: true };
-      }
-      if (user?.councilRole === 'vice_presidente') {
-        return { ...user, councilRole: 'presidente', vicePresidentCouncilOverride: true };
-      }
-      return user;
-    };
+  async function effectiveMe(...args) {
+    const user = originalMe ? await originalMe(...args) : null;
+    if (user?.role === 'admin' && user.councilRole !== 'presidente') {
+      return { ...user, councilRole: 'presidente', developerCouncilOverride: true };
+    }
+    if (user?.councilRole === 'vice_presidente') {
+      return { ...user, councilRole: 'presidente', vicePresidentCouncilOverride: true };
+    }
+    return user;
   }
 
-  auth.hasCouncilAccess = (user) => Boolean(
-    user?.role === 'admin'
-    || (originalHasCouncilAccess
-      ? originalHasCouncilAccess(user)
-      : ['membro', 'presidente', 'vice_presidente'].includes(user?.councilRole))
-  );
+  function effectiveHasCouncilAccess(user) {
+    return Boolean(
+      user?.role === 'admin'
+      || (originalHasCouncilAccess
+        ? originalHasCouncilAccess(user)
+        : ['membro', 'presidente', 'vice_presidente'].includes(user?.councilRole))
+    );
+  }
+
+  // RegulationAuth é congelado no cliente principal. Em vez de mutar propriedades
+  // não graváveis, o painel recebe uma fachada imutável com a política institucional.
+  window.RegulationAuth = Object.freeze({
+    ...auth,
+    me: effectiveMe,
+    hasCouncilAccess: effectiveHasCouncilAccess
+  });
 
   function attachmentHeading() {
     const list = document.getElementById('attachmentList');
