@@ -233,7 +233,7 @@ Endpoints:
 - `PATCH /api/telemedicina/patients/{patientId}/name`;
 - `PATCH /api/telemedicina/followups/{followupId}/specialty`;
 - `GET /api/telemedicina/maintenance/specialties` para auditar, sem alterar dados;
-- `POST /api/telemedicina/maintenance/specialties` para executar um lote limitado a dez correções.
+- `POST /api/telemedicina/maintenance/specialties` para executar uma única correção por chamada.
 
 ### Padronização e unificação automática das especialidades
 
@@ -241,12 +241,13 @@ Decisão complementar registrada em 03/09/2026.
 
 - novos lançamentos, importações técnicas e correções manuais são convertidos no Worker para o nome canônico antes da gravação;
 - o Desenvolvedor dispõe da ação **Unificar especialidades**, precedida por uma auditoria que mostra apenas grafias, destinos e quantidades, sem nomes de pacientes;
-- a operação global é exclusiva do Desenvolvedor, idempotente e executada em lotes de no máximo dez documentos para respeitar os limites do Worker e do Firestore;
+- a operação global é exclusiva do Desenvolvedor, idempotente e processa apenas um acompanhamento ou evento por chamada, repetindo chamadas curtas para permanecer abaixo dos limites do Worker e do Firestore;
 - quando aliases do mesmo paciente convergem, permanece o acompanhamento com a consulta mais recente, os eventos dos dois registros são preservados e passam a apontar para o identificador canônico;
 - as equivalências são exatas e versionadas; não há comparação aproximada, decisão por IA ou união de textos apenas parecidos;
 - por decisão operacional do módulo, `NUTRI`, `NUTRIÇÃO` e `NUTRICIONISTA` representam a especialidade canônica `NUTROLOGIA`;
 - `NEUROPEDIATRIA` permanece distinta de `NEUROLOGIA ADULTO`;
 - entre as equivalências auditadas estão `REUMATO → REUMATOLOGIA`, `ORTO → ORTOPEDIA`, `ENDOCRINO → ENDOCRINOLOGIA`, `PSIQ/PSIQUIATRA → PSIQUIATRIA` e `NUTRI/NUTRIÇÃO/NUTRICIONISTA → NUTROLOGIA`;
+- durante a manutenção em lote, a correção dos eventos é adiada para uma fase própria, com um evento por chamada; nessa fase, referências de acompanhamentos unificados também são redirecionadas para o identificador canônico;
 - eventos históricos isolados também são corrigidos após a conclusão dos acompanhamentos, mantendo a consulta do histórico coerente.
 
 O roteador `worker/telemedicine-router-v2.js` intercepta apenas essas correções e delega todas as demais rotas ao módulo original, reduzindo o risco de regressão no fluxo de consultas, programação, solicitação e importação.

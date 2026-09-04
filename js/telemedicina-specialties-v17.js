@@ -53,12 +53,12 @@
       let eventsChanged = 0;
       let attempts = 0;
 
-      while (attempts < 100) {
+      while (attempts < 1000) {
         attempts += 1;
         button.textContent = `Unificando… ${changed + eventsChanged}`;
         const batch = await auth.api('/api/telemedicina/maintenance/specialties', {
           method: 'POST',
-          body: JSON.stringify({ limit: 8 })
+          body: JSON.stringify({ limit: 1 })
         });
         const errors = Array.isArray(batch.errors) ? batch.errors : [];
         if (errors.length) {
@@ -79,7 +79,7 @@
         }
       }
 
-      if (attempts >= 100) {
+      if (attempts >= 1000) {
         throw new Error('A operação excedeu o limite seguro de lotes.');
       }
 

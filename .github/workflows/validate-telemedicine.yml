@@ -158,9 +158,12 @@ jobs:
           grep -q "canonicalSpecialtyName" worker/telemedicine.js
           grep -q "normalizeSpecialtiesBatch" worker/telemedicine-router-v2.js
           grep -q "Somente o Desenvolvedor pode unificar todas as especialidades" worker/telemedicine-router-v2.js
-          grep -q "Math.min(10" worker/telemedicine-router-v2.js
+          grep -q "const limit = 1;" worker/telemedicine-router-v2.js
+          grep -q "deferEvents: true" worker/telemedicine-router-v2.js
+          grep -q "specialtyEventCandidates" worker/telemedicine-router-v2.js
+          grep -q "body: JSON.stringify({ limit: 1 })" js/telemedicina-specialties-v17.js
           grep -q "normalizeSpecialties" telemedicina/index.html
-          grep -q "telemedicina-specialties-v17.js?v=20260903-1" telemedicina/index.html
+          grep -q "telemedicina-specialties-v17.js?v=20260904-1" telemedicina/index.html
           grep -q "followupMode" worker/telemedicine.js
           grep -q "ALTA DO EPISÓDIO" worker/telemedicine.js
           grep -q "Registro objetivo de alta" docs/TELEMEDICINA.md
