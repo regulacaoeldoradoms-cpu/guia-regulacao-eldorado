@@ -293,7 +293,7 @@
   }
 
   function hasCouncilAccess(user) {
-    return Boolean(user && (user.councilRole === 'membro' || user.councilRole === 'presidente'));
+    return Boolean(user && ['membro', 'presidente', 'vice_presidente'].includes(user.councilRole));
   }
 
   function authorizationHeader() {
