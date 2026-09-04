@@ -81,6 +81,16 @@ function developerCouncilEnv(env) {
   return new Proxy(env, {
     get(target, property) {
       if (property === 'AUTH_DB') return dbProxy;
+      if (property === 'COUNCIL_VICE_AS_PRESIDENT') return true;
+      return Reflect.get(target, property, target);
+    }
+  });
+}
+
+function vicePresidentCouncilEnv(env) {
+  return new Proxy(env, {
+    get(target, property) {
+      if (property === 'COUNCIL_VICE_AS_PRESIDENT') return true;
       return Reflect.get(target, property, target);
     }
   });
@@ -180,7 +190,11 @@ function protocolFromPath(pathname) {
 }
 
 function canDeleteManifestations(user, institutional) {
-  return Boolean(institutional && (user?.councilRole === 'presidente' || user?.role === 'admin'));
+  return Boolean(institutional && (
+    user?.councilRole === 'presidente'
+    || user?.councilRole === 'vice_presidente'
+    || user?.role === 'admin'
+  ));
 }
 
 async function safeAudit(env, username, protocol) {
@@ -222,7 +236,11 @@ async function deleteManifestations(request, env, user, origin, originAllowed) {
   const notFound = [];
   const now = new Date().toISOString();
   const actor = String(user?.username || '');
-  const actorRole = user?.role === 'admin' ? 'Desenvolvedor' : 'Presidência do Conselho';
+  const actorRole = user?.role === 'admin'
+    ? 'Desenvolvedor'
+    : user?.councilRole === 'vice_presidente'
+      ? 'Vice-Presidência do Conselho'
+      : 'Presidência do Conselho';
 
   for (const protocol of protocols) {
     const documentPath = `council_manifestations/${protocol}`;
@@ -271,6 +289,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   const institutional = !citizenContext(url);
   const isMember = isCouncilMemberReadOnly(user, institutional);
   const isDeveloper = institutional && user?.role === 'admin';
+  const isVicePresident = user?.councilRole === 'vice_presidente';
 
   if (isMember && isInstitutionalManifestationMutation(url, request)) {
     return jsonError(
@@ -284,7 +303,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
 
   if (isMember && isInstitutionalAttachmentDownload(url, request)) {
     return jsonError(
-      'Anexos ficam restritos à Presidência e ao Desenvolvedor para preservar a identidade do manifestante.',
+      'Anexos ficam restritos à Presidência, Vice-Presidência e ao Desenvolvedor para preservar a identidade do manifestante.',
       403,
       origin,
       originAllowed,
@@ -295,7 +314,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   if (url.pathname === '/api/council/manifestations/delete' && request.method === 'POST') {
     if (!canDeleteManifestations(user, institutional)) {
       return jsonError(
-        'Somente a Presidência do Conselho e o Desenvolvedor podem excluir manifestações.',
+        'Somente a Presidência, a Vice-Presidência do Conselho e o Desenvolvedor podem excluir manifestações.',
         403,
         origin,
         originAllowed,
@@ -313,9 +332,14 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
     }
   }
 
-  // O Desenvolvedor recebe, apenas dentro do painel institucional, a mesma
-  // capacidade operacional da Presidência sem alterar o cargo salvo na conta.
-  const effectiveEnv = isDeveloper ? developerCouncilEnv(env) : env;
+  // O Desenvolvedor recebe capacidade operacional da Presidência apenas no painel.
+  // O Vice-Presidente recebe a mesma capacidade da Presidência em todo o fluxo do Conselho,
+  // inclusive no bloqueio de abertura de manifestações pessoais durante o exercício do cargo.
+  const effectiveEnv = isDeveloper
+    ? developerCouncilEnv(env)
+    : isVicePresident
+      ? vicePresidentCouncilEnv(env)
+      : env;
   let response = await baseHandleCouncilRoute(request, effectiveEnv, origin, originAllowed);
   response = await filterDeletedResponse(response);
 
