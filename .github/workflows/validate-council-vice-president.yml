@@ -1,0 +1,35 @@
+name: Validar Vice-Presidência do Conselho
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-council-vice-president:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar sintaxe
+        run: |
+          node --check worker/council-vice-access.js
+          node --check worker/auth-management-flex.js
+          node --check js/admin-council-role-options.js
+          node --check js/council-access-policy.js
+      - name: Conferir arquitetura de menor privilégio
+        run: |
+          grep -q "const UNDERLYING_COUNCIL_ROLE = 'membro'" worker/council-vice-access.js
+          grep -q "const COUNCIL_VICE_OFFICE = 'vice_presidente'" worker/council-vice-access.js
+          grep -q "requestedCouncilRole === councilViceOfficeName()" worker/auth-management-flex.js
+          grep -q "rewrittenCouncilRole = councilViceUnderlyingRole()" worker/auth-management-flex.js
+          grep -q "councilOffice === 'vice_presidente'" js/council-access-policy.js
+          grep -q "mesmas permissões do Membro do Conselho" js/council-access-policy.js
+          grep -q "não são exibidos, mesmo quando a manifestação foi enviada como identificada" js/council-access-policy.js
+          grep -q "conselho_vice_presidente" js/admin-council-role-options.js
+          grep -q "Vice-Presidente do Conselho — leitura anônima, como Membro" js/admin-council-role-options.js
+      - name: Executar testes do Worker
+        working-directory: worker
+        run: npm test
