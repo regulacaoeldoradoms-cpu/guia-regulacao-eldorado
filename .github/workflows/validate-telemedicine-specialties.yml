@@ -57,11 +57,15 @@ jobs:
           grep -q "NEUROLOGIA ADULTO" worker/telemedicine-rules.js
           grep -q "specialtyMaintenanceAudit" worker/telemedicine-router-v2.js
           grep -q "normalizeSpecialtiesBatch" worker/telemedicine-router-v2.js
-          grep -q "Math.min(10" worker/telemedicine-router-v2.js
+          grep -q "const limit = 1;" worker/telemedicine-router-v2.js
+          grep -q "deferEvents: true" worker/telemedicine-router-v2.js
+          grep -q "specialtyEventCandidates" worker/telemedicine-router-v2.js
+          grep -q "body: JSON.stringify({ limit: 1 })" js/telemedicina-specialties-v17.js
+          grep -q "while (attempts < 1000)" js/telemedicina-specialties-v17.js
           grep -q "Array.isArray(options.events)" worker/telemedicine-router-v2.js
           grep -q "Somente o Desenvolvedor pode unificar todas as especialidades" worker/telemedicine-router-v2.js
           grep -q "id=\"normalizeSpecialties\"" telemedicina/index.html
-          grep -q "telemedicina-specialties-v17.js?v=20260903-1" telemedicina/index.html
+          grep -q "telemedicina-specialties-v17.js?v=20260904-1" telemedicina/index.html
           grep -q "dicionário fechado" docs/TELEMEDICINA.md
           grep -q "idempotente" docs/TELEMEDICINA.md
           if grep -R -n -E '\b(CNS|CPF)\b' js/telemedicina-specialties-v17.js worker/telemedicine-router-v2.js worker/telemedicine-rules.js; then
