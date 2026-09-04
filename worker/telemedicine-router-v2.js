@@ -21,6 +21,8 @@ const PATIENTS = 'telemedicine_patients';
 const FOLLOWUPS = 'telemedicine_followups';
 const EVENTS = 'telemedicine_events';
 const MAX_CORRECTION_HISTORY = 12;
+const SPECIALTY_FOLLOWUP_BATCH_LIMIT = 4;
+const SPECIALTY_EVENT_BATCH_LIMIT = 8;
 
 function responseHeaders(origin, allowed = true) {
   const headers = {
@@ -471,14 +473,14 @@ async function specialtyMaintenanceAudit(env) {
 }
 
 async function normalizeSpecialtiesBatch(env, user, _input = {}) {
-  // Uma única correção por chamada mantém cada invocação bem abaixo do
-  // limite de subrequisições do Cloudflare, mesmo quando há unificação.
-  const limit = 1;
+  // As consultas e os eventos são processados em fases separadas. Estes
+  // limites reduzem a quantidade de chamadas feitas pelo navegador sem se
+  // aproximar do teto de subrequisições do Cloudflare em uma invocação.
   const followups = await listAll(env, FOLLOWUPS);
   const followupCandidates = followups.map(specialtyCandidate).filter(Boolean);
 
   if (followupCandidates.length) {
-    const selected = followupCandidates.slice(0, limit);
+    const selected = followupCandidates.slice(0, SPECIALTY_FOLLOWUP_BATCH_LIMIT);
     let changed = 0;
     let merged = 0;
     const errors = [];
@@ -517,7 +519,7 @@ async function normalizeSpecialtiesBatch(env, user, _input = {}) {
   const events = await listAll(env, EVENTS);
   const validFollowupIds = new Set(followups.map((item) => item.id).filter(Boolean));
   const eventCandidates = await specialtyEventCandidates(events, validFollowupIds);
-  const selectedEvents = eventCandidates.slice(0, limit);
+  const selectedEvents = eventCandidates.slice(0, SPECIALTY_EVENT_BATCH_LIMIT);
   let eventsChanged = 0;
   const errors = [];
 
