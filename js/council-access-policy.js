@@ -40,7 +40,7 @@
     return null;
   }
 
-  function ensureMemberNotice() {
+  function ensureMemberNotice(isVicePresident = false) {
     if (document.getElementById('councilMemberReadOnlyNotice')) return;
     const hero = document.querySelector('.portal-hero');
     if (!hero?.parentNode) return;
@@ -50,26 +50,36 @@
     notice.style.marginTop = '12px';
     notice.style.fontSize = '1rem';
     notice.style.lineHeight = '1.55';
-    notice.innerHTML = '<strong>Acesso de leitura.</strong> Como Membro do Conselho, você pode consultar o conteúdo e o histórico das manifestações. Para este perfil, todas as manifestações são apresentadas como anônimas: nome, @, cargo e demais dados de identidade do manifestante não são exibidos. O membro também não pode responder, alterar status, registrar observações internas ou acessar anexos.';
+    notice.innerHTML = isVicePresident
+      ? '<strong>Acesso de leitura da Vice-Presidência.</strong> O Vice-Presidente possui, neste portal, as mesmas permissões do Membro do Conselho: pode consultar o conteúdo e o histórico das manifestações, mas todas são apresentadas como anônimas. Nome, @, cargo e demais dados de identidade do manifestante não são exibidos, mesmo quando a manifestação foi enviada como identificada. Também não é permitido responder, alterar status, registrar observações internas ou acessar anexos.'
+      : '<strong>Acesso de leitura.</strong> Como Membro do Conselho, você pode consultar o conteúdo e o histórico das manifestações. Para este perfil, todas as manifestações são apresentadas como anônimas: nome, @, cargo e demais dados de identidade do manifestante não são exibidos. O membro também não pode responder, alterar status, registrar observações internas ou acessar anexos.';
     hero.insertAdjacentElement('afterend', notice);
   }
 
-  function applyMemberUi() {
+  function applyMemberUi(user) {
+    const isVicePresident = user?.councilOffice === 'vice_presidente';
     document.body.classList.add('council-member-readonly');
+    if (isVicePresident) document.body.classList.add('council-vice-president');
 
     const userRole = document.getElementById('portalUserRole');
-    if (userRole) userRole.textContent = 'Membro do Conselho · somente leitura';
+    if (userRole) {
+      userRole.textContent = isVicePresident
+        ? 'Vice-Presidente do Conselho · somente leitura'
+        : 'Membro do Conselho · somente leitura';
+    }
     const badge = document.getElementById('councilRoleBadge');
     if (badge) {
       badge.classList.remove('is-president-image');
-      badge.textContent = 'Membro · somente leitura';
-      badge.removeAttribute('aria-label');
+      badge.textContent = isVicePresident ? 'Vice-Presidente · somente leitura' : 'Membro · somente leitura';
+      badge.setAttribute('aria-label', isVicePresident ? 'Vice-Presidente do Conselho · somente leitura' : 'Membro do Conselho · somente leitura');
     }
     const heroText = document.querySelector('.portal-hero-copy p');
     if (heroText) {
-      heroText.textContent = 'Consulte o conteúdo e acompanhe o histórico das manifestações. Para membros, todas as manifestações são apresentadas como anônimas e não há permissão para responder ou alterar o andamento.';
+      heroText.textContent = isVicePresident
+        ? 'Consulte o conteúdo e acompanhe o histórico das manifestações. A Vice-Presidência usa o mesmo modo protegido dos membros: todas as manifestações aparecem como anônimas e não há permissão para responder ou alterar o andamento.'
+        : 'Consulte o conteúdo e acompanhe o histórico das manifestações. Para membros, todas as manifestações são apresentadas como anônimas e não há permissão para responder ou alterar o andamento.';
     }
-    ensureMemberNotice();
+    ensureMemberNotice(isVicePresident);
 
     document.querySelectorAll('.president-only').forEach((element) => {
       element.hidden = true;
@@ -106,7 +116,7 @@
         note.id = 'memberAttachmentRestriction';
         note.className = 'portal-note info';
         note.style.margin = '6px 0 0';
-        note.textContent = 'Os anexos não são exibidos para membros, pois podem conter dados capazes de identificar o manifestante.';
+        note.textContent = 'Os anexos não são exibidos para este nível de acesso, pois podem conter dados capazes de identificar o manifestante.';
         list.insertAdjacentElement('afterend', note);
       }
     }
@@ -134,7 +144,7 @@
       return;
     }
     if (realUser.councilRole === 'membro') {
-      applyMemberUi();
+      applyMemberUi(realUser);
     }
   }
 
