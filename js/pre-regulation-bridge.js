@@ -10,6 +10,7 @@
   const MAX_REQUEST_BYTES = 76000;
   const MODE_TITLE = 'MODO DE PRÉ-REGULAÇÃO CONVERSACIONAL — ORIENTAÇÃO DE RESPOSTA, NÃO PROTOCOLO CLÍNICO';
   const PRACTICE_TITLE = 'PRÁTICA REGULATÓRIA ANONIMIZADA — NÃO NORMATIVA';
+  const SUBPROTOCOL_CONTEXT_RULE = 'Quando um protocolo possui requisitos distribuídos em subprotocolos oficiais, um campo geral vazio não significa ausência de requisitos. Consulte os subprotocolos antes de responder. Em perguntas genéricas sobre exames, explique que eles variam conforme a condição clínica e nunca afirme que não há exames se algum subprotocolo trouxer exames obrigatórios ou condicionais.';
   const MODE_RULES = [
     'Atue como simulador de raciocínio regulatório para apoiar o médico, sem se apresentar como regulador oficial e sem emitir autorização, negativa ou classificação de risco real.',
     'Antes de perguntar, reconheça o que já foi informado na conversa. Não peça novamente dados já presentes.',
@@ -19,7 +20,8 @@
     'Separe relato do paciente/responsável de exame físico, hipótese, interpretação de exames, indicação cirúrgica, estado mental e avaliação de gravidade, que exigem profissional habilitado.',
     'Se houver possível incompatibilidade com fila eletiva, destaque atenção clínica e oriente avaliação profissional da segurança de aguardar, sem classificar risco por conta própria.',
     'Quando houver dados suficientes, use um parecer simulado: Encaminhamento bem qualificado; Necessita complementação; Conferir fluxo/procedimento; ou Atenção clínica. Nunca use aprovado, autorizado, negado ou recusado como decisão da IA.',
-    'Em devoluções, considere a justificativa mais recente e não reabra pendências antigas já resolvidas. Não recomende cancelamento e reinserção automaticamente.'
+    'Em devoluções, considere a justificativa mais recente e não reabra pendências antigas já resolvidas. Não recomende cancelamento e reinserção automaticamente.',
+    SUBPROTOCOL_CONTEXT_RULE
   ];
 
   const text = (value, maximum = 420) => String(value || '').trim().slice(0, maximum);
@@ -119,19 +121,30 @@
   function compactOfficialSubprotocol(subprotocol) {
     return {
       titulo: text(subprotocol?.titulo || 'Condição específica', 180),
-      criterios: list(subprotocol?.criterios, 2, 220),
-      informacoesObrigatorias: list(subprotocol?.informacoesObrigatorias, 2, 220),
-      examesObrigatorios: list(subprotocol?.examesObrigatorios, 2, 220),
-      examesCondicionais: list(subprotocol?.examesCondicionais, 2, 220),
-      recomendadosQuandoDisponiveis: list(subprotocol?.recomendadosQuandoDisponiveis, 2, 220)
+      criterios: list(subprotocol?.criterios, 3, 240),
+      informacoesObrigatorias: list(subprotocol?.informacoesObrigatorias, 3, 240),
+      examesObrigatorios: list(subprotocol?.examesObrigatorios, 6, 240),
+      examesCondicionais: list(subprotocol?.examesCondicionais, 4, 240),
+      recomendadosQuandoDisponiveis: list(subprotocol?.recomendadosQuandoDisponiveis, 3, 240)
     };
+  }
+
+  function hasSubprotocolItems(subprotocols, field) {
+    return subprotocols.some((subprotocol) => Array.isArray(subprotocol?.[field]) && subprotocol[field].length > 0);
+  }
+
+  function parentRequirements(value, subprotocols, childField, fallbackMessage, maximumItems, maximumLength) {
+    const parent = list(value, maximumItems, maximumLength);
+    if (parent.length || !hasSubprotocolItems(subprotocols, childField)) return parent;
+    return [fallbackMessage];
   }
 
   function compactProtocol(protocol) {
     const practice = compactPractice(protocol?.praticaRegulatoria);
-    const officialSubprotocols = Array.isArray(protocol?.subprotocolos)
-      ? protocol.subprotocolos.filter((item) => !isEmbeddedPractice(item)).slice(0, 5).map(compactOfficialSubprotocol)
+    const officialSource = Array.isArray(protocol?.subprotocolos)
+      ? protocol.subprotocolos.filter((item) => !isEmbeddedPractice(item))
       : [];
+    const officialSubprotocols = officialSource.slice(0, 10).map(compactOfficialSubprotocol);
     return {
       id: text(protocol?.id, 80),
       nome: text(protocol?.nome, 150),
@@ -141,14 +154,49 @@
       situacaoTeleconsulta: text(protocol?.situacaoTeleconsulta, 180),
       resumo: text(protocol?.resumo, 650),
       fluxoLocal: text(protocol?.fluxoLocal, 700),
-      criteriosParaEncaminhar: list(protocol?.criteriosParaEncaminhar, 8, 320),
-      informacoesClinicasObrigatorias: list(protocol?.informacoesClinicasObrigatorias, 9, 320),
-      examesObrigatorios: list(protocol?.examesObrigatorios, 9, 300),
-      examesCondicionais: list(protocol?.examesCondicionais, 7, 300),
-      recomendadosQuandoDisponiveis: list(protocol?.recomendadosQuandoDisponiveis, 6, 280),
+      criteriosParaEncaminhar: parentRequirements(
+        protocol?.criteriosParaEncaminhar,
+        officialSource,
+        'criterios',
+        'Os critérios variam conforme a condição clínica e estão definidos nos subprotocolos oficiais abaixo.',
+        8,
+        320
+      ),
+      informacoesClinicasObrigatorias: parentRequirements(
+        protocol?.informacoesClinicasObrigatorias,
+        officialSource,
+        'informacoesObrigatorias',
+        'As informações clínicas obrigatórias variam conforme a condição clínica e estão definidas nos subprotocolos oficiais abaixo.',
+        9,
+        320
+      ),
+      examesObrigatorios: parentRequirements(
+        protocol?.examesObrigatorios,
+        officialSource,
+        'examesObrigatorios',
+        'Não existe uma lista única no nível geral: há exames obrigatórios definidos por condição clínica nos subprotocolos oficiais abaixo. Não interpretar o campo geral vazio como ausência de exames.',
+        9,
+        300
+      ),
+      examesCondicionais: parentRequirements(
+        protocol?.examesCondicionais,
+        officialSource,
+        'examesCondicionais',
+        'Há exames obrigatórios conforme o caso definidos nos subprotocolos oficiais abaixo. Não interpretar o campo geral vazio como ausência de exames condicionais.',
+        7,
+        300
+      ),
+      recomendadosQuandoDisponiveis: parentRequirements(
+        protocol?.recomendadosQuandoDisponiveis,
+        officialSource,
+        'recomendadosQuandoDisponiveis',
+        'Os exames ou documentos recomendados variam conforme a condição clínica e estão definidos nos subprotocolos oficiais abaixo.',
+        6,
+        280
+      ),
       elementosPriorizacao: list(protocol?.elementosPriorizacao, 6, 300),
       alertas: list(protocol?.alertas, 6, 300),
-      subprotocolos: [behaviorSubprotocol(), practiceSubprotocol(practice), ...officialSubprotocols].filter(Boolean).slice(0, 7),
+      subprotocolos: [...officialSubprotocols, behaviorSubprotocol(), practiceSubprotocol(practice)].filter(Boolean).slice(0, 10),
       praticaRegulatoria: practice,
       fontes: list(protocol?.fontes, 4, 260),
       ultimaConferencia: text(protocol?.ultimaConferencia, 60)
@@ -182,7 +230,7 @@
 
     payload.catalog = payload.catalog.slice(0, 60);
     if (payload.protocols[0]) {
-      payload.protocols[0].subprotocolos = payload.protocols[0].subprotocolos.slice(0, 4);
+      payload.protocols[0].subprotocolos = payload.protocols[0].subprotocolos.slice(0, 8);
       payload.protocols[0].criteriosParaEncaminhar = payload.protocols[0].criteriosParaEncaminhar.slice(0, 6);
       payload.protocols[0].informacoesClinicasObrigatorias = payload.protocols[0].informacoesClinicasObrigatorias.slice(0, 6);
       payload.protocols[0].examesObrigatorios = payload.protocols[0].examesObrigatorios.slice(0, 6);
@@ -196,12 +244,12 @@
     const question = originalQuestion(payload);
     payload.originalQuestion = question;
     const shortQuestion = text(question, 560);
-    payload.question = `${shortQuestion}\n\nModo: pré-regulação conversacional. Considere o CASO ATUAL completo registrado no histórico e não repita perguntas já respondidas.`;
+    payload.question = `${shortQuestion}\n\nModo: pré-regulação conversacional. Considere o CASO ATUAL completo registrado no histórico e não repita perguntas já respondidas.\nRegra de leitura de subprotocolos: ${SUBPROTOCOL_CONTEXT_RULE}`;
     payload.history = historyForWorker(payload.history, question);
     payload.protocols = protocolsForWorker(payload.protocols);
     payload.catalog = compactCatalog(payload.catalog);
     payload.assistantMode = 'pre_regulation_simulator';
-    payload.contextCompression = 'pre_regulation_compact_v2';
+    payload.contextCompression = 'pre_regulation_compact_v3';
     return fitPayload(payload);
   }
 
