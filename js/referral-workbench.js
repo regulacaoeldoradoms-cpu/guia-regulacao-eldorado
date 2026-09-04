@@ -169,6 +169,27 @@
     if (checklist) checklist.classList.add('final-clinical-check');
   }
 
+  function removeRedundantParentBlocks(article, protocol) {
+    const officialSubprotocols = arr(protocol?.subprotocolos)
+      .filter((item) => !String(item?.titulo || '').startsWith(PRACTICE_PREFIX));
+    if (!officialSubprotocols.length) return;
+
+    const mappings = [
+      ['protocolCriteria', 'quandoSolicitar', 'quando'],
+      ['protocolClinicalInfo', 'informacoesObrigatorias', 'obrigatorias'],
+      ['protocolMandatoryExams', 'examesObrigatorios', 'examesObrigatorios'],
+      ['protocolConditionalExams', 'examesCondicionais', 'condicionais'],
+      ['protocolDocuments', 'complementares', 'complementares']
+    ];
+
+    mappings.forEach(([id, parentField, childField]) => {
+      if (arr(protocol?.[parentField]).length) return;
+      if (!officialSubprotocols.some((subprotocol) => arr(subprotocol?.[childField]).length)) return;
+      const block = article.querySelector(`#${id}`);
+      if (block && !block.closest('.subprotocols')) block.remove();
+    });
+  }
+
   function officialNavigation(article) {
     const entries = [
       ['protocolCriteria', 'Quando encaminhar'],
@@ -250,6 +271,7 @@
 
     removePracticeDetails(article);
     identifyOfficialSections(article, Boolean(selected));
+    if (selected) removeRedundantParentBlocks(article, selected);
 
     if (!article.querySelector(`.official-protocol-heading[data-protocol-id="${key}"]`)) {
       article.querySelectorAll('.referral-enhancement').forEach((element) => element.remove());
