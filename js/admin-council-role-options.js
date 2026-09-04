@@ -7,12 +7,19 @@
   const currentUser = await auth.me({ allowCached: false }).catch(() => null);
   if (!currentUser || currentUser.role !== 'admin') return;
 
+  const VICE_OFFICE = 'vice_presidente';
   const VIRTUAL_COUNCIL_ROLES = Object.freeze({
     conselho_presidente: {
       role: 'cidadao',
       councilRole: 'presidente',
       label: 'Presidente do Conselho — gestão completa das manifestações',
       defaultJobTitle: 'Presidente do Conselho Municipal de Saúde'
+    },
+    conselho_vice_presidente: {
+      role: 'cidadao',
+      councilRole: VICE_OFFICE,
+      label: 'Vice-Presidente do Conselho — leitura anônima, como Membro',
+      defaultJobTitle: 'Vice-Presidente do Conselho Municipal de Saúde'
     },
     conselho_membro: {
       role: 'cidadao',
@@ -34,6 +41,18 @@
   const editJobTitle = document.getElementById('editJobTitle');
   const editForm = document.getElementById('editUserForm');
   const usersList = document.getElementById('usersList');
+  let viceUsernames = new Set();
+  let refreshTimer = 0;
+
+  function ensureViceCouncilOption(select) {
+    if (!select || select.querySelector(`option[value="${VICE_OFFICE}"]`)) return;
+    const option = document.createElement('option');
+    option.value = VICE_OFFICE;
+    option.textContent = 'Vice-Presidente do Conselho';
+    const president = select.querySelector('option[value="presidente"]');
+    if (president?.nextSibling) select.insertBefore(option, president.nextSibling);
+    else select.appendChild(option);
+  }
 
   function addCouncilOptions(select) {
     if (!select || select.querySelector('option[value="conselho_presidente"]')) return;
@@ -51,12 +70,14 @@
     select.appendChild(group);
   }
 
-  function isVirtualCouncilRole(value) {
-    return Object.prototype.hasOwnProperty.call(VIRTUAL_COUNCIL_ROLES, value);
+  function syncCouncilSelectOptions() {
+    ensureViceCouncilOption(newCouncilRole);
+    ensureViceCouncilOption(editCouncilRole);
   }
 
   function syncCreateCouncilUi() {
     if (!newRole) return;
+    syncCouncilSelectOptions();
     const config = VIRTUAL_COUNCIL_ROLES[newRole.value];
 
     if (config) {
@@ -72,6 +93,7 @@
 
   function syncEditCouncilUi() {
     if (!editRole) return;
+    syncCouncilSelectOptions();
     const config = VIRTUAL_COUNCIL_ROLES[editRole.value];
 
     if (config) {
@@ -97,11 +119,40 @@
     if (!row) return '';
     const badges = [...row.querySelectorAll('.user-badge')].map((item) => item.textContent.trim());
     if (badges.includes('Presidente do Conselho') && badges.includes('Cidadão')) return 'conselho_presidente';
+    if (badges.includes('Vice-Presidente do Conselho') && badges.includes('Cidadão')) return 'conselho_vice_presidente';
     if (badges.includes('Membro do Conselho') && badges.includes('Cidadão')) return 'conselho_membro';
     return '';
   }
 
+  function decorateViceRows() {
+    if (!usersList) return;
+    usersList.querySelectorAll('[data-username]').forEach((row) => {
+      const username = String(row.dataset.username || '').trim().toLowerCase();
+      if (!viceUsernames.has(username)) return;
+      const badge = [...row.querySelectorAll('.user-badge')]
+        .find((item) => item.textContent.trim() === 'Membro do Conselho');
+      if (badge && badge.textContent !== 'Vice-Presidente do Conselho') {
+        badge.textContent = 'Vice-Presidente do Conselho';
+      }
+    });
+  }
+
+  async function refreshViceUsers() {
+    const users = await auth.listUsers().catch(() => []);
+    viceUsernames = new Set(users
+      .filter((user) => user.councilOffice === VICE_OFFICE)
+      .map((user) => String(user.username || '').trim().toLowerCase())
+      .filter(Boolean));
+    decorateViceRows();
+  }
+
+  function scheduleViceRefresh() {
+    window.clearTimeout(refreshTimer);
+    refreshTimer = window.setTimeout(refreshViceUsers, 80);
+  }
+
   addCouncilOptions(newRole);
+  syncCouncilSelectOptions();
   syncCreateCouncilUi();
 
   const profileLabel = document.querySelector('label[for="newRole"]');
@@ -110,7 +161,7 @@
   const councilHelp = document.createElement('div');
   councilHelp.className = 'password-meter';
   councilHelp.style.marginTop = '7px';
-  councilHelp.textContent = 'Presidente e Membro do Conselho podem ser criados diretamente nesta lista. Essas permissões só podem ser concedidas pelo Desenvolvedor.';
+  councilHelp.textContent = 'Presidente, Vice-Presidente e Membro do Conselho podem ser criados diretamente nesta lista. O Vice-Presidente usa as mesmas permissões de leitura anônima do Membro: não vê identidade, anexos ou observações internas e não pode interagir. Essas funções só podem ser concedidas pelo Desenvolvedor.';
   newRole?.insertAdjacentElement('afterend', councilHelp);
 
   newRole?.addEventListener('change', syncCreateCouncilUi);
@@ -124,10 +175,17 @@
     const row = event.target.closest('[data-username]');
     if (!button || !row) return;
 
+    const username = String(row.dataset.username || '').trim().toLowerCase();
+    const isVice = viceUsernames.has(username);
     const virtualRole = selectedCouncilRoleFromRow(row);
     setTimeout(() => {
       addCouncilOptions(editRole);
-      if (virtualRole && editRole) editRole.value = virtualRole;
+      syncCouncilSelectOptions();
+      if (virtualRole && editRole) {
+        editRole.value = virtualRole;
+      } else if (isVice && editCouncilRole) {
+        editCouncilRole.value = VICE_OFFICE;
+      }
       syncEditCouncilUi();
     }, 0);
   }, true);
@@ -138,12 +196,18 @@
     mapVirtualSelection(editRole, editCouncilRole, editJobTitle);
   }, true);
 
-  // O script principal recria as opções do campo de edição a cada abertura.
-  // Mantemos as funções do Conselho presentes mesmo após essa reconstrução.
   if (editRole) {
     const observer = new MutationObserver(() => {
       if (!editRole.querySelector('option[value="conselho_presidente"]')) addCouncilOptions(editRole);
+      syncCouncilSelectOptions();
     });
     observer.observe(editRole, { childList: true });
   }
+
+  if (usersList) {
+    const observer = new MutationObserver(scheduleViceRefresh);
+    observer.observe(usersList, { childList: true, subtree: true });
+  }
+
+  await refreshViceUsers();
 })();
