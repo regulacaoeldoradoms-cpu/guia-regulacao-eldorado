@@ -171,6 +171,24 @@ A interface desktop passa a usar a mesma linguagem visual já aprovada no celula
 - os estados usam cores semânticas: âmbar para solicitar, vermelho para atraso, verde-azulado para aguardo, cinza-azulado para ausência de programação e azul para solicitado;
 - formulários, histórico e cartões de conduta recebem a mesma hierarquia de cores e tipografia, sem qualquer mudança nas regras de negócio;
 - interações respeitam `prefers-reduced-motion` e não dependem apenas de cor para comunicar estado.
+
+## Cards institucionais V19
+
+Decisão permanente registrada em 05/09/2026.
+
+A área de acompanhamentos usa uma camada visual única para desktop e mobile, preservando os modos Lista, Grade 2 × 2 e Grade 3 × 3 já existentes. A mudança é exclusivamente de apresentação: estados, filtros, permissões, APIs, cálculos, histórico, programação e confirmação de solicitação permanecem inalterados.
+
+- o workspace e a lista usam superfícies suaves de azul e cinza-azulado, reduzindo a predominância de branco puro;
+- cada card mantém quatro zonas reconhecíveis: paciente e conduta; especialidade, última consulta e estado; retorno e avisos; ações;
+- o fundo completo do card recebe uma tonalização sutil conforme o estado: verde-azulado para `EM AGUARDO`, âmbar para `SOLICITAR`, salmão para `ATRASADO`, cinza-azulado para `SEM PROGRAMAÇÃO` e azul institucional para `SOLICITADO`;
+- a comunicação do estado nunca depende somente da cor: o selo mantém o texto e acrescenta um ícone vetorial consistente;
+- os três avisos são exibidos como chips numerados, mantendo as datas completas e seus rótulos acessíveis;
+- `Programar`, `Solicitado` e `Histórico` usam respectivamente calendário, confirmação em círculo e histórico; o lápis de edição segue a mesma linguagem vetorial de traço;
+- a interface de Telemedicina não usa emojis nem pictogramas tipográficos decorativos; Lista e Grade também usam ícones vetoriais;
+- foco por teclado permanece visível, o contraste textual é preservado e `prefers-reduced-motion` remove elevação e transições não essenciais;
+- no desktop, as três ações continuam com largura e altura simétricas; no mobile, as áreas de toque, a tipografia ampliada, os painéis sanfonados e a centralização aprovada permanecem vigentes.
+
+Detalhes de implementação e critérios de regressão estão em `docs/TELEMEDICINA-CARDS-V19.md`.
 ## Três condutas de retorno
 
 Decisão permanente registrada em 03/09/2026.

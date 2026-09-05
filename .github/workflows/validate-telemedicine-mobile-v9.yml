@@ -40,7 +40,7 @@ jobs:
           test -f docs/TELEMEDICINA-MOBILE-V9.md
           node --check js/telemedicina-mobile-v9.js
           grep -q 'telemedicina-mobile-v9.css?v=20260903-1' telemedicina/index.html
-          grep -q 'telemedicina-mobile-v9.js?v=20260903-2' telemedicina/index.html
+          grep -q 'telemedicina-mobile-v9.js?v=20260905-1' telemedicina/index.html
           grep -q 'telemedicina-mobile-v15.css?v=20260903-3' telemedicina/index.html
           grep -q 'data-mobile-readability="v15"' telemedicina/index.html
           grep -q 'data-mobile-interaction="v9"' telemedicina/index.html

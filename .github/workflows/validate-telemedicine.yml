@@ -8,11 +8,14 @@ on:
       - 'css/telemedicina-outcome-v14.css'
       - 'css/telemedicina-mobile-v15.css'
       - 'css/telemedicina-desktop-v16.css'
+      - 'css/telemedicina-cards-v19.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-specialties-v17.js'
       - 'js/telemedicina-business-day.js'
       - 'js/telemedicina-mobile-v7.js'
+      - 'js/telemedicina-mobile-v9.js'
+      - 'js/telemedicina-edit.js'
       - 'js/home.js'
       - 'js/admin-users.js'
       - 'js/account.js'
@@ -24,8 +27,10 @@ on:
       - 'worker/portal-safety.js'
       - 'worker/index.js'
       - 'worker/tests/telemedicine-rules.test.mjs'
+      - 'worker/tests/telemedicine-card-ui-v19.test.mjs'
       - 'docs/TELEMEDICINA.md'
       - 'docs/TELEMEDICINA-DESKTOP-V16.md'
+      - 'docs/TELEMEDICINA-CARDS-V19.md'
       - 'PORTAL-ARQUITETURA.md'
       - '.github/workflows/validate-telemedicine.yml'
   push:
@@ -36,11 +41,14 @@ on:
       - 'css/telemedicina-outcome-v14.css'
       - 'css/telemedicina-mobile-v15.css'
       - 'css/telemedicina-desktop-v16.css'
+      - 'css/telemedicina-cards-v19.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-specialties-v17.js'
       - 'js/telemedicina-business-day.js'
       - 'js/telemedicina-mobile-v7.js'
+      - 'js/telemedicina-mobile-v9.js'
+      - 'js/telemedicina-edit.js'
       - 'js/home.js'
       - 'js/admin-users.js'
       - 'js/account.js'
@@ -52,8 +60,10 @@ on:
       - 'worker/portal-safety.js'
       - 'worker/index.js'
       - 'worker/tests/telemedicine-rules.test.mjs'
+      - 'worker/tests/telemedicine-card-ui-v19.test.mjs'
       - 'docs/TELEMEDICINA.md'
       - 'docs/TELEMEDICINA-DESKTOP-V16.md'
+      - 'docs/TELEMEDICINA-CARDS-V19.md'
       - 'PORTAL-ARQUITETURA.md'
       - '.github/workflows/validate-telemedicine.yml'
 
@@ -74,12 +84,16 @@ jobs:
           test -f css/telemedicina-outcome-v14.css
           test -f css/telemedicina-mobile-v15.css
           test -f css/telemedicina-desktop-v16.css
+          test -f css/telemedicina-cards-v19.css
           test -f css/account-admin.css
           test -f js/telemedicina.js
           test -f js/telemedicina-specialties-v17.js
           test -f js/telemedicina-business-day.js
           test -f js/telemedicina-mobile-v7.js
+          test -f js/telemedicina-mobile-v9.js
+          test -f js/telemedicina-edit.js
           test -f docs/TELEMEDICINA-DESKTOP-V16.md
+          test -f docs/TELEMEDICINA-CARDS-V19.md
           test -f worker/telemedicine.js
           test -f worker/telemedicine-access.js
           test -f worker/telemedicine-rules.js
@@ -87,6 +101,8 @@ jobs:
           node --check js/telemedicina-specialties-v17.js
           node --check js/telemedicina-business-day.js
           node --check js/telemedicina-mobile-v7.js
+          node --check js/telemedicina-mobile-v9.js
+          node --check js/telemedicina-edit.js
           node --check js/home.js
           node --check js/admin-users.js
           node --check js/account.js
@@ -103,6 +119,7 @@ jobs:
           set -euo pipefail
           cp worker/telemedicine-rules.js /tmp/telemedicine-rules.mjs
           node worker/tests/telemedicine-rules.test.mjs /tmp/telemedicine-rules.mjs
+          node worker/tests/telemedicine-card-ui-v19.test.mjs
       - name: Conferir autorização, interface, importação e privacidade
         shell: bash
         run: |
@@ -120,7 +137,7 @@ jobs:
           grep -q "const batchSize = 5;" js/telemedicina.js
           grep -q "const existingEvent = await firestoreGet" worker/telemedicine.js
           grep -q "if (!existingEvent)" worker/telemedicine.js
-          grep -q "telemedicina.js?v=20260903-4" telemedicina/index.html
+          grep -q "telemedicina.js?v=20260905-1" telemedicina/index.html
           grep -q "telemedicina.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicine-title-mobile" telemedicina/index.html
           grep -q "Data da última consulta" telemedicina/index.html
@@ -131,9 +148,13 @@ jobs:
           grep -q "telemedicina-outcome-v14.css?v=20260903-2" telemedicina/index.html
           grep -q "telemedicina-mobile-v15.css?v=20260903-3" telemedicina/index.html
           grep -q "telemedicina-desktop-v16.css?v=20260903-2" telemedicina/index.html
-          grep -q "telemedicina-mobile-v7.js?v=20260903-1" telemedicina/index.html
+          grep -q "telemedicina-cards-v19.css?v=20260905-1" telemedicina/index.html
+          grep -q "telemedicina-mobile-v7.js?v=20260905-1" telemedicina/index.html
+          grep -q "telemedicina-mobile-v9.js?v=20260905-1" telemedicina/index.html
+          grep -q "telemedicina-edit.js?v=20260905-1" telemedicina/index.html
           grep -q 'data-desktop-design="v16"' telemedicina/index.html
           grep -q 'data-mobile-readability="v15"' telemedicina/index.html
+          grep -q 'data-followup-cards="v19"' telemedicina/index.html
           grep -q "min-height: 82px" css/telemedicina-mobile-v15.css
           grep -q "flex-flow: row nowrap !important" css/telemedicina-mobile-v15.css
           grep -q "font-size: 1.28rem !important" css/telemedicina-mobile-v15.css
@@ -149,7 +170,10 @@ jobs:
           grep -q "consultFollowupFields" telemedicina/index.html
           grep -q "launchDischargeCelebration" js/telemedicina.js
           grep -q "telemedicine:celebrate-discharge" js/telemedicina.js
-          grep -q "telemedicina-mobile-v9.js?v=20260903-2" telemedicina/index.html
+          grep -q "telemedicine-reminder-chip" js/telemedicina.js
+          grep -q "telemedicine-reminder-chip" js/telemedicina-mobile-v9.js
+          grep -q "prefers-reduced-motion: reduce" css/telemedicina-cards-v19.css
+          grep -q "Cards institucionais V19" docs/TELEMEDICINA.md
           grep -q "prefers-reduced-motion:reduce" css/telemedicina.css
           grep -q "const requestedMode" worker/telemedicine.js
           grep -q "returnConditionResolution" worker/telemedicine.js

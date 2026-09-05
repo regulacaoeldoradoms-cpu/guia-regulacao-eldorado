@@ -36,7 +36,7 @@ jobs:
           test -f docs/TELEMEDICINA-DESKTOP-V16.md
           node --check js/telemedicina-mobile-v7.js
           grep -q 'telemedicina-desktop-v16.css?v=20260903-2' telemedicina/index.html
-          grep -q 'telemedicina-mobile-v7.js?v=20260903-1' telemedicina/index.html
+          grep -q 'telemedicina-mobile-v7.js?v=20260905-1' telemedicina/index.html
           grep -q 'data-desktop-design="v16"' telemedicina/index.html
           grep -q '@media (min-width: 861px)' css/telemedicina-desktop-v16.css
           grep -q 'tm-context-desktop' css/telemedicina-desktop-v16.css

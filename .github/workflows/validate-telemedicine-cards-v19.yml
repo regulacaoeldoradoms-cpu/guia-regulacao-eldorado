@@ -1,0 +1,57 @@
+name: Validar Telemedicina Cards V19
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-cards-v19.css'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-mobile-v7.js'
+      - 'js/telemedicina-mobile-v9.js'
+      - 'js/telemedicina-edit.js'
+      - 'docs/TELEMEDICINA.md'
+      - 'docs/TELEMEDICINA-CARDS-V19.md'
+      - 'worker/tests/telemedicine-card-ui-v19.test.mjs'
+      - '.github/workflows/validate-telemedicine-cards-v19.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-cards-v19.css'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-mobile-v7.js'
+      - 'js/telemedicina-mobile-v9.js'
+      - 'js/telemedicina-edit.js'
+      - 'docs/TELEMEDICINA.md'
+      - 'docs/TELEMEDICINA-CARDS-V19.md'
+      - 'worker/tests/telemedicine-card-ui-v19.test.mjs'
+      - '.github/workflows/validate-telemedicine-cards-v19.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe e camada visual
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f css/telemedicina-cards-v19.css
+          test -f docs/TELEMEDICINA-CARDS-V19.md
+          test -f worker/tests/telemedicine-card-ui-v19.test.mjs
+          node --check js/telemedicina.js
+          node --check js/telemedicina-mobile-v7.js
+          node --check js/telemedicina-mobile-v9.js
+          node --check js/telemedicina-edit.js
+          node worker/tests/telemedicine-card-ui-v19.test.mjs
+      - name: Conferir privacidade e escopo
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -n -E '\b(CNS|CPF)\b' css/telemedicina-cards-v19.css docs/TELEMEDICINA-CARDS-V19.md worker/tests/telemedicine-card-ui-v19.test.mjs; then
+            echo 'A camada visual não deve introduzir identificadores pessoais.' >&2
+            exit 1
+          fi
