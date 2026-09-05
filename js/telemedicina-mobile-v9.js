@@ -89,14 +89,22 @@
   }
 
   function actionButtons(item) {
-    const schedule = item.status === 'SEM PROGRAMAÇÃO' || item.needsReview
-      ? `<button class="portal-button secondary" type="button" data-action="schedule" data-followup="${escapeHtml(item.id)}">Programar</button>` : '';
-    const requested = ['SOLICITAR', 'ATRASADO', 'EM AGUARDO'].includes(item.status) && !item.requestedAt
-      ? `<button class="portal-button primary" type="button" data-action="requested" data-followup="${escapeHtml(item.id)}">Solicitado</button>` : '';
-    return `${schedule}${requested}<button class="portal-button secondary" type="button" data-action="patient" data-patient="${escapeHtml(item.patientId)}">Histórico</button>`;
+    const actions = [];
+    if (['SOLICITAR', 'ATRASADO', 'EM AGUARDO'].includes(item.status) && !item.requestedAt) {
+      actions.push(`<button class="portal-button primary" type="button" data-action="requested" data-followup="${escapeHtml(item.id)}">Solicitado</button>`);
+    }
+    if (window.TelemedicineJustification?.isAvailable(item)) {
+      actions.push(`<button class="portal-button secondary" type="button" data-action="copy-justification" data-followup="${escapeHtml(item.id)}" aria-label="Copiar justificativa da solicitação" aria-live="polite" title="Copiar justificativa da solicitação">Copiar motivo</button>`);
+    }
+    if (item.status === 'SEM PROGRAMAÇÃO' || item.needsReview) {
+      actions.push(`<button class="portal-button secondary" type="button" data-action="schedule" data-followup="${escapeHtml(item.id)}">Programar</button>`);
+    }
+    actions.push(`<button class="portal-button secondary" type="button" data-action="patient" data-patient="${escapeHtml(item.patientId)}">Histórico</button>`);
+    return actions;
   }
 
   function cardHtml(item) {
+    const actions = actionButtons(item);
     return `<article class="telemedicine-row" data-followup-row="${escapeHtml(item.id)}" data-status="${escapeHtml(statusClass(item.status))}">
       <div class="telemedicine-patient">
         <span class="telemedicine-zone-label">Paciente</span>
@@ -107,7 +115,7 @@
       </div>
       <div class="telemedicine-specialty-block"><div><strong>${escapeHtml(item.specialty || 'Especialidade não informada')}</strong><small>Última consulta: ${escapeHtml(formatDate(item.lastConsultationDate))}</small></div><span class="telemedicine-status ${statusClass(item.status)}">${escapeHtml(statusText(item))}</span></div>
       <div class="telemedicine-date-block"><span class="telemedicine-zone-label">Retorno e avisos</span><strong>${item.returnDueDate ? `Retorno: ${escapeHtml(formatDate(item.returnDueDate))}` : 'Retorno sem data'}</strong>${reminderMarkup(item)}</div>
-      <div class="telemedicine-actions" aria-label="Ações do acompanhamento">${actionButtons(item)}</div>
+      <div class="telemedicine-actions" data-action-count="${actions.length}" aria-label="Ações do acompanhamento">${actions.join('')}</div>
     </article>`;
   }
 
@@ -185,7 +193,11 @@
     if (status) { status.className = `telemedicine-status ${statusClass(item.status)}`; status.textContent = statusText(item); }
     if (returnDate) returnDate.textContent = item.returnDueDate ? `Retorno: ${formatDate(item.returnDueDate)}` : 'Retorno sem data';
     if (reminders) reminders.outerHTML = reminderMarkup(item);
-    if (actions) actions.innerHTML = actionButtons(item);
+    if (actions) {
+      const buttons = actionButtons(item);
+      actions.dataset.actionCount = String(buttons.length);
+      actions.innerHTML = buttons.join('');
+    }
     const alert = row.querySelector('.telemedicine-alert-marker');
     if (item.alertToday && !alert) {
       patientButton?.insertAdjacentHTML('afterend', '<span class="telemedicine-alert-marker">HOJE</span>');
@@ -571,6 +583,7 @@
     if (!item) return;
     if (button.dataset.action === 'schedule') return openScheduleInline(row, item, button);
     if (button.dataset.action === 'requested') return openRequestedInline(row, item, button);
+    if (button.dataset.action === 'copy-justification') return window.TelemedicineJustification?.copyFromButton(button, item);
   }
 
   function installCaptureHandlers() {

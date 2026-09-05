@@ -190,6 +190,17 @@ A área de acompanhamentos usa uma camada visual única para desktop e mobile, p
 - na Grade 2 × 2 mobile, as quatro zonas ocupam integralmente a largura de cada card e as ações formam uma coluna uniforme; na Lista, os botões visíveis dividem a largura igualmente, sem alturas artificiais nem extravasamento lateral.
 
 Detalhes de implementação e critérios de regressão estão em `docs/TELEMEDICINA-CARDS-V19.md`.
+
+## Justificativa de solicitação V20
+
+Decisão permanente registrada em 05/09/2026.
+
+Quando um acompanhamento entra em `SOLICITAR` ou permanece em `ATRASADO`, o card oferece **Copiar motivo**. A ação gera uma justificativa com data da última consulta, motivo coerente com a conduta registrada e previsão de retorno. Ela permanece disponível enquanto a solicitação estiver pendente e desaparece após a confirmação em **Solicitado**.
+
+O gerador diferencia retorno por prazo, data-alvo, exames, fisioterapia, procedimento/cirurgia, conclusão de tratamento, condição livre, necessidade clínica e acompanhamento genérico. Campos estruturados prevalecem; a leitura determinística da conduta mantém compatibilidade com registros antigos. Nenhum estado, alarme, permissão, dado persistido ou fluxo operacional é alterado.
+
+Detalhes de redação, acessibilidade e validação estão em `docs/TELEMEDICINA-JUSTIFICATIVA-V20.md`.
+
 ## Três condutas de retorno
 
 Decisão permanente registrada em 03/09/2026.

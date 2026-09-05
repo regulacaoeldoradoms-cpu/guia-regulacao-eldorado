@@ -111,6 +111,21 @@
     return `<small class="telemedicine-reminders"><span class="telemedicine-reminders-label" aria-hidden="true">Avisos programados</span>${chips}</small>`;
   }
 
+  function actionButtons(item) {
+    const actions = [];
+    if (['SOLICITAR', 'ATRASADO', 'EM AGUARDO'].includes(item.status) && !item.requestedAt) {
+      actions.push(`<button class="portal-button primary" type="button" data-action="requested" data-followup="${escapeHtml(item.id)}">Solicitado</button>`);
+    }
+    if (window.TelemedicineJustification?.isAvailable(item)) {
+      actions.push(`<button class="portal-button secondary" type="button" data-action="copy-justification" data-followup="${escapeHtml(item.id)}" aria-label="Copiar justificativa da solicitação" aria-live="polite" title="Copiar justificativa da solicitação">Copiar motivo</button>`);
+    }
+    if (item.status === 'SEM PROGRAMAÇÃO' || item.needsReview) {
+      actions.push(`<button class="portal-button secondary" type="button" data-action="schedule" data-followup="${escapeHtml(item.id)}">Programar</button>`);
+    }
+    actions.push(`<button class="portal-button secondary" type="button" data-action="patient" data-patient="${escapeHtml(item.patientId)}">Histórico</button>`);
+    return actions;
+  }
+
   function latestPatientName(id) {
     return state.patients.find((item) => item.id === id)?.name || '';
   }
@@ -141,10 +156,7 @@
       return;
     }
     listEl.innerHTML = items.map((item) => {
-      const actionPrimary = ['SOLICITAR', 'ATRASADO', 'EM AGUARDO'].includes(item.status) && !item.requestedAt
-        ? `<button class="portal-button primary" type="button" data-action="requested" data-followup="${escapeHtml(item.id)}">Solicitado</button>` : '';
-      const scheduleAction = item.status === 'SEM PROGRAMAÇÃO' || item.needsReview
-        ? `<button class="portal-button secondary" type="button" data-action="schedule" data-followup="${escapeHtml(item.id)}">Programar</button>` : '';
+      const actions = actionButtons(item);
       return `<article class="telemedicine-row" data-followup-row="${escapeHtml(item.id)}" data-status="${escapeHtml(statusClass(item.status))}">
         <div class="telemedicine-patient">
           <span class="telemedicine-zone-label">Paciente</span>
@@ -155,7 +167,7 @@
         </div>
         <div class="telemedicine-specialty-block"><div><strong>${escapeHtml(item.specialty || 'Especialidade não informada')}</strong><small>Última consulta: ${escapeHtml(formatDate(item.lastConsultationDate))}</small></div><span class="telemedicine-status ${statusClass(item.status)}">${escapeHtml(statusText(item))}</span></div>
         <div class="telemedicine-date-block"><span class="telemedicine-zone-label">Retorno e avisos</span><strong>${item.returnDueDate ? `Retorno: ${escapeHtml(formatDate(item.returnDueDate))}` : 'Retorno sem data'}</strong>${reminderMarkup(item)}</div>
-        <div class="telemedicine-actions" aria-label="Ações do acompanhamento">${scheduleAction}${actionPrimary}<button class="portal-button secondary" type="button" data-action="patient" data-patient="${escapeHtml(item.patientId)}">Histórico</button></div>
+        <div class="telemedicine-actions" data-action-count="${actions.length}" aria-label="Ações do acompanhamento">${actions.join('')}</div>
       </article>`;
     }).join('');
   }
@@ -382,6 +394,7 @@
     if (!item) return;
     if (button.dataset.action === 'schedule') openSchedule(item);
     if (button.dataset.action === 'requested') openRequested(item);
+    if (button.dataset.action === 'copy-justification') window.TelemedicineJustification?.copyFromButton(button, item);
   });
 
   document.querySelectorAll('[data-status-filter]').forEach((button) => button.addEventListener('click', () => {
