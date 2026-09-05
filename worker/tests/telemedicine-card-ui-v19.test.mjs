@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const read = (path) => fs.readFileSync(path, 'utf8');
+const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const read = (relativePath) => fs.readFileSync(path.join(repositoryRoot, relativePath), 'utf8');
 
 const html = read('telemedicina/index.html');
 const css = read('css/telemedicina-cards-v19.css');
