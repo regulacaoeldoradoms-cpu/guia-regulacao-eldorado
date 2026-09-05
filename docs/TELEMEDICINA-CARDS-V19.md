@@ -44,6 +44,12 @@ Cards e botões respondem a foco e passagem do ponteiro com borda, sombra e elev
 - desktop: Lista ou Grade 3 × 3, preferência independente e ações simétricas com 48 px de altura;
 - nenhuma visualização limita a quantidade de pacientes.
 
+### Correção de alinhamento mobile
+
+Em 05/09/2026, a camada V19 recebeu uma correção permanente para neutralizar regras antigas de alinhamento que faziam as quatro zonas encolherem conforme o conteúdo na Grade 2 × 2. Em cada coluna da grade, paciente e conduta, especialidade e estado, retorno e avisos, e ações passam a ocupar toda a largura interna disponível. Os botões permanecem em uma coluna, com larguras iguais e sem alterar quais ações a regra operacional disponibiliza.
+
+Na visualização Lista, o card não conserva altura mínima artificial e o bloco de ações usa toda a largura, distribuindo dinamicamente os botões visíveis em partes iguais. As duas visualizações exigem `min-width: 0` nas zonas para evitar extravasamento horizontal quando há ampliação de texto, mantendo a preferência explícita por Lista ou Grade 2 × 2.
+
 ## Implementação
 
 - `css/telemedicina-cards-v19.css` é carregado depois das camadas V15 e V16 e contém apenas apresentação;
@@ -61,4 +67,5 @@ A validação deve confirmar:
 - manutenção de `data-action="schedule"`, `data-action="requested"` e `data-action="patient"`;
 - ausência de emojis e de símbolos tipográficos usados como ícones na interface;
 - preservação dos seletores de edição, filtros, Lista/Grade e painéis inline;
+- zonas com largura integral na Grade 2 × 2 e botões com largura simétrica na Lista;
 - nenhuma alteração nos arquivos de backend, autorização ou regras de retorno para esta evolução visual.

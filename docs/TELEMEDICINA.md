@@ -187,6 +187,7 @@ A área de acompanhamentos usa uma camada visual única para desktop e mobile, p
 - a interface de Telemedicina não usa emojis nem pictogramas tipográficos decorativos; Lista e Grade também usam ícones vetoriais;
 - foco por teclado permanece visível, o contraste textual é preservado e `prefers-reduced-motion` remove elevação e transições não essenciais;
 - no desktop, as três ações continuam com largura e altura simétricas; no mobile, as áreas de toque, a tipografia ampliada, os painéis sanfonados e a centralização aprovada permanecem vigentes.
+- na Grade 2 × 2 mobile, as quatro zonas ocupam integralmente a largura de cada card e as ações formam uma coluna uniforme; na Lista, os botões visíveis dividem a largura igualmente, sem alturas artificiais nem extravasamento lateral.
 
 Detalhes de implementação e critérios de regressão estão em `docs/TELEMEDICINA-CARDS-V19.md`.
 ## Três condutas de retorno

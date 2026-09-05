@@ -493,8 +493,36 @@ body.telemedicine-page[data-followup-cards="v19"] {
 
   .telemedicine-page[data-followup-cards="v19"] .telemedicine-row > .telemedicine-patient,
   .telemedicine-page[data-followup-cards="v19"] .telemedicine-row > .telemedicine-specialty-block,
-  .telemedicine-page[data-followup-cards="v19"] .telemedicine-row > .telemedicine-date-block {
+  .telemedicine-page[data-followup-cards="v19"] .telemedicine-row > .telemedicine-date-block,
+  .telemedicine-page[data-followup-cards="v19"] .telemedicine-row > .telemedicine-actions {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    min-width: 0 !important;
     padding: 11px !important;
+  }
+
+  .telemedicine-page[data-followup-cards="v19"].tm-view-list .telemedicine-row {
+    min-height: 0 !important;
+    height: auto !important;
+    align-items: stretch !important;
+  }
+
+  .telemedicine-page[data-followup-cards="v19"].tm-view-list .telemedicine-actions {
+    display: flex !important;
+    width: 100% !important;
+    max-width: none !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    justify-items: stretch !important;
+  }
+
+  .telemedicine-page[data-followup-cards="v19"].tm-view-list .telemedicine-actions .portal-button {
+    grid-column: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    flex: 1 1 0 !important;
   }
 
   .telemedicine-page[data-followup-cards="v19"] .telemedicine-zone-label,
@@ -521,12 +549,32 @@ body.telemedicine-page[data-followup-cards="v19"] {
     min-height: 380px !important;
     gap: 8px !important;
     padding: 9px !important;
+    align-items: stretch !important;
   }
 
   .telemedicine-page[data-followup-cards="v19"].tm-view-grid .telemedicine-row > .telemedicine-patient,
   .telemedicine-page[data-followup-cards="v19"].tm-view-grid .telemedicine-row > .telemedicine-specialty-block,
-  .telemedicine-page[data-followup-cards="v19"].tm-view-grid .telemedicine-row > .telemedicine-date-block {
+  .telemedicine-page[data-followup-cards="v19"].tm-view-grid .telemedicine-row > .telemedicine-date-block,
+  .telemedicine-page[data-followup-cards="v19"].tm-view-grid .telemedicine-row > .telemedicine-actions {
+    width: 100% !important;
+    min-width: 0 !important;
+    align-self: stretch !important;
     padding: 8px !important;
+  }
+
+  .telemedicine-page[data-followup-cards="v19"].tm-view-grid .telemedicine-actions {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    max-width: none !important;
+    justify-content: stretch !important;
+    justify-items: stretch !important;
+  }
+
+  .telemedicine-page[data-followup-cards="v19"].tm-view-grid .telemedicine-actions .portal-button {
+    grid-column: 1 !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
   }
 
   .telemedicine-page[data-followup-cards="v19"].tm-view-grid .telemedicine-zone-label,
