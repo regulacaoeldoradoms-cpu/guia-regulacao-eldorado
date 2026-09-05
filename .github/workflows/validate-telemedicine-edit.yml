@@ -61,7 +61,7 @@ jobs:
           grep -Fq "firestoreReplace(env" worker/telemedicine-router-v2.js
           grep -Fq "combined.sort" worker/telemedicine-router-v2.js
           grep -Fq "export async function firestoreReplace" worker/firebase-gateway.js
-          grep -Fq "telemedicina-edit.js?v=20260902-1" telemedicina/index.html
+          grep -Fq "telemedicina-edit.js?v=20260905-1" telemedicina/index.html
           grep -Fq "telemedicina-mobile-v13.css?v=20260903-2" telemedicina/index.html
           grep -Fq "data-telemedicine-edit" js/telemedicina-edit.js
           grep -Fq "REUMATOLOGIA" js/telemedicina-edit.js

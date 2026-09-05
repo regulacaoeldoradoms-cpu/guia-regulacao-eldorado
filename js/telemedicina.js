@@ -99,6 +99,18 @@
     return item.status || '—';
   }
 
+  function reminderMarkup(item) {
+    const dates = Array.isArray(item.reminderDates) ? item.reminderDates.filter(Boolean) : [];
+    if (!dates.length) {
+      return '<small class="telemedicine-reminders is-empty"><span class="telemedicine-reminder-empty">Sem lembretes calculados</span></small>';
+    }
+    const chips = dates.map((date, index) => {
+      const formatted = formatDate(date);
+      return `<span class="telemedicine-reminder-chip" aria-label="Aviso ${index + 1}: ${escapeHtml(formatted)}"><span class="telemedicine-reminder-number" aria-hidden="true">${index + 1}</span><span>${escapeHtml(formatted)}</span></span>`;
+    }).join('');
+    return `<small class="telemedicine-reminders"><span class="telemedicine-reminders-label" aria-hidden="true">Avisos programados</span>${chips}</small>`;
+  }
+
   function latestPatientName(id) {
     return state.patients.find((item) => item.id === id)?.name || '';
   }
@@ -129,22 +141,21 @@
       return;
     }
     listEl.innerHTML = items.map((item) => {
-      const reminder = Array.isArray(item.reminderDates) && item.reminderDates.length
-        ? `Avisos: ${item.reminderDates.map(formatDate).join(' · ')}`
-        : 'Sem lembretes calculados';
       const actionPrimary = ['SOLICITAR', 'ATRASADO', 'EM AGUARDO'].includes(item.status) && !item.requestedAt
         ? `<button class="portal-button primary" type="button" data-action="requested" data-followup="${escapeHtml(item.id)}">Solicitado</button>` : '';
       const scheduleAction = item.status === 'SEM PROGRAMAÇÃO' || item.needsReview
         ? `<button class="portal-button secondary" type="button" data-action="schedule" data-followup="${escapeHtml(item.id)}">Programar</button>` : '';
-      return `<article class="telemedicine-row" data-followup-row="${escapeHtml(item.id)}">
+      return `<article class="telemedicine-row" data-followup-row="${escapeHtml(item.id)}" data-status="${escapeHtml(statusClass(item.status))}">
         <div class="telemedicine-patient">
+          <span class="telemedicine-zone-label">Paciente</span>
           <button type="button" data-action="patient" data-patient="${escapeHtml(item.patientId)}">${escapeHtml(item.patientName || latestPatientName(item.patientId) || 'Paciente')}</button>
           ${item.alertToday ? '<span class="telemedicine-alert-marker">HOJE</span>' : ''}
+          <span class="telemedicine-zone-label telemedicine-condition-label">Conduta</span>
           <small>${escapeHtml(item.resolution || 'Sem conduta registrada')}</small>
         </div>
         <div class="telemedicine-specialty-block"><div><strong>${escapeHtml(item.specialty || 'Especialidade não informada')}</strong><small>Última consulta: ${escapeHtml(formatDate(item.lastConsultationDate))}</small></div><span class="telemedicine-status ${statusClass(item.status)}">${escapeHtml(statusText(item))}</span></div>
-        <div class="telemedicine-date-block"><strong>${item.returnDueDate ? `Retorno: ${escapeHtml(formatDate(item.returnDueDate))}` : 'Retorno sem data'}</strong><small>${escapeHtml(reminder)}</small></div>
-        <div class="telemedicine-actions">${scheduleAction}${actionPrimary}<button class="portal-button secondary" type="button" data-action="patient" data-patient="${escapeHtml(item.patientId)}">Histórico</button></div>
+        <div class="telemedicine-date-block"><span class="telemedicine-zone-label">Retorno e avisos</span><strong>${item.returnDueDate ? `Retorno: ${escapeHtml(formatDate(item.returnDueDate))}` : 'Retorno sem data'}</strong>${reminderMarkup(item)}</div>
+        <div class="telemedicine-actions" aria-label="Ações do acompanhamento">${scheduleAction}${actionPrimary}<button class="portal-button secondary" type="button" data-action="patient" data-patient="${escapeHtml(item.patientId)}">Histórico</button></div>
       </article>`;
     }).join('');
   }

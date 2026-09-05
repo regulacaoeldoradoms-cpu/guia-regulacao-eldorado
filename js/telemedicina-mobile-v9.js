@@ -76,10 +76,16 @@
     return item.status || '—';
   }
 
-  function reminderText(item) {
-    return Array.isArray(item.reminderDates) && item.reminderDates.length
-      ? `Avisos: ${item.reminderDates.map(formatDate).join(' · ')}`
-      : 'Sem lembretes calculados';
+  function reminderMarkup(item) {
+    const dates = Array.isArray(item.reminderDates) ? item.reminderDates.filter(Boolean) : [];
+    if (!dates.length) {
+      return '<small class="telemedicine-reminders is-empty"><span class="telemedicine-reminder-empty">Sem lembretes calculados</span></small>';
+    }
+    const chips = dates.map((date, index) => {
+      const formatted = formatDate(date);
+      return `<span class="telemedicine-reminder-chip" aria-label="Aviso ${index + 1}: ${escapeHtml(formatted)}"><span class="telemedicine-reminder-number" aria-hidden="true">${index + 1}</span><span>${escapeHtml(formatted)}</span></span>`;
+    }).join('');
+    return `<small class="telemedicine-reminders"><span class="telemedicine-reminders-label" aria-hidden="true">Avisos programados</span>${chips}</small>`;
   }
 
   function actionButtons(item) {
@@ -91,15 +97,17 @@
   }
 
   function cardHtml(item) {
-    return `<article class="telemedicine-row" data-followup-row="${escapeHtml(item.id)}">
+    return `<article class="telemedicine-row" data-followup-row="${escapeHtml(item.id)}" data-status="${escapeHtml(statusClass(item.status))}">
       <div class="telemedicine-patient">
+        <span class="telemedicine-zone-label">Paciente</span>
         <button type="button" data-action="patient" data-patient="${escapeHtml(item.patientId)}">${escapeHtml(item.patientName || 'Paciente')}</button>
         ${item.alertToday ? '<span class="telemedicine-alert-marker">HOJE</span>' : ''}
+        <span class="telemedicine-zone-label telemedicine-condition-label">Conduta</span>
         <small>${escapeHtml(item.resolution || 'Sem conduta registrada')}</small>
       </div>
       <div class="telemedicine-specialty-block"><div><strong>${escapeHtml(item.specialty || 'Especialidade não informada')}</strong><small>Última consulta: ${escapeHtml(formatDate(item.lastConsultationDate))}</small></div><span class="telemedicine-status ${statusClass(item.status)}">${escapeHtml(statusText(item))}</span></div>
-      <div class="telemedicine-date-block"><strong>${item.returnDueDate ? `Retorno: ${escapeHtml(formatDate(item.returnDueDate))}` : 'Retorno sem data'}</strong><small>${escapeHtml(reminderText(item))}</small></div>
-      <div class="telemedicine-actions">${actionButtons(item)}</div>
+      <div class="telemedicine-date-block"><span class="telemedicine-zone-label">Retorno e avisos</span><strong>${item.returnDueDate ? `Retorno: ${escapeHtml(formatDate(item.returnDueDate))}` : 'Retorno sem data'}</strong>${reminderMarkup(item)}</div>
+      <div class="telemedicine-actions" aria-label="Ações do acompanhamento">${actionButtons(item)}</div>
     </article>`;
   }
 
@@ -167,15 +175,16 @@
     const lastDate = row.querySelector('.telemedicine-specialty-block small');
     const status = row.querySelector('.telemedicine-status');
     const returnDate = row.querySelector('.telemedicine-date-block strong');
-    const reminders = row.querySelector('.telemedicine-date-block small');
+    const reminders = row.querySelector('.telemedicine-date-block .telemedicine-reminders');
     const actions = row.querySelector('.telemedicine-actions');
     if (patientButton) { patientButton.textContent = item.patientName || 'Paciente'; patientButton.dataset.patient = item.patientId || ''; }
     if (patientSmall) patientSmall.textContent = item.resolution || 'Sem conduta registrada';
     if (specialty) specialty.textContent = item.specialty || 'Especialidade não informada';
     if (lastDate) lastDate.textContent = `Última consulta: ${formatDate(item.lastConsultationDate)}`;
+    row.dataset.status = statusClass(item.status);
     if (status) { status.className = `telemedicine-status ${statusClass(item.status)}`; status.textContent = statusText(item); }
     if (returnDate) returnDate.textContent = item.returnDueDate ? `Retorno: ${formatDate(item.returnDueDate)}` : 'Retorno sem data';
-    if (reminders) reminders.textContent = reminderText(item);
+    if (reminders) reminders.outerHTML = reminderMarkup(item);
     if (actions) actions.innerHTML = actionButtons(item);
     const alert = row.querySelector('.telemedicine-alert-marker');
     if (item.alertToday && !alert) {

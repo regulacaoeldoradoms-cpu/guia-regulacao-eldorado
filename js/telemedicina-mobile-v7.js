@@ -27,8 +27,8 @@
   }
 
   function viewLabel(view, context) {
-    if (view === 'list') return '☰ Lista';
-    return context === 'mobile' ? '▦ Grade 2×2' : '▦ Grade 3×3';
+    if (view === 'list') return 'Lista';
+    return context === 'mobile' ? 'Grade 2×2' : 'Grade 3×3';
   }
 
   function updateSwitch(context) {
