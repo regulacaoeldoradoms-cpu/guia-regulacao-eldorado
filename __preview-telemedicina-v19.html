@@ -29,7 +29,7 @@
         let html = await response.text();
         html = html.replace(
           /\s*<script src="\/js\/auth-config\.js[^>]*><\/script>\s*<script src="\/js\/auth-client\.js[^>]*><\/script>/,
-          '\n  <script>' + mock + '<\\/script>'
+          '\n  <script>' + mock + '<\/script>'
         );
         html = html.replace(/(href|src)="\//g, '$1="' + base);
         document.open();
