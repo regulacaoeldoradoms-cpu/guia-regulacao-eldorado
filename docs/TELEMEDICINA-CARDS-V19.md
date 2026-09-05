@@ -32,6 +32,7 @@ Cor não é o único identificador. Cada selo preserva o texto do estado, possui
 
 - `Programar` usa calendário com adição;
 - `Solicitado` usa confirmação em círculo;
+- `Copiar motivo`, disponível em `SOLICITAR` e `ATRASADO`, usa prancheta e mantém o vetor junto ao texto;
 - `Histórico` usa relógio com retorno;
 - edição usa lápis de traço;
 - Lista e Grade usam vetores próprios, sem caracteres pictográficos ou emojis.
@@ -66,7 +67,7 @@ A validação deve confirmar:
 
 - presença dos cinco estados operacionais e de `prefers-reduced-motion` na camada V19;
 - paridade de marcação entre o carregamento inicial e os cards recriados após salvamentos mobile;
-- manutenção de `data-action="schedule"`, `data-action="requested"` e `data-action="patient"`;
+- manutenção de `data-action="schedule"`, `data-action="requested"`, `data-action="copy-justification"` e `data-action="patient"`;
 - ausência de emojis e de símbolos tipográficos usados como ícones na interface;
 - preservação dos seletores de edição, filtros, Lista/Grade e painéis inline;
 - zonas com largura integral na Grade 2 × 2 e botões com largura simétrica na Lista;
