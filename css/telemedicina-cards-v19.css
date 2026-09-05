@@ -231,6 +231,15 @@ body.telemedicine-page[data-followup-cards="v19"] {
   mask-size: contain;
 }
 
+/* Neutraliza o posicionamento absoluto usado pelo antigo texto substituto da V6.
+   O vetor volta ao fluxo flex e permanece imediatamente ao lado do rótulo. */
+.telemedicine-page[data-followup-cards="v19"] .telemedicine-actions [data-action]::before {
+  position: static !important;
+  inset: auto !important;
+  place-items: normal !important;
+  margin: 0 !important;
+}
+
 .telemedicine-page[data-followup-cards="v19"] .telemedicine-status.em-aguardo {
   --tm-status-icon: var(--tm-v19-icon-hourglass);
   color: #155f58 !important;

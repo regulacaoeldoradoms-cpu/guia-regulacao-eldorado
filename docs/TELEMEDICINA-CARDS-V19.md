@@ -50,6 +50,8 @@ Em 05/09/2026, a camada V19 recebeu uma correção permanente para neutralizar r
 
 Na visualização Lista, o card não conserva altura mínima artificial e o bloco de ações usa toda a largura, distribuindo dinamicamente os botões visíveis em partes iguais. As duas visualizações exigem `min-width: 0` nas zonas para evitar extravasamento horizontal quando há ampliação de texto, mantendo a preferência explícita por Lista ou Grade 2 × 2.
 
+O ícone de confirmação de `Solicitado` deve participar do fluxo flex do botão e permanecer imediatamente ao lado do texto. A V19 neutraliza expressamente `position: absolute` e `inset: 0` herdados do antigo texto substituto da V6; nenhum ícone de ação pode ser ancorado isoladamente em uma borda do botão.
+
 ## Implementação
 
 - `css/telemedicina-cards-v19.css` é carregado depois das camadas V15 e V16 e contém apenas apresentação;
@@ -68,4 +70,5 @@ A validação deve confirmar:
 - ausência de emojis e de símbolos tipográficos usados como ícones na interface;
 - preservação dos seletores de edição, filtros, Lista/Grade e painéis inline;
 - zonas com largura integral na Grade 2 × 2 e botões com largura simétrica na Lista;
+- ícone de `Solicitado` no fluxo do botão, ao lado do texto, sem posicionamento absoluto;
 - nenhuma alteração nos arquivos de backend, autorização ou regras de retorno para esta evolução visual.
