@@ -148,7 +148,7 @@ jobs:
           grep -q "telemedicina-outcome-v14.css?v=20260903-2" telemedicina/index.html
           grep -q "telemedicina-mobile-v15.css?v=20260903-3" telemedicina/index.html
           grep -q "telemedicina-desktop-v16.css?v=20260903-2" telemedicina/index.html
-          grep -q "telemedicina-cards-v19.css?v=20260905-2" telemedicina/index.html
+          grep -q "telemedicina-cards-v19.css?v=20260905-3" telemedicina/index.html
           grep -q "telemedicina-mobile-v7.js?v=20260905-1" telemedicina/index.html
           grep -q "telemedicina-mobile-v9.js?v=20260905-1" telemedicina/index.html
           grep -q "telemedicina-edit.js?v=20260905-1" telemedicina/index.html

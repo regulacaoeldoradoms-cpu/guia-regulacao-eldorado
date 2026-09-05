@@ -14,7 +14,7 @@ const viewSwitch = read('js/telemedicina-mobile-v7.js');
 const edit = read('js/telemedicina-edit.js');
 const documentation = read('docs/TELEMEDICINA-CARDS-V19.md');
 
-assert.match(html, /telemedicina-cards-v19\.css\?v=20260905-2/);
+assert.match(html, /telemedicina-cards-v19\.css\?v=20260905-3/);
 assert.match(html, /data-followup-cards="v19"/);
 assert.match(html, /telemedicina\.js\?v=20260905-1/);
 assert.match(html, /telemedicina-mobile-v7\.js\?v=20260905-1/);
@@ -47,6 +47,9 @@ for (const state of ['em-aguardo', 'solicitar', 'atrasado', 'sem-programacao', '
 for (const action of ['schedule', 'requested', 'patient']) {
   assert.ok(css.includes(`[data-action="${action}"]`), `Icone/acao ausente para ${action}`);
 }
+
+assert.match(css, /\.telemedicine-actions \[data-action\]::before\s*\{[\s\S]*?position: static !important;[\s\S]*?inset: auto !important;/);
+assert.doesNotMatch(css, /\[data-followup-cards="v19"\][^{]*\[data-action="requested"\]::before\s*\{[^}]*position:\s*absolute/);
 
 assert.match(css, /telemedicine-workspace/);
 assert.match(css, /telemedicine-reminders/);
