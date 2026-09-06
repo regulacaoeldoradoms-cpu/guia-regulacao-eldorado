@@ -48,7 +48,7 @@ jobs:
           node --check js/telemedicina-justification-v20.js
           node worker/tests/telemedicine-justification-v20.test.mjs
           grep -q 'telemedicina-mobile-v9.css?v=20260903-1' telemedicina/index.html
-          grep -q 'telemedicina-justification-v20.js?v=20260905-1' telemedicina/index.html
+          grep -q 'telemedicina-justification-v20.js?v=20260906-1' telemedicina/index.html
           grep -q 'telemedicina-mobile-v9.js?v=20260905-2' telemedicina/index.html
           grep -q 'telemedicina-mobile-v15.css?v=20260903-3' telemedicina/index.html
           grep -q 'data-mobile-readability="v15"' telemedicina/index.html
