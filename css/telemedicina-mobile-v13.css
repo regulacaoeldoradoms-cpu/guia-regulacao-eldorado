@@ -40,6 +40,33 @@
     vertical-align: middle !important;
   }
 
+  /* Na grade 2x2, o bloco do paciente precisa formar uma linha real para nome + lápis.
+     Os rótulos e a conduta continuam ocupando linhas inteiras abaixo/acima. */
+  .telemedicine-page.tm-view-grid .telemedicine-row > .telemedicine-patient {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: center !important;
+    column-gap: 2px !important;
+    row-gap: 0 !important;
+  }
+
+  .telemedicine-page.tm-view-grid .telemedicine-row > .telemedicine-patient > .telemedicine-zone-label,
+  .telemedicine-page.tm-view-grid .telemedicine-row > .telemedicine-patient > small {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+  }
+
+  .telemedicine-page.tm-view-grid .telemedicine-row > .telemedicine-patient > button[data-action="patient"] {
+    flex: 0 1 auto !important;
+    width: auto !important;
+    max-width: calc(100% - 30px) !important;
+  }
+
+  .telemedicine-page.tm-view-grid .telemedicine-row > .telemedicine-patient > .telemedicine-inline-edit[data-telemedicine-edit="patient"] {
+    flex: 0 0 24px !important;
+  }
+
   .telemedicine-page .telemedicine-row > .telemedicine-specialty-block > div {
     display: flex !important;
     flex-wrap: wrap !important;
