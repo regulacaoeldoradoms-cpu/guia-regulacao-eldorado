@@ -1,6 +1,6 @@
 /* Telemedicina Mobile V13
    Mantém os controles de correção de cadastro discretos nos cards mobile.
-   O lápis do paciente fica no canto do nome e o da especialidade fica ao lado do texto.
+   O lápis do paciente fica imediatamente ao lado do nome e o da especialidade fica ao lado do texto.
    Garante que os cards filtrados pelo atributo hidden realmente desapareçam no mobile.
    Não introduz regras para desktop. */
 @media (max-width: 860px), (pointer: coarse) and (max-device-width: 900px) {
@@ -31,10 +31,13 @@
     z-index: 4 !important;
   }
 
+  /* O controle pertence visualmente ao nome do paciente, não ao canto do card. */
   .telemedicine-page .telemedicine-row > .telemedicine-patient > .telemedicine-inline-edit[data-telemedicine-edit="patient"] {
-    position: absolute !important;
-    top: 5px !important;
-    right: 6px !important;
+    position: static !important;
+    display: inline-flex !important;
+    margin-left: 2px !important;
+    transform: none !important;
+    vertical-align: middle !important;
   }
 
   .telemedicine-page .telemedicine-row > .telemedicine-specialty-block > div {
@@ -79,6 +82,10 @@
 
   .telemedicine-page .telemedicine-row > .telemedicine-patient > button[data-action="patient"] {
     box-sizing: border-box !important;
-    padding-inline: 24px !important;
+    display: inline-block !important;
+    width: auto !important;
+    max-width: calc(100% - 30px) !important;
+    padding-inline: 0 !important;
+    vertical-align: middle !important;
   }
 }
