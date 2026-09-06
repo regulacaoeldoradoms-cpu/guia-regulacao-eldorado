@@ -67,6 +67,21 @@
     flex: 0 0 24px !important;
   }
 
+  /* A camada V19 é carregada depois e transforma o nome em bloco de largura total.
+     Esta regra mais específica preserva a atmosfera V19, mas impede que ela afaste o lápis. */
+  .telemedicine-page[data-followup-cards="v19"].tm-view-grid .telemedicine-row > .telemedicine-patient > button[data-action="patient"] {
+    display: inline-block !important;
+    flex: 0 1 auto !important;
+    width: auto !important;
+    max-width: calc(100% - 30px) !important;
+    padding: 0 !important;
+  }
+
+  .telemedicine-page[data-followup-cards="v19"].tm-view-grid .telemedicine-row > .telemedicine-patient > .telemedicine-inline-edit[data-telemedicine-edit="patient"] {
+    flex: 0 0 24px !important;
+    margin-left: 2px !important;
+  }
+
   .telemedicine-page .telemedicine-row > .telemedicine-specialty-block > div {
     display: flex !important;
     flex-wrap: wrap !important;
