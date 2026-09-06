@@ -229,6 +229,9 @@ export async function ensureAuthSchema(env) {
   await ensureColumn(env, 'email_verified', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn(env, 'firebase_uid', "TEXT NOT NULL DEFAULT ''");
   await ensureColumn(env, 'accept_friend_requests', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn(env, 'interface_sounds_enabled', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn(env, 'interface_sound_volume', 'INTEGER NOT NULL DEFAULT 32');
+  await ensureColumn(env, 'interface_sounds_muted', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn(env, 'self_registered', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn(env, 'avatar_data', "TEXT NOT NULL DEFAULT ''");
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_auth_users_active_role ON auth_users(active, role)').run();
@@ -253,6 +256,9 @@ function mapDbUser(row) {
     emailVerified: Number(row.email_verified) === 1,
     firebaseUid: row.firebase_uid || '',
     acceptFriendRequests: Number(row.accept_friend_requests) === 1,
+    interfaceSoundsEnabled: Number(row.interface_sounds_enabled) === 1,
+    interfaceSoundVolume: Math.min(100, Math.max(0, Number(row.interface_sound_volume ?? 32))),
+    interfaceSoundsMuted: Number(row.interface_sounds_muted) === 1,
     selfRegistered: Number(row.self_registered) === 1,
     active: Number(row.active) === 1,
     mustChangePassword: Number(row.must_change_password) === 1,
@@ -278,6 +284,9 @@ function publicUser(user, options = {}) {
     emailVerified: Boolean(user.emailVerified),
     privacyMode: user.email ? 'sigilosa' : 'anonima',
     acceptFriendRequests: Boolean(user.acceptFriendRequests),
+    interfaceSoundsEnabled: Boolean(user.interfaceSoundsEnabled),
+    interfaceSoundVolume: Math.min(100, Math.max(0, Number(user.interfaceSoundVolume ?? 32))),
+    interfaceSoundsMuted: Boolean(user.interfaceSoundsMuted),
     selfRegistered: Boolean(user.selfRegistered)
   };
   if (options.includeEmail) result.email = user.email || '';
@@ -302,6 +311,9 @@ function configuredUsers(env) {
     email: normalizeEmail(item.email),
     emailVerified: Boolean(item.emailVerified),
     acceptFriendRequests: Boolean(item.acceptFriendRequests),
+    interfaceSoundsEnabled: Boolean(item.interfaceSoundsEnabled),
+    interfaceSoundVolume: Math.min(100, Math.max(0, Number(item.interfaceSoundVolume ?? 32))),
+    interfaceSoundsMuted: Boolean(item.interfaceSoundsMuted),
     selfRegistered: false,
     sessionVersion: 1,
     source: 'bootstrap'
@@ -480,6 +492,9 @@ async function securityGet(request, env, origin) {
       emailVerified: Boolean(user.emailVerified),
       privacyMode: user.email ? 'sigilosa' : 'anonima',
       acceptFriendRequests: Boolean(user.acceptFriendRequests),
+      interfaceSoundsEnabled: Boolean(user.interfaceSoundsEnabled),
+      interfaceSoundVolume: Math.min(100, Math.max(0, Number(user.interfaceSoundVolume ?? 32))),
+      interfaceSoundsMuted: Boolean(user.interfaceSoundsMuted),
       firebaseReady: firebaseConfigured(env)
     }
   }, 200, origin);
@@ -495,6 +510,25 @@ async function securityPatch(request, env, origin) {
   if (Object.prototype.hasOwnProperty.call(body, 'acceptFriendRequests')) {
     updates.push('accept_friend_requests = ?');
     values.push(body.acceptFriendRequests ? 1 : 0);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, 'interfaceSoundsEnabled')) {
+    updates.push('interface_sounds_enabled = ?');
+    values.push(body.interfaceSoundsEnabled ? 1 : 0);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, 'interfaceSoundVolume')) {
+    const volume = Number(body.interfaceSoundVolume);
+    if (!Number.isFinite(volume) || volume < 0 || volume > 100) {
+      return json({ error: 'O volume dos sons da interface deve estar entre 0 e 100.' }, 400, origin);
+    }
+    updates.push('interface_sound_volume = ?');
+    values.push(Math.round(volume));
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, 'interfaceSoundsMuted')) {
+    updates.push('interface_sounds_muted = ?');
+    values.push(body.interfaceSoundsMuted ? 1 : 0);
   }
 
   if (Object.prototype.hasOwnProperty.call(body, 'email')) {

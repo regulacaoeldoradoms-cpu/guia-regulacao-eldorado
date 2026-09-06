@@ -194,12 +194,14 @@
 
     overlay = document.createElement('div');
     overlay.id = 'praiseRecipientDialog';
-    overlay.hidden = true;
+    overlay.className = 'portal-auxiliary-dialog';
+    overlay.setAttribute('aria-hidden', 'true');
     overlay.innerHTML = `
       <style>
-        #praiseRecipientDialog{position:fixed;inset:0;z-index:10050;display:grid;place-items:center;padding:18px;background:rgba(12,31,47,.62);backdrop-filter:blur(4px)}
-        #praiseRecipientDialog[hidden]{display:none!important}
-        #praiseRecipientDialog .praise-dialog{width:min(560px,100%);max-height:calc(100dvh - 36px);overflow:auto;padding:24px;border:1px solid #d8e2e8;border-radius:20px;background:#fff;box-shadow:0 22px 60px rgba(13,42,61,.28)}
+        #praiseRecipientDialog{position:fixed;inset:0;z-index:10050;display:grid;place-items:center;padding:18px;background:rgba(12,31,47,.62);backdrop-filter:blur(4px);visibility:hidden;opacity:0;pointer-events:none;transition:opacity var(--portal-motion-standard,180ms) ease,visibility 0s linear var(--portal-motion-standard,180ms)}
+        #praiseRecipientDialog.open{visibility:visible;opacity:1;pointer-events:auto;transition-delay:0s}
+        #praiseRecipientDialog .praise-dialog{width:min(560px,100%);max-height:calc(100dvh - 36px);overflow:auto;padding:24px;border:1px solid #d8e2e8;border-radius:20px;background:#fff;box-shadow:0 22px 60px rgba(13,42,61,.28);opacity:.96;transform:translateY(8px) scale(.985);transition:opacity var(--portal-motion-standard,180ms) ease,transform var(--portal-motion-standard,180ms) var(--portal-motion-ease-out,ease)}
+        #praiseRecipientDialog.open .praise-dialog{opacity:1;transform:none}
         #praiseRecipientDialog .praise-kicker{display:block;color:#8b6918;font-size:12px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
         #praiseRecipientDialog h3{margin:6px 0 8px;color:#173b5d;font-size:25px;line-height:1.15}
         #praiseRecipientDialog p{margin:0 0 18px;color:#607687;font-size:15px;line-height:1.5}
@@ -213,9 +215,9 @@
         #praiseRecipientDialog .generate{border:0;background:#8e6b18;color:#fff;box-shadow:0 7px 16px rgba(142,107,24,.2)}
         @media(max-width:600px){#praiseRecipientDialog{padding:10px;align-items:end}#praiseRecipientDialog .praise-dialog{padding:20px 16px 18px;border-radius:20px 20px 12px 12px}#praiseRecipientDialog h3{font-size:24px}#praiseRecipientDialog label{font-size:16px}#praiseRecipientDialog input{min-height:58px;font-size:18px}#praiseRecipientDialog .praise-actions{grid-template-columns:1fr}#praiseRecipientDialog button{min-height:58px;font-size:17px}}
       </style>
-      <form class="praise-dialog" id="praiseRecipientForm">
+      <form class="praise-dialog" id="praiseRecipientForm" role="dialog" aria-modal="true" aria-labelledby="praiseRecipientTitle">
         <span class="praise-kicker">Carta de reconhecimento</span>
-        <h3>Para quem será entregue?</h3>
+        <h3 id="praiseRecipientTitle">Para quem será entregue?</h3>
         <p>Informe o profissional, equipe ou serviço que deve aparecer como destinatário. O sistema não tenta adivinhar o nome a partir do relato.</p>
         <label for="praiseRecipientName">Nome do profissional, equipe ou serviço</label>
         <input id="praiseRecipientName" maxlength="160" required autocomplete="off" placeholder="Ex.: Maria da Silva ou Equipe do Núcleo de Saúde">
@@ -226,8 +228,18 @@
       </form>`;
     document.body.appendChild(overlay);
 
-    overlay.querySelector('#cancelPraiseRecipient').addEventListener('click', () => { overlay.hidden = true; });
-    overlay.addEventListener('click', (event) => { if (event.target === overlay) overlay.hidden = true; });
+    const closeDialog = () => {
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+    };
+    overlay.closeDialog = closeDialog;
+    overlay.querySelector('#cancelPraiseRecipient').addEventListener('click', closeDialog);
+    overlay.addEventListener('click', (event) => { if (event.target === overlay) closeDialog(); });
+    overlay.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      closeDialog();
+    });
     return overlay;
   }
 
@@ -247,7 +259,8 @@
       suggestion.hidden = true;
       suggestion.textContent = '';
     }
-    overlay.hidden = false;
+    overlay.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => overlay.classList.add('open'));
     setTimeout(() => name.focus(), 30);
 
     form.onsubmit = (event) => {
@@ -257,7 +270,8 @@
         name.focus();
         return;
       }
-      overlay.hidden = true;
+      overlay.closeDialog();
+      window.PortalInteractions?.endTask?.(event.submitter || form.querySelector('.generate'));
       openDocument(buildPraiseDocument({ name: recipientName, role: role.value.trim() }));
     };
   }

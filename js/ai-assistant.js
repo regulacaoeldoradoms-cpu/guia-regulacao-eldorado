@@ -40,7 +40,7 @@
     'Se houver sinal potencialmente incompatível com fila eletiva, destaque ATENÇÃO CLÍNICA e diga que a segurança de aguardar precisa ser avaliada imediatamente pela equipe responsável. Não determine sozinho uma classificação de risco.',
     'Em solicitações devolvidas, leia a cronologia: a justificativa mais recente prevalece; pendências anteriores já corrigidas não devem reaparecer como faltantes, salvo nova exigência.',
     'Não recomende cancelamento e reinserção automaticamente. Se houver troca de fluxo, lembre que é preciso verificar perda de data, posição ou classificação.',
-    'Quando houver informação suficiente para uma síntese, use um PARECER SIMULADO com apenas uma destas categorias: 🟢 Encaminhamento bem qualificado; 🟡 Necessita complementação; 🟠 Conferir fluxo/procedimento; 🔴 Atenção clínica. Nunca escreva APROVADO, AUTORIZADO, NEGADO ou RECUSADO como decisão da IA.',
+    'Quando houver informação suficiente para uma síntese, use um PARECER SIMULADO com apenas uma destas categorias textuais: Encaminhamento bem qualificado; Necessita complementação; Conferir fluxo/procedimento; Atenção clínica. Não use emojis. Nunca escreva APROVADO, AUTORIZADO, NEGADO ou RECUSADO como decisão da IA.',
     'Se o caso estiver bem qualificado, diga apenas que não identificou pendência evidente na base consultada; não garanta que o regulador real aceitará.',
     'Se a pergunta for apenas factual (idade, disponibilidade, exame obrigatório, via de acesso), responda diretamente e de forma curta, sem forçar uma entrevista.',
     'Mantenha continuidade entre as mensagens: trate respostas curtas do médico como complementação do caso em andamento e não reinicie a análise.',
@@ -403,9 +403,14 @@
   async function submitQuestion(question) {
     if (busy) return;
     const cleanQuestion = String(question || '').trim().slice(0, MAX_QUESTION_LENGTH);
-    if (!cleanQuestion) return;
+    if (!cleanQuestion) {
+      window.PortalInteractions?.endTask?.(document.getElementById('aiSend'));
+      return;
+    }
     if (containsSensitiveData(cleanQuestion)) {
       addMessage('assistant', 'Não envie nome, CPF, Cartão SUS, telefone, endereço, prontuário ou outros dados que identifiquem o paciente. Remova os identificadores e envie apenas o conteúdo clínico necessário.', 'error');
+      window.PortalInteractions?.notify?.('error', 'Remova os dados que identificam o paciente antes de enviar.', document.getElementById('aiInput'));
+      window.PortalInteractions?.endTask?.(document.getElementById('aiSend'));
       return;
     }
 
@@ -422,6 +427,7 @@
         addMessage('assistant', `${answer}\n\nModo de contingência local: os provedores de IA serão testados novamente automaticamente em alguns minutos.`, 'contingency');
         history.push({ role: 'assistant', text: answer.slice(0, 7000) });
         setProviderStatus('contingency', 'Contingência local');
+        window.PortalInteractions?.notify?.('warning', 'Resposta concluída em contingência local.', document.getElementById('aiMessages'));
         return;
       }
 
@@ -432,6 +438,7 @@
       loading?.remove();
       addMessage('assistant', result.answer);
       history.push({ role: 'assistant', text: result.answer.slice(0, 7000) });
+      window.PortalInteractions?.notify?.('task-complete', 'Pré-análise concluída.', document.getElementById('aiMessages'));
       if (CONFIG.endpoint) {
         remoteAiUnavailableUntil = 0;
         if (result.provider === 'Cloudflare Workers AI') {
@@ -447,8 +454,10 @@
       addMessage('assistant', `${fallback}\n\nModo de contingência local: ${friendlyAiFailure(error)}`, 'contingency');
       history.push({ role: 'assistant', text: fallback.slice(0, 7000) });
       setProviderStatus('contingency', 'Contingência local');
+      window.PortalInteractions?.notify?.('warning', 'A consulta remota falhou; a resposta local foi apresentada.', document.getElementById('aiMessages'));
     } finally {
       setBusy(false);
+      window.PortalInteractions?.endTask?.(document.getElementById('aiSend'));
       document.getElementById('aiInput')?.focus();
     }
   }

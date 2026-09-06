@@ -39,9 +39,9 @@ jobs:
           grep -q "Notification.requestPermission" js/portal-chat.js
           grep -q "showNotification" js/portal-chat.js
           grep -q "serviceWorker.register('/portal-sw.js'" js/portal-chat.js
-          grep -q "portal-chat.js?v=20260814-1" index.html
-          grep -q "portal-chat.js?v=20260814-1" recepcao/index.html
-          grep -q "portal-chat.js?v=20260814-1" admin/usuarios/index.html
+          grep -q "portal-chat.js?v=20260906-1" index.html
+          grep -q "portal-chat.js?v=20260906-1" recepcao/index.html
+          grep -q "portal-chat.js?v=20260906-1" admin/usuarios/index.html
           grep -q "portal-chat-switch-optimizer.js?v=20260812-1" index.html
           grep -q "portal-chat-switch-optimizer.js?v=20260812-1" recepcao/index.html
           grep -q "portal-chat-switch-optimizer.js?v=20260812-1" admin/usuarios/index.html

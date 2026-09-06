@@ -5,7 +5,7 @@
 .fast-check input { position: absolute; opacity: 0; pointer-events: none; }
 .fast-check-mark { width: 25px; height: 25px; border: 2px solid #a9bfd1; border-radius: 7px; background: #fff; display: grid; place-items: center; transition: .15s ease; }
 .fast-check input:checked + .fast-check-mark { border-color: #07866f; background: #07866f; box-shadow: 0 0 0 3px rgba(7,134,111,.10); }
-.fast-check input:checked + .fast-check-mark::after { content: '✓'; color: #fff; font-size: 17px; line-height: 1; font-weight: 900; }
+.fast-check input:checked + .fast-check-mark::after { content: ''; width: 7px; height: 12px; border: solid #fff; border-width: 0 2px 2px 0; transform: translateY(-1px) rotate(45deg); }
 .fast-check:focus-within .fast-check-mark { outline: 3px solid rgba(37,126,196,.22); outline-offset: 2px; }
 
 .reception-checklist-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 16px; }

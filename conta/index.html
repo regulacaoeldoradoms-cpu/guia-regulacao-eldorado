@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="/css/account-level.css?v=20260816-1">
   <link rel="stylesheet" href="/css/account-mobile.css?v=20260820-1826">
   <link rel="stylesheet" href="/css/account-mobile-refinement.css?v=20260821-0718">
+  <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-1">
 </head>
 <body class="portal-page">
   <script>
@@ -130,6 +131,36 @@
           <div class="account-status" id="securityStatus" role="status" aria-live="polite"></div>
         </article>
 
+        <article class="account-card" id="interfaceSoundsCard" data-portal-sound-settings>
+          <h2>Sons da interface</h2>
+          <p>Os sons são curtos e discretos e acompanham apenas ações deliberadas ou mudanças importantes. Eles começam desligados para não surpreender quem já utiliza o Portal em ambiente de trabalho.</p>
+          <div class="interface-sound-settings">
+            <div class="interface-sound-toggle">
+              <div>
+                <strong>Ativar sons da interface</strong>
+                <small>Cliques relevantes, confirmações, avisos, erros, notificações e conclusões recebem respostas sonoras diferentes.</small>
+              </div>
+              <label class="interface-switch">
+                <input id="interfaceSoundsEnabled" type="checkbox" aria-label="Ativar sons da interface">
+                <span aria-hidden="true"></span>
+              </label>
+            </div>
+            <div class="interface-sound-volume">
+              <label for="interfaceSoundVolume"><strong>Volume dos efeitos</strong><small>O áudio nunca bloqueia nem atrasa uma operação do Portal.</small></label>
+              <output id="interfaceSoundVolumeValue" for="interfaceSoundVolume">32%</output>
+              <input id="interfaceSoundVolume" type="range" min="0" max="100" step="1" value="32" aria-label="Volume dos sons da interface">
+            </div>
+            <div class="interface-sound-actions">
+              <button class="portal-button secondary interface-sound-mute" id="interfaceSoundsMute" type="button" aria-pressed="false">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h4l5 4V6l-5 4H5Z"></path><path d="M17 9.5c.8.7 1.2 1.5 1.2 2.5s-.4 1.8-1.2 2.5"></path><path d="M19.5 7c1.4 1.4 2.1 3 2.1 5s-.7 3.6-2.1 5"></path></svg>
+                <span>Silenciar agora</span>
+              </button>
+              <small style="color:#687f90">Quando os sons estiverem ativos, o mesmo controle rápido ficará disponível nas demais ferramentas.</small>
+            </div>
+            <div class="account-status" id="interfaceSoundsStatus" role="status" aria-live="polite"></div>
+          </div>
+        </article>
+
         <article class="account-card" id="socialPreferencesCard">
           <h2>Recursos sociais futuros</h2>
           <p>A camada social ainda não está ativa. O portal já prepara as preferências para quando amizade e outras funções forem implantadas. Contas profissionais continuarão aparecendo pelo cargo/função de saúde, não como “Cidadão”.</p>
@@ -147,6 +178,7 @@
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260816-1"></script>
+  <script src="/js/portal-interactions.js?v=20260906-1"></script>
   <script src="/js/account-levels.js?v=20260819-1"></script>
   <script src="/js/account.js?v=20260901-1"></script>
   <script src="/js/citizen-identity-ui.js?v=20260818-3"></script>

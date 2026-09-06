@@ -188,7 +188,7 @@
 
     const top = document.getElementById('clearReceptionChecklist');
     const bottom = document.getElementById('clearReceptionChecklistBottom');
-    setText(top, '✓ Marcar obrigatórios presentes');
+    setText(top, 'Marcar obrigatórios presentes');
     setText(bottom, 'Desmarcar tudo');
   }
 

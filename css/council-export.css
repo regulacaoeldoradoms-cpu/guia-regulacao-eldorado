@@ -7,6 +7,10 @@
   margin:14px 0 4px;
 }
 .council-export-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
   min-height:46px;
   padding:10px 15px;
   border:1px solid #c8d9e4;
@@ -24,7 +28,7 @@
   color:#6b5011;
   box-shadow:0 6px 15px rgba(158,116,20,.12);
 }
-.council-export-button.is-praise::before{content:"★ ";}
+.council-export-button.is-praise::before{content:"";width:18px;height:18px;flex:0 0 18px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m12 3 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8L12 3Z' fill='black'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m12 3 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8L12 3Z' fill='black'/%3E%3C/svg%3E") center/contain no-repeat;}
 .council-export-hint{font-size:.82rem;color:#718696;line-height:1.4;}
 
 body.mobile-council-mode .council-export-actions{

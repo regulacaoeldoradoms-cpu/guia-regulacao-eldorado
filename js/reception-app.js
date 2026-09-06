@@ -68,7 +68,7 @@
   const notRequiredPattern = /(n[aã]o retardar|n[aã]o aguardar|n[aã]o h[aá] exame obrigat[oó]rio|sem exame obrigat[oó]rio|n[aã]o exige exame)/i;
 
   function cleanItem(value) {
-    return String(value || '').replace(/^[-•✔\s]+/, '').replace(/\s+/g, ' ').trim();
+    return String(value || '').replace(new RegExp(`^[-\\u2022\\u2714\\s]+`), '').replace(/\s+/g, ' ').trim();
   }
 
   function uniqueItems(items) {
