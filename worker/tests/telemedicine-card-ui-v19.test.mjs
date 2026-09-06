@@ -19,7 +19,7 @@ const justificationDocumentation = read('docs/TELEMEDICINA-JUSTIFICATIVA-V20.md'
 assert.match(html, /telemedicina-cards-v19\.css\?v=20260905-4/);
 assert.match(html, /data-followup-cards="v19"/);
 assert.match(html, /data-copy-justification="v20"/);
-assert.match(html, /telemedicina-justification-v20\.js\?v=20260905-1/);
+assert.match(html, /telemedicina-justification-v20\.js\?v=20260906-1/);
 assert.match(html, /telemedicina\.js\?v=20260905-2/);
 assert.match(html, /telemedicina-mobile-v7\.js\?v=20260905-1/);
 assert.match(html, /telemedicina-mobile-v9\.js\?v=20260905-2/);
@@ -74,6 +74,8 @@ assert.match(documentation, /quatro zonas/);
 assert.match(documentation, /nenhuma alteração nos arquivos de backend/);
 assert.match(justificationDocumentation, /`SOLICITAR` ou permanece pendente em `ATRASADO`/);
 assert.match(justificationDocumentation, /Data da última consulta/);
+assert.match(justificationDocumentation, /40 famílias de situações reconhecidas/);
+assert.match(justificationDocumentation, /fallback universal/);
 
 const runtimeSources = [html, desktop, mobile, justification, viewSwitch, edit, css];
 const pictographicCharacter = /[\u2600-\u27BF\u{1F000}-\u{1FAFF}]/u;

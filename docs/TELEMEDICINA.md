@@ -197,7 +197,9 @@ Decisão permanente registrada em 05/09/2026.
 
 Quando um acompanhamento entra em `SOLICITAR` ou permanece em `ATRASADO`, o card oferece **Copiar motivo**. A ação gera uma justificativa com data da última consulta, motivo coerente com a conduta registrada e previsão de retorno. Ela permanece disponível enquanto a solicitação estiver pendente e desaparece após a confirmação em **Solicitado**.
 
-O gerador diferencia retorno por prazo, data-alvo, exames, fisioterapia, procedimento/cirurgia, conclusão de tratamento, condição livre, necessidade clínica e acompanhamento genérico. Campos estruturados prevalecem; a leitura determinística da conduta mantém compatibilidade com registros antigos. Nenhum estado, alarme, permissão, dado persistido ou fluxo operacional é alterado.
+O gerador reconhece 40 famílias de situações clínicas e operacionais: prazos e data-alvo; exames gerais, de imagem e laboratoriais; terapias e reabilitação; procedimento, cirurgia e pós-operatório; tratamento e medicação; evolução clínica; avaliação de outro profissional; documentos e monitoramentos; alta hospitalar; condições livres; faltas, cancelamentos, falhas técnicas, consulta não concluída, pedidos devolvidos/indeferidos/cancelados/expirados, perda de prazo ou seguimento e reagendamentos. Campos estruturados prevalecem e a leitura determinística da conduta e da observação pertinente mantém compatibilidade com registros antigos.
+
+Quando nenhuma família corresponde, um fallback universal incorpora fielmente a conduta registrada em vez de inventar informação clínica. Ocorrências operacionais podem ser combinadas com o prazo indicado pela especialidade no mesmo texto. O resultado continua contendo data da última consulta, motivo e previsão de retorno. Nenhum estado, alarme, permissão, dado persistido ou fluxo operacional é alterado.
 
 Detalhes de redação, acessibilidade e validação estão em `docs/TELEMEDICINA-JUSTIFICATIVA-V20.md`.
 

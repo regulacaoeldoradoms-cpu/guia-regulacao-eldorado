@@ -147,7 +147,7 @@ jobs:
           grep -q "const batchSize = 5;" js/telemedicina.js
           grep -q "const existingEvent = await firestoreGet" worker/telemedicine.js
           grep -q "if (!existingEvent)" worker/telemedicine.js
-          grep -q "telemedicina-justification-v20.js?v=20260905-1" telemedicina/index.html
+          grep -q "telemedicina-justification-v20.js?v=20260906-1" telemedicina/index.html
           grep -q "telemedicina.js?v=20260905-2" telemedicina/index.html
           grep -q "telemedicina.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicine-title-mobile" telemedicina/index.html
@@ -188,6 +188,9 @@ jobs:
           grep -q 'data-action="copy-justification"' js/telemedicina-mobile-v9.js
           grep -q "returnConditionType" js/telemedicina-justification-v20.js
           grep -q "Retorno solicitado para apresentar os exames solicitados" js/telemedicina-justification-v20.js
+          grep -q "operationalCategory" js/telemedicina-justification-v20.js
+          grep -q "fallback universal" docs/TELEMEDICINA-JUSTIFICATIVA-V20.md
+          grep -q "40 famílias" docs/TELEMEDICINA.md
           grep -q "Justificativa de solicitação V20" docs/TELEMEDICINA.md
           grep -q "prefers-reduced-motion: reduce" css/telemedicina-cards-v19.css
           grep -q "Cards institucionais V19" docs/TELEMEDICINA.md
