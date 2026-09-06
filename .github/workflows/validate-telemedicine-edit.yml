@@ -62,7 +62,7 @@ jobs:
           grep -Fq "combined.sort" worker/telemedicine-router-v2.js
           grep -Fq "export async function firestoreReplace" worker/firebase-gateway.js
           grep -Fq "telemedicina-edit.js?v=20260905-1" telemedicina/index.html
-          grep -Fq "telemedicina-mobile-v13.css?v=20260906-2" telemedicina/index.html
+          grep -Fq "telemedicina-mobile-v13.css?v=20260906-3" telemedicina/index.html
           grep -Fq "data-telemedicine-edit" js/telemedicina-edit.js
           grep -Fq "REUMATOLOGIA" js/telemedicina-edit.js
           grep -Fq "line-clamp: unset" js/telemedicina-edit.js
@@ -74,6 +74,8 @@ jobs:
           grep -Fq ".telemedicine-page.tm-view-grid .telemedicine-row > .telemedicine-patient" css/telemedicina-mobile-v13.css
           grep -Fq "justify-content: center !important" css/telemedicina-mobile-v13.css
           grep -Fq "flex: 0 0 24px !important" css/telemedicina-mobile-v13.css
+          grep -Fq ".telemedicine-page[data-followup-cards=\"v19\"].tm-view-grid .telemedicine-row > .telemedicine-patient > button[data-action=\"patient\"]" css/telemedicina-mobile-v13.css
+          grep -Fq "padding: 0 !important" css/telemedicina-mobile-v13.css
           grep -Fq ".telemedicine-page .telemedicine-row[hidden]" css/telemedicina-mobile-v13.css
           grep -Fq "display: none !important" css/telemedicina-mobile-v13.css
           grep -Fq "Correção de nome e especialidade" docs/TELEMEDICINA.md
