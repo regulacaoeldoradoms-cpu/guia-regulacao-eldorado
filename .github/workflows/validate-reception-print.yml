@@ -22,7 +22,7 @@ jobs:
       - name: Conferir integração da impressão
         run: |
           test -f js/reception-print-v6.js
-          grep -q 'reception-print-v6.js?v=20260813-1' recepcao/index.html
+          grep -q 'reception-print-v6.js?v=20260906-1' recepcao/index.html
           ! grep -q 'reception-print-v5.js' recepcao/index.html
           ! grep -q 'referral-practice-data.js' recepcao/index.html
           ! grep -q 'referral-practice-update-' recepcao/index.html

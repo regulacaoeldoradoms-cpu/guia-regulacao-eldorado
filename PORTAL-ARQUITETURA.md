@@ -210,3 +210,13 @@ Amizade, busca social, feed, seguidores e chat cidadão↔profissional ficam for
 Em 01/09/2026 o repositório foi alterado para **privado**. Essa mudança reduz a exposição do código, mas não transforma o GitHub em banco de dados assistencial.
 
 Nenhuma credencial, chave privada, e-mail protegido, conteúdo de manifestação, nome de paciente, arquivo de migração de Telemedicina ou outro dado sensível deve ser salvo no repositório. Dados protegidos ficam em serviços autenticados no backend. Segredos permanecem no painel da Cloudflare. O `.gitignore` bloqueia arquivos locais comuns de segredo, e `worker/.dev.vars.example` contém somente placeholders.
+
+## Linguagem permanente de interação
+
+Desde 06/09/2026, todas as rotas ativas utilizam a camada central `PortalInteractions`. Ela coordena estados visuais, movimento, foco, anúncios acessíveis e uma identidade sonora original sem interferir nas regras funcionais de cada módulo.
+
+As preferências `interface_sounds_enabled`, `interface_sound_volume` e `interface_sounds_muted` pertencem à conta e são persistidas no D1 pelo endpoint de segurança. Sons começam desativados para contas existentes e novas. A ausência, o bloqueio ou a falha de áudio nunca pode bloquear uma ação.
+
+Novos módulos devem registrar apenas interações semanticamente relevantes, reutilizar os tokens centrais, respeitar `prefers-reduced-motion`, manter feedback textual/visual completo e utilizar ícones SVG em vez de emojis. É proibido implementar um listener sonoro indiscriminado para todos os botões ou links.
+
+A especificação, a matriz de rotas, a API, a identidade sonora e o checklist de evolução estão em `docs/PORTAL-INTERACTIONS-V1.md`.

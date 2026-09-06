@@ -19,6 +19,12 @@
   const unreadSnapshot = new Map();
 
   const escapeText = (value) => String(value || '');
+  const ICONS = Object.freeze({
+    chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8l-4.5 3v-3H5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2Z"></path><path d="M7.5 9.5h9M7.5 13h6"></path></svg>',
+    notification: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"></path><path d="M10 20h4"></path></svg>',
+    back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path><path d="M9 12h10"></path></svg>',
+    close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"></path></svg>'
+  });
 
   function initials(value) {
     const parts = String(value || '?').trim().split(/\s+/).filter(Boolean);
@@ -211,6 +217,7 @@
       seen.add(username);
       unreadSnapshot.set(username, unread);
       if (!firstLoad && unread > previous) {
+        window.PortalInteractions?.emit?.('notification', { debounce: 900 });
         showMessageNotification(contact, unread - previous);
       }
     });
@@ -395,6 +402,7 @@
       });
       if (input) input.value = '';
       if (payload.message) appendMessages([payload.message], false);
+      window.PortalInteractions?.notify?.('success', 'Mensagem enviada.', send);
       loadContacts();
     } catch (error) {
       showStatus(error.message || 'Não foi possível enviar a mensagem.');
@@ -412,13 +420,13 @@
     root.id = 'portalChatRoot';
     root.innerHTML = `
       <button class="portal-chat-launcher" id="portalChatLauncher" type="button" aria-label="Abrir chat interno">
-        <span>💬</span><span class="chat-launcher-text">Chat</span><span class="chat-online-dot" aria-hidden="true"></span><span class="portal-chat-count" id="portalChatUnread">0</span>
+        <span class="portal-chat-launcher-icon">${ICONS.chat}</span><span class="chat-launcher-text">Chat</span><span class="chat-online-dot" aria-hidden="true"></span><span class="portal-chat-count" id="portalChatUnread">0</span>
       </button>
       <section class="portal-chat-panel" aria-label="Chat interno do portal">
         <header class="portal-chat-header">
-          <button class="portal-chat-icon-button" id="portalChatBack" type="button" aria-label="Voltar para usuários" hidden>←</button>
+          <button class="portal-chat-icon-button" id="portalChatBack" type="button" aria-label="Voltar para usuários" hidden>${ICONS.back}</button>
           <div class="portal-chat-header-main"><strong id="portalChatHeaderName">Chat interno</strong><span id="portalChatHeaderStatus">Comunicação entre usuários do portal</span></div>
-          <button class="portal-chat-icon-button" id="portalChatClose" type="button" aria-label="Recolher chat">×</button>
+          <button class="portal-chat-icon-button" id="portalChatClose" type="button" aria-label="Recolher chat">${ICONS.close}</button>
         </header>
         <div class="portal-chat-body">
           <div class="portal-chat-view portal-chat-contacts active" id="portalChatContactsView">
@@ -426,7 +434,7 @@
               <input class="portal-chat-search" id="portalChatSearch" type="search" placeholder="Procurar usuário" autocomplete="off">
               <div class="portal-chat-note" id="portalChatSummary">Carregando usuários...</div>
               <div class="portal-chat-notification-card" id="portalChatNotificationCard" hidden>
-                <div><strong>🔔 Notificações de mensagens</strong><span id="portalChatNotificationText"></span></div>
+                <span class="portal-chat-notification-icon">${ICONS.notification}</span><div><strong>Notificações de mensagens</strong><span id="portalChatNotificationText"></span></div>
                 <button type="button" id="portalChatEnableNotifications">Ativar notificações</button>
               </div>
             </div>

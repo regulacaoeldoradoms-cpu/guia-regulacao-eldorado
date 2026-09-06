@@ -21,11 +21,7 @@ body.mobile-home-mode .portal-chat-launcher{
 }
 
 body.mobile-home-mode .portal-chat-launcher::before{
-  content:"💬" !important;
-  display:block !important;
-  font-size:32px !important;
-  line-height:1 !important;
-  flex:0 0 auto !important;
+  content:none !important;
 }
 
 body.mobile-home-mode .portal-chat-launcher .chat-launcher-text{

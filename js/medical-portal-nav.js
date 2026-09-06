@@ -43,7 +43,7 @@
     }
     if (!document.querySelector('script[data-portal-chat-script]')) {
       const script = document.createElement('script');
-      script.src = '/js/portal-chat.js?v=20260814-1';
+      script.src = '/js/portal-chat.js?v=20260906-1';
       script.defer = true;
       script.dataset.portalChatScript = 'true';
       document.body.appendChild(script);

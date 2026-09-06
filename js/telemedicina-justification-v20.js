@@ -371,11 +371,13 @@
       button.textContent = 'Copiado';
       button.setAttribute('aria-label', 'Justificativa copiada');
       button.classList.add('is-copied');
+      root.PortalInteractions?.notify?.('copy', 'Justificativa copiada.', button);
       return true;
     } catch (_) {
       button.textContent = 'Tente novamente';
       button.setAttribute('aria-label', 'Não foi possível copiar; tente novamente');
       button.classList.add('is-copy-error');
+      root.PortalInteractions?.notify?.('error', 'Não foi possível copiar a justificativa.', button);
       return false;
     } finally {
       button.disabled = false;

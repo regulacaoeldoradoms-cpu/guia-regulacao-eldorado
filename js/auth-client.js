@@ -222,6 +222,9 @@
         emailVerificationRequired: Boolean(current.emailVerificationRequired && !security.emailVerified),
         privacyMode: security.privacyMode || current.privacyMode,
         acceptFriendRequests: Boolean(security.acceptFriendRequests),
+        interfaceSoundsEnabled: Boolean(security.interfaceSoundsEnabled),
+        interfaceSoundVolume: Math.min(100, Math.max(0, Number(security.interfaceSoundVolume ?? current.interfaceSoundVolume ?? 32))),
+        interfaceSoundsMuted: Boolean(security.interfaceSoundsMuted),
         accountLevel: level
       };
       saveSession(getToken(), user, persistentSession());

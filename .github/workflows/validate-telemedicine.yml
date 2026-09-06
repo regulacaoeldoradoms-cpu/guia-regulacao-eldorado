@@ -148,7 +148,7 @@ jobs:
           grep -q "const existingEvent = await firestoreGet" worker/telemedicine.js
           grep -q "if (!existingEvent)" worker/telemedicine.js
           grep -q "telemedicina-justification-v20.js?v=20260906-1" telemedicina/index.html
-          grep -q "telemedicina.js?v=20260905-2" telemedicina/index.html
+          grep -q "telemedicina.js?v=20260906-1" telemedicina/index.html
           grep -q "telemedicina.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicine-title-mobile" telemedicina/index.html
           grep -q "Data da última consulta" telemedicina/index.html

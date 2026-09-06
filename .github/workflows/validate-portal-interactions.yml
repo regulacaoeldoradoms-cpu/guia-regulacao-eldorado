@@ -1,0 +1,32 @@
+name: Validar interações do Portal V1
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  portal-interactions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar sintaxe da camada e integrações
+        run: |
+          node --check js/portal-interactions.js
+          node --check js/portal-chat.js
+          node --check js/ai-assistant.js
+          node --check js/system-readiness.js
+          node --check js/telemedicina.js
+          node --check scripts/generate-interaction-sounds.mjs
+
+      - name: Validar arquitetura, preferências, acessibilidade e sons
+        run: node --test worker/tests/portal-interactions.test.mjs
+
+      - name: Confirmar geração determinística dos sons originais
+        run: |
+          node scripts/generate-interaction-sounds.mjs
+          git diff --exit-code -- assets/sounds

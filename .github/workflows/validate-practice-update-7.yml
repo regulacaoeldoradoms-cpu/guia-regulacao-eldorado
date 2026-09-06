@@ -25,7 +25,7 @@ jobs:
         run: |
           grep -q 'referral-practice-update-20260828.js?v=20260828-1' medico/index.html
           grep -q 'medical-app.js?v=20260828-1' medico/index.html
-          grep -q 'ai-assistant.js?v=20260904-2' medico/index.html
+          grep -q 'ai-assistant.js?v=20260906-1' medico/index.html
           grep -q 'app.js?v=20260828-1' protocolo/index.html
 
       - name: Conferir fonte, escopo e resposta direta

@@ -199,6 +199,11 @@
         ? `${due[0].patientName} · ${due[0].specialty} · aviso ${due[0].reminderNumber || 1}/3`
         : `${due.length} retornos de telemedicina precisam da sua atenção hoje.`;
       new Notification('Regulação Eldorado · Telemedicina', { body, icon: '/assets/portal-regulacao-header.png' });
+      window.PortalInteractions?.notify?.(
+        'notification',
+        due.length === 1 ? 'Há um retorno de telemedicina para solicitar hoje.' : `Há ${due.length} retornos de telemedicina para solicitar hoje.`,
+        document.getElementById('followupList')
+      );
       sessionStorage.setItem(key, '1');
     } catch (_) {}
   }

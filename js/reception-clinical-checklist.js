@@ -26,7 +26,7 @@
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
-  const clean = (value) => String(value || '').replace(/^[-•✔\s]+/, '').replace(/\s+/g, ' ').trim();
+  const clean = (value) => String(value || '').replace(new RegExp(`^[-\\u2022\\u2714\\s]+`), '').replace(/\s+/g, ' ').trim();
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[char]));

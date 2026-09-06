@@ -76,7 +76,7 @@
   function buttonLabels() {
     const top = document.getElementById('clearReceptionChecklist');
     const bottom = document.getElementById('clearReceptionChecklistBottom');
-    if (top) top.textContent = '✓ Marcar obrigatórios';
+    if (top) top.textContent = 'Marcar obrigatórios';
     if (bottom) bottom.textContent = 'Desmarcar tudo';
   }
 
