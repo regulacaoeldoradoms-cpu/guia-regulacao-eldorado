@@ -1,0 +1,38 @@
+name: Validar formulário da Telemedicina
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-business-day.js'
+      - '.github/workflows/validate-telemedicine-form-stability.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-business-day.js'
+      - '.github/workflows/validate-telemedicine-form-stability.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe e regressões do formulário
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check js/telemedicina-business-day.js
+          grep -Fq 'telemedicina-business-day.js?v=20260908-1' telemedicina/index.html
+          grep -Fq "dueInput.dispatchEvent(new Event('change', { bubbles: true }))" js/telemedicina-business-day.js
+          grep -Fq 'input.showPicker()' js/telemedicina-business-day.js
+          grep -Fq 'telemedicineFormStabilityStyle' js/telemedicina-business-day.js
+          grep -Fq '#consultationModal > .portal-modal' js/telemedicina-business-day.js
+          grep -Fq 'backdrop-filter: none !important' js/telemedicina-business-day.js
+          if grep -Fq "dueInput.dispatchEvent(new Event('input', { bubbles: true }))" js/telemedicina-business-day.js; then
+            echo 'A data calculada não pode emitir input: isso apaga o prazo em dias durante a digitação.' >&2
+            exit 1
+          fi
