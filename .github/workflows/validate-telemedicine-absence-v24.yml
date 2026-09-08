@@ -1,0 +1,80 @@
+name: Validar Telemedicina Falta V24
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-absence-v24.css'
+      - 'css/telemedicina-viewport-v22.css'
+      - 'js/telemedicina-absence-v24.js'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-mobile-v9.js'
+      - 'worker/telemedicine.js'
+      - 'worker/telemedicine-rules.js'
+      - 'worker/tests/telemedicine-rules.test.mjs'
+      - 'docs/TELEMEDICINA-FALTA-V24.md'
+      - '.github/workflows/validate-telemedicine-absence-v24.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-absence-v24.css'
+      - 'css/telemedicina-viewport-v22.css'
+      - 'js/telemedicina-absence-v24.js'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-mobile-v9.js'
+      - 'worker/telemedicine.js'
+      - 'worker/telemedicine-rules.js'
+      - 'worker/tests/telemedicine-rules.test.mjs'
+      - 'docs/TELEMEDICINA-FALTA-V24.md'
+      - '.github/workflows/validate-telemedicine-absence-v24.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe e regras
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check js/telemedicina-absence-v24.js
+          node --check js/telemedicina.js
+          node --check js/telemedicina-mobile-v9.js
+          node --input-type=module --check < worker/telemedicine.js
+          node --input-type=module --check < worker/telemedicine-rules.js
+          cp worker/telemedicine-rules.js /tmp/telemedicine-rules.mjs
+          node worker/tests/telemedicine-rules.test.mjs /tmp/telemedicine-rules.mjs
+      - name: Conferir contrato da falta V24
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f css/telemedicina-absence-v24.css
+          test -f js/telemedicina-absence-v24.js
+          test -f docs/TELEMEDICINA-FALTA-V24.md
+          grep -q 'telemedicina-absence-v24.css?v=20260908-1' telemedicina/index.html
+          grep -q 'telemedicina-absence-v24.js?v=20260908-1' telemedicina/index.html
+          grep -q 'data-absence-record="v24"' telemedicina/index.html
+          grep -q "ABSENCE_MODE = 'absence'" js/telemedicina-absence-v24.js
+          grep -q '<strong>Falta</strong>' js/telemedicina-absence-v24.js
+          grep -q 'Justificativa da falta' js/telemedicina-absence-v24.js
+          grep -q 'SOLICITAR NOVAMENTE' js/telemedicina-absence-v24.js
+          grep -q "\['discharge', 'scheduled', 'conditional', 'absence'\]" worker/telemedicine.js
+          grep -q "absencePendingRequest: absence" worker/telemedicine.js
+          grep -q "eventType: absence ? 'falta' : 'consulta'" worker/telemedicine.js
+          grep -q "if (followup?.absencePendingRequest === true) return 'SOLICITAR';" worker/telemedicine-rules.js
+          grep -q "deriveFollowupStatus(absence.*'SOLICITAR'" worker/tests/telemedicine-rules.test.mjs
+          grep -q 'Falta pendente deriva `SOLICITAR`' docs/TELEMEDICINA-FALTA-V24.md
+      - name: Garantir rota sem movimento
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'animation: none !important' css/telemedicina-viewport-v22.css
+          grep -q 'transition: none !important' css/telemedicina-viewport-v22.css
+          if grep -q '@keyframes' css/telemedicina-absence-v24.css; then
+            echo 'A V24 não pode reintroduzir animações em /telemedicina/.' >&2
+            exit 1
+          fi
