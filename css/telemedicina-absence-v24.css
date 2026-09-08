@@ -1,0 +1,67 @@
+/* Telemedicina V24 — registro de falta.
+   A rota permanece integralmente sem animações conforme a decisão V23. */
+
+.telemedicine-page .telemedicine-choice-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.telemedicine-page .telemedicine-choice.absence {
+  --choice-accent: #a93b46;
+  --choice-border: #e7bbc0;
+  --choice-bg: #fff0f1;
+}
+
+.telemedicine-page .telemedicine-mode-panel.absence {
+  grid-template-columns: 1fr;
+  border: 1px solid #e6bdc2;
+  background: linear-gradient(135deg, #fff4f5, #fff9f9);
+}
+
+.telemedicine-page .telemedicine-mode-panel.absence .portal-field,
+.telemedicine-page .tm-inline-consult-form [data-tm-absence-field] {
+  min-width: 0;
+}
+
+.telemedicine-page .telemedicine-mode-panel.absence textarea,
+.telemedicine-page .tm-inline-consult-form [data-tm-absence-field] textarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+}
+
+.telemedicine-page .tm-inline-consult-form [data-tm-absence-field] {
+  padding: 11px !important;
+  border: 1px solid #e6bdc2 !important;
+  border-radius: 12px !important;
+  background: #fff4f5 !important;
+}
+
+.telemedicine-page .tm-inline-consult-form [data-tm-absence-field][hidden],
+.telemedicine-page #consultAbsenceFields[hidden] {
+  display: none !important;
+}
+
+.telemedicine-page .telemedicine-status.solicitar.tm-absence-status {
+  min-width: max-content;
+}
+
+.telemedicine-page .telemedicine-row.tm-absence-card .telemedicine-reminder-empty {
+  color: #76525a;
+  font-weight: 700;
+}
+
+@media (max-width: 720px), (pointer: coarse) and (max-device-width: 900px) {
+  .telemedicine-page #consultationForm .telemedicine-choice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .telemedicine-page .tm-inline-consult-form .telemedicine-choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .telemedicine-page .tm-inline-consult-form .telemedicine-choice-grid {
+    grid-template-columns: 1fr;
+  }
+}
