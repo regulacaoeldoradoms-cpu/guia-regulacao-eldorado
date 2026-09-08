@@ -6,6 +6,8 @@ A partir da V21, qualquer janela modal da Telemedicina deve se comportar como um
 
 A rota `/telemedicina/` prioriza estabilidade visual durante a operação. O efeito global de pressão não deve deslocar nem redimensionar controles dessa página, e a animação de atualização de conteúdo não deve mover verticalmente listas, cards ou painéis ao clicar. Cor, mudança de estado, foco e som podem continuar fornecendo retorno ao usuário, desde que não provoquem o efeito de a página inteira "pular".
 
+Os quatro indicadores do resumo (`Solicitar agora`, `Atrasados`, `Em aguardo` e `Sem programação`) filtram os acompanhamentos **no ponto atual da página**. O clique nesses indicadores não deve executar `scrollIntoView`, rolagem suave, reposicionamento automático do viewport ou qualquer outro deslocamento vertical. A posição de rolagem existente deve ser preservada enquanto o filtro é aplicado.
+
 As janelas modais da Telemedicina também ficam fora da camada global de microinterações do Portal. Não devem receber animações de pressão, transição, seleção, abertura ou atualização que possam causar repintura perceptível durante o preenchimento dos campos. A prioridade nesses diálogos é estabilidade visual e entrada de dados sem piscadas. Essa exceção vale somente para os modais da Telemedicina e não remove a linguagem global de interação do restante do Portal.
 
 O isolamento do fundo não deve ser reprocessado em cada alteração de classe de controles internos. A observação de DOM deve reagir somente a criação/remoção de modais e a alterações de estado do próprio backdrop, evitando repinturas desnecessárias enquanto o usuário digita ou muda o foco.
@@ -34,6 +36,7 @@ A confirmação de exclusão deve explicar apenas a consequência operacional re
 - O foco é mantido dentro do modal e a tecla Tab circula entre os controles disponíveis.
 - A pressão global `.portal-interaction-pressing` não aplica `transform` na rota `/telemedicina/`.
 - A atualização global `.portal-content-updating` não executa animação nem deslocamento na rota `/telemedicina/`.
+- Os indicadores com `data-status-filter` preservam `scrollX` e `scrollY`, atualizam `#statusFilter` e disparam o fluxo normal de filtragem sem permitir os handlers legados que chamam `scrollIntoView`.
 - Os backdrops da Telemedicina usam `data-portal-interaction-ignore="true"` para não receber as microinterações globais do Portal.
 - Os modais da Telemedicina não usam `backdrop-filter`, animação, transformação nem transição de composição.
 - O botão de exclusão usa `data-telemedicine-delete`, separado de `data-action`, para não conflitar com a captura de ações da camada mobile V9.
