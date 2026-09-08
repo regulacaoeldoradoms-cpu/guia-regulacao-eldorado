@@ -29,12 +29,20 @@
     const daysInput = document.getElementById('consultReturnDays');
     const dueInput = document.getElementById('consultReturnDate');
     if (!consultation || !daysInput || !dueInput) return;
+
     const days = Number(daysInput.value || 0);
     if (!consultation.value || !Number.isInteger(days) || days <= 0) return;
+
     const target = nextBusinessDay(addDays(consultation.value, days));
     if (target && dueInput.value !== target) {
       dueInput.value = target;
-      dueInput.dispatchEvent(new Event('input', { bubbles: true }));
+      /*
+       * O valor foi calculado pelo prazo em dias, não digitado manualmente.
+       * A Telemedicina limpa o campo de dias em eventos input da data-alvo;
+       * por isso a atualização automática usa change, preservando valores
+       * com mais de um dígito (30, 60, 120 etc.) e atualizando a prévia.
+       */
+      dueInput.dispatchEvent(new Event('change', { bubbles: true }));
     }
   }
 
@@ -47,6 +55,44 @@
     }
   }
 
+  function bindNativeDatePicker(input) {
+    if (!input || input.type !== 'date' || typeof input.showPicker !== 'function') return;
+
+    input.addEventListener('pointerdown', (event) => {
+      if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
+      if (input.disabled || input.readOnly) return;
+      try {
+        input.focus({ preventScroll: true });
+        input.showPicker();
+        /* Evita uma segunda tentativa do controle nativo no mesmo gesto. */
+        event.preventDefault();
+      } catch (_) {
+        /* Em navegadores sem autorização para showPicker, mantém o fallback nativo. */
+      }
+    });
+  }
+
+  function installStableModalRendering() {
+    if (document.getElementById('telemedicineFormStabilityStyle')) return;
+    const style = document.createElement('style');
+    style.id = 'telemedicineFormStabilityStyle';
+    style.textContent = `
+      @media (min-width: 861px) {
+        html[data-portal-interactions="v1"] body.telemedicine-page.tm-context-desktop #consultationModal {
+          -webkit-backdrop-filter: none !important;
+          backdrop-filter: none !important;
+        }
+        html[data-portal-interactions="v1"] body.telemedicine-page.tm-context-desktop #consultationModal > .portal-modal {
+          opacity: 1 !important;
+          transform: none !important;
+          transition: none !important;
+          will-change: auto !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   window.TelemedicineBusinessDay = { addDays, isBusinessDay, nextBusinessDay };
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -54,6 +100,10 @@
     const daysInput = document.getElementById('consultReturnDays');
     const dueInput = document.getElementById('consultReturnDate');
     const scheduleInput = document.getElementById('scheduleReturnDate');
+    const requestedInput = document.getElementById('requestedDate');
+
+    installStableModalRendering();
+    [consultation, dueInput, scheduleInput, requestedInput].forEach(bindNativeDatePicker);
 
     consultation?.addEventListener('input', syncConsultationTarget);
     daysInput?.addEventListener('input', syncConsultationTarget);
