@@ -8,15 +8,14 @@ A Camada Social deixou de ser somente roadmap. Perfil, amizade, feed textual,
 comentários, curtida, notificações, descoberta protegida, moderação, navegação global
 e a rota `/ferramentas/` estão implementados.
 
-A ativação é deliberadamente gradual:
+A ativação passou a ser efetiva em produção em 08/09/2026:
 
-- `SOCIAL_BACKEND_ENABLED` libera APIs, schema e superfícies sociais;
-- `SOCIAL_HOME_ENABLED` troca a apresentação da raiz pelo feed somente depois do QA
-  funcional no ambiente publicado.
+- `SOCIAL_BACKEND_ENABLED=true` libera APIs, schema e superfícies sociais;
+- `SOCIAL_HOME_ENABLED=true` faz da raiz `/` a Home social para contas elegíveis.
 
-Com a segunda flag desligada, `/` mantém o catálogo de trabalho e informa que a Home
-social está em validação. A estrutura do feed já fica disponível no mesmo artefato,
-sem exigir uma migração destrutiva posterior.
+Ferramentas permanece como fallback operacional independente. Se a API social falhar,
+a conta não for elegível ou a Home for deliberadamente desativada, `/` volta ao
+catálogo de trabalho sem perder dados sociais nem interromper os módulos profissionais.
 
 ## Princípio de produto
 
@@ -48,9 +47,14 @@ seguindo suas autorizações próprias.
 
 ## Navegação global implantada
 
-No desktop, a navegação oferece Início, Meu perfil, Amigos, Ferramentas,
-Notificações e Conta conforme elegibilidade. No mobile, prioriza Início, Amigos,
-Ferramentas, Avisos e Conta com áreas sociais omitidas para contas sem o gate.
+No desktop, a navegação oferece Início, Amigos, Ferramentas, Notificações e Perfil
+conforme elegibilidade. No mobile, prioriza Início, Amigos, Ferramentas, Avisos e
+Perfil com áreas sociais omitidas para contas sem o gate.
+
+Não existe item independente `Conta` na navegação global. A área de foto/nome no
+cabeçalho continua sendo o acesso às configurações privadas em `/conta/`. `Perfil`
+aponta para `/perfil/` e representa a identidade social pública da conta, incluindo
+suas publicações visíveis conforme audiência e permissões.
 
 Chat continua como recurso flutuante apenas para os cargos profissionais já
 autorizados. Notificações sociais usam rota e tabela próprias; avisos do Conselho
@@ -60,7 +64,7 @@ continuam no Canal do Cidadão.
 
 Em `/conta/`, usuários com acesso social podem escolher:
 
-- `Feed`: abrir a Home social quando a flag estiver ativa;
+- `Feed`: abrir a Home social;
 - `Ferramentas`: entrar diretamente em `/ferramentas/`.
 
 Login continua levando à raiz, que aplica a preferência depois de validar sessão e

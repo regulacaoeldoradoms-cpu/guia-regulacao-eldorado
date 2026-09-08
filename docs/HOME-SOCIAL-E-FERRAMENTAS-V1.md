@@ -39,11 +39,11 @@ O fluxo de `js/home.js` é:
 
 - `SOCIAL_BACKEND_ENABLED=true`: libera a API e executa schema/semeadura idempotente
   na primeira sessão social.
-- `SOCIAL_HOME_ENABLED=false`: valor de implantação inicial; mantém o hub enquanto
-  perfil, amizade e feed são validados no domínio publicado.
+- `SOCIAL_HOME_ENABLED=true`: decisão permanente de 08/09/2026; a raiz passa a ser o
+  feed para contas elegíveis, mantendo Ferramentas como fallback seguro.
 
-Depois do QA autenticado, a segunda flag pode ser alterada para `true` em um commit
-pequeno e reversível. Desligá-la restaura imediatamente o catálogo na raiz sem apagar
+A ativação continua reversível. Se a Home social apresentar falha incapacitante,
+`SOCIAL_HOME_ENABLED=false` restaura imediatamente o catálogo na raiz sem apagar
 dados sociais. Desligar também o backend contém toda a camada, enquanto
 `/ferramentas/` continua funcional.
 
@@ -58,10 +58,15 @@ dados sociais. Desligar também o backend contém toda a camada, enquanto
 
 ## Navegação
 
-Desktop apresenta os recursos elegíveis em primeiro nível: Início, Meu perfil,
-Amigos, Ferramentas, Notificações e Conta. Mobile usa barra inferior com Início,
-Amigos, Ferramentas, Avisos e Conta; itens sociais são omitidos para Bronze ou quando
-o backend estiver indisponível.
+Desktop apresenta os recursos elegíveis em primeiro nível: Início, Amigos,
+Ferramentas, Notificações e Perfil. Mobile usa barra inferior com Início, Amigos,
+Ferramentas, Avisos e Perfil. Não existe mais item independente `Conta` na navegação
+global; as configurações privadas permanecem acessíveis pela área de foto/nome do
+cabeçalho, que continua apontando para `/conta/`.
+
+Para contas sem elegibilidade social, os itens sociais são omitidos e a navegação
+mínima mantém Início e Ferramentas. Isso evita expor Perfil social para contas Bronze
+antes do gate de segurança.
 
 Chat profissional permanece flutuante somente para os cargos autorizados. O CSS
 reposiciona o launcher acima da barra inferior e respeita safe areas.
