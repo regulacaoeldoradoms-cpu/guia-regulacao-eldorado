@@ -52,6 +52,8 @@ Na Recepção, a condição continua com orientação própria para impressão e
 - em **Psicologia**, a folha informa que esse fluxo não é aplicável à demanda relacionada a substâncias e orienta retorno à equipe assistente para organização do cuidado;
 - em **Psiquiatria**, a folha informa que o atendimento é aceito quando houver estabilidade clínica e deixa explícito que a recepção não avalia estabilidade.
 
+A ação adicional de impressão dessa condição deve aparecer separada da impressão geral do protocolo, com botão vermelho identificado como **“Imprimir orientação condicional”**, para deixar claro que se trata de uma orientação aplicável somente quando a condição descrita estiver presente.
+
 ## Limites
 
 A camada prática não substitui:
