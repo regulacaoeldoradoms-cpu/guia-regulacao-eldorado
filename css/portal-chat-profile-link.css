@@ -1,0 +1,12 @@
+.portal-chat-profile-link {
+  display: inline-block;
+  margin-top: 4px;
+  border-radius: 3px;
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.portal-chat-profile-link[hidden] { display: none; }
+.portal-chat-profile-link:focus-visible { outline: 2px solid #ffd36b; outline-offset: 2px; }

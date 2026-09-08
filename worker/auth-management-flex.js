@@ -27,6 +27,10 @@ import {
   decorateCouncilViceUsers,
   setCouncilViceAccess
 } from './council-vice-access.js';
+import {
+  provisionProfessionalSocialGraph,
+  retireProfessionalSeededRelationships
+} from './social-schema.js';
 
 export { isPortalApi, ensureAuthSchema };
 
@@ -199,6 +203,14 @@ async function handleAdminUsers(request, env, origin) {
         }
       } else if (request.method === 'PATCH' && targetUsername && requestedCouncilRole !== null) {
         await setCouncilViceAccess(env, targetUsername, requestedCouncilRole === councilViceOfficeName(), actor.username || 'admin');
+      }
+    }
+
+    if (actor?.role === 'admin') {
+      if (requestedRole === 'cidadao') {
+        await retireProfessionalSeededRelationships(env, payload.user.username);
+      } else {
+        await provisionProfessionalSocialGraph(env, payload.user.username);
       }
     }
 

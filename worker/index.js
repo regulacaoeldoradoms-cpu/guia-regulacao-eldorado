@@ -4,6 +4,7 @@ import aiWorker from './gemini-assistant.js';
 import { handlePortalRoute, isPortalApi, validatePortalSession } from './auth-management-flex.js';
 import { handleProfileRoute, isProfileApi } from './profile-photo.js';
 import { handleChatRoute, isChatApi } from './portal-chat-v2.js';
+import { handleSocialRoute, isSocialApi } from './social.js';
 import { handleUsageRoute, isUsageApi } from './usage-monitor-v2.js';
 import { handleCouncilRoute, isCouncilApi } from './council-access-policy.js';
 import { handleSystemReadinessRoute, isSystemReadinessApi } from './system-readiness.js';
@@ -206,6 +207,13 @@ export default {
     if (isCouncilApi(url.pathname)) {
       try { return await handleCouncilRoute(request, env, origin, originAllowed); }
       catch (error) { return jsonError(error?.message || 'Falha no módulo do Conselho.', 500, origin, originAllowed); }
+    }
+    if (isSocialApi(url.pathname)) {
+      try { return await handleSocialRoute(request, env, origin, originAllowed); }
+      catch (error) {
+        console.error(JSON.stringify({ event: 'social_route_failed', path: url.pathname, kind: error?.name || 'Error' }));
+        return jsonError('Falha temporária na Camada Social. As Ferramentas continuam disponíveis.', 500, origin, originAllowed, 'SOCIAL_TEMPORARILY_UNAVAILABLE');
+      }
     }
     if (isChatApi(url.pathname)) {
       try { return await handleChatRoute(request, env, origin, originAllowed); }

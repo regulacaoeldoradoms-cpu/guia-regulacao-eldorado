@@ -89,6 +89,9 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
   const sessionSecretReady = present(env.AUTH_SESSION_SECRET);
   const emailVerificationRequired = enabled(env.AUTH_REQUIRE_EMAIL_VERIFICATION);
   const legacyMigrationEnabled = enabled(env.AUTH_MIGRATE_LEGACY_ADMINS);
+  const socialBackendEnabled = enabled(env.SOCIAL_BACKEND_ENABLED);
+  const socialHomeEnabled = enabled(env.SOCIAL_HOME_ENABLED);
+  const socialFlagsCoherent = !socialHomeEnabled || socialBackendEnabled;
   const gemini = {
     apiKey: present(env.GEMINI_API_KEY),
     primaryModel: present(env.GEMINI_MODEL),
@@ -200,6 +203,26 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
       detail: emailVerificationRequired
         ? 'A exigência está ATIVA. Use apenas após testar o envio e a confirmação real de e-mail.'
         : 'A exigência está desligada durante a fase de migração, conforme planejado.'
+    },
+    {
+      id: 'social-backend',
+      label: 'Backend da Camada Social',
+      ok: socialBackendEnabled,
+      requiredBeforeDeploy: false,
+      detail: socialBackendEnabled
+        ? 'As APIs sociais e a migração idempotente estão habilitadas.'
+        : 'O backend social está desligado; Ferramentas e os módulos existentes continuam disponíveis.'
+    },
+    {
+      id: 'social-rollout',
+      label: 'Sequência segura da Home social',
+      ok: socialFlagsCoherent,
+      requiredBeforeDeploy: true,
+      detail: !socialFlagsCoherent
+        ? 'Configuração inválida: a Home social não pode ser ativada com o backend social desligado.'
+        : socialHomeEnabled
+          ? 'A Home social está ativa e o backend necessário também está habilitado.'
+          : 'A Home social está em rollout controlado; a raiz mantém o fallback de Ferramentas.'
     }
   ];
 
@@ -217,7 +240,9 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
     cloudflareAi,
     flags: {
       legacyMigrationEnabled,
-      emailVerificationRequired
+      emailVerificationRequired,
+      socialBackendEnabled,
+      socialHomeEnabled
     }
   }, 200, origin);
 }

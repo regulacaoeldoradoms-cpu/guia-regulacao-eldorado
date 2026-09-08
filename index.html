@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d3157">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
   <meta name="description" content="Portal interno da Regulação de Saúde de Eldorado/MS.">
   <title>Início | Portal da Regulação</title>
   <link rel="icon" href="/assets/portal-regulacao-header.png?v=20260816-6" type="image/png">
@@ -17,7 +18,8 @@
   <link rel="stylesheet" href="/css/portal-chat.css?v=20260814-1">
   <link rel="stylesheet" href="/css/home-mobile.css?v=20260906-1">
   <link rel="stylesheet" href="/css/home-chat-button.css?v=20260906-1">
-  <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-1">
+  <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
+  <link rel="stylesheet" href="/css/social.css?v=20260906-1">
 </head>
 <body class="portal-page">
   <script>
@@ -50,27 +52,89 @@
       </div>
     </header>
 
-    <main class="portal-main">
+    <main class="portal-main" id="toolsFallback">
       <section class="portal-hero">
         <div class="portal-hero-copy">
-          <span class="portal-eyebrow">Início</span>
+          <span class="portal-eyebrow">Início · Ferramentas</span>
           <h2>Escolha a ferramenta adequada ao seu perfil.</h2>
-          <p>O portal libera os módulos de acordo com as permissões da mesma conta. Médicos, recepção, Telemedicina, Coordenação, Conselho e Desenvolvimento mantêm seus cargos e também podem acessar o Canal do Cidadão sem criar uma segunda identidade.</p>
+          <p>O Portal libera os módulos de acordo com as permissões da mesma conta. Ferramentas também permanece em primeiro nível durante a implantação gradual da Home social.</p>
+          <div class="portal-note info" id="homeFallbackNotice" hidden></div>
         </div>
       </section>
 
       <section class="portal-section" aria-labelledby="toolsTitle">
-        <div class="portal-section-heading"><h2 id="toolsTitle">Ferramentas disponíveis</h2></div>
+        <div class="portal-section-heading"><h2 id="toolsTitle">Ferramentas disponíveis</h2><a class="portal-button secondary" href="/ferramentas/">Abrir página Ferramentas</a></div>
         <div class="portal-grid" id="hubGrid"><div class="portal-note info">Carregando ferramentas...</div></div>
       </section>
+    </main>
+
+    <main class="social-shell" id="socialHome" hidden>
+      <div class="social-layout">
+        <aside class="social-column social-sticky" aria-label="Meu perfil social">
+          <section class="social-card social-identity-card">
+            <div class="social-mini-cover"></div>
+            <div class="social-avatar" id="socialIdentityAvatar">?</div>
+            <div>
+              <h2 id="socialIdentityName">Carregando perfil...</h2>
+              <p class="social-handle" id="socialIdentityHandle"></p>
+              <span class="social-professional-badge" id="socialIdentityRole" hidden></span>
+            </div>
+          </section>
+          <nav class="social-card social-side-links" aria-label="Atalhos sociais">
+            <a id="socialIdentityLink" href="/perfil/">Ver meu perfil</a>
+            <a href="/amigos/">Amigos e pedidos</a>
+            <a href="/notificacoes/">Notificações sociais</a>
+            <a href="/conta/#socialPreferencesCard">Privacidade social</a>
+          </nav>
+        </aside>
+
+        <section class="social-column" aria-label="Feed social">
+          <div class="social-card social-composer">
+            <h2>Compartilhe com sua rede</h2>
+            <form id="socialComposerForm">
+              <label class="sr-only" for="socialComposerText">Texto da publicação</label>
+              <textarea class="social-textarea" id="socialComposerText" maxlength="2000" required placeholder="Escreva uma atualização social. Não inclua dados de pacientes ou documentos assistenciais."></textarea>
+              <div class="social-composer-footer">
+                <select class="social-select" id="socialComposerAudience" aria-label="Audiência da publicação">
+                  <option value="friends">Amigos</option>
+                  <option value="self">Somente eu</option>
+                </select>
+                <button class="social-button primary" type="submit">Publicar</button>
+              </div>
+            </form>
+          </div>
+          <div class="social-status info" id="socialStatus" role="status" aria-live="polite" hidden></div>
+          <section class="social-card" aria-label="Publicações do feed">
+            <div id="socialFeedList"><div class="social-skeleton" aria-label="Carregando publicações"></div></div>
+          </section>
+          <button class="social-button secondary" id="socialFeedMore" type="button" hidden>Carregar mais publicações</button>
+        </section>
+
+        <aside class="social-column social-sticky">
+          <section class="social-card social-shortcuts" aria-labelledby="shortcutTitle">
+            <div class="social-section-heading"><div><h2 id="shortcutTitle">Atalhos de trabalho</h2><p>Ferramentas autorizadas, sem eventos no feed.</p></div></div>
+            <div class="portal-grid" id="socialShortcutGrid"></div>
+            <div class="social-card-pad"><a class="social-button secondary" href="/ferramentas/">Ver todas as Ferramentas</a></div>
+          </section>
+          <section class="social-card social-card-pad">
+            <h2 style="margin:0 0 8px;font-size:.95rem">Rede institucional, conversa segura</h2>
+            <p style="margin:0;color:#667d90;font-size:.8rem;line-height:1.55">O feed social não publica atividades assistenciais. Amizade não libera chat profissional, Conselho, Telemedicina ou qualquer dado de saúde.</p>
+          </section>
+        </aside>
+      </div>
     </main>
   </div>
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260818-4"></script>
-  <script src="/js/portal-interactions.js?v=20260906-1"></script>
-  <script src="/js/home.js?v=20260901-1"></script>
-  <script src="/js/portal-chat.js?v=20260906-1"></script>
+  <script src="/js/portal-interactions.js?v=20260906-2"></script>
+  <script src="/js/tools-catalog.js?v=20260906-1"></script>
+  <script src="/js/social-api.js?v=20260906-1"></script>
+  <script src="/js/social-navigation.js?v=20260906-1"></script>
+  <script src="/js/social-feed.js?v=20260906-1"></script>
+  <script src="/js/social-home.js?v=20260906-1"></script>
+  <script src="/js/home.js?v=20260906-1"></script>
+  <script src="/js/portal-chat.js?v=20260906-2"></script>
   <script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>
 </body>
 </html>

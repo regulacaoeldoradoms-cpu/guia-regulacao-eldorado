@@ -17,6 +17,7 @@
   let contactsInitialized = false;
   let notificationWorker = null;
   const unreadSnapshot = new Map();
+  const CHAT_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin']);
 
   const escapeText = (value) => String(value || '');
   const ICONS = Object.freeze({
@@ -77,7 +78,7 @@
   }
 
   function roleLabel(role) {
-    return ({ medico: 'Médico', recepcao: 'Recepção', admin: 'Administrador' })[role] || role || '';
+    return ({ medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', telemedicina: 'Técnico em Telemedicina', admin: 'Desenvolvedor' })[role] || role || '';
   }
 
   function avatarStyle(contact) {
@@ -290,8 +291,13 @@
   function updateConversationHeader() {
     const name = document.getElementById('portalChatHeaderName');
     const status = document.getElementById('portalChatHeaderStatus');
+    const profile = document.getElementById('portalChatProfileLink');
     if (name) name.textContent = activeContact?.name || activeContact?.username || 'Conversa';
     if (status) status.textContent = activeContact?.online ? 'online agora' : formatLastSeen(activeContact?.lastSeen);
+    if (profile) {
+      profile.href = `/perfil/?u=${encodeURIComponent(activeContact?.username || '')}`;
+      profile.hidden = !activeContact?.username;
+    }
   }
 
   function messageElement(message) {
@@ -384,8 +390,10 @@
     document.getElementById('portalChatBack').hidden = true;
     const name = document.getElementById('portalChatHeaderName');
     const status = document.getElementById('portalChatHeaderStatus');
+    const profile = document.getElementById('portalChatProfileLink');
     if (name) name.textContent = 'Chat interno';
     if (status) status.textContent = 'Comunicação entre usuários do portal';
+    if (profile) profile.hidden = true;
     loadContacts();
   }
 
@@ -415,6 +423,13 @@
   function mount() {
     if (mounted) return;
     mounted = true;
+    if (!document.querySelector('link[data-portal-chat-profile]')) {
+      const styles = document.createElement('link');
+      styles.rel = 'stylesheet';
+      styles.href = '/css/portal-chat-profile-link.css?v=20260906-2';
+      styles.dataset.portalChatProfile = 'true';
+      document.head.appendChild(styles);
+    }
     const root = document.createElement('div');
     root.className = 'portal-chat';
     root.id = 'portalChatRoot';
@@ -425,7 +440,7 @@
       <section class="portal-chat-panel" aria-label="Chat interno do portal">
         <header class="portal-chat-header">
           <button class="portal-chat-icon-button" id="portalChatBack" type="button" aria-label="Voltar para usuários" hidden>${ICONS.back}</button>
-          <div class="portal-chat-header-main"><strong id="portalChatHeaderName">Chat interno</strong><span id="portalChatHeaderStatus">Comunicação entre usuários do portal</span></div>
+          <div class="portal-chat-header-main"><strong id="portalChatHeaderName">Chat interno</strong><span id="portalChatHeaderStatus">Comunicação entre usuários do portal</span><a class="portal-chat-profile-link" id="portalChatProfileLink" href="/perfil/" hidden>Ver perfil</a></div>
           <button class="portal-chat-icon-button" id="portalChatClose" type="button" aria-label="Recolher chat">${ICONS.close}</button>
         </header>
         <div class="portal-chat-body">
@@ -493,7 +508,7 @@
 
   async function start() {
     currentUser = await auth.me({ allowCached: true }).catch(() => auth.getCachedUser?.() || null);
-    if (!currentUser) return;
+    if (!currentUser || !CHAT_ROLES.has(currentUser.role)) return;
     mount();
     if (notificationSupported() && Notification.permission === 'granted') await ensureNotificationWorker();
     await heartbeat(true);

@@ -152,7 +152,7 @@
       achievement.innerHTML = current.level === 'bronze'
         ? '<div><strong>Falta uma confirmação</strong><span>Adicionar e confirmar o e-mail leva sua conta ao nível Prata.</span></div>'
         : current.level === 'prata'
-          ? '<div><strong>E-mail confirmado</strong><span>Sua conta está no nível Prata e preparada para os recursos que dependem de identificação de segurança verificada.</span></div>'
+          ? '<div><strong>E-mail confirmado</strong><span>Sua conta está no nível Prata e pode usar perfil, amizades e feed social conforme suas preferências.</span></div>'
           : '<div><strong>Conta Ouro</strong><span>Proteção reforçada e acesso aos recursos avançados previstos para a camada social.</span></div>';
     }
   }

@@ -15,7 +15,7 @@
   };
   document.getElementById('portalUserName').textContent = user.name || user.username;
   document.getElementById('portalUserRole').textContent = `${roleLabels[user.role] || user.role}${user.councilRole ? ` · Conselho: ${user.councilRole === 'presidente' ? 'Presidente' : 'Membro'}` : ''}`;
-  document.getElementById('accountHomeLink').href = isCitizen ? '/cidadao/' : '/';
+  document.getElementById('accountHomeLink').href = '/';
 
   const params = new URLSearchParams(location.search);
   const firstAccess = user.mustChangePassword === true || params.get('primeiro-acesso') === '1';
@@ -49,6 +49,12 @@
   const verificationButton = document.getElementById('sendEmailVerification');
   const securityStatus = document.getElementById('securityStatus');
   const friendRequests = document.getElementById('acceptFriendRequests');
+  const socialVisibility = document.getElementById('socialProfileVisibility');
+  const socialAudience = document.getElementById('socialDefaultAudience');
+  const socialHomePreference = document.getElementById('socialHomePreference');
+  const saveSocialPreferences = document.getElementById('saveSocialPreferences');
+  const socialPreferencesStatus = document.getElementById('socialPreferencesStatus');
+  const viewSocialProfile = document.getElementById('viewSocialProfile');
   let security = {};
 
   function initialsFor(value) {
@@ -71,6 +77,13 @@
     return levels?.minimumMet(user, 'prata') || user.emailVerified === true;
   }
 
+  function showSecuritySection() {
+    document.getElementById('seguranca')?.scrollIntoView({
+      behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start'
+    });
+  }
+
   function syncLevelUI() {
     if (accountLevelPanel) {
       accountLevelPanel.hidden = false;
@@ -82,6 +95,10 @@
     if (choosePhoto) choosePhoto.disabled = !silver;
     if (profileInput) profileInput.disabled = !silver;
     if (friendRequests) friendRequests.disabled = !silver;
+    if (socialVisibility) socialVisibility.disabled = !silver;
+    if (socialAudience) socialAudience.disabled = !silver;
+    if (socialHomePreference) socialHomePreference.disabled = !silver;
+    if (saveSocialPreferences) saveSocialPreferences.disabled = !silver;
     if (!silver && removePhoto) removePhoto.hidden = true;
   }
 
@@ -188,7 +205,7 @@
 
   choosePhoto?.addEventListener('click', () => {
     if (!hasSilver()) {
-      document.getElementById('seguranca')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showSecuritySection();
       show(profileStatus, 'A foto de perfil é liberada no nível Prata. Confirme seu e-mail para desbloquear.', 'error');
       return;
     }
@@ -242,11 +259,11 @@
       if (firstAccess) {
         if (user.emailVerificationRequired) {
           show(passwordStatus, 'Senha alterada. Agora confirme seu e-mail de segurança para concluir o acesso.', 'success');
-          document.getElementById('seguranca')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          showSecuritySection();
           return;
         }
         show(passwordStatus, 'Senha alterada com sucesso. Abrindo seu ambiente...', 'success');
-        const destination = isCitizen ? '/cidadao/' : '/';
+        const destination = '/';
         window.setTimeout(() => location.replace(destination), 550);
         return;
       }
@@ -291,14 +308,14 @@
   friendRequests.addEventListener('change', async () => {
     if (!hasSilver()) {
       friendRequests.checked = false;
-      document.getElementById('seguranca')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showSecuritySection();
       show(securityStatus, 'Esta preferência é desbloqueada no nível Prata.', 'error');
       return;
     }
     try {
       security = await auth.updateSecurity({ acceptFriendRequests: friendRequests.checked });
       renderSecurity();
-      show(securityStatus, friendRequests.checked ? 'Preferência salva. Ela só terá efeito quando a função de amizade for ativada.' : 'Pedidos de amizade estão desativados.', 'success');
+      show(securityStatus, friendRequests.checked ? 'Preferência salva. Pedidos elegíveis estão liberados.' : 'Pedidos de amizade estão desativados.', 'success');
     } catch (error) {
       friendRequests.checked = !friendRequests.checked;
       show(securityStatus, error.message || 'Não foi possível salvar a preferência.', 'error');
@@ -310,5 +327,49 @@
     location.replace('/login/');
   });
 
+  async function loadSocialPreferences() {
+    if (!hasSilver()) return;
+    try {
+      const config = await window.PortalSocial.getConfig();
+      if (!config.backendEnabled || !config.available) return;
+      const payload = await auth.api('/api/social/me');
+      const profile = payload.profile || {};
+      if (socialVisibility) socialVisibility.value = profile.profileVisibility || 'portal';
+      if (socialAudience) socialAudience.value = profile.defaultPostAudience || 'friends';
+      if (socialHomePreference) socialHomePreference.value = profile.homePreference || 'feed';
+      if (friendRequests) friendRequests.checked = Boolean(profile.acceptFriendRequests);
+      if (viewSocialProfile) viewSocialProfile.href = `/perfil/?u=${encodeURIComponent(profile.handle || '')}`;
+    } catch (error) {
+      show(socialPreferencesStatus, error.message || 'Não foi possível carregar as preferências sociais.', 'error');
+    }
+  }
+
+  saveSocialPreferences?.addEventListener('click', async () => {
+    if (!hasSilver()) {
+      showSecuritySection();
+      show(socialPreferencesStatus, 'Confirme seu e-mail para alcançar o nível Prata.', 'error');
+      return;
+    }
+    saveSocialPreferences.disabled = true;
+    try {
+      const payload = await auth.api('/api/social/me', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          acceptFriendRequests: Boolean(friendRequests?.checked),
+          profileVisibility: socialVisibility?.value || 'portal',
+          defaultPostAudience: socialAudience?.value || 'friends',
+          homePreference: socialHomePreference?.value || 'feed'
+        })
+      });
+      if (viewSocialProfile) viewSocialProfile.href = `/perfil/?u=${encodeURIComponent(payload.profile?.handle || '')}`;
+      show(socialPreferencesStatus, 'Preferências sociais salvas.', 'success');
+    } catch (error) {
+      show(socialPreferencesStatus, error.message || 'Não foi possível salvar as preferências sociais.', 'error');
+    } finally {
+      saveSocialPreferences.disabled = !hasSilver();
+    }
+  });
+
   await loadSecurity();
+  await loadSocialPreferences();
 })();

@@ -1,116 +1,134 @@
-# Camada social — amizades e perfis
+# Camada Social V1 — amizades e perfis
 
-Decisão permanente registrada em 06/09/2026.
+Decisão permanente atualizada em 08/09/2026.
 
-## Estado
+## Estado implantado
 
-Este documento registra decisões de produto para a futura camada social do Portal da Regulação de Saúde de Eldorado/MS. A implementação ainda não está autorizada por este registro; amizade e perfil social devem ser desenvolvidos em etapa própria, com revisão de arquitetura, privacidade, segurança e testes.
+A Ordem Mestre de 06/09/2026 autorizou a implementação que antes constava apenas
+como visão futura. A V1 está implementada no código com backend social próprio,
+perfil visitável e ciclo completo de amizade. A publicação é gradual por duas flags:
+o backend pode ser validado antes de a raiz passar a exibir o feed.
 
-## Princípio geral
+Amizade é uma relação exclusivamente social. Ela nunca concede acesso ao chat
+profissional, Telemedicina, Guia Médico, Recepção, Conselho, manifestações, anexos
+ou qualquer dado assistencial.
 
-A amizade será uma relação social separada das permissões profissionais e assistenciais do Portal. Nenhuma amizade poderá conceder acesso a dados de Telemedicina, Regulação, manifestações, Conselho, anexos, prontuários ou qualquer informação protegida de saúde.
+## Identidade estável
+
+Cada conta possui um `social_user_id` UUID imutável. Amizades, bloqueios, posts,
+comentários, reações e notificações usam esse identificador, e não nome ou `@handle`.
+
+O perfil é aberto dentro do Portal pela rota `/perfil/?u=handle`. Quando o cidadão
+altera o `@`, o handle anterior é preservado em `social_handle_aliases`; URLs antigas,
+autoria e amizades continuam resolvendo a mesma identidade.
+
+`/conta/` permanece sendo o painel privado. `/perfil/` é a representação social
+autenticada e não indexável.
+
+## Estados e transições
+
+Existe no máximo uma linha em `social_relationships` para cada par não ordenado de
+identidades. Os estados persistidos são:
+
+- `pending`: pedido enviado/recebido, com `initiated_by` indicando a direção;
+- `friends`: amizade ativa;
+- `removed`: pedido recusado/cancelado ou amizade removida;
+- `blocked`: bloqueio ativo, com `blocked_by` indicando quem bloqueou.
+
+A API traduz esses dados para os estados de interface `none`, `sent`, `received`,
+`friends`, `removed`, `blocked` e `unavailable`. Todas as transições são validadas
+no Worker. O navegador não é autoridade de autorização.
+
+A V1 oferece:
+
+- enviar e cancelar pedido;
+- aceitar ou recusar pedido recebido;
+- desfazer amizade;
+- bloquear e desbloquear;
+- consultar relações por estado com paginação por cursor;
+- consultar o estado atual ao abrir um perfil.
+
+Autoamizade, pedido duplicado e transições incompatíveis são recusados ou tratados
+de forma idempotente. A pessoa bloqueada não descobre nem interage com quem a
+bloqueou. Quem efetuou o bloqueio mantém apenas o acesso necessário para desbloquear.
 
 ## Rede inicial de colegas
 
-Quando a camada social for implementada, contas profissionais provisionadas pelo Desenvolvedor e elegíveis ao chat profissional poderão ser tratadas como amizades iniciais entre si.
+Contas profissionais ativas, não autocadastradas, provisionadas pelo Desenvolvedor
+ou pelo bootstrap técnico e elegíveis ao chat recebem amizades iniciais entre si.
+Os perfis lógicos abrangidos são:
 
-A regra deve abranger apenas perfis profissionais efetivamente autorizados no chat profissional, atualmente: Médico, Recepção, Coordenação, Técnico em Telemedicina e Desenvolvedor.
+- Médico;
+- Recepção;
+- Coordenação;
+- Técnico em Telemedicina;
+- Desenvolvedor.
 
-Contas `cidadao`, funções do Conselho isoladamente e outras contas institucionais que não participem do chat profissional não devem receber amizade automática por essa regra.
+Cidadãos, funções isoladas do Conselho e contas criadas pela Coordenação não entram
+na semeadura automática. A origem é verificada pelo backend por `created_by` e pela
+capacidade real do chat; nenhum nome pessoal é hardcoded.
 
-A origem da conta deve ser determinada pelos dados técnicos do backend, como `created_by`, e não por inferência no frontend.
+A migração `professional-friendships-v1` é idempotente. Remover uma amizade gera
+`tombstone=1`, e bloquear também preserva a exceção. O provisionamento automático
+nunca recria esses pares. Novos profissionais elegíveis são conectados no fluxo
+administrativo de criação/alteração da conta.
 
-## Amizade não é autorização profissional
+## Descoberta e tipos de conta
 
-O chat profissional e a amizade são conceitos independentes.
+- Cidadão Prata descobre somente outros cidadãos ativos, não suspensos, com perfil
+  visível ao Portal e pedidos habilitados.
+- Cidadão não recebe uma busca ampla de profissionais.
+- Profissional elegível descobre outros profissionais e pode abrir o perfil pelo
+  chat profissional.
+- Relações manuais cidadão-profissional ficam fora da V1.
+- Conta inativa ou socialmente suspensa sai da descoberta e não recebe novas ações.
 
-- desfazer amizade não deve retirar, por si só, o acesso a comunicação profissional que seja permitida pelo cargo;
-- amizade não deve conceder acesso ao chat profissional para quem não possui essa autorização;
-- futuros chats sociais entre cidadãos ou perfis sociais poderão depender de amizade, privacidade, bloqueio e consentimento próprios.
+Busca exige ao menos três caracteres, possui limite por conta/janela e retorna uma
+página limitada por cursor. Perfis protegidos usam resposta genérica de não
+encontrado para reduzir enumeração.
 
-## Desfazer amizade
+## Perfil social
 
-Qualquer usuário deve poder desfazer uma amizade.
+O perfil pode conter foto da conta, capa por tema/padrão aprovado, nome, `@`, bio,
+frase/status, interesses, seleção e ordem de módulos, contadores e posts permitidos
+pela audiência. Não existe entrada de HTML, CSS, JavaScript, SVG ou iframe pelo
+usuário.
 
-A remoção deve ser registrada como decisão explícita entre aquele par de contas. Uma rotina de amizade automática não poderá recriar posteriormente uma amizade que tenha sido removida manualmente, salvo nova ação voluntária entre os usuários.
+O cargo de um profissional é derivado da autenticação flexível no backend e não é
+editável na superfície social. E-mail, UUID interno, dados administrativos e dados
+assistenciais não aparecem em perfis comuns. Preferências privadas, como página
+inicial e audiência padrão, são devolvidas apenas ao próprio titular.
 
-## Bloqueio
+A foto continua sendo configurada em `/conta/` e exige Conta Prata. A capa da V1 usa
+somente tokens visuais controlados; upload de mídia social foi adiado até existir
+pipeline próprio com validação de MIME, transformação e remoção segura de metadados.
 
-Bloquear e desfazer amizade são ações distintas.
+## Chat profissional é independente
 
-- desfazer amizade encerra apenas o relacionamento social;
-- bloquear deve ter regras próprias de visibilidade, contato e descoberta;
-- a implementação futura deverá definir como bloqueio social se relaciona com comunicações profissionais obrigatórias, sem permitir que a camada social elimine fluxos institucionais necessários.
+O chat continua autorizado exclusivamente pelo cargo profissional. A amizade não
+libera chat para cidadãos, e desfazer amizade ou bloquear na Camada Social não remove
+uma comunicação institucional permitida pelo cargo.
 
-## Integração com o chat
+O cabeçalho da conversa oferece `Ver perfil` para o contato profissional. O link
+resolve pelo username/alias no backend social, sem consultar o grafo para decidir se
+o chat pode funcionar.
 
-No chat profissional, a identidade do contato deverá poder levar ao perfil social da pessoa quando esse perfil estiver disponível.
+## Privacidade, abuso e moderação
 
-A interface poderá oferecer `Ver perfil` pelo cabeçalho da conversa e/ou por elementos de identidade do contato, como nome e foto, respeitando acessibilidade e comportamento mobile.
+- Ações sociais ativas exigem Conta Prata; autocadastro Bronze mantém os recursos
+  cidadãos já permitidos, sem descoberta nem interação social. Relações profissionais
+  podem ser pré-semeadas no backend antes da regularização, como exige a regra
+  institucional, mas a interface continua bloqueada até o gate Prata.
+- `accept_friend_requests` é respeitado nos pedidos manuais.
+- Busca e pedidos possuem rate limit em D1.
+- Perfil, post e comentário podem ser denunciados.
+- O Desenvolvedor pode ocultar conteúdo ou suspender somente a participação social.
+- Suspensão social não altera `auth_users.active`, cargo, sessão nem ferramentas.
+- A trilha de moderação registra metadados técnicos mínimos sem copiar conteúdo para
+  logs ou GitHub.
 
-## Perfil social público
+## Extensões futuras
 
-`/conta/` permanece como área privada de configuração da própria conta.
-
-A representação social visitável por outras pessoas deverá ser uma rota própria, em formato equivalente a `/perfil/@usuario`, sem misturar controles administrativos privados com o perfil público/social.
-
-Inicialmente, "perfil aberto" deve significar visível a usuários autenticados da camada social, e não necessariamente uma página pública indexável na internet. Níveis adicionais de visibilidade poderão ser definidos posteriormente.
-
-## Personalização do perfil
-
-O perfil social deverá permitir personalização substancial, incluindo progressivamente:
-
-- foto de perfil;
-- capa;
-- nome de exibição e `@usuario`;
-- biografia;
-- frase ou status pessoal;
-- informações opcionais definidas pelo usuário;
-- interesses;
-- cores e tema do perfil;
-- fundo ou padrões aprovados pelo Portal;
-- organização e seleção de módulos visíveis;
-- amigos;
-- comunidades;
-- conquistas;
-- jogos e progresso social, quando existirem.
-
-A personalização deve ocorrer por opções e componentes controlados pelo Portal. Não permitir HTML, JavaScript ou CSS arbitrário fornecido pelo usuário, evitando XSS, quebra de layout e problemas de acessibilidade.
-
-## Identidade institucional de profissionais
-
-Perfis profissionais devem manter uma identificação institucional autêntica e não falsificável pelo próprio usuário.
-
-Cargo/função profissional deve permanecer derivado dos dados autorizados do Portal e ser exibido de forma clara no perfil social quando aplicável. O usuário poderá personalizar a área social ao redor dessa identificação, mas não transformar, ocultar ou falsificar seu cargo institucional por meio da personalização do perfil.
-
-## Estados da relação
-
-A implementação futura deve prever estados explícitos de relacionamento, pelo menos:
-
-- sem relação;
-- pedido enviado;
-- pedido recebido;
-- amigos;
-- amizade removida;
-- bloqueado.
-
-As transições devem ser validadas no backend, e não apenas pela interface.
-
-## Integração futura com jogos
-
-A amizade será uma das fundações da futura plataforma social de jogos. Jogos poderão usar amigos para visitas, cooperação, presentes, conquistas e outras mecânicas sociais, mas sem acesso a qualquer dado assistencial ou protegido do Portal.
-
-## Segurança e privacidade
-
-- autorização de relações deve ser validada no Cloudflare Worker;
-- não confiar em botões ocultos no frontend como controle de segurança;
-- não expor e-mail, dados assistenciais, manifestações ou outros dados protegidos no perfil social;
-- não versionar conteúdo privado de usuários no repositório público;
-- evitar enumeração abusiva de contas e descoberta irrestrita de profissionais;
-- manter separação entre identidade social, identidade institucional e permissões assistenciais.
-
-## Relação com decisões anteriores
-
-Esta decisão evolui a camada social anteriormente mantida como futura no Portal. A preferência `accept_friend_requests` já existente permanece como preparação técnica e deverá ser revisada quando a implementação da amizade começar.
-
-O chat profissional continua regido por `docs/CHAT-PROFISSIONAL.md` até que uma implementação social posterior altere explicitamente sua integração, sem reduzir as garantias atuais de autorização e isolamento de cidadãos.
+Comunidades, jogos, seguidores e chat social generalizado permanecem fora da V1.
+Produtos futuros podem referenciar `social_user_id`, mas deverão criar políticas,
+persistência e tipos de evento próprios, mantendo o isolamento assistencial.

@@ -1,126 +1,128 @@
-# Camada social — visão de produto e navegação
+# Camada Social V1 — visão de produto e navegação
 
-Decisão permanente registrada em 06/09/2026.
+Decisão permanente atualizada em 08/09/2026.
 
 ## Estado
 
-Este documento registra a direção de produto para a futura camada social do Portal da Regulação de Saúde de Eldorado/MS. Ele não autoriza, por si só, a implementação imediata do feed ou a substituição do hub atual. A transição deverá ocorrer em etapa própria, após fechamento seguro da V1 e com revisão de arquitetura, privacidade, desempenho, acessibilidade e segurança.
+A Camada Social deixou de ser somente roadmap. Perfil, amizade, feed textual,
+comentários, curtida, notificações, descoberta protegida, moderação, navegação global
+e a rota `/ferramentas/` estão implementados.
+
+A ativação é deliberadamente gradual:
+
+- `SOCIAL_BACKEND_ENABLED` libera APIs, schema e superfícies sociais;
+- `SOCIAL_HOME_ENABLED` troca a apresentação da raiz pelo feed somente depois do QA
+  funcional no ambiente publicado.
+
+Com a segunda flag desligada, `/` mantém o catálogo de trabalho e informa que a Home
+social está em validação. A estrutura do feed já fica disponível no mesmo artefato,
+sem exigir uma migração destrutiva posterior.
 
 ## Princípio de produto
 
-A futura rede social não deverá ser uma cópia do Orkut. A referência é conceitual e nostálgica: perfis fortes, amizades, comunidades, identidade pessoal, recados, jogos e sensação de pertencimento. O objetivo é evoluir esse modelo com padrões modernos de UX, segurança, acessibilidade, desempenho e entretenimento.
+A experiência recupera a ideia de pertencimento, perfil pessoal e amizades da
+internet social clássica com linguagem visual original do Portal. Não copia nome,
+marca, composição, assets, textos ou código do Orkut.
 
-A proposta deve ser tratada como uma melhoria do conceito de rede social comunitária daquela época, e não como reprodução de marca, interface, ativos, código, personagens ou propriedade intelectual de terceiros.
+A V1 combina convivência digital com acesso rápido ao trabalho. A camada social pode
+ser pessoal e expressiva, enquanto cargo profissional, autenticação e dados
+assistenciais permanecem institucionais e separados.
 
-## Evolução da página inicial
+## Home e Ferramentas
 
-Hoje a rota `/` funciona como hub de trabalho e apresenta as ferramentas liberadas de acordo com as permissões da mesma conta.
+Quando a Home está ativa, `/` usa composição responsiva:
 
-Quando a camada social estiver madura para lançamento, a intenção de produto é que a rota `/` evolua para a Home social do usuário, com o feed ocupando a área principal da experiência.
+- identidade e atalhos sociais;
+- feed cronológico e compositor no centro;
+- dois a quatro atalhos autorizados de trabalho, com três como padrão da V1;
+- contexto de privacidade e separação entre social e assistencial.
 
-A mudança não deverá acontecer antes de existir uma base social funcional e segura, incluindo pelo menos perfil social e amizade suficientes para que a nova Home tenha utilidade real.
+`/ferramentas/` reutiliza o mesmo `PortalTools` usado pelo fallback da raiz. A matriz
+de cards não é duplicada entre as duas páginas. A API social não é necessária para
+renderizar ou abrir uma ferramenta autorizada.
 
-## Ferramentas permanecem a um clique
+Ferramentas permanece em primeiro nível na navegação desktop e na barra inferior
+mobile. Se configuração, perfil ou feed falhar, a raiz volta para o catálogo de
+Ferramentas com aviso curto; Telemedicina, Guia, Recepção e demais módulos continuam
+seguindo suas autorizações próprias.
 
-Mesmo com a Home social, o Portal deve continuar sendo eficiente para o trabalho profissional.
+## Navegação global implantada
 
-As ferramentas nunca deverão ficar escondidas atrás de navegação profunda. O acesso a `Ferramentas` deve permanecer a um único clique ou toque a partir da Home e das principais áreas globais do Portal.
+No desktop, a navegação oferece Início, Meu perfil, Amigos, Ferramentas,
+Notificações e Conta conforme elegibilidade. No mobile, prioriza Início, Amigos,
+Ferramentas, Avisos e Conta com áreas sociais omitidas para contas sem o gate.
 
-A área de Ferramentas continuará respeitando integralmente as permissões da conta e deverá apresentar somente os módulos autorizados para aquele usuário.
-
-Profissionais que utilizam o Portal prioritariamente para trabalho não devem ser obrigados a navegar pelo feed para acessar Telemedicina, Guia Médico, Recepção, Conselho, Administração ou outros módulos autorizados.
-
-## Navegação global proposta
-
-A arquitetura futura deverá reservar navegação de primeiro nível para os grandes domínios da experiência social e profissional, em formato equivalente a:
-
-- Início / Feed;
-- Perfil;
-- Amigos;
-- Comunidades;
-- Jogos;
-- Ferramentas.
-
-Conta, Chat e Notificações devem funcionar como recursos globais e permanecer acessíveis independentemente da área em que o usuário estiver.
-
-A composição exata poderá variar entre desktop e mobile, desde que a hierarquia conceitual e o acesso rápido às Ferramentas sejam preservados.
-
-## Atalhos profissionais
-
-A Home social poderá oferecer atalhos fixados pelo próprio usuário para ferramentas profissionais de uso recorrente.
-
-Esses atalhos não substituem a área `Ferramentas`; servem apenas para reduzir ainda mais o atrito operacional.
-
-A implementação futura poderá permitir que o usuário escolha ferramentas favoritas ou frequentes, sempre dentro das permissões já concedidas pelo backend.
+Chat continua como recurso flutuante apenas para os cargos profissionais já
+autorizados. Notificações sociais usam rota e tabela próprias; avisos do Conselho
+continuam no Canal do Cidadão.
 
 ## Página inicial preferida
 
-Deverá ser considerada uma preferência de conta que permita ao usuário escolher, quando tecnicamente e institucionalmente adequado, entre:
+Em `/conta/`, usuários com acesso social podem escolher:
 
-- abrir o Portal na Home social / Feed;
-- abrir o Portal diretamente em Ferramentas.
+- `Feed`: abrir a Home social quando a flag estiver ativa;
+- `Ferramentas`: entrar diretamente em `/ferramentas/`.
 
-Essa preferência é especialmente importante para profissionais que usam o sistema durante o expediente e desejam acesso direto ao ambiente de trabalho.
+Login continua levando à raiz, que aplica a preferência depois de validar sessão e
+configuração. Troca obrigatória de senha, primeiro acesso e regularização de
+segurança sempre têm precedência.
 
-## Feed social
+## Feed social V1
 
-O feed deverá ser social, transparente e separado dos dados assistenciais.
+O feed usa ordem cronológica explícita e paginação por cursor. Mostra publicações do
+próprio usuário e de amigos ativos dentro da audiência `friends` ou `self`. Não
+existe ranking comportamental, feed global ou diretório público de profissionais.
 
-Na primeira geração, a prioridade deve ser conteúdo compreensível e previsível, como:
+A V1 permite:
 
-- publicações de amigos;
-- atividades de comunidades acompanhadas;
-- conquistas ou atividades sociais de jogos quando o usuário optar por compartilhá-las;
-- atualizações sociais explicitamente publicadas pelos próprios usuários.
+- publicar texto;
+- editar/excluir post próprio;
+- comentar e excluir comentário próprio;
+- uma curtida vetorial por usuário/post;
+- denunciar perfil, post ou comentário;
+- carregar páginas progressivamente.
 
-Evitar, no início, um algoritmo opaco de retenção que decida de forma imprevisível o que o usuário verá. Ordem cronológica, relevância simples ou filtros claros são preferíveis enquanto o produto estiver amadurecendo.
+Ao excluir um post, o texto é limpo, comentários são apagados logicamente e reações
+são removidas. Texto de usuário é renderizado com `textContent`, nunca como HTML.
+
+Imagem social não foi liberada nesta etapa. A foto da conta já existente permanece
+disponível, mas posts com mídia aguardam namespace de objetos, validação real de
+MIME, transformação e remoção de EXIF mediados pelo Worker.
 
 ## Separação absoluta entre social e assistencial
 
-O feed e demais superfícies sociais jamais devem publicar automaticamente informações oriundas de Telemedicina, Regulação, manifestações, Conselho, prontuários, solicitações, pacientes, anexos, encaminhamentos ou qualquer outro fluxo assistencial ou protegido.
+O backend social usa apenas tabelas `social_*` e a identidade mínima da conta. Não
+consulta Firestore, Storage, manifestações, anexos, Telemedicina, prontuários,
+encaminhamentos ou dados de pacientes.
 
-Exemplos de conteúdo proibido no feed incluem eventos como registro de paciente, criação de manifestação, alteração de encaminhamento ou atividade clínica/administrativa individual.
+Ferramentas são links autorizados, não eventos do feed. Nenhuma utilização de módulo,
+manifestação, consulta ou alteração administrativa gera publicação automática.
+Amizade, perfil, nível ou reação nunca são usados como autorização profissional.
 
-A camada social deverá conhecer apenas dados e eventos criados para finalidade social, como amizade, publicações, comunidades, jogos, conquistas e preferências sociais voluntárias.
+## Privacidade e elegibilidade
 
-## Inspiração no Orkut
+- A camada é autenticada e suas páginas dedicadas são `noindex,nofollow`.
+- Ações sociais ativas exigem Conta Prata; Ouro não é requisito para a V1 básica.
+- Bronze continua usando as capacidades cidadãs vigentes sem descoberta social.
+- Cidadãos descobrem somente cidadãos que optaram pela visibilidade e pelos pedidos.
+- Profissionais não aparecem em busca cidadã ampla.
+- Perfil profissional mostra cargo autêntico fornecido pelo backend.
+- E-mail, UUID e preferências privadas não aparecem para terceiros.
+- CSP das novas superfícies restringe origens e conteúdo executável.
 
-A inspiração deverá permanecer concentrada nos elementos que criavam identidade e comunidade:
+## Interação e acessibilidade
 
-- perfil social marcante e personalizável;
-- amizades;
-- comunidades;
-- recados e interações sociais;
-- presença de jogos integrados à identidade do usuário;
-- sensação de que cada perfil pertence de fato àquela pessoa.
+As páginas reutilizam `PortalInteractions`; não existe segundo gerenciador de sons.
+Estados possuem texto e cor, com `aria-live` para resultados relevantes. Ícones são
+SVG vetoriais do Portal, sem emojis como pictogramas.
 
-A experiência futura deve atualizar esses conceitos para padrões modernos, sem tentar reproduzir a Home ou o layout histórico do Orkut.
+A interface possui foco visível, controles nativos de formulário, diálogo modal
+nativo, navegação por teclado, tratamento de `prefers-reduced-motion`, contraste
+forçado, safe areas e breakpoint dedicado para evitar compressão/overflow mobile.
 
-## Direção de experiência
+## Evolução posterior
 
-A futura Home deverá fazer o Portal deixar de se apresentar apenas como uma lista de módulos e passar a funcionar também como espaço de convivência digital.
-
-O objetivo de produto é que o usuário possa entrar no Portal e encontrar sua rede, amigos, comunidades, atividades sociais e jogos, ao mesmo tempo em que suas ferramentas de trabalho continuam imediatamente disponíveis quando necessárias.
-
-A camada profissional continua institucional, objetiva e segura. A camada social poderá ser mais pessoal e expressiva, sem comprometer a identidade profissional ou a separação de dados protegidos.
-
-## Relação com amizades e jogos
-
-Esta visão deve ser interpretada em conjunto com `docs/SOCIAL-AMIZADES.md`.
-
-A amizade será uma das fundações da Home social e da futura plataforma de jogos. Jogos poderão usar identidade social, amigos, visitas, cooperação, presentes e conquistas, mantendo isolamento absoluto de dados assistenciais.
-
-## Implementação futura
-
-Antes de substituir o hub atual pela Home social, a etapa de implementação deverá:
-
-- conferir novamente o Dossiê Mestre e a `main`;
-- revisar a arquitetura vigente de autenticação, permissões, chat, perfil e conta;
-- garantir que Ferramentas permaneça a um clique/toque;
-- preservar acesso rápido para profissionais;
-- testar desktop e mobile separadamente;
-- garantir navegação por teclado, leitores de tela e foco visível;
-- validar desempenho do feed e carregamento progressivo;
-- impedir qualquer vazamento entre dados sociais e assistenciais;
-- documentar a migração da raiz `/` e os fallbacks para contas sem uso social;
-- publicar somente após validação completa.
+Comunidades, fóruns, seguidores, jogos, conquistas e chat social cidadão-profissional
+não foram implementados e não aparecem como controles falsos. A identidade UUID e a
+separação de domínio permitem que esses produtos sejam adicionados depois com tabelas,
+eventos e políticas próprias.
