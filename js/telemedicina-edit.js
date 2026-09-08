@@ -126,6 +126,12 @@
     document.querySelectorAll('#followupList [data-followup-row]').forEach(decorateRow);
   }
 
+  function decorateAddedNode(node) {
+    if (!(node instanceof Element)) return;
+    if (node.matches('[data-followup-row]')) decorateRow(node);
+    node.querySelectorAll?.('[data-followup-row]').forEach(decorateRow);
+  }
+
   function buildModal() {
     if (document.getElementById('telemedicineEditModal')) return;
     const backdrop = document.createElement('div');
@@ -259,8 +265,13 @@
 
   const list = document.getElementById('followupList');
   if (list) {
-    const observer = new MutationObserver(() => decorateAll());
-    observer.observe(list, { childList: true, subtree: true, characterData: true });
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type !== 'childList') return;
+        mutation.addedNodes.forEach(decorateAddedNode);
+      });
+    });
+    observer.observe(list, { childList: true, subtree: true });
   }
 
   buildModal();
