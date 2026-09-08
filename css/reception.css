@@ -34,6 +34,20 @@
 .reception-summary span { color: #6c8091; font-size: .82rem; }
 .reception-summary.has-missing { background: #fff7f3; border-color: #f1d0bf; }
 .reception-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.reception-conditional-print {
+  background: linear-gradient(135deg, #c62828, #b71c1c);
+  color: #fff;
+  border: 1px solid #b71c1c;
+  box-shadow: 0 9px 20px rgba(183, 28, 28, .24);
+}
+.reception-conditional-print:hover {
+  background: linear-gradient(135deg, #b71c1c, #991b1b);
+  box-shadow: 0 11px 24px rgba(153, 27, 27, .28);
+}
+.reception-conditional-print:focus-visible {
+  outline: 3px solid rgba(198, 40, 40, .28);
+  outline-offset: 2px;
+}
 .reception-scope-note { margin-top: 18px; padding: 15px 16px; border-left: 4px solid #9b6f17; background: #fff9e9; border-radius: 10px; color: #6e541e; font-size: .83rem; line-height: 1.5; }
 .reception-loading { padding: 36px; text-align: center; color: var(--portal-muted); }
 
