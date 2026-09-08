@@ -42,6 +42,7 @@ jobs:
           node --check js/account.js
           node --check js/citizen-identity-ui.js
           node --check js/home.js
+          node --check js/tools-catalog.js
           node --check js/usage-monitor-v2.js
           node --check js/system-readiness.js
 
@@ -71,8 +72,8 @@ jobs:
           grep -q 'Sua porta de entrada' login/index.html
           grep -q 'Criar minha conta' login/index.html
           grep -q 'Configuração técnica' admin/configuracao/index.html
-          grep -q '/admin/configuracao/' js/home.js
-          grep -q 'mesma conta do portal' js/home.js
+          grep -q '/admin/configuracao/' js/tools-catalog.js
+          grep -q 'com a mesma conta' js/tools-catalog.js
 
       - name: Conferir níveis Bronze Prata Ouro unificados
         run: |

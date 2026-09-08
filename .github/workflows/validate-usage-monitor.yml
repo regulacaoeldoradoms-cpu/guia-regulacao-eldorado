@@ -20,6 +20,7 @@ jobs:
           node --check js/usage-monitor-v2.js
           node --check js/portal-chat.js
           node --check js/home.js
+          node --check js/tools-catalog.js
           node --check js/medical-portal-nav.js
           node --check worker/usage-monitor-v2.js
           node --check worker/portal-chat-v2.js
@@ -36,8 +37,8 @@ jobs:
           grep -q "\['coordenacao', 'admin'\].includes" worker/usage-monitor-v2.js
           grep -q '/api/admin/usage' worker/usage-monitor-v2.js
           grep -q 'handleUsageRoute' worker/index.js
-          grep -q 'Monitoramento de uso' js/home.js
-          grep -q '/admin/monitoramento/' js/home.js
+          grep -q 'Monitoramento de uso' js/tools-catalog.js
+          grep -q '/admin/monitoramento/' js/tools-catalog.js
 
       - name: Conferir presença, histórico e rota médica
         run: |
