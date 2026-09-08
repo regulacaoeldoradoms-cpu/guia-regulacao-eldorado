@@ -113,6 +113,7 @@ jobs:
           node --check js/telemedicina-mobile-v9.js
           node --check js/telemedicina-edit.js
           node --check js/home.js
+          node --check js/tools-catalog.js
           node --check js/admin-users.js
           node --check js/account.js
           node --input-type=module --check < worker/telemedicine.js
@@ -229,7 +230,7 @@ jobs:
             echo 'A documentação não pode reintroduzir o cabeçalho móvel em duas linhas.' >&2
             exit 1
           fi
-          grep -q "href=\"/telemedicina/\"" js/home.js
+          grep -q "href: '/telemedicina/'" js/tools-catalog.js
           grep -q "Técnico em Telemedicina" js/admin-users.js
           grep -q "telemedicina: 'Técnico em Telemedicina'" js/account.js
           grep -q "Privacidade à escolha · conta Bronze" js/account.js
