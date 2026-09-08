@@ -29,14 +29,14 @@ jobs:
         run: node --check js/telemedicina-viewport-v22.js
       - name: Validar carregamento antecipado
         run: |
-          grep -q '/css/telemedicina-viewport-v22.css?v=20260908-1' telemedicina/index.html
-          grep -q '/js/telemedicina-viewport-v22.js?v=20260908-1' telemedicina/index.html
+          grep -q '/css/telemedicina-viewport-v22.css?v=20260908-3' telemedicina/index.html
+          grep -q '/js/telemedicina-viewport-v22.js?v=20260908-3' telemedicina/index.html
           python - <<'PY'
           from pathlib import Path
           html = Path('telemedicina/index.html').read_text()
           head_end = html.index('</head>')
-          css = html.index('/css/telemedicina-viewport-v22.css?v=20260908-1')
-          js = html.index('/js/telemedicina-viewport-v22.js?v=20260908-1')
+          css = html.index('/css/telemedicina-viewport-v22.css?v=20260908-3')
+          js = html.index('/js/telemedicina-viewport-v22.js?v=20260908-3')
           body = html.index('<body')
           assert css < head_end and js < head_end and js < body, 'A guarda V22 deve iniciar no head, antes do body e da hidratação.'
           PY
