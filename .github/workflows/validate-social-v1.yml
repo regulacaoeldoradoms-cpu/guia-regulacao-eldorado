@@ -1,0 +1,104 @@
+name: Validar Camada Social V1
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-social-v1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validar sintaxe e suíte completa
+        working-directory: worker
+        run: |
+          npm run check
+          npm test
+
+      - name: Validar clientes e rotas sociais
+        run: |
+          set -euo pipefail
+          for file in \
+            js/tools-catalog.js js/tools.js js/social-api.js js/social-navigation.js \
+            js/social-home.js js/social-feed.js js/social-profile.js js/social-friends.js \
+            js/social-notifications.js js/social-moderation.js js/home.js js/account.js \
+            js/login.js js/signup.js js/portal-chat.js js/portal-interactions.js; do
+            node --check "$file"
+          done
+          for file in \
+            ferramentas/index.html perfil/index.html amigos/index.html \
+            notificacoes/index.html admin/social/index.html; do
+            test -f "$file"
+            grep -q 'name="robots" content="noindex,nofollow"' "$file"
+            grep -q 'social.css?v=20260906-1' "$file"
+            grep -q 'social-api.js?v=20260906-1' "$file"
+            grep -q 'portal-interactions.js?v=20260906-2' "$file"
+          done
+
+      - name: Conferir arquitetura, flags e rollback
+        run: |
+          set -euo pipefail
+          grep -q 'SOCIAL_BACKEND_ENABLED = "true"' worker/wrangler.toml
+          grep -Eq '^SOCIAL_HOME_ENABLED = "(true|false)"$' worker/wrangler.toml
+          grep -q 'social-v1-20260906' worker/social-schema.js
+          grep -q 'professional-friendships-v1' worker/social-schema.js
+          grep -q 'ON CONFLICT(pair_low, pair_high) DO NOTHING' worker/social-schema.js
+          grep -q 'tombstone = 1' worker/social-schema.js
+          grep -q 'social_user_id TEXT PRIMARY KEY' worker/social-schema.js
+          grep -q 'social_handle_aliases' worker/social-schema.js
+          grep -q 'social_moderation_audit' worker/social-schema.js
+          grep -q 'social_rate_limits' worker/social-schema.js
+          grep -q 'SOCIAL_TEMPORARILY_UNAVAILABLE' worker/index.js
+          grep -q 'showToolsFallback' js/home.js
+          grep -q 'tools-catalog.js?v=20260906-1' index.html
+          grep -q 'tools-catalog.js?v=20260906-1' ferramentas/index.html
+          grep -q 'socialFlagsCoherent' worker/system-readiness.js
+
+      - name: Conferir autorização e separação de domínios
+        run: |
+          set -euo pipefail
+          grep -q "CHAT_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin'\])" js/portal-chat.js
+          grep -q 'portalChatProfileLink' js/portal-chat.js
+          if grep -Eqi 'social_relationship|friend' worker/portal-chat-v2.js; then
+            echo 'O chat profissional não pode depender de amizade social.' >&2
+            exit 1
+          fi
+          if grep -Eqi 'council_manifestation|portal_notifications|firebase|firestore' worker/social.js worker/social-schema.js; then
+            echo 'A Camada Social não pode consultar dados assistenciais ou do Conselho.' >&2
+            exit 1
+          fi
+          if grep -Eqi '\b(CNS|CPF|prontu[aá]rio|paciente|patient)\b' worker/social.js worker/social-schema.js worker/social-policy.js; then
+            echo 'Identificador ou dado assistencial proibido no backend social.' >&2
+            exit 1
+          fi
+          grep -q 'socialGate' worker/social.js
+          grep -q 'ACCOUNT_LEVEL_REQUIRED' worker/social-policy.js
+          grep -q 'SOCIAL_SUSPENDED' worker/social-policy.js
+          grep -q 'role !== '\''admin'\''' worker/social.js
+
+      - name: Conferir conteúdo textual e acessibilidade
+        run: |
+          set -euo pipefail
+          if grep -R -E 'type="file"|accept="image/' index.html perfil amigos notificacoes admin/social js/social-*.js; then
+            echo 'A V1 deve permanecer textual até existir pipeline seguro de imagens.' >&2
+            exit 1
+          fi
+          grep -q '@media (max-width: 360px)' css/social.css
+          grep -q '@media (prefers-reduced-motion: reduce)' css/social.css
+          grep -q '@media (forced-colors: active)' css/social.css
+          grep -q 'focus-visible' css/social.css
+          grep -q 'safe-area-inset-bottom' css/social.css
+          grep -q 'role="tablist"' amigos/index.html
+          grep -q 'aria-live="polite"' perfil/index.html
+          grep -q 'Avisos do Conselho continuam no Canal do Cidadão' notificacoes/index.html
+          for file in index.html ferramentas/index.html perfil/index.html amigos/index.html notificacoes/index.html admin/social/index.html; do
+            grep -q 'http-equiv="Content-Security-Policy"' "$file"
+          done

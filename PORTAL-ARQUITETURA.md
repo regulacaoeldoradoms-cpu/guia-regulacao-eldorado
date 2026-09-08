@@ -1,6 +1,6 @@
 # Portal de acesso por perfil
 
-Arquitetura revisada em 01/09/2026.
+Arquitetura revisada em 08/09/2026.
 
 ## Entrada única
 
@@ -13,17 +13,83 @@ Arquitetura revisada em 01/09/2026.
 
 ## Ambientes
 
-- `/`: Início profissional.
+- `/`: Home social quando ativada; catálogo de trabalho como rollout/fallback.
+- `/ferramentas/`: catálogo único de módulos autorizados, independente da API social.
+- `/perfil/?u=handle`: perfil social autenticado; sem parâmetro, abre o próprio perfil.
+- `/amigos/`: amizades, pedidos, bloqueios e descoberta protegida.
+- `/notificacoes/`: notificações exclusivamente sociais.
 - `/medico/`: Guia Médico e pré-regulação Gemini.
 - `/recepcao/`: Conferência da Recepção.
 - `/telemedicina/`: acompanhamento longitudinal de teleconsultas, retornos e lembretes operacionais.
 - `/admin/usuarios/`: gestão de usuários conforme hierarquia.
 - `/admin/monitoramento/`: monitoramento disponível para Coordenação e Desenvolvedor.
 - `/admin/configuracao/`: diagnóstico técnico exclusivo do Desenvolvedor.
+- `/admin/social/`: denúncias, moderação e observabilidade das migrações sociais,
+  exclusivo do Desenvolvedor.
 - `/cidadao/`: Hub do Cidadão, manifestações, notificações e acompanhamento.
 - `/conselho/`: página pública do Conselho Municipal de Saúde.
 - `/conselho/painel/`: área institucional para Presidente e membros autorizados do Conselho.
-- `/conta/`: perfil, senha, e-mail de segurança, evolução da conta e preferências futuras.
+- `/conta/`: perfil privado, senha, e-mail, evolução, foto e preferências sociais.
+
+## Camada Social V1
+
+A camada social usa a mesma sessão, mas possui domínio de dados e autorização
+próprios. `social_user_id` é um UUID imutável ligado internamente a
+`auth_users.username`. Handles antigos são aliases; mudanças de nome ou `@` não
+alteram autoria nem relações.
+
+### Persistência D1
+
+- `social_schema_migrations`: versões aplicadas e detalhes técnicos mínimos;
+- `social_users`: identidade, perfil, preferências e suspensão somente social;
+- `social_handle_aliases`: resolução de URLs antigas;
+- `social_relationships`: uma linha por par, estado, direção, origem e tombstone;
+- `social_posts`, `social_comments`, `social_reactions`: feed textual;
+- `social_notifications`: avisos sociais, separados de `portal_notifications`;
+- `social_reports`: denúncias categorizadas;
+- `social_moderation_audit`: trilha técnica sem duplicar conteúdo;
+- `social_rate_limits`: limites por identidade, ação e janela.
+
+Schemas e índices são aditivos e idempotentes. As versões atuais são
+`social-v1-20260906` e `professional-friendships-v1`. A semeadura profissional usa
+`created_by`, atividade da conta e capacidade real do chat, e nunca recria um par
+com tombstone ou bloqueio.
+
+### APIs
+
+Todas as rotas abaixo ficam sob `/api/social/*`, validam sessão e aplicam a política
+no Worker:
+
+- `config`, `me`, `profiles/:handle` e `avatars/:handle`;
+- `search` e `relationships`;
+- `feed`, `posts`, `comments` e `reaction`;
+- `notifications` e `reports`;
+- `moderation/reports`, `moderation/users`, `moderation/content` e
+  `migrations/status` para o Desenvolvedor.
+
+Listas usam cursor e limite fixo. Ownership, audiência, amizade, bloqueio,
+visibilidade, atividade e suspensão são revalidados no backend. Respostas comuns não
+contêm e-mail, UUID, conteúdo de manifestação ou dado assistencial.
+
+### Flags e resiliência
+
+- `SOCIAL_BACKEND_ENABLED`: ativa schema e APIs; ausência equivale a `false`.
+- `SOCIAL_HOME_ENABLED`: permite ao `/` mostrar o feed; depende da flag anterior.
+
+O rollout mantém flags separadas para backend e Home. `js/home.js` renderiza
+`PortalTools` antes de consultar a configuração e limita essa consulta a cinco
+segundos; `/ferramentas/` não depende da API social para exibir ou abrir os módulos.
+O rollback não apaga tabelas: desligar primeiro a Home e, se necessário, o backend.
+
+### Matriz de visibilidade
+
+- Bronze não executa ações sociais nem entra em descoberta.
+- Prata/Ouro usa a camada dentro das políticas de tipo de conta e relação.
+- Cidadão descobre somente cidadãos elegíveis; profissionais não formam diretório
+  amplo para cidadãos.
+- Profissionais podem descobrir outros profissionais e abrir perfil pelo chat.
+- Suspensão social remove descoberta/ações, mas não altera login, cargo ou ferramenta.
+- Amizade social jamais autoriza chat, Conselho, Telemedicina, Guia ou Recepção.
 
 ## Perfis primários
 
@@ -101,8 +167,9 @@ Requisito: e-mail de segurança confirmado.
 Além do Bronze, desbloqueia:
 
 - foto de perfil;
-- preparação do perfil social;
-- preferência para receber pedidos de amizade quando a camada social for ativada.
+- perfil social e personalização controlada;
+- amizade, descoberta permitida, feed textual e notificações sociais;
+- preferências de pedidos, visibilidade, audiência e Home Feed/Ferramentas.
 
 A foto de perfil pertence à conta/social e não é exibida no painel do Conselho dentro das manifestações.
 
@@ -114,7 +181,8 @@ O nível Ouro ainda não pode ser alcançado na V1. A arquitetura já prevê ess
 
 - dispositivos confiáveis;
 - recursos sociais mais sensíveis;
-- elegibilidade para comunicação social avançada quando essa camada for implementada.
+- elegibilidade futura para recursos sociais mais sensíveis quando forem
+  especificados e implementados.
 
 Mesmo no nível Ouro, um cidadão não recebe acesso automático a médicos, recepcionistas ou outros profissionais. As regras de amizade, consentimento e privacidade continuam obrigatórias.
 
@@ -132,7 +200,8 @@ O conteúdo das manifestações não é armazenado no Google Drive e não possui
 
 - Cloud Firestore: manifestação, mensagens, andamento, observações internas e metadados de anexos; também armazena as coleções protegidas de Telemedicina.
 - Cloud Storage/Firebase Storage: JPG, PNG e PDF privados.
-- D1: autenticação do portal, capacidades técnicas, índice protocolo↔conta, contador de protocolo, rate limit, notificações genéricas e auditoria sem conteúdo da manifestação.
+- D1: autenticação, capacidades técnicas, índice protocolo↔conta, contador, rate
+  limits, notificações institucionais sem conteúdo e tabelas `social_*` isoladas.
 - O documento principal da manifestação no Firestore não contém o nome de usuário do cidadão.
 - O acesso ao Firestore/Storage é intermediado pelo Worker. O navegador não recebe credencial de conta de serviço.
 - As regras versionadas em `firebase/firestore.rules` e `firebase/storage.rules` negam todo acesso direto por clientes Firebase na V1; o Worker usa IAM/conta de serviço.
@@ -193,21 +262,25 @@ O objetivo é permitir rastreabilidade sem duplicar conteúdo sensível em logs 
 - Auto cadastro possui limite técnico por conexão, armazenando apenas hash para a regra antiabuso.
 - App Check/reCAPTCHA poderá ser adicionado ao endpoint público após o projeto Firebase ser conectado.
 
-## Chat e futura camada social
+## Chat profissional e Camada Social
 
-Na V1, cidadãos não possuem acesso ao chat profissional nem à lista de médicos, recepcionistas, coordenadores ou desenvolvedores. O Técnico em Telemedicina também não recebe acesso ao chat profissional apenas por possuir esse perfil; qualquer integração futura deve ser decidida explicitamente.
+Cidadãos continuam sem acesso ao chat profissional e sem lista de médicos,
+recepcionistas, coordenadores, técnicos ou desenvolvedores. Médico, Recepção,
+Coordenação, Técnico em Telemedicina e Desenvolvedor usam o chat por autorização de
+cargo validada no Worker.
 
-A arquitetura de conta já contém `accept_friend_requests` e gates de nível:
+O cabeçalho da conversa oferece `Ver perfil`, mas o grafo social não participa da
+decisão do chat. Amizade não libera conversa profissional, e remoção/bloqueio ou
+suspensão social não retiram comunicação exigida pelo cargo.
 
-- Bronze: sem recursos sociais;
-- Prata: foto de perfil e preferência futura de pedidos de amizade;
-- Ouro: elegibilidade futura para recursos sociais avançados.
-
-Amizade, busca social, feed, seguidores e chat cidadão↔profissional ficam fora da V1. Quando implementados, o chat só poderá existir após relação autorizada. Cada usuário poderá escolher se aceita pedidos, e o nível da conta nunca contornará as regras de privacidade do profissional.
+A Camada Social V1 implementa amizade, busca protegida e feed. Seguidores,
+comunidades, jogos e chat social cidadão↔profissional permanecem fora do escopo.
 
 ## Repositório e proteção de dados
 
-Em 01/09/2026 o repositório foi alterado para **privado**. Essa mudança reduz a exposição do código, mas não transforma o GitHub em banco de dados assistencial.
+Na conferência de 06/09/2026, o repositório estava **público**. Por isso, nenhum dado
+social real, conteúdo privado, credencial ou material assistencial pode ser
+versionado; a proteção não depende da visibilidade do código.
 
 Nenhuma credencial, chave privada, e-mail protegido, conteúdo de manifestação, nome de paciente, arquivo de migração de Telemedicina ou outro dado sensível deve ser salvo no repositório. Dados protegidos ficam em serviços autenticados no backend. Segredos permanecem no painel da Cloudflare. O `.gitignore` bloqueia arquivos locais comuns de segredo, e `worker/.dev.vars.example` contém somente placeholders.
 

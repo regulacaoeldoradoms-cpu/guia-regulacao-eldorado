@@ -92,7 +92,11 @@ As preferências são gravadas no D1 pela API autenticada `/api/auth/security` e
 
 | Rota | Respostas classificadas |
 |---|---|
-| `/` | entrada nas ferramentas, saída, chat e notificações |
+| `/` | ferramentas/fallback, compositor, feed, ações sociais, saída, chat e notificações |
+| `/ferramentas/` | entrada nos módulos autorizados, navegação global, chat e saída |
+| `/perfil/` | personalização, relação social, posts, comentários, modais, chat e saída |
+| `/amigos/` | abas, pesquisa, pedidos, remoção, bloqueio, paginação, modais e saída |
+| `/notificacoes/` | paginação e leitura das notificações exclusivamente sociais |
 | `/login/` | envio, erro de autenticação e entrada no cadastro |
 | `/cadastro/` | envio, validação, sucesso e retorno ao acesso |
 | `/medico/` | filtros, seleção de protocolo, cópia, impressão, checklist, assistente e chat |
@@ -102,10 +106,11 @@ As preferências são gravadas no D1 pela API autenticada `/api/auth/security` e
 | `/cidadao/` | nova manifestação, atualização, anexos, privacidade, abas, notificações, modais e saída |
 | `/conselho/` | entrada em cadastro ou login e resposta dos cards públicos |
 | `/conselho/painel/` | filtros, abertura, resposta, andamento, exportação, exclusão, atualização e saída |
-| `/conta/` | formulários, foto, e-mail, senha, preferências de interface e saída |
+| `/conta/` | formulários, foto, e-mail, senha, preferências de interface/social e saída |
 | `/admin/usuarios/` | criação, edição, redefinição, filtros implícitos, resultados e saída |
 | `/admin/monitoramento/` | períodos, seleção de profissional, atualização de conteúdo, chat e saída |
 | `/admin/configuracao/` | diagnóstico, carregamento, conclusão, bloqueios, erro e saída |
+| `/admin/social/` | fila, filtros, decisões de moderação, confirmações, migrações e saída |
 
 `/home/` e `/protocolo.html` continuam sendo redirecionamentos de compatibilidade, sem efeitos próprios.
 

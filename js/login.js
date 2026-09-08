@@ -255,7 +255,7 @@
   function defaultDestination(user) {
     if (user?.role === 'cidadao') {
       if (user?.councilRole === 'presidente' || user?.councilRole === 'membro') return '/conselho/painel/';
-      return '/cidadao/';
+      return '/';
     }
     return config.homePath || '/';
   }

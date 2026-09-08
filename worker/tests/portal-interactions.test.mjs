@@ -9,6 +9,10 @@ const read = (filename) => fs.readFileSync(path.join(root, filename), 'utf8');
 
 const ACTIVE_ROUTES = [
   'index.html',
+  'ferramentas/index.html',
+  'perfil/index.html',
+  'amigos/index.html',
+  'notificacoes/index.html',
   'login/index.html',
   'cadastro/index.html',
   'medico/index.html',
@@ -21,7 +25,8 @@ const ACTIVE_ROUTES = [
   'conta/index.html',
   'admin/usuarios/index.html',
   'admin/monitoramento/index.html',
-  'admin/configuracao/index.html'
+  'admin/configuracao/index.html',
+  'admin/social/index.html'
 ];
 
 const RUNTIME_TEXT_FILES = [
@@ -78,8 +83,8 @@ function interactionRuntime() {
 test('todas as rotas ativas carregam uma única camada central versionada', () => {
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
-    assert.equal((html.match(/portal-interactions\.css\?v=20260906-1/g) || []).length, 1, `${filename}: CSS central`);
-    assert.equal((html.match(/portal-interactions\.js\?v=20260906-1/g) || []).length, 1, `${filename}: JS central`);
+    assert.equal((html.match(/portal-interactions\.css\?v=20260906-2/g) || []).length, 1, `${filename}: CSS central`);
+    assert.equal((html.match(/portal-interactions\.js\?v=20260906-2/g) || []).length, 1, `${filename}: JS central`);
   }
 });
 

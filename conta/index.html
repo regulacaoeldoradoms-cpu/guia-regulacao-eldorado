@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
   <meta name="theme-color" content="#0d3157">
   <title>Minha conta | Portal da Regulação</title>
   <link rel="icon" id="accountFavicon" href="/assets/portal-regulacao-header.png" type="image/png">
@@ -12,7 +13,8 @@
   <link rel="stylesheet" href="/css/account-level.css?v=20260816-1">
   <link rel="stylesheet" href="/css/account-mobile.css?v=20260820-1826">
   <link rel="stylesheet" href="/css/account-mobile-refinement.css?v=20260821-0718">
-  <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-1">
+  <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
+  <link rel="stylesheet" href="/css/social.css?v=20260906-1">
 </head>
 <body class="portal-page">
   <script>
@@ -63,7 +65,7 @@
             <h3>O que cada nível desbloqueia</h3>
             <div class="account-level-unlock-list">
               <div class="account-level-unlock"><span class="state">B</span><span><strong>Bronze:</strong> acesso básico à conta e aos recursos liberados para o seu perfil.</span></div>
-              <div class="account-level-unlock"><span class="state">P</span><span><strong>Prata:</strong> foto de perfil e preparação do perfil social e de pedidos de amizade.</span></div>
+              <div class="account-level-unlock"><span class="state">P</span><span><strong>Prata:</strong> foto, perfil social, amizades, publicações e feed dentro das regras de privacidade.</span></div>
               <div class="account-level-unlock"><span class="state">O</span><span><strong>Ouro:</strong> recursos sociais avançados e dispositivos confiáveis quando a proteção reforçada for implantada.</span></div>
             </div>
           </div>
@@ -162,15 +164,23 @@
         </article>
 
         <article class="account-card" id="socialPreferencesCard">
-          <h2>Recursos sociais futuros</h2>
-          <p>A camada social ainda não está ativa. O portal já prepara as preferências para quando amizade e outras funções forem implantadas. Contas profissionais continuarão aparecendo pelo cargo/função de saúde, não como “Cidadão”.</p>
+          <h2>Preferências sociais</h2>
+          <p>Controle pedidos, visibilidade, audiência padrão e a página inicial da Camada Social. Contas profissionais aparecem pelo cargo/função autêntico e nunca como diretório público para cidadãos.</p>
           <div class="level-lock" id="friendRequestLevelLock">
-            <div class="level-lock-overlay"><strong>Recurso de Conta Prata.</strong><br>Confirme o e-mail para liberar a preferência de pedidos de amizade. Isso não ativa a rede social agora.</div>
+            <div class="level-lock-overlay"><strong>Recursos de Conta Prata.</strong><br>Confirme o e-mail para participar do grafo social, publicar e personalizar o perfil.</div>
             <div class="level-lock-content">
-              <label style="display:flex;gap:10px;align-items:flex-start;margin-top:16px"><input id="acceptFriendRequests" type="checkbox" style="margin-top:3px"><span><strong>Permitir pedidos de amizade</strong><br><small style="color:#6c8293">Quando a função existir, você poderá decidir se aceita novos pedidos. Profissionais continuarão protegidos pelas regras específicas de relacionamento.</small></span></label>
+              <label style="display:flex;gap:10px;align-items:flex-start;margin:16px 0"><input id="acceptFriendRequests" type="checkbox" style="margin-top:3px"><span><strong>Permitir pedidos de amizade</strong><br><small style="color:#6c8293">Pessoas elegíveis poderão enviar pedidos conforme a matriz de descoberta do Portal.</small></span></label>
+              <div class="social-form-grid">
+                <div class="social-field"><label for="socialProfileVisibility">Visibilidade do perfil</label><select class="social-select" id="socialProfileVisibility"><option value="portal">Portal autenticado</option><option value="friends">Somente amigos</option></select></div>
+                <div class="social-field"><label for="socialDefaultAudience">Audiência padrão dos posts</label><select class="social-select" id="socialDefaultAudience"><option value="friends">Amigos</option><option value="self">Somente eu</option></select></div>
+                <div class="social-field"><label for="socialHomePreference">Página inicial preferida</label><select class="social-select" id="socialHomePreference"><option value="feed">Feed social</option><option value="tools">Ferramentas</option></select></div>
+                <div class="social-field" style="align-self:end"><button class="social-button primary" id="saveSocialPreferences" type="button">Salvar preferências</button></div>
+              </div>
+              <div class="account-status" id="socialPreferencesStatus" role="status" aria-live="polite"></div>
+              <div class="account-actions" style="margin-top:14px"><a class="portal-button secondary linklike" id="viewSocialProfile" href="/perfil/">Ver meu perfil social</a><a class="portal-button secondary linklike" href="/amigos/">Abrir Amigos</a></div>
             </div>
           </div>
-          <div class="portal-note info" style="margin-top:16px"><strong>Conta Ouro:</strong> a elegibilidade para recursos sociais mais sensíveis ficará reservada ao nível Ouro quando a proteção reforçada em novos dispositivos estiver disponível.</div>
+          <div class="portal-note info" style="margin-top:16px"><strong>Conta Ouro:</strong> permanece reservada a recursos sociais futuros mais sensíveis. Amizade, perfil e feed básicos exigem Conta Prata, não Ouro.</div>
         </article>
       </section>
     </main>
@@ -178,9 +188,10 @@
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260816-1"></script>
-  <script src="/js/portal-interactions.js?v=20260906-1"></script>
+  <script src="/js/portal-interactions.js?v=20260906-2"></script>
+  <script src="/js/social-api.js?v=20260906-1"></script>
   <script src="/js/account-levels.js?v=20260819-1"></script>
-  <script src="/js/account.js?v=20260901-1"></script>
-  <script src="/js/citizen-identity-ui.js?v=20260818-3"></script>
+  <script src="/js/account.js?v=20260906-1"></script>
+  <script src="/js/citizen-identity-ui.js?v=20260906-1"></script>
 </body>
 </html>

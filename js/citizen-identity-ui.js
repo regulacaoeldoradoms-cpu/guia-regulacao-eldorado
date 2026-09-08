@@ -38,7 +38,7 @@ import('/js/account-brand.js?v=20260817-1').catch(() => {});
     if (profileCopy) profileCopy.textContent = 'Esta é a foto única do seu perfil no portal. Ela é usada nos ambientes em que sua identidade pode aparecer e nunca é copiada para dentro de uma manifestação sigilosa do Conselho.';
 
     const securityCopy = document.querySelector('#seguranca > p');
-    if (securityCopy) securityCopy.innerHTML = 'Confirmar o e-mail de segurança transforma a conta Bronze em Prata e protege o acesso. Nas manifestações do Conselho, contas com e-mail são tratadas como <strong>sigilosas</strong>; o endereço não aparece no painel institucional.';
+    if (securityCopy) securityCopy.innerHTML = 'Confirmar o e-mail de segurança transforma a conta Bronze em Prata, protege o acesso e libera os recursos sociais básicos. Em cada manifestação, a pessoa escolhe entre a modalidade protegida disponível e a identificação segura; o e-mail nunca aparece no painel institucional.';
   }
 
   await syncUnifiedAccountExperience();

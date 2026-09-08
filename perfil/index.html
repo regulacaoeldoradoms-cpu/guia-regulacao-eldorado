@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0d3157">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <title>Perfil social | Portal da Regulação</title>
+  <link rel="icon" href="/assets/portal-regulacao-header.png?v=20260816-6" type="image/png">
+  <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
+  <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
+  <link rel="stylesheet" href="/css/portal-chat.css?v=20260814-1">
+  <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
+  <link rel="stylesheet" href="/css/social.css?v=20260906-1">
+</head>
+<body class="portal-page">
+  <div class="portal-shell">
+    <header class="portal-topbar">
+      <div class="portal-topbar-inner">
+        <a class="portal-brand portal-brand--portal-identity" href="/" style="color:inherit;text-decoration:none">
+          <img class="portal-symbol" src="/assets/portal-regulacao-header.png?v=20260816-2" alt="Símbolo do Portal da Regulação de Saúde">
+          <div class="portal-brand-copy"><h1>Portal da Regulação de Saúde</h1><p>Perfil social autenticado · Eldorado/MS</p></div>
+        </a>
+        <div class="portal-user"><div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div><button class="portal-button ghost" id="portalLogout" type="button">Sair</button></div>
+      </div>
+    </header>
+    <main class="social-shell">
+      <div class="social-status info" id="socialStatus" role="status" aria-live="polite">Carregando perfil...</div>
+      <section class="social-card" id="socialProfile" hidden>
+        <div class="social-profile-cover theme-aurora pattern-waves" id="profileCover">
+          <div class="social-profile-identity">
+            <div class="social-avatar" id="profileAvatar">?</div>
+            <div class="social-profile-name"><h1 id="profileName"></h1><p id="profileHandle"></p><span class="social-professional-badge" id="profileProfessional" hidden></span></div>
+            <div class="social-profile-actions" id="profileActions"></div>
+          </div>
+        </div>
+        <div class="social-profile-grid" id="profileModules">
+          <section class="social-profile-module" id="profileModuleAbout" data-profile-module="about">
+            <h2>Sobre</h2>
+            <p id="profileStatusText"></p>
+            <p id="profileBio" style="margin-top:10px"></p>
+            <div class="social-chip-list" id="profileInterests"></div>
+          </section>
+          <section class="social-profile-module" id="profileModuleFriends" data-profile-module="friends">
+            <h2>Amigos</h2>
+            <p id="profileFriendCount"></p>
+          </section>
+          <section class="social-profile-module" id="profileModulePosts" data-profile-module="posts" style="padding:0">
+            <div class="social-section-heading"><div><h2>Publicações</h2><p>Em ordem cronológica e dentro da audiência permitida.</p></div></div>
+            <div id="profilePosts"></div>
+            <div class="social-card-pad"><button class="social-button secondary" id="profilePostsMore" type="button" hidden>Carregar mais publicações</button></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="social-card social-card-pad" id="profileEditor" hidden style="margin-top:18px">
+        <div class="social-section-heading" style="padding:0 0 14px"><div><h2>Personalizar meu perfil</h2><p>Use temas e módulos aprovados. Nome, @ e foto continuam em Minha Conta.</p></div><a class="social-button secondary" href="/conta/">Abrir Minha Conta</a></div>
+        <form id="profileEditorForm" class="social-form-grid" style="margin-top:16px">
+          <div class="social-field wide"><label for="profileEditStatus">Frase ou status</label><input class="social-input" id="profileEditStatus" maxlength="100"></div>
+          <div class="social-field wide"><label for="profileEditBio">Bio</label><textarea class="social-textarea" id="profileEditBio" maxlength="240"></textarea></div>
+          <div class="social-field wide"><label for="profileEditInterests">Interesses, separados por vírgula</label><input class="social-input" id="profileEditInterests" maxlength="320"></div>
+          <div class="social-field"><label for="profileEditTheme">Tema da capa</label><select class="social-select" id="profileEditTheme"><option value="aurora">Aurora</option><option value="oceano">Oceano</option><option value="serra">Serra</option><option value="ipê">Ipê</option></select></div>
+          <div class="social-field"><label for="profileEditPattern">Padrão da capa</label><select class="social-select" id="profileEditPattern"><option value="waves">Ondas</option><option value="rings">Círculos</option><option value="grid">Grade</option><option value="none">Sem padrão</option></select></div>
+          <fieldset class="social-field wide" style="border:0;padding:0;margin:0"><legend style="font-size:.75rem;font-weight:850;color:#38566c;margin-bottom:7px">Módulos visíveis e ordem</legend><div class="social-module-order" id="profileModuleOrderEditor"></div><small style="color:#667d90">Marque os módulos desejados e use Subir/Descer para definir a ordem.</small></fieldset>
+          <div class="social-field wide"><button class="social-button primary" type="submit">Salvar personalização</button></div>
+        </form>
+      </section>
+    </main>
+  </div>
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260818-4"></script>
+  <script src="/js/portal-interactions.js?v=20260906-2"></script>
+  <script src="/js/tools-catalog.js?v=20260906-1"></script>
+  <script src="/js/social-api.js?v=20260906-1"></script>
+  <script src="/js/social-navigation.js?v=20260906-1"></script>
+  <script src="/js/social-feed.js?v=20260906-1"></script>
+  <script src="/js/social-profile.js?v=20260906-1"></script>
+  <script src="/js/portal-chat.js?v=20260906-2"></script>
+  <script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>
+</body>
+</html>

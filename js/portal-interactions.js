@@ -107,6 +107,46 @@
       path: /^\/$/,
       click: [
         ['.hub-card', 'navigation-enter', '.portal-grid'],
+        ['#socialComposerForm button[type="submit"]', 'primary', '#socialFeedList'],
+        ['#socialFeedMore,.social-post-actions button,.social-comment-form button', 'state-change', '#socialFeedList'],
+        ['#portalLogout', 'navigation-exit']
+      ]
+    },
+    {
+      path: /^\/ferramentas\/?$/,
+      click: [
+        ['.hub-card', 'navigation-enter', '#toolsGrid'],
+        ['#portalLogout', 'navigation-exit']
+      ]
+    },
+    {
+      path: /^\/perfil\/?$/,
+      click: [
+        ['#profileActions .social-button,.social-post-actions button,.social-comment-form button', 'state-change', '#socialProfile'],
+        ['#profileEditorForm button[type="submit"]', 'save', '#socialProfile'],
+        ['#profilePostsMore', 'loading', '#profilePosts'],
+        ['.social-button.danger', 'destructive'],
+        ['#portalLogout', 'navigation-exit']
+      ],
+      change: [['#profileEditTheme,#profileEditPattern,#profileModuleOrderEditor input', 'selection', '#socialProfile']]
+    },
+    {
+      path: /^\/amigos\/?$/,
+      click: [
+        ['[data-relationship-tab]', 'filter', '#relationshipList'],
+        ['#socialSearchForm button[type="submit"]', 'primary', '#socialSearchResults'],
+        ['#relationshipMore,#socialSearchMore', 'loading'],
+        ['.social-row-actions .social-button', 'state-change'],
+        ['.social-button.danger', 'destructive'],
+        ['#portalLogout', 'navigation-exit']
+      ]
+    },
+    {
+      path: /^\/notificacoes\/?$/,
+      click: [
+        ['#markSocialRead', 'confirm', '#socialNotificationList'],
+        ['#socialNotificationMore', 'loading', '#socialNotificationList'],
+        ['.social-notification', 'navigation-enter'],
         ['#portalLogout', 'navigation-exit']
       ]
     },
@@ -226,10 +266,11 @@
       click: [
         ['#chooseProfilePhoto,#sendEmailVerification', 'primary'],
         ['#removeProfilePhoto', 'destructive'],
+        ['#saveSocialPreferences', 'save', '#socialPreferencesStatus'],
         ['[data-level-next-action]', 'navigation-enter'],
         ['#portalLogout,#accountHomeLink', 'navigation-exit']
       ],
-      change: [['#acceptFriendRequests', 'selection']]
+      change: [['#acceptFriendRequests,#socialProfileVisibility,#socialDefaultAudience,#socialHomePreference', 'selection']]
     },
     {
       path: /^\/admin\/usuarios\/?$/,
@@ -254,6 +295,16 @@
         ['#refreshReadiness', 'loading', '#readinessList'],
         ['#portalLogout,a[href="/"]', 'navigation-exit']
       ]
+    },
+    {
+      path: /^\/admin\/social\/?$/,
+      click: [
+        ['#moderationMore', 'loading', '#moderationList'],
+        ['.social-admin-report .social-button', 'state-change', '#moderationList'],
+        ['.social-button.danger', 'destructive'],
+        ['#portalLogout', 'navigation-exit']
+      ],
+      change: [['#moderationStatus', 'filter', '#moderationList']]
     }
   ];
 
@@ -265,10 +316,11 @@
     '.toast',
     '.council-delete-toast',
     '.portal-chat-status',
-    '.tm-inline-status'
+    '.tm-inline-status',
+    '.social-status'
   ].join(',');
 
-  const LAYER_SELECTOR = '.modal-backdrop,.citizen-modal,.council-delete-dialog-backdrop,.portal-auxiliary-dialog,.ai-chat,.portal-chat';
+  const LAYER_SELECTOR = '.modal-backdrop,.citizen-modal,.council-delete-dialog-backdrop,.portal-auxiliary-dialog,.social-dialog,.ai-chat,.portal-chat';
   const customRules = { click: [], change: [] };
   const statusSnapshots = new WeakMap();
   const layerSnapshots = new WeakMap();

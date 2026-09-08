@@ -1,6 +1,7 @@
 'use strict';
 
 import { validatePortalSession } from './auth-management-flex.js';
+import { isSocialHandleOwnedByAnother } from './social-schema.js';
 
 const HANDLE_CHANGE_DAYS = 30;
 const RESERVED_HANDLES = new Set([
@@ -129,7 +130,8 @@ async function handleAvailable(env, proposed, currentUsername) {
   // também ficam reservados e não podem virar @ de cidadão.
   const professionalOwner = await env.AUTH_DB.prepare("SELECT username FROM auth_users WHERE username = ? AND username <> ? AND role <> 'cidadao' LIMIT 1")
     .bind(proposed, currentUsername).first();
-  return !professionalOwner;
+  if (professionalOwner) return false;
+  return !(await isSocialHandleOwnedByAnother(env, proposed, currentUsername));
 }
 
 export function isCitizenIdentityApi(pathname) {
