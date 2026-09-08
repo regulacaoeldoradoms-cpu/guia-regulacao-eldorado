@@ -3,6 +3,55 @@
 (() => {
   if (!/^\/telemedicina\/?$/.test(window.location.pathname)) return;
 
+  /*
+   * V23 — decisão permanente de estabilidade:
+   * a Telemedicina não executa mais qualquer camada de movimento,
+   * sonificação ou manipulação automática de viewport.
+   *
+   * Este arquivo continua carregado por compatibilidade e cache-busting,
+   * mas a implementação V22 abaixo fica deliberadamente inativa.
+   */
+  document.documentElement.classList.remove('tm-viewport-v22', 'tm-viewport-v22-ready');
+  try {
+    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'auto';
+  } catch (_) {}
+
+  const noop = () => {};
+  if (!window.PortalInteractions) {
+    window.PortalInteractions = Object.freeze({
+      version: 'disabled-telemedicina-v23',
+      disabled: true,
+      emit: () => false,
+      notify: () => false,
+      announce: noop,
+      beginTask: () => noop,
+      endTask: noop,
+      transition: (update) => {
+        if (typeof update === 'function') update();
+        return Promise.resolve();
+      },
+      register: () => noop,
+      getPreferences: () => ({ soundsEnabled: false, volume: 0, muted: true }),
+      setPreferences: () => Promise.resolve({ localOnly: true }),
+      prefersReducedMotion: () => true,
+      start: noop,
+      destroy: noop,
+      sounds: Object.freeze({
+        play: () => false,
+        preload: noop,
+        unlock: () => false,
+        update: noop
+      })
+    });
+  }
+
+  window.TelemedicineViewportV22 = Object.freeze({
+    pin: noop,
+    release: noop,
+    isLocked: () => false
+  });
+  return;
+
   const MAX_HOLD_MS = 15000;
   const STABILIZE_MS = 320;
   const SCROLL_KEYS = new Set(['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' ']);
