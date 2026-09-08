@@ -12,20 +12,35 @@ html.tm-telemedicine-modal-active body.telemedicine-page .portal-shell {
   user-select: none;
 }
 
-@media (min-width: 861px) {
-  .telemedicine-page.tm-context-desktop .modal-backdrop {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-    transition: none !important;
-  }
+/*
+   A Telemedicina opta por estabilidade visual durante a operação.
+   A pressão global não desloca nem redimensiona controles nesta rota, e a
+   atualização de listas não aplica animação que faça o conteúdo "pular".
+   Cor, estado, foco e som permanecem disponíveis como feedback.
+*/
+html[data-portal-interactions="v1"] body.telemedicine-page .portal-interaction-pressing:not(:disabled) {
+  transform: none !important;
+}
 
-  .telemedicine-page.tm-context-desktop .modal-backdrop.open > .portal-modal {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
-    animation: none !important;
-    will-change: auto !important;
-  }
+html[data-portal-interactions="v1"] body.telemedicine-page .portal-content-updating {
+  animation: none !important;
+  transform: none !important;
+  will-change: auto !important;
+}
+
+/*
+   Os modais da Telemedicina ficam fora da camada global de microinterações.
+   Isso evita repintura/piscada durante foco, clique e abertura de controles nativos.
+*/
+html[data-portal-interactions="v1"] body.telemedicine-page .modal-backdrop,
+html[data-portal-interactions="v1"] body.telemedicine-page .modal-backdrop > .portal-modal,
+html[data-portal-interactions="v1"] body.telemedicine-page .modal-backdrop.open > .portal-modal {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  transition: none !important;
+  animation: none !important;
+  transform: none !important;
+  will-change: auto !important;
 }
 
 .telemedicine-page .telemedicine-actions .telemedicine-delete-button {
