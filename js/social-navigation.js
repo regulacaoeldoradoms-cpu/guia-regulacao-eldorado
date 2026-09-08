@@ -45,20 +45,17 @@
       const inner = document.createElement('div');
       inner.className = 'social-global-nav-inner';
       const desktopLinks = [navLink('/', 'Início', icons.home || '')];
-      if (socialAvailable) {
-        desktopLinks.push(
-          navLink('/perfil/', 'Meu perfil', icons.user || '', { social: true }),
-          navLink('/amigos/', 'Amigos', icons.friends || '', { social: true })
-        );
-      }
+      if (socialAvailable) desktopLinks.push(navLink('/amigos/', 'Amigos', icons.friends || '', { social: true }));
       desktopLinks.push(navLink('/ferramentas/', 'Ferramentas', icons.tools || ''));
       if (socialAvailable) {
-        desktopLinks.push(navLink('/notificacoes/', 'Notificações', icons.bell || '', {
-          social: true,
-          badge: Number(socialConfig.unreadSocialNotifications || 0)
-        }));
+        desktopLinks.push(
+          navLink('/notificacoes/', 'Notificações', icons.bell || '', {
+            social: true,
+            badge: Number(socialConfig.unreadSocialNotifications || 0)
+          }),
+          navLink('/perfil/', 'Perfil', icons.user || '', { social: true })
+        );
       }
-      desktopLinks.push(navLink('/conta/', 'Conta', icons.user || ''));
       inner.append(...desktopLinks);
       desktop.appendChild(inner);
       header.insertAdjacentElement('afterend', desktop);
@@ -71,13 +68,15 @@
     if (socialAvailable) mobileLinks.push(navLink('/amigos/', 'Amigos', icons.friends || '', { mobile: true, social: true }));
     mobileLinks.push(navLink('/ferramentas/', 'Ferramentas', icons.tools || '', { mobile: true }));
     if (socialAvailable) {
-      mobileLinks.push(navLink('/notificacoes/', 'Avisos', icons.bell || '', {
-        mobile: true,
-        social: true,
-        badge: Number(socialConfig.unreadSocialNotifications || 0)
-      }));
+      mobileLinks.push(
+        navLink('/notificacoes/', 'Avisos', icons.bell || '', {
+          mobile: true,
+          social: true,
+          badge: Number(socialConfig.unreadSocialNotifications || 0)
+        }),
+        navLink('/perfil/', 'Perfil', icons.user || '', { mobile: true, social: true })
+      );
     }
-    mobileLinks.push(navLink('/conta/', 'Conta', icons.user || '', { mobile: true }));
     bottom.append(...mobileLinks);
     document.body.appendChild(bottom);
     document.body.classList.add('has-social-navigation');
