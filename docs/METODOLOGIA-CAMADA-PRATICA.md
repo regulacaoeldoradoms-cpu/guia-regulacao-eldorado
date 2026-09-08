@@ -24,6 +24,7 @@ Ela existe para explicar ao médico não apenas o que o protocolo exige, mas tam
 6. Situações agudas ou de risco são apresentadas como alertas de segurança, não como simples pendências documentais.
 7. Nenhum nome, documento, telefone, número de solicitação ou outro identificador de paciente integra a base pública.
 8. Quando uma orientação operacional confirmada divergir do protocolo formal, os dois registros devem permanecer distinguíveis: o protocolo não é reescrito, e a restrição prática é identificada como divergência operacional vigente.
+9. Quando uma confirmação operacional anterior for corrigida pelo próprio serviço, a camada prática deve substituir a interpretação incorreta e registrar a correção para evitar regressões.
 
 ## Atualizações operacionais confirmadas
 
@@ -31,15 +32,25 @@ Ela existe para explicar ao médico não apenas o que o protocolo exige, mas tam
 
 O suporte do DigSaúde MS confirmou que a teleconsulta de Psicologia não aceita pacientes com TEA/autismo. A regra é específica dessa oferta de Psicologia e não deve ser generalizada para todo o DigSaúde.
 
-### 08/09/2026 — Psicologia e Psiquiatria / álcool e outras drogas
+### 08/09/2026 — Psicologia e Psiquiatria / álcool e outras drogas — CORRIGIDO
 
-Foi registrada orientação operacional do DigSaúde MS segundo a qual teleconsultas de Psicologia e Psiquiatria não recebem pacientes cuja demanda esteja relacionada ao uso de álcool ou outras drogas, inclusive quando em reabilitação por uso de substâncias, por critérios operacionais de segurança do atendimento.
+Após nova conferência com o suporte do DigSaúde MS em 08/09/2026, foi corrigida a interpretação registrada inicialmente no mesmo dia.
 
-Na Psiquiatria, essa orientação é mais restritiva que o protocolo formal de Teleatendimentos 2025, que lista transtornos por uso de substâncias entre as condições atendidas. O Guia deve apresentar essa diferença como **divergência operacional confirmada**, sem alterar silenciosamente o conteúdo do protocolo oficial.
+A regra vigente passa a ser:
 
-A ausência desse fluxo ambulatorial não deve ser convertida automaticamente em indicação de internação. Regulação hospitalar depende de indicação clínica real. Situações agudas, como intoxicação ou abstinência grave, agitação grave, risco de auto ou heteroagressão ou outra condição que exija cuidado hospitalar, devem seguir avaliação e fluxo de urgência apropriados.
+- **Psicologia:** demandas relacionadas ao uso de álcool ou outras drogas permanecem fora dos critérios dessa teleconsulta, conforme os critérios vigentes da especialidade.
+- **Psiquiatria:** pacientes em uso de álcool ou outras drogas **podem ser atendidos pelo DigSaúde MS desde que estejam clinicamente estáveis** para o teleatendimento.
 
-Na Recepção, essa condição possui orientação própria para impressão e entrega ao paciente, informando a indisponibilidade do teleatendimento e orientando retorno à unidade de saúde para organização da continuidade do cuidado conforme os fluxos assistenciais disponíveis.
+Na Psiquiatria, portanto, o uso de substâncias por si só não é motivo de inelegibilidade, devolução ou recusa. A estabilidade é uma condição clínica e de segurança do atendimento e do profissional que acompanha o paciente durante a teleconsulta. A avaliação de estabilidade, risco e eventual necessidade de internação cabe à equipe profissional habilitada, não à recepção.
+
+Situações agudas, como intoxicação ou abstinência grave, agitação grave, risco de auto ou heteroagressão, alteração importante do estado de consciência ou outra condição que exija cuidado imediato, não devem aguardar teleconsulta ambulatorial e devem seguir avaliação pelo fluxo de urgência apropriado.
+
+Uso de substâncias, isoladamente, não deve ser convertido em indicação automática de internação hospitalar.
+
+Na Recepção, a condição continua com orientação própria para impressão e entrega ao paciente, mas o conteúdo deve respeitar a especialidade:
+
+- em **Psicologia**, a folha informa que esse fluxo não é aplicável à demanda relacionada a substâncias e orienta retorno à equipe assistente para organização do cuidado;
+- em **Psiquiatria**, a folha informa que o atendimento é aceito quando houver estabilidade clínica e deixa explícito que a recepção não avalia estabilidade.
 
 ## Limites
 
