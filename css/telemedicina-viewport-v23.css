@@ -1,0 +1,31 @@
+/* Telemedicina Viewport V23
+   Impede deslocamento automático durante a montagem inicial do dashboard.
+   A trava existe somente enquanto o JavaScript V23 sinaliza a hidratação. */
+
+html.tm-viewport-v23-lock {
+  overflow-y: hidden !important;
+  scroll-behavior: auto !important;
+  overflow-anchor: none !important;
+  scrollbar-gutter: stable;
+}
+
+html.tm-viewport-v23-lock body.telemedicine-page {
+  overflow-y: hidden !important;
+  scroll-behavior: auto !important;
+  overflow-anchor: none !important;
+}
+
+html.tm-viewport-v23-lock body.telemedicine-page .portal-shell,
+html.tm-viewport-v23-lock body.telemedicine-page .telemedicine-main,
+html.tm-viewport-v23-lock body.telemedicine-page .telemedicine-hero,
+html.tm-viewport-v23-lock body.telemedicine-page .telemedicine-stats,
+html.tm-viewport-v23-lock body.telemedicine-page .telemedicine-workspace,
+html.tm-viewport-v23-lock body.telemedicine-page #followupList,
+html.tm-viewport-v23-ready body.telemedicine-page .portal-shell,
+html.tm-viewport-v23-ready body.telemedicine-page .telemedicine-main,
+html.tm-viewport-v23-ready body.telemedicine-page .telemedicine-hero,
+html.tm-viewport-v23-ready body.telemedicine-page .telemedicine-stats,
+html.tm-viewport-v23-ready body.telemedicine-page .telemedicine-workspace,
+html.tm-viewport-v23-ready body.telemedicine-page #followupList {
+  overflow-anchor: none !important;
+}
