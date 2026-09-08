@@ -53,13 +53,21 @@ test('Guia Médico carrega a correção operacional depois da regra de TEA', () 
 test('Recepção imprime orientação distinta para Psicologia e Psiquiatria', () => {
   const html = read('recepcao/index.html');
   const source = read('js/reception-substance-guidance.js');
-  assert.match(html, /reception-substance-guidance\.js\?v=20260908-3/);
+  const css = read('css/reception.css');
+  assert.match(html, /reception\.css\?v=20260908-1/);
+  assert.match(html, /reception-substance-guidance\.js\?v=20260908-4/);
   assert.match(source, /Condição operacional — uso de álcool e outras drogas/);
   assert.match(source, /A recepção deve imprimir a orientação abaixo e entregar ao paciente/);
   assert.match(source, /Psiquiatria<\/strong> do DigSaúde MS <strong>aceita pacientes em uso de álcool ou outras drogas quando estão clinicamente estáveis/);
   assert.match(source, /A recepção não faz avaliação clínica de estabilidade/);
   assert.match(source, /teleconsulta de <strong>Psicologia<\/strong> do DigSaúde MS não recebe demandas relacionadas ao uso de álcool ou outras drogas/);
+  assert.match(source, /Imprimir orientação condicional/);
+  assert.match(source, /portal-button reception-conditional-print/);
+  assert.match(css, /\.reception-conditional-print\s*\{/);
+  assert.match(css, /background: linear-gradient\(135deg, #c62828, #b71c1c\)/);
+  assert.match(css, /color: #fff/);
   assert.match(source, /if \(existing\) return/);
+  assert.doesNotMatch(source, /Imprimir orientação para entregar ao paciente/);
   assert.doesNotMatch(source, /Psicologia e Psiquiatria<\/strong> não recebe/);
   assert.doesNotMatch(source, /\b(?:CPF|CNS|telefone do paciente|nome do paciente)\b/i);
 });
