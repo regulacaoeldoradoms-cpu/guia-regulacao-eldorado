@@ -1,4 +1,4 @@
-name: Validar regra de substâncias em Saúde Mental
+name: Validar orientações condicionais da Recepção
 
 on:
   pull_request:
@@ -20,31 +20,40 @@ jobs:
           node --check js/referral-practice-update-20260908.js
           node --check js/reception-substance-guidance.js
 
-      - name: Executar teste específico da regra operacional
+      - name: Executar testes das orientações condicionais
         run: node --test worker/tests/substance-use-operational-rule.test.mjs
 
       - name: Conferir carregamento e cache
         run: |
           grep -q 'referral-practice-update-20260908.js?v=20260908-2' medico/index.html
           grep -q 'reception.css?v=20260908-1' recepcao/index.html
-          grep -q 'reception-substance-guidance.js?v=20260908-4' recepcao/index.html
+          grep -q 'reception-substance-guidance.js?v=20260908-5' recepcao/index.html
 
-      - name: Conferir regra corrigida
+      - name: Conferir matriz condicional e regra de substâncias
         run: |
           grep -q "guidance.version = '1.9'" js/referral-practice-update-20260908.js
           grep -q 'Psiquiatria via DigSaúde MS aceita pacientes em uso de álcool ou outras drogas desde que estejam clinicamente estáveis' js/referral-practice-update-20260908.js
           grep -q 'Psicologia via DigSaúde MS não deve ser solicitada' js/referral-practice-update-20260908.js
-          grep -q 'A recepção não faz avaliação clínica de estabilidade' js/reception-substance-guidance.js
+          grep -q 'ORIENTAÇÃO CONDICIONAL — FLUXO DIGSAÚDE MS' js/reception-substance-guidance.js
+          grep -q 'A recepção não avalia estabilidade' js/reception-substance-guidance.js
           grep -q 'Imprimir orientação condicional' js/reception-substance-guidance.js
+          grep -q 'LDL ≥ 190 mg/dL' js/reception-substance-guidance.js
+          grep -q 'convulsão febril simples' js/reception-substance-guidance.js
+          grep -q 'cerume obstrutivo' js/reception-substance-guidance.js
+          grep -q 'cardiopatas, nefropatas' js/reception-substance-guidance.js
           grep -q 'reception-conditional-print' js/reception-substance-guidance.js css/reception.css
           grep -q '#c62828' css/reception.css
           grep -q '08/09/2026 — Psicologia e Psiquiatria / álcool e outras drogas — CORRIGIDO' docs/METODOLOGIA-CAMADA-PRATICA.md
-          grep -q 'Imprimir orientação condicional' docs/METODOLOGIA-CAMADA-PRATICA.md
+          grep -q '08/09/2026 — Matriz de orientações condicionais da Recepção' docs/METODOLOGIA-CAMADA-PRATICA.md
 
-      - name: Impedir regressão para a regra incorreta
+      - name: Impedir regressão para regras clínicas não suportadas
         run: |
           if grep -E 'teleconsultas de Psicologia e Psiquiatria não recebem pacientes|Psicologia e Psiquiatria</strong> não recebe' js/referral-practice-update-20260908.js js/reception-substance-guidance.js docs/METODOLOGIA-CAMADA-PRATICA.md; then
             echo 'Foi reintroduzida a generalização incorreta de que Psiquiatria não aceita pacientes em uso de substâncias.'
+            exit 1
+          fi
+          if grep -E "aliases: \[[^]]*'dermatologia geral'|aliases: \[[^]]*'enfermagem em cuidados paliativos'|aliases: \[[^]]*'odontologia - estomatologia'" js/reception-substance-guidance.js; then
+            echo 'Foi criado botão condicional para especialidade sem restrição objetiva identificada no estudo.'
             exit 1
           fi
 
