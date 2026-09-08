@@ -50,7 +50,7 @@ function json(body, status, origin, allowed = true) {
 function preflight(origin, allowed) {
   if (!allowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
   const responseHeaders = headers(origin, true);
-  responseHeaders['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, OPTIONS';
+  responseHeaders['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, DELETE, OPTIONS';
   responseHeaders['Access-Control-Allow-Headers'] = 'Authorization, Content-Type';
   responseHeaders['Access-Control-Max-Age'] = '600';
   delete responseHeaders['Content-Type'];
@@ -179,7 +179,7 @@ async function patientDetail(env, patientId) {
   if (!patient) return null;
   const [followups, events] = await Promise.all([listAll(env, FOLLOWUPS), listAll(env, EVENTS)]);
   const patientFollowups = followups
-    .filter((item) => item.patientId === patientId)
+    .filter((item) => item.patientId === patientId && !item.deletedAt)
     .map((item) => publicFollowup(item))
     .sort((a, b) => String(b.lastConsultationDate || '').localeCompare(String(a.lastConsultationDate || '')));
   const patientEvents = events
@@ -275,6 +275,8 @@ async function recordConsultation(env, user, input) {
     requestedAt: '',
     requestedBy: '',
     active: Boolean(needsReturn),
+    deletedAt: '',
+    deletedBy: '',
     source: 'manual',
     updatedAt: now,
     createdBy: user.username
@@ -347,6 +349,19 @@ async function updateSchedule(env, user, followupId, input = {}) {
     createdBy: user.username
   });
   return publicFollowup({ ...current, id: followupId, returnDueDate, reminderDates, requestedAt: '', requestedHistorical: false, requestedBy: '', active: true, updatedAt: now });
+}
+
+async function deleteFollowup(env, user, followupId) {
+  const current = await firestoreGet(env, `${FOLLOWUPS}/${followupId}`);
+  if (!current) throw Object.assign(new Error('Acompanhamento não encontrado.'), { status: 404 });
+  const now = new Date().toISOString();
+  await firestorePatch(env, `${FOLLOWUPS}/${followupId}`, {
+    active: false,
+    deletedAt: now,
+    deletedBy: user.username,
+    updatedAt: now
+  });
+  return { deleted: true, followupId, deletedAt: now };
 }
 
 async function importRecord(env, user, record) {
@@ -479,6 +494,10 @@ export async function handleTelemedicineRoute(request, env, origin, originAllowe
     if (url.pathname === '/api/telemedicina/consultations' && request.method === 'POST') {
       const body = await request.json().catch(() => ({}));
       return json(await recordConsultation(env, user, body), 201, origin);
+    }
+    const deleteMatch = url.pathname.match(/^\/api\/telemedicina\/followups\/([a-f0-9]{20,64})$/);
+    if (deleteMatch && request.method === 'DELETE') {
+      return json(await deleteFollowup(env, user, deleteMatch[1]), 200, origin);
     }
     const requestedMatch = url.pathname.match(/^\/api\/telemedicina\/followups\/([a-f0-9]{20,64})\/requested$/);
     if (requestedMatch && request.method === 'POST') {

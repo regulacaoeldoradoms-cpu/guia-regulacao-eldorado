@@ -1,0 +1,110 @@
+/* Telemedicina Modal/Delete V21
+   Garante modalidade real dos diálogos e adiciona a ação destrutiva de exclusão
+   dos acompanhamentos sem alterar o layout estrutural dos cards. */
+
+.telemedicine-page .modal-backdrop.open {
+  pointer-events: auto !important;
+  isolation: isolate;
+}
+
+html.tm-telemedicine-modal-active body.telemedicine-page .portal-shell {
+  pointer-events: none !important;
+  user-select: none;
+}
+
+@media (min-width: 861px) {
+  .telemedicine-page.tm-context-desktop .modal-backdrop {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transition: none !important;
+  }
+
+  .telemedicine-page.tm-context-desktop .modal-backdrop.open > .portal-modal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+  }
+}
+
+.telemedicine-page .telemedicine-actions .telemedicine-delete-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: 100% !important;
+  min-width: 0;
+  border-color: #9f2531 !important;
+  background: #b52a38 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 10px rgba(159, 37, 49, .18) !important;
+}
+
+.telemedicine-page .telemedicine-actions .telemedicine-delete-button:hover,
+.telemedicine-page .telemedicine-actions .telemedicine-delete-button:focus-visible {
+  border-color: #841d28 !important;
+  background: #99232f !important;
+  color: #fff !important;
+}
+
+.telemedicine-page .telemedicine-actions .telemedicine-delete-button svg,
+.telemedicine-page .tm-delete-confirm-button svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.telemedicine-page .telemedicine-actions .telemedicine-delete-button {
+  grid-column: 1 / -1 !important;
+}
+
+.telemedicine-page .tm-delete-modal {
+  width: min(520px, calc(100vw - 40px));
+}
+
+.telemedicine-page .tm-delete-copy {
+  margin: 0 0 16px;
+  color: #405b70;
+  line-height: 1.55;
+}
+
+.telemedicine-page .tm-delete-copy strong {
+  color: #7f202a;
+}
+
+.telemedicine-page .tm-delete-note {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid #e7bdc2;
+  border-radius: 12px;
+  background: #fff4f5;
+  color: #6f2b33;
+  font-size: .88rem;
+  line-height: 1.45;
+}
+
+.telemedicine-page .tm-delete-confirm-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-color: #8f202b !important;
+  background: #ad2734 !important;
+  color: #fff !important;
+}
+
+.telemedicine-page .tm-delete-confirm-button:hover,
+.telemedicine-page .tm-delete-confirm-button:focus-visible {
+  background: #8f202b !important;
+  color: #fff !important;
+}
+
+.telemedicine-page .tm-delete-status {
+  margin-top: 12px;
+}

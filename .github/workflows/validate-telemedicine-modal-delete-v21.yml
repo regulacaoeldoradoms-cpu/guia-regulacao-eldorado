@@ -1,0 +1,67 @@
+name: Validar Telemedicina Modal e Exclusão V21
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-modal-delete-v21.css'
+      - 'js/telemedicina-modal-delete-v21.js'
+      - 'worker/telemedicine.js'
+      - 'docs/TELEMEDICINA-MODAL-EXCLUSAO-V21.md'
+      - '.github/workflows/validate-telemedicine-modal-delete-v21.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-modal-delete-v21.css'
+      - 'js/telemedicina-modal-delete-v21.js'
+      - 'worker/telemedicine.js'
+      - 'docs/TELEMEDICINA-MODAL-EXCLUSAO-V21.md'
+      - '.github/workflows/validate-telemedicine-modal-delete-v21.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar sintaxe JavaScript
+        run: |
+          node --check js/telemedicina-modal-delete-v21.js
+          node --check worker/telemedicine.js
+      - name: Validar carregamento e ordem da camada modal
+        run: |
+          grep -q 'telemedicina-modal-delete-v21.css?v=20260908-1' telemedicina/index.html
+          grep -q 'telemedicina-modal-delete-v21.js?v=20260908-1' telemedicina/index.html
+          python - <<'PY'
+          from pathlib import Path
+          html = Path('telemedicina/index.html').read_text()
+          guard = html.index('/js/telemedicina-modal-delete-v21.js?v=20260908-1')
+          interactions = html.index('/js/portal-interactions.js?v=20260906-2')
+          assert guard < interactions, 'A guarda modal deve carregar antes de portal-interactions.'
+          PY
+      - name: Validar isolamento modal
+        run: |
+          grep -q "setAttribute('inert'" js/telemedicina-modal-delete-v21.js
+          grep -q 'stopImmediatePropagation' js/telemedicina-modal-delete-v21.js
+          grep -q 'focusin' js/telemedicina-modal-delete-v21.js
+          grep -q "event.key !== 'Tab'" js/telemedicina-modal-delete-v21.js
+          grep -q 'backdrop-filter: none !important' css/telemedicina-modal-delete-v21.css
+          grep -q 'pointer-events: none !important' css/telemedicina-modal-delete-v21.css
+      - name: Validar exclusão protegida
+        run: |
+          grep -q "GET, POST, PATCH, DELETE, OPTIONS" worker/telemedicine.js
+          grep -q "request.method === 'DELETE'" worker/telemedicine.js
+          grep -q 'async function deleteFollowup' worker/telemedicine.js
+          grep -q 'active: false' worker/telemedicine.js
+          grep -q 'deletedAt:' worker/telemedicine.js
+          grep -q 'deletedBy:' worker/telemedicine.js
+          grep -q 'item.patientId === patientId && !item.deletedAt' worker/telemedicine.js
+          grep -q 'data-telemedicine-delete' js/telemedicina-modal-delete-v21.js
+          grep -q 'tm-delete-confirm-button' js/telemedicina-modal-delete-v21.js
+          grep -q 'telemedicine-delete-button' css/telemedicina-modal-delete-v21.css
+      - name: Garantir ausência de dependência por emoji ou pacote externo
+        run: |
+          ! grep -Eq 'https?://|cdnjs|unpkg|jsdelivr' js/telemedicina-modal-delete-v21.js css/telemedicina-modal-delete-v21.css
