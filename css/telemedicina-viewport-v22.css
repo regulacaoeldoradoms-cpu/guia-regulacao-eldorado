@@ -1,3 +1,68 @@
+/*
+  Telemedicina V23 — rota sem movimento.
+  Este stylesheet é carregado no <head> e neutraliza animações e transições
+  antes da primeira interação visível da página.
+*/
+
+@view-transition {
+  navigation: none;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none !important;
+}
+
+html {
+  scroll-behavior: auto !important;
+}
+
+body.telemedicine-page,
+body.telemedicine-page *,
+body.telemedicine-page *::before,
+body.telemedicine-page *::after {
+  animation: none !important;
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition: none !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+body.telemedicine-page :where(
+  .portal-button,
+  .portal-account-area,
+  .telemedicine-stat,
+  .telemedicine-row,
+  .telemedicine-choice,
+  .telemedicine-inline-edit,
+  .telemedicine-delete-button,
+  .tm-inline-close,
+  [data-telemedicine-view]
+):hover,
+body.telemedicine-page :where(
+  .portal-button,
+  .portal-account-area,
+  .telemedicine-stat,
+  .telemedicine-row,
+  .telemedicine-choice,
+  .telemedicine-inline-edit,
+  .telemedicine-delete-button,
+  .tm-inline-close,
+  [data-telemedicine-view]
+):active {
+  transform: none !important;
+}
+
+body.telemedicine-page .telemedicine-celebration,
+body.telemedicine-page .telemedicine-confetti,
+body.telemedicine-page .telemedicine-firework {
+  display: none !important;
+}
+
+/* Mantido apenas por compatibilidade documental com a V22. A classe não é
+   mais ativada pelo JavaScript V23, portanto esta regra fica inerte. */
 html.tm-viewport-v22,
 html.tm-viewport-v22 body.telemedicine-page,
 html.tm-viewport-v22 body.telemedicine-page .portal-shell,
