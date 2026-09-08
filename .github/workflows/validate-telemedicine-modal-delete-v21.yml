@@ -40,7 +40,10 @@ jobs:
           html = Path('telemedicina/index.html').read_text()
           guard = html.index('/js/telemedicina-modal-delete-v21.js?v=20260908-2')
           interactions = html.index('/js/portal-interactions.js?v=20260906-2')
+          base = html.index('/js/telemedicina.js?v=20260906-1')
+          mobile = html.index('/js/telemedicina-mobile-v9.js?v=20260905-2')
           assert guard < interactions, 'A guarda modal deve carregar antes de portal-interactions.'
+          assert guard < base and guard < mobile, 'A guarda de estabilidade deve carregar antes dos handlers legados de filtro.'
           assert html.count('data-portal-interaction-ignore="true"') >= 5, 'Os modais estáticos da Telemedicina devem ignorar a camada global de microinterações.'
           PY
       - name: Validar estabilidade visual da Telemedicina
@@ -56,6 +59,15 @@ jobs:
           assert 'animation: none !important' in update, 'A atualização de conteúdo não pode fazer a página pular.'
           assert 'transform: none !important' in update, 'A atualização de conteúdo não pode deslocar a página.'
           PY
+      - name: Validar filtros sem rolagem automática
+        run: |
+          grep -q 'handleStatusFilterWithoutScroll' js/telemedicina-modal-delete-v21.js
+          grep -q "closest('.telemedicine-stat\[data-status-filter\]')" js/telemedicina-modal-delete-v21.js
+          grep -q 'const scrollX = window.scrollX' js/telemedicina-modal-delete-v21.js
+          grep -q 'const scrollY = window.scrollY' js/telemedicina-modal-delete-v21.js
+          grep -q "filter.dispatchEvent(new Event('change', { bubbles: true }))" js/telemedicina-modal-delete-v21.js
+          grep -q 'window.scrollTo(scrollX, scrollY)' js/telemedicina-modal-delete-v21.js
+          grep -q 'event.stopImmediatePropagation()' js/telemedicina-modal-delete-v21.js
       - name: Validar isolamento modal estável
         run: |
           grep -q "setAttribute('inert'" js/telemedicina-modal-delete-v21.js
