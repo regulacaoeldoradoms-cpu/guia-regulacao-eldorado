@@ -118,7 +118,7 @@
       existing?.remove();
       return;
     }
-    existing?.remove();
+    if (existing) return;
 
     const card = document.createElement('div');
     card.id = CARD_ID;
