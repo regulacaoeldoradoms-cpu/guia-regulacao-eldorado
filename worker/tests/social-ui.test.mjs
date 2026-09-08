@@ -56,20 +56,29 @@ test('Ferramentas mantém uma única matriz de autorização compartilhada', () 
   }
 });
 
-test('Home social ativa mantém fallback independente e navegação usa Perfil sem Conta duplicada', () => {
+test('Home social ativa mantém fallback independente, recuperação de produção e Perfil sem Conta duplicada', () => {
   const home = read('js/home.js');
   const navigation = read('js/social-navigation.js');
   const worker = read('worker/social.js');
   const flags = read('worker/wrangler.toml');
+  const index = read('index.html');
   assert.match(home, /showToolsFallback/);
-  assert.match(home, /showToolsFallback\(\);[\s\S]+getConfig\(\)/);
+  assert.match(home, /loadSocialConfigWithRecovery/);
+  assert.match(home, /getConfig\(10000\)/);
+  assert.match(home, /getConfig\(30000\)/);
+  assert.match(home, /SOCIAL_CONFIG_TIMEOUT/);
+  assert.match(home, /SOCIAL_DATABASE_UNAVAILABLE/);
+  assert.match(home, /SOCIAL_TEMPORARILY_UNAVAILABLE/);
+  assert.match(home, /Conectando à Camada Social/);
   assert.match(home, /if \(!socialConfig\.homeEnabled\)/);
-  assert.match(home, /catch \(_\)[\s\S]+showToolsFallback/);
+  assert.match(home, /Diagnóstico:/);
   assert.match(navigation, /navLink\('\/ferramentas\/', 'Ferramentas'/);
   assert.match(navigation, /navLink\('\/perfil\/', 'Perfil'/);
   assert.match(navigation, /navLink\('\/notificacoes\/', 'Avisos'/);
   assert.doesNotMatch(navigation, /navLink\('\/conta\/', 'Conta'/);
   assert.doesNotMatch(navigation, /'Meu perfil'/);
+  assert.match(index, /social-navigation\.js\?v=20260908-1/);
+  assert.match(index, /home\.js\?v=20260908-1/);
   assert.match(worker, /socialHomeEnabled/);
   assert.match(read('js/social-api.js'), /AbortController/);
   assert.match(flags, /SOCIAL_BACKEND_ENABLED = "true"/);
