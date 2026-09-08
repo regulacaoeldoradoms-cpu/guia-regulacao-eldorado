@@ -1,0 +1,51 @@
+name: Validar Telemedicina Desfechos V25
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-absence-v24.js'
+      - 'css/telemedicina-absence-v24.css'
+      - 'worker/telemedicine-rules.js'
+      - 'worker/tests/telemedicine-outcomes-v25.test.mjs'
+      - 'docs/TELEMEDICINA-DESFECHOS-V25.md'
+      - '.github/workflows/validate-telemedicine-outcomes-v25.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-absence-v24.js'
+      - 'css/telemedicina-absence-v24.css'
+      - 'worker/telemedicine-rules.js'
+      - 'worker/tests/telemedicine-outcomes-v25.test.mjs'
+      - 'docs/TELEMEDICINA-DESFECHOS-V25.md'
+      - '.github/workflows/validate-telemedicine-outcomes-v25.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe
+        run: |
+          node --check js/telemedicina-absence-v24.js
+          node --check worker/telemedicine-rules.js
+      - name: Conferir regras V25
+        run: node worker/tests/telemedicine-outcomes-v25.test.mjs
+      - name: Conferir contrato visual e operacional
+        run: |
+          grep -q 'Desistiu' js/telemedicina-absence-v24.js
+          grep -q 'Encaminhado para presencial' js/telemedicina-absence-v24.js
+          grep -q 'Já realizado' js/telemedicina-absence-v24.js
+          grep -q 'READY_SENTINEL' js/telemedicina-absence-v24.js
+          grep -q 'conditionReadyForRequest' worker/telemedicine-rules.js
+          grep -q 'Retornos, faltas e condições prontas' telemedicina/index.html
+          grep -q 'telemedicina-absence-v24.js?v=20260908-2' telemedicina/index.html
+          grep -q 'telemedicina-absence-v24.css?v=20260908-2' telemedicina/index.html
+      - name: Garantir rota sem animações novas
+        run: |
+          grep -q 'animation: none !important' css/telemedicina-absence-v24.css
+          grep -q 'transition: none !important' css/telemedicina-absence-v24.css

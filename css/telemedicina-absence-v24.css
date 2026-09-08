@@ -1,4 +1,4 @@
-/* Telemedicina V24 — registro de falta.
+/* Telemedicina V24/V25 — falta, encerramentos e condição já realizada.
    A rota permanece integralmente sem animações conforme a decisão V23. */
 
 .telemedicine-page .telemedicine-choice-grid {
@@ -11,10 +11,22 @@
   --choice-bg: #fff0f1;
 }
 
+.telemedicine-page .telemedicine-choice.withdrawn {
+  --choice-accent: #73584d;
+  --choice-border: #d9c9c1;
+  --choice-bg: #faf5f2;
+}
+
+.telemedicine-page .telemedicine-choice.in-person {
+  --choice-accent: #365f86;
+  --choice-border: #bfd0df;
+  --choice-bg: #f1f7fb;
+}
+
 .telemedicine-page .telemedicine-mode-panel.absence {
   grid-template-columns: 1fr;
   border: 1px solid #e6bdc2;
-  background: linear-gradient(135deg, #fff4f5, #fff9f9);
+  background: #fff7f8;
 }
 
 .telemedicine-page .telemedicine-mode-panel.absence .portal-field,
@@ -33,12 +45,80 @@
   padding: 11px !important;
   border: 1px solid #e6bdc2 !important;
   border-radius: 12px !important;
-  background: #fff4f5 !important;
+  background: #fff7f8 !important;
 }
 
 .telemedicine-page .tm-inline-consult-form [data-tm-absence-field][hidden],
 .telemedicine-page #consultAbsenceFields[hidden] {
   display: none !important;
+}
+
+.telemedicine-page .tm-condition-ready-field {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+}
+
+.telemedicine-page .tm-condition-ready-title {
+  color: #284c69;
+  font-weight: 800;
+  font-size: .9rem;
+}
+
+.telemedicine-page .tm-condition-ready-toggle {
+  width: 100%;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #a9c4d5;
+  border-radius: 12px;
+  background: #f5fafc;
+  color: #244d68;
+  text-align: left;
+  cursor: pointer;
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
+.telemedicine-page .tm-condition-ready-toggle > svg {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.telemedicine-page .tm-condition-ready-toggle > span {
+  display: grid;
+  gap: 2px;
+}
+
+.telemedicine-page .tm-condition-ready-toggle strong {
+  font-size: .94rem;
+}
+
+.telemedicine-page .tm-condition-ready-toggle small {
+  color: #667b8b;
+  font-size: .76rem;
+  line-height: 1.2;
+}
+
+.telemedicine-page .tm-condition-ready-toggle[aria-pressed="true"] {
+  border-color: #d29b31;
+  background: #fff4d7;
+  color: #855900;
+  box-shadow: inset 0 0 0 1px rgba(210, 155, 49, .18);
+}
+
+.telemedicine-page .tm-condition-ready-toggle[aria-pressed="true"] small {
+  color: #735613;
 }
 
 .telemedicine-page .telemedicine-status.solicitar.tm-absence-status {
@@ -50,6 +130,11 @@
   font-weight: 700;
 }
 
+.telemedicine-page .telemedicine-row.tm-condition-ready-card .telemedicine-reminder-empty {
+  color: #7a5a12;
+  font-weight: 700;
+}
+
 @media (max-width: 720px), (pointer: coarse) and (max-device-width: 900px) {
   .telemedicine-page #consultationForm .telemedicine-choice-grid {
     grid-template-columns: 1fr;
@@ -57,6 +142,10 @@
 
   .telemedicine-page .tm-inline-consult-form .telemedicine-choice-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .telemedicine-page .tm-inline-consult-form .tm-condition-ready-field {
+    min-width: 0;
   }
 }
 

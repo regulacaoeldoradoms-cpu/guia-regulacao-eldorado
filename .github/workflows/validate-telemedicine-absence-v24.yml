@@ -55,11 +55,11 @@ jobs:
           test -f css/telemedicina-absence-v24.css
           test -f js/telemedicina-absence-v24.js
           test -f docs/TELEMEDICINA-FALTA-V24.md
-          grep -q 'telemedicina-absence-v24.css?v=20260908-1' telemedicina/index.html
-          grep -q 'telemedicina-absence-v24.js?v=20260908-1' telemedicina/index.html
+          grep -q 'telemedicina-absence-v24.css?v=20260908-2' telemedicina/index.html
+          grep -q 'telemedicina-absence-v24.js?v=20260908-2' telemedicina/index.html
           grep -q 'data-absence-record="v24"' telemedicina/index.html
           grep -q "ABSENCE_MODE = 'absence'" js/telemedicina-absence-v24.js
-          grep -q '<strong>Falta</strong>' js/telemedicina-absence-v24.js
+          grep -q "ABSENCE_MODE, 'Falta'" js/telemedicina-absence-v24.js
           grep -q 'Justificativa da falta' js/telemedicina-absence-v24.js
           grep -q 'SOLICITAR NOVAMENTE' js/telemedicina-absence-v24.js
           grep -q "\['discharge', 'scheduled', 'conditional', 'absence'\]" worker/telemedicine.js

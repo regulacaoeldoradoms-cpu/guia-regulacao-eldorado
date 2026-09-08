@@ -119,10 +119,16 @@ export function threeBusinessReminders(returnDueDate) {
   return reminders;
 }
 
+export function conditionReadyForRequest(followup) {
+  const text = normalizeText(followup?.resolution);
+  return /\bRETORNO APOS\b.*\bJA REALIZADO\b/.test(text);
+}
+
 export function deriveFollowupStatus(followup, today) {
   if (followup?.active === false) return 'CONCLUÍDO';
   if (followup?.requestedAt || followup?.requestedHistorical === true) return 'SOLICITADO';
   if (followup?.absencePendingRequest === true) return 'SOLICITAR';
+  if (conditionReadyForRequest(followup)) return 'SOLICITAR';
   const dueDate = clean(followup?.returnDueDate, 10);
   if (!dateValid(dueDate)) return 'SEM PROGRAMAÇÃO';
   const reminders = Array.isArray(followup?.reminderDates) && followup.reminderDates.length === 3
@@ -148,7 +154,7 @@ export function reminderMetaFor(followup, today) {
 export function looksClosed(resolution) {
   const text = normalizeText(resolution);
   if (!text) return false;
-  return /\bCONCLUID[AO]\b|\bALTA\b|RETORNO SE NECESSARIO|NAO NECESSITA RETORNO|TRATAMENTO FINALIZADO|FINALIZOU TRATAMENTO|ENCAMINHAD[AO].*PRESENCIAL/.test(text);
+  return /\bCONCLUID[AO]\b|\bALTA\b|RETORNO SE NECESSARIO|NAO NECESSITA RETORNO|TRATAMENTO FINALIZADO|FINALIZOU TRATAMENTO|\bDESISTIU\b|\bDESISTENCIA\b|ABANDONO DO TRATAMENTO|ENCAMINHAD[AO].*PRESENCIAL/.test(text);
 }
 
 export function looksRequested(resolution, comment = '') {
@@ -180,7 +186,6 @@ export function returnDueFromRecord(date, resolution, explicitDueDate = '') {
   const days = explicitReturnDays(resolution);
   return days ? normalizeReturnDueDate(addDays(date, days)) : '';
 }
-
 
 const RETURN_CONDITION_LABELS = Object.freeze({
   exams: 'EXAMES',
