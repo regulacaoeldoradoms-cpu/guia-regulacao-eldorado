@@ -1,0 +1,68 @@
+name: Validar Telemedicina sem movimento V23
+
+on:
+  pull_request:
+    paths:
+      - 'js/telemedicina-viewport-v22.js'
+      - 'css/telemedicina-viewport-v22.css'
+      - 'docs/TELEMEDICINA-SEM-ANIMACOES-V23.md'
+      - 'docs/TELEMEDICINA-ESTABILIDADE-CARGA-V22.md'
+      - 'docs/TELEMEDICINA-MODAL-EXCLUSAO-V21.md'
+      - 'docs/PORTAL-INTERACTIONS-V1.md'
+      - '.github/workflows/validate-telemedicine-no-motion-v23.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'js/telemedicina-viewport-v22.js'
+      - 'css/telemedicina-viewport-v22.css'
+      - 'docs/TELEMEDICINA-SEM-ANIMACOES-V23.md'
+      - 'docs/TELEMEDICINA-ESTABILIDADE-CARGA-V22.md'
+      - 'docs/TELEMEDICINA-MODAL-EXCLUSAO-V21.md'
+      - 'docs/PORTAL-INTERACTIONS-V1.md'
+      - '.github/workflows/validate-telemedicine-no-motion-v23.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar sintaxe da guarda V23
+        run: node --check js/telemedicina-viewport-v22.js
+      - name: Confirmar PortalInteractions inerte na Telemedicina
+        run: |
+          grep -q "version: 'disabled-telemedicina-v23'" js/telemedicina-viewport-v22.js
+          grep -q 'disabled: true' js/telemedicina-viewport-v22.js
+          grep -q 'emit: () => false' js/telemedicina-viewport-v22.js
+          grep -q 'play: () => false' js/telemedicina-viewport-v22.js
+          grep -q 'isLocked: () => false' js/telemedicina-viewport-v22.js
+          python - <<'PY'
+          from pathlib import Path
+          js = Path('js/telemedicina-viewport-v22.js').read_text()
+          disabled = js.index("version: 'disabled-telemedicina-v23'")
+          stop = js.index('\n  return;\n', disabled)
+          legacy = js.index('const MAX_HOLD_MS = 15000', stop)
+          assert disabled < stop < legacy, 'A V23 deve encerrar antes da implementação legada V22.'
+          PY
+      - name: Confirmar movimento zero desde o head
+        run: |
+          grep -q '@view-transition' css/telemedicina-viewport-v22.css
+          grep -q 'navigation: none' css/telemedicina-viewport-v22.css
+          grep -q 'animation: none !important' css/telemedicina-viewport-v22.css
+          grep -q 'transition: none !important' css/telemedicina-viewport-v22.css
+          grep -q 'scroll-behavior: auto !important' css/telemedicina-viewport-v22.css
+          grep -q 'transform: none !important' css/telemedicina-viewport-v22.css
+          grep -q 'telemedicine-celebration' css/telemedicina-viewport-v22.css
+      - name: Confirmar documentação da decisão permanente
+        run: |
+          grep -q 'nenhuma animação CSS deve executar' docs/TELEMEDICINA-SEM-ANIMACOES-V23.md
+          grep -q 'nenhuma transição CSS deve executar' docs/TELEMEDICINA-SEM-ANIMACOES-V23.md
+          grep -q 'PortalInteractions.*inerte' docs/TELEMEDICINA-SEM-ANIMACOES-V23.md
+          grep -q 'Superada pela decisão V23' docs/TELEMEDICINA-ESTABILIDADE-CARGA-V22.md
+          grep -q 'Atualização V23' docs/TELEMEDICINA-MODAL-EXCLUSAO-V21.md
+          grep -q 'Exceção permanente: Telemedicina' docs/PORTAL-INTERACTIONS-V1.md
+      - name: Garantir escopo local e ausência de dependência externa
+        run: |
+          ! grep -Eq 'https?://|cdnjs|unpkg|jsdelivr' js/telemedicina-viewport-v22.js css/telemedicina-viewport-v22.css

@@ -1,26 +1,19 @@
 # Telemedicina — estabilidade do viewport na carga V22
 
-## Decisão de produto
+## Estado atual
 
-A rota `/telemedicina/` deve permanecer visualmente estável desde a entrada na página até o término da hidratação inicial do dashboard. O carregamento assíncrono da data operacional, alertas e acompanhamentos não pode deslocar automaticamente o viewport para baixo.
+**Superada pela decisão V23 de 08/09/2026.**
 
-A correção anterior da V21 impediu que os indicadores de situação executassem a rolagem explícita dos handlers legados. A V22 cobre um segundo mecanismo observado durante a carga inicial: navegadores podem restaurar uma posição anterior de rolagem ou reajustar a âncora visual quando o conteúdo curto de carregamento é substituído pelo dashboard completo.
+A V22 tentou manter o viewport no topo durante a hidratação inicial do dashboard e desativar a ancoragem automática de rolagem. Como o deslocamento visual continuou sendo observado na prática, a estratégia deixou de ser considerada adequada para a rota `/telemedicina/`.
 
-## Comportamento obrigatório
+A partir da V23, o mecanismo V22 permanece apenas no histórico do repositório e **não executa mais qualquer correção automática de viewport**. O JavaScript carregado com esse nome retorna imediatamente e expõe apenas uma fachada inerte por compatibilidade.
 
-- Ao entrar em `/telemedicina/`, a restauração automática de rolagem do histórico do navegador é desativada para essa rota.
-- Enquanto a data operacional e a lista de acompanhamentos ainda estão sendo hidratadas, o viewport inicial permanece no topo.
-- A ancoragem automática de rolagem é desativada nos principais contêineres da Telemedicina para que a troca de conteúdo de carregamento pelo conteúdo real não mova a página.
-- Assim que `#todayLabel` recebe a data operacional e `#followupList` deixa o estado `Carregando acompanhamentos...`, a proteção aguarda a composição estabilizar e é liberada.
-- Se o usuário demonstrar intenção explícita de rolar antes do fim da carga por roda do mouse, gesto de toque ou tecla de navegação, a proteção é liberada imediatamente e nunca combate a rolagem manual.
-- Existe um limite máximo de tempo para a proteção, evitando bloqueio de rolagem caso o dashboard falhe ou demore excessivamente.
+A decisão vigente está documentada em `docs/TELEMEDICINA-SEM-ANIMACOES-V23.md`.
 
-## Escopo
+## Histórico da V22
 
-A V22 altera somente a estabilidade de viewport da rota `/telemedicina/`. Não modifica regras assistenciais, filtros, permissões, APIs, conteúdo clínico, dados persistidos ou layout desktop/mobile.
+A rota `/telemedicina/` deveria permanecer visualmente estável desde a entrada na página até o término da hidratação inicial do dashboard. O carregamento assíncrono da data operacional, alertas e acompanhamentos não deveria deslocar automaticamente o viewport para baixo.
 
-## Implementação
+A V22 cobria restauração de posição pelo navegador e reajuste de âncora quando o conteúdo curto de carregamento era substituído pelo dashboard completo. Essa abordagem usava `history.scrollRestoration = 'manual'`, observação de DOM e reposicionamento explícito para o topo.
 
-- `js/telemedicina-viewport-v22.js`: executado ainda no `<head>`, antes da hidratação do dashboard, define `history.scrollRestoration = 'manual'`, mantém a posição inicial estável e observa a conclusão da hidratação.
-- `css/telemedicina-viewport-v22.css`: aplica `overflow-anchor: none` somente à Telemedicina e seus principais contêineres.
-- O mecanismo não usa bibliotecas externas, não coleta dados e não interfere em navegação por teclado além de reconhecer teclas de rolagem como intenção do usuário.
+Esses mecanismos foram desativados na V23 para eliminar qualquer interferência automática sobre o viewport da Telemedicina.
