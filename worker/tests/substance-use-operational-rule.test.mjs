@@ -34,7 +34,7 @@ test('camada prática 1.9 diferencia Psicologia e Psiquiatria no uso de substân
   assert.ok(psychology);
   assert.ok(psychiatry);
   assert.match(psychology.returns.join(' '), /Psicologia via DigSaúde MS não deve ser solicitada/);
-  assert.match(psychiatry.returns.join(' '), /não considerar o uso de álcool ou outras drogas, por si só, como motivo/);
+  assert.match(psychiatry.returns.join(' '), /Não considerar o uso de álcool ou outras drogas, por si só, como motivo/);
   assert.match(psychiatry.caseDependent.join(' '), /aceita pacientes em uso de álcool ou outras drogas desde que estejam clinicamente estáveis/);
   assert.match(psychiatry.safety.join(' '), /não constitui indicação de internação hospitalar/);
   assert.doesNotMatch(guidance.methodology.studyHistory.join(' '), /Psiquiatria não recebem pacientes/);
