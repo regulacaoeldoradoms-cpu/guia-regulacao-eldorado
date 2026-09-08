@@ -50,24 +50,68 @@ test('Guia Médico carrega a correção operacional depois da regra de TEA', () 
   assert.ok(current < html.indexOf('medical-app.js?v=20260828-1'));
 });
 
-test('Recepção imprime orientação distinta para Psicologia e Psiquiatria', () => {
+test('Recepção oferece impressão condicional apenas onde há regra apoiada em fonte', () => {
   const html = read('recepcao/index.html');
   const source = read('js/reception-substance-guidance.js');
   const css = read('css/reception.css');
-  assert.match(html, /reception\.css\?v=20260908-1/);
-  assert.match(html, /reception-substance-guidance\.js\?v=20260908-4/);
-  assert.match(source, /Condição operacional — uso de álcool e outras drogas/);
-  assert.match(source, /A recepção deve imprimir a orientação abaixo e entregar ao paciente/);
-  assert.match(source, /Psiquiatria<\/strong> do DigSaúde MS <strong>aceita pacientes em uso de álcool ou outras drogas quando estão clinicamente estáveis/);
-  assert.match(source, /A recepção não faz avaliação clínica de estabilidade/);
-  assert.match(source, /teleconsulta de <strong>Psicologia<\/strong> do DigSaúde MS não recebe demandas relacionadas ao uso de álcool ou outras drogas/);
+
+  assert.match(html, /reception-substance-guidance\.js\?v=20260908-5/);
+  assert.match(source, /ORIENTAÇÃO CONDICIONAL — FLUXO DIGSAÚDE MS/);
   assert.match(source, /Imprimir orientação condicional/);
-  assert.match(source, /portal-button reception-conditional-print/);
+  assert.match(source, /reception-conditional-print/);
   assert.match(css, /\.reception-conditional-print\s*\{/);
-  assert.match(css, /background: linear-gradient\(135deg, #c62828, #b71c1c\)/);
-  assert.match(css, /color: #fff/);
-  assert.match(source, /if \(existing\) return/);
-  assert.doesNotMatch(source, /Imprimir orientação para entregar ao paciente/);
-  assert.doesNotMatch(source, /Psicologia e Psiquiatria<\/strong> não recebe/);
-  assert.doesNotMatch(source, /\b(?:CPF|CNS|telefone do paciente|nome do paciente)\b/i);
+  assert.match(css, /#c62828/);
+  assert.match(css, /#b71c1c/);
+
+  for (const specialty of [
+    'endocrinologia adulto', 'geriatria', 'hematologia adulto', 'infectologia',
+    'neurologia adulto', 'nefrologia adulto', 'neuropediatria', 'nutricao',
+    'obstetricia', 'ortopedia adulto', 'otorrinolaringologia', 'pediatria',
+    'pneumologia adulto', 'psicologia', 'psiquiatria adulto', 'reumatologia adulto'
+  ]) {
+    assert.match(source, new RegExp(specialty.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'));
+  }
+
+  assert.doesNotMatch(source, /aliases:\s*\[[^\]]*'dermatologia geral'/i);
+  assert.doesNotMatch(source, /aliases:\s*\[[^\]]*'enfermagem em cuidados paliativos'/i);
+  assert.doesNotMatch(source, /aliases:\s*\[[^\]]*'odontologia - estomatologia'/i);
+});
+
+test('orientações condicionais preservam as regras clínicas mais sensíveis sem atribuir avaliação à recepção', () => {
+  const source = read('js/reception-substance-guidance.js');
+
+  assert.match(source, /LDL ≥ 190 mg\/dL.*excluir hipotireoidismo/s);
+  assert.match(source, /IMC ≥ 30 kg\/m² após falha de tratamento clínico com nutricionista/);
+  assert.match(source, /ITU recorrente.*após exclusão de causas anatômicas urológicas ou ginecológicas/s);
+  assert.match(source, /alteração anatômica do trato urinário.*Urologia/s);
+  assert.match(source, /convulsão febril simples/);
+  assert.match(source, /Síncope ou perda transitória de consciência/);
+  assert.match(source, /síncope vasovagal usualmente não necessitam avaliação/);
+  assert.match(source, /Vertigem com suspeita de origem central.*após avaliação em serviço de emergência/s);
+  assert.match(source, /otite externa maligna após o manejo na emergência/);
+  assert.match(source, /cerume obstrutivo/);
+  assert.match(source, /luxação recorrente de ombro após avaliação em serviço de emergência/);
+  assert.match(source, /arboviroses.*pacientes estáveis/is);
+  assert.match(source, /endocardite infecciosa.*pacientes estáveis/is);
+
+  assert.match(source, /cardiopatas, nefropatas, pacientes bariátricos ou em processo bariátrico/);
+  assert.match(source, /transtornos alimentares como anorexia e bulimia/);
+  assert.match(source, /indivíduos em uso de insulinoterapia/);
+
+  assert.match(source, /dificuldades de aprendizagem; avaliações psicológicas/);
+  assert.match(source, /Transtorno do Espectro Autista \(TEA\)/);
+  assert.match(source, /alterações comportamentais devido ao uso de substâncias psicoativas/);
+  assert.match(source, /transtornos mentais graves com risco iminente/);
+
+  assert.match(source, /Psiquiatria quando estão clinicamente estáveis/);
+  assert.match(source, /uso de substâncias, isoladamente, não é motivo de exclusão nem indicação automática de internação/);
+  assert.match(source, /A recepção não avalia estabilidade/);
+  assert.match(source, /A recepção apenas entrega a orientação e não realiza avaliação clínica/);
+  assert.match(source, /A recepção não diagnostica, não classifica risco, não interpreta exames e não define estabilidade/);
+});
+
+test('orientação condicional não contém dados identificáveis de pacientes', () => {
+  const source = read('js/reception-substance-guidance.js');
+  assert.doesNotMatch(source, /\b(?:CPF|CNS|telefone do paciente|nome do paciente|Nome da Mãe|Código da Solicitação)\b/i);
+  assert.doesNotMatch(source, /\b\d{11,15}\b/);
 });
