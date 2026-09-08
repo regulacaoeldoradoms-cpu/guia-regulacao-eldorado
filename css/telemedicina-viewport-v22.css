@@ -1,0 +1,10 @@
+html.tm-viewport-v22,
+html.tm-viewport-v22 body.telemedicine-page,
+html.tm-viewport-v22 body.telemedicine-page .portal-shell,
+html.tm-viewport-v22 body.telemedicine-page .telemedicine-main,
+html.tm-viewport-v22 body.telemedicine-page .telemedicine-hero,
+html.tm-viewport-v22 body.telemedicine-page .telemedicine-stats,
+html.tm-viewport-v22 body.telemedicine-page .telemedicine-workspace,
+html.tm-viewport-v22 body.telemedicine-page #followupList {
+  overflow-anchor: none !important;
+}
