@@ -28,12 +28,35 @@ O fluxo de `js/home.js` é:
 1. validar a sessão;
 2. priorizar troca obrigatória de senha;
 3. renderizar imediatamente Ferramentas e a navegação básica;
-4. carregar `/api/social/config` com limite de cinco segundos e então reconciliar a
-   navegação com a elegibilidade;
-5. usar Ferramentas se a Home estiver desligada, o usuário não estiver elegível ou
-   a API falhar ou demorar além do limite;
-6. respeitar a preferência `tools` antes de montar o feed;
-7. montar perfil, compositor, atalhos e feed; qualquer falha volta ao fallback.
+4. carregar `/api/social/config` com uma primeira janela de até dez segundos;
+5. em timeout ou erro transitório de backend/banco social, manter Ferramentas visível,
+   informar que a Camada Social está conectando e executar uma segunda tentativa com
+   orçamento de até trinta segundos;
+6. usar Ferramentas se a Home estiver desligada, o usuário não estiver elegível ou a
+   API permanecer indisponível após a recuperação;
+7. respeitar a preferência `tools` antes de montar o feed;
+8. montar perfil, compositor, atalhos e feed; qualquer falha volta ao fallback.
+
+Para o perfil Desenvolvedor, uma falha persistente da configuração social inclui
+somente o código técnico e o status HTTP no aviso da Home. Nenhuma credencial, dado de
+usuário ou conteúdo protegido é exposto.
+
+## Diagnóstico de produção
+
+Após a primeira tentativa de ativação da Home, a interface publicada permaneceu no
+fallback com a mensagem de indisponibilidade social. Um probe externo sem credenciais
+foi adicionado para distinguir indisponibilidade do Worker de falha interna da camada.
+O teste confirmou em produção:
+
+- `/api/auth/me` responde `401` sem sessão, como esperado;
+- `/api/social/config` também responde `401` sem sessão, confirmando que a rota social
+  está publicada no Worker;
+- o preflight `OPTIONS /api/social/config`, com a origem oficial do Portal, responde
+  `204`, confirmando a configuração CORS da rota.
+
+Portanto, o fallback observado não era ausência da rota nem bloqueio CORS. A Home foi
+endurecida para tolerar inicialização lenta/transitória do backend social sem abandonar
+a experiência na primeira falha curta.
 
 ## Flags
 
