@@ -1,0 +1,45 @@
+name: Validar Telemedicina Outra condição V26
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-condition-other-v26.js'
+      - 'docs/TELEMEDICINA-OUTRA-CONDICAO-V26.md'
+      - '.github/workflows/validate-telemedicine-condition-other-v26.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-condition-other-v26.js'
+      - 'docs/TELEMEDICINA-OUTRA-CONDICAO-V26.md'
+      - '.github/workflows/validate-telemedicine-condition-other-v26.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe
+        run: node --check js/telemedicina-condition-other-v26.js
+      - name: Conferir contrato V26
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f docs/TELEMEDICINA-OUTRA-CONDICAO-V26.md
+          grep -q 'telemedicina-condition-other-v26.js?v=20260908-1' telemedicina/index.html
+          grep -q "option.value = 'other'" js/telemedicina-condition-other-v26.js
+          grep -q "option.textContent = 'Outra condição'" js/telemedicina-condition-other-v26.js
+          grep -q "OTHER_RESOLUTION = 'RETORNO APÓS OUTRA CONDIÇÃO'" js/telemedicina-condition-other-v26.js
+          grep -q "READY_SENTINEL = '__TM_ALREADY_DONE_V25__'" js/telemedicina-condition-other-v26.js
+          grep -q 'field.remove();' js/telemedicina-condition-other-v26.js
+          grep -q 'Já realizado' docs/TELEMEDICINA-OUTRA-CONDICAO-V26.md
+      - name: Garantir preservação da V25
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'telemedicina-absence-v24.js?v=20260908-2' telemedicina/index.html
+          grep -q 'data-outcomes-record="v25"' telemedicina/index.html
