@@ -179,7 +179,7 @@ async function patientDetail(env, patientId) {
   if (!patient) return null;
   const [followups, events] = await Promise.all([listAll(env, FOLLOWUPS), listAll(env, EVENTS)]);
   const patientFollowups = followups
-    .filter((item) => item.patientId === patientId && item.active !== false)
+    .filter((item) => item.patientId === patientId && !item.deletedAt)
     .map((item) => publicFollowup(item))
     .sort((a, b) => String(b.lastConsultationDate || '').localeCompare(String(a.lastConsultationDate || '')));
   const patientEvents = events
