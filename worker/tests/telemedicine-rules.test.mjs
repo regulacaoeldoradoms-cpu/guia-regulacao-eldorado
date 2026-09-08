@@ -65,6 +65,25 @@ assert.equal(deriveFollowupStatus({ ...followup, requestedHistorical: true }, '2
 assert.equal(deriveFollowupStatus({ ...followup, active: false }, '2026-09-15'), 'CONCLUÍDO');
 assert.equal(deriveFollowupStatus({ active: true, returnDueDate: '' }, '2026-09-15'), 'SEM PROGRAMAÇÃO');
 
+const absence = {
+  active: true,
+  followupMode: 'absence',
+  absence: true,
+  absencePendingRequest: true,
+  returnDueDate: '',
+  reminderDates: [],
+  requestedAt: '',
+  requestedHistorical: false
+};
+assert.equal(deriveFollowupStatus(absence, '2026-09-15'), 'SOLICITAR');
+assert.equal(deriveFollowupStatus({ ...absence, requestedAt: '2026-09-15', absencePendingRequest: false }, '2026-09-15'), 'SOLICITADO');
+assert.deepEqual(reminderMetaFor(absence, '2026-09-15'), {
+  alertToday: false,
+  reminderNumber: 0,
+  remindersRemaining: 0,
+  reminderDates: []
+});
+
 assert.equal(returnDueFromRecord('2026-08-01', 'RETORNO EM 3 MESES'), '');
 assert.equal(returnDueFromRecord('2026-08-01', 'RETORNO APÓS EXAMES'), '');
 assert.equal(looksClosed('PACIENTE TEVE ALTA DO EPISÓDIO'), true);
@@ -94,4 +113,4 @@ assert.equal(canonicalSpecialtyName('neurologia'), 'NEUROLOGIA ADULTO');
 assert.equal(canonicalSpecialtyName('PSIQ'), 'PSIQUIATRIA');
 assert.equal(canonicalSpecialtyName('especialidade futura'), 'especialidade futura');
 
-console.log('Telemedicina: regras de retorno, lembretes e especialidades validadas.');
+console.log('Telemedicina: regras de retorno, faltas, lembretes e especialidades validadas.');

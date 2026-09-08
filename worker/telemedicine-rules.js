@@ -122,6 +122,7 @@ export function threeBusinessReminders(returnDueDate) {
 export function deriveFollowupStatus(followup, today) {
   if (followup?.active === false) return 'CONCLUÍDO';
   if (followup?.requestedAt || followup?.requestedHistorical === true) return 'SOLICITADO';
+  if (followup?.absencePendingRequest === true) return 'SOLICITAR';
   const dueDate = clean(followup?.returnDueDate, 10);
   if (!dateValid(dueDate)) return 'SEM PROGRAMAÇÃO';
   const reminders = Array.isArray(followup?.reminderDates) && followup.reminderDates.length === 3
