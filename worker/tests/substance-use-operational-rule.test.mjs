@@ -53,12 +53,13 @@ test('Guia Médico carrega a correção operacional depois da regra de TEA', () 
 test('Recepção imprime orientação distinta para Psicologia e Psiquiatria', () => {
   const html = read('recepcao/index.html');
   const source = read('js/reception-substance-guidance.js');
-  assert.match(html, /reception-substance-guidance\.js\?v=20260908-2/);
+  assert.match(html, /reception-substance-guidance\.js\?v=20260908-3/);
   assert.match(source, /Condição operacional — uso de álcool e outras drogas/);
   assert.match(source, /A recepção deve imprimir a orientação abaixo e entregar ao paciente/);
   assert.match(source, /Psiquiatria<\/strong> do DigSaúde MS <strong>aceita pacientes em uso de álcool ou outras drogas quando estão clinicamente estáveis/);
   assert.match(source, /A recepção não faz avaliação clínica de estabilidade/);
   assert.match(source, /teleconsulta de <strong>Psicologia<\/strong> do DigSaúde MS não recebe demandas relacionadas ao uso de álcool ou outras drogas/);
+  assert.match(source, /if \(existing\) return/);
   assert.doesNotMatch(source, /Psicologia e Psiquiatria<\/strong> não recebe/);
   assert.doesNotMatch(source, /\b(?:CPF|CNS|telefone do paciente|nome do paciente)\b/i);
 });
