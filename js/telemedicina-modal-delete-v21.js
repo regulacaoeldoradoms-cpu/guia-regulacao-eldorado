@@ -32,7 +32,8 @@
     if (!modal || !document.body) return;
     [...document.body.children].forEach((element) => {
       if (!(element instanceof HTMLElement) || element === modal || element.tagName === 'SCRIPT') return;
-      if (!inertState.has(element)) inertState.set(element, element.hasAttribute('inert') || Boolean(element.inert));
+      if (inertState.has(element)) return;
+      inertState.set(element, element.hasAttribute('inert') || Boolean(element.inert));
       element.setAttribute('inert', '');
       if ('inert' in element) element.inert = true;
       element.setAttribute('data-tm-modal-inert', 'true');
@@ -97,13 +98,14 @@
     modal.className = 'modal-backdrop';
     modal.id = 'deleteFollowupModal';
     modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('data-portal-interaction-ignore', 'true');
     modal.innerHTML = `<section class="portal-modal telemedicine-modal compact tm-delete-modal" role="dialog" aria-modal="true" aria-labelledby="deleteFollowupTitle">
       <div class="portal-modal-header">
         <div><h2 id="deleteFollowupTitle">Excluir registro</h2><div class="user-meta" id="deleteFollowupMeta"></div></div>
         <button class="portal-modal-close" type="button" data-tm-delete-cancel aria-label="Fechar confirmação">×</button>
       </div>
       <p class="tm-delete-copy"><strong>Confirma a exclusão deste acompanhamento?</strong> Ele deixará de aparecer nos cards e nos retornos ativos.</p>
-      <p class="tm-delete-note">A exclusão é lógica: o registro fica marcado como inativo no backend para preservar rastreabilidade técnica e poderá ser recriado por uma nova teleconsulta.</p>
+      <p class="tm-delete-note">Este acompanhamento será removido da lista de retornos ativos. As informações já registradas no histórico serão preservadas.</p>
       <div class="account-actions">
         <button class="portal-button secondary" type="button" data-tm-delete-cancel>Cancelar</button>
         <button class="portal-button danger tm-delete-confirm-button" id="confirmDeleteFollowup" type="button">${trashIcon()}<span>Excluir registro</span></button>
@@ -202,7 +204,27 @@
     openDeleteModal(button.closest('[data-followup-row]'));
   }, { capture: true });
 
+  function markTelemedicineModalsAsStable(root = document) {
+    if (root instanceof Element && root.matches?.('.telemedicine-page .modal-backdrop')) {
+      root.setAttribute('data-portal-interaction-ignore', 'true');
+    }
+    root.querySelectorAll?.('.telemedicine-page .modal-backdrop').forEach((modal) => {
+      modal.setAttribute('data-portal-interaction-ignore', 'true');
+    });
+  }
+
+  function modalStateMutation(mutation) {
+    if (mutation.type === 'attributes') {
+      return mutation.target instanceof Element && mutation.target.classList.contains('modal-backdrop');
+    }
+    if (mutation.type !== 'childList') return false;
+    return [...mutation.addedNodes].some((node) => node instanceof Element && (
+      node.classList.contains('modal-backdrop') || Boolean(node.querySelector?.('.modal-backdrop'))
+    ));
+  }
+
   function boot() {
+    markTelemedicineModalsAsStable();
     ensureDeleteModal();
     scanDeleteButtons();
     isolateBackground();
@@ -211,11 +233,12 @@
       mutations.forEach((mutation) => {
         if (mutation.type === 'childList') {
           mutation.addedNodes.forEach((node) => {
-            if (node instanceof Element) scanDeleteButtons(node);
+            if (!(node instanceof Element)) return;
+            scanDeleteButtons(node);
+            markTelemedicineModalsAsStable(node);
           });
-          needsIsolation = true;
         }
-        if (mutation.type === 'attributes') needsIsolation = true;
+        if (modalStateMutation(mutation)) needsIsolation = true;
       });
       if (needsIsolation) isolateBackground();
     });

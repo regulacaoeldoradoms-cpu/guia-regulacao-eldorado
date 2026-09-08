@@ -4,11 +4,13 @@
 
 A partir da V21, qualquer janela modal da Telemedicina deve se comportar como um diálogo verdadeiramente modal: enquanto estiver aberta, somente os controles contidos nela podem receber clique, toque, foco ou navegação por teclado. O conteúdo de fundo permanece visível, mas fica inerte até o fechamento da janela.
 
-No desktop, a Telemedicina não usa `backdrop-filter` nem transformações/transições de composição nos modais. Essa restrição é deliberada para evitar a piscada observada em navegadores durante interação com campos nativos, especialmente entradas de data.
+As janelas modais da Telemedicina também ficam fora da camada global de microinterações do Portal. Não devem receber animações de pressão, transição, seleção, abertura ou atualização que possam causar repintura perceptível durante o preenchimento dos campos. A prioridade nesses diálogos é estabilidade visual e entrada de dados sem piscadas. Essa exceção vale somente para os modais da Telemedicina e não remove a linguagem global de interação do restante do Portal.
+
+O isolamento do fundo não deve ser reprocessado em cada alteração de classe de controles internos. A observação de DOM deve reagir somente a criação/remoção de modais e a alterações de estado do próprio backdrop, evitando repinturas desnecessárias enquanto o usuário digita ou muda o foco.
 
 ## Exclusão de acompanhamento
 
-Cada card de acompanhamento ativo exibe uma ação vermelha `Excluir`, identificada por ícone vetorial profissional de lixeira. A ação sempre exige confirmação em uma janela modal antes de qualquer alteração no backend.
+Cada card de acompanhamento ativo exibe uma ação vermelha `Excluir`, identificada por ícone vetorial profissional de lixeira. A ação sempre exige confirmação em uma janela modal antes de qualquer alteração persistente.
 
 A exclusão é **lógica**, não física:
 
@@ -20,10 +22,16 @@ A exclusão é **lógica**, não física:
 
 A rota `DELETE /api/telemedicina/followups/:id` permanece protegida pela mesma autorização de backend da Telemedicina. Ocultar ou exibir o botão no frontend não substitui a validação do Worker.
 
+### Linguagem apresentada ao operador
+
+A confirmação de exclusão deve explicar apenas a consequência operacional relevante: o acompanhamento será removido da lista de retornos ativos e as informações já registradas no histórico serão preservadas. Termos internos de implementação como `backend`, Firestore, exclusão lógica, campos técnicos ou rastreabilidade técnica não devem ser apresentados ao operador na interface.
+
 ## Regras técnicas
 
 - O isolamento utiliza `inert` quando disponível e também uma guarda de eventos em fase de captura para impedir interação acidental com o fundo.
 - O foco é mantido dentro do modal e a tecla Tab circula entre os controles disponíveis.
+- Os backdrops da Telemedicina usam `data-portal-interaction-ignore="true"` para não receber as microinterações globais do Portal.
+- Os modais da Telemedicina não usam `backdrop-filter`, animação, transformação nem transição de composição.
 - O botão de exclusão usa `data-telemedicine-delete`, separado de `data-action`, para não conflitar com a captura de ações da camada mobile V9.
 - O ícone é SVG inline; não são usados emoji ou bibliotecas externas.
 - Nenhum dado de paciente, credencial ou conteúdo sensível é versionado nesta implementação.

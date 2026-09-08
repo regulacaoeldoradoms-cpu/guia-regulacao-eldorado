@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="/css/telemedicina-desktop-v16.css?v=20260903-2">
   <link rel="stylesheet" href="/css/telemedicina-cards-v19.css?v=20260905-4">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/telemedicina-modal-delete-v21.css?v=20260908-1">
+  <link rel="stylesheet" href="/css/telemedicina-modal-delete-v21.css?v=20260908-2">
 </head>
 <body class="portal-page telemedicine-page" data-mobile-ui="v3" data-mobile-density="v4" data-mobile-design="v5" data-mobile-scale="v6" data-mobile-layout="v7" data-mobile-refinement="v8" data-mobile-interaction="v9" data-mobile-card-align="v11" data-mobile-visual="v12" data-mobile-readability="v15" data-desktop-design="v16" data-followup-cards="v19" data-copy-justification="v20">
   <div class="portal-shell">
@@ -90,14 +90,14 @@
     </main>
   </div>
 
-  <div class="modal-backdrop" id="patientModal" aria-hidden="true">
+  <div class="modal-backdrop" id="patientModal" aria-hidden="true" data-portal-interaction-ignore="true">
     <section class="portal-modal telemedicine-modal telemedicine-patient-modal" role="dialog" aria-modal="true" aria-labelledby="patientModalTitle">
       <div class="portal-modal-header"><div><h2 id="patientModalTitle">Histórico do paciente</h2><div class="user-meta" id="patientModalMeta"></div></div><button class="portal-modal-close" type="button" data-close-modal="patientModal">×</button></div>
       <div id="patientDetail"><div class="portal-note info">Carregando histórico...</div></div>
     </section>
   </div>
 
-  <div class="modal-backdrop" id="consultationModal" aria-hidden="true">
+  <div class="modal-backdrop" id="consultationModal" aria-hidden="true" data-portal-interaction-ignore="true">
     <form class="portal-modal telemedicine-modal" id="consultationForm">
       <div class="portal-modal-header"><div><h2>Registrar teleconsulta</h2><div class="user-meta">Um novo registro entra automaticamente no histórico do paciente.</div></div><button class="portal-modal-close" type="button" data-close-modal="consultationModal">×</button></div>
       <div class="telemedicine-form-grid">
@@ -141,7 +141,7 @@
       </div>
     </form>
   </div>
-  <div class="modal-backdrop" id="scheduleModal" aria-hidden="true">
+  <div class="modal-backdrop" id="scheduleModal" aria-hidden="true" data-portal-interaction-ignore="true">
     <form class="portal-modal telemedicine-modal compact" id="scheduleForm">
       <div class="portal-modal-header"><div><h2>Programar retorno</h2><div class="user-meta" id="scheduleMeta"></div></div><button class="portal-modal-close" type="button" data-close-modal="scheduleModal">×</button></div>
       <div class="telemedicine-form-grid one-column">
@@ -153,7 +153,7 @@
     </form>
   </div>
 
-  <div class="modal-backdrop" id="requestedModal" aria-hidden="true">
+  <div class="modal-backdrop" id="requestedModal" aria-hidden="true" data-portal-interaction-ignore="true">
     <form class="portal-modal telemedicine-modal compact" id="requestedForm">
       <div class="portal-modal-header"><div><h2>Confirmar solicitação</h2><div class="user-meta" id="requestedMeta"></div></div><button class="portal-modal-close" type="button" data-close-modal="requestedModal">×</button></div>
       <div class="telemedicine-form-grid one-column">
@@ -165,7 +165,7 @@
     </form>
   </div>
 
-  <div class="modal-backdrop" id="importModal" aria-hidden="true">
+  <div class="modal-backdrop" id="importModal" aria-hidden="true" data-portal-interaction-ignore="true">
     <form class="portal-modal telemedicine-modal" id="importForm">
       <div class="portal-modal-header"><div><h2>Importação inicial</h2><div class="user-meta">Exclusiva do Desenvolvedor. O arquivo é enviado diretamente ao Worker e não é armazenado como arquivo do site.</div></div><button class="portal-modal-close" type="button" data-close-modal="importModal">×</button></div>
       <div class="telemedicine-form-grid one-column">
@@ -180,7 +180,7 @@
 
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260816-1"></script>
-  <script src="/js/telemedicina-modal-delete-v21.js?v=20260908-1"></script>
+  <script src="/js/telemedicina-modal-delete-v21.js?v=20260908-2"></script>
   <script src="/js/portal-interactions.js?v=20260906-2"></script>
   <div class="telemedicine-celebration" id="dischargeCelebration" aria-hidden="true"></div>
 

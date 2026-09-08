@@ -33,23 +33,34 @@ jobs:
           node --check worker/telemedicine.js
       - name: Validar carregamento e ordem da camada modal
         run: |
-          grep -q 'telemedicina-modal-delete-v21.css?v=20260908-1' telemedicina/index.html
-          grep -q 'telemedicina-modal-delete-v21.js?v=20260908-1' telemedicina/index.html
+          grep -q 'telemedicina-modal-delete-v21.css?v=20260908-2' telemedicina/index.html
+          grep -q 'telemedicina-modal-delete-v21.js?v=20260908-2' telemedicina/index.html
           python - <<'PY'
           from pathlib import Path
           html = Path('telemedicina/index.html').read_text()
-          guard = html.index('/js/telemedicina-modal-delete-v21.js?v=20260908-1')
+          guard = html.index('/js/telemedicina-modal-delete-v21.js?v=20260908-2')
           interactions = html.index('/js/portal-interactions.js?v=20260906-2')
           assert guard < interactions, 'A guarda modal deve carregar antes de portal-interactions.'
+          assert html.count('data-portal-interaction-ignore="true"') >= 5, 'Os modais estáticos da Telemedicina devem ignorar a camada global de microinterações.'
           PY
-      - name: Validar isolamento modal
+      - name: Validar isolamento modal estável
         run: |
           grep -q "setAttribute('inert'" js/telemedicina-modal-delete-v21.js
           grep -q 'stopImmediatePropagation' js/telemedicina-modal-delete-v21.js
           grep -q 'focusin' js/telemedicina-modal-delete-v21.js
           grep -q "event.key !== 'Tab'" js/telemedicina-modal-delete-v21.js
+          grep -q 'data-portal-interaction-ignore' js/telemedicina-modal-delete-v21.js
+          grep -q 'modalStateMutation' js/telemedicina-modal-delete-v21.js
+          grep -q "target.classList.contains('modal-backdrop')" js/telemedicina-modal-delete-v21.js
           grep -q 'backdrop-filter: none !important' css/telemedicina-modal-delete-v21.css
+          grep -q 'transition: none !important' css/telemedicina-modal-delete-v21.css
+          grep -q 'animation: none !important' css/telemedicina-modal-delete-v21.css
           grep -q 'pointer-events: none !important' css/telemedicina-modal-delete-v21.css
+      - name: Validar texto operacional da confirmação
+        run: |
+          grep -q 'As informações já registradas no histórico serão preservadas' js/telemedicina-modal-delete-v21.js
+          ! grep -q 'inativo no backend' js/telemedicina-modal-delete-v21.js
+          ! grep -q 'rastreabilidade técnica' js/telemedicina-modal-delete-v21.js
       - name: Validar exclusão protegida
         run: |
           grep -q "GET, POST, PATCH, DELETE, OPTIONS" worker/telemedicine.js
