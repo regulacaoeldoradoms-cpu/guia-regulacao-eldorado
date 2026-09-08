@@ -194,12 +194,15 @@ async function recordConsultation(env, user, input) {
   const specialty = canonicalSpecialtyName(input.specialty);
   const consultationDate = clean(input.consultationDate, 10);
   const requestedMode = clean(input.followupMode, 20).toLowerCase();
-  const hasExplicitMode = ['discharge', 'scheduled', 'conditional'].includes(requestedMode);
+  const hasExplicitMode = ['discharge', 'scheduled', 'conditional', 'absence'].includes(requestedMode);
   const followupMode = hasExplicitMode ? requestedMode : (input.discharged === true ? 'discharge' : 'scheduled');
   const discharged = followupMode === 'discharge';
   const conditional = followupMode === 'conditional';
+  const absence = followupMode === 'absence';
   const inputResolution = clean(input.resolution, 2500);
-  const notes = discharged ? '' : clean(input.notes, 1500);
+  const inputNotes = clean(input.notes, 1500);
+  const absenceReason = absence ? inputNotes : '';
+  const notes = discharged ? '' : inputNotes;
   const needsReturn = hasExplicitMode ? !discharged : (discharged ? false : input.needsReturn !== false);
   const explicitDueInput = followupMode === 'scheduled' ? clean(input.returnDueDate, 10) : '';
   const explicitDue = dateValid(explicitDueInput) ? normalizeReturnDueDate(explicitDueInput) : '';
@@ -212,19 +215,24 @@ async function recordConsultation(env, user, input) {
   if (conditional && !conditionalResolution) {
     throw Object.assign(new Error('Informe a condição necessária para o retorno.'), { status: 400 });
   }
+  if (absence && absenceReason.length < 3) {
+    throw Object.assign(new Error('Justifique a falta do paciente.'), { status: 400 });
+  }
   const generatedResolution = discharged
     ? 'ALTA DO EPISÓDIO'
-    : conditional
-      ? conditionalResolution
-      : dateValid(explicitDue)
-        ? `RETORNO PROGRAMADO PARA ${explicitDue}`
-        : Number.isInteger(returnDays) && returnDays > 0
-          ? `RETORNO COM ${returnDays} DIAS`
-          : 'ACOMPANHAMENTO SEM DATA DEFINIDA';
+    : absence
+      ? 'FALTA DO PACIENTE'
+      : conditional
+        ? conditionalResolution
+        : dateValid(explicitDue)
+          ? `RETORNO PROGRAMADO PARA ${explicitDue}`
+          : Number.isInteger(returnDays) && returnDays > 0
+            ? `RETORNO COM ${returnDays} DIAS`
+            : 'ACOMPANHAMENTO SEM DATA DEFINIDA';
   const resolution = hasExplicitMode ? generatedResolution : (inputResolution || generatedResolution);
 
   if (patientName.length < 3) throw Object.assign(new Error('Informe o nome do paciente.'), { status: 400 });
-  if (!dateValid(consultationDate)) throw Object.assign(new Error('Informe a data da consulta.'), { status: 400 });
+  if (!dateValid(consultationDate)) throw Object.assign(new Error(absence ? 'Informe a data da falta.' : 'Informe a data da consulta.'), { status: 400 });
   if (specialty.length < 2) throw Object.assign(new Error('Informe a especialidade.'), { status: 400 });
   if (!resolution) throw Object.assign(new Error('Informe a resolutividade/conduta registrada na teleconsulta.'), { status: 400 });
 
@@ -250,8 +258,8 @@ async function recordConsultation(env, user, input) {
   });
 
   const event = {
-    patientId, patientName, followupId, eventType: 'consulta', eventDate: consultationDate,
-    specialty, resolution, notes, followupMode, discharged, needsReturn, returnDueDate,
+    patientId, patientName, followupId, eventType: absence ? 'falta' : 'consulta', eventDate: consultationDate,
+    specialty, resolution, notes, followupMode, discharged, absence, absenceReason, needsReturn, returnDueDate,
     returnDays: Number.isInteger(returnDays) ? returnDays : 0,
     returnConditionType, returnConditionDetail,
     reminderDates, source: 'manual', createdAt: now, createdBy: user.username
@@ -268,6 +276,9 @@ async function recordConsultation(env, user, input) {
     notes,
     followupMode,
     discharged,
+    absence,
+    absenceReason,
+    absencePendingRequest: absence,
     returnConditionType,
     returnConditionDetail,
     returnDueDate,
@@ -296,6 +307,7 @@ async function markRequested(env, user, followupId, input = {}) {
     requestedAt: requestedDate,
     requestedBy: user.username,
     requestedHistorical: false,
+    absencePendingRequest: false,
     requestNote: note,
     updatedAt: now
   });
@@ -313,7 +325,7 @@ async function markRequested(env, user, followupId, input = {}) {
     createdAt: now,
     createdBy: user.username
   });
-  return publicFollowup({ ...current, id: followupId, requestedAt: requestedDate, requestedHistorical: false, requestedBy: user.username, requestNote: note, updatedAt: now });
+  return publicFollowup({ ...current, id: followupId, requestedAt: requestedDate, requestedHistorical: false, requestedBy: user.username, absencePendingRequest: false, requestNote: note, updatedAt: now });
 }
 
 async function updateSchedule(env, user, followupId, input = {}) {
@@ -325,6 +337,10 @@ async function updateSchedule(env, user, followupId, input = {}) {
   const now = new Date().toISOString();
   const reminderDates = threeBusinessReminders(returnDueDate);
   await firestorePatch(env, `${FOLLOWUPS}/${followupId}`, {
+    followupMode: 'scheduled',
+    absence: false,
+    absenceReason: '',
+    absencePendingRequest: false,
     returnDueDate,
     reminderDates,
     requestedAt: '',
@@ -348,7 +364,7 @@ async function updateSchedule(env, user, followupId, input = {}) {
     createdAt: now,
     createdBy: user.username
   });
-  return publicFollowup({ ...current, id: followupId, returnDueDate, reminderDates, requestedAt: '', requestedHistorical: false, requestedBy: '', active: true, updatedAt: now });
+  return publicFollowup({ ...current, id: followupId, followupMode: 'scheduled', absence: false, absenceReason: '', absencePendingRequest: false, returnDueDate, reminderDates, requestedAt: '', requestedHistorical: false, requestedBy: '', active: true, updatedAt: now });
 }
 
 async function deleteFollowup(env, user, followupId) {
