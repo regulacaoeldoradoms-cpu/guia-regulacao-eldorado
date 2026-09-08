@@ -56,7 +56,7 @@ test('Ferramentas mantém uma única matriz de autorização compartilhada', () 
   }
 });
 
-test('Home social tem fallback independente e Ferramentas fica em primeiro nível', () => {
+test('Home social ativa mantém fallback independente e navegação usa Perfil sem Conta duplicada', () => {
   const home = read('js/home.js');
   const navigation = read('js/social-navigation.js');
   const worker = read('worker/social.js');
@@ -66,12 +66,14 @@ test('Home social tem fallback independente e Ferramentas fica em primeiro níve
   assert.match(home, /if \(!socialConfig\.homeEnabled\)/);
   assert.match(home, /catch \(_\)[\s\S]+showToolsFallback/);
   assert.match(navigation, /navLink\('\/ferramentas\/', 'Ferramentas'/);
-  assert.match(navigation, /navLink\('\/conta\/', 'Conta'/);
+  assert.match(navigation, /navLink\('\/perfil\/', 'Perfil'/);
   assert.match(navigation, /navLink\('\/notificacoes\/', 'Avisos'/);
+  assert.doesNotMatch(navigation, /navLink\('\/conta\/', 'Conta'/);
+  assert.doesNotMatch(navigation, /'Meu perfil'/);
   assert.match(worker, /socialHomeEnabled/);
   assert.match(read('js/social-api.js'), /AbortController/);
   assert.match(flags, /SOCIAL_BACKEND_ENABLED = "true"/);
-  assert.match(flags, /^SOCIAL_HOME_ENABLED = "(?:true|false)"$/m);
+  assert.match(flags, /^SOCIAL_HOME_ENABLED = "true"$/m);
 });
 
 test('chat profissional ignora amizade e oferece perfil sem liberar cidadãos', () => {
