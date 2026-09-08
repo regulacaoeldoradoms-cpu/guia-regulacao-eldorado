@@ -39,18 +39,52 @@
     window.PortalTools?.render(document.getElementById('hubGrid'), user);
   }
 
+  function wait(milliseconds) {
+    return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+  }
+
+  function socialErrorIsRetryable(error) {
+    const status = Number(error?.status || 0);
+    return error?.code === 'SOCIAL_CONFIG_TIMEOUT'
+      || error?.code === 'SOCIAL_DATABASE_UNAVAILABLE'
+      || error?.code === 'SOCIAL_TEMPORARILY_UNAVAILABLE'
+      || [500, 502, 503, 504].includes(status);
+  }
+
+  function socialFailureMessage(error) {
+    let message = 'A Camada Social está temporariamente indisponível. Suas Ferramentas continuam funcionando normalmente.';
+    if (user.role === 'admin') {
+      const code = String(error?.code || '').trim();
+      const status = Number(error?.status || 0);
+      const technical = [code, status ? `HTTP ${status}` : ''].filter(Boolean).join(' · ');
+      if (technical) message += ` Diagnóstico: ${technical}.`;
+    }
+    return message;
+  }
+
+  async function loadSocialConfigWithRecovery() {
+    try {
+      return await social.getConfig(10000);
+    } catch (error) {
+      if (!socialErrorIsRetryable(error)) throw error;
+      showToolsFallback('Conectando à Camada Social. Suas Ferramentas continuam disponíveis enquanto a conexão é concluída.');
+      await wait(900);
+      return social.getConfig(30000);
+    }
+  }
+
   let socialConfig = {
     backendEnabled: false,
     homeEnabled: false,
     available: false,
     toolsPath: '/ferramentas/'
   };
-  showToolsFallback();
+  showToolsFallback('Conectando à Camada Social...');
   window.PortalSocialNavigation?.mount(user, socialConfig);
   try {
-    socialConfig = await social.getConfig();
-  } catch (_) {
-    showToolsFallback('A Camada Social está temporariamente indisponível. Suas Ferramentas continuam funcionando normalmente.');
+    socialConfig = await loadSocialConfigWithRecovery();
+  } catch (error) {
+    showToolsFallback(socialFailureMessage(error));
     window.PortalSocialNavigation?.mount(user, socialConfig);
     return;
   }
@@ -74,6 +108,6 @@
   try {
     await window.PortalSocialHome.mount(user, socialConfig);
   } catch (error) {
-    showToolsFallback(error.message || 'A Camada Social está temporariamente indisponível. Suas Ferramentas continuam funcionando normalmente.');
+    showToolsFallback(socialFailureMessage(error));
   }
 })();
