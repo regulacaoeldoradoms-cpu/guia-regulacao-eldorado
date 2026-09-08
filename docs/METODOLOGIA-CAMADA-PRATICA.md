@@ -54,6 +54,33 @@ Na Recepção, a condição continua com orientação própria para impressão e
 
 A ação adicional de impressão dessa condição deve aparecer separada da impressão geral do protocolo, com botão vermelho identificado como **“Imprimir orientação condicional”**, para deixar claro que se trata de uma orientação aplicável somente quando a condição descrita estiver presente.
 
+### 08/09/2026 — Matriz de orientações condicionais da Recepção
+
+A impressão condicional da Recepção foi ampliada com base prioritária no **Protocolo de Acesso aos Serviços de Teleatendimentos do Núcleo de Telessaúde Mato Grosso do Sul — versão 2.0/2025**. A matriz não transforma critérios de inclusão em proibições: uma condição só entra como orientação condicional quando a fonte estabelece de forma objetiva uma faixa etária, uma situação não contemplada/não encaminhável, um fluxo alternativo, uma etapa prévia ou uma condição de segurança.
+
+O botão vermelho **“Imprimir orientação condicional”** aparece nas especialidades em que existe ao menos uma dessas condições apoiadas em fonte. Especialidades sem restrição/condição objetiva identificada não recebem botão apenas para uniformizar a interface.
+
+A matriz vigente contempla:
+
+- **Endocrinologia Adulto:** faixa etária; LDL ≥ 190 mg/dL após exclusão/tratamento de hipotireoidismo; obesidade após falha de tratamento clínico com nutricionista;
+- **Geriatria:** faixa etária a partir de 60 anos;
+- **Hematologia Adulto:** faixa etária a partir de 18 anos;
+- **Infectologia:** faixa etária a partir de 13 anos e condições de estabilidade explicitadas para arboviroses e endocardite infecciosa;
+- **Neurologia Adulto:** faixa etária; síncope/perda transitória de consciência apenas quando sugestiva de crise convulsiva; síncope vasovagal típica usualmente sem necessidade de especialista; vertigem de provável origem central após avaliação de emergência;
+- **Nefrologia Adulto:** faixa etária e direcionamento de ITU recorrente conforme exclusão de causas anatômicas urológicas/ginecológicas;
+- **Neuropediatria:** faixa etária máxima; exclusão de convulsão febril simples no critério de Convulsão/Epilepsia; presença de familiar/responsável no teleatendimento;
+- **Nutrição:** faixa etária e lista formal de condições não contempladas, incluindo cardiopatia, nefropatia, bariátrica/processo bariátrico, transtornos alimentares, gestação, nutrição esportiva e insulinoterapia;
+- **Obstetrícia:** faixa etária e escopo de Gestação de Alto Risco, sem atribuir à recepção a classificação do risco;
+- **Ortopedia Adulto:** faixa etária; luxação recorrente de ombro após avaliação de emergência; condições do protocolo para ruptura tendínea não operada em caráter emergencial;
+- **Otorrinolaringologia:** faixa etária; otite externa maligna após manejo na emergência; exclusão prévia de causas reversíveis de hipoacusia/zumbido; causas a excluir em disfonia sem etiologia identificada;
+- **Pediatria:** faixa etária até 12 anos completos;
+- **Pneumologia Adulto:** faixa etária a partir de 16 anos;
+- **Psicologia:** faixa etária e a lista oficial de situações “Não encaminhar”, mantendo a confirmação operacional de TEA/autismo;
+- **Psiquiatria Adulto:** faixa etária e regra operacional de que uso de álcool/outras drogas é aceito quando houver estabilidade clínica;
+- **Reumatologia Adulto:** faixa etária a partir de 18 anos.
+
+A folha impressa deve declarar expressamente que **nem todas as condições listadas necessariamente se aplicam ao paciente**. A recepção somente imprime e entrega a orientação quando a situação já estiver clara no encaminhamento ou tiver sido confirmada pela equipe assistente. Não cabe à recepção diagnosticar, interpretar exames, classificar risco, determinar estabilidade, concluir indicação de urgência ou decidir o fluxo clínico.
+
 ## Limites
 
 A camada prática não substitui:
