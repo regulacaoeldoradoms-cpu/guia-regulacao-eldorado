@@ -83,7 +83,7 @@ test('orientações condicionais preservam as regras clínicas mais sensíveis s
   assert.match(source, /LDL ≥ 190 mg\/dL.*excluir hipotireoidismo/s);
   assert.match(source, /IMC ≥ 30 kg\/m² após falha de tratamento clínico com nutricionista/);
   assert.match(source, /ITU recorrente.*após exclusão de causas anatômicas urológicas ou ginecológicas/s);
-  assert.match(source, /alteração anatômica do trato urinário.*Urologia/s);
+  assert.match(source, /alteração anatômica do trato urinário.*Urologia/is);
   assert.match(source, /convulsão febril simples/);
   assert.match(source, /Síncope ou perda transitória de consciência/);
   assert.match(source, /síncope vasovagal usualmente não necessitam avaliação/);
