@@ -1,0 +1,56 @@
+name: Validar estabilidade de carga da Telemedicina V22
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-viewport-v22.js'
+      - 'css/telemedicina-viewport-v22.css'
+      - 'docs/TELEMEDICINA-ESTABILIDADE-CARGA-V22.md'
+      - '.github/workflows/validate-telemedicine-viewport-v22.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-viewport-v22.js'
+      - 'css/telemedicina-viewport-v22.css'
+      - 'docs/TELEMEDICINA-ESTABILIDADE-CARGA-V22.md'
+      - '.github/workflows/validate-telemedicine-viewport-v22.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar sintaxe JavaScript
+        run: node --check js/telemedicina-viewport-v22.js
+      - name: Validar carregamento antecipado
+        run: |
+          grep -q '/css/telemedicina-viewport-v22.css?v=20260908-1' telemedicina/index.html
+          grep -q '/js/telemedicina-viewport-v22.js?v=20260908-1' telemedicina/index.html
+          python - <<'PY'
+          from pathlib import Path
+          html = Path('telemedicina/index.html').read_text()
+          head_end = html.index('</head>')
+          css = html.index('/css/telemedicina-viewport-v22.css?v=20260908-1')
+          js = html.index('/js/telemedicina-viewport-v22.js?v=20260908-1')
+          body = html.index('<body')
+          assert css < head_end and js < head_end and js < body, 'A guarda V22 deve iniciar no head, antes do body e da hidratação.'
+          PY
+      - name: Validar proteção contra rolagem automática
+        run: |
+          grep -q "scrollRestoration = 'manual'" js/telemedicina-viewport-v22.js
+          grep -q "window.scrollTo({ left: target.x, top: target.y, behavior: 'auto' })" js/telemedicina-viewport-v22.js
+          grep -q "document.getElementById('todayLabel')" js/telemedicina-viewport-v22.js
+          grep -q "document.getElementById('followupList')" js/telemedicina-viewport-v22.js
+          grep -q 'Carregando acompanhamentos' js/telemedicina-viewport-v22.js
+          grep -q "window.addEventListener('wheel', markUserScrollIntent" js/telemedicina-viewport-v22.js
+          grep -q "window.addEventListener('touchmove', markUserScrollIntent" js/telemedicina-viewport-v22.js
+          grep -q 'overflow-anchor: none !important' css/telemedicina-viewport-v22.css
+      - name: Garantir escopo local e ausência de dependências externas
+        run: |
+          grep -q '^html.tm-viewport-v22' css/telemedicina-viewport-v22.css
+          ! grep -Eq 'https?://|cdnjs|unpkg|jsdelivr' js/telemedicina-viewport-v22.js css/telemedicina-viewport-v22.css
