@@ -126,7 +126,7 @@
     const message = mode === 'psychology'
       ? 'Se o encaminhamento de Psicologia envolver demanda relacionada ao uso de álcool e/ou outras drogas, esse fluxo de teleatendimento não é aceito pelo DigSaúde MS. <strong>A recepção deve imprimir a orientação abaixo e entregar ao paciente.</strong>'
       : 'Se o encaminhamento de Psiquiatria envolver uso de álcool e/ou outras drogas, o DigSaúde MS aceita o atendimento <strong>desde que o paciente esteja clinicamente estável</strong>. A recepção não avalia estabilidade; <strong>deve imprimir a orientação abaixo e entregar ao paciente.</strong>';
-    card.innerHTML = `<strong>Condição operacional — uso de álcool e outras drogas</strong><br><span>${message}</span><br><br><button class="portal-button primary" id="${PRINT_BUTTON_ID}" type="button">Imprimir orientação para entregar ao paciente</button>`;
+    card.innerHTML = `<strong>Condição operacional — uso de álcool e outras drogas</strong><br><span>${message}</span><br><br><button class="portal-button reception-conditional-print" id="${PRINT_BUTTON_ID}" type="button">Imprimir orientação condicional</button>`;
 
     const anchor = detail.querySelector('.reception-scope-note');
     if (anchor) anchor.insertAdjacentElement('beforebegin', card);
