@@ -87,6 +87,30 @@
   document.addEventListener('focusin', keepFocusInside, { capture: true });
   document.addEventListener('keydown', trapTab, { capture: true });
 
+  function handleStatusFilterWithoutScroll(event) {
+    if (!(event.target instanceof Element) || activeModal()) return;
+    const stat = event.target.closest('.telemedicine-stat[data-status-filter]');
+    if (!stat) return;
+    const filter = document.getElementById('statusFilter');
+    if (!filter) return;
+
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    filter.value = stat.dataset.statusFilter || '';
+    filter.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const restoreScroll = () => {
+      if (window.scrollX !== scrollX || window.scrollY !== scrollY) window.scrollTo(scrollX, scrollY);
+    };
+    restoreScroll();
+    window.requestAnimationFrame(restoreScroll);
+  }
+
+  document.addEventListener('click', handleStatusFilterWithoutScroll, { capture: true });
+
   function trashIcon() {
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 10v6M14 10v6"/></svg>';
   }
