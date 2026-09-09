@@ -1,4 +1,4 @@
-# Telemedicina — salvamento atômico e fila de Altas V29/V30
+# Telemedicina — salvamento atômico e fila de Altas V29/V30/V32
 
 ## Decisão permanente
 
@@ -30,7 +30,7 @@ No mesmo espaço passa a existir o botão **Altas**. O nome foi escolhido em vez
 
 O botão **Altas** funciona como atalho de fila:
 
-- primeiro toque/clique: mostra somente os cards com status `CONCLUÍDO` que permanecem visíveis como altas/conquistas;
+- primeiro toque/clique: mostra somente os cards com status `CONCLUÍDO` que permanecem visíveis por **alta real do episódio**;
 - segundo toque/clique: volta para todas as situações;
 - ao entrar na fila de Altas, uma busca textual antiga é limpa para que a fila não pareça vazia ou sem resposta por causa de um filtro residual;
 - o filtro “Altas / conquistas” continua disponível na lista de situações;
@@ -52,22 +52,41 @@ A fila de altas passa também a ter identidade de **conquista**:
 - `prefers-reduced-motion` respeitado: o reflexo deixa de se mover quando o sistema solicita redução de animações;
 - dimensões e posição da barra permanecem inalteradas.
 
+## Correção V32 — separar alta de outros encerramentos
+
+A decisão da V25 já define **Desistiu** e **Encaminhado para presencial** como encerramentos históricos, sem retorno e sem pendência, mas **não como alta**. Uma incompatibilidade da camada de adaptação podia deixar nesses registros marcadores técnicos antigos equivalentes a `discharged: true` ou `followupMode: discharge`.
+
+A V32 corrige a classificação sem migrar nem publicar dados de pacientes. A própria conduta registrada passa a ter precedência quando identificar claramente um encerramento diferente de alta:
+
+- desistência, abandono do tratamento e `PACIENTE DESISTIU DO TRATAMENTO` não entram em **Altas**;
+- `ENCAMINHADO PARA ATENDIMENTO PRESENCIAL` não entra em **Altas**;
+- esses registros permanecem apenas no histórico longitudinal, conforme a V25;
+- marcadores técnicos antigos de alta são ignorados nesses dois tipos de encerramento;
+- a proteção é aplicada também à resposta imediata do frontend, evitando que esses cards reapareçam temporariamente no mobile logo após o salvamento;
+- alta verdadeira continua visível, dourada e sem lembretes.
+
+A regra semântica permanente é: **CONCLUÍDO não é sinônimo de ALTA**. O botão **Altas** deve representar somente alta do episódio.
+
 ## Desktop e mobile
 
 A fila **Altas** usa a mesma barra e o mesmo filtro em desktop e mobile. No mobile, a camada também mantém a alta recém-salva visível de imediato no cache de interface, sem reativar o acompanhamento no Firestore. Após nova leitura do dashboard, a regra persistente da V28 continua responsável por exibir a alta encerrada como conquista.
 
 ## Cache e publicação
 
-Como o Portal usa service worker e cache de páginas/ativos, a V30 usa novos nomes/versionamentos de CSS e JavaScript da fila de Altas. A versão global do cache já havia sido renovada na mesma sequência de mudanças da `main`, portanto a correção preserva essa versão vigente sem retrocedê-la.
+Como o Portal usa service worker e cache de páginas/ativos, a V30 usa novos nomes/versionamentos de CSS e JavaScript da fila de Altas.
+
+Na V32 o cache global do Portal é renovado para garantir que navegadores que já armazenaram a camada anterior recebam a classificação corrigida.
 
 ## Arquivos
 
 - `worker/firestore-atomic-v29.js` — commit atômico no Firestore;
 - `worker/telemedicine-router-v2.js` — registro atômico de consulta e compatibilidade com as demais rotas;
-- `js/telemedicina-altas-v30.js` — comportamento confiável da fila de Altas e continuidade visual após o salvamento mobile;
+- `worker/telemedicine-rules.js` — classificação persistente que separa alta de outros encerramentos;
+- `js/telemedicina-altas-v30.js` — comportamento da fila de Altas e proteção da resposta imediata;
 - `css/telemedicina-altas-v30.css` — acabamento dourado e reflexo do botão;
 - `telemedicina/index.html` — integração do botão ao filtro nativo e carregamento da V30;
 - `worker/tests/firestore-atomic-v29.test.mjs` — contrato do lote atômico;
+- `worker/tests/telemedicine-outcomes-v25.test.mjs` — regressões dos desfechos e falsas altas;
 - `.github/workflows/validate-telemedicine-atomic-v29.yml` — validação do salvamento atômico;
 - `.github/workflows/validate-telemedicine-altas-v30.yml` — validação específica da interação e do visual da fila de Altas.
 
@@ -77,4 +96,5 @@ Como o Portal usa service worker e cache de páginas/ativos, a V30 usa novos nom
 - não expor `FIREBASE_PRIVATE_KEY`, tokens ou outras credenciais no frontend;
 - não transformar uma alta em acompanhamento ativo no banco apenas para fazê-la aparecer na tela;
 - não usar a fila Altas para classificar desistência, encaminhamento presencial ou outros desfechos como conquista sem decisão de produto explícita;
-- preservar as regras da V28: alta concluída permanece visível, sem lembretes e sem pendências.
+- preservar as regras da V28: alta concluída permanece visível, sem lembretes e sem pendências;
+- preservar as regras da V25: desistência e encaminhamento presencial ficam somente no histórico longitudinal.
