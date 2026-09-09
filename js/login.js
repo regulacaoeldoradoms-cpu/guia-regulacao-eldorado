@@ -278,8 +278,17 @@
 
   async function redirectIfAuthenticated() {
     if (!window.RegulationAuth?.enforcementEnabled) return;
+    const cached = window.RegulationAuth.getToken?.() && window.RegulationAuth.getCachedUser?.();
+    if (cached && window.RegulationAuth.sessionValidationAge?.() < 45000) {
+      window.PortalPerformance?.warmForUser?.(cached, { immediate: true });
+      location.replace(destinationFor(cached));
+      return;
+    }
     const user = await window.RegulationAuth.me().catch(() => null);
-    if (user) location.replace(destinationFor(user));
+    if (user) {
+      window.PortalPerformance?.warmForUser?.(user, { immediate: true });
+      location.replace(destinationFor(user));
+    }
   }
 
   if (!window.RegulationAuth?.enforcementEnabled) {
@@ -293,6 +302,7 @@
     status.className = 'login-status';
     try {
       const user = await window.RegulationAuth.login(username.value, password.value, remember.checked);
+      window.PortalPerformance?.warmForUser?.(user, { immediate: true });
       location.replace(destinationFor(user));
     } catch (error) {
       let message;
