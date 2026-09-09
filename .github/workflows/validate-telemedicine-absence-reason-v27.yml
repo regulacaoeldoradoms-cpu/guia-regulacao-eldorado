@@ -1,0 +1,41 @@
+name: Validar Telemedicina Justificativa de Falta V27
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-absence-reason-v27.js'
+      - 'css/telemedicina-absence-reason-v27.css'
+      - 'worker/tests/telemedicine-absence-reason-v27.test.mjs'
+      - 'docs/TELEMEDICINA-FALTA-JUSTIFICATIVA-V27.md'
+      - '.github/workflows/validate-telemedicine-absence-reason-v27.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-absence-reason-v27.js'
+      - 'css/telemedicina-absence-reason-v27.css'
+      - 'worker/tests/telemedicine-absence-reason-v27.test.mjs'
+      - 'docs/TELEMEDICINA-FALTA-JUSTIFICATIVA-V27.md'
+      - '.github/workflows/validate-telemedicine-absence-reason-v27.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe
+        run: node --check js/telemedicina-absence-reason-v27.js
+      - name: Conferir regra V27
+        run: node worker/tests/telemedicine-absence-reason-v27.test.mjs
+      - name: Conferir contrato operacional
+        run: |
+          grep -q 'Justificativa:' js/telemedicina-absence-reason-v27.js
+          grep -q 'absenceReason' js/telemedicina-absence-reason-v27.js
+          grep -q 'telemedicina-absence-reason-v27.css?v=20260909-1' telemedicina/index.html
+          grep -q 'telemedicina-absence-reason-v27.js?v=20260909-1' telemedicina/index.html
+          grep -q 'animation: none !important' css/telemedicina-absence-reason-v27.css
+          ! grep -q 'Previsão de retorno: não informada' js/telemedicina-absence-reason-v27.js

@@ -1,0 +1,30 @@
+/* Telemedicina V27 — justificativa da falta visível no próprio card.
+   Mantém a rota sem animações e não altera o layout estrutural existente. */
+
+.telemedicine-page .tm-absence-reason-v27 {
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(132, 76, 86, .18);
+  color: #6c4f56;
+  font-size: .78rem;
+  line-height: 1.38;
+  font-weight: 650;
+  text-align: left;
+  overflow-wrap: anywhere;
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
+.telemedicine-page .tm-absence-reason-v27 strong {
+  color: #9a2f3a;
+  font-weight: 850;
+}
+
+@media (max-width: 720px), (pointer: coarse) and (max-device-width: 900px) {
+  .telemedicine-page .tm-absence-reason-v27 {
+    font-size: .8rem;
+    line-height: 1.4;
+  }
+}
