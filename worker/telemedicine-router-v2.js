@@ -10,8 +10,20 @@ import {
   firestorePatch,
   firestoreReplace
 } from './firebase-gateway.js';
+import { firestoreAtomicCommit } from './firestore-atomic-v29.js';
 import { telemedicineAccessFor } from './telemedicine-access.js';
-import { clean, normalizeText, canonicalSpecialtyName } from './telemedicine-rules.js';
+import {
+  clean,
+  normalizeText,
+  canonicalSpecialtyName,
+  dateValid,
+  normalizeReturnDueDate,
+  threeBusinessReminders,
+  deriveFollowupStatus,
+  reminderMetaFor,
+  returnDueFromRecord,
+  returnConditionResolution
+} from './telemedicine-rules.js';
 import {
   handleTelemedicineRoute as handleLegacyTelemedicineRoute,
   isTelemedicineApi as isLegacyTelemedicineApi
@@ -77,6 +89,18 @@ async function followupIdFor(patientId, specialty) {
   return digestId('followup', `${patientId}|${normalizeSpecialty(specialty)}`);
 }
 
+async function eventIdFor(sourceKey) {
+  return digestId('event', sourceKey);
+}
+
+function publicFollowup(item, today = localToday()) {
+  return {
+    ...item,
+    status: deriveFollowupStatus(item, today),
+    ...reminderMetaFor(item, today)
+  };
+}
+
 async function listAll(env, collectionPath) {
   const output = [];
   let pageToken = '';
@@ -140,6 +164,158 @@ function newerFollowup(first, second) {
 function earliestCreatedAt(first, second) {
   const values = [first?.createdAt, second?.createdAt].filter(Boolean).map(String).sort();
   return values[0] || '';
+}
+
+async function recordConsultationAtomic(env, user, input = {}) {
+  const patientName = clean(input.patientName, 160);
+  const specialty = canonicalSpecialtyName(input.specialty);
+  const consultationDate = clean(input.consultationDate, 10);
+  const requestedMode = clean(input.followupMode, 20).toLowerCase();
+  const hasExplicitMode = ['discharge', 'scheduled', 'conditional', 'absence'].includes(requestedMode);
+  const followupMode = hasExplicitMode ? requestedMode : (input.discharged === true ? 'discharge' : 'scheduled');
+  const discharged = followupMode === 'discharge';
+  const conditional = followupMode === 'conditional';
+  const absence = followupMode === 'absence';
+  const inputResolution = clean(input.resolution, 2500);
+  const inputNotes = clean(input.notes, 1500);
+  const absenceReason = absence ? inputNotes : '';
+  const notes = discharged ? '' : inputNotes;
+  const needsReturn = hasExplicitMode ? !discharged : (discharged ? false : input.needsReturn !== false);
+  const explicitDueInput = followupMode === 'scheduled' ? clean(input.returnDueDate, 10) : '';
+  const explicitDue = dateValid(explicitDueInput) ? normalizeReturnDueDate(explicitDueInput) : '';
+  const returnDays = followupMode === 'scheduled' && !explicitDue ? Number(input.returnDays || 0) : 0;
+  const returnConditionType = conditional ? clean(input.conditionType, 40).toLowerCase() : '';
+  const returnConditionDetail = conditional ? clean(input.conditionDetail, 300) : '';
+  const conditionalResolution = conditional
+    ? returnConditionResolution(returnConditionType, returnConditionDetail)
+    : '';
+
+  if (conditional && !conditionalResolution) {
+    throw Object.assign(new Error('Informe a condição necessária para o retorno.'), { status: 400 });
+  }
+  if (absence && absenceReason.length < 3) {
+    throw Object.assign(new Error('Justifique a falta do paciente.'), { status: 400 });
+  }
+
+  const generatedResolution = discharged
+    ? 'ALTA DO EPISÓDIO'
+    : absence
+      ? 'FALTA DO PACIENTE'
+      : conditional
+        ? conditionalResolution
+        : dateValid(explicitDue)
+          ? `RETORNO PROGRAMADO PARA ${explicitDue}`
+          : Number.isInteger(returnDays) && returnDays > 0
+            ? `RETORNO COM ${returnDays} DIAS`
+            : 'ACOMPANHAMENTO SEM DATA DEFINIDA';
+  const resolution = hasExplicitMode ? generatedResolution : (inputResolution || generatedResolution);
+
+  if (patientName.length < 3) throw Object.assign(new Error('Informe o nome do paciente.'), { status: 400 });
+  if (!dateValid(consultationDate)) throw Object.assign(new Error(absence ? 'Informe a data da falta.' : 'Informe a data da consulta.'), { status: 400 });
+  if (specialty.length < 2) throw Object.assign(new Error('Informe a especialidade.'), { status: 400 });
+  if (!resolution) throw Object.assign(new Error('Informe a resolutividade/conduta registrada na teleconsulta.'), { status: 400 });
+
+  let returnDueDate = '';
+  if (needsReturn) {
+    if (dateValid(explicitDue)) returnDueDate = explicitDue;
+    else if (Number.isInteger(returnDays) && returnDays > 0 && returnDays <= 730) returnDueDate = returnDueFromRecord(consultationDate, `RETORNO COM ${returnDays} DIAS`);
+    else returnDueDate = returnDueFromRecord(consultationDate, resolution);
+  }
+  const reminderDates = needsReturn && returnDueDate ? threeBusinessReminders(returnDueDate) : [];
+  const patientId = await patientIdFor(patientName);
+  const followupId = await followupIdFor(patientId, specialty);
+  const now = new Date().toISOString();
+  const sourceKey = `manual|${patientId}|${normalizeSpecialty(specialty)}|${consultationDate}|${now}`;
+  const eventId = await eventIdFor(sourceKey);
+
+  const [existingPatient, existingFollowup] = await Promise.all([
+    firestoreGet(env, `${PATIENTS}/${patientId}`),
+    firestoreGet(env, `${FOLLOWUPS}/${followupId}`)
+  ]);
+
+  const patient = {
+    name: patientName,
+    normalizedName: normalizePatientName(patientName),
+    updatedAt: now,
+    createdAt: now,
+    needsReview: /\.\.\.|\bSAN\s*$|\bDOS\s*$/.test(patientName.toUpperCase())
+  };
+
+  const event = {
+    patientId,
+    patientName,
+    followupId,
+    eventType: absence ? 'falta' : 'consulta',
+    eventDate: consultationDate,
+    specialty,
+    resolution,
+    notes,
+    followupMode,
+    discharged,
+    absence,
+    absenceReason,
+    needsReturn,
+    returnDueDate,
+    returnDays: Number.isInteger(returnDays) ? returnDays : 0,
+    returnConditionType,
+    returnConditionDetail,
+    reminderDates,
+    source: 'manual',
+    createdAt: now,
+    createdBy: user.username
+  };
+
+  const followup = {
+    patientId,
+    patientName,
+    specialty,
+    specialtyKey: normalizeSpecialty(specialty),
+    lastConsultationDate: consultationDate,
+    resolution,
+    notes,
+    followupMode,
+    discharged,
+    absence,
+    absenceReason,
+    absencePendingRequest: absence,
+    returnConditionType,
+    returnConditionDetail,
+    returnDueDate,
+    reminderDates,
+    requestedAt: '',
+    requestedBy: '',
+    active: Boolean(needsReturn),
+    deletedAt: '',
+    deletedBy: '',
+    source: 'manual',
+    updatedAt: now,
+    createdBy: user.username
+  };
+
+  await firestoreAtomicCommit(env, [
+    {
+      path: `${PATIENTS}/${patientId}`,
+      data: patient,
+      mode: existingPatient ? 'update' : 'create'
+    },
+    {
+      path: `${EVENTS}/${eventId}`,
+      data: event,
+      mode: 'create'
+    },
+    {
+      path: `${FOLLOWUPS}/${followupId}`,
+      data: followup,
+      mode: existingFollowup ? 'update' : 'create'
+    }
+  ]);
+
+  return {
+    patientId,
+    followupId,
+    eventId,
+    followup: publicFollowup({ id: followupId, ...followup })
+  };
 }
 
 async function correctPatientName(env, user, patientId, input = {}) {
@@ -391,7 +567,6 @@ async function correctSpecialty(env, user, followupId, input = {}, options = {})
   };
 }
 
-
 function specialtyCandidate(document) {
   const previous = clean(document?.specialty, 120);
   const canonical = canonicalSpecialtyName(previous);
@@ -565,10 +740,11 @@ export async function handleTelemedicineRoute(request, env, origin, originAllowe
   const patientNameMatch = url.pathname.match(/^\/api\/telemedicina\/patients\/([a-f0-9]{20,64})\/name$/);
   const specialtyMatch = url.pathname.match(/^\/api\/telemedicina\/followups\/([a-f0-9]{20,64})\/specialty$/);
   const specialtyMaintenance = url.pathname === '/api/telemedicina/maintenance/specialties';
+  const consultationCreate = url.pathname === '/api/telemedicina/consultations' && request.method === 'POST';
   const correctionRoute = Boolean(patientNameMatch || specialtyMatch) && request.method === 'PATCH';
   const maintenanceRoute = specialtyMaintenance && (request.method === 'GET' || request.method === 'POST');
 
-  if (!correctionRoute && !maintenanceRoute) {
+  if (!consultationCreate && !correctionRoute && !maintenanceRoute) {
     return handleLegacyTelemedicineRoute(request, env, origin, originAllowed);
   }
 
@@ -580,6 +756,11 @@ export async function handleTelemedicineRoute(request, env, origin, originAllowe
   }
 
   try {
+    if (consultationCreate) {
+      const body = await request.json().catch(() => ({}));
+      return json(await recordConsultationAtomic(env, user, body), 201, origin);
+    }
+
     if (specialtyMaintenance) {
       if (!user.telemedicineAdmin) {
         return json({ error: 'Somente o Desenvolvedor pode unificar todas as especialidades.' }, 403, origin);
@@ -597,6 +778,9 @@ export async function handleTelemedicineRoute(request, env, origin, originAllowe
     }
     return json({ followup: await correctSpecialty(env, user, specialtyMatch[1], body) }, 200, origin);
   } catch (error) {
-    return json({ error: error?.message || 'Não foi possível corrigir o cadastro.' }, Number(error?.status || 500), origin);
+    const fallback = consultationCreate
+      ? 'Não foi possível salvar a consulta.'
+      : 'Não foi possível corrigir o cadastro.';
+    return json({ error: error?.message || fallback }, Number(error?.status || 500), origin);
   }
 }
