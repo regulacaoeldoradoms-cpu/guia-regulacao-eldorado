@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   conditionReadyForRequest,
   deriveFollowupStatus,
+  isDischargeAchievement,
   looksClosed,
   reminderMetaFor,
   returnDueFromRecord
@@ -40,4 +41,10 @@ assert.equal(looksClosed('DESISTÊNCIA DO TRATAMENTO'), true);
 assert.equal(looksClosed('ENCAMINHADO PARA ATENDIMENTO PRESENCIAL'), true);
 assert.equal(looksClosed('RETORNO APÓS FISIOTERAPIA - JÁ REALIZADO'), false);
 
-console.log('Telemedicina Outcomes V25: OK');
+assert.equal(isDischargeAchievement({ active: false, followupMode: 'discharge', resolution: 'ALTA DO EPISÓDIO' }), true);
+assert.equal(isDischargeAchievement({ active: false, resolution: 'ALTA' }), true);
+assert.equal(isDischargeAchievement({ active: false, resolution: 'PACIENTE DESISTIU DO TRATAMENTO' }), false);
+assert.equal(isDischargeAchievement({ active: false, resolution: 'ENCAMINHADO PARA ATENDIMENTO PRESENCIAL' }), false);
+assert.equal(deriveFollowupStatus({ active: false, followupMode: 'discharge', resolution: 'ALTA DO EPISÓDIO' }, '2026-09-09'), 'CONCLUÍDO');
+
+console.log('Telemedicina Outcomes V25 + Alta Conquista V28: OK');
