@@ -26,12 +26,27 @@
     location.replace('/login/');
   });
 
+  const loading = document.getElementById('homeLoading');
+  const fallback = document.getElementById('toolsFallback');
+  const socialHome = document.getElementById('socialHome');
+
+  function showHomeSurface(surface) {
+    if (loading) {
+      loading.hidden = surface !== 'loading';
+      loading.setAttribute('aria-busy', surface === 'loading' ? 'true' : 'false');
+    }
+    if (fallback) fallback.hidden = surface !== 'tools';
+    if (socialHome) socialHome.hidden = surface !== 'social';
+    document.body.classList.toggle('home-loading-active', surface === 'loading');
+  }
+
+  function announceLoading(message) {
+    if (loading) loading.setAttribute('aria-label', message);
+  }
+
   function showToolsFallback(message = '') {
-    const fallback = document.getElementById('toolsFallback');
-    const socialHome = document.getElementById('socialHome');
     const notice = document.getElementById('homeFallbackNotice');
-    if (socialHome) socialHome.hidden = true;
-    if (fallback) fallback.hidden = false;
+    showHomeSurface('tools');
     if (notice) {
       notice.textContent = message;
       notice.hidden = !message;
@@ -67,7 +82,7 @@
       return await social.getConfig(10000);
     } catch (error) {
       if (!socialErrorIsRetryable(error)) throw error;
-      showToolsFallback('Conectando à Camada Social. Suas Ferramentas continuam disponíveis enquanto a conexão é concluída.');
+      announceLoading('Conectando à Camada Social');
       await wait(900);
       return social.getConfig(30000);
     }
@@ -79,13 +94,12 @@
     available: false,
     toolsPath: '/ferramentas/'
   };
-  showToolsFallback('Conectando à Camada Social...');
-  window.PortalSocialNavigation?.mount(user, socialConfig);
+  showHomeSurface('loading');
   try {
     socialConfig = await loadSocialConfigWithRecovery();
   } catch (error) {
-    showToolsFallback(socialFailureMessage(error));
     window.PortalSocialNavigation?.mount(user, socialConfig);
+    showToolsFallback(socialFailureMessage(error));
     return;
   }
 
@@ -107,6 +121,7 @@
 
   try {
     await window.PortalSocialHome.mount(user, socialConfig);
+    showHomeSurface('social');
   } catch (error) {
     showToolsFallback(socialFailureMessage(error));
   }
