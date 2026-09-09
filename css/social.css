@@ -444,7 +444,7 @@
 /* O celular pode anunciar uma viewport larga (modo desktop/zoom do navegador).
    A classe aplicada pela Home garante uma composição de aplicativo nesses casos. */
 body.mobile-home-mode.has-social-navigation {
-  padding-bottom: calc(clamp(84px, 10vw, 100px) + env(safe-area-inset-bottom));
+  padding-bottom: calc(clamp(108px, 15vw, 150px) + env(safe-area-inset-bottom));
 }
 
 body.mobile-home-mode .social-global-nav { display: none; }
@@ -455,11 +455,11 @@ body.mobile-home-mode .social-mobile-nav {
   bottom: 0;
   left: 0;
   z-index: 13000;
-  min-height: clamp(74px, 9vw, 88px);
+  min-height: clamp(96px, 13.5vw, 132px);
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
-  padding: clamp(5px, .8vw, 8px) max(6px, env(safe-area-inset-right)) calc(clamp(5px, .8vw, 8px) + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+  padding: clamp(8px, 1.2vw, 12px) max(8px, env(safe-area-inset-right)) calc(clamp(8px, 1.2vw, 12px) + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
   border-top: 2px solid #b9cfdd;
   background: rgba(255, 255, 255, .98);
   box-shadow: 0 -8px 24px rgba(13, 50, 78, .16);
@@ -467,52 +467,54 @@ body.mobile-home-mode .social-mobile-nav {
 
 body.mobile-home-mode .social-mobile-nav-link {
   min-width: 0;
-  min-height: clamp(64px, 8vw, 78px);
+  min-height: clamp(88px, 12vw, 117px);
   flex-direction: column;
-  gap: clamp(3px, .45vw, 5px);
-  padding: clamp(5px, .7vw, 7px) 3px;
-  border-radius: 12px;
-  font-size: clamp(14px, 1.9vw, 18px);
-  line-height: 1.1;
+  gap: clamp(4px, .7vw, 8px);
+  padding: clamp(7px, 1.1vw, 11px) 4px;
+  border-radius: 16px;
+  font-size: clamp(18px, 2.85vw, 27px);
+  line-height: 1.05;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 body.mobile-home-mode .social-mobile-nav-link[aria-current="page"] {
   color: var(--social-blue);
   background: #e5f3fb;
-  box-shadow: inset 0 3px var(--social-blue);
+  box-shadow: inset 0 4px var(--social-blue);
 }
 
 body.mobile-home-mode .social-mobile-nav-link .social-nav-icon {
-  width: clamp(30px, 3.7vw, 36px);
-  height: clamp(30px, 3.7vw, 36px);
+  width: clamp(40px, 5.55vw, 54px);
+  height: clamp(40px, 5.55vw, 54px);
 }
 
 body.mobile-home-mode .social-mobile-nav-link .social-nav-badge {
-  min-width: clamp(22px, 2.6vw, 26px);
-  height: clamp(22px, 2.6vw, 26px);
-  font-size: clamp(11px, 1.3vw, 13px);
+  min-width: clamp(29px, 3.9vw, 39px);
+  height: clamp(29px, 3.9vw, 39px);
+  font-size: clamp(14px, 1.95vw, 19.5px);
   position: absolute;
-  top: clamp(2px, .4vw, 4px);
-  left: calc(50% + clamp(9px, 1.2vw, 12px));
+  top: clamp(3px, .6vw, 6px);
+  left: calc(50% + clamp(12px, 1.8vw, 18px));
 }
 
 body.mobile-home-mode .social-shell {
   width: 100%;
-  margin: 0 auto clamp(32px, 4vw, 40px);
-  padding: clamp(10px, 1.4vw, 14px) clamp(10px, 1.4vw, 14px) 0;
-  font-size: clamp(17px, 2.15vw, 21px);
+  margin: 0 auto clamp(40px, 6vw, 60px);
+  padding: clamp(13px, 2.1vw, 21px) clamp(13px, 2.1vw, 21px) 0;
+  font-size: clamp(21px, 3.225vw, 31.5px);
 }
 
 body.mobile-home-mode .social-layout {
   display: flex;
   flex-direction: column;
-  gap: clamp(9px, 1.2vw, 12px);
+  gap: clamp(12px, 1.8vw, 18px);
 }
 
 body.mobile-home-mode .social-layout > .social-column {
   width: 100%;
   margin: 0;
-  gap: clamp(9px, 1.2vw, 12px);
+  gap: clamp(12px, 1.8vw, 18px);
 }
 
 body.mobile-home-mode .social-profile-rail { display: none; }
@@ -524,78 +526,78 @@ body.mobile-home-mode .social-tools-rail {
 }
 
 body.mobile-home-mode .social-card {
-  border-radius: clamp(14px, 1.8vw, 18px);
-  box-shadow: 0 2px 9px rgba(13, 54, 86, .08);
+  border-radius: clamp(18px, 2.7vw, 27px);
+  box-shadow: 0 3px 13px rgba(13, 54, 86, .09);
 }
 
 body.mobile-home-mode .social-composer {
-  padding: clamp(14px, 1.9vw, 19px);
+  padding: clamp(18px, 2.85vw, 28.5px);
 }
 
 body.mobile-home-mode .social-composer h2 {
-  margin-bottom: clamp(9px, 1.2vw, 12px);
+  margin-bottom: clamp(12px, 1.8vw, 18px);
   font-size: 1em;
 }
 
 body.mobile-home-mode .social-textarea {
-  min-height: clamp(82px, 9.8vw, 96px);
-  padding: clamp(11px, 1.5vw, 15px);
-  border-radius: 14px;
+  min-height: clamp(108px, 14.7vw, 144px);
+  padding: clamp(14px, 2.25vw, 22.5px);
+  border-radius: 20px;
   font-size: 1em;
   line-height: 1.45;
 }
 
 body.mobile-home-mode .social-composer-footer {
-  margin-top: clamp(9px, 1.2vw, 12px);
+  margin-top: clamp(12px, 1.8vw, 18px);
   align-items: center;
   flex-direction: row;
-  gap: clamp(8px, 1.2vw, 12px);
+  gap: clamp(10px, 1.8vw, 18px);
 }
 
 body.mobile-home-mode .social-composer-footer .social-select {
   width: auto;
   min-width: 0;
   max-width: none;
-  min-height: clamp(48px, 6.2vw, 60px);
+  min-height: clamp(64px, 9.3vw, 90px);
   flex: 1 1 auto;
-  padding: clamp(10px, 1.3vw, 13px) clamp(12px, 1.5vw, 15px);
+  padding: clamp(13px, 1.95vw, 19.5px) clamp(15px, 2.25vw, 22.5px);
   font-size: .95em;
 }
 
 body.mobile-home-mode .social-composer-footer .social-button {
   width: auto;
-  min-width: clamp(102px, 12vw, 118px);
-  min-height: clamp(48px, 6.2vw, 60px);
+  min-width: clamp(136px, 18vw, 177px);
+  min-height: clamp(64px, 9.3vw, 90px);
   flex: 0 0 auto;
-  padding-right: clamp(14px, 1.8vw, 18px);
-  padding-left: clamp(14px, 1.8vw, 18px);
+  padding-right: clamp(18px, 2.7vw, 27px);
+  padding-left: clamp(18px, 2.7vw, 27px);
 }
 
 body.mobile-home-mode .social-status {
   margin: 0;
-  padding: clamp(11px, 1.4vw, 14px);
+  padding: clamp(14px, 2.1vw, 21px);
   font-size: .9em;
 }
-body.mobile-home-mode .social-skeleton { min-height: clamp(110px, 13vw, 128px); }
+body.mobile-home-mode .social-skeleton { min-height: clamp(145px, 19.5vw, 192px); }
 
-body.mobile-home-mode .social-post { padding: clamp(14px, 1.9vw, 19px); }
+body.mobile-home-mode .social-post { padding: clamp(18px, 2.85vw, 28.5px); }
 body.mobile-home-mode .social-post-header {
-  grid-template-columns: clamp(46px, 5.3vw, 52px) minmax(0, 1fr) clamp(48px, 5.8vw, 56px);
-  gap: clamp(9px, 1.2vw, 12px);
+  grid-template-columns: clamp(60px, 7.95vw, 78px) minmax(0, 1fr) clamp(64px, 8.7vw, 84px);
+  gap: clamp(12px, 1.8vw, 18px);
 }
 body.mobile-home-mode .social-post-header .social-avatar {
-  width: clamp(46px, 5.3vw, 52px);
-  height: clamp(46px, 5.3vw, 52px);
+  width: clamp(60px, 7.95vw, 78px);
+  height: clamp(60px, 7.95vw, 78px);
 }
 body.mobile-home-mode .social-post-author a { font-size: .95em; }
 body.mobile-home-mode .social-post-author span,
 body.mobile-home-mode .social-post-meta { font-size: .78em; }
 body.mobile-home-mode .social-icon-button {
-  width: clamp(48px, 5.8vw, 56px);
-  height: clamp(48px, 5.8vw, 56px);
+  width: clamp(64px, 8.7vw, 84px);
+  height: clamp(64px, 8.7vw, 84px);
 }
 body.mobile-home-mode .social-post-body {
-  margin: clamp(12px, 1.5vw, 15px) 0 clamp(10px, 1.3vw, 13px);
+  margin: clamp(16px, 2.25vw, 22.5px) 0 clamp(13px, 1.95vw, 19.5px);
   font-size: 1em;
   line-height: 1.5;
 }
@@ -603,29 +605,29 @@ body.mobile-home-mode .social-post-actions {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
-  gap: 2px;
-  margin-top: 10px;
-  padding-top: 7px;
+  gap: 3px;
+  margin-top: 15px;
+  padding-top: 11px;
 }
 body.mobile-home-mode .social-action {
   min-width: 0;
-  min-height: clamp(48px, 6vw, 58px);
+  min-height: clamp(64px, 9vw, 87px);
   justify-content: center;
-  padding: clamp(7px, 1vw, 10px) 4px;
+  padding: clamp(9px, 1.5vw, 15px) 6px;
   font-size: .85em;
 }
 body.mobile-home-mode .social-action svg {
-  width: clamp(20px, 2.5vw, 24px);
-  height: clamp(20px, 2.5vw, 24px);
+  width: clamp(27px, 3.75vw, 36px);
+  height: clamp(27px, 3.75vw, 36px);
 }
 
 body.mobile-home-mode .social-comments {
-  margin-top: 9px;
-  padding-top: 9px;
+  margin-top: 14px;
+  padding-top: 14px;
 }
 body.mobile-home-mode .social-comment .social-avatar {
-  width: clamp(38px, 4.5vw, 44px);
-  height: clamp(38px, 4.5vw, 44px);
+  width: clamp(50px, 6.75vw, 66px);
+  height: clamp(50px, 6.75vw, 66px);
 }
 body.mobile-home-mode .social-comment-bubble a { font-size: .82em; }
 body.mobile-home-mode .social-comment-bubble p { font-size: .9em; }
@@ -635,52 +637,52 @@ body.mobile-home-mode .social-comment-form {
 }
 body.mobile-home-mode .social-comment-form .social-input,
 body.mobile-home-mode .social-comment-form .social-button {
-  min-height: clamp(48px, 5.8vw, 56px);
+  min-height: clamp(64px, 8.7vw, 84px);
 }
 
-body.mobile-home-mode .social-empty { padding: clamp(28px, 4vw, 40px) clamp(18px, 2.5vw, 24px); }
-body.mobile-home-mode .social-empty svg { width: clamp(44px, 5.3vw, 52px); height: clamp(44px, 5.3vw, 52px); }
-body.mobile-home-mode .social-empty h2 { margin-top: clamp(10px, 1.4vw, 14px); font-size: 1em; }
+body.mobile-home-mode .social-empty { padding: clamp(37px, 6vw, 60px) clamp(24px, 3.75vw, 36px); }
+body.mobile-home-mode .social-empty svg { width: clamp(58px, 7.95vw, 78px); height: clamp(58px, 7.95vw, 78px); }
+body.mobile-home-mode .social-empty h2 { margin-top: clamp(13px, 2.1vw, 21px); font-size: 1em; }
 body.mobile-home-mode .social-empty p { font-size: .9em; line-height: 1.5; }
-body.mobile-home-mode #socialFeedMore { width: 100%; min-height: clamp(50px, 6.2vw, 60px); }
+body.mobile-home-mode #socialFeedMore { width: 100%; min-height: clamp(66px, 9.3vw, 90px); }
 
-body.mobile-home-mode .social-shortcuts { margin-top: 2px; }
+body.mobile-home-mode .social-shortcuts { margin-top: 3px; }
 body.mobile-home-mode .social-shortcuts .social-section-heading {
-  padding: clamp(13px, 1.8vw, 18px) clamp(14px, 1.9vw, 19px) clamp(9px, 1.2vw, 12px);
+  padding: clamp(17px, 2.7vw, 27px) clamp(18px, 2.85vw, 28.5px) clamp(12px, 1.8vw, 18px);
   border-bottom: 0;
 }
 body.mobile-home-mode .social-shortcuts .social-section-heading h2 { font-size: 1em; }
 body.mobile-home-mode .social-shortcuts .social-section-heading p { display: none; }
 body.mobile-home-mode .social-shortcuts .portal-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(8px, 1.2vw, 12px);
-  padding: 2px clamp(10px, 1.4vw, 14px) clamp(11px, 1.5vw, 15px);
+  gap: clamp(10px, 1.8vw, 18px);
+  padding: 3px clamp(13px, 2.1vw, 21px) clamp(14px, 2.25vw, 22.5px);
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact {
-  min-height: clamp(128px, 15.5vw, 152px);
-  padding: clamp(11px, 1.5vw, 15px) clamp(6px, 1vw, 10px);
+  min-height: clamp(168px, 23.25vw, 228px);
+  padding: clamp(14px, 2.25vw, 22.5px) clamp(8px, 1.5vw, 15px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: clamp(8px, 1.1vw, 11px);
-  border-radius: 14px;
+  gap: clamp(10px, 1.65vw, 16.5px);
+  border-radius: 20px;
   text-align: center;
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact .hub-card-icon {
-  width: clamp(54px, 6.5vw, 64px);
-  height: clamp(54px, 6.5vw, 64px);
+  width: clamp(72px, 9.75vw, 96px);
+  height: clamp(72px, 9.75vw, 96px);
   margin: 0;
-  border-radius: 14px;
+  border-radius: 20px;
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact .hub-card-icon img {
-  width: clamp(50px, 6.1vw, 60px);
-  height: clamp(50px, 6.1vw, 60px);
-  border-radius: 12px;
+  width: clamp(66px, 9.15vw, 90px);
+  height: clamp(66px, 9.15vw, 90px);
+  border-radius: 18px;
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact .hub-card-icon svg {
-  width: clamp(34px, 4.2vw, 42px);
-  height: clamp(34px, 4.2vw, 42px);
+  width: clamp(45px, 6.3vw, 63px);
+  height: clamp(45px, 6.3vw, 63px);
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact > span:not(.hub-card-icon):not(.hub-card-arrow) {
   width: 100%;
@@ -693,24 +695,24 @@ body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact h3 {
   overflow-wrap: anywhere;
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact .hub-card-arrow { display: none; }
-body.mobile-home-mode .social-shortcuts .social-card-pad { padding: 0 clamp(10px, 1.4vw, 14px) clamp(11px, 1.5vw, 15px); }
+body.mobile-home-mode .social-shortcuts .social-card-pad { padding: 0 clamp(13px, 2.1vw, 21px) clamp(14px, 2.25vw, 22.5px); }
 body.mobile-home-mode .social-shortcuts .social-card-pad .social-button {
   width: 100%;
-  min-height: clamp(50px, 6.2vw, 60px);
+  min-height: clamp(66px, 9.3vw, 90px);
 }
 body.mobile-home-mode .social-safety-card { display: none; }
 
 body.mobile-home-mode .portal-chat {
-  bottom: calc(clamp(94px, 11vw, 112px) + env(safe-area-inset-bottom)) !important;
+  bottom: calc(clamp(126px, 16.5vw, 168px) + env(safe-area-inset-bottom)) !important;
 }
 
 @media (max-width: 390px) {
-  body.mobile-home-mode .social-shell { padding-right: 8px; padding-left: 8px; }
+  body.mobile-home-mode .social-shell { padding-right: 10px; padding-left: 10px; }
   body.mobile-home-mode .social-composer,
-  body.mobile-home-mode .social-post { padding-right: 12px; padding-left: 12px; }
-  body.mobile-home-mode .social-shortcuts .portal-grid { gap: 6px; padding-right: 8px; padding-left: 8px; }
-  body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact { min-height: 124px; padding-right: 5px; padding-left: 5px; }
-  body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact h3 { font-size: .84em; }
+  body.mobile-home-mode .social-post { padding-right: 15px; padding-left: 15px; }
+  body.mobile-home-mode .social-shortcuts .portal-grid { gap: 8px; padding-right: 10px; padding-left: 10px; }
+  body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact { min-height: 165px; padding-right: 6px; padding-left: 6px; }
+  body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact h3 { font-size: .86em; }
 }
 
 @media (prefers-reduced-motion: reduce) {
