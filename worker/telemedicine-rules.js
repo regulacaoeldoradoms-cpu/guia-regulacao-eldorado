@@ -151,6 +151,14 @@ export function reminderMetaFor(followup, today) {
   };
 }
 
+export function isDischargeAchievement(followup) {
+  const mode = clean(followup?.followupMode, 20).toLowerCase();
+  const resolution = normalizeText(followup?.resolution);
+  return followup?.discharged === true
+    || mode === 'discharge'
+    || /\bALTA\b/.test(resolution);
+}
+
 export function looksClosed(resolution) {
   const text = normalizeText(resolution);
   if (!text) return false;
