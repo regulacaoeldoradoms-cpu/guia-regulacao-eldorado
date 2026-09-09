@@ -7,6 +7,8 @@ on:
       - 'worker/telemedicine-router-v2.js'
       - 'worker/tests/firestore-atomic-v29.test.mjs'
       - 'js/telemedicina-altas-v29.js'
+      - 'js/telemedicina-altas-v30.js'
+      - 'css/telemedicina-altas-v30.css'
       - 'telemedicina/index.html'
       - 'docs/TELEMEDICINA-SALVAMENTO-ATOMICO-E-ALTAS-V29.md'
       - '.github/workflows/validate-telemedicine-atomic-v29.yml'
@@ -17,6 +19,8 @@ on:
       - 'worker/telemedicine-router-v2.js'
       - 'worker/tests/firestore-atomic-v29.test.mjs'
       - 'js/telemedicina-altas-v29.js'
+      - 'js/telemedicina-altas-v30.js'
+      - 'css/telemedicina-altas-v30.css'
       - 'telemedicina/index.html'
       - 'docs/TELEMEDICINA-SALVAMENTO-ATOMICO-E-ALTAS-V29.md'
       - '.github/workflows/validate-telemedicine-atomic-v29.yml'
@@ -36,7 +40,7 @@ jobs:
         run: |
           node --input-type=module --check < worker/firestore-atomic-v29.js
           node --input-type=module --check < worker/telemedicine-router-v2.js
-          node --check js/telemedicina-altas-v29.js
+          node --check js/telemedicina-altas-v30.js
       - name: Conferir commit atômico
         run: node --test worker/tests/firestore-atomic-v29.test.mjs
       - name: Conferir contrato do salvamento
@@ -47,13 +51,15 @@ jobs:
           grep -q 'telemedicine_patients' worker/telemedicine-router-v2.js
           grep -q 'telemedicine_events' worker/telemedicine-router-v2.js
           grep -q 'telemedicine_followups' worker/telemedicine-router-v2.js
-      - name: Conferir fila de Altas
+      - name: Conferir fila de Altas atual
         run: |
           grep -q 'id="dischargeQueue"' telemedicina/index.html
           grep -q '>Altas</button>' telemedicina/index.html
           grep -q 'id="normalizeSpecialties" hidden' telemedicina/index.html
-          grep -q 'telemedicina-altas-v29.js?v=20260909-1' telemedicina/index.html
-          grep -q "COMPLETED_STATUS = 'CONCLUÍDO'" js/telemedicina-altas-v29.js
+          grep -q 'data-status-filter="CONCLUÍDO"' telemedicina/index.html
+          grep -q 'telemedicina-altas-v30.js?v=20260909-1' telemedicina/index.html
+          grep -q "COMPLETED_STATUS = 'CONCLUÍDO'" js/telemedicina-altas-v30.js
           grep -q 'data-atomic-save="v29"' telemedicina/index.html
+          grep -q 'data-discharge-queue="v30"' telemedicina/index.html
       - name: Conferir regressões dos desfechos
         run: node --test worker/tests/telemedicine-outcomes-v25.test.mjs
