@@ -43,10 +43,11 @@ notificações não lidas e fila de moderação.
 ## Elegibilidade
 
 - Toda rota social valida a sessão no Worker.
-- Conta Bronze recebe apenas o estado de regularização e não entra em busca, feed
-  ou ações sociais.
-- Conta Prata ou Ouro pode usar as ações permitidas pelas políticas de relação,
-  visibilidade e bloqueio.
+- Toda conta autenticada e ativa, inclusive Bronze e qualquer papel vigente, pode
+  entrar na Home e usar as ações sociais permitidas pelas políticas de relação,
+  visibilidade, rate limit e bloqueio.
+- O nível Bronze, Prata ou Ouro continua informativo para segurança da conta, mas não
+  é gate da Camada Social básica.
 - Conta inativa não chega às rotas porque a sessão é rejeitada pela autenticação.
 - Suspensão social bloqueia ações sociais, mas não altera `auth_users.active`, o
   papel profissional nem o chat institucional.

@@ -22,7 +22,7 @@ export function socialAccountLevel(user) {
   return user?.emailVerified === true || Number(user?.emailVerified) === 1 ? 'prata' : 'bronze';
 }
 
-export function socialGate(user, socialUser, options = {}) {
+export function socialGate(user, socialUser) {
   if (!user || user.active === false || Number(user.active) === 0) {
     return { allowed: false, code: 'ACCOUNT_INACTIVE', message: 'Esta conta não está ativa.' };
   }
@@ -33,16 +33,7 @@ export function socialGate(user, socialUser, options = {}) {
       message: 'A participação social desta conta está suspensa. As ferramentas profissionais continuam disponíveis.'
     };
   }
-  const level = socialAccountLevel(user);
-  if (options.activeAction !== false && level === 'bronze') {
-    return {
-      allowed: false,
-      code: 'ACCOUNT_LEVEL_REQUIRED',
-      requiredLevel: 'prata',
-      message: 'Confirme seu e-mail para alcançar o nível Prata e usar a Camada Social.'
-    };
-  }
-  return { allowed: true, level };
+  return { allowed: true, level: socialAccountLevel(user) };
 }
 
 export function relationshipStateFor(viewerId, targetId, row) {

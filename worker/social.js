@@ -237,7 +237,7 @@ async function profilePayload(env, viewer, target, relationship) {
   if (isSelf) {
     profile.profileVisibility = target.profile_visibility === 'friends' ? 'friends' : 'portal';
     profile.defaultPostAudience = target.default_post_audience === 'self' ? 'self' : 'friends';
-    profile.homePreference = target.home_preference === 'tools' ? 'tools' : 'feed';
+    profile.homePreference = 'feed';
   }
   return profile;
 }
@@ -304,7 +304,7 @@ async function handleConfig(request, env, origin) {
     profile: {
       handle: context.social.handle,
       name: context.social.name || context.social.handle,
-      homePreference: context.social.home_preference === 'tools' ? 'tools' : 'feed',
+      homePreference: 'feed',
       avatarAvailable: Boolean(Number(ownProfile?.avatarAvailable || 0))
     },
     unreadSocialNotifications: Number(unread?.total || 0),
@@ -365,7 +365,7 @@ async function handleMyProfile(request, env, context, origin) {
   }
   if (Object.prototype.hasOwnProperty.call(body, 'homePreference')) {
     if (!['feed', 'tools'].includes(body.homePreference)) return json({ error: 'Página inicial preferida inválida.' }, 400, origin);
-    fields.push('home_preference = ?'); values.push(body.homePreference);
+    fields.push('home_preference = ?'); values.push('feed');
   }
   if (Object.prototype.hasOwnProperty.call(body, 'acceptFriendRequests')) {
     await env.AUTH_DB.prepare('UPDATE auth_users SET accept_friend_requests = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?')
@@ -408,7 +408,7 @@ async function handleSearch(url, env, context, origin) {
   const professional = isSocialProfessional(context.social);
   const roleClause = professional
     ? "(au.role IN ('medico','recepcao','coordenacao','admin') OR tele.enabled = 1)"
-    : "au.role = 'cidadao' AND au.email_verified = 1 AND au.accept_friend_requests = 1 AND su.profile_visibility = 'portal'";
+    : "au.role = 'cidadao' AND au.accept_friend_requests = 1 AND su.profile_visibility = 'portal'";
   const result = await env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name,
       au.job_title AS jobTitle, au.active, au.email_verified AS emailVerified,
       au.accept_friend_requests AS acceptFriendRequests,

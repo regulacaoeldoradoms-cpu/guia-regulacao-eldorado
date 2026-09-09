@@ -1,6 +1,6 @@
 'use strict';
 
-import { accountProgressFor, minimumLevelMet } from './account-levels.js';
+import { accountProgressFor } from './account-levels.js';
 
 const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin']);
 const COUNCIL_ROLES_REQUIRING_VERIFICATION = new Set(['membro', 'presidente']);
@@ -171,24 +171,6 @@ export async function guardCitizenRegistrationUsername(request, origin, originAl
     error: 'Este nome de usuário é reservado para identificação institucional do portal. Escolha outro.',
     code: 'USERNAME_RESERVED'
   }, 409, origin, originAllowed);
-}
-
-export async function guardCitizenLevelMutation(request, env, validatePortalSession, origin, originAllowed = true) {
-  const url = new URL(request.url);
-  if (url.pathname !== '/api/auth/security' || request.method !== 'PATCH') return null;
-
-  const actor = await validatePortalSession(request, env, []).catch(() => null);
-  if (!actor) return null;
-  const body = await request.clone().json().catch(() => ({}));
-
-  if (body.acceptFriendRequests === true && !minimumLevelMet(actor, 'prata')) {
-    return json({
-      error: 'Confirme seu e-mail para alcançar o nível Prata e desbloquear esta preferência.',
-      code: 'ACCOUNT_LEVEL_REQUIRED',
-      requiredLevel: 'prata'
-    }, 403, origin, originAllowed);
-  }
-  return null;
 }
 
 export async function sanitizeCitizenRegistrationRequest(request) {

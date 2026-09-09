@@ -27,7 +27,7 @@ AUTH_REQUIRE_EMAIL_VERIFICATION = "false"
 # Só ligar novamente de forma deliberada se houver uma nova migração de administradores legados.
 AUTH_MIGRATE_LEGACY_ADMINS = "false"
 # Camada social liberada em produção: backend e Home social ativos.
-# A raiz exibe o feed para contas elegíveis; Ferramentas continua como fallback seguro.
+# A raiz exibe o feed para toda conta ativa; Ferramentas continua como fallback seguro.
 SOCIAL_BACKEND_ENABLED = "true"
 SOCIAL_HOME_ENABLED = "true"
 

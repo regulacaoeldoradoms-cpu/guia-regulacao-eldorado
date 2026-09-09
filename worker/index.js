@@ -18,7 +18,6 @@ import {
 import {
   augmentAuthResponse,
   enforceProfessionalEmailGate,
-  guardCitizenLevelMutation,
   guardCitizenRegistrationBasics,
   guardCitizenRegistrationUsername,
   guardDeveloperSelfMutation,
@@ -186,9 +185,6 @@ export default {
 
     const selfMutationBlock = await guardDeveloperSelfMutation(request, env, validatePortalSession, origin, originAllowed);
     if (selfMutationBlock) return selfMutationBlock;
-
-    const citizenLevelBlock = await guardCitizenLevelMutation(request, env, validatePortalSession, origin, originAllowed);
-    if (citizenLevelBlock) return citizenLevelBlock;
 
     const emailRemovalBlock = await guardSecurityEmailRemoval(request, env, validatePortalSession, origin, originAllowed);
     if (emailRemovalBlock) return emailRemovalBlock;

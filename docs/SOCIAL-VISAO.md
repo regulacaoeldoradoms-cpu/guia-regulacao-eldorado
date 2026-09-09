@@ -1,6 +1,6 @@
 # Camada Social V1 — visão de produto e navegação
 
-Decisão permanente atualizada em 08/09/2026.
+Decisão permanente atualizada em 09/09/2026.
 
 ## Estado
 
@@ -11,11 +11,13 @@ e a rota `/ferramentas/` estão implementados.
 A ativação passou a ser efetiva em produção em 08/09/2026:
 
 - `SOCIAL_BACKEND_ENABLED=true` libera APIs, schema e superfícies sociais;
-- `SOCIAL_HOME_ENABLED=true` faz da raiz `/` a Home social para contas elegíveis.
+- `SOCIAL_HOME_ENABLED=true` faz da raiz `/` a Home social para todas as contas
+  autenticadas e ativas.
 
 Ferramentas permanece como fallback operacional independente. Se a API social falhar,
-a conta não for elegível ou a Home for deliberadamente desativada, `/` volta ao
-catálogo de trabalho sem perder dados sociais nem interromper os módulos profissionais.
+a participação social estiver suspensa ou a Home for deliberadamente desativada, `/`
+volta ao catálogo de trabalho sem perder dados sociais nem interromper os módulos
+profissionais.
 
 ## Princípio de produto
 
@@ -47,9 +49,9 @@ seguindo suas autorizações próprias.
 
 ## Navegação global implantada
 
-No desktop, a navegação oferece Início, Amigos, Ferramentas, Notificações e Perfil
-conforme elegibilidade. No mobile, prioriza Início, Amigos, Ferramentas, Avisos e
-Perfil com áreas sociais omitidas para contas sem o gate.
+No desktop, a navegação oferece Início, Amigos, Ferramentas, Notificações e Perfil.
+No mobile, prioriza Início, Amigos, Ferramentas, Avisos e Perfil. O catálogo de
+Ferramentas é o único trecho dessa composição que varia conforme cargo e permissões.
 
 Não existe item independente `Conta` na navegação global. A área de foto/nome no
 cabeçalho continua sendo o acesso às configurações privadas em `/conta/`. `Perfil`
@@ -60,16 +62,13 @@ Chat continua como recurso flutuante apenas para os cargos profissionais já
 autorizados. Notificações sociais usam rota e tabela próprias; avisos do Conselho
 continuam no Canal do Cidadão.
 
-## Página inicial preferida
+## Home social universal
 
-Em `/conta/`, usuários com acesso social podem escolher:
-
-- `Feed`: abrir a Home social;
-- `Ferramentas`: entrar diretamente em `/ferramentas/`.
-
-Login continua levando à raiz, que aplica a preferência depois de validar sessão e
-configuração. Troca obrigatória de senha, primeiro acesso e regularização de
-segurança sempre têm precedência.
+O login comum leva à raiz e a raiz abre a Home social para toda conta autenticada e
+ativa. Não existe preferência individual para substituir a Home por Ferramentas.
+Quem precisa trabalhar entra pela aba `Ferramentas`, que continua em primeiro nível e
+mostra somente os módulos autorizados para aquela conta. Troca obrigatória de senha e
+primeiro acesso continuam tendo precedência.
 
 ## Feed social V1
 
@@ -106,8 +105,10 @@ Amizade, perfil, nível ou reação nunca são usados como autorização profiss
 ## Privacidade e elegibilidade
 
 - A camada é autenticada e suas páginas dedicadas são `noindex,nofollow`.
-- Ações sociais ativas exigem Conta Prata; Ouro não é requisito para a V1 básica.
-- Bronze continua usando as capacidades cidadãs vigentes sem descoberta social.
+- Perfil, amizades, feed e ações sociais básicas estão disponíveis desde a Conta
+  Bronze; o nível da conta não altera a Home.
+- A confirmação do e-mail continua fortalecendo a segurança e liberando a foto de
+  perfil, sem controlar o acesso à Camada Social básica.
 - Cidadãos descobrem somente cidadãos que optaram pela visibilidade e pelos pedidos.
 - Profissionais não aparecem em busca cidadã ampla.
 - Perfil profissional mostra cargo autêntico fornecido pelo backend.

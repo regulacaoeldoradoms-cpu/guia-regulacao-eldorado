@@ -115,10 +115,11 @@ o chat pode funcionar.
 
 ## Privacidade, abuso e moderação
 
-- Ações sociais ativas exigem Conta Prata; autocadastro Bronze mantém os recursos
-  cidadãos já permitidos, sem descoberta nem interação social. Relações profissionais
-  podem ser pré-semeadas no backend antes da regularização, como exige a regra
-  institucional, mas a interface continua bloqueada até o gate Prata.
+- Toda conta autenticada e ativa pode usar perfil, descoberta, amizades e feed desde
+  o primeiro acesso. A confirmação do e-mail continua sendo uma evolução de segurança
+  e requisito da foto de perfil, não um gate da Camada Social básica.
+- Relações profissionais podem ser pré-semeadas no backend conforme a regra
+  institucional, preservando remoções e bloqueios.
 - `accept_friend_requests` é respeitado nos pedidos manuais.
 - Busca e pedidos possuem rate limit em D1.
 - Perfil, post e comentário podem ser denunciados.
