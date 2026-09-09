@@ -1,8 +1,8 @@
 'use strict';
 
 const CACHE_VERSION = '20260909-1';
-const STATIC_CACHE = \`portal-static-\${CACHE_VERSION}\`;
-const PAGE_CACHE = \`portal-pages-\${CACHE_VERSION}\`;
+const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
+const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
 const MAX_WARM_ROUTES = 18;
 const MAX_ASSETS_PER_PAGE = 90;
@@ -90,7 +90,7 @@ function deduped(key, operation) {
 }
 
 async function fetchPage(request, key, event = null) {
-  const id = \`page:\${new URL(key.url).pathname}\`;
+  const id = `page:${new URL(key.url).pathname}`;
   return deduped(id, async () => {
     const preloaded = event?.preloadResponse ? await event.preloadResponse.catch(() => null) : null;
     const response = preloaded || await fetch(request);
@@ -124,7 +124,7 @@ async function fetchAsset(request, event) {
   const cache = await caches.open(STATIC_CACHE);
   const cached = await cache.match(request);
   const versioned = new URL(request.url).searchParams.has('v');
-  const id = \`asset:\${request.url}\`;
+  const id = `asset:${request.url}`;
   const update = deduped(id, async () => {
     const response = await fetch(request);
     await putResponse(STATIC_CACHE, request, response);
@@ -189,7 +189,7 @@ async function warmAsset(value, parseNestedCss = true) {
   const cache = await caches.open(STATIC_CACHE);
   let response = await cache.match(request);
   if (!response) {
-    response = await deduped(\`asset:\${request.url}\`, async () => {
+    response = await deduped(`asset:${request.url}`, async () => {
       const fetched = await fetch(request);
       await putResponse(STATIC_CACHE, request, fetched);
       return fetched;
@@ -279,7 +279,7 @@ self.addEventListener('message', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const chatUser = String(event.notification?.data?.chatUser || '');
-  const fallbackUrl = event.notification?.data?.url || (chatUser ? \`/?chat=\${encodeURIComponent(chatUser)}\` : '/');
+  const fallbackUrl = event.notification?.data?.url || (chatUser ? `/?chat=${encodeURIComponent(chatUser)}` : '/');
 
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
