@@ -27,7 +27,7 @@ const CORE_RESOURCES = Object.freeze([
   '/js/portal-performance.js?v=20260909-1',
   '/js/auth-client.js?v=20260909-1',
   '/js/tools-catalog.js?v=20260909-1',
-  '/assets/portal-regulacao-icon.webp',
+  '/assets/portal-regulacao-icon.webp?v=20260909-1',
   '/assets/portal-regulacao-logo-v2.svg?v=20260909-1'
 ]);
 
@@ -150,9 +150,23 @@ function referencedAssets(text, baseUrl, contentType = '') {
   };
 
   if (contentType.includes('text/css')) {
-    for (const match of text.matchAll(/url\(\s*([^)]*?)\s*\)/gi)) add(match[1]);
+    for (const match of text.matchAll(/url\(\s*([^)]*?)\s*\)/gi)) {
+      const value = String(match[1] || '').replace(/^['"]|['"]$/g, '');
+      try {
+        const url = new URL(value, baseUrl);
+        if (/\.(?:woff2?|ttf)$/i.test(url.pathname)) add(value);
+      } catch (_) {}
+    }
   } else {
-    for (const match of text.matchAll(/\b(?:src|href)=["']([^"'<>]+)["']/gi)) add(match[1]);
+    for (const match of text.matchAll(/<script\b[^>]*\bsrc=["']([^"'<>]+)["'][^>]*>/gi)) add(match[1]);
+    for (const match of text.matchAll(/<link\b[^>]*>/gi)) {
+      const tag = match[0];
+      const rel = tag.match(/\brel=["']([^"']+)["']/i)?.[1]?.toLowerCase() || '';
+      const href = tag.match(/\bhref=["']([^"'<>]+)["']/i)?.[1] || '';
+      const as = tag.match(/\bas=["']([^"']+)["']/i)?.[1]?.toLowerCase() || '';
+      const critical = rel.split(/\s+/).some((value) => ['stylesheet', 'modulepreload', 'preload'].includes(value));
+      if (critical && as !== 'image') add(href);
+    }
   }
   return Array.from(new Set(values)).slice(0, MAX_ASSETS_PER_PAGE);
 }
