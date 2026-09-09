@@ -14,7 +14,7 @@ test('primeiro acesso deixa a troca de senha inequívoca sem alterar a regra de 
   const account = read('js/account.js');
   const worker = read('worker/auth-management-v2.js');
 
-  assert.match(loader, /account-first-access\.js\?v=20260909-1/);
+  assert.match(loader, /account-first-access\.js\?v=20260909-2/);
   assert.match(ui, /user\?\.mustChangePassword === true/);
   assert.match(ui, /Defina sua nova senha para continuar\./);
   assert.match(ui, /Seu acesso ainda não foi concluído\./);
@@ -34,6 +34,17 @@ test('primeiro acesso deixa a troca de senha inequívoca sem alterar a regra de 
   assert.match(worker, /session_version = session_version \+ 1/);
 });
 
+test('o modo de primeiro acesso ganha contraste por camadas sem perder a hierarquia', () => {
+  const ui = read('js/account-first-access.js');
+  assert.match(ui, /linear-gradient\(180deg,#dfeaf2 0%,#edf4f8 50%,#e3edf3 100%\)/);
+  assert.match(ui, /linear-gradient\(135deg,#e6f1f9 0%,#dff3ef 100%\)/);
+  assert.match(ui, /background:linear-gradient\(135deg,#dceff5 0%,#e4f4f1 100%\)/);
+  assert.match(ui, /background:linear-gradient\(180deg,#fbfdff 0%,#f3f8fb 100%\)/);
+  assert.match(ui, /border:1px solid #9fb8cc!important/);
+  assert.match(ui, /background:#eaf2f7/);
+  assert.match(ui, /#changePasswordButton/);
+});
+
 test('o modo de primeiro acesso oculta conteúdo secundário e preserva saída', () => {
   const ui = read('js/account-first-access.js');
   assert.match(ui, /#accountLevelPanel/);
@@ -45,5 +56,5 @@ test('o modo de primeiro acesso oculta conteúdo secundário e preserva saída',
 
 test('cache do portal é renovado para entregar a nova experiência', () => {
   const sw = read('portal-sw.js');
-  assert.match(sw, /const CACHE_VERSION = '20260909-2'/);
+  assert.match(sw, /const CACHE_VERSION = '20260909-3'/);
 });

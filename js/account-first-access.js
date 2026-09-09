@@ -30,24 +30,34 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
+      body.${MODE_CLASS}{
+        background:
+          radial-gradient(circle at 12% 18%,rgba(18,101,200,.08),transparent 28%),
+          radial-gradient(circle at 88% 16%,rgba(15,159,116,.09),transparent 30%),
+          linear-gradient(180deg,#dfeaf2 0%,#edf4f8 50%,#e3edf3 100%) !important
+      }
+      body.${MODE_CLASS} .portal-shell{background:transparent}
       body.${MODE_CLASS} .portal-main{max-width:1180px}
       body.${MODE_CLASS} .portal-hero{
         padding:34px 40px;
-        border:1px solid #c6dbe8;
-        background:linear-gradient(135deg,#f8fcff 0%,#edf8f8 100%);
-        box-shadow:0 16px 36px rgba(15,55,86,.08)
+        border:1px solid #9fc2d7;
+        background:linear-gradient(135deg,#e6f1f9 0%,#dff3ef 100%);
+        box-shadow:0 18px 40px rgba(15,55,86,.13),inset 0 1px 0 rgba(255,255,255,.7)
       }
+      body.${MODE_CLASS} .portal-hero::after{background:radial-gradient(circle,rgba(19,184,202,.24),rgba(19,184,202,0) 70%)}
       body.${MODE_CLASS} .portal-hero-copy{max-width:920px}
-      body.${MODE_CLASS} .portal-hero-copy .portal-eyebrow{color:#087b82;letter-spacing:.12em}
+      body.${MODE_CLASS} .portal-hero-copy .portal-eyebrow{color:#08737d;letter-spacing:.12em}
       body.${MODE_CLASS} .portal-hero-copy h2{
         max-width:860px;
         margin-top:10px;
+        color:#0a2b4b;
         font-size:clamp(2rem,3.7vw,3.15rem);
         line-height:1.06
       }
       body.${MODE_CLASS} .portal-hero-copy p{
         max-width:860px;
         margin-top:14px;
+        color:#49677d;
         font-size:1.08rem;
         line-height:1.62
       }
@@ -55,10 +65,13 @@
       body.${MODE_CLASS} .account-layout,
       body.${MODE_CLASS} #emailVerificationNotice{display:none!important}
       body.${MODE_CLASS} #accountHomeLink[aria-disabled="true"]{
-        opacity:.64;
+        opacity:.76;
         cursor:not-allowed;
         pointer-events:none;
-        border-style:dashed
+        color:rgba(255,255,255,.78);
+        background:rgba(5,43,79,.24)!important;
+        border:1px dashed rgba(255,255,255,.38)!important;
+        box-shadow:none!important
       }
       body.${MODE_CLASS} #firstAccessNotice{
         display:grid!important;
@@ -69,20 +82,22 @@
         margin:24px auto 0;
         padding:18px 20px;
         color:#123d5b;
-        background:#eef8fb;
-        border:1px solid #a9d2df;
-        border-left:5px solid #0a8b91;
+        background:linear-gradient(135deg,#dceff5 0%,#e4f4f1 100%);
+        border:1px solid #79b4c4;
+        border-left:6px solid #087c84;
         border-radius:16px;
-        box-shadow:0 10px 24px rgba(18,73,99,.08)
+        box-shadow:0 12px 28px rgba(18,73,99,.13)
       }
       body.${MODE_CLASS} #firstAccessNotice .first-access-notice-icon{
         width:44px;
         height:44px;
         display:grid;
         place-items:center;
+        border:1px solid #8bc9c7;
         border-radius:12px;
-        color:#0b7078;
-        background:#d9f0f2
+        color:#09676d;
+        background:#c7e9e7;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.65)
       }
       body.${MODE_CLASS} #firstAccessNotice .first-access-notice-icon svg,
       body.${MODE_CLASS} .first-access-password-toggle svg,
@@ -94,25 +109,51 @@
       }
       body.${MODE_CLASS} #firstAccessNotice .first-access-notice-icon svg{width:25px;height:25px;stroke-width:1.9}
       body.${MODE_CLASS} #firstAccessNotice .first-access-notice-copy{display:grid;gap:5px}
-      body.${MODE_CLASS} #firstAccessNotice .first-access-notice-copy strong{font-size:1.02rem;color:#0e3e60}
-      body.${MODE_CLASS} #firstAccessNotice .first-access-notice-copy span{line-height:1.5;color:#4e6c80}
+      body.${MODE_CLASS} #firstAccessNotice .first-access-notice-copy strong{font-size:1.02rem;color:#0b3557}
+      body.${MODE_CLASS} #firstAccessNotice .first-access-notice-copy span{line-height:1.5;color:#3e6176}
       body.${MODE_CLASS} .first-access-password-card{
         display:block!important;
+        position:relative;
+        overflow:hidden;
         width:min(780px,calc(100% - 28px));
         margin:18px auto 52px;
         padding:28px 30px;
-        border:1px solid #b7d3e2;
-        border-top:5px solid #176fa8;
+        border:1px solid #95b8d0;
+        border-top:6px solid #176fa8;
         border-radius:18px;
-        box-shadow:0 18px 42px rgba(14,55,86,.12);
-        background:#fff
+        box-shadow:0 22px 48px rgba(14,55,86,.16),0 4px 12px rgba(14,55,86,.08);
+        background:linear-gradient(180deg,#fbfdff 0%,#f3f8fb 100%)
       }
-      body.${MODE_CLASS} .first-access-password-card>h2{margin:0 0 8px;color:#0e3559;font-size:1.55rem}
-      body.${MODE_CLASS} .first-access-password-card>p{margin:0 0 20px;color:#5c7386;line-height:1.55}
+      body.${MODE_CLASS} .first-access-password-card::before{
+        content:"";
+        position:absolute;
+        width:240px;
+        height:240px;
+        right:-120px;
+        top:-130px;
+        border-radius:50%;
+        pointer-events:none;
+        background:radial-gradient(circle,rgba(18,101,200,.11),rgba(18,101,200,0) 70%)
+      }
+      body.${MODE_CLASS} .first-access-password-card>*{position:relative;z-index:1}
+      body.${MODE_CLASS} .first-access-password-card>h2{margin:0 0 8px;color:#0b3153;font-size:1.55rem}
+      body.${MODE_CLASS} .first-access-password-card>p{margin:0 0 20px;color:#4d6a7f;line-height:1.55}
       body.${MODE_CLASS} .first-access-password-card .account-form{display:grid;gap:16px}
-      body.${MODE_CLASS} .first-access-password-card .portal-field label{font-weight:800;color:#173f60}
+      body.${MODE_CLASS} .first-access-password-card .portal-field label{font-weight:800;color:#123a5b}
       body.${MODE_CLASS} .first-access-input-shell{position:relative}
-      body.${MODE_CLASS} .first-access-input-shell input{width:100%;padding-right:52px}
+      body.${MODE_CLASS} .first-access-input-shell input{
+        width:100%;
+        padding-right:52px;
+        background:#fff!important;
+        border:1px solid #9fb8cc!important;
+        box-shadow:inset 0 1px 2px rgba(14,55,86,.05)!important
+      }
+      body.${MODE_CLASS} .first-access-input-shell input:hover{border-color:#7fa7c2!important}
+      body.${MODE_CLASS} .first-access-input-shell input:focus{
+        border-color:#176fa8!important;
+        box-shadow:0 0 0 3px rgba(23,111,168,.15),inset 0 1px 2px rgba(14,55,86,.04)!important;
+        outline:none
+      }
       body.${MODE_CLASS} .first-access-password-toggle{
         position:absolute;
         top:50%;
@@ -124,12 +165,13 @@
         display:grid;
         place-items:center;
         transform:translateY(-50%);
-        color:#3f6680;
-        background:transparent;
-        border:0;
+        color:#285b7d;
+        background:#edf4f8;
+        border:1px solid #c7d8e4;
         border-radius:9px;
         cursor:pointer
       }
+      body.${MODE_CLASS} .first-access-password-toggle:hover{background:#e1edf4;border-color:#a9c3d5}
       body.${MODE_CLASS} .first-access-password-toggle:focus-visible{outline:3px solid rgba(32,120,177,.28);outline-offset:1px}
       body.${MODE_CLASS} .first-access-password-toggle svg{width:21px;height:21px;stroke-width:1.8}
       body.${MODE_CLASS} .first-access-password-checks{
@@ -138,23 +180,38 @@
         margin:0;
         padding:14px 16px;
         list-style:none;
-        border:1px solid #d7e4ec;
+        border:1px solid #b8cedc;
         border-radius:13px;
-        background:#f7fafc
+        background:#eaf2f7;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.72)
       }
       body.${MODE_CLASS} .first-access-password-check{
         display:flex;
         gap:9px;
         align-items:center;
-        color:#6b7e8d;
+        padding:7px 9px;
+        border-radius:9px;
+        color:#587286;
+        background:rgba(255,255,255,.66);
         font-size:.92rem
       }
-      body.${MODE_CLASS} .first-access-password-check svg{width:18px;height:18px;flex:0 0 18px;stroke:#91a4b2;stroke-width:2}
-      body.${MODE_CLASS} .first-access-password-check.is-ok{color:#166b58;font-weight:700}
+      body.${MODE_CLASS} .first-access-password-check svg{width:18px;height:18px;flex:0 0 18px;stroke:#6e8da3;stroke-width:2}
+      body.${MODE_CLASS} .first-access-password-check.is-ok{color:#125f50;font-weight:700;background:#dff1eb}
       body.${MODE_CLASS} .first-access-password-check.is-ok svg{stroke:#16836c}
       body.${MODE_CLASS} .first-access-password-card .account-actions{margin-top:2px}
-      body.${MODE_CLASS} #changePasswordButton{min-height:52px;padding-inline:24px;font-size:1rem}
+      body.${MODE_CLASS} #changePasswordButton{
+        min-width:285px;
+        min-height:54px;
+        padding-inline:26px;
+        font-size:1rem;
+        box-shadow:0 12px 24px rgba(18,101,200,.26)
+      }
       @media(max-width:760px){
+        body.${MODE_CLASS}{
+          background:
+            radial-gradient(circle at 86% 8%,rgba(15,159,116,.08),transparent 24%),
+            linear-gradient(180deg,#dfeaf2 0%,#edf4f8 58%,#e4edf3 100%) !important
+        }
         body.${MODE_CLASS} .portal-main{padding-inline:12px}
         body.${MODE_CLASS} .portal-hero{padding:24px 20px;border-radius:16px}
         body.${MODE_CLASS} .portal-hero-copy h2{font-size:clamp(1.8rem,9vw,2.35rem)}
@@ -168,7 +225,7 @@
         }
         body.${MODE_CLASS} #firstAccessNotice .first-access-notice-icon{width:38px;height:38px}
         body.${MODE_CLASS} .first-access-password-card{width:100%;margin:14px auto 30px;padding:22px 18px;border-radius:16px}
-        body.${MODE_CLASS} #changePasswordButton{width:100%}
+        body.${MODE_CLASS} #changePasswordButton{width:100%;min-width:0}
       }
     `;
     document.head.appendChild(style);
