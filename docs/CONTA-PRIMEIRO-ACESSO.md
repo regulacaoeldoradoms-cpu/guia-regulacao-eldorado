@@ -23,6 +23,21 @@ Durante o primeiro acesso:
 - `Sair` continua disponível;
 - desktop e mobile devem apresentar a mesma lógica, adaptada ao espaço disponível.
 
+## Hierarquia visual e contraste
+
+O primeiro acesso não deve formar uma sequência de superfícies quase brancas. A interface deve separar claramente as camadas sem perder a identidade institucional do Portal:
+
+- o fundo geral usa cinza-azulado suave, com presença discreta de azul e verde-azulado;
+- o bloco principal de orientação usa uma superfície azul/verde-azulada clara, porém distinta do fundo;
+- o aviso de acesso incompleto recebe contraste intermediário, borda lateral institucional e ícone de segurança mais evidente;
+- o formulário permanece como a superfície principal, com borda azul, sombra moderada e fundo levemente azulado em vez de branco plano;
+- os campos usam fundo branco, borda cinza-azulada perceptível e foco azul institucional;
+- o painel de requisitos usa uma superfície própria, com estados pendentes e concluídos claramente diferenciados;
+- o botão de continuidade deve ter presença visual superior aos elementos auxiliares;
+- o botão `Início` bloqueado deve parecer indisponível, mas continuar legível;
+- o contraste deve ser obtido por cor, borda e superfície, sem efeitos chamativos ou perda de legibilidade;
+- a mesma lógica de contraste deve existir em desktop e mobile, respeitando o espaço de cada tela.
+
 ## Após a troca
 
 O backend continua sendo responsável por:
@@ -48,4 +63,5 @@ Depois da confirmação dessa nova sessão, a experiência de primeiro acesso é
 - não remover a exigência de troca de senha no frontend nem no backend;
 - não criar requisitos de senha que o backend não valide;
 - não expor detalhes técnicos de autenticação ao usuário final;
-- não alterar permissões, cargo, nível Bronze/Prata/Ouro ou regras sociais por causa desse fluxo.
+- não alterar permissões, cargo, nível Bronze/Prata/Ouro ou regras sociais por causa desse fluxo;
+- não transformar o contraste visual em uma estética pesada, saturada ou desvinculada das cores institucionais do Portal.
