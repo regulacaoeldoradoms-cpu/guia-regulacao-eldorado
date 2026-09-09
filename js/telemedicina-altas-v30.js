@@ -32,6 +32,7 @@
   function boot() {
     const button = document.getElementById('dischargeQueue');
     const filter = document.getElementById('statusFilter');
+    const search = document.getElementById('telemedicineSearch');
     if (!button || !filter) return;
 
     ensureCompletedOption(filter);
@@ -42,10 +43,34 @@
       button.setAttribute(
         'title',
         active
-          ? 'Filtro de altas ativo. Use “Todas as situações” para voltar.'
+          ? 'Filtro de altas ativo. Clique novamente para voltar.'
+          : 'Mostrar somente pacientes com alta'
+      );
+      button.setAttribute(
+        'aria-label',
+        active
+          ? 'Filtro de altas ativo. Clique novamente para mostrar todas as situações.'
           : 'Mostrar somente pacientes com alta'
       );
     };
+
+    document.addEventListener('click', (event) => {
+      const trigger = event.target.closest?.('#dischargeQueue');
+      if (!trigger) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      const activating = filter.value !== COMPLETED_STATUS;
+      if (activating && search?.value) {
+        search.value = '';
+        search.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      filter.value = activating ? COMPLETED_STATUS : '';
+      filter.dispatchEvent(new Event('change', { bubbles: true }));
+      syncState();
+      document.querySelector('.telemedicine-workspace')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, true);
 
     filter.addEventListener('change', syncState);
     syncState();
