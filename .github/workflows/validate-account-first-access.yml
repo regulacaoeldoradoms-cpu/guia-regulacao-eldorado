@@ -1,0 +1,41 @@
+name: Validar primeiro acesso da conta
+
+on:
+  pull_request:
+    paths:
+      - 'js/account-first-access.js'
+      - 'js/citizen-identity-ui.js'
+      - 'js/account.js'
+      - 'portal-sw.js'
+      - 'worker/auth-management-v2.js'
+      - 'worker/tests/account-first-access-ui.test.mjs'
+      - '.github/workflows/validate-account-first-access.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'js/account-first-access.js'
+      - 'js/citizen-identity-ui.js'
+      - 'js/account.js'
+      - 'portal-sw.js'
+      - 'worker/auth-management-v2.js'
+      - 'worker/tests/account-first-access-ui.test.mjs'
+      - '.github/workflows/validate-account-first-access.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe
+        run: |
+          node --check js/account-first-access.js
+          node --check js/citizen-identity-ui.js
+          node --check portal-sw.js
+      - name: Conferir contrato do primeiro acesso
+        run: node --test worker/tests/account-first-access-ui.test.mjs
