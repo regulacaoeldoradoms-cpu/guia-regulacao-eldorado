@@ -1,4 +1,4 @@
-name: Validar Telemedicina Alta Conquista V28
+name: Validar Telemedicina Alta V28/V31
 
 on:
   pull_request:
@@ -44,13 +44,15 @@ jobs:
           grep -q 'item.active !== false || isDischargeAchievement(item)' worker/telemedicine.js
           grep -q '!item.deletedAt' worker/telemedicine.js
           grep -q 'altas: 0' worker/telemedicine.js
-      - name: Conferir contrato visual de conquista
+      - name: Conferir contrato visual da alta
         run: |
           grep -q 'data-discharge-achievement="v28"' telemedicina/index.html
           grep -q 'telemedicina-discharge-achievement-v28.css?v=20260909-1' telemedicina/index.html
-          grep -q 'telemedicina-discharge-achievement-v28.js?v=20260909-1' telemedicina/index.html
-          grep -q 'ALTA · CONQUISTA' js/telemedicina-discharge-achievement-v28.js
-          grep -q 'Conquista · Alta' js/telemedicina-discharge-achievement-v28.js
+          grep -q 'telemedicina-discharge-achievement-v28.js?v=20260909-2' telemedicina/index.html
+          grep -q "status.textContent = 'ALTA'" js/telemedicina-discharge-achievement-v28.js
+          grep -q '<span>Alta</span>' js/telemedicina-discharge-achievement-v28.js
+          grep -q "label.textContent = 'Desfecho'" js/telemedicina-discharge-achievement-v28.js
+          ! grep -qi 'conquista' js/telemedicina-discharge-achievement-v28.js
           grep -q 'telemedicine-achievement-crown' css/telemedicina-discharge-achievement-v28.css
           grep -q 'border: 2px solid var(--tm-card-border)' css/telemedicina-discharge-achievement-v28.css
           grep -q 'transition: none !important' css/telemedicina-discharge-achievement-v28.css
@@ -58,3 +60,4 @@ jobs:
         run: |
           test -f docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md
           grep -q 'não deve fazer o card do paciente desaparecer' docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md
+          grep -q 'não deve aparecer na interface da Telemedicina' docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md
