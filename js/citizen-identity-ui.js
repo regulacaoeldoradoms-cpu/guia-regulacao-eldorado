@@ -3,7 +3,7 @@
 // A página /conta/ é compartilhada por todos os perfis. A identidade da conta é única:
 // o perfil profissional apenas acrescenta função e permissões, sem criar uma segunda persona cidadã.
 import('/js/account-brand.js?v=20260909-1').catch(() => {});
-import('/js/account-first-access.js?v=20260909-1').catch(() => {});
+import('/js/account-first-access.js?v=20260909-2').catch(() => {});
 
 (async () => {
   const auth = window.RegulationAuth;
