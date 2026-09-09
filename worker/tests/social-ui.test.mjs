@@ -32,7 +32,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     const html = read(filename);
     assert.match(html, /portal-interactions\.css\?v=20260906-2/);
     assert.match(html, /portal-interactions\.js\?v=20260906-2/);
-    assert.match(html, /social\.css\?v=20260906-1/);
+    assert.match(html, /social\.css\?v=20260909-1/);
     assert.match(html, /social-api\.js\?v=20260906-1/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
@@ -115,6 +115,7 @@ test('V1 é textual, responsiva e respeita preferências de acessibilidade', () 
   const home = read('index.html');
   const feed = read('js/social-feed.js');
   const css = read('css/social.css');
+  const homeMobileCss = read('css/home-mobile.css');
   assert.doesNotMatch(home, /type="file"|accept="image/);
   assert.match(feed, /ordem é cronológica|ordem cronológica/i);
   assert.match(css, /@media \(max-width: 360px\)/);
@@ -122,6 +123,14 @@ test('V1 é textual, responsiva e respeita preferências de acessibilidade', () 
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@media \(forced-colors: active\)/);
   assert.match(css, /:focus-visible/);
+  assert.match(css, /body\.mobile-home-mode \.social-layout\s*\{[^}]*display:\s*flex/s);
+  assert.match(css, /body\.mobile-home-mode \.social-global-nav\s*\{\s*display:\s*none/);
+  assert.match(css, /body\.mobile-home-mode \.social-shortcuts \.portal-grid\s*\{[^}]*repeat\(3/s);
+  assert.match(homeMobileCss, /body\.mobile-home-mode #toolsFallback \.hub-card\s*\{/);
+  assert.doesNotMatch(homeMobileCss, /body\.mobile-home-mode \.hub-card\s*\{/);
+  assert.match(home, /social-profile-rail/);
+  assert.match(home, /social-feed-column/);
+  assert.match(home, /social-tools-rail/);
   for (const filename of socialPages) {
     assert.match(read(filename), /http-equiv="Content-Security-Policy"/);
   }
