@@ -254,6 +254,7 @@ function mapDbUser(row) {
     councilRole: COUNCIL_ROLES.has(row.council_role) ? row.council_role : '',
     email: row.email || '',
     emailVerified: Number(row.email_verified) === 1,
+    avatarDataUrl: String(row.avatar_data || ''),
     firebaseUid: row.firebase_uid || '',
     acceptFriendRequests: Number(row.accept_friend_requests) === 1,
     interfaceSoundsEnabled: Number(row.interface_sounds_enabled) === 1,
@@ -290,6 +291,7 @@ function publicUser(user, options = {}) {
     selfRegistered: Boolean(user.selfRegistered)
   };
   if (options.includeEmail) result.email = user.email || '';
+  if (options.includeAvatar) result.avatarDataUrl = user.emailVerified ? String(user.avatarDataUrl || '') : '';
   return result;
 }
 
@@ -400,7 +402,7 @@ async function login(request, env, origin) {
 async function me(request, env, origin) {
   const user = await validatePortalSession(request, env, []);
   if (!user) return json({ error: 'Sessão inválida ou expirada.' }, 401, origin);
-  return json({ user: publicUser(user) }, 200, origin);
+  return json({ user: publicUser(user, { includeAvatar: true }) }, 200, origin);
 }
 
 async function changePassword(request, env, origin) {
