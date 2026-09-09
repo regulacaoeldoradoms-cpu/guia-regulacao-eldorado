@@ -80,7 +80,12 @@ jobs:
             exit 1
           fi
           grep -q 'socialGate' worker/social.js
-          grep -q 'ACCOUNT_LEVEL_REQUIRED' worker/social-policy.js
+          if grep -q 'ACCOUNT_LEVEL_REQUIRED' worker/social-policy.js; then
+            echo 'A Home social deve estar disponível para todas as contas ativas.' >&2
+            exit 1
+          fi
+          grep -q 'socialFeed: true' worker/account-levels.js
+          grep -q 'socialPublishing: true' worker/account-levels.js
           grep -q 'SOCIAL_SUSPENDED' worker/social-policy.js
           grep -q 'role !== '\''admin'\''' worker/social.js
 

@@ -23,6 +23,10 @@ Eles não têm relação com os níveis oficiais da conta Gov.br e não represen
 ### Recursos
 
 - login no Portal;
+- Home social na raiz do Portal;
+- perfil social visitável e personalizável;
+- descoberta, pedidos, amizades e bloqueio conforme privacidade;
+- feed textual, posts próprios, comentários, curtidas e notificações sociais;
 - Hub do Cidadão;
 - abertura de manifestação;
 - protocolo;
@@ -34,9 +38,7 @@ Eles não têm relação com os níveis oficiais da conta Gov.br e não represen
 ### Recursos ainda bloqueados
 
 - foto de perfil da conta cidadã;
-- perfil social visitável e personalizável;
-- descoberta, pedidos e participação no grafo de amizades;
-- publicações, comentários, curtidas e notificações sociais.
+- recursos futuros que venham a exigir autenticação reforçada.
 
 ## Prata
 
@@ -49,12 +51,7 @@ O endereço de e-mail continua separado do documento da manifestação e não é
 ### Recursos adicionais
 
 - foto de perfil;
-- perfil social visitável e personalização por temas/padrões aprovados;
-- preferência para receber pedidos de amizade;
-- amizade, descoberta social permitida e bloqueio;
-- feed textual, posts próprios, comentários, curtida e notificações sociais;
-- preferência entre abrir o Portal no Feed ou em Ferramentas quando a Home social
-  estiver ativada.
+- e-mail confirmado como reforço de segurança e recuperação da conta.
 
 A foto de perfil é um dado do perfil da conta. Ela **não acompanha a manifestação** e não deve ser exibida à Presidência ou aos membros do Conselho como forma de identificação do autor.
 
@@ -108,7 +105,7 @@ São conceitos independentes.
 
 ## Níveis de profissionais
 
-Bronze, Prata e Ouro são apresentados como experiência de evolução principalmente para cidadãos. Médicos, Recepção, Coordenação, Conselho e Desenvolvedor continuam sujeitos às exigências de segurança definidas para os seus cargos. Para abrir superfícies e executar ações sociais, a implementação atual também exige que a conta profissional satisfaça o gate equivalente a Prata.
+Bronze, Prata e Ouro são apresentados como experiência de evolução principalmente para cidadãos. Médicos, Recepção, Coordenação, Conselho e Desenvolvedor continuam sujeitos às exigências de segurança definidas para os seus cargos. O nível não altera a Home social: todas as contas autenticadas e ativas recebem a mesma superfície, enquanto as Ferramentas variam por cargo e permissão.
 
 A verificação obrigatória de e-mail dos profissionais é uma regra de segurança institucional e não deve ser tratada como privilégio ou gamificação de acesso ao trabalho.
 
@@ -121,13 +118,13 @@ Desde a implementação autorizada em 06/09/2026, a matriz básica é:
 | Manifestações ao Conselho | Sim | Sim | Sim |
 | Acompanhamento e notificações | Sim | Sim | Sim |
 | Foto de perfil | Não | Sim | Sim |
-| Preferência de pedidos de amizade | Não | Sim | Sim |
-| Perfil, amizade e feed social básico | Não | Sim | Sim |
-| Preferência Feed/Ferramentas | Não | Sim | Sim |
+| Preferência de pedidos de amizade | Sim | Sim | Sim |
+| Perfil, amizade e feed social básico | Sim | Sim | Sim |
+| Home social como página inicial | Sim | Sim | Sim |
 | Recursos sociais avançados | Não | Não | Previsto |
 | Dispositivos confiáveis | Não | Não | Previsto |
 
-A Conta Prata libera somente ações permitidas pela matriz de tipo de conta,
-visibilidade, relação e bloqueio. Ela não concede chat profissional nem acesso a
-módulos de saúde. Ouro continua reservado para autenticação reforçada e recursos
-futuros mais sensíveis.
+A Camada Social continua obedecendo à matriz de tipo de conta, visibilidade, relação,
+rate limits e bloqueio. Nenhum nível concede chat profissional nem acesso a módulos de
+saúde. Prata reforça a identidade da conta e libera a foto; Ouro continua reservado
+para autenticação reforçada e recursos futuros mais sensíveis.

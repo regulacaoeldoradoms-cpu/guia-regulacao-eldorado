@@ -20,8 +20,8 @@ próprios; um card nunca concede acesso.
 `/` contém duas superfícies mutuamente exclusivas:
 
 1. `toolsFallback`, disponível sem depender da API social;
-2. `socialHome`, montada apenas com sessão válida, Conta Prata, backend e Home
-   habilitados.
+2. `socialHome`, montada para qualquer sessão ativa quando backend e Home estão
+   habilitados e a participação social não está suspensa.
 
 O fluxo de `js/home.js` é:
 
@@ -32,10 +32,9 @@ O fluxo de `js/home.js` é:
 4. carregar `/api/social/config` com uma primeira janela de até dez segundos;
 5. em timeout ou erro transitório de backend/banco social, manter a animação e
    executar uma segunda tentativa com orçamento de até trinta segundos;
-6. usar Ferramentas se a Home estiver desligada, o usuário não estiver elegível ou a
-   API permanecer indisponível após a recuperação;
-7. respeitar a preferência `tools` antes de montar o feed;
-8. montar perfil, compositor, atalhos e feed; qualquer falha volta ao fallback.
+6. usar Ferramentas se a Home estiver desligada, a participação social estiver
+   suspensa ou a API permanecer indisponível após a recuperação;
+7. montar perfil, compositor, atalhos e feed; qualquer falha volta ao fallback.
 
 Para o perfil Desenvolvedor, uma falha persistente da configuração social inclui
 somente o código técnico e o status HTTP no aviso da Home. Nenhuma credencial, dado de
@@ -71,7 +70,8 @@ esgotar as duas janelas de espera e cair na Home anterior por latência de inici
 - `SOCIAL_BACKEND_ENABLED=true`: libera a API e executa schema/semeadura idempotente
   na primeira sessão social.
 - `SOCIAL_HOME_ENABLED=true`: decisão permanente de 08/09/2026; a raiz passa a ser o
-  feed para contas elegíveis, mantendo Ferramentas como fallback seguro.
+  feed para todas as contas autenticadas e ativas, mantendo Ferramentas como fallback
+  seguro.
 
 A ativação continua reversível. Se a Home social apresentar falha incapacitante,
 `SOCIAL_HOME_ENABLED=false` restaura imediatamente o catálogo na raiz sem apagar
@@ -80,8 +80,8 @@ dados sociais. Desligar também o backend contém toda a camada, enquanto
 
 ## Redirecionamentos
 
-- Login comum abre `/`; a raiz aplica a preferência Feed/Ferramentas.
-- Autocadastro Bronze abre `/` e recebe o fallback, sem descoberta social.
+- Login comum abre `/`, que apresenta a Home social independentemente do cargo.
+- Autocadastro Bronze abre `/` e recebe a mesma Home social básica.
 - Primeiro acesso e troca obrigatória de senha continuam em `/conta/` antes de
   qualquer preferência.
 - `/home/` permanece redirecionamento de compatibilidade para `/`.
@@ -95,9 +95,9 @@ Ferramentas, Avisos e Perfil. Não existe mais item independente `Conta` na nave
 global; as configurações privadas permanecem acessíveis pela área de foto/nome do
 cabeçalho, que continua apontando para `/conta/`.
 
-Para contas sem elegibilidade social, os itens sociais são omitidos e a navegação
-mínima mantém Início e Ferramentas. Isso evita expor Perfil social para contas Bronze
-antes do gate de segurança.
+O nível da conta não remove itens sociais da navegação. Apenas uma suspensão social
+oculta essas áreas e mantém Início e Ferramentas disponíveis. Dentro da Home e de
+`/ferramentas/`, os atalhos de trabalho continuam variando por cargo e permissão.
 
 Chat profissional permanece flutuante somente para os cargos autorizados. O CSS
 reposiciona o launcher acima da barra inferior e respeita safe areas.

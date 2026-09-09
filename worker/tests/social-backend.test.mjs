@@ -113,11 +113,13 @@ async function callChat(env, path, token, options = {}) {
   return handleChatRoute(socialRequest(path, token, options), env, '', true);
 }
 
-test('política mantém nível, tipos de conta e estados relacionais separados', () => {
+test('política libera a camada social para toda conta ativa e mantém tipos e estados separados', () => {
   const bronze = { active: true, emailVerified: false };
-  assert.equal(socialGate(bronze, {}).code, 'ACCOUNT_LEVEL_REQUIRED');
+  assert.equal(socialGate(bronze, {}).allowed, true);
+  assert.equal(socialGate(bronze, {}).level, 'bronze');
   assert.equal(socialGate({ ...bronze, emailVerified: true }, {}).allowed, true);
   assert.equal(socialGate({ ...bronze, emailVerified: true }, { suspended_at: '2026-09-06' }).code, 'SOCIAL_SUSPENDED');
+  assert.equal(socialGate({ ...bronze, active: false }, {}).code, 'ACCOUNT_INACTIVE');
 
   const citizenA = { social_user_id: 'a', role: 'cidadao' };
   const citizenB = { social_user_id: 'b', role: 'cidadao', active: 1, profile_visibility: 'portal', acceptFriendRequests: 1 };
@@ -232,18 +234,24 @@ sqliteTest('perfil protegido não pode ser enumerado por ação direta de amizad
   assert.equal(relationships.total, 0);
 });
 
-sqliteTest('fluxo social real aplica gate Prata, amizade, feed e bloqueio no backend', async () => {
+sqliteTest('fluxo social real funciona desde a Conta Bronze e mantém amizade, feed e bloqueio', async () => {
   const env = environment();
+  env.SOCIAL_HOME_ENABLED = 'true';
   const first = await register(env, 'ana.social', '127.0.0.10');
   const second = await register(env, 'bia.social', '127.0.0.11');
 
-  const bronzePost = await callSocial(env, '/api/social/posts', first.token, {
-    method: 'POST', body: { body: 'Publicação indevida' }
-  });
-  assert.equal(bronzePost.status, 403);
-  assert.equal((await payload(bronzePost)).code, 'ACCOUNT_LEVEL_REQUIRED');
+  const bronzeConfig = await payload(await callSocial(env, '/api/social/config', first.token));
+  assert.equal(bronzeConfig.homeEnabled, true);
+  assert.equal(bronzeConfig.available, true);
+  assert.equal(bronzeConfig.accountLevel, 'bronze');
+  assert.equal(bronzeConfig.gate, null);
 
-  await env.AUTH_DB.prepare("UPDATE auth_users SET email_verified = 1, accept_friend_requests = 1 WHERE username IN ('ana.social','bia.social')").run();
+  const bronzePost = await callSocial(env, '/api/social/posts', first.token, {
+    method: 'POST', body: { body: 'Publicação disponível desde o primeiro acesso' }
+  });
+  assert.equal(bronzePost.status, 201);
+  const bronzePostPayload = await payload(bronzePost);
+
   for (const session of [first, second]) {
     const configured = await callSocial(env, '/api/social/me', session.token, {
       method: 'PATCH', body: { profileVisibility: 'portal', acceptFriendRequests: true }
@@ -274,7 +282,9 @@ sqliteTest('fluxo social real aplica gate Prata, amizade, feed e bloqueio no bac
 
   const feed = await callSocial(env, '/api/social/feed', first.token);
   assert.equal(feed.status, 200);
-  assert.equal((await payload(feed)).posts[0].id, postPayload.post.id);
+  const feedPosts = (await payload(feed)).posts;
+  assert.ok(feedPosts.some((item) => item.id === bronzePostPayload.post.id));
+  assert.ok(feedPosts.some((item) => item.id === postPayload.post.id));
 
   const blocked = await callSocial(env, '/api/social/relationships', second.token, {
     method: 'POST', body: { action: 'block', targetHandle: 'ana.social' }
@@ -295,6 +305,25 @@ sqliteTest('fluxo social real aplica gate Prata, amizade, feed e bloqueio no bac
   assert.equal(chatTables, null, 'amizade e bloqueio social não alteram nem criam o chat profissional');
 });
 
+sqliteTest('Home social é universal para todos os papéis e não depende de e-mail confirmado', async () => {
+  const env = environment();
+  env.SOCIAL_HOME_ENABLED = 'true';
+  const roles = ['cidadao', 'medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin'];
+
+  for (const [index, role] of roles.entries()) {
+    const username = `home.${role}`;
+    const session = await register(env, username, `127.0.1.${index + 1}`);
+    await env.AUTH_DB.prepare('UPDATE auth_users SET role = ?, email_verified = 0 WHERE username = ?')
+      .bind(role, username).run();
+    const config = await payload(await callSocial(env, '/api/social/config', session.token));
+    assert.equal(config.homeEnabled, true, role);
+    assert.equal(config.available, true, role);
+    assert.equal(config.accountLevel, 'bronze', role);
+    assert.equal(config.gate, null, role);
+    assert.equal(config.profile.homePreference, 'feed', role);
+  }
+});
+
 sqliteTest('mutação é limitada ao autor e preferências próprias não vazam', async () => {
   const env = environment();
   const first = await register(env, 'clara.social', '127.0.0.20');
@@ -306,6 +335,7 @@ sqliteTest('mutação é limitada ao autor e preferências próprias não vazam'
       method: 'PATCH', body: { profileVisibility: 'portal', acceptFriendRequests: true, homePreference: 'tools' }
     });
     assert.equal(configured.status, 200);
+    assert.equal((await payload(configured)).profile.homePreference, 'feed');
   }
   await callSocial(env, '/api/social/relationships', first.token, {
     method: 'POST', body: { action: 'request', targetHandle: 'dora.social' }

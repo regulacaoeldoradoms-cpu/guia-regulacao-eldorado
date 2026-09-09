@@ -27,7 +27,6 @@
 
   const accountLevelPanel = document.getElementById('accountLevelPanel');
   const profilePhotoLevelLock = document.getElementById('profilePhotoLevelLock');
-  const friendRequestLevelLock = document.getElementById('friendRequestLevelLock');
   const profileInput = document.getElementById('profilePhotoInput');
   const choosePhoto = document.getElementById('chooseProfilePhoto');
   const removePhoto = document.getElementById('removeProfilePhoto');
@@ -51,7 +50,6 @@
   const friendRequests = document.getElementById('acceptFriendRequests');
   const socialVisibility = document.getElementById('socialProfileVisibility');
   const socialAudience = document.getElementById('socialDefaultAudience');
-  const socialHomePreference = document.getElementById('socialHomePreference');
   const saveSocialPreferences = document.getElementById('saveSocialPreferences');
   const socialPreferencesStatus = document.getElementById('socialPreferencesStatus');
   const viewSocialProfile = document.getElementById('viewSocialProfile');
@@ -91,14 +89,12 @@
     }
     const silver = hasSilver();
     profilePhotoLevelLock?.classList.toggle('locked', !silver);
-    friendRequestLevelLock?.classList.toggle('locked', !silver);
     if (choosePhoto) choosePhoto.disabled = !silver;
     if (profileInput) profileInput.disabled = !silver;
-    if (friendRequests) friendRequests.disabled = !silver;
-    if (socialVisibility) socialVisibility.disabled = !silver;
-    if (socialAudience) socialAudience.disabled = !silver;
-    if (socialHomePreference) socialHomePreference.disabled = !silver;
-    if (saveSocialPreferences) saveSocialPreferences.disabled = !silver;
+    if (friendRequests) friendRequests.disabled = false;
+    if (socialVisibility) socialVisibility.disabled = false;
+    if (socialAudience) socialAudience.disabled = false;
+    if (saveSocialPreferences) saveSocialPreferences.disabled = false;
     if (!silver && removePhoto) removePhoto.hidden = true;
   }
 
@@ -306,12 +302,6 @@
   });
 
   friendRequests.addEventListener('change', async () => {
-    if (!hasSilver()) {
-      friendRequests.checked = false;
-      showSecuritySection();
-      show(securityStatus, 'Esta preferência é desbloqueada no nível Prata.', 'error');
-      return;
-    }
     try {
       security = await auth.updateSecurity({ acceptFriendRequests: friendRequests.checked });
       renderSecurity();
@@ -328,7 +318,6 @@
   });
 
   async function loadSocialPreferences() {
-    if (!hasSilver()) return;
     try {
       const config = await window.PortalSocial.getConfig();
       if (!config.backendEnabled || !config.available) return;
@@ -336,7 +325,6 @@
       const profile = payload.profile || {};
       if (socialVisibility) socialVisibility.value = profile.profileVisibility || 'portal';
       if (socialAudience) socialAudience.value = profile.defaultPostAudience || 'friends';
-      if (socialHomePreference) socialHomePreference.value = profile.homePreference || 'feed';
       if (friendRequests) friendRequests.checked = Boolean(profile.acceptFriendRequests);
       if (viewSocialProfile) viewSocialProfile.href = `/perfil/?u=${encodeURIComponent(profile.handle || '')}`;
     } catch (error) {
@@ -345,11 +333,6 @@
   }
 
   saveSocialPreferences?.addEventListener('click', async () => {
-    if (!hasSilver()) {
-      showSecuritySection();
-      show(socialPreferencesStatus, 'Confirme seu e-mail para alcançar o nível Prata.', 'error');
-      return;
-    }
     saveSocialPreferences.disabled = true;
     try {
       const payload = await auth.api('/api/social/me', {
@@ -357,8 +340,7 @@
         body: JSON.stringify({
           acceptFriendRequests: Boolean(friendRequests?.checked),
           profileVisibility: socialVisibility?.value || 'portal',
-          defaultPostAudience: socialAudience?.value || 'friends',
-          homePreference: socialHomePreference?.value || 'feed'
+          defaultPostAudience: socialAudience?.value || 'friends'
         })
       });
       if (viewSocialProfile) viewSocialProfile.href = `/perfil/?u=${encodeURIComponent(payload.profile?.handle || '')}`;
@@ -366,7 +348,7 @@
     } catch (error) {
       show(socialPreferencesStatus, error.message || 'Não foi possível salvar as preferências sociais.', 'error');
     } finally {
-      saveSocialPreferences.disabled = !hasSilver();
+      saveSocialPreferences.disabled = false;
     }
   });
 

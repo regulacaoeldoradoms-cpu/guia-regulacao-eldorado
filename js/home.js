@@ -114,11 +114,6 @@
     showToolsFallback(message);
     return;
   }
-  if (socialConfig.profile?.homePreference === 'tools') {
-    location.replace('/ferramentas/');
-    return;
-  }
-
   try {
     await window.PortalSocialHome.mount(user, socialConfig);
     showHomeSurface('social');

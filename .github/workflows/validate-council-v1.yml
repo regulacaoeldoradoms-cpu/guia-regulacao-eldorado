@@ -80,14 +80,17 @@ jobs:
           grep -q "const LEVEL_ORDER = Object.freeze({ bronze: 1, prata: 2, ouro: 3 })" worker/account-levels.js
           grep -q "if (user?.emailVerified === true) return 'prata'" worker/account-levels.js
           grep -q "profilePhoto: rank >= LEVEL_ORDER.prata" worker/account-levels.js
-          grep -q "friendRequestPreference: rank >= LEVEL_ORDER.prata" worker/account-levels.js
+          grep -q "friendRequestPreference: true" worker/account-levels.js
           grep -q 'accountProgressFor' worker/portal-safety.js
           grep -q 'accountLevel: progress.level' worker/portal-safety.js
           grep -q 'ACCOUNT_LEVEL_REQUIRED' worker/profile-photo.js
           grep -q "minimumLevelMet(user, 'prata')" worker/profile-photo.js
           grep -q 'const photoUnlocked' worker/profile-photo.js
-          grep -q 'guardCitizenLevelMutation' worker/index.js
-          grep -q 'requiredLevel: .prata.' worker/portal-safety.js
+          if grep -q 'guardCitizenLevelMutation' worker/index.js; then
+            echo 'A Camada Social básica não deve depender da confirmação de e-mail.' >&2
+            exit 1
+          fi
+          ! grep -q 'ACCOUNT_LEVEL_REQUIRED' worker/portal-safety.js
           grep -q 'Conta Bronze' cadastro/index.html
           grep -q 'Conta Prata' conta/index.html
           grep -q 'Conta Ouro' conta/index.html

@@ -73,6 +73,7 @@ test('Home social ativa mantém fallback independente, recuperação de produç�
   assert.match(home, /announceLoading\('Conectando à Camada Social'\)/);
   assert.doesNotMatch(home, /showToolsFallback\('Conectando à Camada Social/);
   assert.match(home, /if \(!socialConfig\.homeEnabled\)/);
+  assert.doesNotMatch(home, /homePreference\s*===\s*['"]tools['"]/);
   assert.match(home, /Diagnóstico:/);
   assert.match(navigation, /navLink\('\/ferramentas\/', 'Ferramentas'/);
   assert.match(navigation, /navLink\('\/perfil\/', 'Perfil'/);
@@ -82,6 +83,7 @@ test('Home social ativa mantém fallback independente, recuperação de produç�
   assert.match(index, /social-navigation\.js\?v=20260908-1/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
   assert.match(index, /social-home\.js\?v=20260909-1/);
+  assert.match(index, /home\.js\?v=20260909-2/);
   assert.match(index, /home\.js\?v=20260909-1/);
   assert.match(index, /<body class="portal-page home-loading-active">/);
   assert.match(index, /id="homeLoading"[^>]*aria-busy="true"/);
@@ -158,16 +160,24 @@ test('painel técnico expõe apenas o estado seguro dos flags sociais', () => {
   assert.match(readiness, /Configuração inválida: a Home social não pode ser ativada/);
 });
 
-test('Conta Prata governa a camada social e o login abre a nova raiz', () => {
+test('Home social é universal, Ferramentas seguem o perfil e o login abre a nova raiz', () => {
   const account = read('conta/index.html');
   const levels = read('js/account-levels.js');
+  const policy = read('worker/social-policy.js');
+  const backendLevels = read('worker/account-levels.js');
+  const home = read('js/home.js');
   const login = read('js/login.js');
   const signup = read('js/signup.js');
   assert.match(account, /id="socialPreferencesCard"/);
   assert.match(account, /id="socialProfileVisibility"/);
   assert.match(account, /id="socialDefaultAudience"/);
-  assert.match(account, /id="socialHomePreference"/);
-  assert.match(levels, /amizade|social/i);
+  assert.doesNotMatch(account, /id="socialHomePreference"/);
+  assert.match(account, /A Home social é a tela inicial de todas as contas ativas/);
+  assert.match(levels, /Home social liberada/);
+  assert.doesNotMatch(policy, /ACCOUNT_LEVEL_REQUIRED/);
+  assert.match(backendLevels, /socialFeed:\s*true/);
+  assert.match(backendLevels, /socialPublishing:\s*true/);
+  assert.doesNotMatch(home, /location\.replace\('\/ferramentas\/'\)/);
   assert.match(login, /return '\/';/);
   assert.match(signup, /location\.replace\('\/'\)/);
 });

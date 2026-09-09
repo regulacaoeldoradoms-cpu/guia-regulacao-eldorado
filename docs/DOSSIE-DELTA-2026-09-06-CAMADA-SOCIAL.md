@@ -1,6 +1,6 @@
 # Delta do Dossiê Mestre — Camada Social V1
 
-Data de corte: 08/09/2026.
+Data de corte: 09/09/2026.
 
 Este arquivo registra mudanças posteriores ao PDF “00 - DOSSIÊ MESTRE DO Portal
 Regulação Eldorado-MS - V1 - 2026-08”. O PDF é uma fotografia de 31/08/2026 e não
@@ -39,7 +39,9 @@ domínios do Conselho e Telemedicina já documentados; o backend social não os 
 
 ## Gates e isolamento
 
-- Conta Prata é o mínimo para ações sociais básicas; Ouro continua futuro.
+- A Home e as ações sociais básicas estão disponíveis para todas as contas
+  autenticadas e ativas, inclusive Bronze. Prata continua ligada à segurança e à foto
+  de perfil; Ouro continua futuro.
 - Cidadãos não enumeram profissionais e não recebem chat profissional.
 - Amizade, bloqueio ou suspensão social não alteram cargo, sessão ou ferramenta.
 - Contas profissionais provisionadas pelo Desenvolvedor e elegíveis ao chat recebem

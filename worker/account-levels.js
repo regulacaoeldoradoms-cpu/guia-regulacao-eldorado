@@ -34,11 +34,10 @@ export function accountProgressFor(user) {
       councilTracking: true,
       internalNotifications: true,
       profilePhoto: rank >= LEVEL_ORDER.prata,
-      socialProfile: rank >= LEVEL_ORDER.prata,
-      friendRequestPreference: rank >= LEVEL_ORDER.prata,
-      socialFeed: rank >= LEVEL_ORDER.prata,
-      socialPublishing: rank >= LEVEL_ORDER.prata,
-      socialHomePreference: rank >= LEVEL_ORDER.prata,
+      socialProfile: true,
+      friendRequestPreference: true,
+      socialFeed: true,
+      socialPublishing: true,
       socialMessagingEligibility: rank >= LEVEL_ORDER.ouro,
       trustedDevices: rank >= LEVEL_ORDER.ouro
     }
