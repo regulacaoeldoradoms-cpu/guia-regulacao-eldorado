@@ -89,6 +89,9 @@ test('Home social ativa mantém fallback independente, recuperação de produç�
   assert.doesNotMatch(read('js/social-home.js'), /home\.hidden = false|fallback\.hidden = true/);
   assert.match(worker, /socialHomeEnabled/);
   assert.match(read('js/social-api.js'), /AbortController/);
+  assert.match(read('worker/social-schema.js'), /socialSchemaAlreadyApplied/);
+  assert.match(worker, /requestContext\(request, env, user\)/);
+  assert.match(worker, /Promise\.all\(\[/);
   assert.match(flags, /SOCIAL_BACKEND_ENABLED = "true"/);
   assert.match(flags, /^SOCIAL_HOME_ENABLED = "true"$/m);
 });

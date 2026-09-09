@@ -205,11 +205,25 @@ async function createSocialSchema(env) {
   return true;
 }
 
+async function socialSchemaAlreadyApplied(env) {
+  try {
+    const migration = await env.AUTH_DB.prepare(
+      'SELECT version FROM social_schema_migrations WHERE version = ? LIMIT 1'
+    ).bind(SOCIAL_SCHEMA_VERSION).first();
+    return migration?.version === SOCIAL_SCHEMA_VERSION;
+  } catch (_) {
+    return false;
+  }
+}
+
 export async function ensureSocialSchema(env) {
   if (String(env?.SOCIAL_BACKEND_ENABLED || '').trim().toLowerCase() !== 'true') return false;
   if (!env.AUTH_DB || (typeof env.AUTH_DB !== 'object' && typeof env.AUTH_DB !== 'function')) return false;
   if (!schemaPromises.has(env.AUTH_DB)) {
-    const operation = createSocialSchema(env).catch((error) => {
+    const operation = (async () => {
+      if (await socialSchemaAlreadyApplied(env)) return true;
+      return createSocialSchema(env);
+    })().catch((error) => {
       schemaPromises.delete(env.AUTH_DB);
       throw error;
     });

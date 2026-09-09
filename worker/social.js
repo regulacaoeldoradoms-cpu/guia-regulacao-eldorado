@@ -152,8 +152,8 @@ async function relationshipRow(env, firstId, secondId) {
     .bind(pairLow, pairHigh).first();
 }
 
-async function requestContext(request, env) {
-  const user = await validatePortalSession(request, env, []);
+async function requestContext(request, env, authenticatedUser = null) {
+  const user = authenticatedUser || await validatePortalSession(request, env, []);
   if (!user) return { error: 'Sessão inválida ou expirada.', status: 401, code: 'SESSION_REQUIRED' };
   if (!socialBackendEnabled(env)) return { user, disabled: true };
   if (!(await ensureSocialSchema(env))) {
@@ -287,12 +287,14 @@ async function handleConfig(request, env, origin) {
       toolsPath: '/ferramentas/'
     }, 200, origin);
   }
-  const context = await requestContext(request, env);
+  const context = await requestContext(request, env, user);
   if (context.error) return json({ error: context.error, code: context.code }, context.status, origin);
   const gate = socialGate(context.user, context.social);
-  const unread = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total FROM social_notifications
-    WHERE recipient_id = ? AND read_at IS NULL`).bind(context.social.social_user_id).first();
-  const ownProfile = await socialUserById(env, context.social.social_user_id);
+  const [unread, ownProfile] = await Promise.all([
+    env.AUTH_DB.prepare(`SELECT COUNT(*) AS total FROM social_notifications
+      WHERE recipient_id = ? AND read_at IS NULL`).bind(context.social.social_user_id).first(),
+    socialUserById(env, context.social.social_user_id)
+  ]);
   return json({
     backendEnabled: true,
     homeEnabled: socialHomeEnabled(env),

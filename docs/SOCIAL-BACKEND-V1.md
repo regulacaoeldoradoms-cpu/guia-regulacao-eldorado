@@ -16,7 +16,10 @@ perfil autenticado.
 
 As migrações são executadas por `ensureSocialSchema()` com
 `CREATE TABLE/INDEX IF NOT EXISTS` e são registradas em
-`social_schema_migrations`.
+`social_schema_migrations`. Em um novo isolate, a rotina faz primeiro uma única
+consulta à versão aplicada; toda a sequência DDL só é repetida quando a versão ainda
+não existe. Isso evita que a configuração da Home fique presa na inicialização do
+schema já implantado.
 
 - `social_users`: identidade estável, handle, bio, status, interesses, tokens de
   tema/padrão, ordem de módulos, visibilidade, audiência padrão, página inicial e

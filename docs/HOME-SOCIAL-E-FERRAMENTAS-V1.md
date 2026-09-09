@@ -1,6 +1,6 @@
 # Migração da Home e área Ferramentas — V1
 
-Atualizado em 08/09/2026.
+Atualizado em 09/09/2026.
 
 ## Mudança de responsabilidade
 
@@ -27,11 +27,11 @@ O fluxo de `js/home.js` é:
 
 1. validar a sessão;
 2. priorizar troca obrigatória de senha;
-3. renderizar imediatamente Ferramentas e a navegação básica;
+3. manter somente a animação de carregamento enquanto a configuração social é
+   resolvida, sem expor a Home anterior durante a transição;
 4. carregar `/api/social/config` com uma primeira janela de até dez segundos;
-5. em timeout ou erro transitório de backend/banco social, manter Ferramentas visível,
-   informar que a Camada Social está conectando e executar uma segunda tentativa com
-   orçamento de até trinta segundos;
+5. em timeout ou erro transitório de backend/banco social, manter a animação e
+   executar uma segunda tentativa com orçamento de até trinta segundos;
 6. usar Ferramentas se a Home estiver desligada, o usuário não estiver elegível ou a
    API permanecer indisponível após a recuperação;
 7. respeitar a preferência `tools` antes de montar o feed;
@@ -57,6 +57,14 @@ O teste confirmou em produção:
 Portanto, o fallback observado não era ausência da rota nem bloqueio CORS. A Home foi
 endurecida para tolerar inicialização lenta/transitória do backend social sem abandonar
 a experiência na primeira falha curta.
+
+Em 09/09/2026, um novo caso no desktop revelou `SOCIAL_CONFIG_TIMEOUT` mesmo com as
+rotas de autenticação funcionando. A causa estava no caminho frio do Worker: cada novo
+isolate repetia toda a sequência idempotente de tabelas e índices antes de responder à
+configuração. O backend agora consulta primeiro a versão registrada da migração e só
+executa DDL quando ela realmente não existe. A configuração também reutiliza a sessão
+já validada e consulta notificações/perfil em paralelo. Assim, o desktop deixa de
+esgotar as duas janelas de espera e cair na Home anterior por latência de inicialização.
 
 ## Flags
 
