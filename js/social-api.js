@@ -7,6 +7,9 @@
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
   const objectUrls = new Set();
+  const CONFIG_CACHE_PREFIX = 'regulacao.portal.social.config.v1.';
+  const CONFIG_MAX_STALE_MS = 15 * 60 * 1000;
+  let configRequest = null;
 
   const icons = Object.freeze({
     home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></svg>',
@@ -24,7 +27,47 @@
     return auth.api(path, options);
   }
 
-  async function getConfig(timeoutMs = 5000) {
+  function configCacheKey() {
+    const username = String(auth?.getCachedUser?.()?.username || 'sem-sessao').toLowerCase();
+    return `${CONFIG_CACHE_PREFIX}${encodeURIComponent(username)}`;
+  }
+
+  function readConfigCache() {
+    try {
+      const raw = sessionStorage.getItem(configCacheKey());
+      if (!raw) return null;
+      const record = JSON.parse(raw);
+      const age = Date.now() - Number(record.savedAt || 0);
+      if (!record.value || age < 0 || age > CONFIG_MAX_STALE_MS) {
+        sessionStorage.removeItem(configCacheKey());
+        return null;
+      }
+      return record.value;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writeConfigCache(value) {
+    if (!value || typeof value !== 'object') return value;
+    try {
+      sessionStorage.setItem(configCacheKey(), JSON.stringify({ savedAt: Date.now(), value }));
+    } catch (_) {}
+    return value;
+  }
+
+  function clearConfigCache() {
+    try {
+      const keys = [];
+      for (let index = 0; index < sessionStorage.length; index += 1) {
+        const key = sessionStorage.key(index);
+        if (key?.startsWith(CONFIG_CACHE_PREFIX)) keys.push(key);
+      }
+      keys.forEach((key) => sessionStorage.removeItem(key));
+    } catch (_) {}
+  }
+
+  async function fetchConfig(timeoutMs) {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -39,6 +82,35 @@
     } finally {
       window.clearTimeout(timeout);
     }
+  }
+
+  function refreshConfig(timeoutMs = 5000, announce = false) {
+    if (configRequest) return configRequest;
+    configRequest = fetchConfig(timeoutMs)
+      .then(writeConfigCache)
+      .then((value) => {
+        if (announce) {
+          window.dispatchEvent(new CustomEvent('portal:social-config-updated', { detail: { config: value } }));
+        }
+        return value;
+      })
+      .finally(() => {
+        configRequest = null;
+      });
+    return configRequest;
+  }
+
+  async function getConfig(timeoutMs = 5000, options = {}) {
+    if (typeof timeoutMs === 'object') {
+      options = timeoutMs;
+      timeoutMs = Number(options.timeoutMs || 5000);
+    }
+    const cached = options.force === true ? null : readConfigCache();
+    if (cached) {
+      refreshConfig(timeoutMs, true).catch(() => {});
+      return cached;
+    }
+    return refreshConfig(timeoutMs, false);
   }
 
   function initials(profile) {
@@ -203,6 +275,7 @@
     objectUrls.forEach((url) => URL.revokeObjectURL(url));
     objectUrls.clear();
   });
+  window.addEventListener('portal:session-cleared', clearConfigCache);
 
   window.PortalSocial = Object.freeze({
     api,
