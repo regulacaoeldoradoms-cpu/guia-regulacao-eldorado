@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260909-3';
+const CACHE_VERSION = '20260909-4';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
