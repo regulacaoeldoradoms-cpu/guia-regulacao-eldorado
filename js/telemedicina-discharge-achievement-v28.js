@@ -24,8 +24,8 @@
     const badge = document.createElement('span');
     badge.className = 'telemedicine-achievement-badge';
     badge.setAttribute('data-tm-discharge-achievement-v28', '');
-    badge.setAttribute('aria-label', 'Conquista: alta do episódio');
-    badge.innerHTML = '<svg class="telemedicine-achievement-crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5 8.2 11l3.8-6 3.8 6 4.7-3.5-1.7 9.2H5.2L3.5 7.5Z"/><path d="M6 19h12"/></svg><span>Conquista · Alta</span>';
+    badge.setAttribute('aria-label', 'Alta do episódio');
+    badge.innerHTML = '<svg class="telemedicine-achievement-crown" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5 8.2 11l3.8-6 3.8 6 4.7-3.5-1.7 9.2H5.2L3.5 7.5Z"/><path d="M6 19h12"/></svg><span>Alta</span>';
     return badge;
   }
 
@@ -45,7 +45,7 @@
 
     const status = row.querySelector('.telemedicine-status');
     if (status) {
-      status.textContent = 'ALTA · CONQUISTA';
+      status.textContent = 'ALTA';
       status.classList.add('is-achievement-status');
       status.setAttribute('aria-label', 'Alta do episódio concluída');
     }
@@ -57,7 +57,7 @@
 
       const label = document.createElement('span');
       label.className = 'telemedicine-zone-label';
-      label.textContent = 'Conquista';
+      label.textContent = 'Desfecho';
 
       const title = document.createElement('strong');
       title.textContent = 'Alta registrada';
@@ -76,11 +76,14 @@
 
   function installCompletedFilter() {
     const filter = document.getElementById('statusFilter');
-    if (!filter || filter.querySelector('option[value="CONCLUÍDO"]')) return;
-    const option = document.createElement('option');
-    option.value = 'CONCLUÍDO';
-    option.textContent = 'Altas / conquistas';
-    filter.appendChild(option);
+    if (!filter) return;
+    let option = filter.querySelector('option[value="CONCLUÍDO"]');
+    if (!option) {
+      option = document.createElement('option');
+      option.value = 'CONCLUÍDO';
+      filter.appendChild(option);
+    }
+    option.textContent = 'Altas';
   }
 
   function boot() {
