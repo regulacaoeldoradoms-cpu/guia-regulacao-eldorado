@@ -47,4 +47,11 @@ assert.equal(isDischargeAchievement({ active: false, resolution: 'PACIENTE DESIS
 assert.equal(isDischargeAchievement({ active: false, resolution: 'ENCAMINHADO PARA ATENDIMENTO PRESENCIAL' }), false);
 assert.equal(deriveFollowupStatus({ active: false, followupMode: 'discharge', resolution: 'ALTA DO EPISÓDIO' }, '2026-09-09'), 'CONCLUÍDO');
 
-console.log('Telemedicina Outcomes V25 + Alta Conquista V28: OK');
+assert.equal(isDischargeAchievement({ source: 'legacy', active: false, resolution: 'SIM', notes: '' }), true);
+assert.equal(isDischargeAchievement({ source: 'legacy', active: false, resolution: 'SIMM', notes: '' }), true);
+assert.equal(isDischargeAchievement({ source: 'legacy', active: false, resolution: '', notes: 'Regulação reagiu com 🏆' }), true);
+assert.equal(isDischargeAchievement({ source: 'legacy', active: true, resolution: 'SIM, RETORNO APÓS EXAMES', notes: '' }), false);
+assert.equal(isDischargeAchievement({ source: 'manual', active: false, resolution: 'SIM', notes: '' }), false);
+assert.equal(deriveFollowupStatus({ source: 'legacy', active: true, resolution: 'RETORNO COM 60 DIAS', notes: 'Regulação reagiu com 🏆' }, '2026-09-09'), 'CONCLUÍDO');
+
+console.log('Telemedicina Outcomes V25 + Altas históricas V32: OK');
