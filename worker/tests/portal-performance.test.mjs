@@ -110,7 +110,7 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
 
 test('service worker armazena somente superfície pública e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260909-3'/);
+  assert.match(source, /CACHE_VERSION = '20260909-4'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.match(source, /navigationPreload\.enable/);
   assert.match(source, /event\.waitUntil\(update\.catch/);
@@ -145,7 +145,7 @@ test('configuração social usa stale-while-revalidate sem persistir feed ou API
   assert.doesNotMatch(social, /localStorage\.setItem\(configCacheKey/);
   assert.doesNotMatch(social, /social\.feed.*sessionStorage|sessionStorage.*social\.feed/i);
   assert.match(home, /Promise\.all\(\[/);
-  assert.match(home, /social\.api\('\/api\/social\/me'\)/);
+  assert.match(social, /api\('\/api\/social\/me'\)/);
   assert.match(home, /PortalSocialFeed\.load\(feed, more\)/);
 });
 
