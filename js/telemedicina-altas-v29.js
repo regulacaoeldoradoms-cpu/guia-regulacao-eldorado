@@ -3,6 +3,24 @@
 (() => {
   const COMPLETED_STATUS = 'CONCLUÍDO';
 
+  function installDischargeResponseVisibility() {
+    const auth = window.RegulationAuth;
+    if (!auth || auth.__telemedicineDischargeVisibilityV29 === true) return;
+    const baseApi = auth.api.bind(auth);
+    auth.api = async (path, options = {}) => {
+      const payload = await baseApi(path, options);
+      const method = String(options.method || 'GET').toUpperCase();
+      if (path === '/api/telemedicina/consultations' && method === 'POST') {
+        const followup = payload?.followup;
+        if (followup?.discharged === true && followup.status === COMPLETED_STATUS && followup.active === false) {
+          payload.followup = { ...followup, active: true };
+        }
+      }
+      return payload;
+    };
+    auth.__telemedicineDischargeVisibilityV29 = true;
+  }
+
   function ensureCompletedOption(filter) {
     if (!filter || filter.querySelector(`option[value="${COMPLETED_STATUS}"]`)) return;
     const option = document.createElement('option');
@@ -35,6 +53,7 @@
     syncState();
   }
 
+  installDischargeResponseVisibility();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 })();
