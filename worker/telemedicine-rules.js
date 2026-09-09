@@ -125,7 +125,7 @@ export function conditionReadyForRequest(followup) {
 }
 
 export function deriveFollowupStatus(followup, today) {
-  if (followup?.active === false) return 'CONCLUÍDO';
+  if (isDischargeAchievement(followup) || followup?.active === false) return 'CONCLUÍDO';
   if (followup?.requestedAt || followup?.requestedHistorical === true) return 'SOLICITADO';
   if (followup?.absencePendingRequest === true) return 'SOLICITAR';
   if (conditionReadyForRequest(followup)) return 'SOLICITAR';
@@ -154,9 +154,15 @@ export function reminderMetaFor(followup, today) {
 export function isDischargeAchievement(followup) {
   const mode = clean(followup?.followupMode, 20).toLowerCase();
   const resolution = normalizeText(followup?.resolution);
+  const source = clean(followup?.source, 20).toLowerCase();
+  const notes = String(followup?.notes || '');
+  const legacyTrophy = source === 'legacy' && notes.includes('🏆');
+  const legacyPlainYes = source === 'legacy' && (resolution === 'SIM' || resolution === 'SIMM');
   return followup?.discharged === true
     || mode === 'discharge'
-    || /\bALTA\b/.test(resolution);
+    || /\bALTA\b/.test(resolution)
+    || legacyTrophy
+    || legacyPlainYes;
 }
 
 export function looksClosed(resolution) {
