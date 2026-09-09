@@ -1,4 +1,4 @@
-name: Validar Telemedicina Alta V28/V31
+name: Validar Telemedicina Alta V28/V31/V32
 
 on:
   pull_request:
@@ -10,6 +10,7 @@ on:
       - 'worker/telemedicine-rules.js'
       - 'worker/tests/telemedicine-outcomes-v25.test.mjs'
       - 'docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md'
+      - 'docs/TELEMEDICINA-ALTAS-HISTORICAS-V32.md'
       - '.github/workflows/validate-telemedicine-discharge-achievement-v28.yml'
   push:
     branches: [main]
@@ -21,6 +22,7 @@ on:
       - 'worker/telemedicine-rules.js'
       - 'worker/tests/telemedicine-outcomes-v25.test.mjs'
       - 'docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md'
+      - 'docs/TELEMEDICINA-ALTAS-HISTORICAS-V32.md'
       - '.github/workflows/validate-telemedicine-discharge-achievement-v28.yml'
 
 jobs:
@@ -44,11 +46,18 @@ jobs:
           grep -q 'item.active !== false || isDischargeAchievement(item)' worker/telemedicine.js
           grep -q '!item.deletedAt' worker/telemedicine.js
           grep -q 'altas: 0' worker/telemedicine.js
+      - name: Conferir reconhecimento histórico V32
+        run: |
+          grep -q "notes.includes('🏆')" worker/telemedicine-rules.js
+          grep -q "resolution === 'SIM'" worker/telemedicine-rules.js
+          grep -q "resolution === 'SIMM'" worker/telemedicine-rules.js
+          grep -q "isDischargeAchievement(followup) || followup?.active === false" worker/telemedicine-rules.js
+          grep -q "row.getAttribute('data-status') === 'concluido'" js/telemedicina-discharge-achievement-v28.js
       - name: Conferir contrato visual da alta
         run: |
           grep -q 'data-discharge-achievement="v28"' telemedicina/index.html
           grep -q 'telemedicina-discharge-achievement-v28.css?v=20260909-1' telemedicina/index.html
-          grep -q 'telemedicina-discharge-achievement-v28.js?v=20260909-2' telemedicina/index.html
+          grep -q 'telemedicina-discharge-achievement-v28.js?v=20260909-3' telemedicina/index.html
           grep -q "status.textContent = 'ALTA'" js/telemedicina-discharge-achievement-v28.js
           grep -q '<span>Alta</span>' js/telemedicina-discharge-achievement-v28.js
           grep -q "label.textContent = 'Desfecho'" js/telemedicina-discharge-achievement-v28.js
@@ -59,5 +68,8 @@ jobs:
       - name: Conferir documentação permanente
         run: |
           test -f docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md
+          test -f docs/TELEMEDICINA-ALTAS-HISTORICAS-V32.md
           grep -q 'não deve fazer o card do paciente desaparecer' docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md
           grep -q 'não deve aparecer na interface da Telemedicina' docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md
+          grep -q '42 registros de alta' docs/TELEMEDICINA-ALTAS-HISTORICAS-V32.md
+          grep -q '38 registros possuem marca de troféu' docs/TELEMEDICINA-ALTAS-HISTORICAS-V32.md
