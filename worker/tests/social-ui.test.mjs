@@ -69,7 +69,9 @@ test('Home social ativa mantém fallback independente, recuperação de produç�
   assert.match(home, /SOCIAL_CONFIG_TIMEOUT/);
   assert.match(home, /SOCIAL_DATABASE_UNAVAILABLE/);
   assert.match(home, /SOCIAL_TEMPORARILY_UNAVAILABLE/);
-  assert.match(home, /Conectando à Camada Social/);
+  assert.match(home, /showHomeSurface\('loading'\)/);
+  assert.match(home, /announceLoading\('Conectando à Camada Social'\)/);
+  assert.doesNotMatch(home, /showToolsFallback\('Conectando à Camada Social/);
   assert.match(home, /if \(!socialConfig\.homeEnabled\)/);
   assert.match(home, /Diagnóstico:/);
   assert.match(navigation, /navLink\('\/ferramentas\/', 'Ferramentas'/);
@@ -78,7 +80,13 @@ test('Home social ativa mantém fallback independente, recuperação de produç�
   assert.doesNotMatch(navigation, /navLink\('\/conta\/', 'Conta'/);
   assert.doesNotMatch(navigation, /'Meu perfil'/);
   assert.match(index, /social-navigation\.js\?v=20260908-1/);
-  assert.match(index, /home\.js\?v=20260908-1/);
+  assert.match(index, /home-loading\.css\?v=20260909-1/);
+  assert.match(index, /social-home\.js\?v=20260909-1/);
+  assert.match(index, /home\.js\?v=20260909-1/);
+  assert.match(index, /<body class="portal-page home-loading-active">/);
+  assert.match(index, /id="homeLoading"[^>]*aria-busy="true"/);
+  assert.match(index, /id="toolsFallback" hidden/);
+  assert.doesNotMatch(read('js/social-home.js'), /home\.hidden = false|fallback\.hidden = true/);
   assert.match(worker, /socialHomeEnabled/);
   assert.match(read('js/social-api.js'), /AbortController/);
   assert.match(flags, /SOCIAL_BACKEND_ENABLED = "true"/);

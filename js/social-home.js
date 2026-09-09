@@ -21,11 +21,7 @@
 
   async function mount(user, config) {
     const home = document.getElementById('socialHome');
-    const fallback = document.getElementById('toolsFallback');
     if (!home) return;
-    fallback.hidden = true;
-    home.hidden = false;
-    window.PortalSocialNavigation?.mount(user, config);
     const payload = await social.api('/api/social/me');
     mountIdentity(payload.profile);
     const audience = document.getElementById('socialComposerAudience');

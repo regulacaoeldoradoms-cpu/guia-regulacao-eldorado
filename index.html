@@ -16,12 +16,13 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-chat.css?v=20260814-1">
+  <link rel="stylesheet" href="/css/home-loading.css?v=20260909-1">
   <link rel="stylesheet" href="/css/home-mobile.css?v=20260909-1">
   <link rel="stylesheet" href="/css/home-chat-button.css?v=20260906-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
   <link rel="stylesheet" href="/css/social.css?v=20260909-1">
 </head>
-<body class="portal-page">
+<body class="portal-page home-loading-active">
   <script>
     (() => {
       const ua = navigator.userAgent || '';
@@ -52,7 +53,11 @@
       </div>
     </header>
 
-    <main class="portal-main" id="toolsFallback">
+    <main class="home-loading" id="homeLoading" role="status" aria-live="polite" aria-label="Carregando o Portal" aria-busy="true">
+      <span class="home-loading-spinner" aria-hidden="true"></span>
+    </main>
+
+    <main class="portal-main" id="toolsFallback" hidden>
       <section class="portal-hero">
         <div class="portal-hero-copy">
           <span class="portal-eyebrow">Início · Ferramentas</span>
@@ -132,8 +137,8 @@
   <script src="/js/social-api.js?v=20260906-1"></script>
   <script src="/js/social-navigation.js?v=20260908-1"></script>
   <script src="/js/social-feed.js?v=20260906-1"></script>
-  <script src="/js/social-home.js?v=20260906-1"></script>
-  <script src="/js/home.js?v=20260908-1"></script>
+  <script src="/js/social-home.js?v=20260909-1"></script>
+  <script src="/js/home.js?v=20260909-1"></script>
   <script src="/js/portal-chat.js?v=20260906-2"></script>
   <script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>
 </body>
