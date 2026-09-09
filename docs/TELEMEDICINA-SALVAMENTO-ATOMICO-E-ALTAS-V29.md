@@ -1,4 +1,4 @@
-# Telemedicina — salvamento atômico e fila de Altas V29/V30/V31
+# Telemedicina — salvamento atômico e fila de Altas V29/V30/V31/V33
 
 ## Decisão permanente
 
@@ -59,25 +59,43 @@ Com a correção:
 - dimensões e posição da barra permanecem inalteradas;
 - os textos visíveis passam a usar apenas **Alta**, **Altas**, **Desfecho** e **Alta registrada**.
 
+## Correção V33 — voltar aos Avisos depois de abrir Altas
+
+No mobile, o controle `#enableNotifications` é apresentado visualmente como **Avisos**. Antes da V33 ele continuava executando somente a ação de permissão de notificações, mesmo quando a fila **Altas** estava ativa. Isso criava uma navegação sem saída aparente: o usuário entrava em Altas e tocar em Avisos não restaurava o painel operacional.
+
+A partir da V33:
+
+- quando o filtro `CONCLUÍDO` estiver ativo no mobile, tocar em **Avisos** sai da fila Altas e volta para **Todas as situações**;
+- uma busca textual residual também é limpa nessa volta, evitando que o painel pareça vazio;
+- o seletor de situação recebe o evento `change`, garantindo que Lista e Grade sejam redesenhadas pela mesma rotina nativa da Telemedicina;
+- o botão **Altas** tem `aria-pressed` e descrição sincronizados imediatamente;
+- nessa situação específica, o clique de **Avisos** não abre o pedido de permissão do navegador, porque sua função naquele momento é navegação de volta;
+- fora da fila Altas, **Avisos** preserva integralmente o comportamento anterior de ativação/estado das notificações;
+- no desktop, o botão continua sendo **Ativar notificações** e não muda de função por causa dessa correção mobile.
+
 ## Desktop e mobile
 
 A fila **Altas** usa a mesma barra e o mesmo filtro em desktop e mobile. No mobile, a camada também mantém a alta recém-salva visível de imediato no cache de interface, sem reativar o acompanhamento no Firestore. Após nova leitura do dashboard, a regra persistente da V28 continua responsável por exibir a alta encerrada com destaque dourado.
+
+A V33 preserva o desktop: a nova navegação de **Avisos → sair de Altas** só é aplicada nos breakpoints móveis já usados pelo módulo (`max-width: 860px` ou dispositivo de ponteiro coarse compatível).
 
 ## Cache e publicação
 
 Como o Portal usa service worker e cache de páginas/ativos, mudanças visuais e de texto devem usar versionamento novo nos arquivos carregados pela página da Telemedicina quando necessário, evitando que CSS ou JavaScript antigos permaneçam em uso após a publicação.
 
+Na V33, `telemedicina-altas-v30.js` passa para a query string `?v=20260909-3` e o marcador da página passa a `data-discharge-queue="v33"`.
+
 ## Arquivos
 
 - `worker/firestore-atomic-v29.js` — commit atômico no Firestore;
 - `worker/telemedicine-router-v2.js` — registro atômico de consulta e compatibilidade com as demais rotas;
-- `js/telemedicina-altas-v30.js` — comportamento confiável da fila de Altas e continuidade visual após o salvamento mobile;
+- `js/telemedicina-altas-v30.js` — comportamento confiável da fila de Altas, retorno aos Avisos no mobile e continuidade visual após o salvamento mobile;
 - `css/telemedicina-altas-v30.css` — acabamento dourado permanente e reflexo do botão;
 - `js/telemedicina-discharge-achievement-v28.js` — apresentação textual dos cards de alta;
 - `telemedicina/index.html` — integração do botão ao filtro nativo e versionamento dos ativos;
 - `worker/tests/firestore-atomic-v29.test.mjs` — contrato do lote atômico;
 - `.github/workflows/validate-telemedicine-atomic-v29.yml` — validação do salvamento atômico;
-- `.github/workflows/validate-telemedicine-altas-v30.yml` — validação específica da interação e do visual da fila de Altas.
+- `.github/workflows/validate-telemedicine-altas-v30.yml` — validação específica da interação, retorno aos Avisos e visual da fila de Altas.
 
 ## Limites e segurança
 
