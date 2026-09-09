@@ -57,9 +57,10 @@ jobs:
           grep -q '>Altas</button>' telemedicina/index.html
           grep -q 'id="normalizeSpecialties" hidden' telemedicina/index.html
           grep -q 'data-status-filter="CONCLUÍDO"' telemedicina/index.html
-          grep -q 'telemedicina-altas-v30.js?v=20260909-1' telemedicina/index.html
+          grep -q '<option value="CONCLUÍDO">Altas</option>' telemedicina/index.html
+          grep -q 'telemedicina-altas-v30.js?v=20260909-2' telemedicina/index.html
           grep -q "COMPLETED_STATUS = 'CONCLUÍDO'" js/telemedicina-altas-v30.js
           grep -q 'data-atomic-save="v29"' telemedicina/index.html
-          grep -q 'data-discharge-queue="v30"' telemedicina/index.html
+          grep -q 'data-discharge-queue="v31"' telemedicina/index.html
       - name: Conferir regressões dos desfechos
         run: node --test worker/tests/telemedicine-outcomes-v25.test.mjs

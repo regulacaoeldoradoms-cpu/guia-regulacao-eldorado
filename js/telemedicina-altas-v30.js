@@ -22,11 +22,14 @@
   }
 
   function ensureCompletedOption(filter) {
-    if (!filter || filter.querySelector(`option[value="${COMPLETED_STATUS}"]`)) return;
-    const option = document.createElement('option');
-    option.value = COMPLETED_STATUS;
-    option.textContent = 'Altas / conquistas';
-    filter.appendChild(option);
+    if (!filter) return;
+    let option = filter.querySelector(`option[value="${COMPLETED_STATUS}"]`);
+    if (!option) {
+      option = document.createElement('option');
+      option.value = COMPLETED_STATUS;
+      filter.appendChild(option);
+    }
+    option.textContent = 'Altas';
   }
 
   function boot() {
