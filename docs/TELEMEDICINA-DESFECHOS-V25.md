@@ -24,7 +24,7 @@ A V25 complementa a V24 de falta sem alterar as regras já consolidadas de alta,
 - encerra o acompanhamento ativo daquela especialidade;
 - mantém o evento no histórico longitudinal com a conduta canônica **ENCAMINHADO PARA ATENDIMENTO PRESENCIAL**.
 
-Esses desfechos são históricos. Eles não entram em **Solicitar agora**, **Atrasados**, **Em aguardo** ou **Sem programação**.
+Esses desfechos são históricos. Eles não entram em **Solicitar agora**, **Atrasados**, **Em aguardo**, **Sem programação** nem na fila **Altas**.
 
 ## Retorno após uma condição
 
@@ -79,6 +79,20 @@ A regra persistente do Worker reconhece `RETORNO APÓS ... - JÁ REALIZADO` como
 
 As expressões de desistência e encaminhamento presencial também são reconhecidas como encerramento na leitura de registros históricos.
 
+### Correção de compatibilidade V32
+
+Uma incompatibilidade da camada de adaptação V25 podia deixar registros de **Desistiu** e **Encaminhado para presencial** com marcadores técnicos antigos equivalentes a `discharged: true` ou `followupMode: discharge`. Isso não altera a decisão de produto: esses dois desfechos **não são alta**.
+
+A partir da V32, a conduta registrada tem precedência na classificação de alta. Quando a resolução indicar desistência, abandono do tratamento ou encaminhamento para atendimento presencial:
+
+- o registro continua encerrado e permanece apenas no histórico longitudinal;
+- não volta a ser acompanhamento ativo;
+- não é contado como alta;
+- não aparece na fila **Altas**;
+- marcadores técnicos antigos de alta são ignorados para essa classificação.
+
+A correção também se aplica à resposta imediata após salvar uma consulta, evitando que um encerramento histórico reapareça temporariamente no mobile antes da próxima leitura do dashboard.
+
 ## Movimento
 
 A V25 preserva a decisão anterior de manter `/telemedicina/` sem animações, transições ou deslocamentos decorativos. Os novos controles não introduzem movimento.
@@ -96,6 +110,7 @@ A V25 preserva a decisão anterior de manter `/telemedicina/` sem animações, t
 - `js/telemedicina-absence-v24.js` - camada V24 ampliada para os desfechos V25;
 - `css/telemedicina-absence-v24.css`;
 - `worker/telemedicine-rules.js`;
+- `js/telemedicina-altas-v30.js` - proteção adicional da resposta imediata da fila de Altas;
 - `worker/tests/telemedicine-outcomes-v25.test.mjs`;
 - `.github/workflows/validate-telemedicine-outcomes-v25.yml`.
 
@@ -103,11 +118,12 @@ A V25 preserva a decisão anterior de manter `/telemedicina/` sem animações, t
 
 1. Falta continua exigindo justificativa e entrando em `SOLICITAR`.
 2. Alta continua encerrando sem retorno.
-3. Desistiu e Encaminhado para presencial ficam somente no histórico e sem alertas.
+3. Desistiu e Encaminhado para presencial ficam somente no histórico, sem alertas e fora da fila Altas.
 4. Retorno condicional não realizado continua em `SEM PROGRAMAÇÃO`.
 5. Retorno condicional marcado **Já realizado** entra em `SOLICITAR` sem data ou lembretes artificiais.
 6. Confirmar **Solicitado** continua levando a `SOLICITADO`.
-7. Desktop e mobile exibem os novos resultados.
+7. Desktop e mobile exibem os novos resultados no formulário de registro.
 8. O campo de texto Detalhe da condição não fica disponível ao operador.
-9. A rota continua sem animações.
-10. Nenhum dado sensível é versionado.
+9. A rota continua sem animações próprias desses desfechos.
+10. Registros antigos com marcador técnico de alta, mas conduta de desistência ou encaminhamento presencial, não podem ser classificados como alta.
+11. Nenhum dado sensível é versionado.
