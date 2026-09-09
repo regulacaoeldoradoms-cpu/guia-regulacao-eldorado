@@ -156,6 +156,6 @@ test('login inicia o aquecimento antes de navegar e usa identidade visual leve',
   assert.match(login, /PortalPerformance\?\.warmForUser\?\.\(user, \{ immediate: true \}\)/);
   assert.match(login, /getCachedUser/);
   assert.match(html, /portal-regulacao-logo-v2\.svg\?v=20260909-1/);
-  assert.match(html, /tools-catalog\\.js\\?v=20260909-1/);
+  assert.match(html, /tools-catalog\.js\?v=20260909-1/);
   assert.match(tools, /loading="lazy" decoding="async" fetchpriority="low"/);
 });
