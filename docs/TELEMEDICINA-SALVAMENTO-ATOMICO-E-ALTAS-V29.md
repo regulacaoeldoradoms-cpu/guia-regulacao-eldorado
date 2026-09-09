@@ -1,4 +1,4 @@
-# Telemedicina — salvamento atômico e fila de Altas V29
+# Telemedicina — salvamento atômico e fila de Altas V29/V30
 
 ## Decisão permanente
 
@@ -32,22 +32,45 @@ O botão **Altas** funciona como atalho de fila:
 
 - primeiro toque/clique: mostra somente os cards com status `CONCLUÍDO` que permanecem visíveis como altas/conquistas;
 - segundo toque/clique: volta para todas as situações;
+- ao entrar na fila de Altas, uma busca textual antiga é limpa para que a fila não pareça vazia ou sem resposta por causa de um filtro residual;
 - o filtro “Altas / conquistas” continua disponível na lista de situações;
 - o card de alta continua amarelo/dourado, com coroa e histórico acessível;
 - a alta não cria retorno, lembrete ou pendência operacional.
 
+## Correção V30 — interação e identidade visual
+
+A V29 tinha um manipulador próprio do botão `Altas`. Na prática, isso deixava a ação dependente de uma camada separada das rotinas de filtro já usadas pelo desktop e pelo mobile. Na V30 o botão passa a declarar `data-status-filter="CONCLUÍDO"` e fica integrado ao mesmo contrato de filtragem já utilizado pelos demais atalhos da Telemedicina.
+
+Para manter o comportamento de alternância no segundo clique e evitar conflitos entre os manipuladores desktop/mobile, a V30 captura especificamente o clique de `#dischargeQueue`, aplica o filtro, dispara o evento `change` do seletor e encerra a propagação do clique original. Assim, a renderização continua sendo feita pelas rotinas já existentes de cada contexto.
+
+A fila de altas passa também a ter identidade de **conquista**:
+
+- botão permanentemente dourado;
+- acabamento em gradiente com contraste suficiente para o texto;
+- reflexo luminoso periódico atravessando o botão;
+- estado ativo destacado por contorno adicional;
+- `prefers-reduced-motion` respeitado: o reflexo deixa de se mover quando o sistema solicita redução de animações;
+- dimensões e posição da barra permanecem inalteradas.
+
 ## Desktop e mobile
 
-A fila **Altas** usa a mesma barra e o mesmo filtro em desktop e mobile. No mobile, a V29 também mantém a alta recém-salva visível de imediato no cache de interface, sem reativar o acompanhamento no Firestore. Após nova leitura do dashboard, a regra persistente da V28 continua responsável por exibir a alta encerrada como conquista.
+A fila **Altas** usa a mesma barra e o mesmo filtro em desktop e mobile. No mobile, a camada também mantém a alta recém-salva visível de imediato no cache de interface, sem reativar o acompanhamento no Firestore. Após nova leitura do dashboard, a regra persistente da V28 continua responsável por exibir a alta encerrada como conquista.
+
+## Cache e publicação
+
+Como o Portal usa service worker e cache de páginas/ativos, a V30 renova a versão do cache para impedir que a página da Telemedicina permaneça presa na implementação anterior. O HTML carrega arquivos novos de CSS e JavaScript da fila de Altas, evitando reutilização indevida de ativos versionados antigos.
 
 ## Arquivos
 
 - `worker/firestore-atomic-v29.js` — commit atômico no Firestore;
 - `worker/telemedicine-router-v2.js` — registro atômico de consulta e compatibilidade com as demais rotas;
-- `js/telemedicina-altas-v29.js` — fila/atalho de Altas e continuidade visual após o salvamento mobile;
-- `telemedicina/index.html` — substituição visual do antigo botão de manutenção pelo botão Altas;
+- `js/telemedicina-altas-v30.js` — comportamento confiável da fila de Altas e continuidade visual após o salvamento mobile;
+- `css/telemedicina-altas-v30.css` — acabamento dourado e reflexo do botão;
+- `telemedicina/index.html` — integração do botão ao filtro nativo e carregamento da V30;
+- `portal-sw.js` — renovação do cache para propagação da interface nova;
 - `worker/tests/firestore-atomic-v29.test.mjs` — contrato do lote atômico;
-- `.github/workflows/validate-telemedicine-atomic-v29.yml` — validação automatizada da V29.
+- `.github/workflows/validate-telemedicine-atomic-v29.yml` — validação do salvamento atômico;
+- `.github/workflows/validate-telemedicine-altas-v30.yml` — validação específica da interação e do visual da fila de Altas.
 
 ## Limites e segurança
 
