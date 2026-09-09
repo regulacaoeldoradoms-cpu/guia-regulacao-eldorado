@@ -38,7 +38,7 @@ jobs:
             notificacoes/index.html admin/social/index.html; do
             test -f "$file"
             grep -q 'name="robots" content="noindex,nofollow"' "$file"
-            grep -q 'social.css?v=20260906-1' "$file"
+            grep -q 'social.css?v=20260909-1' "$file"
             grep -q 'social-api.js?v=20260906-1' "$file"
             grep -q 'portal-interactions.js?v=20260906-2' "$file"
           done

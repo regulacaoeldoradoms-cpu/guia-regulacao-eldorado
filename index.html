@@ -16,10 +16,10 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-chat.css?v=20260814-1">
-  <link rel="stylesheet" href="/css/home-mobile.css?v=20260906-1">
+  <link rel="stylesheet" href="/css/home-mobile.css?v=20260909-1">
   <link rel="stylesheet" href="/css/home-chat-button.css?v=20260906-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/social.css?v=20260906-1">
+  <link rel="stylesheet" href="/css/social.css?v=20260909-1">
 </head>
 <body class="portal-page">
   <script>
@@ -70,7 +70,7 @@
 
     <main class="social-shell" id="socialHome" hidden>
       <div class="social-layout">
-        <aside class="social-column social-sticky" aria-label="Meu perfil social">
+        <aside class="social-column social-sticky social-profile-rail" aria-label="Meu perfil social">
           <section class="social-card social-identity-card">
             <div class="social-mini-cover"></div>
             <div class="social-avatar" id="socialIdentityAvatar">?</div>
@@ -88,7 +88,7 @@
           </nav>
         </aside>
 
-        <section class="social-column" aria-label="Feed social">
+        <section class="social-column social-feed-column" aria-label="Feed social">
           <div class="social-card social-composer">
             <h2>Compartilhe com sua rede</h2>
             <form id="socialComposerForm">
@@ -110,13 +110,13 @@
           <button class="social-button secondary" id="socialFeedMore" type="button" hidden>Carregar mais publicações</button>
         </section>
 
-        <aside class="social-column social-sticky">
+        <aside class="social-column social-sticky social-tools-rail">
           <section class="social-card social-shortcuts" aria-labelledby="shortcutTitle">
             <div class="social-section-heading"><div><h2 id="shortcutTitle">Atalhos de trabalho</h2><p>Ferramentas autorizadas, sem eventos no feed.</p></div></div>
             <div class="portal-grid" id="socialShortcutGrid"></div>
             <div class="social-card-pad"><a class="social-button secondary" href="/ferramentas/">Ver todas as Ferramentas</a></div>
           </section>
-          <section class="social-card social-card-pad">
+          <section class="social-card social-card-pad social-safety-card">
             <h2 style="margin:0 0 8px;font-size:.95rem">Rede institucional, conversa segura</h2>
             <p style="margin:0;color:#667d90;font-size:.8rem;line-height:1.55">O feed social não publica atividades assistenciais. Amizade não libera chat profissional, Conselho, Telemedicina ou qualquer dado de saúde.</p>
           </section>
