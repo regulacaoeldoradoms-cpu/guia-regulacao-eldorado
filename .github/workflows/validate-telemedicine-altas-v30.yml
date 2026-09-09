@@ -1,4 +1,4 @@
-name: Validar Telemedicina Altas V30/V31
+name: Validar Telemedicina Altas V30/V31/V33
 
 on:
   pull_request:
@@ -41,13 +41,24 @@ jobs:
           grep -q 'id="dischargeQueue"' telemedicina/index.html
           grep -q 'data-status-filter="CONCLUÍDO"' telemedicina/index.html
           grep -q '<option value="CONCLUÍDO">Altas</option>' telemedicina/index.html
-          grep -q 'data-discharge-queue="v31"' telemedicina/index.html
-          grep -q 'telemedicina-altas-v30.js?v=20260909-2' telemedicina/index.html
+          grep -q 'data-discharge-queue="v33"' telemedicina/index.html
+          grep -q 'telemedicina-altas-v30.js?v=20260909-3' telemedicina/index.html
           grep -q 'telemedicina-altas-v30.css?v=20260909-2' telemedicina/index.html
           grep -q 'stopImmediatePropagation' js/telemedicina-altas-v30.js
           grep -q "filter.value = activating ? COMPLETED_STATUS : ''" js/telemedicina-altas-v30.js
           grep -q "search.value = ''" js/telemedicina-altas-v30.js
           grep -q "option.textContent = 'Altas'" js/telemedicina-altas-v30.js
+
+      - name: Conferir volta de Altas para Avisos no mobile
+        run: |
+          grep -q "MOBILE_ALERTS_QUERY" js/telemedicina-altas-v30.js
+          grep -q "#enableNotifications" js/telemedicina-altas-v30.js
+          grep -q "filter.value !== COMPLETED_STATUS || !isMobileAlertsControl()" js/telemedicina-altas-v30.js
+          grep -q "showAllSituations" js/telemedicina-altas-v30.js
+          grep -q "filter.value = ''" js/telemedicina-altas-v30.js
+          grep -q "filter.dispatchEvent(new Event('change', { bubbles: true }))" js/telemedicina-altas-v30.js
+          grep -q "alertsButton.dataset.returnFromAltas = 'true'" js/telemedicina-altas-v30.js
+          grep -q "Voltar aos avisos da Telemedicina" js/telemedicina-altas-v30.js
 
       - name: Conferir identidade dourada e reflexo
         run: |
