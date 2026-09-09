@@ -151,6 +151,11 @@ export function reminderMetaFor(followup, today) {
   };
 }
 
+function isNonDischargeClosureResolution(value) {
+  const resolution = normalizeText(value);
+  return /\bDESISTIU\b|\bDESISTENCIA\b|ABANDONO DO TRATAMENTO|ENCAMINHAD[AO].*PRESENCIAL/.test(resolution);
+}
+
 export function isDischargeAchievement(followup) {
   const mode = clean(followup?.followupMode, 20).toLowerCase();
   const resolution = normalizeText(followup?.resolution);
@@ -158,11 +163,13 @@ export function isDischargeAchievement(followup) {
   const notes = String(followup?.notes || '');
   const legacyTrophy = source === 'legacy' && notes.includes('🏆');
   const legacyPlainYes = source === 'legacy' && (resolution === 'SIM' || resolution === 'SIMM');
-  return followup?.discharged === true
-    || mode === 'discharge'
-    || /\bALTA\b/.test(resolution)
+  const explicitAlta = /\bALTA\b/.test(resolution);
+  const technicalDischarge = followup?.discharged === true || mode === 'discharge';
+  const nonDischargeClosure = isNonDischargeClosureResolution(resolution);
+  return explicitAlta
     || legacyTrophy
-    || legacyPlainYes;
+    || legacyPlainYes
+    || (technicalDischarge && !nonDischargeClosure);
 }
 
 export function looksClosed(resolution) {
