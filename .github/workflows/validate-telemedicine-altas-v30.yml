@@ -1,0 +1,59 @@
+name: Validar Telemedicina Altas V30
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-altas-v30.js'
+      - 'css/telemedicina-altas-v30.css'
+      - 'docs/TELEMEDICINA-SALVAMENTO-ATOMICO-E-ALTAS-V29.md'
+      - '.github/workflows/validate-telemedicine-altas-v30.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-altas-v30.js'
+      - 'css/telemedicina-altas-v30.css'
+      - 'docs/TELEMEDICINA-SALVAMENTO-ATOMICO-E-ALTAS-V29.md'
+      - '.github/workflows/validate-telemedicine-altas-v30.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Conferir sintaxe
+        run: node --check js/telemedicina-altas-v30.js
+
+      - name: Conferir integração do botão Altas
+        run: |
+          grep -q 'id="dischargeQueue"' telemedicina/index.html
+          grep -q 'data-status-filter="CONCLUÍDO"' telemedicina/index.html
+          grep -q '<option value="CONCLUÍDO">Altas / conquistas</option>' telemedicina/index.html
+          grep -q 'data-discharge-queue="v30"' telemedicina/index.html
+          grep -q 'telemedicina-altas-v30.js?v=20260909-1' telemedicina/index.html
+          grep -q 'telemedicina-altas-v30.css?v=20260909-1' telemedicina/index.html
+          grep -q 'stopImmediatePropagation' js/telemedicina-altas-v30.js
+          grep -q "filter.value = activating ? COMPLETED_STATUS : ''" js/telemedicina-altas-v30.js
+          grep -q "search.value = ''" js/telemedicina-altas-v30.js
+
+      - name: Conferir identidade dourada e reflexo
+        run: |
+          grep -q '#dischargeQueue.portal-button' css/telemedicina-altas-v30.css
+          grep -q 'telemedicine-altas-reflexo' css/telemedicina-altas-v30.css
+          grep -q 'linear-gradient' css/telemedicina-altas-v30.css
+          grep -q 'prefers-reduced-motion' css/telemedicina-altas-v30.css
+          grep -q "aria-pressed='true'" css/telemedicina-altas-v30.css
+
+      - name: Conferir regressões da Telemedicina
+        run: |
+          node --test worker/tests/telemedicine-outcomes-v25.test.mjs
+          node --test worker/tests/firestore-atomic-v29.test.mjs
+          node --test worker/tests/portal-performance.test.mjs
