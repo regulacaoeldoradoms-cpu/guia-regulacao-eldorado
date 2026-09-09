@@ -1,6 +1,6 @@
 # Portal de acesso por perfil
 
-Arquitetura revisada em 08/09/2026.
+Arquitetura revisada em 09/09/2026.
 
 ## Entrada única
 
@@ -30,6 +30,23 @@ Arquitetura revisada em 08/09/2026.
 - `/conselho/`: página pública do Conselho Municipal de Saúde.
 - `/conselho/painel/`: área institucional para Presidente e membros autorizados do Conselho.
 - `/conta/`: perfil privado, senha, e-mail, evolução, foto e preferências sociais.
+
+
+## Desempenho e cache seguro
+
+Todas as entradas ativas registram `js/portal-performance.js`. Depois da
+autenticação, a matriz única de `PortalTools` define quais páginas podem ser
+pré-carregadas para cada conta. O service worker mantém somente páginas e assets
+públicos versionados; navegações já preparadas abrem pelo cache e são atualizadas em
+segundo plano.
+
+A sessão local validada permite montar a interface imediatamente, com reconferência
+silenciosa no Worker. APIs, feed, mensagens, chat, manifestações, anexos, dados de
+pacientes e respostas administrativas nunca entram no cache estático. A autorização
+continua sendo revalidada no backend em toda operação protegida.
+
+A política completa, os limites e a validação estão em
+`docs/PORTAL-DESEMPENHO-CACHE-V1.md`.
 
 ## Camada Social V1
 
@@ -76,9 +93,10 @@ contêm e-mail, UUID, conteúdo de manifestação ou dado assistencial.
 - `SOCIAL_BACKEND_ENABLED`: ativa schema e APIs; ausência equivale a `false`.
 - `SOCIAL_HOME_ENABLED`: permite ao `/` mostrar o feed; depende da flag anterior.
 
-O rollout mantém flags separadas para backend e Home. `js/home.js` renderiza
-`PortalTools` antes de consultar a configuração e limita essa consulta a cinco
-segundos; `/ferramentas/` não depende da API social para exibir ou abrir os módulos.
+O rollout mantém flags separadas para backend e Home. `js/home.js` mantém um estado de carregamento próprio enquanto resolve a configuração;
+a última configuração válida da sessão pode abrir a superfície imediatamente e é
+revalidada em segundo plano. Perfil social e feed são solicitados em paralelo;
+`/ferramentas/` não depende da API social para exibir ou abrir os módulos.
 O rollback não apaga tabelas: desligar primeiro a Home e, se necessário, o backend.
 
 ### Matriz de visibilidade

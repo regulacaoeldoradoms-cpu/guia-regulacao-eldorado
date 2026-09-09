@@ -20,7 +20,7 @@
   });
 
   function image(src, alt = '') {
-    return `<img src="${src}" alt="${alt}">`;
+    return `<img src="${src}" alt="${alt}" loading="lazy" decoding="async" fetchpriority="low">`;
   }
 
   function authorized(user, roles) {

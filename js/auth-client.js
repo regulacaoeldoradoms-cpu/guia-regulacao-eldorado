@@ -5,6 +5,9 @@
   const endpoint = String(CONFIG.endpoint || '').replace(/\/$/, '');
   const tokenKey = CONFIG.tokenStorageKey || 'regulacao.portal.session';
   const userKey = CONFIG.userStorageKey || 'regulacao.portal.user';
+  const validationKey = `${userKey}.validatedAt`;
+  const SESSION_RECHECK_MS = 45000;
+  let backgroundValidation = null;
 
   function getToken() {
     try { return sessionStorage.getItem(tokenKey) || localStorage.getItem(tokenKey) || ''; }
@@ -23,20 +26,42 @@
     catch (_) { return false; }
   }
 
-  function clearSession() {
+  function sessionEvent(type, user = null) {
+    try {
+      window.dispatchEvent(new CustomEvent(type, { detail: user ? { user } : {} }));
+    } catch (_) {}
+    if (user) window.PortalPerformance?.warmForUser?.(user);
+  }
+
+  function clearSession(options = {}) {
     try {
       sessionStorage.removeItem(tokenKey);
       sessionStorage.removeItem(userKey);
+      sessionStorage.removeItem(validationKey);
       localStorage.removeItem(tokenKey);
       localStorage.removeItem(userKey);
+      localStorage.removeItem(validationKey);
     } catch (_) {}
+    if (options.notify !== false) sessionEvent('portal:session-cleared');
   }
 
   function saveSession(token, user, persistent = false) {
-    clearSession();
+    clearSession({ notify: false });
     const storage = persistent ? localStorage : sessionStorage;
     storage.setItem(tokenKey, token);
     storage.setItem(userKey, JSON.stringify(user));
+    storage.setItem(validationKey, String(Date.now()));
+    sessionEvent('portal:session-ready', user);
+  }
+
+  function sessionValidationAge() {
+    try {
+      const value = sessionStorage.getItem(validationKey) || localStorage.getItem(validationKey);
+      const checkedAt = Number(value || 0);
+      return checkedAt > 0 ? Math.max(0, Date.now() - checkedAt) : Number.POSITIVE_INFINITY;
+    } catch (_) {
+      return Number.POSITIVE_INFINITY;
+    }
   }
 
   function initialsFor(user) {
@@ -113,12 +138,17 @@
   }
 
   async function login(username, password, persistent = false) {
+    const previous = getCachedUser();
     const payload = await api('/api/auth/login', {
       method: 'POST', body: JSON.stringify({ username: String(username || '').trim(), password: String(password || '') })
     });
     if (!payload?.token || !payload?.user) throw new Error('Resposta de autenticação inválida.');
-    saveSession(payload.token, payload.user, persistent);
-    return payload.user;
+    const user = {
+      ...payload.user,
+      avatarDataUrl: previous?.username === payload.user.username ? String(previous.avatarDataUrl || '') : ''
+    };
+    saveSession(payload.token, user, persistent);
+    return user;
   }
 
   async function registerCitizen(username, password) {
@@ -135,17 +165,19 @@
     if (!token) return null;
     try {
       const payload = await api('/api/auth/me', { method: 'GET' });
-      let user = payload?.user || null;
-      if (user) {
-        const profile = await api('/api/auth/profile', { method: 'GET' }).catch(() => null);
+      const fresh = payload?.user || null;
+      let user = fresh;
+      if (fresh) {
+        const cached = getCachedUser();
+        const sameUser = cached?.username === fresh.username;
+        const hasAvatar = Object.prototype.hasOwnProperty.call(fresh, 'avatarDataUrl');
+        const level = fresh.accountLevel || (fresh.emailVerified ? 'prata' : 'bronze');
         user = {
-          ...user,
-          accountLevel: profile?.accountLevel || user.accountLevel || (user.emailVerified ? 'prata' : 'bronze'),
-          avatarDataUrl: profile && Object.prototype.hasOwnProperty.call(profile, 'avatarDataUrl')
-            ? String(profile.avatarDataUrl || '')
-            : String(getCachedUser()?.avatarDataUrl || ''),
-          profilePhotoLocked: Boolean(profile?.locked),
-          profilePhotoRequiredLevel: profile?.requiredLevel || ''
+          ...fresh,
+          accountLevel: level,
+          avatarDataUrl: hasAvatar ? String(fresh.avatarDataUrl || '') : (sameUser ? String(cached.avatarDataUrl || '') : ''),
+          profilePhotoLocked: accountRank({ ...fresh, accountLevel: level }) < 2,
+          profilePhotoRequiredLevel: accountRank({ ...fresh, accountLevel: level }) < 2 ? 'prata' : ''
         };
         saveSession(token, user, persistentSession());
         mountPortalAvatar(user);
@@ -160,6 +192,23 @@
       }
       throw error;
     }
+  }
+
+  async function revalidateSession(options = {}) {
+    if (!getToken()) return null;
+    if (backgroundValidation) return backgroundValidation;
+    backgroundValidation = me({ allowCached: false })
+      .catch((error) => {
+        if (error.status === 401 && options.redirectOnInvalid === true && !location.pathname.startsWith('/login')) {
+          const next = encodeURIComponent(location.pathname + location.search + location.hash);
+          location.replace(`${CONFIG.loginPath || '/login/'}?next=${next}`);
+        }
+        return error.status === 401 ? null : getCachedUser();
+      })
+      .finally(() => {
+        backgroundValidation = null;
+      });
+    return backgroundValidation;
   }
 
   async function logout() {
@@ -271,26 +320,42 @@
     return `/conta/?verificar-email=1&next=${next}`;
   }
 
+  function accessAllowed(user, allowedRoles, options = {}) {
+    if (!user) {
+      const next = encodeURIComponent(location.pathname + location.search + location.hash);
+      location.replace(`${CONFIG.loginPath || '/login/'}?next=${next}`);
+      return false;
+    }
+    if (user.emailVerificationRequired && location.pathname !== '/conta/' && !location.pathname.startsWith('/conta/')) {
+      location.replace(verificationDestination());
+      return false;
+    }
+    if (!roleAllowed(user, allowedRoles)) {
+      location.replace(options.deniedPath || (user.role === 'cidadao' ? '/cidadao/' : CONFIG.homePath || '/'));
+      return false;
+    }
+    return true;
+  }
+
   async function requireRole(allowedRoles, options = {}) {
     if (CONFIG.enforcement !== true) {
       const preview = getCachedUser() || { username: 'configuracao', name: 'Modo de configuração', role: 'admin', councilRole: 'membro', preview: true };
       mountPortalAvatar(preview);
+      sessionEvent('portal:session-ready', preview);
       return preview;
     }
-    const user = await me({ allowCached: false }).catch(() => null);
-    if (!user) {
-      const next = encodeURIComponent(location.pathname + location.search + location.hash);
-      location.replace(`${CONFIG.loginPath || '/login/'}?next=${next}`);
-      return null;
-    }
+
+    let user = getToken() ? getCachedUser() : null;
+    if (!user) user = await me({ allowCached: false }).catch(() => null);
+    if (!accessAllowed(user, allowedRoles, options)) return null;
+
     mountPortalAvatar(user);
-    if (user.emailVerificationRequired && location.pathname !== '/conta/' && !location.pathname.startsWith('/conta/')) {
-      location.replace(verificationDestination());
-      return null;
-    }
-    if (!roleAllowed(user, allowedRoles)) {
-      location.replace(options.deniedPath || (user.role === 'cidadao' ? '/cidadao/' : CONFIG.homePath || '/'));
-      return null;
+    sessionEvent('portal:session-ready', user);
+
+    if (sessionValidationAge() > SESSION_RECHECK_MS) {
+      revalidateSession({ redirectOnInvalid: true }).then((fresh) => {
+        if (fresh) accessAllowed(fresh, allowedRoles, options);
+      });
     }
     return user;
   }
@@ -304,6 +369,12 @@
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
+  window.addEventListener('portal:background-refresh', () => {
+    if (getToken() && getCachedUser() && sessionValidationAge() > SESSION_RECHECK_MS) {
+      revalidateSession({ redirectOnInvalid: true });
+    }
+  });
+
   window.RegulationAuth = Object.freeze({
     api,
     login,
@@ -316,6 +387,8 @@
     getToken,
     getCachedUser,
     clearSession,
+    revalidateSession,
+    sessionValidationAge,
     authorizationHeader,
     changePassword,
     updateProfilePhoto,

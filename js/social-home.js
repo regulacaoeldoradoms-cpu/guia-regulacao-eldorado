@@ -22,17 +22,27 @@
   async function mount(user, config) {
     const home = document.getElementById('socialHome');
     if (!home) return;
-    const payload = await social.api('/api/social/me');
-    mountIdentity(payload.profile);
-    const audience = document.getElementById('socialComposerAudience');
-    if (audience) audience.value = payload.profile.defaultPostAudience || 'friends';
+
+    const roleLabel = window.PortalTools?.roleLabels?.[user?.role] || user?.jobTitle || '';
+    mountIdentity({
+      name: user?.name || user?.username || 'Usuário',
+      handle: user?.username || '',
+      professional: roleLabel ? { label: roleLabel } : null
+    });
 
     const shortcuts = document.getElementById('socialShortcutGrid');
     window.PortalTools?.render(shortcuts, user, { compact: true, limit: 3 });
     const feed = document.getElementById('socialFeedList');
     const more = document.getElementById('socialFeedMore');
     window.PortalSocialFeed.bindComposer(document.getElementById('socialComposerForm'), feed, more);
-    await window.PortalSocialFeed.load(feed, more);
+
+    const [payload] = await Promise.all([
+      social.api('/api/social/me'),
+      window.PortalSocialFeed.load(feed, more)
+    ]);
+    mountIdentity(payload.profile);
+    const audience = document.getElementById('socialComposerAudience');
+    if (audience) audience.value = payload.profile.defaultPostAudience || 'friends';
   }
 
   window.PortalSocialHome = Object.freeze({ mount });

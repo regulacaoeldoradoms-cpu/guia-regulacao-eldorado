@@ -33,7 +33,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     assert.match(html, /portal-interactions\.css\?v=20260906-2/);
     assert.match(html, /portal-interactions\.js\?v=20260906-2/);
     assert.match(html, /social\.css\?v=20260909-3/);
-    assert.match(html, /social-api\.js\?v=20260906-1/);
+    assert.match(html, /social-api\.js\?v=20260909-1/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
   }
@@ -52,7 +52,7 @@ test('Ferramentas mantém uma única matriz de autorização compartilhada', () 
   assert.ok(ids({ role: 'admin', emailVerified: true }).includes('social-moderation'));
 
   for (const filename of ['index.html', 'ferramentas/index.html']) {
-    assert.match(read(filename), /tools-catalog\.js\?v=20260906-1/);
+    assert.match(read(filename), /tools-catalog\.js\?v=20260909-1/);
   }
 });
 
@@ -82,9 +82,9 @@ test('Home social ativa mantém fallback independente, recuperação de produç�
   assert.doesNotMatch(navigation, /'Meu perfil'/);
   assert.match(index, /social-navigation\.js\?v=20260908-1/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
-  assert.match(index, /social-home\.js\?v=20260909-1/);
-  assert.match(index, /home\.js\?v=20260909-2/);
-  assert.match(index, /home\.js\?v=20260909-1/);
+  assert.match(index, /\/js\/social-home\.js\?v=20260909-2/);
+  assert.match(index, /\/js\/home\.js\?v=20260909-3/);
+  assert.equal((index.match(/\/js\/home\.js\?v=20260909-3/g) || []).length, 1);
   assert.match(index, /<body class="portal-page home-loading-active">/);
   assert.match(index, /id="homeLoading"[^>]*aria-busy="true"/);
   assert.match(index, /id="toolsFallback" hidden/);

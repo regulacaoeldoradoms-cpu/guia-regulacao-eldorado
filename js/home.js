@@ -13,6 +13,11 @@
     return;
   }
 
+  window.addEventListener('portal:social-config-updated', (event) => {
+    const refreshed = event.detail?.config;
+    if (refreshed) window.PortalSocialNavigation?.mount(user, refreshed);
+  });
+
   const name = document.getElementById('portalUserName');
   const role = document.getElementById('portalUserRole');
   const logout = document.getElementById('portalLogout');

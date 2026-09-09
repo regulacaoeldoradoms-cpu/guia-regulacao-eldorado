@@ -30,7 +30,7 @@ jobs:
             js/tools-catalog.js js/tools.js js/social-api.js js/social-navigation.js \
             js/social-home.js js/social-feed.js js/social-profile.js js/social-friends.js \
             js/social-notifications.js js/social-moderation.js js/home.js js/account.js \
-            js/login.js js/signup.js js/portal-chat.js js/portal-interactions.js; do
+            js/login.js js/signup.js js/portal-chat.js js/portal-interactions.js js/portal-performance.js portal-sw.js; do
             node --check "$file"
           done
           for file in \
@@ -39,7 +39,7 @@ jobs:
             test -f "$file"
             grep -q 'name="robots" content="noindex,nofollow"' "$file"
             grep -q 'social.css?v=20260909-3' "$file"
-            grep -q 'social-api.js?v=20260906-1' "$file"
+            grep -q 'social-api.js?v=20260909-1' "$file"
             grep -q 'portal-interactions.js?v=20260906-2' "$file"
           done
 
@@ -58,9 +58,11 @@ jobs:
           grep -q 'social_rate_limits' worker/social-schema.js
           grep -q 'SOCIAL_TEMPORARILY_UNAVAILABLE' worker/index.js
           grep -q 'showToolsFallback' js/home.js
-          grep -q 'tools-catalog.js?v=20260906-1' index.html
-          grep -q 'tools-catalog.js?v=20260906-1' ferramentas/index.html
+          grep -q 'tools-catalog.js?v=20260909-1' index.html
+          grep -q 'tools-catalog.js?v=20260909-1' ferramentas/index.html
           grep -q 'socialFlagsCoherent' worker/system-readiness.js
+          test -f docs/PORTAL-DESEMPENHO-CACHE-V1.md
+          grep -q 'Nunca entram no cache' docs/PORTAL-DESEMPENHO-CACHE-V1.md
 
       - name: Conferir autorização e separação de domínios
         run: |
