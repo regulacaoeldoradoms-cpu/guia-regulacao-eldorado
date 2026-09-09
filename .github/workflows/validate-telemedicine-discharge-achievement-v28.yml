@@ -1,0 +1,60 @@
+name: Validar Telemedicina Alta Conquista V28
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-discharge-achievement-v28.js'
+      - 'css/telemedicina-discharge-achievement-v28.css'
+      - 'worker/telemedicine.js'
+      - 'worker/telemedicine-rules.js'
+      - 'worker/tests/telemedicine-outcomes-v25.test.mjs'
+      - 'docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md'
+      - '.github/workflows/validate-telemedicine-discharge-achievement-v28.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-discharge-achievement-v28.js'
+      - 'css/telemedicina-discharge-achievement-v28.css'
+      - 'worker/telemedicine.js'
+      - 'worker/telemedicine-rules.js'
+      - 'worker/tests/telemedicine-outcomes-v25.test.mjs'
+      - 'docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md'
+      - '.github/workflows/validate-telemedicine-discharge-achievement-v28.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe
+        run: |
+          node --check worker/telemedicine-rules.js
+          node --check worker/telemedicine.js
+          node --check js/telemedicina-discharge-achievement-v28.js
+      - name: Conferir regras de desfecho
+        run: node worker/tests/telemedicine-outcomes-v25.test.mjs
+      - name: Conferir persistência da alta no dashboard
+        run: |
+          grep -q 'isDischargeAchievement' worker/telemedicine.js
+          grep -q 'item.active !== false || isDischargeAchievement(item)' worker/telemedicine.js
+          grep -q '!item.deletedAt' worker/telemedicine.js
+          grep -q 'altas: 0' worker/telemedicine.js
+      - name: Conferir contrato visual de conquista
+        run: |
+          grep -q 'data-discharge-achievement="v28"' telemedicina/index.html
+          grep -q 'telemedicina-discharge-achievement-v28.css?v=20260909-1' telemedicina/index.html
+          grep -q 'telemedicina-discharge-achievement-v28.js?v=20260909-1' telemedicina/index.html
+          grep -q 'ALTA · CONQUISTA' js/telemedicina-discharge-achievement-v28.js
+          grep -q 'Conquista · Alta' js/telemedicina-discharge-achievement-v28.js
+          grep -q 'telemedicine-achievement-crown' css/telemedicina-discharge-achievement-v28.css
+          grep -q 'border: 2px solid var(--tm-card-border)' css/telemedicina-discharge-achievement-v28.css
+          grep -q 'transition: none !important' css/telemedicina-discharge-achievement-v28.css
+      - name: Conferir documentação permanente
+        run: |
+          test -f docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md
+          grep -q 'não deve fazer o card do paciente desaparecer' docs/TELEMEDICINA-ALTA-CONQUISTA-V28.md

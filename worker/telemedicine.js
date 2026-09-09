@@ -18,6 +18,7 @@ import {
   threeBusinessReminders,
   deriveFollowupStatus,
   reminderMetaFor,
+  isDischargeAchievement,
   looksClosed,
   looksRequested,
   returnDueFromRecord,
@@ -156,18 +157,19 @@ async function dashboard(env) {
   ]);
   const visible = followups
     .map((item) => publicFollowup(item, today))
-    .filter((item) => item.active !== false)
+    .filter((item) => !item.deletedAt && (item.active !== false || isDischargeAchievement(item)))
     .sort((a, b) => statusRank(a.status) - statusRank(b.status)
       || String(a.reminderDates?.[0] || a.returnDueDate || '9999').localeCompare(String(b.reminderDates?.[0] || b.returnDueDate || '9999'))
       || String(a.patientName || '').localeCompare(String(b.patientName || ''), 'pt-BR'));
 
-  const counts = { total: visible.length, solicitar: 0, atrasado: 0, emAguardo: 0, semProgramacao: 0, solicitado: 0, alertasHoje: 0 };
+  const counts = { total: visible.length, solicitar: 0, atrasado: 0, emAguardo: 0, semProgramacao: 0, solicitado: 0, altas: 0, alertasHoje: 0 };
   visible.forEach((item) => {
     if (item.status === 'SOLICITAR') counts.solicitar += 1;
     if (item.status === 'ATRASADO') counts.atrasado += 1;
     if (item.status === 'EM AGUARDO') counts.emAguardo += 1;
     if (item.status === 'SEM PROGRAMAÇÃO') counts.semProgramacao += 1;
     if (item.status === 'SOLICITADO') counts.solicitado += 1;
+    if (isDischargeAchievement(item)) counts.altas += 1;
     if (item.alertToday) counts.alertasHoje += 1;
   });
 
