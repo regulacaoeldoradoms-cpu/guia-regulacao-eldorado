@@ -29,13 +29,13 @@
     },
     coordenacao: {
       icon: '/assets/portal-regulacao-icon.webp?v=20260909-1',
-      type: 'image/png',
+      type: 'image/webp',
       subtitle: 'Portal da Regulação de Saúde · Eldorado/MS',
       title: 'Minha conta | Portal da Regulação'
     },
     admin: {
       icon: '/assets/portal-regulacao-icon.webp?v=20260909-1',
-      type: 'image/png',
+      type: 'image/webp',
       subtitle: 'Portal da Regulação de Saúde · Eldorado/MS',
       title: 'Minha conta | Portal da Regulação'
     }
