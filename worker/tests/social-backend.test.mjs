@@ -59,11 +59,13 @@ class D1Statement {
 }
 
 class D1Database {
-  constructor() {
-    this.database = new DatabaseSync(':memory:');
+  constructor(database = null) {
+    this.database = database || new DatabaseSync(':memory:');
+    this.preparedSql = [];
   }
 
   prepare(sql) {
+    this.preparedSql.push(String(sql));
     return new D1Statement(this.database, sql);
   }
 }
@@ -137,6 +139,19 @@ sqliteTest('flag desligada contém schema, semeadura e aliases sociais', async (
   assert.deepEqual(await provisionProfessionalSocialGraph(env), { users: 0, pairs: 0 });
   const socialTable = await env.AUTH_DB.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'social_users'").first();
   assert.equal(socialTable, null);
+});
+
+sqliteTest('novo isolate reconhece a migração social sem repetir todo o DDL', async () => {
+  const env = environment();
+  await ensureAuthSchema(env);
+  await ensureSocialSchema(env);
+
+  const coldBinding = new D1Database(env.AUTH_DB.database);
+  const coldEnv = { ...env, AUTH_DB: coldBinding };
+  assert.equal(await ensureSocialSchema(coldEnv), true);
+  assert.equal(coldBinding.preparedSql.length, 1);
+  assert.match(coldBinding.preparedSql[0], /SELECT version FROM social_schema_migrations/);
+  assert.equal(coldBinding.preparedSql.some((sql) => /\b(?:CREATE|ALTER|PRAGMA)\b/i.test(sql)), false);
 });
 
 sqliteTest('migração profissional é idempotente e preserva tombstone', async () => {
