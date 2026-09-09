@@ -1,4 +1,4 @@
-name: Validar Telemedicina Altas V30
+name: Validar Telemedicina Altas V30/V31
 
 on:
   pull_request:
@@ -6,6 +6,7 @@ on:
       - 'telemedicina/index.html'
       - 'js/telemedicina-altas-v30.js'
       - 'css/telemedicina-altas-v30.css'
+      - 'js/telemedicina-discharge-achievement-v28.js'
       - 'docs/TELEMEDICINA-SALVAMENTO-ATOMICO-E-ALTAS-V29.md'
       - '.github/workflows/validate-telemedicine-altas-v30.yml'
   push:
@@ -14,6 +15,7 @@ on:
       - 'telemedicina/index.html'
       - 'js/telemedicina-altas-v30.js'
       - 'css/telemedicina-altas-v30.css'
+      - 'js/telemedicina-discharge-achievement-v28.js'
       - 'docs/TELEMEDICINA-SALVAMENTO-ATOMICO-E-ALTAS-V29.md'
       - '.github/workflows/validate-telemedicine-altas-v30.yml'
 
@@ -30,27 +32,40 @@ jobs:
           node-version: '22'
 
       - name: Conferir sintaxe
-        run: node --check js/telemedicina-altas-v30.js
+        run: |
+          node --check js/telemedicina-altas-v30.js
+          node --check js/telemedicina-discharge-achievement-v28.js
 
       - name: Conferir integração do botão Altas
         run: |
           grep -q 'id="dischargeQueue"' telemedicina/index.html
           grep -q 'data-status-filter="CONCLUÍDO"' telemedicina/index.html
-          grep -q '<option value="CONCLUÍDO">Altas / conquistas</option>' telemedicina/index.html
-          grep -q 'data-discharge-queue="v30"' telemedicina/index.html
-          grep -q 'telemedicina-altas-v30.js?v=20260909-1' telemedicina/index.html
-          grep -q 'telemedicina-altas-v30.css?v=20260909-1' telemedicina/index.html
+          grep -q '<option value="CONCLUÍDO">Altas</option>' telemedicina/index.html
+          grep -q 'data-discharge-queue="v31"' telemedicina/index.html
+          grep -q 'telemedicina-altas-v30.js?v=20260909-2' telemedicina/index.html
+          grep -q 'telemedicina-altas-v30.css?v=20260909-2' telemedicina/index.html
           grep -q 'stopImmediatePropagation' js/telemedicina-altas-v30.js
           grep -q "filter.value = activating ? COMPLETED_STATUS : ''" js/telemedicina-altas-v30.js
           grep -q "search.value = ''" js/telemedicina-altas-v30.js
+          grep -q "option.textContent = 'Altas'" js/telemedicina-altas-v30.js
 
       - name: Conferir identidade dourada e reflexo
         run: |
+          ! grep -q "^'use strict';" css/telemedicina-altas-v30.css
           grep -q '#dischargeQueue.portal-button' css/telemedicina-altas-v30.css
+          grep -q 'background: linear-gradient' css/telemedicina-altas-v30.css
+          grep -q 'background: linear-gradient.*!important' css/telemedicina-altas-v30.css
           grep -q 'telemedicine-altas-reflexo' css/telemedicina-altas-v30.css
-          grep -q 'linear-gradient' css/telemedicina-altas-v30.css
+          grep -q 'animation: telemedicine-altas-reflexo' css/telemedicina-altas-v30.css
+          grep -q 'overflow: hidden' css/telemedicina-altas-v30.css
           grep -q 'prefers-reduced-motion' css/telemedicina-altas-v30.css
           grep -q "aria-pressed='true'" css/telemedicina-altas-v30.css
+
+      - name: Conferir nomenclatura visível
+        run: |
+          ! grep -qi 'Altas / conquistas' telemedicina/index.html
+          ! grep -qi 'conquista' js/telemedicina-altas-v30.js
+          ! grep -qi 'conquista' js/telemedicina-discharge-achievement-v28.js
 
       - name: Conferir regressões da Telemedicina
         run: |
