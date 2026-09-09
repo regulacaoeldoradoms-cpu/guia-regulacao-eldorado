@@ -444,7 +444,7 @@
 /* O celular pode anunciar uma viewport larga (modo desktop/zoom do navegador).
    A classe aplicada pela Home garante uma composição de aplicativo nesses casos. */
 body.mobile-home-mode.has-social-navigation {
-  padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  padding-bottom: calc(clamp(84px, 10vw, 100px) + env(safe-area-inset-bottom));
 }
 
 body.mobile-home-mode .social-global-nav { display: none; }
@@ -455,59 +455,64 @@ body.mobile-home-mode .social-mobile-nav {
   bottom: 0;
   left: 0;
   z-index: 13000;
-  min-height: 64px;
+  min-height: clamp(74px, 9vw, 88px);
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
-  padding: 4px max(5px, env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(5px, env(safe-area-inset-left));
-  border-top: 1px solid #cadbe7;
+  padding: clamp(5px, .8vw, 8px) max(6px, env(safe-area-inset-right)) calc(clamp(5px, .8vw, 8px) + env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+  border-top: 2px solid #b9cfdd;
   background: rgba(255, 255, 255, .98);
-  box-shadow: 0 -4px 18px rgba(13, 50, 78, .12);
+  box-shadow: 0 -8px 24px rgba(13, 50, 78, .16);
 }
 
 body.mobile-home-mode .social-mobile-nav-link {
   min-width: 0;
-  min-height: 56px;
+  min-height: clamp(64px, 8vw, 78px);
   flex-direction: column;
-  gap: 2px;
-  padding: 5px 2px;
-  border-radius: 9px;
-  font-size: .75rem;
+  gap: clamp(3px, .45vw, 5px);
+  padding: clamp(5px, .7vw, 7px) 3px;
+  border-radius: 12px;
+  font-size: clamp(14px, 1.9vw, 18px);
   line-height: 1.1;
 }
 
 body.mobile-home-mode .social-mobile-nav-link[aria-current="page"] {
   color: var(--social-blue);
-  background: #edf6fb;
+  background: #e5f3fb;
+  box-shadow: inset 0 3px var(--social-blue);
 }
 
 body.mobile-home-mode .social-mobile-nav-link .social-nav-icon {
-  width: 24px;
-  height: 24px;
+  width: clamp(30px, 3.7vw, 36px);
+  height: clamp(30px, 3.7vw, 36px);
 }
 
 body.mobile-home-mode .social-mobile-nav-link .social-nav-badge {
+  min-width: clamp(22px, 2.6vw, 26px);
+  height: clamp(22px, 2.6vw, 26px);
+  font-size: clamp(11px, 1.3vw, 13px);
   position: absolute;
-  top: 2px;
-  left: calc(50% + 7px);
+  top: clamp(2px, .4vw, 4px);
+  left: calc(50% + clamp(9px, 1.2vw, 12px));
 }
 
 body.mobile-home-mode .social-shell {
   width: 100%;
-  margin: 0 auto 28px;
-  padding: 10px 10px 0;
+  margin: 0 auto clamp(32px, 4vw, 40px);
+  padding: clamp(10px, 1.4vw, 14px) clamp(10px, 1.4vw, 14px) 0;
+  font-size: clamp(17px, 2.15vw, 21px);
 }
 
 body.mobile-home-mode .social-layout {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: clamp(9px, 1.2vw, 12px);
 }
 
 body.mobile-home-mode .social-layout > .social-column {
   width: 100%;
   margin: 0;
-  gap: 8px;
+  gap: clamp(9px, 1.2vw, 12px);
 }
 
 body.mobile-home-mode .social-profile-rail { display: none; }
@@ -519,72 +524,79 @@ body.mobile-home-mode .social-tools-rail {
 }
 
 body.mobile-home-mode .social-card {
-  border-radius: 14px;
+  border-radius: clamp(14px, 1.8vw, 18px);
   box-shadow: 0 2px 9px rgba(13, 54, 86, .08);
 }
 
 body.mobile-home-mode .social-composer {
-  padding: 13px 14px 14px;
+  padding: clamp(14px, 1.9vw, 19px);
 }
 
 body.mobile-home-mode .social-composer h2 {
-  margin-bottom: 9px;
-  font-size: .9rem;
+  margin-bottom: clamp(9px, 1.2vw, 12px);
+  font-size: 1em;
 }
 
 body.mobile-home-mode .social-textarea {
-  min-height: 72px;
-  padding: 11px 12px;
+  min-height: clamp(82px, 9.8vw, 96px);
+  padding: clamp(11px, 1.5vw, 15px);
   border-radius: 14px;
-  font-size: 1rem;
-  line-height: 1.4;
+  font-size: 1em;
+  line-height: 1.45;
 }
 
 body.mobile-home-mode .social-composer-footer {
-  margin-top: 8px;
+  margin-top: clamp(9px, 1.2vw, 12px);
   align-items: center;
   flex-direction: row;
-  gap: 8px;
+  gap: clamp(8px, 1.2vw, 12px);
 }
 
 body.mobile-home-mode .social-composer-footer .social-select {
   width: auto;
   min-width: 0;
   max-width: none;
-  min-height: 44px;
+  min-height: clamp(48px, 6.2vw, 60px);
   flex: 1 1 auto;
-  font-size: .9rem;
+  padding: clamp(10px, 1.3vw, 13px) clamp(12px, 1.5vw, 15px);
+  font-size: .95em;
 }
 
 body.mobile-home-mode .social-composer-footer .social-button {
   width: auto;
-  min-width: 96px;
-  min-height: 44px;
+  min-width: clamp(102px, 12vw, 118px);
+  min-height: clamp(48px, 6.2vw, 60px);
   flex: 0 0 auto;
+  padding-right: clamp(14px, 1.8vw, 18px);
+  padding-left: clamp(14px, 1.8vw, 18px);
 }
 
-body.mobile-home-mode .social-status { margin: 0; }
-body.mobile-home-mode .social-skeleton { min-height: 100px; }
+body.mobile-home-mode .social-status {
+  margin: 0;
+  padding: clamp(11px, 1.4vw, 14px);
+  font-size: .9em;
+}
+body.mobile-home-mode .social-skeleton { min-height: clamp(110px, 13vw, 128px); }
 
-body.mobile-home-mode .social-post { padding: 13px 14px; }
+body.mobile-home-mode .social-post { padding: clamp(14px, 1.9vw, 19px); }
 body.mobile-home-mode .social-post-header {
-  grid-template-columns: 40px minmax(0, 1fr) 44px;
-  gap: 9px;
+  grid-template-columns: clamp(46px, 5.3vw, 52px) minmax(0, 1fr) clamp(48px, 5.8vw, 56px);
+  gap: clamp(9px, 1.2vw, 12px);
 }
 body.mobile-home-mode .social-post-header .social-avatar {
-  width: 40px;
-  height: 40px;
+  width: clamp(46px, 5.3vw, 52px);
+  height: clamp(46px, 5.3vw, 52px);
 }
-body.mobile-home-mode .social-post-author a { font-size: .9rem; }
+body.mobile-home-mode .social-post-author a { font-size: .95em; }
 body.mobile-home-mode .social-post-author span,
-body.mobile-home-mode .social-post-meta { font-size: .75rem; }
+body.mobile-home-mode .social-post-meta { font-size: .78em; }
 body.mobile-home-mode .social-icon-button {
-  width: 44px;
-  height: 44px;
+  width: clamp(48px, 5.8vw, 56px);
+  height: clamp(48px, 5.8vw, 56px);
 }
 body.mobile-home-mode .social-post-body {
-  margin: 12px 0 10px;
-  font-size: 1rem;
+  margin: clamp(12px, 1.5vw, 15px) 0 clamp(10px, 1.3vw, 13px);
+  font-size: 1em;
   line-height: 1.5;
 }
 body.mobile-home-mode .social-post-actions {
@@ -597,94 +609,108 @@ body.mobile-home-mode .social-post-actions {
 }
 body.mobile-home-mode .social-action {
   min-width: 0;
-  min-height: 44px;
+  min-height: clamp(48px, 6vw, 58px);
   justify-content: center;
-  padding: 7px 4px;
-  font-size: .8rem;
+  padding: clamp(7px, 1vw, 10px) 4px;
+  font-size: .85em;
+}
+body.mobile-home-mode .social-action svg {
+  width: clamp(20px, 2.5vw, 24px);
+  height: clamp(20px, 2.5vw, 24px);
 }
 
 body.mobile-home-mode .social-comments {
   margin-top: 9px;
   padding-top: 9px;
 }
-body.mobile-home-mode .social-comment-bubble p { font-size: .875rem; }
+body.mobile-home-mode .social-comment .social-avatar {
+  width: clamp(38px, 4.5vw, 44px);
+  height: clamp(38px, 4.5vw, 44px);
+}
+body.mobile-home-mode .social-comment-bubble a { font-size: .82em; }
+body.mobile-home-mode .social-comment-bubble p { font-size: .9em; }
+body.mobile-home-mode .social-comment-delete { font-size: .8em; }
 body.mobile-home-mode .social-comment-form {
   grid-template-columns: minmax(0, 1fr) auto;
 }
+body.mobile-home-mode .social-comment-form .social-input,
+body.mobile-home-mode .social-comment-form .social-button {
+  min-height: clamp(48px, 5.8vw, 56px);
+}
 
-body.mobile-home-mode .social-empty { padding: 24px 16px; }
-body.mobile-home-mode .social-empty svg { width: 36px; height: 36px; }
-body.mobile-home-mode .social-empty h2 { margin-top: 9px; font-size: 1rem; }
-body.mobile-home-mode .social-empty p { font-size: .875rem; line-height: 1.45; }
-body.mobile-home-mode #socialFeedMore { width: 100%; min-height: 44px; }
+body.mobile-home-mode .social-empty { padding: clamp(28px, 4vw, 40px) clamp(18px, 2.5vw, 24px); }
+body.mobile-home-mode .social-empty svg { width: clamp(44px, 5.3vw, 52px); height: clamp(44px, 5.3vw, 52px); }
+body.mobile-home-mode .social-empty h2 { margin-top: clamp(10px, 1.4vw, 14px); font-size: 1em; }
+body.mobile-home-mode .social-empty p { font-size: .9em; line-height: 1.5; }
+body.mobile-home-mode #socialFeedMore { width: 100%; min-height: clamp(50px, 6.2vw, 60px); }
 
 body.mobile-home-mode .social-shortcuts { margin-top: 2px; }
 body.mobile-home-mode .social-shortcuts .social-section-heading {
-  padding: 12px 14px 8px;
+  padding: clamp(13px, 1.8vw, 18px) clamp(14px, 1.9vw, 19px) clamp(9px, 1.2vw, 12px);
   border-bottom: 0;
 }
-body.mobile-home-mode .social-shortcuts .social-section-heading h2 { font-size: .95rem; }
+body.mobile-home-mode .social-shortcuts .social-section-heading h2 { font-size: 1em; }
 body.mobile-home-mode .social-shortcuts .social-section-heading p { display: none; }
 body.mobile-home-mode .social-shortcuts .portal-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  padding: 2px 10px 10px;
+  gap: clamp(8px, 1.2vw, 12px);
+  padding: 2px clamp(10px, 1.4vw, 14px) clamp(11px, 1.5vw, 15px);
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact {
-  min-height: 112px;
-  padding: 10px 6px;
+  min-height: clamp(128px, 15.5vw, 152px);
+  padding: clamp(11px, 1.5vw, 15px) clamp(6px, 1vw, 10px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
-  border-radius: 12px;
+  gap: clamp(8px, 1.1vw, 11px);
+  border-radius: 14px;
   text-align: center;
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact .hub-card-icon {
-  width: 44px;
-  height: 44px;
+  width: clamp(54px, 6.5vw, 64px);
+  height: clamp(54px, 6.5vw, 64px);
   margin: 0;
-  border-radius: 12px;
+  border-radius: 14px;
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact .hub-card-icon img {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
+  width: clamp(50px, 6.1vw, 60px);
+  height: clamp(50px, 6.1vw, 60px);
+  border-radius: 12px;
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact .hub-card-icon svg {
-  width: 26px;
-  height: 26px;
+  width: clamp(34px, 4.2vw, 42px);
+  height: clamp(34px, 4.2vw, 42px);
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact > span:not(.hub-card-icon):not(.hub-card-arrow) {
   width: 100%;
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact h3 {
   margin: 0;
-  font-size: .875rem;
-  line-height: 1.2;
+  font-size: .88em;
+  line-height: 1.25;
   text-align: center;
   overflow-wrap: anywhere;
 }
 body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact .hub-card-arrow { display: none; }
-body.mobile-home-mode .social-shortcuts .social-card-pad { padding: 0 10px 10px; }
+body.mobile-home-mode .social-shortcuts .social-card-pad { padding: 0 clamp(10px, 1.4vw, 14px) clamp(11px, 1.5vw, 15px); }
 body.mobile-home-mode .social-shortcuts .social-card-pad .social-button {
   width: 100%;
-  min-height: 44px;
+  min-height: clamp(50px, 6.2vw, 60px);
 }
 body.mobile-home-mode .social-safety-card { display: none; }
 
 body.mobile-home-mode .portal-chat {
-  bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+  bottom: calc(clamp(94px, 11vw, 112px) + env(safe-area-inset-bottom)) !important;
 }
 
 @media (max-width: 390px) {
-  body.mobile-home-mode .social-shell { padding-right: 6px; padding-left: 6px; }
+  body.mobile-home-mode .social-shell { padding-right: 8px; padding-left: 8px; }
   body.mobile-home-mode .social-composer,
   body.mobile-home-mode .social-post { padding-right: 12px; padding-left: 12px; }
   body.mobile-home-mode .social-shortcuts .portal-grid { gap: 6px; padding-right: 8px; padding-left: 8px; }
-  body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact { min-height: 106px; padding-right: 4px; padding-left: 4px; }
-  body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact h3 { font-size: .8rem; }
+  body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact { min-height: 124px; padding-right: 5px; padding-left: 5px; }
+  body.mobile-home-mode .social-shortcuts .hub-card.hub-card-compact h3 { font-size: .84em; }
 }
 
 @media (prefers-reduced-motion: reduce) {

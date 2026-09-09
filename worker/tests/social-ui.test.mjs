@@ -32,7 +32,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     const html = read(filename);
     assert.match(html, /portal-interactions\.css\?v=20260906-2/);
     assert.match(html, /portal-interactions\.js\?v=20260906-2/);
-    assert.match(html, /social\.css\?v=20260909-1/);
+    assert.match(html, /social\.css\?v=20260909-2/);
     assert.match(html, /social-api\.js\?v=20260906-1/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
@@ -134,6 +134,9 @@ test('V1 é textual, responsiva e respeita preferências de acessibilidade', () 
   assert.match(css, /body\.mobile-home-mode \.social-layout\s*\{[^}]*display:\s*flex/s);
   assert.match(css, /body\.mobile-home-mode \.social-global-nav\s*\{\s*display:\s*none/);
   assert.match(css, /body\.mobile-home-mode \.social-shortcuts \.portal-grid\s*\{[^}]*repeat\(3/s);
+  assert.match(css, /body\.mobile-home-mode \.social-shell\s*\{[^}]*font-size:\s*clamp\(17px,\s*2\.15vw,\s*21px\)/s);
+  assert.match(css, /body\.mobile-home-mode \.social-mobile-nav\s*\{[^}]*min-height:\s*clamp\(74px,\s*9vw,\s*88px\)/s);
+  assert.match(css, /body\.mobile-home-mode \.social-mobile-nav-link \.social-nav-icon\s*\{[^}]*clamp\(30px,\s*3\.7vw,\s*36px\)/s);
   assert.match(homeMobileCss, /body\.mobile-home-mode #toolsFallback \.hub-card\s*\{/);
   assert.doesNotMatch(homeMobileCss, /body\.mobile-home-mode \.hub-card\s*\{/);
   assert.match(home, /social-profile-rail/);
