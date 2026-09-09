@@ -145,7 +145,7 @@ test('configuração social usa stale-while-revalidate sem persistir feed ou API
   assert.doesNotMatch(social, /localStorage\.setItem\(configCacheKey/);
   assert.doesNotMatch(social, /social\.feed.*sessionStorage|sessionStorage.*social\.feed/i);
   assert.match(home, /Promise\.all\(\[/);
-  assert.match(social, /api\('\/api\/social\/me'\)/);
+  assert.match(home, /social\.api\('\/api\/social\/me'\)/);
   assert.match(home, /PortalSocialFeed\.load\(feed, more\)/);
 });
 
