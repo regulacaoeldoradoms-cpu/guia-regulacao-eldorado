@@ -15,9 +15,7 @@
 
   function isDischargeAchievementRow(row) {
     if (!(row instanceof Element) || !row.matches('[data-followup-row]')) return false;
-    if (row.getAttribute('data-status') !== 'concluido') return false;
-    const resolution = row.querySelector('.telemedicine-patient > small')?.textContent || '';
-    return /\bALTA\b/.test(normalize(resolution));
+    return row.getAttribute('data-status') === 'concluido';
   }
 
   function crownBadge() {
