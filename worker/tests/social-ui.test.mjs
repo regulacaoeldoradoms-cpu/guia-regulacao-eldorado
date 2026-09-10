@@ -202,6 +202,110 @@ test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação
   assert.equal(window.PortalSocial.getCachedRelationshipList('friends').profiles.length, 3);
 });
 
+test('avatar social reutiliza Cache Storage e baixa novamente somente quando a versão muda', async () => {
+  const source = read('js/social-api.js');
+  const stored = new Map();
+  let networkRequests = 0;
+  let objectUrlSequence = 0;
+
+  const cache = {
+    async match(request) {
+      const response = stored.get(request.url);
+      return response ? response.clone() : undefined;
+    },
+    async put(request, response) {
+      stored.set(request.url, response.clone());
+    },
+    async keys() {
+      return Array.from(stored.keys(), (url) => new Request(url));
+    },
+    async delete(request) {
+      return stored.delete(typeof request === 'string' ? request : request.url);
+    }
+  };
+
+  function runtime() {
+    const eventListeners = new Map();
+    class TestURL extends URL {}
+    TestURL.createObjectURL = () => `blob:avatar-${++objectUrlSequence}`;
+    TestURL.revokeObjectURL = () => {};
+
+    const window = {
+      RegulationAuth: {
+        api: async () => ({}),
+        getToken: () => 'sessao-teste',
+        authorizationHeader: () => ({ Authorization: 'Bearer sessao-teste' }),
+        getCachedUser: () => ({ username: 'visualizador.teste' })
+      },
+      REGULATION_AUTH_CONFIG: { endpoint: 'https://worker.test' },
+      location: { origin: 'https://portal.test' },
+      caches: {
+        open: async () => cache,
+        delete: async () => { stored.clear(); return true; }
+      },
+      addEventListener(type, callback) { eventListeners.set(type, callback); },
+      setTimeout,
+      clearTimeout
+    };
+    const context = {
+      window,
+      document: { getElementById: () => null },
+      sessionStorage: {
+        get length() { return 0; },
+        getItem: () => null,
+        setItem() {},
+        removeItem() {},
+        key: () => null
+      },
+      localStorage: {
+        getItem: () => null,
+        setItem() {},
+        removeItem() {}
+      },
+      fetch: async () => {
+        networkRequests += 1;
+        return new Response(new Blob(['imagem'], { type: 'image/png' }), {
+          status: 200,
+          headers: { 'Content-Type': 'image/png' }
+        });
+      },
+      Request,
+      Response,
+      Blob,
+      URL: TestURL,
+      AbortController,
+      FormData,
+      setTimeout,
+      clearTimeout
+    };
+    vm.runInNewContext(source, context, { filename: 'js/social-api.js' });
+    return window.PortalSocial;
+  }
+
+  function element() {
+    return {
+      textContent: '',
+      style: {},
+      isConnected: true,
+      setAttribute() {}
+    };
+  }
+
+  const v1 = { handle: 'pessoa.teste', name: 'Pessoa Teste', avatarAvailable: true, avatarVersion: 'versao-1' };
+  const firstRuntime = runtime();
+  await firstRuntime.mountAvatar(element(), v1);
+  assert.equal(networkRequests, 1);
+  assert.equal(stored.size, 1);
+
+  const secondRuntime = runtime();
+  await secondRuntime.mountAvatar(element(), v1);
+  assert.equal(networkRequests, 1, 'nova página deve reutilizar o avatar persistido localmente');
+
+  await secondRuntime.mountAvatar(element(), { ...v1, avatarVersion: 'versao-2' });
+  assert.equal(networkRequests, 2, 'uma versão nova deve baixar a foto nova uma única vez');
+  assert.equal(stored.size, 1, 'a versão antiga deve ser removida após a atualização');
+});
+
 test('cliente social renderiza texto do usuário sem interpolação HTML', () => {
   const files = ['js/social-feed.js', 'js/social-friends.js', 'js/social-profile.js', 'js/social-notifications.js', 'js/social-moderation.js'];
   for (const filename of files) {
