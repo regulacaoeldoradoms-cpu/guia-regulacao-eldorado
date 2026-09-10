@@ -32,14 +32,27 @@ function preflight(origin, allowed) {
   return new Response(null, { status: 204, headers });
 }
 
-async function ensureAvatarColumn(env) {
+async function ensureAvatarColumns(env) {
   if (!env.AUTH_DB) return false;
   const columns = await env.AUTH_DB.prepare('PRAGMA table_info(auth_users)').all();
   const names = new Set((columns.results || []).map((column) => String(column.name || '')));
   if (!names.has('avatar_data')) {
     await env.AUTH_DB.prepare("ALTER TABLE auth_users ADD COLUMN avatar_data TEXT NOT NULL DEFAULT ''").run();
   }
+  if (!names.has('avatar_version')) {
+    await env.AUTH_DB.prepare("ALTER TABLE auth_users ADD COLUMN avatar_version TEXT NOT NULL DEFAULT ''").run();
+    await env.AUTH_DB.prepare(`UPDATE auth_users
+      SET avatar_version = COALESCE(NULLIF(updated_at, ''), CURRENT_TIMESTAMP)
+      WHERE avatar_data <> '' AND avatar_version = ''`).run();
+  }
   return true;
+}
+
+function nextAvatarVersion() {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 function validAvatar(value) {
@@ -50,9 +63,12 @@ function validAvatar(value) {
 }
 
 async function avatarFor(env, username) {
-  if (!(await ensureAvatarColumn(env))) return '';
-  const row = await env.AUTH_DB.prepare('SELECT avatar_data FROM auth_users WHERE username = ?').bind(username).first();
-  return String(row?.avatar_data || '');
+  if (!(await ensureAvatarColumns(env))) return { avatarDataUrl: '', avatarVersion: '' };
+  const row = await env.AUTH_DB.prepare('SELECT avatar_data, avatar_version FROM auth_users WHERE username = ?').bind(username).first();
+  return {
+    avatarDataUrl: String(row?.avatar_data || ''),
+    avatarVersion: String(row?.avatar_version || '')
+  };
 }
 
 export function isProfileApi(pathname) {
@@ -71,8 +87,10 @@ export async function handleProfileRoute(request, env, origin, originAllowed = t
   const photoUnlocked = minimumLevelMet(user, 'prata');
 
   if (request.method === 'GET') {
+    const avatar = photoUnlocked ? await avatarFor(env, user.username) : { avatarDataUrl: '', avatarVersion: '' };
     return jsonResponse({
-      avatarDataUrl: photoUnlocked ? await avatarFor(env, user.username) : '',
+      avatarDataUrl: avatar.avatarDataUrl,
+      avatarVersion: avatar.avatarVersion,
       locked: !photoUnlocked,
       requiredLevel: !photoUnlocked ? 'prata' : '',
       accountLevel: progress.level
@@ -93,11 +111,14 @@ export async function handleProfileRoute(request, env, origin, originAllowed = t
     if (!validAvatar(avatarDataUrl)) {
       return jsonResponse({ error: 'A foto de perfil enviada é inválida ou muito grande.' }, 400, origin, originAllowed);
     }
-    await ensureAvatarColumn(env);
-    await env.AUTH_DB.prepare('UPDATE auth_users SET avatar_data = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?')
-      .bind(avatarDataUrl, user.username)
+    await ensureAvatarColumns(env);
+    const avatarVersion = nextAvatarVersion();
+    await env.AUTH_DB.prepare(`UPDATE auth_users
+      SET avatar_data = ?, avatar_version = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE username = ?`)
+      .bind(avatarDataUrl, avatarVersion, user.username)
       .run();
-    return jsonResponse({ ok: true, avatarDataUrl, accountLevel: progress.level }, 200, origin, originAllowed);
+    return jsonResponse({ ok: true, avatarDataUrl, avatarVersion, accountLevel: progress.level }, 200, origin, originAllowed);
   }
 
   return jsonResponse({ error: 'Método não permitido.' }, 405, origin, originAllowed);
