@@ -136,7 +136,7 @@
     }
 
     card.classList.remove('blocked');
-    text.textContent = 'Ative para receber avisos de novas mensagens quando o portal estiver em outra aba ou janela.';
+    text.textContent = 'Ative para receber avisos de novas mensagens mesmo quando o Portal estiver fechado.';
     button.hidden = false;
   }
 
