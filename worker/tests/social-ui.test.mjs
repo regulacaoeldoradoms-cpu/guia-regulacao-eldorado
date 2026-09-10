@@ -32,10 +32,10 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     const html = read(filename);
     assert.match(html, /portal-interactions\.css\?v=20260906-2/);
     assert.match(html, /portal-interactions\.js\?v=20260910-2/);
-    assert.match(html, /social\.css\?v=20260909-3/);
+    assert.match(html, /social\.css\?v=20260910-3/);
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
-    assert.match(html, /social-api\.js\?v=20260909-1/);
-    assert.match(html, /social-navigation\.js\?v=20260910-2/);
+    assert.match(html, /social-api\.js\?v=20260910-3/);
+    assert.match(html, /social-navigation\.js\?v=20260910-3/);
     if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-2/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
@@ -89,7 +89,7 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.doesNotMatch(navigation, /navLink\('\/notificacoes\/', '(?:Notificações|Avisos)'/);
   assert.doesNotMatch(navigation, /navLink\('\/conta\/', 'Conta'/);
   assert.doesNotMatch(navigation, /'Meu perfil'/);
-  assert.match(index, /social-navigation\.js\?v=20260910-2/);
+  assert.match(index, /social-navigation\.js\?v=20260910-3/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
   assert.match(index, /\/js\/social-home\.js\?v=20260910-1/);
   assert.match(index, /\/js\/home\.js\?v=20260910-2/);
@@ -136,6 +136,70 @@ test('chat profissional ignora amizade e oferece perfil sem liberar cidadãos', 
   assert.doesNotMatch(client, /social_relationship|friend/i);
   assert.match(backend, /PROFESSIONAL_ROLES = new Set/);
   assert.doesNotMatch(backend, /social_relationship|friend/i);
+});
+
+test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação local', async () => {
+  const html = read('amigos/index.html');
+  const client = read('js/social-friends.js');
+  const navigation = read('js/social-navigation.js');
+  const apiSource = read('js/social-api.js');
+
+  assert.doesNotMatch(html, /id="relationshipMore"/);
+  assert.match(html, /id="relationshipPageSize"/);
+  assert.match(html, /value="10">10 por página/);
+  assert.match(html, /value="20">20 por página/);
+  assert.match(html, /value="30">30 por página/);
+  assert.match(html, /value="all">Todos/);
+  assert.match(html, /id="relationshipPageButtons"/);
+  assert.match(html, /social-friends\.js\?v=20260910-3/);
+
+  assert.match(navigation, /preloadRelationshipList\?\.\('friends'\)/);
+  assert.match(apiSource, /fetchAllRelationshipPages/);
+  assert.match(apiSource, /seenHandles/);
+  assert.match(apiSource, /SOCIAL_RELATIONSHIP_CURSOR_REPEAT/);
+  assert.match(client, /preloadOtherRelationshipLists/);
+  assert.match(client, /relationshipPageSize/);
+  assert.match(client, /pageTokens/);
+  assert.doesNotMatch(client, /listCursor|relationshipMore/);
+
+  const store = new Map();
+  const sessionStorage = {
+    get length() { return store.size; },
+    getItem(key) { return store.has(key) ? store.get(key) : null; },
+    setItem(key, value) { store.set(key, String(value)); },
+    removeItem(key) { store.delete(key); },
+    key(index) { return Array.from(store.keys())[index] || null; }
+  };
+  const calls = [];
+  const window = {
+    RegulationAuth: {
+      api: async (path) => {
+        calls.push(path);
+        if (path.includes('cursor=cursor-2')) {
+          return { profiles: [{ handle: 'bruno' }, { handle: 'carla' }], nextCursor: '' };
+        }
+        return { profiles: [{ handle: 'ana' }, { handle: 'bruno' }], nextCursor: 'cursor-2' };
+      },
+      getCachedUser: () => ({ username: 'teste.amigos' })
+    },
+    REGULATION_AUTH_CONFIG: {},
+    addEventListener() {},
+    setTimeout,
+    clearTimeout
+  };
+  vm.runInNewContext(apiSource, {
+    window,
+    sessionStorage,
+    URL,
+    AbortController,
+    setTimeout,
+    clearTimeout
+  });
+
+  const profiles = await window.PortalSocial.refreshRelationshipList('friends');
+  assert.deepEqual(Array.from(profiles, (profile) => profile.handle), ['ana', 'bruno', 'carla']);
+  assert.equal(calls.length, 2);
+  assert.equal(window.PortalSocial.getCachedRelationshipList('friends').profiles.length, 3);
 });
 
 test('cliente social renderiza texto do usuário sem interpolação HTML', () => {
