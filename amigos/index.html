@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-chat.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/social.css?v=20260909-3">
+  <link rel="stylesheet" href="/css/social.css?v=20260910-3">
   <link rel="stylesheet" href="/css/social-notification-panel.css?v=20260910-1">
 </head>
 <body class="portal-page">
@@ -33,7 +33,11 @@
               <button class="social-tab" type="button" role="tab" aria-selected="false" data-relationship-tab="blocked">Bloqueados</button>
             </div>
             <div class="social-list" id="relationshipList"><div class="social-skeleton"></div></div>
-            <div class="social-card-pad"><button class="social-button secondary" id="relationshipMore" type="button" hidden>Carregar mais</button></div>
+            <div class="social-list-pagination" id="relationshipPagination" hidden>
+              <label class="social-page-size" for="relationshipPageSize"><span>Exibir</span><select class="social-select" id="relationshipPageSize" aria-label="Quantidade de pessoas por página"><option value="10">10 por página</option><option value="20">20 por página</option><option value="30">30 por página</option><option value="all">Todos</option></select></label>
+              <span class="social-pagination-summary" id="relationshipPageSummary" aria-live="polite"></span>
+              <nav class="social-pagination-pages" id="relationshipPageButtons" aria-label="Páginas da lista"></nav>
+            </div>
           </div>
           <div class="social-status info" id="socialStatus" role="status" aria-live="polite" hidden></div>
         </section>
@@ -49,6 +53,6 @@
       </div>
     </main>
   </div>
-  <script src="/js/auth-config.js?v=20260815-1"></script><script src="/js/auth-client.js?v=20260910-2"></script><script src="/js/portal-interactions.js?v=20260910-2"></script><script src="/js/tools-catalog.js?v=20260910-2"></script><script src="/js/social-api.js?v=20260909-1"></script><script src="/js/social-navigation.js?v=20260910-2"></script><script src="/js/social-friends.js?v=20260910-2"></script><script src="/js/portal-chat.js?v=20260906-2"></script><script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>
+  <script src="/js/auth-config.js?v=20260815-1"></script><script src="/js/auth-client.js?v=20260910-2"></script><script src="/js/portal-interactions.js?v=20260910-2"></script><script src="/js/tools-catalog.js?v=20260910-2"></script><script src="/js/social-api.js?v=20260910-3"></script><script src="/js/social-navigation.js?v=20260910-3"></script><script src="/js/social-friends.js?v=20260910-3"></script><script src="/js/portal-chat.js?v=20260906-2"></script><script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>
 </body>
 </html>
