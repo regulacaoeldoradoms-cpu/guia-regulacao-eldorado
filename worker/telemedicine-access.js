@@ -3,8 +3,8 @@
 const TELEMEDICINE_ROLE = 'telemedicina';
 const UNDERLYING_ROLE = 'recepcao';
 const DEFAULT_JOB_TITLE = 'Técnico em Telemedicina';
-let accessSchemaReady = false;
-let accessSchemaPromise = null;
+const accessSchemaReady = new WeakSet();
+const accessSchemaPromises = new WeakMap();
 
 function normalizeUsername(value) {
   return String(value || '')
@@ -20,28 +20,31 @@ function normalizeUsername(value) {
 }
 
 export async function ensureTelemedicineAccessSchema(env) {
-  if (!env.AUTH_DB) return false;
-  if (accessSchemaReady) return true;
-  if (accessSchemaPromise) return accessSchemaPromise;
+  const binding = env.AUTH_DB;
+  if (!binding) return false;
+  if (accessSchemaReady.has(binding)) return true;
+  if (accessSchemaPromises.has(binding)) return accessSchemaPromises.get(binding);
 
-  accessSchemaPromise = (async () => {
-    await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS auth_telemedicine_access (
+  const operation = (async () => {
+    await binding.prepare(`CREATE TABLE IF NOT EXISTS auth_telemedicine_access (
       username TEXT PRIMARY KEY,
       enabled INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       created_by TEXT
     )`).run();
-    await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_auth_telemedicine_enabled ON auth_telemedicine_access(enabled, username)').run();
-    accessSchemaReady = true;
+    await binding.prepare('CREATE INDEX IF NOT EXISTS idx_auth_telemedicine_enabled ON auth_telemedicine_access(enabled, username)').run();
+    accessSchemaReady.add(binding);
     return true;
   })().catch((error) => {
-    accessSchemaReady = false;
-    accessSchemaPromise = null;
+    accessSchemaReady.delete(binding);
     throw error;
+  }).finally(() => {
+    accessSchemaPromises.delete(binding);
   });
 
-  return accessSchemaPromise;
+  accessSchemaPromises.set(binding, operation);
+  return operation;
 }
 
 export async function ensureTelemedicineUnderlyingRole(env, username) {
