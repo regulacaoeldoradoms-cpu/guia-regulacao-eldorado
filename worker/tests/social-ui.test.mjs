@@ -33,7 +33,9 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     assert.match(html, /portal-interactions\.css\?v=20260906-2/);
     assert.match(html, /portal-interactions\.js\?v=20260906-2/);
     assert.match(html, /social\.css\?v=20260909-3/);
+    assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
     assert.match(html, /social-api\.js\?v=20260909-1/);
+    assert.match(html, /social-navigation\.js\?v=20260910-1/);
     if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-1/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
@@ -78,10 +80,12 @@ test('Home social ativa mantém fallback independente, recuperação de produç�
   assert.match(home, /Diagnóstico:/);
   assert.match(navigation, /navLink\('\/ferramentas\/', 'Ferramentas'/);
   assert.match(navigation, /navLink\('\/perfil\/', 'Perfil'/);
-  assert.match(navigation, /navLink\('\/notificacoes\/', 'Avisos'/);
+  assert.match(navigation, /notificationButton\('Notificações'/);
+  assert.match(navigation, /notificationButton\('Avisos'/);
+  assert.doesNotMatch(navigation, /navLink\('\/notificacoes\/', '(?:Notificações|Avisos)'/);
   assert.doesNotMatch(navigation, /navLink\('\/conta\/', 'Conta'/);
   assert.doesNotMatch(navigation, /'Meu perfil'/);
-  assert.match(index, /social-navigation\.js\?v=20260908-1/);
+  assert.match(index, /social-navigation\.js\?v=20260910-1/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
   assert.match(index, /\/js\/social-home\.js\?v=20260910-1/);
   assert.match(index, /\/js\/home\.js\?v=20260909-3/);
@@ -97,6 +101,25 @@ test('Home social ativa mantém fallback independente, recuperação de produç�
   assert.match(worker, /Promise\.all\(\[/);
   assert.match(flags, /SOCIAL_BACKEND_ENABLED = "true"/);
   assert.match(flags, /^SOCIAL_HOME_ENABLED = "true"$/m);
+});
+
+test('Notificações abrem painel acessível na própria tela e preservam histórico completo', () => {
+  const navigation = read('js/social-navigation.js');
+  const panelCss = read('css/social-notification-panel.css');
+  assert.match(navigation, /aria-haspopup/);
+  assert.match(navigation, /aria-expanded/);
+  assert.match(navigation, /aria-controls/);
+  assert.match(navigation, /event\.key === 'Escape'/);
+  assert.match(navigation, /document\.addEventListener\('pointerdown'/);
+  assert.match(navigation, /social\.api\('\/api\/social\/notifications'/);
+  assert.match(navigation, /method: 'PATCH'/);
+  assert.match(navigation, /Ver histórico completo/);
+  assert.match(navigation, /Nenhuma notificação no momento/);
+  assert.match(panelCss, /overflow-y:\s*auto/);
+  assert.match(panelCss, /data-mobile="true"/);
+  assert.match(panelCss, /safe-area-inset-bottom/);
+  assert.match(panelCss, /prefers-reduced-motion/);
+  assert.match(panelCss, /forced-colors/);
 });
 
 test('chat profissional ignora amizade e oferece perfil sem liberar cidadãos', () => {

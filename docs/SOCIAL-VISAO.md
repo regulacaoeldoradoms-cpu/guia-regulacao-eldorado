@@ -61,6 +61,17 @@ No desktop, a navegação oferece Início, Amigos, Ferramentas, Notificações e
 No mobile, prioriza Início, Amigos, Ferramentas, Avisos e Perfil. O catálogo de
 Ferramentas é o único trecho dessa composição que varia conforme cargo e permissões.
 
+`Notificações` no desktop e `Avisos` no mobile funcionam como controles de abertura,
+não como navegação direta. Ao acioná-los, o Portal abre na própria tela um painel com
+as notificações sociais recentes, preservando o contador de não lidas, a ação de
+marcar como lidas, estado vazio e rolagem interna quando necessário. Clicar fora ou
+pressionar `Esc` fecha o painel. No mobile, o mesmo conteúdo aparece como painel
+amplo acima da barra inferior, respeitando safe areas.
+
+A rota `/notificacoes/` continua existindo como histórico completo e fallback. Ela é
+oferecida como ação secundária `Ver histórico completo` dentro do painel, sem obrigar
+o usuário a abandonar a tela atual apenas para consultar notificações recentes.
+
 Não existe item independente `Conta` na navegação global. A área de foto/nome no
 cabeçalho continua sendo o acesso às configurações privadas em `/conta/`. `Perfil`
 aponta para `/perfil/` e representa a identidade social pública da conta, incluindo
@@ -128,6 +139,10 @@ Amizade, perfil, nível ou reação nunca são usados como autorização profiss
 As páginas reutilizam `PortalInteractions`; não existe segundo gerenciador de sons.
 Estados possuem texto e cor, com `aria-live` para resultados relevantes. Ícones são
 SVG vetoriais do Portal, sem emojis como pictogramas.
+
+O painel de notificações usa botão nativo, `aria-expanded`, `aria-controls` e
+`aria-haspopup`; pode ser fechado por `Esc`, devolvendo o foco ao acionador. O conteúdo
+é rolável sem deslocar a página inteira e mantém alternativa de histórico completo.
 
 A interface possui foco visível, controles nativos de formulário, diálogo modal
 nativo, navegação por teclado, tratamento de `prefers-reduced-motion`, contraste
