@@ -171,7 +171,9 @@ async function requestContext(request, env, authenticatedUser = null) {
     active: user.active === false ? 0 : 1,
     emailVerified: user.emailVerified ? 1 : 0,
     selfRegistered: user.selfRegistered ? 1 : 0,
-    acceptFriendRequests: user.acceptFriendRequests ? 1 : 0
+    acceptFriendRequests: user.acceptFriendRequests ? 1 : 0,
+    avatarAvailable: Boolean(user.avatarDataUrl) ? 1 : 0,
+    avatarVersion: String(user.avatarVersion || '')
   });
   return { user, social };
 }
@@ -190,6 +192,7 @@ function publicSummary(row) {
     name: row.name || row.handle,
     status: row.status_text || '',
     avatarAvailable: Boolean(Number(row.avatarAvailable || row.avatar_available || 0)),
+    avatarVersion: String(row.avatarVersion || row.avatar_version || ''),
     professional: rolePresentation(row)
   };
 }
@@ -225,6 +228,7 @@ async function profilePayload(env, viewer, target, relationship) {
     coverPattern: PATTERNS.has(target.cover_pattern) ? target.cover_pattern : 'waves',
     moduleOrder: safeJson(target.modules_order_json, ['about', 'friends', 'posts']).filter((item) => MODULES.has(item)),
     avatarAvailable: Boolean(Number(target.avatarAvailable || 0)),
+    avatarVersion: String(target.avatarVersion || target.avatar_version || ''),
     professional: rolePresentation(target),
     relationship: relationshipStateFor(viewer.social_user_id, target.social_user_id, relationship),
     acceptFriendRequests: Number(target.acceptFriendRequests || 0) === 1,
@@ -305,7 +309,8 @@ async function handleConfig(request, env, origin) {
       handle: context.social.handle,
       name: context.social.name || context.social.handle,
       homePreference: 'feed',
-      avatarAvailable: Boolean(Number(ownProfile?.avatarAvailable || 0))
+      avatarAvailable: Boolean(Number(ownProfile?.avatarAvailable || 0)),
+      avatarVersion: String(ownProfile?.avatarVersion || '')
     },
     unreadSocialNotifications: Number(unread?.total || 0),
     toolsPath: '/ferramentas/',
@@ -413,6 +418,7 @@ async function handleSearch(url, env, context, origin) {
       au.job_title AS jobTitle, au.active, au.email_verified AS emailVerified,
       au.accept_friend_requests AS acceptFriendRequests,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      COALESCE(au.avatar_version, '') AS avatarVersion,
       tele.enabled AS telemedicineEnabled
     FROM social_users su
     JOIN auth_users au ON au.username = su.auth_username
@@ -584,7 +590,8 @@ async function handleRelationshipList(url, env, context, origin) {
   const result = await env.AUTH_DB.prepare(`SELECT rel.*,
       su.*, au.username, au.role, au.name, au.job_title AS jobTitle, au.active,
       au.email_verified AS emailVerified, au.accept_friend_requests AS acceptFriendRequests,
-      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable
+      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      COALESCE(au.avatar_version, '') AS avatarVersion
     FROM social_relationships rel
     JOIN social_users su ON su.social_user_id = CASE WHEN rel.pair_low = ? THEN rel.pair_high ELSE rel.pair_low END
     JOIN auth_users au ON au.username = su.auth_username
@@ -659,6 +666,7 @@ async function feedRows(env, viewerId, cursor, authorId = '') {
       )))`;
   const sql = `SELECT p.*, su.handle, su.status_text, au.username, au.role, au.name,
       au.job_title AS jobTitle, COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      COALESCE(au.avatar_version, '') AS avatarVersion,
       CASE WHEN p.author_id = ? THEN 1 ELSE 0 END AS own,
       (SELECT COUNT(*) FROM social_comments c
         JOIN social_users comment_author ON comment_author.social_user_id = c.author_id
@@ -742,6 +750,7 @@ async function postById(env, postId, viewerId) {
   return env.AUTH_DB.prepare(`SELECT p.*, su.handle, su.status_text, au.username, au.role, au.name,
       au.job_title AS jobTitle, au.active, su.suspended_at,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      COALESCE(au.avatar_version, '') AS avatarVersion,
       CASE WHEN p.author_id = ? THEN 1 ELSE 0 END AS own,
       (SELECT COUNT(*) FROM social_comments c
         JOIN social_users comment_author ON comment_author.social_user_id = c.author_id
@@ -815,6 +824,7 @@ async function handleCommentsGet(url, env, context, postId, origin) {
   const afterId = cleanText(cursor?.id, 80) || '';
   const result = await env.AUTH_DB.prepare(`SELECT c.*, su.handle, su.status_text, au.username, au.role, au.name,
       au.job_title AS jobTitle, COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      COALESCE(au.avatar_version, '') AS avatarVersion,
       CASE WHEN c.author_id = ? THEN 1 ELSE 0 END AS own
     FROM social_comments c
     JOIN social_users su ON su.social_user_id = c.author_id
@@ -927,7 +937,8 @@ async function handleNotifications(request, url, env, context, origin) {
   const result = await env.AUTH_DB.prepare(`SELECT notification.id, notification.type, notification.entity_type AS entityType,
       notification.entity_id AS entityId, notification.created_at AS createdAt,
       notification.read_at AS readAt, actor.handle, au.name, au.role,
-      au.job_title AS jobTitle, COALESCE(au.avatar_data, '') <> '' AS avatarAvailable
+      au.job_title AS jobTitle, COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      COALESCE(au.avatar_version, '') AS avatarVersion
     FROM social_notifications notification
     LEFT JOIN social_users actor ON actor.social_user_id = notification.actor_id
     LEFT JOIN auth_users au ON au.username = actor.auth_username
@@ -976,7 +987,7 @@ async function handleNotifications(request, url, env, context, origin) {
   }, 200, origin);
 }
 
-function dataUrlResponse(dataUrl, origin) {
+function dataUrlResponse(dataUrl, origin, avatarVersion = '') {
   const match = String(dataUrl || '').match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/);
   if (!match) return json({ error: 'Foto de perfil não encontrada.' }, 404, origin);
   const binary = atob(match[2]);
@@ -987,6 +998,7 @@ function dataUrlResponse(dataUrl, origin) {
       ...responseHeaders(origin, true),
       'Content-Type': `image/${match[1]}`,
       'Cache-Control': 'private, max-age=300',
+      ...(avatarVersion ? { 'ETag': `"avatar-${avatarVersion}"`, 'X-Portal-Avatar-Version': avatarVersion } : {}),
       'Content-Security-Policy': "default-src 'none'; sandbox",
       'Content-Length': String(bytes.byteLength)
     }
@@ -1000,9 +1012,11 @@ async function handleAvatar(env, context, handle, origin) {
   if (!target) return json({ error: 'Foto de perfil não encontrada.' }, 404, origin);
   const relation = await relationshipRow(env, context.social.social_user_id, target.social_user_id);
   if (!canViewSocialProfile(context.social, target, relation)) return json({ error: 'Foto de perfil não encontrada.' }, 404, origin);
-  const row = await env.AUTH_DB.prepare('SELECT avatar_data AS avatarData FROM auth_users WHERE username = ? AND active = 1')
+  const row = await env.AUTH_DB.prepare(`SELECT avatar_data AS avatarData,
+      COALESCE(avatar_version, '') AS avatarVersion
+    FROM auth_users WHERE username = ? AND active = 1`)
     .bind(target.auth_username).first();
-  return dataUrlResponse(row?.avatarData || '', origin);
+  return dataUrlResponse(row?.avatarData || '', origin, String(row?.avatarVersion || ''));
 }
 
 async function reportTarget(env, context, targetType, targetValue) {
@@ -1101,7 +1115,8 @@ async function moderationTargetSummary(env, targetType, targetId) {
   const row = await env.AUTH_DB.prepare(`SELECT content.id, content.body, content.status,
       content.author_id AS authorSocialUserId, su.handle, su.status_text,
       su.suspended_at, au.username, au.name, au.role, au.job_title AS jobTitle,
-      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable
+      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      COALESCE(au.avatar_version, '') AS avatarVersion
     FROM ${table} content
     JOIN social_users su ON su.social_user_id = content.author_id
     JOIN auth_users au ON au.username = su.auth_username
