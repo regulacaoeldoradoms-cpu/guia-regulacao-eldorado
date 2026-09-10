@@ -35,7 +35,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     assert.match(html, /social\.css\?v=20260909-3/);
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
     assert.match(html, /social-api\.js\?v=20260909-1/);
-    assert.match(html, /social-navigation\.js\?v=20260910-1/);
+    assert.match(html, /social-navigation\.js\?v=20260910-2/);
     if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-2/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
@@ -59,7 +59,7 @@ test('Ferramentas mantém uma única matriz de autorização compartilhada', () 
   }
 });
 
-test('Home social ativa mantém fallback independente, recuperação de produção e Perfil sem Conta duplicada', () => {
+test('Home social ativa mantém fallback independente, nova navegação e Perfil sem Conta duplicada', () => {
   const home = read('js/home.js');
   const navigation = read('js/social-navigation.js');
   const worker = read('worker/social.js');
@@ -80,12 +80,16 @@ test('Home social ativa mantém fallback independente, recuperação de produç�
   assert.match(home, /Diagnóstico:/);
   assert.match(navigation, /navLink\('\/ferramentas\/', 'Ferramentas'/);
   assert.match(navigation, /navLink\('\/perfil\/', 'Perfil'/);
+  assert.match(navigation, /navLink\('\/seguranca\/', 'Segurança'/);
+  assert.match(navigation, /navLink\('\/configuracoes\/', 'Configurações'/);
+  assert.match(navigation, /navLink\('\/conquistas\/', 'Conquistas'/);
   assert.match(navigation, /notificationButton\('Notificações'/);
   assert.match(navigation, /notificationButton\('Avisos'/);
+  assert.match(navigation, /overflow-x:auto/);
   assert.doesNotMatch(navigation, /navLink\('\/notificacoes\/', '(?:Notificações|Avisos)'/);
   assert.doesNotMatch(navigation, /navLink\('\/conta\/', 'Conta'/);
   assert.doesNotMatch(navigation, /'Meu perfil'/);
-  assert.match(index, /social-navigation\.js\?v=20260910-1/);
+  assert.match(index, /social-navigation\.js\?v=20260910-2/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
   assert.match(index, /\/js\/social-home\.js\?v=20260910-1/);
   assert.match(index, /\/js\/home\.js\?v=20260909-3/);
@@ -93,6 +97,7 @@ test('Home social ativa mantém fallback independente, recuperação de produç�
   assert.match(index, /<body class="portal-page home-loading-active">/);
   assert.match(index, /id="homeLoading"[^>]*aria-busy="true"/);
   assert.match(index, /id="toolsFallback" hidden/);
+  assert.match(index, /\/configuracoes\/#socialPreferencesCard/);
   assert.doesNotMatch(read('js/social-home.js'), /home\.hidden = false|fallback\.hidden = true/);
   assert.match(worker, /socialHomeEnabled/);
   assert.match(read('js/social-api.js'), /AbortController/);
@@ -134,18 +139,26 @@ test('chat profissional ignora amizade e oferece perfil sem liberar cidadãos', 
 });
 
 test('cliente social renderiza texto do usuário sem interpolação HTML', () => {
-  const files = [
-    'js/social-feed.js',
-    'js/social-friends.js',
-    'js/social-profile.js',
-    'js/social-notifications.js',
-    'js/social-moderation.js'
-  ];
+  const files = ['js/social-feed.js', 'js/social-friends.js', 'js/social-profile.js', 'js/social-notifications.js', 'js/social-moderation.js'];
   for (const filename of files) {
     const source = read(filename);
     assert.doesNotMatch(source, /innerHTML\s*=\s*`[^`]*\$\{/s, `${filename}: conteúdo interpolado em HTML`);
     assert.doesNotMatch(source, /insertAdjacentHTML|document\.write/);
   }
+});
+
+test('Perfil permite foto pela câmera e mantém identidade cidadã na própria tela', () => {
+  const html = read('perfil/index.html');
+  const client = read('js/social-profile.js');
+  assert.match(html, /id="profilePhotoCamera"/);
+  assert.match(html, /id="profilePhotoDialog"/);
+  assert.match(html, /id="profilePhotoInput"[^>]*accept="image\/jpeg,image\/png,image\/webp"/);
+  assert.match(html, /id="profileIdentityEditor"/);
+  assert.match(html, /id="profileIdentityForm"/);
+  assert.doesNotMatch(html, /href="\/conta\//);
+  assert.match(client, /auth\.updateProfilePhoto/);
+  assert.match(client, /\/api\/citizen\/identity/);
+  assert.match(client, /\/seguranca\/\?primeiro-acesso=1/);
 });
 
 test('V1 é textual, responsiva e respeita preferências de acessibilidade', () => {
@@ -178,9 +191,7 @@ test('V1 é textual, responsiva e respeita preferências de acessibilidade', () 
   assert.match(home, /social-profile-rail/);
   assert.match(home, /social-feed-column/);
   assert.match(home, /social-tools-rail/);
-  for (const filename of socialPages) {
-    assert.match(read(filename), /http-equiv="Content-Security-Policy"/);
-  }
+  for (const filename of socialPages) assert.match(read(filename), /http-equiv="Content-Security-Policy"/);
 });
 
 test('painel técnico expõe apenas o estado seguro dos flags sociais', () => {
@@ -191,19 +202,18 @@ test('painel técnico expõe apenas o estado seguro dos flags sociais', () => {
   assert.match(readiness, /Configuração inválida: a Home social não pode ser ativada/);
 });
 
-test('Home social é universal, Ferramentas seguem o perfil e o login abre a nova raiz', () => {
-  const account = read('conta/index.html');
+test('Home social é universal e preferências sociais vivem em Configurações', () => {
+  const settings = read('configuracoes/index.html');
   const levels = read('js/account-levels.js');
   const policy = read('worker/social-policy.js');
   const backendLevels = read('worker/account-levels.js');
   const home = read('js/home.js');
   const login = read('js/login.js');
   const signup = read('js/signup.js');
-  assert.match(account, /id="socialPreferencesCard"/);
-  assert.match(account, /id="socialProfileVisibility"/);
-  assert.match(account, /id="socialDefaultAudience"/);
-  assert.doesNotMatch(account, /id="socialHomePreference"/);
-  assert.match(account, /A Home social é a tela inicial de todas as contas ativas/);
+  assert.match(settings, /id="socialPreferencesCard"/);
+  assert.match(settings, /id="socialProfileVisibility"/);
+  assert.match(settings, /id="socialDefaultAudience"/);
+  assert.doesNotMatch(settings, /id="socialHomePreference"/);
   assert.match(levels, /Home social liberada/);
   assert.doesNotMatch(policy, /ACCOUNT_LEVEL_REQUIRED/);
   assert.match(backendLevels, /socialFeed:\s*true/);
