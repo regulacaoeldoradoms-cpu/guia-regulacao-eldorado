@@ -94,6 +94,23 @@ Quem precisa trabalhar entra pela aba `Ferramentas`, que continua em primeiro n�
 mostra somente os módulos autorizados para aquela conta. Troca obrigatória de senha e
 primeiro acesso continuam tendo precedência.
 
+## Amigos
+
+A área `/amigos/` não utiliza mais o padrão visual de `Carregar mais` para a lista
+de relacionamentos. A lista completa de amigos é pré-carregada em segundo plano a
+partir das páginas por cursor do backend, com deduplicação defensiva antes da
+renderização.
+
+Ao entrar em Amigos, o usuário pode escolher 10, 20, 30 ou Todos os itens por página.
+Quando a escolha não é `Todos`, a interface apresenta navegação numérica entre as
+páginas. O tamanho selecionado é uma preferência local não sensível e não altera
+qualquer regra de relacionamento ou autorização.
+
+A lista de amigos pode usar um snapshot transitório por usuário em
+`sessionStorage`, de vida curta e limpo no logout, para que a abertura da tela seja
+imediata. Pedidos recebidos, enviados e bloqueios são aquecidos em segundo plano ao
+entrar na área e permanecem fora do cache persistente do service worker.
+
 ## Feed social V1
 
 O feed usa ordem cronológica explícita e paginação por cursor. Mostra publicações do
