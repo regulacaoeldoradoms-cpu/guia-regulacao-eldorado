@@ -12,6 +12,7 @@ const sqliteTest = DatabaseSync ? test : test.skip;
 
 import { ensureAuthSchema, handlePortalRoute } from '../auth-management-v2.js';
 import { handleChatRoute } from '../portal-chat-v2.js';
+import { handleProfileRoute } from '../profile-photo.js';
 import { handleSocialRoute } from '../social.js';
 import {
   ensureInitialProfessionalFriendships,
@@ -303,6 +304,44 @@ sqliteTest('fluxo social real funciona desde a Conta Bronze e mantém amizade, f
 
   const chatTables = await env.AUTH_DB.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'portal_chat_messages'").first();
   assert.equal(chatTables, null, 'amizade e bloqueio social não alteram nem criam o chat profissional');
+});
+
+sqliteTest('foto social recebe versão estável e muda somente quando o avatar é atualizado', async () => {
+  const env = environment();
+  const session = await register(env, 'avatar.social', '127.0.0.90');
+  await env.AUTH_DB.prepare("UPDATE auth_users SET email_verified = 1 WHERE username = 'avatar.social'").run();
+
+  const firstPhoto = await handleProfileRoute(socialRequest('/api/auth/profile', session.token, {
+    method: 'PATCH',
+    body: { avatarDataUrl: 'data:image/png;base64,YXZhdGFyLTE=' }
+  }), env, '', true);
+  assert.equal(firstPhoto.status, 200);
+  const firstPayload = await payload(firstPhoto);
+  assert.ok(firstPayload.avatarVersion);
+
+  const firstProfile = await payload(await callSocial(env, '/api/social/me', session.token));
+  assert.equal(firstProfile.profile.avatarAvailable, true);
+  assert.equal(firstProfile.profile.avatarVersion, firstPayload.avatarVersion);
+
+  const image = await callSocial(env, '/api/social/avatars/avatar.social', session.token);
+  assert.equal(image.status, 200);
+  assert.equal(image.headers.get('X-Portal-Avatar-Version'), firstPayload.avatarVersion);
+  assert.match(image.headers.get('ETag') || '', /avatar-/);
+
+  const unchangedProfile = await payload(await callSocial(env, '/api/social/me', session.token));
+  assert.equal(unchangedProfile.profile.avatarVersion, firstPayload.avatarVersion);
+
+  const secondPhoto = await handleProfileRoute(socialRequest('/api/auth/profile', session.token, {
+    method: 'PATCH',
+    body: { avatarDataUrl: 'data:image/png;base64,YXZhdGFyLTI=' }
+  }), env, '', true);
+  assert.equal(secondPhoto.status, 200);
+  const secondPayload = await payload(secondPhoto);
+  assert.ok(secondPayload.avatarVersion);
+  assert.notEqual(secondPayload.avatarVersion, firstPayload.avatarVersion);
+
+  const secondProfile = await payload(await callSocial(env, '/api/social/me', session.token));
+  assert.equal(secondProfile.profile.avatarVersion, secondPayload.avatarVersion);
 });
 
 sqliteTest('Home social é universal para todos os papéis e não depende de e-mail confirmado', async () => {

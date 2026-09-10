@@ -291,14 +291,16 @@ export async function resolveSocialUser(env, handleOrUsername) {
   let social = await env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name, au.job_title AS jobTitle,
       au.active, au.email_verified AS emailVerified, au.self_registered AS selfRegistered,
       au.accept_friend_requests AS acceptFriendRequests,
-      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable
+      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      COALESCE(au.avatar_version, '') AS avatarVersion
     FROM social_users su JOIN auth_users au ON au.username = su.auth_username
     WHERE su.handle = ? COLLATE NOCASE LIMIT 1`).bind(requested).first();
   if (!social) {
     social = await env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name, au.job_title AS jobTitle,
         au.active, au.email_verified AS emailVerified, au.self_registered AS selfRegistered,
         au.accept_friend_requests AS acceptFriendRequests,
-        COALESCE(au.avatar_data, '') <> '' AS avatarAvailable
+        COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+        COALESCE(au.avatar_version, '') AS avatarVersion
       FROM social_handle_aliases sha
       JOIN social_users su ON su.social_user_id = sha.social_user_id
       JOIN auth_users au ON au.username = su.auth_username
@@ -318,7 +320,8 @@ export async function socialUserById(env, socialUserId) {
   return env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name, au.job_title AS jobTitle,
       au.active, au.email_verified AS emailVerified, au.self_registered AS selfRegistered,
       au.accept_friend_requests AS acceptFriendRequests,
-      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable
+      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      COALESCE(au.avatar_version, '') AS avatarVersion
     FROM social_users su JOIN auth_users au ON au.username = su.auth_username
     WHERE su.social_user_id = ? LIMIT 1`).bind(String(socialUserId || '')).first();
 }

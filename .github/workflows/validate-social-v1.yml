@@ -39,7 +39,7 @@ jobs:
             test -f "$file"
             grep -q 'name="robots" content="noindex,nofollow"' "$file"
             grep -q 'social.css?v=20260910-3' "$file"
-            grep -q 'social-api.js?v=20260910-3' "$file"
+            grep -q 'social-api.js?v=20260910-4' "$file"
             grep -q 'portal-interactions.js?v=20260910-2' "$file"
           done
 
@@ -116,6 +116,10 @@ jobs:
           grep -q 'fetchAllRelationshipPages' js/social-api.js
           grep -q 'preloadRelationshipList' js/social-navigation.js
           grep -q 'preloadOtherRelationshipLists' js/social-friends.js
+          grep -q 'AVATAR_CACHE_NAME' js/social-api.js
+          grep -q 'cache.put(descriptor.request' js/social-api.js
+          grep -q 'avatarVersion' worker/social.js
+          grep -q 'avatar_version' worker/profile-photo.js
           grep -q 'aria-live="polite"' perfil/index.html
           grep -q 'Avisos do Conselho continuam no Canal do Cidadão' notificacoes/index.html
           for file in index.html ferramentas/index.html perfil/index.html amigos/index.html notificacoes/index.html admin/social/index.html; do

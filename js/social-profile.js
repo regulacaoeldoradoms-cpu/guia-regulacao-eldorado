@@ -141,6 +141,8 @@
     try {
       const avatarDataUrl = await prepareAvatar(file);
       await auth.updateProfilePhoto(avatarDataUrl);
+      await social.invalidateAvatarCache?.(profile.handle);
+      social.invalidateConfigCache?.();
       photoDialog?.close();
       await load();
       social.status('Foto de perfil atualizada.', 'success');
@@ -159,6 +161,8 @@
     removePhoto.disabled = true;
     try {
       await auth.updateProfilePhoto('');
+      await social.invalidateAvatarCache?.(profile.handle);
+      social.invalidateConfigCache?.();
       photoDialog?.close();
       await load();
       social.status('Foto de perfil removida.', 'success');

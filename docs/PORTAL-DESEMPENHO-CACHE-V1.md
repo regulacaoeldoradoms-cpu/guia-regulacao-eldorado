@@ -75,6 +75,19 @@ percorre todas as páginas por cursor, deduplica os perfis e pagina localmente e
 
 Perfil social e primeira página do feed são solicitados em paralelo.
 
+As fotos de perfil sociais usam um cache binário local separado em Cache Storage. Cada
+foto recebe no backend uma versão própria, alterada somente quando o avatar é trocado
+ou removido. O cliente combina visualizador, @handle e versão para formar a chave do
+cache: se a versão já estiver armazenada, reutiliza o blob local sem baixar a imagem
+novamente; se a versão mudar, baixa a nova foto uma vez e elimina a versão anterior.
+Requisições simultâneas do mesmo avatar também são consolidadas para evitar downloads
+duplicados na mesma página.
+
+Esse cache não passa pelo service worker, não é fonte de autorização e não armazena
+respostas gerais das APIs sociais. O Worker continua decidindo se o perfil pode ser
+visualizado antes de fornecer a foto. O cache de avatares é apagado no logout e suas
+chaves são isoladas por usuário visualizador.
+
 ### Imagens e conteúdo abaixo da dobra
 
 Imagens dos cartões de ferramenta usam carregamento tardio e decodificação assíncrona.
@@ -101,20 +114,23 @@ Também não são persistidos em cache de aplicação:
 - manifestações e anexos;
 - nomes ou dados de pacientes;
 - teleatendimentos;
-- respostas das APIs protegidas, exceto a configuração social e o snapshot transitório
-  da lista de amigos explicitamente descritos acima;
+- respostas das APIs protegidas, exceto a configuração social, o snapshot transitório
+  da lista de amigos e o cache binário versionado de fotos de perfil explicitamente
+  descritos acima;
 - resultados administrativos, de moderação ou monitoramento.
 
-Logout limpa os pequenos caches de sessão da configuração social. A troca de versão
-do service worker invalida automaticamente os caches estáticos anteriores.
+Logout limpa os pequenos caches de sessão da configuração social, a lista transitória
+de amigos e o Cache Storage de fotos de perfil. A troca de versão do service worker
+invalida automaticamente os caches estáticos anteriores, sem administrar o cache
+privado de avatares.
 
 ## Arquivos centrais
 
 - `js/portal-performance.js`: registro, priorização de rotas e aquecimento por perfil;
 - `portal-sw.js`: política de cache, atualização e pré-carregamento;
 - `js/auth-client.js`: abertura pela sessão válida e reconferência silenciosa;
-- `js/social-api.js`: stale-while-revalidate da configuração social e pré-carga
-  transitória da lista de amigos;
+- `js/social-api.js`: stale-while-revalidate da configuração social, pré-carga
+  transitória da lista de amigos e cache local versionado de avatares;
 - `js/social-home.js`: carregamento paralelo do perfil e do feed;
 - `js/tools-catalog.js`: matriz única de autorização e imagens tardias.
 
@@ -127,8 +143,8 @@ A suíte automatizada verifica que:
 - URLs externas e rotas de API são recusadas;
 - conexões com economia de dados reduzem o aquecimento;
 - a sessão abre antes da reconferência remota;
-- o feed e os dados protegidos não são persistidos fora das duas exceções sociais
-  transitórias documentadas;
+- o feed e os dados protegidos não são persistidos fora das exceções sociais
+  explicitamente documentadas;
 - os assets leves e as versões corretas são usados nas páginas ativas.
 
 A primeira visita depois de uma nova versão ainda precisa baixar o núcleo atualizado.
