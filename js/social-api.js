@@ -9,6 +9,12 @@
   const objectUrls = new Set();
   const CONFIG_CACHE_PREFIX = 'regulacao.portal.social.config.v1.';
   const CONFIG_MAX_STALE_MS = 15 * 60 * 1000;
+  const RELATIONSHIP_CACHE_PREFIX = 'regulacao.portal.social.relationships.v1.';
+  const RELATIONSHIP_CACHE_MAX_STALE_MS = 5 * 60 * 1000;
+  const RELATIONSHIP_CACHE_FRESH_MS = 30 * 1000;
+  const RELATIONSHIP_PAGE_GUARD = 250;
+  const RELATIONSHIP_TYPES = new Set(['friends', 'incoming', 'outgoing', 'blocked']);
+  const relationshipRequests = new Map();
   let configRequest = null;
 
   const icons = Object.freeze({
@@ -65,6 +71,137 @@
       }
       keys.forEach((key) => sessionStorage.removeItem(key));
     } catch (_) {}
+  }
+
+  function normalizeRelationshipType(value) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return RELATIONSHIP_TYPES.has(normalized) ? normalized : 'friends';
+  }
+
+  function relationshipCacheKey(type) {
+    const username = String(auth?.getCachedUser?.()?.username || 'sem-sessao').toLowerCase();
+    return `${RELATIONSHIP_CACHE_PREFIX}${encodeURIComponent(username)}.${normalizeRelationshipType(type)}`;
+  }
+
+  function readRelationshipCache(type = 'friends') {
+    try {
+      const raw = sessionStorage.getItem(relationshipCacheKey(type));
+      if (!raw) return null;
+      const record = JSON.parse(raw);
+      const age = Date.now() - Number(record.savedAt || 0);
+      if (!Array.isArray(record.profiles) || age < 0 || age > RELATIONSHIP_CACHE_MAX_STALE_MS) {
+        sessionStorage.removeItem(relationshipCacheKey(type));
+        return null;
+      }
+      return { savedAt: Number(record.savedAt || 0), profiles: record.profiles };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writeRelationshipCache(type, profiles) {
+    const value = Array.isArray(profiles) ? profiles : [];
+    try {
+      sessionStorage.setItem(relationshipCacheKey(type), JSON.stringify({ savedAt: Date.now(), profiles: value }));
+    } catch (_) {}
+    return value;
+  }
+
+  function clearRelationshipCache(type = '') {
+    try {
+      if (type) {
+        sessionStorage.removeItem(relationshipCacheKey(type));
+        return;
+      }
+      const keys = [];
+      for (let index = 0; index < sessionStorage.length; index += 1) {
+        const key = sessionStorage.key(index);
+        if (key?.startsWith(RELATIONSHIP_CACHE_PREFIX)) keys.push(key);
+      }
+      keys.forEach((key) => sessionStorage.removeItem(key));
+    } catch (_) {}
+  }
+
+  function uniqueRelationshipProfiles(profiles) {
+    const output = [];
+    const seen = new Set();
+    for (const profile of Array.isArray(profiles) ? profiles : []) {
+      const handle = String(profile?.handle || '').trim().toLowerCase();
+      if (!handle || seen.has(handle)) continue;
+      seen.add(handle);
+      output.push(profile);
+    }
+    return output;
+  }
+
+  async function fetchAllRelationshipPages(type = 'friends') {
+    const normalizedType = normalizeRelationshipType(type);
+    const profiles = [];
+    const seenHandles = new Set();
+    const seenCursors = new Set();
+    let cursor = '';
+    let pageCount = 0;
+
+    while (pageCount < RELATIONSHIP_PAGE_GUARD) {
+      const suffix = cursor ? `&cursor=${encodeURIComponent(cursor)}` : '';
+      const payload = await api(`/api/social/relationships?type=${encodeURIComponent(normalizedType)}${suffix}`);
+      for (const profile of Array.isArray(payload?.profiles) ? payload.profiles : []) {
+        const handle = String(profile?.handle || '').trim().toLowerCase();
+        if (!handle || seenHandles.has(handle)) continue;
+        seenHandles.add(handle);
+        profiles.push(profile);
+      }
+
+      const nextCursor = String(payload?.nextCursor || '');
+      if (!nextCursor) return profiles;
+      if (nextCursor === cursor || seenCursors.has(nextCursor)) {
+        const error = new Error('A lista de amizades retornou uma paginação repetida. Atualize a página e tente novamente.');
+        error.code = 'SOCIAL_RELATIONSHIP_CURSOR_REPEAT';
+        throw error;
+      }
+      seenCursors.add(nextCursor);
+      cursor = nextCursor;
+      pageCount += 1;
+    }
+
+    const error = new Error('A lista de amizades excedeu o limite seguro de paginação.');
+    error.code = 'SOCIAL_RELATIONSHIP_PAGE_GUARD';
+    throw error;
+  }
+
+  function refreshRelationshipList(type = 'friends', options = {}) {
+    const normalizedType = normalizeRelationshipType(type);
+    const requestKey = normalizedType;
+    if (relationshipRequests.has(requestKey)) return relationshipRequests.get(requestKey);
+
+    const request = fetchAllRelationshipPages(normalizedType)
+      .then(uniqueRelationshipProfiles)
+      .then((profiles) => {
+        if (options.store !== false) writeRelationshipCache(normalizedType, profiles);
+        return profiles;
+      })
+      .finally(() => {
+        relationshipRequests.delete(requestKey);
+      });
+    relationshipRequests.set(requestKey, request);
+    return request;
+  }
+
+  function getCachedRelationshipList(type = 'friends') {
+    return readRelationshipCache(normalizeRelationshipType(type));
+  }
+
+  function preloadRelationshipList(type = 'friends') {
+    const normalizedType = normalizeRelationshipType(type);
+    const cached = readRelationshipCache(normalizedType);
+    const fresh = cached && Date.now() - cached.savedAt <= RELATIONSHIP_CACHE_FRESH_MS;
+    if (fresh) return Promise.resolve(cached.profiles);
+
+    const refresh = refreshRelationshipList(normalizedType, { store: true }).catch((error) => {
+      if (cached) return cached.profiles;
+      throw error;
+    });
+    return cached ? Promise.resolve(cached.profiles) : refresh;
   }
 
   async function fetchConfig(timeoutMs) {
@@ -275,7 +412,10 @@
     objectUrls.forEach((url) => URL.revokeObjectURL(url));
     objectUrls.clear();
   });
-  window.addEventListener('portal:session-cleared', clearConfigCache);
+  window.addEventListener('portal:session-cleared', () => {
+    clearConfigCache();
+    clearRelationshipCache();
+  });
 
   window.PortalSocial = Object.freeze({
     api,
@@ -283,7 +423,11 @@
     confirmAction,
     formatDate,
     getConfig,
+    getCachedRelationshipList,
     icons,
+    invalidateRelationshipList: clearRelationshipCache,
+    preloadRelationshipList,
+    refreshRelationshipList,
     initials,
     mountAvatar,
     profileUrl,
