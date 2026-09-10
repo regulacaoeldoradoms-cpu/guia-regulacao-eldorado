@@ -38,8 +38,8 @@ jobs:
             notificacoes/index.html admin/social/index.html; do
             test -f "$file"
             grep -q 'name="robots" content="noindex,nofollow"' "$file"
-            grep -q 'social.css?v=20260909-3' "$file"
-            grep -q 'social-api.js?v=20260909-1' "$file"
+            grep -q 'social.css?v=20260910-3' "$file"
+            grep -q 'social-api.js?v=20260910-3' "$file"
             grep -q 'portal-interactions.js?v=20260910-2' "$file"
           done
 
@@ -107,6 +107,15 @@ jobs:
           grep -q 'focus-visible' css/social.css
           grep -q 'safe-area-inset-bottom' css/social.css
           grep -q 'role="tablist"' amigos/index.html
+          grep -q 'id="relationshipPageSize"' amigos/index.html
+          grep -q 'value="10">10 por página' amigos/index.html
+          grep -q 'value="20">20 por página' amigos/index.html
+          grep -q 'value="30">30 por página' amigos/index.html
+          grep -q 'value="all">Todos' amigos/index.html
+          ! grep -q 'id="relationshipMore"' amigos/index.html
+          grep -q 'fetchAllRelationshipPages' js/social-api.js
+          grep -q 'preloadRelationshipList' js/social-navigation.js
+          grep -q 'preloadOtherRelationshipLists' js/social-friends.js
           grep -q 'aria-live="polite"' perfil/index.html
           grep -q 'Avisos do Conselho continuam no Canal do Cidadão' notificacoes/index.html
           for file in index.html ferramentas/index.html perfil/index.html amigos/index.html notificacoes/index.html admin/social/index.html; do
