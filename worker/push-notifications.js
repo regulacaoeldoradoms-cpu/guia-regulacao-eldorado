@@ -6,6 +6,8 @@ const MAX_SUBSCRIPTIONS_PER_USER = 8;
 const PUSH_TIMEOUT_MS = 3500;
 const VAPID_TTL_SECONDS = 12 * 60 * 60;
 const VAPID_SUBJECT_FALLBACK = 'https://regulacaoeldoradoms.com.br/';
+const TRUSTED_PUSH_HOSTS = new Set(['fcm.googleapis.com', 'web.push.apple.com']);
+const TRUSTED_PUSH_SUFFIXES = ['.push.services.mozilla.com', '.notify.windows.com'];
 const schemaPromises = new WeakMap();
 
 function responseHeaders(origin, allowed = true) {
@@ -75,8 +77,11 @@ function endpointUrl(value) {
   if (!text || text.length > 4096) return null;
   try {
     const url = new URL(text);
-    if (url.protocol !== 'https:') return null;
-    return url;
+    if (url.protocol !== 'https:' || url.username || url.password || url.port) return null;
+    const host = url.hostname.toLowerCase();
+    const trusted = TRUSTED_PUSH_HOSTS.has(host)
+      || TRUSTED_PUSH_SUFFIXES.some((suffix) => host.endsWith(suffix));
+    return trusted ? url : null;
   } catch (_) {
     return null;
   }
