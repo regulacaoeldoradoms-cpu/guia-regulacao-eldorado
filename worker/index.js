@@ -210,7 +210,7 @@ export default {
       catch (error) { return jsonError(error?.message || 'Falha no módulo do Conselho.', 500, origin, originAllowed); }
     }
     if (isSocialApi(url.pathname)) {
-      try { return await handleSocialRoute(request, env, origin, originAllowed); }
+      try { return await handleSocialRoute(request, env, origin, originAllowed, ctx); }
       catch (error) {
         console.error(JSON.stringify({ event: 'social_route_failed', path: url.pathname, kind: error?.name || 'Error' }));
         return jsonError('Falha temporária na Camada Social. As Ferramentas continuam disponíveis.', 500, origin, originAllowed, 'SOCIAL_TEMPORARILY_UNAVAILABLE');
