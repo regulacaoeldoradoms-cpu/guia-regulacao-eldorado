@@ -8,6 +8,7 @@ import { handleSocialRoute, isSocialApi } from './social.js';
 import { handleUsageRoute, isUsageApi } from './usage-monitor-v2.js';
 import { handleCouncilRoute, isCouncilApi } from './council-access-policy.js';
 import { handleSystemReadinessRoute, isSystemReadinessApi } from './system-readiness.js';
+import { handlePushRoute, isPushApi } from './push-notifications.js';
 import { handleTelemedicineRoute, isTelemedicineApi } from './telemedicine-router-v2.js';
 import { enforceDeveloperSeparation } from './role-migration.js';
 import {
@@ -192,6 +193,10 @@ export default {
     const emailGate = await enforceProfessionalEmailGate(request, env, validatePortalSession, origin, originAllowed);
     if (emailGate) return emailGate;
 
+    if (isPushApi(url.pathname)) {
+      try { return await handlePushRoute(request, env, origin, originAllowed); }
+      catch (error) { return jsonError(error?.message || 'Falha no serviço de notificações.', 500, origin, originAllowed); }
+    }
     if (isSystemReadinessApi(url.pathname)) {
       try { return await handleSystemReadinessRoute(request, env, origin, originAllowed); }
       catch (error) { return jsonError(error?.message || 'Falha no diagnóstico técnico.', 500, origin, originAllowed); }
@@ -205,14 +210,14 @@ export default {
       catch (error) { return jsonError(error?.message || 'Falha no módulo do Conselho.', 500, origin, originAllowed); }
     }
     if (isSocialApi(url.pathname)) {
-      try { return await handleSocialRoute(request, env, origin, originAllowed); }
+      try { return await handleSocialRoute(request, env, origin, originAllowed, ctx); }
       catch (error) {
         console.error(JSON.stringify({ event: 'social_route_failed', path: url.pathname, kind: error?.name || 'Error' }));
         return jsonError('Falha temporária na Camada Social. As Ferramentas continuam disponíveis.', 500, origin, originAllowed, 'SOCIAL_TEMPORARILY_UNAVAILABLE');
       }
     }
     if (isChatApi(url.pathname)) {
-      try { return await handleChatRoute(request, env, origin, originAllowed); }
+      try { return await handleChatRoute(request, env, origin, originAllowed, ctx); }
       catch (error) { return jsonError(error?.message || 'Falha no chat interno.', 500, origin, originAllowed); }
     }
     if (isCitizenIdentityApi(url.pathname)) {

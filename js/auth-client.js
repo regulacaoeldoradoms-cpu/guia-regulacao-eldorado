@@ -215,6 +215,8 @@
   }
 
   async function logout() {
+    try { if (getToken()) await window.PortalPWA?.detachCurrentSubscription?.(); }
+    catch (_) {}
     try { if (getToken()) await api('/api/auth/logout', { method: 'POST', body: '{}' }); }
     catch (_) {}
     clearSession();

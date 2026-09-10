@@ -48,6 +48,25 @@ continua sendo revalidada no backend em toda operação protegida.
 A política completa, os limites e a validação estão em
 `docs/PORTAL-DESEMPENHO-CACHE-V1.md`.
 
+## PWA instalável e Web Push
+
+O Portal é distribuído diretamente pela Web como PWA, sem dependência de loja de
+aplicativos. `portal.webmanifest` define a identidade instalável;
+`js/portal-pwa.js` coordena instalação e assinatura; e `portal-sw.js` recebe
+eventos Push quando a página não está aberta.
+
+O Web Push usa envio vazio: nenhum conteúdo clínico, mensagem, manifestação,
+comentário ou identificador funcional é transportado no payload. O Service Worker
+mostra apenas um aviso genérico e o conteúdo real é carregado depois da abertura e
+da validação da sessão.
+
+O D1 mantém `portal_push_vapid` e `portal_push_subscriptions`. A chave privada
+VAPID é criada e mantida no backend; nunca é versionada no repositório público.
+Chat profissional, notificações sociais e avisos institucionais do
+Canal do Cidadão/Conselho podem acordar a PWA por essa infraestrutura.
+
+A especificação completa está em `docs/PORTAL-PWA-WEB-PUSH-V1.md`.
+
 ## Camada Social V1
 
 A camada social usa a mesma sessão, mas possui domínio de dados e autorização

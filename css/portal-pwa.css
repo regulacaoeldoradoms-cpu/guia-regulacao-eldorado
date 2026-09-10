@@ -1,0 +1,91 @@
+.portal-pwa-card{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  z-index:2147482000;
+  width:min(390px,calc(100vw - 36px));
+  display:grid;
+  grid-template-columns:46px minmax(0,1fr);
+  gap:12px;
+  align-items:start;
+  padding:14px;
+  border:1px solid rgba(13,49,87,.14);
+  border-radius:18px;
+  background:rgba(255,255,255,.97);
+  box-shadow:0 18px 48px rgba(13,49,87,.22);
+  color:#16324d;
+  font-family:inherit;
+  backdrop-filter:blur(12px);
+}
+.portal-pwa-card[hidden]{display:none!important}
+.portal-pwa-icon{
+  width:46px;
+  height:46px;
+  border-radius:12px;
+  object-fit:cover;
+  background:#0d3157;
+  box-shadow:0 6px 16px rgba(13,49,87,.18);
+}
+.portal-pwa-copy{min-width:0}
+.portal-pwa-copy strong{
+  display:block;
+  margin:0 0 3px;
+  font-size:.98rem;
+  line-height:1.25;
+  color:#0d3157;
+}
+.portal-pwa-copy p{
+  margin:0;
+  font-size:.84rem;
+  line-height:1.42;
+  color:#53697d;
+}
+.portal-pwa-actions{
+  grid-column:1/-1;
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:2px;
+}
+.portal-pwa-action{
+  min-height:40px;
+  border:0;
+  border-radius:11px;
+  padding:9px 14px;
+  font:inherit;
+  font-size:.84rem;
+  font-weight:800;
+  cursor:pointer;
+}
+.portal-pwa-action.primary{
+  background:#0d3157;
+  color:#fff;
+  box-shadow:0 7px 16px rgba(13,49,87,.18);
+}
+.portal-pwa-action.secondary{
+  background:#edf3f7;
+  color:#29455f;
+}
+.portal-pwa-action:focus-visible{
+  outline:3px solid rgba(29,124,132,.28);
+  outline-offset:2px;
+}
+@media(max-width:860px){
+  .portal-pwa-card{
+    left:12px;
+    right:12px;
+    bottom:calc(78px + env(safe-area-inset-bottom));
+    width:auto;
+    padding:13px;
+    border-radius:16px;
+  }
+  .portal-pwa-actions{justify-content:stretch}
+  .portal-pwa-action{flex:1}
+}
+@media(prefers-reduced-motion:no-preference){
+  .portal-pwa-card{animation:portal-pwa-enter .22s ease-out}
+  @keyframes portal-pwa-enter{
+    from{opacity:0;transform:translateY(12px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+}

@@ -3,6 +3,7 @@
 import { validatePortalSession } from './auth-management-flex.js';
 import { decorateTelemedicineUser, decorateTelemedicineUsers } from './telemedicine-access.js';
 import { recordUsageHeartbeat } from './usage-monitor.js';
+import { notifyUserPush } from './push-notifications.js';
 
 const MESSAGE_LIMIT = 2000;
 const ONLINE_WINDOW_SECONDS = 75;
@@ -118,7 +119,7 @@ export function isChatApi(pathname) {
   return String(pathname || '').startsWith('/api/chat/');
 }
 
-export async function handleChatRoute(request, env, origin, originAllowed = true) {
+export async function handleChatRoute(request, env, origin, originAllowed = true, executionContext = null) {
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
   const user = await validatePortalSession(request, env, ['medico', 'recepcao', 'telemedicina']);
@@ -165,6 +166,9 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     const id = Number(inserted.meta?.last_row_id || 0);
     const row = id ? await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
       sent_at AS sentAt, read_at AS readAt FROM portal_chat_messages WHERE id = ?`).bind(id).first() : null;
+    const pushTask = notifyUserPush(env, to).catch(() => ({ attempted: 0, accepted: 0 }));
+    if (executionContext?.waitUntil) executionContext.waitUntil(pushTask);
+    else await pushTask;
     return json({ message: row || { id, fromUser: username, toUser: to, body: message } }, 201, origin);
   }
 

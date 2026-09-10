@@ -2,6 +2,7 @@
 
 import { validatePortalSession } from './auth-management-flex.js';
 import { validateAttachmentFile, extensionForAttachment } from './attachment-safety.js';
+import { notifyUserPush } from './push-notifications.js';
 import {
   firebaseConfigured,
   firestoreCreate,
@@ -207,6 +208,7 @@ async function notify(env, username, protocol, title, category = 'conselho') {
   if (!username) return;
   await env.AUTH_DB.prepare('INSERT INTO portal_notifications(username, category, protocol, title) VALUES (?, ?, ?, ?)')
     .bind(username, category, protocol || '', clean(title, 180)).run();
+  await notifyUserPush(env, username).catch(() => ({ attempted: 0, accepted: 0 }));
 }
 
 async function audit(env, user, action, protocol = '') {

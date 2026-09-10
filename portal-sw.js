@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260910-3';
+const CACHE_VERSION = '20260910-4';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -23,9 +23,11 @@ const CORE_RESOURCES = Object.freeze([
   '/css/portal.css?v=20260816-5',
   '/css/home-loading.css?v=20260909-1',
   '/css/social.css?v=20260910-3',
+  '/css/portal-pwa.css?v=20260910-1',
   '/js/auth-config.js?v=20260815-1',
-  '/js/portal-performance.js?v=20260910-2',
-  '/js/auth-client.js?v=20260910-3',
+  '/js/portal-performance.js?v=20260910-4',
+  '/js/portal-pwa.js?v=20260910-1',
+  '/js/auth-client.js?v=20260910-4',
   '/js/tools-catalog.js?v=20260910-2',
   '/assets/portal-regulacao-icon.webp?v=20260909-1',
   '/assets/portal-regulacao-logo-v2.svg?v=20260909-1'
@@ -274,6 +276,35 @@ self.addEventListener('message', (event) => {
   }
   if (event.data?.type !== 'PORTAL_WARM_ROUTES') return;
   event.waitUntil(warmRoutes(Array.isArray(event.data.routes) ? event.data.routes : []));
+});
+
+self.addEventListener('push', (event) => {
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const visiblePortalWindows = windows.filter((client) => {
+      try {
+        return new URL(client.url).origin === self.location.origin && client.visibilityState === 'visible';
+      } catch (_) {
+        return false;
+      }
+    });
+
+    if (visiblePortalWindows.length) {
+      visiblePortalWindows.forEach((client) => {
+        client.postMessage({ type: 'PORTAL_PUSH_RECEIVED' });
+      });
+      return;
+    }
+
+    await self.registration.showNotification('Portal da Regulação de Saúde', {
+      body: 'Você recebeu uma nova notificação no Portal. Abra para consultar.',
+      icon: '/assets/portal-regulacao-icon.webp?v=20260909-1',
+      badge: '/assets/portal-regulacao-icon.webp?v=20260909-1',
+      tag: 'portal-background-notification',
+      renotify: true,
+      data: { url: '/' }
+    });
+  })());
 });
 
 self.addEventListener('notificationclick', (event) => {

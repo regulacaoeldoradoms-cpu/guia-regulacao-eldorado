@@ -10,10 +10,28 @@
   "theme_color": "#0d3157",
   "icons": [
     {
-      "src": "/assets/portal-regulacao-header.png",
+      "src": "/assets/app-icon.svg",
       "sizes": "any",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any"
+    },
+    {
+      "src": "/assets/portal-regulacao-icon.webp",
+      "sizes": "any",
+      "type": "image/webp",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ferramentas",
+      "short_name": "Ferramentas",
+      "url": "/ferramentas/"
+    },
+    {
+      "name": "Notificações",
+      "short_name": "Notificações",
+      "url": "/notificacoes/"
     }
   ]
 }

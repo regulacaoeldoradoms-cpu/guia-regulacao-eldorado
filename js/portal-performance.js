@@ -5,6 +5,7 @@
 
   const WORKER_URL = '/portal-sw.js';
   const WORKER_SCOPE = '/';
+  const PWA_CLIENT_URL = '/js/portal-pwa.js?v=20260910-1';
   const CORE_ROUTES = Object.freeze(['/', '/ferramentas/', '/seguranca/', '/configuracoes/', '/conquistas/']);
   const SOCIAL_ROUTES = Object.freeze(['/amigos/', '/notificacoes/', '/perfil/']);
   const KNOWN_ROUTES = new Set([
@@ -17,6 +18,19 @@
   const warmedRoutes = new Set();
   let registrationPromise = null;
   let observer = null;
+  let pwaClientStarted = false;
+
+  function ensurePwaClient() {
+    if (window.PortalPWA || pwaClientStarted || document.querySelector?.('script[data-portal-pwa]')) return;
+    if (typeof document.createElement !== 'function' || !document.head?.appendChild) return;
+    pwaClientStarted = true;
+    const script = document.createElement('script');
+    script.src = PWA_CLIENT_URL;
+    script.async = false;
+    script.dataset.portalPwa = 'true';
+    script.addEventListener('error', () => { pwaClientStarted = false; }, { once: true });
+    document.head.appendChild(script);
+  }
 
   function portalRoute(value) {
     if (!value) return '';
@@ -151,6 +165,7 @@
   }
 
   function start() {
+    ensurePwaClient();
     register();
     const cachedUser = window.RegulationAuth?.getCachedUser?.() || null;
     if (cachedUser) warmForUser(cachedUser);
@@ -186,6 +201,7 @@
     __test: Object.freeze({ portalRoute, connectionIsConstrained })
   });
 
+  ensurePwaClient();
   register();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
