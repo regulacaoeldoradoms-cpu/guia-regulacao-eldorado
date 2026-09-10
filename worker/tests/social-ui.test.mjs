@@ -36,7 +36,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
     assert.match(html, /social-api\.js\?v=20260909-1/);
     assert.match(html, /social-navigation\.js\?v=20260910-1/);
-    if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-1/);
+    if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-2/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
   }
@@ -173,6 +173,7 @@ test('V1 é textual, responsiva e respeita preferências de acessibilidade', () 
   assert.match(homeDesktopScaleCss, /body:not\(\.mobile-home-mode\) #socialHome\.social-shell/);
   assert.match(homeDesktopScaleCss, /width:\s*min\(1298px,\s*calc\(100% - 32px\)\)/);
   assert.match(homeDesktopScaleCss, /grid-template-columns:\s*242px minmax\(0, 704px\) minmax\(253px, 308px\)/);
+  assert.match(homeDesktopScaleCss, /#socialHome \.social-comment \.social-avatar\s*\{[^}]*width:\s*38px;[^}]*height:\s*38px/s);
   assert.doesNotMatch(homeDesktopScaleCss, /\.social-global-nav(?:-inner)?\s*\{/);
   assert.match(home, /social-profile-rail/);
   assert.match(home, /social-feed-column/);
