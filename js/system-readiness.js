@@ -55,7 +55,7 @@
       if (withFeedback) window.PortalInteractions?.notify?.('loaded', 'Diagnóstico atualizado.', summary);
     } catch (error) {
       if (error.code === 'EMAIL_VERIFICATION_REQUIRED') {
-        location.replace(error.verificationPath || `/conta/?verificar-email=1&next=${encodeURIComponent('/admin/configuracao/')}`);
+        location.replace(error.verificationPath || `/seguranca/?verificar-email=1&next=${encodeURIComponent('/admin/configuracao/')}`);
         return;
       }
       summary.className = 'readiness-summary pending';
