@@ -562,6 +562,7 @@
     getCachedRelationshipList,
     icons,
     invalidateAvatarCache: clearAvatarCache,
+    invalidateConfigCache: clearConfigCache,
     invalidateRelationshipList: clearRelationshipCache,
     preloadRelationshipList,
     refreshRelationshipList,
