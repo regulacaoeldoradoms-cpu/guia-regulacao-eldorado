@@ -2,6 +2,7 @@
 
 import { validatePortalSession } from './auth-management-flex.js';
 import { decorateTelemedicineUser } from './telemedicine-access.js';
+import { notifyUserPush } from './push-notifications.js';
 import {
   ensureInitialProfessionalFriendships,
   ensureSocialSchema,
@@ -269,10 +270,17 @@ function rateLimitResponse(result, origin) {
   }, 429, origin, true, { 'Retry-After': String(result.retryAfterSeconds) });
 }
 
-async function createNotification(env, recipientId, type, actorId, entityType = '', entityId = '') {
+async function createNotification(env, recipientId, type, actorId, entityType = '', entityId = '', executionContext = null) {
   if (!recipientId || recipientId === actorId) return;
   await env.AUTH_DB.prepare(`INSERT INTO social_notifications(recipient_id, type, actor_id, entity_type, entity_id)
     VALUES (?, ?, ?, ?, ?)`).bind(recipientId, type, actorId || null, entityType, entityId).run();
+  const recipient = await env.AUTH_DB.prepare(
+    'SELECT auth_username AS username FROM social_users WHERE social_user_id = ? LIMIT 1'
+  ).bind(recipientId).first();
+  if (!recipient?.username) return;
+  const pushTask = notifyUserPush(env, recipient.username).catch(() => ({ attempted: 0, accepted: 0 }));
+  if (executionContext?.waitUntil) executionContext.waitUntil(pushTask);
+  else await pushTask;
 }
 
 export function isSocialApi(pathname) {
@@ -521,7 +529,7 @@ async function handleRelationshipAction(request, env, context, origin) {
         state = 'pending', initiated_by = excluded.initiated_by, blocked_by = NULL,
         origin = 'manual', updated_at = CURRENT_TIMESTAMP`)
       .bind(pairLow, pairHigh, actorId).run();
-    await createNotification(env, targetId, 'friend_request', actorId, 'profile', actorId);
+    await createNotification(env, targetId, 'friend_request', actorId, 'profile', actorId, context.executionContext);
   } else if (action === 'cancel') {
     if (current?.state === 'pending' && current.initiated_by === actorId) {
       await env.AUTH_DB.prepare(`UPDATE social_relationships SET state = 'removed', initiated_by = NULL,
@@ -534,7 +542,7 @@ async function handleRelationshipAction(request, env, context, origin) {
     }
     await env.AUTH_DB.prepare(`UPDATE social_relationships SET state = 'friends', blocked_by = NULL,
       updated_at = CURRENT_TIMESTAMP WHERE pair_low = ? AND pair_high = ?`).bind(pairLow, pairHigh).run();
-    await createNotification(env, targetId, 'friend_accepted', actorId, 'profile', actorId);
+    await createNotification(env, targetId, 'friend_accepted', actorId, 'profile', actorId, context.executionContext);
   } else if (action === 'decline') {
     if (current?.state === 'pending' && current.initiated_by === targetId) {
       await env.AUTH_DB.prepare(`UPDATE social_relationships SET state = 'removed', initiated_by = NULL,
@@ -866,7 +874,7 @@ async function handleCommentCreate(request, env, context, postId, origin) {
   const id = randomId('comment');
   await env.AUTH_DB.prepare('INSERT INTO social_comments(id, post_id, author_id, body) VALUES (?, ?, ?, ?)')
     .bind(id, postId, context.social.social_user_id, text).run();
-  await createNotification(env, post.author_id, 'comment', context.social.social_user_id, 'post', postId);
+  await createNotification(env, post.author_id, 'comment', context.social.social_user_id, 'post', postId, context.executionContext);
   return json({
     comment: {
       id,
@@ -1258,7 +1266,7 @@ async function handleMigrationStatus(env, context, origin) {
   return json({ migrations: await socialMigrationStatus(env) }, 200, origin);
 }
 
-export async function handleSocialRoute(request, env, origin, originAllowed = true) {
+export async function handleSocialRoute(request, env, origin, originAllowed = true, executionContext = null) {
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
   const url = new URL(request.url);
@@ -1268,6 +1276,7 @@ export async function handleSocialRoute(request, env, origin, originAllowed = tr
   }
 
   const context = await requestContext(request, env);
+  context.executionContext = executionContext;
   if (context.error) return json({ error: context.error, code: context.code }, context.status, origin);
   if (context.disabled) {
     return json({ error: 'Camada Social ainda não ativada.', code: 'SOCIAL_DISABLED' }, 503, origin);
