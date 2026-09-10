@@ -69,8 +69,8 @@ jobs:
           grep -q 'profilePhotoCamera' perfil/index.html
           grep -q 'E-mail de segurança' seguranca/index.html
           grep -q 'Conta Bronze' conquistas/index.html
-          grep -q 'Conta Prata' conquistas/index.html
-          grep -q 'Conta Ouro' conquistas/index.html
+          grep -q 'data-level-step="prata"' conquistas/index.html
+          grep -q 'data-level-step="ouro"' conquistas/index.html
           grep -q 'auth-client.js?v=20260910-2' seguranca/index.html
           grep -q 'account-levels.js?v=20260909-1' conquistas/index.html
           grep -q 'enforcement: true' js/auth-config.js
