@@ -145,6 +145,24 @@ Imagem social não foi liberada nesta etapa. A foto da conta já existente perma
 disponível, mas posts com mídia aguardam namespace de objetos, validação real de
 MIME, transformação e remoção de EXIF mediados pelo Worker.
 
+## Fotos de perfil e cache local
+
+A foto social não deve ser baixada do zero a cada navegação. O backend mantém uma
+`avatarVersion` opaca e independente para cada conta. Essa versão só muda quando a
+foto é atualizada ou removida e acompanha os resumos sociais autorizados do perfil,
+feed, comentários, notificações, busca e amizades.
+
+O cliente mantém os blobs das fotos em Cache Storage local, com chave isolada pelo
+usuário que está visualizando, pelo `@handle` e pela versão do avatar. Ao voltar para
+uma página, uma versão já conhecida é reaproveitada diretamente do dispositivo. Uma
+versão nova provoca um único download; depois disso, a versão anterior daquele avatar
+é descartada. Requisições concorrentes da mesma foto na mesma tela são deduplicadas.
+
+A autorização não é cacheada: o Worker continua validando sessão, visibilidade e
+relacionamento antes de entregar uma foto que ainda não esteja localmente disponível.
+O cache de avatares é excluído no logout e permanece totalmente separado do cache
+estático do service worker e de qualquer dado assistencial.
+
 ## Separação absoluta entre social e assistencial
 
 O backend social usa apenas tabelas `social_*` e a identidade mínima da conta. Não
