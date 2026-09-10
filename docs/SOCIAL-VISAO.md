@@ -1,6 +1,6 @@
 # Camada Social V1 — visão de produto e navegação
 
-Decisão permanente atualizada em 09/09/2026.
+Decisão permanente atualizada em 10/09/2026.
 
 ## Estado
 
@@ -35,8 +35,16 @@ Quando a Home está ativa, `/` usa composição responsiva:
 
 - identidade e atalhos sociais;
 - feed cronológico e compositor no centro;
-- dois a quatro atalhos autorizados de trabalho, com três como padrão da V1;
+- atalhos autorizados de trabalho com quantidade configurável pelo usuário entre 1 e
+  o total efetivamente disponível para seu perfil; o padrão é até cinco atalhos;
+- o botão `Ver todas as Ferramentas` fica oculto quando todos os módulos autorizados
+  já estiverem visíveis na própria Home;
 - contexto de privacidade e separação entre social e assistencial.
+
+No desktop largo, a área útil da Home social é aproximadamente 10% maior para reduzir
+espaços laterais vazios e ampliar cards, tipografia, controles e atalhos. Essa ampliação
+não altera a barra global `Início`, `Amigos`, `Ferramentas`, `Notificações` e `Perfil`,
+nem o modo mobile, que mantêm suas dimensões e regras próprias.
 
 `/ferramentas/` reutiliza o mesmo `PortalTools` usado pelo fallback da raiz. A matriz
 de cards não é duplicada entre as duas páginas. A API social não é necessária para
