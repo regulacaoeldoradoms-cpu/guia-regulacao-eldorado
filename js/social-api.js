@@ -7,6 +7,10 @@
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
   const objectUrls = new Set();
+  const avatarObjectUrls = new Map();
+  const avatarRequests = new Map();
+  const AVATAR_CACHE_NAME = 'regulacao.portal.social.avatars.v1';
+  const AVATAR_CACHE_PREFIX = '/__portal-avatar-cache__/';
   const CONFIG_CACHE_PREFIX = 'regulacao.portal.social.config.v1.';
   const CONFIG_MAX_STALE_MS = 15 * 60 * 1000;
   const RELATIONSHIP_CACHE_PREFIX = 'regulacao.portal.social.relationships.v1.';
@@ -275,15 +279,144 @@
     if (message) window.PortalInteractions?.emit?.(type === 'error' ? 'error' : type === 'success' ? 'success' : 'loaded', { target });
   }
 
-  async function avatarBlob(handle) {
-    if (!endpoint || !auth?.getToken?.()) return '';
-    const response = await fetch(`${endpoint}/api/social/avatars/${encodeURIComponent(String(handle || '').replace(/^@/, ''))}`, {
-      headers: auth.authorizationHeader(), cache: 'no-store'
-    });
-    if (!response.ok) return '';
-    const url = URL.createObjectURL(await response.blob());
+  function avatarHandle(value) {
+    return String(value || '').replace(/^@/, '').trim().toLowerCase();
+  }
+
+  function avatarCacheDescriptor(profile) {
+    const handle = avatarHandle(profile?.handle);
+    const version = String(profile?.avatarVersion || '').trim();
+    const viewer = String(auth?.getCachedUser?.()?.username || '').trim().toLowerCase();
+    const memoryKey = `${viewer || 'sem-sessao'}|${handle}|${version || 'volatil'}`;
+    if (!handle || !version || !viewer || !window.caches?.open) {
+      return { handle, version, viewer, memoryKey, request: null };
+    }
+    const url = new URL(
+      `${AVATAR_CACHE_PREFIX}${encodeURIComponent(viewer)}/${encodeURIComponent(handle)}`,
+      window.location.origin
+    );
+    url.searchParams.set('v', version);
+    return {
+      handle,
+      version,
+      viewer,
+      memoryKey,
+      request: new Request(url.toString(), { method: 'GET', credentials: 'same-origin' })
+    };
+  }
+
+  function objectUrlForAvatar(blob, memoryKey) {
+    if (!blob || !memoryKey) return '';
+    const existing = avatarObjectUrls.get(memoryKey);
+    if (existing) return existing;
+    const url = URL.createObjectURL(blob);
+    avatarObjectUrls.set(memoryKey, url);
     objectUrls.add(url);
     return url;
+  }
+
+  async function openAvatarCache() {
+    if (!window.caches?.open) return null;
+    try {
+      return await window.caches.open(AVATAR_CACHE_NAME);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function pruneOldAvatarVersions(cache, descriptor) {
+    if (!cache || !descriptor?.request) return;
+    try {
+      const currentUrl = new URL(descriptor.request.url);
+      const requests = await cache.keys();
+      await Promise.all(requests.map(async (request) => {
+        const cachedUrl = new URL(request.url);
+        if (cachedUrl.pathname === currentUrl.pathname && cachedUrl.search !== currentUrl.search) {
+          await cache.delete(request);
+        }
+      }));
+    } catch (_) {}
+  }
+
+  async function clearAvatarCache(handle = '') {
+    const normalized = avatarHandle(handle);
+    for (const [key, url] of avatarObjectUrls.entries()) {
+      const parts = key.split('|');
+      const cachedHandle = parts[1] || '';
+      if (normalized && cachedHandle !== normalized) continue;
+      URL.revokeObjectURL(url);
+      objectUrls.delete(url);
+      avatarObjectUrls.delete(key);
+    }
+
+    if (!window.caches?.open) return;
+    try {
+      if (!normalized) {
+        await window.caches.delete(AVATAR_CACHE_NAME);
+        return;
+      }
+      const viewer = String(auth?.getCachedUser?.()?.username || '').trim().toLowerCase();
+      if (!viewer) return;
+      const cache = await window.caches.open(AVATAR_CACHE_NAME);
+      const pathname = `${AVATAR_CACHE_PREFIX}${encodeURIComponent(viewer)}/${encodeURIComponent(normalized)}`;
+      const requests = await cache.keys();
+      await Promise.all(requests.map((request) => {
+        const url = new URL(request.url);
+        return url.pathname === pathname ? cache.delete(request) : false;
+      }));
+    } catch (_) {}
+  }
+
+  async function avatarBlob(profile) {
+    const descriptor = avatarCacheDescriptor(profile);
+    if (!endpoint || !auth?.getToken?.() || !descriptor.handle) return '';
+
+    const memoryHit = avatarObjectUrls.get(descriptor.memoryKey);
+    if (memoryHit) return memoryHit;
+    if (avatarRequests.has(descriptor.memoryKey)) return avatarRequests.get(descriptor.memoryKey);
+
+    const request = (async () => {
+      let cache = null;
+      if (descriptor.request) {
+        cache = await openAvatarCache();
+        const cached = await cache?.match(descriptor.request);
+        if (cached) {
+          const blob = await cached.blob();
+          if (blob.size && /^image\/(?:jpeg|png|webp)$/i.test(blob.type)) {
+            return objectUrlForAvatar(blob, descriptor.memoryKey);
+          }
+          await cache.delete(descriptor.request).catch(() => {});
+        }
+      }
+
+      const suffix = descriptor.version ? `?v=${encodeURIComponent(descriptor.version)}` : '';
+      const response = await fetch(
+        `${endpoint}/api/social/avatars/${encodeURIComponent(descriptor.handle)}${suffix}`,
+        { headers: auth.authorizationHeader(), cache: 'no-store' }
+      );
+      if (!response.ok) return '';
+      const blob = await response.blob();
+      if (!blob.size || !/^image\/(?:jpeg|png|webp)$/i.test(blob.type)) return '';
+
+      if (cache && descriptor.request) {
+        const stored = new Response(blob, {
+          status: 200,
+          headers: {
+            'Content-Type': blob.type,
+            'Cache-Control': 'private, max-age=31536000, immutable',
+            'X-Portal-Avatar-Version': descriptor.version
+          }
+        });
+        await cache.put(descriptor.request, stored).catch(() => {});
+        await pruneOldAvatarVersions(cache, descriptor);
+      }
+      return objectUrlForAvatar(blob, descriptor.memoryKey);
+    })().finally(() => {
+      avatarRequests.delete(descriptor.memoryKey);
+    });
+
+    avatarRequests.set(descriptor.memoryKey, request);
+    return request;
   }
 
   async function mountAvatar(element, profile) {
@@ -292,9 +425,12 @@
     element.style.backgroundImage = 'none';
     element.setAttribute('role', 'img');
     element.setAttribute('aria-label', `Foto de ${profile.name || `@${profile.handle}`}`);
-    if (!profile.avatarAvailable) return;
+    if (!profile.avatarAvailable) {
+      clearAvatarCache(profile.handle).catch(() => {});
+      return;
+    }
     try {
-      const url = await avatarBlob(profile.handle);
+      const url = await avatarBlob(profile);
       if (!url || !element.isConnected) return;
       element.textContent = '';
       element.style.backgroundImage = `url("${url}")`;
@@ -411,10 +547,13 @@
   window.addEventListener('pagehide', () => {
     objectUrls.forEach((url) => URL.revokeObjectURL(url));
     objectUrls.clear();
+    avatarObjectUrls.clear();
+    avatarRequests.clear();
   });
   window.addEventListener('portal:session-cleared', () => {
     clearConfigCache();
     clearRelationshipCache();
+    clearAvatarCache().catch(() => {});
   });
 
   window.PortalSocial = Object.freeze({
@@ -425,6 +564,7 @@
     getConfig,
     getCachedRelationshipList,
     icons,
+    invalidateAvatarCache: clearAvatarCache,
     invalidateRelationshipList: clearRelationshipCache,
     preloadRelationshipList,
     refreshRelationshipList,
