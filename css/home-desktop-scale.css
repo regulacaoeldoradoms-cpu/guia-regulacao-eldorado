@@ -119,6 +119,19 @@
     font-size: .79rem;
   }
 
+  /* Comentários usam avatar compacto; não devem herdar o avatar de 86px da identidade. */
+  body:not(.mobile-home-mode) #socialHome .social-comment {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 9px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-comment .social-avatar {
+    width: 38px;
+    height: 38px;
+    border-width: 1px;
+    font-size: .67rem;
+  }
+
   body:not(.mobile-home-mode) #socialHome .social-post-author a {
     font-size: .97rem;
   }
