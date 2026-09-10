@@ -350,7 +350,7 @@ export async function sendFirebaseVerificationEmail(env, email, verificationPass
   return identityPublicRequest(env, 'accounts:sendOobCode', {
     requestType: 'VERIFY_EMAIL',
     idToken: signIn.idToken,
-    continueUrl: 'https://regulacaoeldoradoms.com.br/conta/?email-verificado=1',
+    continueUrl: 'https://regulacaoeldoradoms.com.br/seguranca/?email-verificado=1',
     canHandleCodeInApp: false
   });
 }

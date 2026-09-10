@@ -111,7 +111,7 @@ export async function enforceProfessionalEmailGate(request, env, validatePortalS
   return json({
     error: 'Confirme o e-mail de segurança da sua conta para continuar.',
     code: 'EMAIL_VERIFICATION_REQUIRED',
-    verificationPath: '/conta/?verificar-email=1'
+    verificationPath: '/seguranca/?verificar-email=1'
   }, 403, origin, originAllowed);
 }
 

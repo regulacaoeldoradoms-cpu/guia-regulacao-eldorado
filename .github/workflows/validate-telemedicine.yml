@@ -232,9 +232,9 @@ jobs:
           fi
           grep -q "href: '/telemedicina/'" js/tools-catalog.js
           grep -q "Técnico em Telemedicina" js/admin-users.js
-          grep -q "telemedicina: 'Técnico em Telemedicina'" js/account.js
-          grep -q "Privacidade à escolha · conta Bronze" js/account.js
-          grep -q "anônima</strong> e <strong>identificada" conta/index.html
+          grep -q "telemedicina: 'Técnico em Telemedicina'" js/account-section-shell.js
+          grep -q "E-mail de segurança" seguranca/index.html
+          grep -q "href: '/seguranca/'" js/tools-catalog.js
           grep -q "admin-users.js?v=20260901-1" admin/usuarios/index.html
           grep -q "telemedicina-business-day.js" telemedicina/index.html
           grep -q "account-admin.css" telemedicina/index.html

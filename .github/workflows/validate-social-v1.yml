@@ -40,7 +40,7 @@ jobs:
             grep -q 'name="robots" content="noindex,nofollow"' "$file"
             grep -q 'social.css?v=20260909-3' "$file"
             grep -q 'social-api.js?v=20260909-1' "$file"
-            grep -q 'portal-interactions.js?v=20260906-2' "$file"
+            grep -q 'portal-interactions.js?v=20260910-2' "$file"
           done
 
       - name: Conferir arquitetura, flags e rollback
@@ -58,8 +58,8 @@ jobs:
           grep -q 'social_rate_limits' worker/social-schema.js
           grep -q 'SOCIAL_TEMPORARILY_UNAVAILABLE' worker/index.js
           grep -q 'showToolsFallback' js/home.js
-          grep -q 'tools-catalog.js?v=20260909-1' index.html
-          grep -q 'tools-catalog.js?v=20260909-1' ferramentas/index.html
+          grep -q 'tools-catalog.js?v=20260910-2' index.html
+          grep -q 'tools-catalog.js?v=20260910-2' ferramentas/index.html
           grep -q 'socialFlagsCoherent' worker/system-readiness.js
           test -f docs/PORTAL-DESEMPENHO-CACHE-V1.md
           grep -q 'Nunca entram no cache' docs/PORTAL-DESEMPENHO-CACHE-V1.md
@@ -94,10 +94,13 @@ jobs:
       - name: Conferir conteúdo textual e acessibilidade
         run: |
           set -euo pipefail
-          if grep -R -E 'type="file"|accept="image/' index.html perfil amigos notificacoes admin/social js/social-*.js; then
-            echo 'A V1 deve permanecer textual até existir pipeline seguro de imagens.' >&2
+          if grep -R -E 'type="file"|accept="image/' index.html amigos notificacoes admin/social js/social-feed.js js/social-friends.js js/social-notifications.js js/social-moderation.js; then
+            echo 'Publicações sociais devem permanecer textuais até existir pipeline seguro de mídia.' >&2
             exit 1
           fi
+          grep -q 'id="profilePhotoInput"' perfil/index.html
+          grep -q 'accept="image/jpeg,image/png,image/webp"' perfil/index.html
+          grep -q 'prepareAvatar' js/social-profile.js
           grep -q '@media (max-width: 360px)' css/social.css
           grep -q '@media (prefers-reduced-motion: reduce)' css/social.css
           grep -q '@media (forced-colors: active)' css/social.css

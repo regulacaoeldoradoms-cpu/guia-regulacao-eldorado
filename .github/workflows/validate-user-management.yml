@@ -25,7 +25,11 @@ jobs:
           node --check worker/index.js
           node --check js/auth-client.js
           node --check js/account-levels.js
-          node --check js/account.js
+          node --check js/account-section-shell.js
+          node --check js/security.js
+          node --check js/settings.js
+          node --check js/achievements.js
+          node --check js/social-profile.js
           node --check js/admin-users.js
           node --check js/home.js
           node --check js/login.js
@@ -33,10 +37,15 @@ jobs:
       - name: Conferir arquivos e rotas
         run: |
           test -f conta/index.html
+          test -f seguranca/index.html
+          test -f configuracoes/index.html
+          test -f conquistas/index.html
+          test -f perfil/index.html
           test -f cadastro/index.html
           test -f cidadao/index.html
           test -f admin/usuarios/index.html
           test -f css/account-admin.css
+          test -f css/account-sections.css
           test -f css/profile-account-link.css
           test -f css/account-level.css
           test -f worker/profile-photo.js
@@ -54,23 +63,27 @@ jobs:
           grep -q 'updateProfilePhoto' js/auth-client.js
           grep -q 'mountPortalAvatar' js/auth-client.js
           grep -q 'ensurePortalAccountArea' js/auth-client.js
-          grep -q "area.href = '/conta/'" js/auth-client.js
-          grep -q 'portal-account-area' css/profile-account-link.css
-          grep -q 'primeiro-acesso' js/account.js
-          grep -q 'Foto do perfil' conta/index.html
-          grep -q 'E-mail de segurança' conta/index.html
-          grep -q 'Conta Bronze' conta/index.html
-          grep -q 'Conta Prata' conta/index.html
-          grep -q 'Conta Ouro' conta/index.html
-          grep -q 'auth-client.js?v=20260909-1' conta/index.html
-          grep -q 'account-levels.js?v=20260909-1' conta/index.html
+          grep -q "area.href = '/perfil/'" js/auth-client.js
+          grep -q '/seguranca/?verificar-email=1' js/auth-client.js
+          grep -q 'primeiro-acesso' js/security.js
+          grep -q 'profilePhotoCamera' perfil/index.html
+          grep -q 'E-mail de segurança' seguranca/index.html
+          grep -q 'Conta Bronze' conquistas/index.html
+          grep -q 'data-level-step="prata"' conquistas/index.html
+          grep -q 'data-level-step="ouro"' conquistas/index.html
+          grep -q 'auth-client.js?v=20260910-2' seguranca/index.html
+          grep -q 'account-levels.js?v=20260909-1' conquistas/index.html
           grep -q 'enforcement: true' js/auth-config.js
           grep -q "homePath: '/'" js/auth-config.js
           grep -q 'AUTH_ENFORCE_AI = "true"' worker/wrangler.toml
           grep -q 'binding = "AUTH_DB"' worker/wrangler.toml
           grep -q 'database_name = "portal-regulacao-users"' worker/wrangler.toml
           grep -q 'Usuários e acessos' admin/usuarios/index.html
-          grep -q 'Alterar senha' conta/index.html
+          grep -q 'Alterar senha' seguranca/index.html
+          grep -q 'id="interfaceSoundsCard"' configuracoes/index.html
+          grep -q 'id="socialPreferencesCard"' configuracoes/index.html
+          grep -q "destination = '/perfil/'" conta/index.html
+          ! grep -E -q 'id="(changePasswordForm|securityEmailForm|socialPreferencesCard)"' conta/index.html
       - name: Conferir hierarquia de permissões
         run: |
           grep -q "AUTH_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'cidadao', 'admin'\])" worker/auth-management-v2.js
@@ -91,7 +104,7 @@ jobs:
           grep -q 'Presidente do Conselho' admin/usuarios/index.html
       - name: Impedir credenciais reais no repositório
         run: |
-          if grep -R -E '"password"\s*:\s*"[0-9]{6,}"' worker js admin conta cadastro cidadao conselho; then
+          if grep -R -E '"password"\s*:\s*"[0-9]{6,}"' worker js admin conta seguranca configuracoes conquistas perfil cadastro cidadao conselho; then
             echo 'Possível senha real encontrada no repositório.'
             exit 1
           fi

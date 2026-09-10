@@ -29,7 +29,7 @@ Arquitetura revisada em 09/09/2026.
 - `/cidadao/`: Hub do Cidadão, manifestações, notificações e acompanhamento.
 - `/conselho/`: página pública do Conselho Municipal de Saúde.
 - `/conselho/painel/`: área institucional para Presidente e membros autorizados do Conselho.
-- `/conta/`: perfil privado, senha, e-mail, evolução, foto e preferências sociais.
+- `/perfil/`: perfil social autenticado; o titular também altera a própria foto e, para contas cidadãs, nome de exibição e @.\n- `/seguranca/`: alteração de senha, e-mail de segurança e confirmação do endereço.\n- `/configuracoes/`: sons da interface e preferências sociais.\n- `/conquistas/`: progressão Bronze/Prata/Ouro e superfície preparada para conquistas futuras.\n- `/conta/`: rota legada de compatibilidade; não contém mais funcionalidades e apenas redireciona para as áreas especializadas.
 
 
 ## Desempenho e cache seguro
@@ -242,7 +242,7 @@ Sem a configuração Firebase, o portal profissional continua funcionando e os m
 
 ## Migração de e-mail profissional
 
-Quando `AUTH_REQUIRE_EMAIL_VERIFICATION` for ativado, credenciais profissionais válidas continuam conseguindo autenticar. O usuário é direcionado para `/conta/`, onde pode cadastrar/confirmar o e-mail. As demais APIs profissionais permanecem bloqueadas até a confirmação.
+Quando `AUTH_REQUIRE_EMAIL_VERIFICATION` for ativado, credenciais profissionais válidas continuam conseguindo autenticar. O usuário é direcionado para `/seguranca/`, onde pode cadastrar/confirmar o e-mail. As demais APIs profissionais permanecem bloqueadas até a confirmação.
 
 Isso evita bloquear uma conta antes que ela tenha como regularizar o próprio e-mail.
 

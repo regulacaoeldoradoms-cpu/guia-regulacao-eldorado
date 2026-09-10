@@ -5,6 +5,32 @@
 
   let activeNotificationPanel = null;
   let globalListenersReady = false;
+  const extraIcons = Object.freeze({
+    settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7a7 7 0 0 0-.7-1.7l.9-1.9-2.1-2.1-1.9.9a7 7 0 0 0-1.7-.7L10.5 2h-3l-.7 2.3a7 7 0 0 0-1.7.7l-1.9-.9-2.1 2.1.9 1.9a7 7 0 0 0-.7 1.7L1 10.5v3l2.3.7a7 7 0 0 0 .7 1.7l-.9 1.9 2.1 2.1 1.9-.9a7 7 0 0 0 1.7.7l.7 2.3h3l.7-2.3a7 7 0 0 0 1.7-.7l1.9.9 2.1-2.1-.9-1.9a7 7 0 0 0 .7-1.7l2.3-.7Z" transform="translate(2.2 0) scale(.82)"/></svg>',
+    trophy: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0V3Z"/><path d="M8 5H4v2a4 4 0 0 0 4 4M16 5h4v2a4 4 0 0 1-4 4M12 12v5M8 21h8M9 17h6"/></svg>'
+  });
+
+  function ensureExtendedNavigationStyles() {
+    if (document.getElementById('socialExtendedNavigationStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'socialExtendedNavigationStyles';
+    style.textContent = `
+      @media (min-width:901px){
+        .social-global-nav-inner{width:min(1360px,calc(100% - 32px));overflow-x:auto;scrollbar-width:thin}
+        .social-nav-link{min-width:100px;flex:1 1 0;padding-left:9px;padding-right:9px;white-space:nowrap}
+      }
+      @media (max-width:900px){
+        .social-mobile-nav{display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain;justify-content:flex-start}
+        .social-mobile-nav::-webkit-scrollbar{display:none}
+        .social-mobile-nav-link{flex:0 0 84px;min-width:84px}
+      }
+      body.mobile-home-mode .social-mobile-nav{display:flex!important;overflow-x:auto;overflow-y:hidden;grid-auto-flow:unset;grid-auto-columns:unset;scrollbar-width:none}
+      body.mobile-home-mode .social-mobile-nav::-webkit-scrollbar{display:none}
+      body.mobile-home-mode .social-mobile-nav-link{flex:0 0 clamp(112px,15vw,150px);min-width:clamp(112px,15vw,150px)}
+      @media (forced-colors:active){.social-nav-link,.social-mobile-nav-link{border:1px solid CanvasText}}
+    `;
+    document.head.appendChild(style);
+  }
 
   function active(path) {
     const current = location.pathname;
@@ -265,11 +291,20 @@
     return button;
   }
 
+  function accountNavigationLinks(icons, mobile) {
+    return [
+      navLink('/seguranca/', 'Segurança', icons.shield || '', { mobile }),
+      navLink('/configuracoes/', 'Configurações', extraIcons.settings, { mobile }),
+      navLink('/conquistas/', 'Conquistas', extraIcons.trophy, { mobile })
+    ];
+  }
+
   function mount(user, socialConfig = {}) {
     closeNotificationPanel();
     document.querySelectorAll('.social-global-nav,.social-mobile-nav,.social-notification-panel').forEach((item) => item.remove());
     document.body.classList.remove('has-social-navigation');
     ensureGlobalListeners();
+    ensureExtendedNavigationStyles();
 
     const icons = window.PortalSocial?.icons || {};
     const header = document.querySelector('.portal-topbar');
@@ -291,6 +326,7 @@
           navLink('/perfil/', 'Perfil', icons.user || '', { social: true })
         );
       }
+      desktopLinks.push(...accountNavigationLinks(icons, false));
       inner.append(...desktopLinks);
       desktop.appendChild(inner);
       header.insertAdjacentElement('afterend', desktop);
@@ -308,6 +344,7 @@
         navLink('/perfil/', 'Perfil', icons.user || '', { mobile: true, social: true })
       );
     }
+    mobileLinks.push(...accountNavigationLinks(icons, true));
     bottom.append(...mobileLinks);
     document.body.appendChild(bottom);
     document.body.classList.add('has-social-navigation');

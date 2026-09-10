@@ -61,7 +61,7 @@ Confirmar:
 3. mesma foto em todos os módulos;
 4. conta sem e-mail verificado aparece Bronze;
 5. conta com e-mail verificado aparece Prata;
-6. `/conta/` mostra uma única progressão Bronze/Prata/Ouro.
+6. `/conquistas/` mostra uma única progressão Bronze/Prata/Ouro e `/conta/` apenas redireciona URLs antigas.
 
 ## 4. Teste completo da manifestação
 

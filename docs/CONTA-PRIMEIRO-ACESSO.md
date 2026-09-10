@@ -1,8 +1,8 @@
-# Conta — experiência de primeiro acesso
+# Segurança — experiência de primeiro acesso
 
 ## Decisão permanente
 
-Quando uma conta autenticada estiver com `mustChangePassword = true`, a rota `/conta/` deve assumir um modo visual específico de **primeiro acesso**. O objetivo é deixar inequívoco que a conta foi criada corretamente, mas o acesso às demais áreas só será liberado depois da substituição da senha temporária.
+Quando uma conta autenticada estiver com `mustChangePassword = true`, a rota `/seguranca/` deve assumir um modo visual específico de **primeiro acesso**. O objetivo é deixar inequívoco que a conta foi criada corretamente, mas o acesso às demais áreas só será liberado depois da substituição da senha temporária.
 
 Essa decisão **não altera a regra de segurança**. A exigência continua sendo validada pelo fluxo existente de autenticação e pelo backend; a mudança é de comunicação, hierarquia visual e prevenção de confusão.
 
@@ -19,7 +19,7 @@ Durante o primeiro acesso:
 - o botão principal deve usar a ação **Salvar nova senha e continuar**;
 - devem ser apresentados somente requisitos realmente aceitos pelo backend: no mínimo 8 caracteres, senha nova diferente da temporária e confirmação igual à nova senha;
 - os campos de senha podem oferecer controle profissional de mostrar/ocultar senha;
-- o restante da página de conta fica temporariamente fora de foco visual enquanto `mustChangePassword` permanecer verdadeiro;
+- o restante da página de Segurança fica temporariamente fora de foco visual enquanto `mustChangePassword` permanecer verdadeiro;
 - `Sair` continua disponível;
 - desktop e mobile devem apresentar a mesma lógica, adaptada ao espaço disponível.
 
@@ -46,13 +46,13 @@ O backend continua sendo responsável por:
 - incrementar `session_version`;
 - emitir uma sessão renovada.
 
-Depois da confirmação dessa nova sessão, a experiência de primeiro acesso é removida. Se não houver outra exigência de segurança, a pessoa segue para `/`. Se houver verificação adicional obrigatória, a página volta ao modo normal de conta e conduz para a etapa correspondente.
+Depois da confirmação dessa nova sessão, a experiência de primeiro acesso é removida. Se não houver outra exigência de segurança, a pessoa segue para `/`. Se houver verificação adicional obrigatória, a página volta ao modo normal de Segurança e conduz para a etapa correspondente.
 
 ## Arquivos
 
-- `js/account-first-access.js` — comportamento e apresentação do modo de primeiro acesso;
-- `js/citizen-identity-ui.js` — carregamento da experiência na rota compartilhada `/conta/`;
-- `js/account.js` — fluxo existente de troca de senha, preservado;
+- `seguranca/index.html` — superfície dedicada de senha e e-mail;
+- `js/security.js` — primeiro acesso, troca de senha e confirmação de e-mail;
+- `js/auth-client.js` — guardas e redirecionamentos para Segurança;
 - `worker/auth-management-v2.js` — regra de segurança e renovação de sessão, preservadas;
 - `portal-sw.js` — versão de cache renovada para impedir que a interface antiga fique presa no cache estático;
 - `worker/tests/account-first-access-ui.test.mjs` — contrato automatizado da experiência.

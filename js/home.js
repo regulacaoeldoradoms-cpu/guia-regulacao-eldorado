@@ -9,7 +9,7 @@
   if (!user) return;
 
   if (user.mustChangePassword) {
-    location.replace('/conta/?primeiro-acesso=1');
+    location.replace('/seguranca/?primeiro-acesso=1');
     return;
   }
 

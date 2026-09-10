@@ -5,11 +5,11 @@
 
   const WORKER_URL = '/portal-sw.js';
   const WORKER_SCOPE = '/';
-  const CORE_ROUTES = Object.freeze(['/', '/ferramentas/', '/conta/']);
+  const CORE_ROUTES = Object.freeze(['/', '/ferramentas/', '/seguranca/', '/configuracoes/', '/conquistas/']);
   const SOCIAL_ROUTES = Object.freeze(['/amigos/', '/notificacoes/', '/perfil/']);
   const KNOWN_ROUTES = new Set([
     '/', '/home/', '/login/', '/cadastro/', '/ferramentas/', '/perfil/',
-    '/amigos/', '/notificacoes/', '/conta/', '/medico/', '/protocolo/',
+    '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/conta/', '/medico/', '/protocolo/',
     '/recepcao/', '/telemedicina/', '/cidadao/', '/conselho/',
     '/conselho/painel/', '/admin/usuarios/', '/admin/monitoramento/',
     '/admin/configuracao/', '/admin/social/'

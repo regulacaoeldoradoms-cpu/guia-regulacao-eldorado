@@ -5,7 +5,7 @@
   const social = window.PortalSocial;
   const user = await auth.requireRole(['admin']);
   if (!user) return;
-  if (user.mustChangePassword) { location.replace('/conta/?primeiro-acesso=1'); return; }
+  if (user.mustChangePassword) { location.replace('/seguranca/?primeiro-acesso=1'); return; }
   document.getElementById('portalUserName').textContent = user.name || user.username || 'Desenvolvedor';
   document.getElementById('portalUserRole').textContent = 'Desenvolvedor · moderação social';
   document.getElementById('portalLogout')?.addEventListener('click', async () => { await auth.logout(); location.replace('/login/'); });

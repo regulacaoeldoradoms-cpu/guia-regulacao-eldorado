@@ -6,7 +6,7 @@
   const user = await auth.requireRole([]);
   if (!user) return;
   if (user.mustChangePassword) {
-    location.replace('/conta/?primeiro-acesso=1');
+    location.replace('/seguranca/?primeiro-acesso=1');
     return;
   }
   document.getElementById('portalUserName').textContent = user.name || user.username || 'Usuário';

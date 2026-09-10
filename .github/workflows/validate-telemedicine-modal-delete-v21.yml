@@ -39,7 +39,7 @@ jobs:
           from pathlib import Path
           html = Path('telemedicina/index.html').read_text()
           guard = html.index('/js/telemedicina-modal-delete-v21.js?v=20260908-2')
-          interactions = html.index('/js/portal-interactions.js?v=20260906-2')
+          interactions = html.index('/js/portal-interactions.js?v=20260910-2')
           base = html.index('/js/telemedicina.js?v=20260906-1')
           mobile = html.index('/js/telemedicina-mobile-v9.js?v=20260905-2')
           assert guard < interactions, 'A guarda modal deve carregar antes de portal-interactions.'

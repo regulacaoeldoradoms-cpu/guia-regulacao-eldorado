@@ -6,7 +6,7 @@
   const user = await auth.requireRole([]);
   if (!user) return;
   if (user.mustChangePassword) {
-    location.replace('/conta/?primeiro-acesso=1');
+    location.replace('/seguranca/?primeiro-acesso=1');
     return;
   }
   document.getElementById('portalUserName').textContent = user.name || user.username || 'Usuário';
@@ -18,12 +18,157 @@
   catch (error) { social.status(error.message || 'Camada Social indisponível.', 'error'); return; }
   window.PortalSocialNavigation?.mount(user, config);
   if (!config.available) {
-    social.status(config.gate?.message || 'Confirme seu e-mail para abrir perfis sociais.', 'error');
+    social.status(config.gate?.message || 'O perfil social está temporariamente indisponível.', 'error');
     return;
   }
 
   const requested = String(new URLSearchParams(location.search).get('u') || '').replace(/^@/, '');
   let profile;
+  let identityLoaded = false;
+
+  const photoCamera = document.getElementById('profilePhotoCamera');
+  const photoDialog = document.getElementById('profilePhotoDialog');
+  const photoPreview = document.getElementById('profilePhotoPreview');
+  const photoHelp = document.getElementById('profilePhotoHelp');
+  const photoInput = document.getElementById('profilePhotoInput');
+  const choosePhoto = document.getElementById('chooseProfilePhoto');
+  const removePhoto = document.getElementById('removeProfilePhoto');
+  const photoStatus = document.getElementById('profilePhotoStatus');
+
+  const identityEditor = document.getElementById('profileIdentityEditor');
+  const identityForm = document.getElementById('profileIdentityForm');
+  const identityName = document.getElementById('profileIdentityName');
+  const identityHandle = document.getElementById('profileIdentityHandle');
+  const identityHandleHelp = document.getElementById('profileIdentityHandleHelp');
+  const identityStatus = document.getElementById('profileIdentityStatus');
+  const saveIdentity = document.getElementById('saveProfileIdentity');
+
+  function accountPhotoUnlocked() {
+    const current = auth.getCachedUser?.() || user;
+    const level = String(current?.accountLevel || '').toLowerCase();
+    return current?.emailVerified === true || level === 'prata' || level === 'ouro';
+  }
+
+  function accountStatus(element, message, type = 'success') {
+    if (!element) return;
+    element.textContent = message || '';
+    element.className = `account-status${message ? ' visible' : ''} ${type}`;
+  }
+
+  function initialsFor(value) {
+    const parts = String(value || '?').trim().split(/\s+/).filter(Boolean);
+    return ((parts[0]?.[0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase() || '?';
+  }
+
+  function readImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('Não foi possível ler a imagem selecionada.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadImage(source) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('Não foi possível abrir a imagem selecionada.'));
+      image.src = source;
+    });
+  }
+
+  async function prepareAvatar(file) {
+    if (!file) throw new Error('Escolha uma imagem.');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) throw new Error('Use uma foto JPG, PNG ou WebP.');
+    if (file.size > 10 * 1024 * 1024) throw new Error('A imagem original pode ter no máximo 10 MB.');
+    const source = await readImage(file);
+    const image = await loadImage(source);
+    const size = Math.min(image.naturalWidth, image.naturalHeight);
+    const sx = Math.max(0, Math.floor((image.naturalWidth - size) / 2));
+    const sy = Math.max(0, Math.floor((image.naturalHeight - size) / 2));
+    const canvas = document.createElement('canvas');
+    canvas.width = 320;
+    canvas.height = 320;
+    const context = canvas.getContext('2d');
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, 320, 320);
+    context.drawImage(image, sx, sy, size, size, 0, 0, 320, 320);
+    const avatar = canvas.toDataURL('image/jpeg', 0.82);
+    if (avatar.length > 220000) throw new Error('A foto ficou muito grande. Escolha outra imagem.');
+    return avatar;
+  }
+
+  function renderPhotoEditor() {
+    const self = Boolean(profile?.isSelf);
+    if (photoCamera) photoCamera.hidden = !self;
+    if (!self || !photoDialog) return;
+    const unlocked = accountPhotoUnlocked();
+    if (photoPreview) {
+      photoPreview.textContent = initialsFor(profile.name || profile.handle);
+      photoPreview.style.backgroundImage = 'none';
+      social.mountAvatar(photoPreview, profile);
+    }
+    if (photoHelp) {
+      photoHelp.textContent = unlocked
+        ? 'Escolha uma foto JPG, PNG ou WebP. A imagem será recortada em formato quadrado para uso no Portal.'
+        : 'A foto de perfil é liberada no nível Prata. Confirme seu e-mail na área Segurança para desbloquear.';
+    }
+    if (choosePhoto) choosePhoto.textContent = unlocked ? 'Escolher foto' : 'Abrir Segurança';
+    if (removePhoto) removePhoto.hidden = !unlocked || !profile.avatarAvailable;
+  }
+
+  photoCamera?.addEventListener('click', () => {
+    renderPhotoEditor();
+    accountStatus(photoStatus, '', 'success');
+    photoDialog?.showModal();
+  });
+
+  choosePhoto?.addEventListener('click', () => {
+    if (!accountPhotoUnlocked()) {
+      location.href = '/seguranca/';
+      return;
+    }
+    photoInput?.click();
+  });
+
+  photoInput?.addEventListener('change', async () => {
+    const file = photoInput.files?.[0];
+    if (!file) return;
+    choosePhoto.disabled = true;
+    if (removePhoto) removePhoto.disabled = true;
+    accountStatus(photoStatus, 'Preparando a foto...', 'success');
+    try {
+      const avatarDataUrl = await prepareAvatar(file);
+      await auth.updateProfilePhoto(avatarDataUrl);
+      photoDialog?.close();
+      await load();
+      social.status('Foto de perfil atualizada.', 'success');
+    } catch (error) {
+      accountStatus(photoStatus, error.message || 'Não foi possível atualizar a foto.', 'error');
+    } finally {
+      photoInput.value = '';
+      choosePhoto.disabled = false;
+      if (removePhoto) removePhoto.disabled = false;
+    }
+  });
+
+  removePhoto?.addEventListener('click', async () => {
+    if (!accountPhotoUnlocked()) return;
+    choosePhoto.disabled = true;
+    removePhoto.disabled = true;
+    try {
+      await auth.updateProfilePhoto('');
+      photoDialog?.close();
+      await load();
+      social.status('Foto de perfil removida.', 'success');
+    } catch (error) {
+      accountStatus(photoStatus, error.message || 'Não foi possível remover a foto.', 'error');
+    } finally {
+      choosePhoto.disabled = false;
+      removePhoto.disabled = false;
+    }
+  });
 
   async function relationship(action, options = {}) {
     if (options.confirm && !(await social.confirmAction(options.confirm))) return;
@@ -142,7 +287,8 @@
     document.getElementById('profileEditPattern').value = profile.coverPattern;
     const orderEditor = document.getElementById('profileModuleOrderEditor');
     const labels = { about: 'Sobre', friends: 'Amigos', posts: 'Publicações' };
-    const ordered = [...profile.moduleOrder, ...['about', 'friends', 'posts'].filter((name) => !profile.moduleOrder.includes(name))];
+    const currentOrder = Array.isArray(profile.moduleOrder) ? profile.moduleOrder : [];
+    const ordered = [...currentOrder, ...['about', 'friends', 'posts'].filter((name) => !currentOrder.includes(name))];
     orderEditor.innerHTML = '';
     ordered.forEach((name) => {
       const row = document.createElement('div');
@@ -152,7 +298,7 @@
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = name;
-      checkbox.checked = profile.moduleOrder.includes(name);
+      checkbox.checked = currentOrder.includes(name);
       label.append(checkbox, document.createTextNode(` ${labels[name]}`));
       const up = social.button('Subir', 'social-button secondary');
       const down = social.button('Descer', 'social-button secondary');
@@ -161,6 +307,37 @@
       row.append(label, up, down);
       orderEditor.appendChild(row);
     });
+  }
+
+  function formatIdentityDate(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
+  }
+
+  function renderIdentity(identity) {
+    if (!identityEditor) return;
+    identityEditor.hidden = !(profile.isSelf && user.role === 'cidadao');
+    if (identityEditor.hidden) return;
+    identityName.value = identity.displayName || '';
+    identityHandle.value = identity.handle || '';
+    const canChange = identity.canChangeHandle !== false;
+    identityHandle.disabled = !canChange;
+    identityHandleHelp.innerHTML = canChange
+      ? 'Seu <strong>@nome.de.usuario</strong> é único. Depois de trocar, você poderá alterá-lo novamente após 30 dias.'
+      : `Seu @ poderá ser alterado novamente em <strong>${formatIdentityDate(identity.nextHandleChangeAt)}</strong>.`;
+  }
+
+  async function loadIdentity(force = false) {
+    if (!profile?.isSelf || user.role !== 'cidadao' || (identityLoaded && !force)) return;
+    try {
+      const payload = await auth.api('/api/citizen/identity', { method: 'GET' });
+      renderIdentity(payload.identity || {});
+      identityLoaded = true;
+    } catch (error) {
+      accountStatus(identityStatus, error.message || 'Não foi possível carregar o nome e @ do perfil.', 'error');
+    }
   }
 
   function render() {
@@ -174,9 +351,11 @@
       professional.hidden = false;
     } else professional.hidden = true;
     social.mountAvatar(document.getElementById('profileAvatar'), profile);
+    renderPhotoEditor();
     renderActions();
     renderModules();
     fillEditor();
+    if (identityEditor) identityEditor.hidden = !(profile.isSelf && user.role === 'cidadao');
     document.getElementById('socialProfile').hidden = false;
     social.status('', 'info');
   }
@@ -188,11 +367,10 @@
       history.replaceState(null, '', social.profileUrl(profile.canonicalHandle));
     }
     render();
+    await loadIdentity();
     const posts = document.getElementById('profilePosts');
     const more = document.getElementById('profilePostsMore');
     await window.PortalSocialFeed.load(posts, more, { handle: profile.handle });
-    more.onclick = () => window.PortalSocialFeed.load(posts, more, { handle: profile.handle, append: true })
-      .catch((error) => social.status(error.message || 'Não foi possível carregar mais publicações.', 'error'));
   }
 
   document.getElementById('profileEditorForm')?.addEventListener('submit', async (event) => {
@@ -220,6 +398,24 @@
       social.status(error.message || 'Não foi possível salvar a personalização.', 'error');
     } finally {
       submit.disabled = false;
+    }
+  });
+
+  identityForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    saveIdentity.disabled = true;
+    try {
+      const body = { displayName: identityName.value.trim() };
+      if (!identityHandle.disabled) body.handle = String(identityHandle.value || '').replace(/^@+/, '').trim().toLowerCase();
+      const payload = await auth.api('/api/citizen/identity', { method: 'PATCH', body: JSON.stringify(body) });
+      renderIdentity(payload.identity || {});
+      identityLoaded = true;
+      accountStatus(identityStatus, 'Nome e @ atualizados.', 'success');
+      await load();
+    } catch (error) {
+      accountStatus(identityStatus, error.message || 'Não foi possível atualizar o nome e @.', 'error');
+    } finally {
+      saveIdentity.disabled = false;
     }
   });
 

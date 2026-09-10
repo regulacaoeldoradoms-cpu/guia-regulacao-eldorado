@@ -43,8 +43,9 @@ Quando a Home está ativa, `/` usa composição responsiva:
 
 No desktop largo, a área útil da Home social é aproximadamente 10% maior para reduzir
 espaços laterais vazios e ampliar cards, tipografia, controles e atalhos. Essa ampliação
-não altera a barra global `Início`, `Amigos`, `Ferramentas`, `Notificações` e `Perfil`,
-nem o modo mobile, que mantêm suas dimensões e regras próprias.
+não altera a lógica visual da barra global nem o modo mobile, que mantêm suas
+dimensões e regras próprias. Segurança, Configurações e Conquistas também fazem
+parte dessa navegação global.
 
 `/ferramentas/` reutiliza o mesmo `PortalTools` usado pelo fallback da raiz. A matriz
 de cards não é duplicada entre as duas páginas. A API social não é necessária para
@@ -57,9 +58,11 @@ seguindo suas autorizações próprias.
 
 ## Navegação global implantada
 
-No desktop, a navegação oferece Início, Amigos, Ferramentas, Notificações e Perfil.
-No mobile, prioriza Início, Amigos, Ferramentas, Avisos e Perfil. O catálogo de
-Ferramentas é o único trecho dessa composição que varia conforme cargo e permissões.
+No desktop, a navegação oferece Início, Amigos, Ferramentas, Notificações, Perfil,
+Segurança, Configurações e Conquistas. No mobile, os mesmos destinos ficam em uma
+barra horizontal rolável; o painel de Notificações aparece como Avisos. O catálogo
+de Ferramentas é o único trecho dessa composição que varia conforme cargo e
+permissões.
 
 `Notificações` no desktop e `Avisos` no mobile funcionam como controles de abertura,
 não como navegação direta. Ao acioná-los, o Portal abre na própria tela um painel com
@@ -72,10 +75,12 @@ A rota `/notificacoes/` continua existindo como histórico completo e fallback. 
 oferecida como ação secundária `Ver histórico completo` dentro do painel, sem obrigar
 o usuário a abandonar a tela atual apenas para consultar notificações recentes.
 
-Não existe item independente `Conta` na navegação global. A área de foto/nome no
-cabeçalho continua sendo o acesso às configurações privadas em `/conta/`. `Perfil`
-aponta para `/perfil/` e representa a identidade social pública da conta, incluindo
-suas publicações visíveis conforme audiência e permissões.
+Não existe item independente `Conta` na navegação global. A antiga página
+monolítica foi redistribuída: `Perfil` aponta para `/perfil/`, `Segurança` para
+`/seguranca/`, `Configurações` para `/configuracoes/` e `Conquistas` para
+`/conquistas/`. A área de foto/nome no cabeçalho também abre o próprio Perfil.
+A rota `/conta/` permanece somente como redirecionamento de compatibilidade para
+URLs antigas.
 
 Chat continua como recurso flutuante apenas para os cargos profissionais já
 autorizados. Notificações sociais usam rota e tabela próprias; avisos do Conselho
@@ -162,7 +167,9 @@ forçado, safe areas e breakpoint dedicado para evitar compressão/overflow mobi
 
 ## Evolução posterior
 
-Comunidades, fóruns, seguidores, jogos, conquistas e chat social cidadão-profissional
-não foram implementados e não aparecem como controles falsos. A identidade UUID e a
-separação de domínio permitem que esses produtos sejam adicionados depois com tabelas,
-eventos e políticas próprias.
+Comunidades, fóruns, seguidores, jogos, desbloqueios de conquistas por jogos e chat
+social cidadão-profissional ainda não foram implementados. A rota `/conquistas/`
+já existe como superfície real da progressão da conta e identifica explicitamente
+como `Planejada` qualquer medalha futura sem regra real de desbloqueio. A identidade
+UUID e a separação de domínio permitem que esses produtos sejam adicionados depois
+com tabelas, eventos e políticas próprias.

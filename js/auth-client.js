@@ -81,9 +81,9 @@
     if (!area) {
       area = document.createElement('a');
       area.className = 'portal-account-area';
-      area.href = '/conta/';
-      area.setAttribute('aria-label', 'Abrir minha conta');
-      area.title = 'Minha conta';
+      area.href = '/perfil/';
+      area.setAttribute('aria-label', 'Abrir meu perfil');
+      area.title = 'Meu perfil';
       if (meta) {
         container.insertBefore(area, meta);
         area.appendChild(meta);
@@ -113,7 +113,7 @@
     const photo = String(user.avatarDataUrl || '');
     avatar.textContent = photo ? '' : initialsFor(user);
     avatar.style.backgroundImage = photo ? `url("${photo}")` : 'none';
-    accountArea.setAttribute('aria-label', `Abrir minha conta: ${user.name || user.username || 'usuário'}`);
+    accountArea.setAttribute('aria-label', `Abrir meu perfil: ${user.name || user.username || 'usuário'}`);
   }
 
   async function api(path, options = {}) {
@@ -317,7 +317,7 @@
 
   function verificationDestination() {
     const next = encodeURIComponent(location.pathname + location.search + location.hash);
-    return `/conta/?verificar-email=1&next=${next}`;
+    return `/seguranca/?verificar-email=1&next=${next}`;
   }
 
   function accessAllowed(user, allowedRoles, options = {}) {
@@ -326,7 +326,8 @@
       location.replace(`${CONFIG.loginPath || '/login/'}?next=${next}`);
       return false;
     }
-    if (user.emailVerificationRequired && location.pathname !== '/conta/' && !location.pathname.startsWith('/conta/')) {
+    const securityRoute = location.pathname === '/seguranca/' || location.pathname.startsWith('/seguranca/') || location.pathname === '/conta/' || location.pathname.startsWith('/conta/');
+    if (user.emailVerificationRequired && !securityRoute) {
       location.replace(verificationDestination());
       return false;
     }

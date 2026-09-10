@@ -22,8 +22,10 @@ O perfil é aberto dentro do Portal pela rota `/perfil/?u=handle`. Quando o cida
 altera o `@`, o handle anterior é preservado em `social_handle_aliases`; URLs antigas,
 autoria e amizades continuam resolvendo a mesma identidade.
 
-`/conta/` permanece sendo o painel privado. `/perfil/` é a representação social
-autenticada e não indexável.
+`/perfil/` é a representação social autenticada e não indexável e também
+concentra a foto do próprio titular. Segurança, preferências e progressão ficam,
+respectivamente, em `/seguranca/`, `/configuracoes/` e `/conquistas/`.
+`/conta/` é somente uma rota legada de redirecionamento.
 
 ## Estados e transições
 
@@ -99,7 +101,8 @@ editável na superfície social. E-mail, UUID interno, dados administrativos e d
 assistenciais não aparecem em perfis comuns. Preferências privadas, como página
 inicial e audiência padrão, são devolvidas apenas ao próprio titular.
 
-A foto continua sendo configurada em `/conta/` e exige Conta Prata. A capa da V1 usa
+A foto é configurada diretamente em `/perfil/`, pelo ícone de câmera sobre o
+avatar, e exige Conta Prata. A capa da V1 usa
 somente tokens visuais controlados; upload de mídia social foi adiado até existir
 pipeline próprio com validação de MIME, transformação e remoção segura de metadados.
 

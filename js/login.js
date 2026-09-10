@@ -267,11 +267,11 @@
   }
 
   function destinationFor(user) {
-    if (user?.mustChangePassword) return '/conta/?primeiro-acesso=1';
+    if (user?.mustChangePassword) return '/seguranca/?primeiro-acesso=1';
     const requested = safeRequestedDestination();
     if (user?.emailVerificationRequired) {
       const next = encodeURIComponent(requested || defaultDestination(user));
-      return `/conta/?verificar-email=1&next=${next}`;
+      return `/seguranca/?verificar-email=1&next=${next}`;
     }
     return requested || defaultDestination(user);
   }

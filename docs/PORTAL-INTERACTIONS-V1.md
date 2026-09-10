@@ -14,7 +14,7 @@ A camada é progressiva: uma operação continua funcionando quando Web Audio, V
 - `css/portal-interactions.css`: tokens e estados visuais compartilhados, transições progressivas, foco visível, movimento reduzido e cores forçadas.
 - `assets/sounds/ui-*.wav`: identidade sonora original e local, sem serviço ou pacote externo.
 - `scripts/generate-interaction-sounds.mjs`: geração determinística dos arquivos de áudio.
-- `/conta/`: configuração global de sons, volume e silêncio rápido.
+- `/configuracoes/`: configuração global de sons, volume e silêncio rápido.
 - `worker/auth-management-v2.js`: persistência das preferências na conta, com fallback local no navegador.
 
 Não deve ser criado um segundo gerenciador por módulo. Novas páginas carregam os dois arquivos centrais e registram somente as interações que possuem significado operacional.
@@ -86,7 +86,7 @@ Não existe áudio em hover. Cooldowns por categoria, prioridade e limite de fon
 
 ## Preferências
 
-Contas existentes e novas começam com sons desativados. A opção só é ativada por decisão do usuário em `/conta/`.
+Contas existentes e novas começam com sons desativados. A opção só é ativada por decisão do usuário em `/configuracoes/`.
 
 - `interface_sounds_enabled`: liga ou desliga a identidade sonora.
 - `interface_sound_volume`: inteiro entre 0 e 100; padrão 32.
@@ -112,7 +112,7 @@ As preferências são gravadas no D1 pela API autenticada `/api/auth/security` e
 | `/cidadao/` | nova manifestação, atualização, anexos, privacidade, abas, notificações, modais e saída |
 | `/conselho/` | entrada em cadastro ou login e resposta dos cards públicos |
 | `/conselho/painel/` | filtros, abertura, resposta, andamento, exportação, exclusão, atualização e saída |
-| `/conta/` | formulários, foto, e-mail, senha, preferências de interface/social e saída |
+| `/seguranca/` | troca de senha, cadastro/confirmação de e-mail e saída |\n| `/configuracoes/` | sons da interface, preferências sociais e saída |\n| `/conquistas/` | progressão Bronze/Prata/Ouro e navegação para Segurança |\n| `/conta/` | redirecionamento de compatibilidade, sem controles próprios |
 | `/admin/usuarios/` | criação, edição, redefinição, filtros implícitos, resultados e saída |
 | `/admin/monitoramento/` | períodos, seleção de profissional, atualização de conteúdo, chat e saída |
 | `/admin/configuracao/` | diagnóstico, carregamento, conclusão, bloqueios, erro e saída |

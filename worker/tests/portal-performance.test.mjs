@@ -22,7 +22,9 @@ const ACTIVE_ROUTES = [
   'cidadao/index.html',
   'conselho/index.html',
   'conselho/painel/index.html',
-  'conta/index.html',
+  'seguranca/index.html',
+  'configuracoes/index.html',
+  'conquistas/index.html',
   'admin/usuarios/index.html',
   'admin/monitoramento/index.html',
   'admin/configuracao/index.html',
@@ -75,15 +77,15 @@ test('todas as entradas ativas registram cedo a camada de desempenho', () => {
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
     assert.equal(
-      (html.match(/portal-performance\.js\?v=20260909-1/g) || []).length,
+      (html.match(/portal-performance\.js\?v=20260910-2/g) || []).length,
       1,
       filename + ': bootstrap único'
     );
-    assert.match(html, /portal-performance\.js\?v=20260909-1" async/);
+    assert.match(html, /portal-performance\.js\?v=20260910-2" async/);
     if (/auth-client\.js/.test(html)) {
       assert.match(html, /rel="preconnect" href="https:\/\/yellow-wave-d0a1guia-regulacao-ia\.regulacaoeldoradoms\.workers\.dev"/);
-      assert.match(html, /rel="preload" href="\/js\/auth-client\.js\?v=20260909-1" as="script"/);
-      assert.match(html, /auth-client\.js\?v=20260909-1/);
+      assert.match(html, /rel="preload" href="\/js\/auth-client\.js\?v=20260910-2" as="script"/);
+      assert.match(html, /auth-client\.js\?v=20260910-2/);
     }
   }
 });
@@ -99,7 +101,7 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
     username: 'desenvolvedor',
     emailVerified: true
   }));
-  for (const route of ['/', '/ferramentas/', '/conta/', '/amigos/', '/notificacoes/', '/perfil/', '/telemedicina/', '/admin/configuracao/']) {
+  for (const route of ['/', '/ferramentas/', '/seguranca/', '/configuracoes/', '/conquistas/', '/amigos/', '/notificacoes/', '/perfil/', '/telemedicina/', '/admin/configuracao/']) {
     assert.ok(routes.includes(route), route);
   }
   assert.equal(api.__test.portalRoute('https://example.com/fora'), '');
@@ -110,8 +112,11 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
 
 test('service worker armazena somente superfície pública e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260909-3'/);
+  assert.match(source, /CACHE_VERSION = '20260910-1'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
+  assert.match(source, /\/seguranca\//);
+  assert.match(source, /\/configuracoes\//);
+  assert.match(source, /\/conquistas\//);
   assert.match(source, /navigationPreload\.enable/);
   assert.match(source, /event\.waitUntil\(update\.catch/);
   assert.match(source, /url\.pathname\.startsWith\('\/api\/'\)/);
@@ -156,6 +161,6 @@ test('login inicia o aquecimento antes de navegar e usa identidade visual leve',
   assert.match(login, /PortalPerformance\?\.warmForUser\?\.\(user, \{ immediate: true \}\)/);
   assert.match(login, /getCachedUser/);
   assert.match(html, /portal-regulacao-logo-v2\.svg\?v=20260909-1/);
-  assert.match(html, /tools-catalog\.js\?v=20260909-1/);
+  assert.match(html, /tools-catalog\.js\?v=20260910-2/);
   assert.match(tools, /loading="lazy" decoding="async" fetchpriority="low"/);
 });
