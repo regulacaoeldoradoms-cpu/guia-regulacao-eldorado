@@ -59,5 +59,8 @@ jobs:
           ! grep -q "portal-chat.js" conselho/index.html
           ! grep -q "portal-chat.js" conselho/painel/index.html
           ! grep -q "portal-chat.js" conta/index.html
+          ! grep -q "portal-chat.js" seguranca/index.html
+          ! grep -q "portal-chat.js" configuracoes/index.html
+          ! grep -q "portal-chat.js" conquistas/index.html
           ! grep -q "role = 'cidadao'" worker/portal-chat-v2.js
           grep -q "chat direto é restrito aos profissionais autorizados" worker/portal-chat-v2.js
