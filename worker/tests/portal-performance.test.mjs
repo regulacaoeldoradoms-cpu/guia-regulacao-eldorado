@@ -22,7 +22,9 @@ const ACTIVE_ROUTES = [
   'cidadao/index.html',
   'conselho/index.html',
   'conselho/painel/index.html',
-  'conta/index.html',
+  'seguranca/index.html',
+  'configuracoes/index.html',
+  'conquistas/index.html',
   'admin/usuarios/index.html',
   'admin/monitoramento/index.html',
   'admin/configuracao/index.html',
@@ -99,7 +101,7 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
     username: 'desenvolvedor',
     emailVerified: true
   }));
-  for (const route of ['/', '/ferramentas/', '/conta/', '/amigos/', '/notificacoes/', '/perfil/', '/telemedicina/', '/admin/configuracao/']) {
+  for (const route of ['/', '/ferramentas/', '/seguranca/', '/configuracoes/', '/conquistas/', '/amigos/', '/notificacoes/', '/perfil/', '/telemedicina/', '/admin/configuracao/']) {
     assert.ok(routes.includes(route), route);
   }
   assert.equal(api.__test.portalRoute('https://example.com/fora'), '');
@@ -110,8 +112,11 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
 
 test('service worker armazena somente superfície pública e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260909-3'/);
+  assert.match(source, /CACHE_VERSION = '20260910-1'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
+  assert.match(source, /\/seguranca\//);
+  assert.match(source, /\/configuracoes\//);
+  assert.match(source, /\/conquistas\//);
   assert.match(source, /navigationPreload\.enable/);
   assert.match(source, /event\.waitUntil\(update\.catch/);
   assert.match(source, /url\.pathname\.startsWith\('\/api\/'\)/);
