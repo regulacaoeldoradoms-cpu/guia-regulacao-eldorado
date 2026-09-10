@@ -205,7 +205,9 @@ async function passwordMatches(password, user) {
 async function ensureColumn(env, name, sqlType) {
   const columns = await env.AUTH_DB.prepare('PRAGMA table_info(auth_users)').all();
   const names = new Set((columns.results || []).map((item) => String(item.name || '')));
-  if (!names.has(name)) await env.AUTH_DB.prepare(`ALTER TABLE auth_users ADD COLUMN ${name} ${sqlType}`).run();
+  if (names.has(name)) return false;
+  await env.AUTH_DB.prepare(`ALTER TABLE auth_users ADD COLUMN ${name} ${sqlType}`).run();
+  return true;
 }
 
 export async function ensureAuthSchema(env) {
@@ -234,6 +236,12 @@ export async function ensureAuthSchema(env) {
   await ensureColumn(env, 'interface_sounds_muted', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn(env, 'self_registered', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn(env, 'avatar_data', "TEXT NOT NULL DEFAULT ''");
+  const avatarVersionAdded = await ensureColumn(env, 'avatar_version', "TEXT NOT NULL DEFAULT ''");
+  if (avatarVersionAdded) {
+    await env.AUTH_DB.prepare(`UPDATE auth_users
+      SET avatar_version = COALESCE(NULLIF(updated_at, ''), CURRENT_TIMESTAMP)
+      WHERE avatar_data <> '' AND avatar_version = ''`).run();
+  }
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_auth_users_active_role ON auth_users(active, role)').run();
   await env.AUTH_DB.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_auth_users_email ON auth_users(email) WHERE email <> ''").run();
   await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS auth_registration_limits (
@@ -255,6 +263,7 @@ function mapDbUser(row) {
     email: row.email || '',
     emailVerified: Number(row.email_verified) === 1,
     avatarDataUrl: String(row.avatar_data || ''),
+    avatarVersion: String(row.avatar_version || ''),
     firebaseUid: row.firebase_uid || '',
     acceptFriendRequests: Number(row.accept_friend_requests) === 1,
     interfaceSoundsEnabled: Number(row.interface_sounds_enabled) === 1,
