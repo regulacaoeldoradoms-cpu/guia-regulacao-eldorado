@@ -16,8 +16,10 @@ jobs:
       - name: Validar sintaxe
         run: |
           node --check worker/portal-chat-v2.js
+          node --check worker/push-notifications.js
           node --check worker/index.js
           node --check js/portal-chat.js
+          node --check js/portal-pwa.js
           node --check js/portal-chat-switch-optimizer.js
           node --check js/medical-portal-nav.js
           node --check portal-sw.js
@@ -35,6 +37,9 @@ jobs:
           grep -q "/api/chat/presence" worker/portal-chat-v2.js
           grep -q "/api/chat/users" worker/portal-chat-v2.js
           grep -q "/api/chat/messages" worker/portal-chat-v2.js
+          grep -q "notifyUserPush" worker/portal-chat-v2.js
+          grep -q "addEventListener('push'" portal-sw.js
+          grep -q "/api/push/subscriptions" js/portal-pwa.js
           grep -q "Uso interno do portal" js/portal-chat.js
           grep -q "Notification.requestPermission" js/portal-chat.js
           grep -q "showNotification" js/portal-chat.js
