@@ -300,7 +300,10 @@ function publicUser(user, options = {}) {
     selfRegistered: Boolean(user.selfRegistered)
   };
   if (options.includeEmail) result.email = user.email || '';
-  if (options.includeAvatar) result.avatarDataUrl = user.emailVerified ? String(user.avatarDataUrl || '') : '';
+  if (options.includeAvatar) {
+    result.avatarDataUrl = user.emailVerified ? String(user.avatarDataUrl || '') : '';
+    result.avatarVersion = user.emailVerified ? String(user.avatarVersion || '') : '';
+  }
   return result;
 }
 
