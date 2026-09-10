@@ -39,8 +39,11 @@ jobs:
           node --check js/council-panel.js
           node --check js/council-access-policy.js
           node --check js/admin-users.js
-          node --check js/account.js
-          node --check js/citizen-identity-ui.js
+          node --check js/account-section-shell.js
+          node --check js/security.js
+          node --check js/settings.js
+          node --check js/achievements.js
+          node --check js/social-profile.js
           node --check js/home.js
           node --check js/tools-catalog.js
           node --check js/usage-monitor-v2.js
@@ -92,10 +95,10 @@ jobs:
           fi
           ! grep -q 'ACCOUNT_LEVEL_REQUIRED' worker/portal-safety.js
           grep -q 'Conta Bronze' cadastro/index.html
-          grep -q 'Conta Prata' conta/index.html
-          grep -q 'Conta Ouro' conta/index.html
-          grep -q 'não têm relação com os níveis oficiais da conta Gov.br' conta/index.html
-          grep -q 'account-levels.js' conta/index.html
+          grep -q 'Conta Prata' conquistas/index.html
+          grep -q 'Conta Ouro' conquistas/index.html
+          grep -q 'não têm relação com os níveis oficiais da conta Gov.br' conquistas/index.html
+          grep -q 'account-levels.js' conquistas/index.html
           grep -q 'citizen-account-level.js' cidadao/index.html
           grep -q 'Segurança da conta' js/citizen-account-level.js
           ! grep -q '🥉\|🥈\|🥇' js/account-levels.js js/citizen-account-level.js cidadao/index.html
@@ -143,7 +146,7 @@ jobs:
           ! grep -q 'displayName.value' js/signup.js
           grep -q 'não use seu nome completo' cadastro/index.html
           grep -q 'requiredLevel: .prata.' worker/profile-photo.js
-          grep -q 'profilePhotoLevelLock' js/account.js
+          grep -q 'accountPhotoUnlocked' js/social-profile.js
           grep -q 'guardSecurityEmailRemoval' worker/index.js
           grep -q 'SECURITY_EMAIL_REMOVAL_BLOCKED' worker/citizen-privacy.js
           grep -q 'COUNCIL_ROLES_REQUIRING_VERIFICATION' worker/portal-safety.js
@@ -201,6 +204,9 @@ jobs:
           ! grep -q 'portal-chat.js' conselho/index.html
           ! grep -q 'portal-chat.js' conselho/painel/index.html
           ! grep -q 'portal-chat.js' conta/index.html
+          ! grep -q 'portal-chat.js' seguranca/index.html
+          ! grep -q 'portal-chat.js' configuracoes/index.html
+          ! grep -q 'portal-chat.js' conquistas/index.html
 
       - name: Conferir hierarquia e migração dos administradores legados
         run: |
