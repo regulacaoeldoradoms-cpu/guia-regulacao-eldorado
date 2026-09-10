@@ -24,9 +24,9 @@ const CORE_RESOURCES = Object.freeze([
   '/css/home-loading.css?v=20260909-1',
   '/css/social.css?v=20260909-3',
   '/js/auth-config.js?v=20260815-1',
-  '/js/portal-performance.js?v=20260909-1',
-  '/js/auth-client.js?v=20260909-1',
-  '/js/tools-catalog.js?v=20260909-1',
+  '/js/portal-performance.js?v=20260910-2',
+  '/js/auth-client.js?v=20260910-2',
+  '/js/tools-catalog.js?v=20260910-2',
   '/assets/portal-regulacao-icon.webp?v=20260909-1',
   '/assets/portal-regulacao-logo-v2.svg?v=20260909-1'
 ]);
