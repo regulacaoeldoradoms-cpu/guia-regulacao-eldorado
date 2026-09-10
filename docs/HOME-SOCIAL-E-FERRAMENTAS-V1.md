@@ -82,18 +82,20 @@ dados sociais. Desligar também o backend contém toda a camada, enquanto
 
 - Login comum abre `/`, que apresenta a Home social independentemente do cargo.
 - Autocadastro Bronze abre `/` e recebe a mesma Home social básica.
-- Primeiro acesso e troca obrigatória de senha continuam em `/conta/` antes de
+- Primeiro acesso e troca obrigatória de senha acontecem em `/seguranca/` antes de
   qualquer preferência.
 - `/home/` permanece redirecionamento de compatibilidade para `/`.
 - Conta-base exclusiva do Conselho continua abrindo `/conselho/painel/`.
 
 ## Navegação
 
-Desktop apresenta os recursos elegíveis em primeiro nível: Início, Amigos,
-Ferramentas, Notificações e Perfil. Mobile usa barra inferior com Início, Amigos,
-Ferramentas, Avisos e Perfil. Não existe mais item independente `Conta` na navegação
-global; as configurações privadas permanecem acessíveis pela área de foto/nome do
-cabeçalho, que continua apontando para `/conta/`.
+Desktop apresenta em primeiro nível Início, Amigos, Ferramentas, Notificações,
+Perfil, Segurança, Configurações e Conquistas. Mobile expõe os mesmos destinos em
+barra horizontal rolável, usando `Avisos` para o painel de notificações. Não existe
+mais item independente `Conta`: a área de foto/nome do cabeçalho abre `/perfil/`,
+senha e e-mail ficam em `/seguranca/`, sons e preferências sociais em
+`/configuracoes/` e a progressão em `/conquistas/`. `/conta/` permanece apenas
+como compatibilidade para URLs antigas.
 
 O nível da conta não remove itens sociais da navegação. Apenas uma suspensão social
 oculta essas áreas e mantém Início e Ferramentas disponíveis. Dentro da Home e de
