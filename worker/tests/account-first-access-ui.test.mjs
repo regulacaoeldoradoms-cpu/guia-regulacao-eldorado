@@ -8,53 +8,54 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '../..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 
-test('primeiro acesso deixa a troca de senha inequívoca sem alterar a regra de autenticação', () => {
-  const loader = read('js/citizen-identity-ui.js');
-  const ui = read('js/account-first-access.js');
-  const account = read('js/account.js');
+test('primeiro acesso usa Segurança como etapa obrigatória sem enfraquecer autenticação', () => {
+  const securityPage = read('seguranca/index.html');
+  const security = read('js/security.js');
+  const login = read('js/login.js');
+  const auth = read('js/auth-client.js');
   const worker = read('worker/auth-management-v2.js');
 
-  assert.match(loader, /account-first-access\.js\?v=20260909-2/);
-  assert.match(ui, /user\?\.mustChangePassword === true/);
-  assert.match(ui, /Defina sua nova senha para continuar\./);
-  assert.match(ui, /Seu acesso ainda não foi concluído\./);
-  assert.match(ui, /Senha temporária atual/);
-  assert.match(ui, /Salvar nova senha e continuar/);
-  assert.match(ui, /Pelo menos 8 caracteres/);
-  assert.match(ui, /Diferente da senha temporária/);
-  assert.match(ui, /Confirmação igual à nova senha/);
-  assert.match(ui, /accountHomeLink/);
-  assert.match(ui, /aria-disabled/);
-  assert.match(ui, /first-access-password-card/);
-  assert.match(ui, /first-access-mode/);
-
-  // A proteção continua sendo a existente: o frontend só melhora a comunicação.
-  assert.match(account, /user\.mustChangePassword === true/);
+  assert.match(securityPage, /id="changePasswordForm"/);
+  assert.match(securityPage, /id="currentPassword"/);
+  assert.match(securityPage, /id="newPassword"[^>]*minlength="8"/);
+  assert.match(securityPage, /id="confirmPassword"[^>]*minlength="8"/);
+  assert.match(securityPage, /id="firstAccessNotice"/);
+  assert.match(security, /user\.mustChangePassword === true/);
+  assert.match(security, /security-first-access/);
+  assert.match(security, /Senha alterada com sucesso\. Abrindo seu ambiente/);
+  assert.match(login, /\/seguranca\/\?primeiro-acesso=1/);
+  assert.match(auth, /\/seguranca\/\?verificar-email=1/);
   assert.match(worker, /must_change_password = 0/);
   assert.match(worker, /session_version = session_version \+ 1/);
 });
 
-test('o modo de primeiro acesso ganha contraste por camadas sem perder a hierarquia', () => {
-  const ui = read('js/account-first-access.js');
-  assert.match(ui, /linear-gradient\(180deg,#dfeaf2 0%,#edf4f8 50%,#e3edf3 100%\)/);
-  assert.match(ui, /linear-gradient\(135deg,#e6f1f9 0%,#dff3ef 100%\)/);
-  assert.match(ui, /background:linear-gradient\(135deg,#dceff5 0%,#e4f4f1 100%\)/);
-  assert.match(ui, /background:linear-gradient\(180deg,#fbfdff 0%,#f3f8fb 100%\)/);
-  assert.match(ui, /border:1px solid #9fb8cc!important/);
-  assert.match(ui, /background:#eaf2f7/);
-  assert.match(ui, /#changePasswordButton/);
+test('confirmação de e-mail também permanece concentrada em Segurança', () => {
+  const page = read('seguranca/index.html');
+  const client = read('js/security.js');
+  const safety = read('worker/portal-safety.js');
+  const firebase = read('worker/firebase-gateway.js');
+
+  assert.match(page, /id="securityEmailForm"/);
+  assert.match(page, /id="sendEmailVerification"/);
+  assert.match(client, /email-verificado/);
+  assert.match(client, /verificar-email/);
+  assert.match(safety, /verificationPath: '\/seguranca\/\?verificar-email=1'/);
+  assert.match(firebase, /regulacaoeldoradoms\.com\.br\/seguranca\/\?email-verificado=1/);
 });
 
-test('o modo de primeiro acesso oculta conteúdo secundário e preserva saída', () => {
-  const ui = read('js/account-first-access.js');
-  assert.match(ui, /#accountLevelPanel/);
-  assert.match(ui, /\.account-layout/);
-  assert.match(ui, /#emailVerificationNotice/);
-  assert.match(ui, /portalLogout|Sair|accountHomeLink/);
-  assert.doesNotMatch(ui, /location\.replace\(['"]\/login\//);
+test('/conta/ é somente compatibilidade e redistribui para rotas especializadas', () => {
+  const legacy = read('conta/index.html');
+  assert.match(legacy, /destination = '\/perfil\/'/);
+  assert.match(legacy, /destination = '\/seguranca\/'/);
+  assert.match(legacy, /destination = `\/configuracoes\//);
+  assert.match(legacy, /destination = '\/conquistas\/'/);
+  assert.doesNotMatch(legacy, /changePasswordForm|securityEmailForm|profilePhotoInput|socialPreferencesCard/);
 });
 
-test('cache do portal é renovado para entregar a nova experiência', () => {
+test('cache do portal é renovado para entregar as novas rotas', () => {
   const sw = read('portal-sw.js');
-  assert.match(sw, /const CACHE_VERSION = '20260909-3'/);
+  assert.match(sw, /const CACHE_VERSION = '20260910-1'/);
+  assert.match(sw, /'\/seguranca\/'/);
+  assert.match(sw, /'\/configuracoes\/'/);
+  assert.match(sw, /'\/conquistas\/'/);
 });
