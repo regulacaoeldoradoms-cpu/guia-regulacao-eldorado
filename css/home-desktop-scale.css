@@ -1,0 +1,230 @@
+/* Home social desktop: ampliação visual solicitada em 10%.
+   Escopo intencionalmente limitado à Home e fora do modo mobile.
+   A navegação global (Início, Amigos, Ferramentas, Notificações e Perfil)
+   permanece com as dimensões originais. */
+
+@media (min-width: 1240px) {
+  body:not(.mobile-home-mode) #socialHome.social-shell {
+    width: min(1298px, calc(100% - 32px));
+    margin-top: 20px;
+    margin-bottom: 53px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-layout {
+    grid-template-columns: 242px minmax(0, 704px) minmax(253px, 308px);
+    gap: 18px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-column {
+    gap: 15px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-card {
+    border-radius: 18px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-card-pad {
+    padding: 20px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-mini-cover {
+    height: 86px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-avatar {
+    width: 86px;
+    height: 86px;
+    border-width: 4px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-identity-card .social-avatar {
+    margin: -43px auto 11px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-identity-card h2 {
+    font-size: 1.12rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-handle {
+    margin-top: 4px;
+    font-size: .88rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-professional-badge {
+    margin-top: 11px;
+    padding: 6px 10px;
+    font-size: .77rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-side-links {
+    padding: 9px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-side-links a {
+    gap: 11px;
+    padding: 12px 13px;
+    border-radius: 12px;
+    font-size: .92rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-composer {
+    padding: 18px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-composer h2 {
+    margin-bottom: 11px;
+    font-size: 1.05rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-textarea {
+    min-height: 92px;
+    padding: 13px 14px;
+    border-radius: 13px;
+    font-size: 1.1rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-select,
+  body:not(.mobile-home-mode) #socialHome .social-input {
+    min-height: 47px;
+    padding: 10px 12px;
+    border-radius: 13px;
+    font-size: 1.05rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-composer-footer {
+    margin-top: 11px;
+    gap: 13px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-button {
+    min-height: 46px;
+    gap: 9px;
+    padding: 10px 15px;
+    border-radius: 12px;
+    font-size: 1.05rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-post {
+    padding: 18px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-post-header {
+    grid-template-columns: 51px minmax(0, 1fr) auto;
+    gap: 11px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-post-header .social-avatar {
+    width: 51px;
+    height: 51px;
+    font-size: .79rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-post-author a {
+    font-size: .97rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-post-author span,
+  body:not(.mobile-home-mode) #socialHome .social-post-meta {
+    font-size: .77rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-post-body {
+    margin: 14px 0 13px;
+    font-size: 1.1rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-post-actions {
+    gap: 7px;
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-action {
+    min-height: 43px;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: .86rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-action svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-section-heading {
+    gap: 13px;
+    padding: 18px 20px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-section-heading h2 {
+    font-size: 1.1rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-section-heading p {
+    margin-top: 3px;
+    font-size: .83rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome #socialShortcutLimitControl {
+    padding: 11px 20px 0 !important;
+    gap: 11px !important;
+  }
+
+  body:not(.mobile-home-mode) #socialHome #socialShortcutLimitControl label {
+    font-size: .79rem !important;
+  }
+
+  body:not(.mobile-home-mode) #socialHome #socialShortcutLimit {
+    min-width: 106px !important;
+    min-height: 40px !important;
+    padding: 7px 10px !important;
+    font-size: .95rem !important;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .hub-card.hub-card-compact {
+    min-height: 106px;
+    padding: 13px;
+    grid-template-columns: 53px minmax(0, 1fr);
+    gap: 4px 11px;
+    border-radius: 15px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .hub-card.hub-card-compact .hub-card-icon {
+    width: 53px;
+    height: 53px;
+    border-radius: 15px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .hub-card.hub-card-compact .hub-card-icon img {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .hub-card.hub-card-compact .hub-card-icon svg {
+    width: 31px;
+    height: 31px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .hub-card.hub-card-compact h3 {
+    font-size: .97rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .hub-card.hub-card-compact .hub-card-arrow {
+    font-size: .83rem;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-shortcuts .portal-grid {
+    padding: 11px;
+    gap: 9px;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-safety-card h2 {
+    margin-bottom: 9px !important;
+    font-size: 1.05rem !important;
+  }
+
+  body:not(.mobile-home-mode) #socialHome .social-safety-card p {
+    font-size: .88rem !important;
+  }
+}
