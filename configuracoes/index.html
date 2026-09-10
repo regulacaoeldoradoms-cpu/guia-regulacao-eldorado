@@ -1,70 +1,26 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="/js/portal-performance.js?v=20260909-1" async></script>
-  <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
-  <link rel="preload" href="/js/auth-client.js?v=20260909-1" as="script">
-  <meta name="robots" content="noindex,nofollow">
-  <meta name="theme-color" content="#0d3157">
+  <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin><link rel="preload" href="/js/auth-client.js?v=20260909-1" as="script">
+  <meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#0d3157">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
   <title>Configurações | Portal da Regulação</title>
   <link rel="icon" href="/assets/portal-regulacao-icon.webp?v=20260909-1" type="image/webp">
-  <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
-  <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
-  <link rel="stylesheet" href="/css/account-admin.css?v=20260812-2">
-  <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/social.css?v=20260909-3">
-  <link rel="stylesheet" href="/css/social-notification-panel.css?v=20260910-1">
-  <link rel="stylesheet" href="/css/account-sections.css?v=20260910-1">
+  <link rel="stylesheet" href="/css/portal.css?v=20260816-5"><link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1"><link rel="stylesheet" href="/css/account-admin.css?v=20260812-2"><link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2"><link rel="stylesheet" href="/css/social.css?v=20260909-3"><link rel="stylesheet" href="/css/social-notification-panel.css?v=20260910-1"><link rel="stylesheet" href="/css/account-sections.css?v=20260910-1">
 </head>
 <body class="portal-page">
   <div class="portal-shell">
-    <header class="portal-topbar"><div class="portal-topbar-inner">
-      <a class="portal-brand portal-brand--portal-identity" href="/" style="color:inherit;text-decoration:none"><img class="portal-symbol" src="/assets/portal-regulacao-icon.webp?v=20260909-1" alt="Símbolo do Portal da Regulação de Saúde"><div class="portal-brand-copy"><h1>Portal da Regulação de Saúde</h1><p>Configurações pessoais · Eldorado/MS</p></div></a>
-      <div class="portal-user"><div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div><button class="portal-button ghost" id="portalLogout" type="button">Sair</button></div>
-    </div></header>
-
+    <header class="portal-topbar"><div class="portal-topbar-inner"><a class="portal-brand portal-brand--portal-identity" href="/" style="color:inherit;text-decoration:none"><img class="portal-symbol" src="/assets/portal-regulacao-icon.webp?v=20260909-1" alt="Símbolo do Portal da Regulação de Saúde"><div class="portal-brand-copy"><h1>Portal da Regulação de Saúde</h1><p>Configurações pessoais · Eldorado/MS</p></div></a><div class="portal-user"><div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div><button class="portal-button ghost" id="portalLogout" type="button">Sair</button></div></div></header>
     <main class="account-section-main">
       <section class="account-section-hero"><div><span class="account-section-eyebrow">Configurações</span><h1>Preferências do Portal</h1><p>Ajuste a experiência da interface e as opções sociais da sua conta sem misturar essas escolhas com senha, e-mail ou dados do perfil.</p></div><div class="account-section-summary"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7a7 7 0 0 0-.7-1.7l.9-1.9-2.1-2.1-1.9.9a7 7 0 0 0-1.7-.7L10.5 2h-3l-.7 2.3a7 7 0 0 0-1.7.7l-1.9-.9-2.1 2.1.9 1.9a7 7 0 0 0-.7 1.7L-1 10.5v3l2.3.7a7 7 0 0 0 .7 1.7l-.9 1.9 2.1 2.1 1.9-.9a7 7 0 0 0 1.7.7l.7 2.3h3l.7-2.3a7 7 0 0 0 1.7-.7l1.9.9 2.1-2.1-.9-1.9a7 7 0 0 0 .7-1.7L19 13.5Z" transform="translate(2 0) scale(.9)"/></svg><div><strong>Preferências sincronizadas</strong><span>Aplicadas à sua conta quando possível</span></div></div></section>
-
       <section class="account-section-grid">
-        <article class="account-card wide" id="interfaceSoundsCard" data-portal-sound-settings>
-          <h2>Sons da interface</h2>
-          <p>Os sons são curtos e discretos e acompanham apenas ações deliberadas ou mudanças importantes. Eles começam desligados para não surpreender quem utiliza o Portal em ambiente de trabalho.</p>
-          <div class="interface-sound-settings">
-            <div class="interface-sound-toggle"><div><strong>Ativar sons da interface</strong><small>Cliques relevantes, confirmações, avisos, erros, notificações e conclusões recebem respostas sonoras diferentes.</small></div><label class="interface-switch"><input id="interfaceSoundsEnabled" type="checkbox" aria-label="Ativar sons da interface"><span aria-hidden="true"></span></label></div>
-            <div class="interface-sound-volume"><label for="interfaceSoundVolume"><strong>Volume dos efeitos</strong><small>O áudio nunca bloqueia nem atrasa uma operação do Portal.</small></label><output id="interfaceSoundVolumeValue" for="interfaceSoundVolume">32%</output><input id="interfaceSoundVolume" type="range" min="0" max="100" step="1" value="32" aria-label="Volume dos sons da interface"></div>
-            <div class="interface-sound-actions"><button class="portal-button secondary interface-sound-mute" id="interfaceSoundsMute" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h4l5 4V6l-5 4H5Z"></path><path d="M17 9.5c.8.7 1.2 1.5 1.2 2.5s-.4 1.8-1.2 2.5"></path><path d="M19.5 7c1.4 1.4 2.1 3 2.1 5s-.7 3.6-2.1 5"></path></svg><span>Silenciar agora</span></button><small style="color:#687f90">Quando os sons estiverem ativos, o mesmo controle rápido fica disponível nas demais ferramentas.</small></div>
-            <div class="account-status" id="interfaceSoundsStatus" role="status" aria-live="polite"></div>
-          </div>
-        </article>
-
-        <article class="account-card wide" id="socialPreferencesCard">
-          <h2>Preferências sociais</h2>
-          <p>Controle pedidos de amizade, visibilidade do perfil e a audiência padrão das suas publicações. Essas escolhas não alteram permissões profissionais nem acesso às ferramentas de trabalho.</p>
-          <label style="display:flex;gap:10px;align-items:flex-start;margin:16px 0"><input id="acceptFriendRequests" type="checkbox" style="margin-top:3px"><span><strong>Permitir pedidos de amizade</strong><br><small style="color:#6c8293">Pessoas elegíveis poderão enviar pedidos conforme as regras de descoberta do Portal.</small></span></label>
-          <div class="social-form-grid">
-            <div class="social-field"><label for="socialProfileVisibility">Visibilidade do perfil</label><select class="social-select" id="socialProfileVisibility"><option value="portal">Portal autenticado</option><option value="friends">Somente amigos</option></select></div>
-            <div class="social-field"><label for="socialDefaultAudience">Audiência padrão das publicações</label><select class="social-select" id="socialDefaultAudience"><option value="friends">Amigos</option><option value="self">Somente eu</option></select></div>
-            <div class="social-field" style="align-self:end"><button class="social-button primary" id="saveSocialPreferences" type="button">Salvar preferências</button></div>
-          </div>
-          <div class="account-status" id="socialPreferencesStatus" role="status" aria-live="polite"></div>
-          <div class="account-actions" style="margin-top:14px"><a class="portal-button secondary linklike" id="viewSocialProfile" href="/perfil/">Ver meu perfil</a><a class="portal-button secondary linklike" href="/amigos/">Abrir Amigos</a></div>
-          <p class="settings-section-note">A camada social permanece separada de Telemedicina, Conselho, encaminhamentos e demais dados assistenciais.</p>
-        </article>
+        <article class="account-card wide" id="interfaceSoundsCard" data-portal-sound-settings><h2>Sons da interface</h2><p>Os sons são curtos e discretos e acompanham apenas ações deliberadas ou mudanças importantes. Eles começam desligados para não surpreender quem utiliza o Portal em ambiente de trabalho.</p><div class="interface-sound-settings"><div class="interface-sound-toggle"><div><strong>Ativar sons da interface</strong><small>Cliques relevantes, confirmações, avisos, erros, notificações e conclusões recebem respostas sonoras diferentes.</small></div><label class="interface-switch"><input id="interfaceSoundsEnabled" type="checkbox" aria-label="Ativar sons da interface"><span aria-hidden="true"></span></label></div><div class="interface-sound-volume"><label for="interfaceSoundVolume"><strong>Volume dos efeitos</strong><small>O áudio nunca bloqueia nem atrasa uma operação do Portal.</small></label><output id="interfaceSoundVolumeValue" for="interfaceSoundVolume">32%</output><input id="interfaceSoundVolume" type="range" min="0" max="100" step="1" value="32" aria-label="Volume dos sons da interface"></div><div class="interface-sound-actions"><button class="portal-button secondary interface-sound-mute" id="interfaceSoundsMute" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h4l5 4V6l-5 4H5Z"></path><path d="M17 9.5c.8.7 1.2 1.5 1.2 2.5s-.4 1.8-1.2 2.5"></path><path d="M19.5 7c1.4 1.4 2.1 3 2.1 5s-.7 3.6-2.1 5"></path></svg><span>Silenciar agora</span></button><small style="color:#687f90">Quando os sons estiverem ativos, o mesmo controle rápido fica disponível nas demais ferramentas.</small></div><div class="account-status" id="interfaceSoundsStatus" role="status" aria-live="polite"></div></div></article>
+        <article class="account-card wide" id="socialPreferencesCard"><h2>Preferências sociais</h2><p>Controle pedidos de amizade, visibilidade do perfil e a audiência padrão das suas publicações. Essas escolhas não alteram permissões profissionais nem acesso às ferramentas de trabalho.</p><label style="display:flex;gap:10px;align-items:flex-start;margin:16px 0"><input id="acceptFriendRequests" type="checkbox" style="margin-top:3px"><span><strong>Permitir pedidos de amizade</strong><br><small style="color:#6c8293">Pessoas elegíveis poderão enviar pedidos conforme as regras de descoberta do Portal.</small></span></label><div class="social-form-grid"><div class="social-field"><label for="socialProfileVisibility">Visibilidade do perfil</label><select class="social-select" id="socialProfileVisibility"><option value="portal">Portal autenticado</option><option value="friends">Somente amigos</option></select></div><div class="social-field"><label for="socialDefaultAudience">Audiência padrão das publicações</label><select class="social-select" id="socialDefaultAudience"><option value="friends">Amigos</option><option value="self">Somente eu</option></select></div><div class="social-field" style="align-self:end"><button class="social-button primary" id="saveSocialPreferences" type="button">Salvar preferências</button></div></div><div class="account-status" id="socialPreferencesStatus" role="status" aria-live="polite"></div><div class="account-actions" style="margin-top:14px"><a class="portal-button secondary linklike" id="viewSocialProfile" href="/perfil/">Ver meu perfil</a><a class="portal-button secondary linklike" href="/amigos/">Abrir Amigos</a></div><p class="settings-section-note">A camada social permanece separada de Telemedicina, Conselho, encaminhamentos e demais dados assistenciais.</p></article>
       </section>
     </main>
   </div>
-
-  <script src="/js/auth-config.js?v=20260815-1"></script>
-  <script src="/js/auth-client.js?v=20260909-1"></script>
-  <script src="/js/portal-interactions.js?v=20260906-2"></script>
-  <script src="/js/tools-catalog.js?v=20260909-1"></script>
-  <script src="/js/social-api.js?v=20260909-1"></script>
-  <script src="/js/social-navigation.js?v=20260910-1"></script>
-  <script src="/js/account-section-shell.js?v=20260910-1"></script>
-  <script src="/js/settings.js?v=20260910-1"></script>
+  <script src="/js/auth-config.js?v=20260815-1"></script><script src="/js/auth-client.js?v=20260909-1"></script><script src="/js/portal-interactions.js?v=20260906-2"></script><script src="/js/tools-catalog.js?v=20260909-1"></script><script src="/js/social-api.js?v=20260909-1"></script><script src="/js/social-navigation.js?v=20260910-2"></script><script src="/js/account-section-shell.js?v=20260910-1"></script><script src="/js/settings.js?v=20260910-1"></script>
 </body>
 </html>
