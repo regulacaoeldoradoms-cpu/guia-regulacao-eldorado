@@ -5,7 +5,7 @@
   const social = window.PortalSocial;
   const user = await auth.requireRole([]);
   if (!user) return;
-  if (user.mustChangePassword) { location.replace('/conta/?primeiro-acesso=1'); return; }
+  if (user.mustChangePassword) { location.replace('/seguranca/?primeiro-acesso=1'); return; }
   document.getElementById('portalUserName').textContent = user.name || user.username || 'Usuário';
   document.getElementById('portalUserRole').textContent = window.PortalTools?.roleLabels?.[user.role] || user.role || '';
   document.getElementById('portalLogout')?.addEventListener('click', async () => { await auth.logout(); location.replace('/login/'); });
