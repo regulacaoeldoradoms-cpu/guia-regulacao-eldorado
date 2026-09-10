@@ -253,7 +253,9 @@
   async function detachCurrentSubscription() {
     if (!browserSupportsPush()) return false;
     const registration = await serviceWorkerRegistration().catch(() => null);
-    const subscription = await registration?.pushManager?.getSubscription?.().catch(() => null);
+    const subscription = registration?.pushManager
+      ? await registration.pushManager.getSubscription().catch(() => null)
+      : null;
     if (!subscription?.endpoint) {
       pushActive = false;
       return true;
@@ -322,7 +324,7 @@
   }
 
   function afterSessionReady() {
-    if (Notification?.permission === 'granted') {
+    if ('Notification' in window && Notification.permission === 'granted') {
       syncPush({ createIfPermitted: true });
       return;
     }
