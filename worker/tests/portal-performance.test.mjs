@@ -77,15 +77,15 @@ test('todas as entradas ativas registram cedo a camada de desempenho', () => {
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
     assert.equal(
-      (html.match(/portal-performance\.js\?v=20260909-1/g) || []).length,
+      (html.match(/portal-performance\.js\?v=20260910-2/g) || []).length,
       1,
       filename + ': bootstrap único'
     );
-    assert.match(html, /portal-performance\.js\?v=20260909-1" async/);
+    assert.match(html, /portal-performance\.js\?v=20260910-2" async/);
     if (/auth-client\.js/.test(html)) {
       assert.match(html, /rel="preconnect" href="https:\/\/yellow-wave-d0a1guia-regulacao-ia\.regulacaoeldoradoms\.workers\.dev"/);
-      assert.match(html, /rel="preload" href="\/js\/auth-client\.js\?v=20260909-1" as="script"/);
-      assert.match(html, /auth-client\.js\?v=20260909-1/);
+      assert.match(html, /rel="preload" href="\/js\/auth-client\.js\?v=20260910-2" as="script"/);
+      assert.match(html, /auth-client\.js\?v=20260910-2/);
     }
   }
 });
@@ -161,6 +161,6 @@ test('login inicia o aquecimento antes de navegar e usa identidade visual leve',
   assert.match(login, /PortalPerformance\?\.warmForUser\?\.\(user, \{ immediate: true \}\)/);
   assert.match(login, /getCachedUser/);
   assert.match(html, /portal-regulacao-logo-v2\.svg\?v=20260909-1/);
-  assert.match(html, /tools-catalog\.js\?v=20260909-1/);
+  assert.match(html, /tools-catalog\.js\?v=20260910-2/);
   assert.match(tools, /loading="lazy" decoding="async" fetchpriority="low"/);
 });
