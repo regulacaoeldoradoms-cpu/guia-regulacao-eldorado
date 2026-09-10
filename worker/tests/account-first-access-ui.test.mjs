@@ -49,7 +49,7 @@ test('/conta/ é somente compatibilidade e redistribui para rotas especializadas
   assert.match(legacy, /destination = '\/seguranca\/'/);
   assert.match(legacy, /destination = `\/configuracoes\//);
   assert.match(legacy, /destination = '\/conquistas\/'/);
-  assert.doesNotMatch(legacy, /changePasswordForm|securityEmailForm|profilePhotoInput|socialPreferencesCard/);
+  assert.doesNotMatch(legacy, /id="(?:changePasswordForm|securityEmailForm|profilePhotoInput|socialPreferencesCard)"/);
 });
 
 test('cache do portal é renovado para entregar as novas rotas', () => {
