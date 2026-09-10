@@ -95,6 +95,18 @@ O feed usa ordem cronológica explícita e paginação por cursor. Mostra public
 próprio usuário e de amigos ativos dentro da audiência `friends` ou `self`. Não
 existe ranking comportamental, feed global ou diretório público de profissionais.
 
+Na interface, as publicações são apresentadas em lotes de 10. A primeira abertura
+mostra as 10 mais recentes disponíveis; novos lotes são acrescentados automaticamente
+quando a rolagem se aproxima do fim do feed, sem botão visível de `Carregar mais
+publicações`. O mesmo padrão é usado no módulo de publicações do perfil. O cliente
+mantém controle de IDs já renderizados para impedir duplicação visual mesmo se uma
+requisição for repetida ou concluída mais de uma vez.
+
+Comentários seguem uma paginação visual menor: até 5 comentários são mostrados de uma
+vez. `Carregar mais comentários` só aparece quando ainda existe pelo menos um sexto
+comentário não exibido; cada acionamento acrescenta até mais 5. Comentários também são
+desduplicados pelo identificador antes de entrarem no DOM.
+
 A V1 permite:
 
 - publicar texto;
