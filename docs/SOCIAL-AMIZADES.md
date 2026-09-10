@@ -54,6 +54,26 @@ Autoamizade, pedido duplicado e transições incompatíveis são recusados ou tr
 de forma idempotente. A pessoa bloqueada não descobre nem interage com quem a
 bloqueou. Quem efetuou o bloqueio mantém apenas o acesso necessário para desbloquear.
 
+## Carregamento e paginação da interface
+
+A lista completa de amizades é aquecida em segundo plano assim que a navegação social
+fica disponível. O snapshot é isolado por usuário em `sessionStorage`, possui vida
+curta e é limpo no logout. Dessa forma, ao abrir `/amigos/`, a lista já pode ser
+renderizada imediatamente enquanto uma atualização silenciosa confirma o estado
+mais recente.
+
+O backend continua paginando por cursor em blocos seguros. O cliente percorre esses
+blocos em segundo plano, reúne todos os resultados e aplica deduplicação defensiva por
+`@handle`. O botão `Carregar mais` foi removido da lista de relacionamentos.
+
+Na interface, o usuário escolhe quantos itens quer visualizar por página: 10, 20, 30
+ou Todos. Quando houver mais de uma página, são exibidos controles numéricos de
+navegação. Pedidos recebidos, enviados e bloqueios também são carregados integralmente
+em segundo plano ao entrar em Amigos e usam a mesma paginação local.
+
+Após aceitar, recusar, cancelar, remover, bloquear ou desbloquear alguém, o snapshot
+transitório é invalidado e as listas são consultadas novamente antes de continuar.
+
 ## Rede inicial de colegas
 
 Contas profissionais ativas, não autocadastradas, provisionadas pelo Desenvolvedor

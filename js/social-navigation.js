@@ -311,6 +311,10 @@
     const socialAvailable = Boolean(socialConfig.backendEnabled && socialConfig.available);
     const unread = Number(socialConfig.unreadSocialNotifications || 0);
 
+    if (socialAvailable) {
+      window.PortalSocial?.preloadRelationshipList?.('friends').catch(() => {});
+    }
+
     if (header) {
       const desktop = document.createElement('nav');
       desktop.className = 'social-global-nav';
