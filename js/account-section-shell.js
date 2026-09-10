@@ -15,8 +15,14 @@
   async function mount(options = {}) {
     const auth = window.RegulationAuth;
     if (!auth) return null;
-    const user = await auth.requireRole([]);
-    if (!user) return null;
+    const onSecurityRoute = location.pathname === '/seguranca/' || location.pathname.startsWith('/seguranca/');
+    const user = onSecurityRoute
+      ? await auth.me({ allowCached: false }).catch(() => null)
+      : await auth.requireRole([]);
+    if (!user) {
+      if (onSecurityRoute) location.replace(`/login/?next=${encodeURIComponent(location.pathname + location.search)}`);
+      return null;
+    }
 
     if (user.mustChangePassword && !options.allowFirstAccess) {
       location.replace('/seguranca/?primeiro-acesso=1');
