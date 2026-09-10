@@ -1,0 +1,53 @@
+name: Validar Telemedicina Acesso V34
+
+on:
+  pull_request:
+    paths:
+      - 'worker/telemedicine-access.js'
+      - 'worker/role-migration.js'
+      - 'worker/index.js'
+      - 'worker/telemedicine.js'
+      - 'worker/telemedicine-router-v2.js'
+      - 'worker/tests/telemedicine-access-v34.test.mjs'
+      - 'docs/TELEMEDICINA-AUTORIZACAO-V34.md'
+      - '.github/workflows/validate-telemedicine-access-v34.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'worker/telemedicine-access.js'
+      - 'worker/role-migration.js'
+      - 'worker/index.js'
+      - 'worker/telemedicine.js'
+      - 'worker/telemedicine-router-v2.js'
+      - 'worker/tests/telemedicine-access-v34.test.mjs'
+      - 'docs/TELEMEDICINA-AUTORIZACAO-V34.md'
+      - '.github/workflows/validate-telemedicine-access-v34.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe
+        run: |
+          node --input-type=module --check < worker/telemedicine-access.js
+          node --input-type=module --check < worker/role-migration.js
+          node --test worker/tests/telemedicine-access-v34.test.mjs
+      - name: Conferir segurança e otimização
+        run: |
+          grep -q "SELECT enabled FROM auth_telemedicine_access WHERE username = ?" worker/telemedicine-access.js
+          grep -q "accessSchemaReady" worker/telemedicine-access.js
+          grep -q "accessSchemaPromise" worker/telemedicine-access.js
+          grep -q "ensureTelemedicineUnderlyingRole" worker/telemedicine-access.js
+          grep -q "SELECT username FROM auth_telemedicine_access WHERE enabled = 1" worker/role-migration.js
+          grep -q "SET role = 'recepcao'" worker/role-migration.js
+          grep -q "role <> 'admin'" worker/role-migration.js
+          grep -q "await enforceDeveloperSeparation(env)" worker/index.js
+          grep -q "validatePortalSession" worker/telemedicine.js
+          grep -q "validatePortalSession" worker/telemedicine-router-v2.js
