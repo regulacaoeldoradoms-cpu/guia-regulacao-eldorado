@@ -32,7 +32,7 @@
     const cards = [];
     if (!user?.preview && ['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin'].includes(user?.role) && !user.emailVerified) {
       cards.push({
-        id: 'email-security', href: '/conta/#seguranca', title: 'Confirme seu e-mail de segurança',
+        id: 'email-security', href: '/seguranca/', title: 'Confirme seu e-mail de segurança',
         description: 'Proteja o acesso profissional e prepare sua conta para os recursos sociais.',
         action: 'Proteger minha conta', icon: ICONS.lock, warning: true
       });
