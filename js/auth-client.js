@@ -143,9 +143,11 @@
       method: 'POST', body: JSON.stringify({ username: String(username || '').trim(), password: String(password || '') })
     });
     if (!payload?.token || !payload?.user) throw new Error('Resposta de autenticação inválida.');
+    const sameUser = previous?.username === payload.user.username;
     const user = {
       ...payload.user,
-      avatarDataUrl: previous?.username === payload.user.username ? String(previous.avatarDataUrl || '') : ''
+      avatarDataUrl: sameUser ? String(previous.avatarDataUrl || '') : '',
+      avatarVersion: sameUser ? String(previous.avatarVersion || '') : ''
     };
     saveSession(payload.token, user, persistent);
     return user;
@@ -176,6 +178,7 @@
           ...fresh,
           accountLevel: level,
           avatarDataUrl: hasAvatar ? String(fresh.avatarDataUrl || '') : (sameUser ? String(cached.avatarDataUrl || '') : ''),
+          avatarVersion: hasAvatar ? String(fresh.avatarVersion || '') : (sameUser ? String(cached.avatarVersion || '') : ''),
           profilePhotoLocked: accountRank({ ...fresh, accountLevel: level }) < 2,
           profilePhotoRequiredLevel: accountRank({ ...fresh, accountLevel: level }) < 2 ? 'prata' : ''
         };
@@ -224,6 +227,7 @@
     const user = {
       ...payload.user,
       avatarDataUrl: String(previous.avatarDataUrl || ''),
+      avatarVersion: String(previous.avatarVersion || ''),
       profilePhotoLocked: Boolean(previous.profilePhotoLocked),
       profilePhotoRequiredLevel: previous.profilePhotoRequiredLevel || '',
       accountLevel: payload.user.accountLevel || previous.accountLevel || (payload.user.emailVerified ? 'prata' : 'bronze'),
@@ -245,7 +249,13 @@
     }
     const payload = await api('/api/auth/profile', { method: 'PATCH', body: JSON.stringify({ avatarDataUrl: String(avatarDataUrl || '') }) });
     if (!current) return payload;
-    const user = { ...current, avatarDataUrl: String(payload.avatarDataUrl || ''), profilePhotoLocked: false, profilePhotoRequiredLevel: '' };
+    const user = {
+      ...current,
+      avatarDataUrl: String(payload.avatarDataUrl || ''),
+      avatarVersion: String(payload.avatarVersion || ''),
+      profilePhotoLocked: false,
+      profilePhotoRequiredLevel: ''
+    };
     saveSession(getToken(), user, persistentSession());
     mountPortalAvatar(user);
     return user;
