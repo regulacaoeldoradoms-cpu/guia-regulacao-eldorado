@@ -86,7 +86,7 @@ test('todas as rotas ativas carregam uma única camada central versionada', () =
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
     assert.equal((html.match(/portal-interactions\.css\?v=20260906-2/g) || []).length, 1, `${filename}: CSS central`);
-    assert.equal((html.match(/portal-interactions\.js\?v=20260906-2/g) || []).length, 1, `${filename}: JS central`);
+    assert.equal((html.match(/portal-interactions\.js\?v=20260910-2/g) || []).length, 1, `${filename}: JS central`);
   }
 });
 
