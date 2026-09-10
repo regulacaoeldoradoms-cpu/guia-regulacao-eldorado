@@ -3,7 +3,12 @@
 (() => {
   if (window.PortalSocialFeed) return;
   const social = window.PortalSocial;
-  const cursors = new Map();
+  const POSTS_PER_VIEW = 10;
+  const COMMENTS_PER_VIEW = 5;
+  const MAX_EMPTY_PAGE_HOPS = 3;
+  const postStates = new Map();
+  const commentStates = new Map();
+  const autoScrollBindings = new WeakMap();
 
   function emptyState(message) {
     const empty = document.createElement('div');
@@ -169,25 +174,84 @@
     return row;
   }
 
+  function freshState() {
+    return { cursor: '', buffer: [], seen: new Set(), done: false, pending: null };
+  }
+
+  function stateHasMore(state) {
+    return Boolean(state && (state.buffer.length || !state.done));
+  }
+
+  function appendUnique(state, items) {
+    let added = 0;
+    for (const item of items || []) {
+      const id = String(item?.id || '');
+      if (!id || state.seen.has(id)) continue;
+      state.seen.add(id);
+      state.buffer.push(item);
+      added += 1;
+    }
+    return added;
+  }
+
+  async function fillBuffer(state, path, itemKey, minimum) {
+    let emptyHops = 0;
+    while (state.buffer.length < minimum && !state.done && emptyHops < MAX_EMPTY_PAGE_HOPS) {
+      const currentCursor = state.cursor;
+      const payload = await social.api(`${path}${currentCursor ? `?cursor=${encodeURIComponent(currentCursor)}` : ''}`);
+      const added = appendUnique(state, payload[itemKey] || []);
+      const nextCursor = String(payload.nextCursor || '');
+      state.cursor = nextCursor;
+      state.done = !nextCursor;
+      if (added > 0) emptyHops = 0;
+      else emptyHops += 1;
+      if (nextCursor && nextCursor === currentCursor) {
+        state.done = true;
+        state.cursor = '';
+      }
+    }
+  }
+
+  function renderComments(list, comments, post, onCountChange, append) {
+    if (!append) list.innerHTML = '';
+    const existing = new Set(Array.from(list.querySelectorAll('[data-comment-id]'), (node) => node.dataset.commentId));
+    for (const comment of comments) {
+      if (!comment?.id || existing.has(String(comment.id))) continue;
+      existing.add(String(comment.id));
+      list.appendChild(commentNode(comment, post, onCountChange));
+    }
+  }
+
   async function loadComments(post, section, append = false, onCountChange = () => {}) {
     const key = `comments:${post.id}`;
-    const cursor = append ? cursors.get(key) || '' : '';
-    const more = section.querySelector('[data-comments-more]');
-    more.disabled = true;
-    try {
-      const payload = await social.api(`/api/social/posts/${encodeURIComponent(post.id)}/comments${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`);
-      const list = section.querySelector('.social-comment-list');
-      if (!append) list.innerHTML = '';
-      (payload.comments || []).forEach((comment) => list.appendChild(commentNode(comment, post, onCountChange)));
-      cursors.set(key, payload.nextCursor || '');
-      more.hidden = !payload.nextCursor;
-      return true;
-    } catch (error) {
-      social.status(error.message || 'Não foi possível carregar os comentários.', 'error');
-      return false;
-    } finally {
-      more.disabled = false;
+    let state = commentStates.get(key);
+    if (!append || !state) {
+      state = freshState();
+      commentStates.set(key, state);
     }
+    if (state.pending) return state.pending;
+
+    const more = section.querySelector('[data-comments-more]');
+    const list = section.querySelector('.social-comment-list');
+    if (more) more.disabled = true;
+
+    state.pending = (async () => {
+      try {
+        await fillBuffer(state, `/api/social/posts/${encodeURIComponent(post.id)}/comments`, 'comments', COMMENTS_PER_VIEW);
+        const batch = state.buffer.splice(0, COMMENTS_PER_VIEW);
+        renderComments(list, batch, post, onCountChange, append);
+        if (more) more.hidden = !stateHasMore(state);
+        return true;
+      } catch (error) {
+        social.status(error.message || 'Não foi possível carregar os comentários.', 'error');
+        return false;
+      } finally {
+        if (more) more.disabled = false;
+        state.pending = null;
+      }
+    })();
+
+    return state.pending;
   }
 
   function commentsSection(post, onCountChange) {
@@ -218,7 +282,11 @@
         const payload = await social.api(`/api/social/posts/${encodeURIComponent(post.id)}/comments`, {
           method: 'POST', body: JSON.stringify({ body: input.value })
         });
-        list.appendChild(commentNode(payload.comment, post, onCountChange));
+        const state = commentStates.get(`comments:${post.id}`);
+        if (state && payload.comment?.id) state.seen.add(String(payload.comment.id));
+        const commentId = String(payload.comment?.id || '');
+        const existingCommentIds = new Set(Array.from(list.querySelectorAll('[data-comment-id]'), (node) => node.dataset.commentId));
+        if (commentId && !existingCommentIds.has(commentId)) list.appendChild(commentNode(payload.comment, post, onCountChange));
         post.counts.comments = Number(post.counts.comments || 0) + 1;
         onCountChange();
         input.value = '';
@@ -301,29 +369,125 @@
       container.appendChild(emptyState());
       return;
     }
-    posts.forEach((post) => container.appendChild(postNode(post)));
-  }
-
-  async function load(container, loadMoreButton, options = {}) {
-    const key = options.handle ? `profile:${options.handle}` : 'feed';
-    const cursor = options.append ? cursors.get(key) || '' : '';
-    const path = options.handle
-      ? `/api/social/profiles/${encodeURIComponent(options.handle)}/posts`
-      : '/api/social/feed';
-    if (loadMoreButton) loadMoreButton.disabled = true;
-    try {
-      const payload = await social.api(`${path}${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`);
-      renderPosts(container, payload.posts || [], Boolean(options.append));
-      cursors.set(key, payload.nextCursor || '');
-      if (loadMoreButton) loadMoreButton.hidden = !payload.nextCursor;
-      return payload;
-    } finally {
-      if (loadMoreButton) loadMoreButton.disabled = false;
+    const existing = new Set(Array.from(container.querySelectorAll('[data-post-id]'), (node) => node.dataset.postId));
+    for (const post of posts) {
+      if (!post?.id || existing.has(String(post.id))) continue;
+      existing.add(String(post.id));
+      container.appendChild(postNode(post));
     }
   }
 
-  function bindComposer(form, container, loadMoreButton) {
+  function postKey(options = {}) {
+    return options.handle ? `profile:${options.handle}` : 'feed';
+  }
+
+  function postPath(options = {}) {
+    return options.handle
+      ? `/api/social/profiles/${encodeURIComponent(options.handle)}/posts`
+      : '/api/social/feed';
+  }
+
+  function isAutoScrollControl(control) {
+    return Boolean(control?.dataset?.autoScroll === 'true');
+  }
+
+  function syncPaginationControl(control, state) {
+    if (!control) return;
+    const more = stateHasMore(state);
+    control.hidden = !more;
+    if (!isAutoScrollControl(control)) control.disabled = false;
+  }
+
+  function bindAutoScroll(container, control, options = {}) {
+    if (!container || !control || !isAutoScrollControl(control)) return;
+    const previous = autoScrollBindings.get(control);
+    previous?.cleanup?.();
+
+    let stopped = false;
+    const loadNext = async () => {
+      if (stopped || control.hidden || control.dataset.loading === 'true') return;
+      const state = postStates.get(postKey(options));
+      if (!stateHasMore(state)) {
+        control.hidden = true;
+        return;
+      }
+      control.dataset.loading = 'true';
+      try {
+        await load(container, control, { ...options, append: true });
+      } catch (error) {
+        social.status(error.message || 'Não foi possível carregar mais publicações.', 'error');
+      } finally {
+        control.dataset.loading = 'false';
+      }
+    };
+
+    let cleanup;
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) loadNext();
+      }, { rootMargin: '600px 0px', threshold: 0 });
+      observer.observe(control);
+      cleanup = () => observer.disconnect();
+    } else {
+      let scheduled = false;
+      const onScroll = () => {
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(() => {
+          scheduled = false;
+          if (control.hidden) return;
+          const rect = control.getBoundingClientRect();
+          if (rect.top <= window.innerHeight + 600) loadNext();
+        });
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll);
+      cleanup = () => {
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
+      };
+    }
+
+    autoScrollBindings.set(control, {
+      cleanup: () => {
+        stopped = true;
+        cleanup?.();
+      }
+    });
+  }
+
+  async function load(container, paginationControl, options = {}) {
+    const key = postKey(options);
+    let state = postStates.get(key);
+    if (!options.append || !state) {
+      state = freshState();
+      postStates.set(key, state);
+    }
+    if (isAutoScrollControl(paginationControl)) bindAutoScroll(container, paginationControl, options);
+    if (state.pending) return state.pending;
+    if (paginationControl && !isAutoScrollControl(paginationControl)) paginationControl.disabled = true;
+
+    state.pending = (async () => {
+      try {
+        await fillBuffer(state, postPath(options), 'posts', POSTS_PER_VIEW);
+        const batch = state.buffer.splice(0, POSTS_PER_VIEW);
+        renderPosts(container, batch, Boolean(options.append));
+        syncPaginationControl(paginationControl, state);
+        return { posts: batch, hasMore: stateHasMore(state), nextCursor: state.cursor };
+      } finally {
+        if (paginationControl && !isAutoScrollControl(paginationControl)) paginationControl.disabled = false;
+        state.pending = null;
+      }
+    })();
+
+    return state.pending;
+  }
+
+  function bindComposer(form, container, paginationControl) {
     if (!form) return;
+    if (isAutoScrollControl(paginationControl)) bindAutoScroll(container, paginationControl);
+    if (form.dataset.socialComposerBound === 'true') return;
+    form.dataset.socialComposerBound = 'true';
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       const textarea = form.querySelector('textarea');
@@ -336,7 +500,11 @@
         });
         const empty = container.querySelector('.social-empty');
         if (empty) empty.remove();
-        container.prepend(postNode(payload.post));
+        const state = postStates.get('feed');
+        if (state && payload.post?.id) state.seen.add(String(payload.post.id));
+        const postId = String(payload.post?.id || '');
+        const existingPostIds = new Set(Array.from(container.querySelectorAll('[data-post-id]'), (node) => node.dataset.postId));
+        if (postId && !existingPostIds.has(postId)) container.prepend(postNode(payload.post));
         textarea.value = '';
         social.status('Publicação criada.', 'success');
       } catch (error) {
@@ -346,7 +514,10 @@
         textarea.focus();
       }
     });
-    loadMoreButton?.addEventListener('click', () => load(container, loadMoreButton, { append: true }).catch((error) => social.status(error.message, 'error')));
+    if (paginationControl && !isAutoScrollControl(paginationControl)) {
+      paginationControl.addEventListener('click', () => load(container, paginationControl, { append: true })
+        .catch((error) => social.status(error.message || 'Não foi possível carregar mais publicações.', 'error')));
+    }
   }
 
   window.PortalSocialFeed = Object.freeze({ bindComposer, load, postNode, renderPosts });

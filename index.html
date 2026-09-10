@@ -117,7 +117,7 @@
           <section class="social-card" aria-label="Publicações do feed">
             <div id="socialFeedList"><div class="social-skeleton" aria-label="Carregando publicações"></div></div>
           </section>
-          <button class="social-button secondary" id="socialFeedMore" type="button" hidden>Carregar mais publicações</button>
+          <div id="socialFeedMore" data-auto-scroll="true" aria-hidden="true" hidden style="height:1px;pointer-events:none"></div>
         </section>
 
         <aside class="social-column social-sticky social-tools-rail">
@@ -141,7 +141,7 @@
   <script src="/js/tools-catalog.js?v=20260909-1"></script>
   <script src="/js/social-api.js?v=20260909-1"></script>
   <script src="/js/social-navigation.js?v=20260910-1"></script>
-  <script src="/js/social-feed.js?v=20260906-1"></script>
+  <script src="/js/social-feed.js?v=20260910-1"></script>
   <script src="/js/social-home.js?v=20260910-1"></script>
   <script src="/js/home.js?v=20260909-3"></script>
   <script src="/js/portal-chat.js?v=20260906-2"></script>
