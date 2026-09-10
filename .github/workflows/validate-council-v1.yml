@@ -232,7 +232,7 @@ jobs:
           grep -q "'/api/auth/email/send-verification'" worker/portal-safety.js
           grep -q 'user.emailVerificationRequired' js/auth-client.js
           grep -q 'verificar-email=1' js/login.js
-          grep -q 'emailVerificationNotice' conta/index.html
+          grep -q 'emailVerificationNotice' seguranca/index.html
 
       - name: Conferir diagnóstico técnico sem exposição de segredos
         run: |
