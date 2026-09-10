@@ -123,7 +123,10 @@
       path: /^\/perfil\/?$/,
       click: [
         ['#profileActions .social-button,.social-post-actions button,.social-comment-form button', 'state-change', '#socialProfile'],
-        ['#profileEditorForm button[type="submit"]', 'save', '#socialProfile'],
+        ['#profilePhotoCamera', 'open'],
+        ['#chooseProfilePhoto', 'primary'],
+        ['#removeProfilePhoto', 'destructive'],
+        ['#profileEditorForm button[type="submit"],#profileIdentityForm button[type="submit"]', 'save', '#socialProfile'],
         ['#profilePostsMore', 'loading', '#profilePosts'],
         ['.social-button.danger', 'destructive'],
         ['#portalLogout', 'navigation-exit']
@@ -262,15 +265,27 @@
       ]
     },
     {
-      path: /^\/conta\/?$/,
+      path: /^\/seguranca\/?$/,
       click: [
-        ['#chooseProfilePhoto,#sendEmailVerification', 'primary'],
-        ['#removeProfilePhoto', 'destructive'],
+        ['#changePasswordForm button[type="submit"],#securityEmailForm button[type="submit"],#sendEmailVerification', 'primary'],
+        ['#portalLogout', 'navigation-exit']
+      ]
+    },
+    {
+      path: /^\/configuracoes\/?$/,
+      click: [
         ['#saveSocialPreferences', 'save', '#socialPreferencesStatus'],
-        ['[data-level-next-action]', 'navigation-enter'],
-        ['#portalLogout,#accountHomeLink', 'navigation-exit']
+        ['#interfaceSoundsMute', 'state-change', '#interfaceSoundsCard'],
+        ['#portalLogout', 'navigation-exit']
       ],
-      change: [['#acceptFriendRequests,#socialProfileVisibility,#socialDefaultAudience,#socialHomePreference', 'selection']]
+      change: [['#interfaceSoundsEnabled,#interfaceSoundVolume,#acceptFriendRequests,#socialProfileVisibility,#socialDefaultAudience', 'selection']]
+    },
+    {
+      path: /^\/conquistas\/?$/,
+      click: [
+        ['[data-level-next-action]', 'navigation-enter'],
+        ['#portalLogout', 'navigation-exit']
+      ]
     },
     {
       path: /^\/admin\/usuarios\/?$/,
