@@ -34,6 +34,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     assert.match(html, /portal-interactions\.js\?v=20260906-2/);
     assert.match(html, /social\.css\?v=20260909-3/);
     assert.match(html, /social-api\.js\?v=20260909-1/);
+    if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-1/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
   }
@@ -82,7 +83,7 @@ test('Home social ativa mantém fallback independente, recuperação de produç�
   assert.doesNotMatch(navigation, /'Meu perfil'/);
   assert.match(index, /social-navigation\.js\?v=20260908-1/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
-  assert.match(index, /\/js\/social-home\.js\?v=20260909-2/);
+  assert.match(index, /\/js\/social-home\.js\?v=20260910-1/);
   assert.match(index, /\/js\/home\.js\?v=20260909-3/);
   assert.equal((index.match(/\/js\/home\.js\?v=20260909-3/g) || []).length, 1);
   assert.match(index, /<body class="portal-page home-loading-active">/);
@@ -129,6 +130,7 @@ test('V1 é textual, responsiva e respeita preferências de acessibilidade', () 
   const feed = read('js/social-feed.js');
   const css = read('css/social.css');
   const homeMobileCss = read('css/home-mobile.css');
+  const homeDesktopScaleCss = read('css/home-desktop-scale.css');
   assert.doesNotMatch(home, /type="file"|accept="image/);
   assert.match(feed, /ordem é cronológica|ordem cronológica/i);
   assert.match(css, /@media \(max-width: 360px\)/);
@@ -144,6 +146,11 @@ test('V1 é textual, responsiva e respeita preferências de acessibilidade', () 
   assert.match(css, /body\.mobile-home-mode \.social-mobile-nav-link \.social-nav-icon\s*\{[^}]*clamp\(40px,\s*5\.55vw,\s*54px\)/s);
   assert.match(homeMobileCss, /body\.mobile-home-mode #toolsFallback \.hub-card\s*\{/);
   assert.doesNotMatch(homeMobileCss, /body\.mobile-home-mode \.hub-card\s*\{/);
+  assert.match(homeDesktopScaleCss, /@media \(min-width: 1240px\)/);
+  assert.match(homeDesktopScaleCss, /body:not\(\.mobile-home-mode\) #socialHome\.social-shell/);
+  assert.match(homeDesktopScaleCss, /width:\s*min\(1298px,\s*calc\(100% - 32px\)\)/);
+  assert.match(homeDesktopScaleCss, /grid-template-columns:\s*242px minmax\(0, 704px\) minmax\(253px, 308px\)/);
+  assert.doesNotMatch(homeDesktopScaleCss, /\.social-global-nav(?:-inner)?\s*\{/);
   assert.match(home, /social-profile-rail/);
   assert.match(home, /social-feed-column/);
   assert.match(home, /social-tools-rail/);
