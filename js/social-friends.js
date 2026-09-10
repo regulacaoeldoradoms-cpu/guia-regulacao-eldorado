@@ -14,12 +14,49 @@
   try { config = await social.getConfig(); }
   catch (error) { social.status(error.message || 'Camada Social indisponível.', 'error'); return; }
   window.PortalSocialNavigation?.mount(user, config);
-  if (!config.available) { social.status(config.gate?.message || 'Confirme seu e-mail para usar amizades.', 'error'); return; }
+  if (!config.available) { social.status(config.gate?.message || 'A Camada Social não está disponível para esta conta.', 'error'); return; }
+
+  const relationshipList = document.getElementById('relationshipList');
+  const relationshipPagination = document.getElementById('relationshipPagination');
+  const relationshipPageSize = document.getElementById('relationshipPageSize');
+  const relationshipPageSummary = document.getElementById('relationshipPageSummary');
+  const relationshipPageButtons = document.getElementById('relationshipPageButtons');
+  const PAGE_SIZE_OPTIONS = new Set(['10', '20', '30', 'all']);
+  const pageSizePreferenceKey = `regulacao.portal.social.relationship-page-size.v1.${encodeURIComponent(String(user.username || 'usuario').toLowerCase())}`;
+  const relationshipLists = new Map();
+  const relationshipLoads = new Map();
 
   let currentType = 'friends';
-  let listCursor = '';
+  let currentPage = 1;
   let searchCursor = '';
   let currentQuery = '';
+
+  function readPageSizePreference() {
+    try {
+      const value = localStorage.getItem(pageSizePreferenceKey) || '10';
+      return PAGE_SIZE_OPTIONS.has(value) ? value : '10';
+    } catch (_) {
+      return '10';
+    }
+  }
+
+  function savePageSizePreference(value) {
+    try { localStorage.setItem(pageSizePreferenceKey, value); } catch (_) {}
+  }
+
+  relationshipPageSize.value = readPageSizePreference();
+
+  function dedupeProfiles(profiles) {
+    const output = [];
+    const seen = new Set();
+    for (const profile of Array.isArray(profiles) ? profiles : []) {
+      const handle = String(profile?.handle || '').trim().toLowerCase();
+      if (!handle || seen.has(handle)) continue;
+      seen.add(handle);
+      output.push(profile);
+    }
+    return output;
+  }
 
   async function mutate(action, profile, confirmation = null) {
     if (confirmation && !(await social.confirmAction(confirmation))) return;
@@ -27,7 +64,10 @@
       await social.api('/api/social/relationships', {
         method: 'POST', body: JSON.stringify({ action, targetHandle: profile.handle })
       });
-      await loadList(false);
+      social.invalidateRelationshipList?.();
+      relationshipLists.clear();
+      await loadList(true);
+      preloadOtherRelationshipLists();
       if (currentQuery) await search(false);
       social.status('Relação social atualizada.', 'success');
     } catch (error) {
@@ -110,19 +150,165 @@
     profiles.forEach((profile) => container.appendChild(personRow(profile, source)));
   }
 
-  async function loadList(append = false) {
-    const button = document.getElementById('relationshipMore');
-    if (!append) listCursor = '';
-    button.disabled = true;
-    try {
-      const path = `/api/social/relationships?type=${currentType}${append && listCursor ? `&cursor=${encodeURIComponent(listCursor)}` : ''}`;
-      const payload = await social.api(path);
-      render(document.getElementById('relationshipList'), payload.profiles || [], append, 'list');
-      listCursor = payload.nextCursor || '';
-      button.hidden = !listCursor;
-    } catch (error) {
-      social.status(error.message || 'Não foi possível carregar amizades.', 'error');
-    } finally { button.disabled = false; }
+  function currentProfiles() {
+    return relationshipLists.get(currentType) || [];
+  }
+
+  function selectedPageSize() {
+    const value = PAGE_SIZE_OPTIONS.has(relationshipPageSize.value) ? relationshipPageSize.value : '10';
+    if (value === 'all') return Math.max(1, currentProfiles().length);
+    return Number(value);
+  }
+
+  function totalPages() {
+    const profiles = currentProfiles();
+    if (!profiles.length || relationshipPageSize.value === 'all') return 1;
+    return Math.max(1, Math.ceil(profiles.length / selectedPageSize()));
+  }
+
+  function pageTokens(total, current) {
+    if (total <= 7) return Array.from({ length: total }, (_, index) => index + 1);
+    const tokens = [1];
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    if (start > 2) tokens.push('start-ellipsis');
+    for (let page = start; page <= end; page += 1) tokens.push(page);
+    if (end < total - 1) tokens.push('end-ellipsis');
+    tokens.push(total);
+    return tokens;
+  }
+
+  function goToPage(page, scroll = true) {
+    const pages = totalPages();
+    currentPage = Math.min(Math.max(1, Number(page || 1)), pages);
+    renderListPage();
+    if (!scroll) return;
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    document.querySelector('.social-tabs')?.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'start'
+    });
+  }
+
+  function paginationButton(label, page, options = {}) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'social-page-button';
+    button.textContent = label;
+    button.disabled = Boolean(options.disabled);
+    if (options.current) button.setAttribute('aria-current', 'page');
+    if (options.label) button.setAttribute('aria-label', options.label);
+    button.addEventListener('click', () => goToPage(page));
+    return button;
+  }
+
+  function renderPagination() {
+    const profiles = currentProfiles();
+    if (!profiles.length) {
+      relationshipPagination.hidden = true;
+      relationshipPageSummary.textContent = '';
+      relationshipPageButtons.textContent = '';
+      return;
+    }
+
+    relationshipPagination.hidden = false;
+    const size = selectedPageSize();
+    const pages = totalPages();
+    currentPage = Math.min(currentPage, pages);
+    const start = relationshipPageSize.value === 'all' ? 0 : (currentPage - 1) * size;
+    const end = relationshipPageSize.value === 'all' ? profiles.length : Math.min(profiles.length, start + size);
+    relationshipPageSummary.textContent = `${start + 1}–${end} de ${profiles.length}`;
+
+    relationshipPageButtons.textContent = '';
+    if (pages <= 1 || relationshipPageSize.value === 'all') return;
+
+    relationshipPageButtons.appendChild(paginationButton('‹', currentPage - 1, {
+      disabled: currentPage === 1,
+      label: 'Página anterior'
+    }));
+
+    pageTokens(pages, currentPage).forEach((token) => {
+      if (typeof token !== 'number') {
+        const ellipsis = document.createElement('span');
+        ellipsis.className = 'social-pagination-ellipsis';
+        ellipsis.textContent = '…';
+        ellipsis.setAttribute('aria-hidden', 'true');
+        relationshipPageButtons.appendChild(ellipsis);
+        return;
+      }
+      relationshipPageButtons.appendChild(paginationButton(String(token), token, {
+        current: token === currentPage,
+        label: `Abrir página ${token}`
+      }));
+    });
+
+    relationshipPageButtons.appendChild(paginationButton('›', currentPage + 1, {
+      disabled: currentPage === pages,
+      label: 'Próxima página'
+    }));
+  }
+
+  function renderListPage() {
+    const profiles = currentProfiles();
+    const size = selectedPageSize();
+    const pages = totalPages();
+    currentPage = Math.min(currentPage, pages);
+    const visible = relationshipPageSize.value === 'all'
+      ? profiles
+      : profiles.slice((currentPage - 1) * size, currentPage * size);
+    render(relationshipList, visible, false, 'list');
+    renderPagination();
+  }
+
+  function setRelationshipProfiles(type, profiles) {
+    relationshipLists.set(type, dedupeProfiles(profiles));
+    if (currentType === type) renderListPage();
+  }
+
+  async function fetchRelationshipType(type, force = false) {
+    if (!force && relationshipLists.has(type)) return relationshipLists.get(type);
+    if (relationshipLoads.has(type)) return relationshipLoads.get(type);
+
+    const cached = !force && type === 'friends' ? social.getCachedRelationshipList?.(type) : null;
+    if (cached) setRelationshipProfiles(type, cached.profiles);
+    else if (currentType === type) {
+      relationshipList.innerHTML = '<div class="social-skeleton"></div>';
+      relationshipPagination.hidden = true;
+    }
+
+    const request = social.refreshRelationshipList(type, { store: type === 'friends' })
+      .then((profiles) => {
+        setRelationshipProfiles(type, profiles);
+        return relationshipLists.get(type) || [];
+      })
+      .catch((error) => {
+        if (!cached && currentType === type) {
+          render(relationshipList, [], false, 'list');
+          renderPagination();
+          social.status(error.message || 'Não foi possível carregar amizades.', 'error');
+        }
+        return cached?.profiles || [];
+      })
+      .finally(() => relationshipLoads.delete(type));
+
+    relationshipLoads.set(type, request);
+    return cached ? cached.profiles : request;
+  }
+
+  async function loadList(force = false) {
+    const type = currentType;
+    if (force) {
+      relationshipLists.delete(type);
+      currentPage = 1;
+    }
+    await fetchRelationshipType(type, force);
+  }
+
+  function preloadOtherRelationshipLists() {
+    ['incoming', 'outgoing', 'blocked'].forEach((type) => {
+      if (relationshipLists.has(type) || relationshipLoads.has(type)) return;
+      fetchRelationshipType(type, false).catch(() => {});
+    });
   }
 
   async function search(append = false) {
@@ -148,10 +334,21 @@
       item.setAttribute('aria-selected', item === tab ? 'true' : 'false');
     });
     currentType = tab.dataset.relationshipTab;
+    currentPage = 1;
     loadList(false);
   }));
-  document.getElementById('relationshipMore').addEventListener('click', () => loadList(true));
+
+  relationshipPageSize.addEventListener('change', () => {
+    const value = PAGE_SIZE_OPTIONS.has(relationshipPageSize.value) ? relationshipPageSize.value : '10';
+    relationshipPageSize.value = value;
+    savePageSizePreference(value);
+    currentPage = 1;
+    renderListPage();
+  });
+
   document.getElementById('socialSearchMore').addEventListener('click', () => search(true));
   document.getElementById('socialSearchForm').addEventListener('submit', (event) => { event.preventDefault(); search(false); });
+
   await loadList(false);
+  preloadOtherRelationshipLists();
 })();
