@@ -2,9 +2,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import vm from 'node:vm';
 
 const root = path.resolve(new URL('../../', import.meta.url).pathname);
 const read = (filename) => fs.readFileSync(path.join(root, filename), 'utf8');
+
+test('cliente do feed social mantém sintaxe JavaScript válida', () => {
+  const feed = read('js/social-feed.js');
+  assert.doesNotThrow(() => new vm.Script(feed, { filename: 'js/social-feed.js' }));
+});
 
 test('feed social usa lotes de 10 com rolagem automática e sem botão visível', () => {
   const feed = read('js/social-feed.js');
