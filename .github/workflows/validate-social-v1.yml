@@ -94,10 +94,13 @@ jobs:
       - name: Conferir conteúdo textual e acessibilidade
         run: |
           set -euo pipefail
-          if grep -R -E 'type="file"|accept="image/' index.html perfil amigos notificacoes admin/social js/social-*.js; then
-            echo 'A V1 deve permanecer textual até existir pipeline seguro de imagens.' >&2
+          if grep -R -E 'type="file"|accept="image/' index.html amigos notificacoes admin/social js/social-feed.js js/social-friends.js js/social-notifications.js js/social-moderation.js; then
+            echo 'Publicações sociais devem permanecer textuais até existir pipeline seguro de mídia.' >&2
             exit 1
           fi
+          grep -q 'id="profilePhotoInput"' perfil/index.html
+          grep -q 'accept="image/jpeg,image/png,image/webp"' perfil/index.html
+          grep -q 'prepareAvatar' js/social-profile.js
           grep -q '@media (max-width: 360px)' css/social.css
           grep -q '@media (prefers-reduced-motion: reduce)' css/social.css
           grep -q '@media (forced-colors: active)' css/social.css
