@@ -30,7 +30,7 @@ jobs:
             js/tools-catalog.js js/tools.js js/social-api.js js/social-navigation.js \
             js/social-home.js js/social-feed.js js/social-profile.js js/social-friends.js \
             js/social-notifications.js js/social-moderation.js js/home.js js/account.js \
-            js/login.js js/signup.js js/portal-chat.js js/portal-interactions.js js/portal-performance.js portal-sw.js; do
+            js/login.js js/signup.js js/portal-chat.js js/portal-interactions.js js/portal-performance.js js/portal-pwa.js portal-sw.js; do
             node --check "$file"
           done
           for file in \
