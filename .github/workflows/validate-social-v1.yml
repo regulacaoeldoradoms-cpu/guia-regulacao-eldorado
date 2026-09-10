@@ -40,7 +40,7 @@ jobs:
             grep -q 'name="robots" content="noindex,nofollow"' "$file"
             grep -q 'social.css?v=20260909-3' "$file"
             grep -q 'social-api.js?v=20260909-1' "$file"
-            grep -q 'portal-interactions.js?v=20260906-2' "$file"
+            grep -q 'portal-interactions.js?v=20260910-2' "$file"
           done
 
       - name: Conferir arquitetura, flags e rollback
@@ -58,8 +58,8 @@ jobs:
           grep -q 'social_rate_limits' worker/social-schema.js
           grep -q 'SOCIAL_TEMPORARILY_UNAVAILABLE' worker/index.js
           grep -q 'showToolsFallback' js/home.js
-          grep -q 'tools-catalog.js?v=20260909-1' index.html
-          grep -q 'tools-catalog.js?v=20260909-1' ferramentas/index.html
+          grep -q 'tools-catalog.js?v=20260910-2' index.html
+          grep -q 'tools-catalog.js?v=20260910-2' ferramentas/index.html
           grep -q 'socialFlagsCoherent' worker/system-readiness.js
           test -f docs/PORTAL-DESEMPENHO-CACHE-V1.md
           grep -q 'Nunca entram no cache' docs/PORTAL-DESEMPENHO-CACHE-V1.md
