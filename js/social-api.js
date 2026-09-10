@@ -425,10 +425,7 @@
     element.style.backgroundImage = 'none';
     element.setAttribute('role', 'img');
     element.setAttribute('aria-label', `Foto de ${profile.name || `@${profile.handle}`}`);
-    if (!profile.avatarAvailable) {
-      clearAvatarCache(profile.handle).catch(() => {});
-      return;
-    }
+    if (!profile.avatarAvailable) return;
     try {
       const url = await avatarBlob(profile);
       if (!url || !element.isConnected) return;
