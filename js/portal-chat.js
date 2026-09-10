@@ -144,6 +144,7 @@
     if (!notificationSupported()) return 'unsupported';
     if (Notification.permission === 'granted') {
       await ensureNotificationWorker();
+      await window.PortalPWA?.enablePush?.({ requestPermission: false });
       updateNotificationUi();
       return 'granted';
     }
@@ -156,6 +157,7 @@
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
         await ensureNotificationWorker();
+        await window.PortalPWA?.enablePush?.({ requestPermission: false });
         showStatus('Notificações de mensagens ativadas.');
       } else if (permission === 'denied') {
         showStatus('Notificações bloqueadas pelo navegador.');
@@ -170,6 +172,7 @@
 
   async function showMessageNotification(contact, amount) {
     if (!notificationSupported() || Notification.permission !== 'granted') return;
+    if (window.PortalPWA?.hasActivePush?.()) return;
 
     const root = document.getElementById('portalChatRoot');
     const conversationVisible = !document.hidden
@@ -510,7 +513,10 @@
     currentUser = await auth.me({ allowCached: true }).catch(() => auth.getCachedUser?.() || null);
     if (!currentUser || !CHAT_ROLES.has(currentUser.role)) return;
     mount();
-    if (notificationSupported() && Notification.permission === 'granted') await ensureNotificationWorker();
+    if (notificationSupported() && Notification.permission === 'granted') {
+      await ensureNotificationWorker();
+      window.PortalPWA?.syncPush?.({ createIfPermitted: true });
+    }
     await heartbeat(true);
     await loadContacts();
 
