@@ -120,10 +120,14 @@
     if (!home) return;
 
     const roleLabel = window.PortalTools?.roleLabels?.[user?.role] || user?.jobTitle || '';
+    const cachedProfile = config?.profile || {};
+    const cachedAvatarFlag = Object.prototype.hasOwnProperty.call(cachedProfile, 'avatarAvailable');
     mountIdentity({
-      name: user?.name || user?.username || 'Usuário',
-      handle: user?.username || '',
-      professional: roleLabel ? { label: roleLabel } : null
+      name: cachedProfile.name || user?.name || user?.username || 'Usuário',
+      handle: cachedProfile.handle || user?.username || '',
+      professional: roleLabel ? { label: roleLabel } : null,
+      avatarAvailable: cachedAvatarFlag ? Boolean(cachedProfile.avatarAvailable) : Boolean(user?.avatarDataUrl),
+      avatarVersion: String(cachedProfile.avatarVersion || user?.avatarVersion || '')
     });
 
     mountShortcuts(user);
