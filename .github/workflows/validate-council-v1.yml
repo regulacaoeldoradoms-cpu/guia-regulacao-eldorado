@@ -95,8 +95,8 @@ jobs:
           fi
           ! grep -q 'ACCOUNT_LEVEL_REQUIRED' worker/portal-safety.js
           grep -q 'Conta Bronze' cadastro/index.html
-          grep -q 'Conta Prata' conquistas/index.html
-          grep -q 'Conta Ouro' conquistas/index.html
+          grep -q 'data-level-step="prata"' conquistas/index.html
+          grep -q 'data-level-step="ouro"' conquistas/index.html
           grep -q 'não têm relação com os níveis oficiais da conta Gov.br' conquistas/index.html
           grep -q 'account-levels.js' conquistas/index.html
           grep -q 'citizen-account-level.js' cidadao/index.html
