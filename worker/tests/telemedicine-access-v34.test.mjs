@@ -16,13 +16,14 @@ test('capacidade Telemedicina mantém papel-base coerente sem conceder acesso po
   assert.doesNotMatch(source, /jobTitle.*telemedicineAccessFor|DEFAULT_JOB_TITLE.*enabled/);
 });
 
-test('schema de acesso é inicializado uma vez por isolate aquecido', () => {
+test('schema de acesso é cacheado por binding D1 sem contaminar bindings distintos', () => {
   const source = read('worker/telemedicine-access.js');
-  assert.match(source, /let accessSchemaReady = false/);
-  assert.match(source, /let accessSchemaPromise = null/);
-  assert.match(source, /if \(accessSchemaReady\) return true/);
-  assert.match(source, /if \(accessSchemaPromise\) return accessSchemaPromise/);
-  assert.match(source, /accessSchemaReady = true/);
+  assert.match(source, /const accessSchemaReady = new WeakSet\(\)/);
+  assert.match(source, /const accessSchemaPromises = new WeakMap\(\)/);
+  assert.match(source, /accessSchemaReady\.has\(binding\)/);
+  assert.match(source, /accessSchemaPromises\.has\(binding\)/);
+  assert.match(source, /accessSchemaReady\.add\(binding\)/);
+  assert.match(source, /accessSchemaPromises\.delete\(binding\)/);
 });
 
 test('registros históricos com capacidade habilitada são reparados antes das rotas', () => {
