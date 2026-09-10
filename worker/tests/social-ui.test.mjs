@@ -91,7 +91,10 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.doesNotMatch(navigation, /'Meu perfil'/);
   assert.match(index, /social-navigation\.js\?v=20260910-3/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
-  assert.match(index, /\/js\/social-home\.js\?v=20260910-1/);
+  assert.match(index, /\/js\/social-home\.js\?v=20260910-2/);
+  const socialHome = read('js/social-home.js');
+  assert.match(socialHome, /cachedProfile = config\?\.profile/);
+  assert.match(socialHome, /avatarVersion: String\(cachedProfile\.avatarVersion/);
   assert.match(index, /\/js\/home\.js\?v=20260910-2/);
   assert.equal((index.match(/\/js\/home\.js\?v=20260910-2/g) || []).length, 1);
   assert.match(index, /<body class="portal-page home-loading-active">/);
