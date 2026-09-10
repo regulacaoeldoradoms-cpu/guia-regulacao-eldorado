@@ -83,7 +83,7 @@ jobs:
           grep -q 'id="interfaceSoundsCard"' configuracoes/index.html
           grep -q 'id="socialPreferencesCard"' configuracoes/index.html
           grep -q "destination = '/perfil/'" conta/index.html
-          ! grep -q 'changePasswordForm\|securityEmailForm\|socialPreferencesCard' conta/index.html
+          ! grep -E -q 'id="(changePasswordForm|securityEmailForm|socialPreferencesCard)"' conta/index.html
       - name: Conferir hierarquia de permissões
         run: |
           grep -q "AUTH_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'cidadao', 'admin'\])" worker/auth-management-v2.js
