@@ -1,6 +1,6 @@
 # Desempenho, cache seguro e pré-carregamento do Portal — V1
 
-Revisado em 09/09/2026.
+Revisado em 10/09/2026.
 
 ## Objetivo
 
@@ -61,9 +61,17 @@ permissão no backend.
 
 ### Camada social
 
-Somente a configuração funcional da camada social pode ser reaproveitada em
+A configuração funcional da camada social pode ser reaproveitada em
 `sessionStorage`, isolada por usuário, por até 15 minutos. Ela é atualizada em
 segundo plano e a navegação recebe os novos contadores e flags sem recarregar a página.
+
+A lista de amigos recebe um snapshot transitório separado, também isolado por usuário
+em `sessionStorage`, com validade máxima de 5 minutos e revalidação preferencial
+depois de 30 segundos. Esse snapshot contém apenas os resumos sociais já autorizados
+para a própria conta, é limpo no logout e nunca entra no service worker. A navegação
+inicia sua carga em segundo plano para reduzir a espera ao abrir `/amigos/`; a tela
+percorre todas as páginas por cursor, deduplica os perfis e pagina localmente em
+10, 20, 30 ou Todos.
 
 Perfil social e primeira página do feed são solicitados em paralelo.
 
@@ -93,7 +101,8 @@ Também não são persistidos em cache de aplicação:
 - manifestações e anexos;
 - nomes ou dados de pacientes;
 - teleatendimentos;
-- respostas das APIs protegidas;
+- respostas das APIs protegidas, exceto a configuração social e o snapshot transitório
+  da lista de amigos explicitamente descritos acima;
 - resultados administrativos, de moderação ou monitoramento.
 
 Logout limpa os pequenos caches de sessão da configuração social. A troca de versão
@@ -104,7 +113,8 @@ do service worker invalida automaticamente os caches estáticos anteriores.
 - `js/portal-performance.js`: registro, priorização de rotas e aquecimento por perfil;
 - `portal-sw.js`: política de cache, atualização e pré-carregamento;
 - `js/auth-client.js`: abertura pela sessão válida e reconferência silenciosa;
-- `js/social-api.js`: stale-while-revalidate da configuração social;
+- `js/social-api.js`: stale-while-revalidate da configuração social e pré-carga
+  transitória da lista de amigos;
 - `js/social-home.js`: carregamento paralelo do perfil e do feed;
 - `js/tools-catalog.js`: matriz única de autorização e imagens tardias.
 
@@ -117,7 +127,8 @@ A suíte automatizada verifica que:
 - URLs externas e rotas de API são recusadas;
 - conexões com economia de dados reduzem o aquecimento;
 - a sessão abre antes da reconferência remota;
-- o feed e os dados protegidos não são persistidos;
+- o feed e os dados protegidos não são persistidos fora das duas exceções sociais
+  transitórias documentadas;
 - os assets leves e as versões corretas são usados nas páginas ativas.
 
 A primeira visita depois de uma nova versão ainda precisa baixar o núcleo atualizado.
