@@ -21,7 +21,8 @@
   let pwaClientStarted = false;
 
   function ensurePwaClient() {
-    if (window.PortalPWA || pwaClientStarted || document.querySelector('script[data-portal-pwa]')) return;
+    if (window.PortalPWA || pwaClientStarted || document.querySelector?.('script[data-portal-pwa]')) return;
+    if (typeof document.createElement !== 'function' || !document.head?.appendChild) return;
     pwaClientStarted = true;
     const script = document.createElement('script');
     script.src = PWA_CLIENT_URL;
