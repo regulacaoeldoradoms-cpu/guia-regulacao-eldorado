@@ -406,8 +406,8 @@
           url.searchParams.set('verificar-email', '1');
           history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
           document.getElementById('emailVerificationNotice')?.removeAttribute('hidden');
-          document.getElementById('seguranca')?.scrollIntoView({ behavior: 'auto', block: 'start' });
-        } else if (location.pathname.startsWith('/conta/')) {
+          document.getElementById('emailSecurityCard')?.scrollIntoView({ behavior: 'auto', block: 'start' });
+        } else if (location.pathname.startsWith('/seguranca/')) {
           location.replace('/');
         }
       } else if (attempts >= 24) {
@@ -511,7 +511,7 @@
   }
 
   async function refresh() {
-    if (!location.pathname.startsWith('/conta/')) return;
+    if (!location.pathname.startsWith('/seguranca/')) return;
     const auth = window.RegulationAuth;
     if (!auth) return;
     const user = await auth.me({ allowCached: false }).catch(() => auth.getCachedUser?.() || null);
