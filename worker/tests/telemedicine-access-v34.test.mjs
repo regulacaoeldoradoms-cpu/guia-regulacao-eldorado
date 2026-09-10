@@ -36,6 +36,15 @@ test('registros históricos com capacidade habilitada são reparados antes das r
   assert.match(worker, /await enforceDeveloperSeparation\(env\)/);
 });
 
+test('V34.1 recupera somente papel legado explícito sem reativar revogação existente', () => {
+  const migration = read('worker/role-migration.js');
+  assert.match(migration, /ensureTelemedicineAccessSchema/);
+  assert.match(migration, /INSERT OR IGNORE INTO auth_telemedicine_access/);
+  assert.match(migration, /FROM auth_users\s+WHERE role = 'telemedicina'/);
+  assert.match(migration, /role = 'telemedicina'[\s\S]+SELECT username FROM auth_telemedicine_access WHERE enabled = 1/);
+  assert.doesNotMatch(migration, /job_title/);
+});
+
 test('backend continua exigindo autorização de servidor em todas as rotas Telemedicina', () => {
   for (const path of ['worker/telemedicine.js', 'worker/telemedicine-router-v2.js']) {
     const source = read(path);

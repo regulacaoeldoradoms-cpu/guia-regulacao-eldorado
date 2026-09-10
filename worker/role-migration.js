@@ -1,5 +1,7 @@
 'use strict';
 
+import { ensureTelemedicineAccessSchema } from './telemedicine-access.js';
+
 let developerLastRun = 0;
 let telemedicineInvariantChecked = false;
 let telemedicineInvariantPromise = null;
@@ -33,17 +35,30 @@ async function ensureTelemedicineUnderlyingRoleInvariant(env) {
   if (telemedicineInvariantPromise) return telemedicineInvariantPromise;
 
   telemedicineInvariantPromise = (async () => {
-    const tables = await env.AUTH_DB.prepare(`SELECT name FROM sqlite_master
-      WHERE type = 'table' AND name IN ('auth_users', 'auth_telemedicine_access')`).all();
-    const names = new Set((tables.results || []).map((row) => String(row.name || '')));
-    if (!names.has('auth_users') || !names.has('auth_telemedicine_access')) return;
+    const authUsersTable = await env.AUTH_DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'auth_users'"
+    ).first();
+    if (!authUsersTable) return;
+    if (!(await ensureTelemedicineAccessSchema(env))) return;
+
+    // V34.1: um papel legado explicitamente salvo como `telemedicina` já é uma
+    // autorização técnica histórica. Recuperamos somente esse marcador forte.
+    // INSERT OR IGNORE preserva revogações explícitas já registradas (enabled=0).
+    await env.AUTH_DB.prepare(`INSERT OR IGNORE INTO auth_telemedicine_access
+      (username, enabled, created_by)
+      SELECT username, 1, 'system-legacy-role-migration'
+      FROM auth_users
+      WHERE role = 'telemedicina'`).run();
 
     await env.AUTH_DB.prepare(`UPDATE auth_users
       SET role = 'recepcao', updated_at = CURRENT_TIMESTAMP
       WHERE role <> 'admin'
         AND role <> 'recepcao'
-        AND username IN (
-          SELECT username FROM auth_telemedicine_access WHERE enabled = 1
+        AND (
+          role = 'telemedicina'
+          OR username IN (
+            SELECT username FROM auth_telemedicine_access WHERE enabled = 1
+          )
         )`).run();
     telemedicineInvariantChecked = true;
   })().catch(() => {
@@ -58,10 +73,9 @@ async function ensureTelemedicineUnderlyingRoleInvariant(env) {
 export async function enforceDeveloperSeparation(env) {
   if (!env.AUTH_DB) return;
 
-  // V34: repara uma eventual divergência histórica entre o perfil lógico
-  // Técnico em Telemedicina e o papel-base `recepcao`. A verificação roda
-  // uma única vez por isolate aquecido; novas concessões já mantêm o
-  // invariante no momento em que o acesso é salvo.
+  // V34/V34.1: reconcilia a função lógica Técnico em Telemedicina com o
+  // papel-base `recepcao` e recupera apenas marcadores legados explícitos.
+  // A verificação roda uma única vez por isolate aquecido.
   await ensureTelemedicineUnderlyingRoleInvariant(env);
 
   if (!migrationEnabled(env)) return;
