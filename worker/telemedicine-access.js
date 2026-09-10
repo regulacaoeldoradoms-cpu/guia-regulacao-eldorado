@@ -3,6 +3,8 @@
 const TELEMEDICINE_ROLE = 'telemedicina';
 const UNDERLYING_ROLE = 'recepcao';
 const DEFAULT_JOB_TITLE = 'Técnico em Telemedicina';
+let accessSchemaReady = false;
+let accessSchemaPromise = null;
 
 function normalizeUsername(value) {
   return String(value || '')
@@ -19,14 +21,38 @@ function normalizeUsername(value) {
 
 export async function ensureTelemedicineAccessSchema(env) {
   if (!env.AUTH_DB) return false;
-  await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS auth_telemedicine_access (
-    username TEXT PRIMARY KEY,
-    enabled INTEGER NOT NULL DEFAULT 1,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by TEXT
-  )`).run();
-  await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_auth_telemedicine_enabled ON auth_telemedicine_access(enabled, username)').run();
+  if (accessSchemaReady) return true;
+  if (accessSchemaPromise) return accessSchemaPromise;
+
+  accessSchemaPromise = (async () => {
+    await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS auth_telemedicine_access (
+      username TEXT PRIMARY KEY,
+      enabled INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      created_by TEXT
+    )`).run();
+    await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_auth_telemedicine_enabled ON auth_telemedicine_access(enabled, username)').run();
+    accessSchemaReady = true;
+    return true;
+  })().catch((error) => {
+    accessSchemaReady = false;
+    accessSchemaPromise = null;
+    throw error;
+  });
+
+  return accessSchemaPromise;
+}
+
+export async function ensureTelemedicineUnderlyingRole(env, username) {
+  if (!env.AUTH_DB) return false;
+  const normalized = normalizeUsername(username);
+  if (!normalized) return false;
+  await env.AUTH_DB.prepare(`UPDATE auth_users
+    SET role = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE username = ? AND role <> 'admin' AND role <> ?`)
+    .bind(UNDERLYING_ROLE, normalized, UNDERLYING_ROLE)
+    .run();
   return true;
 }
 
@@ -48,6 +74,7 @@ export async function setTelemedicineAccess(env, username, enabled, actor = '') 
       VALUES (?, 1, ?)
       ON CONFLICT(username) DO UPDATE SET enabled = 1, updated_at = CURRENT_TIMESTAMP, created_by = excluded.created_by`)
       .bind(normalized, actor || null).run();
+    await ensureTelemedicineUnderlyingRole(env, normalized);
   } else {
     await env.AUTH_DB.prepare(`INSERT INTO auth_telemedicine_access(username, enabled, created_by)
       VALUES (?, 0, ?)
@@ -62,6 +89,7 @@ export async function decorateTelemedicineUser(env, user) {
   if (user.role === 'admin') return { ...user, telemedicineAccess: true };
   const enabled = await telemedicineAccessFor(env, user.username);
   if (!enabled) return { ...user, telemedicineAccess: false };
+  if (user.role !== UNDERLYING_ROLE) await ensureTelemedicineUnderlyingRole(env, user.username);
   return {
     ...user,
     role: TELEMEDICINE_ROLE,
