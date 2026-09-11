@@ -28,14 +28,14 @@
       title: 'Minha conta | Recepção'
     },
     coordenacao: {
-      icon: '/assets/portal-regulacao-icon.webp?v=20260909-1',
-      type: 'image/webp',
+      icon: '/assets/portal-regulacao-header_512x512.png?v=20260911-1',
+      type: 'image/png',
       subtitle: 'Portal da Regulação de Saúde · Eldorado/MS',
       title: 'Minha conta | Portal da Regulação'
     },
     admin: {
-      icon: '/assets/portal-regulacao-icon.webp?v=20260909-1',
-      type: 'image/webp',
+      icon: '/assets/portal-regulacao-header_512x512.png?v=20260911-1',
+      type: 'image/png',
       subtitle: 'Portal da Regulação de Saúde · Eldorado/MS',
       title: 'Minha conta | Portal da Regulação'
     }
