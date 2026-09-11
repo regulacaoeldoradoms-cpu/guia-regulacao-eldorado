@@ -11,6 +11,7 @@ import { handleCouncilRoute, isCouncilApi } from './council-access-policy.js';
 import { handleSystemReadinessRoute, isSystemReadinessApi } from './system-readiness.js';
 import { handlePushRoute, isPushApi } from './push-notifications.js';
 import { handleTelemedicineRoute, isTelemedicineApi } from './telemedicine-router-v2.js';
+import { handleDocumentsRoute, isDocumentsApi, isDocumentsOAuthCallback } from './documents-router.js';
 import { enforceDeveloperSeparation } from './role-migration.js';
 import {
   handleCitizenIdentityRoute,
@@ -175,6 +176,11 @@ export default {
 
     await enforceDeveloperSeparation(env);
 
+    if (isDocumentsOAuthCallback(url.pathname)) {
+      try { return await handleDocumentsRoute(request, env, origin, originAllowed); }
+      catch (_) { return jsonError('Falha temporária na conexão com o Google Drive.', 503, origin, originAllowed, 'DOCUMENTS_OAUTH_TEMPORARILY_UNAVAILABLE'); }
+    }
+
     const preparedLogin = await prepareCitizenHandleLogin(request, env, origin, originAllowed);
     if (preparedLogin instanceof Response) return preparedLogin;
     request = preparedLogin;
@@ -198,6 +204,11 @@ export default {
 
     const emailGate = await enforceProfessionalEmailGate(request, env, validatePortalSession, origin, originAllowed);
     if (emailGate) return emailGate;
+
+    if (isDocumentsApi(url.pathname)) {
+      try { return await handleDocumentsRoute(request, env, origin, originAllowed); }
+      catch (_) { return jsonError('Falha temporária na Central de Documentos.', 503, origin, originAllowed, 'DOCUMENTS_TEMPORARILY_UNAVAILABLE'); }
+    }
 
     if (isPushApi(url.pathname)) {
       try { return await handlePushRoute(request, env, origin, originAllowed); }

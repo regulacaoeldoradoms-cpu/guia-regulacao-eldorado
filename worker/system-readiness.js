@@ -1,6 +1,7 @@
 'use strict';
 
 import { validatePortalSession } from './auth-management-flex.js';
+import { driveOAuthConfiguration } from './document-drive.js';
 
 function json(body, status, origin, allowed = true) {
   const headers = {
@@ -92,6 +93,7 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
   const socialBackendEnabled = enabled(env.SOCIAL_BACKEND_ENABLED);
   const socialHomeEnabled = enabled(env.SOCIAL_HOME_ENABLED);
   const socialFlagsCoherent = !socialHomeEnabled || socialBackendEnabled;
+  const documentDrive = driveOAuthConfiguration(env);
   const gemini = {
     apiKey: present(env.GEMINI_API_KEY),
     primaryModel: present(env.GEMINI_MODEL),
@@ -205,6 +207,15 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
         : 'A exigência está desligada durante a fase de migração, conforme planejado.'
     },
     {
+      id: 'document-drive-oauth',
+      label: 'OAuth da Central de Documentos',
+      ok: documentDrive.ready,
+      requiredBeforeDeploy: false,
+      detail: documentDrive.ready
+        ? 'Client ID, segredo OAuth, redirect URI e chave de criptografia estão configurados.'
+        : 'A Central permanece segura e desconectada até configurar OAuth e chave de criptografia no ambiente.'
+    },
+    {
       id: 'social-backend',
       label: 'Backend da Camada Social',
       ok: socialBackendEnabled,
@@ -238,6 +249,7 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
     },
     gemini,
     cloudflareAi,
+    documentDrive,
     flags: {
       legacyMigrationEnabled,
       emailVerificationRequired,

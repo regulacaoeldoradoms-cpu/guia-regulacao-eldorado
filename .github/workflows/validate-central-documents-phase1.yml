@@ -1,0 +1,67 @@
+name: Validar Central de Documentos — Fase 1
+
+on:
+  pull_request:
+    paths:
+      - 'documentos/**'
+      - 'css/documents.css'
+      - 'js/documents.js'
+      - 'js/tools-catalog.js'
+      - 'js/portal-performance.js'
+      - 'portal-sw.js'
+      - 'worker/document-*.js'
+      - 'worker/documents-router.js'
+      - 'worker/auth-management-flex.js'
+      - 'worker/index.js'
+      - 'worker/system-readiness.js'
+      - 'worker/wrangler.toml'
+      - 'worker/package.json'
+      - 'worker/tests/documents-*.test.mjs'
+      - 'docs/CENTRAL-DOCUMENTOS-**'
+      - '.github/workflows/validate-central-documents-phase1.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'documentos/**'
+      - 'css/documents.css'
+      - 'js/documents.js'
+      - 'worker/document-*.js'
+      - 'worker/documents-router.js'
+      - 'docs/CENTRAL-DOCUMENTOS-**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validar sintaxe e suíte do Worker
+        working-directory: worker
+        run: |
+          npm run check
+          npm test
+
+      - name: Conferir superfície read-only
+        run: |
+          test -f documentos/index.html
+          test -f css/documents.css
+          test -f js/documents.js
+          test -f worker/document-access.js
+          test -f worker/document-drive.js
+          test -f worker/documents-router.js
+          grep -q "https://www.googleapis.com/auth/drive" worker/document-drive.js
+          grep -q "Cache-Control.*no-store" worker/documents-router.js
+          grep -q "URL.revokeObjectURL" js/documents.js
+          grep -q "Somente leitura" documentos/index.html
+          ! grep -R -E "localStorage|sessionStorage|indexedDB" js/documents.js
+
+      - name: Bloquear segredos e telemetria identificável
+        run: |
+          ! grep -R -E 'ya29\.[0-9A-Za-z_-]+' worker/document-*.js worker/documents-router.js js/documents.js
+          ! grep -R -E 'GOCSPX-[0-9A-Za-z_-]+' worker/document-*.js worker/documents-router.js js/documents.js
+          ! grep -R -E 'AIza[0-9A-Za-z_-]{20,}' worker/document-*.js worker/documents-router.js js/documents.js
+          ! grep -R -E "capture\([^\n]*(fileId|filename|item\.name|item\.ref|searchQuery)" js/documents.js

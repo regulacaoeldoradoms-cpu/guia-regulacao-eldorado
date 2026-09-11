@@ -1,0 +1,590 @@
+'use strict';
+
+(async () => {
+  const auth = window.RegulationAuth;
+  const config = window.REGULATION_AUTH_CONFIG || {};
+  const endpoint = String(config.endpoint || '').replace(/\/$/, '');
+  const user = await auth.requireRole([]);
+  if (!user) return;
+
+  if (user.mustChangePassword) {
+    location.replace('/seguranca/?primeiro-acesso=1');
+    return;
+  }
+
+  const state = {
+    user,
+    access: null,
+    stack: [],
+    items: [],
+    nextPageToken: '',
+    searchQuery: '',
+    searchMode: false,
+    loading: false,
+    pdfObjectUrl: '',
+    pdfOpenedAt: 0
+  };
+
+  const els = {
+    userName: document.getElementById('portalUserName'),
+    userRole: document.getElementById('portalUserRole'),
+    logout: document.getElementById('portalLogout'),
+    badge: document.getElementById('driveConnectionBadge'),
+    status: document.getElementById('documentsGlobalStatus'),
+    setup: document.getElementById('documentsSetup'),
+    setupMessage: document.getElementById('driveSetupMessage'),
+    connect: document.getElementById('connectDriveButton'),
+    grantSelf: document.getElementById('grantSelfViewButton'),
+    disconnect: document.getElementById('disconnectDriveButton'),
+    accessAdmin: document.getElementById('documentsAccessAdmin'),
+    accessList: document.getElementById('documentsAccessList'),
+    refreshAccess: document.getElementById('refreshAccessButton'),
+    workspace: document.getElementById('documentsWorkspace'),
+    searchForm: document.getElementById('documentsSearchForm'),
+    search: document.getElementById('documentsSearch'),
+    refreshFolder: document.getElementById('refreshFolderButton'),
+    breadcrumbs: document.getElementById('documentsBreadcrumbs'),
+    list: document.getElementById('documentsList'),
+    listTitle: document.getElementById('documentsListTitle'),
+    listCount: document.getElementById('documentsListCount'),
+    pagination: document.getElementById('documentsPagination'),
+    loadMore: document.getElementById('loadMoreButton'),
+    viewer: document.getElementById('documentsViewer'),
+    viewerTitle: document.getElementById('documentsViewerTitle'),
+    viewerState: document.getElementById('documentsViewerState'),
+    frame: document.getElementById('documentsPdfFrame'),
+    closeViewer: document.getElementById('closeViewerButton')
+  };
+
+  els.userName.textContent = user.name || user.username || 'Usuário';
+  els.userRole.textContent = window.PortalTools?.roleLabels?.[user.role] || user.role || '';
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>'"]/g, (char) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[char]));
+  }
+
+  function showStatus(message = '', type = 'info') {
+    els.status.innerHTML = message
+      ? `<div class="portal-note ${type}">${escapeHtml(message)}</div>`
+      : '';
+  }
+
+  function capture(event, properties) {
+    const send = () => window.PortalObservability?.capture?.(event, properties);
+    if (!send()) window.setTimeout(send, 1100);
+  }
+
+  function duration(started) {
+    return Math.max(0, Math.round(performance.now() - started));
+  }
+
+  function sizeBucket(size) {
+    const bytes = Number(size || 0);
+    if (!(bytes > 0)) return 'unknown';
+    if (bytes < 250 * 1024) return 'tiny';
+    if (bytes < 2 * 1024 * 1024) return 'small';
+    if (bytes < 10 * 1024 * 1024) return 'medium';
+    if (bytes < 40 * 1024 * 1024) return 'large';
+    return 'very_large';
+  }
+
+  function resultCountBucket(count) {
+    const value = Number(count || 0);
+    if (value <= 0) return '0';
+    if (value <= 5) return '1-5';
+    if (value <= 20) return '6-20';
+    if (value <= 100) return '21-100';
+    return '100+';
+  }
+
+  function formatSize(size) {
+    const bytes = Number(size);
+    if (!Number.isFinite(bytes) || bytes < 0) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    const units = ['KB', 'MB', 'GB', 'TB'];
+    let value = bytes / 1024;
+    let unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit += 1;
+    }
+    return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} ${units[unit]}`;
+  }
+
+  function formatDate(value) {
+    const date = new Date(String(value || ''));
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat('pt-BR', {
+      dateStyle: 'short',
+      timeStyle: 'short'
+    }).format(date);
+  }
+
+  function itemSubtitle(item) {
+    const parts = [];
+    if (item.isFolder) parts.push('Pasta');
+    else if (item.isPdf) parts.push('PDF');
+    else parts.push('Arquivo');
+    const size = formatSize(item.size);
+    const modified = formatDate(item.modifiedTime);
+    if (size) parts.push(size);
+    if (modified) parts.push(`modificado ${modified}`);
+    return parts.join(' · ');
+  }
+
+  function api(path, options = {}) {
+    return auth.api(path, options);
+  }
+
+  async function loadAccess() {
+    state.access = await api('/api/documents/access', { method: 'GET' });
+    state.user = auth.getCachedUser() || state.user;
+    renderAccessState();
+  }
+
+  function renderAccessState() {
+    const caps = state.access?.capabilities || state.user?.documentCapabilities || {};
+    const drive = state.access?.drive || {};
+    const canManage = caps.manage === true;
+    const canView = caps.view === true;
+
+    els.setup.hidden = !canManage;
+    els.accessAdmin.hidden = !(canManage && state.user.role === 'admin');
+    els.workspace.hidden = !(canView && drive.connected);
+
+    if (drive.connected) {
+      els.badge.textContent = 'Drive conectado';
+      els.badge.className = 'documents-hero-state connected';
+    } else if (drive.configured) {
+      els.badge.textContent = 'Drive aguardando conexão';
+      els.badge.className = 'documents-hero-state pending';
+    } else {
+      els.badge.textContent = 'Integração aguardando configuração';
+      els.badge.className = 'documents-hero-state pending';
+    }
+
+    if (canManage) {
+      els.connect.hidden = Boolean(drive.connected) || !drive.configured;
+      els.disconnect.hidden = !drive.connected;
+      els.grantSelf.hidden = canView;
+      els.connect.disabled = !drive.configured;
+      if (!drive.configured) {
+        els.setupMessage.textContent = 'O código da Central está preparado, mas as credenciais OAuth do Google ainda precisam ser configuradas no ambiente seguro da Cloudflare.';
+        els.setupMessage.className = 'portal-note warning';
+      } else if (!drive.connected) {
+        els.setupMessage.textContent = 'A integração está configurada. Autorize uma vez a conta institucional para liberar a navegação do Drive.';
+        els.setupMessage.className = 'portal-note info';
+      } else if (!canView) {
+        els.setupMessage.textContent = 'O Drive está conectado. Seu perfil administra a Central, mas a leitura documental ainda não foi concedida a esta conta.';
+        els.setupMessage.className = 'portal-note info';
+      } else {
+        els.setupMessage.textContent = 'Conexão institucional ativa. As permissões de cada usuário continuam separadas do cargo principal.';
+        els.setupMessage.className = 'portal-note success';
+      }
+    }
+
+    if (!canView && !canManage) {
+      showStatus('Sua conta não possui acesso à Central de Documentos.', 'warning');
+    } else if (canView && !drive.connected) {
+      showStatus('Seu acesso está liberado, mas a conta institucional do Google Drive ainda não foi conectada.', 'warning');
+    } else {
+      showStatus('');
+    }
+  }
+
+  function sortItems(items) {
+    return [...items].sort((a, b) => {
+      if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1;
+      return String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR', { numeric: true, sensitivity: 'base' });
+    });
+  }
+
+  function currentParentRef() {
+    return state.stack.length ? state.stack[state.stack.length - 1].ref : '';
+  }
+
+  function renderBreadcrumbs() {
+    const parts = [
+      '<button class="documents-crumb" type="button" data-depth="-1">Meu Drive</button>'
+    ];
+    state.stack.forEach((entry, index) => {
+      parts.push('<span class="documents-crumb-sep">›</span>');
+      parts.push(`<button class="documents-crumb" type="button" data-depth="${index}">${escapeHtml(entry.name)}</button>`);
+    });
+    if (state.searchMode) {
+      parts.push('<span class="documents-crumb-sep">›</span><span class="documents-crumb">Resultados da pesquisa</span>');
+    }
+    els.breadcrumbs.innerHTML = parts.join('');
+  }
+
+  function renderItems() {
+    renderBreadcrumbs();
+    els.listTitle.textContent = state.searchMode
+      ? `Pesquisa: ${state.searchQuery}`
+      : (state.stack.length ? state.stack[state.stack.length - 1].name : 'Meu Drive');
+    els.listCount.textContent = `${state.items.length} item(ns) carregado(s)`;
+
+    if (!state.items.length) {
+      els.list.innerHTML = `<div class="documents-empty">${state.searchMode
+        ? 'Nenhum arquivo ou pasta encontrado para esta pesquisa.'
+        : 'Esta pasta está vazia.'}</div>`;
+    } else {
+      els.list.innerHTML = state.items.map((item, index) => {
+        const supported = item.isFolder || item.isPdf;
+        const classes = ['documents-item', item.isFolder ? 'folder' : '', supported ? '' : 'unsupported'].filter(Boolean).join(' ');
+        const action = item.isFolder ? 'Abrir pasta' : item.isPdf ? 'Abrir PDF' : 'Não suportado nesta fase';
+        const icon = item.isFolder ? '▰' : item.isPdf ? 'PDF' : '•';
+        return `<button class="${classes}" type="button" data-index="${index}" ${supported ? '' : 'aria-disabled="true"'}>
+          <span class="documents-item-icon" aria-hidden="true">${icon}</span>
+          <span class="documents-item-copy">
+            <strong title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</strong>
+            <span>${escapeHtml(itemSubtitle(item))}</span>
+          </span>
+          <span class="documents-item-action">${action}</span>
+        </button>`;
+      }).join('');
+    }
+
+    els.pagination.hidden = !state.nextPageToken;
+    els.loadMore.disabled = false;
+  }
+
+  async function loadFolder({ append = false, pageToken = '' } = {}) {
+    if (state.loading) return;
+    state.loading = true;
+    const started = performance.now();
+    if (!append) {
+      state.searchMode = false;
+      state.searchQuery = '';
+      els.search.value = '';
+      els.list.innerHTML = '<div class="documents-loading">Carregando pasta…</div>';
+    } else {
+      els.loadMore.disabled = true;
+    }
+
+    try {
+      const payload = await api('/api/documents/drive/list', {
+        method: 'POST',
+        body: JSON.stringify({
+          parentRef: currentParentRef(),
+          pageToken,
+          pageSize: 80
+        })
+      });
+      const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
+      state.items = append ? sortItems([...state.items, ...incoming]) : incoming;
+      state.nextPageToken = String(payload?.nextPageToken || '');
+      renderItems();
+      capture('drive_folder_opened', {
+        route: '/documentos/',
+        duration_ms: duration(started),
+        source: 'drive',
+        cache_state: 'miss'
+      });
+    } catch (error) {
+      if (!append) els.list.innerHTML = '<div class="documents-empty">Não foi possível carregar esta pasta.</div>';
+      showStatus(error.message || 'Não foi possível acessar o Google Drive.', 'warning');
+    } finally {
+      state.loading = false;
+      els.loadMore.disabled = false;
+    }
+  }
+
+  async function search(query, { append = false, pageToken = '' } = {}) {
+    const value = String(query || '').trim();
+    if (value.length < 2) {
+      if (!value) return loadFolder();
+      showStatus('Digite pelo menos dois caracteres para pesquisar.', 'warning');
+      return;
+    }
+    if (state.loading) return;
+    state.loading = true;
+    const started = performance.now();
+    if (!append) {
+      state.searchMode = true;
+      state.searchQuery = value;
+      els.list.innerHTML = '<div class="documents-loading">Pesquisando no Drive…</div>';
+    } else {
+      els.loadMore.disabled = true;
+    }
+
+    try {
+      const payload = await api('/api/documents/drive/search', {
+        method: 'POST',
+        body: JSON.stringify({ query: value, pageToken, pageSize: 80 })
+      });
+      const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
+      state.items = append ? sortItems([...state.items, ...incoming]) : incoming;
+      state.nextPageToken = String(payload?.nextPageToken || '');
+      renderItems();
+      capture('drive_search_completed', {
+        route: '/documentos/',
+        duration_ms: duration(started),
+        source: 'drive',
+        result_count_bucket: resultCountBucket(state.items.length)
+      });
+    } catch (error) {
+      if (!append) els.list.innerHTML = '<div class="documents-empty">Não foi possível concluir a pesquisa.</div>';
+      showStatus(error.message || 'Não foi possível pesquisar no Google Drive.', 'warning');
+    } finally {
+      state.loading = false;
+      els.loadMore.disabled = false;
+    }
+  }
+
+  function closePdf() {
+    if (state.pdfObjectUrl) URL.revokeObjectURL(state.pdfObjectUrl);
+    state.pdfObjectUrl = '';
+    els.frame.removeAttribute('src');
+    els.viewer.hidden = true;
+    els.viewerState.className = 'documents-viewer-state';
+    els.viewerState.textContent = 'Preparando PDF…';
+  }
+
+  async function openPdf(item) {
+    closePdf();
+    els.viewer.hidden = false;
+    els.viewerTitle.textContent = item.name || 'Documento PDF';
+    els.viewerState.textContent = 'Baixando o PDF com conexão protegida…';
+    els.viewerState.className = 'documents-viewer-state';
+    state.pdfOpenedAt = performance.now();
+    const bucket = sizeBucket(item.size);
+
+    capture('pdf_open_started', {
+      route: '/documentos/',
+      source: 'drive',
+      size_bucket: bucket,
+      cache_state: 'miss'
+    });
+
+    try {
+      const response = await fetch(`${endpoint}/api/documents/drive/content/${encodeURIComponent(item.ref)}`, {
+        method: 'GET',
+        headers: auth.authorizationHeader(),
+        cache: 'no-store',
+        credentials: 'omit'
+      });
+      if (!response.ok) {
+        let message = `Não foi possível abrir o PDF (${response.status}).`;
+        if ((response.headers.get('Content-Type') || '').includes('application/json')) {
+          const payload = await response.json().catch(() => ({}));
+          if (payload?.error) message = payload.error;
+        }
+        throw new Error(message);
+      }
+      const blob = await response.blob();
+      state.pdfObjectUrl = URL.createObjectURL(blob);
+      els.frame.addEventListener('load', () => {
+        els.viewerState.className = 'documents-viewer-state ready';
+        capture('pdf_ready', {
+          route: '/documentos/',
+          duration_ms: duration(state.pdfOpenedAt),
+          source: 'drive',
+          size_bucket: sizeBucket(blob.size || item.size),
+          cache_state: 'miss'
+        });
+      }, { once: true });
+      els.frame.src = state.pdfObjectUrl;
+      els.viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (error) {
+      els.viewerState.textContent = error.message || 'Não foi possível abrir este PDF.';
+      showStatus(error.message || 'Não foi possível abrir este PDF.', 'warning');
+    }
+  }
+
+  async function loadAccessAdmin() {
+    if (!(state.user.role === 'admin' && state.access?.capabilities?.manage)) return;
+    els.accessList.innerHTML = '<div class="portal-note info">Carregando usuários…</div>';
+    try {
+      const users = await auth.listUsers();
+      els.accessList.innerHTML = users.map((account) => {
+        const caps = account.documentCapabilities || {};
+        return `<article class="documents-access-row"
+          data-username="${escapeHtml(account.username)}"
+          data-extract="${caps.extract ? '1' : '0'}"
+          data-edit="${caps.edit ? '1' : '0'}">
+          <div class="documents-access-person">
+            <strong>${escapeHtml(account.name || account.username)}</strong>
+            <small>@${escapeHtml(account.username)} · ${escapeHtml(window.PortalTools?.roleLabels?.[account.role] || account.role || '')}</small>
+          </div>
+          <div class="documents-access-options">
+            <label><input type="checkbox" data-cap="view" ${caps.view ? 'checked' : ''}> Leitura do Drive</label>
+          </div>
+          <button class="portal-button secondary" type="button" data-action="save-access">Salvar</button>
+        </article>`;
+      }).join('') || '<div class="portal-note info">Nenhuma conta disponível.</div>';
+    } catch (error) {
+      els.accessList.innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível carregar os acessos.')}</div>`;
+    }
+  }
+
+  async function saveAccountAccess(row) {
+    const username = row.dataset.username;
+    const button = row.querySelector('[data-action="save-access"]');
+    const inputs = Object.fromEntries(Array.from(row.querySelectorAll('[data-cap]')).map((input) => [input.dataset.cap, input.checked]));
+    const preserveExtract = row.dataset.extract === '1';
+    const preserveEdit = row.dataset.edit === '1';
+    button.disabled = true;
+    button.textContent = 'Salvando…';
+    try {
+      const payload = await api(`/api/documents/admin/access/${encodeURIComponent(username)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          view: inputs.view === true,
+          extract: inputs.view === true && preserveExtract,
+          edit: inputs.view === true && preserveEdit
+        })
+      });
+      row.querySelector('[data-cap="view"]').checked = payload?.capabilities?.view === true;
+      row.dataset.extract = payload?.capabilities?.extract ? '1' : '0';
+      row.dataset.edit = payload?.capabilities?.edit ? '1' : '0';
+      button.textContent = 'Salvo';
+      if (username === state.user.username) {
+        await auth.me({ allowCached: false }).catch(() => null);
+        await loadAccess();
+        if (state.access?.capabilities?.view && state.access?.drive?.connected) await loadFolder();
+      }
+      setTimeout(() => { button.textContent = 'Salvar'; }, 900);
+    } catch (error) {
+      button.textContent = 'Tentar novamente';
+      showStatus(error.message || 'Não foi possível alterar este acesso.', 'warning');
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  els.connect.addEventListener('click', async () => {
+    els.connect.disabled = true;
+    els.connect.textContent = 'Preparando autorização…';
+    try {
+      const payload = await api('/api/documents/oauth/start', { method: 'POST', body: '{}' });
+      if (!payload?.authorizationUrl) throw new Error('Não foi possível iniciar a autorização do Google.');
+      location.assign(payload.authorizationUrl);
+    } catch (error) {
+      showStatus(error.message || 'Não foi possível iniciar a conexão do Google Drive.', 'warning');
+      els.connect.disabled = false;
+      els.connect.textContent = 'Conectar Google Drive';
+    }
+  });
+
+  els.disconnect.addEventListener('click', async () => {
+    if (!confirm('Desconectar a conta institucional da Central? Os arquivos do Google Drive não serão apagados.')) return;
+    els.disconnect.disabled = true;
+    try {
+      await api('/api/documents/oauth/disconnect', { method: 'POST', body: '{}' });
+      closePdf();
+      await loadAccess();
+      showStatus('Google Drive desconectado da Central.', 'info');
+    } catch (error) {
+      showStatus(error.message || 'Não foi possível desconectar o Google Drive.', 'warning');
+    } finally {
+      els.disconnect.disabled = false;
+    }
+  });
+
+  els.grantSelf.addEventListener('click', async () => {
+    els.grantSelf.disabled = true;
+    try {
+      const current = state.user.documentCapabilities || {};
+      await api(`/api/documents/admin/access/${encodeURIComponent(state.user.username)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          view: true,
+          extract: current.extract === true,
+          edit: current.edit === true,
+          manage: current.manage === true
+        })
+      });
+      state.user = await auth.me({ allowCached: false }) || state.user;
+      await loadAccess();
+      await loadAccessAdmin();
+      if (state.access?.drive?.connected) await loadFolder();
+    } catch (error) {
+      showStatus(error.message || 'Não foi possível liberar a leitura para sua conta.', 'warning');
+    } finally {
+      els.grantSelf.disabled = false;
+    }
+  });
+
+  els.refreshAccess.addEventListener('click', loadAccessAdmin);
+
+  els.accessList.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-action="save-access"]');
+    const row = event.target.closest('[data-username]');
+    if (button && row) saveAccountAccess(row);
+  });
+
+  els.searchForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    search(els.search.value);
+  });
+
+  els.refreshFolder.addEventListener('click', () => {
+    if (state.searchMode) search(state.searchQuery);
+    else loadFolder();
+  });
+
+  els.breadcrumbs.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-depth]');
+    if (!button) return;
+    const depth = Number(button.dataset.depth);
+    state.stack = depth < 0 ? [] : state.stack.slice(0, depth + 1);
+    state.searchMode = false;
+    state.searchQuery = '';
+    loadFolder();
+  });
+
+  els.list.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-index]');
+    if (!button) return;
+    const item = state.items[Number(button.dataset.index)];
+    if (!item) return;
+    if (item.isFolder) {
+      state.stack.push({ ref: item.ref, name: item.name });
+      state.searchMode = false;
+      state.searchQuery = '';
+      loadFolder();
+      return;
+    }
+    if (item.isPdf) openPdf(item);
+  });
+
+  els.loadMore.addEventListener('click', () => {
+    if (!state.nextPageToken) return;
+    if (state.searchMode) search(state.searchQuery, { append: true, pageToken: state.nextPageToken });
+    else loadFolder({ append: true, pageToken: state.nextPageToken });
+  });
+
+  els.closeViewer.addEventListener('click', closePdf);
+
+  els.logout.addEventListener('click', async () => {
+    closePdf();
+    await auth.logout();
+    location.replace('/login/');
+  });
+
+  window.addEventListener('pagehide', closePdf, { once: true });
+
+  const oauthState = new URLSearchParams(location.search).get('oauth');
+  if (oauthState) {
+    history.replaceState(null, '', location.pathname);
+    showStatus(
+      oauthState === 'connected'
+        ? 'Conta institucional conectada ao Google Drive com sucesso.'
+        : 'A autorização do Google Drive não foi concluída. Tente novamente.',
+      oauthState === 'connected' ? 'success' : 'warning'
+    );
+  }
+
+  try {
+    await loadAccess();
+    if (state.user.role === 'admin' && state.access?.capabilities?.manage) await loadAccessAdmin();
+    if (state.access?.capabilities?.view && state.access?.drive?.connected) await loadFolder();
+  } catch (error) {
+    showStatus(error.message || 'Não foi possível iniciar a Central de Documentos.', 'warning');
+    els.badge.textContent = 'Central indisponível';
+    els.badge.className = 'documents-hero-state pending';
+  }
+})();
