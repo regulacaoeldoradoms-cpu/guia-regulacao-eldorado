@@ -33,7 +33,7 @@ O Canal do Cidadão é um módulo da mesma conta, não uma troca de perfil. Em r
 - Firestore para conteúdo e Storage para anexos;
 - D1 para autenticação, propriedade dos protocolos, auditoria, notificações e rate limits;
 - `council_role=membro|presidente` separado do perfil principal;
-- feed social e chat cidadão-profissional fora da V1.
+- Camada Social separada do domínio do Conselho; amizades e chat social não concedem acesso institucional.
 
 ## Perfis e permissões
 
@@ -178,7 +178,9 @@ FIREBASE_STORAGE_BUCKET
 
 - nível Ouro e desafio adicional em novo dispositivo;
 - recuperação de conta por mecanismos adicionais;
-- amizade/chat entre usuários somente com autorização;
-- perfis sociais mantendo cargo profissional quando aplicável;
-- feed/comunidade pública após definição institucional;
+- comunidades e mídia social somente após definição/pipeline próprios;
 - App Check/reCAPTCHA Enterprise depois da validação da V1.
+
+A amizade social entre contas cidadãs e profissionais já é permitida mediante
+consentimento, mas continua fora do domínio de autorização do Conselho e não altera
+cargo, função institucional ou acesso às manifestações.
