@@ -187,8 +187,8 @@ Amizade, perfil, nível ou reação nunca são usados como autorização profiss
   Bronze; o nível da conta não altera a Home.
 - A confirmação do e-mail continua fortalecendo a segurança e liberando a foto de
   perfil, sem controlar o acesso à Camada Social básica.
-- Cidadãos e profissionais podem se localizar para amizade quando o perfil opta por
-  visibilidade no Portal e aceita pedidos.
+- Cidadãos e profissionais podem se localizar quando o perfil está visível no Portal.
+  A preferência de aceitar pedidos controla o botão/ação de adicionar, sem ocultar o perfil da busca.
 - Perfil profissional mostra cargo autêntico fornecido pelo backend, sem transformar
   esse cargo em autorização social ou conceder ferramentas a amigos.
 - E-mail, UUID e preferências privadas não aparecem para terceiros.
