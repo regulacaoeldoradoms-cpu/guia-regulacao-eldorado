@@ -87,9 +87,10 @@ A rota `/conta/` permanece somente como redirecionamento de compatibilidade para
 URLs antigas.
 
 O chat flutuante continua atendendo os cargos profissionais por autorização de
-cargo, sem depender de amizade. Para cidadãos, ele passa a listar somente outros
-cidadãos com amizade aceita e permite conversa social apenas enquanto esse vínculo
-permanecer ativo. Não existe chat social cidadão↔profissional. Notificações sociais
+cargo, sem depender de amizade. Em paralelo, qualquer amizade social aceita pode
+abrir uma conversa social entre o par, inclusive cidadão↔profissional. Esse segundo
+gate depende exclusivamente do vínculo social e não concede nenhuma permissão
+institucional. Notificações sociais
 usam rota e tabela próprias; avisos do Conselho continuam no Canal do Cidadão.
 
 ## Home social universal
@@ -186,9 +187,10 @@ Amizade, perfil, nível ou reação nunca são usados como autorização profiss
   Bronze; o nível da conta não altera a Home.
 - A confirmação do e-mail continua fortalecendo a segurança e liberando a foto de
   perfil, sem controlar o acesso à Camada Social básica.
-- Cidadãos descobrem somente cidadãos que optaram pela visibilidade e pelos pedidos.
-- Profissionais não aparecem em busca cidadã ampla.
-- Perfil profissional mostra cargo autêntico fornecido pelo backend.
+- Cidadãos e profissionais podem se localizar para amizade quando o perfil opta por
+  visibilidade no Portal e aceita pedidos.
+- Perfil profissional mostra cargo autêntico fornecido pelo backend, sem transformar
+  esse cargo em autorização social ou conceder ferramentas a amigos.
 - E-mail, UUID e preferências privadas não aparecem para terceiros.
 - CSP das novas superfícies restringe origens e conteúdo executável.
 
@@ -209,14 +211,15 @@ forçado, safe areas e breakpoint dedicado para evitar compressão/overflow mobi
 ## Busca social na Home
 
 A pesquisa do topo da Home reutiliza o endpoint protegido `/api/social/search`.
-Exige pelo menos três caracteres, respeita rate limit, visibilidade, bloqueios e a
-separação de tipos de conta. O resultado permite abrir perfil, enviar/aceitar pedido
-e, quando já houver amizade, iniciar o chat social permitido.
+Exige pelo menos três caracteres e respeita rate limit, visibilidade e bloqueios.
+A busca não separa mais por tipo de conta: cidadão e profissional podem localizar-se
+para amizade. O resultado permite abrir perfil, enviar/aceitar pedido e, quando já
+houver amizade, iniciar o chat social permitido.
 
 ## Evolução posterior
 
-Comunidades, fóruns, seguidores, jogos, desbloqueios de conquistas por jogos e chat
-social cidadão-profissional ainda não foram implementados. A rota `/conquistas/`
+Comunidades, fóruns, seguidores, jogos e desbloqueios de conquistas por jogos ainda
+não foram implementados. A rota `/conquistas/`
 já existe como superfície real da progressão da conta e identifica explicitamente
 como `Planejada` qualquer medalha futura sem regra real de desbloqueio. A identidade
 UUID e a separação de domínio permitem que esses produtos sejam adicionados depois
