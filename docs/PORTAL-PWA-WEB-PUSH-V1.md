@@ -22,6 +22,19 @@ como um cartão amplo e legível, próximo à largura da tela, com ícone, títu
 explicação e botões maiores. O desktop preserva o cartão compacto para não interferir
 no layout institucional.
 
+### Ícones oficiais de instalação
+
+A identidade do aplicativo/atalho usa arquivos PNG quadrados próprios, separados da
+marca horizontal exibida no login:
+
+- `assets/portal-regulacao-header_192x192.png`: ícone padrão 192×192 do manifesto;
+- `assets/portal-regulacao-header_512x512.png`: ícone padrão 512×512 do manifesto;
+- `assets/portal-regulacao-header_180x180.png`: `apple-touch-icon` para iPhone/iPad.
+
+Os três arquivos entram no cache estático versionado do Service Worker. O manifesto
+declara apenas `purpose: "any"`; não declarar `maskable` até existir uma arte
+específica preparada com margem segura para recorte pelo sistema operacional.
+
 Como o Portal usa cache agressivo, toda alteração visual ou funcional em
 `portal-pwa.css`, `portal-pwa.js` ou `portal-performance.js` deve avançar também
 o respectivo parâmetro `?v=` e a referência em `portal-sw.js`. Alterar apenas o

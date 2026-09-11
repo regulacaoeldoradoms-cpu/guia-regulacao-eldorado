@@ -6,6 +6,7 @@ const pushWorker = readFileSync(new URL('../push-notifications.js', import.meta.
 const serviceWorker = readFileSync(new URL('../../portal-sw.js', import.meta.url), 'utf8');
 const pwaClient = readFileSync(new URL('../../js/portal-pwa.js', import.meta.url), 'utf8');
 const pwaStyle = readFileSync(new URL('../../css/portal-pwa.css', import.meta.url), 'utf8');
+const manifest = JSON.parse(readFileSync(new URL('../../portal.webmanifest', import.meta.url), 'utf8'));
 const portalChat = readFileSync(new URL('../../js/portal-chat.js', import.meta.url), 'utf8');
 const councilWorker = readFileSync(new URL('../council.js', import.meta.url), 'utf8');
 const councilPolicy = readFileSync(new URL('../council-access-policy.js', import.meta.url), 'utf8');
@@ -45,6 +46,32 @@ test('cliente PWA oferece instalação e inscrição Push autenticada', () => {
   assert.match(pwaClient, /subscription\.unsubscribe\(\)/);
   assert.match(pwaClient, /keepalive:\s*true/);
   assert.match(pwaClient, /ensurePortalManifest/);
+  assert.match(pwaClient, /ensureAppleTouchIcon/);
+  assert.match(pwaClient, /portal-regulacao-header_192x192\.png\?v=20260911-1/);
+  assert.match(pwaClient, /portal-regulacao-header_180x180\.png\?v=20260911-1/);
+});
+
+test('manifesto usa os ícones oficiais 192 e 512 e o Apple usa 180', () => {
+  assert.deepEqual(
+    manifest.icons.map(({ src, sizes, type, purpose }) => ({ src, sizes, type, purpose })),
+    [
+      {
+        src: '/assets/portal-regulacao-header_192x192.png?v=20260911-1',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any'
+      },
+      {
+        src: '/assets/portal-regulacao-header_512x512.png?v=20260911-1',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any'
+      }
+    ]
+  );
+  assert.match(serviceWorker, /portal-regulacao-header_180x180\.png\?v=20260911-1/);
+  assert.match(serviceWorker, /portal-regulacao-header_192x192\.png\?v=20260911-1/);
+  assert.match(serviceWorker, /portal-regulacao-header_512x512\.png\?v=20260911-1/);
 });
 
 test('convite de instalação fica destacado no mobile sem ampliar o desktop', () => {
