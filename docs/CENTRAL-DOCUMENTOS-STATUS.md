@@ -21,7 +21,7 @@ Subfase atual: formalização técnica, validação e PR da arquitetura-base.
 
 Branch atual: `feat/central-docs-phase-0-architecture`
 
-PR atual: ainda não criado no momento deste registro inicial.
+PR atual: #133 — Central de Documentos — Fase 0: arquitetura e segurança (aberto).
 
 ## Entregas concluídas nesta unidade
 
@@ -91,9 +91,9 @@ Nenhum conteúdo de Drive foi enviado ao PostHog.
 
 ## Próximo passo
 
-1. abrir PR da Fase 0;
-2. validar checks;
-3. atualizar este status com PR/checks;
+1. validar os checks do PR #133;
+2. corrigir qualquer falha encontrada;
+3. atualizar este status com o resultado dos checks;
 4. encerrar Fase 0 quando o PR estiver apto/mesclado;
 5. iniciar Fase 1 somente a partir do estado real pós-merge;
 6. configurar OAuth Google durante a Fase 1 quando a integração read-only precisar conectar ao Drive.
@@ -116,9 +116,9 @@ Nenhum conteúdo de Drive foi enviado ao PostHog.
 **Subfase / objetivo atual:** validar e encerrar a arquitetura-base em PR.  
 **Última ação concluída:** arquitetura V1 e status inicial redigidos na branch da Fase 0.  
 **Branch atual:** `feat/central-docs-phase-0-architecture`.  
-**PR atual:** ainda não criado neste registro.  
-**Último commit relevante:** main de origem `6f1169f`; commits da branch devem ser conferidos antes de continuar.  
-**Checks e testes:** pendentes até abertura do PR.  
+**PR atual:** #133 — aberto; objetivo: validar e encerrar a arquitetura-base da Fase 0.  
+**Último commit relevante:** `1f6b109` — referência da Central adicionada à arquitetura geral do Portal; conferir HEAD atual da branch antes de continuar.  
+**Checks e testes:** PR #133 aberto; checks ainda pendentes neste registro.  
 **Decisões tomadas:** Drive API v3 via Worker; escopo `drive`; token criptografado no backend; capabilities independentes; cache documental somente efêmero; IA documental separada.  
 **Justificativas:** acesso integral ao Meu Drive, menor exposição de credenciais/dados e preservação das regras atuais do Portal.  
 **Alternativas descartadas:** `drive.file`, service account com acervo compartilhado, banco como espelho de PDFs, PostHog direto, cache persistente.  
@@ -126,5 +126,5 @@ Nenhum conteúdo de Drive foi enviado ao PostHog.
 **Pendências:** OAuth Google ainda não configurado; verificar requisitos de produção para restricted scope.  
 **Riscos conhecidos:** expiração de refresh token em Testing, restrição OAuth, cache clínico, conflito de versões.  
 **Métricas / observabilidade:** base PostHog validada; nenhum evento documental ainda.  
-**Próxima ação exata:** abrir PR da Fase 0, aguardar checks e registrar o resultado neste status.  
+**Próxima ação exata:** aguardar os checks do PR #133, corrigir qualquer regressão e registrar o resultado antes do merge.  
 **Arquivos e fontes principais:** arquitetura V1, este status, PORTAL-ARQUITETURA, política PostHog, Worker/auth.
