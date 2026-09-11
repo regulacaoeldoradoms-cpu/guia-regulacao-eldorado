@@ -271,9 +271,12 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     const other = await chatContact(env, { ...user, username }, otherUsername);
     if (!other || otherUsername === username) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
     const afterId = Math.max(0, Number.parseInt(url.searchParams.get('after') || '0', 10) || 0);
+    const peekOnly = url.searchParams.get('peek') === '1';
     const rows = await messages(env, username, otherUsername, afterId);
-    await env.AUTH_DB.prepare(`UPDATE portal_chat_messages SET read_at = CURRENT_TIMESTAMP
-      WHERE to_user = ? AND from_user = ? AND read_at IS NULL`).bind(username, otherUsername).run();
+    if (!peekOnly) {
+      await env.AUTH_DB.prepare(`UPDATE portal_chat_messages SET read_at = CURRENT_TIMESTAMP
+        WHERE to_user = ? AND from_user = ? AND read_at IS NULL`).bind(username, otherUsername).run();
+    }
     return json({ messages: rows }, 200, origin);
   }
 
