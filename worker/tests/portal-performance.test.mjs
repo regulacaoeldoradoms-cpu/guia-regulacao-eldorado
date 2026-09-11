@@ -112,7 +112,7 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
 
 test('service worker armazena somente superfície pública e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260911-7'/);
+  assert.match(source, /CACHE_VERSION = '20260911-8'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.match(source, /\/seguranca\//);
   assert.match(source, /\/configuracoes\//);
@@ -154,10 +154,29 @@ test('configuração social usa stale-while-revalidate sem persistir feed ou API
   assert.match(home, /PortalSocialFeed\.load\(feed, more\)/);
 });
 
-test('home usa o ícone oficial 512 no cabeçalho principal', () => {
-  const html = read('index.html');
-  assert.match(html, /class="portal-symbol" src="\/assets\/portal-regulacao-header_512x512\.png\?v=20260911-1"/);
-  assert.match(html, /fetchpriority="high"/);
+test('cabeçalhos genéricos do Portal usam a logo oficial 512 sem o ícone legado', () => {
+  const pages = [
+    'index.html',
+    'ferramentas/index.html',
+    'notificacoes/index.html',
+    'amigos/index.html',
+    'seguranca/index.html',
+    'perfil/index.html',
+    'configuracoes/index.html',
+    'conquistas/index.html',
+    'admin/social/index.html',
+    'admin/usuarios/index.html'
+  ];
+  for (const page of pages) {
+    const html = read(page);
+    assert.match(html, /portal-regulacao-header_512x512\.png\?v=20260911-1/, page);
+    assert.doesNotMatch(html, /portal-regulacao-icon\.webp/, page);
+  }
+  const home = read('index.html');
+  assert.match(home, /fetchpriority="high"/);
+  const accountBrand = read('js/account-brand.js');
+  assert.match(accountBrand, /coordenacao:[\s\S]*portal-regulacao-header_512x512\.png/);
+  assert.match(accountBrand, /admin:[\s\S]*portal-regulacao-header_512x512\.png/);
 });
 
 test('login inicia o aquecimento antes de navegar e usa a marca oficial em cache', () => {
