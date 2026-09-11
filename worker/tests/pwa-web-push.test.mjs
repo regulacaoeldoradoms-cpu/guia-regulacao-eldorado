@@ -6,6 +6,15 @@ const pushWorker = readFileSync(new URL('../push-notifications.js', import.meta.
 const serviceWorker = readFileSync(new URL('../../portal-sw.js', import.meta.url), 'utf8');
 const pwaClient = readFileSync(new URL('../../js/portal-pwa.js', import.meta.url), 'utf8');
 const portalChat = readFileSync(new URL('../../js/portal-chat.js', import.meta.url), 'utf8');
+const councilWorker = readFileSync(new URL('../council.js', import.meta.url), 'utf8');
+const councilPolicy = readFileSync(new URL('../council-access-policy.js', import.meta.url), 'utf8');
+const workerIndex = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
+const installEntries = [
+  '../../cidadao/index.html',
+  '../../recepcao/index.html',
+  '../../medico/index.html',
+  '../../conselho/painel/index.html'
+];
 
 test('Web Push não transporta conteúdo sensível no POST ao provedor', () => {
   assert.match(pushWorker, /method:\s*'POST'/);
@@ -21,6 +30,8 @@ test('service worker trata push vazio com aviso genérico', () => {
   assert.match(serviceWorker, /addEventListener\('push'/);
   assert.match(serviceWorker, /Você recebeu uma nova notificação no Portal\. Abra para consultar\./);
   assert.match(serviceWorker, /PORTAL_PUSH_RECEIVED/);
+  assert.match(serviceWorker, /visiblePortalWindows\.forEach[\s\S]+showNotification/);
+  assert.doesNotMatch(serviceWorker, /if \(visiblePortalWindows\.length\)[\s\S]{0,260}return;/);
   assert.doesNotMatch(serviceWorker, /event\.data\.(?:text|json)/);
 });
 
@@ -30,6 +41,23 @@ test('cliente PWA oferece instalação e inscrição Push autenticada', () => {
   assert.match(pwaClient, /\/api\/push\/subscriptions/);
   assert.match(pwaClient, /Adicionar à Tela de Início/);
   assert.match(pwaClient, /detachCurrentSubscription/);
+  assert.match(pwaClient, /subscription\.unsubscribe\(\)/);
+  assert.match(pwaClient, /keepalive:\s*true/);
+  assert.match(pwaClient, /ensurePortalManifest/);
+});
+
+test('rotas instaláveis usam a identidade única do Portal', () => {
+  for (const filename of installEntries) {
+    const html = readFileSync(new URL(filename, import.meta.url), 'utf8');
+    assert.match(html, /rel="manifest" href="\/portal\.webmanifest\?v=20260910-2"/, filename);
+    assert.doesNotMatch(html, /rel="manifest" href="\/(?:cidadao|recepcao)\.webmanifest|rel="manifest" href="\/site\.webmanifest|conselho\/painel\/manifest\.webmanifest/, filename);
+  }
+});
+
+test('Conselho agenda entrega Push fora do caminho da resposta', () => {
+  assert.match(councilWorker, /executionContext\?\.waitUntil/);
+  assert.match(councilPolicy, /baseHandleCouncilRoute\(request, effectiveEnv, origin, originAllowed, executionContext\)/);
+  assert.match(workerIndex, /handleCouncilRoute\(request, env, origin, originAllowed, ctx\)/);
 });
 
 test('chat desativa notificação local quando Web Push real está ativo', () => {

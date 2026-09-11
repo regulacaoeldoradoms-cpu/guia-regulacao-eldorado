@@ -261,9 +261,9 @@ function isInstitutionalAttachmentDownload(url, request) {
 
 export { isCouncilApi, protectMemberPayload, canDeleteManifestations, isCouncilMemberReadOnly };
 
-export async function handleCouncilRoute(request, env, origin, originAllowed = true) {
+export async function handleCouncilRoute(request, env, origin, originAllowed = true, executionContext = null) {
   if (request.method === 'OPTIONS') {
-    return baseHandleCouncilRoute(request, env, origin, originAllowed);
+    return baseHandleCouncilRoute(request, env, origin, originAllowed, executionContext);
   }
 
   const url = new URL(request.url);
@@ -316,7 +316,7 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   // O Desenvolvedor recebe, apenas dentro do painel institucional, a mesma
   // capacidade operacional da Presidência sem alterar o cargo salvo na conta.
   const effectiveEnv = isDeveloper ? developerCouncilEnv(env) : env;
-  let response = await baseHandleCouncilRoute(request, effectiveEnv, origin, originAllowed);
+  let response = await baseHandleCouncilRoute(request, effectiveEnv, origin, originAllowed, executionContext);
   response = await filterDeletedResponse(response);
 
   if (isMember) return protectMemberResponse(response);

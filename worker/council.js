@@ -204,11 +204,13 @@ async function ownership(env, protocol, username) {
   return row && row.authorUsername === username ? row : null;
 }
 
-async function notify(env, username, protocol, title, category = 'conselho') {
+async function notify(env, username, protocol, title, category = 'conselho', executionContext = null) {
   if (!username) return;
   await env.AUTH_DB.prepare('INSERT INTO portal_notifications(username, category, protocol, title) VALUES (?, ?, ?, ?)')
     .bind(username, category, protocol || '', clean(title, 180)).run();
-  await notifyUserPush(env, username).catch(() => ({ attempted: 0, accepted: 0 }));
+  const pushTask = notifyUserPush(env, username).catch(() => ({ attempted: 0, accepted: 0 }));
+  if (executionContext?.waitUntil) executionContext.waitUntil(pushTask);
+  else await pushTask;
 }
 
 async function audit(env, user, action, protocol = '') {
@@ -338,7 +340,7 @@ async function detail(env, user, protocol, origin, asCitizen = false) {
   }, 200, origin);
 }
 
-async function addMessage(request, env, user, protocol, origin, asCitizen = false) {
+async function addMessage(request, env, user, protocol, origin, asCitizen = false, executionContext = null) {
   const own = await ownership(env, protocol, user.username);
   const isCouncil = !asCitizen && councilAccess(user);
   if (asCitizen && !own) return json({ error: 'Sem permissão para responder a esta manifestação.' }, 403, origin);
@@ -360,7 +362,7 @@ async function addMessage(request, env, user, protocol, origin, asCitizen = fals
   await addEvent(env, protocol, { type: 'message', actorType: isCouncil ? 'council' : 'user', actorLabel: message.senderLabel, detail: isCouncil ? 'Nova resposta oficial registrada.' : 'Nova resposta do usuário.' });
   const index = await env.AUTH_DB.prepare('SELECT author_username AS authorUsername FROM council_manifestation_index WHERE protocol = ?').bind(protocol).first();
   if (isCouncil && index?.authorUsername) {
-    await notify(env, index.authorUsername, protocol, 'O Conselho respondeu à sua manifestação.');
+    await notify(env, index.authorUsername, protocol, 'O Conselho respondeu à sua manifestação.', 'conselho', executionContext);
     await audit(env, user, 'manifestation.official_reply', protocol);
   }
   return json({ message }, 201, origin);
@@ -378,7 +380,7 @@ async function addInternalNote(request, env, user, protocol, origin) {
   return json({ note: protectedInternalNote(note) }, 201, origin);
 }
 
-async function changeStatus(request, env, user, protocol, origin) {
+async function changeStatus(request, env, user, protocol, origin, executionContext = null) {
   if (!presidentAccess(user)) return json({ error: 'Somente a Presidência pode alterar o andamento oficial.' }, 403, origin);
   const body = await request.json().catch(() => ({}));
   const status = clean(body.status, 40);
@@ -393,7 +395,7 @@ async function changeStatus(request, env, user, protocol, origin) {
     fromStatus: doc.status || '', toStatus: status, detail: clean(body.detail, 500)
   });
   const index = await env.AUTH_DB.prepare('SELECT author_username AS authorUsername FROM council_manifestation_index WHERE protocol = ?').bind(protocol).first();
-  if (index?.authorUsername) await notify(env, index.authorUsername, protocol, 'O andamento da sua manifestação foi atualizado.');
+  if (index?.authorUsername) await notify(env, index.authorUsername, protocol, 'O andamento da sua manifestação foi atualizado.', 'conselho', executionContext);
   await audit(env, user, `manifestation.status.${status}`, protocol);
   return json({ manifestation: protectedManifestation(updated) }, 200, origin);
 }
@@ -479,7 +481,7 @@ export function isCouncilApi(pathname) {
   return String(pathname || '').startsWith('/api/council/');
 }
 
-export async function handleCouncilRoute(request, env, origin, originAllowed = true) {
+export async function handleCouncilRoute(request, env, origin, originAllowed = true, executionContext = null) {
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
   const user = await validatePortalSession(request, env, []);
@@ -513,11 +515,11 @@ export async function handleCouncilRoute(request, env, origin, originAllowed = t
   if (match && request.method === 'GET') return detail(env, user, match[1], origin, asCitizen);
   if (match && request.method === 'PATCH') {
     if (asCitizen) return json({ error: 'Ações institucionais não estão disponíveis na área de acompanhamento das próprias manifestações.' }, 403, origin);
-    return changeStatus(request, env, user, match[1], origin);
+    return changeStatus(request, env, user, match[1], origin, executionContext);
   }
 
   match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})\/messages$/);
-  if (match && request.method === 'POST') return addMessage(request, env, user, match[1], origin, asCitizen);
+  if (match && request.method === 'POST') return addMessage(request, env, user, match[1], origin, asCitizen, executionContext);
 
   match = url.pathname.match(/^\/api\/council\/manifestations\/(CMS-\d{4}-\d{6})\/internal-notes$/);
   if (match && request.method === 'POST') {

@@ -11,11 +11,19 @@ Em navegadores compatíveis, o Portal oferece instalação no dispositivo e abre
 modo `standalone`. No iPhone/iPad, a instalação é realizada pelo comando
 **Adicionar à Tela de Início** do sistema.
 
+As rotas ativas que antes possuíam manifestos próprios de módulo passam a apontar
+para `portal.webmanifest`, preservando uma única identidade, `start_url` e
+`scope` para o aplicativo do Portal. Os manifestos especializados antigos podem
+permanecer versionados apenas por compatibilidade histórica, sem dirigir novas
+instalações.
+
 ## Notificações em segundo plano
 
 A PWA usa Service Worker + Push API para receber avisos mesmo quando não existe
 uma aba do Portal aberta. O registro do dispositivo é sempre associado à conta
-autenticada no backend.
+autenticada no backend. Se outra tela do Portal estiver visível, ela recebe também
+um sinal de atualização em segundo plano e o aviso genérico do sistema continua
+sendo exibido, evitando que novos eventos fiquem silenciosos em outra rota.
 
 Eventos atualmente conectados ao Web Push:
 
@@ -56,9 +64,12 @@ respondidos com 404/410 são removidos automaticamente.
 
 ## Sessão e dispositivo compartilhado
 
-Antes do logout, o cliente desvincula o endpoint Push da conta enquanto a sessão
-ainda é válida. A assinatura do navegador pode ser reaproveitada e reassociada a
-uma conta posterior, sem compartilhar notificações entre usuários.
+Antes do logout, o cliente revoga primeiro a assinatura Push local do navegador e,
+enquanto a sessão ainda é válida, tenta remover também o endpoint associado no
+backend. Se o logout ocorrer sem rede e a remoção remota falhar, a revogação local
+impede aquele navegador de continuar recebendo Push; o endpoint órfão é descartado
+automaticamente quando o provedor responder 404/410. Uma sessão futura cria uma
+nova assinatura para a conta autenticada.
 
 ## Compatibilidade e fallback
 

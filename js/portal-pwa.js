@@ -29,8 +29,20 @@
     document.head.appendChild(element);
   }
 
+  function ensurePortalManifest() {
+    const manifests = Array.from(document.querySelectorAll('link[rel="manifest"]'));
+    let manifest = manifests.shift();
+    if (!manifest) {
+      manifest = document.createElement('link');
+      manifest.rel = 'manifest';
+      document.head.appendChild(manifest);
+    }
+    manifest.href = MANIFEST_URL;
+    manifests.forEach((item) => item.remove());
+  }
+
   function ensurePwaHead() {
-    addHeadLink('link[rel="manifest"]', { rel: 'manifest', href: MANIFEST_URL });
+    ensurePortalManifest();
     addHeadLink('link[rel="apple-touch-icon"]', { rel: 'apple-touch-icon', href: ICON_URL });
     addHeadLink('link[data-portal-pwa-style]', { rel: 'stylesheet', href: STYLE_URL, 'data-portal-pwa-style': 'true' });
     addMeta('theme-color', '#0d3157');
@@ -251,7 +263,10 @@
   }
 
   async function detachCurrentSubscription() {
-    if (!browserSupportsPush()) return false;
+    if (!browserSupportsPush()) {
+      pushActive = false;
+      return true;
+    }
     const registration = await serviceWorkerRegistration().catch(() => null);
     const subscription = registration?.pushManager
       ? await registration.pushManager.getSubscription().catch(() => null)
@@ -260,15 +275,20 @@
       pushActive = false;
       return true;
     }
+
+    const endpoint = subscription.endpoint;
+    const locallyDetached = await subscription.unsubscribe().catch(() => false);
+    pushActive = false;
+
     try {
       await api('/api/push/subscriptions', {
         method: 'DELETE',
-        body: JSON.stringify({ endpoint: subscription.endpoint })
+        keepalive: true,
+        body: JSON.stringify({ endpoint })
       });
-      pushActive = false;
       return true;
     } catch (_) {
-      return false;
+      return locallyDetached;
     }
   }
 

@@ -51,9 +51,11 @@ A política completa, os limites e a validação estão em
 ## PWA instalável e Web Push
 
 O Portal é distribuído diretamente pela Web como PWA, sem dependência de loja de
-aplicativos. `portal.webmanifest` define a identidade instalável;
-`js/portal-pwa.js` coordena instalação e assinatura; e `portal-sw.js` recebe
-eventos Push quando a página não está aberta.
+aplicativos. `portal.webmanifest` define a identidade instalável única nas rotas
+ativas; `js/portal-pwa.js` coordena instalação e assinatura; e `portal-sw.js`
+recebe eventos Push mesmo sem uma página aberta. Manifestos antigos específicos de
+módulo permanecem apenas como compatibilidade histórica e não dirigem novas
+instalações.
 
 O Web Push usa envio vazio: nenhum conteúdo clínico, mensagem, manifestação,
 comentário ou identificador funcional é transportado no payload. O Service Worker
@@ -63,7 +65,10 @@ da validação da sessão.
 O D1 mantém `portal_push_vapid` e `portal_push_subscriptions`. A chave privada
 VAPID é criada e mantida no backend; nunca é versionada no repositório público.
 Chat profissional, notificações sociais e avisos institucionais do
-Canal do Cidadão/Conselho podem acordar a PWA por essa infraestrutura.
+Canal do Cidadão/Conselho podem acordar a PWA por essa infraestrutura. Quando há
+uma tela do Portal visível, ela também recebe o sinal de atualização e o aviso
+genérico do sistema continua disponível. No logout, a assinatura local é revogada
+mesmo se a remoção remota do endpoint não puder ser concluída naquele momento.
 
 A especificação completa está em `docs/PORTAL-PWA-WEB-PUSH-V1.md`.
 

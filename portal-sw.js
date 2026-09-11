@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260910-4';
+const CACHE_VERSION = '20260910-5';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -26,7 +26,7 @@ const CORE_RESOURCES = Object.freeze([
   '/css/portal-pwa.css?v=20260910-1',
   '/js/auth-config.js?v=20260815-1',
   '/js/portal-performance.js?v=20260910-4',
-  '/js/portal-pwa.js?v=20260910-1',
+  '/js/portal-pwa.js?v=20260910-2',
   '/js/auth-client.js?v=20260910-4',
   '/js/tools-catalog.js?v=20260910-2',
   '/assets/portal-regulacao-icon.webp?v=20260909-1',
@@ -289,12 +289,9 @@ self.addEventListener('push', (event) => {
       }
     });
 
-    if (visiblePortalWindows.length) {
-      visiblePortalWindows.forEach((client) => {
-        client.postMessage({ type: 'PORTAL_PUSH_RECEIVED' });
-      });
-      return;
-    }
+    visiblePortalWindows.forEach((client) => {
+      client.postMessage({ type: 'PORTAL_PUSH_RECEIVED' });
+    });
 
     await self.registration.showNotification('Portal da Regulação de Saúde', {
       body: 'Você recebeu uma nova notificação no Portal. Abra para consultar.',
