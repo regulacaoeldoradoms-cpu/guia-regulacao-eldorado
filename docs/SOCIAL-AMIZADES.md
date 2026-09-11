@@ -77,6 +77,13 @@ em segundo plano ao entrar em Amigos e usam a mesma paginação local.
 Após aceitar, recusar, cancelar, remover, bloquear ou desbloquear alguém, o snapshot
 transitório é invalidado e as listas são consultadas novamente antes de continuar.
 
+O envio de um novo pedido usa **feedback otimista**: ao tocar em `Adicionar` ou
+`Adicionar amigo`, o botão muda imediatamente para `Pedido enviado` e a interface
+segue utilizável enquanto a API confirma a operação em segundo plano. Se o Worker
+recusar ou falhar, o estado visual é revertido e o usuário recebe um aviso discreto.
+A autorização real continua sendo exclusivamente do backend; a antecipação é apenas
+de experiência visual.
+
 ## Rede inicial de colegas
 
 Contas profissionais ativas, não autocadastradas, provisionadas pelo Desenvolvedor

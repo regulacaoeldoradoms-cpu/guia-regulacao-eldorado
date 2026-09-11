@@ -58,6 +58,56 @@
     return output;
   }
 
+  function buttonLabel(button, label) {
+    const text = button?.querySelector?.('span:last-child');
+    if (text) text.textContent = label;
+    else if (button) button.textContent = label;
+  }
+
+  function optimisticFriendRequest(profile, button, originalLabel) {
+    const previous = {
+      relationship: profile.relationship,
+      label: originalLabel || button.textContent,
+      className: button.className,
+      disabled: button.disabled
+    };
+
+    profile.relationship = 'sent';
+    button.className = 'social-button secondary';
+    button.disabled = true;
+    buttonLabel(button, 'Pedido enviado');
+    button.setAttribute('aria-label', `Pedido de amizade enviado para ${profile.name || `@${profile.handle}`}`);
+    social.invalidateRelationshipList?.();
+    window.PortalInteractions?.notify?.('success', 'Pedido de amizade enviado.', button);
+
+    const optimisticOutgoing = dedupeProfiles([
+      ...(relationshipLists.get('outgoing') || []),
+      { ...profile, relationship: 'sent' }
+    ]);
+    relationshipLists.set('outgoing', optimisticOutgoing);
+    if (currentType === 'outgoing') renderListPage();
+
+    void social.api('/api/social/relationships', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'request', targetHandle: profile.handle })
+    }).then(() => {
+      social.invalidateRelationshipList?.();
+      relationshipLists.delete('outgoing');
+      void fetchRelationshipType('outgoing', true).catch(() => {});
+    }).catch((error) => {
+      profile.relationship = previous.relationship;
+      button.className = previous.className;
+      button.disabled = previous.disabled;
+      buttonLabel(button, previous.label);
+      button.removeAttribute('aria-label');
+      relationshipLists.delete('outgoing');
+      if (currentType === 'outgoing') void fetchRelationshipType('outgoing', true).catch(() => {});
+      const text = error?.message || 'Não foi possível enviar o pedido de amizade.';
+      social.status(text, 'error');
+      window.PortalInteractions?.notify?.('error', text, button);
+    });
+  }
+
   async function mutate(action, profile, confirmation = null) {
     if (confirmation && !(await social.confirmAction(confirmation))) return;
     try {
@@ -80,7 +130,11 @@
     actions.className = 'social-row-actions';
     const add = (label, action, className = 'social-button secondary', confirmation = null) => {
       const button = social.button(label, className);
-      button.addEventListener('click', () => mutate(action, profile, confirmation));
+      if (action === 'request' && !confirmation) {
+        button.addEventListener('click', () => optimisticFriendRequest(profile, button, label));
+      } else {
+        button.addEventListener('click', () => mutate(action, profile, confirmation));
+      }
       actions.appendChild(button);
     };
     if (profile.relationship === 'received') {

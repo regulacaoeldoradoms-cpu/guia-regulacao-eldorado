@@ -361,7 +361,50 @@
       openResults();
     }
 
+    function buttonLabel(button, label) {
+      const text = button?.querySelector?.('span:last-child');
+      if (text) text.textContent = label;
+      else if (button) button.textContent = label;
+    }
+
+    function optimisticFriendRequest(profile, button) {
+      const previous = {
+        relationship: profile.relationship,
+        label: button.textContent,
+        className: button.className,
+        disabled: button.disabled
+      };
+
+      profile.relationship = 'sent';
+      button.className = 'social-button secondary';
+      button.disabled = true;
+      buttonLabel(button, 'Pedido enviado');
+      button.setAttribute('aria-label', `Pedido de amizade enviado para ${profile.name || `@${profile.handle}`}`);
+      social.invalidateRelationshipList?.();
+      window.PortalInteractions?.notify?.('success', 'Pedido de amizade enviado.', button);
+
+      void social.api('/api/social/relationships', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'request', targetHandle: profile.handle })
+      }).then(() => {
+        social.invalidateRelationshipList?.();
+      }).catch((error) => {
+        profile.relationship = previous.relationship;
+        button.className = previous.className;
+        button.disabled = previous.disabled;
+        buttonLabel(button, previous.label);
+        button.removeAttribute('aria-label');
+        const text = error?.message || 'Não foi possível enviar o pedido de amizade.';
+        social.status?.(text, 'error');
+        window.PortalInteractions?.notify?.('error', text, button);
+      });
+    }
+
     async function relationshipAction(profile, action, button) {
+      if (action === 'request') {
+        optimisticFriendRequest(profile, button);
+        return;
+      }
       button.disabled = true;
       try {
         await social.api('/api/social/relationships', {
