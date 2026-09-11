@@ -137,9 +137,13 @@ assistenciais não aparecem em perfis comuns. Preferências privadas, como pági
 inicial e audiência padrão, são devolvidas apenas ao próprio titular.
 
 A foto é configurada diretamente em `/perfil/`, pelo ícone de câmera sobre o
-avatar, e exige Conta Prata. A capa da V1 usa
-somente tokens visuais controlados; upload de mídia social foi adiado até existir
-pipeline próprio com validação de MIME, transformação e remoção segura de metadados.
+avatar, e exige Conta Prata. O controle de câmera e qualquer ação de alterar ou
+remover foto pertencem exclusivamente ao titular autenticado e só podem aparecer
+quando `profile.isSelf === true`; visitantes de perfis de terceiros nunca recebem
+esse controle. O backend de foto permanece vinculado ao usuário da sessão e não
+aceita identidade-alvo para edição. A capa da V1 usa somente tokens visuais
+controlados; upload de mídia social foi adiado até existir pipeline próprio com
+validação de MIME, transformação e remoção segura de metadados.
 
 ## Chat profissional e conversa social entre amigos
 
