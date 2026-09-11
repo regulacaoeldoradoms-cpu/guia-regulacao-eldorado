@@ -42,9 +42,12 @@ domínios do Conselho e Telemedicina já documentados; o backend social não os 
 - A Home e as ações sociais básicas estão disponíveis para todas as contas
   autenticadas e ativas, inclusive Bronze. Prata continua ligada à segurança e à foto
   de perfil; Ouro continua futuro.
-- Cidadãos não enumeram profissionais e não recebem chat profissional.
-- Duas contas cidadãs com amizade aceita podem usar chat social direto; remoção ou
-  bloqueio revogam esse canal. Isso não cria contato cidadão↔profissional.
+- O Dossiê de 31/08 restringia descoberta cidadão↔profissional. A decisão permanente
+  de 11/09/2026 substitui essa limitação: qualquer conta social elegível pode ser
+  localizada para amizade, independentemente do cargo.
+- Cidadãos continuam sem receber **permissões de chat profissional** ou ferramentas
+  por causa da amizade. O contato cidadão↔profissional, quando houver amizade aceita,
+  é exclusivamente social e é revogado com remoção/bloqueio.
 - Amizade, bloqueio ou suspensão social não alteram cargo, sessão ou ferramenta.
 - Contas profissionais provisionadas pelo Desenvolvedor e elegíveis ao chat recebem
   amizades iniciais idempotentes; remoções/bloqueios persistem como exceção.
@@ -63,7 +66,9 @@ validação autenticada, com rollback pela flag e sem migração destrutiva.
   Conquistas.
 - Os atalhos redundantes Ver meu perfil, Amigos e pedidos, Notificações sociais e
   Privacidade social foram removidos desse bloco.
-- Na barra horizontal da Home, o espaço liberado recebe a busca social de usuários,
-  mantendo as políticas existentes de descoberta e permitindo adicionar/aceitar
-  amizade e abrir conversa quando o vínculo já estiver em `friends`.
+- Na barra horizontal da Home, o espaço liberado recebe a busca social de usuários.
+  Desde 11/09/2026, a descoberta para amizade não separa cidadãos e profissionais;
+  visibilidade, aceite de pedidos, bloqueio, suspensão e rate limit continuam
+  obrigatórios. Uma amizade aceita pode abrir chat social, sem qualquer promoção de
+  cargo ou permissão institucional.
 - Em outras rotas e no mobile, a navegação preserva os destinos necessários.

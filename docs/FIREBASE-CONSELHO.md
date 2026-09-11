@@ -90,5 +90,8 @@ A modalidade de privacidade é congelada na criação. Sem e-mail verificado, o 
 - verificação adicional ao entrar em dispositivo novo;
 - App Check/reCAPTCHA Enterprise;
 - chave de recuperação para conta sem e-mail;
-- amizade/chat cidadão-profissional;
-- feed público.
+- comunidades/mídia social que exijam infraestrutura própria.
+
+A amizade e o chat social entre contas cidadãs e profissionais já pertencem à Camada
+Social no D1/Worker e não usam Firestore/Storage do Conselho nem alteram permissões
+institucionais.

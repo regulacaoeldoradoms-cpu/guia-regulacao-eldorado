@@ -54,24 +54,21 @@ export function canViewSocialProfile(viewer, target, relationship) {
   if (viewer.social_user_id === target.social_user_id) return true;
   if (Number(target.active) !== 1 || target.suspended_at) return false;
   if (relationship?.state === 'blocked') return relationship.blocked_by === viewer.social_user_id;
-  if (isSocialProfessional(target)) return isSocialProfessional(viewer);
-  if (isSocialProfessional(viewer)) return target.profile_visibility === 'portal';
-  return relationship?.state === 'friends' || target.profile_visibility === 'portal';
+  if (relationship?.state === 'friends') return true;
+  return target.profile_visibility === 'portal';
 }
 
 export function canDiscoverSocialProfile(viewer, target, relationship) {
   if (!viewer || !target || viewer.social_user_id === target.social_user_id) return false;
   if (Number(target.active) !== 1 || target.suspended_at || relationship?.state === 'blocked') return false;
-  if (isSocialProfessional(viewer)) return isSocialProfessional(target);
-  return !isSocialProfessional(target)
-    && target.profile_visibility === 'portal'
-    && Number(target.acceptFriendRequests) === 1;
+  if (['friends', 'pending'].includes(relationship?.state)) return true;
+  return target.profile_visibility === 'portal';
 }
 
 export function canCreateManualRelationship(viewer, target) {
   if (!viewer || !target || viewer.social_user_id === target.social_user_id) return false;
   if (Number(target.active) !== 1 || target.suspended_at) return false;
-  return isSocialProfessional(viewer) === isSocialProfessional(target);
+  return true;
 }
 
 export function postAudienceAllows(viewerId, authorId, audience, relationship) {

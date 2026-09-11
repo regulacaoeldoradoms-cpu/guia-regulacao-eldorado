@@ -54,11 +54,13 @@ notificações não lidas e fila de moderação.
 
 ## Visibilidade e descoberta
 
-- Cidadão pesquisa apenas cidadãos elegíveis que aceitaram pedidos e escolheram
-  visibilidade `portal`.
-- Profissional pesquisa profissionais autorizados pela política social e pode abrir
-  o perfil de um contato do chat.
-- Profissionais não entram na busca ampla de cidadãos.
+- A descoberta social é transversal ao cargo: cidadão e profissional podem localizar
+  qualquer conta social elegível que esteja com visibilidade `portal`. A flag
+  `accept_friend_requests` controla o envio de novos pedidos, não a descoberta do perfil.
+- O cargo profissional continua sendo exibido como identidade autêntica do perfil,
+  mas nunca é transformado em permissão social ou institucional.
+- Bloqueio, suspensão, atividade da conta, visibilidade e rate limit continuam sendo
+  aplicados antes de qualquer resultado.
 - E-mail, identificadores técnicos, campos administrativos, manifestações e dados
   assistenciais nunca integram respostas sociais.
 - Perfil usa `/perfil/?u=@handle`, uma rota estática compatível com a hospedagem.
@@ -67,15 +69,15 @@ notificações não lidas e fila de moderação.
 ## Chat social entre cidadãos amigos
 
 O chat social reutiliza a infraestrutura de mensagens do Portal, mas aplica um gate
-adicional no Worker. Para uma conta `cidadao`, a lista de contatos e cada leitura ou
-envio de mensagem exigem uma relação `social_relationships.state='friends'` com
-outra conta cidadã ativa e não suspensa. Remover a amizade ou bloquear revoga novas
-leituras/envios pelo canal social.
+adicional no Worker. Para qualquer par social, cada contato social, leitura ou envio
+de mensagem exige `social_relationships.state='friends'`, com ambas as contas
+ativas e não suspensas socialmente. Isso permite amizade e conversa social também em
+pares cidadão↔profissional. Remover a amizade ou bloquear revoga o canal social.
 
 Esse gate não altera o chat profissional: Médico, Recepção, Coordenação, Técnico em
 Telemedicina e Desenvolvedor continuam autorizados por cargo, sem depender do grafo
-social. A política de descoberta também continua impedindo que cidadãos enumerem ou
-iniciem conversa com profissionais.
+social. A amizade não concede ferramentas, cargo, Conselho, Telemedicina, Guia
+Médico, Recepção ou qualquer dado protegido.
 
 ## Amizade profissional inicial
 

@@ -125,13 +125,16 @@ O rollback não apaga tabelas: desligar primeiro a Home e, se necessário, o bac
 
 ### Matriz de visibilidade
 
-- Bronze não executa ações sociais nem entra em descoberta.
-- Prata/Ouro usa a camada dentro das políticas de tipo de conta e relação.
-- Cidadão descobre somente cidadãos elegíveis; profissionais não formam diretório
-  amplo para cidadãos.
-- Profissionais podem descobrir outros profissionais e abrir perfil pelo chat.
-- Suspensão social remove descoberta/ações, mas não altera login, cargo ou ferramenta.
-- Amizade social jamais autoriza chat, Conselho, Telemedicina, Guia ou Recepção.
+- Toda conta autenticada e ativa pode usar a Camada Social básica; Prata continua
+  necessária para recursos de segurança/foto, não para amizade ou descoberta.
+- Cidadãos e profissionais podem se localizar quando o alvo está com perfil visível
+  ao Portal; `accept_friend_requests` controla apenas se um novo pedido pode ser enviado.
+- O cargo profissional aparece apenas como identidade social autêntica; amizade não
+  altera cargo nem autoriza ferramenta profissional.
+- Suspensão social remove descoberta e o canal social, mas não altera login, cargo,
+  ferramentas ou chat institucional autorizado por cargo.
+- Amizade aceita pode autorizar somente o chat social entre o par; nunca autoriza
+  Conselho, Telemedicina, Guia Médico, Recepção ou dados protegidos.
 
 ## Perfis primários
 
@@ -306,26 +309,27 @@ O objetivo é permitir rastreabilidade sem duplicar conteúdo sensível em logs 
 
 ## Chat profissional e Camada Social
 
-Cidadãos continuam sem acesso ao diretório/chat **profissional** e sem lista de
-médicos, recepcionistas, coordenadores, técnicos ou desenvolvedores. Médico,
-Recepção, Coordenação, Técnico em Telemedicina e Desenvolvedor usam o chat por
-autorização de cargo validada no Worker, independentemente de amizade.
+Cidadãos continuam sem acesso ao diretório/chat **profissional** como capacidade
+institucional. Médico, Recepção, Coordenação, Técnico em Telemedicina e Desenvolvedor
+usam esse chat por autorização de cargo validada no Worker, independentemente de
+amizade.
 
-A Camada Social acrescenta um segundo gate de conversa: duas contas cidadãs podem
-conversar diretamente somente enquanto houver amizade aceita entre elas
-(`social_relationships.state='friends'`). Pedido pendente não libera chat;
-remoção/bloqueio revogam novas mensagens. Essa regra não concede nenhuma ferramenta
-profissional nem permite cidadão↔profissional.
+A Camada Social possui um gate separado: qualquer conta social elegível pode localizar
+outra conta, inclusive em pares cidadão↔profissional, enviar pedido e conversar
+enquanto houver amizade aceita (`social_relationships.state='friends'`). Pedido
+pendente não libera chat; remoção/bloqueio revogam o canal social. Essa amizade nunca
+concede cargo, ferramenta, Conselho, Telemedicina, Guia Médico, Recepção ou dados
+protegidos.
 
 Na Home desktop, Segurança, Configurações e Conquistas ficam no bloco vertical
 esquerdo, enquanto o espaço correspondente na barra horizontal recebe pesquisa de
-usuários. A busca reutiliza a descoberta protegida do backend social; portanto não
-contorna visibilidade, bloqueio, rate limit nem a separação cidadão/profissional.
+usuários. A busca reutiliza a descoberta protegida do backend social e respeita
+visibilidade, bloqueio, suspensão e rate limit, sem separar por cargo. A preferência
+`accept_friend_requests` continua sendo aplicada no momento de enviar o pedido.
 
-O cabeçalho da conversa oferece `Ver perfil`. Para profissionais, o grafo social
-não participa da autorização; para cidadãos, o vínculo de amizade é revalidado pelo
-Worker. Seguidores, comunidades, jogos e chat social cidadão↔profissional permanecem
-fora do escopo.
+O cabeçalho da conversa oferece `Ver perfil`. Para o chat profissional, o grafo
+social não participa da autorização; para o canal social, o vínculo de amizade é
+revalidado pelo Worker. Seguidores, comunidades e jogos permanecem fora do escopo.
 
 ## Repositório e proteção de dados
 

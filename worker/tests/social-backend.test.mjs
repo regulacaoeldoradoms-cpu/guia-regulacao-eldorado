@@ -114,7 +114,7 @@ async function callChat(env, path, token, options = {}) {
   return handleChatRoute(socialRequest(path, token, options), env, '', true);
 }
 
-test('política libera a camada social para toda conta ativa e mantém tipos e estados separados', () => {
+test('política libera a camada social para toda conta ativa e mantém permissões e estados separados', () => {
   const bronze = { active: true, emailVerified: false };
   assert.equal(socialGate(bronze, {}).allowed, true);
   assert.equal(socialGate(bronze, {}).level, 'bronze');
@@ -126,9 +126,10 @@ test('política libera a camada social para toda conta ativa e mantém tipos e e
   const citizenB = { social_user_id: 'b', role: 'cidadao', active: 1, profile_visibility: 'portal', acceptFriendRequests: 1 };
   const doctor = { social_user_id: 'm', role: 'medico', active: 1, profile_visibility: 'portal', acceptFriendRequests: 1 };
   assert.equal(canCreateManualRelationship(citizenA, citizenB), true);
-  assert.equal(canCreateManualRelationship(citizenA, doctor), false);
+  assert.equal(canCreateManualRelationship(citizenA, doctor), true);
   assert.equal(canDiscoverSocialProfile(citizenA, citizenB, null), true);
-  assert.equal(canDiscoverSocialProfile(citizenA, doctor, null), false);
+  assert.equal(canDiscoverSocialProfile(citizenA, doctor, null), true);
+  assert.equal(canDiscoverSocialProfile(citizenA, { ...doctor, profile_visibility: 'friends' }, null), false);
   assert.equal(relationshipStateFor('a', 'b', { state: 'pending', initiated_by: 'a' }), 'sent');
   assert.equal(relationshipStateFor('a', 'b', { state: 'pending', initiated_by: 'b' }), 'received');
   assert.equal(relationshipStateFor('a', 'b', { state: 'blocked', blocked_by: 'b' }), 'unavailable');
@@ -518,13 +519,55 @@ sqliteTest('moderação social não desativa sessão, cargo nem chat profissiona
   await callSocial(env, '/api/social/me', moderator.token);
   await callSocial(env, '/api/social/me', citizen.token);
   const citizenSearch = await payload(await callSocial(env, '/api/social/search?q=medica', citizen.token));
-  assert.deepEqual(citizenSearch.profiles, [], 'busca cidadã ampla não enumera profissionais');
-  const citizenChatDirectory = await payload(await callChat(env, '/api/chat/users', citizen.token));
-  assert.ok(!citizenChatDirectory.users.some((item) => item.username === 'medica.social'), 'chat cidadão não enumera profissionais');
-  const citizenToProfessional = await callChat(env, '/api/chat/messages', citizen.token, {
-    method: 'POST', body: { to: 'medica.social', body: 'Contato profissional indevido' }
+  assert.ok(citizenSearch.profiles.some((item) => item.handle === 'medica.social' && item.professional?.role === 'medico'),
+    'busca social deve localizar contas elegíveis independentemente do cargo');
+
+  const professionalSearch = await payload(await callSocial(env, '/api/social/search?q=cidada', doctor.token));
+  assert.ok(professionalSearch.profiles.some((item) => item.handle === 'cidada.social' && item.professional === null),
+    'profissional deve conseguir localizar cidadão elegível para amizade');
+
+  const citizenRejectsRequests = await callSocial(env, '/api/social/relationships', doctor.token, {
+    method: 'POST', body: { action: 'request', targetHandle: 'cidada.social' }
   });
-  assert.equal(citizenToProfessional.status, 404, 'cidadão não inicia chat com profissional pela camada social');
+  assert.equal(citizenRejectsRequests.status, 409,
+    'perfil visível continua respeitando a preferência de não aceitar novos pedidos');
+
+  const beforeFriendship = await payload(await callChat(env, '/api/chat/users', citizen.token));
+  assert.ok(!beforeFriendship.users.some((item) => item.username === 'medica.social'),
+    'localizar um profissional não concede chat antes da amizade');
+
+  const crossRequest = await callSocial(env, '/api/social/relationships', citizen.token, {
+    method: 'POST', body: { action: 'request', targetHandle: 'medica.social' }
+  });
+  assert.equal((await payload(crossRequest)).relationship, 'sent');
+  const crossAccept = await callSocial(env, '/api/social/relationships', doctor.token, {
+    method: 'POST', body: { action: 'accept', targetHandle: 'cidada.social' }
+  });
+  assert.equal((await payload(crossAccept)).relationship, 'friends');
+
+  const citizenChatDirectory = await payload(await callChat(env, '/api/chat/users', citizen.token));
+  assert.ok(citizenChatDirectory.users.some((item) => item.username === 'medica.social' && item.role === 'medico'),
+    'amizade aceita libera somente o contato social entre o par');
+
+  const citizenToProfessional = await callChat(env, '/api/chat/messages', citizen.token, {
+    method: 'POST', body: { to: 'medica.social', body: 'Mensagem social entre amigos' }
+  });
+  assert.equal(citizenToProfessional.status, 201);
+  const professionalConversation = await payload(await callChat(env, '/api/chat/messages?with=cidada.social', doctor.token));
+  assert.equal(professionalConversation.messages.at(-1).body, 'Mensagem social entre amigos');
+
+  const citizenAuth = await payload(await handlePortalRoute(socialRequest('/api/auth/me', citizen.token), env, '', true));
+  assert.equal(citizenAuth.user.role, 'cidadao', 'amizade com profissional não promove cargo nem ferramenta');
+
+  const removeCrossFriendship = await callSocial(env, '/api/social/relationships', citizen.token, {
+    method: 'POST', body: { action: 'remove', targetHandle: 'medica.social' }
+  });
+  assert.equal((await payload(removeCrossFriendship)).relationship, 'removed');
+  const blockedAfterRemoval = await callChat(env, '/api/chat/messages', citizen.token, {
+    method: 'POST', body: { to: 'medica.social', body: 'Não deve passar sem amizade' }
+  });
+  assert.equal(blockedAfterRemoval.status, 404, 'remoção da amizade revoga o canal social cidadão-profissional');
+
   await callSocial(env, '/api/social/relationships', doctor.token, {
     method: 'POST', body: { action: 'request', targetHandle: 'recepcao.social' }
   });
