@@ -45,8 +45,8 @@ jobs:
           grep -q "showNotification" js/portal-chat.js
           grep -q "serviceWorker.register('/portal-sw.js'" js/portal-chat.js
           grep -q "portal-chat.js?v=20260911-2" index.html
-          grep -q "portal-chat.js?v=20260911-1" recepcao/index.html
-          grep -q "portal-chat.js?v=20260911-1" admin/usuarios/index.html
+          grep -q "portal-chat.js?v=20260911-2" recepcao/index.html
+          grep -q "portal-chat.js?v=20260911-2" admin/usuarios/index.html
           grep -q "CHAT_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao'\])" js/portal-chat.js
           grep -q "id=\"portalChatProfileLink\"" js/portal-chat.js
           grep -Fq 'profile.href = `/perfil/?u=' js/portal-chat.js
