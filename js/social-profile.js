@@ -101,8 +101,15 @@
 
   function renderPhotoEditor() {
     const self = Boolean(profile?.isSelf);
-    if (photoCamera) photoCamera.hidden = !self;
-    if (!self || !photoDialog) return;
+    if (photoCamera) {
+      photoCamera.hidden = !self;
+      photoCamera.disabled = !self;
+    }
+    if (!self) {
+      if (photoDialog?.open) photoDialog.close();
+      return;
+    }
+    if (!photoDialog) return;
     const unlocked = accountPhotoUnlocked();
     if (photoPreview) {
       photoPreview.textContent = initialsFor(profile.name || profile.handle);
@@ -119,12 +126,14 @@
   }
 
   photoCamera?.addEventListener('click', () => {
+    if (!profile?.isSelf) return;
     renderPhotoEditor();
     accountStatus(photoStatus, '', 'success');
     photoDialog?.showModal();
   });
 
   choosePhoto?.addEventListener('click', () => {
+    if (!profile?.isSelf) return;
     if (!accountPhotoUnlocked()) {
       location.href = '/seguranca/';
       return;
@@ -133,6 +142,10 @@
   });
 
   photoInput?.addEventListener('change', async () => {
+    if (!profile?.isSelf) {
+      photoInput.value = '';
+      return;
+    }
     const file = photoInput.files?.[0];
     if (!file) return;
     choosePhoto.disabled = true;
@@ -156,7 +169,7 @@
   });
 
   removePhoto?.addEventListener('click', async () => {
-    if (!accountPhotoUnlocked()) return;
+    if (!profile?.isSelf || !accountPhotoUnlocked()) return;
     choosePhoto.disabled = true;
     removePhoto.disabled = true;
     try {

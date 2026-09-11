@@ -371,16 +371,25 @@ test('cliente social renderiza texto do usuário sem interpolação HTML', () =>
   }
 });
 
-test('Perfil permite foto pela câmera e mantém identidade cidadã na própria tela', () => {
+test('Perfil permite foto somente ao próprio titular e mantém identidade cidadã na própria tela', () => {
   const html = read('perfil/index.html');
   const client = read('js/social-profile.js');
-  assert.match(html, /id="profilePhotoCamera"/);
+  const accountCss = read('css/account-sections.css');
+  const backend = read('worker/profile-photo.js');
+  assert.match(html, /id="profilePhotoCamera"[^>]*hidden/);
   assert.match(html, /id="profilePhotoDialog"/);
   assert.match(html, /id="profilePhotoInput"[^>]*accept="image\/jpeg,image\/png,image\/webp"/);
   assert.match(html, /id="profileIdentityEditor"/);
   assert.match(html, /id="profileIdentityForm"/);
   assert.doesNotMatch(html, /href="\/conta\//);
+  assert.match(accountCss, /\.profile-photo-camera\[hidden\]\{display:none!important\}/);
+  assert.match(client, /photoCamera\.hidden = !self/);
+  assert.match(client, /photoCamera\.disabled = !self/);
+  assert.match(client, /if \(!profile\?\.isSelf\) return;/);
+  assert.match(client, /if \(!profile\?\.isSelf \|\| !accountPhotoUnlocked\(\)\) return;/);
   assert.match(client, /auth\.updateProfilePhoto/);
+  assert.match(backend, /WHERE username = \?/);
+  assert.doesNotMatch(backend, /targetUsername|targetHandle|profileUsername/);
   assert.match(client, /\/api\/citizen\/identity/);
   assert.match(client, /\/seguranca\/\?primeiro-acesso=1/);
 });
