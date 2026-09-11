@@ -525,6 +525,12 @@ sqliteTest('moderação social não desativa sessão, cargo nem chat profissiona
   assert.ok(professionalSearch.profiles.some((item) => item.handle === 'cidada.social' && item.professional === null),
     'profissional deve conseguir localizar cidadão elegível para amizade');
 
+  const citizenRejectsRequests = await callSocial(env, '/api/social/relationships', doctor.token, {
+    method: 'POST', body: { action: 'request', targetHandle: 'cidada.social' }
+  });
+  assert.equal(citizenRejectsRequests.status, 409,
+    'perfil visível continua respeitando a preferência de não aceitar novos pedidos');
+
   const beforeFriendship = await payload(await callChat(env, '/api/chat/users', citizen.token));
   assert.ok(!beforeFriendship.users.some((item) => item.username === 'medica.social'),
     'localizar um profissional não concede chat antes da amizade');
