@@ -838,7 +838,8 @@ async function handleCommentsGet(url, env, context, postId, origin) {
   const afterAt = cleanText(cursor?.createdAt, 40) || '';
   const afterId = cleanText(cursor?.id, 80) || '';
   const result = await env.AUTH_DB.prepare(`SELECT c.*, su.handle, su.status_text, au.username, au.role, au.name,
-      au.job_title AS jobTitle, COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      au.job_title AS jobTitle, au.council_role AS councilRole,
+      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion,
       CASE WHEN c.author_id = ? THEN 1 ELSE 0 END AS own
     FROM social_comments c
