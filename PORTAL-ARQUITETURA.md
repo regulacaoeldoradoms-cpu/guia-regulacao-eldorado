@@ -51,6 +51,12 @@ em toda operação protegida.
 A política completa, os limites e a validação estão em
 `docs/PORTAL-DESEMPENHO-CACHE-V1.md`.
 
+## Central de Documentos — arquitetura aprovada para desenvolvimento
+
+A Central de Documentos será implementada por fases e usará o Google Drive como fonte institucional dos PDFs. O Cloudflare Worker permanecerá como fronteira para sessão, capabilities documentais, OAuth e operações sensíveis; tokens Google não serão expostos ao frontend. Conteúdo documental não entra no cache estático do Service Worker nem no PostHog.
+
+A arquitetura de Fase 0, incluindo OAuth, escopo Google, capabilities, cache, concorrência, rollback e fronteira da IA documental, está em `docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md`. O estado operacional e o handoff entre chats ficam em `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+
 ## PWA instalável e Web Push
 
 O Portal é distribuído diretamente pela Web como PWA, sem dependência de loja de
