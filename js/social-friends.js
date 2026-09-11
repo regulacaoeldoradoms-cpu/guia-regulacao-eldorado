@@ -101,6 +101,7 @@
       buttonLabel(button, previous.label);
       button.removeAttribute('aria-label');
       relationshipLists.delete('outgoing');
+      if (currentType === 'outgoing') void fetchRelationshipType('outgoing', true).catch(() => {});
       const text = error?.message || 'Não foi possível enviar o pedido de amizade.';
       social.status(text, 'error');
       window.PortalInteractions?.notify?.('error', text, button);
