@@ -12,7 +12,7 @@ Eles não têm relação com os níveis oficiais da conta Gov.br e não represen
 2. Evoluir a conta acrescenta segurança e funcionalidades, mas não aumenta o peso de uma reclamação, denúncia, elogio ou sugestão.
 3. O nível da conta é separado da privacidade da manifestação.
 4. Perfil social e manifestação institucional permanecem separados.
-5. Nenhum nível permite contornar as regras que protegem médicos, recepcionistas ou outros profissionais do contato direto não autorizado.
+5. Nenhum nível concede cargo, ferramenta ou permissão profissional. Contato social com profissionais depende de visibilidade, aceite de amizade e das políticas da Camada Social.
 
 ## Bronze
 
@@ -72,9 +72,10 @@ O nível existe na arquitetura e na interface como evolução futura, mas **não
 - elegibilidade para comunicação social avançada quando esse produto for
   especificado e implementado.
 
-O nível Ouro não transforma o cidadão em contato autorizado de nenhum profissional.
-Chat social cidadão-profissional não faz parte da Camada Social V1 e exigirá decisão
-posterior explícita, consentimento e políticas próprias.
+O nível Ouro não transforma o cidadão em profissional nem concede qualquer ferramenta
+institucional. A amizade e o chat social cidadão↔profissional já podem existir pela
+Camada Social, mas dependem de consentimento/amizade e permanecem totalmente
+separados das autorizações de cargo.
 
 ## Nível da conta x privacidade da manifestação
 
@@ -124,7 +125,8 @@ Desde a implementação autorizada em 06/09/2026, a matriz básica é:
 | Recursos sociais avançados | Não | Não | Previsto |
 | Dispositivos confiáveis | Não | Não | Previsto |
 
-A Camada Social continua obedecendo à matriz de tipo de conta, visibilidade, relação,
-rate limits e bloqueio. Nenhum nível concede chat profissional nem acesso a módulos de
-saúde. Prata reforça a identidade da conta e libera a foto; Ouro continua reservado
+A Camada Social continua obedecendo a visibilidade, relação, aceite de pedidos, rate
+limits e bloqueio, sem separar a descoberta por cargo. Nenhum nível concede chat
+profissional nem acesso a módulos de saúde. Prata reforça a identidade da conta e
+libera a foto; Ouro continua reservado
 para autenticação reforçada e recursos futuros mais sensíveis.
