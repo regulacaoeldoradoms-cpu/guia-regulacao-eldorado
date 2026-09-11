@@ -4,6 +4,7 @@ import { validatePortalSession } from './auth-management-flex.js';
 import { decorateTelemedicineUser } from './telemedicine-access.js';
 import { notifyUserPush } from './push-notifications.js';
 import {
+  ensureCouncilSocialProfiles,
   ensureInitialProfessionalFriendships,
   ensureSocialSchema,
   resolveSocialUser,
@@ -168,6 +169,7 @@ async function requestContext(request, env, authenticatedUser = null) {
     name: user.name,
     jobTitle: user.jobTitle,
     role: user.role,
+    councilRole: user.councilRole || '',
     active: user.active === false ? 0 : 1,
     emailVerified: user.emailVerified ? 1 : 0,
     selfRegistered: user.selfRegistered ? 1 : 0,
@@ -410,6 +412,7 @@ async function handleProfileGet(env, context, requestedHandle, origin) {
 async function handleSearch(url, env, context, origin) {
   const gate = socialGate(context.user, context.social);
   if (!gate.allowed) return gateResponse(gate, origin);
+  await ensureCouncilSocialProfiles(env);
   const limited = await enforceRateLimit(env, context.social.social_user_id, 'search');
   if (!limited.allowed) return rateLimitResponse(limited, origin);
   const query = cleanText(url.searchParams.get('q'), 60).toLowerCase();
@@ -419,7 +422,8 @@ async function handleSearch(url, env, context, origin) {
   const escapedQuery = query.replace(/[\\%_]/g, '\\$&');
   const like = `%${escapedQuery}%`;
   const result = await env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name,
-      au.job_title AS jobTitle, au.active, au.email_verified AS emailVerified,
+      au.job_title AS jobTitle, au.active, au.council_role AS councilRole,
+      au.email_verified AS emailVerified,
       au.accept_friend_requests AS acceptFriendRequests,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion,
@@ -429,7 +433,12 @@ async function handleSearch(url, env, context, origin) {
     LEFT JOIN auth_telemedicine_access tele ON tele.username = au.username AND tele.enabled = 1
     WHERE su.social_user_id <> ? AND au.active = 1 AND su.suspended_at IS NULL
       AND su.handle > ? COLLATE NOCASE
-      AND (lower(su.handle) LIKE ? ESCAPE '\\' OR lower(au.name) LIKE ? ESCAPE '\\')
+      AND (
+        lower(su.handle) LIKE ? ESCAPE '\\'
+        OR lower(au.name) LIKE ? ESCAPE '\\'
+        OR lower(COALESCE(au.job_title, '')) LIKE ? ESCAPE '\\'
+        OR lower(COALESCE(au.council_role, '')) LIKE ? ESCAPE '\\'
+      )
       AND NOT EXISTS (
         SELECT 1 FROM social_relationships block
         WHERE block.pair_low = CASE WHEN su.social_user_id < ? THEN su.social_user_id ELSE ? END
@@ -441,6 +450,8 @@ async function handleSearch(url, env, context, origin) {
     .bind(
       context.social.social_user_id,
       afterHandle,
+      like,
+      like,
       like,
       like,
       context.social.social_user_id,
