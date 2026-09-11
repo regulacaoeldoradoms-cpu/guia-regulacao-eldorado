@@ -22,6 +22,8 @@
   let messageCacheGeneration = 0;
   let messagePreloadSweep = null;
   const MESSAGE_PRELOAD_CONCURRENCY = 3;
+  const MESSAGE_HISTORY_PAGE_SIZE = 120;
+  const MESSAGE_PRELOAD_PAGE_GUARD = 100;
   const CHAT_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao']);
 
   const escapeText = (value) => String(value || '');
@@ -111,20 +113,52 @@
     if (messagePreloadRequests.has(key)) return messagePreloadRequests.get(key);
 
     const generation = messageCacheGeneration;
-    const after = cached?.messages?.length ? Number(cached.messages.at(-1)?.id || 0) : 0;
-    const path = `/api/chat/messages?with=${encodeURIComponent(username)}&after=${after}&peek=1`;
-    const request = api(path, { method: 'GET' })
-      .then((payload) => {
-        const messages = Array.isArray(payload.messages) ? payload.messages : [];
+    const request = (async () => {
+      if (cached?.messages?.length) {
+        const after = Number(cached.messages.at(-1)?.id || 0);
+        const payload = await api(
+          `/api/chat/messages?with=${encodeURIComponent(username)}&after=${after}&peek=1`,
+          { method: 'GET' }
+        );
         if (generation !== messageCacheGeneration) return [];
-        if (after > 0 && cached) mergeCachedMessages(key, messages, lastMessageAt);
-        else replaceCachedMessages(key, messages, lastMessageAt);
+        mergeCachedMessages(key, Array.isArray(payload.messages) ? payload.messages : [], lastMessageAt);
         return messageCache.get(key)?.messages || [];
-      })
+      }
+
+      let allMessages = [];
+      let before = 0;
+      let pageCount = 0;
+      const seenFirstIds = new Set();
+
+      while (pageCount < MESSAGE_PRELOAD_PAGE_GUARD) {
+        const beforeSuffix = before > 0 ? `&before=${before}` : '';
+        const payload = await api(
+          `/api/chat/messages?with=${encodeURIComponent(username)}&after=0&peek=1${beforeSuffix}`,
+          { method: 'GET' }
+        );
+        const page = Array.isArray(payload.messages) ? payload.messages : [];
+        if (!page.length) break;
+
+        allMessages = before > 0 ? [...page, ...allMessages] : page;
+        const pageSize = Math.max(1, Number(payload.pageSize || MESSAGE_HISTORY_PAGE_SIZE));
+        if (page.length < pageSize) break;
+
+        const firstId = Number(page[0]?.id || 0);
+        if (!firstId || seenFirstIds.has(firstId)) break;
+        seenFirstIds.add(firstId);
+        before = firstId;
+        pageCount += 1;
+      }
+
+      if (generation !== messageCacheGeneration) return [];
+      replaceCachedMessages(key, allMessages, lastMessageAt);
+      return messageCache.get(key)?.messages || [];
+    })()
       .catch(() => cached?.messages || [])
       .finally(() => {
         messagePreloadRequests.delete(key);
       });
+
     messagePreloadRequests.set(key, request);
     return request;
   }
