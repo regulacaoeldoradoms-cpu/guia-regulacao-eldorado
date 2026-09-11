@@ -28,6 +28,10 @@ import {
   setCouncilViceAccess
 } from './council-vice-access.js';
 import {
+  decorateDocumentUser,
+  decorateDocumentUsers
+} from './document-access.js';
+import {
   provisionProfessionalSocialGraph,
   retireProfessionalSeededRelationships
 } from './social-schema.js';
@@ -60,12 +64,14 @@ function roleCanAccess(role, allowedRoles = []) {
 async function decoratePortalUser(env, user) {
   if (!user) return user;
   const telemedicine = await decorateTelemedicineUser(env, user);
-  return decorateCouncilViceUser(env, telemedicine);
+  const council = await decorateCouncilViceUser(env, telemedicine);
+  return decorateDocumentUser(env, council);
 }
 
 async function decoratePortalUsers(env, users) {
   const telemedicine = await decorateTelemedicineUsers(env, users);
-  return decorateCouncilViceUsers(env, telemedicine);
+  const council = await decorateCouncilViceUsers(env, telemedicine);
+  return decorateDocumentUsers(env, council);
 }
 
 export async function validatePortalSession(request, env, allowedRoles = []) {
