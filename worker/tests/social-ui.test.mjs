@@ -139,7 +139,7 @@ test('Notificações abrem painel acessível na própria tela e preservam histó
   assert.match(panelCss, /forced-colors/);
 });
 
-test('chat profissional continua por cargo e chat cidadão exige amizade aceita', () => {
+test('chat profissional continua por cargo e chat social exige amizade aceita', () => {
   const client = read('js/portal-chat.js');
   const backend = read('worker/portal-chat-v2.js');
   const policy = read('worker/social-policy.js');
@@ -149,12 +149,13 @@ test('chat profissional continua por cargo e chat cidadão exige amizade aceita'
   assert.match(client, /portalChatProfileLink/);
   assert.match(client, /socialHandle/);
   assert.match(backend, /PROFESSIONAL_ROLES = new Set/);
-  assert.match(backend, /citizenFriendContacts/);
-  assert.match(backend, /citizenFriendContact/);
+  assert.match(backend, /socialFriendContacts/);
+  assert.match(backend, /socialFriendContact/);
   assert.match(backend, /relationship\.state = 'friends'/);
-  assert.match(backend, /if \(PROFESSIONAL_ROLES\.has\(currentUser\.role\)\) return professionalContact/);
-  assert.match(backend, /if \(currentUser\.role === 'cidadao'\) return citizenFriendContact/);
-  assert.match(policy, /return isSocialProfessional\(viewer\) === isSocialProfessional\(target\)/);
+  assert.match(backend, /const institutional = await professionalContact/);
+  assert.match(backend, /return socialFriendContact\(env, currentUser\.username, targetUsername\)/);
+  assert.match(policy, /target\.profile_visibility === 'portal'/);
+  assert.doesNotMatch(policy, /isSocialProfessional\(viewer\) === isSocialProfessional\(target\)/);
 });
 
 test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação local', async () => {
