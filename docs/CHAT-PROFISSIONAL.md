@@ -1,4 +1,4 @@
-# Chat profissional do portal
+# Chat do portal — profissional e social entre amigos
 
 Decisão permanente registrada em 03/09/2026 e atualizada para conversa social entre amigos em 11/09/2026.
 
