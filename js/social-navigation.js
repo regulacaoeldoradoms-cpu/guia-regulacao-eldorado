@@ -4,10 +4,12 @@
   if (window.PortalSocialNavigation) return;
 
   let activeNotificationPanel = null;
+  let activeUserSearch = null;
   let globalListenersReady = false;
   const extraIcons = Object.freeze({
     settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7a7 7 0 0 0-.7-1.7l.9-1.9-2.1-2.1-1.9.9a7 7 0 0 0-1.7-.7L10.5 2h-3l-.7 2.3a7 7 0 0 0-1.7.7l-1.9-.9-2.1 2.1.9 1.9a7 7 0 0 0-.7 1.7L1 10.5v3l2.3.7a7 7 0 0 0 .7 1.7l-.9 1.9 2.1 2.1 1.9-.9a7 7 0 0 0 1.7.7l.7 2.3h3l.7-2.3a7 7 0 0 0 1.7-.7l1.9.9 2.1-2.1-.9-1.9a7 7 0 0 0 .7-1.7l2.3-.7Z" transform="translate(2.2 0) scale(.82)"/></svg>',
-    trophy: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0V3Z"/><path d="M8 5H4v2a4 4 0 0 0 4 4M16 5h4v2a4 4 0 0 1-4 4M12 12v5M8 21h8M9 17h6"/></svg>'
+    trophy: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0V3Z"/><path d="M8 5H4v2a4 4 0 0 0 4 4M16 5h4v2a4 4 0 0 1-4 4M12 12v5M8 21h8M9 17h6"/></svg>',
+    search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 5 5"/></svg>'
   });
 
   function ensureExtendedNavigationStyles() {
@@ -18,6 +20,8 @@
       @media (min-width:901px){
         .social-global-nav-inner{width:min(1360px,calc(100% - 32px));overflow-x:auto;scrollbar-width:thin}
         .social-nav-link{min-width:100px;flex:1 1 0;padding-left:9px;padding-right:9px;white-space:nowrap}
+        .social-global-nav-inner.has-home-user-search{overflow:visible}
+        .social-global-nav-inner.has-home-user-search .social-nav-link{flex:0 1 150px;min-width:98px}
       }
       @media (max-width:900px){
         .social-mobile-nav{display:flex;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;overscroll-behavior-x:contain;justify-content:flex-start}
@@ -84,19 +88,37 @@
     if (restoreFocus && trigger.isConnected) trigger.focus();
   }
 
+  function closeUserSearch({ restoreFocus = false } = {}) {
+    if (!activeUserSearch) return;
+    const { input, results } = activeUserSearch;
+    results.hidden = true;
+    input.setAttribute('aria-expanded', 'false');
+    activeUserSearch = null;
+    if (restoreFocus && input.isConnected) input.focus();
+  }
+
   function ensureGlobalListeners() {
     if (globalListenersReady) return;
     globalListenersReady = true;
     document.addEventListener('pointerdown', (event) => {
-      if (!activeNotificationPanel) return;
-      const { trigger, panel } = activeNotificationPanel;
-      if (trigger.contains(event.target) || panel.contains(event.target)) return;
-      closeNotificationPanel();
+      if (activeNotificationPanel) {
+        const { trigger, panel } = activeNotificationPanel;
+        if (!trigger.contains(event.target) && !panel.contains(event.target)) closeNotificationPanel();
+      }
+      if (activeUserSearch) {
+        const { root } = activeUserSearch;
+        if (!root.contains(event.target)) closeUserSearch();
+      }
     });
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && activeNotificationPanel) closeNotificationPanel({ restoreFocus: true });
+      if (event.key !== 'Escape') return;
+      if (activeNotificationPanel) closeNotificationPanel({ restoreFocus: true });
+      if (activeUserSearch) closeUserSearch({ restoreFocus: true });
     });
-    window.addEventListener('resize', () => closeNotificationPanel());
+    window.addEventListener('resize', () => {
+      closeNotificationPanel();
+      closeUserSearch();
+    });
   }
 
   function notificationPanelId(mobile) {
@@ -291,6 +313,185 @@
     return button;
   }
 
+
+  function homeUserSearch() {
+    const social = window.PortalSocial;
+    const root = document.createElement('div');
+    root.className = 'social-global-user-search';
+    root.setAttribute('role', 'search');
+
+    const box = document.createElement('div');
+    box.className = 'social-global-user-search-box';
+    const icon = document.createElement('span');
+    icon.className = 'social-global-user-search-icon';
+    icon.innerHTML = extraIcons.search;
+
+    const input = document.createElement('input');
+    input.type = 'search';
+    input.className = 'social-global-user-search-input';
+    input.placeholder = 'Pesquisar usuários';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.setAttribute('aria-label', 'Pesquisar usuários para adicionar como amigo');
+    input.setAttribute('aria-expanded', 'false');
+    input.setAttribute('aria-controls', 'socialGlobalUserSearchResults');
+
+    const results = document.createElement('section');
+    results.id = 'socialGlobalUserSearchResults';
+    results.className = 'social-global-user-search-results';
+    results.setAttribute('aria-label', 'Resultados da pesquisa de usuários');
+    results.hidden = true;
+
+    let timer = null;
+    let sequence = 0;
+
+    function openResults() {
+      results.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      activeUserSearch = { root, input, results };
+    }
+
+    function message(text) {
+      results.textContent = '';
+      const item = document.createElement('div');
+      item.className = 'social-global-user-search-message';
+      item.textContent = text;
+      results.appendChild(item);
+      openResults();
+    }
+
+    async function relationshipAction(profile, action, button) {
+      button.disabled = true;
+      try {
+        await social.api('/api/social/relationships', {
+          method: 'POST',
+          body: JSON.stringify({ action, targetHandle: profile.handle })
+        });
+        social.invalidateRelationshipList?.();
+        await executeSearch(true);
+      } catch (error) {
+        button.disabled = false;
+        message(error?.message || 'Não foi possível atualizar a amizade.');
+      }
+    }
+
+    function actionFor(profile, row) {
+      const actions = document.createElement('div');
+      actions.className = 'social-global-user-search-actions';
+
+      if (profile.relationship === 'friends') {
+        const chat = social.button('Conversar', 'social-button primary');
+        chat.addEventListener('click', () => {
+          closeUserSearch();
+          if (window.PortalChat?.openByHandle) {
+            window.PortalChat.openByHandle(profile.handle);
+            return;
+          }
+          location.href = `/?chatHandle=${encodeURIComponent(profile.handle)}`;
+        });
+        actions.appendChild(chat);
+      } else if (profile.relationship === 'received') {
+        const accept = social.button('Aceitar', 'social-button primary');
+        accept.addEventListener('click', () => relationshipAction(profile, 'accept', accept));
+        actions.appendChild(accept);
+      } else if (profile.relationship === 'sent') {
+        const sent = social.button('Pedido enviado', 'social-button secondary');
+        sent.disabled = true;
+        actions.appendChild(sent);
+      } else if (profile.acceptFriendRequests) {
+        const add = social.button('Adicionar', 'social-button primary');
+        add.addEventListener('click', () => relationshipAction(profile, 'request', add));
+        actions.appendChild(add);
+      }
+
+      const view = document.createElement('a');
+      view.className = 'social-global-user-search-profile';
+      view.href = social.profileUrl(profile.handle);
+      view.textContent = 'Ver perfil';
+      actions.appendChild(view);
+      row.appendChild(actions);
+    }
+
+    function render(profiles) {
+      results.textContent = '';
+      if (!profiles.length) {
+        message('Nenhum usuário elegível encontrado.');
+        return;
+      }
+      profiles.slice(0, 8).forEach((profile) => {
+        const row = document.createElement('article');
+        row.className = 'social-global-user-search-result';
+
+        const avatar = document.createElement('div');
+        avatar.className = 'social-avatar social-global-user-search-avatar';
+        social.mountAvatar(avatar, profile);
+
+        const copy = document.createElement('div');
+        copy.className = 'social-global-user-search-copy';
+        const link = document.createElement('a');
+        link.href = social.profileUrl(profile.handle);
+        link.textContent = profile.name || `@${profile.handle}`;
+        const meta = document.createElement('span');
+        const profession = profile.professional?.label ? `${profile.professional.label} · ` : '';
+        meta.textContent = `${profession}@${profile.handle}`;
+        copy.append(link, meta);
+
+        row.append(avatar, copy);
+        actionFor(profile, row);
+        results.appendChild(row);
+      });
+      openResults();
+    }
+
+    async function executeSearch(force = false) {
+      const query = String(input.value || '').trim();
+      if (query.length < 3) {
+        if (force || query.length) message('Digite ao menos 3 caracteres para pesquisar.');
+        else closeUserSearch();
+        return;
+      }
+      const current = ++sequence;
+      message('Pesquisando usuários...');
+      try {
+        const payload = await social.api(`/api/social/search?q=${encodeURIComponent(query)}`);
+        if (current !== sequence) return;
+        render(Array.isArray(payload.profiles) ? payload.profiles : []);
+      } catch (error) {
+        if (current !== sequence) return;
+        message(error?.message || 'Não foi possível pesquisar usuários.');
+      }
+    }
+
+    input.addEventListener('input', () => {
+      window.clearTimeout(timer);
+      const query = String(input.value || '').trim();
+      if (!query) {
+        sequence += 1;
+        closeUserSearch();
+        return;
+      }
+      if (query.length < 3) {
+        message('Digite ao menos 3 caracteres para pesquisar.');
+        return;
+      }
+      timer = window.setTimeout(() => executeSearch(), 260);
+    });
+    input.addEventListener('focus', () => {
+      if (results.childElementCount) openResults();
+    });
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        window.clearTimeout(timer);
+        executeSearch(true);
+      }
+    });
+
+    box.append(icon, input);
+    root.append(box, results);
+    return root;
+  }
+
   function accountNavigationLinks(icons, mobile) {
     return [
       navLink('/seguranca/', 'Segurança', icons.shield || '', { mobile }),
@@ -330,7 +531,12 @@
           navLink('/perfil/', 'Perfil', icons.user || '', { social: true })
         );
       }
-      desktopLinks.push(...accountNavigationLinks(icons, false));
+      if (active('/') && socialAvailable) {
+        inner.classList.add('has-home-user-search');
+        desktopLinks.push(homeUserSearch());
+      } else {
+        desktopLinks.push(...accountNavigationLinks(icons, false));
+      }
       inner.append(...desktopLinks);
       desktop.appendChild(inner);
       header.insertAdjacentElement('afterend', desktop);
