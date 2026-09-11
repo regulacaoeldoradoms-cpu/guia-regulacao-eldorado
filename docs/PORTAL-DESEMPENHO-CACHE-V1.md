@@ -91,10 +91,13 @@ chaves são isoladas por usuário visualizador.
 ### Imagens e conteúdo abaixo da dobra
 
 Imagens dos cartões de ferramenta usam carregamento tardio e decodificação assíncrona.
-A marca do login passou do PNG de aproximadamente 1,6 MB para o SVG existente de
-aproximadamente 160 KB. Os símbolos gerais do Portal passaram do PNG de
-aproximadamente 1 MB para o WebP existente de aproximadamente 8 KB onde a imagem é
-exibida.
+Por decisão de identidade visual, a tela de login usa diretamente
+`assets/portal-regulacao-header.png` como marca oficial. O arquivo é pré-carregado
+com prioridade alta e integra o núcleo versionado do Service Worker. Depois da
+primeira obtenção da versão atual, a estratégia cache-first reutiliza a cópia local
+sem novo download da imagem; uma nova transferência só é exigida quando o parâmetro
+de versão do ativo for alterado. Os símbolos gerais do Portal continuam usando o
+WebP leve onde essa identidade completa não é necessária.
 
 ## Limites de segurança
 

@@ -112,7 +112,7 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
 
 test('service worker armazena somente superfície pública e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260910-7'/);
+  assert.match(source, /CACHE_VERSION = '20260910-8'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.match(source, /\/seguranca\//);
   assert.match(source, /\/configuracoes\//);
@@ -154,13 +154,15 @@ test('configuração social usa stale-while-revalidate sem persistir feed ou API
   assert.match(home, /PortalSocialFeed\.load\(feed, more\)/);
 });
 
-test('login inicia o aquecimento antes de navegar e usa identidade visual leve', () => {
+test('login inicia o aquecimento antes de navegar e usa a marca oficial em cache', () => {
   const login = read('js/login.js');
   const html = read('login/index.html');
   const tools = read('js/tools-catalog.js');
   assert.match(login, /PortalPerformance\?\.warmForUser\?\.\(user, \{ immediate: true \}\)/);
   assert.match(login, /getCachedUser/);
-  assert.match(html, /portal-regulacao-logo-v2\.svg\?v=20260909-1/);
+  assert.match(html, /portal-regulacao-header\.png\?v=20260910-1/);
+  assert.match(html, /fetchpriority="high"/);
+  assert.match(read('portal-sw.js'), /portal-regulacao-header\.png\?v=20260910-1/);
   assert.match(html, /tools-catalog\.js\?v=20260910-2/);
   assert.match(tools, /loading="lazy" decoding="async" fetchpriority="low"/);
 });
