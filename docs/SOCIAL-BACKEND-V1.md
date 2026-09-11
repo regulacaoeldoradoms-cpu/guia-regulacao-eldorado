@@ -55,8 +55,8 @@ notificações não lidas e fila de moderação.
 ## Visibilidade e descoberta
 
 - A descoberta social é transversal ao cargo: cidadão e profissional podem localizar
-  qualquer conta social elegível que aceite pedidos e esteja com visibilidade
-  `portal`.
+  qualquer conta social elegível que esteja com visibilidade `portal`. A flag
+  `accept_friend_requests` controla o envio de novos pedidos, não a descoberta do perfil.
 - O cargo profissional continua sendo exibido como identidade autêntica do perfil,
   mas nunca é transformado em permissão social ou institucional.
 - Bloqueio, suspensão, atividade da conta, visibilidade e rate limit continuam sendo
