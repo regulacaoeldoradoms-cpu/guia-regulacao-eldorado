@@ -125,13 +125,16 @@ O rollback não apaga tabelas: desligar primeiro a Home e, se necessário, o bac
 
 ### Matriz de visibilidade
 
-- Bronze não executa ações sociais nem entra em descoberta.
-- Prata/Ouro usa a camada dentro das políticas de tipo de conta e relação.
-- Cidadão descobre somente cidadãos elegíveis; profissionais não formam diretório
-  amplo para cidadãos.
-- Profissionais podem descobrir outros profissionais e abrir perfil pelo chat.
-- Suspensão social remove descoberta/ações, mas não altera login, cargo ou ferramenta.
-- Amizade social jamais autoriza chat, Conselho, Telemedicina, Guia ou Recepção.
+- Toda conta autenticada e ativa pode usar a Camada Social básica; Prata continua
+  necessária para recursos de segurança/foto, não para amizade ou descoberta.
+- Cidadãos e profissionais podem se localizar para amizade quando o alvo está com
+  perfil visível ao Portal e aceita novos pedidos.
+- O cargo profissional aparece apenas como identidade social autêntica; amizade não
+  altera cargo nem autoriza ferramenta profissional.
+- Suspensão social remove descoberta e o canal social, mas não altera login, cargo,
+  ferramentas ou chat institucional autorizado por cargo.
+- Amizade aceita pode autorizar somente o chat social entre o par; nunca autoriza
+  Conselho, Telemedicina, Guia Médico, Recepção ou dados protegidos.
 
 ## Perfis primários
 
