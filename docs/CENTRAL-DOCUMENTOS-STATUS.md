@@ -10,13 +10,13 @@ Subfase atual: implementar a superfície read-only da Central, capabilities docu
 
 ## Estado de entrada
 
-- Branch `main` verificada em `6f1169f38fce94da43ec51031226de74142de827`.
+- Branch da Fase 1 criada da `main` pós-Fase 0 em `686b5774dfd51916b21b63d66fd8b4ff7a822795`.
 - A main já contém a observabilidade segura do PostHog para o Portal.
-- Não existe integração Google Drive da Central no código atual.
-- Não existia este arquivo de status antes desta fase.
+- No estado de entrada da Fase 1 ainda não existia integração Google Drive funcional; ela passou a ser implementada nesta branch.
+- O arquivo de status foi criado na Fase 0 e agora é o ponto obrigatório de continuidade.
 - Há PR antigo de Telemedicina aberto (#107), sem relação com a Central; não deve ser misturado a este trabalho.
 - PR #133 da Fase 0 foi validado com 21 workflows sem falhas e mesclado na main em `686b5774dfd51916b21b63d66fd8b4ff7a822795`.
-- A arquitetura da Fase 0 está encerrada; a Central ainda não possui rota funcional, frontend, capabilities ou endpoints Drive.
+- A arquitetura da Fase 0 está encerrada; a Fase 1 implementa agora rota funcional, frontend, capabilities e endpoints read-only do Drive.
 
 ## Branch / PR
 
@@ -34,7 +34,20 @@ PR atual: ainda não criado para a Fase 1.
 - confirmação de que a Central de Documentos ainda não foi implementada;
 - pesquisa das regras atuais do Google Drive API/OAuth em documentação oficial;
 - criação de `docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md`;
-- criação deste arquivo de estado.
+- criação deste arquivo de estado;
+- `worker/document-access.js`: tabela e capabilities documentais independentes do cargo;
+- autenticação flexível passou a devolver `documentCapabilities` na sessão e na gestão de usuários;
+- `worker/document-drive.js`: OAuth web-server, refresh token AES-GCM, access token efêmero, referências opacas, listagem, busca e PDF read-only;
+- estado OAuth deixou de transportar username para o Google; identidade fica apenas no D1 temporário;
+- `worker/documents-router.js` e integração no `worker/index.js`;
+- `/documentos/`, `css/documents.css` e `js/documents.js` com navegação, busca, breadcrumbs, gestão de leitura e visualizador PDF;
+- catálogo de ferramentas passou a mostrar a Central somente por capability documental;
+- Service Worker reconhece a página estática da Central, mantendo `/api/*` e Range fora do cache; cache global renovado para V10;
+- prontidão técnica passou a indicar apenas presença/ausência das configurações OAuth, sem exibir valores;
+- redirect URI e URL de retorno públicos foram documentados no `wrangler.toml`; credenciais permanecem externas;
+- testes `documents-phase1.test.mjs` e `documents-ui.test.mjs` adicionados;
+- workflow `Validar Central de Documentos — Fase 1` adicionado;
+- documentação `docs/CENTRAL-DOCUMENTOS-FASE-1.md` criada e arquitetura geral atualizada.
 
 ## Decisões tomadas
 
@@ -48,6 +61,10 @@ PR atual: ainda não criado para a Fase 1.
 8. Conflitos futuros serão detectados com a `version` do Drive antes da escrita.
 9. Substituição futura só será considerada salva após confirmação real do Google Drive e preservará revisão recuperável.
 10. A IA documental será separada da pré-regulação atual e não reutilizará automaticamente o endpoint existente.
+11. A Fase 1 usa referência opaca AES-GCM para que o fileId bruto do Drive não chegue ao navegador.
+12. Lista e pesquisa usam POST no Portal para evitar termos/referências em query string local.
+13. O visualizador da Fase 1 usa Blob efêmero + iframe nativo; medição confiável de primeira página fica para a Fase 2.
+14. A interface da Fase 1 concede somente Leitura; IA/Edição permanecem capabilities reservadas e não são expostas como funcionalidade ativa.
 
 ## Justificativas
 
@@ -77,7 +94,9 @@ PR atual: ainda não criado para a Fase 1.
 - Consentimento da conta institucional ainda não executado.
 - Produção com escopo `drive` exige tratar o status de escopo restrito e requisitos de verificação aplicáveis.
 - Nenhum bloqueio impede concluir a documentação da Fase 0.
-- Fase 1 não poderá conectar dados reais até os passos OAuth externos estarem prontos.
+- Fase 1 não poderá completar o critério de aceite real até os passos OAuth externos estarem prontos.
+- O código read-only está preparado para permanecer desconectado de forma neutra quando as variáveis/Secrets ainda não existirem.
+- Após checks do PR, a próxima dependência humana será criar/configurar o OAuth no Google Cloud e os valores correspondentes na Cloudflare.
 
 ## Riscos conhecidos
 
@@ -89,23 +108,33 @@ PR atual: ainda não criado para a Fase 1.
 
 ## Métricas / observabilidade
 
-A observabilidade-base já está operacional. Eventos reservados para a Central existem na allowlist, mas ainda não devem aparecer porque o módulo documental não existe.
+A observabilidade-base já está operacional. A Fase 1 passa a emitir apenas `drive_folder_opened`, `drive_search_completed`, `pdf_open_started` e `pdf_ready` quando houver uso real.
 
-Nenhum conteúdo de Drive foi enviado ao PostHog.
+`pdf_first_page_visible` não será emitido nesta fase porque o iframe nativo não oferece medição confiável da primeira página; isso fica para a Fase 2.
+
+Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. implementar backend read-only `/api/documents/*` com sessão/capability;
-2. implementar rota `/documentos/` e navegador de pastas/pesquisa;
-3. implementar OAuth web-server sem expor tokens;
-4. adicionar testes de autorização, privacidade e respostas do Drive;
-5. abrir PR da Fase 1 e validar checks;
-6. quando o código estiver pronto para conexão real, configurar o Google Cloud/OAuth externo e executar o consentimento institucional.
+1. abrir PR da Fase 1;
+2. validar todos os checks e corrigir regressões;
+3. registrar resultado no status;
+4. somente com o código validado, realizar a configuração externa Google Cloud/Cloudflare;
+5. conectar a conta institucional a partir de `/documentos/`;
+6. comprovar navegação por Meu Drive, pesquisa e abertura de PDF real;
+7. auditar eventos/propriedades reais no PostHog;
+8. encerrar Fase 1 apenas após esses critérios.
 
 ## Arquivos e fontes principais
 
 - `docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md`
 - `docs/CENTRAL-DOCUMENTOS-STATUS.md`
+- `docs/CENTRAL-DOCUMENTOS-FASE-1.md`
+- `documentos/index.html`
+- `js/documents.js`
+- `worker/document-access.js`
+- `worker/document-drive.js`
+- `worker/documents-router.js`
 - `PORTAL-ARQUITETURA.md`
 - `docs/PORTAL-OBSERVABILIDADE-POSTHOG-V1.md`
 - `js/tools-catalog.js`
@@ -117,18 +146,18 @@ Nenhum conteúdo de Drive foi enviado ao PostHog.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 1 — Navegação do Google Drive.  
-**Subfase / objetivo atual:** construir navegação read-only, capabilities e OAuth backend.  
-**Última ação concluída:** Fase 0 validada e mesclada pelo PR #133; branch da Fase 1 criada da main pós-merge.  
+**Subfase / objetivo atual:** validar em PR o código read-only antes da configuração OAuth externa.  
+**Última ação concluída:** backend, frontend, capabilities, OAuth, referências opacas, visualizador read-only, testes e workflow da Fase 1 foram implementados na branch.  
 **Branch atual:** `feat/central-docs-phase-1-drive-readonly`.  
-**PR atual:** nenhum para a Fase 1 neste registro.  
-**Último commit relevante:** `686b577` — merge da arquitetura e segurança da Fase 0.  
-**Checks e testes:** PR #133 teve 21 workflows concluídos com sucesso; testes da Fase 1 ainda não existem.  
-**Decisões tomadas:** Drive API v3 via Worker; escopo `drive`; token criptografado no backend; capabilities independentes; cache documental somente efêmero; IA documental separada.  
-**Justificativas:** acesso integral ao Meu Drive, menor exposição de credenciais/dados e preservação das regras atuais do Portal.  
-**Alternativas descartadas:** `drive.file`, service account com acervo compartilhado, banco como espelho de PDFs, PostHog direto, cache persistente.  
-**Ações externas concluídas:** PostHog seguro já operacional.  
-**Pendências:** OAuth Google ainda não configurado; verificar requisitos de produção para restricted scope.  
-**Riscos conhecidos:** expiração de refresh token em Testing, restrição OAuth, cache clínico, conflito de versões.  
-**Métricas / observabilidade:** base PostHog validada; nenhum evento documental ainda.  
-**Próxima ação exata:** implementar primeiro o controle de acesso e o router read-only da Central antes de conectar a conta Google.  
-**Arquivos e fontes principais:** arquitetura V1, este status, PORTAL-ARQUITETURA, política PostHog, Worker/auth.
+**PR atual:** ainda não criado neste registro; criar a seguir.  
+**Último commit relevante:** `af2825a` — arquitetura geral atualizada com a superfície read-only; conferir HEAD atual antes de continuar.  
+**Checks e testes:** testes foram adicionados, mas ainda aguardam execução pelos checks do PR.  
+**Decisões tomadas:** Drive API via Worker; escopo `drive`; refresh token AES-GCM; access token em memória; fileId encapsulado; POST para lista/pesquisa; Blob efêmero; UI estritamente read-only.  
+**Justificativas:** atender Meu Drive completo sem expor credenciais/fileId nem persistir documento clínico, mantendo a Fase 1 simples e validável.  
+**Alternativas descartadas:** `drive.file`, service account com acervo compartilhado, espelho de PDFs, cache persistente, Google token no frontend, IA/edição antecipadas.  
+**Ações externas concluídas:** PostHog seguro operacional; nenhuma configuração Google Cloud da Central ainda.  
+**Pendências:** abrir PR/checks; depois configurar Google Cloud OAuth e Cloudflare, conceder consentimento e testar Drive real.  
+**Riscos conhecidos:** restricted scope, refresh token temporário em Testing, falha de configuração externa, PDFs grandes no visualizador integral da Fase 1.  
+**Métricas / observabilidade:** instrumentação técnica pronta; nenhum evento documental real validado ainda.  
+**Próxima ação exata:** abrir o PR da Fase 1 e aguardar os checks; não pedir configuração OAuth ao usuário antes de confirmar o código.  
+**Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, arquitetura V1, este status, `worker/document-*.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`, política PostHog.
