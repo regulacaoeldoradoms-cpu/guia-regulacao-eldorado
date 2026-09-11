@@ -416,12 +416,8 @@ async function handleSearch(url, env, context, origin) {
   if (query.length < 3) return json({ error: 'Digite ao menos 3 caracteres para pesquisar.' }, 400, origin);
   const cursor = decodeCursor(url.searchParams.get('cursor'));
   const afterHandle = cleanText(cursor?.handle, 40);
-  const like = `%${query.replace(/[\\%_]/g, '\\  const like = `%${query.replace(/[\\%_]/g, '\\$&')}%`;
-  const professional = isSocialProfessional(context.social);
-  const roleClause = professional
-    ? "(au.role IN ('medico','recepcao','coordenacao','admin') OR tele.enabled = 1)"
-    : "au.role = 'cidadao' AND au.accept_friend_requests = 1 AND su.profile_visibility = 'portal'";
-  const result = await env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name,')}%`;
+  const escapedQuery = query.replace(/[\\%_]/g, '\\$&');
+  const like = `%${escapedQuery}%`;
   const result = await env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name,
       au.job_title AS jobTitle, au.active, au.email_verified AS emailVerified,
       au.accept_friend_requests AS acceptFriendRequests,
