@@ -22,7 +22,7 @@ Subfase atual: implementar a superfície read-only da Central, capabilities docu
 
 Branch atual: `feat/central-docs-phase-1-drive-readonly`
 
-PR atual: ainda não criado para a Fase 1.
+PR atual: #134 — Central de Documentos — Fase 1: Google Drive read-only (aberto).
 
 ## Entregas concluídas nesta unidade
 
@@ -149,9 +149,9 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Subfase / objetivo atual:** validar em PR o código read-only antes da configuração OAuth externa.  
 **Última ação concluída:** backend, frontend, capabilities, OAuth, referências opacas, visualizador read-only, testes e workflow da Fase 1 foram implementados na branch.  
 **Branch atual:** `feat/central-docs-phase-1-drive-readonly`.  
-**PR atual:** ainda não criado neste registro; criar a seguir.  
-**Último commit relevante:** `af2825a` — arquitetura geral atualizada com a superfície read-only; conferir HEAD atual antes de continuar.  
-**Checks e testes:** testes foram adicionados, mas ainda aguardam execução pelos checks do PR.  
+**PR atual:** #134 — aberto; objetivo: validar a implementação read-only antes da conexão real.  
+**Último commit relevante:** `a56c7cf` — status/handoff consolidado antes da abertura do PR #134; conferir HEAD atual antes de continuar.  
+**Checks e testes:** PR #134 aberto; checks iniciados e ainda não concluídos neste registro.  
 **Decisões tomadas:** Drive API via Worker; escopo `drive`; refresh token AES-GCM; access token em memória; fileId encapsulado; POST para lista/pesquisa; Blob efêmero; UI estritamente read-only.  
 **Justificativas:** atender Meu Drive completo sem expor credenciais/fileId nem persistir documento clínico, mantendo a Fase 1 simples e validável.  
 **Alternativas descartadas:** `drive.file`, service account com acervo compartilhado, espelho de PDFs, cache persistente, Google token no frontend, IA/edição antecipadas.  
@@ -159,5 +159,5 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Pendências:** abrir PR/checks; depois configurar Google Cloud OAuth e Cloudflare, conceder consentimento e testar Drive real.  
 **Riscos conhecidos:** restricted scope, refresh token temporário em Testing, falha de configuração externa, PDFs grandes no visualizador integral da Fase 1.  
 **Métricas / observabilidade:** instrumentação técnica pronta; nenhum evento documental real validado ainda.  
-**Próxima ação exata:** abrir o PR da Fase 1 e aguardar os checks; não pedir configuração OAuth ao usuário antes de confirmar o código.  
+**Próxima ação exata:** acompanhar os checks do PR #134, corrigir qualquer falha e registrar o resultado; não pedir configuração OAuth ao usuário antes de confirmar o código.  
 **Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, arquitetura V1, este status, `worker/document-*.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`, política PostHog.
