@@ -111,9 +111,10 @@
       }
     });
     document.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape') return;
-      if (activeNotificationPanel) closeNotificationPanel({ restoreFocus: true });
-      if (activeUserSearch) closeUserSearch({ restoreFocus: true });
+      if (event.key === 'Escape') {
+        if (activeNotificationPanel) closeNotificationPanel({ restoreFocus: true });
+        if (activeUserSearch) closeUserSearch({ restoreFocus: true });
+      }
     });
     window.addEventListener('resize', () => {
       closeNotificationPanel();
