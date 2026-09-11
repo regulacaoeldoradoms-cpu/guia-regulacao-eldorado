@@ -38,7 +38,7 @@ jobs:
             notificacoes/index.html admin/social/index.html; do
             test -f "$file"
             grep -q 'name="robots" content="noindex,nofollow"' "$file"
-            grep -q 'social.css?v=20260910-3' "$file"
+            grep -q 'social.css?v=20260911-1' "$file"
             grep -q 'social-api.js?v=20260910-4' "$file"
             grep -q 'portal-interactions.js?v=20260910-2' "$file"
           done
@@ -67,12 +67,12 @@ jobs:
       - name: Conferir autorização e separação de domínios
         run: |
           set -euo pipefail
-          grep -q "CHAT_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin'\])" js/portal-chat.js
+          grep -q "CHAT_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao'\])" js/portal-chat.js
           grep -q 'portalChatProfileLink' js/portal-chat.js
-          if grep -Eqi 'social_relationship|friend' worker/portal-chat-v2.js; then
-            echo 'O chat profissional não pode depender de amizade social.' >&2
-            exit 1
-          fi
+          grep -q 'citizenFriendContacts' worker/portal-chat-v2.js
+          grep -q "relationship.state = 'friends'" worker/portal-chat-v2.js
+          grep -q "PROFESSIONAL_ROLES.has(currentUser.role).*professionalContact" worker/portal-chat-v2.js
+          grep -q "return isSocialProfessional(viewer) === isSocialProfessional(target)" worker/social-policy.js
           if grep -Eqi 'council_manifestation|portal_notifications|firebase|firestore' worker/social.js worker/social-schema.js; then
             echo 'A Camada Social não pode consultar dados assistenciais ou do Conselho.' >&2
             exit 1
