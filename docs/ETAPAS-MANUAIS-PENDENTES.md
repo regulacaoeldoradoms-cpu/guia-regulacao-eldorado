@@ -164,16 +164,17 @@ Revisar com Conselho/gestão municipal:
 - nomenclatura Bronze/Prata/Ouro;
 - fluxo para situações que não devem ser tratadas apenas como manifestação administrativa;
 - regra definitiva para membros do Conselho que também sejam autores;
-- regra de exibição social futura dos profissionais pelo cargo/função de saúde.
+- conferência da política social vigente: cargo profissional aparece como identidade, sem conceder permissões aos amigos.
 
 ## Não ativar ainda
 
-- feed social;
-- amizade/chat cidadão-profissional;
-- descoberta pública de profissionais;
 - nível Ouro efetivo;
 - recuperação por chave sem e-mail;
 - App Check/reCAPTCHA Enterprise até o fluxo atual estar validado.
+
+A Camada Social, o feed e a amizade entre contas cidadãs/profissionais já estão
+implementados. Essa amizade autoriza apenas recursos sociais consentidos e nunca
+substitui a validação de cargo das ferramentas profissionais.
 
 ## Regra de segurança da publicação
 
