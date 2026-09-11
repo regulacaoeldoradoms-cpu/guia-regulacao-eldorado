@@ -34,6 +34,9 @@ O Canal do Cidadão é um módulo da mesma conta, não uma troca de perfil. Em r
 - D1 para autenticação, propriedade dos protocolos, auditoria, notificações e rate limits;
 - `council_role=membro|presidente` separado do perfil principal;
 - Camada Social separada do domínio do Conselho; amizades e chat social não concedem acesso institucional.
+- Membros e Presidência podem possuir perfil social pesquisável como qualquer outra
+  conta ativa do Portal. Essa descoberta usa apenas identidade social pública e não
+  expõe manifestações, anexos, observações internas nem qualquer permissão do Conselho.
 
 ## Perfis e permissões
 
