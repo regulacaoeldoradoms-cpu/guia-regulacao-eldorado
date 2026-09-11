@@ -8,11 +8,12 @@ O chat interno possui dois gates independentes no Portal da Regulação de Saúd
 Eldorado/MS:
 
 1. **chat profissional**, autorizado pelo cargo e independente de amizade;
-2. **chat social cidadão↔cidadão**, autorizado somente quando existe amizade aceita
-   entre as duas contas.
+2. **chat social entre amigos**, autorizado somente quando existe amizade aceita
+   entre as duas contas, inclusive em pares cidadão↔profissional.
 
-A busca social não funciona como diretório profissional para cidadãos e não cria
-autorização cidadão↔profissional.
+A busca social pode localizar contas profissionais para amizade, mas isso não cria
+autorização profissional: o vínculo libera apenas o canal social enquanto a amizade
+estiver ativa.
 
 ## Perfis autorizados
 
@@ -24,9 +25,9 @@ O backend admite os seguintes perfis lógicos no chat:
 - `telemedicina` — Técnico em Telemedicina;
 - `admin` — Desenvolvedor.
 
-O perfil `cidadao` permanece fora do **chat profissional**. Quando a conta é
-cidadã, o Worker monta sua lista de chat somente a partir de amizades cidadãs em
-estado `friends`. Funções do Conselho, por si só, não concedem acesso ao chat
+O perfil `cidadao` permanece fora do **chat profissional**. Para o canal social, o
+Worker acrescenta contatos cuja amizade esteja em `friends`, independentemente do
+cargo do amigo. Funções do Conselho, por si só, não concedem acesso ao chat
 profissional.
 
 ## Técnico em Telemedicina
@@ -42,7 +43,7 @@ Por isso, o chat deve sempre usar a camada de autenticação flexível e a decor
 - A autorização é validada no Cloudflare Worker; exibir o componente visual não concede acesso.
 - Contas inativas não podem aparecer como contato nem receber novas conversas.
 - Cidadãos continuam isolados do diretório e do chat profissional no frontend e no backend.
-- Chat social cidadão↔cidadão exige amizade atual em `friends`; pedido, remoção ou bloqueio não autorizam conversa.
+- Chat social entre quaisquer duas contas exige amizade atual em `friends`; pedido, remoção ou bloqueio não autorizam conversa.
 - Nenhum conteúdo de conversa, credencial ou dado protegido deve ser versionado no GitHub.
 - Alterações futuras em perfis profissionais devem atualizar também os testes de `validate-portal-chat.yml`.
 
@@ -57,12 +58,12 @@ A integração mantém autorizações separadas:
 
 - para profissional, `worker/portal-chat-v2.js` continua autorizando pelo cargo e a
   amizade não participa da decisão;
-- para cidadão, o Worker consulta apenas o vínculo cidadão↔cidadão e exige
-  `social_relationships.state='friends'`;
-- o componente do chat pode ser montado para cidadão, mas sua lista contém somente
-  amigos cidadãos atualmente autorizados;
+- para o canal social, o Worker consulta o vínculo entre o usuário e o amigo e exige
+  `social_relationships.state='friends'`, sem separar por cargo;
+- o componente do chat pode ser montado para cidadão e profissional; contatos sociais
+  aparecem somente quando a amizade estiver ativa;
 - amizade removida/bloqueio revogam a conversa social, sem afetar a comunicação
-  institucional dos profissionais;
+  institucional autorizada por cargo;
 - uma suspensão social não altera sessão, cargo nem chat profissional, mas impede o
   chat social do cidadão enquanto o perfil social estiver suspenso.
 
