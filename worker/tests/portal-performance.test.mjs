@@ -112,7 +112,7 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
 
 test('service worker armazena somente superfície pública e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260911-1'/);
+  assert.match(source, /CACHE_VERSION = '20260911-2'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.match(source, /\/seguranca\//);
   assert.match(source, /\/configuracoes\//);
@@ -152,6 +152,12 @@ test('configuração social usa stale-while-revalidate sem persistir feed ou API
   assert.match(home, /Promise\.all\(\[/);
   assert.match(home, /social\.api\('\/api\/social\/me'\)/);
   assert.match(home, /PortalSocialFeed\.load\(feed, more\)/);
+});
+
+test('home usa o ícone oficial 512 no cabeçalho principal', () => {
+  const html = read('index.html');
+  assert.match(html, /class="portal-symbol" src="\/assets\/portal-regulacao-header_512x512\.png\?v=20260911-1"/);
+  assert.match(html, /fetchpriority="high"/);
 });
 
 test('login inicia o aquecimento antes de navegar e usa a marca oficial em cache', () => {
