@@ -11,9 +11,10 @@ o backend pode ser validado antes de a raiz passar a exibir o feed.
 
 Amizade é uma relação exclusivamente social. Ela nunca concede acesso ao chat
 profissional, Telemedicina, Guia Médico, Recepção, Conselho, manifestações, anexos
-ou qualquer dado assistencial. Entre duas contas cidadãs, porém, uma amizade
-explicitamente aceita passa a autorizar somente a conversa social direta entre
-aquele par. Essa autorização é revalidada no backend a cada leitura/envio.
+ou qualquer dado assistencial. Contas cidadãs e profissionais podem se localizar,
+enviar/aceitar amizade e, quando o vínculo estiver em `friends`, conversar pelo
+canal social. Essa autorização é revalidada no backend a cada leitura/envio e nunca
+promove cargo, ferramenta ou capacidade institucional.
 
 ## Identidade estável
 
@@ -99,12 +100,12 @@ administrativo de criação/alteração da conta.
 
 ## Descoberta e tipos de conta
 
-- Cidadão Prata descobre somente outros cidadãos ativos, não suspensos, com perfil
-  visível ao Portal e pedidos habilitados.
-- Cidadão não recebe uma busca ampla de profissionais.
-- Profissional elegível descobre outros profissionais e pode abrir o perfil pelo
-  chat profissional.
-- Relações manuais cidadão-profissional ficam fora da V1.
+- Qualquer conta social ativa pode localizar outra conta elegível, seja cidadã ou
+  profissional, desde que o perfil esteja visível ao Portal e aceite pedidos.
+- A busca continua autenticada, limitada, sujeita a bloqueios e sem expor e-mail,
+  UUID, permissões internas ou dados assistenciais.
+- O resultado profissional mantém o cargo/função autêntico fornecido pelo backend,
+  mas esse rótulo é apenas identidade social e não autorização.
 - Conta inativa ou socialmente suspensa sai da descoberta e não recebe novas ações.
 
 Busca exige ao menos três caracteres, possui limite por conta/janela e retorna uma
@@ -134,16 +135,15 @@ O chat profissional continua autorizado exclusivamente pelo cargo e não depende
 amizade. Desfazer amizade, bloquear ou suspender a participação social não remove uma
 comunicação institucional que o cargo profissional já permite.
 
-Para contas cidadãs, o mesmo componente visual de chat possui uma autorização
-separada: só aparecem contatos cidadãos cuja relação atual esteja em `friends`.
-Pedido pendente não libera conversa. Remover amizade ou bloquear elimina o contato e
-o backend passa a recusar novas mensagens entre o par. Cidadão não descobre nem
-inicia conversa com Médico, Recepção, Coordenação, Técnico em Telemedicina ou
-Desenvolvedor.
+O mesmo componente visual também oferece um canal social entre quaisquer duas contas
+com amizade aceita, inclusive cidadão↔profissional. Pedido pendente não libera
+conversa. Remover amizade, bloquear ou suspender o perfil social elimina esse canal e
+o backend recusa novas mensagens sociais entre o par.
 
-O cabeçalho da conversa oferece `Ver perfil`. O profissional continua resolvido por
-username/alias sem usar amizade como gate; no chat social cidadão↔cidadão, o backend
-também devolve o handle social atual para abrir o perfil correto.
+O chat profissional permanece separado: entre contas profissionais autorizadas, ele
+continua disponível por cargo mesmo sem amizade e não é removido quando uma amizade
+social termina. Para contatos sociais, o backend devolve o handle atual para abrir o
+perfil correto.
 
 ## Privacidade, abuso e moderação
 
@@ -169,9 +169,9 @@ já possuem navegação própria.
 
 Na barra horizontal da Home, o espaço antes usado por Segurança, Configurações e
 Conquistas recebe uma busca de usuários. Ela reutiliza `/api/social/search`, portanto
-mantém as mesmas regras de visibilidade, tipo de conta, bloqueio e rate limit. O
-resultado permite abrir o perfil, enviar/aceitar pedido e, quando a relação já for
-`friends`, abrir a conversa. Em outras rotas, a navegação global continua exibindo
+mantém as mesmas regras de visibilidade, bloqueio e rate limit, mas não separa mais
+cidadãos e profissionais na descoberta. O resultado permite abrir o perfil,
+enviar/aceitar pedido e, quando a relação já for `friends`, abrir a conversa social. Em outras rotas, a navegação global continua exibindo
 Segurança, Configurações e Conquistas para não criar becos de navegação. A navegação
 mobile continua com os destinos existentes.
 
