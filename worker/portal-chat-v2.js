@@ -122,7 +122,7 @@ async function professionalContacts(env, currentUsername) {
   return output;
 }
 
-async function citizenFriendContacts(env, currentUsername) {
+async function socialFriendContacts(env, currentUsername) {
   if (!socialBackendEnabled(env) || !(await ensureSocialSchema(env))) return [];
   const result = await env.AUTH_DB.prepare(`SELECT
       u.username, u.name, u.job_title AS jobTitle, u.role,
@@ -143,11 +143,11 @@ async function citizenFriendContacts(env, currentUsername) {
     JOIN auth_users u ON u.username = friend.auth_username
     LEFT JOIN portal_chat_presence p ON p.username = u.username
     WHERE viewer.auth_username = ? AND viewer.suspended_at IS NULL
-      AND friend.suspended_at IS NULL AND u.active = 1 AND u.role = 'cidadao'
+      AND friend.suspended_at IS NULL AND u.active = 1
     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
     .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername).all();
   const users = await decorateTelemedicineUsers(env, result.results || []);
-  return users.filter((item) => item.role === 'cidadao').map((item) => ({
+  return users.filter((item) => CHAT_ROLES.has(item.role)).map((item) => ({
     username: item.username,
     socialHandle: item.socialHandle || '',
     name: item.name || item.username,
@@ -161,7 +161,7 @@ async function citizenFriendContacts(env, currentUsername) {
   }));
 }
 
-async function citizenFriendContact(env, currentUsername, targetUsername) {
+async function socialFriendContact(env, currentUsername, targetUsername) {
   if (!socialBackendEnabled(env) || !(await ensureSocialSchema(env))) return null;
   const row = await env.AUTH_DB.prepare(`SELECT
       u.username, u.name, u.job_title AS jobTitle, u.role, u.active,
@@ -176,22 +176,49 @@ async function citizenFriendContact(env, currentUsername, targetUsername) {
     JOIN auth_users u ON u.username = friend.auth_username
     WHERE viewer.auth_username = ? AND u.username = ?
       AND viewer.suspended_at IS NULL AND friend.suspended_at IS NULL
-      AND u.active = 1 AND u.role = 'cidadao'
+      AND u.active = 1
     LIMIT 1`).bind(currentUsername, targetUsername).first();
   if (!row) return null;
   const decorated = await decorateTelemedicineUser(env, row);
-  return decorated.role === 'cidadao' ? { ...decorated, socialHandle: row.socialHandle || '' } : null;
+  return CHAT_ROLES.has(decorated.role) ? { ...decorated, socialHandle: row.socialHandle || '' } : null;
+}
+
+function mergeContacts(...groups) {
+  const merged = new Map();
+  for (const group of groups) {
+    for (const item of group || []) {
+      const key = normalizeUsername(item.username);
+      if (!key) continue;
+      const previous = merged.get(key);
+      merged.set(key, previous
+        ? { ...previous, ...item, socialHandle: item.socialHandle || previous.socialHandle || '' }
+        : item);
+    }
+  }
+  return Array.from(merged.values()).sort((first, second) => {
+    const firstMessage = String(first.lastMessageAt || '');
+    const secondMessage = String(second.lastMessageAt || '');
+    if (firstMessage !== secondMessage) return secondMessage.localeCompare(firstMessage);
+    if (Boolean(first.online) !== Boolean(second.online)) return Number(Boolean(second.online)) - Number(Boolean(first.online));
+    return String(first.name || first.username).localeCompare(String(second.name || second.username), 'pt-BR');
+  });
 }
 
 async function contacts(env, currentUser) {
-  if (PROFESSIONAL_ROLES.has(currentUser.role)) return professionalContacts(env, currentUser.username);
-  if (currentUser.role === 'cidadao') return citizenFriendContacts(env, currentUser.username);
+  const socialFriends = await socialFriendContacts(env, currentUser.username);
+  if (PROFESSIONAL_ROLES.has(currentUser.role)) {
+    return mergeContacts(await professionalContacts(env, currentUser.username), socialFriends);
+  }
+  if (currentUser.role === 'cidadao') return socialFriends;
   return [];
 }
 
 async function chatContact(env, currentUser, targetUsername) {
-  if (PROFESSIONAL_ROLES.has(currentUser.role)) return professionalContact(env, targetUsername);
-  if (currentUser.role === 'cidadao') return citizenFriendContact(env, currentUser.username, targetUsername);
+  if (PROFESSIONAL_ROLES.has(currentUser.role)) {
+    const institutional = await professionalContact(env, targetUsername);
+    if (institutional) return institutional;
+  }
+  if (CHAT_ROLES.has(currentUser.role)) return socialFriendContact(env, currentUser.username, targetUsername);
   return null;
 }
 
