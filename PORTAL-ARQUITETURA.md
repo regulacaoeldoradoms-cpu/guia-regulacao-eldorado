@@ -127,8 +127,8 @@ O rollback não apaga tabelas: desligar primeiro a Home e, se necessário, o bac
 
 - Toda conta autenticada e ativa pode usar a Camada Social básica; Prata continua
   necessária para recursos de segurança/foto, não para amizade ou descoberta.
-- Cidadãos e profissionais podem se localizar para amizade quando o alvo está com
-  perfil visível ao Portal e aceita novos pedidos.
+- Cidadãos e profissionais podem se localizar quando o alvo está com perfil visível
+  ao Portal; `accept_friend_requests` controla apenas se um novo pedido pode ser enviado.
 - O cargo profissional aparece apenas como identidade social autêntica; amizade não
   altera cargo nem autoriza ferramenta profissional.
 - Suspensão social remove descoberta e o canal social, mas não altera login, cargo,
@@ -324,8 +324,8 @@ protegidos.
 Na Home desktop, Segurança, Configurações e Conquistas ficam no bloco vertical
 esquerdo, enquanto o espaço correspondente na barra horizontal recebe pesquisa de
 usuários. A busca reutiliza a descoberta protegida do backend social e respeita
-visibilidade, aceite de pedidos, bloqueio, suspensão e rate limit, sem separar por
-cargo.
+visibilidade, bloqueio, suspensão e rate limit, sem separar por cargo. A preferência
+`accept_friend_requests` continua sendo aplicada no momento de enviar o pedido.
 
 O cabeçalho da conversa oferece `Ver perfil`. Para o chat profissional, o grafo
 social não participa da autorização; para o canal social, o vínculo de amizade é
