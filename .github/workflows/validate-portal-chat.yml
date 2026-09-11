@@ -38,7 +38,10 @@ jobs:
           grep -q "/api/chat/users" worker/portal-chat-v2.js
           grep -q "/api/chat/messages" worker/portal-chat-v2.js
           grep -q "peekOnly" worker/portal-chat-v2.js
+          grep -q "beforeId" worker/portal-chat-v2.js
+          grep -q "MESSAGE_HISTORY_PAGE_SIZE = 120" worker/portal-chat-v2.js
           grep -q "preloadConversationsInBackground" js/portal-chat.js
+          grep -q "MESSAGE_PRELOAD_PAGE_GUARD = 100" js/portal-chat.js
           grep -q "messageCache = new Map" js/portal-chat.js
           grep -q "notifyUserPush" worker/portal-chat-v2.js
           grep -q "addEventListener('push'" portal-sw.js
