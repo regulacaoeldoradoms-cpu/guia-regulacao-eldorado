@@ -17,7 +17,7 @@
   let contactsInitialized = false;
   let notificationWorker = null;
   const unreadSnapshot = new Map();
-  const CHAT_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin']);
+  const CHAT_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao']);
 
   const escapeText = (value) => String(value || '');
   const ICONS = Object.freeze({
@@ -78,7 +78,7 @@
   }
 
   function roleLabel(role) {
-    return ({ medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', telemedicina: 'Técnico em Telemedicina', admin: 'Desenvolvedor' })[role] || role || '';
+    return ({ medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', telemedicina: 'Técnico em Telemedicina', admin: 'Desenvolvedor', cidadao: 'Cidadão' })[role] || role || '';
   }
 
   function avatarStyle(contact) {
@@ -298,8 +298,9 @@
     if (name) name.textContent = activeContact?.name || activeContact?.username || 'Conversa';
     if (status) status.textContent = activeContact?.online ? 'online agora' : formatLastSeen(activeContact?.lastSeen);
     if (profile) {
-      profile.href = `/perfil/?u=${encodeURIComponent(activeContact?.username || '')}`;
-      profile.hidden = !activeContact?.username;
+      const profileHandle = activeContact?.socialHandle || activeContact?.username || '';
+      profile.href = `/perfil/?u=${encodeURIComponent(profileHandle)}`;
+      profile.hidden = !profileHandle;
     }
   }
 
@@ -382,6 +383,23 @@
     if (!contacts.length) await loadContacts();
     const contact = contacts.find((item) => item.username === normalized);
     if (contact) openConversation(contact);
+  }
+
+  async function openChatByHandle(handle) {
+    const normalized = String(handle || '').replace(/^@/, '').trim().toLowerCase();
+    if (!normalized) return false;
+    await loadContacts();
+    const contact = contacts.find((item) => {
+      const socialHandle = String(item.socialHandle || '').replace(/^@/, '').trim().toLowerCase();
+      const username = String(item.username || '').trim().toLowerCase();
+      return socialHandle === normalized || username === normalized;
+    });
+    if (!contact) {
+      showStatus('A conversa ainda não está disponível. Confirme a amizade e tente novamente.');
+      return false;
+    }
+    openConversation(contact);
+    return true;
   }
 
   function closeConversation() {
@@ -537,16 +555,26 @@
       }
     });
 
-    const chatFromUrl = new URLSearchParams(location.search).get('chat');
-    if (chatFromUrl) {
-      openChatByUsername(chatFromUrl);
+    const params = new URLSearchParams(location.search);
+    const chatFromUrl = params.get('chat');
+    const chatHandleFromUrl = params.get('chatHandle');
+    if (chatFromUrl || chatHandleFromUrl) {
+      if (chatHandleFromUrl) openChatByHandle(chatHandleFromUrl);
+      else openChatByUsername(chatFromUrl);
       try {
         const url = new URL(location.href);
         url.searchParams.delete('chat');
+        url.searchParams.delete('chatHandle');
         history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
       } catch (_) {}
     }
   }
+
+  window.PortalChat = Object.freeze({
+    openByUsername: openChatByUsername,
+    openByHandle: openChatByHandle,
+    refreshContacts: loadContacts
+  });
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();

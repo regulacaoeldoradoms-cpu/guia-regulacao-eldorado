@@ -433,7 +433,28 @@ sqliteTest('mutação é limitada ao autor e preferências próprias não vazam'
   assert.equal((await env.AUTH_DB.prepare('SELECT COUNT(*) AS total FROM social_reactions WHERE post_id = ?').bind(postId).first()).total, 0);
 
   const citizenChat = await callChat(env, '/api/chat/users', first.token);
-  assert.equal(citizenChat.status, 403, 'amizade entre cidadãos não concede acesso ao chat profissional');
+  assert.equal(citizenChat.status, 200, 'amizade aceita entre cidadãos libera somente o chat social entre o par');
+  const citizenContacts = (await payload(citizenChat)).users;
+  assert.ok(citizenContacts.some((item) => item.username === 'dora.social' && item.role === 'cidadao'));
+
+  const citizenMessage = await callChat(env, '/api/chat/messages', first.token, {
+    method: 'POST', body: { to: 'dora.social', body: 'Conversa social entre amigos' }
+  });
+  assert.equal(citizenMessage.status, 201);
+  const citizenConversation = await payload(await callChat(env, '/api/chat/messages?with=clara.social', second.token));
+  assert.equal(citizenConversation.messages.at(-1).body, 'Conversa social entre amigos');
+
+  const removedFriendship = await callSocial(env, '/api/social/relationships', first.token, {
+    method: 'POST', body: { action: 'remove', targetHandle: 'dora.social' }
+  });
+  assert.equal((await payload(removedFriendship)).relationship, 'removed');
+  const chatAfterRemoval = await payload(await callChat(env, '/api/chat/users', first.token));
+  assert.ok(!chatAfterRemoval.users.some((item) => item.username === 'dora.social'));
+  const blockedChatAfterRemoval = await callChat(env, '/api/chat/messages', first.token, {
+    method: 'POST', body: { to: 'dora.social', body: 'Não deve ser enviado' }
+  });
+  assert.equal(blockedChatAfterRemoval.status, 404);
+
   const authState = await payload(await handlePortalRoute(socialRequest('/api/auth/me', first.token), env, '', true));
   assert.equal(authState.user.role, 'cidadao', 'amizade não altera o cargo nem permissões da conta');
 
@@ -498,6 +519,12 @@ sqliteTest('moderação social não desativa sessão, cargo nem chat profissiona
   await callSocial(env, '/api/social/me', citizen.token);
   const citizenSearch = await payload(await callSocial(env, '/api/social/search?q=medica', citizen.token));
   assert.deepEqual(citizenSearch.profiles, [], 'busca cidadã ampla não enumera profissionais');
+  const citizenChatDirectory = await payload(await callChat(env, '/api/chat/users', citizen.token));
+  assert.ok(!citizenChatDirectory.users.some((item) => item.username === 'medica.social'), 'chat cidadão não enumera profissionais');
+  const citizenToProfessional = await callChat(env, '/api/chat/messages', citizen.token, {
+    method: 'POST', body: { to: 'medica.social', body: 'Contato profissional indevido' }
+  });
+  assert.equal(citizenToProfessional.status, 404, 'cidadão não inicia chat com profissional pela camada social');
   await callSocial(env, '/api/social/relationships', doctor.token, {
     method: 'POST', body: { action: 'request', targetHandle: 'recepcao.social' }
   });

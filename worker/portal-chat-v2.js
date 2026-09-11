@@ -4,10 +4,12 @@ import { validatePortalSession } from './auth-management-flex.js';
 import { decorateTelemedicineUser, decorateTelemedicineUsers } from './telemedicine-access.js';
 import { recordUsageHeartbeat } from './usage-monitor.js';
 import { notifyUserPush } from './push-notifications.js';
+import { ensureSocialSchema } from './social-schema.js';
 
 const MESSAGE_LIMIT = 2000;
 const ONLINE_WINDOW_SECONDS = 75;
 const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin']);
+const CHAT_ROLES = new Set([...PROFESSIONAL_ROLES, 'cidadao']);
 
 function headers(origin, allowed = true) {
   const result = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer' };
@@ -70,7 +72,23 @@ async function professionalContact(env, username) {
   return user;
 }
 
-async function contacts(env, currentUsername) {
+function socialBackendEnabled(env) {
+  return String(env.SOCIAL_BACKEND_ENABLED || '').trim().toLowerCase() === 'true';
+}
+
+async function socialHandleForUsername(env, username) {
+  if (!socialBackendEnabled(env)) return '';
+  try {
+    if (!(await ensureSocialSchema(env))) return '';
+    const row = await env.AUTH_DB.prepare('SELECT handle FROM social_users WHERE auth_username = ? LIMIT 1')
+      .bind(username).first();
+    return String(row?.handle || '');
+  } catch (_) {
+    return '';
+  }
+}
+
+async function professionalContacts(env, currentUsername) {
   const result = await env.AUTH_DB.prepare(`SELECT
       u.username, u.name, u.job_title AS jobTitle, u.role,
       COALESCE(u.avatar_data, '') AS avatarDataUrl,
@@ -86,8 +104,52 @@ async function contacts(env, currentUsername) {
     ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
     .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername).all();
   const users = await decorateTelemedicineUsers(env, result.results || []);
-  return users.filter((item) => PROFESSIONAL_ROLES.has(item.role)).map((item) => ({
+  const output = [];
+  for (const item of users.filter((candidate) => PROFESSIONAL_ROLES.has(candidate.role))) {
+    output.push({
+      username: item.username,
+      socialHandle: await socialHandleForUsername(env, item.username),
+      name: item.name || item.username,
+      jobTitle: item.jobTitle || '',
+      role: item.role,
+      avatarDataUrl: item.avatarDataUrl || '',
+      online: Number(item.online) === 1,
+      lastSeen: item.lastSeen || null,
+      lastMessageAt: item.lastMessageAt || null,
+      unread: Number(item.unread || 0)
+    });
+  }
+  return output;
+}
+
+async function citizenFriendContacts(env, currentUsername) {
+  if (!socialBackendEnabled(env) || !(await ensureSocialSchema(env))) return [];
+  const result = await env.AUTH_DB.prepare(`SELECT
+      u.username, u.name, u.job_title AS jobTitle, u.role,
+      COALESCE(u.avatar_data, '') AS avatarDataUrl,
+      friend.handle AS socialHandle,
+      p.last_seen AS lastSeen,
+      CASE WHEN p.last_seen IS NOT NULL AND p.last_seen >= datetime('now', '-' || ? || ' seconds') THEN 1 ELSE 0 END AS online,
+      COALESCE((SELECT MAX(m2.sent_at) FROM portal_chat_messages m2
+        WHERE (m2.from_user = ? AND m2.to_user = u.username) OR (m2.from_user = u.username AND m2.to_user = ?)), '') AS lastMessageAt,
+      COALESCE((SELECT COUNT(*) FROM portal_chat_messages m
+        WHERE m.to_user = ? AND m.from_user = u.username AND m.read_at IS NULL), 0) AS unread
+    FROM social_users viewer
+    JOIN social_relationships relationship
+      ON relationship.state = 'friends'
+      AND (relationship.pair_low = viewer.social_user_id OR relationship.pair_high = viewer.social_user_id)
+    JOIN social_users friend ON friend.social_user_id = CASE
+      WHEN relationship.pair_low = viewer.social_user_id THEN relationship.pair_high ELSE relationship.pair_low END
+    JOIN auth_users u ON u.username = friend.auth_username
+    LEFT JOIN portal_chat_presence p ON p.username = u.username
+    WHERE viewer.auth_username = ? AND viewer.suspended_at IS NULL
+      AND friend.suspended_at IS NULL AND u.active = 1 AND u.role = 'cidadao'
+    ORDER BY CASE WHEN lastMessageAt = '' THEN 1 ELSE 0 END, lastMessageAt DESC, online DESC, lower(u.name), u.username`)
+    .bind(ONLINE_WINDOW_SECONDS, currentUsername, currentUsername, currentUsername, currentUsername).all();
+  const users = await decorateTelemedicineUsers(env, result.results || []);
+  return users.filter((item) => item.role === 'cidadao').map((item) => ({
     username: item.username,
+    socialHandle: item.socialHandle || '',
     name: item.name || item.username,
     jobTitle: item.jobTitle || '',
     role: item.role,
@@ -97,6 +159,40 @@ async function contacts(env, currentUsername) {
     lastMessageAt: item.lastMessageAt || null,
     unread: Number(item.unread || 0)
   }));
+}
+
+async function citizenFriendContact(env, currentUsername, targetUsername) {
+  if (!socialBackendEnabled(env) || !(await ensureSocialSchema(env))) return null;
+  const row = await env.AUTH_DB.prepare(`SELECT
+      u.username, u.name, u.job_title AS jobTitle, u.role, u.active,
+      COALESCE(u.avatar_data, '') AS avatarDataUrl,
+      friend.handle AS socialHandle
+    FROM social_users viewer
+    JOIN social_relationships relationship
+      ON relationship.state = 'friends'
+      AND (relationship.pair_low = viewer.social_user_id OR relationship.pair_high = viewer.social_user_id)
+    JOIN social_users friend ON friend.social_user_id = CASE
+      WHEN relationship.pair_low = viewer.social_user_id THEN relationship.pair_high ELSE relationship.pair_low END
+    JOIN auth_users u ON u.username = friend.auth_username
+    WHERE viewer.auth_username = ? AND u.username = ?
+      AND viewer.suspended_at IS NULL AND friend.suspended_at IS NULL
+      AND u.active = 1 AND u.role = 'cidadao'
+    LIMIT 1`).bind(currentUsername, targetUsername).first();
+  if (!row) return null;
+  const decorated = await decorateTelemedicineUser(env, row);
+  return decorated.role === 'cidadao' ? { ...decorated, socialHandle: row.socialHandle || '' } : null;
+}
+
+async function contacts(env, currentUser) {
+  if (PROFESSIONAL_ROLES.has(currentUser.role)) return professionalContacts(env, currentUser.username);
+  if (currentUser.role === 'cidadao') return citizenFriendContacts(env, currentUser.username);
+  return [];
+}
+
+async function chatContact(env, currentUser, targetUsername) {
+  if (PROFESSIONAL_ROLES.has(currentUser.role)) return professionalContact(env, targetUsername);
+  if (currentUser.role === 'cidadao') return citizenFriendContact(env, currentUser.username, targetUsername);
+  return null;
 }
 
 async function messages(env, current, other, afterId) {
@@ -122,9 +218,10 @@ export function isChatApi(pathname) {
 export async function handleChatRoute(request, env, origin, originAllowed = true, executionContext = null) {
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
-  const user = await validatePortalSession(request, env, ['medico', 'recepcao', 'telemedicina']);
-  if (!user || !PROFESSIONAL_ROLES.has(user.role)) {
-    return json({ error: 'O chat direto é restrito aos profissionais autorizados.' }, 403, origin);
+  const sessionUser = await validatePortalSession(request, env, []);
+  const user = sessionUser ? await decorateTelemedicineUser(env, sessionUser) : null;
+  if (!user || !CHAT_ROLES.has(user.role)) {
+    return json({ error: 'O chat não está disponível para esta conta.' }, 403, origin);
   }
   if (!(await ensureSchema(env))) return json({ error: 'Banco do chat ainda não disponível.' }, 503, origin);
 
@@ -139,13 +236,13 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
   }
 
   if (url.pathname === '/api/chat/users' && request.method === 'GET') {
-    return json({ users: await contacts(env, username) }, 200, origin);
+    return json({ users: await contacts(env, { ...user, username }) }, 200, origin);
   }
 
   if (url.pathname === '/api/chat/messages' && request.method === 'GET') {
     const otherUsername = normalizeUsername(url.searchParams.get('with'));
-    const other = await professionalContact(env, otherUsername);
-    if (!other || otherUsername === username) return json({ error: 'Contato profissional não encontrado.' }, 404, origin);
+    const other = await chatContact(env, { ...user, username }, otherUsername);
+    if (!other || otherUsername === username) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
     const afterId = Math.max(0, Number.parseInt(url.searchParams.get('after') || '0', 10) || 0);
     const rows = await messages(env, username, otherUsername, afterId);
     await env.AUTH_DB.prepare(`UPDATE portal_chat_messages SET read_at = CURRENT_TIMESTAMP
@@ -160,7 +257,7 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     if (!message) return json({ error: 'Digite uma mensagem.' }, 400, origin);
     if (message.length > MESSAGE_LIMIT) return json({ error: `A mensagem pode ter no máximo ${MESSAGE_LIMIT} caracteres.` }, 400, origin);
     if (to === username) return json({ error: 'Escolha outro usuário para conversar.' }, 400, origin);
-    if (!(await professionalContact(env, to))) return json({ error: 'Contato profissional não encontrado.' }, 404, origin);
+    if (!(await chatContact(env, { ...user, username }, to))) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
     const inserted = await env.AUTH_DB.prepare('INSERT INTO portal_chat_messages(from_user, to_user, body) VALUES (?, ?, ?)')
       .bind(username, to, message).run();
     const id = Number(inserted.meta?.last_row_id || 0);

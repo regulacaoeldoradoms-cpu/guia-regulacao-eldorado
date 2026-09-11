@@ -306,17 +306,26 @@ O objetivo é permitir rastreabilidade sem duplicar conteúdo sensível em logs 
 
 ## Chat profissional e Camada Social
 
-Cidadãos continuam sem acesso ao chat profissional e sem lista de médicos,
-recepcionistas, coordenadores, técnicos ou desenvolvedores. Médico, Recepção,
-Coordenação, Técnico em Telemedicina e Desenvolvedor usam o chat por autorização de
-cargo validada no Worker.
+Cidadãos continuam sem acesso ao diretório/chat **profissional** e sem lista de
+médicos, recepcionistas, coordenadores, técnicos ou desenvolvedores. Médico,
+Recepção, Coordenação, Técnico em Telemedicina e Desenvolvedor usam o chat por
+autorização de cargo validada no Worker, independentemente de amizade.
 
-O cabeçalho da conversa oferece `Ver perfil`, mas o grafo social não participa da
-decisão do chat. Amizade não libera conversa profissional, e remoção/bloqueio ou
-suspensão social não retiram comunicação exigida pelo cargo.
+A Camada Social acrescenta um segundo gate de conversa: duas contas cidadãs podem
+conversar diretamente somente enquanto houver amizade aceita entre elas
+(`social_relationships.state='friends'`). Pedido pendente não libera chat;
+remoção/bloqueio revogam novas mensagens. Essa regra não concede nenhuma ferramenta
+profissional nem permite cidadão↔profissional.
 
-A Camada Social V1 implementa amizade, busca protegida e feed. Seguidores,
-comunidades, jogos e chat social cidadão↔profissional permanecem fora do escopo.
+Na Home desktop, Segurança, Configurações e Conquistas ficam no bloco vertical
+esquerdo, enquanto o espaço correspondente na barra horizontal recebe pesquisa de
+usuários. A busca reutiliza a descoberta protegida do backend social; portanto não
+contorna visibilidade, bloqueio, rate limit nem a separação cidadão/profissional.
+
+O cabeçalho da conversa oferece `Ver perfil`. Para profissionais, o grafo social
+não participa da autorização; para cidadãos, o vínculo de amizade é revalidado pelo
+Worker. Seguidores, comunidades, jogos e chat social cidadão↔profissional permanecem
+fora do escopo.
 
 ## Repositório e proteção de dados
 

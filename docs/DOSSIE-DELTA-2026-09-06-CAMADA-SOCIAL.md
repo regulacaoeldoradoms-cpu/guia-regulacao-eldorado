@@ -1,6 +1,6 @@
 # Delta do Dossiê Mestre — Camada Social V1
 
-Data de corte: 09/09/2026.
+Data de corte: 11/09/2026.
 
 Este arquivo registra mudanças posteriores ao PDF “00 - DOSSIÊ MESTRE DO Portal
 Regulação Eldorado-MS - V1 - 2026-08”. O PDF é uma fotografia de 31/08/2026 e não
@@ -43,6 +43,8 @@ domínios do Conselho e Telemedicina já documentados; o backend social não os 
   autenticadas e ativas, inclusive Bronze. Prata continua ligada à segurança e à foto
   de perfil; Ouro continua futuro.
 - Cidadãos não enumeram profissionais e não recebem chat profissional.
+- Duas contas cidadãs com amizade aceita podem usar chat social direto; remoção ou
+  bloqueio revogam esse canal. Isso não cria contato cidadão↔profissional.
 - Amizade, bloqueio ou suspensão social não alteram cargo, sessão ou ferramenta.
 - Contas profissionais provisionadas pelo Desenvolvedor e elegíveis ao chat recebem
   amizades iniciais idempotentes; remoções/bloqueios persistem como exceção.
@@ -53,3 +55,15 @@ domínios do Conselho e Telemedicina já documentados; o backend social não os 
 O backend e a troca da Home têm flags separadas. A implantação inicial usa backend
 ativo e Home desativada para QA no domínio. A ativação da Home ocorre somente após
 validação autenticada, com rollback pela flag e sem migração destrutiva.
+
+
+## Home desktop — decisão de 11/09/2026
+
+- O bloco vertical esquerdo da Home passa a mostrar Segurança, Configurações e
+  Conquistas.
+- Os atalhos redundantes Ver meu perfil, Amigos e pedidos, Notificações sociais e
+  Privacidade social foram removidos desse bloco.
+- Na barra horizontal da Home, o espaço liberado recebe a busca social de usuários,
+  mantendo as políticas existentes de descoberta e permitindo adicionar/aceitar
+  amizade e abrir conversa quando o vínculo já estiver em `friends`.
+- Em outras rotas e no mobile, a navegação preserva os destinos necessários.

@@ -32,10 +32,10 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     const html = read(filename);
     assert.match(html, /portal-interactions\.css\?v=20260906-2/);
     assert.match(html, /portal-interactions\.js\?v=20260910-2/);
-    assert.match(html, /social\.css\?v=20260910-3/);
+    assert.match(html, /social\.css\?v=20260911-1/);
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
     assert.match(html, /social-api\.js\?v=20260910-4/);
-    assert.match(html, /social-navigation\.js\?v=20260910-3/);
+    assert.match(html, /social-navigation\.js\?v=20260911-1/);
     if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-2/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
@@ -85,11 +85,21 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.match(navigation, /navLink\('\/conquistas\/', 'Conquistas'/);
   assert.match(navigation, /notificationButton\('Notificações'/);
   assert.match(navigation, /notificationButton\('Avisos'/);
+  assert.match(navigation, /homeUserSearch/);
+  assert.match(navigation, /Pesquisar usuários/);
+  assert.match(navigation, /\/api\/social\/search\?q=/);
+  assert.match(navigation, /if \(active\('\/'\) && socialAvailable\)/);
+  assert.match(navigation, /has-home-user-search/);
   assert.match(navigation, /overflow-x:auto/);
   assert.doesNotMatch(navigation, /navLink\('\/notificacoes\/', '(?:Notificações|Avisos)'/);
   assert.doesNotMatch(navigation, /navLink\('\/conta\/', 'Conta'/);
   assert.doesNotMatch(navigation, /'Meu perfil'/);
-  assert.match(index, /social-navigation\.js\?v=20260910-3/);
+  assert.match(index, /<nav class="social-card social-side-links" aria-label="Conta e preferências">/);
+  assert.match(index, /<a href="\/seguranca\/">Segurança<\/a>/);
+  assert.match(index, /<a href="\/configuracoes\/">Configurações<\/a>/);
+  assert.match(index, /<a href="\/conquistas\/">Conquistas<\/a>/);
+  assert.doesNotMatch(index, />Ver meu perfil<|>Amigos e pedidos<|>Notificações sociais<|>Privacidade social</);
+  assert.match(index, /social-navigation\.js\?v=20260911-1/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
   assert.match(index, /\/js\/social-home\.js\?v=20260910-2/);
   const socialHome = read('js/social-home.js');
@@ -100,7 +110,6 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.match(index, /<body class="portal-page home-loading-active">/);
   assert.match(index, /id="homeLoading"[^>]*aria-busy="true"/);
   assert.match(index, /id="toolsFallback" hidden/);
-  assert.match(index, /\/configuracoes\/#socialPreferencesCard/);
   assert.doesNotMatch(read('js/social-home.js'), /home\.hidden = false|fallback\.hidden = true/);
   assert.match(worker, /socialHomeEnabled/);
   assert.match(read('js/social-api.js'), /AbortController/);
@@ -130,15 +139,22 @@ test('Notificações abrem painel acessível na própria tela e preservam histó
   assert.match(panelCss, /forced-colors/);
 });
 
-test('chat profissional ignora amizade e oferece perfil sem liberar cidadãos', () => {
+test('chat profissional continua por cargo e chat cidadão exige amizade aceita', () => {
   const client = read('js/portal-chat.js');
   const backend = read('worker/portal-chat-v2.js');
-  assert.match(client, /CHAT_ROLES = new Set\(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin'\]\)/);
+  const policy = read('worker/social-policy.js');
+  assert.match(client, /CHAT_ROLES = new Set\(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao'\]\)/);
+  assert.match(client, /openChatByHandle/);
+  assert.match(client, /window\.PortalChat = Object\.freeze/);
   assert.match(client, /portalChatProfileLink/);
-  assert.match(client, /\/perfil\/\?u=/);
-  assert.doesNotMatch(client, /social_relationship|friend/i);
+  assert.match(client, /socialHandle/);
   assert.match(backend, /PROFESSIONAL_ROLES = new Set/);
-  assert.doesNotMatch(backend, /social_relationship|friend/i);
+  assert.match(backend, /citizenFriendContacts/);
+  assert.match(backend, /citizenFriendContact/);
+  assert.match(backend, /relationship\.state = 'friends'/);
+  assert.match(backend, /if \(PROFESSIONAL_ROLES\.has\(currentUser\.role\)\) return professionalContact/);
+  assert.match(backend, /if \(currentUser\.role === 'cidadao'\) return citizenFriendContact/);
+  assert.match(policy, /return isSocialProfessional\(viewer\) === isSocialProfessional\(target\)/);
 });
 
 test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação local', async () => {

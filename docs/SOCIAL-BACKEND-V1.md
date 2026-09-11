@@ -64,6 +64,19 @@ notificações não lidas e fila de moderação.
 - Perfil usa `/perfil/?u=@handle`, uma rota estática compatível com a hospedagem.
   O backend resolve tanto o handle atual quanto aliases históricos.
 
+## Chat social entre cidadãos amigos
+
+O chat social reutiliza a infraestrutura de mensagens do Portal, mas aplica um gate
+adicional no Worker. Para uma conta `cidadao`, a lista de contatos e cada leitura ou
+envio de mensagem exigem uma relação `social_relationships.state='friends'` com
+outra conta cidadã ativa e não suspensa. Remover a amizade ou bloquear revoga novas
+leituras/envios pelo canal social.
+
+Esse gate não altera o chat profissional: Médico, Recepção, Coordenação, Técnico em
+Telemedicina e Desenvolvedor continuam autorizados por cargo, sem depender do grafo
+social. A política de descoberta também continua impedindo que cidadãos enumerem ou
+iniciem conversa com profissionais.
+
 ## Amizade profissional inicial
 
 `ensureInitialProfessionalFriendships()` e `provisionProfessionalSocialGraph()`

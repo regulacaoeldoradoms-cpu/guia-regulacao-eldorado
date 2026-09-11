@@ -1,6 +1,6 @@
 # Camada Social V1 — visão de produto e navegação
 
-Decisão permanente atualizada em 10/09/2026.
+Decisão permanente atualizada em 11/09/2026.
 
 ## Estado
 
@@ -58,11 +58,15 @@ seguindo suas autorizações próprias.
 
 ## Navegação global implantada
 
-No desktop, a navegação oferece Início, Amigos, Ferramentas, Notificações, Perfil,
-Segurança, Configurações e Conquistas. No mobile, os mesmos destinos ficam em uma
-barra horizontal rolável; o painel de Notificações aparece como Avisos. O catálogo
-de Ferramentas é o único trecho dessa composição que varia conforme cargo e
-permissões.
+No desktop, a navegação global oferece Início, Amigos, Ferramentas, Notificações e
+Perfil. Na **Home**, Segurança, Configurações e Conquistas saem da barra horizontal e
+passam para o bloco vertical esquerdo abaixo da identidade; o espaço liberado recebe
+a busca social de usuários. Nas demais rotas, Segurança, Configurações e Conquistas
+continuam na barra global para preservar acesso direto.
+
+No mobile, os destinos existentes permanecem em uma barra horizontal rolável; o
+painel de Notificações aparece como Avisos. O catálogo de Ferramentas continua
+variando conforme cargo e permissões.
 
 `Notificações` no desktop e `Avisos` no mobile funcionam como controles de abertura,
 não como navegação direta. Ao acioná-los, o Portal abre na própria tela um painel com
@@ -82,9 +86,11 @@ monolítica foi redistribuída: `Perfil` aponta para `/perfil/`, `Segurança` pa
 A rota `/conta/` permanece somente como redirecionamento de compatibilidade para
 URLs antigas.
 
-Chat continua como recurso flutuante apenas para os cargos profissionais já
-autorizados. Notificações sociais usam rota e tabela próprias; avisos do Conselho
-continuam no Canal do Cidadão.
+O chat flutuante continua atendendo os cargos profissionais por autorização de
+cargo, sem depender de amizade. Para cidadãos, ele passa a listar somente outros
+cidadãos com amizade aceita e permite conversa social apenas enquanto esse vínculo
+permanecer ativo. Não existe chat social cidadão↔profissional. Notificações sociais
+usam rota e tabela próprias; avisos do Conselho continuam no Canal do Cidadão.
 
 ## Home social universal
 
@@ -199,6 +205,13 @@ O painel de notificações usa botão nativo, `aria-expanded`, `aria-controls` e
 A interface possui foco visível, controles nativos de formulário, diálogo modal
 nativo, navegação por teclado, tratamento de `prefers-reduced-motion`, contraste
 forçado, safe areas e breakpoint dedicado para evitar compressão/overflow mobile.
+
+## Busca social na Home
+
+A pesquisa do topo da Home reutiliza o endpoint protegido `/api/social/search`.
+Exige pelo menos três caracteres, respeita rate limit, visibilidade, bloqueios e a
+separação de tipos de conta. O resultado permite abrir perfil, enviar/aceitar pedido
+e, quando já houver amizade, iniciar o chat social permitido.
 
 ## Evolução posterior
 

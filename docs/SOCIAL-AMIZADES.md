@@ -1,6 +1,6 @@
 # Camada Social V1 — amizades e perfis
 
-Decisão permanente atualizada em 08/09/2026.
+Decisão permanente atualizada em 11/09/2026.
 
 ## Estado implantado
 
@@ -11,7 +11,9 @@ o backend pode ser validado antes de a raiz passar a exibir o feed.
 
 Amizade é uma relação exclusivamente social. Ela nunca concede acesso ao chat
 profissional, Telemedicina, Guia Médico, Recepção, Conselho, manifestações, anexos
-ou qualquer dado assistencial.
+ou qualquer dado assistencial. Entre duas contas cidadãs, porém, uma amizade
+explicitamente aceita passa a autorizar somente a conversa social direta entre
+aquele par. Essa autorização é revalidada no backend a cada leitura/envio.
 
 ## Identidade estável
 
@@ -126,15 +128,22 @@ avatar, e exige Conta Prata. A capa da V1 usa
 somente tokens visuais controlados; upload de mídia social foi adiado até existir
 pipeline próprio com validação de MIME, transformação e remoção segura de metadados.
 
-## Chat profissional é independente
+## Chat profissional e conversa social entre amigos
 
-O chat continua autorizado exclusivamente pelo cargo profissional. A amizade não
-libera chat para cidadãos, e desfazer amizade ou bloquear na Camada Social não remove
-uma comunicação institucional permitida pelo cargo.
+O chat profissional continua autorizado exclusivamente pelo cargo e não depende de
+amizade. Desfazer amizade, bloquear ou suspender a participação social não remove uma
+comunicação institucional que o cargo profissional já permite.
 
-O cabeçalho da conversa oferece `Ver perfil` para o contato profissional. O link
-resolve pelo username/alias no backend social, sem consultar o grafo para decidir se
-o chat pode funcionar.
+Para contas cidadãs, o mesmo componente visual de chat possui uma autorização
+separada: só aparecem contatos cidadãos cuja relação atual esteja em `friends`.
+Pedido pendente não libera conversa. Remover amizade ou bloquear elimina o contato e
+o backend passa a recusar novas mensagens entre o par. Cidadão não descobre nem
+inicia conversa com Médico, Recepção, Coordenação, Técnico em Telemedicina ou
+Desenvolvedor.
+
+O cabeçalho da conversa oferece `Ver perfil`. O profissional continua resolvido por
+username/alias sem usar amizade como gate; no chat social cidadão↔cidadão, o backend
+também devolve o handle social atual para abrir o perfil correto.
 
 ## Privacidade, abuso e moderação
 
@@ -151,8 +160,23 @@ o chat pode funcionar.
 - A trilha de moderação registra metadados técnicos mínimos sem copiar conteúdo para
   logs ou GitHub.
 
+## Navegação e descoberta na Home
+
+Na Home desktop, o bloco vertical esquerdo abaixo da identidade passa a concentrar
+`Segurança`, `Configurações` e `Conquistas`. Os atalhos redundantes para Perfil,
+Amigos, Notificações e Privacidade Social foram removidos dali porque esses destinos
+já possuem navegação própria.
+
+Na barra horizontal da Home, o espaço antes usado por Segurança, Configurações e
+Conquistas recebe uma busca de usuários. Ela reutiliza `/api/social/search`, portanto
+mantém as mesmas regras de visibilidade, tipo de conta, bloqueio e rate limit. O
+resultado permite abrir o perfil, enviar/aceitar pedido e, quando a relação já for
+`friends`, abrir a conversa. Em outras rotas, a navegação global continua exibindo
+Segurança, Configurações e Conquistas para não criar becos de navegação. A navegação
+mobile continua com os destinos existentes.
+
 ## Extensões futuras
 
-Comunidades, jogos, seguidores e chat social generalizado permanecem fora da V1.
-Produtos futuros podem referenciar `social_user_id`, mas deverão criar políticas,
-persistência e tipos de evento próprios, mantendo o isolamento assistencial.
+Comunidades, jogos e seguidores permanecem fora da V1. Produtos futuros podem
+referenciar `social_user_id`, mas deverão criar políticas, persistência e tipos de
+evento próprios, mantendo o isolamento assistencial.
