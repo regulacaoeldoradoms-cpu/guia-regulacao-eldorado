@@ -114,8 +114,8 @@ test('service worker armazena somente superfície pública e atualiza sem bloque
   const source = read('portal-sw.js');
   assert.match(source, /CACHE_VERSION = '20260911-10'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
-  assert.match(source, /'\\/documentos\\/'/);
-  assert.match(read('js/portal-performance.js'), /'\\/documentos\\/'/);
+  assert.ok(source.includes("'/documentos/'"));
+  assert.ok(read('js/portal-performance.js').includes("'/documentos/'"));
   assert.match(source, /portal-observability\.js\?v=20260911-1/);
   assert.match(read('js/portal-performance.js'), /portal-observability\.js\?v=20260911-1/);
   assert.match(source, /\/seguranca\//);
