@@ -49,7 +49,7 @@ test('cliente PWA oferece instalação e inscrição Push autenticada', () => {
 
 test('convite de instalação fica destacado no mobile sem ampliar o desktop', () => {
   assert.match(pwaStyle, /width:min\(390px,calc\(100vw - 36px\)\)/);
-  assert.match(pwaStyle, /@media \(max-width:860px\), \(max-width:1100px\) and \(hover:none\) and \(pointer:coarse\)/);
+  assert.match(pwaStyle, /@media \(max-width:860px\), \(hover:none\) and \(pointer:coarse\)/);
   assert.match(pwaStyle, /grid-template-columns:76px minmax\(0,1fr\)/);
   assert.match(pwaStyle, /font-size:1\.3rem/);
   assert.match(pwaStyle, /min-height:58px/);
