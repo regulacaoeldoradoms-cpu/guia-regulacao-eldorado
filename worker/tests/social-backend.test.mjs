@@ -25,6 +25,7 @@ import {
   canCreateManualRelationship,
   canDiscoverSocialProfile,
   relationshipStateFor,
+  rolePresentation,
   socialGate
 } from '../social-policy.js';
 
@@ -130,9 +131,50 @@ test('política libera a camada social para toda conta ativa e mantém permissõ
   assert.equal(canDiscoverSocialProfile(citizenA, citizenB, null), true);
   assert.equal(canDiscoverSocialProfile(citizenA, doctor, null), true);
   assert.equal(canDiscoverSocialProfile(citizenA, { ...doctor, profile_visibility: 'friends' }, null), false);
+  assert.equal(rolePresentation({ role: 'cidadao', councilRole: 'membro', jobTitle: '' }).label, 'Membro do Conselho');
+  assert.equal(rolePresentation({ role: 'cidadao', councilRole: 'presidente', jobTitle: '' }).label, 'Presidente do Conselho');
+  assert.equal(rolePresentation({ role: 'medico', councilRole: 'presidente', jobTitle: 'Clínico' }).label, 'Médico',
+    'cargo profissional permanece a identidade principal quando a conta também participa do Conselho');
   assert.equal(relationshipStateFor('a', 'b', { state: 'pending', initiated_by: 'a' }), 'sent');
   assert.equal(relationshipStateFor('a', 'b', { state: 'pending', initiated_by: 'b' }), 'received');
   assert.equal(relationshipStateFor('a', 'b', { state: 'blocked', blocked_by: 'b' }), 'unavailable');
+});
+
+sqliteTest('busca social inclui membros e Presidência do Conselho mesmo antes do primeiro acesso social', async () => {
+  const env = environment();
+  const viewer = await register(env, 'busca.conselho', '127.0.0.41');
+  await register(env, 'joana.colegiado', '127.0.0.42');
+  await register(env, 'maria.presidencia', '127.0.0.43');
+
+  await env.AUTH_DB.prepare(`UPDATE auth_users SET
+      name = CASE username
+        WHEN 'joana.colegiado' THEN 'Joana da Silva'
+        WHEN 'maria.presidencia' THEN 'Maria Souza'
+        ELSE name END,
+      council_role = CASE username
+        WHEN 'joana.colegiado' THEN 'membro'
+        WHEN 'maria.presidencia' THEN 'presidente'
+        ELSE council_role END,
+      accept_friend_requests = 1
+    WHERE username IN ('joana.colegiado','maria.presidencia')`).run();
+
+  const before = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total
+    FROM social_users WHERE auth_username IN ('joana.colegiado','maria.presidencia')`).first();
+  assert.equal(Number(before?.total || 0), 0, 'contas do Conselho ainda não precisam ter aberto a Camada Social');
+
+  const memberSearch = await payload(await callSocial(env, '/api/social/search?q=joana', viewer.token));
+  const member = memberSearch.profiles.find((item) => item.handle === 'joana.colegiado');
+  assert.ok(member, 'membro do Conselho deve ser localizável por nome');
+  assert.equal(member.professional?.label, 'Membro do Conselho');
+
+  const presidentSearch = await payload(await callSocial(env, '/api/social/search?q=presidente', viewer.token));
+  const president = presidentSearch.profiles.find((item) => item.handle === 'maria.presidencia');
+  assert.ok(president, 'Presidência deve ser localizável pelo cargo do Conselho');
+  assert.equal(president.professional?.label, 'Presidente do Conselho');
+
+  const after = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total
+    FROM social_users WHERE auth_username IN ('joana.colegiado','maria.presidencia')`).first();
+  assert.equal(Number(after?.total || 0), 2, 'a busca deve sincronizar identidades sociais faltantes do Conselho');
 });
 
 sqliteTest('flag desligada contém schema, semeadura e aliases sociais', async () => {
