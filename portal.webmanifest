@@ -10,15 +10,15 @@
   "theme_color": "#0d3157",
   "icons": [
     {
-      "src": "/assets/app-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/assets/portal-regulacao-header_192x192.png?v=20260911-1",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/portal-regulacao-icon.webp",
-      "sizes": "any",
-      "type": "image/webp",
+      "src": "/assets/portal-regulacao-header_512x512.png?v=20260911-1",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     }
   ],
