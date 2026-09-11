@@ -147,7 +147,7 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 **Fase atual:** Fase 1 — Navegação do Google Drive.  
 **Subfase / objetivo atual:** conectar e validar a conta institucional no ambiente real, sem iniciar Fase 2.  
-**Última ação concluída:** PR #134 validado com 26 workflows e mesclado na main em `3dc50afd3ba902d36ebe806176ad0939d71c9379`; nova branch de validação OAuth criada da main.  
+**Última ação concluída:** PR #134 validado com 26 workflows e mesclado na main em `3dc50afd3ba902d36ebe806176ad0939d71c9379`; branch de validação OAuth criada e guia de configuração externa documentado.  
 **Branch atual:** `feat/central-docs-phase1-oauth-validation`.  
 **PR atual:** nenhum; abrir somente se a validação real exigir correção de código/documentação.  
 **Último commit relevante:** `3dc50afd` — merge da implementação read-only da Fase 1.  
@@ -156,8 +156,8 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Justificativas:** atender Meu Drive completo sem expor credenciais/fileId nem persistir documento clínico.  
 **Alternativas descartadas:** `drive.file`, service account para acervo atual, espelho de PDFs, cache persistente, token Google no frontend, IA/edição antecipadas.  
 **Ações externas concluídas:** PostHog seguro operacional; código da Fase 1 mesclado. Google Cloud OAuth ainda não configurado.  
-**Pendências:** confirmar deploy; configurar Google Drive API/OAuth; adicionar Client ID/Secret e chave AES na Cloudflare; consentir conta institucional; testar navegação/pesquisa/PDF; auditar PostHog.  
+**Pendências:** confirmação pública do deploy não pôde ser feita pelos conectores disponíveis; configurar Google Drive API/OAuth; adicionar Client ID/Secret e chave AES na Cloudflare; consentir conta institucional; testar navegação/pesquisa/PDF; auditar PostHog.  
 **Riscos conhecidos:** restricted scope e requisitos de produção; refresh token curto em Testing; PDFs grandes ainda carregam integralmente nesta fase.  
 **Métricas / observabilidade:** instrumentação da Fase 1 pronta, mas nenhum evento documental real validado ainda.  
-**Próxima ação exata:** confirmar que a versão pós-merge está publicada e, então, orientar somente os passos manuais inevitáveis do Google Cloud/Cloudflare.  
-**Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, arquitetura V1, este status, `worker/document-drive.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`.
+**Próxima ação exata:** iniciar com o usuário a configuração manual do Google Cloud descrita em `docs/CENTRAL-DOCUMENTOS-OAUTH-SETUP.md`; solicitar apenas ações que não podem ser executadas pelos conectores disponíveis.  
+**Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, `docs/CENTRAL-DOCUMENTOS-OAUTH-SETUP.md`, arquitetura V1, este status, `worker/document-drive.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`.
