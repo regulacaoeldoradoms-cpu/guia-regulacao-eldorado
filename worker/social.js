@@ -16,7 +16,6 @@ import {
   canCreateManualRelationship,
   canDiscoverSocialProfile,
   canViewSocialProfile,
-  isSocialProfessional,
   relationshipStateFor,
   rolePresentation,
   socialAccountLevel,
@@ -417,11 +416,12 @@ async function handleSearch(url, env, context, origin) {
   if (query.length < 3) return json({ error: 'Digite ao menos 3 caracteres para pesquisar.' }, 400, origin);
   const cursor = decodeCursor(url.searchParams.get('cursor'));
   const afterHandle = cleanText(cursor?.handle, 40);
-  const like = `%${query.replace(/[\\%_]/g, '\\$&')}%`;
+  const like = `%${query.replace(/[\\%_]/g, '\\  const like = `%${query.replace(/[\\%_]/g, '\\$&')}%`;
   const professional = isSocialProfessional(context.social);
   const roleClause = professional
     ? "(au.role IN ('medico','recepcao','coordenacao','admin') OR tele.enabled = 1)"
     : "au.role = 'cidadao' AND au.accept_friend_requests = 1 AND su.profile_visibility = 'portal'";
+  const result = await env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name,')}%`;
   const result = await env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name,
       au.job_title AS jobTitle, au.active, au.email_verified AS emailVerified,
       au.accept_friend_requests AS acceptFriendRequests,
@@ -432,7 +432,6 @@ async function handleSearch(url, env, context, origin) {
     JOIN auth_users au ON au.username = su.auth_username
     LEFT JOIN auth_telemedicine_access tele ON tele.username = au.username AND tele.enabled = 1
     WHERE su.social_user_id <> ? AND au.active = 1 AND su.suspended_at IS NULL
-      AND ${roleClause}
       AND su.handle > ? COLLATE NOCASE
       AND (lower(su.handle) LIKE ? ESCAPE '\\' OR lower(au.name) LIKE ? ESCAPE '\\')
       AND NOT EXISTS (
