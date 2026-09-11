@@ -101,7 +101,7 @@ administrativo de criação/alteração da conta.
 ## Descoberta e tipos de conta
 
 - Qualquer conta social ativa pode localizar outra conta elegível, seja cidadã ou
-  profissional, desde que o perfil esteja visível ao Portal e aceite pedidos.
+  profissional, desde que o perfil esteja visível ao Portal. A preferência de aceitar pedidos controla o envio de novos convites, não a existência do perfil na pesquisa.
 - A busca continua autenticada, limitada, sujeita a bloqueios e sem expor e-mail,
   UUID, permissões internas ou dados assistenciais.
 - O resultado profissional mantém o cargo/função autêntico fornecido pelo backend,
@@ -169,7 +169,7 @@ já possuem navegação própria.
 
 Na barra horizontal da Home, o espaço antes usado por Segurança, Configurações e
 Conquistas recebe uma busca de usuários. Ela reutiliza `/api/social/search`, portanto
-mantém as mesmas regras de visibilidade, bloqueio e rate limit, mas não separa mais
+mantém as mesmas regras de visibilidade, bloqueio e rate limit, e respeita a preferência de aceitar pedidos na ação de adicionar, mas não separa mais
 cidadãos e profissionais na descoberta. O resultado permite abrir o perfil,
 enviar/aceitar pedido e, quando a relação já for `friends`, abrir a conversa social. Em outras rotas, a navegação global continua exibindo
 Segurança, Configurações e Conquistas para não criar becos de navegação. A navegação
