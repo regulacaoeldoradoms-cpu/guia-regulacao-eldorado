@@ -80,7 +80,7 @@ function jsonResponse(payload, status, origin = '') {
 
 function noContent(origin = '') {
   const headers = responseHeaders(origin);
-  headers.delete('Content-Type');
+  delete headers['Content-Type'];
   return new Response(null, { status: 204, headers });
 }
 
