@@ -83,7 +83,7 @@
 
   function avatarStyle(contact) {
     const photo = String(contact?.avatarDataUrl || '');
-    return photo ? `background-image:url("${photo.replace(/"/g, '&quot;')}")` : '';
+    return photo ? `background-image:url('${photo.replace(/'/g, '%27')}')` : '';
   }
 
   function showStatus(message) {
