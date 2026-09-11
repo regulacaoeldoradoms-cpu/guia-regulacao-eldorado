@@ -74,6 +74,10 @@ jobs:
           grep -q "const institutional = await professionalContact" worker/portal-chat-v2.js
           grep -q "return socialFriendContact(env, currentUser.username, targetUsername)" worker/portal-chat-v2.js
           grep -q "target.profile_visibility === 'portal'" worker/social-policy.js
+          grep -q "ensureCouncilSocialProfiles" worker/social.js
+          grep -q "u.council_role IN ('membro','presidente')" worker/social-schema.js
+          grep -q "Presidente do Conselho" worker/social-policy.js
+          grep -q "Membro do Conselho" worker/social-policy.js
           ! grep -q "isSocialProfessional(viewer) === isSocialProfessional(target)" worker/social-policy.js
           if grep -Eqi 'council_manifestation|portal_notifications|firebase|firestore' worker/social.js worker/social-schema.js; then
             echo 'A Camada Social não pode consultar dados assistenciais ou do Conselho.' >&2

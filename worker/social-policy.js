@@ -13,6 +13,11 @@ export const SOCIAL_ROLE_LABELS = Object.freeze({
   cidadao: 'Cidadão'
 });
 
+export const SOCIAL_COUNCIL_LABELS = Object.freeze({
+  membro: 'Membro do Conselho',
+  presidente: 'Presidente do Conselho'
+});
+
 export function isSocialProfessional(user) {
   return Boolean(user && SOCIAL_PROFESSIONAL_ROLES.has(String(user.role || '')));
 }
@@ -77,10 +82,20 @@ export function postAudienceAllows(viewerId, authorId, audience, relationship) {
 }
 
 export function rolePresentation(user) {
-  if (!isSocialProfessional(user)) return null;
-  return {
-    role: user.role,
-    label: SOCIAL_ROLE_LABELS[user.role] || 'Profissional',
-    jobTitle: String(user.jobTitle || '')
-  };
+  if (isSocialProfessional(user)) {
+    return {
+      role: user.role,
+      label: SOCIAL_ROLE_LABELS[user.role] || 'Profissional',
+      jobTitle: String(user.jobTitle || '')
+    };
+  }
+  const councilRole = String(user?.councilRole || user?.council_role || '');
+  if (SOCIAL_COUNCIL_LABELS[councilRole]) {
+    return {
+      role: `conselho_${councilRole}`,
+      label: SOCIAL_COUNCIL_LABELS[councilRole],
+      jobTitle: String(user?.jobTitle || '')
+    };
+  }
+  return null;
 }

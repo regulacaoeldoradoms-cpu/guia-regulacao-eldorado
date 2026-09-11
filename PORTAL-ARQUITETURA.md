@@ -130,8 +130,10 @@ O rollback não apaga tabelas: desligar primeiro a Home e, se necessário, o bac
 
 - Toda conta autenticada e ativa pode usar a Camada Social básica; Prata continua
   necessária para recursos de segurança/foto, não para amizade ou descoberta.
-- Cidadãos e profissionais podem se localizar quando o alvo está com perfil visível
-  ao Portal; `accept_friend_requests` controla apenas se um novo pedido pode ser enviado.
+- Cidadãos, profissionais e integrantes do Conselho podem se localizar quando o
+  alvo está com perfil visível ao Portal; contas com `council_role=membro|presidente`
+  são sincronizadas para a identidade social na descoberta mesmo sem acesso social
+  prévio. `accept_friend_requests` controla apenas se um novo pedido pode ser enviado.
 - O cargo profissional aparece apenas como identidade social autêntica; amizade não
   altera cargo nem autoriza ferramenta profissional.
 - Suspensão social remove descoberta e o canal social, mas não altera login, cargo,

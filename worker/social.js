@@ -4,6 +4,7 @@ import { validatePortalSession } from './auth-management-flex.js';
 import { decorateTelemedicineUser } from './telemedicine-access.js';
 import { notifyUserPush } from './push-notifications.js';
 import {
+  ensureCouncilSocialProfiles,
   ensureInitialProfessionalFriendships,
   ensureSocialSchema,
   resolveSocialUser,
@@ -168,6 +169,7 @@ async function requestContext(request, env, authenticatedUser = null) {
     name: user.name,
     jobTitle: user.jobTitle,
     role: user.role,
+    councilRole: user.councilRole || '',
     active: user.active === false ? 0 : 1,
     emailVerified: user.emailVerified ? 1 : 0,
     selfRegistered: user.selfRegistered ? 1 : 0,
@@ -410,6 +412,7 @@ async function handleProfileGet(env, context, requestedHandle, origin) {
 async function handleSearch(url, env, context, origin) {
   const gate = socialGate(context.user, context.social);
   if (!gate.allowed) return gateResponse(gate, origin);
+  await ensureCouncilSocialProfiles(env);
   const limited = await enforceRateLimit(env, context.social.social_user_id, 'search');
   if (!limited.allowed) return rateLimitResponse(limited, origin);
   const query = cleanText(url.searchParams.get('q'), 60).toLowerCase();
@@ -419,7 +422,8 @@ async function handleSearch(url, env, context, origin) {
   const escapedQuery = query.replace(/[\\%_]/g, '\\$&');
   const like = `%${escapedQuery}%`;
   const result = await env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name,
-      au.job_title AS jobTitle, au.active, au.email_verified AS emailVerified,
+      au.job_title AS jobTitle, au.active, au.council_role AS councilRole,
+      au.email_verified AS emailVerified,
       au.accept_friend_requests AS acceptFriendRequests,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion,
@@ -429,7 +433,12 @@ async function handleSearch(url, env, context, origin) {
     LEFT JOIN auth_telemedicine_access tele ON tele.username = au.username AND tele.enabled = 1
     WHERE su.social_user_id <> ? AND au.active = 1 AND su.suspended_at IS NULL
       AND su.handle > ? COLLATE NOCASE
-      AND (lower(su.handle) LIKE ? ESCAPE '\\' OR lower(au.name) LIKE ? ESCAPE '\\')
+      AND (
+        lower(su.handle) LIKE ? ESCAPE '\\'
+        OR lower(au.name) LIKE ? ESCAPE '\\'
+        OR lower(COALESCE(au.job_title, '')) LIKE ? ESCAPE '\\'
+        OR lower(COALESCE(au.council_role, '')) LIKE ? ESCAPE '\\'
+      )
       AND NOT EXISTS (
         SELECT 1 FROM social_relationships block
         WHERE block.pair_low = CASE WHEN su.social_user_id < ? THEN su.social_user_id ELSE ? END
@@ -441,6 +450,8 @@ async function handleSearch(url, env, context, origin) {
     .bind(
       context.social.social_user_id,
       afterHandle,
+      like,
+      like,
       like,
       like,
       context.social.social_user_id,
@@ -592,7 +603,7 @@ async function handleRelationshipList(url, env, context, origin) {
   const viewerId = context.social.social_user_id;
   const result = await env.AUTH_DB.prepare(`SELECT rel.*,
       su.*, au.username, au.role, au.name, au.job_title AS jobTitle, au.active,
-      au.email_verified AS emailVerified, au.accept_friend_requests AS acceptFriendRequests,
+      au.council_role AS councilRole, au.email_verified AS emailVerified, au.accept_friend_requests AS acceptFriendRequests,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion
     FROM social_relationships rel
@@ -668,7 +679,8 @@ async function feedRows(env, viewerId, cursor, authorId = '') {
           AND audience_rel.state = 'friends'
       )))`;
   const sql = `SELECT p.*, su.handle, su.status_text, au.username, au.role, au.name,
-      au.job_title AS jobTitle, COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      au.job_title AS jobTitle, au.council_role AS councilRole,
+      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion,
       CASE WHEN p.author_id = ? THEN 1 ELSE 0 END AS own,
       (SELECT COUNT(*) FROM social_comments c
@@ -751,7 +763,7 @@ async function handlePostCreate(request, env, context, origin) {
 
 async function postById(env, postId, viewerId) {
   return env.AUTH_DB.prepare(`SELECT p.*, su.handle, su.status_text, au.username, au.role, au.name,
-      au.job_title AS jobTitle, au.active, su.suspended_at,
+      au.job_title AS jobTitle, au.active, au.council_role AS councilRole, su.suspended_at,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion,
       CASE WHEN p.author_id = ? THEN 1 ELSE 0 END AS own,
@@ -826,7 +838,8 @@ async function handleCommentsGet(url, env, context, postId, origin) {
   const afterAt = cleanText(cursor?.createdAt, 40) || '';
   const afterId = cleanText(cursor?.id, 80) || '';
   const result = await env.AUTH_DB.prepare(`SELECT c.*, su.handle, su.status_text, au.username, au.role, au.name,
-      au.job_title AS jobTitle, COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      au.job_title AS jobTitle, au.council_role AS councilRole,
+      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion,
       CASE WHEN c.author_id = ? THEN 1 ELSE 0 END AS own
     FROM social_comments c
@@ -940,7 +953,8 @@ async function handleNotifications(request, url, env, context, origin) {
   const result = await env.AUTH_DB.prepare(`SELECT notification.id, notification.type, notification.entity_type AS entityType,
       notification.entity_id AS entityId, notification.created_at AS createdAt,
       notification.read_at AS readAt, actor.handle, au.name, au.role,
-      au.job_title AS jobTitle, COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      au.job_title AS jobTitle, au.council_role AS councilRole,
+      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion
     FROM social_notifications notification
     LEFT JOIN social_users actor ON actor.social_user_id = notification.actor_id
@@ -1118,6 +1132,7 @@ async function moderationTargetSummary(env, targetType, targetId) {
   const row = await env.AUTH_DB.prepare(`SELECT content.id, content.body, content.status,
       content.author_id AS authorSocialUserId, su.handle, su.status_text,
       su.suspended_at, au.username, au.name, au.role, au.job_title AS jobTitle,
+      au.council_role AS councilRole,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion
     FROM ${table} content

@@ -107,8 +107,13 @@ administrativo de criação/alteração da conta.
 
 ## Descoberta e tipos de conta
 
-- Qualquer conta social ativa pode localizar outra conta elegível, seja cidadã ou
-  profissional, desde que o perfil esteja visível ao Portal. A preferência de aceitar pedidos controla o envio de novos convites, não a existência do perfil na pesquisa.
+- Qualquer conta social ativa pode localizar outra conta elegível, seja cidadã,
+  profissional ou integrante do Conselho, desde que o perfil esteja visível ao
+  Portal. Contas com `council_role=membro|presidente` são sincronizadas para a
+  identidade social mesmo quando ainda não abriram a Camada Social, permitindo
+  localizar membros e a Presidência pela pesquisa.
+- A preferência de aceitar pedidos controla o envio de novos convites, não a
+  existência do perfil na pesquisa.
 - A busca continua autenticada, limitada, sujeita a bloqueios e sem expor e-mail,
   UUID, permissões internas ou dados assistenciais.
 - O resultado profissional mantém o cargo/função autêntico fornecido pelo backend,
