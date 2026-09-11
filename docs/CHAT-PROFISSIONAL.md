@@ -50,9 +50,11 @@ Por isso, o chat deve sempre usar a camada de autenticação flexível e a decor
 ## Pré-carregamento privado das conversas
 
 Depois que a lista de contatos autorizados é carregada, o cliente inicia em segundo
-plano o pré-carregamento do mesmo histórico recente que a conversa já oferece na
-abertura. O objetivo é que, ao tocar em uma pessoa, as mensagens já estejam na
-memória da página e apareçam imediatamente.
+plano o pré-carregamento paginado do histórico da conversa. O primeiro lote mantém a
+janela de 120 mensagens já usada pelo chat e, quando houver conteúdo anterior, o
+cliente busca os lotes mais antigos em sequência até completar o histórico disponível.
+O objetivo é que, ao tocar em uma pessoa, as mensagens já estejam na memória da
+página e apareçam imediatamente.
 
 Regras permanentes desse comportamento:
 
@@ -66,8 +68,9 @@ Regras permanentes desse comportamento:
   gravado em `localStorage`, `sessionStorage`, Cache Storage nem no cache estático
   do Service Worker;
 - a memória é descartada ao sair da página ou quando a sessão é limpa;
-- novas mensagens são incorporadas ao snapshot em segundo plano quando
-  `lastMessageAt` muda, sem bloquear a interface;
+- o histórico anterior é buscado em páginas de 120 mensagens, com trava defensiva
+  contra paginação infinita; novas mensagens são incorporadas ao snapshot em segundo
+  plano quando `lastMessageAt` muda, sem refazer todo o histórico;
 - qualquer falha de pré-carregamento é silenciosa e a conversa continua podendo ser
   carregada normalmente sob demanda.
 
