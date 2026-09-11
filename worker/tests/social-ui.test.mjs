@@ -35,7 +35,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
     assert.match(html, /social\.css\?v=20260911-1/);
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
     assert.match(html, /social-api\.js\?v=20260910-4/);
-    assert.match(html, /social-navigation\.js\?v=20260911-1/);
+    assert.match(html, /social-navigation\.js\?v=20260911-2/);
     if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-2/);
     if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
@@ -99,7 +99,7 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.match(index, /<a href="\/configuracoes\/">Configurações<\/a>/);
   assert.match(index, /<a href="\/conquistas\/">Conquistas<\/a>/);
   assert.doesNotMatch(index, />Ver meu perfil<|>Amigos e pedidos<|>Notificações sociais<|>Privacidade social</);
-  assert.match(index, /social-navigation\.js\?v=20260911-1/);
+  assert.match(index, /social-navigation\.js\?v=20260911-2/);
   assert.match(index, /home-loading\.css\?v=20260909-1/);
   assert.match(index, /\/js\/social-home\.js\?v=20260910-2/);
   const socialHome = read('js/social-home.js');
@@ -118,6 +118,24 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
   assert.match(worker, /Promise\.all\(\[/);
   assert.match(flags, /SOCIAL_BACKEND_ENABLED = "true"/);
   assert.match(flags, /^SOCIAL_HOME_ENABLED = "true"$/m);
+});
+
+test('pedido de amizade muda para enviado imediatamente e confirma em segundo plano', () => {
+  const navigation = read('js/social-navigation.js');
+  const friends = read('js/social-friends.js');
+
+  for (const source of [navigation, friends]) {
+    assert.match(source, /function optimisticFriendRequest/);
+    assert.match(source, /buttonLabel\(button, 'Pedido enviado'\)/);
+    assert.match(source, /profile\.relationship = 'sent'/);
+    assert.match(source, /void social\.api\('\/api\/social\/relationships'/);
+    assert.match(source, /PortalInteractions\?\.notify\?\.\('success', 'Pedido de amizade enviado\.'/);
+    assert.match(source, /PortalInteractions\?\.notify\?\.\('error'/);
+  }
+
+  assert.match(navigation, /if \(action === 'request'\) \{\s*optimisticFriendRequest\(profile, button\);\s*return;/);
+  assert.match(friends, /if \(action === 'request' && !confirmation\)/);
+  assert.match(friends, /relationshipLists\.set\('outgoing', optimisticOutgoing\)/);
 });
 
 test('Notificações abrem painel acessível na própria tela e preservam histórico completo', () => {
@@ -171,7 +189,7 @@ test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação
   assert.match(html, /value="30">30 por página/);
   assert.match(html, /value="all">Todos/);
   assert.match(html, /id="relationshipPageButtons"/);
-  assert.match(html, /social-friends\.js\?v=20260910-3/);
+  assert.match(html, /social-friends\.js\?v=20260911-1/);
 
   assert.match(navigation, /preloadRelationshipList\?\.\('friends'\)/);
   assert.match(apiSource, /fetchAllRelationshipPages/);
