@@ -441,7 +441,7 @@ sqliteTest('mutação é limitada ao autor e preferências próprias não vazam'
     method: 'POST', body: { to: 'dora.social', body: 'Conversa social entre amigos' }
   });
   assert.equal(citizenMessage.status, 201);
-  const citizenConversation = await payload(await callChat(env, '/api/chat/messages?with=dora.social', second.token));
+  const citizenConversation = await payload(await callChat(env, '/api/chat/messages?with=clara.social', second.token));
   assert.equal(citizenConversation.messages.at(-1).body, 'Conversa social entre amigos');
 
   const removedFriendship = await callSocial(env, '/api/social/relationships', first.token, {
