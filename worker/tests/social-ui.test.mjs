@@ -171,12 +171,18 @@ test('chat profissional continua por cargo e chat social exige amizade aceita', 
   assert.match(client, /function preloadConversationsInBackground/);
   assert.match(client, /requestIdleCallback/);
   assert.match(client, /MESSAGE_PRELOAD_CONCURRENCY = 3/);
+  assert.match(client, /MESSAGE_HISTORY_PAGE_SIZE = 120/);
+  assert.match(client, /MESSAGE_PRELOAD_PAGE_GUARD = 100/);
   assert.match(client, /&peek=1/);
+  assert.match(client, /&before=/);
+  assert.match(client, /seenFirstIds/);
   assert.match(client, /renderCachedConversation\(contact\)/);
   assert.match(client, /void loadMessages\(!renderedFromMemory\)/);
   assert.match(client, /portal:session-cleared/);
   assert.doesNotMatch(client, /sessionStorage.*message|localStorage.*message/s);
   assert.match(backend, /const peekOnly = url\.searchParams\.get\('peek'\) === '1'/);
+  assert.match(backend, /const beforeId = Math\.max/);
+  assert.match(backend, /MESSAGE_HISTORY_PAGE_SIZE = 120/);
   assert.match(backend, /if \(!peekOnly\) \{/);
   assert.match(backend, /PROFESSIONAL_ROLES = new Set/);
   assert.match(backend, /socialFriendContacts/);
