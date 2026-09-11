@@ -401,15 +401,16 @@
       const users = await auth.listUsers();
       els.accessList.innerHTML = users.map((account) => {
         const caps = account.documentCapabilities || {};
-        return `<article class="documents-access-row" data-username="${escapeHtml(account.username)}">
+        return `<article class="documents-access-row"
+          data-username="${escapeHtml(account.username)}"
+          data-extract="${caps.extract ? '1' : '0'}"
+          data-edit="${caps.edit ? '1' : '0'}">
           <div class="documents-access-person">
             <strong>${escapeHtml(account.name || account.username)}</strong>
             <small>@${escapeHtml(account.username)} · ${escapeHtml(window.PortalTools?.roleLabels?.[account.role] || account.role || '')}</small>
           </div>
           <div class="documents-access-options">
-            <label><input type="checkbox" data-cap="view" ${caps.view ? 'checked' : ''}> Leitura</label>
-            <label><input type="checkbox" data-cap="extract" ${caps.extract ? 'checked' : ''}> IA</label>
-            <label><input type="checkbox" data-cap="edit" ${caps.edit ? 'checked' : ''}> Edição</label>
+            <label><input type="checkbox" data-cap="view" ${caps.view ? 'checked' : ''}> Leitura do Drive</label>
           </div>
           <button class="portal-button secondary" type="button" data-action="save-access">Salvar</button>
         </article>`;
@@ -423,6 +424,8 @@
     const username = row.dataset.username;
     const button = row.querySelector('[data-action="save-access"]');
     const inputs = Object.fromEntries(Array.from(row.querySelectorAll('[data-cap]')).map((input) => [input.dataset.cap, input.checked]));
+    const preserveExtract = row.dataset.extract === '1';
+    const preserveEdit = row.dataset.edit === '1';
     button.disabled = true;
     button.textContent = 'Salvando…';
     try {
@@ -430,13 +433,13 @@
         method: 'PATCH',
         body: JSON.stringify({
           view: inputs.view === true,
-          extract: inputs.extract === true,
-          edit: inputs.edit === true
+          extract: inputs.view === true && preserveExtract,
+          edit: inputs.view === true && preserveEdit
         })
       });
       row.querySelector('[data-cap="view"]').checked = payload?.capabilities?.view === true;
-      row.querySelector('[data-cap="extract"]').checked = payload?.capabilities?.extract === true;
-      row.querySelector('[data-cap="edit"]').checked = payload?.capabilities?.edit === true;
+      row.dataset.extract = payload?.capabilities?.extract ? '1' : '0';
+      row.dataset.edit = payload?.capabilities?.edit ? '1' : '0';
       button.textContent = 'Salvo';
       if (username === state.user.username) {
         await auth.me({ allowCached: false }).catch(() => null);
@@ -511,19 +514,6 @@
     const button = event.target.closest('[data-action="save-access"]');
     const row = event.target.closest('[data-username]');
     if (button && row) saveAccountAccess(row);
-  });
-
-  els.accessList.addEventListener('change', (event) => {
-    const input = event.target.closest('[data-cap]');
-    const row = event.target.closest('[data-username]');
-    if (!input || !row) return;
-    if (input.dataset.cap !== 'view' && input.checked) {
-      const view = row.querySelector('[data-cap="view"]');
-      if (view) view.checked = true;
-    }
-    if (input.dataset.cap === 'view' && !input.checked) {
-      row.querySelectorAll('[data-cap="extract"],[data-cap="edit"]').forEach((dependent) => { dependent.checked = false; });
-    }
   });
 
   els.searchForm.addEventListener('submit', (event) => {
