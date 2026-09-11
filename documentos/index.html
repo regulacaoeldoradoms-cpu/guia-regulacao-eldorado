@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="/js/portal-performance.js?v=20260911-2" async></script>
+  <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0d3157">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data: blob:; frame-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <title>Central de Documentos | Portal da Regulação</title>
+  <link rel="icon" href="/assets/portal-regulacao-header_512x512.png?v=20260911-1" type="image/png">
+  <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
+  <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
+  <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
+  <link rel="stylesheet" href="/css/documents.css?v=20260911-1">
+</head>
+<body class="portal-page documents-page">
+  <div class="portal-shell">
+    <header class="portal-topbar">
+      <div class="portal-topbar-inner">
+        <a class="portal-brand portal-brand--portal-identity" href="/" style="color:inherit;text-decoration:none">
+          <img class="portal-symbol" src="/assets/portal-regulacao-header_512x512.png?v=20260911-1" alt="Símbolo do Portal da Regulação de Saúde">
+          <div class="portal-brand-copy"><h1>Portal da Regulação de Saúde</h1><p>Central de Documentos · Eldorado/MS</p></div>
+        </a>
+        <div class="portal-user">
+          <div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div>
+          <a class="portal-button ghost documents-tools-link" href="/ferramentas/">Ferramentas</a>
+          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="portal-main documents-main">
+      <section class="portal-hero documents-hero">
+        <div class="portal-hero-copy">
+          <span class="portal-eyebrow">Central de Documentos</span>
+          <h2>Google Drive institucional dentro do Portal.</h2>
+          <p>Navegue por pastas, pesquise no acervo e abra PDFs autorizados. Nesta primeira fase, a Central é somente leitura: nenhuma alteração é feita nos arquivos.</p>
+        </div>
+        <div class="documents-hero-state" id="driveConnectionBadge" aria-live="polite">Verificando conexão…</div>
+      </section>
+
+      <div id="documentsGlobalStatus" class="documents-global-status" aria-live="polite"></div>
+
+      <section class="portal-section documents-setup" id="documentsSetup" hidden>
+        <div class="portal-section-heading">
+          <div><h2>Configuração institucional</h2><p>Disponível somente para quem administra a Central.</p></div>
+        </div>
+        <div class="documents-setup-body">
+          <div id="driveSetupMessage" class="portal-note info"></div>
+          <div class="documents-setup-actions">
+            <button class="portal-button primary" id="connectDriveButton" type="button" hidden>Conectar Google Drive</button>
+            <button class="portal-button secondary" id="grantSelfViewButton" type="button" hidden>Liberar meu acesso de leitura</button>
+            <button class="portal-button danger" id="disconnectDriveButton" type="button" hidden>Desconectar Drive</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="portal-section documents-access-admin" id="documentsAccessAdmin" hidden>
+        <div class="portal-section-heading">
+          <div><h2>Acessos à Central</h2><p>Permissões documentais são independentes do cargo principal no Portal.</p></div>
+          <button class="portal-button secondary" id="refreshAccessButton" type="button">Atualizar</button>
+        </div>
+        <div class="documents-access-list" id="documentsAccessList">
+          <div class="portal-note info">Carregando acessos…</div>
+        </div>
+      </section>
+
+      <section class="documents-workspace" id="documentsWorkspace" hidden>
+        <div class="documents-browser">
+          <div class="documents-browser-toolbar">
+            <form class="documents-search-form" id="documentsSearchForm" role="search">
+              <label class="sr-only" for="documentsSearch">Pesquisar no Google Drive</label>
+              <input id="documentsSearch" class="portal-search" type="search" autocomplete="off" maxlength="120" placeholder="Pesquisar arquivos e pastas no Drive">
+              <button class="portal-button primary" type="submit">Pesquisar</button>
+            </form>
+            <button class="portal-button secondary" id="refreshFolderButton" type="button">Atualizar pasta</button>
+          </div>
+
+          <nav class="documents-breadcrumbs" id="documentsBreadcrumbs" aria-label="Localização no Google Drive"></nav>
+
+          <div class="documents-list-heading">
+            <div>
+              <strong id="documentsListTitle">Meu Drive</strong>
+              <span id="documentsListCount"></span>
+            </div>
+            <span class="documents-readonly-chip">Somente leitura</span>
+          </div>
+
+          <div class="documents-list" id="documentsList" aria-live="polite">
+            <div class="documents-loading">Carregando documentos…</div>
+          </div>
+
+          <div class="documents-pagination" id="documentsPagination" hidden>
+            <button class="portal-button secondary" id="loadMoreButton" type="button">Carregar mais</button>
+          </div>
+        </div>
+
+        <aside class="documents-viewer" id="documentsViewer" hidden aria-label="Visualizador de PDF">
+          <div class="documents-viewer-head">
+            <div>
+              <span>Visualização</span>
+              <strong id="documentsViewerTitle">PDF</strong>
+            </div>
+            <button class="documents-close-viewer" id="closeViewerButton" type="button" aria-label="Fechar visualização">×</button>
+          </div>
+          <div class="documents-viewer-state" id="documentsViewerState">Preparando PDF…</div>
+          <iframe id="documentsPdfFrame" title="Documento PDF" referrerpolicy="no-referrer"></iframe>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260910-4"></script>
+  <script src="/js/portal-interactions.js?v=20260910-2"></script>
+  <script src="/js/tools-catalog.js?v=20260911-3"></script>
+  <script src="/js/documents.js?v=20260911-1"></script>
+</body>
+</html>
