@@ -37,6 +37,12 @@ jobs:
           grep -q "/api/chat/presence" worker/portal-chat-v2.js
           grep -q "/api/chat/users" worker/portal-chat-v2.js
           grep -q "/api/chat/messages" worker/portal-chat-v2.js
+          grep -q "peekOnly" worker/portal-chat-v2.js
+          grep -q "beforeId" worker/portal-chat-v2.js
+          grep -q "MESSAGE_HISTORY_PAGE_SIZE = 120" worker/portal-chat-v2.js
+          grep -q "preloadConversationsInBackground" js/portal-chat.js
+          grep -q "MESSAGE_PRELOAD_PAGE_GUARD = 100" js/portal-chat.js
+          grep -q "messageCache = new Map" js/portal-chat.js
           grep -q "notifyUserPush" worker/portal-chat-v2.js
           grep -q "addEventListener('push'" portal-sw.js
           grep -q "/api/push/subscriptions" js/portal-pwa.js
@@ -44,9 +50,9 @@ jobs:
           grep -q "Notification.requestPermission" js/portal-chat.js
           grep -q "showNotification" js/portal-chat.js
           grep -q "serviceWorker.register('/portal-sw.js'" js/portal-chat.js
-          grep -q "portal-chat.js?v=20260911-2" index.html
-          grep -q "portal-chat.js?v=20260911-2" recepcao/index.html
-          grep -q "portal-chat.js?v=20260911-2" admin/usuarios/index.html
+          grep -q "portal-chat.js?v=20260911-3" index.html
+          grep -q "portal-chat.js?v=20260911-3" recepcao/index.html
+          grep -q "portal-chat.js?v=20260911-3" admin/usuarios/index.html
           grep -q "CHAT_ROLES = new Set(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao'\])" js/portal-chat.js
           grep -q "id=\"portalChatProfileLink\"" js/portal-chat.js
           grep -Fq 'profile.href = `/perfil/?u=' js/portal-chat.js

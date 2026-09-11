@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260911-5';
+const CACHE_VERSION = '20260911-6';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -30,7 +30,7 @@ const CORE_RESOURCES = Object.freeze([
   '/js/auth-client.js?v=20260910-4',
   '/js/tools-catalog.js?v=20260910-2',
   '/js/social-navigation.js?v=20260911-2',
-  '/js/portal-chat.js?v=20260911-2',
+  '/js/portal-chat.js?v=20260911-3',
   '/assets/portal-regulacao-icon.webp?v=20260909-1',
   '/assets/portal-regulacao-header.png?v=20260910-1',
   '/portal.webmanifest?v=20260911-1',

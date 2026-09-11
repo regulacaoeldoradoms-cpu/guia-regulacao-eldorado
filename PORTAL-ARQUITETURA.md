@@ -42,8 +42,11 @@ segundo plano.
 
 A sessão local validada permite montar a interface imediatamente, com reconferência
 silenciosa no Worker. APIs, feed, mensagens, chat, manifestações, anexos, dados de
-pacientes e respostas administrativas nunca entram no cache estático. A autorização
-continua sendo revalidada no backend em toda operação protegida.
+pacientes e respostas administrativas nunca entram no cache estático. O Chat Interno
+pode pré-carregar conversas autorizadas somente na memória efêmera da página, usando
+leitura protegida que não altera o estado de não lida; esse conteúdo é descartado ao
+sair da página ou limpar a sessão. A autorização continua sendo revalidada no backend
+em toda operação protegida.
 
 A política completa, os limites e a validação estão em
 `docs/PORTAL-DESEMPENHO-CACHE-V1.md`.

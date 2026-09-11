@@ -1,6 +1,6 @@
 # Chat do portal — profissional e social entre amigos
 
-Decisão permanente registrada em 03/09/2026 e atualizada para conversa social entre amigos em 11/09/2026.
+Decisão permanente registrada em 03/09/2026 e atualizada para conversa social entre amigos e pré-carregamento privado em 11/09/2026.
 
 ## Finalidade
 
@@ -46,6 +46,36 @@ Por isso, o chat deve sempre usar a camada de autenticação flexível e a decor
 - Chat social entre quaisquer duas contas exige amizade atual em `friends`; pedido, remoção ou bloqueio não autorizam conversa.
 - Nenhum conteúdo de conversa, credencial ou dado protegido deve ser versionado no GitHub.
 - Alterações futuras em perfis profissionais devem atualizar também os testes de `validate-portal-chat.yml`.
+
+## Pré-carregamento privado das conversas
+
+Depois que a lista de contatos autorizados é carregada, o cliente inicia em segundo
+plano o pré-carregamento paginado do histórico da conversa. O primeiro lote mantém a
+janela de 120 mensagens já usada pelo chat e, quando houver conteúdo anterior, o
+cliente busca os lotes mais antigos em sequência até completar o histórico disponível.
+O objetivo é que, ao tocar em uma pessoa, as mensagens já estejam na memória da
+página e apareçam imediatamente.
+
+Regras permanentes desse comportamento:
+
+- o pré-carregamento usa no máximo três requisições concorrentes para não disputar
+  recursos com a navegação principal;
+- a rota protegida de mensagens aceita `peek=1`: ela revalida sessão e autorização,
+  entrega o conteúdo permitido, mas **não** marca mensagens como lidas;
+- somente a abertura efetiva da conversa mantém o comportamento de leitura e marca
+  as mensagens recebidas como lidas;
+- o conteúdo pré-carregado fica apenas em memória JavaScript da página; não é
+  gravado em `localStorage`, `sessionStorage`, Cache Storage nem no cache estático
+  do Service Worker;
+- a memória é descartada ao sair da página ou quando a sessão é limpa;
+- o histórico anterior é buscado em páginas de 120 mensagens, com trava defensiva
+  contra paginação infinita; novas mensagens são incorporadas ao snapshot em segundo
+  plano quando `lastMessageAt` muda, sem refazer todo o histórico;
+- qualquer falha de pré-carregamento é silenciosa e a conversa continua podendo ser
+  carregada normalmente sob demanda.
+
+Esse cache transitório nunca substitui a autorização do Worker. O frontend não pode
+usar uma cópia antiga para liberar um contato que deixou de ser autorizado.
 
 ## Integração com o perfil social
 

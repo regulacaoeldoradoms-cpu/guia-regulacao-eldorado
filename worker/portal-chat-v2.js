@@ -7,6 +7,7 @@ import { notifyUserPush } from './push-notifications.js';
 import { ensureSocialSchema } from './social-schema.js';
 
 const MESSAGE_LIMIT = 2000;
+const MESSAGE_HISTORY_PAGE_SIZE = 120;
 const ONLINE_WINDOW_SECONDS = 75;
 const PROFESSIONAL_ROLES = new Set(['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin']);
 const CHAT_ROLES = new Set([...PROFESSIONAL_ROLES, 'cidadao']);
@@ -222,7 +223,7 @@ async function chatContact(env, currentUser, targetUsername) {
   return null;
 }
 
-async function messages(env, current, other, afterId) {
+async function messages(env, current, other, afterId, beforeId = 0) {
   if (afterId > 0) {
     const result = await env.AUTH_DB.prepare(`SELECT id, from_user AS fromUser, to_user AS toUser, body,
         sent_at AS sentAt, read_at AS readAt FROM portal_chat_messages
@@ -230,10 +231,19 @@ async function messages(env, current, other, afterId) {
       ORDER BY id ASC LIMIT 200`).bind(afterId, current, other, other, current).all();
     return result.results || [];
   }
+  if (beforeId > 0) {
+    const result = await env.AUTH_DB.prepare(`SELECT * FROM (
+        SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, read_at AS readAt
+        FROM portal_chat_messages
+        WHERE id < ? AND ((from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?))
+        ORDER BY id DESC LIMIT ${MESSAGE_HISTORY_PAGE_SIZE}
+      ) ORDER BY id ASC`).bind(beforeId, current, other, other, current).all();
+    return result.results || [];
+  }
   const result = await env.AUTH_DB.prepare(`SELECT * FROM (
       SELECT id, from_user AS fromUser, to_user AS toUser, body, sent_at AS sentAt, read_at AS readAt
       FROM portal_chat_messages WHERE (from_user = ? AND to_user = ?) OR (from_user = ? AND to_user = ?)
-      ORDER BY id DESC LIMIT 120
+      ORDER BY id DESC LIMIT ${MESSAGE_HISTORY_PAGE_SIZE}
     ) ORDER BY id ASC`).bind(current, other, other, current).all();
   return result.results || [];
 }
@@ -271,10 +281,14 @@ export async function handleChatRoute(request, env, origin, originAllowed = true
     const other = await chatContact(env, { ...user, username }, otherUsername);
     if (!other || otherUsername === username) return json({ error: 'Contato não disponível para chat.' }, 404, origin);
     const afterId = Math.max(0, Number.parseInt(url.searchParams.get('after') || '0', 10) || 0);
-    const rows = await messages(env, username, otherUsername, afterId);
-    await env.AUTH_DB.prepare(`UPDATE portal_chat_messages SET read_at = CURRENT_TIMESTAMP
-      WHERE to_user = ? AND from_user = ? AND read_at IS NULL`).bind(username, otherUsername).run();
-    return json({ messages: rows }, 200, origin);
+    const beforeId = Math.max(0, Number.parseInt(url.searchParams.get('before') || '0', 10) || 0);
+    const peekOnly = url.searchParams.get('peek') === '1';
+    const rows = await messages(env, username, otherUsername, afterId, beforeId);
+    if (!peekOnly) {
+      await env.AUTH_DB.prepare(`UPDATE portal_chat_messages SET read_at = CURRENT_TIMESTAMP
+        WHERE to_user = ? AND from_user = ? AND read_at IS NULL`).bind(username, otherUsername).run();
+    }
+    return json({ messages: rows, pageSize: MESSAGE_HISTORY_PAGE_SIZE }, 200, origin);
   }
 
   if (url.pathname === '/api/chat/messages' && request.method === 'POST') {
