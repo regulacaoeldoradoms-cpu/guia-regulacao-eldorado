@@ -16,13 +16,13 @@ Subfase atual: implementar a superfície read-only da Central, capabilities docu
 - O arquivo de status foi criado na Fase 0 e agora é o ponto obrigatório de continuidade.
 - Há PR antigo de Telemedicina aberto (#107), sem relação com a Central; não deve ser misturado a este trabalho.
 - PR #133 da Fase 0 foi validado com 21 workflows sem falhas e mesclado na main em `686b5774dfd51916b21b63d66fd8b4ff7a822795`.
-- A arquitetura da Fase 0 está encerrada; a Fase 1 implementa agora rota funcional, frontend, capabilities e endpoints read-only do Drive.
+- A arquitetura da Fase 0 está encerrada. O código read-only da Fase 1 foi validado e mesclado na `main` pelo PR #134 em `3dc50afd3ba902d36ebe806176ad0939d71c9379`.
 
 ## Branch / PR
 
-Branch atual: `feat/central-docs-phase-1-drive-readonly`
+Branch atual: `feat/central-docs-phase1-oauth-validation`
 
-PR atual: #134 — Central de Documentos — Fase 1: Google Drive read-only (aberto).
+PR atual: nenhum para esta subfase. PR #134 foi mesclado na `main`.
 
 ## Entregas concluídas nesta unidade
 
@@ -90,6 +90,7 @@ PR atual: #134 — Central de Documentos — Fase 1: Google Drive read-only (abe
 
 ## Pendências e bloqueios
 
+- PR #134 foi validado com 26 workflows sem falhas e mesclado na `main`.
 - Google Cloud/OAuth da Central ainda não configurado.
 - Consentimento da conta institucional ainda não executado.
 - Produção com escopo `drive` exige tratar o status de escopo restrito e requisitos de verificação aplicáveis.
@@ -116,9 +117,9 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. PR #134 aberto e 26 workflows validados sem falhas;
-2. mesclar o PR #134 e confirmar a main pós-merge;
-3. somente com o código validado em main, realizar a configuração externa Google Cloud/Cloudflare;
+1. PR #134 validado com 26 workflows e mesclado em `3dc50afd`;
+2. confirmar publicação do Worker/frontend pós-merge;
+3. realizar a configuração externa Google Cloud/Cloudflare;
 5. conectar a conta institucional a partir de `/documentos/`;
 6. comprovar navegação por Meu Drive, pesquisa e abertura de PDF real;
 7. auditar eventos/propriedades reais no PostHog;
@@ -145,18 +146,18 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 1 — Navegação do Google Drive.  
-**Subfase / objetivo atual:** validar em PR o código read-only antes da configuração OAuth externa.  
-**Última ação concluída:** backend, frontend, capabilities, OAuth, referências opacas, visualizador read-only, testes e workflow da Fase 1 foram implementados na branch.  
-**Branch atual:** `feat/central-docs-phase-1-drive-readonly`.  
-**PR atual:** #134 — aberto; objetivo: validar a implementação read-only antes da conexão real.  
-**Último commit relevante:** `a56c7cf` — status/handoff consolidado antes da abertura do PR #134; conferir HEAD atual antes de continuar.  
-**Checks e testes:** 26 workflows do PR #134 concluídos com sucesso, incluindo a suíte específica da Central, suíte completa do Worker, site, autenticação, Camada Social, Telemedicina e módulos legados.  
+**Subfase / objetivo atual:** conectar e validar a conta institucional no ambiente real, sem iniciar Fase 2.  
+**Última ação concluída:** PR #134 validado com 26 workflows e mesclado na main em `3dc50afd3ba902d36ebe806176ad0939d71c9379`; nova branch de validação OAuth criada da main.  
+**Branch atual:** `feat/central-docs-phase1-oauth-validation`.  
+**PR atual:** nenhum; abrir somente se a validação real exigir correção de código/documentação.  
+**Último commit relevante:** `3dc50afd` — merge da implementação read-only da Fase 1.  
+**Checks e testes:** 26 workflows do PR #134 passaram; inclui suíte específica da Central e suíte completa do Worker.  
 **Decisões tomadas:** Drive API via Worker; escopo `drive`; refresh token AES-GCM; access token em memória; fileId encapsulado; POST para lista/pesquisa; Blob efêmero; UI estritamente read-only.  
-**Justificativas:** atender Meu Drive completo sem expor credenciais/fileId nem persistir documento clínico, mantendo a Fase 1 simples e validável.  
-**Alternativas descartadas:** `drive.file`, service account com acervo compartilhado, espelho de PDFs, cache persistente, Google token no frontend, IA/edição antecipadas.  
-**Ações externas concluídas:** PostHog seguro operacional; nenhuma configuração Google Cloud da Central ainda.  
-**Pendências:** abrir PR/checks; depois configurar Google Cloud OAuth e Cloudflare, conceder consentimento e testar Drive real.  
-**Riscos conhecidos:** restricted scope, refresh token temporário em Testing, falha de configuração externa, PDFs grandes no visualizador integral da Fase 1.  
-**Métricas / observabilidade:** instrumentação técnica pronta; nenhum evento documental real validado ainda.  
-**Próxima ação exata:** mesclar o PR #134 após esta atualização de status; em seguida confirmar a main pós-merge e iniciar a subfase de configuração OAuth externa.  
-**Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, arquitetura V1, este status, `worker/document-*.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`, política PostHog.
+**Justificativas:** atender Meu Drive completo sem expor credenciais/fileId nem persistir documento clínico.  
+**Alternativas descartadas:** `drive.file`, service account para acervo atual, espelho de PDFs, cache persistente, token Google no frontend, IA/edição antecipadas.  
+**Ações externas concluídas:** PostHog seguro operacional; código da Fase 1 mesclado. Google Cloud OAuth ainda não configurado.  
+**Pendências:** confirmar deploy; configurar Google Drive API/OAuth; adicionar Client ID/Secret e chave AES na Cloudflare; consentir conta institucional; testar navegação/pesquisa/PDF; auditar PostHog.  
+**Riscos conhecidos:** restricted scope e requisitos de produção; refresh token curto em Testing; PDFs grandes ainda carregam integralmente nesta fase.  
+**Métricas / observabilidade:** instrumentação da Fase 1 pronta, mas nenhum evento documental real validado ainda.  
+**Próxima ação exata:** confirmar que a versão pós-merge está publicada e, então, orientar somente os passos manuais inevitáveis do Google Cloud/Cloudflare.  
+**Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, arquitetura V1, este status, `worker/document-drive.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`.
