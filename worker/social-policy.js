@@ -62,8 +62,7 @@ export function canDiscoverSocialProfile(viewer, target, relationship) {
   if (!viewer || !target || viewer.social_user_id === target.social_user_id) return false;
   if (Number(target.active) !== 1 || target.suspended_at || relationship?.state === 'blocked') return false;
   if (['friends', 'pending'].includes(relationship?.state)) return true;
-  return target.profile_visibility === 'portal'
-    && Number(target.acceptFriendRequests) === 1;
+  return target.profile_visibility === 'portal';
 }
 
 export function canCreateManualRelationship(viewer, target) {
