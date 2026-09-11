@@ -31,6 +31,8 @@ marca horizontal exibida no login:
 - `assets/portal-regulacao-header_512x512.png`: ícone padrão 512×512 do manifesto;
 - `assets/portal-regulacao-header_180x180.png`: `apple-touch-icon` para iPhone/iPad.
 
+Na Home, o símbolo do cabeçalho ao lado de “Portal da Regulação de Saúde” usa o arquivo de 512×512 para manter a mesma identidade visual da instalação sem o fundo preto do ícone legado.
+
 Os três arquivos entram no cache estático versionado do Service Worker. O manifesto
 declara apenas `purpose: "any"`; não declarar `maskable` até existir uma arte
 específica preparada com margem segura para recorte pelo sistema operacional.
