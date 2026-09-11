@@ -21,6 +21,7 @@ Arquitetura revisada em 09/09/2026.
 - `/medico/`: Guia Médico e pré-regulação Gemini.
 - `/recepcao/`: Conferência da Recepção.
 - `/telemedicina/`: acompanhamento longitudinal de teleconsultas, retornos e lembretes operacionais.
+- `/documentos/`: Central de Documentos; navegação Google Drive e PDFs conforme capabilities documentais independentes do cargo.
 - `/admin/usuarios/`: gestão de usuários conforme hierarquia.
 - `/admin/monitoramento/`: monitoramento disponível para Coordenação e Desenvolvedor.
 - `/admin/configuracao/`: diagnóstico técnico exclusivo do Desenvolvedor.
@@ -53,9 +54,9 @@ A política completa, os limites e a validação estão em
 
 ## Central de Documentos — arquitetura aprovada para desenvolvimento
 
-A Central de Documentos será implementada por fases e usará o Google Drive como fonte institucional dos PDFs. O Cloudflare Worker permanecerá como fronteira para sessão, capabilities documentais, OAuth e operações sensíveis; tokens Google não serão expostos ao frontend. Conteúdo documental não entra no cache estático do Service Worker nem no PostHog.
+A Central de Documentos é implementada por fases e usa o Google Drive como fonte institucional dos PDFs. Na Fase 1, a rota `/documentos/` é somente leitura, com navegação, pesquisa por nome e abertura de PDF. O Cloudflare Worker permanecerá como fronteira para sessão, capabilities documentais, OAuth e operações sensíveis; tokens Google não serão expostos ao frontend. Conteúdo documental não entra no cache estático do Service Worker nem no PostHog.
 
-A arquitetura de Fase 0, incluindo OAuth, escopo Google, capabilities, cache, concorrência, rollback e fronteira da IA documental, está em `docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md`. O estado operacional e o handoff entre chats ficam em `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+A arquitetura de Fase 0, incluindo OAuth, escopo Google, capabilities, cache, concorrência, rollback e fronteira da IA documental, está em `docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md`. O detalhamento read-only está em `docs/CENTRAL-DOCUMENTOS-FASE-1.md`. O estado operacional e o handoff entre chats ficam em `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
 
 ## PWA instalável e Web Push
 
