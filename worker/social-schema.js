@@ -234,6 +234,7 @@ export async function ensureSocialSchema(env) {
 
 async function authRecord(env, username) {
   return env.AUTH_DB.prepare(`SELECT username, role, name, job_title AS jobTitle, active,
+      council_role AS councilRole,
       email_verified AS emailVerified, self_registered AS selfRegistered,
       COALESCE(public_handle, '') AS publicHandle
     FROM auth_users WHERE username = ? LIMIT 1`).bind(String(username || '')).first();
@@ -289,7 +290,8 @@ export async function resolveSocialUser(env, handleOrUsername) {
   const requested = normalizeSocialHandle(handleOrUsername);
   if (!requested) return null;
   let social = await env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name, au.job_title AS jobTitle,
-      au.active, au.email_verified AS emailVerified, au.self_registered AS selfRegistered,
+      au.active, au.council_role AS councilRole,
+      au.email_verified AS emailVerified, au.self_registered AS selfRegistered,
       au.accept_friend_requests AS acceptFriendRequests,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion
@@ -297,7 +299,8 @@ export async function resolveSocialUser(env, handleOrUsername) {
     WHERE su.handle = ? COLLATE NOCASE LIMIT 1`).bind(requested).first();
   if (!social) {
     social = await env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name, au.job_title AS jobTitle,
-        au.active, au.email_verified AS emailVerified, au.self_registered AS selfRegistered,
+        au.active, au.council_role AS councilRole,
+        au.email_verified AS emailVerified, au.self_registered AS selfRegistered,
         au.accept_friend_requests AS acceptFriendRequests,
         COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
         COALESCE(au.avatar_version, '') AS avatarVersion
@@ -318,7 +321,8 @@ export async function resolveSocialUser(env, handleOrUsername) {
 export async function socialUserById(env, socialUserId) {
   if (!(await ensureSocialSchema(env))) return null;
   return env.AUTH_DB.prepare(`SELECT su.*, au.username, au.role, au.name, au.job_title AS jobTitle,
-      au.active, au.email_verified AS emailVerified, au.self_registered AS selfRegistered,
+      au.active, au.council_role AS councilRole,
+      au.email_verified AS emailVerified, au.self_registered AS selfRegistered,
       au.accept_friend_requests AS acceptFriendRequests,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion
@@ -337,6 +341,23 @@ export async function isSocialHandleOwnedByAnother(env, handle, authUsername) {
       WHERE sha.handle = ? COLLATE NOCASE
     LIMIT 1`).bind(normalized, normalized).first();
   return Boolean(row?.auth_username && row.auth_username !== authUsername);
+}
+
+export async function ensureCouncilSocialProfiles(env) {
+  if (!(await ensureSocialSchema(env))) return { synced: 0 };
+  const result = await env.AUTH_DB.prepare(`SELECT u.username
+    FROM auth_users u
+    LEFT JOIN social_users su ON su.auth_username = u.username
+    WHERE u.active = 1
+      AND u.council_role IN ('membro','presidente')
+      AND su.social_user_id IS NULL
+    ORDER BY u.username`).all();
+  let synced = 0;
+  for (const row of result.results || []) {
+    const social = await syncSocialUser(env, row.username);
+    if (social) synced += 1;
+  }
+  return { synced };
 }
 
 async function eligibleProfessionalRows(env) {
