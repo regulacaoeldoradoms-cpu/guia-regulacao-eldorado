@@ -603,7 +603,7 @@ async function handleRelationshipList(url, env, context, origin) {
   const viewerId = context.social.social_user_id;
   const result = await env.AUTH_DB.prepare(`SELECT rel.*,
       su.*, au.username, au.role, au.name, au.job_title AS jobTitle, au.active,
-      au.email_verified AS emailVerified, au.accept_friend_requests AS acceptFriendRequests,
+      au.council_role AS councilRole, au.email_verified AS emailVerified, au.accept_friend_requests AS acceptFriendRequests,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion
     FROM social_relationships rel
@@ -679,7 +679,8 @@ async function feedRows(env, viewerId, cursor, authorId = '') {
           AND audience_rel.state = 'friends'
       )))`;
   const sql = `SELECT p.*, su.handle, su.status_text, au.username, au.role, au.name,
-      au.job_title AS jobTitle, COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      au.job_title AS jobTitle, au.council_role AS councilRole,
+      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion,
       CASE WHEN p.author_id = ? THEN 1 ELSE 0 END AS own,
       (SELECT COUNT(*) FROM social_comments c
@@ -762,7 +763,7 @@ async function handlePostCreate(request, env, context, origin) {
 
 async function postById(env, postId, viewerId) {
   return env.AUTH_DB.prepare(`SELECT p.*, su.handle, su.status_text, au.username, au.role, au.name,
-      au.job_title AS jobTitle, au.active, su.suspended_at,
+      au.job_title AS jobTitle, au.active, au.council_role AS councilRole, su.suspended_at,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion,
       CASE WHEN p.author_id = ? THEN 1 ELSE 0 END AS own,
@@ -951,7 +952,8 @@ async function handleNotifications(request, url, env, context, origin) {
   const result = await env.AUTH_DB.prepare(`SELECT notification.id, notification.type, notification.entity_type AS entityType,
       notification.entity_id AS entityId, notification.created_at AS createdAt,
       notification.read_at AS readAt, actor.handle, au.name, au.role,
-      au.job_title AS jobTitle, COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
+      au.job_title AS jobTitle, au.council_role AS councilRole,
+      COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion
     FROM social_notifications notification
     LEFT JOIN social_users actor ON actor.social_user_id = notification.actor_id
@@ -1129,6 +1131,7 @@ async function moderationTargetSummary(env, targetType, targetId) {
   const row = await env.AUTH_DB.prepare(`SELECT content.id, content.body, content.status,
       content.author_id AS authorSocialUserId, su.handle, su.status_text,
       su.suspended_at, au.username, au.name, au.role, au.job_title AS jobTitle,
+      au.council_role AS councilRole,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
       COALESCE(au.avatar_version, '') AS avatarVersion
     FROM ${table} content
