@@ -99,7 +99,7 @@ export async function setDocumentCapabilities(env, username, input = {}, actor =
   if (!(await ensureDocumentAccessSchema(env))) throw new Error('Banco de autenticação indisponível.');
   const normalized = normalizeUsername(username);
   if (!normalized) throw new Error('Usuário inválido para acesso documental.');
-  const target = await env.AUTH_DB.prepare('SELECT username, active FROM auth_users WHERE username = ?')
+  const target = await env.AUTH_DB.prepare('SELECT username, role, active FROM auth_users WHERE username = ?')
     .bind(normalized).first();
   if (!target) throw new Error('Usuário não encontrado.');
 
@@ -123,7 +123,7 @@ export async function setDocumentCapabilities(env, username, input = {}, actor =
       normalizeUsername(actor) || null
     ).run();
 
-  return documentCapabilitiesFor(env, normalized, '');
+  return documentCapabilitiesFor(env, normalized, String(target.role || ''));
 }
 
 export async function decorateDocumentUser(env, user) {
