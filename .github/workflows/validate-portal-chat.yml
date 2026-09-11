@@ -68,10 +68,10 @@ jobs:
           ! grep -q "portal-chat.js" seguranca/index.html
           ! grep -q "portal-chat.js" configuracoes/index.html
           ! grep -q "portal-chat.js" conquistas/index.html
-          grep -q "citizenFriendContacts" worker/portal-chat-v2.js
-          grep -q "citizenFriendContact" worker/portal-chat-v2.js
+          grep -q "socialFriendContacts" worker/portal-chat-v2.js
+          grep -q "socialFriendContact" worker/portal-chat-v2.js
           grep -q "relationship.state = 'friends'" worker/portal-chat-v2.js
-          grep -q "PROFESSIONAL_ROLES.has(currentUser.role).*professionalContact" worker/portal-chat-v2.js
-          grep -q "currentUser.role === 'cidadao'.*citizenFriendContact" worker/portal-chat-v2.js
-          grep -q "return isSocialProfessional(viewer) === isSocialProfessional(target)" worker/social-policy.js
-          grep -q "au.role = 'cidadao' AND au.accept_friend_requests = 1" worker/social.js
+          grep -q "const institutional = await professionalContact" worker/portal-chat-v2.js
+          grep -q "return socialFriendContact(env, currentUser.username, targetUsername)" worker/portal-chat-v2.js
+          ! grep -q "isSocialProfessional(viewer) === isSocialProfessional(target)" worker/social-policy.js
+          ! grep -q "au.role = 'cidadao' AND au.accept_friend_requests = 1" worker/social.js
