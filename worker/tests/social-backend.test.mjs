@@ -158,6 +158,7 @@ sqliteTest('busca social inclui membros e Presidência do Conselho mesmo antes d
       accept_friend_requests = 1
     WHERE username IN ('joana.colegiado','maria.presidencia')`).run();
 
+  await ensureSocialSchema(env);
   const before = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total
     FROM social_users WHERE auth_username IN ('joana.colegiado','maria.presidencia')`).first();
   assert.equal(Number(before?.total || 0), 0, 'contas do Conselho ainda não precisam ter aberto a Camada Social');
