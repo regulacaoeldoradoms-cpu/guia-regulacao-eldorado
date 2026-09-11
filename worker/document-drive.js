@@ -218,7 +218,7 @@ async function verifyState(env, value) {
     );
     if (!valid) throw new Error('invalid');
     const payload = jsonFromBase64Url(parts[0]);
-    if (!payload?.nonce || !payload?.sub || Number(payload.exp || 0) < nowSeconds()) throw new Error('expired');
+    if (!payload?.nonce || Number(payload.exp || 0) < nowSeconds()) throw new Error('expired');
     return payload;
   } catch (error) {
     if (error instanceof DriveIntegrationError) throw error;
@@ -281,7 +281,7 @@ export async function createDriveAuthorizationUrl(env, username) {
   await env.AUTH_DB.prepare(`INSERT INTO document_drive_oauth_states(nonce, username, expires_at)
     VALUES (?, ?, ?)`).bind(nonce, actor, exp).run();
 
-  const state = await signState(env, { sub: actor, nonce, exp });
+  const state = await signState(env, { nonce, exp });
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.searchParams.set('client_id', config.clientId);
   url.searchParams.set('redirect_uri', config.redirectUri);
@@ -326,9 +326,7 @@ export async function completeDriveOAuth(env, code, state) {
   const payload = await verifyState(env, state);
   const storedState = await env.AUTH_DB.prepare(`SELECT username, expires_at FROM document_drive_oauth_states
     WHERE nonce = ?`).bind(String(payload.nonce)).first();
-  if (!storedState
-    || normalizeUsername(storedState.username) !== normalizeUsername(payload.sub)
-    || Number(storedState.expires_at || 0) < nowSeconds()) {
+  if (!storedState || Number(storedState.expires_at || 0) < nowSeconds()) {
     throw new DriveIntegrationError('DRIVE_OAUTH_STATE_INVALID', 'Esta autorização não é mais válida.', 400);
   }
 
@@ -354,7 +352,7 @@ export async function completeDriveOAuth(env, code, state) {
     );
   }
 
-  await storeRefreshToken(env, refresh, tokenPayload.scope || DRIVE_SCOPE, payload.sub);
+  await storeRefreshToken(env, refresh, tokenPayload.scope || DRIVE_SCOPE, storedState.username);
   await env.AUTH_DB.prepare('DELETE FROM document_drive_oauth_states WHERE nonce = ?').bind(String(payload.nonce)).run();
 
   cachedAccessToken = {
