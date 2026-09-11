@@ -375,6 +375,22 @@ sqliteTest('foto social recebe versão estável e muda somente quando o avatar �
   const unchangedProfile = await payload(await callSocial(env, '/api/social/me', session.token));
   assert.equal(unchangedProfile.profile.avatarVersion, firstPayload.avatarVersion);
 
+  const target = await register(env, 'alvo.avatar', '127.0.0.91');
+  await env.AUTH_DB.prepare("UPDATE auth_users SET email_verified = 1 WHERE username = 'alvo.avatar'").run();
+  const crossAccountAttempt = await handleProfileRoute(socialRequest('/api/auth/profile', session.token, {
+    method: 'PATCH',
+    body: {
+      avatarDataUrl: 'data:image/png;base64,VElUVUxBUi1TT01FTlRF',
+      targetUsername: 'alvo.avatar'
+    }
+  }), env, '', true);
+  assert.equal(crossAccountAttempt.status, 200);
+  const targetAvatar = await env.AUTH_DB.prepare("SELECT avatar_data AS avatarData FROM auth_users WHERE username = 'alvo.avatar'").first();
+  assert.equal(targetAvatar.avatarData, '', 'parâmetro de alvo não pode alterar a foto de outra conta');
+  const sessionAvatar = await env.AUTH_DB.prepare("SELECT avatar_data AS avatarData FROM auth_users WHERE username = 'avatar.social'").first();
+  assert.equal(sessionAvatar.avatarData, 'data:image/png;base64,VElUVUxBUi1TT01FTlRF',
+    'o endpoint de foto permanece vinculado ao usuário autenticado');
+
   const secondPhoto = await handleProfileRoute(socialRequest('/api/auth/profile', session.token, {
     method: 'PATCH',
     body: { avatarDataUrl: 'data:image/png;base64,YXZhdGFyLTI=' }
