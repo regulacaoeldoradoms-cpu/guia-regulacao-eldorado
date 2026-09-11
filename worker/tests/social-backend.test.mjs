@@ -114,7 +114,7 @@ async function callChat(env, path, token, options = {}) {
   return handleChatRoute(socialRequest(path, token, options), env, '', true);
 }
 
-test('política libera a camada social para toda conta ativa e mantém tipos e estados separados', () => {
+test('política libera a camada social para toda conta ativa e mantém permissões e estados separados', () => {
   const bronze = { active: true, emailVerified: false };
   assert.equal(socialGate(bronze, {}).allowed, true);
   assert.equal(socialGate(bronze, {}).level, 'bronze');
@@ -126,9 +126,10 @@ test('política libera a camada social para toda conta ativa e mantém tipos e e
   const citizenB = { social_user_id: 'b', role: 'cidadao', active: 1, profile_visibility: 'portal', acceptFriendRequests: 1 };
   const doctor = { social_user_id: 'm', role: 'medico', active: 1, profile_visibility: 'portal', acceptFriendRequests: 1 };
   assert.equal(canCreateManualRelationship(citizenA, citizenB), true);
-  assert.equal(canCreateManualRelationship(citizenA, doctor), false);
+  assert.equal(canCreateManualRelationship(citizenA, doctor), true);
   assert.equal(canDiscoverSocialProfile(citizenA, citizenB, null), true);
-  assert.equal(canDiscoverSocialProfile(citizenA, doctor, null), false);
+  assert.equal(canDiscoverSocialProfile(citizenA, doctor, null), true);
+  assert.equal(canDiscoverSocialProfile(citizenA, { ...doctor, profile_visibility: 'friends' }, null), false);
   assert.equal(relationshipStateFor('a', 'b', { state: 'pending', initiated_by: 'a' }), 'sent');
   assert.equal(relationshipStateFor('a', 'b', { state: 'pending', initiated_by: 'b' }), 'received');
   assert.equal(relationshipStateFor('a', 'b', { state: 'blocked', blocked_by: 'b' }), 'unavailable');
