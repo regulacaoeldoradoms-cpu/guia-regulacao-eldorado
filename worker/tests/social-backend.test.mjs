@@ -442,8 +442,25 @@ sqliteTest('mutação é limitada ao autor e preferências próprias não vazam'
     method: 'POST', body: { to: 'dora.social', body: 'Conversa social entre amigos' }
   });
   assert.equal(citizenMessage.status, 201);
+  const unreadBeforePeek = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total FROM portal_chat_messages
+    WHERE to_user = 'dora.social' AND from_user = 'clara.social' AND read_at IS NULL`).first();
+  assert.equal(Number(unreadBeforePeek.total || 0), 1);
+
+  const preloadedConversation = await payload(await callChat(
+    env,
+    '/api/chat/messages?with=clara.social&after=0&peek=1',
+    second.token
+  ));
+  assert.equal(preloadedConversation.messages.at(-1).body, 'Conversa social entre amigos');
+  const unreadAfterPeek = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total FROM portal_chat_messages
+    WHERE to_user = 'dora.social' AND from_user = 'clara.social' AND read_at IS NULL`).first();
+  assert.equal(Number(unreadAfterPeek.total || 0), 1, 'pré-carregamento não pode marcar a mensagem como lida');
+
   const citizenConversation = await payload(await callChat(env, '/api/chat/messages?with=clara.social', second.token));
   assert.equal(citizenConversation.messages.at(-1).body, 'Conversa social entre amigos');
+  const unreadAfterOpen = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total FROM portal_chat_messages
+    WHERE to_user = 'dora.social' AND from_user = 'clara.social' AND read_at IS NULL`).first();
+  assert.equal(Number(unreadAfterOpen.total || 0), 0, 'abrir a conversa continua marcando as mensagens como lidas');
 
   const removedFriendship = await callSocial(env, '/api/social/relationships', first.token, {
     method: 'POST', body: { action: 'remove', targetHandle: 'dora.social' }
