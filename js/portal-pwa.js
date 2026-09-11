@@ -3,9 +3,10 @@
 (() => {
   if (window.PortalPWA) return;
 
-  const MANIFEST_URL = '/portal.webmanifest?v=20260910-2';
+  const MANIFEST_URL = '/portal.webmanifest?v=20260911-1';
   const STYLE_URL = '/css/portal-pwa.css?v=20260910-2';
-  const ICON_URL = '/assets/portal-regulacao-icon.webp?v=20260909-1';
+  const APP_ICON_URL = '/assets/portal-regulacao-header_192x192.png?v=20260911-1';
+  const APPLE_TOUCH_ICON_URL = '/assets/portal-regulacao-header_180x180.png?v=20260911-1';
   const INSTALL_DISMISS_KEY = 'regulacao.portal.pwa.install.dismissedAt';
   const PUSH_DISMISS_KEY = 'regulacao.portal.pwa.push.dismissedAt';
   const DISMISS_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
@@ -41,9 +42,22 @@
     manifests.forEach((item) => item.remove());
   }
 
+  function ensureAppleTouchIcon() {
+    const icons = Array.from(document.querySelectorAll('link[rel="apple-touch-icon"]'));
+    let icon = icons.shift();
+    if (!icon) {
+      icon = document.createElement('link');
+      icon.rel = 'apple-touch-icon';
+      document.head.appendChild(icon);
+    }
+    icon.href = APPLE_TOUCH_ICON_URL;
+    icon.setAttribute('sizes', '180x180');
+    icons.forEach((item) => item.remove());
+  }
+
   function ensurePwaHead() {
     ensurePortalManifest();
-    addHeadLink('link[rel="apple-touch-icon"]', { rel: 'apple-touch-icon', href: ICON_URL });
+    ensureAppleTouchIcon();
     addHeadLink('link[data-portal-pwa-style]', { rel: 'stylesheet', href: STYLE_URL, 'data-portal-pwa-style': 'true' });
     addMeta('theme-color', '#0d3157');
     addMeta('apple-mobile-web-app-capable', 'yes');
@@ -107,7 +121,7 @@
 
     const icon = document.createElement('img');
     icon.className = 'portal-pwa-icon';
-    icon.src = ICON_URL;
+    icon.src = APP_ICON_URL;
     icon.alt = '';
 
     const copy = document.createElement('div');

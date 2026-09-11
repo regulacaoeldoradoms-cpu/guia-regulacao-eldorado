@@ -77,11 +77,11 @@ test('todas as entradas ativas registram cedo a camada de desempenho', () => {
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
     assert.equal(
-      (html.match(/portal-performance\.js\?v=20260910-5/g) || []).length,
+      (html.match(/portal-performance\.js\?v=20260911-1/g) || []).length,
       1,
       filename + ': bootstrap único'
     );
-    assert.match(html, /portal-performance\.js\?v=20260910-5" async/);
+    assert.match(html, /portal-performance\.js\?v=20260911-1" async/);
     if (/auth-client\.js/.test(html)) {
       assert.match(html, /rel="preconnect" href="https:\/\/yellow-wave-d0a1guia-regulacao-ia\.regulacaoeldoradoms\.workers\.dev"/);
       assert.match(html, /rel="preload" href="\/js\/auth-client\.js\?v=20260910-4" as="script"/);
@@ -112,7 +112,7 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
 
 test('service worker armazena somente superfície pública e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260910-8'/);
+  assert.match(source, /CACHE_VERSION = '20260911-1'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.match(source, /\/seguranca\//);
   assert.match(source, /\/configuracoes\//);
