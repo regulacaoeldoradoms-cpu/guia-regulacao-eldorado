@@ -86,7 +86,7 @@ test('convite de instalação fica destacado no mobile sem ampliar o desktop', (
 test('rotas instaláveis usam a identidade única do Portal', () => {
   for (const filename of installEntries) {
     const html = readFileSync(new URL(filename, import.meta.url), 'utf8');
-    assert.match(html, /rel="manifest" href="\/portal\.webmanifest\?v=20260910-2"/, filename);
+    assert.match(html, /rel="manifest" href="\/portal\.webmanifest\?v=20260911-1"/, filename);
     assert.doesNotMatch(html, /rel="manifest" href="\/(?:cidadao|recepcao)\.webmanifest|rel="manifest" href="\/site\.webmanifest|conselho\/painel\/manifest\.webmanifest/, filename);
   }
 });
