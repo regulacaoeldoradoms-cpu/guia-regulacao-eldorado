@@ -22,6 +22,12 @@ como um cartão amplo e legível, próximo à largura da tela, com ícone, títu
 explicação e botões maiores. O desktop preserva o cartão compacto para não interferir
 no layout institucional.
 
+Como o Portal usa cache agressivo, toda alteração visual ou funcional em
+`portal-pwa.css`, `portal-pwa.js` ou `portal-performance.js` deve avançar também
+o respectivo parâmetro `?v=` e a referência em `portal-sw.js`. Alterar apenas o
+conteúdo do arquivo sem trocar a URL versionada pode manter a versão antiga no
+navegador.
+
 ## Notificações em segundo plano
 
 A PWA usa Service Worker + Push API para receber avisos mesmo quando não existe

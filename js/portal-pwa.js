@@ -4,7 +4,7 @@
   if (window.PortalPWA) return;
 
   const MANIFEST_URL = '/portal.webmanifest?v=20260910-2';
-  const STYLE_URL = '/css/portal-pwa.css?v=20260910-1';
+  const STYLE_URL = '/css/portal-pwa.css?v=20260910-2';
   const ICON_URL = '/assets/portal-regulacao-icon.webp?v=20260909-1';
   const INSTALL_DISMISS_KEY = 'regulacao.portal.pwa.install.dismissedAt';
   const PUSH_DISMISS_KEY = 'regulacao.portal.pwa.push.dismissedAt';

@@ -70,46 +70,46 @@
   outline:3px solid rgba(29,124,132,.28);
   outline-offset:2px;
 }
-@media (max-width:860px), (max-width:1100px) and (hover:none) and (pointer:coarse){
+@media (max-width:860px), (hover:none) and (pointer:coarse){
   .portal-pwa-card{
-    left:14px;
-    right:14px;
-    bottom:calc(78px + env(safe-area-inset-bottom));
-    width:auto;
-    max-width:none;
-    grid-template-columns:64px minmax(0,1fr);
-    gap:15px;
-    padding:18px;
-    border-radius:22px;
+    left:8px!important;
+    right:8px!important;
+    bottom:calc(18px + env(safe-area-inset-bottom))!important;
+    width:auto!important;
+    max-width:none!important;
+    grid-template-columns:76px minmax(0,1fr);
+    gap:17px;
+    padding:22px;
+    border-radius:24px;
     background:#fff;
-    box-shadow:0 22px 70px rgba(13,49,87,.34);
+    box-shadow:0 24px 78px rgba(13,49,87,.42);
   }
   .portal-pwa-icon{
-    width:64px;
-    height:64px;
-    border-radius:16px;
+    width:76px;
+    height:76px;
+    border-radius:18px;
   }
   .portal-pwa-copy strong{
-    margin:1px 0 6px;
-    font-size:1.14rem;
-    line-height:1.2;
+    margin:2px 0 8px;
+    font-size:1.3rem;
+    line-height:1.18;
   }
   .portal-pwa-copy p{
-    font-size:.98rem;
-    line-height:1.48;
+    font-size:1.04rem;
+    line-height:1.5;
   }
   .portal-pwa-actions{
     display:grid;
-    grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);
+    grid-template-columns:minmax(0,1fr) minmax(0,1.22fr);
     justify-content:stretch;
-    gap:10px;
-    margin-top:6px;
+    gap:12px;
+    margin-top:8px;
   }
   .portal-pwa-action{
-    min-height:52px;
-    padding:12px 16px;
-    border-radius:14px;
-    font-size:.98rem;
+    min-height:58px;
+    padding:13px 18px;
+    border-radius:15px;
+    font-size:1.04rem;
   }
 }
 @media(prefers-reduced-motion:no-preference){
