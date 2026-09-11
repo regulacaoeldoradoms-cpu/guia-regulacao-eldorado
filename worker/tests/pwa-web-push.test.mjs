@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 const pushWorker = readFileSync(new URL('../push-notifications.js', import.meta.url), 'utf8');
 const serviceWorker = readFileSync(new URL('../../portal-sw.js', import.meta.url), 'utf8');
 const pwaClient = readFileSync(new URL('../../js/portal-pwa.js', import.meta.url), 'utf8');
+const pwaStyle = readFileSync(new URL('../../css/portal-pwa.css', import.meta.url), 'utf8');
 const portalChat = readFileSync(new URL('../../js/portal-chat.js', import.meta.url), 'utf8');
 const councilWorker = readFileSync(new URL('../council.js', import.meta.url), 'utf8');
 const councilPolicy = readFileSync(new URL('../council-access-policy.js', import.meta.url), 'utf8');
@@ -44,6 +45,14 @@ test('cliente PWA oferece instalação e inscrição Push autenticada', () => {
   assert.match(pwaClient, /subscription\.unsubscribe\(\)/);
   assert.match(pwaClient, /keepalive:\s*true/);
   assert.match(pwaClient, /ensurePortalManifest/);
+});
+
+test('convite de instalação fica destacado no mobile sem ampliar o desktop', () => {
+  assert.match(pwaStyle, /width:min\(390px,calc\(100vw - 36px\)\)/);
+  assert.match(pwaStyle, /@media \(max-width:860px\), \(max-width:1100px\) and \(hover:none\) and \(pointer:coarse\)/);
+  assert.match(pwaStyle, /grid-template-columns:64px minmax\(0,1fr\)/);
+  assert.match(pwaStyle, /font-size:1\.14rem/);
+  assert.match(pwaStyle, /min-height:52px/);
 });
 
 test('rotas instaláveis usam a identidade única do Portal', () => {

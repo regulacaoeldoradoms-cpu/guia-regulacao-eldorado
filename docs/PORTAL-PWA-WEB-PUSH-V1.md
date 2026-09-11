@@ -17,6 +17,11 @@ para `portal.webmanifest`, preservando uma única identidade, `start_url` e
 permanecer versionados apenas por compatibilidade histórica, sem dirigir novas
 instalações.
 
+No mobile e em dispositivos de toque, o convite de instalação deve ser apresentado
+como um cartão amplo e legível, próximo à largura da tela, com ícone, título,
+explicação e botões maiores. O desktop preserva o cartão compacto para não interferir
+no layout institucional.
+
 ## Notificações em segundo plano
 
 A PWA usa Service Worker + Push API para receber avisos mesmo quando não existe
