@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260911-9';
+const CACHE_VERSION = '20260911-10';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -11,7 +11,7 @@ const inFlight = new Map();
 const KNOWN_PAGE_PATHS = new Set([
   '/', '/home/', '/login/', '/cadastro/', '/ferramentas/', '/perfil/',
   '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/conta/', '/medico/', '/protocolo/',
-  '/recepcao/', '/telemedicina/', '/cidadao/', '/conselho/',
+  '/recepcao/', '/telemedicina/', '/documentos/', '/cidadao/', '/conselho/',
   '/conselho/painel/', '/admin/usuarios/', '/admin/monitoramento/',
   '/admin/configuracao/', '/admin/social/'
 ]);
