@@ -206,7 +206,7 @@ export default {
       catch (error) { return jsonError(error?.message || 'Falha no módulo de Telemedicina.', 500, origin, originAllowed); }
     }
     if (isCouncilApi(url.pathname)) {
-      try { return await handleCouncilRoute(request, env, origin, originAllowed); }
+      try { return await handleCouncilRoute(request, env, origin, originAllowed, ctx); }
       catch (error) { return jsonError(error?.message || 'Falha no módulo do Conselho.', 500, origin, originAllowed); }
     }
     if (isSocialApi(url.pathname)) {
