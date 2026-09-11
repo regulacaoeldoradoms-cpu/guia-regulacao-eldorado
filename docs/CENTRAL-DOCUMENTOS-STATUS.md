@@ -4,9 +4,9 @@
 
 ## Fase atual
 
-**Fase 0 — Arquitetura e segurança**
+**Fase 1 — Navegação do Google Drive**
 
-Subfase atual: formalização técnica, validação e PR da arquitetura-base.
+Subfase atual: implementar a superfície read-only da Central, capabilities documentais e integração OAuth/Drive sem escrita.
 
 ## Estado de entrada
 
@@ -15,16 +15,20 @@ Subfase atual: formalização técnica, validação e PR da arquitetura-base.
 - Não existe integração Google Drive da Central no código atual.
 - Não existia este arquivo de status antes desta fase.
 - Há PR antigo de Telemedicina aberto (#107), sem relação com a Central; não deve ser misturado a este trabalho.
-- A Central ainda não possui rota, frontend, capabilities ou endpoints próprios.
+- PR #133 da Fase 0 foi validado com 21 workflows sem falhas e mesclado na main em `686b5774dfd51916b21b63d66fd8b4ff7a822795`.
+- A arquitetura da Fase 0 está encerrada; a Central ainda não possui rota funcional, frontend, capabilities ou endpoints Drive.
 
 ## Branch / PR
 
-Branch atual: `feat/central-docs-phase-0-architecture`
+Branch atual: `feat/central-docs-phase-1-drive-readonly`
 
-PR atual: #133 — Central de Documentos — Fase 0: arquitetura e segurança (aberto).
+PR atual: ainda não criado para a Fase 1.
 
 ## Entregas concluídas nesta unidade
 
+- Fase 0 encerrada com PR #133 mesclado;
+- 21 workflows do PR #133 concluídos com sucesso;
+- branch da Fase 1 criada diretamente da main pós-merge;
 - leitura do Guia Mestre V1.1 e aplicação do protocolo de continuidade;
 - inspeção da main, arquitetura, autenticação, catálogo de ferramentas e política de observabilidade;
 - confirmação de que a Central de Documentos ainda não foi implementada;
@@ -91,12 +95,12 @@ Nenhum conteúdo de Drive foi enviado ao PostHog.
 
 ## Próximo passo
 
-1. validar os checks do PR #133;
-2. corrigir qualquer falha encontrada;
-3. atualizar este status com o resultado dos checks;
-4. encerrar Fase 0 quando o PR estiver apto/mesclado;
-5. iniciar Fase 1 somente a partir do estado real pós-merge;
-6. configurar OAuth Google durante a Fase 1 quando a integração read-only precisar conectar ao Drive.
+1. implementar backend read-only `/api/documents/*` com sessão/capability;
+2. implementar rota `/documentos/` e navegador de pastas/pesquisa;
+3. implementar OAuth web-server sem expor tokens;
+4. adicionar testes de autorização, privacidade e respostas do Drive;
+5. abrir PR da Fase 1 e validar checks;
+6. quando o código estiver pronto para conexão real, configurar o Google Cloud/OAuth externo e executar o consentimento institucional.
 
 ## Arquivos e fontes principais
 
@@ -112,13 +116,13 @@ Nenhum conteúdo de Drive foi enviado ao PostHog.
 
 ## Handoff para o próximo chat
 
-**Fase atual:** Fase 0 — Arquitetura e segurança.  
-**Subfase / objetivo atual:** validar e encerrar a arquitetura-base em PR.  
-**Última ação concluída:** arquitetura V1 e status inicial redigidos na branch da Fase 0.  
-**Branch atual:** `feat/central-docs-phase-0-architecture`.  
-**PR atual:** #133 — aberto; objetivo: validar e encerrar a arquitetura-base da Fase 0.  
-**Último commit relevante:** `1f6b109` — referência da Central adicionada à arquitetura geral do Portal; conferir HEAD atual da branch antes de continuar.  
-**Checks e testes:** PR #133 aberto; checks ainda pendentes neste registro.  
+**Fase atual:** Fase 1 — Navegação do Google Drive.  
+**Subfase / objetivo atual:** construir navegação read-only, capabilities e OAuth backend.  
+**Última ação concluída:** Fase 0 validada e mesclada pelo PR #133; branch da Fase 1 criada da main pós-merge.  
+**Branch atual:** `feat/central-docs-phase-1-drive-readonly`.  
+**PR atual:** nenhum para a Fase 1 neste registro.  
+**Último commit relevante:** `686b577` — merge da arquitetura e segurança da Fase 0.  
+**Checks e testes:** PR #133 teve 21 workflows concluídos com sucesso; testes da Fase 1 ainda não existem.  
 **Decisões tomadas:** Drive API v3 via Worker; escopo `drive`; token criptografado no backend; capabilities independentes; cache documental somente efêmero; IA documental separada.  
 **Justificativas:** acesso integral ao Meu Drive, menor exposição de credenciais/dados e preservação das regras atuais do Portal.  
 **Alternativas descartadas:** `drive.file`, service account com acervo compartilhado, banco como espelho de PDFs, PostHog direto, cache persistente.  
@@ -126,5 +130,5 @@ Nenhum conteúdo de Drive foi enviado ao PostHog.
 **Pendências:** OAuth Google ainda não configurado; verificar requisitos de produção para restricted scope.  
 **Riscos conhecidos:** expiração de refresh token em Testing, restrição OAuth, cache clínico, conflito de versões.  
 **Métricas / observabilidade:** base PostHog validada; nenhum evento documental ainda.  
-**Próxima ação exata:** aguardar os checks do PR #133, corrigir qualquer regressão e registrar o resultado antes do merge.  
+**Próxima ação exata:** implementar primeiro o controle de acesso e o router read-only da Central antes de conectar a conta Google.  
 **Arquivos e fontes principais:** arquitetura V1, este status, PORTAL-ARQUITETURA, política PostHog, Worker/auth.
