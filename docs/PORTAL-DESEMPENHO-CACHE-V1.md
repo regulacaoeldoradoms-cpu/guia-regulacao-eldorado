@@ -99,6 +99,26 @@ sem novo download da imagem; uma nova transferência só é exigida quando o par
 de versão do ativo for alterado. Os símbolos gerais do Portal continuam usando o
 WebP leve onde essa identidade completa não é necessária.
 
+## Observabilidade técnica com privacidade
+
+A telemetria de desempenho usa uma camada própria e não instala o SDK do PostHog
+diretamente nas páginas. O navegador envia somente eventos técnicos explicitamente
+permitidos para `/api/observability` no Worker. O Worker valida nome do evento,
+propriedades, tipos, limites e rotas antes de encaminhar qualquer dado.
+
+A coleta não lê DOM textual, formulários, nomes de arquivo, parâmetros de consulta,
+identidade da conta ou conteúdo assistencial. Cada carregamento recebe apenas um
+identificador efêmero aleatório, descartado ao sair da página. Não existe identificação
+persistente de pessoa no PostHog.
+
+A configuração do projeto deve manter Session Replay, console logs, autocapture e
+dead clicks desligados, IP descartado e Web Vitals habilitado. O backend também envia
+`$process_person_profile=false` e `$geoip_disable=true` em cada evento, como defesa
+adicional.
+
+A especificação completa está em
+`docs/PORTAL-OBSERVABILIDADE-POSTHOG-V1.md`.
+
 ## Limites de segurança
 
 Nunca entram no cache do service worker:
@@ -130,6 +150,8 @@ privado de avatares.
 ## Arquivos centrais
 
 - `js/portal-performance.js`: registro, priorização de rotas e aquecimento por perfil;
+- `js/portal-observability.js`: Web Vitals e eventos técnicos sem conteúdo de usuário;
+- `worker/observability.js`: allowlist, validação e encaminhamento protegido ao PostHog;
 - `portal-sw.js`: política de cache, atualização e pré-carregamento;
 - `js/auth-client.js`: abertura pela sessão válida e reconferência silenciosa;
 - `js/social-api.js`: stale-while-revalidate da configuração social, pré-carga

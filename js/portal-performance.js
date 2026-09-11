@@ -6,6 +6,7 @@
   const WORKER_URL = '/portal-sw.js';
   const WORKER_SCOPE = '/';
   const PWA_CLIENT_URL = '/js/portal-pwa.js?v=20260911-1';
+  const OBSERVABILITY_CLIENT_URL = '/js/portal-observability.js?v=20260911-1';
   const CORE_ROUTES = Object.freeze(['/', '/ferramentas/', '/seguranca/', '/configuracoes/', '/conquistas/']);
   const SOCIAL_ROUTES = Object.freeze(['/amigos/', '/notificacoes/', '/perfil/']);
   const KNOWN_ROUTES = new Set([
@@ -19,6 +20,7 @@
   let registrationPromise = null;
   let observer = null;
   let pwaClientStarted = false;
+  let observabilityClientStarted = false;
 
   function ensurePwaClient() {
     if (window.PortalPWA || pwaClientStarted || document.querySelector?.('script[data-portal-pwa]')) return;
@@ -29,6 +31,18 @@
     script.async = false;
     script.dataset.portalPwa = 'true';
     script.addEventListener('error', () => { pwaClientStarted = false; }, { once: true });
+    document.head.appendChild(script);
+  }
+
+  function ensureObservabilityClient() {
+    if (window.PortalObservability || observabilityClientStarted || document.querySelector?.('script[data-portal-observability]')) return;
+    if (typeof document.createElement !== 'function' || !document.head?.appendChild) return;
+    observabilityClientStarted = true;
+    const script = document.createElement('script');
+    script.src = OBSERVABILITY_CLIENT_URL;
+    script.async = true;
+    script.dataset.portalObservability = 'true';
+    script.addEventListener('error', () => { observabilityClientStarted = false; }, { once: true });
     document.head.appendChild(script);
   }
 
@@ -167,6 +181,7 @@
   function start() {
     ensurePwaClient();
     register();
+    idle(ensureObservabilityClient, 900);
     const cachedUser = window.RegulationAuth?.getCachedUser?.() || null;
     if (cachedUser) warmForUser(cachedUser);
     else warmRoutes([location.pathname, '/login/', '/'], { delay: 250 });

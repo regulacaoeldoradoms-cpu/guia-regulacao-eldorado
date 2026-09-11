@@ -1,6 +1,7 @@
 'use strict';
 
 import aiWorker from './gemini-assistant.js';
+import { handleObservabilityRoute, isObservabilityApi } from './observability.js';
 import { handlePortalRoute, isPortalApi, validatePortalSession } from './auth-management-flex.js';
 import { handleProfileRoute, isProfileApi } from './profile-photo.js';
 import { handleChatRoute, isChatApi } from './portal-chat-v2.js';
@@ -163,11 +164,16 @@ async function fetchAiResilient(request, env, ctx, origin, originAllowed) {
 
 export default {
   async fetch(request, env, ctx) {
-    await enforceDeveloperSeparation(env);
-
     let url = new URL(request.url);
     const origin = request.headers.get('Origin') || '';
     const originAllowed = !origin || allowedOrigins(env).includes(origin);
+
+    if (isObservabilityApi(url.pathname)) {
+      try { return await handleObservabilityRoute(request, env, ctx, origin, originAllowed); }
+      catch (_) { return jsonError('Falha temporária na telemetria técnica.', 503, origin, originAllowed, 'OBSERVABILITY_TEMPORARILY_UNAVAILABLE'); }
+    }
+
+    await enforceDeveloperSeparation(env);
 
     const preparedLogin = await prepareCitizenHandleLogin(request, env, origin, originAllowed);
     if (preparedLogin instanceof Response) return preparedLogin;
