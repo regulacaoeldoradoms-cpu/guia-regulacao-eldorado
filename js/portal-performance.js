@@ -12,7 +12,7 @@
   const KNOWN_ROUTES = new Set([
     '/', '/home/', '/login/', '/cadastro/', '/ferramentas/', '/perfil/',
     '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/conta/', '/medico/', '/protocolo/',
-    '/recepcao/', '/telemedicina/', '/cidadao/', '/conselho/',
+    '/recepcao/', '/telemedicina/', '/documentos/', '/cidadao/', '/conselho/',
     '/conselho/painel/', '/admin/usuarios/', '/admin/monitoramento/',
     '/admin/configuracao/', '/admin/social/'
   ]);
