@@ -1,0 +1,38 @@
+name: Validar governança Central de Documentos
+
+on:
+  pull_request:
+    paths:
+      - 'docs/CENTRAL-DOCUMENTOS-**'
+      - '.github/workflows/validate-central-documents-governance.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'docs/CENTRAL-DOCUMENTOS-**'
+      - '.github/workflows/validate-central-documents-governance.yml'
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Conferir arquivos obrigatórios
+        run: |
+          test -f docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md
+          test -f docs/CENTRAL-DOCUMENTOS-STATUS.md
+
+      - name: Conferir decisões mínimas da Fase 0
+        run: |
+          grep -q 'https://www.googleapis.com/auth/drive' docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md
+          grep -q 'documents_view' docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md
+          grep -q 'version' docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md
+          grep -q 'Cache-Control: no-store' docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md
+          grep -q 'Handoff para o próximo chat' docs/CENTRAL-DOCUMENTOS-STATUS.md
+          grep -q 'Fase 0' docs/CENTRAL-DOCUMENTOS-STATUS.md
+
+      - name: Bloquear padrões óbvios de segredo
+        run: |
+          ! grep -R -E 'ya29\.[0-9A-Za-z_-]+' docs/CENTRAL-DOCUMENTOS-* || exit 1
+          ! grep -R -E 'GOCSPX-[0-9A-Za-z_-]+' docs/CENTRAL-DOCUMENTOS-* || exit 1
+          ! grep -R -E 'AIza[0-9A-Za-z_-]{20,}' docs/CENTRAL-DOCUMENTOS-* || exit 1
