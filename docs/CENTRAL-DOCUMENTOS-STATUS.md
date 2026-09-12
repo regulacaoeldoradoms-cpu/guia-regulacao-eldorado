@@ -227,6 +227,19 @@ Alternativas descartadas:
 - cache persistente do PDF para acelerar reaberturas;
 - considerar o `load` do Blob integral como `pdf_first_page_visible`, pois isso não mede primeira página com confiabilidade.
 
+## Correção de sessão validada e mesclada — 12/09/2026
+
+PR #148:
+- 23 workflows concluídos sem falhas;
+- teste funcional confirmou que o Desenvolvedor pode salvar a própria conta e, com o mesmo token, conceder `edit=true`;
+- teste separado confirmou que mudança crítica do próprio papel continua invalidando a sessão;
+- merge concluído em `49d86934831577884e68c90f5758239df2a2f341`.
+
+Próxima validação real:
+- como a tentativa anterior ocorreu com o comportamento antigo, a sessão atualmente aberta no navegador pode já estar invalidada;
+- após o deploy, relogar uma vez é suficiente;
+- salvar novamente Regulador(a) + **Permitir editor de PDF** deve concluir as duas operações sem derrubar a sessão.
+
 ## Bloqueio encontrado na concessão do editor — 12/09/2026
 
 Durante a tentativa real de habilitar **Permitir editor de PDF** na própria conta Desenvolvedor/Regulador(a), a interface exibiu incorretamente:
@@ -391,12 +404,12 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
 **Subfase / objetivo atual:** corrigir regressão de sessão que bloqueava a concessão real da capability `edit` na própria conta Desenvolvedor.  
-**Estado real da main antes da correção:** `b5ad566e1d27bc81230ac3e36054422b0ba1cf13`.  
-**Branch atual:** `fix/developer-self-edit-session`.  
-**PR atual:** ainda não aberto neste registro.  
+**Estado real da main:** `49d86934831577884e68c90f5758239df2a2f341` — PR #148 mesclado com a correção de sessão do Desenvolvedor.  
+**Branch atual:** `docs/central-docs-self-edit-fix-postmerge` (somente consolidação pós-merge).  
+**PR atual:** nenhum funcional; PR #148 foi concluído.  
 **Bug reproduzido:** salvar a própria conta em Usuários e acessos invalidava o token porque `session_version` sempre era incrementado; a tentativa seguinte exibia falsamente “Somente o Desenvolvedor pode conceder funções adicionais”.  
 **Correção:** preservar sessão em autoedição quando papel/ativo não mudam; manter invalidação em mudanças críticas e alvos terceiros; 401 explícito para sessão inválida; revalidação imediata na página admin; cache-bust do JS.  
 **Teste de regressão:** Desenvolvedor edita própria conta + função Regulador(a) e, com o mesmo token, concede `edit=true`; mudança do próprio papel continua invalidando a sessão.  
-**Pendências:** abrir PR, checks, merge/deploy; usuário pode precisar relogar uma vez por causa da sessão antiga já invalidada; depois conceder `edit` e testar o editor real.  
-**Próxima ação exata:** abrir PR da correção, acompanhar checks e corrigir qualquer falha antes de merge.  
+**Pendências:** aguardar deploy da main `49d86934`; usuário deve relogar uma vez se a sessão antiga estiver inválida; depois salvar novamente Regulador(a) + `Permitir editor de PDF` e testar o editor real.  
+**Próxima ação exata:** após o deploy, sair e entrar novamente uma vez se necessário, abrir `/admin/usuarios/`, editar a própria conta, manter Regulador(a), marcar `Permitir editor de PDF` e salvar; depois validar o botão `Editar PDF` na Central.  
 **Arquivos principais:** `worker/auth-management-v2.js`, `worker/auth-management-flex.js`, `worker/tests/developer-self-edit-session.test.mjs`, `js/admin-users.js`, `admin/usuarios/index.html`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
