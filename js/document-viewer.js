@@ -89,6 +89,9 @@
     if (session.resizeTimer) clearTimeout(session.resizeTimer);
     for (const record of session.pages.values()) clearRenderedPage(record);
     for (const record of session.thumbs.values()) cancelRender(record);
+    if (session.thumbClick) {
+      try { session.thumbnailsRoot?.removeEventListener('click', session.thumbClick); } catch (_) {}
+    }
     try { session.loadingTask?.destroy?.(); } catch (_) {}
     try { session.document?.destroy?.(); } catch (_) {}
     clearNode(session.pagesRoot);
@@ -206,11 +209,11 @@
     const pixelHeight = Math.max(1, Math.floor(viewport.height * outputScale));
 
     record.container.style.setProperty('--page-width', `${Math.ceil(viewport.width)}px`);
-    record.container.style.setProperty('--page-height', `${Math.ceil(viewport.height)}px`);
+    record.container.style.aspectRatio = `${Math.max(1, viewport.width)} / ${Math.max(1, viewport.height)}`;
     record.canvas.width = pixelWidth;
     record.canvas.height = pixelHeight;
-    record.canvas.style.width = `${Math.ceil(viewport.width)}px`;
-    record.canvas.style.height = `${Math.ceil(viewport.height)}px`;
+    record.canvas.style.width = '100%';
+    record.canvas.style.height = '100%';
 
     const context = record.canvas.getContext('2d', { alpha: false, desynchronized: true });
     if (!context) throw new Error('Canvas do visualizador indisponível.');
@@ -550,7 +553,7 @@
   function supported() {
     return typeof HTMLCanvasElement !== 'undefined'
       && typeof Promise !== 'undefined'
-      && typeof importScripts !== 'undefined' ? true : typeof Worker !== 'undefined';
+      && typeof Worker !== 'undefined';
   }
 
   window.PortalPdfViewer = Object.freeze({
