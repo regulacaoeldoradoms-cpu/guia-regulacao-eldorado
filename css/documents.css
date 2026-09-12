@@ -147,8 +147,12 @@
   background: #102f4d;
   color: #fff;
 }
+.documents-viewer-head > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
 .documents-viewer-head span { display: block; opacity: .7; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
-.documents-viewer-head strong { display: block; max-width: min(54vw, 640px); margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.documents-viewer-head strong { display: block; width: 100%; max-width: 100%; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .documents-close-viewer {
   width: 38px; height: 38px; flex: 0 0 38px;
   border: 1px solid rgba(255,255,255,.2);
@@ -158,7 +162,7 @@
   font-size: 1.5rem;
   cursor: pointer;
 }
-.documents-viewer-actions { display: flex; align-items: center; gap: 8px; }
+.documents-viewer-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .documents-edit-trigger { border-color: rgba(255,255,255,.22); color: #fff; }
 .documents-edit-trigger:hover { background: rgba(255,255,255,.16); }
 
@@ -274,7 +278,7 @@
   .documents-search-form { width: 100%; }
   .documents-item { grid-template-columns: 36px minmax(0, 1fr); }
   .documents-item-action { grid-column: 2; }
-  .documents-viewer-head strong { max-width: 72vw; }
+  .documents-viewer-head strong { max-width: 100%; }
   .documents-viewer-actions { gap: 5px; }
   .documents-edit-trigger { padding-inline: 10px; }
   .documents-editor-toolbar .portal-button { flex: 1 1 42%; }

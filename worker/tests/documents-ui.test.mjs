@@ -119,6 +119,18 @@ test('cache local criptografa PDFs, limita tamanho e invalida por versão', () =
 });
 
 
+test('cabeçalho do visualizador preserva ações e trunca somente o título do PDF', () => {
+  const html = read('documentos/index.html');
+  const css = read('css/documents.css');
+
+  assert.match(html, /documents\.css\?v=20260912-4/);
+  assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
+  assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
+  assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
+  assert.match(css, /\.documents-viewer-head strong\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*text-overflow:\s*ellipsis;/s);
+  assert.doesNotMatch(css, /\.documents-viewer-head strong\s*\{[^}]*max-width:\s*min\(54vw,\s*640px\)/s);
+});
+
 test('editor PDF é local, reversível e separado da escrita no Drive', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
