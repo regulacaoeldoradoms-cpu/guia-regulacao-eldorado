@@ -22,7 +22,7 @@ Subfase atual: concluir validação real da Fase 1 e consolidar o novo modelo de
 
 Branch atual: `feat/central-docs-phase1-oauth-validation`
 
-PR atual: nenhum para esta subfase. PR #134 foi mesclado na `main`.
+PR atual: #135 — Central de Documentos — cargos acumuláveis e gestão compacta (aberto, checks aprovados).
 
 ## Entregas concluídas nesta unidade
 
@@ -166,9 +166,8 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. abrir PR desta subfase com remoção do bloco extenso de acessos e funções adicionais acumuláveis;
-2. validar suíte completa e checks;
-3. mesclar somente se os checks passarem;
+1. PR #135 aberto e 22 workflows validados sem falhas;
+2. mesclar o PR #135 e confirmar a main pós-merge;
 4. confirmar em produção que `/documentos/` ficou compacta e que a função **Central de Documentos** aparece em `/admin/usuarios/`;
 5. validar pesquisa real no Drive;
 6. abrir um PDF real autorizado e confirmar visualização;
@@ -199,14 +198,14 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Subfase / objetivo atual:** concluir a revisão de UX/autorização com funções acumuláveis e depois finalizar os testes reais da Fase 1.  
 **Estado real da main:** `3dc50afd3ba902d36ebe806176ad0939d71c9379`; main continua sem as mudanças desta subfase.  
 **Branch atual:** `feat/central-docs-phase1-oauth-validation`.  
-**PR atual:** ainda não criado para esta subfase.  
+**PR atual:** #135 — aberto; 22 workflows concluídos sem falhas.  
 **Última ação concluída:** implementado modelo `auth_user_additional_roles`, função acumulável `documentos`, gestão em `/admin/usuarios/`, remoção do bloco gigante `Acessos à Central` e documentação correspondente.  
 **Validação externa concluída:** OAuth real conectado; Portal mostrou `Drive conectado` e carregou a raiz do Meu Drive.  
-**Checks e testes:** testes automatizados foram ampliados, mas ainda precisam rodar no PR desta subfase.  
+**Checks e testes:** 22 workflows do PR #135 concluídos com sucesso; inclui Central de Documentos, gestão de usuários, Telemedicina, Camada Social, site e módulos legados.  
 **Decisões tomadas:** perfil principal permanece único; funções adicionais podem acumular; `documentos` concede leitura da Central; gestão de usuários fica fora da tela operacional; capabilities finas permanecem no backend.  
 **Justificativas:** reduzir drasticamente o espaço ocupado na Central e permitir combinações como Médico + Central de Documentos sem trocar o perfil profissional.  
 **Alternativas descartadas:** continuar com uma checkbox para cada usuário dentro de `/documentos/`; transformar `documentos` em novo perfil primário mutuamente exclusivo; conceder acesso apenas escondendo/exibindo UI.  
 **Pendências:** abrir PR/checks; validar produção após merge; testar pesquisa real; abrir PDF real; auditar PostHog; futura Drive Activity API permanece registrada para outra fase.  
 **Riscos conhecidos:** compatibilidade com acessos legados em `auth_document_access`; escopo OAuth restrito em modo Testing; PDF grande ainda é carregado integralmente nesta fase.  
-**Próxima ação exata:** abrir PR da branch atual, acompanhar checks e corrigir qualquer regressão antes de merge.  
+**Próxima ação exata:** mesclar o PR #135, confirmar a main pós-merge e então validar em produção a UI compacta e o cargo acumulável antes dos testes finais de pesquisa/PDF/PostHog.  
 **Arquivos principais:** `worker/additional-roles.js`, `worker/document-access.js`, `worker/auth-management-flex.js`, `admin/usuarios/index.html`, `js/admin-users.js`, `documentos/index.html`, `js/documents.js`, `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, este status.
