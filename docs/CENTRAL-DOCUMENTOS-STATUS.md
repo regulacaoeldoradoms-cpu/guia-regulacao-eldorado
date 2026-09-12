@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: validar em produção a correção de preflight CORS já mesclada e, com a lista de usuários restaurada, concluir a concessão real da capability `edit` da Fase 3.
+Subfase atual: corrigir a regressão visual do cabeçalho do visualizador que corta o botão **Editar PDF** e então continuar a validação funcional real do editor da Fase 3.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: validar em produção a correção de preflight CORS já mesclada
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-cors-postmerge` (somente consolidação pós-merge).
+Branch atual: `fix/document-viewer-edit-button-layout`.
 
-PR atual: nenhum funcional; PR #150 foi validado e mesclado.
+PR atual: ainda não aberto neste registro; correção visual implementada na branch.
 
 ## Entregas concluídas nesta unidade
 
@@ -313,6 +313,31 @@ Estado técnico:
 
 A aprovação está registrada e não precisa ser solicitada novamente. A próxima ação humana é somente efetivar o checkbox na conta de teste autorizada após o deploy.
 
+## Validação real da capability `edit` e regressão visual — 12/09/2026
+
+A validação em produção avançou após a correção de CORS:
+- a Central voltou a carregar normalmente;
+- a conta de teste autorizada possui capability `edit` efetiva, comprovada pelo aparecimento real do botão **Editar PDF** ao abrir um PDF;
+- portanto, os bloqueios anteriores de sessão/CORS não impedem mais o início do editor.
+
+Novo problema visual observado:
+- em desktop com o visualizador na coluna direita, o botão **Editar PDF** aparece parcialmente cortado no canto superior direito;
+- causa raiz no CSS: o bloco do título era um flex item sem `min-width: 0` e o título usava `max-width: min(54vw, 640px)`, largura calculada pela viewport e não pelo espaço realmente disponível no cabeçalho;
+- com título longo + ações fixas, o conteúdo ultrapassava a largura da coluna e era recortado pelo `overflow: hidden` do visualizador.
+
+Correção implementada na branch `fix/document-viewer-edit-button-layout`:
+- o bloco de título passou a `min-width: 0; flex: 1 1 auto`;
+- o título usa a largura real disponível e elipse dentro desse bloco;
+- o bloco de ações passou a `flex: 0 0 auto`, preservando **Editar PDF** e fechar;
+- a regra mobile também deixa de reservar largura por viewport para o título;
+- cache-bust de `documents.css` avançou para `20260912-4`;
+- teste de regressão em `documents-ui.test.mjs` protege essa composição.
+
+Alternativas descartadas:
+- reduzir apenas o texto ou fonte do botão, pois não corrige a causa estrutural;
+- esconder o título, pois ele é informação útil;
+- permitir overflow horizontal no cabeçalho, pois degradaria desktop e mobile.
+
 ## Fase 3 — implementação em andamento
 
 Unidades 3A/3B implementadas na branch:
@@ -410,13 +435,12 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. acompanhar os checks do PR #150;
-2. mesclar somente com checks aprovados;
-3. aguardar deploy da main;
-4. validar em produção que **Contas cadastradas** volta a carregar sem `Failed to fetch`;
-5. editar a própria conta, manter Regulador(a), marcar **Permitir editor de PDF** e salvar;
-6. confirmar que a capability `edit` foi concedida sem derrubar a sessão;
-7. retomar a validação real da Fase 3: excluir/reordenar/undo/redo/unir/prévia.
+1. abrir PR da correção visual `fix/document-viewer-edit-button-layout`;
+2. acompanhar os checks e corrigir qualquer falha;
+3. mesclar somente com checks aprovados;
+4. após deploy, validar em desktop e mobile que **Editar PDF** e fechar permanecem totalmente visíveis com títulos longos;
+5. iniciar o editor e validar excluir/reordenar/undo/redo/unir/prévia com PDFs reais autorizados;
+6. encerrar a Fase 3 somente se o PDF resultante for válido e não houver regressão de leitura/cache.
 
 ## Arquivos e fontes principais
 
@@ -439,17 +463,15 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** validar em produção a correção CORS já mesclada e então efetivar `Permitir editor de PDF` na conta Regulador(a) de teste autorizada.  
-**Estado real da main:** `2d8d429e7ff5cb0ef91bd2aae526220e80086483` — PR #150 mesclado.  
-**Branch atual:** `docs/central-docs-cors-postmerge` (somente consolidação documental pós-merge).  
-**PR atual:** nenhum funcional; PR #150 concluído.  
-**Última ação concluída:** correção do preflight CORS mesclada; 22 checks do PR e 23 validações funcionais pós-merge concluíram sem falhas.  
-**Causa raiz encerrada:** o `OPTIONS` de `/api/admin/users` era autenticado após o PR #148, recebia 401 sem Bearer token e fazia o navegador exibir `Failed to fetch`.  
-**Correção:** `OPTIONS` agora é resolvido pelo handler base antes da autenticação; requisições reais continuam autenticadas.  
-**Decisões tomadas:** preservar o 401 explícito do PR #148; não usar retry de frontend para mascarar erro CORS.  
-**Ações externas concluídas:** usuário já havia tentado `Ctrl+F5` e relog, sem efeito antes da correção.  
-**Pendências e bloqueios:** aguardar propagação do deploy; validar a lista de usuários em produção; depois conceder `edit` e testar o editor real.  
-**Riscos conhecidos:** nova autenticação aplicada antes do tratamento de `OPTIONS` pode reintroduzir a regressão.  
-**Métricas / observabilidade:** PostHog Error Tracking não capturou exceção para essa falha, coerente com bloqueio CORS anterior à resposta de aplicação; nenhuma informação sensível foi consultada.  
-**Próxima ação exata:** recarregar `/admin/usuarios/` após o deploy; se a lista carregar, editar a própria conta, manter Regulador(a), marcar `Permitir editor de PDF` e salvar.  
-**Arquivos principais:** `worker/auth-management-flex.js`, `worker/tests/developer-self-edit-session.test.mjs`, `js/admin-users.js`, `admin/usuarios/index.html`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Subfase / objetivo atual:** corrigir o botão **Editar PDF** cortado no cabeçalho do visualizador e então continuar os testes reais do editor.  
+**Estado real da main antes desta correção:** `eb7c1898ef54e1234090a1d54335c88104727dd3` — inclui PR #150 e consolidação pós-CORS.  
+**Branch atual:** `fix/document-viewer-edit-button-layout`.  
+**PR atual:** ainda não aberto neste registro.  
+**Validação real concluída:** a capability `edit` está efetiva em produção, pois o botão **Editar PDF** apareceu ao abrir um PDF; sessão/CORS deixaram de ser bloqueio.  
+**Bug visual:** título longo ocupava largura baseada na viewport e empurrava as ações para fora da coluna; o visualizador recortava o botão.  
+**Correção:** título agora é flexível com `min-width: 0`, ações não encolhem e a elipse ocorre dentro do espaço disponível; cache-bust CSS `20260912-4`.  
+**Teste:** `worker/tests/documents-ui.test.mjs` ganhou cobertura para o contrato de layout do cabeçalho.  
+**Pendências:** abrir PR, validar checks, merge/deploy e confirmação visual real; depois executar operações do editor.  
+**Riscos conhecidos:** títulos extremamente longos devem ser truncados, nunca deslocar as ações; manter essa propriedade em futuras mudanças de cabeçalho.  
+**Próxima ação exata:** abrir PR da correção visual, acompanhar checks e mesclar se aprovados.  
+**Arquivos principais:** `css/documents.css`, `documentos/index.html`, `worker/tests/documents-ui.test.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
