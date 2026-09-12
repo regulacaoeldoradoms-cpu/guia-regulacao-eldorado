@@ -161,8 +161,8 @@ Para encerrar a Fase 1:
 - [x] testes automatizados de privacidade e autorização adicionados;
 - [x] configuração Google Cloud/OAuth real concluída;
 - [x] conta institucional conectada;
-- [ ] teste real confirma navegação por Meu Drive, pesquisa e abertura de PDF permitido;
-- [ ] propriedades recebidas no PostHog revalidadas após uso real;
-- [ ] PR da Fase 1 com checks aprovados e resultado registrado no status.
+- [x] teste real confirma navegação por Meu Drive, pesquisa e abertura de PDF permitido;
+- [x] propriedades recebidas no PostHog revalidadas após uso real;
+- [x] PR da Fase 1 com checks aprovados e resultado registrado no status.
 
-A fase permanece aberta enquanto os itens de integração real não forem comprovados.
+Fase 1 encerrada em 11/09/2026 após validação real de navegação, pesquisa, abertura de PDF e telemetria técnica segura no PostHog. A próxima fase autorizada é a **Fase 2 — Visualização de alta performance**.

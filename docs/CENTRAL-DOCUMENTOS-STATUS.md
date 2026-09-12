@@ -4,9 +4,9 @@
 
 ## Fase atual
 
-**Fase 1 — Navegação do Google Drive**
+**Fase 2 — Visualização de alta performance**
 
-Subfase atual: concluir a validação real da Fase 1. OAuth, conexão e navegação por pastas já foram comprovados; faltam comprovar pesquisa global, abertura de PDF e os eventos correspondentes.
+Subfase atual: iniciar a Fase 2 com visualização progressiva de PDF, medição confiável da primeira página e redução do tempo percebido sem persistir conteúdo clínico.
 
 ## Estado de entrada
 
@@ -150,7 +150,7 @@ Diretriz registrada:
 - Google Cloud/OAuth da Central configurado e consentimento institucional concluído.
 - Produção com escopo `drive` exige tratar o status de escopo restrito e requisitos de verificação aplicáveis.
 - Nenhum bloqueio impede concluir a documentação da Fase 0.
-- Auditoria PostHog da navegação por pasta foi concluída sem propriedades sensíveis observadas; Fase 1 ainda depende de validar pesquisa global e abertura de PDF real, gerando os eventos correspondentes.
+- Fase 1 encerrada: pesquisa global, abertura de PDF e telemetria documental foram comprovadas em produção sem propriedades sensíveis observadas.
 - A alteração de UX/cargos acumuláveis desta subfase ainda precisa passar por PR/checks antes de ir para a main.
 
 ## Riscos conhecidos
@@ -160,6 +160,31 @@ Diretriz registrada:
 - nomes de arquivos podem conter dados identificáveis, portanto não entram em PostHog/logs;
 - cache persistente ou service worker mal configurado poderia reter documento clínico; explicitamente proibido;
 - escrita concorrente futura pode sobrescrever versão externa se a comparação de `version` for omitida.
+
+## Encerramento formal da Fase 1 — 11/09/2026
+
+Critério do Guia Mestre: usuário autorizado consegue encontrar e abrir qualquer PDF permitido da conta sem sair do Portal.
+
+Evidências reais:
+- OAuth institucional conectado;
+- navegação por Meu Drive e subpastas comprovada;
+- pesquisa global comprovada pelo usuário em produção;
+- abertura de PDF real autorizada comprovada dentro do Portal;
+- PostHog confirmou 1 evento `drive_search_completed`, 1 `pdf_open_started` e 1 `pdf_ready` após os testes;
+- propriedades observadas ficaram limitadas a metadados técnicos allowlisted: rota genérica, duração, origem, faixa de quantidade/tamanho, cache state, versão de observabilidade e propriedades técnicas do próprio PostHog;
+- não foram observados nome de arquivo, fileId, nome de paciente, CPF, CNS, CID, conteúdo clínico ou conteúdo do PDF.
+
+Conclusão: **Fase 1 encerrada**. A ausência inicial dos três eventos era atraso de ingestão/indexação, não falha funcional do pipeline. Não foi necessária correção de código para esse ponto.
+
+Próxima fase autorizada pelo Guia Mestre: **Fase 2 — Visualização de alta performance**.
+
+## Validação real de PDF — 11/09/2026
+
+- Abertura de PDF real autorizada foi confirmada visualmente em produção dentro de `/documentos/`.
+- O visualizador exibiu múltiplas páginas no navegador e permaneceu em modo somente leitura.
+- Nenhuma escrita no Drive foi necessária para a validação.
+- Imediatamente após o teste, o schema do PostHog ainda não apresentava `pdf_open_started` nem `pdf_ready`. Isso não invalida a abertura funcional do PDF, mas mantém a telemetria documental como pendência de validação.
+- Não registrar nome de arquivo, conteúdo do PDF ou qualquer dado identificável no status, logs ou telemetria.
 
 ## Auditoria real de observabilidade — 11/09/2026
 
@@ -187,13 +212,13 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. PR #135 mesclado com gestão compacta e cargos acumuláveis;
-2. PR #136 validado com 23 workflows e mesclado em `866d981a`;
-3. confirmar em produção que `/documentos/` ficou compacta e que a função **Regulador(a)** aparece em `/admin/usuarios/`;
-4. validar pesquisa real no Drive;
-5. abrir um PDF real autorizado e confirmar visualização;
-6. confirmar no PostHog a chegada de `drive_search_completed`, `pdf_open_started` e `pdf_ready`, sem propriedades sensíveis;
-7. encerrar a Fase 1 somente após esses critérios.
+1. mesclar o PR #139 com o encerramento formal da Fase 1;
+2. criar branch isolada da **Fase 2 — Visualização de alta performance**;
+3. documentar o desenho técnico da visualização progressiva;
+4. substituir gradualmente o iframe/Blob integral por renderização progressiva com primeira página priorizada;
+5. emitir `pdf_first_page_visible` de forma confiável;
+6. medir antes/depois no PostHog sem nomes, IDs ou conteúdo documental;
+7. encerrar a Fase 2 somente quando o critério do Guia Mestre estiver comprovado.
 
 ## Arquivos e fontes principais
 
@@ -215,18 +240,18 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Handoff para o próximo chat
 
-**Fase atual:** Fase 1 — Navegação do Google Drive.  
-**Subfase / objetivo atual:** finalizar os testes reais restantes da Fase 1: pesquisa global, abertura de PDF e confirmação dos eventos correspondentes.  
+**Fase atual:** Fase 2 — Visualização de alta performance.  
+**Subfase / objetivo atual:** iniciar visualização progressiva de PDF, priorizar primeira página e tornar `pdf_first_page_visible` confiável.  
 **Estado real da main:** `866d981a3ca060e1f01064dc751a22d88aec0592` — PR #136 mesclado com as nomenclaturas Regulador(a) e Médico(a).  
 **Branch atual:** nenhuma após o merge do PR #137; abrir nova branch somente para a próxima unidade de trabalho.  
 **PR atual:** nenhum após o merge do PR #137. PR #136 concluiu a nomenclatura; PR #137 consolidou somente este status.  
-**Última ação concluída:** PR #136 validado com 23 workflows sem falhas e mesclado na main em `866d981a`; a função `documentos` agora é exibida como Regulador(a) e o perfil `medico` como Médico(a).  
-**Validação externa concluída:** OAuth real conectado; Portal mostrou `Drive conectado` e carregou a raiz do Meu Drive.  
+**Última ação concluída:** Fase 1 validada em produção: navegação, pesquisa e abertura de PDF funcionaram; PostHog confirmou `drive_search_completed`, `pdf_open_started` e `pdf_ready` com propriedades técnicas permitidas.  
+**Validação externa concluída:** OAuth real conectado; Meu Drive, pesquisa global e PDF real validados dentro do Portal.  
 **Checks e testes:** 23 workflows do PR #136 concluídos sem falhas; o PR #137 de status também deve ser mesclado somente com checks aprovados.  
 **Decisões tomadas:** perfil principal permanece único; funções adicionais podem acumular; `documentos` é exibido como `Regulador(a)` e concede leitura da Central; gestão de usuários fica fora da tela operacional; capabilities finas permanecem no backend.  
 **Justificativas:** reduzir drasticamente o espaço ocupado na Central e permitir combinações como Médico(a) + Regulador(a) sem trocar o perfil profissional.  
 **Alternativas descartadas:** continuar com uma checkbox para cada usuário dentro de `/documentos/`; transformar `documentos` em novo perfil primário mutuamente exclusivo; conceder acesso apenas escondendo/exibindo UI.  
-**Pendências:** testar pesquisa real; abrir PDF real; confirmar no PostHog os eventos `drive_search_completed`, `pdf_open_started` e `pdf_ready`; futura Drive Activity API permanece registrada para outra fase.  
-**Riscos conhecidos:** compatibilidade com acessos legados em `auth_document_access`; escopo OAuth restrito em modo Testing; PDF grande ainda é carregado integralmente nesta fase.  
-**Próxima ação exata:** na Central em produção, executar uma pesquisa por um arquivo/pasta permitido e abrir um PDF autorizado. Em seguida, consultar o PostHog para confirmar `drive_search_completed`, `pdf_open_started` e `pdf_ready` e, se tudo passar, encerrar a Fase 1 e iniciar a Fase 2.  
+**Pendências:** mesclar o encerramento da Fase 1 e iniciar a Fase 2; futura Drive Activity API permanece registrada para fase posterior.  
+**Riscos conhecidos:** compatibilidade com acessos legados em `auth_document_access`; escopo OAuth restrito em modo Testing; PDF grande ainda é carregado integralmente e é o principal alvo da Fase 2.  
+**Próxima ação exata:** mesclar o PR #139, criar branch da Fase 2 a partir da main resultante e implementar a primeira unidade de visualização progressiva com medição real de primeira página.  
 **Arquivos principais:** `worker/additional-roles.js`, `worker/document-access.js`, `worker/auth-management-flex.js`, `admin/usuarios/index.html`, `js/admin-users.js`, `documentos/index.html`, `js/documents.js`, `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, este status.
