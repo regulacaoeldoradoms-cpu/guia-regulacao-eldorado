@@ -20,9 +20,9 @@ Subfase atual: concluir validação real da Fase 1 e consolidar o novo modelo de
 
 ## Branch / PR
 
-Branch atual: `feat/central-docs-phase1-final-validation`
+Branch atual: nenhuma após a consolidação do status; a próxima mudança funcional deve abrir nova branch a partir da `main`.
 
-PR atual: #136 — Padronizar cargos Regulador(a) e Médico(a) (aberto).
+PR atual: nenhum após a consolidação; PR #136 foi funcional e PR #137 apenas registra o status pós-merge.
 
 ## Entregas concluídas nesta unidade
 
@@ -171,9 +171,9 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. PR #135 aberto e 22 workflows validados sem falhas;
-2. mesclar o PR #135 e confirmar a main pós-merge;
-4. confirmar em produção que `/documentos/` ficou compacta e que a função **Regulador(a)** aparece em `/admin/usuarios/`;
+1. PR #135 mesclado com gestão compacta e cargos acumuláveis;
+2. PR #136 validado com 23 workflows e mesclado em `866d981a`;
+3. confirmar em produção que `/documentos/` ficou compacta e que a função **Regulador(a)** aparece em `/admin/usuarios/`;
 5. validar pesquisa real no Drive;
 6. abrir um PDF real autorizado e confirmar visualização;
 7. auditar no PostHog apenas os eventos/propriedades técnicas permitidos;
@@ -201,16 +201,16 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 **Fase atual:** Fase 1 — Navegação do Google Drive.  
 **Subfase / objetivo atual:** concluir a revisão de UX/autorização com funções acumuláveis e depois finalizar os testes reais da Fase 1.  
-**Estado real da main:** `433456b669ca11f818a42762493ea8df14b97b43` — PR #135 mesclado com cargos acumuláveis e gestão compacta.  
-**Branch atual:** `feat/central-docs-phase1-final-validation`.  
-**PR atual:** #136 — aberto; objetivo: padronizar a nomenclatura Regulador(a) e Médico(a) sem alterar IDs técnicos ou permissões.  
-**Última ação concluída:** nomenclaturas Regulador(a) e Médico(a) aplicadas na branch e PR #136 aberto para validação.  
+**Estado real da main:** `866d981a3ca060e1f01064dc751a22d88aec0592` — PR #136 mesclado com as nomenclaturas Regulador(a) e Médico(a).  
+**Branch atual:** nenhuma após o merge do PR #137; abrir nova branch somente para a próxima unidade de trabalho.  
+**PR atual:** nenhum após o merge do PR #137. PR #136 concluiu a nomenclatura; PR #137 consolidou somente este status.  
+**Última ação concluída:** PR #136 validado com 23 workflows sem falhas e mesclado na main em `866d981a`; a função `documentos` agora é exibida como Regulador(a) e o perfil `medico` como Médico(a).  
 **Validação externa concluída:** OAuth real conectado; Portal mostrou `Drive conectado` e carregou a raiz do Meu Drive.  
-**Checks e testes:** PR #136 aguardando checks; testes foram atualizados para os novos rótulos sem alterar identificadores `documentos` e `medico`.  
+**Checks e testes:** 23 workflows do PR #136 concluídos sem falhas; o PR #137 de status também deve ser mesclado somente com checks aprovados.  
 **Decisões tomadas:** perfil principal permanece único; funções adicionais podem acumular; `documentos` é exibido como `Regulador(a)` e concede leitura da Central; gestão de usuários fica fora da tela operacional; capabilities finas permanecem no backend.  
 **Justificativas:** reduzir drasticamente o espaço ocupado na Central e permitir combinações como Médico(a) + Regulador(a) sem trocar o perfil profissional.  
 **Alternativas descartadas:** continuar com uma checkbox para cada usuário dentro de `/documentos/`; transformar `documentos` em novo perfil primário mutuamente exclusivo; conceder acesso apenas escondendo/exibindo UI.  
 **Pendências:** validar em produção que a lista extensa desapareceu e que a função acumulável aparece em Usuários e acessos; testar pesquisa real; abrir PDF real; auditar PostHog; futura Drive Activity API permanece registrada para outra fase.  
 **Riscos conhecidos:** compatibilidade com acessos legados em `auth_document_access`; escopo OAuth restrito em modo Testing; PDF grande ainda é carregado integralmente nesta fase.  
-**Próxima ação exata:** acompanhar os checks do PR #136; mesclar somente se aprovados. Após o deploy, validar `Regulador(a)` e `Médico(a)` nas superfícies do Portal e então retomar pesquisa, abertura de PDF real e auditoria PostHog.  
+**Próxima ação exata:** após o deploy da main `866d981a`, validar `Regulador(a)` e `Médico(a)` nas superfícies do Portal; depois retomar os critérios finais da Fase 1: pesquisa real no Drive, abertura de PDF real e auditoria PostHog.  
 **Arquivos principais:** `worker/additional-roles.js`, `worker/document-access.js`, `worker/auth-management-flex.js`, `admin/usuarios/index.html`, `js/admin-users.js`, `documentos/index.html`, `js/documents.js`, `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, este status.
