@@ -157,7 +157,7 @@ test('permissão de edição é explícita e não é herdada automaticamente de 
   assert.match(html, /salvar no Drive continua indisponível nesta fase/);
   assert.match(client, /documentCapabilities\?\.edit/);
   assert.match(client, /\/api\/documents\/admin\/access\//);
-  assert.match(client, /edit: allowEdit === true/);
+  assert.match(client, /edit: regulatorEnabled === true && allowEdit === true/);
   assert.match(client, /editAdditionalRoleDocuments\.checked/);
   assert.doesNotMatch(client, /additionalRoles.*edit:\s*true/);
 });
