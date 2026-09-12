@@ -20,9 +20,9 @@ Subfase atual: iniciar a Fase 2 com visualização progressiva de PDF, medição
 
 ## Branch / PR
 
-Branch atual: `feat/central-docs-phase2-progressive-viewer`, criada da main pós-encerramento da Fase 1 (`876d0272`).
+Branch atual: `docs/central-docs-phase2a-postmerge` (somente consolidação de status pós-merge).
 
-PR atual: ainda não aberto para a Fase 2.
+PR atual: nenhum funcional aberto; PR #140 foi validado e mesclado.
 
 ## Entregas concluídas nesta unidade
 
@@ -242,10 +242,8 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. abrir PR da unidade 2A;
-2. executar suíte completa e checks do GitHub;
-3. corrigir qualquer regressão antes de merge;
-4. após merge/deploy, abrir PDF real e confirmar que o modo progressivo funciona;
+1. PR #140 validado com 23 workflows e mesclado em `3447c446`;
+2. após deploy, abrir PDF real e confirmar que o modo progressivo funciona;
 5. verificar no PostHog `pdf_first_page_visible`, `pdf_open_started` e `pdf_ready`;
 6. comparar duração real com a linha de base da Fase 1, especialmente em PDFs médios/grandes;
 7. manter a Fase 2 aberta até comprovar ganho e ausência de regressão.
@@ -272,16 +270,16 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 **Fase atual:** Fase 2 — Visualização de alta performance.  
 **Subfase / objetivo atual:** unidade 2A — stream progressivo protegido via Service Worker, com fallback Blob e métrica `pdf_first_page_visible`.  
-**Estado real da main:** `876d0272b300924cb1a23ae458966e6c7c20ed90` — PR #139 mesclado e Fase 1 formalmente encerrada.  
-**Branch atual:** `feat/central-docs-phase2-progressive-viewer`.  
-**PR atual:** ainda não aberto.  
-**Última ação concluída:** código da unidade 2A implementado: stream virtual efêmero no Service Worker, Range encaminhado ao Worker, heartbeat/release, fallback Blob, primeira página instrumentada e documentação/testes atualizados.  
+**Estado real da main:** `3447c446dcb6cf8187f613a701e3cfcb844e41a9` — PR #140 mesclado com a unidade 2A da Fase 2.  
+**Branch atual:** `docs/central-docs-phase2a-postmerge` (status pós-merge; nenhuma mudança funcional adicional).  
+**PR atual:** nenhum funcional; PR #140 foi concluído.  
+**Última ação concluída:** PR #140 validado com 23 workflows sem falhas e mesclado na main; unidade 2A está publicada no código oficial e aguarda validação real de produção.  
 **Validação externa concluída:** Fase 1 comprovada em produção; PostHog registrou pesquisa e abertura PDF sem propriedades sensíveis.  
-**Checks e testes:** testes foram ampliados, mas ainda precisam rodar no PR da Fase 2.  
+**Checks e testes:** 23 workflows do PR #140 concluídos sem falhas antes do merge.  
 **Decisões tomadas:** usar stream same-origin virtual mediado pelo Service Worker; referência/token somente em memória; TTL curto + heartbeat; no-store; sem ticket bearer em URL; sem biblioteca PDF de terceiros; Blob integral permanece fallback.  
 **Justificativas:** permitir início de visualização sem esperar Blob completo, preservar sessão/capability do Worker e evitar persistência/exposição de documentos clínicos.  
 **Alternativas descartadas:** PDF.js remoto/CDN; credencial/ticket na URL; cache persistente; fingir métrica de primeira página no Blob integral.  
-**Pendências:** abrir PR/checks; validar progressivo em produção; comprovar `pdf_first_page_visible`; comparar tempos com Fase 1; futura Drive Activity API permanece para fase posterior.  
+**Pendências:** aguardar deploy da main; validar progressivo em produção; comprovar `pdf_first_page_visible`; comparar tempos com Fase 1; futura Drive Activity API permanece para fase posterior.  
 **Riscos conhecidos:** Service Worker pode reiniciar; navegador pode tratar Range/PDF nativo de modo diferente; heartbeat e fallback reduzem impacto, mas validação real é obrigatória.  
-**Próxima ação exata:** abrir PR da branch atual, aguardar todos os checks e corrigir qualquer falha; somente depois mesclar e pedir/realizar teste real do PDF progressivo.  
+**Próxima ação exata:** após o deploy da main `3447c446`, recarregar `/documentos/` com atualização completa, abrir um PDF real e confirmar visualização; em seguida auditar `pdf_first_page_visible`, `pdf_open_started` e `pdf_ready` no PostHog e comparar duração com a Fase 1.  
 **Arquivos principais:** `portal-sw.js`, `js/documents.js`, `documentos/index.html`, `worker/tests/documents-ui.test.mjs`, `worker/tests/observability-privacy.test.mjs`, `docs/CENTRAL-DOCUMENTOS-FASE-2.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
