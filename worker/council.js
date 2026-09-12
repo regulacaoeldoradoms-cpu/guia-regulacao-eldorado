@@ -22,7 +22,7 @@ const TYPES = new Set(['sugestao', 'reclamacao', 'elogio', 'denuncia']);
 const STATUSES = new Set(['recebida', 'em_analise', 'aguardando_cidadao', 'encaminhada', 'aguardando_retorno', 'respondida', 'concluida', 'arquivada']);
 const ATTACHMENT_TYPES = new Set(['image/jpeg', 'image/png', 'application/pdf']);
 const ROLE_LABELS = Object.freeze({
-  medico: 'Médico',
+  medico: 'Médico(a)',
   recepcao: 'Recepção',
   coordenacao: 'Coordenação',
   admin: 'Desenvolvedor',
