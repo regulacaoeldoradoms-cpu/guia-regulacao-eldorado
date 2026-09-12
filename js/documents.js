@@ -76,6 +76,7 @@
     editorPageCount: document.getElementById('documentsEditorPageCount'),
     editorUndo: document.getElementById('editorUndoButton'),
     editorRedo: document.getElementById('editorRedoButton'),
+    editorMerge: document.getElementById('editorMergeButton'),
     editorPreview: document.getElementById('editorPreviewButton'),
     editorExit: document.getElementById('editorExitButton')
   };
@@ -289,6 +290,18 @@
     state.editorBuildSeq += 1;
   }
 
+  function refreshPdfListActions() {
+    if (!els.list) return;
+    els.list.querySelectorAll('[data-index]').forEach((button) => {
+      const item = state.items[Number(button.dataset.index)];
+      const action = button.querySelector('.documents-item-action');
+      if (!item?.isPdf || !action) return;
+      action.textContent = state.editorSession
+        ? (editorContainsItem(item) ? 'Já no editor' : 'Unir ao editor')
+        : 'Abrir PDF';
+    });
+  }
+
   function resetEditorState({ restoreOriginal = false } = {}) {
     clearEditorPreview();
     state.editorSession = null;
@@ -296,6 +309,7 @@
     if (els.viewerModeLabel) els.viewerModeLabel.textContent = 'Visualização';
     if (els.editPdf) els.editPdf.hidden = !(canEditDocuments() && state.pdfItem);
     setEditorStatus('');
+    refreshPdfListActions();
     if (restoreOriginal && state.pdfObjectUrl) {
       els.frame.src = state.pdfObjectUrl;
     }
@@ -390,8 +404,9 @@
       els.viewerModeLabel.textContent = 'Editor PDF';
       els.editPdf.hidden = true;
       els.viewerState.className = 'documents-viewer-state ready';
-      setEditorStatus('Editor pronto. Para unir outro PDF, clique nele na lista. Alterações são locais e reversíveis; nada será salvo no Drive nesta fase.', 'success');
+      setEditorStatus('Editor pronto. Use “Unir outro PDF” para escolher outro documento da lista. Alterações são locais e reversíveis; nada será salvo no Drive nesta fase.', 'success');
       renderEditorPages();
+      refreshPdfListActions();
       els.editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (error) {
       els.viewerState.className = 'documents-viewer-state ready';
@@ -419,6 +434,7 @@
         cacheIdentity: identity
       });
       renderEditorPages();
+      refreshPdfListActions();
       scheduleEditorPreview();
       capture('pdf_edit_completed', {
         route: '/documentos/',
@@ -445,6 +461,7 @@
     if (!changed) return;
 
     renderEditorPages();
+    refreshPdfListActions();
     scheduleEditorPreview();
     capture('pdf_edit_completed', {
       route: '/documentos/',
@@ -457,13 +474,27 @@
   function undoEditor() {
     if (!state.editorSession || !window.PortalPdfEditor?.undo(state.editorSession)) return;
     renderEditorPages();
+    refreshPdfListActions();
     scheduleEditorPreview();
   }
 
   function redoEditor() {
     if (!state.editorSession || !window.PortalPdfEditor?.redo(state.editorSession)) return;
     renderEditorPages();
+    refreshPdfListActions();
     scheduleEditorPreview();
+  }
+
+  function choosePdfToMerge() {
+    if (!state.editorSession) return;
+    refreshPdfListActions();
+    setEditorStatus('Escolha outro PDF na lista e clique em “Unir ao editor”. O documento atual continuará aberto no editor.', 'success');
+    const candidate = [...els.list.querySelectorAll('[data-index]')].find((button) => {
+      const item = state.items[Number(button.dataset.index)];
+      return item?.isPdf && !editorContainsItem(item);
+    });
+    (candidate || els.list).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    candidate?.focus?.({ preventScroll: true });
   }
 
   function exitEditor() {
@@ -1029,6 +1060,7 @@
   els.editPdf.addEventListener('click', startEditor);
   els.editorUndo.addEventListener('click', undoEditor);
   els.editorRedo.addEventListener('click', redoEditor);
+  els.editorMerge.addEventListener('click', choosePdfToMerge);
   els.editorPreview.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
   els.editorExit.addEventListener('click', exitEditor);
 
