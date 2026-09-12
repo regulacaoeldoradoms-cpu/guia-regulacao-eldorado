@@ -20,9 +20,9 @@ Subfase atual: unidade 2B — reduzir a latência real com cache local criptogra
 
 ## Branch / PR
 
-Branch atual: `feat/central-docs-phase2b-encrypted-cache`, criada da main `8b4c3d40`.
+Branch atual: `docs/central-docs-phase2b-postmerge` (somente consolidação pós-merge).
 
-PR atual: ainda não aberto para a unidade 2B.
+PR atual: nenhum funcional aberto; PR #142 foi validado e mesclado.
 
 ## Entregas concluídas nesta unidade
 
@@ -272,13 +272,13 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. abrir PR da unidade 2B;
-2. executar todos os workflows e corrigir regressões;
-3. após merge/deploy, recarregar a Central e aguardar o pré-aquecimento de alguns PDFs;
-4. abrir um PDF pela primeira vez e depois reabri-lo para produzir um cache miss e um cache hit;
-5. verificar no PostHog `pdf_ready` e `pdf_first_page_visible` por `cache_state`;
-6. confirmar redução mensurável frente à linha de base recente de ~4,8–5,9 s;
-7. manter a Fase 2 aberta até o cache hit ficar rápido e a primeira página ser medida com confiabilidade.
+1. PR #142 validado com 23 workflows e mesclado em `f75b5725`;
+2. aguardar deploy da main e atualização do Service Worker/cache estático V12;
+3. recarregar a Central com Ctrl+F5;
+4. aguardar alguns segundos na pasta para o pré-aquecimento;
+5. abrir um PDF, fechar e abrir o mesmo novamente;
+6. confirmar no PostHog diferença entre `cache_state=miss` e `cache_state=hit` em `pdf_ready`/`pdf_first_page_visible`;
+7. manter a Fase 2 aberta até o ganho de cache hit ser comprovado.
 
 ## Arquivos e fontes principais
 
@@ -302,15 +302,15 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 **Fase atual:** Fase 2 — Visualização de alta performance.  
 **Subfase / objetivo atual:** unidade 2B — cache local criptografado + pré-aquecimento para reduzir `pdf_ready` e tornar `pdf_first_page_visible` mensurável.  
-**Estado real da main:** `8b4c3d4002c62ac0ff044a5589ecf86ece9cc8f0` — PR #141 mesclado; unidade 2A em produção.  
-**Branch atual:** `feat/central-docs-phase2b-encrypted-cache`.  
-**PR atual:** ainda não aberto.  
+**Estado real da main:** `f75b5725cc447cde66cbceb9eb2ea79a72b981bd` — PR #142 mesclado com a unidade 2B de cache criptografado.  
+**Branch atual:** `docs/central-docs-phase2b-postmerge` (status pós-merge; nenhuma mudança funcional adicional).  
+**PR atual:** nenhum funcional; PR #142 foi concluído.  
 **Última validação real:** PDF abriu, porém lento; PostHog mostrou abertura anterior ~4.830 ms e mais recente ~5.914 ms em `pdf_ready`, ambos cache miss; `pdf_first_page_visible` ainda 0.  
 **Decisão aprovada:** permitir cache persistente de PDFs, mas implementá-lo cifrado e segregado pela sessão; cargo/capability continua obrigatório, porém não é a única barreira para bytes em disco.  
-**Implementação concluída na branch:** chave opaca HMAC por arquivo; IndexedDB cifrado AES-GCM/HKDF; TTL 12 h; 256 MB totais; 50 MB por PDF; prefetch até 12 MB; aquecimento por lista/hover; invalidação por `version`; limpeza por logout/desconexão/troca de sessão; cache hit/miss na telemetria allowlisted.  
+**Implementação concluída:** PR #142 validado com 23 workflows sem falhas e mesclado; chave opaca HMAC por arquivo; IndexedDB cifrado AES-GCM/HKDF; TTL 12 h; 256 MB totais; 50 MB por PDF; prefetch até 12 MB; aquecimento por lista/hover; invalidação por `version`; limpeza por logout/desconexão/troca de sessão; cache hit/miss na telemetria allowlisted.  
 **Justificativa:** o stream progressivo sozinho não reduziu a espera no navegador real; o Guia Mestre autoriza cache e pré-carregamento na Fase 2.  
 **Alternativas descartadas:** PDF clínico em texto puro no Cache Storage; CDN/edge cache compartilhado; fileId como chave de cache; cache ilimitado; confiar apenas na UI/cargo para proteger bytes locais.  
-**Pendências:** abrir PR/checks; validar cache hit real em produção; comparar tempos; confirmar `pdf_first_page_visible`; futura Drive Activity API permanece registrada.  
+**Pendências:** aguardar deploy da main; validar cache hit real em produção; comparar tempos; confirmar `pdf_first_page_visible`; futura Drive Activity API permanece registrada.  
 **Riscos conhecidos:** armazenamento local limitado; cache de outra sessão; documento desatualizado; todos mitigados por criptografia ligada à sessão, fingerprint, TTL/LRU e `version` do Drive.  
-**Próxima ação exata:** abrir PR da 2B, aguardar checks e corrigir falhas; depois mesclar e executar teste A/B prático: primeira abertura (miss) e reabertura (hit) do mesmo PDF.  
+**Próxima ação exata:** após o deploy da main `f75b5725`, recarregar `/documentos/` com atualização completa; aguardar alguns segundos para o prefetch, abrir um PDF, fechá-lo e abrir o mesmo PDF novamente. Em seguida comparar `pdf_ready` e `pdf_first_page_visible` entre miss/hit no PostHog.  
 **Arquivos principais:** `worker/document-drive.js`, `js/document-cache.js`, `js/documents.js`, `documentos/index.html`, `portal-sw.js`, `docs/CENTRAL-DOCUMENTOS-FASE-2.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
