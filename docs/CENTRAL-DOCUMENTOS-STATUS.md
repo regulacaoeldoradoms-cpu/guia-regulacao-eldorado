@@ -85,6 +85,8 @@ PR atual: nenhum para esta subfase. PR #134 foi mesclado na `main`.
 
 ## Ações externas concluídas
 
+- Cloudflare: credenciais OAuth e chave de criptografia configuradas pelo usuário, sem exposição dos valores no chat ou repositório.
+
 - Google Drive API ativada no projeto Google Cloud.
 - Tela de consentimento OAuth configurada como **Externo** em modo de testes.
 - OAuth Client do tipo Web criado no Google Cloud para a Central de Documentos.
@@ -173,8 +175,8 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Justificativas:** atender Meu Drive completo sem expor credenciais/fileId nem persistir documento clínico.  
 **Alternativas descartadas:** `drive.file`, service account para acervo atual, espelho de PDFs, cache persistente, token Google no frontend, IA/edição antecipadas.  
 **Ações externas concluídas:** PostHog seguro operacional; código da Fase 1 mesclado. Google Cloud OAuth ainda não configurado.  
-**Pendências:** confirmação pública do deploy não pôde ser feita pelos conectores disponíveis; adicionar Client ID/Secret e chave AES na Cloudflare; cadastrar usuário de teste se ainda não estiver cadastrado; consentir conta institucional; testar navegação/pesquisa/PDF; auditar PostHog; em fase posterior, avaliar Google Drive Activity API para histórico de ações em arquivos/pastas.  
+**Pendências:** confirmação pública do deploy não pôde ser feita pelos conectores disponíveis; cadastrar usuário de teste se ainda não estiver cadastrado; consentir conta institucional; testar navegação/pesquisa/PDF; auditar PostHog; em fase posterior, avaliar Google Drive Activity API para histórico de ações em arquivos/pastas.  
 **Riscos conhecidos:** restricted scope e requisitos de produção; refresh token curto em Testing; PDFs grandes ainda carregam integralmente nesta fase.  
 **Métricas / observabilidade:** instrumentação da Fase 1 pronta, mas nenhum evento documental real validado ainda.  
-**Próxima ação exata:** configurar no Cloudflare Worker `GOOGLE_DRIVE_OAUTH_CLIENT_ID`, `GOOGLE_DRIVE_OAUTH_CLIENT_SECRET` e `DRIVE_TOKEN_ENCRYPTION_KEY`; depois cadastrar/confirmar o usuário de teste e executar o consentimento pela Central.  
+**Próxima ação exata:** cadastrar/confirmar a conta institucional em `Público-alvo > Usuários de teste` no Google Auth Platform e, em seguida, executar o consentimento pela Central de Documentos.  
 **Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, `docs/CENTRAL-DOCUMENTOS-OAUTH-SETUP.md`, arquitetura V1, este status, `worker/document-drive.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`.
