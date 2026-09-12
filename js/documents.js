@@ -702,7 +702,7 @@
     try {
       await api('/api/documents/oauth/disconnect', { method: 'POST', body: '{}' });
       closePdf();
-      await documentCache?.clearAll?.().catch?.(() => {});
+      if (documentCache?.clearAll) await documentCache.clearAll().catch(() => {});
       await loadAccess();
       showStatus('Google Drive desconectado da Central.', 'info');
     } catch (error) {
@@ -773,7 +773,7 @@
 
   els.logout.addEventListener('click', async () => {
     closePdf();
-    await documentCache?.clearAll?.().catch?.(() => {});
+    if (documentCache?.clearAll) await documentCache.clearAll().catch(() => {});
     await auth.logout();
     location.replace('/login/');
   });
