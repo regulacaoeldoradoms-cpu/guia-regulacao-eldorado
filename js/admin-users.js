@@ -62,15 +62,15 @@
     if (!enabled) editDocumentPdfPermission.checked = false;
   }
 
-  async function updateDocumentCapabilities(username, user, allowEdit) {
+  async function updateDocumentCapabilities(username, user, regulatorEnabled, allowEdit) {
     if (!isDeveloper || !username) return null;
     const existing = user?.documentCapabilities || {};
     return auth.api(`/api/documents/admin/access/${encodeURIComponent(username)}`, {
       method: 'PATCH',
       body: JSON.stringify({
-        view: existing.view === true,
-        extract: existing.extract === true,
-        edit: allowEdit === true,
+        view: regulatorEnabled === true,
+        extract: regulatorEnabled === true && existing.extract === true,
+        edit: regulatorEnabled === true && allowEdit === true,
         manage: user?.role === 'admin' ? false : existing.manage === true
       })
     });
@@ -235,7 +235,8 @@
         await updateDocumentCapabilities(
           state.editing,
           editingUser,
-          Boolean(editAdditionalRoleDocuments?.checked && editDocumentPdfPermission?.checked)
+          Boolean(editAdditionalRoleDocuments?.checked),
+          Boolean(editDocumentPdfPermission?.checked)
         );
       }
       showStatus(status, 'Alterações salvas.', 'success');
