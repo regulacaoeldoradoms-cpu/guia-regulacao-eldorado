@@ -46,7 +46,7 @@
     result_count_bucket: new Set(['0', '1-5', '6-20', '21-100', '100+', 'unknown']),
     operation: new Set([
       'open_folder', 'search', 'open_pdf', 'delete_page', 'reorder_page', 'rotate_page',
-      'merge_pdf', 'save_copy', 'replace_pdf', 'extract', 'document_chat', 'request', 'unknown'
+      'merge_pdf', 'insert_image', 'save_copy', 'replace_pdf', 'extract', 'document_chat', 'request', 'unknown'
     ])
   });
 
