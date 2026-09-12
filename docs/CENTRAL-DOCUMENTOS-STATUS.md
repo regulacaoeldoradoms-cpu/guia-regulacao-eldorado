@@ -6,7 +6,7 @@
 
 **Fase 1 — Navegação do Google Drive**
 
-Subfase atual: concluir validação real da Fase 1 e consolidar o novo modelo de funções adicionais acumuláveis para acesso à Central.
+Subfase atual: concluir a validação real da Fase 1. OAuth, conexão e navegação por pastas já foram comprovados; faltam comprovar pesquisa global, abertura de PDF e os eventos correspondentes.
 
 ## Estado de entrada
 
@@ -150,7 +150,7 @@ Diretriz registrada:
 - Google Cloud/OAuth da Central configurado e consentimento institucional concluído.
 - Produção com escopo `drive` exige tratar o status de escopo restrito e requisitos de verificação aplicáveis.
 - Nenhum bloqueio impede concluir a documentação da Fase 0.
-- Fase 1 ainda depende de validar pesquisa, abertura de PDF real e auditoria final dos eventos PostHog.
+- Auditoria PostHog da navegação por pasta foi concluída sem propriedades sensíveis observadas; Fase 1 ainda depende de validar pesquisa global e abertura de PDF real, gerando os eventos correspondentes.
 - A alteração de UX/cargos acumuláveis desta subfase ainda precisa passar por PR/checks antes de ir para a main.
 
 ## Riscos conhecidos
@@ -160,6 +160,22 @@ Diretriz registrada:
 - nomes de arquivos podem conter dados identificáveis, portanto não entram em PostHog/logs;
 - cache persistente ou service worker mal configurado poderia reter documento clínico; explicitamente proibido;
 - escrita concorrente futura pode sobrescrever versão externa se a comparação de `version` for omitida.
+
+## Auditoria real de observabilidade — 11/09/2026
+
+Consulta direta ao projeto PostHog confirmou tráfego real da Central e do Portal nas últimas 24 horas:
+
+- `drive_folder_opened`: 12 eventos;
+- `portal_page_ready`: 32 eventos;
+- `portal_web_vital`: 108 eventos.
+
+Propriedades reais observadas em `drive_folder_opened`: `duration_ms`, `cache_state`, `portal_observability_version`, `route`, `source`, `$geoip_disable` e propriedades virtuais de classificação de bot do próprio PostHog. Não foram observados nome de arquivo, fileId do Drive, nome de paciente, CPF, CNS, CID, conteúdo clínico ou conteúdo de PDF.
+
+Propriedades reais observadas em `portal_page_ready`: `duration_ms`, `route`, `connection`, `navigation_type`, `portal_observability_version` e propriedades técnicas virtuais do PostHog.
+
+Propriedades reais observadas em `portal_web_vital`: `value`, `metric`, `route`, `portal_observability_version` e propriedades técnicas virtuais do PostHog.
+
+O schema real ainda não apresenta `drive_search_completed`, `pdf_open_started` nem `pdf_ready`. Isso é evidência de que pesquisa e abertura de PDF ainda não foram comprovadas em uso real nesta validação; esses dois testes continuam obrigatórios para encerrar a Fase 1.
 
 ## Métricas / observabilidade
 
@@ -174,10 +190,10 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 1. PR #135 mesclado com gestão compacta e cargos acumuláveis;
 2. PR #136 validado com 23 workflows e mesclado em `866d981a`;
 3. confirmar em produção que `/documentos/` ficou compacta e que a função **Regulador(a)** aparece em `/admin/usuarios/`;
-5. validar pesquisa real no Drive;
-6. abrir um PDF real autorizado e confirmar visualização;
-7. auditar no PostHog apenas os eventos/propriedades técnicas permitidos;
-8. encerrar a Fase 1 somente após esses critérios.
+4. validar pesquisa real no Drive;
+5. abrir um PDF real autorizado e confirmar visualização;
+6. confirmar no PostHog a chegada de `drive_search_completed`, `pdf_open_started` e `pdf_ready`, sem propriedades sensíveis;
+7. encerrar a Fase 1 somente após esses critérios.
 
 ## Arquivos e fontes principais
 
@@ -200,7 +216,7 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 1 — Navegação do Google Drive.  
-**Subfase / objetivo atual:** concluir a revisão de UX/autorização com funções acumuláveis e depois finalizar os testes reais da Fase 1.  
+**Subfase / objetivo atual:** finalizar os testes reais restantes da Fase 1: pesquisa global, abertura de PDF e confirmação dos eventos correspondentes.  
 **Estado real da main:** `866d981a3ca060e1f01064dc751a22d88aec0592` — PR #136 mesclado com as nomenclaturas Regulador(a) e Médico(a).  
 **Branch atual:** nenhuma após o merge do PR #137; abrir nova branch somente para a próxima unidade de trabalho.  
 **PR atual:** nenhum após o merge do PR #137. PR #136 concluiu a nomenclatura; PR #137 consolidou somente este status.  
@@ -210,7 +226,7 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Decisões tomadas:** perfil principal permanece único; funções adicionais podem acumular; `documentos` é exibido como `Regulador(a)` e concede leitura da Central; gestão de usuários fica fora da tela operacional; capabilities finas permanecem no backend.  
 **Justificativas:** reduzir drasticamente o espaço ocupado na Central e permitir combinações como Médico(a) + Regulador(a) sem trocar o perfil profissional.  
 **Alternativas descartadas:** continuar com uma checkbox para cada usuário dentro de `/documentos/`; transformar `documentos` em novo perfil primário mutuamente exclusivo; conceder acesso apenas escondendo/exibindo UI.  
-**Pendências:** validar em produção que a lista extensa desapareceu e que a função acumulável aparece em Usuários e acessos; testar pesquisa real; abrir PDF real; auditar PostHog; futura Drive Activity API permanece registrada para outra fase.  
+**Pendências:** testar pesquisa real; abrir PDF real; confirmar no PostHog os eventos `drive_search_completed`, `pdf_open_started` e `pdf_ready`; futura Drive Activity API permanece registrada para outra fase.  
 **Riscos conhecidos:** compatibilidade com acessos legados em `auth_document_access`; escopo OAuth restrito em modo Testing; PDF grande ainda é carregado integralmente nesta fase.  
-**Próxima ação exata:** após o deploy da main `866d981a`, validar `Regulador(a)` e `Médico(a)` nas superfícies do Portal; depois retomar os critérios finais da Fase 1: pesquisa real no Drive, abertura de PDF real e auditoria PostHog.  
+**Próxima ação exata:** na Central em produção, executar uma pesquisa por um arquivo/pasta permitido e abrir um PDF autorizado. Em seguida, consultar o PostHog para confirmar `drive_search_completed`, `pdf_open_started` e `pdf_ready` e, se tudo passar, encerrar a Fase 1 e iniciar a Fase 2.  
 **Arquivos principais:** `worker/additional-roles.js`, `worker/document-access.js`, `worker/auth-management-flex.js`, `admin/usuarios/index.html`, `js/admin-users.js`, `documentos/index.html`, `js/documents.js`, `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, este status.
