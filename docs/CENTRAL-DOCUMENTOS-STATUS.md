@@ -324,10 +324,9 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. concluir checks estáticos/unitários da Fase 3 e atualizar workflows para o novo editor;
-2. abrir PR da branch `feat/central-docs-phase3-editor-core`;
-3. corrigir qualquer regressão antes do merge;
-4. após merge/deploy, conceder explicitamente a capability **Permitir editor de PDF** somente à conta de teste autorizada;
+1. PR #146 aberto e validado com 23 workflows sem falhas;
+2. mesclar o PR #146;
+3. após merge/deploy, conceder explicitamente a capability **Permitir editor de PDF** somente à conta de teste autorizada;
 5. validar em produção: excluir, reordenar, desfazer/refazer, unir outro PDF e visualizar o resultado;
 6. testar pelo menos PDFs com contagens/tamanhos diferentes;
 7. encerrar a Fase 3 somente se os PDFs resultantes forem válidos e a leitura/cache da Fase 2 não regredir.
@@ -356,14 +355,14 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Subfase / objetivo atual:** unidades 3A/3B — excluir/reordenar/undo/redo/unir/visualizar localmente, com capability `edit` explícita.  
 **Estado real da main:** `9f3fb713699dbd50f2510c3b9785b3a12de29c50` — Fase 2 encerrada pelo PR #145.  
 **Branch atual:** `feat/central-docs-phase3-editor-core`.  
-**PR atual:** ainda não aberto neste registro.  
+**PR atual:** #146 — aberto; 23 workflows concluídos sem falhas.  
 **Última ação concluída:** núcleo local do editor, superfície UI, união pelo navegador do Drive, preview local, permissão fina de edição, testes unitários e documentação arquitetural implementados na branch.  
 **Permissões:** Regulador(a) continua concedendo leitura; edição não é herdada. O Desenvolvedor pode marcar **Permitir editor de PDF** por usuário; remover Regulador(a) também revoga capabilities documentais correspondentes.  
 **Dependência PDF:** `pdf-lib 1.17.1`, carregado sob demanda com SRI fixo e CSP restrita a jsDelivr.  
 **Limite de escopo:** nenhuma rota de upload/save/replace e nenhuma escrita no Drive até a Fase 4.  
 **Telemetria:** `pdf_edit_completed` somente com operation/duration/size_bucket/route; sem página, nome, ref, fileId ou conteúdo.  
-**Checks e testes:** testes foram adicionados/atualizados, mas ainda precisam rodar no PR.  
-**Pendências:** atualizar todos os checks de versão/cache/CSP, abrir PR, corrigir falhas, merge e validação real com capability edit explicitamente concedida à conta de teste.  
+**Checks e testes:** 23 workflows do PR #146 concluídos sem falhas; suíte inclui testes unitários do plano de páginas, UI, autorização e privacidade.  
+**Pendências:** mesclar PR #146; aguardar deploy; conceder capability `edit` explicitamente a uma conta Regulador(a) de teste; validar operações reais com PDFs diferentes.  
 **Riscos conhecidos:** PDFs protegidos por senha ou estruturas incomuns podem não ser compatíveis com pdf-lib; falha é neutra e não afeta leitura. CDN depende de SRI/host disponível apenas ao iniciar edição.  
-**Próxima ação exata:** finalizar workflow/testes, abrir PR da Fase 3 e acompanhar todos os checks antes de qualquer merge.  
+**Próxima ação exata:** mesclar o PR #146; após deploy, pedir autorização humana para conceder `Permitir editor de PDF` à conta de teste Regulador(a), então executar validação real de excluir/reordenar/undo/redo/unir/prévia.  
 **Arquivos principais:** `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `js/admin-users.js`, `admin/usuarios/index.html`, `docs/CENTRAL-DOCUMENTOS-FASE-3.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
