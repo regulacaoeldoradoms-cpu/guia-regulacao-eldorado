@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260912-4">
+  <link rel="stylesheet" href="/css/documents.css?v=20260912-5">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -122,7 +122,23 @@
             <div class="documents-editor-pages" id="documentsEditorPages"></div>
           </section>
 
-          <iframe id="documentsPdfFrame" title="Documento PDF" referrerpolicy="no-referrer"></iframe>
+          <section class="documents-custom-viewer" id="documentsCustomViewer" hidden aria-label="Visualizador próprio de PDF">
+            <div class="documents-pdf-toolbar" role="toolbar" aria-label="Controles do PDF">
+              <button class="portal-button ghost" id="pdfZoomOutButton" type="button" aria-label="Diminuir zoom">−</button>
+              <button class="portal-button ghost" id="pdfZoomResetButton" type="button" aria-label="Restaurar zoom"><span id="pdfZoomLabel">100%</span></button>
+              <button class="portal-button ghost" id="pdfZoomInButton" type="button" aria-label="Aumentar zoom">+</button>
+              <button class="portal-button secondary" id="pdfFitWidthButton" type="button">Ajustar largura</button>
+              <span class="documents-pdf-page-count" id="pdfPageCountLabel"></span>
+            </div>
+            <div class="documents-pdf-layout">
+              <nav class="documents-pdf-thumbnails" id="pdfThumbnailRail" aria-label="Miniaturas das páginas"></nav>
+              <div class="documents-pdf-scroll" id="pdfPageScroll" tabindex="0" aria-label="Páginas do PDF">
+                <div class="documents-pdf-pages" id="pdfPages"></div>
+              </div>
+            </div>
+          </section>
+
+          <iframe id="documentsPdfFrame" title="Documento PDF" referrerpolicy="no-referrer" hidden></iframe>
         </aside>
       </section>
     </main>
@@ -134,6 +150,7 @@
   <script src="/js/tools-catalog.js?v=20260911-3"></script>
   <script src="/js/document-cache.js?v=20260912-1"></script>
   <script src="/js/document-editor.js?v=20260912-2"></script>
-  <script src="/js/documents.js?v=20260912-4"></script>
+  <script src="/js/document-viewer.js?v=20260912-1"></script>
+  <script src="/js/documents.js?v=20260912-5"></script>
 </body>
 </html>

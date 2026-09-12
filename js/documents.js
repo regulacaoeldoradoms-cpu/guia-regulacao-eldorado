@@ -35,6 +35,8 @@
     pdfProgressiveFailed: false,
     pdfFirstPageObserver: null,
     pdfFirstPageEmitted: false,
+    pdfReadyEmitted: false,
+    pdfCustomFallbackStarted: false,
     cachePrefetchGeneration: 0,
     editorSession: null,
     editorPreviewUrl: '',
@@ -67,6 +69,16 @@
     viewerModeLabel: document.getElementById('documentsViewerModeLabel'),
     viewerTitle: document.getElementById('documentsViewerTitle'),
     viewerState: document.getElementById('documentsViewerState'),
+    customViewer: document.getElementById('documentsCustomViewer'),
+    pdfPageScroll: document.getElementById('pdfPageScroll'),
+    pdfPages: document.getElementById('pdfPages'),
+    pdfThumbnails: document.getElementById('pdfThumbnailRail'),
+    pdfZoomLabel: document.getElementById('pdfZoomLabel'),
+    pdfPageCountLabel: document.getElementById('pdfPageCountLabel'),
+    pdfZoomOut: document.getElementById('pdfZoomOutButton'),
+    pdfZoomReset: document.getElementById('pdfZoomResetButton'),
+    pdfZoomIn: document.getElementById('pdfZoomInButton'),
+    pdfFitWidth: document.getElementById('pdfFitWidthButton'),
     frame: document.getElementById('documentsPdfFrame'),
     editPdf: document.getElementById('editPdfButton'),
     closeViewer: document.getElementById('closeViewerButton'),
@@ -313,6 +325,7 @@
     setEditorStatus('');
     refreshPdfListActions();
     if (restoreOriginal && state.pdfObjectUrl) {
+      showIframeViewerSurface();
       els.frame.src = state.pdfObjectUrl;
     }
   }
@@ -359,6 +372,7 @@
       if (seq !== state.editorBuildSeq || session !== state.editorSession) return;
       if (state.editorPreviewUrl) URL.revokeObjectURL(state.editorPreviewUrl);
       state.editorPreviewUrl = URL.createObjectURL(blob);
+      showIframeViewerSurface();
       els.viewerState.className = 'documents-viewer-state';
       els.viewerState.textContent = 'Carregando prévia editada…';
       els.frame.addEventListener('load', () => {
@@ -397,6 +411,8 @@
       releaseProgressiveStream();
       const blob = await editablePdfBlob(state.pdfItem);
       if (!state.pdfObjectUrl) state.pdfObjectUrl = URL.createObjectURL(blob);
+      showIframeViewerSurface();
+      els.frame.src = state.pdfObjectUrl;
       const session = await window.PortalPdfEditor.createSession(blob, {
         label: 'Documento inicial',
         cacheIdentity: itemCacheIdentity(state.pdfItem)
@@ -665,8 +681,19 @@
     return String(response.url);
   }
 
+  function showCustomViewerSurface() {
+    if (els.customViewer) els.customViewer.hidden = false;
+    if (els.frame) els.frame.hidden = true;
+  }
+
+  function showIframeViewerSurface() {
+    window.PortalPdfViewer?.close?.();
+    if (els.customViewer) els.customViewer.hidden = true;
+    if (els.frame) els.frame.hidden = false;
+  }
+
   function frameVisibleInViewport() {
-    if (els.viewer.hidden || document.visibilityState === 'hidden') return false;
+    if (els.viewer.hidden || els.frame.hidden || document.visibilityState === 'hidden') return false;
     const rect = els.frame.getBoundingClientRect();
     const width = window.innerWidth || document.documentElement.clientWidth || 0;
     const height = window.innerHeight || document.documentElement.clientHeight || 0;
@@ -678,9 +705,8 @@
       && rect.left < width;
   }
 
-  function emitFirstPageVisible(openId, bucket, cacheState, source = 'drive') {
+  function recordFirstPageVisible(openId, bucket, cacheState, source = 'drive') {
     if (state.pdfFirstPageEmitted || openId !== state.pdfOpenId) return;
-    if (!frameVisibleInViewport()) return;
     state.pdfFirstPageEmitted = true;
     state.pdfFirstPageObserver?.disconnect?.();
     state.pdfFirstPageObserver = null;
@@ -691,6 +717,12 @@
       size_bucket: bucket,
       cache_state: cacheState
     });
+  }
+
+  function emitFirstPageVisible(openId, bucket, cacheState, source = 'drive') {
+    if (state.pdfFirstPageEmitted || openId !== state.pdfOpenId) return;
+    if (!frameVisibleInViewport()) return;
+    recordFirstPageVisible(openId, bucket, cacheState, source);
   }
 
   function observeFirstPageVisible(openId, bucket, cacheState, source = 'drive') {
@@ -710,9 +742,10 @@
     });
   }
 
-  function markViewerReady(openId, bucket, cacheState, progressive, source = 'drive') {
+  function markViewerReady(openId, bucket, cacheState, progressive, source = 'drive', observeFrame = true) {
     window.setTimeout(() => {
-      if (openId !== state.pdfOpenId || (progressive && state.pdfProgressiveFailed)) return;
+      if (state.pdfReadyEmitted || openId !== state.pdfOpenId || (progressive && state.pdfProgressiveFailed)) return;
+      state.pdfReadyEmitted = true;
       els.viewerState.className = 'documents-viewer-state ready';
       capture('pdf_ready', {
         route: '/documentos/',
@@ -721,14 +754,74 @@
         size_bucket: bucket,
         cache_state: cacheState
       });
-      observeFirstPageVisible(openId, bucket, cacheState, source);
-    }, progressive ? 100 : 40);
+      if (observeFrame) observeFirstPageVisible(openId, bucket, cacheState, source);
+    }, progressive ? 30 : 20);
+  }
+
+  async function openWithPortalViewer(source, { openId, bucket, cacheState, progressive = false, sourceLabel = 'drive' }) {
+    const viewer = window.PortalPdfViewer;
+    if (!viewer?.open || viewer.supported?.() === false) return false;
+
+    showCustomViewerSurface();
+    els.viewerState.textContent = 'Renderizando no visualizador do Portal…';
+    els.viewerState.className = 'documents-viewer-state';
+
+    try {
+      await viewer.open(source, {
+        root: els.customViewer,
+        scrollRoot: els.pdfPageScroll,
+        pagesRoot: els.pdfPages,
+        thumbnailsRoot: els.pdfThumbnails,
+        zoomLabel: els.pdfZoomLabel,
+        pageCountLabel: els.pdfPageCountLabel,
+        onFirstPageVisible: () => {
+          if (openId !== state.pdfOpenId) return;
+          recordFirstPageVisible(openId, bucket, cacheState, sourceLabel);
+        },
+        onReady: () => {
+          if (openId !== state.pdfOpenId) return;
+          els.viewerState.textContent = 'Visualizador do Portal pronto.';
+          markViewerReady(openId, bucket, cacheState, progressive, sourceLabel, false);
+        },
+        onError: () => {
+          if (openId !== state.pdfOpenId || state.pdfCustomFallbackStarted) return;
+          state.pdfCustomFallbackStarted = true;
+          els.viewerState.textContent = 'Uma página não pôde ser renderizada. Ativando modo compatível…';
+          if (state.pdfObjectUrl) {
+            showIframeViewerSurface();
+            els.frame.addEventListener('load', () => {
+              markViewerReady(openId, bucket, cacheState, false, sourceLabel);
+            }, { once: true });
+            els.frame.src = state.pdfObjectUrl;
+            return;
+          }
+          if (state.pdfItem) {
+            state.pdfCustomFallbackStarted = false;
+            loadPdfBlobFallback(state.pdfItem, openId, bucket).catch(() => {
+              if (openId !== state.pdfOpenId) return;
+              els.viewerState.textContent = 'Não foi possível ativar o modo compatível.';
+            });
+          }
+        }
+      });
+      if (openId !== state.pdfOpenId) {
+        viewer.close();
+        return false;
+      }
+      return true;
+    } catch (_) {
+      viewer.close();
+      if (els.customViewer) els.customViewer.hidden = true;
+      if (els.frame) els.frame.hidden = false;
+      return false;
+    }
   }
 
   async function loadPdfBlobFallback(item, openId, bucket) {
     if (openId !== state.pdfOpenId || state.pdfFallbackStarted) return;
     state.pdfFallbackStarted = true;
     releaseProgressiveStream();
+    window.PortalPdfViewer?.close?.();
     els.viewerState.textContent = 'Carregando PDF em modo compatível…';
     els.viewerState.className = 'documents-viewer-state';
 
@@ -736,6 +829,17 @@
     if (openId !== state.pdfOpenId) return;
     storeCachedPdf(item, blob).catch(() => {});
     state.pdfObjectUrl = URL.createObjectURL(blob);
+
+    const customOpened = await openWithPortalViewer(blob, {
+      openId,
+      bucket: sizeBucket(blob.size || item.size),
+      cacheState: 'miss',
+      progressive: false,
+      sourceLabel: 'drive'
+    });
+    if (customOpened || openId !== state.pdfOpenId) return;
+
+    showIframeViewerSurface();
     els.frame.addEventListener('load', () => {
       markViewerReady(openId, sizeBucket(blob.size || item.size), 'miss', false, 'drive');
     }, { once: true });
@@ -988,15 +1092,24 @@
     resetEditorState();
     state.pdfOpenId += 1;
     releaseProgressiveStream();
+    window.PortalPdfViewer?.close?.();
     if (state.pdfObjectUrl) URL.revokeObjectURL(state.pdfObjectUrl);
     state.pdfObjectUrl = '';
     state.pdfItem = null;
     state.pdfFallbackStarted = false;
     state.pdfProgressiveFailed = false;
     state.pdfFirstPageEmitted = false;
+    state.pdfReadyEmitted = false;
+    state.pdfCustomFallbackStarted = false;
     state.pdfFirstPageObserver?.disconnect?.();
     state.pdfFirstPageObserver = null;
+    if (els.customViewer) els.customViewer.hidden = true;
+    if (els.pdfPages) els.pdfPages.replaceChildren();
+    if (els.pdfThumbnails) els.pdfThumbnails.replaceChildren();
+    if (els.pdfPageCountLabel) els.pdfPageCountLabel.textContent = '';
+    if (els.pdfZoomLabel) els.pdfZoomLabel.textContent = '100%';
     els.frame.removeAttribute('src');
+    els.frame.hidden = true;
     els.viewer.hidden = true;
     els.viewerState.className = 'documents-viewer-state';
     els.viewerState.textContent = 'Preparando PDF…';
@@ -1029,23 +1142,47 @@
       if (cachedBlob) {
         els.viewerState.textContent = 'Abrindo do cache local…';
         state.pdfObjectUrl = URL.createObjectURL(cachedBlob);
-        els.frame.addEventListener('load', () => {
-          markViewerReady(openId, sizeBucket(cachedBlob.size || item.size), 'hit', false, 'cache');
-        }, { once: true });
-        els.frame.src = state.pdfObjectUrl;
+        const customOpened = await openWithPortalViewer(cachedBlob, {
+          openId,
+          bucket: sizeBucket(cachedBlob.size || item.size),
+          cacheState: 'hit',
+          progressive: false,
+          sourceLabel: 'cache'
+        });
+
+        if (!customOpened && openId === state.pdfOpenId) {
+          showIframeViewerSurface();
+          els.frame.addEventListener('load', () => {
+            markViewerReady(openId, sizeBucket(cachedBlob.size || item.size), 'hit', false, 'cache');
+          }, { once: true });
+          els.frame.src = state.pdfObjectUrl;
+        }
       } else {
         els.viewerState.textContent = 'Abrindo primeira página…';
         const progressiveUrl = await registerProgressiveStream(item);
         if (openId !== state.pdfOpenId) return;
 
         if (progressiveUrl) {
-          els.frame.addEventListener('load', () => {
-            markViewerReady(openId, bucket, 'miss', true, 'drive');
-            const warm = () => warmPdfCache(item, { prefetch: false }).catch(() => {});
-            if (typeof requestIdleCallback === 'function') requestIdleCallback(warm, { timeout: 2200 });
-            else window.setTimeout(warm, 1400);
-          }, { once: true });
-          els.frame.src = progressiveUrl;
+          const customOpened = await openWithPortalViewer({ url: progressiveUrl }, {
+            openId,
+            bucket,
+            cacheState: 'miss',
+            progressive: true,
+            sourceLabel: 'drive'
+          });
+          if (openId !== state.pdfOpenId || state.pdfFallbackStarted) return;
+
+          const warm = () => warmPdfCache(item, { prefetch: false }).catch(() => {});
+          if (typeof requestIdleCallback === 'function') requestIdleCallback(warm, { timeout: 2200 });
+          else window.setTimeout(warm, 1400);
+
+          if (!customOpened) {
+            showIframeViewerSurface();
+            els.frame.addEventListener('load', () => {
+              markViewerReady(openId, bucket, 'miss', true, 'drive');
+            }, { once: true });
+            els.frame.src = progressiveUrl;
+          }
         } else {
           await loadPdfBlobFallback(item, openId, bucket);
         }
@@ -1151,6 +1288,10 @@
   });
   els.editorPreview.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
   els.editorExit.addEventListener('click', exitEditor);
+  els.pdfZoomOut?.addEventListener('click', () => window.PortalPdfViewer?.zoomOut?.());
+  els.pdfZoomReset?.addEventListener('click', () => window.PortalPdfViewer?.resetZoom?.());
+  els.pdfZoomIn?.addEventListener('click', () => window.PortalPdfViewer?.zoomIn?.());
+  els.pdfFitWidth?.addEventListener('click', () => window.PortalPdfViewer?.fitWidth?.());
 
   els.editorPages.addEventListener('click', (event) => {
     const button = event.target.closest('[data-editor-action]');

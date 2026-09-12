@@ -290,3 +290,242 @@
   .documents-hero { padding: 22px 18px; }
   .documents-hero h2 { font-size: 1.65rem; }
 }
+
+
+/* Visualizador próprio PDF.js — Fase 3C.1 */
+.documents-custom-viewer[hidden],
+#documentsPdfFrame[hidden] { display: none !important; }
+
+.documents-custom-viewer {
+  min-height: 620px;
+  background: #18212b;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.documents-pdf-toolbar {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f7f9fc;
+  border-bottom: 1px solid #d8e0ea;
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+
+.documents-pdf-toolbar .portal-button {
+  min-height: 36px;
+  padding: 7px 11px;
+}
+
+.documents-pdf-toolbar #pdfZoomResetButton {
+  min-width: 70px;
+  font-variant-numeric: tabular-nums;
+}
+
+.documents-pdf-page-count {
+  margin-left: auto;
+  color: #536579;
+  font-size: .9rem;
+  white-space: nowrap;
+}
+
+.documents-pdf-layout {
+  display: grid;
+  grid-template-columns: 142px minmax(0, 1fr);
+  height: min(76vh, 920px);
+  min-height: 560px;
+  overflow: hidden;
+}
+
+.documents-pdf-thumbnails {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 10px 24px;
+  background: #eef2f6;
+  border-right: 1px solid #cad4df;
+  scrollbar-gutter: stable;
+}
+
+.portal-pdf-thumb {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 11px;
+  padding: 8px 6px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #3e5165;
+  cursor: pointer;
+  font: inherit;
+  font-size: .76rem;
+  transition: background-color .14s ease, border-color .14s ease, box-shadow .14s ease;
+}
+
+.portal-pdf-thumb:hover,
+.portal-pdf-thumb:focus-visible {
+  background: #fff;
+  border-color: #b8c7d7;
+  outline: none;
+}
+
+.portal-pdf-thumb.active {
+  background: #fff;
+  border-color: #2b6faa;
+  box-shadow: 0 0 0 2px rgba(43,111,170,.14);
+  color: #173b5c;
+  font-weight: 700;
+}
+
+.portal-pdf-thumb-canvas {
+  display: block;
+  max-width: 104px;
+  max-height: 148px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(16,33,51,.16);
+}
+
+.portal-pdf-thumb:not(.rendered) .portal-pdf-thumb-canvas {
+  width: 86px;
+  height: 116px;
+  border: 1px solid #d4dce5;
+}
+
+.documents-pdf-scroll {
+  position: relative;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: #343f49;
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+  outline: none;
+}
+
+.documents-pdf-scroll:focus-visible {
+  box-shadow: inset 0 0 0 3px rgba(79,151,215,.38);
+}
+
+.documents-pdf-pages {
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 22px 18px 42px;
+}
+
+.portal-pdf-page {
+  --page-width: 760px;
+  position: relative;
+  width: var(--page-width);
+  max-width: none;
+  aspect-ratio: 1 / 1.4142;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(0,0,0,.28);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.portal-pdf-page-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #fff;
+}
+
+.portal-pdf-page-number {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgba(13,49,87,.82);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+.portal-pdf-page-loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #6d7b88;
+  background: linear-gradient(110deg, #f5f7f9 20%, #fff 38%, #f5f7f9 56%);
+  background-size: 220% 100%;
+  animation: documents-pdf-skeleton 1.4s linear infinite;
+  font-size: .86rem;
+}
+
+.portal-pdf-page.rendered .portal-pdf-page-loading,
+.portal-pdf-page-loading[hidden] { display: none; }
+
+@keyframes documents-pdf-skeleton {
+  to { background-position-x: -220%; }
+}
+
+@media (max-width: 780px) {
+  .documents-custom-viewer { min-height: 540px; }
+  .documents-pdf-toolbar {
+    position: static;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+  }
+  .documents-pdf-toolbar .portal-button { min-height: 38px; }
+  .documents-pdf-page-count { margin-left: 0; width: 100%; text-align: right; }
+  .documents-pdf-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 130px minmax(0, 1fr);
+    height: min(74vh, 820px);
+    min-height: 520px;
+  }
+  .documents-pdf-thumbnails {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 10px;
+    border-right: 0;
+    border-bottom: 1px solid #cad4df;
+  }
+  .portal-pdf-thumb {
+    flex: 0 0 92px;
+    height: 112px;
+    margin: 0;
+    padding: 5px;
+  }
+  .portal-pdf-thumb-canvas {
+    max-width: 72px;
+    max-height: 82px;
+  }
+  .portal-pdf-thumb:not(.rendered) .portal-pdf-thumb-canvas {
+    width: 58px;
+    height: 76px;
+  }
+  .documents-pdf-pages {
+    gap: 14px;
+    padding: 14px 8px 28px;
+  }
+  .portal-pdf-page {
+    width: var(--page-width);
+  }
+}

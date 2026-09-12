@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: pesquisa/arquitetura do visualizador-editor próprio concluída; próxima unidade funcional é **3C.1 — visualizador próprio somente leitura + miniaturas**.
+Subfase atual: **3C.1 — visualizador próprio somente leitura + miniaturas** em implementação na branch funcional.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: pesquisa/arquitetura do visualizador-editor próprio concluída; 
 
 ## Branch / PR
 
-Branch funcional atual: nenhuma; próxima branch funcional será a unidade **3C.1**.
+Branch funcional atual: `feat/document-viewer-pdfjs-3c1`.
 
-PR funcional atual: nenhum. PR #158 (arquitetura) e PR #159 (consolidação pós-merge) foram validados e mesclados.
+PR funcional atual: ainda não aberto neste registro; implementação 3C.1 em validação antes do PR.
 
 ## Entregas concluídas nesta unidade
 
@@ -411,6 +411,37 @@ Próxima unidade aprovada:
 - reorganização por arrastar e soltar;
 - paste global confiável durante a edição, sem perder o evento para o plugin PDF do navegador.
 
+## Implementação 3C.1 — visualizador próprio + miniaturas — 12/09/2026
+
+Estado desta branch:
+- PDF.js **6.3.289** foi vendorizado e passou a ser servido pelo próprio Portal em `vendor/pdfjs/`;
+- o vendor inclui módulo principal, worker, CMaps, fontes padrão, WASM, ICCs e licença;
+- a vendorização foi realizada por workflow temporário restrito à branch, executado com sucesso, evitando CDN em runtime e sem inserir conteúdo documental no processo;
+- `js/document-viewer.js` carrega o módulo local sob demanda e fixa o worker local;
+- `enableScripting: false` e `isEvalSupported: false` permanecem explícitos;
+- a interface ganhou visualizador próprio com trilho de miniaturas, páginas em canvas, zoom, reset e ajuste à largura;
+- páginas principais e miniaturas usam renderização preguiçosa por `IntersectionObserver`;
+- canvases distantes são liberados para limitar memória e há teto de pixels por canvas;
+- abertura por cache criptografado reutiliza o Blob local;
+- abertura sem cache reutiliza a URL virtual progressiva do Service Worker, permitindo ao PDF.js continuar usando stream/Range autorizado;
+- o iframe nativo permanece como **fallback de compatibilidade** e também continua servindo a prévia do editor nesta unidade;
+- `pdf_ready` e `pdf_first_page_visible` continuam com o schema técnico já aprovado, sem página exata, nome, fileId ou conteúdo;
+- nenhuma escrita no Google Drive foi adicionada.
+
+Decisões:
+- não usar CDN para PDF.js;
+- não remover o iframe antes da validação real, pois ele é o rollback funcional da unidade;
+- não antecipar drag-and-drop ou overlays para 3C.1;
+- não usar APIs internas da AnnotationEditorLayer;
+- preservar anotações visuais do PDF no canvas, sem criar camada interativa de scripts.
+
+Pendências desta unidade:
+- concluir testes automatizados;
+- workflow temporário de vendorização removido após confirmar os assets self-hosted;
+- abrir PR e validar todos os checks;
+- depois do deploy, validar PDFs reais em desktop e mobile, incluindo documento grande, páginas rotacionadas e cache hit/miss;
+- somente após essa validação avançar para 3C.2.
+
 ## Pesquisa/arquitetura do visualizador-editor validada e mesclada — 12/09/2026
 
 PR #158:
@@ -617,13 +648,11 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. criar branch funcional **3C.1** diretamente da `main` atual;
-2. adicionar PDF.js corrigido, fixado e **self-hosted**, sem CDN em runtime;
-3. adicionar PDF.js corrigido, fixado e **self-hosted**, sem CDN em runtime;
-4. configurar a integração com `enableScripting: false`, `isEvalSupported: false`, worker local e CSP restrita;
-5. entregar visualizador próprio somente leitura com canvas por página, miniaturas e zoom, mantendo o iframe atual como fallback;
-6. validar desktop/mobile, PDF grande, rotação 0/90/180/270, CropBox e primeira página;
-7. somente depois avançar para 3C.2 (drag-and-drop de páginas) e 3C.3 (**Colar imagem** como overlay).
+1. abrir PR da unidade 3C.1 e executar a validação automatizada completa;
+2. corrigir qualquer regressão encontrada e exigir checks verdes antes do merge;
+3. após deploy, abrir PDFs reais e confirmar visualizador próprio, miniaturas, zoom, ajuste à largura, rotação e desempenho em cache hit/miss;
+4. confirmar que o fallback nativo continua funcional em caso de incompatibilidade;
+5. registrar a validação real e somente então iniciar **3C.2 — drag-and-drop das páginas**.
 
 ## Arquivos e fontes principais
 
@@ -647,15 +676,15 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** 3C.1 — visualizador próprio somente leitura + miniaturas.  
-**Base funcional consolidada para 3C.1:** `c7e9831134c17eb8955e04ceab8e6fed052c6ec2` — inclui PR #158 e PR #159; alterações documentais posteriores não mudam essa base funcional.  
-**Branch funcional atual:** nenhuma; a próxima deve ser criada da main atual para 3C.1.  
-**PR funcional atual:** nenhum.  
-**Pesquisa concluída:** `docs/CENTRAL-DOCUMENTOS-EDITOR-VISUAL-V1.md` é o detalhamento técnico vigente das unidades 3C.1–3C.5; PR #158 passou 21 workflows e foi mesclado.  
-**Consolidação:** PR #159 também passou 21 workflows e foi mesclado; não há bloqueio documental restante.  
-**Última decisão do usuário:** **Adicionar imagem** cria página independente; **Colar imagem** seleciona arquivo do armazenamento e cria objeto sobre página existente; objeto pode mover dentro/entre páginas, redimensionar por quatro alças e usar a alça inferior direita para resize+rotação. Ctrl+V continua adicionando print/imagem como nova página.  
-**Stack aprovada:** PDF.js Display Layer para renderização/thumbnails; pdf-lib para montagem/flatten; DOM overlay + Pointer Events para objetos; Fabric/Konva como contingência; SortableJS somente se necessário.  
-**Segurança:** PDF.js corrigido/pinado/self-hosted; `enableScripting: false`; `isEvalSupported: false`; worker local; CSP restrita; conteúdo, nomes, coordenadas e páginas fora do PostHog.  
-**Riscos/testes obrigatórios:** rotações 0/90/180/270, CropBox, cross-page drag/autoscroll, touch/pen/mouse, consumo de memória e paridade prévia x PDF final.  
-**Próxima ação exata:** criar branch funcional 3C.1 da main atual e implementar PDF.js self-hosted + canvas por página + trilho de miniaturas, preservando o iframe como fallback até a validação real.  
-**Arquivos principais:** `docs/CENTRAL-DOCUMENTOS-EDITOR-VISUAL-V1.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`, `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`.
+**Subfase:** 3C.1 — visualizador próprio somente leitura + miniaturas.  
+**Main de entrada da unidade:** `3d737adf1c718b9faac6389d084274c02bc3bb24`.  
+**Branch funcional:** `feat/document-viewer-pdfjs-3c1`.  
+**PR funcional:** ainda não aberto neste registro.  
+**Dependência:** PDF.js 6.3.289 self-hosted em `vendor/pdfjs/` (módulo, worker, CMaps, fontes, WASM, ICCs e licença); workflow temporário de vendor executou com sucesso e já foi removido da branch.  
+**Implementação:** `js/document-viewer.js` + superfície própria em `/documentos/`; thumbnails; canvas por página; zoom/reset/fit width; lazy rendering; liberação de canvas distante; Range/stream existente reutilizado; cache criptografado existente preservado.  
+**Fallback:** iframe nativo continua disponível e a prévia do editor permanece nele durante 3C.1.  
+**Segurança:** `enableScripting:false`, `isEvalSupported:false`, worker local, sem CDN runtime para PDF.js; nenhuma escrita Drive; nenhuma propriedade sensível nova no PostHog.  
+**Decisão do usuário preservada para fases seguintes:** Adicionar imagem = página nova; Colar imagem = overlay selecionado do armazenamento, movível entre páginas e transformável; Ctrl+V = nova página.  
+**Pendências:** checks da branch/PR, merge/deploy e validação real desktop/mobile.  
+**Próxima ação exata:** abrir PR da 3C.1, corrigir qualquer check e mesclar somente com validações verdes; depois validar o visualizador em produção antes de iniciar 3C.2.  
+**Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `vendor/pdfjs/`, `worker/tests/documents-ui.test.mjs`, `.github/workflows/validate-central-documents-phase1.yml`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
