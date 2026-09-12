@@ -509,7 +509,7 @@
       route: '/documentos/',
       source: 'drive',
       size_bucket: bucket,
-      cache_state: 'bypass'
+      cache_state: 'unknown'
     });
 
     try {
