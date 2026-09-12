@@ -54,9 +54,9 @@ A política completa, os limites e a validação estão em
 
 ## Central de Documentos — arquitetura aprovada para desenvolvimento
 
-A Central de Documentos é implementada por fases e usa o Google Drive como fonte institucional dos PDFs. A Fase 1 validou navegação, pesquisa e abertura read-only. Na Fase 2, o visualizador usa stream efêmero mediado pelo Service Worker para Range e, após validação real de latência, também usa cache IndexedDB criptografado por sessão para PDFs já abertos ou pré-aquecidos; o Blob integral permanece como fallback. O Cloudflare Worker continua sendo a fronteira para sessão, capabilities documentais, OAuth e operações sensíveis; tokens Google não são expostos ao visualizador nem persistidos. Conteúdo documental não entra no cache estático do Service Worker nem no PostHog. O único cache persistente permitido para PDF é o IndexedDB cifrado e limitado da Central, segregado pela sessão.
+A Central de Documentos é implementada por fases e usa o Google Drive como fonte institucional dos PDFs. A Fase 1 validou navegação, pesquisa e abertura read-only. A Fase 2 validou stream, primeira página e cache IndexedDB criptografado por sessão, reduzindo reaberturas para a faixa de centenas de milissegundos. Na Fase 3, o editor manipula PDFs somente no navegador: excluir, reordenar, unir, desfazer/refazer e visualizar geram um Blob local efêmero; nenhuma escrita no Drive existe nesta fase. O Cloudflare Worker continua sendo a fronteira para sessão, capabilities documentais, OAuth e operações sensíveis; tokens Google não são expostos ao visualizador nem persistidos. Conteúdo documental não entra no cache estático do Service Worker nem no PostHog. O único cache persistente permitido para PDF é o IndexedDB cifrado e limitado da Central, segregado pela sessão.
 
-A arquitetura de Fase 0, incluindo OAuth, escopo Google, capabilities, cache, concorrência, rollback e fronteira da IA documental, está em `docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md`. O detalhamento read-only está em `docs/CENTRAL-DOCUMENTOS-FASE-1.md` e a visualização progressiva em `docs/CENTRAL-DOCUMENTOS-FASE-2.md`. O estado operacional e o handoff entre chats ficam em `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+A arquitetura de Fase 0, incluindo OAuth, escopo Google, capabilities, cache, concorrência, rollback e fronteira da IA documental, está em `docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md`. O detalhamento read-only está em `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, a visualização/cache em `docs/CENTRAL-DOCUMENTOS-FASE-2.md` e o editor local em `docs/CENTRAL-DOCUMENTOS-FASE-3.md`. O estado operacional e o handoff entre chats ficam em `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
 
 ## PWA instalável e Web Push
 
@@ -164,7 +164,7 @@ O perfil primário não deve ser confundido com a função no Conselho nem com o
 O Portal passa a suportar funções adicionais que se somam ao perfil primário sem substituí-lo. A persistência usa `auth_user_additional_roles`, e o Worker compõe `effectiveRoles` a partir do perfil principal + funções adicionais autorizadas.
 
 Função adicional inicial:
-- `documentos` — **Regulador(a)**: concede acesso à Central de Documentos, incluindo leitura do Google Drive institucional na rota `/documentos/`.
+- `documentos` — **Regulador(a)**: concede acesso de leitura à Central de Documentos na rota `/documentos/`. Edição não é herdada automaticamente: a capability documental `edit` é concedida separadamente pelo Desenvolvedor.
 
 Exemplo: uma conta pode permanecer `medico` (**Médico(a)**) e acumular `documentos` (**Regulador(a)**). A gestão é feita em `/admin/usuarios/` pelo Desenvolvedor. Funções adicionais nunca são concedidas por simples ocultação/exibição no frontend; o backend revalida a autorização.
 
