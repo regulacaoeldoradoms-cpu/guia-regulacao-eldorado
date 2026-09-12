@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: validar em produção a correção visual já mesclada do botão **Editar PDF** e continuar a validação funcional real do editor da Fase 3.
+Subfase atual: tornar as funções do editor explícitas na interface, começando por **Unir outro PDF**, e continuar a validação funcional real da Fase 3.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: validar em produção a correção visual já mesclada do botão 
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-edit-button-postmerge` (somente consolidação pós-merge).
+Branch atual: `feat/document-editor-merge-action`.
 
-PR atual: nenhum funcional; PR #152 foi validado e mesclado.
+PR atual: #154 — melhoria de UX para tornar a união de PDFs explícita no editor.
 
 ## Entregas concluídas nesta unidade
 
@@ -354,6 +354,30 @@ Alternativas descartadas:
 - esconder o título, pois ele é informação útil;
 - permitir overflow horizontal no cabeçalho, pois degradaria desktop e mobile.
 
+## UX das funções do editor — 12/09/2026
+
+Durante a validação real, o usuário questionou onde estavam as demais funções do editor, especialmente **unir outro documento ao PDF atual**.
+
+Diagnóstico:
+- a função de união já existia no núcleo da Fase 3;
+- tecnicamente, enquanto o editor estava aberto, clicar em outro PDF da lista chamava `mergePdfIntoEditor`;
+- porém a interface não deixava isso evidente: a barra do editor não possuía botão de união e a lista continuava exibindo **Abrir PDF** porque seus rótulos não eram atualizados ao entrar no editor;
+- portanto o recurso existia, mas estava praticamente oculto na experiência real.
+
+Melhoria implementada na branch `feat/document-editor-merge-action`:
+- novo botão **Unir outro PDF** na barra do editor;
+- ao acioná-lo, o Portal orienta a escolher outro PDF na lista e desloca o foco para um candidato disponível;
+- enquanto o editor está ativo, PDFs disponíveis passam a exibir **Unir ao editor**;
+- PDFs que já fazem parte do resultado exibem **Já no editor**;
+- os rótulos são sincronizados após união, exclusão, desfazer, refazer e ao sair do editor;
+- o comportamento existente de união local foi preservado, sem adicionar escrita no Google Drive;
+- cache-bust de `documents.js` avançou para `20260912-3`;
+- teste de regressão cobre a nova ação explícita e os rótulos contextuais.
+
+Decisão:
+- funções centrais do editor não devem depender de comportamento implícito ou de instrução textual escondida;
+- ações como união devem possuir controle visível e feedback contextual.
+
 ## Fase 3 — implementação em andamento
 
 Unidades 3A/3B implementadas na branch:
@@ -451,11 +475,12 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. aguardar a propagação do deploy da `main` `e432ba54`;
-2. validar em produção que **Editar PDF** e fechar ficam totalmente visíveis com título longo;
-3. iniciar o editor e validar excluir/reordenar/undo/redo/unir/prévia com PDFs reais autorizados;
-4. testar pelo menos PDFs com tamanhos/contagens diferentes;
-5. encerrar a Fase 3 somente se os resultados forem PDFs válidos e leitura/cache da Fase 2 não regredir.
+1. PR #154 aberto e validado com 21 workflows sem falhas;
+2. mesclar o PR #154;
+3. após deploy, confirmar que **Unir outro PDF** aparece na barra do editor;
+4. clicar em **Unir outro PDF**, selecionar outro PDF da lista e confirmar a inclusão de suas páginas no resultado;
+5. validar desfazer/refazer da união, exclusão/reordenação e prévia final;
+6. encerrar a Fase 3 somente com PDF resultante válido e sem regressão de leitura/cache.
 
 ## Arquivos e fontes principais
 
@@ -478,15 +503,16 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** validar em produção o cabeçalho corrigido e executar os testes reais das operações do editor.  
-**Estado real da main:** `e432ba54e92992e61bff7898933da57f5e44538a` — PR #152 mesclado.  
-**Branch atual:** `docs/central-docs-edit-button-postmerge` (somente consolidação documental pós-merge).  
-**PR atual:** nenhum funcional; PR #152 concluído.  
-**Última ação concluída:** correção do botão **Editar PDF** cortado foi validada com 21 checks sem falhas e mesclada na main.  
-**Capability:** `edit` já está efetiva na conta de teste autorizada; o botão apareceu em produção antes da correção visual.  
-**Correção visual:** título é flexível com `min-width: 0`; ações usam `flex: 0 0 auto`; elipse respeita o espaço disponível; cache-bust CSS `20260912-4`.  
-**Checks:** 21 workflows do PR #152 concluídos com sucesso; workflows pós-merge da main estavam iniciando no último registro.  
-**Pendências:** propagação do deploy, confirmação visual real e validação funcional excluir/reordenar/undo/redo/unir/prévia.  
-**Riscos conhecidos:** títulos longos devem truncar sem deslocar ações; editor continua local e sem escrita no Drive nesta fase.  
-**Próxima ação exata:** recarregar `/documentos/`, abrir um PDF com título longo, confirmar o botão inteiro e clicar em **Editar PDF** para iniciar os testes funcionais.  
-**Arquivos principais:** `css/documents.css`, `documentos/index.html`, `worker/tests/documents-ui.test.mjs`, `js/document-editor.js`, `js/documents.js`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Subfase / objetivo atual:** tornar as operações do editor explícitas e validar a união de PDFs em produção.  
+**Estado real da main de entrada:** `1025e793375220005ccbec482943c6ed46844ff9`.  
+**Branch atual:** `feat/document-editor-merge-action`.  
+**PR atual:** #154 — `Expor ação Unir outro PDF no editor`.  
+**Descoberta:** união de PDFs já funcionava via clique em outro item enquanto o editor estava ativo, mas a UX escondia o recurso e mantinha rótulos “Abrir PDF”.  
+**Implementação:** botão **Unir outro PDF**; rótulos contextuais **Unir ao editor** / **Já no editor**; foco guiado para a lista; sincronização após merge/undo/redo/exclusão/saída.  
+**Segurança:** continua edição estritamente local; nenhuma rota de escrita no Drive foi adicionada.  
+**Cache-bust:** `documents.js?v=20260912-3`.  
+**Teste:** `documents-ui.test.mjs` cobre botão, binding, rótulos e fluxo de merge.  
+**Checks:** 21 workflows do PR #154 concluídos com sucesso após correção de uma regex de teste que estava escapada em excesso; nenhuma falha funcional permaneceu.  
+**Pendências:** merge/deploy e validação real da união.  
+**Próxima ação exata:** mesclar o PR #154 e, após deploy, testar **Unir outro PDF** em produção.  
+**Arquivos principais:** `documentos/index.html`, `js/documents.js`, `worker/tests/documents-ui.test.mjs`, `js/document-editor.js`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.

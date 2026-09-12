@@ -85,7 +85,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260912-2/);
+  assert.match(html, /documents\.js\?v=20260912-3/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -129,6 +129,20 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
   assert.match(css, /\.documents-viewer-head strong\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*text-overflow:\s*ellipsis;/s);
   assert.doesNotMatch(css, /\.documents-viewer-head strong\s*\{[^}]*max-width:\s*min\(54vw,\s*640px\)/s);
+});
+
+test('editor expõe união de outro PDF e sincroniza ações da lista', () => {
+  const html = read('documentos/index.html');
+  const client = read('js/documents.js');
+
+  assert.match(html, /id="editorMergeButton"[^>]*>Unir outro PDF<\/button>/);
+  assert.match(client, /editorMerge:\s*document\.getElementById\('editorMergeButton'\)/);
+  assert.match(client, /function refreshPdfListActions\(\)/);
+  assert.match(client, /'Unir ao editor'/);
+  assert.match(client, /'Já no editor'/);
+  assert.match(client, /function choosePdfToMerge\(\)/);
+  assert.match(client, /els\.editorMerge\.addEventListener\('click', choosePdfToMerge\)/);
+  assert.match(client, /mergePdfIntoEditor\(item\)/);
 });
 
 test('editor PDF é local, reversível e separado da escrita no Drive', () => {
