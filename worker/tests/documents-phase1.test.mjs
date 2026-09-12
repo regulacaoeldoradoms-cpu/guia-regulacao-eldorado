@@ -267,6 +267,9 @@ sqliteTest('listagem e pesquisa não devolvem fileId bruto e aceitam somente ref
     assert.equal(JSON.stringify(listed).includes('raw-pdf-id-sensitive'), false);
     assert.equal(JSON.stringify(listed).includes('raw-folder-id-sensitive'), false);
     assert.ok(listed.items[0].ref.length > 30);
+    assert.match(listed.items[0].cacheKey, /^[A-Za-z0-9_-]{32}$/);
+    assert.match(listed.items[1].cacheKey, /^[A-Za-z0-9_-]{32}$/);
+    assert.notEqual(listed.items[0].cacheKey, listed.items[1].cacheKey);
 
     const opened = await openDriveFileRef(env, listed.items[1].ref);
     assert.equal(opened.id, 'raw-pdf-id-sensitive');
@@ -275,6 +278,8 @@ sqliteTest('listagem e pesquisa não devolvem fileId bruto e aceitam somente ref
     const searched = await searchDrive(env, { query: 'DOCUMENTO' });
     assert.equal(searched.items.length, 2);
     assert.equal(JSON.stringify(searched).includes('raw-pdf-id-sensitive'), false);
+    assert.equal(searched.items[0].cacheKey, listed.items[0].cacheKey);
+    assert.equal(searched.items[1].cacheKey, listed.items[1].cacheKey);
 
     const searchCall = calls.find((call) => call.url.includes('/drive/v3/files') && call.url.includes('name+contains'));
     assert.ok(searchCall);

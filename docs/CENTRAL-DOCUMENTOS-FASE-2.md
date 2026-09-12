@@ -5,7 +5,7 @@ Branch: `feat/central-docs-phase2-progressive-viewer`
 
 ## Objetivo
 
-Reduzir o tempo percebido para abrir PDFs, priorizando o início da visualização e permitindo que o visualizador nativo solicite faixas do arquivo conforme necessário, sem persistir documentos clínicos no navegador e sem expor conteúdo ao PostHog.
+Reduzir o tempo percebido para abrir PDFs, priorizando primeira página, stream progressivo e cache local controlado, sem expor conteúdo ao PostHog e sem gravar documento em texto puro fora da sessão autorizada.
 
 ## Estado de entrada
 
@@ -40,7 +40,7 @@ Quando o visualizador nativo solicita essa URL, inclusive com `Range`, o Service
 5. devolve o corpo como stream, preservando `Content-Length`, `Content-Range` e `Accept-Ranges`;
 6. aplica `Cache-Control: no-store`.
 
-Nenhum PDF é gravado em Cache Storage, IndexedDB, localStorage ou sessionStorage.
+Nenhum PDF é gravado em Cache Storage, localStorage ou sessionStorage. A unidade 2B passa a permitir **IndexedDB criptografado**, conforme decisão explícita de desempenho registrada abaixo.
 
 ### Vida útil
 
@@ -52,7 +52,7 @@ Service Workers podem reiniciar; por isso o heartbeat reidrata somente a referê
 
 - `pdf_open_started`: clique para abrir;
 - `pdf_ready`: evento `load` do iframe do visualizador;
-- `pdf_first_page_visible`: somente no modo progressivo, após `load` do iframe + dois frames de pintura e confirmação de que o iframe está visível e possui área renderizável.
+- `pdf_first_page_visible`: após `load` do iframe + dois frames de pintura e confirmação de que o iframe está visível e possui área renderizável, tanto em stream progressivo quanto em cache/fallback.
 
 A Fase 1 não emitia `pdf_first_page_visible`; a Fase 2 passa a exigir esse evento em uso real.
 
@@ -67,13 +67,40 @@ Nunca enviar nome de arquivo, referência opaca, fileId, usuário, conteúdo do 
 
 ## Fallback
 
-Se não houver Service Worker controlador, se o registro não responder em tempo curto ou se houver incompatibilidade do navegador, o Portal usa o Blob integral da Fase 1. O fallback mantém funcionalidade, mas não emite `pdf_first_page_visible` porque a primeira página não é mensurável com confiabilidade nesse modo.
+Se não houver Service Worker controlador, se o registro não responder em tempo curto ou se houver incompatibilidade do navegador, o Portal usa o Blob integral da Fase 1. O fallback continua funcional e passa a medir `pdf_first_page_visible` somente após `load`, pintura e confirmação de visibilidade.
 
-## Fora de escopo desta unidade
+## Unidade 2B — cache local criptografado
+
+### Descoberta real
+
+Após o deploy da unidade 2A, um PDF real voltou a abrir em produção, porém o usuário relatou que a experiência ainda estava lenta. O PostHog registrou `pdf_open_started` e `pdf_ready`, mas ainda não registrou `pdf_first_page_visible` nessa abertura. A estratégia somente por stream progressivo não atingiu sozinha a experiência desejada.
+
+### Decisão aprovada
+
+A Fase 2 passa a usar cache local persistente **controlado e criptografado**, coerente com o Guia Mestre, que prevê cache e pré-carregamento nesta fase.
+
+Controles:
+- armazenamento em IndexedDB dedicado à Central;
+- bytes do PDF sempre cifrados com AES-GCM;
+- chave derivada por HKDF da sessão atual do Portal; o token não é gravado dentro do cache;
+- mudança de sessão/fingerprint invalida e limpa o cache anterior;
+- logout e desconexão do Drive solicitam limpeza;
+- chave de cache do arquivo é opaca e estável, derivada no Worker por HMAC; fileId bruto não sai do backend;
+- `version` do Drive integra a chave lógica e invalida automaticamente conteúdo antigo;
+- TTL inicial: 12 horas;
+- limite total inicial: 256 MB;
+- limite por PDF: 50 MB;
+- pré-aquecimento automático somente para PDFs de até 12 MB;
+- aquecimento dos primeiros PDFs prováveis e também ao passar/focar sobre um item;
+- Cache Storage do Service Worker continua sem guardar PDFs;
+- nomes de arquivo, referências, cacheKey e conteúdo continuam proibidos no PostHog.
+
+O objetivo é que PDFs já abertos ou pré-aquecidos sejam exibidos a partir do cache local sem novo download completo.
+
 
 - edição de PDF;
-- persistência offline;
-- cache de conteúdo clínico;
+- funcionamento offline completo;
+- cache clínico em texto puro ou compartilhado entre sessões;
 - IA;
 - escrita no Drive;
 - bibliotecas PDF de terceiros;
@@ -83,11 +110,12 @@ Se não houver Service Worker controlador, se o registro não responder em tempo
 
 - [ ] abertura progressiva funciona sem regressão da Fase 1;
 - [ ] requisições Range continuam protegidas por sessão/capability no Worker;
-- [ ] nenhuma resposta documental entra no cache persistente do Service Worker;
+- [ ] nenhuma resposta documental entra no Cache Storage persistente do Service Worker;
+- [ ] cache IndexedDB permanece criptografado, limitado, versionado e segregado por sessão;
 - [ ] fallback Blob continua funcional;
 - [ ] `pdf_first_page_visible` aparece em produção com propriedades técnicas permitidas;
 - [ ] `pdf_open_started` e `pdf_ready` continuam confiáveis;
-- [ ] experiência melhora em PDFs médios/grandes sem perda de integridade;
+- [ ] cache hit reduz de forma mensurável o tempo de `pdf_ready`/`pdf_first_page_visible` sem perda de integridade;
 - [ ] checks automatizados e testes de privacidade passam;
 - [ ] resultado e métricas reais são registrados em `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
 

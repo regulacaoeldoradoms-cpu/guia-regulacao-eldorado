@@ -6,7 +6,7 @@
 
 **Fase 2 — Visualização de alta performance**
 
-Subfase atual: iniciar a Fase 2 com visualização progressiva de PDF, medição confiável da primeira página e redução do tempo percebido sem persistir conteúdo clínico.
+Subfase atual: unidade 2B — reduzir a latência real com cache local criptografado, pré-aquecimento e invalidação por versão, mantendo `pdf_first_page_visible` confiável.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: iniciar a Fase 2 com visualização progressiva de PDF, medição
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-phase2a-postmerge` (somente consolidação de status pós-merge).
+Branch atual: `feat/central-docs-phase2b-encrypted-cache`, criada da main `8b4c3d40`.
 
-PR atual: nenhum funcional aberto; PR #140 foi validado e mesclado.
+PR atual: ainda não aberto para a unidade 2B.
 
 ## Entregas concluídas nesta unidade
 
@@ -153,6 +153,35 @@ Diretriz registrada:
 - Fase 1 encerrada: pesquisa global, abertura de PDF e telemetria documental foram comprovadas em produção sem propriedades sensíveis observadas.
 - A alteração de UX/cargos acumuláveis desta subfase ainda precisa passar por PR/checks antes de ir para a main.
 
+## Validação real da Fase 2A e decisão de cache — 12/09/2026
+
+Teste real após o PR #140:
+- PDF abriu em produção, mas a experiência continuou perceptivelmente lenta;
+- PostHog nas últimas duas horas registrou 2 `pdf_open_started` e 2 `pdf_ready`;
+- a abertura mais recente apresentou `pdf_ready.duration_ms` de aproximadamente **5.914 ms**; a abertura anterior havia ficado em aproximadamente **4.830 ms**;
+- `pdf_first_page_visible` permaneceu em **0** nessa validação;
+- o valor real de `pdf_ready.cache_state` observado foi `miss`.
+
+Conclusão: stream progressivo isolado não entregou o ganho esperado no navegador testado. A Fase 2 permanece aberta.
+
+Nova decisão aprovada pelo usuário:
+- PDFs podem ser mantidos em cache local para acelerar o fluxo;
+- a proteção por cargo continua obrigatória, porém não é usada como única proteção dos bytes persistidos;
+- para preservar privacidade mesmo em disco local, o cache aprovado será IndexedDB **criptografado** e segregado pela sessão;
+- cache em texto puro no Service Worker/Cache Storage continua proibido.
+
+Unidade 2B implementada na branch:
+- Worker devolve `cacheKey` estável e opaco por HMAC, sem expor fileId;
+- `js/document-cache.js` cifra bytes com AES-GCM e chave derivada via HKDF da sessão atual;
+- cache usa `version` do Drive para invalidar conteúdo antigo;
+- TTL inicial 12 h, limite total 256 MB, limite por PDF 50 MB;
+- pré-aquecimento automático até 12 MB para os primeiros PDFs prováveis;
+- hover/foco em PDF também inicia aquecimento;
+- uma abertura reutiliza aquecimento já em curso por até 350 ms antes de cair para rede;
+- logout e desconexão do Drive solicitam limpeza;
+- mudança de fingerprint de sessão limpa o cache anterior;
+- `pdf_ready`/`pdf_first_page_visible` passam a distinguir `cache_state=hit|miss` sem identificadores.
+
 ## Fase 2 — implementação em andamento
 
 Unidade 2A implementada na branch:
@@ -188,7 +217,8 @@ Alternativas descartadas:
 - nomes de arquivos podem conter dados identificáveis, portanto não entram em PostHog/logs;
 - cache persistente ou service worker mal configurado poderia reter documento clínico; explicitamente proibido;
 - o registro progressivo do Service Worker é volátil e pode desaparecer se o processo reiniciar; heartbeat de 5 s e fallback Blob mitigam esse risco;
-- o comportamento do visualizador PDF nativo com Range varia entre navegadores e precisa de validação real antes de encerrar a Fase 2;
+- o comportamento do visualizador PDF nativo com Range varia entre navegadores; o teste real da Fase 2A mostrou latência de ~5,9 s e ausência de `pdf_first_page_visible`, motivando a unidade 2B;
+- cache local cifrado pode consumir armazenamento do navegador; limites de 256 MB/50 MB, TTL de 12 h e LRU mitigam o risco;
 - escrita concorrente futura pode sobrescrever versão externa se a comparação de `version` for omitida.
 
 ## Encerramento formal da Fase 1 — 11/09/2026
@@ -242,11 +272,13 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. PR #140 validado com 23 workflows e mesclado em `3447c446`;
-2. após deploy, abrir PDF real e confirmar que o modo progressivo funciona;
-5. verificar no PostHog `pdf_first_page_visible`, `pdf_open_started` e `pdf_ready`;
-6. comparar duração real com a linha de base da Fase 1, especialmente em PDFs médios/grandes;
-7. manter a Fase 2 aberta até comprovar ganho e ausência de regressão.
+1. abrir PR da unidade 2B;
+2. executar todos os workflows e corrigir regressões;
+3. após merge/deploy, recarregar a Central e aguardar o pré-aquecimento de alguns PDFs;
+4. abrir um PDF pela primeira vez e depois reabri-lo para produzir um cache miss e um cache hit;
+5. verificar no PostHog `pdf_ready` e `pdf_first_page_visible` por `cache_state`;
+6. confirmar redução mensurável frente à linha de base recente de ~4,8–5,9 s;
+7. manter a Fase 2 aberta até o cache hit ficar rápido e a primeira página ser medida com confiabilidade.
 
 ## Arquivos e fontes principais
 
@@ -269,17 +301,16 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 2 — Visualização de alta performance.  
-**Subfase / objetivo atual:** unidade 2A — stream progressivo protegido via Service Worker, com fallback Blob e métrica `pdf_first_page_visible`.  
-**Estado real da main:** `3447c446dcb6cf8187f613a701e3cfcb844e41a9` — PR #140 mesclado com a unidade 2A da Fase 2.  
-**Branch atual:** `docs/central-docs-phase2a-postmerge` (status pós-merge; nenhuma mudança funcional adicional).  
-**PR atual:** nenhum funcional; PR #140 foi concluído.  
-**Última ação concluída:** PR #140 validado com 23 workflows sem falhas e mesclado na main; unidade 2A está publicada no código oficial e aguarda validação real de produção.  
-**Validação externa concluída:** Fase 1 comprovada em produção; PostHog registrou pesquisa e abertura PDF sem propriedades sensíveis.  
-**Checks e testes:** 23 workflows do PR #140 concluídos sem falhas antes do merge.  
-**Decisões tomadas:** usar stream same-origin virtual mediado pelo Service Worker; referência/token somente em memória; TTL curto + heartbeat; no-store; sem ticket bearer em URL; sem biblioteca PDF de terceiros; Blob integral permanece fallback.  
-**Justificativas:** permitir início de visualização sem esperar Blob completo, preservar sessão/capability do Worker e evitar persistência/exposição de documentos clínicos.  
-**Alternativas descartadas:** PDF.js remoto/CDN; credencial/ticket na URL; cache persistente; fingir métrica de primeira página no Blob integral.  
-**Pendências:** aguardar deploy da main; validar progressivo em produção; comprovar `pdf_first_page_visible`; comparar tempos com Fase 1; futura Drive Activity API permanece para fase posterior.  
-**Riscos conhecidos:** Service Worker pode reiniciar; navegador pode tratar Range/PDF nativo de modo diferente; heartbeat e fallback reduzem impacto, mas validação real é obrigatória.  
-**Próxima ação exata:** após o deploy da main `3447c446`, recarregar `/documentos/` com atualização completa, abrir um PDF real e confirmar visualização; em seguida auditar `pdf_first_page_visible`, `pdf_open_started` e `pdf_ready` no PostHog e comparar duração com a Fase 1.  
-**Arquivos principais:** `portal-sw.js`, `js/documents.js`, `documentos/index.html`, `worker/tests/documents-ui.test.mjs`, `worker/tests/observability-privacy.test.mjs`, `docs/CENTRAL-DOCUMENTOS-FASE-2.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Subfase / objetivo atual:** unidade 2B — cache local criptografado + pré-aquecimento para reduzir `pdf_ready` e tornar `pdf_first_page_visible` mensurável.  
+**Estado real da main:** `8b4c3d4002c62ac0ff044a5589ecf86ece9cc8f0` — PR #141 mesclado; unidade 2A em produção.  
+**Branch atual:** `feat/central-docs-phase2b-encrypted-cache`.  
+**PR atual:** ainda não aberto.  
+**Última validação real:** PDF abriu, porém lento; PostHog mostrou abertura anterior ~4.830 ms e mais recente ~5.914 ms em `pdf_ready`, ambos cache miss; `pdf_first_page_visible` ainda 0.  
+**Decisão aprovada:** permitir cache persistente de PDFs, mas implementá-lo cifrado e segregado pela sessão; cargo/capability continua obrigatório, porém não é a única barreira para bytes em disco.  
+**Implementação concluída na branch:** chave opaca HMAC por arquivo; IndexedDB cifrado AES-GCM/HKDF; TTL 12 h; 256 MB totais; 50 MB por PDF; prefetch até 12 MB; aquecimento por lista/hover; invalidação por `version`; limpeza por logout/desconexão/troca de sessão; cache hit/miss na telemetria allowlisted.  
+**Justificativa:** o stream progressivo sozinho não reduziu a espera no navegador real; o Guia Mestre autoriza cache e pré-carregamento na Fase 2.  
+**Alternativas descartadas:** PDF clínico em texto puro no Cache Storage; CDN/edge cache compartilhado; fileId como chave de cache; cache ilimitado; confiar apenas na UI/cargo para proteger bytes locais.  
+**Pendências:** abrir PR/checks; validar cache hit real em produção; comparar tempos; confirmar `pdf_first_page_visible`; futura Drive Activity API permanece registrada.  
+**Riscos conhecidos:** armazenamento local limitado; cache de outra sessão; documento desatualizado; todos mitigados por criptografia ligada à sessão, fingerprint, TTL/LRU e `version` do Drive.  
+**Próxima ação exata:** abrir PR da 2B, aguardar checks e corrigir falhas; depois mesclar e executar teste A/B prático: primeira abertura (miss) e reabertura (hit) do mesmo PDF.  
+**Arquivos principais:** `worker/document-drive.js`, `js/document-cache.js`, `js/documents.js`, `documentos/index.html`, `portal-sw.js`, `docs/CENTRAL-DOCUMENTOS-FASE-2.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.

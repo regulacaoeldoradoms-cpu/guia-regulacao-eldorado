@@ -6,6 +6,7 @@ on:
       - 'documentos/**'
       - 'css/documents.css'
       - 'js/documents.js'
+      - 'js/document-cache.js'
       - 'js/admin-users.js'
       - 'admin/usuarios/index.html'
       - 'js/tools-catalog.js'
@@ -28,6 +29,7 @@ on:
       - 'documentos/**'
       - 'css/documents.css'
       - 'js/documents.js'
+      - 'js/document-cache.js'
       - 'js/admin-users.js'
       - 'admin/usuarios/index.html'
       - 'worker/document-*.js'
@@ -69,10 +71,13 @@ jobs:
           ! grep -q "Acessos à Central" documentos/index.html
           ! grep -R -E "localStorage|sessionStorage|indexedDB" js/documents.js
           node --check js/documents.js
+          node --check js/document-cache.js
           node --check js/admin-users.js
           node --check portal-sw.js
           grep -q "PORTAL_DOCUMENT_STREAM_REGISTER" portal-sw.js
           grep -q "pdf_first_page_visible" js/documents.js
+          grep -q "AES-GCM" js/document-cache.js
+          grep -q "HKDF" js/document-cache.js
 
       - name: Bloquear segredos e telemetria identificável
         run: |

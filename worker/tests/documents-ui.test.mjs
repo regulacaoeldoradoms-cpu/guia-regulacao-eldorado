@@ -6,7 +6,7 @@ import test from 'node:test';
 const root = path.resolve(import.meta.dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-test('Central read-only usa somente Worker para Google Drive e não persiste conteúdo clínico no navegador', () => {
+test('Central usa somente Worker para Drive e delega persistência documental ao cache criptografado', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
 
@@ -17,6 +17,7 @@ test('Central read-only usa somente Worker para Google Drive e não persiste con
   assert.match(client, /\/api\/documents\/drive\/content\//);
   assert.doesNotMatch(client, /googleapis\.com|accounts\.google\.com/);
   assert.doesNotMatch(client, /localStorage|sessionStorage|indexedDB|caches\.open/);
+  assert.match(html, /document-cache\.js\?v=20260912-1/);
   assert.match(client, /URL\.revokeObjectURL/);
   assert.match(client, /cache:\s*'no-store'/);
 });
@@ -44,7 +45,7 @@ test('catálogo mostra a Central apenas por capability documental', () => {
   assert.match(source, /Central de Documentos/);
 });
 
-test('service worker reconhece a página e fornece stream PDF efêmero sem cache persistente', () => {
+test('service worker fornece stream PDF efêmero sem persistir bytes no Cache Storage', () => {
   const source = read('portal-sw.js');
   assert.match(source, /'\/documentos\/'/);
   assert.match(source, /url\.pathname\.startsWith\('\/api\/'\)/);
@@ -56,7 +57,7 @@ test('service worker reconhece a página e fornece stream PDF efêmero sem cache
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260911-11'/);
+  assert.match(source, /CACHE_VERSION = '20260912-12'/);
 });
 
 test('observabilidade documental continua sem propriedades identificáveis', () => {
@@ -84,7 +85,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260911-3/);
+  assert.match(html, /documents\.js\?v=20260912-1/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -93,4 +94,26 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   assert.match(client, /URL\.createObjectURL/);
   assert.match(worker, /DOCUMENT_STREAM_TTL_MS = 20000/);
   assert.doesNotMatch(worker, /localStorage|sessionStorage|indexedDB/);
+});
+
+test('cache local criptografa PDFs, limita tamanho e invalida por versão', () => {
+  const cache = read('js/document-cache.js');
+  const client = read('js/documents.js');
+
+  assert.match(cache, /DB_NAME = 'regulacao\.portal\.documents\.cache\.v1'/);
+  assert.match(cache, /HKDF/);
+  assert.match(cache, /AES-GCM/);
+  assert.match(cache, /CACHE_TTL_MS = 12 \* 60 \* 60 \* 1000/);
+  assert.match(cache, /MAX_TOTAL_BYTES = 256 \* 1024 \* 1024/);
+  assert.match(cache, /MAX_FILE_BYTES = 50 \* 1024 \* 1024/);
+  assert.match(cache, /key \+ ':' \+ fileVersion/);
+  assert.match(cache, /portal:session-cleared/);
+  assert.doesNotMatch(cache, /file_name|filename|patient_name|cpf|cns|diagnostico|cid/i);
+
+  assert.match(client, /readCachedPdf/);
+  assert.match(client, /storeCachedPdf/);
+  assert.match(client, /warmPdfCache/);
+  assert.match(client, /scheduleLikelyPdfWarmup/);
+  assert.match(client, /'hit', false, 'cache'/);
+  assert.match(client, /source: 'cache'|source,?/);
 });

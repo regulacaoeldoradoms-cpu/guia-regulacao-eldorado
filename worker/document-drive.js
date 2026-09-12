@@ -159,6 +159,25 @@ async function deriveAesKey(secret, label) {
   return crypto.subtle.importKey('raw', digest, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
 }
 
+async function stableDriveCacheKey(env, fileId) {
+  const { encryptionSecret } = requireOAuthConfig(env);
+  const material = await crypto.subtle.digest('SHA-256', utf8(`central-doc-cache-v1\u0000${encryptionSecret}`));
+  const key = await crypto.subtle.importKey(
+    'raw',
+    material,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign(
+    'HMAC',
+    key,
+    utf8(`drive-file\u0000${String(fileId || '')}`)
+  );
+  return base64UrlBytes(new Uint8Array(signature)).slice(0, 32);
+}
+
+
 async function encryptText(secret, label, plaintext) {
   const iv = new Uint8Array(12);
   crypto.getRandomValues(iv);
@@ -476,9 +495,10 @@ export async function openDriveFileRef(env, ref) {
   }
 }
 
-function normalizedDriveItem(file, ref, effectiveMime, shortcut = false) {
+function normalizedDriveItem(file, ref, cacheKey, effectiveMime, shortcut = false) {
   return {
     ref,
+    cacheKey,
     name: safeName(file.name || 'Sem nome'),
     mimeType: safeMime(effectiveMime || file.mimeType),
     originalMimeType: safeMime(file.mimeType),
@@ -500,8 +520,11 @@ async function mapDriveFiles(env, files) {
     const effectiveId = shortcut ? file.shortcutDetails.targetId : file.id;
     const effectiveMime = shortcut ? file.shortcutDetails.targetMimeType : file.mimeType;
     if (!effectiveId) continue;
-    const ref = await sealDriveFileRef(env, effectiveId, effectiveMime);
-    output.push(normalizedDriveItem(file, ref, effectiveMime, Boolean(shortcut)));
+    const [ref, cacheKey] = await Promise.all([
+      sealDriveFileRef(env, effectiveId, effectiveMime),
+      stableDriveCacheKey(env, effectiveId)
+    ]);
+    output.push(normalizedDriveItem(file, ref, cacheKey, effectiveMime, Boolean(shortcut)));
   }
   return output;
 }

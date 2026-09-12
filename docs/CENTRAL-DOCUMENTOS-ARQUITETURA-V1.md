@@ -32,7 +32,7 @@ Frontend /documentos/
   - navegação
   - visualizador
   - editor local futuro
-  - cache somente em memória da sessão
+  - cache local controlado (memória + IndexedDB criptografado por sessão)
         |
         | sessão do Portal
         v
@@ -187,18 +187,18 @@ Objetivo: reduzir latência e pressão de memória no Worker.
 
 - JS/CSS/fonts/icons públicos versionados: Service Worker/cache existente;
 - listas/metadados do Drive: memória efêmera da aba/sessão, com TTL curto;
-- páginas/bytes de PDF: memória efêmera da aba enquanto o documento estiver em uso;
+- páginas/bytes de PDF: memória efêmera e, desde a decisão da Fase 2B, IndexedDB criptografado por sessão com TTL/limites/versionamento;
 - access token: memória efêmera do Worker.
 
 ### Proibido
 
-- PDF clínico em Service Worker Cache Storage;
+- PDF clínico em Service Worker Cache Storage ou qualquer cache compartilhado em texto puro;
 - PDF em CDN/edge cache compartilhado;
 - PDF, nome de arquivo ou fileId em localStorage;
 - conteúdo do PDF ou campos extraídos em PostHog;
-- cache persistente que sobreviva ao encerramento da sessão sem decisão posterior explícita.
+- cache persistente em texto puro ou desvinculado da sessão. A exceção aprovada na Fase 2B é IndexedDB criptografado com chave derivada da sessão, TTL e invalidação por versão.
 
-No logout, a Central deve limpar seu estado documental em memória.
+No logout e na desconexão do Drive, a Central deve solicitar limpeza do cache documental; bytes remanescentes após falha/crash permanecem cifrados e uma nova sessão invalida o fingerprint anterior.
 
 ## 10. Concorrência, conflitos e integridade
 
@@ -298,7 +298,7 @@ A escolha definitiva do provedor/contrato de tratamento de dados fica para a Fas
 | Token Google roubado por JavaScript/XSS | refresh token nunca vai ao frontend; CSP e backend como proxy |
 | Segredo publicado em repositório público | segredos somente no Cloudflare; validações automatizadas |
 | Nome/ID/conteúdo enviado ao PostHog | allowlist rígida e testes de privacidade |
-| Cache entrega documento antigo ou de outra sessão | conteúdo documental no-store e cache somente em memória da sessão |
+| Cache entrega documento antigo ou de outra sessão | `version` do Drive na chave lógica + cache IndexedDB cifrado por sessão + fingerprint de sessão + TTL/LRU |
 | Usuários editam o mesmo arquivo simultaneamente | comparação de `version` imediatamente antes da escrita |
 | Upload interrompido | upload resumable e estado "pendente", nunca falso sucesso |
 | PDF novo inválido | validação antes de enviar e revisão anterior preservada |
@@ -321,7 +321,7 @@ Descartado. Google Drive continua sendo a fonte institucional; duplicar o acervo
 Descartado. A política atual por Worker/allowlist já está validada e é mais apropriada para ambiente de saúde.
 
 ### Cache persistente de PDFs no navegador
-Descartado nesta versão por aumentar risco de dados clínicos permanecerem no dispositivo após a sessão.
+A proibição absoluta da Fase 0 foi revisada na Fase 2 após validação real de desempenho. Continua proibido cache clínico em texto puro, Cache Storage ou cache compartilhado. Foi aprovado somente cache IndexedDB cifrado por sessão, com TTL, limites, invalidação por `version` e limpeza no logout/desconexão.
 
 ## 16. Critérios de aceite da Fase 0
 
