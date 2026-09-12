@@ -158,7 +158,7 @@ Diretriz registrada:
 Teste real após o PR #140:
 - PDF abriu em produção, mas a experiência continuou perceptivelmente lenta;
 - PostHog nas últimas duas horas registrou 2 `pdf_open_started` e 2 `pdf_ready`;
-- a abertura mais recente apresentou `pdf_ready.duration_ms` de aproximadamente **5.914 ms**; a abertura anterior havia ficado em aproximadamente **4.830 ms**;
+- a abertura mais recente apresentou `pdf_ready.duration_ms` de aproximadamente **5.914 ms (~5,9 s)**; a abertura anterior havia ficado em aproximadamente **4.830 ms (~4,8 s)**;
 - `pdf_first_page_visible` permaneceu em **0** nessa validação;
 - o valor real de `pdf_ready.cache_state` observado foi `miss`.
 
@@ -305,7 +305,7 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Estado real da main:** `f75b5725cc447cde66cbceb9eb2ea79a72b981bd` — PR #142 mesclado com a unidade 2B de cache criptografado.  
 **Branch atual:** `docs/central-docs-phase2b-postmerge` (status pós-merge; nenhuma mudança funcional adicional).  
 **PR atual:** nenhum funcional; PR #142 foi concluído.  
-**Última validação real:** PDF abriu, porém lento; PostHog mostrou abertura anterior ~4.830 ms e mais recente ~5.914 ms em `pdf_ready`, ambos cache miss; `pdf_first_page_visible` ainda 0.  
+**Última validação real:** PDF abriu, porém lento; PostHog mostrou abertura anterior ~4.830 ms (~4,8 s) e mais recente ~5.914 ms (~5,9 s) em `pdf_ready`, ambos cache miss; `pdf_first_page_visible` ainda 0.  
 **Decisão aprovada:** permitir cache persistente de PDFs, mas implementá-lo cifrado e segregado pela sessão; cargo/capability continua obrigatório, porém não é a única barreira para bytes em disco.  
 **Implementação concluída:** PR #142 validado com 23 workflows sem falhas e mesclado; chave opaca HMAC por arquivo; IndexedDB cifrado AES-GCM/HKDF; TTL 12 h; 256 MB totais; 50 MB por PDF; prefetch até 12 MB; aquecimento por lista/hover; invalidação por `version`; limpeza por logout/desconexão/troca de sessão; cache hit/miss na telemetria allowlisted.  
 **Justificativa:** o stream progressivo sozinho não reduziu a espera no navegador real; o Guia Mestre autoriza cache e pré-carregamento na Fase 2.  
