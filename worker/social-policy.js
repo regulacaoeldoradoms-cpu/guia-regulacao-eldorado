@@ -5,7 +5,7 @@ export const SOCIAL_PROFESSIONAL_ROLES = new Set([
 ]);
 
 export const SOCIAL_ROLE_LABELS = Object.freeze({
-  medico: 'Médico',
+  medico: 'Médico(a)',
   recepcao: 'Recepção',
   coordenacao: 'Coordenação',
   telemedicina: 'Técnico em Telemedicina',
