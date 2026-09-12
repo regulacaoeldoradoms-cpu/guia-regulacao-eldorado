@@ -20,9 +20,9 @@ Subfase atual: concluir validação real da Fase 1 e consolidar o novo modelo de
 
 ## Branch / PR
 
-Branch atual: `feat/central-docs-phase1-final-validation`
+Branch atual: nenhuma após a consolidação do status; a próxima mudança funcional deve abrir nova branch a partir da `main`.
 
-PR atual: nenhum. PR #136 foi validado e mesclado na `main`.
+PR atual: nenhum após a consolidação; PR #136 foi funcional e PR #137 apenas registra o status pós-merge.
 
 ## Entregas concluídas nesta unidade
 
@@ -202,11 +202,11 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Fase atual:** Fase 1 — Navegação do Google Drive.  
 **Subfase / objetivo atual:** concluir a revisão de UX/autorização com funções acumuláveis e depois finalizar os testes reais da Fase 1.  
 **Estado real da main:** `866d981a3ca060e1f01064dc751a22d88aec0592` — PR #136 mesclado com as nomenclaturas Regulador(a) e Médico(a).  
-**Branch atual:** `docs/central-docs-status-pr136` (somente atualização de status pós-merge).  
-**PR atual:** nenhum; PR #136 foi concluído.  
+**Branch atual:** nenhuma após o merge do PR #137; abrir nova branch somente para a próxima unidade de trabalho.  
+**PR atual:** nenhum após o merge do PR #137. PR #136 concluiu a nomenclatura; PR #137 consolidou somente este status.  
 **Última ação concluída:** PR #136 validado com 23 workflows sem falhas e mesclado na main em `866d981a`; a função `documentos` agora é exibida como Regulador(a) e o perfil `medico` como Médico(a).  
 **Validação externa concluída:** OAuth real conectado; Portal mostrou `Drive conectado` e carregou a raiz do Meu Drive.  
-**Checks e testes:** 23 workflows do PR #136 concluídos sem falhas antes do merge.  
+**Checks e testes:** 23 workflows do PR #136 concluídos sem falhas; o PR #137 de status também deve ser mesclado somente com checks aprovados.  
 **Decisões tomadas:** perfil principal permanece único; funções adicionais podem acumular; `documentos` é exibido como `Regulador(a)` e concede leitura da Central; gestão de usuários fica fora da tela operacional; capabilities finas permanecem no backend.  
 **Justificativas:** reduzir drasticamente o espaço ocupado na Central e permitir combinações como Médico(a) + Regulador(a) sem trocar o perfil profissional.  
 **Alternativas descartadas:** continuar com uma checkbox para cada usuário dentro de `/documentos/`; transformar `documentos` em novo perfil primário mutuamente exclusivo; conceder acesso apenas escondendo/exibindo UI.  
