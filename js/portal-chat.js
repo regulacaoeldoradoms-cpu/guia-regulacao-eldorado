@@ -228,7 +228,7 @@
   }
 
   function roleLabel(role) {
-    return ({ medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', telemedicina: 'Técnico em Telemedicina', admin: 'Desenvolvedor', cidadao: 'Cidadão' })[role] || role || '';
+    return ({ medico: 'Médico(a)', recepcao: 'Recepção', coordenacao: 'Coordenação', telemedicina: 'Técnico em Telemedicina', admin: 'Desenvolvedor', cidadao: 'Cidadão' })[role] || role || '';
   }
 
   function avatarStyle(contact) {
