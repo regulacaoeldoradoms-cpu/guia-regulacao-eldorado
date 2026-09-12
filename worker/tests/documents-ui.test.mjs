@@ -44,12 +44,19 @@ test('catálogo mostra a Central apenas por capability documental', () => {
   assert.match(source, /Central de Documentos/);
 });
 
-test('service worker reconhece a página, mas mantém APIs e Range fora do cache', () => {
+test('service worker reconhece a página e fornece stream PDF efêmero sem cache persistente', () => {
   const source = read('portal-sw.js');
   assert.match(source, /'\/documentos\/'/);
   assert.match(source, /url\.pathname\.startsWith\('\/api\/'\)/);
   assert.match(source, /request\.headers\.has\('Range'\)/);
-  assert.match(source, /CACHE_VERSION = '20260911-10'/);
+  assert.match(source, /DOCUMENT_STREAM_PREFIX = '\/__portal_document_pdf\/'/);
+  assert.match(source, /const documentStreams = new Map\(\)/);
+  assert.match(source, /PORTAL_DOCUMENT_STREAM_REGISTER/);
+  assert.match(source, /PORTAL_DOCUMENT_STREAM_RELEASE/);
+  assert.match(source, /headers\.set\('Range', range\)/);
+  assert.match(source, /Authorization: entry\.authorization/);
+  assert.match(source, /'Cache-Control': 'no-store'/);
+  assert.match(source, /CACHE_VERSION = '20260911-11'/);
 });
 
 test('observabilidade documental continua sem propriedades identificáveis', () => {
@@ -60,6 +67,7 @@ test('observabilidade documental continua sem propriedades identificáveis', () 
     assert.match(source, /drive_folder_opened/);
     assert.match(source, /drive_search_completed/);
     assert.match(source, /pdf_open_started/);
+    assert.match(source, /pdf_first_page_visible/);
     assert.match(source, /pdf_ready/);
     assert.match(source, /'\/documentos\/'/);
     assert.doesNotMatch(source, /file_name|filename|fileId|patient_name|cpf|cns/i);
@@ -69,4 +77,20 @@ test('observabilidade documental continua sem propriedades identificáveis', () 
   assert.doesNotMatch(documentsClient, /capture\([^\n]*item\.name/);
   assert.doesNotMatch(documentsClient, /capture\([^\n]*item\.ref/);
   assert.doesNotMatch(documentsClient, /capture\([^\n]*searchQuery/);
+});
+
+test('modo progressivo prioriza primeira página e mantém fallback Blob', () => {
+  const html = read('documentos/index.html');
+  const client = read('js/documents.js');
+  const worker = read('portal-sw.js');
+
+  assert.match(html, /documents\.js\?v=20260911-3/);
+  assert.match(client, /registerProgressiveStream/);
+  assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
+  assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
+  assert.match(client, /pdf_first_page_visible/);
+  assert.match(client, /loadPdfBlobFallback/);
+  assert.match(client, /URL\.createObjectURL/);
+  assert.match(worker, /DOCUMENT_STREAM_TTL_MS = 20000/);
+  assert.doesNotMatch(worker, /localStorage|sessionStorage|indexedDB/);
 });
