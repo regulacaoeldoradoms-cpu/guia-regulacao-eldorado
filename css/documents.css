@@ -411,7 +411,8 @@
 }
 
 .documents-pdf-pages {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   min-height: 100%;
   box-sizing: border-box;
   display: flex;
@@ -423,11 +424,10 @@
 
 .portal-pdf-page {
   --page-width: 760px;
-  --page-height: 1075px;
   position: relative;
-  width: min(calc(100% - 4px), var(--page-width));
-  min-height: min(var(--page-height), 80vh);
-  aspect-ratio: var(--page-width) / var(--page-height);
+  width: var(--page-width);
+  max-width: none;
+  aspect-ratio: 1 / 1.4142;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -439,8 +439,8 @@
 
 .portal-pdf-page-canvas {
   display: block;
-  max-width: 100%;
-  height: auto;
+  width: 100%;
+  height: 100%;
   background: #fff;
 }
 
@@ -526,7 +526,6 @@
     padding: 14px 8px 28px;
   }
   .portal-pdf-page {
-    width: min(100%, var(--page-width));
-    min-height: 420px;
+    width: var(--page-width);
   }
 }
