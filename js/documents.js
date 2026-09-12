@@ -1000,7 +1000,10 @@
       loadFolder();
       return;
     }
-    if (item.isPdf) openPdf(item);
+    if (item.isPdf) {
+      if (state.editorSession) mergePdfIntoEditor(item);
+      else openPdf(item);
+    }
   });
 
   els.loadMore.addEventListener('click', () => {
@@ -1010,6 +1013,18 @@
   });
 
   els.closeViewer.addEventListener('click', closePdf);
+  els.editPdf.addEventListener('click', startEditor);
+  els.editorUndo.addEventListener('click', undoEditor);
+  els.editorRedo.addEventListener('click', redoEditor);
+  els.editorPreview.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
+  els.editorExit.addEventListener('click', exitEditor);
+
+  els.editorPages.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-editor-action]');
+    const row = event.target.closest('[data-editor-index]');
+    if (!button || !row) return;
+    applyEditorOperation(button.dataset.editorAction, Number(row.dataset.editorIndex));
+  });
 
   navigator.serviceWorker?.addEventListener('message', (event) => {
     if (event.data?.type !== 'PORTAL_DOCUMENT_STREAM_FAILED') return;
