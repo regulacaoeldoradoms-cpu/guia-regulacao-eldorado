@@ -13,6 +13,11 @@ import {
   setDocumentCapabilities
 } from '../document-access.js';
 import {
+  additionalRolesFor,
+  decorateAdditionalRolesUser,
+  setAdditionalRoles
+} from '../additional-roles.js';
+import {
   completeDriveOAuth,
   createDriveAuthorizationUrl,
   fetchDrivePdf,
@@ -118,6 +123,33 @@ sqliteTest('capabilities documentais são independentes do cargo e edit/extract 
 
   const untouched = await documentCapabilitiesFor(env, { username: 'documentos.dois', role: 'cidadao' });
   assert.deepEqual(untouched, { view: false, extract: false, edit: false, manage: false });
+});
+
+sqliteTest('cargo adicional Central de Documentos acumula com o perfil principal e concede leitura', async () => {
+  const env = environment();
+  await register(env, 'documentos.acumulado', '127.0.0.87');
+
+  const before = await decorateAdditionalRolesUser(env, { username: 'documentos.acumulado', role: 'cidadao' });
+  assert.deepEqual(before.additionalRoles, []);
+  assert.deepEqual(before.effectiveRoles, ['cidadao']);
+
+  await setAdditionalRoles(env, 'documentos.acumulado', ['documentos'], 'admin');
+
+  const roles = await additionalRolesFor(env, 'documentos.acumulado');
+  assert.deepEqual(roles, ['documentos']);
+
+  const decorated = await decorateAdditionalRolesUser(env, { username: 'documentos.acumulado', role: 'cidadao' });
+  assert.deepEqual(decorated.effectiveRoles, ['cidadao', 'documentos']);
+
+  const capabilities = await documentCapabilitiesFor(env, decorated);
+  assert.equal(capabilities.view, true);
+  assert.equal(capabilities.extract, false);
+  assert.equal(capabilities.edit, false);
+  assert.equal(capabilities.manage, false);
+
+  await setAdditionalRoles(env, 'documentos.acumulado', [], 'admin');
+  const removed = await documentCapabilitiesFor(env, { username: 'documentos.acumulado', role: 'cidadao', additionalRoles: [] });
+  assert.equal(removed.view, false);
 });
 
 sqliteTest('router bloqueia leitura sem capability e não depende de esconder botão no frontend', async () => {
@@ -318,6 +350,7 @@ test('código da Central não contém logs de conteúdo nem segredos hardcoded',
   const path = await import('node:path');
   const root = path.resolve(import.meta.dirname, '..');
   const sources = [
+    fs.readFileSync(path.join(root, 'additional-roles.js'), 'utf8'),
     fs.readFileSync(path.join(root, 'document-access.js'), 'utf8'),
     fs.readFileSync(path.join(root, 'document-drive.js'), 'utf8'),
     fs.readFileSync(path.join(root, 'documents-router.js'), 'utf8')

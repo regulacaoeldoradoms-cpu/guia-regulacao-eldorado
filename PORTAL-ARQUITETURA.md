@@ -21,7 +21,7 @@ Arquitetura revisada em 09/09/2026.
 - `/medico/`: Guia Médico e pré-regulação Gemini.
 - `/recepcao/`: Conferência da Recepção.
 - `/telemedicina/`: acompanhamento longitudinal de teleconsultas, retornos e lembretes operacionais.
-- `/documentos/`: Central de Documentos; navegação Google Drive e PDFs conforme capabilities documentais independentes do cargo.
+- `/documentos/`: Central de Documentos; navegação Google Drive e PDFs conforme função adicional/capabilities documentais independentes do perfil principal.
 - `/admin/usuarios/`: gestão de usuários conforme hierarquia.
 - `/admin/monitoramento/`: monitoramento disponível para Coordenação e Desenvolvedor.
 - `/admin/configuracao/`: diagnóstico técnico exclusivo do Desenvolvedor.
@@ -158,6 +158,15 @@ O rollback não apaga tabelas: desligar primeiro a Home e, se necessário, o bac
 6. `cidadao` — **Cidadão**. Hub do Cidadão.
 
 O perfil primário não deve ser confundido com a função no Conselho nem com o nível Bronze/Prata/Ouro.
+
+### Funções adicionais acumuláveis
+
+O Portal passa a suportar funções adicionais que se somam ao perfil primário sem substituí-lo. A persistência usa `auth_user_additional_roles`, e o Worker compõe `effectiveRoles` a partir do perfil principal + funções adicionais autorizadas.
+
+Função adicional inicial:
+- `documentos` — **Central de Documentos**: concede leitura do Google Drive institucional e da rota `/documentos/`.
+
+Exemplo: uma conta pode permanecer `medico` e acumular `documentos`. A gestão é feita em `/admin/usuarios/` pelo Desenvolvedor. Funções adicionais nunca são concedidas por simples ocultação/exibição no frontend; o backend revalida a autorização.
 
 ### Implementação do perfil de Telemedicina
 

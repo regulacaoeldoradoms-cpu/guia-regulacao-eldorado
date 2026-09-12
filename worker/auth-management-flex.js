@@ -32,6 +32,12 @@ import {
   decorateDocumentUsers
 } from './document-access.js';
 import {
+  additionalRoleCatalog,
+  decorateAdditionalRolesUser,
+  decorateAdditionalRolesUsers,
+  setAdditionalRoles
+} from './additional-roles.js';
+import {
   provisionProfessionalSocialGraph,
   retireProfessionalSeededRelationships
 } from './social-schema.js';
@@ -65,13 +71,15 @@ async function decoratePortalUser(env, user) {
   if (!user) return user;
   const telemedicine = await decorateTelemedicineUser(env, user);
   const council = await decorateCouncilViceUser(env, telemedicine);
-  return decorateDocumentUser(env, council);
+  const additional = await decorateAdditionalRolesUser(env, council);
+  return decorateDocumentUser(env, additional);
 }
 
 async function decoratePortalUsers(env, users) {
   const telemedicine = await decorateTelemedicineUsers(env, users);
   const council = await decorateCouncilViceUsers(env, telemedicine);
-  return decorateDocumentUsers(env, council);
+  const additional = await decorateAdditionalRolesUsers(env, council);
+  return decorateDocumentUsers(env, additional);
 }
 
 export async function validatePortalSession(request, env, allowedRoles = []) {
@@ -147,6 +155,7 @@ async function handleAdminUsers(request, env, origin) {
 
   let requestedRole = '';
   let requestedCouncilRole = null;
+  let requestedAdditionalRoles = null;
   let baseRequest = request;
 
   if ((request.method === 'POST' || request.method === 'PATCH') && url.pathname.startsWith('/api/admin/users')) {
@@ -154,6 +163,10 @@ async function handleAdminUsers(request, env, origin) {
     requestedRole = String(body.role || '').trim();
     if (Object.prototype.hasOwnProperty.call(body, 'councilRole')) {
       requestedCouncilRole = String(body.councilRole || '').trim();
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'additionalRoles')) {
+      if (actor?.role !== 'admin') return jsonError('Somente o Desenvolvedor pode conceder funções adicionais.', 403, origin);
+      requestedAdditionalRoles = Array.isArray(body.additionalRoles) ? body.additionalRoles : [];
     }
 
     let rewrittenRole = '';
@@ -191,6 +204,7 @@ async function handleAdminUsers(request, env, origin) {
     if (payload.actor?.role === 'admin') {
       const roles = Array.isArray(payload.actor.assignableRoles) ? payload.actor.assignableRoles : [];
       payload.actor.assignableRoles = [...new Set([...roles, 'telemedicina'])];
+      payload.actor.assignableAdditionalRoles = additionalRoleCatalog();
     }
     return responseWithPayload(response, payload);
   }
@@ -218,6 +232,10 @@ async function handleAdminUsers(request, env, origin) {
       } else {
         await provisionProfessionalSocialGraph(env, payload.user.username);
       }
+    }
+
+    if (actor?.role === 'admin' && requestedAdditionalRoles !== null) {
+      await setAdditionalRoles(env, payload.user.username, requestedAdditionalRoles, actor.username || 'admin');
     }
 
     payload.user = await decoratePortalUser(env, payload.user);

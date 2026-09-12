@@ -21,6 +21,21 @@ test('Central read-only usa somente Worker para Google Drive e não persiste con
   assert.match(client, /cache:\s*'no-store'/);
 });
 
+test('gestão de acesso sai da Central e usa função adicional acumulável em Usuários e acessos', () => {
+  const documentsHtml = read('documentos/index.html');
+  const documentsClient = read('js/documents.js');
+  const adminHtml = read('admin/usuarios/index.html');
+  const adminClient = read('js/admin-users.js');
+
+  assert.doesNotMatch(documentsHtml, /Acessos à Central/);
+  assert.doesNotMatch(documentsClient, /documentsAccessList|loadAccessAdmin|saveAccountAccess/);
+  assert.match(documentsHtml, /Gerenciar cargos e acessos/);
+  assert.match(adminHtml, /Cargos\/funções adicionais \(acumuláveis\)/);
+  assert.match(adminHtml, /Central de Documentos — navegação e leitura/);
+  assert.match(adminClient, /additionalRoles/);
+  assert.match(adminClient, /documentos: 'Central de Documentos'/);
+});
+
 test('catálogo mostra a Central apenas por capability documental', () => {
   const source = read('js/tools-catalog.js');
   assert.match(source, /documentCapabilities\?\.view \|\| user\?\.documentCapabilities\?\.manage/);

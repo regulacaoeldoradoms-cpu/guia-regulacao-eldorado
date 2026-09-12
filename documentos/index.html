@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260911-1">
+  <link rel="stylesheet" href="/css/documents.css?v=20260911-2">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -51,19 +51,9 @@
           <div id="driveSetupMessage" class="portal-note info"></div>
           <div class="documents-setup-actions">
             <button class="portal-button primary" id="connectDriveButton" type="button" hidden>Conectar Google Drive</button>
-            <button class="portal-button secondary" id="grantSelfViewButton" type="button" hidden>Liberar meu acesso de leitura</button>
+            <a class="portal-button secondary" id="manageDocumentsAccessLink" href="/admin/usuarios/" hidden>Gerenciar cargos e acessos</a>
             <button class="portal-button danger" id="disconnectDriveButton" type="button" hidden>Desconectar Drive</button>
           </div>
-        </div>
-      </section>
-
-      <section class="portal-section documents-access-admin" id="documentsAccessAdmin" hidden>
-        <div class="portal-section-heading">
-          <div><h2>Acessos à Central</h2><p>Permissões documentais são independentes do cargo principal no Portal.</p></div>
-          <button class="portal-button secondary" id="refreshAccessButton" type="button">Atualizar</button>
-        </div>
-        <div class="documents-access-list" id="documentsAccessList">
-          <div class="portal-note info">Carregando acessos…</div>
         </div>
       </section>
 
@@ -116,6 +106,6 @@
   <script src="/js/auth-client.js?v=20260910-4"></script>
   <script src="/js/portal-interactions.js?v=20260910-2"></script>
   <script src="/js/tools-catalog.js?v=20260911-3"></script>
-  <script src="/js/documents.js?v=20260911-1"></script>
+  <script src="/js/documents.js?v=20260911-2"></script>
 </body>
 </html>

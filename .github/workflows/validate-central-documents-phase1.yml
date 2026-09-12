@@ -6,10 +6,13 @@ on:
       - 'documentos/**'
       - 'css/documents.css'
       - 'js/documents.js'
+      - 'js/admin-users.js'
+      - 'admin/usuarios/index.html'
       - 'js/tools-catalog.js'
       - 'js/portal-performance.js'
       - 'portal-sw.js'
       - 'worker/document-*.js'
+      - 'worker/additional-roles.js'
       - 'worker/documents-router.js'
       - 'worker/auth-management-flex.js'
       - 'worker/index.js'
@@ -25,7 +28,10 @@ on:
       - 'documentos/**'
       - 'css/documents.css'
       - 'js/documents.js'
+      - 'js/admin-users.js'
+      - 'admin/usuarios/index.html'
       - 'worker/document-*.js'
+      - 'worker/additional-roles.js'
       - 'worker/documents-router.js'
       - 'docs/CENTRAL-DOCUMENTOS-**'
 
@@ -50,6 +56,7 @@ jobs:
           test -f documentos/index.html
           test -f css/documents.css
           test -f js/documents.js
+          test -f worker/additional-roles.js
           test -f worker/document-access.js
           test -f worker/document-drive.js
           test -f worker/documents-router.js
@@ -57,7 +64,12 @@ jobs:
           grep -q "Cache-Control.*no-store" worker/documents-router.js
           grep -q "URL.revokeObjectURL" js/documents.js
           grep -q "Somente leitura" documentos/index.html
+          grep -q "Gerenciar cargos e acessos" documentos/index.html
+          grep -q "Cargos/funções adicionais (acumuláveis)" admin/usuarios/index.html
+          ! grep -q "Acessos à Central" documentos/index.html
           ! grep -R -E "localStorage|sessionStorage|indexedDB" js/documents.js
+          node --check js/documents.js
+          node --check js/admin-users.js
 
       - name: Bloquear segredos e telemetria identificável
         run: |

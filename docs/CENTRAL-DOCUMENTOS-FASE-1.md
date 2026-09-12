@@ -11,16 +11,21 @@ Entregar a primeira superfície funcional da Central de Documentos: acesso autor
 
 ### Autorização do Portal
 
-A Central usa capabilities separadas do cargo principal:
+A Central usa autorização composta:
 
-- `view`: leitura da Central e PDFs;
+- **perfil principal** continua sendo único (Desenvolvedor, Coordenação, Médico, Recepção, Telemedicina ou Cidadão);
+- **funções adicionais acumuláveis** podem ser somadas ao perfil principal;
+- a primeira função adicional criada é `documentos` (**Central de Documentos**);
+- `view`: leitura da Central e PDFs, concedida pela função adicional `documentos` ou por regra legada de compatibilidade;
 - `extract`: reservada para Fase 5;
 - `edit`: reservada para Fase 3/4;
 - `manage`: administração da conexão institucional.
 
-A tabela D1 é `auth_document_access`. O Desenvolvedor recebe `manage` implicitamente, mas não recebe leitura de documentos automaticamente: `view` continua explícita.
+A tabela `auth_user_additional_roles` guarda funções acumuláveis. A tabela `auth_document_access` permanece para capabilities documentais finas e compatibilidade. O Desenvolvedor recebe `manage` implicitamente, mas leitura documental continua sendo uma autorização independente.
 
-Toda rota protegida revalida sessão + capability no Worker.
+Exemplo: uma conta pode ser **Médico + Central de Documentos** sem perder o perfil Médico.
+
+Toda rota protegida revalida sessão + autorização efetiva no Worker.
 
 ### OAuth institucional
 
@@ -95,7 +100,9 @@ Eventos técnicos permitidos nesta fase:
 A rota `/documentos/`:
 - aparece no catálogo somente quando há `view` ou `manage`;
 - mostra configuração institucional para quem administra;
-- permite ao Desenvolvedor conceder apenas a capability de leitura nesta fase;
+- não exibe mais a lista completa de usuários, evitando ocupar grande parte da tela operacional;
+- direciona a gestão de acesso para `/admin/usuarios/`;
+- em **Usuários e acessos**, o Desenvolvedor pode acumular a função **Central de Documentos** com o perfil principal;
 - navega por pastas com breadcrumbs mantidos somente em memória;
 - pesquisa globalmente por nome;
 - mostra pastas primeiro;
@@ -152,8 +159,8 @@ Para encerrar a Fase 1:
 - [x] cache persistente de PDF bloqueado;
 - [x] telemetria documental limitada à allowlist técnica;
 - [x] testes automatizados de privacidade e autorização adicionados;
-- [ ] configuração Google Cloud/OAuth real concluída;
-- [ ] conta institucional conectada;
+- [x] configuração Google Cloud/OAuth real concluída;
+- [x] conta institucional conectada;
 - [ ] teste real confirma navegação por Meu Drive, pesquisa e abertura de PDF permitido;
 - [ ] propriedades recebidas no PostHog revalidadas após uso real;
 - [ ] PR da Fase 1 com checks aprovados e resultado registrado no status.

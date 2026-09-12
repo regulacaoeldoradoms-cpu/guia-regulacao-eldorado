@@ -34,11 +34,8 @@
     setup: document.getElementById('documentsSetup'),
     setupMessage: document.getElementById('driveSetupMessage'),
     connect: document.getElementById('connectDriveButton'),
-    grantSelf: document.getElementById('grantSelfViewButton'),
+    manageAccess: document.getElementById('manageDocumentsAccessLink'),
     disconnect: document.getElementById('disconnectDriveButton'),
-    accessAdmin: document.getElementById('documentsAccessAdmin'),
-    accessList: document.getElementById('documentsAccessList'),
-    refreshAccess: document.getElementById('refreshAccessButton'),
     workspace: document.getElementById('documentsWorkspace'),
     searchForm: document.getElementById('documentsSearchForm'),
     search: document.getElementById('documentsSearch'),
@@ -151,7 +148,6 @@
     const canView = caps.view === true;
 
     els.setup.hidden = !canManage;
-    els.accessAdmin.hidden = !(canManage && state.user.role === 'admin');
     els.workspace.hidden = !(canView && drive.connected);
 
     if (drive.connected) {
@@ -168,7 +164,7 @@
     if (canManage) {
       els.connect.hidden = Boolean(drive.connected) || !drive.configured;
       els.disconnect.hidden = !drive.connected;
-      els.grantSelf.hidden = canView;
+      if (els.manageAccess) els.manageAccess.hidden = state.user.role !== 'admin';
       els.connect.disabled = !drive.configured;
       if (!drive.configured) {
         els.setupMessage.textContent = 'O código da Central está preparado, mas as credenciais OAuth do Google ainda precisam ser configuradas no ambiente seguro da Cloudflare.';
@@ -177,10 +173,10 @@
         els.setupMessage.textContent = 'A integração está configurada. Autorize uma vez a conta institucional para liberar a navegação do Drive.';
         els.setupMessage.className = 'portal-note info';
       } else if (!canView) {
-        els.setupMessage.textContent = 'O Drive está conectado. Seu perfil administra a Central, mas a leitura documental ainda não foi concedida a esta conta.';
+        els.setupMessage.textContent = 'O Drive está conectado. O acesso de leitura é concedido pela função adicional Central de Documentos em Usuários e acessos.';
         els.setupMessage.className = 'portal-note info';
       } else {
-        els.setupMessage.textContent = 'Conexão institucional ativa. As permissões de cada usuário continuam separadas do cargo principal.';
+        els.setupMessage.textContent = 'Conexão institucional ativa. Os acessos são administrados em Usuários e acessos por funções acumuláveis.';
         els.setupMessage.className = 'portal-note success';
       }
     }
@@ -394,67 +390,6 @@
     }
   }
 
-  async function loadAccessAdmin() {
-    if (!(state.user.role === 'admin' && state.access?.capabilities?.manage)) return;
-    els.accessList.innerHTML = '<div class="portal-note info">Carregando usuários…</div>';
-    try {
-      const users = await auth.listUsers();
-      els.accessList.innerHTML = users.map((account) => {
-        const caps = account.documentCapabilities || {};
-        return `<article class="documents-access-row"
-          data-username="${escapeHtml(account.username)}"
-          data-extract="${caps.extract ? '1' : '0'}"
-          data-edit="${caps.edit ? '1' : '0'}">
-          <div class="documents-access-person">
-            <strong>${escapeHtml(account.name || account.username)}</strong>
-            <small>@${escapeHtml(account.username)} · ${escapeHtml(window.PortalTools?.roleLabels?.[account.role] || account.role || '')}</small>
-          </div>
-          <div class="documents-access-options">
-            <label><input type="checkbox" data-cap="view" ${caps.view ? 'checked' : ''}> Leitura do Drive</label>
-          </div>
-          <button class="portal-button secondary" type="button" data-action="save-access">Salvar</button>
-        </article>`;
-      }).join('') || '<div class="portal-note info">Nenhuma conta disponível.</div>';
-    } catch (error) {
-      els.accessList.innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível carregar os acessos.')}</div>`;
-    }
-  }
-
-  async function saveAccountAccess(row) {
-    const username = row.dataset.username;
-    const button = row.querySelector('[data-action="save-access"]');
-    const inputs = Object.fromEntries(Array.from(row.querySelectorAll('[data-cap]')).map((input) => [input.dataset.cap, input.checked]));
-    const preserveExtract = row.dataset.extract === '1';
-    const preserveEdit = row.dataset.edit === '1';
-    button.disabled = true;
-    button.textContent = 'Salvando…';
-    try {
-      const payload = await api(`/api/documents/admin/access/${encodeURIComponent(username)}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          view: inputs.view === true,
-          extract: inputs.view === true && preserveExtract,
-          edit: inputs.view === true && preserveEdit
-        })
-      });
-      row.querySelector('[data-cap="view"]').checked = payload?.capabilities?.view === true;
-      row.dataset.extract = payload?.capabilities?.extract ? '1' : '0';
-      row.dataset.edit = payload?.capabilities?.edit ? '1' : '0';
-      button.textContent = 'Salvo';
-      if (username === state.user.username) {
-        await auth.me({ allowCached: false }).catch(() => null);
-        await loadAccess();
-        if (state.access?.capabilities?.view && state.access?.drive?.connected) await loadFolder();
-      }
-      setTimeout(() => { button.textContent = 'Salvar'; }, 900);
-    } catch (error) {
-      button.textContent = 'Tentar novamente';
-      showStatus(error.message || 'Não foi possível alterar este acesso.', 'warning');
-    } finally {
-      button.disabled = false;
-    }
-  }
-
   els.connect.addEventListener('click', async () => {
     els.connect.disabled = true;
     els.connect.textContent = 'Preparando autorização…';
@@ -482,38 +417,6 @@
     } finally {
       els.disconnect.disabled = false;
     }
-  });
-
-  els.grantSelf.addEventListener('click', async () => {
-    els.grantSelf.disabled = true;
-    try {
-      const current = state.user.documentCapabilities || {};
-      await api(`/api/documents/admin/access/${encodeURIComponent(state.user.username)}`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          view: true,
-          extract: current.extract === true,
-          edit: current.edit === true,
-          manage: current.manage === true
-        })
-      });
-      state.user = await auth.me({ allowCached: false }) || state.user;
-      await loadAccess();
-      await loadAccessAdmin();
-      if (state.access?.drive?.connected) await loadFolder();
-    } catch (error) {
-      showStatus(error.message || 'Não foi possível liberar a leitura para sua conta.', 'warning');
-    } finally {
-      els.grantSelf.disabled = false;
-    }
-  });
-
-  els.refreshAccess.addEventListener('click', loadAccessAdmin);
-
-  els.accessList.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-action="save-access"]');
-    const row = event.target.closest('[data-username]');
-    if (button && row) saveAccountAccess(row);
   });
 
   els.searchForm.addEventListener('submit', (event) => {
@@ -580,7 +483,6 @@
 
   try {
     await loadAccess();
-    if (state.user.role === 'admin' && state.access?.capabilities?.manage) await loadAccessAdmin();
     if (state.access?.capabilities?.view && state.access?.drive?.connected) await loadFolder();
   } catch (error) {
     showStatus(error.message || 'Não foi possível iniciar a Central de Documentos.', 'warning');
