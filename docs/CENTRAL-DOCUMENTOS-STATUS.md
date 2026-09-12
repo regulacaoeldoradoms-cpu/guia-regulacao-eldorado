@@ -20,9 +20,9 @@ Subfase atual: pesquisa/arquitetura do visualizador-editor próprio concluída; 
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-editor-visual-postmerge` (somente consolidação pós-merge).
+Branch funcional atual: nenhuma; próxima branch funcional será a unidade **3C.1**.
 
-PR atual: nenhum funcional; PR #158 foi validado com 21 workflows e mesclado.
+PR funcional atual: nenhum. PR #158 (arquitetura) e PR #159 (consolidação pós-merge) foram validados e mesclados.
 
 ## Entregas concluídas nesta unidade
 
@@ -617,8 +617,8 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. mesclar esta consolidação documental pós-PR #158;
-2. criar branch funcional **3C.1** diretamente da `main` pós-merge;
+1. criar branch funcional **3C.1** diretamente da `main` atual;
+2. adicionar PDF.js corrigido, fixado e **self-hosted**, sem CDN em runtime;
 3. adicionar PDF.js corrigido, fixado e **self-hosted**, sem CDN em runtime;
 4. configurar a integração com `enableScripting: false`, `isEvalSupported: false`, worker local e CSP restrita;
 5. entregar visualizador próprio somente leitura com canvas por página, miniaturas e zoom, mantendo o iframe atual como fallback;
@@ -647,14 +647,15 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** iniciar 3C.1 — visualizador próprio somente leitura + miniaturas.  
-**Estado real da main:** `5fa0ec5a1ebea0b6c6a0dc11a0a7ba429879791f` — PR #158 mesclado.  
-**Branch atual:** `docs/central-docs-editor-visual-postmerge` (somente consolidação documental pós-merge).  
+**Subfase / objetivo atual:** 3C.1 — visualizador próprio somente leitura + miniaturas.  
+**Base funcional consolidada para 3C.1:** `c7e9831134c17eb8955e04ceab8e6fed052c6ec2` — inclui PR #158 e PR #159; alterações documentais posteriores não mudam essa base funcional.  
+**Branch funcional atual:** nenhuma; a próxima deve ser criada da main atual para 3C.1.  
 **PR funcional atual:** nenhum.  
-**Pesquisa concluída:** PR #158 com 21 workflows aprovados; `docs/CENTRAL-DOCUMENTOS-EDITOR-VISUAL-V1.md` contém a arquitetura 3C.1–3C.5.  
-**Última decisão do usuário:** **Adicionar imagem** cria página independente; **Colar imagem** seleciona arquivo do armazenamento e cria objeto sobre a página, movível entre páginas, redimensionável por quatro alças e com resize+rotação pela alça inferior direita. Ctrl+V continua adicionando print/imagem como nova página.  
-**Stack aprovada:** PDF.js Display Layer para renderização/thumbnails; pdf-lib para montagem/flatten; DOM overlay + Pointer Events para objetos; Fabric/Konva contingência; SortableJS somente se necessário.  
+**Pesquisa concluída:** `docs/CENTRAL-DOCUMENTOS-EDITOR-VISUAL-V1.md` é o detalhamento técnico vigente das unidades 3C.1–3C.5; PR #158 passou 21 workflows e foi mesclado.  
+**Consolidação:** PR #159 também passou 21 workflows e foi mesclado; não há bloqueio documental restante.  
+**Última decisão do usuário:** **Adicionar imagem** cria página independente; **Colar imagem** seleciona arquivo do armazenamento e cria objeto sobre página existente; objeto pode mover dentro/entre páginas, redimensionar por quatro alças e usar a alça inferior direita para resize+rotação. Ctrl+V continua adicionando print/imagem como nova página.  
+**Stack aprovada:** PDF.js Display Layer para renderização/thumbnails; pdf-lib para montagem/flatten; DOM overlay + Pointer Events para objetos; Fabric/Konva como contingência; SortableJS somente se necessário.  
 **Segurança:** PDF.js corrigido/pinado/self-hosted; `enableScripting: false`; `isEvalSupported: false`; worker local; CSP restrita; conteúdo, nomes, coordenadas e páginas fora do PostHog.  
-**Riscos/testes obrigatórios:** rotações 0/90/180/270, CropBox, cross-page drag/autoscroll, touch/pen/mouse, consumo de memória e paridade entre prévia e PDF final.  
-**Próxima ação exata:** após mesclar esta consolidação, criar branch funcional 3C.1 da main atual e implementar PDF.js self-hosted + canvas por página + trilho de miniaturas, preservando o iframe como fallback até a validação real.  
+**Riscos/testes obrigatórios:** rotações 0/90/180/270, CropBox, cross-page drag/autoscroll, touch/pen/mouse, consumo de memória e paridade prévia x PDF final.  
+**Próxima ação exata:** criar branch funcional 3C.1 da main atual e implementar PDF.js self-hosted + canvas por página + trilho de miniaturas, preservando o iframe como fallback até a validação real.  
 **Arquivos principais:** `docs/CENTRAL-DOCUMENTOS-EDITOR-VISUAL-V1.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`, `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`.
