@@ -54,7 +54,7 @@ test('/conta/ é somente compatibilidade e redistribui para rotas especializadas
 
 test('cache do portal é renovado para entregar as novas rotas', () => {
   const sw = read('portal-sw.js');
-  assert.match(sw, /const CACHE_VERSION = '20260911-11'/);
+  assert.match(sw, /const CACHE_VERSION = '20260912-12'/);
   assert.match(sw, /'\/seguranca\/'/);
   assert.match(sw, /'\/configuracoes\/'/);
   assert.match(sw, /'\/conquistas\/'/);
