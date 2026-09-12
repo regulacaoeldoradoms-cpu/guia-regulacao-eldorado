@@ -257,6 +257,12 @@ export async function handlePortalRoute(request, env, origin, originAllowed = tr
 
   if (url.pathname.startsWith('/api/admin/users')) {
     if (!originAllowed) return jsonError('Origem não autorizada.', 403, origin);
+    // CORS preflight não possui Bearer token. Ele deve ser resolvido antes
+    // da validação de sessão; caso contrário o navegador bloqueia a chamada
+    // real e expõe apenas TypeError: Failed to fetch.
+    if (request.method === 'OPTIONS') {
+      return handlePortalRouteBase(request, env, origin, true);
+    }
     return handleAdminUsers(request, env, origin);
   }
 

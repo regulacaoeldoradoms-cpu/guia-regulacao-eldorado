@@ -1,12 +1,12 @@
 # Central de Documentos — Status
 
-Última atualização: 11/09/2026
+Última atualização: 12/09/2026
 
 ## Fase atual
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: corrigir regressão de sessão no auto-gerenciamento do Desenvolvedor e então concluir a validação real da capability `edit` da Fase 3.
+Subfase atual: corrigir a regressão de preflight CORS em `/api/admin/users` que impede carregar as contas e então concluir a validação real da capability `edit` da Fase 3.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: corrigir regressão de sessão no auto-gerenciamento do Desenvolv
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-phase2b-postmerge` (somente consolidação pós-merge).
+Branch atual: `fix/admin-users-cors-preflight`.
 
-PR atual: nenhum funcional aberto; PR #142 foi validado e mesclado.
+PR atual: #150 — correção da regressão `Failed to fetch` em Usuários e acessos.
 
 ## Entregas concluídas nesta unidade
 
@@ -240,6 +240,27 @@ Próxima validação real:
 - após o deploy, relogar uma vez é suficiente;
 - salvar novamente Regulador(a) + **Permitir editor de PDF** deve concluir as duas operações sem derrubar a sessão.
 
+## Regressão de CORS em Usuários e acessos — 12/09/2026
+
+Após o merge do PR #148, a lista **Contas cadastradas** passou a exibir `Failed to fetch` mesmo após `Ctrl+F5` e novo login.
+
+Causa raiz confirmada no código:
+- o PR #148 adicionou retorno 401 explícito quando `handleAdminUsers` não encontra ator autenticado;
+- o roteador flexível encaminhava também o `OPTIONS` de preflight CORS para `handleAdminUsers`;
+- preflight CORS não envia Bearer token;
+- por isso o `OPTIONS /api/admin/users` passou a receber 401 antes do handler base de CORS;
+- o navegador bloqueava a requisição GET real e mostrava apenas `TypeError: Failed to fetch`.
+
+Correção na branch `fix/admin-users-cors-preflight` / PR #150:
+- `OPTIONS` de `/api/admin/users*` é resolvido pelo handler base antes da autenticação;
+- requisições reais continuam exigindo sessão válida e preservam o 401 explícito;
+- teste de regressão verifica status 204 e os cabeçalhos `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods` e `Access-Control-Allow-Headers`;
+- nenhuma permissão, cargo, capability documental ou regra do editor foi ampliada.
+
+Alternativas descartadas:
+- remover a validação 401 adicionada no PR #148, porque isso reintroduziria a mensagem enganosa de falta de papel;
+- contornar no frontend com retry, porque o navegador bloqueia a requisição antes do GET real e o problema é do preflight.
+
 ## Bloqueio encontrado na concessão do editor — 12/09/2026
 
 Durante a tentativa real de habilitar **Permitir editor de PDF** na própria conta Desenvolvedor/Regulador(a), a interface exibiu incorretamente:
@@ -374,10 +395,10 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. abrir PR da correção `fix/developer-self-edit-session`;
-2. rodar suíte completa e validar o teste de regressão;
-3. mesclar somente com checks aprovados;
-4. após deploy, recarregar `/admin/usuarios/`; se a sessão antiga estiver invalidada, entrar novamente uma vez;
+1. acompanhar os checks do PR #150;
+2. mesclar somente com checks aprovados;
+3. aguardar deploy da main;
+4. validar em produção que **Contas cadastradas** volta a carregar sem `Failed to fetch`;
 5. editar a própria conta, manter Regulador(a), marcar **Permitir editor de PDF** e salvar;
 6. confirmar que a capability `edit` foi concedida sem derrubar a sessão;
 7. retomar a validação real da Fase 3: excluir/reordenar/undo/redo/unir/prévia.
@@ -403,13 +424,18 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** corrigir regressão de sessão que bloqueava a concessão real da capability `edit` na própria conta Desenvolvedor.  
-**Estado real da main:** `49d86934831577884e68c90f5758239df2a2f341` — PR #148 mesclado com a correção de sessão do Desenvolvedor.  
-**Branch atual:** `docs/central-docs-self-edit-fix-postmerge` (somente consolidação pós-merge).  
-**PR atual:** nenhum funcional; PR #148 foi concluído.  
-**Bug reproduzido:** salvar a própria conta em Usuários e acessos invalidava o token porque `session_version` sempre era incrementado; a tentativa seguinte exibia falsamente “Somente o Desenvolvedor pode conceder funções adicionais”.  
-**Correção:** preservar sessão em autoedição quando papel/ativo não mudam; manter invalidação em mudanças críticas e alvos terceiros; 401 explícito para sessão inválida; revalidação imediata na página admin; cache-bust do JS.  
-**Teste de regressão:** Desenvolvedor edita própria conta + função Regulador(a) e, com o mesmo token, concede `edit=true`; mudança do próprio papel continua invalidando a sessão.  
-**Pendências:** aguardar deploy da main `49d86934`; usuário deve relogar uma vez se a sessão antiga estiver inválida; depois salvar novamente Regulador(a) + `Permitir editor de PDF` e testar o editor real.  
-**Próxima ação exata:** após o deploy, sair e entrar novamente uma vez se necessário, abrir `/admin/usuarios/`, editar a própria conta, manter Regulador(a), marcar `Permitir editor de PDF` e salvar; depois validar o botão `Editar PDF` na Central.  
-**Arquivos principais:** `worker/auth-management-v2.js`, `worker/auth-management-flex.js`, `worker/tests/developer-self-edit-session.test.mjs`, `js/admin-users.js`, `admin/usuarios/index.html`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Subfase / objetivo atual:** corrigir regressão de preflight CORS em `/api/admin/users` que impede carregar as contas antes da concessão real de `edit`.  
+**Estado real da main:** `d1a8d6e0c9dee84d4a8471ed540055b5df26a454`; inclui o PR #148 e a consolidação de status pós-merge.  
+**Branch atual:** `fix/admin-users-cors-preflight`.  
+**PR atual:** #150 — Corrigir Failed to fetch em Usuários e acessos.  
+**Última ação concluída:** causa raiz isolada e correção implementada; preflight `OPTIONS` passa pelo handler base antes da validação de sessão.  
+**Últimos commits relevantes:** `4fa3299b` (correção CORS) e `c05c09c9` (teste de regressão).  
+**Checks e testes:** teste novo exige 204 + cabeçalhos CORS; checks do PR #150 ainda devem ser confirmados antes do merge.  
+**Decisões tomadas:** manter o 401 explícito do PR #148 nas requisições reais e corrigir somente o caminho de preflight; não mascarar o problema com retry no frontend.  
+**Justificativa:** preflight não possui Bearer token; autenticá-lo bloqueia o navegador antes da requisição real.  
+**Ações externas concluídas:** usuário já fez `Ctrl+F5` e relog; o erro persistiu, descartando sessão/cache antigo como causa suficiente.  
+**Pendências e bloqueios:** checks/merge/deploy do PR #150; depois validar a lista de usuários em produção e conceder `Permitir editor de PDF`.  
+**Riscos conhecidos:** qualquer nova autenticação colocada antes do tratamento de `OPTIONS` pode recriar a regressão CORS.  
+**Métricas / observabilidade:** PostHog Error Tracking não registrou exceção para a rota; compatível com bloqueio de rede/CORS no navegador antes de evento de aplicação. Nenhum dado sensível foi consultado ou enviado.  
+**Próxima ação exata:** acompanhar os checks do PR #150, corrigir falhas se houver e mesclar; após deploy, testar novamente `/admin/usuarios/`.  
+**Arquivos principais:** `worker/auth-management-flex.js`, `worker/tests/developer-self-edit-session.test.mjs`, `js/admin-users.js`, `admin/usuarios/index.html`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
