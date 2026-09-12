@@ -5,7 +5,7 @@
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
   const documentCache = window.PortalDocumentCache || null;
-  const cacheWarmInFlight = new Set();
+  const cacheWarmInFlight = new Map();
   let cacheWarmTimer = null;
   const user = await auth.requireRole([]);
   if (!user) return;
@@ -148,6 +148,14 @@
   async function readCachedPdf(item) {
     const descriptor = cacheDescriptor(item);
     if (!descriptor || !documentCache?.get) return null;
+    const key = `${descriptor.cacheKey}:${descriptor.version}`;
+    const warming = cacheWarmInFlight.get(key);
+    if (warming) {
+      await Promise.race([
+        warming.catch(() => false),
+        new Promise((resolve) => window.setTimeout(resolve, 350))
+      ]);
+    }
     return documentCache.get(descriptor).catch(() => null);
   }
 
@@ -167,17 +175,24 @@
     if (prefetch && !connectionAllowsPrefetch()) return false;
 
     const key = `${descriptor.cacheKey}:${descriptor.version}`;
-    if (cacheWarmInFlight.has(key)) return false;
-    if (await documentCache.has(descriptor).catch(() => false)) return true;
+    const existing = cacheWarmInFlight.get(key);
+    if (existing) return existing;
 
-    cacheWarmInFlight.add(key);
+    const task = (async () => {
+      if (await documentCache.has(descriptor).catch(() => false)) return true;
+      try {
+        const blob = await fetchPdfBlob(item);
+        return await storeCachedPdf(item, blob);
+      } catch (_) {
+        return false;
+      }
+    })();
+
+    cacheWarmInFlight.set(key, task);
     try {
-      const blob = await fetchPdfBlob(item);
-      return await storeCachedPdf(item, blob);
-    } catch (_) {
-      return false;
+      return await task;
     } finally {
-      cacheWarmInFlight.delete(key);
+      if (cacheWarmInFlight.get(key) === task) cacheWarmInFlight.delete(key);
     }
   }
 
