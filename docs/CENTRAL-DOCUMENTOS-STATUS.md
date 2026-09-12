@@ -88,6 +88,17 @@ PR atual: nenhum para esta subfase. PR #134 foi mesclado na `main`.
 - PostHog seguro já implantado e validado no Portal antes do início desta fase.
 - `POSTHOG_PROJECT_TOKEN` já configurado externamente e eventos técnicos validados.
 
+## Decisão futura registrada — histórico de atividade do Drive
+
+O usuário confirmou que deseja, em fase posterior, consultar o histórico de atividade de arquivos e pastas dentro da Central de Documentos.
+
+Diretriz registrada:
+- avaliar integração com a **Google Drive Activity API** após a navegação read-only principal estar validada;
+- objetivo: exibir eventos como renomeação, movimentação, criação, exclusão/restauração, alterações de compartilhamento e outras ações suportadas pela API;
+- isso **não entra na Fase 1** e não deve atrasar a conexão inicial com o Google Drive API;
+- antes de implementar, definir escopo OAuth adicional, política de retenção, modelo de exibição e quais eventos podem aparecer sem expor conteúdo clínico;
+- qualquer telemetria desse histórico continua proibida de enviar nome de arquivo, usuário, identificadores do Drive ou conteúdo ao PostHog.
+
 ## Pendências e bloqueios
 
 - PR #134 foi validado com 26 workflows sem falhas e mesclado na `main`.
@@ -156,7 +167,7 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Justificativas:** atender Meu Drive completo sem expor credenciais/fileId nem persistir documento clínico.  
 **Alternativas descartadas:** `drive.file`, service account para acervo atual, espelho de PDFs, cache persistente, token Google no frontend, IA/edição antecipadas.  
 **Ações externas concluídas:** PostHog seguro operacional; código da Fase 1 mesclado. Google Cloud OAuth ainda não configurado.  
-**Pendências:** confirmação pública do deploy não pôde ser feita pelos conectores disponíveis; configurar Google Drive API/OAuth; adicionar Client ID/Secret e chave AES na Cloudflare; consentir conta institucional; testar navegação/pesquisa/PDF; auditar PostHog.  
+**Pendências:** confirmação pública do deploy não pôde ser feita pelos conectores disponíveis; configurar Google Drive API/OAuth; adicionar Client ID/Secret e chave AES na Cloudflare; consentir conta institucional; testar navegação/pesquisa/PDF; auditar PostHog; em fase posterior, avaliar Google Drive Activity API para histórico de ações em arquivos/pastas.  
 **Riscos conhecidos:** restricted scope e requisitos de produção; refresh token curto em Testing; PDFs grandes ainda carregam integralmente nesta fase.  
 **Métricas / observabilidade:** instrumentação da Fase 1 pronta, mas nenhum evento documental real validado ainda.  
 **Próxima ação exata:** iniciar com o usuário a configuração manual do Google Cloud descrita em `docs/CENTRAL-DOCUMENTOS-OAUTH-SETUP.md`; solicitar apenas ações que não podem ser executadas pelos conectores disponíveis.  
