@@ -6,6 +6,8 @@
   const LIB_URL = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
   const LIB_INTEGRITY = 'sha512-z8IYLHO8bTgFqj+yrPyIJnzBDf7DDhWwiEsk4sY+Oe6J2M+WQequeGS7qioI5vT6rXgVRb4K1UVQC5ER7MKzKQ==';
   const HISTORY_LIMIT = 50;
+  const A4_PORTRAIT = Object.freeze([595.28, 841.89]);
+  const IMAGE_PAGE_MARGIN = 18;
   let libraryPromise = null;
 
   function loadLibrary() {
@@ -78,11 +80,63 @@
     const pageCount = documentPdf.getPageCount();
     if (!(pageCount > 0)) throw new Error('O PDF não possui páginas editáveis.');
     return {
+      kind: 'pdf',
       label: String(label || ''),
       cacheIdentity: String(cacheIdentity || ''),
       blobSize: blob.size,
       document: documentPdf,
       pageCount
+    };
+  }
+
+  async function loadImageSource(blob, label = 'Imagem', cacheIdentity = '') {
+    if (!(blob instanceof Blob)) throw new Error('Imagem inválida para edição.');
+    const type = String(blob.type || '').toLowerCase();
+    if (!['image/png', 'image/jpeg'].includes(type)) {
+      throw new Error('Formato de imagem não suportado. Use PNG ou JPEG.');
+    }
+
+    const lib = await loadLibrary();
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const documentPdf = await lib.PDFDocument.create();
+    let embedded;
+    try {
+      embedded = type === 'image/png'
+        ? await documentPdf.embedPng(bytes)
+        : await documentPdf.embedJpg(bytes);
+    } catch (_) {
+      throw new Error('Não foi possível converter esta imagem em página PDF.');
+    }
+
+    const natural = embedded.scale(1);
+    if (!(natural?.width > 0) || !(natural?.height > 0)) {
+      throw new Error('A imagem não possui dimensões válidas.');
+    }
+
+    const landscape = natural.width > natural.height;
+    const pageWidth = landscape ? A4_PORTRAIT[1] : A4_PORTRAIT[0];
+    const pageHeight = landscape ? A4_PORTRAIT[0] : A4_PORTRAIT[1];
+    const availableWidth = Math.max(1, pageWidth - (IMAGE_PAGE_MARGIN * 2));
+    const availableHeight = Math.max(1, pageHeight - (IMAGE_PAGE_MARGIN * 2));
+    const scale = Math.min(availableWidth / natural.width, availableHeight / natural.height);
+    const width = natural.width * scale;
+    const height = natural.height * scale;
+    const page = documentPdf.addPage([pageWidth, pageHeight]);
+
+    page.drawImage(embedded, {
+      x: (pageWidth - width) / 2,
+      y: (pageHeight - height) / 2,
+      width,
+      height
+    });
+
+    return {
+      kind: 'image',
+      label: String(label || 'Imagem'),
+      cacheIdentity: String(cacheIdentity || ''),
+      blobSize: blob.size,
+      document: documentPdf,
+      pageCount: 1
     };
   }
 
@@ -110,6 +164,22 @@
     session.revision += 1;
     commitHistory(session);
     return source.pageCount;
+  }
+
+  async function addImagePage(session, blob, options = {}) {
+    if (!session) throw new Error('Sessão de edição ausente.');
+    const source = await loadImageSource(blob, options.label || `Imagem ${session.sources.length + 1}`, options.cacheIdentity || '');
+    const sourceIndex = session.sources.length;
+    const requestedIndex = Number(options.insertAt);
+    const insertAt = Number.isInteger(requestedIndex)
+      ? Math.max(0, Math.min(session.plan.length, requestedIndex))
+      : session.plan.length;
+
+    session.sources.push(source);
+    session.plan.splice(insertAt, 0, { sourceIndex, pageIndex: 0 });
+    session.revision += 1;
+    commitHistory(session);
+    return insertAt;
   }
 
   function removePage(session, index) {
@@ -155,6 +225,7 @@
       displayPage: index + 1,
       sourceIndex: ref.sourceIndex,
       sourcePage: ref.pageIndex + 1,
+      sourceKind: session.sources[ref.sourceIndex]?.kind || 'pdf',
       sourceLabel: session.sources[ref.sourceIndex]?.label || `Documento ${ref.sourceIndex + 1}`
     }));
   }
@@ -194,6 +265,7 @@
     loadLibrary,
     createSession,
     addDocument,
+    addImagePage,
     removePage,
     movePage,
     undo,
@@ -204,6 +276,6 @@
     pageCount,
     sourceCount,
     buildBlob,
-    version: 'phase3-v1'
+    version: 'phase3-v2'
   });
 })();

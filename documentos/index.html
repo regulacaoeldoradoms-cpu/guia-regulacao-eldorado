@@ -103,12 +103,14 @@
           <section class="documents-editor" id="documentsEditor" hidden aria-label="Editor local de PDF">
             <div class="documents-editor-banner">
               <strong>Edição local</strong>
-              <span>As alterações ainda não serão salvas no Google Drive.</span>
+              <span>As alterações ainda não serão salvas no Google Drive. Você também pode colar um print com Ctrl+V.</span>
             </div>
             <div class="documents-editor-toolbar">
               <button class="portal-button secondary" id="editorUndoButton" type="button">Desfazer</button>
               <button class="portal-button secondary" id="editorRedoButton" type="button">Refazer</button>
               <button class="portal-button secondary" id="editorMergeButton" type="button">Unir outro PDF</button>
+              <button class="portal-button secondary" id="editorImageButton" type="button">Adicionar imagem</button>
+              <input id="editorImageInput" type="file" accept="image/*" multiple hidden>
               <button class="portal-button primary" id="editorPreviewButton" type="button">Atualizar prévia</button>
               <button class="portal-button secondary" id="editorExitButton" type="button">Sair do editor</button>
             </div>
@@ -131,7 +133,7 @@
   <script src="/js/portal-interactions.js?v=20260910-2"></script>
   <script src="/js/tools-catalog.js?v=20260911-3"></script>
   <script src="/js/document-cache.js?v=20260912-1"></script>
-  <script src="/js/document-editor.js?v=20260912-1"></script>
-  <script src="/js/documents.js?v=20260912-3"></script>
+  <script src="/js/document-editor.js?v=20260912-2"></script>
+  <script src="/js/documents.js?v=20260912-4"></script>
 </body>
 </html>

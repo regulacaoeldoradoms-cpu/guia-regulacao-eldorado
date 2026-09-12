@@ -77,6 +77,8 @@
     editorUndo: document.getElementById('editorUndoButton'),
     editorRedo: document.getElementById('editorRedoButton'),
     editorMerge: document.getElementById('editorMergeButton'),
+    editorImage: document.getElementById('editorImageButton'),
+    editorImageInput: document.getElementById('editorImageInput'),
     editorPreview: document.getElementById('editorPreviewButton'),
     editorExit: document.getElementById('editorExitButton')
   };
@@ -413,6 +415,86 @@
       showStatus(error.message || 'Não foi possível iniciar o editor PDF.', 'warning');
     } finally {
       els.editPdf.disabled = false;
+    }
+  }
+
+  async function normalizeImageForPdf(blob) {
+    if (!(blob instanceof Blob) || !String(blob.type || '').startsWith('image/')) {
+      throw new Error('Selecione uma imagem válida.');
+    }
+    const type = String(blob.type || '').toLowerCase();
+    if (type === 'image/png' || type === 'image/jpeg') return blob;
+
+    const bitmap = await createImageBitmap(blob).catch(() => null);
+    if (!bitmap) throw new Error('Este formato de imagem não pôde ser convertido pelo navegador.');
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, bitmap.width);
+      canvas.height = Math.max(1, bitmap.height);
+      const context = canvas.getContext('2d', { alpha: false });
+      if (!context) throw new Error('Não foi possível preparar a imagem.');
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0);
+      const converted = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!(converted instanceof Blob)) throw new Error('Não foi possível converter a imagem.');
+      return converted;
+    } finally {
+      bitmap.close?.();
+    }
+  }
+
+  async function addImageBlobToEditor(blob, { pasted = false } = {}) {
+    if (!state.editorSession || !canEditDocuments()) return false;
+    const started = performance.now();
+    setEditorStatus(pasted ? 'Colando imagem como nova página…' : 'Adicionando imagem como nova página…');
+    try {
+      const normalized = await normalizeImageForPdf(blob);
+      await window.PortalPdfEditor.addImagePage(state.editorSession, normalized, {
+        label: pasted ? 'Imagem colada' : 'Imagem adicionada'
+      });
+      renderEditorPages();
+      scheduleEditorPreview();
+      capture('pdf_edit_completed', {
+        route: '/documentos/',
+        duration_ms: duration(started),
+        operation: 'insert_image',
+        size_bucket: sizeBucket(blob.size)
+      });
+      setEditorStatus(
+        pasted
+          ? 'Print colado como nova página. Você pode reorganizar ou excluir normalmente.'
+          : 'Imagem adicionada como nova página. Você pode reorganizar ou excluir normalmente.',
+        'success'
+      );
+      return true;
+    } catch (error) {
+      setEditorStatus(error.message || 'Não foi possível adicionar a imagem.', 'warning');
+      return false;
+    }
+  }
+
+  async function addSelectedImages(files) {
+    const images = Array.from(files || []).filter((file) => String(file?.type || '').startsWith('image/'));
+    if (!images.length) {
+      setEditorStatus('Selecione pelo menos uma imagem.', 'warning');
+      return;
+    }
+    for (const image of images) {
+      await addImageBlobToEditor(image, { pasted: false });
+    }
+  }
+
+  async function handleEditorPaste(event) {
+    if (!state.editorSession || !canEditDocuments()) return;
+    const images = Array.from(event.clipboardData?.items || [])
+      .filter((item) => String(item.type || '').startsWith('image/'))
+      .map((item) => item.getAsFile())
+      .filter(Boolean);
+    if (!images.length) return;
+    event.preventDefault();
+    for (const image of images) {
+      await addImageBlobToEditor(image, { pasted: true });
     }
   }
 
@@ -1061,6 +1143,12 @@
   els.editorUndo.addEventListener('click', undoEditor);
   els.editorRedo.addEventListener('click', redoEditor);
   els.editorMerge.addEventListener('click', choosePdfToMerge);
+  els.editorImage.addEventListener('click', () => els.editorImageInput.click());
+  els.editorImageInput.addEventListener('change', async () => {
+    const files = els.editorImageInput.files;
+    els.editorImageInput.value = '';
+    await addSelectedImages(files);
+  });
   els.editorPreview.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
   els.editorExit.addEventListener('click', exitEditor);
 
@@ -1070,6 +1158,10 @@
     if (!button || !row) return;
     applyEditorOperation(button.dataset.editorAction, Number(row.dataset.editorIndex));
   });
+
+  document.addEventListener('paste', (event) => {
+    handleEditorPaste(event).catch(() => {});
+  }, true);
 
   navigator.serviceWorker?.addEventListener('message', (event) => {
     if (event.data?.type !== 'PORTAL_DOCUMENT_STREAM_FAILED') return;
