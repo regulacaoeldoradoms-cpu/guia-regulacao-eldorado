@@ -76,7 +76,7 @@ test('excluir e reordenar páginas são reversíveis e não permitem remover a �
   assert.equal(editor.canRedo(session), true);
 
   assert.equal(editor.redo(session), true);
-  assert.deepEqual(editor.pageModel(session).map((page) => page.sourcePage), [1, 3, 2]);
+  assert.deepEqual(Array.from(editor.pageModel(session), (page) => Number(page.sourcePage)), [1, 3, 2]);
 
   const single = await editor.createSession(new Blob([new Uint8Array([1])], { type: 'application/pdf' }));
   assert.equal(editor.removePage(single, 0), false);
