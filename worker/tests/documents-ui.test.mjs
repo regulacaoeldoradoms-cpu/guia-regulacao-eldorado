@@ -85,7 +85,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260912-4/);
+  assert.match(html, /documents\.js\?v=20260912-5/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -123,12 +123,51 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260912-4/);
+  assert.match(html, /documents\.css\?v=20260912-5/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
   assert.match(css, /\.documents-viewer-head strong\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*text-overflow:\s*ellipsis;/s);
   assert.doesNotMatch(css, /\.documents-viewer-head strong\s*\{[^}]*max-width:\s*min\(54vw,\s*640px\)/s);
+});
+
+test('visualizador próprio usa PDF.js self-hosted com segurança e fallback nativo', () => {
+  const html = read('documentos/index.html');
+  const client = read('js/documents.js');
+  const viewer = read('js/document-viewer.js');
+
+  assert.match(html, /id="documentsCustomViewer"/);
+  assert.match(html, /id="pdfThumbnailRail"/);
+  assert.match(html, /id="pdfPageScroll"/);
+  assert.match(html, /id="pdfZoomOutButton"/);
+  assert.match(html, /id="pdfFitWidthButton"/);
+  assert.match(html, /document-viewer\.js\?v=20260912-1/);
+  assert.match(html, /documents\.js\?v=20260912-5/);
+  assert.match(html, /documents\.css\?v=20260912-5/);
+  assert.match(html, /id="documentsPdfFrame"[^>]*hidden/);
+
+  assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
+  assert.match(viewer, /\/vendor\/pdfjs\/pdf\.min\.mjs/);
+  assert.match(viewer, /\/vendor\/pdfjs\/pdf\.worker\.min\.mjs/);
+  assert.match(viewer, /enableScripting:\s*false/);
+  assert.match(viewer, /isEvalSupported:\s*false/);
+  assert.match(viewer, /cMapUrl:\s*CMAP_URL/);
+  assert.match(viewer, /standardFontDataUrl:\s*STANDARD_FONT_URL/);
+  assert.match(viewer, /wasmUrl:\s*WASM_URL/);
+  assert.match(viewer, /iccUrl:\s*ICC_URL/);
+  assert.match(viewer, /IntersectionObserver/);
+  assert.match(viewer, /MAX_CANVAS_PIXELS/);
+  assert.doesNotMatch(viewer, /cdn\.jsdelivr\.net|unpkg\.com|googleapis\.com/);
+
+  assert.ok(fs.statSync(path.join(root, 'vendor/pdfjs/pdf.min.mjs')).size > 100_000);
+  assert.ok(fs.statSync(path.join(root, 'vendor/pdfjs/pdf.worker.min.mjs')).size > 500_000);
+  assert.ok(fs.existsSync(path.join(root, 'vendor/pdfjs/LICENSE')));
+
+  assert.match(client, /openWithPortalViewer/);
+  assert.match(client, /showIframeViewerSurface/);
+  assert.match(client, /registerProgressiveStream/);
+  assert.match(client, /pdf_first_page_visible/);
+  assert.match(client, /pdfReadyEmitted/);
 });
 
 test('editor expõe união de outro PDF e sincroniza ações da lista', () => {
@@ -154,7 +193,7 @@ test('editor aceita imagens e Ctrl+V como novas páginas', () => {
   assert.match(html, /id="editorImageButton"[^>]*>Adicionar imagem<\/button>/);
   assert.match(html, /Ctrl\+V/);
   assert.match(html, /document-editor\.js\?v=20260912-2/);
-  assert.match(html, /documents\.js\?v=20260912-4/);
+  assert.match(html, /documents\.js\?v=20260912-5/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /clipboardData/);
   assert.match(client, /addImageBlobToEditor/);
