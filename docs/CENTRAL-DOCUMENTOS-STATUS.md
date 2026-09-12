@@ -20,9 +20,9 @@ Subfase atual: iniciar a Fase 2 com visualização progressiva de PDF, medição
 
 ## Branch / PR
 
-Branch atual: nenhuma após a consolidação do status; a próxima mudança funcional deve abrir nova branch a partir da `main`.
+Branch atual: `feat/central-docs-phase2-progressive-viewer`, criada da main pós-encerramento da Fase 1 (`876d0272`).
 
-PR atual: nenhum após a consolidação; PR #136 foi funcional e PR #137 apenas registra o status pós-merge.
+PR atual: ainda não aberto para a Fase 2.
 
 ## Entregas concluídas nesta unidade
 
@@ -153,12 +153,42 @@ Diretriz registrada:
 - Fase 1 encerrada: pesquisa global, abertura de PDF e telemetria documental foram comprovadas em produção sem propriedades sensíveis observadas.
 - A alteração de UX/cargos acumuláveis desta subfase ainda precisa passar por PR/checks antes de ir para a main.
 
+## Fase 2 — implementação em andamento
+
+Unidade 2A implementada na branch:
+- documento `docs/CENTRAL-DOCUMENTOS-FASE-2.md` criado;
+- Service Worker ganhou rota virtual efêmera `/__portal_document_pdf/<viewId>`;
+- a página registra referência opaca + sessão apenas em memória do Service Worker, com TTL curto e heartbeat;
+- requisições `Range` do visualizador são encaminhadas ao endpoint documental protegido;
+- respostas continuam `no-store` e não entram em Cache Storage;
+- endpoint virtual não contém fileId, nome de arquivo ou token;
+- modo progressivo usa iframe nativo diretamente sobre o stream;
+- fallback Blob integral da Fase 1 permanece automático;
+- `pdf_first_page_visible` passa a ser emitido somente no modo progressivo após `load` + confirmação de área visível;
+- testes estáticos e de privacidade foram ampliados;
+- cache do Service Worker avançou para V11.
+
+Decisões desta unidade:
+- não usar CDN de terceiros/PDF.js remoto em página clínica;
+- não colocar token de sessão ou ticket bearer na URL do PDF, evitando exposição em histórico/logs;
+- não persistir sessão/referência em IndexedDB/Cache Storage;
+- usar memória efêmera do Service Worker e reidratação por heartbeat;
+- manter fallback Blob para compatibilidade e rollback funcional.
+
+Alternativas descartadas:
+- biblioteca PDF remota via CDN, por ampliar superfície de supply chain em tela com documentos sensíveis;
+- URL temporária com credencial no path/query, por risco de registro em logs/histórico;
+- cache persistente do PDF para acelerar reaberturas;
+- considerar o `load` do Blob integral como `pdf_first_page_visible`, pois isso não mede primeira página com confiabilidade.
+
 ## Riscos conhecidos
 
 - refresh token de OAuth externo em status Testing expira em prazo curto segundo Google; não usar Testing como solução de produção;
 - escopo `drive` é restrito e exige processo de conformidade apropriado;
 - nomes de arquivos podem conter dados identificáveis, portanto não entram em PostHog/logs;
 - cache persistente ou service worker mal configurado poderia reter documento clínico; explicitamente proibido;
+- o registro progressivo do Service Worker é volátil e pode desaparecer se o processo reiniciar; heartbeat de 5 s e fallback Blob mitigam esse risco;
+- o comportamento do visualizador PDF nativo com Range varia entre navegadores e precisa de validação real antes de encerrar a Fase 2;
 - escrita concorrente futura pode sobrescrever versão externa se a comparação de `version` for omitida.
 
 ## Encerramento formal da Fase 1 — 11/09/2026
@@ -212,13 +242,13 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. mesclar o PR #139 com o encerramento formal da Fase 1;
-2. criar branch isolada da **Fase 2 — Visualização de alta performance**;
-3. documentar o desenho técnico da visualização progressiva;
-4. substituir gradualmente o iframe/Blob integral por renderização progressiva com primeira página priorizada;
-5. emitir `pdf_first_page_visible` de forma confiável;
-6. medir antes/depois no PostHog sem nomes, IDs ou conteúdo documental;
-7. encerrar a Fase 2 somente quando o critério do Guia Mestre estiver comprovado.
+1. abrir PR da unidade 2A;
+2. executar suíte completa e checks do GitHub;
+3. corrigir qualquer regressão antes de merge;
+4. após merge/deploy, abrir PDF real e confirmar que o modo progressivo funciona;
+5. verificar no PostHog `pdf_first_page_visible`, `pdf_open_started` e `pdf_ready`;
+6. comparar duração real com a linha de base da Fase 1, especialmente em PDFs médios/grandes;
+7. manter a Fase 2 aberta até comprovar ganho e ausência de regressão.
 
 ## Arquivos e fontes principais
 
@@ -241,17 +271,17 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 2 — Visualização de alta performance.  
-**Subfase / objetivo atual:** iniciar visualização progressiva de PDF, priorizar primeira página e tornar `pdf_first_page_visible` confiável.  
-**Estado real da main:** `866d981a3ca060e1f01064dc751a22d88aec0592` — PR #136 mesclado com as nomenclaturas Regulador(a) e Médico(a).  
-**Branch atual:** nenhuma após o merge do PR #137; abrir nova branch somente para a próxima unidade de trabalho.  
-**PR atual:** nenhum após o merge do PR #137. PR #136 concluiu a nomenclatura; PR #137 consolidou somente este status.  
-**Última ação concluída:** Fase 1 validada em produção: navegação, pesquisa e abertura de PDF funcionaram; PostHog confirmou `drive_search_completed`, `pdf_open_started` e `pdf_ready` com propriedades técnicas permitidas.  
-**Validação externa concluída:** OAuth real conectado; Meu Drive, pesquisa global e PDF real validados dentro do Portal.  
-**Checks e testes:** 23 workflows do PR #136 concluídos sem falhas; o PR #137 de status também deve ser mesclado somente com checks aprovados.  
-**Decisões tomadas:** perfil principal permanece único; funções adicionais podem acumular; `documentos` é exibido como `Regulador(a)` e concede leitura da Central; gestão de usuários fica fora da tela operacional; capabilities finas permanecem no backend.  
-**Justificativas:** reduzir drasticamente o espaço ocupado na Central e permitir combinações como Médico(a) + Regulador(a) sem trocar o perfil profissional.  
-**Alternativas descartadas:** continuar com uma checkbox para cada usuário dentro de `/documentos/`; transformar `documentos` em novo perfil primário mutuamente exclusivo; conceder acesso apenas escondendo/exibindo UI.  
-**Pendências:** mesclar o encerramento da Fase 1 e iniciar a Fase 2; futura Drive Activity API permanece registrada para fase posterior.  
-**Riscos conhecidos:** compatibilidade com acessos legados em `auth_document_access`; escopo OAuth restrito em modo Testing; PDF grande ainda é carregado integralmente e é o principal alvo da Fase 2.  
-**Próxima ação exata:** mesclar o PR #139, criar branch da Fase 2 a partir da main resultante e implementar a primeira unidade de visualização progressiva com medição real de primeira página.  
-**Arquivos principais:** `worker/additional-roles.js`, `worker/document-access.js`, `worker/auth-management-flex.js`, `admin/usuarios/index.html`, `js/admin-users.js`, `documentos/index.html`, `js/documents.js`, `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, este status.
+**Subfase / objetivo atual:** unidade 2A — stream progressivo protegido via Service Worker, com fallback Blob e métrica `pdf_first_page_visible`.  
+**Estado real da main:** `876d0272b300924cb1a23ae458966e6c7c20ed90` — PR #139 mesclado e Fase 1 formalmente encerrada.  
+**Branch atual:** `feat/central-docs-phase2-progressive-viewer`.  
+**PR atual:** ainda não aberto.  
+**Última ação concluída:** código da unidade 2A implementado: stream virtual efêmero no Service Worker, Range encaminhado ao Worker, heartbeat/release, fallback Blob, primeira página instrumentada e documentação/testes atualizados.  
+**Validação externa concluída:** Fase 1 comprovada em produção; PostHog registrou pesquisa e abertura PDF sem propriedades sensíveis.  
+**Checks e testes:** testes foram ampliados, mas ainda precisam rodar no PR da Fase 2.  
+**Decisões tomadas:** usar stream same-origin virtual mediado pelo Service Worker; referência/token somente em memória; TTL curto + heartbeat; no-store; sem ticket bearer em URL; sem biblioteca PDF de terceiros; Blob integral permanece fallback.  
+**Justificativas:** permitir início de visualização sem esperar Blob completo, preservar sessão/capability do Worker e evitar persistência/exposição de documentos clínicos.  
+**Alternativas descartadas:** PDF.js remoto/CDN; credencial/ticket na URL; cache persistente; fingir métrica de primeira página no Blob integral.  
+**Pendências:** abrir PR/checks; validar progressivo em produção; comprovar `pdf_first_page_visible`; comparar tempos com Fase 1; futura Drive Activity API permanece para fase posterior.  
+**Riscos conhecidos:** Service Worker pode reiniciar; navegador pode tratar Range/PDF nativo de modo diferente; heartbeat e fallback reduzem impacto, mas validação real é obrigatória.  
+**Próxima ação exata:** abrir PR da branch atual, aguardar todos os checks e corrigir qualquer falha; somente depois mesclar e pedir/realizar teste real do PDF progressivo.  
+**Arquivos principais:** `portal-sw.js`, `js/documents.js`, `documentos/index.html`, `worker/tests/documents-ui.test.mjs`, `worker/tests/observability-privacy.test.mjs`, `docs/CENTRAL-DOCUMENTOS-FASE-2.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
