@@ -114,6 +114,6 @@ test('cache local criptografa PDFs, limita tamanho e invalida por versão', () =
   assert.match(client, /storeCachedPdf/);
   assert.match(client, /warmPdfCache/);
   assert.match(client, /scheduleLikelyPdfWarmup/);
-  assert.match(client, /cache_state: 'hit'/);
+  assert.match(client, /'hit', false, 'cache'/);
   assert.match(client, /source: 'cache'|source,?/);
 });
