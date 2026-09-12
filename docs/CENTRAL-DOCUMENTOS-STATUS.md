@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: ampliar o editor essencial para aceitar imagens como páginas e registrar a decisão aprovada de substituir o visualizador nativo por um visualizador/editor próprio do Portal.
+Subfase atual: validar em produção imagens/clipboard já mesclados e iniciar a próxima unidade do visualizador/editor próprio do Portal com miniaturas controladas e drag-and-drop.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: ampliar o editor essencial para aceitar imagens como páginas e r
 
 ## Branch / PR
 
-Branch atual: `feat/document-editor-images-paste`.
+Branch atual: `docs/central-docs-images-postmerge` (somente consolidação pós-merge).
 
-PR atual: #156 — imagens e Ctrl+V no editor; rodada final com 21 workflows aprovados e 0 falhas.
+PR atual: nenhum funcional; PR #156 foi validado e mesclado.
 
 ## Entregas concluídas nesta unidade
 
@@ -395,6 +395,22 @@ Decisão:
 - funções centrais do editor não devem depender de comportamento implícito ou de instrução textual escondida;
 - ações como união devem possuir controle visível e feedback contextual.
 
+## Imagens e Ctrl+V validados e mesclados — 12/09/2026
+
+PR #156:
+- rodada final do Pull Request com 21 workflows aprovados e 0 falhas;
+- merge concluído na `main` em `c84f13e9dedc5d6b1b1ca5ff3b4e6aa0a07fd4bd`;
+- validações pós-merge da `main` também concluíram sem falhas;
+- editor aceita imagens como novas páginas locais e permite seleção múltipla;
+- prints/imagens no clipboard podem ser inseridos com **Ctrl+V** quando o evento de paste chega à página do Portal;
+- nenhum byte de imagem é enviado ao Worker/PostHog/Google Drive nesta fase.
+
+Próxima unidade aprovada:
+- substituir o visualizador nativo por uma superfície própria do Portal;
+- miniaturas de páginas renderizadas/controladas pelo Portal;
+- reorganização por arrastar e soltar;
+- paste global confiável durante a edição, sem perder o evento para o plugin PDF do navegador.
+
 ## Decisão aprovada — visualizador/editor próprio + imagens — 12/09/2026
 
 O usuário aprovou duas mudanças estruturais para a Fase 3:
@@ -545,14 +561,14 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** validar imagens/clipboard e preparar a substituição do iframe por visualizador/editor próprio com miniaturas arrastáveis.  
-**Estado real da main de entrada:** `f521f77300d03ef75c72c5cf23e61771ef1b22bc`.  
-**Branch atual:** `feat/document-editor-images-paste`.  
-**Decisão aprovada:** visualizador próprio do Portal; miniaturas controladas pela aplicação; drag-and-drop; imagens como páginas; Ctrl+V para prints.  
-**Implementação atual:** PNG/JPEG viram páginas A4 locais; formatos decodificáveis são normalizados para PNG; botão Adicionar imagem; paste de imagem; telemetria genérica insert_image.  
-**Segurança:** processamento 100% local no navegador; nenhuma imagem/clipboard enviado ao Worker, Drive ou PostHog.  
-**Limitação:** foco dentro do iframe nativo pode impedir o paste global; será removida com o visualizador próprio.  
-**Checks:** PR #156 com 21 workflows aprovados e 0 falhas após atualizar a expectativa de cache-bust do teste do editor.  
-**Pendências:** merge/deploy e teste real; depois iniciar visualizador próprio com miniaturas + drag-and-drop.  
-**Próxima ação exata:** mesclar o PR #156; após deploy testar botão Adicionar imagem e Ctrl+V fora do iframe.  
-**Arquivos principais:** `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `js/portal-observability.js`, `worker/tests/documents-ui.test.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Subfase / objetivo atual:** validar imagens/clipboard em produção e implementar o visualizador/editor próprio com miniaturas + drag-and-drop.  
+**Estado real da main:** `c84f13e9dedc5d6b1b1ca5ff3b4e6aa0a07fd4bd` — PR #156 mesclado.  
+**Branch atual:** `docs/central-docs-images-postmerge` (somente consolidação documental pós-merge).  
+**PR atual:** nenhum funcional; PR #156 concluído.  
+**Entregas novas:** Adicionar imagem, seleção múltipla, Ctrl+V de print, conversão local para página A4, orientação automática, telemetria genérica insert_image.  
+**Checks:** 21 workflows do PR + validações pós-merge sem falhas.  
+**Decisão arquitetural aprovada:** substituir iframe/visualizador nativo por visualizador/editor próprio do Portal; miniaturas próprias; reordenação por drag-and-drop; clipboard controlado pelo Portal.  
+**Segurança:** imagens e PDFs permanecem locais durante edição; sem escrita no Drive até Fase 4; PostHog não recebe conteúdo.  
+**Limitação restante:** paste pode falhar se o foco estiver dentro do iframe nativo; desaparece ao concluir o visualizador próprio.  
+**Próxima ação exata:** iniciar branch funcional do visualizador próprio, preservando o motor `document-editor.js` e o cache existente; primeira unidade deve entregar trilho de miniaturas controlado pelo Portal + drag-and-drop sem remover o fallback atual antes da validação.  
+**Arquivos principais:** `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `js/portal-observability.js`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
