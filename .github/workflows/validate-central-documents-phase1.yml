@@ -32,12 +32,17 @@ on:
       - 'css/documents.css'
       - 'js/documents.js'
       - 'js/document-cache.js'
+      - 'js/document-editor.js'
       - 'js/admin-users.js'
       - 'admin/usuarios/index.html'
       - 'worker/document-*.js'
       - 'worker/additional-roles.js'
       - 'worker/documents-router.js'
+      - 'worker/tests/documents-*.test.mjs'
+      - 'worker/tests/document-editor.test.mjs'
+      - 'portal-sw.js'
       - 'docs/CENTRAL-DOCUMENTOS-**'
+      - '.github/workflows/validate-central-documents-phase1.yml'
 
 jobs:
   validate:
@@ -82,6 +87,7 @@ jobs:
           grep -q "AES-GCM" js/document-cache.js
           grep -q "HKDF" js/document-cache.js
           grep -q "pdf-lib@1.17.1" js/document-editor.js
+          grep -q "script-src.*https://cdn.jsdelivr.net" documentos/index.html
           grep -q "sha512-z8IYLHO8bTgFqj+yrPyIJnzBDf7DDhWwiEsk4sY+Oe6J2M+WQequeGS7qioI5vT6rXgVRb4K1UVQC5ER7MKzKQ==" js/document-editor.js
           grep -q "As alterações ainda não serão salvas no Google Drive" documentos/index.html
           grep -q "editDocumentPdfPermission" admin/usuarios/index.html
