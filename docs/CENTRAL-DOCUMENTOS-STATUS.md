@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: validar em produção imagens/clipboard já mesclados e iniciar a próxima unidade do visualizador/editor próprio do Portal com miniaturas controladas e drag-and-drop.
+Subfase atual: concluir a pesquisa/arquitetura do visualizador-editor próprio e preparar a implementação incremental de miniaturas, drag-and-drop e objetos de imagem sobre páginas.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: validar em produção imagens/clipboard já mesclados e iniciar a
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-images-postmerge` (somente consolidação pós-merge).
+Branch atual: `docs/central-docs-editor-visual-research` (pesquisa e decisão arquitetural).
 
-PR atual: nenhum funcional; PR #156 foi validado e mesclado.
+PR atual: ainda não aberto neste registro; alteração exclusivamente documental.
 
 ## Entregas concluídas nesta unidade
 
@@ -411,6 +411,72 @@ Próxima unidade aprovada:
 - reorganização por arrastar e soltar;
 - paste global confiável durante a edição, sem perder o evento para o plugin PDF do navegador.
 
+## Pesquisa técnica do visualizador/editor próprio — 12/09/2026
+
+Documento novo: `docs/CENTRAL-DOCUMENTOS-EDITOR-VISUAL-V1.md`.
+
+Escopo pesquisado:
+- visualização própria de PDF;
+- miniaturas e drag-and-drop de páginas;
+- diferença entre **Adicionar imagem como página** e **Colar imagem**;
+- imagem como objeto sobre página existente;
+- mover objeto dentro/entre páginas;
+- quatro alças de transformação;
+- resize + rotação pela alça inferior direita;
+- undo/redo;
+- exportação/flatten local;
+- desempenho, segurança e privacidade.
+
+Decisões principais:
+- **Adicionar imagem como página** continua criando página independente e o Ctrl+V já aprovado continua associado a esse fluxo;
+- **Colar imagem** é função separada: abre seletor do armazenamento do dispositivo e insere a imagem como objeto sobre a página atual;
+- PDF.js será usado pela **Display Layer** para renderização, thumbnails, zoom e geometria;
+- o iframe/visualizador nativo será removido progressivamente, mas mantido como fallback até a validação real;
+- a `AnnotationEditorLayer` interna do PDF.js não será a base do editor porque não oferece uma API externa genérica/estável adequada ao Portal;
+- `pdf-lib` permanece responsável por montagem/exportação binária e flatten dos overlays;
+- o motor de interação escolhido para overlays é **DOM overlay + Pointer Events**, evitando um segundo scene graph pesado por página;
+- Fabric.js e Konva.js foram avaliados e permanecem contingência, mas não são a base inicial;
+- SortableJS é contingência para thumbnails caso Pointer Events próprios não entreguem touch/autoscroll suficientemente robustos;
+- coordenadas dos overlays serão normalizadas pela página, não armazenadas em pixels de tela;
+- mover overlay para outra página troca `pageId` e reconverte posição/tamanho relativos;
+- a alça inferior direita executará transformação combinada: distância ao centro controla escala e ângulo controla rotação;
+- gestos contínuos geram um único snapshot de histórico em `pointerup`;
+- ao gerar o PDF final, overlays serão flattened com `pdf-lib drawImage`, preservando o PDF vetorial/textual de base;
+- reeditabilidade do overlay após salvar/reabrir fica fora da Fase 3.
+
+Segurança pesquisada:
+- PDF.js teve advisories relevantes em 2024 e 2026;
+- implementação deve usar versão corrigida e fixada, self-hosted;
+- `enableScripting: false`;
+- `isEvalSupported: false`;
+- CSP sem script remoto na superfície documental;
+- worker PDF.js self-hosted;
+- limites de canvas/imagem para reduzir exaustão de memória;
+- advisories devem ser revisados antes de cada upgrade.
+
+Privacidade:
+- imagem, coordenadas, tamanho, página, nome de arquivo e conteúdo permanecem fora do PostHog;
+- somente operação genérica, duração, faixa de tamanho e status técnico podem ser observados.
+
+Alternativas descartadas:
+- continuar com iframe nativo como editor;
+- rasterizar a página inteira para “simplificar” edição;
+- basear o Portal em APIs internas do AnnotationEditorLayer;
+- usar Fabric/Konva como primeira arquitetura sem provar necessidade.
+
+Riscos/pontos de validação:
+- conversão entre espaço visual e coordenadas PDF deve ser testada em 0/90/180/270 graus e CropBox não padrão;
+- cross-page drag precisa de auto-scroll e testes touch;
+- o PDF.js deve ser integrado sem reintroduzir execução de JavaScript de PDFs;
+- overlay final é flattened; não ficará selecionável após reabrir o arquivo salvo.
+
+Plano incremental definido:
+- 3C.1: visualizador próprio somente leitura + thumbnails;
+- 3C.2: reordenação por drag-and-drop;
+- 3C.3: **Colar imagem** como overlay com mover/resize/rotação;
+- 3C.4: mover overlay entre páginas;
+- 3C.5: exportação/flatten integrada.
+
 ## Decisão aprovada — visualizador/editor próprio + imagens — 12/09/2026
 
 O usuário aprovou duas mudanças estruturais para a Fase 3:
@@ -533,16 +599,18 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. aguardar a propagação do deploy da `main` `187d631b`;
-2. abrir um PDF e entrar no editor;
-3. confirmar que **Unir outro PDF** aparece na barra;
-4. clicar na ação, escolher outro PDF com rótulo **Unir ao editor** e confirmar que suas páginas entram no resultado;
-5. validar desfazer/refazer da união, exclusão/reordenação e prévia final;
-6. encerrar a Fase 3 somente com PDF resultante válido e sem regressão de leitura/cache.
+1. abrir PR da pesquisa/arquitetura e validar os checks;
+2. mesclar somente se a documentação não regredir governança/segurança;
+3. criar branch funcional da unidade **3C.1** a partir da main pós-merge;
+4. self-host de PDF.js corrigido e fixado, com `enableScripting: false` e `isEvalSupported: false`;
+5. entregar visualizador próprio somente leitura + thumbnails, mantendo o iframe atual como fallback;
+6. validar desktop/mobile, PDF grande, rotação e primeira página;
+7. somente depois avançar para 3C.2 drag-and-drop e 3C.3 **Colar imagem**.
 
 ## Arquivos e fontes principais
 
 - `docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md`
+- `docs/CENTRAL-DOCUMENTOS-EDITOR-VISUAL-V1.md`
 - `docs/CENTRAL-DOCUMENTOS-STATUS.md`
 - `docs/CENTRAL-DOCUMENTOS-FASE-1.md`
 - `documentos/index.html`
@@ -561,14 +629,14 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** validar imagens/clipboard em produção e implementar o visualizador/editor próprio com miniaturas + drag-and-drop.  
-**Estado real da main:** `c84f13e9dedc5d6b1b1ca5ff3b4e6aa0a07fd4bd` — PR #156 mesclado.  
-**Branch atual:** `docs/central-docs-images-postmerge` (somente consolidação documental pós-merge).  
-**PR atual:** nenhum funcional; PR #156 concluído.  
-**Entregas novas:** Adicionar imagem, seleção múltipla, Ctrl+V de print, conversão local para página A4, orientação automática, telemetria genérica insert_image.  
-**Checks:** 21 workflows do PR + validações pós-merge sem falhas.  
-**Decisão arquitetural aprovada:** substituir iframe/visualizador nativo por visualizador/editor próprio do Portal; miniaturas próprias; reordenação por drag-and-drop; clipboard controlado pelo Portal.  
-**Segurança:** imagens e PDFs permanecem locais durante edição; sem escrita no Drive até Fase 4; PostHog não recebe conteúdo.  
-**Limitação restante:** paste pode falhar se o foco estiver dentro do iframe nativo; desaparece ao concluir o visualizador próprio.  
-**Próxima ação exata:** iniciar branch funcional do visualizador próprio, preservando o motor `document-editor.js` e o cache existente; primeira unidade deve entregar trilho de miniaturas controlado pelo Portal + drag-and-drop sem remover o fallback atual antes da validação.  
-**Arquivos principais:** `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `js/portal-observability.js`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Subfase / objetivo atual:** concluir o registro arquitetural e iniciar 3C.1 — visualizador próprio somente leitura + thumbnails.  
+**Estado real da main de entrada:** `41d3eedc79fb54825b63bc186b9fe028a17d22c1`.  
+**Branch atual:** `docs/central-docs-editor-visual-research`.  
+**PR atual:** ainda não aberto neste registro; mudança exclusivamente documental.  
+**Última decisão do usuário:** manter **Adicionar imagem como página** e criar função separada **Colar imagem**, escolhida do armazenamento, como objeto sobre página existente; objeto move, muda de página, redimensiona por quatro alças e a inferior direita combina resize + rotação.  
+**Pesquisa concluída:** PDF.js Display Layer para render; pdf-lib para montagem/flatten; DOM overlay + Pointer Events para objetos; Fabric/Konva como contingência; SortableJS apenas se necessário para robustez de thumbnails.  
+**Segurança:** PDF.js deve ser corrigido/pinado/self-hosted; scripting e eval desabilitados; CSP restrita; conteúdo/coords/nomes fora do PostHog.  
+**Documento novo:** `docs/CENTRAL-DOCUMENTOS-EDITOR-VISUAL-V1.md`.  
+**Riscos:** geometria de páginas rotacionadas/CropBox, cross-page drag/autoscroll, consumo de memória e paridade prévia x PDF final.  
+**Próxima ação exata:** abrir PR da pesquisa; após checks/merge, criar branch funcional 3C.1 e implementar PDF.js self-hosted + canvas por página + trilho de thumbnails, mantendo o iframe atual como fallback até validação real.  
+**Arquivos principais:** `docs/CENTRAL-DOCUMENTOS-EDITOR-VISUAL-V1.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`, `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`.
