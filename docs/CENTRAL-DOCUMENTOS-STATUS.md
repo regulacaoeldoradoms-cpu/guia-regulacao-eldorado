@@ -113,6 +113,8 @@ Diretriz registrada:
 
 ## Descoberta técnica na validação real
 
+- Durante o consentimento real, o Google exibiu aviso de **app não verificado**. Isso é esperado nesta etapa porque o OAuth está em modo de testes e a conta institucional foi cadastrada como usuário de teste. O fluxo deve continuar apenas com essa conta autorizada até a futura verificação/publicação.
+
 - Revisão visual do Cloudflare mostrou que a linha da variável `GOOGLE_DRIVE_OAUTH_CLIENT_ID` está presente, porém o campo **Value** aparece vazio; `GOOGLE_DRIVE_OAUTH_CLIENT_SECRET` está como Secret, `GOOGLE_DRIVE_OAUTH_REDIRECT_URI` possui URL e `DRIVE_TOKEN_ENCRYPTION_KEY` está como Secret. A ausência do valor do Client ID explica o estado `Integração aguardando configuração` mostrado pela Central.
 - Validação real em `/documentos/` mostrou **Integração aguardando configuração** mesmo após o usuário informar que cadastrou as três variáveis no Cloudflare.
 - Isso comprova que o Worker em produção não está enxergando pelo menos uma das quatro configurações exigidas por `driveOAuthConfiguration`: `GOOGLE_DRIVE_OAUTH_CLIENT_ID`, `GOOGLE_DRIVE_OAUTH_CLIENT_SECRET`, `GOOGLE_DRIVE_OAUTH_REDIRECT_URI` ou `DRIVE_TOKEN_ENCRYPTION_KEY`.
@@ -190,5 +192,5 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Pendências:** confirmação pública do deploy não pôde ser feita pelos conectores disponíveis; executar o consentimento institucional pela Central; testar navegação/pesquisa/PDF; auditar PostHog; em fase posterior, avaliar Google Drive Activity API para histórico de ações em arquivos/pastas.  
 **Riscos conhecidos:** restricted scope e requisitos de produção; refresh token curto em Testing; PDFs grandes ainda carregam integralmente nesta fase.  
 **Métricas / observabilidade:** instrumentação da Fase 1 pronta, mas nenhum evento documental real validado ainda.  
-**Próxima ação exata:** recarregar `https://regulacaoeldoradoms.com.br/documentos/`; confirmar mudança para `Drive aguardando conexão` e clicar em `Conectar Google Drive` para iniciar o consentimento da conta institucional.  
+**Próxima ação exata:** no aviso `O Google não verificou este app`, clicar em `Continuar` usando somente a conta institucional cadastrada como test user; na tela seguinte, conferir as permissões solicitadas antes de consentir.  
 **Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, `docs/CENTRAL-DOCUMENTOS-OAUTH-SETUP.md`, arquitetura V1, este status, `worker/document-drive.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`.
