@@ -90,7 +90,7 @@ Contas profissionais ativas, não autocadastradas, provisionadas pelo Desenvolve
 ou pelo bootstrap técnico e elegíveis ao chat recebem amizades iniciais entre si.
 Os perfis lógicos abrangidos são:
 
-- Médico;
+- Médico(a);
 - Recepção;
 - Coordenação;
 - Técnico em Telemedicina;
