@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: validar em produção a ação explícita **Unir outro PDF** já mesclada e concluir os testes funcionais reais do editor da Fase 3.
+Subfase atual: ampliar o editor essencial para aceitar imagens como páginas e registrar a decisão aprovada de substituir o visualizador nativo por um visualizador/editor próprio do Portal.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: validar em produção a ação explícita **Unir outro PDF** já 
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-merge-action-postmerge` (somente consolidação pós-merge).
+Branch atual: `feat/document-editor-images-paste`.
 
-PR atual: nenhum funcional; PR #154 foi validado e mesclado.
+PR atual: ainda não aberto neste registro; implementação de imagens/clipboard em andamento.
 
 ## Entregas concluídas nesta unidade
 
@@ -395,6 +395,31 @@ Decisão:
 - funções centrais do editor não devem depender de comportamento implícito ou de instrução textual escondida;
 - ações como união devem possuir controle visível e feedback contextual.
 
+## Decisão aprovada — visualizador/editor próprio + imagens — 12/09/2026
+
+O usuário aprovou duas mudanças estruturais para a Fase 3:
+
+1. substituir progressivamente o visualizador PDF nativo do navegador por uma superfície própria do Portal, para permitir miniaturas controladas pelo sistema e reorganização por arrastar e soltar;
+2. permitir imagens como novas páginas do PDF, incluindo captura de tela colada diretamente com **Ctrl+V**.
+
+Justificativa:
+- o iframe do visualizador nativo não permite controle confiável das miniaturas internas nem interação consistente com drag-and-drop/clipboard do Portal;
+- essas funções pertencem ao escopo real de reorganização/união do editor e melhoram diretamente o fluxo operacional.
+
+Unidade implementada nesta branch:
+- `document-editor.js` aceita PNG/JPEG como fonte de página;
+- a imagem é convertida localmente em página A4, com orientação automática e ajuste proporcional sem corte;
+- outros formatos de imagem que o navegador consiga decodificar são convertidos localmente para PNG antes da inserção;
+- novo botão **Adicionar imagem** aceita uma ou várias imagens;
+- enquanto o editor está ativo, colar imagem/print com **Ctrl+V** cria nova página;
+- nenhuma imagem é enviada a servidor/terceiro;
+- telemetria usa apenas a operação genérica `insert_image`, sem nome, conteúdo ou dimensões clínicas;
+- cache-bust de `document-editor.js` e `documents.js` atualizado.
+
+Limitação temporária:
+- enquanto o iframe nativo ainda existir, eventos de clipboard podem não chegar ao Portal se o foco estiver dentro do próprio plugin PDF do navegador;
+- a substituição pelo visualizador próprio é o próximo passo arquitetural e elimina essa limitação.
+
 ## Fase 3 — implementação em andamento
 
 Unidades 3A/3B implementadas na branch:
@@ -520,13 +545,13 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** validar em produção a união explícita de PDFs e concluir a validação funcional do editor.  
-**Estado real da main:** `187d631be7e639d6ba7ea957d75b4abca7a1279e` — PR #154 mesclado.  
-**Branch atual:** `docs/central-docs-merge-action-postmerge` (somente consolidação documental pós-merge).  
-**PR atual:** nenhum funcional; PR #154 concluído.  
-**Última ação concluída:** botão **Unir outro PDF** e rótulos contextuais foram validados em CI e mesclados.  
-**Checks:** rodada final do PR #154 com 21 workflows aprovados e 0 falhas; falha anterior era apenas regex de teste com escape excessivo e foi corrigida.  
-**Segurança:** união permanece local no navegador; nenhuma escrita no Google Drive foi adicionada.  
-**Pendências:** deploy e validação real de união + undo/redo + prévia final.  
-**Próxima ação exata:** recarregar `/documentos/`, abrir um PDF, entrar no editor, clicar **Unir outro PDF** e selecionar outro PDF da lista.  
-**Arquivos principais:** `documentos/index.html`, `js/documents.js`, `worker/tests/documents-ui.test.mjs`, `js/document-editor.js`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Subfase / objetivo atual:** validar imagens/clipboard e preparar a substituição do iframe por visualizador/editor próprio com miniaturas arrastáveis.  
+**Estado real da main de entrada:** `f521f77300d03ef75c72c5cf23e61771ef1b22bc`.  
+**Branch atual:** `feat/document-editor-images-paste`.  
+**Decisão aprovada:** visualizador próprio do Portal; miniaturas controladas pela aplicação; drag-and-drop; imagens como páginas; Ctrl+V para prints.  
+**Implementação atual:** PNG/JPEG viram páginas A4 locais; formatos decodificáveis são normalizados para PNG; botão Adicionar imagem; paste de imagem; telemetria genérica insert_image.  
+**Segurança:** processamento 100% local no navegador; nenhuma imagem/clipboard enviado ao Worker, Drive ou PostHog.  
+**Limitação:** foco dentro do iframe nativo pode impedir o paste global; será removida com o visualizador próprio.  
+**Pendências:** abrir PR, checks, merge/deploy e teste real; depois iniciar visualizador próprio com miniaturas + drag-and-drop.  
+**Próxima ação exata:** abrir PR da branch e validar checks; após deploy testar botão Adicionar imagem e Ctrl+V fora do iframe.  
+**Arquivos principais:** `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `js/portal-observability.js`, `worker/tests/documents-ui.test.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
