@@ -85,6 +85,7 @@
     session.pageObserver?.disconnect?.();
     session.thumbObserver?.disconnect?.();
     session.activeObserver?.disconnect?.();
+    session.firstPageWindowObserver?.disconnect?.();
     session.resizeObserver?.disconnect?.();
     if (session.resizeTimer) clearTimeout(session.resizeTimer);
     for (const record of session.pages.values()) clearRenderedPage(record);
@@ -224,8 +225,7 @@
       canvasContext: context,
       viewport,
       transform,
-      intent: 'display',
-      annotationMode: 0
+      intent: 'display'
     });
 
     try {
@@ -245,13 +245,26 @@
 
     if (pageNumber === 1 && !session.firstPageRendered) {
       session.firstPageRendered = true;
-      requestAnimationFrame(() => requestAnimationFrame(() => {
+      const notifyVisible = () => {
         if (session.closed || session.firstPageNotified) return;
         const rect = record.container.getBoundingClientRect();
-        if (rect.width <= 0 || rect.height <= 0 || rect.bottom <= 0 || rect.top >= window.innerHeight) return;
+        const width = window.innerWidth || document.documentElement.clientWidth || 0;
+        const height = window.innerHeight || document.documentElement.clientHeight || 0;
+        if (rect.width <= 0 || rect.height <= 0 || rect.bottom <= 0 || rect.right <= 0 || rect.top >= height || rect.left >= width) return;
         session.firstPageNotified = true;
+        session.firstPageWindowObserver?.disconnect?.();
+        session.firstPageWindowObserver = null;
         session.onFirstPageVisible?.();
-      }));
+      };
+
+      requestAnimationFrame(() => requestAnimationFrame(notifyVisible));
+      if (typeof IntersectionObserver === 'function') {
+        session.firstPageWindowObserver?.disconnect?.();
+        session.firstPageWindowObserver = new IntersectionObserver((entries) => {
+          if (entries.some((entry) => entry.isIntersecting && entry.intersectionRatio > 0)) notifyVisible();
+        }, { threshold: 0.01 });
+        session.firstPageWindowObserver.observe(record.container);
+      }
     }
   }
 
@@ -280,8 +293,7 @@
       canvasContext: context,
       viewport,
       transform,
-      intent: 'display',
-      annotationMode: 0
+      intent: 'display'
     });
 
     try {
@@ -461,6 +473,7 @@
       pageObserver: null,
       thumbObserver: null,
       activeObserver: null,
+      firstPageWindowObserver: null,
       resizeObserver: null,
       resizeTimer: null,
       pageRatios: new Map(),
