@@ -278,7 +278,7 @@
   .documents-search-form { width: 100%; }
   .documents-item { grid-template-columns: 36px minmax(0, 1fr); }
   .documents-item-action { grid-column: 2; }
-  .documents-viewer-head strong { max-width: 72vw; }
+  .documents-viewer-head strong { max-width: 100%; }
   .documents-viewer-actions { gap: 5px; }
   .documents-edit-trigger { padding-inline: 10px; }
   .documents-editor-toolbar .portal-button { flex: 1 1 42%; }
