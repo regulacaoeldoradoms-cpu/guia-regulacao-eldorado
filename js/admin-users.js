@@ -2,6 +2,7 @@
 
 (async () => {
   const auth = window.RegulationAuth;
+  await auth.revalidateSession({ redirectOnInvalid: true });
   const currentUser = await auth.requireRole(['coordenacao']);
   if (!currentUser || !['admin', 'coordenacao'].includes(currentUser.role)) return;
 

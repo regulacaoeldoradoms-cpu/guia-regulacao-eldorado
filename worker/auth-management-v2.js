@@ -641,6 +641,7 @@ async function updateManagedUser(request, env, url, origin) {
   const body = await request.json().catch(() => ({}));
   const fields = [];
   const values = [];
+  let invalidatesSessions = target.username !== actor.username;
 
   if (Object.prototype.hasOwnProperty.call(body, 'name')) {
     const name = bounded(body.name);
@@ -651,11 +652,14 @@ async function updateManagedUser(request, env, url, origin) {
     fields.push('job_title = ?'); values.push(bounded(body.jobTitle));
   }
   if (Object.prototype.hasOwnProperty.call(body, 'active')) {
-    fields.push('active = ?'); values.push(body.active ? 1 : 0);
+    const nextActive = body.active ? 1 : 0;
+    if (nextActive !== (target.active ? 1 : 0)) invalidatesSessions = true;
+    fields.push('active = ?'); values.push(nextActive);
   }
   if (Object.prototype.hasOwnProperty.call(body, 'role') && body.role !== target.role) {
     const nextRole = bounded(body.role, 30);
     if (!assignableRoles(actor.role).has(nextRole)) return json({ error: 'Você não pode conceder este perfil de acesso.' }, 403, origin);
+    invalidatesSessions = true;
     fields.push('role = ?'); values.push(nextRole);
   }
   if (Object.prototype.hasOwnProperty.call(body, 'councilRole')) {
@@ -665,7 +669,8 @@ async function updateManagedUser(request, env, url, origin) {
     fields.push('council_role = ?'); values.push(councilRole);
   }
   if (!fields.length) return json({ user: publicUser(target) }, 200, origin);
-  fields.push('session_version = session_version + 1', 'updated_at = CURRENT_TIMESTAMP');
+  if (invalidatesSessions) fields.push('session_version = session_version + 1');
+  fields.push('updated_at = CURRENT_TIMESTAMP');
   values.push(target.username);
   await env.AUTH_DB.prepare(`UPDATE auth_users SET ${fields.join(', ')} WHERE username = ?`).bind(...values).run();
   return json({ user: publicUser(await getDbUser(env, target.username)) }, 200, origin);

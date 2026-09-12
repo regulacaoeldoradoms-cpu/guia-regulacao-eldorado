@@ -235,7 +235,7 @@ jobs:
           grep -q "telemedicina: 'Técnico em Telemedicina'" js/account-section-shell.js
           grep -q "E-mail de segurança" seguranca/index.html
           grep -q "href: '/seguranca/'" js/tools-catalog.js
-          grep -q "admin-users.js?v=20260912-4" admin/usuarios/index.html
+          grep -q "admin-users.js?v=20260912-5" admin/usuarios/index.html
           grep -q "telemedicina-business-day.js" telemedicina/index.html
           grep -q "account-admin.css" telemedicina/index.html
           grep -q "modal-backdrop.open" css/account-admin.css

@@ -146,6 +146,10 @@ async function handleAdminUsers(request, env, origin) {
   const actor = actorBase ? await decoratePortalUser(env, actorBase) : null;
   const targetUsername = adminTargetUsername(url.pathname);
 
+  if (!actor) {
+    return jsonError('Sessão inválida ou expirada. Entre novamente.', 401, origin);
+  }
+
   if (actor?.role === 'coordenacao' && targetUsername && await telemedicineAccessFor(env, targetUsername)) {
     return jsonError('O perfil Técnico em Telemedicina é gerenciado somente pelo Desenvolvedor.', 403, origin);
   }

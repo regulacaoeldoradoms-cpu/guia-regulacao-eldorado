@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: unidade 3A/3B — núcleo reversível do editor local, união de PDFs e capability explícita de edição; nenhuma escrita no Drive pertence a esta fase.
+Subfase atual: corrigir regressão de sessão no auto-gerenciamento do Desenvolvedor e então concluir a validação real da capability `edit` da Fase 3.
 
 ## Estado de entrada
 
@@ -227,6 +227,31 @@ Alternativas descartadas:
 - cache persistente do PDF para acelerar reaberturas;
 - considerar o `load` do Blob integral como `pdf_first_page_visible`, pois isso não mede primeira página com confiabilidade.
 
+## Bloqueio encontrado na concessão do editor — 12/09/2026
+
+Durante a tentativa real de habilitar **Permitir editor de PDF** na própria conta Desenvolvedor/Regulador(a), a interface exibiu incorretamente:
+
+`Somente o Desenvolvedor pode conceder funções adicionais.`
+
+Diagnóstico:
+- a tela considerava a sessão como Desenvolvedor a partir do usuário em cache;
+- ao salvar alterações da própria conta, `updateManagedUser` sempre incrementava `session_version`, mesmo quando papel e estado ativo não mudavam;
+- isso invalidava imediatamente o token da própria sessão;
+- a operação seguinte de capability documental ocorria com token já invalidado;
+- em uma nova tentativa, `auth-management-flex` recebia ator nulo e devolvia a mensagem de permissão de Desenvolvedor, mascarando o problema real de sessão expirada.
+
+Correção implementada na branch `fix/developer-self-edit-session`:
+- edição da própria conta preserva a sessão quando apenas dados não críticos mudam;
+- mudança do próprio papel ou estado ativo continua incrementando `session_version` por segurança;
+- alterações em contas de terceiros continuam invalidando as sessões do alvo como antes;
+- sessão inválida agora retorna 401 com mensagem explícita de sessão expirada, em vez de falsa mensagem de falta de papel;
+- `/admin/usuarios/` força revalidação da sessão antes de permitir gestão;
+- versão de `admin-users.js` avançou para evitar cache do cliente antigo;
+- teste de regressão cobre exatamente o fluxo: salvar a própria conta Desenvolvedor + conceder capability `edit` na segunda requisição com o mesmo token.
+
+Impacto observado:
+- a tentativa anterior pode ter deixado a sessão atual do navegador já invalidada. Após o deploy da correção, será necessário entrar novamente **uma vez** se essa sessão antiga continuar aberta.
+
 ## Aprovação explícita de edição — 12/09/2026
 
 O usuário aprovou explicitamente **“Permitir editor de PDF”** para a conta Regulador(a) usada nos testes da Central.
@@ -336,12 +361,13 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. PR #146 aberto e validado com 23 workflows sem falhas;
-2. mesclar o PR #146;
-3. após merge/deploy, conceder explicitamente a capability **Permitir editor de PDF** somente à conta de teste autorizada;
-5. validar em produção: excluir, reordenar, desfazer/refazer, unir outro PDF e visualizar o resultado;
-6. testar pelo menos PDFs com contagens/tamanhos diferentes;
-7. encerrar a Fase 3 somente se os PDFs resultantes forem válidos e a leitura/cache da Fase 2 não regredir.
+1. abrir PR da correção `fix/developer-self-edit-session`;
+2. rodar suíte completa e validar o teste de regressão;
+3. mesclar somente com checks aprovados;
+4. após deploy, recarregar `/admin/usuarios/`; se a sessão antiga estiver invalidada, entrar novamente uma vez;
+5. editar a própria conta, manter Regulador(a), marcar **Permitir editor de PDF** e salvar;
+6. confirmar que a capability `edit` foi concedida sem derrubar a sessão;
+7. retomar a validação real da Fase 3: excluir/reordenar/undo/redo/unir/prévia.
 
 ## Arquivos e fontes principais
 
@@ -364,17 +390,13 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** unidades 3A/3B — excluir/reordenar/undo/redo/unir/visualizar localmente, com capability `edit` explícita.  
-**Estado real da main:** `b3665ed906b97980c87fd8bf8c023133838a5249` — PR #146 mesclado com o editor PDF essencial da Fase 3.  
-**Branch atual:** `docs/central-docs-phase3-postmerge` (somente status; nenhuma mudança funcional adicional).  
-**PR atual:** nenhum funcional; PR #146 foi concluído com 23 workflows sem falhas.  
-**Última ação concluída:** PR #146 validado com 23 workflows e mesclado na main; editor local da Fase 3 está no código oficial e aguarda concessão/validação real da capability `edit`.  
-**Permissões:** Regulador(a) continua concedendo leitura; edição não é herdada. O Desenvolvedor pode marcar **Permitir editor de PDF** por usuário; remover Regulador(a) também revoga capabilities documentais correspondentes.  
-**Dependência PDF:** `pdf-lib 1.17.1`, carregado sob demanda com SRI fixo e CSP restrita a jsDelivr.  
-**Limite de escopo:** nenhuma rota de upload/save/replace e nenhuma escrita no Drive até a Fase 4.  
-**Telemetria:** `pdf_edit_completed` somente com operation/duration/size_bucket/route; sem página, nome, ref, fileId ou conteúdo.  
-**Checks e testes:** 23 workflows do PR #146 concluídos sem falhas antes do merge; suíte inclui plano de páginas, união, undo/redo, UI, autorização e privacidade.  
-**Pendências:** aguardar deploy; conceder capability `edit` explicitamente à conta Regulador(a) de teste já aprovada pelo usuário; validar operações reais com PDFs diferentes.  
-**Riscos conhecidos:** PDFs protegidos por senha ou estruturas incomuns podem não ser compatíveis com pdf-lib; falha é neutra e não afeta leitura. CDN depende de SRI/host disponível apenas ao iniciar edição.  
-**Próxima ação exata:** após deploy da main `b3665ed9`, na gestão de usuários marcar `Permitir editor de PDF` somente para a conta Regulador(a) de teste aprovada; depois executar validação real de excluir/reordenar/undo/redo/unir/prévia.  
-**Arquivos principais:** `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `js/admin-users.js`, `admin/usuarios/index.html`, `docs/CENTRAL-DOCUMENTOS-FASE-3.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Subfase / objetivo atual:** corrigir regressão de sessão que bloqueava a concessão real da capability `edit` na própria conta Desenvolvedor.  
+**Estado real da main antes da correção:** `b5ad566e1d27bc81230ac3e36054422b0ba1cf13`.  
+**Branch atual:** `fix/developer-self-edit-session`.  
+**PR atual:** ainda não aberto neste registro.  
+**Bug reproduzido:** salvar a própria conta em Usuários e acessos invalidava o token porque `session_version` sempre era incrementado; a tentativa seguinte exibia falsamente “Somente o Desenvolvedor pode conceder funções adicionais”.  
+**Correção:** preservar sessão em autoedição quando papel/ativo não mudam; manter invalidação em mudanças críticas e alvos terceiros; 401 explícito para sessão inválida; revalidação imediata na página admin; cache-bust do JS.  
+**Teste de regressão:** Desenvolvedor edita própria conta + função Regulador(a) e, com o mesmo token, concede `edit=true`; mudança do próprio papel continua invalidando a sessão.  
+**Pendências:** abrir PR, checks, merge/deploy; usuário pode precisar relogar uma vez por causa da sessão antiga já invalidada; depois conceder `edit` e testar o editor real.  
+**Próxima ação exata:** abrir PR da correção, acompanhar checks e corrigir qualquer falha antes de merge.  
+**Arquivos principais:** `worker/auth-management-v2.js`, `worker/auth-management-flex.js`, `worker/tests/developer-self-edit-session.test.mjs`, `js/admin-users.js`, `admin/usuarios/index.html`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
