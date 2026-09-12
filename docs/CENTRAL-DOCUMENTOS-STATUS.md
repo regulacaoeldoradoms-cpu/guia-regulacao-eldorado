@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: iniciar o Editor PDF essencial com operações locais reversíveis; nenhuma escrita no Drive pertence a esta fase.
+Subfase atual: unidade 3A/3B — núcleo reversível do editor local, união de PDFs e capability explícita de edição; nenhuma escrita no Drive pertence a esta fase.
 
 ## Estado de entrada
 
@@ -227,6 +227,41 @@ Alternativas descartadas:
 - cache persistente do PDF para acelerar reaberturas;
 - considerar o `load` do Blob integral como `pdf_first_page_visible`, pois isso não mede primeira página com confiabilidade.
 
+## Fase 3 — implementação em andamento
+
+Unidades 3A/3B implementadas na branch:
+- `docs/CENTRAL-DOCUMENTOS-FASE-3.md` criado com escopo e critérios;
+- núcleo `js/document-editor.js` com plano de páginas, histórico de até 50 snapshots, undo/redo e geração de Blob PDF;
+- excluir página com trava para impedir resultado sem páginas;
+- mover página para cima/baixo;
+- unir outro PDF permitido à sessão local;
+- visualização do resultado editado no iframe existente;
+- sair do editor descarta prévia e restaura o documento original;
+- clicar em outro PDF enquanto o editor está ativo oferece união ao resultado atual;
+- o editor não possui rota de escrita/salvamento no Drive;
+- `pdf_edit_completed` registra apenas operação, duração, faixa de tamanho e rota genérica;
+- capability `edit` passa a ser administrável explicitamente em **Usuários e acessos**;
+- marcar Regulador(a) **não** concede edição automaticamente;
+- remover Regulador(a) revoga `view/extract/edit` explícitos associados à Central, evitando acesso residual;
+- `pdf-lib 1.17.1` é carregado somente ao iniciar o editor, com URL versionada, SRI, crossorigin anônimo e no-referrer;
+- CSP da Central permite somente o host fixo do jsDelivr para esse script;
+- testes unitários do plano do editor foram adicionados com motor PDF simulado, incluindo exclusão, reordenação, undo/redo, união e verificação do cabeçalho `%PDF`.
+
+Decisões:
+- editor continua estritamente local na Fase 3;
+- capability de edição é fina e separada do cargo Regulador(a), pois concedê-la automaticamente ampliaria permissão sem decisão individual;
+- biblioteca externa não foi necessária na Fase 2 e por isso foi descartada lá; na Fase 3 a decisão foi reavaliada por necessidade de manipulação binária, mantendo versão fixa + SRI;
+- falha da biblioteca afeta somente o editor; visualização/cache da Fase 2 permanecem disponíveis;
+- a união usa PDFs já autorizados pela mesma navegação do Drive; nenhum seletor externo é introduzido;
+- após undo de uma união, a presença do PDF é derivada do plano atual, evitando bloquear nova união por estado residual.
+
+Alternativas descartadas:
+- habilitar editor para todo Regulador(a) automaticamente;
+- criar endpoints de save/upload antecipando a Fase 4;
+- enviar PDF ao Worker/terceiro apenas para excluir/reordenar páginas;
+- manter nome/fileId/número exato de página na telemetria;
+- remover o fallback/read-only da Fase 2.
+
 ## Riscos conhecidos
 
 - refresh token de OAuth externo em status Testing expira em prazo curto segundo Google; não usar Testing como solução de produção;
@@ -289,13 +324,13 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. mesclar o encerramento formal da Fase 2;
-2. criar branch isolada da **Fase 3 — Editor PDF essencial**;
-3. documentar arquitetura do editor local e modelo de histórico undo/redo;
-4. implementar primeiro: carregamento do PDF em workspace editável + excluir/reordenar páginas + desfazer/refazer;
-5. depois implementar união de PDFs e visualização do resultado;
-6. não salvar de volta no Google Drive nesta fase; escrita/sincronização pertence à Fase 4;
-7. validar PDFs resultantes com documentos de tamanhos e estruturas diferentes antes de encerrar a Fase 3.
+1. concluir checks estáticos/unitários da Fase 3 e atualizar workflows para o novo editor;
+2. abrir PR da branch `feat/central-docs-phase3-editor-core`;
+3. corrigir qualquer regressão antes do merge;
+4. após merge/deploy, conceder explicitamente a capability **Permitir editor de PDF** somente à conta de teste autorizada;
+5. validar em produção: excluir, reordenar, desfazer/refazer, unir outro PDF e visualizar o resultado;
+6. testar pelo menos PDFs com contagens/tamanhos diferentes;
+7. encerrar a Fase 3 somente se os PDFs resultantes forem válidos e a leitura/cache da Fase 2 não regredir.
 
 ## Arquivos e fontes principais
 
@@ -318,14 +353,17 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** iniciar editor local reversível, sem escrita no Drive.  
-**Estado real da main antes deste PR de encerramento:** `66ac7f8702abaffd7d233ce9a14efeebf1267885`.  
-**Branch atual:** `docs/central-docs-phase2-close`.  
+**Subfase / objetivo atual:** unidades 3A/3B — excluir/reordenar/undo/redo/unir/visualizar localmente, com capability `edit` explícita.  
+**Estado real da main:** `9f3fb713699dbd50f2510c3b9785b3a12de29c50` — Fase 2 encerrada pelo PR #145.  
+**Branch atual:** `feat/central-docs-phase3-editor-core`.  
 **PR atual:** ainda não aberto neste registro.  
-**Última validação real:** cache criptografado comprovado em produção; `pdf_ready` hit média 107 ms vs miss 5.461 ms, e primeira página hit 127,6 ms vs miss 5.506,7 ms.  
-**Conclusão:** Fase 2 encerrada; todos os critérios de aceite foram cumpridos.  
-**Decisões preservadas:** cache IndexedDB cifrado por sessão, TTL/limites/versionamento, prefetch controlado, Service Worker sem cache clínico em Cache Storage, telemetria allowlisted.  
-**Próxima fase:** Fase 3 — excluir páginas, unir PDFs, reorganizar, desfazer/refazer e visualizar resultado localmente.  
-**Limite de escopo:** nenhuma gravação/substituição no Google Drive até a Fase 4.  
-**Próxima ação exata:** mesclar este encerramento, criar branch da Fase 3 e implementar a primeira unidade do editor com testes automatizados e validação de PDF resultante.  
-**Arquivos principais atuais:** `js/document-cache.js`, `js/documents.js`, `worker/document-drive.js`, `portal-sw.js`, `docs/CENTRAL-DOCUMENTOS-FASE-2.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Última ação concluída:** núcleo local do editor, superfície UI, união pelo navegador do Drive, preview local, permissão fina de edição, testes unitários e documentação arquitetural implementados na branch.  
+**Permissões:** Regulador(a) continua concedendo leitura; edição não é herdada. O Desenvolvedor pode marcar **Permitir editor de PDF** por usuário; remover Regulador(a) também revoga capabilities documentais correspondentes.  
+**Dependência PDF:** `pdf-lib 1.17.1`, carregado sob demanda com SRI fixo e CSP restrita a jsDelivr.  
+**Limite de escopo:** nenhuma rota de upload/save/replace e nenhuma escrita no Drive até a Fase 4.  
+**Telemetria:** `pdf_edit_completed` somente com operation/duration/size_bucket/route; sem página, nome, ref, fileId ou conteúdo.  
+**Checks e testes:** testes foram adicionados/atualizados, mas ainda precisam rodar no PR.  
+**Pendências:** atualizar todos os checks de versão/cache/CSP, abrir PR, corrigir falhas, merge e validação real com capability edit explicitamente concedida à conta de teste.  
+**Riscos conhecidos:** PDFs protegidos por senha ou estruturas incomuns podem não ser compatíveis com pdf-lib; falha é neutra e não afeta leitura. CDN depende de SRI/host disponível apenas ao iniciar edição.  
+**Próxima ação exata:** finalizar workflow/testes, abrir PR da Fase 3 e acompanhar todos os checks antes de qualquer merge.  
+**Arquivos principais:** `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `js/admin-users.js`, `admin/usuarios/index.html`, `docs/CENTRAL-DOCUMENTOS-FASE-3.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
