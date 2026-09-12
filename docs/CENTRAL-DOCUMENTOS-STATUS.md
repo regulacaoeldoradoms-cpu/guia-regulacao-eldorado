@@ -109,6 +109,13 @@ Diretriz registrada:
 - antes de implementar, definir escopo OAuth adicional, política de retenção, modelo de exibição e quais eventos podem aparecer sem expor conteúdo clínico;
 - qualquer telemetria desse histórico continua proibida de enviar nome de arquivo, usuário, identificadores do Drive ou conteúdo ao PostHog.
 
+## Descoberta técnica na validação real
+
+- Validação real em `/documentos/` mostrou **Integração aguardando configuração** mesmo após o usuário informar que cadastrou as três variáveis no Cloudflare.
+- Isso comprova que o Worker em produção não está enxergando pelo menos uma das quatro configurações exigidas por `driveOAuthConfiguration`: `GOOGLE_DRIVE_OAUTH_CLIENT_ID`, `GOOGLE_DRIVE_OAUTH_CLIENT_SECRET`, `GOOGLE_DRIVE_OAUTH_REDIRECT_URI` ou `DRIVE_TOKEN_ENCRYPTION_KEY`.
+- O frontend e as rotas da Central estão publicados e funcionais, pois a página, capabilities e lista de usuários carregaram normalmente.
+- Próxima verificação deve ser feita no Cloudflare em Variables and Secrets, sem expor valores: conferir nomes exatos, ambiente correto e se houve Save/Deploy.
+
 ## Pendências e bloqueios
 
 - PR #134 foi validado com 26 workflows sem falhas e mesclado na `main`.
@@ -180,5 +187,5 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Pendências:** confirmação pública do deploy não pôde ser feita pelos conectores disponíveis; executar o consentimento institucional pela Central; testar navegação/pesquisa/PDF; auditar PostHog; em fase posterior, avaliar Google Drive Activity API para histórico de ações em arquivos/pastas.  
 **Riscos conhecidos:** restricted scope e requisitos de produção; refresh token curto em Testing; PDFs grandes ainda carregam integralmente nesta fase.  
 **Métricas / observabilidade:** instrumentação da Fase 1 pronta, mas nenhum evento documental real validado ainda.  
-**Próxima ação exata:** abrir `https://regulacaoeldoradoms.com.br/documentos/` logado como Desenvolvedor, liberar a própria Leitura se necessário e iniciar `Conectar Google Drive` para executar o consentimento institucional.  
+**Próxima ação exata:** revisar no Cloudflare Worker a lista de Variables and Secrets e confirmar os quatro nomes esperados no ambiente de produção; depois Save/Deploy e recarregar `/documentos/` até o status mudar para `Drive aguardando conexão`.  
 **Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, `docs/CENTRAL-DOCUMENTOS-OAUTH-SETUP.md`, arquitetura V1, este status, `worker/document-drive.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`.
