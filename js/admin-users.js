@@ -9,6 +9,9 @@
   const roleLabels = {
     medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', telemedicina: 'Técnico em Telemedicina', cidadao: 'Cidadão', admin: 'Desenvolvedor'
   };
+  const additionalRoleLabels = {
+    documentos: 'Central de Documentos'
+  };
   const councilLabels = { presidente: 'Presidente do Conselho', membro: 'Membro do Conselho', '': 'Sem função no Conselho' };
   const state = { users: [], editing: null, resetting: null };
 
@@ -27,6 +30,10 @@
   const editRole = document.getElementById('editRole');
   const editCouncilWrap = document.getElementById('editCouncilWrap');
   const editCouncil = document.getElementById('editCouncilRole');
+  const newAdditionalRolesWrap = document.getElementById('newAdditionalRolesWrap');
+  const newAdditionalRoleDocuments = document.getElementById('newAdditionalRoleDocuments');
+  const editAdditionalRolesWrap = document.getElementById('editAdditionalRolesWrap');
+  const editAdditionalRoleDocuments = document.getElementById('editAdditionalRoleDocuments');
 
   if (isDeveloper) {
     newRole.innerHTML = '<option value="coordenacao">Coordenação — Guia + Recepção + Monitoramento + usuários subordinados</option><option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option><option value="telemedicina">Técnico em Telemedicina — acompanhamento de teleconsultas e retornos</option><option value="cidadao">Cidadão — conta sem função profissional</option>';
@@ -35,6 +42,8 @@
   }
   if (newCouncilWrap) newCouncilWrap.hidden = !isDeveloper;
   editCouncilWrap.hidden = !isDeveloper;
+  if (newAdditionalRolesWrap) newAdditionalRolesWrap.hidden = !isDeveloper;
+  if (editAdditionalRolesWrap) editAdditionalRolesWrap.hidden = !isDeveloper;
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
@@ -60,7 +69,15 @@
   function filteredUsers() {
     const q = searchEl.value.trim().toLowerCase();
     if (!q) return state.users;
-    return state.users.filter((user) => [user.name, user.username, user.jobTitle, roleLabels[user.role], councilLabels[user.councilRole], 'Canal do Cidadão'].some((value) => String(value || '').toLowerCase().includes(q)));
+    return state.users.filter((user) => [
+      user.name,
+      user.username,
+      user.jobTitle,
+      roleLabels[user.role],
+      councilLabels[user.councilRole],
+      ...(Array.isArray(user.additionalRoles) ? user.additionalRoles.map((role) => additionalRoleLabels[role] || role) : []),
+      'Canal do Cidadão'
+    ].some((value) => String(value || '').toLowerCase().includes(q)));
   }
 
   function render() {
@@ -82,6 +99,7 @@
             ${user.role !== 'cidadao' ? '<span class="user-badge">Canal do Cidadão</span>' : ''}
             ${user.role === 'telemedicina' ? '<span class="user-badge">Módulo Telemedicina</span>' : ''}
             ${user.councilRole ? `<span class="user-badge">${escapeHtml(councilLabels[user.councilRole] || user.councilRole)}</span>` : ''}
+            ${(Array.isArray(user.additionalRoles) ? user.additionalRoles : []).map((role) => `<span class="user-badge">${escapeHtml(additionalRoleLabels[role] || role)}</span>`).join('')}
             <span class="user-badge ${user.active ? '' : 'inactive'}">${user.active ? 'Ativo' : 'Desativado'}</span>
             ${user.mustChangePassword ? '<span class="user-badge">Troca de senha pendente</span>' : ''}
             ${user.emailConfigured ? `<span class="user-badge">E-mail ${user.emailVerified ? 'verificado' : 'não verificado'}</span>` : '<span class="user-badge">Sem e-mail</span>'}
@@ -118,6 +136,7 @@
         jobTitle: document.getElementById('newJobTitle').value.trim() || (selectedRole === 'telemedicina' ? 'Técnico em Telemedicina' : ''),
         role: selectedRole,
         councilRole: isDeveloper && newCouncil ? newCouncil.value : '',
+        additionalRoles: isDeveloper && newAdditionalRoleDocuments?.checked ? ['documentos'] : [],
         password: document.getElementById('newPassword').value,
         mustChangePassword: document.getElementById('newMustChange').checked,
         active: true
@@ -125,6 +144,7 @@
       createForm.reset();
       document.getElementById('newMustChange').checked = true;
       if (newCouncil) newCouncil.value = '';
+      if (newAdditionalRoleDocuments) newAdditionalRoleDocuments.checked = false;
       showStatus(createStatus, 'Acesso criado com sucesso.', 'success');
       await loadUsers();
     } catch (error) {
@@ -151,6 +171,9 @@
       editRole.innerHTML = available.map((role) => `<option value="${role}">${roleLabels[role]}</option>`).join('');
       editRole.value = user.role;
       if (isDeveloper) editCouncil.value = user.councilRole || '';
+      if (editAdditionalRoleDocuments) {
+        editAdditionalRoleDocuments.checked = Array.isArray(user.additionalRoles) && user.additionalRoles.includes('documentos');
+      }
       document.getElementById('editActive').checked = Boolean(user.active);
       document.getElementById('editStatus').className = 'account-status full';
       openModal('editUserModal');
@@ -176,7 +199,10 @@
         role: editRole.value,
         active: document.getElementById('editActive').checked
       };
-      if (isDeveloper) input.councilRole = editCouncil.value;
+      if (isDeveloper) {
+        input.councilRole = editCouncil.value;
+        input.additionalRoles = editAdditionalRoleDocuments?.checked ? ['documentos'] : [];
+      }
       await auth.updateUser(state.editing, input);
       showStatus(status, 'Alterações salvas.', 'success');
       await loadUsers();
