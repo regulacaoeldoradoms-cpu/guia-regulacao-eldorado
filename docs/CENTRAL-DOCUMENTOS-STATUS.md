@@ -85,6 +85,8 @@ PR atual: nenhum para esta subfase. PR #134 foi mesclado na `main`.
 
 ## Ações externas concluídas
 
+- Client ID OAuth corrigido no Cloudflare após diagnóstico de valor ausente; configuração esperada agora contém Client ID, Client Secret, redirect URI e chave de criptografia.
+
 - Conta institucional adicionada como usuário de teste no Google Auth Platform; tela confirma 1 usuário de teste ativo.
 
 - Cloudflare: credenciais OAuth e chave de criptografia configuradas pelo usuário, sem exposição dos valores no chat ou repositório.
@@ -188,5 +190,5 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Pendências:** confirmação pública do deploy não pôde ser feita pelos conectores disponíveis; executar o consentimento institucional pela Central; testar navegação/pesquisa/PDF; auditar PostHog; em fase posterior, avaliar Google Drive Activity API para histórico de ações em arquivos/pastas.  
 **Riscos conhecidos:** restricted scope e requisitos de produção; refresh token curto em Testing; PDFs grandes ainda carregam integralmente nesta fase.  
 **Métricas / observabilidade:** instrumentação da Fase 1 pronta, mas nenhum evento documental real validado ainda.  
-**Próxima ação exata:** preencher o valor de `GOOGLE_DRIVE_OAUTH_CLIENT_ID` no Cloudflare com o Client ID gerado pelo Google, salvar/deployar e recarregar `/documentos/`; o status esperado é `Drive aguardando conexão` e o botão `Conectar Google Drive` deve aparecer.  
+**Próxima ação exata:** recarregar `https://regulacaoeldoradoms.com.br/documentos/`; confirmar mudança para `Drive aguardando conexão` e clicar em `Conectar Google Drive` para iniciar o consentimento da conta institucional.  
 **Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, `docs/CENTRAL-DOCUMENTOS-OAUTH-SETUP.md`, arquitetura V1, este status, `worker/document-drive.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`.
