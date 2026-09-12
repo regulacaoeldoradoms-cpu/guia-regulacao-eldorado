@@ -111,6 +111,7 @@ Diretriz registrada:
 
 ## Descoberta técnica na validação real
 
+- Revisão visual do Cloudflare mostrou que a linha da variável `GOOGLE_DRIVE_OAUTH_CLIENT_ID` está presente, porém o campo **Value** aparece vazio; `GOOGLE_DRIVE_OAUTH_CLIENT_SECRET` está como Secret, `GOOGLE_DRIVE_OAUTH_REDIRECT_URI` possui URL e `DRIVE_TOKEN_ENCRYPTION_KEY` está como Secret. A ausência do valor do Client ID explica o estado `Integração aguardando configuração` mostrado pela Central.
 - Validação real em `/documentos/` mostrou **Integração aguardando configuração** mesmo após o usuário informar que cadastrou as três variáveis no Cloudflare.
 - Isso comprova que o Worker em produção não está enxergando pelo menos uma das quatro configurações exigidas por `driveOAuthConfiguration`: `GOOGLE_DRIVE_OAUTH_CLIENT_ID`, `GOOGLE_DRIVE_OAUTH_CLIENT_SECRET`, `GOOGLE_DRIVE_OAUTH_REDIRECT_URI` ou `DRIVE_TOKEN_ENCRYPTION_KEY`.
 - O frontend e as rotas da Central estão publicados e funcionais, pois a página, capabilities e lista de usuários carregaram normalmente.
@@ -187,5 +188,5 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Pendências:** confirmação pública do deploy não pôde ser feita pelos conectores disponíveis; executar o consentimento institucional pela Central; testar navegação/pesquisa/PDF; auditar PostHog; em fase posterior, avaliar Google Drive Activity API para histórico de ações em arquivos/pastas.  
 **Riscos conhecidos:** restricted scope e requisitos de produção; refresh token curto em Testing; PDFs grandes ainda carregam integralmente nesta fase.  
 **Métricas / observabilidade:** instrumentação da Fase 1 pronta, mas nenhum evento documental real validado ainda.  
-**Próxima ação exata:** revisar no Cloudflare Worker a lista de Variables and Secrets e confirmar os quatro nomes esperados no ambiente de produção; depois Save/Deploy e recarregar `/documentos/` até o status mudar para `Drive aguardando conexão`.  
+**Próxima ação exata:** preencher o valor de `GOOGLE_DRIVE_OAUTH_CLIENT_ID` no Cloudflare com o Client ID gerado pelo Google, salvar/deployar e recarregar `/documentos/`; o status esperado é `Drive aguardando conexão` e o botão `Conectar Google Drive` deve aparecer.  
 **Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, `docs/CENTRAL-DOCUMENTOS-OAUTH-SETUP.md`, arquitetura V1, este status, `worker/document-drive.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`.
