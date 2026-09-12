@@ -22,7 +22,7 @@ Subfase atual: concluir validação real da Fase 1 e consolidar o novo modelo de
 
 Branch atual: `feat/central-docs-phase1-final-validation`
 
-PR atual: nenhum para esta subfase. PR #135 foi mesclado na `main`.
+PR atual: #136 — Padronizar cargos Regulador(a) e Médico(a) (aberto).
 
 ## Entregas concluídas nesta unidade
 
@@ -203,14 +203,14 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Subfase / objetivo atual:** concluir a revisão de UX/autorização com funções acumuláveis e depois finalizar os testes reais da Fase 1.  
 **Estado real da main:** `433456b669ca11f818a42762493ea8df14b97b43` — PR #135 mesclado com cargos acumuláveis e gestão compacta.  
 **Branch atual:** `feat/central-docs-phase1-final-validation`.  
-**PR atual:** nenhum; PR #135 foi validado com 22 workflows sem falhas e mesclado.  
-**Última ação concluída:** PR #135 validado com 22 workflows e mesclado na main; nova branch criada exclusivamente para a validação final em produção da Fase 1.  
+**PR atual:** #136 — aberto; objetivo: padronizar a nomenclatura Regulador(a) e Médico(a) sem alterar IDs técnicos ou permissões.  
+**Última ação concluída:** nomenclaturas Regulador(a) e Médico(a) aplicadas na branch e PR #136 aberto para validação.  
 **Validação externa concluída:** OAuth real conectado; Portal mostrou `Drive conectado` e carregou a raiz do Meu Drive.  
-**Checks e testes:** 22 workflows do PR #135 concluídos com sucesso e merge confirmado em `433456b6`.  
+**Checks e testes:** PR #136 aguardando checks; testes foram atualizados para os novos rótulos sem alterar identificadores `documentos` e `medico`.  
 **Decisões tomadas:** perfil principal permanece único; funções adicionais podem acumular; `documentos` é exibido como `Regulador(a)` e concede leitura da Central; gestão de usuários fica fora da tela operacional; capabilities finas permanecem no backend.  
 **Justificativas:** reduzir drasticamente o espaço ocupado na Central e permitir combinações como Médico(a) + Regulador(a) sem trocar o perfil profissional.  
 **Alternativas descartadas:** continuar com uma checkbox para cada usuário dentro de `/documentos/`; transformar `documentos` em novo perfil primário mutuamente exclusivo; conceder acesso apenas escondendo/exibindo UI.  
 **Pendências:** validar em produção que a lista extensa desapareceu e que a função acumulável aparece em Usuários e acessos; testar pesquisa real; abrir PDF real; auditar PostHog; futura Drive Activity API permanece registrada para outra fase.  
 **Riscos conhecidos:** compatibilidade com acessos legados em `auth_document_access`; escopo OAuth restrito em modo Testing; PDF grande ainda é carregado integralmente nesta fase.  
-**Próxima ação exata:** após o deploy da main `433456b6`, recarregar `/documentos/` e `/admin/usuarios/` para confirmar a UI compacta e a função acumulável `Regulador(a)`; depois executar pesquisa, abrir PDF real e auditar PostHog.  
+**Próxima ação exata:** acompanhar os checks do PR #136; mesclar somente se aprovados. Após o deploy, validar `Regulador(a)` e `Médico(a)` nas superfícies do Portal e então retomar pesquisa, abertura de PDF real e auditoria PostHog.  
 **Arquivos principais:** `worker/additional-roles.js`, `worker/document-access.js`, `worker/auth-management-flex.js`, `admin/usuarios/index.html`, `js/admin-users.js`, `documentos/index.html`, `js/documents.js`, `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, este status.
