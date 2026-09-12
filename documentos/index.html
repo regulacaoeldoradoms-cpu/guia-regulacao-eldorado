@@ -7,13 +7,13 @@
   <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#0d3157">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data: blob:; frame-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data: blob:; frame-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
   <title>Central de Documentos | Portal da Regulação</title>
   <link rel="icon" href="/assets/portal-regulacao-header_512x512.png?v=20260911-1" type="image/png">
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260911-2">
+  <link rel="stylesheet" href="/css/documents.css?v=20260912-3">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -36,7 +36,7 @@
         <div class="portal-hero-copy">
           <span class="portal-eyebrow">Central de Documentos</span>
           <h2>Google Drive institucional dentro do Portal.</h2>
-          <p>Navegue por pastas, pesquise no acervo e abra PDFs autorizados com carregamento progressivo e cache local criptografado. A Central permanece somente leitura: nenhuma alteração é feita nos arquivos.</p>
+          <p>Navegue por pastas, pesquise no acervo e abra PDFs autorizados com carregamento progressivo e cache local criptografado. Quando autorizado, o editor trabalha localmente; nenhuma alteração é enviada ao Google Drive nesta fase.</p>
         </div>
         <div class="documents-hero-state" id="driveConnectionBadge" aria-live="polite">Verificando conexão…</div>
       </section>
@@ -90,12 +90,35 @@
         <aside class="documents-viewer" id="documentsViewer" hidden aria-label="Visualizador de PDF">
           <div class="documents-viewer-head">
             <div>
-              <span>Visualização</span>
+              <span id="documentsViewerModeLabel">Visualização</span>
               <strong id="documentsViewerTitle">PDF</strong>
             </div>
-            <button class="documents-close-viewer" id="closeViewerButton" type="button" aria-label="Fechar visualização">×</button>
+            <div class="documents-viewer-actions">
+              <button class="portal-button ghost documents-edit-trigger" id="editPdfButton" type="button" hidden>Editar PDF</button>
+              <button class="documents-close-viewer" id="closeViewerButton" type="button" aria-label="Fechar visualização">×</button>
+            </div>
           </div>
           <div class="documents-viewer-state" id="documentsViewerState">Preparando PDF…</div>
+
+          <section class="documents-editor" id="documentsEditor" hidden aria-label="Editor local de PDF">
+            <div class="documents-editor-banner">
+              <strong>Edição local</strong>
+              <span>As alterações ainda não serão salvas no Google Drive.</span>
+            </div>
+            <div class="documents-editor-toolbar">
+              <button class="portal-button secondary" id="editorUndoButton" type="button">Desfazer</button>
+              <button class="portal-button secondary" id="editorRedoButton" type="button">Refazer</button>
+              <button class="portal-button primary" id="editorPreviewButton" type="button">Atualizar prévia</button>
+              <button class="portal-button secondary" id="editorExitButton" type="button">Sair do editor</button>
+            </div>
+            <div class="documents-editor-status" id="documentsEditorStatus" aria-live="polite"></div>
+            <div class="documents-editor-pages-head">
+              <strong>Páginas do resultado</strong>
+              <span id="documentsEditorPageCount"></span>
+            </div>
+            <div class="documents-editor-pages" id="documentsEditorPages"></div>
+          </section>
+
           <iframe id="documentsPdfFrame" title="Documento PDF" referrerpolicy="no-referrer"></iframe>
         </aside>
       </section>
@@ -107,6 +130,7 @@
   <script src="/js/portal-interactions.js?v=20260910-2"></script>
   <script src="/js/tools-catalog.js?v=20260911-3"></script>
   <script src="/js/document-cache.js?v=20260912-1"></script>
-  <script src="/js/documents.js?v=20260912-1"></script>
+  <script src="/js/document-editor.js?v=20260912-1"></script>
+  <script src="/js/documents.js?v=20260912-2"></script>
 </body>
 </html>
