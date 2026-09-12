@@ -793,6 +793,14 @@
               markViewerReady(openId, bucket, cacheState, false, sourceLabel);
             }, { once: true });
             els.frame.src = state.pdfObjectUrl;
+            return;
+          }
+          if (state.pdfItem) {
+            state.pdfCustomFallbackStarted = false;
+            loadPdfBlobFallback(state.pdfItem, openId, bucket).catch(() => {
+              if (openId !== state.pdfOpenId) return;
+              els.viewerState.textContent = 'Não foi possível ativar o modo compatível.';
+            });
           }
         }
       });
