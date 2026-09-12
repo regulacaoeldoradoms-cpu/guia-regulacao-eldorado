@@ -165,7 +165,7 @@
     empty.hidden = true;
     selected.hidden = false;
     document.getElementById('selectedDoctorName').textContent = doctor.name || doctor.username;
-    document.getElementById('selectedDoctorMeta').textContent = `${doctor.jobTitle || 'Médico'} · @${doctor.username}${doctor.active === false ? ' · acesso desativado' : ''}`;
+    document.getElementById('selectedDoctorMeta').textContent = `${doctor.jobTitle || 'Médico(a)'} · @${doctor.username}${doctor.active === false ? ' · acesso desativado' : ''}`;
     const presence = document.getElementById('selectedPresence');
     presence.textContent = doctor.online ? '● Online agora' : `○ ${lastSeenText(doctor.lastSeen)}`;
     presence.classList.toggle('online', Boolean(doctor.online));
