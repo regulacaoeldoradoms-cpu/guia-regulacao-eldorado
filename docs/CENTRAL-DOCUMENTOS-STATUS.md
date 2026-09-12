@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: corrigir a regressão de preflight CORS em `/api/admin/users` que impede carregar as contas e então concluir a validação real da capability `edit` da Fase 3.
+Subfase atual: validar em produção a correção de preflight CORS já mesclada e, com a lista de usuários restaurada, concluir a concessão real da capability `edit` da Fase 3.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: corrigir a regressão de preflight CORS em `/api/admin/users` que
 
 ## Branch / PR
 
-Branch atual: `fix/admin-users-cors-preflight`.
+Branch atual: `docs/central-docs-cors-postmerge` (somente consolidação pós-merge).
 
-PR atual: #150 — correção da regressão `Failed to fetch` em Usuários e acessos.
+PR atual: nenhum funcional; PR #150 foi validado e mesclado.
 
 ## Entregas concluídas nesta unidade
 
@@ -240,6 +240,21 @@ Próxima validação real:
 - após o deploy, relogar uma vez é suficiente;
 - salvar novamente Regulador(a) + **Permitir editor de PDF** deve concluir as duas operações sem derrubar a sessão.
 
+## Correção CORS validada e mesclada — 12/09/2026
+
+PR #150:
+- 22 workflows do Pull Request concluídos com sucesso e sem falhas;
+- teste de regressão confirmou preflight `OPTIONS /api/admin/users` com status 204 e cabeçalhos CORS permitidos;
+- merge concluído na `main` em `2d8d429e7ff5cb0ef91bd2aae526220e80086483`;
+- após o merge, 23 workflows de validação funcional da `main` concluíram com sucesso; o deploy estático do GitHub Pages ainda estava em fila na última consulta;
+- a mudança não altera cargos, permissões ou capabilities; corrige exclusivamente o caminho CORS.
+
+Próxima validação real:
+- abrir novamente `/admin/usuarios/` após a propagação do deploy;
+- confirmar que **Contas cadastradas** carrega normalmente;
+- em seguida manter Regulador(a), marcar **Permitir editor de PDF** e salvar;
+- continuar os testes funcionais do editor da Fase 3.
+
 ## Regressão de CORS em Usuários e acessos — 12/09/2026
 
 Após o merge do PR #148, a lista **Contas cadastradas** passou a exibir `Failed to fetch` mesmo após `Ctrl+F5` e novo login.
@@ -424,18 +439,17 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** corrigir regressão de preflight CORS em `/api/admin/users` que impede carregar as contas antes da concessão real de `edit`.  
-**Estado real da main:** `d1a8d6e0c9dee84d4a8471ed540055b5df26a454`; inclui o PR #148 e a consolidação de status pós-merge.  
-**Branch atual:** `fix/admin-users-cors-preflight`.  
-**PR atual:** #150 — Corrigir Failed to fetch em Usuários e acessos.  
-**Última ação concluída:** causa raiz isolada e correção implementada; preflight `OPTIONS` passa pelo handler base antes da validação de sessão.  
-**Últimos commits relevantes:** `4fa3299b` (correção CORS) e `c05c09c9` (teste de regressão).  
-**Checks e testes:** teste novo exige 204 + cabeçalhos CORS; checks do PR #150 ainda devem ser confirmados antes do merge.  
-**Decisões tomadas:** manter o 401 explícito do PR #148 nas requisições reais e corrigir somente o caminho de preflight; não mascarar o problema com retry no frontend.  
-**Justificativa:** preflight não possui Bearer token; autenticá-lo bloqueia o navegador antes da requisição real.  
-**Ações externas concluídas:** usuário já fez `Ctrl+F5` e relog; o erro persistiu, descartando sessão/cache antigo como causa suficiente.  
-**Pendências e bloqueios:** checks/merge/deploy do PR #150; depois validar a lista de usuários em produção e conceder `Permitir editor de PDF`.  
-**Riscos conhecidos:** qualquer nova autenticação colocada antes do tratamento de `OPTIONS` pode recriar a regressão CORS.  
-**Métricas / observabilidade:** PostHog Error Tracking não registrou exceção para a rota; compatível com bloqueio de rede/CORS no navegador antes de evento de aplicação. Nenhum dado sensível foi consultado ou enviado.  
-**Próxima ação exata:** acompanhar os checks do PR #150, corrigir falhas se houver e mesclar; após deploy, testar novamente `/admin/usuarios/`.  
+**Subfase / objetivo atual:** validar em produção a correção CORS já mesclada e então efetivar `Permitir editor de PDF` na conta Regulador(a) de teste autorizada.  
+**Estado real da main:** `2d8d429e7ff5cb0ef91bd2aae526220e80086483` — PR #150 mesclado.  
+**Branch atual:** `docs/central-docs-cors-postmerge` (somente consolidação documental pós-merge).  
+**PR atual:** nenhum funcional; PR #150 concluído.  
+**Última ação concluída:** correção do preflight CORS mesclada; 22 checks do PR e 23 validações funcionais pós-merge concluíram sem falhas.  
+**Causa raiz encerrada:** o `OPTIONS` de `/api/admin/users` era autenticado após o PR #148, recebia 401 sem Bearer token e fazia o navegador exibir `Failed to fetch`.  
+**Correção:** `OPTIONS` agora é resolvido pelo handler base antes da autenticação; requisições reais continuam autenticadas.  
+**Decisões tomadas:** preservar o 401 explícito do PR #148; não usar retry de frontend para mascarar erro CORS.  
+**Ações externas concluídas:** usuário já havia tentado `Ctrl+F5` e relog, sem efeito antes da correção.  
+**Pendências e bloqueios:** aguardar propagação do deploy; validar a lista de usuários em produção; depois conceder `edit` e testar o editor real.  
+**Riscos conhecidos:** nova autenticação aplicada antes do tratamento de `OPTIONS` pode reintroduzir a regressão.  
+**Métricas / observabilidade:** PostHog Error Tracking não capturou exceção para essa falha, coerente com bloqueio CORS anterior à resposta de aplicação; nenhuma informação sensível foi consultada.  
+**Próxima ação exata:** recarregar `/admin/usuarios/` após o deploy; se a lista carregar, editar a própria conta, manter Regulador(a), marcar `Permitir editor de PDF` e salvar.  
 **Arquivos principais:** `worker/auth-management-flex.js`, `worker/tests/developer-self-edit-session.test.mjs`, `js/admin-users.js`, `admin/usuarios/index.html`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
