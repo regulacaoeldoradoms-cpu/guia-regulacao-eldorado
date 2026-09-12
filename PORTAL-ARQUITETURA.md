@@ -54,9 +54,9 @@ A política completa, os limites e a validação estão em
 
 ## Central de Documentos — arquitetura aprovada para desenvolvimento
 
-A Central de Documentos é implementada por fases e usa o Google Drive como fonte institucional dos PDFs. Na Fase 1, a rota `/documentos/` é somente leitura, com navegação, pesquisa por nome e abertura de PDF. O Cloudflare Worker permanecerá como fronteira para sessão, capabilities documentais, OAuth e operações sensíveis; tokens Google não serão expostos ao frontend. Conteúdo documental não entra no cache estático do Service Worker nem no PostHog.
+A Central de Documentos é implementada por fases e usa o Google Drive como fonte institucional dos PDFs. A Fase 1 validou navegação, pesquisa e abertura read-only. Na Fase 2, o visualizador passa a usar um stream efêmero mediado pelo Service Worker para permitir carregamento progressivo/Range sem persistir conteúdo; o Blob integral permanece como fallback. O Cloudflare Worker continua sendo a fronteira para sessão, capabilities documentais, OAuth e operações sensíveis; tokens Google não são expostos ao visualizador nem persistidos. Conteúdo documental não entra no cache estático do Service Worker nem no PostHog.
 
-A arquitetura de Fase 0, incluindo OAuth, escopo Google, capabilities, cache, concorrência, rollback e fronteira da IA documental, está em `docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md`. O detalhamento read-only está em `docs/CENTRAL-DOCUMENTOS-FASE-1.md`. O estado operacional e o handoff entre chats ficam em `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+A arquitetura de Fase 0, incluindo OAuth, escopo Google, capabilities, cache, concorrência, rollback e fronteira da IA documental, está em `docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md`. O detalhamento read-only está em `docs/CENTRAL-DOCUMENTOS-FASE-1.md` e a visualização progressiva em `docs/CENTRAL-DOCUMENTOS-FASE-2.md`. O estado operacional e o handoff entre chats ficam em `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
 
 ## PWA instalável e Web Push
 
