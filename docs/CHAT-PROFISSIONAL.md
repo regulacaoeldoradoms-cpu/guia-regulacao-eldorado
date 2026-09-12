@@ -19,7 +19,7 @@ estiver ativa.
 
 O backend admite os seguintes perfis lógicos no chat:
 
-- `medico` — Médico;
+- `medico` — Médico(a);
 - `recepcao` — Recepção;
 - `coordenacao` — Coordenação;
 - `telemedicina` — Técnico em Telemedicina;

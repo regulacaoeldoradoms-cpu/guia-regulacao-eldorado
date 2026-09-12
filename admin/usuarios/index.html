@@ -49,7 +49,7 @@
           <div class="admin-form-grid">
             <div class="portal-field"><label for="newName">Nome completo</label><input id="newName" required maxlength="120" placeholder="Nome do profissional"></div>
             <div class="portal-field"><label for="newUsername">Usuário</label><input id="newUsername" required maxlength="40" placeholder="Ex.: Paola Dourado"><div class="password-meter">O sistema normaliza o usuário, por exemplo “Paola Dourado” para “paola.dourado”.</div></div>
-            <div class="portal-field"><label for="newJobTitle">Cargo/função</label><input id="newJobTitle" maxlength="120" placeholder="ex.: Médica ESF Centro"></div>
+            <div class="portal-field"><label for="newJobTitle">Cargo/função</label><input id="newJobTitle" maxlength="120" placeholder="ex.: Médico(a) ESF Centro"></div>
             <div class="portal-field"><label for="newRole">Perfil de acesso</label><select id="newRole" required></select></div>
             <div class="portal-field full" id="newCouncilWrap" hidden>
               <label for="newCouncilRole">Função no Conselho Municipal de Saúde</label>
@@ -64,9 +64,9 @@
               <label>Cargos/funções adicionais (acumuláveis)</label>
               <label style="display:flex;gap:9px;align-items:center;padding:9px 0">
                 <input id="newAdditionalRoleDocuments" type="checkbox" value="documentos">
-                Central de Documentos — navegação e leitura do Google Drive institucional
+                Regulador(a) — acesso à Central de Documentos e leitura do Google Drive institucional
               </label>
-              <div class="password-meter">Essas funções são somadas ao perfil principal. A pessoa pode, por exemplo, continuar Médica e também ter acesso à Central de Documentos.</div>
+              <div class="password-meter">Essas funções são somadas ao perfil principal. A pessoa pode, por exemplo, continuar Médico(a) e também acumular a função Regulador(a).</div>
             </div>
             <div class="portal-field"><label for="newPassword">Senha inicial</label><input id="newPassword" type="password" required minlength="8" maxlength="160" autocomplete="new-password"></div>
             <div class="portal-field"><label>&nbsp;</label><label style="display:flex;gap:9px;align-items:center;padding:13px 0"><input id="newMustChange" type="checkbox" checked> Exigir troca de senha no primeiro acesso</label></div>
@@ -94,9 +94,9 @@
           <label>Cargos/funções adicionais (acumuláveis)</label>
           <label style="display:flex;gap:9px;align-items:center;padding:9px 0">
             <input id="editAdditionalRoleDocuments" type="checkbox" value="documentos">
-            Central de Documentos — navegação e leitura do Google Drive institucional
+            Regulador(a) — acesso à Central de Documentos e leitura do Google Drive institucional
           </label>
-          <div class="password-meter">A função adicional não substitui o perfil principal e pode ser acumulada com outros cargos.</div>
+          <div class="password-meter">A função Regulador(a) não substitui o perfil principal e pode ser acumulada com outros cargos.</div>
         </div>
         <div class="portal-field full"><label style="display:flex;gap:9px;align-items:center"><input id="editActive" type="checkbox"> Acesso ativo</label></div>
         <div class="full account-actions"><button class="portal-button primary" type="submit">Salvar alterações</button><button class="portal-button secondary" type="button" data-close-modal="editUserModal">Cancelar</button></div>
@@ -121,7 +121,7 @@
   <script src="/js/auth-client.js?v=20260910-4"></script>
   <script src="/js/portal-interactions.js?v=20260910-2"></script>
   <script src="/js/credential-input.js?v=20260812-1"></script>
-  <script src="/js/admin-users.js?v=20260911-2"></script>
+  <script src="/js/admin-users.js?v=20260911-3"></script>
   <script src="/js/admin-council-role-options.js?v=20260823-1544"></script>
   <script src="/js/portal-chat.js?v=20260911-3"></script>
   <script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>

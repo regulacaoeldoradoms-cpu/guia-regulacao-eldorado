@@ -13,9 +13,9 @@ Entregar a primeira superfície funcional da Central de Documentos: acesso autor
 
 A Central usa autorização composta:
 
-- **perfil principal** continua sendo único (Desenvolvedor, Coordenação, Médico, Recepção, Telemedicina ou Cidadão);
+- **perfil principal** continua sendo único (Desenvolvedor, Coordenação, Médico(a), Recepção, Telemedicina ou Cidadão);
 - **funções adicionais acumuláveis** podem ser somadas ao perfil principal;
-- a primeira função adicional criada é `documentos` (**Central de Documentos**);
+- a primeira função adicional criada é `documentos` (**Regulador(a)**), que libera a Central de Documentos;
 - `view`: leitura da Central e PDFs, concedida pela função adicional `documentos` ou por regra legada de compatibilidade;
 - `extract`: reservada para Fase 5;
 - `edit`: reservada para Fase 3/4;
@@ -23,7 +23,7 @@ A Central usa autorização composta:
 
 A tabela `auth_user_additional_roles` guarda funções acumuláveis. A tabela `auth_document_access` permanece para capabilities documentais finas e compatibilidade. O Desenvolvedor recebe `manage` implicitamente, mas leitura documental continua sendo uma autorização independente.
 
-Exemplo: uma conta pode ser **Médico + Central de Documentos** sem perder o perfil Médico.
+Exemplo: uma conta pode ser **Médico(a) + Regulador(a)** sem perder o perfil Médico(a).
 
 Toda rota protegida revalida sessão + autorização efetiva no Worker.
 
@@ -102,7 +102,7 @@ A rota `/documentos/`:
 - mostra configuração institucional para quem administra;
 - não exibe mais a lista completa de usuários, evitando ocupar grande parte da tela operacional;
 - direciona a gestão de acesso para `/admin/usuarios/`;
-- em **Usuários e acessos**, o Desenvolvedor pode acumular a função **Central de Documentos** com o perfil principal;
+- em **Usuários e acessos**, o Desenvolvedor pode acumular a função **Regulador(a)** com o perfil principal;
 - navega por pastas com breadcrumbs mantidos somente em memória;
 - pesquisa globalmente por nome;
 - mostra pastas primeiro;

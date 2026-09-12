@@ -133,7 +133,7 @@ test('política libera a camada social para toda conta ativa e mantém permissõ
   assert.equal(canDiscoverSocialProfile(citizenA, { ...doctor, profile_visibility: 'friends' }, null), false);
   assert.equal(rolePresentation({ role: 'cidadao', councilRole: 'membro', jobTitle: '' }).label, 'Membro do Conselho');
   assert.equal(rolePresentation({ role: 'cidadao', councilRole: 'presidente', jobTitle: '' }).label, 'Presidente do Conselho');
-  assert.equal(rolePresentation({ role: 'medico', councilRole: 'presidente', jobTitle: 'Clínico' }).label, 'Médico',
+  assert.equal(rolePresentation({ role: 'medico', councilRole: 'presidente', jobTitle: 'Clínico' }).label, 'Médico(a)',
     'cargo profissional permanece a identidade principal quando a conta também participa do Conselho');
   assert.equal(relationshipStateFor('a', 'b', { state: 'pending', initiated_by: 'a' }), 'sent');
   assert.equal(relationshipStateFor('a', 'b', { state: 'pending', initiated_by: 'b' }), 'received');

@@ -3,8 +3,8 @@
 const ROLE_CATALOG = Object.freeze({
   documentos: Object.freeze({
     id: 'documentos',
-    label: 'Central de Documentos',
-    description: 'Navegação e leitura de documentos autorizados no Google Drive institucional.'
+    label: 'Regulador(a)',
+    description: 'Acesso à Central de Documentos e leitura de documentos autorizados no Google Drive institucional.'
   })
 });
 

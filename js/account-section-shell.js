@@ -4,7 +4,7 @@
   if (window.PortalAccountSection) return;
 
   const roleLabels = Object.freeze({
-    medico: 'Médico',
+    medico: 'Médico(a)',
     recepcao: 'Recepção',
     coordenacao: 'Coordenação',
     telemedicina: 'Técnico em Telemedicina',

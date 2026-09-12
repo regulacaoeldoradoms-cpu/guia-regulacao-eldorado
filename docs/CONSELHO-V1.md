@@ -10,7 +10,7 @@ O portal não cria uma segunda identidade para quem já possui perfil profission
 
 O campo `role` continua indicando a função principal em todos os módulos:
 
-- `medico`: Médico;
+- `medico`: Médico(a);
 - `recepcao`: Recepção;
 - `coordenacao`: Coordenação;
 - `admin`: Desenvolvedor;
@@ -48,7 +48,7 @@ Mantém administração técnica e os módulos profissionais autorizados. No pai
 
 Mantém Guia Médico, pré-regulação com IA, Conferência da Recepção, Monitoramento e gestão apenas de contas subordinadas permitidas.
 
-### Médico (`medico`)
+### Médico(a) (`medico`)
 
 Mantém Guia Médico e recursos profissionais correspondentes.
 
@@ -120,7 +120,7 @@ O texto e os anexos podem revelar identidade se o próprio usuário incluir dado
 
 ## Conta profissional e Canal do Cidadão
 
-Médico, Recepção, Coordenação e Desenvolvedor usam a mesma conta no Canal do Cidadão. Não existe perfil cidadão paralelo.
+Médico(a), Recepção, Coordenação e Desenvolvedor usam a mesma conta no Canal do Cidadão. Não existe perfil cidadão paralelo.
 
 Uma conta profissional sem e-mail verificado continua Bronze e pode escolher, em cada novo envio, entre manifestação anônima e manifestação identificada, salvo se possuir a função de Presidente do Conselho.
 
@@ -156,7 +156,7 @@ FIREBASE_STORAGE_BUCKET
 
 ## Testes mínimos antes de liberar ao público
 
-1. Médico, Recepção, Coordenação e Desenvolvedor mantêm seus próprios cargos no Canal do Cidadão.
+1. Médico(a), Recepção, Coordenação e Desenvolvedor mantêm seus próprios cargos no Canal do Cidadão.
 2. O mesmo avatar acompanha a conta em todos os módulos.
 3. Conta sem e-mail verificado aparece como Bronze.
 4. Conta com e-mail verificado aparece como Prata.
