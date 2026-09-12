@@ -1,0 +1,59 @@
+name: Vendor PDF.js 3C.1
+
+on:
+  push:
+    branches:
+      - feat/document-viewer-pdfjs-3c1
+    paths:
+      - '.github/workflows/vendor-pdfjs-3c1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/document-viewer-pdfjs-3c1
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Baixar PDF.js fixado
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf vendor/pdfjs .tmp-pdfjs
+          mkdir -p vendor/pdfjs .tmp-pdfjs
+          cd .tmp-pdfjs
+          TGZ="$(npm pack pdfjs-dist@6.3.289 --silent)"
+          tar -xzf "$TGZ"
+          cd ..
+          cp .tmp-pdfjs/package/build/pdf.min.mjs vendor/pdfjs/pdf.min.mjs
+          cp .tmp-pdfjs/package/build/pdf.worker.min.mjs vendor/pdfjs/pdf.worker.min.mjs
+          cp .tmp-pdfjs/package/LICENSE vendor/pdfjs/LICENSE
+          cp -R .tmp-pdfjs/package/cmaps vendor/pdfjs/cmaps
+          cp -R .tmp-pdfjs/package/standard_fonts vendor/pdfjs/standard_fonts
+          cp -R .tmp-pdfjs/package/wasm vendor/pdfjs/wasm
+          cp -R .tmp-pdfjs/package/iccs vendor/pdfjs/iccs
+          rm -rf .tmp-pdfjs
+          test -s vendor/pdfjs/pdf.min.mjs
+          test -s vendor/pdfjs/pdf.worker.min.mjs
+
+      - name: Registrar dependência vendorizada
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vendor/pdfjs
+          if git diff --cached --quiet; then
+            echo "PDF.js já está atualizado."
+            exit 0
+          fi
+          git commit -m "Vendor PDF.js 6.3.289 para o visualizador próprio"
+          git push origin HEAD:feat/document-viewer-pdfjs-3c1
