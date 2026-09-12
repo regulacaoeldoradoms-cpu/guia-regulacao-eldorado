@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: corrigir a regressão visual do cabeçalho do visualizador que corta o botão **Editar PDF** e então continuar a validação funcional real do editor da Fase 3.
+Subfase atual: validar em produção a correção visual já mesclada do botão **Editar PDF** e continuar a validação funcional real do editor da Fase 3.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: corrigir a regressão visual do cabeçalho do visualizador que co
 
 ## Branch / PR
 
-Branch atual: `fix/document-viewer-edit-button-layout`.
+Branch atual: `docs/central-docs-edit-button-postmerge` (somente consolidação pós-merge).
 
-PR atual: ainda não aberto neste registro; correção visual implementada na branch.
+PR atual: nenhum funcional; PR #152 foi validado e mesclado.
 
 ## Entregas concluídas nesta unidade
 
@@ -313,6 +313,22 @@ Estado técnico:
 
 A aprovação está registrada e não precisa ser solicitada novamente. A próxima ação humana é somente efetivar o checkbox na conta de teste autorizada após o deploy.
 
+## Correção visual do botão Editar PDF validada e mesclada — 12/09/2026
+
+PR #152:
+- 21 workflows do Pull Request concluídos com sucesso e sem falhas;
+- correção visual mesclada na `main` em `e432ba54e92992e61bff7898933da57f5e44538a`;
+- o título do PDF agora encolhe e recebe elipse dentro do espaço disponível;
+- **Editar PDF** e o botão de fechar permanecem como ações não encolhíveis no cabeçalho;
+- regra equivalente foi preservada em telas estreitas;
+- cache-bust de `documents.css` avançou para `20260912-4`;
+- a mudança é exclusivamente de layout e não altera permissões, OAuth, cache, conteúdo do PDF ou escrita no Drive.
+
+Próxima validação real:
+- recarregar `/documentos/` após a propagação do deploy;
+- abrir PDF com título longo e confirmar que **Editar PDF** aparece totalmente visível;
+- iniciar o editor e validar excluir/reordenar/undo/redo/unir/prévia.
+
 ## Validação real da capability `edit` e regressão visual — 12/09/2026
 
 A validação em produção avançou após a correção de CORS:
@@ -435,12 +451,11 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. abrir PR da correção visual `fix/document-viewer-edit-button-layout`;
-2. acompanhar os checks e corrigir qualquer falha;
-3. mesclar somente com checks aprovados;
-4. após deploy, validar em desktop e mobile que **Editar PDF** e fechar permanecem totalmente visíveis com títulos longos;
-5. iniciar o editor e validar excluir/reordenar/undo/redo/unir/prévia com PDFs reais autorizados;
-6. encerrar a Fase 3 somente se o PDF resultante for válido e não houver regressão de leitura/cache.
+1. aguardar a propagação do deploy da `main` `e432ba54`;
+2. validar em produção que **Editar PDF** e fechar ficam totalmente visíveis com título longo;
+3. iniciar o editor e validar excluir/reordenar/undo/redo/unir/prévia com PDFs reais autorizados;
+4. testar pelo menos PDFs com tamanhos/contagens diferentes;
+5. encerrar a Fase 3 somente se os resultados forem PDFs válidos e leitura/cache da Fase 2 não regredir.
 
 ## Arquivos e fontes principais
 
@@ -463,15 +478,15 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase / objetivo atual:** corrigir o botão **Editar PDF** cortado no cabeçalho do visualizador e então continuar os testes reais do editor.  
-**Estado real da main antes desta correção:** `eb7c1898ef54e1234090a1d54335c88104727dd3` — inclui PR #150 e consolidação pós-CORS.  
-**Branch atual:** `fix/document-viewer-edit-button-layout`.  
-**PR atual:** ainda não aberto neste registro.  
-**Validação real concluída:** a capability `edit` está efetiva em produção, pois o botão **Editar PDF** apareceu ao abrir um PDF; sessão/CORS deixaram de ser bloqueio.  
-**Bug visual:** título longo ocupava largura baseada na viewport e empurrava as ações para fora da coluna; o visualizador recortava o botão.  
-**Correção:** título agora é flexível com `min-width: 0`, ações não encolhem e a elipse ocorre dentro do espaço disponível; cache-bust CSS `20260912-4`.  
-**Teste:** `worker/tests/documents-ui.test.mjs` ganhou cobertura para o contrato de layout do cabeçalho.  
-**Pendências:** abrir PR, validar checks, merge/deploy e confirmação visual real; depois executar operações do editor.  
-**Riscos conhecidos:** títulos extremamente longos devem ser truncados, nunca deslocar as ações; manter essa propriedade em futuras mudanças de cabeçalho.  
-**Próxima ação exata:** abrir PR da correção visual, acompanhar checks e mesclar se aprovados.  
-**Arquivos principais:** `css/documents.css`, `documentos/index.html`, `worker/tests/documents-ui.test.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Subfase / objetivo atual:** validar em produção o cabeçalho corrigido e executar os testes reais das operações do editor.  
+**Estado real da main:** `e432ba54e92992e61bff7898933da57f5e44538a` — PR #152 mesclado.  
+**Branch atual:** `docs/central-docs-edit-button-postmerge` (somente consolidação documental pós-merge).  
+**PR atual:** nenhum funcional; PR #152 concluído.  
+**Última ação concluída:** correção do botão **Editar PDF** cortado foi validada com 21 checks sem falhas e mesclada na main.  
+**Capability:** `edit` já está efetiva na conta de teste autorizada; o botão apareceu em produção antes da correção visual.  
+**Correção visual:** título é flexível com `min-width: 0`; ações usam `flex: 0 0 auto`; elipse respeita o espaço disponível; cache-bust CSS `20260912-4`.  
+**Checks:** 21 workflows do PR #152 concluídos com sucesso; workflows pós-merge da main estavam iniciando no último registro.  
+**Pendências:** propagação do deploy, confirmação visual real e validação funcional excluir/reordenar/undo/redo/unir/prévia.  
+**Riscos conhecidos:** títulos longos devem truncar sem deslocar ações; editor continua local e sem escrita no Drive nesta fase.  
+**Próxima ação exata:** recarregar `/documentos/`, abrir um PDF com título longo, confirmar o botão inteiro e clicar em **Editar PDF** para iniciar os testes funcionais.  
+**Arquivos principais:** `css/documents.css`, `documentos/index.html`, `worker/tests/documents-ui.test.mjs`, `js/document-editor.js`, `js/documents.js`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
