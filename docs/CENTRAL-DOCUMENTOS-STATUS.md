@@ -437,7 +437,7 @@ Decisões:
 
 Pendências desta unidade:
 - concluir testes automatizados;
-- remover o workflow temporário de vendorização antes do merge;
+- workflow temporário de vendorização removido após confirmar os assets self-hosted;
 - abrir PR e validar todos os checks;
 - depois do deploy, validar PDFs reais em desktop e mobile, incluindo documento grande, páginas rotacionadas e cache hit/miss;
 - somente após essa validação avançar para 3C.2.
@@ -648,12 +648,11 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. concluir a validação automatizada da branch `feat/document-viewer-pdfjs-3c1`;
-2. remover o workflow temporário de vendorização, mantendo apenas os assets self-hosted já versionados;
-3. abrir PR da unidade 3C.1 e exigir checks verdes antes do merge;
-4. após deploy, abrir PDFs reais e confirmar visualizador próprio, miniaturas, zoom, ajuste à largura, rotação e desempenho em cache hit/miss;
-5. confirmar que o fallback nativo continua funcional em caso de incompatibilidade;
-6. registrar a validação real e somente então iniciar **3C.2 — drag-and-drop das páginas**.
+1. abrir PR da unidade 3C.1 e executar a validação automatizada completa;
+2. corrigir qualquer regressão encontrada e exigir checks verdes antes do merge;
+3. após deploy, abrir PDFs reais e confirmar visualizador próprio, miniaturas, zoom, ajuste à largura, rotação e desempenho em cache hit/miss;
+4. confirmar que o fallback nativo continua funcional em caso de incompatibilidade;
+5. registrar a validação real e somente então iniciar **3C.2 — drag-and-drop das páginas**.
 
 ## Arquivos e fontes principais
 
@@ -681,11 +680,11 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Main de entrada da unidade:** `3d737adf1c718b9faac6389d084274c02bc3bb24`.  
 **Branch funcional:** `feat/document-viewer-pdfjs-3c1`.  
 **PR funcional:** ainda não aberto neste registro.  
-**Dependência:** PDF.js 6.3.289 self-hosted em `vendor/pdfjs/` (módulo, worker, CMaps, fontes, WASM, ICCs e licença); workflow temporário de vendor executou com sucesso e deve ser removido antes do merge.  
+**Dependência:** PDF.js 6.3.289 self-hosted em `vendor/pdfjs/` (módulo, worker, CMaps, fontes, WASM, ICCs e licença); workflow temporário de vendor executou com sucesso e já foi removido da branch.  
 **Implementação:** `js/document-viewer.js` + superfície própria em `/documentos/`; thumbnails; canvas por página; zoom/reset/fit width; lazy rendering; liberação de canvas distante; Range/stream existente reutilizado; cache criptografado existente preservado.  
 **Fallback:** iframe nativo continua disponível e a prévia do editor permanece nele durante 3C.1.  
 **Segurança:** `enableScripting:false`, `isEvalSupported:false`, worker local, sem CDN runtime para PDF.js; nenhuma escrita Drive; nenhuma propriedade sensível nova no PostHog.  
 **Decisão do usuário preservada para fases seguintes:** Adicionar imagem = página nova; Colar imagem = overlay selecionado do armazenamento, movível entre páginas e transformável; Ctrl+V = nova página.  
-**Pendências:** checks da branch/PR, remoção do workflow temporário, merge/deploy e validação real desktop/mobile.  
-**Próxima ação exata:** remover o workflow temporário após confirmar assets, abrir PR da 3C.1 e corrigir qualquer check; depois validar o visualizador em produção antes de iniciar 3C.2.  
+**Pendências:** checks da branch/PR, merge/deploy e validação real desktop/mobile.  
+**Próxima ação exata:** abrir PR da 3C.1, corrigir qualquer check e mesclar somente com validações verdes; depois validar o visualizador em produção antes de iniciar 3C.2.  
 **Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `vendor/pdfjs/`, `worker/tests/documents-ui.test.mjs`, `.github/workflows/validate-central-documents-phase1.yml`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
