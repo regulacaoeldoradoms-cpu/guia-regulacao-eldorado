@@ -648,7 +648,7 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
 **Subfase / objetivo atual:** 3C.1 — visualizador próprio somente leitura + miniaturas.  
-**Estado real da main:** `c7e9831134c17eb8955e04ceab8e6fed052c6ec2` — inclui PR #158 e PR #159.  
+**Base funcional consolidada para 3C.1:** `c7e9831134c17eb8955e04ceab8e6fed052c6ec2` — inclui PR #158 e PR #159; alterações documentais posteriores não mudam essa base funcional.  
 **Branch funcional atual:** nenhuma; a próxima deve ser criada da main atual para 3C.1.  
 **PR funcional atual:** nenhum.  
 **Pesquisa concluída:** `docs/CENTRAL-DOCUMENTOS-EDITOR-VISUAL-V1.md` é o detalhamento técnico vigente das unidades 3C.1–3C.5; PR #158 passou 21 workflows e foi mesclado.  
