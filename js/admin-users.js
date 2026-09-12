@@ -7,10 +7,10 @@
 
   const isDeveloper = currentUser.role === 'admin';
   const roleLabels = {
-    medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', telemedicina: 'Técnico em Telemedicina', cidadao: 'Cidadão', admin: 'Desenvolvedor'
+    medico: 'Médico(a)', recepcao: 'Recepção', coordenacao: 'Coordenação', telemedicina: 'Técnico em Telemedicina', cidadao: 'Cidadão', admin: 'Desenvolvedor'
   };
   const additionalRoleLabels = {
-    documentos: 'Central de Documentos'
+    documentos: 'Regulador(a)'
   };
   const councilLabels = { presidente: 'Presidente do Conselho', membro: 'Membro do Conselho', '': 'Sem função no Conselho' };
   const state = { users: [], editing: null, resetting: null };
@@ -36,7 +36,7 @@
   const editAdditionalRoleDocuments = document.getElementById('editAdditionalRoleDocuments');
 
   if (isDeveloper) {
-    newRole.innerHTML = '<option value="coordenacao">Coordenação — Guia + Recepção + Monitoramento + usuários subordinados</option><option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option><option value="telemedicina">Técnico em Telemedicina — acompanhamento de teleconsultas e retornos</option><option value="cidadao">Cidadão — conta sem função profissional</option>';
+    newRole.innerHTML = '<option value="coordenacao">Coordenação — Guia + Recepção + Monitoramento + usuários subordinados</option><option value="medico">Médico(a) — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option><option value="telemedicina">Técnico em Telemedicina — acompanhamento de teleconsultas e retornos</option><option value="cidadao">Cidadão — conta sem função profissional</option>';
   } else {
     newRole.innerHTML = '<option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option>';
   }
