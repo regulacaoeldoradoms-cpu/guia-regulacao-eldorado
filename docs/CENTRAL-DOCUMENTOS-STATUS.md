@@ -4,9 +4,9 @@
 
 ## Fase atual
 
-**Fase 2 — Visualização de alta performance**
+**Fase 3 — Editor PDF essencial**
 
-Subfase atual: unidade 2B — reduzir a latência real com cache local criptografado, pré-aquecimento e invalidação por versão, mantendo `pdf_first_page_visible` confiável.
+Subfase atual: iniciar o Editor PDF essencial com operações locais reversíveis; nenhuma escrita no Drive pertence a esta fase.
 
 ## Estado de entrada
 
@@ -153,6 +153,23 @@ Diretriz registrada:
 - Fase 1 encerrada: pesquisa global, abertura de PDF e telemetria documental foram comprovadas em produção sem propriedades sensíveis observadas.
 - A alteração de UX/cargos acumuláveis desta subfase ainda precisa passar por PR/checks antes de ir para a main.
 
+## Encerramento formal da Fase 2 — 12/09/2026
+
+Validação real do cache criptografado após reaberturas em produção:
+
+- `pdf_ready` hit: 7 eventos; média 107 ms; mediana 90 ms; p95 167,5 ms;
+- `pdf_ready` miss: 9 eventos; média 5.461,3 ms (~5,46 s); mediana 5.177 ms; p95 6.878,2 ms;
+- `pdf_first_page_visible` hit: 7 eventos; média 127,6 ms; mediana 110 ms; p95 193 ms;
+- `pdf_first_page_visible` miss: 7 eventos; média 5.506,7 ms (~5,51 s); mediana 5.212 ms; p95 7.026,6 ms.
+
+Ganho:
+- `pdf_ready`: redução média de ~98,0%, cerca de 51x;
+- primeira página: redução média de ~97,7%, cerca de 43x.
+
+O PostHog mostrou eventos reais `cache_state=hit` com `source=cache` e eventos `miss` com `source=drive`. A telemetria continuou sem nomes de arquivos, IDs do Drive, paciente, CPF, CNS, CID ou conteúdo de PDF.
+
+Conclusão: **Fase 2 encerrada**. O critério do Guia Mestre foi cumprido: métricas confiáveis, cache/pré-carregamento funcionando e reabertura sem espera desnecessária. A próxima fase é **Fase 3 — Editor PDF essencial**.
+
 ## Validação real da Fase 2A e decisão de cache — 12/09/2026
 
 Teste real após o PR #140:
@@ -272,13 +289,13 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. PR #142 validado com 23 workflows e mesclado em `f75b5725`;
-2. aguardar deploy da main e atualização do Service Worker/cache estático V12;
-3. recarregar a Central com Ctrl+F5;
-4. aguardar alguns segundos na pasta para o pré-aquecimento;
-5. abrir um PDF, fechar e abrir o mesmo novamente;
-6. confirmar no PostHog diferença entre `cache_state=miss` e `cache_state=hit` em `pdf_ready`/`pdf_first_page_visible`;
-7. manter a Fase 2 aberta até o ganho de cache hit ser comprovado.
+1. mesclar o encerramento formal da Fase 2;
+2. criar branch isolada da **Fase 3 — Editor PDF essencial**;
+3. documentar arquitetura do editor local e modelo de histórico undo/redo;
+4. implementar primeiro: carregamento do PDF em workspace editável + excluir/reordenar páginas + desfazer/refazer;
+5. depois implementar união de PDFs e visualização do resultado;
+6. não salvar de volta no Google Drive nesta fase; escrita/sincronização pertence à Fase 4;
+7. validar PDFs resultantes com documentos de tamanhos e estruturas diferentes antes de encerrar a Fase 3.
 
 ## Arquivos e fontes principais
 
@@ -300,17 +317,15 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Handoff para o próximo chat
 
-**Fase atual:** Fase 2 — Visualização de alta performance.  
-**Subfase / objetivo atual:** unidade 2B — cache local criptografado + pré-aquecimento para reduzir `pdf_ready` e tornar `pdf_first_page_visible` mensurável.  
-**Estado real da main:** `f75b5725cc447cde66cbceb9eb2ea79a72b981bd` — PR #142 mesclado com a unidade 2B de cache criptografado.  
-**Branch atual:** `docs/central-docs-phase2b-postmerge` (status pós-merge; nenhuma mudança funcional adicional).  
-**PR atual:** nenhum funcional; PR #142 foi concluído.  
-**Última validação real:** PDF abriu, porém lento; PostHog mostrou abertura anterior ~4.830 ms (~4,8 s) e mais recente ~5.914 ms (~5,9 s) em `pdf_ready`, ambos cache miss; `pdf_first_page_visible` ainda 0.  
-**Decisão aprovada:** permitir cache persistente de PDFs, mas implementá-lo cifrado e segregado pela sessão; cargo/capability continua obrigatório, porém não é a única barreira para bytes em disco.  
-**Implementação concluída:** PR #142 validado com 23 workflows sem falhas e mesclado; chave opaca HMAC por arquivo; IndexedDB cifrado AES-GCM/HKDF; TTL 12 h; 256 MB totais; 50 MB por PDF; prefetch até 12 MB; aquecimento por lista/hover; invalidação por `version`; limpeza por logout/desconexão/troca de sessão; cache hit/miss na telemetria allowlisted.  
-**Justificativa:** o stream progressivo sozinho não reduziu a espera no navegador real; o Guia Mestre autoriza cache e pré-carregamento na Fase 2.  
-**Alternativas descartadas:** PDF clínico em texto puro no Cache Storage; CDN/edge cache compartilhado; fileId como chave de cache; cache ilimitado; confiar apenas na UI/cargo para proteger bytes locais.  
-**Pendências:** aguardar deploy da main; validar cache hit real em produção; comparar tempos; confirmar `pdf_first_page_visible`; futura Drive Activity API permanece registrada.  
-**Riscos conhecidos:** armazenamento local limitado; cache de outra sessão; documento desatualizado; todos mitigados por criptografia ligada à sessão, fingerprint, TTL/LRU e `version` do Drive.  
-**Próxima ação exata:** após o deploy da main `f75b5725`, recarregar `/documentos/` com atualização completa; aguardar alguns segundos para o prefetch, abrir um PDF, fechá-lo e abrir o mesmo PDF novamente. Em seguida comparar `pdf_ready` e `pdf_first_page_visible` entre miss/hit no PostHog.  
-**Arquivos principais:** `worker/document-drive.js`, `js/document-cache.js`, `js/documents.js`, `documentos/index.html`, `portal-sw.js`, `docs/CENTRAL-DOCUMENTOS-FASE-2.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Fase atual:** Fase 3 — Editor PDF essencial.  
+**Subfase / objetivo atual:** iniciar editor local reversível, sem escrita no Drive.  
+**Estado real da main antes deste PR de encerramento:** `66ac7f8702abaffd7d233ce9a14efeebf1267885`.  
+**Branch atual:** `docs/central-docs-phase2-close`.  
+**PR atual:** ainda não aberto neste registro.  
+**Última validação real:** cache criptografado comprovado em produção; `pdf_ready` hit média 107 ms vs miss 5.461 ms, e primeira página hit 127,6 ms vs miss 5.506,7 ms.  
+**Conclusão:** Fase 2 encerrada; todos os critérios de aceite foram cumpridos.  
+**Decisões preservadas:** cache IndexedDB cifrado por sessão, TTL/limites/versionamento, prefetch controlado, Service Worker sem cache clínico em Cache Storage, telemetria allowlisted.  
+**Próxima fase:** Fase 3 — excluir páginas, unir PDFs, reorganizar, desfazer/refazer e visualizar resultado localmente.  
+**Limite de escopo:** nenhuma gravação/substituição no Google Drive até a Fase 4.  
+**Próxima ação exata:** mesclar este encerramento, criar branch da Fase 3 e implementar a primeira unidade do editor com testes automatizados e validação de PDF resultante.  
+**Arquivos principais atuais:** `js/document-cache.js`, `js/documents.js`, `worker/document-drive.js`, `portal-sw.js`, `docs/CENTRAL-DOCUMENTOS-FASE-2.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
