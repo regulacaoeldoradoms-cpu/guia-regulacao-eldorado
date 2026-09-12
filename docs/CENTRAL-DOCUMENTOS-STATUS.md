@@ -22,7 +22,7 @@ Subfase atual: tornar as funções do editor explícitas na interface, começand
 
 Branch atual: `feat/document-editor-merge-action`.
 
-PR atual: ainda não aberto neste registro; melhoria de UX do editor implementada na branch.
+PR atual: #154 — melhoria de UX para tornar a união de PDFs explícita no editor.
 
 ## Entregas concluídas nesta unidade
 
@@ -475,8 +475,8 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. abrir PR da melhoria `feat/document-editor-merge-action`;
-2. validar checks e mesclar somente sem falhas;
+1. PR #154 aberto e validado com 21 workflows sem falhas;
+2. mesclar o PR #154;
 3. após deploy, confirmar que **Unir outro PDF** aparece na barra do editor;
 4. clicar em **Unir outro PDF**, selecionar outro PDF da lista e confirmar a inclusão de suas páginas no resultado;
 5. validar desfazer/refazer da união, exclusão/reordenação e prévia final;
@@ -506,12 +506,13 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Subfase / objetivo atual:** tornar as operações do editor explícitas e validar a união de PDFs em produção.  
 **Estado real da main de entrada:** `1025e793375220005ccbec482943c6ed46844ff9`.  
 **Branch atual:** `feat/document-editor-merge-action`.  
-**PR atual:** ainda não aberto neste registro.  
+**PR atual:** #154 — `Expor ação Unir outro PDF no editor`.  
 **Descoberta:** união de PDFs já funcionava via clique em outro item enquanto o editor estava ativo, mas a UX escondia o recurso e mantinha rótulos “Abrir PDF”.  
 **Implementação:** botão **Unir outro PDF**; rótulos contextuais **Unir ao editor** / **Já no editor**; foco guiado para a lista; sincronização após merge/undo/redo/exclusão/saída.  
 **Segurança:** continua edição estritamente local; nenhuma rota de escrita no Drive foi adicionada.  
 **Cache-bust:** `documents.js?v=20260912-3`.  
 **Teste:** `documents-ui.test.mjs` cobre botão, binding, rótulos e fluxo de merge.  
-**Pendências:** PR, checks, merge/deploy e validação real da união.  
-**Próxima ação exata:** abrir PR da branch, acompanhar checks e mesclar se todos aprovados; depois testar **Unir outro PDF** em produção.  
+**Checks:** 21 workflows do PR #154 concluídos com sucesso após correção de uma regex de teste que estava escapada em excesso; nenhuma falha funcional permaneceu.  
+**Pendências:** merge/deploy e validação real da união.  
+**Próxima ação exata:** mesclar o PR #154 e, após deploy, testar **Unir outro PDF** em produção.  
 **Arquivos principais:** `documentos/index.html`, `js/documents.js`, `worker/tests/documents-ui.test.mjs`, `js/document-editor.js`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
