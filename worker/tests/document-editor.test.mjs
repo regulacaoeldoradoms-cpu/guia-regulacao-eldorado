@@ -59,7 +59,7 @@ test('excluir e reordenar páginas são reversíveis e não permitem remover a �
   assert.equal(editor.pageCount(session), 3);
   assert.equal(editor.movePage(session, 2, -1), true);
   assert.deepEqual(
-    editor.pageModel(session).map((page) => page.sourcePage),
+    Array.from(editor.pageModel(session), (page) => Number(page.sourcePage)),
     [1, 3, 2]
   );
 
@@ -69,10 +69,10 @@ test('excluir e reordenar páginas são reversíveis e não permitem remover a �
 
   assert.equal(editor.undo(session), true);
   assert.equal(editor.pageCount(session), 3);
-  assert.deepEqual(editor.pageModel(session).map((page) => page.sourcePage), [1, 3, 2]);
+  assert.deepEqual(Array.from(editor.pageModel(session), (page) => Number(page.sourcePage)), [1, 3, 2]);
 
   assert.equal(editor.undo(session), true);
-  assert.deepEqual(editor.pageModel(session).map((page) => page.sourcePage), [1, 2, 3]);
+  assert.deepEqual(Array.from(editor.pageModel(session), (page) => Number(page.sourcePage)), [1, 2, 3]);
   assert.equal(editor.canRedo(session), true);
 
   assert.equal(editor.redo(session), true);
@@ -97,7 +97,7 @@ test('união adiciona páginas ao plano e gera Blob PDF local válido', async ()
   assert.equal(editor.sourceCount(session), 2);
   assert.equal(editor.pageCount(session), 5);
   assert.deepEqual(
-    editor.pageModel(session).map((page) => [page.sourceIndex, page.sourcePage]),
+    Array.from(editor.pageModel(session), (page) => [Number(page.sourceIndex), Number(page.sourcePage)]),
     [[0, 1], [0, 2], [1, 1], [1, 2], [1, 3]]
   );
 
