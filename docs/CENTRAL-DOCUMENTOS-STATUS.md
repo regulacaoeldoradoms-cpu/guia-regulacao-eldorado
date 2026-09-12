@@ -51,10 +51,15 @@ PR atual: nenhum para esta subfase. PR #135 foi mesclado na `main`.
 
 ## Decisões tomadas
 
+21. A nomenclatura institucional aprovada para a função adicional `documentos` é **Regulador(a)**; o nome **Central de Documentos** fica reservado à ferramenta.
+22. O perfil `medico` passa a ser exibido como **Médico(a)** nas superfícies do Portal, preservando o identificador técnico `medico` e todas as permissões existentes.
+23. Nomes futuros de cargos, perfis e funções institucionais devem ser confirmados pelo usuário antes de serem adotados como nomenclatura oficial.
+
+
 15. O acesso operacional à Central deixa de ser administrado por uma lista enorme dentro de `/documentos/`.
 16. O Portal passa a suportar **funções adicionais acumuláveis** sem substituir o perfil principal.
-17. A primeira função adicional é `documentos` — **Central de Documentos** — e concede leitura do Drive institucional.
-18. A gestão dessa função fica em `/admin/usuarios/`; exemplo válido: **Médico + Central de Documentos**.
+17. A primeira função adicional é `documentos` — **Regulador(a)** — e concede acesso à Central de Documentos e leitura do Drive institucional.
+18. A gestão dessa função fica em `/admin/usuarios/`; exemplo válido: **Médico(a) + Regulador(a)**.
 19. `auth_document_access` permanece para capabilities documentais finas/compatibilidade, enquanto `auth_user_additional_roles` registra funções acumuláveis.
 20. A página `/documentos/` mantém apenas operação documental e configuração institucional compacta; administração de usuários sai da tela operacional.
 
@@ -127,7 +132,7 @@ Diretriz registrada:
 ## Descoberta técnica na validação real
 
 - O bloco `Acessos à Central` ocupava espaço excessivo e misturava administração de usuários com a operação documental. Foi decidido removê-lo da rota operacional e centralizar a concessão em **Usuários e acessos**.
-- O modelo anterior de um único perfil principal não atendia ao requisito novo de acumular funções. Foi criada uma camada adicional, sem quebrar os perfis existentes, para permitir combinações como Médico + Central de Documentos.
+- O modelo anterior de um único perfil principal não atendia ao requisito novo de acumular funções. Foi criada uma camada adicional, sem quebrar os perfis existentes, para permitir combinações como Médico(a) + Regulador(a).
 - A tela real já comprovou OAuth conectado e listagem da raiz do Meu Drive.
 
 
@@ -168,7 +173,7 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 1. PR #135 aberto e 22 workflows validados sem falhas;
 2. mesclar o PR #135 e confirmar a main pós-merge;
-4. confirmar em produção que `/documentos/` ficou compacta e que a função **Central de Documentos** aparece em `/admin/usuarios/`;
+4. confirmar em produção que `/documentos/` ficou compacta e que a função **Regulador(a)** aparece em `/admin/usuarios/`;
 5. validar pesquisa real no Drive;
 6. abrir um PDF real autorizado e confirmar visualização;
 7. auditar no PostHog apenas os eventos/propriedades técnicas permitidos;
@@ -202,10 +207,10 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Última ação concluída:** PR #135 validado com 22 workflows e mesclado na main; nova branch criada exclusivamente para a validação final em produção da Fase 1.  
 **Validação externa concluída:** OAuth real conectado; Portal mostrou `Drive conectado` e carregou a raiz do Meu Drive.  
 **Checks e testes:** 22 workflows do PR #135 concluídos com sucesso e merge confirmado em `433456b6`.  
-**Decisões tomadas:** perfil principal permanece único; funções adicionais podem acumular; `documentos` concede leitura da Central; gestão de usuários fica fora da tela operacional; capabilities finas permanecem no backend.  
-**Justificativas:** reduzir drasticamente o espaço ocupado na Central e permitir combinações como Médico + Central de Documentos sem trocar o perfil profissional.  
+**Decisões tomadas:** perfil principal permanece único; funções adicionais podem acumular; `documentos` é exibido como `Regulador(a)` e concede leitura da Central; gestão de usuários fica fora da tela operacional; capabilities finas permanecem no backend.  
+**Justificativas:** reduzir drasticamente o espaço ocupado na Central e permitir combinações como Médico(a) + Regulador(a) sem trocar o perfil profissional.  
 **Alternativas descartadas:** continuar com uma checkbox para cada usuário dentro de `/documentos/`; transformar `documentos` em novo perfil primário mutuamente exclusivo; conceder acesso apenas escondendo/exibindo UI.  
 **Pendências:** validar em produção que a lista extensa desapareceu e que a função acumulável aparece em Usuários e acessos; testar pesquisa real; abrir PDF real; auditar PostHog; futura Drive Activity API permanece registrada para outra fase.  
 **Riscos conhecidos:** compatibilidade com acessos legados em `auth_document_access`; escopo OAuth restrito em modo Testing; PDF grande ainda é carregado integralmente nesta fase.  
-**Próxima ação exata:** após o deploy da main `433456b6`, recarregar `/documentos/` e `/admin/usuarios/` para confirmar a UI compacta e a função acumulável `Central de Documentos`; depois executar pesquisa, abrir PDF real e auditar PostHog.  
+**Próxima ação exata:** após o deploy da main `433456b6`, recarregar `/documentos/` e `/admin/usuarios/` para confirmar a UI compacta e a função acumulável `Regulador(a)`; depois executar pesquisa, abrir PDF real e auditar PostHog.  
 **Arquivos principais:** `worker/additional-roles.js`, `worker/document-access.js`, `worker/auth-management-flex.js`, `admin/usuarios/index.html`, `js/admin-users.js`, `documentos/index.html`, `js/documents.js`, `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, este status.
