@@ -170,7 +170,7 @@ test('editor PDF é local, reversível e separado da escrita no Drive', () => {
   const client = read('js/documents.js');
   const editor = read('js/document-editor.js');
 
-  assert.match(html, /document-editor\.js\?v=20260912-1/);
+  assert.match(html, /document-editor\.js\?v=20260912-2/);
   assert.match(html, /Editar PDF/);
   assert.match(html, /As alterações ainda não serão salvas no Google Drive/);
   assert.match(html, /cdn\.jsdelivr\.net/);
