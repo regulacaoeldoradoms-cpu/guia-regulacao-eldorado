@@ -21,7 +21,7 @@
   };
   const privacyLabels = { anonima: 'Anônima', sigilosa: 'Sigilosa', identificada: 'Identificada' };
   const roleLabels = {
-    medico: 'Médico', recepcao: 'Recepção', coordenacao: 'Coordenação', admin: 'Desenvolvedor', cidadao: 'Cidadão'
+    medico: 'Médico(a)', recepcao: 'Recepção', coordenacao: 'Coordenação', admin: 'Desenvolvedor', cidadao: 'Cidadão'
   };
   const isPrimaryCitizen = user.role === 'cidadao';
   const isPresident = user.councilRole === 'presidente';
