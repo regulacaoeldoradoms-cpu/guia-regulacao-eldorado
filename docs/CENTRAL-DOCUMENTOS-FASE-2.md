@@ -108,15 +108,28 @@ O objetivo é que PDFs já abertos ou pré-aquecidos sejam exibidos a partir do 
 
 ## Critérios de aceite da Fase 2
 
-- [ ] abertura progressiva funciona sem regressão da Fase 1;
-- [ ] requisições Range continuam protegidas por sessão/capability no Worker;
-- [ ] nenhuma resposta documental entra no Cache Storage persistente do Service Worker;
-- [ ] cache IndexedDB permanece criptografado, limitado, versionado e segregado por sessão;
-- [ ] fallback Blob continua funcional;
-- [ ] `pdf_first_page_visible` aparece em produção com propriedades técnicas permitidas;
-- [ ] `pdf_open_started` e `pdf_ready` continuam confiáveis;
-- [ ] cache hit reduz de forma mensurável o tempo de `pdf_ready`/`pdf_first_page_visible` sem perda de integridade;
-- [ ] checks automatizados e testes de privacidade passam;
-- [ ] resultado e métricas reais são registrados em `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+- [x] abertura progressiva funciona sem regressão da Fase 1;
+- [x] requisições Range continuam protegidas por sessão/capability no Worker;
+- [x] nenhuma resposta documental entra no Cache Storage persistente do Service Worker;
+- [x] cache IndexedDB permanece criptografado, limitado, versionado e segregado por sessão;
+- [x] fallback Blob continua funcional;
+- [x] `pdf_first_page_visible` aparece em produção com propriedades técnicas permitidas;
+- [x] `pdf_open_started` e `pdf_ready` continuam confiáveis;
+- [x] cache hit reduz de forma mensurável o tempo de `pdf_ready`/`pdf_first_page_visible` sem perda de integridade;
+- [x] checks automatizados e testes de privacidade passam;
+- [x] resultado e métricas reais são registrados em `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
 
-A fase só encerra quando os critérios acima forem comprovados em uso real.
+## Encerramento formal — 12/09/2026
+
+Validação real no PostHog após o usuário abrir PDFs repetidamente:
+
+- `pdf_ready` cache hit: 7 eventos, média **107 ms**, mediana **90 ms**, p95 **167,5 ms**;
+- `pdf_ready` cache miss: 9 eventos, média **5.461,3 ms (~5,46 s)**, mediana **5.177 ms**, p95 **6.878,2 ms**;
+- `pdf_first_page_visible` cache hit: 7 eventos, média **127,6 ms**, mediana **110 ms**, p95 **193 ms**;
+- `pdf_first_page_visible` cache miss: 7 eventos, média **5.506,7 ms (~5,51 s)**, mediana **5.212 ms**, p95 **7.026,6 ms**.
+
+O cache hit reduziu a média de `pdf_ready` em aproximadamente **98,0%** (cerca de **51x** mais rápido) e a primeira página em aproximadamente **97,7%** (cerca de **43x** mais rápido).
+
+Nenhuma propriedade sensível foi adicionada à telemetria; a comparação usa somente duração, estado de cache, origem, rota genérica e faixa de tamanho.
+
+**Conclusão:** todos os critérios de aceite da Fase 2 foram comprovados. A Fase 2 está encerrada e a próxima fase autorizada é a **Fase 3 — Editor PDF essencial**.
