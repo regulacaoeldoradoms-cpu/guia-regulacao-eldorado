@@ -6,7 +6,7 @@
 
 **Fase 1 — Navegação do Google Drive**
 
-Subfase atual: implementar a superfície read-only da Central, capabilities documentais e integração OAuth/Drive sem escrita.
+Subfase atual: concluir validação real da Fase 1 e consolidar o novo modelo de funções adicionais acumuláveis para acesso à Central.
 
 ## Estado de entrada
 
@@ -51,6 +51,14 @@ PR atual: nenhum para esta subfase. PR #134 foi mesclado na `main`.
 
 ## Decisões tomadas
 
+15. O acesso operacional à Central deixa de ser administrado por uma lista enorme dentro de `/documentos/`.
+16. O Portal passa a suportar **funções adicionais acumuláveis** sem substituir o perfil principal.
+17. A primeira função adicional é `documentos` — **Central de Documentos** — e concede leitura do Drive institucional.
+18. A gestão dessa função fica em `/admin/usuarios/`; exemplo válido: **Médico + Central de Documentos**.
+19. `auth_document_access` permanece para capabilities documentais finas/compatibilidade, enquanto `auth_user_additional_roles` registra funções acumuláveis.
+20. A página `/documentos/` mantém apenas operação documental e configuração institucional compacta; administração de usuários sai da tela operacional.
+
+
 1. Google Drive continua sendo a fonte institucional; PDFs não serão copiados para D1/Firebase como repositório paralelo.
 2. Integração usa Google Drive API v3 através do Cloudflare Worker.
 3. A conta institucional é autorizada uma vez; usuários do Portal usam sessão/capabilities do próprio Portal.
@@ -85,6 +93,11 @@ PR atual: nenhum para esta subfase. PR #134 foi mesclado na `main`.
 
 ## Ações externas concluídas
 
+- OAuth institucional concluído: a tela real da Central exibiu **Drive conectado**.
+- A raiz do Meu Drive foi carregada com sucesso no Portal e exibiu pastas reais em modo somente leitura.
+- A integração Google Drive está funcional no ambiente real para listagem inicial; pesquisa e abertura de PDF ainda precisam de validação final explícita.
+
+
 - Client ID OAuth corrigido no Cloudflare após diagnóstico de valor ausente; configuração esperada agora contém Client ID, Client Secret, redirect URI e chave de criptografia.
 
 - Conta institucional adicionada como usuário de teste no Google Auth Platform; tela confirma 1 usuário de teste ativo.
@@ -113,6 +126,11 @@ Diretriz registrada:
 
 ## Descoberta técnica na validação real
 
+- O bloco `Acessos à Central` ocupava espaço excessivo e misturava administração de usuários com a operação documental. Foi decidido removê-lo da rota operacional e centralizar a concessão em **Usuários e acessos**.
+- O modelo anterior de um único perfil principal não atendia ao requisito novo de acumular funções. Foi criada uma camada adicional, sem quebrar os perfis existentes, para permitir combinações como Médico + Central de Documentos.
+- A tela real já comprovou OAuth conectado e listagem da raiz do Meu Drive.
+
+
 - Durante o consentimento real, o Google exibiu aviso de **app não verificado**. Isso é esperado nesta etapa porque o OAuth está em modo de testes e a conta institucional foi cadastrada como usuário de teste. O fluxo deve continuar apenas com essa conta autorizada até a futura verificação/publicação.
 
 - Revisão visual do Cloudflare mostrou que a linha da variável `GOOGLE_DRIVE_OAUTH_CLIENT_ID` está presente, porém o campo **Value** aparece vazio; `GOOGLE_DRIVE_OAUTH_CLIENT_SECRET` está como Secret, `GOOGLE_DRIVE_OAUTH_REDIRECT_URI` possui URL e `DRIVE_TOKEN_ENCRYPTION_KEY` está como Secret. A ausência do valor do Client ID explica o estado `Integração aguardando configuração` mostrado pela Central.
@@ -124,13 +142,11 @@ Diretriz registrada:
 ## Pendências e bloqueios
 
 - PR #134 foi validado com 26 workflows sem falhas e mesclado na `main`.
-- Google Cloud/OAuth da Central ainda não configurado.
-- Consentimento da conta institucional ainda não executado.
+- Google Cloud/OAuth da Central configurado e consentimento institucional concluído.
 - Produção com escopo `drive` exige tratar o status de escopo restrito e requisitos de verificação aplicáveis.
 - Nenhum bloqueio impede concluir a documentação da Fase 0.
-- Fase 1 não poderá completar o critério de aceite real até os passos OAuth externos estarem prontos.
-- O código read-only está preparado para permanecer desconectado de forma neutra quando as variáveis/Secrets ainda não existirem.
-- Após checks do PR, a próxima dependência humana será criar/configurar o OAuth no Google Cloud e os valores correspondentes na Cloudflare.
+- Fase 1 ainda depende de validar pesquisa, abertura de PDF real e auditoria final dos eventos PostHog.
+- A alteração de UX/cargos acumuláveis desta subfase ainda precisa passar por PR/checks antes de ir para a main.
 
 ## Riscos conhecidos
 
@@ -150,13 +166,14 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. PR #134 validado com 26 workflows e mesclado em `3dc50afd`;
-2. confirmar publicação do Worker/frontend pós-merge;
-3. realizar a configuração externa Google Cloud/Cloudflare;
-5. conectar a conta institucional a partir de `/documentos/`;
-6. comprovar navegação por Meu Drive, pesquisa e abertura de PDF real;
-7. auditar eventos/propriedades reais no PostHog;
-8. encerrar Fase 1 apenas após esses critérios.
+1. abrir PR desta subfase com remoção do bloco extenso de acessos e funções adicionais acumuláveis;
+2. validar suíte completa e checks;
+3. mesclar somente se os checks passarem;
+4. confirmar em produção que `/documentos/` ficou compacta e que a função **Central de Documentos** aparece em `/admin/usuarios/`;
+5. validar pesquisa real no Drive;
+6. abrir um PDF real autorizado e confirmar visualização;
+7. auditar no PostHog apenas os eventos/propriedades técnicas permitidos;
+8. encerrar a Fase 1 somente após esses critérios.
 
 ## Arquivos e fontes principais
 
@@ -179,18 +196,17 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 1 — Navegação do Google Drive.  
-**Subfase / objetivo atual:** conectar e validar a conta institucional no ambiente real, sem iniciar Fase 2.  
-**Última ação concluída:** PR #134 validado com 26 workflows e mesclado na main em `3dc50afd3ba902d36ebe806176ad0939d71c9379`; branch de validação OAuth criada e guia de configuração externa documentado.  
+**Subfase / objetivo atual:** concluir a revisão de UX/autorização com funções acumuláveis e depois finalizar os testes reais da Fase 1.  
+**Estado real da main:** `3dc50afd3ba902d36ebe806176ad0939d71c9379`; main continua sem as mudanças desta subfase.  
 **Branch atual:** `feat/central-docs-phase1-oauth-validation`.  
-**PR atual:** nenhum; abrir somente se a validação real exigir correção de código/documentação.  
-**Último commit relevante:** `3dc50afd` — merge da implementação read-only da Fase 1.  
-**Checks e testes:** 26 workflows do PR #134 passaram; inclui suíte específica da Central e suíte completa do Worker.  
-**Decisões tomadas:** Drive API via Worker; escopo `drive`; refresh token AES-GCM; access token em memória; fileId encapsulado; POST para lista/pesquisa; Blob efêmero; UI estritamente read-only.  
-**Justificativas:** atender Meu Drive completo sem expor credenciais/fileId nem persistir documento clínico.  
-**Alternativas descartadas:** `drive.file`, service account para acervo atual, espelho de PDFs, cache persistente, token Google no frontend, IA/edição antecipadas.  
-**Ações externas concluídas:** PostHog seguro operacional; código da Fase 1 mesclado. Google Cloud OAuth ainda não configurado.  
-**Pendências:** confirmação pública do deploy não pôde ser feita pelos conectores disponíveis; executar o consentimento institucional pela Central; testar navegação/pesquisa/PDF; auditar PostHog; em fase posterior, avaliar Google Drive Activity API para histórico de ações em arquivos/pastas.  
-**Riscos conhecidos:** restricted scope e requisitos de produção; refresh token curto em Testing; PDFs grandes ainda carregam integralmente nesta fase.  
-**Métricas / observabilidade:** instrumentação da Fase 1 pronta, mas nenhum evento documental real validado ainda.  
-**Próxima ação exata:** no aviso `O Google não verificou este app`, clicar em `Continuar` usando somente a conta institucional cadastrada como test user; na tela seguinte, conferir as permissões solicitadas antes de consentir.  
-**Arquivos e fontes principais:** `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, `docs/CENTRAL-DOCUMENTOS-OAUTH-SETUP.md`, arquitetura V1, este status, `worker/document-drive.js`, `worker/documents-router.js`, `documentos/index.html`, `js/documents.js`.
+**PR atual:** ainda não criado para esta subfase.  
+**Última ação concluída:** implementado modelo `auth_user_additional_roles`, função acumulável `documentos`, gestão em `/admin/usuarios/`, remoção do bloco gigante `Acessos à Central` e documentação correspondente.  
+**Validação externa concluída:** OAuth real conectado; Portal mostrou `Drive conectado` e carregou a raiz do Meu Drive.  
+**Checks e testes:** testes automatizados foram ampliados, mas ainda precisam rodar no PR desta subfase.  
+**Decisões tomadas:** perfil principal permanece único; funções adicionais podem acumular; `documentos` concede leitura da Central; gestão de usuários fica fora da tela operacional; capabilities finas permanecem no backend.  
+**Justificativas:** reduzir drasticamente o espaço ocupado na Central e permitir combinações como Médico + Central de Documentos sem trocar o perfil profissional.  
+**Alternativas descartadas:** continuar com uma checkbox para cada usuário dentro de `/documentos/`; transformar `documentos` em novo perfil primário mutuamente exclusivo; conceder acesso apenas escondendo/exibindo UI.  
+**Pendências:** abrir PR/checks; validar produção após merge; testar pesquisa real; abrir PDF real; auditar PostHog; futura Drive Activity API permanece registrada para outra fase.  
+**Riscos conhecidos:** compatibilidade com acessos legados em `auth_document_access`; escopo OAuth restrito em modo Testing; PDF grande ainda é carregado integralmente nesta fase.  
+**Próxima ação exata:** abrir PR da branch atual, acompanhar checks e corrigir qualquer regressão antes de merge.  
+**Arquivos principais:** `worker/additional-roles.js`, `worker/document-access.js`, `worker/auth-management-flex.js`, `admin/usuarios/index.html`, `js/admin-users.js`, `documentos/index.html`, `js/documents.js`, `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, este status.
