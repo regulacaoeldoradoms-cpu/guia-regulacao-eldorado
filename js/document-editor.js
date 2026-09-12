@@ -65,7 +65,7 @@
     return true;
   }
 
-  async function loadSource(blob, label = '') {
+  async function loadSource(blob, label = '', cacheIdentity = '') {
     if (!(blob instanceof Blob)) throw new Error('PDF inválido para edição.');
     const lib = await loadLibrary();
     const bytes = new Uint8Array(await blob.arrayBuffer());
@@ -79,6 +79,7 @@
     if (!(pageCount > 0)) throw new Error('O PDF não possui páginas editáveis.');
     return {
       label: String(label || ''),
+      cacheIdentity: String(cacheIdentity || ''),
       blobSize: blob.size,
       document: documentPdf,
       pageCount
@@ -86,7 +87,7 @@
   }
 
   async function createSession(blob, options = {}) {
-    const source = await loadSource(blob, options.label || 'Documento 1');
+    const source = await loadSource(blob, options.label || 'Documento 1', options.cacheIdentity || '');
     const plan = Array.from({ length: source.pageCount }, (_, pageIndex) => ({ sourceIndex: 0, pageIndex }));
     return {
       sources: [source],
@@ -100,7 +101,7 @@
 
   async function addDocument(session, blob, options = {}) {
     if (!session) throw new Error('Sessão de edição ausente.');
-    const source = await loadSource(blob, options.label || `Documento ${session.sources.length + 1}`);
+    const source = await loadSource(blob, options.label || `Documento ${session.sources.length + 1}`, options.cacheIdentity || '');
     const sourceIndex = session.sources.length;
     session.sources.push(source);
     for (let pageIndex = 0; pageIndex < source.pageCount; pageIndex += 1) {
