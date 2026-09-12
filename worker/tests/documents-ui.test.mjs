@@ -106,7 +106,7 @@ test('cache local criptografa PDFs, limita tamanho e invalida por versão', () =
   assert.match(cache, /CACHE_TTL_MS = 12 \* 60 \* 60 \* 1000/);
   assert.match(cache, /MAX_TOTAL_BYTES = 256 \* 1024 \* 1024/);
   assert.match(cache, /MAX_FILE_BYTES = 50 \* 1024 \* 1024/);
-  assert.match(cache, /cacheKey \+ ':' \+ fileVersion/);
+  assert.match(cache, /key \+ ':' \+ fileVersion/);
   assert.match(cache, /portal:session-cleared/);
   assert.doesNotMatch(cache, /file_name|filename|patient_name|cpf|cns|diagnostico|cid/i);
 
