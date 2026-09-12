@@ -1,4 +1,4 @@
-name: Validar Central de Documentos — Fases 1–2
+name: Validar Central de Documentos — Fases 1–3
 
 on:
   pull_request:
@@ -7,6 +7,7 @@ on:
       - 'css/documents.css'
       - 'js/documents.js'
       - 'js/document-cache.js'
+      - 'js/document-editor.js'
       - 'js/admin-users.js'
       - 'admin/usuarios/index.html'
       - 'js/tools-catalog.js'
@@ -21,6 +22,7 @@ on:
       - 'worker/wrangler.toml'
       - 'worker/package.json'
       - 'worker/tests/documents-*.test.mjs'
+      - 'worker/tests/document-editor.test.mjs'
       - 'docs/CENTRAL-DOCUMENTOS-**'
       - '.github/workflows/validate-central-documents-phase1.yml'
   push:
@@ -53,7 +55,7 @@ jobs:
           npm run check
           npm test
 
-      - name: Conferir superfície read-only
+      - name: Conferir navegação, cache e editor local
         run: |
           test -f documentos/index.html
           test -f css/documents.css
@@ -72,12 +74,19 @@ jobs:
           ! grep -R -E "localStorage|sessionStorage|indexedDB" js/documents.js
           node --check js/documents.js
           node --check js/document-cache.js
+          node --check js/document-editor.js
           node --check js/admin-users.js
           node --check portal-sw.js
           grep -q "PORTAL_DOCUMENT_STREAM_REGISTER" portal-sw.js
           grep -q "pdf_first_page_visible" js/documents.js
           grep -q "AES-GCM" js/document-cache.js
           grep -q "HKDF" js/document-cache.js
+          grep -q "pdf-lib@1.17.1" js/document-editor.js
+          grep -q "sha512-z8IYLHO8bTgFqj+yrPyIJnzBDf7DDhWwiEsk4sY+Oe6J2M+WQequeGS7qioI5vT6rXgVRb4K1UVQC5ER7MKzKQ==" js/document-editor.js
+          grep -q "As alterações ainda não serão salvas no Google Drive" documentos/index.html
+          grep -q "editDocumentPdfPermission" admin/usuarios/index.html
+          grep -q "pdf_edit_completed" js/documents.js
+          ! grep -R -E "/api/documents/drive/(upload|update|replace)|drive_sync_(started|completed|failed)" js/document-editor.js js/documents.js documentos/index.html
 
       - name: Bloquear segredos e telemetria identificável
         run: |
