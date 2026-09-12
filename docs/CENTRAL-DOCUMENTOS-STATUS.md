@@ -22,7 +22,7 @@ Subfase atual: ampliar o editor essencial para aceitar imagens como páginas e r
 
 Branch atual: `feat/document-editor-images-paste`.
 
-PR atual: ainda não aberto neste registro; implementação de imagens/clipboard em andamento.
+PR atual: #156 — imagens e Ctrl+V no editor; rodada final com 21 workflows aprovados e 0 falhas.
 
 ## Entregas concluídas nesta unidade
 
@@ -552,6 +552,7 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Implementação atual:** PNG/JPEG viram páginas A4 locais; formatos decodificáveis são normalizados para PNG; botão Adicionar imagem; paste de imagem; telemetria genérica insert_image.  
 **Segurança:** processamento 100% local no navegador; nenhuma imagem/clipboard enviado ao Worker, Drive ou PostHog.  
 **Limitação:** foco dentro do iframe nativo pode impedir o paste global; será removida com o visualizador próprio.  
-**Pendências:** abrir PR, checks, merge/deploy e teste real; depois iniciar visualizador próprio com miniaturas + drag-and-drop.  
-**Próxima ação exata:** abrir PR da branch e validar checks; após deploy testar botão Adicionar imagem e Ctrl+V fora do iframe.  
+**Checks:** PR #156 com 21 workflows aprovados e 0 falhas após atualizar a expectativa de cache-bust do teste do editor.  
+**Pendências:** merge/deploy e teste real; depois iniciar visualizador próprio com miniaturas + drag-and-drop.  
+**Próxima ação exata:** mesclar o PR #156; após deploy testar botão Adicionar imagem e Ctrl+V fora do iframe.  
 **Arquivos principais:** `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `js/portal-observability.js`, `worker/tests/documents-ui.test.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
