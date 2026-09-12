@@ -194,3 +194,37 @@ test('aceita métrica de primeira página somente com propriedades técnicas', (
     }
   }), null);
 });
+
+
+test('aceita edição PDF somente com operação técnica allowlisted', () => {
+  const clean = sanitizeObservabilityEvent({
+    event: 'pdf_edit_completed',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 42,
+      operation: 'delete_page',
+      size_bucket: 'small'
+    }
+  });
+
+  assert.ok(clean);
+  assert.deepEqual(clean.properties, {
+    route: '/documentos/',
+    duration_ms: 42,
+    operation: 'delete_page',
+    size_bucket: 'small'
+  });
+
+  assert.equal(sanitizeObservabilityEvent({
+    event: 'pdf_edit_completed',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 42,
+      operation: 'merge_pdf',
+      size_bucket: 'medium',
+      page_number: 2
+    }
+  }), null);
+});

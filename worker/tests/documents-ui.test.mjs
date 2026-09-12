@@ -57,7 +57,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260912-12'/);
+  assert.match(source, /CACHE_VERSION = '20260912-13'/);
 });
 
 test('observabilidade documental continua sem propriedades identificáveis', () => {
@@ -85,7 +85,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260912-1/);
+  assert.match(html, /documents\.js\?v=20260912-2/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -116,4 +116,48 @@ test('cache local criptografa PDFs, limita tamanho e invalida por versão', () =
   assert.match(client, /scheduleLikelyPdfWarmup/);
   assert.match(client, /'hit', false, 'cache'/);
   assert.match(client, /source: 'cache'|source,?/);
+});
+
+
+test('editor PDF é local, reversível e separado da escrita no Drive', () => {
+  const html = read('documentos/index.html');
+  const client = read('js/documents.js');
+  const editor = read('js/document-editor.js');
+
+  assert.match(html, /document-editor\.js\?v=20260912-1/);
+  assert.match(html, /Editar PDF/);
+  assert.match(html, /As alterações ainda não serão salvas no Google Drive/);
+  assert.match(html, /cdn\.jsdelivr\.net/);
+
+  assert.match(client, /canEditDocuments/);
+  assert.match(client, /caps\.edit === true/);
+  assert.match(client, /startEditor/);
+  assert.match(client, /mergePdfIntoEditor/);
+  assert.match(client, /delete_page/);
+  assert.match(client, /reorder_page/);
+  assert.match(client, /merge_pdf/);
+  assert.match(client, /pdf_edit_completed/);
+  assert.doesNotMatch(client, /drive_sync_started|drive_sync_completed|replace_pdf|save_copy/);
+
+  assert.match(editor, /removePage/);
+  assert.match(editor, /movePage/);
+  assert.match(editor, /undo/);
+  assert.match(editor, /redo/);
+  assert.match(editor, /addDocument/);
+  assert.match(editor, /buildBlob/);
+  assert.match(editor, /session\.plan\.length <= 1/);
+});
+
+test('permissão de edição é explícita e não é herdada automaticamente de Regulador(a)', () => {
+  const html = read('admin/usuarios/index.html');
+  const client = read('js/admin-users.js');
+
+  assert.match(html, /editDocumentPdfPermission/);
+  assert.match(html, /Permitir editor de PDF/);
+  assert.match(html, /salvar no Drive continua indisponível nesta fase/);
+  assert.match(client, /documentCapabilities\?\.edit/);
+  assert.match(client, /\/api\/documents\/admin\/access\//);
+  assert.match(client, /edit: regulatorEnabled === true && allowEdit === true/);
+  assert.match(client, /editAdditionalRoleDocuments\.checked/);
+  assert.doesNotMatch(client, /additionalRoles.*edit:\s*true/);
 });

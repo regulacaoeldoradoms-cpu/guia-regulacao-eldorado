@@ -369,3 +369,24 @@ Regras:
 - nomes, referências e conteúdo continuam proibidos na telemetria.
 
 O detalhamento operacional está em `docs/CENTRAL-DOCUMENTOS-FASE-2.md`.
+
+
+## Atualização Fase 3 — editor local reversível
+
+A Fase 3 adiciona manipulação binária somente no navegador. A fonte continua vindo do fluxo autorizado/cached da Fase 2 e o resultado permanece efêmero até a Fase 4.
+
+Arquitetura:
+- `documents_view`/função Regulador(a) continua necessária para listar e abrir;
+- capability fina `edit` é necessária para mostrar/iniciar o editor;
+- `edit` não é concedida automaticamente junto com Regulador(a);
+- o Desenvolvedor administra `edit` por usuário em **Usuários e acessos**;
+- biblioteca `pdf-lib 1.17.1` é carregada somente quando o editor é iniciado, com versão fixa, SRI, `crossorigin=anonymous` e `no-referrer`;
+- a sessão do editor mantém fontes PDF e um plano ordenado de referências de páginas;
+- excluir/reordenar/mesclar alteram o plano e registram snapshots para undo/redo;
+- a prévia é um Blob local gerado a partir do plano; URLs Blob são revogadas ao trocar/fechar;
+- não existe endpoint de upload, replace ou save na Fase 3;
+- `pdf_edit_completed` aceita apenas rota genérica, duração, operação e faixa de tamanho.
+
+A dependência remota por CDN havia sido descartada para a visualização da Fase 2 porque não era necessária para ler PDFs. Para a Fase 3, a decisão foi reavaliada porque manipulação binária exige um motor PDF; o risco de supply chain é reduzido por versão fixa + SRI e a biblioteca não recebe conteúdo por rede. Se o SRI falhar, somente o editor fica indisponível; leitura/cache permanecem operacionais.
+
+A escrita continua reservada à Fase 4 e deve seguir a estratégia de versionamento, conflito e rollback já definida.

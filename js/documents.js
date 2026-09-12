@@ -35,7 +35,11 @@
     pdfProgressiveFailed: false,
     pdfFirstPageObserver: null,
     pdfFirstPageEmitted: false,
-    cachePrefetchGeneration: 0
+    cachePrefetchGeneration: 0,
+    editorSession: null,
+    editorPreviewUrl: '',
+    editorPreviewTimer: null,
+    editorBuildSeq: 0
   };
 
   const els = {
@@ -60,10 +64,20 @@
     pagination: document.getElementById('documentsPagination'),
     loadMore: document.getElementById('loadMoreButton'),
     viewer: document.getElementById('documentsViewer'),
+    viewerModeLabel: document.getElementById('documentsViewerModeLabel'),
     viewerTitle: document.getElementById('documentsViewerTitle'),
     viewerState: document.getElementById('documentsViewerState'),
     frame: document.getElementById('documentsPdfFrame'),
-    closeViewer: document.getElementById('closeViewerButton')
+    editPdf: document.getElementById('editPdfButton'),
+    closeViewer: document.getElementById('closeViewerButton'),
+    editor: document.getElementById('documentsEditor'),
+    editorStatus: document.getElementById('documentsEditorStatus'),
+    editorPages: document.getElementById('documentsEditorPages'),
+    editorPageCount: document.getElementById('documentsEditorPageCount'),
+    editorUndo: document.getElementById('editorUndoButton'),
+    editorRedo: document.getElementById('editorRedoButton'),
+    editorPreview: document.getElementById('editorPreviewButton'),
+    editorExit: document.getElementById('editorExitButton')
   };
 
   els.userName.textContent = user.name || user.username || 'Usuário';
@@ -227,6 +241,233 @@
     const item = state.items[Number(button.dataset.index)];
     if (!item?.isPdf) return;
     warmPdfCache(item, { prefetch: true }).catch(() => {});
+  }
+
+  function canEditDocuments() {
+    const caps = state.access?.capabilities || state.user?.documentCapabilities || {};
+    return caps.edit === true;
+  }
+
+  function itemCacheIdentity(item) {
+    const descriptor = cacheDescriptor(item);
+    return descriptor ? `${descriptor.cacheKey}:${descriptor.version}` : '';
+  }
+
+  function editorContainsItem(item) {
+    const session = state.editorSession;
+    const identity = itemCacheIdentity(item);
+    if (!session || !identity) return false;
+    const sourceIndexes = new Set(
+      session.sources
+        .map((source, index) => source?.cacheIdentity === identity ? index : -1)
+        .filter((index) => index >= 0)
+    );
+    return session.plan.some((entry) => sourceIndexes.has(entry.sourceIndex));
+  }
+
+  async function editablePdfBlob(item) {
+    const cached = await readCachedPdf(item);
+    if (cached) return cached;
+    const blob = await fetchPdfBlob(item);
+    storeCachedPdf(item, blob).catch(() => {});
+    return blob;
+  }
+
+  function setEditorStatus(message = '', type = '') {
+    if (!els.editorStatus) return;
+    els.editorStatus.textContent = String(message || '');
+    els.editorStatus.className = `documents-editor-status${type ? ` ${type}` : ''}`;
+  }
+
+  function clearEditorPreview() {
+    if (state.editorPreviewTimer) {
+      clearTimeout(state.editorPreviewTimer);
+      state.editorPreviewTimer = null;
+    }
+    if (state.editorPreviewUrl) URL.revokeObjectURL(state.editorPreviewUrl);
+    state.editorPreviewUrl = '';
+    state.editorBuildSeq += 1;
+  }
+
+  function resetEditorState({ restoreOriginal = false } = {}) {
+    clearEditorPreview();
+    state.editorSession = null;
+    if (els.editor) els.editor.hidden = true;
+    if (els.viewerModeLabel) els.viewerModeLabel.textContent = 'Visualização';
+    if (els.editPdf) els.editPdf.hidden = !(canEditDocuments() && state.pdfItem);
+    setEditorStatus('');
+    if (restoreOriginal && state.pdfObjectUrl) {
+      els.frame.src = state.pdfObjectUrl;
+    }
+  }
+
+  function renderEditorPages() {
+    const editor = window.PortalPdfEditor;
+    const session = state.editorSession;
+    if (!editor || !session) {
+      if (els.editorPages) els.editorPages.innerHTML = '';
+      if (els.editorPageCount) els.editorPageCount.textContent = '';
+      return;
+    }
+
+    const pages = editor.pageModel(session);
+    els.editorPageCount.textContent = `${pages.length} página(s)`;
+    els.editorUndo.disabled = !editor.canUndo(session);
+    els.editorRedo.disabled = !editor.canRedo(session);
+
+    els.editorPages.innerHTML = pages.map((page) => `<article class="documents-editor-page" data-editor-index="${page.index}">
+      <div class="documents-editor-page-copy">
+        <strong>Página ${page.displayPage}</strong>
+        <span>${escapeHtml(page.sourceLabel)} · página original ${page.sourcePage}</span>
+      </div>
+      <div class="documents-editor-page-actions">
+        <button type="button" data-editor-action="up" aria-label="Mover página para cima" ${page.index === 0 ? 'disabled' : ''}>↑</button>
+        <button type="button" data-editor-action="down" aria-label="Mover página para baixo" ${page.index === pages.length - 1 ? 'disabled' : ''}>↓</button>
+        <button class="danger" type="button" data-editor-action="delete" aria-label="Excluir página" ${pages.length <= 1 ? 'disabled' : ''}>Excluir</button>
+      </div>
+    </article>`).join('');
+  }
+
+  async function buildEditorPreview({ explicit = false } = {}) {
+    const editor = window.PortalPdfEditor;
+    const session = state.editorSession;
+    if (!editor || !session) return;
+
+    const seq = ++state.editorBuildSeq;
+    els.editorPreview.disabled = true;
+    setEditorStatus(explicit ? 'Gerando prévia local…' : 'Atualizando prévia…');
+    const started = performance.now();
+
+    try {
+      const blob = await editor.buildBlob(session);
+      if (seq !== state.editorBuildSeq || session !== state.editorSession) return;
+      if (state.editorPreviewUrl) URL.revokeObjectURL(state.editorPreviewUrl);
+      state.editorPreviewUrl = URL.createObjectURL(blob);
+      els.viewerState.className = 'documents-viewer-state';
+      els.viewerState.textContent = 'Carregando prévia editada…';
+      els.frame.addEventListener('load', () => {
+        if (seq !== state.editorBuildSeq) return;
+        els.viewerState.className = 'documents-viewer-state ready';
+        setEditorStatus(`Prévia local pronta em ${duration(started)} ms.`, 'success');
+      }, { once: true });
+      els.frame.src = state.editorPreviewUrl;
+    } catch (error) {
+      setEditorStatus(error.message || 'Não foi possível gerar a prévia.', 'warning');
+    } finally {
+      if (seq === state.editorBuildSeq) els.editorPreview.disabled = false;
+    }
+  }
+
+  function scheduleEditorPreview() {
+    if (state.editorPreviewTimer) clearTimeout(state.editorPreviewTimer);
+    state.editorPreviewTimer = window.setTimeout(() => {
+      state.editorPreviewTimer = null;
+      buildEditorPreview().catch(() => {});
+    }, 220);
+  }
+
+  async function startEditor() {
+    if (!canEditDocuments()) {
+      showStatus('Sua conta não possui permissão de edição de PDF.', 'warning');
+      return;
+    }
+    if (!state.pdfItem || !window.PortalPdfEditor) return;
+
+    els.editPdf.disabled = true;
+    els.viewerState.className = 'documents-viewer-state';
+    els.viewerState.textContent = 'Preparando editor local…';
+
+    try {
+      releaseProgressiveStream();
+      const blob = await editablePdfBlob(state.pdfItem);
+      if (!state.pdfObjectUrl) state.pdfObjectUrl = URL.createObjectURL(blob);
+      const session = await window.PortalPdfEditor.createSession(blob, {
+        label: 'Documento inicial',
+        cacheIdentity: itemCacheIdentity(state.pdfItem)
+      });
+      state.editorSession = session;
+      els.editor.hidden = false;
+      els.viewerModeLabel.textContent = 'Editor PDF';
+      els.editPdf.hidden = true;
+      els.viewerState.className = 'documents-viewer-state ready';
+      setEditorStatus('Editor pronto. Para unir outro PDF, clique nele na lista. Alterações são locais e reversíveis; nada será salvo no Drive nesta fase.', 'success');
+      renderEditorPages();
+      els.editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (error) {
+      els.viewerState.className = 'documents-viewer-state ready';
+      showStatus(error.message || 'Não foi possível iniciar o editor PDF.', 'warning');
+    } finally {
+      els.editPdf.disabled = false;
+    }
+  }
+
+  async function mergePdfIntoEditor(item) {
+    if (!state.editorSession || !item?.isPdf || !canEditDocuments()) return;
+    const identity = itemCacheIdentity(item);
+    if (identity && editorContainsItem(item)) {
+      setEditorStatus('Esse PDF já faz parte do resultado atual.', 'warning');
+      return;
+    }
+
+    const started = performance.now();
+    setEditorStatus('Adicionando PDF ao resultado…');
+    try {
+      const blob = await editablePdfBlob(item);
+      const sourceNumber = window.PortalPdfEditor.sourceCount(state.editorSession) + 1;
+      await window.PortalPdfEditor.addDocument(state.editorSession, blob, {
+        label: `Documento ${sourceNumber}`,
+        cacheIdentity: identity
+      });
+      renderEditorPages();
+      scheduleEditorPreview();
+      capture('pdf_edit_completed', {
+        route: '/documentos/',
+        duration_ms: duration(started),
+        operation: 'merge_pdf',
+        size_bucket: sizeBucket(item.size)
+      });
+      setEditorStatus('PDF adicionado. A prévia está sendo atualizada.', 'success');
+    } catch (error) {
+      setEditorStatus(error.message || 'Não foi possível unir este PDF.', 'warning');
+    }
+  }
+
+  function applyEditorOperation(operation, index) {
+    const editor = window.PortalPdfEditor;
+    const session = state.editorSession;
+    if (!editor || !session) return;
+    const started = performance.now();
+    let changed = false;
+
+    if (operation === 'delete') changed = editor.removePage(session, index);
+    if (operation === 'up') changed = editor.movePage(session, index, -1);
+    if (operation === 'down') changed = editor.movePage(session, index, 1);
+    if (!changed) return;
+
+    renderEditorPages();
+    scheduleEditorPreview();
+    capture('pdf_edit_completed', {
+      route: '/documentos/',
+      duration_ms: duration(started),
+      operation: operation === 'delete' ? 'delete_page' : 'reorder_page',
+      size_bucket: sizeBucket(state.pdfItem?.size)
+    });
+  }
+
+  function undoEditor() {
+    if (!state.editorSession || !window.PortalPdfEditor?.undo(state.editorSession)) return;
+    renderEditorPages();
+    scheduleEditorPreview();
+  }
+
+  function redoEditor() {
+    if (!state.editorSession || !window.PortalPdfEditor?.redo(state.editorSession)) return;
+    renderEditorPages();
+    scheduleEditorPreview();
+  }
+
+  function exitEditor() {
+    resetEditorState({ restoreOriginal: true });
   }
 
   function randomViewId() {
@@ -473,6 +714,8 @@
       }
     }
 
+    if (els.editPdf) els.editPdf.hidden = !(canEditDocuments() && state.pdfItem && !state.editorSession);
+
     if (!canView && !canManage) {
       showStatus('Sua conta não possui acesso à Central de Documentos.', 'warning');
     } else if (canView && !drive.connected) {
@@ -522,7 +765,12 @@
       els.list.innerHTML = state.items.map((item, index) => {
         const supported = item.isFolder || item.isPdf;
         const classes = ['documents-item', item.isFolder ? 'folder' : '', supported ? '' : 'unsupported'].filter(Boolean).join(' ');
-        const action = item.isFolder ? 'Abrir pasta' : item.isPdf ? 'Abrir PDF' : 'Não suportado nesta fase';
+        const editorHasItem = Boolean(state.editorSession && editorContainsItem(item));
+        const action = item.isFolder
+          ? 'Abrir pasta'
+          : item.isPdf
+            ? (state.editorSession ? (editorHasItem ? 'Já no editor' : 'Unir ao editor') : 'Abrir PDF')
+            : 'Não suportado nesta fase';
         const icon = item.isFolder ? '▰' : item.isPdf ? 'PDF' : '•';
         return `<button class="${classes}" type="button" data-index="${index}" ${supported ? '' : 'aria-disabled="true"'}>
           <span class="documents-item-icon" aria-hidden="true">${icon}</span>
@@ -624,6 +872,7 @@
   }
 
   function closePdf() {
+    resetEditorState();
     state.pdfOpenId += 1;
     releaseProgressiveStream();
     if (state.pdfObjectUrl) URL.revokeObjectURL(state.pdfObjectUrl);
@@ -645,6 +894,8 @@
     const openId = state.pdfOpenId;
     state.pdfItem = item;
     els.viewer.hidden = false;
+    els.viewerModeLabel.textContent = 'Visualização';
+    els.editPdf.hidden = !canEditDocuments();
     els.viewerTitle.textContent = item.name || 'Documento PDF';
     els.viewerState.textContent = 'Verificando cache seguro…';
     els.viewerState.className = 'documents-viewer-state';
@@ -762,7 +1013,10 @@
       loadFolder();
       return;
     }
-    if (item.isPdf) openPdf(item);
+    if (item.isPdf) {
+      if (state.editorSession) mergePdfIntoEditor(item);
+      else openPdf(item);
+    }
   });
 
   els.loadMore.addEventListener('click', () => {
@@ -772,6 +1026,18 @@
   });
 
   els.closeViewer.addEventListener('click', closePdf);
+  els.editPdf.addEventListener('click', startEditor);
+  els.editorUndo.addEventListener('click', undoEditor);
+  els.editorRedo.addEventListener('click', redoEditor);
+  els.editorPreview.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
+  els.editorExit.addEventListener('click', exitEditor);
+
+  els.editorPages.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-editor-action]');
+    const row = event.target.closest('[data-editor-index]');
+    if (!button || !row) return;
+    applyEditorOperation(button.dataset.editorAction, Number(row.dataset.editorIndex));
+  });
 
   navigator.serviceWorker?.addEventListener('message', (event) => {
     if (event.data?.type !== 'PORTAL_DOCUMENT_STREAM_FAILED') return;
