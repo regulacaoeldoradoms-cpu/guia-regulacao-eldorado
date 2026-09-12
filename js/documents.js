@@ -35,7 +35,12 @@
     pdfProgressiveFailed: false,
     pdfFirstPageObserver: null,
     pdfFirstPageEmitted: false,
-    cachePrefetchGeneration: 0
+    cachePrefetchGeneration: 0,
+    editorSession: null,
+    editorPreviewUrl: '',
+    editorPreviewTimer: null,
+    editorBuildSeq: 0,
+    editorMergedKeys: new Set()
   };
 
   const els = {
@@ -60,10 +65,20 @@
     pagination: document.getElementById('documentsPagination'),
     loadMore: document.getElementById('loadMoreButton'),
     viewer: document.getElementById('documentsViewer'),
+    viewerModeLabel: document.getElementById('documentsViewerModeLabel'),
     viewerTitle: document.getElementById('documentsViewerTitle'),
     viewerState: document.getElementById('documentsViewerState'),
     frame: document.getElementById('documentsPdfFrame'),
-    closeViewer: document.getElementById('closeViewerButton')
+    editPdf: document.getElementById('editPdfButton'),
+    closeViewer: document.getElementById('closeViewerButton'),
+    editor: document.getElementById('documentsEditor'),
+    editorStatus: document.getElementById('documentsEditorStatus'),
+    editorPages: document.getElementById('documentsEditorPages'),
+    editorPageCount: document.getElementById('documentsEditorPageCount'),
+    editorUndo: document.getElementById('editorUndoButton'),
+    editorRedo: document.getElementById('editorRedoButton'),
+    editorPreview: document.getElementById('editorPreviewButton'),
+    editorExit: document.getElementById('editorExitButton')
   };
 
   els.userName.textContent = user.name || user.username || 'Usuário';
