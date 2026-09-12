@@ -1,5 +1,7 @@
 'use strict';
 
+import { additionalRolesFor } from './additional-roles.js';
+
 const accessSchemaReady = new WeakSet();
 const accessSchemaPromises = new WeakMap();
 
@@ -16,8 +18,8 @@ function normalizeUsername(value) {
     .slice(0, 40);
 }
 
-function flags(row = null, role = '') {
-  const view = Number(row?.can_view || 0) === 1;
+function flags(row = null, role = '', additionalRoles = []) {
+  const view = Number(row?.can_view || 0) === 1 || additionalRoles.includes('documentos');
   return Object.freeze({
     view,
     extract: view && Number(row?.can_extract || 0) === 1,
@@ -62,9 +64,12 @@ export async function documentCapabilitiesFor(env, userOrUsername, roleHint = ''
   const username = normalizeUsername(typeof userOrUsername === 'object' ? userOrUsername?.username : userOrUsername);
   const role = String(typeof userOrUsername === 'object' ? userOrUsername?.role : roleHint || '').trim();
   if (!username) return flags(null, role);
+  const additionalRoles = Array.isArray(userOrUsername?.additionalRoles)
+    ? userOrUsername.additionalRoles
+    : await additionalRolesFor(env, username);
   const row = await env.AUTH_DB.prepare(`SELECT can_view, can_extract, can_edit, can_manage
     FROM auth_document_access WHERE username = ?`).bind(username).first();
-  return flags(row, role);
+  return flags(row, role, additionalRoles);
 }
 
 export async function documentCapabilitiesForUsername(env, username) {
@@ -74,7 +79,7 @@ export async function documentCapabilitiesForUsername(env, username) {
   const user = await env.AUTH_DB.prepare('SELECT role, active FROM auth_users WHERE username = ?')
     .bind(normalized).first();
   if (!user || Number(user.active || 0) !== 1) {
-    return { active: false, role: String(user?.role || ''), capabilities: flags(null, String(user?.role || '')) };
+    return { active: false, role: String(user?.role || ''), capabilities: flags(null, String(user?.role || ''), []) };
   }
   return {
     active: true,
@@ -139,7 +144,7 @@ export async function decorateDocumentUsers(env, users) {
   if (!(await ensureDocumentAccessSchema(env)) || !list.length) {
     return list.map((user) => ({
       ...user,
-      documentCapabilities: flags(null, String(user?.role || ''))
+      documentCapabilities: flags(null, String(user?.role || ''), Array.isArray(user?.additionalRoles) ? user.additionalRoles : [])
     }));
   }
 
@@ -148,7 +153,7 @@ export async function decorateDocumentUsers(env, users) {
   const byUser = new Map((rows.results || []).map((row) => [normalizeUsername(row.username), row]));
   return list.map((user) => ({
     ...user,
-    documentCapabilities: flags(byUser.get(normalizeUsername(user?.username)), String(user?.role || ''))
+    documentCapabilities: flags(byUser.get(normalizeUsername(user?.username)), String(user?.role || ''), Array.isArray(user?.additionalRoles) ? user.additionalRoles : [])
   }));
 }
 
