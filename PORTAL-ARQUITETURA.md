@@ -152,7 +152,7 @@ O rollback não apaga tabelas: desligar primeiro a Home e, se necessário, o bac
 
 1. `admin` — **Desenvolvedor**. Nível técnico máximo.
 2. `coordenacao` — **Coordenação**. Guia, Recepção, Monitoramento e gestão apenas de médicos/recepção.
-3. `medico` — **Médico**. Ambiente médico.
+3. `medico` — **Médico(a)**. Ambiente médico.
 4. `recepcao` — **Recepção**. Conferência operacional.
 5. `telemedicina` — **Técnico em Telemedicina**. Acompanhamento de teleconsultas e retornos; concedido apenas pelo Desenvolvedor.
 6. `cidadao` — **Cidadão**. Hub do Cidadão.
@@ -164,9 +164,9 @@ O perfil primário não deve ser confundido com a função no Conselho nem com o
 O Portal passa a suportar funções adicionais que se somam ao perfil primário sem substituí-lo. A persistência usa `auth_user_additional_roles`, e o Worker compõe `effectiveRoles` a partir do perfil principal + funções adicionais autorizadas.
 
 Função adicional inicial:
-- `documentos` — **Central de Documentos**: concede leitura do Google Drive institucional e da rota `/documentos/`.
+- `documentos` — **Regulador(a)**: concede acesso à Central de Documentos, incluindo leitura do Google Drive institucional na rota `/documentos/`.
 
-Exemplo: uma conta pode permanecer `medico` e acumular `documentos`. A gestão é feita em `/admin/usuarios/` pelo Desenvolvedor. Funções adicionais nunca são concedidas por simples ocultação/exibição no frontend; o backend revalida a autorização.
+Exemplo: uma conta pode permanecer `medico` (**Médico(a)**) e acumular `documentos` (**Regulador(a)**). A gestão é feita em `/admin/usuarios/` pelo Desenvolvedor. Funções adicionais nunca são concedidas por simples ocultação/exibição no frontend; o backend revalida a autorização.
 
 ### Implementação do perfil de Telemedicina
 
@@ -188,10 +188,10 @@ No painel institucional, o perfil `admin` (Desenvolvedor) recebe capacidade oper
 
 ## Hierarquia para concessão de acessos
 
-- Desenvolvedor pode criar/atribuir: Coordenação, Médico, Recepção, Técnico em Telemedicina e Cidadão. Funções do Conselho também são atribuídas pelo Desenvolvedor.
-- Coordenação pode criar/atribuir somente Médico e Recepção.
+- Desenvolvedor pode criar/atribuir: Coordenação, Médico(a), Recepção, Técnico em Telemedicina e Cidadão. Funções do Conselho também são atribuídas pelo Desenvolvedor.
+- Coordenação pode criar/atribuir somente Médico(a) e Recepção.
 - O perfil Técnico em Telemedicina é administrado exclusivamente pelo Desenvolvedor e fica fora da lista de subordinados da Coordenação.
-- Médico, Recepção, Técnico em Telemedicina e Cidadão não concedem cargos.
+- Médico(a), Recepção, Técnico em Telemedicina e Cidadão não concedem cargos.
 - Auto cadastro sempre cria exclusivamente `cidadao`; o cliente nunca escolhe um cargo privilegiado.
 - A conta Desenvolvedor não pode se desativar ou remover o próprio nível técnico pelo formulário comum.
 
@@ -331,7 +331,7 @@ O objetivo é permitir rastreabilidade sem duplicar conteúdo sensível em logs 
 ## Chat profissional e Camada Social
 
 Cidadãos continuam sem acesso ao diretório/chat **profissional** como capacidade
-institucional. Médico, Recepção, Coordenação, Técnico em Telemedicina e Desenvolvedor
+institucional. Médico(a), Recepção, Coordenação, Técnico em Telemedicina e Desenvolvedor
 usam esse chat por autorização de cargo validada no Worker, independentemente de
 amizade.
 
