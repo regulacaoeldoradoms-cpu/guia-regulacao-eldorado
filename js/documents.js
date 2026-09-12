@@ -700,6 +700,8 @@
       }
     }
 
+    if (els.editPdf) els.editPdf.hidden = !(canEditDocuments() && state.pdfItem && !state.editorSession);
+
     if (!canView && !canManage) {
       showStatus('Sua conta não possui acesso à Central de Documentos.', 'warning');
     } else if (canView && !drive.connected) {
@@ -749,7 +751,13 @@
       els.list.innerHTML = state.items.map((item, index) => {
         const supported = item.isFolder || item.isPdf;
         const classes = ['documents-item', item.isFolder ? 'folder' : '', supported ? '' : 'unsupported'].filter(Boolean).join(' ');
-        const action = item.isFolder ? 'Abrir pasta' : item.isPdf ? 'Abrir PDF' : 'Não suportado nesta fase';
+        const identity = itemCacheIdentity(item);
+        const editorHasItem = Boolean(state.editorSession && identity && state.editorMergedKeys.has(identity));
+        const action = item.isFolder
+          ? 'Abrir pasta'
+          : item.isPdf
+            ? (state.editorSession ? (editorHasItem ? 'Já no editor' : 'Unir ao editor') : 'Abrir PDF')
+            : 'Não suportado nesta fase';
         const icon = item.isFolder ? '▰' : item.isPdf ? 'PDF' : '•';
         return `<button class="${classes}" type="button" data-index="${index}" ${supported ? '' : 'aria-disabled="true"'}>
           <span class="documents-item-icon" aria-hidden="true">${icon}</span>
@@ -851,6 +859,7 @@
   }
 
   function closePdf() {
+    resetEditorState();
     state.pdfOpenId += 1;
     releaseProgressiveStream();
     if (state.pdfObjectUrl) URL.revokeObjectURL(state.pdfObjectUrl);
@@ -872,6 +881,8 @@
     const openId = state.pdfOpenId;
     state.pdfItem = item;
     els.viewer.hidden = false;
+    els.viewerModeLabel.textContent = 'Visualização';
+    els.editPdf.hidden = !canEditDocuments();
     els.viewerTitle.textContent = item.name || 'Documento PDF';
     els.viewerState.textContent = 'Verificando cache seguro…';
     els.viewerState.className = 'documents-viewer-state';
