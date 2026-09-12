@@ -85,7 +85,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260912-3/);
+  assert.match(html, /documents\.js\?v=20260912-4/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -143,6 +143,26 @@ test('editor expõe união de outro PDF e sincroniza ações da lista', () => {
   assert.match(client, /function choosePdfToMerge\(\)/);
   assert.match(client, /els\.editorMerge\.addEventListener\('click', choosePdfToMerge\)/);
   assert.match(client, /mergePdfIntoEditor\(item\)/);
+});
+
+test('editor aceita imagens e Ctrl+V como novas páginas', () => {
+  const html = read('documentos/index.html');
+  const client = read('js/documents.js');
+  const editor = read('js/document-editor.js');
+  const observability = read('js/portal-observability.js');
+
+  assert.match(html, /id="editorImageButton"[^>]*>Adicionar imagem<\/button>/);
+  assert.match(html, /Ctrl\+V/);
+  assert.match(html, /document-editor\.js\?v=20260912-2/);
+  assert.match(html, /documents\.js\?v=20260912-4/);
+  assert.match(client, /handleEditorPaste/);
+  assert.match(client, /clipboardData/);
+  assert.match(client, /addImageBlobToEditor/);
+  assert.match(client, /addImagePage/);
+  assert.match(editor, /async function addImagePage/);
+  assert.match(editor, /embedPng/);
+  assert.match(editor, /embedJpg/);
+  assert.match(observability, /'insert_image'/);
 });
 
 test('editor PDF é local, reversível e separado da escrita no Drive', () => {
