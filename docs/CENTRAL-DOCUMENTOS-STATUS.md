@@ -227,6 +227,18 @@ Alternativas descartadas:
 - cache persistente do PDF para acelerar reaberturas;
 - considerar o `load` do Blob integral como `pdf_first_page_visible`, pois isso não mede primeira página com confiabilidade.
 
+## Aprovação explícita de edição — 12/09/2026
+
+O usuário aprovou explicitamente **“Permitir editor de PDF”** para a conta Regulador(a) usada nos testes da Central.
+
+Estado técnico:
+- o PR #146 já foi mesclado na main em `b3665ed9`;
+- a UI administrativa agora possui o controle separado `Permitir editor de PDF`;
+- a capability `edit` continua opt-in e não é herdada automaticamente de Regulador(a);
+- a concessão ainda depende de uma ação autenticada no Portal em `/admin/usuarios/`, pois esta conversa não possui uma sessão administrativa do Portal para executar a alteração diretamente.
+
+A aprovação está registrada e não precisa ser solicitada novamente. A próxima ação humana é somente efetivar o checkbox na conta de teste autorizada após o deploy.
+
 ## Fase 3 — implementação em andamento
 
 Unidades 3A/3B implementadas na branch:
@@ -353,16 +365,16 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
 **Subfase / objetivo atual:** unidades 3A/3B — excluir/reordenar/undo/redo/unir/visualizar localmente, com capability `edit` explícita.  
-**Estado real da main:** `9f3fb713699dbd50f2510c3b9785b3a12de29c50` — Fase 2 encerrada pelo PR #145.  
-**Branch atual:** `feat/central-docs-phase3-editor-core`.  
-**PR atual:** #146 — aberto; 23 workflows concluídos sem falhas.  
-**Última ação concluída:** núcleo local do editor, superfície UI, união pelo navegador do Drive, preview local, permissão fina de edição, testes unitários e documentação arquitetural implementados na branch.  
+**Estado real da main:** `b3665ed906b97980c87fd8bf8c023133838a5249` — PR #146 mesclado com o editor PDF essencial da Fase 3.  
+**Branch atual:** `docs/central-docs-phase3-postmerge` (somente status; nenhuma mudança funcional adicional).  
+**PR atual:** nenhum funcional; PR #146 foi concluído com 23 workflows sem falhas.  
+**Última ação concluída:** PR #146 validado com 23 workflows e mesclado na main; editor local da Fase 3 está no código oficial e aguarda concessão/validação real da capability `edit`.  
 **Permissões:** Regulador(a) continua concedendo leitura; edição não é herdada. O Desenvolvedor pode marcar **Permitir editor de PDF** por usuário; remover Regulador(a) também revoga capabilities documentais correspondentes.  
 **Dependência PDF:** `pdf-lib 1.17.1`, carregado sob demanda com SRI fixo e CSP restrita a jsDelivr.  
 **Limite de escopo:** nenhuma rota de upload/save/replace e nenhuma escrita no Drive até a Fase 4.  
 **Telemetria:** `pdf_edit_completed` somente com operation/duration/size_bucket/route; sem página, nome, ref, fileId ou conteúdo.  
-**Checks e testes:** 23 workflows do PR #146 concluídos sem falhas; suíte inclui testes unitários do plano de páginas, UI, autorização e privacidade.  
-**Pendências:** mesclar PR #146; aguardar deploy; conceder capability `edit` explicitamente a uma conta Regulador(a) de teste; validar operações reais com PDFs diferentes.  
+**Checks e testes:** 23 workflows do PR #146 concluídos sem falhas antes do merge; suíte inclui plano de páginas, união, undo/redo, UI, autorização e privacidade.  
+**Pendências:** aguardar deploy; conceder capability `edit` explicitamente à conta Regulador(a) de teste já aprovada pelo usuário; validar operações reais com PDFs diferentes.  
 **Riscos conhecidos:** PDFs protegidos por senha ou estruturas incomuns podem não ser compatíveis com pdf-lib; falha é neutra e não afeta leitura. CDN depende de SRI/host disponível apenas ao iniciar edição.  
-**Próxima ação exata:** mesclar o PR #146; após deploy, pedir autorização humana para conceder `Permitir editor de PDF` à conta de teste Regulador(a), então executar validação real de excluir/reordenar/undo/redo/unir/prévia.  
+**Próxima ação exata:** após deploy da main `b3665ed9`, na gestão de usuários marcar `Permitir editor de PDF` somente para a conta Regulador(a) de teste aprovada; depois executar validação real de excluir/reordenar/undo/redo/unir/prévia.  
 **Arquivos principais:** `js/document-editor.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `js/admin-users.js`, `admin/usuarios/index.html`, `docs/CENTRAL-DOCUMENTOS-FASE-3.md`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
