@@ -4,6 +4,9 @@
   const auth = window.RegulationAuth;
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
+  const documentCache = window.PortalDocumentCache || null;
+  const cacheWarmInFlight = new Set();
+  let cacheWarmTimer = null;
   const user = await auth.requireRole([]);
   if (!user) return;
 
@@ -31,7 +34,8 @@
     pdfFallbackStarted: false,
     pdfProgressiveFailed: false,
     pdfFirstPageObserver: null,
-    pdfFirstPageEmitted: false
+    pdfFirstPageEmitted: false,
+    cachePrefetchGeneration: 0
   };
 
   const els = {
@@ -103,6 +107,111 @@
     if (value <= 20) return '6-20';
     if (value <= 100) return '21-100';
     return '100+';
+  }
+
+  function currentToken() {
+    return String(auth.getToken?.() || '');
+  }
+
+  function cacheDescriptor(item) {
+    const cacheKey = String(item?.cacheKey || '');
+    const version = String(item?.version || '');
+    return cacheKey && version && item?.isPdf
+      ? { cacheKey, version, token: currentToken() }
+      : null;
+  }
+
+  function connectionAllowsPrefetch() {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (connection?.saveData) return false;
+    return !['slow-2g', '2g'].includes(String(connection?.effectiveType || ''));
+  }
+
+  async function fetchPdfBlob(item) {
+    const response = await fetch(`${endpoint}/api/documents/drive/content/${encodeURIComponent(item.ref)}`, {
+      method: 'GET',
+      headers: auth.authorizationHeader(),
+      cache: 'no-store',
+      credentials: 'omit'
+    });
+    if (!response.ok) {
+      let message = `Não foi possível abrir o PDF (${response.status}).`;
+      if ((response.headers.get('Content-Type') || '').includes('application/json')) {
+        const payload = await response.json().catch(() => ({}));
+        if (payload?.error) message = payload.error;
+      }
+      throw new Error(message);
+    }
+    return response.blob();
+  }
+
+  async function readCachedPdf(item) {
+    const descriptor = cacheDescriptor(item);
+    if (!descriptor || !documentCache?.get) return null;
+    return documentCache.get(descriptor).catch(() => null);
+  }
+
+  async function storeCachedPdf(item, blob) {
+    const descriptor = cacheDescriptor(item);
+    if (!descriptor || !documentCache?.put || !(blob instanceof Blob)) return false;
+    return documentCache.put({ ...descriptor, blob }).catch(() => false);
+  }
+
+  async function warmPdfCache(item, { prefetch = false } = {}) {
+    const descriptor = cacheDescriptor(item);
+    if (!descriptor || !documentCache?.has || !documentCache?.put) return false;
+    const size = Number(item?.size || 0);
+    const limits = documentCache.limits || {};
+    const maximum = prefetch ? Number(limits.prefetchFileBytes || 0) : Number(limits.maxFileBytes || 0);
+    if (maximum > 0 && (!(size > 0) || size > maximum)) return false;
+    if (prefetch && !connectionAllowsPrefetch()) return false;
+
+    const key = `${descriptor.cacheKey}:${descriptor.version}`;
+    if (cacheWarmInFlight.has(key)) return false;
+    if (await documentCache.has(descriptor).catch(() => false)) return true;
+
+    cacheWarmInFlight.add(key);
+    try {
+      const blob = await fetchPdfBlob(item);
+      return await storeCachedPdf(item, blob);
+    } catch (_) {
+      return false;
+    } finally {
+      cacheWarmInFlight.delete(key);
+    }
+  }
+
+  function scheduleLikelyPdfWarmup() {
+    if (!documentCache?.supported?.() || !connectionAllowsPrefetch()) return;
+    if (cacheWarmTimer) clearTimeout(cacheWarmTimer);
+    const generation = ++state.cachePrefetchGeneration;
+    const run = async () => {
+      cacheWarmTimer = null;
+      if (generation !== state.cachePrefetchGeneration || document.visibilityState === 'hidden') return;
+      const candidates = state.items
+        .filter((item) => item?.isPdf && item.cacheKey && item.version)
+        .filter((item) => Number(item.size || 0) > 0)
+        .filter((item) => Number(item.size || 0) <= Number(documentCache.limits?.prefetchFileBytes || 0))
+        .slice(0, 3);
+      for (const item of candidates) {
+        if (generation !== state.cachePrefetchGeneration || document.visibilityState === 'hidden') break;
+        await warmPdfCache(item, { prefetch: true });
+      }
+    };
+
+    if (typeof requestIdleCallback === 'function') {
+      cacheWarmTimer = window.setTimeout(() => requestIdleCallback(run, { timeout: 1800 }), 700);
+    } else {
+      cacheWarmTimer = window.setTimeout(run, 1200);
+    }
+  }
+
+  function warmPdfFromListEvent(event) {
+    const button = event.target.closest?.('[data-index]');
+    if (!button) return;
+    const item = state.items[Number(button.dataset.index)];
+    if (!item?.isPdf) return;
+    warmPdfCache(item, { prefetch: true }).catch(() => {});
   }
 
   function randomViewId() {
@@ -200,8 +309,8 @@
       && rect.left < width;
   }
 
-  function emitFirstPageVisible(openId, bucket, cacheState) {
-    if (state.pdfFirstPageEmitted || openId !== state.pdfOpenId || state.pdfProgressiveFailed) return;
+  function emitFirstPageVisible(openId, bucket, cacheState, source = 'drive') {
+    if (state.pdfFirstPageEmitted || openId !== state.pdfOpenId) return;
     if (!frameVisibleInViewport()) return;
     state.pdfFirstPageEmitted = true;
     state.pdfFirstPageObserver?.disconnect?.();
@@ -209,22 +318,22 @@
     capture('pdf_first_page_visible', {
       route: '/documentos/',
       duration_ms: duration(state.pdfOpenedAt),
-      source: 'drive',
+      source,
       size_bucket: bucket,
       cache_state: cacheState
     });
   }
 
-  function observeFirstPageVisible(openId, bucket, cacheState) {
+  function observeFirstPageVisible(openId, bucket, cacheState, source = 'drive') {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if (openId !== state.pdfOpenId || state.pdfProgressiveFailed) return;
-        emitFirstPageVisible(openId, bucket, cacheState);
+        if (openId !== state.pdfOpenId) return;
+        emitFirstPageVisible(openId, bucket, cacheState, source);
         if (state.pdfFirstPageEmitted || typeof IntersectionObserver !== 'function') return;
         state.pdfFirstPageObserver?.disconnect?.();
         state.pdfFirstPageObserver = new IntersectionObserver((entries) => {
           if (entries.some((entry) => entry.isIntersecting && entry.intersectionRatio > 0)) {
-            emitFirstPageVisible(openId, bucket, cacheState);
+            emitFirstPageVisible(openId, bucket, cacheState, source);
           }
         }, { threshold: 0.01 });
         state.pdfFirstPageObserver.observe(els.frame);
@@ -232,20 +341,19 @@
     });
   }
 
-  function markViewerReady(openId, bucket, cacheState, progressive) {
+  function markViewerReady(openId, bucket, cacheState, progressive, source = 'drive') {
     window.setTimeout(() => {
       if (openId !== state.pdfOpenId || (progressive && state.pdfProgressiveFailed)) return;
       els.viewerState.className = 'documents-viewer-state ready';
       capture('pdf_ready', {
         route: '/documentos/',
         duration_ms: duration(state.pdfOpenedAt),
-        source: 'drive',
+        source,
         size_bucket: bucket,
         cache_state: cacheState
       });
-
-      if (progressive) observeFirstPageVisible(openId, bucket, cacheState);
-    }, progressive ? 100 : 0);
+      observeFirstPageVisible(openId, bucket, cacheState, source);
+    }, progressive ? 100 : 40);
   }
 
   async function loadPdfBlobFallback(item, openId, bucket) {
@@ -255,26 +363,12 @@
     els.viewerState.textContent = 'Carregando PDF em modo compatível…';
     els.viewerState.className = 'documents-viewer-state';
 
-    const response = await fetch(`${endpoint}/api/documents/drive/content/${encodeURIComponent(item.ref)}`, {
-      method: 'GET',
-      headers: auth.authorizationHeader(),
-      cache: 'no-store',
-      credentials: 'omit'
-    });
-    if (!response.ok) {
-      let message = `Não foi possível abrir o PDF (${response.status}).`;
-      if ((response.headers.get('Content-Type') || '').includes('application/json')) {
-        const payload = await response.json().catch(() => ({}));
-        if (payload?.error) message = payload.error;
-      }
-      throw new Error(message);
-    }
-
-    const blob = await response.blob();
+    const blob = await fetchPdfBlob(item);
     if (openId !== state.pdfOpenId) return;
+    storeCachedPdf(item, blob).catch(() => {});
     state.pdfObjectUrl = URL.createObjectURL(blob);
     els.frame.addEventListener('load', () => {
-      markViewerReady(openId, sizeBucket(blob.size || item.size), 'miss', false);
+      markViewerReady(openId, sizeBucket(blob.size || item.size), 'miss', false, 'drive');
     }, { once: true });
     els.frame.src = state.pdfObjectUrl;
   }
@@ -428,6 +522,7 @@
 
     els.pagination.hidden = !state.nextPageToken;
     els.loadMore.disabled = false;
+    scheduleLikelyPdfWarmup();
   }
 
   async function loadFolder({ append = false, pageToken = '' } = {}) {
@@ -536,7 +631,7 @@
     state.pdfItem = item;
     els.viewer.hidden = false;
     els.viewerTitle.textContent = item.name || 'Documento PDF';
-    els.viewerState.textContent = 'Abrindo primeira página…';
+    els.viewerState.textContent = 'Verificando cache seguro…';
     els.viewerState.className = 'documents-viewer-state';
     state.pdfOpenedAt = performance.now();
     const bucket = sizeBucket(item.size);
@@ -549,16 +644,32 @@
     });
 
     try {
-      const progressiveUrl = await registerProgressiveStream(item);
+      const cachedBlob = await readCachedPdf(item);
       if (openId !== state.pdfOpenId) return;
 
-      if (progressiveUrl) {
+      if (cachedBlob) {
+        els.viewerState.textContent = 'Abrindo do cache local…';
+        state.pdfObjectUrl = URL.createObjectURL(cachedBlob);
         els.frame.addEventListener('load', () => {
-          markViewerReady(openId, bucket, 'bypass', true);
+          markViewerReady(openId, sizeBucket(cachedBlob.size || item.size), 'hit', false, 'cache');
         }, { once: true });
-        els.frame.src = progressiveUrl;
+        els.frame.src = state.pdfObjectUrl;
       } else {
-        await loadPdfBlobFallback(item, openId, bucket);
+        els.viewerState.textContent = 'Abrindo primeira página…';
+        const progressiveUrl = await registerProgressiveStream(item);
+        if (openId !== state.pdfOpenId) return;
+
+        if (progressiveUrl) {
+          els.frame.addEventListener('load', () => {
+            markViewerReady(openId, bucket, 'miss', true, 'drive');
+            const warm = () => warmPdfCache(item, { prefetch: false }).catch(() => {});
+            if (typeof requestIdleCallback === 'function') requestIdleCallback(warm, { timeout: 2200 });
+            else window.setTimeout(warm, 1400);
+          }, { once: true });
+          els.frame.src = progressiveUrl;
+        } else {
+          await loadPdfBlobFallback(item, openId, bucket);
+        }
       }
 
       if (openId === state.pdfOpenId) {
@@ -591,6 +702,7 @@
     try {
       await api('/api/documents/oauth/disconnect', { method: 'POST', body: '{}' });
       closePdf();
+      await documentCache?.clearAll?.().catch?.(() => {});
       await loadAccess();
       showStatus('Google Drive desconectado da Central.', 'info');
     } catch (error) {
@@ -619,6 +731,9 @@
     state.searchQuery = '';
     loadFolder();
   });
+
+  els.list.addEventListener('mouseover', warmPdfFromListEvent);
+  els.list.addEventListener('focusin', warmPdfFromListEvent);
 
   els.list.addEventListener('click', (event) => {
     const button = event.target.closest('[data-index]');
@@ -658,11 +773,16 @@
 
   els.logout.addEventListener('click', async () => {
     closePdf();
+    await documentCache?.clearAll?.().catch?.(() => {});
     await auth.logout();
     location.replace('/login/');
   });
 
-  window.addEventListener('pagehide', closePdf, { once: true });
+  window.addEventListener('pagehide', () => {
+    state.cachePrefetchGeneration += 1;
+    if (cacheWarmTimer) clearTimeout(cacheWarmTimer);
+    closePdf();
+  }, { once: true });
 
   const oauthState = new URLSearchParams(location.search).get('oauth');
   if (oauthState) {
