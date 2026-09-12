@@ -39,8 +39,7 @@
     editorSession: null,
     editorPreviewUrl: '',
     editorPreviewTimer: null,
-    editorBuildSeq: 0,
-    editorMergedKeys: new Set()
+    editorBuildSeq: 0
   };
 
   const els = {
@@ -254,6 +253,18 @@
     return descriptor ? `${descriptor.cacheKey}:${descriptor.version}` : '';
   }
 
+  function editorContainsItem(item) {
+    const session = state.editorSession;
+    const identity = itemCacheIdentity(item);
+    if (!session || !identity) return false;
+    const sourceIndexes = new Set(
+      session.sources
+        .map((source, index) => source?.cacheIdentity === identity ? index : -1)
+        .filter((index) => index >= 0)
+    );
+    return session.plan.some((entry) => sourceIndexes.has(entry.sourceIndex));
+  }
+
   async function editablePdfBlob(item) {
     const cached = await readCachedPdf(item);
     if (cached) return cached;
@@ -281,7 +292,6 @@
   function resetEditorState({ restoreOriginal = false } = {}) {
     clearEditorPreview();
     state.editorSession = null;
-    state.editorMergedKeys = new Set();
     if (els.editor) els.editor.hidden = true;
     if (els.viewerModeLabel) els.viewerModeLabel.textContent = 'Visualização';
     if (els.editPdf) els.editPdf.hidden = !(canEditDocuments() && state.pdfItem);
@@ -371,14 +381,16 @@
       releaseProgressiveStream();
       const blob = await editablePdfBlob(state.pdfItem);
       if (!state.pdfObjectUrl) state.pdfObjectUrl = URL.createObjectURL(blob);
-      const session = await window.PortalPdfEditor.createSession(blob, { label: 'Documento inicial' });
+      const session = await window.PortalPdfEditor.createSession(blob, {
+        label: 'Documento inicial',
+        cacheIdentity: itemCacheIdentity(state.pdfItem)
+      });
       state.editorSession = session;
-      state.editorMergedKeys = new Set([itemCacheIdentity(state.pdfItem)].filter(Boolean));
       els.editor.hidden = false;
       els.viewerModeLabel.textContent = 'Editor PDF';
       els.editPdf.hidden = true;
       els.viewerState.className = 'documents-viewer-state ready';
-      setEditorStatus('Editor pronto. Alterações são locais e reversíveis; nada será salvo no Drive nesta fase.', 'success');
+      setEditorStatus('Editor pronto. Para unir outro PDF, clique nele na lista. Alterações são locais e reversíveis; nada será salvo no Drive nesta fase.', 'success');
       renderEditorPages();
       els.editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (error) {
@@ -392,8 +404,8 @@
   async function mergePdfIntoEditor(item) {
     if (!state.editorSession || !item?.isPdf || !canEditDocuments()) return;
     const identity = itemCacheIdentity(item);
-    if (identity && state.editorMergedKeys.has(identity)) {
-      setEditorStatus('Esse PDF já faz parte da sessão de edição.', 'warning');
+    if (identity && editorContainsItem(item)) {
+      setEditorStatus('Esse PDF já faz parte do resultado atual.', 'warning');
       return;
     }
 
@@ -402,8 +414,10 @@
     try {
       const blob = await editablePdfBlob(item);
       const sourceNumber = window.PortalPdfEditor.sourceCount(state.editorSession) + 1;
-      await window.PortalPdfEditor.addDocument(state.editorSession, blob, { label: `Documento ${sourceNumber}` });
-      if (identity) state.editorMergedKeys.add(identity);
+      await window.PortalPdfEditor.addDocument(state.editorSession, blob, {
+        label: `Documento ${sourceNumber}`,
+        cacheIdentity: identity
+      });
       renderEditorPages();
       scheduleEditorPreview();
       capture('pdf_edit_completed', {
@@ -751,8 +765,7 @@
       els.list.innerHTML = state.items.map((item, index) => {
         const supported = item.isFolder || item.isPdf;
         const classes = ['documents-item', item.isFolder ? 'folder' : '', supported ? '' : 'unsupported'].filter(Boolean).join(' ');
-        const identity = itemCacheIdentity(item);
-        const editorHasItem = Boolean(state.editorSession && identity && state.editorMergedKeys.has(identity));
+        const editorHasItem = Boolean(state.editorSession && editorContainsItem(item));
         const action = item.isFolder
           ? 'Abrir pasta'
           : item.isPdf
