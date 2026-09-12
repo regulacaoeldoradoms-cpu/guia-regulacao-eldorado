@@ -89,6 +89,23 @@ function request(path, token, options = {}) {
   });
 }
 
+test('preflight CORS da gestão de usuários responde antes da validação de sessão', async () => {
+  const origin = 'https://regulacaoeldoradoms.com.br';
+  const response = await handlePortalRoute(new Request('https://worker.test/api/admin/users', {
+    method: 'OPTIONS',
+    headers: {
+      Origin: origin,
+      'Access-Control-Request-Method': 'GET',
+      'Access-Control-Request-Headers': 'authorization'
+    }
+  }), {}, origin, true);
+
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get('Access-Control-Allow-Origin'), origin);
+  assert.match(response.headers.get('Access-Control-Allow-Methods') || '', /GET/);
+  assert.match(response.headers.get('Access-Control-Allow-Headers') || '', /Authorization/i);
+});
+
 sqliteTest('Desenvolvedor pode editar a própria conta e conceder editor PDF sem invalidar a sessão entre as duas operações', async () => {
   const env = environment();
   const account = await register(env, 'desenvolvedor.self');
