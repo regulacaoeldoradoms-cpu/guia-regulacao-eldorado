@@ -38,7 +38,7 @@
   if (isDeveloper) {
     newRole.innerHTML = '<option value="coordenacao">Coordenação — Guia + Recepção + Monitoramento + usuários subordinados</option><option value="medico">Médico(a) — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option><option value="telemedicina">Técnico em Telemedicina — acompanhamento de teleconsultas e retornos</option><option value="cidadao">Cidadão — conta sem função profissional</option>';
   } else {
-    newRole.innerHTML = '<option value="medico">Médico — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option>';
+    newRole.innerHTML = '<option value="medico">Médico(a) — Guia Médico + Gemini</option><option value="recepcao">Recepção — conferência documental</option>';
   }
   if (newCouncilWrap) newCouncilWrap.hidden = !isDeveloper;
   editCouncilWrap.hidden = !isDeveloper;
