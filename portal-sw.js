@@ -131,11 +131,29 @@ function releaseDocumentStream(viewId) {
   if (validDocumentStreamId(id)) documentStreams.delete(id);
 }
 
+async function notifyDocumentStreamFailure(viewId, status) {
+  try {
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clients) {
+      try {
+        if (new URL(client.url).origin === self.location.origin) {
+          client.postMessage({
+            type: 'PORTAL_DOCUMENT_STREAM_FAILED',
+            viewId: String(viewId || ''),
+            status: Number(status || 0)
+          });
+        }
+      } catch (_) {}
+    }
+  } catch (_) {}
+}
+
 async function streamDocumentPdf(event, url) {
   cleanDocumentStreams();
   const viewId = decodeURIComponent(url.pathname.slice(DOCUMENT_STREAM_PREFIX.length));
   const entry = documentStreams.get(viewId);
   if (!entry) {
+    event.waitUntil?.(notifyDocumentStreamFailure(viewId, 410));
     return new Response('Visualização expirada.', {
       status: 410,
       headers: { 'Cache-Control': 'no-store', 'Content-Type': 'text/plain; charset=utf-8' }
@@ -161,10 +179,15 @@ async function streamDocumentPdf(event, url) {
       }
     );
   } catch (_) {
+    event.waitUntil?.(notifyDocumentStreamFailure(viewId, 502));
     return new Response('Não foi possível carregar o PDF.', {
       status: 502,
       headers: { 'Cache-Control': 'no-store', 'Content-Type': 'text/plain; charset=utf-8' }
     });
+  }
+
+  if (!upstream.ok && upstream.status !== 206) {
+    event.waitUntil?.(notifyDocumentStreamFailure(viewId, upstream.status));
   }
 
   const responseHeaders = new Headers({
