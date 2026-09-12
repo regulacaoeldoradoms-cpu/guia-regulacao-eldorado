@@ -6,7 +6,7 @@
 
 **Fase 1 — Navegação do Google Drive**
 
-Subfase atual: concluir a validação real da Fase 1. OAuth, conexão e navegação por pastas já foram comprovados; faltam comprovar pesquisa global, abertura de PDF e os eventos correspondentes.
+Subfase atual: concluir a validação real da Fase 1. OAuth, conexão, navegação por pastas e abertura visual de PDF já foram comprovados; falta validar pesquisa global e fechar a confirmação de telemetria documental.
 
 ## Estado de entrada
 
@@ -150,7 +150,7 @@ Diretriz registrada:
 - Google Cloud/OAuth da Central configurado e consentimento institucional concluído.
 - Produção com escopo `drive` exige tratar o status de escopo restrito e requisitos de verificação aplicáveis.
 - Nenhum bloqueio impede concluir a documentação da Fase 0.
-- Auditoria PostHog da navegação por pasta foi concluída sem propriedades sensíveis observadas; Fase 1 ainda depende de validar pesquisa global e abertura de PDF real, gerando os eventos correspondentes.
+- Auditoria PostHog da navegação por pasta foi concluída sem propriedades sensíveis observadas; abertura de PDF real foi confirmada visualmente. Fase 1 ainda depende de validar pesquisa global e confirmar a telemetria documental correspondente.
 - A alteração de UX/cargos acumuláveis desta subfase ainda precisa passar por PR/checks antes de ir para a main.
 
 ## Riscos conhecidos
@@ -160,6 +160,14 @@ Diretriz registrada:
 - nomes de arquivos podem conter dados identificáveis, portanto não entram em PostHog/logs;
 - cache persistente ou service worker mal configurado poderia reter documento clínico; explicitamente proibido;
 - escrita concorrente futura pode sobrescrever versão externa se a comparação de `version` for omitida.
+
+## Validação real de PDF — 11/09/2026
+
+- Abertura de PDF real autorizada foi confirmada visualmente em produção dentro de `/documentos/`.
+- O visualizador exibiu múltiplas páginas no navegador e permaneceu em modo somente leitura.
+- Nenhuma escrita no Drive foi necessária para a validação.
+- Imediatamente após o teste, o schema do PostHog ainda não apresentava `pdf_open_started` nem `pdf_ready`. Isso não invalida a abertura funcional do PDF, mas mantém a telemetria documental como pendência de validação.
+- Não registrar nome de arquivo, conteúdo do PDF ou qualquer dado identificável no status, logs ou telemetria.
 
 ## Auditoria real de observabilidade — 11/09/2026
 
@@ -191,8 +199,8 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 2. PR #136 validado com 23 workflows e mesclado em `866d981a`;
 3. confirmar em produção que `/documentos/` ficou compacta e que a função **Regulador(a)** aparece em `/admin/usuarios/`;
 4. validar pesquisa real no Drive;
-5. abrir um PDF real autorizado e confirmar visualização;
-6. confirmar no PostHog a chegada de `drive_search_completed`, `pdf_open_started` e `pdf_ready`, sem propriedades sensíveis;
+5. confirmar no PostHog a chegada de `drive_search_completed`, `pdf_open_started` e `pdf_ready`, sem propriedades sensíveis;
+6. se os eventos de PDF continuarem ausentes após nova interação, diagnosticar o pipeline de observabilidade antes de encerrar a fase;
 7. encerrar a Fase 1 somente após esses critérios.
 
 ## Arquivos e fontes principais
@@ -226,7 +234,7 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 **Decisões tomadas:** perfil principal permanece único; funções adicionais podem acumular; `documentos` é exibido como `Regulador(a)` e concede leitura da Central; gestão de usuários fica fora da tela operacional; capabilities finas permanecem no backend.  
 **Justificativas:** reduzir drasticamente o espaço ocupado na Central e permitir combinações como Médico(a) + Regulador(a) sem trocar o perfil profissional.  
 **Alternativas descartadas:** continuar com uma checkbox para cada usuário dentro de `/documentos/`; transformar `documentos` em novo perfil primário mutuamente exclusivo; conceder acesso apenas escondendo/exibindo UI.  
-**Pendências:** testar pesquisa real; abrir PDF real; confirmar no PostHog os eventos `drive_search_completed`, `pdf_open_started` e `pdf_ready`; futura Drive Activity API permanece registrada para outra fase.  
+**Pendências:** testar pesquisa real; confirmar no PostHog `drive_search_completed`, `pdf_open_started` e `pdf_ready`; se os eventos de PDF continuarem ausentes, diagnosticar a entrega de telemetria; futura Drive Activity API permanece registrada para outra fase.  
 **Riscos conhecidos:** compatibilidade com acessos legados em `auth_document_access`; escopo OAuth restrito em modo Testing; PDF grande ainda é carregado integralmente nesta fase.  
-**Próxima ação exata:** na Central em produção, executar uma pesquisa por um arquivo/pasta permitido e abrir um PDF autorizado. Em seguida, consultar o PostHog para confirmar `drive_search_completed`, `pdf_open_started` e `pdf_ready` e, se tudo passar, encerrar a Fase 1 e iniciar a Fase 2.  
+**Próxima ação exata:** na Central em produção, executar uma pesquisa por um arquivo ou pasta permitido. Em seguida, consultar o PostHog para confirmar `drive_search_completed` e revalidar `pdf_open_started`/`pdf_ready`; se tudo passar, encerrar a Fase 1 e iniciar a Fase 2.  
 **Arquivos principais:** `worker/additional-roles.js`, `worker/document-access.js`, `worker/auth-management-flex.js`, `admin/usuarios/index.html`, `js/admin-users.js`, `documentos/index.html`, `js/documents.js`, `docs/CENTRAL-DOCUMENTOS-FASE-1.md`, este status.
