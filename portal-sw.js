@@ -1,12 +1,18 @@
 'use strict';
 
-const CACHE_VERSION = '20260911-10';
+const CACHE_VERSION = '20260911-11';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
 const MAX_WARM_ROUTES = 18;
 const MAX_ASSETS_PER_PAGE = 90;
 const inFlight = new Map();
+const DOCUMENT_STREAM_PREFIX = '/__portal_document_pdf/';
+const DOCUMENT_STREAM_TTL_MS = 20000;
+const DOCUMENT_WORKER_ORIGINS = new Set([
+  'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev'
+]);
+const documentStreams = new Map();
 
 const KNOWN_PAGE_PATHS = new Set([
   '/', '/home/', '/login/', '/cadastro/', '/ferramentas/', '/perfil/',
@@ -25,11 +31,11 @@ const CORE_RESOURCES = Object.freeze([
   '/css/social.css?v=20260911-1',
   '/css/portal-pwa.css?v=20260910-2',
   '/js/auth-config.js?v=20260815-1',
-  '/js/portal-performance.js?v=20260911-1',
+  '/js/portal-performance.js?v=20260911-2',
   '/js/portal-observability.js?v=20260911-1',
   '/js/portal-pwa.js?v=20260911-1',
   '/js/auth-client.js?v=20260910-4',
-  '/js/tools-catalog.js?v=20260910-2',
+  '/js/tools-catalog.js?v=20260911-3',
   '/js/social-navigation.js?v=20260911-2',
   '/js/portal-chat.js?v=20260911-3',
   '/assets/portal-regulacao-icon.webp?v=20260909-1',
@@ -57,6 +63,150 @@ function pagePath(value) {
 function pageCacheKey(value) {
   const path = pagePath(value);
   return path ? new Request(new URL(path, self.location.origin).toString(), { credentials: 'same-origin' }) : null;
+}
+
+function cleanDocumentStreams(now = Date.now()) {
+  for (const [id, entry] of documentStreams.entries()) {
+    if (!entry || Number(entry.expiresAt || 0) <= now) documentStreams.delete(id);
+  }
+}
+
+function sameOriginClient(event) {
+  try {
+    return new URL(String(event.source?.url || '')).origin === self.location.origin;
+  } catch (_) {
+    return false;
+  }
+}
+
+function validDocumentStreamId(value) {
+  return /^[a-z0-9-]{20,80}$/i.test(String(value || ''));
+}
+
+function validDocumentRef(value) {
+  return /^[A-Za-z0-9._-]{20,1200}$/.test(String(value || ''));
+}
+
+function validAuthorization(value) {
+  const token = String(value || '');
+  return token.startsWith('Bearer ')
+    && token.length >= 28
+    && token.length <= 5000
+    && !/[\r\n]/.test(token);
+}
+
+function normalizedDocumentEndpoint(value) {
+  try {
+    const url = new URL(String(value || ''));
+    if (!DOCUMENT_WORKER_ORIGINS.has(url.origin)) return '';
+    if (url.pathname !== '/' || url.search || url.hash) return '';
+    return url.origin;
+  } catch (_) {
+    return '';
+  }
+}
+
+function registerDocumentStream(data) {
+  cleanDocumentStreams();
+  const viewId = String(data?.viewId || '');
+  const ref = String(data?.ref || '');
+  const authorization = String(data?.authorization || '');
+  const endpoint = normalizedDocumentEndpoint(data?.endpoint);
+  if (!validDocumentStreamId(viewId) || !validDocumentRef(ref) || !validAuthorization(authorization) || !endpoint) {
+    return null;
+  }
+
+  documentStreams.set(viewId, {
+    ref,
+    authorization,
+    endpoint,
+    expiresAt: Date.now() + DOCUMENT_STREAM_TTL_MS
+  });
+
+  return DOCUMENT_STREAM_PREFIX + encodeURIComponent(viewId);
+}
+
+function releaseDocumentStream(viewId) {
+  const id = String(viewId || '');
+  if (validDocumentStreamId(id)) documentStreams.delete(id);
+}
+
+async function notifyDocumentStreamFailure(viewId, status) {
+  try {
+    const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of clients) {
+      try {
+        if (new URL(client.url).origin === self.location.origin) {
+          client.postMessage({
+            type: 'PORTAL_DOCUMENT_STREAM_FAILED',
+            viewId: String(viewId || ''),
+            status: Number(status || 0)
+          });
+        }
+      } catch (_) {}
+    }
+  } catch (_) {}
+}
+
+async function streamDocumentPdf(event, url) {
+  cleanDocumentStreams();
+  const viewId = decodeURIComponent(url.pathname.slice(DOCUMENT_STREAM_PREFIX.length));
+  const entry = documentStreams.get(viewId);
+  if (!entry) {
+    event.waitUntil?.(notifyDocumentStreamFailure(viewId, 410));
+    return new Response('Visualização expirada.', {
+      status: 410,
+      headers: { 'Cache-Control': 'no-store', 'Content-Type': 'text/plain; charset=utf-8' }
+    });
+  }
+
+  entry.expiresAt = Date.now() + DOCUMENT_STREAM_TTL_MS;
+  const headers = new Headers({ Authorization: entry.authorization });
+  const range = String(event.request.headers.get('Range') || '').trim();
+  if (range && /^bytes=\d*-\d*(?:,\d*-\d*)*$/i.test(range)) headers.set('Range', range);
+
+  let upstream;
+  try {
+    upstream = await fetch(
+      entry.endpoint + '/api/documents/drive/content/' + encodeURIComponent(entry.ref),
+      {
+        method: 'GET',
+        mode: 'cors',
+        credentials: 'omit',
+        cache: 'no-store',
+        redirect: 'error',
+        headers
+      }
+    );
+  } catch (_) {
+    event.waitUntil?.(notifyDocumentStreamFailure(viewId, 502));
+    return new Response('Não foi possível carregar o PDF.', {
+      status: 502,
+      headers: { 'Cache-Control': 'no-store', 'Content-Type': 'text/plain; charset=utf-8' }
+    });
+  }
+
+  if (!upstream.ok && upstream.status !== 206) {
+    event.waitUntil?.(notifyDocumentStreamFailure(viewId, upstream.status));
+  }
+
+  const responseHeaders = new Headers({
+    'Cache-Control': 'no-store',
+    'Content-Type': upstream.headers.get('Content-Type') || 'application/pdf',
+    'X-Content-Type-Options': 'nosniff',
+    'Content-Disposition': 'inline'
+  });
+  for (const name of ['Content-Length', 'Content-Range', 'Accept-Ranges', 'ETag', 'Last-Modified']) {
+    const value = upstream.headers.get(name);
+    if (value) responseHeaders.set(name, value);
+  }
+
+  if (event.request.method === 'HEAD') {
+    try { await upstream.body?.cancel(); } catch (_) {}
+    return new Response(null, { status: upstream.status, headers: responseHeaders });
+  }
+
+  return new Response(upstream.body, { status: upstream.status, headers: responseHeaders });
 }
 
 function isPrivateRequest(request, url) {
@@ -266,6 +416,13 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const request = event.request;
   const url = new URL(request.url);
+
+  if (url.origin === self.location.origin && url.pathname.startsWith(DOCUMENT_STREAM_PREFIX)) {
+    if (request.method === 'GET' || request.method === 'HEAD') event.respondWith(streamDocumentPdf(event, url));
+    else event.respondWith(new Response(null, { status: 405, headers: { 'Cache-Control': 'no-store' } }));
+    return;
+  }
+
   if (isPrivateRequest(request, url)) return;
 
   if (request.mode === 'navigate' && pagePath(url)) {
@@ -281,6 +438,19 @@ self.addEventListener('message', (event) => {
     event.waitUntil(self.skipWaiting());
     return;
   }
+
+  if (event.data?.type === 'PORTAL_DOCUMENT_STREAM_REGISTER') {
+    const port = event.ports?.[0];
+    const url = sameOriginClient(event) ? registerDocumentStream(event.data) : null;
+    if (port) port.postMessage(url ? { ok: true, url } : { ok: false });
+    return;
+  }
+
+  if (event.data?.type === 'PORTAL_DOCUMENT_STREAM_RELEASE') {
+    if (sameOriginClient(event)) releaseDocumentStream(event.data?.viewId);
+    return;
+  }
+
   if (event.data?.type !== 'PORTAL_WARM_ROUTES') return;
   event.waitUntil(warmRoutes(Array.isArray(event.data.routes) ? event.data.routes : []));
 });

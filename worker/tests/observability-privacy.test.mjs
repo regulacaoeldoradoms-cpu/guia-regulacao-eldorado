@@ -157,3 +157,40 @@ test('sem token configurado a telemetria não vaza nem bloqueia o Portal', async
     globalThis.fetch = originalFetch;
   }
 });
+
+test('aceita métrica de primeira página somente com propriedades técnicas', () => {
+  const clean = sanitizeObservabilityEvent({
+    event: 'pdf_first_page_visible',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 318.4,
+      source: 'drive',
+      size_bucket: 'medium',
+      cache_state: 'bypass'
+    }
+  });
+
+  assert.ok(clean);
+  assert.equal(clean.event, 'pdf_first_page_visible');
+  assert.deepEqual(clean.properties, {
+    route: '/documentos/',
+    duration_ms: 318.4,
+    source: 'drive',
+    size_bucket: 'medium',
+    cache_state: 'bypass'
+  });
+
+  assert.equal(sanitizeObservabilityEvent({
+    event: 'pdf_first_page_visible',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 318.4,
+      source: 'drive',
+      size_bucket: 'medium',
+      cache_state: 'bypass',
+      file_name: 'proibido.pdf'
+    }
+  }), null);
+});

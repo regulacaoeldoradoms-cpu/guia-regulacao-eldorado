@@ -22,7 +22,16 @@
     searchMode: false,
     loading: false,
     pdfObjectUrl: '',
-    pdfOpenedAt: 0
+    pdfOpenedAt: 0,
+    pdfOpenId: 0,
+    pdfStreamId: '',
+    pdfStreamRef: '',
+    pdfStreamHeartbeat: null,
+    pdfItem: null,
+    pdfFallbackStarted: false,
+    pdfProgressiveFailed: false,
+    pdfFirstPageObserver: null,
+    pdfFirstPageEmitted: false
   };
 
   const els = {
@@ -94,6 +103,180 @@
     if (value <= 20) return '6-20';
     if (value <= 100) return '21-100';
     return '100+';
+  }
+
+  function randomViewId() {
+    try {
+      if (crypto.randomUUID) return crypto.randomUUID();
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('');
+    } catch (_) {
+      return 'view-' + Math.round(performance.now()).toString(16) + '-' + Math.random().toString(16).slice(2);
+    }
+  }
+
+  function documentStreamPayload(viewId, ref) {
+    const authorization = String(auth.authorizationHeader?.().Authorization || '');
+    if (!viewId || !ref || !authorization || !endpoint) return null;
+    return {
+      type: 'PORTAL_DOCUMENT_STREAM_REGISTER',
+      viewId,
+      ref,
+      endpoint,
+      authorization
+    };
+  }
+
+  function releaseProgressiveStream() {
+    if (state.pdfStreamHeartbeat) {
+      clearInterval(state.pdfStreamHeartbeat);
+      state.pdfStreamHeartbeat = null;
+    }
+    const viewId = state.pdfStreamId;
+    state.pdfStreamId = '';
+    state.pdfStreamRef = '';
+    if (!viewId || !navigator.serviceWorker?.controller) return;
+    try {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'PORTAL_DOCUMENT_STREAM_RELEASE',
+        viewId
+      });
+    } catch (_) {}
+  }
+
+  function refreshProgressiveStream() {
+    if (!state.pdfStreamId || !state.pdfStreamRef || !navigator.serviceWorker?.controller) return;
+    const payload = documentStreamPayload(state.pdfStreamId, state.pdfStreamRef);
+    if (!payload) return;
+    try { navigator.serviceWorker.controller.postMessage(payload); } catch (_) {}
+  }
+
+  async function registerProgressiveStream(item) {
+    const controller = navigator.serviceWorker?.controller;
+    if (!controller || typeof MessageChannel !== 'function') return '';
+
+    const viewId = randomViewId();
+    const payload = documentStreamPayload(viewId, item?.ref);
+    if (!payload) return '';
+
+    const response = await new Promise((resolve) => {
+      const channel = new MessageChannel();
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        try { channel.port1.close(); } catch (_) {}
+        resolve(value || null);
+      };
+      const timer = window.setTimeout(() => finish(null), 900);
+      channel.port1.onmessage = (event) => finish(event.data);
+      try {
+        controller.postMessage(payload, [channel.port2]);
+      } catch (_) {
+        finish(null);
+      }
+    });
+
+    if (!response?.ok || !String(response.url || '').startsWith('/__portal_document_pdf/')) return '';
+
+    state.pdfStreamId = viewId;
+    state.pdfStreamRef = String(item.ref || '');
+    state.pdfStreamHeartbeat = window.setInterval(refreshProgressiveStream, 5000);
+    return String(response.url);
+  }
+
+  function frameVisibleInViewport() {
+    if (els.viewer.hidden || document.visibilityState === 'hidden') return false;
+    const rect = els.frame.getBoundingClientRect();
+    const width = window.innerWidth || document.documentElement.clientWidth || 0;
+    const height = window.innerHeight || document.documentElement.clientHeight || 0;
+    return rect.width > 0
+      && rect.height > 0
+      && rect.bottom > 0
+      && rect.right > 0
+      && rect.top < height
+      && rect.left < width;
+  }
+
+  function emitFirstPageVisible(openId, bucket, cacheState) {
+    if (state.pdfFirstPageEmitted || openId !== state.pdfOpenId || state.pdfProgressiveFailed) return;
+    if (!frameVisibleInViewport()) return;
+    state.pdfFirstPageEmitted = true;
+    state.pdfFirstPageObserver?.disconnect?.();
+    state.pdfFirstPageObserver = null;
+    capture('pdf_first_page_visible', {
+      route: '/documentos/',
+      duration_ms: duration(state.pdfOpenedAt),
+      source: 'drive',
+      size_bucket: bucket,
+      cache_state: cacheState
+    });
+  }
+
+  function observeFirstPageVisible(openId, bucket, cacheState) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (openId !== state.pdfOpenId || state.pdfProgressiveFailed) return;
+        emitFirstPageVisible(openId, bucket, cacheState);
+        if (state.pdfFirstPageEmitted || typeof IntersectionObserver !== 'function') return;
+        state.pdfFirstPageObserver?.disconnect?.();
+        state.pdfFirstPageObserver = new IntersectionObserver((entries) => {
+          if (entries.some((entry) => entry.isIntersecting && entry.intersectionRatio > 0)) {
+            emitFirstPageVisible(openId, bucket, cacheState);
+          }
+        }, { threshold: 0.01 });
+        state.pdfFirstPageObserver.observe(els.frame);
+      });
+    });
+  }
+
+  function markViewerReady(openId, bucket, cacheState, progressive) {
+    window.setTimeout(() => {
+      if (openId !== state.pdfOpenId || (progressive && state.pdfProgressiveFailed)) return;
+      els.viewerState.className = 'documents-viewer-state ready';
+      capture('pdf_ready', {
+        route: '/documentos/',
+        duration_ms: duration(state.pdfOpenedAt),
+        source: 'drive',
+        size_bucket: bucket,
+        cache_state: cacheState
+      });
+
+      if (progressive) observeFirstPageVisible(openId, bucket, cacheState);
+    }, progressive ? 100 : 0);
+  }
+
+  async function loadPdfBlobFallback(item, openId, bucket) {
+    if (openId !== state.pdfOpenId || state.pdfFallbackStarted) return;
+    state.pdfFallbackStarted = true;
+    releaseProgressiveStream();
+    els.viewerState.textContent = 'Carregando PDF em modo compatível…';
+    els.viewerState.className = 'documents-viewer-state';
+
+    const response = await fetch(`${endpoint}/api/documents/drive/content/${encodeURIComponent(item.ref)}`, {
+      method: 'GET',
+      headers: auth.authorizationHeader(),
+      cache: 'no-store',
+      credentials: 'omit'
+    });
+    if (!response.ok) {
+      let message = `Não foi possível abrir o PDF (${response.status}).`;
+      if ((response.headers.get('Content-Type') || '').includes('application/json')) {
+        const payload = await response.json().catch(() => ({}));
+        if (payload?.error) message = payload.error;
+      }
+      throw new Error(message);
+    }
+
+    const blob = await response.blob();
+    if (openId !== state.pdfOpenId) return;
+    state.pdfObjectUrl = URL.createObjectURL(blob);
+    els.frame.addEventListener('load', () => {
+      markViewerReady(openId, sizeBucket(blob.size || item.size), 'miss', false);
+    }, { once: true });
+    els.frame.src = state.pdfObjectUrl;
   }
 
   function formatSize(size) {
@@ -331,8 +514,16 @@
   }
 
   function closePdf() {
+    state.pdfOpenId += 1;
+    releaseProgressiveStream();
     if (state.pdfObjectUrl) URL.revokeObjectURL(state.pdfObjectUrl);
     state.pdfObjectUrl = '';
+    state.pdfItem = null;
+    state.pdfFallbackStarted = false;
+    state.pdfProgressiveFailed = false;
+    state.pdfFirstPageEmitted = false;
+    state.pdfFirstPageObserver?.disconnect?.();
+    state.pdfFirstPageObserver = null;
     els.frame.removeAttribute('src');
     els.viewer.hidden = true;
     els.viewerState.className = 'documents-viewer-state';
@@ -341,9 +532,11 @@
 
   async function openPdf(item) {
     closePdf();
+    const openId = state.pdfOpenId;
+    state.pdfItem = item;
     els.viewer.hidden = false;
     els.viewerTitle.textContent = item.name || 'Documento PDF';
-    els.viewerState.textContent = 'Baixando o PDF com conexão protegida…';
+    els.viewerState.textContent = 'Abrindo primeira página…';
     els.viewerState.className = 'documents-viewer-state';
     state.pdfOpenedAt = performance.now();
     const bucket = sizeBucket(item.size);
@@ -352,39 +545,27 @@
       route: '/documentos/',
       source: 'drive',
       size_bucket: bucket,
-      cache_state: 'miss'
+      cache_state: 'unknown'
     });
 
     try {
-      const response = await fetch(`${endpoint}/api/documents/drive/content/${encodeURIComponent(item.ref)}`, {
-        method: 'GET',
-        headers: auth.authorizationHeader(),
-        cache: 'no-store',
-        credentials: 'omit'
-      });
-      if (!response.ok) {
-        let message = `Não foi possível abrir o PDF (${response.status}).`;
-        if ((response.headers.get('Content-Type') || '').includes('application/json')) {
-          const payload = await response.json().catch(() => ({}));
-          if (payload?.error) message = payload.error;
-        }
-        throw new Error(message);
+      const progressiveUrl = await registerProgressiveStream(item);
+      if (openId !== state.pdfOpenId) return;
+
+      if (progressiveUrl) {
+        els.frame.addEventListener('load', () => {
+          markViewerReady(openId, bucket, 'bypass', true);
+        }, { once: true });
+        els.frame.src = progressiveUrl;
+      } else {
+        await loadPdfBlobFallback(item, openId, bucket);
       }
-      const blob = await response.blob();
-      state.pdfObjectUrl = URL.createObjectURL(blob);
-      els.frame.addEventListener('load', () => {
-        els.viewerState.className = 'documents-viewer-state ready';
-        capture('pdf_ready', {
-          route: '/documentos/',
-          duration_ms: duration(state.pdfOpenedAt),
-          source: 'drive',
-          size_bucket: sizeBucket(blob.size || item.size),
-          cache_state: 'miss'
-        });
-      }, { once: true });
-      els.frame.src = state.pdfObjectUrl;
-      els.viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      if (openId === state.pdfOpenId) {
+        els.viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     } catch (error) {
+      if (openId !== state.pdfOpenId) return;
       els.viewerState.textContent = error.message || 'Não foi possível abrir este PDF.';
       showStatus(error.message || 'Não foi possível abrir este PDF.', 'warning');
     }
@@ -461,6 +642,19 @@
   });
 
   els.closeViewer.addEventListener('click', closePdf);
+
+  navigator.serviceWorker?.addEventListener('message', (event) => {
+    if (event.data?.type !== 'PORTAL_DOCUMENT_STREAM_FAILED') return;
+    if (!state.pdfStreamId || event.data.viewId !== state.pdfStreamId || !state.pdfItem) return;
+    const item = state.pdfItem;
+    const openId = state.pdfOpenId;
+    state.pdfProgressiveFailed = true;
+    loadPdfBlobFallback(item, openId, sizeBucket(item.size)).catch((error) => {
+      if (openId !== state.pdfOpenId) return;
+      els.viewerState.textContent = error.message || 'Não foi possível abrir este PDF.';
+      showStatus(error.message || 'Não foi possível abrir este PDF.', 'warning');
+    });
+  });
 
   els.logout.addEventListener('click', async () => {
     closePdf();

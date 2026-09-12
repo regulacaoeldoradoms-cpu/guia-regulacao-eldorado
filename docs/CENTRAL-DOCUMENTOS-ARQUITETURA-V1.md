@@ -349,3 +349,23 @@ Antes de leitura real do Drive em ambiente conectado:
 8. executar consentimento inicial da conta institucional.
 
 A configuração do Google Cloud exige intervenção humana quando o conector disponível não puder criar/autorizar esses recursos.
+
+
+## Atualização Fase 2 — stream efêmero
+
+A Fase 2 substitui preferencialmente o caminho `fetch completo -> Blob -> iframe` por um caminho progressivo:
+
+`iframe same-origin virtual -> Service Worker -> Worker documental autenticado -> Google Drive Range/stream`
+
+Regras:
+- o Service Worker guarda referência opaca e token de sessão apenas em memória, com expiração curta;
+- a página renova esse registro enquanto o PDF estiver aberto e o libera ao fechar;
+- o endpoint virtual nunca contém fileId, nome de arquivo ou token;
+- o Service Worker não grava resposta documental em Cache Storage, IndexedDB ou outra persistência;
+- requisições `Range` do visualizador são encaminhadas ao Worker documental;
+- o Worker continua revalidando a sessão e a capability `view` em cada fetch real;
+- se o modo progressivo não estiver disponível, o Blob efêmero da Fase 1 continua como fallback;
+- `pdf_first_page_visible` só é emitido no caminho progressivo, após o iframe carregar e uma pintura visível ser confirmada;
+- nomes, referências e conteúdo continuam proibidos na telemetria.
+
+O detalhamento operacional está em `docs/CENTRAL-DOCUMENTOS-FASE-2.md`.

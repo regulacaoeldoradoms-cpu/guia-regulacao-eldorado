@@ -1,4 +1,4 @@
-name: Validar Central de Documentos — Fase 1
+name: Validar Central de Documentos — Fases 1–2
 
 on:
   pull_request:
@@ -70,6 +70,9 @@ jobs:
           ! grep -R -E "localStorage|sessionStorage|indexedDB" js/documents.js
           node --check js/documents.js
           node --check js/admin-users.js
+          node --check portal-sw.js
+          grep -q "PORTAL_DOCUMENT_STREAM_REGISTER" portal-sw.js
+          grep -q "pdf_first_page_visible" js/documents.js
 
       - name: Bloquear segredos e telemetria identificável
         run: |
