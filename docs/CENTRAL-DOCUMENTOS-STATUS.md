@@ -951,6 +951,34 @@ A observabilidade-base já está operacional. A Fase 1 passa a emitir apenas `dr
 
 Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
+## Diagnóstico automatizado da falha 3C.1e — 14/09/2026
+
+O novo laboratório reproduziu a falha do visualizador sem usar qualquer documento clínico.
+
+Evidência:
+- Chromium desktop e mobile falharam antes da primeira página com `this[#Yr].getOrInsertComputed is not a function`;
+- os assets PDF.js self-hosted estavam presentes e carregaram, portanto a falha não era ausência do módulo/worker;
+- a exceção ocorre no build moderno do PDF.js 6.3.289, que usa uma API de `Map` mais nova que o Chromium operacional/testado;
+- isso explica por que os checks estáticos anteriores ficaram verdes enquanto o navegador real falhou.
+
+Decisão técnica:
+- manter PDF.js **6.3.289**, preservando a versão de segurança já aprovada;
+- substituir somente o módulo principal e o worker pelo **build legacy oficial da mesma versão**, destinado pelo próprio PDF.js a navegadores anteriores;
+- manter CMaps, fontes padrão, WASM e ICCs self-hosted da mesma versão;
+- usar caminhos novos `/vendor/pdfjs-legacy/` para não reutilizar cache do build moderno incompatível;
+- manter `enableScripting:false` e `isEvalSupported:false`;
+- não adicionar polyfill global ao Portal enquanto o build legacy oficial resolver a compatibilidade, evitando ampliar comportamento global desnecessariamente.
+
+Implementação na branch:
+- build legacy oficial 6.3.289 vendorizado a partir do pacote `pdfjs-dist@6.3.289`;
+- `js/document-viewer.js` aponta para módulo e worker legacy;
+- cache-bust do visualizador renovado;
+- CI de navegador cobre fonte Blob e fonte URL sintética em desktop e mobile.
+
+Estado:
+- aguardando o resultado final do Playwright com o build legacy antes de declarar a 3C.1 corrigida;
+- 3C.2 continua bloqueada.
+
 ## Infraestrutura de laboratório de navegador iniciada — 14/09/2026
 
 Motivação:
