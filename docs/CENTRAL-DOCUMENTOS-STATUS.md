@@ -1,6 +1,6 @@
 # Central de Documentos — Status
 
-Última atualização: 12/09/2026
+Última atualização: 13/09/2026
 
 ## Fase atual
 
@@ -436,6 +436,7 @@ Causa exata no código:
 Decisão 3C.1d:
 - o visualizador nativo do navegador deixa de existir na Central, inclusive como fallback;
 - o `iframe` será removido do HTML e `frame-src` será removido da CSP da rota documental;
+- estilos legados de `compatibility-mode` também serão removidos;
 - o fallback de transporte continua existindo, mas muda de **progressivo → Blob completo → PDF.js**, sempre dentro do visualizador próprio;
 - se PDF.js falhar mesmo com Blob completo, o Portal mostra erro controlado na própria superfície, sem abrir plugin do navegador;
 - nenhuma escrita no Drive, permissão ou telemetria sensível é alterada.
