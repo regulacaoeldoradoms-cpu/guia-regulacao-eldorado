@@ -244,9 +244,10 @@
       document.getElementById('patientModalMeta').textContent = patient.needsReview ? 'Cadastro sinalizado para revisão' : 'Histórico longitudinal de teleconsultas';
       const followups = Array.isArray(payload.followups) ? payload.followups : [];
       const events = Array.isArray(payload.events) ? payload.events : [];
-      const current = followups.length ? `<div class="telemedicine-current"><strong>Situação atual</strong><div class="telemedicine-current-grid">${followups.map((item) => `<div><small>${escapeHtml(item.specialty || 'Especialidade')}</small><strong>${escapeHtml(item.status || '—')}</strong><span>${item.returnDueDate ? `Retorno ${escapeHtml(formatDate(item.returnDueDate))}` : 'Sem data-alvo definida'}</span></div>`).join('')}</div></div>` : '';
-      const timeline = events.length ? `<div class="telemedicine-timeline">${events.map((event) => `<article class="telemedicine-event"><small>${escapeHtml(formatDate(event.eventDate))} · ${escapeHtml(event.specialty || '')}</small><h4>${escapeHtml(event.eventType === 'solicitacao' ? 'Solicitação registrada' : event.eventType === 'programacao' ? 'Retorno programado' : event.eventType === 'correcao_situacao' ? 'Situação atualizada' : 'Teleconsulta')}</h4><p>${escapeHtml(event.resolution || '')}</p>${event.notes ? `<p><strong>Observação:</strong> ${escapeHtml(event.notes)}</p>` : ''}${event.returnDueDate ? `<small>Retorno-alvo: ${escapeHtml(formatDate(event.returnDueDate))}</small>` : ''}</article>`).join('')}</div>` : '<div class="telemedicine-empty">Nenhum evento histórico encontrado.</div>';
-      document.getElementById('patientDetail').innerHTML = current + timeline;
+      const historyRenderer = window.TelemedicineHistoryV40;
+      document.getElementById('patientDetail').innerHTML = historyRenderer?.render
+        ? historyRenderer.render({ followups, events, inline: false })
+        : '<div class="portal-note warning">Não foi possível montar a linha do tempo visual. Atualize a página e tente novamente.</div>';
     } catch (error) {
       document.getElementById('patientDetail').innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível abrir o histórico.')}</div>`;
     }
