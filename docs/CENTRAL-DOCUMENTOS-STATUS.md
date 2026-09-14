@@ -1,12 +1,12 @@
 # Central de Documentos — Status
 
-Última atualização: 13/09/2026
+Última atualização: 14/09/2026
 
 ## Fase atual
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1e — estabilização da primeira renderização do visualizador próprio PDF.js** publicada, porém **reprovada no reteste real**; diagnóstico/correção permanecem obrigatórios antes da 3C.2.
+Subfase atual: **3C.1f — compatibilidade do visualizador PDF.js com navegadores operacionais** mesclada e publicada; aguardando reteste real em produção antes da 3C.2.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: **3C.1e — estabilização da primeira renderização do visuali
 
 ## Branch / PR
 
-Branch atual de suporte: `infra/central-docs-browser-lab` (laboratório automatizado; a fase funcional continua em 3C.1e).
+Branch atual: `docs/central-docs-lab-postmerge` (consolidação documental pós-merge da correção 3C.1f).
 
-PR funcional atual: nenhum; PR #170 foi validado, mesclado e publicado.
+PR funcional atual: nenhum; PR #173 foi validado, mesclado e publicado.
 
 ## Entregas concluídas nesta unidade
 
@@ -951,6 +951,41 @@ A observabilidade-base já está operacional. A Fase 1 passa a emitir apenas `dr
 
 Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
+## 3C.1f validada em navegador, mesclada e publicada — 14/09/2026
+
+PR #173:
+- causa da falha real reproduzida automaticamente: o build moderno do PDF.js 6.3.289 exigia `Map.prototype.getOrInsertComputed`, indisponível no Chromium operacional/testado;
+- PDF.js permaneceu na versão **6.3.289**, mas módulo principal e worker passaram ao **build legacy oficial da mesma versão**;
+- módulo e worker legacy estão self-hosted em `vendor/pdfjs-legacy/`;
+- CMaps, fontes padrão, WASM e ICCs continuam self-hosted e pareados na mesma versão;
+- o caminho novo evita reaproveitar cache do build moderno incompatível;
+- `enableScripting:false` e `isEvalSupported:false` foram preservados;
+- não foi introduzido polyfill global;
+- laboratório Playwright com PDF 100% sintético foi adicionado para Chromium desktop e mobile;
+- testes cobrem Blob e URL, primeira página, miniatura, canvas real, zoom, Ajustar largura, callback de primeira página visível e navegação por miniaturas;
+- falhas futuras geram trace, screenshot e vídeo sem usar dados clínicos.
+
+Validação:
+- **22/22 workflows do PR #173 concluíram com sucesso**;
+- o novo workflow **Validar Central de Documentos — navegador** passou em desktop e mobile;
+- merge squash concluído na `main` em `a22ddbdd85302a3c2635b5656715cb9af74e1561`;
+- **23/23 workflows pós-merge concluíram com sucesso**, incluindo `pages build and deployment`;
+- a correção já está publicada.
+
+Governança:
+- a 3C.1 ainda não está formalmente encerrada até o reteste real em produção;
+- 3C.2 permanece bloqueada;
+- o ambiente remoto de homologação Cloudflare ainda não foi criado; a camada local/CI já está pronta e a continuação remota deve usar o MCP oficial `cloudflare-api` autenticado no Work/Codex, com dados exclusivamente fictícios e isolamento de produção.
+
+Próxima ação exata:
+1. fazer `Ctrl+F5` em `/documentos/`;
+2. abrir um PDF real autorizado;
+3. confirmar página 1 e miniatura no visualizador próprio;
+4. testar zoom e **Ajustar largura**;
+5. abrir um segundo PDF;
+6. entrar no editor;
+7. se passar, registrar aceite da 3C.1 e então completar staging remoto/preview antes de iniciar 3C.2.
+
 ## Diagnóstico automatizado da falha 3C.1e — 14/09/2026
 
 O novo laboratório reproduziu a falha do visualizador sem usar qualquer documento clínico.
@@ -1047,9 +1082,9 @@ Próximo passo desta infraestrutura:
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
 **Subfase:** 3C.1e implementada, validada em CI, mesclada e publicada; aguardando somente reteste real antes da 3C.2.  
-**Main funcional:** `a13b9f91b60a59ecb5cd6f612fdd3cdfa1a2c3ea` — PR #170.  
-**PR #170:** 21/21 workflows aprovados.  
+**Main funcional:** `a22ddbdd85302a3c2635b5656715cb9af74e1561` — PR #173.  
+**PR #173:** 22/22 workflows aprovados, incluindo Playwright real em Chromium desktop/mobile.  
 **Pós-merge/deploy:** 23/23 workflows associados ao merge concluíram com sucesso, incluindo `pages build and deployment`.  
-**Correção:** primeira página/miniatura renderizam antes dos observers; tasks duplicados são aguardados; rerender cancela e aguarda o anterior; finalização é protegida por identidade; PDF.js usa `canvas`.  
+**Correção:** build legacy oficial do PDF.js 6.3.289 para compatibilidade, mantendo primeira página/miniatura prioritárias, tasks concorrentes seguras e renderização em `canvas`.  
 **Segurança:** sem escrita no Drive, sem mudança de capabilities e sem nova telemetria sensível.  
 **Próxima ação exata:** retestar em produção página 1, miniatura, segundo PDF, zoom, Ajustar largura e editor; somente após aceite iniciar 3C.2.
