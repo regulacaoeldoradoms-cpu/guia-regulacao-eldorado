@@ -243,7 +243,7 @@
     }
 
     const bytes = await output.save({
-      useObjectStreams: true,
+      useObjectStreams: false,
       addDefaultPage: false,
       updateFieldAppearances: false
     });
@@ -276,6 +276,6 @@
     pageCount,
     sourceCount,
     buildBlob,
-    version: 'phase3-v2'
+    version: 'phase3-v3'
   });
 })();
