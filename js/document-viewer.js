@@ -19,6 +19,7 @@
 
   let modulePromise = null;
   let active = null;
+  let openGeneration = 0;
 
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -43,7 +44,7 @@
     const deviceScale = clamp(Number(window.devicePixelRatio || 1), 1, MAX_DEVICE_SCALE);
     const cssPixels = Math.max(1, viewport.width * viewport.height);
     const memoryScale = Math.sqrt(MAX_CANVAS_PIXELS / cssPixels);
-    return clamp(Math.min(deviceScale, memoryScale), 1, MAX_DEVICE_SCALE);
+    return Math.min(deviceScale, memoryScale);
   }
 
   function sourceParameters(source) {
@@ -82,15 +83,27 @@
     }
   }
 
+  // Serialize the entire operation, including getPage and canvas reset. Locking
+  // only PDF.js renderTask leaves a race before page.render() is reached.
+  function enqueueCanvas(record, operation) {
+    const previous = record.work || Promise.resolve();
+    const work = previous.catch(() => {}).then(operation);
+    record.work = work;
+    return work;
+  }
+
   function clearRenderedPage(record) {
-    if (!record?.canvas) return;
+    if (!record?.canvas) return Promise.resolve();
     cancelRender(record);
-    record.canvas.width = 0;
-    record.canvas.height = 0;
-    record.canvas.removeAttribute('style');
-    record.renderedScale = 0;
-    record.renderGeneration = 0;
-    record.container?.classList.remove('rendered');
+    return enqueueCanvas(record, async () => {
+      await settleRenderTask(record, { cancel: true });
+      record.canvas.width = 0;
+      record.canvas.height = 0;
+      record.canvas.removeAttribute('style');
+      record.renderedScale = 0;
+      record.renderGeneration = 0;
+      record.container?.classList.remove('rendered');
+    });
   }
 
   function destroySession(session) {
@@ -102,18 +115,18 @@
     session.firstPageWindowObserver?.disconnect?.();
     session.resizeObserver?.disconnect?.();
     if (session.resizeTimer) clearTimeout(session.resizeTimer);
-    for (const record of session.pages.values()) clearRenderedPage(record);
+    for (const record of session.pages.values()) clearRenderedPage(record).catch(() => {});
     for (const record of session.thumbs.values()) cancelRender(record);
     if (session.thumbClick) {
       try { session.thumbnailsRoot?.removeEventListener('click', session.thumbClick); } catch (_) {}
     }
-    try { session.loadingTask?.destroy?.(); } catch (_) {}
-    try { session.document?.destroy?.(); } catch (_) {}
+    try { Promise.resolve(session.loadingTask?.destroy?.()).catch(() => {}); } catch (_) {}
     clearNode(session.pagesRoot);
     clearNode(session.thumbnailsRoot);
   }
 
   function close() {
+    openGeneration += 1;
     if (active) destroySession(active);
     active = null;
   }
@@ -241,7 +254,17 @@
     session.onPageChange?.(pageNumber, session.document.numPages);
   }
 
-  async function renderMainPage(session, pageNumber, { force = false } = {}) {
+  function renderMainPage(session, pageNumber, options = {}) {
+    const record = session.pages.get(pageNumber);
+    if (!record || session.closed) return Promise.resolve();
+    const generation = session.generation;
+    return enqueueCanvas(record, () => {
+      if (session.closed || generation !== session.generation) return;
+      return renderMainPageNow(session, pageNumber, options);
+    });
+  }
+
+  async function renderMainPageNow(session, pageNumber, { force = false } = {}) {
     const record = session.pages.get(pageNumber);
     if (!record || session.closed) return;
     const generation = session.generation;
@@ -325,7 +348,13 @@
     }
   }
 
-  async function renderThumbnail(session, pageNumber) {
+  function renderThumbnail(session, pageNumber) {
+    const record = session.thumbs.get(pageNumber);
+    if (!record || session.closed) return Promise.resolve();
+    return enqueueCanvas(record, () => renderThumbnailNow(session, pageNumber));
+  }
+
+  async function renderThumbnailNow(session, pageNumber) {
     const record = session.thumbs.get(pageNumber);
     if (!record || record.rendered || session.closed) return;
     if (record.renderTask) {
@@ -380,7 +409,7 @@
           } else {
             session.visiblePages.delete(pageNumber);
             const record = session.pages.get(pageNumber);
-            if (record && record.canvas.width > 0) clearRenderedPage(record);
+            if (record && record.canvas.width > 0) clearRenderedPage(record).catch(() => {});
           }
         }
       }, {
@@ -452,7 +481,7 @@
     session.generation += 1;
 
     if (session.zoomLabel) session.zoomLabel.textContent = `${Math.round(session.scale * 100)}%`;
-    for (const record of session.pages.values()) clearRenderedPage(record);
+    for (const record of session.pages.values()) clearRenderedPage(record).catch(() => {});
 
     const targets = session.visiblePages.size ? [...session.visiblePages] : [session.activePage || 1];
     await Promise.all(targets.map((pageNumber) => renderMainPage(session, pageNumber, { force: true }).catch(() => {})));
@@ -494,6 +523,7 @@
 
   async function open(source, options = {}) {
     close();
+    const opening = openGeneration;
 
     const {
       root,
@@ -515,7 +545,9 @@
     }
 
     const pdfjs = await loadPdfJs();
+    if (opening !== openGeneration) return null;
     const input = await sourceParameters(source);
+    if (opening !== openGeneration) return null;
     const session = {
       root,
       scrollRoot,
@@ -541,7 +573,7 @@
       resizeTimer: null,
       pageRatios: new Map(),
       visiblePages: new Set(),
-      activePage: 1,
+      activePage: 0,
       scale: 1,
       fitMode: true,
       generation: 1,
@@ -652,6 +684,6 @@
     scrollToPage,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-phase3c1e`
+    version: `pdfjs-${PDFJS_VERSION}-phase3c1f`
   });
 })();

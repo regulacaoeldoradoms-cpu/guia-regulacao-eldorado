@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PDF viewer regression harness — synthetic documents only</title>
+<link rel="stylesheet" href="/css/documents.css">
+<style>body{margin:0;font:16px sans-serif}#results{white-space:pre-wrap}button{min-height:44px}#fixture.mobile{width:390px}#fixture.mobile .documents-pdf-layout{grid-template-columns:1fr;grid-template-rows:170px 1fr}</style>
+<button id="run">Run regression suite</button><button id="mobile">390px surface</button><pre id="results">Ready</pre>
+<div id="fixture" class="documents-custom-viewer">
+ <div class="documents-pdf-toolbar"><button id="minus">−</button><button id="plus">+</button><button id="fit">Ajustar largura</button><span id="zoom"></span><span id="count"></span></div>
+ <div class="documents-pdf-layout"><div id="thumbs" class="documents-pdf-thumbnails"></div><div id="scroll" class="documents-pdf-scroll"><div id="pages" class="documents-pdf-pages"></div></div></div>
+</div>
+<script src="/js/document-viewer.js"></script>
+<script src="/js/document-editor.js"></script>
+<script src="/test-pdf-lib.js"></script>
+<script>
+const el = id => document.getElementById(id);
+const viewer = window.PortalPdfViewer;
+const options = () => ({root:el('fixture'),scrollRoot:el('scroll'),pagesRoot:el('pages'),thumbnailsRoot:el('thumbs'),zoomLabel:el('zoom'),pageCountLabel:el('count'),thumbnailActions:true});
+const pause = ms => new Promise(resolve=>setTimeout(resolve,ms));
+const assert = (ok,message) => {if(!ok) throw Error(message)};
+const messages=[];
+window.addEventListener('unhandledrejection', e=>messages.push(String(e.reason)));
+async function pdf(n) { const doc=await PDFLib.PDFDocument.create(); for(let i=0;i<n;i++){const p=doc.addPage(i%2?[842,595]:[595,842]);p.drawText('SYNTHETIC PAGE '+(i+1),{x:40,y:450,size:28});} return new Blob([await doc.save()],{type:'application/pdf'}); }
+el('minus').onclick=()=>viewer.zoomOut(); el('plus').onclick=()=>viewer.zoomIn(); el('fit').onclick=()=>viewer.fitWidth();
+el('mobile').onclick=()=>{el('fixture').classList.toggle('mobile');viewer.fitWidth()};
+el('run').onclick=async()=>{
+ el('results').textContent='Running…'; const results=[];
+ async function check(name,fn){try{await fn();results.push('PASS '+name)}catch(e){results.push('FAIL '+name+': '+e.message)}el('results').textContent=results.join('\n')}
+ const a=await pdf(6), b=await pdf(2);
+ await check('first page and thumbnail',async()=>{await viewer.open(a,options());assert(el('pages').querySelector('.rendered canvas')?.width>0,'no rendered page');assert(el('thumbs').querySelector('.rendered canvas')?.width>0,'no thumbnail')});
+ await check('concurrent zoom and fit',async()=>{await Promise.all([viewer.zoomIn(),viewer.zoomIn(),viewer.zoomOut(),viewer.fitWidth()]);await pause(300);assert(el('pages').querySelector('.rendered canvas')?.width>0,'blank after zoom')});
+ await check('late first open cannot replace second',async()=>{const slow=new Blob([await a.arrayBuffer()]);const original=slow.arrayBuffer.bind(slow);slow.arrayBuffer=async()=>{await pause(180);return original()};await Promise.all([viewer.open(slow,options()),viewer.open(b,options())]);assert(el('count').textContent==='2 página(s)','older document won: '+el('count').textContent)});
+ await check('close while source is loading',async()=>{const slow=new Blob([await a.arrayBuffer()]);const original=slow.arrayBuffer.bind(slow);slow.arrayBuffer=async()=>{await pause(100);return original()};const opening=viewer.open(slow,options());viewer.close();await opening;assert(el('pages').childElementCount===0,'closed document reopened')});
+ await check('editor output reopens',async()=>{const session=await PortalPdfEditor.createSession(a);PortalPdfEditor.removePage(session,0);const blob=await PortalPdfEditor.buildBlob(session);await viewer.open(blob,options());assert(el('count').textContent==='5 página(s)','wrong edited count')});
+ await check('no asynchronous errors',async()=>{await pause(250);assert(!messages.length,messages.join('; '))});
+ el('results').textContent+='\nDONE';
+};
+</script>

@@ -85,7 +85,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260913-3/);
+  assert.match(html, /documents\.js\?v=20260914-1/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -143,8 +143,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<iframe|frame-src/);
-  assert.match(html, /document-viewer\.js\?v=20260913-2/);
-  assert.match(html, /documents\.js\?v=20260913-3/);
+  assert.match(html, /document-viewer\.js\?v=20260914-1/);
+  assert.match(html, /documents\.js\?v=20260914-1/);
   assert.match(html, /documents\.css\?v=20260913-2/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
@@ -195,8 +195,8 @@ test('editor permanece no visualizador próprio e não usa iframe nativo como fa
   const css = read('css/documents.css');
 
   assert.match(html, /editorPreviewButton"[^>]*>Atualizar visualização<\/button>/);
-  assert.match(html, /document-viewer\.js\?v=20260913-2/);
-  assert.match(html, /documents\.js\?v=20260913-3/);
+  assert.match(html, /document-viewer\.js\?v=20260914-1/);
+  assert.match(html, /documents\.js\?v=20260914-1/);
   assert.match(html, /documents\.css\?v=20260913-2/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -242,7 +242,7 @@ test('editor aceita imagens e Ctrl+V como novas páginas', () => {
   assert.match(html, /id="editorImageButton"[^>]*>Adicionar imagem<\/button>/);
   assert.match(html, /Ctrl\+V/);
   assert.match(html, /document-editor\.js\?v=20260913-2/);
-  assert.match(html, /documents\.js\?v=20260913-3/);
+  assert.match(html, /documents\.js\?v=20260914-1/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /clipboardData/);
   assert.match(client, /addImageBlobToEditor/);

@@ -8,6 +8,10 @@ on:
       - 'js/documents.js'
       - 'js/document-cache.js'
       - 'js/document-editor.js'
+      - 'js/document-viewer.js'
+      - 'vendor/pdfjs/**'
+      - 'worker/tests/document-viewer.test.mjs'
+      - 'worker/tests/browser/**'
       - 'js/admin-users.js'
       - 'admin/usuarios/index.html'
       - 'js/tools-catalog.js'
@@ -35,6 +39,10 @@ on:
       - 'js/documents.js'
       - 'js/document-cache.js'
       - 'js/document-editor.js'
+      - 'js/document-viewer.js'
+      - 'vendor/pdfjs/**'
+      - 'worker/tests/document-viewer.test.mjs'
+      - 'worker/tests/browser/**'
       - 'js/admin-users.js'
       - 'admin/usuarios/index.html'
       - 'worker/document-*.js'
@@ -112,3 +120,17 @@ jobs:
           ! grep -R -E 'GOCSPX-[0-9A-Za-z_-]+' worker/document-*.js worker/documents-router.js js/documents.js
           ! grep -R -E 'AIza[0-9A-Za-z_-]{20,}' worker/document-*.js worker/documents-router.js js/documents.js
           ! grep -R -E "capture\([^\n]*(fileId|filename|item\.name|item\.ref|searchQuery)" js/documents.js
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Instalar ferramentas isoladas de teste
+        run: |
+          npm install --prefix "$RUNNER_TEMP/pdf-browser" --no-save playwright@1.62.1 pdf-lib@1.17.1
+          "$RUNNER_TEMP/pdf-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Renderizar PDFs sintéticos em desktop e mobile
+        run: NODE_PATH="$RUNNER_TEMP/pdf-browser/node_modules" node worker/tests/browser/run.cjs
