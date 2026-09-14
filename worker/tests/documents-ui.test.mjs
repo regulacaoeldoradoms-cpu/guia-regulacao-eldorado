@@ -184,7 +184,6 @@ test('editor permanece no visualizador próprio e não usa iframe nativo como fa
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /thumbnailActions:\s*true/);
   assert.match(client, /onThumbnailAction:/);
-  assert.match(client, /showEditorIframeFallback/);
   assert.match(client, /await openEditorWithPortalViewer\(blob/);
   assert.match(client, /restoreOriginalPortalViewer/);
   assert.match(client, /showEditorPortalFailure/);
