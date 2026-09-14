@@ -60,8 +60,17 @@ jobs:
           grep -Fq "return mergeSpecialtyFollowups" worker/telemedicine-router-v2.js
           grep -Fq "firestoreReplace(env" worker/telemedicine-router-v2.js
           grep -Fq "combined.sort" worker/telemedicine-router-v2.js
+          grep -Fq "const followupId = clean(input.followupId, 64);" worker/telemedicine-router-v2.js
+          grep -Fq "FOLLOWUP_PATIENT_MERGE_CONFIRMATION_REQUIRED" worker/telemedicine-router-v2.js
+          grep -Fq "event.followupId !== followupId" worker/telemedicine-router-v2.js
+          grep -Fq "otherPatientFollowups" worker/telemedicine-router-v2.js
+          grep -Fq "followupId: editContext.followupId" js/telemedicina-edit.js
+          grep -Fq "mergeExisting" js/telemedicina-edit.js
+          grep -Fq "As demais especialidades não serão alteradas" js/telemedicina-edit.js
+          grep -Fq "correção do nome pelo lápis de um card atua somente naquele acompanhamento" docs/TELEMEDICINA.md
+          grep -Fq "outros acompanhamentos/especialidades do cadastro de origem permanecem intocados" docs/TELEMEDICINA.md
           grep -Fq "export async function firestoreReplace" worker/firebase-gateway.js
-          grep -Fq "telemedicina-edit.js?v=20260905-1" telemedicina/index.html
+          grep -Fq "telemedicina-edit.js?v=20260914-2" telemedicina/index.html
           grep -Fq "telemedicina-mobile-v13.css?v=20260906-3" telemedicina/index.html
           grep -Fq "data-telemedicine-edit" js/telemedicina-edit.js
           grep -Fq "REUMATOLOGIA" js/telemedicina-edit.js
