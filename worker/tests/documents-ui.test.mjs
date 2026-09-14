@@ -143,7 +143,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<iframe|frame-src/);
-  assert.match(html, /document-viewer\.js\?v=20260913-2/);
+  assert.match(html, /document-viewer\.js\?v=20260914-1/);
   assert.match(html, /documents\.js\?v=20260913-3/);
   assert.match(html, /documents\.css\?v=20260913-2/);
 
