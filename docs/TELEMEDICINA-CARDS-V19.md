@@ -73,3 +73,14 @@ A validação deve confirmar:
 - zonas com largura integral na Grade 2 × 2 e botões com largura simétrica na Lista;
 - ícone de `Solicitado` no fluxo do botão, ao lado do texto, sem posicionamento absoluto;
 - nenhuma alteração nos arquivos de backend, autorização ou regras de retorno para esta evolução visual.
+
+
+## Hierarquia interna V37
+
+Em 14/09/2026, a organização interna dos cards recebeu uma revisão de leitura, sem alterar dados, regras de retorno, permissões ou ações.
+
+Na visualização desktop, as três zonas informativas passam a iniciar no topo e usar espaçamento consistente. O bloco de especialidade recebe identificação visual explícita, a situação fica abaixo das informações da consulta, e o bloco de retorno separa com mais clareza o prazo dos avisos programados. A conduta continua separada do nome do paciente por divisor discreto.
+
+A visualização Lista usa colunas mais equilibradas e mantém as ações em coluna própria. A Grade 3 × 3 preserva sua composição anterior, recebendo apenas a mesma hierarquia tipográfica. As regras V15/V19 de mobile permanecem fora do escopo desta revisão.
+
+Implementação: `css/telemedicina-card-hierarchy-v37.css`, ativada por `data-card-hierarchy="v37"`.
