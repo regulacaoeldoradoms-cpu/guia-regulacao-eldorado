@@ -57,7 +57,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260912-13'/);
+  assert.match(source, /CACHE_VERSION = '20260914-2'/);
 });
 
 test('observabilidade documental continua sem propriedades identificáveis', () => {
