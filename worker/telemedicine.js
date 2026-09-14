@@ -369,6 +369,8 @@ async function updateSchedule(env, user, followupId, input = {}) {
   return publicFollowup({ ...current, id: followupId, followupMode: 'scheduled', absence: false, absenceReason: '', absencePendingRequest: false, returnDueDate, reminderDates, requestedAt: '', requestedHistorical: false, requestedBy: '', active: true, updatedAt: now });
 }
 
+// V35 (14/09/2026): correções de situação preservam o histórico anterior,
+// limpam estado operacional incompatível e continuam derivando o status no Worker.
 async function updateFollowupOutcome(env, user, followupId, input = {}) {
   const current = await firestoreGet(env, `${FOLLOWUPS}/${followupId}`);
   if (!current) throw Object.assign(new Error('Acompanhamento não encontrado.'), { status: 404 });
