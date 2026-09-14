@@ -408,6 +408,8 @@ self.addEventListener('activate', (event) => {
       const owned = PORTAL_CACHE_PREFIXES.some((prefix) => name.startsWith(prefix));
       return owned && !valid.has(name) ? caches.delete(name) : Promise.resolve(false);
     }));
+    const staticCache = await caches.open(STATIC_CACHE);
+    await staticCache.delete('/js/telemedicina.js?v=20260906-1');
     if (self.registration.navigationPreload) {
       await self.registration.navigationPreload.enable().catch(() => {});
     }

@@ -369,6 +369,117 @@ async function updateSchedule(env, user, followupId, input = {}) {
   return publicFollowup({ ...current, id: followupId, followupMode: 'scheduled', absence: false, absenceReason: '', absencePendingRequest: false, returnDueDate, reminderDates, requestedAt: '', requestedHistorical: false, requestedBy: '', active: true, updatedAt: now });
 }
 
+// V35 (14/09/2026): correções de situação preservam o histórico anterior,
+// limpam estado operacional incompatível e continuam derivando o status no Worker.
+async function updateFollowupOutcome(env, user, followupId, input = {}) {
+  const current = await firestoreGet(env, `${FOLLOWUPS}/${followupId}`);
+  if (!current) throw Object.assign(new Error('Acompanhamento não encontrado.'), { status: 404 });
+
+  const followupMode = clean(input.followupMode, 24).toLowerCase();
+  if (!['discharge', 'scheduled', 'conditional', 'absence'].includes(followupMode)) {
+    throw Object.assign(new Error('Informe uma situação válida para o acompanhamento.'), { status: 400 });
+  }
+
+  const now = new Date().toISOString();
+  const today = localToday();
+  const previousStatus = deriveStatus(current, today);
+  const correctionNote = clean(input.note, 1200);
+  const patch = {
+    followupMode,
+    discharged: false,
+    absence: false,
+    absenceReason: '',
+    absencePendingRequest: false,
+    returnConditionType: '',
+    returnConditionDetail: '',
+    returnDueDate: '',
+    reminderDates: [],
+    requestedAt: '',
+    requestedBy: '',
+    requestedHistorical: false,
+    requestNote: '',
+    active: true,
+    updatedAt: now
+  };
+
+  let resolution = '';
+  if (followupMode === 'discharge') {
+    resolution = 'ALTA DO EPISÓDIO';
+    Object.assign(patch, {
+      discharged: true,
+      active: false,
+      resolution,
+      notes: ''
+    });
+  } else if (followupMode === 'scheduled') {
+    const requestedReturnDueDate = clean(input.returnDueDate, 10);
+    if (!dateValid(requestedReturnDueDate)) {
+      throw Object.assign(new Error('Informe uma data válida para o retorno.'), { status: 400 });
+    }
+    const returnDueDate = normalizeReturnDueDate(requestedReturnDueDate);
+    const reminderDates = threeBusinessReminders(returnDueDate);
+    resolution = `RETORNO PROGRAMADO PARA ${returnDueDate}`;
+    Object.assign(patch, {
+      resolution,
+      notes: correctionNote,
+      returnDueDate,
+      reminderDates
+    });
+  } else if (followupMode === 'conditional') {
+    const conditionType = clean(input.conditionType, 40).toLowerCase();
+    const conditionDetail = clean(input.conditionDetail, 300);
+    const conditionReady = input.conditionReady === true;
+    const baseResolution = returnConditionResolution(conditionType, conditionDetail);
+    if (!baseResolution) {
+      throw Object.assign(new Error('Informe a condição necessária para o retorno.'), { status: 400 });
+    }
+    resolution = conditionReady ? `${baseResolution} - JÁ REALIZADO` : baseResolution;
+    Object.assign(patch, {
+      resolution,
+      notes: correctionNote,
+      returnConditionType: conditionType,
+      returnConditionDetail: conditionDetail
+    });
+  } else {
+    const absenceReason = clean(input.absenceReason, 1500);
+    if (absenceReason.length < 3) {
+      throw Object.assign(new Error('Justifique a falta do paciente.'), { status: 400 });
+    }
+    resolution = 'FALTA DO PACIENTE';
+    Object.assign(patch, {
+      resolution,
+      notes: absenceReason,
+      absence: true,
+      absenceReason,
+      absencePendingRequest: true
+    });
+  }
+
+  await firestorePatch(env, `${FOLLOWUPS}/${followupId}`, patch);
+
+  const eventId = await eventIdFor(`outcome-change|${followupId}|${now}`);
+  await firestoreCreate(env, EVENTS, eventId, {
+    patientId: current.patientId,
+    patientName: current.patientName,
+    followupId,
+    eventType: 'correcao_situacao',
+    eventDate: today,
+    specialty: current.specialty,
+    resolution,
+    notes: followupMode === 'absence' ? patch.absenceReason : correctionNote,
+    returnDueDate: patch.returnDueDate,
+    reminderDates: patch.reminderDates,
+    followupMode,
+    previousStatus,
+    previousResolution: clean(current.resolution, 2500),
+    source: 'manual',
+    createdAt: now,
+    createdBy: user.username
+  });
+
+  return publicFollowup({ ...current, id: followupId, ...patch });
+}
+
 async function deleteFollowup(env, user, followupId) {
   const current = await firestoreGet(env, `${FOLLOWUPS}/${followupId}`);
   if (!current) throw Object.assign(new Error('Acompanhamento não encontrado.'), { status: 404 });
@@ -526,6 +637,11 @@ export async function handleTelemedicineRoute(request, env, origin, originAllowe
     if (scheduleMatch && request.method === 'PATCH') {
       const body = await request.json().catch(() => ({}));
       return json({ followup: await updateSchedule(env, user, scheduleMatch[1], body) }, 200, origin);
+    }
+    const outcomeMatch = url.pathname.match(/^\/api\/telemedicina\/followups\/([a-f0-9]{20,64})\/outcome$/);
+    if (outcomeMatch && request.method === 'PATCH') {
+      const body = await request.json().catch(() => ({}));
+      return json({ followup: await updateFollowupOutcome(env, user, outcomeMatch[1], body) }, 200, origin);
     }
     if (url.pathname === '/api/telemedicina/import' && request.method === 'POST') {
       const body = await request.json().catch(() => ({}));

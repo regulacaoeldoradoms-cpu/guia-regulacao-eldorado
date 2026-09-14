@@ -122,6 +122,7 @@
     if (item.status === 'SEM PROGRAMAÇÃO' || item.needsReview) {
       actions.push(`<button class="portal-button secondary" type="button" data-action="schedule" data-followup="${escapeHtml(item.id)}">Programar</button>`);
     }
+    actions.push(`<button class="portal-button secondary" type="button" data-action="change-outcome" data-followup="${escapeHtml(item.id)}">Alterar situação</button>`);
     actions.push(`<button class="portal-button secondary" type="button" data-action="patient" data-patient="${escapeHtml(item.patientId)}">Histórico</button>`);
     return actions;
   }
@@ -244,7 +245,7 @@
       const followups = Array.isArray(payload.followups) ? payload.followups : [];
       const events = Array.isArray(payload.events) ? payload.events : [];
       const current = followups.length ? `<div class="telemedicine-current"><strong>Situação atual</strong><div class="telemedicine-current-grid">${followups.map((item) => `<div><small>${escapeHtml(item.specialty || 'Especialidade')}</small><strong>${escapeHtml(item.status || '—')}</strong><span>${item.returnDueDate ? `Retorno ${escapeHtml(formatDate(item.returnDueDate))}` : 'Sem data-alvo definida'}</span></div>`).join('')}</div></div>` : '';
-      const timeline = events.length ? `<div class="telemedicine-timeline">${events.map((event) => `<article class="telemedicine-event"><small>${escapeHtml(formatDate(event.eventDate))} · ${escapeHtml(event.specialty || '')}</small><h4>${escapeHtml(event.eventType === 'solicitacao' ? 'Solicitação registrada' : event.eventType === 'programacao' ? 'Retorno programado' : 'Teleconsulta')}</h4><p>${escapeHtml(event.resolution || '')}</p>${event.notes ? `<p><strong>Observação:</strong> ${escapeHtml(event.notes)}</p>` : ''}${event.returnDueDate ? `<small>Retorno-alvo: ${escapeHtml(formatDate(event.returnDueDate))}</small>` : ''}</article>`).join('')}</div>` : '<div class="telemedicine-empty">Nenhum evento histórico encontrado.</div>';
+      const timeline = events.length ? `<div class="telemedicine-timeline">${events.map((event) => `<article class="telemedicine-event"><small>${escapeHtml(formatDate(event.eventDate))} · ${escapeHtml(event.specialty || '')}</small><h4>${escapeHtml(event.eventType === 'solicitacao' ? 'Solicitação registrada' : event.eventType === 'programacao' ? 'Retorno programado' : event.eventType === 'correcao_situacao' ? 'Situação atualizada' : 'Teleconsulta')}</h4><p>${escapeHtml(event.resolution || '')}</p>${event.notes ? `<p><strong>Observação:</strong> ${escapeHtml(event.notes)}</p>` : ''}${event.returnDueDate ? `<small>Retorno-alvo: ${escapeHtml(formatDate(event.returnDueDate))}</small>` : ''}</article>`).join('')}</div>` : '<div class="telemedicine-empty">Nenhum evento histórico encontrado.</div>';
       document.getElementById('patientDetail').innerHTML = current + timeline;
     } catch (error) {
       document.getElementById('patientDetail').innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível abrir o histórico.')}</div>`;
@@ -271,6 +272,114 @@
     document.getElementById('requestedNote').value = '';
     document.getElementById('requestedStatus').className = 'account-status';
     openModal('requestedModal');
+  }
+
+  function ensureOutcomeEditor() {
+    let modal = document.getElementById('outcomeEditModal');
+    if (modal) return modal;
+    modal = document.createElement('div');
+    modal.className = 'modal-backdrop';
+    modal.id = 'outcomeEditModal';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('data-portal-interaction-ignore', 'true');
+    modal.innerHTML = `<form class="portal-modal telemedicine-modal compact" id="outcomeEditForm">
+      <div class="portal-modal-header"><div><h2>Alterar situação</h2><div class="user-meta" id="outcomeEditMeta"></div></div><button class="portal-modal-close" type="button" data-outcome-close>×</button></div>
+      <div class="telemedicine-form-grid one-column">
+        <div class="portal-field"><label for="outcomeEditMode">Nova situação</label><select id="outcomeEditMode" required><option value="discharge">Alta do episódio</option><option value="scheduled">Retorno com data</option><option value="conditional">Retorno após uma condição</option><option value="absence">Falta do paciente</option></select></div>
+        <div class="portal-field" id="outcomeEditScheduled" hidden><label for="outcomeEditReturnDate">Data-alvo do retorno</label><input id="outcomeEditReturnDate" type="date"></div>
+        <div id="outcomeEditConditional" hidden><div class="portal-field"><label for="outcomeEditConditionType">Retornar após</label><select id="outcomeEditConditionType"><option value="exams">Exames</option><option value="physiotherapy">Fisioterapia</option><option value="procedure">Procedimento ou cirurgia</option><option value="treatment">Conclusão do tratamento</option><option value="other">Outra condição</option></select></div><div class="portal-field"><label for="outcomeEditConditionDetail">Detalhe</label><input id="outcomeEditConditionDetail" maxlength="300"></div><label><input id="outcomeEditConditionReady" type="checkbox"> Condição já realizada</label></div>
+        <div class="portal-field" id="outcomeEditAbsence" hidden><label for="outcomeEditAbsenceReason">Justificativa da falta</label><textarea id="outcomeEditAbsenceReason" maxlength="1500" rows="3"></textarea></div>
+        <div class="portal-field"><label for="outcomeEditNote">Observação da correção</label><textarea id="outcomeEditNote" maxlength="1200" rows="3" placeholder="Opcional"></textarea><small>A situação anterior continuará no histórico.</small></div>
+        <div class="telemedicine-preview" id="outcomeEditPreview"></div>
+        <div class="account-actions"><button class="portal-button primary" id="saveOutcomeEdit" type="submit">Salvar nova situação</button><button class="portal-button secondary" type="button" data-outcome-close>Cancelar</button></div>
+        <div class="account-status" id="outcomeEditStatus"></div>
+      </div></form>`;
+    document.body.appendChild(modal);
+
+    const sync = () => {
+      const mode = document.getElementById('outcomeEditMode').value;
+      const scheduled = document.getElementById('outcomeEditScheduled');
+      const conditional = document.getElementById('outcomeEditConditional');
+      const absence = document.getElementById('outcomeEditAbsence');
+      const returnDate = document.getElementById('outcomeEditReturnDate');
+      const conditionType = document.getElementById('outcomeEditConditionType');
+      const conditionDetail = document.getElementById('outcomeEditConditionDetail');
+      const absenceReason = document.getElementById('outcomeEditAbsenceReason');
+      scheduled.hidden = mode !== 'scheduled';
+      conditional.hidden = mode !== 'conditional';
+      absence.hidden = mode !== 'absence';
+      returnDate.required = mode === 'scheduled';
+      conditionDetail.required = mode === 'conditional' && conditionType.value === 'other';
+      absenceReason.required = mode === 'absence';
+      const preview = document.getElementById('outcomeEditPreview');
+      preview.textContent = mode === 'discharge'
+        ? 'O acompanhamento será encerrado como alta e os lembretes atuais serão removidos.'
+        : mode === 'scheduled'
+          ? 'O retorno será reprogramado e receberá três novos avisos úteis.'
+          : mode === 'conditional'
+            ? 'O acompanhamento ficará sem data até a condição ser concluída.'
+            : 'A falta será registrada e uma nova solicitação ficará pendente.';
+    };
+
+    document.getElementById('outcomeEditMode').addEventListener('change', sync);
+    document.getElementById('outcomeEditConditionType').addEventListener('change', sync);
+    modal.querySelectorAll('[data-outcome-close]').forEach((button) => button.addEventListener('click', () => closeModal('outcomeEditModal')));
+    modal.addEventListener('click', (event) => { if (event.target === modal) closeModal('outcomeEditModal'); });
+    document.getElementById('outcomeEditForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const item = state.selectedFollowup;
+      if (!item) return;
+      const status = document.getElementById('outcomeEditStatus');
+      const button = document.getElementById('saveOutcomeEdit');
+      const mode = document.getElementById('outcomeEditMode').value;
+      const body = { followupMode: mode, note: document.getElementById('outcomeEditNote').value.trim() };
+      if (mode === 'scheduled') body.returnDueDate = document.getElementById('outcomeEditReturnDate').value;
+      if (mode === 'conditional') {
+        body.conditionType = document.getElementById('outcomeEditConditionType').value;
+        body.conditionDetail = document.getElementById('outcomeEditConditionDetail').value.trim();
+        body.conditionReady = document.getElementById('outcomeEditConditionReady').checked;
+      }
+      if (mode === 'absence') body.absenceReason = document.getElementById('outcomeEditAbsenceReason').value.trim();
+      button.disabled = true;
+      try {
+        const payload = await auth.api(`/api/telemedicina/followups/${encodeURIComponent(item.id)}/outcome`, { method: 'PATCH', body: JSON.stringify(body) });
+        showStatus(status, 'Situação atualizada e registrada no histórico.', 'success');
+        document.dispatchEvent(new CustomEvent('telemedicine:status-corrected', { detail: { followup: payload.followup } }));
+        if (mode === 'discharge') launchDischargeCelebration();
+        await loadDashboard({ preserveNotice: true });
+        setTimeout(() => closeModal('outcomeEditModal'), 650);
+      } catch (error) {
+        showStatus(status, error.message || 'Não foi possível alterar a situação.', 'error');
+      } finally {
+        button.disabled = false;
+      }
+    });
+    modal._syncOutcomeEditor = sync;
+    return modal;
+  }
+
+  function openOutcomeEditor(item) {
+    state.selectedFollowup = item;
+    const modal = ensureOutcomeEditor();
+    const resolution = normalize(item.resolution);
+    const mode = item.absence === true || item.followupMode === 'absence'
+      ? 'absence'
+      : item.discharged === true || item.followupMode === 'discharge' || resolution.includes('alta')
+        ? 'discharge'
+        : item.followupMode === 'conditional' || resolution.includes('retorno apos')
+          ? 'conditional'
+          : 'scheduled';
+    document.getElementById('outcomeEditMeta').textContent = `${item.patientName} · ${item.specialty} · situação atual: ${item.status || '—'}`;
+    document.getElementById('outcomeEditMode').value = mode;
+    document.getElementById('outcomeEditReturnDate').value = item.returnDueDate || '';
+    document.getElementById('outcomeEditConditionType').value = item.returnConditionType || 'exams';
+    document.getElementById('outcomeEditConditionDetail').value = item.returnConditionDetail || '';
+    document.getElementById('outcomeEditConditionReady').checked = resolution.includes('ja realizado');
+    document.getElementById('outcomeEditAbsenceReason').value = item.absenceReason || '';
+    document.getElementById('outcomeEditNote').value = '';
+    document.getElementById('outcomeEditStatus').className = 'account-status';
+    modal._syncOutcomeEditor?.();
+    openModal('outcomeEditModal');
   }
 
   function launchDischargeCelebration() {
@@ -391,6 +500,33 @@
     preview.innerHTML = `<strong>Retorno:</strong> ${escapeHtml(formatDate(value))}<br><strong>3 avisos úteis:</strong> ${dates.map(formatDate).join(' · ')}`;
   }
 
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest?.('#followupList [data-action="change-outcome"]');
+    if (!button) return;
+    const item = findFollowup(button.dataset.followup);
+    if (!item) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openOutcomeEditor(item);
+  }, true);
+
+  const outcomeActionObserver = new MutationObserver(() => {
+    listEl.querySelectorAll('[data-followup-row]').forEach((row) => {
+      if (row.querySelector('[data-action="change-outcome"]')) return;
+      const actions = row.querySelector('.telemedicine-actions');
+      if (!actions || !row.dataset.followupRow) return;
+      const button = document.createElement('button');
+      button.className = 'portal-button secondary';
+      button.type = 'button';
+      button.dataset.action = 'change-outcome';
+      button.dataset.followup = row.dataset.followupRow;
+      button.textContent = 'Alterar situação';
+      actions.appendChild(button);
+      actions.dataset.actionCount = String(actions.querySelectorAll('[data-action]').length);
+    });
+  });
+  outcomeActionObserver.observe(listEl, { childList: true, subtree: true });
+
   listEl.addEventListener('click', (event) => {
     const button = event.target.closest('[data-action]');
     if (!button) return;
@@ -399,6 +535,7 @@
     if (!item) return;
     if (button.dataset.action === 'schedule') openSchedule(item);
     if (button.dataset.action === 'requested') openRequested(item);
+    if (button.dataset.action === 'change-outcome') openOutcomeEditor(item);
     if (button.dataset.action === 'copy-justification') window.TelemedicineJustification?.copyFromButton(button, item);
   });
 
