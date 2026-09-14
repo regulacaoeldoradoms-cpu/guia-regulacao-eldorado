@@ -190,7 +190,7 @@ test('editor usa visualizador próprio como fluxo principal e iframe apenas como
 
   assert.match(viewer, /thumbnailActions = false/);
   assert.match(viewer, /onThumbnailAction = null/);
-  assert.match(viewer, /data\.thumbnailAction/);
+  assert.match(viewer, /dataset\.thumbnailAction/);
   assert.match(viewer, /portal-pdf-thumb-actions/);
 
   assert.match(css, /\.documents-editor\.compatibility-mode \.documents-editor-pages\s*\{\s*display:\s*grid;/s);
