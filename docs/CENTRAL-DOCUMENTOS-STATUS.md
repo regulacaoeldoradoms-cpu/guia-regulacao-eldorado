@@ -20,9 +20,9 @@ Subfase atual: **3C.1c — eliminar fallback nativo do editor e tornar a prévia
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-3c1-postmerge` (somente consolidação documental pós-merge).
+Branch atual: `fix/document-editor-pdfjs-compat-3c1c`.
 
-PR funcional atual: nenhum; PR #161 foi validado e mesclado.
+PR funcional atual: ainda não aberto; esta branch corrige a prévia PDF.js e elimina fallback nativo no editor.
 
 ## Entregas concluídas nesta unidade
 
