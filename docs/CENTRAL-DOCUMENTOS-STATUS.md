@@ -425,6 +425,8 @@ A primeira execução do PR #163 apresentou falhas em workflows amplos por **uma
 - a causa era exclusivamente três chamadas mortas de `classList.remove('compatibility-mode')` em `js/documents.js`, remanescentes das versões anteriores;
 - essas referências foram removidas; nenhum fluxo adicionava mais essa classe e os estilos correspondentes já haviam sido eliminados;
 - as falhas em workflows de outras áreas ocorreram porque eles executam a mesma suíte compartilhada e atingiram a mesma asserção, não por regressões próprias dessas áreas;
+- uma segunda execução revelou duas asserções históricas ainda incompatíveis com a decisão 3C.1d: uma exigia `frame-src 'self' blob:` e outra exigia a antiga assinatura literal de `markViewerReady` para cache hit;
+- os testes foram atualizados para exigir a **ausência** de `frame-src` e validar semanticamente `cacheState: 'hit'` + `sourceLabel: 'cache'`;
 - o PR deve ser revalidado integralmente antes do merge.
 
 ## Validação real revelou fallback nativo remanescente na visualização — 13/09/2026
