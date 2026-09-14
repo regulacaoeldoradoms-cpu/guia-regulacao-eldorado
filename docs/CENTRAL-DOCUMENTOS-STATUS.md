@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1e — estabilização da primeira renderização do visualizador próprio PDF.js** mesclada e publicada; aguardando validação real antes da 3C.2.
+Subfase atual: **3C.1e — estabilização da primeira renderização do visualizador próprio PDF.js** publicada, porém **reprovada no reteste real**; diagnóstico/correção permanecem obrigatórios antes da 3C.2.
 
 ## Estado de entrada
 
@@ -20,7 +20,7 @@ Subfase atual: **3C.1e — estabilização da primeira renderização do visuali
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-3c1e-postmerge` (consolidação documental pós-merge).
+Branch atual de suporte: `infra/central-docs-browser-lab` (laboratório automatizado; a fase funcional continua em 3C.1e).
 
 PR funcional atual: nenhum; PR #170 foi validado, mesclado e publicado.
 
@@ -950,6 +950,70 @@ A observabilidade-base já está operacional. A Fase 1 passa a emitir apenas `dr
 `pdf_first_page_visible` não será emitido nesta fase porque o iframe nativo não oferece medição confiável da primeira página; isso fica para a Fase 2.
 
 Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
+
+## Diagnóstico automatizado da falha 3C.1e — 14/09/2026
+
+O novo laboratório reproduziu a falha do visualizador sem usar qualquer documento clínico.
+
+Evidência:
+- Chromium desktop e mobile falharam antes da primeira página com `this[#Yr].getOrInsertComputed is not a function`;
+- os assets PDF.js self-hosted estavam presentes e carregaram, portanto a falha não era ausência do módulo/worker;
+- a exceção ocorre no build moderno do PDF.js 6.3.289, que usa uma API de `Map` mais nova que o Chromium operacional/testado;
+- isso explica por que os checks estáticos anteriores ficaram verdes enquanto o navegador real falhou.
+
+Decisão técnica:
+- manter PDF.js **6.3.289**, preservando a versão de segurança já aprovada;
+- substituir somente o módulo principal e o worker pelo **build legacy oficial da mesma versão**, destinado pelo próprio PDF.js a navegadores anteriores;
+- manter CMaps, fontes padrão, WASM e ICCs self-hosted da mesma versão;
+- usar caminhos novos `/vendor/pdfjs-legacy/` para não reutilizar cache do build moderno incompatível;
+- manter `enableScripting:false` e `isEvalSupported:false`;
+- não adicionar polyfill global ao Portal enquanto o build legacy oficial resolver a compatibilidade, evitando ampliar comportamento global desnecessariamente.
+
+Implementação na branch:
+- build legacy oficial 6.3.289 vendorizado a partir do pacote `pdfjs-dist@6.3.289`;
+- `js/document-viewer.js` aponta para módulo e worker legacy;
+- cache-bust do visualizador renovado;
+- CI de navegador cobre fonte Blob e fonte URL sintética em desktop e mobile.
+
+Estado:
+- o primeiro laboratório reproduziu a exceção `getOrInsertComputed` do build moderno;
+- após a troca para o build legacy oficial e correção da própria fixture/harness de teste, o workflow **Validar Central de Documentos — navegador** concluiu com sucesso em Chromium desktop e mobile;
+- foram validadas fonte Blob e fonte URL sintética, página 1, miniatura, canvases reais, zoom, Ajustar largura, callback de primeira página visível e navegação por miniatura;
+- o workflow temporário usado apenas para vendorização do build legacy foi removido após os assets ficarem versionados;
+- a correção está tecnicamente validada em navegador automatizado, mas **3C.1 ainda depende do reteste real em produção após merge/deploy**;
+- 3C.2 continua bloqueada até esse aceite real.
+
+## Infraestrutura de laboratório de navegador iniciada — 14/09/2026
+
+Motivação:
+- o reteste real da 3C.1e falhou mesmo com CI anterior verde;
+- os checks existentes não reproduziam o PDF.js real em navegador;
+- a 3C.2 continua bloqueada até a 3C.1 ser corrigida e aceita.
+
+Branch de suporte atual:
+- `infra/central-docs-browser-lab`, criada diretamente da `main` em `1878fdf4331dc1a8566822d9ac442799d931b0d9`;
+- PR #173 aberto para laboratório + correção de compatibilidade;
+- nenhuma alteração desta branch está em produção.
+
+Entregas desta unidade:
+- laboratório `testing/central-docs/viewer-harness.html` usando o mesmo `js/document-viewer.js` e os assets PDF.js self-hosted;
+- fixture PDF 100% sintética, com três páginas e variações de orientação/rotação;
+- Playwright configurado para Chromium desktop e perfil mobile;
+- teste E2E verifica página 1, miniatura, canvas real, callback de visibilidade, zoom, Ajustar largura e navegação por miniatura;
+- erros geram trace, screenshot e vídeo como artefatos de CI;
+- workflow `Validar Central de Documentos — navegador` criado sem deploy;
+- documentação `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md` registra arquitetura, privacidade e próximos passos.
+
+Privacidade e segurança:
+- o laboratório não acessa Google Drive, D1 de produção ou documentos clínicos;
+- não usa nomes, identificadores ou conteúdo real;
+- não contém segredos e não publica nada em produção.
+
+Próximo passo desta infraestrutura:
+- abrir PR da branch e executar o novo workflow;
+- corrigir qualquer falha do próprio laboratório até obter um baseline verde;
+- quando o ambiente Cloudflare estiver disponível no Work/Codex, criar staging remoto isolado e previews por branch/PR com dados exclusivamente fictícios;
+- depois usar o laboratório para diagnosticar/corrigir a falha atual da 3C.1e.
 
 ## Próximo passo
 

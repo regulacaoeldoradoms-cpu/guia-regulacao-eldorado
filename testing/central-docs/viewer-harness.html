@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <title>Laboratório PDF.js — Central de Documentos</title>
+  <link rel="stylesheet" href="/css/documents.css">
+  <style>
+    html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;background:#eef3f7;color:#173b5c}
+    .lab-shell{max-width:1280px;margin:0 auto;padding:18px}
+    .lab-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+    .lab-head h1{font-size:1.1rem;margin:0 auto 0 0}
+    .lab-badge{padding:6px 9px;border-radius:999px;background:#fff3cd;color:#6b5200;font-weight:700;font-size:.78rem}
+    .lab-status{padding:8px 10px;border-radius:8px;background:#fff;border:1px solid #cfd9e3;font-size:.84rem}
+    .lab-status[data-state="ready"]{border-color:#98c9a8;color:#1e6635}
+    .lab-status[data-state="error"]{border-color:#e4a0a0;color:#9b2222}
+    .portal-button{border:1px solid #c7d4e0;background:#fff;color:#173b5c;border-radius:8px;padding:8px 11px;font-weight:700;cursor:pointer}
+  </style>
+</head>
+<body>
+  <main class="lab-shell">
+    <div class="lab-head">
+      <h1>Laboratório automatizado do visualizador PDF.js</h1>
+      <span class="lab-badge">DADOS FICTÍCIOS</span>
+      <span id="labStatus" class="lab-status" data-state="loading">Inicializando…</span>
+    </div>
+
+    <section id="pdfRoot" class="documents-custom-viewer" aria-label="Visualizador PDF de teste">
+      <div class="documents-pdf-toolbar">
+        <button id="zoomOut" class="portal-button" type="button">−</button>
+        <button id="zoomReset" class="portal-button" type="button">100%</button>
+        <button id="zoomIn" class="portal-button" type="button">+</button>
+        <button id="fitWidth" class="portal-button" type="button">Ajustar largura</button>
+        <span id="pageCount" class="documents-pdf-page-count">—</span>
+      </div>
+      <div class="documents-pdf-layout">
+        <aside id="thumbnails" class="documents-pdf-thumbnails" aria-label="Miniaturas"></aside>
+        <div id="scrollRoot" class="documents-pdf-scroll" tabindex="0">
+          <div id="pages" class="documents-pdf-pages"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/testing/central-docs/fixture.js"></script>
+  <script src="/js/document-viewer.js"></script>
+  <script>
+    (() => {
+      const status = document.getElementById('labStatus');
+      const fail = (error) => {
+        status.dataset.state = 'error';
+        status.textContent = 'ERRO: ' + String(error?.message || error || 'falha desconhecida');
+        document.documentElement.dataset.viewerState = 'error';
+        console.error('[central-docs-lab]', error);
+      };
+
+      window.addEventListener('error', (event) => {
+        if (document.documentElement.dataset.viewerState !== 'ready') fail(event.error || event.message);
+      });
+
+      window.addEventListener('unhandledrejection', (event) => {
+        if (document.documentElement.dataset.viewerState !== 'ready') fail(event.reason);
+      });
+
+      const start = async () => {
+        try {
+          if (!window.PortalPdfViewer?.supported()) throw new Error('PortalPdfViewer não suportado neste navegador.');
+          const source = new URLSearchParams(location.search).get('source') === 'url'
+            ? '/testing/central-docs/_fixture.pdf'
+            : window.CentralDocsTestFixture.blob();
+          document.documentElement.dataset.sourceMode = typeof source === 'string' ? 'url' : 'blob';
+          const result = await window.PortalPdfViewer.open(source, {
+            root: document.getElementById('pdfRoot'),
+            scrollRoot: document.getElementById('scrollRoot'),
+            pagesRoot: document.getElementById('pages'),
+            thumbnailsRoot: document.getElementById('thumbnails'),
+            zoomLabel: document.getElementById('zoomReset'),
+            pageCountLabel: document.getElementById('pageCount'),
+            onReady(info) {
+              document.documentElement.dataset.viewerState = 'ready';
+              document.documentElement.dataset.pageCount = String(info.pageCount);
+              status.dataset.state = 'ready';
+              status.textContent = 'Pronto — PDF.js ' + info.version + ' — ' + info.pageCount + ' páginas';
+            },
+            onFirstPageVisible() {
+              document.documentElement.dataset.firstPageVisible = 'true';
+            },
+            onPageChange(page) {
+              document.documentElement.dataset.activePage = String(page);
+            },
+            onError() {
+              fail(new Error('Falha assíncrona de renderização.'));
+            }
+          });
+
+          if (!result) throw new Error('Abertura do visualizador não retornou resultado.');
+        } catch (error) {
+          fail(error);
+        }
+      };
+
+      document.getElementById('zoomIn').addEventListener('click', () => window.PortalPdfViewer.zoomIn().catch(fail));
+      document.getElementById('zoomOut').addEventListener('click', () => window.PortalPdfViewer.zoomOut().catch(fail));
+      document.getElementById('zoomReset').addEventListener('click', () => window.PortalPdfViewer.resetZoom().catch(fail));
+      document.getElementById('fitWidth').addEventListener('click', () => window.PortalPdfViewer.fitWidth().catch(fail));
+
+      start();
+    })();
+  </script>
+</body>
+</html>
