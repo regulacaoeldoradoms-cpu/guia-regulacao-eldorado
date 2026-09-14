@@ -85,7 +85,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260913-2/);
+  assert.match(html, /documents\.js\?v=20260913-3/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -123,7 +123,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260913-1/);
+  assert.match(html, /documents\.css\?v=20260913-2/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -131,7 +131,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   assert.doesNotMatch(css, /\.documents-viewer-head strong\s*\{[^}]*max-width:\s*min\(54vw,\s*640px\)/s);
 });
 
-test('visualizador próprio usa PDF.js self-hosted com segurança e fallback nativo', () => {
+test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
   const viewer = read('js/document-viewer.js');
@@ -141,10 +141,10 @@ test('visualizador próprio usa PDF.js self-hosted com segurança e fallback nat
   assert.match(html, /id="pdfPageScroll"/);
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
+  assert.doesNotMatch(html, /documentsPdfFrame|<iframe|frame-src/);
   assert.match(html, /document-viewer\.js\?v=20260913-1/);
-  assert.match(html, /documents\.js\?v=20260913-2/);
-  assert.match(html, /documents\.css\?v=20260913-1/);
-  assert.match(html, /id="documentsPdfFrame"[^>]*hidden/);
+  assert.match(html, /documents\.js\?v=20260913-3/);
+  assert.match(html, /documents\.css\?v=20260913-2/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs\/pdf\.min\.mjs/);
@@ -164,7 +164,9 @@ test('visualizador próprio usa PDF.js self-hosted com segurança e fallback nat
   assert.ok(fs.existsSync(path.join(root, 'vendor/pdfjs/LICENSE')));
 
   assert.match(client, /openWithPortalViewer/);
-  assert.match(client, /showIframeViewerSurface/);
+  assert.match(client, /showPortalViewerFailure/);
+  assert.match(client, /loadPdfBlobFallback/);
+  assert.doesNotMatch(client, /showIframeViewerSurface|documentsPdfFrame|els\.frame/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /pdf_first_page_visible/);
   assert.match(client, /pdfReadyEmitted/);
@@ -179,8 +181,8 @@ test('editor permanece no visualizador próprio e não usa iframe nativo como fa
 
   assert.match(html, /editorPreviewButton"[^>]*>Atualizar visualização<\/button>/);
   assert.match(html, /document-viewer\.js\?v=20260913-1/);
-  assert.match(html, /documents\.js\?v=20260913-2/);
-  assert.match(html, /documents\.css\?v=20260913-1/);
+  assert.match(html, /documents\.js\?v=20260913-3/);
+  assert.match(html, /documents\.css\?v=20260913-2/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /thumbnailActions:\s*true/);
@@ -225,7 +227,7 @@ test('editor aceita imagens e Ctrl+V como novas páginas', () => {
   assert.match(html, /id="editorImageButton"[^>]*>Adicionar imagem<\/button>/);
   assert.match(html, /Ctrl\+V/);
   assert.match(html, /document-editor\.js\?v=20260913-2/);
-  assert.match(html, /documents\.js\?v=20260913-2/);
+  assert.match(html, /documents\.js\?v=20260913-3/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /clipboardData/);
   assert.match(client, /addImageBlobToEditor/);
