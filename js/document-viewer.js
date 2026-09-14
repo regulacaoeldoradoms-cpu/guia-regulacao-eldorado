@@ -3,8 +3,8 @@
 (() => {
   if (window.PortalPdfViewer) return;
 
-  const PDFJS_MODULE_URL = '/vendor/pdfjs/pdf.min.mjs';
-  const PDFJS_WORKER_URL = '/vendor/pdfjs/pdf.worker.min.mjs';
+  const PDFJS_MODULE_URL = '/vendor/pdfjs-legacy/pdf.min.mjs';
+  const PDFJS_WORKER_URL = '/vendor/pdfjs-legacy/pdf.worker.min.mjs';
   const CMAP_URL = '/vendor/pdfjs/cmaps/';
   const STANDARD_FONT_URL = '/vendor/pdfjs/standard_fonts/';
   const WASM_URL = '/vendor/pdfjs/wasm/';
@@ -652,6 +652,6 @@
     scrollToPage,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-phase3c1e`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1f`
   });
 })();
