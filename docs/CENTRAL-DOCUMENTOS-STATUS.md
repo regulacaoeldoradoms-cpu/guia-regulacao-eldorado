@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1e — estabilizar a primeira renderização do visualizador próprio PDF.js**.
+Subfase atual: **3C.1e — estabilização da primeira renderização do visualizador próprio PDF.js** mesclada e publicada; aguardando validação real antes da 3C.2.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: **3C.1e — estabilizar a primeira renderização do visualizador
 
 ## Branch / PR
 
-Branch atual: `fix/pdfjs-viewer-render-race-3c1e`.
+Branch atual: `docs/central-docs-3c1e-postmerge` (consolidação documental pós-merge).
 
-PR funcional atual: ainda não aberto; correção da falha real observada no visualizador próprio.
+PR funcional atual: nenhum; PR #170 foi validado, mesclado e publicado.
 
 ## Entregas concluídas nesta unidade
 
@@ -418,6 +418,29 @@ A primeira execução do PR #163 apresentou falhas em workflows amplos por **uma
 - o código real e correto usa a propriedade DOM `dataset.thumbnailAction`;
 - a asserção foi corrigida para refletir a API usada pela implementação;
 - nenhuma lógica do editor, permissão, cache ou Drive foi alterada por essa correção.
+
+## 3C.1e validada, mesclada e publicada — 13/09/2026
+
+PR #170:
+- **21/21 workflows do Pull Request concluíram com sucesso** e 0 falhas;
+- merge funcional concluído na `main` em `a13b9f91b60a59ecb5cd6f612fdd3cdfa1a2c3ea`;
+- no pós-merge, **23/23 workflows associados ao commit concluíram com sucesso**, incluindo **Central de Documentos — Fases 1–3**, **governança Central de Documentos**, **site**, **gestão de usuários** e **pages build and deployment**;
+- a publicação estática da correção de renderização foi concluída com sucesso.
+
+Resultado publicado:
+- primeira página e primeira miniatura terminam antes da ativação dos `IntersectionObserver`;
+- renderizações duplicadas da mesma página/geração aguardam o task já em andamento;
+- rerenders necessários cancelam e aguardam o task anterior antes da reutilização do canvas;
+- finalizadores só limpam `record.renderTask` quando ainda estão finalizando o mesmo task;
+- a chamada de renderização usa o parâmetro `canvas` da API atual do PDF.js;
+- o asset `document-viewer.js` recebeu nova versão para furar cache;
+- nenhuma escrita no Drive, capability ou telemetria sensível foi alterada.
+
+Critério restante:
+- validar em produção a renderização real da página 1 e da miniatura;
+- abrir um segundo PDF;
+- testar zoom, **Ajustar largura** e entrada no editor;
+- somente após aceite real iniciar 3C.2.
 
 ## Validação real da 3C.1d revelou falha do PDF.js — 13/09/2026
 
@@ -930,13 +953,12 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. validar a 3C.1e em CI e mesclar somente com todos os checks verdes;
-2. aguardar publicação do Pages;
-3. fazer recarga forçada em `/documentos/`;
-4. abrir um PDF real e confirmar página 1 + miniatura no visualizador próprio;
-5. abrir um segundo PDF para excluir efeito de cache específico;
-6. testar zoom, **Ajustar largura** e entrada no editor;
-7. registrar o resultado real; somente com aceite iniciar **3C.2 — drag-and-drop das páginas**.
+1. fazer recarga forçada em `/documentos/`;
+2. abrir um PDF real e confirmar renderização da página 1 + miniatura no visualizador próprio;
+3. abrir um segundo PDF para excluir efeito de cache específico;
+4. testar zoom, **Ajustar largura** e entrada no editor;
+5. confirmar que o visualizador nativo continua ausente;
+6. registrar o resultado real; somente com aceite iniciar **3C.2 — drag-and-drop das páginas**.
 
 ## Arquivos e fontes principais
 
@@ -960,10 +982,10 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase:** 3C.1e em implementação — estabilização da primeira renderização no visualizador próprio PDF.js.  
-**Base:** `d2fe8884e4a1d46437823aefbb3cfa83f1375a36`.  
-**Evidência real:** o plugin nativo deixou de aparecer, mas a superfície própria exibiu erro antes de renderizar o PDF.  
-**Falha técnica encontrada:** observadores eram instalados antes da primeira renderização e podiam disputar o mesmo canvas com a renderização inicial; finalizadores também podiam limpar referência de task mais novo.  
+**Subfase:** 3C.1e implementada, validada em CI, mesclada e publicada; aguardando somente reteste real antes da 3C.2.  
+**Main funcional:** `a13b9f91b60a59ecb5cd6f612fdd3cdfa1a2c3ea` — PR #170.  
+**PR #170:** 21/21 workflows aprovados.  
+**Pós-merge/deploy:** 23/23 workflows associados ao merge concluíram com sucesso, incluindo `pages build and deployment`.  
 **Correção:** primeira página/miniatura renderizam antes dos observers; tasks duplicados são aguardados; rerender cancela e aguarda o anterior; finalização é protegida por identidade; PDF.js usa `canvas`.  
 **Segurança:** sem escrita no Drive, sem mudança de capabilities e sem nova telemetria sensível.  
-**Próxima ação exata:** concluir CI/PR/deploy da 3C.1e e repetir teste real de página 1, miniatura, zoom, Ajustar largura e editor; só depois iniciar 3C.2.
+**Próxima ação exata:** retestar em produção página 1, miniatura, segundo PDF, zoom, Ajustar largura e editor; somente após aceite iniciar 3C.2.
