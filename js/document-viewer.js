@@ -19,6 +19,54 @@
 
   let modulePromise = null;
   let active = null;
+  let openGeneration = 0;
+  let currentInvocation = null;
+  const OPEN_CANCELLED = Symbol('portal-pdf-open-cancelled');
+
+  function cancelInvocation(invocation) {
+    if (!invocation || invocation.cancelled) return;
+    invocation.cancelled = true;
+    invocation.resolveCancellation();
+  }
+
+  function beginOpenInvocation() {
+    cancelInvocation(currentInvocation);
+    let resolveCancellation;
+    const invocation = {
+      generation: ++openGeneration,
+      cancelled: false,
+      cancellation: new Promise((resolve) => { resolveCancellation = resolve; }),
+      resolveCancellation
+    };
+    currentInvocation = invocation;
+    return invocation;
+  }
+
+  function isCurrentInvocation(invocation) {
+    return Boolean(
+      invocation
+      && !invocation.cancelled
+      && currentInvocation === invocation
+      && invocation.generation === openGeneration
+    );
+  }
+
+  function waitForInvocation(invocation, promise) {
+    return Promise.race([
+      Promise.resolve(promise),
+      invocation.cancellation.then(() => OPEN_CANCELLED)
+    ]);
+  }
+
+  function isCurrentSession(session) {
+    return Boolean(
+      session
+      && !session.closed
+      && active === session
+      && session.openGeneration === openGeneration
+      && isCurrentInvocation(session.invocation)
+    );
+  }
 
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -67,6 +115,13 @@
     try { record?.renderTask?.cancel?.(); } catch (_) {}
   }
 
+  function safelyDestroy(resource) {
+    try {
+      const result = resource?.destroy?.();
+      if (result && typeof result.catch === 'function') result.catch(() => {});
+    } catch (_) {}
+  }
+
   async function settleRenderTask(record, { cancel = false } = {}) {
     const task = record?.renderTask || null;
     if (!task) return;
@@ -93,7 +148,7 @@
     record.container?.classList.remove('rendered');
   }
 
-  function destroySession(session) {
+  function destroySession(session, { clearSurface = false } = {}) {
     if (!session) return;
     session.closed = true;
     session.pageObserver?.disconnect?.();
@@ -102,20 +157,93 @@
     session.firstPageWindowObserver?.disconnect?.();
     session.resizeObserver?.disconnect?.();
     if (session.resizeTimer) clearTimeout(session.resizeTimer);
+    session.resizeTimer = null;
     for (const record of session.pages.values()) clearRenderedPage(record);
-    for (const record of session.thumbs.values()) cancelRender(record);
+    for (const record of session.thumbs.values()) {
+      cancelRender(record);
+      if (record.canvas) {
+        record.canvas.width = 0;
+        record.canvas.height = 0;
+        record.canvas.removeAttribute('style');
+      }
+    }
     if (session.thumbClick) {
       try { session.thumbnailsRoot?.removeEventListener('click', session.thumbClick); } catch (_) {}
+      session.thumbClick = null;
     }
-    try { session.loadingTask?.destroy?.(); } catch (_) {}
-    try { session.document?.destroy?.(); } catch (_) {}
-    clearNode(session.pagesRoot);
-    clearNode(session.thumbnailsRoot);
+    const loadingTask = session.loadingTask;
+    const document = session.document;
+    session.loadingTask = null;
+    session.document = null;
+    safelyDestroy(loadingTask);
+    safelyDestroy(document);
+    if (clearSurface) {
+      clearNode(session.pagesRoot);
+      clearNode(session.thumbnailsRoot);
+    }
+  }
+
+  function closeActiveSession() {
+    const session = active;
+    if (!session) return;
+    active = null;
+    destroySession(session, { clearSurface: true });
+  }
+
+  function abandonSession(session) {
+    const ownsSurface = active === session;
+    if (ownsSurface) active = null;
+    destroySession(session, { clearSurface: ownsSurface });
   }
 
   function close() {
-    if (active) destroySession(active);
-    active = null;
+    const invocation = currentInvocation;
+    currentInvocation = null;
+    openGeneration += 1;
+    cancelInvocation(invocation);
+    closeActiveSession();
+  }
+
+  function thumbnailActionSpecs(session, pageNumber) {
+    return [
+      { action: 'up', label: '↑', aria: `Mover página ${pageNumber} para cima`, disabled: pageNumber === 1 },
+      { action: 'down', label: '↓', aria: `Mover página ${pageNumber} para baixo`, disabled: pageNumber === session.document.numPages },
+      { action: 'delete', label: '×', aria: `Excluir página ${pageNumber}`, disabled: session.document.numPages <= 1 }
+    ];
+  }
+
+  function syncThumbnailActionControls(session, record) {
+    if (!record?.wrapper) return;
+    let actions = record.wrapper.querySelector('.portal-pdf-thumb-actions');
+    if (!session.thumbnailActions) {
+      actions?.remove();
+      return;
+    }
+
+    if (!actions) {
+      actions = document.createElement('div');
+      actions.className = 'portal-pdf-thumb-actions';
+      record.wrapper.appendChild(actions);
+    }
+
+    actions.replaceChildren();
+    for (const spec of thumbnailActionSpecs(session, record.pageNumber)) {
+      const actionButton = document.createElement('button');
+      actionButton.type = 'button';
+      actionButton.className = `portal-pdf-thumb-action${spec.action === 'delete' ? ' danger' : ''}`;
+      actionButton.dataset.thumbnailAction = spec.action;
+      actionButton.setAttribute('aria-label', spec.aria);
+      actionButton.title = spec.aria;
+      actionButton.textContent = spec.label;
+      actionButton.disabled = spec.disabled;
+      actions.appendChild(actionButton);
+    }
+  }
+
+  function syncThumbnailActions(session) {
+    if (!isCurrentSession(session)) return;
+    for (const record of session.thumbs.values()) syncThumbnailActionControls(session, record);
+    session.root.dataset.editorMode = session.thumbnailActions ? 'true' : 'false';
   }
 
   function createPagePlaceholder(session, pageNumber) {
@@ -176,31 +304,6 @@
     button.append(canvas, label);
     wrapper.appendChild(button);
 
-    if (session.thumbnailActions) {
-      const actions = document.createElement('div');
-      actions.className = 'portal-pdf-thumb-actions';
-
-      const actionSpecs = [
-        { action: 'up', label: '↑', aria: `Mover página ${pageNumber} para cima`, disabled: pageNumber === 1 },
-        { action: 'down', label: '↓', aria: `Mover página ${pageNumber} para baixo`, disabled: pageNumber === session.document.numPages },
-        { action: 'delete', label: '×', aria: `Excluir página ${pageNumber}`, disabled: session.document.numPages <= 1 }
-      ];
-
-      for (const spec of actionSpecs) {
-        const actionButton = document.createElement('button');
-        actionButton.type = 'button';
-        actionButton.className = `portal-pdf-thumb-action${spec.action === 'delete' ? ' danger' : ''}`;
-        actionButton.dataset.thumbnailAction = spec.action;
-        actionButton.setAttribute('aria-label', spec.aria);
-        actionButton.title = spec.aria;
-        actionButton.textContent = spec.label;
-        actionButton.disabled = spec.disabled;
-        actions.appendChild(actionButton);
-      }
-
-      wrapper.appendChild(actions);
-    }
-
     session.thumbnailsRoot.appendChild(wrapper);
 
     const record = {
@@ -213,6 +316,7 @@
       rendered: false
     };
     session.thumbs.set(pageNumber, record);
+    syncThumbnailActionControls(session, record);
     return record;
   }
 
@@ -222,14 +326,14 @@
     if (main?.page) return main.page;
     if (thumb?.page) return thumb.page;
     const page = await session.document.getPage(pageNumber);
-    if (session.closed) return null;
+    if (!isCurrentSession(session)) return null;
     if (main) main.page = page;
     if (thumb) thumb.page = page;
     return page;
   }
 
   function setActivePage(session, pageNumber) {
-    if (session.closed || !Number.isInteger(pageNumber) || pageNumber < 1) return;
+    if (!isCurrentSession(session) || !Number.isInteger(pageNumber) || pageNumber < 1) return;
     if (session.activePage === pageNumber) return;
     session.activePage = pageNumber;
     session.root.dataset.activePage = String(pageNumber);
@@ -243,7 +347,7 @@
 
   async function renderMainPage(session, pageNumber, { force = false } = {}) {
     const record = session.pages.get(pageNumber);
-    if (!record || session.closed) return;
+    if (!record || !isCurrentSession(session)) return;
     const generation = session.generation;
     const scale = session.scale;
     if (!force && record.renderedScale === scale && record.renderGeneration === generation && record.canvas.width > 0) return;
@@ -255,11 +359,11 @@
         return;
       }
       await settleRenderTask(record, { cancel: true });
-      if (session.closed || generation !== session.generation) return;
+      if (!isCurrentSession(session) || generation !== session.generation) return;
     }
 
     const page = await getPage(session, pageNumber);
-    if (!page || session.closed || generation !== session.generation) return;
+    if (!page || !isCurrentSession(session) || generation !== session.generation) return;
 
     const viewport = page.getViewport({ scale });
     const outputScale = safeCanvasScale(viewport);
@@ -288,13 +392,13 @@
     try {
       await task.promise;
     } catch (error) {
-      if (error?.name === 'RenderingCancelledException' || session.closed || generation !== session.generation) return;
+      if (error?.name === 'RenderingCancelledException' || !isCurrentSession(session) || generation !== session.generation) return;
       throw error;
     } finally {
       if (record.renderTask === task) record.renderTask = null;
     }
 
-    if (session.closed || generation !== session.generation) return;
+    if (!isCurrentSession(session) || generation !== session.generation) return;
     record.renderedScale = scale;
     record.renderGeneration = generation;
     record.loading.hidden = true;
@@ -303,7 +407,7 @@
     if (pageNumber === 1 && !session.firstPageRendered) {
       session.firstPageRendered = true;
       const notifyVisible = () => {
-        if (session.closed || session.firstPageNotified) return;
+        if (!isCurrentSession(session) || session.firstPageNotified) return;
         const rect = record.container.getBoundingClientRect();
         const width = window.innerWidth || document.documentElement.clientWidth || 0;
         const height = window.innerHeight || document.documentElement.clientHeight || 0;
@@ -327,14 +431,14 @@
 
   async function renderThumbnail(session, pageNumber) {
     const record = session.thumbs.get(pageNumber);
-    if (!record || record.rendered || session.closed) return;
+    if (!record || record.rendered || !isCurrentSession(session)) return;
     if (record.renderTask) {
       await settleRenderTask(record);
       return;
     }
 
     const page = await getPage(session, pageNumber);
-    if (!page || session.closed) return;
+    if (!page || !isCurrentSession(session)) return;
 
     const base = page.getViewport({ scale: 1 });
     const scale = THUMB_WIDTH / Math.max(1, base.width);
@@ -357,26 +461,30 @@
 
     try {
       await task.promise;
-      if (!session.closed) {
+      if (isCurrentSession(session)) {
         record.rendered = true;
         record.button.classList.add('rendered');
       }
     } catch (error) {
-      if (error?.name !== 'RenderingCancelledException' && !session.closed) throw error;
+      if (error?.name !== 'RenderingCancelledException' && isCurrentSession(session)) throw error;
     } finally {
       if (record.renderTask === task) record.renderTask = null;
     }
   }
 
   function installObservers(session) {
+    if (!isCurrentSession(session)) return;
     if (typeof IntersectionObserver === 'function') {
       session.pageObserver = new IntersectionObserver((entries) => {
+        if (!isCurrentSession(session)) return;
         for (const entry of entries) {
           const pageNumber = Number(entry.target.dataset.pageNumber);
           if (!Number.isInteger(pageNumber)) continue;
           if (entry.isIntersecting) {
             session.visiblePages.add(pageNumber);
-            renderMainPage(session, pageNumber).catch(() => session.onError?.());
+            renderMainPage(session, pageNumber).catch(() => {
+              if (isCurrentSession(session)) session.onError?.();
+            });
           } else {
             session.visiblePages.delete(pageNumber);
             const record = session.pages.get(pageNumber);
@@ -390,6 +498,7 @@
       });
 
       session.thumbObserver = new IntersectionObserver((entries) => {
+        if (!isCurrentSession(session)) return;
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           const pageNumber = Number(entry.target.dataset.pageNumber);
@@ -402,6 +511,7 @@
       });
 
       session.activeObserver = new IntersectionObserver((entries) => {
+        if (!isCurrentSession(session)) return;
         for (const entry of entries) {
           const pageNumber = Number(entry.target.dataset.pageNumber);
           if (!Number.isInteger(pageNumber)) continue;
@@ -431,7 +541,9 @@
     } else {
       for (let pageNumber = 1; pageNumber <= session.document.numPages; pageNumber += 1) {
         session.visiblePages.add(pageNumber);
-        renderMainPage(session, pageNumber).catch(() => session.onError?.());
+        renderMainPage(session, pageNumber).catch(() => {
+          if (isCurrentSession(session)) session.onError?.();
+        });
         renderThumbnail(session, pageNumber).catch(() => {});
       }
     }
@@ -439,14 +551,14 @@
 
   async function calculateFitScale(session) {
     const firstPage = await getPage(session, 1);
-    if (!firstPage || session.closed) return 1;
+    if (!firstPage || !isCurrentSession(session)) return 1;
     const viewport = firstPage.getViewport({ scale: 1 });
     const available = Math.max(280, (session.scrollRoot.clientWidth || session.root.clientWidth || 720) - 38);
     return clamp(available / Math.max(1, viewport.width), MIN_SCALE, MAX_SCALE);
   }
 
   async function applyScale(session, nextScale, { fit = false } = {}) {
-    if (!session || session.closed) return;
+    if (!isCurrentSession(session)) return;
     session.fitMode = fit;
     session.scale = clamp(Number(nextScale || 1), MIN_SCALE, MAX_SCALE);
     session.generation += 1;
@@ -492,8 +604,29 @@
     return true;
   }
 
+  function getViewState() {
+    const session = active;
+    if (!session || session.closed) return null;
+    return Object.freeze({
+      activePage: session.activePage || 1,
+      scale: session.scale || 1,
+      fitMode: session.fitMode === true
+    });
+  }
+
+  function setThumbnailActions(enabled, onThumbnailAction = null) {
+    const session = active;
+    if (!session || session.closed) return false;
+    session.thumbnailActions = enabled === true;
+    session.onThumbnailAction = typeof onThumbnailAction === 'function' ? onThumbnailAction : null;
+    syncThumbnailActions(session);
+    return true;
+  }
+
   async function open(source, options = {}) {
-    close();
+    const invocation = beginOpenInvocation();
+    const invocationGeneration = invocation.generation;
+    closeActiveSession();
 
     const {
       root,
@@ -507,16 +640,33 @@
       onPageChange = null,
       onThumbnailAction = null,
       thumbnailActions = false,
+      initialViewState = null,
       onError = null
     } = options;
 
     if (!root || !scrollRoot || !pagesRoot || !thumbnailsRoot) {
+      if (currentInvocation === invocation) currentInvocation = null;
+      cancelInvocation(invocation);
       throw new Error('Superfície do visualizador incompleta.');
     }
 
-    const pdfjs = await loadPdfJs();
-    const input = await sourceParameters(source);
+    let pdfjs;
+    let input;
+    try {
+      pdfjs = await waitForInvocation(invocation, loadPdfJs());
+      if (pdfjs === OPEN_CANCELLED || !isCurrentInvocation(invocation)) return null;
+      input = await waitForInvocation(invocation, sourceParameters(source));
+      if (input === OPEN_CANCELLED || !isCurrentInvocation(invocation)) return null;
+    } catch (error) {
+      if (!isCurrentInvocation(invocation)) return null;
+      currentInvocation = null;
+      cancelInvocation(invocation);
+      throw error;
+    }
+
     const session = {
+      invocation,
+      openGeneration: invocationGeneration,
       root,
       scrollRoot,
       pagesRoot,
@@ -541,7 +691,7 @@
       resizeTimer: null,
       pageRatios: new Map(),
       visiblePages: new Set(),
-      activePage: 1,
+      activePage: 0,
       scale: 1,
       fitMode: true,
       generation: 1,
@@ -549,32 +699,45 @@
       firstPageNotified: false,
       closed: false
     };
+
+    if (!isCurrentInvocation(invocation)) {
+      destroySession(session);
+      return null;
+    }
     active = session;
 
     clearNode(pagesRoot);
     clearNode(thumbnailsRoot);
     root.hidden = false;
 
-    const loadingTask = pdfjs.getDocument({
-      ...input,
-      cMapUrl: CMAP_URL,
-      cMapPacked: true,
-      standardFontDataUrl: STANDARD_FONT_URL,
-      wasmUrl: WASM_URL,
-      iccUrl: ICC_URL,
-      enableScripting: false,
-      isEvalSupported: false,
-      useSystemFonts: true,
-      disableRange: false,
-      disableStream: false,
-      disableAutoFetch: false,
-      withCredentials: false
-    });
-    session.loadingTask = loadingTask;
-
     try {
-      session.document = await loadingTask.promise;
-      if (session.closed || active !== session) return null;
+      const loadingTask = pdfjs.getDocument({
+        ...input,
+        cMapUrl: CMAP_URL,
+        cMapPacked: true,
+        standardFontDataUrl: STANDARD_FONT_URL,
+        wasmUrl: WASM_URL,
+        iccUrl: ICC_URL,
+        enableScripting: false,
+        isEvalSupported: false,
+        useSystemFonts: true,
+        disableRange: false,
+        disableStream: false,
+        disableAutoFetch: false,
+        withCredentials: false
+      });
+      session.loadingTask = loadingTask;
+
+      const loadedDocument = await waitForInvocation(invocation, loadingTask.promise);
+      if (loadedDocument === OPEN_CANCELLED) {
+        abandonSession(session);
+        return null;
+      }
+      session.document = loadedDocument;
+      if (!isCurrentSession(session)) {
+        abandonSession(session);
+        return null;
+      }
       if (!(session.document?.numPages > 0)) throw new Error('O PDF não possui páginas visíveis.');
 
       if (pageCountLabel) pageCountLabel.textContent = `${session.document.numPages} página(s)`;
@@ -583,8 +746,10 @@
         createPagePlaceholder(session, pageNumber);
         createThumbnailPlaceholder(session, pageNumber);
       }
+      syncThumbnailActions(session);
 
       thumbnailsRoot.addEventListener('click', session.thumbClick = (event) => {
+        if (!isCurrentSession(session)) return;
         const actionButton = event.target.closest?.('[data-thumbnail-action]');
         if (actionButton) {
           const wrapper = actionButton.closest?.('.portal-pdf-thumb-wrap');
@@ -597,41 +762,85 @@
 
         const button = event.target.closest?.('.portal-pdf-thumb[data-page-number]');
         if (!button) return;
-        scrollToPage(Number(button.dataset.pageNumber));
+        const pageNumber = Number(button.dataset.pageNumber);
+        const record = session.pages.get(pageNumber);
+        if (!record) return;
+        setActivePage(session, pageNumber);
+        record.container.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
 
-      setActivePage(session, 1);
-      session.scale = await calculateFitScale(session);
+      const requestedPage = Math.round(Number(initialViewState?.activePage || 1));
+      const initialPage = clamp(Number.isFinite(requestedPage) ? requestedPage : 1, 1, session.document.numPages);
+      setActivePage(session, initialPage);
+      if (!isCurrentSession(session)) {
+        abandonSession(session);
+        return null;
+      }
+
+      const requestedScale = Number(initialViewState?.scale);
+      const preserveManualScale = initialViewState?.fitMode === false && Number.isFinite(requestedScale);
+      session.fitMode = !preserveManualScale;
+      const initialScale = preserveManualScale
+        ? clamp(requestedScale, MIN_SCALE, MAX_SCALE)
+        : await calculateFitScale(session);
+      if (!isCurrentSession(session)) {
+        abandonSession(session);
+        return null;
+      }
+      session.scale = initialScale;
       if (zoomLabel) zoomLabel.textContent = `${Math.round(session.scale * 100)}%`;
 
-      session.visiblePages.add(1);
+      session.visiblePages.add(initialPage);
       await Promise.all([
-        renderMainPage(session, 1, { force: true }),
-        renderThumbnail(session, 1)
+        renderMainPage(session, initialPage, { force: true }),
+        renderThumbnail(session, initialPage)
       ]);
 
-      if (session.closed || active !== session) return null;
+      if (!isCurrentSession(session)) {
+        abandonSession(session);
+        return null;
+      }
       installObservers(session);
+
+      if (initialPage > 1) {
+        const initialRecord = session.pages.get(initialPage);
+        requestAnimationFrame(() => {
+          if (!isCurrentSession(session) || !initialRecord) return;
+          session.scrollRoot.scrollTop = Math.max(0, initialRecord.container.offsetTop - 16);
+        });
+      }
 
       if (typeof ResizeObserver === 'function') {
         session.resizeObserver = new ResizeObserver(() => {
-          if (!session.fitMode || session.closed) return;
+          if (!session.fitMode || !isCurrentSession(session)) return;
           if (session.resizeTimer) clearTimeout(session.resizeTimer);
-          session.resizeTimer = window.setTimeout(() => fitWidth().catch(() => {}), 140);
+          session.resizeTimer = window.setTimeout(() => {
+            if (!session.fitMode || !isCurrentSession(session)) return;
+            fitWidth().catch(() => {});
+          }, 140);
         });
         session.resizeObserver.observe(scrollRoot);
       }
 
       onReady?.({
         pageCount: session.document.numPages,
-        version: PDFJS_VERSION
+        version: PDFJS_VERSION,
+        viewState: getViewState()
       });
+      if (!isCurrentSession(session)) {
+        abandonSession(session);
+        return null;
+      }
       return {
         pageCount: session.document.numPages,
         version: PDFJS_VERSION
       };
     } catch (error) {
-      if (active === session) close();
+      const stale = !isCurrentSession(session);
+      abandonSession(session);
+      if (stale) return null;
+      currentInvocation = null;
+      cancelInvocation(invocation);
       throw error;
     }
   }
@@ -650,8 +859,10 @@
     zoomOut,
     resetZoom,
     scrollToPage,
+    getViewState,
+    setThumbnailActions,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1f`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1h`
   });
 })();

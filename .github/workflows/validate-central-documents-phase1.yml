@@ -8,6 +8,7 @@ on:
       - 'js/documents.js'
       - 'js/document-cache.js'
       - 'js/document-editor.js'
+      - 'js/document-viewer.js'
       - 'js/admin-users.js'
       - 'admin/usuarios/index.html'
       - 'js/tools-catalog.js'
@@ -25,6 +26,10 @@ on:
       - 'worker/tests/documents-*.test.mjs'
       - 'worker/tests/document-editor.test.mjs'
       - 'worker/tests/developer-self-edit-session.test.mjs'
+      - 'scripts/build-central-docs-staging.mjs'
+      - 'testing/central-docs/**'
+      - 'testing/browser/**'
+      - 'vendor/pdf-lib/**'
       - 'docs/CENTRAL-DOCUMENTOS-**'
       - '.github/workflows/validate-central-documents-phase1.yml'
   push:
@@ -35,6 +40,7 @@ on:
       - 'js/documents.js'
       - 'js/document-cache.js'
       - 'js/document-editor.js'
+      - 'js/document-viewer.js'
       - 'js/admin-users.js'
       - 'admin/usuarios/index.html'
       - 'worker/document-*.js'
@@ -45,6 +51,10 @@ on:
       - 'worker/tests/documents-*.test.mjs'
       - 'worker/tests/document-editor.test.mjs'
       - 'worker/tests/developer-self-edit-session.test.mjs'
+      - 'scripts/build-central-docs-staging.mjs'
+      - 'testing/central-docs/**'
+      - 'testing/browser/**'
+      - 'vendor/pdf-lib/**'
       - 'portal-sw.js'
       - 'docs/CENTRAL-DOCUMENTOS-**'
       - '.github/workflows/validate-central-documents-phase1.yml'
@@ -92,16 +102,18 @@ jobs:
           grep -q "pdf_first_page_visible" js/documents.js
           grep -q "AES-GCM" js/document-cache.js
           grep -q "HKDF" js/document-cache.js
-          grep -q "pdf-lib@1.17.1" js/document-editor.js
+          grep -q "/vendor/pdf-lib/pdf-lib.min.js" js/document-editor.js
+          test -s vendor/pdf-lib/pdf-lib.min.js
+          test -s vendor/pdf-lib/LICENSE.md
           grep -q "PDFJS_VERSION = '6.3.289'" js/document-viewer.js
           grep -q "enableScripting: false" js/document-viewer.js
           grep -q "isEvalSupported: false" js/document-viewer.js
           test -s vendor/pdfjs/pdf.min.mjs
           test -s vendor/pdfjs/pdf.worker.min.mjs
           test -s vendor/pdfjs/LICENSE
-          grep -q "script-src.*https://cdn.jsdelivr.net" documentos/index.html
+          ! grep -R -F "cdn.jsdelivr.net" documentos/index.html js/document-editor.js
           grep -q "sha512-z8IYLHO8bTgFqj+yrPyIJnzBDf7DDhWwiEsk4sY+Oe6J2M+WQequeGS7qioI5vT6rXgVRb4K1UVQC5ER7MKzKQ==" js/document-editor.js
-          grep -q "As alterações ainda não serão salvas no Google Drive" documentos/index.html
+          grep -qi "ainda não serão salvas no Google Drive" documentos/index.html
           grep -q "editDocumentPdfPermission" admin/usuarios/index.html
           grep -q "pdf_edit_completed" js/documents.js
           ! grep -R -E "/api/documents/drive/(upload|update|replace)|drive_sync_(started|completed|failed)" js/document-editor.js js/documents.js documentos/index.html

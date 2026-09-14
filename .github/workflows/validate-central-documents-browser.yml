@@ -3,9 +3,15 @@ name: Validar Central de Documentos — navegador
 on:
   pull_request:
     paths:
+      - 'documentos/index.html'
+      - 'js/documents.js'
+      - 'js/document-editor.js'
       - 'js/document-viewer.js'
       - 'css/documents.css'
+      - 'scripts/build-central-docs-staging.mjs'
       - 'vendor/pdfjs/**'
+      - 'vendor/pdfjs-legacy/**'
+      - 'vendor/pdf-lib/**'
       - 'testing/central-docs/**'
       - 'testing/browser/**'
       - '.github/workflows/validate-central-documents-browser.yml'
@@ -39,8 +45,11 @@ jobs:
         run: |
           test -s vendor/pdfjs-legacy/pdf.min.mjs
           test -s vendor/pdfjs-legacy/pdf.worker.min.mjs
+          test -s vendor/pdf-lib/pdf-lib.min.js
           grep -q "vendor/pdfjs-legacy/pdf.min.mjs" js/document-viewer.js
           grep -q "vendor/pdfjs-legacy/pdf.worker.min.mjs" js/document-viewer.js
+          grep -q "/vendor/pdf-lib/pdf-lib.min.js" js/document-editor.js
+          ! grep -R -F "cdn.jsdelivr.net" documentos/index.html js/document-editor.js
           test -d vendor/pdfjs/cmaps
           test -d vendor/pdfjs/standard_fonts
           test -d vendor/pdfjs/wasm

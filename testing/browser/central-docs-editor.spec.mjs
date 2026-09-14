@@ -1,0 +1,167 @@
+import { test, expect } from '@playwright/test';
+
+function monitorPage(page) {
+  const consoleErrors = [];
+  const requests = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('pageerror', (error) => consoleErrors.push(String(error?.message || error)));
+  page.on('request', (request) => requests.push(request.url()));
+
+  return () => {
+    const unsafe = requests.filter((value) => {
+      const url = new URL(value);
+      return /yellow-wave-d0a1guia-regulacao-ia\.regulacaoeldoradoms\.workers\.dev/i.test(url.hostname)
+        || /(^|\.)googleapis\.com$/i.test(url.hostname)
+        || /(^|\.)googleusercontent\.com$/i.test(url.hostname)
+        || /(^|\.)accounts\.google\.com$/i.test(url.hostname)
+        || /(^|\.)drive\.google\.com$/i.test(url.hostname)
+        || /portal-regulacao-users/i.test(value)
+        || url.pathname.startsWith('/api/');
+    });
+    expect(consoleErrors).toEqual([]);
+    expect(unsafe).toEqual([]);
+  };
+}
+
+async function openLab(page) {
+  await page.goto('/');
+  await expect(page.locator('#labStatus')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('html')).toHaveAttribute('data-viewer-state', 'ready');
+  await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+  await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'readonly');
+  await expect(page.locator('.portal-pdf-page')).toHaveCount(3);
+  await expect(page.locator('.portal-pdf-thumb')).toHaveCount(3);
+  await expect(page.locator('.portal-pdf-page').first()).toHaveClass(/rendered/);
+  await expect(page.locator('.portal-pdf-thumb').first()).toHaveClass(/rendered/);
+}
+
+async function enterEditor(page) {
+  await page.locator('#enterEditor').click();
+  await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'editor');
+  await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+  await expect(page.locator('#editorControls')).toBeVisible();
+  await expect(page.locator('.portal-pdf-thumb-actions')).toHaveCount(3);
+  await expect(page.locator('[data-thumbnail-action]')).toHaveCount(9);
+}
+
+async function waitForOrder(page, value) {
+  await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+  await expect(page.locator('html')).toHaveAttribute('data-viewer-state', 'ready');
+  await expect(page.locator('html')).toHaveAttribute('data-page-order', value);
+}
+
+test.describe('Central de Documentos — superfície única do editor', () => {
+  test('entra e sai do editor preservando a mesma superfície PDF.js', async ({ page, request }) => {
+    const finishMonitoring = monitorPage(page);
+    await openLab(page);
+
+    await page.locator('#zoomIn').click();
+    const zoomBeforeEditor = await page.locator('#zoomReset').textContent();
+    await page.locator('.portal-pdf-thumb').nth(1).click();
+    await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
+
+    await page.evaluate(() => {
+      window.__centralDocsNodes = {
+        root: document.getElementById('pdfRoot'),
+        firstPage: document.querySelector('.portal-pdf-page'),
+        firstThumb: document.querySelector('.portal-pdf-thumb')
+      };
+    });
+
+    await enterEditor(page);
+
+    expect(await page.evaluate(() => (
+      window.__centralDocsNodes.root === document.getElementById('pdfRoot')
+      && window.__centralDocsNodes.firstPage === document.querySelector('.portal-pdf-page')
+      && window.__centralDocsNodes.firstThumb === document.querySelector('.portal-pdf-thumb')
+    ))).toBe(true);
+    await expect(page.locator('#zoomReset')).toHaveText(zoomBeforeEditor || '');
+    await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
+    await expect(page.locator('#documentsEditorPages, .documents-editor-pages, [data-editor-index]')).toHaveCount(0);
+    await expect(page.locator('iframe, embed, object')).toHaveCount(0);
+
+    await page.locator('#fitWidth').click();
+    await expect(page.locator('#zoomReset')).toContainText('%');
+    await page.locator('#editorExit').click();
+    await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'readonly');
+    await expect(page.locator('#editorControls')).toBeHidden();
+    await expect(page.locator('[data-thumbnail-action]')).toHaveCount(0);
+    expect(await page.evaluate(() => (
+      window.__centralDocsNodes.root === document.getElementById('pdfRoot')
+      && window.__centralDocsNodes.firstPage === document.querySelector('.portal-pdf-page')
+      && window.__centralDocsNodes.firstThumb === document.querySelector('.portal-pdf-thumb')
+    ))).toBe(true);
+
+    const manifestResponse = await request.get('/staging-manifest.json');
+    expect(manifestResponse.ok()).toBe(true);
+    const manifest = await manifestResponse.json();
+    expect(manifest.syntheticOnly).toBe(true);
+    expect(manifest.productionApisIncluded).toBe(false);
+    finishMonitoring();
+  });
+
+  test('mover e excluir atualizam a ordem visual e as miniaturas', async ({ page }) => {
+    const finishMonitoring = monitorPage(page);
+    await openLab(page);
+    await enterEditor(page);
+    await page.evaluate(() => { window.__centralDocsRoot = document.getElementById('pdfRoot'); });
+    const firstThumbBefore = await page.locator('.portal-pdf-thumb-canvas').first().evaluate((canvas) => canvas.toDataURL());
+
+    await page.locator('.portal-pdf-thumb-wrap').nth(1).locator('[data-thumbnail-action="up"]').click();
+    await waitForOrder(page, '0:1,0:0,0:2');
+    await expect(page.locator('.portal-pdf-page')).toHaveCount(3);
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(3);
+    await expect(page.locator('.portal-pdf-page').first()).toHaveClass(/rendered/);
+    const firstPageSize = await page.locator('.portal-pdf-page-canvas').first().evaluate((canvas) => ({ width: canvas.width, height: canvas.height }));
+    expect(firstPageSize.width).toBeGreaterThan(firstPageSize.height);
+    const firstThumbAfter = await page.locator('.portal-pdf-thumb-canvas').first().evaluate((canvas) => canvas.toDataURL());
+    expect(firstThumbAfter).not.toBe(firstThumbBefore);
+
+    await page.locator('.portal-pdf-thumb-wrap').first().locator('[data-thumbnail-action="delete"]').click();
+    await waitForOrder(page, '0:0,0:2');
+    await expect(page.locator('.portal-pdf-page')).toHaveCount(2);
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(2);
+    await expect(page.locator('#pageCount')).toHaveText('2 página(s)');
+    expect(await page.evaluate(() => window.__centralDocsRoot === document.getElementById('pdfRoot'))).toBe(true);
+
+    await page.locator('#editorUndo').click();
+    await waitForOrder(page, '0:1,0:0,0:2');
+    await expect(page.locator('.portal-pdf-page')).toHaveCount(3);
+    await page.locator('#editorRedo').click();
+    await waitForOrder(page, '0:0,0:2');
+    await expect(page.locator('.portal-pdf-page')).toHaveCount(2);
+    finishMonitoring();
+  });
+
+  test('adicionar imagem e unir PDF atualizam o PDF na mesma superfície', async ({ page }) => {
+    const finishMonitoring = monitorPage(page);
+    await openLab(page);
+    await enterEditor(page);
+    await page.evaluate(() => { window.__centralDocsRoot = document.getElementById('pdfRoot'); });
+
+    await page.locator('#editorAddImage').click();
+    await waitForOrder(page, '0:0,0:1,0:2,1:0');
+    await expect(page.locator('.portal-pdf-page')).toHaveCount(4);
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
+    await expect(page.locator('html')).toHaveAttribute('data-active-page', '4');
+    await expect(page.locator('.portal-pdf-page').nth(3)).toHaveClass(/rendered/);
+    await expect(page.locator('.portal-pdf-thumb').nth(3)).toHaveClass(/rendered/);
+
+    await page.locator('#editorMerge').click();
+    await waitForOrder(page, '0:0,0:1,0:2,1:0,2:0,2:1,2:2');
+    await expect(page.locator('.portal-pdf-page')).toHaveCount(7);
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(7);
+    expect(await page.evaluate(() => window.__centralDocsRoot === document.getElementById('pdfRoot'))).toBe(true);
+
+    await page.locator('#editorExit').click();
+    await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'readonly');
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('.portal-pdf-page')).toHaveCount(3);
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(3);
+    await expect(page.locator('[data-thumbnail-action]')).toHaveCount(0);
+    expect(await page.evaluate(() => window.__centralDocsRoot === document.getElementById('pdfRoot'))).toBe(true);
+    finishMonitoring();
+  });
+});

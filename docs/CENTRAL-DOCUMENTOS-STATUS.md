@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1 — visualizador próprio validado em produção; integração visual do editor ainda pendente**. A 3C.2 continua bloqueada.
+Subfase atual: **3C.1 — superfície única de visualização/edição implementada e aprovada no staging sintético; aceite humano, merge e reteste real ainda pendentes**. A 3C.2 continua bloqueada.
 
 ## Estado de entrada
 
@@ -20,9 +20,97 @@ Subfase atual: **3C.1 — visualizador próprio validado em produção; integra�
 
 ## Branch / PR
 
-Branch atual: `codex/central-docs-staging-registro` (registro do ambiente remoto de homologação; a fase funcional continua em 3C.1).
+Branch atual: `codex/central-docs-editor-superficie-unica`, criada da `main` confirmada em `7c25797d2a5c73aa389f064c35b95a3b67b6e0ba` antes de qualquer alteração desta unidade.
 
-PR documental atual: esta PR da branch de registro. PR #175 (infraestrutura de staging) foi validado e mesclado. A correção funcional do visualizador permanece no PR #173 já publicado.
+PR atual: esta PR funcional da branch `codex/central-docs-editor-superficie-unica`, aberta somente depois da aprovação do preview e dos testes registrados abaixo. PR #175 (infraestrutura de staging) e PR #173 (compatibilidade do visualizador) permanecem como histórico já publicado.
+
+## 3C.1 — superfície única do visualizador/editor aprovada no preview — 14/09/2026
+
+Controle de versão e escopo:
+
+- `origin/main` foi atualizada e confirmada em `7c25797d2a5c73aa389f064c35b95a3b67b6e0ba` antes das alterações; esse commit é descendente da referência esperada `313101db4b6fb34ea503205e6cfa55a1c71864f8`;
+- implementação isolada na branch `codex/central-docs-editor-superficie-unica`;
+- nenhum merge, deploy ou alteração de configuração foi feito na produção;
+- Worker `yellow-wave-d0a1guia-regulacao-ia` e D1 `portal-regulacao-users` permaneceram intocados;
+- a 3C.2 e qualquer drag-and-drop de páginas não foram iniciados.
+
+Implementação funcional:
+
+- `#documentsEditor` passou a ficar dentro de `#documentsCustomViewer`, na mesma superfície controlada pelo Portal;
+- entrar no editor preserva o mesmo root, os mesmos canvases de página, as mesmas miniaturas, a página ativa, o zoom e o modo Ajustar largura;
+- ações de mover para cima/baixo e excluir ficam associadas às próprias miniaturas;
+- excluir, mover, unir PDF e adicionar imagem reconstroem o PDF local na mesma superfície PDF.js;
+- a lista textual paralela deixou de existir como editor principal;
+- sair sem alterações apenas remove os controles; sair depois de alterações restaura o PDF original no mesmo root e em modo somente leitura;
+- não existe fallback para `iframe`, `embed`, `object` ou visualizador nativo;
+- `pdf-lib` 1.17.1 passou a ser self-hosted em `vendor/pdf-lib/`, mantendo SRI e eliminando a dependência de CDN;
+- operações assíncronas são bloqueadas/serializadas durante a reconstrução, ciclos obsoletos não podem fechar um visualizador mais novo e o foco volta à miniatura pertinente depois de mover/excluir.
+
+Laboratório e isolamento:
+
+- o laboratório remoto usa somente o PDF sintético de três páginas e uma imagem sintética gerada em memória;
+- não inclui `documents.js`, autenticação, Pages Functions, bindings, variáveis ou secrets; essa separação evita qualquer acesso acidental a backend institucional;
+- o builder rejeita referências ao Worker/D1 de produção, `/api/documents/`, Google APIs, Google Drive, Google OAuth e CDN do `pdf-lib`;
+- `staging-manifest.json` agora usa `CF_PAGES_COMMIT_SHA` no Pages, com fallback para `GITHUB_SHA` no CI.
+
+Preview Cloudflare Pages aprovado:
+
+- projeto: `portal-regulacao-central-staging`;
+- branch: `codex/central-docs-editor-superficie-unica`;
+- alias: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- deployment funcional imutável: `https://dfe80b5e.portal-regulacao-central-staging.pages.dev/`;
+- ID: `dfe80b5e-810b-45e2-acc4-638adbdc1391`;
+- commit do deployment: `67c9544ce22a849e60af20a245f76550aae61974`;
+- clone, build e deploy concluíram com sucesso; `uses_functions: false` e `env_vars: {}` confirmados pela API Cloudflare.
+
+Testes automatizados:
+
+- suíte completa do Worker: **133/133 aprovada**;
+- `npm run check`: aprovado;
+- Playwright local: **10/10 aprovado** em Chromium desktop e mobile;
+- primeira execução remota: **7/10**, revelando que um callback já agendado do `ResizeObserver` podia sobrescrever o zoom manual;
+- correção aplicada: o callback revalida `fitMode`, sessão ativa e ciclo antes de executar Ajustar largura;
+- segunda execução no deployment corrigido: **10/10 aprovada** em desktop e mobile, sem retry;
+- cobertura: abertura do PDF, entrada/saída do editor, identidade da superfície, ausência de lista textual/viewer nativo, zoom, Ajustar largura, miniaturas, mover, excluir, undo/redo, adicionar imagem, unir PDF, restauração do original e bloqueio de rede proibida.
+
+Validação visual real no preview:
+
+- selo **DADOS FICTÍCIOS** visível e PDF.js 6.3.289 pronto com exatamente três páginas;
+- página principal e três miniaturas renderizadas;
+- modo editor exibido dentro do mesmo `pdfRoot`, sem segundo visualizador;
+- zoom mobile alterado de `47%` para `62%` e Ajustar largura retornou a `47%`;
+- navegação pela miniatura 2 mostrou a página sintética paisagem;
+- mover a página 2 para o início atualizou miniatura e página principal;
+- excluir reduziu página principal/miniaturas de três para duas;
+- adicionar imagem voltou a três páginas e mostrou a página azul **DADOS FICTÍCIOS**;
+- sair do editor restaurou leitura, três páginas originais e miniaturas sem controles de edição;
+- breakpoint desktop validado em `1440 x 900` e mobile validado no viewport estreito do navegador de homologação;
+- DOM real confirmou `editorInsideViewer: true`, `nativeViewers: 0` e `textualEditorLists: 0`;
+- nenhum erro ou warning foi registrado no console durante a inspeção.
+
+Headers e rede no deployment corrigido:
+
+- HTTP `200`, `Cache-Control: no-store` e `X-Robots-Tag: noindex, nofollow, noarchive`;
+- `robots.txt`: `User-agent: *` e `Disallow: /`;
+- CSP: `connect-src 'self'`, `script-src 'self'`, `frame-src 'none'`, `object-src 'none'`, `base-uri 'none'`, `form-action 'none'` e `frame-ancestors 'none'`;
+- `staging-manifest.json`: `syntheticOnly: true`, `productionApisIncluded: false` e `sourceSha: 67c9544ce22a849e60af20a245f76550aae61974`;
+- nenhuma requisição para o Worker de produção, Google APIs/Drive/OAuth, rota `/api/` ou recurso D1;
+- nenhum dado institucional ou documento clínico foi usado.
+
+Riscos e pendências:
+
+- Cloudflare Access continua pendente; o preview é público e deve permanecer restrito a validação técnica com dados sintéticos;
+- domínio personalizado continua pendente porque a zona `regulacaoeldoradoms.com.br` não está acessível nesta conexão;
+- o laboratório testa os componentes reais `PortalPdfViewer` e `PortalPdfEditor`, mas usa uma orquestração sintética própria para não carregar autenticação/Drive; o controlador `documents.js` tem cobertura estática e de modelo, e ainda exige reteste real autorizado após merge/deploy;
+- a aceitação da 3C.1 não autoriza iniciar 3C.2 automaticamente.
+
+Próximo passo exato:
+
+1. abrir a PR desta branch e aguardar os workflows obrigatórios;
+2. revisar o preview pelo alias acima e registrar o aceite humano da superfície única;
+3. somente após merge/deploy, fazer reteste real autorizado com PDF institucional, incluindo entrada/saída do editor e todas as mutações da 3C.1;
+4. manter a 3C.2 bloqueada até esse aceite explícito;
+5. tratar Access e domínio personalizado em tarefa separada, com as decisões humanas já registradas.
 
 ## Homologação remota Cloudflare Pages criada e validada — 14/09/2026
 
@@ -93,7 +181,7 @@ Riscos e limitações:
 
 - o staging permanece público até uma decisão humana habilitar e configurar Access;
 - o subdomínio `staging.regulacaoeldoradoms.com.br` depende de acesso à zona/DNS;
-- `staging-manifest.json` registra `sourceSha: null` porque o builder lê `GITHUB_SHA`, enquanto Pages fornece metadados próprios; a proveniência continua confirmada pela API do deployment no SHA exato;
+- no deployment histórico inicial, `staging-manifest.json` registrou `sourceSha: null`; a 3C.1 corrigiu o builder para ler `CF_PAGES_COMMIT_SHA`, preservando `GITHUB_SHA` como fallback de CI;
 - o ambiente valida apenas o laboratório sintético e não substitui a pendência funcional de integração visual do editor.
 
 Próximo passo exato:
@@ -1207,12 +1295,11 @@ Próximo passo desta infraestrutura:
 
 ## Próximo passo
 
-1. fazer recarga forçada em `/documentos/`;
-2. abrir um PDF real e confirmar renderização da página 1 + miniatura no visualizador próprio;
-3. abrir um segundo PDF para excluir efeito de cache específico;
-4. testar zoom, **Ajustar largura** e entrada no editor;
-5. confirmar que o visualizador nativo continua ausente;
-6. registrar o resultado real; somente com aceite iniciar **3C.2 — drag-and-drop das páginas**.
+1. concluir a revisão da PR da branch `codex/central-docs-editor-superficie-unica` e aguardar os checks obrigatórios;
+2. registrar o aceite humano do preview sintético da superfície única;
+3. somente após merge/deploy, executar reteste real autorizado com PDF institucional, incluindo entrada/saída do editor, zoom, **Ajustar largura**, navegação por miniatura e todas as mutações da 3C.1;
+4. confirmar novamente que o visualizador nativo continua ausente;
+5. manter **3C.2 — drag-and-drop das páginas** bloqueada até o aceite explícito desse reteste.
 
 ## Arquivos e fontes principais
 
@@ -1237,13 +1324,13 @@ Próximo passo desta infraestrutura:
 
 **Fase atual:** Fase 3 — Editor PDF essencial.
 
-**Subfase:** 3C.1 — visualizador próprio validado em produção; integração visual do editor ainda pendente. A 3C.2 continua bloqueada.
+**Subfase:** 3C.1 — superfície única do visualizador/editor implementada e aprovada no staging sintético; aceite humano, merge e reteste real pós-deploy ainda pendentes. A 3C.2 continua bloqueada.
 
-**Main confirmada antes do staging:** `313101db4b6fb34ea503205e6cfa55a1c71864f8`.
+**Main confirmada antes desta unidade:** `7c25797d2a5c73aa389f064c35b95a3b67b6e0ba`, descendente da referência esperada `313101db4b6fb34ea503205e6cfa55a1c71864f8`.
 
 **Staging:** `portal-regulacao-central-staging` em `https://portal-regulacao-central-staging.pages.dev/`, com bundle sintético e sem bindings, Functions ou secrets.
 
-**Preview:** branch separada validada automaticamente, sem merge experimental.
+**Preview:** branch separada validada automaticamente em `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`; deployment funcional imutável `https://dfe80b5e.portal-regulacao-central-staging.pages.dev/`, sem merge experimental.
 
 **Access:** pendente; staging público até definição humana de identidade/política.
 
@@ -1251,4 +1338,4 @@ Próximo passo desta infraestrutura:
 
 **Produção:** Worker `yellow-wave-d0a1guia-regulacao-ia` e D1 `portal-regulacao-users` permaneceram intocados.
 
-**Próxima ação exata:** concluir a PR documental; depois definir e habilitar Access, repetir o smoke test autenticado e manter a 3C.2 bloqueada até tratar separadamente a integração visual do editor.
+**Próxima ação exata:** revisar a PR funcional e registrar o aceite humano; após merge/deploy, executar o reteste real autorizado da 3C.1. Tratar Access e domínio personalizado em tarefa separada e manter a 3C.2 bloqueada até o aceite explícito.

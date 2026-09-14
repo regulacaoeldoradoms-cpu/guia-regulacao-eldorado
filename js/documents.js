@@ -39,9 +39,11 @@
     pdfCustomFallbackStarted: false,
     cachePrefetchGeneration: 0,
     editorSession: null,
-    editorPreviewUrl: '',
-    editorPreviewTimer: null,
-    editorBuildSeq: 0
+    editorViewState: null,
+    editorFocusRestore: null,
+    editorBuildSeq: 0,
+    editorStartSeq: 0,
+    editorBusy: false
   };
 
   const els = {
@@ -83,8 +85,6 @@
     closeViewer: document.getElementById('closeViewerButton'),
     editor: document.getElementById('documentsEditor'),
     editorStatus: document.getElementById('documentsEditorStatus'),
-    editorPages: document.getElementById('documentsEditorPages'),
-    editorPageCount: document.getElementById('documentsEditorPageCount'),
     editorUndo: document.getElementById('editorUndoButton'),
     editorRedo: document.getElementById('editorRedoButton'),
     editorMerge: document.getElementById('editorMergeButton'),
@@ -294,13 +294,58 @@
   }
 
   function clearEditorPreview() {
-    if (state.editorPreviewTimer) {
-      clearTimeout(state.editorPreviewTimer);
-      state.editorPreviewTimer = null;
-    }
-    if (state.editorPreviewUrl) URL.revokeObjectURL(state.editorPreviewUrl);
-    state.editorPreviewUrl = '';
+    state.editorViewState = null;
+    state.editorFocusRestore = null;
     state.editorBuildSeq += 1;
+    state.editorStartSeq += 1;
+    state.editorBusy = false;
+  }
+
+  function currentViewerState() {
+    return window.PortalPdfViewer?.getViewState?.() || state.editorViewState || null;
+  }
+
+  function setEditorSurfaceMode(enabled) {
+    const editing = enabled === true;
+    if (els.editor) els.editor.hidden = !editing;
+    if (els.customViewer) {
+      els.customViewer.classList.toggle('is-editing', editing);
+      els.customViewer.dataset.editorMode = editing ? 'true' : 'false';
+      els.customViewer.setAttribute('aria-label', editing ? 'Editor visual de PDF' : 'Visualizador próprio de PDF');
+    }
+  }
+
+  function syncEditorControls() {
+    const editor = window.PortalPdfEditor;
+    const session = state.editorSession;
+    const busy = state.editorBusy;
+    els.editorUndo.disabled = busy || !editor || !session || !editor.canUndo(session);
+    els.editorRedo.disabled = busy || !editor || !session || !editor.canRedo(session);
+    els.editorMerge.disabled = busy || !session;
+    els.editorImage.disabled = busy || !session;
+    els.editorImageInput.disabled = busy || !session;
+    els.editorPreview.disabled = busy || !session;
+  }
+
+  function setEditorBusy(busy) {
+    const active = busy === true;
+    state.editorBusy = active;
+    els.customViewer?.setAttribute('aria-busy', active ? 'true' : 'false');
+    for (const control of [els.pdfZoomOut, els.pdfZoomReset, els.pdfZoomIn, els.pdfFitWidth]) {
+      if (control) control.disabled = active;
+    }
+    syncEditorControls();
+    const wrappers = [...(els.pdfThumbnails?.querySelectorAll('.portal-pdf-thumb-wrap') || [])];
+    wrappers.forEach((wrapper, index) => {
+      wrapper.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
+        const action = String(button.dataset.thumbnailAction || '');
+        button.disabled = active
+          || (action === 'up' && index === 0)
+          || (action === 'down' && index === wrappers.length - 1)
+          || (action === 'delete' && wrappers.length <= 1);
+      });
+    });
+    refreshPdfListActions();
   }
 
   function refreshPdfListActions() {
@@ -312,6 +357,7 @@
       action.textContent = state.editorSession
         ? (editorContainsItem(item) ? 'Já no editor' : 'Unir ao editor')
         : 'Abrir PDF';
+      button.disabled = Boolean(state.editorSession && state.editorBusy);
     });
   }
 
@@ -319,7 +365,7 @@
     if (seq !== state.editorBuildSeq || !state.editorSession) return false;
     window.PortalPdfViewer?.close?.();
     showCustomViewerSurface();
-    els.viewerState.className = 'documents-viewer-state ready';
+    els.viewerState.className = 'documents-viewer-state';
     els.viewerState.textContent = 'Não foi possível renderizar esta prévia no visualizador próprio do Portal.';
     setEditorStatus(
       initial
@@ -330,7 +376,29 @@
     return false;
   }
 
-  async function openEditorWithPortalViewer(blob, { seq, started, initial = false } = {}) {
+  function restoreEditorFocus(target, seq, session) {
+    if (!target) return;
+    requestAnimationFrame(() => {
+      if (seq !== state.editorBuildSeq || session !== state.editorSession) return;
+      const wrappers = [...(els.pdfThumbnails?.querySelectorAll('.portal-pdf-thumb-wrap') || [])];
+      const pageIndex = Math.max(0, Math.min(wrappers.length - 1, Number(target.pageNumber || 1) - 1));
+      const wrapper = wrappers[pageIndex];
+      const action = String(target.action || '');
+      const control = action
+        ? wrapper?.querySelector(`[data-thumbnail-action="${action}"]`)
+        : wrapper?.querySelector('.portal-pdf-thumb');
+      control?.focus?.({ preventScroll: true });
+      if (state.editorFocusRestore === target) state.editorFocusRestore = null;
+    });
+  }
+
+  async function openEditorWithPortalViewer(blob, {
+    seq,
+    started,
+    initial = false,
+    initialViewState = null,
+    focusRestore = null
+  } = {}) {
     const viewer = window.PortalPdfViewer;
     const session = state.editorSession;
     if (!session || seq !== state.editorBuildSeq) return false;
@@ -355,12 +423,14 @@
         zoomLabel: els.pdfZoomLabel,
         pageCountLabel: els.pdfPageCountLabel,
         thumbnailActions: true,
+        initialViewState,
         onThumbnailAction: (action, pageIndex) => {
-          if (session !== state.editorSession || seq !== state.editorBuildSeq) return;
-          applyEditorOperation(action, pageIndex);
+          if (session !== state.editorSession) return;
+          applyEditorOperation(action, pageIndex).catch(() => {});
         },
         onReady: () => {
           if (session !== state.editorSession || seq !== state.editorBuildSeq) return;
+          state.editorViewState = viewer.getViewState?.() || initialViewState;
           els.viewerState.className = 'documents-viewer-state ready';
           setEditorStatus(
             initial
@@ -368,6 +438,7 @@
               : `Visualização editada atualizada em ${duration(started)} ms.`,
             'success'
           );
+          restoreEditorFocus(focusRestore, seq, session);
         },
         onError: (error) => {
           if (pageFailureHandled || session !== state.editorSession || seq !== state.editorBuildSeq) return;
@@ -377,18 +448,17 @@
       });
 
       if (session !== state.editorSession || seq !== state.editorBuildSeq) {
-        viewer.close?.();
         return false;
       }
       return true;
     } catch (error) {
-      viewer.close?.();
       if (session !== state.editorSession || seq !== state.editorBuildSeq) return false;
+      viewer.close?.();
       return showEditorPortalFailure(error, { seq, initial });
     }
   }
 
-  async function restoreOriginalPortalViewer() {
+  async function restoreOriginalPortalViewer(initialViewState = null) {
     const viewer = window.PortalPdfViewer;
     const url = state.pdfObjectUrl;
     const openId = state.pdfOpenId;
@@ -404,6 +474,7 @@
           thumbnailsRoot: els.pdfThumbnails,
           zoomLabel: els.pdfZoomLabel,
           pageCountLabel: els.pdfPageCountLabel,
+          initialViewState,
           onReady: () => {
             if (openId !== state.pdfOpenId || state.editorSession) return;
             els.viewerState.className = 'documents-viewer-state ready';
@@ -411,6 +482,7 @@
         });
         if (openId === state.pdfOpenId && !state.editorSession) return true;
       } catch (_) {
+        if (openId !== state.pdfOpenId || state.editorSession) return false;
         viewer.close?.();
       }
     }
@@ -423,17 +495,22 @@
   }
 
   function resetEditorState({ restoreOriginal = false } = {}) {
+    const session = state.editorSession;
+    const shouldRestoreOriginal = restoreOriginal && Boolean(session?.revision > 0);
+    const viewState = currentViewerState();
     clearEditorPreview();
     state.editorSession = null;
-    if (els.editor) {
-      els.editor.hidden = true;
-    }
+    window.PortalPdfViewer?.setThumbnailActions?.(false);
+    setEditorSurfaceMode(false);
+    setEditorBusy(false);
+    els.customViewer?.removeAttribute('aria-busy');
+    if (els.editPdf) els.editPdf.disabled = false;
     if (els.viewerModeLabel) els.viewerModeLabel.textContent = 'Visualização';
     if (els.editPdf) els.editPdf.hidden = !(canEditDocuments() && state.pdfItem);
     setEditorStatus('');
     refreshPdfListActions();
-    if (restoreOriginal && state.pdfObjectUrl) {
-      restoreOriginalPortalViewer().catch(() => {
+    if (shouldRestoreOriginal && state.pdfObjectUrl) {
+      restoreOriginalPortalViewer(viewState).catch(() => {
         if (!state.editorSession) {
           showCustomViewerSurface();
           els.viewerState.className = 'documents-viewer-state ready';
@@ -443,66 +520,43 @@
     }
   }
 
-  function renderEditorPages() {
+  async function buildEditorPreview({
+    explicit = false,
+    initialViewState = null,
+    focusRestore = null,
+    allowBusy = false
+  } = {}) {
     const editor = window.PortalPdfEditor;
     const session = state.editorSession;
-    if (!editor || !session) {
-      if (els.editorPages) els.editorPages.innerHTML = '';
-      if (els.editorPageCount) els.editorPageCount.textContent = '';
-      return;
-    }
-
-    const pages = editor.pageModel(session);
-    els.editorPageCount.textContent = `${pages.length} página(s)`;
-    els.editorUndo.disabled = !editor.canUndo(session);
-    els.editorRedo.disabled = !editor.canRedo(session);
-
-    els.editorPages.innerHTML = pages.map((page) => `<article class="documents-editor-page" data-editor-index="${page.index}">
-      <div class="documents-editor-page-copy">
-        <strong>Página ${page.displayPage}</strong>
-        <span>${escapeHtml(page.sourceLabel)} · página original ${page.sourcePage}</span>
-      </div>
-      <div class="documents-editor-page-actions">
-        <button type="button" data-editor-action="up" aria-label="Mover página para cima" ${page.index === 0 ? 'disabled' : ''}>↑</button>
-        <button type="button" data-editor-action="down" aria-label="Mover página para baixo" ${page.index === pages.length - 1 ? 'disabled' : ''}>↓</button>
-        <button class="danger" type="button" data-editor-action="delete" aria-label="Excluir página" ${pages.length <= 1 ? 'disabled' : ''}>Excluir</button>
-      </div>
-    </article>`).join('');
-  }
-
-  async function buildEditorPreview({ explicit = false } = {}) {
-    const editor = window.PortalPdfEditor;
-    const session = state.editorSession;
-    if (!editor || !session) return;
+    if (!editor || !session || (state.editorBusy && !allowBusy)) return false;
 
     const seq = ++state.editorBuildSeq;
-    els.editorPreview.disabled = true;
+    const viewState = initialViewState || state.editorViewState || currentViewerState();
+    state.editorFocusRestore = focusRestore;
+    setEditorBusy(true);
     setEditorStatus(explicit ? 'Gerando visualização local…' : 'Atualizando visualização…');
     const started = performance.now();
+    let opened = false;
 
     try {
       const blob = await editor.buildBlob(session);
       if (seq !== state.editorBuildSeq || session !== state.editorSession) return;
-      if (state.editorPreviewUrl) URL.revokeObjectURL(state.editorPreviewUrl);
-      state.editorPreviewUrl = '';
-      await openEditorWithPortalViewer(blob, {
+      releaseProgressiveStream();
+      opened = await openEditorWithPortalViewer(blob, {
         seq,
         started,
-        initial: false
+        initial: false,
+        initialViewState: viewState,
+        focusRestore
       });
     } catch (error) {
-      setEditorStatus(error.message || 'Não foi possível atualizar a visualização.', 'warning');
+      if (seq === state.editorBuildSeq && session === state.editorSession) {
+        setEditorStatus(error.message || 'Não foi possível atualizar a visualização.', 'warning');
+      }
     } finally {
-      if (seq === state.editorBuildSeq) els.editorPreview.disabled = false;
+      if (seq === state.editorBuildSeq && session === state.editorSession) setEditorBusy(false);
     }
-  }
-
-  function scheduleEditorPreview() {
-    if (state.editorPreviewTimer) clearTimeout(state.editorPreviewTimer);
-    state.editorPreviewTimer = window.setTimeout(() => {
-      state.editorPreviewTimer = null;
-      buildEditorPreview().catch(() => {});
-    }, 220);
+    return opened && seq === state.editorBuildSeq && session === state.editorSession;
   }
 
   async function startEditor() {
@@ -510,40 +564,65 @@
       showStatus('Sua conta não possui permissão de edição de PDF.', 'warning');
       return;
     }
-    if (!state.pdfItem || !window.PortalPdfEditor) return;
+    if (!state.pdfItem || !window.PortalPdfEditor || state.editorSession) return;
 
+    const item = state.pdfItem;
+    const openId = state.pdfOpenId;
+    const startSeq = ++state.editorStartSeq;
+    const isCurrentStart = () => (
+      startSeq === state.editorStartSeq
+      && openId === state.pdfOpenId
+      && item === state.pdfItem
+    );
     els.editPdf.disabled = true;
     els.viewerState.className = 'documents-viewer-state';
     els.viewerState.textContent = 'Preparando editor visual…';
 
     try {
-      releaseProgressiveStream();
-      const blob = await editablePdfBlob(state.pdfItem);
+      const initialViewState = currentViewerState();
+      const blob = await editablePdfBlob(item);
+      if (!isCurrentStart()) return;
       if (!state.pdfObjectUrl) state.pdfObjectUrl = URL.createObjectURL(blob);
       const session = await window.PortalPdfEditor.createSession(blob, {
         label: 'Documento inicial',
-        cacheIdentity: itemCacheIdentity(state.pdfItem)
+        cacheIdentity: itemCacheIdentity(item)
       });
+      if (!isCurrentStart()) return;
       state.editorSession = session;
-      els.editor.hidden = false;
+      state.editorViewState = initialViewState;
+      setEditorSurfaceMode(true);
       els.viewerModeLabel.textContent = 'Editor PDF';
       els.editPdf.hidden = true;
-      renderEditorPages();
+      syncEditorControls();
       refreshPdfListActions();
 
-      const seq = ++state.editorBuildSeq;
-      await openEditorWithPortalViewer(blob, {
-        seq,
-        started: performance.now(),
-        initial: true
+      const actionsInstalled = window.PortalPdfViewer?.setThumbnailActions?.(true, (action, pageIndex) => {
+        if (!state.editorSession) return;
+        applyEditorOperation(action, pageIndex).catch(() => {});
       });
 
-      els.editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (actionsInstalled) {
+        els.viewerState.className = 'documents-viewer-state ready';
+        setEditorStatus('Editor visual pronto. As miniaturas do Portal controlam as páginas; alterações continuam locais e reversíveis.', 'success');
+      } else {
+        const seq = ++state.editorBuildSeq;
+        await openEditorWithPortalViewer(blob, {
+          seq,
+          started: performance.now(),
+          initial: true,
+          initialViewState
+        });
+      }
     } catch (error) {
+      if (!isCurrentStart()) return;
+      state.editorSession = null;
+      state.editorViewState = null;
+      window.PortalPdfViewer?.setThumbnailActions?.(false);
+      setEditorSurfaceMode(false);
       els.viewerState.className = 'documents-viewer-state ready';
       showStatus(error.message || 'Não foi possível iniciar o editor PDF.', 'warning');
     } finally {
-      els.editPdf.disabled = false;
+      if (startSeq === state.editorStartSeq) els.editPdf.disabled = false;
     }
   }
 
@@ -573,17 +652,52 @@
     }
   }
 
+  function viewStateAfterPageOperation(operation, index, pageCount, baseState = null) {
+    if (!baseState) return null;
+    let activePage = Math.max(1, Math.round(Number(baseState.activePage || 1)));
+    const sourcePage = index + 1;
+
+    if (operation === 'delete') {
+      if (activePage > sourcePage) activePage -= 1;
+      else if (activePage === sourcePage) activePage = Math.min(sourcePage, pageCount);
+    } else if (operation === 'up') {
+      const targetPage = sourcePage - 1;
+      if (activePage === sourcePage) activePage = targetPage;
+      else if (activePage === targetPage) activePage = sourcePage;
+    } else if (operation === 'down') {
+      const targetPage = sourcePage + 1;
+      if (activePage === sourcePage) activePage = targetPage;
+      else if (activePage === targetPage) activePage = sourcePage;
+    }
+
+    return {
+      ...baseState,
+      activePage: Math.max(1, Math.min(pageCount, activePage))
+    };
+  }
+
   async function addImageBlobToEditor(blob, { pasted = false } = {}) {
-    if (!state.editorSession || !canEditDocuments()) return false;
+    const session = state.editorSession;
+    if (!session || !canEditDocuments() || state.editorBusy) return false;
     const started = performance.now();
+    const viewState = currentViewerState();
+    setEditorBusy(true);
     setEditorStatus(pasted ? 'Colando imagem como nova página…' : 'Adicionando imagem como nova página…');
     try {
       const normalized = await normalizeImageForPdf(blob);
-      await window.PortalPdfEditor.addImagePage(state.editorSession, normalized, {
+      if (session !== state.editorSession) return false;
+      const insertAt = await window.PortalPdfEditor.addImagePage(session, normalized, {
         label: pasted ? 'Imagem colada' : 'Imagem adicionada'
       });
-      renderEditorPages();
-      scheduleEditorPreview();
+      if (session !== state.editorSession) return false;
+      syncEditorControls();
+      refreshPdfListActions();
+      const rebuilt = await buildEditorPreview({
+        initialViewState: viewState ? { ...viewState, activePage: insertAt + 1 } : null,
+        focusRestore: { pageNumber: insertAt + 1, action: '' },
+        allowBusy: true
+      });
+      if (!rebuilt) return false;
       capture('pdf_edit_completed', {
         route: '/documentos/',
         duration_ms: duration(started),
@@ -598,8 +712,12 @@
       );
       return true;
     } catch (error) {
-      setEditorStatus(error.message || 'Não foi possível adicionar a imagem.', 'warning');
+      if (session === state.editorSession) {
+        setEditorStatus(error.message || 'Não foi possível adicionar a imagem.', 'warning');
+      }
       return false;
+    } finally {
+      if (session === state.editorSession && state.editorBusy) setEditorBusy(false);
     }
   }
 
@@ -615,7 +733,7 @@
   }
 
   async function handleEditorPaste(event) {
-    if (!state.editorSession || !canEditDocuments()) return;
+    if (!state.editorSession || !canEditDocuments() || state.editorBusy) return;
     const images = Array.from(event.clipboardData?.items || [])
       .filter((item) => String(item.type || '').startsWith('image/'))
       .map((item) => item.getAsFile())
@@ -628,7 +746,8 @@
   }
 
   async function mergePdfIntoEditor(item) {
-    if (!state.editorSession || !item?.isPdf || !canEditDocuments()) return;
+    const session = state.editorSession;
+    if (!session || !item?.isPdf || !canEditDocuments() || state.editorBusy) return;
     const identity = itemCacheIdentity(item);
     if (identity && editorContainsItem(item)) {
       setEditorStatus('Esse PDF já faz parte do resultado atual.', 'warning');
@@ -636,17 +755,22 @@
     }
 
     const started = performance.now();
+    const viewState = currentViewerState();
+    setEditorBusy(true);
     setEditorStatus('Adicionando PDF ao resultado…');
     try {
       const blob = await editablePdfBlob(item);
-      const sourceNumber = window.PortalPdfEditor.sourceCount(state.editorSession) + 1;
-      await window.PortalPdfEditor.addDocument(state.editorSession, blob, {
+      if (session !== state.editorSession) return;
+      const sourceNumber = window.PortalPdfEditor.sourceCount(session) + 1;
+      await window.PortalPdfEditor.addDocument(session, blob, {
         label: `Documento ${sourceNumber}`,
         cacheIdentity: identity
       });
-      renderEditorPages();
+      if (session !== state.editorSession) return;
+      syncEditorControls();
       refreshPdfListActions();
-      scheduleEditorPreview();
+      const rebuilt = await buildEditorPreview({ initialViewState: viewState, allowBusy: true });
+      if (!rebuilt) return;
       capture('pdf_edit_completed', {
         route: '/documentos/',
         duration_ms: duration(started),
@@ -655,49 +779,102 @@
       });
       setEditorStatus('PDF adicionado. A prévia está sendo atualizada.', 'success');
     } catch (error) {
-      setEditorStatus(error.message || 'Não foi possível unir este PDF.', 'warning');
+      if (session === state.editorSession) {
+        setEditorStatus(error.message || 'Não foi possível unir este PDF.', 'warning');
+      }
+    } finally {
+      if (session === state.editorSession && state.editorBusy) setEditorBusy(false);
     }
   }
 
-  function applyEditorOperation(operation, index) {
+  async function applyEditorOperation(operation, index) {
     const editor = window.PortalPdfEditor;
     const session = state.editorSession;
-    if (!editor || !session) return;
+    if (!editor || !session || state.editorBusy) return false;
     const started = performance.now();
-    let changed = false;
+    const viewState = currentViewerState();
+    setEditorBusy(true);
+    try {
+      let changed = false;
+      if (operation === 'delete') changed = editor.removePage(session, index);
+      if (operation === 'up') changed = editor.movePage(session, index, -1);
+      if (operation === 'down') changed = editor.movePage(session, index, 1);
+      if (!changed) return false;
 
-    if (operation === 'delete') changed = editor.removePage(session, index);
-    if (operation === 'up') changed = editor.movePage(session, index, -1);
-    if (operation === 'down') changed = editor.movePage(session, index, 1);
-    if (!changed) return;
+      const pageCount = editor.pageCount(session);
+      const pageNumber = operation === 'up'
+        ? Math.max(1, index)
+        : operation === 'down'
+          ? Math.min(pageCount, index + 2)
+          : Math.min(pageCount, index + 1);
+      const focusAction = operation === 'delete'
+        ? ''
+        : operation === 'up' && pageNumber === 1
+          ? 'down'
+          : operation === 'down' && pageNumber === pageCount
+            ? 'up'
+            : operation;
 
-    renderEditorPages();
-    refreshPdfListActions();
-    scheduleEditorPreview();
-    capture('pdf_edit_completed', {
-      route: '/documentos/',
-      duration_ms: duration(started),
-      operation: operation === 'delete' ? 'delete_page' : 'reorder_page',
-      size_bucket: sizeBucket(state.pdfItem?.size)
-    });
+      syncEditorControls();
+      refreshPdfListActions();
+      capture('pdf_edit_completed', {
+        route: '/documentos/',
+        duration_ms: duration(started),
+        operation: operation === 'delete' ? 'delete_page' : 'reorder_page',
+        size_bucket: sizeBucket(state.pdfItem?.size)
+      });
+      return await buildEditorPreview({
+        initialViewState: viewStateAfterPageOperation(operation, index, pageCount, viewState),
+        focusRestore: { pageNumber, action: focusAction },
+        allowBusy: true
+      });
+    } finally {
+      if (session === state.editorSession && state.editorBusy) setEditorBusy(false);
+    }
   }
 
-  function undoEditor() {
-    if (!state.editorSession || !window.PortalPdfEditor?.undo(state.editorSession)) return;
-    renderEditorPages();
-    refreshPdfListActions();
-    scheduleEditorPreview();
+  async function undoEditor() {
+    const session = state.editorSession;
+    if (!session || state.editorBusy || !window.PortalPdfEditor?.undo(session)) return false;
+    const viewState = currentViewerState();
+    setEditorBusy(true);
+    try {
+      syncEditorControls();
+      refreshPdfListActions();
+      return await buildEditorPreview({
+        initialViewState: viewState ? {
+          ...viewState,
+          activePage: Math.min(viewState.activePage || 1, window.PortalPdfEditor.pageCount(session))
+        } : null,
+        allowBusy: true
+      });
+    } finally {
+      if (session === state.editorSession && state.editorBusy) setEditorBusy(false);
+    }
   }
 
-  function redoEditor() {
-    if (!state.editorSession || !window.PortalPdfEditor?.redo(state.editorSession)) return;
-    renderEditorPages();
-    refreshPdfListActions();
-    scheduleEditorPreview();
+  async function redoEditor() {
+    const session = state.editorSession;
+    if (!session || state.editorBusy || !window.PortalPdfEditor?.redo(session)) return false;
+    const viewState = currentViewerState();
+    setEditorBusy(true);
+    try {
+      syncEditorControls();
+      refreshPdfListActions();
+      return await buildEditorPreview({
+        initialViewState: viewState ? {
+          ...viewState,
+          activePage: Math.min(viewState.activePage || 1, window.PortalPdfEditor.pageCount(session))
+        } : null,
+        allowBusy: true
+      });
+    } finally {
+      if (session === state.editorSession && state.editorBusy) setEditorBusy(false);
+    }
   }
 
   function choosePdfToMerge() {
-    if (!state.editorSession) return;
+    if (!state.editorSession || state.editorBusy) return;
     refreshPdfListActions();
     setEditorStatus('Escolha outro PDF na lista e clique em “Unir ao editor”. O documento atual continuará aberto no editor.', 'success');
     const candidate = [...els.list.querySelectorAll('[data-index]')].find((button) => {
@@ -886,13 +1063,12 @@
         }
       });
       if (openId !== state.pdfOpenId) {
-        viewer.close();
         return false;
       }
       return true;
     } catch (_) {
-      viewer.close();
       if (openId !== state.pdfOpenId) return false;
+      viewer.close();
       showPortalViewerFailure();
       return false;
     }
@@ -1361,13 +1537,6 @@
   els.pdfZoomReset?.addEventListener('click', () => window.PortalPdfViewer?.resetZoom?.());
   els.pdfZoomIn?.addEventListener('click', () => window.PortalPdfViewer?.zoomIn?.());
   els.pdfFitWidth?.addEventListener('click', () => window.PortalPdfViewer?.fitWidth?.());
-
-  els.editorPages.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-editor-action]');
-    const row = event.target.closest('[data-editor-index]');
-    if (!button || !row) return;
-    applyEditorOperation(button.dataset.editorAction, Number(row.dataset.editorIndex));
-  });
 
   document.addEventListener('paste', (event) => {
     handleEditorPaste(event).catch(() => {});

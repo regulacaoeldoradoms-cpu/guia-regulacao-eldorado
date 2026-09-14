@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive">
-  <title>Laboratório PDF.js — Central de Documentos</title>
+  <link rel="icon" href="data:,">
+  <title>Laboratório visualizador/editor — Central de Documentos</title>
   <link rel="stylesheet" href="/css/documents.css">
   <style>
     html,body{margin:0;min-height:100%;font-family:Arial,sans-serif;background:#eef3f7;color:#173b5c}
@@ -16,14 +17,18 @@
     .lab-status[data-state="ready"]{border-color:#98c9a8;color:#1e6635}
     .lab-status[data-state="error"]{border-color:#e4a0a0;color:#9b2222}
     .portal-button{border:1px solid #c7d4e0;background:#fff;color:#173b5c;border-radius:8px;padding:8px 11px;font-weight:700;cursor:pointer}
+    .portal-button.primary{background:#195b8f;border-color:#195b8f;color:#fff}
+    .portal-button:disabled{opacity:.48;cursor:not-allowed}
+    .lab-editor-status{min-height:1.1em}
   </style>
 </head>
 <body>
   <main class="lab-shell">
     <div class="lab-head">
-      <h1>Laboratório automatizado do visualizador PDF.js</h1>
+      <h1>Laboratório automatizado do visualizador/editor PDF.js</h1>
       <span class="lab-badge">DADOS FICTÍCIOS</span>
       <span id="labStatus" class="lab-status" data-state="loading">Inicializando…</span>
+      <button id="enterEditor" class="portal-button primary" type="button" disabled>Editar PDF</button>
     </div>
 
     <section id="pdfRoot" class="documents-custom-viewer" aria-label="Visualizador PDF de teste">
@@ -33,6 +38,21 @@
         <button id="zoomIn" class="portal-button" type="button">+</button>
         <button id="fitWidth" class="portal-button" type="button">Ajustar largura</button>
         <span id="pageCount" class="documents-pdf-page-count">—</span>
+      </div>
+      <div id="editorControls" class="documents-editor" hidden aria-label="Controles de edição local do PDF">
+        <div class="documents-editor-banner">
+          <strong>Edição local</strong>
+          <span>Somente PDF e imagem sintéticos. As alterações aparecem nesta mesma superfície.</span>
+        </div>
+        <div class="documents-editor-toolbar" role="toolbar" aria-label="Ações de edição do PDF sintético">
+          <button id="editorUndo" class="portal-button" type="button">Desfazer</button>
+          <button id="editorRedo" class="portal-button" type="button">Refazer</button>
+          <button id="editorMerge" class="portal-button" type="button">Unir PDF sintético</button>
+          <button id="editorAddImage" class="portal-button" type="button">Adicionar imagem sintética</button>
+          <button id="editorRefresh" class="portal-button" type="button">Atualizar PDF</button>
+          <button id="editorExit" class="portal-button" type="button">Sair do editor</button>
+        </div>
+        <div id="editorStatus" class="documents-editor-status lab-editor-status" aria-live="polite"></div>
       </div>
       <div class="documents-pdf-layout">
         <aside id="thumbnails" class="documents-pdf-thumbnails" aria-label="Miniaturas"></aside>
@@ -44,69 +64,8 @@
   </main>
 
   <script src="/testing/central-docs/fixture.js"></script>
+  <script src="/js/document-editor.js"></script>
   <script src="/js/document-viewer.js"></script>
-  <script>
-    (() => {
-      const status = document.getElementById('labStatus');
-      const fail = (error) => {
-        status.dataset.state = 'error';
-        status.textContent = 'ERRO: ' + String(error?.message || error || 'falha desconhecida');
-        document.documentElement.dataset.viewerState = 'error';
-        console.error('[central-docs-lab]', error);
-      };
-
-      window.addEventListener('error', (event) => {
-        if (document.documentElement.dataset.viewerState !== 'ready') fail(event.error || event.message);
-      });
-
-      window.addEventListener('unhandledrejection', (event) => {
-        if (document.documentElement.dataset.viewerState !== 'ready') fail(event.reason);
-      });
-
-      const start = async () => {
-        try {
-          if (!window.PortalPdfViewer?.supported()) throw new Error('PortalPdfViewer não suportado neste navegador.');
-          const source = new URLSearchParams(location.search).get('source') === 'url'
-            ? '/testing/central-docs/_fixture.pdf'
-            : window.CentralDocsTestFixture.blob();
-          document.documentElement.dataset.sourceMode = typeof source === 'string' ? 'url' : 'blob';
-          const result = await window.PortalPdfViewer.open(source, {
-            root: document.getElementById('pdfRoot'),
-            scrollRoot: document.getElementById('scrollRoot'),
-            pagesRoot: document.getElementById('pages'),
-            thumbnailsRoot: document.getElementById('thumbnails'),
-            zoomLabel: document.getElementById('zoomReset'),
-            pageCountLabel: document.getElementById('pageCount'),
-            onReady(info) {
-              document.documentElement.dataset.viewerState = 'ready';
-              document.documentElement.dataset.pageCount = String(info.pageCount);
-              status.dataset.state = 'ready';
-              status.textContent = 'Pronto — PDF.js ' + info.version + ' — ' + info.pageCount + ' páginas';
-            },
-            onFirstPageVisible() {
-              document.documentElement.dataset.firstPageVisible = 'true';
-            },
-            onPageChange(page) {
-              document.documentElement.dataset.activePage = String(page);
-            },
-            onError() {
-              fail(new Error('Falha assíncrona de renderização.'));
-            }
-          });
-
-          if (!result) throw new Error('Abertura do visualizador não retornou resultado.');
-        } catch (error) {
-          fail(error);
-        }
-      };
-
-      document.getElementById('zoomIn').addEventListener('click', () => window.PortalPdfViewer.zoomIn().catch(fail));
-      document.getElementById('zoomOut').addEventListener('click', () => window.PortalPdfViewer.zoomOut().catch(fail));
-      document.getElementById('zoomReset').addEventListener('click', () => window.PortalPdfViewer.resetZoom().catch(fail));
-      document.getElementById('fitWidth').addEventListener('click', () => window.PortalPdfViewer.fitWidth().catch(fail));
-
-      start();
-    })();
-  </script>
+  <script src="/testing/central-docs/editor-harness.js"></script>
 </body>
 </html>

@@ -6,6 +6,24 @@ import test from 'node:test';
 const root = path.resolve(import.meta.dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
+function elementSourceById(source, id) {
+  const opening = new RegExp(`<([a-z][\\w:-]*)\\b[^>]*\\bid=["']${id}["'][^>]*>`, 'i').exec(source);
+  assert.ok(opening, `Elemento #${id} não encontrado.`);
+
+  const tag = opening[1];
+  const tags = new RegExp(`</?${tag}\\b[^>]*>`, 'gi');
+  tags.lastIndex = opening.index;
+  let depth = 0;
+  let match;
+  while ((match = tags.exec(source))) {
+    if (match[0].startsWith('</')) depth -= 1;
+    else if (!match[0].endsWith('/>')) depth += 1;
+    if (depth === 0) return source.slice(opening.index, tags.lastIndex);
+  }
+
+  assert.fail(`Elemento #${id} não foi fechado.`);
+}
+
 test('Central usa somente Worker para Drive e delega persistência documental ao cache criptografado', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
@@ -85,7 +103,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260913-3/);
+  assert.match(html, /documents\.js\?v=20260914-1/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -124,7 +142,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260913-2/);
+  assert.match(html, /documents\.css\?v=20260914-2/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -142,10 +160,10 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfPageScroll"/);
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
-  assert.doesNotMatch(html, /documentsPdfFrame|<iframe|frame-src/);
-  assert.match(html, /document-viewer\.js\?v=20260914-1/);
-  assert.match(html, /documents\.js\?v=20260913-3/);
-  assert.match(html, /documents\.css\?v=20260913-2/);
+  assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
+  assert.match(html, /document-viewer\.js\?v=20260914-4/);
+  assert.match(html, /documents\.js\?v=20260914-1/);
+  assert.match(html, /documents\.css\?v=20260914-2/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -171,7 +189,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(client, /openWithPortalViewer/);
   assert.match(client, /showPortalViewerFailure/);
   assert.match(client, /loadPdfBlobFallback/);
-  assert.doesNotMatch(client, /showIframeViewerSurface|documentsPdfFrame|els\.frame/);
+  assert.doesNotMatch(client, /showIframeViewerSurface|documentsPdfFrame|els\.frame|createElement\(['"](?:iframe|embed|object)['"]\)/i);
+  assert.doesNotMatch(viewer, /createElement\(['"](?:iframe|embed|object)['"]\)/i);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /pdf_first_page_visible/);
   assert.match(client, /pdfReadyEmitted/);
@@ -187,20 +206,32 @@ test('observadores entram somente depois da primeira renderização do PDF.js', 
 });
 
 
-test('editor permanece no visualizador próprio e não usa iframe nativo como fallback', () => {
+test('editor usa os controles da mesma superfície PDF.js sem lista textual paralela', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
   const viewer = read('js/document-viewer.js');
   const editor = read('js/document-editor.js');
   const css = read('css/documents.css');
+  const viewerSurface = elementSourceById(html, 'documentsCustomViewer');
 
-  assert.match(html, /editorPreviewButton"[^>]*>Atualizar visualização<\/button>/);
-  assert.match(html, /document-viewer\.js\?v=20260914-1/);
-  assert.match(html, /documents\.js\?v=20260913-3/);
-  assert.match(html, /documents\.css\?v=20260913-2/);
+  assert.match(viewerSurface, /id="documentsEditor"/);
+  assert.match(viewerSurface, /id="editorUndoButton"/);
+  assert.match(viewerSurface, /id="editorRedoButton"/);
+  assert.match(viewerSurface, /id="editorMergeButton"/);
+  assert.match(viewerSurface, /id="editorImageButton"/);
+  assert.match(viewerSurface, /id="editorExitButton"/);
+  assert.match(viewerSurface, /id="pdfThumbnailRail"/);
+  assert.match(viewerSurface, /id="pdfPageScroll"/);
+  assert.doesNotMatch(html, /id="documentsEditorPages"/);
+  assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
+  assert.match(html, /document-viewer\.js\?v=20260914-4/);
+  assert.match(html, /documents\.js\?v=20260914-1/);
+  assert.match(html, /documents\.css\?v=20260914-2/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
-  assert.match(client, /thumbnailActions:\s*true/);
+  assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
+  assert.match(client, /(?:viewer|PortalPdfViewer)\?*\.setThumbnailActions(?:\?\.)?\(/);
+  assert.match(client, /initialViewState:/);
   assert.match(client, /onThumbnailAction:/);
   assert.match(client, /await openEditorWithPortalViewer\(blob/);
   assert.match(client, /restoreOriginalPortalViewer/);
@@ -210,16 +241,63 @@ test('editor permanece no visualizador próprio e não usa iframe nativo como fa
   assert.doesNotMatch(css, /compatibility-mode/);
   assert.match(editor, /useObjectStreams:\s*false/);
 
-  assert.match(viewer, /thumbnailActions = false/);
+  assert.match(viewer, /initialViewState = null/);
   assert.match(viewer, /onThumbnailAction = null/);
+  assert.match(viewer, /function getViewState\(/);
+  assert.match(viewer, /function setThumbnailActions\(/);
+  assert.match(viewer, /if \(!session\.fitMode \|\| !isCurrentSession\(session\)\) return;/);
+  assert.match(viewer, /getViewState,/);
+  assert.match(viewer, /setThumbnailActions,/);
   assert.match(viewer, /dataset\.thumbnailAction/);
   assert.match(viewer, /portal-pdf-thumb-actions/);
 
   assert.match(css, /\.portal-pdf-thumb-actions/);
   assert.match(css, /\.portal-pdf-thumb-action\.danger/);
+  assert.doesNotMatch(html, /<(?:iframe|embed|object)\b/i);
+  assert.doesNotMatch(client, /createElement\(['"](?:iframe|embed|object)['"]\)/i);
 });
 
-test('editor expõe união de outro PDF e sincroniza ações da lista', () => {
+test('ciclo assíncrono do editor não fecha um visualizador mais novo nem aceita mutações concorrentes', () => {
+  const client = read('js/documents.js');
+
+  assert.match(client, /editorStartSeq:\s*0/);
+  assert.match(client, /editorBusy:\s*false/);
+  assert.match(client, /const openId = state\.pdfOpenId/);
+  assert.match(client, /startSeq === state\.editorStartSeq[\s\S]{0,180}openId === state\.pdfOpenId[\s\S]{0,180}item === state\.pdfItem/);
+  assert.match(client, /if \(!isCurrentStart\(\)\) return;/);
+  assert.match(client, /if \(session !== state\.editorSession \|\| seq !== state\.editorBuildSeq\) \{\s*return false;\s*\}/);
+  assert.doesNotMatch(client, /if \(session !== state\.editorSession \|\| seq !== state\.editorBuildSeq\) \{\s*viewer\.close/);
+  assert.match(client, /if \(openId !== state\.pdfOpenId \|\| state\.editorSession\) return false;\s*viewer\.close/);
+  assert.doesNotMatch(client, /if \(openId !== state\.pdfOpenId\) \{\s*viewer\.close/);
+  assert.match(client, /catch \(_\) \{\s*if \(openId !== state\.pdfOpenId\) return false;\s*viewer\.close\(\);/);
+  assert.match(client, /if \(!editor \|\| !session \|\| state\.editorBusy\) return false;/);
+  assert.match(client, /setEditorBusy\(true\);[\s\S]{0,1800}buildEditorPreview\(\{[\s\S]{0,300}allowBusy:\s*true/);
+  assert.match(client, /restoreEditorFocus/);
+});
+
+test('visualizador invalida aberturas obsoletas sem destruir a sessão vencedora', () => {
+  const viewer = read('js/document-viewer.js');
+
+  assert.match(viewer, /let openGeneration = 0/);
+  assert.match(viewer, /generation: \+\+openGeneration/);
+  assert.match(viewer, /const invocation = beginOpenInvocation\(\)/);
+  assert.match(viewer, /waitForInvocation\(invocation, loadingTask\.promise\)/);
+  assert.match(viewer, /session\.openGeneration === openGeneration/);
+  assert.match(viewer, /function close\(\) \{[\s\S]{0,180}openGeneration \+= 1;[\s\S]{0,180}cancelInvocation\(invocation\);[\s\S]{0,180}closeActiveSession\(\);/);
+  assert.match(viewer, /function abandonSession\(session\) \{[\s\S]{0,220}const ownsSurface = active === session;[\s\S]{0,220}clearSurface: ownsSurface/);
+  assert.match(viewer, /if \(input === OPEN_CANCELLED \|\| !isCurrentInvocation\(invocation\)\) return null;/);
+  assert.match(viewer, /const stale = !isCurrentSession\(session\);\s*abandonSession\(session\);\s*if \(stale\) return null;/);
+  assert.doesNotMatch(viewer, /if \(active === session\) close\(\)/);
+  assert.match(viewer, /if \(clearSurface\) \{\s*clearNode\(session\.pagesRoot\);\s*clearNode\(session\.thumbnailsRoot\);/);
+  assert.match(viewer, /if \(!isCurrentSession\(session\) \|\| session\.firstPageNotified\) return;/);
+  assert.match(viewer, /session\.pageObserver\?\.disconnect\?\.\(\);/);
+  assert.match(viewer, /for \(const record of session\.pages\.values\(\)\) clearRenderedPage\(record\);/);
+  assert.match(viewer, /for \(const record of session\.thumbs\.values\(\)\) \{\s*cancelRender\(record\);/);
+  assert.match(viewer, /safelyDestroy\(loadingTask\);\s*safelyDestroy\(document\);/);
+  assert.match(viewer, /thumbnailsRoot\.addEventListener\('click', session\.thumbClick = \(event\) => \{\s*if \(!isCurrentSession\(session\)\) return;/);
+});
+
+test('editor expõe união de outro PDF e sincroniza ações do catálogo', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
 
@@ -241,8 +319,8 @@ test('editor aceita imagens e Ctrl+V como novas páginas', () => {
 
   assert.match(html, /id="editorImageButton"[^>]*>Adicionar imagem<\/button>/);
   assert.match(html, /Ctrl\+V/);
-  assert.match(html, /document-editor\.js\?v=20260913-2/);
-  assert.match(html, /documents\.js\?v=20260913-3/);
+  assert.match(html, /document-editor\.js\?v=20260914-1/);
+  assert.match(html, /documents\.js\?v=20260914-1/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /clipboardData/);
   assert.match(client, /addImageBlobToEditor/);
@@ -258,10 +336,13 @@ test('editor PDF é local, reversível e separado da escrita no Drive', () => {
   const client = read('js/documents.js');
   const editor = read('js/document-editor.js');
 
-  assert.match(html, /document-editor\.js\?v=20260913-2/);
+  assert.match(html, /document-editor\.js\?v=20260914-1/);
   assert.match(html, /Editar PDF/);
-  assert.match(html, /As alterações ainda não serão salvas no Google Drive/);
-  assert.match(html, /cdn\.jsdelivr\.net/);
+  assert.match(html, /ainda não serão salvas no Google Drive/i);
+  assert.match(editor, /\/vendor\/pdf-lib\/pdf-lib\.min\.js/);
+  assert.doesNotMatch(editor, /https?:\/\//);
+  assert.doesNotMatch(html, /cdn\.jsdelivr\.net/);
+  assert.ok(fs.statSync(path.join(root, 'vendor/pdf-lib/pdf-lib.min.js')).size > 100_000);
 
   assert.match(client, /canEditDocuments/);
   assert.match(client, /caps\.edit === true/);

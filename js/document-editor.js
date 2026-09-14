@@ -3,7 +3,7 @@
 (() => {
   if (window.PortalPdfEditor) return;
 
-  const LIB_URL = 'https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+  const LIB_URL = '/vendor/pdf-lib/pdf-lib.min.js';
   const LIB_INTEGRITY = 'sha512-z8IYLHO8bTgFqj+yrPyIJnzBDf7DDhWwiEsk4sY+Oe6J2M+WQequeGS7qioI5vT6rXgVRb4K1UVQC5ER7MKzKQ==';
   const HISTORY_LIMIT = 50;
   const A4_PORTRAIT = Object.freeze([595.28, 841.89]);
