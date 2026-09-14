@@ -191,7 +191,8 @@ test('editor permanece no visualizador próprio e não usa iframe nativo como fa
   assert.match(client, /restoreOriginalPortalViewer/);
   assert.match(client, /showEditorPortalFailure/);
   assert.doesNotMatch(client, /showEditorIframeFallback/);
-  assert.doesNotMatch(client, /modo de compatibilidade/);
+  assert.doesNotMatch(client, /modo de compatibilidade|compatibility-mode/);
+  assert.doesNotMatch(css, /compatibility-mode/);
   assert.match(editor, /useObjectStreams:\s*false/);
 
   assert.match(viewer, /thumbnailActions = false/);
@@ -199,7 +200,6 @@ test('editor permanece no visualizador próprio e não usa iframe nativo como fa
   assert.match(viewer, /dataset\.thumbnailAction/);
   assert.match(viewer, /portal-pdf-thumb-actions/);
 
-  assert.match(css, /\.documents-editor\.compatibility-mode \.documents-editor-pages\s*\{\s*display:\s*grid;/s);
   assert.match(css, /\.portal-pdf-thumb-actions/);
   assert.match(css, /\.portal-pdf-thumb-action\.danger/);
 });
