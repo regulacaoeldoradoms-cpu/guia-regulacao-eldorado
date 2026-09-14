@@ -316,46 +316,38 @@
     });
   }
 
-  function setEditorCompatibilityMode(enabled) {
-    els.editor?.classList.toggle('compatibility-mode', enabled === true);
+  function showEditorPortalFailure(error, { seq, initial = false } = {}) {
+    if (seq !== state.editorBuildSeq || !state.editorSession) return false;
+    window.PortalPdfViewer?.close?.();
+    showCustomViewerSurface();
+    els.viewerState.className = 'documents-viewer-state ready';
+    els.viewerState.textContent = 'Não foi possível renderizar esta prévia no visualizador próprio do Portal.';
+    setEditorStatus(
+      initial
+        ? 'O editor visual não conseguiu abrir este PDF. O Portal não usará o visualizador nativo do navegador.'
+        : 'A visualização editada não pôde ser renderizada pelo PDF.js. O Portal manteve o editor próprio e não abriu o visualizador nativo.',
+      'warning'
+    );
+    return false;
   }
 
-  function showEditorIframeFallback(fallbackUrl, { seq, started, initial = false } = {}) {
-    if (!fallbackUrl || seq !== state.editorBuildSeq || !state.editorSession) return false;
-    showIframeViewerSurface();
-    setEditorCompatibilityMode(true);
-    els.viewerState.className = 'documents-viewer-state';
-    els.viewerState.textContent = 'Visualizador próprio indisponível. Usando modo de compatibilidade…';
-    els.frame.addEventListener('load', () => {
-      if (seq !== state.editorBuildSeq || !state.editorSession) return;
-      els.viewerState.className = 'documents-viewer-state ready';
-      setEditorStatus(
-        initial
-          ? 'Editor aberto em modo de compatibilidade. Os controles de páginas foram exibidos separadamente.'
-          : `Prévia atualizada em modo de compatibilidade em ${duration(started)} ms.`,
-        'warning'
-      );
-    }, { once: true });
-    els.frame.src = fallbackUrl;
-    return true;
-  }
-
-  async function openEditorWithPortalViewer(blob, { seq, started, initial = false, fallbackUrl = '' } = {}) {
+  async function openEditorWithPortalViewer(blob, { seq, started, initial = false } = {}) {
     const viewer = window.PortalPdfViewer;
     const session = state.editorSession;
     if (!session || seq !== state.editorBuildSeq) return false;
 
-    const fallback = () => showEditorIframeFallback(fallbackUrl, { seq, started, initial });
-    if (!viewer?.open || viewer.supported?.() === false) return fallback();
+    if (!viewer?.open || viewer.supported?.() === false) {
+      return showEditorPortalFailure(new Error('viewer_unsupported'), { seq, initial });
+    }
 
     showCustomViewerSurface();
-    setEditorCompatibilityMode(false);
+    els.editor?.classList.remove('compatibility-mode');
     els.viewerState.className = 'documents-viewer-state';
     els.viewerState.textContent = initial
       ? 'Preparando editor visual do Portal…'
       : 'Atualizando visualização editada…';
 
-    let pageFallbackStarted = false;
+    let pageFailureHandled = false;
     try {
       await viewer.open(blob, {
         root: els.customViewer,
@@ -374,15 +366,15 @@
           els.viewerState.className = 'documents-viewer-state ready';
           setEditorStatus(
             initial
-              ? 'Editor visual pronto. As miniaturas do Portal agora controlam as páginas; alterações continuam locais e reversíveis.'
+              ? 'Editor visual pronto. As miniaturas do Portal controlam as páginas; alterações continuam locais e reversíveis.'
               : `Visualização editada atualizada em ${duration(started)} ms.`,
             'success'
           );
         },
-        onError: () => {
-          if (pageFallbackStarted || session !== state.editorSession || seq !== state.editorBuildSeq) return;
-          pageFallbackStarted = true;
-          fallback();
+        onError: (error) => {
+          if (pageFailureHandled || session !== state.editorSession || seq !== state.editorBuildSeq) return;
+          pageFailureHandled = true;
+          showEditorPortalFailure(error, { seq, initial });
         }
       });
 
@@ -391,10 +383,10 @@
         return false;
       }
       return true;
-    } catch (_) {
+    } catch (error) {
       viewer.close?.();
       if (session !== state.editorSession || seq !== state.editorBuildSeq) return false;
-      return fallback();
+      return showEditorPortalFailure(error, { seq, initial });
     }
   }
 
@@ -426,8 +418,9 @@
     }
 
     if (openId !== state.pdfOpenId || state.editorSession) return false;
-    showIframeViewerSurface();
-    els.frame.src = url;
+    showCustomViewerSurface();
+    els.viewerState.className = 'documents-viewer-state ready';
+    els.viewerState.textContent = 'Não foi possível restaurar o PDF no visualizador próprio. Reabra o documento para tentar novamente.';
     return false;
   }
 
@@ -444,9 +437,10 @@
     refreshPdfListActions();
     if (restoreOriginal && state.pdfObjectUrl) {
       restoreOriginalPortalViewer().catch(() => {
-        if (!state.editorSession && state.pdfObjectUrl) {
-          showIframeViewerSurface();
-          els.frame.src = state.pdfObjectUrl;
+        if (!state.editorSession) {
+          showCustomViewerSurface();
+          els.viewerState.className = 'documents-viewer-state ready';
+          els.viewerState.textContent = 'Não foi possível restaurar o PDF no visualizador próprio. Reabra o documento para tentar novamente.';
         }
       });
     }
@@ -493,12 +487,11 @@
       const blob = await editor.buildBlob(session);
       if (seq !== state.editorBuildSeq || session !== state.editorSession) return;
       if (state.editorPreviewUrl) URL.revokeObjectURL(state.editorPreviewUrl);
-      state.editorPreviewUrl = URL.createObjectURL(blob);
+      state.editorPreviewUrl = '';
       await openEditorWithPortalViewer(blob, {
         seq,
         started,
-        initial: false,
-        fallbackUrl: state.editorPreviewUrl
+        initial: false
       });
     } catch (error) {
       setEditorStatus(error.message || 'Não foi possível atualizar a visualização.', 'warning');
@@ -546,8 +539,7 @@
       await openEditorWithPortalViewer(blob, {
         seq,
         started: performance.now(),
-        initial: true,
-        fallbackUrl: state.pdfObjectUrl
+        initial: true
       });
 
       els.editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
