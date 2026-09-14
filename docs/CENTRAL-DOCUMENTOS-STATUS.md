@@ -20,9 +20,9 @@ Subfase atual: **3C.1 — visualizador próprio validado em produção; integra�
 
 ## Branch / PR
 
-Branch atual de suporte: `infra/central-docs-staging-bundle` (preparação do staging remoto sintético; a fase funcional continua em 3C.1f).
+Branch atual: `docs/central-docs-staging-postmerge` (consolidação documental após merge da preparação de staging; a fase funcional continua em 3C.1).
 
-PR funcional atual: nenhum; PR #173 foi validado, mesclado e publicado.
+PR funcional atual: nenhum; PR #175 (infraestrutura de staging) foi validado e mesclado. A correção funcional do visualizador permanece no PR #173 já publicado.
 
 ## Entregas concluídas nesta unidade
 
@@ -970,6 +970,40 @@ Decisão:
 - manter a Fase 3 aberta;
 - não iniciar 3C.2 enquanto a experiência do editor continuar separada;
 - continuar a preparação do ambiente de homologação automatizado em paralelo, pois ele é infraestrutura de suporte e não substitui o critério funcional do editor.
+
+## Staging automatizado preparado no repositório — 14/09/2026
+
+PR #175:
+- adicionou o builder `scripts/build-central-docs-staging.mjs`;
+- adicionou o workflow `Validar bundle de staging da Central`;
+- adicionou a documentação operacional `docs/CENTRAL-DOCUMENTOS-STAGING-OPERACIONAL-V1.md`;
+- o bundle gerado contém apenas laboratório sintético, PDF.js e arquivos mínimos;
+- nenhuma integração com Google Drive, D1 de produção ou documentos clínicos é incluída;
+- referências explícitas ao Worker de produção e nomes de segredos críticos fazem o build falhar;
+- `robots.txt`, `X-Robots-Tag`, `no-store` e CSP restritiva são aplicados;
+- o smoke test HTTP do bundle foi aprovado.
+
+Validação:
+- **22/22 workflows do PR #175 concluíram com sucesso**;
+- merge squash concluído na `main` em `3793d61307d0c55b7b5cdf37bcddc4995e6cdce5`.
+
+Estado real do ambiente de homologação:
+- **camada de código e CI: pronta**;
+- **bundle sintético isolado: pronto e validado**;
+- **preview remoto Cloudflare Pages: ainda não criado**;
+- **Cloudflare Access: ainda não configurado**;
+- **subdomínio de staging: ainda não criado**;
+- **Worker/D1 staging: não necessários nesta primeira versão e continuam não criados**.
+
+Próximo passo exato no Work/Codex:
+1. usar o MCP oficial `cloudflare-api`;
+2. criar o projeto Pages isolado `portal-regulacao-central-staging`;
+3. configurar build `node scripts/build-central-docs-staging.mjs`;
+4. configurar output `dist-staging`;
+5. habilitar previews por branch/PR;
+6. proteger o ambiente com Cloudflare Access;
+7. opcionalmente associar `staging.regulacaoeldoradoms.com.br`;
+8. validar cabeçalhos, noindex e ausência de chamadas ao backend de produção.
 
 ## Preparação do staging remoto sintético — 14/09/2026
 
