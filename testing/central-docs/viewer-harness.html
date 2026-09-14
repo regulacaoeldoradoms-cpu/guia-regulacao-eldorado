@@ -66,7 +66,7 @@
       const start = async () => {
         try {
           if (!window.PortalPdfViewer?.supported()) throw new Error('PortalPdfViewer não suportado neste navegador.');
-          const result = await window.PortalPdfViewer.open(window.CentralDocsTestFixture.blob(), {
+          const source = new URLSearchParams(location.search).get('source') === 'url'\n            ? '/testing/central-docs/_fixture.pdf'\n            : window.CentralDocsTestFixture.blob();\n          document.documentElement.dataset.sourceMode = typeof source === 'string' ? 'url' : 'blob';\n          const result = await window.PortalPdfViewer.open(source, {
             root: document.getElementById('pdfRoot'),
             scrollRoot: document.getElementById('scrollRoot'),
             pagesRoot: document.getElementById('pages'),
