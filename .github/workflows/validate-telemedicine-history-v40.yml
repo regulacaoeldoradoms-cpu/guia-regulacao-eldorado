@@ -1,0 +1,57 @@
+name: Validar Telemedicina Histórico V40
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-history-v40.css'
+      - 'js/telemedicina-history-v40.js'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-mobile-v9.js'
+      - 'docs/TELEMEDICINA.md'
+      - 'worker/tests/telemedicine-history-v40.test.mjs'
+      - '.github/workflows/validate-telemedicine-history-v40.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'css/telemedicina-history-v40.css'
+      - 'js/telemedicina-history-v40.js'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-mobile-v9.js'
+      - 'docs/TELEMEDICINA.md'
+      - 'worker/tests/telemedicine-history-v40.test.mjs'
+      - '.github/workflows/validate-telemedicine-history-v40.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe
+        run: |
+          set -euo pipefail
+          test -f css/telemedicina-history-v40.css
+          test -f js/telemedicina-history-v40.js
+          test -f worker/tests/telemedicine-history-v40.test.mjs
+          node --check js/telemedicina-history-v40.js
+          node --check js/telemedicina.js
+          node --check js/telemedicina-mobile-v9.js
+      - name: Testar histórico visual
+        run: |
+          set -euo pipefail
+          node worker/tests/telemedicine-history-v40.test.mjs
+      - name: Conferir escopo e privacidade
+        run: |
+          set -euo pipefail
+          grep -Fq 'data-history-design="v40"' telemedicina/index.html
+          grep -Fq 'telemedicina-history-v40.css?v=20260914-1' telemedicina/index.html
+          grep -Fq 'telemedicina-history-v40.js?v=20260914-1' telemedicina/index.html
+          grep -Fq 'Histórico longitudinal visual V40' docs/TELEMEDICINA.md
+          if grep -R -n -E '\b(CNS|CPF)\b' js/telemedicina-history-v40.js css/telemedicina-history-v40.css worker/tests/telemedicine-history-v40.test.mjs; then
+            echo 'Identificador pessoal proibido na camada visual do histórico.' >&2
+            exit 1
+          fi
