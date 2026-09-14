@@ -29,7 +29,7 @@ assert.match(html, /telemedicina-outcome-v14\.css\?v=20260914-3/);
 assert.match(html, /data-status-correction="v36"/);
 assert.match(html, /telemedicina-mobile-v7\.js\?v=20260905-1/);
 assert.match(html, /telemedicina-mobile-v9\.js\?v=20260905-2/);
-assert.match(html, /telemedicina-edit\.js\?v=20260905-1/);
+assert.match(html, /telemedicina-edit\.js\?v=20260914-2/);
 
 for (const source of [desktop, mobile]) {
   assert.match(source, /function reminderMarkup\(item\)/);

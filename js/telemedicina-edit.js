@@ -178,7 +178,8 @@
       kind,
       patientId: patientButton?.dataset.patient || button.dataset.patient || '',
       followupId: row.dataset.followupRow || button.dataset.followup || '',
-      currentValue: currentValue || button.dataset.currentValue || ''
+      currentValue: currentValue || button.dataset.currentValue || '',
+      specialty: specialty?.textContent.trim() || ''
     };
 
     const title = document.getElementById('telemedicineEditTitle');
@@ -194,9 +195,9 @@
     input.value = editContext.currentValue;
     title.textContent = kind === 'patient' ? 'Corrigir nome do paciente' : 'Corrigir especialidade';
     label.textContent = kind === 'patient' ? 'Nome completo correto' : 'Nome da especialidade por extenso';
-    meta.textContent = kind === 'patient' ? 'A correção vale para todo o histórico agrupado deste paciente.' : (patientButton?.textContent.trim() || 'Acompanhamento de Telemedicina');
+    meta.textContent = kind === 'patient' ? `A correção vale somente para este acompanhamento${editContext.specialty ? ` de ${editContext.specialty}` : ''}.` : (patientButton?.textContent.trim() || 'Acompanhamento de Telemedicina');
     help.textContent = kind === 'patient'
-      ? 'Se o nome já estiver completo neste campo, os “...” vistos na grade eram apenas corte visual. Corrija somente quando o cadastro realmente estiver abreviado ou incorreto.'
+      ? 'Se já existir outro cadastro com o nome informado, o Portal pedirá confirmação antes de unificar apenas esta mesma especialidade. As demais especialidades não serão alteradas.'
       : 'Evite abreviações como “REUMATO”. Prefira o nome por extenso, por exemplo “REUMATOLOGIA”.';
 
     const backdrop = document.getElementById('telemedicineEditModal');
@@ -226,10 +227,26 @@
     saveButton.textContent = 'Salvando…';
     try {
       if (editContext.kind === 'patient') {
-        await auth.api(`/api/telemedicina/patients/${encodeURIComponent(editContext.patientId)}/name`, {
+        const path = `/api/telemedicina/patients/${encodeURIComponent(editContext.patientId)}/name`;
+        const request = (mergeExisting = false) => auth.api(path, {
           method: 'PATCH',
-          body: JSON.stringify({ name: value })
+          body: JSON.stringify({ name: value, followupId: editContext.followupId, mergeExisting })
         });
+        try {
+          await request(false);
+        } catch (error) {
+          if (error.status !== 409 || error.code !== 'FOLLOWUP_PATIENT_MERGE_CONFIRMATION_REQUIRED') throw error;
+          const specialty = editContext.specialty || 'esta especialidade';
+          const confirmed = window.confirm(
+            `Já existe um cadastro com esse nome. Deseja unificar somente o acompanhamento de ${specialty}? As demais especialidades não serão alteradas.`
+          );
+          if (!confirmed) {
+            saveButton.disabled = false;
+            saveButton.textContent = 'Salvar correção';
+            return showStatus('Unificação cancelada. Nenhuma outra especialidade foi alterada.', 'error');
+          }
+          await request(true);
+        }
       } else {
         await auth.api(`/api/telemedicina/followups/${encodeURIComponent(editContext.followupId)}/specialty`, {
           method: 'PATCH',

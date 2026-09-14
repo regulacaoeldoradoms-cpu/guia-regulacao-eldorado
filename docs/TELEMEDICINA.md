@@ -245,24 +245,26 @@ Regras obrigatórias:
 
 - a permissão é validada no Worker; o lápis não é apenas uma liberação de frontend;
 - o perfil `telemedicina` pode corrigir os próprios lançamentos e também registros históricos do módulo, sem depender do Desenvolvedor para pequenos ajustes cadastrais;
-- o nome do paciente deve ser corrigido de forma longitudinal, preservando o agrupamento do histórico;
+- a correção do nome pelo lápis de um card atua somente naquele acompanhamento e nos eventos históricos vinculados a ele; outros acompanhamentos/especialidades do cadastro de origem permanecem intocados até serem conferidos e corrigidos separadamente;
 - a especialidade deve ser registrada por extenso quando a abreviação puder gerar ambiguidade, evitando formas como `REUMATO` quando o correto for `REUMATOLOGIA`;
 - como os identificadores técnicos de paciente e acompanhamento derivam da forma normalizada do nome e da especialidade, uma correção que altere essa forma migra de modo controlado os documentos relacionados para os novos identificadores;
-- colisão de **nome de paciente** continua bloqueada: o sistema não funde automaticamente pacientes apenas porque o nome corrigido coincide com outro cadastro;
+- colisão de **nome de paciente** exige confirmação explícita: quando o nome corrigido coincide com outro cadastro, a confirmação vale somente para o acompanhamento selecionado; se o cadastro de destino já tiver a mesma especialidade, apenas esses dois cards são unificados;
 - colisão de **especialidade do mesmo paciente** tem comportamento diferente: quando o operador corrige explicitamente uma abreviação/grafia para uma especialidade que já existe naquele mesmo paciente, o backend executa a unificação controlada dos dois acompanhamentos em vez de bloquear a correção;
 - a unificação nunca é inferida por semelhança de texto, aproximação ou IA. A padronização em lote usa somente um dicionário fechado, auditado e versionado de equivalências exatas, evitando unir especialidades diferentes por engano;
-- na unificação, permanece um único acompanhamento para o paciente + especialidade; o estado operacional atual é preservado a partir do registro com teleconsulta mais recente, usando a atualização mais recente como desempate;
+- na unificação por correção de nome, permanece um único acompanhamento para aquela especialidade; o estado operacional atual é preservado a partir do registro com teleconsulta mais recente, usando a atualização mais recente como desempate, sem alterar cards de outras especialidades;
 - o documento canônico é substituído integralmente pelo estado escolhido, impedindo que campos operacionais antigos do outro acompanhamento sobrevivam e alterem indevidamente a situação exibida;
 - os históricos de correção são ordenados por data antes de manter as doze entradas mais recentes, preservando a auditoria mais atual;
-- todos os eventos longitudinais dos dois acompanhamentos são preservados e passam a apontar para o identificador canônico da especialidade, para que o histórico continue completo;
+- todos os eventos longitudinais dos dois acompanhamentos da especialidade selecionada são preservados, reagrupados no card canônico e continuam ordenáveis por data; eventos de outras especialidades não são migrados nessa operação;
 - a correção e a unificação registram data, usuário responsável, valor anterior e valor novo dentro do armazenamento protegido do módulo; nomes não são enviados para logs técnicos;
 - na grade 2 × 2 mobile, o nome completo deixa de ser ocultado artificialmente por `...`; nomes longos podem quebrar em mais linhas.
+
+Regra de conferência por especialidade: quando existirem nomes abreviados ou divergentes para a mesma pessoa, o operador corrige um card por vez. A correção de um card de `PSIQUIATRIA`, por exemplo, pode unificar somente os dois acompanhamentos de `PSIQUIATRIA` correspondentes; `ENDOCRINOLOGIA`, `ORTOPEDIA` ou qualquer outra especialidade do cadastro de origem permanecem separadas até uma correção manual posterior. Se não restarem outros acompanhamentos nem eventos ligados ao cadastro antigo, o registro técnico órfão pode ser removido pelo backend.
 
 Exemplo operacional: se o mesmo paciente tiver acompanhamentos separados como `ENDOC`, `ENDOCRINO` e `ENDOCRINOLOGIA`, o operador pode corrigir cada abreviação para `ENDOCRINOLOGIA`. A primeira colisão encontrada passa a consolidar o acompanhamento na especialidade canônica; repetindo a correção no outro alias, o painel termina com um único acompanhamento de `ENDOCRINOLOGIA`, sem perder os eventos históricos anteriores.
 
 Endpoints:
 
-- `PATCH /api/telemedicina/patients/{patientId}/name`;
+- `PATCH /api/telemedicina/patients/{patientId}/name` com `followupId` obrigatório; a correção de nome é aplicada somente ao card selecionado;
 - `PATCH /api/telemedicina/followups/{followupId}/specialty`;
 - `GET /api/telemedicina/maintenance/specialties` para auditar, sem alterar dados;
 - `POST /api/telemedicina/maintenance/specialties` para executar uma única correção por chamada.
