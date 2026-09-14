@@ -20,9 +20,89 @@ Subfase atual: **3C.1 — visualizador próprio validado em produção; integra�
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-staging-postmerge` (consolidação documental após merge da preparação de staging; a fase funcional continua em 3C.1).
+Branch atual: `codex/central-docs-staging-registro` (registro do ambiente remoto de homologação; a fase funcional continua em 3C.1).
 
-PR funcional atual: nenhum; PR #175 (infraestrutura de staging) foi validado e mesclado. A correção funcional do visualizador permanece no PR #173 já publicado.
+PR documental atual: esta PR da branch de registro. PR #175 (infraestrutura de staging) foi validado e mesclado. A correção funcional do visualizador permanece no PR #173 já publicado.
+
+## Homologação remota Cloudflare Pages criada e validada — 14/09/2026
+
+Controle de versão confirmado antes da criação:
+
+- repositório: `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`;
+- `main` remota confirmada duas vezes em `313101db4b6fb34ea503205e6cfa55a1c71864f8`;
+- o primeiro deployment de produção do projeto de staging foi construído exatamente desse commit.
+
+Projeto Cloudflare criado:
+
+- nome: `portal-regulacao-central-staging`;
+- ID do projeto: `f9937ede-dc00-42a0-8207-581d39a04de9`;
+- URL canônica: `https://portal-regulacao-central-staging.pages.dev/`;
+- deployment inicial imutável: `https://fbb103cb.portal-regulacao-central-staging.pages.dev/`;
+- ID do deployment inicial: `fbb103cb-e043-4c8a-9fa0-226dadc5a0c9`;
+- origem GitHub: `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`;
+- branch de produção deste projeto de staging: `main`;
+- build command: `node scripts/build-central-docs-staging.mjs`;
+- output directory: `dist-staging`;
+- deployments de produção e previews habilitados;
+- previews configurados para todas as branches, com comentários em Pull Requests habilitados.
+
+Isolamento confirmado:
+
+- nenhuma variável de ambiente, secret ou binding foi configurado nos ambientes de produção ou preview do projeto Pages;
+- bindings de D1, KV, R2, Service e Workers AI permanecem vazios;
+- o projeto não usa Pages Functions;
+- o Worker de produção `yellow-wave-d0a1guia-regulacao-ia` e o D1 de produção `portal-regulacao-users` não foram modificados, reiniciados, redeployados ou vinculados;
+- não foi criado Worker nem D1 de staging porque o bundle é integralmente estático e sintético.
+
+Cloudflare Access e domínio:
+
+- **Access: pendente**. Os endpoints específicos retornaram `access.api.error.not_enabled`; habilitar Access exigiria inicializar a organização da conta e decidir `auth_domain`, provedor de identidade, pessoas/domínios autorizados, duração de sessão e eventual MFA;
+- nenhuma dessas decisões foi improvisada e nenhuma configuração Zero Trust/Access foi alterada;
+- enquanto Access permanecer pendente, a URL `pages.dev` está pública e deve ser usada somente para validação técnica do conteúdo sintético;
+- **domínio personalizado: pendente**. A conexão não possui zona acessível para `regulacaoeldoradoms.com.br`; nenhum DNS externo foi tentado.
+
+Validação obrigatória executada na URL canônica:
+
+- resposta HTTP `200` e selo visível **DADOS FICTÍCIOS**;
+- PDF sintético identificado como pronto no PDF.js 6.3.289, com exatamente **3 páginas**;
+- página principal, três miniaturas e canvases renderizados;
+- zoom validado em desktop (`182%` para `197%`) e mobile (`57%` para `72%`);
+- **Ajustar largura** validado em desktop (`182%`) e mobile (`57%`);
+- navegação pela miniatura da página 2 validada;
+- layout validado em `1440 x 1000` e `412 x 915`;
+- `robots.txt` respondeu `User-agent: *` e `Disallow: /`;
+- `X-Robots-Tag: noindex, nofollow, noarchive` confirmado;
+- `Cache-Control: no-store` confirmado;
+- CSP restritiva confirmada, incluindo `connect-src 'self'`, `object-src 'none'`, `base-uri 'none'`, `form-action 'none'` e `frame-ancestors 'none'`;
+- captura de rede registrou somente seis requisições GET, todas para `portal-regulacao-central-staging.pages.dev`;
+- nenhuma requisição foi feita para `yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`, Google APIs, Google Drive ou qualquer rota `/api/`;
+- nenhum erro de console ou de página foi observado;
+- ausência de D1 e dados institucionais confirmada pelo bundle estático, pela inexistência de Functions/bindings e pela captura de rede.
+
+Preview não destrutivo comprovado:
+
+- branch de teste/registro: `codex/central-docs-staging-registro`, criada do mesmo SHA confirmado da `main`;
+- o push da branch disparou automaticamente um deployment `preview` pelo GitHub, sem merge e sem alterar produção;
+- ID: `d4b0ac1e-dae2-43b1-b5cc-7975082af17f`;
+- URL imutável: `https://d4b0ac1e.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-staging-r.portal-regulacao-central-staging.pages.dev/`;
+- clone, build e deploy do preview concluíram com sucesso;
+- o alias respondeu `200`, com selo sintético e os mesmos cabeçalhos de não indexação, não armazenamento e CSP.
+
+Riscos e limitações:
+
+- o staging permanece público até uma decisão humana habilitar e configurar Access;
+- o subdomínio `staging.regulacaoeldoradoms.com.br` depende de acesso à zona/DNS;
+- `staging-manifest.json` registra `sourceSha: null` porque o builder lê `GITHUB_SHA`, enquanto Pages fornece metadados próprios; a proveniência continua confirmada pela API do deployment no SHA exato;
+- o ambiente valida apenas o laboratório sintético e não substitui a pendência funcional de integração visual do editor.
+
+Próximo passo exato:
+
+1. revisar e mesclar a PR documental desta branch;
+2. um responsável humano definir `auth_domain`, IdP, público autorizado, duração de sessão e MFA para habilitar Cloudflare Access;
+3. depois da proteção, repetir o smoke test autenticado antes de compartilhar o staging;
+4. quando a zona estiver acessível, associar `staging.regulacaoeldoradoms.com.br` e repetir os testes de DNS/TLS/cabeçalhos;
+5. manter a 3C.2 bloqueada; esta tarefa não inicia a integração visual do editor.
 
 ## Entregas concluídas nesta unidade
 
@@ -990,20 +1070,18 @@ Validação:
 Estado real do ambiente de homologação:
 - **camada de código e CI: pronta**;
 - **bundle sintético isolado: pronto e validado**;
-- **preview remoto Cloudflare Pages: ainda não criado**;
-- **Cloudflare Access: ainda não configurado**;
-- **subdomínio de staging: ainda não criado**;
+- **Cloudflare Pages: criado e validado** em `https://portal-regulacao-central-staging.pages.dev/`;
+- **preview remoto por branch: criado e validado** sem merge experimental;
+- **Cloudflare Access: pendente**, pois Access não está habilitado na conta e sua inicialização exige decisões humanas de identidade e política;
+- **subdomínio de staging: pendente**, pois a zona `regulacaoeldoradoms.com.br` não está acessível nesta conexão;
 - **Worker/D1 staging: não necessários nesta primeira versão e continuam não criados**.
 
-Próximo passo exato no Work/Codex:
-1. usar o MCP oficial `cloudflare-api`;
-2. criar o projeto Pages isolado `portal-regulacao-central-staging`;
-3. configurar build `node scripts/build-central-docs-staging.mjs`;
-4. configurar output `dist-staging`;
-5. habilitar previews por branch/PR;
-6. proteger o ambiente com Cloudflare Access;
-7. opcionalmente associar `staging.regulacaoeldoradoms.com.br`;
-8. validar cabeçalhos, noindex e ausência de chamadas ao backend de produção.
+Próximo passo exato desta infraestrutura:
+
+1. concluir a PR documental de registro;
+2. obter a decisão humana sobre identidade e política do Cloudflare Access;
+3. habilitar Access e repetir o smoke test autenticado;
+4. associar o domínio personalizado quando a zona estiver acessível.
 
 ## Preparação do staging remoto sintético — 14/09/2026
 
@@ -1019,17 +1097,14 @@ Entregas na branch `infra/central-docs-staging-bundle`:
 - workflow `Validar bundle de staging da Central` constrói o bundle, valida isolamento e executa smoke test HTTP;
 - `docs/CENTRAL-DOCUMENTOS-STAGING-OPERACIONAL-V1.md` registra a configuração exata a aplicar no Cloudflare Pages.
 
-Próxima ação no Work/Codex:
-- usar o MCP oficial `cloudflare-api` já autenticado;
-- criar projeto Pages separado `portal-regulacao-central-staging`;
-- build command: `node scripts/build-central-docs-staging.mjs`;
-- output: `dist-staging`;
-- habilitar previews de branches/PRs;
-- proteger com Cloudflare Access;
-- opcionalmente associar `staging.regulacaoeldoradoms.com.br`;
-- validar que não existe requisição ao Worker/Drive de produção.
+Resultado remoto posterior:
 
-Esta infraestrutura é de suporte e não encerra a 3C.1. O reteste real da correção 3C.1f em produção continua obrigatório.
+- o projeto isolado `portal-regulacao-central-staging` foi criado no Cloudflare Pages;
+- a integração GitHub, o build de `main` e o preview separado por branch foram comprovados;
+- cabeçalhos, noindex, três páginas, controles e isolamento de rede foram validados em desktop e mobile;
+- Access e domínio personalizado permanecem pendentes pelas limitações registradas na seção autoritativa de homologação remota acima.
+
+Esta infraestrutura é de suporte e não encerra a pendência funcional da integração visual do editor. A 3C.2 continua bloqueada.
 
 ## 3C.1f validada em navegador, mesclada e publicada — 14/09/2026
 
@@ -1160,11 +1235,20 @@ Próximo passo desta infraestrutura:
 
 ## Handoff para o próximo chat
 
-**Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase:** 3C.1e implementada, validada em CI, mesclada e publicada; aguardando somente reteste real antes da 3C.2.  
-**Main funcional:** `a22ddbdd85302a3c2635b5656715cb9af74e1561` — PR #173.  
-**PR #173:** 22/22 workflows aprovados, incluindo Playwright real em Chromium desktop/mobile.  
-**Pós-merge/deploy:** 23/23 workflows associados ao merge concluíram com sucesso, incluindo `pages build and deployment`.  
-**Correção:** build legacy oficial do PDF.js 6.3.289 para compatibilidade, mantendo primeira página/miniatura prioritárias, tasks concorrentes seguras e renderização em `canvas`.  
-**Segurança:** sem escrita no Drive, sem mudança de capabilities e sem nova telemetria sensível.  
-**Próxima ação exata:** retestar em produção página 1, miniatura, segundo PDF, zoom, Ajustar largura e editor; somente após aceite iniciar 3C.2.
+**Fase atual:** Fase 3 — Editor PDF essencial.
+
+**Subfase:** 3C.1 — visualizador próprio validado em produção; integração visual do editor ainda pendente. A 3C.2 continua bloqueada.
+
+**Main confirmada antes do staging:** `313101db4b6fb34ea503205e6cfa55a1c71864f8`.
+
+**Staging:** `portal-regulacao-central-staging` em `https://portal-regulacao-central-staging.pages.dev/`, com bundle sintético e sem bindings, Functions ou secrets.
+
+**Preview:** branch separada validada automaticamente, sem merge experimental.
+
+**Access:** pendente; staging público até definição humana de identidade/política.
+
+**Domínio personalizado:** pendente por ausência de acesso à zona.
+
+**Produção:** Worker `yellow-wave-d0a1guia-regulacao-ia` e D1 `portal-regulacao-users` permaneceram intocados.
+
+**Próxima ação exata:** concluir a PR documental; depois definir e habilitar Access, repetir o smoke test autenticado e manter a 3C.2 bloqueada até tratar separadamente a integração visual do editor.
