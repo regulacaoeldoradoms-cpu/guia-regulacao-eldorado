@@ -37,8 +37,10 @@ jobs:
 
       - name: Validar assets self-hosted do PDF.js
         run: |
-          test -s vendor/pdfjs/pdf.min.mjs
-          test -s vendor/pdfjs/pdf.worker.min.mjs
+          test -s vendor/pdfjs-legacy/pdf.min.mjs
+          test -s vendor/pdfjs-legacy/pdf.worker.min.mjs
+          grep -q "vendor/pdfjs-legacy/pdf.min.mjs" js/document-viewer.js
+          grep -q "vendor/pdfjs-legacy/pdf.worker.min.mjs" js/document-viewer.js
           test -d vendor/pdfjs/cmaps
           test -d vendor/pdfjs/standard_fonts
           test -d vendor/pdfjs/wasm
