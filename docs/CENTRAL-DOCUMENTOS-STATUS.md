@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1d — remover definitivamente o visualizador PDF nativo de toda a Central**.
+Subfase atual: **3C.1d — visualizador PDF nativo removido de toda a Central** mesclada e publicada; aguardando validação real antes da 3C.2.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: **3C.1d — remover definitivamente o visualizador PDF nativo de 
 
 ## Branch / PR
 
-Branch atual: `fix/remove-native-pdf-viewer-3c1d`.
+Branch atual: `docs/central-docs-3c1d-postmerge` (consolidação documental pós-merge).
 
-PR funcional atual: **#168 — Remover visualizador PDF nativo da Central — 3C.1d**.
+PR funcional atual: nenhum; PR #168 foi validado, mesclado e publicado.
 
 ## Entregas concluídas nesta unidade
 
@@ -418,6 +418,30 @@ A primeira execução do PR #163 apresentou falhas em workflows amplos por **uma
 - o código real e correto usa a propriedade DOM `dataset.thumbnailAction`;
 - a asserção foi corrigida para refletir a API usada pela implementação;
 - nenhuma lógica do editor, permissão, cache ou Drive foi alterada por essa correção.
+
+## 3C.1d validada, mesclada e publicada — 13/09/2026
+
+PR #168:
+- a primeira execução de CI encontrou referências legadas de `compatibility-mode` e duas asserções históricas incompatíveis com a decisão de remover o iframe; os testes e chamadas mortas foram corrigidos sem reintroduzir fallback nativo;
+- após os ajustes, **21/21 workflows do Pull Request concluíram com sucesso** e 0 falhas;
+- merge funcional concluído na `main` em `eb991901a047cc8f5eb7083cc44e9d9ffabc4c91`;
+- no pós-merge, **23/23 workflows associados ao commit concluíram com sucesso**, incluindo **Central de Documentos — Fases 1–3**, **governança Central de Documentos**, **site**, **gestão de usuários** e **pages build and deployment**;
+- o deploy estático da versão sem visualizador nativo foi concluído com sucesso.
+
+Resultado publicado:
+- `documentsPdfFrame` foi removido do HTML;
+- `frame-src` foi removido da CSP da Central;
+- `showIframeViewerSurface()`, `els.frame` e observadores específicos do iframe foram removidos do cliente;
+- cache hit e cache miss usam exclusivamente PDF.js;
+- no caminho progressivo, uma falha tenta novamente com Blob completo e PDF.js, sem recorrer ao plugin do navegador;
+- falha definitiva exibe erro controlado dentro da superfície própria;
+- estilos e referências legadas de `compatibility-mode` foram removidos;
+- nenhuma escrita no Google Drive, capability ou telemetria sensível foi alterada.
+
+Critério restante:
+- validação real em produção da visualização normal e do editor;
+- confirmar ausência total da toolbar nativa do navegador tanto em cache hit quanto em cache miss;
+- somente após aceite real iniciar 3C.2.
 
 ## Ajuste de CI da 3C.1d — 13/09/2026
 
@@ -876,10 +900,10 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. validar a 3C.1d em CI e mesclar somente com checks verdes;
-2. após deploy, fazer recarga forçada em `/documentos/`;
-3. abrir um PDF em visualização normal e confirmar que não existe mais toolbar do navegador;
-4. testar um arquivo em cache hit e outro em cache miss;
+1. fazer recarga forçada em `/documentos/`;
+2. abrir um PDF em visualização normal e confirmar que aparecem somente os controles e miniaturas do Portal;
+3. confirmar que não existe toolbar do Chrome/Edge, nome interno de Blob, download/impressão nativos ou outro plugin PDF do navegador;
+4. testar um PDF já presente no cache local e outro ainda não aberto;
 5. entrar em **Editar PDF**, realizar uma alteração e confirmar permanência na mesma superfície PDF.js;
 6. registrar o resultado real; somente com aceite iniciar **3C.2 — drag-and-drop das páginas**.
 
@@ -905,10 +929,10 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase:** 3C.1d em implementação — remoção total do visualizador PDF nativo da Central.  
-**Base:** `c962d65c4b9d16a6ea0c3e75080bc2423a4a011e`.  
-**Evidência:** validação real mostrou a toolbar nativa ainda aparecendo na visualização somente leitura; 3C.1c havia removido o fallback apenas do editor.  
-**Causa:** `documentsPdfFrame` e caminhos de fallback nativo ainda existiam em `openPdf()`, `openWithPortalViewer()` e `loadPdfBlobFallback()`.  
-**Correção 3C.1d:** iframe removido; CSP sem `frame-src`; retry progressivo usa Blob completo e continua no PDF.js; falha final fica na superfície própria com mensagem controlada.  
-**Segurança:** sem escrita no Drive, sem alteração de capabilities, sem novos dados sensíveis em observabilidade.  
-**Próxima ação exata:** concluir CI/PR/deploy da 3C.1d e repetir o teste real de visualização normal + editor; só após aceite iniciar 3C.2.
+**Subfase:** 3C.1d implementada, validada em CI, mesclada e publicada; aguardando somente reteste real antes da 3C.2.  
+**Main funcional:** `eb991901a047cc8f5eb7083cc44e9d9ffabc4c91` — PR #168.  
+**PR #168:** 21/21 workflows finais aprovados; falhas intermediárias vieram de referências/testes legados da antiga compatibilidade, corrigidos sem reintroduzir iframe.  
+**Pós-merge/deploy:** 23/23 workflows associados ao merge concluíram com sucesso, incluindo `pages build and deployment`.  
+**Correção:** iframe removido do HTML e CSP; visualização normal e editor usam exclusivamente PDF.js; retry é progressivo → Blob completo → PDF.js; falha final permanece na superfície própria.  
+**Segurança:** sem escrita no Drive, sem alteração de capabilities e sem novos dados sensíveis em observabilidade.  
+**Próxima ação exata:** retestar em produção visualização normal em cache hit/miss e o editor; somente após confirmar ausência total do plugin PDF do navegador iniciar 3C.2.
