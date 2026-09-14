@@ -8,6 +8,7 @@ const read = (relativePath) => fs.readFileSync(path.join(repositoryRoot, relativ
 
 const html = read('telemedicina/index.html');
 const css = read('css/telemedicina-cards-v19.css');
+const hierarchyCss = read('css/telemedicina-card-hierarchy-v37.css');
 const outcomeCss = read('css/telemedicina-outcome-v14.css');
 const desktop = read('js/telemedicina.js');
 const mobile = read('js/telemedicina-mobile-v9.js');
@@ -19,6 +20,8 @@ const justificationDocumentation = read('docs/TELEMEDICINA-JUSTIFICATIVA-V20.md'
 
 assert.match(html, /telemedicina-cards-v19\.css\?v=20260905-4/);
 assert.match(html, /data-followup-cards="v19"/);
+assert.match(html, /telemedicina-card-hierarchy-v37\.css\?v=20260914-1/);
+assert.match(html, /data-card-hierarchy="v37"/);
 assert.match(html, /data-copy-justification="v20"/);
 assert.match(html, /telemedicina-justification-v20\.js\?v=20260906-1/);
 assert.match(html, /telemedicina\.js\?v=20260914-2/);
@@ -46,6 +49,15 @@ assert.match(viewSwitch, /if \(view === 'list'\) return 'Lista'/);
 assert.doesNotMatch(viewSwitch, /[☰▦]/u);
 assert.match(edit, /stroke="currentColor"/);
 assert.match(edit, /stroke-linecap="round"/);
+
+assert.match(hierarchyCss, /data-card-hierarchy="v37"/);
+assert.match(hierarchyCss, /telemedicine-specialty-block > div::before/);
+assert.match(hierarchyCss, /content: "Especialidade"/);
+assert.match(hierarchyCss, /align-content: start !important/);
+assert.match(hierarchyCss, /telemedicine-condition-label/);
+assert.match(hierarchyCss, /telemedicine-reminders[\s\S]*border-top/);
+assert.match(hierarchyCss, /tm-view-list[\s\S]*grid-template-columns/);
+assert.match(hierarchyCss, /@media \(min-width: 861px\)/);
 
 assert.match(desktop, /name="outcomeEditChoice" value="discharge"/);
 assert.match(desktop, /name="outcomeEditChoice" value="scheduled"/);
@@ -93,7 +105,7 @@ assert.match(justificationDocumentation, /Data da última consulta/);
 assert.match(justificationDocumentation, /40 famílias de situações reconhecidas/);
 assert.match(justificationDocumentation, /fallback universal/);
 
-const runtimeSources = [html, desktop, mobile, justification, viewSwitch, edit, css];
+const runtimeSources = [html, desktop, mobile, justification, viewSwitch, edit, css, hierarchyCss];
 const pictographicCharacter = /[\u2600-\u27BF\u{1F000}-\u{1FAFF}]/u;
 for (const source of runtimeSources) assert.doesNotMatch(source, pictographicCharacter);
 
