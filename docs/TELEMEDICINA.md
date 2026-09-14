@@ -318,3 +318,8 @@ Validação:
 - `worker/tests/telemedicine-rules.test.mjs`
 - `.github/workflows/validate-telemedicine.yml`
 - `.github/workflows/validate-telemedicine-edit.yml`
+
+
+## Modal de correção de situação V36
+
+Decisão permanente registrada em 14/09/2026: a janela **Alterar situação** deve reutilizar a linguagem visual da janela **Registrar teleconsulta**, com opções em cartões coloridos, ícones vetoriais, campos condicionais e rolagem contida dentro da moldura do modal. A barra de rolagem não pode ultrapassar o limite visual da janela. Essa harmonização não altera as regras de negócio do acompanhamento.
