@@ -855,7 +855,7 @@
     els.viewerState.className = 'documents-viewer-state';
 
     try {
-      await viewer.open(source, {
+      const opened = await viewer.open(source, {
         root: els.customViewer,
         scrollRoot: els.pdfPageScroll,
         pagesRoot: els.pdfPages,
@@ -885,14 +885,11 @@
           showPortalViewerFailure();
         }
       });
-      if (openId !== state.pdfOpenId) {
-        viewer.close();
-        return false;
-      }
+      if (openId !== state.pdfOpenId || !opened) return false;
       return true;
     } catch (_) {
-      viewer.close();
       if (openId !== state.pdfOpenId) return false;
+      viewer.close();
       showPortalViewerFailure();
       return false;
     }

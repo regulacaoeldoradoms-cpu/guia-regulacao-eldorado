@@ -1,12 +1,12 @@
 # Central de Documentos — Status
 
-Última atualização: 13/09/2026
+Última atualização: 14/09/2026
 
 ## Fase atual
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1e — estabilização da primeira renderização do visualizador próprio PDF.js** mesclada e publicada; aguardando validação real antes da 3C.2.
+Subfase atual: **3C.1f — concorrência e ciclo de vida do visualizador** em branch; 3C.1e continua sendo a versão publicada. Aceite visual real ainda pendente antes da 3C.2.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: **3C.1e — estabilização da primeira renderização do visuali
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-3c1e-postmerge` (consolidação documental pós-merge).
+Branch atual: `fix/central-docs-3c1f-viewer-lifecycle`.
 
-PR funcional atual: nenhum; PR #170 foi validado, mesclado e publicado.
+PR funcional atual: em preparação; envio da branch 3C.1f autorizado explicitamente pelo usuário em 14/09/2026. PR #170 permanece mesclado e publicado.
 
 ## Entregas concluídas nesta unidade
 
@@ -979,13 +979,63 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 - `worker/wrangler.toml`
 - Guia Mestre — Central de Documentos V1.1
 
+## Estabilização 3C.1f — 14/09/2026
+
+Reconstrução: Guia Mestre V1.1, Dossiê Mestre integral e delta social consultados;
+main `1878fdf4331dc1a8566822d9ac442799d931b0d9`, sem PR da Central aberto na entrada.
+A 3C.1e foi preservada como entrega anterior; não houve reinício da fase.
+
+Descobertas e correções:
+- `open()` aguardava biblioteca/Blob antes de registrar a sessão. Uma abertura antiga
+  podia substituir a nova, e `close()` nesse intervalo não impedia reabertura.
+  Contador de abertura agora invalida operações anteriores antes/depois dos awaits.
+- Chamadas duplicadas de miniaturas atravessavam `getPage()` sem renderTask definido,
+  disputando o canvas. Fila por canvas cobre busca da página, renderização e limpeza.
+- A conclusão antiga em `documents.js` podia fechar o visualizador novo. Agora o
+  identificador da abertura é verificado antes de qualquer limpeza da sessão atual.
+- Destruição usa somente o loadingTask e trata sua rejeição assíncrona.
+- Limite de pixels permite escala abaixo de 1 para páginas muito grandes.
+- Página inicial recebe estado ativo corretamente. Assets alterados têm nova versão.
+- Workflow agora reage diretamente a mudanças no viewer/vendor/testes e inclui
+  harness Chromium com PDF.js real e PDFs sintéticos para desktop e mobile.
+
+Evidências locais: três dos quatro testes novos falham contra o código da main
+(abertura antiga, fechamento durante carregamento, miniaturas concorrentes); os
+quatro passam na correção. Suíte completa: **135/135**; sintaxe do Worker aprovada.
+Testes unitários usam motor controlado e não substituem validação do PDF.js real.
+
+Limitação: navegador remoto desta sessão bloqueou `127.0.0.1` com
+`ERR_BLOCKED_BY_CLIENT`; não houve contorno, login nem acesso a PDFs de pacientes.
+Harness real versionado em `worker/tests/browser/`, para execução em CI. Resultado
+CI ainda pendente neste registro. Nenhuma mudança foi publicada em produção.
+
+Bloqueio externo: a revisão automática rejeitou `git push` da branch 3C.1f,
+por considerar não estabelecida a autorização específica de envio externo e
+a confiança/privacidade do destino. Não houve nova tentativa nem contorno por
+outro conector. Necessária autorização explícita do usuário para enviar a branch
+a `regulacaoeldoradoms-cpu/guia-regulacao-eldorado` e abrir PR.
+Commit funcional local: `2f8112f`. O trabalho está completo localmente, mas
+checks remotos e harness Chromium não foram executados.
+
+Alternativas descartadas: considerar regex/checks como prova de renderização;
+voltar ao viewer nativo; iniciar drag-and-drop antes de estabilizar a visualização.
+Sem escrita no Drive, mudança de permissões, conteúdo clínico ou nova telemetria.
+
+Autorização posterior: em 14/09/2026 o usuário respondeu “Sim, autorizo tudo” ao pedido específico de enviar a branch e abrir PR sem publicar em produção. O bloqueio de autorização está resolvido. O terminal não tem credencial HTTPS; envio pela integração GitHub conectada.
+
 ## Handoff para o próximo chat
 
-**Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase:** 3C.1e implementada, validada em CI, mesclada e publicada; aguardando somente reteste real antes da 3C.2.  
-**Main funcional:** `a13b9f91b60a59ecb5cd6f612fdd3cdfa1a2c3ea` — PR #170.  
-**PR #170:** 21/21 workflows aprovados.  
-**Pós-merge/deploy:** 23/23 workflows associados ao merge concluíram com sucesso, incluindo `pages build and deployment`.  
-**Correção:** primeira página/miniatura renderizam antes dos observers; tasks duplicados são aguardados; rerender cancela e aguarda o anterior; finalização é protegida por identidade; PDF.js usa `canvas`.  
-**Segurança:** sem escrita no Drive, sem mudança de capabilities e sem nova telemetria sensível.  
-**Próxima ação exata:** retestar em produção página 1, miniatura, segundo PDF, zoom, Ajustar largura e editor; somente após aceite iniciar 3C.2.
+**Fase atual:** 3 — Editor PDF essencial.
+**Subfase / objetivo:** 3C.1f — estabilizar concorrência e fechamento/abertura.
+**Última ação concluída:** correções locais com três regressões reproduzidas na main e 135 testes aprovados.
+**Branch atual:** `fix/central-docs-3c1f-viewer-lifecycle`.
+**PR atual:** em preparação via integração GitHub; autorização de envio e abertura de PR confirmada; 3C.1e/#170 segue publicado.
+**Último commit de referência:** main `1878fdf4331dc1a8566822d9ac442799d931b0d9`.
+**Checks e testes:** 135/135 locais; Chromium/CI e reteste autenticado pendentes.
+**Decisões e justificativas:** serializar toda operação de canvas; invalidar aberturas antigas antes de criar sessão; não fechar sessão nova por conclusão antiga.
+**Alternativas descartadas:** viewer nativo e avançar sem evidência visual.
+**Ações externas concluídas:** OAuth institucional anterior preservado, nenhuma reconfiguração necessária.
+**Pendências / riscos:** CI com PDF.js real; validação de primeira página/miniatura, segundo PDF, zoom, Ajustar largura e entrada no editor em produção. Sem aceite, não encerrar 3C.1 nem iniciar 3C.2.
+**Métricas:** nenhuma nova medição de produção; evidências locais são funcionais, não p75/p95.
+**Próxima ação exata:** enviar a branch 3C.1f ao repositório e abrir PR com a autorização já concedida; então conferir resultado Chromium desktop/mobile; corrigir falhas antes de propor merge; após publicação autorizada, validar uso real e registrar aceite.
+**Fontes principais:** este status, `js/document-viewer.js`, `js/documents.js`, `worker/tests/document-viewer.test.mjs`, `worker/tests/browser/`, arquitetura visual V1 e Guia Mestre.
