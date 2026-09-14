@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1f — compatibilidade do visualizador PDF.js com navegadores operacionais** mesclada e publicada; aguardando reteste real em produção antes da 3C.2.
+Subfase atual: **3C.1 — visualizador próprio validado em produção; integração visual do editor ainda pendente**. A 3C.2 continua bloqueada.
 
 ## Estado de entrada
 
@@ -950,6 +950,26 @@ A observabilidade-base já está operacional. A Fase 1 passa a emitir apenas `dr
 `pdf_first_page_visible` não será emitido nesta fase porque o iframe nativo não oferece medição confiável da primeira página; isso fica para a Fase 2.
 
 Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
+
+## Reteste real em produção — visualizador aprovado, editor ainda separado — 14/09/2026
+
+Evidência real do usuário:
+- o visualizador próprio do Portal abriu corretamente um PDF institucional;
+- página principal renderizou em canvas pelo Portal;
+- miniaturas próprias apareceram e renderizaram corretamente;
+- o navegador não voltou ao visualizador nativo no fluxo de leitura;
+- o resultado do visualizador foi considerado satisfatório pelo usuário.
+
+Pendência observada:
+- o **editor ainda permanece visualmente separado** da superfície principal;
+- portanto o objetivo maior de uma experiência única de visualização + edição ainda não está concluído;
+- a 3C.1 não será encerrada apenas porque a leitura PDF.js passou: a integração visual do editor continua sendo critério de aceite.
+
+Decisão:
+- considerar encerrada a investigação de compatibilidade do visualizador PDF.js iniciada na 3C.1e/3C.1f;
+- manter a Fase 3 aberta;
+- não iniciar 3C.2 enquanto a experiência do editor continuar separada;
+- continuar a preparação do ambiente de homologação automatizado em paralelo, pois ele é infraestrutura de suporte e não substitui o critério funcional do editor.
 
 ## Preparação do staging remoto sintético — 14/09/2026
 
