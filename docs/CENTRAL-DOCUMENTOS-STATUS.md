@@ -20,9 +20,9 @@ Subfase atual: **3C.1 — visualizador próprio validado em produção; integra�
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-staging-postmerge` (consolidação documental após merge da preparação de staging; a fase funcional continua em 3C.1).
+Branch atual: `docs/central-staging-access-handoff` (registro documental do bloqueio de acesso Cloudflare; a fase funcional continua em 3C.1).
 
-PR funcional atual: nenhum; PR #175 (infraestrutura de staging) foi validado e mesclado. A correção funcional do visualizador permanece no PR #173 já publicado.
+PR desta unidade: localizar pela branch `docs/central-staging-access-handoff`. PRs #175 e #176 mesclados. PR #172 continua aberto e foi preservado; não reutilizar seu código sem comparar com a main. Correção funcional publicada pelo PR #173.
 
 ## Entregas concluídas nesta unidade
 
@@ -1132,12 +1132,11 @@ Próximo passo desta infraestrutura:
 
 ## Próximo passo
 
-1. fazer recarga forçada em `/documentos/`;
-2. abrir um PDF real e confirmar renderização da página 1 + miniatura no visualizador próprio;
-3. abrir um segundo PDF para excluir efeito de cache específico;
-4. testar zoom, **Ajustar largura** e entrada no editor;
-5. confirmar que o visualizador nativo continua ausente;
-6. registrar o resultado real; somente com aceite iniciar **3C.2 — drag-and-drop das páginas**.
+1. Disponibilizar o MCP oficial `cloudflare-api` nesta sessão e confirmar acesso real com inventário somente leitura.
+2. Conferir novamente main, PRs e recursos remotos para evitar duplicação; criar Pages sintético separado conforme o documento operacional.
+3. Inspecionar política de identidade existente antes de configurar Access; se faltar definição de usuários/grupo/provedor autorizado, solicitar somente essa decisão.
+4. Validar staging e preview de PR com dados fictícios, incluindo navegador desktop/mobile, rede e cabeçalhos reais.
+5. Depois retomar a integração visual do editor na 3C.1. A 3C.2 permanece bloqueada; staging não encerra a fase funcional.
 
 ## Arquivos e fontes principais
 
@@ -1158,13 +1157,46 @@ Próximo passo desta infraestrutura:
 - `worker/wrangler.toml`
 - Guia Mestre — Central de Documentos V1.1
 
+## Verificação no Work — 14/09/2026
+
+- Main confirmada no GitHub: `313101db4b6fb34ea503205e6cfa55a1c71864f8`.
+- PRs #175 e #176 confirmados como mesclados; 23/23 workflows associados à main consultada concluídos com sucesso, incluindo publicação estática. Esses resultados não comprovam staging Cloudflare.
+- Guia Mestre V1.1, Dossiê Mestre e delta, status, homologação, plano operacional, builder e workflows consultados.
+- Build sintético executado localmente com sucesso nesta sessão. Nenhum teste remoto foi executado.
+- Descoberta de integrações: nenhuma ferramenta `cloudflare-api` exposta; busca de plugin Cloudflare retornou lista vazia. O relato de autenticação anterior é preservado, mas não comprova disponibilidade nesta sessão. Não houve rejeição de aprovação nem falha de credencial testada.
+- Inventário remoto de contas, zona, Workers, Pages e bindings: não executado por falta dessa integração.
+- Recursos Cloudflare criados nesta unidade: nenhum. URLs de staging/preview: nenhuma obtida ou validada. Não confundir nome/domínio proposto com recurso existente.
+- Access, DNS, cabeçalhos HTTP reais, noindex remoto, isolamento de rede e preview de PR: pendentes. Nenhuma política de identidade foi inventada.
+- Alternativas descartadas: mudar produção, usar outro provedor, copiar segredos ou conectar Drive/D1 institucional para contornar ausência do MCP. Worker/D1 staging desnecessários para laboratório estático.
+- Risco: registros históricos abaixo/acima descrevem fases passadas; o handoff anterior ainda pedia reteste já aprovado e poderia induzir avanço indevido à 3C.2. Este handoff prevalece.
+- Não houve alteração funcional, deploy, mudança de permissões, DNS ou acesso a documentos clínicos.
+
 ## Handoff para o próximo chat
 
-**Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase:** 3C.1e implementada, validada em CI, mesclada e publicada; aguardando somente reteste real antes da 3C.2.  
-**Main funcional:** `a22ddbdd85302a3c2635b5656715cb9af74e1561` — PR #173.  
-**PR #173:** 22/22 workflows aprovados, incluindo Playwright real em Chromium desktop/mobile.  
-**Pós-merge/deploy:** 23/23 workflows associados ao merge concluíram com sucesso, incluindo `pages build and deployment`.  
-**Correção:** build legacy oficial do PDF.js 6.3.289 para compatibilidade, mantendo primeira página/miniatura prioritárias, tasks concorrentes seguras e renderização em `canvas`.  
-**Segurança:** sem escrita no Drive, sem mudança de capabilities e sem nova telemetria sensível.  
-**Próxima ação exata:** retestar em produção página 1, miniatura, segundo PDF, zoom, Ajustar largura e editor; somente após aceite iniciar 3C.2.
+**Fase atual:** Fase 3 — Editor PDF essencial; 3C.1 aberta pela integração visual do editor pendente.
+
+**Subfase / objetivo atual:** concluir ambiente remoto de homologação sintético, bloqueado pela disponibilidade do MCP Cloudflare.
+
+**Última ação concluída:** reconciliação do estado real do GitHub e build sintético local aprovado.
+
+**Branch atual / PR:** `docs/central-staging-access-handoff`; localizar PR pela branch. PR #172 preexistente preservado.
+
+**Último commit relevante:** main de entrada `313101db4b6fb34ea503205e6cfa55a1c71864f8`, PR #176; infraestrutura #175 e visualizador #173 já mesclados.
+
+**Checks e testes:** main consultada com 23/23 workflows aprovados; build local aprovado; consultar checks do PR documental. Testes remotos/preview não executados.
+
+**Decisões e justificativas:** preservar aceite do visualizador em produção; editor separado mantém 3C.1 aberta. Corrigir continuidade sem reiniciar fases.
+
+**Alternativas descartadas:** reutilizar produção ou outro provedor; criar backend desnecessário; presumir MCP autenticado disponível nesta sessão.
+
+**Ações externas concluídas:** nenhuma configuração Cloudflare nesta unidade; OAuth institucional anterior não deve ser refeito nem usado no staging.
+
+**Pendências e bloqueios:** disponibilizar MCP oficial; inventariar recursos; criar Pages isolado; definir/reutilizar identidade autorizada comprovada no Access; configurar domínio se livre; validar preview.
+
+**Riscos conhecidos:** sem inventário não é possível afirmar ausência/conflito de recursos remotos; não publicar staging compartilhado sem Access.
+
+**Métricas / observabilidade:** nenhuma nova coleta; somente fixture sintética permitida.
+
+**Próxima ação exata:** confirmar que `cloudflare-api` está exposto e listar contas, zona, Workers, Pages e bindings sem mutações; depois seguir configuração operacional e validações. Após homologação, retomar integração visual da 3C.1, sem iniciar 3C.2 automaticamente.
+
+**Arquivos e fontes principais:** Guia Mestre V1.1, Dossiê/deltas, este status, `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`, `docs/CENTRAL-DOCUMENTOS-STAGING-OPERACIONAL-V1.md`, builder, laboratório e workflows.
