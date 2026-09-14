@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1e — estabilização da primeira renderização do visualizador próprio PDF.js** mesclada e publicada; aguardando validação real antes da 3C.2.
+Subfase atual: **3C.1e — estabilização da primeira renderização do visualizador próprio PDF.js** publicada, porém **reprovada no reteste real**; diagnóstico/correção permanecem obrigatórios antes da 3C.2.
 
 ## Estado de entrada
 
