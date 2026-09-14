@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1 — visualizador próprio somente leitura + miniaturas** em implementação na branch funcional.
+Subfase atual: **3C.1b — unificar o editor com o visualizador próprio**; validação real encontrou retorno ao iframe nativo no modo de edição.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: **3C.1 — visualizador próprio somente leitura + miniaturas** e
 
 ## Branch / PR
 
-Branch funcional atual: `feat/document-viewer-pdfjs-3c1`.
+Branch atual: `docs/central-docs-3c1-postmerge` (somente consolidação documental pós-merge).
 
-PR funcional atual: ainda não aberto neste registro; implementação 3C.1 em validação antes do PR.
+PR funcional atual: nenhum; PR #161 foi validado e mesclado.
 
 ## Entregas concluídas nesta unidade
 
@@ -411,6 +411,67 @@ Próxima unidade aprovada:
 - reorganização por arrastar e soltar;
 - paste global confiável durante a edição, sem perder o evento para o plugin PDF do navegador.
 
+## Validação real — editor ainda separado do visualizador próprio — 13/09/2026
+
+Evidência do usuário em produção:
+- ao entrar em **Editar PDF**, a metade inferior ainda exibe a barra/viewport do visualizador PDF nativo do navegador dentro do iframe;
+- o editor permanece em um painel separado acima, com a lista textual de páginas e controles ↑/↓/Excluir;
+- portanto a experiência ainda não é um **editor visual único controlado pelo Portal**.
+
+Diagnóstico de código:
+- isso não é cache nem falha de deploy;
+- a implementação 3C.1 substituiu o iframe no fluxo de visualização somente leitura, porém `startEditor()` e `buildEditorPreview()` ainda chamam explicitamente `showIframeViewerSurface()`;
+- essa decisão provisória havia sido registrada como fallback durante 3C.1, mas a validação real mostrou que ela não pode permanecer como fluxo principal do editor;
+- o próprio documento de arquitetura já descarta o iframe nativo como editor principal, porque o Portal não controla miniaturas, DOM interno, drag-and-drop nem clipboard de forma confiável.
+
+Decisão:
+- **3C.1 não será considerada aceita para avanço direto à 3C.2 enquanto o editor continuar voltando ao iframe**;
+- criar a correção **3C.1b — superfície visual unificada do editor**;
+- no modo de edição, a prévia deve ser renderizada no mesmo `PortalPdfViewer`/PDF.js self-hosted usado pela visualização;
+- o iframe ficará somente como fallback automático de compatibilidade quando o PDF.js realmente falhar, nunca como caminho normal;
+- a lista textual separada de páginas deve deixar de ser a superfície principal de edição; as miniaturas visuais serão a base para a próxima unidade de drag-and-drop;
+- nenhuma escrita no Google Drive será adicionada.
+
+Próximo critério de aceite:
+1. abrir PDF;
+2. entrar em **Editar PDF**;
+3. continuar vendo o visualizador próprio do Portal, sem barra nativa do navegador;
+4. atualizar a prévia após excluir/reordenar/unir/adicionar imagem e permanecer na mesma superfície;
+5. iframe só pode aparecer em fallback de erro real;
+6. depois disso iniciar 3C.2 (drag-and-drop das miniaturas).
+
+## 3C.1 validado em CI, mesclado e publicado — 12/09/2026
+
+PR #161:
+- **21/21 workflows do Pull Request concluídos com sucesso**, sem falhas;
+- merge concluído na `main` em `12a86c024a4acf2edffa1e4404589ad001075fa9`;
+- validações pós-merge relevantes concluídas com sucesso: **Central de Documentos — Fases 1–3**, **governança Central de Documentos**, **site**, **gestão de usuários** e **pages build and deployment**;
+- o deploy estático da versão contendo o visualizador próprio foi concluído com sucesso.
+
+Entregue na produção:
+- PDF.js 6.3.289 self-hosted;
+- páginas renderizadas pelo Portal em canvas;
+- trilho de miniaturas próprio;
+- zoom + reset + ajuste à largura;
+- renderização preguiçosa e liberação de canvases distantes;
+- abertura por cache criptografado preservada;
+- caminho progressivo/Range pelo Service Worker preservado;
+- iframe nativo mantido como fallback automático e como prévia temporária do editor;
+- segurança explícita com `enableScripting:false` e `isEvalSupported:false`;
+- nenhuma escrita no Google Drive e nenhuma ampliação da telemetria sensível.
+
+Critério ainda pendente para encerrar 3C.1:
+- validação real pelo usuário em produção, porque os checks automatizados comprovam integridade/código, mas não substituem a verificação visual e de desempenho com PDFs reais no navegador/dispositivo operacional.
+
+Teste real solicitado:
+1. recarregar `/documentos/`;
+2. abrir um PDF;
+3. confirmar que aparece o visualizador do Portal com **miniaturas à esquerda no desktop** (ou trilho horizontal no mobile);
+4. testar **− / percentual / + / Ajustar largura**;
+5. clicar em miniaturas e confirmar navegação;
+6. testar um PDF já aberto anteriormente (cache hit) e um PDF ainda não aberto (miss);
+7. informar qualquer diferença de renderização, lentidão ou queda para o visualizador compatível.
+
 ## Implementação 3C.1 — visualizador próprio + miniaturas — 12/09/2026
 
 Estado desta branch:
@@ -648,11 +709,11 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. abrir PR da unidade 3C.1 e executar a validação automatizada completa;
-2. corrigir qualquer regressão encontrada e exigir checks verdes antes do merge;
-3. após deploy, abrir PDFs reais e confirmar visualizador próprio, miniaturas, zoom, ajuste à largura, rotação e desempenho em cache hit/miss;
-4. confirmar que o fallback nativo continua funcional em caso de incompatibilidade;
-5. registrar a validação real e somente então iniciar **3C.2 — drag-and-drop das páginas**.
+1. validar a 3C.1 em produção com PDF real no desktop e, quando possível, no Android;
+2. confirmar miniaturas, zoom, ajuste à largura, navegação por página e ausência de regressão em cache hit/miss;
+3. se houver incompatibilidade, confirmar que o iframe de fallback mantém a abertura do documento;
+4. registrar resultado, métricas/descobertas e correções necessárias;
+5. somente após o aceite real iniciar **3C.2 — drag-and-drop das páginas**.
 
 ## Arquivos e fontes principais
 
@@ -676,15 +737,14 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase:** 3C.1 — visualizador próprio somente leitura + miniaturas.  
-**Main de entrada da unidade:** `3d737adf1c718b9faac6389d084274c02bc3bb24`.  
-**Branch funcional:** `feat/document-viewer-pdfjs-3c1`.  
-**PR funcional:** ainda não aberto neste registro.  
-**Dependência:** PDF.js 6.3.289 self-hosted em `vendor/pdfjs/` (módulo, worker, CMaps, fontes, WASM, ICCs e licença); workflow temporário de vendor executou com sucesso e já foi removido da branch.  
-**Implementação:** `js/document-viewer.js` + superfície própria em `/documentos/`; thumbnails; canvas por página; zoom/reset/fit width; lazy rendering; liberação de canvas distante; Range/stream existente reutilizado; cache criptografado existente preservado.  
-**Fallback:** iframe nativo continua disponível e a prévia do editor permanece nele durante 3C.1.  
-**Segurança:** `enableScripting:false`, `isEvalSupported:false`, worker local, sem CDN runtime para PDF.js; nenhuma escrita Drive; nenhuma propriedade sensível nova no PostHog.  
-**Decisão do usuário preservada para fases seguintes:** Adicionar imagem = página nova; Colar imagem = overlay selecionado do armazenamento, movível entre páginas e transformável; Ctrl+V = nova página.  
-**Pendências:** checks da branch/PR, merge/deploy e validação real desktop/mobile.  
-**Próxima ação exata:** abrir PR da 3C.1, corrigir qualquer check e mesclar somente com validações verdes; depois validar o visualizador em produção antes de iniciar 3C.2.  
-**Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `vendor/pdfjs/`, `worker/tests/documents-ui.test.mjs`, `.github/workflows/validate-central-documents-phase1.yml`, `docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+**Subfase:** 3C.1b — correção necessária antes da 3C.2: editor deve permanecer na superfície PDF.js própria.  
+**Main funcional:** `12a86c024a4acf2edffa1e4404589ad001075fa9` — PR #161.  
+**PR #161:** 21/21 workflows aprovados e 0 falhas.  
+**Pós-merge:** Central Fases 1–3, governança, site, gestão de usuários e GitHub Pages concluíram com sucesso.  
+**Branch atual:** `docs/central-docs-3c1-postmerge` (consolidação documental).  
+**Entrega:** PDF.js 6.3.289 self-hosted; canvas por página; thumbnails; zoom/reset/fit width; lazy rendering; cache criptografado e Range/stream preservados; iframe fallback.  
+**Segurança:** `enableScripting:false`, `isEvalSupported:false`, worker local, sem CDN runtime de PDF.js, sem escrita Drive e sem conteúdo sensível no PostHog.  
+**Editor:** prévia da edição ainda usa iframe nesta unidade; integração total da superfície de edição fica para 3C.2–3C.5.  
+**Decisão do usuário preservada:** Adicionar imagem = página; Colar imagem = overlay do armazenamento movível/redimensionável/rotacionável; Ctrl+V = nova página.  
+**Pendência crítica:** validação real mostrou que o editor ainda usa iframe nativo como fluxo principal; corrigir antes da 3C.2.  
+**Próxima ação exata:** implementar 3C.1b para `startEditor()`/`buildEditorPreview()` renderizarem no `PortalPdfViewer`; manter iframe somente como fallback e validar em produção antes da 3C.2.
