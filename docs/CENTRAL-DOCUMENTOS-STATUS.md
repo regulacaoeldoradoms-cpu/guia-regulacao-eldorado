@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1b — editor unificado com o visualizador próprio** mesclado na `main`; aguardando nova validação real em produção antes da 3C.2.
+Subfase atual: **3C.1c — eliminar fallback nativo do editor e tornar a prévia gerada compatível com PDF.js**.
 
 ## Estado de entrada
 
@@ -419,6 +419,36 @@ A primeira execução do PR #163 apresentou falhas em workflows amplos por **uma
 - a asserção foi corrigida para refletir a API usada pela implementação;
 - nenhuma lógica do editor, permissão, cache ou Drive foi alterada por essa correção.
 
+## Validação real falhou novamente — editor caiu no modo de compatibilidade — 13/09/2026
+
+Evidência do usuário em produção:
+- após o deploy da 3C.1b, o editor ainda exibiu a lista textual de páginas separada e o PDF no visualizador nativo do navegador;
+- a própria UI informou **“Prévia atualizada em modo de compatibilidade”**, provando que o caminho `showEditorIframeFallback()` foi acionado;
+- portanto 3C.1b não atende ao requisito de um editor controlado integralmente pelo Portal.
+
+Diagnóstico técnico:
+- o fallback ocorreu na **prévia gerada pelo editor**, não por ausência do código novo;
+- `document-editor.js` gerava o PDF intermediário com `pdf-lib 1.17.1` e `useObjectStreams: true`;
+- existe incompatibilidade conhecida nessa versão do pdf-lib para alguns PDFs quando salvos com object streams, enquanto `useObjectStreams: false` evita esse tipo de saída problemática;
+- a velocidade do fallback observada na UI é compatível com falha imediata de abertura/renderização da prévia gerada, e não com timeout de download;
+- o código também ainda permitia que qualquer falha do PDF.js trocasse automaticamente para o iframe, contrariando a decisão de ter controle total do editor.
+
+Decisão aprovada pela nova evidência:
+- criar **3C.1c**;
+- prévias do editor passam a ser geradas com `useObjectStreams: false`;
+- o editor **não pode mais abrir o iframe nativo como fallback**;
+- se o PDF.js falhar, a superfície continua sendo a do Portal e mostra erro controlado, sem separar editor e visualizador;
+- ao sair do editor, a restauração também não deve cair automaticamente no iframe;
+- o fallback nativo geral de visualização somente leitura fica fora desta correção e não será usado pelo editor;
+- nenhuma escrita no Google Drive é adicionada.
+
+Critério de aceite 3C.1c:
+1. entrar em **Editar PDF** e permanecer no PDF.js do Portal;
+2. atualizar a visualização após uma alteração sem aparecer “modo de compatibilidade”;
+3. miniaturas e ações de páginas continuam na mesma superfície;
+4. nenhum iframe nativo é usado durante a sessão de edição;
+5. somente após validação real iniciar 3C.2.
+
 ## Publicação confirmada da correção 3C.1b — 13/09/2026
 
 Evidência de deploy:
@@ -783,10 +813,10 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. recarregar `/documentos/` com recarga forçada, abrir um PDF real e entrar em **Editar PDF**;
-2. confirmar que o editor permanece na superfície PDF.js do Portal, sem toolbar nativa do navegador;
-3. testar mover/excluir pelas miniaturas, unir outro PDF, adicionar imagem, atualizar visualização e sair do editor;
-4. confirmar que o iframe só aparece se o Portal informar modo de compatibilidade;
+1. validar a 3C.1c em CI e mesclar somente com checks verdes;
+2. após deploy, recarregar `/documentos/`, abrir um PDF e entrar em **Editar PDF**;
+3. realizar ao menos uma alteração e atualizar a visualização;
+4. confirmar que o editor permanece no PDF.js do Portal e que não existe mais “modo de compatibilidade”/iframe durante a edição;
 5. registrar o resultado real e somente então iniciar **3C.2 — drag-and-drop das páginas**.
 
 ## Arquivos e fontes principais
@@ -811,11 +841,11 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase:** 3C.1b implementada, mesclada e publicada; aguardando somente reteste real antes da 3C.2.  
+**Subfase:** 3C.1c em implementação — corrigir serialização da prévia e proibir fallback nativo dentro do editor.  
 **Main funcional:** `478f32952b4b2c0cd3294cb249222dc37eef3409` — PR #163.  
 **PR #163:** 21/21 workflows aprovados após corrigir somente uma asserção de teste; 0 falhas finais.  
 **Pós-merge:** 22/22 workflows funcionais disponíveis concluíram com sucesso; depois, `pages build and deployment` também concluiu com sucesso na `main` descendente `6b2b2d8d346fc699bea10acf2e58da2d2d371d88`.  
 **Correção:** `startEditor()` e `buildEditorPreview()` agora usam `PortalPdfViewer`; iframe somente em `showEditorIframeFallback()`; restauração pelo visualizador próprio; ações ↑/↓/excluir integradas às miniaturas.  
 **UI:** lista textual separada fica oculta no fluxo normal e reaparece apenas em modo de compatibilidade.  
 **Segurança:** PDF.js self-hosted, `enableScripting:false`, `isEvalSupported:false`, sem escrita no Drive e sem novos dados sensíveis em observabilidade.  
-**Próxima ação exata:** reproduzir agora o cenário real do editor em `/documentos/` e validar que a toolbar nativa desapareceu; só após aceite iniciar 3C.2.
+**Próxima ação exata:** concluir CI/PR/deploy da 3C.1c e repetir o teste real; o editor deve permanecer exclusivamente na superfície PDF.js do Portal.
