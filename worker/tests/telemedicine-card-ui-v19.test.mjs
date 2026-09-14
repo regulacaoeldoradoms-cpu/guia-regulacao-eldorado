@@ -24,11 +24,11 @@ assert.match(html, /telemedicina-card-hierarchy-v37\.css\?v=20260914-1/);
 assert.match(html, /data-card-hierarchy="v37"/);
 assert.match(html, /data-copy-justification="v20"/);
 assert.match(html, /telemedicina-justification-v20\.js\?v=20260906-1/);
-assert.match(html, /telemedicina\.js\?v=20260914-3/);
+assert.match(html, /telemedicina\.js\?v=20260914-4/);
 assert.match(html, /telemedicina-outcome-v14\.css\?v=20260914-3/);
 assert.match(html, /data-status-correction="v36"/);
 assert.match(html, /telemedicina-mobile-v7\.js\?v=20260905-1/);
-assert.match(html, /telemedicina-mobile-v9\.js\?v=20260905-2/);
+assert.match(html, /telemedicina-mobile-v9\.js\?v=20260914-3/);
 assert.match(html, /telemedicina-edit\.js\?v=20260914-2/);
 
 for (const source of [desktop, mobile]) {
