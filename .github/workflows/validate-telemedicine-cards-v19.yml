@@ -5,6 +5,7 @@ on:
     paths:
       - 'telemedicina/index.html'
       - 'css/telemedicina-cards-v19.css'
+      - 'css/telemedicina-card-hierarchy-v37.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-mobile-v7.js'
       - 'js/telemedicina-mobile-v9.js'
@@ -18,6 +19,7 @@ on:
     paths:
       - 'telemedicina/index.html'
       - 'css/telemedicina-cards-v19.css'
+      - 'css/telemedicina-card-hierarchy-v37.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-mobile-v7.js'
       - 'js/telemedicina-mobile-v9.js'
@@ -40,6 +42,7 @@ jobs:
         run: |
           set -euo pipefail
           test -f css/telemedicina-cards-v19.css
+          test -f css/telemedicina-card-hierarchy-v37.css
           test -f docs/TELEMEDICINA-CARDS-V19.md
           test -f worker/tests/telemedicine-card-ui-v19.test.mjs
           node --check js/telemedicina.js
@@ -51,7 +54,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -R -n -E '\b(CNS|CPF)\b' css/telemedicina-cards-v19.css docs/TELEMEDICINA-CARDS-V19.md worker/tests/telemedicine-card-ui-v19.test.mjs; then
+          if grep -R -n -E '\b(CNS|CPF)\b' css/telemedicina-cards-v19.css css/telemedicina-card-hierarchy-v37.css docs/TELEMEDICINA-CARDS-V19.md worker/tests/telemedicine-card-ui-v19.test.mjs; then
             echo 'A camada visual não deve introduzir identificadores pessoais.' >&2
             exit 1
           fi

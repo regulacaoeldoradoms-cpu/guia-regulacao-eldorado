@@ -9,6 +9,7 @@ on:
       - 'css/telemedicina-mobile-v15.css'
       - 'css/telemedicina-desktop-v16.css'
       - 'css/telemedicina-cards-v19.css'
+      - 'css/telemedicina-card-hierarchy-v37.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-justification-v20.js'
@@ -45,6 +46,7 @@ on:
       - 'css/telemedicina-mobile-v15.css'
       - 'css/telemedicina-desktop-v16.css'
       - 'css/telemedicina-cards-v19.css'
+      - 'css/telemedicina-card-hierarchy-v37.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
       - 'js/telemedicina-justification-v20.js'
@@ -91,6 +93,7 @@ jobs:
           test -f css/telemedicina-mobile-v15.css
           test -f css/telemedicina-desktop-v16.css
           test -f css/telemedicina-cards-v19.css
+          test -f css/telemedicina-card-hierarchy-v37.css
           test -f css/account-admin.css
           test -f js/telemedicina.js
           test -f js/telemedicina-justification-v20.js
