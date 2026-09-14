@@ -322,35 +322,48 @@ async function correctPatientName(env, user, patientId, input = {}) {
   const patient = await firestoreGet(env, `${PATIENTS}/${patientId}`);
   if (!patient) throw Object.assign(new Error('Paciente não encontrado.'), { status: 404 });
 
+  const followupId = clean(input.followupId, 64);
+  if (!followupId) {
+    throw Object.assign(new Error('Atualize a página e tente novamente: o acompanhamento específico não foi informado.'), { status: 400 });
+  }
+
+  const followup = await firestoreGet(env, `${FOLLOWUPS}/${followupId}`);
+  if (!followup || followup.patientId !== patientId) {
+    throw Object.assign(new Error('O acompanhamento selecionado não pertence mais a este cadastro. Atualize a página antes de corrigir.'), { status: 409 });
+  }
+
   const newName = clean(input.name, 160);
   if (newName.length < 3) throw Object.assign(new Error('Informe o nome completo do paciente.'), { status: 400 });
 
-  const oldName = clean(patient.name, 160);
+  const oldName = clean(followup.patientName || patient.name, 160);
   const oldNormalized = normalizePatientName(oldName);
   const newNormalized = normalizePatientName(newName);
   if (!newNormalized) throw Object.assign(new Error('Informe um nome válido.'), { status: 400 });
 
   const targetPatientId = await patientIdFor(newName);
-  if (targetPatientId !== patientId) {
-    const collision = await firestoreGet(env, `${PATIENTS}/${targetPatientId}`);
-    if (collision) {
-      throw Object.assign(new Error('Já existe outro cadastro com esse nome. Abra o histórico antes de corrigir para evitar juntar pacientes diferentes.'), { status: 409 });
-    }
-  }
+  const targetFollowupId = await followupIdFor(targetPatientId, followup.specialty || '');
+  const mergeExisting = input.mergeExisting === true;
 
   const [followups, events] = await Promise.all([listAll(env, FOLLOWUPS), listAll(env, EVENTS)]);
-  const patientFollowups = followups.filter((item) => item.patientId === patientId);
-  const migration = new Map();
+  const targetPatient = targetPatientId === patientId
+    ? patient
+    : await firestoreGet(env, `${PATIENTS}/${targetPatientId}`);
+  const targetFollowup = targetFollowupId === followupId
+    ? followup
+    : followups.find((item) => item.id === targetFollowupId) || null;
 
-  for (const followup of patientFollowups) {
-    const targetFollowupId = await followupIdFor(targetPatientId, followup.specialty || '');
-    if (targetFollowupId !== followup.id) {
-      const collision = await firestoreGet(env, `${FOLLOWUPS}/${targetFollowupId}`);
-      if (collision) {
-        throw Object.assign(new Error('A correção criaria um acompanhamento duplicado para este paciente e especialidade. Revise o histórico antes de continuar.'), { status: 409 });
-      }
-    }
-    migration.set(followup.id, targetFollowupId);
+  if (targetPatientId !== patientId && targetPatient && !mergeExisting) {
+    throw Object.assign(
+      new Error('Já existe um cadastro com esse nome. Confirme para corrigir somente este acompanhamento; se já houver outro card da mesma especialidade, apenas esses dois serão unificados.'),
+      { status: 409, code: 'FOLLOWUP_PATIENT_MERGE_CONFIRMATION_REQUIRED' }
+    );
+  }
+
+  if (targetFollowupId !== followupId && targetFollowup && !mergeExisting) {
+    throw Object.assign(
+      new Error('Já existe outro acompanhamento com esse nome e especialidade. Confirme a unificação somente deste card.'),
+      { status: 409, code: 'FOLLOWUP_PATIENT_MERGE_CONFIRMATION_REQUIRED' }
+    );
   }
 
   const now = new Date().toISOString();
@@ -362,69 +375,108 @@ async function correctPatientName(env, user, patientId, input = {}) {
     correctedBy: user.username
   };
 
-  await upsert(env, PATIENTS, targetPatientId, {
-    ...withoutId(patient),
-    name: newName,
-    normalizedName: newNormalized,
-    needsReview: false,
-    updatedAt: now,
-    correctedAt: now,
-    correctedBy: user.username,
-    correctionHistory: appendCorrectionHistory(patient.correctionHistory, correction)
-  });
+  if (targetPatientId === patientId) {
+    await firestorePatch(env, `${PATIENTS}/${patientId}`, {
+      name: newName,
+      normalizedName: newNormalized,
+      needsReview: false,
+      updatedAt: now,
+      correctedAt: now,
+      correctedBy: user.username,
+      correctionHistory: appendCorrectionHistory(patient.correctionHistory, correction)
+    });
+  } else if (targetPatient) {
+    await firestoreReplace(env, `${PATIENTS}/${targetPatientId}`, {
+      ...withoutId(targetPatient),
+      name: newName,
+      normalizedName: newNormalized,
+      needsReview: false,
+      updatedAt: now,
+      correctedAt: now,
+      correctedBy: user.username,
+      correctionHistory: appendCorrectionHistory(targetPatient.correctionHistory, correction)
+    });
+  } else {
+    await firestoreCreate(env, PATIENTS, targetPatientId, {
+      name: newName,
+      normalizedName: newNormalized,
+      needsReview: false,
+      createdAt: now,
+      updatedAt: now,
+      correctedAt: now,
+      correctedBy: user.username,
+      correctionHistory: [correction]
+    });
+  }
 
-  for (const followup of patientFollowups) {
-    const targetFollowupId = migration.get(followup.id) || followup.id;
+  let merged = false;
+  if (targetFollowupId !== followupId && targetFollowup) {
+    const sourceDeleted = Boolean(followup.deletedAt);
+    const targetDeleted = Boolean(targetFollowup.deletedAt);
+    const current = sourceDeleted !== targetDeleted
+      ? (sourceDeleted ? targetFollowup : followup)
+      : newerFollowup(followup, targetFollowup);
+    const mergedFromFollowups = Array.from(new Set([
+      ...(Array.isArray(targetFollowup.mergedFromFollowups) ? targetFollowup.mergedFromFollowups : []),
+      ...(Array.isArray(followup.mergedFromFollowups) ? followup.mergedFromFollowups : []),
+      followupId
+    ])).filter((id) => id && id !== targetFollowupId).slice(-20);
+
+    await firestoreReplace(env, `${FOLLOWUPS}/${targetFollowupId}`, {
+      ...withoutId(current),
+      patientId: targetPatientId,
+      patientName: newName,
+      specialty: targetFollowup.specialty || followup.specialty,
+      specialtyKey: targetFollowup.specialtyKey || followup.specialtyKey || normalizeSpecialty(followup.specialty || ''),
+      createdAt: earliestCreatedAt(followup, targetFollowup) || String(current?.createdAt || now),
+      updatedAt: now,
+      correctedAt: now,
+      correctedBy: user.username,
+      correctionHistory: mergeCorrectionHistory(targetFollowup.correctionHistory, followup.correctionHistory, correction),
+      mergedFromFollowups
+    });
+    merged = true;
+  } else {
     await upsert(env, FOLLOWUPS, targetFollowupId, {
       ...withoutId(followup),
       patientId: targetPatientId,
       patientName: newName,
       updatedAt: now,
       correctedAt: now,
-      correctedBy: user.username
+      correctedBy: user.username,
+      correctionHistory: appendCorrectionHistory(followup.correctionHistory, correction)
     });
-    if (targetFollowupId !== followup.id) {
-      await firestorePatch(env, `${FOLLOWUPS}/${followup.id}`, {
-        active: false,
-        replacedBy: targetFollowupId,
-        updatedAt: now
-      });
-    }
   }
 
   for (const event of events) {
-    if (event.patientId !== patientId) continue;
-    const patch = {
+    if (event.followupId !== followupId) continue;
+    await firestorePatch(env, `${EVENTS}/${event.id}`, {
       patientId: targetPatientId,
-      patientName: newName
-    };
-    const targetFollowupId = migration.get(event.followupId);
-    if (targetFollowupId) patch.followupId = targetFollowupId;
-    await firestorePatch(env, `${EVENTS}/${event.id}`, patch);
+      patientName: newName,
+      followupId: targetFollowupId
+    });
+  }
+
+  if (targetFollowupId !== followupId) {
+    await firestoreDelete(env, `${FOLLOWUPS}/${followupId}`).catch(() => false);
   }
 
   if (targetPatientId !== patientId) {
-    await firestorePatch(env, `${PATIENTS}/${patientId}`, {
-      active: false,
-      mergedInto: targetPatientId,
-      name: newName,
-      updatedAt: now
-    });
-    for (const followup of patientFollowups) {
-      const targetFollowupId = migration.get(followup.id);
-      if (targetFollowupId && targetFollowupId !== followup.id) {
-        await firestoreDelete(env, `${FOLLOWUPS}/${followup.id}`).catch(() => false);
-      }
+    const otherPatientFollowups = followups.filter((item) => item.patientId === patientId && item.id !== followupId);
+    const otherPatientEvents = events.filter((item) => item.patientId === patientId && item.followupId !== followupId);
+    if (!otherPatientFollowups.length && !otherPatientEvents.length) {
+      await firestoreDelete(env, `${PATIENTS}/${patientId}`).catch(() => false);
     }
-    await firestoreDelete(env, `${PATIENTS}/${patientId}`).catch(() => false);
   }
 
   return {
     patientId: targetPatientId,
+    followupId: targetFollowupId,
     name: newName,
     previousName: oldName,
+    specialty: followup.specialty || '',
     normalizedChanged: oldNormalized !== newNormalized,
-    migratedFollowups: patientFollowups.length,
+    merged,
     correctedAt: now
   };
 }
@@ -781,6 +833,8 @@ export async function handleTelemedicineRoute(request, env, origin, originAllowe
     const fallback = consultationCreate
       ? 'Não foi possível salvar a consulta.'
       : 'Não foi possível corrigir o cadastro.';
-    return json({ error: error?.message || fallback }, Number(error?.status || 500), origin);
+    const payload = { error: error?.message || fallback };
+    if (error?.code) payload.code = String(error.code);
+    return json(payload, Number(error?.status || 500), origin);
   }
 }
