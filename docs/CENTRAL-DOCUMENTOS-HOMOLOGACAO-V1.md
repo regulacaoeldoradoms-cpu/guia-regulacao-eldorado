@@ -67,3 +67,27 @@ O ambiente de homologação não substitui os critérios do Guia Mestre. Ele acr
 `branch -> testes unitários/estáticos -> Playwright -> preview/homologação -> PR -> main -> produção`
 
 A 3C.2 continua bloqueada até a 3C.1 ser corrigida e validada.
+
+
+## Resultado do primeiro ciclo automatizado — 14/09/2026
+
+O laboratório já encontrou uma regressão que o CI anterior não detectava:
+
+- o build moderno do PDF.js 6.3.289 falhou no Chromium automatizado com `getOrInsertComputed is not a function`;
+- a falha é compatível com o erro observado pelo usuário em produção;
+- a solução adotada foi usar o build **legacy oficial** da mesma versão 6.3.289, mantendo módulo e worker pareados;
+- o build legacy foi self-hosted em `vendor/pdfjs-legacy/`;
+- os recursos auxiliares da mesma versão permanecem em `vendor/pdfjs/`;
+- não foi adicionado polyfill global ao Portal.
+
+Após a correção, o Playwright passou em desktop e mobile para:
+- Blob local;
+- URL sintética;
+- página 1;
+- miniatura;
+- zoom;
+- Ajustar largura;
+- navegação por miniatura;
+- callback de primeira página visível.
+
+Isso cria um baseline automatizado antes do futuro staging Cloudflare.
