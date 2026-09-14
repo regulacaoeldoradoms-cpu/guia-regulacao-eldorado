@@ -400,7 +400,11 @@
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #7ca8c2 transparent;
+  padding-right: 26px;
 }
 
 
