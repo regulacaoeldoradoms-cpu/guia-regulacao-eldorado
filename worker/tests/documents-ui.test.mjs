@@ -10,7 +10,7 @@ test('Central usa somente Worker para Drive e delega persistência documental ao
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
 
-  assert.match(html, /frame-src 'self' blob:/);
+  assert.doesNotMatch(html, /frame-src/);
   assert.match(html, /Somente leitura/);
   assert.match(client, /\/api\/documents\/drive\/list/);
   assert.match(client, /\/api\/documents\/drive\/search/);
@@ -114,7 +114,8 @@ test('cache local criptografa PDFs, limita tamanho e invalida por versão', () =
   assert.match(client, /storeCachedPdf/);
   assert.match(client, /warmPdfCache/);
   assert.match(client, /scheduleLikelyPdfWarmup/);
-  assert.match(client, /'hit', false, 'cache'/);
+  assert.match(client, /cacheState: 'hit'/);
+  assert.match(client, /sourceLabel: 'cache'/);
   assert.match(client, /source: 'cache'|source,?/);
 });
 
