@@ -411,6 +411,14 @@ Próxima unidade aprovada:
 - reorganização por arrastar e soltar;
 - paste global confiável durante a edição, sem perder o evento para o plugin PDF do navegador.
 
+### Correção de CI — 13/09/2026
+
+A primeira execução do PR #163 apresentou falhas em workflows amplos por **uma única asserção incorreta do teste novo**, não por regressão funcional:
+- o teste procurava `data.thumbnailAction`;
+- o código real e correto usa a propriedade DOM `dataset.thumbnailAction`;
+- a asserção foi corrigida para refletir a API usada pela implementação;
+- nenhuma lógica do editor, permissão, cache ou Drive foi alterada por essa correção.
+
 ## Implementação 3C.1b — superfície visual unificada do editor — 13/09/2026
 
 Implementado na branch `fix/document-editor-unified-viewer-3c1b`:
