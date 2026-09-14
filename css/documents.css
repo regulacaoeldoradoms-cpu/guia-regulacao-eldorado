@@ -219,8 +219,6 @@
   background: #f5f9fc;
 }
 .documents-editor-pages-head { display: none; }
-.documents-editor.compatibility-mode .documents-editor-pages-head { display: flex; }
-.documents-editor.compatibility-mode .documents-editor-pages { display: grid; }
 .documents-editor-page {
   display: grid;
   grid-template-columns: minmax(0,1fr) auto;
