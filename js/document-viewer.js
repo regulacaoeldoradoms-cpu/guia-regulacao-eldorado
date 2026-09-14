@@ -65,7 +65,21 @@
 
   function cancelRender(record) {
     try { record?.renderTask?.cancel?.(); } catch (_) {}
-    if (record) record.renderTask = null;
+  }
+
+  async function settleRenderTask(record, { cancel = false } = {}) {
+    const task = record?.renderTask || null;
+    if (!task) return;
+    if (cancel) {
+      try { task.cancel?.(); } catch (_) {}
+    }
+    try {
+      await task.promise;
+    } catch (error) {
+      if (error?.name !== 'RenderingCancelledException') throw error;
+    } finally {
+      if (record?.renderTask === task) record.renderTask = null;
+    }
   }
 
   function clearRenderedPage(record) {
@@ -132,6 +146,8 @@
       loading,
       page: null,
       renderTask: null,
+      pendingScale: 0,
+      pendingGeneration: 0,
       renderedScale: 0,
       renderGeneration: 0
     };
@@ -232,10 +248,19 @@
     const scale = session.scale;
     if (!force && record.renderedScale === scale && record.renderGeneration === generation && record.canvas.width > 0) return;
 
+    if (record.renderTask) {
+      const sameRender = record.pendingScale === scale && record.pendingGeneration === generation;
+      if (!force && sameRender) {
+        await settleRenderTask(record);
+        return;
+      }
+      await settleRenderTask(record, { cancel: true });
+      if (session.closed || generation !== session.generation) return;
+    }
+
     const page = await getPage(session, pageNumber);
     if (!page || session.closed || generation !== session.generation) return;
 
-    cancelRender(record);
     const viewport = page.getViewport({ scale });
     const outputScale = safeCanvasScale(viewport);
     const pixelWidth = Math.max(1, Math.floor(viewport.width * outputScale));
@@ -248,25 +273,25 @@
     record.canvas.style.width = '100%';
     record.canvas.style.height = '100%';
 
-    const context = record.canvas.getContext('2d', { alpha: false, desynchronized: true });
-    if (!context) throw new Error('Canvas do visualizador indisponível.');
-
     const transform = outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0];
     record.loading.hidden = false;
-    record.renderTask = page.render({
-      canvasContext: context,
+    const task = page.render({
+      canvas: record.canvas,
       viewport,
       transform,
       intent: 'display'
     });
+    record.renderTask = task;
+    record.pendingScale = scale;
+    record.pendingGeneration = generation;
 
     try {
-      await record.renderTask.promise;
+      await task.promise;
     } catch (error) {
       if (error?.name === 'RenderingCancelledException' || session.closed || generation !== session.generation) return;
       throw error;
     } finally {
-      record.renderTask = null;
+      if (record.renderTask === task) record.renderTask = null;
     }
 
     if (session.closed || generation !== session.generation) return;
@@ -303,6 +328,10 @@
   async function renderThumbnail(session, pageNumber) {
     const record = session.thumbs.get(pageNumber);
     if (!record || record.rendered || session.closed) return;
+    if (record.renderTask) {
+      await settleRenderTask(record);
+      return;
+    }
 
     const page = await getPage(session, pageNumber);
     if (!page || session.closed) return;
@@ -317,19 +346,17 @@
     record.canvas.style.width = `${Math.ceil(viewport.width)}px`;
     record.canvas.style.height = `${Math.ceil(viewport.height)}px`;
 
-    const context = record.canvas.getContext('2d', { alpha: false });
-    if (!context) return;
     const transform = outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0];
-
-    record.renderTask = page.render({
-      canvasContext: context,
+    const task = page.render({
+      canvas: record.canvas,
       viewport,
       transform,
       intent: 'display'
     });
+    record.renderTask = task;
 
     try {
-      await record.renderTask.promise;
+      await task.promise;
       if (!session.closed) {
         record.rendered = true;
         record.button.classList.add('rendered');
@@ -337,7 +364,7 @@
     } catch (error) {
       if (error?.name !== 'RenderingCancelledException' && !session.closed) throw error;
     } finally {
-      record.renderTask = null;
+      if (record.renderTask === task) record.renderTask = null;
     }
   }
 
@@ -577,7 +604,6 @@
       session.scale = await calculateFitScale(session);
       if (zoomLabel) zoomLabel.textContent = `${Math.round(session.scale * 100)}%`;
 
-      installObservers(session);
       session.visiblePages.add(1);
       await Promise.all([
         renderMainPage(session, 1, { force: true }),
@@ -585,6 +611,7 @@
       ]);
 
       if (session.closed || active !== session) return null;
+      installObservers(session);
 
       if (typeof ResizeObserver === 'function') {
         session.resizeObserver = new ResizeObserver(() => {
@@ -625,6 +652,6 @@
     scrollToPage,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-phase3c1`
+    version: `pdfjs-${PDFJS_VERSION}-phase3c1e`
   });
 })();

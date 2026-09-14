@@ -143,7 +143,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<iframe|frame-src/);
-  assert.match(html, /document-viewer\.js\?v=20260913-1/);
+  assert.match(html, /document-viewer\.js\?v=20260913-2/);
   assert.match(html, /documents\.js\?v=20260913-3/);
   assert.match(html, /documents\.css\?v=20260913-2/);
 
@@ -158,6 +158,10 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(viewer, /iccUrl:\s*ICC_URL/);
   assert.match(viewer, /IntersectionObserver/);
   assert.match(viewer, /MAX_CANVAS_PIXELS/);
+  assert.match(viewer, /async function settleRenderTask/);
+  assert.match(viewer, /canvas:\s*record\.canvas/);
+  assert.doesNotMatch(viewer, /canvasContext:\s*context/);
+  assert.match(viewer, /if \(record\.renderTask === task\) record\.renderTask = null/);
   assert.doesNotMatch(viewer, /cdn\.jsdelivr\.net|unpkg\.com|googleapis\.com/);
 
   assert.ok(fs.statSync(path.join(root, 'vendor/pdfjs/pdf.min.mjs')).size > 100_000);
@@ -173,6 +177,16 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(client, /pdfReadyEmitted/);
 });
 
+test('observadores entram somente depois da primeira renderização do PDF.js', () => {
+  const viewer = read('js/document-viewer.js');
+  const firstRender = viewer.indexOf('await Promise.all([');
+  const observers = viewer.indexOf('installObservers(session);', firstRender);
+  assert.ok(firstRender >= 0);
+  assert.ok(observers > firstRender);
+  assert.match(viewer, /if \(!force && sameRender\) \{\s*await settleRenderTask\(record\);\s*return;/s);
+});
+
+
 test('editor permanece no visualizador próprio e não usa iframe nativo como fallback', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
@@ -181,7 +195,7 @@ test('editor permanece no visualizador próprio e não usa iframe nativo como fa
   const css = read('css/documents.css');
 
   assert.match(html, /editorPreviewButton"[^>]*>Atualizar visualização<\/button>/);
-  assert.match(html, /document-viewer\.js\?v=20260913-1/);
+  assert.match(html, /document-viewer\.js\?v=20260913-2/);
   assert.match(html, /documents\.js\?v=20260913-3/);
   assert.match(html, /documents\.css\?v=20260913-2/);
 
