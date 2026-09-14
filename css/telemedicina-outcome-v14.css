@@ -402,3 +402,18 @@
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
+
+
+#outcomeEditModal .telemedicine-modal.compact {
+  width: min(760px, calc(100vw - 32px));
+}
+#outcomeEditModal .portal-modal-header {
+  border-bottom: 1px solid #cfe0e9;
+  background: #edf8fb;
+}
+#outcomeEditModal #outcomeEditMode {
+  min-height: 60px;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 850;
+}
