@@ -8,6 +8,7 @@ const read = (relativePath) => fs.readFileSync(path.join(repositoryRoot, relativ
 
 const html = read('telemedicina/index.html');
 const css = read('css/telemedicina-cards-v19.css');
+const outcomeCss = read('css/telemedicina-outcome-v14.css');
 const desktop = read('js/telemedicina.js');
 const mobile = read('js/telemedicina-mobile-v9.js');
 const justification = read('js/telemedicina-justification-v20.js');
@@ -20,7 +21,9 @@ assert.match(html, /telemedicina-cards-v19\.css\?v=20260905-4/);
 assert.match(html, /data-followup-cards="v19"/);
 assert.match(html, /data-copy-justification="v20"/);
 assert.match(html, /telemedicina-justification-v20\.js\?v=20260906-1/);
-assert.match(html, /telemedicina\.js\?v=20260906-1/);
+assert.match(html, /telemedicina\.js\?v=20260914-2/);
+assert.match(html, /telemedicina-outcome-v14\.css\?v=20260914-2/);
+assert.match(html, /data-status-correction="v36"/);
 assert.match(html, /telemedicina-mobile-v7\.js\?v=20260905-1/);
 assert.match(html, /telemedicina-mobile-v9\.js\?v=20260905-2/);
 assert.match(html, /telemedicina-edit\.js\?v=20260905-1/);
@@ -43,6 +46,19 @@ assert.match(viewSwitch, /if \(view === 'list'\) return 'Lista'/);
 assert.doesNotMatch(viewSwitch, /[☰▦]/u);
 assert.match(edit, /stroke="currentColor"/);
 assert.match(edit, /stroke-linecap="round"/);
+
+assert.match(desktop, /name="outcomeEditChoice" value="discharge"/);
+assert.match(desktop, /name="outcomeEditChoice" value="scheduled"/);
+assert.match(desktop, /name="outcomeEditChoice" value="conditional"/);
+assert.match(desktop, /name="outcomeEditChoice" value="absence"/);
+assert.match(desktop, /tm-outcome-edit-modal/);
+assert.match(desktop, /tm-outcome-edit-body/);
+assert.match(outcomeCss, /#outcomeEditModal \.tm-outcome-edit-body/);
+assert.match(outcomeCss, /overflow-y:\s*auto/);
+assert.match(outcomeCss, /scrollbar-gutter:\s*stable/);
+assert.match(outcomeCss, /\.tm-outcome-edit-choice-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,/);
+assert.match(outcomeCss, /\.telemedicine-choice\.absence/);
+assert.match(outcomeCss, /tm-outcome-edit-preview\[data-mode="discharge"\]/);
 
 for (const state of ['em-aguardo', 'solicitar', 'atrasado', 'sem-programacao', 'solicitado']) {
   assert.ok(css.includes(`[data-status="${state}"]`), `Atmosfera ausente para ${state}`);
