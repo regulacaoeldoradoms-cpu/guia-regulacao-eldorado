@@ -340,7 +340,6 @@
     }
 
     showCustomViewerSurface();
-    els.editor?.classList.remove('compatibility-mode');
     els.viewerState.className = 'documents-viewer-state';
     els.viewerState.textContent = initial
       ? 'Preparando editor visual do Portal…'
@@ -428,7 +427,6 @@
     state.editorSession = null;
     if (els.editor) {
       els.editor.hidden = true;
-      els.editor.classList.remove('compatibility-mode');
     }
     if (els.viewerModeLabel) els.viewerModeLabel.textContent = 'Visualização';
     if (els.editPdf) els.editPdf.hidden = !(canEditDocuments() && state.pdfItem);
@@ -528,7 +526,6 @@
       });
       state.editorSession = session;
       els.editor.hidden = false;
-      els.editor.classList.remove('compatibility-mode');
       els.viewerModeLabel.textContent = 'Editor PDF';
       els.editPdf.hidden = true;
       renderEditorPages();
