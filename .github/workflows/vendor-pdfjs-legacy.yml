@@ -1,0 +1,52 @@
+name: Vendorizar PDF.js legacy 6.3.289
+
+on:
+  push:
+    branches:
+      - infra/central-docs-browser-lab
+    paths:
+      - '.github/workflows/vendor-pdfjs-legacy.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout da branch
+        uses: actions/checkout@v4
+        with:
+          ref: infra/central-docs-browser-lab
+
+      - name: Instalar distribuição oficial fixada
+        run: |
+          set -euo pipefail
+          npm install --no-save --ignore-scripts --no-audit --no-fund pdfjs-dist@6.3.289
+          test -s node_modules/pdfjs-dist/legacy/build/pdf.min.mjs
+          test -s node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs
+          test -s node_modules/pdfjs-dist/LICENSE
+
+      - name: Copiar somente os módulos legacy necessários
+        run: |
+          set -euo pipefail
+          mkdir -p vendor/pdfjs-legacy
+          cp node_modules/pdfjs-dist/legacy/build/pdf.min.mjs vendor/pdfjs-legacy/pdf.min.mjs
+          cp node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs vendor/pdfjs-legacy/pdf.worker.min.mjs
+          cp node_modules/pdfjs-dist/LICENSE vendor/pdfjs-legacy/LICENSE
+          grep -q '6.3.289' vendor/pdfjs-legacy/pdf.min.mjs
+          grep -q '6.3.289' vendor/pdfjs-legacy/pdf.worker.min.mjs
+
+      - name: Registrar assets vendorizados na branch
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vendor/pdfjs-legacy
+          if git diff --cached --quiet; then
+            echo "Assets legacy já estão atualizados."
+            exit 0
+          fi
+          git commit -m "Vendorizar PDF.js legacy 6.3.289"
+          git push origin HEAD:infra/central-docs-browser-lab
