@@ -510,6 +510,23 @@
     openOutcomeEditor(item);
   }, true);
 
+  const outcomeActionObserver = new MutationObserver(() => {
+    listEl.querySelectorAll('[data-followup-row]').forEach((row) => {
+      if (row.querySelector('[data-action="change-outcome"]')) return;
+      const actions = row.querySelector('.telemedicine-actions');
+      if (!actions || !row.dataset.followupRow) return;
+      const button = document.createElement('button');
+      button.className = 'portal-button secondary';
+      button.type = 'button';
+      button.dataset.action = 'change-outcome';
+      button.dataset.followup = row.dataset.followupRow;
+      button.textContent = 'Alterar situação';
+      actions.appendChild(button);
+      actions.dataset.actionCount = String(actions.querySelectorAll('[data-action]').length);
+    });
+  });
+  outcomeActionObserver.observe(listEl, { childList: true, subtree: true });
+
   listEl.addEventListener('click', (event) => {
     const button = event.target.closest('[data-action]');
     if (!button) return;
