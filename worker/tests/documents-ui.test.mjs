@@ -85,7 +85,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260913-1/);
+  assert.match(html, /documents\.js\?v=20260913-2/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -142,7 +142,7 @@ test('visualizador próprio usa PDF.js self-hosted com segurança e fallback nat
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.match(html, /document-viewer\.js\?v=20260913-1/);
-  assert.match(html, /documents\.js\?v=20260913-1/);
+  assert.match(html, /documents\.js\?v=20260913-2/);
   assert.match(html, /documents\.css\?v=20260913-1/);
   assert.match(html, /id="documentsPdfFrame"[^>]*hidden/);
 
@@ -170,7 +170,7 @@ test('visualizador próprio usa PDF.js self-hosted com segurança e fallback nat
   assert.match(client, /pdfReadyEmitted/);
 });
 
-test('editor usa visualizador próprio como fluxo principal e iframe apenas como fallback', () => {
+test('editor permanece no visualizador próprio e não usa iframe nativo como fallback', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
   const viewer = read('js/document-viewer.js');
@@ -178,7 +178,7 @@ test('editor usa visualizador próprio como fluxo principal e iframe apenas como
 
   assert.match(html, /editorPreviewButton"[^>]*>Atualizar visualização<\/button>/);
   assert.match(html, /document-viewer\.js\?v=20260913-1/);
-  assert.match(html, /documents\.js\?v=20260913-1/);
+  assert.match(html, /documents\.js\?v=20260913-2/);
   assert.match(html, /documents\.css\?v=20260913-1/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -187,6 +187,10 @@ test('editor usa visualizador próprio como fluxo principal e iframe apenas como
   assert.match(client, /showEditorIframeFallback/);
   assert.match(client, /await openEditorWithPortalViewer\(blob/);
   assert.match(client, /restoreOriginalPortalViewer/);
+  assert.match(client, /showEditorPortalFailure/);
+  assert.doesNotMatch(client, /showEditorIframeFallback/);
+  assert.doesNotMatch(client, /modo de compatibilidade/);
+  assert.match(editor, /useObjectStreams:\s*false/);
 
   assert.match(viewer, /thumbnailActions = false/);
   assert.match(viewer, /onThumbnailAction = null/);
@@ -220,8 +224,8 @@ test('editor aceita imagens e Ctrl+V como novas páginas', () => {
 
   assert.match(html, /id="editorImageButton"[^>]*>Adicionar imagem<\/button>/);
   assert.match(html, /Ctrl\+V/);
-  assert.match(html, /document-editor\.js\?v=20260912-2/);
-  assert.match(html, /documents\.js\?v=20260913-1/);
+  assert.match(html, /document-editor\.js\?v=20260913-2/);
+  assert.match(html, /documents\.js\?v=20260913-2/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /clipboardData/);
   assert.match(client, /addImageBlobToEditor/);
@@ -237,7 +241,7 @@ test('editor PDF é local, reversível e separado da escrita no Drive', () => {
   const client = read('js/documents.js');
   const editor = read('js/document-editor.js');
 
-  assert.match(html, /document-editor\.js\?v=20260912-2/);
+  assert.match(html, /document-editor\.js\?v=20260913-2/);
   assert.match(html, /Editar PDF/);
   assert.match(html, /As alterações ainda não serão salvas no Google Drive/);
   assert.match(html, /cdn\.jsdelivr\.net/);
