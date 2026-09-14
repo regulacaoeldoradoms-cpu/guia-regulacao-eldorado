@@ -20,3 +20,6 @@ worker/node_modules/
 Thumbs.db
 .vscode/
 .idea/
+
+# Artefato gerado do staging documental
+dist-staging/
