@@ -387,3 +387,103 @@
     background-clip: padding-box;
   }
 }
+
+
+/* Telemedicina V36 - editor visual de situacao e rolagem interna */
+#outcomeEditModal .telemedicine-modal {
+  width: min(900px, calc(100vw - 32px));
+  max-height: min(90vh, 820px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#outcomeEditModal .portal-modal-header {
+  flex: 0 0 auto;
+  border-bottom: 1px solid #cfe0e9;
+  background: linear-gradient(135deg, #edf8fb, #e5f2f8);
+}
+#outcomeEditModal .tm-outcome-edit-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #7ca8c2 transparent;
+  padding-right: 26px;
+}
+#outcomeEditModal .tm-outcome-edit-body::-webkit-scrollbar { width: 10px; }
+#outcomeEditModal .tm-outcome-edit-body::-webkit-scrollbar-track { background: transparent; }
+#outcomeEditModal .tm-outcome-edit-body::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: #7ca8c2;
+  background-clip: padding-box;
+}
+#outcomeEditModal .tm-outcome-edit-choice-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+#outcomeEditModal .telemedicine-choice.absence {
+  --choice-accent: #bc4352;
+  --choice-border: #e9bcc3;
+  --choice-bg: #fff0f2;
+}
+#outcomeEditModal .tm-outcome-edit-panel {
+  padding: 15px;
+  border-radius: 15px;
+}
+#outcomeEditModal #outcomeEditScheduled {
+  border: 1px solid #c8dfed;
+  background: linear-gradient(135deg, #edf7fc, #f6fbfe);
+}
+#outcomeEditModal #outcomeEditConditional {
+  border: 1px solid #ead5a6;
+  background: linear-gradient(135deg, #fff7e4, #fffbf1);
+}
+#outcomeEditModal #outcomeEditAbsence {
+  border: 1px solid #e9bcc3;
+  background: linear-gradient(135deg, #fff1f2, #fff8f8);
+}
+#outcomeEditModal #outcomeEditConditional[hidden],
+#outcomeEditModal #outcomeEditScheduled[hidden],
+#outcomeEditModal #outcomeEditAbsence[hidden] { display: none !important; }
+#outcomeEditModal .tm-outcome-edit-ready {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 11px 13px;
+  border: 1px solid #dcc68f;
+  border-radius: 12px;
+  background: #fffaf0;
+  color: #624b1a;
+  font-weight: 850;
+}
+#outcomeEditModal .tm-outcome-edit-ready input { width: 20px; height: 20px; }
+#outcomeEditModal .tm-outcome-edit-note {
+  padding: 14px;
+  border: 1px solid #d7e2e9;
+  border-radius: 14px;
+  background: #f8fbfc;
+}
+#outcomeEditModal .tm-outcome-edit-preview { border-radius: 14px; font-weight: 700; line-height: 1.4; }
+#outcomeEditModal .tm-outcome-edit-preview[data-mode="discharge"] { border-color:#b8ddcf; background:#edf9f4; color:#236b5b; }
+#outcomeEditModal .tm-outcome-edit-preview[data-mode="scheduled"] { border-color:#bedbeb; background:#edf7fc; color:#2d6384; }
+#outcomeEditModal .tm-outcome-edit-preview[data-mode="conditional"] { border-color:#ead39f; background:#fff8e7; color:#74551a; }
+#outcomeEditModal .tm-outcome-edit-preview[data-mode="absence"] { border-color:#e9bcc3; background:#fff2f3; color:#8d3440; }
+#outcomeEditModal .tm-outcome-edit-actions .portal-button { min-height: 48px; }
+
+@media (max-width: 720px), (pointer: coarse) and (max-device-width: 900px) {
+  #outcomeEditModal .telemedicine-modal {
+    width: 100%;
+    max-height: 92dvh;
+    border-radius: 20px 20px 0 0;
+  }
+  #outcomeEditModal .tm-outcome-edit-choice-grid { grid-template-columns: 1fr; }
+  #outcomeEditModal .tm-outcome-edit-body {
+    padding-right: 18px;
+    padding-bottom: calc(22px + env(safe-area-inset-bottom));
+  }
+}
