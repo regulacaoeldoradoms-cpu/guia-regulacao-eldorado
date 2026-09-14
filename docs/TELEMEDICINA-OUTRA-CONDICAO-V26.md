@@ -66,3 +66,8 @@ A camada também remove do DOM o bloco visual antigo de detalhe da condição, m
 - `js/telemedicina-condition-other-v26.js`;
 - `.github/workflows/validate-telemedicine-condition-other-v26.yml`;
 - `docs/TELEMEDICINA-OUTRA-CONDICAO-V26.md`.
+
+
+### Alinhamento com Alterar situacao V38
+
+Em 14/09/2026, a mesma decisao passou a valer na janela **Alterar situacao**: nao existe campo visual separado para detalhar a condicao. Qualquer informacao complementar deve ser registrada em **Observacao da correcao**. O marcador **Ja realizado** continua determinando a transicao para **Solicitar agora**.
