@@ -316,17 +316,139 @@
     });
   }
 
+  function setEditorCompatibilityMode(enabled) {
+    els.editor?.classList.toggle('compatibility-mode', enabled === true);
+  }
+
+  function showEditorIframeFallback(fallbackUrl, { seq, started, initial = false } = {}) {
+    if (!fallbackUrl || seq !== state.editorBuildSeq || !state.editorSession) return false;
+    showIframeViewerSurface();
+    setEditorCompatibilityMode(true);
+    els.viewerState.className = 'documents-viewer-state';
+    els.viewerState.textContent = 'Visualizador próprio indisponível. Usando modo de compatibilidade…';
+    els.frame.addEventListener('load', () => {
+      if (seq !== state.editorBuildSeq || !state.editorSession) return;
+      els.viewerState.className = 'documents-viewer-state ready';
+      setEditorStatus(
+        initial
+          ? 'Editor aberto em modo de compatibilidade. Os controles de páginas foram exibidos separadamente.'
+          : `Prévia atualizada em modo de compatibilidade em ${duration(started)} ms.`,
+        'warning'
+      );
+    }, { once: true });
+    els.frame.src = fallbackUrl;
+    return true;
+  }
+
+  async function openEditorWithPortalViewer(blob, { seq, started, initial = false, fallbackUrl = '' } = {}) {
+    const viewer = window.PortalPdfViewer;
+    const session = state.editorSession;
+    if (!session || seq !== state.editorBuildSeq) return false;
+
+    const fallback = () => showEditorIframeFallback(fallbackUrl, { seq, started, initial });
+    if (!viewer?.open || viewer.supported?.() === false) return fallback();
+
+    showCustomViewerSurface();
+    setEditorCompatibilityMode(false);
+    els.viewerState.className = 'documents-viewer-state';
+    els.viewerState.textContent = initial
+      ? 'Preparando editor visual do Portal…'
+      : 'Atualizando visualização editada…';
+
+    let pageFallbackStarted = false;
+    try {
+      await viewer.open(blob, {
+        root: els.customViewer,
+        scrollRoot: els.pdfPageScroll,
+        pagesRoot: els.pdfPages,
+        thumbnailsRoot: els.pdfThumbnails,
+        zoomLabel: els.pdfZoomLabel,
+        pageCountLabel: els.pdfPageCountLabel,
+        thumbnailActions: true,
+        onThumbnailAction: (action, pageIndex) => {
+          if (session !== state.editorSession || seq !== state.editorBuildSeq) return;
+          applyEditorOperation(action, pageIndex);
+        },
+        onReady: () => {
+          if (session !== state.editorSession || seq !== state.editorBuildSeq) return;
+          els.viewerState.className = 'documents-viewer-state ready';
+          setEditorStatus(
+            initial
+              ? 'Editor visual pronto. As miniaturas do Portal agora controlam as páginas; alterações continuam locais e reversíveis.'
+              : `Visualização editada atualizada em ${duration(started)} ms.`,
+            'success'
+          );
+        },
+        onError: () => {
+          if (pageFallbackStarted || session !== state.editorSession || seq !== state.editorBuildSeq) return;
+          pageFallbackStarted = true;
+          fallback();
+        }
+      });
+
+      if (session !== state.editorSession || seq !== state.editorBuildSeq) {
+        viewer.close?.();
+        return false;
+      }
+      return true;
+    } catch (_) {
+      viewer.close?.();
+      if (session !== state.editorSession || seq !== state.editorBuildSeq) return false;
+      return fallback();
+    }
+  }
+
+  async function restoreOriginalPortalViewer() {
+    const viewer = window.PortalPdfViewer;
+    const url = state.pdfObjectUrl;
+    const openId = state.pdfOpenId;
+    if (!url || !state.pdfItem) return false;
+
+    if (viewer?.open && viewer.supported?.() !== false) {
+      showCustomViewerSurface();
+      try {
+        await viewer.open({ url }, {
+          root: els.customViewer,
+          scrollRoot: els.pdfPageScroll,
+          pagesRoot: els.pdfPages,
+          thumbnailsRoot: els.pdfThumbnails,
+          zoomLabel: els.pdfZoomLabel,
+          pageCountLabel: els.pdfPageCountLabel,
+          onReady: () => {
+            if (openId !== state.pdfOpenId || state.editorSession) return;
+            els.viewerState.className = 'documents-viewer-state ready';
+          }
+        });
+        if (openId === state.pdfOpenId && !state.editorSession) return true;
+      } catch (_) {
+        viewer.close?.();
+      }
+    }
+
+    if (openId !== state.pdfOpenId || state.editorSession) return false;
+    showIframeViewerSurface();
+    els.frame.src = url;
+    return false;
+  }
+
   function resetEditorState({ restoreOriginal = false } = {}) {
     clearEditorPreview();
     state.editorSession = null;
-    if (els.editor) els.editor.hidden = true;
+    if (els.editor) {
+      els.editor.hidden = true;
+      els.editor.classList.remove('compatibility-mode');
+    }
     if (els.viewerModeLabel) els.viewerModeLabel.textContent = 'Visualização';
     if (els.editPdf) els.editPdf.hidden = !(canEditDocuments() && state.pdfItem);
     setEditorStatus('');
     refreshPdfListActions();
     if (restoreOriginal && state.pdfObjectUrl) {
-      showIframeViewerSurface();
-      els.frame.src = state.pdfObjectUrl;
+      restoreOriginalPortalViewer().catch(() => {
+        if (!state.editorSession && state.pdfObjectUrl) {
+          showIframeViewerSurface();
+          els.frame.src = state.pdfObjectUrl;
+        }
+      });
     }
   }
 
@@ -364,7 +486,7 @@
 
     const seq = ++state.editorBuildSeq;
     els.editorPreview.disabled = true;
-    setEditorStatus(explicit ? 'Gerando prévia local…' : 'Atualizando prévia…');
+    setEditorStatus(explicit ? 'Gerando visualização local…' : 'Atualizando visualização…');
     const started = performance.now();
 
     try {
@@ -372,17 +494,14 @@
       if (seq !== state.editorBuildSeq || session !== state.editorSession) return;
       if (state.editorPreviewUrl) URL.revokeObjectURL(state.editorPreviewUrl);
       state.editorPreviewUrl = URL.createObjectURL(blob);
-      showIframeViewerSurface();
-      els.viewerState.className = 'documents-viewer-state';
-      els.viewerState.textContent = 'Carregando prévia editada…';
-      els.frame.addEventListener('load', () => {
-        if (seq !== state.editorBuildSeq) return;
-        els.viewerState.className = 'documents-viewer-state ready';
-        setEditorStatus(`Prévia local pronta em ${duration(started)} ms.`, 'success');
-      }, { once: true });
-      els.frame.src = state.editorPreviewUrl;
+      await openEditorWithPortalViewer(blob, {
+        seq,
+        started,
+        initial: false,
+        fallbackUrl: state.editorPreviewUrl
+      });
     } catch (error) {
-      setEditorStatus(error.message || 'Não foi possível gerar a prévia.', 'warning');
+      setEditorStatus(error.message || 'Não foi possível atualizar a visualização.', 'warning');
     } finally {
       if (seq === state.editorBuildSeq) els.editorPreview.disabled = false;
     }
@@ -405,26 +524,32 @@
 
     els.editPdf.disabled = true;
     els.viewerState.className = 'documents-viewer-state';
-    els.viewerState.textContent = 'Preparando editor local…';
+    els.viewerState.textContent = 'Preparando editor visual…';
 
     try {
       releaseProgressiveStream();
       const blob = await editablePdfBlob(state.pdfItem);
       if (!state.pdfObjectUrl) state.pdfObjectUrl = URL.createObjectURL(blob);
-      showIframeViewerSurface();
-      els.frame.src = state.pdfObjectUrl;
       const session = await window.PortalPdfEditor.createSession(blob, {
         label: 'Documento inicial',
         cacheIdentity: itemCacheIdentity(state.pdfItem)
       });
       state.editorSession = session;
       els.editor.hidden = false;
+      els.editor.classList.remove('compatibility-mode');
       els.viewerModeLabel.textContent = 'Editor PDF';
       els.editPdf.hidden = true;
-      els.viewerState.className = 'documents-viewer-state ready';
-      setEditorStatus('Editor pronto. Use “Unir outro PDF” para escolher outro documento da lista. Alterações são locais e reversíveis; nada será salvo no Drive nesta fase.', 'success');
       renderEditorPages();
       refreshPdfListActions();
+
+      const seq = ++state.editorBuildSeq;
+      await openEditorWithPortalViewer(blob, {
+        seq,
+        started: performance.now(),
+        initial: true,
+        fallbackUrl: state.pdfObjectUrl
+      });
+
       els.editor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (error) {
       els.viewerState.className = 'documents-viewer-state ready';
