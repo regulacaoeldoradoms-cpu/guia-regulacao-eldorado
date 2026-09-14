@@ -1,0 +1,60 @@
+name: Validar Central de Documentos — navegador
+
+on:
+  pull_request:
+    paths:
+      - 'js/document-viewer.js'
+      - 'css/documents.css'
+      - 'vendor/pdfjs/**'
+      - 'testing/central-docs/**'
+      - 'testing/browser/**'
+      - '.github/workflows/validate-central-documents-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  playwright:
+    name: PDF.js real em Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar Playwright
+        working-directory: testing/browser
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Validar assets self-hosted do PDF.js
+        run: |
+          test -s vendor/pdfjs/pdf.min.mjs
+          test -s vendor/pdfjs/pdf.worker.min.mjs
+          test -d vendor/pdfjs/cmaps
+          test -d vendor/pdfjs/standard_fonts
+          test -d vendor/pdfjs/wasm
+          test -d vendor/pdfjs/iccs
+
+      - name: Executar testes de navegador
+        working-directory: testing/browser
+        run: npx playwright test
+
+      - name: Publicar diagnóstico em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: central-docs-playwright-diagnostics
+          path: |
+            testing/browser/test-results/
+            testing/browser/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
