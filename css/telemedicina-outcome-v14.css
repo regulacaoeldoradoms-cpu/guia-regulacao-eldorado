@@ -419,3 +419,5 @@
 }
 
 #outcomeEditModal .account-actions .portal-button{min-height:48px}
+
+#outcomeEditModal .telemedicine-form-grid > .portal-field:first-child{padding:16px;border:1px solid #c7dbe7;border-radius:16px;background:#f4f9fc}
