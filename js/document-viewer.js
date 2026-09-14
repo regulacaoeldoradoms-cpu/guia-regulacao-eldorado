@@ -140,6 +140,10 @@
   }
 
   function createThumbnailPlaceholder(session, pageNumber) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'portal-pdf-thumb-wrap';
+    wrapper.dataset.pageNumber = String(pageNumber);
+
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'portal-pdf-thumb';
@@ -154,10 +158,38 @@
     label.textContent = `Página ${pageNumber}`;
 
     button.append(canvas, label);
-    session.thumbnailsRoot.appendChild(button);
+    wrapper.appendChild(button);
+
+    if (session.thumbnailActions) {
+      const actions = document.createElement('div');
+      actions.className = 'portal-pdf-thumb-actions';
+
+      const actionSpecs = [
+        { action: 'up', label: '↑', aria: `Mover página ${pageNumber} para cima`, disabled: pageNumber === 1 },
+        { action: 'down', label: '↓', aria: `Mover página ${pageNumber} para baixo`, disabled: pageNumber === session.document.numPages },
+        { action: 'delete', label: '×', aria: `Excluir página ${pageNumber}`, disabled: session.document.numPages <= 1 }
+      ];
+
+      for (const spec of actionSpecs) {
+        const actionButton = document.createElement('button');
+        actionButton.type = 'button';
+        actionButton.className = `portal-pdf-thumb-action${spec.action === 'delete' ? ' danger' : ''}`;
+        actionButton.dataset.thumbnailAction = spec.action;
+        actionButton.setAttribute('aria-label', spec.aria);
+        actionButton.title = spec.aria;
+        actionButton.textContent = spec.label;
+        actionButton.disabled = spec.disabled;
+        actions.appendChild(actionButton);
+      }
+
+      wrapper.appendChild(actions);
+    }
+
+    session.thumbnailsRoot.appendChild(wrapper);
 
     const record = {
       pageNumber,
+      wrapper,
       button,
       canvas,
       page: null,
@@ -446,6 +478,8 @@
       onReady = null,
       onFirstPageVisible = null,
       onPageChange = null,
+      onThumbnailAction = null,
+      thumbnailActions = false,
       onError = null
     } = options;
 
@@ -465,6 +499,8 @@
       onReady,
       onFirstPageVisible,
       onPageChange,
+      onThumbnailAction,
+      thumbnailActions: thumbnailActions === true,
       onError,
       loadingTask: null,
       document: null,
@@ -522,7 +558,17 @@
       }
 
       thumbnailsRoot.addEventListener('click', session.thumbClick = (event) => {
-        const button = event.target.closest?.('[data-page-number]');
+        const actionButton = event.target.closest?.('[data-thumbnail-action]');
+        if (actionButton) {
+          const wrapper = actionButton.closest?.('.portal-pdf-thumb-wrap');
+          const pageNumber = Number(wrapper?.dataset.pageNumber);
+          if (Number.isInteger(pageNumber) && pageNumber > 0) {
+            session.onThumbnailAction?.(String(actionButton.dataset.thumbnailAction || ''), pageNumber - 1);
+          }
+          return;
+        }
+
+        const button = event.target.closest?.('.portal-pdf-thumb[data-page-number]');
         if (!button) return;
         scrollToPage(Number(button.dataset.pageNumber));
       });
