@@ -500,6 +500,16 @@
     preview.innerHTML = `<strong>Retorno:</strong> ${escapeHtml(formatDate(value))}<br><strong>3 avisos úteis:</strong> ${dates.map(formatDate).join(' · ')}`;
   }
 
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest?.('#followupList [data-action="change-outcome"]');
+    if (!button) return;
+    const item = findFollowup(button.dataset.followup);
+    if (!item) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openOutcomeEditor(item);
+  }, true);
+
   listEl.addEventListener('click', (event) => {
     const button = event.target.closest('[data-action]');
     if (!button) return;
