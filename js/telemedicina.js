@@ -122,6 +122,7 @@
     if (item.status === 'SEM PROGRAMAÇÃO' || item.needsReview) {
       actions.push(`<button class="portal-button secondary" type="button" data-action="schedule" data-followup="${escapeHtml(item.id)}">Programar</button>`);
     }
+    actions.push(`<button class="portal-button secondary" type="button" data-action="change-outcome" data-followup="${escapeHtml(item.id)}">Alterar situação</button>`);
     actions.push(`<button class="portal-button secondary" type="button" data-action="patient" data-patient="${escapeHtml(item.patientId)}">Histórico</button>`);
     return actions;
   }
@@ -244,7 +245,7 @@
       const followups = Array.isArray(payload.followups) ? payload.followups : [];
       const events = Array.isArray(payload.events) ? payload.events : [];
       const current = followups.length ? `<div class="telemedicine-current"><strong>Situação atual</strong><div class="telemedicine-current-grid">${followups.map((item) => `<div><small>${escapeHtml(item.specialty || 'Especialidade')}</small><strong>${escapeHtml(item.status || '—')}</strong><span>${item.returnDueDate ? `Retorno ${escapeHtml(formatDate(item.returnDueDate))}` : 'Sem data-alvo definida'}</span></div>`).join('')}</div></div>` : '';
-      const timeline = events.length ? `<div class="telemedicine-timeline">${events.map((event) => `<article class="telemedicine-event"><small>${escapeHtml(formatDate(event.eventDate))} · ${escapeHtml(event.specialty || '')}</small><h4>${escapeHtml(event.eventType === 'solicitacao' ? 'Solicitação registrada' : event.eventType === 'programacao' ? 'Retorno programado' : 'Teleconsulta')}</h4><p>${escapeHtml(event.resolution || '')}</p>${event.notes ? `<p><strong>Observação:</strong> ${escapeHtml(event.notes)}</p>` : ''}${event.returnDueDate ? `<small>Retorno-alvo: ${escapeHtml(formatDate(event.returnDueDate))}</small>` : ''}</article>`).join('')}</div>` : '<div class="telemedicine-empty">Nenhum evento histórico encontrado.</div>';
+      const timeline = events.length ? `<div class="telemedicine-timeline">${events.map((event) => `<article class="telemedicine-event"><small>${escapeHtml(formatDate(event.eventDate))} · ${escapeHtml(event.specialty || '')}</small><h4>${escapeHtml(event.eventType === 'solicitacao' ? 'Solicitação registrada' : event.eventType === 'programacao' ? 'Retorno programado' : event.eventType === 'correcao_situacao' ? 'Situação atualizada' : 'Teleconsulta')}</h4><p>${escapeHtml(event.resolution || '')}</p>${event.notes ? `<p><strong>Observação:</strong> ${escapeHtml(event.notes)}</p>` : ''}${event.returnDueDate ? `<small>Retorno-alvo: ${escapeHtml(formatDate(event.returnDueDate))}</small>` : ''}</article>`).join('')}</div>` : '<div class="telemedicine-empty">Nenhum evento histórico encontrado.</div>';
       document.getElementById('patientDetail').innerHTML = current + timeline;
     } catch (error) {
       document.getElementById('patientDetail').innerHTML = `<div class="portal-note warning">${escapeHtml(error.message || 'Não foi possível abrir o histórico.')}</div>`;
