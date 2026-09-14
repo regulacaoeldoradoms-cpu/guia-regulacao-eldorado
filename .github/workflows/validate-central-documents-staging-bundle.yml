@@ -1,0 +1,64 @@
+name: Validar bundle de staging da Central
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/build-central-docs-staging.mjs'
+      - 'testing/central-docs/**'
+      - 'css/documents.css'
+      - 'js/document-viewer.js'
+      - 'vendor/pdfjs/**'
+      - 'vendor/pdfjs-legacy/**'
+      - '.github/workflows/validate-central-documents-staging-bundle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Construir bundle sintético
+        run: node scripts/build-central-docs-staging.mjs
+
+      - name: Validar isolamento
+        run: |
+          set -euo pipefail
+          test -s dist-staging/index.html
+          test -s dist-staging/testing/central-docs/fixture.js
+          test -s dist-staging/js/document-viewer.js
+          test -s dist-staging/vendor/pdfjs-legacy/pdf.min.mjs
+          test -s dist-staging/vendor/pdfjs-legacy/pdf.worker.min.mjs
+          test -s dist-staging/_headers
+          test -s dist-staging/robots.txt
+          grep -q '"syntheticOnly": true' dist-staging/staging-manifest.json
+          grep -q "Disallow: /" dist-staging/robots.txt
+          ! grep -R -F "yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" dist-staging
+          ! grep -R -F "regulacaoeldoradoms.com.br/api/" dist-staging
+          ! grep -R -E "GOOGLE_DRIVE_OAUTH_CLIENT_SECRET|DRIVE_TOKEN_ENCRYPTION_KEY|AUTH_SESSION_SECRET" dist-staging
+
+      - name: Smoke test HTTP estático
+        run: |
+          set -euo pipefail
+          cd dist-staging
+          python3 -m http.server 4174 --bind 127.0.0.1 >/tmp/central-docs-staging-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:4174/ >/dev/null; then
+              exit 0
+            fi
+            sleep 0.25
+          done
+          cat /tmp/central-docs-staging-http.log
+          exit 1
