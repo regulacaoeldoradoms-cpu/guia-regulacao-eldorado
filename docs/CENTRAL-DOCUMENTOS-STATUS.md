@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1c — eliminar fallback nativo do editor e tornar a prévia gerada compatível com PDF.js**.
+Subfase atual: **3C.1c — editor sem fallback nativo, compatibilidade de prévia PDF.js** mesclada e publicada; aguardando validação real antes da 3C.2.
 
 ## Estado de entrada
 
@@ -20,9 +20,9 @@ Subfase atual: **3C.1c — eliminar fallback nativo do editor e tornar a prévia
 
 ## Branch / PR
 
-Branch atual: `fix/document-editor-pdfjs-compat-3c1c`.
+Branch atual: `docs/central-docs-3c1c-postmerge` (consolidação documental pós-merge).
 
-PR funcional atual: ainda não aberto; esta branch corrige a prévia PDF.js e elimina fallback nativo no editor.
+PR funcional atual: nenhum; PR #166 foi validado, mesclado e publicado.
 
 ## Entregas concluídas nesta unidade
 
@@ -419,6 +419,30 @@ A primeira execução do PR #163 apresentou falhas em workflows amplos por **uma
 - a asserção foi corrigida para refletir a API usada pela implementação;
 - nenhuma lógica do editor, permissão, cache ou Drive foi alterada por essa correção.
 
+## 3C.1c validada, mesclada e publicada — 13/09/2026
+
+PR #166:
+- a primeira execução de CI revelou um erro exclusivamente no teste novo (`editor is not defined`), sem regressão funcional; a variável de leitura de `js/document-editor.js` foi adicionada ao teste;
+- após a correção, **21/21 workflows do Pull Request concluíram com sucesso** e 0 falhas;
+- merge concluído na `main` em `dd9a7253e6d75ef4d80161208a2084f6c81079cd`;
+- no pós-merge, **23/23 workflows associados ao commit concluíram com sucesso**, incluindo **Central de Documentos — Fases 1–3**, **governança Central de Documentos**, **site**, **gestão de usuários** e **pages build and deployment**;
+- portanto a correção está publicada e pronta para reteste real.
+
+Resultado técnico publicado:
+- `pdf-lib` passa a gerar a prévia intermediária com `useObjectStreams: false`;
+- o fluxo de edição não possui mais `showEditorIframeFallback()`;
+- se o PDF.js falhar durante edição, o Portal permanece na superfície própria e mostra erro controlado;
+- `buildEditorPreview()` envia o Blob editado diretamente ao `PortalPdfViewer`;
+- ao sair do editor, a restauração tenta permanecer no visualizador próprio e não cai automaticamente no iframe;
+- cache-bust de `document-editor.js` e `documents.js` foi renovado;
+- nenhuma escrita no Google Drive, alteração de permissões ou nova telemetria sensível foi adicionada.
+
+Critério restante:
+- reteste real em produção com um PDF que anteriormente acionou “modo de compatibilidade”;
+- a sessão de edição deve permanecer integralmente no visualizador PDF.js do Portal;
+- a toolbar nativa do navegador e a mensagem “modo de compatibilidade” não podem aparecer;
+- somente após esse aceite iniciar 3C.2.
+
 ## Validação real falhou novamente — editor caiu no modo de compatibilidade — 13/09/2026
 
 Evidência do usuário em produção:
@@ -813,11 +837,13 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. validar a 3C.1c em CI e mesclar somente com checks verdes;
-2. após deploy, recarregar `/documentos/`, abrir um PDF e entrar em **Editar PDF**;
-3. realizar ao menos uma alteração e atualizar a visualização;
-4. confirmar que o editor permanece no PDF.js do Portal e que não existe mais “modo de compatibilidade”/iframe durante a edição;
-5. registrar o resultado real e somente então iniciar **3C.2 — drag-and-drop das páginas**.
+1. fazer recarga forçada em `/documentos/`;
+2. abrir um PDF real, preferencialmente um que já tenha acionado “modo de compatibilidade”;
+3. entrar em **Editar PDF**;
+4. realizar ao menos uma alteração de página e aguardar a atualização automática ou clicar em **Atualizar visualização**;
+5. confirmar que PDF, miniaturas e controles permanecem na superfície PDF.js do Portal, sem toolbar nativa do navegador e sem “modo de compatibilidade”;
+6. testar mover/excluir, unir outro PDF, adicionar imagem e sair do editor;
+7. registrar o resultado real; somente com aceite iniciar **3C.2 — drag-and-drop das páginas**.
 
 ## Arquivos e fontes principais
 
@@ -841,11 +867,10 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase:** 3C.1c em implementação — corrigir serialização da prévia e proibir fallback nativo dentro do editor.  
-**Main funcional:** `478f32952b4b2c0cd3294cb249222dc37eef3409` — PR #163.  
-**PR #163:** 21/21 workflows aprovados após corrigir somente uma asserção de teste; 0 falhas finais.  
-**Pós-merge:** 22/22 workflows funcionais disponíveis concluíram com sucesso; depois, `pages build and deployment` também concluiu com sucesso na `main` descendente `6b2b2d8d346fc699bea10acf2e58da2d2d371d88`.  
-**Correção:** `startEditor()` e `buildEditorPreview()` agora usam `PortalPdfViewer`; iframe somente em `showEditorIframeFallback()`; restauração pelo visualizador próprio; ações ↑/↓/excluir integradas às miniaturas.  
-**UI:** lista textual separada fica oculta no fluxo normal e reaparece apenas em modo de compatibilidade.  
-**Segurança:** PDF.js self-hosted, `enableScripting:false`, `isEvalSupported:false`, sem escrita no Drive e sem novos dados sensíveis em observabilidade.  
-**Próxima ação exata:** concluir CI/PR/deploy da 3C.1c e repetir o teste real; o editor deve permanecer exclusivamente na superfície PDF.js do Portal.
+**Subfase:** 3C.1c implementada, validada em CI, mesclada e publicada; aguardando somente reteste real antes da 3C.2.  
+**Main funcional:** `dd9a7253e6d75ef4d80161208a2084f6c81079cd` — PR #166.  
+**PR #166:** 21/21 workflows finais aprovados; a única falha intermediária foi um erro de variável no teste novo, corrigido sem mudança funcional.  
+**Pós-merge/deploy:** 23/23 workflows associados ao merge concluíram com sucesso, incluindo `pages build and deployment`.  
+**Correção:** prévia do pdf-lib com `useObjectStreams:false`; editor não possui mais fallback para iframe nativo; falha do PDF.js permanece na superfície do Portal com erro controlado.  
+**Segurança:** PDF.js self-hosted, `enableScripting:false`, `isEvalSupported:false`, sem escrita no Drive, sem mudança de permissões e sem novos dados sensíveis em observabilidade.  
+**Próxima ação exata:** retestar em produção o mesmo cenário que antes exibiu “modo de compatibilidade”; somente após confirmar ausência total do visualizador nativo iniciar 3C.2.
