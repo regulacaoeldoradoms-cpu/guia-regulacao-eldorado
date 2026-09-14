@@ -417,3 +417,5 @@
   font-size: 1rem;
   font-weight: 850;
 }
+
+#outcomeEditModal .account-actions .portal-button{min-height:48px}
