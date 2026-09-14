@@ -20,7 +20,7 @@ Subfase atual: **3C.1f — compatibilidade do visualizador PDF.js com navegadore
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-lab-postmerge` (consolidação documental pós-merge da correção 3C.1f).
+Branch atual de suporte: `infra/central-docs-staging-bundle` (preparação do staging remoto sintético; a fase funcional continua em 3C.1f).
 
 PR funcional atual: nenhum; PR #173 foi validado, mesclado e publicado.
 
@@ -950,6 +950,32 @@ A observabilidade-base já está operacional. A Fase 1 passa a emitir apenas `dr
 `pdf_first_page_visible` não será emitido nesta fase porque o iframe nativo não oferece medição confiável da primeira página; isso fica para a Fase 2.
 
 Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
+
+## Preparação do staging remoto sintético — 14/09/2026
+
+Objetivo:
+- permitir validação visual/remota sem expor o Portal completo nem conectar Google Drive, D1 ou documentos clínicos;
+- preparar o código agora e deixar apenas a criação dos recursos Cloudflare para o Work/Codex.
+
+Entregas na branch `infra/central-docs-staging-bundle`:
+- `scripts/build-central-docs-staging.mjs` cria `dist-staging` com **somente** o laboratório sintético, CSS, visualizador e assets PDF.js necessários;
+- o bundle exclui deliberadamente frontend autenticado, endpoints do Worker de produção e segredos;
+- `robots.txt`, `X-Robots-Tag`, `no-store` e CSP restritiva são gerados para o ambiente;
+- o builder falha se detectar origem do Worker de produção ou nomes de segredos críticos;
+- workflow `Validar bundle de staging da Central` constrói o bundle, valida isolamento e executa smoke test HTTP;
+- `docs/CENTRAL-DOCUMENTOS-STAGING-OPERACIONAL-V1.md` registra a configuração exata a aplicar no Cloudflare Pages.
+
+Próxima ação no Work/Codex:
+- usar o MCP oficial `cloudflare-api` já autenticado;
+- criar projeto Pages separado `portal-regulacao-central-staging`;
+- build command: `node scripts/build-central-docs-staging.mjs`;
+- output: `dist-staging`;
+- habilitar previews de branches/PRs;
+- proteger com Cloudflare Access;
+- opcionalmente associar `staging.regulacaoeldoradoms.com.br`;
+- validar que não existe requisição ao Worker/Drive de produção.
+
+Esta infraestrutura é de suporte e não encerra a 3C.1. O reteste real da correção 3C.1f em produção continua obrigatório.
 
 ## 3C.1f validada em navegador, mesclada e publicada — 14/09/2026
 
