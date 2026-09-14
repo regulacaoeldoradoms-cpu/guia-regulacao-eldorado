@@ -976,8 +976,12 @@ Implementação na branch:
 - CI de navegador cobre fonte Blob e fonte URL sintética em desktop e mobile.
 
 Estado:
-- aguardando o resultado final do Playwright com o build legacy antes de declarar a 3C.1 corrigida;
-- 3C.2 continua bloqueada.
+- o primeiro laboratório reproduziu a exceção `getOrInsertComputed` do build moderno;
+- após a troca para o build legacy oficial e correção da própria fixture/harness de teste, o workflow **Validar Central de Documentos — navegador** concluiu com sucesso em Chromium desktop e mobile;
+- foram validadas fonte Blob e fonte URL sintética, página 1, miniatura, canvases reais, zoom, Ajustar largura, callback de primeira página visível e navegação por miniatura;
+- o workflow temporário usado apenas para vendorização do build legacy foi removido após os assets ficarem versionados;
+- a correção está tecnicamente validada em navegador automatizado, mas **3C.1 ainda depende do reteste real em produção após merge/deploy**;
+- 3C.2 continua bloqueada até esse aceite real.
 
 ## Infraestrutura de laboratório de navegador iniciada — 14/09/2026
 
@@ -988,6 +992,7 @@ Motivação:
 
 Branch de suporte atual:
 - `infra/central-docs-browser-lab`, criada diretamente da `main` em `1878fdf4331dc1a8566822d9ac442799d931b0d9`;
+- PR #173 aberto para laboratório + correção de compatibilidade;
 - nenhuma alteração desta branch está em produção.
 
 Entregas desta unidade:
