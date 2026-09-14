@@ -287,6 +287,31 @@ Decisão complementar registrada em 03/09/2026.
 
 O roteador `worker/telemedicine-router-v2.js` intercepta apenas essas correções e delega todas as demais rotas ao módulo original, reduzindo o risco de regressão no fluxo de consultas, programação, solicitação e importação.
 
+
+## Histórico longitudinal visual V40
+
+Decisão permanente registrada em 14/09/2026.
+
+A janela **Histórico do paciente** foi redesenhada como uma linha do tempo visual. Esta evolução é de **somente apresentação**: não altera Firestore, identificadores, permissões, regras clínicas, estados persistidos nem outras regras operacionais da Telemedicina.
+
+Regras da V40:
+
+- a área **Situação atual** usa cartões separados por acompanhamento, com especialidade, situação e resumo operacional; quando o acompanhamento está concluído sem retorno, o texto exibido passa a ser **Acompanhamento encerrado**, evitando a concatenação visual de `CONCLUÍDO` com `Sem data-alvo definida`;
+- a área **Linha do tempo** mantém os eventos em ordem cronológica decrescente, usando data do evento e criação como desempate visual, e destaca o primeiro item com o selo **Mais recente**;
+- cada tipo de evento recebe ícone vetorial e cor semântica próprios: teleconsulta, solicitação, programação, correção de situação, falta, alta, desistência e encaminhamento para atendimento presencial;
+- observações e retorno-alvo aparecem em blocos visuais próprios, sem alterar o conteúdo armazenado;
+- o cabeçalho do modal permanece visível durante a rolagem e a barra de rolagem fica integrada ao interior da janela;
+- no mobile V9, o histórico continua abrindo de forma sanfonada dentro do card, sem reintroduzir modal no celular, mas usa a mesma linguagem visual de cartões, marcadores e linha temporal;
+- todos os ícones são SVG em `currentColor`; não são usados emojis decorativos;
+- a interface respeita `prefers-reduced-motion`;
+- nomes, observações e demais dados sensíveis continuam sendo lidos somente do backend autenticado e não são adicionados ao repositório ou a logs técnicos.
+
+Arquivos da V40:
+
+- `js/telemedicina-history-v40.js`: renderização e classificação visual dos eventos;
+- `css/telemedicina-history-v40.css`: modal, cartões, linha temporal, cores e responsividade;
+- `worker/tests/telemedicine-history-v40.test.mjs`: validação estrutural da nova apresentação.
+
 ## Privacidade e logs
 
 - não enviar pacientes ou dados clínicos para a IA do Guia Médico;

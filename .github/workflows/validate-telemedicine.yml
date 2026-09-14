@@ -156,7 +156,7 @@ jobs:
           grep -q "const existingEvent = await firestoreGet" worker/telemedicine.js
           grep -q "if (!existingEvent)" worker/telemedicine.js
           grep -q "telemedicina-justification-v20.js?v=20260906-1" telemedicina/index.html
-          grep -q "telemedicina.js?v=20260914-3" telemedicina/index.html
+          grep -q "telemedicina.js?v=20260914-4" telemedicina/index.html
           grep -q "telemedicina.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicine-title-mobile" telemedicina/index.html
           grep -q "Data da última consulta" telemedicina/index.html
@@ -169,7 +169,7 @@ jobs:
           grep -q "telemedicina-desktop-v16.css?v=20260903-2" telemedicina/index.html
           grep -q "telemedicina-cards-v19.css?v=20260905-4" telemedicina/index.html
           grep -q "telemedicina-mobile-v7.js?v=20260905-1" telemedicina/index.html
-          grep -q "telemedicina-mobile-v9.js?v=20260905-2" telemedicina/index.html
+          grep -q "telemedicina-mobile-v9.js?v=20260914-3" telemedicina/index.html
           grep -q "telemedicina-edit.js?v=20260914-2" telemedicina/index.html
           grep -q 'data-desktop-design="v16"' telemedicina/index.html
           grep -q 'data-mobile-readability="v15"' telemedicina/index.html

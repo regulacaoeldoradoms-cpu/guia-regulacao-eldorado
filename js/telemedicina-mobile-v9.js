@@ -372,9 +372,10 @@
       const events = Array.isArray(payload.events) ? payload.events : [];
       const head = panel.querySelector('.tm-inline-panel-head span');
       if (head) head.textContent = patient.name || 'Histórico longitudinal';
-      const current = followups.length ? `<div class="tm-inline-current"><strong>Situação atual</strong><div class="tm-inline-current-grid">${followups.map((followup) => `<div><small>${escapeHtml(followup.specialty || 'Especialidade')}</small><strong>${escapeHtml(followup.status || '—')}</strong><span>${followup.returnDueDate ? `Retorno ${escapeHtml(formatDate(followup.returnDueDate))}` : 'Sem data-alvo definida'}</span></div>`).join('')}</div></div>` : '';
-      const timeline = events.length ? `<div class="tm-inline-timeline">${events.map((event) => `<article><small>${escapeHtml(formatDate(event.eventDate))} · ${escapeHtml(event.specialty || '')}</small><h4>${escapeHtml(event.eventType === 'solicitacao' ? 'Solicitação registrada' : event.eventType === 'programacao' ? 'Retorno programado' : 'Teleconsulta')}</h4><p>${escapeHtml(event.resolution || '')}</p>${event.notes ? `<p><strong>Observação:</strong> ${escapeHtml(event.notes)}</p>` : ''}${event.returnDueDate ? `<small>Retorno-alvo: ${escapeHtml(formatDate(event.returnDueDate))}</small>` : ''}</article>`).join('')}</div>` : '<div class="tm-inline-loading">Nenhum evento histórico encontrado.</div>';
-      body.innerHTML = current + timeline;
+      const historyRenderer = window.TelemedicineHistoryV40;
+      body.innerHTML = historyRenderer?.render
+        ? historyRenderer.render({ followups, events, inline: true })
+        : '<div class="tm-inline-status error">Não foi possível montar a linha do tempo visual. Atualize a página e tente novamente.</div>';
     } catch (error) {
       body.innerHTML = `<div class="tm-inline-status error">${escapeHtml(error.message || 'Não foi possível carregar o histórico.')}</div>`;
     }

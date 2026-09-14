@@ -40,8 +40,8 @@ jobs:
           html = Path('telemedicina/index.html').read_text()
           guard = html.index('/js/telemedicina-modal-delete-v21.js?v=20260908-2')
           interactions = html.index('/js/portal-interactions.js?v=20260910-2')
-          base = html.index('/js/telemedicina.js?v=20260914-3')
-          mobile = html.index('/js/telemedicina-mobile-v9.js?v=20260905-2')
+          base = html.index('/js/telemedicina.js?v=20260914-4')
+          mobile = html.index('/js/telemedicina-mobile-v9.js?v=20260914-3')
           assert guard < interactions, 'A guarda modal deve carregar antes de portal-interactions.'
           assert guard < base and guard < mobile, 'A guarda de estabilidade deve carregar antes dos handlers legados de filtro.'
           assert html.count('data-portal-interaction-ignore="true"') >= 5, 'Os modais estáticos da Telemedicina devem ignorar a camada global de microinterações.'
