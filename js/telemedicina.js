@@ -282,22 +282,70 @@
     modal.id = 'outcomeEditModal';
     modal.setAttribute('aria-hidden', 'true');
     modal.setAttribute('data-portal-interaction-ignore', 'true');
-    modal.innerHTML = `<form class="portal-modal telemedicine-modal compact" id="outcomeEditForm">
-      <div class="portal-modal-header"><div><h2>Alterar situação</h2><div class="user-meta" id="outcomeEditMeta"></div></div><button class="portal-modal-close" type="button" data-outcome-close>×</button></div>
-      <div class="telemedicine-form-grid one-column">
-        <div class="portal-field"><label for="outcomeEditMode">Nova situação</label><select id="outcomeEditMode" required><option value="discharge">Alta do episódio</option><option value="scheduled">Retorno com data</option><option value="conditional">Retorno após uma condição</option><option value="absence">Falta do paciente</option></select></div>
-        <div class="portal-field" id="outcomeEditScheduled" hidden><label for="outcomeEditReturnDate">Data-alvo do retorno</label><input id="outcomeEditReturnDate" type="date"></div>
-        <div id="outcomeEditConditional" hidden><div class="portal-field"><label for="outcomeEditConditionType">Retornar após</label><select id="outcomeEditConditionType"><option value="exams">Exames</option><option value="physiotherapy">Fisioterapia</option><option value="procedure">Procedimento ou cirurgia</option><option value="treatment">Conclusão do tratamento</option><option value="other">Outra condição</option></select></div><div class="portal-field"><label for="outcomeEditConditionDetail">Detalhe</label><input id="outcomeEditConditionDetail" maxlength="300"></div><label><input id="outcomeEditConditionReady" type="checkbox"> Condição já realizada</label></div>
-        <div class="portal-field" id="outcomeEditAbsence" hidden><label for="outcomeEditAbsenceReason">Justificativa da falta</label><textarea id="outcomeEditAbsenceReason" maxlength="1500" rows="3"></textarea></div>
-        <div class="portal-field"><label for="outcomeEditNote">Observação da correção</label><textarea id="outcomeEditNote" maxlength="1200" rows="3" placeholder="Opcional"></textarea><small>A situação anterior continuará no histórico.</small></div>
-        <div class="telemedicine-preview" id="outcomeEditPreview"></div>
-        <div class="account-actions"><button class="portal-button primary" id="saveOutcomeEdit" type="submit">Salvar nova situação</button><button class="portal-button secondary" type="button" data-outcome-close>Cancelar</button></div>
+    modal.innerHTML = `<form class="portal-modal telemedicine-modal tm-outcome-edit-modal" id="outcomeEditForm">
+      <div class="portal-modal-header">
+        <div><h2>Alterar situação</h2><div class="user-meta" id="outcomeEditMeta"></div></div>
+        <button class="portal-modal-close" type="button" data-outcome-close aria-label="Fechar">×</button>
+      </div>
+      <div class="telemedicine-form-grid one-column tm-outcome-edit-body">
+        <fieldset class="telemedicine-outcome-picker full tm-outcome-edit-picker">
+          <legend>Qual é a situação correta agora?</legend>
+          <div class="telemedicine-choice-grid tm-outcome-edit-choice-grid">
+            <label class="telemedicine-choice success">
+              <input type="radio" name="outcomeEditChoice" value="discharge">
+              <span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.4-8.35C.55 9.22 2.1 5 6.15 5c2.08 0 3.22 1.22 3.85 2.18C10.63 6.22 11.77 5 13.85 5c4.05 0 5.6 4.22 3.55 7.65C15 16.65 12 21 12 21Z"/><path d="m8.2 12.1 2.15 2.15 4.1-4.35"/></svg></span>
+              <span><strong>Alta do episódio</strong><small>Encerra o acompanhamento sem retorno.</small></span>
+            </label>
+            <label class="telemedicine-choice schedule">
+              <input type="radio" name="outcomeEditChoice" value="scheduled">
+              <span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4.5h14a2 2 0 0 1 2 2v13H3v-13a2 2 0 0 1 2-2Z"/><path d="M7 2v5M17 2v5M3 9h18M12 12v3l2 1"/></svg></span>
+              <span><strong>Retorno com prazo ou data</strong><small>Reprograma o retorno e recalcula os avisos.</small></span>
+            </label>
+            <label class="telemedicine-choice condition">
+              <input type="radio" name="outcomeEditChoice" value="conditional">
+              <span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v5l-5 9a2.5 2.5 0 0 0 2.2 3.7h9.6A2.5 2.5 0 0 0 19 17l-5-9V3"/><path d="M7.4 16h9.2M9.2 12h5.6"/></svg></span>
+              <span><strong>Retorno após uma condição</strong><small>Exames, fisioterapia, procedimento ou tratamento.</small></span>
+            </label>
+            <label class="telemedicine-choice absence">
+              <input type="radio" name="outcomeEditChoice" value="absence">
+              <span class="telemedicine-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4.5h14a2 2 0 0 1 2 2v13H3v-13a2 2 0 0 1 2-2Z"/><path d="M7 2v5M17 2v5M3 9h18"/><path d="m8.5 12.5 7 7m0-7-7 7"/></svg></span>
+              <span><strong>Falta do paciente</strong><small>Registra a falta e deixa nova solicitação pendente.</small></span>
+            </label>
+          </div>
+        </fieldset>
+        <input id="outcomeEditMode" type="hidden" value="scheduled">
+
+        <div class="telemedicine-mode-panel scheduled tm-outcome-edit-panel" id="outcomeEditScheduled" hidden>
+          <div class="portal-field"><label for="outcomeEditReturnDate">Data-alvo do retorno</label><input id="outcomeEditReturnDate" type="date"><small>O sistema recalcula os três avisos úteis.</small></div>
+        </div>
+
+        <div class="telemedicine-mode-panel conditional tm-outcome-edit-panel" id="outcomeEditConditional" hidden>
+          <div class="portal-field"><label for="outcomeEditConditionType">Retornar após</label><select id="outcomeEditConditionType"><option value="exams">Exames</option><option value="physiotherapy">Fisioterapia</option><option value="procedure">Procedimento ou cirurgia</option><option value="treatment">Conclusão do tratamento</option><option value="other">Outra condição</option></select></div>
+          <div class="portal-field"><label for="outcomeEditConditionDetail">Detalhe da condição</label><input id="outcomeEditConditionDetail" maxlength="300" placeholder="Opcional, exceto em Outra condição"></div>
+          <label class="tm-outcome-edit-ready"><input id="outcomeEditConditionReady" type="checkbox"><span><strong>Condição já realizada</strong><small>O acompanhamento irá para “Solicitar agora”.</small></span></label>
+        </div>
+
+        <div class="telemedicine-mode-panel absence tm-outcome-edit-panel" id="outcomeEditAbsence" hidden>
+          <div class="portal-field"><label for="outcomeEditAbsenceReason">Justificativa da falta</label><textarea id="outcomeEditAbsenceReason" maxlength="1500" rows="3" placeholder="Informe o motivo registrado para a falta"></textarea></div>
+        </div>
+
+        <div class="portal-field tm-outcome-edit-note"><label for="outcomeEditNote">Observação da correção</label><textarea id="outcomeEditNote" maxlength="1200" rows="3" placeholder="Opcional"></textarea><small>A situação anterior continuará no histórico.</small></div>
+        <div class="telemedicine-preview tm-outcome-edit-preview" id="outcomeEditPreview"></div>
+        <div class="account-actions tm-outcome-edit-actions"><button class="portal-button primary" id="saveOutcomeEdit" type="submit">Salvar nova situação</button><button class="portal-button secondary" type="button" data-outcome-close>Cancelar</button></div>
         <div class="account-status" id="outcomeEditStatus"></div>
-      </div></form>`;
+      </div>
+    </form>`;
     document.body.appendChild(modal);
 
-    const sync = () => {
-      const mode = document.getElementById('outcomeEditMode').value;
+    const sync = (forcedMode = '') => {
+      const hiddenMode = document.getElementById('outcomeEditMode');
+      const checked = modal.querySelector('input[name="outcomeEditChoice"]:checked');
+      const mode = forcedMode || checked?.value || hiddenMode.value || 'scheduled';
+      hiddenMode.value = mode;
+      modal.querySelectorAll('input[name="outcomeEditChoice"]').forEach((input) => {
+        input.checked = input.value === mode;
+      });
+
       const scheduled = document.getElementById('outcomeEditScheduled');
       const conditional = document.getElementById('outcomeEditConditional');
       const absence = document.getElementById('outcomeEditAbsence');
@@ -305,13 +353,16 @@
       const conditionType = document.getElementById('outcomeEditConditionType');
       const conditionDetail = document.getElementById('outcomeEditConditionDetail');
       const absenceReason = document.getElementById('outcomeEditAbsenceReason');
+
       scheduled.hidden = mode !== 'scheduled';
       conditional.hidden = mode !== 'conditional';
       absence.hidden = mode !== 'absence';
       returnDate.required = mode === 'scheduled';
       conditionDetail.required = mode === 'conditional' && conditionType.value === 'other';
       absenceReason.required = mode === 'absence';
+
       const preview = document.getElementById('outcomeEditPreview');
+      preview.dataset.mode = mode;
       preview.textContent = mode === 'discharge'
         ? 'O acompanhamento será encerrado como alta e os lembretes atuais serão removidos.'
         : mode === 'scheduled'
@@ -321,10 +372,11 @@
             : 'A falta será registrada e uma nova solicitação ficará pendente.';
     };
 
-    document.getElementById('outcomeEditMode').addEventListener('change', sync);
-    document.getElementById('outcomeEditConditionType').addEventListener('change', sync);
+    modal.querySelectorAll('input[name="outcomeEditChoice"]').forEach((input) => input.addEventListener('change', () => sync(input.value)));
+    document.getElementById('outcomeEditConditionType').addEventListener('change', () => sync());
     modal.querySelectorAll('[data-outcome-close]').forEach((button) => button.addEventListener('click', () => closeModal('outcomeEditModal')));
     modal.addEventListener('click', (event) => { if (event.target === modal) closeModal('outcomeEditModal'); });
+
     document.getElementById('outcomeEditForm').addEventListener('submit', async (event) => {
       event.preventDefault();
       const item = state.selectedFollowup;
@@ -340,6 +392,7 @@
         body.conditionReady = document.getElementById('outcomeEditConditionReady').checked;
       }
       if (mode === 'absence') body.absenceReason = document.getElementById('outcomeEditAbsenceReason').value.trim();
+
       button.disabled = true;
       try {
         const payload = await auth.api(`/api/telemedicina/followups/${encodeURIComponent(item.id)}/outcome`, { method: 'PATCH', body: JSON.stringify(body) });
@@ -354,6 +407,7 @@
         button.disabled = false;
       }
     });
+
     modal._syncOutcomeEditor = sync;
     return modal;
   }
@@ -370,7 +424,7 @@
           ? 'conditional'
           : 'scheduled';
     document.getElementById('outcomeEditMeta').textContent = `${item.patientName} · ${item.specialty} · situação atual: ${item.status || '—'}`;
-    document.getElementById('outcomeEditMode').value = mode;
+    modal._syncOutcomeEditor?.(mode);
     document.getElementById('outcomeEditReturnDate').value = item.returnDueDate || '';
     document.getElementById('outcomeEditConditionType').value = item.returnConditionType || 'exams';
     document.getElementById('outcomeEditConditionDetail').value = item.returnConditionDetail || '';
@@ -378,7 +432,6 @@
     document.getElementById('outcomeEditAbsenceReason').value = item.absenceReason || '';
     document.getElementById('outcomeEditNote').value = '';
     document.getElementById('outcomeEditStatus').className = 'account-status';
-    modal._syncOutcomeEditor?.();
     openModal('outcomeEditModal');
   }
 
