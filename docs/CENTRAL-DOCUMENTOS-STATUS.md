@@ -419,6 +419,24 @@ A primeira execução do PR #163 apresentou falhas em workflows amplos por **uma
 - a asserção foi corrigida para refletir a API usada pela implementação;
 - nenhuma lógica do editor, permissão, cache ou Drive foi alterada por essa correção.
 
+## Publicação confirmada da correção 3C.1b — 13/09/2026
+
+Evidência de deploy:
+- o workflow dinâmico **pages build and deployment** associado à `main` `6b2b2d8d346fc699bea10acf2e58da2d2d371d88` concluiu com **success**;
+- esse deploy contém a correção funcional do PR #163 porque o commit documental é descendente direto de `478f32952b4b2c0cd3294cb249222dc37eef3409`;
+- portanto o novo fluxo do editor visual já pode ser validado em produção.
+
+Reteste real agora exigido:
+1. atualizar `/documentos/` com recarga forçada;
+2. abrir um PDF;
+3. entrar em **Editar PDF**;
+4. confirmar que não aparece a toolbar nativa do navegador;
+5. confirmar miniaturas visuais com ações ↑, ↓ e excluir;
+6. testar união, adicionar imagem, atualizar visualização e sair do editor;
+7. se o Portal entrar em **modo de compatibilidade**, registrar a ocorrência porque isso indica fallback real do PDF.js.
+
+A 3C.2 continua bloqueada até esse reteste real ser aceito.
+
 ## 3C.1b validada em CI e mesclada — 13/09/2026
 
 PR #163:
@@ -426,7 +444,7 @@ PR #163:
 - após a correção do teste, **21/21 workflows do Pull Request concluíram com sucesso**, sem falhas;
 - merge concluído na `main` em `478f32952b4b2c0cd3294cb249222dc37eef3409`;
 - na validação pós-merge consultada, **22/22 workflows disponíveis para o commit concluíram com sucesso**, incluindo Central de Documentos — Fases 1–3, governança, site e gestão de usuários;
-- até este registro, o workflow dinâmico de GitHub Pages ainda não apareceu associado ao commit; portanto o status não presume publicação concluída apenas com base no merge.
+- posteriormente, o deploy de GitHub Pages foi confirmado com sucesso no commit documental descendente `6b2b2d8d346fc699bea10acf2e58da2d2d371d88`, publicando também a correção funcional do PR #163.
 
 Resultado técnico:
 - modo **Editar PDF** deixa de trocar deliberadamente para o visualizador nativo;
@@ -765,12 +783,11 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. confirmar a publicação/deploy da `main` `478f32952b4b2c0cd3294cb249222dc37eef3409`;
-2. recarregar `/documentos/`, abrir um PDF real e entrar em **Editar PDF**;
-3. confirmar que o editor permanece na superfície PDF.js do Portal, sem toolbar nativa do navegador;
-4. testar mover/excluir pelas miniaturas, unir outro PDF, adicionar imagem, atualizar visualização e sair do editor;
-5. confirmar que o iframe só aparece se o Portal informar modo de compatibilidade;
-6. registrar o resultado real e somente então iniciar **3C.2 — drag-and-drop das páginas**.
+1. recarregar `/documentos/` com recarga forçada, abrir um PDF real e entrar em **Editar PDF**;
+2. confirmar que o editor permanece na superfície PDF.js do Portal, sem toolbar nativa do navegador;
+3. testar mover/excluir pelas miniaturas, unir outro PDF, adicionar imagem, atualizar visualização e sair do editor;
+4. confirmar que o iframe só aparece se o Portal informar modo de compatibilidade;
+5. registrar o resultado real e somente então iniciar **3C.2 — drag-and-drop das páginas**.
 
 ## Arquivos e fontes principais
 
@@ -794,11 +811,11 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase:** 3C.1b implementada e mesclada; aguardando confirmação de deploy + reteste real antes da 3C.2.  
+**Subfase:** 3C.1b implementada, mesclada e publicada; aguardando somente reteste real antes da 3C.2.  
 **Main funcional:** `478f32952b4b2c0cd3294cb249222dc37eef3409` — PR #163.  
 **PR #163:** 21/21 workflows aprovados após corrigir somente uma asserção de teste; 0 falhas finais.  
-**Pós-merge:** 22/22 workflows disponíveis para o commit concluíram com sucesso; o workflow dinâmico de Pages ainda não apareceu no momento deste registro.  
+**Pós-merge:** 22/22 workflows funcionais disponíveis concluíram com sucesso; depois, `pages build and deployment` também concluiu com sucesso na `main` descendente `6b2b2d8d346fc699bea10acf2e58da2d2d371d88`.  
 **Correção:** `startEditor()` e `buildEditorPreview()` agora usam `PortalPdfViewer`; iframe somente em `showEditorIframeFallback()`; restauração pelo visualizador próprio; ações ↑/↓/excluir integradas às miniaturas.  
 **UI:** lista textual separada fica oculta no fluxo normal e reaparece apenas em modo de compatibilidade.  
 **Segurança:** PDF.js self-hosted, `enableScripting:false`, `isEvalSupported:false`, sem escrita no Drive e sem novos dados sensíveis em observabilidade.  
-**Próxima ação exata:** confirmar deploy, reproduzir o cenário real do editor em `/documentos/` e validar que a toolbar nativa desapareceu; só após aceite iniciar 3C.2.
+**Próxima ação exata:** reproduzir agora o cenário real do editor em `/documentos/` e validar que a toolbar nativa desapareceu; só após aceite iniciar 3C.2.
