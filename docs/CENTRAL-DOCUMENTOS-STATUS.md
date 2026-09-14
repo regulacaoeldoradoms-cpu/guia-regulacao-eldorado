@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1b — unificar o editor com o visualizador próprio**; validação real encontrou retorno ao iframe nativo no modo de edição.
+Subfase atual: **3C.1b — unificar o editor com o visualizador próprio** em implementação na branch `fix/document-editor-unified-viewer-3c1b`.
 
 ## Estado de entrada
 
@@ -411,6 +411,32 @@ Próxima unidade aprovada:
 - reorganização por arrastar e soltar;
 - paste global confiável durante a edição, sem perder o evento para o plugin PDF do navegador.
 
+## Implementação 3C.1b — superfície visual unificada do editor — 13/09/2026
+
+Implementado na branch `fix/document-editor-unified-viewer-3c1b`:
+- `startEditor()` deixou de abrir o iframe como caminho normal;
+- `buildEditorPreview()` agora envia o Blob editado diretamente ao `PortalPdfViewer`;
+- a prévia editada permanece no PDF.js self-hosted do Portal;
+- o iframe foi preservado somente em `showEditorIframeFallback()`, acionado quando o visualizador próprio não está disponível ou falha;
+- ao sair do editor, o documento original volta para a superfície própria pelo `restoreOriginalPortalViewer()`;
+- miniaturas do visualizador receberam ações visuais de mover para cima, mover para baixo e excluir;
+- a lista textual separada de páginas fica oculta no fluxo normal e reaparece apenas no modo de compatibilidade;
+- isso prepara a mesma trilha de miniaturas para a próxima unidade 3C.2, onde as setas serão complementadas/substituídas por drag-and-drop;
+- nenhuma escrita no Google Drive foi adicionada e nenhuma telemetria sensível nova foi criada.
+
+Critérios de aceite desta correção:
+1. entrar no editor sem aparecer a barra nativa do navegador;
+2. ver PDF e miniaturas controlados pelo Portal;
+3. excluir/reordenar página pelas miniaturas e continuar na mesma superfície;
+4. unir PDF/adicionar imagem e a visualização atualizar no PDF.js;
+5. sair do editor e voltar à visualização própria;
+6. iframe somente se houver falha real de compatibilidade.
+
+Pendências:
+- checks automatizados da branch/PR;
+- merge/deploy;
+- nova validação real do usuário em produção.
+
 ## Validação real — editor ainda separado do visualizador próprio — 13/09/2026
 
 Evidência do usuário em produção:
@@ -709,11 +735,12 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. validar a 3C.1 em produção com PDF real no desktop e, quando possível, no Android;
-2. confirmar miniaturas, zoom, ajuste à largura, navegação por página e ausência de regressão em cache hit/miss;
-3. se houver incompatibilidade, confirmar que o iframe de fallback mantém a abertura do documento;
-4. registrar resultado, métricas/descobertas e correções necessárias;
-5. somente após o aceite real iniciar **3C.2 — drag-and-drop das páginas**.
+1. validar a branch 3C.1b com todos os checks;
+2. abrir PR, corrigir qualquer regressão e mesclar somente com validações verdes;
+3. após deploy, abrir um PDF e entrar em **Editar PDF**;
+4. confirmar que a visualização continua no PDF.js do Portal, sem barra nativa do navegador;
+5. testar ações das miniaturas, união, adicionar imagem, atualizar visualização e sair do editor;
+6. registrar o resultado real e somente então iniciar **3C.2 — drag-and-drop das páginas**.
 
 ## Arquivos e fontes principais
 
