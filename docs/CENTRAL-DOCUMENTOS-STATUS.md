@@ -22,7 +22,7 @@ Subfase atual: **3C.1d — remover definitivamente o visualizador PDF nativo de 
 
 Branch atual: `fix/remove-native-pdf-viewer-3c1d`.
 
-PR funcional atual: ainda não aberto; a branch remove o iframe nativo também da visualização somente leitura.
+PR funcional atual: **#168 — Remover visualizador PDF nativo da Central — 3C.1d**.
 
 ## Entregas concluídas nesta unidade
 
@@ -418,6 +418,14 @@ A primeira execução do PR #163 apresentou falhas em workflows amplos por **uma
 - o código real e correto usa a propriedade DOM `dataset.thumbnailAction`;
 - a asserção foi corrigida para refletir a API usada pela implementação;
 - nenhuma lógica do editor, permissão, cache ou Drive foi alterada por essa correção.
+
+## Ajuste de CI da 3C.1d — 13/09/2026
+
+- a primeira execução do PR #168 apontou falha no teste novo de ausência de `compatibility-mode`;
+- a causa era exclusivamente três chamadas mortas de `classList.remove('compatibility-mode')` em `js/documents.js`, remanescentes das versões anteriores;
+- essas referências foram removidas; nenhum fluxo adicionava mais essa classe e os estilos correspondentes já haviam sido eliminados;
+- as falhas em workflows de outras áreas ocorreram porque eles executam a mesma suíte compartilhada e atingiram a mesma asserção, não por regressões próprias dessas áreas;
+- o PR deve ser revalidado integralmente antes do merge.
 
 ## Validação real revelou fallback nativo remanescente na visualização — 13/09/2026
 
