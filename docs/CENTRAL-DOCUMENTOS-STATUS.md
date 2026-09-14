@@ -20,7 +20,7 @@ Subfase atual: **3C.1e — estabilização da primeira renderização do visuali
 
 ## Branch / PR
 
-Branch atual: `docs/central-docs-3c1e-postmerge` (consolidação documental pós-merge).
+Branch atual de suporte: `infra/central-docs-browser-lab` (laboratório automatizado; a fase funcional continua em 3C.1e).
 
 PR funcional atual: nenhum; PR #170 foi validado, mesclado e publicado.
 
@@ -950,6 +950,37 @@ A observabilidade-base já está operacional. A Fase 1 passa a emitir apenas `dr
 `pdf_first_page_visible` não será emitido nesta fase porque o iframe nativo não oferece medição confiável da primeira página; isso fica para a Fase 2.
 
 Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
+
+## Infraestrutura de laboratório de navegador iniciada — 14/09/2026
+
+Motivação:
+- o reteste real da 3C.1e falhou mesmo com CI anterior verde;
+- os checks existentes não reproduziam o PDF.js real em navegador;
+- a 3C.2 continua bloqueada até a 3C.1 ser corrigida e aceita.
+
+Branch de suporte atual:
+- `infra/central-docs-browser-lab`, criada diretamente da `main` em `1878fdf4331dc1a8566822d9ac442799d931b0d9`;
+- nenhuma alteração desta branch está em produção.
+
+Entregas desta unidade:
+- laboratório `testing/central-docs/viewer-harness.html` usando o mesmo `js/document-viewer.js` e os assets PDF.js self-hosted;
+- fixture PDF 100% sintética, com três páginas e variações de orientação/rotação;
+- Playwright configurado para Chromium desktop e perfil mobile;
+- teste E2E verifica página 1, miniatura, canvas real, callback de visibilidade, zoom, Ajustar largura e navegação por miniatura;
+- erros geram trace, screenshot e vídeo como artefatos de CI;
+- workflow `Validar Central de Documentos — navegador` criado sem deploy;
+- documentação `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md` registra arquitetura, privacidade e próximos passos.
+
+Privacidade e segurança:
+- o laboratório não acessa Google Drive, D1 de produção ou documentos clínicos;
+- não usa nomes, identificadores ou conteúdo real;
+- não contém segredos e não publica nada em produção.
+
+Próximo passo desta infraestrutura:
+- abrir PR da branch e executar o novo workflow;
+- corrigir qualquer falha do próprio laboratório até obter um baseline verde;
+- quando o ambiente Cloudflare estiver disponível no Work/Codex, criar staging remoto isolado e previews por branch/PR com dados exclusivamente fictícios;
+- depois usar o laboratório para diagnosticar/corrigir a falha atual da 3C.1e.
 
 ## Próximo passo
 
