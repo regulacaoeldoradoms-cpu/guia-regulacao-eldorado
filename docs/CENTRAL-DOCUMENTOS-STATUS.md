@@ -6,7 +6,7 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1b — unificar o editor com o visualizador próprio** em implementação na branch `fix/document-editor-unified-viewer-3c1b`.
+Subfase atual: **3C.1b — editor unificado com o visualizador próprio** mesclado na `main`; aguardando nova validação real em produção antes da 3C.2.
 
 ## Estado de entrada
 
@@ -419,6 +419,28 @@ A primeira execução do PR #163 apresentou falhas em workflows amplos por **uma
 - a asserção foi corrigida para refletir a API usada pela implementação;
 - nenhuma lógica do editor, permissão, cache ou Drive foi alterada por essa correção.
 
+## 3C.1b validada em CI e mesclada — 13/09/2026
+
+PR #163:
+- primeira execução expôs apenas um erro de asserção no teste novo (`data.thumbnailAction` vs. `dataset.thumbnailAction`); a implementação funcional não precisou ser alterada por essa falha;
+- após a correção do teste, **21/21 workflows do Pull Request concluíram com sucesso**, sem falhas;
+- merge concluído na `main` em `478f32952b4b2c0cd3294cb249222dc37eef3409`;
+- na validação pós-merge consultada, **22/22 workflows disponíveis para o commit concluíram com sucesso**, incluindo Central de Documentos — Fases 1–3, governança, site e gestão de usuários;
+- até este registro, o workflow dinâmico de GitHub Pages ainda não apareceu associado ao commit; portanto o status não presume publicação concluída apenas com base no merge.
+
+Resultado técnico:
+- modo **Editar PDF** deixa de trocar deliberadamente para o visualizador nativo;
+- Blob original/editado é aberto na mesma superfície `PortalPdfViewer`/PDF.js do Portal;
+- miniaturas visuais passam a concentrar mover para cima, mover para baixo e excluir;
+- lista textual separada de páginas fica restrita ao modo de compatibilidade;
+- iframe permanece exclusivamente como fallback quando o visualizador próprio realmente não puder ser usado;
+- sair do editor tenta restaurar o documento original no visualizador próprio;
+- nenhuma escrita no Drive e nenhuma ampliação de dados sensíveis em observabilidade.
+
+Critério pendente:
+- confirmar o deploy/publicação do commit;
+- repetir em produção o cenário que gerou a captura anterior e verificar que a barra nativa do navegador não aparece no fluxo normal do editor.
+
 ## Implementação 3C.1b — superfície visual unificada do editor — 13/09/2026
 
 Implementado na branch `fix/document-editor-unified-viewer-3c1b`:
@@ -743,11 +765,11 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 
 ## Próximo passo
 
-1. validar a branch 3C.1b com todos os checks;
-2. abrir PR, corrigir qualquer regressão e mesclar somente com validações verdes;
-3. após deploy, abrir um PDF e entrar em **Editar PDF**;
-4. confirmar que a visualização continua no PDF.js do Portal, sem barra nativa do navegador;
-5. testar ações das miniaturas, união, adicionar imagem, atualizar visualização e sair do editor;
+1. confirmar a publicação/deploy da `main` `478f32952b4b2c0cd3294cb249222dc37eef3409`;
+2. recarregar `/documentos/`, abrir um PDF real e entrar em **Editar PDF**;
+3. confirmar que o editor permanece na superfície PDF.js do Portal, sem toolbar nativa do navegador;
+4. testar mover/excluir pelas miniaturas, unir outro PDF, adicionar imagem, atualizar visualização e sair do editor;
+5. confirmar que o iframe só aparece se o Portal informar modo de compatibilidade;
 6. registrar o resultado real e somente então iniciar **3C.2 — drag-and-drop das páginas**.
 
 ## Arquivos e fontes principais
@@ -772,14 +794,11 @@ Nenhum conteúdo real de Drive foi enviado ao PostHog até este registro.
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 3 — Editor PDF essencial.  
-**Subfase:** 3C.1b — correção necessária antes da 3C.2: editor deve permanecer na superfície PDF.js própria.  
-**Main funcional:** `12a86c024a4acf2edffa1e4404589ad001075fa9` — PR #161.  
-**PR #161:** 21/21 workflows aprovados e 0 falhas.  
-**Pós-merge:** Central Fases 1–3, governança, site, gestão de usuários e GitHub Pages concluíram com sucesso.  
-**Branch atual:** `docs/central-docs-3c1-postmerge` (consolidação documental).  
-**Entrega:** PDF.js 6.3.289 self-hosted; canvas por página; thumbnails; zoom/reset/fit width; lazy rendering; cache criptografado e Range/stream preservados; iframe fallback.  
-**Segurança:** `enableScripting:false`, `isEvalSupported:false`, worker local, sem CDN runtime de PDF.js, sem escrita Drive e sem conteúdo sensível no PostHog.  
-**Editor:** prévia da edição ainda usa iframe nesta unidade; integração total da superfície de edição fica para 3C.2–3C.5.  
-**Decisão do usuário preservada:** Adicionar imagem = página; Colar imagem = overlay do armazenamento movível/redimensionável/rotacionável; Ctrl+V = nova página.  
-**Pendência crítica:** validação real mostrou que o editor ainda usa iframe nativo como fluxo principal; corrigir antes da 3C.2.  
-**Próxima ação exata:** implementar 3C.1b para `startEditor()`/`buildEditorPreview()` renderizarem no `PortalPdfViewer`; manter iframe somente como fallback e validar em produção antes da 3C.2.
+**Subfase:** 3C.1b implementada e mesclada; aguardando confirmação de deploy + reteste real antes da 3C.2.  
+**Main funcional:** `478f32952b4b2c0cd3294cb249222dc37eef3409` — PR #163.  
+**PR #163:** 21/21 workflows aprovados após corrigir somente uma asserção de teste; 0 falhas finais.  
+**Pós-merge:** 22/22 workflows disponíveis para o commit concluíram com sucesso; o workflow dinâmico de Pages ainda não apareceu no momento deste registro.  
+**Correção:** `startEditor()` e `buildEditorPreview()` agora usam `PortalPdfViewer`; iframe somente em `showEditorIframeFallback()`; restauração pelo visualizador próprio; ações ↑/↓/excluir integradas às miniaturas.  
+**UI:** lista textual separada fica oculta no fluxo normal e reaparece apenas em modo de compatibilidade.  
+**Segurança:** PDF.js self-hosted, `enableScripting:false`, `isEvalSupported:false`, sem escrita no Drive e sem novos dados sensíveis em observabilidade.  
+**Próxima ação exata:** confirmar deploy, reproduzir o cenário real do editor em `/documentos/` e validar que a toolbar nativa desapareceu; só após aceite iniciar 3C.2.
