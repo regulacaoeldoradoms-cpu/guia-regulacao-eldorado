@@ -414,6 +414,7 @@
 #outcomeEditModal #outcomeEditMode {
   min-height: 60px;
   border: 1px solid #8ebbd4;
+  border-left: 6px solid #247cb2;
   border-radius: 14px;
   background: #fff;
   color: #24445c;
