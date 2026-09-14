@@ -24,8 +24,8 @@ assert.match(html, /telemedicina-card-hierarchy-v37\.css\?v=20260914-1/);
 assert.match(html, /data-card-hierarchy="v37"/);
 assert.match(html, /data-copy-justification="v20"/);
 assert.match(html, /telemedicina-justification-v20\.js\?v=20260906-1/);
-assert.match(html, /telemedicina\.js\?v=20260914-2/);
-assert.match(html, /telemedicina-outcome-v14\.css\?v=20260914-2/);
+assert.match(html, /telemedicina\.js\?v=20260914-3/);
+assert.match(html, /telemedicina-outcome-v14\.css\?v=20260914-3/);
 assert.match(html, /data-status-correction="v36"/);
 assert.match(html, /telemedicina-mobile-v7\.js\?v=20260905-1/);
 assert.match(html, /telemedicina-mobile-v9\.js\?v=20260905-2/);
@@ -71,6 +71,15 @@ assert.match(outcomeCss, /scrollbar-gutter:\s*stable/);
 assert.match(outcomeCss, /\.tm-outcome-edit-choice-grid\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,/);
 assert.match(outcomeCss, /\.telemedicine-choice\.absence/);
 assert.match(outcomeCss, /tm-outcome-edit-preview\[data-mode="discharge"\]/);
+assert.match(html, /data-condition-correction="v38"/);
+assert.doesNotMatch(desktop, /id="outcomeEditConditionDetail"/);
+assert.doesNotMatch(desktop, /getElementById\('outcomeEditConditionDetail'\)/);
+assert.match(desktop, /body\.conditionDetail = body\.conditionType === 'other' \? 'OUTRA CONDIÇÃO' : ''/);
+assert.match(desktop, /outcomeEditConditionReady'\)\.addEventListener\('change'/);
+assert.match(desktop, /A condição já foi realizada\. O acompanhamento irá para “Solicitar agora”\./);
+assert.match(desktop, /Use este campo para qualquer detalhe adicional, inclusive sobre a condição/);
+assert.match(outcomeCss, /#outcomeEditModal #outcomeEditConditional \{[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
+assert.match(outcomeCss, /\.tm-outcome-edit-ready strong,[\s\S]*\.tm-outcome-edit-ready small \{ display: block; \}/);
 
 for (const state of ['em-aguardo', 'solicitar', 'atrasado', 'sem-programacao', 'solicitado']) {
   assert.ok(css.includes(`[data-status="${state}"]`), `Atmosfera ausente para ${state}`);
