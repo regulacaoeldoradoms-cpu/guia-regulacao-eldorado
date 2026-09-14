@@ -387,3 +387,18 @@
     background-clip: padding-box;
   }
 }
+
+
+/* V36: a rolagem do editor de situação fica contida dentro da moldura. */
+#outcomeEditModal .telemedicine-modal {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#outcomeEditModal .telemedicine-form-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
