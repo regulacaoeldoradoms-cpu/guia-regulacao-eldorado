@@ -174,6 +174,7 @@ test('editor permanece no visualizador próprio e não usa iframe nativo como fa
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
   const viewer = read('js/document-viewer.js');
+  const editor = read('js/document-editor.js');
   const css = read('css/documents.css');
 
   assert.match(html, /editorPreviewButton"[^>]*>Atualizar visualização<\/button>/);
