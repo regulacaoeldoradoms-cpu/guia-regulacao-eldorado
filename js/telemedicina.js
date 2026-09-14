@@ -321,7 +321,6 @@
 
         <div class="telemedicine-mode-panel conditional tm-outcome-edit-panel" id="outcomeEditConditional" hidden>
           <div class="portal-field"><label for="outcomeEditConditionType">Retornar após</label><select id="outcomeEditConditionType"><option value="exams">Exames</option><option value="physiotherapy">Fisioterapia</option><option value="procedure">Procedimento ou cirurgia</option><option value="treatment">Conclusão do tratamento</option><option value="other">Outra condição</option></select></div>
-          <div class="portal-field"><label for="outcomeEditConditionDetail">Detalhe da condição</label><input id="outcomeEditConditionDetail" maxlength="300" placeholder="Opcional, exceto em Outra condição"></div>
           <label class="tm-outcome-edit-ready"><input id="outcomeEditConditionReady" type="checkbox"><span><strong>Condição já realizada</strong><small>O acompanhamento irá para “Solicitar agora”.</small></span></label>
         </div>
 
@@ -329,7 +328,7 @@
           <div class="portal-field"><label for="outcomeEditAbsenceReason">Justificativa da falta</label><textarea id="outcomeEditAbsenceReason" maxlength="1500" rows="3" placeholder="Informe o motivo registrado para a falta"></textarea></div>
         </div>
 
-        <div class="portal-field tm-outcome-edit-note"><label for="outcomeEditNote">Observação da correção</label><textarea id="outcomeEditNote" maxlength="1200" rows="3" placeholder="Opcional"></textarea><small>A situação anterior continuará no histórico.</small></div>
+        <div class="portal-field tm-outcome-edit-note"><label for="outcomeEditNote">Observação da correção</label><textarea id="outcomeEditNote" maxlength="1200" rows="3" placeholder="Opcional"></textarea><small>Use este campo para qualquer detalhe adicional, inclusive sobre a condição. A situação anterior continuará no histórico.</small></div>
         <div class="telemedicine-preview tm-outcome-edit-preview" id="outcomeEditPreview"></div>
         <div class="account-actions tm-outcome-edit-actions"><button class="portal-button primary" id="saveOutcomeEdit" type="submit">Salvar nova situação</button><button class="portal-button secondary" type="button" data-outcome-close>Cancelar</button></div>
         <div class="account-status" id="outcomeEditStatus"></div>
@@ -351,14 +350,13 @@
       const absence = document.getElementById('outcomeEditAbsence');
       const returnDate = document.getElementById('outcomeEditReturnDate');
       const conditionType = document.getElementById('outcomeEditConditionType');
-      const conditionDetail = document.getElementById('outcomeEditConditionDetail');
+      const conditionReady = document.getElementById('outcomeEditConditionReady');
       const absenceReason = document.getElementById('outcomeEditAbsenceReason');
 
       scheduled.hidden = mode !== 'scheduled';
       conditional.hidden = mode !== 'conditional';
       absence.hidden = mode !== 'absence';
       returnDate.required = mode === 'scheduled';
-      conditionDetail.required = mode === 'conditional' && conditionType.value === 'other';
       absenceReason.required = mode === 'absence';
 
       const preview = document.getElementById('outcomeEditPreview');
@@ -368,12 +366,15 @@
         : mode === 'scheduled'
           ? 'O retorno será reprogramado e receberá três novos avisos úteis.'
           : mode === 'conditional'
-            ? 'O acompanhamento ficará sem data até a condição ser concluída.'
+            ? (conditionReady.checked
+              ? 'A condição já foi realizada. O acompanhamento irá para “Solicitar agora”.'
+              : 'O acompanhamento ficará sem data até a condição ser concluída.')
             : 'A falta será registrada e uma nova solicitação ficará pendente.';
     };
 
     modal.querySelectorAll('input[name="outcomeEditChoice"]').forEach((input) => input.addEventListener('change', () => sync(input.value)));
     document.getElementById('outcomeEditConditionType').addEventListener('change', () => sync());
+    document.getElementById('outcomeEditConditionReady').addEventListener('change', () => sync());
     modal.querySelectorAll('[data-outcome-close]').forEach((button) => button.addEventListener('click', () => closeModal('outcomeEditModal')));
     modal.addEventListener('click', (event) => { if (event.target === modal) closeModal('outcomeEditModal'); });
 
@@ -388,7 +389,7 @@
       if (mode === 'scheduled') body.returnDueDate = document.getElementById('outcomeEditReturnDate').value;
       if (mode === 'conditional') {
         body.conditionType = document.getElementById('outcomeEditConditionType').value;
-        body.conditionDetail = document.getElementById('outcomeEditConditionDetail').value.trim();
+        body.conditionDetail = body.conditionType === 'other' ? 'OUTRA CONDIÇÃO' : '';
         body.conditionReady = document.getElementById('outcomeEditConditionReady').checked;
       }
       if (mode === 'absence') body.absenceReason = document.getElementById('outcomeEditAbsenceReason').value.trim();
@@ -427,10 +428,10 @@
     modal._syncOutcomeEditor?.(mode);
     document.getElementById('outcomeEditReturnDate').value = item.returnDueDate || '';
     document.getElementById('outcomeEditConditionType').value = item.returnConditionType || 'exams';
-    document.getElementById('outcomeEditConditionDetail').value = item.returnConditionDetail || '';
     document.getElementById('outcomeEditConditionReady').checked = resolution.includes('ja realizado');
     document.getElementById('outcomeEditAbsenceReason').value = item.absenceReason || '';
     document.getElementById('outcomeEditNote').value = '';
+    modal._syncOutcomeEditor?.(mode);
     document.getElementById('outcomeEditStatus').className = 'account-status';
     openModal('outcomeEditModal');
   }
