@@ -1832,3 +1832,34 @@ Próximo passo:
 4. depois Recortar;
 5. depois Desenhar/Borracha;
 6. só então solicitar homologação visual do editor como conjunto.
+
+
+## Aceite humano do arraste centralizado — Organizar V2 — 15/09/2026
+
+Feedback humano no preview `18f60df9.portal-regulacao-central-staging.pages.dev`:
+- o usuário confirmou que o novo posicionamento do drag ficou bom;
+- a correção que mantém o ghost centralizado sob o cursor/dedo foi aceita visualmente;
+- a observação anterior sobre “faltar página em branco” foi retirada pelo próprio usuário: a função já está presente;
+- o usuário também reconheceu como correto que **Escrever, Colar imagem sobre página, Recortar e Desenhar** permaneçam para as próximas subetapas da mesma Fase 3, conforme o plano UX V2.
+
+Validação técnica do head anterior `3e99d71b2ade084bde0255f57779b0832b5ef494`:
+- 24/24 workflows GitHub verdes;
+- `Validar Central de Documentos — navegador`: sucesso;
+- `Validar Central de Documentos — Fases 1–3`: sucesso;
+- PR #179 segue aberto, mergeável e sem merge;
+- `main` permanece em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`;
+- nenhuma escrita no Google Drive foi introduzida.
+
+Decisão:
+- o arraste do Organizar V2 está aceito visualmente;
+- o Organizar V2 pode ser tratado como checkpoint técnico/humano suficiente para avançar dentro da Fase 3;
+- a próxima unidade passa a ser **3C.3 — objetos sobre página: Escrever + Colar imagem**, mantendo o PR #179 aberto e sem merge;
+- Recortar permanece para 3C.4 e Desenhar/Borracha para 3C.5;
+- o aceite global da Fase 3 continua pendente até essas unidades e a consolidação/exportação local estarem concluídas.
+
+Próximo passo exato:
+1. implementar Escrever sobre páginas grandes em lista;
+2. implementar Colar imagem sobre página existente;
+3. garantir seleção, mover, resize, rotação e undo/redo;
+4. validar desktop/mobile no staging sintético;
+5. solicitar homologação humana dessa nova unidade antes de seguir para Recortar.
