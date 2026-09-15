@@ -163,6 +163,26 @@ test('trocas rápidas de modo não deixam miniaturas vazias ou de resolução an
   await order(page, original);
 });
 
+test('troca Organizar/Escrever mantém miniaturas lazy em documento maior', async ({ page }) => {
+  for (let i = 0; i < 4; i++) await merge(page, 'after-document');
+  await ready(page);
+  const total = await cards(page).count();
+  expect(total).toBeGreaterThan(10);
+  await page.locator('#thumbnails').evaluate((node) => { node.scrollTop = 0; });
+
+  await page.evaluate(async () => {
+    const viewer = window.PortalPdfViewer;
+    viewer.setOrganizerMode(false);
+    await new Promise(requestAnimationFrame);
+    viewer.setOrganizerMode(true);
+  });
+  await ready(page);
+
+  await expect.poll(() => page.locator('#thumbnails .portal-pdf-thumb.rendered').count()).toBeGreaterThan(0);
+  const rendered = await page.locator('#thumbnails .portal-pdf-thumb.rendered').count();
+  expect(rendered).toBeLessThan(total);
+});
+
 test('auto-scroll continua com ponteiro parado e para ao cancelar', async ({ page }) => {
   await merge(page, 'after-document');
   await merge(page, 'after-document');

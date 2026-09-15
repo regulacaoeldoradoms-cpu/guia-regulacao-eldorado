@@ -59,11 +59,13 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(handle).toBeVisible();
     const handleBox = await handle.boundingBox();
     const handleCenter = { x: handleBox.x + handleBox.width / 2, y: handleBox.y + handleBox.height / 2 };
+    const transformBefore = await object.evaluate((node) => getComputedStyle(node).transform);
     await page.mouse.move(handleCenter.x, handleCenter.y);
     await page.mouse.down();
-    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-object-gesture', 'resize');
-    await page.mouse.move(handleCenter.x + 48, handleCenter.y + 36, { steps: 6 });
+    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-object-gesture', 'transform');
+    await page.mouse.move(handleCenter.x + 72, handleCenter.y - 28, { steps: 8 });
     await expect.poll(async () => (await object.boundingBox()).width).toBeGreaterThan(movedVisible.width + 20);
+    await expect.poll(() => object.evaluate((node) => getComputedStyle(node).transform)).not.toBe(transformBefore);
     await page.mouse.up();
     const resized = await object.boundingBox();
     expect(resized.width).toBeGreaterThan(movedVisible.width + 20);

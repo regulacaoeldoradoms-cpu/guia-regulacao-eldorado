@@ -783,7 +783,7 @@
         return {
           element,
           layer,
-          kind: 'resize',
+          kind: handle === 'se' ? 'transform' : 'resize',
           handle,
           origin: element.querySelector(`[data-object-resize="${handle}"]`) || element
         };
@@ -810,7 +810,7 @@
 
       const directResize = event.target.closest?.('[data-object-resize]')?.dataset?.objectResize || '';
       const directRotate = Boolean(event.target.closest?.('[data-object-rotate]'));
-      const kind = geometryHit?.kind || (directRotate ? 'rotate' : directResize ? 'resize' : 'move');
+      const kind = geometryHit?.kind || (directRotate ? 'rotate' : directResize === 'se' ? 'transform' : directResize ? 'resize' : 'move');
       const handle = geometryHit?.handle || directResize;
       const origin = geometryHit?.origin || event.target.closest?.('[data-object-resize], [data-object-rotate]') || element;
 
@@ -837,6 +837,7 @@
         layerHeight: Math.max(1, rect.height),
         center,
         startAngle: Math.atan2(event.clientY - center.y, event.clientX - center.x) * 180 / Math.PI,
+        startDistance: Math.max(1, Math.hypot(event.clientX - center.x, event.clientY - center.y)),
         start: { ...object },
         currentPageNumber: Number(object.displayPage || layer.dataset.pageNumber || 1),
         changed: false
@@ -890,6 +891,33 @@
       } else if (drag.kind === 'rotate') {
         const angle = Math.atan2(event.clientY - drag.center.y, event.clientX - drag.center.x) * 180 / Math.PI;
         patch = { rotation: drag.start.rotation + (angle - drag.startAngle) };
+      } else if (drag.kind === 'transform') {
+        const angle = Math.atan2(event.clientY - drag.center.y, event.clientX - drag.center.x) * 180 / Math.PI;
+        const distance = Math.max(1, Math.hypot(event.clientX - drag.center.x, event.clientY - drag.center.y));
+        const centerX = drag.start.x + (drag.start.width / 2);
+        const centerY = drag.start.y + (drag.start.height / 2);
+        const minScale = Math.max(
+          0.035 / Math.max(0.001, drag.start.width),
+          0.025 / Math.max(0.001, drag.start.height)
+        );
+        const maxScale = Math.min(
+          0.95 / Math.max(0.001, drag.start.width),
+          0.95 / Math.max(0.001, drag.start.height),
+          (2 * centerX) / Math.max(0.001, drag.start.width),
+          (2 * (1 - centerX)) / Math.max(0.001, drag.start.width),
+          (2 * centerY) / Math.max(0.001, drag.start.height),
+          (2 * (1 - centerY)) / Math.max(0.001, drag.start.height)
+        );
+        const scale = Math.min(maxScale, Math.max(minScale, distance / drag.startDistance));
+        const width = drag.start.width * scale;
+        const height = drag.start.height * scale;
+        patch = {
+          x: centerX - (width / 2),
+          y: centerY - (height / 2),
+          width,
+          height,
+          rotation: drag.start.rotation + (angle - drag.startAngle)
+        };
       } else {
         let x = drag.start.x;
         let y = drag.start.y;
@@ -1390,7 +1418,28 @@
       record.rendered = false;
       record.button.classList.remove('rendered');
     }
-    for (let pageNumber = 1; pageNumber <= (session.document?.numPages || 0); pageNumber += 1) {
+
+    // Preserve the viewer's lazy thumbnail architecture on mode switches.
+    // Re-observing invalidated records makes IntersectionObserver schedule only
+    // thumbnails that are visible/near the rail viewport instead of eagerly
+    // starting one PDF.js job per page on large documents.
+    if (session.thumbObserver) {
+      for (const record of session.thumbs.values()) {
+        session.thumbObserver.unobserve(record.button);
+        session.thumbObserver.observe(record.button);
+      }
+    } else if (typeof IntersectionObserver !== 'function') {
+      for (let pageNumber = 1; pageNumber <= (session.document?.numPages || 0); pageNumber += 1) {
+        renderThumbnail(session, pageNumber).catch(() => {});
+      }
+    } else {
+      // setOrganizerMode() can be called in the narrow interval before
+      // installObservers(). Keep only the active thumbnail warm; the observer
+      // will pick up the remainder as soon as it is installed.
+      const pageNumber = Math.min(
+        Math.max(1, Number(session.activePage || 1)),
+        Math.max(1, Number(session.document?.numPages || 1))
+      );
       renderThumbnail(session, pageNumber).catch(() => {});
     }
     return true;

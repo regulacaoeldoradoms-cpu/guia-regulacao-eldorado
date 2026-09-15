@@ -29,6 +29,11 @@ test('troca de modo serializa a renderização completa da miniatura e invalida 
   assert.match(render, /if \(!page \|\| !isCurrentThumbnail\(\)\) return/);
   assert.match(render, /if \(isCurrentThumbnail\(\)\) \{\s*record\.rendered = true/);
   assert.match(toggle, /session\.thumbnailGeneration = \(session\.thumbnailGeneration \|\| 0\) \+ 1/);
+  assert.match(toggle, /if \(session\.thumbObserver\)/);
+  assert.match(toggle, /session\.thumbObserver\.unobserve\(record\.button\)/);
+  assert.match(toggle, /session\.thumbObserver\.observe\(record\.button\)/);
+  assert.match(toggle, /else if \(typeof IntersectionObserver !== 'function'\)/);
+  assert.match(toggle, /renderThumbnail\(session, pageNumber\)\.catch/);
   assert.doesNotMatch(toggle, /record\.canvas\.(?:width|height) = 0/);
 });
 
@@ -481,6 +486,9 @@ test('3C.3 mantém objetos locais reversíveis e deixa Recortar/Desenhar bloquea
   assert.match(editor, /commitObjectMutation/);
   assert.match(viewer, /data-object-resize/);
   assert.match(viewer, /data-object-rotate/);
+  assert.match(viewer, /handle === 'se' \? 'transform' : 'resize'/);
+  assert.match(viewer, /distance \/ drag\.startDistance/);
+  assert.match(viewer, /rotation: drag\.start\.rotation \+ \(angle - drag\.startAngle\)/);
   assert.match(viewer, /contentEditable/);
   assert.match(css, /\.portal-pdf-object-layer/);
   assert.match(css, /\.portal-pdf-object-handle--se/);
