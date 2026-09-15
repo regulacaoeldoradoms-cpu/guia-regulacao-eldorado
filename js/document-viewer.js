@@ -1026,6 +1026,9 @@
         currentPageNumber: Number(object.displayPage || layer.dataset.pageNumber || 1),
         changed: false
       };
+      if (kind === 'edit-move-pending' && event.pointerId != null) {
+        try { origin.setPointerCapture?.(event.pointerId); } catch (_) {}
+      }
       session.root.dataset.objectGesture = session.objectDrag.kind;
     };
 
@@ -1146,6 +1149,11 @@
       const drag = session.objectDrag;
       if (!drag || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
       session.objectDrag = null;
+      try {
+        if (drag.pointerId != null && drag.origin?.hasPointerCapture?.(drag.pointerId)) {
+          drag.origin.releasePointerCapture?.(drag.pointerId);
+        }
+      } catch (_) {}
       session.root.dataset.objectGesture = '';
       session.root.dataset.objectGestureMoved = drag.changed ? 'true' : 'false';
       if (drag.changed) commitObjectGesture(session, drag);
