@@ -1172,7 +1172,7 @@
 
     const click = (event) => {
       if (!isCurrentSession(session) || session.organizerMode) return;
-      if (performance.now() < Number(session.suppressObjectClickUntil || 0)) return;
+      const suppressObjectClick = performance.now() < Number(session.suppressObjectClickUntil || 0);
 
       const quickbar = event.target.closest?.('[data-text-quickbar]');
       if (quickbar) {
@@ -1240,6 +1240,7 @@
 
       const element = event.target.closest?.('.portal-pdf-object');
       if (element) {
+        if (suppressObjectClick) return;
         const id = String(element.dataset.objectId || '');
         if (id && session.selectedObjectId !== id) {
           markSelectedObject(session, id);
@@ -2082,6 +2083,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2f`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2g`
   });
 })();
