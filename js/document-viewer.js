@@ -865,19 +865,6 @@
     return { paletteRect, panelRect, hostRect, minLeft, maxLeft, minTop, maxTop };
   }
 
-  function constrainCustomColorPanel(panel) {
-    if (!panel || panel.hidden) return false;
-    const bounds = customColorPanelBounds(panel);
-    if (!bounds) return false;
-    const currentLeft = bounds.panelRect.left - bounds.paletteRect.left;
-    const currentTop = bounds.panelRect.top - bounds.paletteRect.top;
-    panel.style.left = `${Math.min(bounds.maxLeft, Math.max(bounds.minLeft, currentLeft))}px`;
-    panel.style.top = `${Math.min(bounds.maxTop, Math.max(bounds.minTop, currentTop))}px`;
-    panel.style.right = 'auto';
-    panel.style.bottom = 'auto';
-    return true;
-  }
-
   function createTextQuickbar(session, element, object) {
     if (object?.type !== 'text' || session.selectedObjectId !== object.id) return;
     const bar = document.createElement('div');
@@ -1585,9 +1572,7 @@
               ? normalizeObjectColor(session.colorPalette[index])
               : normalizeObjectColor(object.color);
             syncCustomColorPanel(panel, color);
-            const opening = panel.hidden;
             panel.hidden = !panel.hidden;
-            if (opening) constrainCustomColorPanel(panel);
           }
           return;
         }
@@ -2428,6 +2413,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2m`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2n`
   });
 })();
