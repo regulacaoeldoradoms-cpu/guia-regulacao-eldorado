@@ -36,7 +36,9 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(1);
     await expect(text).toHaveAttribute('contenteditable', 'true');
 
-    // Drag the box while contenteditable is still active.
+    // Drag the box while contenteditable is still active. Keep the object inside
+    // the viewport first so the synthetic mouse gesture reaches the DOM.
+    await object.scrollIntoViewIfNeeded();
     const before = await object.boundingBox();
     await page.mouse.move(before.x + before.width * .55, before.y + before.height * .55);
     await page.mouse.down();
