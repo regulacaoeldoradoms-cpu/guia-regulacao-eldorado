@@ -43,11 +43,17 @@ async function enterEditor(page) {
   await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
   await expect(page.locator('#editorControls')).toBeVisible();
   await expect(page.locator('#pdfRoot')).toHaveAttribute('data-organizer-mode', 'true');
+  await expect(page.locator('#pdfRoot')).toHaveAttribute('data-editor-workspace-mode', 'organize');
   await expect(page.locator('#scrollRoot')).toBeHidden();
   await expect(page.locator('.portal-pdf-thumb-actions')).toHaveCount(3);
   await expect(page.locator('[data-thumbnail-drag]')).toHaveCount(3);
   await expect(page.locator('[data-thumbnail-action]')).toHaveCount(12);
-  await expect(page.locator('[data-thumbnail-action="up"], [data-thumbnail-action="down"], [data-thumbnail-action="rotate-right"]')).toHaveCount(0);
+  await expect(page.locator('[data-thumbnail-action="up"], [data-thumbnail-action="down"]')).toHaveCount(0);
+  for (const action of ['rotate-left', 'rotate-right', 'duplicate', 'delete']) {
+    await expect(page.locator(`[data-thumbnail-action="${action}"]`)).toHaveCount(3);
+  }
+  await expect.poll(() => page.locator('#thumbnails .portal-pdf-thumb.rendered').count()).toBe(3);
+  expect(await page.locator('#thumbnails').evaluate((node) => getComputedStyle(node).display)).toBe('grid');
 }
 
 async function waitForOrder(page, value) {
@@ -65,7 +71,7 @@ async function dragThumbnail(page, fromIndex, toIndex) {
   await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
   await page.mouse.down();
   await page.mouse.move(
-    targetBox.x + targetBox.width / 2,
+    targetBox.x + targetBox.width * (fromIndex < toIndex ? 0.85 : 0.15),
     targetBox.y + Math.max(4, targetBox.height * 0.2),
     { steps: 8 }
   );
@@ -191,6 +197,7 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await openLab(page);
     await enterEditor(page);
 
+    await page.locator('.portal-pdf-thumb').first().click();
     await page.locator('.portal-pdf-thumb-wrap').first().locator('[data-thumbnail-action="duplicate"]').click();
     await waitForOrder(page, '0:0,0:0,0:1,0:2');
     await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
@@ -218,10 +225,14 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await expect(page.locator('.portal-pdf-page')).toHaveCount(4);
     await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
     await expect(page.locator('html')).toHaveAttribute('data-active-page', '4');
-    await expect(page.locator('.portal-pdf-page').nth(3)).toHaveClass(/rendered/);
+    // Organizar V2 deliberately hides/releases the large reading canvas.
+    // The page's real rendered representation is now the grid card.
+    await expect(page.locator('#scrollRoot')).toBeHidden();
     await expect(page.locator('.portal-pdf-thumb').nth(3)).toHaveClass(/rendered/);
+    expect(await page.locator('#thumbnails .portal-pdf-thumb-canvas').nth(3).evaluate((canvas) => canvas.width > 0 && canvas.height > 0)).toBe(true);
 
     await page.locator('#editorMerge').click();
+    await page.locator('#editorMergeConfirm').click();
     await waitForOrder(page, '0:0,0:1,0:2,1:0,2:0,2:1,2:2');
     await expect(page.locator('.portal-pdf-page')).toHaveCount(7);
     await expect(page.locator('.portal-pdf-thumb')).toHaveCount(7);
@@ -252,8 +263,9 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
     await expect(page.locator('#zoomReset')).toHaveText(zoomBefore);
 
-    await page.locator('#editorMerge').click();
-    await waitForOrder(page, '0:0,0:1,1:0,1:1,1:2,0:2');
+    await page.locator('.portal-pdf-thumb').nth(1).click();
+    await page.locator('.portal-pdf-thumb-wrap').nth(1).locator('[data-thumbnail-action="rotate-left"]').click();
+    await waitForOrder(page, '0:0,0:1,0:2');
     await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
     await expect(page.locator('#zoomReset')).toHaveText(zoomBefore);
 

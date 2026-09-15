@@ -1,12 +1,34 @@
 # Central de Documentos — Status
 
-Última atualização: 14/09/2026
+Última atualização: 15/09/2026
 
 ## Fase atual
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.1 — superfície única de visualização/edição implementada e aprovada no staging sintético; aceite humano, merge e reteste real ainda pendentes**. A 3C.2 continua bloqueada.
+Subfase atual: **Organizar V2 — grade de páginas e operações estruturais locais, em validação técnica no PR #179**. A decisão de UX V2 substitui os bloqueios históricos de drag-and-drop/3C.2 abaixo. A Fase 3 permanece aberta; Escrever, Colar imagem sobre página, Recortar, Desenhar e escrita no Drive não estão autorizados nesta unidade. **Não fazer merge antes do aceite visual humano.**
+
+## Handoff para o próximo chat — Organizar V2, registro vigente
+
+Este bloco prevalece sobre os handoffs históricos abaixo.
+
+- Main real confirmada por GitHub e `git fetch origin`: `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`.
+- PR #179: aberto, mergeável, branch `codex/central-docs-editor-superficie-unica`; entrada remota em `22b781d0e2c427f50ca078df9ad89a1f26c0d779`.
+- Governança: Guia Mestre V1.1 e Dossiê Mestre lidos integralmente; STATUS, UX V2, homologação, staging e arquitetura do editor reconciliados com a branch. Alterações locais interrompidas foram preservadas, sem reset.
+- Causa raiz reproduzida no navegador: `setOrganizerMode()` existia internamente, mas faltava na API pública. A chamada opcional não executava nada; `editorWorkspaceMode=organize` coexistia com `organizerMode=false`.
+- Correção: exportação real e teste de execução da API pública; a asserção `data-organizer-mode=true` foi mantida. A grade é a superfície principal; o canvas grande oculto pode ser liberado normalmente pelo lazy-render.
+- Troca de modo: a renderização inteira de cada miniatura (incluindo `getPage`) é serializada, com geração própria. Cancelamento não redimensiona canvas ainda em uso e a geração antiga não marca a miniatura nova como pronta. Observadores de leitura/fit não sobrescrevem seleção/zoom durante Organizar.
+- Drag: ghost copia bitmap real, inclusive no grip touch; página inteira aceita mouse/pen e toque prolongado. Movimento imediato do dedo preserva scroll nativo. Um RAF da sessão mantém auto-scroll com ponteiro parado na borda, sem reconstruir PDF durante movimento; a operação só ocorre no drop.
+- Cleanup: drop/cancelamento/perda de captura/troca de modo/fechamento removem ghost, classes, captura, timer de hold e RAF. Sessão antiga só limpa seus próprios elementos, sem interferir na vencedora.
+- Laboratório: painel de união sintética com `before-document`, `after-document` e `after-page`, validação de página e undo/redo. Continua sem frontend autenticado, Drive real, Functions, D1, bindings ou secrets.
+- Arquivos desta correção: `js/document-viewer.js`, `documentos/index.html`, `worker/tests/documents-ui.test.mjs`, `testing/central-docs/editor-harness.js`, `testing/central-docs/viewer-harness.html`, `testing/browser/central-docs-editor.spec.mjs`, novo `testing/browser/central-docs-organizer.spec.mjs` e este status.
+- Alternativas descartadas: enfraquecer a asserção de Organizar; manter editor textual; reconstruir em pointermove; depender apenas de pointermove para auto-scroll; bloquear todo scroll touch com `touch-action:none` na página; limpar roots compartilhados de sessão obsoleta.
+- Testes: Worker completo 141/141 e sintaxe aprovados na primeira rodada; matriz ampliada inicial 35 aprovados + 1 caso touch não aplicável no desktop. A rodada final deve confirmar as extensões de toque prolongado, drop no fim e a versão final do runtime antes da publicação candidata.
+- CI remoto de entrada: 23/24 verdes; navegador falhava na entrada de Organizar. As duas threads antigas P1/P2 estão resolvidas; isso não substitui revisão do V2.
+- Preview anterior `8935c0ec` não é evidência desta correção. A URL imutável candidata e os resultados pós-publicação serão registrados após CI/validação remota.
+- Riscos: Access e domínio próprio continuam pendentes; staging público, somente sintético. Touch é validado no Chromium emulado, não equivale ao aceite num celular físico. PDFs institucionais/integração autenticada exigem reteste autorizado em outra etapa.
+- Não feito: merge, alteração da main, deploy de produção, escrita no Drive, mudança de Worker/D1, telemetria sensível ou ferramentas futuras.
+- Próximo passo exato: finalizar matriz local, publicar somente a branch do PR, verificar CI e deployment imutável, testar remotamente e entregar para aceite visual humano do Organizar V2.
 
 ## Estado de entrada
 

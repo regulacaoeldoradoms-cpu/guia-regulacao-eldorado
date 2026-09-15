@@ -2,9 +2,35 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import vm from 'node:vm';
 
 const root = path.resolve(import.meta.dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+
+test('API pública do visualizador expõe a transição real do Organizar V2', () => {
+  const viewer = read('js/document-viewer.js');
+  const publicApi = viewer.match(/window\.PortalPdfViewer = Object\.freeze\(\{([\s\S]*?)\}\);/);
+  assert.ok(publicApi, 'A API pública do visualizador deve existir.');
+  assert.match(publicApi[1], /\bsetOrganizerMode\s*,/);
+  const sandbox = { window: {} };
+  vm.runInNewContext(viewer, sandbox);
+  for (const method of ['open', 'close', 'getViewState', 'setThumbnailActions', 'setOrganizerMode', 'scrollToPage', 'zoomIn', 'zoomOut', 'fitWidth']) {
+    assert.equal(typeof sandbox.window.PortalPdfViewer[method], 'function', `API pública: ${method}`);
+  }
+  assert.match(viewer, /session\.root\.dataset\.organizerMode = next \? 'true' : 'false'/);
+});
+
+test('troca de modo serializa a renderização completa da miniatura e invalida geração antiga', () => {
+  const viewer = read('js/document-viewer.js');
+  const render = viewer.slice(viewer.indexOf('  async function renderThumbnail('), viewer.indexOf('  function installObservers('));
+  const toggle = viewer.slice(viewer.indexOf('  function setOrganizerMode('), viewer.indexOf('  async function open('));
+  assert.match(render, /await record\.thumbnailPromise;\s*return renderThumbnail\(session, pageNumber\)/);
+  assert.match(render, /generation === \(session\.thumbnailGeneration \|\| 0\)/);
+  assert.match(render, /if \(!page \|\| !isCurrentThumbnail\(\)\) return/);
+  assert.match(render, /if \(isCurrentThumbnail\(\)\) \{\s*record\.rendered = true/);
+  assert.match(toggle, /session\.thumbnailGeneration = \(session\.thumbnailGeneration \|\| 0\) \+ 1/);
+  assert.doesNotMatch(toggle, /record\.canvas\.(?:width|height) = 0/);
+});
 
 function elementSourceById(source, id) {
   const opening = new RegExp(`<([a-z][\\w:-]*)\\b[^>]*\\bid=["']${id}["'][^>]*>`, 'i').exec(source);
@@ -161,7 +187,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260915-1/);
+  assert.match(html, /document-viewer\.js\?v=20260915-2/);
   assert.match(html, /documents\.js\?v=20260915-1/);
   assert.match(html, /documents\.css\?v=20260915-1/);
 
@@ -231,7 +257,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260915-1/);
+  assert.match(html, /document-viewer\.js\?v=20260915-2/);
   assert.match(html, /documents\.js\?v=20260915-1/);
   assert.match(html, /documents\.css\?v=20260915-1/);
 
@@ -254,7 +280,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewer, /function setThumbnailActions\(/);
   assert.match(viewer, /function setOrganizerMode\(/);
   assert.match(viewer, /ORGANIZER_THUMB_WIDTH = 210/);
-  assert.match(viewer, /if \(!session\.fitMode \|\| !isCurrentSession\(session\)\) return;/);
+  assert.match(viewer, /if \(!session\.fitMode \|\| session\.organizerMode \|\| !isCurrentSession\(session\)\) return;/);
   assert.match(viewer, /getViewState,/);
   assert.match(viewer, /setThumbnailActions,/);
   assert.match(viewer, /dataset\.thumbnailAction/);

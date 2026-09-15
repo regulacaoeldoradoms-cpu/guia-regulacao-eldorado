@@ -23,6 +23,12 @@
     redo: document.getElementById('editorRedo'),
     organize: document.getElementById('editorOrganize'),
     merge: document.getElementById('editorMerge'),
+    mergePanel: document.getElementById('editorMergePanel'),
+    mergePosition: document.getElementById('editorMergePosition'),
+    mergePageField: document.getElementById('editorMergePageField'),
+    mergeAfterPage: document.getElementById('editorMergeAfterPage'),
+    mergeConfirm: document.getElementById('editorMergeConfirm'),
+    mergeCancel: document.getElementById('editorMergeCancel'),
     blank: document.getElementById('editorBlank'),
     addImage: document.getElementById('editorAddImage'),
     refresh: document.getElementById('editorRefresh'),
@@ -32,6 +38,7 @@
   const state = {
     originalBlob: fixture?.blob?.() || null,
     session: null,
+    merging: false,
     viewState: null,
     sequence: 0,
     operation: Promise.resolve()
@@ -65,18 +72,29 @@
     root.dataset.editorMode = editing ? 'editor' : 'readonly';
     root.dataset.editorRevision = String(state.session?.revision || 0);
     root.dataset.pageOrder = pageOrder();
+    root.dataset.pageRotations = state.session ? editor.pageModel(state.session).map((page) => page.rotation).join(',') : '';
+    root.dataset.pageKinds = state.session ? editor.pageModel(state.session).map((page) => page.sourceKind).join(',') : '';
     elements.editorControls.hidden = !editing;
     elements.enterEditor.hidden = editing;
     elements.enterEditor.disabled = editing || root.dataset.viewerState !== 'ready';
     elements.surface.classList.toggle('is-editing', editing);
     elements.surface.dataset.editorMode = editing ? 'true' : 'false';
-    elements.surface.dataset.editorWorkspaceMode = editing ? 'organize' : 'readonly';
+    elements.surface.dataset.editorWorkspaceMode = editing ? (state.merging ? 'merge' : 'organize') : 'readonly';
+    elements.mergePanel.hidden = !editing || !state.merging;
+    elements.organize.classList.toggle('active', editing && !state.merging);
+    elements.organize.setAttribute('aria-pressed', String(editing && !state.merging));
+    elements.merge.classList.toggle('active', editing && state.merging);
+    elements.merge.setAttribute('aria-pressed', String(editing && state.merging));
     viewer.setOrganizerMode?.(editing);
     elements.surface.setAttribute('aria-label', editing ? 'Editor visual PDF sintético' : 'Visualizador PDF sintético');
     elements.undo.disabled = !editing || !editor.canUndo(state.session);
     elements.redo.disabled = !editing || !editor.canRedo(state.session);
     elements.organize.disabled = !editing;
     elements.merge.disabled = !editing;
+    elements.mergeConfirm.disabled = !editing || !state.merging;
+    elements.mergeCancel.disabled = !editing;
+    elements.mergePosition.disabled = !editing;
+    elements.mergeAfterPage.disabled = !editing;
     elements.blank.disabled = !editing;
     elements.addImage.disabled = !editing;
     elements.refresh.disabled = !editing;
@@ -89,7 +107,7 @@
     elements.surface.setAttribute('aria-busy', active ? 'true' : 'false');
     if (message) elements.editorStatus.textContent = message;
     if (active) {
-      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.blank, elements.addImage, elements.refresh, elements.exit]) {
+      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.blank, elements.addImage, elements.refresh, elements.exit]) {
         button.disabled = true;
       }
       elements.thumbnails.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
@@ -255,14 +273,39 @@
   }
 
   async function mergeSyntheticPdf() {
-    if (!state.session) return;
+    if (!state.session || !state.merging) return;
     const viewState = viewer.getViewState() || state.viewState;
-    const insertAt = Math.max(0, Math.min(editor.pageCount(state.session), Number(viewState?.activePage || 1)));
+    const count = editor.pageCount(state.session);
+    const position = elements.mergePosition.value;
+    if (position === 'after-page' && !elements.mergeAfterPage.reportValidity()) return;
+    const insertAt = position === 'before-document' ? 0
+      : position === 'after-page' ? Math.max(1, Math.min(count, Number(elements.mergeAfterPage.value)))
+        : count;
+    setBusy(true, 'Unindo segundo PDF sintético…');
     await editor.addDocument(state.session, fixture.blob(), {
       label: 'Segundo PDF sintético',
       insertAt
     });
+    state.merging = false;
     await rebuild(viewState ? { ...viewState, activePage: insertAt + 1 } : null, 'Unindo segundo PDF sintético…');
+  }
+
+  function showMergePanel() {
+    if (!state.session) return;
+    state.merging = true;
+    elements.mergePosition.value = 'after-document';
+    elements.mergeAfterPage.max = String(editor.pageCount(state.session));
+    elements.mergeAfterPage.value = String(viewer.getViewState()?.activePage || 1);
+    elements.mergePageField.hidden = true;
+    syncEditorState();
+    elements.editorStatus.textContent = 'Segundo PDF sintético selecionado. Escolha a posição e confirme em Unir.';
+    elements.mergePosition.focus();
+  }
+
+  function cancelMerge() {
+    state.merging = false;
+    syncEditorState();
+    elements.editorStatus.textContent = 'Modo Organizar ativo.';
   }
 
   async function addBlankPage() {
@@ -289,6 +332,7 @@
     const changed = state.session.revision > 0;
     const viewState = viewer.getViewState() || state.viewState;
     state.session = null;
+    state.merging = false;
     syncEditorState();
     if (changed) {
       setBusy(true, 'Restaurando PDF sintético original…');
@@ -313,8 +357,13 @@
   elements.enterEditor.addEventListener('click', () => run(enterEditor));
   elements.undo.addEventListener('click', () => run(() => changeHistory('undo')));
   elements.redo.addEventListener('click', () => run(() => changeHistory('redo')));
-  elements.organize.addEventListener('click', () => viewer.setOrganizerMode?.(true));
-  elements.merge.addEventListener('click', () => run(mergeSyntheticPdf));
+  elements.organize.addEventListener('click', () => run(cancelMerge));
+  elements.merge.addEventListener('click', () => run(showMergePanel));
+  elements.mergeConfirm.addEventListener('click', () => run(mergeSyntheticPdf));
+  elements.mergeCancel.addEventListener('click', () => run(cancelMerge));
+  elements.mergePosition.addEventListener('change', () => {
+    elements.mergePageField.hidden = elements.mergePosition.value !== 'after-page';
+  });
   elements.blank.addEventListener('click', () => run(addBlankPage));
   elements.addImage.addEventListener('click', () => run(addSyntheticImage));
   elements.refresh.addEventListener('click', () => run(() => rebuild()));

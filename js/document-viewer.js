@@ -159,6 +159,7 @@
     session.resizeObserver?.disconnect?.();
     if (session.resizeTimer) clearTimeout(session.resizeTimer);
     session.resizeTimer = null;
+    clearThumbnailDragState(session);
     for (const record of session.pages.values()) clearRenderedPage(record);
     for (const record of session.thumbs.values()) {
       cancelRender(record);
@@ -270,13 +271,18 @@
   }
 
   function clearThumbnailDragState(session) {
+    const drag = session.touchDrag;
+    if (drag?.holdTimer) clearTimeout(drag.holdTimer);
+    if (session.dragFrame) cancelAnimationFrame(session.dragFrame);
+    session.dragFrame = null;
     session.dragSourceIndex = null;
     session.dragTargetIndex = null;
     session.touchDrag = null;
     session.dragGhost?.remove?.();
     session.dragGhost = null;
-    for (const wrapper of session.thumbnailsRoot?.querySelectorAll?.('.portal-pdf-thumb-wrap') || []) {
-      wrapper.classList.remove('dragging', 'drag-before', 'drag-after');
+    try { drag?.origin?.releasePointerCapture?.(drag.pointerId); } catch (_) {}
+    for (const record of session.thumbs.values()) {
+      record.wrapper?.classList.remove('dragging', 'drag-before', 'drag-after');
     }
   }
 
@@ -285,6 +291,7 @@
     const rect = wrapper.getBoundingClientRect();
     const ghost = wrapper.cloneNode(true);
     ghost.className = 'portal-pdf-drag-ghost';
+    ghost.setAttribute('aria-hidden', 'true');
     ghost.style.width = `${Math.max(120, rect.width)}px`;
     ghost.style.height = `${Math.max(120, rect.height)}px`;
     ghost.querySelectorAll('button').forEach((button) => { button.tabIndex = -1; });
@@ -387,26 +394,87 @@
 
     const dragend = () => clearThumbnailDragState(session);
 
+    // One session-owned loop keeps scrolling while the pointer rests at an edge.
+    // Hit testing includes grid gaps; the page plan is untouched until pointerup.
+    const updateDropTarget = (drag) => {
+      const rect = root.getBoundingClientRect();
+      if (drag.clientX < rect.left || drag.clientX > rect.right || drag.clientY < rect.top || drag.clientY > rect.bottom) {
+        session.dragTargetIndex = null;
+        markThumbnailDropTarget(session, null, false);
+        return;
+      }
+      let nearest = null;
+      let distance = Infinity;
+      for (const wrapper of root.querySelectorAll('.portal-pdf-thumb-wrap')) {
+        const box = wrapper.getBoundingClientRect();
+        const dx = Math.max(box.left - drag.clientX, 0, drag.clientX - box.right);
+        const dy = Math.max(box.top - drag.clientY, 0, drag.clientY - box.bottom);
+        const score = dx * dx + dy * dy;
+        if (score < distance) { nearest = wrapper; distance = score; }
+      }
+      const target = dropIndexForWrapper(session, nearest, drag.clientX, drag.clientY, drag.sourceIndex);
+      session.dragTargetIndex = target?.finalIndex ?? null;
+      markThumbnailDropTarget(session, nearest, target?.after);
+    };
+
+    const animateDrag = (time) => {
+      session.dragFrame = null;
+      const drag = session.touchDrag;
+      if (!isCurrentSession(session) || !drag?.started) return;
+      const rect = root.getBoundingClientRect();
+      const edge = 54;
+      const elapsed = Math.min(32, Math.max(0, time - (drag.frameTime || time)));
+      drag.frameTime = time;
+      if (drag.clientX >= rect.left && drag.clientX <= rect.right && drag.clientY >= rect.top && drag.clientY <= rect.bottom) {
+        const speed = drag.clientY < rect.top + edge
+          ? -clamp((rect.top + edge - drag.clientY) / edge, 0, 1)
+          : clamp((drag.clientY - (rect.bottom - edge)) / edge, 0, 1);
+        root.scrollTop += speed * elapsed * 0.75;
+      }
+      moveDragGhost(session, drag);
+      updateDropTarget(drag);
+      session.dragFrame = requestAnimationFrame(animateDrag);
+    };
+
+    const liftPage = (drag) => {
+      if (!isCurrentSession(session) || session.touchDrag !== drag) return;
+      if (drag.holdTimer) clearTimeout(drag.holdTimer);
+      drag.holdTimer = null;
+      drag.started = true;
+      drag.wrapper.classList.add('dragging');
+      ensureDragGhost(session, drag.wrapper, drag);
+      if (!session.dragFrame) session.dragFrame = requestAnimationFrame(animateDrag);
+    };
+
     const pointerdown = (event) => {
       if (!isCurrentSession(session) || !session.thumbnailActions || event.button > 0) return;
       if (event.target.closest?.('[data-thumbnail-action]')) return;
       const handle = event.target.closest?.('[data-thumbnail-drag]');
       const button = event.target.closest?.('.portal-pdf-thumb[data-page-number]');
-      if (event.pointerType === 'touch' && !handle) return;
       const origin = handle || button;
       const wrapper = origin?.closest?.('.portal-pdf-thumb-wrap');
       const pageNumber = Number(wrapper?.dataset.pageNumber);
       if (!origin || !wrapper || !Number.isInteger(pageNumber)) return;
+      if (!session.thumbs.get(pageNumber)?.rendered) return;
+      clearThumbnailDragState(session);
       session.touchDrag = {
+        origin,
+        wrapper,
+        pointerType: event.pointerType,
         pointerId: event.pointerId,
         sourceIndex: pageNumber - 1,
         startX: event.clientX,
         startY: event.clientY,
-        started: Boolean(handle)
+        clientX: event.clientX,
+        clientY: event.clientY,
+        started: false
       };
       if (handle) {
-        wrapper.classList.add('dragging');
+        liftPage(session.touchDrag);
         event.preventDefault();
+      } else if (event.pointerType === 'touch') {
+        const drag = session.touchDrag;
+        drag.holdTimer = setTimeout(() => liftPage(drag), 350);
       }
       try { origin.setPointerCapture?.(event.pointerId); } catch (_) {}
     };
@@ -414,30 +482,25 @@
     const pointermove = (event) => {
       const drag = session.touchDrag;
       if (!isCurrentSession(session) || !drag || drag.pointerId !== event.pointerId) return;
+      drag.clientX = event.clientX;
+      drag.clientY = event.clientY;
       if (!drag.started) {
         const distance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
         if (distance < 7) return;
-        drag.started = true;
-        const source = session.thumbnailsRoot.querySelector(`.portal-pdf-thumb-wrap[data-page-number="${drag.sourceIndex + 1}"]`);
-        source?.classList.add('dragging');
-        ensureDragGhost(session, source, event);
+        // A moving finger before the hold threshold is ordinary native scrolling.
+        if (drag.pointerType === 'touch') { clearThumbnailDragState(session); return; }
+        liftPage(drag);
       }
       event.preventDefault();
-      moveDragGhost(session, event);
-      const element = document.elementFromPoint(event.clientX, event.clientY);
-      const wrapper = element?.closest?.('.portal-pdf-thumb-wrap');
-      const target = dropIndexForWrapper(session, wrapper, event.clientX, event.clientY, drag.sourceIndex);
-      if (!target) return;
-      session.dragTargetIndex = target.finalIndex;
-      markThumbnailDropTarget(session, wrapper, target.after);
-      const rect = root.getBoundingClientRect();
-      if (event.clientY < rect.top + 36) root.scrollTop -= 20;
-      else if (event.clientY > rect.bottom - 36) root.scrollTop += 20;
+      updateDropTarget(drag);
     };
 
     const pointerup = (event) => {
       const drag = session.touchDrag;
       if (!drag || drag.pointerId !== event.pointerId) return;
+      drag.clientX = event.clientX;
+      drag.clientY = event.clientY;
+      if (drag.started) updateDropTarget(drag);
       const finalIndex = session.dragTargetIndex;
       const started = drag.started === true;
       clearThumbnailDragState(session);
@@ -446,11 +509,19 @@
       if (Number.isInteger(finalIndex)) emitThumbnailReorder(session, drag.sourceIndex, finalIndex);
     };
 
-    const pointercancel = () => clearThumbnailDragState(session);
+    const pointercancel = (event) => {
+      if (!session.touchDrag || event.pointerId == null || event.pointerId === session.touchDrag.pointerId) clearThumbnailDragState(session);
+    };
+    const touchmove = (event) => {
+      if (session.touchDrag?.started && event.cancelable) event.preventDefault();
+    };
+    const contextmenu = (event) => {
+      if (session.touchDrag?.started) event.preventDefault();
+    };
 
-    session.thumbnailDragHandlers = { dragstart, dragover, drop, dragend, pointerdown, pointermove, pointerup, pointercancel };
+    session.thumbnailDragHandlers = { dragstart, dragover, drop, dragend, pointerdown, pointermove, pointerup, pointercancel, lostpointercapture: pointercancel, touchmove, contextmenu };
     for (const [type, handler] of Object.entries(session.thumbnailDragHandlers)) {
-      root.addEventListener(type, handler, type === 'pointermove' ? { passive: false } : false);
+      root.addEventListener(type, handler, (type === 'pointermove' || type === 'touchmove') ? { passive: false } : false);
     }
   }
 
@@ -639,46 +710,66 @@
 
   async function renderThumbnail(session, pageNumber) {
     const record = session.thumbs.get(pageNumber);
-    if (!record || record.rendered || !isCurrentSession(session)) return;
-    if (record.renderTask) {
-      await settleRenderTask(record);
-      return;
+    if (!record || !isCurrentSession(session)) return;
+    const targetWidth = Number(session.thumbnailWidth || THUMB_WIDTH);
+    if (record.rendered && record.renderedWidth === targetWidth) return;
+    // Serialize the entire job, including getPage(), not only PDF.js render().
+    // A mode switch may arrive while either await is pending.
+    if (record.thumbnailPromise) {
+      await record.thumbnailPromise;
+      return renderThumbnail(session, pageNumber);
     }
 
-    const page = await getPage(session, pageNumber);
-    if (!page || !isCurrentSession(session)) return;
+    const generation = session.thumbnailGeneration || 0;
+    const isCurrentThumbnail = () => isCurrentSession(session)
+      && generation === (session.thumbnailGeneration || 0);
+    const promise = (async () => {
+      if (record.renderTask) await settleRenderTask(record, { cancel: true });
+      if (!isCurrentThumbnail()) return;
+      const page = await getPage(session, pageNumber);
+      if (!page || !isCurrentThumbnail()) return;
 
-    const base = page.getViewport({ scale: 1 });
-    const targetWidth = Number(session.thumbnailWidth || THUMB_WIDTH);
-    const scale = targetWidth / Math.max(1, base.width);
-    const viewport = page.getViewport({ scale });
-    const outputScale = Math.min(Number(window.devicePixelRatio || 1), 1.5);
+      const base = page.getViewport({ scale: 1 });
+      const scale = targetWidth / Math.max(1, base.width);
+      const viewport = page.getViewport({ scale });
+      const outputScale = Math.min(Number(window.devicePixelRatio || 1), 1.5);
 
-    record.canvas.width = Math.max(1, Math.floor(viewport.width * outputScale));
-    record.canvas.height = Math.max(1, Math.floor(viewport.height * outputScale));
-    record.canvas.style.width = `${Math.ceil(viewport.width)}px`;
-    record.canvas.style.height = `${Math.ceil(viewport.height)}px`;
+      // The previous task is settled before resizing its canvas.
+      record.canvas.width = Math.max(1, Math.floor(viewport.width * outputScale));
+      record.canvas.height = Math.max(1, Math.floor(viewport.height * outputScale));
+      record.canvas.style.width = `${Math.ceil(viewport.width)}px`;
+      record.canvas.style.height = `${Math.ceil(viewport.height)}px`;
 
-    const transform = outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0];
-    const task = page.render({
-      canvas: record.canvas,
-      viewport,
-      transform,
-      intent: 'display'
-    });
-    record.renderTask = task;
+      const transform = outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0];
+      const task = page.render({
+        canvas: record.canvas,
+        viewport,
+        transform,
+        intent: 'display'
+      });
+      record.renderTask = task;
+
+      try {
+        await task.promise;
+        if (isCurrentThumbnail()) {
+          record.rendered = true;
+          record.renderedWidth = targetWidth;
+          record.button.classList.add('rendered');
+        }
+      } catch (error) {
+        if (error?.name !== 'RenderingCancelledException' && isCurrentThumbnail()) throw error;
+      } finally {
+        if (record.renderTask === task) record.renderTask = null;
+      }
+    })();
+    record.thumbnailPromise = promise;
 
     try {
-      await task.promise;
-      if (isCurrentSession(session)) {
-        record.rendered = true;
-        record.button.classList.add('rendered');
-      }
-    } catch (error) {
-      if (error?.name !== 'RenderingCancelledException' && isCurrentSession(session)) throw error;
+      await promise;
     } finally {
-      if (record.renderTask === task) record.renderTask = null;
+      if (record.thumbnailPromise === promise) record.thumbnailPromise = null;
     }
+    if (isCurrentSession(session) && !isCurrentThumbnail()) return renderThumbnail(session, pageNumber);
   }
 
   function installObservers(session) {
@@ -726,7 +817,7 @@
           if (!Number.isInteger(pageNumber)) continue;
           session.pageRatios.set(pageNumber, entry.isIntersecting ? entry.intersectionRatio : 0);
         }
-        if (session.initialPageTarget) return;
+        if (session.initialPageTarget || session.organizerMode) return;
         let bestPage = session.activePage || 1;
         let bestRatio = -1;
         for (const [pageNumber, ratio] of session.pageRatios) {
@@ -828,6 +919,7 @@
     const session = active;
     if (!session || session.closed) return false;
     session.thumbnailActions = enabled === true;
+    if (!session.thumbnailActions) clearThumbnailDragState(session);
     session.onThumbnailAction = typeof onThumbnailAction === 'function' ? onThumbnailAction : null;
     syncThumbnailActions(session);
     return true;
@@ -839,17 +931,17 @@
     const next = enabled === true;
     if (session.organizerMode === next) return true;
     session.organizerMode = next;
+    clearThumbnailDragState(session);
     session.thumbnailWidth = next ? ORGANIZER_THUMB_WIDTH : THUMB_WIDTH;
+    session.thumbnailGeneration = (session.thumbnailGeneration || 0) + 1;
     session.root.dataset.organizerMode = next ? 'true' : 'false';
 
     for (const record of session.thumbs.values()) {
       cancelRender(record);
       record.rendered = false;
-      record.canvas.width = 0;
-      record.canvas.height = 0;
-      record.canvas.removeAttribute('style');
+      record.button.classList.remove('rendered');
     }
-    for (let pageNumber = 1; pageNumber <= session.document.numPages; pageNumber += 1) {
+    for (let pageNumber = 1; pageNumber <= (session.document?.numPages || 0); pageNumber += 1) {
       renderThumbnail(session, pageNumber).catch(() => {});
     }
     return true;
@@ -1083,10 +1175,10 @@
 
       if (typeof ResizeObserver === 'function') {
         session.resizeObserver = new ResizeObserver(() => {
-          if (!session.fitMode || !isCurrentSession(session)) return;
+          if (!session.fitMode || session.organizerMode || !isCurrentSession(session)) return;
           if (session.resizeTimer) clearTimeout(session.resizeTimer);
           session.resizeTimer = window.setTimeout(() => {
-            if (!session.fitMode || !isCurrentSession(session)) return;
+            if (!session.fitMode || session.organizerMode || !isCurrentSession(session)) return;
             fitWidth().catch(() => {});
           }, 140);
         });
@@ -1132,8 +1224,9 @@
     scrollToPage,
     getViewState,
     setThumbnailActions,
+    setOrganizerMode,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c2b`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-organizar-v2-c`
   });
 })();
