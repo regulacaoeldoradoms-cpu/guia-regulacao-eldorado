@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260914-2">
+  <link rel="stylesheet" href="/css/documents.css?v=20260915-1">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -101,6 +101,12 @@
           <div class="documents-viewer-state" id="documentsViewerState">Preparando PDF…</div>
 
           <section class="documents-custom-viewer" id="documentsCustomViewer" hidden aria-label="Visualizador próprio de PDF">
+            <nav class="documents-editor-side-rail" id="documentsEditorSideRail" aria-label="Ferramentas do documento">
+              <button class="documents-rail-tool" id="editorRailEditButton" type="button" title="Editar documento" aria-label="Editar documento" hidden>
+                <span aria-hidden="true">✎</span>
+                <span class="sr-only">Editar</span>
+              </button>
+            </nav>
             <div class="documents-pdf-toolbar" role="toolbar" aria-label="Controles do PDF">
               <button class="portal-button ghost" id="pdfZoomOutButton" type="button" aria-label="Diminuir zoom">−</button>
               <button class="portal-button ghost" id="pdfZoomResetButton" type="button" aria-label="Restaurar zoom"><span id="pdfZoomLabel">100%</span></button>
@@ -109,20 +115,44 @@
               <span class="documents-pdf-page-count" id="pdfPageCountLabel"></span>
             </div>
             <div class="documents-editor" id="documentsEditor" hidden aria-label="Controles de edição local do PDF">
-              <div class="documents-editor-banner">
-                <strong>Edição local</strong>
-                <span>As alterações aparecem neste mesmo PDF e ainda não serão salvas no Google Drive. Você também pode colar um print com Ctrl+V.</span>
-              </div>
-              <div class="documents-editor-toolbar" role="toolbar" aria-label="Ações de edição do PDF">
-                <button class="portal-button secondary" id="editorUndoButton" type="button">Desfazer</button>
-                <button class="portal-button secondary" id="editorRedoButton" type="button">Refazer</button>
-                <button class="portal-button secondary" id="editorMergeButton" type="button">Unir outro PDF</button>
-                <button class="portal-button secondary" id="editorImageButton" type="button">Adicionar imagem</button>
+              <div class="documents-editor-toolbar documents-editor-toolbar--compact" role="toolbar" aria-label="Ferramentas do editor PDF">
+                <button class="documents-editor-tool" id="editorUndoButton" type="button" title="Desfazer" aria-label="Desfazer">↶</button>
+                <button class="documents-editor-tool" id="editorRedoButton" type="button" title="Refazer" aria-label="Refazer">↷</button>
+                <span class="documents-editor-tool-separator" aria-hidden="true"></span>
+                <button class="documents-editor-tool active" id="editorOrganizeButton" type="button" title="Organizar páginas" aria-label="Organizar páginas" aria-pressed="true">▦</button>
+                <button class="documents-editor-tool" id="editorMergeButton" type="button" title="Unir outro PDF" aria-label="Unir outro PDF">⧉</button>
+                <button class="documents-editor-tool" id="editorBlankPageButton" type="button" title="Inserir página em branco" aria-label="Inserir página em branco">⊞</button>
+                <button class="documents-editor-tool" id="editorImageButton" type="button" title="Adicionar imagem como nova página" aria-label="Adicionar imagem como nova página">▧</button>
                 <input id="editorImageInput" type="file" accept="image/*" multiple hidden>
-                <button class="portal-button primary" id="editorPreviewButton" type="button">Atualizar PDF</button>
-                <button class="portal-button secondary" id="editorExitButton" type="button">Sair do editor</button>
+                <button class="documents-editor-tool is-planned" id="editorCropButton" type="button" title="Recortar página — próxima unidade" aria-label="Recortar página" disabled>⌗</button>
+                <button class="documents-editor-tool is-planned" id="editorWriteButton" type="button" title="Escrever — próxima unidade" aria-label="Escrever" disabled>T</button>
+                <button class="documents-editor-tool is-planned" id="editorOverlayImageButton" type="button" title="Colar imagem sobre a página — próxima unidade" aria-label="Colar imagem sobre a página" disabled>▣</button>
+                <button class="documents-editor-tool is-planned" id="editorDrawButton" type="button" title="Desenhar — próxima unidade" aria-label="Desenhar" disabled>✎</button>
+                <span class="documents-editor-tool-spacer"></span>
+                <button class="documents-editor-tool" id="editorPreviewButton" type="button" title="Atualizar PDF" aria-label="Atualizar PDF">⟳</button>
+                <button class="documents-editor-tool" id="editorExitButton" type="button" title="Sair do editor" aria-label="Sair do editor">×</button>
               </div>
               <div class="documents-editor-status" id="documentsEditorStatus" aria-live="polite"></div>
+              <aside class="documents-editor-panel" id="editorMergePanel" hidden aria-label="Unir documentos">
+                <div class="documents-editor-panel-head">
+                  <strong>Unir documentos</strong>
+                  <button class="documents-editor-panel-close" id="editorMergeCancelButton" type="button" aria-label="Fechar painel de união">×</button>
+                </div>
+                <p id="editorMergeSelection">Escolha outro PDF na lista da Central.</p>
+                <label class="documents-editor-field">
+                  <span>Posição de inserção</span>
+                  <select id="editorMergePosition">
+                    <option value="after-document">Após o documento atual</option>
+                    <option value="before-document">Antes do documento atual</option>
+                    <option value="after-page">Após uma página específica</option>
+                  </select>
+                </label>
+                <label class="documents-editor-field" id="editorMergePageField" hidden>
+                  <span>Página</span>
+                  <input id="editorMergeAfterPage" type="number" min="1" step="1" value="1">
+                </label>
+                <button class="portal-button primary" id="editorMergeApplyButton" type="button" disabled>Unir</button>
+              </aside>
             </div>
             <div class="documents-pdf-layout">
               <nav class="documents-pdf-thumbnails" id="pdfThumbnailRail" aria-label="Miniaturas das páginas"></nav>
@@ -141,8 +171,8 @@
   <script src="/js/portal-interactions.js?v=20260910-2"></script>
   <script src="/js/tools-catalog.js?v=20260911-3"></script>
   <script src="/js/document-cache.js?v=20260912-1"></script>
-  <script src="/js/document-editor.js?v=20260914-1"></script>
-  <script src="/js/document-viewer.js?v=20260914-4"></script>
-  <script src="/js/documents.js?v=20260914-1"></script>
+  <script src="/js/document-editor.js?v=20260915-1"></script>
+  <script src="/js/document-viewer.js?v=20260915-1"></script>
+  <script src="/js/documents.js?v=20260915-1"></script>
 </body>
 </html>
