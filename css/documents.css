@@ -946,3 +946,117 @@
 .portal-pdf-drag-ghost {
   transition: opacity .08s ease;
 }
+
+
+/* Fase 3C.3 — objetos editáveis sobre páginas */
+.portal-pdf-object-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.documents-custom-viewer[data-object-mode="select"] .portal-pdf-object-layer,
+.documents-custom-viewer[data-object-mode="write"] .portal-pdf-object-layer,
+.documents-custom-viewer[data-object-mode="image"] .portal-pdf-object-layer {
+  pointer-events: auto;
+}
+
+.portal-pdf-object {
+  position: absolute;
+  box-sizing: border-box;
+  min-width: 24px;
+  min-height: 18px;
+  border: 1px solid transparent;
+  transform-origin: center;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
+.portal-pdf-object:hover,
+.portal-pdf-object:focus-visible,
+.portal-pdf-object.selected {
+  border-color: #2b77a8;
+  box-shadow: 0 0 0 2px rgba(43,119,168,.13);
+  outline: none;
+}
+
+.portal-pdf-object-text {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 3px 5px;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.18;
+  font-size: var(--object-font-size, 18px);
+  cursor: inherit;
+  user-select: text;
+}
+
+.portal-pdf-object-text[contenteditable="true"] {
+  cursor: text;
+  background: rgba(255,255,255,.86);
+  outline: 1px dashed #2b77a8;
+}
+
+.portal-pdf-object-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.portal-pdf-object-handle,
+.portal-pdf-object-rotate {
+  position: absolute;
+  display: none;
+  box-sizing: border-box;
+  background: #fff;
+  border: 2px solid #2b77a8;
+  z-index: 4;
+}
+
+.portal-pdf-object.selected .portal-pdf-object-handle,
+.portal-pdf-object.selected .portal-pdf-object-rotate {
+  display: block;
+}
+
+.portal-pdf-object-handle {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.portal-pdf-object-handle--nw { left: -7px; top: -7px; cursor: nwse-resize; }
+.portal-pdf-object-handle--ne { right: -7px; top: -7px; cursor: nesw-resize; }
+.portal-pdf-object-handle--sw { left: -7px; bottom: -7px; cursor: nesw-resize; }
+.portal-pdf-object-handle--se { right: -7px; bottom: -7px; cursor: nwse-resize; }
+
+.portal-pdf-object-rotate {
+  width: 14px;
+  height: 14px;
+  left: calc(50% - 7px);
+  bottom: -30px;
+  border-radius: 50%;
+  cursor: grab;
+}
+
+.portal-pdf-object-rotate::before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 16px;
+  left: 4px;
+  bottom: 10px;
+  background: #2b77a8;
+}
+
+.documents-custom-viewer[data-organizer-mode="true"] .portal-pdf-object-layer {
+  display: none;
+}

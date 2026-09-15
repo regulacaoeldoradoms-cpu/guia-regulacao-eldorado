@@ -160,6 +160,7 @@
     if (session.resizeTimer) clearTimeout(session.resizeTimer);
     session.resizeTimer = null;
     clearThumbnailDragState(session);
+    clearEditorObjectUi(session);
     for (const record of session.pages.values()) clearRenderedPage(record);
     for (const record of session.thumbs.values()) {
       cancelRender(record);
@@ -551,7 +552,12 @@
     loading.className = 'portal-pdf-page-loading';
     loading.textContent = 'Carregando página…';
 
-    article.append(badge, canvas, loading);
+    const objectLayer = document.createElement('div');
+    objectLayer.className = 'portal-pdf-object-layer';
+    objectLayer.dataset.pageNumber = String(pageNumber);
+    objectLayer.setAttribute('aria-label', `Objetos da página ${pageNumber}`);
+
+    article.append(badge, canvas, loading, objectLayer);
     session.pagesRoot.appendChild(article);
 
     const record = {
@@ -559,6 +565,7 @@
       container: article,
       canvas,
       loading,
+      objectLayer,
       page: null,
       renderTask: null,
       pendingScale: 0,
@@ -568,6 +575,310 @@
     };
     session.pages.set(pageNumber, record);
     return record;
+  }
+
+  function clamp01(value, fallback = 0) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return fallback;
+    return Math.min(1, Math.max(0, numeric));
+  }
+
+  function clearEditorObjectUi(session) {
+    for (const entry of session?.objectUrls?.values?.() || []) {
+      try { URL.revokeObjectURL(entry.url); } catch (_) {}
+    }
+    session?.objectUrls?.clear?.();
+    if (session) {
+      session.editorObjects = [];
+      session.selectedObjectId = '';
+      session.editingTextId = '';
+      session.objectDrag = null;
+    }
+    for (const record of session?.pages?.values?.() || []) record.objectLayer?.replaceChildren();
+  }
+
+  function objectForId(session, objectId) {
+    return (session.editorObjects || []).find((item) => String(item.id) === String(objectId || '')) || null;
+  }
+
+  function objectUrl(session, object) {
+    if (!(object?.blob instanceof Blob)) return '';
+    const existing = session.objectUrls.get(object.id);
+    if (existing?.blob === object.blob) return existing.url;
+    if (existing?.url) {
+      try { URL.revokeObjectURL(existing.url); } catch (_) {}
+    }
+    const url = URL.createObjectURL(object.blob);
+    session.objectUrls.set(object.id, { blob: object.blob, url });
+    return url;
+  }
+
+  function applyObjectGeometry(element, object, pageWidth = 760) {
+    const width = Math.min(0.95, Math.max(0.035, Number(object.width) || 0.2));
+    const height = Math.min(0.95, Math.max(0.025, Number(object.height) || 0.08));
+    element.style.left = `${clamp01(object.x) * 100}%`;
+    element.style.top = `${clamp01(object.y) * 100}%`;
+    element.style.width = `${width * 100}%`;
+    element.style.height = `${height * 100}%`;
+    element.style.opacity = String(clamp01(object.opacity, 1));
+    element.style.transform = `rotate(${Number(object.rotation || 0)}deg)`;
+    element.style.setProperty('--object-font-size', `${Math.max(8, Number(object.fontSize || 0.032) * Math.max(240, pageWidth))}px`);
+  }
+
+  function createObjectHandles(element) {
+    for (const handle of ['nw', 'ne', 'sw', 'se']) {
+      const node = document.createElement('span');
+      node.className = `portal-pdf-object-handle portal-pdf-object-handle--${handle}`;
+      node.dataset.objectResize = handle;
+      node.setAttribute('aria-hidden', 'true');
+      element.appendChild(node);
+    }
+    const rotate = document.createElement('span');
+    rotate.className = 'portal-pdf-object-rotate';
+    rotate.dataset.objectRotate = 'true';
+    rotate.title = 'Rotacionar';
+    rotate.setAttribute('aria-label', 'Rotacionar objeto');
+    element.appendChild(rotate);
+  }
+
+  function renderEditorObjectsForPage(session, pageNumber) {
+    const record = session.pages.get(Number(pageNumber));
+    const layer = record?.objectLayer;
+    if (!layer) return;
+    const mode = String(session.objectMode || 'none');
+    layer.dataset.objectMode = mode;
+    layer.replaceChildren();
+
+    const liveIds = new Set();
+    for (const object of session.editorObjects || []) {
+      if (Number(object.displayPage) !== Number(pageNumber)) continue;
+      liveIds.add(String(object.id));
+      const element = document.createElement('div');
+      element.className = `portal-pdf-object portal-pdf-object--${object.type}`;
+      element.dataset.objectId = String(object.id);
+      element.tabIndex = 0;
+      element.setAttribute('aria-label', object.type === 'text' ? 'Caixa de texto' : 'Imagem inserida');
+      if (session.selectedObjectId === object.id) element.classList.add('selected');
+      applyObjectGeometry(element, object, record.container.clientWidth || 760);
+
+      if (object.type === 'text') {
+        const content = document.createElement('div');
+        content.className = 'portal-pdf-object-text';
+        content.textContent = String(object.text || '');
+        content.style.fontFamily = String(object.fontFamily || 'Arial');
+        content.style.color = String(object.color || '#111111');
+        content.contentEditable = session.editingTextId === object.id ? 'true' : 'false';
+        content.spellcheck = false;
+        element.appendChild(content);
+      } else if (object.type === 'image') {
+        const image = document.createElement('img');
+        image.className = 'portal-pdf-object-image';
+        image.alt = '';
+        image.draggable = false;
+        image.src = objectUrl(session, object);
+        element.appendChild(image);
+      }
+
+      createObjectHandles(element);
+      layer.appendChild(element);
+    }
+
+    for (const [id, entry] of [...session.objectUrls.entries()]) {
+      if (liveIds.has(id)) continue;
+      try { URL.revokeObjectURL(entry.url); } catch (_) {}
+      session.objectUrls.delete(id);
+    }
+  }
+
+  function renderEditorObjects(session) {
+    if (!isCurrentSession(session)) return false;
+    for (let pageNumber = 1; pageNumber <= (session.document?.numPages || 0); pageNumber += 1) {
+      renderEditorObjectsForPage(session, pageNumber);
+    }
+    session.root.dataset.objectMode = String(session.objectMode || 'none');
+    return true;
+  }
+
+  function commitObjectGesture(session, drag) {
+    if (!drag || !session.onObjectCommit) return;
+    const object = objectForId(session, drag.id);
+    if (!object) return;
+    session.onObjectCommit(drag.id, {
+      x: object.x, y: object.y, width: object.width, height: object.height, rotation: object.rotation
+    });
+  }
+
+  function installObjectHandlers(session) {
+    if (session.objectHandlers) return;
+    const pagesRoot = session.pagesRoot;
+
+    const pointerdown = (event) => {
+      if (!isCurrentSession(session) || session.organizerMode || String(session.objectMode || 'none') === 'none') return;
+      const element = event.target.closest?.('.portal-pdf-object');
+      if (!element) return;
+      const id = String(element.dataset.objectId || '');
+      const object = objectForId(session, id);
+      const layer = element.closest('.portal-pdf-object-layer');
+      if (!object || !layer) return;
+      if (event.target.closest?.('.portal-pdf-object-text[contenteditable="true"]')) return;
+      event.preventDefault();
+      session.selectedObjectId = id;
+      session.onObjectSelect?.(id);
+      renderEditorObjects(session);
+
+      const rect = layer.getBoundingClientRect();
+      const objectRect = element.getBoundingClientRect();
+      const resize = event.target.closest?.('[data-object-resize]')?.dataset?.objectResize || '';
+      const rotate = Boolean(event.target.closest?.('[data-object-rotate]'));
+      const center = {
+        x: objectRect.left + objectRect.width / 2,
+        y: objectRect.top + objectRect.height / 2
+      };
+      session.objectDrag = {
+        id,
+        pointerId: event.pointerId,
+        origin: element,
+        kind: rotate ? 'rotate' : resize ? 'resize' : 'move',
+        handle: resize,
+        startX: event.clientX,
+        startY: event.clientY,
+        layerWidth: Math.max(1, rect.width),
+        layerHeight: Math.max(1, rect.height),
+        center,
+        startAngle: Math.atan2(event.clientY - center.y, event.clientX - center.x) * 180 / Math.PI,
+        start: { ...object }
+      };
+      try { element.setPointerCapture?.(event.pointerId); } catch (_) {}
+    };
+
+    const pointermove = (event) => {
+      const drag = session.objectDrag;
+      if (!drag || !isCurrentSession(session) || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
+      const object = objectForId(session, drag.id);
+      if (!object) return;
+      event.preventDefault();
+      const dx = (event.clientX - drag.startX) / drag.layerWidth;
+      const dy = (event.clientY - drag.startY) / drag.layerHeight;
+      let patch = {};
+
+      if (drag.kind === 'move') {
+        patch = {
+          x: Math.min(1 - drag.start.width, Math.max(0, drag.start.x + dx)),
+          y: Math.min(1 - drag.start.height, Math.max(0, drag.start.y + dy))
+        };
+      } else if (drag.kind === 'rotate') {
+        const angle = Math.atan2(event.clientY - drag.center.y, event.clientX - drag.center.x) * 180 / Math.PI;
+        patch = { rotation: drag.start.rotation + (angle - drag.startAngle) };
+      } else {
+        let x = drag.start.x;
+        let y = drag.start.y;
+        let width = drag.start.width;
+        let height = drag.start.height;
+        if (drag.handle.includes('e')) width = drag.start.width + dx;
+        if (drag.handle.includes('s')) height = drag.start.height + dy;
+        if (drag.handle.includes('w')) {
+          x = drag.start.x + dx;
+          width = drag.start.width - dx;
+        }
+        if (drag.handle.includes('n')) {
+          y = drag.start.y + dy;
+          height = drag.start.height - dy;
+        }
+        width = Math.min(0.95, Math.max(0.035, width));
+        height = Math.min(0.95, Math.max(0.025, height));
+        x = Math.min(1 - width, Math.max(0, x));
+        y = Math.min(1 - height, Math.max(0, y));
+        patch = { x, y, width, height };
+      }
+
+      Object.assign(object, patch);
+      session.onObjectChange?.(drag.id, patch);
+      const element = pagesRoot.querySelector(`.portal-pdf-object[data-object-id="${CSS.escape(drag.id)}"]`);
+      if (element) applyObjectGeometry(element, object, element.closest('.portal-pdf-page')?.clientWidth || 760);
+    };
+
+    const finish = (event) => {
+      const drag = session.objectDrag;
+      if (!drag || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
+      session.objectDrag = null;
+      try { drag.origin?.releasePointerCapture?.(drag.pointerId); } catch (_) {}
+      commitObjectGesture(session, drag);
+    };
+
+    const click = (event) => {
+      if (!isCurrentSession(session) || session.organizerMode) return;
+      const element = event.target.closest?.('.portal-pdf-object');
+      if (element) {
+        const id = String(element.dataset.objectId || '');
+        if (id && session.selectedObjectId !== id) {
+          session.selectedObjectId = id;
+          session.onObjectSelect?.(id);
+          renderEditorObjects(session);
+        }
+        return;
+      }
+      const layer = event.target.closest?.('.portal-pdf-object-layer');
+      if (!layer || String(session.objectMode || '') !== 'write') return;
+      const pageNumber = Number(layer.dataset.pageNumber);
+      const rect = layer.getBoundingClientRect();
+      session.onCreateText?.(pageNumber, {
+        x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width)),
+        y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height))
+      });
+    };
+
+    const dblclick = (event) => {
+      const text = event.target.closest?.('.portal-pdf-object-text');
+      const element = text?.closest?.('.portal-pdf-object');
+      if (!text || !element || !isCurrentSession(session)) return;
+      event.preventDefault();
+      const id = String(element.dataset.objectId || '');
+      session.selectedObjectId = id;
+      session.editingTextId = id;
+      renderEditorObjects(session);
+      const next = pagesRoot.querySelector(`.portal-pdf-object[data-object-id="${CSS.escape(id)}"] .portal-pdf-object-text`);
+      next?.focus?.();
+      try {
+        const range = document.createRange();
+        range.selectNodeContents(next);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+      } catch (_) {}
+    };
+
+    const focusout = (event) => {
+      const text = event.target.closest?.('.portal-pdf-object-text[contenteditable="true"]');
+      const element = text?.closest?.('.portal-pdf-object');
+      if (!text || !element) return;
+      const id = String(element.dataset.objectId || '');
+      session.editingTextId = '';
+      const value = String(text.textContent || '');
+      const object = objectForId(session, id);
+      if (object) object.text = value;
+      session.onObjectTextCommit?.(id, value);
+      renderEditorObjects(session);
+    };
+
+    session.objectHandlers = { pointerdown, pointermove, pointerup: finish, pointercancel: finish, click, dblclick, focusout };
+    for (const [type, handler] of Object.entries(session.objectHandlers)) {
+      pagesRoot.addEventListener(type, handler, type === 'pointermove' ? { passive: false } : false);
+    }
+  }
+
+  function setEditorObjects(objects = [], options = {}) {
+    const session = active;
+    if (!session || session.closed) return false;
+    session.editorObjects = Array.isArray(objects) ? objects.map((item) => ({ ...item })) : [];
+    session.objectMode = String(options.mode || session.objectMode || 'select');
+    session.selectedObjectId = String(options.selectedObjectId || session.selectedObjectId || '');
+    session.onObjectChange = typeof options.onChange === 'function' ? options.onChange : session.onObjectChange;
+    session.onObjectCommit = typeof options.onCommit === 'function' ? options.onCommit : session.onObjectCommit;
+    session.onObjectSelect = typeof options.onSelect === 'function' ? options.onSelect : session.onObjectSelect;
+    session.onCreateText = typeof options.onCreateText === 'function' ? options.onCreateText : session.onCreateText;
+    session.onObjectTextCommit = typeof options.onTextCommit === 'function' ? options.onTextCommit : session.onObjectTextCommit;
+    installObjectHandlers(session);
+    return renderEditorObjects(session);
   }
 
   function createThumbnailPlaceholder(session, pageNumber) {
@@ -690,6 +1001,7 @@
     record.renderGeneration = generation;
     record.loading.hidden = true;
     record.container.classList.add('rendered');
+    if (session.editorObjects?.length) renderEditorObjectsForPage(session, pageNumber);
 
     if (pageNumber === 1 && !session.firstPageRendered) {
       session.firstPageRendered = true;
@@ -1035,6 +1347,18 @@
       dragGhostOffsetY: 0,
       touchDrag: null,
       suppressThumbnailClickUntil: 0,
+      editorObjects: [],
+      objectMode: 'none',
+      selectedObjectId: '',
+      editingTextId: '',
+      objectDrag: null,
+      objectUrls: new Map(),
+      objectHandlers: null,
+      onObjectChange: null,
+      onObjectCommit: null,
+      onObjectSelect: null,
+      onCreateText: null,
+      onObjectTextCommit: null,
       pageRatios: new Map(),
       visiblePages: new Set(),
       activePage: 0,
@@ -1235,8 +1559,9 @@
     getViewState,
     setThumbnailActions,
     setOrganizerMode,
+    setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-organizar-v2-c`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v1`
   });
 })();
