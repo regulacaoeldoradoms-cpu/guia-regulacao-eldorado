@@ -206,7 +206,7 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(panel).toBeVisible();
     const paletteBox = await palette.boundingBox();
     const panelBefore = await panel.boundingBox();
-    expect(panelBefore.bottom).toBeLessThanOrEqual(paletteBox.y + 2);
+    expect(panelBefore.y + panelBefore.height).toBeLessThanOrEqual(paletteBox.y + 2);
 
     // The lower-right grip moves the panel freely without closing it.
     const dragHandle = panel.locator('[data-color-drag-handle]');
