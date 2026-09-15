@@ -273,6 +273,25 @@ test('objetos sobre página acompanham página, histórico, duplicação e exclu
   assert.equal(editor.objectModel(session)[0].displayPage, 1);
   assert.equal(editor.objectModel(session)[0].text, 'Texto sintético');
 
+  assert.equal(editor.updateObject(session, textId, {
+    fontWeight: 'bold',
+    fontStyle: 'italic',
+    textDecoration: 'underline',
+    textAlign: 'center'
+  }), true);
+  let formatted = editor.objectModel(session).find((item) => item.id === textId);
+  assert.equal(formatted.fontWeight, 'bold');
+  assert.equal(formatted.fontStyle, 'italic');
+  assert.equal(formatted.textDecoration, 'underline');
+  assert.equal(formatted.textAlign, 'center');
+  assert.equal(editor.undo(session), true);
+  formatted = editor.objectModel(session).find((item) => item.id === textId);
+  assert.equal(formatted.fontWeight, 'normal');
+  assert.equal(formatted.fontStyle, 'normal');
+  assert.equal(formatted.textDecoration, 'none');
+  assert.equal(formatted.textAlign, 'left');
+  assert.equal(editor.redo(session), true);
+
   assert.equal(editor.updateObject(session, textId, { x: .35, rotation: 27 }, { commit: false }), true);
   assert.equal(editor.commitObjectMutation(session), true);
   assert.equal(Math.round(editor.objectModel(session)[0].rotation), 27);
