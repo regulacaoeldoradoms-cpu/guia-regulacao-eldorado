@@ -497,6 +497,34 @@ test('seletor de cor do toolbar faz preview sem poluir o histórico e consolida 
   assert.match(client, /editorObjectColor\?\.addEventListener\('change', \(\) => finalizeSelectedEditorColor/);
 });
 
+test('paleta serializa gravações e a saída limpa o object mode antes de descartar a sessão', () => {
+  const client = read('js/documents.js');
+
+  assert.match(client, /editorPaletteWriteChain:\s*Promise\.resolve\(\)/);
+  assert.match(client, /state\.editorPaletteWriteChain\.then\(write, write\)/);
+  assert.match(client, /generation === state\.editorPaletteWriteGeneration/);
+  assert.match(client, /setEditorObjects\?\.\(\[\], \{ mode: 'none', selectedObjectId: '' \}\)/);
+});
+
+test('paleta contextual cria slot no + e usa showPicker para RGB', () => {
+  const viewer = read('js/document-viewer.js');
+
+  assert.match(viewer, /session\.paletteSelectedIndex = session\.colorPalette\.length - 1/);
+  assert.match(viewer, /session\.onColorPaletteChange\?\.\(\[\.\.\.session\.colorPalette\]\)/);
+  assert.match(viewer, /picker\.showPicker\(\)/);
+  assert.doesNotMatch(viewer, /data-text-palette-add-picker/);
+});
+
+test('transparência afeta somente o conteúdo e mantém controles opacos', () => {
+  const viewer = read('js/document-viewer.js');
+  const css = read('css/documents.css');
+
+  assert.match(viewer, /--object-opacity/);
+  assert.doesNotMatch(viewer, /element\.style\.opacity = String\(clamp01\(object\.opacity/);
+  assert.match(css, /\.portal-pdf-object-text[\s\S]*opacity:\s*var\(--object-opacity, 1\)/);
+  assert.match(css, /\.portal-pdf-object-image[\s\S]*opacity:\s*var\(--object-opacity, 1\)/);
+});
+
 test('3C.3 mantém objetos locais reversíveis e deixa Recortar/Desenhar bloqueados', () => {
   const html = read('documentos/index.html');
   const editor = read('js/document-editor.js');
