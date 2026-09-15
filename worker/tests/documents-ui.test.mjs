@@ -543,13 +543,14 @@ test('transparência afeta somente o conteúdo e mantém controles opacos', () =
   assert.match(css, /\.portal-pdf-object-image[\s\S]*opacity:\s*var\(--object-opacity, 1\)/);
 });
 
-test('3C.3 mantém objetos locais reversíveis e deixa Recortar/Desenhar bloqueados', () => {
+test('3C.4 mantém objetos reversíveis, habilita Recortar e mantém Desenhar bloqueado', () => {
   const html = read('documentos/index.html');
   const editor = read('js/document-editor.js');
   const viewer = read('js/document-viewer.js');
   const css = read('css/documents.css');
 
-  assert.match(html, /id="editorCropButton"[^>]*disabled/);
+  assert.match(html, /id="editorCropButton"/);
+  assert.doesNotMatch(html, /id="editorCropButton"[^>]*disabled/);
   assert.match(html, /id="editorDrawButton"[^>]*disabled/);
   assert.match(html, /id="editorOverlayImageInput"[^>]*type="file"/);
   assert.match(editor, /objects:\s*\[\]/);
@@ -575,4 +576,12 @@ test('3C.3 mantém objetos locais reversíveis e deixa Recortar/Desenhar bloquea
   assert.match(css, /\.portal-pdf-object-rotate/);
   assert.match(css, /\.portal-pdf-text-quickbar/);
   assert.match(css, /\.portal-pdf-text-palette/);
+  assert.match(editor, /function setPageCrop\(/);
+  assert.match(editor, /function clearPageCrop\(/);
+  assert.match(editor, /function rotateCropRect\(/);
+  assert.match(viewer, /function setEditorCrops\(/);
+  assert.match(viewer, /data-crop-frame/);
+  assert.match(viewer, /data-crop-resize/);
+  assert.match(css, /\.portal-pdf-crop-layer/);
+  assert.match(css, /\.portal-pdf-crop-frame/);
 });
