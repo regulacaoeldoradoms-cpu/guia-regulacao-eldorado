@@ -1453,3 +1453,26 @@ Próximo passo:
 2. confirmar o novo deployment de preview da branch;
 3. se tudo ficar verde, manter o PR aberto até revisão final/aceite humano;
 4. a revisão automática Codex permanece indisponível apenas por limite de uso, não por falha técnica do PR.
+
+
+## 3C.1 — restauração robusta de página ativa após rebuild — 14/09/2026
+
+Descoberta no CI após a correção do P2:
+- o teste de preservação de página/zoom deixou de falhar por expectativa incorreta e revelou um comportamento real do visualizador;
+- `PortalPdfViewer.open()` aplicava `initialViewState.activePage`, porém instalava os `IntersectionObserver` antes de restaurar a posição de rolagem;
+- como o novo DOM começava no topo, o observer podia promover a página 1 a ativa antes do `requestAnimationFrame` que tentava rolar para a página solicitada;
+- em rebuilds como união de PDF, a página ativa podia portanto regressar para 1 mesmo com `initialViewState.activePage = 2`.
+
+Correção:
+- a posição inicial do scroll passa a ser restaurada **antes** da instalação dos observers;
+- o mesmo viewport é reaplicado no próximo frame para absorver ajuste de layout;
+- a página ativa solicitada é reafirmada junto com a restauração do scroll;
+- página 1 também força `scrollTop = 0`, evitando herdar posição da sessão anterior;
+- o marcador interno do visualizador foi avançado para `phase3c1i`;
+- nenhuma API, permissão, escrita no Drive ou integração de produção foi alterada.
+
+Validação pendente desta microcorreção:
+- nova rodada do workflow de navegador em desktop/mobile;
+- confirmação de que o teste de página/zoom passa após `Atualizar PDF` e após união/rebuild;
+- demais checks devem permanecer verdes;
+- PR #179 continua sem merge e 3C.2 continua bloqueada.

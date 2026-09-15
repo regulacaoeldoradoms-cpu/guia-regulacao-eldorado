@@ -800,15 +800,20 @@
         abandonSession(session);
         return null;
       }
-      installObservers(session);
+      const initialRecord = session.pages.get(initialPage);
+      const restoreInitialViewport = () => {
+        if (!isCurrentSession(session)) return;
+        const targetTop = initialPage > 1 && initialRecord
+          ? Math.max(0, initialRecord.container.offsetTop - 16)
+          : 0;
+        session.scrollRoot.scrollTop = targetTop;
+        session.scrollRoot.scrollLeft = 0;
+        setActivePage(session, initialPage);
+      };
 
-      if (initialPage > 1) {
-        const initialRecord = session.pages.get(initialPage);
-        requestAnimationFrame(() => {
-          if (!isCurrentSession(session) || !initialRecord) return;
-          session.scrollRoot.scrollTop = Math.max(0, initialRecord.container.offsetTop - 16);
-        });
-      }
+      restoreInitialViewport();
+      installObservers(session);
+      requestAnimationFrame(restoreInitialViewport);
 
       if (typeof ResizeObserver === 'function') {
         session.resizeObserver = new ResizeObserver(() => {
@@ -863,6 +868,6 @@
     setThumbnailActions,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1h`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1i`
   });
 })();
