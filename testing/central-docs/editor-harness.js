@@ -31,6 +31,7 @@
     mergeCancel: document.getElementById('editorMergeCancel'),
     blank: document.getElementById('editorBlank'),
     addImage: document.getElementById('editorAddImage'),
+    crop: document.getElementById('editorCrop'),
     select: document.getElementById('editorSelect'),
     write: document.getElementById('editorWrite'),
     overlayImage: document.getElementById('editorOverlayImage'),
@@ -161,8 +162,25 @@
         node?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
       }
     });
+    viewer.setEditorCrops?.(editor.pageModel(state.session), {
+      mode: state.mode === 'crop' ? 'crop' : 'none',
+      onChange(pageIndex, crop) {
+        editor.setPageCrop(state.session, pageIndex, crop, { commit: false });
+      },
+      onCommit(pageIndex, crop) {
+        editor.setPageCrop(state.session, pageIndex, crop, { commit: false });
+        editor.commitObjectMutation(state.session);
+        syncEditorState();
+      },
+      onReset(pageIndex) {
+        if (!editor.clearPageCrop(state.session, pageIndex)) return;
+        syncEditorState();
+        syncObjects();
+      }
+    });
     syncObjectToolbar();
     root.dataset.objectCount = String(editor.objectModel(state.session).length);
+    root.dataset.cropCount = String(editor.pageModel(state.session).filter((page) => page.crop).length);
     return result;
   }
 
@@ -182,6 +200,7 @@
     root.dataset.pageOrder = pageOrder();
     root.dataset.pageRotations = state.session ? editor.pageModel(state.session).map((page) => page.rotation).join(',') : '';
     root.dataset.pageKinds = state.session ? editor.pageModel(state.session).map((page) => page.sourceKind).join(',') : '';
+    root.dataset.pageCrops = state.session ? editor.pageModel(state.session).map((page) => page.crop ? [page.crop.x, page.crop.y, page.crop.width, page.crop.height].map((value) => Number(value.toFixed(4))).join(':') : 'full').join(',') : '';
     elements.editorControls.hidden = !editing;
     elements.enterEditor.hidden = editing;
     elements.enterEditor.disabled = editing || root.dataset.viewerState !== 'ready';
@@ -193,6 +212,8 @@
     elements.organize.setAttribute('aria-pressed', String(editing && state.mode === 'organize'));
     elements.merge.classList.toggle('active', editing && state.mode === 'merge');
     elements.merge.setAttribute('aria-pressed', String(editing && state.mode === 'merge'));
+    elements.crop.classList.toggle('active', editing && state.mode === 'crop');
+    elements.crop.setAttribute('aria-pressed', String(editing && state.mode === 'crop'));
     elements.select.classList.toggle('active', editing && state.mode === 'select');
     elements.write.classList.toggle('active', editing && state.mode === 'write');
     elements.overlayImage.classList.toggle('active', editing && state.mode === 'image');
@@ -208,6 +229,7 @@
     elements.mergeAfterPage.disabled = !editing;
     elements.blank.disabled = !editing;
     elements.addImage.disabled = !editing;
+    elements.crop.disabled = !editing;
     elements.select.disabled = !editing;
     elements.write.disabled = !editing;
     elements.overlayImage.disabled = !editing;
@@ -222,7 +244,7 @@
     elements.surface.setAttribute('aria-busy', active ? 'true' : 'false');
     if (message) elements.editorStatus.textContent = message;
     if (active) {
-      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.blank, elements.addImage, elements.select, elements.write, elements.overlayImage, elements.objectDelete, elements.refresh, elements.exit]) {
+      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.objectDelete, elements.refresh, elements.exit]) {
         button.disabled = true;
       }
       elements.thumbnails.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
@@ -438,6 +460,11 @@
     await rebuild(viewState ? { ...viewState, activePage: pageIndex + 1 } : null, 'Inserindo página em branco…');
   }
 
+  function startCropMode() {
+    setMode('crop');
+    elements.editorStatus.textContent = 'Recortar: arraste a moldura azul ou suas alças. A área escurecida fica fora do recorte; ↺ restaura a página.';
+  }
+
   function startWriteMode() {
     setMode('write');
     elements.editorStatus.textContent = 'Escrever: clique na página para criar uma caixa de texto. Dê duplo clique no texto para editar.';
@@ -491,6 +518,7 @@
     const changed = state.session.revision > 0;
     const viewState = viewer.getViewState() || state.viewState;
     viewer.setEditorObjects?.([], { mode: 'none', selectedObjectId: '' });
+    viewer.setEditorCrops?.([], { mode: 'none' });
     state.session = null;
     state.merging = false;
     state.mode = 'readonly';
@@ -528,6 +556,7 @@
   });
   elements.blank.addEventListener('click', () => run(addBlankPage));
   elements.addImage.addEventListener('click', () => run(addSyntheticImage));
+  elements.crop.addEventListener('click', () => run(startCropMode));
   elements.select.addEventListener('click', () => run(startSelectMode));
   elements.write.addEventListener('click', () => run(startWriteMode));
   elements.overlayImage.addEventListener('click', () => run(addOverlayImage));
