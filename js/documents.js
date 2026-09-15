@@ -51,6 +51,7 @@
     editorMode: 'readonly',
     selectedObjectId: '',
     editorColorPalette: [...DEFAULT_EDITOR_COLOR_PALETTE],
+    editorColorGesture: null,
     pendingMergeItem: null
   };
 
@@ -442,6 +443,9 @@
       colorPalette: state.editorColorPalette,
       onSelect(id) {
         if (session !== state.editorSession) return;
+        if (state.editorColorGesture && state.editorColorGesture.objectId !== id) {
+          commitEditorColorGesture({ sync: false });
+        }
         state.selectedObjectId = id;
         syncEditorObjectToolbar();
       },
@@ -1019,6 +1023,84 @@
       if (session === state.editorSession) setEditorBusy(false);
       if (els.editorOverlayImageInput) els.editorOverlayImageInput.value = '';
     }
+  }
+
+  function normalizeEditorObjectColor(value, fallback = '#111111') {
+    const color = String(value || '').trim().toLowerCase();
+    return /^#[0-9a-f]{6}$/.test(color) ? color : fallback;
+  }
+
+  function paintSelectedEditorColor(objectId, color) {
+    if (!objectId || !els.pdfPages) return;
+    const element = els.pdfPages.querySelector(`.portal-pdf-object[data-object-id="${CSS.escape(objectId)}"]`);
+    const text = element?.querySelector('.portal-pdf-object-text');
+    if (text) text.style.color = color;
+    const swatch = element?.querySelector('[data-text-quick-color] .portal-pdf-text-quickbar-swatch');
+    if (swatch) swatch.style.background = color;
+  }
+
+  function previewSelectedEditorColor(value) {
+    const session = state.editorSession;
+    const editor = window.PortalPdfEditor;
+    const object = selectedEditorObject();
+    if (!session || !editor || !object || object.type !== 'text' || state.editorBusy) return false;
+
+    const color = normalizeEditorObjectColor(value, normalizeEditorObjectColor(object.color));
+    const currentColor = normalizeEditorObjectColor(object.color);
+    if (!state.editorColorGesture || state.editorColorGesture.objectId !== object.id) {
+      state.editorColorGesture = {
+        objectId: object.id,
+        startColor: currentColor
+      };
+    }
+    if (currentColor === color) {
+      paintSelectedEditorColor(object.id, color);
+      return false;
+    }
+
+    editor.updateObject(session, object.id, { color }, { commit: false });
+    paintSelectedEditorColor(object.id, color);
+    return true;
+  }
+
+  function commitEditorColorGesture({ sync = true } = {}) {
+    const session = state.editorSession;
+    const editor = window.PortalPdfEditor;
+    const gesture = state.editorColorGesture;
+    state.editorColorGesture = null;
+    if (!session || !editor || !gesture?.objectId) return false;
+
+    const object = editor.objectModel(session).find((item) => item.id === gesture.objectId);
+    if (!object || object.type !== 'text') return false;
+    const finalColor = normalizeEditorObjectColor(object.color);
+    if (finalColor === normalizeEditorObjectColor(gesture.startColor)) return false;
+
+    editor.commitObjectMutation(session);
+    if (sync) {
+      syncEditorControls();
+      syncEditorObjects();
+    }
+    return true;
+  }
+
+  function finalizeSelectedEditorColor(value) {
+    const session = state.editorSession;
+    const editor = window.PortalPdfEditor;
+    const object = selectedEditorObject();
+    if (!session || !editor || !object || object.type !== 'text' || state.editorBusy) return false;
+
+    if (!state.editorColorGesture || state.editorColorGesture.objectId !== object.id) {
+      state.editorColorGesture = {
+        objectId: object.id,
+        startColor: normalizeEditorObjectColor(object.color)
+      };
+    }
+    const color = normalizeEditorObjectColor(value, normalizeEditorObjectColor(object.color));
+    if (normalizeEditorObjectColor(object.color) !== color) {
+      editor.updateObject(session, object.id, { color }, { commit: false });
+      paintSelectedEditorColor(object.id, color);
+    }
+    return commitEditorColorGesture();
   }
 
   function updateSelectedEditorObject(patch) {
@@ -1984,7 +2066,9 @@
   });
   els.editorObjectFont?.addEventListener('change', () => updateSelectedEditorObject({ fontFamily: els.editorObjectFont.value }));
   els.editorObjectFontSize?.addEventListener('change', () => updateSelectedEditorObject({ fontSize: Number(els.editorObjectFontSize.value || 18) / 560 }));
-  els.editorObjectColor?.addEventListener('input', () => updateSelectedEditorObject({ color: els.editorObjectColor.value }));
+  els.editorObjectColor?.addEventListener('input', () => previewSelectedEditorColor(els.editorObjectColor.value));
+  els.editorObjectColor?.addEventListener('change', () => finalizeSelectedEditorColor(els.editorObjectColor.value));
+  els.editorObjectColor?.addEventListener('blur', () => finalizeSelectedEditorColor(els.editorObjectColor.value));
   els.editorObjectBold?.addEventListener('click', () => {
     const object = selectedEditorObject();
     if (object?.type === 'text') updateSelectedEditorObject({ fontWeight: object.fontWeight === 'bold' ? 'normal' : 'bold' });
