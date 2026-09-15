@@ -634,7 +634,9 @@
     element.style.height = `${height * 100}%`;
     element.style.opacity = String(clamp01(object.opacity, 1));
     element.style.transform = `rotate(${Number(object.rotation || 0)}deg)`;
+    element.style.setProperty('--object-rotation', `${Number(object.rotation || 0)}deg`);
     element.style.setProperty('--object-font-size', `${Math.max(8, Number(object.fontSize || 0.032) * Math.max(240, pageWidth))}px`);
+    element.classList.toggle('quickbar-above', Number(object.y || 0) + height > 0.82);
   }
 
   function createObjectHandles(element) {
@@ -651,6 +653,172 @@
     rotate.title = 'Rotacionar';
     rotate.setAttribute('aria-label', 'Rotacionar objeto');
     element.appendChild(rotate);
+  }
+
+  function normalizeObjectColor(value, fallback = '#111111') {
+    const color = String(value || '').trim().toLowerCase();
+    return /^#[0-9a-f]{6}$/.test(color) ? color : fallback;
+  }
+
+  function normalizeColorPalette(value) {
+    const source = Array.isArray(value) ? value : [];
+    const colors = [];
+    for (const item of source) {
+      const color = normalizeObjectColor(item, '');
+      if (!color || colors.includes(color)) continue;
+      colors.push(color);
+      if (colors.length >= 16) break;
+    }
+    return colors.length ? colors : ['#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'];
+  }
+
+  function patchObjectFromQuickbar(session, objectId, patch) {
+    const object = objectForId(session, objectId);
+    if (!object) return false;
+    Object.assign(object, patch);
+    session.onObjectChange?.(objectId, patch);
+    session.onObjectCommit?.(objectId, patch);
+    const element = session.pagesRoot?.querySelector?.(`.portal-pdf-object[data-object-id="${CSS.escape(objectId)}"]`);
+    if (element) {
+      applyObjectGeometry(element, object, element.closest('.portal-pdf-page')?.clientWidth || 760);
+      const text = element.querySelector('.portal-pdf-object-text');
+      if (text && patch.color) text.style.color = patch.color;
+      if (text && patch.fontSize) {
+        element.style.setProperty('--object-font-size', `${Math.max(8, Number(patch.fontSize) * Math.max(240, element.closest('.portal-pdf-page')?.clientWidth || 760))}px`);
+      }
+      const swatch = element.querySelector('[data-text-quick-color] .portal-pdf-text-quickbar-swatch');
+      if (swatch && patch.color) swatch.style.background = patch.color;
+    }
+    return true;
+  }
+
+  function refreshPaletteButtons(session, element, object) {
+    const palette = element?.querySelector?.('[data-text-palette]');
+    if (!palette) return;
+    const colors = normalizeColorPalette(session.colorPalette);
+    session.colorPalette = colors;
+    const slots = palette.querySelector('[data-text-palette-slots]');
+    if (!slots) return;
+    slots.replaceChildren();
+    colors.forEach((color, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'portal-pdf-text-palette-color';
+      button.dataset.textPaletteIndex = String(index);
+      button.title = `Usar cor ${color}`;
+      button.setAttribute('aria-label', `Usar cor ${color}`);
+      button.style.background = color;
+      if (color === '#ffffff') button.classList.add('is-light');
+      if (index === session.paletteSelectedIndex || color === normalizeObjectColor(object?.color)) button.classList.add('active');
+      slots.appendChild(button);
+    });
+  }
+
+  function createTextQuickbar(session, element, object) {
+    if (object?.type !== 'text' || session.selectedObjectId !== object.id) return;
+    const bar = document.createElement('div');
+    bar.className = 'portal-pdf-text-quickbar';
+    bar.dataset.textQuickbar = 'true';
+    bar.setAttribute('role', 'toolbar');
+    bar.setAttribute('aria-label', 'Atalhos da caixa de texto');
+
+    const color = document.createElement('button');
+    color.type = 'button';
+    color.className = 'portal-pdf-text-quickbar-button portal-pdf-text-quickbar-color';
+    color.dataset.textQuickColor = 'true';
+    color.title = 'Cor do texto';
+    color.setAttribute('aria-label', 'Cor do texto');
+    const swatch = document.createElement('span');
+    swatch.className = 'portal-pdf-text-quickbar-swatch';
+    swatch.style.background = normalizeObjectColor(object.color);
+    color.appendChild(swatch);
+    bar.appendChild(color);
+
+    for (const [action, label, title] of [
+      ['smaller', 'A−', 'Diminuir texto'],
+      ['larger', 'A+', 'Aumentar texto']
+    ]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'portal-pdf-text-quickbar-button';
+      button.dataset.textQuickSize = action;
+      button.textContent = label;
+      button.title = title;
+      button.setAttribute('aria-label', title);
+      bar.appendChild(button);
+    }
+
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'portal-pdf-text-quickbar-button danger';
+    remove.dataset.textQuickDelete = 'true';
+    remove.textContent = '⌫';
+    remove.title = 'Excluir caixa de texto';
+    remove.setAttribute('aria-label', 'Excluir caixa de texto');
+    bar.appendChild(remove);
+
+    const palette = document.createElement('div');
+    palette.className = 'portal-pdf-text-palette';
+    palette.dataset.textPalette = 'true';
+    palette.hidden = true;
+
+    const slots = document.createElement('div');
+    slots.className = 'portal-pdf-text-palette-slots';
+    slots.dataset.textPaletteSlots = 'true';
+    palette.appendChild(slots);
+
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'portal-pdf-text-palette-action';
+    add.dataset.textPaletteAdd = 'true';
+    add.textContent = '+';
+    add.title = 'Cadastrar nova cor predefinida';
+    add.setAttribute('aria-label', 'Cadastrar nova cor predefinida');
+    palette.appendChild(add);
+
+    const custom = document.createElement('button');
+    custom.type = 'button';
+    custom.className = 'portal-pdf-text-palette-action';
+    custom.dataset.textPaletteCustom = 'true';
+    custom.textContent = 'RGB';
+    custom.title = 'Escolher cor RGB/HEX';
+    custom.setAttribute('aria-label', 'Escolher cor RGB ou hexadecimal');
+    palette.appendChild(custom);
+
+    const customPicker = document.createElement('input');
+    customPicker.type = 'color';
+    customPicker.dataset.textPaletteCustomPicker = 'true';
+    customPicker.value = normalizeObjectColor(object.color);
+    customPicker.tabIndex = -1;
+    customPicker.setAttribute('aria-hidden', 'true');
+    palette.appendChild(customPicker);
+
+    const addPicker = document.createElement('input');
+    addPicker.type = 'color';
+    addPicker.dataset.textPaletteAddPicker = 'true';
+    addPicker.value = normalizeObjectColor(object.color);
+    addPicker.tabIndex = -1;
+    addPicker.setAttribute('aria-hidden', 'true');
+    palette.appendChild(addPicker);
+
+    bar.appendChild(palette);
+    element.appendChild(bar);
+    refreshPaletteButtons(session, element, object);
+  }
+
+  function finishTextEditing(session, { suppressCreate = true } = {}) {
+    const id = String(session?.editingTextId || '');
+    if (!id) return false;
+    const selector = `.portal-pdf-object[data-object-id="${CSS.escape(id)}"] .portal-pdf-object-text[contenteditable="true"]`;
+    const text = session.pagesRoot?.querySelector?.(selector);
+    const object = objectForId(session, id);
+    const value = String(text?.textContent ?? object?.text ?? '');
+    session.editingTextId = '';
+    if (text) text.contentEditable = 'false';
+    if (object) object.text = value;
+    session.onObjectTextCommit?.(id, value);
+    if (suppressCreate) session.suppressCreateTextUntil = performance.now() + 400;
+    return true;
   }
 
   function renderEditorObjectsForPage(session, pageNumber) {
@@ -694,6 +862,7 @@
       }
 
       createObjectHandles(element);
+      createTextQuickbar(session, element, object);
       layer.appendChild(element);
     }
   }
@@ -798,6 +967,11 @@
 
     const pointerdown = (event) => {
       if (!isCurrentSession(session) || session.organizerMode || String(session.objectMode || 'none') === 'none') return;
+      if (event.target.closest?.('[data-text-quickbar]')) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       const directElement = event.target.closest?.('.portal-pdf-object');
       const geometryHit = selectedObjectGestureHit(session, event);
       const element = directElement || geometryHit?.element;
@@ -806,16 +980,21 @@
       const object = objectForId(session, id);
       const layer = geometryHit?.layer || element.closest('.portal-pdf-object-layer');
       if (!object || !layer) return;
-      if (!geometryHit && event.target.closest?.('.portal-pdf-object-text[contenteditable="true"]')) return;
 
+      const editingText = event.target.closest?.('.portal-pdf-object-text[contenteditable="true"]');
       const directResize = event.target.closest?.('[data-object-resize]')?.dataset?.objectResize || '';
       const directRotate = Boolean(event.target.closest?.('[data-object-rotate]'));
-      const kind = geometryHit?.kind || (directRotate ? 'rotate' : directResize === 'se' ? 'transform' : directResize ? 'resize' : 'move');
+      const kind = geometryHit?.kind
+        || (directRotate ? 'rotate'
+          : directResize === 'se' ? 'transform'
+            : directResize ? 'resize'
+              : editingText ? 'edit-move-pending'
+                : 'move');
       const handle = geometryHit?.handle || directResize;
       const origin = geometryHit?.origin || event.target.closest?.('[data-object-resize], [data-object-rotate]') || element;
 
-      event.preventDefault();
-      if (kind !== 'move') session.suppressObjectClickUntil = performance.now() + 350;
+      if (kind !== 'edit-move-pending') event.preventDefault();
+      if (kind !== 'move' && kind !== 'edit-move-pending') session.suppressObjectClickUntil = performance.now() + 350;
       markSelectedObject(session, id);
       session.onObjectSelect?.(id);
 
@@ -850,6 +1029,15 @@
       if (!drag || !isCurrentSession(session) || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
       const object = objectForId(session, drag.id);
       if (!object) return;
+
+      if (drag.kind === 'edit-move-pending') {
+        if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 7) return;
+        drag.kind = 'move';
+        session.root.dataset.objectGesture = 'move';
+        session.suppressObjectClickUntil = performance.now() + 350;
+        try { window.getSelection()?.removeAllRanges?.(); } catch (_) {}
+      }
+
       event.preventDefault();
 
       if (drag.kind === 'move') {
@@ -940,6 +1128,7 @@
         patch = { x, y, width, height };
       }
 
+      if (!Object.keys(patch).length) return;
       Object.assign(object, patch);
       drag.changed = true;
       session.root.dataset.objectGestureMoved = 'true';
@@ -960,17 +1149,89 @@
     const click = (event) => {
       if (!isCurrentSession(session) || session.organizerMode) return;
       if (performance.now() < Number(session.suppressObjectClickUntil || 0)) return;
+
+      const quickbar = event.target.closest?.('[data-text-quickbar]');
+      if (quickbar) {
+        event.preventDefault();
+        event.stopPropagation();
+        const element = quickbar.closest('.portal-pdf-object');
+        const id = String(element?.dataset.objectId || '');
+        const object = objectForId(session, id);
+        if (!element || !object) return;
+
+        if (event.target.closest('[data-text-quick-color]')) {
+          const palette = quickbar.querySelector('[data-text-palette]');
+          if (palette) {
+            palette.hidden = !palette.hidden;
+            session.paletteSelectedIndex = session.colorPalette.indexOf(normalizeObjectColor(object.color));
+            refreshPaletteButtons(session, element, object);
+          }
+          return;
+        }
+
+        const sizeAction = event.target.closest('[data-text-quick-size]')?.dataset?.textQuickSize;
+        if (sizeAction) {
+          const current = Math.max(8, Math.min(96, Math.round(Number(object.fontSize || .032) * 560)));
+          const next = Math.max(8, Math.min(96, current + (sizeAction === 'larger' ? 2 : -2)));
+          patchObjectFromQuickbar(session, id, { fontSize: next / 560 });
+          return;
+        }
+
+        if (event.target.closest('[data-text-quick-delete]')) {
+          if (session.editingTextId === id) finishTextEditing(session, { suppressCreate: false });
+          session.onObjectDelete?.(id);
+          return;
+        }
+
+        const colorSlot = event.target.closest('[data-text-palette-index]');
+        if (colorSlot) {
+          const index = Number(colorSlot.dataset.textPaletteIndex);
+          const selected = session.colorPalette[index];
+          if (selected) {
+            session.paletteSelectedIndex = index;
+            patchObjectFromQuickbar(session, id, { color: selected });
+            refreshPaletteButtons(session, element, object);
+          }
+          return;
+        }
+
+        if (event.target.closest('[data-text-palette-custom]')) {
+          const picker = quickbar.querySelector('[data-text-palette-custom-picker]');
+          if (picker) {
+            picker.value = normalizeObjectColor(object.color);
+            picker.click();
+          }
+          return;
+        }
+
+        if (event.target.closest('[data-text-palette-add]')) {
+          const picker = quickbar.querySelector('[data-text-palette-add-picker]');
+          if (picker) {
+            picker.value = normalizeObjectColor(object.color);
+            picker.click();
+          }
+        }
+        return;
+      }
+
       const element = event.target.closest?.('.portal-pdf-object');
       if (element) {
         const id = String(element.dataset.objectId || '');
         if (id && session.selectedObjectId !== id) {
           markSelectedObject(session, id);
           session.onObjectSelect?.(id);
+          renderEditorObjects(session);
         }
         return;
       }
+
       const layer = event.target.closest?.('.portal-pdf-object-layer');
       if (!layer || String(session.objectMode || '') !== 'write') return;
+      if (session.editingTextId) {
+        finishTextEditing(session);
+        return;
+      }
+      if (performance.now() < Number(session.suppressCreateTextUntil || 0)) return;
       const pageNumber = Number(layer.dataset.pageNumber);
       const rect = layer.getBoundingClientRect();
       session.onCreateText?.(pageNumber, {
@@ -984,15 +1245,16 @@
       const element = text?.closest?.('.portal-pdf-object');
       if (!text || !element || !isCurrentSession(session)) return;
       event.preventDefault();
+      event.stopPropagation();
       const id = String(element.dataset.objectId || '');
-      session.selectedObjectId = id;
+      markSelectedObject(session, id);
+      session.onObjectSelect?.(id);
       session.editingTextId = id;
-      renderEditorObjects(session);
-      const next = pagesRoot.querySelector(`.portal-pdf-object[data-object-id="${CSS.escape(id)}"] .portal-pdf-object-text`);
-      next?.focus?.();
+      text.contentEditable = 'true';
+      text.focus?.();
       try {
         const range = document.createRange();
-        range.selectNodeContents(next);
+        range.selectNodeContents(text);
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(range);
@@ -1001,18 +1263,50 @@
 
     const focusout = (event) => {
       const text = event.target.closest?.('.portal-pdf-object-text[contenteditable="true"]');
-      const element = text?.closest?.('.portal-pdf-object');
-      if (!text || !element) return;
-      const id = String(element.dataset.objectId || '');
-      session.editingTextId = '';
-      const value = String(text.textContent || '');
-      const object = objectForId(session, id);
-      if (object) object.text = value;
-      session.onObjectTextCommit?.(id, value);
-      renderEditorObjects(session);
+      if (!text) return;
+      const element = text.closest?.('.portal-pdf-object');
+      const id = String(element?.dataset.objectId || '');
+      if (!id || session.editingTextId !== id) return;
+      finishTextEditing(session);
     };
 
-    session.objectHandlers = { pointerdown, click, dblclick, focusout };
+    const change = (event) => {
+      const quickbar = event.target.closest?.('[data-text-quickbar]');
+      if (!quickbar) return;
+      const element = quickbar.closest('.portal-pdf-object');
+      const id = String(element?.dataset.objectId || '');
+      const object = objectForId(session, id);
+      if (!element || !object) return;
+
+      const customPicker = event.target.closest('[data-text-palette-custom-picker]');
+      if (customPicker) {
+        const color = normalizeObjectColor(customPicker.value);
+        const index = Number(session.paletteSelectedIndex);
+        if (Number.isInteger(index) && index >= 0 && index < session.colorPalette.length) {
+          const next = [...session.colorPalette];
+          next[index] = color;
+          session.colorPalette = normalizeColorPalette(next);
+          session.paletteSelectedIndex = session.colorPalette.indexOf(color);
+          session.onColorPaletteChange?.([...session.colorPalette]);
+        }
+        patchObjectFromQuickbar(session, id, { color });
+        refreshPaletteButtons(session, element, object);
+        return;
+      }
+
+      const addPicker = event.target.closest('[data-text-palette-add-picker]');
+      if (addPicker) {
+        const color = normalizeObjectColor(addPicker.value);
+        const next = normalizeColorPalette([...session.colorPalette, color]);
+        session.colorPalette = next;
+        session.paletteSelectedIndex = next.indexOf(color);
+        session.onColorPaletteChange?.([...next]);
+        patchObjectFromQuickbar(session, id, { color });
+        refreshPaletteButtons(session, element, object);
+      }
+    };
+
+    session.objectHandlers = { pointerdown, click, dblclick, focusout, change };
     for (const [type, handler] of Object.entries(session.objectHandlers)) {
       pagesRoot.addEventListener(type, handler, type === 'pointerdown');
     }
@@ -1025,12 +1319,17 @@
   function setEditorObjects(objects = [], options = {}) {
     const session = active;
     if (!session || session.closed) return false;
+    const nextMode = String(options.mode || session.objectMode || 'select');
+    if (session.editingTextId && nextMode !== 'write') finishTextEditing(session, { suppressCreate: false });
     session.editorObjects = Array.isArray(objects) ? objects.map((item) => ({ ...item })) : [];
-    session.objectMode = String(options.mode || session.objectMode || 'select');
+    session.objectMode = nextMode;
     session.selectedObjectId = String(options.selectedObjectId || session.selectedObjectId || '');
+    if (Array.isArray(options.colorPalette)) session.colorPalette = normalizeColorPalette(options.colorPalette);
     session.onObjectChange = typeof options.onChange === 'function' ? options.onChange : session.onObjectChange;
     session.onObjectCommit = typeof options.onCommit === 'function' ? options.onCommit : session.onObjectCommit;
     session.onObjectSelect = typeof options.onSelect === 'function' ? options.onSelect : session.onObjectSelect;
+    session.onObjectDelete = typeof options.onDelete === 'function' ? options.onDelete : session.onObjectDelete;
+    session.onColorPaletteChange = typeof options.onColorPaletteChange === 'function' ? options.onColorPaletteChange : session.onColorPaletteChange;
     session.onCreateText = typeof options.onCreateText === 'function' ? options.onCreateText : session.onCreateText;
     session.onObjectTextCommit = typeof options.onTextCommit === 'function' ? options.onTextCommit : session.onObjectTextCommit;
     session.onObjectPageChange = typeof options.onPageChange === 'function' ? options.onPageChange : session.onObjectPageChange;
@@ -1529,14 +1828,19 @@
       objectMode: 'none',
       selectedObjectId: '',
       editingTextId: '',
+      suppressCreateTextUntil: 0,
       objectDrag: null,
       suppressObjectClickUntil: 0,
       objectUrls: new Map(),
+      colorPalette: ['#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'],
+      paletteSelectedIndex: -1,
       objectHandlers: null,
       objectWindowHandlers: null,
       onObjectChange: null,
       onObjectCommit: null,
       onObjectSelect: null,
+      onObjectDelete: null,
+      onColorPaletteChange: null,
       onCreateText: null,
       onObjectTextCommit: null,
       onObjectPageChange: null,
@@ -1743,6 +2047,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2d`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2e`
   });
 })();
