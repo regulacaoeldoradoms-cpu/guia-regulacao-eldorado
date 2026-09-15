@@ -200,8 +200,19 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await palette.locator('[data-text-palette-index="2"]').click();
     await expect(text).toHaveCSS('color', 'rgb(229, 57, 53)');
 
+    // RGB opens the native picker from the direct user gesture.
+    const picker = palette.locator('[data-text-palette-custom-picker]');
+    await picker.evaluate((node) => {
+      Object.defineProperty(node, 'showPicker', {
+        configurable: true,
+        value() { this.dataset.showPickerCalled = 'true'; }
+      });
+    });
+    await palette.locator('[data-text-palette-custom]').click();
+    await expect(picker).toHaveAttribute('data-show-picker-called', 'true');
+
     // RGB/HEX replaces the selected predefined slot, preserving its position.
-    await palette.locator('[data-text-palette-custom-picker]').evaluate((node) => {
+    await picker.evaluate((node) => {
       node.value = '#7b1fa2';
       node.dispatchEvent(new Event('change', { bubbles: true }));
     });
@@ -209,12 +220,17 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(page.locator('html')).toHaveAttribute('data-editor-palette', /#000000,#ffffff,#7b1fa2,#1565c0,#2e7d32,#f9a825/);
     await expect(palette.locator('[data-text-palette-index="2"]')).toHaveCSS('background-color', 'rgb(123, 31, 162)');
 
-    // + appends a new predefined slot.
-    await palette.locator('[data-text-palette-add-picker]').evaluate((node) => {
+    // + creates a visible slot immediately and selects it for the next RGB choice.
+    await palette.locator('[data-text-palette-add]').click();
+    await expect(palette.locator('[data-text-palette-index]')).toHaveCount(7);
+    await expect(palette.locator('[data-text-palette-index="6"]')).toHaveClass(/active/);
+
+    // RGB fills the newly-created slot.
+    await picker.evaluate((node) => {
       node.value = '#00838f';
       node.dispatchEvent(new Event('change', { bubbles: true }));
     });
-    await expect(palette.locator('[data-text-palette-index]')).toHaveCount(7);
+    await expect(palette.locator('[data-text-palette-index="6"]')).toHaveCSS('background-color', 'rgb(0, 131, 143)');
     await expect(page.locator('html')).toHaveAttribute('data-editor-palette', /#00838f$/);
 
     // Quick delete is reversible through the shared history.
@@ -224,6 +240,19 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(1);
 
     expect(errors).toEqual([]);
+  });
+
+  test('sair do editor sem mutação limpa object mode e devolve a superfície ao visualizador', async ({ page }) => {
+    await openEditor(page);
+    await page.locator('#editorSelect').click();
+    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-object-mode', 'select');
+    const layer = page.locator('.portal-pdf-object-layer').first();
+    await expect(layer).toHaveCSS('pointer-events', 'auto');
+
+    await page.locator('#editorExit').click();
+    await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'readonly');
+    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-object-mode', 'none');
+    await expect(layer).toHaveCSS('pointer-events', 'none');
   });
 
   test('imagem overlay é local, selecionável, redimensionável e removível com undo', async ({ page }) => {
@@ -243,7 +272,9 @@ test.describe('Central de Documentos — objetos sobre página', () => {
 
     await page.locator('#editorObjectOpacity').fill('60');
     await page.locator('#editorObjectOpacity').dispatchEvent('change');
-    await expect(image).toHaveCSS('opacity', '0.6');
+    await expect(image).toHaveCSS('opacity', '1');
+    await expect(image.locator('img')).toHaveCSS('opacity', '0.6');
+    await expect(image.locator('[data-object-rotate]')).toHaveCSS('opacity', '1');
 
     const rotate = image.locator('[data-object-rotate]');
     await expect(rotate).toBeVisible();
