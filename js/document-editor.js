@@ -73,6 +73,10 @@
       text: String(item.text || ''),
       fontFamily: String(item.fontFamily || 'Arial'),
       fontSize: Number(item.fontSize || 0.032),
+      fontWeight: item.fontWeight === 'bold' ? 'bold' : 'normal',
+      fontStyle: item.fontStyle === 'italic' ? 'italic' : 'normal',
+      textDecoration: item.textDecoration === 'underline' ? 'underline' : 'none',
+      textAlign: ['left', 'center', 'right'].includes(item.textAlign) ? item.textAlign : 'left',
       color: String(item.color || '#111111'),
       blob: item.blob instanceof Blob ? item.blob : null,
       mimeType: String(item.mimeType || ''),
@@ -136,6 +140,10 @@
     if ('text' in patch) normalized.text = String(patch.text || '');
     if ('fontFamily' in patch) normalized.fontFamily = String(patch.fontFamily || 'Arial').slice(0, 80);
     if ('fontSize' in patch) normalized.fontSize = Math.min(0.18, Math.max(0.008, Number(patch.fontSize) || 0.032));
+    if ('fontWeight' in patch) normalized.fontWeight = patch.fontWeight === 'bold' ? 'bold' : 'normal';
+    if ('fontStyle' in patch) normalized.fontStyle = patch.fontStyle === 'italic' ? 'italic' : 'normal';
+    if ('textDecoration' in patch) normalized.textDecoration = patch.textDecoration === 'underline' ? 'underline' : 'none';
+    if ('textAlign' in patch) normalized.textAlign = ['left', 'center', 'right'].includes(patch.textAlign) ? patch.textAlign : 'left';
     if ('color' in patch && /^#[0-9a-f]{6}$/i.test(String(patch.color || ''))) normalized.color = String(patch.color);
     return normalized;
   }
@@ -382,6 +390,10 @@
       text: String(options.text || 'Digite aqui'),
       fontFamily: String(options.fontFamily || 'Arial').slice(0, 80),
       fontSize: Math.min(0.18, Math.max(0.008, Number(options.fontSize) || 0.032)),
+      fontWeight: options.fontWeight === 'bold' ? 'bold' : 'normal',
+      fontStyle: options.fontStyle === 'italic' ? 'italic' : 'normal',
+      textDecoration: options.textDecoration === 'underline' ? 'underline' : 'none',
+      textAlign: ['left', 'center', 'right'].includes(options.textAlign) ? options.textAlign : 'left',
       color: /^#[0-9a-f]{6}$/i.test(String(options.color || '')) ? String(options.color) : '#111111',
       blob: null,
       mimeType: '',
@@ -586,6 +598,6 @@
     pageCount,
     sourceCount,
     buildBlob,
-    version: 'phase3-v7'
+    version: 'phase3-v8'
   });
 })();
