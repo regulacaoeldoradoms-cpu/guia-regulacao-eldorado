@@ -49,16 +49,23 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(text).toHaveAttribute('contenteditable', 'true');
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(1);
 
-    // First outside click only confirms the active edit.
-    await page.mouse.click(layerBox.x + layerBox.width * .75, layerBox.y + layerBox.height * .72);
+    // First outside click only confirms the active edit. Use a point next to the
+    // now-visible object; the page may have scrolled since its original layer box was measured.
+    const movedVisible = await object.boundingBox();
+    const visibleLayer = await layer.boundingBox();
+    const outsidePoint = {
+      x: Math.min(visibleLayer.x + visibleLayer.width - 18, movedVisible.x + movedVisible.width + 36),
+      y: movedVisible.y + Math.min(24, movedVisible.height / 2)
+    };
+    await page.mouse.click(outsidePoint.x, outsidePoint.y);
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(1);
     text = page.locator('.portal-pdf-object--text').first().locator('.portal-pdf-object-text');
     await expect(text).toHaveAttribute('contenteditable', 'false');
     await expect(text).toHaveText('Texto sintético editado');
 
-    // A later, distinct click may create the next box because editing is already finished.
+    // A later, distinct click at the same empty point may create the next box because editing is finished.
     await page.waitForTimeout(450);
-    await page.mouse.click(layerBox.x + layerBox.width * .68, layerBox.y + layerBox.height * .55);
+    await page.mouse.click(outsidePoint.x, outsidePoint.y);
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(2);
 
     // Switching to Select also finalizes an active edit without creating anything.
