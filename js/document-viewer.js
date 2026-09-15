@@ -676,6 +676,10 @@
         content.className = 'portal-pdf-object-text';
         content.textContent = String(object.text || '');
         content.style.fontFamily = String(object.fontFamily || 'Arial');
+        content.style.fontWeight = object.fontWeight === 'bold' ? 'bold' : 'normal';
+        content.style.fontStyle = object.fontStyle === 'italic' ? 'italic' : 'normal';
+        content.style.textDecoration = object.textDecoration === 'underline' ? 'underline' : 'none';
+        content.style.textAlign = ['left', 'center', 'right'].includes(object.textAlign) ? object.textAlign : 'left';
         content.style.color = String(object.color || '#111111');
         content.contentEditable = session.editingTextId === object.id ? 'true' : 'false';
         content.spellcheck = false;
@@ -1690,6 +1694,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2c`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2d`
   });
 })();
