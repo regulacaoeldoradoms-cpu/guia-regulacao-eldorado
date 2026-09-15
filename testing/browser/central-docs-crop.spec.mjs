@@ -57,8 +57,11 @@ test.describe('Central de Documentos — 3C.4 Recortar', () => {
     await expect(frame).toHaveAttribute('data-committed', 'false');
     await expect(page.locator('html')).toHaveAttribute('data-crop-count', '0');
 
+    await frame.scrollIntoViewIfNeeded();
     const handle = frame.locator('[data-crop-resize="se"]');
+    await expect(handle).toBeVisible();
     const box = await handle.boundingBox();
+    expect(box).not.toBeNull();
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
     await expect(page.locator('#pdfRoot')).toHaveAttribute('data-crop-gesture', 'resize');
@@ -120,9 +123,11 @@ test.describe('Central de Documentos — 3C.4 Recortar', () => {
     await page.locator('#editorCrop').click();
 
     const frame = page.locator('.portal-pdf-crop-frame').first();
+    await frame.scrollIntoViewIfNeeded();
     const handle = frame.locator('[data-crop-resize="se"]');
-    await handle.scrollIntoViewIfNeeded();
+    await expect(handle).toBeVisible();
     const box = await handle.boundingBox();
+    expect(box).not.toBeNull();
     const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     const end = { x: start.x - 56, y: start.y - 72 };
     const cdp = await context.newCDPSession(page);
