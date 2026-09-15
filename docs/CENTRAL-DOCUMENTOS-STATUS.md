@@ -14,19 +14,30 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, confirmada antes desta rodada.
 - **PR:** #179 — `codex/central-docs-editor-superficie-unica`, aberto, sem merge e ainda apontado para a mesma main.
-- **Último commit funcional relevante:** `29077e43cd11d837dac4769d56b3cc531971a1ee` — adendo humano da ferramenta Escrever/Selecionar validado: conteúdo protegido no modo Selecionar, barra contextual disponível e clique externo confirmando/desmarcando inclusive logo após mover o objeto.
+- **Último head validado:** `9725a0ca4a32878223bf1145c72f8068ed00265a` — mantém o adendo humano aprovado da ferramenta Escrever/Selecionar e acrescenta correção do histórico do seletor de cor + regressão de troca da quickbar entre duas caixas.
 - **Organizar V2:** aceito pelo usuário; drag centralizado, grade, rotação de página, duplicação, exclusão, página em branco, união posicionada e undo/redo permanecem requisitos preservados.
 - **3C.3 já implementada:** texto e imagem overlay por `pageId`, seleção, movimento, quatro pontos de manipulação, rotação, formatação de texto, opacidade, transferência entre páginas e histórico local. No modo **Selecionar**, texto permanece não editável, mas a caixa selecionada expõe bolinha de cor, A−, A+ e lixeira; clique fora confirma o estado e remove a seleção. Os objetos continuam locais; o flatten permanece para 3C.6.
 - **P2 de miniaturas lazy:** a causa era `setOrganizerMode()` invalidar e chamar `renderThumbnail()` para todas as páginas. A correção agora invalida a geração e rearma o `IntersectionObserver`, renderizando tudo somente no fallback sem IntersectionObserver. Foi acrescentado teste de navegador com documento sintético ampliado para provar que a troca de modo não materializa todas as miniaturas.
 - **Alça inferior direita:** agora é transformação combinada. Distância ao centro controla escala uniforme e variação angular controla rotação; o centro do objeto é preservado e o gesto continua sendo consolidado como uma única mutação no `pointerup`. A alça de rotação dedicada continua disponível como alternativa.
 - **Testes acrescentados:** além do lazy loading e da transformação SE, o Playwright agora cobre o contrato do adendo humano: duplo clique em Selecionar não ativa `contenteditable`, os atalhos contextuais continuam funcionais sem alterar o conteúdo textual e clique externo desmarca/remove a barra contextual.
 - **Segurança:** nenhuma rota de escrita no Drive, nenhum backend novo, nenhuma telemetria de texto/imagem/coordenadas e nenhum dado real no staging.
-- **Validação automática atual:** head `29077e43cd11d837dac4769d56b3cc531971a1ee` passou **24/24 workflows**. O Playwright executou **47 passed / 1 skipped**; os cenários `Escrever mantém uma única caixa...` e `Selecionar protege o conteúdo do texto...` passaram em Chromium desktop e mobile. O único skip continua sendo o gesto touch específico no projeto desktop.
+- **Validação automática atual:** head `9725a0ca4a32878223bf1145c72f8068ed00265a` passou **24/24 workflows**. O Playwright executou **49 passed / 1 skipped**; a nova regressão de alternância da quickbar entre duas caixas passou em desktop e mobile. O único skip continua sendo o gesto touch específico no projeto desktop.
 - **Gate:** Recortar (3C.4) não deve ser implementado antes do aceite humano da 3C.3. Desenhar/Borracha (3C.5) e flatten (3C.6) continuam apenas preparados em especificação/testes.
 - **Riscos conhecidos:** staging público enquanto Cloudflare Access estiver pendente, portanto somente dados sintéticos; touch automatizado não substitui teste em aparelho físico; PDFs institucionais só entram em reteste autorizado posterior.
 - **Não feito:** merge, alteração da main, deploy de produção, escrita no Drive, mudança de Worker/D1, uso de documento clínico ou avanço funcional para 3C.4/3C.5.
-- **Preview candidato atual:** deployment sintético imutável `https://b6bd0b94.portal-regulacao-central-staging.pages.dev/`, associado ao head `29077e4`; alias da branch permanece `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
-- **Próxima ação exata:** pedir homologação humana especificamente do fluxo **Selecionar caixa de texto → ajustar cor/tamanho/excluir sem editar conteúdo → clicar fora e desmarcar** no preview `b6bd0b94...`. Recortar continua bloqueado até esse aceite.
+- **Preview candidato atual:** deployment sintético imutável `https://e0f0b735.portal-regulacao-central-staging.pages.dev/`, associado ao head `9725a0c`; alias da branch permanece `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+- **Aceite humano parcial:** o usuário aprovou o fluxo **Selecionar caixa de texto → ajustar sem editar conteúdo → clicar fora e desmarcar** em 15/09/2026. Isso fecha esse adendo, mas não equivale ao aceite completo de toda a 3C.3.
+- **Review novo:** dois P2s foram tratados nesta rodada: quickbar ao alternar entre caixas e consolidação do seletor de cor em uma única mutação de histórico. O review abriu ainda um terceiro P2: serializar/coalescer os PATCHes da paleta por conta para impedir que uma resposta antiga sobrescreva a mais nova.
+- **Próxima ação exata:** usar o Codex agora disponível para corrigir o P2 de serialização da paleta, reexecutar CI/review e resolver os threads restantes. Recortar continua bloqueado até o aceite completo da 3C.3.
+
+## 3C.3 — revisão pós-homologação e fila para Codex — 15/09/2026
+
+- o usuário aprovou visualmente o novo comportamento do modo Selecionar;
+- o review encontrou P2 na migração da quickbar entre duas caixas; a implementação atual de `markSelectedObject()` já remove a barra anterior e cria a nova, e foi acrescentada regressão Playwright com duas caixas;
+- o review encontrou P2 no seletor RGB da barra superior: eventos `input` enchiam o histórico. O cliente agora faz preview/model update com `commit: false` e consolida uma única mutação no `change`, com `blur` como fallback;
+- head `9725a0c`: 24/24 workflows verdes; Playwright 49 passed / 1 skipped esperado;
+- surgiu um P2 adicional ainda aberto: persistência da paleta por conta pode sofrer corrida entre PATCHes completos feitos em sequência. A correção deve serializar/coalescer as gravações ou rejeitar conclusões obsoletas por geração;
+- esse P2 é o melhor ponto de retomada pelo Codex agora que o acesso foi liberado. Não iniciar 3C.4 antes de fechar a revisão da 3C.3.
 
 ## 3C.3 — adendo humano: Selecionar protege o conteúdo do texto — 15/09/2026
 
