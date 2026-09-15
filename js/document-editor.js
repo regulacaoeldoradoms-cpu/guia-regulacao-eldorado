@@ -52,14 +52,39 @@
 
   function clonePlan(plan) {
     return plan.map((item) => ({
+      pageId: String(item.pageId || ''),
       sourceIndex: item.sourceIndex,
       pageIndex: item.pageIndex,
       rotation: normalizeRotation(item.rotation)
     }));
   }
 
+  function cloneObjects(objects) {
+    return (objects || []).map((item) => ({
+      id: String(item.id || ''),
+      type: String(item.type || ''),
+      pageId: String(item.pageId || ''),
+      x: Number(item.x || 0),
+      y: Number(item.y || 0),
+      width: Number(item.width || 0),
+      height: Number(item.height || 0),
+      rotation: Number(item.rotation || 0),
+      opacity: Number.isFinite(Number(item.opacity)) ? Number(item.opacity) : 1,
+      text: String(item.text || ''),
+      fontFamily: String(item.fontFamily || 'Arial'),
+      fontSize: Number(item.fontSize || 0.032),
+      color: String(item.color || '#111111'),
+      blob: item.blob instanceof Blob ? item.blob : null,
+      mimeType: String(item.mimeType || ''),
+      aspectRatio: Number(item.aspectRatio || 0)
+    }));
+  }
+
   function snapshot(session) {
-    return clonePlan(session.plan);
+    return {
+      plan: clonePlan(session.plan),
+      objects: cloneObjects(session.objects)
+    };
   }
 
   function commitHistory(session) {
@@ -72,10 +97,47 @@
 
   function restoreHistory(session, index) {
     if (!Number.isInteger(index) || index < 0 || index >= session.history.length) return false;
+    const stored = session.history[index];
+    const legacyPlan = Array.isArray(stored) ? stored : stored?.plan;
+    if (!Array.isArray(legacyPlan)) return false;
     session.historyIndex = index;
-    session.plan = clonePlan(session.history[index]);
+    session.plan = clonePlan(legacyPlan);
+    session.objects = cloneObjects(Array.isArray(stored) ? [] : stored?.objects);
     session.revision += 1;
     return true;
+  }
+
+  function nextPageId(session) {
+    const value = Math.max(1, Number(session.nextPageId || 1));
+    session.nextPageId = value + 1;
+    return `page-${value}`;
+  }
+
+  function nextObjectId(session) {
+    const value = Math.max(1, Number(session.nextObjectId || 1));
+    session.nextObjectId = value + 1;
+    return `object-${value}`;
+  }
+
+  function clamp01(value, fallback = 0) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return fallback;
+    return Math.min(1, Math.max(0, numeric));
+  }
+
+  function normalizeObjectPatch(patch = {}) {
+    const normalized = {};
+    if ('x' in patch) normalized.x = clamp01(patch.x);
+    if ('y' in patch) normalized.y = clamp01(patch.y);
+    if ('width' in patch) normalized.width = Math.min(0.95, Math.max(0.035, Number(patch.width) || 0.2));
+    if ('height' in patch) normalized.height = Math.min(0.95, Math.max(0.025, Number(patch.height) || 0.08));
+    if ('rotation' in patch) normalized.rotation = Number.isFinite(Number(patch.rotation)) ? Number(patch.rotation) : 0;
+    if ('opacity' in patch) normalized.opacity = clamp01(patch.opacity, 1);
+    if ('text' in patch) normalized.text = String(patch.text || '');
+    if ('fontFamily' in patch) normalized.fontFamily = String(patch.fontFamily || 'Arial').slice(0, 80);
+    if ('fontSize' in patch) normalized.fontSize = Math.min(0.18, Math.max(0.008, Number(patch.fontSize) || 0.032));
+    if ('color' in patch && /^#[0-9a-f]{6}$/i.test(String(patch.color || ''))) normalized.color = String(patch.color);
+    return normalized;
   }
 
   async function loadSource(blob, label = '', cacheIdentity = '') {
@@ -169,15 +231,25 @@
 
   async function createSession(blob, options = {}) {
     const source = await loadSource(blob, options.label || 'Documento 1', options.cacheIdentity || '');
-    const plan = Array.from({ length: source.pageCount }, (_, pageIndex) => ({ sourceIndex: 0, pageIndex, rotation: 0 }));
-    return {
+    const session = {
       sources: [source],
-      plan,
-      history: [clonePlan(plan)],
+      plan: [],
+      objects: [],
+      history: [],
       historyIndex: 0,
       revision: 0,
+      nextPageId: 1,
+      nextObjectId: 1,
       createdAt: performance.now()
     };
+    session.plan = Array.from({ length: source.pageCount }, (_, pageIndex) => ({
+      pageId: nextPageId(session),
+      sourceIndex: 0,
+      pageIndex,
+      rotation: 0
+    }));
+    session.history = [snapshot(session)];
+    return session;
   }
 
   async function addDocument(session, blob, options = {}) {
@@ -189,6 +261,7 @@
       ? Math.max(0, Math.min(session.plan.length, requestedIndex))
       : session.plan.length;
     const entries = Array.from({ length: source.pageCount }, (_, pageIndex) => ({
+      pageId: nextPageId(session),
       sourceIndex,
       pageIndex,
       rotation: 0
@@ -210,7 +283,7 @@
       : session.plan.length;
 
     session.sources.push(source);
-    session.plan.splice(insertAt, 0, { sourceIndex, pageIndex: 0, rotation: 0 });
+    session.plan.splice(insertAt, 0, { pageId: nextPageId(session), sourceIndex, pageIndex: 0, rotation: 0 });
     session.revision += 1;
     commitHistory(session);
     return insertAt;
@@ -225,7 +298,7 @@
       ? Math.max(0, Math.min(session.plan.length, requestedIndex))
       : session.plan.length;
     session.sources.push(source);
-    session.plan.splice(insertAt, 0, { sourceIndex, pageIndex: 0, rotation: 0 });
+    session.plan.splice(insertAt, 0, { pageId: nextPageId(session), sourceIndex, pageIndex: 0, rotation: 0 });
     session.revision += 1;
     commitHistory(session);
     return insertAt;
@@ -235,12 +308,17 @@
     if (!session || !Number.isInteger(index) || index < 0 || index >= session.plan.length) return false;
     const source = session.plan[index];
     const duplicate = {
+      pageId: nextPageId(session),
       sourceIndex: source.sourceIndex,
       pageIndex: source.pageIndex,
       rotation: normalizeRotation(source.rotation)
     };
     const insertAt = index + 1;
     session.plan.splice(insertAt, 0, duplicate);
+    const cloned = cloneObjects(session.objects)
+      .filter((item) => item.pageId === source.pageId)
+      .map((item) => ({ ...item, id: nextObjectId(session), pageId: duplicate.pageId }));
+    session.objects.push(...cloned);
     session.revision += 1;
     commitHistory(session);
     return insertAt;
@@ -249,7 +327,8 @@
   function removePage(session, index) {
     if (!session || session.plan.length <= 1) return false;
     if (!Number.isInteger(index) || index < 0 || index >= session.plan.length) return false;
-    session.plan.splice(index, 1);
+    const [removed] = session.plan.splice(index, 1);
+    if (removed?.pageId) session.objects = session.objects.filter((item) => item.pageId !== removed.pageId);
     session.revision += 1;
     commitHistory(session);
     return true;
@@ -287,6 +366,116 @@
     return true;
   }
 
+  function addTextObject(session, pageIndex, options = {}) {
+    const page = session?.plan?.[Number(pageIndex)];
+    if (!page) return null;
+    const object = {
+      id: nextObjectId(session),
+      type: 'text',
+      pageId: page.pageId,
+      x: clamp01(options.x, 0.16),
+      y: clamp01(options.y, 0.16),
+      width: Math.min(0.9, Math.max(0.12, Number(options.width) || 0.34)),
+      height: Math.min(0.5, Math.max(0.045, Number(options.height) || 0.09)),
+      rotation: Number(options.rotation || 0),
+      opacity: clamp01(options.opacity, 1),
+      text: String(options.text || 'Digite aqui'),
+      fontFamily: String(options.fontFamily || 'Arial').slice(0, 80),
+      fontSize: Math.min(0.18, Math.max(0.008, Number(options.fontSize) || 0.032)),
+      color: /^#[0-9a-f]{6}$/i.test(String(options.color || '')) ? String(options.color) : '#111111',
+      blob: null,
+      mimeType: '',
+      aspectRatio: 0
+    };
+    session.objects.push(object);
+    session.revision += 1;
+    commitHistory(session);
+    return object.id;
+  }
+
+  async function addImageOverlay(session, pageIndex, blob, options = {}) {
+    const page = session?.plan?.[Number(pageIndex)];
+    if (!page || !(blob instanceof Blob)) return null;
+    const mimeType = String(blob.type || '').toLowerCase();
+    if (!mimeType.startsWith('image/')) throw new Error('Selecione uma imagem válida.');
+    let aspectRatio = Number(options.aspectRatio || 0);
+    if (!(aspectRatio > 0) && typeof createImageBitmap === 'function') {
+      const bitmap = await createImageBitmap(blob).catch(() => null);
+      if (bitmap) {
+        aspectRatio = bitmap.width > 0 && bitmap.height > 0 ? bitmap.width / bitmap.height : 0;
+        bitmap.close?.();
+      }
+    }
+    const width = Math.min(0.85, Math.max(0.08, Number(options.width) || 0.3));
+    const height = Math.min(0.85, Math.max(0.06, Number(options.height) || (aspectRatio > 0 ? width / aspectRatio : 0.22)));
+    const object = {
+      id: nextObjectId(session),
+      type: 'image',
+      pageId: page.pageId,
+      x: clamp01(options.x, 0.18),
+      y: clamp01(options.y, 0.18),
+      width,
+      height,
+      rotation: Number(options.rotation || 0),
+      opacity: clamp01(options.opacity, 1),
+      text: '',
+      fontFamily: '',
+      fontSize: 0,
+      color: '',
+      blob,
+      mimeType,
+      aspectRatio
+    };
+    session.objects.push(object);
+    session.revision += 1;
+    commitHistory(session);
+    return object.id;
+  }
+
+  function updateObject(session, objectId, patch = {}, options = {}) {
+    if (!session) return false;
+    const object = session.objects.find((item) => item.id === String(objectId || ''));
+    if (!object) return false;
+    Object.assign(object, normalizeObjectPatch(patch));
+    if (options.commit !== false) {
+      session.revision += 1;
+      commitHistory(session);
+    }
+    return true;
+  }
+
+  function commitObjectMutation(session) {
+    if (!session) return false;
+    session.revision += 1;
+    commitHistory(session);
+    return true;
+  }
+
+  function removeObject(session, objectId) {
+    if (!session) return false;
+    const index = session.objects.findIndex((item) => item.id === String(objectId || ''));
+    if (index < 0) return false;
+    session.objects.splice(index, 1);
+    session.revision += 1;
+    commitHistory(session);
+    return true;
+  }
+
+  function objectModel(session, pageIndex = null) {
+    if (!session) return [];
+    const pageById = new Map(session.plan.map((page, index) => [page.pageId, index]));
+    return cloneObjects(session.objects)
+      .map((object) => {
+        const index = pageById.get(object.pageId);
+        return {
+          ...object,
+          pageIndex: Number.isInteger(index) ? index : -1,
+          displayPage: Number.isInteger(index) ? index + 1 : 0
+        };
+      })
+      .filter((object) => object.pageIndex >= 0 && (pageIndex == null || object.pageIndex === Number(pageIndex)));
+  }
+
   function undo(session) {
     return restoreHistory(session, session.historyIndex - 1);
   }
@@ -308,6 +497,7 @@
     return session.plan.map((ref, index) => ({
       index,
       displayPage: index + 1,
+      pageId: ref.pageId,
       sourceIndex: ref.sourceIndex,
       sourcePage: ref.pageIndex + 1,
       sourceKind: session.sources[ref.sourceIndex]?.kind || 'pdf',
@@ -363,6 +553,12 @@
     movePage,
     movePageTo,
     rotatePage,
+    addTextObject,
+    addImageOverlay,
+    updateObject,
+    commitObjectMutation,
+    removeObject,
+    objectModel,
     undo,
     redo,
     canUndo,
@@ -371,6 +567,6 @@
     pageCount,
     sourceCount,
     buildBlob,
-    version: 'phase3-v5'
+    version: 'phase3-v6'
   });
 })();
