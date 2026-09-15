@@ -200,25 +200,30 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await palette.locator('[data-text-palette-index="2"]').click();
     await expect(text).toHaveCSS('color', 'rgb(229, 57, 53)');
 
-    // RGB opens the native picker from the direct user gesture.
-    const picker = palette.locator('[data-text-palette-custom-picker]');
-    const paletteBox = await palette.boundingBox();
-    const pickerBox = await picker.boundingBox();
-    expect(pickerBox.y).toBeLessThan(paletteBox.y - 20);
-    await picker.evaluate((node) => {
-      Object.defineProperty(node, 'showPicker', {
-        configurable: true,
-        value() { this.dataset.showPickerCalled = 'true'; }
-      });
-    });
+    // RGB opens a Portal-controlled panel in the old position, directly above the palette.
     await palette.locator('[data-text-palette-custom]').click();
-    await expect(picker).toHaveAttribute('data-show-picker-called', 'true');
+    const panel = palette.locator('[data-text-custom-color-panel]');
+    await expect(panel).toBeVisible();
+    const paletteBox = await palette.boundingBox();
+    const panelBefore = await panel.boundingBox();
+    expect(panelBefore.bottom).toBeLessThanOrEqual(paletteBox.y + 2);
+
+    // The lower-right grip moves the panel freely without closing it.
+    const dragHandle = panel.locator('[data-color-drag-handle]');
+    const handleBox = await dragHandle.boundingBox();
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(handleBox.x + handleBox.width / 2 + 72, handleBox.y + handleBox.height / 2 + 36, { steps: 6 });
+    await page.mouse.up();
+    const panelAfter = await panel.boundingBox();
+    expect(panelAfter.x).toBeGreaterThan(panelBefore.x + 45);
+    expect(panelAfter.y).toBeGreaterThan(panelBefore.y + 20);
+    await expect(panel).toBeVisible();
 
     // RGB/HEX replaces the selected predefined slot, preserving its position.
-    await picker.evaluate((node) => {
-      node.value = '#7b1fa2';
-      node.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+    const hex = panel.locator('[data-color-hex]');
+    await hex.fill('#7B1FA2');
+    await hex.dispatchEvent('change');
     await expect(text).toHaveCSS('color', 'rgb(123, 31, 162)');
     await expect(page.locator('html')).toHaveAttribute('data-editor-palette', /#000000,#ffffff,#7b1fa2,#1565c0,#2e7d32,#f9a825/);
     await expect(palette.locator('[data-text-palette-index="2"]')).toHaveCSS('background-color', 'rgb(123, 31, 162)');
@@ -228,11 +233,13 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(palette.locator('[data-text-palette-index]')).toHaveCount(7);
     await expect(palette.locator('[data-text-palette-index="6"]')).toHaveClass(/active/);
 
-    // RGB fills the newly-created slot.
-    await picker.evaluate((node) => {
-      node.value = '#00838f';
-      node.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+    // RGB fills the newly-created slot from the same movable panel.
+    await palette.locator('[data-text-palette-custom]').click();
+    await expect(panel).toBeHidden();
+    await palette.locator('[data-text-palette-custom]').click();
+    await expect(panel).toBeVisible();
+    await panel.locator('[data-color-hex]').fill('#00838F');
+    await panel.locator('[data-color-hex]').dispatchEvent('change');
     await expect(palette.locator('[data-text-palette-index="6"]')).toHaveCSS('background-color', 'rgb(0, 131, 143)');
     await expect(page.locator('html')).toHaveAttribute('data-editor-palette', /#00838f$/);
 

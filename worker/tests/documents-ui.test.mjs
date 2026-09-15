@@ -106,7 +106,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260915-9'/);
+  assert.match(source, /CACHE_VERSION = '20260915-10'/);
 });
 
 test('observabilidade documental continua sem propriedades identificáveis', () => {
@@ -173,7 +173,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260915-6/);
+  assert.match(html, /documents\.css\?v=20260915-7/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -192,9 +192,9 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260915-9/);
+  assert.match(html, /document-viewer\.js\?v=20260915-10/);
   assert.match(html, /documents\.js\?v=20260915-7/);
-  assert.match(html, /documents\.css\?v=20260915-6/);
+  assert.match(html, /documents\.css\?v=20260915-7/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -265,9 +265,9 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260915-9/);
+  assert.match(html, /document-viewer\.js\?v=20260915-10/);
   assert.match(html, /documents\.js\?v=20260915-7/);
-  assert.match(html, /documents\.css\?v=20260915-6/);
+  assert.match(html, /documents\.css\?v=20260915-7/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -506,15 +506,20 @@ test('paleta serializa gravações e a saída limpa o object mode antes de desca
   assert.match(client, /setEditorObjects\?\.\(\[\], \{ mode: 'none', selectedObjectId: '' \}\)/);
 });
 
-test('paleta contextual cria slot no + e usa showPicker para RGB', () => {
+test('paleta contextual cria slot e usa painel RGB próprio arrastável', () => {
   const viewer = read('js/document-viewer.js');
   const css = read('css/documents.css');
 
   assert.match(viewer, /session\.paletteSelectedIndex = session\.colorPalette\.length - 1/);
   assert.match(viewer, /session\.onColorPaletteChange\?\.\(\[\.\.\.session\.colorPalette\]\)/);
-  assert.match(viewer, /picker\.showPicker\(\)/);
-  assert.doesNotMatch(viewer, /data-text-palette-add-picker/);
-  assert.match(css, /\.portal-pdf-text-palette input\[type="color"\][\s\S]*top:\s*-52px/);
+  assert.match(viewer, /data-text-custom-color-panel/);
+  assert.match(viewer, /data-color-drag-handle/);
+  assert.match(viewer, /rgbToHsv/);
+  assert.match(viewer, /hsvToRgb/);
+  assert.doesNotMatch(viewer, /showPicker\(\)/);
+  assert.doesNotMatch(viewer, /data-text-palette-custom-picker/);
+  assert.match(css, /\.portal-pdf-custom-color-panel[\s\S]*bottom:\s*calc\(100% \+ 8px\)/);
+  assert.match(css, /\.portal-pdf-custom-color-drag[\s\S]*cursor:\s*move/);
 });
 
 test('transparência afeta somente o conteúdo e mantém controles opacos', () => {
