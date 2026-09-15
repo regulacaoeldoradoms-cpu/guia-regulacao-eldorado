@@ -257,3 +257,47 @@ Staging sintético:
 - continua proibido usar documento real enquanto o staging público não estiver protegido por Access.
 
 Conclusão técnica: a 3C.3 está pronta para **homologação humana de Escrever + Colar imagem**. O PR continua aberto e sem merge. Recortar permanece bloqueado até esse aceite.
+
+## Resultado técnico final do painel RGB arrastável — 15/09/2026
+
+Head funcional validado: `8596a2d92937cae3c0357f123e61ec1f50bbf257`.
+
+O adendo final da 3C.3 substituiu o picker nativo de cor por um painel controlado pelo Portal para cumprir o requisito de movimentação livre sem depender do posicionamento imposto pelo navegador.
+
+Cobertura comprovada:
+- painel RGB/HEX abre acima da paleta contextual;
+- alça inferior direita usa Pointer Events para mover o painel;
+- painel permanece utilizável após o movimento e pode ser fechado por ×;
+- posição movida é preservada ao fechar/reabrir durante a mesma barra contextual;
+- selecionar slot predefinido sincroniza RGB/HEX;
+- editar RGB/HEX substitui o slot ativo;
+- `+` adiciona slot e o torna alvo da próxima edição RGB;
+- quickbar, exclusão reversível, Undo/Redo e seleção de texto permanecem funcionais;
+- desktop e perfil mobile não geram console/pageerror nesse fluxo.
+
+Resultado de CI:
+- **24/24 workflows aprovados**;
+- Playwright: **51 passed / 1 skipped esperado**;
+- teste específico da barra contextual/paleta aprovado em desktop e mobile;
+- nenhum thread de review pendente no PR #179.
+
+Staging candidato:
+- imutável: `https://b92136d4.portal-regulacao-central-staging.pages.dev/`;
+- alias: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+
+Limites desta homologação:
+- staging continua somente com dados fictícios enquanto Cloudflare Access estiver pendente;
+- nenhum teste automatizado substitui completamente o gesto touch em aparelho físico;
+- nenhuma escrita no Google Drive faz parte da Fase 3.
+
+Roteiro humano final específico do adendo:
+1. selecionar/criar uma caixa de texto e abrir **Cor → RGB**;
+2. confirmar abertura acima da paleta;
+3. mover pelo puxador inferior direito em diferentes direções;
+4. confirmar que × fecha e que reabrir mantém a posição;
+5. selecionar um slot, alterar RGB/HEX e confirmar substituição daquele slot;
+6. usar `+`, abrir RGB/HEX e preencher o novo slot;
+7. se possível, repetir abrir/mover/fechar em celular físico.
+
+Aceite desses pontos encerra o gate humano da 3C.3 e libera 3C.4 — Recortar.
+

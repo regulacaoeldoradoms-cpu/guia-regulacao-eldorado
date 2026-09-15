@@ -6,29 +6,53 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.3 — objetos sobre página: Escrever + Colar imagem, em validação técnica no PR #179**. O Organizar V2 foi aceito visualmente pelo usuário e permanece como checkpoint concluído dentro da Fase 3. Recortar é a próxima unidade (3C.4) somente após homologação da 3C.3; Desenhar/Borracha permanece para 3C.5 e flatten/exportação local para 3C.6. **Não fazer merge nem escrever no Google Drive nesta fase.**
+Subfase atual: **3C.3 — objetos sobre página: Escrever + Colar imagem, tecnicamente validada e aguardando homologação humana final no PR #179**. O Organizar V2 foi aceito visualmente pelo usuário e permanece como checkpoint concluído dentro da Fase 3. Recortar é a próxima unidade (3C.4) somente após homologação da 3C.3; Desenhar/Borracha permanece para 3C.5 e flatten/exportação local para 3C.6. **Não fazer merge nem escrever no Google Drive nesta fase.**
 
 ## Handoff para o próximo chat — 3C.3, registro vigente
 
 Este bloco prevalece sobre os handoffs históricos abaixo.
 
-- **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, confirmada antes desta rodada.
-- **PR:** #179 — `codex/central-docs-editor-superficie-unica`, aberto, sem merge e ainda apontado para a mesma main.
-- **Último head funcional validado:** `b95914d8d7bf4a7086b280e543abae4a7a0efba2` — mantém o fluxo real da paleta contextual e reposiciona a âncora do seletor RGB 52 px acima da paleta para não cobrir a primeira linha de slots.
-- **Organizar V2:** aceito pelo usuário; drag centralizado, grade, rotação de página, duplicação, exclusão, página em branco, união posicionada e undo/redo permanecem requisitos preservados.
-- **3C.3 já implementada:** texto e imagem overlay por `pageId`, seleção, movimento, quatro pontos de manipulação, rotação, formatação de texto, opacidade, transferência entre páginas e histórico local. No modo **Selecionar**, texto permanece não editável, mas a caixa selecionada expõe bolinha de cor, A−, A+ e lixeira; clique fora confirma o estado e remove a seleção. Os objetos continuam locais; o flatten permanece para 3C.6.
-- **P2 de miniaturas lazy:** a causa era `setOrganizerMode()` invalidar e chamar `renderThumbnail()` para todas as páginas. A correção agora invalida a geração e rearma o `IntersectionObserver`, renderizando tudo somente no fallback sem IntersectionObserver. Foi acrescentado teste de navegador com documento sintético ampliado para provar que a troca de modo não materializa todas as miniaturas.
-- **Alça inferior direita:** agora é transformação combinada. Distância ao centro controla escala uniforme e variação angular controla rotação; o centro do objeto é preservado e o gesto continua sendo consolidado como uma única mutação no `pointerup`. A alça de rotação dedicada continua disponível como alternativa.
-- **Testes acrescentados:** além do lazy loading e da transformação SE, o Playwright agora cobre o contrato do adendo humano: duplo clique em Selecionar não ativa `contenteditable`, os atalhos contextuais continuam funcionais sem alterar o conteúdo textual e clique externo desmarca/remove a barra contextual.
-- **Segurança:** nenhuma rota de escrita no Drive, nenhum backend novo, nenhuma telemetria de texto/imagem/coordenadas e nenhum dado real no staging.
-- **Validação automática atual:** head `b95914d8d7bf4a7086b280e543abae4a7a0efba2` passou **24/24 workflows**. O Playwright executou **51 passed / 1 skipped**; o teste da paleta agora confirma também que a âncora invisível do seletor nativo fica acima da paleta, evitando sobreposição dos slots. O único skip continua sendo o gesto touch específico no projeto desktop.
-- **Gate:** Recortar (3C.4) não deve ser implementado antes do aceite humano da 3C.3. Desenhar/Borracha (3C.5) e flatten (3C.6) continuam apenas preparados em especificação/testes.
-- **Riscos conhecidos:** staging público enquanto Cloudflare Access estiver pendente, portanto somente dados sintéticos; touch automatizado não substitui teste em aparelho físico; PDFs institucionais só entram em reteste autorizado posterior.
-- **Não feito:** merge, alteração da main, deploy de produção, escrita no Drive, mudança de Worker/D1, uso de documento clínico ou avanço funcional para 3C.4/3C.5.
-- **Preview candidato atual:** deployment sintético imutável `https://547ebcd7.portal-regulacao-central-staging.pages.dev/`, associado ao head `b95914d`; alias da branch permanece `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
-- **Aceite humano parcial:** o usuário aprovou o fluxo **Selecionar caixa de texto → ajustar sem editar conteúdo → clicar fora e desmarcar** em 15/09/2026. Isso fecha esse adendo, mas não equivale ao aceite completo de toda a 3C.3.
-- **Review atual:** todos os P2s conhecidos desta rodada foram corrigidos, respondidos com evidência e resolvidos no PR #179: quickbar entre caixas, histórico do seletor de cor, serialização da paleta, limpeza do object mode ao sair e controles opacos durante transparência.
-- **Próxima ação exata:** homologação humana final da 3C.3 no preview `547ebcd7...`, confirmando especificamente que a janela RGB não cobre mais a primeira linha de slots. Recortar continua bloqueado até esse aceite.
+- **Fase atual:** Fase 3 — Editor PDF essencial.
+- **Subfase / objetivo atual:** 3C.3 — Escrever + Colar imagem. A implementação está tecnicamente verde; falta somente homologação humana final do fluxo contextual de texto/RGB e dos gestos em aparelho real.
+- **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, confirmada em 15/09/2026 e mantida intacta.
+- **Branch atual:** `codex/central-docs-editor-superficie-unica`.
+- **PR atual:** #179 — aberto, mergeável, sem merge.
+- **Último commit funcional validado:** `8596a2d92937cae3c0357f123e61ec1f50bbf257`.
+- **Última ação concluída:** substituição do seletor nativo de cor por painel RGB/HEX próprio, mantendo a abertura acima da paleta e adicionando movimentação por alça inferior direita, fechamento por × e preservação da posição movida durante a sessão.
+- **Paleta contextual:** preto, branco, vermelho, azul, verde e amarelo permanecem como slots iniciais; `+` cria slot novo até o limite de 16; selecionar slot + RGB/HEX substitui exatamente aquele slot; o painel acompanha o slot ativo; duplicatas são permitidas porque a posição do slot é significativa.
+- **Escrever / Selecionar:** enquanto uma caixa está em edição, clique nela não cria outra caixa; clique fora confirma e consome o gesto; Selecionar não permite editar o conteúdo, mas mantém cor, A−, A+ e lixeira; clique fora desmarca.
+- **Objetos:** texto e imagem overlay continuam vinculados por `pageId`, com mover, resize, transformação SE (escala + rotação), rotação dedicada, opacidade, transferência entre páginas e Undo/Redo local.
+- **Miniaturas / desempenho:** Organizar ↔ Escrever preserva lazy loading por `IntersectionObserver`; documento sintético maior comprova que a troca de modo não materializa todas as miniaturas.
+- **Checks e testes:** no head funcional `8596a2d...`, **24/24 workflows verdes**. O Playwright concluiu **51 passed / 1 skipped esperado**, incluindo a barra contextual/paleta em desktop e mobile. Não há threads de review não resolvidos.
+- **Staging sintético:** deployment imutável do head funcional: `https://b92136d4.portal-regulacao-central-staging.pages.dev/`; alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+- **Segurança / privacidade:** staging somente com dados fictícios; nenhuma escrita no Drive; nenhum backend novo; nenhuma telemetria de texto, imagem, nome de arquivo, fileId ou coordenadas; nenhum segredo no frontend.
+- **Decisões tomadas:** o seletor nativo do navegador foi descartado para esta interação porque sua janela não pode ser reposicionada/arrastada de forma controlada pelo Portal. O painel próprio mantém o mesmo propósito com comportamento previsível e testável.
+- **Alternativas descartadas:** deslocar apenas a âncora do picker nativo e manter a janela do navegador; isso não atendia ao requisito de mover livremente a janela e continuava sujeito a sobreposição não controlável.
+- **Não feito:** merge, alteração da main, deploy de produção, escrita no Drive, mudança destrutiva, uso de documento real ou implementação de Recortar/Desenhar/flatten.
+- **Riscos conhecidos:** Cloudflare Access ainda não protege o staging, portanto somente dados sintéticos; automação mobile não substitui totalmente o teste touch em aparelho físico.
+- **Gate:** 3C.4 — Recortar continua bloqueada até o aceite humano da 3C.3.
+- **Próxima ação exata:** o usuário deve homologar no preview `b92136d4...` o painel RGB (abrir, mover pelo puxador, fechar/reabrir, editar slot e criar slot com +) e, se possível, repetir abrir/mover/fechar em celular físico. Se aprovado, registrar o aceite e liberar 3C.4.
+- **Arquivos e fontes principais:** Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-STATUS.md`; `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`; PR #179; `js/document-viewer.js`; `testing/browser/central-docs-objects.spec.mjs`.
+
+## 3C.3 — painel RGB arrastável finalizado tecnicamente — 15/09/2026
+
+A rodada encerrou o adendo visual/funcional da paleta sem Codex e sem ampliar o escopo da fase.
+
+- o picker nativo foi substituído por componente próprio RGB/HEX, permitindo movimento real pelo puxador inferior direito;
+- o painel abre acima da paleta, pode ser fechado por × e conserva a posição movida enquanto a barra contextual existir;
+- a movimentação usa Pointer Events e limites calculados sobre a área útil do viewer durante o gesto, evitando que o painel seja arrastado para uma posição inacessível;
+- selecionar outro slot com o painel aberto sincroniza imediatamente RGB/HEX; `+` cria e seleciona o slot novo; reabrir o painel usa o slot ativo;
+- foram corrigidas regressões encontradas pela própria automação durante a implementação, incluindo captura de pointer events, sobreposição de controles e escopo dos helpers de posicionamento;
+- o teste foi ajustado para validar comportamento real em desktop/mobile, inclusive fechar o painel antes de acessar controles encobertos e reabrir na posição persistida;
+- head funcional final: `8596a2d92937cae3c0357f123e61ec1f50bbf257`;
+- CI: **24/24 workflows verdes**;
+- navegador: **51 passed / 1 skipped esperado**;
+- preview imutável: `https://b92136d4.portal-regulacao-central-staging.pages.dev/`;
+- review: nenhum thread não resolvido;
+- main permanece em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`;
+- nenhuma escrita no Drive, merge ou avanço para 3C.4.
+
+Resultado: a 3C.3 está **tecnicamente pronta para homologação humana final**. A próxima intervenção necessária é somente o aceite visual/touch do usuário; não há outra correção técnica conhecida bloqueando o teste humano.
 
 ## 3C.3 — microajuste visual do seletor RGB — 15/09/2026
 
