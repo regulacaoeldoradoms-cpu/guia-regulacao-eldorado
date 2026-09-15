@@ -186,6 +186,12 @@
       }
       session.objectHandlers = null;
     }
+    if (session.objectWindowHandlers) {
+      for (const [type, handler] of Object.entries(session.objectWindowHandlers)) {
+        try { window.removeEventListener(type, handler, true); } catch (_) {}
+      }
+      session.objectWindowHandlers = null;
+    }
     const loadingTask = session.loadingTask;
     const document = session.document;
     session.loadingTask = null;
@@ -771,7 +777,6 @@
         start: { ...object },
         changed: false
       };
-      try { captureTarget.setPointerCapture?.(event.pointerId); } catch (_) {}
     };
 
     const pointermove = (event) => {
@@ -825,7 +830,6 @@
       const drag = session.objectDrag;
       if (!drag || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
       session.objectDrag = null;
-      try { drag.origin?.releasePointerCapture?.(drag.pointerId); } catch (_) {}
       if (drag.changed) commitObjectGesture(session, drag);
     };
 
@@ -883,9 +887,13 @@
       renderEditorObjects(session);
     };
 
-    session.objectHandlers = { pointerdown, pointermove, pointerup: finish, pointercancel: finish, click, dblclick, focusout };
+    session.objectHandlers = { pointerdown, click, dblclick, focusout };
     for (const [type, handler] of Object.entries(session.objectHandlers)) {
-      pagesRoot.addEventListener(type, handler, type === 'pointermove' ? { passive: false } : false);
+      pagesRoot.addEventListener(type, handler, false);
+    }
+    session.objectWindowHandlers = { pointermove, pointerup: finish, pointercancel: finish };
+    for (const [type, handler] of Object.entries(session.objectWindowHandlers)) {
+      window.addEventListener(type, handler, { capture: true, passive: type !== 'pointermove' });
     }
   }
 
@@ -1377,6 +1385,7 @@
       objectDrag: null,
       objectUrls: new Map(),
       objectHandlers: null,
+      objectWindowHandlers: null,
       onObjectChange: null,
       onObjectCommit: null,
       onObjectSelect: null,
@@ -1585,6 +1594,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v1c`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v1d`
   });
 })();
