@@ -2,7 +2,7 @@
 
 Data: 15/09/2026  
 Fase: 3 — Editor PDF  
-Status: requisitos de UX aprovados pelo usuário; implementação incremental no staging antes de produção.
+Status: requisitos de UX aprovados pelo usuário; implementação incremental no staging antes de produção. O aceite humano mais recente exige a experiência completa da Fase 3, não apenas o Organizar V2.
 
 ## 1. Objetivo
 
@@ -124,3 +124,11 @@ A união não deve obrigar o usuário a inserir no final e reorganizar manualmen
 - validação desktop/mobile e PDFs variados.
 
 Somente após aceite real dessas unidades a Fase 3 poderá ser encerrada e a sincronização segura com Drive (Fase 4) iniciada.
+
+## 7. Critério humano de aceite atualizado — 15/09/2026
+
+O Organizar V2 é checkpoint técnico, não o editor final. O usuário explicitou que considera ausentes/incompletas as ferramentas Escrever, Colar imagem sobre página, Recortar e Desenhar. Portanto:
+- não solicitar aceite global da Fase 3 somente com a grade;
+- implementar as unidades 3C.3–3C.5 antes do aceite visual global;
+- manter Inserir página em branco no Organizar, mas tornar seu ícone/tooltip facilmente reconhecível;
+- durante drag, o centro visual do cartão flutuante deve acompanhar o cursor/dedo, sem deslocamento para o canto superior esquerdo.

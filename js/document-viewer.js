@@ -280,6 +280,8 @@
     session.touchDrag = null;
     session.dragGhost?.remove?.();
     session.dragGhost = null;
+    session.dragGhostOffsetX = 0;
+    session.dragGhostOffsetY = 0;
     try { drag?.origin?.releasePointerCapture?.(drag.pointerId); } catch (_) {}
     for (const record of session.thumbs.values()) {
       record.wrapper?.classList.remove('dragging', 'drag-before', 'drag-after');
@@ -310,13 +312,19 @@
 
     document.body.appendChild(ghost);
     session.dragGhost = ghost;
+    // O usuário arrasta a própria página: o ponteiro/dedo deve permanecer no centro
+    // do cartão flutuante, em vez de ficar deslocado no canto superior esquerdo.
+    session.dragGhostOffsetX = Math.max(60, rect.width / 2);
+    session.dragGhostOffsetY = Math.max(60, rect.height / 2);
     moveDragGhost(session, event);
     return ghost;
   }
 
   function moveDragGhost(session, event) {
     if (!session.dragGhost) return;
-    session.dragGhost.style.transform = `translate3d(${Math.round(event.clientX + 14)}px,${Math.round(event.clientY + 14)}px,0)`;
+    const offsetX = Number(session.dragGhostOffsetX || session.dragGhost.offsetWidth / 2 || 0);
+    const offsetY = Number(session.dragGhostOffsetY || session.dragGhost.offsetHeight / 2 || 0);
+    session.dragGhost.style.transform = `translate3d(${Math.round(event.clientX - offsetX)}px,${Math.round(event.clientY - offsetY)}px,0)`;
   }
 
   function dropIndexForWrapper(session, wrapper, clientX, clientY, sourceIndex) {
@@ -1023,6 +1031,8 @@
       dragSourceIndex: null,
       dragTargetIndex: null,
       dragGhost: null,
+      dragGhostOffsetX: 0,
+      dragGhostOffsetY: 0,
       touchDrag: null,
       suppressThumbnailClickUntil: 0,
       pageRatios: new Map(),

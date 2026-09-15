@@ -187,7 +187,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260915-2/);
+  assert.match(html, /document-viewer\.js\?v=20260915-3/);
   assert.match(html, /documents\.js\?v=20260915-1/);
   assert.match(html, /documents\.css\?v=20260915-1/);
 
@@ -257,7 +257,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260915-2/);
+  assert.match(html, /document-viewer\.js\?v=20260915-3/);
   assert.match(html, /documents\.js\?v=20260915-1/);
   assert.match(html, /documents\.css\?v=20260915-1/);
 

@@ -1805,3 +1805,30 @@ Ajuste aplicado antes do primeiro preview V2:
 - o ghost acompanha o ponteiro sem capturar eventos;
 - clicar numa página no modo grade apenas seleciona a página; não tenta rolar a superfície grande que está oculta;
 - o botão legado **Editar PDF** do cabeçalho deixa de ser visualmente redundante; o acesso principal passa a ser o ícone lateral Editar, preservando o nó legado por compatibilidade interna.
+
+
+## Homologação humana do Organizar V2 — correção de posicionamento do drag e escopo do editor — 15/09/2026
+
+Feedback humano no preview imutável `198c6ffe.portal-regulacao-central-staging.pages.dev`:
+- a grade e o arraste estão funcionais, porém o cartão flutuante fica deslocado do cursor/dedo; o ponteiro aparece no canto superior esquerdo do ghost em vez de ficar centralizado sobre a página arrastada;
+- o usuário também rejeitou tratar o Organizar V2 isolado como editor final, pois ainda espera as ferramentas já definidas: **Escrever, Colar imagem sobre página, Recortar e Desenhar**;
+- **Inserir página em branco já existe tecnicamente no Organizar V2**, mas o fato de não ter sido reconhecida no preview evidencia problema de descobribilidade do ícone/tooltips, que deverá ser refinado junto da barra final.
+
+Correção aplicada ao drag:
+- o ghost passa a usar metade da largura/altura do cartão como offset, mantendo cursor/dedo no centro visual da página durante o arraste;
+- offsets do ghost são limpos em todo cancelamento/drop/close;
+- Playwright passa a verificar geometricamente que o centro do ghost coincide com o ponteiro dentro de tolerância pequena.
+
+Decisão de aceite atualizada:
+- o Organizar V2 continua sendo uma unidade técnica necessária, mas **não é mais um ponto de parada para declarar o editor aceito**;
+- a Fase 3 só poderá receber aceite visual global depois que Escrever, Colar imagem overlay, Recortar e Desenhar/Borracha estiverem implementados e integrados na mesma experiência;
+- a borracha permanece restrita aos traços feitos por Desenhar;
+- PR #179 permanece aberto; sem merge e sem escrita no Drive.
+
+Próximo passo:
+1. validar a centralização do ghost em desktop/mobile;
+2. manter o Organizar estável;
+3. avançar dentro da própria Fase 3 para os objetos sobre página (Escrever + Colar imagem);
+4. depois Recortar;
+5. depois Desenhar/Borracha;
+6. só então solicitar homologação visual do editor como conjunto.

@@ -30,9 +30,10 @@ async function startDrag(page, index = 0) {
   const point = { x: box.x + box.width * .4, y: box.y + box.height * .55 };
   await page.mouse.move(point.x, point.y);
   await page.mouse.down();
-  await page.mouse.move(point.x + 12, point.y, { steps: 3 });
+  const pointer = { x: point.x + 12, y: point.y };
+  await page.mouse.move(pointer.x, pointer.y, { steps: 3 });
   await expect(page.locator('.portal-pdf-drag-ghost')).toBeVisible();
-  return point;
+  return pointer;
 }
 
 test.beforeEach(async ({ page, baseURL }) => {
@@ -112,7 +113,10 @@ test('última página não pode ser excluída', async ({ page }) => {
 
 test('ghost real, drop início/fim e histórico sem mutação durante drag', async ({ page }) => {
   const revision = await page.locator('html').getAttribute('data-editor-revision');
-  await startDrag(page, 1);
+  const pointer = await startDrag(page, 1);
+  const ghostBox = await page.locator('.portal-pdf-drag-ghost').boundingBox();
+  expect(Math.abs((ghostBox.x + ghostBox.width / 2) - pointer.x)).toBeLessThanOrEqual(3);
+  expect(Math.abs((ghostBox.y + ghostBox.height / 2) - pointer.y)).toBeLessThanOrEqual(3);
   expect(await page.evaluate(() => {
     const source = document.querySelector('#thumbnails .dragging canvas');
     const ghost = document.querySelector('.portal-pdf-drag-ghost canvas');
