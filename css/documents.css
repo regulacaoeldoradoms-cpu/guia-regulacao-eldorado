@@ -994,6 +994,7 @@
   overflow-wrap: anywhere;
   line-height: 1.18;
   font-size: var(--object-font-size, 18px);
+  opacity: var(--object-opacity, 1);
   cursor: inherit;
   user-select: text;
 }
@@ -1009,6 +1010,7 @@
   height: 100%;
   display: block;
   object-fit: contain;
+  opacity: var(--object-opacity, 1);
   pointer-events: none;
 }
 
