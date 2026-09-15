@@ -50,12 +50,45 @@
     return ((snapped % 360) + 360) % 360;
   }
 
+  function normalizeCropRect(value) {
+    if (!value || typeof value !== 'object') return null;
+    const minSize = 0.04;
+    let x = clamp01(value.x, 0);
+    let y = clamp01(value.y, 0);
+    let width = Number(value.width);
+    let height = Number(value.height);
+    if (!Number.isFinite(width) || !Number.isFinite(height)) return null;
+    width = Math.min(1, Math.max(minSize, width));
+    height = Math.min(1, Math.max(minSize, height));
+    x = Math.min(1 - width, Math.max(0, x));
+    y = Math.min(1 - height, Math.max(0, y));
+    const full = x <= 0.0001 && y <= 0.0001 && width >= 0.9999 && height >= 0.9999;
+    return full ? null : { x, y, width, height };
+  }
+
+  function rotateCropRect(crop, quarterTurns = 1) {
+    let rect = normalizeCropRect(crop);
+    if (!rect) return null;
+    const turns = ((Math.round(Number(quarterTurns) || 0) % 4) + 4) % 4;
+    for (let index = 0; index < turns; index += 1) {
+      rect = normalizeCropRect({
+        x: 1 - (rect.y + rect.height),
+        y: rect.x,
+        width: rect.height,
+        height: rect.width
+      });
+      if (!rect) break;
+    }
+    return rect;
+  }
+
   function clonePlan(plan) {
     return plan.map((item) => ({
       pageId: String(item.pageId || ''),
       sourceIndex: item.sourceIndex,
       pageIndex: item.pageIndex,
-      rotation: normalizeRotation(item.rotation)
+      rotation: normalizeRotation(item.rotation),
+      crop: normalizeCropRect(item.crop)
     }));
   }
 
@@ -254,7 +287,8 @@
       pageId: nextPageId(session),
       sourceIndex: 0,
       pageIndex,
-      rotation: 0
+      rotation: 0,
+      crop: null
     }));
     session.history = [snapshot(session)];
     return session;
@@ -272,7 +306,8 @@
       pageId: nextPageId(session),
       sourceIndex,
       pageIndex,
-      rotation: 0
+      rotation: 0,
+      crop: null
     }));
     session.sources.push(source);
     session.plan.splice(insertAt, 0, ...entries);
@@ -291,7 +326,7 @@
       : session.plan.length;
 
     session.sources.push(source);
-    session.plan.splice(insertAt, 0, { pageId: nextPageId(session), sourceIndex, pageIndex: 0, rotation: 0 });
+    session.plan.splice(insertAt, 0, { pageId: nextPageId(session), sourceIndex, pageIndex: 0, rotation: 0, crop: null });
     session.revision += 1;
     commitHistory(session);
     return insertAt;
@@ -306,7 +341,7 @@
       ? Math.max(0, Math.min(session.plan.length, requestedIndex))
       : session.plan.length;
     session.sources.push(source);
-    session.plan.splice(insertAt, 0, { pageId: nextPageId(session), sourceIndex, pageIndex: 0, rotation: 0 });
+    session.plan.splice(insertAt, 0, { pageId: nextPageId(session), sourceIndex, pageIndex: 0, rotation: 0, crop: null });
     session.revision += 1;
     commitHistory(session);
     return insertAt;
@@ -319,7 +354,8 @@
       pageId: nextPageId(session),
       sourceIndex: source.sourceIndex,
       pageIndex: source.pageIndex,
-      rotation: normalizeRotation(source.rotation)
+      rotation: normalizeRotation(source.rotation),
+      crop: normalizeCropRect(source.crop)
     };
     const insertAt = index + 1;
     session.plan.splice(insertAt, 0, duplicate);
@@ -369,9 +405,32 @@
     if (!turns) return false;
     const entry = session.plan[index];
     entry.rotation = normalizeRotation((entry.rotation || 0) + (turns * 90));
+    if (entry.crop) entry.crop = rotateCropRect(entry.crop, turns);
     session.revision += 1;
     commitHistory(session);
     return true;
+  }
+
+  function setPageCrop(session, pageIndex, crop, options = {}) {
+    const page = session?.plan?.[Number(pageIndex)];
+    if (!page) return false;
+    const next = normalizeCropRect(crop);
+    const current = normalizeCropRect(page.crop);
+    const same = (!current && !next) || (
+      current && next
+      && ['x', 'y', 'width', 'height'].every((key) => Math.abs(current[key] - next[key]) < 0.000001)
+    );
+    if (same) return false;
+    page.crop = next;
+    if (options.commit !== false) {
+      session.revision += 1;
+      commitHistory(session);
+    }
+    return true;
+  }
+
+  function clearPageCrop(session, pageIndex, options = {}) {
+    return setPageCrop(session, pageIndex, null, options);
   }
 
   function addTextObject(session, pageIndex, options = {}) {
@@ -532,7 +591,8 @@
       sourcePage: ref.pageIndex + 1,
       sourceKind: session.sources[ref.sourceIndex]?.kind || 'pdf',
       sourceLabel: session.sources[ref.sourceIndex]?.label || `Documento ${ref.sourceIndex + 1}`,
-      rotation: normalizeRotation(ref.rotation)
+      rotation: normalizeRotation(ref.rotation),
+      crop: normalizeCropRect(ref.crop)
     }));
   }
 
@@ -583,6 +643,8 @@
     movePage,
     movePageTo,
     rotatePage,
+    setPageCrop,
+    clearPageCrop,
     addTextObject,
     addImageOverlay,
     updateObject,
@@ -598,6 +660,6 @@
     pageCount,
     sourceCount,
     buildBlob,
-    version: 'phase3-v8'
+    version: 'phase3-v9'
   });
 })();
