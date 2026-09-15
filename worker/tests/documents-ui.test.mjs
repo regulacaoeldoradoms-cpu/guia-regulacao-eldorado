@@ -106,7 +106,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260915-4'/);
+  assert.match(source, /CACHE_VERSION = '20260915-5'/);
 });
 
 test('observabilidade documental continua sem propriedades identificáveis', () => {
@@ -134,7 +134,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260915-4/);
+  assert.match(html, /documents\.js\?v=20260915-5/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -192,8 +192,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260915-6/);
-  assert.match(html, /documents\.js\?v=20260915-4/);
+  assert.match(html, /document-viewer\.js\?v=20260915-7/);
+  assert.match(html, /documents\.js\?v=20260915-5/);
   assert.match(html, /documents\.css\?v=20260915-4/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
@@ -265,8 +265,8 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260915-6/);
-  assert.match(html, /documents\.js\?v=20260915-4/);
+  assert.match(html, /document-viewer\.js\?v=20260915-7/);
+  assert.match(html, /documents\.js\?v=20260915-5/);
   assert.match(html, /documents\.css\?v=20260915-4/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -376,7 +376,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260915-3/);
-  assert.match(html, /documents\.js\?v=20260915-4/);
+  assert.match(html, /documents\.js\?v=20260915-5/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -509,6 +509,9 @@ test('3C.3 mantém objetos locais reversíveis e deixa Recortar/Desenhar bloquea
   assert.match(viewer, /data-text-quickbar/);
   assert.match(viewer, /data-text-palette-index/);
   assert.match(viewer, /onColorPaletteChange/);
+  assert.match(viewer, /objectMode[^\n]+!== 'write'/);
+  assert.match(viewer, /clearSelectedObject/);
+  assert.match(viewer, /hasOwnProperty\.call\(options, 'selectedObjectId'\)/);
   assert.match(css, /\.portal-pdf-object-layer/);
   assert.match(css, /\.portal-pdf-object-handle--se/);
   assert.match(css, /\.portal-pdf-object-rotate/);
