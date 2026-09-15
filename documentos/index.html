@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260915-2">
+  <link rel="stylesheet" href="/css/documents.css?v=20260915-3">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -154,6 +154,18 @@
                   <span>Cor</span>
                   <input id="editorObjectColor" type="color" value="#111111">
                 </label>
+                <div class="documents-object-format documents-object-field--font" id="editorObjectFormatField" role="group" aria-label="Formatação do texto">
+                  <button type="button" id="editorObjectBold" class="documents-object-format-button" title="Negrito" aria-label="Negrito" aria-pressed="false"><strong>B</strong></button>
+                  <button type="button" id="editorObjectItalic" class="documents-object-format-button" title="Itálico" aria-label="Itálico" aria-pressed="false"><em>I</em></button>
+                  <button type="button" id="editorObjectUnderline" class="documents-object-format-button" title="Sublinhado" aria-label="Sublinhado" aria-pressed="false"><u>U</u></button>
+                  <label class="documents-object-align"><span class="sr-only">Alinhamento</span>
+                    <select id="editorObjectAlign" aria-label="Alinhamento do texto">
+                      <option value="left">Esquerda</option>
+                      <option value="center">Centro</option>
+                      <option value="right">Direita</option>
+                    </select>
+                  </label>
+                </div>
                 <label class="documents-object-field">
                   <span>Transparência</span>
                   <input id="editorObjectOpacity" type="range" min="10" max="100" step="5" value="100">
@@ -198,8 +210,8 @@
   <script src="/js/portal-interactions.js?v=20260910-2"></script>
   <script src="/js/tools-catalog.js?v=20260911-3"></script>
   <script src="/js/document-cache.js?v=20260912-1"></script>
-  <script src="/js/document-editor.js?v=20260915-2"></script>
-  <script src="/js/document-viewer.js?v=20260915-4"></script>
-  <script src="/js/documents.js?v=20260915-2"></script>
+  <script src="/js/document-editor.js?v=20260915-3"></script>
+  <script src="/js/document-viewer.js?v=20260915-5"></script>
+  <script src="/js/documents.js?v=20260915-3"></script>
 </body>
 </html>
