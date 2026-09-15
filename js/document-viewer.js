@@ -853,6 +853,9 @@
       const crop = normalizeCropRect(entry?.crop, drag.start);
       session.onCropCommit?.(drag.pageIndex, crop);
       renderCropForPage(session, drag.pageNumber);
+      session.root.dataset.cropCount = String(
+        (session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length
+      );
     };
 
     const click = (event) => {
@@ -2665,6 +2668,6 @@
     setEditorCrops,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2p`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2q`
   });
 })();
