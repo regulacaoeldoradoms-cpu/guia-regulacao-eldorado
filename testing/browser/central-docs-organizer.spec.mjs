@@ -168,7 +168,12 @@ test('troca Organizar/Escrever mantém miniaturas lazy em documento maior', asyn
   await ready(page);
   const total = await cards(page).count();
   expect(total).toBeGreaterThan(10);
-  await page.locator('#thumbnails').evaluate((node) => { node.scrollTop = 0; });
+  // Keep the observed rail deliberately short so the observer's 360px preload
+  // margin cannot cover every card in the synthetic multi-page document.
+  await page.locator('#thumbnails').evaluate((node) => {
+    node.style.height = '240px';
+    node.scrollTop = 0;
+  });
 
   await page.evaluate(async () => {
     const viewer = window.PortalPdfViewer;
