@@ -14,21 +14,40 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, confirmada antes desta rodada.
 - **PR:** #179 — `codex/central-docs-editor-superficie-unica`, aberto, sem merge e ainda apontado para a mesma main.
-- **Último head validado:** `9725a0ca4a32878223bf1145c72f8068ed00265a` — mantém o adendo humano aprovado da ferramenta Escrever/Selecionar e acrescenta correção do histórico do seletor de cor + regressão de troca da quickbar entre duas caixas.
+- **Último head funcional validado:** `633a568c50a4e87234305d024cc62f1c2d40f1e2` — fecha os P2s restantes da 3C.3 e corrige o fluxo real da paleta contextual (`+` cria slot imediatamente; `RGB` abre o seletor e edita o slot selecionado).
 - **Organizar V2:** aceito pelo usuário; drag centralizado, grade, rotação de página, duplicação, exclusão, página em branco, união posicionada e undo/redo permanecem requisitos preservados.
 - **3C.3 já implementada:** texto e imagem overlay por `pageId`, seleção, movimento, quatro pontos de manipulação, rotação, formatação de texto, opacidade, transferência entre páginas e histórico local. No modo **Selecionar**, texto permanece não editável, mas a caixa selecionada expõe bolinha de cor, A−, A+ e lixeira; clique fora confirma o estado e remove a seleção. Os objetos continuam locais; o flatten permanece para 3C.6.
 - **P2 de miniaturas lazy:** a causa era `setOrganizerMode()` invalidar e chamar `renderThumbnail()` para todas as páginas. A correção agora invalida a geração e rearma o `IntersectionObserver`, renderizando tudo somente no fallback sem IntersectionObserver. Foi acrescentado teste de navegador com documento sintético ampliado para provar que a troca de modo não materializa todas as miniaturas.
 - **Alça inferior direita:** agora é transformação combinada. Distância ao centro controla escala uniforme e variação angular controla rotação; o centro do objeto é preservado e o gesto continua sendo consolidado como uma única mutação no `pointerup`. A alça de rotação dedicada continua disponível como alternativa.
 - **Testes acrescentados:** além do lazy loading e da transformação SE, o Playwright agora cobre o contrato do adendo humano: duplo clique em Selecionar não ativa `contenteditable`, os atalhos contextuais continuam funcionais sem alterar o conteúdo textual e clique externo desmarca/remove a barra contextual.
 - **Segurança:** nenhuma rota de escrita no Drive, nenhum backend novo, nenhuma telemetria de texto/imagem/coordenadas e nenhum dado real no staging.
-- **Validação automática atual:** head `9725a0ca4a32878223bf1145c72f8068ed00265a` passou **24/24 workflows**. O Playwright executou **49 passed / 1 skipped**; a nova regressão de alternância da quickbar entre duas caixas passou em desktop e mobile. O único skip continua sendo o gesto touch específico no projeto desktop.
+- **Validação automática atual:** head `633a568c50a4e87234305d024cc62f1c2d40f1e2` passou **24/24 workflows**. O Playwright executou **51 passed / 1 skipped**; paleta contextual, saída sem mutação, quickbar entre caixas e transparência passaram em desktop e mobile. O único skip continua sendo o gesto touch específico no projeto desktop.
 - **Gate:** Recortar (3C.4) não deve ser implementado antes do aceite humano da 3C.3. Desenhar/Borracha (3C.5) e flatten (3C.6) continuam apenas preparados em especificação/testes.
 - **Riscos conhecidos:** staging público enquanto Cloudflare Access estiver pendente, portanto somente dados sintéticos; touch automatizado não substitui teste em aparelho físico; PDFs institucionais só entram em reteste autorizado posterior.
 - **Não feito:** merge, alteração da main, deploy de produção, escrita no Drive, mudança de Worker/D1, uso de documento clínico ou avanço funcional para 3C.4/3C.5.
-- **Preview candidato atual:** deployment sintético imutável `https://e0f0b735.portal-regulacao-central-staging.pages.dev/`, associado ao head `9725a0c`; alias da branch permanece `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+- **Preview candidato atual:** deployment sintético imutável `https://a475ca05.portal-regulacao-central-staging.pages.dev/`, associado ao head `633a568`; alias da branch permanece `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
 - **Aceite humano parcial:** o usuário aprovou o fluxo **Selecionar caixa de texto → ajustar sem editar conteúdo → clicar fora e desmarcar** em 15/09/2026. Isso fecha esse adendo, mas não equivale ao aceite completo de toda a 3C.3.
-- **Review novo:** dois P2s foram tratados nesta rodada: quickbar ao alternar entre caixas e consolidação do seletor de cor em uma única mutação de histórico. O review abriu ainda um terceiro P2: serializar/coalescer os PATCHes da paleta por conta para impedir que uma resposta antiga sobrescreva a mais nova.
-- **Próxima ação exata:** usar o Codex agora disponível para corrigir os P2s de **serialização da paleta** e **limpeza do object mode ao sair do editor**, verificar os dois P2s já corrigidos, reexecutar CI/review e resolver todos os threads restantes. Recortar continua bloqueado até o aceite completo da 3C.3.
+- **Review atual:** todos os P2s conhecidos desta rodada foram corrigidos, respondidos com evidência e resolvidos no PR #179: quickbar entre caixas, histórico do seletor de cor, serialização da paleta, limpeza do object mode ao sair e controles opacos durante transparência.
+- **Próxima ação exata:** homologação humana final da 3C.3 no preview `a475ca05...`, com foco em `+ → novo slot → RGB → substituir cor`, persistência visual da paleta, saída do editor e transparência. Recortar continua bloqueado até esse aceite.
+
+## 3C.3 — correções finais de paleta e P2s — 15/09/2026
+
+Rodada concluída diretamente no PR #179, sem merge e sem tocar a main:
+
+- **Paleta contextual:** o botão `+` agora cria imediatamente um novo slot visível e selecionado, até o limite de 16 slots. O novo slot nasce com a cor atual apenas como valor inicial e fica pronto para ser substituído pelo RGB.
+- **RGB/HEX:** o botão `RGB` chama `showPicker()` quando suportado e usa `click()` como fallback. A cor escolhida substitui exatamente o slot selecionado; se o slot veio do `+`, ele é preenchido pela nova cor. Duplicatas de cor são permitidas porque a posição do slot é significativa.
+- **Persistência por conta:** gravações de paleta foram serializadas por `editorPaletteWriteChain`; PATCHes de paleta inteira não podem mais concluir fora de ordem. `editorPaletteWriteGeneration` impede que falha antiga substitua o feedback da alteração mais recente.
+- **Saída do editor:** `setEditorObjects([], { mode: 'none', selectedObjectId: '' })` é executado antes de descartar a sessão. Isso devolve `data-object-mode=none` e `pointer-events:none` à camada de objetos mesmo ao sair sem mutação.
+- **Transparência:** a opacidade passou do wrapper interativo para `--object-opacity`, aplicada somente ao texto/imagem. Borda, handles, rotação e quickbar permanecem 100% visíveis.
+- **Quickbar entre caixas:** a barra contextual acompanha a seleção imediatamente e não permanece presa ao objeto anterior.
+- **Histórico do seletor de cor:** eventos intermediários de `input` continuam como preview com `commit:false`; o gesto é consolidado em uma única mutação no `change`.
+- **Testes:** Playwright passou com **51 casos aprovados e 1 skip esperado**, incluindo os novos cenários em desktop e mobile.
+- **CI:** **24/24 workflows verdes** no head funcional `633a568c50a4e87234305d024cc62f1c2d40f1e2`.
+- **Review:** todos os cinco threads P2 da rodada foram respondidos com evidência e resolvidos.
+- **Staging:** preview imutável funcional `https://a475ca05.portal-regulacao-central-staging.pages.dev/`.
+- **Segurança/governança:** nenhuma escrita no Drive, nenhum merge, nenhuma mudança na main, nenhum deploy de produção e nenhum avanço para 3C.4.
+
+Decisão: a 3C.3 volta a depender apenas da **homologação humana final**. Se o fluxo da paleta e os demais pontos acima forem aprovados, registrar o aceite e somente então liberar 3C.4 — Recortar.
 
 ## 3C.3 — revisão pós-homologação e fila para Codex — 15/09/2026
 
