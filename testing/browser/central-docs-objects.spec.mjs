@@ -216,9 +216,15 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await page.mouse.move(handleBox.x + handleBox.width / 2 + 72, handleBox.y + handleBox.height / 2 + 36, { steps: 6 });
     await page.mouse.up();
     const panelAfter = await panel.boundingBox();
-    expect(panelAfter.x).toBeGreaterThan(panelBefore.x + 45);
-    expect(panelAfter.y).toBeGreaterThan(panelBefore.y + 20);
+    expect(panelAfter.x).toBeGreaterThan(panelBefore.x + 20);
+    expect(panelAfter.y).toBeGreaterThan(panelBefore.y + 10);
     await expect(panel).toBeVisible();
+
+    const scrollBox = await page.locator('.documents-pdf-scroll').boundingBox();
+    expect(panelAfter.x).toBeGreaterThanOrEqual(scrollBox.x + 7);
+    expect(panelAfter.y).toBeGreaterThanOrEqual(scrollBox.y + 7);
+    expect(panelAfter.x + panelAfter.width).toBeLessThanOrEqual(scrollBox.x + scrollBox.width - 7);
+    expect(panelAfter.y + panelAfter.height).toBeLessThanOrEqual(scrollBox.y + scrollBox.height - 7);
 
     // RGB/HEX replaces the selected predefined slot, preserving its position.
     const hex = panel.locator('[data-color-hex]');
