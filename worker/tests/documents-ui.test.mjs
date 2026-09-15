@@ -513,7 +513,7 @@ test('paleta contextual cria slot e usa painel RGB próprio arrastável', () => 
   assert.match(viewer, /session\.paletteSelectedIndex = session\.colorPalette\.length - 1/);
   assert.match(viewer, /session\.onColorPaletteChange\?\.\(\[\.\.\.session\.colorPalette\]\)/);
   assert.match(viewer, /data-text-custom-color-panel/);
-  assert.match(viewer, /data-color-drag-handle/);
+  assert.match(viewer, /dataset\.colorDragHandle = 'true'/);
   assert.match(viewer, /rgbToHsv/);
   assert.match(viewer, /hsvToRgb/);
   assert.doesNotMatch(viewer, /showPicker\(\)/);
