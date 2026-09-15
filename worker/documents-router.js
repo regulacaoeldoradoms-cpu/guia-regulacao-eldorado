@@ -19,6 +19,88 @@ import {
 const API_PREFIX = '/api/documents/';
 const OAUTH_CALLBACK = '/api/documents/oauth/callback';
 const MAX_JSON_BODY_BYTES = 16 * 1024;
+const DEFAULT_EDITOR_COLOR_PALETTE = Object.freeze([
+  '#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'
+]);
+const editorPreferencesSchemaReady = new WeakSet();
+const editorPreferencesSchemaPromises = new WeakMap();
+
+function normalizeEditorColorPalette(value, { strict = false } = {}) {
+  if (!Array.isArray(value)) {
+    if (strict) throw new DriveIntegrationError('DOCUMENTS_EDITOR_PALETTE_INVALID', 'Paleta de cores inválida.', 400);
+    return [...DEFAULT_EDITOR_COLOR_PALETTE];
+  }
+  if (strict && (value.length < 1 || value.length > 16)) {
+    throw new DriveIntegrationError('DOCUMENTS_EDITOR_PALETTE_INVALID', 'A paleta deve ter entre 1 e 16 cores.', 400);
+  }
+  const colors = [];
+  for (const item of value) {
+    const color = String(item || '').trim().toLowerCase();
+    if (!/^#[0-9a-f]{6}$/.test(color)) {
+      if (strict) throw new DriveIntegrationError('DOCUMENTS_EDITOR_PALETTE_INVALID', 'Use cores no formato hexadecimal #RRGGBB.', 400);
+      continue;
+    }
+    if (!colors.includes(color)) colors.push(color);
+    if (colors.length >= 16) break;
+  }
+  if (!colors.length) {
+    if (strict) throw new DriveIntegrationError('DOCUMENTS_EDITOR_PALETTE_INVALID', 'A paleta precisa ter ao menos uma cor válida.', 400);
+    return [...DEFAULT_EDITOR_COLOR_PALETTE];
+  }
+  return colors;
+}
+
+async function ensureEditorPreferencesSchema(env) {
+  const binding = env.AUTH_DB;
+  if (!binding) return false;
+  if (editorPreferencesSchemaReady.has(binding)) return true;
+  if (editorPreferencesSchemaPromises.has(binding)) return editorPreferencesSchemaPromises.get(binding);
+
+  const operation = (async () => {
+    await binding.prepare(`CREATE TABLE IF NOT EXISTS auth_document_editor_preferences (
+      username TEXT PRIMARY KEY,
+      color_palette_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`).run();
+    editorPreferencesSchemaReady.add(binding);
+    return true;
+  })().catch((error) => {
+    editorPreferencesSchemaReady.delete(binding);
+    throw error;
+  }).finally(() => {
+    editorPreferencesSchemaPromises.delete(binding);
+  });
+
+  editorPreferencesSchemaPromises.set(binding, operation);
+  return operation;
+}
+
+async function editorPreferencesFor(env, username) {
+  if (!(await ensureEditorPreferencesSchema(env))) {
+    return { colorPalette: [...DEFAULT_EDITOR_COLOR_PALETTE] };
+  }
+  const row = await env.AUTH_DB.prepare(
+    'SELECT color_palette_json FROM auth_document_editor_preferences WHERE username = ? LIMIT 1'
+  ).bind(String(username || '')).first();
+  let palette = null;
+  try { palette = JSON.parse(String(row?.color_palette_json || '')); } catch (_) {}
+  return { colorPalette: normalizeEditorColorPalette(palette) };
+}
+
+async function setEditorPreferences(env, username, input = {}) {
+  if (!(await ensureEditorPreferencesSchema(env))) {
+    throw new DriveIntegrationError('DOCUMENTS_PREFERENCES_UNAVAILABLE', 'Preferências do editor indisponíveis.', 503);
+  }
+  const colorPalette = normalizeEditorColorPalette(input.colorPalette, { strict: true });
+  await env.AUTH_DB.prepare(`INSERT INTO auth_document_editor_preferences(username, color_palette_json)
+    VALUES (?, ?)
+    ON CONFLICT(username) DO UPDATE SET
+      color_palette_json = excluded.color_palette_json,
+      updated_at = CURRENT_TIMESTAMP`)
+    .bind(String(username || ''), JSON.stringify(colorPalette)).run();
+  return { colorPalette };
+}
 
 function headers(origin = '', allowed = true) {
   const value = {
@@ -146,6 +228,19 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
         capabilities: user.documentCapabilities || { view: false, extract: false, edit: false, manage: user.role === 'admin' },
         drive: await driveConnectionStatus(env)
       }, 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/preferences' && request.method === 'GET') {
+      const denied = requireCapability(user, 'view', origin);
+      if (denied) return denied;
+      return json(await editorPreferencesFor(env, user.username), 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/preferences' && request.method === 'PATCH') {
+      const denied = requireCapability(user, 'view', origin);
+      if (denied) return denied;
+      const body = await safeJson(request);
+      return json(await setEditorPreferences(env, user.username, body), 200, origin);
     }
 
     const accessMatch = url.pathname.match(/^\/api\/documents\/admin\/access\/([a-z0-9._-]{3,40})$/);
