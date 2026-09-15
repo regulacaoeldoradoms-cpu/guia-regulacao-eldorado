@@ -1199,6 +1199,8 @@
 
 .portal-pdf-text-palette input[type="color"] {
   position: absolute;
+  top: -52px;
+  right: 10px;
   width: 1px;
   height: 1px;
   opacity: 0;

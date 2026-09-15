@@ -202,6 +202,9 @@ test.describe('Central de Documentos — objetos sobre página', () => {
 
     // RGB opens the native picker from the direct user gesture.
     const picker = palette.locator('[data-text-palette-custom-picker]');
+    const paletteBox = await palette.boundingBox();
+    const pickerBox = await picker.boundingBox();
+    expect(pickerBox.y).toBeLessThan(paletteBox.y - 20);
     await picker.evaluate((node) => {
       Object.defineProperty(node, 'showPicker', {
         configurable: true,
