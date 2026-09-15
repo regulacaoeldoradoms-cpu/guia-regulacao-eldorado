@@ -43,7 +43,9 @@
     editorFocusRestore: null,
     editorBuildSeq: 0,
     editorStartSeq: 0,
-    editorBusy: false
+    editorBusy: false,
+    editorMode: 'readonly',
+    pendingMergeItem: null
   };
 
   const els = {
@@ -82,16 +84,30 @@
     pdfZoomIn: document.getElementById('pdfZoomInButton'),
     pdfFitWidth: document.getElementById('pdfFitWidthButton'),
     editPdf: document.getElementById('editPdfButton'),
+    editorRailEdit: document.getElementById('editorRailEditButton'),
     closeViewer: document.getElementById('closeViewerButton'),
     editor: document.getElementById('documentsEditor'),
     editorStatus: document.getElementById('documentsEditorStatus'),
     editorUndo: document.getElementById('editorUndoButton'),
     editorRedo: document.getElementById('editorRedoButton'),
+    editorOrganize: document.getElementById('editorOrganizeButton'),
     editorMerge: document.getElementById('editorMergeButton'),
+    editorBlankPage: document.getElementById('editorBlankPageButton'),
     editorImage: document.getElementById('editorImageButton'),
+    editorCrop: document.getElementById('editorCropButton'),
+    editorWrite: document.getElementById('editorWriteButton'),
+    editorOverlayImage: document.getElementById('editorOverlayImageButton'),
+    editorDraw: document.getElementById('editorDrawButton'),
     editorImageInput: document.getElementById('editorImageInput'),
     editorPreview: document.getElementById('editorPreviewButton'),
-    editorExit: document.getElementById('editorExitButton')
+    editorExit: document.getElementById('editorExitButton'),
+    editorMergePanel: document.getElementById('editorMergePanel'),
+    editorMergeSelection: document.getElementById('editorMergeSelection'),
+    editorMergePosition: document.getElementById('editorMergePosition'),
+    editorMergePageField: document.getElementById('editorMergePageField'),
+    editorMergeAfterPage: document.getElementById('editorMergeAfterPage'),
+    editorMergeApply: document.getElementById('editorMergeApplyButton'),
+    editorMergeCancel: document.getElementById('editorMergeCancelButton')
   };
 
   els.userName.textContent = user.name || user.username || 'Usuário';
@@ -313,6 +329,28 @@
       els.customViewer.dataset.editorMode = editing ? 'true' : 'false';
       els.customViewer.setAttribute('aria-label', editing ? 'Editor visual de PDF' : 'Visualizador próprio de PDF');
     }
+    if (els.editorRailEdit) {
+      els.editorRailEdit.classList.toggle('active', editing);
+      els.editorRailEdit.setAttribute('aria-pressed', editing ? 'true' : 'false');
+    }
+  }
+
+  function setEditorWorkspaceMode(mode = 'organize') {
+    const editing = Boolean(state.editorSession);
+    const next = editing ? String(mode || 'organize') : 'readonly';
+    state.editorMode = next;
+    if (els.customViewer) els.customViewer.dataset.editorWorkspaceMode = next;
+    const organizer = editing && (next === 'organize' || next === 'merge');
+    window.PortalPdfViewer?.setOrganizerMode?.(organizer);
+    if (els.editorOrganize) {
+      els.editorOrganize.classList.toggle('active', next === 'organize');
+      els.editorOrganize.setAttribute('aria-pressed', next === 'organize' ? 'true' : 'false');
+    }
+    if (els.editorMerge) {
+      els.editorMerge.classList.toggle('active', next === 'merge');
+      els.editorMerge.setAttribute('aria-pressed', next === 'merge' ? 'true' : 'false');
+    }
+    if (els.editorMergePanel) els.editorMergePanel.hidden = next !== 'merge';
   }
 
   function syncEditorControls() {
@@ -321,10 +359,14 @@
     const busy = state.editorBusy;
     els.editorUndo.disabled = busy || !editor || !session || !editor.canUndo(session);
     els.editorRedo.disabled = busy || !editor || !session || !editor.canRedo(session);
+    if (els.editorOrganize) els.editorOrganize.disabled = busy || !session;
     els.editorMerge.disabled = busy || !session;
+    if (els.editorBlankPage) els.editorBlankPage.disabled = busy || !session;
     els.editorImage.disabled = busy || !session;
     els.editorImageInput.disabled = busy || !session;
     els.editorPreview.disabled = busy || !session;
+    if (els.editorMergeApply) els.editorMergeApply.disabled = busy || !session || !state.pendingMergeItem;
+    if (els.editorMergeCancel) els.editorMergeCancel.disabled = busy || !session;
   }
 
   function setEditorBusy(busy) {
@@ -352,7 +394,7 @@
       const action = button.querySelector('.documents-item-action');
       if (!item?.isPdf || !action) return;
       action.textContent = state.editorSession
-        ? (editorContainsItem(item) ? 'Já no editor' : 'Unir ao editor')
+        ? (editorContainsItem(item) ? 'Já no editor' : 'Selecionar para unir')
         : 'Abrir PDF';
       button.disabled = Boolean(state.editorSession && state.editorBusy);
     });
@@ -420,6 +462,8 @@
         zoomLabel: els.pdfZoomLabel,
         pageCountLabel: els.pdfPageCountLabel,
         thumbnailActions: true,
+        organizerMode: state.editorMode === 'organize' || state.editorMode === 'merge',
+        thumbnailWidth: 210,
         initialViewState,
         onThumbnailAction: (action, pageIndex, detail) => {
           if (session !== state.editorSession) return;
@@ -497,8 +541,12 @@
     const viewState = currentViewerState();
     clearEditorPreview();
     state.editorSession = null;
+    state.pendingMergeItem = null;
+    state.editorMode = 'readonly';
     window.PortalPdfViewer?.setThumbnailActions?.(false);
+    window.PortalPdfViewer?.setOrganizerMode?.(false);
     setEditorSurfaceMode(false);
+    setEditorWorkspaceMode('readonly');
     setEditorBusy(false);
     els.customViewer?.removeAttribute('aria-busy');
     if (els.editPdf) els.editPdf.disabled = false;
@@ -587,7 +635,9 @@
       if (!isCurrentStart()) return;
       state.editorSession = session;
       state.editorViewState = initialViewState;
+      state.pendingMergeItem = null;
       setEditorSurfaceMode(true);
+      setEditorWorkspaceMode('organize');
       els.viewerModeLabel.textContent = 'Editor PDF';
       els.editPdf.hidden = true;
       syncEditorControls();
@@ -599,8 +649,9 @@
       });
 
       if (actionsInstalled) {
+        window.PortalPdfViewer?.setOrganizerMode?.(true);
         els.viewerState.className = 'documents-viewer-state ready';
-        setEditorStatus('Editor pronto. Arraste as miniaturas para reorganizar; use ↻ para girar e × para excluir. Alterações continuam locais e reversíveis.', 'success');
+        setEditorStatus('Organize as páginas em grade. Arraste para mover; use os controles da página para girar, duplicar ou excluir.', 'success');
       } else {
         const seq = ++state.editorBuildSeq;
         await openEditorWithPortalViewer(blob, {
