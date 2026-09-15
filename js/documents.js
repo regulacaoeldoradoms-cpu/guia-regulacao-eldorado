@@ -52,6 +52,8 @@
     selectedObjectId: '',
     editorColorPalette: [...DEFAULT_EDITOR_COLOR_PALETTE],
     editorColorGesture: null,
+    editorPaletteWriteChain: Promise.resolve(),
+    editorPaletteWriteGeneration: 0,
     pendingMergeItem: null
   };
 
@@ -383,19 +385,29 @@
     }
   }
 
-  async function persistEditorColorPalette(colors) {
+  function persistEditorColorPalette(colors) {
     const normalized = normalizeEditorColorPalette(colors);
     state.editorColorPalette = normalized;
-    try {
-      await api('/api/documents/preferences', {
-        method: 'PATCH',
-        body: JSON.stringify({ colorPalette: normalized })
-      });
-      return true;
-    } catch (error) {
-      setEditorStatus(error?.message || 'A paleta foi aplicada nesta sessão, mas não pôde ser sincronizada com sua conta.', 'warning');
-      return false;
-    }
+    const generation = ++state.editorPaletteWriteGeneration;
+
+    const write = async () => {
+      try {
+        await api('/api/documents/preferences', {
+          method: 'PATCH',
+          body: JSON.stringify({ colorPalette: normalized })
+        });
+        return true;
+      } catch (error) {
+        if (generation === state.editorPaletteWriteGeneration) {
+          setEditorStatus(error?.message || 'A paleta foi aplicada nesta sessão, mas não pôde ser sincronizada com sua conta.', 'warning');
+        }
+        return false;
+      }
+    };
+
+    const queued = state.editorPaletteWriteChain.then(write, write);
+    state.editorPaletteWriteChain = queued.then(() => true, () => false);
+    return queued;
   }
 
   function selectedEditorObject() {
@@ -721,7 +733,9 @@
     const session = state.editorSession;
     const shouldRestoreOriginal = restoreOriginal && Boolean(session?.revision > 0);
     const viewState = currentViewerState();
+    window.PortalPdfViewer?.setEditorObjects?.([], { mode: 'none', selectedObjectId: '' });
     clearEditorPreview();
+    state.editorColorGesture = null;
     state.editorSession = null;
     state.pendingMergeItem = null;
     state.selectedObjectId = '';
