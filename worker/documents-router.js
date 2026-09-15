@@ -40,7 +40,7 @@ function normalizeEditorColorPalette(value, { strict = false } = {}) {
       if (strict) throw new DriveIntegrationError('DOCUMENTS_EDITOR_PALETTE_INVALID', 'Use cores no formato hexadecimal #RRGGBB.', 400);
       continue;
     }
-    if (!colors.includes(color)) colors.push(color);
+    colors.push(color);
     if (colors.length >= 16) break;
   }
   if (!colors.length) {

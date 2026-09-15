@@ -665,7 +665,7 @@
     const colors = [];
     for (const item of source) {
       const color = normalizeObjectColor(item, '');
-      if (!color || colors.includes(color)) continue;
+      if (!color) continue;
       colors.push(color);
       if (colors.length >= 16) break;
     }
@@ -700,6 +700,11 @@
     const slots = palette.querySelector('[data-text-palette-slots]');
     if (!slots) return;
     slots.replaceChildren();
+    const selectedIndex = Number.isInteger(Number(session.paletteSelectedIndex))
+      && Number(session.paletteSelectedIndex) >= 0
+      && Number(session.paletteSelectedIndex) < colors.length
+      ? Number(session.paletteSelectedIndex)
+      : colors.indexOf(normalizeObjectColor(object?.color));
     colors.forEach((color, index) => {
       const button = document.createElement('button');
       button.type = 'button';
@@ -709,7 +714,7 @@
       button.setAttribute('aria-label', `Usar cor ${color}`);
       button.style.background = color;
       if (color === '#ffffff') button.classList.add('is-light');
-      if (index === session.paletteSelectedIndex || color === normalizeObjectColor(object?.color)) button.classList.add('active');
+      if (index === selectedIndex) button.classList.add('active');
       slots.appendChild(button);
     });
   }
@@ -752,7 +757,7 @@
     remove.type = 'button';
     remove.className = 'portal-pdf-text-quickbar-button danger';
     remove.dataset.textQuickDelete = 'true';
-    remove.textContent = '⌫';
+    remove.textContent = '🗑';
     remove.title = 'Excluir caixa de texto';
     remove.setAttribute('aria-label', 'Excluir caixa de texto');
     bar.appendChild(remove);

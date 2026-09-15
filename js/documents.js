@@ -362,7 +362,7 @@
     const colors = [];
     for (const item of source) {
       const color = String(item || '').trim().toLowerCase();
-      if (!/^#[0-9a-f]{6}$/.test(color) || colors.includes(color)) continue;
+      if (!/^#[0-9a-f]{6}$/.test(color)) continue;
       colors.push(color);
       if (colors.length >= 16) break;
     }
