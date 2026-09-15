@@ -14,21 +14,34 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, confirmada antes desta rodada.
 - **PR:** #179 — `codex/central-docs-editor-superficie-unica`, aberto, sem merge e ainda apontado para a mesma main.
-- **Último head funcional validado:** `633a568c50a4e87234305d024cc62f1c2d40f1e2` — fecha os P2s restantes da 3C.3 e corrige o fluxo real da paleta contextual (`+` cria slot imediatamente; `RGB` abre o seletor e edita o slot selecionado).
+- **Último head funcional validado:** `b95914d8d7bf4a7086b280e543abae4a7a0efba2` — mantém o fluxo real da paleta contextual e reposiciona a âncora do seletor RGB 52 px acima da paleta para não cobrir a primeira linha de slots.
 - **Organizar V2:** aceito pelo usuário; drag centralizado, grade, rotação de página, duplicação, exclusão, página em branco, união posicionada e undo/redo permanecem requisitos preservados.
 - **3C.3 já implementada:** texto e imagem overlay por `pageId`, seleção, movimento, quatro pontos de manipulação, rotação, formatação de texto, opacidade, transferência entre páginas e histórico local. No modo **Selecionar**, texto permanece não editável, mas a caixa selecionada expõe bolinha de cor, A−, A+ e lixeira; clique fora confirma o estado e remove a seleção. Os objetos continuam locais; o flatten permanece para 3C.6.
 - **P2 de miniaturas lazy:** a causa era `setOrganizerMode()` invalidar e chamar `renderThumbnail()` para todas as páginas. A correção agora invalida a geração e rearma o `IntersectionObserver`, renderizando tudo somente no fallback sem IntersectionObserver. Foi acrescentado teste de navegador com documento sintético ampliado para provar que a troca de modo não materializa todas as miniaturas.
 - **Alça inferior direita:** agora é transformação combinada. Distância ao centro controla escala uniforme e variação angular controla rotação; o centro do objeto é preservado e o gesto continua sendo consolidado como uma única mutação no `pointerup`. A alça de rotação dedicada continua disponível como alternativa.
 - **Testes acrescentados:** além do lazy loading e da transformação SE, o Playwright agora cobre o contrato do adendo humano: duplo clique em Selecionar não ativa `contenteditable`, os atalhos contextuais continuam funcionais sem alterar o conteúdo textual e clique externo desmarca/remove a barra contextual.
 - **Segurança:** nenhuma rota de escrita no Drive, nenhum backend novo, nenhuma telemetria de texto/imagem/coordenadas e nenhum dado real no staging.
-- **Validação automática atual:** head `633a568c50a4e87234305d024cc62f1c2d40f1e2` passou **24/24 workflows**. O Playwright executou **51 passed / 1 skipped**; paleta contextual, saída sem mutação, quickbar entre caixas e transparência passaram em desktop e mobile. O único skip continua sendo o gesto touch específico no projeto desktop.
+- **Validação automática atual:** head `b95914d8d7bf4a7086b280e543abae4a7a0efba2` passou **24/24 workflows**. O Playwright executou **51 passed / 1 skipped**; o teste da paleta agora confirma também que a âncora invisível do seletor nativo fica acima da paleta, evitando sobreposição dos slots. O único skip continua sendo o gesto touch específico no projeto desktop.
 - **Gate:** Recortar (3C.4) não deve ser implementado antes do aceite humano da 3C.3. Desenhar/Borracha (3C.5) e flatten (3C.6) continuam apenas preparados em especificação/testes.
 - **Riscos conhecidos:** staging público enquanto Cloudflare Access estiver pendente, portanto somente dados sintéticos; touch automatizado não substitui teste em aparelho físico; PDFs institucionais só entram em reteste autorizado posterior.
 - **Não feito:** merge, alteração da main, deploy de produção, escrita no Drive, mudança de Worker/D1, uso de documento clínico ou avanço funcional para 3C.4/3C.5.
-- **Preview candidato atual:** deployment sintético imutável `https://a475ca05.portal-regulacao-central-staging.pages.dev/`, associado ao head `633a568`; alias da branch permanece `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+- **Preview candidato atual:** deployment sintético imutável `https://547ebcd7.portal-regulacao-central-staging.pages.dev/`, associado ao head `b95914d`; alias da branch permanece `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
 - **Aceite humano parcial:** o usuário aprovou o fluxo **Selecionar caixa de texto → ajustar sem editar conteúdo → clicar fora e desmarcar** em 15/09/2026. Isso fecha esse adendo, mas não equivale ao aceite completo de toda a 3C.3.
 - **Review atual:** todos os P2s conhecidos desta rodada foram corrigidos, respondidos com evidência e resolvidos no PR #179: quickbar entre caixas, histórico do seletor de cor, serialização da paleta, limpeza do object mode ao sair e controles opacos durante transparência.
-- **Próxima ação exata:** homologação humana final da 3C.3 no preview `a475ca05...`, com foco em `+ → novo slot → RGB → substituir cor`, persistência visual da paleta, saída do editor e transparência. Recortar continua bloqueado até esse aceite.
+- **Próxima ação exata:** homologação humana final da 3C.3 no preview `547ebcd7...`, confirmando especificamente que a janela RGB não cobre mais a primeira linha de slots. Recortar continua bloqueado até esse aceite.
+
+## 3C.3 — microajuste visual do seletor RGB — 15/09/2026
+
+Durante a homologação humana, o usuário confirmou o funcionamento de `+` e `RGB`, mas observou que o seletor nativo de cor abria sobre a primeira linha da paleta, impedindo selecionar/editar os slots superiores enquanto a janela estivesse aberta.
+
+Correção aplicada:
+- a âncora invisível do `input[type="color"]` foi deslocada **52 px acima** da paleta e 10 px da borda direita;
+- o seletor nativo continua sendo aberto por `showPicker()`/fallback `click()`, sem substituir o componente do navegador;
+- a mudança é apenas de posicionamento da âncora: não altera slots, persistência, histórico, conteúdo do texto ou permissões;
+- o teste Playwright da paleta passou a verificar que a âncora do picker fica pelo menos 20 px acima da paleta;
+- head funcional `b95914d8d7bf4a7086b280e543abae4a7a0efba2`: **24/24 workflows verdes**, Playwright **51 passed / 1 skipped esperado**;
+- preview imutável: `https://547ebcd7.portal-regulacao-central-staging.pages.dev/`;
+- nenhuma escrita no Drive, merge, alteração da main ou avanço para 3C.4.
 
 ## 3C.3 — correções finais de paleta e P2s — 15/09/2026
 
