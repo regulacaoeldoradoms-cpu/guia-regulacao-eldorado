@@ -350,12 +350,15 @@ test('editor PDF é local, reversível e separado da escrita no Drive', () => {
   assert.match(client, /mergePdfIntoEditor/);
   assert.match(client, /delete_page/);
   assert.match(client, /reorder_page/);
+  assert.match(client, /rotate_page/);
   assert.match(client, /merge_pdf/);
   assert.match(client, /pdf_edit_completed/);
   assert.doesNotMatch(client, /drive_sync_started|drive_sync_completed|replace_pdf|save_copy/);
 
   assert.match(editor, /removePage/);
   assert.match(editor, /movePage/);
+  assert.match(editor, /movePageTo/);
+  assert.match(editor, /rotatePage/);
   assert.match(editor, /undo/);
   assert.match(editor, /redo/);
   assert.match(editor, /addDocument/);

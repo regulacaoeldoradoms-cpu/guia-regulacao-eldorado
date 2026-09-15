@@ -1585,3 +1585,40 @@ Decisão:
 **Próxima ação humana exata:** abrir o alias da branch em desktop e, se possível, celular; confirmar visualmente que **Editar PDF** mantém o usuário na mesma superfície PDF.js, que miniaturas/controles aparecem integrados e que não existe editor textual separado. Não usar documento real no staging.
 
 **Depois do aceite:** solicitar revisão automática final quando a cota Codex voltar; com revisão/checks limpos, considerar merge. Após deploy, executar o roteiro institucional de smoke test. Somente o aceite pós-produção encerra 3C.1 e libera 3C.2.
+
+
+## Revisão de aceite do usuário — drag-and-drop + rotação de páginas — 14/09/2026
+
+Evidência humana no preview do PR #179:
+- a superfície única foi confirmada visualmente, porém o usuário **não aceitou o editor como concluído**;
+- a reorganização ainda estava exposta por setas ↑/↓, enquanto o requisito original era clicar/arrastar a miniatura para a posição desejada;
+- foi identificada ausência de comando para girar página; o caso concreto foi a página sintética em paisagem que precisa poder ser girada para retrato.
+
+Decisão de escopo:
+- o Guia Mestre define na Fase 3 a capacidade de **reorganizar páginas**; a forma de interação agora fica explicitamente fixada pelo requisito humano mais recente como **drag-and-drop**, não setas;
+- a antiga separação local que tratava drag-and-drop como “3C.2 futura” é revista: não faz sentido declarar a experiência do editor aceita sem a interação já solicitada;
+- rotação de página entra como operação essencial do editor por necessidade operacional demonstrada no próprio preview;
+- PR #179 permanece aberto e sem merge até novo aceite visual.
+
+Implementação desta rodada:
+- setas de mover são removidas da interface;
+- miniaturas passam a ser arrastáveis no desktop; um grip de arraste também suporta Pointer Events para interação touch;
+- drop antes/depois de outra miniatura calcula a posição final exata e aciona `movePageTo()`;
+- botão ↻ gira a página selecionada em incrementos de 90° para a direita;
+- rotação passa a integrar o plano reversível do editor e portanto participa de Desfazer/Refazer;
+- `buildBlob()` aplica a rotação via PDF-lib ao PDF gerado;
+- telemetria técnica usa apenas `reorder_page` e `rotate_page`, sem conteúdo documental;
+- nenhum salvamento no Drive é introduzido.
+
+Critérios de aceite adicionais:
+1. não existir mais ↑/↓ para reordenar;
+2. arrastar página 2 para antes da página 1 deve alterar ordem visual e PDF gerado;
+3. ↻ deve trocar orientação visível em 90°;
+4. Desfazer/Refazer deve restaurar/aplicar rotação e reordenação;
+5. desktop e mobile devem permanecer sem erros de console;
+6. nenhuma operação pode escrever no Google Drive nesta fase.
+
+Próximo passo:
+- executar CI completo e gerar novo preview Cloudflare;
+- solicitar novo reteste humano de arrastar e girar;
+- manter o merge bloqueado até esse aceite.

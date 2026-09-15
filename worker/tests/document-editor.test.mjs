@@ -9,6 +9,9 @@ const source = fs.readFileSync(path.join(root, 'js/document-editor.js'), 'utf8')
 
 function editorWithFakePdfLib() {
   const fakePdfLib = {
+    degrees(angle) {
+      return { angle: Number(angle || 0) };
+    },
     PDFDocument: {
       async load(bytes) {
         const pageCount = Math.max(1, Number(bytes?.[0] || 1));
@@ -21,7 +24,13 @@ function editorWithFakePdfLib() {
         const pages = [];
         return {
           async copyPages(sourceDocument, indices) {
-            return indices.map((pageIndex) => ({ sourceDocument, pageIndex }));
+            return indices.map((pageIndex) => ({
+              sourceDocument,
+              pageIndex,
+              rotation: 0,
+              getRotation() { return { angle: this.rotation }; },
+              setRotation(value) { this.rotation = Number(value?.angle || 0); }
+            }));
           },
           async embedPng() {
             return { scale: () => ({ width: 1200, height: 600 }) };
@@ -96,6 +105,33 @@ test('excluir e reordenar páginas são reversíveis e não permitem remover a �
   const single = await editor.createSession(new Blob([new Uint8Array([1])], { type: 'application/pdf' }));
   assert.equal(editor.removePage(single, 0), false);
   assert.equal(editor.pageCount(single), 1);
+});
+
+test('arrastar para posição exata e girar página são reversíveis', async () => {
+  const editor = editorWithFakePdfLib();
+  const session = await editor.createSession(
+    new Blob([new Uint8Array([4])], { type: 'application/pdf' }),
+    { label: 'Documento inicial' }
+  );
+
+  assert.equal(editor.movePageTo(session, 0, 3), true);
+  assert.deepEqual(Array.from(editor.pageModel(session), (page) => Number(page.sourcePage)), [2, 3, 4, 1]);
+
+  assert.equal(editor.rotatePage(session, 1, 1), true);
+  assert.equal(Number(editor.pageModel(session)[1].rotation), 90);
+
+  assert.equal(editor.undo(session), true);
+  assert.equal(Number(editor.pageModel(session)[1].rotation), 0);
+  assert.equal(editor.undo(session), true);
+  assert.deepEqual(Array.from(editor.pageModel(session), (page) => Number(page.sourcePage)), [1, 2, 3, 4]);
+
+  assert.equal(editor.redo(session), true);
+  assert.deepEqual(Array.from(editor.pageModel(session), (page) => Number(page.sourcePage)), [2, 3, 4, 1]);
+  assert.equal(editor.redo(session), true);
+  assert.equal(Number(editor.pageModel(session)[1].rotation), 90);
+
+  const output = await editor.buildBlob(session);
+  assert.equal(output.type, 'application/pdf');
 });
 
 test('união adiciona páginas ao plano e gera Blob PDF local válido', async () => {
