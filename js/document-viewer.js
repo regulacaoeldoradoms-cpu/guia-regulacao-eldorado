@@ -632,7 +632,8 @@
     element.style.top = `${clamp01(object.y) * 100}%`;
     element.style.width = `${width * 100}%`;
     element.style.height = `${height * 100}%`;
-    element.style.opacity = String(clamp01(object.opacity, 1));
+    element.style.removeProperty('opacity');
+    element.style.setProperty('--object-opacity', String(clamp01(object.opacity, 1)));
     element.style.transform = `rotate(${Number(object.rotation || 0)}deg)`;
     element.style.setProperty('--object-rotation', `${Number(object.rotation || 0)}deg`);
     element.style.setProperty('--object-font-size', `${Math.max(8, Number(object.fontSize || 0.032) * Math.max(240, pageWidth))}px`);
@@ -672,6 +673,23 @@
     return colors.length ? colors : ['#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'];
   }
 
+  function openNativeColorPicker(picker) {
+    if (!picker) return false;
+    try { picker.focus?.({ preventScroll: true }); } catch (_) {}
+    if (typeof picker.showPicker === 'function') {
+      try {
+        picker.showPicker();
+        return true;
+      } catch (_) {}
+    }
+    try {
+      picker.click();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   function patchObjectFromQuickbar(session, objectId, patch) {
     const object = objectForId(session, objectId);
     if (!object) return false;
@@ -705,6 +723,8 @@
       && Number(session.paletteSelectedIndex) < colors.length
       ? Number(session.paletteSelectedIndex)
       : colors.indexOf(normalizeObjectColor(object?.color));
+    const addButton = palette.querySelector('[data-text-palette-add]');
+    if (addButton) addButton.disabled = colors.length >= 16;
     colors.forEach((color, index) => {
       const button = document.createElement('button');
       button.type = 'button';
@@ -797,14 +817,6 @@
     customPicker.tabIndex = -1;
     customPicker.setAttribute('aria-hidden', 'true');
     palette.appendChild(customPicker);
-
-    const addPicker = document.createElement('input');
-    addPicker.type = 'color';
-    addPicker.dataset.textPaletteAddPicker = 'true';
-    addPicker.value = normalizeObjectColor(object.color);
-    addPicker.tabIndex = -1;
-    addPicker.setAttribute('aria-hidden', 'true');
-    palette.appendChild(addPicker);
 
     bar.appendChild(palette);
     element.appendChild(bar);
@@ -1222,18 +1234,23 @@
         if (event.target.closest('[data-text-palette-custom]')) {
           const picker = quickbar.querySelector('[data-text-palette-custom-picker]');
           if (picker) {
-            picker.value = normalizeObjectColor(object.color);
-            picker.click();
+            const index = Number(session.paletteSelectedIndex);
+            picker.value = Number.isInteger(index) && index >= 0 && index < session.colorPalette.length
+              ? normalizeObjectColor(session.colorPalette[index])
+              : normalizeObjectColor(object.color);
+            openNativeColorPicker(picker);
           }
           return;
         }
 
         if (event.target.closest('[data-text-palette-add]')) {
-          const picker = quickbar.querySelector('[data-text-palette-add-picker]');
-          if (picker) {
-            picker.value = normalizeObjectColor(object.color);
-            picker.click();
-          }
+          if (session.colorPalette.length >= 16) return;
+          const next = [...session.colorPalette, normalizeObjectColor(object.color)];
+          session.colorPalette = normalizeColorPalette(next);
+          session.paletteSelectedIndex = session.colorPalette.length - 1;
+          session.onColorPaletteChange?.([...session.colorPalette]);
+          refreshPaletteButtons(session, element, object);
+          return;
         }
         return;
       }
@@ -1320,21 +1337,9 @@
           const next = [...session.colorPalette];
           next[index] = color;
           session.colorPalette = normalizeColorPalette(next);
-          session.paletteSelectedIndex = session.colorPalette.indexOf(color);
+          session.paletteSelectedIndex = index;
           session.onColorPaletteChange?.([...session.colorPalette]);
         }
-        patchObjectFromQuickbar(session, id, { color });
-        refreshPaletteButtons(session, element, object);
-        return;
-      }
-
-      const addPicker = event.target.closest('[data-text-palette-add-picker]');
-      if (addPicker) {
-        const color = normalizeObjectColor(addPicker.value);
-        const next = normalizeColorPalette([...session.colorPalette, color]);
-        session.colorPalette = next;
-        session.paletteSelectedIndex = next.indexOf(color);
-        session.onColorPaletteChange?.([...next]);
         patchObjectFromQuickbar(session, id, { color });
         refreshPaletteButtons(session, element, object);
       }
@@ -2083,6 +2088,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2g`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2h`
   });
 })();
