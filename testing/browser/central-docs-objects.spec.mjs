@@ -59,9 +59,12 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     };
     await page.mouse.click(outsidePoint.x, outsidePoint.y);
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(1);
-    text = page.locator('.portal-pdf-object--text').first().locator('.portal-pdf-object-text');
+    object = page.locator('.portal-pdf-object--text').first();
+    text = object.locator('.portal-pdf-object-text');
     await expect(text).toHaveAttribute('contenteditable', 'false');
     await expect(text).toHaveText('Texto sintético editado');
+    await expect(object).not.toHaveClass(/selected/);
+    await expect(object.locator('[data-text-quickbar]')).toHaveCount(0);
 
     // A later, distinct click at the same empty point may create the next box because editing is finished.
     await page.waitForTimeout(450);
@@ -75,6 +78,66 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await page.locator('#editorSelect').click();
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(2);
     await expect(page.locator('.portal-pdf-object--text').nth(1).locator('.portal-pdf-object-text')).toHaveAttribute('contenteditable', 'false');
+
+    expect(errors).toEqual([]);
+  });
+
+  test('Selecionar protege o conteúdo do texto, mantém ajustes contextuais e desmarca ao clicar fora', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
+
+    await openEditor(page);
+    await page.locator('#editorWrite').click();
+    const layer = page.locator('.portal-pdf-object-layer').first();
+    const layerBox = await layer.boundingBox();
+    await page.mouse.click(layerBox.x + layerBox.width * .44, layerBox.y + layerBox.height * .30);
+
+    let object = page.locator('.portal-pdf-object--text').first();
+    let text = object.locator('.portal-pdf-object-text');
+    await text.fill('Conteúdo protegido no modo selecionar');
+    await page.locator('#editorSelect').click();
+
+    object = page.locator('.portal-pdf-object--text').first();
+    text = object.locator('.portal-pdf-object-text');
+    await expect(text).toHaveAttribute('contenteditable', 'false');
+    await text.dblclick();
+    await expect(text).toHaveAttribute('contenteditable', 'false');
+    await expect(text).toHaveText('Conteúdo protegido no modo selecionar');
+
+    await text.click();
+    await expect(object).toHaveClass(/selected/);
+    const quickbar = object.locator('[data-text-quickbar]');
+    await expect(quickbar).toBeVisible();
+    await expect(quickbar.locator('[data-text-quick-color]')).toBeVisible();
+    await expect(quickbar.locator('[data-text-quick-size="smaller"]')).toBeVisible();
+    await expect(quickbar.locator('[data-text-quick-size="larger"]')).toBeVisible();
+    await expect(quickbar.locator('[data-text-quick-delete] svg')).toHaveCount(1);
+
+    const sizeBefore = parseFloat(await text.evaluate((node) => getComputedStyle(node).fontSize));
+    await quickbar.locator('[data-text-quick-size="larger"]').click();
+    await expect.poll(async () => parseFloat(await text.evaluate((node) => getComputedStyle(node).fontSize))).toBeGreaterThan(sizeBefore);
+    await expect(text).toHaveText('Conteúdo protegido no modo selecionar');
+
+    await quickbar.locator('[data-text-quick-color]').click();
+    const palette = quickbar.locator('[data-text-palette]');
+    await expect(palette).toBeVisible();
+    await palette.locator('[data-text-palette-index="3"]').click();
+    await expect(text).toHaveCSS('color', 'rgb(21, 101, 192)');
+    await expect(text).toHaveText('Conteúdo protegido no modo selecionar');
+
+    await object.scrollIntoViewIfNeeded();
+    const objectBox = await object.boundingBox();
+    const visibleLayer = await layer.boundingBox();
+    const outsidePoint = {
+      x: Math.max(visibleLayer.x + 18, Math.min(visibleLayer.x + visibleLayer.width - 18, objectBox.x - 36)),
+      y: objectBox.y + Math.min(24, objectBox.height / 2)
+    };
+    await page.mouse.click(outsidePoint.x, outsidePoint.y);
+    await expect(object).not.toHaveClass(/selected/);
+    await expect(object.locator('[data-text-quickbar]')).toHaveCount(0);
+    await expect(text).toHaveAttribute('contenteditable', 'false');
+    await expect(text).toHaveText('Conteúdo protegido no modo selecionar');
 
     expect(errors).toEqual([]);
   });

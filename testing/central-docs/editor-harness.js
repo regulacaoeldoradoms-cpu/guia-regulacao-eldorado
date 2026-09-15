@@ -445,7 +445,7 @@
 
   function startSelectMode() {
     setMode('select');
-    elements.editorStatus.textContent = 'Selecionar: arraste objetos para mover; use os pontos para redimensionar e o ponto inferior para rotacionar.';
+    elements.editorStatus.textContent = 'Selecionar: clique no objeto para ajustar cor ou tamanho e arraste para mover; o conteúdo do texto fica protegido. Clique fora para confirmar e desmarcar.';
   }
 
   async function addOverlayImage() {
