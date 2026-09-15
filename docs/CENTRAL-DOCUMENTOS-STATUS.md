@@ -1476,3 +1476,32 @@ Validação pendente desta microcorreção:
 - confirmação de que o teste de página/zoom passa após `Atualizar PDF` e após união/rebuild;
 - demais checks devem permanecer verdes;
 - PR #179 continua sem merge e 3C.2 continua bloqueada.
+
+
+## 3C.1 — segunda rodada P2: paridade do harness + guarda de página inicial — 14/09/2026
+
+Evidência do workflow de navegador após o head `7dfc0d9`:
+- os checks estáticos e as suítes gerais ficaram verdes, mas o navegador revelou que a primeira tentativa de restaurar o viewport ainda não era determinística;
+- em rebuilds, `data-active-page` podia voltar para 1 ao atualizar, inserir imagem ou unir PDF;
+- o teste de corrida também ficou instável em alguns cenários após a tentativa anterior de reposicionar o scroll diretamente.
+
+Causas reconciliadas:
+1. o **harness** não reproduzia exatamente o cliente real: calculava o fallback `viewer.getViewState()` somente depois de `editor.buildBlob()`; o cliente real captura o estado antes do await;
+2. no **visualizador**, o `IntersectionObserver` de página ativa podia emitir callbacks durante a restauração inicial do scroll e sobrescrever temporariamente a página solicitada.
+
+Correção desta rodada:
+- o harness captura `preservedViewState` antes do build assíncrono, igualando a ordem do cliente real;
+- o visualizador mantém uma guarda `initialPageTarget` durante a montagem inicial;
+- os observers continuam coletando interseções, mas não podem trocar a página ativa enquanto a guarda está vigente;
+- o alvo inicial usa `scrollIntoView({ behavior: 'auto' })` e é reafirmado por dois frames;
+- ao finalizar a restauração, os ratios transitórios são limpos e a guarda é liberada;
+- marcador interno avançado para `phase3c1j`.
+
+Alternativa descartada:
+- apenas escrever `scrollTop` antes/depois da instalação dos observers. O CI mostrou que isso não estabilizava todos os layouts e ainda introduzia flakiness no teste de concorrência.
+
+Estado:
+- PR #179 continua aberto e sem merge;
+- produção permanece inalterada;
+- nova rodada completa de CI/navegador é obrigatória;
+- 3C.2 continua bloqueada.

@@ -517,6 +517,7 @@
           if (!Number.isInteger(pageNumber)) continue;
           session.pageRatios.set(pageNumber, entry.isIntersecting ? entry.intersectionRatio : 0);
         }
+        if (session.initialPageTarget) return;
         let bestPage = session.activePage || 1;
         let bestRatio = -1;
         for (const [pageNumber, ratio] of session.pageRatios) {
@@ -692,6 +693,7 @@
       pageRatios: new Map(),
       visiblePages: new Set(),
       activePage: 0,
+      initialPageTarget: 0,
       scale: 1,
       fitMode: true,
       generation: 1,
@@ -801,19 +803,29 @@
         return null;
       }
       const initialRecord = session.pages.get(initialPage);
+      session.initialPageTarget = initialPage;
       const restoreInitialViewport = () => {
-        if (!isCurrentSession(session)) return;
-        const targetTop = initialPage > 1 && initialRecord
-          ? Math.max(0, initialRecord.container.offsetTop - 16)
-          : 0;
-        session.scrollRoot.scrollTop = targetTop;
-        session.scrollRoot.scrollLeft = 0;
+        if (!isCurrentSession(session) || !initialRecord) return;
+        initialRecord.container.scrollIntoView({
+          behavior: 'auto',
+          block: 'start',
+          inline: 'nearest'
+        });
         setActivePage(session, initialPage);
       };
 
       restoreInitialViewport();
       installObservers(session);
-      requestAnimationFrame(restoreInitialViewport);
+      requestAnimationFrame(() => {
+        if (!isCurrentSession(session)) return;
+        restoreInitialViewport();
+        requestAnimationFrame(() => {
+          if (!isCurrentSession(session)) return;
+          restoreInitialViewport();
+          session.pageRatios.clear();
+          session.initialPageTarget = 0;
+        });
+      });
 
       if (typeof ResizeObserver === 'function') {
         session.resizeObserver = new ResizeObserver(() => {
@@ -868,6 +880,6 @@
     setThumbnailActions,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1i`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1j`
   });
 })();

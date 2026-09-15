@@ -155,13 +155,14 @@
 
   async function rebuild(viewState = null, message = 'Atualizando PDF sintético…') {
     if (!state.session) return;
+    const preservedViewState = viewState || viewer.getViewState() || state.viewState;
     setBusy(true, message);
     const session = state.session;
     const blob = await editor.buildBlob(session);
     if (session !== state.session) return;
     await openViewer(blob, {
       editing: true,
-      initialViewState: viewState || viewer.getViewState() || state.viewState
+      initialViewState: preservedViewState
     });
     root.dataset.editorRevision = String(session.revision);
     root.dataset.pageOrder = pageOrder();
