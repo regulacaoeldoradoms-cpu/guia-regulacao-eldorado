@@ -789,6 +789,7 @@
         currentPageNumber: Number(object.displayPage || layer.dataset.pageNumber || 1),
         changed: false
       };
+      session.root.dataset.objectGesture = session.objectDrag.kind;
     };
 
     const pointermove = (event) => {
@@ -861,6 +862,7 @@
 
       Object.assign(object, patch);
       drag.changed = true;
+      session.root.dataset.objectGestureMoved = 'true';
       session.onObjectChange?.(drag.id, patch);
       const element = pagesRoot.querySelector(`.portal-pdf-object[data-object-id="${CSS.escape(drag.id)}"]`);
       if (element) applyObjectGeometry(element, object, element.closest('.portal-pdf-page')?.clientWidth || 760);
@@ -870,6 +872,8 @@
       const drag = session.objectDrag;
       if (!drag || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
       session.objectDrag = null;
+      session.root.dataset.objectGesture = '';
+      session.root.dataset.objectGestureMoved = drag.changed ? 'true' : 'false';
       if (drag.changed) commitObjectGesture(session, drag);
     };
 
@@ -929,7 +933,7 @@
 
     session.objectHandlers = { pointerdown, click, dblclick, focusout };
     for (const [type, handler] of Object.entries(session.objectHandlers)) {
-      pagesRoot.addEventListener(type, handler, false);
+      pagesRoot.addEventListener(type, handler, type === 'pointerdown');
     }
     session.objectWindowHandlers = { pointermove, pointerup: finish, pointercancel: finish };
     for (const [type, handler] of Object.entries(session.objectWindowHandlers)) {
@@ -1636,6 +1640,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2b`
   });
 })();
