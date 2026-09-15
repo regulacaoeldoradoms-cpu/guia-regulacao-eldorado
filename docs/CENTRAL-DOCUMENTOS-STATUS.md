@@ -6,29 +6,38 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **Organizar V2 — grade de páginas e operações estruturais locais, em validação técnica no PR #179**. A decisão de UX V2 substitui os bloqueios históricos de drag-and-drop/3C.2 abaixo. A Fase 3 permanece aberta; Escrever, Colar imagem sobre página, Recortar, Desenhar e escrita no Drive não estão autorizados nesta unidade. **Não fazer merge antes do aceite visual humano.**
+Subfase atual: **3C.3 — objetos sobre página: Escrever + Colar imagem, em validação técnica no PR #179**. O Organizar V2 foi aceito visualmente pelo usuário e permanece como checkpoint concluído dentro da Fase 3. Recortar é a próxima unidade (3C.4) somente após homologação da 3C.3; Desenhar/Borracha permanece para 3C.5 e flatten/exportação local para 3C.6. **Não fazer merge nem escrever no Google Drive nesta fase.**
 
-## Handoff para o próximo chat — Organizar V2, registro vigente
+## Handoff para o próximo chat — 3C.3, registro vigente
 
 Este bloco prevalece sobre os handoffs históricos abaixo.
 
-- Main real confirmada por GitHub e `git fetch origin`: `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`.
-- PR #179: aberto, mergeável, branch `codex/central-docs-editor-superficie-unica`; entrada remota em `22b781d0e2c427f50ca078df9ad89a1f26c0d779`.
-- Governança: Guia Mestre V1.1 e Dossiê Mestre lidos integralmente; STATUS, UX V2, homologação, staging e arquitetura do editor reconciliados com a branch. Alterações locais interrompidas foram preservadas, sem reset.
-- Causa raiz reproduzida no navegador: `setOrganizerMode()` existia internamente, mas faltava na API pública. A chamada opcional não executava nada; `editorWorkspaceMode=organize` coexistia com `organizerMode=false`.
-- Correção: exportação real e teste de execução da API pública; a asserção `data-organizer-mode=true` foi mantida. A grade é a superfície principal; o canvas grande oculto pode ser liberado normalmente pelo lazy-render.
-- Troca de modo: a renderização inteira de cada miniatura (incluindo `getPage`) é serializada, com geração própria. Cancelamento não redimensiona canvas ainda em uso e a geração antiga não marca a miniatura nova como pronta. Observadores de leitura/fit não sobrescrevem seleção/zoom durante Organizar.
-- Drag: ghost copia bitmap real, inclusive no grip touch; página inteira aceita mouse/pen e toque prolongado. Movimento imediato do dedo preserva scroll nativo. Um RAF da sessão mantém auto-scroll com ponteiro parado na borda, sem reconstruir PDF durante movimento; a operação só ocorre no drop.
-- Cleanup: drop/cancelamento/perda de captura/troca de modo/fechamento removem ghost, classes, captura, timer de hold e RAF. Sessão antiga só limpa seus próprios elementos, sem interferir na vencedora.
-- Laboratório: painel de união sintética com `before-document`, `after-document` e `after-page`, validação de página e undo/redo. Continua sem frontend autenticado, Drive real, Functions, D1, bindings ou secrets.
-- Arquivos desta correção: `js/document-viewer.js`, `documentos/index.html`, `worker/tests/documents-ui.test.mjs`, `testing/central-docs/editor-harness.js`, `testing/central-docs/viewer-harness.html`, `testing/browser/central-docs-editor.spec.mjs`, novo `testing/browser/central-docs-organizer.spec.mjs` e este status.
-- Alternativas descartadas: enfraquecer a asserção de Organizar; manter editor textual; reconstruir em pointermove; depender apenas de pointermove para auto-scroll; bloquear todo scroll touch com `touch-action:none` na página; limpar roots compartilhados de sessão obsoleta.
-- Testes: Worker completo 141/141 e sintaxe aprovados na primeira rodada; matriz ampliada inicial 35 aprovados + 1 caso touch não aplicável no desktop. A rodada final deve confirmar as extensões de toque prolongado, drop no fim e a versão final do runtime antes da publicação candidata.
-- CI remoto de entrada: 23/24 verdes; navegador falhava na entrada de Organizar. As duas threads antigas P1/P2 estão resolvidas; isso não substitui revisão do V2.
-- Preview anterior `8935c0ec` não é evidência desta correção. A URL imutável candidata e os resultados pós-publicação serão registrados após CI/validação remota.
-- Riscos: Access e domínio próprio continuam pendentes; staging público, somente sintético. Touch é validado no Chromium emulado, não equivale ao aceite num celular físico. PDFs institucionais/integração autenticada exigem reteste autorizado em outra etapa.
-- Não feito: merge, alteração da main, deploy de produção, escrita no Drive, mudança de Worker/D1, telemetria sensível ou ferramentas futuras.
-- Próximo passo exato: finalizar matriz local, publicar somente a branch do PR, verificar CI e deployment imutável, testar remotamente e entregar para aceite visual humano do Organizar V2.
+- **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, confirmada antes desta rodada.
+- **PR:** #179 — `codex/central-docs-editor-superficie-unica`, aberto, sem merge e ainda apontado para a mesma main.
+- **Último commit funcional relevante:** `d1345a6d96d6de5fa614e3ff743f482b9a68a045` — preserva lazy loading de miniaturas nas trocas de modo e transforma pela alça inferior direita.
+- **Organizar V2:** aceito pelo usuário; drag centralizado, grade, rotação de página, duplicação, exclusão, página em branco, união posicionada e undo/redo permanecem requisitos preservados.
+- **3C.3 já implementada:** texto e imagem overlay por `pageId`, seleção, movimento, quatro pontos de manipulação, rotação, formatação de texto, opacidade, transferência entre páginas e histórico local. Os objetos continuam locais; o flatten permanece para 3C.6.
+- **P2 de miniaturas lazy:** a causa era `setOrganizerMode()` invalidar e chamar `renderThumbnail()` para todas as páginas. A correção agora invalida a geração e rearma o `IntersectionObserver`, renderizando tudo somente no fallback sem IntersectionObserver. Foi acrescentado teste de navegador com documento sintético ampliado para provar que a troca de modo não materializa todas as miniaturas.
+- **Alça inferior direita:** agora é transformação combinada. Distância ao centro controla escala uniforme e variação angular controla rotação; o centro do objeto é preservado e o gesto continua sendo consolidado como uma única mutação no `pointerup`. A alça de rotação dedicada continua disponível como alternativa.
+- **Testes acrescentados:** cobertura estática do lazy loading e da transformação SE; Playwright verifica resize + rotação pela alça SE e um cenário com mais de dez páginas onde somente miniaturas visíveis/próximas devem ficar renderizadas após Organizar ↔ Escrever.
+- **Segurança:** nenhuma rota de escrita no Drive, nenhum backend novo, nenhuma telemetria de texto/imagem/coordenadas e nenhum dado real no staging.
+- **Pendência imediata:** aguardar o CI do commit `d1345a6d...`. Se a matriz ficar verde, responder e resolver o thread P2, registrar o deployment imutável da branch e entregar o preview para homologação humana de Escrever + Colar imagem.
+- **Gate:** Recortar (3C.4) não deve ser implementado antes do aceite humano da 3C.3. Desenhar/Borracha (3C.5) e flatten (3C.6) continuam apenas preparados em especificação/testes.
+- **Riscos conhecidos:** staging público enquanto Cloudflare Access estiver pendente, portanto somente dados sintéticos; touch automatizado não substitui teste em aparelho físico; PDFs institucionais só entram em reteste autorizado posterior.
+- **Não feito:** merge, alteração da main, deploy de produção, escrita no Drive, mudança de Worker/D1, uso de documento clínico ou avanço funcional para 3C.4/3C.5.
+- **Próxima ação exata:** verificar CI do head corrente; corrigir somente regressões da 3C.3 se houver; com CI verde, fechar o P2, validar preview sintético desktop/mobile e solicitar homologação humana de Escrever + Colar imagem.
+
+## 3C.3 — adiantamento técnico enquanto Codex estava indisponível — 15/09/2026
+
+A rodada foi executada diretamente no PR #179, sem tocar a main:
+
+- corrigido o P2 de performance das miniaturas, preservando o lazy loading baseado em `IntersectionObserver`;
+- mantido o fallback completo apenas para navegadores sem `IntersectionObserver`;
+- alinhada a interação da imagem ao requisito humano original: a alça inferior direita combina escala + rotação, sem remover o controle dedicado de rotação;
+- adicionados testes de regressão para a transformação combinada e para a troca de modo com documento maior;
+- a documentação de homologação passou a conter a matriz completa da 3C.3 e a preparação das unidades seguintes, sem autorizar sua implementação antecipada.
+
+Decisão: esta rodada reduz a fila do Codex para **CI/diagnóstico de eventuais regressões → staging → homologação humana da 3C.3**. Não há justificativa para iniciar Recortar antes desse gate.
 
 ## Estado de entrada
 

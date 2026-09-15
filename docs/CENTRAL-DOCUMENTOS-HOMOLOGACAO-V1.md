@@ -1,6 +1,6 @@
 # Central de Documentos — Homologação e testes de navegador V1
 
-Data: 14/09/2026  
+Data: 15/09/2026  
 Fase relacionada: 3 — Editor PDF essencial  
 Estado: laboratório local + CI + Cloudflare Pages operacionais; PR funcional em homologação, sem alteração em produção.
 
@@ -65,7 +65,7 @@ O ambiente de homologação não substitui os critérios do Guia Mestre. Ele acr
 
 `branch -> testes unitários/estáticos -> Playwright -> preview/homologação -> PR -> main -> produção`
 
-A 3C.2 continua bloqueada até a 3C.1 ser corrigida e validada.
+O Organizar V2 já foi aceito. A unidade atual é 3C.3 — Escrever + Colar imagem; o avanço para 3C.4 depende de sua homologação humana.
 
 
 ## Resultado do primeiro ciclo automatizado — 14/09/2026
@@ -137,7 +137,7 @@ Após aceite visual do preview e revisão final do PR:
 13. confirmar que nenhuma operação escreveu no Drive e que não houve telemetria sensível;
 14. registrar o aceite real no status.
 
-Somente depois desse aceite a 3C.1 pode ser encerrada e a 3C.2 liberada.
+Esse roteiro permanece como histórico da superfície única. No estado atual, o gate ativo é a homologação da 3C.3 antes de Recortar.
 
 
 ### Reorganização por arraste e rotação
@@ -157,3 +157,74 @@ Validação no head `ec518dc024ec79ea5ab52012082bcc68cdb99d36`:
 - deployment imutável: `https://7c94b5a6.portal-regulacao-central-staging.pages.dev/`.
 
 Essa homologação continua sintética. O merge depende do novo aceite visual humano.
+
+
+## Matriz atual de homologação — 3C.3 Escrever + Colar imagem
+
+A 3C.3 deve ser considerada pronta para aceite humano somente quando a matriz abaixo estiver verde no head corrente do PR:
+
+1. **Escrever:** criar texto na página, editar conteúdo, fonte, tamanho, cor, negrito/itálico/sublinhado, alinhamento e opacidade.
+2. **Mover:** deslocar texto e imagem dentro da página sem sair dos limites.
+3. **Resize convencional:** alças NW/NE/SW continuam redimensionando de forma previsível.
+4. **Transformação SE:** a alça inferior direita aumenta/reduz proporcionalmente e também rotaciona conforme o ângulo do ponteiro, preservando o centro do objeto.
+5. **Rotação dedicada:** o controle próprio de rotação continua funcional como alternativa.
+6. **Transferência entre páginas:** arrastar imagem para outra página atualiza `pageId`/posição e participa de Undo/Redo.
+7. **Página reorganizada:** objetos continuam vinculados à página correta depois de reordenar o documento.
+8. **Duplicar/excluir página:** duplicar clona objetos com novos IDs; excluir remove somente objetos da página eliminada.
+9. **Undo/Redo:** um gesto contínuo de mover/resize/transformar gera uma única mutação consolidada.
+10. **Zoom/rebuild:** objetos preservam posição relativa após mudança de zoom, Atualizar PDF e troca de modo.
+11. **PDF maior:** Organizar ↔ Escrever não pode disparar renderização de todas as miniaturas; o `IntersectionObserver` continua governando o lazy loading.
+12. **Desktop + mobile:** nenhuma exceção de console/pageerror e nenhuma regressão de scroll/touch.
+13. **Rede/privacidade:** nenhum texto, imagem, nome de arquivo, ID do Drive ou conteúdo documental sai do laboratório; nenhuma chamada nova a `/api/`, Google ou Worker de produção.
+14. **Drive:** nenhuma ação da Fase 3 pode declarar ou executar salvamento no Google Drive.
+
+O teste sintético ampliado usa união repetida para criar mais de dez páginas e confirma que, após a troca de modo, o número de miniaturas renderizadas permanece menor que o total do documento.
+
+### Roteiro humano da 3C.3
+
+No preview sintético candidato:
+
+1. entrar em **Editar** e selecionar **Escrever**;
+2. criar um texto, alterar formatação e mover a caixa;
+3. usar a alça inferior direita para aumentar e girar no mesmo gesto;
+4. desfazer e refazer;
+5. escolher **Colar imagem**, inserir uma imagem fictícia do dispositivo e mover/redimensionar/rotacionar;
+6. transferir a imagem para outra página e conferir Undo/Redo;
+7. alternar Organizar ↔ Escrever e confirmar que a interface continua responsiva;
+8. testar em desktop e, se possível, celular físico;
+9. confirmar que nenhuma ação oferece salvamento no Drive nesta fase.
+
+Aceite humano dessa sequência libera **3C.4 — Recortar**. Sem esse aceite, a 3C.3 permanece aberta.
+
+## Preparação das próximas unidades — sem implementação antecipada
+
+Esta preparação existe para reduzir tempo de execução posterior; **não autoriza pular o gate da 3C.3**.
+
+### 3C.4 — Recortar
+
+Modelo previsto:
+- crop associado ao `pageId`, não ao índice visual;
+- retângulo em coordenadas normalizadas da página;
+- moldura manipulável com preview imediato;
+- commit único no fim do gesto e Undo/Redo;
+- reorganizar/duplicar/excluir página preserva a semântica do crop;
+- testes obrigatórios em rotações 0/90/180/270° e CropBox não padrão;
+- nenhum raster obrigatório do conteúdo original durante a edição.
+
+### 3C.5 — Desenhar/Borracha
+
+Modelo previsto:
+- traços vetoriais locais, normalizados por `pageId`;
+- cor e espessura por traço;
+- borracha atua somente sobre traços criados pela ferramenta Desenhar;
+- conteúdo original do PDF nunca é apagado, mascarado ou reescrito pela borracha;
+- Undo/Redo trabalha por gesto/traço, não por cada ponto capturado.
+
+### 3C.6 — flatten/exportação local
+
+Critério crítico:
+- PDF.js continua como camada de visualização;
+- pdf-lib incorpora texto, imagem, crop e desenhos ao Blob final;
+- comparar visualmente **preview × PDF gerado e reaberto**;
+- preservar conteúdo vetorial/textual original sempre que a operação não exigir rasterização;
+- nenhuma sincronização com Drive entra aqui; isso pertence à Fase 4.
