@@ -21,7 +21,9 @@
     editorStatus: document.getElementById('editorStatus'),
     undo: document.getElementById('editorUndo'),
     redo: document.getElementById('editorRedo'),
+    organize: document.getElementById('editorOrganize'),
     merge: document.getElementById('editorMerge'),
+    blank: document.getElementById('editorBlank'),
     addImage: document.getElementById('editorAddImage'),
     refresh: document.getElementById('editorRefresh'),
     exit: document.getElementById('editorExit')
@@ -68,10 +70,14 @@
     elements.enterEditor.disabled = editing || root.dataset.viewerState !== 'ready';
     elements.surface.classList.toggle('is-editing', editing);
     elements.surface.dataset.editorMode = editing ? 'true' : 'false';
+    elements.surface.dataset.editorWorkspaceMode = editing ? 'organize' : 'readonly';
+    viewer.setOrganizerMode?.(editing);
     elements.surface.setAttribute('aria-label', editing ? 'Editor visual PDF sintético' : 'Visualizador PDF sintético');
     elements.undo.disabled = !editing || !editor.canUndo(state.session);
     elements.redo.disabled = !editing || !editor.canRedo(state.session);
+    elements.organize.disabled = !editing;
     elements.merge.disabled = !editing;
+    elements.blank.disabled = !editing;
     elements.addImage.disabled = !editing;
     elements.refresh.disabled = !editing;
     elements.exit.disabled = !editing;
@@ -83,7 +89,7 @@
     elements.surface.setAttribute('aria-busy', active ? 'true' : 'false');
     if (message) elements.editorStatus.textContent = message;
     if (active) {
-      for (const button of [elements.undo, elements.redo, elements.merge, elements.addImage, elements.refresh, elements.exit]) {
+      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.blank, elements.addImage, elements.refresh, elements.exit]) {
         button.disabled = true;
       }
       elements.thumbnails.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
@@ -123,6 +129,8 @@
       zoomLabel: elements.zoomReset,
       pageCountLabel: elements.pageCount,
       thumbnailActions: editing,
+      organizerMode: editing,
+      thumbnailWidth: editing ? 210 : null,
       initialViewState,
       onThumbnailAction: editing ? handleThumbnailAction : null,
       onReady(info) {
@@ -180,7 +188,12 @@
       let changed = false;
       let targetIndex = pageIndex;
       if (action === 'delete') changed = editor.removePage(state.session, pageIndex);
-      if (action === 'rotate') changed = editor.rotatePage(state.session, pageIndex, 1);
+      if (action === 'rotate-left') changed = editor.rotatePage(state.session, pageIndex, -1);
+      if (action === 'rotate-right') changed = editor.rotatePage(state.session, pageIndex, 1);
+      if (action === 'duplicate') {
+        targetIndex = editor.duplicatePage(state.session, pageIndex);
+        changed = Number.isInteger(targetIndex);
+      }
       if (action === 'reorder') {
         targetIndex = Math.round(Number(detail?.toIndex));
         changed = editor.movePageTo(state.session, pageIndex, targetIndex);
@@ -189,7 +202,9 @@
       const pageCount = editor.pageCount(state.session);
       const viewState = action === 'reorder'
         ? adjustedReorderViewState(pageIndex, targetIndex, pageCount, before)
-        : adjustedViewState(action, pageIndex, pageCount, before);
+        : action === 'duplicate'
+          ? (before ? { ...before, activePage: targetIndex + 1 } : null)
+          : adjustedViewState(action, pageIndex, pageCount, before);
       await rebuild(viewState);
     });
   }
@@ -207,7 +222,7 @@
     }
     root.dataset.editorRevision = '0';
     root.dataset.pageOrder = pageOrder();
-    elements.editorStatus.textContent = 'Editor pronto. Arraste as miniaturas para reorganizar; use ↻ para girar e × para excluir.';
+    elements.editorStatus.textContent = 'Organizador pronto. Arraste páginas; use ↺/↻, duplicar ou excluir.';
     elements.status.textContent = `Editor pronto — PDF.js ${viewer.version} — ${editor.pageCount(state.session)} páginas`;
     setBusy(false);
   }
@@ -242,8 +257,20 @@
   async function mergeSyntheticPdf() {
     if (!state.session) return;
     const viewState = viewer.getViewState() || state.viewState;
-    await editor.addDocument(state.session, fixture.blob(), { label: 'Segundo PDF sintético' });
-    await rebuild(viewState, 'Unindo segundo PDF sintético…');
+    const insertAt = Math.max(0, Math.min(editor.pageCount(state.session), Number(viewState?.activePage || 1)));
+    await editor.addDocument(state.session, fixture.blob(), {
+      label: 'Segundo PDF sintético',
+      insertAt
+    });
+    await rebuild(viewState ? { ...viewState, activePage: insertAt + 1 } : null, 'Unindo segundo PDF sintético…');
+  }
+
+  async function addBlankPage() {
+    if (!state.session) return;
+    const viewState = viewer.getViewState() || state.viewState;
+    const insertAt = Math.max(0, Math.min(editor.pageCount(state.session), Number(viewState?.activePage || 1)));
+    const pageIndex = await editor.addBlankPage(state.session, { insertAt });
+    await rebuild(viewState ? { ...viewState, activePage: pageIndex + 1 } : null, 'Inserindo página em branco…');
   }
 
   async function changeHistory(direction) {
@@ -286,7 +313,9 @@
   elements.enterEditor.addEventListener('click', () => run(enterEditor));
   elements.undo.addEventListener('click', () => run(() => changeHistory('undo')));
   elements.redo.addEventListener('click', () => run(() => changeHistory('redo')));
+  elements.organize.addEventListener('click', () => viewer.setOrganizerMode?.(true));
   elements.merge.addEventListener('click', () => run(mergeSyntheticPdf));
+  elements.blank.addEventListener('click', () => run(addBlankPage));
   elements.addImage.addEventListener('click', () => run(addSyntheticImage));
   elements.refresh.addEventListener('click', () => run(() => rebuild()));
   elements.exit.addEventListener('click', () => run(exitEditor));

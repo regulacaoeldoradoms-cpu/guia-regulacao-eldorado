@@ -40,17 +40,17 @@
         <span id="pageCount" class="documents-pdf-page-count">—</span>
       </div>
       <div id="editorControls" class="documents-editor" hidden aria-label="Controles de edição local do PDF">
-        <div class="documents-editor-banner">
-          <strong>Edição local</strong>
-          <span>Somente PDF e imagem sintéticos. As alterações aparecem nesta mesma superfície.</span>
-        </div>
-        <div class="documents-editor-toolbar" role="toolbar" aria-label="Ações de edição do PDF sintético">
-          <button id="editorUndo" class="portal-button" type="button">Desfazer</button>
-          <button id="editorRedo" class="portal-button" type="button">Refazer</button>
-          <button id="editorMerge" class="portal-button" type="button">Unir PDF sintético</button>
-          <button id="editorAddImage" class="portal-button" type="button">Adicionar imagem sintética</button>
-          <button id="editorRefresh" class="portal-button" type="button">Atualizar PDF</button>
-          <button id="editorExit" class="portal-button" type="button">Sair do editor</button>
+        <div class="documents-editor-toolbar documents-editor-toolbar--compact" role="toolbar" aria-label="Ações de edição do PDF sintético">
+          <button id="editorUndo" class="documents-editor-tool" type="button" title="Desfazer">↶</button>
+          <button id="editorRedo" class="documents-editor-tool" type="button" title="Refazer">↷</button>
+          <span class="documents-editor-tool-separator"></span>
+          <button id="editorOrganize" class="documents-editor-tool active" type="button" title="Organizar">▦</button>
+          <button id="editorMerge" class="documents-editor-tool" type="button" title="Unir PDF sintético">⧉</button>
+          <button id="editorBlank" class="documents-editor-tool" type="button" title="Inserir página em branco">⊞</button>
+          <button id="editorAddImage" class="documents-editor-tool" type="button" title="Adicionar imagem como página">▧</button>
+          <span class="documents-editor-tool-spacer"></span>
+          <button id="editorRefresh" class="documents-editor-tool" type="button" title="Atualizar PDF">⟳</button>
+          <button id="editorExit" class="documents-editor-tool" type="button" title="Sair do editor">×</button>
         </div>
         <div id="editorStatus" class="documents-editor-status lab-editor-status" aria-live="polite"></div>
       </div>
