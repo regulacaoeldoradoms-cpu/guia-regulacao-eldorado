@@ -101,7 +101,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260915-1'/);
+  assert.match(source, /CACHE_VERSION = '20260915-2'/);
 });
 
 test('observabilidade documental continua sem propriedades identificáveis', () => {
@@ -249,8 +249,11 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="editorMergePanel"/);
   assert.match(viewerSurface, /id="editorImageButton"/);
   assert.match(viewerSurface, /id="editorCropButton"[^>]*disabled/);
-  assert.match(viewerSurface, /id="editorWriteButton"[^>]*disabled/);
-  assert.match(viewerSurface, /id="editorOverlayImageButton"[^>]*disabled/);
+  assert.match(viewerSurface, /id="editorSelectButton"/);
+  assert.match(viewerSurface, /id="editorWriteButton"/);
+  assert.doesNotMatch(viewerSurface, /id="editorWriteButton"[^>]*disabled/);
+  assert.match(viewerSurface, /id="editorOverlayImageButton"/);
+  assert.doesNotMatch(viewerSurface, /id="editorOverlayImageButton"[^>]*disabled/);
   assert.match(viewerSurface, /id="editorDrawButton"[^>]*disabled/);
   assert.match(viewerSurface, /id="editorExitButton"/);
   assert.match(viewerSurface, /id="pdfThumbnailRail"/);
