@@ -101,14 +101,17 @@
     if (operation === 'delete') {
       if (activePage > sourcePage) activePage -= 1;
       else if (activePage === sourcePage) activePage = Math.min(sourcePage, pageCount);
-    } else if (operation === 'up') {
-      if (activePage === sourcePage) activePage -= 1;
-      else if (activePage === sourcePage - 1) activePage += 1;
-    } else if (operation === 'down') {
-      if (activePage === sourcePage) activePage += 1;
-      else if (activePage === sourcePage + 1) activePage -= 1;
     }
     return { ...baseState, activePage: Math.max(1, Math.min(pageCount, activePage)) };
+  }
+
+  function adjustedReorderViewState(fromIndex, toIndex, pageCount, baseState) {
+    if (!baseState) return null;
+    let activeIndex = Math.max(0, Math.round(Number(baseState.activePage || 1)) - 1);
+    if (activeIndex === fromIndex) activeIndex = toIndex;
+    else if (fromIndex < toIndex && activeIndex > fromIndex && activeIndex <= toIndex) activeIndex -= 1;
+    else if (toIndex < fromIndex && activeIndex >= toIndex && activeIndex < fromIndex) activeIndex += 1;
+    return { ...baseState, activePage: Math.max(1, Math.min(pageCount, activeIndex + 1)) };
   }
 
   function viewerOptions({ editing = false, initialViewState = null, sequence }) {
@@ -170,16 +173,23 @@
     setBusy(false);
   }
 
-  function handleThumbnailAction(action, pageIndex) {
+  function handleThumbnailAction(action, pageIndex, detail = null) {
     run(async () => {
       if (!state.session) return;
       const before = viewer.getViewState() || state.viewState;
       let changed = false;
+      let targetIndex = pageIndex;
       if (action === 'delete') changed = editor.removePage(state.session, pageIndex);
-      if (action === 'up') changed = editor.movePage(state.session, pageIndex, -1);
-      if (action === 'down') changed = editor.movePage(state.session, pageIndex, 1);
+      if (action === 'rotate') changed = editor.rotatePage(state.session, pageIndex, 1);
+      if (action === 'reorder') {
+        targetIndex = Math.round(Number(detail?.toIndex));
+        changed = editor.movePageTo(state.session, pageIndex, targetIndex);
+      }
       if (!changed) return;
-      const viewState = adjustedViewState(action, pageIndex, editor.pageCount(state.session), before);
+      const pageCount = editor.pageCount(state.session);
+      const viewState = action === 'reorder'
+        ? adjustedReorderViewState(pageIndex, targetIndex, pageCount, before)
+        : adjustedViewState(action, pageIndex, pageCount, before);
       await rebuild(viewState);
     });
   }
@@ -197,7 +207,7 @@
     }
     root.dataset.editorRevision = '0';
     root.dataset.pageOrder = pageOrder();
-    elements.editorStatus.textContent = 'Editor pronto. Use as ações associadas às miniaturas.';
+    elements.editorStatus.textContent = 'Editor pronto. Arraste as miniaturas para reorganizar; use ↻ para girar e × para excluir.';
     elements.status.textContent = `Editor pronto — PDF.js ${viewer.version} — ${editor.pageCount(state.session)} páginas`;
     setBusy(false);
   }

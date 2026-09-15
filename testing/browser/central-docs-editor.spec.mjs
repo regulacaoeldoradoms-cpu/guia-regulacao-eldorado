@@ -43,7 +43,9 @@ async function enterEditor(page) {
   await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
   await expect(page.locator('#editorControls')).toBeVisible();
   await expect(page.locator('.portal-pdf-thumb-actions')).toHaveCount(3);
-  await expect(page.locator('[data-thumbnail-action]')).toHaveCount(9);
+  await expect(page.locator('[data-thumbnail-drag]')).toHaveCount(3);
+  await expect(page.locator('[data-thumbnail-action]')).toHaveCount(6);
+  await expect(page.locator('[data-thumbnail-action="up"], [data-thumbnail-action="down"]')).toHaveCount(0);
 }
 
 async function waitForOrder(page, value) {
@@ -102,14 +104,14 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     finishMonitoring();
   });
 
-  test('mover e excluir atualizam a ordem visual e as miniaturas', async ({ page }) => {
+  test('arrastar e excluir atualizam a ordem visual e as miniaturas sem setas', async ({ page }) => {
     const finishMonitoring = monitorPage(page);
     await openLab(page);
     await enterEditor(page);
     await page.evaluate(() => { window.__centralDocsRoot = document.getElementById('pdfRoot'); });
     const firstThumbBefore = await page.locator('.portal-pdf-thumb-canvas').first().evaluate((canvas) => canvas.toDataURL());
 
-    await page.locator('.portal-pdf-thumb-wrap').nth(1).locator('[data-thumbnail-action="up"]').click();
+    await page.locator('.portal-pdf-thumb').nth(1).dragTo(page.locator('.portal-pdf-thumb').first());
     await waitForOrder(page, '0:1,0:0,0:2');
     await expect(page.locator('.portal-pdf-page')).toHaveCount(3);
     await expect(page.locator('.portal-pdf-thumb')).toHaveCount(3);
@@ -132,6 +134,35 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await page.locator('#editorRedo').click();
     await waitForOrder(page, '0:0,0:2');
     await expect(page.locator('.portal-pdf-page')).toHaveCount(2);
+    finishMonitoring();
+  });
+
+  test('gira uma página 90 graus e mantém rotação no desfazer/refazer', async ({ page }) => {
+    const finishMonitoring = monitorPage(page);
+    await openLab(page);
+    await enterEditor(page);
+
+    const lastCanvas = page.locator('.portal-pdf-page-canvas').nth(2);
+    await expect(page.locator('.portal-pdf-page').nth(2)).toHaveClass(/rendered/);
+    const before = await lastCanvas.evaluate((canvas) => ({ width: canvas.width, height: canvas.height }));
+    const revisionBefore = await page.locator('html').getAttribute('data-editor-revision');
+
+    await page.locator('.portal-pdf-thumb-wrap').nth(2).locator('[data-thumbnail-action="rotate"]').click();
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('html')).not.toHaveAttribute('data-editor-revision', revisionBefore || '');
+    const rotated = await lastCanvas.evaluate((canvas) => ({ width: canvas.width, height: canvas.height }));
+    expect(Math.sign(before.width - before.height)).toBe(-Math.sign(rotated.width - rotated.height));
+
+    await page.locator('#editorUndo').click();
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    const undone = await lastCanvas.evaluate((canvas) => ({ width: canvas.width, height: canvas.height }));
+    expect(Math.sign(undone.width - undone.height)).toBe(Math.sign(before.width - before.height));
+
+    await page.locator('#editorRedo').click();
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    const redone = await lastCanvas.evaluate((canvas) => ({ width: canvas.width, height: canvas.height }));
+    expect(Math.sign(redone.width - redone.height)).toBe(Math.sign(rotated.width - rotated.height));
+
     finishMonitoring();
   });
 

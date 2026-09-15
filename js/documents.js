@@ -339,10 +339,7 @@
     wrappers.forEach((wrapper, index) => {
       wrapper.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
         const action = String(button.dataset.thumbnailAction || '');
-        button.disabled = active
-          || (action === 'up' && index === 0)
-          || (action === 'down' && index === wrappers.length - 1)
-          || (action === 'delete' && wrappers.length <= 1);
+        button.disabled = active || (action === 'delete' && wrappers.length <= 1);
       });
     });
     refreshPdfListActions();
@@ -424,9 +421,9 @@
         pageCountLabel: els.pdfPageCountLabel,
         thumbnailActions: true,
         initialViewState,
-        onThumbnailAction: (action, pageIndex) => {
+        onThumbnailAction: (action, pageIndex, detail) => {
           if (session !== state.editorSession) return;
-          applyEditorOperation(action, pageIndex).catch(() => {});
+          applyEditorOperation(action, pageIndex, detail).catch(() => {});
         },
         onReady: () => {
           if (session !== state.editorSession || seq !== state.editorBuildSeq) return;
@@ -434,7 +431,7 @@
           els.viewerState.className = 'documents-viewer-state ready';
           setEditorStatus(
             initial
-              ? 'Editor visual pronto. As miniaturas do Portal controlam as páginas; alterações continuam locais e reversíveis.'
+              ? 'Editor pronto. Arraste as miniaturas para reorganizar; use ↻ para girar e × para excluir. Alterações continuam locais e reversíveis.'
               : `Visualização editada atualizada em ${duration(started)} ms.`,
             'success'
           );
@@ -596,14 +593,14 @@
       syncEditorControls();
       refreshPdfListActions();
 
-      const actionsInstalled = window.PortalPdfViewer?.setThumbnailActions?.(true, (action, pageIndex) => {
+      const actionsInstalled = window.PortalPdfViewer?.setThumbnailActions?.(true, (action, pageIndex, detail) => {
         if (!state.editorSession) return;
-        applyEditorOperation(action, pageIndex).catch(() => {});
+        applyEditorOperation(action, pageIndex, detail).catch(() => {});
       });
 
       if (actionsInstalled) {
         els.viewerState.className = 'documents-viewer-state ready';
-        setEditorStatus('Editor visual pronto. As miniaturas do Portal controlam as páginas; alterações continuam locais e reversíveis.', 'success');
+        setEditorStatus('Editor pronto. Arraste as miniaturas para reorganizar; use ↻ para girar e × para excluir. Alterações continuam locais e reversíveis.', 'success');
       } else {
         const seq = ++state.editorBuildSeq;
         await openEditorWithPortalViewer(blob, {
@@ -660,19 +657,27 @@
     if (operation === 'delete') {
       if (activePage > sourcePage) activePage -= 1;
       else if (activePage === sourcePage) activePage = Math.min(sourcePage, pageCount);
-    } else if (operation === 'up') {
-      const targetPage = sourcePage - 1;
-      if (activePage === sourcePage) activePage = targetPage;
-      else if (activePage === targetPage) activePage = sourcePage;
-    } else if (operation === 'down') {
-      const targetPage = sourcePage + 1;
-      if (activePage === sourcePage) activePage = targetPage;
-      else if (activePage === targetPage) activePage = sourcePage;
     }
 
     return {
       ...baseState,
       activePage: Math.max(1, Math.min(pageCount, activePage))
+    };
+  }
+
+  function viewStateAfterReorder(fromIndex, toIndex, pageCount, baseState = null) {
+    if (!baseState) return null;
+    let activeIndex = Math.max(0, Math.round(Number(baseState.activePage || 1)) - 1);
+    if (activeIndex === fromIndex) {
+      activeIndex = toIndex;
+    } else if (fromIndex < toIndex && activeIndex > fromIndex && activeIndex <= toIndex) {
+      activeIndex -= 1;
+    } else if (toIndex < fromIndex && activeIndex >= toIndex && activeIndex < fromIndex) {
+      activeIndex += 1;
+    }
+    return {
+      ...baseState,
+      activePage: Math.max(1, Math.min(pageCount, activeIndex + 1))
     };
   }
 
@@ -787,7 +792,7 @@
     }
   }
 
-  async function applyEditorOperation(operation, index) {
+  async function applyEditorOperation(operation, index, detail = null) {
     const editor = window.PortalPdfEditor;
     const session = state.editorSession;
     if (!editor || !session || state.editorBusy) return false;
@@ -796,38 +801,52 @@
     setEditorBusy(true);
     try {
       let changed = false;
+      let targetIndex = index;
       if (operation === 'delete') changed = editor.removePage(session, index);
-      if (operation === 'up') changed = editor.movePage(session, index, -1);
-      if (operation === 'down') changed = editor.movePage(session, index, 1);
+      if (operation === 'rotate') changed = editor.rotatePage(session, index, 1);
+      if (operation === 'reorder') {
+        targetIndex = Math.round(Number(detail?.toIndex));
+        changed = editor.movePageTo(session, index, targetIndex);
+      }
       if (!changed) return false;
 
       const pageCount = editor.pageCount(session);
-      const pageNumber = operation === 'up'
-        ? Math.max(1, index)
-        : operation === 'down'
-          ? Math.min(pageCount, index + 2)
-          : Math.min(pageCount, index + 1);
-      const focusAction = operation === 'delete'
-        ? ''
-        : operation === 'up' && pageNumber === 1
-          ? 'down'
-          : operation === 'down' && pageNumber === pageCount
-            ? 'up'
-            : operation;
+      const pageNumber = operation === 'reorder'
+        ? Math.min(pageCount, targetIndex + 1)
+        : Math.min(pageCount, index + 1);
+      const nextViewState = operation === 'reorder'
+        ? viewStateAfterReorder(index, targetIndex, pageCount, viewState)
+        : viewStateAfterPageOperation(operation, index, pageCount, viewState);
+      const eventOperation = operation === 'delete'
+        ? 'delete_page'
+        : operation === 'rotate'
+          ? 'rotate_page'
+          : 'reorder_page';
 
       syncEditorControls();
       refreshPdfListActions();
       capture('pdf_edit_completed', {
         route: '/documentos/',
         duration_ms: duration(started),
-        operation: operation === 'delete' ? 'delete_page' : 'reorder_page',
+        operation: eventOperation,
         size_bucket: sizeBucket(state.pdfItem?.size)
       });
-      return await buildEditorPreview({
-        initialViewState: viewStateAfterPageOperation(operation, index, pageCount, viewState),
-        focusRestore: { pageNumber, action: focusAction },
+      const rebuilt = await buildEditorPreview({
+        initialViewState: nextViewState,
+        focusRestore: { pageNumber, action: operation === 'rotate' ? 'rotate' : '' },
         allowBusy: true
       });
+      if (rebuilt) {
+        setEditorStatus(
+          operation === 'rotate'
+            ? 'Página girada 90° para a direita.'
+            : operation === 'reorder'
+              ? 'Página movida para a nova posição.'
+              : 'Página excluída. Use Desfazer se precisar restaurá-la.',
+          'success'
+        );
+      }
+      return rebuilt;
     } finally {
       if (session === state.editorSession && state.editorBusy) setEditorBusy(false);
     }
