@@ -1724,3 +1724,36 @@ Próximo passo exato:
 3. implementar somente os refinamentos compatíveis com a arquitetura atual;
 4. repetir Playwright e novo aceite visual humano;
 5. PR #179 permanece aberto e sem merge.
+
+
+## Editor UX V2 autorizado — referência Lumin convertida em requisitos — 15/09/2026
+
+Decisão humana:
+- o usuário aprovou iniciar a reformulação do editor usando o Lumin como referência de ergonomia, **sem copiar identidade visual**;
+- visualização normal continua com páginas grandes;
+- ao editar estrutura, a superfície deve mudar para **grade de páginas**, com drag-and-drop fluido;
+- ações por página ficam contextuais em hover/foco: girar esquerda, girar direita, duplicar e excluir;
+- Unir deve permitir inserir antes do documento, depois do documento ou após página específica;
+- inserir página em branco passa a integrar o organizador;
+- ferramentas futuras da mesma experiência: Escrever, Colar imagem, Recortar e Desenhar;
+- a borracha de Desenhar apaga exclusivamente traços feitos pela caneta, nunca conteúdo original do PDF;
+- botões devem migrar para ícones compactos com tooltip sempre que isso reduzir ocupação visual.
+
+Arquitetura/escopo:
+- criada a especificação `docs/CENTRAL-DOCUMENTOS-EDITOR-UX-V2.md`;
+- a Fase 3 permanece local/reversível e **sem escrita no Google Drive**;
+- a antiga ideia de considerar o editor aceito apenas com miniaturas laterais foi superada pelo aceite humano mais recente;
+- PR #179 continua aberto e sem merge.
+
+Implementação iniciada:
+- motor do editor passa a aceitar posição de inserção ao unir documentos;
+- adicionadas primitivas locais para página em branco e duplicação de página;
+- essas APIs ainda precisam ser conectadas à nova superfície visual e homologadas antes de qualquer merge.
+
+Próximo passo exato:
+1. implementar shell compacto + modo Organizar em grade;
+2. conectar drag, girar esquerda/direita, duplicar, excluir e página em branco;
+3. implementar painel de Unir com posição de inserção;
+4. atualizar laboratório e Playwright;
+5. publicar novo preview Cloudflare;
+6. solicitar novo aceite visual antes de avançar para Escrever/Imagem/Recortar/Desenhar.

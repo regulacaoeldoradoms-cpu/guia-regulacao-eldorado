@@ -151,6 +151,22 @@
     };
   }
 
+  async function loadBlankSource(label = 'Página em branco', options = {}) {
+    const lib = await loadLibrary();
+    const documentPdf = await lib.PDFDocument.create();
+    const width = Math.max(120, Number(options.width || A4_PORTRAIT[0]));
+    const height = Math.max(120, Number(options.height || A4_PORTRAIT[1]));
+    documentPdf.addPage([width, height]);
+    return {
+      kind: 'blank',
+      label: String(label || 'Página em branco'),
+      cacheIdentity: '',
+      blobSize: 0,
+      document: documentPdf,
+      pageCount: 1
+    };
+  }
+
   async function createSession(blob, options = {}) {
     const source = await loadSource(blob, options.label || 'Documento 1', options.cacheIdentity || '');
     const plan = Array.from({ length: source.pageCount }, (_, pageIndex) => ({ sourceIndex: 0, pageIndex, rotation: 0 }));
@@ -168,10 +184,17 @@
     if (!session) throw new Error('Sessão de edição ausente.');
     const source = await loadSource(blob, options.label || `Documento ${session.sources.length + 1}`, options.cacheIdentity || '');
     const sourceIndex = session.sources.length;
+    const requestedIndex = Number(options.insertAt);
+    const insertAt = Number.isInteger(requestedIndex)
+      ? Math.max(0, Math.min(session.plan.length, requestedIndex))
+      : session.plan.length;
+    const entries = Array.from({ length: source.pageCount }, (_, pageIndex) => ({
+      sourceIndex,
+      pageIndex,
+      rotation: 0
+    }));
     session.sources.push(source);
-    for (let pageIndex = 0; pageIndex < source.pageCount; pageIndex += 1) {
-      session.plan.push({ sourceIndex, pageIndex, rotation: 0 });
-    }
+    session.plan.splice(insertAt, 0, ...entries);
     session.revision += 1;
     commitHistory(session);
     return source.pageCount;
@@ -188,6 +211,36 @@
 
     session.sources.push(source);
     session.plan.splice(insertAt, 0, { sourceIndex, pageIndex: 0, rotation: 0 });
+    session.revision += 1;
+    commitHistory(session);
+    return insertAt;
+  }
+
+  async function addBlankPage(session, options = {}) {
+    if (!session) throw new Error('Sessão de edição ausente.');
+    const source = await loadBlankSource(options.label || 'Página em branco', options);
+    const sourceIndex = session.sources.length;
+    const requestedIndex = Number(options.insertAt);
+    const insertAt = Number.isInteger(requestedIndex)
+      ? Math.max(0, Math.min(session.plan.length, requestedIndex))
+      : session.plan.length;
+    session.sources.push(source);
+    session.plan.splice(insertAt, 0, { sourceIndex, pageIndex: 0, rotation: 0 });
+    session.revision += 1;
+    commitHistory(session);
+    return insertAt;
+  }
+
+  function duplicatePage(session, index) {
+    if (!session || !Number.isInteger(index) || index < 0 || index >= session.plan.length) return false;
+    const source = session.plan[index];
+    const duplicate = {
+      sourceIndex: source.sourceIndex,
+      pageIndex: source.pageIndex,
+      rotation: normalizeRotation(source.rotation)
+    };
+    const insertAt = index + 1;
+    session.plan.splice(insertAt, 0, duplicate);
     session.revision += 1;
     commitHistory(session);
     return insertAt;
@@ -304,6 +357,8 @@
     createSession,
     addDocument,
     addImagePage,
+    addBlankPage,
+    duplicatePage,
     removePage,
     movePage,
     movePageTo,
@@ -316,6 +371,6 @@
     pageCount,
     sourceCount,
     buildBlob,
-    version: 'phase3-v4'
+    version: 'phase3-v5'
   });
 })();
