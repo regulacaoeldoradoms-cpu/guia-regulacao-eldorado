@@ -14,6 +14,7 @@
   const MAX_SCALE = 3;
   const ZOOM_STEP = 0.15;
   const THUMB_WIDTH = 104;
+  const ORGANIZER_THUMB_WIDTH = 210;
   const MAX_CANVAS_PIXELS = 18_000_000;
   const MAX_DEVICE_SCALE = 2;
 
@@ -212,7 +213,9 @@
 
   function thumbnailActionSpecs(session, pageNumber) {
     return [
-      { action: 'rotate', label: '↻', aria: `Girar página ${pageNumber} 90 graus para a direita`, disabled: false },
+      { action: 'rotate-left', label: '↺', aria: `Girar página ${pageNumber} 90 graus para a esquerda`, disabled: false },
+      { action: 'rotate-right', label: '↻', aria: `Girar página ${pageNumber} 90 graus para a direita`, disabled: false },
+      { action: 'duplicate', label: '⧉', aria: `Duplicar página ${pageNumber}`, disabled: false },
       { action: 'delete', label: '×', aria: `Excluir página ${pageNumber}`, disabled: session.document.numPages <= 1 }
     ];
   }
@@ -270,18 +273,41 @@
     session.dragSourceIndex = null;
     session.dragTargetIndex = null;
     session.touchDrag = null;
+    session.dragGhost?.remove?.();
+    session.dragGhost = null;
     for (const wrapper of session.thumbnailsRoot?.querySelectorAll?.('.portal-pdf-thumb-wrap') || []) {
       wrapper.classList.remove('dragging', 'drag-before', 'drag-after');
     }
   }
 
-  function dropIndexForWrapper(session, wrapper, clientY, sourceIndex) {
+  function ensureDragGhost(session, wrapper, event) {
+    if (!wrapper || session.dragGhost) return session.dragGhost;
+    const rect = wrapper.getBoundingClientRect();
+    const ghost = wrapper.cloneNode(true);
+    ghost.className = 'portal-pdf-drag-ghost';
+    ghost.style.width = `${Math.max(120, rect.width)}px`;
+    ghost.style.height = `${Math.max(120, rect.height)}px`;
+    ghost.querySelectorAll('button').forEach((button) => { button.tabIndex = -1; });
+    document.body.appendChild(ghost);
+    session.dragGhost = ghost;
+    moveDragGhost(session, event);
+    return ghost;
+  }
+
+  function moveDragGhost(session, event) {
+    if (!session.dragGhost) return;
+    session.dragGhost.style.transform = `translate3d(${Math.round(event.clientX + 14)}px,${Math.round(event.clientY + 14)}px,0)`;
+  }
+
+  function dropIndexForWrapper(session, wrapper, clientX, clientY, sourceIndex) {
     if (!wrapper) return null;
     const targetPage = Number(wrapper.dataset.pageNumber);
     if (!Number.isInteger(targetPage) || targetPage < 1) return null;
     const targetIndex = targetPage - 1;
     const rect = wrapper.getBoundingClientRect();
-    const after = Number(clientY) > rect.top + (rect.height / 2);
+    const after = session.organizerMode
+      ? Number(clientX) > rect.left + (rect.width / 2)
+      : Number(clientY) > rect.top + (rect.height / 2);
     let insertIndex = targetIndex + (after ? 1 : 0);
     if (sourceIndex < insertIndex) insertIndex -= 1;
     return { finalIndex: clamp(insertIndex, 0, session.document.numPages - 1), after };
@@ -329,7 +355,7 @@
       if (!wrapper) return;
       event.preventDefault();
       try { event.dataTransfer.dropEffect = 'move'; } catch (_) {}
-      const target = dropIndexForWrapper(session, wrapper, event.clientY, session.dragSourceIndex);
+      const target = dropIndexForWrapper(session, wrapper, event.clientX, event.clientY, session.dragSourceIndex);
       if (!target) return;
       session.dragTargetIndex = target.finalIndex;
       markThumbnailDropTarget(session, wrapper, target.after);
@@ -340,7 +366,7 @@
       event.preventDefault();
       const sourceIndex = session.dragSourceIndex;
       const wrapper = event.target.closest?.('.portal-pdf-thumb-wrap');
-      const target = dropIndexForWrapper(session, wrapper, event.clientY, sourceIndex);
+      const target = dropIndexForWrapper(session, wrapper, event.clientX, event.clientY, sourceIndex);
       const finalIndex = target?.finalIndex ?? session.dragTargetIndex;
       clearThumbnailDragState(session);
       if (Number.isInteger(finalIndex)) emitThumbnailReorder(session, sourceIndex, finalIndex);
@@ -381,11 +407,13 @@
         drag.started = true;
         const source = session.thumbnailsRoot.querySelector(`.portal-pdf-thumb-wrap[data-page-number="${drag.sourceIndex + 1}"]`);
         source?.classList.add('dragging');
+        ensureDragGhost(session, source, event);
       }
       event.preventDefault();
+      moveDragGhost(session, event);
       const element = document.elementFromPoint(event.clientX, event.clientY);
       const wrapper = element?.closest?.('.portal-pdf-thumb-wrap');
-      const target = dropIndexForWrapper(session, wrapper, event.clientY, drag.sourceIndex);
+      const target = dropIndexForWrapper(session, wrapper, event.clientX, event.clientY, drag.sourceIndex);
       if (!target) return;
       session.dragTargetIndex = target.finalIndex;
       markThumbnailDropTarget(session, wrapper, target.after);
@@ -608,7 +636,8 @@
     if (!page || !isCurrentSession(session)) return;
 
     const base = page.getViewport({ scale: 1 });
-    const scale = THUMB_WIDTH / Math.max(1, base.width);
+    const targetWidth = Number(session.thumbnailWidth || THUMB_WIDTH);
+    const scale = targetWidth / Math.max(1, base.width);
     const viewport = page.getViewport({ scale });
     const outputScale = Math.min(Number(window.devicePixelRatio || 1), 1.5);
 
@@ -791,6 +820,28 @@
     return true;
   }
 
+  function setOrganizerMode(enabled) {
+    const session = active;
+    if (!session || session.closed) return false;
+    const next = enabled === true;
+    if (session.organizerMode === next) return true;
+    session.organizerMode = next;
+    session.thumbnailWidth = next ? ORGANIZER_THUMB_WIDTH : THUMB_WIDTH;
+    session.root.dataset.organizerMode = next ? 'true' : 'false';
+
+    for (const record of session.thumbs.values()) {
+      cancelRender(record);
+      record.rendered = false;
+      record.canvas.width = 0;
+      record.canvas.height = 0;
+      record.canvas.removeAttribute('style');
+    }
+    for (let pageNumber = 1; pageNumber <= session.document.numPages; pageNumber += 1) {
+      renderThumbnail(session, pageNumber).catch(() => {});
+    }
+    return true;
+  }
+
   async function open(source, options = {}) {
     const invocation = beginOpenInvocation();
     const invocationGeneration = invocation.generation;
@@ -808,6 +859,8 @@
       onPageChange = null,
       onThumbnailAction = null,
       thumbnailActions = false,
+      organizerMode = false,
+      thumbnailWidth = null,
       initialViewState = null,
       onError = null
     } = options;
@@ -846,6 +899,10 @@
       onPageChange,
       onThumbnailAction,
       thumbnailActions: thumbnailActions === true,
+      organizerMode: organizerMode === true,
+      thumbnailWidth: Number(thumbnailWidth) > 0
+        ? Number(thumbnailWidth)
+        : (organizerMode === true ? ORGANIZER_THUMB_WIDTH : THUMB_WIDTH),
       onError,
       loadingTask: null,
       document: null,
@@ -860,6 +917,7 @@
       thumbnailDragHandlers: null,
       dragSourceIndex: null,
       dragTargetIndex: null,
+      dragGhost: null,
       touchDrag: null,
       suppressThumbnailClickUntil: 0,
       pageRatios: new Map(),
@@ -883,6 +941,7 @@
     clearNode(pagesRoot);
     clearNode(thumbnailsRoot);
     root.hidden = false;
+    root.dataset.organizerMode = session.organizerMode ? 'true' : 'false';
 
     try {
       const loadingTask = pdfjs.getDocument({
@@ -1060,6 +1119,6 @@
     setThumbnailActions,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1n`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c2a`
   });
 })();
