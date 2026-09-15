@@ -143,7 +143,12 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await layer.click({ position: { x: 12, y: 12 } });
     await page.waitForTimeout(450);
 
-    await page.mouse.click(layerBox.x + layerBox.width * .68, layerBox.y + layerBox.height * .48);
+    await layer.click({
+      position: {
+        x: Math.round(layerBox.width * .68),
+        y: Math.round(layerBox.height * .48)
+      }
+    });
     texts = page.locator('.portal-pdf-object--text');
     await expect(texts).toHaveCount(2);
     await texts.nth(1).locator('.portal-pdf-object-text').fill('Caixa B');
