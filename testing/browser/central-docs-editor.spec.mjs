@@ -42,10 +42,12 @@ async function enterEditor(page) {
   await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'editor');
   await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
   await expect(page.locator('#editorControls')).toBeVisible();
+  await expect(page.locator('#pdfRoot')).toHaveAttribute('data-organizer-mode', 'true');
+  await expect(page.locator('#scrollRoot')).toBeHidden();
   await expect(page.locator('.portal-pdf-thumb-actions')).toHaveCount(3);
   await expect(page.locator('[data-thumbnail-drag]')).toHaveCount(3);
-  await expect(page.locator('[data-thumbnail-action]')).toHaveCount(6);
-  await expect(page.locator('[data-thumbnail-action="up"], [data-thumbnail-action="down"]')).toHaveCount(0);
+  await expect(page.locator('[data-thumbnail-action]')).toHaveCount(12);
+  await expect(page.locator('[data-thumbnail-action="up"], [data-thumbnail-action="down"], [data-thumbnail-action="rotate-right"]')).toHaveCount(0);
 }
 
 async function waitForOrder(page, value) {
@@ -100,8 +102,7 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await expect(page.locator('#documentsEditorPages, .documents-editor-pages, [data-editor-index]')).toHaveCount(0);
     await expect(page.locator('iframe, embed, object')).toHaveCount(0);
 
-    await page.locator('#fitWidth').click();
-    await expect(page.locator('#zoomReset')).toContainText('%');
+    await expect(page.locator('#scrollRoot')).toBeHidden();
     await page.locator('#editorExit').click();
     await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'readonly');
     await expect(page.locator('#editorControls')).toBeHidden();
@@ -131,9 +132,9 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await waitForOrder(page, '0:1,0:0,0:2');
     await expect(page.locator('.portal-pdf-page')).toHaveCount(3);
     await expect(page.locator('.portal-pdf-thumb')).toHaveCount(3);
-    await expect(page.locator('.portal-pdf-page').first()).toHaveClass(/rendered/);
-    const firstPageSize = await page.locator('.portal-pdf-page-canvas').first().evaluate((canvas) => ({ width: canvas.width, height: canvas.height }));
-    expect(firstPageSize.width).toBeGreaterThan(firstPageSize.height);
+    await expect(page.locator('.portal-pdf-thumb').first()).toHaveClass(/rendered/);
+    const firstThumbSize = await page.locator('.portal-pdf-thumb-canvas').first().evaluate((canvas) => ({ width: canvas.width, height: canvas.height }));
+    expect(firstThumbSize.width).toBeGreaterThan(firstThumbSize.height);
     const firstThumbAfter = await page.locator('.portal-pdf-thumb-canvas').first().evaluate((canvas) => canvas.toDataURL());
     expect(firstThumbAfter).not.toBe(firstThumbBefore);
 
@@ -160,12 +161,12 @@ test.describe('Central de Documentos — superfície única do editor', () => {
 
     await page.locator('.portal-pdf-thumb').nth(2).click();
     await expect(page.locator('html')).toHaveAttribute('data-active-page', '3');
-    const lastCanvas = page.locator('.portal-pdf-page-canvas').nth(2);
-    await expect(page.locator('.portal-pdf-page').nth(2)).toHaveClass(/rendered/);
+    const lastCanvas = page.locator('.portal-pdf-thumb-canvas').nth(2);
+    await expect(page.locator('.portal-pdf-thumb').nth(2)).toHaveClass(/rendered/);
     const before = await lastCanvas.evaluate((canvas) => ({ width: canvas.width, height: canvas.height }));
     const revisionBefore = await page.locator('html').getAttribute('data-editor-revision');
 
-    await page.locator('.portal-pdf-thumb-wrap').nth(2).locator('[data-thumbnail-action="rotate"]').click();
+    await page.locator('.portal-pdf-thumb-wrap').nth(2).locator('[data-thumbnail-action="rotate-right"]').click();
     await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
     await expect(page.locator('html')).not.toHaveAttribute('data-editor-revision', revisionBefore || '');
     const rotated = await lastCanvas.evaluate((canvas) => ({ width: canvas.width, height: canvas.height }));
@@ -180,6 +181,28 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
     const redone = await lastCanvas.evaluate((canvas) => ({ width: canvas.width, height: canvas.height }));
     expect(Math.sign(redone.width - redone.height)).toBe(Math.sign(rotated.width - rotated.height));
+
+    finishMonitoring();
+  });
+
+
+  test('duplicar e inserir página em branco participam do histórico', async ({ page }) => {
+    const finishMonitoring = monitorPage(page);
+    await openLab(page);
+    await enterEditor(page);
+
+    await page.locator('.portal-pdf-thumb-wrap').first().locator('[data-thumbnail-action="duplicate"]').click();
+    await waitForOrder(page, '0:0,0:0,0:1,0:2');
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
+
+    await page.locator('#editorBlank').click();
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(5);
+
+    await page.locator('#editorUndo').click();
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
+    await page.locator('#editorUndo').click();
+    await waitForOrder(page, '0:0,0:1,0:2');
 
     finishMonitoring();
   });
@@ -220,7 +243,7 @@ test.describe('Central de Documentos — superfície única do editor', () => {
 
     await page.locator('.portal-pdf-thumb').nth(1).click();
     await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
-    await page.locator('#zoomIn').click();
+    await page.evaluate(() => window.PortalPdfViewer.zoomIn());
     const zoomBefore = (await page.locator('#zoomReset').textContent())?.trim() || '';
     expect(zoomBefore).toMatch(/%/);
 
@@ -230,7 +253,7 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await expect(page.locator('#zoomReset')).toHaveText(zoomBefore);
 
     await page.locator('#editorMerge').click();
-    await waitForOrder(page, '0:0,0:1,0:2,1:0,1:1,1:2');
+    await waitForOrder(page, '0:0,0:1,1:0,1:1,1:2,0:2');
     await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
     await expect(page.locator('#zoomReset')).toHaveText(zoomBefore);
 
