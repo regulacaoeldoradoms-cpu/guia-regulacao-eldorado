@@ -164,4 +164,28 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     expect(await page.evaluate(() => window.__centralDocsRoot === document.getElementById('pdfRoot'))).toBe(true);
     finishMonitoring();
   });
+  test('preserva página e zoom vivos ao atualizar e após rebuild de edição', async ({ page }) => {
+    const finishMonitoring = monitorPage(page);
+    await openLab(page);
+    await enterEditor(page);
+
+    await page.locator('.portal-pdf-thumb').nth(1).click();
+    await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
+    await page.locator('#zoomIn').click();
+    const zoomBefore = (await page.locator('#zoomReset').textContent())?.trim() || '';
+    expect(zoomBefore).toMatch(/%/);
+
+    await page.locator('#editorRefresh').click();
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
+    await expect(page.locator('#zoomReset')).toHaveText(zoomBefore);
+
+    await page.locator('#editorMerge').click();
+    await waitForOrder(page, '0:0,0:1,0:2,2:0,2:1,2:2');
+    await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
+    await expect(page.locator('#zoomReset')).toHaveText(zoomBefore);
+
+    finishMonitoring();
+  });
+
 });

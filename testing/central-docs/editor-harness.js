@@ -161,7 +161,7 @@
     if (session !== state.session) return;
     await openViewer(blob, {
       editing: true,
-      initialViewState: viewState || state.viewState || viewer.getViewState()
+      initialViewState: viewState || viewer.getViewState() || state.viewState
     });
     root.dataset.editorRevision = String(session.revision);
     root.dataset.pageOrder = pageOrder();
@@ -277,7 +277,7 @@
   elements.redo.addEventListener('click', () => run(() => changeHistory('redo')));
   elements.merge.addEventListener('click', () => run(mergeSyntheticPdf));
   elements.addImage.addEventListener('click', () => run(addSyntheticImage));
-  elements.refresh.addEventListener('click', () => run(() => rebuild(viewer.getViewState() || state.viewState)));
+  elements.refresh.addEventListener('click', () => run(() => rebuild()));
   elements.exit.addEventListener('click', () => run(exitEditor));
 
   run(async () => {

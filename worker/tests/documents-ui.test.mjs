@@ -376,3 +376,10 @@ test('permissão de edição é explícita e não é herdada automaticamente de 
   assert.match(client, /editAdditionalRoleDocuments\.checked/);
   assert.doesNotMatch(client, /additionalRoles.*edit:\s*true/);
 });
+
+
+test('rebuild do editor prioriza o estado vivo atual antes do snapshot salvo', () => {
+  const client = read('js/documents.js');
+  assert.match(client, /const viewState = initialViewState \\|\\| currentViewerState\\(\\) \\|\\| state\\.editorViewState;/);
+  assert.doesNotMatch(client, /initialViewState \\|\\| state\\.editorViewState \\|\\| currentViewerState\\(\\)/);
+});

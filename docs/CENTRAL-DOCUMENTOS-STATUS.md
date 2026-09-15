@@ -1404,3 +1404,32 @@ Próximo passo desta infraestrutura:
 **Produção:** Worker `yellow-wave-d0a1guia-regulacao-ia` e D1 `portal-regulacao-users` permaneceram intocados.
 
 **Próxima ação exata:** revisar a PR funcional e registrar o aceite humano; após merge/deploy, executar o reteste real autorizado da 3C.1. Tratar Access e domínio personalizado em tarefa separada e manter a 3C.2 bloqueada até o aceite explícito.
+
+
+## 3C.1 — P2 de preservação do estado vivo em rebuild — 14/09/2026
+
+Descoberta:
+- a revisão automática do PR #179 encontrou um P2 após a correção da corrida P1;
+- `buildEditorPreview()` priorizava `state.editorViewState` (snapshot do `onReady`) antes de `currentViewerState()`;
+- após o usuário navegar ou alterar zoom dentro do editor, um rebuild sem estado explícito poderia regressar para página/zoom antigos.
+
+Correção aplicada na própria branch do PR #179:
+- estado explícito continua tendo prioridade;
+- sem estado explícito, o rebuild passa a priorizar `currentViewerState()` e usa `state.editorViewState` apenas como fallback;
+- o laboratório sintético foi alinhado à mesma ordem de prioridade;
+- o botão de atualização do laboratório passa a exercitar o fallback real, sem injetar estado explícito;
+- teste Playwright cobre preservação de página ativa e zoom após atualização e após uma edição que dispara rebuild;
+- teste estático impede regressão da ordem de fallback no cliente real.
+
+Estado desta unidade:
+- alteração preparada no PR #179 sem merge;
+- produção permanece inalterada;
+- CI, novo preview remoto e revisão final ainda precisam concluir antes de qualquer merge;
+- 3C.2 continua bloqueada.
+
+Próximo passo exato:
+1. aguardar GitHub Actions do novo head;
+2. confirmar preview Cloudflare automático da branch;
+3. executar/confirmar Playwright remoto no novo deployment;
+4. obter nova revisão sem P1/P2;
+5. somente então submeter o PR #179 à revisão humana final e eventual merge.

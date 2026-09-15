@@ -531,7 +531,7 @@
     if (!editor || !session || (state.editorBusy && !allowBusy)) return false;
 
     const seq = ++state.editorBuildSeq;
-    const viewState = initialViewState || state.editorViewState || currentViewerState();
+    const viewState = initialViewState || currentViewerState() || state.editorViewState;
     state.editorFocusRestore = focusRestore;
     setEditorBusy(true);
     setEditorStatus(explicit ? 'Gerando visualização local…' : 'Atualizando visualização…');
