@@ -1641,3 +1641,26 @@ Ajuste:
 
 Próximo passo:
 - repetir CI completo e só apresentar novo preview ao usuário após a matriz de navegador ficar verde.
+
+
+## CI do drag/rotate — conflito drag HTML5 × Pointer Events — 14/09/2026
+
+Resultado do head `d1b37ad`:
+- rotação passou no navegador após a página-alvo ser renderizada;
+- 14/16 cenários passaram;
+- as duas falhas restantes foram exclusivamente o gesto de reordenação em desktop/mobile;
+- o plano/editor e os testes unitários de `movePageTo()` já estavam aprovados, isolando o defeito na camada de interação.
+
+Diagnóstico:
+- a miniatura estava simultaneamente marcada como `draggable=true` (drag HTML5) e submetida a `pointerdown/move/up` com pointer capture;
+- o navegador pode promover o gesto para drag nativo e cancelar/interromper a sequência de Pointer Events antes do drop calculado;
+- isso explica a ausência de alteração no `data-page-order` sem erro no editor.
+
+Correção:
+- drag HTML5 deixa de ser o mecanismo ativo da miniatura;
+- a reordenação passa a usar exclusivamente Pointer Events no desktop/mouse/pen;
+- no touch, o grip ⠿ continua sendo o ponto de arraste com `touch-action:none`;
+- o comportamento de clique para navegar continua separado pelo limiar de movimento de 7 px.
+
+Próximo passo:
+- repetir a matriz de navegador; merge continua bloqueado.

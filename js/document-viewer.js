@@ -220,7 +220,8 @@
   function syncThumbnailActionControls(session, record) {
     if (!record?.wrapper) return;
     let actions = record.wrapper.querySelector('.portal-pdf-thumb-actions');
-    record.button.draggable = session.thumbnailActions === true;
+    // Reordenação usa Pointer Events para evitar conflito entre drag nativo e pointer capture.
+    record.button.draggable = false;
     record.button.classList.toggle('can-drag', session.thumbnailActions === true);
     record.button.title = session.thumbnailActions
       ? `Página ${record.pageNumber}. Clique para abrir ou arraste para reorganizar.`
@@ -1059,6 +1060,6 @@
     setThumbnailActions,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1m`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1n`
   });
 })();
