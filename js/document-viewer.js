@@ -1287,7 +1287,8 @@
     const pointerdown = (event) => {
       if (!isCurrentSession(session) || session.organizerMode || String(session.objectMode || 'none') === 'none') return;
       if (event.target.closest?.('[data-text-custom-color-panel]')) {
-        event.stopPropagation();
+        // Capture phase: do not cancel propagation here. The panel's own
+        // controls need to receive pointer events (especially the drag grip).
         return;
       }
       if (event.target.closest?.('[data-text-quickbar]')) {
