@@ -204,6 +204,7 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await palette.locator('[data-text-palette-custom]').click();
     const panel = palette.locator('[data-text-custom-color-panel]');
     await expect(panel).toBeVisible();
+    await expect(panel.locator('[data-color-hex]')).toHaveValue('#E53935');
     const paletteBox = await palette.boundingBox();
     const panelBefore = await panel.boundingBox();
     expect(panelBefore.y + panelBefore.height).toBeLessThanOrEqual(paletteBox.y + 2);
@@ -238,6 +239,7 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await palette.locator('[data-text-palette-add]').click();
     await expect(palette.locator('[data-text-palette-index]')).toHaveCount(7);
     await expect(palette.locator('[data-text-palette-index="6"]')).toHaveClass(/active/);
+    await expect(panel.locator('[data-color-hex]')).toHaveValue('#7B1FA2');
 
     // RGB fills the newly-created slot from the same movable panel.
     await palette.locator('[data-text-palette-custom]').click();
