@@ -58,6 +58,7 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     const handleCenter = { x: handleBox.x + handleBox.width / 2, y: handleBox.y + handleBox.height / 2 };
     await page.mouse.move(handleCenter.x, handleCenter.y);
     await page.mouse.down();
+    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-object-gesture', 'resize');
     await page.mouse.move(handleCenter.x + 48, handleCenter.y + 36, { steps: 6 });
     await expect.poll(async () => (await object.boundingBox()).width).toBeGreaterThan(moved.width + 20);
     await page.mouse.up();
@@ -93,6 +94,7 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     const imageBeforeRotate = await image.evaluate((node) => getComputedStyle(node).transform);
     await page.mouse.move(rotateBox.x + rotateBox.width / 2, rotateBox.y + rotateBox.height / 2);
     await page.mouse.down();
+    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-object-gesture', 'rotate');
     await page.mouse.move(rotateBox.x + 48, rotateBox.y - 24, { steps: 5 });
     await page.mouse.up();
     await expect.poll(() => image.evaluate((node) => getComputedStyle(node).transform)).not.toBe(imageBeforeRotate);
