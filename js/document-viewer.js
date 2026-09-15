@@ -757,7 +757,7 @@
     remove.type = 'button';
     remove.className = 'portal-pdf-text-quickbar-button danger';
     remove.dataset.textQuickDelete = 'true';
-    remove.textContent = '🗑';
+    remove.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><path d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-.7 11H7.7L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z" fill="currentColor"/></svg>';
     remove.title = 'Excluir caixa de texto';
     remove.setAttribute('aria-label', 'Excluir caixa de texto');
     bar.appendChild(remove);

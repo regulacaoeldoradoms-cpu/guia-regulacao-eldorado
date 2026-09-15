@@ -88,7 +88,7 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(quickbar.locator('[data-text-quick-color]')).toBeVisible();
     await expect(quickbar.locator('[data-text-quick-size="smaller"]')).toBeVisible();
     await expect(quickbar.locator('[data-text-quick-size="larger"]')).toBeVisible();
-    await expect(quickbar.locator('[data-text-quick-delete]')).toHaveText('🗑');
+    await expect(quickbar.locator('[data-text-quick-delete] svg')).toHaveCount(1);
 
     const sizeBefore = parseFloat(await text.evaluate((node) => getComputedStyle(node).fontSize));
     await quickbar.locator('[data-text-quick-size="larger"]').click();
