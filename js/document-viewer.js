@@ -1572,6 +1572,8 @@
             session.paletteSelectedIndex = index;
             patchObjectFromQuickbar(session, id, { color: selected });
             refreshPaletteButtons(session, element, object);
+            const panel = quickbar.querySelector('[data-text-custom-color-panel]');
+            if (panel && !panel.hidden) syncCustomColorPanel(panel, selected);
           }
           return;
         }
@@ -1593,11 +1595,14 @@
 
         if (event.target.closest('[data-text-palette-add]')) {
           if (session.colorPalette.length >= 16) return;
-          const next = [...session.colorPalette, normalizeObjectColor(object.color)];
+          const initialColor = normalizeObjectColor(object.color);
+          const next = [...session.colorPalette, initialColor];
           session.colorPalette = normalizeColorPalette(next);
           session.paletteSelectedIndex = session.colorPalette.length - 1;
           session.onColorPaletteChange?.([...session.colorPalette]);
           refreshPaletteButtons(session, element, object);
+          const panel = quickbar.querySelector('[data-text-custom-color-panel]');
+          if (panel && !panel.hidden) syncCustomColorPanel(panel, initialColor);
           return;
         }
         return;
@@ -2424,6 +2429,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2k`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2l`
   });
 })();
