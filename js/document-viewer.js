@@ -673,21 +673,124 @@
     return colors.length ? colors : ['#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'];
   }
 
-  function openNativeColorPicker(picker) {
-    if (!picker) return false;
-    try { picker.focus?.({ preventScroll: true }); } catch (_) {}
-    if (typeof picker.showPicker === 'function') {
-      try {
-        picker.showPicker();
-        return true;
-      } catch (_) {}
+  function hexToRgb(color) {
+    const hex = normalizeObjectColor(color, '#111111');
+    return {
+      r: parseInt(hex.slice(1, 3), 16),
+      g: parseInt(hex.slice(3, 5), 16),
+      b: parseInt(hex.slice(5, 7), 16)
+    };
+  }
+
+  function rgbToHex(r, g, b) {
+    const channel = (value) => Math.max(0, Math.min(255, Math.round(Number(value) || 0)))
+      .toString(16).padStart(2, '0');
+    return `#${channel(r)}${channel(g)}${channel(b)}`;
+  }
+
+  function rgbToHsv(r, g, b) {
+    const red = Math.max(0, Math.min(255, Number(r) || 0)) / 255;
+    const green = Math.max(0, Math.min(255, Number(g) || 0)) / 255;
+    const blue = Math.max(0, Math.min(255, Number(b) || 0)) / 255;
+    const max = Math.max(red, green, blue);
+    const min = Math.min(red, green, blue);
+    const delta = max - min;
+    let hue = 0;
+    if (delta) {
+      if (max === red) hue = 60 * (((green - blue) / delta) % 6);
+      else if (max === green) hue = 60 * (((blue - red) / delta) + 2);
+      else hue = 60 * (((red - green) / delta) + 4);
     }
-    try {
-      picker.click();
-      return true;
-    } catch (_) {
-      return false;
+    if (hue < 0) hue += 360;
+    return { h: hue, s: max ? delta / max : 0, v: max };
+  }
+
+  function hsvToRgb(h, s, v) {
+    const hue = ((Number(h) || 0) % 360 + 360) % 360;
+    const saturation = clamp01(s);
+    const value = clamp01(v);
+    const chroma = value * saturation;
+    const x = chroma * (1 - Math.abs(((hue / 60) % 2) - 1));
+    const match = value - chroma;
+    let red = 0, green = 0, blue = 0;
+    if (hue < 60) [red, green] = [chroma, x];
+    else if (hue < 120) [red, green] = [x, chroma];
+    else if (hue < 180) [green, blue] = [chroma, x];
+    else if (hue < 240) [green, blue] = [x, chroma];
+    else if (hue < 300) [red, blue] = [x, chroma];
+    else [red, blue] = [chroma, x];
+    return {
+      r: Math.round((red + match) * 255),
+      g: Math.round((green + match) * 255),
+      b: Math.round((blue + match) * 255)
+    };
+  }
+
+  function customPanelColor(panel) {
+    const hue = Number(panel?.dataset?.colorHue || 0);
+    const saturation = Number(panel?.dataset?.colorSaturation || 0);
+    const value = Number(panel?.dataset?.colorValue || 0);
+    const rgb = hsvToRgb(hue, saturation, value);
+    return rgbToHex(rgb.r, rgb.g, rgb.b);
+  }
+
+  function syncCustomColorPanel(panel, color) {
+    if (!panel) return;
+    const rgb = hexToRgb(color);
+    const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+    panel.dataset.colorHue = String(hsv.h);
+    panel.dataset.colorSaturation = String(hsv.s);
+    panel.dataset.colorValue = String(hsv.v);
+
+    const plane = panel.querySelector('[data-color-plane]');
+    if (plane) {
+      plane.style.setProperty('--picker-hue', String(hsv.h));
+      const cursor = plane.querySelector('[data-color-plane-cursor]');
+      if (cursor) {
+        cursor.style.left = `${hsv.s * 100}%`;
+        cursor.style.top = `${(1 - hsv.v) * 100}%`;
+      }
     }
+    const hue = panel.querySelector('[data-color-hue]');
+    if (hue) hue.value = String(Math.round(hsv.h));
+    const preview = panel.querySelector('[data-color-preview]');
+    if (preview) preview.style.background = normalizeObjectColor(color);
+    const red = panel.querySelector('[data-color-r]');
+    const green = panel.querySelector('[data-color-g]');
+    const blue = panel.querySelector('[data-color-b]');
+    const hex = panel.querySelector('[data-color-hex]');
+    if (red) red.value = String(rgb.r);
+    if (green) green.value = String(rgb.g);
+    if (blue) blue.value = String(rgb.b);
+    if (hex) hex.value = normalizeObjectColor(color).toUpperCase();
+  }
+
+  function previewQuickbarColor(session, element, object, color) {
+    const normalized = normalizeObjectColor(color, normalizeObjectColor(object?.color));
+    if (!object || !normalized) return false;
+    object.color = normalized;
+    session.onObjectChange?.(object.id, { color: normalized });
+    const text = element?.querySelector?.('.portal-pdf-object-text');
+    if (text) text.style.color = normalized;
+    const swatch = element?.querySelector?.('[data-text-quick-color] .portal-pdf-text-quickbar-swatch');
+    if (swatch) swatch.style.background = normalized;
+    return true;
+  }
+
+  function commitQuickbarColor(session, element, object, color) {
+    const normalized = normalizeObjectColor(color, normalizeObjectColor(object?.color));
+    previewQuickbarColor(session, element, object, normalized);
+    const index = Number(session.paletteSelectedIndex);
+    if (Number.isInteger(index) && index >= 0 && index < session.colorPalette.length) {
+      const next = [...session.colorPalette];
+      next[index] = normalized;
+      session.colorPalette = normalizeColorPalette(next);
+      session.paletteSelectedIndex = index;
+      session.onColorPaletteChange?.([...session.colorPalette]);
+      refreshPaletteButtons(session, element, object);
+    }
+    session.onObjectCommit?.(object.id, { color: normalized });
+    return true;
   }
 
   function patchObjectFromQuickbar(session, objectId, patch) {
@@ -810,17 +913,197 @@
     custom.setAttribute('aria-label', 'Escolher cor RGB ou hexadecimal');
     palette.appendChild(custom);
 
-    const customPicker = document.createElement('input');
-    customPicker.type = 'color';
-    customPicker.dataset.textPaletteCustomPicker = 'true';
-    customPicker.value = normalizeObjectColor(object.color);
-    customPicker.tabIndex = -1;
-    customPicker.setAttribute('aria-hidden', 'true');
-    palette.appendChild(customPicker);
+    const customPanel = document.createElement('div');
+    customPanel.className = 'portal-pdf-custom-color-panel';
+    customPanel.dataset.textCustomColorPanel = 'true';
+    customPanel.hidden = true;
+    customPanel.setAttribute('role', 'dialog');
+    customPanel.setAttribute('aria-label', 'Seletor RGB e hexadecimal');
 
+    const plane = document.createElement('div');
+    plane.className = 'portal-pdf-custom-color-plane';
+    plane.dataset.colorPlane = 'true';
+    const planeCursor = document.createElement('span');
+    planeCursor.className = 'portal-pdf-custom-color-plane-cursor';
+    planeCursor.dataset.colorPlaneCursor = 'true';
+    plane.appendChild(planeCursor);
+    customPanel.appendChild(plane);
+
+    const hueRow = document.createElement('div');
+    hueRow.className = 'portal-pdf-custom-color-hue-row';
+    const preview = document.createElement('span');
+    preview.className = 'portal-pdf-custom-color-preview';
+    preview.dataset.colorPreview = 'true';
+    const hue = document.createElement('input');
+    hue.type = 'range';
+    hue.min = '0';
+    hue.max = '359';
+    hue.step = '1';
+    hue.dataset.colorHue = 'true';
+    hue.setAttribute('aria-label', 'Matiz');
+    hueRow.append(preview, hue);
+    customPanel.appendChild(hueRow);
+
+    const rgbRow = document.createElement('div');
+    rgbRow.className = 'portal-pdf-custom-color-rgb';
+    for (const [channel, label] of [['r', 'R'], ['g', 'G'], ['b', 'B']]) {
+      const field = document.createElement('label');
+      field.textContent = label;
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = '0';
+      input.max = '255';
+      input.step = '1';
+      input.dataset[`color${channel.toUpperCase()}`] = 'true';
+      field.appendChild(input);
+      rgbRow.appendChild(field);
+    }
+    customPanel.appendChild(rgbRow);
+
+    const bottomRow = document.createElement('div');
+    bottomRow.className = 'portal-pdf-custom-color-bottom';
+    const hex = document.createElement('label');
+    hex.className = 'portal-pdf-custom-color-hex';
+    hex.textContent = 'HEX';
+    const hexInput = document.createElement('input');
+    hexInput.type = 'text';
+    hexInput.maxLength = 7;
+    hexInput.dataset.colorHex = 'true';
+    hexInput.setAttribute('aria-label', 'Cor hexadecimal');
+    hex.appendChild(hexInput);
+    bottomRow.appendChild(hex);
+
+    const dragHandle = document.createElement('button');
+    dragHandle.type = 'button';
+    dragHandle.className = 'portal-pdf-custom-color-drag';
+    dragHandle.dataset.colorDragHandle = 'true';
+    dragHandle.title = 'Arrastar seletor de cor';
+    dragHandle.setAttribute('aria-label', 'Arrastar seletor de cor');
+    dragHandle.innerHTML = '<span></span><span></span><span></span><span></span><span></span><span></span>';
+    bottomRow.appendChild(dragHandle);
+    customPanel.appendChild(bottomRow);
+
+    palette.appendChild(customPanel);
     bar.appendChild(palette);
     element.appendChild(bar);
     refreshPaletteButtons(session, element, object);
+    syncCustomColorPanel(customPanel, object.color);
+
+    const colorFromRgbInputs = () => {
+      const red = Number(customPanel.querySelector('[data-color-r]')?.value);
+      const green = Number(customPanel.querySelector('[data-color-g]')?.value);
+      const blue = Number(customPanel.querySelector('[data-color-b]')?.value);
+      if (![red, green, blue].every(Number.isFinite)) return null;
+      return rgbToHex(red, green, blue);
+    };
+
+    const previewPanelColor = (color) => {
+      syncCustomColorPanel(customPanel, color);
+      previewQuickbarColor(session, element, object, color);
+    };
+    const commitPanelColor = (color) => {
+      syncCustomColorPanel(customPanel, color);
+      commitQuickbarColor(session, element, object, color);
+    };
+
+    let planeDrag = null;
+    const updatePlane = (event, commit = false) => {
+      const rect = plane.getBoundingClientRect();
+      const saturation = clamp01((event.clientX - rect.left) / Math.max(1, rect.width));
+      const value = 1 - clamp01((event.clientY - rect.top) / Math.max(1, rect.height));
+      customPanel.dataset.colorSaturation = String(saturation);
+      customPanel.dataset.colorValue = String(value);
+      const color = customPanelColor(customPanel);
+      if (commit) commitPanelColor(color);
+      else previewPanelColor(color);
+    };
+
+    plane.addEventListener('pointerdown', (event) => {
+      if (event.button > 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      planeDrag = { pointerId: event.pointerId };
+      try { plane.setPointerCapture?.(event.pointerId); } catch (_) {}
+      updatePlane(event, false);
+    });
+    plane.addEventListener('pointermove', (event) => {
+      if (!planeDrag || planeDrag.pointerId !== event.pointerId) return;
+      event.preventDefault();
+      updatePlane(event, false);
+    });
+    const finishPlane = (event) => {
+      if (!planeDrag || (event.pointerId != null && planeDrag.pointerId !== event.pointerId)) return;
+      updatePlane(event, true);
+      planeDrag = null;
+      try { plane.releasePointerCapture?.(event.pointerId); } catch (_) {}
+    };
+    plane.addEventListener('pointerup', finishPlane);
+    plane.addEventListener('pointercancel', () => { planeDrag = null; });
+
+    hue.addEventListener('input', (event) => {
+      customPanel.dataset.colorHue = String(Number(event.target.value) || 0);
+      previewPanelColor(customPanelColor(customPanel));
+    });
+    hue.addEventListener('change', () => commitPanelColor(customPanelColor(customPanel)));
+
+    for (const selector of ['[data-color-r]', '[data-color-g]', '[data-color-b]']) {
+      customPanel.querySelector(selector)?.addEventListener('change', () => {
+        const color = colorFromRgbInputs();
+        if (color) commitPanelColor(color);
+      });
+    }
+    hexInput.addEventListener('change', () => {
+      const color = normalizeObjectColor(hexInput.value, '');
+      if (!color) {
+        syncCustomColorPanel(customPanel, object.color);
+        return;
+      }
+      commitPanelColor(color);
+    });
+
+    let panelDrag = null;
+    dragHandle.addEventListener('pointerdown', (event) => {
+      if (event.button > 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const panelRect = customPanel.getBoundingClientRect();
+      const paletteRect = palette.getBoundingClientRect();
+      customPanel.style.left = `${panelRect.left - paletteRect.left}px`;
+      customPanel.style.top = `${panelRect.top - paletteRect.top}px`;
+      customPanel.style.right = 'auto';
+      customPanel.style.bottom = 'auto';
+      panelDrag = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        left: parseFloat(customPanel.style.left) || 0,
+        top: parseFloat(customPanel.style.top) || 0
+      };
+      try { dragHandle.setPointerCapture?.(event.pointerId); } catch (_) {}
+    });
+    dragHandle.addEventListener('pointermove', (event) => {
+      if (!panelDrag || panelDrag.pointerId !== event.pointerId) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const paletteRect = palette.getBoundingClientRect();
+      const dx = event.clientX - panelDrag.startX;
+      const dy = event.clientY - panelDrag.startY;
+      const minLeft = 12 - paletteRect.left;
+      const maxLeft = window.innerWidth - paletteRect.left - 48;
+      const minTop = 12 - paletteRect.top;
+      const maxTop = window.innerHeight - paletteRect.top - 36;
+      customPanel.style.left = `${Math.min(maxLeft, Math.max(minLeft, panelDrag.left + dx))}px`;
+      customPanel.style.top = `${Math.min(maxTop, Math.max(minTop, panelDrag.top + dy))}px`;
+    });
+    const finishPanelDrag = (event) => {
+      if (!panelDrag || (event.pointerId != null && panelDrag.pointerId !== event.pointerId)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      panelDrag = null;
+      try { dragHandle.releasePointerCapture?.(event.pointerId); } catch (_) {}
+    };
+    dragHandle.addEventListener('pointerup', finishPanelDrag);
+    dragHandle.addEventListener('pointercancel', () => { panelDrag = null; });
   }
 
   function finishTextEditing(session, { suppressCreate = true } = {}) {
@@ -1003,6 +1286,10 @@
 
     const pointerdown = (event) => {
       if (!isCurrentSession(session) || session.organizerMode || String(session.objectMode || 'none') === 'none') return;
+      if (event.target.closest?.('[data-text-custom-color-panel]')) {
+        event.stopPropagation();
+        return;
+      }
       if (event.target.closest?.('[data-text-quickbar]')) {
         event.preventDefault();
         event.stopPropagation();
@@ -1188,6 +1475,10 @@
 
       const quickbar = event.target.closest?.('[data-text-quickbar]');
       if (quickbar) {
+        if (event.target.closest?.('[data-text-custom-color-panel]')) {
+          event.stopPropagation();
+          return;
+        }
         event.preventDefault();
         event.stopPropagation();
         const element = quickbar.closest('.portal-pdf-object');
@@ -1232,13 +1523,14 @@
         }
 
         if (event.target.closest('[data-text-palette-custom]')) {
-          const picker = quickbar.querySelector('[data-text-palette-custom-picker]');
-          if (picker) {
+          const panel = quickbar.querySelector('[data-text-custom-color-panel]');
+          if (panel) {
             const index = Number(session.paletteSelectedIndex);
-            picker.value = Number.isInteger(index) && index >= 0 && index < session.colorPalette.length
+            const color = Number.isInteger(index) && index >= 0 && index < session.colorPalette.length
               ? normalizeObjectColor(session.colorPalette[index])
               : normalizeObjectColor(object.color);
-            openNativeColorPicker(picker);
+            syncCustomColorPanel(panel, color);
+            panel.hidden = !panel.hidden;
           }
           return;
         }
@@ -1329,20 +1621,8 @@
       const object = objectForId(session, id);
       if (!element || !object) return;
 
-      const customPicker = event.target.closest('[data-text-palette-custom-picker]');
-      if (customPicker) {
-        const color = normalizeObjectColor(customPicker.value);
-        const index = Number(session.paletteSelectedIndex);
-        if (Number.isInteger(index) && index >= 0 && index < session.colorPalette.length) {
-          const next = [...session.colorPalette];
-          next[index] = color;
-          session.colorPalette = normalizeColorPalette(next);
-          session.paletteSelectedIndex = index;
-          session.onColorPaletteChange?.([...session.colorPalette]);
-        }
-        patchObjectFromQuickbar(session, id, { color });
-        refreshPaletteButtons(session, element, object);
-      }
+      const customPanel = event.target.closest('[data-text-custom-color-panel]');
+      if (customPanel) return;
     };
 
     session.objectHandlers = { pointerdown, click, dblclick, focusout, change };
@@ -2088,6 +2368,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2h`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2i`
   });
 })();
