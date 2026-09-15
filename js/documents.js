@@ -506,6 +506,27 @@
         });
       }
     });
+    if (viewer?.setEditorCrops && editor?.pageModel) {
+      viewer.setEditorCrops(editor.pageModel(session), {
+        mode: state.editorMode === 'crop' ? 'crop' : 'none',
+        onChange(pageIndex, crop) {
+          if (session !== state.editorSession) return;
+          editor.setPageCrop?.(session, pageIndex, crop, { commit: false });
+        },
+        onCommit(pageIndex, crop) {
+          if (session !== state.editorSession) return;
+          editor.setPageCrop?.(session, pageIndex, crop, { commit: false });
+          editor.commitObjectMutation(session);
+          syncEditorControls();
+        },
+        onReset(pageIndex) {
+          if (session !== state.editorSession) return;
+          if (!editor.clearPageCrop?.(session, pageIndex)) return;
+          syncEditorControls();
+          syncEditorObjects();
+        }
+      });
+    }
     syncEditorObjectToolbar();
     return result;
   }
@@ -524,6 +545,10 @@
     if (els.editorMerge) {
       els.editorMerge.classList.toggle('active', next === 'merge');
       els.editorMerge.setAttribute('aria-pressed', next === 'merge' ? 'true' : 'false');
+    }
+    if (els.editorCrop) {
+      els.editorCrop.classList.toggle('active', next === 'crop');
+      els.editorCrop.setAttribute('aria-pressed', next === 'crop' ? 'true' : 'false');
     }
     if (els.editorSelect) {
       els.editorSelect.classList.toggle('active', next === 'select');
@@ -552,6 +577,7 @@
     if (els.editorBlankPage) els.editorBlankPage.disabled = busy || !session;
     els.editorImage.disabled = busy || !session;
     els.editorImageInput.disabled = busy || !session;
+    if (els.editorCrop) els.editorCrop.disabled = busy || !session;
     if (els.editorSelect) els.editorSelect.disabled = busy || !session;
     if (els.editorWrite) els.editorWrite.disabled = busy || !session;
     if (els.editorOverlayImage) els.editorOverlayImage.disabled = busy || !session;
@@ -734,6 +760,7 @@
     const shouldRestoreOriginal = restoreOriginal && Boolean(session?.revision > 0);
     const viewState = currentViewerState();
     window.PortalPdfViewer?.setEditorObjects?.([], { mode: 'none', selectedObjectId: '' });
+    window.PortalPdfViewer?.setEditorCrops?.([], { mode: 'none' });
     clearEditorPreview();
     state.editorColorGesture = null;
     state.editorSession = null;
@@ -997,6 +1024,13 @@
     for (const image of images) {
       await addImageBlobToEditor(image, { pasted: true });
     }
+  }
+
+  function startCropPages() {
+    if (!state.editorSession || state.editorBusy) return;
+    state.selectedObjectId = '';
+    setEditorWorkspaceMode('crop');
+    setEditorStatus('Recortar: arraste a moldura azul ou suas alças. A área escurecida ficará fora do recorte; use ↺ dentro da moldura para restaurar a página.', 'success');
   }
 
   function startSelectObjects() {
@@ -2067,6 +2101,7 @@
     syncEditorControls();
     setEditorStatus('Modo Organizar ativo.', 'success');
   });
+  els.editorCrop?.addEventListener('click', startCropPages);
   els.editorSelect?.addEventListener('click', startSelectObjects);
   els.editorWrite?.addEventListener('click', startWriteObjects);
   els.editorOverlayImage?.addEventListener('click', () => {
