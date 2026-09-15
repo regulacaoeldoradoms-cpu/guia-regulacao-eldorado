@@ -119,7 +119,7 @@ test('service worker armazena somente superfície pública e atualiza sem bloque
   assert.ok(read('js/portal-performance.js').includes("'/documentos/'"));
   assert.match(source, /portal-observability\.js\?v=20260911-1/);
   assert.match(source, /document-cache\.js\?v=20260912-1/);
-  assert.match(source, /document-editor\.js\?v=20260915-3/);
+  assert.match(source, /document-editor\.js\?v=20260915-4/);
   assert.ok(source.includes("'/vendor/pdf-lib/pdf-lib.min.js'"));
   assert.match(read('js/portal-performance.js'), /portal-observability\.js\?v=20260911-1/);
   assert.match(source, /\/seguranca\//);
