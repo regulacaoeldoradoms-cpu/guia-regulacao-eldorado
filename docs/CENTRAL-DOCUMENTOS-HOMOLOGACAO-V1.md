@@ -2,7 +2,7 @@
 
 Data: 14/09/2026  
 Fase relacionada: 3 — Editor PDF essencial  
-Estado: infraestrutura-base preparada em branch isolada; sem alteração em produção.
+Estado: laboratório local + CI + Cloudflare Pages operacionais; PR funcional em homologação, sem alteração em produção.
 
 ## Objetivo
 
@@ -44,21 +44,20 @@ O teste falha se qualquer um destes pontos não for atendido:
 - nenhum deploy em produção é feito por este workflow;
 - artefatos de diagnóstico contêm apenas a fixture fictícia e a UI de laboratório.
 
-## Próxima camada — depende do Cloudflare/Work
+## Staging remoto operacional
 
-Quando o Work/Codex voltar a estar disponível, usar o MCP oficial `cloudflare-api` já autenticado para criar o ambiente remoto de homologação:
+O ambiente remoto já existe no Cloudflare Pages como `portal-regulacao-central-staging`.
 
-- frontend de staging/preview separado da produção;
-- Worker de staging separado;
-- D1/bindings de staging separados quando necessários;
-- origem e CSP próprias;
-- proteção por Cloudflare Access;
-- `noindex,nofollow,noarchive`;
-- dados exclusivamente fictícios;
-- previews por branch/PR;
-- jamais compartilhar Google Drive institucional com staging.
+Estado atual:
+- URL canônica: `https://portal-regulacao-central-staging.pages.dev/`;
+- previews automáticos por branch/PR: operacionais;
+- bundle: exclusivamente sintético, sem Google Drive, Worker/D1 de produção, secrets ou documentos clínicos;
+- `noindex,nofollow,noarchive`, `no-store` e CSP restritiva: preservados;
+- Cloudflare Access: pendente de decisão humana de identidade/política;
+- domínio personalizado: pendente enquanto a zona não estiver acessível;
+- Worker/D1 de staging: não necessários para a versão estática atual.
 
-A configuração remota deve ser registrada no status antes de qualquer promoção.
+O staging público só pode continuar usando dados fictícios enquanto Access estiver pendente.
 
 ## Regra de promoção
 
@@ -90,4 +89,52 @@ Após a correção, o Playwright passou em desktop e mobile para:
 - navegação por miniatura;
 - callback de primeira página visível.
 
-Isso cria um baseline automatizado antes do futuro staging Cloudflare.
+Esse ciclo criou o baseline automatizado que posteriormente passou a ser publicado também no staging Cloudflare.
+
+
+## Cobertura atual da 3C.1 — superfície única do editor
+
+No head funcional `b02f2addf6eba16f383cc8ff7804c6eaee0b7879` do PR #179:
+
+- **24/24 workflows** do GitHub concluíram com sucesso;
+- o workflow de navegador executou **14/14 testes aprovados** em Chromium desktop e perfil Pixel 7;
+- o editor permanece dentro da mesma superfície PDF.js;
+- não existe lista textual paralela como editor principal;
+- não existe `iframe`, `embed` ou `object` para o PDF;
+- mover, excluir, undo/redo, adicionar imagem e unir PDF atualizam a mesma superfície;
+- página ativa e zoom são preservados após **Atualizar PDF** e após rebuild de edição;
+- corrida A → B → C de aberturas concorrentes é coberta deterministicamente;
+- PDF-lib e PDF.js são self-hosted; o CSP da Central não depende mais de jsDelivr;
+- o editor continua local e **não escreve no Google Drive** nesta fase;
+- a permissão de editar continua explícita (`can_edit`) e não é herdada automaticamente do papel Regulador(a).
+
+O deployment imutável correspondente foi publicado com sucesso em:
+
+`https://cd41605e.portal-regulacao-central-staging.pages.dev/`
+
+O alias estável da branch é:
+
+`https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`
+
+A matriz 14/14 é executada pelo GitHub Actions contra o bundle sintético construído no CI. A validação visual do deployment remoto continua sendo uma barreira separada antes do merge; não confundir CI de navegador com teste institucional em produção.
+
+## Roteiro obrigatório de promoção para produção
+
+Após aceite visual do preview e revisão final do PR:
+
+1. mesclar somente com todos os checks obrigatórios verdes;
+2. aguardar o deploy de produção;
+3. usuário autorizado abrir `/documentos/` e um PDF institucional permitido;
+4. confirmar canvas + miniaturas do PDF.js próprio e ausência de visualizador nativo;
+5. navegar para uma página diferente e alterar o zoom;
+6. entrar em **Editar PDF** e confirmar que permanece na mesma superfície;
+7. executar **Atualizar PDF** e confirmar preservação de página/zoom;
+8. mover e excluir página; validar undo/redo;
+9. adicionar imagem e validar a nova página;
+10. unir um segundo PDF autorizado;
+11. sair do editor e confirmar retorno ao PDF original em somente leitura;
+12. abrir rapidamente outro PDF e confirmar que o documento anterior não reassume a superfície;
+13. confirmar que nenhuma operação escreveu no Drive e que não houve telemetria sensível;
+14. registrar o aceite real no status.
+
+Somente depois desse aceite a 3C.1 pode ser encerrada e a 3C.2 liberada.

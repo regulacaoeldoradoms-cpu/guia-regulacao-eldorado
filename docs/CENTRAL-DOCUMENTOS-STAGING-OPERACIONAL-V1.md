@@ -7,7 +7,7 @@ Estado: Cloudflare Pages criado e validado; Access e domínio personalizado pend
 
 Disponibilizar um ambiente remoto isolado para validar visualmente o PDF.js/editor sem publicar o Portal completo nem conectar dados institucionais.
 
-A primeira versão publica **somente o laboratório sintético** já validado pelo Playwright. A pendência funcional da integração visual do editor continua separada e a 3C.2 não foi iniciada.
+A primeira versão nasceu como laboratório sintético do visualizador e evoluiu para validar também a superfície única do editor da 3C.1. A 3C.2 não foi iniciada.
 
 ## Controle de versão verificado
 
@@ -49,8 +49,8 @@ O bundle contém somente:
 - harness do visualizador;
 - PDF sintético de três páginas;
 - CSS necessário;
-- `document-viewer.js`;
-- PDF.js legacy 6.3.289 e recursos locais necessários;
+- `document-viewer.js` e `document-editor.js`;
+- PDF.js legacy 6.3.289, PDF-lib self-hosted e recursos locais necessários;
 - `robots.txt`;
 - `_headers` com noindex, no-store e CSP restritiva;
 - manifesto declarando `syntheticOnly: true` e `productionApisIncluded: false`.
@@ -151,15 +151,16 @@ Resultados da captura de rede:
 1. O ambiente está público enquanto Access não for habilitado. A mitigação atual é o conteúdo exclusivamente sintético, sem backend ou dados institucionais.
 2. O domínio personalizado depende de acesso futuro à zona/DNS.
 3. `staging-manifest.json` registra `sourceSha: null`, pois o builder lê `GITHUB_SHA` e o Pages fornece metadados próprios. A proveniência do deployment continua confirmada pela API do Pages no SHA exato.
-4. O ambiente valida o laboratório do visualizador; não resolve nem inicia a integração visual do editor ou a 3C.2.
+4. O ambiente valida visualizador e editor da 3C.1 com dados sintéticos; ele não substitui o reteste institucional pós-deploy e não inicia a 3C.2.
 
 ## Próximo passo exato
 
-1. revisar e mesclar a PR documental da branch `codex/central-docs-staging-registro`;
-2. um responsável humano definir `auth_domain`, IdP, público autorizado, sessão e MFA;
-3. habilitar Cloudflare Access e repetir a validação autenticada antes de compartilhar o staging;
-4. quando a zona estiver acessível, associar `staging.regulacaoeldoradoms.com.br` e validar DNS, TLS e cabeçalhos;
-5. manter a integração visual do editor e a 3C.2 fora desta tarefa.
+1. concluir o aceite humano do preview da 3C.1 no alias da branch;
+2. obter a revisão final do PR #179 quando o serviço de code review estiver disponível;
+3. manter o PR sem merge enquanto houver P1/P2 pendente, check vermelho ou ausência de aceite humano;
+4. após merge/deploy, executar o smoke test institucional descrito em `CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`;
+5. tratar Cloudflare Access e domínio personalizado em tarefa de infraestrutura separada antes de qualquer staging com dados/integrações reais;
+6. manter a 3C.2 bloqueada até o aceite explícito da 3C.1.
 
 ## Evolução futura
 
@@ -171,3 +172,19 @@ Somente quando for necessário testar autenticação, Drive ou backend:
 - nunca reutilizar OAuth ou Drive institucional de produção;
 - nunca copiar secrets de produção sem necessidade técnica e aprovação;
 - manter produção e staging com nomes, domínios e bindings inequivocamente distintos.
+
+
+## Evolução — preview da superfície única do editor
+
+PR funcional: **#179 — Central de Documentos: unificar visualizador e editor PDF**.
+
+Evidência do head funcional `b02f2addf6eba16f383cc8ff7804c6eaee0b7879`:
+- deployment Cloudflare Pages: sucesso;
+- URL imutável: `https://cd41605e.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- GitHub Actions: **24/24 verdes**;
+- Playwright do bundle sintético: **14/14 verdes**, desktop + mobile;
+- cobertura: entrada/saída do editor na mesma superfície, mover/excluir, undo/redo, imagem, união, zoom, preservação de página/zoom e corrida de abertura;
+- nenhuma integração de produção foi adicionada.
+
+Access e domínio personalizado continuam pendências de infraestrutura e não bloqueiam esta homologação porque o conteúdo publicado é exclusivamente fictício.

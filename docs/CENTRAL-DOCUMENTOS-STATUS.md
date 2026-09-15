@@ -1526,3 +1526,62 @@ Risco controlado:
 
 Próximo passo:
 - repetir o workflow de navegador em desktop/mobile; não fazer merge até a matriz ficar integralmente verde.
+
+
+## Consolidação 3C.1 antes do aceite humano — 14/09/2026
+
+Estado funcional validado no head `b02f2addf6eba16f383cc8ff7804c6eaee0b7879` do PR #179:
+
+- base confirmada: `main` em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`;
+- PR mergeável e mantido **sem merge**;
+- **24/24 workflows GitHub verdes**;
+- workflow `Validar Central de Documentos — navegador`: **14/14**, Chromium desktop + Pixel 7;
+- P1 de concorrência de abertura: corrigido, testado e thread resolvida;
+- P2 de preservação de estado vivo: corrigido, testado e thread resolvida;
+- o P2 levou à descoberta adicional de interação entre `IntersectionObserver` e `scroll-behavior: smooth`; a solução final neutraliza o scroll suave somente durante o restore inicial e preserva o comportamento suave normal do usuário;
+- preview Cloudflare do head funcional: `https://cd41605e.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- produção, Worker `yellow-wave-d0a1guia-regulacao-ia`, D1 `portal-regulacao-users` e Google Drive permaneceram intocados.
+
+Revisão manual complementar:
+- PDF.js e PDF-lib permanecem self-hosted;
+- CSP da Central não depende de CDN externa para o editor;
+- `can_edit` continua explícito e separado do cargo/papel Regulador(a);
+- não foi introduzida rota de upload/update/replace nem evento de save/sync para o Drive;
+- o staging continua sintético, sem bindings, Functions, secrets ou dados clínicos;
+- não foi identificado bloqueador adicional no diff após a matriz automatizada final.
+
+Limitação externa:
+- a nova revisão automática Codex do head final não pôde ser executada porque a cota de code review foi atingida. Isso é indisponibilidade temporária da ferramenta, não evidência técnica contra o PR;
+- a última revisão automática disponível encontrou o P2; ele foi endereçado e sua thread está resolvida com evidência 14/14.
+
+Decisão:
+- **não fazer merge ainda**;
+- aguardar o aceite humano visual do preview e, quando a cota restaurar, solicitar revisão automática final do head corrente;
+- 3C.2 permanece bloqueada.
+
+## Handoff autoritativo atual — 14/09/2026
+
+**Fase:** Fase 3 — Editor PDF essencial.
+
+**Subfase:** 3C.1 — superfície única implementada e tecnicamente homologada em ambiente sintético; faltam aceite humano do preview, revisão final disponível e reteste institucional pós-merge/deploy.
+
+**Main/base confirmada:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`.
+
+**PR:** #179, branch `codex/central-docs-editor-superficie-unica`, aberto e sem merge.
+
+**Head funcional homologado:** `b02f2addf6eba16f383cc8ff7804c6eaee0b7879`. A consolidação documental posterior não altera runtime; ao retomar, consultar o head corrente do PR no GitHub.
+
+**Staging:** `portal-regulacao-central-staging`; alias da branch `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+
+**Evidência imutável do runtime homologado:** `https://cd41605e.portal-regulacao-central-staging.pages.dev/`.
+
+**Access:** pendente; enquanto isso, staging deve permanecer estritamente sintético.
+
+**Domínio personalizado:** pendente por ausência de acesso à zona.
+
+**P1/P2:** ambos corrigidos e threads resolvidas.
+
+**Próxima ação humana exata:** abrir o alias da branch em desktop e, se possível, celular; confirmar visualmente que **Editar PDF** mantém o usuário na mesma superfície PDF.js, que miniaturas/controles aparecem integrados e que não existe editor textual separado. Não usar documento real no staging.
+
+**Depois do aceite:** solicitar revisão automática final quando a cota Codex voltar; com revisão/checks limpos, considerar merge. Após deploy, executar o roteiro institucional de smoke test. Somente o aceite pós-produção encerra 3C.1 e libera 3C.2.
