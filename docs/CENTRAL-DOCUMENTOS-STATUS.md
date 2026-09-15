@@ -28,7 +28,7 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 - **Preview candidato atual:** deployment sintético imutável `https://e0f0b735.portal-regulacao-central-staging.pages.dev/`, associado ao head `9725a0c`; alias da branch permanece `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
 - **Aceite humano parcial:** o usuário aprovou o fluxo **Selecionar caixa de texto → ajustar sem editar conteúdo → clicar fora e desmarcar** em 15/09/2026. Isso fecha esse adendo, mas não equivale ao aceite completo de toda a 3C.3.
 - **Review novo:** dois P2s foram tratados nesta rodada: quickbar ao alternar entre caixas e consolidação do seletor de cor em uma única mutação de histórico. O review abriu ainda um terceiro P2: serializar/coalescer os PATCHes da paleta por conta para impedir que uma resposta antiga sobrescreva a mais nova.
-- **Próxima ação exata:** usar o Codex agora disponível para corrigir o P2 de serialização da paleta, reexecutar CI/review e resolver os threads restantes. Recortar continua bloqueado até o aceite completo da 3C.3.
+- **Próxima ação exata:** usar o Codex agora disponível para corrigir os P2s de **serialização da paleta** e **limpeza do object mode ao sair do editor**, verificar os dois P2s já corrigidos, reexecutar CI/review e resolver todos os threads restantes. Recortar continua bloqueado até o aceite completo da 3C.3.
 
 ## 3C.3 — revisão pós-homologação e fila para Codex — 15/09/2026
 
@@ -37,7 +37,8 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 - o review encontrou P2 no seletor RGB da barra superior: eventos `input` enchiam o histórico. O cliente agora faz preview/model update com `commit: false` e consolida uma única mutação no `change`, com `blur` como fallback;
 - head `9725a0c`: 24/24 workflows verdes; Playwright 49 passed / 1 skipped esperado;
 - surgiu um P2 adicional ainda aberto: persistência da paleta por conta pode sofrer corrida entre PATCHes completos feitos em sequência. A correção deve serializar/coalescer as gravações ou rejeitar conclusões obsoletas por geração;
-- esse P2 é o melhor ponto de retomada pelo Codex agora que o acesso foi liberado. Não iniciar 3C.4 antes de fechar a revisão da 3C.3.
+- o review abriu também um P2 de saída do editor: ao sair sem mutação depois de Select/Write/Image, o viewer pode conservar `data-object-mode` e a camada de objetos continuar interceptando ponteiro/touch. O modo de objetos deve ser limpo antes de descartar `editorSession`;
+- esses dois P2s são agora o melhor ponto de retomada pelo Codex. Os dois P2s anteriores (quickbar e histórico do seletor de cor) já têm correção/teste no head funcional `9725a0c`, mas os threads ainda devem ser conferidos e fechados. Não iniciar 3C.4 antes de fechar a revisão da 3C.3.
 
 ## 3C.3 — adendo humano: Selecionar protege o conteúdo do texto — 15/09/2026
 
