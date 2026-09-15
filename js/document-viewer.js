@@ -348,20 +348,39 @@
     const dragend = () => clearThumbnailDragState(session);
 
     const pointerdown = (event) => {
-      if (!isCurrentSession(session) || !session.thumbnailActions) return;
+      if (!isCurrentSession(session) || !session.thumbnailActions || event.button > 0) return;
+      if (event.target.closest?.('[data-thumbnail-action]')) return;
       const handle = event.target.closest?.('[data-thumbnail-drag]');
-      const wrapper = handle?.closest?.('.portal-pdf-thumb-wrap');
+      const button = event.target.closest?.('.portal-pdf-thumb[data-page-number]');
+      if (event.pointerType === 'touch' && !handle) return;
+      const origin = handle || button;
+      const wrapper = origin?.closest?.('.portal-pdf-thumb-wrap');
       const pageNumber = Number(wrapper?.dataset.pageNumber);
-      if (!handle || !wrapper || !Number.isInteger(pageNumber)) return;
-      session.touchDrag = { pointerId: event.pointerId, sourceIndex: pageNumber - 1 };
-      wrapper.classList.add('dragging');
-      try { handle.setPointerCapture?.(event.pointerId); } catch (_) {}
-      event.preventDefault();
+      if (!origin || !wrapper || !Number.isInteger(pageNumber)) return;
+      session.touchDrag = {
+        pointerId: event.pointerId,
+        sourceIndex: pageNumber - 1,
+        startX: event.clientX,
+        startY: event.clientY,
+        started: Boolean(handle)
+      };
+      if (handle) {
+        wrapper.classList.add('dragging');
+        event.preventDefault();
+      }
+      try { origin.setPointerCapture?.(event.pointerId); } catch (_) {}
     };
 
     const pointermove = (event) => {
       const drag = session.touchDrag;
       if (!isCurrentSession(session) || !drag || drag.pointerId !== event.pointerId) return;
+      if (!drag.started) {
+        const distance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
+        if (distance < 7) return;
+        drag.started = true;
+        const source = session.thumbnailsRoot.querySelector(`.portal-pdf-thumb-wrap[data-page-number="${drag.sourceIndex + 1}"]`);
+        source?.classList.add('dragging');
+      }
       event.preventDefault();
       const element = document.elementFromPoint(event.clientX, event.clientY);
       const wrapper = element?.closest?.('.portal-pdf-thumb-wrap');
@@ -377,9 +396,11 @@
     const pointerup = (event) => {
       const drag = session.touchDrag;
       if (!drag || drag.pointerId !== event.pointerId) return;
-      event.preventDefault();
       const finalIndex = session.dragTargetIndex;
+      const started = drag.started === true;
       clearThumbnailDragState(session);
+      if (!started) return;
+      event.preventDefault();
       if (Number.isInteger(finalIndex)) emitThumbnailReorder(session, drag.sourceIndex, finalIndex);
     };
 
@@ -1038,6 +1059,6 @@
     setThumbnailActions,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1l`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1m`
   });
 })();

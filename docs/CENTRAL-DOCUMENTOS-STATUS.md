@@ -1622,3 +1622,22 @@ Próximo passo:
 - executar CI completo e gerar novo preview Cloudflare;
 - solicitar novo reteste humano de arrastar e girar;
 - manter o merge bloqueado até esse aceite.
+
+
+## CI do primeiro drag/rotate — correção de interação de teste — 14/09/2026
+
+Resultado do head `ae22ad9`:
+- suíte estática/Worker e Fases 1–3: aprovadas;
+- navegador: 13 cenários passaram e 3 falharam;
+- rotação unitária passou; a falha visual de rotação ocorreu porque o teste tentava medir a página 3 antes de ela entrar na janela de renderização progressiva;
+- drag-and-drop não foi acionado por `Locator.dragTo()` no ambiente emulado, embora a UI já tivesse listeners nativos.
+
+Ajuste:
+- o teste de rotação agora navega para a página 3 antes de medir orientação;
+- o visualizador passa a aceitar Pointer Events no corpo da miniatura para mouse/pen com limiar de 7 px, além do grip já usado para touch;
+- o teste de arraste passa a usar gesto real de mouse (down → move em etapas → up), cobrindo a interação solicitada pelo usuário;
+- o drag HTML5 permanece como fallback;
+- nenhuma mudança de backend, Drive ou produção.
+
+Próximo passo:
+- repetir CI completo e só apresentar novo preview ao usuário após a matriz de navegador ficar verde.

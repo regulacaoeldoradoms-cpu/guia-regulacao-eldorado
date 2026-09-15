@@ -54,6 +54,22 @@ async function waitForOrder(page, value) {
   await expect(page.locator('html')).toHaveAttribute('data-page-order', value);
 }
 
+async function dragThumbnail(page, fromIndex, toIndex) {
+  const source = page.locator('.portal-pdf-thumb').nth(fromIndex);
+  const target = page.locator('.portal-pdf-thumb').nth(toIndex);
+  const sourceBox = await source.boundingBox();
+  const targetBox = await target.boundingBox();
+  if (!sourceBox || !targetBox) throw new Error('Miniatura não disponível para arraste.');
+  await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(
+    targetBox.x + targetBox.width / 2,
+    targetBox.y + Math.max(4, targetBox.height * 0.2),
+    { steps: 8 }
+  );
+  await page.mouse.up();
+}
+
 test.describe('Central de Documentos — superfície única do editor', () => {
   test('entra e sai do editor preservando a mesma superfície PDF.js', async ({ page, request }) => {
     const finishMonitoring = monitorPage(page);
@@ -111,7 +127,7 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await page.evaluate(() => { window.__centralDocsRoot = document.getElementById('pdfRoot'); });
     const firstThumbBefore = await page.locator('.portal-pdf-thumb-canvas').first().evaluate((canvas) => canvas.toDataURL());
 
-    await page.locator('.portal-pdf-thumb').nth(1).dragTo(page.locator('.portal-pdf-thumb').first());
+    await dragThumbnail(page, 1, 0);
     await waitForOrder(page, '0:1,0:0,0:2');
     await expect(page.locator('.portal-pdf-page')).toHaveCount(3);
     await expect(page.locator('.portal-pdf-thumb')).toHaveCount(3);
@@ -142,6 +158,8 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await openLab(page);
     await enterEditor(page);
 
+    await page.locator('.portal-pdf-thumb').nth(2).click();
+    await expect(page.locator('html')).toHaveAttribute('data-active-page', '3');
     const lastCanvas = page.locator('.portal-pdf-page-canvas').nth(2);
     await expect(page.locator('.portal-pdf-page').nth(2)).toHaveClass(/rendered/);
     const before = await lastCanvas.evaluate((canvas) => ({ width: canvas.width, height: canvas.height }));
