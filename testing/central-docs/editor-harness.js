@@ -54,6 +54,7 @@
     merging: false,
     mode: 'readonly',
     selectedObjectId: '',
+    colorPalette: ['#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'],
     viewState: null,
     sequence: 0,
     operation: Promise.resolve()
@@ -116,6 +117,7 @@
     const result = viewer.setEditorObjects?.(editor.objectModel(state.session), {
       mode,
       selectedObjectId: state.selectedObjectId,
+      colorPalette: state.colorPalette,
       onSelect(id) {
         state.selectedObjectId = id;
         syncObjectToolbar();
@@ -134,6 +136,16 @@
       },
       onPageChange(id, pageIndex, patch) {
         editor.moveObjectToPage(state.session, id, pageIndex, { ...patch, commit: false });
+      },
+      onDelete(id) {
+        if (!editor.removeObject(state.session, id)) return;
+        if (state.selectedObjectId === id) state.selectedObjectId = '';
+        syncEditorState();
+        syncObjects();
+      },
+      onColorPaletteChange(colors) {
+        state.colorPalette = Array.isArray(colors) ? [...colors] : state.colorPalette;
+        root.dataset.editorPalette = state.colorPalette.join(',');
       },
       onCreateText(pageNumber, point) {
         if (state.mode !== 'write') return;

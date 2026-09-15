@@ -10,6 +10,10 @@
   const user = await auth.requireRole([]);
   if (!user) return;
 
+  const DEFAULT_EDITOR_COLOR_PALETTE = Object.freeze([
+    '#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'
+  ]);
+
   if (user.mustChangePassword) {
     location.replace('/seguranca/?primeiro-acesso=1');
     return;
@@ -46,6 +50,7 @@
     editorBusy: false,
     editorMode: 'readonly',
     selectedObjectId: '',
+    editorColorPalette: [...DEFAULT_EDITOR_COLOR_PALETTE],
     pendingMergeItem: null
   };
 
@@ -352,6 +357,46 @@
     }
   }
 
+  function normalizeEditorColorPalette(value) {
+    const source = Array.isArray(value) ? value : [];
+    const colors = [];
+    for (const item of source) {
+      const color = String(item || '').trim().toLowerCase();
+      if (!/^#[0-9a-f]{6}$/.test(color) || colors.includes(color)) continue;
+      colors.push(color);
+      if (colors.length >= 16) break;
+    }
+    return colors.length ? colors : [...DEFAULT_EDITOR_COLOR_PALETTE];
+  }
+
+  async function loadEditorPreferences() {
+    const caps = state.access?.capabilities || state.user?.documentCapabilities || {};
+    if (caps.view !== true && caps.manage !== true) return false;
+    try {
+      const payload = await api('/api/documents/preferences', { method: 'GET' });
+      state.editorColorPalette = normalizeEditorColorPalette(payload?.colorPalette);
+      return true;
+    } catch (_) {
+      state.editorColorPalette = [...DEFAULT_EDITOR_COLOR_PALETTE];
+      return false;
+    }
+  }
+
+  async function persistEditorColorPalette(colors) {
+    const normalized = normalizeEditorColorPalette(colors);
+    state.editorColorPalette = normalized;
+    try {
+      await api('/api/documents/preferences', {
+        method: 'PATCH',
+        body: JSON.stringify({ colorPalette: normalized })
+      });
+      return true;
+    } catch (error) {
+      setEditorStatus(error?.message || 'A paleta foi aplicada nesta sessão, mas não pôde ser sincronizada com sua conta.', 'warning');
+      return false;
+    }
+  }
+
   function selectedEditorObject() {
     const session = state.editorSession;
     if (!session || !state.selectedObjectId) return null;
@@ -394,6 +439,7 @@
     const result = viewer.setEditorObjects(editor.objectModel(session), {
       mode,
       selectedObjectId: state.selectedObjectId,
+      colorPalette: state.editorColorPalette,
       onSelect(id) {
         if (session !== state.editorSession) return;
         state.selectedObjectId = id;
@@ -418,6 +464,15 @@
       onPageChange(id, pageIndex, patch) {
         if (session !== state.editorSession) return;
         editor.moveObjectToPage(session, id, pageIndex, { ...patch, commit: false });
+      },
+      onDelete(id) {
+        if (session !== state.editorSession) return;
+        deleteEditorObjectById(id);
+      },
+      onColorPaletteChange(colors) {
+        if (session !== state.editorSession) return;
+        state.editorColorPalette = normalizeEditorColorPalette(colors);
+        persistEditorColorPalette(state.editorColorPalette).catch(() => {});
       },
       onCreateText(pageNumber, point) {
         if (session !== state.editorSession || state.editorMode !== 'write') return;
@@ -977,16 +1032,21 @@
     return true;
   }
 
-  function deleteSelectedEditorObject() {
+  function deleteEditorObjectById(objectId) {
     const session = state.editorSession;
-    const object = selectedEditorObject();
-    if (!session || !object || state.editorBusy) return false;
-    if (!window.PortalPdfEditor.removeObject(session, object.id)) return false;
-    state.selectedObjectId = '';
+    const id = String(objectId || '');
+    if (!session || !id || state.editorBusy) return false;
+    if (!window.PortalPdfEditor.removeObject(session, id)) return false;
+    if (state.selectedObjectId === id) state.selectedObjectId = '';
     syncEditorControls();
     syncEditorObjects();
     setEditorStatus('Objeto removido. Use Desfazer se precisar restaurá-lo.', 'success');
     return true;
+  }
+
+  function deleteSelectedEditorObject() {
+    const object = selectedEditorObject();
+    return object ? deleteEditorObjectById(object.id) : false;
   }
 
   async function mergePdfIntoEditor(item, { insertAt = null } = {}) {
@@ -2005,6 +2065,7 @@
 
   try {
     await loadAccess();
+    if (state.access?.capabilities?.view || state.access?.capabilities?.manage) await loadEditorPreferences();
     if (state.access?.capabilities?.view && state.access?.drive?.connected) await loadFolder();
   } catch (error) {
     showStatus(error.message || 'Não foi possível iniciar a Central de Documentos.', 'warning');
