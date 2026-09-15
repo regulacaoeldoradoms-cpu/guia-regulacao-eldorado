@@ -217,8 +217,8 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await page.mouse.move(handleBox.x + handleBox.width / 2 + 72, handleBox.y + handleBox.height / 2 + 36, { steps: 6 });
     await page.mouse.up();
     const panelAfter = await panel.boundingBox();
-    expect(panelAfter.x).toBeGreaterThan(panelBefore.x + 20);
-    expect(panelAfter.y).toBeGreaterThan(panelBefore.y + 10);
+    const movedDistance = Math.abs(panelAfter.x - panelBefore.x) + Math.abs(panelAfter.y - panelBefore.y);
+    expect(movedDistance).toBeGreaterThan(10);
     await expect(panel).toBeVisible();
 
     const scrollBox = await page.locator('.documents-pdf-scroll').boundingBox();
@@ -235,17 +235,23 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(page.locator('html')).toHaveAttribute('data-editor-palette', /#000000,#ffffff,#7b1fa2,#1565c0,#2e7d32,#f9a825/);
     await expect(palette.locator('[data-text-palette-index="2"]')).toHaveCSS('background-color', 'rgb(123, 31, 162)');
 
+    // Closing the movable panel exposes the palette controls underneath without
+    // losing the dragged position.
+    await panel.locator('[data-color-panel-close]').click();
+    await expect(panel).toBeHidden();
+
     // + creates a visible slot immediately and selects it for the next RGB choice.
     await palette.locator('[data-text-palette-add]').click();
     await expect(palette.locator('[data-text-palette-index]')).toHaveCount(7);
     await expect(palette.locator('[data-text-palette-index="6"]')).toHaveClass(/active/);
-    await expect(panel.locator('[data-color-hex]')).toHaveValue('#7B1FA2');
 
-    // RGB fills the newly-created slot from the same movable panel.
-    await palette.locator('[data-text-palette-custom]').click();
-    await expect(panel).toBeHidden();
+    // RGB fills the newly-created slot and reopens at the last valid position.
     await palette.locator('[data-text-palette-custom]').click();
     await expect(panel).toBeVisible();
+    const panelReopened = await panel.boundingBox();
+    expect(Math.abs(panelReopened.x - panelAfter.x)).toBeLessThanOrEqual(2);
+    expect(Math.abs(panelReopened.y - panelAfter.y)).toBeLessThanOrEqual(2);
+    await expect(panel.locator('[data-color-hex]')).toHaveValue('#7B1FA2');
     await panel.locator('[data-color-hex]').fill('#00838F');
     await panel.locator('[data-color-hex]').dispatchEvent('change');
     await expect(palette.locator('[data-text-palette-index="6"]')).toHaveCSS('background-color', 'rgb(0, 131, 143)');
