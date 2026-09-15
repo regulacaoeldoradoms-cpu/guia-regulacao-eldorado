@@ -958,6 +958,83 @@
   touch-action: none;
 }
 
+.portal-pdf-crop-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.documents-custom-viewer[data-crop-mode="crop"] .portal-pdf-crop-layer {
+  pointer-events: auto;
+}
+
+.portal-pdf-crop-frame {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid #1684bd;
+  box-shadow: 0 0 0 9999px rgba(16, 33, 48, .42);
+  outline: 1px dashed rgba(255,255,255,.9);
+  outline-offset: -4px;
+  touch-action: none;
+  pointer-events: none;
+}
+
+.portal-pdf-crop-frame[data-interactive="true"] {
+  pointer-events: auto;
+  cursor: move;
+}
+
+.portal-pdf-crop-frame[data-interactive="false"] {
+  border-style: dashed;
+  border-color: rgba(22, 132, 189, .72);
+  box-shadow: 0 0 0 9999px rgba(16, 33, 48, .28);
+}
+
+.portal-pdf-crop-handle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #1684bd;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 5px rgba(0,0,0,.18);
+  z-index: 3;
+}
+
+.portal-pdf-crop-handle--nw { left: -10px; top: -10px; cursor: nwse-resize; }
+.portal-pdf-crop-handle--n { left: calc(50% - 9px); top: -10px; cursor: ns-resize; }
+.portal-pdf-crop-handle--ne { right: -10px; top: -10px; cursor: nesw-resize; }
+.portal-pdf-crop-handle--e { right: -10px; top: calc(50% - 9px); cursor: ew-resize; }
+.portal-pdf-crop-handle--se { right: -10px; bottom: -10px; cursor: nwse-resize; }
+.portal-pdf-crop-handle--s { left: calc(50% - 9px); bottom: -10px; cursor: ns-resize; }
+.portal-pdf-crop-handle--sw { left: -10px; bottom: -10px; cursor: nesw-resize; }
+.portal-pdf-crop-handle--w { left: -10px; top: calc(50% - 9px); cursor: ew-resize; }
+
+.portal-pdf-crop-reset {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  min-width: 34px;
+  height: 30px;
+  border: 1px solid #b7d7e8;
+  border-radius: 8px;
+  background: rgba(255,255,255,.96);
+  color: #0c628f;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0,0,0,.14);
+}
+
+.portal-pdf-crop-reset:hover,
+.portal-pdf-crop-reset:focus-visible {
+  background: #eef8fd;
+  outline: 2px solid rgba(22,132,189,.28);
+}
+
 .documents-custom-viewer[data-object-mode="select"] .portal-pdf-object-layer,
 .documents-custom-viewer[data-object-mode="write"] .portal-pdf-object-layer,
 .documents-custom-viewer[data-object-mode="image"] .portal-pdf-object-layer {
