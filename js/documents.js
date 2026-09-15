@@ -106,9 +106,14 @@
     editorObjectFontField: document.getElementById('editorObjectFontField'),
     editorObjectSizeField: document.getElementById('editorObjectSizeField'),
     editorObjectColorField: document.getElementById('editorObjectColorField'),
+    editorObjectFormatField: document.getElementById('editorObjectFormatField'),
     editorObjectFont: document.getElementById('editorObjectFont'),
     editorObjectFontSize: document.getElementById('editorObjectFontSize'),
     editorObjectColor: document.getElementById('editorObjectColor'),
+    editorObjectBold: document.getElementById('editorObjectBold'),
+    editorObjectItalic: document.getElementById('editorObjectItalic'),
+    editorObjectUnderline: document.getElementById('editorObjectUnderline'),
+    editorObjectAlign: document.getElementById('editorObjectAlign'),
     editorObjectOpacity: document.getElementById('editorObjectOpacity'),
     editorObjectDelete: document.getElementById('editorObjectDelete'),
     editorPreview: document.getElementById('editorPreviewButton'),
@@ -359,13 +364,23 @@
     if (els.editorObjectToolbar) els.editorObjectToolbar.hidden = !object;
     if (!object || !els.editorObjectToolbar) return;
     const isText = object.type === 'text';
-    for (const field of [els.editorObjectFontField, els.editorObjectSizeField, els.editorObjectColorField]) {
+    for (const field of [els.editorObjectFontField, els.editorObjectSizeField, els.editorObjectColorField, els.editorObjectFormatField]) {
       if (field) field.hidden = !isText;
     }
     if (isText) {
       if (els.editorObjectFont) els.editorObjectFont.value = object.fontFamily || 'Arial';
       if (els.editorObjectFontSize) els.editorObjectFontSize.value = String(Math.max(8, Math.min(96, Math.round((object.fontSize || .032) * 560))));
       if (els.editorObjectColor) els.editorObjectColor.value = /^#[0-9a-f]{6}$/i.test(object.color || '') ? object.color : '#111111';
+      if (els.editorObjectAlign) els.editorObjectAlign.value = ['left', 'center', 'right'].includes(object.textAlign) ? object.textAlign : 'left';
+      for (const [control, active] of [
+        [els.editorObjectBold, object.fontWeight === 'bold'],
+        [els.editorObjectItalic, object.fontStyle === 'italic'],
+        [els.editorObjectUnderline, object.textDecoration === 'underline']
+      ]) {
+        if (!control) continue;
+        control.classList.toggle('active', active);
+        control.setAttribute('aria-pressed', active ? 'true' : 'false');
+      }
     }
     if (els.editorObjectOpacity) els.editorObjectOpacity.value = String(Math.round((object.opacity ?? 1) * 100));
   }
@@ -1910,6 +1925,19 @@
   els.editorObjectFont?.addEventListener('change', () => updateSelectedEditorObject({ fontFamily: els.editorObjectFont.value }));
   els.editorObjectFontSize?.addEventListener('change', () => updateSelectedEditorObject({ fontSize: Number(els.editorObjectFontSize.value || 18) / 560 }));
   els.editorObjectColor?.addEventListener('input', () => updateSelectedEditorObject({ color: els.editorObjectColor.value }));
+  els.editorObjectBold?.addEventListener('click', () => {
+    const object = selectedEditorObject();
+    if (object?.type === 'text') updateSelectedEditorObject({ fontWeight: object.fontWeight === 'bold' ? 'normal' : 'bold' });
+  });
+  els.editorObjectItalic?.addEventListener('click', () => {
+    const object = selectedEditorObject();
+    if (object?.type === 'text') updateSelectedEditorObject({ fontStyle: object.fontStyle === 'italic' ? 'normal' : 'italic' });
+  });
+  els.editorObjectUnderline?.addEventListener('click', () => {
+    const object = selectedEditorObject();
+    if (object?.type === 'text') updateSelectedEditorObject({ textDecoration: object.textDecoration === 'underline' ? 'none' : 'underline' });
+  });
+  els.editorObjectAlign?.addEventListener('change', () => updateSelectedEditorObject({ textAlign: els.editorObjectAlign.value }));
   els.editorObjectOpacity?.addEventListener('change', () => updateSelectedEditorObject({ opacity: Number(els.editorObjectOpacity.value || 100) / 100 }));
   els.editorObjectDelete?.addEventListener('click', deleteSelectedEditorObject);
   els.editorMerge.addEventListener('click', choosePdfToMerge);
