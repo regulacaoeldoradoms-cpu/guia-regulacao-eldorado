@@ -38,6 +38,10 @@
     objectFont: document.getElementById('editorObjectFont'),
     objectFontSize: document.getElementById('editorObjectFontSize'),
     objectColor: document.getElementById('editorObjectColor'),
+    objectBold: document.getElementById('editorObjectBold'),
+    objectItalic: document.getElementById('editorObjectItalic'),
+    objectUnderline: document.getElementById('editorObjectUnderline'),
+    objectAlign: document.getElementById('editorObjectAlign'),
     objectOpacity: document.getElementById('editorObjectOpacity'),
     objectDelete: document.getElementById('editorObjectDelete'),
     refresh: document.getElementById('editorRefresh'),
@@ -93,6 +97,15 @@
       elements.objectFont.value = object.fontFamily || 'Arial';
       elements.objectFontSize.value = String(Math.round((object.fontSize || .032) * 560));
       elements.objectColor.value = /^#[0-9a-f]{6}$/i.test(object.color || '') ? object.color : '#111111';
+      elements.objectAlign.value = ['left', 'center', 'right'].includes(object.textAlign) ? object.textAlign : 'left';
+      for (const [control, active] of [
+        [elements.objectBold, object.fontWeight === 'bold'],
+        [elements.objectItalic, object.fontStyle === 'italic'],
+        [elements.objectUnderline, object.textDecoration === 'underline']
+      ]) {
+        control.classList.toggle('active', active);
+        control.setAttribute('aria-pressed', String(active));
+      }
     }
     elements.objectOpacity.value = String(Math.round((object.opacity ?? 1) * 100));
   }
@@ -508,6 +521,10 @@
   elements.objectFont.addEventListener('change', () => run(() => updateSelectedObject({ fontFamily: elements.objectFont.value })));
   elements.objectFontSize.addEventListener('change', () => run(() => updateSelectedObject({ fontSize: Number(elements.objectFontSize.value || 18) / 560 })));
   elements.objectColor.addEventListener('input', () => run(() => updateSelectedObject({ color: elements.objectColor.value })));
+  elements.objectBold.addEventListener('click', () => run(() => { const o = selectedObject(); if (o?.type === 'text') updateSelectedObject({ fontWeight: o.fontWeight === 'bold' ? 'normal' : 'bold' }); }));
+  elements.objectItalic.addEventListener('click', () => run(() => { const o = selectedObject(); if (o?.type === 'text') updateSelectedObject({ fontStyle: o.fontStyle === 'italic' ? 'normal' : 'italic' }); }));
+  elements.objectUnderline.addEventListener('click', () => run(() => { const o = selectedObject(); if (o?.type === 'text') updateSelectedObject({ textDecoration: o.textDecoration === 'underline' ? 'none' : 'underline' }); }));
+  elements.objectAlign.addEventListener('change', () => run(() => updateSelectedObject({ textAlign: elements.objectAlign.value })));
   elements.objectOpacity.addEventListener('change', () => run(() => updateSelectedObject({ opacity: Number(elements.objectOpacity.value || 100) / 100 })));
   elements.objectDelete.addEventListener('click', () => run(deleteSelectedObject));
   elements.refresh.addEventListener('click', () => run(() => rebuild()));
