@@ -552,6 +552,7 @@
     if (els.editPdf) els.editPdf.disabled = false;
     if (els.viewerModeLabel) els.viewerModeLabel.textContent = 'Visualização';
     if (els.editPdf) els.editPdf.hidden = !(canEditDocuments() && state.pdfItem);
+    if (els.editorRailEdit) els.editorRailEdit.hidden = !(canEditDocuments() && state.pdfItem);
     setEditorStatus('');
     refreshPdfListActions();
     if (shouldRestoreOriginal && state.pdfObjectUrl) {
@@ -1369,6 +1370,7 @@
     }
 
     if (els.editPdf) els.editPdf.hidden = !(canEditDocuments() && state.pdfItem && !state.editorSession);
+    if (els.editorRailEdit) els.editorRailEdit.hidden = !(canEditDocuments() && state.pdfItem);
 
     if (!canView && !canManage) {
       showStatus('Sua conta não possui acesso à Central de Documentos.', 'warning');
@@ -1423,7 +1425,7 @@
         const action = item.isFolder
           ? 'Abrir pasta'
           : item.isPdf
-            ? (state.editorSession ? (editorHasItem ? 'Já no editor' : 'Unir ao editor') : 'Abrir PDF')
+            ? (state.editorSession ? (editorHasItem ? 'Já no editor' : 'Selecionar para unir') : 'Abrir PDF')
             : 'Não suportado nesta fase';
         const icon = item.isFolder ? '▰' : item.isPdf ? 'PDF' : '•';
         return `<button class="${classes}" type="button" data-index="${index}" ${supported ? '' : 'aria-disabled="true"'}>
@@ -1533,6 +1535,7 @@
     if (state.pdfObjectUrl) URL.revokeObjectURL(state.pdfObjectUrl);
     state.pdfObjectUrl = '';
     state.pdfItem = null;
+    if (els.editorRailEdit) els.editorRailEdit.hidden = true;
     state.pdfFallbackStarted = false;
     state.pdfProgressiveFailed = false;
     state.pdfFirstPageEmitted = false;
@@ -1557,6 +1560,7 @@
     els.viewer.hidden = false;
     els.viewerModeLabel.textContent = 'Visualização';
     els.editPdf.hidden = !canEditDocuments();
+    if (els.editorRailEdit) els.editorRailEdit.hidden = !canEditDocuments();
     els.viewerTitle.textContent = item.name || 'Documento PDF';
     els.viewerState.textContent = 'Verificando cache seguro…';
     els.viewerState.className = 'documents-viewer-state';
@@ -1691,7 +1695,7 @@
       return;
     }
     if (item.isPdf) {
-      if (state.editorSession) mergePdfIntoEditor(item);
+      if (state.editorSession) prepareMergePdf(item);
       else openPdf(item);
     }
   });
@@ -1704,9 +1708,21 @@
 
   els.closeViewer.addEventListener('click', closePdf);
   els.editPdf.addEventListener('click', startEditor);
+  els.editorRailEdit?.addEventListener('click', () => {
+    if (state.editorSession) setEditorWorkspaceMode('organize');
+    else startEditor();
+  });
   els.editorUndo.addEventListener('click', undoEditor);
   els.editorRedo.addEventListener('click', redoEditor);
+  els.editorOrganize?.addEventListener('click', () => {
+    if (!state.editorSession || state.editorBusy) return;
+    state.pendingMergeItem = null;
+    setEditorWorkspaceMode('organize');
+    syncEditorControls();
+    setEditorStatus('Modo Organizar ativo.', 'success');
+  });
   els.editorMerge.addEventListener('click', choosePdfToMerge);
+  els.editorBlankPage?.addEventListener('click', () => addBlankPageToEditor().catch(() => {}));
   els.editorImage.addEventListener('click', () => els.editorImageInput.click());
   els.editorImageInput.addEventListener('change', async () => {
     const files = els.editorImageInput.files;
@@ -1715,6 +1731,13 @@
   });
   els.editorPreview.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
   els.editorExit.addEventListener('click', exitEditor);
+  els.editorMergePosition?.addEventListener('change', () => {
+    if (els.editorMergePageField) {
+      els.editorMergePageField.hidden = els.editorMergePosition.value !== 'after-page';
+    }
+  });
+  els.editorMergeApply?.addEventListener('click', () => applyPendingMerge().catch(() => {}));
+  els.editorMergeCancel?.addEventListener('click', cancelPendingMerge);
   els.pdfZoomOut?.addEventListener('click', () => window.PortalPdfViewer?.zoomOut?.());
   els.pdfZoomReset?.addEventListener('click', () => window.PortalPdfViewer?.resetZoom?.());
   els.pdfZoomIn?.addEventListener('click', () => window.PortalPdfViewer?.zoomIn?.());
