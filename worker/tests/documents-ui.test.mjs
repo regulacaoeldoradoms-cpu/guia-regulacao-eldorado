@@ -345,6 +345,8 @@ test('editor mantém imagem como nova página e Ctrl+V local enquanto Colar imag
   assert.match(editor, /embedPng/);
   assert.match(editor, /embedJpg/);
   assert.match(observability, /'insert_image'/);
+  assert.match(observability, /'duplicate_page'/);
+  assert.match(observability, /'insert_blank_page'/);
 });
 
 test('editor PDF é local, reversível e separado da escrita no Drive', () => {
