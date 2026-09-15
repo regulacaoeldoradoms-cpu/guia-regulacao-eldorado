@@ -43,8 +43,19 @@
     return libraryPromise;
   }
 
+  function normalizeRotation(value) {
+    const numeric = Number(value || 0);
+    if (!Number.isFinite(numeric)) return 0;
+    const snapped = Math.round(numeric / 90) * 90;
+    return ((snapped % 360) + 360) % 360;
+  }
+
   function clonePlan(plan) {
-    return plan.map((item) => ({ sourceIndex: item.sourceIndex, pageIndex: item.pageIndex }));
+    return plan.map((item) => ({
+      sourceIndex: item.sourceIndex,
+      pageIndex: item.pageIndex,
+      rotation: normalizeRotation(item.rotation)
+    }));
   }
 
   function snapshot(session) {
@@ -142,7 +153,7 @@
 
   async function createSession(blob, options = {}) {
     const source = await loadSource(blob, options.label || 'Documento 1', options.cacheIdentity || '');
-    const plan = Array.from({ length: source.pageCount }, (_, pageIndex) => ({ sourceIndex: 0, pageIndex }));
+    const plan = Array.from({ length: source.pageCount }, (_, pageIndex) => ({ sourceIndex: 0, pageIndex, rotation: 0 }));
     return {
       sources: [source],
       plan,
@@ -159,7 +170,7 @@
     const sourceIndex = session.sources.length;
     session.sources.push(source);
     for (let pageIndex = 0; pageIndex < source.pageCount; pageIndex += 1) {
-      session.plan.push({ sourceIndex, pageIndex });
+      session.plan.push({ sourceIndex, pageIndex, rotation: 0 });
     }
     session.revision += 1;
     commitHistory(session);
@@ -176,7 +187,7 @@
       : session.plan.length;
 
     session.sources.push(source);
-    session.plan.splice(insertAt, 0, { sourceIndex, pageIndex: 0 });
+    session.plan.splice(insertAt, 0, { sourceIndex, pageIndex: 0, rotation: 0 });
     session.revision += 1;
     commitHistory(session);
     return insertAt;
@@ -191,12 +202,33 @@
     return true;
   }
 
+  function movePageTo(session, fromIndex, toIndex) {
+    if (!session || !Number.isInteger(fromIndex) || !Number.isInteger(toIndex)) return false;
+    if (
+      fromIndex < 0
+      || fromIndex >= session.plan.length
+      || toIndex < 0
+      || toIndex >= session.plan.length
+      || fromIndex === toIndex
+    ) return false;
+    const [entry] = session.plan.splice(fromIndex, 1);
+    session.plan.splice(toIndex, 0, entry);
+    session.revision += 1;
+    commitHistory(session);
+    return true;
+  }
+
   function movePage(session, index, delta) {
-    if (!session || !Number.isInteger(index) || !Number.isInteger(delta)) return false;
-    const target = index + delta;
-    if (index < 0 || index >= session.plan.length || target < 0 || target >= session.plan.length) return false;
-    const [entry] = session.plan.splice(index, 1);
-    session.plan.splice(target, 0, entry);
+    if (!Number.isInteger(delta)) return false;
+    return movePageTo(session, index, index + delta);
+  }
+
+  function rotatePage(session, index, quarterTurns = 1) {
+    if (!session || !Number.isInteger(index) || index < 0 || index >= session.plan.length) return false;
+    const turns = Number.isFinite(Number(quarterTurns)) ? Math.round(Number(quarterTurns)) : 1;
+    if (!turns) return false;
+    const entry = session.plan[index];
+    entry.rotation = normalizeRotation((entry.rotation || 0) + (turns * 90));
     session.revision += 1;
     commitHistory(session);
     return true;
@@ -226,7 +258,8 @@
       sourceIndex: ref.sourceIndex,
       sourcePage: ref.pageIndex + 1,
       sourceKind: session.sources[ref.sourceIndex]?.kind || 'pdf',
-      sourceLabel: session.sources[ref.sourceIndex]?.label || `Documento ${ref.sourceIndex + 1}`
+      sourceLabel: session.sources[ref.sourceIndex]?.label || `Documento ${ref.sourceIndex + 1}`,
+      rotation: normalizeRotation(ref.rotation)
     }));
   }
 
@@ -239,6 +272,11 @@
       const source = session.sources[ref.sourceIndex]?.document;
       if (!source) throw new Error('Fonte de página ausente.');
       const [page] = await output.copyPages(source, [ref.pageIndex]);
+      const rotation = normalizeRotation(ref.rotation);
+      if (rotation) {
+        const sourceRotation = Number(page.getRotation?.()?.angle || 0);
+        page.setRotation?.(lib.degrees(normalizeRotation(sourceRotation + rotation)));
+      }
       output.addPage(page);
     }
 
@@ -268,6 +306,8 @@
     addImagePage,
     removePage,
     movePage,
+    movePageTo,
+    rotatePage,
     undo,
     redo,
     canUndo,
@@ -276,6 +316,6 @@
     pageCount,
     sourceCount,
     buildBlob,
-    version: 'phase3-v3'
+    version: 'phase3-v4'
   });
 })();

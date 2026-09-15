@@ -171,6 +171,12 @@
       try { session.thumbnailsRoot?.removeEventListener('click', session.thumbClick); } catch (_) {}
       session.thumbClick = null;
     }
+    if (session.thumbnailDragHandlers) {
+      for (const [type, handler] of Object.entries(session.thumbnailDragHandlers)) {
+        try { session.thumbnailsRoot?.removeEventListener(type, handler); } catch (_) {}
+      }
+      session.thumbnailDragHandlers = null;
+    }
     const loadingTask = session.loadingTask;
     const document = session.document;
     session.loadingTask = null;
@@ -206,8 +212,7 @@
 
   function thumbnailActionSpecs(session, pageNumber) {
     return [
-      { action: 'up', label: '↑', aria: `Mover página ${pageNumber} para cima`, disabled: pageNumber === 1 },
-      { action: 'down', label: '↓', aria: `Mover página ${pageNumber} para baixo`, disabled: pageNumber === session.document.numPages },
+      { action: 'rotate', label: '↻', aria: `Girar página ${pageNumber} 90 graus para a direita`, disabled: false },
       { action: 'delete', label: '×', aria: `Excluir página ${pageNumber}`, disabled: session.document.numPages <= 1 }
     ];
   }
@@ -215,6 +220,12 @@
   function syncThumbnailActionControls(session, record) {
     if (!record?.wrapper) return;
     let actions = record.wrapper.querySelector('.portal-pdf-thumb-actions');
+    record.button.draggable = session.thumbnailActions === true;
+    record.button.classList.toggle('can-drag', session.thumbnailActions === true);
+    record.button.title = session.thumbnailActions
+      ? `Página ${record.pageNumber}. Clique para abrir ou arraste para reorganizar.`
+      : `Ir para página ${record.pageNumber}`;
+
     if (!session.thumbnailActions) {
       actions?.remove();
       return;
@@ -227,6 +238,14 @@
     }
 
     actions.replaceChildren();
+    const dragHandle = document.createElement('span');
+    dragHandle.className = 'portal-pdf-thumb-drag';
+    dragHandle.dataset.thumbnailDrag = 'true';
+    dragHandle.setAttribute('aria-hidden', 'true');
+    dragHandle.title = `Arraste a página ${record.pageNumber} para reorganizar`;
+    dragHandle.textContent = '⠿';
+    actions.appendChild(dragHandle);
+
     for (const spec of thumbnailActionSpecs(session, record.pageNumber)) {
       const actionButton = document.createElement('button');
       actionButton.type = 'button';
@@ -244,6 +263,132 @@
     if (!isCurrentSession(session)) return;
     for (const record of session.thumbs.values()) syncThumbnailActionControls(session, record);
     session.root.dataset.editorMode = session.thumbnailActions ? 'true' : 'false';
+  }
+
+  function clearThumbnailDragState(session) {
+    session.dragSourceIndex = null;
+    session.dragTargetIndex = null;
+    session.touchDrag = null;
+    for (const wrapper of session.thumbnailsRoot?.querySelectorAll?.('.portal-pdf-thumb-wrap') || []) {
+      wrapper.classList.remove('dragging', 'drag-before', 'drag-after');
+    }
+  }
+
+  function dropIndexForWrapper(session, wrapper, clientY, sourceIndex) {
+    if (!wrapper) return null;
+    const targetPage = Number(wrapper.dataset.pageNumber);
+    if (!Number.isInteger(targetPage) || targetPage < 1) return null;
+    const targetIndex = targetPage - 1;
+    const rect = wrapper.getBoundingClientRect();
+    const after = Number(clientY) > rect.top + (rect.height / 2);
+    let insertIndex = targetIndex + (after ? 1 : 0);
+    if (sourceIndex < insertIndex) insertIndex -= 1;
+    return { finalIndex: clamp(insertIndex, 0, session.document.numPages - 1), after };
+  }
+
+  function markThumbnailDropTarget(session, wrapper, after) {
+    for (const candidate of session.thumbnailsRoot?.querySelectorAll?.('.portal-pdf-thumb-wrap') || []) {
+      candidate.classList.remove('drag-before', 'drag-after');
+    }
+    if (wrapper) wrapper.classList.add(after ? 'drag-after' : 'drag-before');
+  }
+
+  function emitThumbnailReorder(session, sourceIndex, finalIndex) {
+    if (!isCurrentSession(session) || !session.thumbnailActions || !Number.isInteger(sourceIndex) || !Number.isInteger(finalIndex) || sourceIndex === finalIndex) return false;
+    session.suppressThumbnailClickUntil = performance.now() + 350;
+    session.onThumbnailAction?.('reorder', sourceIndex, { toIndex: finalIndex });
+    return true;
+  }
+
+  function installThumbnailReorder(session) {
+    const root = session.thumbnailsRoot;
+    if (!root || session.thumbnailDragHandlers) return;
+
+    const dragstart = (event) => {
+      if (!isCurrentSession(session) || !session.thumbnailActions) return;
+      if (event.target.closest?.('[data-thumbnail-action]')) {
+        event.preventDefault();
+        return;
+      }
+      const button = event.target.closest?.('.portal-pdf-thumb[data-page-number]');
+      const wrapper = button?.closest?.('.portal-pdf-thumb-wrap');
+      const pageNumber = Number(wrapper?.dataset.pageNumber);
+      if (!wrapper || !Number.isInteger(pageNumber)) return;
+      session.dragSourceIndex = pageNumber - 1;
+      wrapper.classList.add('dragging');
+      try {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', String(session.dragSourceIndex));
+      } catch (_) {}
+    };
+
+    const dragover = (event) => {
+      if (!isCurrentSession(session) || !session.thumbnailActions || !Number.isInteger(session.dragSourceIndex)) return;
+      const wrapper = event.target.closest?.('.portal-pdf-thumb-wrap');
+      if (!wrapper) return;
+      event.preventDefault();
+      try { event.dataTransfer.dropEffect = 'move'; } catch (_) {}
+      const target = dropIndexForWrapper(session, wrapper, event.clientY, session.dragSourceIndex);
+      if (!target) return;
+      session.dragTargetIndex = target.finalIndex;
+      markThumbnailDropTarget(session, wrapper, target.after);
+    };
+
+    const drop = (event) => {
+      if (!isCurrentSession(session) || !session.thumbnailActions || !Number.isInteger(session.dragSourceIndex)) return;
+      event.preventDefault();
+      const sourceIndex = session.dragSourceIndex;
+      const wrapper = event.target.closest?.('.portal-pdf-thumb-wrap');
+      const target = dropIndexForWrapper(session, wrapper, event.clientY, sourceIndex);
+      const finalIndex = target?.finalIndex ?? session.dragTargetIndex;
+      clearThumbnailDragState(session);
+      if (Number.isInteger(finalIndex)) emitThumbnailReorder(session, sourceIndex, finalIndex);
+    };
+
+    const dragend = () => clearThumbnailDragState(session);
+
+    const pointerdown = (event) => {
+      if (!isCurrentSession(session) || !session.thumbnailActions) return;
+      const handle = event.target.closest?.('[data-thumbnail-drag]');
+      const wrapper = handle?.closest?.('.portal-pdf-thumb-wrap');
+      const pageNumber = Number(wrapper?.dataset.pageNumber);
+      if (!handle || !wrapper || !Number.isInteger(pageNumber)) return;
+      session.touchDrag = { pointerId: event.pointerId, sourceIndex: pageNumber - 1 };
+      wrapper.classList.add('dragging');
+      try { handle.setPointerCapture?.(event.pointerId); } catch (_) {}
+      event.preventDefault();
+    };
+
+    const pointermove = (event) => {
+      const drag = session.touchDrag;
+      if (!isCurrentSession(session) || !drag || drag.pointerId !== event.pointerId) return;
+      event.preventDefault();
+      const element = document.elementFromPoint(event.clientX, event.clientY);
+      const wrapper = element?.closest?.('.portal-pdf-thumb-wrap');
+      const target = dropIndexForWrapper(session, wrapper, event.clientY, drag.sourceIndex);
+      if (!target) return;
+      session.dragTargetIndex = target.finalIndex;
+      markThumbnailDropTarget(session, wrapper, target.after);
+      const rect = root.getBoundingClientRect();
+      if (event.clientY < rect.top + 36) root.scrollTop -= 20;
+      else if (event.clientY > rect.bottom - 36) root.scrollTop += 20;
+    };
+
+    const pointerup = (event) => {
+      const drag = session.touchDrag;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      event.preventDefault();
+      const finalIndex = session.dragTargetIndex;
+      clearThumbnailDragState(session);
+      if (Number.isInteger(finalIndex)) emitThumbnailReorder(session, drag.sourceIndex, finalIndex);
+    };
+
+    const pointercancel = () => clearThumbnailDragState(session);
+
+    session.thumbnailDragHandlers = { dragstart, dragover, drop, dragend, pointerdown, pointermove, pointerup, pointercancel };
+    for (const [type, handler] of Object.entries(session.thumbnailDragHandlers)) {
+      root.addEventListener(type, handler, type === 'pointermove' ? { passive: false } : false);
+    }
   }
 
   function createPagePlaceholder(session, pageNumber) {
@@ -690,6 +835,11 @@
       firstPageWindowObserver: null,
       resizeObserver: null,
       resizeTimer: null,
+      thumbnailDragHandlers: null,
+      dragSourceIndex: null,
+      dragTargetIndex: null,
+      touchDrag: null,
+      suppressThumbnailClickUntil: 0,
       pageRatios: new Map(),
       visiblePages: new Set(),
       activePage: 0,
@@ -749,6 +899,7 @@
         createThumbnailPlaceholder(session, pageNumber);
       }
       syncThumbnailActions(session);
+      installThumbnailReorder(session);
 
       thumbnailsRoot.addEventListener('click', session.thumbClick = (event) => {
         if (!isCurrentSession(session)) return;
@@ -762,6 +913,7 @@
           return;
         }
 
+        if (performance.now() < Number(session.suppressThumbnailClickUntil || 0)) return;
         const button = event.target.closest?.('.portal-pdf-thumb[data-page-number]');
         if (!button) return;
         const pageNumber = Number(button.dataset.pageNumber);
@@ -886,6 +1038,6 @@
     setThumbnailActions,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1k`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1l`
   });
 })();
