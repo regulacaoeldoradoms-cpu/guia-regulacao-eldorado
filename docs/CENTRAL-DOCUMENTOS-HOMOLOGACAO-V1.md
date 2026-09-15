@@ -228,3 +228,32 @@ Critério crítico:
 - comparar visualmente **preview × PDF gerado e reaberto**;
 - preservar conteúdo vetorial/textual original sempre que a operação não exigir rasterização;
 - nenhuma sincronização com Drive entra aqui; isso pertence à Fase 4.
+
+
+## Resultado automatizado da 3C.3 — 15/09/2026
+
+Head validado: `32e3f45957142f1d6e6f0402db1ca70fe401377b`.
+
+GitHub Actions:
+- **24/24 workflows concluídos com sucesso**;
+- `Validar Central de Documentos — Fases 1–3`: sucesso;
+- governança: sucesso;
+- bundle de staging: sucesso;
+- workflow de navegador: sucesso.
+
+Playwright:
+- **44 casos descobertos**;
+- **43 passaram**;
+- **1 foi pulado intencionalmente** porque o teste “touch nativo” só se aplica ao projeto mobile;
+- no perfil mobile, o mesmo teste touch passou;
+- a regressão nova **“troca Organizar/Escrever mantém miniaturas lazy em documento maior”** passou em desktop e mobile;
+- a transformação da alça inferior direita (escala + rotação) passou em desktop e mobile;
+- nenhum diagnóstico de falha foi publicado porque a etapa correspondente foi corretamente ignorada.
+
+Staging sintético:
+- deployment imutável: `https://11589904.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- deploy reportado como sucesso pelo Cloudflare Pages;
+- continua proibido usar documento real enquanto o staging público não estiver protegido por Access.
+
+Conclusão técnica: a 3C.3 está pronta para **homologação humana de Escrever + Colar imagem**. O PR continua aberto e sem merge. Recortar permanece bloqueado até esse aceite.

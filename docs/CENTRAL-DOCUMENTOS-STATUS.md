@@ -21,11 +21,12 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 - **Alça inferior direita:** agora é transformação combinada. Distância ao centro controla escala uniforme e variação angular controla rotação; o centro do objeto é preservado e o gesto continua sendo consolidado como uma única mutação no `pointerup`. A alça de rotação dedicada continua disponível como alternativa.
 - **Testes acrescentados:** cobertura estática do lazy loading e da transformação SE; Playwright verifica resize + rotação pela alça SE e um cenário com mais de dez páginas onde somente miniaturas visíveis/próximas devem ficar renderizadas após Organizar ↔ Escrever.
 - **Segurança:** nenhuma rota de escrita no Drive, nenhum backend novo, nenhuma telemetria de texto/imagem/coordenadas e nenhum dado real no staging.
-- **Pendência imediata:** aguardar o CI do commit `d1345a6d...`. Se a matriz ficar verde, responder e resolver o thread P2, registrar o deployment imutável da branch e entregar o preview para homologação humana de Escrever + Colar imagem.
+- **Validação automática:** head `32e3f45957142f1d6e6f0402db1ca70fe401377b` passou **24/24 workflows**. O workflow de navegador executou 44 casos: **43 passaram e 1 foi pulado por ser o gesto touch específico no projeto desktop**; o mesmo gesto passou no perfil mobile. A nova regressão de lazy thumbnails passou em desktop e mobile.
 - **Gate:** Recortar (3C.4) não deve ser implementado antes do aceite humano da 3C.3. Desenhar/Borracha (3C.5) e flatten (3C.6) continuam apenas preparados em especificação/testes.
 - **Riscos conhecidos:** staging público enquanto Cloudflare Access estiver pendente, portanto somente dados sintéticos; touch automatizado não substitui teste em aparelho físico; PDFs institucionais só entram em reteste autorizado posterior.
 - **Não feito:** merge, alteração da main, deploy de produção, escrita no Drive, mudança de Worker/D1, uso de documento clínico ou avanço funcional para 3C.4/3C.5.
-- **Próxima ação exata:** verificar CI do head corrente; corrigir somente regressões da 3C.3 se houver; com CI verde, fechar o P2, validar preview sintético desktop/mobile e solicitar homologação humana de Escrever + Colar imagem.
+- **Preview candidato:** deployment sintético imutável `https://11589904.portal-regulacao-central-staging.pages.dev/`, associado ao head `32e3f45`; alias da branch permanece `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+- **Próxima ação exata:** fechar o thread P2 já comprovado por CI, manter o PR sem merge e entregar o preview candidato para homologação humana de **Escrever + Colar imagem**. Somente um defeito observado nessa homologação reabre trabalho técnico na 3C.3.
 
 ## 3C.3 — adiantamento técnico enquanto Codex estava indisponível — 15/09/2026
 
@@ -37,7 +38,7 @@ A rodada foi executada diretamente no PR #179, sem tocar a main:
 - adicionados testes de regressão para a transformação combinada e para a troca de modo com documento maior;
 - a documentação de homologação passou a conter a matriz completa da 3C.3 e a preparação das unidades seguintes, sem autorizar sua implementação antecipada.
 
-Decisão: esta rodada reduz a fila do Codex para **CI/diagnóstico de eventuais regressões → staging → homologação humana da 3C.3**. Não há justificativa para iniciar Recortar antes desse gate.
+Resultado: o CI confirmou a rodada sem regressão conhecida: 24/24 workflows verdes e Playwright 43 passed / 1 skipped (skip exclusivo do teste touch no projeto desktop; mobile aprovado). O deployment imutável `11589904...` foi publicado com sucesso. A fila restante é **homologação humana da 3C.3**; não há justificativa para iniciar Recortar antes desse gate.
 
 ## Estado de entrada
 
