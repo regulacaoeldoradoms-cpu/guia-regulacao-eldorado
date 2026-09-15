@@ -1702,3 +1702,25 @@ Próximo passo exato:
 5. testar Desfazer/Refazer;
 6. registrar aceite ou nova correção;
 7. somente depois decidir merge/deploy e executar reteste institucional real.
+
+
+## Aceite humano parcial do drag-and-drop — 14/09/2026
+
+Evidência do preview `7c94b5a6.portal-regulacao-central-staging.pages.dev`:
+- o usuário confirmou que agora consegue **mover a posição das páginas arrastando**;
+- a interação foi considerada conceitualmente correta e superior às antigas setas;
+- o usuário observou, porém, que o arraste **ainda não parece suficientemente fluido**;
+- por preferência operacional, o usuário enviará capturas do Lumin como referência de comportamento/UX para o refinamento.
+
+Interpretação:
+- a capacidade funcional de reordenação por arraste está aceita;
+- a experiência de interação ainda não está aceita como final;
+- não fazer merge com base apenas na funcionalidade atual; primeiro comparar a dinâmica de arraste, feedback visual, alvo de inserção e sensação de movimentação com as referências fornecidas pelo usuário;
+- a referência externa deve orientar comportamento e ergonomia, sem copiar identidade visual proprietária.
+
+Próximo passo exato:
+1. receber as capturas/etapas do Lumin;
+2. decompor o comportamento observado em estados de interação: repouso, início do drag, deslocamento, indicador de inserção, auto-scroll, soltura e animação pós-drop;
+3. implementar somente os refinamentos compatíveis com a arquitetura atual;
+4. repetir Playwright e novo aceite visual humano;
+5. PR #179 permanece aberto e sem merge.
