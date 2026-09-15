@@ -243,6 +243,11 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(palette.locator('[data-text-palette-index="6"]')).toHaveCSS('background-color', 'rgb(0, 131, 143)');
     await expect(page.locator('html')).toHaveAttribute('data-editor-palette', /#00838f$/);
 
+    // The custom panel can be closed after positioning/editing so it never traps
+    // the contextual controls underneath it.
+    await panel.locator('[data-color-panel-close]').click();
+    await expect(panel).toBeHidden();
+
     // Quick delete is reversible through the shared history.
     await quickbar.locator('[data-text-quick-delete]').click();
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(0);

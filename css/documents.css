@@ -1216,6 +1216,36 @@
   display: none !important;
 }
 
+.portal-pdf-custom-color-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+  color: #294b62;
+  font-size: .72rem;
+}
+
+.portal-pdf-custom-color-close {
+  width: 26px;
+  height: 24px;
+  border: 1px solid #d4dee7;
+  border-radius: 7px;
+  background: #fff;
+  color: #6b7f8f;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.portal-pdf-custom-color-close:hover,
+.portal-pdf-custom-color-close:focus-visible {
+  background: #f3f8fb;
+  border-color: #9fbccc;
+  outline: none;
+}
+
 .portal-pdf-custom-color-plane {
   --picker-hue: 0;
   position: relative;
