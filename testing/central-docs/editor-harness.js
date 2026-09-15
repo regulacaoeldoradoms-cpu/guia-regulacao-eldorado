@@ -490,6 +490,7 @@
     if (!state.session) return;
     const changed = state.session.revision > 0;
     const viewState = viewer.getViewState() || state.viewState;
+    viewer.setEditorObjects?.([], { mode: 'none', selectedObjectId: '' });
     state.session = null;
     state.merging = false;
     state.mode = 'readonly';
