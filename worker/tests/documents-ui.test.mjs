@@ -14,7 +14,7 @@ test('API pública do visualizador expõe a transição real do Organizar V2', (
   assert.match(publicApi[1], /\bsetOrganizerMode\s*,/);
   const sandbox = { window: {} };
   vm.runInNewContext(viewer, sandbox);
-  for (const method of ['open', 'close', 'getViewState', 'setThumbnailActions', 'setOrganizerMode', 'scrollToPage', 'zoomIn', 'zoomOut', 'fitWidth']) {
+  for (const method of ['open', 'close', 'getViewState', 'setThumbnailActions', 'setOrganizerMode', 'setEditorObjects', 'scrollToPage', 'zoomIn', 'zoomOut', 'fitWidth']) {
     assert.equal(typeof sandbox.window.PortalPdfViewer[method], 'function', `API pública: ${method}`);
   }
   assert.match(viewer, /session\.root\.dataset\.organizerMode = next \? 'true' : 'false'/);
@@ -129,7 +129,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260915-1/);
+  assert.match(html, /documents\.js\?v=20260915-2/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -168,7 +168,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260915-1/);
+  assert.match(html, /documents\.css\?v=20260915-2/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -187,9 +187,9 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260915-3/);
-  assert.match(html, /documents\.js\?v=20260915-1/);
-  assert.match(html, /documents\.css\?v=20260915-1/);
+  assert.match(html, /document-viewer\.js\?v=20260915-4/);
+  assert.match(html, /documents\.js\?v=20260915-2/);
+  assert.match(html, /documents\.css\?v=20260915-2/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -257,9 +257,9 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260915-3/);
-  assert.match(html, /documents\.js\?v=20260915-1/);
-  assert.match(html, /documents\.css\?v=20260915-1/);
+  assert.match(html, /document-viewer\.js\?v=20260915-4/);
+  assert.match(html, /documents\.js\?v=20260915-2/);
+  assert.match(html, /documents\.css\?v=20260915-2/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -353,26 +353,33 @@ test('editor V2 expõe união posicionada e sincroniza seleção do catálogo', 
   assert.match(client, /prepareMergePdf\(item\)/);
 });
 
-test('editor mantém imagem como nova página e Ctrl+V local enquanto Colar imagem overlay fica para unidade própria', () => {
+test('editor diferencia imagem como nova página de Colar imagem sobre página', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
   const editor = read('js/document-editor.js');
+  const viewer = read('js/document-viewer.js');
   const observability = read('js/portal-observability.js');
 
   assert.match(html, /id="editorImageButton"[^>]*title="Adicionar imagem como nova página"/);
-  assert.match(html, /id="editorOverlayImageButton"[^>]*title="Colar imagem sobre a página[^"]*"[^>]*disabled/);
-  assert.match(html, /document-editor\.js\?v=20260915-1/);
-  assert.match(html, /documents\.js\?v=20260915-1/);
+  assert.match(html, /id="editorOverlayImageButton"[^>]*title="Colar imagem sobre a página"/);
+  assert.doesNotMatch(html, /id="editorOverlayImageButton"[^>]*disabled/);
+  assert.match(html, /id="editorWriteButton"[^>]*title="Escrever sobre a página"/);
+  assert.doesNotMatch(html, /id="editorWriteButton"[^>]*disabled/);
+  assert.match(html, /id="editorSelectButton"/);
+  assert.match(html, /id="editorObjectToolbar"/);
+  assert.match(html, /document-editor\.js\?v=20260915-2/);
+  assert.match(html, /documents\.js\?v=20260915-2/);
   assert.match(client, /handleEditorPaste/);
-  assert.match(client, /clipboardData/);
   assert.match(client, /addImageBlobToEditor/);
-  assert.match(client, /addImagePage/);
-  assert.match(editor, /async function addImagePage/);
-  assert.match(editor, /embedPng/);
-  assert.match(editor, /embedJpg/);
+  assert.match(client, /addOverlayImageFile/);
+  assert.match(client, /startWriteObjects/);
+  assert.match(editor, /async function addImageOverlay/);
+  assert.match(editor, /function addTextObject/);
+  assert.match(editor, /function updateObject/);
+  assert.match(editor, /function objectModel/);
+  assert.match(viewer, /function setEditorObjects/);
+  assert.match(viewer, /portal-pdf-object/);
   assert.match(observability, /'insert_image'/);
-  assert.match(observability, /'duplicate_page'/);
-  assert.match(observability, /'insert_blank_page'/);
 });
 
 test('editor PDF é local, reversível e separado da escrita no Drive', () => {
@@ -380,7 +387,7 @@ test('editor PDF é local, reversível e separado da escrita no Drive', () => {
   const client = read('js/documents.js');
   const editor = read('js/document-editor.js');
 
-  assert.match(html, /document-editor\.js\?v=20260915-1/);
+  assert.match(html, /document-editor\.js\?v=20260915-2/);
   assert.match(html, /Editar PDF/);
   assert.match(html, /id="editorExitButton"/);
   assert.match(editor, /\/vendor\/pdf-lib\/pdf-lib\.min\.js/);
@@ -454,4 +461,25 @@ test('Editor UX V2 usa grade contextual sem botões globais redundantes de mover
   assert.match(css, /data-organizer-mode="true"/);
   assert.match(css, /grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(205px,\s*1fr\)\)/);
   assert.match(css, /\.portal-pdf-drag-ghost/);
+});
+
+
+test('3C.3 mantém objetos locais reversíveis e deixa Recortar/Desenhar bloqueados', () => {
+  const html = read('documentos/index.html');
+  const editor = read('js/document-editor.js');
+  const viewer = read('js/document-viewer.js');
+  const css = read('css/documents.css');
+
+  assert.match(html, /id="editorCropButton"[^>]*disabled/);
+  assert.match(html, /id="editorDrawButton"[^>]*disabled/);
+  assert.match(html, /id="editorOverlayImageInput"[^>]*type="file"/);
+  assert.match(editor, /objects:\s*\[\]/);
+  assert.match(editor, /pageId:/);
+  assert.match(editor, /commitObjectMutation/);
+  assert.match(viewer, /data-object-resize/);
+  assert.match(viewer, /data-object-rotate/);
+  assert.match(viewer, /contentEditable/);
+  assert.match(css, /\.portal-pdf-object-layer/);
+  assert.match(css, /\.portal-pdf-object-handle--se/);
+  assert.match(css, /\.portal-pdf-object-rotate/);
 });

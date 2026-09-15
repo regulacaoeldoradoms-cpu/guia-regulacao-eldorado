@@ -1863,3 +1863,36 @@ Próximo passo exato:
 3. garantir seleção, mover, resize, rotação e undo/redo;
 4. validar desktop/mobile no staging sintético;
 5. solicitar homologação humana dessa nova unidade antes de seguir para Recortar.
+
+
+## 3C.3 — Escrever + Colar imagem: implementação iniciada — 15/09/2026
+
+Estado real:
+- Organizar V2 aceito visualmente e tecnicamente;
+- PR #179 segue aberto, sem merge;
+- a próxima unidade da Fase 3 é 3C.3 — objetos sobre página.
+
+Implementado nesta rodada:
+- o plano de páginas ganhou identidade estável por `pageId`, permitindo que objetos acompanhem a página ao reordenar;
+- sessão do editor ganhou modelo local de objetos com histórico integrado;
+- texto e imagem overlay possuem posição, tamanho, rotação e opacidade;
+- textos também guardam fonte, tamanho relativo e cor;
+- duplicar página duplica seus objetos com novos IDs; excluir página remove os objetos daquela página;
+- Undo/Redo restaura plano + objetos;
+- visualizador ganhou camada de objetos sobre o canvas PDF, seleção, movimento, quatro pontos de resize, rotação e edição direta de texto por duplo clique;
+- toolbar habilita **Selecionar**, **Escrever** e **Colar imagem sobre a página**;
+- Recortar e Desenhar continuam bloqueados para as unidades seguintes;
+- laboratório sintético recebeu os mesmos modos, usando somente texto/imagem fictícios;
+- objetos continuam locais; `buildBlob()` ainda não faz flatten desses objetos — isso permanece explicitamente para 3C.6.
+
+Segurança:
+- nenhuma escrita no Drive;
+- nenhuma chamada nova de backend;
+- nenhum conteúdo textual/imagem é enviado para observabilidade;
+- staging permanece sintético.
+
+Próximo passo:
+1. validar testes unitários/estáticos e Playwright da nova camada;
+2. corrigir qualquer regressão de gesto/zoom/rebuild;
+3. publicar preview sintético de 3C.3;
+4. homologar Escrever e Colar imagem antes de avançar para Recortar.

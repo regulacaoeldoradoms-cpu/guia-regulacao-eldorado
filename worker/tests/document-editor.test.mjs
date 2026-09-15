@@ -249,3 +249,66 @@ test('imagem entra na posição pedida e permanece identificável na ordem visua
   const output = await editor.buildBlob(session);
   assert.equal(output.type, 'application/pdf');
 });
+
+
+test('objetos sobre página acompanham página, histórico, duplicação e exclusão', async () => {
+  const editor = editorWithFakePdfLib();
+  const session = await editor.createSession(
+    new Blob([new Uint8Array([2])], { type: 'application/pdf' }),
+    { label: 'Documento inicial' }
+  );
+
+  const textId = editor.addTextObject(session, 0, {
+    text: 'Texto sintético',
+    x: .2,
+    y: .3,
+    width: .4,
+    fontFamily: 'Arial',
+    fontSize: .04,
+    color: '#123456',
+    opacity: .8
+  });
+  assert.ok(textId);
+  assert.equal(editor.objectModel(session).length, 1);
+  assert.equal(editor.objectModel(session)[0].displayPage, 1);
+  assert.equal(editor.objectModel(session)[0].text, 'Texto sintético');
+
+  assert.equal(editor.updateObject(session, textId, { x: .35, rotation: 27 }, { commit: false }), true);
+  assert.equal(editor.commitObjectMutation(session), true);
+  assert.equal(Math.round(editor.objectModel(session)[0].rotation), 27);
+  assert.equal(editor.undo(session), true);
+  assert.equal(Number(editor.objectModel(session)[0].x.toFixed(2)), .2);
+  assert.equal(editor.redo(session), true);
+  assert.equal(Number(editor.objectModel(session)[0].x.toFixed(2)), .35);
+
+  assert.equal(editor.movePageTo(session, 0, 1), true);
+  assert.equal(editor.objectModel(session)[0].displayPage, 2);
+
+  const duplicateAt = editor.duplicatePage(session, 1);
+  assert.equal(duplicateAt, 2);
+  assert.equal(editor.pageCount(session), 3);
+  assert.equal(editor.objectModel(session).length, 2);
+  assert.notEqual(editor.objectModel(session)[0].id, editor.objectModel(session)[1].id);
+  assert.equal(editor.objectModel(session)[1].displayPage, 3);
+
+  assert.equal(editor.removePage(session, 2), true);
+  assert.equal(editor.objectModel(session).length, 1);
+
+  const imageId = await editor.addImageOverlay(
+    session,
+    0,
+    new Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' }),
+    { x: .1, y: .1, width: .25, height: .2 }
+  );
+  assert.ok(imageId);
+  const image = editor.objectModel(session).find((item) => item.id === imageId);
+  assert.equal(image.type, 'image');
+  assert.equal(image.displayPage, 1);
+  assert.ok(image.blob instanceof Blob);
+
+  assert.equal(editor.removeObject(session, imageId), true);
+  assert.equal(editor.objectModel(session).some((item) => item.id === imageId), false);
+  assert.equal(editor.undo(session), true);
+  assert.equal(editor.objectModel(session).some((item) => item.id === imageId), true);
+});
+
