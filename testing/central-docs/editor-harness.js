@@ -377,6 +377,7 @@
       insertAt
     });
     state.merging = false;
+    state.mode = 'organize';
     await rebuild(viewState ? { ...viewState, activePage: insertAt + 1 } : null, 'Unindo segundo PDF sintético…');
   }
 

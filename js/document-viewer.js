@@ -180,6 +180,12 @@
       }
       session.thumbnailDragHandlers = null;
     }
+    if (session.objectHandlers) {
+      for (const [type, handler] of Object.entries(session.objectHandlers)) {
+        try { session.pagesRoot?.removeEventListener(type, handler); } catch (_) {}
+      }
+      session.objectHandlers = null;
+    }
     const loadingTask = session.loadingTask;
     const document = session.document;
     session.loadingTask = null;
@@ -649,10 +655,8 @@
     layer.dataset.objectMode = mode;
     layer.replaceChildren();
 
-    const liveIds = new Set();
     for (const object of session.editorObjects || []) {
       if (Number(object.displayPage) !== Number(pageNumber)) continue;
-      liveIds.add(String(object.id));
       const element = document.createElement('div');
       element.className = `portal-pdf-object portal-pdf-object--${object.type}`;
       element.dataset.objectId = String(object.id);
@@ -682,18 +686,18 @@
       createObjectHandles(element);
       layer.appendChild(element);
     }
-
-    for (const [id, entry] of [...session.objectUrls.entries()]) {
-      if (liveIds.has(id)) continue;
-      try { URL.revokeObjectURL(entry.url); } catch (_) {}
-      session.objectUrls.delete(id);
-    }
   }
 
   function renderEditorObjects(session) {
     if (!isCurrentSession(session)) return false;
+    const liveIds = new Set((session.editorObjects || []).map((item) => String(item.id)));
     for (let pageNumber = 1; pageNumber <= (session.document?.numPages || 0); pageNumber += 1) {
       renderEditorObjectsForPage(session, pageNumber);
+    }
+    for (const [id, entry] of [...session.objectUrls.entries()]) {
+      if (liveIds.has(id)) continue;
+      try { URL.revokeObjectURL(entry.url); } catch (_) {}
+      session.objectUrls.delete(id);
     }
     session.root.dataset.objectMode = String(session.objectMode || 'none');
     return true;
@@ -1569,6 +1573,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v1`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v1a`
   });
 })();
