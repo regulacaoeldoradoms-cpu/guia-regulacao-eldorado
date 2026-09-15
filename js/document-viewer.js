@@ -699,6 +699,13 @@
     return true;
   }
 
+  function markSelectedObject(session, objectId) {
+    session.selectedObjectId = String(objectId || '');
+    for (const element of session.pagesRoot?.querySelectorAll?.('.portal-pdf-object') || []) {
+      element.classList.toggle('selected', element.dataset.objectId === session.selectedObjectId);
+    }
+  }
+
   function commitObjectGesture(session, drag) {
     if (!drag || !session.onObjectCommit) return;
     const object = objectForId(session, drag.id);
@@ -722,9 +729,8 @@
       if (!object || !layer) return;
       if (event.target.closest?.('.portal-pdf-object-text[contenteditable="true"]')) return;
       event.preventDefault();
-      session.selectedObjectId = id;
+      markSelectedObject(session, id);
       session.onObjectSelect?.(id);
-      renderEditorObjects(session);
 
       const rect = layer.getBoundingClientRect();
       const objectRect = element.getBoundingClientRect();
@@ -746,7 +752,8 @@
         layerHeight: Math.max(1, rect.height),
         center,
         startAngle: Math.atan2(event.clientY - center.y, event.clientX - center.x) * 180 / Math.PI,
-        start: { ...object }
+        start: { ...object },
+        changed: false
       };
       try { element.setPointerCapture?.(event.pointerId); } catch (_) {}
     };
@@ -792,6 +799,7 @@
       }
 
       Object.assign(object, patch);
+      drag.changed = true;
       session.onObjectChange?.(drag.id, patch);
       const element = pagesRoot.querySelector(`.portal-pdf-object[data-object-id="${CSS.escape(drag.id)}"]`);
       if (element) applyObjectGeometry(element, object, element.closest('.portal-pdf-page')?.clientWidth || 760);
@@ -802,7 +810,7 @@
       if (!drag || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
       session.objectDrag = null;
       try { drag.origin?.releasePointerCapture?.(drag.pointerId); } catch (_) {}
-      commitObjectGesture(session, drag);
+      if (drag.changed) commitObjectGesture(session, drag);
     };
 
     const click = (event) => {
@@ -811,9 +819,8 @@
       if (element) {
         const id = String(element.dataset.objectId || '');
         if (id && session.selectedObjectId !== id) {
-          session.selectedObjectId = id;
+          markSelectedObject(session, id);
           session.onObjectSelect?.(id);
-          renderEditorObjects(session);
         }
         return;
       }
