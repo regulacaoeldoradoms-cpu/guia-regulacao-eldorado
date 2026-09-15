@@ -1029,21 +1029,23 @@
 }
 
 .portal-pdf-object-handle {
-  width: 12px;
-  height: 12px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
+  z-index: 10;
 }
 
-.portal-pdf-object-handle--nw { left: -7px; top: -7px; cursor: nwse-resize; }
-.portal-pdf-object-handle--ne { right: -7px; top: -7px; cursor: nesw-resize; }
-.portal-pdf-object-handle--sw { left: -7px; bottom: -7px; cursor: nesw-resize; }
-.portal-pdf-object-handle--se { right: -7px; bottom: -7px; cursor: nwse-resize; }
+.portal-pdf-object-handle--nw { left: -10px; top: -10px; cursor: nwse-resize; }
+.portal-pdf-object-handle--ne { right: -10px; top: -10px; cursor: nesw-resize; }
+.portal-pdf-object-handle--sw { left: -10px; bottom: -10px; cursor: nesw-resize; }
+.portal-pdf-object-handle--se { right: -10px; bottom: -10px; cursor: nwse-resize; }
 
 .portal-pdf-object-rotate {
-  width: 14px;
-  height: 14px;
-  left: calc(50% - 7px);
-  bottom: -30px;
+  width: 18px;
+  height: 18px;
+  left: calc(50% - 9px);
+  bottom: -34px;
+  z-index: 10;
   border-radius: 50%;
   cursor: grab;
 }
