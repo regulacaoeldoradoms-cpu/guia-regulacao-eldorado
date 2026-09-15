@@ -20,11 +20,76 @@ Subfase atual: **3C.1 — superfície única de visualização/edição implemen
 
 ## Branch / PR
 
-Branch atual: `codex/central-docs-editor-superficie-unica`, criada da `main` confirmada em `7c25797d2a5c73aa389f064c35b95a3b67b6e0ba` antes de qualquer alteração desta unidade.
+Branch atual: `codex/central-docs-editor-superficie-unica`, inicialmente criada de `7c25797d2a5c73aa389f064c35b95a3b67b6e0ba` e atualizada por rebase sobre a `origin/main` real `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`.
 
-PR atual: esta PR funcional da branch `codex/central-docs-editor-superficie-unica`, aberta somente depois da aprovação do preview e dos testes registrados abaixo. PR #175 (infraestrutura de staging) e PR #173 (compatibilidade do visualizador) permanecem como histórico já publicado.
+PR atual: [#179 — Central de Documentos: unificar visualizador e editor PDF](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/179), aberto e sem merge. PR #175 (infraestrutura de staging) e PR #173 (compatibilidade do visualizador) permanecem como histórico já publicado.
 
-## 3C.1 — superfície única do visualizador/editor aprovada no preview — 14/09/2026
+## 3C.1 — P1 corrigido e validação pós-rebase — 14/09/2026
+
+Este registro substitui as referências de base, contagens e preview da homologação anterior para a revisão final do PR #179.
+
+P1 encontrado no review:
+
+- [comentário Codex #4006168373](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/179#discussion_r4006168373): uma abertura antiga podia terminar a conversão de Blob ou o carregamento do PDF.js depois de uma nova e reassumir `active`, misturando título/estado do documento novo com canvases antigos;
+- a causa estava dentro de `PortalPdfViewer.open()`: a sessão ativa era fechada antes da preparação assíncrona, mas a atribuição posterior de `active` não verificava qual chamada ainda era atual;
+- a correção foi publicada no commit `0d0782d94534e6e376205e86952868f06254e874`.
+
+Correção generation-aware:
+
+- cada chamada de `open()` recebe geração/token próprio e um sinal de cancelamento;
+- os awaits do módulo PDF.js, de `Blob.arrayBuffer()` e da loading task competem com esse sinal; uma chamada obsoleta retorna `null` e não assume `active`;
+- o encerramento de uma sessão antiga cancela somente suas render/loading tasks, desconecta seus observers/listeners e zera seus canvases; os roots compartilhados só são limpos quando a sessão ainda é proprietária da superfície;
+- `close()` invalida também aberturas pendentes, e renderizações, observers, timers, callbacks e eventos de miniatura revalidam a sessão;
+- exceções síncronas de `getDocument()` passam pelo mesmo cleanup;
+- o visualizador continua sem criar Blob URLs próprias; a propriedade das URLs permanece com o chamador;
+- o versionamento do asset passou a `document-viewer.js?v=20260914-4`; `.gitattributes` conserva os bytes de `pdf-lib.min.js` para evitar quebra do SRI por conversão de fim de linha no Windows.
+
+Sincronização com a main:
+
+- `git fetch origin` executado; `origin/main` confirmada novamente em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3` (Telemedicina: histórico longitudinal visual V40);
+- rebase concluído, com essa main como ancestral; o conteúdo publicado pela API GitHub foi conferido pelo tree SHA `473dc4ccb39c79b57dd129a65add5223881f047b`, idêntico à árvore local testada;
+- conflitos de cache resolvidos preservando `20260914-4`, que já vinha da main;
+- `account-first-access-ui.test.mjs` permaneceu idêntico à main; `portal-sw.js`, `documents-ui.test.mjs` e `portal-performance.test.mjs` preservam integralmente as mudanças recentes de Telemedicina;
+- as correções auxiliares de caminho nos testes usam `fileURLToPath` para executar a suíte no Windows, sem alterar comportamento do Portal.
+
+Validações pós-rebase:
+
+- suíte Worker completa: **135/135 aprovada**, incluindo Telemedicina V40; `npm run check`, sintaxe JavaScript e `git diff --check` aprovados;
+- Playwright local: **12/12 aprovado**, sem retry, em Chromium desktop e Pixel 7;
+- os dez cenários anteriores de visualizador/editor permanecem **10/10**; a corrida acrescenta **2/2** (desktop/mobile);
+- teste determinístico A → B: A é retido durante a conversão do Blob, B termina primeiro e A é liberado depois; A retorna `null`, sem alterar identidade ou pixels dos canvases/miniaturas de B, página ativa, zoom ou callbacks;
+- teste B → C: B é retido em uma loading task, C vence e B é cancelado; C permanece proprietário da superfície, sem callbacks obsoletos;
+- os snapshots aguardam a renderização preguiçosa e o scroll do vencedor estabilizarem antes de liberar a abertura antiga;
+- build `node scripts/build-central-docs-staging.mjs` aprovado;
+- GitHub Actions do commit funcional: **24/24 workflows concluídos com sucesso**;
+- Playwright remoto no novo deployment imutável abaixo: **12/12 aprovado**, sem retry;
+- inspeção visual real em desktop `1440 × 900` e mobile `412 × 915`: selo **DADOS FICTÍCIOS**, três páginas/miniaturas, entrada e saída na mesma superfície, mover, excluir, adicionar imagem, unir PDF, navegação e zoom;
+- no mobile, zoom passou de `52%` para `67%`; Ajustar largura retornou a `52%`; a miniatura 2 mostrou a página paisagem;
+- o DOM confirmou `editorInsideViewer: true`, `nativeViewers: 0` e `textualEditorLists: 0`; console sem warning/error.
+
+Preview Cloudflare Pages pós-rebase:
+
+- projeto: `portal-regulacao-central-staging`;
+- deployment imutável funcional: [f23269b1](https://f23269b1.portal-regulacao-central-staging.pages.dev/);
+- ID: `f23269b1-a1c2-4bd2-84d6-26c9a4f7c6d4`;
+- commit: `0d0782d94534e6e376205e86952868f06254e874`;
+- alias da branch: [preview da 3C.1](https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/);
+- ambiente `preview`, clone/build/deploy em `success`, `uses_functions: false` e `env_vars: {}`;
+- HTTP 200, `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `robots.txt` com `Disallow: /`;
+- CSP preserva `connect-src 'self'`, `script-src 'self'`, `frame-src 'none'`, `object-src 'none'` e `frame-ancestors 'none'`;
+- manifesto confirma `syntheticOnly: true`, `productionApisIncluded: false` e o SHA exato do deployment;
+- nenhuma requisição ao Worker de produção, Google APIs/Drive/OAuth ou `/api/`; nenhum D1, documento clínico ou dado institucional no bundle.
+
+Review, riscos e próximo passo:
+
+- o P1 foi respondido com causa, correção e evidências e a thread `PRRT_kwDOSN6RU86iJZI4` foi efetivamente marcada como resolvida no GitHub;
+- PR #179 permanece aberto, aguardando **revisão final humana antes do merge**; nenhuma operação de merge foi executada;
+- produção, Worker `yellow-wave-d0a1guia-regulacao-ia` e D1 `portal-regulacao-users` permaneceram intocados;
+- Access e domínio personalizado continuam pendentes; o preview público só pode conter dados sintéticos;
+- o laboratório usa os componentes reais com orquestração sintética; o fluxo institucional completo ainda exige reteste autorizado após eventual merge/deploy;
+- **não iniciar 3C.2** até o aceite explícito da integração visual da 3C.1.
+
+## Histórico: 3C.1 — primeira homologação da superfície única — 14/09/2026
 
 Controle de versão e escopo:
 
