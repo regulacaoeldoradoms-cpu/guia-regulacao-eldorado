@@ -45,6 +45,7 @@
     editorStartSeq: 0,
     editorBusy: false,
     editorMode: 'readonly',
+    selectedObjectId: '',
     pendingMergeItem: null
   };
 
@@ -95,10 +96,21 @@
     editorBlankPage: document.getElementById('editorBlankPageButton'),
     editorImage: document.getElementById('editorImageButton'),
     editorCrop: document.getElementById('editorCropButton'),
+    editorSelect: document.getElementById('editorSelectButton'),
     editorWrite: document.getElementById('editorWriteButton'),
     editorOverlayImage: document.getElementById('editorOverlayImageButton'),
+    editorOverlayImageInput: document.getElementById('editorOverlayImageInput'),
     editorDraw: document.getElementById('editorDrawButton'),
     editorImageInput: document.getElementById('editorImageInput'),
+    editorObjectToolbar: document.getElementById('editorObjectToolbar'),
+    editorObjectFontField: document.getElementById('editorObjectFontField'),
+    editorObjectSizeField: document.getElementById('editorObjectSizeField'),
+    editorObjectColorField: document.getElementById('editorObjectColorField'),
+    editorObjectFont: document.getElementById('editorObjectFont'),
+    editorObjectFontSize: document.getElementById('editorObjectFontSize'),
+    editorObjectColor: document.getElementById('editorObjectColor'),
+    editorObjectOpacity: document.getElementById('editorObjectOpacity'),
+    editorObjectDelete: document.getElementById('editorObjectDelete'),
     editorPreview: document.getElementById('editorPreviewButton'),
     editorExit: document.getElementById('editorExitButton'),
     editorMergePanel: document.getElementById('editorMergePanel'),
@@ -335,6 +347,79 @@
     }
   }
 
+  function selectedEditorObject() {
+    const session = state.editorSession;
+    if (!session || !state.selectedObjectId) return null;
+    return window.PortalPdfEditor?.objectModel?.(session)
+      ?.find?.((item) => item.id === state.selectedObjectId) || null;
+  }
+
+  function syncEditorObjectToolbar() {
+    const object = selectedEditorObject();
+    if (els.editorObjectToolbar) els.editorObjectToolbar.hidden = !object;
+    if (!object || !els.editorObjectToolbar) return;
+    const isText = object.type === 'text';
+    for (const field of [els.editorObjectFontField, els.editorObjectSizeField, els.editorObjectColorField]) {
+      if (field) field.hidden = !isText;
+    }
+    if (isText) {
+      if (els.editorObjectFont) els.editorObjectFont.value = object.fontFamily || 'Arial';
+      if (els.editorObjectFontSize) els.editorObjectFontSize.value = String(Math.max(8, Math.min(96, Math.round((object.fontSize || .032) * 560))));
+      if (els.editorObjectColor) els.editorObjectColor.value = /^#[0-9a-f]{6}$/i.test(object.color || '') ? object.color : '#111111';
+    }
+    if (els.editorObjectOpacity) els.editorObjectOpacity.value = String(Math.round((object.opacity ?? 1) * 100));
+  }
+
+  function syncEditorObjects() {
+    const session = state.editorSession;
+    const editor = window.PortalPdfEditor;
+    const viewer = window.PortalPdfViewer;
+    if (!session || !editor?.objectModel || !viewer?.setEditorObjects) return false;
+    const mode = ['select', 'write', 'image'].includes(state.editorMode) ? state.editorMode : 'none';
+    const result = viewer.setEditorObjects(editor.objectModel(session), {
+      mode,
+      selectedObjectId: state.selectedObjectId,
+      onSelect(id) {
+        if (session !== state.editorSession) return;
+        state.selectedObjectId = id;
+        syncEditorObjectToolbar();
+      },
+      onChange(id, patch) {
+        if (session !== state.editorSession) return;
+        editor.updateObject(session, id, patch, { commit: false });
+      },
+      onCommit() {
+        if (session !== state.editorSession) return;
+        editor.commitObjectMutation(session);
+        syncEditorControls();
+      },
+      onTextCommit(id, value) {
+        if (session !== state.editorSession) return;
+        editor.updateObject(session, id, { text: value }, { commit: false });
+        editor.commitObjectMutation(session);
+        syncEditorControls();
+        syncEditorObjectToolbar();
+      },
+      onCreateText(pageNumber, point) {
+        if (session !== state.editorSession || state.editorMode !== 'write') return;
+        const id = editor.addTextObject(session, pageNumber - 1, {
+          x: Math.min(.82, Math.max(0, point.x - .04)),
+          y: Math.min(.9, Math.max(0, point.y - .025)),
+          text: 'Digite aqui'
+        });
+        state.selectedObjectId = id || '';
+        syncEditorControls();
+        syncEditorObjects();
+        requestAnimationFrame(() => {
+          const selector = `.portal-pdf-object[data-object-id="${CSS.escape(state.selectedObjectId)}"] .portal-pdf-object-text`;
+          els.pdfPages?.querySelector(selector)?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+        });
+      }
+    });
+    syncEditorObjectToolbar();
+    return result;
+  }
+
   function setEditorWorkspaceMode(mode = 'organize') {
     const editing = Boolean(state.editorSession);
     const next = editing ? String(mode || 'organize') : 'readonly';
@@ -350,7 +435,20 @@
       els.editorMerge.classList.toggle('active', next === 'merge');
       els.editorMerge.setAttribute('aria-pressed', next === 'merge' ? 'true' : 'false');
     }
+    if (els.editorSelect) {
+      els.editorSelect.classList.toggle('active', next === 'select');
+      els.editorSelect.setAttribute('aria-pressed', next === 'select' ? 'true' : 'false');
+    }
+    if (els.editorWrite) {
+      els.editorWrite.classList.toggle('active', next === 'write');
+      els.editorWrite.setAttribute('aria-pressed', next === 'write' ? 'true' : 'false');
+    }
+    if (els.editorOverlayImage) {
+      els.editorOverlayImage.classList.toggle('active', next === 'image');
+      els.editorOverlayImage.setAttribute('aria-pressed', next === 'image' ? 'true' : 'false');
+    }
     if (els.editorMergePanel) els.editorMergePanel.hidden = next !== 'merge';
+    syncEditorObjects();
   }
 
   function syncEditorControls() {
@@ -364,6 +462,11 @@
     if (els.editorBlankPage) els.editorBlankPage.disabled = busy || !session;
     els.editorImage.disabled = busy || !session;
     els.editorImageInput.disabled = busy || !session;
+    if (els.editorSelect) els.editorSelect.disabled = busy || !session;
+    if (els.editorWrite) els.editorWrite.disabled = busy || !session;
+    if (els.editorOverlayImage) els.editorOverlayImage.disabled = busy || !session;
+    if (els.editorOverlayImageInput) els.editorOverlayImageInput.disabled = busy || !session;
+    if (els.editorObjectDelete) els.editorObjectDelete.disabled = busy || !selectedEditorObject();
     els.editorPreview.disabled = busy || !session;
     if (els.editorMergeApply) els.editorMergeApply.disabled = busy || !session || !state.pendingMergeItem;
     if (els.editorMergeCancel) els.editorMergeCancel.disabled = busy || !session;
@@ -479,6 +582,7 @@
               : `Visualização editada atualizada em ${duration(started)} ms.`,
             'success'
           );
+          syncEditorObjects();
           restoreEditorFocus(focusRestore, seq, session);
         },
         onError: (error) => {
@@ -542,6 +646,7 @@
     clearEditorPreview();
     state.editorSession = null;
     state.pendingMergeItem = null;
+    state.selectedObjectId = '';
     state.editorMode = 'readonly';
     window.PortalPdfViewer?.setThumbnailActions?.(false);
     window.PortalPdfViewer?.setOrganizerMode?.(false);
@@ -802,6 +907,69 @@
     }
   }
 
+  function startSelectObjects() {
+    if (!state.editorSession || state.editorBusy) return;
+    setEditorWorkspaceMode('select');
+    setEditorStatus('Selecionar: arraste objetos para mover; use os quatro pontos para redimensionar e o ponto inferior para rotacionar.', 'success');
+  }
+
+  function startWriteObjects() {
+    if (!state.editorSession || state.editorBusy) return;
+    setEditorWorkspaceMode('write');
+    setEditorStatus('Escrever: clique em uma página para criar uma caixa de texto. Dê duplo clique no texto para editar.', 'success');
+  }
+
+  async function addOverlayImageFile(file) {
+    const session = state.editorSession;
+    if (!session || state.editorBusy || !(file instanceof Blob)) return false;
+    setEditorBusy(true);
+    try {
+      const normalized = await normalizeImageForPdf(file);
+      if (session !== state.editorSession) return false;
+      const activePage = Math.max(1, Number(currentViewerState()?.activePage || 1));
+      const id = await window.PortalPdfEditor.addImageOverlay(session, activePage - 1, normalized, {
+        width: .3,
+        height: .22
+      });
+      if (!id || session !== state.editorSession) return false;
+      state.selectedObjectId = id;
+      setEditorWorkspaceMode('image');
+      syncEditorControls();
+      syncEditorObjects();
+      setEditorStatus('Imagem inserida sobre a página. Arraste, redimensione pelos pontos ou rotacione pelo controle inferior.', 'success');
+      return true;
+    } catch (error) {
+      setEditorStatus(error.message || 'Não foi possível inserir a imagem sobre a página.', 'warning');
+      return false;
+    } finally {
+      if (session === state.editorSession) setEditorBusy(false);
+      if (els.editorOverlayImageInput) els.editorOverlayImageInput.value = '';
+    }
+  }
+
+  function updateSelectedEditorObject(patch) {
+    const session = state.editorSession;
+    const object = selectedEditorObject();
+    if (!session || !object || state.editorBusy) return false;
+    const changed = window.PortalPdfEditor.updateObject(session, object.id, patch);
+    if (!changed) return false;
+    syncEditorControls();
+    syncEditorObjects();
+    return true;
+  }
+
+  function deleteSelectedEditorObject() {
+    const session = state.editorSession;
+    const object = selectedEditorObject();
+    if (!session || !object || state.editorBusy) return false;
+    if (!window.PortalPdfEditor.removeObject(session, object.id)) return false;
+    state.selectedObjectId = '';
+    syncEditorControls();
+    syncEditorObjects();
+    setEditorStatus('Objeto removido. Use Desfazer se precisar restaurá-lo.', 'success');
+    return true;
+  }
+
   async function mergePdfIntoEditor(item, { insertAt = null } = {}) {
     const session = state.editorSession;
     if (!session || !item?.isPdf || !canEditDocuments() || state.editorBusy) return false;
@@ -981,6 +1149,7 @@
   async function undoEditor() {
     const session = state.editorSession;
     if (!session || state.editorBusy || !window.PortalPdfEditor?.undo(session)) return false;
+    state.selectedObjectId = '';
     const viewState = currentViewerState();
     setEditorBusy(true);
     try {
@@ -1001,6 +1170,7 @@
   async function redoEditor() {
     const session = state.editorSession;
     if (!session || state.editorBusy || !window.PortalPdfEditor?.redo(session)) return false;
+    state.selectedObjectId = '';
     const viewState = currentViewerState();
     setEditorBusy(true);
     try {
@@ -1717,10 +1887,27 @@
   els.editorOrganize?.addEventListener('click', () => {
     if (!state.editorSession || state.editorBusy) return;
     state.pendingMergeItem = null;
+    state.selectedObjectId = '';
     setEditorWorkspaceMode('organize');
     syncEditorControls();
     setEditorStatus('Modo Organizar ativo.', 'success');
   });
+  els.editorSelect?.addEventListener('click', startSelectObjects);
+  els.editorWrite?.addEventListener('click', startWriteObjects);
+  els.editorOverlayImage?.addEventListener('click', () => {
+    if (!state.editorSession || state.editorBusy) return;
+    setEditorWorkspaceMode('image');
+    els.editorOverlayImageInput?.click();
+  });
+  els.editorOverlayImageInput?.addEventListener('change', () => {
+    const file = els.editorOverlayImageInput.files?.[0];
+    if (file) addOverlayImageFile(file).catch(() => {});
+  });
+  els.editorObjectFont?.addEventListener('change', () => updateSelectedEditorObject({ fontFamily: els.editorObjectFont.value }));
+  els.editorObjectFontSize?.addEventListener('change', () => updateSelectedEditorObject({ fontSize: Number(els.editorObjectFontSize.value || 18) / 560 }));
+  els.editorObjectColor?.addEventListener('input', () => updateSelectedEditorObject({ color: els.editorObjectColor.value }));
+  els.editorObjectOpacity?.addEventListener('change', () => updateSelectedEditorObject({ opacity: Number(els.editorObjectOpacity.value || 100) / 100 }));
+  els.editorObjectDelete?.addEventListener('click', deleteSelectedEditorObject);
   els.editorMerge.addEventListener('click', choosePdfToMerge);
   els.editorBlankPage?.addEventListener('click', () => addBlankPageToEditor().catch(() => {}));
   els.editorImage.addEventListener('click', () => els.editorImageInput.click());
