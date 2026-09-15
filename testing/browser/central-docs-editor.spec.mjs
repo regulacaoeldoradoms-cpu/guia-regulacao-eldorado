@@ -181,7 +181,7 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await expect(page.locator('#zoomReset')).toHaveText(zoomBefore);
 
     await page.locator('#editorMerge').click();
-    await waitForOrder(page, '0:0,0:1,0:2,2:0,2:1,2:2');
+    await waitForOrder(page, '0:0,0:1,0:2,1:0,1:1,1:2');
     await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
     await expect(page.locator('#zoomReset')).toHaveText(zoomBefore);
 

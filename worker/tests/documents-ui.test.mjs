@@ -380,6 +380,6 @@ test('permissão de edição é explícita e não é herdada automaticamente de 
 
 test('rebuild do editor prioriza o estado vivo atual antes do snapshot salvo', () => {
   const client = read('js/documents.js');
-  assert.match(client, /const viewState = initialViewState \\|\\| currentViewerState\\(\\) \\|\\| state\\.editorViewState;/);
-  assert.doesNotMatch(client, /initialViewState \\|\\| state\\.editorViewState \\|\\| currentViewerState\\(\\)/);
+  assert.ok(client.includes('const viewState = initialViewState || currentViewerState() || state.editorViewState;'));
+  assert.ok(!client.includes('const viewState = initialViewState || state.editorViewState || currentViewerState();'));
 });

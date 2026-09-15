@@ -1433,3 +1433,23 @@ Próximo passo exato:
 3. executar/confirmar Playwright remoto no novo deployment;
 4. obter nova revisão sem P1/P2;
 5. somente então submeter o PR #179 à revisão humana final e eventual merge.
+
+
+## 3C.1 — correção das próprias asserções de homologação do P2 — 14/09/2026
+
+Resultado do primeiro CI do head `1161fe46f4be6f8966c06a5e012a2a335750eccc`:
+- a implementação do P2 estava presente no cliente real, mas a asserção estática adicionada usou uma expressão regular excessivamente escapada e produziu falso negativo;
+- os workflows que executam a suíte Worker completa herdaram a mesma única falha, por isso cinco checks não relacionados apareceram vermelhos sem regressão funcional nesses módulos;
+- o Playwright novo chegou ao rebuild de união, mas a expectativa de `data-page-order` usou índice de documento `2`; o harness real identifica o segundo PDF sintético como documento `1`, portanto a expectativa correta é `0:0,0:1,0:2,1:0,1:1,1:2`;
+- os 12 cenários anteriores do navegador passaram; somente o cenário novo do P2 falhou por essa expectativa incorreta, em desktop e mobile.
+
+Correção:
+- o teste estático passou a comparar strings literais, evitando ambiguidade de escaping;
+- o teste Playwright passou a esperar a ordem efetivamente gerada pelo editor sintético;
+- nenhuma mudança adicional foi feita no comportamento de produção nesta correção de CI.
+
+Próximo passo:
+1. aguardar a nova rodada completa de GitHub Actions;
+2. confirmar o novo deployment de preview da branch;
+3. se tudo ficar verde, manter o PR aberto até revisão final/aceite humano;
+4. a revisão automática Codex permanece indisponível apenas por limite de uso, não por falha técnica do PR.
