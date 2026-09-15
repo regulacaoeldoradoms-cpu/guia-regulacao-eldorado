@@ -52,6 +52,9 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     const moved = await object.boundingBox();
     expect(moved.x).toBeGreaterThan(before.x + 20);
 
+    await object.scrollIntoViewIfNeeded();
+    await expect(object).toBeVisible();
+    const movedVisible = await object.boundingBox();
     const handle = object.locator('[data-object-resize="se"]');
     await expect(handle).toBeVisible();
     const handleBox = await handle.boundingBox();
@@ -60,10 +63,10 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await page.mouse.down();
     await expect(page.locator('#pdfRoot')).toHaveAttribute('data-object-gesture', 'resize');
     await page.mouse.move(handleCenter.x + 48, handleCenter.y + 36, { steps: 6 });
-    await expect.poll(async () => (await object.boundingBox()).width).toBeGreaterThan(moved.width + 20);
+    await expect.poll(async () => (await object.boundingBox()).width).toBeGreaterThan(movedVisible.width + 20);
     await page.mouse.up();
     const resized = await object.boundingBox();
-    expect(resized.width).toBeGreaterThan(moved.width + 20);
+    expect(resized.width).toBeGreaterThan(movedVisible.width + 20);
 
     await page.locator('#editorUndo').click();
     await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
@@ -83,6 +86,8 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     const image = page.locator('.portal-pdf-object--image');
     await expect(image).toHaveClass(/selected/);
     await expect(image.locator('img')).toHaveAttribute('src', /^blob:/);
+    await image.scrollIntoViewIfNeeded();
+    await expect(image).toBeVisible();
 
     await page.locator('#editorObjectOpacity').fill('60');
     await page.locator('#editorObjectOpacity').dispatchEvent('change');
