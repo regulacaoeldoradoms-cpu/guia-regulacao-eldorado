@@ -444,6 +444,24 @@
     return true;
   }
 
+  function moveObjectToPage(session, objectId, pageIndex, options = {}) {
+    if (!session) return false;
+    const object = session.objects.find((item) => item.id === String(objectId || ''));
+    const page = session.plan[Number(pageIndex)];
+    if (!object || !page) return false;
+    const patch = normalizeObjectPatch(options);
+    const changedPage = object.pageId !== page.pageId;
+    const changedGeometry = Object.keys(patch).some((key) => object[key] !== patch[key]);
+    if (!changedPage && !changedGeometry) return false;
+    object.pageId = page.pageId;
+    Object.assign(object, patch);
+    if (options.commit !== false) {
+      session.revision += 1;
+      commitHistory(session);
+    }
+    return true;
+  }
+
   function commitObjectMutation(session) {
     if (!session) return false;
     session.revision += 1;
@@ -556,6 +574,7 @@
     addTextObject,
     addImageOverlay,
     updateObject,
+    moveObjectToPage,
     commitObjectMutation,
     removeObject,
     objectModel,
@@ -567,6 +586,6 @@
     pageCount,
     sourceCount,
     buildBlob,
-    version: 'phase3-v6'
+    version: 'phase3-v7'
   });
 })();

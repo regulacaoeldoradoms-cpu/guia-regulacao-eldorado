@@ -306,6 +306,14 @@ test('objetos sobre página acompanham página, histórico, duplicação e exclu
   assert.equal(image.displayPage, 1);
   assert.ok(image.blob instanceof Blob);
 
+  assert.equal(editor.moveObjectToPage(session, imageId, 1, { x: .45, y: .25, commit: false }), true);
+  assert.equal(editor.objectModel(session).find((item) => item.id === imageId).displayPage, 2);
+  assert.equal(editor.commitObjectMutation(session), true);
+  assert.equal(editor.undo(session), true);
+  assert.equal(editor.objectModel(session).find((item) => item.id === imageId).displayPage, 1);
+  assert.equal(editor.redo(session), true);
+  assert.equal(editor.objectModel(session).find((item) => item.id === imageId).displayPage, 2);
+
   assert.equal(editor.removeObject(session, imageId), true);
   assert.equal(editor.objectModel(session).some((item) => item.id === imageId), false);
   assert.equal(editor.undo(session), true);

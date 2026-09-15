@@ -400,6 +400,10 @@
         syncEditorControls();
         syncEditorObjectToolbar();
       },
+      onPageChange(id, pageIndex, patch) {
+        if (session !== state.editorSession) return;
+        editor.moveObjectToPage(session, id, pageIndex, { ...patch, commit: false });
+      },
       onCreateText(pageNumber, point) {
         if (session !== state.editorSession || state.editorMode !== 'write') return;
         const id = editor.addTextObject(session, pageNumber - 1, {

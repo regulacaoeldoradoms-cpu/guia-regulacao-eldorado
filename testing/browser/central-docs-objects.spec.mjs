@@ -87,6 +87,25 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await page.locator('#editorObjectOpacity').dispatchEvent('change');
     await expect(image).toHaveCSS('opacity', '0.6');
 
+    const rotate = image.locator('[data-object-rotate]');
+    await expect(rotate).toBeVisible();
+    const rotateBox = await rotate.boundingBox();
+    const imageBeforeRotate = await image.evaluate((node) => getComputedStyle(node).transform);
+    await page.mouse.move(rotateBox.x + rotateBox.width / 2, rotateBox.y + rotateBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(rotateBox.x + 48, rotateBox.y - 24, { steps: 5 });
+    await page.mouse.up();
+    await expect.poll(() => image.evaluate((node) => getComputedStyle(node).transform)).not.toBe(imageBeforeRotate);
+
+    const secondLayer = page.locator('.portal-pdf-object-layer').nth(1);
+    const imageBox = await image.boundingBox();
+    const secondBox = await secondLayer.boundingBox();
+    await page.mouse.move(imageBox.x + imageBox.width / 2, imageBox.y + imageBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(secondBox.x + secondBox.width * .5, secondBox.y + secondBox.height * .35, { steps: 8 });
+    await page.mouse.up();
+    await expect(page.locator('.portal-pdf-object-layer').nth(1).locator('.portal-pdf-object--image')).toHaveCount(1);
+
     await page.locator('#editorObjectDelete').click();
     await expect(page.locator('.portal-pdf-object--image')).toHaveCount(0);
     await page.locator('#editorUndo').click();

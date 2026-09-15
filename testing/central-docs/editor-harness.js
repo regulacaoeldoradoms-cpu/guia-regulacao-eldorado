@@ -119,6 +119,9 @@
         editor.commitObjectMutation(state.session);
         syncEditorState();
       },
+      onPageChange(id, pageIndex, patch) {
+        editor.moveObjectToPage(state.session, id, pageIndex, { ...patch, commit: false });
+      },
       onCreateText(pageNumber, point) {
         if (state.mode !== 'write') return;
         const id = editor.addTextObject(state.session, pageNumber - 1, {

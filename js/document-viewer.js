@@ -727,6 +727,17 @@
     }
   }
 
+  function pageAtPoint(session, clientX, clientY) {
+    for (const [pageNumber, record] of session.pages) {
+      const rect = record.container?.getBoundingClientRect?.();
+      if (!rect) continue;
+      if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+        return { pageNumber, record, rect };
+      }
+    }
+    return null;
+  }
+
   function commitObjectGesture(session, drag) {
     if (!drag || !session.onObjectCommit) return;
     const object = objectForId(session, drag.id);
@@ -775,6 +786,7 @@
         center,
         startAngle: Math.atan2(event.clientY - center.y, event.clientX - center.x) * 180 / Math.PI,
         start: { ...object },
+        currentPageNumber: Number(object.displayPage || layer.dataset.pageNumber || 1),
         changed: false
       };
     };
@@ -785,6 +797,34 @@
       const object = objectForId(session, drag.id);
       if (!object) return;
       event.preventDefault();
+
+      if (drag.kind === 'move') {
+        const targetPage = pageAtPoint(session, event.clientX, event.clientY);
+        if (targetPage && targetPage.pageNumber !== drag.currentPageNumber) {
+          const x = Math.min(1 - object.width, Math.max(0,
+            ((event.clientX - targetPage.rect.left) / Math.max(1, targetPage.rect.width)) - (object.width / 2)
+          ));
+          const y = Math.min(1 - object.height, Math.max(0,
+            ((event.clientY - targetPage.rect.top) / Math.max(1, targetPage.rect.height)) - (object.height / 2)
+          ));
+          object.displayPage = targetPage.pageNumber;
+          object.pageIndex = targetPage.pageNumber - 1;
+          object.x = x;
+          object.y = y;
+          drag.currentPageNumber = targetPage.pageNumber;
+          drag.startX = event.clientX;
+          drag.startY = event.clientY;
+          drag.layerWidth = Math.max(1, targetPage.rect.width);
+          drag.layerHeight = Math.max(1, targetPage.rect.height);
+          drag.start = { ...object };
+          drag.changed = true;
+          session.onObjectPageChange?.(drag.id, targetPage.pageNumber - 1, { x, y });
+          renderEditorObjects(session);
+          markSelectedObject(session, drag.id);
+          return;
+        }
+      }
+
       const dx = (event.clientX - drag.startX) / drag.layerWidth;
       const dy = (event.clientY - drag.startY) / drag.layerHeight;
       let patch = {};
@@ -908,6 +948,7 @@
     session.onObjectSelect = typeof options.onSelect === 'function' ? options.onSelect : session.onObjectSelect;
     session.onCreateText = typeof options.onCreateText === 'function' ? options.onCreateText : session.onCreateText;
     session.onObjectTextCommit = typeof options.onTextCommit === 'function' ? options.onTextCommit : session.onObjectTextCommit;
+    session.onObjectPageChange = typeof options.onPageChange === 'function' ? options.onPageChange : session.onObjectPageChange;
     installObjectHandlers(session);
     return renderEditorObjects(session);
   }
@@ -1391,6 +1432,7 @@
       onObjectSelect: null,
       onCreateText: null,
       onObjectTextCommit: null,
+      onObjectPageChange: null,
       pageRatios: new Map(),
       visiblePages: new Set(),
       activePage: 0,
@@ -1594,6 +1636,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v1d`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2`
   });
 })();
