@@ -117,6 +117,60 @@ test.describe('Central de Documentos — 3C.4 Recortar', () => {
     expect(errors).toEqual([]);
   });
 
+  test('CropBox não padrão usa a superfície visível e acompanha reordenação da página', async ({ page }) => {
+    await openEditor(page);
+    await page.locator('#editorCrop').click();
+
+    // Page 2 has MediaBox 842×595 but a deliberately different CropBox 642×435.
+    // PDF.js must expose the CropBox viewport to the same normalized crop overlay.
+    const pageTwo = page.locator('.portal-pdf-page').nth(1);
+    await pageTwo.scrollIntoViewIfNeeded();
+    await expect(pageTwo).toHaveClass(/rendered/);
+    const pageBox = await pageTwo.boundingBox();
+    expect(pageBox).not.toBeNull();
+    expect(pageBox.width / pageBox.height).toBeGreaterThan(1.45);
+    expect(pageBox.width / pageBox.height).toBeLessThan(1.50);
+
+    const frame = page.locator('.portal-pdf-crop-layer').nth(1).locator('[data-crop-frame]');
+    await expect(frame).toBeVisible();
+    const handle = frame.locator('[data-crop-resize="se"]');
+    await expect(handle).toBeVisible();
+    const handleBox = await handle.boundingBox();
+    expect(handleBox).not.toBeNull();
+
+    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(handleBox.x - 62, handleBox.y - 52, { steps: 6 });
+    await page.mouse.up();
+    await expect(page.locator('html')).toHaveAttribute('data-crop-count', '1');
+
+    const beforeReorder = (await page.locator('html').getAttribute('data-page-crops')).split(',');
+    expect(beforeReorder[0]).toBe('full');
+    expect(beforeReorder[1]).not.toBe('full');
+    const cropToken = beforeReorder[1];
+
+    await page.locator('#editorOrganize').click();
+    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-organizer-mode', 'true');
+
+    const cards = page.locator('#thumbnails .portal-pdf-thumb');
+    await cards.nth(1).scrollIntoViewIfNeeded();
+    await expect(cards.nth(1)).toHaveClass(/rendered/);
+    const source = await cards.nth(1).boundingBox();
+    const start = { x: source.x + source.width * .4, y: source.y + source.height * .55 };
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(start.x + 14, start.y, { steps: 3 });
+    await expect(page.locator('.portal-pdf-drag-ghost')).toBeVisible();
+    const target = await cards.nth(0).boundingBox();
+    await page.mouse.move(target.x + 12, target.y + target.height * .6, { steps: 6 });
+    await page.mouse.up();
+
+    await expect(page.locator('html')).toHaveAttribute('data-page-order', '0:1,0:0,0:2');
+    const afterReorder = (await page.locator('html').getAttribute('data-page-crops')).split(',');
+    expect(afterReorder[0]).toBe(cropToken);
+    expect(afterReorder[1]).toBe('full');
+  });
+
   test('touch move a alça de recorte no perfil mobile', async ({ page, context, isMobile }) => {
     test.skip(!isMobile, 'Gesto touch específico validado no perfil mobile.');
     await openEditor(page);
