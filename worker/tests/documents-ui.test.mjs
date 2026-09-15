@@ -485,6 +485,18 @@ test('paleta do editor é vinculada à conta e não contém conteúdo documental
   assert.doesNotMatch(router, /patient_name|cpf|cns|diagnostico|cid/i);
 });
 
+test('seletor de cor do toolbar faz preview sem poluir o histórico e consolida no change', () => {
+  const client = read('js/documents.js');
+
+  assert.match(client, /editorColorGesture/);
+  assert.match(client, /function previewSelectedEditorColor/);
+  assert.match(client, /updateObject\(session, object\.id, \{ color \}, \{ commit: false \}\)/);
+  assert.match(client, /function commitEditorColorGesture/);
+  assert.match(client, /commitObjectMutation\(session\)/);
+  assert.match(client, /editorObjectColor\?\.addEventListener\('input', \(\) => previewSelectedEditorColor/);
+  assert.match(client, /editorObjectColor\?\.addEventListener\('change', \(\) => finalizeSelectedEditorColor/);
+});
+
 test('3C.3 mantém objetos locais reversíveis e deixa Recortar/Desenhar bloqueados', () => {
   const html = read('documentos/index.html');
   const editor = read('js/document-editor.js');
