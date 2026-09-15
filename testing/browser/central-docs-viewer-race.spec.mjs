@@ -185,7 +185,7 @@ test.describe('Central de Documentos — concorrência de abertura do visualizad
       const afterARelease = snapshot();
 
       viewer.scrollToPage(1);
-      thumbnailsRoot.querySelector('[data-thumbnail-action="rotate"]')?.click();
+      thumbnailsRoot.querySelector('[data-thumbnail-action="rotate-right"]')?.click();
 
       window.__centralDocsViewerRace = {
         viewer,
@@ -245,7 +245,7 @@ test.describe('Central de Documentos — concorrência de abertura do visualizad
       const afterSlowRelease = race.snapshot();
       const stable = race.unchanged(race.cSnapshot, afterSlowRelease);
       race.viewer.scrollToPage(2);
-      document.querySelectorAll('[data-thumbnail-action="rotate"]')[1]?.click();
+      document.querySelectorAll('[data-thumbnail-action="rotate-right"]')[1]?.click();
       return {
         slowResult,
         stable,
@@ -271,7 +271,7 @@ test.describe('Central de Documentos — concorrência de abertura do visualizad
       'B-win:ready:2',
       'B-win:page:2',
       'B-win:page:1',
-      'B-win:action:rotate:0'
+      'B-win:action:rotate-right:0'
     ]));
 
     expect(cWinner.resultC?.pageCount).toBe(2);
@@ -293,7 +293,7 @@ test.describe('Central de Documentos — concorrência de abertura do visualizad
       'C-win:ready:2',
       'C-win:page:1',
       'C-win:page:2',
-      'C-win:action:rotate:1'
+      'C-win:action:rotate-right:1'
     ]));
 
     await expect(page.locator('iframe, embed, object')).toHaveCount(0);

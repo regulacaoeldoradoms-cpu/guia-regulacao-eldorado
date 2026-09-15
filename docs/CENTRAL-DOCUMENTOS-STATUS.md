@@ -1757,3 +1757,19 @@ Próximo passo exato:
 4. atualizar laboratório e Playwright;
 5. publicar novo preview Cloudflare;
 6. solicitar novo aceite visual antes de avançar para Escrever/Imagem/Recortar/Desenhar.
+
+
+## Organizar V2 — primeira implementação funcional em branch — 15/09/2026
+
+Implementado no PR #179, ainda sem merge:
+- shell compacto por ícones e acesso lateral **Editar**;
+- modo Organizar altera a representação principal para grade responsiva;
+- miniaturas maiores, drag ghost, indicador de inserção e drop horizontal na grade;
+- ações contextuais por página: girar esquerda, girar direita, duplicar e excluir;
+- página em branco local/reversível;
+- motor de união aceita posição de inserção;
+- painel de união oferece antes do documento, depois do documento e após página específica;
+- Recortar, Escrever, Colar imagem overlay e Desenhar aparecem apenas como próximos modos desabilitados; ainda não são declarados implementados;
+- Service Worker/cache versionado para evitar servir a UI antiga após futura promoção.
+
+Testes foram atualizados para a UX V2; CI completo deve ficar verde antes de gerar o preview candidato a aceite humano.

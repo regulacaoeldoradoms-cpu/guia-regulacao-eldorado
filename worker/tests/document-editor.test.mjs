@@ -163,6 +163,59 @@ test('união adiciona páginas ao plano e gera Blob PDF local válido', async ()
   assert.equal(editor.pageCount(session), 5);
 });
 
+
+test('união posicionada, duplicação e página em branco são reversíveis', async () => {
+  const editor = editorWithFakePdfLib();
+  const session = await editor.createSession(
+    new Blob([new Uint8Array([3])], { type: 'application/pdf' }),
+    { label: 'Documento inicial' }
+  );
+
+  const added = await editor.addDocument(
+    session,
+    new Blob([new Uint8Array([2])], { type: 'application/pdf' }),
+    { label: 'Documento inserido', insertAt: 1 }
+  );
+  assert.equal(added, 2);
+  assert.deepEqual(
+    Array.from(editor.pageModel(session), (page) => [Number(page.sourceIndex), Number(page.sourcePage)]),
+    [[0, 1], [1, 1], [1, 2], [0, 2], [0, 3]]
+  );
+
+  const duplicateAt = editor.duplicatePage(session, 1);
+  assert.equal(duplicateAt, 2);
+  assert.equal(editor.pageCount(session), 6);
+  assert.deepEqual(
+    Array.from(editor.pageModel(session).slice(1, 3), (page) => [Number(page.sourceIndex), Number(page.sourcePage)]),
+    [[1, 1], [1, 1]]
+  );
+
+  const blankAt = await editor.addBlankPage(session, { insertAt: 3 });
+  assert.equal(blankAt, 3);
+  assert.equal(editor.pageModel(session)[3].sourceKind, 'blank');
+  assert.equal(editor.pageCount(session), 7);
+
+  assert.equal(editor.undo(session), true);
+  assert.equal(editor.pageCount(session), 6);
+  assert.equal(editor.undo(session), true);
+  assert.equal(editor.pageCount(session), 5);
+  assert.equal(editor.undo(session), true);
+  assert.deepEqual(
+    Array.from(editor.pageModel(session), (page) => [Number(page.sourceIndex), Number(page.sourcePage)]),
+    [[0, 1], [0, 2], [0, 3]]
+  );
+
+  assert.equal(editor.redo(session), true);
+  assert.equal(editor.pageCount(session), 5);
+  assert.equal(editor.redo(session), true);
+  assert.equal(editor.pageCount(session), 6);
+  assert.equal(editor.redo(session), true);
+  assert.equal(editor.pageCount(session), 7);
+
+  const output = await editor.buildBlob(session);
+  assert.equal(output.type, 'application/pdf');
+});
+
 test('imagem entra na posição pedida e permanece identificável na ordem visual', async () => {
   const editor = editorWithFakePdfLib();
   const session = await editor.createSession(
