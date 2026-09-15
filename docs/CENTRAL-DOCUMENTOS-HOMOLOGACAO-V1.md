@@ -301,3 +301,32 @@ Roteiro humano final específico do adendo:
 
 Aceite desses pontos encerra o gate humano da 3C.3 e libera 3C.4 — Recortar.
 
+## Aceite humano final da 3C.3 — 15/09/2026
+
+O usuário declarou explicitamente **“Aprovado”** após testar o preview final da 3C.3.
+
+Fica homologado o conjunto:
+- Escrever;
+- Selecionar e mover sem permitir edição do conteúdo textual;
+- quickbar contextual de cor, A−, A+ e lixeira;
+- clique externo confirmando/desmarcando;
+- Colar imagem overlay;
+- paleta predefinida por conta;
+- criação de novos slots por `+`;
+- edição do slot ativo por RGB/HEX;
+- painel RGB próprio, arrastável pelo puxador inferior direito, com × para fechar e preservação de posição durante a sessão.
+
+Evidência técnica associada:
+- runtime funcional validado: `8596a2d92937cae3c0357f123e61ec1f50bbf257`;
+- head documental/preview homologado: `4ea02f0722bfec022eeb58702e198498da3eef0f`;
+- GitHub Actions: **24/24 workflows aprovados**;
+- Playwright: **51 passed / 1 skipped esperado**;
+- PR #179 sem threads de review pendentes;
+- preview homologado: `https://a95d970c.portal-regulacao-central-staging.pages.dev/`.
+
+Consequência de governança:
+- **3C.3 está encerrada**;
+- o gate humano que bloqueava **3C.4 — Recortar** foi satisfeito;
+- a próxima unidade autorizada é 3C.4;
+- continuam proibidos merge, escrita no Google Drive e deploy de produção durante esta etapa.
+
