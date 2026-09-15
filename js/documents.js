@@ -801,46 +801,102 @@
     }
   }
 
-  async function mergePdfIntoEditor(item) {
+  async function mergePdfIntoEditor(item, { insertAt = null } = {}) {
     const session = state.editorSession;
-    if (!session || !item?.isPdf || !canEditDocuments() || state.editorBusy) return;
+    if (!session || !item?.isPdf || !canEditDocuments() || state.editorBusy) return false;
     const identity = itemCacheIdentity(item);
     if (identity && editorContainsItem(item)) {
       setEditorStatus('Esse PDF já faz parte do resultado atual.', 'warning');
-      return;
+      return false;
     }
 
     const started = performance.now();
     const viewState = currentViewerState();
     setEditorBusy(true);
-    setEditorStatus('Adicionando PDF ao resultado…');
+    setEditorStatus('Unindo documento ao resultado…');
     try {
       const blob = await editablePdfBlob(item);
-      if (session !== state.editorSession) return;
+      if (session !== state.editorSession) return false;
       const sourceNumber = window.PortalPdfEditor.sourceCount(session) + 1;
+      const insertion = Number.isInteger(Number(insertAt))
+        ? Math.max(0, Math.min(window.PortalPdfEditor.pageCount(session), Number(insertAt)))
+        : window.PortalPdfEditor.pageCount(session);
       await window.PortalPdfEditor.addDocument(session, blob, {
         label: `Documento ${sourceNumber}`,
-        cacheIdentity: identity
+        cacheIdentity: identity,
+        insertAt: insertion
       });
-      if (session !== state.editorSession) return;
+      if (session !== state.editorSession) return false;
+      state.pendingMergeItem = null;
       syncEditorControls();
       refreshPdfListActions();
-      const rebuilt = await buildEditorPreview({ initialViewState: viewState, allowBusy: true });
-      if (!rebuilt) return;
+      const rebuilt = await buildEditorPreview({
+        initialViewState: viewState ? { ...viewState, activePage: Math.min(insertion + 1, window.PortalPdfEditor.pageCount(session)) } : null,
+        allowBusy: true
+      });
+      if (!rebuilt) return false;
       capture('pdf_edit_completed', {
         route: '/documentos/',
         duration_ms: duration(started),
         operation: 'merge_pdf',
         size_bucket: sizeBucket(item.size)
       });
-      setEditorStatus('PDF adicionado. A prévia está sendo atualizada.', 'success');
+      setEditorWorkspaceMode('organize');
+      setEditorStatus('Documento unido na posição escolhida.', 'success');
+      return true;
     } catch (error) {
       if (session === state.editorSession) {
         setEditorStatus(error.message || 'Não foi possível unir este PDF.', 'warning');
       }
+      return false;
     } finally {
       if (session === state.editorSession && state.editorBusy) setEditorBusy(false);
     }
+  }
+
+  function prepareMergePdf(item) {
+    const session = state.editorSession;
+    if (!session || !item?.isPdf || state.editorBusy) return false;
+    if (editorContainsItem(item)) {
+      setEditorStatus('Esse PDF já faz parte do resultado atual.', 'warning');
+      return false;
+    }
+    state.pendingMergeItem = item;
+    setEditorWorkspaceMode('merge');
+    if (els.editorMergeSelection) els.editorMergeSelection.textContent = item.name || 'PDF selecionado';
+    if (els.editorMergeAfterPage) {
+      els.editorMergeAfterPage.max = String(window.PortalPdfEditor.pageCount(session));
+      els.editorMergeAfterPage.value = String(Math.max(1, currentViewerState()?.activePage || 1));
+    }
+    syncEditorControls();
+    setEditorStatus('Escolha onde o documento deve entrar e confirme em Unir.', 'success');
+    return true;
+  }
+
+  function mergeInsertAt() {
+    const session = state.editorSession;
+    if (!session) return 0;
+    const pageCount = window.PortalPdfEditor.pageCount(session);
+    const mode = String(els.editorMergePosition?.value || 'after-document');
+    if (mode === 'before-document') return 0;
+    if (mode === 'after-page') {
+      const page = Math.max(1, Math.min(pageCount, Math.round(Number(els.editorMergeAfterPage?.value || 1))));
+      return page;
+    }
+    return pageCount;
+  }
+
+  async function applyPendingMerge() {
+    if (!state.pendingMergeItem || state.editorBusy) return false;
+    return mergePdfIntoEditor(state.pendingMergeItem, { insertAt: mergeInsertAt() });
+  }
+
+  function cancelPendingMerge() {
+    state.pendingMergeItem = null;
+    if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF na lista da Central.';
+    syncEditorControls();
+    setEditorWorkspaceMode('organize');
+    setEditorStatus('Modo Organizar ativo.', 'success');
   }
 
   async function applyEditorOperation(operation, index, detail = null) {
@@ -854,7 +910,12 @@
       let changed = false;
       let targetIndex = index;
       if (operation === 'delete') changed = editor.removePage(session, index);
-      if (operation === 'rotate') changed = editor.rotatePage(session, index, 1);
+      if (operation === 'rotate-left') changed = editor.rotatePage(session, index, -1);
+      if (operation === 'rotate-right') changed = editor.rotatePage(session, index, 1);
+      if (operation === 'duplicate') {
+        targetIndex = editor.duplicatePage(session, index);
+        changed = Number.isInteger(targetIndex);
+      }
       if (operation === 'reorder') {
         targetIndex = Math.round(Number(detail?.toIndex));
         changed = editor.movePageTo(session, index, targetIndex);
@@ -862,17 +923,21 @@
       if (!changed) return false;
 
       const pageCount = editor.pageCount(session);
-      const pageNumber = operation === 'reorder'
+      const pageNumber = operation === 'reorder' || operation === 'duplicate'
         ? Math.min(pageCount, targetIndex + 1)
         : Math.min(pageCount, index + 1);
       const nextViewState = operation === 'reorder'
         ? viewStateAfterReorder(index, targetIndex, pageCount, viewState)
-        : viewStateAfterPageOperation(operation, index, pageCount, viewState);
+        : operation === 'duplicate'
+          ? (viewState ? { ...viewState, activePage: pageNumber } : null)
+          : viewStateAfterPageOperation(operation, index, pageCount, viewState);
       const eventOperation = operation === 'delete'
         ? 'delete_page'
-        : operation === 'rotate'
-          ? 'rotate_page'
-          : 'reorder_page';
+        : operation === 'duplicate'
+          ? 'duplicate_page'
+          : operation === 'rotate-left' || operation === 'rotate-right'
+            ? 'rotate_page'
+            : 'reorder_page';
 
       syncEditorControls();
       refreshPdfListActions();
@@ -884,18 +949,27 @@
       });
       const rebuilt = await buildEditorPreview({
         initialViewState: nextViewState,
-        focusRestore: { pageNumber, action: operation === 'rotate' ? 'rotate' : '' },
+        focusRestore: {
+          pageNumber,
+          action: operation === 'rotate-left'
+            ? 'rotate-left'
+            : operation === 'rotate-right'
+              ? 'rotate-right'
+              : operation === 'duplicate'
+                ? 'duplicate'
+                : ''
+        },
         allowBusy: true
       });
       if (rebuilt) {
-        setEditorStatus(
-          operation === 'rotate'
-            ? 'Página girada 90° para a direita.'
-            : operation === 'reorder'
-              ? 'Página movida para a nova posição.'
-              : 'Página excluída. Use Desfazer se precisar restaurá-la.',
-          'success'
-        );
+        const messages = {
+          'rotate-left': 'Página girada 90° para a esquerda.',
+          'rotate-right': 'Página girada 90° para a direita.',
+          duplicate: 'Página duplicada.',
+          reorder: 'Página movida para a nova posição.',
+          delete: 'Página excluída. Use Desfazer se precisar restaurá-la.'
+        };
+        setEditorStatus(messages[operation] || 'PDF atualizado.', 'success');
       }
       return rebuilt;
     } finally {
@@ -945,14 +1019,52 @@
 
   function choosePdfToMerge() {
     if (!state.editorSession || state.editorBusy) return;
+    state.pendingMergeItem = null;
+    if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF na lista da Central.';
+    if (els.editorMergePosition) els.editorMergePosition.value = 'after-document';
+    if (els.editorMergePageField) els.editorMergePageField.hidden = true;
+    setEditorWorkspaceMode('merge');
+    syncEditorControls();
     refreshPdfListActions();
-    setEditorStatus('Escolha outro PDF na lista e clique em “Unir ao editor”. O documento atual continuará aberto no editor.', 'success');
+    setEditorStatus('Selecione outro PDF na lista da Central; depois escolha a posição no painel.', 'success');
     const candidate = [...els.list.querySelectorAll('[data-index]')].find((button) => {
       const item = state.items[Number(button.dataset.index)];
       return item?.isPdf && !editorContainsItem(item);
     });
     (candidate || els.list).scrollIntoView({ behavior: 'smooth', block: 'center' });
     candidate?.focus?.({ preventScroll: true });
+  }
+
+  async function addBlankPageToEditor() {
+    const session = state.editorSession;
+    if (!session || state.editorBusy) return false;
+    const viewState = currentViewerState();
+    const insertAt = Math.max(0, Math.min(
+      window.PortalPdfEditor.pageCount(session),
+      Math.round(Number(viewState?.activePage || window.PortalPdfEditor.pageCount(session)))
+    ));
+    setEditorBusy(true);
+    setEditorStatus('Inserindo página em branco…');
+    try {
+      const pageIndex = await window.PortalPdfEditor.addBlankPage(session, { insertAt });
+      syncEditorControls();
+      const rebuilt = await buildEditorPreview({
+        initialViewState: viewState ? { ...viewState, activePage: pageIndex + 1 } : null,
+        allowBusy: true
+      });
+      if (rebuilt) {
+        capture('pdf_edit_completed', {
+          route: '/documentos/',
+          duration_ms: 0,
+          operation: 'insert_blank_page',
+          size_bucket: sizeBucket(state.pdfItem?.size)
+        });
+        setEditorStatus('Página em branco inserida.', 'success');
+      }
+      return rebuilt;
+    } finally {
+      if (session === state.editorSession && state.editorBusy) setEditorBusy(false);
+    }
   }
 
   function exitEditor() {
