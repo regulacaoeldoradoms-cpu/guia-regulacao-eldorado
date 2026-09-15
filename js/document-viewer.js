@@ -842,6 +842,42 @@
     });
   }
 
+  function customColorPanelBounds(panel) {
+    if (!panel) return null;
+    const palette = panel.closest?.('[data-text-palette]');
+    if (!palette) return null;
+    const host = palette.closest?.('.documents-pdf-scroll')
+      || palette.closest?.('.documents-pdf-layout')
+      || palette.closest?.('.documents-custom-viewer');
+    const paletteRect = palette.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    const hostRect = host?.getBoundingClientRect?.() || {
+      left: 0,
+      top: 0,
+      right: window.innerWidth,
+      bottom: window.innerHeight
+    };
+    const inset = 8;
+    const minLeft = hostRect.left + inset - paletteRect.left;
+    const maxLeft = Math.max(minLeft, hostRect.right - inset - panelRect.width - paletteRect.left);
+    const minTop = hostRect.top + inset - paletteRect.top;
+    const maxTop = Math.max(minTop, hostRect.bottom - inset - panelRect.height - paletteRect.top);
+    return { paletteRect, panelRect, hostRect, minLeft, maxLeft, minTop, maxTop };
+  }
+
+  function constrainCustomColorPanel(panel) {
+    if (!panel || panel.hidden) return false;
+    const bounds = customColorPanelBounds(panel);
+    if (!bounds) return false;
+    const currentLeft = bounds.panelRect.left - bounds.paletteRect.left;
+    const currentTop = bounds.panelRect.top - bounds.paletteRect.top;
+    panel.style.left = `${Math.min(bounds.maxLeft, Math.max(bounds.minLeft, currentLeft))}px`;
+    panel.style.top = `${Math.min(bounds.maxTop, Math.max(bounds.minTop, currentTop))}px`;
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    return true;
+  }
+
   function createTextQuickbar(session, element, object) {
     if (object?.type !== 'text' || session.selectedObjectId !== object.id) return;
     const bar = document.createElement('div');
@@ -1075,37 +1111,6 @@
       commitPanelColor(color);
     });
 
-    const panelHostRect = () => {
-      const host = element.closest?.('.documents-pdf-scroll')
-        || element.closest?.('.documents-pdf-layout')
-        || element.closest?.('.documents-custom-viewer');
-      return host?.getBoundingClientRect?.() || {
-        left: 0,
-        top: 0,
-        right: window.innerWidth,
-        bottom: window.innerHeight
-      };
-    };
-
-    const constrainColorPanel = () => {
-      if (customPanel.hidden) return false;
-      const paletteRect = palette.getBoundingClientRect();
-      const panelRect = customPanel.getBoundingClientRect();
-      const hostRect = panelHostRect();
-      const inset = 8;
-      const minLeft = hostRect.left + inset - paletteRect.left;
-      const maxLeft = Math.max(minLeft, hostRect.right - inset - panelRect.width - paletteRect.left);
-      const minTop = hostRect.top + inset - paletteRect.top;
-      const maxTop = Math.max(minTop, hostRect.bottom - inset - panelRect.height - paletteRect.top);
-      const currentLeft = panelRect.left - paletteRect.left;
-      const currentTop = panelRect.top - paletteRect.top;
-      customPanel.style.left = `${Math.min(maxLeft, Math.max(minLeft, currentLeft))}px`;
-      customPanel.style.top = `${Math.min(maxTop, Math.max(minTop, currentTop))}px`;
-      customPanel.style.right = 'auto';
-      customPanel.style.bottom = 'auto';
-      return true;
-    };
-
     let panelDrag = null;
     dragHandle.addEventListener('pointerdown', (event) => {
       if (event.button > 0) return;
@@ -1130,18 +1135,12 @@
       if (!panelDrag || panelDrag.pointerId !== event.pointerId) return;
       event.preventDefault();
       event.stopPropagation();
-      const paletteRect = palette.getBoundingClientRect();
-      const panelRect = customPanel.getBoundingClientRect();
-      const hostRect = panelHostRect();
+      const bounds = customColorPanelBounds(customPanel);
+      if (!bounds) return;
       const dx = event.clientX - panelDrag.startX;
       const dy = event.clientY - panelDrag.startY;
-      const inset = 8;
-      const minLeft = hostRect.left + inset - paletteRect.left;
-      const maxLeft = Math.max(minLeft, hostRect.right - inset - panelRect.width - paletteRect.left);
-      const minTop = hostRect.top + inset - paletteRect.top;
-      const maxTop = Math.max(minTop, hostRect.bottom - inset - panelRect.height - paletteRect.top);
-      customPanel.style.left = `${Math.min(maxLeft, Math.max(minLeft, panelDrag.left + dx))}px`;
-      customPanel.style.top = `${Math.min(maxTop, Math.max(minTop, panelDrag.top + dy))}px`;
+      customPanel.style.left = `${Math.min(bounds.maxLeft, Math.max(bounds.minLeft, panelDrag.left + dx))}px`;
+      customPanel.style.top = `${Math.min(bounds.maxTop, Math.max(bounds.minTop, panelDrag.top + dy))}px`;
     });
     const finishPanelDrag = (event) => {
       if (!panelDrag || (event.pointerId != null && panelDrag.pointerId !== event.pointerId)) return;
@@ -1588,7 +1587,7 @@
             syncCustomColorPanel(panel, color);
             const opening = panel.hidden;
             panel.hidden = !panel.hidden;
-            if (opening) constrainColorPanel();
+            if (opening) constrainCustomColorPanel(panel);
           }
           return;
         }
@@ -2429,6 +2428,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2l`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2m`
   });
 })();
