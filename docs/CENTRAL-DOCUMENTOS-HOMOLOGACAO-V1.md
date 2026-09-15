@@ -97,7 +97,7 @@ Esse ciclo criou o baseline automatizado que posteriormente passou a ser publica
 No head funcional `b02f2addf6eba16f383cc8ff7804c6eaee0b7879` do PR #179:
 
 - **24/24 workflows** do GitHub concluíram com sucesso;
-- o workflow de navegador executou **14/14 testes aprovados** em Chromium desktop e perfil Pixel 7;
+- o workflow de navegador executou **16/16 testes aprovados** em Chromium desktop e perfil Pixel 7;
 - o editor permanece dentro da mesma superfície PDF.js;
 - não existe lista textual paralela como editor principal;
 - não existe `iframe`, `embed` ou `object` para o PDF;
@@ -138,3 +138,22 @@ Após aceite visual do preview e revisão final do PR:
 14. registrar o aceite real no status.
 
 Somente depois desse aceite a 3C.1 pode ser encerrada e a 3C.2 liberada.
+
+
+### Reorganização por arraste e rotação
+
+Após o aceite humano rejeitar as setas ↑/↓ como interação final, a reorganização da Fase 3 foi ajustada para drag-and-drop.
+
+Validação no head `ec518dc024ec79ea5ab52012082bcc68cdb99d36`:
+- arrastar miniatura altera a posição exata no plano do PDF;
+- feedback visual mostra inserção antes/depois;
+- desktop usa Pointer Events diretamente sobre a miniatura;
+- touch usa grip ⠿ com Pointer Events;
+- setas ↑/↓ foram removidas da interface;
+- ↻ gira a página 90° para a direita;
+- rotação e reordenação integram Desfazer/Refazer;
+- o PDF reconstruído pelo PDF-lib conserva as alterações;
+- Playwright final: **16/16**, desktop + mobile;
+- deployment imutável: `https://7c94b5a6.portal-regulacao-central-staging.pages.dev/`.
+
+Essa homologação continua sintética. O merge depende do novo aceite visual humano.

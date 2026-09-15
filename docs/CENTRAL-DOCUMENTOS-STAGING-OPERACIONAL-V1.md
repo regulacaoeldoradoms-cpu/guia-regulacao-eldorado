@@ -188,3 +188,19 @@ Evidência do head funcional `b02f2addf6eba16f383cc8ff7804c6eaee0b7879`:
 - nenhuma integração de produção foi adicionada.
 
 Access e domínio personalizado continuam pendências de infraestrutura e não bloqueiam esta homologação porque o conteúdo publicado é exclusivamente fictício.
+
+
+## Evolução — drag-and-drop e rotação
+
+Head funcional: `ec518dc024ec79ea5ab52012082bcc68cdb99d36`.
+
+- preview imutável: `https://7c94b5a6.portal-regulacao-central-staging.pages.dev/`;
+- alias: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- deploy: sucesso;
+- GitHub Actions: 24/24;
+- Playwright: 16/16 em desktop/mobile;
+- reorganização: Pointer Events + drop antes/depois, sem setas ↑/↓;
+- rotação: ↻ em incrementos de 90°, reversível por undo/redo;
+- nenhuma API de produção, Drive, D1, binding ou secret foi adicionada.
+
+O ambiente permanece público apenas porque contém dados exclusivamente fictícios. O aceite humano desta interação ainda é obrigatório antes do merge.

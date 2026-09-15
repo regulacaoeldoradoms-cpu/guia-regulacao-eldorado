@@ -1664,3 +1664,41 @@ Correção:
 
 Próximo passo:
 - repetir a matriz de navegador; merge continua bloqueado.
+
+
+## Drag-and-drop + rotação — homologação técnica concluída — 14/09/2026
+
+Head funcional validado: `ec518dc024ec79ea5ab52012082bcc68cdb99d36`.
+
+Resultado:
+- **24/24 workflows GitHub verdes**;
+- `Validar Central de Documentos — navegador`: **16/16 testes aprovados em 34,3 s**;
+- matriz executada em Chromium desktop e perfil Pixel 7;
+- drag-and-drop por Pointer Events aprovado em desktop e mobile emulado;
+- setas ↑/↓ não são mais o mecanismo de reorganização;
+- botão ↻ aprovado para giro de 90°;
+- rotação participa corretamente de Desfazer/Refazer;
+- excluir, imagem, união, preservação de página/zoom e corrida A → B → C continuam aprovados;
+- Fases 1–3, governança, bundle de staging e demais checks permaneceram verdes;
+- produção e Google Drive não foram alterados.
+
+Cloudflare Pages:
+- deployment do head funcional: sucesso;
+- URL imutável: `https://7c94b5a6.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- staging continua exclusivamente sintético e sem bindings/secrets.
+
+Aceite:
+- **homologação técnica automatizada concluída para este incremento**;
+- aceite humano ainda pendente: o usuário deve testar visualmente arrastar página para posição diferente e girar a página paisagem;
+- PR #179 continua aberto e sem merge;
+- nenhum avanço para sincronização com Drive ocorre antes do aceite humano da experiência atual.
+
+Próximo passo exato:
+1. usuário abrir o preview imutável `7c94b5a6...`;
+2. entrar no editor;
+3. arrastar uma miniatura para outra posição e confirmar a ordem;
+4. usar ↻ na página 3 e confirmar paisagem → retrato;
+5. testar Desfazer/Refazer;
+6. registrar aceite ou nova correção;
+7. somente depois decidir merge/deploy e executar reteste institucional real.
