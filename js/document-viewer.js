@@ -194,9 +194,15 @@
     }
     if (session.cropHandlers) {
       for (const [type, handler] of Object.entries(session.cropHandlers)) {
-        try { session.pagesRoot?.removeEventListener(type, handler); } catch (_) {}
+        try { session.pagesRoot?.removeEventListener(type, handler, type === 'pointerdown'); } catch (_) {}
       }
       session.cropHandlers = null;
+    }
+    if (session.cropWindowHandlers) {
+      for (const [type, handler] of Object.entries(session.cropWindowHandlers)) {
+        try { window.removeEventListener(type, handler, true); } catch (_) {}
+      }
+      session.cropWindowHandlers = null;
     }
     const loadingTask = session.loadingTask;
     const document = session.document;
@@ -874,9 +880,16 @@
       session.root.dataset.cropCount = String((session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length);
     };
 
-    session.cropHandlers = { pointerdown, pointermove, pointerup: finish, pointercancel: finish, click };
+    // Pointerdown is captured before page/object layers can consume the gesture.
+    // Move/up live on window so a resize keeps tracking even when the pointer
+    // crosses the crop frame or page boundary.
+    session.cropHandlers = { pointerdown, click };
     for (const [type, handler] of Object.entries(session.cropHandlers)) {
-      pagesRoot.addEventListener(type, handler, false);
+      pagesRoot.addEventListener(type, handler, type === 'pointerdown');
+    }
+    session.cropWindowHandlers = { pointermove, pointerup: finish, pointercancel: finish };
+    for (const [type, handler] of Object.entries(session.cropWindowHandlers)) {
+      window.addEventListener(type, handler, { capture: true, passive: type !== 'pointermove' });
     }
   }
 
@@ -2453,6 +2466,7 @@
       cropMode: 'none',
       cropDrag: null,
       cropHandlers: null,
+      cropWindowHandlers: null,
       onCropChange: null,
       onCropCommit: null,
       onCropReset: null,
@@ -2668,6 +2682,6 @@
     setEditorCrops,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2q`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2r`
   });
 })();
