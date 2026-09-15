@@ -1142,3 +1142,41 @@
     flex: 1 1 94px;
   }
 }
+
+
+.documents-object-format {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 34px;
+}
+
+.documents-object-format[hidden] { display: none !important; }
+
+.documents-object-format-button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #c7d5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #274c69;
+  cursor: pointer;
+  font: inherit;
+}
+
+.documents-object-format-button:hover,
+.documents-object-format-button.active {
+  background: #e3f3fb;
+  border-color: #91c5db;
+  color: #0f5f83;
+}
+
+.documents-object-align select,
+#editorObjectAlign {
+  min-height: 34px;
+  border: 1px solid #c7d5e1;
+  border-radius: 8px;
+  padding: 4px 6px;
+  background: #fff;
+  color: #173b5c;
+}
