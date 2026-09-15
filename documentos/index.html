@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260915-1">
+  <link rel="stylesheet" href="/css/documents.css?v=20260915-2">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -126,14 +126,40 @@
                 <button class="documents-editor-tool" id="editorImageButton" type="button" title="Adicionar imagem como nova página" aria-label="Adicionar imagem como nova página">▧</button>
                 <input id="editorImageInput" type="file" accept="image/*" multiple hidden>
                 <button class="documents-editor-tool is-planned" id="editorCropButton" type="button" title="Recortar página — próxima unidade" aria-label="Recortar página" disabled>⌗</button>
-                <button class="documents-editor-tool is-planned" id="editorWriteButton" type="button" title="Escrever — próxima unidade" aria-label="Escrever" disabled>T</button>
-                <button class="documents-editor-tool is-planned" id="editorOverlayImageButton" type="button" title="Colar imagem sobre a página — próxima unidade" aria-label="Colar imagem sobre a página" disabled>▣</button>
+                <button class="documents-editor-tool" id="editorSelectButton" type="button" title="Selecionar e mover objetos" aria-label="Selecionar e mover objetos">↖</button>
+                <button class="documents-editor-tool" id="editorWriteButton" type="button" title="Escrever sobre a página" aria-label="Escrever sobre a página">T</button>
+                <button class="documents-editor-tool" id="editorOverlayImageButton" type="button" title="Colar imagem sobre a página" aria-label="Colar imagem sobre a página">▣</button>
+                <input id="editorOverlayImageInput" type="file" accept="image/*" hidden>
                 <button class="documents-editor-tool is-planned" id="editorDrawButton" type="button" title="Desenhar — próxima unidade" aria-label="Desenhar" disabled>✎</button>
                 <span class="documents-editor-tool-spacer"></span>
                 <button class="documents-editor-tool" id="editorPreviewButton" type="button" title="Atualizar PDF" aria-label="Atualizar PDF">⟳</button>
                 <button class="documents-editor-tool" id="editorExitButton" type="button" title="Sair do editor" aria-label="Sair do editor">×</button>
               </div>
               <div class="documents-editor-status" id="documentsEditorStatus" aria-live="polite"></div>
+              <div class="documents-object-toolbar" id="editorObjectToolbar" hidden aria-label="Propriedades do objeto selecionado">
+                <label class="documents-object-field documents-object-field--font" id="editorObjectFontField">
+                  <span>Fonte</span>
+                  <select id="editorObjectFont">
+                    <option value="Arial">Arial</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Courier New">Courier New</option>
+                  </select>
+                </label>
+                <label class="documents-object-field documents-object-field--font" id="editorObjectSizeField">
+                  <span>Tamanho</span>
+                  <input id="editorObjectFontSize" type="number" min="8" max="96" step="1" value="18">
+                </label>
+                <label class="documents-object-field documents-object-field--font" id="editorObjectColorField">
+                  <span>Cor</span>
+                  <input id="editorObjectColor" type="color" value="#111111">
+                </label>
+                <label class="documents-object-field">
+                  <span>Transparência</span>
+                  <input id="editorObjectOpacity" type="range" min="10" max="100" step="5" value="100">
+                </label>
+                <button class="documents-object-action" id="editorObjectDelete" type="button" title="Excluir objeto" aria-label="Excluir objeto">×</button>
+              </div>
               <aside class="documents-editor-panel" id="editorMergePanel" hidden aria-label="Unir documentos">
                 <div class="documents-editor-panel-head">
                   <strong>Unir documentos</strong>
@@ -172,8 +198,8 @@
   <script src="/js/portal-interactions.js?v=20260910-2"></script>
   <script src="/js/tools-catalog.js?v=20260911-3"></script>
   <script src="/js/document-cache.js?v=20260912-1"></script>
-  <script src="/js/document-editor.js?v=20260915-1"></script>
-  <script src="/js/document-viewer.js?v=20260915-3"></script>
-  <script src="/js/documents.js?v=20260915-1"></script>
+  <script src="/js/document-editor.js?v=20260915-2"></script>
+  <script src="/js/document-viewer.js?v=20260915-4"></script>
+  <script src="/js/documents.js?v=20260915-2"></script>
 </body>
 </html>

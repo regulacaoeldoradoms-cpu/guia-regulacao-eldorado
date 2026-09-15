@@ -48,11 +48,29 @@
           <button id="editorMerge" class="documents-editor-tool" type="button" title="Unir PDF sintético">⧉</button>
           <button id="editorBlank" class="documents-editor-tool" type="button" title="Inserir página em branco">⊞</button>
           <button id="editorAddImage" class="documents-editor-tool" type="button" title="Adicionar imagem como página">▧</button>
+          <button id="editorSelect" class="documents-editor-tool" type="button" title="Selecionar e mover objetos">↖</button>
+          <button id="editorWrite" class="documents-editor-tool" type="button" title="Escrever sobre a página">T</button>
+          <button id="editorOverlayImage" class="documents-editor-tool" type="button" title="Colar imagem sintética sobre a página">▣</button>
           <span class="documents-editor-tool-spacer"></span>
           <button id="editorRefresh" class="documents-editor-tool" type="button" title="Atualizar PDF">⟳</button>
           <button id="editorExit" class="documents-editor-tool" type="button" title="Sair do editor">×</button>
         </div>
         <div id="editorStatus" class="documents-editor-status lab-editor-status" aria-live="polite"></div>
+        <div id="editorObjectToolbar" class="documents-object-toolbar" hidden>
+          <label class="documents-object-field documents-object-field--font"><span>Fonte</span>
+            <select id="editorObjectFont"><option>Arial</option><option>Helvetica</option><option>Times New Roman</option><option>Courier New</option></select>
+          </label>
+          <label class="documents-object-field documents-object-field--font"><span>Tamanho</span>
+            <input id="editorObjectFontSize" type="number" min="8" max="96" value="18">
+          </label>
+          <label class="documents-object-field documents-object-field--font"><span>Cor</span>
+            <input id="editorObjectColor" type="color" value="#111111">
+          </label>
+          <label class="documents-object-field"><span>Transparência</span>
+            <input id="editorObjectOpacity" type="range" min="10" max="100" step="5" value="100">
+          </label>
+          <button id="editorObjectDelete" class="documents-object-action" type="button" title="Excluir objeto">×</button>
+        </div>
       </div>
       <aside id="editorMergePanel" class="documents-editor-panel" hidden aria-label="Unir documentos sintéticos">
         <div class="documents-editor-panel-head">

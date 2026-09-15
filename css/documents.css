@@ -1060,3 +1060,82 @@
 .documents-custom-viewer[data-organizer-mode="true"] .portal-pdf-object-layer {
   display: none;
 }
+
+
+.documents-object-toolbar {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border-top: 1px solid #dbe4eb;
+  background: #fff;
+}
+
+.documents-object-toolbar[hidden] { display: none !important; }
+
+.documents-object-field {
+  display: grid;
+  gap: 3px;
+  min-width: 112px;
+  color: #49657a;
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+.documents-object-field select,
+.documents-object-field input[type="number"] {
+  min-height: 34px;
+  border: 1px solid #c7d5e1;
+  border-radius: 8px;
+  padding: 5px 7px;
+  background: #fff;
+  color: #173b5c;
+  font: inherit;
+}
+
+.documents-object-field input[type="color"] {
+  width: 44px;
+  height: 34px;
+  padding: 2px;
+  border: 1px solid #c7d5e1;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.documents-object-field input[type="range"] {
+  width: 120px;
+  min-height: 34px;
+}
+
+.documents-object-action {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #efc9c9;
+  border-radius: 8px;
+  background: #fff7f7;
+  color: #a83f3f;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.documents-custom-viewer[data-editor-workspace-mode="select"] .documents-pdf-layout,
+.documents-custom-viewer[data-editor-workspace-mode="write"] .documents-pdf-layout,
+.documents-custom-viewer[data-editor-workspace-mode="image"] .documents-pdf-layout {
+  height: min(76vh, 920px);
+}
+
+.documents-custom-viewer[data-editor-workspace-mode="write"] .portal-pdf-object-layer {
+  cursor: text;
+}
+
+@media (max-width: 720px) {
+  .documents-object-toolbar {
+    align-items: center;
+    gap: 6px;
+  }
+  .documents-object-field {
+    min-width: 94px;
+    flex: 1 1 94px;
+  }
+}
