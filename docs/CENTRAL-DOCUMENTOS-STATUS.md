@@ -1505,3 +1505,24 @@ Estado:
 - produção permanece inalterada;
 - nova rodada completa de CI/navegador é obrigatória;
 - 3C.2 continua bloqueada.
+
+
+## 3C.1 — terceira rodada P2: neutralização do scroll suave no restore — 14/09/2026
+
+Evidência do head `dacf9494`:
+- as suítes gerais permaneceram verdes e o workflow de navegador reduziu para **uma única falha**: preservação de página/zoom após rebuild no desktop;
+- o estado ainda regressava de página 2 para página 1 após `Atualizar PDF`;
+- a causa remanescente foi localizada no CSS: `.documents-pdf-scroll` usa `scroll-behavior: smooth`. Assim, `scrollIntoView({ behavior: 'auto' })` continuava sujeito ao comportamento suave computado do contêiner; a guarda era liberada antes de o deslocamento terminar.
+
+Correção:
+- durante a restauração inicial, o visualizador neutraliza temporariamente o `scroll-behavior` inline para `auto`;
+- calcula o deslocamento da página-alvo em relação ao viewport rolável e aplica `scrollTop`/ `scrollLeft` de forma imediata;
+- restaura em seguida o estilo inline anterior, preservando a navegação suave normal do usuário;
+- mantém a guarda `initialPageTarget` e as reafirmações em dois frames;
+- marcador interno avançado para `phase3c1k`.
+
+Risco controlado:
+- a mudança afeta somente a montagem/restauração de uma sessão do visualizador; cliques normais em miniaturas continuam usando a navegação suave existente.
+
+Próximo passo:
+- repetir o workflow de navegador em desktop/mobile; não fazer merge até a matriz ficar integralmente verde.

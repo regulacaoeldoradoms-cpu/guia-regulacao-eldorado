@@ -806,11 +806,17 @@
       session.initialPageTarget = initialPage;
       const restoreInitialViewport = () => {
         if (!isCurrentSession(session) || !initialRecord) return;
-        initialRecord.container.scrollIntoView({
-          behavior: 'auto',
-          block: 'start',
-          inline: 'nearest'
-        });
+        const previousScrollBehavior = session.scrollRoot.style.scrollBehavior;
+        session.scrollRoot.style.scrollBehavior = 'auto';
+        const scrollRect = session.scrollRoot.getBoundingClientRect();
+        const pageRect = initialRecord.container.getBoundingClientRect();
+        const targetTop = Math.max(
+          0,
+          session.scrollRoot.scrollTop + (pageRect.top - scrollRect.top) - 16
+        );
+        session.scrollRoot.scrollTop = targetTop;
+        session.scrollRoot.scrollLeft = 0;
+        session.scrollRoot.style.scrollBehavior = previousScrollBehavior;
         setActivePage(session, initialPage);
       };
 
@@ -880,6 +886,6 @@
     setThumbnailActions,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1j`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c1k`
   });
 })();
