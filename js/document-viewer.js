@@ -192,6 +192,12 @@
       }
       session.objectWindowHandlers = null;
     }
+    if (session.cropHandlers) {
+      for (const [type, handler] of Object.entries(session.cropHandlers)) {
+        try { session.pagesRoot?.removeEventListener(type, handler); } catch (_) {}
+      }
+      session.cropHandlers = null;
+    }
     const loadingTask = session.loadingTask;
     const document = session.document;
     session.loadingTask = null;
@@ -569,7 +575,12 @@
     objectLayer.dataset.pageNumber = String(pageNumber);
     objectLayer.setAttribute('aria-label', `Objetos da página ${pageNumber}`);
 
-    article.append(badge, canvas, loading, objectLayer);
+    const cropLayer = document.createElement('div');
+    cropLayer.className = 'portal-pdf-crop-layer';
+    cropLayer.dataset.pageNumber = String(pageNumber);
+    cropLayer.setAttribute('aria-label', `Recorte da página ${pageNumber}`);
+
+    article.append(badge, canvas, loading, objectLayer, cropLayer);
     session.pagesRoot.appendChild(article);
 
     const record = {
@@ -578,6 +589,7 @@
       canvas,
       loading,
       objectLayer,
+      cropLayer,
       page: null,
       renderTask: null,
       pendingScale: 0,
@@ -654,6 +666,229 @@
     rotate.title = 'Rotacionar';
     rotate.setAttribute('aria-label', 'Rotacionar objeto');
     element.appendChild(rotate);
+  }
+
+  function normalizeCropRect(value, fallback = null) {
+    if (!value || typeof value !== 'object') return fallback;
+    const minSize = 0.04;
+    let x = clamp01(value.x, 0);
+    let y = clamp01(value.y, 0);
+    let width = Number(value.width);
+    let height = Number(value.height);
+    if (!Number.isFinite(width) || !Number.isFinite(height)) return fallback;
+    width = Math.min(1, Math.max(minSize, width));
+    height = Math.min(1, Math.max(minSize, height));
+    x = Math.min(1 - width, Math.max(0, x));
+    y = Math.min(1 - height, Math.max(0, y));
+    return { x, y, width, height };
+  }
+
+  function cropEntryForPage(session, pageNumber) {
+    return (session.editorCrops || []).find((item) => Number(item.displayPage) === Number(pageNumber)) || null;
+  }
+
+  function defaultCropRect() {
+    return { x: 0.04, y: 0.04, width: 0.92, height: 0.92 };
+  }
+
+  function applyCropGeometry(element, crop) {
+    const rect = normalizeCropRect(crop, defaultCropRect());
+    element.style.left = `${rect.x * 100}%`;
+    element.style.top = `${rect.y * 100}%`;
+    element.style.width = `${rect.width * 100}%`;
+    element.style.height = `${rect.height * 100}%`;
+    element.dataset.cropX = String(rect.x);
+    element.dataset.cropY = String(rect.y);
+    element.dataset.cropWidth = String(rect.width);
+    element.dataset.cropHeight = String(rect.height);
+  }
+
+  function cropRectFromElement(element) {
+    return normalizeCropRect({
+      x: Number(element?.dataset?.cropX),
+      y: Number(element?.dataset?.cropY),
+      width: Number(element?.dataset?.cropWidth),
+      height: Number(element?.dataset?.cropHeight)
+    }, defaultCropRect());
+  }
+
+  function renderCropForPage(session, pageNumber) {
+    const record = session.pages.get(Number(pageNumber));
+    const layer = record?.cropLayer;
+    if (!layer) return;
+    layer.replaceChildren();
+
+    const entry = cropEntryForPage(session, pageNumber);
+    const committed = normalizeCropRect(entry?.crop);
+    const interactive = String(session.cropMode || 'none') === 'crop';
+    layer.dataset.cropMode = interactive ? 'crop' : 'none';
+    layer.dataset.hasCrop = committed ? 'true' : 'false';
+    if (!interactive && !committed) return;
+
+    const frame = document.createElement('div');
+    frame.className = 'portal-pdf-crop-frame';
+    frame.dataset.cropFrame = 'true';
+    frame.dataset.pageNumber = String(pageNumber);
+    frame.dataset.interactive = interactive ? 'true' : 'false';
+    frame.dataset.committed = committed ? 'true' : 'false';
+    frame.tabIndex = interactive ? 0 : -1;
+    frame.setAttribute('aria-label', `Área mantida da página ${pageNumber}`);
+    applyCropGeometry(frame, committed || defaultCropRect());
+
+    if (interactive) {
+      for (const handle of ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']) {
+        const node = document.createElement('span');
+        node.className = `portal-pdf-crop-handle portal-pdf-crop-handle--${handle}`;
+        node.dataset.cropResize = handle;
+        node.setAttribute('aria-hidden', 'true');
+        frame.appendChild(node);
+      }
+      if (committed) {
+        const reset = document.createElement('button');
+        reset.type = 'button';
+        reset.className = 'portal-pdf-crop-reset';
+        reset.dataset.cropReset = 'true';
+        reset.title = 'Remover recorte desta página';
+        reset.setAttribute('aria-label', `Remover recorte da página ${pageNumber}`);
+        reset.textContent = '↺';
+        frame.appendChild(reset);
+      }
+    }
+
+    layer.appendChild(frame);
+  }
+
+  function renderEditorCrops(session) {
+    if (!isCurrentSession(session)) return false;
+    for (let pageNumber = 1; pageNumber <= (session.document?.numPages || 0); pageNumber += 1) {
+      renderCropForPage(session, pageNumber);
+    }
+    session.root.dataset.cropMode = String(session.cropMode || 'none');
+    session.root.dataset.cropCount = String((session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length);
+    return true;
+  }
+
+  function installCropHandlers(session) {
+    if (session.cropHandlers) return;
+    const pagesRoot = session.pagesRoot;
+
+    const pointerdown = (event) => {
+      if (!isCurrentSession(session) || session.organizerMode || String(session.cropMode || '') !== 'crop') return;
+      if (event.target.closest?.('[data-crop-reset]')) return;
+      const frame = event.target.closest?.('[data-crop-frame]');
+      if (!frame) return;
+      const layer = frame.closest('.portal-pdf-crop-layer');
+      if (!layer) return;
+      const pageNumber = Number(frame.dataset.pageNumber || layer.dataset.pageNumber);
+      const handle = event.target.closest?.('[data-crop-resize]')?.dataset?.cropResize || '';
+      const rect = layer.getBoundingClientRect();
+      event.preventDefault();
+      event.stopPropagation();
+      session.cropDrag = {
+        pointerId: event.pointerId,
+        origin: event.target,
+        pageNumber,
+        pageIndex: pageNumber - 1,
+        handle,
+        kind: handle ? 'resize' : 'move',
+        startX: event.clientX,
+        startY: event.clientY,
+        layerWidth: Math.max(1, rect.width),
+        layerHeight: Math.max(1, rect.height),
+        start: cropRectFromElement(frame),
+        changed: false
+      };
+      try { event.target.setPointerCapture?.(event.pointerId); } catch (_) {}
+      session.root.dataset.cropGesture = session.cropDrag.kind;
+    };
+
+    const pointermove = (event) => {
+      const drag = session.cropDrag;
+      if (!drag || !isCurrentSession(session) || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
+      event.preventDefault();
+      const dx = (event.clientX - drag.startX) / drag.layerWidth;
+      const dy = (event.clientY - drag.startY) / drag.layerHeight;
+      const minSize = 0.04;
+      let { x, y, width, height } = drag.start;
+
+      if (drag.kind === 'move') {
+        x = Math.min(1 - width, Math.max(0, x + dx));
+        y = Math.min(1 - height, Math.max(0, y + dy));
+      } else {
+        if (drag.handle.includes('e')) width = Math.max(minSize, Math.min(1 - x, drag.start.width + dx));
+        if (drag.handle.includes('s')) height = Math.max(minSize, Math.min(1 - y, drag.start.height + dy));
+        if (drag.handle.includes('w')) {
+          const right = drag.start.x + drag.start.width;
+          x = Math.max(0, Math.min(right - minSize, drag.start.x + dx));
+          width = right - x;
+        }
+        if (drag.handle.includes('n')) {
+          const bottom = drag.start.y + drag.start.height;
+          y = Math.max(0, Math.min(bottom - minSize, drag.start.y + dy));
+          height = bottom - y;
+        }
+      }
+
+      const crop = normalizeCropRect({ x, y, width, height }, drag.start);
+      const entry = cropEntryForPage(session, drag.pageNumber);
+      if (entry) entry.crop = { ...crop };
+      drag.changed = true;
+      session.root.dataset.cropGestureMoved = 'true';
+      session.onCropChange?.(drag.pageIndex, crop);
+      const frame = pagesRoot.querySelector(`.portal-pdf-crop-frame[data-page-number="${drag.pageNumber}"]`);
+      if (frame) {
+        frame.dataset.committed = 'true';
+        applyCropGeometry(frame, crop);
+      }
+    };
+
+    const finish = (event) => {
+      const drag = session.cropDrag;
+      if (!drag || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
+      session.cropDrag = null;
+      session.root.dataset.cropGesture = '';
+      session.root.dataset.cropGestureMoved = drag.changed ? 'true' : 'false';
+      if (!drag.changed) return;
+      const entry = cropEntryForPage(session, drag.pageNumber);
+      const crop = normalizeCropRect(entry?.crop, drag.start);
+      session.onCropCommit?.(drag.pageIndex, crop);
+      renderCropForPage(session, drag.pageNumber);
+    };
+
+    const click = (event) => {
+      if (!isCurrentSession(session) || String(session.cropMode || '') !== 'crop') return;
+      const reset = event.target.closest?.('[data-crop-reset]');
+      if (!reset) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const frame = reset.closest('[data-crop-frame]');
+      const pageNumber = Number(frame?.dataset?.pageNumber || 0);
+      if (!(pageNumber > 0)) return;
+      const entry = cropEntryForPage(session, pageNumber);
+      if (entry) entry.crop = null;
+      session.onCropReset?.(pageNumber - 1);
+      renderCropForPage(session, pageNumber);
+      session.root.dataset.cropCount = String((session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length);
+    };
+
+    session.cropHandlers = { pointerdown, pointermove, pointerup: finish, pointercancel: finish, click };
+    for (const [type, handler] of Object.entries(session.cropHandlers)) {
+      pagesRoot.addEventListener(type, handler, false);
+    }
+  }
+
+  function setEditorCrops(crops = [], options = {}) {
+    const session = active;
+    if (!session || session.closed) return false;
+    session.editorCrops = Array.isArray(crops)
+      ? crops.map((item) => ({ ...item, crop: normalizeCropRect(item?.crop) }))
+      : [];
+    session.cropMode = String(options.mode || 'none') === 'crop' ? 'crop' : 'none';
+    session.onCropChange = typeof options.onChange === 'function' ? options.onChange : session.onCropChange;
+    session.onCropCommit = typeof options.onCommit === 'function' ? options.onCommit : session.onCropCommit;
+    session.onCropReset = typeof options.onReset === 'function' ? options.onReset : session.onCropReset;
+    installCropHandlers(session);
+    return renderEditorCrops(session);
   }
 
   function normalizeObjectColor(value, fallback = '#111111') {
@@ -1824,6 +2059,7 @@
     record.loading.hidden = true;
     record.container.classList.add('rendered');
     if (session.editorObjects?.length) refreshEditorObjectGeometryForPage(session, pageNumber);
+    if (session.editorCrops?.length || session.cropMode === 'crop') renderCropForPage(session, pageNumber);
 
     if (pageNumber === 1 && !session.firstPageRendered) {
       session.firstPageRendered = true;
@@ -2202,6 +2438,13 @@
       paletteSelectedIndex: -1,
       objectHandlers: null,
       objectWindowHandlers: null,
+      editorCrops: [],
+      cropMode: 'none',
+      cropDrag: null,
+      cropHandlers: null,
+      onCropChange: null,
+      onCropCommit: null,
+      onCropReset: null,
       onObjectChange: null,
       onObjectCommit: null,
       onObjectSelect: null,
@@ -2411,8 +2654,9 @@
     setThumbnailActions,
     setOrganizerMode,
     setEditorObjects,
+    setEditorCrops,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2n`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2o`
   });
 })();
