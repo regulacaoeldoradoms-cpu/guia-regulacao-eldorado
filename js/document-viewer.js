@@ -747,38 +747,86 @@
     });
   }
 
+  function selectedObjectGestureHit(session, event) {
+    const selectedId = String(session.selectedObjectId || '');
+    if (!selectedId) return null;
+    const element = session.pagesRoot?.querySelector?.(`.portal-pdf-object[data-object-id="${CSS.escape(selectedId)}"]`);
+    const layer = element?.closest?.('.portal-pdf-object-layer');
+    if (!element || !layer) return null;
+
+    const rect = element.getBoundingClientRect();
+    const x = Number(event.clientX);
+    const y = Number(event.clientY);
+    const tolerance = event.pointerType === 'touch' ? 28 : 20;
+    const near = (px, py, radius = tolerance) => Math.hypot(x - px, y - py) <= radius;
+
+    const rotateNode = element.querySelector('[data-object-rotate]');
+    const rotateRect = rotateNode?.getBoundingClientRect?.();
+    if (rotateRect) {
+      const rx = rotateRect.left + rotateRect.width / 2;
+      const ry = rotateRect.top + rotateRect.height / 2;
+      if (near(rx, ry, tolerance + 4)) return { element, layer, kind: 'rotate', handle: '', origin: rotateNode };
+    }
+
+    const corners = [
+      ['nw', rect.left, rect.top],
+      ['ne', rect.right, rect.top],
+      ['sw', rect.left, rect.bottom],
+      ['se', rect.right, rect.bottom]
+    ];
+    for (const [handle, px, py] of corners) {
+      if (near(px, py)) {
+        return {
+          element,
+          layer,
+          kind: 'resize',
+          handle,
+          origin: element.querySelector(`[data-object-resize="${handle}"]`) || element
+        };
+      }
+    }
+    return null;
+  }
+
   function installObjectHandlers(session) {
     if (session.objectHandlers) return;
     const pagesRoot = session.pagesRoot;
 
     const pointerdown = (event) => {
       if (!isCurrentSession(session) || session.organizerMode || String(session.objectMode || 'none') === 'none') return;
-      const element = event.target.closest?.('.portal-pdf-object');
+      const directElement = event.target.closest?.('.portal-pdf-object');
+      const geometryHit = selectedObjectGestureHit(session, event);
+      const element = directElement || geometryHit?.element;
       if (!element) return;
       const id = String(element.dataset.objectId || '');
       const object = objectForId(session, id);
-      const layer = element.closest('.portal-pdf-object-layer');
+      const layer = geometryHit?.layer || element.closest('.portal-pdf-object-layer');
       if (!object || !layer) return;
-      if (event.target.closest?.('.portal-pdf-object-text[contenteditable="true"]')) return;
+      if (!geometryHit && event.target.closest?.('.portal-pdf-object-text[contenteditable="true"]')) return;
+
+      const directResize = event.target.closest?.('[data-object-resize]')?.dataset?.objectResize || '';
+      const directRotate = Boolean(event.target.closest?.('[data-object-rotate]'));
+      const kind = geometryHit?.kind || (directRotate ? 'rotate' : directResize ? 'resize' : 'move');
+      const handle = geometryHit?.handle || directResize;
+      const origin = geometryHit?.origin || event.target.closest?.('[data-object-resize], [data-object-rotate]') || element;
+
       event.preventDefault();
+      if (kind !== 'move') session.suppressObjectClickUntil = performance.now() + 350;
       markSelectedObject(session, id);
       session.onObjectSelect?.(id);
 
       const rect = layer.getBoundingClientRect();
       const objectRect = element.getBoundingClientRect();
-      const resize = event.target.closest?.('[data-object-resize]')?.dataset?.objectResize || '';
-      const rotate = Boolean(event.target.closest?.('[data-object-rotate]'));
       const center = {
         x: objectRect.left + objectRect.width / 2,
         y: objectRect.top + objectRect.height / 2
       };
-      const captureTarget = event.target.closest?.('[data-object-resize], [data-object-rotate]') || element;
       session.objectDrag = {
         id,
         pointerId: event.pointerId,
-        origin: captureTarget,
-        kind: rotate ? 'rotate' : resize ? 'resize' : 'move',
-        handle: resize,
+        origin,
+        kind,
+        handle,
         startX: event.clientX,
         startY: event.clientY,
         layerWidth: Math.max(1, rect.width),
@@ -879,6 +927,7 @@
 
     const click = (event) => {
       if (!isCurrentSession(session) || session.organizerMode) return;
+      if (performance.now() < Number(session.suppressObjectClickUntil || 0)) return;
       const element = event.target.closest?.('.portal-pdf-object');
       if (element) {
         const id = String(element.dataset.objectId || '');
@@ -1428,6 +1477,7 @@
       selectedObjectId: '',
       editingTextId: '',
       objectDrag: null,
+      suppressObjectClickUntil: 0,
       objectUrls: new Map(),
       objectHandlers: null,
       objectWindowHandlers: null,
@@ -1640,6 +1690,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2b`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2c`
   });
 })();
