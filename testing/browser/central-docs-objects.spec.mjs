@@ -49,15 +49,9 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(text).toHaveAttribute('contenteditable', 'true');
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(1);
 
-    // First outside click only confirms the active edit. Use a point next to the
-    // now-visible object; the page may have scrolled since its original layer box was measured.
-    const movedVisible = await object.boundingBox();
-    const visibleLayer = await layer.boundingBox();
-    const outsidePoint = {
-      x: Math.min(visibleLayer.x + visibleLayer.width - 18, movedVisible.x + movedVisible.width + 36),
-      y: movedVisible.y + Math.min(24, movedVisible.height / 2)
-    };
-    await page.mouse.click(outsidePoint.x, outsidePoint.y);
+    // First outside click only confirms the active edit. Click a known empty
+    // corner of the page layer so the gesture is unambiguously outside the object.
+    await layer.click({ position: { x: 12, y: 12 } });
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(1);
     object = page.locator('.portal-pdf-object--text').first();
     text = object.locator('.portal-pdf-object-text');
@@ -68,7 +62,7 @@ test.describe('Central de Documentos — objetos sobre página', () => {
 
     // A later, distinct click at the same empty point may create the next box because editing is finished.
     await page.waitForTimeout(450);
-    await page.mouse.click(outsidePoint.x, outsidePoint.y);
+    await layer.click({ position: { x: 12, y: 12 } });
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(2);
 
     // Switching to Select also finalizes an active edit without creating anything.
@@ -127,13 +121,7 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(text).toHaveText('Conteúdo protegido no modo selecionar');
 
     await object.scrollIntoViewIfNeeded();
-    const objectBox = await object.boundingBox();
-    const visibleLayer = await layer.boundingBox();
-    const outsidePoint = {
-      x: Math.max(visibleLayer.x + 18, Math.min(visibleLayer.x + visibleLayer.width - 18, objectBox.x - 36)),
-      y: objectBox.y + Math.min(24, objectBox.height / 2)
-    };
-    await page.mouse.click(outsidePoint.x, outsidePoint.y);
+    await layer.click({ position: { x: 12, y: 12 } });
     await expect(object).not.toHaveClass(/selected/);
     await expect(object.locator('[data-text-quickbar]')).toHaveCount(0);
     await expect(text).toHaveAttribute('contenteditable', 'false');
