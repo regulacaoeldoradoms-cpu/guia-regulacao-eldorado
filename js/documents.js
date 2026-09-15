@@ -984,7 +984,7 @@
   function startSelectObjects() {
     if (!state.editorSession || state.editorBusy) return;
     setEditorWorkspaceMode('select');
-    setEditorStatus('Selecionar: arraste objetos para mover; use os quatro pontos para redimensionar e o ponto inferior para rotacionar.', 'success');
+    setEditorStatus('Selecionar: clique em um objeto para ajustar cor ou tamanho, arraste para mover; o conteúdo do texto fica protegido. Clique fora para confirmar e desmarcar.', 'success');
   }
 
   function startWriteObjects() {

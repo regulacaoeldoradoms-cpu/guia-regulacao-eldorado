@@ -826,6 +826,16 @@
     return true;
   }
 
+  function clearSelectedObject(session, { finishEditing = true, suppressCreate = true } = {}) {
+    if (!session) return false;
+    const hadSelection = Boolean(session.selectedObjectId || session.editingTextId);
+    if (finishEditing && session.editingTextId) finishTextEditing(session, { suppressCreate });
+    session.paletteSelectedIndex = -1;
+    markSelectedObject(session, '');
+    session.onObjectSelect?.('');
+    return hadSelection;
+  }
+
   function renderEditorObjectsForPage(session, pageNumber) {
     const record = session.pages.get(Number(pageNumber));
     const layer = record?.objectLayer;
@@ -901,7 +911,16 @@
   function markSelectedObject(session, objectId) {
     session.selectedObjectId = String(objectId || '');
     for (const element of session.pagesRoot?.querySelectorAll?.('.portal-pdf-object') || []) {
-      element.classList.toggle('selected', element.dataset.objectId === session.selectedObjectId);
+      const selected = element.dataset.objectId === session.selectedObjectId;
+      element.classList.toggle('selected', selected);
+      if (!selected) {
+        element.querySelector('[data-text-quickbar]')?.remove();
+        continue;
+      }
+      const object = objectForId(session, element.dataset.objectId);
+      if (object?.type === 'text' && !element.querySelector('[data-text-quickbar]')) {
+        createTextQuickbar(session, element, object);
+      }
     }
   }
 
@@ -1225,17 +1244,21 @@
         if (id && session.selectedObjectId !== id) {
           markSelectedObject(session, id);
           session.onObjectSelect?.(id);
-          renderEditorObjects(session);
+        } else if (id) {
+          markSelectedObject(session, id);
         }
+        return;
+      }
+
+      // Outside click confirms the current object state and deselects it first.
+      // In Write mode the same click is consumed so it cannot create a second box.
+      if (session.selectedObjectId || session.editingTextId) {
+        clearSelectedObject(session, { finishEditing: true, suppressCreate: true });
         return;
       }
 
       const layer = event.target.closest?.('.portal-pdf-object-layer');
       if (!layer || String(session.objectMode || '') !== 'write') return;
-      if (session.editingTextId) {
-        finishTextEditing(session);
-        return;
-      }
       if (performance.now() < Number(session.suppressCreateTextUntil || 0)) return;
       const pageNumber = Number(layer.dataset.pageNumber);
       const rect = layer.getBoundingClientRect();
@@ -1249,6 +1272,11 @@
       const text = event.target.closest?.('.portal-pdf-object-text');
       const element = text?.closest?.('.portal-pdf-object');
       if (!text || !element || !isCurrentSession(session)) return;
+      if (String(session.objectMode || '') !== 'write') {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       event.preventDefault();
       event.stopPropagation();
       const id = String(element.dataset.objectId || '');
@@ -1328,7 +1356,9 @@
     if (session.editingTextId && nextMode !== 'write') finishTextEditing(session, { suppressCreate: false });
     session.editorObjects = Array.isArray(objects) ? objects.map((item) => ({ ...item })) : [];
     session.objectMode = nextMode;
-    session.selectedObjectId = String(options.selectedObjectId || session.selectedObjectId || '');
+    if (Object.prototype.hasOwnProperty.call(options, 'selectedObjectId')) {
+      session.selectedObjectId = String(options.selectedObjectId || '');
+    }
     if (Array.isArray(options.colorPalette)) session.colorPalette = normalizeColorPalette(options.colorPalette);
     session.onObjectChange = typeof options.onChange === 'function' ? options.onChange : session.onObjectChange;
     session.onObjectCommit = typeof options.onCommit === 'function' ? options.onCommit : session.onObjectCommit;
@@ -2052,6 +2082,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2e`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2f`
   });
 })();
