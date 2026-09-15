@@ -688,6 +688,17 @@
     }
   }
 
+  function refreshEditorObjectGeometryForPage(session, pageNumber) {
+    const record = session.pages.get(Number(pageNumber));
+    const layer = record?.objectLayer;
+    if (!layer) return;
+    const width = record.container.clientWidth || 760;
+    for (const element of layer.querySelectorAll('.portal-pdf-object[data-object-id]')) {
+      const object = objectForId(session, element.dataset.objectId);
+      if (object) applyObjectGeometry(element, object, width);
+    }
+  }
+
   function renderEditorObjects(session) {
     if (!isCurrentSession(session)) return false;
     const liveIds = new Set((session.editorObjects || []).map((item) => String(item.id)));
@@ -1013,7 +1024,7 @@
     record.renderGeneration = generation;
     record.loading.hidden = true;
     record.container.classList.add('rendered');
-    if (session.editorObjects?.length) renderEditorObjectsForPage(session, pageNumber);
+    if (session.editorObjects?.length) refreshEditorObjectGeometryForPage(session, pageNumber);
 
     if (pageNumber === 1 && !session.firstPageRendered) {
       session.firstPageRendered = true;
@@ -1574,6 +1585,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v1b`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v1c`
   });
 })();
