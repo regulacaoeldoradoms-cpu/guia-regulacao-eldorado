@@ -923,3 +923,26 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* O Editor V2 usa o acesso lateral; o gatilho legado do cabeçalho fica apenas no DOM para compatibilidade. */
+.documents-viewer-actions .documents-edit-trigger { display: none !important; }
+
+.documents-custom-viewer[data-organizer-mode="true"] .portal-pdf-thumb.can-drag {
+  cursor: grab;
+}
+
+.documents-custom-viewer[data-organizer-mode="true"] .portal-pdf-thumb-wrap.dragging .portal-pdf-thumb {
+  transform: scale(.985);
+}
+
+.portal-pdf-drag-ghost .portal-pdf-thumb-canvas {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100% - 36px);
+  object-fit: contain;
+}
+
+.portal-pdf-drag-ghost {
+  transition: opacity .08s ease;
+}

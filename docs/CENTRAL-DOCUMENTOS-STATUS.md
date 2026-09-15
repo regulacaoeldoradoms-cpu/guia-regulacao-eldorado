@@ -1773,3 +1773,13 @@ Implementado no PR #179, ainda sem merge:
 - Service Worker/cache versionado para evitar servir a UI antiga após futura promoção.
 
 Testes foram atualizados para a UX V2; CI completo deve ficar verde antes de gerar o preview candidato a aceite humano.
+
+
+## Organizar V2 — refinamento de fluidez do arraste — 15/09/2026
+
+Ajuste aplicado antes do primeiro preview V2:
+- o ghost de arraste agora copia os pixels reais do canvas da miniatura; `cloneNode()` sozinho não preserva bitmap de canvas e poderia produzir um cartão fantasma vazio;
+- a página de origem recebe feedback de escala/opacidade enquanto é movida;
+- o ghost acompanha o ponteiro sem capturar eventos;
+- clicar numa página no modo grade apenas seleciona a página; não tenta rolar a superfície grande que está oculta;
+- o botão legado **Editar PDF** do cabeçalho deixa de ser visualmente redundante; o acesso principal passa a ser o ícone lateral Editar, preservando o nó legado por compatibilidade interna.

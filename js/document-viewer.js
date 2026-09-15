@@ -288,6 +288,19 @@
     ghost.style.width = `${Math.max(120, rect.width)}px`;
     ghost.style.height = `${Math.max(120, rect.height)}px`;
     ghost.querySelectorAll('button').forEach((button) => { button.tabIndex = -1; });
+
+    const sourceCanvas = wrapper.querySelector('.portal-pdf-thumb-canvas');
+    const ghostCanvas = ghost.querySelector('.portal-pdf-thumb-canvas');
+    if (sourceCanvas && ghostCanvas && sourceCanvas.width > 0 && sourceCanvas.height > 0) {
+      ghostCanvas.width = sourceCanvas.width;
+      ghostCanvas.height = sourceCanvas.height;
+      ghostCanvas.style.width = sourceCanvas.style.width || `${sourceCanvas.clientWidth}px`;
+      ghostCanvas.style.height = sourceCanvas.style.height || `${sourceCanvas.clientHeight}px`;
+      try {
+        ghostCanvas.getContext('2d')?.drawImage(sourceCanvas, 0, 0);
+      } catch (_) {}
+    }
+
     document.body.appendChild(ghost);
     session.dragGhost = ghost;
     moveDragGhost(session, event);
@@ -1001,7 +1014,9 @@
         const record = session.pages.get(pageNumber);
         if (!record) return;
         setActivePage(session, pageNumber);
-        record.container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (!session.organizerMode) {
+          record.container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       });
 
       const requestedPage = Math.round(Number(initialViewState?.activePage || 1));
@@ -1119,6 +1134,6 @@
     setThumbnailActions,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c2a`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-phase3c2b`
   });
 })();
