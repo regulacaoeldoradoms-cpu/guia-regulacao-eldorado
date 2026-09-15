@@ -130,6 +130,39 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     expect(errors).toEqual([]);
   });
 
+  test('barra contextual acompanha a seleção ao alternar entre duas caixas de texto', async ({ page }) => {
+    await openEditor(page);
+    await page.locator('#editorWrite').click();
+    const layer = page.locator('.portal-pdf-object-layer').first();
+    const layerBox = await layer.boundingBox();
+
+    await page.mouse.click(layerBox.x + layerBox.width * .28, layerBox.y + layerBox.height * .26);
+    let texts = page.locator('.portal-pdf-object--text');
+    await expect(texts).toHaveCount(1);
+    await texts.first().locator('.portal-pdf-object-text').fill('Caixa A');
+    await layer.click({ position: { x: 12, y: 12 } });
+    await page.waitForTimeout(450);
+
+    await page.mouse.click(layerBox.x + layerBox.width * .68, layerBox.y + layerBox.height * .48);
+    texts = page.locator('.portal-pdf-object--text');
+    await expect(texts).toHaveCount(2);
+    await texts.nth(1).locator('.portal-pdf-object-text').fill('Caixa B');
+    await page.locator('#editorSelect').click();
+
+    const first = texts.nth(0);
+    const second = texts.nth(1);
+    await first.locator('.portal-pdf-object-text').click();
+    await expect(first).toHaveClass(/selected/);
+    await expect(first.locator('[data-text-quickbar]')).toHaveCount(1);
+    await expect(second.locator('[data-text-quickbar]')).toHaveCount(0);
+
+    // Pointerdown selects before click; the quickbar must still migrate to B.
+    await second.locator('.portal-pdf-object-text').click();
+    await expect(second).toHaveClass(/selected/);
+    await expect(second.locator('[data-text-quickbar]')).toHaveCount(1);
+    await expect(first.locator('[data-text-quickbar]')).toHaveCount(0);
+  });
+
   test('barra contextual do texto oferece tamanho, paleta editável e exclusão reversível', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
