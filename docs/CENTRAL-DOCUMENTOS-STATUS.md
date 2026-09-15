@@ -14,19 +14,35 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, confirmada antes desta rodada.
 - **PR:** #179 — `codex/central-docs-editor-superficie-unica`, aberto, sem merge e ainda apontado para a mesma main.
-- **Último commit funcional relevante:** `d1345a6d96d6de5fa614e3ff743f482b9a68a045` — preserva lazy loading de miniaturas nas trocas de modo e transforma pela alça inferior direita.
+- **Último commit funcional relevante:** `b559a18bbb47d56fca0484814e36e3c84ca5e4d8` — incorpora o adendo humano da ferramenta Escrever/Selecionar: conteúdo protegido no modo Selecionar, barra contextual disponível e clique externo confirmando/desmarcando.
 - **Organizar V2:** aceito pelo usuário; drag centralizado, grade, rotação de página, duplicação, exclusão, página em branco, união posicionada e undo/redo permanecem requisitos preservados.
-- **3C.3 já implementada:** texto e imagem overlay por `pageId`, seleção, movimento, quatro pontos de manipulação, rotação, formatação de texto, opacidade, transferência entre páginas e histórico local. Os objetos continuam locais; o flatten permanece para 3C.6.
+- **3C.3 já implementada:** texto e imagem overlay por `pageId`, seleção, movimento, quatro pontos de manipulação, rotação, formatação de texto, opacidade, transferência entre páginas e histórico local. No modo **Selecionar**, texto permanece não editável, mas a caixa selecionada expõe bolinha de cor, A−, A+ e lixeira; clique fora confirma o estado e remove a seleção. Os objetos continuam locais; o flatten permanece para 3C.6.
 - **P2 de miniaturas lazy:** a causa era `setOrganizerMode()` invalidar e chamar `renderThumbnail()` para todas as páginas. A correção agora invalida a geração e rearma o `IntersectionObserver`, renderizando tudo somente no fallback sem IntersectionObserver. Foi acrescentado teste de navegador com documento sintético ampliado para provar que a troca de modo não materializa todas as miniaturas.
 - **Alça inferior direita:** agora é transformação combinada. Distância ao centro controla escala uniforme e variação angular controla rotação; o centro do objeto é preservado e o gesto continua sendo consolidado como uma única mutação no `pointerup`. A alça de rotação dedicada continua disponível como alternativa.
-- **Testes acrescentados:** cobertura estática do lazy loading e da transformação SE; Playwright verifica resize + rotação pela alça SE e um cenário com mais de dez páginas onde somente miniaturas visíveis/próximas devem ficar renderizadas após Organizar ↔ Escrever.
+- **Testes acrescentados:** além do lazy loading e da transformação SE, o Playwright agora cobre o contrato do adendo humano: duplo clique em Selecionar não ativa `contenteditable`, os atalhos contextuais continuam funcionais sem alterar o conteúdo textual e clique externo desmarca/remove a barra contextual.
 - **Segurança:** nenhuma rota de escrita no Drive, nenhum backend novo, nenhuma telemetria de texto/imagem/coordenadas e nenhum dado real no staging.
-- **Validação automática:** head `32e3f45957142f1d6e6f0402db1ca70fe401377b` passou **24/24 workflows**. O workflow de navegador executou 44 casos: **43 passaram e 1 foi pulado por ser o gesto touch específico no projeto desktop**; o mesmo gesto passou no perfil mobile. A nova regressão de lazy thumbnails passou em desktop e mobile.
+- **Validação automática atual:** no head `b559a18bbb47d56fca0484814e36e3c84ca5e4d8`, **23/24 workflows já concluíram com sucesso**; `Validar Central de Documentos — navegador` ainda está em execução nesta atualização. A suíte estática da Central, o cache, primeiro acesso e interações do Portal já estão verdes. Não declarar a rodada encerrada antes do resultado do navegador.
 - **Gate:** Recortar (3C.4) não deve ser implementado antes do aceite humano da 3C.3. Desenhar/Borracha (3C.5) e flatten (3C.6) continuam apenas preparados em especificação/testes.
 - **Riscos conhecidos:** staging público enquanto Cloudflare Access estiver pendente, portanto somente dados sintéticos; touch automatizado não substitui teste em aparelho físico; PDFs institucionais só entram em reteste autorizado posterior.
 - **Não feito:** merge, alteração da main, deploy de produção, escrita no Drive, mudança de Worker/D1, uso de documento clínico ou avanço funcional para 3C.4/3C.5.
-- **Preview candidato:** deployment sintético imutável `https://11589904.portal-regulacao-central-staging.pages.dev/`, associado ao head `32e3f45`; alias da branch permanece `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
-- **Próxima ação exata:** fechar o thread P2 já comprovado por CI, manter o PR sem merge e entregar o preview candidato para homologação humana de **Escrever + Colar imagem**. Somente um defeito observado nessa homologação reabre trabalho técnico na 3C.3.
+- **Preview candidato atual:** deployment sintético imutável `https://ae1326fb.portal-regulacao-central-staging.pages.dev/`, associado ao head `b559a18`; alias da branch permanece `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+- **Próxima ação exata:** aguardar o workflow de navegador do head `b559a18`, corrigir qualquer regressão se aparecer e então pedir homologação humana especificamente do fluxo **Selecionar caixa de texto → ajustar cor/tamanho/excluir sem editar conteúdo → clicar fora e desmarcar**. Recortar continua bloqueado até esse aceite.
+
+## 3C.3 — adendo humano: Selecionar protege o conteúdo do texto — 15/09/2026
+
+Durante a homologação humana, foi acrescentado um requisito de interação para a caixa de texto. A 3C.3 foi reaberta tecnicamente sem avançar para Recortar.
+
+- no modo **Selecionar e mover**, clicar na caixa seleciona o objeto, mas não permite editar o conteúdo textual; inclusive duplo clique é ignorado para edição enquanto o modo não for Escrever;
+- a caixa selecionada continua expondo os atalhos contextuais já definidos: cor, A−, A+ e lixeira, preservando alterações de aparência e exclusão;
+- ao clicar fora da caixa, o estado atual é confirmado e a caixa deixa de ficar selecionada; no modo Escrever esse primeiro clique externo é consumido para não criar outra caixa acidentalmente;
+- foi corrigido também o contrato de `selectedObjectId`: valor vazio explícito agora realmente limpa a seleção em vez de reaproveitar a seleção anterior;
+- a barra contextual passa a acompanhar a seleção sem reconstruir toda a camada de objetos;
+- foi renovado o versionamento dos assets (`document-viewer.js?v=20260915-7`, `documents.js?v=20260915-5`) e do cache do Portal (`20260915-5`) para impedir que o navegador continue servindo o comportamento antigo;
+- não houve merge, escrita no Drive, deploy de produção, telemetria de conteúdo ou avanço para 3C.4.
+
+Decisão descartada: não tornar o texto editável no modo Selecionar nem aproveitar o clique externo de confirmação para criar uma nova caixa. A separação é deliberada para evitar alterações acidentais do conteúdo.
+
+Pendência desta atualização: concluir o workflow Playwright de navegador e repetir a homologação humana no preview sintético atual.
 
 ## 3C.3 — adiantamento técnico enquanto Codex estava indisponível — 15/09/2026
 
