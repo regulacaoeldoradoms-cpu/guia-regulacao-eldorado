@@ -66,6 +66,12 @@
           <label class="documents-object-field documents-object-field--font"><span>Cor</span>
             <input id="editorObjectColor" type="color" value="#111111">
           </label>
+          <div class="documents-object-format documents-object-field--font" id="editorObjectFormatField">
+            <button id="editorObjectBold" class="documents-object-format-button" type="button" aria-pressed="false">B</button>
+            <button id="editorObjectItalic" class="documents-object-format-button" type="button" aria-pressed="false">I</button>
+            <button id="editorObjectUnderline" class="documents-object-format-button" type="button" aria-pressed="false">U</button>
+            <select id="editorObjectAlign" aria-label="Alinhamento"><option value="left">Esquerda</option><option value="center">Centro</option><option value="right">Direita</option></select>
+          </div>
           <label class="documents-object-field"><span>Transparência</span>
             <input id="editorObjectOpacity" type="range" min="10" max="100" step="5" value="100">
           </label>
