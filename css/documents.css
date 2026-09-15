@@ -1014,6 +1014,7 @@
 
 .portal-pdf-object-handle,
 .portal-pdf-object-rotate {
+  pointer-events: auto;
   position: absolute;
   display: none;
   box-sizing: border-box;

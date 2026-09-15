@@ -28,6 +28,7 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(page.locator('#editorObjectToolbar')).toBeVisible();
 
     const text = page.locator('.portal-pdf-object-text').first();
+    await expect(text).toHaveAttribute('contenteditable', 'true');
     await text.fill('Texto sintético editado');
     await page.locator('#editorStatus').click();
     await expect(text).toHaveText('Texto sintético editado');
@@ -52,13 +53,16 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     expect(moved.x).toBeGreaterThan(before.x + 20);
 
     const handle = object.locator('[data-object-resize="se"]');
+    await expect(handle).toBeVisible();
     const handleBox = await handle.boundingBox();
-    await page.mouse.move(handleBox.x + 4, handleBox.y + 4);
+    const handleCenter = { x: handleBox.x + handleBox.width / 2, y: handleBox.y + handleBox.height / 2 };
+    await page.mouse.move(handleCenter.x, handleCenter.y);
     await page.mouse.down();
-    await page.mouse.move(handleBox.x + 40, handleBox.y + 30, { steps: 4 });
+    await page.mouse.move(handleCenter.x + 48, handleCenter.y + 36, { steps: 6 });
+    await expect.poll(async () => (await object.boundingBox()).width).toBeGreaterThan(moved.width + 20);
     await page.mouse.up();
     const resized = await object.boundingBox();
-    expect(resized.width).toBeGreaterThan(moved.width + 15);
+    expect(resized.width).toBeGreaterThan(moved.width + 20);
 
     await page.locator('#editorUndo').click();
     await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');

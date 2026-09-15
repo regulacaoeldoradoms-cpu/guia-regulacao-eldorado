@@ -744,10 +744,11 @@
         x: objectRect.left + objectRect.width / 2,
         y: objectRect.top + objectRect.height / 2
       };
+      const captureTarget = event.target.closest?.('[data-object-resize], [data-object-rotate]') || element;
       session.objectDrag = {
         id,
         pointerId: event.pointerId,
-        origin: element,
+        origin: captureTarget,
         kind: rotate ? 'rotate' : resize ? 'resize' : 'move',
         handle: resize,
         startX: event.clientX,
@@ -759,7 +760,7 @@
         start: { ...object },
         changed: false
       };
-      try { element.setPointerCapture?.(event.pointerId); } catch (_) {}
+      try { captureTarget.setPointerCapture?.(event.pointerId); } catch (_) {}
     };
 
     const pointermove = (event) => {
@@ -1573,6 +1574,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v1a`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v1b`
   });
 })();
