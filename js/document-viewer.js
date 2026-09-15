@@ -920,6 +920,20 @@
     customPanel.setAttribute('role', 'dialog');
     customPanel.setAttribute('aria-label', 'Seletor RGB e hexadecimal');
 
+    const panelHeader = document.createElement('div');
+    panelHeader.className = 'portal-pdf-custom-color-header';
+    const panelTitle = document.createElement('strong');
+    panelTitle.textContent = 'RGB / HEX';
+    const panelClose = document.createElement('button');
+    panelClose.type = 'button';
+    panelClose.className = 'portal-pdf-custom-color-close';
+    panelClose.dataset.colorPanelClose = 'true';
+    panelClose.textContent = '×';
+    panelClose.title = 'Fechar seletor de cor';
+    panelClose.setAttribute('aria-label', 'Fechar seletor de cor');
+    panelHeader.append(panelTitle, panelClose);
+    customPanel.appendChild(panelHeader);
+
     const plane = document.createElement('div');
     plane.className = 'portal-pdf-custom-color-plane';
     plane.dataset.colorPlane = 'true';
@@ -1104,6 +1118,11 @@
     };
     dragHandle.addEventListener('pointerup', finishPanelDrag);
     dragHandle.addEventListener('pointercancel', () => { panelDrag = null; });
+    panelClose.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      customPanel.hidden = true;
+    });
   }
 
   function finishTextEditing(session, { suppressCreate = true } = {}) {
@@ -2369,6 +2388,6 @@
     setEditorObjects,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2i`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2j`
   });
 })();
