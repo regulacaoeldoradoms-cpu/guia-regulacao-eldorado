@@ -2059,7 +2059,15 @@
     record.loading.hidden = true;
     record.container.classList.add('rendered');
     if (session.editorObjects?.length) refreshEditorObjectGeometryForPage(session, pageNumber);
-    if (session.editorCrops?.length || session.cropMode === 'crop') renderCropForPage(session, pageNumber);
+    // Rendering/lazy-loading a page must not replace an active crop frame while
+    // the user is touching or dragging one of its handles. setEditorCrops()
+    // owns structural refreshes when the mode/model changes.
+    if (
+      (session.editorCrops?.length || session.cropMode === 'crop')
+      && !record.cropLayer?.querySelector?.('[data-crop-frame]')
+    ) {
+      renderCropForPage(session, pageNumber);
+    }
 
     if (pageNumber === 1 && !session.firstPageRendered) {
       session.firstPageRendered = true;
@@ -2657,6 +2665,6 @@
     setEditorCrops,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2o`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2p`
   });
 })();
