@@ -31,6 +31,15 @@
     mergeCancel: document.getElementById('editorMergeCancel'),
     blank: document.getElementById('editorBlank'),
     addImage: document.getElementById('editorAddImage'),
+    select: document.getElementById('editorSelect'),
+    write: document.getElementById('editorWrite'),
+    overlayImage: document.getElementById('editorOverlayImage'),
+    objectToolbar: document.getElementById('editorObjectToolbar'),
+    objectFont: document.getElementById('editorObjectFont'),
+    objectFontSize: document.getElementById('editorObjectFontSize'),
+    objectColor: document.getElementById('editorObjectColor'),
+    objectOpacity: document.getElementById('editorObjectOpacity'),
+    objectDelete: document.getElementById('editorObjectDelete'),
     refresh: document.getElementById('editorRefresh'),
     exit: document.getElementById('editorExit')
   };
@@ -39,6 +48,8 @@
     originalBlob: fixture?.blob?.() || null,
     session: null,
     merging: false,
+    mode: 'readonly',
+    selectedObjectId: '',
     viewState: null,
     sequence: 0,
     operation: Promise.resolve()
@@ -67,6 +78,75 @@
       .join(',');
   }
 
+  function selectedObject() {
+    if (!state.session || !state.selectedObjectId) return null;
+    return editor.objectModel(state.session).find((item) => item.id === state.selectedObjectId) || null;
+  }
+
+  function syncObjectToolbar() {
+    const object = selectedObject();
+    elements.objectToolbar.hidden = !object;
+    if (!object) return;
+    const text = object.type === 'text';
+    for (const field of elements.objectToolbar.querySelectorAll('.documents-object-field--font')) field.hidden = !text;
+    if (text) {
+      elements.objectFont.value = object.fontFamily || 'Arial';
+      elements.objectFontSize.value = String(Math.round((object.fontSize || .032) * 560));
+      elements.objectColor.value = /^#[0-9a-f]{6}$/i.test(object.color || '') ? object.color : '#111111';
+    }
+    elements.objectOpacity.value = String(Math.round((object.opacity ?? 1) * 100));
+  }
+
+  function syncObjects() {
+    if (!state.session) return false;
+    const mode = ['write', 'image', 'select'].includes(state.mode) ? state.mode : 'none';
+    const result = viewer.setEditorObjects?.(editor.objectModel(state.session), {
+      mode,
+      selectedObjectId: state.selectedObjectId,
+      onSelect(id) {
+        state.selectedObjectId = id;
+        syncObjectToolbar();
+      },
+      onChange(id, patch) {
+        editor.updateObject(state.session, id, patch, { commit: false });
+      },
+      onCommit() {
+        editor.commitObjectMutation(state.session);
+        syncEditorState();
+      },
+      onTextCommit(id, value) {
+        editor.updateObject(state.session, id, { text: value }, { commit: false });
+        editor.commitObjectMutation(state.session);
+        syncEditorState();
+      },
+      onCreateText(pageNumber, point) {
+        if (state.mode !== 'write') return;
+        const id = editor.addTextObject(state.session, pageNumber - 1, {
+          x: Math.min(.82, Math.max(0, point.x - .04)),
+          y: Math.min(.9, Math.max(0, point.y - .025)),
+          text: 'Digite aqui'
+        });
+        state.selectedObjectId = id || '';
+        syncEditorState();
+        syncObjects();
+        const node = elements.pages.querySelector(`.portal-pdf-object[data-object-id="${CSS.escape(state.selectedObjectId)}"] .portal-pdf-object-text`);
+        node?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+      }
+    });
+    syncObjectToolbar();
+    root.dataset.objectCount = String(editor.objectModel(state.session).length);
+    return result;
+  }
+
+  function setMode(mode) {
+    if (!state.session) return;
+    state.mode = mode;
+    state.merging = mode === 'merge';
+    viewer.setOrganizerMode?.(mode === 'organize' || mode === 'merge');
+    syncEditorState();
+    syncObjects();
+  }
+
   function syncEditorState() {
     const editing = Boolean(state.session);
     root.dataset.editorMode = editing ? 'editor' : 'readonly';
@@ -79,13 +159,16 @@
     elements.enterEditor.disabled = editing || root.dataset.viewerState !== 'ready';
     elements.surface.classList.toggle('is-editing', editing);
     elements.surface.dataset.editorMode = editing ? 'true' : 'false';
-    elements.surface.dataset.editorWorkspaceMode = editing ? (state.merging ? 'merge' : 'organize') : 'readonly';
-    elements.mergePanel.hidden = !editing || !state.merging;
-    elements.organize.classList.toggle('active', editing && !state.merging);
-    elements.organize.setAttribute('aria-pressed', String(editing && !state.merging));
-    elements.merge.classList.toggle('active', editing && state.merging);
-    elements.merge.setAttribute('aria-pressed', String(editing && state.merging));
-    viewer.setOrganizerMode?.(editing);
+    elements.surface.dataset.editorWorkspaceMode = editing ? state.mode : 'readonly';
+    elements.mergePanel.hidden = !editing || state.mode !== 'merge';
+    elements.organize.classList.toggle('active', editing && state.mode === 'organize');
+    elements.organize.setAttribute('aria-pressed', String(editing && state.mode === 'organize'));
+    elements.merge.classList.toggle('active', editing && state.mode === 'merge');
+    elements.merge.setAttribute('aria-pressed', String(editing && state.mode === 'merge'));
+    elements.select.classList.toggle('active', editing && state.mode === 'select');
+    elements.write.classList.toggle('active', editing && state.mode === 'write');
+    elements.overlayImage.classList.toggle('active', editing && state.mode === 'image');
+    viewer.setOrganizerMode?.(editing && (state.mode === 'organize' || state.mode === 'merge'));
     elements.surface.setAttribute('aria-label', editing ? 'Editor visual PDF sintético' : 'Visualizador PDF sintético');
     elements.undo.disabled = !editing || !editor.canUndo(state.session);
     elements.redo.disabled = !editing || !editor.canRedo(state.session);
@@ -97,6 +180,10 @@
     elements.mergeAfterPage.disabled = !editing;
     elements.blank.disabled = !editing;
     elements.addImage.disabled = !editing;
+    elements.select.disabled = !editing;
+    elements.write.disabled = !editing;
+    elements.overlayImage.disabled = !editing;
+    elements.objectDelete.disabled = !editing || !selectedObject();
     elements.refresh.disabled = !editing;
     elements.exit.disabled = !editing;
   }
@@ -107,7 +194,7 @@
     elements.surface.setAttribute('aria-busy', active ? 'true' : 'false');
     if (message) elements.editorStatus.textContent = message;
     if (active) {
-      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.blank, elements.addImage, elements.refresh, elements.exit]) {
+      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.blank, elements.addImage, elements.select, elements.write, elements.overlayImage, elements.objectDelete, elements.refresh, elements.exit]) {
         button.disabled = true;
       }
       elements.thumbnails.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
@@ -147,8 +234,8 @@
       zoomLabel: elements.zoomReset,
       pageCountLabel: elements.pageCount,
       thumbnailActions: editing,
-      organizerMode: editing,
-      thumbnailWidth: editing ? 210 : null,
+      organizerMode: editing && (state.mode === 'organize' || state.mode === 'merge'),
+      thumbnailWidth: editing && (state.mode === 'organize' || state.mode === 'merge') ? 210 : null,
       initialViewState,
       onThumbnailAction: editing ? handleThumbnailAction : null,
       onReady(info) {
@@ -159,6 +246,7 @@
         elements.status.dataset.state = 'ready';
         elements.status.textContent = `${editing ? 'Editor' : 'Visualizador'} pronto — PDF.js ${info.version} — ${info.pageCount} páginas`;
         elements.enterEditor.disabled = editing;
+        if (editing) syncObjects();
       },
       onFirstPageVisible() {
         if (sequence === state.sequence) root.dataset.firstPageVisible = 'true';
@@ -233,6 +321,8 @@
     const viewState = viewer.getViewState();
     state.session = await editor.createSession(state.originalBlob, { label: 'PDF sintético' });
     state.viewState = viewState;
+    state.mode = 'organize';
+    state.selectedObjectId = '';
     syncEditorState();
     const installed = viewer.setThumbnailActions(true, handleThumbnailAction);
     if (!installed) {
@@ -293,6 +383,7 @@
   function showMergePanel() {
     if (!state.session) return;
     state.merging = true;
+    state.mode = 'merge';
     elements.mergePosition.value = 'after-document';
     elements.mergeAfterPage.max = String(editor.pageCount(state.session));
     elements.mergeAfterPage.value = String(viewer.getViewState()?.activePage || 1);
@@ -304,7 +395,9 @@
 
   function cancelMerge() {
     state.merging = false;
+    state.mode = 'organize';
     syncEditorState();
+    syncObjects();
     elements.editorStatus.textContent = 'Modo Organizar ativo.';
   }
 
@@ -316,10 +409,47 @@
     await rebuild(viewState ? { ...viewState, activePage: pageIndex + 1 } : null, 'Inserindo página em branco…');
   }
 
+  function startWriteMode() {
+    setMode('write');
+    elements.editorStatus.textContent = 'Escrever: clique na página para criar uma caixa de texto. Dê duplo clique no texto para editar.';
+  }
+
+  function startSelectMode() {
+    setMode('select');
+    elements.editorStatus.textContent = 'Selecionar: arraste objetos para mover; use os pontos para redimensionar e o ponto inferior para rotacionar.';
+  }
+
+  async function addOverlayImage() {
+    if (!state.session) return;
+    const blob = await syntheticImageBlob();
+    const activePage = Math.max(1, Number(viewer.getViewState()?.activePage || 1));
+    const id = await editor.addImageOverlay(state.session, activePage - 1, blob, { width: .3, height: .2 });
+    state.selectedObjectId = id || '';
+    setMode('image');
+    elements.editorStatus.textContent = 'Imagem sintética inserida sobre a página. Arraste, redimensione ou rotacione.';
+  }
+
+  function updateSelectedObject(patch) {
+    const object = selectedObject();
+    if (!object) return;
+    if (!editor.updateObject(state.session, object.id, patch)) return;
+    syncEditorState();
+    syncObjects();
+  }
+
+  function deleteSelectedObject() {
+    const object = selectedObject();
+    if (!object || !editor.removeObject(state.session, object.id)) return;
+    state.selectedObjectId = '';
+    syncEditorState();
+    syncObjects();
+  }
+
   async function changeHistory(direction) {
     if (!state.session) return;
     const changed = direction === 'undo' ? editor.undo(state.session) : editor.redo(state.session);
     if (!changed) return;
+    state.selectedObjectId = '';
     const viewState = viewer.getViewState() || state.viewState;
     await rebuild(viewState ? {
       ...viewState,
@@ -333,6 +463,8 @@
     const viewState = viewer.getViewState() || state.viewState;
     state.session = null;
     state.merging = false;
+    state.mode = 'readonly';
+    state.selectedObjectId = '';
     syncEditorState();
     if (changed) {
       setBusy(true, 'Restaurando PDF sintético original…');
@@ -357,7 +489,7 @@
   elements.enterEditor.addEventListener('click', () => run(enterEditor));
   elements.undo.addEventListener('click', () => run(() => changeHistory('undo')));
   elements.redo.addEventListener('click', () => run(() => changeHistory('redo')));
-  elements.organize.addEventListener('click', () => run(cancelMerge));
+  elements.organize.addEventListener('click', () => run(() => { state.mode = 'organize'; cancelMerge(); }));
   elements.merge.addEventListener('click', () => run(showMergePanel));
   elements.mergeConfirm.addEventListener('click', () => run(mergeSyntheticPdf));
   elements.mergeCancel.addEventListener('click', () => run(cancelMerge));
@@ -366,6 +498,14 @@
   });
   elements.blank.addEventListener('click', () => run(addBlankPage));
   elements.addImage.addEventListener('click', () => run(addSyntheticImage));
+  elements.select.addEventListener('click', () => run(startSelectMode));
+  elements.write.addEventListener('click', () => run(startWriteMode));
+  elements.overlayImage.addEventListener('click', () => run(addOverlayImage));
+  elements.objectFont.addEventListener('change', () => run(() => updateSelectedObject({ fontFamily: elements.objectFont.value })));
+  elements.objectFontSize.addEventListener('change', () => run(() => updateSelectedObject({ fontSize: Number(elements.objectFontSize.value || 18) / 560 })));
+  elements.objectColor.addEventListener('input', () => run(() => updateSelectedObject({ color: elements.objectColor.value })));
+  elements.objectOpacity.addEventListener('change', () => run(() => updateSelectedObject({ opacity: Number(elements.objectOpacity.value || 100) / 100 })));
+  elements.objectDelete.addEventListener('click', () => run(deleteSelectedObject));
   elements.refresh.addEventListener('click', () => run(() => rebuild()));
   elements.exit.addEventListener('click', () => run(exitEditor));
 
