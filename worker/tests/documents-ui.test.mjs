@@ -106,7 +106,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260915-12'/);
+  assert.match(source, /CACHE_VERSION = '20260915-13'/);
 });
 
 test('observabilidade documental continua sem propriedades identificáveis', () => {
@@ -192,7 +192,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260915-12/);
+  assert.match(html, /document-viewer\.js\?v=20260915-13/);
   assert.match(html, /documents\.js\?v=20260915-7/);
   assert.match(html, /documents\.css\?v=20260915-8/);
 
@@ -265,7 +265,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260915-12/);
+  assert.match(html, /document-viewer\.js\?v=20260915-13/);
   assert.match(html, /documents\.js\?v=20260915-7/);
   assert.match(html, /documents\.css\?v=20260915-8/);
 
