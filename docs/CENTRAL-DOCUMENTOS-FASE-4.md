@@ -144,6 +144,8 @@ Critério de aceite da Fase 4:
 
 ## Gate atual
 
-**4A, 4B e 4C concluídas tecnicamente. 4D é o único gate restante.**
+**4C reaberta após homologação visual humana.** O staging anterior publicava apenas o harness sintético da Fase 3 e não mostrava a UI nova. O harness foi corrigido para exibir **Forçar sincronização com Google Drive** sem realizar escrita real.
 
-O PR #201 deve permanecer aberto e sem merge até a homologação real controlada. O feature gate de escrita deve permanecer desligado até que um operador escolha conscientemente um PDF descartável para o teste institucional.
+A intenção funcional esclarecida pelo usuário é: **sincronização automática como caminho normal; botão de força como fallback/retry quando a automática falhar**. A implementação atual ainda é manual, portanto não deve ser promovida para 4D nem mesclada como conclusão da Fase 4.
+
+Próximo gate: definir e implementar o gatilho seguro da sincronização automática, manter conflito por `version`, revisão recuperável e confirmação final do Google, e somente então retomar 4D com PDF descartável.
