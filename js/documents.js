@@ -839,6 +839,7 @@
     state.editorSession = null;
     state.pendingMergeItem = null;
     state.pendingMergeFiles = [];
+    clearMergePreview();
     state.selectedObjectId = '';
     state.editorMode = 'readonly';
     window.PortalPdfViewer?.setThumbnailActions?.(false);
@@ -2473,6 +2474,7 @@
     state.pendingMergeItem = null;
     state.pendingMergeFiles = [];
     if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
+    clearMergePreview();
     state.selectedObjectId = '';
     setEditorWorkspaceMode('organize');
     syncEditorControls();
@@ -2538,6 +2540,8 @@
     const files = Array.from(els.editorMergeLocalInput.files || []).filter((file) => localMergeFileKind(file));
     if (!files.length) {
       state.pendingMergeFiles = [];
+      clearMergePreview();
+      syncPendingMergeSelectionCopy();
       syncEditorControls();
       setEditorStatus('Selecione pelo menos um PDF ou uma imagem válida.', 'warning');
       return;
