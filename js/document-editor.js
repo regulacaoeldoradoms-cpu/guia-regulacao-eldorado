@@ -464,6 +464,28 @@
     return object.id;
   }
 
+  function displayPageAspectRatio(session, pageIndex) {
+    const ref = session?.plan?.[Number(pageIndex)];
+    const source = ref ? session.sources?.[ref.sourceIndex] : null;
+    const page = source?.document?.getPage?.(ref?.pageIndex);
+    if (!ref || !page) return 0;
+    let box = null;
+    try { box = page.getCropBox?.(); } catch (_) {}
+    if (!(box?.width > 0) || !(box?.height > 0)) {
+      try { box = page.getMediaBox?.(); } catch (_) {}
+    }
+    if (!(box?.width > 0) || !(box?.height > 0)) {
+      try { box = page.getSize?.(); } catch (_) {}
+    }
+    let width = Number(box?.width || 0);
+    let height = Number(box?.height || 0);
+    if (!(width > 0) || !(height > 0)) return 0;
+    const sourceRotation = normalizeRotation(page.getRotation?.()?.angle || 0);
+    const displayRotation = normalizeRotation(sourceRotation + normalizeRotation(ref.rotation));
+    if (displayRotation === 90 || displayRotation === 270) [width, height] = [height, width];
+    return width / height;
+  }
+
   async function addImageOverlay(session, pageIndex, blob, options = {}) {
     const page = session?.plan?.[Number(pageIndex)];
     if (!page || !(blob instanceof Blob)) return null;
@@ -478,7 +500,11 @@
       }
     }
     const width = Math.min(0.85, Math.max(0.08, Number(options.width) || 0.3));
-    const height = Math.min(0.85, Math.max(0.06, Number(options.height) || (aspectRatio > 0 ? width / aspectRatio : 0.22)));
+    const pageAspectRatio = Number(options.pageAspectRatio || 0) || displayPageAspectRatio(session, pageIndex);
+    const naturalHeight = aspectRatio > 0
+      ? width * (pageAspectRatio > 0 ? pageAspectRatio : 1) / aspectRatio
+      : 0.22;
+    const height = Math.min(0.85, Math.max(0.06, Number(options.height) || naturalHeight));
     const object = {
       id: nextObjectId(session),
       type: 'image',
@@ -660,6 +686,6 @@
     pageCount,
     sourceCount,
     buildBlob,
-    version: 'phase3-v9'
+    version: 'phase3-v10'
   });
 })();
