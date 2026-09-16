@@ -106,7 +106,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260916-1'/);
+  assert.match(source, /CACHE_VERSION = '20260916-2'/);
 });
 
 test('observabilidade documental continua sem propriedades identificáveis', () => {
@@ -134,7 +134,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260916-1/);
+  assert.match(html, /documents\.js\?v=20260916-2/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -193,7 +193,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260916-1/);
-  assert.match(html, /documents\.js\?v=20260916-1/);
+  assert.match(html, /documents\.js\?v=20260916-2/);
   assert.match(html, /documents\.css\?v=20260916-1/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
@@ -273,7 +273,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260916-1/);
-  assert.match(html, /documents\.js\?v=20260916-1/);
+  assert.match(html, /documents\.js\?v=20260916-2/);
   assert.match(html, /documents\.css\?v=20260916-1/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -391,8 +391,8 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.doesNotMatch(html, /id="editorWriteButton"[^>]*disabled/);
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
-  assert.match(html, /document-editor\.js\?v=20260916-1/);
-  assert.match(html, /documents\.js\?v=20260916-1/);
+  assert.match(html, /document-editor\.js\?v=20260916-2/);
+  assert.match(html, /documents\.js\?v=20260916-2/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -411,7 +411,7 @@ test('editor PDF é local, reversível e separado da escrita no Drive', () => {
   const client = read('js/documents.js');
   const editor = read('js/document-editor.js');
 
-  assert.match(html, /document-editor\.js\?v=20260916-1/);
+  assert.match(html, /document-editor\.js\?v=20260916-2/);
   assert.match(html, /Editar PDF/);
   assert.match(html, /id="editorExitButton"/);
   assert.match(editor, /\/vendor\/pdf-lib\/pdf-lib\.min\.js/);
@@ -615,3 +615,30 @@ test('3C.5 mantém objetos/crop reversíveis e habilita Desenhar/Borracha vetori
   assert.match(viewer, /drag\.start\.width \+ localDx/);
   assert.match(viewer, /plane\.addEventListener\('pointercancel',[\s\S]{0,700}startColor[\s\S]{0,700}previewQuickbarColor/);
 });
+
+test('3C.6 mantém preview estrutural separado e exporta flatten somente para o dispositivo', () => {
+  const html = read('documentos/index.html');
+  const client = read('js/documents.js');
+  const editor = read('js/document-editor.js');
+
+  assert.match(html, /id="editorExportButton"/);
+  assert.match(html, /Exportar PDF final localmente/);
+  assert.match(editor, /async function buildFlattenedBlob\(/);
+  assert.match(editor, /function displayCartesianToPdf\(/);
+  assert.match(editor, /setCropBox\?\.\(/);
+  assert.match(editor, /page\.drawText\(/);
+  assert.match(editor, /page\.drawImage\(/);
+  assert.match(editor, /page\.drawLine\(/);
+  assert.match(editor, /buildBlob,\s*buildFlattenedBlob,/s);
+  assert.match(client, /async function exportEditedPdfLocal\(/);
+  assert.match(client, /editor\.buildFlattenedBlob\(session\)/);
+  assert.match(client, /URL\.createObjectURL\(blob\)/);
+  assert.match(client, /link\.download = localEditedPdfName\(\)/);
+  assert.match(client, /Nenhum arquivo foi enviado ao Google Drive/);
+
+  const exportStart = client.indexOf('async function exportEditedPdfLocal');
+  const exportEnd = client.indexOf('async function startEditor', exportStart);
+  const exportBlock = client.slice(exportStart, exportEnd);
+  assert.doesNotMatch(exportBlock, /auth\.api|capture\(|\/api\/documents|fetch\(/);
+});
+
