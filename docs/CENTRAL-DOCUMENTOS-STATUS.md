@@ -6,7 +6,36 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.6 — flatten/exportação local, impressão otimizada no mesmo editor e aguardando reteste humano final + fidelidade do PDF exportado**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
+Subfase atual: **3C.6 — editor funcional, correção visual dos botões aplicada e aguardando reteste humano visual + fidelidade do PDF exportado**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
+
+## 3C.6 — correção do kit visual dos botões após reteste humano — 16/09/2026
+
+O usuário testou o primeiro candidato visual e informou que **os novos ícones não apareceram**. No screenshot, os espaços dos novos controles estavam reservados, porém alguns botões apareciam apenas como caixas claras vazias.
+
+Diagnóstico:
+- a primeira implementação carregava os novos componentes por arquivos SVG separados em `/assets/editor-pdf-buttons/`;
+- a estrutura CSS, dimensões e classes estavam sendo aplicadas, mas os gráficos não estavam aparecendo no staging;
+- como a folha original `assets/Botões_Editor_PDF.png` havia sido adicionada à `main` depois da última reconciliação da branch da Central, ela ainda não existia fisicamente na branch de staging;
+- portanto o candidato visual dependia de uma cadeia de assets que não reproduziu o resultado esperado no navegador, apesar dos testes estáticos anteriores.
+
+Correção aplicada:
+- o blob original de **`assets/Botões_Editor_PDF.png`** foi incorporado diretamente à branch da Central sem alterar `main`;
+- o runtime visual agora usa a própria folha PNG **self-hosted** como fonte, com recortes CSS independentes para cada controle;
+- foram mapeados recortes específicos para **Zoom −, Zoom +, Ajustar largura, Organizar ativo/inativo, Atualizar, Salvar PDF, Imprimir, Fechar e Cancelar**;
+- o botão **Imprimir** usa também os estados normal, hover, pressionado e selecionado presentes na folha;
+- o CSS foi cache-bustado para `documents.css?v=20260916-6`, evitando que o navegador reutilize a primeira versão defeituosa;
+- os SVGs separados permanecem no repositório como material derivado, mas o staging não depende mais deles para renderizar os controles principais.
+
+Validação técnica desta correção:
+- o arquivo PNG está presente na branch com SHA de blob `9c61bb78ad3ba96bb5a14d0baab5074c8f9c1b97`;
+- contratos estáticos do kit visual foram atualizados para exigir a folha PNG self-hosted e os estados visuais;
+- Cloudflare Pages publicou o head funcional `ba41897c2ec31e173ac8c54d6f5c6c80b5603338` com sucesso no deployment `20bd348f-9006-4ea9-94da-a8b63ce2bfa8`;
+- no momento do registro, **24/25 checks estavam verdes** e somente **PDF.js real em Chromium** ainda executava, sem falha registrada;
+- `main` vigente durante esta correção: `d54e017f587c1655f602ed6dbf911a56a24f555a`; nenhuma escrita em produção ou Google Drive.
+
+**Gate atual:** reteste humano visual do novo kit no alias de staging. O usuário deve confirmar que os gráficos agora aparecem de fato e que tamanhos/posições estão adequados.
+
+**Próxima ação exata:** fazer **Ctrl+F5** no alias da branch e conferir Zoom, Ajustar largura, Organizar, Atualizar, Salvar PDF, Imprimir e Fechar. Se algum botão estiver grande/pequeno ou mal posicionado, ajustar somente dimensões/recortes; depois retomar a confirmação final de fidelidade do PDF exportado.
 
 ## 3C.6 — otimização da impressão no mesmo editor após reteste humano — 16/09/2026
 
