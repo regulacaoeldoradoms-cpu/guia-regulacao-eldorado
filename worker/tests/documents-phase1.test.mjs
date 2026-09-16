@@ -787,6 +787,7 @@ sqliteTest('Fase 4B substituição usa revisão preservada, resumable e só conc
     assert.match(started.syncId, /^[A-Za-z0-9_-]{20,80}$/);
     assert.equal(started.operation, 'replace_pdf');
     assert.equal(started.chunkSize, 4 * 1024 * 1024);
+    assert.equal(started.safetyRevisionPreserved, true);
     assert.equal(JSON.stringify(started).includes('upload_id='), false);
     assert.equal(JSON.stringify(started).includes('raw-sync-upload-id'), false);
 
@@ -964,6 +965,7 @@ sqliteTest('Fase 4B salvar como novo inicia create resumable no mesmo parent e p
     const started = await response.json();
     assert.equal(started.operation, 'save_copy');
     assert.equal(started.conflictDetected, true);
+    assert.equal(started.safetyRevisionPreserved, false);
     assert.equal(revisionCalls, 0);
     assert.equal(createMetadata.name, 'Cópia editada.pdf');
     assert.equal(createMetadata.mimeType, 'application/pdf');
