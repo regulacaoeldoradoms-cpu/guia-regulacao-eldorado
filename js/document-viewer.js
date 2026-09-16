@@ -1192,7 +1192,6 @@
     path.setAttribute('stroke-width', String(Math.max(1, Number(stroke.width || 0.006) * 1000)));
     path.setAttribute('stroke-linecap', 'round');
     path.setAttribute('stroke-linejoin', 'round');
-    path.setAttribute('vector-effect', 'non-scaling-stroke');
     svg.appendChild(path);
     return path;
   }
