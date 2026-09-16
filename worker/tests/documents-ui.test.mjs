@@ -250,6 +250,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   const viewer = read('js/document-viewer.js');
   const editor = read('js/document-editor.js');
   const css = read('css/documents.css');
+  const harness = read('testing/central-docs/editor-harness.js');
   const viewerSurface = elementSourceById(html, 'documentsCustomViewer');
 
   assert.match(viewerSurface, /id="documentsEditor"/);
@@ -314,7 +315,11 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(client, /function startCropPages\(/);
   assert.match(client, /state\.editorMode === 'crop'/);
   assert.match(client, /async function printEditedPdfLocal\(/);
+  assert.match(client, /async function renderPdfBlobForPrint\(/);
   assert.match(client, /window\.open\('about:blank', '_blank'\)/);
+  assert.doesNotMatch(client, /printWindow\.location\.replace\(/);
+  assert.match(harness, /async function renderPdfBlobForPrint\(/);
+  assert.doesNotMatch(harness, /createElement\(['"]iframe['"]\)|frame\.contentWindow|printWindow\.location\.replace\(/i);
   assert.match(client, /primary && key === 'z'/);
   assert.match(client, /primary && key === 'p'/);
   assert.match(css, /\.documents-editor-field\[hidden\]/);
