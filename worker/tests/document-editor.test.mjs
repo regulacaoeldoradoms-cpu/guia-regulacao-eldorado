@@ -339,3 +339,62 @@ test('objetos sobre página acompanham página, histórico, duplicação e exclu
   assert.equal(editor.objectModel(session).some((item) => item.id === imageId), true);
 });
 
+test('3C.5 traços vetoriais seguem pageId, rotação, duplicação, exclusão e histórico por gesto', async () => {
+  const editor = editorWithFakePdfLib();
+  const session = await editor.createSession(
+    new Blob([new Uint8Array([2])], { type: 'application/pdf' }),
+    { label: 'Documento inicial' }
+  );
+
+  const firstId = editor.addStroke(session, 0, [
+    { x: .1, y: .2 },
+    { x: .3, y: .4 },
+    { x: .5, y: .35 }
+  ], { color: '#123456', width: .008 });
+  assert.ok(firstId);
+  assert.equal(editor.strokeModel(session).length, 1);
+  assert.equal(editor.strokeModel(session)[0].displayPage, 1);
+  assert.equal(editor.strokeModel(session)[0].color, '#123456');
+  assert.equal(Number(editor.strokeModel(session)[0].width.toFixed(3)), .008);
+
+  const historyAfterFirstStroke = session.historyIndex;
+  const secondId = editor.addStroke(session, 1, [
+    { x: .2, y: .25 },
+    { x: .4, y: .5 }
+  ], { color: '#654321', width: .004 });
+  assert.ok(secondId);
+  assert.equal(session.historyIndex, historyAfterFirstStroke + 1);
+  assert.equal(editor.strokeModel(session).length, 2);
+
+  const beforeRotation = editor.strokeModel(session).find((stroke) => stroke.id === firstId).points;
+  assert.equal(editor.rotatePage(session, 0, 1), true);
+  const afterRotation = editor.strokeModel(session).find((stroke) => stroke.id === firstId).points;
+  assert.equal(Number(afterRotation[0].x.toFixed(2)), .8);
+  assert.equal(Number(afterRotation[0].y.toFixed(2)), .1);
+  assert.notDeepEqual(afterRotation, beforeRotation);
+
+  assert.equal(editor.movePageTo(session, 0, 1), true);
+  assert.equal(editor.strokeModel(session).find((stroke) => stroke.id === firstId).displayPage, 2);
+
+  const duplicateAt = editor.duplicatePage(session, 1);
+  assert.equal(duplicateAt, 2);
+  const pageTwoStrokes = editor.strokeModel(session).filter((stroke) => stroke.displayPage === 2);
+  const pageThreeStrokes = editor.strokeModel(session).filter((stroke) => stroke.displayPage === 3);
+  assert.equal(pageTwoStrokes.length, 1);
+  assert.equal(pageThreeStrokes.length, 1);
+  assert.notEqual(pageTwoStrokes[0].id, pageThreeStrokes[0].id);
+  assert.deepEqual(pageThreeStrokes[0].points, pageTwoStrokes[0].points);
+
+  const clonedId = pageThreeStrokes[0].id;
+  assert.equal(editor.removeStrokes(session, [clonedId]), 1);
+  assert.equal(editor.strokeModel(session).some((stroke) => stroke.id === clonedId), false);
+  assert.equal(editor.undo(session), true);
+  assert.equal(editor.strokeModel(session).some((stroke) => stroke.id === clonedId), true);
+  assert.equal(editor.redo(session), true);
+  assert.equal(editor.strokeModel(session).some((stroke) => stroke.id === clonedId), false);
+
+  assert.equal(editor.removePage(session, 1), true);
+  assert.equal(editor.strokeModel(session).some((stroke) => stroke.id === firstId), false);
+  assert.ok(editor.strokeModel(session).every((stroke) => stroke.pageId !== pageTwoStrokes[0].pageId));
+});
+
