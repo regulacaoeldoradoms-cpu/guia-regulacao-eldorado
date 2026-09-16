@@ -113,13 +113,13 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
 
 test('service worker armazena somente superfície pública e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260915-21'/);
+  assert.match(source, /CACHE_VERSION = '20260916-1'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.ok(source.includes("'/documentos/'"));
   assert.ok(read('js/portal-performance.js').includes("'/documentos/'"));
   assert.match(source, /portal-observability\.js\?v=20260911-1/);
   assert.match(source, /document-cache\.js\?v=20260912-1/);
-  assert.match(source, /document-editor\.js\?v=20260915-5/);
+  assert.match(source, /document-editor\.js\?v=20260916-1/);
   assert.ok(source.includes("'/vendor/pdf-lib/pdf-lib.min.js'"));
   assert.match(read('js/portal-performance.js'), /portal-observability\.js\?v=20260911-1/);
   assert.match(source, /\/seguranca\//);
