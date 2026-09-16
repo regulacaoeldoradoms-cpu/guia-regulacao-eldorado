@@ -882,6 +882,8 @@
     state.pendingMergeItem = null;
     state.pendingMergeFiles = [];
     clearMergePreview();
+    state.syncOperation = 'save_copy';
+    setDriveSyncProgress('');
     state.selectedObjectId = '';
     state.editorMode = 'readonly';
     window.PortalPdfViewer?.setThumbnailActions?.(false);
@@ -1122,15 +1124,6 @@
     setEditorStatus('Validando sincronização com o Google Drive…');
 
     try {
-      await driveSyncFetch('/api/documents/drive/sync/preflight', {
-        method: 'POST',
-        json: {
-          operation,
-          ref: state.pdfItem.ref,
-          baseVersion: String(state.pdfItem.version || '')
-        }
-      });
-
       setDriveSyncProgress('Gerando o PDF final…');
       blob = await finalPdfBlobForSession(session);
       if (!(blob instanceof Blob) || session !== state.editorSession) return false;
@@ -1141,6 +1134,16 @@
         size_bucket: sizeBucket(blob.size)
       });
       syncStarted = true;
+
+      setDriveSyncProgress('Validando a versão atual no Google Drive…');
+      await driveSyncFetch('/api/documents/drive/sync/preflight', {
+        method: 'POST',
+        json: {
+          operation,
+          ref: state.pdfItem.ref,
+          baseVersion: String(state.pdfItem.version || '')
+        }
+      });
 
       setDriveSyncProgress('Iniciando envio seguro ao Google Drive…');
       const startedSync = await driveSyncFetch('/api/documents/drive/sync/start', {
@@ -3029,6 +3032,12 @@
     await addSelectedImages(files);
   });
   els.editorPreview?.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
+  els.editorSync?.addEventListener('click', openDriveSyncPanel);
+  document.querySelectorAll('input[name="editorSyncOperation"]').forEach((control) => {
+    control.addEventListener('change', updateDriveSyncPanel);
+  });
+  els.editorSyncApply?.addEventListener('click', () => syncEditedPdfToDrive().catch(() => {}));
+  els.editorSyncCancel?.addEventListener('click', cancelDriveSyncPanel);
   els.editorExport?.addEventListener('click', () => exportEditedPdfLocal().catch(() => {}));
   els.editorPrint?.addEventListener('click', () => printEditedPdfLocal().catch(() => {}));
   els.editorExit.addEventListener('click', exitEditor);
