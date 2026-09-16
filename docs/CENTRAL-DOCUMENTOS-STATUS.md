@@ -4,9 +4,31 @@
 
 ## Fase atual
 
-**Fase 3 — Editor PDF essencial — ENCERRADA E HOMOLOGADA**
+**Fase 4 — Sincronização segura com Drive**
 
-Homologação humana final: **APROVADA em 16/09/2026**. O usuário confirmou o estado final do editor e autorizou explicitamente avançar para a próxima fase. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar), 3C.5 (Desenhar/Borracha) e 3C.6 (flatten/exportação/impressão + kit visual) estão aceitos.
+Subfase atual: **4A — contrato e preflight de sincronização, sem escrita no Drive**.
+
+A Fase 3 foi homologada, o PR #179 foi mesclado por squash na `main` em `ccaa15c0c7b46dd53f7f508635079131806144b8`, com **24/24 workflows verdes**, e a nova branch isolada `codex/central-docs-drive-sync-phase4` foi criada diretamente dessa `main`.
+
+Escopo imediato da 4A:
+- metadados atuais do Drive por referência opaca;
+- validação de PDF, capacidade de edição e versão-base;
+- detecção de conflito antes de qualquer escrita;
+- contrato separado para `replace_pdf` e `save_copy`;
+- cobertura automatizada com Google Drive mockado.
+
+Decisões confirmadas:
+- upload resumable permanece a estratégia de escrita da Fase 4;
+- substituir original deverá revalidar `version` imediatamente antes da escrita;
+- revisão anterior deverá permanecer recuperável;
+- URI resumable, access token e fileId bruto nunca serão entregues ao frontend;
+- “Salvo no Drive” só poderá existir após confirmação final do Google;
+- **nenhuma escrita real no Drive será realizada na 4A**.
+
+Documentação da fase: `docs/CENTRAL-DOCUMENTOS-FASE-4.md`.
+
+**Próxima ação exata:** implementar o preflight read-only no Worker e testes de conflito/permissão/privacidade. Depois avançar para 4B (transporte resumable mockado) somente com a 4A verde.
+
 
 ## Encerramento formal da Fase 3 — 16/09/2026
 
