@@ -119,8 +119,12 @@ function fromFsFields(fields) {
   return result;
 }
 
+function firestoreDatabaseRoot(env) {
+  return `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID)}/databases/(default)`;
+}
+
 function firestoreRoot(env) {
-  return `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(env.FIREBASE_PROJECT_ID)}/databases/(default)/documents`;
+  return `${firestoreDatabaseRoot(env)}/documents`;
 }
 
 async function firestoreRequest(env, path, options = {}) {
@@ -185,6 +189,42 @@ export async function firestoreReplace(env, documentPath, data) {
   });
   const id = String(payload.name || '').split('/').pop();
   return { id, ...fromFsFields(payload.fields || {}) };
+}
+
+export async function firestoreCommit(env, writes = []) {
+  const items = Array.isArray(writes) ? writes : [];
+  if (!items.length) return { writeResults: [] };
+  if (items.length > 500) throw new Error('O Firestore aceita no máximo 500 gravações por commit.');
+
+  const projectId = String(env.FIREBASE_PROJECT_ID || '');
+  const payloadWrites = items.map((item) => {
+    const documentPath = String(item?.documentPath || '').replace(/^\\/+|\\/+$/g, '');
+    if (!documentPath) throw new Error('Caminho de documento inválido para commit do Firestore.');
+    return {
+      update: {
+        name: `projects/${projectId}/databases/(default)/documents/${documentPath}`,
+        fields: fsFields(item?.data || {})
+      }
+    };
+  });
+
+  const token = await googleAccessToken(env, FIRESTORE_SCOPE);
+  const response = await fetch(`${firestoreDatabaseRoot(env)}/documents:commit`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json; charset=utf-8'
+    },
+    body: JSON.stringify({ writes: payloadWrites })
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload?.error?.message || payload?.error || `Falha no commit do Firestore (${response.status}).`;
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
+  }
+  return payload;
 }
 
 export async function firestoreList(env, collectionPath, options = {}) {
