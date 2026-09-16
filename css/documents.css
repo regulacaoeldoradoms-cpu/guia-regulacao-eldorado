@@ -948,6 +948,106 @@
 }
 
 
+/* Fase 3C.5 — desenho vetorial local */
+.portal-pdf-draw-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.documents-custom-viewer[data-draw-mode="draw"] .portal-pdf-draw-layer,
+.documents-custom-viewer[data-draw-mode="erase"] .portal-pdf-draw-layer {
+  pointer-events: auto;
+}
+
+.documents-custom-viewer[data-draw-mode="draw"] .portal-pdf-draw-layer { cursor: crosshair; }
+.documents-custom-viewer[data-draw-mode="erase"] .portal-pdf-draw-layer { cursor: cell; }
+
+.portal-pdf-draw-svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.portal-pdf-draw-path {
+  pointer-events: none;
+  transition: opacity .08s ease;
+}
+
+.portal-pdf-draw-path.is-draft { opacity: .84; }
+.portal-pdf-draw-path.is-erasing { opacity: .18; stroke-dasharray: 18 12; }
+
+.documents-draw-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid #dce7ee;
+  background: #f7fbfd;
+}
+
+.documents-draw-toolbar[hidden] { display: none !important; }
+
+.documents-draw-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid #d4e1e9;
+  border-radius: 9px;
+  background: #fff;
+  color: #31536a;
+  font-size: .78rem;
+  font-weight: 700;
+}
+
+.documents-draw-field input[type="color"] {
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.documents-draw-field input[type="range"] {
+  width: 110px;
+}
+
+.documents-draw-mode {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid #cbdbe5;
+  border-radius: 9px;
+  background: #fff;
+  color: #24465f;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.documents-draw-mode.active,
+.documents-draw-mode[aria-pressed="true"] {
+  border-color: #5b9bc3;
+  background: #eaf5fb;
+  color: #125f8b;
+}
+
+@media (max-width: 720px) {
+  .documents-draw-toolbar { padding: 8px; gap: 6px; }
+  .documents-draw-field input[type="range"] { width: 86px; }
+}
+
 /* Fase 3C.3 — objetos editáveis sobre páginas */
 .portal-pdf-object-layer {
   position: absolute;
