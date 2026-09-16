@@ -252,27 +252,12 @@ test('observadores entram somente depois da primeira renderização do PDF.js', 
 });
 
 
-test('kit visual do editor usa assets individuais e preserva acessibilidade textual', () => {
+test('kit visual do editor usa a folha PNG self-hosted e preserva acessibilidade textual', () => {
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
   const harness = read('testing/central-docs/viewer-harness.html');
-  const assets = [
-    'salvar-pdf.svg',
-    'cancelar.svg',
-    'ajustar-largura.svg',
-    'zoom-mais.svg',
-    'zoom-menos.svg',
-    'atualizar.svg',
-    'fechar.svg',
-    'grade-ativa.svg',
-    'grade-inativa.svg',
-    'imprimir-normal.svg'
-  ];
 
-  for (const asset of assets) {
-    assert.ok(fs.existsSync(path.join(root, 'assets/editor-pdf-buttons', asset)), `Asset visual ausente: ${asset}`);
-  }
-
+  assert.ok(fs.existsSync(path.join(root, 'assets/Botões_Editor_PDF.png')));
   assert.match(html, /id="pdfZoomOutButton"[^>]*documents-art-zoom-minus/);
   assert.match(html, /id="pdfZoomInButton"[^>]*documents-art-zoom-plus/);
   assert.match(html, /id="pdfFitWidthButton"[^>]*documents-art-fit-width[^>]*aria-label="Ajustar largura"/);
@@ -282,9 +267,10 @@ test('kit visual do editor usa assets individuais e preserva acessibilidade text
   assert.match(html, /id="editorPrintButton"[^>]*documents-art-print[^>]*aria-label="Imprimir PDF final"/);
   assert.match(html, /id="editorExitButton"[^>]*documents-art-close/);
   assert.match(harness, /id="editorPrint"[^>]*documents-art-print/);
-  assert.match(css, /--documents-art-image/);
-  assert.match(css, /editor-pdf-buttons\/salvar-pdf\.svg/);
-  assert.match(css, /editor-pdf-buttons\/imprimir-normal\.svg/);
+  assert.match(css, /--documents-art-sheet/);
+  assert.match(css, /Bot%C3%B5es_Editor_PDF\.png/);
+  assert.match(css, /documents-art-print:hover/);
+  assert.match(css, /documents-art-print:active/);
   assert.match(css, /portal-pdf-crop-action--cancel/);
 });
 
