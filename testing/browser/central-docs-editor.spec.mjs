@@ -257,24 +257,38 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     finishMonitoring();
   });
 
-  test('painel Unir aceita PDF/imagem local e não deixa a grade escondida sob o painel', async ({ page }) => {
+  test('painel Unir mostra preview local e força novas páginas para a linha seguinte sem sobreposição', async ({ page }) => {
     const finishMonitoring = monitorPage(page);
     await openLab(page);
     await enterEditor(page);
+
+    // Cria páginas suficientes para provar que o painel não apenas deixa o
+    // primeiro cartão livre: a grade inteira precisa recalcular as colunas.
+    await page.locator('#editorBlank').click();
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await page.locator('#editorBlank').click();
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('.portal-pdf-thumb-wrap')).toHaveCount(5);
 
     await page.locator('#editorMerge').click();
     await expect(page.locator('#editorMergePanel')).toBeVisible();
     await expect(page.locator('#editorMergeFileButton')).toBeVisible();
 
     const panel = await page.locator('#editorMergePanel').boundingBox();
-    const firstThumb = await page.locator('.portal-pdf-thumb-wrap').first().boundingBox();
+    const thumbs = await page.locator('.portal-pdf-thumb-wrap').evaluateAll((nodes) => nodes.map((node) => {
+      const rect = node.getBoundingClientRect();
+      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+    }));
     const viewport = page.viewportSize();
     if (viewport.width <= 720) {
-      // No mobile o painel entra no fluxo, acima da grade, em vez de cobri-la.
-      expect(panel.y + panel.height).toBeLessThanOrEqual(firstThumb.y + 2);
+      const firstTop = Math.min(...thumbs.map((box) => box.y));
+      expect(panel.y + panel.height).toBeLessThanOrEqual(firstTop + 2);
     } else {
-      // No desktop a grade reserva a faixa lateral ocupada pelo painel.
-      expect(firstThumb.x + firstThumb.width).toBeLessThanOrEqual(panel.x + 2);
+      for (const box of thumbs) {
+        expect(box.x + box.width).toBeLessThanOrEqual(panel.x + 2);
+      }
+      const firstRowY = Math.min(...thumbs.map((box) => box.y));
+      expect(thumbs.some((box) => box.y > firstRowY + 20)).toBe(true);
     }
 
     const chooserPromise = page.waitForEvent('filechooser');
@@ -285,12 +299,17 @@ test.describe('Central de Documentos — superfície única do editor', () => {
       mimeType: 'image/png',
       buffer: ONE_PIXEL_PNG
     });
-    await expect(page.locator('#editorMergeSelectionLab')).toContainText('1 arquivo do dispositivo selecionado');
-    await page.locator('#editorMergeConfirm').click();
 
-    await waitForOrder(page, '0:0,0:1,0:2,1:0');
+    await expect(page.locator('#editorMergeSelectionLab')).toContainText('1 arquivo do dispositivo selecionado');
+    await expect(page.locator('#editorMergePreviewLab')).toBeVisible();
+    await expect(page.locator('#editorMergePreviewLab .documents-editor-merge-preview-item')).toHaveCount(1);
+    await expect(page.locator('#editorMergePreviewLab .documents-editor-merge-preview-name')).toHaveText('imagem-para-unir.png');
+    await expect(page.locator('#editorMergePreviewLab img')).toHaveCount(1);
+
+    await page.locator('#editorMergeConfirm').click();
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
     await expect(page.locator('#editorMergePanel')).toBeHidden();
-    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(6);
     finishMonitoring();
   });
 
