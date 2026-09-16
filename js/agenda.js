@@ -180,8 +180,23 @@
     ].join('\n');
   }
 
-  function whatsappUrl(group) {
-    return `https://wa.me/${WHATSAPP_SUPPORT_NUMBER}?text=${encodeURIComponent(capacityMessage(group))}`;
+  function whatsappUrl() {
+    return `https://wa.me/${WHATSAPP_SUPPORT_NUMBER}`;
+  }
+
+  async function copyCapacityMessage(group, button) {
+    const message = capacityMessage(group);
+    try {
+      await navigator.clipboard.writeText(message);
+      if (button) {
+        const original = button.textContent;
+        button.textContent = 'Mensagem copiada';
+        window.setTimeout(() => { button.textContent = original; }, 2200);
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   function renderCapacityAlerts() {
@@ -236,21 +251,41 @@
           list.appendChild(item);
         });
 
+      const messageLabel = document.createElement('label');
+      messageLabel.className = 'agenda-capacity-message';
+      const messageTitle = document.createElement('span');
+      messageTitle.textContent = 'Mensagem pronta para o suporte';
+      const messagePreview = document.createElement('textarea');
+      messagePreview.readOnly = true;
+      messagePreview.rows = 7;
+      messagePreview.value = capacityMessage(group);
+      messageLabel.append(messageTitle, messagePreview);
+
       const footer = document.createElement('div');
       footer.className = 'agenda-capacity-footer';
 
       const privacy = document.createElement('small');
-      privacy.textContent = 'A mensagem é montada neste navegador e só é enviada após sua confirmação no WhatsApp.';
+      privacy.textContent = 'A mensagem é preparada localmente. Copie o texto e confirme o envio no WhatsApp.';
+
+      const actions = document.createElement('div');
+      actions.className = 'agenda-capacity-actions';
+
+      const copy = document.createElement('button');
+      copy.type = 'button';
+      copy.className = 'portal-button secondary';
+      copy.textContent = 'Copiar mensagem';
+      copy.addEventListener('click', () => { copyCapacityMessage(group, copy); });
 
       const whatsapp = document.createElement('a');
       whatsapp.className = 'portal-button agenda-whatsapp-button';
-      whatsapp.href = whatsappUrl(group);
+      whatsapp.href = whatsappUrl();
       whatsapp.target = '_blank';
       whatsapp.rel = 'noopener noreferrer';
       whatsapp.textContent = 'Abrir WhatsApp do suporte';
 
-      footer.append(privacy, whatsapp);
-      alert.append(head, explanation, list, footer);
+      actions.append(copy, whatsapp);
+      footer.append(privacy, actions);
+      alert.append(head, explanation, list, messageLabel, footer);
       els.capacityAlerts.appendChild(alert);
     });
   }
