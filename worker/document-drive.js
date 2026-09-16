@@ -1155,6 +1155,7 @@ export async function disconnectDrive(env) {
   if (env.AUTH_DB && await ensureDriveOAuthSchema(env)) {
     await env.AUTH_DB.prepare('DELETE FROM document_drive_oauth WHERE connection_id = ?').bind(TOKEN_ROW_ID).run();
     await env.AUTH_DB.prepare('DELETE FROM document_drive_oauth_states').run();
+    await env.AUTH_DB.prepare('DELETE FROM document_drive_sync_sessions').run();
   }
   cachedAccessToken = { token: '', expiresAt: 0 };
   return { connected: false };
