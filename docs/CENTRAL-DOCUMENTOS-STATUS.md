@@ -49,7 +49,7 @@ Privacidade e segurança:
 
 Estado da `main`:
 - a `main` avançou para `abf7882f125cc9b3b3e322a2b14981e304aaec67` com **8 commits do módulo Agenda/DigSaúde**, posteriores ao ponto de separação desta branch;
-- a comparação confirma que esses commits não alteram os arquivos centrais do editor PDF, porém a branch agora está divergente e o PR aparece não mergeável no estado corrente;
+- a comparação confirma que esses commits não alteram os arquivos centrais do editor PDF; a branch está divergente, mas o PR #179 foi recalculado pelo GitHub como **mergeável** após a atualização documental;
 - **não reconciliar/rebasear antes do gate humano da 3C.5**: isso adicionaria churn e nova rodada de CI sem benefício para a homologação visual atual;
 - após o aceite humano, antes de qualquer merge, sincronizar a branch com a `main` atual, resolver eventuais conflitos de testes compartilhados e executar novamente toda a matriz.
 
