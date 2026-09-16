@@ -8,8 +8,6 @@
   const DIGSAUDE_BASE = 'https://teleatendimento.saude.ms.gov.br/N%C3%BAcleo%20de%20Telessa%C3%BAde%20-%20SES-Fiocruz/consultas/';
   const WHATSAPP_SUPPORT_NUMBER = '556781631815';
   const capacityRules = window.AgendaCapacity;
-  const WHATSAPP_SUPPORT_NUMBER = '556781631815';
-  const capacityRules = window.AgendaCapacity;
   const els = {
     userName: document.getElementById('portalUserName'),
     userRole: document.getElementById('portalUserRole'),
@@ -19,9 +17,6 @@
     lastSync: document.getElementById('agendaLastSync'),
     list: document.getElementById('agendaList'),
     resultCount: document.getElementById('agendaResultCount'),
-    capacitySection: document.getElementById('agendaCapacitySection'),
-    capacityAlerts: document.getElementById('agendaCapacityAlerts'),
-    capacityBadge: document.getElementById('agendaCapacityBadge'),
     capacitySection: document.getElementById('agendaCapacitySection'),
     capacityAlerts: document.getElementById('agendaCapacityAlerts'),
     capacityBadge: document.getElementById('agendaCapacityBadge'),
@@ -41,12 +36,6 @@
     records: [],
     scope: 'all',
     justRead: new Set(),
-    capacity: {
-      roomCapacity: 2,
-      windowMinutes: 30,
-      occupancyBySourceId: {},
-      criticalGroups: []
-    },
     capacity: {
       roomCapacity: 2,
       windowMinutes: 30,
