@@ -8,6 +8,7 @@ on:
       - 'testing/central-docs/**'
       - 'testing/browser/**'
       - 'assets/editor-pdf-buttons/**'
+      - 'assets/*.png'
       - 'css/documents.css'
       - 'js/documents.js'
       - 'js/document-editor.js'
@@ -45,6 +46,14 @@ jobs:
           test -s dist-staging/assets/editor-pdf-buttons/imprimir-normal.svg
           test -s dist-staging/assets/editor-pdf-buttons/salvar-pdf.svg
           test -s dist-staging/assets/editor-pdf-buttons/zoom-mais.svg
+          test -s dist-staging/assets/Unir_PDF.png
+          test -s dist-staging/assets/Inserir_pagina_branca.png
+          test -s dist-staging/assets/Adicionar_imagem.png
+          test -s dist-staging/assets/Recortar_pagina.png
+          test -s dist-staging/assets/Selecionar_mover.png
+          test -s dist-staging/assets/Escrever.png
+          test -s dist-staging/assets/Colar_imagem.png
+          test -s dist-staging/assets/Desenhar.png
           test -s dist-staging/js/document-editor.js
           test -s dist-staging/js/document-viewer.js
           test -s dist-staging/vendor/pdf-lib/pdf-lib.min.js
