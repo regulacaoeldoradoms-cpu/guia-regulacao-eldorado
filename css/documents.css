@@ -637,24 +637,26 @@
   opacity: .42;
 }
 
-/* Kit visual do editor PDF — recortes da folha Botões_Editor_PDF.png.
-   O PNG-fonte fica self-hosted para eliminar falhas de SVG/CSP no staging. */
+/* Kit visual do editor PDF — assets individuais derivados do kit aprovado.
+   Usar arquivos separados evita recortes frágeis de sprite e mantém os botões nítidos. */
 .documents-art-button {
-  --documents-art-sheet: url('/assets/Bot%C3%B5es_Editor_PDF.png?v=20260916-1');
   flex: 0 0 auto;
   padding: 0 !important;
   border: 0 !important;
-  background-image: var(--documents-art-sheet) !important;
+  background-color: transparent !important;
   background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 100% 100% !important;
   color: transparent !important;
   font-size: 0 !important;
   line-height: 0;
-  box-shadow: none;
+  box-shadow: none !important;
+  overflow: visible;
   transition: transform .12s ease, filter .12s ease, opacity .12s ease;
 }
 
 .documents-art-button:hover:not(:disabled) {
-  filter: brightness(1.035) saturate(1.035);
+  filter: brightness(1.045) saturate(1.03);
 }
 
 .documents-art-button:focus-visible {
@@ -673,21 +675,19 @@
 }
 
 .documents-art-zoom-minus {
-  width: 41px !important;
-  min-width: 41px !important;
+  width: 38px !important;
+  min-width: 38px !important;
   height: 38px !important;
   min-height: 38px !important;
-  background-size: 376.877px 282.658px !important;
-  background-position: -212.384px -93.178px !important;
+  background-image: url('/assets/editor-pdf-buttons/zoom-menos.svg?v=20260916-2') !important;
 }
 
 .documents-art-zoom-plus {
-  width: 41px !important;
-  min-width: 41px !important;
+  width: 38px !important;
+  min-width: 38px !important;
   height: 38px !important;
   min-height: 38px !important;
-  background-size: 376.877px 282.658px !important;
-  background-position: -159.027px -93.178px !important;
+  background-image: url('/assets/editor-pdf-buttons/zoom-mais.svg?v=20260916-2') !important;
 }
 
 .documents-art-fit-width {
@@ -695,82 +695,78 @@
   min-width: 137px !important;
   height: 38px !important;
   min-height: 38px !important;
-  background-size: 384.783px 288.587px !important;
-  background-position: -14.350px -94.867px !important;
+  background-image: url('/assets/editor-pdf-buttons/ajustar-largura.svg?v=20260916-2') !important;
 }
 
 .documents-art-grid {
-  width: 43px !important;
-  min-width: 43px !important;
+  width: 38px !important;
+  min-width: 38px !important;
   height: 38px !important;
-  background-size: 343.900px 257.925px !important;
-  background-position: -67.213px -134.663px !important;
+  min-height: 38px !important;
+  background-image: url('/assets/editor-pdf-buttons/grade-inativa.svg?v=20260916-2') !important;
 }
 
 .documents-art-grid.active,
 .documents-art-grid[aria-pressed="true"] {
-  background-size: 335.512px 251.634px !important;
-  background-position: -12.976px -130.915px !important;
+  background-image: url('/assets/editor-pdf-buttons/grade-ativa.svg?v=20260916-2') !important;
 }
 
 .documents-art-refresh {
-  width: 41px !important;
-  min-width: 41px !important;
+  width: 38px !important;
+  min-width: 38px !important;
   height: 38px !important;
-  background-size: 376.877px 282.658px !important;
-  background-position: -265.219px -93.178px !important;
+  min-height: 38px !important;
+  background-image: url('/assets/editor-pdf-buttons/atualizar.svg?v=20260916-2') !important;
 }
 
 .documents-art-export {
   width: 123px !important;
   min-width: 123px !important;
   height: 38px !important;
-  background-size: 366.827px 275.120px !important;
-  background-position: -132.240px -35.973px !important;
+  min-height: 38px !important;
+  background-image: url('/assets/editor-pdf-buttons/salvar-pdf.svg?v=20260916-2') !important;
 }
 
 .documents-art-print {
   width: 109px !important;
   min-width: 109px !important;
   height: 38px !important;
-  background-size: 474.345px 355.759px !important;
-  background-position: -16.052px -275.500px !important;
+  min-height: 38px !important;
+  background-image: url('/assets/editor-pdf-buttons/imprimir-normal.svg?v=20260916-2') !important;
 }
 
 .documents-art-print:hover:not(:disabled) {
-  background-position: -131.362px -275.828px !important;
-  filter: none;
+  filter: brightness(1.10) saturate(1.05);
 }
 
 .documents-art-print:active:not(:disabled) {
-  background-position: -244.310px -275.828px !important;
-  transform: translateY(1px);
-  filter: none;
+  transform: translateY(1px) scale(.985);
+  filter: brightness(.88);
 }
 
 .documents-art-print.active,
 .documents-art-print[aria-pressed="true"] {
-  background-position: -356.897px -275.828px !important;
+  filter: brightness(1.12) saturate(1.06);
 }
 
 .documents-art-close {
-  width: 41px !important;
-  min-width: 41px !important;
+  width: 38px !important;
+  min-width: 38px !important;
   height: 38px !important;
-  background-size: 376.877px 282.658px !important;
-  background-position: -318.315px -93.178px !important;
+  min-height: 38px !important;
+  background-image: url('/assets/editor-pdf-buttons/fechar.svg?v=20260916-2') !important;
 }
 
 .documents-close-viewer.documents-art-close {
-  width: 41px !important;
-  min-width: 41px !important;
+  width: 38px !important;
+  min-width: 38px !important;
   height: 38px !important;
-  flex-basis: 41px;
+  flex-basis: 38px;
 }
 
 .documents-editor-panel-close.documents-art-close {
-  width: 41px !important;
-  min-width: 41px !important;
+  width: 38px !important;
+  min-width: 38px !important;
   height: 38px !important;
 }
 
@@ -780,10 +776,11 @@
   height: 38px;
   padding: 0;
   border: 0;
-  background-image: url('/assets/Bot%C3%B5es_Editor_PDF.png?v=20260916-1');
+  background-color: transparent;
+  background-image: url('/assets/editor-pdf-buttons/cancelar.svg?v=20260916-2');
   background-repeat: no-repeat;
-  background-size: 371.784px 278.838px;
-  background-position: -264.973px -36.716px;
+  background-position: center;
+  background-size: 100% 100%;
   color: transparent;
   font-size: 0;
   box-shadow: none;
@@ -791,11 +788,8 @@
 
 .portal-pdf-crop-action--cancel:hover,
 .portal-pdf-crop-action--cancel:focus-visible {
-  background-image: url('/assets/Bot%C3%B5es_Editor_PDF.png?v=20260916-1');
-  background-repeat: no-repeat;
-  background-size: 371.784px 278.838px;
-  background-position: -264.973px -36.716px;
-  filter: brightness(1.03);
+  background-image: url('/assets/editor-pdf-buttons/cancelar.svg?v=20260916-2');
+  filter: brightness(1.04);
 }
 
 .documents-editor-toolbar--compact {
