@@ -40,12 +40,18 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     // the viewport first so the synthetic mouse gesture reaches the DOM.
     await object.scrollIntoViewIfNeeded();
     const before = await object.boundingBox();
+    const target = {
+      x: before.x + before.width * .55 + 58,
+      y: before.y + before.height * .55 + 30
+    };
     await page.mouse.move(before.x + before.width * .55, before.y + before.height * .55);
     await page.mouse.down();
-    await page.mouse.move(before.x + before.width * .55 + 58, before.y + before.height * .55 + 30, { steps: 7 });
+    await page.mouse.move(target.x, target.y, { steps: 7 });
     await page.mouse.up();
     const moved = await object.boundingBox();
     expect(moved.x).toBeGreaterThan(before.x + 25);
+    expect(Math.abs((moved.x + moved.width / 2) - target.x)).toBeLessThanOrEqual(3);
+    expect(Math.abs((moved.y + moved.height / 2) - target.y)).toBeLessThanOrEqual(3);
     await expect(text).toHaveAttribute('contenteditable', 'true');
     await expect(page.locator('.portal-pdf-object--text')).toHaveCount(1);
 
