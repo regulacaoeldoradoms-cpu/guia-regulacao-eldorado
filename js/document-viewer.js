@@ -809,14 +809,14 @@
     confirm.className = 'portal-pdf-crop-action portal-pdf-crop-action--confirm';
     confirm.dataset.cropConfirm = 'true';
     confirm.setAttribute('aria-label', `Confirmar recorte da página ${pageNumber}`);
-    confirm.textContent = '✓ Confirmar recorte';
+    confirm.textContent = 'Confirmar recorte';
 
     const cancel = document.createElement('button');
     cancel.type = 'button';
     cancel.className = 'portal-pdf-crop-action portal-pdf-crop-action--cancel';
     cancel.dataset.cropCancel = 'true';
     cancel.setAttribute('aria-label', `Cancelar seleção de recorte da página ${pageNumber}`);
-    cancel.textContent = '✕ Cancelar';
+    cancel.textContent = 'Cancelar';
 
     actions.append(confirm, cancel);
     frame.appendChild(actions);
