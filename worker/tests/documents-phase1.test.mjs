@@ -703,7 +703,7 @@ sqliteTest('Fase 4B substituição usa revisão preservada, resumable e só conc
       });
     }
 
-    if (text.startsWith('https://www.googleapis.com/upload/drive/v3/files/raw-sync-upload-id?')) {
+    if (text.startsWith('https://www.googleapis.com/upload/drive/v3/files/raw-sync-upload-id?') && !text.includes('upload_id=')) {
       assert.equal(method, 'PATCH');
       const u = new URL(text);
       assert.equal(u.searchParams.get('uploadType'), 'resumable');
