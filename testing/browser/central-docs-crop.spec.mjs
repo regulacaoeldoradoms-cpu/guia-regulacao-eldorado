@@ -37,8 +37,23 @@ async function drawCropSelection(page, layer, start = { x: .18, y: .16 }, end = 
   await layer.scrollIntoViewIfNeeded();
   const box = await layer.boundingBox();
   expect(box).not.toBeNull();
-  const from = { x: box.x + box.width * start.x, y: box.y + box.height * start.y };
-  const to = { x: box.x + box.width * end.x, y: box.y + box.height * end.y };
+  const viewport = page.viewportSize() || { width: 1280, height: 900 };
+  const inset = 18;
+  const visibleLeft = Math.max(box.x + inset, inset);
+  const visibleRight = Math.min(box.x + box.width - inset, viewport.width - inset);
+  const visibleTop = Math.max(box.y + inset, inset);
+  const visibleBottom = Math.min(box.y + box.height - inset, viewport.height - inset);
+  expect(visibleRight - visibleLeft).toBeGreaterThan(80);
+  expect(visibleBottom - visibleTop).toBeGreaterThan(80);
+
+  const from = {
+    x: visibleLeft + (visibleRight - visibleLeft) * start.x,
+    y: visibleTop + (visibleBottom - visibleTop) * start.y
+  };
+  const to = {
+    x: visibleLeft + (visibleRight - visibleLeft) * end.x,
+    y: visibleTop + (visibleBottom - visibleTop) * end.y
+  };
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(to.x, to.y, { steps: 8 });

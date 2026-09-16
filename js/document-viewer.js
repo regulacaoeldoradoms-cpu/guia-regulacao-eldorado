@@ -799,7 +799,75 @@
     }, fullCropRect());
   }
 
-  function createCropDraftActions(frame, pageNumber) {
+  function bindCropActionButton(button, action) {
+    const invoke = (event) => {
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+      action();
+    };
+    // Direct pointer handling makes the actions reliable on touch even when
+    // the parent crop layer uses touch-action:none for resize gestures.
+    button.addEventListener('pointerup', (event) => {
+      if (event.pointerType === 'touch') invoke(event);
+    });
+    button.addEventListener('click', invoke);
+  }
+
+  function confirmCropDraft(session, pageNumber) {
+    const draft = cropDraftForPage(session, pageNumber);
+    if (!(pageNumber > 0) || !draft) return false;
+    const entry = cropEntryForPage(session, pageNumber);
+    const committed = normalizeCropRect(entry?.crop);
+    clearCropDraft(session, pageNumber);
+    session.root.dataset.cropGesture = '';
+    session.root.dataset.cropGestureMoved = 'false';
+
+    if (!cropRectsEqual(committed, draft)) {
+      if (entry) entry.crop = { ...draft };
+      session.onCropConfirm?.(pageNumber - 1, { ...draft });
+    }
+    renderCropForPage(session, pageNumber);
+    session.root.dataset.cropCount = String((session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length);
+    session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
+    return true;
+  }
+
+  function cancelCropDraft(session, pageNumber) {
+    if (!(pageNumber > 0) || !cropDraftForPage(session, pageNumber)) return false;
+    clearCropDraft(session, pageNumber);
+    session.root.dataset.cropGesture = '';
+    session.root.dataset.cropGestureMoved = 'false';
+    renderCropForPage(session, pageNumber);
+    session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
+    return true;
+  }
+
+  function adjustConfirmedCrop(session, pageNumber) {
+    const entry = cropEntryForPage(session, pageNumber);
+    const committed = normalizeCropRect(entry?.crop);
+    if (!(pageNumber > 0) || !committed) return false;
+    setCropDraft(session, pageNumber, committed);
+    renderCropForPage(session, pageNumber);
+    session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
+    return true;
+  }
+
+  function resetConfirmedCrop(session, pageNumber) {
+    if (!(pageNumber > 0)) return false;
+    const entry = cropEntryForPage(session, pageNumber);
+    if (!normalizeCropRect(entry?.crop)) return false;
+    if (entry) entry.crop = null;
+    clearCropDraft(session, pageNumber);
+    session.root.dataset.cropGesture = '';
+    session.root.dataset.cropGestureMoved = 'false';
+    session.onCropReset?.(pageNumber - 1);
+    renderCropForPage(session, pageNumber);
+    session.root.dataset.cropCount = String((session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length);
+    session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
+    return true;
+  }
+
+  function createCropDraftActions(session, frame, pageNumber) {
     const actions = document.createElement('div');
     actions.className = 'portal-pdf-crop-actions';
     actions.dataset.cropActions = 'true';
@@ -810,6 +878,7 @@
     confirm.dataset.cropConfirm = 'true';
     confirm.setAttribute('aria-label', `Confirmar recorte da página ${pageNumber}`);
     confirm.textContent = 'Confirmar recorte';
+    bindCropActionButton(confirm, () => confirmCropDraft(session, pageNumber));
 
     const cancel = document.createElement('button');
     cancel.type = 'button';
@@ -817,12 +886,13 @@
     cancel.dataset.cropCancel = 'true';
     cancel.setAttribute('aria-label', `Cancelar seleção de recorte da página ${pageNumber}`);
     cancel.textContent = 'Cancelar';
+    bindCropActionButton(cancel, () => cancelCropDraft(session, pageNumber));
 
     actions.append(confirm, cancel);
     frame.appendChild(actions);
   }
 
-  function createConfirmedCropActions(layer, pageNumber) {
+  function createConfirmedCropActions(session, layer, pageNumber) {
     const actions = document.createElement('div');
     actions.className = 'portal-pdf-crop-confirmed-actions';
 
@@ -833,6 +903,7 @@
     adjust.title = 'Ajustar recorte';
     adjust.setAttribute('aria-label', `Ajustar recorte da página ${pageNumber}`);
     adjust.textContent = 'Ajustar';
+    bindCropActionButton(adjust, () => adjustConfirmedCrop(session, pageNumber));
 
     const reset = document.createElement('button');
     reset.type = 'button';
@@ -841,6 +912,7 @@
     reset.title = 'Remover recorte desta página';
     reset.setAttribute('aria-label', `Remover recorte da página ${pageNumber}`);
     reset.textContent = '↺';
+    bindCropActionButton(reset, () => resetConfirmedCrop(session, pageNumber));
 
     actions.append(adjust, reset);
     layer.appendChild(actions);
@@ -884,13 +956,13 @@
           node.setAttribute('aria-hidden', 'true');
           frame.appendChild(node);
         }
-        createCropDraftActions(frame, pageNumber);
+        createCropDraftActions(session, frame, pageNumber);
       }
       layer.appendChild(frame);
       return;
     }
 
-    if (committed && interactive) createConfirmedCropActions(layer, pageNumber);
+    if (committed && interactive) createConfirmedCropActions(session, layer, pageNumber);
   }
 
   function renderEditorCrops(session) {
@@ -1013,81 +1085,14 @@
     const finish = (event) => {
       const drag = session.cropDrag;
       if (!drag || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
+      try { drag.origin?.releasePointerCapture?.(drag.pointerId); } catch (_) {}
       session.cropDrag = null;
       session.root.dataset.cropGesture = '';
       session.root.dataset.cropGestureMoved = drag.changed ? 'true' : 'false';
       if (drag.changed) renderCropForPage(session, drag.pageNumber);
     };
 
-    const click = (event) => {
-      if (!isCurrentSession(session) || String(session.cropMode || '') !== 'crop') return;
-
-      const confirm = event.target.closest?.('[data-crop-confirm]');
-      if (confirm) {
-        event.preventDefault();
-        event.stopPropagation();
-        const frame = confirm.closest('[data-crop-frame]');
-        const pageNumber = Number(frame?.dataset?.pageNumber || 0);
-        const draft = cropDraftForPage(session, pageNumber);
-        if (!(pageNumber > 0) || !draft) return;
-        const entry = cropEntryForPage(session, pageNumber);
-        const committed = normalizeCropRect(entry?.crop);
-        clearCropDraft(session, pageNumber);
-        if (!cropRectsEqual(committed, draft)) {
-          if (entry) entry.crop = { ...draft };
-          session.onCropConfirm?.(pageNumber - 1, { ...draft });
-        }
-        renderCropForPage(session, pageNumber);
-        session.root.dataset.cropCount = String((session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length);
-        session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
-        return;
-      }
-
-      const cancel = event.target.closest?.('[data-crop-cancel]');
-      if (cancel) {
-        event.preventDefault();
-        event.stopPropagation();
-        const frame = cancel.closest('[data-crop-frame]');
-        const pageNumber = Number(frame?.dataset?.pageNumber || 0);
-        if (!(pageNumber > 0)) return;
-        clearCropDraft(session, pageNumber);
-        renderCropForPage(session, pageNumber);
-        session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
-        return;
-      }
-
-      const adjust = event.target.closest?.('[data-crop-adjust]');
-      if (adjust) {
-        event.preventDefault();
-        event.stopPropagation();
-        const layer = adjust.closest('.portal-pdf-crop-layer');
-        const pageNumber = Number(layer?.dataset?.pageNumber || 0);
-        const entry = cropEntryForPage(session, pageNumber);
-        const committed = normalizeCropRect(entry?.crop);
-        if (!(pageNumber > 0) || !committed) return;
-        setCropDraft(session, pageNumber, committed);
-        renderCropForPage(session, pageNumber);
-        session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
-        return;
-      }
-
-      const reset = event.target.closest?.('[data-crop-reset]');
-      if (!reset) return;
-      event.preventDefault();
-      event.stopPropagation();
-      const layer = reset.closest('.portal-pdf-crop-layer');
-      const pageNumber = Number(layer?.dataset?.pageNumber || 0);
-      if (!(pageNumber > 0)) return;
-      const entry = cropEntryForPage(session, pageNumber);
-      if (entry) entry.crop = null;
-      clearCropDraft(session, pageNumber);
-      session.onCropReset?.(pageNumber - 1);
-      renderCropForPage(session, pageNumber);
-      session.root.dataset.cropCount = String((session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length);
-      session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
-    };
-
-    session.cropHandlers = { pointerdown, click };
+    session.cropHandlers = { pointerdown };
     for (const [type, handler] of Object.entries(session.cropHandlers)) {
       pagesRoot.addEventListener(type, handler, type === 'pointerdown');
     }
