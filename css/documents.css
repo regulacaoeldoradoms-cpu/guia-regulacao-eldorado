@@ -678,6 +678,17 @@
   display: none !important;
 }
 
+.documents-print-frame {
+  position: fixed;
+  left: -10000px;
+  top: -10000px;
+  width: 1px;
+  height: 1px;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .documents-editor-panel-head {
   display: flex;
   align-items: center;
@@ -808,6 +819,10 @@
   color: #3c5870;
   font-size: .78rem;
   font-weight: 800;
+}
+
+.documents-editor-field[hidden] {
+  display: none !important;
 }
 
 .documents-editor-field select,
