@@ -7,13 +7,13 @@
   <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#0d3157">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
   <title>Central de Documentos | Portal da Regulação</title>
   <link rel="icon" href="/assets/portal-regulacao-header_512x512.png?v=20260911-1" type="image/png">
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260913-2">
+  <link rel="stylesheet" href="/css/documents.css?v=20260915-9">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -100,35 +100,98 @@
           </div>
           <div class="documents-viewer-state" id="documentsViewerState">Preparando PDF…</div>
 
-          <section class="documents-editor" id="documentsEditor" hidden aria-label="Editor local de PDF">
-            <div class="documents-editor-banner">
-              <strong>Edição local</strong>
-              <span>As alterações ainda não serão salvas no Google Drive. Você também pode colar um print com Ctrl+V.</span>
-            </div>
-            <div class="documents-editor-toolbar">
-              <button class="portal-button secondary" id="editorUndoButton" type="button">Desfazer</button>
-              <button class="portal-button secondary" id="editorRedoButton" type="button">Refazer</button>
-              <button class="portal-button secondary" id="editorMergeButton" type="button">Unir outro PDF</button>
-              <button class="portal-button secondary" id="editorImageButton" type="button">Adicionar imagem</button>
-              <input id="editorImageInput" type="file" accept="image/*" multiple hidden>
-              <button class="portal-button primary" id="editorPreviewButton" type="button">Atualizar visualização</button>
-              <button class="portal-button secondary" id="editorExitButton" type="button">Sair do editor</button>
-            </div>
-            <div class="documents-editor-status" id="documentsEditorStatus" aria-live="polite"></div>
-            <div class="documents-editor-pages-head">
-              <strong>Páginas do resultado</strong>
-              <span id="documentsEditorPageCount"></span>
-            </div>
-            <div class="documents-editor-pages" id="documentsEditorPages"></div>
-          </section>
-
           <section class="documents-custom-viewer" id="documentsCustomViewer" hidden aria-label="Visualizador próprio de PDF">
+            <nav class="documents-editor-side-rail" id="documentsEditorSideRail" aria-label="Ferramentas do documento">
+              <button class="documents-rail-tool" id="editorRailEditButton" type="button" title="Editar documento" aria-label="Editar documento" hidden>
+                <span aria-hidden="true">✎</span>
+                <span class="sr-only">Editar</span>
+              </button>
+            </nav>
             <div class="documents-pdf-toolbar" role="toolbar" aria-label="Controles do PDF">
               <button class="portal-button ghost" id="pdfZoomOutButton" type="button" aria-label="Diminuir zoom">−</button>
               <button class="portal-button ghost" id="pdfZoomResetButton" type="button" aria-label="Restaurar zoom"><span id="pdfZoomLabel">100%</span></button>
               <button class="portal-button ghost" id="pdfZoomInButton" type="button" aria-label="Aumentar zoom">+</button>
               <button class="portal-button secondary" id="pdfFitWidthButton" type="button">Ajustar largura</button>
               <span class="documents-pdf-page-count" id="pdfPageCountLabel"></span>
+            </div>
+            <div class="documents-editor" id="documentsEditor" hidden aria-label="Controles de edição local do PDF">
+              <span class="sr-only">As alterações são locais e ainda não serão salvas no Google Drive.</span>
+              <div class="documents-editor-toolbar documents-editor-toolbar--compact" role="toolbar" aria-label="Ferramentas do editor PDF">
+                <button class="documents-editor-tool" id="editorUndoButton" type="button" title="Desfazer" aria-label="Desfazer">↶</button>
+                <button class="documents-editor-tool" id="editorRedoButton" type="button" title="Refazer" aria-label="Refazer">↷</button>
+                <span class="documents-editor-tool-separator" aria-hidden="true"></span>
+                <button class="documents-editor-tool active" id="editorOrganizeButton" type="button" title="Organizar páginas" aria-label="Organizar páginas" aria-pressed="true">▦</button>
+                <button class="documents-editor-tool" id="editorMergeButton" type="button" title="Unir outro PDF" aria-label="Unir outro PDF">⧉</button>
+                <button class="documents-editor-tool" id="editorBlankPageButton" type="button" title="Inserir página em branco" aria-label="Inserir página em branco">⊞</button>
+                <button class="documents-editor-tool" id="editorImageButton" type="button" title="Adicionar imagem como nova página" aria-label="Adicionar imagem como nova página">▧</button>
+                <input id="editorImageInput" type="file" accept="image/*" multiple hidden>
+                <button class="documents-editor-tool" id="editorCropButton" type="button" title="Recortar página" aria-label="Recortar página" aria-pressed="false">⌗</button>
+                <button class="documents-editor-tool" id="editorSelectButton" type="button" title="Selecionar e mover objetos" aria-label="Selecionar e mover objetos">↖</button>
+                <button class="documents-editor-tool" id="editorWriteButton" type="button" title="Escrever sobre a página" aria-label="Escrever sobre a página">T</button>
+                <button class="documents-editor-tool" id="editorOverlayImageButton" type="button" title="Colar imagem sobre a página" aria-label="Colar imagem sobre a página">▣</button>
+                <input id="editorOverlayImageInput" type="file" accept="image/*" hidden>
+                <button class="documents-editor-tool is-planned" id="editorDrawButton" type="button" title="Desenhar — próxima unidade" aria-label="Desenhar" disabled>✎</button>
+                <span class="documents-editor-tool-spacer"></span>
+                <button class="documents-editor-tool" id="editorPreviewButton" type="button" title="Atualizar PDF" aria-label="Atualizar PDF">⟳</button>
+                <button class="documents-editor-tool" id="editorExitButton" type="button" title="Sair do editor" aria-label="Sair do editor">×</button>
+              </div>
+              <div class="documents-editor-status" id="documentsEditorStatus" aria-live="polite"></div>
+              <div class="documents-object-toolbar" id="editorObjectToolbar" hidden aria-label="Propriedades do objeto selecionado">
+                <label class="documents-object-field documents-object-field--font" id="editorObjectFontField">
+                  <span>Fonte</span>
+                  <select id="editorObjectFont">
+                    <option value="Arial">Arial</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Courier New">Courier New</option>
+                  </select>
+                </label>
+                <label class="documents-object-field documents-object-field--font" id="editorObjectSizeField">
+                  <span>Tamanho</span>
+                  <input id="editorObjectFontSize" type="number" min="8" max="96" step="1" value="18">
+                </label>
+                <label class="documents-object-field documents-object-field--font" id="editorObjectColorField">
+                  <span>Cor</span>
+                  <input id="editorObjectColor" type="color" value="#111111">
+                </label>
+                <div class="documents-object-format documents-object-field--font" id="editorObjectFormatField" role="group" aria-label="Formatação do texto">
+                  <button type="button" id="editorObjectBold" class="documents-object-format-button" title="Negrito" aria-label="Negrito" aria-pressed="false"><strong>B</strong></button>
+                  <button type="button" id="editorObjectItalic" class="documents-object-format-button" title="Itálico" aria-label="Itálico" aria-pressed="false"><em>I</em></button>
+                  <button type="button" id="editorObjectUnderline" class="documents-object-format-button" title="Sublinhado" aria-label="Sublinhado" aria-pressed="false"><u>U</u></button>
+                  <label class="documents-object-align"><span class="sr-only">Alinhamento</span>
+                    <select id="editorObjectAlign" aria-label="Alinhamento do texto">
+                      <option value="left">Esquerda</option>
+                      <option value="center">Centro</option>
+                      <option value="right">Direita</option>
+                    </select>
+                  </label>
+                </div>
+                <label class="documents-object-field">
+                  <span>Transparência</span>
+                  <input id="editorObjectOpacity" type="range" min="10" max="100" step="5" value="100">
+                </label>
+                <button class="documents-object-action" id="editorObjectDelete" type="button" title="Excluir objeto" aria-label="Excluir objeto">×</button>
+              </div>
+              <aside class="documents-editor-panel" id="editorMergePanel" hidden aria-label="Unir documentos">
+                <div class="documents-editor-panel-head">
+                  <strong>Unir documentos</strong>
+                  <button class="documents-editor-panel-close" id="editorMergeCancelButton" type="button" aria-label="Fechar painel de união">×</button>
+                </div>
+                <p id="editorMergeSelection">Escolha outro PDF na lista da Central.</p>
+                <label class="documents-editor-field">
+                  <span>Posição de inserção</span>
+                  <select id="editorMergePosition">
+                    <option value="after-document">Após o documento atual</option>
+                    <option value="before-document">Antes do documento atual</option>
+                    <option value="after-page">Após uma página específica</option>
+                  </select>
+                </label>
+                <label class="documents-editor-field" id="editorMergePageField" hidden>
+                  <span>Página</span>
+                  <input id="editorMergeAfterPage" type="number" min="1" step="1" value="1">
+                </label>
+                <button class="portal-button primary" id="editorMergeApplyButton" type="button" disabled>Unir</button>
+              </aside>
             </div>
             <div class="documents-pdf-layout">
               <nav class="documents-pdf-thumbnails" id="pdfThumbnailRail" aria-label="Miniaturas das páginas"></nav>
@@ -147,8 +210,8 @@
   <script src="/js/portal-interactions.js?v=20260910-2"></script>
   <script src="/js/tools-catalog.js?v=20260911-3"></script>
   <script src="/js/document-cache.js?v=20260912-1"></script>
-  <script src="/js/document-editor.js?v=20260913-2"></script>
-  <script src="/js/document-viewer.js?v=20260914-1"></script>
-  <script src="/js/documents.js?v=20260913-3"></script>
+  <script src="/js/document-editor.js?v=20260915-5"></script>
+  <script src="/js/document-viewer.js?v=20260915-21"></script>
+  <script src="/js/documents.js?v=20260915-9"></script>
 </body>
 </html>

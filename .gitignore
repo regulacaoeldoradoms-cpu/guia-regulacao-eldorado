@@ -23,3 +23,5 @@ Thumbs.db
 
 # Artefato gerado do staging documental
 dist-staging/
+testing/browser/playwright-report/
+testing/browser/test-results/

@@ -9,8 +9,11 @@ const out = path.join(root, 'dist-staging');
 const files = [
   ['testing/central-docs/viewer-harness.html', 'testing/central-docs/viewer-harness.html'],
   ['testing/central-docs/fixture.js', 'testing/central-docs/fixture.js'],
+  ['testing/central-docs/editor-harness.js', 'testing/central-docs/editor-harness.js'],
   ['css/documents.css', 'css/documents.css'],
+  ['js/document-editor.js', 'js/document-editor.js'],
   ['js/document-viewer.js', 'js/document-viewer.js'],
+  ['vendor/pdf-lib', 'vendor/pdf-lib'],
   ['vendor/pdfjs-legacy', 'vendor/pdfjs-legacy'],
   ['vendor/pdfjs/cmaps', 'vendor/pdfjs/cmaps'],
   ['vendor/pdfjs/standard_fonts', 'vendor/pdfjs/standard_fonts'],
@@ -45,7 +48,7 @@ const headers = `/*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
-  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; child-src 'self' blob:; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
 `;
 await writeFile(path.join(out, '_headers'), headers, 'utf8');
 
@@ -53,13 +56,19 @@ const manifest = {
   environment: 'central-docs-staging',
   syntheticOnly: true,
   productionApisIncluded: false,
-  sourceSha: process.env.GITHUB_SHA || null
+  sourceSha: process.env.CF_PAGES_COMMIT_SHA || process.env.GITHUB_SHA || null
 };
 await writeFile(path.join(out, 'staging-manifest.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf8');
 
 const forbidden = [
   'yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev',
   'regulacaoeldoradoms.com.br/api/',
+  'portal-regulacao-users',
+  'googleapis.com',
+  'googleusercontent.com',
+  'accounts.google.com',
+  'drive.google.com',
+  '/api/documents/',
   'GOOGLE_DRIVE_OAUTH_CLIENT_SECRET',
   'DRIVE_TOKEN_ENCRYPTION_KEY',
   'AUTH_SESSION_SECRET'
