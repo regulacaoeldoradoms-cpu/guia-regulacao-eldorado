@@ -2,7 +2,26 @@
 
 Data: 16/09/2026  
 Fase relacionada: 3 — Editor PDF essencial  
-Estado: laboratório local + CI + Cloudflare Pages operacionais; 3C.6 tecnicamente concluída e aguardando homologação humana do PDF exportado, sem alteração em produção.
+Estado: **Fase 3 homologada pelo usuário em 16/09/2026**; laboratório local + CI + Cloudflare Pages operacionais; promoção final para `main` condicionada somente à matriz pós-reconciliação.
+
+## Homologação humana final da Fase 3 — 16/09/2026
+
+O usuário confirmou o estado final do editor e autorizou explicitamente o avanço para a próxima fase. Esse aceite encerra o gate humano da 3C.6 e, por consequência, da **Fase 3 — Editor PDF essencial**.
+
+O aceite final abrange o conjunto consolidado da fase:
+- superfície única PDF.js;
+- reorganização, exclusão, duplicação, rotação e página em branco;
+- união de PDFs/imagens;
+- Escrever + Colar imagem;
+- Recortar;
+- Desenhar/Borracha;
+- Undo/Redo;
+- flatten/exportação local;
+- impressão local sem nova aba;
+- kit visual final dos botões;
+- remoção do botão redundante **Atualizar PDF**.
+
+A partir deste aceite, nenhuma nova melhoria estética ou funcional pertence à Fase 3 salvo regressão comprovada. Alterações de sincronização com Google Drive pertencem à **Fase 4**.
 
 ## Objetivo
 
