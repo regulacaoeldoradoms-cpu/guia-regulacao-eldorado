@@ -17,6 +17,9 @@ Atualizado em 16/09/2026.
 - Ajuste visual implementado no PR #191 — **Agenda: chip compacto do sincronizador no canto inferior esquerdo** — e mesclado na `main` em `abf7882f125cc9b3b3e322a2b14981e304aaec67`.
 - Pós-merge do PR #191: **26/26 check-runs concluídos com sucesso**, incluindo build/deploy, validação da Agenda e regressões gerais.
 - Produção: userscript **1.1.1** publicado; resta somente homologar visualmente o novo chip no navegador autorizado.
+- Nova correção autorizada em 16/09/2026: **persistência real de visualização dos agendamentos** e manutenção do card após marcar como visto.
+- Problema observado: ao marcar um card como visto, ele desaparecia porque a tela iniciava no filtro `Novos / alterados`; além disso, o estado de leitura podia voltar após uma nova sincronização porque a memória ficava embutida no mesmo documento que o sincronizador substitui.
+- Branch atual desta correção: `fix/agenda-read-memory`; produção ainda pendente de PR/checks/merge.
 - Evidência real em 16/09/2026: a ponte `/agenda/sync/` exibiu `Automático ativo · última sincronização: 10:13 · 0 novo(s), 0 alterado(s)`, confirmando conexão persistente e primeira sincronização automática bem-sucedida sem mudanças.
 
 ## Objetivo da V2
@@ -105,13 +108,14 @@ A homologação funcional inicial está aprovada. Ainda faltam somente testes op
 
 ## Próximo passo exato
 
-1. atualizar o userscript existente no Tampermonkey para a versão 1.1.1 e validar o novo chip compacto no DigSaúde;
-2. confirmar que o chip aparece no canto inferior esquerdo, mostra apenas `⟳` após ativado e abre detalhes por hover/clique;
-3. deixar DigSaúde e a ponte do Portal abertos durante o expediente;
-4. confirmar uma próxima verificação automática após o intervalo de 15 minutos ou ao recuperar foco vencido;
-5. quando ocorrer uma mudança real no DigSaúde, confirmar que o Portal registra `+novo` ou `~alterado` sem intervenção manual;
-6. em momento controlado, fechar a ponte, confirmar que o automático pausa e depois reativá-lo;
-7. se esses comportamentos passarem, considerar a V2 integralmente homologada e encerrar esta unidade.
+1. abrir PR da branch `fix/agenda-read-memory` contra `main`;
+2. validar o workflow da Agenda e regressões gerais;
+3. mesclar somente com CI verde e aguardar deploy;
+4. no Portal, confirmar que **Todos ativos** é a visão inicial;
+5. marcar um agendamento como visto e confirmar que o card permanece na lista com borda de visualizado;
+6. executar uma sincronização do DigSaúde sem alteração real e confirmar que o mesmo agendamento continua visualizado;
+7. quando ocorrer uma alteração real de data/horário/status, confirmar que o registro volta a ser destacado como alterado;
+8. registrar o resultado e encerrar esta correção.
 
 ## Riscos restantes
 
