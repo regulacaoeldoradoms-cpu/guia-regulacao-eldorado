@@ -8,6 +8,49 @@
 
 Subfase atual: **3C.6 — flatten/exportação local, correções de UX pós-homologação implementadas e aguardando novo reteste humano**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
 
+## 3C.6 — terceira rodada de ajustes UX: campo condicional, impressão e atalhos — 16/09/2026
+
+Novo reteste humano da 3C.6 acrescentou três requisitos de ergonomia antes da homologação final:
+
+1. o campo **Após a página** deve aparecer somente quando a opção **Após uma página específica** estiver selecionada no painel Unir;
+2. além de **Exportar PDF final localmente**, o editor deve oferecer uma ação explícita de **Imprimir** o PDF final;
+3. o editor deve oferecer atalhos de teclado usuais, começando por **Ctrl+Z** para desfazer a última edição.
+
+Implementação:
+- o campo de página já era alternado por JavaScript, porém a regra autoral `.documents-editor-field { display: grid; }` sobrepunha o atributo HTML `hidden`; foi adicionada uma regra explícita `.documents-editor-field[hidden] { display: none !important; }`, fazendo o campo aparecer apenas em `after-page`;
+- foi adicionado o botão **⎙ Imprimir PDF final**, ao lado da exportação local; a impressão usa o mesmo `buildFlattenedBlob()` da saída final, portanto inclui texto, imagem overlay, desenhos, crop, ordem e rotação;
+- no produto real, a impressão abre o PDF final local em uma nova aba e solicita `print()` depois do carregamento. Esta solução foi escolhida para não reintroduzir iframe/embed/object no runtime documental, preservando a arquitetura de superfície única do visualizador;
+- se o navegador bloquear a abertura da aba, o editor informa que é necessário permitir pop-ups; se a caixa de impressão automática não aparecer, a nova aba permanece com o PDF final e o usuário pode usar Ctrl+P nela;
+- atalhos adicionados enquanto o editor está ativo: **Ctrl+Z** desfaz, **Ctrl+Y** e **Ctrl+Shift+Z** refazem, **Ctrl+P** aciona a impressão local e **Delete** continua removendo o objeto selecionado;
+- atalhos de undo/redo não sequestram campos de digitação, `contenteditable`, `textarea`, `select` ou inputs textuais, preservando a edição nativa do conteúdo;
+- os tooltips dos botões Desfazer, Refazer e Imprimir agora exibem os atalhos correspondentes.
+
+Correção durante a validação:
+- a primeira implementação da impressão usava um iframe local temporário; dois contratos legados da Central bloquearam corretamente essa abordagem porque `js/documents.js` não pode voltar a criar `iframe/embed/object`, mesmo para impressão;
+- a alternativa foi descartada e substituída por abertura do PDF final em nova aba, mantendo o contrato de **nenhum fallback nativo embutido na superfície da Central**.
+
+Head funcional validado: `6f6cfaf09100fd92f2308938d6dd02343024aa97`.
+
+Validação:
+- **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **76 casos — 73 passed / 3 skipped esperados**, em desktop e mobile;
+- teste do painel Unir exige que `Após a página` fique oculto em `after-document`, visível em `after-page` e volte a ocultar ao retornar;
+- testes de teclado cobrem Ctrl+Z, Ctrl+Shift+Z e Ctrl+Y, além de confirmar que um campo numérico focado não dispara o undo global;
+- teste da impressão cobre o botão **Imprimir** e **Ctrl+P** usando o blob final flatten sem sair do editor;
+- contrato estático do produto exige botão `editorPrintButton`, `printEditedPdfLocal()`, `window.open()` para impressão e proíbe regressão para iframe/embed/object;
+- Cloudflare Pages publicou o head funcional com sucesso (deployment `42357ef1-0dd0-47ec-aa94-f9dac48fc328`).
+
+Privacidade e segurança:
+- exportação e impressão continuam 100% locais no navegador; nenhum PDF é enviado ao backend ou Google Drive;
+- nenhuma telemetria de conteúdo foi adicionada;
+- nenhuma alteração em `main` ou produção;
+- PR #179 permanece aberto e sem merge.
+
+**Gate atual:** 3C.6 permanece aberta para reteste humano das novas interações e para a comparação visual final preview × PDF exportado/reaberto.
+
+**Próxima ação exata:** abrir `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, fazer Ctrl+F5 e validar: (a) `Após a página` só aparece em `Após uma página específica`; (b) o botão Imprimir abre o PDF final e a impressão; (c) Ctrl+Z desfaz e Ctrl+Y/Ctrl+Shift+Z refazem; (d) Ctrl+P aciona a impressão; depois concluir a comparação final do PDF exportado. Somente após aceite explícito encerrar 3C.6/Fase 3.
+
 ## 3C.6 — segunda rodada de correções UX após reteste humano — 16/09/2026
 
 O reteste do candidato com zoom inicial em 114% revelou quatro ajustes adicionais antes da homologação final:
@@ -172,22 +215,22 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Fase atual:** Fase 3 — Editor PDF essencial.
 - **Subfase atual:** 3C.6 — flatten/exportação local; correções de UX pós-homologação implementadas e aguardando novo reteste humano.
-- **Última ação concluída:** após o zoom inicial de 114%, foram corrigidos o refluxo real da grade ao abrir Unir, preview de PDF/imagem local, fluxo em dois estágios de Colar imagem e exclusão de objetos selecionados pela tecla Delete.
+- **Última ação concluída:** além das correções anteriores da UX, o campo `Após a página` passou a respeitar o estado condicional, foi adicionado Imprimir PDF final e foram adicionados atalhos Ctrl+Z, Ctrl+Y/Ctrl+Shift+Z e Ctrl+P.
 - **Branch atual:** `codex/central-docs-editor-superficie-unica`.
-- **Head funcional validado:** `3b08614541494b430a81f8e9936a7c72d97bf74b`.
+- **Head funcional validado:** `6f6cfaf09100fd92f2308938d6dd02343024aa97`.
 - **PR atual:** #179 — manter aberto e sem merge até o encerramento da Fase 3.
 - **Main atual conhecida:** `73997b4d108dd0392173e93640310d70dd3eeccf`, já reconciliada nesta branch pelo merge `95c660d6e74c4aafdbb5d7be4c4383ac11d46995`.
-- **Checks e testes:** 25/25 checks verdes; Playwright 72 casos = 69 passed / 3 skipped esperados; PDF.js real em Chromium e Cloudflare Pages verdes.
+- **Checks e testes:** 25/25 checks verdes; Playwright 76 casos = 73 passed / 3 skipped esperados; PDF.js real em Chromium e Cloudflare Pages verdes.
 - **Preview imutável do runtime corrigido:** `https://a32de5a1.portal-regulacao-central-staging.pages.dev/`.
 - **Alias da branch:** `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
-- **Decisões tomadas:** objeto arrastado segue o centro do ponteiro; laboratório usa file picker real; arquivos locais no painel Unir ficam pendentes até confirmação explícita em Unir; desktop reduz a largura real da grade para reservar o painel e forçar quebra de linha; o painel mostra preview local; mobile empilha o painel; Colar imagem usa entrada em modo + abertura do seletor no clique seguinte; Delete remove texto/imagem selecionados sem interferir em campos de edição; abertura nova usa 114% no desktop e limita a escala à largura disponível em telas menores.
+- **Decisões tomadas:** objeto arrastado segue o centro do ponteiro; laboratório usa file picker real; arquivos locais no painel Unir ficam pendentes até confirmação explícita em Unir; desktop reduz a largura real da grade para reservar o painel e forçar quebra de linha; o painel mostra preview local; `Após a página` é estritamente condicional a `after-page`; mobile empilha o painel; Colar imagem usa entrada em modo + abertura do seletor no clique seguinte; Delete remove texto/imagem selecionados sem interferir em campos de edição; Ctrl+Z desfaz, Ctrl+Y/Ctrl+Shift+Z refazem e Ctrl+P imprime; impressão usa o PDF final flatten em nova aba, sem iframe/embed/object; abertura nova usa 114% no desktop e limita a escala à largura disponível em telas menores.
 - **Justificativas:** reduzir deslocamento perceptivo no arraste; eliminar divergência entre laboratório e produto; tornar a união autossuficiente; impedir páginas ocultas pelo painel; evitar abertura excessivamente ampliada e enquadrar melhor a página sem remover a opção Ajustar largura.
-- **Alternativas descartadas:** manter offset original de clique; imagem sintética automática no botão; união local imediata após escolher arquivo; painel flutuante sobre a grade; manter fit-width automático como zoom inicial.
+- **Alternativas descartadas:** manter offset original de clique; imagem sintética automática no botão; união local imediata após escolher arquivo; painel flutuante sobre a grade; manter fit-width automático como zoom inicial; usar iframe/embed/object temporário para impressão dentro do runtime documental.
 - **Pendências e bloqueios:** homologação humana da UX corrigida e da fidelidade do PDF exportado. Fase 4 permanece bloqueada. Cloudflare Access ainda pendente, portanto staging somente com dados fictícios.
 - **Riscos conhecidos:** diferenças finas de fonte entre navegador/pdf-lib e combinações incomuns de crop/rotação ainda dependem da conferência visual humana final.
 - **Métricas / observabilidade:** nenhuma telemetria de conteúdo; união local registra somente operação técnica e bucket agregado de tamanho.
-- **Próxima ação exata:** abrir `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, fazer Ctrl+F5 e validar refluxo da grade no Unir, preview do arquivo selecionado, fluxo em dois estágios de Colar imagem e Delete em texto/imagem; depois exportar e reabrir o PDF final. Se aprovado, encerrar formalmente 3C.6/Fase 3; se houver defeito, manter 3C.6 aberta e corrigir somente o problema observado.
-- **Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `testing/central-docs/editor-harness.js`, `testing/browser/central-docs-editor.spec.mjs`, `testing/browser/central-docs-viewer.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md` e `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`.
+- **Próxima ação exata:** abrir `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, fazer Ctrl+F5 e validar também o campo condicional `Após a página`, botão Imprimir, Ctrl+Z, Ctrl+Y/Ctrl+Shift+Z e Ctrl+P; depois exportar e reabrir o PDF final. Se aprovado, encerrar formalmente 3C.6/Fase 3; se houver defeito, manter 3C.6 aberta e corrigir somente o problema observado.
+- **Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `testing/central-docs/editor-harness.js`, `testing/browser/central-docs-editor.spec.mjs`, `testing/browser/central-docs-flatten.spec.mjs`, `testing/browser/central-docs-viewer.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md` e `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`.
 
 ## 3C.6 — liberada após reconciliação verde com main — 16/09/2026
 
