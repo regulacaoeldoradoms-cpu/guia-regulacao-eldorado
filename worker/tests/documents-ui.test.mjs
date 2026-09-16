@@ -263,7 +263,6 @@ test('kit visual do editor usa assets individuais self-hosted e preserva acessib
     'ajustar-largura.svg',
     'grade-ativa.svg',
     'grade-inativa.svg',
-    'atualizar.svg',
     'salvar-pdf.svg',
     'imprimir-normal.svg',
     'fechar.svg',
@@ -271,11 +270,31 @@ test('kit visual do editor usa assets individuais self-hosted e preserva acessib
   ]) {
     assert.ok(fs.existsSync(path.join(root, 'assets/editor-pdf-buttons', asset)), asset);
   }
+  for (const asset of [
+    'Unir_PDF.png',
+    'Inserir_pagina_branca.png',
+    'Adicionar_imagem.png',
+    'Recortar_pagina.png',
+    'Selecionar_mover.png',
+    'Escrever.png',
+    'Colar_imagem.png',
+    'Desenhar.png'
+  ]) {
+    assert.ok(fs.existsSync(path.join(root, 'assets', asset)), asset);
+  }
   assert.match(html, /id="pdfZoomOutButton"[^>]*documents-art-zoom-minus/);
   assert.match(html, /id="pdfZoomInButton"[^>]*documents-art-zoom-plus/);
   assert.match(html, /id="pdfFitWidthButton"[^>]*documents-art-fit-width[^>]*aria-label="Ajustar largura"/);
   assert.match(html, /id="editorOrganizeButton"[^>]*documents-art-grid/);
-  assert.match(html, /id="editorPreviewButton"[^>]*documents-art-refresh/);
+  assert.match(html, /id="editorMergeButton"[^>]*documents-tool-icon-merge/);
+  assert.match(html, /id="editorBlankPageButton"[^>]*documents-tool-icon-blank/);
+  assert.match(html, /id="editorImageButton"[^>]*documents-tool-icon-add-image/);
+  assert.match(html, /id="editorCropButton"[^>]*documents-tool-icon-crop/);
+  assert.match(html, /id="editorSelectButton"[^>]*documents-tool-icon-select/);
+  assert.match(html, /id="editorWriteButton"[^>]*documents-tool-icon-write/);
+  assert.match(html, /id="editorOverlayImageButton"[^>]*documents-tool-icon-paste-image/);
+  assert.match(html, /id="editorDrawButton"[^>]*documents-tool-icon-draw/);
+  assert.doesNotMatch(html, /id="editorPreviewButton"/);
   assert.match(html, /id="editorExportButton"[^>]*documents-art-export[^>]*aria-label="Exportar PDF final localmente"/);
   assert.match(html, /id="editorPrintButton"[^>]*documents-art-print[^>]*aria-label="Imprimir PDF final"/);
   assert.match(html, /id="editorExitButton"[^>]*documents-art-close/);
@@ -284,6 +303,15 @@ test('kit visual do editor usa assets individuais self-hosted e preserva acessib
   assert.match(css, /editor-pdf-buttons\/salvar-pdf\.svg/);
   assert.match(css, /editor-pdf-buttons\/imprimir-normal\.svg/);
   assert.match(css, /editor-pdf-buttons\/grade-ativa\.svg/);
+  assert.match(css, /assets\/Unir_PDF\.png/);
+  assert.match(css, /assets\/Inserir_pagina_branca\.png/);
+  assert.match(css, /assets\/Adicionar_imagem\.png/);
+  assert.match(css, /assets\/Recortar_pagina\.png/);
+  assert.match(css, /assets\/Selecionar_mover\.png/);
+  assert.match(css, /assets\/Escrever\.png/);
+  assert.match(css, /assets\/Colar_imagem\.png/);
+  assert.match(css, /assets\/Desenhar\.png/);
+  assert.doesNotMatch(css, /documents-art-refresh/);
   assert.doesNotMatch(css, /--documents-art-sheet/);
   assert.doesNotMatch(css, /Bot%C3%B5es_Editor_PDF\.png/);
   assert.match(css, /documents-art-print:hover/);
