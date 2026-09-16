@@ -159,15 +159,16 @@ Justificativa: automatizar a conferência operacional antes feita pela planilha 
 
 ## Próximo passo exato
 
-1. concluir os checks do PR da branch `feat/agenda-capacidade-salas` e publicar somente com CI verde;
+1. concluir os checks do PR #198 e publicar somente com CI verde;
 2. no Portal, atualizar a página da Agenda com `Ctrl+F5`;
-2. confirmar que **Todos ativos** é a visão inicial e que **Agendamento mais próximo** é a ordenação padrão;
-3. alternar para **Agendamento mais distante** e confirmar inversão cronológica, preservando data e horário como chaves;
-4. marcar um agendamento como visto e confirmar que o card permanece na lista com borda de visualizado;
-5. executar uma sincronização do DigSaúde sem alteração real e confirmar que o mesmo agendamento continua visualizado;
-6. quando uma consulta sair da aba **Agendados** do DigSaúde, confirmar após a sincronização completa que ela desaparece de **Todos ativos** no Portal;
-7. quando ocorrer uma alteração real de data/horário/status em uma consulta ainda ativa, confirmar que o registro volta a ser destacado como alterado;
-8. registrar a homologação humana e encerrar esta correção.
+3. confirmar que **Todos ativos** é a visão inicial e que **Agendamento mais próximo** é a ordenação padrão;
+4. validar visualmente um cenário de **2/2 salas no intervalo**;
+5. validar um cenário de **Capacidade excedida** com 3 ou mais agendamentos dentro de uma janela direta de até 30 minutos;
+6. confirmar que **Psiquiatria** não participa da contagem;
+7. confirmar que 08:00 / 08:30 / 09:00 não forma grupo crítico transitivo;
+8. abrir o WhatsApp de um grupo crítico e conferir data, horários, pacientes e especialidades antes de enviar;
+9. confirmar que marcar como visto continua preservando o card enquanto ele permanece em Agendados;
+10. registrar a homologação humana desta melhoria no status.
 
 ## Riscos restantes
 
