@@ -129,6 +129,39 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     finishMonitoring();
   });
 
+  test('assets visuais dos botões carregam no navegador', async ({ page, request }) => {
+    const finishMonitoring = monitorPage(page);
+    await openLab(page);
+    await enterEditor(page);
+
+    const assets = [
+      '/assets/editor-pdf-buttons/zoom-menos.svg',
+      '/assets/editor-pdf-buttons/zoom-mais.svg',
+      '/assets/editor-pdf-buttons/ajustar-largura.svg',
+      '/assets/editor-pdf-buttons/grade-ativa.svg',
+      '/assets/editor-pdf-buttons/grade-inativa.svg',
+      '/assets/editor-pdf-buttons/atualizar.svg',
+      '/assets/editor-pdf-buttons/salvar-pdf.svg',
+      '/assets/editor-pdf-buttons/imprimir-normal.svg',
+      '/assets/editor-pdf-buttons/fechar.svg'
+    ];
+
+    for (const asset of assets) {
+      const response = await request.get(asset);
+      expect(response.ok()).toBe(true);
+      expect((await response.body()).byteLength).toBeGreaterThan(100);
+    }
+
+    for (const selector of ['#zoomOut', '#zoomIn', '#fitWidth', '#editorOrganize', '#editorRefresh', '#editorExport', '#editorPrint', '#editorExit']) {
+      const background = await page.locator(selector).evaluate((node) => getComputedStyle(node).backgroundImage);
+      expect(background).toContain('/assets/editor-pdf-buttons/');
+    }
+
+    const organizeBackground = await page.locator('#editorOrganize').evaluate((node) => getComputedStyle(node).backgroundImage);
+    expect(organizeBackground).toContain('grade-ativa.svg');
+    finishMonitoring();
+  });
+
   test('arrastar e excluir atualizam a ordem visual e as miniaturas sem setas', async ({ page }) => {
     const finishMonitoring = monitorPage(page);
     await openLab(page);
