@@ -900,7 +900,9 @@ async function initiateDriveResumableUpload(env, input) {
   let method;
 
   if (input.operation === 'replace_pdf') {
-    await preserveDriveRevision(env, current);
+    if (input.preserveRevision !== false) {
+      await preserveDriveRevision(env, current);
+    }
     url = new URL(`https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(current.id)}`);
     method = 'PATCH';
     metadata = {};
@@ -948,7 +950,8 @@ export async function startDriveSync(env, username, input = {}) {
     operation: prepared.operation,
     current: prepared.current,
     totalBytes,
-    copyName: input.copyName
+    copyName: input.copyName,
+    preserveRevision: input.preserveRevision !== false
   });
   const syncId = await storeDriveSyncSession(env, {
     username,
@@ -961,7 +964,8 @@ export async function startDriveSync(env, username, input = {}) {
     operation: prepared.operation,
     totalBytes,
     chunkSize: DRIVE_SYNC_CHUNK_BYTES,
-    conflictDetected: prepared.publicResult.conflict === true
+    conflictDetected: prepared.publicResult.conflict === true,
+    safetyRevisionPreserved: prepared.operation === 'replace_pdf' && input.preserveRevision !== false
   };
 }
 
