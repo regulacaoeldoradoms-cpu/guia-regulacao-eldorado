@@ -8,6 +8,45 @@
 
 Subfase atual: **3C.6 — flatten/exportação local, correções de UX pós-homologação implementadas e aguardando novo reteste humano**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
 
+## 3C.6 — correção da impressão cross-origin após reteste humano — 16/09/2026
+
+No reteste posterior ao aceite funcional geral, o usuário confirmou que **Exportar PDF final localmente funciona**, porém o botão **Imprimir** falhou no laboratório com erro de segurança do navegador:
+
+`Blocked a frame with origin ... from accessing a cross-origin frame` ao tentar acessar `addEventListener` no `Window` do visualizador nativo de PDF.
+
+Diagnóstico:
+- o laboratório ainda usava um `iframe` temporário apontando para um Blob PDF; ao o navegador entregar esse Blob ao visualizador PDF nativo, o conteúdo efetivo passa por um frame de outra origem e o script perde permissão de acessar `contentWindow`; o erro observado é portanto uma restrição real de Same-Origin Policy, não um problema do PDF exportado;
+- o runtime real já havia abandonado o iframe e aberto o Blob em nova aba, mas ainda tentava chamar `focus()`/`print()` depois da navegação para o visualizador nativo. Essa abordagem também dependia de acesso posterior a uma janela que pode se tornar cross-origin e foi considerada frágil;
+- o botão **Exportar PDF final localmente** não usa esse caminho e permaneceu funcional, conforme confirmação humana.
+
+Correção aplicada:
+- impressão deixou de depender completamente do visualizador PDF nativo para acionar `print()`;
+- o editor continua gerando o mesmo `buildFlattenedBlob()` final;
+- abre-se imediatamente uma janela `about:blank` same-origin para preservar a ativação do usuário;
+- o Blob final é reaberto **em memória pelo PDF.js self-hosted** e cada página é renderizada nessa própria janela same-origin, com page breaks e tamanho proporcional ao PDF;
+- somente depois de todas as páginas estarem renderizadas o editor chama `window.print()` na janela same-origin;
+- nenhuma página, conteúdo ou imagem é enviada a backend/Drive; a impressão continua local;
+- o laboratório foi alinhado ao mesmo fluxo e não cria mais `iframe`, nem acessa `frame.contentWindow`, nem navega a janela de impressão para o Blob PDF;
+- foi adicionado contrato de regressão que bloqueia o retorno de `iframe/contentWindow/location.replace()` nesse fluxo.
+
+Implementação funcional corrigida: `80e270a8e3388ab821145848ee14851c2f6e6ddb`.
+
+Validação:
+- **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **76 casos — 73 passed / 3 skipped esperados**;
+- Cloudflare Pages: sucesso no deployment `1532704a-fd8b-4310-b7b2-c4958bd8f2a1`;
+- o runtime continua proibido de criar iframe/embed/object para a superfície documental;
+- o teste automatizado de impressão continua verificando que o Blob utilizado é o PDF final flatten.
+
+Estado da `main` durante esta correção:
+- `main` avançou para `549507d651f512473d491c39a55110f37a696034` por uma mudança da **Agenda/DigSaúde** (`docs/AGENDA-DIGSAUDE-STATUS.md` e `worker/tests/agenda.test.mjs`), sem alteração nos arquivos funcionais da Central de Documentos;
+- antes do encerramento formal da Fase 3/promoção do PR #179, reconciliar novamente a branch com a `main` vigente e repetir a matriz completa.
+
+**Gate atual:** a falha de impressão foi corrigida tecnicamente; falta reteste humano do botão Imprimir/Ctrl+P e continua pendente a comparação visual final do PDF exportado/reaberto.
+
+**Próxima ação exata:** fazer Ctrl+F5 no alias da branch, clicar em **Imprimir** e confirmar que a caixa de impressão abre sem erro cross-origin. Depois, se ainda não feito, abrir o PDF exportado fora do editor e confirmar fidelidade visual. Com ambos aprovados, reconciliar com `main`, rodar a matriz final e encerrar 3C.6/Fase 3.
+
 ## 3C.6 — aceite humano da funcionalidade do editor; fidelidade final ainda pendente — 16/09/2026
 
 O usuário declarou explicitamente: **“pra mim o editor está completamente funcional agora”**.
@@ -228,9 +267,9 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Fase atual:** Fase 3 — Editor PDF essencial.
 - **Subfase atual:** 3C.6 — flatten/exportação local; correções de UX pós-homologação implementadas e aguardando novo reteste humano.
-- **Última ação concluída:** além das correções anteriores da UX, o campo `Após a página` passou a respeitar o estado condicional, foi adicionado Imprimir PDF final e foram adicionados atalhos Ctrl+Z, Ctrl+Y/Ctrl+Shift+Z e Ctrl+P.
+- **Última ação concluída:** corrigida a impressão após erro cross-origin do visualizador PDF nativo; runtime e laboratório agora renderizam o PDF final com PDF.js em janela same-origin antes de chamar `print()`.
 - **Branch atual:** `codex/central-docs-editor-superficie-unica`.
-- **Head funcional validado:** `6f6cfaf09100fd92f2308938d6dd02343024aa97`.
+- **Head funcional validado:** `80e270a8e3388ab821145848ee14851c2f6e6ddb`.
 - **PR atual:** #179 — manter aberto e sem merge até o encerramento da Fase 3.
 - **Main atual conhecida:** `73997b4d108dd0392173e93640310d70dd3eeccf`, já reconciliada nesta branch pelo merge `95c660d6e74c4aafdbb5d7be4c4383ac11d46995`.
 - **Checks e testes:** 25/25 checks verdes; Playwright 76 casos = 73 passed / 3 skipped esperados; PDF.js real em Chromium e Cloudflare Pages verdes.
@@ -239,10 +278,10 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 - **Decisões tomadas:** objeto arrastado segue o centro do ponteiro; laboratório usa file picker real; arquivos locais no painel Unir ficam pendentes até confirmação explícita em Unir; desktop reduz a largura real da grade para reservar o painel e forçar quebra de linha; o painel mostra preview local; `Após a página` é estritamente condicional a `after-page`; mobile empilha o painel; Colar imagem usa entrada em modo + abertura do seletor no clique seguinte; Delete remove texto/imagem selecionados sem interferir em campos de edição; Ctrl+Z desfaz, Ctrl+Y/Ctrl+Shift+Z refazem e Ctrl+P imprime; impressão usa o PDF final flatten em nova aba, sem iframe/embed/object; abertura nova usa 114% no desktop e limita a escala à largura disponível em telas menores.
 - **Justificativas:** reduzir deslocamento perceptivo no arraste; eliminar divergência entre laboratório e produto; tornar a união autossuficiente; impedir páginas ocultas pelo painel; evitar abertura excessivamente ampliada e enquadrar melhor a página sem remover a opção Ajustar largura.
 - **Alternativas descartadas:** manter offset original de clique; imagem sintética automática no botão; união local imediata após escolher arquivo; painel flutuante sobre a grade; manter fit-width automático como zoom inicial; usar iframe/embed/object temporário para impressão dentro do runtime documental.
-- **Pendências e bloqueios:** a UX/funcionalidade do editor foi homologada pelo usuário; falta somente a confirmação visual da fidelidade do PDF exportado/reaberto para encerrar 3C.6/Fase 3. Fase 4 permanece bloqueada até esse aceite. Cloudflare Access ainda pendente, portanto staging somente com dados fictícios.
+- **Pendências e bloqueios:** o usuário confirmou a exportação local, mas encontrou regressão na impressão; a correção técnica está verde e aguarda reteste humano. Também falta a confirmação visual da fidelidade do PDF exportado/reaberto. Antes do encerramento final, reconciliar com a `main` atual (`549507d...`) e repetir a matriz. Fase 4 permanece bloqueada. Cloudflare Access ainda pendente, portanto staging somente com dados fictícios.
 - **Riscos conhecidos:** diferenças finas de fonte entre navegador/pdf-lib e combinações incomuns de crop/rotação ainda dependem da conferência visual humana final.
 - **Métricas / observabilidade:** nenhuma telemetria de conteúdo; união local registra somente operação técnica e bucket agregado de tamanho.
-- **Próxima ação exata:** a UX já foi aceita. Exportar um PDF final, reabri-lo fora do editor e comparar com o preview; se texto, imagem, desenho, crop, ordem e rotação estiverem fiéis, encerrar formalmente 3C.6/Fase 3 e preparar a Fase 4.
+- **Próxima ação exata:** fazer Ctrl+F5 e retestar Imprimir/Ctrl+P no alias da branch; confirmar que a caixa de impressão abre sem erro cross-origin. Depois confirmar a fidelidade do PDF exportado/reaberto. Com aceite dos dois pontos, reconciliar com `main`, rodar a matriz final e encerrar 3C.6/Fase 3.
 - **Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `testing/central-docs/editor-harness.js`, `testing/browser/central-docs-editor.spec.mjs`, `testing/browser/central-docs-flatten.spec.mjs`, `testing/browser/central-docs-viewer.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md` e `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`.
 
 ## 3C.6 — liberada após reconciliação verde com main — 16/09/2026
