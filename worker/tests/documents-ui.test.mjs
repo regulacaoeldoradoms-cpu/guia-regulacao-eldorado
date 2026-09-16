@@ -274,6 +274,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="editorDrawWidth"/);
   assert.match(viewerSurface, /id="editorDrawPen"/);
   assert.match(viewerSurface, /id="editorDrawEraser"/);
+  assert.match(viewerSurface, /id="editorPrintButton"/);
   assert.match(viewerSurface, /id="editorExitButton"/);
   assert.match(viewerSurface, /id="pdfThumbnailRail"/);
   assert.match(viewerSurface, /id="pdfPageScroll"/);
@@ -312,6 +313,11 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(css, /\.portal-pdf-thumb-action\.danger/);
   assert.match(client, /function startCropPages\(/);
   assert.match(client, /state\.editorMode === 'crop'/);
+  assert.match(client, /async function printEditedPdfLocal\(/);
+  assert.match(client, /window\.open\('about:blank', '_blank'\)/);
+  assert.match(client, /primary && key === 'z'/);
+  assert.match(client, /primary && key === 'p'/);
+  assert.match(css, /\.documents-editor-field\[hidden\]/);
   assert.match(viewer, /function setEditorCrops\(/);
   assert.match(viewer, /data-crop-resize/);
   assert.match(editor, /function setPageCrop\(/);
