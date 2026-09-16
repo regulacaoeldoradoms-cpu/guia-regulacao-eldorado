@@ -56,7 +56,7 @@ Estado da `main`:
 
 
 Validação de continuidade antes da homologação (16/09/2026):
-- head atual da branch: `26e1f7237eb2ce9f93d8e566e61d93e3453449f7`;
+- head validado imediatamente antes desta atualização documental: `26e1f7237eb2ce9f93d8e566e61d93e3453449f7`; a atualização do próprio status gera um novo head documental sem mudar o runtime;
 - **25/25 check-runs verdes** no head atual, inclusive Cloudflare Pages e PDF.js real em Chromium;
 - nenhuma falha técnica nova detectada na revisão de continuidade;
 - o próximo passo permanece a homologação humana de caneta/borracha no preview sintético; não houve motivo técnico para ampliar o escopo antes desse gate.
