@@ -52,6 +52,7 @@
     objectOpacity: document.getElementById('editorObjectOpacity'),
     objectDelete: document.getElementById('editorObjectDelete'),
     refresh: document.getElementById('editorRefresh'),
+    exportPdf: document.getElementById('editorExport'),
     exit: document.getElementById('editorExit')
   };
 
@@ -67,6 +68,7 @@
     drawWidth: 4,
     viewState: null,
     sequence: 0,
+    flattenSeeded: false,
     operation: Promise.resolve()
   };
 
@@ -295,6 +297,7 @@
     elements.drawEraser.disabled = !editing;
     elements.objectDelete.disabled = !editing || !selectedObject();
     elements.refresh.disabled = !editing;
+    elements.exportPdf.disabled = !editing || typeof editor?.buildFlattenedBlob !== 'function';
     elements.exit.disabled = !editing;
   }
 
@@ -304,7 +307,7 @@
     elements.surface.setAttribute('aria-busy', active ? 'true' : 'false');
     if (message) elements.editorStatus.textContent = message;
     if (active) {
-      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.draw, elements.drawColor, elements.drawWidth, elements.drawPen, elements.drawEraser, elements.objectDelete, elements.refresh, elements.exit]) {
+      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.draw, elements.drawColor, elements.drawWidth, elements.drawPen, elements.drawEraser, elements.objectDelete, elements.refresh, elements.exportPdf, elements.exit]) {
         button.disabled = true;
       }
       elements.thumbnails.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
@@ -581,6 +584,140 @@
     } : null, direction === 'undo' ? 'Desfazendo operação…' : 'Refazendo operação…');
   }
 
+
+  async function seedFlattenFixture() {
+    if (!state.session) throw new Error('Editor sintético não está ativo.');
+    if (state.flattenSeeded) return true;
+
+    editor.addTextObject(state.session, 0, {
+      x: .16,
+      y: .25,
+      width: .46,
+      height: .13,
+      text: 'FLATTEN 3C6',
+      fontFamily: 'Arial',
+      fontSize: .038,
+      fontWeight: 'bold',
+      color: '#e53935',
+      opacity: .9
+    });
+    const image = await syntheticImageBlob();
+    await editor.addImageOverlay(state.session, 0, image, {
+      x: .56,
+      y: .54,
+      width: .28,
+      opacity: .78
+    });
+    editor.addStroke(state.session, 0, [
+      { x: .18, y: .72 },
+      { x: .34, y: .64 },
+      { x: .52, y: .73 }
+    ], { color: '#1565c0', width: .008 });
+    editor.setPageCrop(state.session, 1, { x: .12, y: .14, width: .68, height: .62 });
+    editor.rotatePage(state.session, 2, 1);
+    state.flattenSeeded = true;
+    syncEditorState();
+    syncObjects();
+    return true;
+  }
+
+  async function diagnosePdfBlob(blob) {
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const pdfjs = await viewer.loadPdfJs();
+    const loadingTask = pdfjs.getDocument({
+      data: bytes.slice(),
+      isEvalSupported: false,
+      enableScripting: false
+    });
+    const documentPdf = await loadingTask.promise;
+    const imageOps = new Set([
+      pdfjs.OPS?.paintImageXObject,
+      pdfjs.OPS?.paintInlineImageXObject,
+      pdfjs.OPS?.paintImageMaskXObject,
+      pdfjs.OPS?.paintImageXObjectRepeat
+    ].filter((value) => Number.isFinite(value)));
+    const pathOps = new Set([
+      pdfjs.OPS?.constructPath,
+      pdfjs.OPS?.stroke,
+      pdfjs.OPS?.fillStroke,
+      pdfjs.OPS?.closeStroke
+    ].filter((value) => Number.isFinite(value)));
+    const pages = [];
+    for (let pageNumber = 1; pageNumber <= documentPdf.numPages; pageNumber += 1) {
+      const page = await documentPdf.getPage(pageNumber);
+      const viewport = page.getViewport({ scale: 1 });
+      const textContent = await page.getTextContent();
+      const operators = await page.getOperatorList();
+      pages.push({
+        width: Number(viewport.width.toFixed(2)),
+        height: Number(viewport.height.toFixed(2)),
+        rotation: Number(page.rotate || 0),
+        text: textContent.items.map((item) => String(item.str || '')).join(' '),
+        imageOps: operators.fnArray.filter((operation) => imageOps.has(operation)).length,
+        pathOps: operators.fnArray.filter((operation) => pathOps.has(operation)).length
+      });
+      page.cleanup?.();
+    }
+    await documentPdf.destroy?.();
+    return {
+      header: String.fromCharCode(...bytes.slice(0, 4)),
+      size: bytes.length,
+      pageCount: pages.length,
+      pages
+    };
+  }
+
+  async function flattenDiagnostics() {
+    if (!state.session) throw new Error('Editor sintético não está ativo.');
+    const revisionBefore = state.session.revision;
+    const structural = await editor.buildBlob(state.session);
+    const flattened = await editor.buildFlattenedBlob(state.session);
+    const result = {
+      revisionBefore,
+      structural: await diagnosePdfBlob(structural),
+      flattened: await diagnosePdfBlob(flattened),
+      revisionAfter: state.session.revision
+    };
+    root.dataset.flattenState = 'ready';
+    root.dataset.flattenSize = String(result.flattened.size);
+    return result;
+  }
+
+  async function exportFlattenedPdf() {
+    if (!state.session || typeof editor?.buildFlattenedBlob !== 'function') return false;
+    setBusy(true, 'Gerando PDF final sintético…');
+    let url = '';
+    try {
+      const blob = await editor.buildFlattenedBlob(state.session);
+      url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'synthetic-3-pages-editado.pdf';
+      link.hidden = true;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      root.dataset.flattenState = 'downloaded';
+      root.dataset.flattenSize = String(blob.size);
+      elements.editorStatus.textContent = 'PDF final sintético exportado localmente.';
+      window.setTimeout(() => {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      }, 1500);
+      url = '';
+      return true;
+    } finally {
+      if (url) {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      }
+      setBusy(false);
+    }
+  }
+
+  window.CentralDocsEditorHarness = Object.freeze({
+    seedFlattenFixture,
+    flattenDiagnostics
+  });
+
   async function exitEditor() {
     if (!state.session) return;
     const changed = state.session.revision > 0;
@@ -652,6 +789,7 @@
   elements.objectOpacity.addEventListener('change', () => run(() => updateSelectedObject({ opacity: Number(elements.objectOpacity.value || 100) / 100 })));
   elements.objectDelete.addEventListener('click', () => run(deleteSelectedObject));
   elements.refresh.addEventListener('click', () => run(() => rebuild()));
+  elements.exportPdf.addEventListener('click', () => run(exportFlattenedPdf));
   elements.exit.addEventListener('click', () => run(exitEditor));
 
   run(async () => {
