@@ -1,12 +1,46 @@
 # Central de Documentos — Status
 
-Última atualização: 15/09/2026
+Última atualização: 16/09/2026
 
 ## Fase atual
 
 **Fase 3 — Editor PDF essencial**
 
 Subfase atual: **3C.4 — Recortar, liberada após homologação humana da 3C.3 no PR #179**. O Organizar V2 e a 3C.3 (Escrever + Colar imagem, incluindo painel RGB arrastável) estão aceitos. Desenhar/Borracha permanece para 3C.5 e flatten/exportação local para 3C.6. **Não fazer merge nem escrever no Google Drive nesta fase.**
+
+## 3C.4 — confirmação/cancelamento explícitos do recorte — 16/09/2026
+
+Feedback humano:
+- a seleção da área precisava continuar **provisória** após o arraste;
+- o recorte só deve ser aplicado visualmente e entrar no histórico quando o usuário confirmar;
+- deve existir um botão **Confirmar recorte** e um botão **Cancelar** junto à seleção;
+- **Cancelar** deve descartar a seleção provisória sem alterar histórico;
+- ao confirmar, o preview deve mostrar somente a área mantida;
+- permanece a regra de **no máximo 1 recorte por página**.
+
+Estado implementado no PR #179:
+- branch `codex/central-docs-editor-superficie-unica`;
+- head funcional atual: `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`;
+- o viewer mantém `cropDrafts` locais, separados do `page.crop` confirmado;
+- o primeiro arraste cria apenas um draft e mostra **Confirmar recorte / Cancelar** abaixo da seleção; quando não houver espaço suficiente, a barra é reposicionada acima;
+- **Confirmar recorte** promove o draft a crop confirmado, dispara uma única mutação de histórico e aplica o viewport recortado no preview;
+- **Cancelar** remove o draft e restaura a página inteira ou o crop confirmado anterior, sem criar histórico;
+- crop já confirmado aparece com ações **Ajustar** e ↺; **Ajustar** reabre uma cópia provisória e exige nova confirmação;
+- os botões usam Pointer Events + click para permanecerem confiáveis em touch;
+- a materialização definitiva no PDF exportado continua reservada à 3C.6; nesta subfase o crop permanece metadado reversível associado ao `pageId`.
+
+Validação:
+- head `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`;
+- **25/25 checks verdes**;
+- Cloudflare Pages: sucesso;
+- workflow de navegador/PDF.js em Chromium: sucesso;
+- testes cobrem draft, cancelar sem histórico, confirmar com viewport recortado, reedição + cancelamento, Undo/Redo, CropBox não padrão, reordenação, rotações e touch;
+- PR #179 continua aberto e sem merge;
+- `main`, produção e Google Drive permanecem intocados.
+
+**Gate atual:** falta somente homologação humana desta UX final da 3C.4. Não iniciar 3C.5 antes do aceite.
+
+**Próxima ação exata:** abrir o alias de staging da branch, criar uma seleção, conferir os botões **Confirmar recorte** e **Cancelar**, testar cancelamento sem efeito, confirmar e verificar que só a área selecionada permanece visível; depois usar **Ajustar**, cancelar e confirmar novamente. Se aprovado, encerrar 3C.4 e iniciar 3C.5 — Desenhar/Borracha.
 
 ## 3C.4 — correção de UX após homologação humana — 16/09/2026
 
@@ -72,22 +106,22 @@ Pendência / risco atual:
 Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Fase atual:** Fase 3 — Editor PDF essencial.
-- **Subfase atual:** **3C.4 — Recortar**, tecnicamente corrigida após feedback humano e aguardando novo aceite visual/tátil.
-- **Última ação concluída:** removido o recorte visual predefinido. Agora `crop: null` significa página inteira, sem moldura nem máscara; o primeiro arraste explícito sobre a página cria a seleção.
-- **Regra funcional vigente:** no máximo **1 recorte por página**. Depois de criado, a mesma moldura pode ser movida/redimensionada/removida; novo arraste fora dela não cria segundo recorte.
+- **Subfase atual:** **3C.4 — Recortar**, com seleção provisória + confirmação/cancelamento implementados; falta somente homologação humana final.
+- **Última ação concluída:** a seleção de crop foi separada do crop confirmado. O arraste cria draft; **Confirmar recorte** aplica e registra; **Cancelar** descarta sem histórico.
+- **Regra funcional vigente:** no máximo **1 recorte por página**. Crop confirmado pode ser reaberto por **Ajustar** como draft e exige nova confirmação.
 - **Branch atual:** `codex/central-docs-editor-superficie-unica`.
 - **PR atual:** #179 — aberto, mergeável e sem merge.
-- **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, mantida intacta.
-- **Último commit funcional relevante:** `ca7801df7d6042a3d111a2185c21bd82b12923c8`.
-- **Validação do runtime:** **25/25 checks verdes** no commit funcional; workflow de navegador e etapa Playwright concluíram com sucesso.
-- **Cobertura nova:** estado inicial sem crop, criação por drag, bloqueio da segunda seleção na mesma página, resize, Undo/Redo, rotações, duplicação, reordenação, CropBox não padrão e touch.
-- **Documentação:** status e homologação atualizados com a decisão e justificativa.
-- **Decisão arquitetural mantida:** o crop continua sendo metadado local/reversível associado ao `pageId`; só será materializado no PDF final na 3C.6.
-- **Ações externas concluídas:** preview da branch continua sendo publicado no Cloudflare Pages; staging deve permanecer com dados fictícios enquanto Access estiver pendente.
-- **Pendências/bloqueios:** somente novo aceite humano da UX de criação explícita. Nenhum bloqueio técnico conhecido.
-- **Riscos conhecidos:** gesto touch físico ainda merece conferência humana; não confundir preview sintético com documento institucional.
-- **Não fazer ainda:** merge, alteração da main, deploy de produção, escrita no Drive, 3C.5 ou 3C.6 antes do aceite da 3C.4.
-- **Próxima ação exata:** abrir o alias `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, entrar em **Recortar**, confirmar que a página começa inteira e sem moldura, arrastar uma área, tentar criar uma segunda na mesma página e confirmar o bloqueio, ajustar a moldura existente e testar ↺/Undo/Redo. Com aprovação, encerrar 3C.4 e iniciar **3C.5 — Desenhar/Borracha**.
+- **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, intacta.
+- **Head funcional validado:** `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`.
+- **Checks/testes:** **25/25 checks verdes**; workflow PDF.js/Chromium verde; testes de draft, confirmar/cancelar, viewport aplicado, Undo/Redo, CropBox, reordenação, rotação e touch aprovados.
+- **Decisões tomadas:** draft fica apenas no viewer; `page.crop` continua sendo a fonte do crop confirmado. Cancelar nunca altera histórico. Confirmar faz uma única mutação.
+- **Justificativa:** evita corte acidental e dá ao usuário controle explícito antes de alterar a página visualmente.
+- **Alternativa descartada:** aplicar o crop automaticamente ao soltar o gesto; foi rejeitada na homologação humana por falta de etapa explícita de confirmação.
+- **Ações externas concluídas:** staging da branch publicado no Cloudflare Pages com dados fictícios.
+- **Pendências/bloqueios:** apenas teste humano do novo fluxo.
+- **Riscos conhecidos:** confirmar ergonomia dos botões em desktop e aparelho touch real; staging continua fictício enquanto Cloudflare Access estiver pendente.
+- **Não fazer ainda:** merge, alteração da main, produção, escrita no Drive, 3C.5 ou 3C.6 antes do aceite.
+- **Próxima ação exata:** testar no alias da branch: selecionar → Cancelar; selecionar → Confirmar; Ajustar → Cancelar; Ajustar → Confirmar; depois Undo/Redo. Com aprovação, encerrar 3C.4 e iniciar 3C.5.
 - **Arquivos/fontes principais:** `js/document-viewer.js`, `js/document-editor.js`, `js/documents.js`, `css/documents.css`, `testing/browser/central-docs-crop.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md` e este status.
 
 ## 3C.3 — aceite humano final e encerramento — 15/09/2026
