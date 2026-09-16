@@ -106,7 +106,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260915-20'/);
+  assert.match(source, /CACHE_VERSION = '20260915-21'/);
 });
 
 test('observabilidade documental continua sem propriedades identificáveis', () => {
@@ -134,7 +134,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260915-8/);
+  assert.match(html, /documents\.js\?v=20260915-9/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -192,8 +192,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260915-20/);
-  assert.match(html, /documents\.js\?v=20260915-8/);
+  assert.match(html, /document-viewer\.js\?v=20260915-21/);
+  assert.match(html, /documents\.js\?v=20260915-9/);
   assert.match(html, /documents\.css\?v=20260915-9/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
@@ -266,8 +266,8 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260915-20/);
-  assert.match(html, /documents\.js\?v=20260915-8/);
+  assert.match(html, /document-viewer\.js\?v=20260915-21/);
+  assert.match(html, /documents\.js\?v=20260915-9/);
   assert.match(html, /documents\.css\?v=20260915-9/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -385,8 +385,8 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.doesNotMatch(html, /id="editorWriteButton"[^>]*disabled/);
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
-  assert.match(html, /document-editor\.js\?v=20260915-4/);
-  assert.match(html, /documents\.js\?v=20260915-8/);
+  assert.match(html, /document-editor\.js\?v=20260915-5/);
+  assert.match(html, /documents\.js\?v=20260915-9/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -405,7 +405,7 @@ test('editor PDF é local, reversível e separado da escrita no Drive', () => {
   const client = read('js/documents.js');
   const editor = read('js/document-editor.js');
 
-  assert.match(html, /document-editor\.js\?v=20260915-4/);
+  assert.match(html, /document-editor\.js\?v=20260915-5/);
   assert.match(html, /Editar PDF/);
   assert.match(html, /id="editorExitButton"/);
   assert.match(editor, /\/vendor\/pdf-lib\/pdf-lib\.min\.js/);
@@ -584,4 +584,15 @@ test('3C.4 mantém objetos reversíveis, habilita Recortar e mantém Desenhar bl
   assert.match(viewer, /data-crop-resize/);
   assert.match(css, /\.portal-pdf-crop-layer/);
   assert.match(css, /\.portal-pdf-crop-frame/);
+
+  // Review regressions: natural image ratio, rotated local-axis resize and
+  // cancellation-safe color preview.
+  const client = read('js/documents.js');
+  assert.match(editor, /function displayPageAspectRatio\(/);
+  assert.match(editor, /width \* \(pageAspectRatio > 0 \? pageAspectRatio : 1\) \/ aspectRatio/);
+  assert.doesNotMatch(client, /addImageOverlay\([\s\S]{0,220}height:\s*\.22/);
+  assert.match(viewer, /const localDx =/);
+  assert.match(viewer, /const localDy =/);
+  assert.match(viewer, /drag\.start\.width \+ localDx/);
+  assert.match(viewer, /plane\.addEventListener\('pointercancel',[\s\S]{0,700}startColor[\s\S]{0,700}previewQuickbarColor/);
 });
