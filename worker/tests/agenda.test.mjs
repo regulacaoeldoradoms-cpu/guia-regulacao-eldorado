@@ -41,7 +41,7 @@ test('backend da Agenda exige sessão e capacidade Telemedicina', () => {
 test('Agenda não carrega observabilidade em uma tela que contém nomes de pacientes', () => {
   const html = read('agenda/index.html');
   assert.match(html, /Agenda DigSaúde/);
-  assert.match(html, /js\/agenda\.js\?v=20260916-2/);
+  assert.match(html, /js\/agenda\.js\?v=20260916-3/);
   assert.doesNotMatch(html, /portal-observability|posthog|umami/i);
   assert.doesNotMatch(html, /portal-performance\.js/);
 });
@@ -175,4 +175,20 @@ test('Agenda acompanha somente itens ainda presentes em Agendados por padrão', 
   assert.match(backend, /active: false/);
   assert.match(backend, /removedAt: now/);
   assert.match(html, /Mostrar removidos da aba Agendados/);
+});
+
+
+test('Agenda permite ordenar agendamentos do mais próximo ao mais distante e vice-versa', () => {
+  const html = read('agenda/index.html');
+  const source = read('js/agenda.js');
+
+  assert.match(html, /id="agendaOrder"/);
+  assert.match(html, /Agendamento mais próximo/);
+  assert.match(html, /Agendamento mais distante/);
+  assert.match(source, /function compareAppointment/);
+  assert.match(source, /els\.order\?\.value === 'desc' \? -1 : 1/);
+  assert.match(source, /appointmentDate/);
+  assert.match(source, /appointmentTime/);
+  assert.match(source, /\.sort\(compareAppointment\)/);
+  assert.match(source, /els\.order\.addEventListener\('change', render\)/);
 });
