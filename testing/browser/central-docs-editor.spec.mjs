@@ -140,7 +140,14 @@ test.describe('Central de Documentos — superfície única do editor', () => {
       '/assets/editor-pdf-buttons/ajustar-largura.svg',
       '/assets/editor-pdf-buttons/grade-ativa.svg',
       '/assets/editor-pdf-buttons/grade-inativa.svg',
-      '/assets/editor-pdf-buttons/atualizar.svg',
+      '/assets/Unir_PDF.png',
+      '/assets/Inserir_pagina_branca.png',
+      '/assets/Adicionar_imagem.png',
+      '/assets/Recortar_pagina.png',
+      '/assets/Selecionar_mover.png',
+      '/assets/Escrever.png',
+      '/assets/Colar_imagem.png',
+      '/assets/Desenhar.png',
       '/assets/editor-pdf-buttons/salvar-pdf.svg',
       '/assets/editor-pdf-buttons/imprimir-normal.svg',
       '/assets/editor-pdf-buttons/fechar.svg'
@@ -152,10 +159,26 @@ test.describe('Central de Documentos — superfície única do editor', () => {
       expect((await response.body()).byteLength).toBeGreaterThan(100);
     }
 
-    for (const selector of ['#zoomOut', '#zoomIn', '#fitWidth', '#editorOrganize', '#editorRefresh', '#editorExport', '#editorPrint', '#editorExit']) {
+    for (const selector of ['#zoomOut', '#zoomIn', '#fitWidth', '#editorOrganize', '#editorExport', '#editorPrint', '#editorExit']) {
       const background = await page.locator(selector).evaluate((node) => getComputedStyle(node).backgroundImage);
       expect(background).toContain('/assets/editor-pdf-buttons/');
     }
+
+    const toolIcons = [
+      ['#editorMerge', 'Unir_PDF.png'],
+      ['#editorBlank', 'Inserir_pagina_branca.png'],
+      ['#editorAddImage', 'Adicionar_imagem.png'],
+      ['#editorCrop', 'Recortar_pagina.png'],
+      ['#editorSelect', 'Selecionar_mover.png'],
+      ['#editorWrite', 'Escrever.png'],
+      ['#editorOverlayImage', 'Colar_imagem.png'],
+      ['#editorDraw', 'Desenhar.png']
+    ];
+    for (const [selector, filename] of toolIcons) {
+      const background = await page.locator(selector).evaluate((node) => getComputedStyle(node).backgroundImage);
+      expect(background).toContain('/assets/' + filename);
+    }
+    await expect(page.locator('#editorRefresh')).toHaveCount(0);
 
     const organizeBackground = await page.locator('#editorOrganize').evaluate((node) => getComputedStyle(node).backgroundImage);
     expect(organizeBackground).toContain('grade-ativa.svg');
@@ -398,7 +421,7 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     const zoomBefore = (await page.locator('#zoomReset').textContent())?.trim() || '';
     expect(zoomBefore).toMatch(/%/);
 
-    await page.locator('#editorRefresh').click();
+    await page.evaluate(() => window.CentralDocsEditorHarness.refreshForTest());
     await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
     await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
     await expect(page.locator('#zoomReset')).toHaveText(zoomBefore);
