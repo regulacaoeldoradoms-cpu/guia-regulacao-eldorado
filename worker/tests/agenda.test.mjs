@@ -163,3 +163,16 @@ test('memória de visualização é persistida fora do documento sincronizado', 
   assert.doesNotMatch(markBlock, /readBy:/);
   assert.doesNotMatch(syncBlock, /READ_STATE_COLLECTION/);
 });
+
+
+test('Agenda acompanha somente itens ainda presentes em Agendados por padrão', () => {
+  const frontend = read('js/agenda.js');
+  const backend = read('worker/agenda.js');
+  const html = read('agenda/index.html');
+
+  assert.match(frontend, /if \(!record\.active && !els\.includeInactive\.checked\) return false/);
+  assert.match(backend, /if \(complete\) \{/);
+  assert.match(backend, /active: false/);
+  assert.match(backend, /removedAt: now/);
+  assert.match(html, /Mostrar removidos da aba Agendados/);
+});
