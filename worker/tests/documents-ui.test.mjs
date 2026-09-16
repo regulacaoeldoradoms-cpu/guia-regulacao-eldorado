@@ -565,7 +565,7 @@ test('permissão de edição é explícita e não é herdada automaticamente de 
 
   assert.match(html, /editDocumentPdfPermission/);
   assert.match(html, /Permitir editor de PDF/);
-  assert.match(html, /salvar no Drive continua indisponível nesta fase/);
+  assert.match(html, /inclui sincronização segura com o Drive quando habilitada no ambiente/);
   assert.match(client, /documentCapabilities\?\.edit/);
   assert.match(client, /\/api\/documents\/admin\/access\//);
   assert.match(client, /edit: regulatorEnabled === true && allowEdit === true/);
