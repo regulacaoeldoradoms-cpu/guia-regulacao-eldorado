@@ -1,0 +1,46 @@
+name: Validar Agenda DigSaúde V1
+
+on:
+  pull_request:
+    paths:
+      - 'agenda/**'
+      - 'css/agenda.css'
+      - 'js/agenda.js'
+      - 'js/agenda-sync-bridge.js'
+      - 'js/tools-catalog.js'
+      - 'worker/agenda.js'
+      - 'worker/index.js'
+      - 'worker/tests/agenda.test.mjs'
+      - 'docs/AGENDA-DIGSAUDE*.md'
+      - '.github/workflows/validate-agenda.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'agenda/**'
+      - 'css/agenda.css'
+      - 'js/agenda.js'
+      - 'js/agenda-sync-bridge.js'
+      - 'js/tools-catalog.js'
+      - 'worker/agenda.js'
+      - 'worker/index.js'
+      - 'worker/tests/agenda.test.mjs'
+      - 'docs/AGENDA-DIGSAUDE*.md'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validar sintaxe
+        shell: bash
+        run: |
+          node --check js/agenda.js
+          node --check js/agenda-sync-bridge.js
+          node --check agenda/digsaude-agenda-sync.user.js
+          node --input-type=module --check < worker/agenda.js
+          node --input-type=module --check < worker/index.js
+      - name: Executar testes da Agenda
+        run: node --test worker/tests/agenda.test.mjs
