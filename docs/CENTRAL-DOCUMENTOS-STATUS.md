@@ -8,6 +8,36 @@
 
 Subfase atual: **3C.4 — Recortar, liberada após homologação humana da 3C.3 no PR #179**. O Organizar V2 e a 3C.3 (Escrever + Colar imagem, incluindo painel RGB arrastável) estão aceitos. Desenhar/Borracha permanece para 3C.5 e flatten/exportação local para 3C.6. **Não fazer merge nem escrever no Google Drive nesta fase.**
 
+## 3C.4 — implementação técnica concluída; homologação humana pendente — 16/09/2026
+
+Este bloco prevalece sobre o handoff anterior da 3C.4.
+
+- **Main:** permanece em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`; não foi alterada.
+- **Branch:** `codex/central-docs-editor-superficie-unica`.
+- **PR:** #179 continua aberto, mergeável e sem merge.
+- **Head funcional validado:** `c19d664bd2b2b5feb5176290ecbb98a082ce6276`.
+- **Recortar:** implementado na própria superfície PDF.js com retângulo normalizado por página/`pageId`, preview imediato, oito alças de recorte, movimentação da moldura, reset por página e um único commit ao fim do gesto.
+- **Semântica preservada:** crop acompanha reorganização, duplicação, exclusão e rotações 0/90/180/270°; `CropBox` não padrão é respeitado pela superfície visível.
+- **Histórico:** Undo/Redo restaura o crop; o modo continua local e reversível e **não** rasteriza nem materializa o recorte no PDF durante a edição.
+- **Desktop/mobile:** gesto por Pointer Events validado com mouse e touch sintético.
+- **Correções de revisão da 3C.3 incorporadas no mesmo head:** proporção natural de imagem overlay, resize de objeto rotacionado no sistema local e cancelamento de preview de cor sem edição silenciosa.
+- **Review:** 11/11 threads do PR #179 estão resolvidos após resposta com evidência.
+- **CI:** 24/24 workflows verdes no head funcional; Playwright executou 58 casos, com **56 passed / 2 skipped esperados** (casos touch-only no projeto desktop).
+- **Segurança:** nenhuma escrita no Google Drive, nenhuma alteração de produção/main, nenhuma rota de persistência nova e nenhuma telemetria de conteúdo documental.
+
+Decisões e justificativas:
+- o crop permanece como metadado reversível da sessão até a 3C.6; materializá-lo agora no PDF criaria perda prematura de reversibilidade e misturaria escopos;
+- a proporção de imagem usa dimensões naturais + proporção visível da página, descartando altura fixa que distorcia retrato/paisagem;
+- resize após rotação usa delta transformado pela inversa da rotação, descartando cálculo direto em coordenadas de tela;
+- `pointercancel` do seletor RGB restaura a cor inicial, descartando a alternativa de deixar preview sem entrada de histórico.
+
+Pendência / risco atual:
+- falta **homologação humana visual e tátil da 3C.4** no preview sintético; automação não substitui a percepção de ergonomia da moldura e alças;
+- flatten/exportação ainda não aplica crop nem objetos ao PDF final — isso continua reservado à 3C.6;
+- Cloudflare Access segue pendente, portanto o staging deve continuar apenas com dados fictícios.
+
+**Próxima ação exata:** abrir o alias de staging da branch, testar Recortar em pelo menos duas páginas (incluindo a página paisagem/CropBox), mover e redimensionar a moldura, testar Undo/Redo e alternar para Organizar para confirmar que o recorte acompanha giro/reordenação. Se o usuário aprovar, registrar o fechamento da 3C.4 e iniciar **3C.5 — Desenhar/Borracha**, mantendo o PR sem merge e sem escrita no Drive.
+
 ## Handoff para o próximo chat — 3C.4, registro vigente
 
 Este bloco prevalece sobre os handoffs históricos abaixo.
