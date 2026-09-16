@@ -1054,8 +1054,7 @@
       if (session !== state.editorSession) return false;
       const activePage = Math.max(1, Number(currentViewerState()?.activePage || 1));
       const id = await window.PortalPdfEditor.addImageOverlay(session, activePage - 1, normalized, {
-        width: .3,
-        height: .22
+        width: .3
       });
       if (!id || session !== state.editorSession) return false;
       state.selectedObjectId = id;
