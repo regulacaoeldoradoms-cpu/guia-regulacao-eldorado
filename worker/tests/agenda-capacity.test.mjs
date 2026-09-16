@@ -76,3 +76,17 @@ test('interface prepara alerta e WhatsApp sem envio automático', () => {
   assert.match(source, /Abrir WhatsApp do suporte/);
   assert.doesNotMatch(html, /portal-observability|posthog|umami/i);
 });
+
+
+test('cards com 2 de 2 salas recebem destaque amarelo completo', () => {
+  const source = read('js/agenda.js');
+  const css = read('css/agenda.css');
+  const html = read('agenda/index.html');
+
+  assert.match(source, /occupancy === state\.capacity\.roomCapacity \? 'is-capacity-full' : ''/);
+  assert.match(css, /\.agenda-card\.is-capacity-full/);
+  assert.match(css, /background: #fff2ad/);
+  assert.match(css, /border-color: #e0a400/);
+  assert.match(html, /css\/agenda\.css\?v=20260916-5/);
+  assert.match(html, /js\/agenda\.js\?v=20260916-3\.2/);
+});
