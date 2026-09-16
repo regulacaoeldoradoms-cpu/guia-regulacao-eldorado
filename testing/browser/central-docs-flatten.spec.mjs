@@ -40,6 +40,26 @@ test.describe('Central de Documentos — 3C.6 flatten/exportação local', () =>
     expect(errors).toEqual([]);
   });
 
+
+  test('cobre 0/90/180/270, duplicação, reordenação e crop na saída final', async ({ page }) => {
+    await openEditor(page);
+    const diagnostics = await page.evaluate(() => window.CentralDocsEditorHarness.flattenRotationDiagnostics());
+
+    expect(diagnostics.pageModel.map((item) => item.sourcePage)).toEqual([1, 2, 3, 1]);
+    expect(diagnostics.pageModel.map((item) => item.rotation)).toEqual([0, 90, 90, 270]);
+
+    expect(diagnostics.structural.pages.map((item) => item.rotation)).toEqual([0, 90, 180, 270]);
+    expect(diagnostics.flattened.pages.map((item) => item.rotation)).toEqual([0, 90, 180, 270]);
+
+    for (const [index, label] of ['ROT0', 'ROT90', 'ROT180', 'ROT270'].entries()) {
+      expect(diagnostics.structural.pages[index].text).not.toContain(label);
+      expect(diagnostics.flattened.pages[index].text).toContain(label);
+    }
+
+    expect(diagnostics.flattened.pages[3].width).toBeLessThan(diagnostics.structural.pages[3].width);
+    expect(diagnostics.flattened.pages[3].height).toBeLessThan(diagnostics.structural.pages[3].height);
+  });
+
   test('botão Exportar gera download local sem sair do editor', async ({ page }) => {
     await openEditor(page);
     await page.evaluate(() => window.CentralDocsEditorHarness.seedFlattenFixture());
