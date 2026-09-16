@@ -82,3 +82,33 @@ test('sincronização da Agenda usa leitura única e commits em lote para não e
   assert.match(gateway, /documents:commit/);
   assert.match(gateway, /500 gravações por commit/);
 });
+
+
+test('sincronizador automático consulta Agendados em segundo plano a cada 15 minutos', () => {
+  const source = read('agenda/digsaude-agenda-sync.user.js');
+  assert.match(source, /@version\s+1\.1\.0/);
+  assert.match(source, /AUTO_INTERVAL_MS = 15 \* 60 \* 1000/);
+  assert.match(source, /fetch\(agendadosUrl\(\)/);
+  assert.match(source, /credentials: 'include'/);
+  assert.match(source, /cache: 'no-store'/);
+  assert.match(source, /new DOMParser\(\)/);
+  assert.match(source, /Ativar sincronização automática/);
+  assert.match(source, /@updateURL\s+https:\/\/regulacaoeldoradoms\.com\.br\/agenda\/digsaude-agenda-sync\.user\.js/);
+  assert.doesNotMatch(source, /document\.cookie|localStorage|sessionStorage|csrf|authorization|bearer/i);
+});
+
+test('ponte da Agenda permanece aberta e aceita sincronizações repetidas com deduplicação', () => {
+  const source = read('js/agenda-sync-bridge.js');
+  assert.match(source, /lastSyncId/);
+  assert.match(source, /syncId === lastSyncId/);
+  assert.match(source, /Sincronização automática conectada/);
+  assert.doesNotMatch(source, /window\.close\(/);
+  assert.doesNotMatch(source, /completed\s*=\s*true/);
+});
+
+test('backend aceita snapshot completo vazio sem aceitar vazio ambíguo', () => {
+  const source = read('worker/agenda.js');
+  assert.match(source, /verifiedEmptySnapshot/);
+  assert.match(source, /declaredComplete && expectedTotal === 0 && rows\.length === 0/);
+  assert.match(source, /!rows\.length && !verifiedEmptySnapshot/);
+});
