@@ -52,6 +52,9 @@
     selectedObjectId: '',
     editorColorPalette: [...DEFAULT_EDITOR_COLOR_PALETTE],
     editorColorGesture: null,
+    editorDrawTool: 'draw',
+    editorDrawColor: '#111111',
+    editorDrawWidth: 4,
     editorPaletteWriteChain: Promise.resolve(),
     editorPaletteWriteGeneration: 0,
     pendingMergeItem: null
@@ -109,6 +112,11 @@
     editorOverlayImage: document.getElementById('editorOverlayImageButton'),
     editorOverlayImageInput: document.getElementById('editorOverlayImageInput'),
     editorDraw: document.getElementById('editorDrawButton'),
+    editorDrawToolbar: document.getElementById('editorDrawToolbar'),
+    editorDrawColor: document.getElementById('editorDrawColor'),
+    editorDrawWidth: document.getElementById('editorDrawWidth'),
+    editorDrawPen: document.getElementById('editorDrawPen'),
+    editorDrawEraser: document.getElementById('editorDrawEraser'),
     editorImageInput: document.getElementById('editorImageInput'),
     editorObjectToolbar: document.getElementById('editorObjectToolbar'),
     editorObjectFontField: document.getElementById('editorObjectFontField'),
@@ -443,6 +451,42 @@
     if (els.editorObjectOpacity) els.editorObjectOpacity.value = String(Math.round((object.opacity ?? 1) * 100));
   }
 
+  function editorDrawWidthNormalized() {
+    return Math.min(0.05, Math.max(0.001, Number(state.editorDrawWidth || 4) / 760));
+  }
+
+  function syncEditorStrokes() {
+    const session = state.editorSession;
+    const editor = window.PortalPdfEditor;
+    const viewer = window.PortalPdfViewer;
+    if (!session || !editor?.strokeModel || !viewer?.setEditorStrokes) return false;
+    const mode = state.editorMode === 'draw' && state.editorDrawTool === 'erase' ? 'erase'
+      : state.editorMode === 'draw' ? 'draw'
+        : 'none';
+    return viewer.setEditorStrokes(editor.strokeModel(session), {
+      mode,
+      color: state.editorDrawColor,
+      width: editorDrawWidthNormalized(),
+      onStrokeCommit(pageIndex, stroke) {
+        if (session !== state.editorSession) return;
+        const id = editor.addStroke?.(session, pageIndex, stroke?.points, {
+          color: stroke?.color || state.editorDrawColor,
+          width: stroke?.width || editorDrawWidthNormalized()
+        });
+        if (!id) return;
+        syncEditorControls();
+        syncEditorStrokes();
+      },
+      onEraseCommit(strokeIds) {
+        if (session !== state.editorSession) return;
+        const removed = editor.removeStrokes?.(session, strokeIds);
+        if (!removed) return;
+        syncEditorControls();
+        syncEditorStrokes();
+      }
+    });
+  }
+
   function syncEditorObjects() {
     const session = state.editorSession;
     const editor = window.PortalPdfEditor;
@@ -524,6 +568,7 @@
       });
     }
     syncEditorObjectToolbar();
+    syncEditorStrokes();
     return result;
   }
 
@@ -558,8 +603,24 @@
       els.editorOverlayImage.classList.toggle('active', next === 'image');
       els.editorOverlayImage.setAttribute('aria-pressed', next === 'image' ? 'true' : 'false');
     }
+    if (els.editorDraw) {
+      els.editorDraw.classList.toggle('active', next === 'draw');
+      els.editorDraw.setAttribute('aria-pressed', next === 'draw' ? 'true' : 'false');
+    }
+    if (els.editorDrawToolbar) els.editorDrawToolbar.hidden = next !== 'draw';
+    if (els.editorDrawPen) {
+      const active = next === 'draw' && state.editorDrawTool === 'draw';
+      els.editorDrawPen.classList.toggle('active', active);
+      els.editorDrawPen.setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
+    if (els.editorDrawEraser) {
+      const active = next === 'draw' && state.editorDrawTool === 'erase';
+      els.editorDrawEraser.classList.toggle('active', active);
+      els.editorDrawEraser.setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
     if (els.editorMergePanel) els.editorMergePanel.hidden = next !== 'merge';
     syncEditorObjects();
+    syncEditorStrokes();
   }
 
   function syncEditorControls() {
@@ -578,6 +639,11 @@
     if (els.editorWrite) els.editorWrite.disabled = busy || !session;
     if (els.editorOverlayImage) els.editorOverlayImage.disabled = busy || !session;
     if (els.editorOverlayImageInput) els.editorOverlayImageInput.disabled = busy || !session;
+    if (els.editorDraw) els.editorDraw.disabled = busy || !session;
+    if (els.editorDrawColor) els.editorDrawColor.disabled = busy || !session;
+    if (els.editorDrawWidth) els.editorDrawWidth.disabled = busy || !session;
+    if (els.editorDrawPen) els.editorDrawPen.disabled = busy || !session;
+    if (els.editorDrawEraser) els.editorDrawEraser.disabled = busy || !session;
     if (els.editorObjectDelete) els.editorObjectDelete.disabled = busy || !selectedEditorObject();
     els.editorPreview.disabled = busy || !session;
     if (els.editorMergeApply) els.editorMergeApply.disabled = busy || !session || !state.pendingMergeItem;
@@ -757,6 +823,7 @@
     const viewState = currentViewerState();
     window.PortalPdfViewer?.setEditorObjects?.([], { mode: 'none', selectedObjectId: '' });
     window.PortalPdfViewer?.setEditorCrops?.([], { mode: 'none' });
+    window.PortalPdfViewer?.setEditorStrokes?.([], { mode: 'none' });
     clearEditorPreview();
     state.editorColorGesture = null;
     state.editorSession = null;
@@ -1026,7 +1093,7 @@
     if (!state.editorSession || state.editorBusy) return;
     state.selectedObjectId = '';
     setEditorWorkspaceMode('crop');
-    setEditorStatus('Recortar: arraste diretamente sobre a página para selecionar uma única área de recorte. Sem seleção, a página permanece inteira. Depois, mova a moldura ou use as alças; ↺ remove o recorte.', 'success');
+    setEditorStatus('Recortar: arraste sobre a página, ajuste a seleção e use Confirmar recorte ou Cancelar. Só após confirmar o preview mostra apenas a área mantida; ↺ restaura a página.', 'success');
   }
 
   function startSelectObjects() {
@@ -1039,6 +1106,20 @@
     if (!state.editorSession || state.editorBusy) return;
     setEditorWorkspaceMode('write');
     setEditorStatus('Escrever: clique em uma página para criar uma caixa de texto. Dê duplo clique no texto para editar.', 'success');
+  }
+
+  function startDrawMode(tool = 'draw') {
+    if (!state.editorSession || state.editorBusy) return;
+    state.selectedObjectId = '';
+    state.editorDrawTool = tool === 'erase' ? 'erase' : 'draw';
+    setEditorWorkspaceMode('draw');
+    syncEditorControls();
+    setEditorStatus(
+      state.editorDrawTool === 'erase'
+        ? 'Borracha: arraste sobre traços criados pela ferramenta Desenhar. O conteúdo original do PDF e outros objetos não são alterados.'
+        : 'Caneta: desenhe livremente sobre a página. Cor e espessura ficam salvas por traço; cada gesto pode ser desfeito/refeito.',
+      'success'
+    );
   }
 
   async function addOverlayImageFile(file) {
@@ -2099,6 +2180,19 @@
   els.editorCrop?.addEventListener('click', startCropPages);
   els.editorSelect?.addEventListener('click', startSelectObjects);
   els.editorWrite?.addEventListener('click', startWriteObjects);
+  els.editorDraw?.addEventListener('click', () => startDrawMode('draw'));
+  els.editorDrawPen?.addEventListener('click', () => startDrawMode('draw'));
+  els.editorDrawEraser?.addEventListener('click', () => startDrawMode('erase'));
+  els.editorDrawColor?.addEventListener('input', () => {
+    state.editorDrawColor = /^#[0-9a-f]{6}$/i.test(String(els.editorDrawColor.value || ''))
+      ? String(els.editorDrawColor.value).toLowerCase()
+      : '#111111';
+    syncEditorStrokes();
+  });
+  els.editorDrawWidth?.addEventListener('input', () => {
+    state.editorDrawWidth = Math.max(1, Math.min(20, Number(els.editorDrawWidth.value || 4)));
+    syncEditorStrokes();
+  });
   els.editorOverlayImage?.addEventListener('click', () => {
     if (!state.editorSession || state.editorBusy) return;
     setEditorWorkspaceMode('image');
