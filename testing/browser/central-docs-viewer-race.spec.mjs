@@ -133,8 +133,12 @@ test.describe('Central de Documentos — concorrência de abertura do visualizad
 
         while (performance.now() < deadline) {
           const current = snapshot();
-          const allPagesRendered = pagesRoot.querySelectorAll('.portal-pdf-page.rendered').length === expectedPageCount;
-          const allThumbsRendered = thumbnailsRoot.querySelectorAll('.portal-pdf-thumb.rendered').length === expectedPageCount;
+          const activePageRendered = Boolean(
+            pagesRoot.querySelector(`.portal-pdf-page[data-page-number="${expectedActivePage}"].rendered`)
+          );
+          const activeThumbRendered = Boolean(
+            thumbnailsRoot.querySelector(`.portal-pdf-thumb[data-page-number="${expectedActivePage}"].rendered`)
+          );
           const signature = JSON.stringify({
             activePage: current.activePage,
             owner: current.owner,
@@ -143,8 +147,12 @@ test.describe('Central de Documentos — concorrência de abertura do visualizad
             scrollTop: current.scrollTop,
             canvasState: current.canvasState
           });
-          const ready = allPagesRendered
-            && allThumbsRendered
+          // The viewer is intentionally lazy. A concurrency test must wait for the
+          // winning active page to settle, not force every offscreen page to render.
+          const ready = activePageRendered
+            && activeThumbRendered
+            && current.pages.length === expectedPageCount
+            && current.thumbs.length === expectedPageCount
             && current.activePage === String(expectedActivePage);
 
           if (ready && signature === previousSignature) {
