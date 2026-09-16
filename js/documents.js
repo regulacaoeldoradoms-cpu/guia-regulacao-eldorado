@@ -60,7 +60,10 @@
     pendingMergeItem: null,
     pendingMergeFiles: [],
     mergePreviewUrls: [],
-    mergePreviewGeneration: 0
+    mergePreviewGeneration: 0,
+    finalPdfCacheSession: null,
+    finalPdfCacheRevision: -1,
+    finalPdfCacheBlob: null
   };
 
   const els = {
@@ -838,6 +841,9 @@
     window.PortalPdfViewer?.setEditorStrokes?.([], { mode: 'none' });
     clearEditorPreview();
     state.editorColorGesture = null;
+    state.finalPdfCacheSession = null;
+    state.finalPdfCacheRevision = -1;
+    state.finalPdfCacheBlob = null;
     state.editorSession = null;
     state.pendingMergeItem = null;
     state.pendingMergeFiles = [];
@@ -917,6 +923,28 @@
     return base + '-editado.pdf';
   }
 
+  async function finalPdfBlobForSession(session) {
+    const editor = window.PortalPdfEditor;
+    if (!session || typeof editor?.buildFlattenedBlob !== 'function') return null;
+
+    const revision = Number(session.revision || 0);
+    if (
+      state.finalPdfCacheSession === session
+      && state.finalPdfCacheRevision === revision
+      && state.finalPdfCacheBlob instanceof Blob
+    ) {
+      return state.finalPdfCacheBlob;
+    }
+
+    const blob = await editor.buildFlattenedBlob(session);
+    if (session === state.editorSession && Number(session.revision || 0) === revision) {
+      state.finalPdfCacheSession = session;
+      state.finalPdfCacheRevision = revision;
+      state.finalPdfCacheBlob = blob;
+    }
+    return blob;
+  }
+
   async function exportEditedPdfLocal() {
     const editor = window.PortalPdfEditor;
     const session = state.editorSession;
@@ -926,8 +954,8 @@
     setEditorStatus('Gerando PDF final localmente…');
     let url = '';
     try {
-      const blob = await editor.buildFlattenedBlob(session);
-      if (session !== state.editorSession) return false;
+      const blob = await finalPdfBlobForSession(session);
+      if (!(blob instanceof Blob) || session !== state.editorSession) return false;
       url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -964,10 +992,27 @@
     return !nonEditingTypes.has(type);
   }
 
-  async function renderPdfBlobForPrint(blob, printWindow) {
-    if (!(blob instanceof Blob) || !printWindow) return false;
+  function ensurePrintFrame() {
+    let frame = document.querySelector('iframe.documents-print-frame[data-central-print-frame="true"]');
+    if (frame) return frame;
+    frame = document.createElement('iframe');
+    frame.className = 'documents-print-frame';
+    frame.dataset.centralPrintFrame = 'true';
+    frame.title = 'Área temporária de impressão do PDF final';
+    frame.setAttribute('aria-hidden', 'true');
+    frame.tabIndex = -1;
+    document.body.appendChild(frame);
+    return frame;
+  }
+
+  async function renderPdfBlobForPrint(blob, frame) {
+    if (!(blob instanceof Blob) || !(frame instanceof HTMLIFrameElement)) return false;
     const pdfjs = await window.PortalPdfViewer?.loadPdfJs?.();
     if (!pdfjs) throw new Error('O mecanismo de impressão PDF.js não está disponível.');
+
+    const printWindow = frame.contentWindow;
+    const doc = frame.contentDocument;
+    if (!printWindow || !doc) throw new Error('Não foi possível preparar a área de impressão.');
 
     let loadingTask = null;
     let documentPdf = null;
@@ -980,51 +1025,59 @@
       });
       documentPdf = await loadingTask.promise;
 
-      const doc = printWindow.document;
       doc.open();
       doc.write('<!doctype html><html><head><meta charset="utf-8"><title>Imprimir PDF final</title><style>'
         + '@page{margin:0;}html,body{margin:0;padding:0;background:#fff;}'
-        + '.print-status{font:600 14px system-ui,sans-serif;padding:12px 16px;color:#294a63;background:#f2f7fa;}'
         + '.print-pages{margin:0;padding:0;}'
         + '.print-sheet{display:flex;align-items:center;justify-content:center;margin:0 auto;background:#fff;break-after:page;page-break-after:always;overflow:hidden;}'
         + '.print-sheet:last-child{break-after:auto;page-break-after:auto;}'
         + '.print-sheet canvas{display:block;width:100%;height:100%;}'
-        + '@media print{.print-status{display:none!important}.print-sheet{margin:0!important}}'
-        + '</style></head><body><div class="print-status">Preparando páginas para impressão…</div><main class="print-pages"></main></body></html>');
+        + '</style></head><body><main class="print-pages"></main></body></html>');
       doc.close();
 
       const container = doc.querySelector('.print-pages');
-      if (!container) throw new Error('Não foi possível preparar a área de impressão.');
+      if (!container) throw new Error('Não foi possível preparar as páginas para impressão.');
 
-      const maxPixels = 8_000_000;
-      for (let pageNumber = 1; pageNumber <= documentPdf.numPages; pageNumber += 1) {
-        const page = await documentPdf.getPage(pageNumber);
-        const base = page.getViewport({ scale: 1 });
-        const basePixels = Math.max(1, base.width * base.height);
-        const renderScale = Math.max(1, Math.min(2, Math.sqrt(maxPixels / basePixels)));
-        const viewport = page.getViewport({ scale: renderScale });
+      const pageJobs = Array.from({ length: documentPdf.numPages }, (_, index) => index + 1);
+      const concurrency = Math.min(3, Math.max(1, pageJobs.length));
+      let cursor = 0;
 
-        const sheet = doc.createElement('section');
-        sheet.className = 'print-sheet';
-        sheet.style.width = base.width + 'pt';
-        sheet.style.height = base.height + 'pt';
+      async function renderNext() {
+        while (cursor < pageJobs.length) {
+          const pageNumber = pageJobs[cursor];
+          cursor += 1;
+          const page = await documentPdf.getPage(pageNumber);
+          const base = page.getViewport({ scale: 1 });
+          const basePixels = Math.max(1, base.width * base.height);
+          const renderScale = Math.max(1, Math.min(1.5, Math.sqrt(4_000_000 / basePixels)));
+          const viewport = page.getViewport({ scale: renderScale });
 
-        const canvas = doc.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(viewport.width));
-        canvas.height = Math.max(1, Math.round(viewport.height));
-        sheet.appendChild(canvas);
-        container.appendChild(sheet);
+          const sheet = doc.createElement('section');
+          sheet.className = 'print-sheet';
+          sheet.dataset.printPage = String(pageNumber);
+          sheet.style.width = base.width + 'pt';
+          sheet.style.height = base.height + 'pt';
 
-        await page.render({
-          canvas,
-          viewport,
-          background: '#ffffff'
-        }).promise;
-        page.cleanup?.();
+          const canvas = doc.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(viewport.width));
+          canvas.height = Math.max(1, Math.round(viewport.height));
+          sheet.appendChild(canvas);
+          container.appendChild(sheet);
+
+          await page.render({
+            canvas,
+            viewport,
+            background: '#ffffff'
+          }).promise;
+          page.cleanup?.();
+        }
       }
 
-      const status = doc.querySelector('.print-status');
-      if (status) status.textContent = 'PDF pronto para impressão.';
+      await Promise.all(Array.from({ length: concurrency }, () => renderNext()));
+      [...container.querySelectorAll('.print-sheet')]
+        .sort((a, b) => Number(a.dataset.printPage || 0) - Number(b.dataset.printPage || 0))
+        .forEach((sheet) => container.appendChild(sheet));
+
       await new Promise((resolve) => printWindow.requestAnimationFrame(() => printWindow.requestAnimationFrame(resolve)));
       return true;
     } finally {
@@ -1038,49 +1091,24 @@
     const session = state.editorSession;
     if (!session || state.editorBusy || typeof editor?.buildFlattenedBlob !== 'function') return false;
 
-    const printWindow = window.open('about:blank', '_blank');
-    if (!printWindow) {
-      setEditorStatus('O navegador bloqueou a janela de impressão. Permita pop-ups para esta página e tente novamente.', 'warning');
-      return false;
-    }
-
-    try {
-      printWindow.document.title = 'Preparando impressão…';
-      if (printWindow.document.body) {
-        printWindow.document.body.textContent = 'Preparando o PDF final para impressão…';
-      }
-    } catch (_) {}
-
     setEditorBusy(true);
-    setEditorStatus('Preparando impressão do PDF final…');
+    setEditorStatus('Preparando impressão…');
     try {
-      const blob = await editor.buildFlattenedBlob(session);
-      if (session !== state.editorSession) {
-        try { printWindow.close(); } catch (_) {}
-        return false;
-      }
+      const blob = await finalPdfBlobForSession(session);
+      if (!(blob instanceof Blob) || session !== state.editorSession) return false;
 
-      await renderPdfBlobForPrint(blob, printWindow);
-      if (session !== state.editorSession) {
-        try { printWindow.close(); } catch (_) {}
-        return false;
-      }
+      const frame = ensurePrintFrame();
+      await renderPdfBlobForPrint(blob, frame);
+      if (session !== state.editorSession) return false;
 
-      try {
-        printWindow.focus();
-        printWindow.addEventListener('afterprint', () => {
-          try { printWindow.close(); } catch (_) {}
-        }, { once: true });
-        printWindow.print();
-      } catch (error) {
-        try { printWindow.close(); } catch (_) {}
-        throw error;
-      }
+      const printWindow = frame.contentWindow;
+      if (!printWindow) throw new Error('Não foi possível abrir a caixa de impressão.');
+      printWindow.focus();
+      printWindow.print();
 
-      setEditorStatus('Impressão do PDF final aberta. Nenhum arquivo foi enviado ao Google Drive.', 'success');
+      setEditorStatus('Impressão aberta. Nenhum arquivo foi enviado ao Google Drive.', 'success');
       return true;
     } catch (error) {
-      try { printWindow.close(); } catch (_) {}
       setEditorStatus(error?.message || 'Não foi possível abrir a impressão do PDF final.', 'warning');
       return false;
     } finally {
