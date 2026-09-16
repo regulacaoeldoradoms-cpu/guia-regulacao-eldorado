@@ -8,6 +8,35 @@
 
 Subfase atual: **3C.4 — Recortar, liberada após homologação humana da 3C.3 no PR #179**. O Organizar V2 e a 3C.3 (Escrever + Colar imagem, incluindo painel RGB arrastável) estão aceitos. Desenhar/Borracha permanece para 3C.5 e flatten/exportação local para 3C.6. **Não fazer merge nem escrever no Google Drive nesta fase.**
 
+## 3C.4 — correção de UX após homologação humana — 16/09/2026
+
+Feedback humano no preview:
+- ao entrar em **Recortar**, a interface mostrava uma moldura predefinida com margem de 4%, dando a impressão de que a página já estava parcialmente cortada sem ação do usuário;
+- requisito aprovado: **sem seleção explícita não existe recorte**;
+- o usuário deve arrastar diretamente sobre a página para criar a área mantida;
+- existe **no máximo 1 área de recorte por página**; depois de criada, novos arrastes fora da moldura não criam outra área;
+- a área existente continua móvel, redimensionável por oito alças, removível por ↺ e integrada a Undo/Redo.
+
+Correção implementada no PR #179:
+- removido o retângulo inicial implícito `{ x: 0.04, y: 0.04, width: 0.92, height: 0.92 }`;
+- uma página com `crop: null` agora é exibida integralmente, sem moldura e sem escurecimento;
+- primeiro drag deliberado sobre a página cria a única seleção de recorte;
+- clique ou movimento pequeno demais não cria recorte;
+- a camada vazia usa cursor de seleção e o texto de ajuda explica que sem seleção a página permanece inteira;
+- a restrição de uma única área é garantida pelo próprio modelo `page.crop` e também pela interação: com crop existente, arrastar fora da moldura é ignorado.
+
+Evidência técnica:
+- head funcional da correção: `ca7801df7d6042a3d111a2185c21bd82b12923c8`;
+- **25/25 checks concluídos com sucesso**, incluindo Cloudflare Pages;
+- workflow **Validar Central de Documentos — navegador**: sucesso;
+- etapa **Executar testes de navegador**: sucesso;
+- testes agora cobrem ausência de recorte inicial, criação por drag, tentativa de segunda seleção na mesma página, resize, Undo/Redo, rotação, duplicação, reordenação, CropBox não padrão e touch;
+- main, produção e Google Drive continuam intocados.
+
+**Gate atual:** 3C.4 continua aberta apenas para reteste humano desta UX corrigida. Não iniciar 3C.5 antes do aceite.
+
+**Próxima ação exata:** abrir o alias de staging da branch, entrar em **Recortar** e confirmar que a página começa inteira, sem moldura; arrastar uma área para criar o recorte; tentar criar uma segunda área na mesma página e confirmar que isso não acontece; ajustar a seleção existente e testar ↺/Undo/Redo. Se aprovado, registrar o encerramento da 3C.4 e iniciar 3C.5 — Desenhar/Borracha.
+
 ## 3C.4 — implementação técnica concluída; homologação humana pendente — 16/09/2026
 
 Este bloco prevalece sobre o handoff anterior da 3C.4.
