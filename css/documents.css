@@ -971,6 +971,10 @@
   pointer-events: auto;
 }
 
+.documents-custom-viewer[data-crop-mode="crop"] .portal-pdf-crop-layer[data-awaiting-selection="true"] {
+  cursor: crosshair;
+}
+
 .portal-pdf-crop-frame {
   position: absolute;
   box-sizing: border-box;
