@@ -513,7 +513,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(observability, /'insert_image'/);
 });
 
-test('editor PDF é local, reversível e separado da escrita no Drive', () => {
+test('editor PDF preserva edição local e sincronização explícita só confirma após Drive', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
   const editor = read('js/document-editor.js');
@@ -521,21 +521,30 @@ test('editor PDF é local, reversível e separado da escrita no Drive', () => {
   assert.match(html, /document-editor\.js\?v=20260916-2/);
   assert.match(html, /Editar PDF/);
   assert.match(html, /id="editorExitButton"/);
+  assert.match(html, /id="editorSyncButton"/);
+  assert.match(html, /id="editorSyncPanel"/);
+  assert.match(html, /value="save_copy"/);
+  assert.match(html, /value="replace_pdf"/);
   assert.match(editor, /\/vendor\/pdf-lib\/pdf-lib\.min\.js/);
   assert.doesNotMatch(editor, /https?:\/\//);
   assert.doesNotMatch(html, /cdn\.jsdelivr\.net/);
   assert.ok(fs.statSync(path.join(root, 'vendor/pdf-lib/pdf-lib.min.js')).size > 100_000);
 
   assert.match(client, /canEditDocuments/);
-  assert.match(client, /caps\.edit === true/);
-  assert.match(client, /startEditor/);
-  assert.match(client, /mergePdfIntoEditor/);
-  assert.match(client, /delete_page/);
-  assert.match(client, /reorder_page/);
-  assert.match(client, /rotate_page/);
-  assert.match(client, /merge_pdf/);
-  assert.match(client, /pdf_edit_completed/);
-  assert.doesNotMatch(client, /drive_sync_started|drive_sync_completed|replace_pdf|save_copy/);
+  assert.match(client, /canSyncDocuments/);
+  assert.match(client, /drive\.writeEnabled === true/);
+  assert.match(client, /\/api\/documents\/drive\/sync\/preflight/);
+  assert.match(client, /\/api\/documents\/drive\/sync\/start/);
+  assert.match(client, /\/api\/documents\/drive\/sync\/upload\//);
+  assert.match(client, /\/api\/documents\/drive\/sync\/status\//);
+  assert.match(client, /drive_sync_started/);
+  assert.match(client, /drive_sync_completed/);
+  assert.match(client, /drive_sync_failed/);
+  assert.match(client, /if \(!completed\?\.completed\)/);
+  assert.match(client, /Salvo no Google Drive\. A confirmação veio do próprio Google Drive\./);
+  assert.match(client, /DRIVE_VERSION_CONFLICT/);
+  assert.match(client, /Content-Range/);
+  assert.match(client, /finalPdfBlobForSession/);
 
   assert.match(editor, /removePage/);
   assert.match(editor, /movePage/);
