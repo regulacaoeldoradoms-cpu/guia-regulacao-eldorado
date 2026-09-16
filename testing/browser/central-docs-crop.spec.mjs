@@ -57,12 +57,12 @@ test.describe('Central de Documentos — 3C.4 Recortar', () => {
     await expect(frame).toHaveAttribute('data-committed', 'false');
     await expect(page.locator('html')).toHaveAttribute('data-crop-count', '0');
 
-    await frame.scrollIntoViewIfNeeded();
     const handle = frame.locator('[data-crop-resize="se"]');
+    await handle.scrollIntoViewIfNeeded();
     await expect(handle).toBeVisible();
+    await handle.hover();
     const box = await handle.boundingBox();
     expect(box).not.toBeNull();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
     await expect(page.locator('#pdfRoot')).toHaveAttribute('data-crop-gesture', 'resize');
     await page.mouse.move(box.x - 74, box.y - 96, { steps: 7 });
@@ -134,12 +134,14 @@ test.describe('Central de Documentos — 3C.4 Recortar', () => {
     const frame = page.locator('.portal-pdf-crop-layer').nth(1).locator('[data-crop-frame]');
     await expect(frame).toBeVisible();
     const handle = frame.locator('[data-crop-resize="se"]');
+    await handle.scrollIntoViewIfNeeded();
     await expect(handle).toBeVisible();
+    await handle.hover();
     const handleBox = await handle.boundingBox();
     expect(handleBox).not.toBeNull();
 
-    await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
     await page.mouse.down();
+    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-crop-gesture', 'resize');
     await page.mouse.move(handleBox.x - 62, handleBox.y - 52, { steps: 6 });
     await page.mouse.up();
     await expect(page.locator('html')).toHaveAttribute('data-crop-count', '1');
