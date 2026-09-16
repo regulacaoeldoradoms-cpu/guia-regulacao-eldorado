@@ -151,7 +151,11 @@ test.describe('Central de Documentos — superfície única do editor', () => {
       '/assets/editor-pdf-buttons/salvar-pdf.svg',
       '/assets/editor-pdf-buttons/imprimir-normal.svg',
       '/assets/editor-pdf-buttons/fechar.svg',
-      '/assets/editor-pdf-buttons/atualizar.svg'
+      '/assets/Drive_normal.png',
+      '/assets/Drive_pendente.png',
+      '/assets/Drive_sincronizando.png',
+      '/assets/Drive_sincronizado_1seg.png',
+      '/assets/Drive_falha.png'
     ];
 
     for (const asset of assets) {
@@ -160,7 +164,7 @@ test.describe('Central de Documentos — superfície única do editor', () => {
       expect((await response.body()).byteLength).toBeGreaterThan(100);
     }
 
-    for (const selector of ['#zoomOut', '#zoomIn', '#fitWidth', '#editorOrganize', '#editorSync', '#editorExport', '#editorPrint', '#editorExit']) {
+    for (const selector of ['#zoomOut', '#zoomIn', '#fitWidth', '#editorOrganize', '#editorExport', '#editorPrint', '#editorExit']) {
       const background = await page.locator(selector).evaluate((node) => getComputedStyle(node).backgroundImage);
       expect(background).toContain('/assets/editor-pdf-buttons/');
     }
@@ -181,10 +185,33 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     }
     await expect(page.locator('#editorRefresh')).toHaveCount(0);
     await expect(page.locator('#editorSync')).toBeVisible();
+
+    const driveStates = [
+      ['normal', 'Drive_normal.png'],
+      ['pending', 'Drive_pendente.png'],
+      ['syncing', 'Drive_sincronizando.png'],
+      ['success', 'Drive_sincronizado_1seg.png'],
+      ['failed', 'Drive_falha.png']
+    ];
+    for (const [state, filename] of driveStates) {
+      await page.evaluate((value) => window.CentralDocsEditorHarness.setSyncStateForTest(value), state);
+      await expect(page.locator('#editorSync')).toHaveAttribute('data-sync-state', state);
+      const background = await page.locator('#editorSync').evaluate((node) => getComputedStyle(node).backgroundImage);
+      expect(background).toContain('/assets/' + filename);
+    }
+
+    await page.evaluate(() => window.CentralDocsEditorHarness.setSyncStateForTest('normal'));
     await expect(page.locator('#editorSync')).toHaveAttribute('title', 'Forçar sincronização com Google Drive');
+
+    await page.locator('.portal-pdf-thumb-wrap').first().locator('[data-thumbnail-action="rotate-right"]').click();
+    await expect(page.locator('#editorSync')).toHaveAttribute('data-sync-state', 'pending');
+    await expect(page.locator('#editorSync')).toHaveAttribute('data-sync-state', 'syncing', { timeout: 3500 });
+    await expect(page.locator('#editorSync')).toHaveAttribute('data-sync-state', 'success', { timeout: 3500 });
+    await expect(page.locator('#editorSync')).toHaveAttribute('data-sync-state', 'normal', { timeout: 3500 });
+
     await page.locator('#editorSync').click();
     await expect(page.locator('html')).toHaveAttribute('data-sync-preview', 'force-visible');
-    await expect(page.locator('#editorStatus')).toContainText('não grava no Drive');
+    await expect(page.locator('#editorSync')).toHaveAttribute('data-sync-state', 'syncing');
 
     const organizeBackground = await page.locator('#editorOrganize').evaluate((node) => getComputedStyle(node).backgroundImage);
     expect(organizeBackground).toContain('grade-ativa.svg');
