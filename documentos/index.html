@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260916-3">
+  <link rel="stylesheet" href="/css/documents.css?v=20260916-4">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -117,8 +117,8 @@
             <div class="documents-editor" id="documentsEditor" hidden aria-label="Controles de edição local do PDF">
               <span class="sr-only">As alterações são locais e ainda não serão salvas no Google Drive.</span>
               <div class="documents-editor-toolbar documents-editor-toolbar--compact" role="toolbar" aria-label="Ferramentas do editor PDF">
-                <button class="documents-editor-tool" id="editorUndoButton" type="button" title="Desfazer" aria-label="Desfazer">↶</button>
-                <button class="documents-editor-tool" id="editorRedoButton" type="button" title="Refazer" aria-label="Refazer">↷</button>
+                <button class="documents-editor-tool" id="editorUndoButton" type="button" title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button>
+                <button class="documents-editor-tool" id="editorRedoButton" type="button" title="Refazer (Ctrl+Y ou Ctrl+Shift+Z)" aria-label="Refazer">↷</button>
                 <span class="documents-editor-tool-separator" aria-hidden="true"></span>
                 <button class="documents-editor-tool active" id="editorOrganizeButton" type="button" title="Organizar páginas" aria-label="Organizar páginas" aria-pressed="true">▦</button>
                 <button class="documents-editor-tool" id="editorMergeButton" type="button" title="Unir outro PDF" aria-label="Unir outro PDF">⧉</button>
@@ -134,6 +134,7 @@
                 <span class="documents-editor-tool-spacer"></span>
                 <button class="documents-editor-tool" id="editorPreviewButton" type="button" title="Atualizar PDF" aria-label="Atualizar PDF">⟳</button>
                 <button class="documents-editor-tool" id="editorExportButton" type="button" title="Exportar PDF final localmente" aria-label="Exportar PDF final localmente">↓</button>
+                <button class="documents-editor-tool" id="editorPrintButton" type="button" title="Imprimir PDF final (Ctrl+P)" aria-label="Imprimir PDF final">⎙</button>
                 <button class="documents-editor-tool" id="editorExitButton" type="button" title="Sair do editor" aria-label="Sair do editor">×</button>
               </div>
               <div class="documents-editor-status" id="documentsEditorStatus" aria-live="polite"></div>
@@ -222,6 +223,6 @@
   <script src="/js/document-cache.js?v=20260912-1"></script>
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-viewer.js?v=20260916-3"></script>
-  <script src="/js/documents.js?v=20260916-4"></script>
+  <script src="/js/documents.js?v=20260916-5"></script>
 </body>
 </html>
