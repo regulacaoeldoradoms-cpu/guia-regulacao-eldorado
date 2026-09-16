@@ -678,7 +678,7 @@ async function currentDrivePdfMetadata(env, ref) {
   };
 }
 
-export async function preflightDriveSync(env, input = {}) {
+async function driveSyncPreflightState(env, input = {}) {
   const operation = String(input.operation || '').trim();
   if (!DRIVE_SYNC_OPERATIONS.has(operation)) {
     throw new DriveIntegrationError('DRIVE_SYNC_OPERATION_INVALID', 'Operação de sincronização inválida.', 400);
@@ -712,14 +712,397 @@ export async function preflightDriveSync(env, input = {}) {
 
   return {
     operation,
-    conflict,
-    blocking: operation === 'replace_pdf' && conflict,
+    ref,
     baseVersion,
-    currentVersion: current.version,
-    modifiedTime: current.modifiedTime,
-    size: current.size,
-    canEditOriginal: current.canEdit
+    current,
+    publicResult: {
+      operation,
+      conflict,
+      blocking: operation === 'replace_pdf' && conflict,
+      baseVersion,
+      currentVersion: current.version,
+      modifiedTime: current.modifiedTime,
+      size: current.size,
+      canEditOriginal: current.canEdit
+    }
   };
+}
+
+export async function preflightDriveSync(env, input = {}) {
+  return (await driveSyncPreflightState(env, input)).publicResult;
+}
+
+function driveSyncWriteEnabled(env) {
+  return String(env.DOCUMENTS_DRIVE_WRITE_ENABLED || '').trim().toLowerCase() === 'true';
+}
+
+function requireDriveSyncWriteEnabled(env) {
+  if (!driveSyncWriteEnabled(env)) {
+    throw new DriveIntegrationError(
+      'DRIVE_SYNC_WRITE_DISABLED',
+      'A escrita no Google Drive ainda não foi habilitada para este ambiente.',
+      503
+    );
+  }
+}
+
+function normalizeSyncTotalBytes(value) {
+  const total = Number(value);
+  if (!Number.isSafeInteger(total) || total <= 0) {
+    throw new DriveIntegrationError('DRIVE_SYNC_SIZE_INVALID', 'Tamanho do PDF inválido para sincronização.', 400);
+  }
+  return total;
+}
+
+function normalizeCopyName(value) {
+  let name = safeName(value).trim();
+  if (!name) {
+    throw new DriveIntegrationError('DRIVE_COPY_NAME_REQUIRED', 'Informe o nome do novo PDF.', 400);
+  }
+  if (!/\.pdf$/i.test(name)) name += '.pdf';
+  if (name.length > 300) name = name.slice(0, 296) + '.pdf';
+  return name;
+}
+
+function validDriveResumableUrl(value) {
+  try {
+    const url = new URL(String(value || ''));
+    return url.protocol === 'https:'
+      && url.hostname === 'www.googleapis.com'
+      && url.pathname.startsWith('/upload/drive/v3/files');
+  } catch (_) {
+    return false;
+  }
+}
+
+function syncSessionLabel(syncId) {
+  return `central-documents-sync-session-v1:${String(syncId || '')}`;
+}
+
+async function cleanDriveSyncSessions(env) {
+  if (!(await ensureDriveOAuthSchema(env))) {
+    throw new DriveIntegrationError('DRIVE_DB_UNAVAILABLE', 'Banco técnico indisponível para sincronização.', 503);
+  }
+  await env.AUTH_DB.prepare('DELETE FROM document_drive_sync_sessions WHERE expires_at < ?').bind(nowSeconds()).run();
+}
+
+async function storeDriveSyncSession(env, input) {
+  await cleanDriveSyncSessions(env);
+  const config = requireOAuthConfig(env);
+  const syncId = randomToken(24);
+  const encrypted = await encryptText(
+    config.encryptionSecret,
+    syncSessionLabel(syncId),
+    String(input.sessionUrl || '')
+  );
+  const username = normalizeUsername(input.username);
+  if (!username) throw new DriveIntegrationError('DRIVE_SYNC_ACTOR_INVALID', 'Usuário inválido para sincronização.', 400);
+  await env.AUTH_DB.prepare(`INSERT INTO document_drive_sync_sessions(
+      sync_id, username, operation, session_url_cipher, session_url_iv,
+      total_bytes, next_offset, expires_at
+    ) VALUES (?, ?, ?, ?, ?, ?, 0, ?)`)
+    .bind(
+      syncId,
+      username,
+      input.operation,
+      encrypted.cipher,
+      encrypted.iv,
+      input.totalBytes,
+      nowSeconds() + DRIVE_SYNC_SESSION_TTL_SECONDS
+    )
+    .run();
+  return syncId;
+}
+
+async function driveSyncSession(env, syncId, username) {
+  await cleanDriveSyncSessions(env);
+  const id = String(syncId || '').trim();
+  const actor = normalizeUsername(username);
+  if (!/^[A-Za-z0-9_-]{20,80}$/.test(id) || !actor) {
+    throw new DriveIntegrationError('DRIVE_SYNC_SESSION_INVALID', 'Sessão de sincronização inválida.', 400);
+  }
+  const row = await env.AUTH_DB.prepare(`SELECT sync_id, username, operation, session_url_cipher,
+      session_url_iv, total_bytes, next_offset, expires_at
+    FROM document_drive_sync_sessions WHERE sync_id = ? LIMIT 1`).bind(id).first();
+  if (!row || row.username !== actor || Number(row.expires_at || 0) < nowSeconds()) {
+    throw new DriveIntegrationError('DRIVE_SYNC_SESSION_NOT_FOUND', 'Sessão de sincronização expirada ou indisponível.', 404);
+  }
+  const config = requireOAuthConfig(env);
+  let sessionUrl = '';
+  try {
+    sessionUrl = await decryptText(
+      config.encryptionSecret,
+      syncSessionLabel(id),
+      row.session_url_cipher,
+      row.session_url_iv
+    );
+  } catch (_) {
+    throw new DriveIntegrationError('DRIVE_SYNC_SESSION_INVALID', 'Sessão de sincronização inválida.', 409);
+  }
+  if (!validDriveResumableUrl(sessionUrl)) {
+    throw new DriveIntegrationError('DRIVE_SYNC_SESSION_INVALID', 'Sessão de sincronização inválida.', 409);
+  }
+  return {
+    syncId: id,
+    username: actor,
+    operation: String(row.operation || ''),
+    sessionUrl,
+    totalBytes: Number(row.total_bytes || 0),
+    nextOffset: Number(row.next_offset || 0)
+  };
+}
+
+async function deleteDriveSyncSession(env, syncId) {
+  if (!env.AUTH_DB) return;
+  await env.AUTH_DB.prepare('DELETE FROM document_drive_sync_sessions WHERE sync_id = ?').bind(String(syncId || '')).run();
+}
+
+async function updateDriveSyncOffset(env, syncId, nextOffset) {
+  await env.AUTH_DB.prepare(`UPDATE document_drive_sync_sessions
+    SET next_offset = ?, updated_at = CURRENT_TIMESTAMP WHERE sync_id = ?`)
+    .bind(Number(nextOffset || 0), String(syncId || '')).run();
+}
+
+async function preserveDriveRevision(env, current) {
+  if (!current.headRevisionId) {
+    throw new DriveIntegrationError(
+      'DRIVE_REVISION_UNAVAILABLE',
+      'O Google Drive não informou uma revisão recuperável do arquivo atual.',
+      409
+    );
+  }
+  const url = new URL(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(current.id)}/revisions/${encodeURIComponent(current.headRevisionId)}`
+  );
+  url.searchParams.set('fields', 'id,keepForever');
+  const response = await driveFetch(env, url.toString(), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify({ keepForever: true })
+  });
+  if (!response.ok) throwDriveResponse(response);
+  const payload = await response.json().catch(() => ({}));
+  if (payload.keepForever !== true) {
+    throw new DriveIntegrationError(
+      'DRIVE_REVISION_PRESERVE_FAILED',
+      'Não foi possível confirmar a preservação da revisão anterior.',
+      502
+    );
+  }
+}
+
+async function initiateDriveResumableUpload(env, input) {
+  const current = input.current;
+  let url;
+  let metadata;
+  let method;
+
+  if (input.operation === 'replace_pdf') {
+    await preserveDriveRevision(env, current);
+    url = new URL(`https://www.googleapis.com/upload/drive/v3/files/${encodeURIComponent(current.id)}`);
+    method = 'PATCH';
+    metadata = {};
+  } else {
+    url = new URL('https://www.googleapis.com/upload/drive/v3/files');
+    method = 'POST';
+    metadata = {
+      name: normalizeCopyName(input.copyName),
+      mimeType: PDF_MIME
+    };
+    if (current.parents.length) metadata.parents = [current.parents[0]];
+  }
+
+  url.searchParams.set('uploadType', 'resumable');
+  url.searchParams.set('supportsAllDrives', 'true');
+  url.searchParams.set('fields', DRIVE_SYNC_FILE_FIELDS);
+
+  const response = await driveFetch(env, url.toString(), {
+    method,
+    headers: {
+      'Content-Type': 'application/json; charset=UTF-8',
+      'X-Upload-Content-Type': PDF_MIME,
+      'X-Upload-Content-Length': String(input.totalBytes)
+    },
+    body: JSON.stringify(metadata)
+  });
+  if (!response.ok) throwDriveResponse(response);
+
+  const sessionUrl = String(response.headers.get('Location') || '');
+  if (!validDriveResumableUrl(sessionUrl)) {
+    throw new DriveIntegrationError(
+      'DRIVE_SYNC_SESSION_MISSING',
+      'O Google Drive não iniciou uma sessão de upload válida.',
+      502
+    );
+  }
+  return sessionUrl;
+}
+
+export async function startDriveSync(env, username, input = {}) {
+  requireDriveSyncWriteEnabled(env);
+  const totalBytes = normalizeSyncTotalBytes(input.totalBytes);
+  const prepared = await driveSyncPreflightState(env, input);
+  const sessionUrl = await initiateDriveResumableUpload(env, {
+    operation: prepared.operation,
+    current: prepared.current,
+    totalBytes,
+    copyName: input.copyName
+  });
+  const syncId = await storeDriveSyncSession(env, {
+    username,
+    operation: prepared.operation,
+    sessionUrl,
+    totalBytes
+  });
+  return {
+    syncId,
+    operation: prepared.operation,
+    totalBytes,
+    chunkSize: DRIVE_SYNC_CHUNK_BYTES,
+    conflictDetected: prepared.publicResult.conflict === true
+  };
+}
+
+function nextOffsetFromRange(value, totalBytes) {
+  const range = String(value || '').trim();
+  if (!range) return 0;
+  const match = /^bytes=0-(\d+)$/.exec(range);
+  if (!match) return 0;
+  const next = Number(match[1]) + 1;
+  return Number.isSafeInteger(next) && next >= 0 && next <= totalBytes ? next : 0;
+}
+
+async function completedDriveSyncResult(env, session, response) {
+  const payload = await response.json().catch(() => ({}));
+  const version = normalizeDriveVersion(payload.version, { required: true });
+  if (!payload?.id || payload.mimeType !== PDF_MIME) {
+    throw new DriveIntegrationError(
+      'DRIVE_SYNC_CONFIRMATION_INVALID',
+      'O Google Drive concluiu a solicitação sem metadados suficientes para confirmar o salvamento.',
+      502
+    );
+  }
+  const [ref, cacheKey] = await Promise.all([
+    sealDriveFileRef(env, String(payload.id), PDF_MIME),
+    stableDriveCacheKey(env, String(payload.id))
+  ]);
+  await deleteDriveSyncSession(env, session.syncId);
+  return {
+    completed: true,
+    operation: session.operation,
+    currentVersion: version,
+    modifiedTime: String(payload.modifiedTime || ''),
+    size: Number.isFinite(Number(payload.size)) ? Number(payload.size) : null,
+    ref,
+    cacheKey
+  };
+}
+
+function validateDriveSyncChunk(request, session) {
+  const contentType = String(request.headers.get('Content-Type') || '').split(';')[0].trim().toLowerCase();
+  if (contentType !== PDF_MIME) {
+    throw new DriveIntegrationError('DRIVE_SYNC_PDF_REQUIRED', 'O bloco de sincronização deve ser PDF.', 415);
+  }
+  const range = String(request.headers.get('Content-Range') || '').trim();
+  const match = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(range);
+  if (!match) {
+    throw new DriveIntegrationError('DRIVE_SYNC_RANGE_INVALID', 'Faixa de upload inválida.', 400);
+  }
+  const start = Number(match[1]);
+  const end = Number(match[2]);
+  const total = Number(match[3]);
+  const length = end - start + 1;
+  if (
+    !Number.isSafeInteger(start) || !Number.isSafeInteger(end) || !Number.isSafeInteger(total)
+    || start < 0 || end < start || total !== session.totalBytes || end >= total
+    || start !== session.nextOffset || length > DRIVE_SYNC_MAX_CHUNK_BYTES
+  ) {
+    throw new DriveIntegrationError('DRIVE_SYNC_RANGE_INVALID', 'Faixa de upload incompatível com a sessão.', 409);
+  }
+  const isFinal = end === total - 1;
+  if (!isFinal && length % DRIVE_SYNC_MIN_CHUNK_UNIT !== 0) {
+    throw new DriveIntegrationError(
+      'DRIVE_SYNC_CHUNK_INVALID',
+      'Blocos intermediários devem usar múltiplos de 256 KB.',
+      400
+    );
+  }
+  const declared = Number(request.headers.get('Content-Length') || 0);
+  if (declared && declared !== length) {
+    throw new DriveIntegrationError('DRIVE_SYNC_LENGTH_INVALID', 'Tamanho do bloco não corresponde à faixa informada.', 400);
+  }
+  return { start, end, total, length };
+}
+
+async function handleDriveSessionResponse(env, session, response) {
+  if (response.status === 308) {
+    const nextOffset = nextOffsetFromRange(response.headers.get('Range'), session.totalBytes);
+    await updateDriveSyncOffset(env, session.syncId, nextOffset);
+    return {
+      completed: false,
+      operation: session.operation,
+      nextOffset,
+      totalBytes: session.totalBytes
+    };
+  }
+  if (response.status === 200 || response.status === 201) {
+    return completedDriveSyncResult(env, session, response);
+  }
+  if (response.status === 404) {
+    await deleteDriveSyncSession(env, session.syncId);
+    throw new DriveIntegrationError('DRIVE_SYNC_SESSION_EXPIRED', 'A sessão de upload expirou. Inicie a sincronização novamente.', 410);
+  }
+  if (response.status >= 500) {
+    throw new DriveIntegrationError(
+      'DRIVE_SYNC_INTERRUPTED',
+      'O Google Drive interrompeu temporariamente o upload. Consulte o status antes de retomar.',
+      503
+    );
+  }
+  await deleteDriveSyncSession(env, session.syncId);
+  throw new DriveIntegrationError(
+    'DRIVE_SYNC_SESSION_RESTART_REQUIRED',
+    'A sessão de upload não pode continuar. Inicie a sincronização novamente.',
+    409
+  );
+}
+
+export async function uploadDriveSyncChunk(env, username, syncId, request) {
+  requireDriveSyncWriteEnabled(env);
+  const session = await driveSyncSession(env, syncId, username);
+  const range = validateDriveSyncChunk(request, session);
+  if (!request.body) {
+    throw new DriveIntegrationError('DRIVE_SYNC_BODY_REQUIRED', 'Bloco de PDF ausente.', 400);
+  }
+  const response = await driveFetch(env, session.sessionUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': PDF_MIME,
+      'Content-Length': String(range.length),
+      'Content-Range': `bytes ${range.start}-${range.end}/${range.total}`
+    },
+    body: request.body
+  }, false);
+  return handleDriveSessionResponse(env, session, response);
+}
+
+export async function queryDriveSyncStatus(env, username, syncId) {
+  requireDriveSyncWriteEnabled(env);
+  const session = await driveSyncSession(env, syncId, username);
+  const response = await driveFetch(env, session.sessionUrl, {
+    method: 'PUT',
+    headers: {
+      'Content-Length': '0',
+      'Content-Range': `bytes */${session.totalBytes}`
+    }
+  }, false);
+  return handleDriveSessionResponse(env, session, response);
+}
+
+export async function cancelDriveSync(env, username, syncId) {
+  const session = await driveSyncSession(env, syncId, username);
+  await deleteDriveSyncSession(env, session.syncId);
+  return { cancelled: true, operation: session.operation };
 }
 
 export async function fetchDrivePdf(env, ref, rangeHeader = '') {
