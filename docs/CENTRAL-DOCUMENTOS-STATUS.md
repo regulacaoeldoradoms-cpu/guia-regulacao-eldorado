@@ -1,12 +1,854 @@
 # Central de Documentos — Status
 
-Última atualização: 14/09/2026
+Última atualização: 16/09/2026
 
 ## Fase atual
 
-**Fase 3 — Editor PDF essencial**
+**Fase 3 — Editor PDF essencial — ENCERRADA E HOMOLOGADA**
 
-Subfase atual: **3C.1 — visualizador próprio validado em produção; integração visual do editor ainda pendente**. A 3C.2 continua bloqueada.
+Homologação humana final: **APROVADA em 16/09/2026**. O usuário confirmou o estado final do editor e autorizou explicitamente avançar para a próxima fase. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar), 3C.5 (Desenhar/Borracha) e 3C.6 (flatten/exportação/impressão + kit visual) estão aceitos.
+
+## Encerramento formal da Fase 3 — 16/09/2026
+
+Critério de aceite do Guia Mestre: **cumprido** — as operações essenciais preservam PDF válido, têm cobertura automatizada em documentos sintéticos com estruturas distintas e foram homologadas visualmente pelo usuário.
+
+Evidências finais antes da promoção:
+- head funcional homologado antes da reconciliação: `83638aa07cc3cd017b23bc7ef8b3370b531fdd52`;
+- todos os **24 workflows** desse head concluíram com sucesso, incluindo **Central de Documentos — Fases 1–3**, **bundle de staging**, **governança** e **PDF.js real em Chromium**;
+- a branch foi reconciliada com a `main` vigente `292ca917628dbb68b03b084021736f56349d28e6` usando o merge calculado pelo GitHub, ficando **0 commits atrás da main**;
+- nenhuma operação da Fase 3 gravou conteúdo documental no Google Drive;
+- nenhuma ampliação de permissões foi introduzida;
+- telemetria continua restrita a eventos técnicos allowlisted, sem conteúdo clínico ou documental.
+
+Decisões consolidadas:
+- o botão **Atualizar PDF** permanece removido por redundância;
+- o espaço liberado fica reservado para uma futura ação explícita de sincronização na Fase 4;
+- assets dos botões permanecem self-hosted;
+- impressão permanece local, same-origin e sem depender do visualizador nativo;
+- exportação/flatten local é a base que a Fase 4 poderá enviar ao Drive somente após validação e confirmação real.
+
+**Próxima ação exata:** concluir a última matriz após a reconciliação, mesclar o PR #179 na `main` somente se todos os checks permanecerem verdes e então criar branch isolada para **Fase 4 — Sincronização segura com Drive**. Não iniciar escrita no Drive dentro deste PR da Fase 3.
+
+## 3C.6 — ícones restantes das ferramentas + remoção de “Atualizar PDF” — 16/09/2026
+
+O usuário adicionou diretamente à `main`, no commit `292ca917628dbb68b03b084021736f56349d28e6`, oito assets PNG aprovados para as ferramentas que ainda usavam glifos/texto. A branch do editor reutilizou exatamente esses blobs, sem recriar nem alterar as imagens.
+
+Aplicado no editor e no laboratório:
+- **Unir PDF** → `assets/Unir_PDF.png`;
+- **Inserir página em branco** → `assets/Inserir_pagina_branca.png`;
+- **Adicionar imagem como nova página** → `assets/Adicionar_imagem.png`;
+- **Recortar página** → `assets/Recortar_pagina.png`;
+- **Selecionar e mover** → `assets/Selecionar_mover.png`;
+- **Escrever** → `assets/Escrever.png`;
+- **Colar imagem** → `assets/Colar_imagem.png`;
+- **Desenhar** → `assets/Desenhar.png`.
+
+Decisão funcional aprovada nesta rodada:
+- o botão **“Atualizar PDF” foi removido da interface**, pois sua função era redundante com a atualização automática do editor;
+- a rotina interna de rebuild continua disponível somente para fluxo técnico/testes, sem controle visível ao usuário;
+- o espaço liberado fica reservado conceitualmente para uma futura ação explícita de **sincronização com o Google Drive**, a ser implementada somente na **Fase 4 — Sincronização segura com Drive**, com confirmação real do Drive e sem antecipar escrita nesta fase.
+
+Empacotamento e testes ajustados:
+- o bundle de staging copia explicitamente os oito PNGs;
+- o servidor Playwright passou a declarar `image/png`;
+- o teste visual de navegador verifica carregamento e `background-image` de todas as oito novas ferramentas e confirma ausência de `#editorRefresh`;
+- testes que precisavam forçar rebuild passaram a chamar helper exclusivamente de laboratório, sem reintroduzir o botão na UI;
+- cache do CSS avançado para `documents.css?v=20260916-9` e Service Worker para `CACHE_VERSION=20260916-10`.
+
+Estado de segurança:
+- nenhuma escrita documental no Google Drive;
+- nenhuma publicação/merge em produção realizada por esta alteração;
+- a `main` só contém os oito assets porque eles já haviam sido enviados pelo usuário antes desta implementação;
+- PR #179 continua aberto e deve permanecer sem merge até homologação final da 3C.6 e reconciliação com a `main` mais recente.
+
+**Gate atual:** CI completo + deployment de preview da branch, seguido de reteste humano dos oito novos ícones e da fidelidade do PDF exportado/reaberto.
+
+**Próxima ação exata:** após os checks e o preview concluírem, abrir o alias `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, fazer Ctrl+F5 e conferir visualmente **Unir PDF, Página em branco, Adicionar imagem, Recortar, Selecionar/mover, Escrever, Colar imagem e Desenhar**. Confirmar também que **Atualizar PDF não aparece**. Depois retomar a confirmação final da fidelidade do PDF exportado/reaberto.
+
+## 3C.6 — correção definitiva dos ícones vazios no staging — 16/09/2026
+
+O usuário retestou o candidato visual e mostrou que os espaços dos novos botões apareciam, porém **os ícones/imagens continuavam vazios** no laboratório de staging.
+
+Diagnóstico definitivo:
+- o CSS já reservava corretamente largura/altura para Zoom −, Zoom +, Ajustar largura, Organizar, Atualizar, Salvar PDF, Imprimir e Fechar;
+- a branch continha os assets individuais em `assets/editor-pdf-buttons/`, mas o script `scripts/build-central-docs-staging.mjs` **não copiava essa pasta para `dist-staging`**;
+- por isso, todos os URLs `/assets/editor-pdf-buttons/*.svg` retornavam **404** no laboratório/Cloudflare Pages; esse fato foi reproduzido automaticamente no Playwright, que registrou os 404s;
+- o servidor local do Playwright também não declarava `image/svg+xml` para `.svg`, então o MIME do kit visual não estava formalmente coberto pelo teste de navegador.
+
+Correção aplicada:
+- abandonado o recorte CSS da folha PNG como runtime principal; ele era mais frágil para manutenção e escondia a causa real dos assets ausentes;
+- os botões principais agora usam **arquivos SVG individuais self-hosted**, todos com nomes ASCII e dimensões próprias: `zoom-menos.svg`, `zoom-mais.svg`, `ajustar-largura.svg`, `grade-ativa.svg`, `grade-inativa.svg`, `atualizar.svg`, `salvar-pdf.svg`, `imprimir-normal.svg`, `fechar.svg` e `cancelar.svg`;
+- o build de staging passou a copiar `assets/editor-pdf-buttons/` integralmente para `dist-staging/assets/editor-pdf-buttons/`;
+- o workflow de validação do bundle agora exige explicitamente a existência dos assets principais dentro de `dist-staging` e observa mudanças em `assets/editor-pdf-buttons/**`;
+- `testing/browser/serve-staging.mjs` passou a servir `.svg` com MIME `image/svg+xml`;
+- o Playwright ganhou um teste real que abre os assets no servidor de staging e verifica que os botões têm `background-image` apontando para `/assets/editor-pdf-buttons/`, inclusive o estado ativo de Organizar;
+- o CSS foi cache-bustado para `documents.css?v=20260916-8` e o Service Worker para `CACHE_VERSION=20260916-9`.
+
+Validação:
+- primeira tentativa do novo teste falhou de forma útil: **58 casos** acusaram 404 dos assets, confirmando que o problema estava no empacotamento do staging, não na geometria dos botões;
+- após corrigir o bundle e o MIME, o head funcional `5e0a849254ba838e62f1077ed91ac3749cda87f4` ficou com **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **78 casos — 75 passed / 3 skipped esperados**;
+- o cenário `assets visuais dos botões carregam no navegador` passou em **934 ms no desktop** e **1,0 s no mobile**;
+- Cloudflare Pages publicou o candidato com sucesso no deployment `5fb57b66-760a-4ddf-8583-64f3628aa69d`;
+- `main` vigente durante a correção: `48ac90fc254fd8c5d0cd479fd38883f5da17f151`; nenhuma alteração em `main`, produção ou Google Drive.
+
+Decisão:
+- **manter assets individuais** é a solução vigente. A folha `assets/Botões_Editor_PDF.png` pode permanecer como fonte visual original, mas não é mais necessária para renderizar os controles no staging/runtime;
+- não reintroduzir sprite CSS/recortes da folha enquanto não houver motivo técnico forte.
+
+**Gate atual:** reteste humano visual no alias de staging. Confirmar que os gráficos aparecem de fato e avaliar apenas tamanho/alinhamento/estética dos botões.
+
+**Próxima ação exata:** fazer **Ctrl+F5** em `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/` e conferir Zoom −/+, Ajustar largura, Organizar, Atualizar, Salvar PDF, Imprimir, Fechar e Cancelar. Se estiver visualmente aprovado, retomar somente a confirmação final da fidelidade do PDF exportado/reaberto para encerrar a 3C.6/Fase 3.
+
+## 3C.6 — correção do kit visual dos botões após reteste humano — 16/09/2026
+
+O usuário testou o primeiro candidato visual e informou que **os novos ícones não apareceram**. No screenshot, os espaços dos novos controles estavam reservados, porém alguns botões apareciam apenas como caixas claras vazias.
+
+Diagnóstico:
+- a primeira implementação carregava os novos componentes por arquivos SVG separados em `/assets/editor-pdf-buttons/`;
+- a estrutura CSS, dimensões e classes estavam sendo aplicadas, mas os gráficos não estavam aparecendo no staging;
+- como a folha original `assets/Botões_Editor_PDF.png` havia sido adicionada à `main` depois da última reconciliação da branch da Central, ela ainda não existia fisicamente na branch de staging;
+- portanto o candidato visual dependia de uma cadeia de assets que não reproduziu o resultado esperado no navegador, apesar dos testes estáticos anteriores.
+
+Correção aplicada:
+- o blob original de **`assets/Botões_Editor_PDF.png`** foi incorporado diretamente à branch da Central sem alterar `main`;
+- o runtime visual agora usa a própria folha PNG **self-hosted** como fonte, com recortes CSS independentes para cada controle;
+- foram mapeados recortes específicos para **Zoom −, Zoom +, Ajustar largura, Organizar ativo/inativo, Atualizar, Salvar PDF, Imprimir, Fechar e Cancelar**;
+- o botão **Imprimir** usa também os estados normal, hover, pressionado e selecionado presentes na folha;
+- o CSS foi cache-bustado para `documents.css?v=20260916-6`, evitando que o navegador reutilize a primeira versão defeituosa;
+- os SVGs separados permanecem no repositório como material derivado, mas o staging não depende mais deles para renderizar os controles principais.
+
+Validação técnica desta correção:
+- o arquivo PNG está presente na branch com SHA de blob `9c61bb78ad3ba96bb5a14d0baab5074c8f9c1b97`;
+- contratos estáticos do kit visual foram atualizados para exigir a folha PNG self-hosted e os estados visuais;
+- Cloudflare Pages publicou o head funcional `ba41897c2ec31e173ac8c54d6f5c6c80b5603338` com sucesso no deployment `20bd348f-9006-4ea9-94da-a8b63ce2bfa8`;
+- no momento do registro, **24/25 checks estavam verdes** e somente **PDF.js real em Chromium** ainda executava, sem falha registrada;
+- `main` vigente durante esta correção: `d54e017f587c1655f602ed6dbf911a56a24f555a`; nenhuma escrita em produção ou Google Drive.
+
+**Gate atual:** reteste humano visual do novo kit no alias de staging. O usuário deve confirmar que os gráficos agora aparecem de fato e que tamanhos/posições estão adequados.
+
+**Próxima ação exata:** fazer **Ctrl+F5** no alias da branch e conferir Zoom, Ajustar largura, Organizar, Atualizar, Salvar PDF, Imprimir e Fechar. Se algum botão estiver grande/pequeno ou mal posicionado, ajustar somente dimensões/recortes; depois retomar a confirmação final de fidelidade do PDF exportado.
+
+## 3C.6 — otimização da impressão no mesmo editor após reteste humano — 16/09/2026
+
+Após a correção do erro cross-origin, o usuário confirmou que a impressão passou a abrir corretamente, mas identificou dois problemas de experiência:
+
+1. a tela **“Preparando páginas para impressão…”** demorava mais do que o desejável;
+2. abrir uma **nova aba** somente para preparar a impressão era incômodo e contrariava a meta de experiência rápida/responsiva da Central.
+
+Decisão e implementação:
+- a impressão deixa de abrir nova aba; a caixa de impressão passa a ser acionada a partir de um **iframe temporário, invisível e same-origin**, criado exclusivamente para impressão;
+- esse iframe **não é um visualizador PDF nativo nem fallback do editor**: ele permanece `about:blank`/same-origin e recebe somente HTML/canvas gerado pelo próprio Portal; continuam proibidos `iframe/embed/object` como superfície de visualização documental;
+- o PDF final continua vindo do mesmo `buildFlattenedBlob()` usado pela exportação local;
+- foi criado **cache em memória do PDF final por sessão + revisão**. Se o usuário acabou de exportar e depois imprimir, ou imprimir novamente sem nova edição, o flatten não é reconstruído;
+- as páginas são renderizadas com o **PDF.js self-hosted em paralelo, com concorrência máxima 3**, em vez de sequencialmente;
+- a escala de preparação para impressão foi reduzida para um teto de **1,5×**, com limite de 4 milhões de pixels por página, equilibrando nitidez e latência;
+- foi removida uma espera dupla por `requestAnimationFrame` no frame invisível; após `page.render().promise`, a página já está pronta para entrar no documento de impressão;
+- os canvas são criados no realm principal do Portal e somente depois anexados ao documento de impressão, evitando custo/fragilidade de canvas cross-realm;
+- o frame temporário é removido após `afterprint` (com fallback de limpeza) e também ao sair/resetar o editor, evitando reter conteúdo documental oculto além do necessário;
+- `Ctrl+P` e o botão **Imprimir** usam exatamente o mesmo fluxo, sem nova aba.
+
+Correção durante a validação:
+- uma primeira rodada do novo teste revelou `shortcutIsTypingTarget is not defined` no harness porque a função de proteção dos atalhos havia sido removida acidentalmente durante a substituição do bloco de impressão;
+- isso fez falhar artificialmente Ctrl+Z/Delete e o segundo Ctrl+P nos testes, embora não fosse um defeito do runtime do produto;
+- o helper foi restaurado no laboratório e a matriz voltou integralmente a verde.
+
+Implementação funcional consolidada: `d223d32456b2eb27023c4bcedd4b0ee5b0d429d9` (runtime); head de validação do laboratório: `c8e7a9784fda07d6d2659c7afee673a8b45a2a81`.
+
+Validação:
+- **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **76 casos — 73 passed / 3 skipped esperados**;
+- o cenário específico **Imprimir + Ctrl+P sem nova aba e com preparação responsiva** passou em **1,8 s no Chromium desktop** e **1,8 s no Chromium mobile** no CI; esse tempo cobre duas preparações no mesmo teste, incluindo reutilização do cache na segunda chamada;
+- o teste exige que nenhuma nova `Page` seja criada e que exista somente o iframe temporário same-origin de impressão;
+- o teste também exige preparação abaixo de 5 s para o fixture sintético e confirma as 3 páginas renderizadas;
+- Cloudflare Pages publicou o candidato com sucesso no deployment `40e7ea5d-77ad-42d4-a928-7e2a65eea8c2`;
+- `documents.js` está cache-bustado como `v=20260916-10`, portanto o usuário deve usar Ctrl+F5 antes do reteste.
+
+Privacidade e segurança:
+- o PDF final e os canvas de impressão permanecem somente em memória no navegador;
+- nenhum conteúdo é enviado ao backend, Google Drive ou PostHog;
+- o frame oculto é descartável e é removido após a impressão/saída do editor;
+- nenhuma alteração em `main`, produção ou Google Drive;
+- PR #179 permanece aberto e sem merge.
+
+Estado da `main`:
+- durante esta rodada, `main` avançou para `8e88467f625198af0e7889ed023c293042e7ba4c`, por documentação da ordenação cronológica da Agenda; não houve mudança nos arquivos funcionais da Central de Documentos;
+- antes do encerramento formal da Fase 3, reconciliar novamente a branch com essa `main` (ou a mais recente) e repetir a matriz final.
+
+**Gate atual:** reteste humano final do **Imprimir/Ctrl+P sem nova aba e com menor espera**, além da confirmação visual do PDF exportado/reaberto.
+
+**Próxima ação exata:** fazer Ctrl+F5 no alias da branch, clicar em **Imprimir** e confirmar que a caixa de impressão aparece diretamente sem abrir nova aba e com tempo de preparação aceitável. Depois confirmar a fidelidade visual do PDF exportado/reaberto. Com os dois aceites, reconciliar com `main`, rodar a matriz final e encerrar 3C.6/Fase 3.
+
+## 3C.6 — correção da impressão cross-origin após reteste humano — 16/09/2026
+
+No reteste posterior ao aceite funcional geral, o usuário confirmou que **Exportar PDF final localmente funciona**, porém o botão **Imprimir** falhou no laboratório com erro de segurança do navegador:
+
+`Blocked a frame with origin ... from accessing a cross-origin frame` ao tentar acessar `addEventListener` no `Window` do visualizador nativo de PDF.
+
+Diagnóstico:
+- o laboratório ainda usava um `iframe` temporário apontando para um Blob PDF; ao o navegador entregar esse Blob ao visualizador PDF nativo, o conteúdo efetivo passa por um frame de outra origem e o script perde permissão de acessar `contentWindow`; o erro observado é portanto uma restrição real de Same-Origin Policy, não um problema do PDF exportado;
+- o runtime real já havia abandonado o iframe e aberto o Blob em nova aba, mas ainda tentava chamar `focus()`/`print()` depois da navegação para o visualizador nativo. Essa abordagem também dependia de acesso posterior a uma janela que pode se tornar cross-origin e foi considerada frágil;
+- o botão **Exportar PDF final localmente** não usa esse caminho e permaneceu funcional, conforme confirmação humana.
+
+Correção aplicada:
+- impressão deixou de depender completamente do visualizador PDF nativo para acionar `print()`;
+- o editor continua gerando o mesmo `buildFlattenedBlob()` final;
+- abre-se imediatamente uma janela `about:blank` same-origin para preservar a ativação do usuário;
+- o Blob final é reaberto **em memória pelo PDF.js self-hosted** e cada página é renderizada nessa própria janela same-origin, com page breaks e tamanho proporcional ao PDF;
+- somente depois de todas as páginas estarem renderizadas o editor chama `window.print()` na janela same-origin;
+- nenhuma página, conteúdo ou imagem é enviada a backend/Drive; a impressão continua local;
+- o laboratório foi alinhado ao mesmo fluxo e não cria mais `iframe`, nem acessa `frame.contentWindow`, nem navega a janela de impressão para o Blob PDF;
+- foi adicionado contrato de regressão que bloqueia o retorno de `iframe/contentWindow/location.replace()` nesse fluxo.
+
+Implementação funcional corrigida: `80e270a8e3388ab821145848ee14851c2f6e6ddb`.
+
+Head de integração/cache validado: `2d9a07a4c91c5119d812193cf142d577d6181d75` (`documents.js?v=20260916-6`, Service Worker `CACHE_VERSION=20260916-5`).
+
+Validação:
+- **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **76 casos — 73 passed / 3 skipped esperados**;
+- Cloudflare Pages: sucesso no deployment funcional e no build com cache renovado; deployment mais recente validado `fce02e30-7378-4f98-ab1d-bf5a47a98a5d`;
+- o runtime continua proibido de criar iframe/embed/object para a superfície documental;
+- o teste automatizado de impressão continua verificando que o Blob utilizado é o PDF final flatten.
+
+Estado da `main` durante esta correção:
+- `main` avançou para `549507d651f512473d491c39a55110f37a696034` por uma mudança da **Agenda/DigSaúde** (`docs/AGENDA-DIGSAUDE-STATUS.md` e `worker/tests/agenda.test.mjs`), sem alteração nos arquivos funcionais da Central de Documentos;
+- antes do encerramento formal da Fase 3/promoção do PR #179, reconciliar novamente a branch com a `main` vigente e repetir a matriz completa.
+
+**Gate atual:** a falha de impressão foi corrigida tecnicamente; falta reteste humano do botão Imprimir/Ctrl+P e continua pendente a comparação visual final do PDF exportado/reaberto.
+
+**Próxima ação exata:** fazer Ctrl+F5 no alias da branch, clicar em **Imprimir** e confirmar que a caixa de impressão abre sem erro cross-origin. Depois, se ainda não feito, abrir o PDF exportado fora do editor e confirmar fidelidade visual. Com ambos aprovados, reconciliar com `main`, rodar a matriz final e encerrar 3C.6/Fase 3.
+
+## 3C.6 — aceite humano da funcionalidade do editor; fidelidade final ainda pendente — 16/09/2026
+
+O usuário declarou explicitamente: **“pra mim o editor está completamente funcional agora”**.
+
+Interpretação de governança:
+- a **UX e o conjunto funcional do editor** ficam homologados pelo usuário nesta etapa;
+- não há nova correção funcional solicitada para organizar, unir, inserir página/imagem, escrever, colar imagem, recortar, desenhar/apagar, desfazer/refazer, excluir objetos, exportar ou imprimir;
+- a 3C.6 ainda não deve ser encerrada automaticamente porque o gate registrado exige uma última confirmação separada de **fidelidade preview × PDF final exportado/reaberto**;
+- se essa comparação final também for aprovada, encerrar formalmente a 3C.6 e a Fase 3, registrar o aceite e preparar a **Fase 4 — Sincronização segura com Drive**;
+- até esse aceite final, PR #179 permanece aberto e sem merge, e nenhuma escrita no Google Drive é liberada.
+
+**Próxima ação exata:** exportar um PDF final de teste contendo algumas das edições já homologadas, abrir o arquivo baixado fora do editor e confirmar que o resultado visual coincide com o preview (texto, imagem, desenho, crop, ordem e rotação). Se o usuário confirmar, encerrar 3C.6/Fase 3 e avançar para Fase 4.
+
+## 3C.6 — terceira rodada de ajustes UX: campo condicional, impressão e atalhos — 16/09/2026
+
+Novo reteste humano da 3C.6 acrescentou três requisitos de ergonomia antes da homologação final:
+
+1. o campo **Após a página** deve aparecer somente quando a opção **Após uma página específica** estiver selecionada no painel Unir;
+2. além de **Exportar PDF final localmente**, o editor deve oferecer uma ação explícita de **Imprimir** o PDF final;
+3. o editor deve oferecer atalhos de teclado usuais, começando por **Ctrl+Z** para desfazer a última edição.
+
+Implementação:
+- o campo de página já era alternado por JavaScript, porém a regra autoral `.documents-editor-field { display: grid; }` sobrepunha o atributo HTML `hidden`; foi adicionada uma regra explícita `.documents-editor-field[hidden] { display: none !important; }`, fazendo o campo aparecer apenas em `after-page`;
+- foi adicionado o botão **⎙ Imprimir PDF final**, ao lado da exportação local; a impressão usa o mesmo `buildFlattenedBlob()` da saída final, portanto inclui texto, imagem overlay, desenhos, crop, ordem e rotação;
+- no produto real, a impressão abre o PDF final local em uma nova aba e solicita `print()` depois do carregamento. Esta solução foi escolhida para não reintroduzir iframe/embed/object no runtime documental, preservando a arquitetura de superfície única do visualizador;
+- se o navegador bloquear a abertura da aba, o editor informa que é necessário permitir pop-ups; se a caixa de impressão automática não aparecer, a nova aba permanece com o PDF final e o usuário pode usar Ctrl+P nela;
+- atalhos adicionados enquanto o editor está ativo: **Ctrl+Z** desfaz, **Ctrl+Y** e **Ctrl+Shift+Z** refazem, **Ctrl+P** aciona a impressão local e **Delete** continua removendo o objeto selecionado;
+- atalhos de undo/redo não sequestram campos de digitação, `contenteditable`, `textarea`, `select` ou inputs textuais, preservando a edição nativa do conteúdo;
+- os tooltips dos botões Desfazer, Refazer e Imprimir agora exibem os atalhos correspondentes.
+
+Correção durante a validação:
+- a primeira implementação da impressão usava um iframe local temporário; dois contratos legados da Central bloquearam corretamente essa abordagem porque `js/documents.js` não pode voltar a criar `iframe/embed/object`, mesmo para impressão;
+- a alternativa foi descartada e substituída por abertura do PDF final em nova aba, mantendo o contrato de **nenhum fallback nativo embutido na superfície da Central**.
+
+Head funcional validado: `6f6cfaf09100fd92f2308938d6dd02343024aa97`.
+
+Validação:
+- **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **76 casos — 73 passed / 3 skipped esperados**, em desktop e mobile;
+- teste do painel Unir exige que `Após a página` fique oculto em `after-document`, visível em `after-page` e volte a ocultar ao retornar;
+- testes de teclado cobrem Ctrl+Z, Ctrl+Shift+Z e Ctrl+Y, além de confirmar que um campo numérico focado não dispara o undo global;
+- teste da impressão cobre o botão **Imprimir** e **Ctrl+P** usando o blob final flatten sem sair do editor;
+- contrato estático do produto exige botão `editorPrintButton`, `printEditedPdfLocal()`, `window.open()` para impressão e proíbe regressão para iframe/embed/object;
+- Cloudflare Pages publicou o head funcional com sucesso (deployment `42357ef1-0dd0-47ec-aa94-f9dac48fc328`).
+
+Privacidade e segurança:
+- exportação e impressão continuam 100% locais no navegador; nenhum PDF é enviado ao backend ou Google Drive;
+- nenhuma telemetria de conteúdo foi adicionada;
+- nenhuma alteração em `main` ou produção;
+- PR #179 permanece aberto e sem merge.
+
+**Gate atual:** 3C.6 permanece aberta para reteste humano das novas interações e para a comparação visual final preview × PDF exportado/reaberto.
+
+**Próxima ação exata:** abrir `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, fazer Ctrl+F5 e validar: (a) `Após a página` só aparece em `Após uma página específica`; (b) o botão Imprimir abre o PDF final e a impressão; (c) Ctrl+Z desfaz e Ctrl+Y/Ctrl+Shift+Z refazem; (d) Ctrl+P aciona a impressão; depois concluir a comparação final do PDF exportado. Somente após aceite explícito encerrar 3C.6/Fase 3.
+
+## 3C.6 — segunda rodada de correções UX após reteste humano — 16/09/2026
+
+O reteste do candidato com zoom inicial em 114% revelou quatro ajustes adicionais antes da homologação final:
+
+1. no desktop, as páginas 4 e 5 ainda podiam ocupar colunas visualmente atrás do painel **Unir**; o requisito humano é que a grade use somente a largura livre e que as páginas excedentes **quebrem para a segunda linha**;
+2. ao escolher PDF ou imagem local no painel **Unir**, deve existir um **preview do arquivo selecionado**, usando a ergonomia do Lumin apenas como referência de comportamento, sem copiar sua identidade visual;
+3. **Colar imagem** passa a ser uma ferramenta em dois estágios: fora do modo, o primeiro clique apenas entra em Colar imagem e o segundo abre o seletor de arquivos; se o modo já estiver ativo, o primeiro clique abre o seletor;
+4. uma caixa de texto ou imagem overlay selecionada deve poder ser excluída pela tecla **Delete**, além dos controles visuais existentes.
+
+Implementação:
+- no modo Unir/Organizar em desktop, a grade agora reduz sua **largura real** pela faixa ocupada pelo painel lateral; não depende mais de apenas aumentar o padding, portanto as páginas seguintes refluem para a próxima linha;
+- o painel Unir ganhou cartão de preview local com nome/tipo/tamanho; imagens usam miniatura local e PDFs locais renderizam a primeira página via **PDF.js self-hosted**, sem upload e sem backend;
+- a seleção pendente pode ser removida pelo × do próprio cartão antes da confirmação em **Unir**;
+- o laboratório sintético foi alinhado ao fluxo real de Colar imagem e usa file picker real;
+- o atalho **Delete** usa a seleção atual do editor e preserva o histórico Undo/Redo; campos de edição textual continuam protegidos contra exclusão acidental;
+- após o primeiro CI, foi detectado que o foco podia permanecer no input de arquivo mesmo depois de selecionar/mover uma imagem. O runtime foi corrigido para tratar `file`/`hidden` e outros inputs não textuais como foco não bloqueante para Delete, mantendo bloqueio em textarea, select, contenteditable, role textbox e inputs de edição.
+
+Head funcional validado: `3b08614541494b430a81f8e9936a7c72d97bf74b`.
+
+Validação:
+- **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **72 casos — 69 passed / 3 skipped esperados**, em desktop e mobile;
+- o teste de Unir cria páginas adicionais e comprova que, no desktop, **nenhuma miniatura invade a faixa do painel** e existe quebra para linha seguinte;
+- o preview local é validado com imagem real fornecida ao file picker;
+- Colar imagem é validado em dois cliques quando o modo ainda não está ativo;
+- a tecla Delete é validada para **imagem overlay** e **caixa de texto**, com Undo restaurando o objeto;
+- Cloudflare Pages concluiu o deployment do head funcional com sucesso (deployment `c5199ad5-10f6-4d23-a18d-4ee3e9e54dc9`).
+
+Privacidade e segurança:
+- arquivos usados no preview são processados somente no navegador;
+- o preview de PDF usa os assets PDF.js já self-hosted;
+- nenhum nome, conteúdo, miniatura, texto ou coordenada é enviado ao PostHog;
+- nenhuma alteração foi feita na `main`, produção ou Google Drive;
+- PR #179 permanece aberto e sem merge.
+
+**Gate atual:** a 3C.6 continua aberta somente para novo reteste humano e comparação final preview × PDF exportado/reaberto.
+
+**Próxima ação exata:** abrir o alias atualizado `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, fazer Ctrl+F5 e validar: (a) páginas excedentes pulam para a segunda linha no Unir; (b) PDF/imagem selecionado mostra preview; (c) Colar imagem segue o fluxo primeiro clique = modo, segundo clique = seletor, e quando já ativo o primeiro clique abre o seletor; (d) texto/imagem selecionados são removidos por Delete e restauráveis por Undo. Depois concluir a exportação/reabertura do PDF final. Somente após aceite explícito encerrar 3C.6/Fase 3.
+
+## 3C.6 — ajuste adicional de zoom inicial após reteste humano — 16/09/2026
+
+Durante o novo reteste da 3C.6, o usuário comparou visualmente a abertura padrão em **174%** com **114%** e informou que **114% enquadra melhor a página**.
+
+Decisão aplicada:
+- o visualizador deixa de abrir automaticamente em **Ajustar largura** quando não existe estado anterior de visualização;
+- em desktop, a abertura inicial usa **114%**;
+- em telas menores, o zoom inicial é limitado pela largura disponível para não forçar uma escala maior do que a tela comporta;
+- o botão **Ajustar largura** continua existindo e permanece explícito: se o usuário o acionar, o modo fit volta a acompanhar a largura;
+- zoom manual e estado de zoom previamente escolhido continuam sendo preservados durante rebuilds do editor.
+
+Implementação funcional: `20e0f885bc14cea74852707a92164c58384e20e2`.
+
+Validação:
+- **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **72 casos**, com **69 passed / 3 skipped esperados**;
+- o teste de navegador agora exige **114% no desktop** na abertura inicial e no mobile exige escala inicial `<= 114%`;
+- Cloudflare Pages publicou o candidato com sucesso.
+
+Preview atualizado:
+- imutável: `https://a32de5a1.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+
+A 3C.6 **continua aberta**. Este ajuste faz parte do mesmo gate de homologação; nenhuma alteração foi feita em `main`, produção ou Google Drive.
+
+**Próxima ação exata:** retestar a abertura do visualizador no candidato acima e confirmar que o zoom inicial aparece em **114%** no desktop, sem perder o funcionamento de `+`, `−` e **Ajustar largura**; depois continuar o roteiro de homologação da 3C.6 já registrado abaixo.
+
+## 3C.6 — correções de UX após homologação humana — 16/09/2026
+
+A primeira tentativa de homologação humana da 3C.6 **não foi aprovada**. Durante o uso do preview, o usuário identificou três problemas concretos de interação antes de conseguir concluir a comparação preview × PDF exportado:
+
+1. ao arrastar uma caixa de texto, o objeto permanecia deslocado em relação ao ponteiro; a expectativa é que **o centro da caixa acompanhe o ponteiro** durante o arraste;
+2. no laboratório, **Adicionar imagem como página** inseria uma imagem sintética automaticamente em vez de abrir o seletor de arquivos do dispositivo;
+3. no modo **Unir**, a grade podia ficar visualmente sob o painel lateral, e o próprio painel não oferecia uma ação direta para **Adicionar PDF ou imagem** do dispositivo.
+
+Diagnóstico e decisões:
+- o arraste dentro da mesma página usava o deslocamento relativo ao ponto original de clique, enquanto a transferência entre páginas já reposicionava pelo centro; o comportamento foi unificado para que o centro do objeto siga o ponteiro, com limites da página preservados;
+- o editor real já possuía `editorImageInput` com `type=file`; a divergência existia no **harness sintético**. O laboratório foi alinhado ao comportamento real e agora abre o seletor de imagens do dispositivo;
+- o painel **Unir** ganhou `Adicionar PDF ou imagem`, aceitando PDF e imagens locais. A escolha do arquivo fica **pendente** e só é aplicada após o usuário escolher a posição e clicar no botão existente **Unir**;
+- em desktop, a grade reserva espaço lateral para o painel de união; em mobile, o painel entra no fluxo acima da grade, em vez de sobrepor as páginas;
+- imagens locais escolhidas no painel são normalizadas localmente quando necessário e convertidas em páginas; PDFs locais são incorporados pela mesma sessão pdf-lib, sem backend e sem Drive;
+- o painel continua permitindo selecionar um PDF já listado na Central, preservando o fluxo anterior.
+
+Implementação funcional consolidada no head `57e132481cc9d21e4734695988cff37b7d1024c7`.
+
+Validação automatizada:
+- **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **72 casos**, com **69 passed / 3 skipped esperados**;
+- teste de arraste agora exige que o centro da caixa fique a até ~3 px do ponteiro final;
+- teste de **Adicionar imagem como página** exige a abertura real de `filechooser`;
+- teste do painel **Unir** cobre seleção de imagem local, confirmação explícita em **Unir** e ausência de sobreposição em desktop e mobile;
+- durante a primeira execução do novo teste, a asserção de layout tratava mobile como desktop e falhou apesar do comportamento responsivo estar correto; a asserção foi separada por viewport e a matriz voltou integralmente a verde;
+- Cloudflare Pages publicou o candidato corrigido com sucesso.
+
+Preview corrigido:
+- imutável: `https://e35bf163.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- usar somente dados fictícios enquanto Cloudflare Access estiver pendente.
+
+Privacidade e segurança:
+- nenhuma alteração em `main`, produção ou Google Drive;
+- os arquivos locais selecionados são processados no navegador;
+- a telemetria da operação de união local registra apenas o tipo técnico de operação e bucket agregado de tamanho, sem nome, conteúdo, texto, coordenadas ou identificadores de documento;
+- PR #179 continua sendo o veículo de trabalho; não fazer merge antes do encerramento da Fase 3.
+
+**Gate atual:** novo reteste humano da 3C.6. O usuário deve confirmar primeiro as três correções de UX e depois concluir o roteiro preview × PDF exportado/reaberto.
+
+**Próxima ação exata:** abrir `https://e35bf163.portal-regulacao-central-staging.pages.dev/`, confirmar que (a) a caixa de texto fica centrada sob o ponteiro durante o arraste, (b) Adicionar imagem como página abre o seletor do dispositivo, e (c) o painel Unir oferece Adicionar PDF ou imagem, aplica somente após **Unir** e não cobre a grade. Em seguida, exportar o PDF final e comparar visualmente texto, imagem, desenho, crop, ordem e rotação. Somente após aceite explícito encerrar a 3C.6 e a Fase 3.
+
+## 3C.6 — implementação técnica concluída; homologação humana pendente — 16/09/2026
+
+A unidade técnica da 3C.6 foi concluída na branch `codex/central-docs-editor-superficie-unica`, sem merge e sem qualquer escrita no Google Drive.
+
+Implementação consolidada no head funcional `d8d5b2e1938a6e8916cd6c6bc7cdafb3f92953c7`:
+- `buildBlob()` permanece responsável pelo PDF estrutural usado durante a edição reversível;
+- novo `buildFlattenedBlob()` gera a saída final separada, incorporando **texto, imagem overlay, crop e desenhos** com pdf-lib;
+- o conteúdo vetorial/textual original do PDF é preservado; a página inteira **não é rasterizada** como atalho;
+- texto é materializado com fontes padrão do pdf-lib, preservando família aproximada, peso, itálico, sublinhado, alinhamento, cor, transparência e rotação;
+- imagens overlay são incorporadas localmente com proporção preservada, transparência e rotação;
+- traços vetoriais são gravados como linhas PDF, mantendo cor e espessura;
+- crop confirmado é materializado no `CropBox` final;
+- conversão de coordenadas cobre orientações efetivas de **0/90/180/270°**;
+- a semântica por `pageId` continua preservada após duplicação e reordenação;
+- novo botão **↓ Exportar PDF final localmente** baixa o PDF no dispositivo e não chama API de persistência;
+- a reeditabilidade dos overlays após reabrir o PDF exportado continua fora da Fase 3, conforme decisão já aprovada.
+
+Validação técnica:
+- **25/25 check-runs verdes** no head funcional;
+- workflow **PDF.js real em Chromium**: sucesso;
+- Playwright: **70 casos**, com **67 passed / 3 skipped esperados**;
+- a suíte da 3C.6 gera o PDF final com pdf-lib, reabre o resultado com o PDF.js real e confirma texto, imagem, desenho, crop e validade do arquivo;
+- matriz adicional confirmou rotações finais 0/90/180/270°, CropBox não padrão, duplicação e reordenação;
+- os cenários da 3C.6 passaram em Chromium desktop e mobile;
+- Cloudflare Pages publicou o candidato com sucesso.
+
+Preview candidato:
+- imutável: `https://afffb869.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- staging continua **somente com dados fictícios** enquanto Cloudflare Access estiver pendente.
+
+Correção de regressão durante a unidade:
+- o incremento de cache do Service Worker para `20260916-2` fez um teste legado de primeiro acesso esperar a versão anterior;
+- a expectativa foi atualizada para a nova versão e a matriz completa voltou a 25/25 verde;
+- nenhuma regra funcional de primeiro acesso foi alterada.
+
+Privacidade e segurança:
+- exportação final ocorre inteiramente no navegador;
+- nenhuma rota nova de upload/salvamento foi criada;
+- nenhum conteúdo documental, coordenada, texto, imagem, nome de arquivo ou ID do Drive é enviado ao PostHog;
+- nenhuma alteração foi feita em produção ou na `main`;
+- PR #179 permanece aberto, mergeável e sem merge.
+
+**Gate atual:** homologação humana da fidelidade **preview × PDF exportado/reaberto**. A automação comprova estrutura e round-trip, mas não substitui a conferência visual final de posicionamento, tamanho, crop e rotação.
+
+**Próxima ação exata:** abrir o preview sintético, editar pelo menos duas páginas usando texto, imagem, desenho e recorte; reorganizar ou girar uma página; clicar em **↓ Exportar PDF final localmente**; abrir o arquivo baixado fora do editor e comparar com o preview. Se o usuário aprovar, registrar o encerramento da 3C.6 e da **Fase 3**, mantendo PR sem merge até o gate de promoção e só então preparar a **Fase 4 — sincronização segura com Drive**.
+
+## Handoff para o próximo chat — 3C.6, registro vigente
+
+Este bloco prevalece sobre os handoffs históricos abaixo.
+
+- **Fase atual:** Fase 3 — Editor PDF essencial.
+- **Subfase atual:** 3C.6 — flatten/exportação local; correções de UX pós-homologação implementadas e aguardando novo reteste humano.
+- **Última ação concluída:** a impressão foi otimizada para ocorrer no mesmo editor, sem nova aba, usando iframe temporário same-origin apenas para impressão, cache do PDF final e renderização PDF.js paralela.
+- **Branch atual:** `codex/central-docs-editor-superficie-unica`.
+- **Head funcional validado:** runtime de impressão otimizada `d223d32456b2eb27023c4bcedd4b0ee5b0d429d9`; head de validação integral `c8e7a9784fda07d6d2659c7afee673a8b45a2a81`.
+- **PR atual:** #179 — manter aberto e sem merge até o encerramento da Fase 3.
+- **Main atual conhecida:** `73997b4d108dd0392173e93640310d70dd3eeccf`, já reconciliada nesta branch pelo merge `95c660d6e74c4aafdbb5d7be4c4383ac11d46995`.
+- **Checks e testes:** 25/25 checks verdes; Playwright 76 casos = 73 passed / 3 skipped esperados; cenário Imprimir + Ctrl+P sem nova aba passou em 1,8 s no desktop e 1,8 s no mobile; PDF.js real em Chromium e Cloudflare Pages verdes.
+- **Preview imutável do runtime corrigido:** `https://a32de5a1.portal-regulacao-central-staging.pages.dev/`.
+- **Alias da branch:** `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+- **Decisões tomadas:** objeto arrastado segue o centro do ponteiro; laboratório usa file picker real; arquivos locais no painel Unir ficam pendentes até confirmação explícita em Unir; desktop reduz a largura real da grade para reservar o painel e forçar quebra de linha; o painel mostra preview local; `Após a página` é estritamente condicional a `after-page`; mobile empilha o painel; Colar imagem usa entrada em modo + abertura do seletor no clique seguinte; Delete remove texto/imagem selecionados sem interferir em campos de edição; Ctrl+Z desfaz, Ctrl+Y/Ctrl+Shift+Z refazem e Ctrl+P imprime; impressão usa o PDF final flatten em nova aba, sem iframe/embed/object; abertura nova usa 114% no desktop e limita a escala à largura disponível em telas menores.
+- **Justificativas:** reduzir deslocamento perceptivo no arraste; eliminar divergência entre laboratório e produto; tornar a união autossuficiente; impedir páginas ocultas pelo painel; evitar abertura excessivamente ampliada e enquadrar melhor a página sem remover a opção Ajustar largura.
+- **Alternativas descartadas:** manter offset original de clique; imagem sintética automática no botão; união local imediata após escolher arquivo; painel flutuante sobre a grade; manter fit-width automático como zoom inicial; usar iframe/embed/object temporário para impressão dentro do runtime documental.
+- **Pendências e bloqueios:** exportação local já confirmada; impressão agora funciona sem nova aba e está otimizada, aguardando reteste humano de velocidade/UX. Também falta a confirmação visual da fidelidade do PDF exportado/reaberto. Antes do encerramento final, reconciliar com a `main` atual (`8e88467f...`) e repetir a matriz. Fase 4 permanece bloqueada. Cloudflare Access ainda pendente, portanto staging somente com dados fictícios.
+- **Riscos conhecidos:** diferenças finas de fonte entre navegador/pdf-lib e combinações incomuns de crop/rotação ainda dependem da conferência visual humana final.
+- **Métricas / observabilidade:** nenhuma telemetria de conteúdo; união local registra somente operação técnica e bucket agregado de tamanho.
+- **Próxima ação exata:** fazer Ctrl+F5 e retestar Imprimir/Ctrl+P no alias da branch; confirmar que a caixa de impressão abre diretamente, sem nova aba, e com preparação rápida. Depois confirmar a fidelidade do PDF exportado/reaberto. Com aceite dos dois pontos, reconciliar com `main`, rodar a matriz final e encerrar 3C.6/Fase 3.
+- **Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `testing/central-docs/editor-harness.js`, `testing/browser/central-docs-editor.spec.mjs`, `testing/browser/central-docs-flatten.spec.mjs`, `testing/browser/central-docs-viewer.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md` e `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`.
+
+## 3C.6 — liberada após reconciliação verde com main — 16/09/2026
+
+Gate anterior concluído:
+- a 3C.5 foi aceita pelo usuário;
+- a `main` `73997b4d108dd0392173e93640310d70dd3eeccf` foi integrada nesta branch por merge commit `95c660d6e74c4aafdbb5d7be4c4383ac11d46995`;
+- a branch ficou **0 commits atrás da main** após a reconciliação;
+- PR #179 permaneceu aberto, mergeável e sem merge;
+- **25/25 check-runs concluíram com sucesso** no merge commit, incluindo Cloudflare Pages e **PDF.js real em Chromium**;
+- os dois testes compartilhados que tinham evolução simultânea na main (`portal-performance` e `social-ui`) foram reconciliados preservando as correções da Central e a nova versão do catálogo de ferramentas da Agenda.
+
+Escopo agora autorizado da 3C.6:
+- manter `buildBlob()` como montagem estrutural usada pelo preview reversível;
+- criar uma saída final separada que incorpore **texto, imagem overlay, crop e desenhos** ao PDF com pdf-lib;
+- preservar o conteúdo vetorial/textual original, sem rasterizar a página inteira;
+- comparar o PDF final reaberto no PDF.js com o preview do editor;
+- validar 0/90/180/270°, CropBox não padrão, páginas reorganizadas/duplicadas, desktop e mobile;
+- disponibilizar apenas **exportação local** nesta fase; nenhum upload/salvamento no Drive;
+- depois do flatten, os overlays deixam de ser reeditáveis ao reabrir o arquivo exportado, conforme decisão já documentada.
+
+Riscos prioritários:
+- conversão entre coordenadas visuais normalizadas e coordenadas PDF em páginas rotacionadas;
+- clipping correto por CropBox;
+- fidelidade de fonte/linha/alinhamento usando apenas fontes padrão já disponíveis no pdf-lib;
+- imagens com `object-fit: contain` e rotação arbitrária;
+- não duplicar overlays no preview estrutural.
+
+**Próxima ação exata:** implementar `buildFlattenedBlob()` separado de `buildBlob()`, adicionar exportação local explícita e criar testes que gerem, reabram e inspecionem o PDF final antes da homologação humana da 3C.6.
+
+## 3C.5 — aceite humano final; reconciliação com main liberada — 16/09/2026
+
+O usuário homologou explicitamente **Desenhar/Borracha** com a avaliação “ta ótimo” e autorizou o avanço.
+
+Aceite humano consolidado:
+- caneta com resposta visual considerada satisfatória;
+- alteração de cor e espessura aceita;
+- Undo/Redo por gesto/traço aceito;
+- borracha restrita aos traços de Desenhar aceita;
+- conteúdo original do PDF e objetos do editor permanecem preservados;
+- comportamento de desenho vinculado à página foi considerado adequado;
+- nenhuma correção visual adicional foi solicitada.
+
+Evidência técnica associada:
+- runtime funcional da 3C.5: `a2c28838df3138beec036baa809a5d7744eb21a5`;
+- matriz técnica já registrada: 25/25 checks verdes;
+- Playwright: 64 casos, 61 passed / 3 skips esperados;
+- PR #179 continua aberto e sem merge;
+- nenhuma escrita no Google Drive ou produção.
+
+Decisão:
+- **3C.5 está encerrada e aceita**;
+- antes de liberar efetivamente a 3C.6, cumprir o gate documental já definido: reconciliar esta branch com a `main` atual e executar novamente a matriz completa de CI;
+- somente após essa reconciliação verde a **3C.6 — flatten/exportação local** se torna a subfase corrente;
+- Fase 4 (sincronização segura com Drive) continua bloqueada até o encerramento integral da Fase 3.
+
+**Próxima ação exata:** integrar a `main` atual nesta branch sem alterar produção, resolver apenas eventuais conflitos reais, rodar a matriz completa e, ficando verde, registrar a liberação da 3C.6.
+
+## 3C.5 — implementação técnica concluída; homologação humana pendente — 16/09/2026
+
+A unidade mínima autorizada da 3C.5 foi implementada na mesma superfície PDF.js do editor, ainda sem merge e sem qualquer persistência no Google Drive.
+
+Implementação consolidada no head funcional `a2c28838df3138beec036baa809a5d7744eb21a5`:
+- modelo local de `strokes` por `pageId`, com pontos normalizados, cor e espessura por traço;
+- camada SVG vetorial sobre a página, separada do canvas original do PDF e da camada de objetos;
+- caneta por Pointer Events para mouse/pen/touch;
+- cada gesto contínuo cria uma única mutação de histórico, sem gerar uma entrada por ponto capturado;
+- borracha atua por hit-test somente sobre os traços do modo **Desenhar**;
+- borracha não altera pixels/canvas do PDF original, texto, imagem overlay, crop ou outros objetos;
+- rotação transforma os pontos do traço junto com a página;
+- reorganização conserva o vínculo por `pageId`;
+- duplicação clona os traços com novos IDs;
+- exclusão de página remove somente os traços vinculados àquela página;
+- Undo/Redo cobre criação e remoção de traços;
+- cor e espessura permanecem persistidas por traço dentro da sessão do editor;
+- flatten/materialização no Blob final continua explicitamente fora do escopo até a 3C.6.
+
+Validação automatizada do head:
+- **25/25 checks GitHub concluídos com sucesso**;
+- workflow **PDF.js real em Chromium**: sucesso;
+- Playwright: **64 casos**, com **61 passed / 3 skipped esperados**;
+- cenários específicos da 3C.5 passaram em Chromium desktop e mobile;
+- touch real sintetizado no perfil mobile desenhou e apagou traço com sucesso;
+- teste de borracha comprovou que objeto de texto e canvas original permanecem intactos;
+- testes de rotação, duplicação, exclusão e vínculo por `pageId` passaram;
+- Cloudflare Pages: deployment bem-sucedido.
+
+Preview candidato:
+- imutável: `https://ea2088f5.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- staging continua **somente com dados fictícios** enquanto Cloudflare Access estiver pendente.
+
+Privacidade e segurança:
+- nenhuma coordenada, ponto, cor, conteúdo de desenho, texto documental, nome de arquivo ou ID do Drive é enviado ao PostHog;
+- nenhuma rota nova de escrita/persistência foi criada;
+- nenhuma alteração foi feita em produção ou no Google Drive.
+
+Estado da `main`:
+- a `main` atual é `73997b4d108dd0392173e93640310d70dd3eeccf`;
+- desde `abf7882f125cc9b3b3e322a2b14981e304aaec67`, houve apenas mais **1 commit documental do módulo Agenda/DigSaúde** (`docs/AGENDA-DIGSAUDE-STATUS.md`), sem alteração nos arquivos centrais do editor PDF;
+- a branch da Central continua **8 commits atrás da main e 243 commits à frente do merge-base**, mas o PR #179 permanece aberto e mergeável;
+- **não reconciliar/rebasear antes do gate humano da 3C.5**: isso adicionaria churn e nova rodada de CI sem benefício para a homologação visual atual;
+- após o aceite humano, antes de qualquer merge, sincronizar a branch com a `main` atual, resolver eventuais conflitos de testes compartilhados e executar novamente toda a matriz.
+
+
+Validação de continuidade antes da homologação (16/09/2026):
+- head validado imediatamente antes desta atualização documental: `26e1f7237eb2ce9f93d8e566e61d93e3453449f7`; a atualização do próprio status gera um novo head documental sem mudar o runtime;
+- **25/25 check-runs verdes** no head atual, inclusive Cloudflare Pages e PDF.js real em Chromium;
+- nenhuma falha técnica nova detectada na revisão de continuidade;
+- o próximo passo permanece a homologação humana de caneta/borracha no preview sintético; não houve motivo técnico para ampliar o escopo antes desse gate.
+
+**Gate atual:** homologação humana de Desenhar/Borracha. A 3C.5 ainda não está encerrada e a 3C.6 permanece bloqueada.
+
+**Próxima ação exata:** testar o preview imutável da 3C.5 em desktop e, se possível, touch: desenhar com duas cores/espessuras, criar traços em páginas diferentes, validar Undo/Redo, apagar somente um traço, confirmar que PDF/texto/imagem permanecem intactos e girar/reorganizar uma página desenhada. Se aprovado, registrar o aceite, reconciliar a branch com a `main` atual e só então liberar a 3C.6.
+
+## 3C.4 — aceite humano final e encerramento; 3C.5 liberada — 16/09/2026
+
+O usuário aprovou explicitamente a UX final do modo **Recortar** após testar o fluxo de seleção provisória com **Confirmar recorte / Cancelar**.
+
+Aceite humano consolidado:
+- página entra no modo Recortar sem corte predefinido;
+- primeiro arraste cria apenas uma seleção provisória;
+- **Cancelar** descarta a seleção sem alterar histórico;
+- **Confirmar recorte** aplica visualmente somente a área mantida e registra uma única mutação;
+- crop confirmado pode ser reaberto por **Ajustar**;
+- cancelar um ajuste restaura o crop confirmado anterior;
+- continua existindo no máximo 1 crop por página;
+- Undo/Redo atua sobre crops confirmados;
+- o comportamento foi considerado satisfatório pelo usuário.
+
+Evidência técnica imediatamente anterior ao aceite:
+- runtime funcional `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`;
+- head documental `17e42734a190253589d3cadec1bca41128cd2d5b`;
+- **25/25 checks verdes**;
+- PR #179 aberto, mergeável e sem merge;
+- `main` permanece em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`;
+- nenhuma escrita no Google Drive ou produção.
+
+Decisão:
+- **3C.4 fica encerrada e aceita**;
+- **3C.5 — Desenhar/Borracha fica formalmente liberada**;
+- o botão/modo Desenhar não deve ser exposto como funcional antes da implementação/testes da própria 3C.5;
+- 3C.6 continua reservada a flatten/exportação local.
+
+Escopo autorizado da 3C.5, conforme UX V2/homologação:
+- caneta com traço livre;
+- traços vetoriais locais normalizados por `pageId`;
+- cor e espessura por traço;
+- borracha remove exclusivamente traços criados pela ferramenta Desenhar;
+- conteúdo original do PDF nunca é apagado, mascarado ou reescrito pela borracha;
+- Undo/Redo trabalha por gesto/traço, nunca por cada ponto capturado;
+- preservar reorganização, rotação, duplicação/exclusão e semântica por `pageId`;
+- desktop + touch/mobile;
+- manter tudo local/reversível; flatten permanece fora do escopo até 3C.6.
+
+**Próxima ação exata:** implementar a unidade mínima da 3C.5 na mesma superfície PDF.js, começando pelo modelo de traço vetorial local por `pageId`, caneta com cor/espessura e histórico por gesto; depois integrar a borracha restrita a esses traços, adicionar testes determinísticos desktop/mobile e publicar novo preview sintético para homologação humana. PR #179 permanece sem merge e sem escrita no Drive.
+
+## 3C.4 — confirmação/cancelamento explícitos do recorte — 16/09/2026
+
+Feedback humano:
+- a seleção da área precisava continuar **provisória** após o arraste;
+- o recorte só deve ser aplicado visualmente e entrar no histórico quando o usuário confirmar;
+- deve existir um botão **Confirmar recorte** e um botão **Cancelar** junto à seleção;
+- **Cancelar** deve descartar a seleção provisória sem alterar histórico;
+- ao confirmar, o preview deve mostrar somente a área mantida;
+- permanece a regra de **no máximo 1 recorte por página**.
+
+Estado implementado no PR #179:
+- branch `codex/central-docs-editor-superficie-unica`;
+- head funcional atual: `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`;
+- o viewer mantém `cropDrafts` locais, separados do `page.crop` confirmado;
+- o primeiro arraste cria apenas um draft e mostra **Confirmar recorte / Cancelar** abaixo da seleção; quando não houver espaço suficiente, a barra é reposicionada acima;
+- **Confirmar recorte** promove o draft a crop confirmado, dispara uma única mutação de histórico e aplica o viewport recortado no preview;
+- **Cancelar** remove o draft e restaura a página inteira ou o crop confirmado anterior, sem criar histórico;
+- crop já confirmado aparece com ações **Ajustar** e ↺; **Ajustar** reabre uma cópia provisória e exige nova confirmação;
+- os botões usam Pointer Events + click para permanecerem confiáveis em touch;
+- a materialização definitiva no PDF exportado continua reservada à 3C.6; nesta subfase o crop permanece metadado reversível associado ao `pageId`.
+
+Validação:
+- head `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`;
+- **25/25 checks verdes**;
+- Cloudflare Pages: sucesso;
+- workflow de navegador/PDF.js em Chromium: sucesso;
+- testes cobrem draft, cancelar sem histórico, confirmar com viewport recortado, reedição + cancelamento, Undo/Redo, CropBox não padrão, reordenação, rotações e touch;
+- PR #179 continua aberto e sem merge;
+- `main`, produção e Google Drive permanecem intocados.
+
+**Gate atual:** falta somente homologação humana desta UX final da 3C.4. Não iniciar 3C.5 antes do aceite.
+
+**Próxima ação exata:** abrir o alias de staging da branch, criar uma seleção, conferir os botões **Confirmar recorte** e **Cancelar**, testar cancelamento sem efeito, confirmar e verificar que só a área selecionada permanece visível; depois usar **Ajustar**, cancelar e confirmar novamente. Se aprovado, encerrar 3C.4 e iniciar 3C.5 — Desenhar/Borracha.
+
+## 3C.4 — correção de UX após homologação humana — 16/09/2026
+
+Feedback humano no preview:
+- ao entrar em **Recortar**, a interface mostrava uma moldura predefinida com margem de 4%, dando a impressão de que a página já estava parcialmente cortada sem ação do usuário;
+- requisito aprovado: **sem seleção explícita não existe recorte**;
+- o usuário deve arrastar diretamente sobre a página para criar a área mantida;
+- existe **no máximo 1 área de recorte por página**; depois de criada, novos arrastes fora da moldura não criam outra área;
+- a área existente continua móvel, redimensionável por oito alças, removível por ↺ e integrada a Undo/Redo.
+
+Correção implementada no PR #179:
+- removido o retângulo inicial implícito `{ x: 0.04, y: 0.04, width: 0.92, height: 0.92 }`;
+- uma página com `crop: null` agora é exibida integralmente, sem moldura e sem escurecimento;
+- primeiro drag deliberado sobre a página cria a única seleção de recorte;
+- clique ou movimento pequeno demais não cria recorte;
+- a camada vazia usa cursor de seleção e o texto de ajuda explica que sem seleção a página permanece inteira;
+- a restrição de uma única área é garantida pelo próprio modelo `page.crop` e também pela interação: com crop existente, arrastar fora da moldura é ignorado.
+
+Evidência técnica:
+- head funcional da correção: `ca7801df7d6042a3d111a2185c21bd82b12923c8`;
+- **25/25 checks concluídos com sucesso**, incluindo Cloudflare Pages;
+- workflow **Validar Central de Documentos — navegador**: sucesso;
+- etapa **Executar testes de navegador**: sucesso;
+- testes agora cobrem ausência de recorte inicial, criação por drag, tentativa de segunda seleção na mesma página, resize, Undo/Redo, rotação, duplicação, reordenação, CropBox não padrão e touch;
+- main, produção e Google Drive continuam intocados.
+
+**Gate atual:** 3C.4 continua aberta apenas para reteste humano desta UX corrigida. Não iniciar 3C.5 antes do aceite.
+
+**Próxima ação exata:** abrir o alias de staging da branch, entrar em **Recortar** e confirmar que a página começa inteira, sem moldura; arrastar uma área para criar o recorte; tentar criar uma segunda área na mesma página e confirmar que isso não acontece; ajustar a seleção existente e testar ↺/Undo/Redo. Se aprovado, registrar o encerramento da 3C.4 e iniciar 3C.5 — Desenhar/Borracha.
+
+## 3C.4 — implementação técnica concluída; homologação humana pendente — 16/09/2026
+
+Este bloco prevalece sobre o handoff anterior da 3C.4.
+
+- **Main:** permanece em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`; não foi alterada.
+- **Branch:** `codex/central-docs-editor-superficie-unica`.
+- **PR:** #179 continua aberto, mergeável e sem merge.
+- **Head funcional validado:** `c19d664bd2b2b5feb5176290ecbb98a082ce6276`.
+- **Recortar:** implementado na própria superfície PDF.js com retângulo normalizado por página/`pageId`, preview imediato, oito alças de recorte, movimentação da moldura, reset por página e um único commit ao fim do gesto.
+- **Semântica preservada:** crop acompanha reorganização, duplicação, exclusão e rotações 0/90/180/270°; `CropBox` não padrão é respeitado pela superfície visível.
+- **Histórico:** Undo/Redo restaura o crop; o modo continua local e reversível e **não** rasteriza nem materializa o recorte no PDF durante a edição.
+- **Desktop/mobile:** gesto por Pointer Events validado com mouse e touch sintético.
+- **Correções de revisão da 3C.3 incorporadas no mesmo head:** proporção natural de imagem overlay, resize de objeto rotacionado no sistema local e cancelamento de preview de cor sem edição silenciosa.
+- **Review:** 11/11 threads do PR #179 estão resolvidos após resposta com evidência.
+- **CI:** 24/24 workflows verdes no head funcional; Playwright executou 58 casos, com **56 passed / 2 skipped esperados** (casos touch-only no projeto desktop).
+- **Segurança:** nenhuma escrita no Google Drive, nenhuma alteração de produção/main, nenhuma rota de persistência nova e nenhuma telemetria de conteúdo documental.
+
+Decisões e justificativas:
+- o crop permanece como metadado reversível da sessão até a 3C.6; materializá-lo agora no PDF criaria perda prematura de reversibilidade e misturaria escopos;
+- a proporção de imagem usa dimensões naturais + proporção visível da página, descartando altura fixa que distorcia retrato/paisagem;
+- resize após rotação usa delta transformado pela inversa da rotação, descartando cálculo direto em coordenadas de tela;
+- `pointercancel` do seletor RGB restaura a cor inicial, descartando a alternativa de deixar preview sem entrada de histórico.
+
+Pendência / risco atual:
+- falta **homologação humana visual e tátil da 3C.4** no preview sintético; automação não substitui a percepção de ergonomia da moldura e alças;
+- flatten/exportação ainda não aplica crop nem objetos ao PDF final — isso continua reservado à 3C.6;
+- Cloudflare Access segue pendente, portanto o staging deve continuar apenas com dados fictícios.
+
+**Próxima ação exata:** abrir o alias de staging da branch, testar Recortar em pelo menos duas páginas (incluindo a página paisagem/CropBox), mover e redimensionar a moldura, testar Undo/Redo e alternar para Organizar para confirmar que o recorte acompanha giro/reordenação. Se o usuário aprovar, registrar o fechamento da 3C.4 e iniciar **3C.5 — Desenhar/Borracha**, mantendo o PR sem merge e sem escrita no Drive.
+
+## Handoff para o próximo chat — 3C.5, registro vigente
+
+Este bloco prevalece sobre os handoffs históricos abaixo.
+
+- **Fase atual:** Fase 3 — Editor PDF essencial.
+- **Subfase atual:** **3C.5 — Desenhar/Borracha, tecnicamente concluída e aguardando homologação humana**.
+- **Última ação concluída:** implementação + correções da 3C.5 validadas no head `a2c28838df3138beec036baa809a5d7744eb21a5`, com 25/25 checks verdes e preview Cloudflare publicado.
+- **Branch atual:** `codex/central-docs-editor-superficie-unica`.
+- **PR atual:** #179 — aberto, sem merge; atualmente divergente da `main`.
+- **Último commit relevante:** `a2c28838df3138beec036baa809a5d7744eb21a5`.
+- **Checks e testes:** 25/25 checks verdes; Playwright 64 casos = 61 passed / 3 skipped esperados; 3C.5 passou em desktop e mobile, incluindo gesto touch.
+- **Preview imutável:** `https://ea2088f5.portal-regulacao-central-staging.pages.dev/`.
+- **Alias da branch:** `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+- **Main atual:** `abf7882f125cc9b3b3e322a2b14981e304aaec67`; avançou 8 commits de Agenda/DigSaúde depois do merge-base `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`.
+- **Decisões tomadas:** desenho é overlay vetorial local por `pageId`; um gesto = uma entrada de histórico; borracha só remove traços do próprio modo; flatten/exportação permanece para 3C.6.
+- **Justificativas:** manter traços vetoriais reversíveis evita rasterização precoce; vínculo por `pageId` preserva semântica quando páginas mudam de posição; borracha restrita evita qualquer risco de apagar conteúdo documental original.
+- **Alternativas descartadas:** apagar pixels do canvas/PDF original; rasterizar a página durante desenho; gravar histórico por ponto; antecipar flatten na 3C.5.
+- **Ações externas concluídas:** deployment Cloudflare Pages do head `a2c2883` concluído com sucesso; nenhuma configuração externa/segredo novo foi necessária.
+- **Pendências e bloqueios:** aceite humano da 3C.5; depois, sincronizar a branch com a `main` atual antes de qualquer merge. Codex Review segue indisponível por limite de uso e não é gate substituto dos checks/homologação.
+- **Riscos conhecidos:** staging continua público e deve usar somente dados fictícios enquanto Access estiver pendente; branch divergente pode gerar conflito em arquivos/testes compartilhados quando for sincronizada.
+- **Métricas / observabilidade:** nenhum dado sensível ou coordenada de desenho é enviado; evidência atual é CI/Playwright e deployment sintético, sem uso de PostHog para conteúdo.
+- **Próxima ação exata:** usuário homologar o preview `ea2088f5...` com caneta, cor/espessura, duas páginas, Undo/Redo, borracha, rotação/reorganização e, se possível, touch. Se aprovado, registrar o aceite; em seguida reconciliar a branch com a `main`, repetir CI completo e liberar 3C.6.
+- **Arquivos e fontes principais:** Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-STATUS.md`; `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`; `docs/CENTRAL-DOCUMENTOS-EDITOR-UX-V2.md`; PR #179; `js/document-editor.js`; `js/document-viewer.js`; `js/documents.js`; `css/documents.css`; `testing/browser/central-docs-drawing.spec.mjs`.
+
+## 3C.3 — aceite humano final e encerramento — 15/09/2026
+
+O usuário respondeu **“Aprovado”** após a rodada final de homologação da 3C.3.
+
+Aceite confirmado para:
+- Escrever e editar caixa de texto;
+- modo Selecionar sem edição do conteúdo;
+- quickbar de cor, A−, A+ e lixeira;
+- clique fora para confirmar/desmarcar;
+- Colar imagem overlay e manipulações já validadas;
+- paleta por conta com slots editáveis e `+`;
+- RGB/HEX substituindo o slot ativo;
+- painel RGB próprio, móvel pelo puxador inferior direito, com fechamento por × e preservação de posição durante a sessão;
+- comportamento desktop e mobile coberto por CI/Playwright, com teste físico recomendado mas não bloqueante após o aceite expresso do usuário.
+
+Evidências:
+- runtime funcional: `8596a2d92937cae3c0357f123e61ec1f50bbf257`;
+- documentação/preview candidato: `4ea02f0722bfec022eeb58702e198498da3eef0f`;
+- **24/24 workflows verdes**;
+- Playwright: **51 passed / 1 skipped esperado**;
+- nenhum thread de review pendente;
+- preview homologado: `https://a95d970c.portal-regulacao-central-staging.pages.dev/`.
+
+Decisão:
+- 3C.3 fica **encerrada**;
+- 3C.4 — Recortar fica **formalmente liberada**;
+- PR #179 continua aberto e sem merge;
+- main e Google Drive permanecem intocados.
+
+## 3C.3 — painel RGB arrastável finalizado tecnicamente — 15/09/2026
+
+A rodada encerrou o adendo visual/funcional da paleta sem Codex e sem ampliar o escopo da fase.
+
+- o picker nativo foi substituído por componente próprio RGB/HEX, permitindo movimento real pelo puxador inferior direito;
+- o painel abre acima da paleta, pode ser fechado por × e conserva a posição movida enquanto a barra contextual existir;
+- a movimentação usa Pointer Events e limites calculados sobre a área útil do viewer durante o gesto, evitando que o painel seja arrastado para uma posição inacessível;
+- selecionar outro slot com o painel aberto sincroniza imediatamente RGB/HEX; `+` cria e seleciona o slot novo; reabrir o painel usa o slot ativo;
+- foram corrigidas regressões encontradas pela própria automação durante a implementação, incluindo captura de pointer events, sobreposição de controles e escopo dos helpers de posicionamento;
+- o teste foi ajustado para validar comportamento real em desktop/mobile, inclusive fechar o painel antes de acessar controles encobertos e reabrir na posição persistida;
+- head funcional final: `8596a2d92937cae3c0357f123e61ec1f50bbf257`;
+- CI: **24/24 workflows verdes**;
+- navegador: **51 passed / 1 skipped esperado**;
+- preview imutável: `https://b92136d4.portal-regulacao-central-staging.pages.dev/`;
+- review: nenhum thread não resolvido;
+- main permanece em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`;
+- nenhuma escrita no Drive, merge ou avanço para 3C.4.
+
+Resultado: a 3C.3 está **tecnicamente pronta para homologação humana final**. A próxima intervenção necessária é somente o aceite visual/touch do usuário; não há outra correção técnica conhecida bloqueando o teste humano.
+
+## 3C.3 — microajuste visual do seletor RGB — 15/09/2026
+
+Durante a homologação humana, o usuário confirmou o funcionamento de `+` e `RGB`, mas observou que o seletor nativo de cor abria sobre a primeira linha da paleta, impedindo selecionar/editar os slots superiores enquanto a janela estivesse aberta.
+
+Correção aplicada:
+- a âncora invisível do `input[type="color"]` foi deslocada **52 px acima** da paleta e 10 px da borda direita;
+- o seletor nativo continua sendo aberto por `showPicker()`/fallback `click()`, sem substituir o componente do navegador;
+- a mudança é apenas de posicionamento da âncora: não altera slots, persistência, histórico, conteúdo do texto ou permissões;
+- o teste Playwright da paleta passou a verificar que a âncora do picker fica pelo menos 20 px acima da paleta;
+- head funcional `b95914d8d7bf4a7086b280e543abae4a7a0efba2`: **24/24 workflows verdes**, Playwright **51 passed / 1 skipped esperado**;
+- preview imutável: `https://547ebcd7.portal-regulacao-central-staging.pages.dev/`;
+- nenhuma escrita no Drive, merge, alteração da main ou avanço para 3C.4.
+
+## 3C.3 — correções finais de paleta e P2s — 15/09/2026
+
+Rodada concluída diretamente no PR #179, sem merge e sem tocar a main:
+
+- **Paleta contextual:** o botão `+` agora cria imediatamente um novo slot visível e selecionado, até o limite de 16 slots. O novo slot nasce com a cor atual apenas como valor inicial e fica pronto para ser substituído pelo RGB.
+- **RGB/HEX:** o botão `RGB` chama `showPicker()` quando suportado e usa `click()` como fallback. A cor escolhida substitui exatamente o slot selecionado; se o slot veio do `+`, ele é preenchido pela nova cor. Duplicatas de cor são permitidas porque a posição do slot é significativa.
+- **Persistência por conta:** gravações de paleta foram serializadas por `editorPaletteWriteChain`; PATCHes de paleta inteira não podem mais concluir fora de ordem. `editorPaletteWriteGeneration` impede que falha antiga substitua o feedback da alteração mais recente.
+- **Saída do editor:** `setEditorObjects([], { mode: 'none', selectedObjectId: '' })` é executado antes de descartar a sessão. Isso devolve `data-object-mode=none` e `pointer-events:none` à camada de objetos mesmo ao sair sem mutação.
+- **Transparência:** a opacidade passou do wrapper interativo para `--object-opacity`, aplicada somente ao texto/imagem. Borda, handles, rotação e quickbar permanecem 100% visíveis.
+- **Quickbar entre caixas:** a barra contextual acompanha a seleção imediatamente e não permanece presa ao objeto anterior.
+- **Histórico do seletor de cor:** eventos intermediários de `input` continuam como preview com `commit:false`; o gesto é consolidado em uma única mutação no `change`.
+- **Testes:** Playwright passou com **51 casos aprovados e 1 skip esperado**, incluindo os novos cenários em desktop e mobile.
+- **CI:** **24/24 workflows verdes** no head funcional `633a568c50a4e87234305d024cc62f1c2d40f1e2`.
+- **Review:** todos os cinco threads P2 da rodada foram respondidos com evidência e resolvidos.
+- **Staging:** preview imutável funcional `https://a475ca05.portal-regulacao-central-staging.pages.dev/`.
+- **Segurança/governança:** nenhuma escrita no Drive, nenhum merge, nenhuma mudança na main, nenhum deploy de produção e nenhum avanço para 3C.4.
+
+Decisão: a 3C.3 volta a depender apenas da **homologação humana final**. Se o fluxo da paleta e os demais pontos acima forem aprovados, registrar o aceite e somente então liberar 3C.4 — Recortar.
+
+## 3C.3 — revisão pós-homologação e fila para Codex — 15/09/2026
+
+- o usuário aprovou visualmente o novo comportamento do modo Selecionar;
+- o review encontrou P2 na migração da quickbar entre duas caixas; a implementação atual de `markSelectedObject()` já remove a barra anterior e cria a nova, e foi acrescentada regressão Playwright com duas caixas;
+- o review encontrou P2 no seletor RGB da barra superior: eventos `input` enchiam o histórico. O cliente agora faz preview/model update com `commit: false` e consolida uma única mutação no `change`, com `blur` como fallback;
+- head `9725a0c`: 24/24 workflows verdes; Playwright 49 passed / 1 skipped esperado;
+- surgiu um P2 adicional ainda aberto: persistência da paleta por conta pode sofrer corrida entre PATCHes completos feitos em sequência. A correção deve serializar/coalescer as gravações ou rejeitar conclusões obsoletas por geração;
+- o review abriu também um P2 de saída do editor: ao sair sem mutação depois de Select/Write/Image, o viewer pode conservar `data-object-mode` e a camada de objetos continuar interceptando ponteiro/touch. O modo de objetos deve ser limpo antes de descartar `editorSession`;
+- esses dois P2s são agora o melhor ponto de retomada pelo Codex. Os dois P2s anteriores (quickbar e histórico do seletor de cor) já têm correção/teste no head funcional `9725a0c`, mas os threads ainda devem ser conferidos e fechados. Não iniciar 3C.4 antes de fechar a revisão da 3C.3.
+
+## 3C.3 — adendo humano: Selecionar protege o conteúdo do texto — 15/09/2026
+
+Durante a homologação humana, foi acrescentado um requisito de interação para a caixa de texto. A 3C.3 foi reaberta tecnicamente sem avançar para Recortar.
+
+- no modo **Selecionar e mover**, clicar na caixa seleciona o objeto, mas não permite editar o conteúdo textual; inclusive duplo clique é ignorado para edição enquanto o modo não for Escrever;
+- a caixa selecionada continua expondo os atalhos contextuais já definidos: cor, A−, A+ e lixeira, preservando alterações de aparência e exclusão;
+- ao clicar fora da caixa, o estado atual é confirmado e a caixa deixa de ficar selecionada; no modo Escrever esse primeiro clique externo é consumido para não criar outra caixa acidentalmente;
+- foi corrigido também o contrato de `selectedObjectId`: valor vazio explícito agora realmente limpa a seleção em vez de reaproveitar a seleção anterior;
+- a barra contextual passa a acompanhar a seleção sem reconstruir toda a camada de objetos;
+- foi renovado o versionamento dos assets (`document-viewer.js?v=20260915-8`, `documents.js?v=20260915-5`) e do cache do Portal (`20260915-6`) para impedir que o navegador continue servindo o comportamento antigo;
+- não houve merge, escrita no Drive, deploy de produção, telemetria de conteúdo ou avanço para 3C.4.
+
+Decisão descartada: não tornar o texto editável no modo Selecionar nem aproveitar o clique externo de confirmação para criar uma nova caixa. A separação é deliberada para evitar alterações acidentais do conteúdo.
+
+Validação desta atualização: os primeiros dois ciclos do Playwright apontaram um falso negativo do próprio teste porque o clique de confirmação era suprimido/medido em coordenadas inadequadas logo após o arraste. O runtime foi ajustado para que a supressão pós-arraste se aplique somente ao clique no objeto, nunca ao clique externo. No head final `29077e4`, o workflow de navegador passou com 47 casos aprovados e 1 skip esperado. Pendência restante: somente homologação humana no preview sintético atual.
+
+## 3C.3 — adiantamento técnico enquanto Codex estava indisponível — 15/09/2026
+
+A rodada foi executada diretamente no PR #179, sem tocar a main:
+
+- corrigido o P2 de performance das miniaturas, preservando o lazy loading baseado em `IntersectionObserver`;
+- mantido o fallback completo apenas para navegadores sem `IntersectionObserver`;
+- alinhada a interação da imagem ao requisito humano original: a alça inferior direita combina escala + rotação, sem remover o controle dedicado de rotação;
+- adicionados testes de regressão para a transformação combinada e para a troca de modo com documento maior;
+- a documentação de homologação passou a conter a matriz completa da 3C.3 e a preparação das unidades seguintes, sem autorizar sua implementação antecipada.
+
+Resultado: o CI confirmou a rodada sem regressão conhecida: 24/24 workflows verdes e Playwright 43 passed / 1 skipped (skip exclusivo do teste touch no projeto desktop; mobile aprovado). O deployment imutável `11589904...` foi publicado com sucesso. A fila restante é **homologação humana da 3C.3**; não há justificativa para iniciar Recortar antes desse gate.
 
 ## Estado de entrada
 
@@ -20,9 +862,162 @@ Subfase atual: **3C.1 — visualizador próprio validado em produção; integra�
 
 ## Branch / PR
 
-Branch atual: `codex/central-docs-staging-registro` (registro do ambiente remoto de homologação; a fase funcional continua em 3C.1).
+Branch atual: `codex/central-docs-editor-superficie-unica`, inicialmente criada de `7c25797d2a5c73aa389f064c35b95a3b67b6e0ba` e atualizada por rebase sobre a `origin/main` real `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`.
 
-PR documental atual: esta PR da branch de registro. PR #175 (infraestrutura de staging) foi validado e mesclado. A correção funcional do visualizador permanece no PR #173 já publicado.
+PR atual: [#179 — Central de Documentos: unificar visualizador e editor PDF](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/179), aberto e sem merge. PR #175 (infraestrutura de staging) e PR #173 (compatibilidade do visualizador) permanecem como histórico já publicado.
+
+## 3C.1 — P1 corrigido e validação pós-rebase — 14/09/2026
+
+Este registro substitui as referências de base, contagens e preview da homologação anterior para a revisão final do PR #179.
+
+P1 encontrado no review:
+
+- [comentário Codex #4006168373](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/179#discussion_r4006168373): uma abertura antiga podia terminar a conversão de Blob ou o carregamento do PDF.js depois de uma nova e reassumir `active`, misturando título/estado do documento novo com canvases antigos;
+- a causa estava dentro de `PortalPdfViewer.open()`: a sessão ativa era fechada antes da preparação assíncrona, mas a atribuição posterior de `active` não verificava qual chamada ainda era atual;
+- a correção foi publicada no commit `0d0782d94534e6e376205e86952868f06254e874`.
+
+Correção generation-aware:
+
+- cada chamada de `open()` recebe geração/token próprio e um sinal de cancelamento;
+- os awaits do módulo PDF.js, de `Blob.arrayBuffer()` e da loading task competem com esse sinal; uma chamada obsoleta retorna `null` e não assume `active`;
+- o encerramento de uma sessão antiga cancela somente suas render/loading tasks, desconecta seus observers/listeners e zera seus canvases; os roots compartilhados só são limpos quando a sessão ainda é proprietária da superfície;
+- `close()` invalida também aberturas pendentes, e renderizações, observers, timers, callbacks e eventos de miniatura revalidam a sessão;
+- exceções síncronas de `getDocument()` passam pelo mesmo cleanup;
+- o visualizador continua sem criar Blob URLs próprias; a propriedade das URLs permanece com o chamador;
+- o versionamento do asset passou a `document-viewer.js?v=20260914-4`; `.gitattributes` conserva os bytes de `pdf-lib.min.js` para evitar quebra do SRI por conversão de fim de linha no Windows.
+
+Sincronização com a main:
+
+- `git fetch origin` executado; `origin/main` confirmada novamente em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3` (Telemedicina: histórico longitudinal visual V40);
+- rebase concluído, com essa main como ancestral; o conteúdo publicado pela API GitHub foi conferido pelo tree SHA `473dc4ccb39c79b57dd129a65add5223881f047b`, idêntico à árvore local testada;
+- conflitos de cache resolvidos preservando `20260914-4`, que já vinha da main;
+- `account-first-access-ui.test.mjs` permaneceu idêntico à main; `portal-sw.js`, `documents-ui.test.mjs` e `portal-performance.test.mjs` preservam integralmente as mudanças recentes de Telemedicina;
+- as correções auxiliares de caminho nos testes usam `fileURLToPath` para executar a suíte no Windows, sem alterar comportamento do Portal.
+
+Validações pós-rebase:
+
+- suíte Worker completa: **135/135 aprovada**, incluindo Telemedicina V40; `npm run check`, sintaxe JavaScript e `git diff --check` aprovados;
+- Playwright local: **12/12 aprovado**, sem retry, em Chromium desktop e Pixel 7;
+- os dez cenários anteriores de visualizador/editor permanecem **10/10**; a corrida acrescenta **2/2** (desktop/mobile);
+- teste determinístico A → B: A é retido durante a conversão do Blob, B termina primeiro e A é liberado depois; A retorna `null`, sem alterar identidade ou pixels dos canvases/miniaturas de B, página ativa, zoom ou callbacks;
+- teste B → C: B é retido em uma loading task, C vence e B é cancelado; C permanece proprietário da superfície, sem callbacks obsoletos;
+- os snapshots aguardam a renderização preguiçosa e o scroll do vencedor estabilizarem antes de liberar a abertura antiga;
+- build `node scripts/build-central-docs-staging.mjs` aprovado;
+- GitHub Actions do commit funcional: **24/24 workflows concluídos com sucesso**;
+- Playwright remoto no novo deployment imutável abaixo: **12/12 aprovado**, sem retry;
+- inspeção visual real em desktop `1440 × 900` e mobile `412 × 915`: selo **DADOS FICTÍCIOS**, três páginas/miniaturas, entrada e saída na mesma superfície, mover, excluir, adicionar imagem, unir PDF, navegação e zoom;
+- no mobile, zoom passou de `52%` para `67%`; Ajustar largura retornou a `52%`; a miniatura 2 mostrou a página paisagem;
+- o DOM confirmou `editorInsideViewer: true`, `nativeViewers: 0` e `textualEditorLists: 0`; console sem warning/error.
+
+Preview Cloudflare Pages pós-rebase:
+
+- projeto: `portal-regulacao-central-staging`;
+- deployment imutável funcional: [f23269b1](https://f23269b1.portal-regulacao-central-staging.pages.dev/);
+- ID: `f23269b1-a1c2-4bd2-84d6-26c9a4f7c6d4`;
+- commit: `0d0782d94534e6e376205e86952868f06254e874`;
+- alias da branch: [preview da 3C.1](https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/);
+- ambiente `preview`, clone/build/deploy em `success`, `uses_functions: false` e `env_vars: {}`;
+- HTTP 200, `Cache-Control: no-store`, `X-Robots-Tag: noindex, nofollow, noarchive` e `robots.txt` com `Disallow: /`;
+- CSP preserva `connect-src 'self'`, `script-src 'self'`, `frame-src 'none'`, `object-src 'none'` e `frame-ancestors 'none'`;
+- manifesto confirma `syntheticOnly: true`, `productionApisIncluded: false` e o SHA exato do deployment;
+- nenhuma requisição ao Worker de produção, Google APIs/Drive/OAuth ou `/api/`; nenhum D1, documento clínico ou dado institucional no bundle.
+
+Review, riscos e próximo passo:
+
+- o P1 foi respondido com causa, correção e evidências e a thread `PRRT_kwDOSN6RU86iJZI4` foi efetivamente marcada como resolvida no GitHub;
+- PR #179 permanece aberto, aguardando **revisão final humana antes do merge**; nenhuma operação de merge foi executada;
+- produção, Worker `yellow-wave-d0a1guia-regulacao-ia` e D1 `portal-regulacao-users` permaneceram intocados;
+- Access e domínio personalizado continuam pendentes; o preview público só pode conter dados sintéticos;
+- o laboratório usa os componentes reais com orquestração sintética; o fluxo institucional completo ainda exige reteste autorizado após eventual merge/deploy;
+- **não iniciar 3C.2** até o aceite explícito da integração visual da 3C.1.
+
+## Histórico: 3C.1 — primeira homologação da superfície única — 14/09/2026
+
+Controle de versão e escopo:
+
+- `origin/main` foi atualizada e confirmada em `7c25797d2a5c73aa389f064c35b95a3b67b6e0ba` antes das alterações; esse commit é descendente da referência esperada `313101db4b6fb34ea503205e6cfa55a1c71864f8`;
+- implementação isolada na branch `codex/central-docs-editor-superficie-unica`;
+- nenhum merge, deploy ou alteração de configuração foi feito na produção;
+- Worker `yellow-wave-d0a1guia-regulacao-ia` e D1 `portal-regulacao-users` permaneceram intocados;
+- a 3C.2 e qualquer drag-and-drop de páginas não foram iniciados.
+
+Implementação funcional:
+
+- `#documentsEditor` passou a ficar dentro de `#documentsCustomViewer`, na mesma superfície controlada pelo Portal;
+- entrar no editor preserva o mesmo root, os mesmos canvases de página, as mesmas miniaturas, a página ativa, o zoom e o modo Ajustar largura;
+- ações de mover para cima/baixo e excluir ficam associadas às próprias miniaturas;
+- excluir, mover, unir PDF e adicionar imagem reconstroem o PDF local na mesma superfície PDF.js;
+- a lista textual paralela deixou de existir como editor principal;
+- sair sem alterações apenas remove os controles; sair depois de alterações restaura o PDF original no mesmo root e em modo somente leitura;
+- não existe fallback para `iframe`, `embed`, `object` ou visualizador nativo;
+- `pdf-lib` 1.17.1 passou a ser self-hosted em `vendor/pdf-lib/`, mantendo SRI e eliminando a dependência de CDN;
+- operações assíncronas são bloqueadas/serializadas durante a reconstrução, ciclos obsoletos não podem fechar um visualizador mais novo e o foco volta à miniatura pertinente depois de mover/excluir.
+
+Laboratório e isolamento:
+
+- o laboratório remoto usa somente o PDF sintético de três páginas e uma imagem sintética gerada em memória;
+- não inclui `documents.js`, autenticação, Pages Functions, bindings, variáveis ou secrets; essa separação evita qualquer acesso acidental a backend institucional;
+- o builder rejeita referências ao Worker/D1 de produção, `/api/documents/`, Google APIs, Google Drive, Google OAuth e CDN do `pdf-lib`;
+- `staging-manifest.json` agora usa `CF_PAGES_COMMIT_SHA` no Pages, com fallback para `GITHUB_SHA` no CI.
+
+Preview Cloudflare Pages aprovado:
+
+- projeto: `portal-regulacao-central-staging`;
+- branch: `codex/central-docs-editor-superficie-unica`;
+- alias: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- deployment funcional imutável: `https://dfe80b5e.portal-regulacao-central-staging.pages.dev/`;
+- ID: `dfe80b5e-810b-45e2-acc4-638adbdc1391`;
+- commit do deployment: `67c9544ce22a849e60af20a245f76550aae61974`;
+- clone, build e deploy concluíram com sucesso; `uses_functions: false` e `env_vars: {}` confirmados pela API Cloudflare.
+
+Testes automatizados:
+
+- suíte completa do Worker: **133/133 aprovada**;
+- `npm run check`: aprovado;
+- Playwright local: **10/10 aprovado** em Chromium desktop e mobile;
+- primeira execução remota: **7/10**, revelando que um callback já agendado do `ResizeObserver` podia sobrescrever o zoom manual;
+- correção aplicada: o callback revalida `fitMode`, sessão ativa e ciclo antes de executar Ajustar largura;
+- segunda execução no deployment corrigido: **10/10 aprovada** em desktop e mobile, sem retry;
+- cobertura: abertura do PDF, entrada/saída do editor, identidade da superfície, ausência de lista textual/viewer nativo, zoom, Ajustar largura, miniaturas, mover, excluir, undo/redo, adicionar imagem, unir PDF, restauração do original e bloqueio de rede proibida.
+
+Validação visual real no preview:
+
+- selo **DADOS FICTÍCIOS** visível e PDF.js 6.3.289 pronto com exatamente três páginas;
+- página principal e três miniaturas renderizadas;
+- modo editor exibido dentro do mesmo `pdfRoot`, sem segundo visualizador;
+- zoom mobile alterado de `47%` para `62%` e Ajustar largura retornou a `47%`;
+- navegação pela miniatura 2 mostrou a página sintética paisagem;
+- mover a página 2 para o início atualizou miniatura e página principal;
+- excluir reduziu página principal/miniaturas de três para duas;
+- adicionar imagem voltou a três páginas e mostrou a página azul **DADOS FICTÍCIOS**;
+- sair do editor restaurou leitura, três páginas originais e miniaturas sem controles de edição;
+- breakpoint desktop validado em `1440 x 900` e mobile validado no viewport estreito do navegador de homologação;
+- DOM real confirmou `editorInsideViewer: true`, `nativeViewers: 0` e `textualEditorLists: 0`;
+- nenhum erro ou warning foi registrado no console durante a inspeção.
+
+Headers e rede no deployment corrigido:
+
+- HTTP `200`, `Cache-Control: no-store` e `X-Robots-Tag: noindex, nofollow, noarchive`;
+- `robots.txt`: `User-agent: *` e `Disallow: /`;
+- CSP: `connect-src 'self'`, `script-src 'self'`, `frame-src 'none'`, `object-src 'none'`, `base-uri 'none'`, `form-action 'none'` e `frame-ancestors 'none'`;
+- `staging-manifest.json`: `syntheticOnly: true`, `productionApisIncluded: false` e `sourceSha: 67c9544ce22a849e60af20a245f76550aae61974`;
+- nenhuma requisição para o Worker de produção, Google APIs/Drive/OAuth, rota `/api/` ou recurso D1;
+- nenhum dado institucional ou documento clínico foi usado.
+
+Riscos e pendências:
+
+- Cloudflare Access continua pendente; o preview é público e deve permanecer restrito a validação técnica com dados sintéticos;
+- domínio personalizado continua pendente porque a zona `regulacaoeldoradoms.com.br` não está acessível nesta conexão;
+- o laboratório testa os componentes reais `PortalPdfViewer` e `PortalPdfEditor`, mas usa uma orquestração sintética própria para não carregar autenticação/Drive; o controlador `documents.js` tem cobertura estática e de modelo, e ainda exige reteste real autorizado após merge/deploy;
+- a aceitação da 3C.1 não autoriza iniciar 3C.2 automaticamente.
+
+Próximo passo exato:
+
+1. abrir a PR desta branch e aguardar os workflows obrigatórios;
+2. revisar o preview pelo alias acima e registrar o aceite humano da superfície única;
+3. somente após merge/deploy, fazer reteste real autorizado com PDF institucional, incluindo entrada/saída do editor e todas as mutações da 3C.1;
+4. manter a 3C.2 bloqueada até esse aceite explícito;
+5. tratar Access e domínio personalizado em tarefa separada, com as decisões humanas já registradas.
 
 ## Homologação remota Cloudflare Pages criada e validada — 14/09/2026
 
@@ -93,7 +1088,7 @@ Riscos e limitações:
 
 - o staging permanece público até uma decisão humana habilitar e configurar Access;
 - o subdomínio `staging.regulacaoeldoradoms.com.br` depende de acesso à zona/DNS;
-- `staging-manifest.json` registra `sourceSha: null` porque o builder lê `GITHUB_SHA`, enquanto Pages fornece metadados próprios; a proveniência continua confirmada pela API do deployment no SHA exato;
+- no deployment histórico inicial, `staging-manifest.json` registrou `sourceSha: null`; a 3C.1 corrigiu o builder para ler `CF_PAGES_COMMIT_SHA`, preservando `GITHUB_SHA` como fallback de CI;
 - o ambiente valida apenas o laboratório sintético e não substitui a pendência funcional de integração visual do editor.
 
 Próximo passo exato:
@@ -1207,12 +2202,11 @@ Próximo passo desta infraestrutura:
 
 ## Próximo passo
 
-1. fazer recarga forçada em `/documentos/`;
-2. abrir um PDF real e confirmar renderização da página 1 + miniatura no visualizador próprio;
-3. abrir um segundo PDF para excluir efeito de cache específico;
-4. testar zoom, **Ajustar largura** e entrada no editor;
-5. confirmar que o visualizador nativo continua ausente;
-6. registrar o resultado real; somente com aceite iniciar **3C.2 — drag-and-drop das páginas**.
+1. concluir a revisão da PR da branch `codex/central-docs-editor-superficie-unica` e aguardar os checks obrigatórios;
+2. registrar o aceite humano do preview sintético da superfície única;
+3. somente após merge/deploy, executar reteste real autorizado com PDF institucional, incluindo entrada/saída do editor, zoom, **Ajustar largura**, navegação por miniatura e todas as mutações da 3C.1;
+4. confirmar novamente que o visualizador nativo continua ausente;
+5. manter **3C.2 — drag-and-drop das páginas** bloqueada até o aceite explícito desse reteste.
 
 ## Arquivos e fontes principais
 
@@ -1237,13 +2231,13 @@ Próximo passo desta infraestrutura:
 
 **Fase atual:** Fase 3 — Editor PDF essencial.
 
-**Subfase:** 3C.1 — visualizador próprio validado em produção; integração visual do editor ainda pendente. A 3C.2 continua bloqueada.
+**Subfase:** 3C.1 — superfície única do visualizador/editor implementada e aprovada no staging sintético; aceite humano, merge e reteste real pós-deploy ainda pendentes. A 3C.2 continua bloqueada.
 
-**Main confirmada antes do staging:** `313101db4b6fb34ea503205e6cfa55a1c71864f8`.
+**Main confirmada antes desta unidade:** `7c25797d2a5c73aa389f064c35b95a3b67b6e0ba`, descendente da referência esperada `313101db4b6fb34ea503205e6cfa55a1c71864f8`.
 
 **Staging:** `portal-regulacao-central-staging` em `https://portal-regulacao-central-staging.pages.dev/`, com bundle sintético e sem bindings, Functions ou secrets.
 
-**Preview:** branch separada validada automaticamente, sem merge experimental.
+**Preview:** branch separada validada automaticamente em `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`; deployment funcional imutável `https://dfe80b5e.portal-regulacao-central-staging.pages.dev/`, sem merge experimental.
 
 **Access:** pendente; staging público até definição humana de identidade/política.
 
@@ -1251,4 +2245,474 @@ Próximo passo desta infraestrutura:
 
 **Produção:** Worker `yellow-wave-d0a1guia-regulacao-ia` e D1 `portal-regulacao-users` permaneceram intocados.
 
-**Próxima ação exata:** concluir a PR documental; depois definir e habilitar Access, repetir o smoke test autenticado e manter a 3C.2 bloqueada até tratar separadamente a integração visual do editor.
+**Próxima ação exata:** revisar a PR funcional e registrar o aceite humano; após merge/deploy, executar o reteste real autorizado da 3C.1. Tratar Access e domínio personalizado em tarefa separada e manter a 3C.2 bloqueada até o aceite explícito.
+
+
+## 3C.1 — P2 de preservação do estado vivo em rebuild — 14/09/2026
+
+Descoberta:
+- a revisão automática do PR #179 encontrou um P2 após a correção da corrida P1;
+- `buildEditorPreview()` priorizava `state.editorViewState` (snapshot do `onReady`) antes de `currentViewerState()`;
+- após o usuário navegar ou alterar zoom dentro do editor, um rebuild sem estado explícito poderia regressar para página/zoom antigos.
+
+Correção aplicada na própria branch do PR #179:
+- estado explícito continua tendo prioridade;
+- sem estado explícito, o rebuild passa a priorizar `currentViewerState()` e usa `state.editorViewState` apenas como fallback;
+- o laboratório sintético foi alinhado à mesma ordem de prioridade;
+- o botão de atualização do laboratório passa a exercitar o fallback real, sem injetar estado explícito;
+- teste Playwright cobre preservação de página ativa e zoom após atualização e após uma edição que dispara rebuild;
+- teste estático impede regressão da ordem de fallback no cliente real.
+
+Estado desta unidade:
+- alteração preparada no PR #179 sem merge;
+- produção permanece inalterada;
+- CI, novo preview remoto e revisão final ainda precisam concluir antes de qualquer merge;
+- 3C.2 continua bloqueada.
+
+Próximo passo exato:
+1. aguardar GitHub Actions do novo head;
+2. confirmar preview Cloudflare automático da branch;
+3. executar/confirmar Playwright remoto no novo deployment;
+4. obter nova revisão sem P1/P2;
+5. somente então submeter o PR #179 à revisão humana final e eventual merge.
+
+
+## 3C.1 — correção das próprias asserções de homologação do P2 — 14/09/2026
+
+Resultado do primeiro CI do head `1161fe46f4be6f8966c06a5e012a2a335750eccc`:
+- a implementação do P2 estava presente no cliente real, mas a asserção estática adicionada usou uma expressão regular excessivamente escapada e produziu falso negativo;
+- os workflows que executam a suíte Worker completa herdaram a mesma única falha, por isso cinco checks não relacionados apareceram vermelhos sem regressão funcional nesses módulos;
+- o Playwright novo chegou ao rebuild de união, mas a expectativa de `data-page-order` usou índice de documento `2`; o harness real identifica o segundo PDF sintético como documento `1`, portanto a expectativa correta é `0:0,0:1,0:2,1:0,1:1,1:2`;
+- os 12 cenários anteriores do navegador passaram; somente o cenário novo do P2 falhou por essa expectativa incorreta, em desktop e mobile.
+
+Correção:
+- o teste estático passou a comparar strings literais, evitando ambiguidade de escaping;
+- o teste Playwright passou a esperar a ordem efetivamente gerada pelo editor sintético;
+- nenhuma mudança adicional foi feita no comportamento de produção nesta correção de CI.
+
+Próximo passo:
+1. aguardar a nova rodada completa de GitHub Actions;
+2. confirmar o novo deployment de preview da branch;
+3. se tudo ficar verde, manter o PR aberto até revisão final/aceite humano;
+4. a revisão automática Codex permanece indisponível apenas por limite de uso, não por falha técnica do PR.
+
+
+## 3C.1 — restauração robusta de página ativa após rebuild — 14/09/2026
+
+Descoberta no CI após a correção do P2:
+- o teste de preservação de página/zoom deixou de falhar por expectativa incorreta e revelou um comportamento real do visualizador;
+- `PortalPdfViewer.open()` aplicava `initialViewState.activePage`, porém instalava os `IntersectionObserver` antes de restaurar a posição de rolagem;
+- como o novo DOM começava no topo, o observer podia promover a página 1 a ativa antes do `requestAnimationFrame` que tentava rolar para a página solicitada;
+- em rebuilds como união de PDF, a página ativa podia portanto regressar para 1 mesmo com `initialViewState.activePage = 2`.
+
+Correção:
+- a posição inicial do scroll passa a ser restaurada **antes** da instalação dos observers;
+- o mesmo viewport é reaplicado no próximo frame para absorver ajuste de layout;
+- a página ativa solicitada é reafirmada junto com a restauração do scroll;
+- página 1 também força `scrollTop = 0`, evitando herdar posição da sessão anterior;
+- o marcador interno do visualizador foi avançado para `phase3c1i`;
+- nenhuma API, permissão, escrita no Drive ou integração de produção foi alterada.
+
+Validação pendente desta microcorreção:
+- nova rodada do workflow de navegador em desktop/mobile;
+- confirmação de que o teste de página/zoom passa após `Atualizar PDF` e após união/rebuild;
+- demais checks devem permanecer verdes;
+- PR #179 continua sem merge e 3C.2 continua bloqueada.
+
+
+## 3C.1 — segunda rodada P2: paridade do harness + guarda de página inicial — 14/09/2026
+
+Evidência do workflow de navegador após o head `7dfc0d9`:
+- os checks estáticos e as suítes gerais ficaram verdes, mas o navegador revelou que a primeira tentativa de restaurar o viewport ainda não era determinística;
+- em rebuilds, `data-active-page` podia voltar para 1 ao atualizar, inserir imagem ou unir PDF;
+- o teste de corrida também ficou instável em alguns cenários após a tentativa anterior de reposicionar o scroll diretamente.
+
+Causas reconciliadas:
+1. o **harness** não reproduzia exatamente o cliente real: calculava o fallback `viewer.getViewState()` somente depois de `editor.buildBlob()`; o cliente real captura o estado antes do await;
+2. no **visualizador**, o `IntersectionObserver` de página ativa podia emitir callbacks durante a restauração inicial do scroll e sobrescrever temporariamente a página solicitada.
+
+Correção desta rodada:
+- o harness captura `preservedViewState` antes do build assíncrono, igualando a ordem do cliente real;
+- o visualizador mantém uma guarda `initialPageTarget` durante a montagem inicial;
+- os observers continuam coletando interseções, mas não podem trocar a página ativa enquanto a guarda está vigente;
+- o alvo inicial usa `scrollIntoView({ behavior: 'auto' })` e é reafirmado por dois frames;
+- ao finalizar a restauração, os ratios transitórios são limpos e a guarda é liberada;
+- marcador interno avançado para `phase3c1j`.
+
+Alternativa descartada:
+- apenas escrever `scrollTop` antes/depois da instalação dos observers. O CI mostrou que isso não estabilizava todos os layouts e ainda introduzia flakiness no teste de concorrência.
+
+Estado:
+- PR #179 continua aberto e sem merge;
+- produção permanece inalterada;
+- nova rodada completa de CI/navegador é obrigatória;
+- 3C.2 continua bloqueada.
+
+
+## 3C.1 — terceira rodada P2: neutralização do scroll suave no restore — 14/09/2026
+
+Evidência do head `dacf9494`:
+- as suítes gerais permaneceram verdes e o workflow de navegador reduziu para **uma única falha**: preservação de página/zoom após rebuild no desktop;
+- o estado ainda regressava de página 2 para página 1 após `Atualizar PDF`;
+- a causa remanescente foi localizada no CSS: `.documents-pdf-scroll` usa `scroll-behavior: smooth`. Assim, `scrollIntoView({ behavior: 'auto' })` continuava sujeito ao comportamento suave computado do contêiner; a guarda era liberada antes de o deslocamento terminar.
+
+Correção:
+- durante a restauração inicial, o visualizador neutraliza temporariamente o `scroll-behavior` inline para `auto`;
+- calcula o deslocamento da página-alvo em relação ao viewport rolável e aplica `scrollTop`/ `scrollLeft` de forma imediata;
+- restaura em seguida o estilo inline anterior, preservando a navegação suave normal do usuário;
+- mantém a guarda `initialPageTarget` e as reafirmações em dois frames;
+- marcador interno avançado para `phase3c1k`.
+
+Risco controlado:
+- a mudança afeta somente a montagem/restauração de uma sessão do visualizador; cliques normais em miniaturas continuam usando a navegação suave existente.
+
+Próximo passo:
+- repetir o workflow de navegador em desktop/mobile; não fazer merge até a matriz ficar integralmente verde.
+
+
+## Consolidação 3C.1 antes do aceite humano — 14/09/2026
+
+Estado funcional validado no head `b02f2addf6eba16f383cc8ff7804c6eaee0b7879` do PR #179:
+
+- base confirmada: `main` em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`;
+- PR mergeável e mantido **sem merge**;
+- **24/24 workflows GitHub verdes**;
+- workflow `Validar Central de Documentos — navegador`: **14/14**, Chromium desktop + Pixel 7;
+- P1 de concorrência de abertura: corrigido, testado e thread resolvida;
+- P2 de preservação de estado vivo: corrigido, testado e thread resolvida;
+- o P2 levou à descoberta adicional de interação entre `IntersectionObserver` e `scroll-behavior: smooth`; a solução final neutraliza o scroll suave somente durante o restore inicial e preserva o comportamento suave normal do usuário;
+- preview Cloudflare do head funcional: `https://cd41605e.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- produção, Worker `yellow-wave-d0a1guia-regulacao-ia`, D1 `portal-regulacao-users` e Google Drive permaneceram intocados.
+
+Revisão manual complementar:
+- PDF.js e PDF-lib permanecem self-hosted;
+- CSP da Central não depende de CDN externa para o editor;
+- `can_edit` continua explícito e separado do cargo/papel Regulador(a);
+- não foi introduzida rota de upload/update/replace nem evento de save/sync para o Drive;
+- o staging continua sintético, sem bindings, Functions, secrets ou dados clínicos;
+- não foi identificado bloqueador adicional no diff após a matriz automatizada final.
+
+Limitação externa:
+- a nova revisão automática Codex do head final não pôde ser executada porque a cota de code review foi atingida. Isso é indisponibilidade temporária da ferramenta, não evidência técnica contra o PR;
+- a última revisão automática disponível encontrou o P2; ele foi endereçado e sua thread está resolvida com evidência 14/14.
+
+Decisão:
+- **não fazer merge ainda**;
+- aguardar o aceite humano visual do preview e, quando a cota restaurar, solicitar revisão automática final do head corrente;
+- 3C.2 permanece bloqueada.
+
+## Handoff autoritativo atual — 14/09/2026
+
+**Fase:** Fase 3 — Editor PDF essencial.
+
+**Subfase:** 3C.1 — superfície única implementada e tecnicamente homologada em ambiente sintético; faltam aceite humano do preview, revisão final disponível e reteste institucional pós-merge/deploy.
+
+**Main/base confirmada:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`.
+
+**PR:** #179, branch `codex/central-docs-editor-superficie-unica`, aberto e sem merge.
+
+**Head funcional homologado:** `b02f2addf6eba16f383cc8ff7804c6eaee0b7879`. A consolidação documental posterior não altera runtime; ao retomar, consultar o head corrente do PR no GitHub.
+
+**Staging:** `portal-regulacao-central-staging`; alias da branch `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+
+**Evidência imutável do runtime homologado:** `https://cd41605e.portal-regulacao-central-staging.pages.dev/`.
+
+**Access:** pendente; enquanto isso, staging deve permanecer estritamente sintético.
+
+**Domínio personalizado:** pendente por ausência de acesso à zona.
+
+**P1/P2:** ambos corrigidos e threads resolvidas.
+
+**Próxima ação humana exata:** abrir o alias da branch em desktop e, se possível, celular; confirmar visualmente que **Editar PDF** mantém o usuário na mesma superfície PDF.js, que miniaturas/controles aparecem integrados e que não existe editor textual separado. Não usar documento real no staging.
+
+**Depois do aceite:** solicitar revisão automática final quando a cota Codex voltar; com revisão/checks limpos, considerar merge. Após deploy, executar o roteiro institucional de smoke test. Somente o aceite pós-produção encerra 3C.1 e libera 3C.2.
+
+
+## Revisão de aceite do usuário — drag-and-drop + rotação de páginas — 14/09/2026
+
+Evidência humana no preview do PR #179:
+- a superfície única foi confirmada visualmente, porém o usuário **não aceitou o editor como concluído**;
+- a reorganização ainda estava exposta por setas ↑/↓, enquanto o requisito original era clicar/arrastar a miniatura para a posição desejada;
+- foi identificada ausência de comando para girar página; o caso concreto foi a página sintética em paisagem que precisa poder ser girada para retrato.
+
+Decisão de escopo:
+- o Guia Mestre define na Fase 3 a capacidade de **reorganizar páginas**; a forma de interação agora fica explicitamente fixada pelo requisito humano mais recente como **drag-and-drop**, não setas;
+- a antiga separação local que tratava drag-and-drop como “3C.2 futura” é revista: não faz sentido declarar a experiência do editor aceita sem a interação já solicitada;
+- rotação de página entra como operação essencial do editor por necessidade operacional demonstrada no próprio preview;
+- PR #179 permanece aberto e sem merge até novo aceite visual.
+
+Implementação desta rodada:
+- setas de mover são removidas da interface;
+- miniaturas passam a ser arrastáveis no desktop; um grip de arraste também suporta Pointer Events para interação touch;
+- drop antes/depois de outra miniatura calcula a posição final exata e aciona `movePageTo()`;
+- botão ↻ gira a página selecionada em incrementos de 90° para a direita;
+- rotação passa a integrar o plano reversível do editor e portanto participa de Desfazer/Refazer;
+- `buildBlob()` aplica a rotação via PDF-lib ao PDF gerado;
+- telemetria técnica usa apenas `reorder_page` e `rotate_page`, sem conteúdo documental;
+- nenhum salvamento no Drive é introduzido.
+
+Critérios de aceite adicionais:
+1. não existir mais ↑/↓ para reordenar;
+2. arrastar página 2 para antes da página 1 deve alterar ordem visual e PDF gerado;
+3. ↻ deve trocar orientação visível em 90°;
+4. Desfazer/Refazer deve restaurar/aplicar rotação e reordenação;
+5. desktop e mobile devem permanecer sem erros de console;
+6. nenhuma operação pode escrever no Google Drive nesta fase.
+
+Próximo passo:
+- executar CI completo e gerar novo preview Cloudflare;
+- solicitar novo reteste humano de arrastar e girar;
+- manter o merge bloqueado até esse aceite.
+
+
+## CI do primeiro drag/rotate — correção de interação de teste — 14/09/2026
+
+Resultado do head `ae22ad9`:
+- suíte estática/Worker e Fases 1–3: aprovadas;
+- navegador: 13 cenários passaram e 3 falharam;
+- rotação unitária passou; a falha visual de rotação ocorreu porque o teste tentava medir a página 3 antes de ela entrar na janela de renderização progressiva;
+- drag-and-drop não foi acionado por `Locator.dragTo()` no ambiente emulado, embora a UI já tivesse listeners nativos.
+
+Ajuste:
+- o teste de rotação agora navega para a página 3 antes de medir orientação;
+- o visualizador passa a aceitar Pointer Events no corpo da miniatura para mouse/pen com limiar de 7 px, além do grip já usado para touch;
+- o teste de arraste passa a usar gesto real de mouse (down → move em etapas → up), cobrindo a interação solicitada pelo usuário;
+- o drag HTML5 permanece como fallback;
+- nenhuma mudança de backend, Drive ou produção.
+
+Próximo passo:
+- repetir CI completo e só apresentar novo preview ao usuário após a matriz de navegador ficar verde.
+
+
+## CI do drag/rotate — conflito drag HTML5 × Pointer Events — 14/09/2026
+
+Resultado do head `d1b37ad`:
+- rotação passou no navegador após a página-alvo ser renderizada;
+- 14/16 cenários passaram;
+- as duas falhas restantes foram exclusivamente o gesto de reordenação em desktop/mobile;
+- o plano/editor e os testes unitários de `movePageTo()` já estavam aprovados, isolando o defeito na camada de interação.
+
+Diagnóstico:
+- a miniatura estava simultaneamente marcada como `draggable=true` (drag HTML5) e submetida a `pointerdown/move/up` com pointer capture;
+- o navegador pode promover o gesto para drag nativo e cancelar/interromper a sequência de Pointer Events antes do drop calculado;
+- isso explica a ausência de alteração no `data-page-order` sem erro no editor.
+
+Correção:
+- drag HTML5 deixa de ser o mecanismo ativo da miniatura;
+- a reordenação passa a usar exclusivamente Pointer Events no desktop/mouse/pen;
+- no touch, o grip ⠿ continua sendo o ponto de arraste com `touch-action:none`;
+- o comportamento de clique para navegar continua separado pelo limiar de movimento de 7 px.
+
+Próximo passo:
+- repetir a matriz de navegador; merge continua bloqueado.
+
+
+## Drag-and-drop + rotação — homologação técnica concluída — 14/09/2026
+
+Head funcional validado: `ec518dc024ec79ea5ab52012082bcc68cdb99d36`.
+
+Resultado:
+- **24/24 workflows GitHub verdes**;
+- `Validar Central de Documentos — navegador`: **16/16 testes aprovados em 34,3 s**;
+- matriz executada em Chromium desktop e perfil Pixel 7;
+- drag-and-drop por Pointer Events aprovado em desktop e mobile emulado;
+- setas ↑/↓ não são mais o mecanismo de reorganização;
+- botão ↻ aprovado para giro de 90°;
+- rotação participa corretamente de Desfazer/Refazer;
+- excluir, imagem, união, preservação de página/zoom e corrida A → B → C continuam aprovados;
+- Fases 1–3, governança, bundle de staging e demais checks permaneceram verdes;
+- produção e Google Drive não foram alterados.
+
+Cloudflare Pages:
+- deployment do head funcional: sucesso;
+- URL imutável: `https://7c94b5a6.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- staging continua exclusivamente sintético e sem bindings/secrets.
+
+Aceite:
+- **homologação técnica automatizada concluída para este incremento**;
+- aceite humano ainda pendente: o usuário deve testar visualmente arrastar página para posição diferente e girar a página paisagem;
+- PR #179 continua aberto e sem merge;
+- nenhum avanço para sincronização com Drive ocorre antes do aceite humano da experiência atual.
+
+Próximo passo exato:
+1. usuário abrir o preview imutável `7c94b5a6...`;
+2. entrar no editor;
+3. arrastar uma miniatura para outra posição e confirmar a ordem;
+4. usar ↻ na página 3 e confirmar paisagem → retrato;
+5. testar Desfazer/Refazer;
+6. registrar aceite ou nova correção;
+7. somente depois decidir merge/deploy e executar reteste institucional real.
+
+
+## Aceite humano parcial do drag-and-drop — 14/09/2026
+
+Evidência do preview `7c94b5a6.portal-regulacao-central-staging.pages.dev`:
+- o usuário confirmou que agora consegue **mover a posição das páginas arrastando**;
+- a interação foi considerada conceitualmente correta e superior às antigas setas;
+- o usuário observou, porém, que o arraste **ainda não parece suficientemente fluido**;
+- por preferência operacional, o usuário enviará capturas do Lumin como referência de comportamento/UX para o refinamento.
+
+Interpretação:
+- a capacidade funcional de reordenação por arraste está aceita;
+- a experiência de interação ainda não está aceita como final;
+- não fazer merge com base apenas na funcionalidade atual; primeiro comparar a dinâmica de arraste, feedback visual, alvo de inserção e sensação de movimentação com as referências fornecidas pelo usuário;
+- a referência externa deve orientar comportamento e ergonomia, sem copiar identidade visual proprietária.
+
+Próximo passo exato:
+1. receber as capturas/etapas do Lumin;
+2. decompor o comportamento observado em estados de interação: repouso, início do drag, deslocamento, indicador de inserção, auto-scroll, soltura e animação pós-drop;
+3. implementar somente os refinamentos compatíveis com a arquitetura atual;
+4. repetir Playwright e novo aceite visual humano;
+5. PR #179 permanece aberto e sem merge.
+
+
+## Editor UX V2 autorizado — referência Lumin convertida em requisitos — 15/09/2026
+
+Decisão humana:
+- o usuário aprovou iniciar a reformulação do editor usando o Lumin como referência de ergonomia, **sem copiar identidade visual**;
+- visualização normal continua com páginas grandes;
+- ao editar estrutura, a superfície deve mudar para **grade de páginas**, com drag-and-drop fluido;
+- ações por página ficam contextuais em hover/foco: girar esquerda, girar direita, duplicar e excluir;
+- Unir deve permitir inserir antes do documento, depois do documento ou após página específica;
+- inserir página em branco passa a integrar o organizador;
+- ferramentas futuras da mesma experiência: Escrever, Colar imagem, Recortar e Desenhar;
+- a borracha de Desenhar apaga exclusivamente traços feitos pela caneta, nunca conteúdo original do PDF;
+- botões devem migrar para ícones compactos com tooltip sempre que isso reduzir ocupação visual.
+
+Arquitetura/escopo:
+- criada a especificação `docs/CENTRAL-DOCUMENTOS-EDITOR-UX-V2.md`;
+- a Fase 3 permanece local/reversível e **sem escrita no Google Drive**;
+- a antiga ideia de considerar o editor aceito apenas com miniaturas laterais foi superada pelo aceite humano mais recente;
+- PR #179 continua aberto e sem merge.
+
+Implementação iniciada:
+- motor do editor passa a aceitar posição de inserção ao unir documentos;
+- adicionadas primitivas locais para página em branco e duplicação de página;
+- essas APIs ainda precisam ser conectadas à nova superfície visual e homologadas antes de qualquer merge.
+
+Próximo passo exato:
+1. implementar shell compacto + modo Organizar em grade;
+2. conectar drag, girar esquerda/direita, duplicar, excluir e página em branco;
+3. implementar painel de Unir com posição de inserção;
+4. atualizar laboratório e Playwright;
+5. publicar novo preview Cloudflare;
+6. solicitar novo aceite visual antes de avançar para Escrever/Imagem/Recortar/Desenhar.
+
+
+## Organizar V2 — primeira implementação funcional em branch — 15/09/2026
+
+Implementado no PR #179, ainda sem merge:
+- shell compacto por ícones e acesso lateral **Editar**;
+- modo Organizar altera a representação principal para grade responsiva;
+- miniaturas maiores, drag ghost, indicador de inserção e drop horizontal na grade;
+- ações contextuais por página: girar esquerda, girar direita, duplicar e excluir;
+- página em branco local/reversível;
+- motor de união aceita posição de inserção;
+- painel de união oferece antes do documento, depois do documento e após página específica;
+- Recortar, Escrever, Colar imagem overlay e Desenhar aparecem apenas como próximos modos desabilitados; ainda não são declarados implementados;
+- Service Worker/cache versionado para evitar servir a UI antiga após futura promoção.
+
+Testes foram atualizados para a UX V2; CI completo deve ficar verde antes de gerar o preview candidato a aceite humano.
+
+
+## Organizar V2 — refinamento de fluidez do arraste — 15/09/2026
+
+Ajuste aplicado antes do primeiro preview V2:
+- o ghost de arraste agora copia os pixels reais do canvas da miniatura; `cloneNode()` sozinho não preserva bitmap de canvas e poderia produzir um cartão fantasma vazio;
+- a página de origem recebe feedback de escala/opacidade enquanto é movida;
+- o ghost acompanha o ponteiro sem capturar eventos;
+- clicar numa página no modo grade apenas seleciona a página; não tenta rolar a superfície grande que está oculta;
+- o botão legado **Editar PDF** do cabeçalho deixa de ser visualmente redundante; o acesso principal passa a ser o ícone lateral Editar, preservando o nó legado por compatibilidade interna.
+
+
+## Homologação humana do Organizar V2 — correção de posicionamento do drag e escopo do editor — 15/09/2026
+
+Feedback humano no preview imutável `198c6ffe.portal-regulacao-central-staging.pages.dev`:
+- a grade e o arraste estão funcionais, porém o cartão flutuante fica deslocado do cursor/dedo; o ponteiro aparece no canto superior esquerdo do ghost em vez de ficar centralizado sobre a página arrastada;
+- o usuário também rejeitou tratar o Organizar V2 isolado como editor final, pois ainda espera as ferramentas já definidas: **Escrever, Colar imagem sobre página, Recortar e Desenhar**;
+- **Inserir página em branco já existe tecnicamente no Organizar V2**, mas o fato de não ter sido reconhecida no preview evidencia problema de descobribilidade do ícone/tooltips, que deverá ser refinado junto da barra final.
+
+Correção aplicada ao drag:
+- o ghost passa a usar metade da largura/altura do cartão como offset, mantendo cursor/dedo no centro visual da página durante o arraste;
+- offsets do ghost são limpos em todo cancelamento/drop/close;
+- Playwright passa a verificar geometricamente que o centro do ghost coincide com o ponteiro dentro de tolerância pequena.
+
+Decisão de aceite atualizada:
+- o Organizar V2 continua sendo uma unidade técnica necessária, mas **não é mais um ponto de parada para declarar o editor aceito**;
+- a Fase 3 só poderá receber aceite visual global depois que Escrever, Colar imagem overlay, Recortar e Desenhar/Borracha estiverem implementados e integrados na mesma experiência;
+- a borracha permanece restrita aos traços feitos por Desenhar;
+- PR #179 permanece aberto; sem merge e sem escrita no Drive.
+
+Próximo passo:
+1. validar a centralização do ghost em desktop/mobile;
+2. manter o Organizar estável;
+3. avançar dentro da própria Fase 3 para os objetos sobre página (Escrever + Colar imagem);
+4. depois Recortar;
+5. depois Desenhar/Borracha;
+6. só então solicitar homologação visual do editor como conjunto.
+
+
+## Aceite humano do arraste centralizado — Organizar V2 — 15/09/2026
+
+Feedback humano no preview `18f60df9.portal-regulacao-central-staging.pages.dev`:
+- o usuário confirmou que o novo posicionamento do drag ficou bom;
+- a correção que mantém o ghost centralizado sob o cursor/dedo foi aceita visualmente;
+- a observação anterior sobre “faltar página em branco” foi retirada pelo próprio usuário: a função já está presente;
+- o usuário também reconheceu como correto que **Escrever, Colar imagem sobre página, Recortar e Desenhar** permaneçam para as próximas subetapas da mesma Fase 3, conforme o plano UX V2.
+
+Validação técnica do head anterior `3e99d71b2ade084bde0255f57779b0832b5ef494`:
+- 24/24 workflows GitHub verdes;
+- `Validar Central de Documentos — navegador`: sucesso;
+- `Validar Central de Documentos — Fases 1–3`: sucesso;
+- PR #179 segue aberto, mergeável e sem merge;
+- `main` permanece em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`;
+- nenhuma escrita no Google Drive foi introduzida.
+
+Decisão:
+- o arraste do Organizar V2 está aceito visualmente;
+- o Organizar V2 pode ser tratado como checkpoint técnico/humano suficiente para avançar dentro da Fase 3;
+- a próxima unidade passa a ser **3C.3 — objetos sobre página: Escrever + Colar imagem**, mantendo o PR #179 aberto e sem merge;
+- Recortar permanece para 3C.4 e Desenhar/Borracha para 3C.5;
+- o aceite global da Fase 3 continua pendente até essas unidades e a consolidação/exportação local estarem concluídas.
+
+Próximo passo exato:
+1. implementar Escrever sobre páginas grandes em lista;
+2. implementar Colar imagem sobre página existente;
+3. garantir seleção, mover, resize, rotação e undo/redo;
+4. validar desktop/mobile no staging sintético;
+5. solicitar homologação humana dessa nova unidade antes de seguir para Recortar.
+
+
+## 3C.3 — Escrever + Colar imagem: implementação iniciada — 15/09/2026
+
+Estado real:
+- Organizar V2 aceito visualmente e tecnicamente;
+- PR #179 segue aberto, sem merge;
+- a próxima unidade da Fase 3 é 3C.3 — objetos sobre página.
+
+Implementado nesta rodada:
+- o plano de páginas ganhou identidade estável por `pageId`, permitindo que objetos acompanhem a página ao reordenar;
+- sessão do editor ganhou modelo local de objetos com histórico integrado;
+- texto e imagem overlay possuem posição, tamanho, rotação e opacidade;
+- textos também guardam fonte, tamanho relativo e cor;
+- duplicar página duplica seus objetos com novos IDs; excluir página remove os objetos daquela página;
+- Undo/Redo restaura plano + objetos;
+- visualizador ganhou camada de objetos sobre o canvas PDF, seleção, movimento, quatro pontos de resize, rotação e edição direta de texto por duplo clique;
+- toolbar habilita **Selecionar**, **Escrever** e **Colar imagem sobre a página**;
+- Recortar e Desenhar continuam bloqueados para as unidades seguintes;
+- laboratório sintético recebeu os mesmos modos, usando somente texto/imagem fictícios;
+- objetos continuam locais; `buildBlob()` ainda não faz flatten desses objetos — isso permanece explicitamente para 3C.6.
+
+Segurança:
+- nenhuma escrita no Drive;
+- nenhuma chamada nova de backend;
+- nenhum conteúdo textual/imagem é enviado para observabilidade;
+- staging permanece sintético.
+
+Próximo passo:
+1. validar testes unitários/estáticos e Playwright da nova camada;
+2. corrigir qualquer regressão de gesto/zoom/rebuild;
+3. publicar preview sintético de 3C.3;
+4. homologar Escrever e Colar imagem antes de avançar para Recortar.

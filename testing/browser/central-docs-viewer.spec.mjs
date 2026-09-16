@@ -43,6 +43,12 @@ async function assertViewer(page, url) {
   await expect(page.locator('html')).toHaveAttribute('data-first-page-visible', 'true');
 
   const initialZoom = await page.locator('#zoomReset').textContent();
+  const viewport = page.viewportSize();
+  if (viewport.width > 720) {
+    expect((initialZoom || '').trim()).toBe('114%');
+  } else {
+    expect(Number.parseInt(initialZoom || '0', 10)).toBeLessThanOrEqual(114);
+  }
   await page.locator('#zoomIn').click();
   await expect(page.locator('#zoomReset')).not.toHaveText(initialZoom || '');
   await page.locator('#fitWidth').click();

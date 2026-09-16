@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="274" height="76" viewBox="0 0 274 76" role="img" aria-hidden="true">
+<defs>
+<linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#edf1f4"/></linearGradient>
+<filter id="s" x="-20%" y="-30%" width="140%" height="170%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.6" flood-color="#0b3858" flood-opacity=".20"/></filter>
+</defs>
+
+<rect x="2" y="2" width="270" height="72" rx="18" fill="url(#g)" stroke="#879aa8" stroke-width="2.5" filter="url(#s)"/>
+<path d="M34 22v32M70 22v32M40 38h24M40 38l7-7M40 38l7 7M64 38l-7-7M64 38l-7 7" fill="none" stroke="#0b4a78" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="91" y="48" fill="#18384f" font-family="Arial,Helvetica,sans-serif" font-size="25" font-weight="700">Ajustar largura</text>
+</svg>
