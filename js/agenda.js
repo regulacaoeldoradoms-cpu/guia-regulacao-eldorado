@@ -326,6 +326,7 @@
       'agenda-card',
       record.unread ? 'is-unread' : (record.active ? 'is-read' : ''),
       record.active ? '' : 'is-inactive',
+      occupancy === state.capacity.roomCapacity ? 'is-capacity-full' : '',
       occupancy > state.capacity.roomCapacity ? 'is-capacity-critical' : ''
     ].filter(Boolean).join(' ');
     card.dataset.sourceId = record.sourceId;

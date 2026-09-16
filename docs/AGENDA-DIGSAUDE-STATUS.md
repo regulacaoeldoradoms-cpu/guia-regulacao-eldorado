@@ -33,6 +33,7 @@ Atualizado em 16/09/2026.
 - PR #198: **21/21 checks** concluídos com sucesso antes do merge.
 - Pós-merge da `main`: **26/26 check-runs** concluídos com sucesso, incluindo build e deploy; produção publicada.
 - Fluxo final de remanejamento: a mensagem com data, horários, pacientes e especialidades é preparada localmente; o usuário copia o texto e abre o WhatsApp do suporte, sem colocar dados de pacientes na URL.
+- Ajuste visual autorizado em 16/09/2026: quando a ocupação estiver em **2/2 salas**, o card inteiro deve ficar amarelo para deixar a capacidade máxima imediatamente visível; capacidade excedida continua com destaque vermelho.
 
 ## Objetivo da V2
 
@@ -151,6 +152,7 @@ Decisão funcional aprovada em 16/09/2026:
 - o cálculo usa uma **janela direta de até 30 minutos**, sem encadeamento transitivo: 08:00 e 09:00 não pertencem ao mesmo conflito apenas porque existe 08:30;
 - **Psiquiatria fica fora do cálculo**, pois é atendida pelo médico na própria Unidade Básica de Saúde e não ocupa essas duas salas;
 - 2 agendamentos elegíveis dentro da janela recebem aviso **2/2 salas no intervalo**, mas ainda são atendíveis;
+- na interface, os cards envolvidos em **2/2 salas** usam fundo amarelo forte e borda âmbar no card inteiro, independentemente de estarem novos/alterados ou já visualizados; o estado crítico de 3+ continua vermelho e prevalece visualmente;
 - 3 ou mais agendamentos elegíveis dentro da mesma janela direta geram **Capacidade excedida**;
 - o alerta crítico lista data, horários, nomes dos pacientes e especialidades;
 - a mensagem é preenchida automaticamente no Portal com data, horários, nomes dos pacientes e especialidades, iniciando por “Olá, identificamos conflito de horários...” e solicitando o remanejamento mínimo necessário;
@@ -163,15 +165,11 @@ Justificativa: automatizar a conferência operacional antes feita pela planilha 
 
 ## Próximo passo exato
 
-1. no Portal, atualizar a página da Agenda com `Ctrl+F5`;
-2. confirmar que **Todos ativos** é a visão inicial e que **Agendamento mais próximo** é a ordenação padrão;
-3. validar visualmente um cenário de **2/2 salas no intervalo**;
-4. validar um cenário de **Capacidade excedida** com 3 ou mais agendamentos dentro de uma janela direta de até 30 minutos;
-5. confirmar que **Psiquiatria** não participa da contagem;
-6. confirmar que 08:00 / 08:30 / 09:00 não forma grupo crítico transitivo;
-7. conferir a mensagem pronta, usar **Copiar mensagem**, abrir o WhatsApp e revisar data, horários, pacientes e especialidades antes de enviar;
-8. confirmar que marcar como visto continua preservando o card enquanto ele permanece em Agendados;
-9. registrar a homologação humana desta melhoria no status.
+1. concluir os checks e publicar o ajuste visual do card **2/2 salas** somente com CI verde;
+2. no Portal, atualizar a Agenda com `Ctrl+F5`;
+3. confirmar que os dois cards do cenário real de **2/2 salas no intervalo** aparecem inteiramente amarelos;
+4. confirmar que um cenário de **Capacidade excedida** continua vermelho e não é sobrescrito pelo amarelo;
+5. registrar a homologação humana desta correção visual no status.
 
 ## Riscos restantes
 

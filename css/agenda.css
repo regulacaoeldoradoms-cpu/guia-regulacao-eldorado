@@ -180,6 +180,11 @@
   box-shadow: 0 0 0 1px rgba(50,137,104,.16), 0 6px 18px rgba(20,55,90,.06);
 }
 .agenda-card.is-inactive { opacity: .68; background: #f7f9fb; }
+.agenda-card.is-capacity-full {
+  border-color: #e0a400;
+  background: #fff2ad;
+  box-shadow: inset 5px 0 0 #d99700, 0 8px 20px rgba(153,105,0,.14);
+}
 .agenda-card.is-capacity-critical {
   border-color: #cf5c67;
   background: linear-gradient(90deg, #fff4f4, #fff 56%);
