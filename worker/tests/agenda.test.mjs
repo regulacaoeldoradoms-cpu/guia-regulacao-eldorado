@@ -86,7 +86,7 @@ test('sincronização da Agenda usa leitura única e commits em lote para não e
 
 test('sincronizador automático consulta Agendados em segundo plano a cada 15 minutos', () => {
   const source = read('agenda/digsaude-agenda-sync.user.js');
-  assert.match(source, /@version\s+1\.1\.0/);
+  assert.match(source, /@version\\s+1\\.1\\.1/);
   assert.match(source, /AUTO_INTERVAL_MS = 15 \* 60 \* 1000/);
   assert.match(source, /fetch\(agendadosUrl\(\)/);
   assert.match(source, /credentials: 'include'/);
@@ -111,4 +111,17 @@ test('backend aceita snapshot completo vazio sem aceitar vazio ambíguo', () => 
   assert.match(source, /verifiedEmptySnapshot/);
   assert.match(source, /declaredComplete && expectedTotal === 0 && rows\.length === 0/);
   assert.match(source, /!rows\.length && !verifiedEmptySnapshot/);
+});
+
+
+test('sincronizador automático usa chip compacto no canto inferior esquerdo após ativação', () => {
+  const source = read('agenda/digsaude-agenda-sync.user.js');
+  assert.match(source, /WIDGET_ID = 'portal-agenda-sync-widget'/);
+  assert.match(source, /'left:18px'/);
+  assert.match(source, /'bottom:18px'/);
+  assert.match(source, /compactMode \? '⟳' : 'Ativar sync'/);
+  assert.match(source, /showDetails/);
+  assert.match(source, /mouseenter/);
+  assert.match(source, /Verificar agora/);
+  assert.doesNotMatch(source, /'right:22px'/);
 });
