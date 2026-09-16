@@ -32,6 +32,7 @@
     mergeCancel: document.getElementById('editorMergeCancel'),
     mergeFileButton: document.getElementById('editorMergeFileButton'),
     mergeFileInput: document.getElementById('editorMergeFileInput'),
+    mergePreview: document.getElementById('editorMergePreviewLab'),
     blank: document.getElementById('editorBlank'),
     addImage: document.getElementById('editorAddImage'),
     addImageInput: document.getElementById('editorAddImageInput'),
@@ -39,6 +40,7 @@
     select: document.getElementById('editorSelect'),
     write: document.getElementById('editorWrite'),
     overlayImage: document.getElementById('editorOverlayImage'),
+    overlayImageInput: document.getElementById('editorOverlayImageInput'),
     draw: document.getElementById('editorDraw'),
     drawToolbar: document.getElementById('editorDrawToolbar'),
     drawColor: document.getElementById('editorDrawColor'),
@@ -65,6 +67,8 @@
     session: null,
     merging: false,
     mergeFiles: [],
+    mergePreviewUrls: [],
+    mergePreviewGeneration: 0,
     mode: 'readonly',
     selectedObjectId: '',
     colorPalette: ['#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'],
@@ -538,6 +542,129 @@
     return '';
   }
 
+  function mergePreviewSizeLabel(bytes) {
+    const size = Math.max(0, Number(bytes || 0));
+    if (size < 1024) return size ? size + ' B' : '';
+    if (size < 1024 * 1024) return (size / 1024).toFixed(size >= 10 * 1024 ? 0 : 1) + ' KB';
+    return (size / (1024 * 1024)).toFixed(size >= 10 * 1024 * 1024 ? 0 : 1) + ' MB';
+  }
+
+  function clearMergePreview() {
+    state.mergePreviewGeneration += 1;
+    for (const url of state.mergePreviewUrls.splice(0)) {
+      try { URL.revokeObjectURL(url); } catch (_) {}
+    }
+    if (!elements.mergePreview) return;
+    elements.mergePreview.replaceChildren();
+    elements.mergePreview.hidden = true;
+  }
+
+  async function renderMergePdfPreview(file, canvas, generation) {
+    if (!(file instanceof Blob) || generation !== state.mergePreviewGeneration) return;
+    let loadingTask = null;
+    let documentPdf = null;
+    try {
+      const pdfjs = await viewer.loadPdfJs();
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (generation !== state.mergePreviewGeneration) return;
+      loadingTask = pdfjs.getDocument({ data: bytes, isEvalSupported: false, enableScripting: false });
+      documentPdf = await loadingTask.promise;
+      if (generation !== state.mergePreviewGeneration) return;
+      const page = await documentPdf.getPage(1);
+      const natural = page.getViewport({ scale: 1 });
+      const ratio = Math.min(54 / natural.width, 68 / natural.height);
+      const pixelRatio = Math.max(1, Math.min(2, Number(window.devicePixelRatio || 1)));
+      const viewport = page.getViewport({ scale: ratio * pixelRatio });
+      canvas.width = Math.max(1, Math.round(viewport.width));
+      canvas.height = Math.max(1, Math.round(viewport.height));
+      const context = canvas.getContext('2d', { alpha: false });
+      if (!context) return;
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: context, viewport }).promise;
+    } catch (_) {
+      canvas.hidden = true;
+      const fallback = canvas.parentElement?.querySelector?.('[data-merge-preview-fallback]');
+      if (fallback) fallback.hidden = false;
+    } finally {
+      try { await documentPdf?.destroy?.(); } catch (_) {}
+      try { loadingTask?.destroy?.(); } catch (_) {}
+    }
+  }
+
+  function syncMergeSelectionCopy() {
+    if (!elements.mergeSelection) return;
+    const count = state.mergeFiles.length;
+    elements.mergeSelection.textContent = count
+      ? (count === 1
+        ? '1 arquivo do dispositivo selecionado. Escolha a posição e confirme em Unir.'
+        : count + ' arquivos do dispositivo selecionados. Escolha a posição e confirme em Unir.')
+      : 'Segundo PDF sintético de 3 páginas selecionado para o laboratório. Você também pode adicionar PDF ou imagem do dispositivo; nada é enviado ao Google Drive.';
+  }
+
+  function renderMergePreview(files = []) {
+    clearMergePreview();
+    if (!elements.mergePreview) return;
+    const selected = Array.from(files || []).filter((file) => localMergeKind(file));
+    const generation = state.mergePreviewGeneration;
+    if (!selected.length) return;
+
+    selected.forEach((file, index) => {
+      const kind = localMergeKind(file);
+      const card = document.createElement('div');
+      card.className = 'documents-editor-merge-preview-item';
+
+      const thumb = document.createElement('div');
+      thumb.className = 'documents-editor-merge-preview-thumb';
+
+      const copy = document.createElement('div');
+      copy.className = 'documents-editor-merge-preview-copy';
+      const name = document.createElement('span');
+      name.className = 'documents-editor-merge-preview-name';
+      name.textContent = file.name || (kind === 'image' ? 'Imagem selecionada' : 'PDF selecionado');
+      const meta = document.createElement('span');
+      meta.className = 'documents-editor-merge-preview-meta';
+      meta.textContent = [kind === 'image' ? 'Imagem' : 'PDF', mergePreviewSizeLabel(file.size)].filter(Boolean).join(' · ');
+      copy.append(name, meta);
+
+      if (kind === 'image') {
+        const image = document.createElement('img');
+        image.alt = '';
+        const url = URL.createObjectURL(file);
+        state.mergePreviewUrls.push(url);
+        image.src = url;
+        thumb.appendChild(image);
+      } else {
+        const fallback = document.createElement('span');
+        fallback.dataset.mergePreviewFallback = 'true';
+        fallback.textContent = 'PDF';
+        fallback.hidden = true;
+        const canvas = document.createElement('canvas');
+        canvas.setAttribute('aria-hidden', 'true');
+        thumb.append(canvas, fallback);
+        renderMergePdfPreview(file, canvas, generation).catch(() => {});
+      }
+
+      const remove = document.createElement('button');
+      remove.className = 'documents-editor-merge-preview-remove';
+      remove.type = 'button';
+      remove.title = 'Remover arquivo selecionado';
+      remove.setAttribute('aria-label', remove.title);
+      remove.textContent = '×';
+      remove.addEventListener('click', () => {
+        state.mergeFiles = state.mergeFiles.filter((_, itemIndex) => itemIndex !== index);
+        if (elements.mergeFileInput) elements.mergeFileInput.value = '';
+        syncMergeSelectionCopy();
+        renderMergePreview(state.mergeFiles);
+        syncEditorState();
+      });
+
+      card.append(thumb, copy, remove);
+      elements.mergePreview.appendChild(card);
+    });
+    elements.mergePreview.hidden = false;
+  }
+
   async function mergeLocalFiles(files) {
     if (!state.session || !state.merging) return false;
     const selected = Array.from(files || []).filter((file) => localMergeKind(file));
@@ -568,6 +695,7 @@
       }
       state.merging = false;
       state.mergeFiles = [];
+      clearMergePreview();
       state.mode = 'organize';
       syncEditorState();
       await rebuild(viewState ? { ...viewState, activePage: firstInsertAt + 1 } : null, 'Atualizando documento…');
@@ -605,6 +733,7 @@
     });
     state.merging = false;
     state.mergeFiles = [];
+    clearMergePreview();
     state.mode = 'organize';
     await rebuild(viewState ? { ...viewState, activePage: insertAt + 1 } : null, 'Unindo segundo PDF sintético…');
   }
@@ -613,6 +742,7 @@
     if (!state.session) return;
     state.merging = true;
     state.mergeFiles = [];
+    clearMergePreview();
     if (elements.mergeFileInput) elements.mergeFileInput.value = '';
     if (elements.mergeSelection) elements.mergeSelection.textContent = 'Segundo PDF sintético de 3 páginas selecionado para o laboratório. Você também pode adicionar PDF ou imagem do dispositivo; nada é enviado ao Google Drive.';
     state.mode = 'merge';
@@ -628,6 +758,7 @@
   function cancelMerge() {
     state.merging = false;
     state.mergeFiles = [];
+    clearMergePreview();
     if (elements.mergeFileInput) elements.mergeFileInput.value = '';
     state.mode = 'organize';
     syncEditorState();
@@ -666,14 +797,16 @@
       : 'Caneta: desenhe livremente. Cor e espessura são gravadas por traço e cada gesto ocupa uma única entrada do histórico.';
   }
 
-  async function addOverlayImage() {
-    if (!state.session) return;
-    const blob = await syntheticImageBlob();
+  async function addOverlayImageFile(file) {
+    if (!state.session || !(file instanceof Blob)) return false;
+    const normalized = await normalizeLocalImage(file);
     const activePage = Math.max(1, Number(viewer.getViewState()?.activePage || 1));
-    const id = await editor.addImageOverlay(state.session, activePage - 1, blob, { width: .3 });
+    const id = await editor.addImageOverlay(state.session, activePage - 1, normalized, { width: .3 });
     state.selectedObjectId = id || '';
     setMode('image');
-    elements.editorStatus.textContent = 'Imagem sintética inserida sobre a página. Arraste, redimensione ou rotacione.';
+    elements.editorStatus.textContent = 'Imagem inserida sobre a página. Arraste, redimensione ou rotacione.';
+    if (elements.overlayImageInput) elements.overlayImageInput.value = '';
+    return true;
   }
 
   function updateSelectedObject(patch) {
@@ -926,15 +1059,13 @@
     const files = Array.from(elements.mergeFileInput.files || []).filter((file) => localMergeKind(file));
     state.mergeFiles = files;
     if (!files.length) {
+      clearMergePreview();
       if (elements.mergeSelection) elements.mergeSelection.textContent = 'Nenhum PDF ou imagem válido selecionado.';
       elements.editorStatus.textContent = 'Selecione pelo menos um PDF ou uma imagem válida.';
       return;
     }
-    if (elements.mergeSelection) {
-      elements.mergeSelection.textContent = files.length === 1
-        ? '1 arquivo do dispositivo selecionado. Escolha a posição e confirme em Unir.'
-        : String(files.length) + ' arquivos do dispositivo selecionados. Escolha a posição e confirme em Unir.';
-    }
+    syncMergeSelectionCopy();
+    renderMergePreview(files);
     elements.editorStatus.textContent = 'Arquivo selecionado. Confirme em Unir.';
   }));
   elements.mergeCancel.addEventListener('click', () => run(cancelMerge));
@@ -963,7 +1094,20 @@
     state.drawWidth = Math.max(1, Math.min(20, Number(elements.drawWidth.value || 4)));
     syncDraws();
   }));
-  elements.overlayImage.addEventListener('click', () => run(addOverlayImage));
+  elements.overlayImage.addEventListener('click', () => {
+    if (!state.session) return;
+    if (state.mode === 'image') {
+      elements.overlayImageInput?.click();
+      return;
+    }
+    state.selectedObjectId = '';
+    setMode('image');
+    elements.editorStatus.textContent = 'Colar imagem ativo. Clique novamente no botão para escolher a imagem do dispositivo.';
+  });
+  elements.overlayImageInput?.addEventListener('change', () => {
+    const file = elements.overlayImageInput.files?.[0];
+    if (file) run(() => addOverlayImageFile(file));
+  });
   elements.objectFont.addEventListener('change', () => run(() => updateSelectedObject({ fontFamily: elements.objectFont.value })));
   elements.objectFontSize.addEventListener('change', () => run(() => updateSelectedObject({ fontSize: Number(elements.objectFontSize.value || 18) / 560 })));
   elements.objectColor.addEventListener('input', () => run(() => updateSelectedObject({ color: elements.objectColor.value })));
@@ -973,6 +1117,15 @@
   elements.objectAlign.addEventListener('change', () => run(() => updateSelectedObject({ textAlign: elements.objectAlign.value })));
   elements.objectOpacity.addEventListener('change', () => run(() => updateSelectedObject({ opacity: Number(elements.objectOpacity.value || 100) / 100 })));
   elements.objectDelete.addEventListener('click', () => run(deleteSelectedObject));
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Delete' || !state.session || root.dataset.operationState === 'busy' || !state.selectedObjectId) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('input, textarea, select, [contenteditable="true"], [role="textbox"]')) return;
+    if (!selectedObject()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    run(deleteSelectedObject);
+  }, true);
   elements.refresh.addEventListener('click', () => run(() => rebuild()));
   elements.exportPdf.addEventListener('click', () => run(exportFlattenedPdf));
   elements.exit.addEventListener('click', () => run(exitEditor));
