@@ -138,6 +138,15 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(text).toHaveAttribute('contenteditable', 'false');
     await expect(text).toHaveText('Conteúdo protegido no modo selecionar');
 
+    // Uma caixa de texto selecionada também pode ser removida diretamente
+    // pela tecla Delete e restaurada pelo mesmo histórico do editor.
+    await text.click();
+    await expect(object).toHaveClass(/selected/);
+    await page.keyboard.press('Delete');
+    await expect(page.locator('.portal-pdf-object--text')).toHaveCount(0);
+    await page.locator('#editorUndo').click();
+    await expect(page.locator('.portal-pdf-object--text')).toHaveCount(1);
+
     expect(errors).toEqual([]);
   });
 
