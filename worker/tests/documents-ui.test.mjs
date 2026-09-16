@@ -581,11 +581,17 @@ test('Fase 4C mantém telemetria de sincronização estritamente técnica e suce
     client.indexOf('async function syncEditedPdfToDrive'),
     client.indexOf('async function exportEditedPdfLocal')
   );
-  assert.doesNotMatch(syncSection, /capture\([\s\S]{0,400}(?:fileId|filename|item\.name|item\.ref|copyName|patient|cpf|cns|diagnostico|cid)/i);
-  assert.match(syncSection, /route:\s*'\/documentos\/'/);
-  assert.match(syncSection, /operation/);
-  assert.match(syncSection, /size_bucket/);
-  assert.match(syncSection, /status_code/);
+  const captureBodies = [...syncSection.matchAll(
+    /capture\('(drive_sync_(?:started|completed|failed))',\s*\{([\s\S]*?)\}\);/g
+  )];
+  assert.equal(captureBodies.length, 3);
+  for (const [, event, properties] of captureBodies) {
+    assert.doesNotMatch(properties, /fileId|filename|item\.name|item\.ref|copyName|patient|cpf|cns|diagnostico|cid/i, event);
+    assert.match(properties, /route:\s*'\/documentos\/'/);
+    assert.match(properties, /operation/);
+    assert.match(properties, /size_bucket/);
+  }
+  assert.match(captureBodies.find(([, event]) => event === 'drive_sync_failed')[2], /status_code/);
   assert.ok(syncSection.indexOf("if (!completed?.completed)") < syncSection.indexOf("setDriveSyncProgress('Salvo no Google Drive.'"));
 });
 
