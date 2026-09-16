@@ -840,6 +840,7 @@
     window.PortalPdfViewer?.setEditorCrops?.([], { mode: 'none' });
     window.PortalPdfViewer?.setEditorStrokes?.([], { mode: 'none' });
     clearEditorPreview();
+    document.querySelector('iframe.documents-print-frame[data-central-print-frame="true"]')?.remove();
     state.editorColorGesture = null;
     state.finalPdfCacheSession = null;
     state.finalPdfCacheRevision = -1;
@@ -1103,6 +1104,15 @@
 
       const printWindow = frame.contentWindow;
       if (!printWindow) throw new Error('Não foi possível abrir a caixa de impressão.');
+
+      let cleaned = false;
+      const cleanupPrintFrame = () => {
+        if (cleaned) return;
+        cleaned = true;
+        try { frame.remove(); } catch (_) {}
+      };
+      printWindow.addEventListener?.('afterprint', cleanupPrintFrame, { once: true });
+      window.setTimeout(cleanupPrintFrame, 60000);
       printWindow.focus();
       printWindow.print();
 
