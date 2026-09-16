@@ -716,12 +716,32 @@
   min-width: 38px !important;
   height: 38px !important;
   min-height: 38px !important;
-  background-image: url('/assets/editor-pdf-buttons/atualizar.svg?v=20260916-3') !important;
+  background-image: url('/assets/Drive_normal.png?v=20260916-1') !important;
+}
+
+.documents-art-sync[data-sync-state="normal"] {
+  background-image: url('/assets/Drive_normal.png?v=20260916-1') !important;
+}
+
+.documents-art-sync[data-sync-state="pending"] {
+  background-image: url('/assets/Drive_pendente.png?v=20260916-1') !important;
+}
+
+.documents-art-sync[data-sync-state="syncing"] {
+  background-image: url('/assets/Drive_sincronizando.png?v=20260916-1') !important;
+}
+
+.documents-art-sync[data-sync-state="success"] {
+  background-image: url('/assets/Drive_sincronizado_1seg.png?v=20260916-1') !important;
+}
+
+.documents-art-sync[data-sync-state="failed"] {
+  background-image: url('/assets/Drive_falha.png?v=20260916-1') !important;
 }
 
 .documents-art-sync.active,
 .documents-art-sync[aria-pressed="true"] {
-  filter: brightness(.92) saturate(1.08);
+  filter: brightness(.96) saturate(1.04);
 }
 
 .documents-art-export {
