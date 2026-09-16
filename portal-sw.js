@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260916-1';
+const CACHE_VERSION = '20260914-4';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -17,7 +17,7 @@ const documentStreams = new Map();
 const KNOWN_PAGE_PATHS = new Set([
   '/', '/home/', '/login/', '/cadastro/', '/ferramentas/', '/perfil/',
   '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/conta/', '/medico/', '/protocolo/',
-  '/recepcao/', '/telemedicina/', '/agenda/', '/agenda/sync/', '/documentos/', '/cidadao/', '/conselho/',
+  '/recepcao/', '/telemedicina/', '/documentos/', '/cidadao/', '/conselho/',
   '/conselho/painel/', '/admin/usuarios/', '/admin/monitoramento/',
   '/admin/configuracao/', '/admin/social/'
 ]);
@@ -26,7 +26,6 @@ const CORE_RESOURCES = Object.freeze([
   '/login/',
   '/',
   '/ferramentas/',
-  '/agenda/',
   '/css/portal.css?v=20260816-5',
   '/css/home-loading.css?v=20260909-1',
   '/css/social.css?v=20260911-1',
@@ -36,7 +35,7 @@ const CORE_RESOURCES = Object.freeze([
   '/js/portal-observability.js?v=20260911-1',
   '/js/portal-pwa.js?v=20260911-1',
   '/js/auth-client.js?v=20260910-4',
-  '/js/tools-catalog.js?v=20260916-1',
+  '/js/tools-catalog.js?v=20260911-3',
   '/js/document-cache.js?v=20260912-1',
   '/js/document-editor.js?v=20260912-1',
   '/js/social-navigation.js?v=20260911-2',
