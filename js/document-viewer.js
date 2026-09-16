@@ -13,6 +13,7 @@
   const MIN_SCALE = 0.45;
   const MAX_SCALE = 3;
   const ZOOM_STEP = 0.15;
+  const DEFAULT_INITIAL_SCALE = 1.14;
   const THUMB_WIDTH = 104;
   const ORGANIZER_THUMB_WIDTH = 210;
   const MAX_CANVAS_PIXELS = 18_000_000;
@@ -3095,10 +3096,20 @@
 
       const requestedScale = Number(initialViewState?.scale);
       const preserveManualScale = initialViewState?.fitMode === false && Number.isFinite(requestedScale);
-      session.fitMode = !preserveManualScale;
-      const initialScale = preserveManualScale
-        ? clamp(requestedScale, MIN_SCALE, MAX_SCALE)
-        : await calculateFitScale(session);
+      const preserveFitScale = initialViewState?.fitMode === true;
+      session.fitMode = preserveFitScale;
+
+      let initialScale;
+      if (preserveManualScale) {
+        initialScale = clamp(requestedScale, MIN_SCALE, MAX_SCALE);
+      } else if (preserveFitScale) {
+        initialScale = await calculateFitScale(session);
+      } else {
+        // Abertura inicial: 114% enquadra melhor em desktop; em telas menores,
+        // nunca ultrapassa a escala necessária para caber na largura disponível.
+        const fitScale = await calculateFitScale(session);
+        initialScale = clamp(Math.min(DEFAULT_INITIAL_SCALE, fitScale), MIN_SCALE, MAX_SCALE);
+      }
       if (!isCurrentSession(session)) {
         abandonSession(session);
         return null;
