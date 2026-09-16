@@ -10,8 +10,9 @@ Atualizado em 16/09/2026.
 - Deploy do Worker corrigido concluído com sucesso em 16/09/2026, versão Cloudflare `a790bd06-b51a-4a02-8bf2-fe2a28f84849`.
 - O usuário repetiu a sincronização real após o deploy e confirmou que **deu certo**; portanto a primeira sincronização funcional em produção está homologada.
 - Nova unidade autorizada: **V2 — sincronização automática enquanto o DigSaúde estiver aberto**.
-- Branch atual: `feat/agenda-auto-sync-v2`.
-- Produção: a V2 ainda não foi mesclada nem publicada.
+- PR #188 — **Agenda V2: sincronização automática enquanto DigSaúde estiver aberto** — validado e mesclado na `main` em `ebf82dc3666a0c253387ee0fcdf0b786934ab815`.
+- Produção: deploy concluído com sucesso; Worker publicado na versão Cloudflare `8fcc9e5f-868b-4c0a-be59-9e16744c72b3` e pipeline de deploy do site concluído com sucesso.
+- Estado atual: V2 publicada e aguardando homologação humana no navegador autorizado.
 
 ## Objetivo da V2
 
@@ -29,7 +30,7 @@ Comportamento planejado:
 - ao voltar à aba/janela depois de mais de 15 minutos, uma verificação é antecipada;
 - se a ponte do Portal for fechada, o automático pausa e exige reativação explícita.
 
-## Implementação preparada na branch
+## Implementação publicada
 
 - userscript atualizado para V1.1.0;
 - `@updateURL` e `@downloadURL` adicionados para facilitar atualizações futuras do Tampermonkey;
@@ -82,24 +83,23 @@ A V2 continua sendo uma automação local assistida. Monitoramento com navegador
 ## Checks e testes
 
 - V1 e correção de subrequests já homologadas em produção.
-- Testes V2 adicionados em `worker/tests/agenda.test.mjs`.
-- Checks da branch V2 ainda pendentes até abertura do PR.
+- PR #188 passou com todos os workflows da branch em verde, incluindo `Validar Agenda DigSaúde V1` e regressões gerais.
+- Pós-merge da `main` em `ebf82dc3`: **26/26 check-runs concluídos com sucesso**, incluindo build, deploy, Worker, validações de Agenda, autenticação, Telemedicina, Conselho, Social e demais regressões.
+- Deploy do Worker confirmado com sucesso na versão `8fcc9e5f-868b-4c0a-be59-9e16744c72b3`.
 
 ## Próximo passo exato
 
-1. abrir PR da branch `feat/agenda-auto-sync-v2` contra `main`;
-2. validar todos os workflows, especialmente `Validar Agenda DigSaúde V1` e regressões gerais;
-3. corrigir qualquer falha sem ampliar o escopo;
-4. mesclar somente com CI verde;
-5. aguardar deploy de produção;
-6. o usuário atualizar o userscript existente no Tampermonkey para a versão 1.1.0;
-7. no DigSaúde, clicar uma vez em **Ativar sincronização automática**, minimizar a ponte do Portal e homologar:
+1. o usuário atualizar o userscript existente no Tampermonkey para a versão **1.1.0** usando **Agenda → Instalar / atualizar sincronizador**;
+2. recarregar a página de Consultas do DigSaúde;
+3. clicar uma vez em **Ativar sincronização automática**;
+4. manter a ponte do Portal aberta — pode ser minimizada;
+5. homologar:
    - sincronização inicial;
-   - botão indicando automático ativo;
-   - nova verificação sem mudança;
-   - verificação após alteração real ou forçada;
+   - botão indicando **Automático ativo**;
+   - verificação imediata ao clicar novamente no botão;
+   - nova verificação automática após o intervalo ou ao recuperar foco vencido;
    - pausa ao fechar a ponte e reativação posterior;
-8. registrar o resultado real desta homologação.
+6. registrar o resultado real desta homologação.
 
 ## Riscos restantes
 
