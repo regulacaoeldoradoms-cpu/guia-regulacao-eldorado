@@ -113,12 +113,18 @@ jobs:
           test -s vendor/pdfjs/LICENSE
           ! grep -R -F "cdn.jsdelivr.net" documentos/index.html js/document-editor.js
           grep -q "sha512-z8IYLHO8bTgFqj+yrPyIJnzBDf7DDhWwiEsk4sY+Oe6J2M+WQequeGS7qioI5vT6rXgVRb4K1UVQC5ER7MKzKQ==" js/document-editor.js
-          grep -qi "ação explícita de sincronização" documentos/index.html
+          grep -qi "sincronizadas automaticamente" documentos/index.html
           grep -q "editDocumentPdfPermission" admin/usuarios/index.html
           grep -q "pdf_edit_completed" js/documents.js
           grep -q "drive_sync_started" js/documents.js
           grep -q "drive_sync_completed" js/documents.js
           grep -q "drive_sync_failed" js/documents.js
+          grep -q "DRIVE_AUTO_SYNC_IDLE_MS = 1000" js/documents.js
+          grep -q "Drive_normal.png" css/documents.css
+          grep -q "Drive_pendente.png" css/documents.css
+          grep -q "Drive_sincronizando.png" css/documents.css
+          grep -q "Drive_sincronizado_1seg.png" css/documents.css
+          grep -q "Drive_falha.png" css/documents.css
           grep -q "/api/documents/drive/sync/preflight" js/documents.js
           grep -q "/api/documents/drive/sync/start" js/documents.js
           grep -q "DOCUMENTS_DRIVE_WRITE_ENABLED" worker/document-drive.js
