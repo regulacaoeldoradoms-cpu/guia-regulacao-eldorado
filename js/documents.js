@@ -636,6 +636,10 @@
       els.editorDraw.classList.toggle('active', next === 'draw');
       els.editorDraw.setAttribute('aria-pressed', next === 'draw' ? 'true' : 'false');
     }
+    if (els.editorSync) {
+      els.editorSync.classList.toggle('active', next === 'sync');
+      els.editorSync.setAttribute('aria-pressed', next === 'sync' ? 'true' : 'false');
+    }
     if (els.editorDrawToolbar) els.editorDrawToolbar.hidden = next !== 'draw';
     if (els.editorDrawPen) {
       const active = next === 'draw' && state.editorDrawTool === 'draw';
@@ -648,6 +652,7 @@
       els.editorDrawEraser.setAttribute('aria-pressed', active ? 'true' : 'false');
     }
     if (els.editorMergePanel) els.editorMergePanel.hidden = next !== 'merge';
+    if (els.editorSyncPanel) els.editorSyncPanel.hidden = next !== 'sync';
     syncEditorObjects();
     syncEditorStrokes();
   }
@@ -682,6 +687,9 @@
     if (els.editorSyncApply) els.editorSyncApply.disabled = busy || !session || !canSyncDocuments();
     if (els.editorSyncCancel) els.editorSyncCancel.disabled = busy;
     if (els.editorSyncCopyName) els.editorSyncCopyName.disabled = busy;
+    document.querySelectorAll('input[name="editorSyncOperation"]').forEach((control) => {
+      control.disabled = busy;
+    });
     if (els.editorExport) els.editorExport.disabled = busy || !session || typeof editor?.buildFlattenedBlob !== 'function';
     if (els.editorPrint) els.editorPrint.disabled = busy || !session || typeof editor?.buildFlattenedBlob !== 'function';
     if (els.editorMergeLocal) els.editorMergeLocal.disabled = busy || !session;
@@ -969,6 +977,264 @@
       state.finalPdfCacheBlob = blob;
     }
     return blob;
+  }
+
+  function setDriveSyncProgress(message = '', type = '') {
+    if (!els.editorSyncProgress) return;
+    els.editorSyncProgress.textContent = String(message || '');
+    els.editorSyncProgress.className = `documents-sync-progress${type ? ` ${type}` : ''}`;
+  }
+
+  function selectedDriveSyncOperation() {
+    const selected = document.querySelector('input[name="editorSyncOperation"]:checked');
+    return selected?.value === 'replace_pdf' ? 'replace_pdf' : 'save_copy';
+  }
+
+  function updateDriveSyncPanel() {
+    const operation = selectedDriveSyncOperation();
+    state.syncOperation = operation;
+    if (els.editorSyncCopyNameField) els.editorSyncCopyNameField.hidden = operation !== 'save_copy';
+    if (els.editorSyncWarning) {
+      els.editorSyncWarning.textContent = operation === 'replace_pdf'
+        ? 'Antes de substituir, o Portal reconfere a versão no Google Drive. Se houver conflito, a operação é interrompida. A revisão anterior precisa ser preservada antes do upload.'
+        : 'Um novo PDF será criado no Google Drive e o arquivo original permanecerá intacto.';
+    }
+  }
+
+  function openDriveSyncPanel() {
+    if (!state.editorSession || state.editorBusy) return false;
+    if (!canSyncDocuments()) {
+      setEditorStatus('A sincronização com Google Drive não está habilitada para este ambiente ou para esta conta.', 'warning');
+      return false;
+    }
+    state.syncOperation = 'save_copy';
+    const saveCopy = document.querySelector('input[name="editorSyncOperation"][value="save_copy"]');
+    if (saveCopy) saveCopy.checked = true;
+    if (els.editorSyncCopyName) els.editorSyncCopyName.value = localEditedPdfName();
+    setDriveSyncProgress('');
+    updateDriveSyncPanel();
+    setEditorWorkspaceMode('sync');
+    setEditorStatus('Escolha como deseja salvar o PDF final no Google Drive.', 'success');
+    return true;
+  }
+
+  function cancelDriveSyncPanel() {
+    if (state.editorBusy) return false;
+    setDriveSyncProgress('');
+    setEditorWorkspaceMode('organize');
+    return true;
+  }
+
+  async function driveSyncFetch(path, options = {}) {
+    const headers = new Headers(auth.authorizationHeader?.() || {});
+    for (const [name, value] of Object.entries(options.headers || {})) {
+      if (value !== undefined && value !== null && value !== '') headers.set(name, String(value));
+    }
+    let body = options.body;
+    if (Object.prototype.hasOwnProperty.call(options, 'json')) {
+      headers.set('Content-Type', 'application/json');
+      body = JSON.stringify(options.json || {});
+    }
+    const response = await fetch(endpoint + path, {
+      method: options.method || 'GET',
+      headers,
+      body,
+      cache: 'no-store',
+      credentials: 'omit'
+    });
+    const type = String(response.headers.get('Content-Type') || '');
+    const payload = type.includes('application/json')
+      ? await response.json().catch(() => ({}))
+      : {};
+    if (!response.ok) {
+      const error = new Error(payload?.error || `Falha ao sincronizar com Google Drive (${response.status}).`);
+      error.code = String(payload?.code || '');
+      error.status = response.status;
+      throw error;
+    }
+    return payload;
+  }
+
+  function applyConfirmedDriveSync(operation, result, blob, copyName) {
+    if (!result?.completed || !result.ref || !result.cacheKey || !result.currentVersion) {
+      throw new Error('O Google Drive não retornou confirmação suficiente do salvamento.');
+    }
+
+    const previous = state.pdfItem || {};
+    const nextName = operation === 'save_copy'
+      ? (String(copyName || '').trim() || localEditedPdfName())
+      : String(previous.name || previous.label || 'PDF');
+    const next = {
+      ...previous,
+      ref: result.ref,
+      cacheKey: result.cacheKey,
+      version: String(result.currentVersion),
+      modifiedTime: String(result.modifiedTime || previous.modifiedTime || ''),
+      size: Number.isFinite(Number(result.size)) ? Number(result.size) : blob.size,
+      name: nextName,
+      label: nextName,
+      mimeType: 'application/pdf',
+      originalMimeType: 'application/pdf',
+      isPdf: true,
+      isFolder: false
+    };
+
+    if (operation === 'replace_pdf') {
+      const previousRef = String(previous.ref || '');
+      const previousCacheKey = String(previous.cacheKey || '');
+      state.items = state.items.map((item) => (
+        (previousRef && item?.ref === previousRef) || (previousCacheKey && item?.cacheKey === previousCacheKey)
+          ? { ...item, ...next }
+          : item
+      ));
+    }
+
+    state.pdfItem = next;
+    if (els.viewerTitle) els.viewerTitle.textContent = nextName;
+    storeCachedPdf(next, blob).catch(() => false);
+    refreshPdfListActions();
+    return next;
+  }
+
+  async function syncEditedPdfToDrive() {
+    const editor = window.PortalPdfEditor;
+    const session = state.editorSession;
+    if (
+      !session
+      || state.editorBusy
+      || !canSyncDocuments()
+      || typeof editor?.buildFlattenedBlob !== 'function'
+    ) return false;
+
+    const operation = selectedDriveSyncOperation();
+    const copyName = String(els.editorSyncCopyName?.value || '').trim();
+    if (operation === 'save_copy' && !copyName) {
+      setDriveSyncProgress('Informe um nome para o novo PDF.', 'warning');
+      els.editorSyncCopyName?.focus?.();
+      return false;
+    }
+
+    const started = performance.now();
+    let blob = null;
+    let syncStarted = false;
+    setEditorBusy(true);
+    setDriveSyncProgress('Validando a versão atual no Google Drive…');
+    setEditorStatus('Validando sincronização com o Google Drive…');
+
+    try {
+      await driveSyncFetch('/api/documents/drive/sync/preflight', {
+        method: 'POST',
+        json: {
+          operation,
+          ref: state.pdfItem.ref,
+          baseVersion: String(state.pdfItem.version || '')
+        }
+      });
+
+      setDriveSyncProgress('Gerando o PDF final…');
+      blob = await finalPdfBlobForSession(session);
+      if (!(blob instanceof Blob) || session !== state.editorSession) return false;
+
+      capture('drive_sync_started', {
+        route: '/documentos/',
+        operation,
+        size_bucket: sizeBucket(blob.size)
+      });
+      syncStarted = true;
+
+      setDriveSyncProgress('Iniciando envio seguro ao Google Drive…');
+      const startedSync = await driveSyncFetch('/api/documents/drive/sync/start', {
+        method: 'POST',
+        json: {
+          operation,
+          ref: state.pdfItem.ref,
+          baseVersion: String(state.pdfItem.version || ''),
+          totalBytes: blob.size,
+          copyName: operation === 'save_copy' ? copyName : ''
+        }
+      });
+
+      const syncId = String(startedSync?.syncId || '');
+      const chunkSize = Math.max(256 * 1024, Number(startedSync?.chunkSize || (4 * 1024 * 1024)));
+      if (!syncId) throw new Error('O Google Drive não iniciou uma sessão de sincronização válida.');
+
+      let offset = 0;
+      let completed = null;
+
+      while (offset < blob.size) {
+        const endExclusive = Math.min(blob.size, offset + chunkSize);
+        const chunk = blob.slice(offset, endExclusive, 'application/pdf');
+        setDriveSyncProgress(
+          `Enviando PDF… ${Math.min(99, Math.floor((offset / blob.size) * 100))}%`
+        );
+
+        let result;
+        try {
+          result = await driveSyncFetch(`/api/documents/drive/sync/upload/${encodeURIComponent(syncId)}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/pdf',
+              'Content-Range': `bytes ${offset}-${endExclusive - 1}/${blob.size}`
+            },
+            body: chunk
+          });
+        } catch (error) {
+          if (error?.code !== 'DRIVE_SYNC_INTERRUPTED') throw error;
+          setDriveSyncProgress('Conferindo até onde o Google Drive recebeu o arquivo…');
+          result = await driveSyncFetch(`/api/documents/drive/sync/status/${encodeURIComponent(syncId)}`, {
+            method: 'POST'
+          });
+        }
+
+        if (result?.completed === true) {
+          completed = result;
+          break;
+        }
+
+        const nextOffset = Number(result?.nextOffset);
+        if (!Number.isSafeInteger(nextOffset) || nextOffset < 0 || nextOffset > blob.size) {
+          throw new Error('O Google Drive retornou uma posição inválida para retomar o upload.');
+        }
+        if (nextOffset === offset && offset !== 0) {
+          throw new Error('Não foi possível confirmar avanço no upload. O arquivo não foi marcado como salvo.');
+        }
+        offset = nextOffset;
+      }
+
+      if (!completed?.completed) {
+        throw new Error('O Google Drive não confirmou a conclusão do upload.');
+      }
+
+      applyConfirmedDriveSync(operation, completed, blob, copyName);
+      setDriveSyncProgress('Salvo no Google Drive.', 'success');
+      setEditorStatus('Salvo no Google Drive. A confirmação veio do próprio Google Drive.', 'success');
+      capture('drive_sync_completed', {
+        route: '/documentos/',
+        duration_ms: duration(started),
+        operation,
+        size_bucket: sizeBucket(blob.size)
+      });
+      return true;
+    } catch (error) {
+      const conflict = error?.code === 'DRIVE_VERSION_CONFLICT';
+      const message = conflict
+        ? 'Conflito detectado: o arquivo foi alterado no Google Drive. Reabra o documento antes de substituir o original.'
+        : (error?.message || 'Não foi possível sincronizar o PDF com o Google Drive.');
+      setDriveSyncProgress(message, conflict ? 'warning' : 'error');
+      setEditorStatus(message, 'warning');
+      if (syncStarted) {
+        capture('drive_sync_failed', {
+          route: '/documentos/',
+          duration_ms: duration(started),
+          operation,
+          size_bucket: sizeBucket(blob?.size || 0),
+          status_code: Number(error?.status || 0)
+        });
+      }
+      return false;
+    } finally {
+      if (session === state.editorSession) setEditorBusy(false);
+    }
   }
 
   async function exportEditedPdfLocal() {
