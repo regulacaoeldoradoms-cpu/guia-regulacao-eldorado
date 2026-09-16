@@ -656,7 +656,7 @@
     if (els.editorDrawPen) els.editorDrawPen.disabled = busy || !session;
     if (els.editorDrawEraser) els.editorDrawEraser.disabled = busy || !session;
     if (els.editorObjectDelete) els.editorObjectDelete.disabled = busy || !selectedEditorObject();
-    els.editorPreview.disabled = busy || !session;
+    if (els.editorPreview) els.editorPreview.disabled = busy || !session;
     if (els.editorExport) els.editorExport.disabled = busy || !session || typeof editor?.buildFlattenedBlob !== 'function';
     if (els.editorPrint) els.editorPrint.disabled = busy || !session || typeof editor?.buildFlattenedBlob !== 'function';
     if (els.editorMergeLocal) els.editorMergeLocal.disabled = busy || !session;
@@ -2733,7 +2733,7 @@
     els.editorImageInput.value = '';
     await addSelectedImages(files);
   });
-  els.editorPreview.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
+  els.editorPreview?.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
   els.editorExport?.addEventListener('click', () => exportEditedPdfLocal().catch(() => {}));
   els.editorPrint?.addEventListener('click', () => printEditedPdfLocal().catch(() => {}));
   els.editorExit.addEventListener('click', exitEditor);
