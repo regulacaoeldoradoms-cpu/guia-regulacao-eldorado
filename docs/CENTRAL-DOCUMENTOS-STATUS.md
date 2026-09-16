@@ -72,23 +72,23 @@ Pendência / risco atual:
 Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Fase atual:** Fase 3 — Editor PDF essencial.
-- **Subfase atual:** **3C.4 — Recortar**.
-- **Motivo do avanço:** o usuário aprovou explicitamente a homologação humana final da 3C.3 em 15/09/2026 após testar o fluxo contextual de texto e o painel RGB arrastável.
-- **3C.3:** encerrada e aceita. Inclui Escrever, Selecionar sem edição de conteúdo, Colar imagem overlay, mover/resize/rotação, transformação SE, opacidade, transferência entre páginas, Undo/Redo, paleta por conta, slots editáveis, `+`, RGB/HEX e painel de cor arrastável.
-- **Último commit funcional validado da 3C.3:** `8596a2d92937cae3c0357f123e61ec1f50bbf257`.
-- **Commit documental de fechamento anterior:** `4ea02f0722bfec022eeb58702e198498da3eef0f`.
-- **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, mantida intacta.
+- **Subfase atual:** **3C.4 — Recortar**, tecnicamente corrigida após feedback humano e aguardando novo aceite visual/tátil.
+- **Última ação concluída:** removido o recorte visual predefinido. Agora `crop: null` significa página inteira, sem moldura nem máscara; o primeiro arraste explícito sobre a página cria a seleção.
+- **Regra funcional vigente:** no máximo **1 recorte por página**. Depois de criado, a mesma moldura pode ser movida/redimensionada/removida; novo arraste fora dela não cria segundo recorte.
 - **Branch atual:** `codex/central-docs-editor-superficie-unica`.
 - **PR atual:** #179 — aberto, mergeável e sem merge.
-- **Validação da 3C.3:** **24/24 workflows verdes**; Playwright **51 passed / 1 skipped esperado**; nenhum thread de review não resolvido.
-- **Staging homologado:** `https://a95d970c.portal-regulacao-central-staging.pages.dev/` (head documental `4ea02f0...`; runtime funcional da 3C.3 preservado).
-- **Aceite humano:** aprovado pelo usuário em 15/09/2026; gate humano da 3C.3 encerrado.
-- **Escopo da 3C.4 — Recortar:** crop associado ao `pageId`, retângulo em coordenadas normalizadas da página, moldura manipulável com preview imediato, commit único no fim do gesto, Undo/Redo e preservação semântica após reorganizar/duplicar/excluir página.
-- **Testes obrigatórios já definidos para 3C.4:** rotações 0/90/180/270°, CropBox não padrão, desktop + mobile/touch, reorganização/duplicação/exclusão, Undo/Redo e ausência de rasterização obrigatória durante edição.
-- **Decisão arquitetural vigente:** PDF.js continua como camada de visualização; o crop deve permanecer local/reversível na sessão e só será materializado no PDF final na 3C.6 junto do flatten/exportação local.
-- **Não fazer nesta subfase:** merge, alteração da main, deploy de produção, escrita no Drive, Desenhar/Borracha (3C.5) ou flatten/exportação (3C.6).
-- **Segurança:** staging apenas com dados fictícios enquanto Cloudflare Access estiver pendente; nenhuma telemetria de conteúdo documental.
-- **Próxima ação exata:** implementar a unidade mínima de Recortar na própria superfície PDF.js, adicionar testes determinísticos de crop/rotação/Undo e publicar preview sintético para homologação humana antes de 3C.5.
+- **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, mantida intacta.
+- **Último commit funcional relevante:** `ca7801df7d6042a3d111a2185c21bd82b12923c8`.
+- **Validação do runtime:** **25/25 checks verdes** no commit funcional; workflow de navegador e etapa Playwright concluíram com sucesso.
+- **Cobertura nova:** estado inicial sem crop, criação por drag, bloqueio da segunda seleção na mesma página, resize, Undo/Redo, rotações, duplicação, reordenação, CropBox não padrão e touch.
+- **Documentação:** status e homologação atualizados com a decisão e justificativa.
+- **Decisão arquitetural mantida:** o crop continua sendo metadado local/reversível associado ao `pageId`; só será materializado no PDF final na 3C.6.
+- **Ações externas concluídas:** preview da branch continua sendo publicado no Cloudflare Pages; staging deve permanecer com dados fictícios enquanto Access estiver pendente.
+- **Pendências/bloqueios:** somente novo aceite humano da UX de criação explícita. Nenhum bloqueio técnico conhecido.
+- **Riscos conhecidos:** gesto touch físico ainda merece conferência humana; não confundir preview sintético com documento institucional.
+- **Não fazer ainda:** merge, alteração da main, deploy de produção, escrita no Drive, 3C.5 ou 3C.6 antes do aceite da 3C.4.
+- **Próxima ação exata:** abrir o alias `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, entrar em **Recortar**, confirmar que a página começa inteira e sem moldura, arrastar uma área, tentar criar uma segunda na mesma página e confirmar o bloqueio, ajustar a moldura existente e testar ↺/Undo/Redo. Com aprovação, encerrar 3C.4 e iniciar **3C.5 — Desenhar/Borracha**.
+- **Arquivos/fontes principais:** `js/document-viewer.js`, `js/document-editor.js`, `js/documents.js`, `css/documents.css`, `testing/browser/central-docs-crop.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md` e este status.
 
 ## 3C.3 — aceite humano final e encerramento — 15/09/2026
 
