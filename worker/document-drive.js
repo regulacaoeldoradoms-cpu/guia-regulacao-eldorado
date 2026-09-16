@@ -6,6 +6,8 @@ const FILE_REF_TTL_SECONDS = 12 * 60 * 60;
 const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder';
 const DRIVE_SHORTCUT_MIME = 'application/vnd.google-apps.shortcut';
 const PDF_MIME = 'application/pdf';
+const DRIVE_SYNC_OPERATIONS = new Set(['replace_pdf', 'save_copy']);
+const DRIVE_SYNC_FILE_FIELDS = 'id,mimeType,size,modifiedTime,version,md5Checksum,headRevisionId,parents,capabilities(canDownload,canEdit,canModifyContent)';
 const TOKEN_ROW_ID = 'institutional';
 const tokenSchemaReady = new WeakSet();
 const tokenSchemaPromises = new WeakMap();
@@ -607,6 +609,100 @@ export async function searchDrive(env, input = {}) {
 
   const response = await driveFetch(env, url.toString(), { method: 'GET' });
   return parseDriveList(response, env);
+}
+
+function normalizeDriveVersion(value, { required = false } = {}) {
+  const version = String(value || '').trim();
+  if (!version) {
+    if (required) {
+      throw new DriveIntegrationError(
+        'DRIVE_BASE_VERSION_REQUIRED',
+        'A versão-base do arquivo é obrigatória para substituir o original.',
+        400
+      );
+    }
+    return '';
+  }
+  if (!/^\d{1,40}$/.test(version)) {
+    throw new DriveIntegrationError('DRIVE_VERSION_INVALID', 'Versão do Google Drive inválida.', 400);
+  }
+  return version;
+}
+
+async function currentDrivePdfMetadata(env, ref) {
+  const file = await openDriveFileRef(env, ref);
+  if (file.mime !== PDF_MIME) {
+    throw new DriveIntegrationError('DRIVE_PDF_REQUIRED', 'Somente arquivos PDF podem ser sincronizados.', 415);
+  }
+
+  const url = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(file.id)}`);
+  url.searchParams.set('supportsAllDrives', 'true');
+  url.searchParams.set('fields', DRIVE_SYNC_FILE_FIELDS);
+
+  const response = await driveFetch(env, url.toString(), { method: 'GET' });
+  if (!response.ok) throwDriveResponse(response);
+
+  const metadata = await response.json().catch(() => ({}));
+  if (!metadata?.id || metadata.mimeType !== PDF_MIME) {
+    throw new DriveIntegrationError('DRIVE_PDF_REQUIRED', 'O arquivo atual não é mais um PDF válido para sincronização.', 409);
+  }
+
+  return {
+    id: String(metadata.id),
+    mimeType: PDF_MIME,
+    size: Number.isFinite(Number(metadata.size)) ? Number(metadata.size) : null,
+    modifiedTime: String(metadata.modifiedTime || ''),
+    version: normalizeDriveVersion(metadata.version, { required: true }),
+    md5Checksum: String(metadata.md5Checksum || ''),
+    headRevisionId: String(metadata.headRevisionId || ''),
+    parents: Array.isArray(metadata.parents) ? metadata.parents.map((item) => String(item || '')).filter(Boolean) : [],
+    canEdit: Boolean(metadata.capabilities?.canEdit || metadata.capabilities?.canModifyContent),
+    canDownload: Boolean(metadata.capabilities?.canDownload)
+  };
+}
+
+export async function preflightDriveSync(env, input = {}) {
+  const operation = String(input.operation || '').trim();
+  if (!DRIVE_SYNC_OPERATIONS.has(operation)) {
+    throw new DriveIntegrationError('DRIVE_SYNC_OPERATION_INVALID', 'Operação de sincronização inválida.', 400);
+  }
+
+  const ref = String(input.ref || '').trim();
+  if (!ref) {
+    throw new DriveIntegrationError('DRIVE_FILE_REF_INVALID', 'Referência de arquivo ausente.', 400);
+  }
+
+  const baseVersion = normalizeDriveVersion(input.baseVersion, { required: operation === 'replace_pdf' });
+  const current = await currentDrivePdfMetadata(env, ref);
+  const conflict = Boolean(baseVersion && current.version !== baseVersion);
+
+  if (operation === 'replace_pdf') {
+    if (!current.canEdit) {
+      throw new DriveIntegrationError(
+        'DRIVE_FILE_NOT_EDITABLE',
+        'A conta institucional não possui permissão para substituir este arquivo.',
+        403
+      );
+    }
+    if (conflict) {
+      throw new DriveIntegrationError(
+        'DRIVE_VERSION_CONFLICT',
+        'O arquivo foi alterado no Google Drive depois que esta edição começou. Reabra o documento antes de substituir o original.',
+        409
+      );
+    }
+  }
+
+  return {
+    operation,
+    conflict,
+    blocking: operation === 'replace_pdf' && conflict,
+    baseVersion,
+    currentVersion: current.version,
+    modifiedTime: current.modifiedTime,
+    size: current.size,
+    canEditOriginal: current.canEdit
+  };
 }
 
 export async function fetchDrivePdf(env, ref, rangeHeader = '') {
