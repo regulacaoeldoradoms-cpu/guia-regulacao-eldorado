@@ -7,6 +7,7 @@ on:
       - 'scripts/build-central-docs-staging.mjs'
       - 'testing/central-docs/**'
       - 'testing/browser/**'
+      - 'assets/editor-pdf-buttons/**'
       - 'css/documents.css'
       - 'js/documents.js'
       - 'js/document-editor.js'
@@ -41,6 +42,9 @@ jobs:
           set -euo pipefail
           test -s dist-staging/index.html
           test -s dist-staging/testing/central-docs/fixture.js
+          test -s dist-staging/assets/editor-pdf-buttons/imprimir-normal.svg
+          test -s dist-staging/assets/editor-pdf-buttons/salvar-pdf.svg
+          test -s dist-staging/assets/editor-pdf-buttons/zoom-mais.svg
           test -s dist-staging/js/document-editor.js
           test -s dist-staging/js/document-viewer.js
           test -s dist-staging/vendor/pdf-lib/pdf-lib.min.js
