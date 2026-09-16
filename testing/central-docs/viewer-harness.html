@@ -48,6 +48,7 @@
           <button id="editorMerge" class="documents-editor-tool" type="button" title="Unir PDF sintético">⧉</button>
           <button id="editorBlank" class="documents-editor-tool" type="button" title="Inserir página em branco">⊞</button>
           <button id="editorAddImage" class="documents-editor-tool" type="button" title="Adicionar imagem como página">▧</button>
+          <input id="editorAddImageInput" type="file" accept="image/*" multiple hidden>
           <button id="editorCrop" class="documents-editor-tool" type="button" title="Recortar página" aria-pressed="false">⌗</button>
           <button id="editorSelect" class="documents-editor-tool" type="button" title="Selecionar e mover objetos">↖</button>
           <button id="editorWrite" class="documents-editor-tool" type="button" title="Escrever sobre a página">T</button>
@@ -92,7 +93,9 @@
           <strong>Unir PDF sintético</strong>
           <button id="editorMergeCancel" class="documents-editor-panel-close" type="button" title="Cancelar união" aria-label="Cancelar união">×</button>
         </div>
-        <p>Segundo PDF sintético de 3 páginas selecionado. Nenhum arquivo real ou Google Drive é acessado.</p>
+        <p>Segundo PDF sintético de 3 páginas selecionado para o laboratório. Você também pode adicionar PDF ou imagem do dispositivo; nada é enviado ao Google Drive.</p>
+        <button id="editorMergeFileButton" class="portal-button documents-editor-local-import" type="button">Adicionar PDF ou imagem</button>
+        <input id="editorMergeFileInput" type="file" accept=".pdf,application/pdf,image/*" multiple hidden>
         <label class="documents-editor-field">Inserir
           <select id="editorMergePosition">
             <option value="before-document">Antes do documento atual</option>
