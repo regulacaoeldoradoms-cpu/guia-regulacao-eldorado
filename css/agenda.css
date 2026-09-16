@@ -158,3 +158,16 @@
   .agenda-page .portal-topbar-inner { gap: 10px; }
   .agenda-page .portal-user .portal-button.ghost:first-of-type { display: none; }
 }
+
+.agenda-sync-bridge {
+  width: min(560px, calc(100% - 28px));
+  margin: 9vh auto 0;
+}
+.agenda-sync-bridge .portal-section { margin: 0; }
+.agenda-sync-bridge-body {
+  padding: 34px;
+  text-align: center;
+}
+.agenda-sync-bridge-body img { width: 82px; height: 82px; object-fit: contain; }
+.agenda-sync-bridge-body h1 { margin: 14px 0 8px; color: #0d3157; font-size: 1.45rem; }
+.agenda-sync-bridge-body p { margin: 0 auto 20px; max-width: 430px; color: #60798f; line-height: 1.6; }
