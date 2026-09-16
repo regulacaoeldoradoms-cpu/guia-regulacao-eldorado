@@ -359,3 +359,49 @@ Validação do head `ca7801df7d6042a3d111a2185c21bd82b12923c8`:
 
 A 3C.4 permanece aguardando apenas o novo aceite humano dessa interação corrigida.
 
+## Homologação candidata — confirmar/cancelar recorte antes de aplicar — 16/09/2026
+
+Feedback humano incorporado:
+- o arraste cria somente uma **seleção provisória**;
+- a seleção exibe **Confirmar recorte** e **Cancelar**;
+- **Cancelar** não modifica o plano nem o histórico;
+- **Confirmar recorte** aplica o crop no preview e registra a alteração;
+- após confirmação, o preview mostra somente a área mantida;
+- um crop confirmado pode ser reaberto por **Ajustar**, voltando a draft até nova confirmação;
+- permanece o limite de **1 crop por página**.
+
+Arquitetura:
+- `page.crop` guarda apenas o crop confirmado;
+- `cropDrafts` existe somente na sessão do viewer;
+- mover/redimensionar um draft não chama commit externo;
+- confirmar promove o draft e executa uma única mutação;
+- cancelar restaura o estado anterior sem histórico;
+- o crop continua reversível por `pageId` e não é materializado no PDF final antes da 3C.6.
+
+UX:
+- barra de ações fica abaixo da seleção;
+- se a seleção estiver muito próxima da borda inferior, a barra vai para cima;
+- após confirmação, a moldura de edição some e a superfície passa a exibir somente o viewport recortado;
+- ações do crop confirmado: **Ajustar** e ↺;
+- botões são compatíveis com mouse e touch por Pointer Events/click.
+
+Evidência técnica do runtime:
+- head funcional: `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`;
+- **25/25 checks verdes**;
+- Cloudflare Pages: sucesso;
+- workflow **Validar Central de Documentos — navegador**: sucesso;
+- Playwright cobre cancelar sem histórico, confirmar com viewport recortado, ajustar + cancelar, Undo/Redo, CropBox não padrão, reordenação, rotações e toque no botão de confirmação em perfil mobile.
+
+Roteiro humano final da 3C.4:
+1. entrar em **Recortar**;
+2. arrastar uma área;
+3. confirmar que aparecem **Confirmar recorte** e **Cancelar** junto da seleção;
+4. clicar **Cancelar** e confirmar que a página volta ao estado anterior;
+5. selecionar novamente e clicar **Confirmar recorte**;
+6. confirmar que a página passa a mostrar somente a área escolhida;
+7. clicar **Ajustar**, modificar a moldura e cancelar, confirmando restauração do crop anterior;
+8. repetir **Ajustar** e confirmar uma nova posição;
+9. testar Undo/Redo;
+10. se possível, repetir confirmação/cancelamento em celular físico.
+
+Aceite humano desse roteiro encerra a 3C.4 e libera **3C.5 — Desenhar/Borracha**.
