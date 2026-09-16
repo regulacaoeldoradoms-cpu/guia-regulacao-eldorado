@@ -62,3 +62,23 @@ test('ponte aceita mensagens somente da origem oficial do DigSaúde', () => {
   assert.match(source, /event\.source !== window\.opener/);
   assert.match(source, /RegulationAuth/);
 });
+
+
+test('sincronização da Agenda usa leitura única e commits em lote para não estourar subrequests', () => {
+  const source = read('worker/agenda.js');
+  const block = source.slice(
+    source.indexOf('async function syncRecords'),
+    source.indexOf('async function markRead')
+  );
+  assert.match(source, /firestoreCommit/);
+  assert.match(block, /existingRecords = await listAll\(env\)/);
+  assert.match(block, /await commitWrites\(env, writes\)/);
+  assert.doesNotMatch(block, /firestoreGet\(/);
+  assert.doesNotMatch(block, /firestoreCreate\(/);
+  assert.doesNotMatch(block, /firestorePatch\(/);
+
+  const gateway = read('worker/firebase-gateway.js');
+  assert.match(gateway, /export async function firestoreCommit/);
+  assert.match(gateway, /documents:commit/);
+  assert.match(gateway, /500 gravações por commit/);
+});
