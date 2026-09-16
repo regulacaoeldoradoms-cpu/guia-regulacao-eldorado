@@ -10,6 +10,7 @@ const files = [
   ['testing/central-docs/viewer-harness.html', 'testing/central-docs/viewer-harness.html'],
   ['testing/central-docs/fixture.js', 'testing/central-docs/fixture.js'],
   ['testing/central-docs/editor-harness.js', 'testing/central-docs/editor-harness.js'],
+  ['assets/editor-pdf-buttons', 'assets/editor-pdf-buttons'],
   ['css/documents.css', 'css/documents.css'],
   ['js/document-editor.js', 'js/document-editor.js'],
   ['js/document-viewer.js', 'js/document-viewer.js'],
