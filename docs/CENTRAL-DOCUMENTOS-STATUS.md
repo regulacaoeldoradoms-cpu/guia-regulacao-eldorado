@@ -6,7 +6,49 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.4 — Recortar, liberada após homologação humana da 3C.3 no PR #179**. O Organizar V2 e a 3C.3 (Escrever + Colar imagem, incluindo painel RGB arrastável) estão aceitos. Desenhar/Borracha permanece para 3C.5 e flatten/exportação local para 3C.6. **Não fazer merge nem escrever no Google Drive nesta fase.**
+Subfase atual: **3C.5 — Desenhar/Borracha, liberada após homologação humana final da 3C.4 em 16/09/2026 no PR #179**. Organizar V2, 3C.3 (Escrever + Colar imagem) e 3C.4 (Recortar com confirmação/cancelamento) estão aceitos. A 3C.5 entra agora em implementação; flatten/exportação local permanece para 3C.6. **Não fazer merge nem escrever no Google Drive nesta fase.**
+
+## 3C.4 — aceite humano final e encerramento; 3C.5 liberada — 16/09/2026
+
+O usuário aprovou explicitamente a UX final do modo **Recortar** após testar o fluxo de seleção provisória com **Confirmar recorte / Cancelar**.
+
+Aceite humano consolidado:
+- página entra no modo Recortar sem corte predefinido;
+- primeiro arraste cria apenas uma seleção provisória;
+- **Cancelar** descarta a seleção sem alterar histórico;
+- **Confirmar recorte** aplica visualmente somente a área mantida e registra uma única mutação;
+- crop confirmado pode ser reaberto por **Ajustar**;
+- cancelar um ajuste restaura o crop confirmado anterior;
+- continua existindo no máximo 1 crop por página;
+- Undo/Redo atua sobre crops confirmados;
+- o comportamento foi considerado satisfatório pelo usuário.
+
+Evidência técnica imediatamente anterior ao aceite:
+- runtime funcional `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`;
+- head documental `17e42734a190253589d3cadec1bca41128cd2d5b`;
+- **25/25 checks verdes**;
+- PR #179 aberto, mergeável e sem merge;
+- `main` permanece em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`;
+- nenhuma escrita no Google Drive ou produção.
+
+Decisão:
+- **3C.4 fica encerrada e aceita**;
+- **3C.5 — Desenhar/Borracha fica formalmente liberada**;
+- o botão/modo Desenhar não deve ser exposto como funcional antes da implementação/testes da própria 3C.5;
+- 3C.6 continua reservada a flatten/exportação local.
+
+Escopo autorizado da 3C.5, conforme UX V2/homologação:
+- caneta com traço livre;
+- traços vetoriais locais normalizados por `pageId`;
+- cor e espessura por traço;
+- borracha remove exclusivamente traços criados pela ferramenta Desenhar;
+- conteúdo original do PDF nunca é apagado, mascarado ou reescrito pela borracha;
+- Undo/Redo trabalha por gesto/traço, nunca por cada ponto capturado;
+- preservar reorganização, rotação, duplicação/exclusão e semântica por `pageId`;
+- desktop + touch/mobile;
+- manter tudo local/reversível; flatten permanece fora do escopo até 3C.6.
+
+**Próxima ação exata:** implementar a unidade mínima da 3C.5 na mesma superfície PDF.js, começando pelo modelo de traço vetorial local por `pageId`, caneta com cor/espessura e histórico por gesto; depois integrar a borracha restrita a esses traços, adicionar testes determinísticos desktop/mobile e publicar novo preview sintético para homologação humana. PR #179 permanece sem merge e sem escrita no Drive.
 
 ## 3C.4 — confirmação/cancelamento explícitos do recorte — 16/09/2026
 
@@ -101,28 +143,28 @@ Pendência / risco atual:
 
 **Próxima ação exata:** abrir o alias de staging da branch, testar Recortar em pelo menos duas páginas (incluindo a página paisagem/CropBox), mover e redimensionar a moldura, testar Undo/Redo e alternar para Organizar para confirmar que o recorte acompanha giro/reordenação. Se o usuário aprovar, registrar o fechamento da 3C.4 e iniciar **3C.5 — Desenhar/Borracha**, mantendo o PR sem merge e sem escrita no Drive.
 
-## Handoff para o próximo chat — 3C.4, registro vigente
+## Handoff para o próximo chat — 3C.5, registro vigente
 
 Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Fase atual:** Fase 3 — Editor PDF essencial.
-- **Subfase atual:** **3C.4 — Recortar**, com seleção provisória + confirmação/cancelamento implementados; falta somente homologação humana final.
-- **Última ação concluída:** a seleção de crop foi separada do crop confirmado. O arraste cria draft; **Confirmar recorte** aplica e registra; **Cancelar** descarta sem histórico.
-- **Regra funcional vigente:** no máximo **1 recorte por página**. Crop confirmado pode ser reaberto por **Ajustar** como draft e exige nova confirmação.
+- **Subfase atual:** **3C.5 — Desenhar/Borracha**.
+- **Motivo do avanço:** o usuário aprovou explicitamente em 16/09/2026 a UX final da 3C.4 com seleção provisória, Confirmar/Cancelar, crop visual aplicado, Ajustar e Undo/Redo.
+- **3C.4:** encerrada e aceita.
 - **Branch atual:** `codex/central-docs-editor-superficie-unica`.
 - **PR atual:** #179 — aberto, mergeável e sem merge.
 - **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, intacta.
-- **Head funcional validado:** `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`.
-- **Checks/testes:** **25/25 checks verdes**; workflow PDF.js/Chromium verde; testes de draft, confirmar/cancelar, viewport aplicado, Undo/Redo, CropBox, reordenação, rotação e touch aprovados.
-- **Decisões tomadas:** draft fica apenas no viewer; `page.crop` continua sendo a fonte do crop confirmado. Cancelar nunca altera histórico. Confirmar faz uma única mutação.
-- **Justificativa:** evita corte acidental e dá ao usuário controle explícito antes de alterar a página visualmente.
-- **Alternativa descartada:** aplicar o crop automaticamente ao soltar o gesto; foi rejeitada na homologação humana por falta de etapa explícita de confirmação.
-- **Ações externas concluídas:** staging da branch publicado no Cloudflare Pages com dados fictícios.
-- **Pendências/bloqueios:** apenas teste humano do novo fluxo.
-- **Riscos conhecidos:** confirmar ergonomia dos botões em desktop e aparelho touch real; staging continua fictício enquanto Cloudflare Access estiver pendente.
-- **Não fazer ainda:** merge, alteração da main, produção, escrita no Drive, 3C.5 ou 3C.6 antes do aceite.
-- **Próxima ação exata:** testar no alias da branch: selecionar → Cancelar; selecionar → Confirmar; Ajustar → Cancelar; Ajustar → Confirmar; depois Undo/Redo. Com aprovação, encerrar 3C.4 e iniciar 3C.5.
-- **Arquivos/fontes principais:** `js/document-viewer.js`, `js/document-editor.js`, `js/documents.js`, `css/documents.css`, `testing/browser/central-docs-crop.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md` e este status.
+- **Último runtime validado antes da liberação:** `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`.
+- **Último head documental antes do aceite:** `17e42734a190253589d3cadec1bca41128cd2d5b`.
+- **Validação:** 25/25 checks verdes; navegador/PDF.js real aprovado; sem regressões conhecidas.
+- **Escopo da 3C.5:** traços vetoriais locais normalizados por `pageId`; caneta; cor; espessura; borracha apenas sobre traços do modo Desenhar; Undo/Redo por gesto/traço.
+- **Regra crítica da borracha:** nunca apagar, mascarar ou reescrever conteúdo original do PDF, textos/imagens de outras ferramentas ou pixels do canvas original.
+- **Semântica obrigatória:** desenho deve acompanhar a página ao reorganizar/rotacionar/duplicar e ser removido junto da página quando ela for excluída; duplicação deve clonar os traços com novos IDs.
+- **Interação:** Pointer Events para mouse/pen/touch; um gesto contínuo = uma entrada de histórico; evitar histórico por ponto.
+- **Fora do escopo:** flatten/exportação dos desenhos (3C.6), merge, produção, escrita no Drive e qualquer telemetria de conteúdo.
+- **Segurança:** staging apenas com dados fictícios enquanto Cloudflare Access estiver pendente; PostHog nunca recebe coordenadas/conteúdo de desenho ou documento.
+- **Próxima ação exata:** implementar primeiro o modelo local de traços + renderização overlay + caneta com cor/espessura e Undo/Redo por gesto; em seguida a borracha restrita aos traços; validar rotação/reordenação/duplicação/exclusão e desktop/mobile; gerar preview sintético e solicitar homologação humana antes de 3C.6.
+- **Arquivos principais esperados:** `js/document-editor.js`, `js/document-viewer.js`, `js/documents.js`, `css/documents.css`, harness/testes de navegador e esta documentação.
 
 ## 3C.3 — aceite humano final e encerramento — 15/09/2026
 
