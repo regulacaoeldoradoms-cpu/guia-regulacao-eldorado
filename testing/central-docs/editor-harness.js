@@ -59,6 +59,7 @@
     objectDelete: document.getElementById('editorObjectDelete'),
     refresh: document.getElementById('editorRefresh'),
     exportPdf: document.getElementById('editorExport'),
+    printPdf: document.getElementById('editorPrint'),
     exit: document.getElementById('editorExit')
   };
 
@@ -310,6 +311,7 @@
     elements.objectDelete.disabled = !editing || !selectedObject();
     elements.refresh.disabled = !editing;
     elements.exportPdf.disabled = !editing || typeof editor?.buildFlattenedBlob !== 'function';
+    elements.printPdf.disabled = !editing || typeof editor?.buildFlattenedBlob !== 'function';
     elements.exit.disabled = !editing;
   }
 
@@ -319,7 +321,7 @@
     elements.surface.setAttribute('aria-busy', active ? 'true' : 'false');
     if (message) elements.editorStatus.textContent = message;
     if (active) {
-      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.mergeFileButton, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.draw, elements.drawColor, elements.drawWidth, elements.drawPen, elements.drawEraser, elements.objectDelete, elements.refresh, elements.exportPdf, elements.exit]) {
+      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.mergeFileButton, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.draw, elements.drawColor, elements.drawWidth, elements.drawPen, elements.drawEraser, elements.objectDelete, elements.refresh, elements.exportPdf, elements.printPdf, elements.exit]) {
         button.disabled = true;
       }
       elements.thumbnails.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
@@ -967,6 +969,86 @@
   }
 
 
+  function shortcutIsTypingTarget(target) {
+    if (!(target instanceof Element)) return false;
+    if (target.closest('textarea, select, [contenteditable="true"], [role="textbox"]')) return true;
+    const input = target.closest('input');
+    if (!input) return false;
+    const type = String(input.getAttribute('type') || 'text').toLowerCase();
+    const nonEditingTypes = new Set(['file', 'hidden', 'button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color']);
+    return !nonEditingTypes.has(type);
+  }
+
+  function printPdfBlob(blob) {
+    if (!(blob instanceof Blob)) return Promise.resolve(false);
+    const url = URL.createObjectURL(blob);
+    const frame = document.createElement('iframe');
+    frame.className = 'documents-print-frame';
+    frame.title = 'Impressão do PDF final sintético';
+    frame.setAttribute('aria-hidden', 'true');
+
+    return new Promise((resolve, reject) => {
+      let requested = false;
+      let cleaned = false;
+      let fallbackTimer = 0;
+      let cleanupTimer = 0;
+
+      const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        if (fallbackTimer) window.clearTimeout(fallbackTimer);
+        if (cleanupTimer) window.clearTimeout(cleanupTimer);
+        try { frame.remove(); } catch (_) {}
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      };
+
+      const requestPrint = () => {
+        if (requested || cleaned) return;
+        const targetWindow = frame.contentWindow;
+        if (!targetWindow) return;
+        requested = true;
+        root.dataset.printState = 'requested';
+        root.dataset.printSize = String(blob.size);
+        try {
+          if (!navigator.webdriver) {
+            targetWindow.focus();
+            targetWindow.addEventListener?.('afterprint', cleanup, { once: true });
+            targetWindow.print();
+            cleanupTimer = window.setTimeout(cleanup, 60000);
+          } else {
+            cleanupTimer = window.setTimeout(cleanup, 1200);
+          }
+          resolve(true);
+        } catch (error) {
+          cleanup();
+          reject(error);
+        }
+      };
+
+      frame.addEventListener('load', () => {
+        window.setTimeout(requestPrint, 120);
+      }, { once: true });
+
+      document.body.appendChild(frame);
+      frame.src = url;
+      fallbackTimer = window.setTimeout(requestPrint, 1800);
+    });
+  }
+
+  async function printFlattenedPdf() {
+    if (!state.session || typeof editor?.buildFlattenedBlob !== 'function') return false;
+    setBusy(true, 'Preparando impressão do PDF final sintético…');
+    try {
+      const blob = await editor.buildFlattenedBlob(state.session);
+      const requested = await printPdfBlob(blob);
+      if (!requested) return false;
+      elements.editorStatus.textContent = 'Impressão do PDF final sintético solicitada ao navegador.';
+      return true;
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function flattenRotationDiagnostics() {
     const matrix = await editor.createSession(fixture.blob(), { label: 'Matriz 3C.6' });
     const duplicateIndex = editor.duplicatePage(matrix, 0);
@@ -1118,22 +1200,44 @@
   elements.objectOpacity.addEventListener('change', () => run(() => updateSelectedObject({ opacity: Number(elements.objectOpacity.value || 100) / 100 })));
   elements.objectDelete.addEventListener('click', () => run(deleteSelectedObject));
   document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Delete' || !state.session || root.dataset.operationState === 'busy' || !state.selectedObjectId) return;
-    const target = event.target instanceof Element ? event.target : null;
-    if (target?.closest('textarea, select, [contenteditable="true"], [role="textbox"]')) return;
-    const focusedInput = target?.closest('input');
-    if (focusedInput) {
-      const type = String(focusedInput.getAttribute('type') || 'text').toLowerCase();
-      const nonEditingTypes = new Set(['file', 'hidden', 'button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color']);
-      if (!nonEditingTypes.has(type)) return;
+    if (!state.session || root.dataset.operationState === 'busy') return;
+
+    const key = String(event.key || '').toLowerCase();
+    const primary = (event.ctrlKey || event.metaKey) && !event.altKey;
+    const typingTarget = shortcutIsTypingTarget(event.target);
+
+    if (primary && key === 'z' && !event.shiftKey) {
+      if (typingTarget) return;
+      event.preventDefault();
+      event.stopPropagation();
+      run(() => changeHistory('undo'));
+      return;
     }
-    if (!selectedObject()) return;
+
+    if (primary && ((key === 'y' && !event.shiftKey) || (key === 'z' && event.shiftKey))) {
+      if (typingTarget) return;
+      event.preventDefault();
+      event.stopPropagation();
+      run(() => changeHistory('redo'));
+      return;
+    }
+
+    if (primary && key === 'p') {
+      event.preventDefault();
+      event.stopPropagation();
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      run(printFlattenedPdf);
+      return;
+    }
+
+    if (event.key !== 'Delete' || !state.selectedObjectId || typingTarget || !selectedObject()) return;
     event.preventDefault();
     event.stopPropagation();
     run(deleteSelectedObject);
   }, true);
   elements.refresh.addEventListener('click', () => run(() => rebuild()));
   elements.exportPdf.addEventListener('click', () => run(exportFlattenedPdf));
+  elements.printPdf.addEventListener('click', () => run(printFlattenedPdf));
   elements.exit.addEventListener('click', () => run(exitEditor));
 
   run(async () => {
