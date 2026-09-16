@@ -693,12 +693,12 @@
     return (session.editorCrops || []).find((item) => Number(item.displayPage) === Number(pageNumber)) || null;
   }
 
-  function defaultCropRect() {
-    return { x: 0.04, y: 0.04, width: 0.92, height: 0.92 };
+  function fullCropRect() {
+    return { x: 0, y: 0, width: 1, height: 1 };
   }
 
   function applyCropGeometry(element, crop) {
-    const rect = normalizeCropRect(crop, defaultCropRect());
+    const rect = normalizeCropRect(crop, fullCropRect());
     element.style.left = `${rect.x * 100}%`;
     element.style.top = `${rect.y * 100}%`;
     element.style.width = `${rect.width * 100}%`;
@@ -715,7 +715,7 @@
       y: Number(element?.dataset?.cropY),
       width: Number(element?.dataset?.cropWidth),
       height: Number(element?.dataset?.cropHeight)
-    }, defaultCropRect());
+    }, fullCropRect());
   }
 
   function renderCropForPage(session, pageNumber) {
@@ -729,17 +729,21 @@
     const interactive = String(session.cropMode || 'none') === 'crop';
     layer.dataset.cropMode = interactive ? 'crop' : 'none';
     layer.dataset.hasCrop = committed ? 'true' : 'false';
-    if (!interactive && !committed) return;
+    layer.dataset.awaitingSelection = interactive && !committed ? 'true' : 'false';
+
+    // Empty means genuinely uncropped. Do not show a preselected inset frame:
+    // the first crop is created only when the user drags a rectangle on the page.
+    if (!committed) return;
 
     const frame = document.createElement('div');
     frame.className = 'portal-pdf-crop-frame';
     frame.dataset.cropFrame = 'true';
     frame.dataset.pageNumber = String(pageNumber);
     frame.dataset.interactive = interactive ? 'true' : 'false';
-    frame.dataset.committed = committed ? 'true' : 'false';
+    frame.dataset.committed = 'true';
     frame.tabIndex = interactive ? 0 : -1;
     frame.setAttribute('aria-label', `Área mantida da página ${pageNumber}`);
-    applyCropGeometry(frame, committed || defaultCropRect());
+    applyCropGeometry(frame, committed);
 
     if (interactive) {
       for (const handle of ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']) {
@@ -749,16 +753,14 @@
         node.setAttribute('aria-hidden', 'true');
         frame.appendChild(node);
       }
-      if (committed) {
-        const reset = document.createElement('button');
-        reset.type = 'button';
-        reset.className = 'portal-pdf-crop-reset';
-        reset.dataset.cropReset = 'true';
-        reset.title = 'Remover recorte desta página';
-        reset.setAttribute('aria-label', `Remover recorte da página ${pageNumber}`);
-        reset.textContent = '↺';
-        frame.appendChild(reset);
-      }
+      const reset = document.createElement('button');
+      reset.type = 'button';
+      reset.className = 'portal-pdf-crop-reset';
+      reset.dataset.cropReset = 'true';
+      reset.title = 'Remover recorte desta página';
+      reset.setAttribute('aria-label', `Remover recorte da página ${pageNumber}`);
+      reset.textContent = '↺';
+      frame.appendChild(reset);
     }
 
     layer.appendChild(frame);
@@ -781,71 +783,108 @@
     const pointerdown = (event) => {
       if (!isCurrentSession(session) || session.organizerMode || String(session.cropMode || '') !== 'crop') return;
       if (event.target.closest?.('[data-crop-reset]')) return;
+
       const frame = event.target.closest?.('[data-crop-frame]');
-      if (!frame) return;
-      const layer = frame.closest('.portal-pdf-crop-layer');
+      const layer = frame?.closest('.portal-pdf-crop-layer') || event.target.closest?.('.portal-pdf-crop-layer');
       if (!layer) return;
-      const pageNumber = Number(frame.dataset.pageNumber || layer.dataset.pageNumber);
-      const handle = event.target.closest?.('[data-crop-resize]')?.dataset?.cropResize || '';
+
+      const pageNumber = Number(frame?.dataset?.pageNumber || layer.dataset.pageNumber);
+      if (!(pageNumber > 0)) return;
+      const entry = cropEntryForPage(session, pageNumber);
+      const committed = normalizeCropRect(entry?.crop);
+
+      // One crop maximum per page. Once it exists, a drag outside the frame
+      // must not create a second selection; only the existing frame can move/resize.
+      if (!frame && committed) return;
+
       const rect = layer.getBoundingClientRect();
+      if (!(rect.width > 0) || !(rect.height > 0)) return;
       event.preventDefault();
       event.stopPropagation();
+
+      const handle = frame ? (event.target.closest?.('[data-crop-resize]')?.dataset?.cropResize || '') : '';
+      const startPoint = {
+        x: clamp01((event.clientX - rect.left) / Math.max(1, rect.width), 0),
+        y: clamp01((event.clientY - rect.top) / Math.max(1, rect.height), 0)
+      };
       session.cropDrag = {
         pointerId: event.pointerId,
         origin: event.target,
         pageNumber,
         pageIndex: pageNumber - 1,
         handle,
-        kind: handle ? 'resize' : 'move',
+        kind: frame ? (handle ? 'resize' : 'move') : 'create',
         startX: event.clientX,
         startY: event.clientY,
+        layerLeft: rect.left,
+        layerTop: rect.top,
         layerWidth: Math.max(1, rect.width),
         layerHeight: Math.max(1, rect.height),
-        start: cropRectFromElement(frame),
+        startPoint,
+        start: frame ? cropRectFromElement(frame) : null,
         changed: false
       };
       try { event.target.setPointerCapture?.(event.pointerId); } catch (_) {}
       session.root.dataset.cropGesture = session.cropDrag.kind;
+      session.root.dataset.cropGestureMoved = 'false';
     };
 
     const pointermove = (event) => {
       const drag = session.cropDrag;
       if (!drag || !isCurrentSession(session) || (event.pointerId != null && drag.pointerId !== event.pointerId)) return;
       event.preventDefault();
-      const dx = (event.clientX - drag.startX) / drag.layerWidth;
-      const dy = (event.clientY - drag.startY) / drag.layerHeight;
       const minSize = 0.04;
-      let { x, y, width, height } = drag.start;
+      let crop = null;
 
-      if (drag.kind === 'move') {
-        x = Math.min(1 - width, Math.max(0, x + dx));
-        y = Math.min(1 - height, Math.max(0, y + dy));
+      if (drag.kind === 'create') {
+        const currentX = clamp01((event.clientX - drag.layerLeft) / drag.layerWidth, drag.startPoint.x);
+        const currentY = clamp01((event.clientY - drag.layerTop) / drag.layerHeight, drag.startPoint.y);
+        const x = Math.min(drag.startPoint.x, currentX);
+        const y = Math.min(drag.startPoint.y, currentY);
+        const width = Math.abs(currentX - drag.startPoint.x);
+        const height = Math.abs(currentY - drag.startPoint.y);
+
+        // A click or tiny accidental movement is not a crop selection.
+        if (width < minSize || height < minSize) return;
+        crop = normalizeCropRect({ x, y, width, height });
       } else {
-        if (drag.handle.includes('e')) width = Math.max(minSize, Math.min(1 - x, drag.start.width + dx));
-        if (drag.handle.includes('s')) height = Math.max(minSize, Math.min(1 - y, drag.start.height + dy));
-        if (drag.handle.includes('w')) {
-          const right = drag.start.x + drag.start.width;
-          x = Math.max(0, Math.min(right - minSize, drag.start.x + dx));
-          width = right - x;
+        const dx = (event.clientX - drag.startX) / drag.layerWidth;
+        const dy = (event.clientY - drag.startY) / drag.layerHeight;
+        let { x, y, width, height } = drag.start;
+
+        if (drag.kind === 'move') {
+          x = Math.min(1 - width, Math.max(0, x + dx));
+          y = Math.min(1 - height, Math.max(0, y + dy));
+        } else {
+          if (drag.handle.includes('e')) width = Math.max(minSize, Math.min(1 - x, drag.start.width + dx));
+          if (drag.handle.includes('s')) height = Math.max(minSize, Math.min(1 - y, drag.start.height + dy));
+          if (drag.handle.includes('w')) {
+            const right = drag.start.x + drag.start.width;
+            x = Math.max(0, Math.min(right - minSize, drag.start.x + dx));
+            width = right - x;
+          }
+          if (drag.handle.includes('n')) {
+            const bottom = drag.start.y + drag.start.height;
+            y = Math.max(0, Math.min(bottom - minSize, drag.start.y + dy));
+            height = bottom - y;
+          }
         }
-        if (drag.handle.includes('n')) {
-          const bottom = drag.start.y + drag.start.height;
-          y = Math.max(0, Math.min(bottom - minSize, drag.start.y + dy));
-          height = bottom - y;
-        }
+        crop = normalizeCropRect({ x, y, width, height }, drag.start);
       }
 
-      const crop = normalizeCropRect({ x, y, width, height }, drag.start);
+      if (!crop) return;
       const entry = cropEntryForPage(session, drag.pageNumber);
       if (entry) entry.crop = { ...crop };
       drag.changed = true;
       session.root.dataset.cropGestureMoved = 'true';
       session.onCropChange?.(drag.pageIndex, crop);
-      const frame = pagesRoot.querySelector(`.portal-pdf-crop-frame[data-page-number="${drag.pageNumber}"]`);
-      if (frame) {
-        frame.dataset.committed = 'true';
-        applyCropGeometry(frame, crop);
+
+      let frame = pagesRoot.querySelector(`.portal-pdf-crop-frame[data-page-number="${drag.pageNumber}"]`);
+      if (!frame) {
+        renderCropForPage(session, drag.pageNumber);
+        frame = pagesRoot.querySelector(`.portal-pdf-crop-frame[data-page-number="${drag.pageNumber}"]`);
       }
+      if (frame) applyCropGeometry(frame, crop);
     };
 
     const finish = (event) => {
@@ -854,7 +893,10 @@
       session.cropDrag = null;
       session.root.dataset.cropGesture = '';
       session.root.dataset.cropGestureMoved = drag.changed ? 'true' : 'false';
-      if (!drag.changed) return;
+      if (!drag.changed) {
+        renderCropForPage(session, drag.pageNumber);
+        return;
+      }
       const entry = cropEntryForPage(session, drag.pageNumber);
       const crop = normalizeCropRect(entry?.crop, drag.start);
       session.onCropCommit?.(drag.pageIndex, crop);
@@ -881,8 +923,7 @@
     };
 
     // Pointerdown is captured before page/object layers can consume the gesture.
-    // Move/up live on window so a resize keeps tracking even when the pointer
-    // crosses the crop frame or page boundary.
+    // Move/up live on window so selection/resize keeps tracking across the page.
     session.cropHandlers = { pointerdown, click };
     for (const [type, handler] of Object.entries(session.cropHandlers)) {
       pagesRoot.addEventListener(type, handler, type === 'pointerdown');
