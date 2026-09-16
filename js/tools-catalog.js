@@ -8,7 +8,8 @@
     users: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c.5-4 2.4-6 5.5-6s5 2 5.5 6M17 8v6M14 11h6"/></svg>',
     chart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/><path d="M2 19h22"/></svg>',
     settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>',
-    documents: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2-2h9v13a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M7 11h10M7 14.5h7"/></svg>'
+    documents: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2-2h9v13a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M7 11h10M7 14.5h7"/></svg>',
+    calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="2"/><path d="M7.5 3v5M16.5 3v5M3.5 10h17M8 14h3M13 14h3M8 17h3"/></svg>'
   });
 
   const roleLabels = Object.freeze({
@@ -52,6 +53,13 @@
         id: 'telemedicine', href: '/telemedicina/', title: 'Telemedicina',
         description: 'Acompanhe históricos, retornos e lembretes operacionais do módulo.',
         action: 'Abrir Telemedicina', icon: image('/assets/Telemedicina.png?v=20260903-1', '')
+      });
+    }
+    if (authorized(user, ['telemedicina', 'admin']) && !user?.preview) {
+      cards.push({
+        id: 'agenda', href: '/agenda/', title: 'Agenda',
+        description: 'Acompanhe os agendamentos do DigSaúde com novos registros e alterações destacados para cada técnico.',
+        action: 'Abrir Agenda', icon: ICONS.calendar
       });
     }
     if (user?.documentCapabilities?.view || user?.documentCapabilities?.manage) {
