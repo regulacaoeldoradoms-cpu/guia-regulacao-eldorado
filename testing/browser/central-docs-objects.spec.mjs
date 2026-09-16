@@ -338,6 +338,10 @@ test.describe('Central de Documentos — objetos sobre página', () => {
 
     const rotate = image.locator('[data-object-rotate]');
     await expect(rotate).toBeVisible();
+    // Use Playwright actionability to place the pointer on the real control.
+    // Manual coordinates can drift on desktop when the PDF surface scrolls by
+    // a fractional amount while the image is brought into view.
+    await rotate.hover();
     const rotateBox = await rotate.boundingBox();
     const objectBoxBeforeRotate = await image.boundingBox();
     const imageBeforeRotate = await image.evaluate((node) => getComputedStyle(node).transform);
@@ -351,7 +355,6 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     };
     const vx = rotateStart.x - center.x;
     const vy = rotateStart.y - center.y;
-    await page.mouse.move(rotateStart.x, rotateStart.y);
     await page.mouse.down();
     await expect(page.locator('#pdfRoot')).toHaveAttribute('data-object-gesture', 'rotate');
     await page.mouse.move(center.x - vy, center.y + vx, { steps: 7 });
