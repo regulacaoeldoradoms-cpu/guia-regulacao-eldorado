@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260916-4">
+  <link rel="stylesheet" href="/css/documents.css?v=20260916-5">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -95,7 +95,7 @@
             </div>
             <div class="documents-viewer-actions">
               <button class="portal-button ghost documents-edit-trigger" id="editPdfButton" type="button" hidden>Editar PDF</button>
-              <button class="documents-close-viewer" id="closeViewerButton" type="button" aria-label="Fechar visualização">×</button>
+              <button class="documents-close-viewer documents-art-button documents-art-close" id="closeViewerButton" type="button" aria-label="Fechar visualização"></button>
             </div>
           </div>
           <div class="documents-viewer-state" id="documentsViewerState">Preparando PDF…</div>
@@ -108,10 +108,10 @@
               </button>
             </nav>
             <div class="documents-pdf-toolbar" role="toolbar" aria-label="Controles do PDF">
-              <button class="portal-button ghost" id="pdfZoomOutButton" type="button" aria-label="Diminuir zoom">−</button>
+              <button class="portal-button ghost documents-art-button documents-art-zoom-minus" id="pdfZoomOutButton" type="button" aria-label="Diminuir zoom"></button>
               <button class="portal-button ghost" id="pdfZoomResetButton" type="button" aria-label="Restaurar zoom"><span id="pdfZoomLabel">100%</span></button>
-              <button class="portal-button ghost" id="pdfZoomInButton" type="button" aria-label="Aumentar zoom">+</button>
-              <button class="portal-button secondary" id="pdfFitWidthButton" type="button">Ajustar largura</button>
+              <button class="portal-button ghost documents-art-button documents-art-zoom-plus" id="pdfZoomInButton" type="button" aria-label="Aumentar zoom"></button>
+              <button class="portal-button secondary documents-art-button documents-art-fit-width" id="pdfFitWidthButton" type="button" aria-label="Ajustar largura"></button>
               <span class="documents-pdf-page-count" id="pdfPageCountLabel"></span>
             </div>
             <div class="documents-editor" id="documentsEditor" hidden aria-label="Controles de edição local do PDF">
@@ -120,7 +120,7 @@
                 <button class="documents-editor-tool" id="editorUndoButton" type="button" title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button>
                 <button class="documents-editor-tool" id="editorRedoButton" type="button" title="Refazer (Ctrl+Y ou Ctrl+Shift+Z)" aria-label="Refazer">↷</button>
                 <span class="documents-editor-tool-separator" aria-hidden="true"></span>
-                <button class="documents-editor-tool active" id="editorOrganizeButton" type="button" title="Organizar páginas" aria-label="Organizar páginas" aria-pressed="true">▦</button>
+                <button class="documents-editor-tool active documents-art-button documents-art-grid" id="editorOrganizeButton" type="button" title="Organizar páginas" aria-label="Organizar páginas" aria-pressed="true"></button>
                 <button class="documents-editor-tool" id="editorMergeButton" type="button" title="Unir outro PDF" aria-label="Unir outro PDF">⧉</button>
                 <button class="documents-editor-tool" id="editorBlankPageButton" type="button" title="Inserir página em branco" aria-label="Inserir página em branco">⊞</button>
                 <button class="documents-editor-tool" id="editorImageButton" type="button" title="Adicionar imagem como nova página" aria-label="Adicionar imagem como nova página">▧</button>
@@ -132,10 +132,10 @@
                 <input id="editorOverlayImageInput" type="file" accept="image/*" hidden>
                 <button class="documents-editor-tool" id="editorDrawButton" type="button" title="Desenhar sobre a página" aria-label="Desenhar sobre a página" aria-pressed="false">✎</button>
                 <span class="documents-editor-tool-spacer"></span>
-                <button class="documents-editor-tool" id="editorPreviewButton" type="button" title="Atualizar PDF" aria-label="Atualizar PDF">⟳</button>
-                <button class="documents-editor-tool" id="editorExportButton" type="button" title="Exportar PDF final localmente" aria-label="Exportar PDF final localmente">↓</button>
-                <button class="documents-editor-tool" id="editorPrintButton" type="button" title="Imprimir PDF final (Ctrl+P)" aria-label="Imprimir PDF final">⎙</button>
-                <button class="documents-editor-tool" id="editorExitButton" type="button" title="Sair do editor" aria-label="Sair do editor">×</button>
+                <button class="documents-editor-tool documents-art-button documents-art-refresh" id="editorPreviewButton" type="button" title="Atualizar PDF" aria-label="Atualizar PDF"></button>
+                <button class="documents-editor-tool documents-art-button documents-art-export" id="editorExportButton" type="button" title="Exportar PDF final localmente" aria-label="Exportar PDF final localmente"></button>
+                <button class="documents-editor-tool documents-art-button documents-art-print" id="editorPrintButton" type="button" title="Imprimir PDF final (Ctrl+P)" aria-label="Imprimir PDF final"></button>
+                <button class="documents-editor-tool documents-art-button documents-art-close" id="editorExitButton" type="button" title="Sair do editor" aria-label="Sair do editor"></button>
               </div>
               <div class="documents-editor-status" id="documentsEditorStatus" aria-live="polite"></div>
               <div class="documents-draw-toolbar" id="editorDrawToolbar" hidden aria-label="Ferramentas de desenho">
@@ -183,7 +183,7 @@
               <aside class="documents-editor-panel" id="editorMergePanel" hidden aria-label="Unir documentos">
                 <div class="documents-editor-panel-head">
                   <strong>Unir documentos</strong>
-                  <button class="documents-editor-panel-close" id="editorMergeCancelButton" type="button" aria-label="Fechar painel de união">×</button>
+                  <button class="documents-editor-panel-close documents-art-button documents-art-close" id="editorMergeCancelButton" type="button" aria-label="Fechar painel de união"></button>
                 </div>
                 <p id="editorMergeSelection">Escolha outro PDF na lista da Central ou adicione um arquivo do dispositivo.</p>
                 <button class="portal-button documents-editor-local-import" id="editorMergeLocalButton" type="button">Adicionar PDF ou imagem</button>
