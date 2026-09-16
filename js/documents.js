@@ -964,6 +964,75 @@
     return !nonEditingTypes.has(type);
   }
 
+  async function renderPdfBlobForPrint(blob, printWindow) {
+    if (!(blob instanceof Blob) || !printWindow) return false;
+    const pdfjs = await window.PortalPdfViewer?.loadPdfJs?.();
+    if (!pdfjs) throw new Error('O mecanismo de impressão PDF.js não está disponível.');
+
+    let loadingTask = null;
+    let documentPdf = null;
+    try {
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      loadingTask = pdfjs.getDocument({
+        data: bytes,
+        isEvalSupported: false,
+        enableScripting: false
+      });
+      documentPdf = await loadingTask.promise;
+
+      const doc = printWindow.document;
+      doc.open();
+      doc.write('<!doctype html><html><head><meta charset="utf-8"><title>Imprimir PDF final</title><style>'
+        + '@page{margin:0;}html,body{margin:0;padding:0;background:#fff;}'
+        + '.print-status{font:600 14px system-ui,sans-serif;padding:12px 16px;color:#294a63;background:#f2f7fa;}'
+        + '.print-pages{margin:0;padding:0;}'
+        + '.print-sheet{display:flex;align-items:center;justify-content:center;margin:0 auto;background:#fff;break-after:page;page-break-after:always;overflow:hidden;}'
+        + '.print-sheet:last-child{break-after:auto;page-break-after:auto;}'
+        + '.print-sheet canvas{display:block;width:100%;height:100%;}'
+        + '@media print{.print-status{display:none!important}.print-sheet{margin:0!important}}'
+        + '</style></head><body><div class="print-status">Preparando páginas para impressão…</div><main class="print-pages"></main></body></html>');
+      doc.close();
+
+      const container = doc.querySelector('.print-pages');
+      if (!container) throw new Error('Não foi possível preparar a área de impressão.');
+
+      const maxPixels = 8_000_000;
+      for (let pageNumber = 1; pageNumber <= documentPdf.numPages; pageNumber += 1) {
+        const page = await documentPdf.getPage(pageNumber);
+        const base = page.getViewport({ scale: 1 });
+        const basePixels = Math.max(1, base.width * base.height);
+        const renderScale = Math.max(1, Math.min(2, Math.sqrt(maxPixels / basePixels)));
+        const viewport = page.getViewport({ scale: renderScale });
+
+        const sheet = doc.createElement('section');
+        sheet.className = 'print-sheet';
+        sheet.style.width = base.width + 'pt';
+        sheet.style.height = base.height + 'pt';
+
+        const canvas = doc.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(viewport.width));
+        canvas.height = Math.max(1, Math.round(viewport.height));
+        sheet.appendChild(canvas);
+        container.appendChild(sheet);
+
+        await page.render({
+          canvas,
+          viewport,
+          background: '#ffffff'
+        }).promise;
+        page.cleanup?.();
+      }
+
+      const status = doc.querySelector('.print-status');
+      if (status) status.textContent = 'PDF pronto para impressão.';
+      await new Promise((resolve) => printWindow.requestAnimationFrame(() => printWindow.requestAnimationFrame(resolve)));
+      return true;
+    } finally {
+      try { await documentPdf?.destroy?.(); } catch (_) {}
+      try { loadingTask?.destroy?.(); } catch (_) {}
+    }
+  }
+
   async function printEditedPdfLocal() {
     const editor = window.PortalPdfEditor;
     const session = state.editorSession;
@@ -976,7 +1045,6 @@
     }
 
     try {
-      printWindow.opener = null;
       printWindow.document.title = 'Preparando impressão…';
       if (printWindow.document.body) {
         printWindow.document.body.textContent = 'Preparando o PDF final para impressão…';
@@ -985,7 +1053,6 @@
 
     setEditorBusy(true);
     setEditorStatus('Preparando impressão do PDF final…');
-    let url = '';
     try {
       const blob = await editor.buildFlattenedBlob(session);
       if (session !== state.editorSession) {
@@ -993,32 +1060,30 @@
         return false;
       }
 
-      url = URL.createObjectURL(blob);
-      printWindow.location.replace(url);
+      await renderPdfBlobForPrint(blob, printWindow);
+      if (session !== state.editorSession) {
+        try { printWindow.close(); } catch (_) {}
+        return false;
+      }
 
-      window.setTimeout(() => {
-        try {
-          if (!printWindow.closed) {
-            printWindow.focus();
-            printWindow.print();
-          }
-        } catch (_) {}
-      }, 1400);
+      try {
+        printWindow.focus();
+        printWindow.addEventListener('afterprint', () => {
+          try { printWindow.close(); } catch (_) {}
+        }, { once: true });
+        printWindow.print();
+      } catch (error) {
+        try { printWindow.close(); } catch (_) {}
+        throw error;
+      }
 
-      setEditorStatus('PDF final aberto para impressão. Se a caixa de impressão não aparecer automaticamente, use Ctrl+P na nova aba.', 'success');
-      window.setTimeout(() => {
-        try { URL.revokeObjectURL(url); } catch (_) {}
-      }, 60000);
-      url = '';
+      setEditorStatus('Impressão do PDF final aberta. Nenhum arquivo foi enviado ao Google Drive.', 'success');
       return true;
     } catch (error) {
       try { printWindow.close(); } catch (_) {}
       setEditorStatus(error?.message || 'Não foi possível abrir a impressão do PDF final.', 'warning');
       return false;
     } finally {
-      if (url) {
-        try { URL.revokeObjectURL(url); } catch (_) {}
-      }
       if (session === state.editorSession) setEditorBusy(false);
     }
   }
