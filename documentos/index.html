@@ -130,12 +130,18 @@
                 <button class="documents-editor-tool" id="editorWriteButton" type="button" title="Escrever sobre a página" aria-label="Escrever sobre a página">T</button>
                 <button class="documents-editor-tool" id="editorOverlayImageButton" type="button" title="Colar imagem sobre a página" aria-label="Colar imagem sobre a página">▣</button>
                 <input id="editorOverlayImageInput" type="file" accept="image/*" hidden>
-                <button class="documents-editor-tool is-planned" id="editorDrawButton" type="button" title="Desenhar — próxima unidade" aria-label="Desenhar" disabled>✎</button>
+                <button class="documents-editor-tool" id="editorDrawButton" type="button" title="Desenhar sobre a página" aria-label="Desenhar sobre a página" aria-pressed="false">✎</button>
                 <span class="documents-editor-tool-spacer"></span>
                 <button class="documents-editor-tool" id="editorPreviewButton" type="button" title="Atualizar PDF" aria-label="Atualizar PDF">⟳</button>
                 <button class="documents-editor-tool" id="editorExitButton" type="button" title="Sair do editor" aria-label="Sair do editor">×</button>
               </div>
               <div class="documents-editor-status" id="documentsEditorStatus" aria-live="polite"></div>
+              <div class="documents-draw-toolbar" id="editorDrawToolbar" hidden aria-label="Ferramentas de desenho">
+                <label class="documents-draw-field"><span>Cor</span><input id="editorDrawColor" type="color" value="#111111" aria-label="Cor da caneta"></label>
+                <label class="documents-draw-field"><span>Espessura</span><input id="editorDrawWidth" type="range" min="1" max="20" step="1" value="4" aria-label="Espessura da caneta"></label>
+                <button class="documents-draw-mode active" id="editorDrawPen" type="button" aria-pressed="true">Caneta</button>
+                <button class="documents-draw-mode" id="editorDrawEraser" type="button" aria-pressed="false">Borracha</button>
+              </div>
               <div class="documents-object-toolbar" id="editorObjectToolbar" hidden aria-label="Propriedades do objeto selecionado">
                 <label class="documents-object-field documents-object-field--font" id="editorObjectFontField">
                   <span>Fonte</span>
@@ -210,8 +216,8 @@
   <script src="/js/portal-interactions.js?v=20260910-2"></script>
   <script src="/js/tools-catalog.js?v=20260911-3"></script>
   <script src="/js/document-cache.js?v=20260912-1"></script>
-  <script src="/js/document-editor.js?v=20260915-5"></script>
-  <script src="/js/document-viewer.js?v=20260915-21"></script>
-  <script src="/js/documents.js?v=20260915-9"></script>
+  <script src="/js/document-editor.js?v=20260916-1"></script>
+  <script src="/js/document-viewer.js?v=20260916-1"></script>
+  <script src="/js/documents.js?v=20260916-1"></script>
 </body>
 </html>
