@@ -1053,17 +1053,16 @@
           const renderScale = Math.max(1, Math.min(1.5, Math.sqrt(4_000_000 / basePixels)));
           const viewport = page.getViewport({ scale: renderScale });
 
-          const sheet = doc.createElement('section');
+          const sheet = document.createElement('section');
           sheet.className = 'print-sheet';
           sheet.dataset.printPage = String(pageNumber);
           sheet.style.width = base.width + 'pt';
           sheet.style.height = base.height + 'pt';
 
-          const canvas = doc.createElement('canvas');
+          const canvas = document.createElement('canvas');
           canvas.width = Math.max(1, Math.round(viewport.width));
           canvas.height = Math.max(1, Math.round(viewport.height));
           sheet.appendChild(canvas);
-          container.appendChild(sheet);
 
           await page.render({
             canvas,
@@ -1071,6 +1070,7 @@
             background: '#ffffff'
           }).promise;
           page.cleanup?.();
+          container.appendChild(sheet);
         }
       }
 
