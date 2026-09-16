@@ -5,61 +5,57 @@ Atualizado em 16/09/2026.
 ## Estado atual
 
 - Frente: Agenda DigSaúde V1.
-- Objetivo: disponibilizar no Portal uma fila somente de leitura dos agendamentos do DigSaúde para Técnico em Telemedicina e Desenvolvedor.
-- Branch: `feat/agenda-digsaude-v1`.
-- PR: #185 — Agenda DigSaúde V1 para Telemedicina; aberto e tecnicamente validado.
-- Base inicial: `main` em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`.
-- Produção: nenhuma alteração publicada por esta frente.
+- Produção: V1 mesclada na `main` pelo PR #185 em `77a1b7b55750ce19ba1c0d3cf8ddf5070ec6c751`.
+- Homologação real iniciada em 16/09/2026 com sessão autorizada do DigSaúde.
+- Primeiro bloqueio real encontrado: a sincronização dos 40 agendamentos falhou no Worker com `Too many subrequests by single Worker invocation`.
+- Causa confirmada no código: a V1 fazia um `firestoreGet` e depois um `firestoreCreate`/`firestorePatch` por registro, excedendo o limite de subrequests do Cloudflare durante a primeira carga.
+- Branch corretiva atual: `fix/agenda-firestore-batch-sync`.
 
-## Concluído na branch
+## Correção preparada
 
-- rota `/agenda/` com resumo, filtros, pesquisa e estado individual de visualização;
-- card **Agenda** no catálogo apenas para Telemedicina/Desenvolvedor;
-- API protegida `/api/agenda`, `/api/agenda/sync` e `/api/agenda/read`;
-- persistência no Firestore com ID de documento derivado por hash;
-- sincronizador local para a aba Agendados do DigSaúde;
-- ponte `postMessage` que mantém a sessão do Portal fora da origem do DigSaúde;
-- registros ausentes são desativados somente em snapshot comprovadamente completo;
-- nenhuma credencial, cookie ou token do DigSaúde é coletado;
-- página Agenda sem PostHog/observabilidade para impedir vazamento de dados de pacientes;
-- testes e workflow dedicados adicionados.
+- a sincronização passa a carregar o estado existente do Firestore uma única vez com `listAll`;
+- os registros recebidos são comparados em memória pelo `sourceId`;
+- criações, atualizações, reativações e desativações são acumuladas em memória;
+- as gravações são enviadas pelo endpoint transacional `documents:commit` do Firestore;
+- commits são divididos em lotes de até 450 gravações, abaixo do limite de 500 writes do Firestore;
+- `markRead` continua usando leitura/gravação unitária, pois opera sobre apenas um registro;
+- leitura individual por usuário, preservação de `readBy`, `firstSeenAt` e demais metadados foram mantidas;
+- reativação de um agendamento agora também atualiza `lastChangedAt`, garantindo que volte a aparecer como não lido;
+- foi adicionado teste de regressão para impedir retorno ao padrão N+1 de subrequests na sincronização.
 
-## Decisões e justificativas
+## Por que esta abordagem
 
-- **DigSaúde continua fonte oficial:** o Portal é uma camada de acompanhamento, não um sistema concorrente.
-- **Sem automação de login:** evita armazenar senha ou sessão institucional no backend.
-- **Sincronização iniciada no navegador autorizado:** usa somente dados que o usuário já pode visualizar.
-- **Leitura individual:** resolve o caso em que um técnico visualiza um agendamento e outro ainda precisa enxergá-lo como novo.
-- **Não excluir ausentes:** uma consulta que saiu de Agendados pode ter mudado de situação; preservar o registro evita perda de contexto.
-- **Não instrumentar conteúdo da Agenda:** dados assistenciais e identidade clínica não entram no PostHog.
+O erro não é do Tampermonkey, da sessão do DigSaúde nem do navegador. O snapshot chegou ao Portal e o Worker falhou ao persistir muitos registros com chamadas individuais ao Firestore. A correção reduz dezenas de subrequests externos para poucas chamadas controladas por sincronização, sem aumentar privilégios nem armazenar credenciais do DigSaúde.
 
-## Alternativas descartadas nesta versão
+## Alternativas descartadas
 
-- iframe do DigSaúde;
-- uso de `/livewire/update` como se fosse API pública;
-- armazenamento de usuário/senha do DigSaúde no Portal;
-- scraping visual por coordenadas/pixels;
-- exclusão automática de registros que desaparecem da lista.
+- aumentar artificialmente o limite de subrequests do Worker como solução principal;
+- dividir a sincronização em dezenas de requisições do navegador;
+- guardar senha/cookie do DigSaúde no backend;
+- desativar a comparação de registros ou a leitura individual para reduzir chamadas.
 
-## Pendências e bloqueios
+Essas alternativas aumentariam fragilidade, exposição ou complexidade sem resolver a causa arquitetural.
 
-- homologar o fluxo real no navegador autorizado após merge/publicação;
-- homologar a primeira sincronização com uma sessão real do DigSaúde;
-- confirmar o comportamento quando a lista ultrapassar 50 itens em uma única página;
-- a sincronização totalmente automática depende de integração institucional apropriada e não faz parte da V1.
+## Segurança e privacidade
 
-## Riscos conhecidos
+- o DigSaúde continua sendo a fonte oficial;
+- o Portal continua somente leitura em relação ao DigSaúde;
+- nenhuma senha, cookie, sessão ou token CSRF do DigSaúde é enviado ao Portal;
+- a Agenda continua sem PostHog/observabilidade de conteúdo clínico;
+- respostas da API permanecem `no-store`.
 
-- mudanças futuras no HTML Filament/Livewire do DigSaúde podem exigir ajuste do extrator;
-- bloqueio de pop-up pode impedir a abertura da ponte até o usuário autorizar o domínio;
-- snapshot parcial nunca deve desativar registros ausentes.
+## Próximo passo exato
 
-## Handoff para o próximo chat
+1. abrir PR da branch `fix/agenda-firestore-batch-sync` contra `main`;
+2. validar todos os checks e o workflow da Agenda;
+3. mesclar somente com CI verde;
+4. aguardar o deploy automático do Worker;
+5. repetir a primeira sincronização real dos 40 agendamentos pelo botão **Enviar Agenda ao Portal**;
+6. confirmar na Agenda do Portal os totais, novos/alterados e leitura individual;
+7. registrar o resultado final desta homologação neste arquivo.
 
-- **Frente atual:** Agenda DigSaúde V1.
-- **Última ação concluída:** implementação inicial da interface, backend, sincronizador e testes na branch.
-- **Branch atual:** `feat/agenda-digsaude-v1`.
-- **PR atual:** #185 — aberto; 28/28 workflows do commit `ceaa39e` concluídos com sucesso.
-- **Checks e testes:** 28/28 workflows do commit `ceaa39e` concluídos com sucesso, incluindo `Validar Agenda DigSaúde V1` e as suítes de regressão do Portal.
-- **Próxima ação exata:** homologar e, após aprovação humana, mesclar o PR #185; em seguida instalar o userscript nos navegadores autorizados de Telemedicina e executar a primeira sincronização real.
-- **Arquivos principais:** `docs/AGENDA-DIGSAUDE.md`, `worker/agenda.js`, `agenda/digsaude-agenda-sync.user.js`, `agenda/index.html`.
+## Riscos restantes
+
+- a homologação real da primeira carga ainda precisa ser repetida após o deploy da correção;
+- se a lista futura ultrapassar o limite de uma página do DigSaúde, snapshots parciais continuam proibidos de desativar ausentes;
+- mudanças futuras no HTML Filament/Livewire podem exigir ajuste do extrator local.
