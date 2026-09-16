@@ -137,6 +137,8 @@
     editorExit: document.getElementById('editorExitButton'),
     editorMergePanel: document.getElementById('editorMergePanel'),
     editorMergeSelection: document.getElementById('editorMergeSelection'),
+    editorMergeLocal: document.getElementById('editorMergeLocalButton'),
+    editorMergeLocalInput: document.getElementById('editorMergeLocalInput'),
     editorMergePosition: document.getElementById('editorMergePosition'),
     editorMergePageField: document.getElementById('editorMergePageField'),
     editorMergeAfterPage: document.getElementById('editorMergeAfterPage'),
@@ -1358,6 +1360,87 @@
     }
   }
 
+  function localMergeFileKind(file) {
+    const type = String(file?.type || '').toLowerCase();
+    const name = String(file?.name || '').toLowerCase();
+    if (type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
+    if (type.startsWith('image/')) return 'image';
+    return '';
+  }
+
+  async function mergeLocalFilesIntoEditor(files) {
+    const editor = window.PortalPdfEditor;
+    const session = state.editorSession;
+    if (!session || !editor || state.editorBusy) return false;
+
+    const selected = Array.from(files || []).filter((file) => localMergeFileKind(file));
+    if (!selected.length) {
+      setEditorStatus('Selecione pelo menos um PDF ou uma imagem válida.', 'warning');
+      return false;
+    }
+
+    const viewState = currentViewerState();
+    const firstInsertAt = mergeInsertAt();
+    let insertAt = firstInsertAt;
+    setEditorBusy(true);
+    setEditorStatus(selected.length === 1 ? 'Adicionando arquivo ao documento…' : 'Adicionando arquivos ao documento…');
+
+    try {
+      for (const file of selected) {
+        if (session !== state.editorSession) return false;
+        const kind = localMergeFileKind(file);
+        if (kind === 'pdf') {
+          const added = await editor.addDocument(session, file, {
+            label: 'PDF local',
+            insertAt
+          });
+          insertAt += Number(added || 0);
+        } else if (kind === 'image') {
+          const normalized = await normalizeImageForPdf(file);
+          await editor.addImagePage(session, normalized, {
+            label: 'Imagem local',
+            insertAt
+          });
+          insertAt += 1;
+        }
+      }
+
+      if (session !== state.editorSession) return false;
+      state.pendingMergeItem = null;
+      setEditorWorkspaceMode('organize');
+      refreshPdfListActions();
+      syncEditorControls();
+
+      const rebuilt = await buildEditorPreview({
+        initialViewState: viewState ? { ...viewState, activePage: Math.min(firstInsertAt + 1, editor.pageCount(session)) } : null,
+        allowBusy: true
+      });
+      if (!rebuilt) return false;
+
+      capture('pdf_edit_completed', {
+        route: '/documentos/',
+        duration_ms: 0,
+        operation: 'merge_local_files',
+        size_bucket: sizeBucket(selected.reduce((sum, file) => sum + Number(file?.size || 0), 0))
+      });
+      setEditorStatus(
+        selected.length === 1
+          ? 'Arquivo adicionado ao documento. A alteração permanece local até a exportação.'
+          : String(selected.length) + ' arquivos adicionados ao documento. As alterações permanecem locais até a exportação.',
+        'success'
+      );
+      return true;
+    } catch (error) {
+      if (session === state.editorSession) {
+        setEditorStatus(error?.message || 'Não foi possível adicionar o arquivo.', 'warning');
+      }
+      return false;
+    } finally {
+      if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
+      if (session === state.editorSession && state.editorBusy) setEditorBusy(false);
+    }
+  }
+
   function prepareMergePdf(item) {
     const session = state.editorSession;
     if (!session || !item?.isPdf || state.editorBusy) return false;
@@ -1397,7 +1480,7 @@
 
   function cancelPendingMerge() {
     state.pendingMergeItem = null;
-    if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF na lista da Central.';
+    if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF na lista da Central ou adicione um arquivo do dispositivo.';
     syncEditorControls();
     setEditorWorkspaceMode('organize');
     setEditorStatus('Modo Organizar ativo.', 'success');
@@ -1526,7 +1609,7 @@
   function choosePdfToMerge() {
     if (!state.editorSession || state.editorBusy) return;
     state.pendingMergeItem = null;
-    if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF na lista da Central.';
+    if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF na lista da Central ou adicione um arquivo do dispositivo.';
     if (els.editorMergePosition) els.editorMergePosition.value = 'after-document';
     if (els.editorMergePageField) els.editorMergePageField.hidden = true;
     setEditorWorkspaceMode('merge');
@@ -2273,6 +2356,14 @@
   els.editorObjectOpacity?.addEventListener('change', () => updateSelectedEditorObject({ opacity: Number(els.editorObjectOpacity.value || 100) / 100 }));
   els.editorObjectDelete?.addEventListener('click', deleteSelectedEditorObject);
   els.editorMerge.addEventListener('click', choosePdfToMerge);
+  els.editorMergeLocal?.addEventListener('click', () => {
+    if (!state.editorSession || state.editorBusy) return;
+    els.editorMergeLocalInput?.click();
+  });
+  els.editorMergeLocalInput?.addEventListener('change', () => {
+    const files = els.editorMergeLocalInput.files;
+    if (files?.length) mergeLocalFilesIntoEditor(files).catch(() => {});
+  });
   els.editorBlankPage?.addEventListener('click', () => addBlankPageToEditor().catch(() => {}));
   els.editorImage.addEventListener('click', () => els.editorImageInput.click());
   els.editorImageInput.addEventListener('change', async () => {
