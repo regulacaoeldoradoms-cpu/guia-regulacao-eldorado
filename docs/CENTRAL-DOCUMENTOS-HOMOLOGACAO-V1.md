@@ -513,3 +513,29 @@ A 3C.5 só pode ser encerrada após o aceite humano desse roteiro. A 3C.6 — fl
 
 Antes de qualquer merge posterior, a branch deverá ser sincronizada com a `main` atual e toda a matriz de CI deverá ser executada novamente, porque a `main` avançou com commits independentes do módulo Agenda/DigSaúde.
 
+## Aceite humano final da 3C.5 — Desenhar/Borracha — 16/09/2026
+
+O usuário concluiu a homologação humana do preview sintético da 3C.5 e respondeu que o comportamento está **“ótimo”**, autorizando o avanço.
+
+Escopo aceito:
+- traço livre vetorial;
+- cor e espessura por traço;
+- Undo/Redo por gesto;
+- borracha exclusiva dos traços criados pelo modo Desenhar;
+- preservação do conteúdo original do PDF, textos, imagens overlay e crop;
+- vínculo dos traços por `pageId` durante operações de página;
+- experiência visual/tátil considerada satisfatória.
+
+Evidência técnica de suporte:
+- head funcional homologado: `a2c28838df3138beec036baa809a5d7744eb21a5`;
+- 25/25 checks verdes no candidato;
+- Playwright: 64 casos, 61 passed / 3 skipped esperados;
+- Chromium desktop/mobile e touch sintético já validados;
+- staging permaneceu com dados fictícios e sem escrita no Drive.
+
+Resultado:
+- **3C.5 encerrada**;
+- o próximo gate é reconciliar a branch com a `main` atual e repetir CI completo;
+- com a reconciliação verde, fica liberada **3C.6 — flatten/exportação local**;
+- a Fase 4 continua fora de escopo até o fechamento de toda a Fase 3.
+
