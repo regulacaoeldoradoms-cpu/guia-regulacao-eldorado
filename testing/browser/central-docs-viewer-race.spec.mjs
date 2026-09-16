@@ -45,14 +45,23 @@ test.describe('Central de Documentos — concorrência de abertura do visualizad
 
       await viewer.loadPdfJs();
 
-      async function subset(removeIndex, label) {
+      async function subset(removeIndex, label, options = {}) {
         const session = await editor.createSession(fixture.blob(), { label });
         if (!editor.removePage(session, removeIndex)) throw new Error(`Falha ao montar ${label}.`);
+        if (Number(options.rotateFirst || 0)) {
+          if (!editor.rotatePage(session, 0, Number(options.rotateFirst))) {
+            throw new Error(`Falha ao rotacionar ${label}.`);
+          }
+        }
         return editor.buildBlob(session);
       }
 
       const bBlob = await subset(2, 'PDF B sintético');
-      const cBlob = await subset(0, 'PDF C sintético');
+      // C intentionally excludes the non-default CropBox page. That fixture is
+      // exercised by the crop suite; the concurrency suite needs a stable
+      // portrait first page on mobile while still using visibly different
+      // pixels from B, achieved with a reversible 180° rotation.
+      const cBlob = await subset(1, 'PDF C sintético', { rotateFirst: 2 });
 
       function options(label, activePage) {
         return {
@@ -127,7 +136,7 @@ test.describe('Central de Documentos — concorrência de abertura do visualizad
       }
 
       async function waitForSettledSurface(expectedPageCount, expectedActivePage) {
-        const deadline = performance.now() + 15_000;
+        const deadline = performance.now() + 10_000;
         let previousSignature = '';
         let stableSamples = 0;
 
@@ -288,7 +297,7 @@ test.describe('Central de Documentos — concorrência de abertura do visualizad
     expect(cWinner.pageCount).toBe('2 página(s)');
     expect(cWinner.pages).toBe(2);
     expect(cWinner.thumbnails).toBe(2);
-    expect(cWinner.firstCanvas.width).toBeGreaterThan(cWinner.firstCanvas.height);
+    expect(cWinner.firstCanvas.height).toBeGreaterThan(cWinner.firstCanvas.width);
 
     expect(secondRace.slowResult).toEqual({ value: null });
     expect(secondRace.stable).toBe(true);
