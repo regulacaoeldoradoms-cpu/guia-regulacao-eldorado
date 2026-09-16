@@ -12,7 +12,8 @@ Atualizado em 16/09/2026.
 - Nova unidade autorizada: **V2 — sincronização automática enquanto o DigSaúde estiver aberto**.
 - PR #188 — **Agenda V2: sincronização automática enquanto DigSaúde estiver aberto** — validado e mesclado na `main` em `ebf82dc3666a0c253387ee0fcdf0b786934ab815`.
 - Produção: deploy concluído com sucesso; Worker publicado na versão Cloudflare `8fcc9e5f-868b-4c0a-be59-9e16744c72b3` e pipeline de deploy do site concluído com sucesso.
-- Estado atual: V2 publicada e aguardando homologação humana no navegador autorizado.
+- Estado atual: V2 publicada e **homologação inicial real concluída** no navegador autorizado.
+- Evidência real em 16/09/2026: a ponte `/agenda/sync/` exibiu `Automático ativo · última sincronização: 10:13 · 0 novo(s), 0 alterado(s)`, confirmando conexão persistente e primeira sincronização automática bem-sucedida sem mudanças.
 
 ## Objetivo da V2
 
@@ -87,19 +88,24 @@ A V2 continua sendo uma automação local assistida. Monitoramento com navegador
 - Pós-merge da `main` em `ebf82dc3`: **26/26 check-runs concluídos com sucesso**, incluindo build, deploy, Worker, validações de Agenda, autenticação, Telemedicina, Conselho, Social e demais regressões.
 - Deploy do Worker confirmado com sucesso na versão `8fcc9e5f-868b-4c0a-be59-9e16744c72b3`.
 
+## Homologação real da V2
+
+- userscript 1.1.0 instalado e executando no navegador autorizado;
+- botão **Ativar sincronização automática** acionado com sucesso;
+- ponte protegida do Portal aberta e autenticada;
+- primeira sincronização automática concluída com sucesso às **10:13 de 16/09/2026**;
+- resultado observado: **0 novo(s), 0 alterado(s)**, coerente com uma execução sem mudanças desde a sincronização anterior;
+- nenhuma nova falha de subrequests, autenticação ou comunicação foi observada nessa execução.
+
+A homologação funcional inicial está aprovada. Ainda faltam somente testes operacionais de continuidade ao longo do uso normal.
+
 ## Próximo passo exato
 
-1. o usuário atualizar o userscript existente no Tampermonkey para a versão **1.1.0** usando **Agenda → Instalar / atualizar sincronizador**;
-2. recarregar a página de Consultas do DigSaúde;
-3. clicar uma vez em **Ativar sincronização automática**;
-4. manter a ponte do Portal aberta — pode ser minimizada;
-5. homologar:
-   - sincronização inicial;
-   - botão indicando **Automático ativo**;
-   - verificação imediata ao clicar novamente no botão;
-   - nova verificação automática após o intervalo ou ao recuperar foco vencido;
-   - pausa ao fechar a ponte e reativação posterior;
-6. registrar o resultado real desta homologação.
+1. deixar DigSaúde e a ponte do Portal abertos durante o expediente;
+2. confirmar uma próxima verificação automática após o intervalo de 15 minutos ou ao recuperar foco vencido;
+3. quando ocorrer uma mudança real no DigSaúde, confirmar que o Portal registra `+novo` ou `~alterado` sem intervenção manual;
+4. em momento controlado, fechar a ponte, confirmar que o automático pausa e depois reativá-lo;
+5. se esses três comportamentos passarem, considerar a V2 integralmente homologada e encerrar esta unidade.
 
 ## Riscos restantes
 
