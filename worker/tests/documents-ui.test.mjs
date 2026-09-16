@@ -180,7 +180,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260916-4/);
+  assert.match(html, /documents\.css\?v=20260916-5/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -201,7 +201,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260916-3/);
   assert.match(html, /documents\.js\?v=20260916-10/);
-  assert.match(html, /documents\.css\?v=20260916-4/);
+  assert.match(html, /documents\.css\?v=20260916-5/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -252,6 +252,42 @@ test('observadores entram somente depois da primeira renderização do PDF.js', 
 });
 
 
+test('kit visual do editor usa assets individuais e preserva acessibilidade textual', () => {
+  const html = read('documentos/index.html');
+  const css = read('css/documents.css');
+  const harness = read('testing/central-docs/viewer-harness.html');
+  const assets = [
+    'salvar-pdf.svg',
+    'cancelar.svg',
+    'ajustar-largura.svg',
+    'zoom-mais.svg',
+    'zoom-menos.svg',
+    'atualizar.svg',
+    'fechar.svg',
+    'grade-ativa.svg',
+    'grade-inativa.svg',
+    'imprimir-normal.svg'
+  ];
+
+  for (const asset of assets) {
+    assert.ok(fs.existsSync(path.join(root, 'assets/editor-pdf-buttons', asset)), `Asset visual ausente: ${asset}`);
+  }
+
+  assert.match(html, /id="pdfZoomOutButton"[^>]*documents-art-zoom-minus/);
+  assert.match(html, /id="pdfZoomInButton"[^>]*documents-art-zoom-plus/);
+  assert.match(html, /id="pdfFitWidthButton"[^>]*documents-art-fit-width[^>]*aria-label="Ajustar largura"/);
+  assert.match(html, /id="editorOrganizeButton"[^>]*documents-art-grid/);
+  assert.match(html, /id="editorPreviewButton"[^>]*documents-art-refresh/);
+  assert.match(html, /id="editorExportButton"[^>]*documents-art-export[^>]*aria-label="Exportar PDF final localmente"/);
+  assert.match(html, /id="editorPrintButton"[^>]*documents-art-print[^>]*aria-label="Imprimir PDF final"/);
+  assert.match(html, /id="editorExitButton"[^>]*documents-art-close/);
+  assert.match(harness, /id="editorPrint"[^>]*documents-art-print/);
+  assert.match(css, /--documents-art-image/);
+  assert.match(css, /editor-pdf-buttons\/salvar-pdf\.svg/);
+  assert.match(css, /editor-pdf-buttons\/imprimir-normal\.svg/);
+  assert.match(css, /portal-pdf-crop-action--cancel/);
+});
+
 test('editor usa os controles da mesma superfície PDF.js sem lista textual paralela', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
@@ -291,7 +327,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260916-3/);
   assert.match(html, /documents\.js\?v=20260916-10/);
-  assert.match(html, /documents\.css\?v=20260916-4/);
+  assert.match(html, /documents\.css\?v=20260916-5/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
