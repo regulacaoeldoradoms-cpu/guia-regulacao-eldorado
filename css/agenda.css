@@ -100,6 +100,10 @@
   background: linear-gradient(90deg, #f0f8ff, #fff 56%);
   box-shadow: inset 4px 0 0 #1265c8, 0 8px 20px rgba(20,55,90,.08);
 }
+.agenda-card.is-read {
+  border-color: #79b7a0;
+  box-shadow: 0 0 0 1px rgba(50,137,104,.16), 0 6px 18px rgba(20,55,90,.06);
+}
 .agenda-card.is-inactive { opacity: .68; background: #f7f9fb; }
 .agenda-patient { min-width: 0; }
 .agenda-patient strong { display: block; color: #113654; font-size: 1rem; white-space: normal; }
