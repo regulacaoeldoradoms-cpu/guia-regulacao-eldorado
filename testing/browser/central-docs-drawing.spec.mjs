@@ -9,13 +9,28 @@ async function openEditor(page) {
   await expect(page.locator('#pdfRoot')).toHaveAttribute('data-draw-mode', 'draw');
 }
 
-async function drawGesture(page, pageIndex, start, end) {
-  const layer = page.locator('.portal-pdf-draw-layer').nth(pageIndex);
+async function visibleGesturePoints(page, layer, start, end) {
   await layer.scrollIntoViewIfNeeded();
   const box = await layer.boundingBox();
   expect(box).not.toBeNull();
-  const from = { x: box.x + box.width * start.x, y: box.y + box.height * start.y };
-  const to = { x: box.x + box.width * end.x, y: box.y + box.height * end.y };
+  const viewport = page.viewportSize() || { width: 1280, height: 900 };
+  const inset = 18;
+  const left = Math.max(box.x + inset, inset);
+  const right = Math.min(box.x + box.width - inset, viewport.width - inset);
+  const top = Math.max(box.y + inset, inset);
+  const bottom = Math.min(box.y + box.height - inset, viewport.height - inset);
+  expect(right - left).toBeGreaterThan(80);
+  expect(bottom - top).toBeGreaterThan(80);
+  return {
+    box,
+    from: { x: left + (right - left) * start.x, y: top + (bottom - top) * start.y },
+    to: { x: left + (right - left) * end.x, y: top + (bottom - top) * end.y }
+  };
+}
+
+async function drawGesture(page, pageIndex, start, end) {
+  const layer = page.locator('.portal-pdf-draw-layer').nth(pageIndex);
+  const { box, from, to } = await visibleGesturePoints(page, layer, start, end);
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await expect(page.locator('#pdfRoot')).toHaveAttribute('data-draw-gesture', 'draw');
@@ -26,14 +41,13 @@ async function drawGesture(page, pageIndex, start, end) {
 }
 
 async function eraseGesture(page, pageIndex, start, end) {
+  // A borracha é uma subferramenta de Desenhar. Se o teste veio de Escrever,
+  // reabre primeiro o modo Desenhar para tornar os controles contextuais visíveis.
+  await page.locator('#editorDraw').click();
   await page.locator('#editorDrawEraser').click();
   await expect(page.locator('#pdfRoot')).toHaveAttribute('data-draw-mode', 'erase');
   const layer = page.locator('.portal-pdf-draw-layer').nth(pageIndex);
-  await layer.scrollIntoViewIfNeeded();
-  const box = await layer.boundingBox();
-  expect(box).not.toBeNull();
-  const from = { x: box.x + box.width * start.x, y: box.y + box.height * start.y };
-  const to = { x: box.x + box.width * end.x, y: box.y + box.height * end.y };
+  const { from, to } = await visibleGesturePoints(page, layer, start, end);
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await expect(page.locator('#pdfRoot')).toHaveAttribute('data-draw-gesture', 'erase');
