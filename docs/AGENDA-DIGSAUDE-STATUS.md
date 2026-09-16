@@ -14,7 +14,9 @@ Atualizado em 16/09/2026.
 - Produção: deploy concluído com sucesso; Worker publicado na versão Cloudflare `8fcc9e5f-868b-4c0a-be59-9e16744c72b3` e pipeline de deploy do site concluído com sucesso.
 - Estado atual: V2 publicada e **homologação inicial real concluída** no navegador autorizado.
 - Ajuste visual autorizado em 16/09/2026: mover o controle do sincronizador para o canto inferior esquerdo e, após ativação, reduzi-lo a um chip compacto com apenas o ícone `⟳`, exibindo detalhes somente em hover/clique.
-- Branch do ajuste visual: `feat/agenda-compact-sync-chip`; produção ainda pendente de PR/checks/merge.
+- Ajuste visual implementado no PR #191 — **Agenda: chip compacto do sincronizador no canto inferior esquerdo** — e mesclado na `main` em `abf7882f125cc9b3b3e322a2b14981e304aaec67`.
+- Pós-merge do PR #191: **26/26 check-runs concluídos com sucesso**, incluindo build/deploy, validação da Agenda e regressões gerais.
+- Produção: userscript **1.1.1** publicado; resta somente homologar visualmente o novo chip no navegador autorizado.
 - Evidência real em 16/09/2026: a ponte `/agenda/sync/` exibiu `Automático ativo · última sincronização: 10:13 · 0 novo(s), 0 alterado(s)`, confirmando conexão persistente e primeira sincronização automática bem-sucedida sem mudanças.
 
 ## Objetivo da V2
@@ -35,7 +37,7 @@ Comportamento planejado:
 
 ## Implementação publicada
 
-- userscript automático publicado em V1.1.0; ajuste visual preparado como V1.1.1;
+- userscript automático atualizado e publicado como V1.1.1;
 - `@updateURL` e `@downloadURL` adicionados para facilitar atualizações futuras do Tampermonkey;
 - GET same-origin do DigSaúde com `credentials: include` e `cache: no-store`;
 - nenhuma leitura de `document.cookie`, localStorage, sessionStorage, token CSRF ou Authorization;
@@ -103,7 +105,7 @@ A homologação funcional inicial está aprovada. Ainda faltam somente testes op
 
 ## Próximo passo exato
 
-1. validar o novo chip compacto do sincronizador no DigSaúde após atualização do userscript;
+1. atualizar o userscript existente no Tampermonkey para a versão 1.1.1 e validar o novo chip compacto no DigSaúde;
 2. confirmar que o chip aparece no canto inferior esquerdo, mostra apenas `⟳` após ativado e abre detalhes por hover/clique;
 3. deixar DigSaúde e a ponte do Portal abertos durante o expediente;
 4. confirmar uma próxima verificação automática após o intervalo de 15 minutos ou ao recuperar foco vencido;
