@@ -709,6 +709,12 @@
   line-height: 1.4;
 }
 
+.documents-editor-local-import {
+  width: 100%;
+  margin: 0 0 12px;
+  justify-content: center;
+}
+
 .documents-editor-field {
   display: grid;
   gap: 6px;
@@ -758,6 +764,12 @@
   padding: 22px;
   border-right: 0;
   background: #f4f7fa;
+}
+
+@media (min-width: 721px) {
+  .documents-custom-viewer[data-editor-workspace-mode="merge"][data-organizer-mode="true"] .documents-pdf-thumbnails {
+    padding-right: 382px;
+  }
 }
 
 .documents-custom-viewer[data-organizer-mode="true"] .portal-pdf-thumb-wrap {
@@ -892,6 +904,18 @@
   .documents-custom-viewer {
     padding-left: 46px;
   }
+
+  .documents-custom-viewer[data-editor-workspace-mode="merge"] .documents-editor-panel {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    min-height: 0;
+    border-left: 0;
+    border-bottom: 1px solid #d8e0e8;
+    box-shadow: none;
+  }
+
 
   .documents-editor-side-rail {
     width: 46px;
