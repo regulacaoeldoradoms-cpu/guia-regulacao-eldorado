@@ -13,6 +13,7 @@ Atualizado em 16/09/2026.
 - PR #188 — **Agenda V2: sincronização automática enquanto DigSaúde estiver aberto** — validado e mesclado na `main` em `ebf82dc3666a0c253387ee0fcdf0b786934ab815`.
 - Produção: deploy concluído com sucesso; Worker publicado na versão Cloudflare `8fcc9e5f-868b-4c0a-be59-9e16744c72b3` e pipeline de deploy do site concluído com sucesso.
 - Estado atual: V2 publicada e **homologação inicial real concluída** no navegador autorizado.
+- Ajuste visual autorizado em 16/09/2026: mover o controle do sincronizador para o canto inferior esquerdo e, após ativação, reduzi-lo a um chip compacto com apenas o ícone `⟳`, exibindo detalhes somente em hover/clique.
 - Evidência real em 16/09/2026: a ponte `/agenda/sync/` exibiu `Automático ativo · última sincronização: 10:13 · 0 novo(s), 0 alterado(s)`, confirmando conexão persistente e primeira sincronização automática bem-sucedida sem mudanças.
 
 ## Objetivo da V2
@@ -101,11 +102,13 @@ A homologação funcional inicial está aprovada. Ainda faltam somente testes op
 
 ## Próximo passo exato
 
-1. deixar DigSaúde e a ponte do Portal abertos durante o expediente;
-2. confirmar uma próxima verificação automática após o intervalo de 15 minutos ou ao recuperar foco vencido;
-3. quando ocorrer uma mudança real no DigSaúde, confirmar que o Portal registra `+novo` ou `~alterado` sem intervenção manual;
-4. em momento controlado, fechar a ponte, confirmar que o automático pausa e depois reativá-lo;
-5. se esses três comportamentos passarem, considerar a V2 integralmente homologada e encerrar esta unidade.
+1. validar o novo chip compacto do sincronizador no DigSaúde após atualização do userscript;
+2. confirmar que o chip aparece no canto inferior esquerdo, mostra apenas `⟳` após ativado e abre detalhes por hover/clique;
+3. deixar DigSaúde e a ponte do Portal abertos durante o expediente;
+4. confirmar uma próxima verificação automática após o intervalo de 15 minutos ou ao recuperar foco vencido;
+5. quando ocorrer uma mudança real no DigSaúde, confirmar que o Portal registra `+novo` ou `~alterado` sem intervenção manual;
+6. em momento controlado, fechar a ponte, confirmar que o automático pausa e depois reativá-lo;
+7. se esses comportamentos passarem, considerar a V2 integralmente homologada e encerrar esta unidade.
 
 ## Riscos restantes
 
