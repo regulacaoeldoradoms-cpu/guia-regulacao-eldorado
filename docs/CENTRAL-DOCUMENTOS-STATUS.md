@@ -6,7 +6,56 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.5 — Desenhar/Borracha, liberada após homologação humana final da 3C.4 em 16/09/2026 no PR #179**. Organizar V2, 3C.3 (Escrever + Colar imagem) e 3C.4 (Recortar com confirmação/cancelamento) estão aceitos. A 3C.5 entra agora em implementação; flatten/exportação local permanece para 3C.6. **Não fazer merge nem escrever no Google Drive nesta fase.**
+Subfase atual: **3C.5 — Desenhar/Borracha, implementação técnica concluída no PR #179 e aguardando homologação humana do preview sintético**. Organizar V2, 3C.3 (Escrever + Colar imagem) e 3C.4 (Recortar com confirmação/cancelamento) estão aceitos. A 3C.6 (flatten/exportação local) permanece bloqueada até o aceite humano da 3C.5. **Não fazer merge nem escrever no Google Drive nesta fase.**
+
+## 3C.5 — implementação técnica concluída; homologação humana pendente — 16/09/2026
+
+A unidade mínima autorizada da 3C.5 foi implementada na mesma superfície PDF.js do editor, ainda sem merge e sem qualquer persistência no Google Drive.
+
+Implementação consolidada no head funcional `a2c28838df3138beec036baa809a5d7744eb21a5`:
+- modelo local de `strokes` por `pageId`, com pontos normalizados, cor e espessura por traço;
+- camada SVG vetorial sobre a página, separada do canvas original do PDF e da camada de objetos;
+- caneta por Pointer Events para mouse/pen/touch;
+- cada gesto contínuo cria uma única mutação de histórico, sem gerar uma entrada por ponto capturado;
+- borracha atua por hit-test somente sobre os traços do modo **Desenhar**;
+- borracha não altera pixels/canvas do PDF original, texto, imagem overlay, crop ou outros objetos;
+- rotação transforma os pontos do traço junto com a página;
+- reorganização conserva o vínculo por `pageId`;
+- duplicação clona os traços com novos IDs;
+- exclusão de página remove somente os traços vinculados àquela página;
+- Undo/Redo cobre criação e remoção de traços;
+- cor e espessura permanecem persistidas por traço dentro da sessão do editor;
+- flatten/materialização no Blob final continua explicitamente fora do escopo até a 3C.6.
+
+Validação automatizada do head:
+- **25/25 checks GitHub concluídos com sucesso**;
+- workflow **PDF.js real em Chromium**: sucesso;
+- Playwright: **64 casos**, com **61 passed / 3 skipped esperados**;
+- cenários específicos da 3C.5 passaram em Chromium desktop e mobile;
+- touch real sintetizado no perfil mobile desenhou e apagou traço com sucesso;
+- teste de borracha comprovou que objeto de texto e canvas original permanecem intactos;
+- testes de rotação, duplicação, exclusão e vínculo por `pageId` passaram;
+- Cloudflare Pages: deployment bem-sucedido.
+
+Preview candidato:
+- imutável: `https://ea2088f5.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- staging continua **somente com dados fictícios** enquanto Cloudflare Access estiver pendente.
+
+Privacidade e segurança:
+- nenhuma coordenada, ponto, cor, conteúdo de desenho, texto documental, nome de arquivo ou ID do Drive é enviado ao PostHog;
+- nenhuma rota nova de escrita/persistência foi criada;
+- nenhuma alteração foi feita em produção ou no Google Drive.
+
+Estado da `main`:
+- a `main` avançou para `abf7882f125cc9b3b3e322a2b14981e304aaec67` com **8 commits do módulo Agenda/DigSaúde**, posteriores ao ponto de separação desta branch;
+- a comparação confirma que esses commits não alteram os arquivos centrais do editor PDF, porém a branch agora está divergente e o PR aparece não mergeável no estado corrente;
+- **não reconciliar/rebasear antes do gate humano da 3C.5**: isso adicionaria churn e nova rodada de CI sem benefício para a homologação visual atual;
+- após o aceite humano, antes de qualquer merge, sincronizar a branch com a `main` atual, resolver eventuais conflitos de testes compartilhados e executar novamente toda a matriz.
+
+**Gate atual:** homologação humana de Desenhar/Borracha. A 3C.5 ainda não está encerrada e a 3C.6 permanece bloqueada.
+
+**Próxima ação exata:** testar o preview imutável da 3C.5 em desktop e, se possível, touch: desenhar com duas cores/espessuras, criar traços em páginas diferentes, validar Undo/Redo, apagar somente um traço, confirmar que PDF/texto/imagem permanecem intactos e girar/reorganizar uma página desenhada. Se aprovado, registrar o aceite, reconciliar a branch com a `main` atual e só então liberar a 3C.6.
 
 ## 3C.4 — aceite humano final e encerramento; 3C.5 liberada — 16/09/2026
 
@@ -148,23 +197,24 @@ Pendência / risco atual:
 Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Fase atual:** Fase 3 — Editor PDF essencial.
-- **Subfase atual:** **3C.5 — Desenhar/Borracha**.
-- **Motivo do avanço:** o usuário aprovou explicitamente em 16/09/2026 a UX final da 3C.4 com seleção provisória, Confirmar/Cancelar, crop visual aplicado, Ajustar e Undo/Redo.
-- **3C.4:** encerrada e aceita.
+- **Subfase atual:** **3C.5 — Desenhar/Borracha, tecnicamente concluída e aguardando homologação humana**.
+- **Última ação concluída:** implementação + correções da 3C.5 validadas no head `a2c28838df3138beec036baa809a5d7744eb21a5`, com 25/25 checks verdes e preview Cloudflare publicado.
 - **Branch atual:** `codex/central-docs-editor-superficie-unica`.
-- **PR atual:** #179 — aberto, mergeável e sem merge.
-- **Main:** `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`, intacta.
-- **Último runtime validado antes da liberação:** `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`.
-- **Último head documental antes do aceite:** `17e42734a190253589d3cadec1bca41128cd2d5b`.
-- **Validação:** 25/25 checks verdes; navegador/PDF.js real aprovado; sem regressões conhecidas.
-- **Escopo da 3C.5:** traços vetoriais locais normalizados por `pageId`; caneta; cor; espessura; borracha apenas sobre traços do modo Desenhar; Undo/Redo por gesto/traço.
-- **Regra crítica da borracha:** nunca apagar, mascarar ou reescrever conteúdo original do PDF, textos/imagens de outras ferramentas ou pixels do canvas original.
-- **Semântica obrigatória:** desenho deve acompanhar a página ao reorganizar/rotacionar/duplicar e ser removido junto da página quando ela for excluída; duplicação deve clonar os traços com novos IDs.
-- **Interação:** Pointer Events para mouse/pen/touch; um gesto contínuo = uma entrada de histórico; evitar histórico por ponto.
-- **Fora do escopo:** flatten/exportação dos desenhos (3C.6), merge, produção, escrita no Drive e qualquer telemetria de conteúdo.
-- **Segurança:** staging apenas com dados fictícios enquanto Cloudflare Access estiver pendente; PostHog nunca recebe coordenadas/conteúdo de desenho ou documento.
-- **Próxima ação exata:** implementar primeiro o modelo local de traços + renderização overlay + caneta com cor/espessura e Undo/Redo por gesto; em seguida a borracha restrita aos traços; validar rotação/reordenação/duplicação/exclusão e desktop/mobile; gerar preview sintético e solicitar homologação humana antes de 3C.6.
-- **Arquivos principais esperados:** `js/document-editor.js`, `js/document-viewer.js`, `js/documents.js`, `css/documents.css`, harness/testes de navegador e esta documentação.
+- **PR atual:** #179 — aberto, sem merge; atualmente divergente da `main`.
+- **Último commit relevante:** `a2c28838df3138beec036baa809a5d7744eb21a5`.
+- **Checks e testes:** 25/25 checks verdes; Playwright 64 casos = 61 passed / 3 skipped esperados; 3C.5 passou em desktop e mobile, incluindo gesto touch.
+- **Preview imutável:** `https://ea2088f5.portal-regulacao-central-staging.pages.dev/`.
+- **Alias da branch:** `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+- **Main atual:** `abf7882f125cc9b3b3e322a2b14981e304aaec67`; avançou 8 commits de Agenda/DigSaúde depois do merge-base `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`.
+- **Decisões tomadas:** desenho é overlay vetorial local por `pageId`; um gesto = uma entrada de histórico; borracha só remove traços do próprio modo; flatten/exportação permanece para 3C.6.
+- **Justificativas:** manter traços vetoriais reversíveis evita rasterização precoce; vínculo por `pageId` preserva semântica quando páginas mudam de posição; borracha restrita evita qualquer risco de apagar conteúdo documental original.
+- **Alternativas descartadas:** apagar pixels do canvas/PDF original; rasterizar a página durante desenho; gravar histórico por ponto; antecipar flatten na 3C.5.
+- **Ações externas concluídas:** deployment Cloudflare Pages do head `a2c2883` concluído com sucesso; nenhuma configuração externa/segredo novo foi necessária.
+- **Pendências e bloqueios:** aceite humano da 3C.5; depois, sincronizar a branch com a `main` atual antes de qualquer merge. Codex Review segue indisponível por limite de uso e não é gate substituto dos checks/homologação.
+- **Riscos conhecidos:** staging continua público e deve usar somente dados fictícios enquanto Access estiver pendente; branch divergente pode gerar conflito em arquivos/testes compartilhados quando for sincronizada.
+- **Métricas / observabilidade:** nenhum dado sensível ou coordenada de desenho é enviado; evidência atual é CI/Playwright e deployment sintético, sem uso de PostHog para conteúdo.
+- **Próxima ação exata:** usuário homologar o preview `ea2088f5...` com caneta, cor/espessura, duas páginas, Undo/Redo, borracha, rotação/reorganização e, se possível, touch. Se aprovado, registrar o aceite; em seguida reconciliar a branch com a `main`, repetir CI completo e liberar 3C.6.
+- **Arquivos e fontes principais:** Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-STATUS.md`; `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`; `docs/CENTRAL-DOCUMENTOS-EDITOR-UX-V2.md`; PR #179; `js/document-editor.js`; `js/document-viewer.js`; `js/documents.js`; `css/documents.css`; `testing/browser/central-docs-drawing.spec.mjs`.
 
 ## 3C.3 — aceite humano final e encerramento — 15/09/2026
 
