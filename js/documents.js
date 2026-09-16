@@ -1079,7 +1079,6 @@
         .sort((a, b) => Number(a.dataset.printPage || 0) - Number(b.dataset.printPage || 0))
         .forEach((sheet) => container.appendChild(sheet));
 
-      await new Promise((resolve) => printWindow.requestAnimationFrame(() => printWindow.requestAnimationFrame(resolve)));
       return true;
     } finally {
       try { await documentPdf?.destroy?.(); } catch (_) {}
