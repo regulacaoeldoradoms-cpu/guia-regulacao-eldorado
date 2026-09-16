@@ -559,6 +559,37 @@ test('editor PDF preserva edição local e sincronização explícita só confir
   assert.match(editor, /session\.plan\.length <= 1/);
 });
 
+test('Fase 4C mantém telemetria de sincronização estritamente técnica e sucesso condicionado', () => {
+  const html = read('documentos/index.html');
+  const client = read('js/documents.js');
+  const observability = read('js/portal-observability.js');
+  const serverObservability = read('worker/observability.js');
+
+  assert.match(html, /id="editorSyncButton"/);
+  assert.match(html, /id="editorSyncPanel"/);
+  assert.match(client, /drive\.writeEnabled === true/);
+  assert.match(client, /if \(!completed\?\.completed\)/);
+  assert.match(client, /applyConfirmedDriveSync\(operation, completed, blob, copyName\)/);
+
+  for (const event of ['drive_sync_started', 'drive_sync_completed', 'drive_sync_failed']) {
+    assert.match(client, new RegExp(`capture\\('${event}'`));
+    assert.match(observability, new RegExp(`${event}: new Set`));
+    assert.match(serverObservability, new RegExp(`${event}: new Set`));
+  }
+
+  const syncSection = client.slice(
+    client.indexOf('async function syncEditedPdfToDrive'),
+    client.indexOf('async function exportEditedPdfLocal')
+  );
+  assert.doesNotMatch(syncSection, /capture\([\s\S]{0,400}(?:fileId|filename|item\.name|item\.ref|copyName|patient|cpf|cns|diagnostico|cid)/i);
+  assert.match(syncSection, /route:\s*'\/documentos\/'/);
+  assert.match(syncSection, /operation/);
+  assert.match(syncSection, /size_bucket/);
+  assert.match(syncSection, /status_code/);
+  assert.ok(syncSection.indexOf("if (!completed?.completed)") < syncSection.indexOf("setDriveSyncProgress('Salvo no Google Drive.'"));
+});
+
+
 test('permissão de edição é explícita e não é herdada automaticamente de Regulador(a)', () => {
   const html = read('admin/usuarios/index.html');
   const client = read('js/admin-users.js');
