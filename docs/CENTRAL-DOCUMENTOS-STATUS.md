@@ -6,12 +6,36 @@
 
 **Fase 4 — Sincronização segura com Drive**
 
-Subfase atual: **4D — homologação controlada no Drive institucional**.
+Subfase atual: **4C — correção de homologação visual: botão de força + definição da sincronização automática**.
 
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: **#201**  
 Base da fase: `main@ccaa15c0c7b46dd53f7f508635079131806144b8`  
 Head final de 4A–4C: `053e313dd45cab589a70c09b529b6c18a296b99f`
+
+## Correção após homologação visual humana — 16/09/2026 19:04 (America/Campo_Grande)
+
+O usuário abriu o deployment de staging e comprovou que a tela publicada continuava visualmente igual à Fase 3: o botão esperado de sincronização não aparecia.
+
+Diagnóstico confirmado:
+- o URL de Cloudflare Pages publicado como staging usa `testing/central-docs/viewer-harness.html` como `index.html`;
+- esse harness sintético não carrega `documentos/index.html` nem `js/documents.js`, exatamente onde a UI de sincronização da 4C havia sido implementada;
+- portanto o link entregue para homologação visual **não demonstrava a mudança implementada**;
+- no Portal real, o botão também estava condicionado a `drive.connected && drive.writeEnabled && ref && version`, de modo que o laboratório sintético jamais o exibiria;
+- além disso, a implementação até aqui criou uma sincronização **manual** com escolha `save_copy/replace_pdf`; ela **não implementou a sincronização automática + botão de força como fallback** que o usuário agora esclareceu como comportamento desejado.
+
+Correção já aplicada nesta branch:
+- o controle real foi renomeado para **Forçar sincronização com Google Drive**;
+- o laboratório sintético agora exibe o mesmo controle no espaço antes ocupado conceitualmente por Atualizar PDF;
+- clicar nesse controle no laboratório apenas confirma visualmente a ação e informa que o ambiente sintético não grava no Drive;
+- o teste Playwright passou a exigir que o botão esteja visível, use o asset self-hosted e responda ao clique sem chamada real ao Drive.
+
+Decisão:
+- **4C não está encerrada** sob o requisito esclarecido pelo usuário;
+- a 4D fica suspensa até a semântica de sincronização automática ser definida e implementada com segurança;
+- nenhuma escrita real foi habilitada e o PR #201 continua sem merge.
+
+**Próxima ação exata:** validar o novo staging com o botão visível e definir o gatilho da sincronização automática (por exemplo, após período ocioso ou ao sair do editor) antes de implementar qualquer sobrescrita automática. O botão de força deve ser fallback/retry, não a única forma normal de salvar.
 
 ## Estado consolidado
 
