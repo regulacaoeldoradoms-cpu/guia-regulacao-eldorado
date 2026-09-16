@@ -8,6 +8,46 @@
 
 Subfase atual: **3C.6 — flatten/exportação local, correções de UX pós-homologação implementadas e aguardando novo reteste humano**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
 
+## 3C.6 — segunda rodada de correções UX após reteste humano — 16/09/2026
+
+O reteste do candidato com zoom inicial em 114% revelou quatro ajustes adicionais antes da homologação final:
+
+1. no desktop, as páginas 4 e 5 ainda podiam ocupar colunas visualmente atrás do painel **Unir**; o requisito humano é que a grade use somente a largura livre e que as páginas excedentes **quebrem para a segunda linha**;
+2. ao escolher PDF ou imagem local no painel **Unir**, deve existir um **preview do arquivo selecionado**, usando a ergonomia do Lumin apenas como referência de comportamento, sem copiar sua identidade visual;
+3. **Colar imagem** passa a ser uma ferramenta em dois estágios: fora do modo, o primeiro clique apenas entra em Colar imagem e o segundo abre o seletor de arquivos; se o modo já estiver ativo, o primeiro clique abre o seletor;
+4. uma caixa de texto ou imagem overlay selecionada deve poder ser excluída pela tecla **Delete**, além dos controles visuais existentes.
+
+Implementação:
+- no modo Unir/Organizar em desktop, a grade agora reduz sua **largura real** pela faixa ocupada pelo painel lateral; não depende mais de apenas aumentar o padding, portanto as páginas seguintes refluem para a próxima linha;
+- o painel Unir ganhou cartão de preview local com nome/tipo/tamanho; imagens usam miniatura local e PDFs locais renderizam a primeira página via **PDF.js self-hosted**, sem upload e sem backend;
+- a seleção pendente pode ser removida pelo × do próprio cartão antes da confirmação em **Unir**;
+- o laboratório sintético foi alinhado ao fluxo real de Colar imagem e usa file picker real;
+- o atalho **Delete** usa a seleção atual do editor e preserva o histórico Undo/Redo; campos de edição textual continuam protegidos contra exclusão acidental;
+- após o primeiro CI, foi detectado que o foco podia permanecer no input de arquivo mesmo depois de selecionar/mover uma imagem. O runtime foi corrigido para tratar `file`/`hidden` e outros inputs não textuais como foco não bloqueante para Delete, mantendo bloqueio em textarea, select, contenteditable, role textbox e inputs de edição.
+
+Head funcional validado: `3b08614541494b430a81f8e9936a7c72d97bf74b`.
+
+Validação:
+- **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **72 casos — 69 passed / 3 skipped esperados**, em desktop e mobile;
+- o teste de Unir cria páginas adicionais e comprova que, no desktop, **nenhuma miniatura invade a faixa do painel** e existe quebra para linha seguinte;
+- o preview local é validado com imagem real fornecida ao file picker;
+- Colar imagem é validado em dois cliques quando o modo ainda não está ativo;
+- a tecla Delete é validada para **imagem overlay** e **caixa de texto**, com Undo restaurando o objeto;
+- Cloudflare Pages concluiu o deployment do head funcional com sucesso (deployment `c5199ad5-10f6-4d23-a18d-4ee3e9e54dc9`).
+
+Privacidade e segurança:
+- arquivos usados no preview são processados somente no navegador;
+- o preview de PDF usa os assets PDF.js já self-hosted;
+- nenhum nome, conteúdo, miniatura, texto ou coordenada é enviado ao PostHog;
+- nenhuma alteração foi feita na `main`, produção ou Google Drive;
+- PR #179 permanece aberto e sem merge.
+
+**Gate atual:** a 3C.6 continua aberta somente para novo reteste humano e comparação final preview × PDF exportado/reaberto.
+
+**Próxima ação exata:** abrir o alias atualizado `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, fazer Ctrl+F5 e validar: (a) páginas excedentes pulam para a segunda linha no Unir; (b) PDF/imagem selecionado mostra preview; (c) Colar imagem segue o fluxo primeiro clique = modo, segundo clique = seletor, e quando já ativo o primeiro clique abre o seletor; (d) texto/imagem selecionados são removidos por Delete e restauráveis por Undo. Depois concluir a exportação/reabertura do PDF final. Somente após aceite explícito encerrar 3C.6/Fase 3.
+
 ## 3C.6 — ajuste adicional de zoom inicial após reteste humano — 16/09/2026
 
 Durante o novo reteste da 3C.6, o usuário comparou visualmente a abertura padrão em **174%** com **114%** e informou que **114% enquadra melhor a página**.
@@ -132,21 +172,21 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Fase atual:** Fase 3 — Editor PDF essencial.
 - **Subfase atual:** 3C.6 — flatten/exportação local; correções de UX pós-homologação implementadas e aguardando novo reteste humano.
-- **Última ação concluída:** além das três correções anteriores (arraste centralizado, file picker real para imagem como página e painel Unir autossuficiente/sem sobreposição), o zoom inicial foi alterado de fit-width (~174% no desktop do usuário) para **114%** por padrão.
+- **Última ação concluída:** após o zoom inicial de 114%, foram corrigidos o refluxo real da grade ao abrir Unir, preview de PDF/imagem local, fluxo em dois estágios de Colar imagem e exclusão de objetos selecionados pela tecla Delete.
 - **Branch atual:** `codex/central-docs-editor-superficie-unica`.
-- **Head funcional validado:** `20e0f885bc14cea74852707a92164c58384e20e2`.
+- **Head funcional validado:** `3b08614541494b430a81f8e9936a7c72d97bf74b`.
 - **PR atual:** #179 — manter aberto e sem merge até o encerramento da Fase 3.
 - **Main atual conhecida:** `73997b4d108dd0392173e93640310d70dd3eeccf`, já reconciliada nesta branch pelo merge `95c660d6e74c4aafdbb5d7be4c4383ac11d46995`.
 - **Checks e testes:** 25/25 checks verdes; Playwright 72 casos = 69 passed / 3 skipped esperados; PDF.js real em Chromium e Cloudflare Pages verdes.
 - **Preview imutável do runtime corrigido:** `https://a32de5a1.portal-regulacao-central-staging.pages.dev/`.
 - **Alias da branch:** `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
-- **Decisões tomadas:** objeto arrastado segue o centro do ponteiro; laboratório usa file picker real; arquivos locais no painel Unir ficam pendentes até confirmação explícita em Unir; desktop reserva faixa lateral e mobile empilha o painel; abertura nova do visualizador usa 114% no desktop e limita a escala à largura disponível em telas menores.
+- **Decisões tomadas:** objeto arrastado segue o centro do ponteiro; laboratório usa file picker real; arquivos locais no painel Unir ficam pendentes até confirmação explícita em Unir; desktop reduz a largura real da grade para reservar o painel e forçar quebra de linha; o painel mostra preview local; mobile empilha o painel; Colar imagem usa entrada em modo + abertura do seletor no clique seguinte; Delete remove texto/imagem selecionados sem interferir em campos de edição; abertura nova usa 114% no desktop e limita a escala à largura disponível em telas menores.
 - **Justificativas:** reduzir deslocamento perceptivo no arraste; eliminar divergência entre laboratório e produto; tornar a união autossuficiente; impedir páginas ocultas pelo painel; evitar abertura excessivamente ampliada e enquadrar melhor a página sem remover a opção Ajustar largura.
 - **Alternativas descartadas:** manter offset original de clique; imagem sintética automática no botão; união local imediata após escolher arquivo; painel flutuante sobre a grade; manter fit-width automático como zoom inicial.
 - **Pendências e bloqueios:** homologação humana da UX corrigida e da fidelidade do PDF exportado. Fase 4 permanece bloqueada. Cloudflare Access ainda pendente, portanto staging somente com dados fictícios.
 - **Riscos conhecidos:** diferenças finas de fonte entre navegador/pdf-lib e combinações incomuns de crop/rotação ainda dependem da conferência visual humana final.
 - **Métricas / observabilidade:** nenhuma telemetria de conteúdo; união local registra somente operação técnica e bucket agregado de tamanho.
-- **Próxima ação exata:** abrir `https://a32de5a1.portal-regulacao-central-staging.pages.dev/`, confirmar zoom inicial de 114% e retestar as demais correções; depois exportar e reabrir o PDF final. Se aprovado, encerrar formalmente 3C.6/Fase 3; se houver defeito, manter 3C.6 aberta e corrigir somente o problema observado.
+- **Próxima ação exata:** abrir `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, fazer Ctrl+F5 e validar refluxo da grade no Unir, preview do arquivo selecionado, fluxo em dois estágios de Colar imagem e Delete em texto/imagem; depois exportar e reabrir o PDF final. Se aprovado, encerrar formalmente 3C.6/Fase 3; se houver defeito, manter 3C.6 aberta e corrigir somente o problema observado.
 - **Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `testing/central-docs/editor-harness.js`, `testing/browser/central-docs-editor.spec.mjs`, `testing/browser/central-docs-viewer.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md` e `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`.
 
 ## 3C.6 — liberada após reconciliação verde com main — 16/09/2026
