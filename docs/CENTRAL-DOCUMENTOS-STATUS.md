@@ -8,6 +8,34 @@
 
 Subfase atual: **3C.6 — flatten/exportação local, correções de UX pós-homologação implementadas e aguardando novo reteste humano**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
 
+## 3C.6 — ajuste adicional de zoom inicial após reteste humano — 16/09/2026
+
+Durante o novo reteste da 3C.6, o usuário comparou visualmente a abertura padrão em **174%** com **114%** e informou que **114% enquadra melhor a página**.
+
+Decisão aplicada:
+- o visualizador deixa de abrir automaticamente em **Ajustar largura** quando não existe estado anterior de visualização;
+- em desktop, a abertura inicial usa **114%**;
+- em telas menores, o zoom inicial é limitado pela largura disponível para não forçar uma escala maior do que a tela comporta;
+- o botão **Ajustar largura** continua existindo e permanece explícito: se o usuário o acionar, o modo fit volta a acompanhar a largura;
+- zoom manual e estado de zoom previamente escolhido continuam sendo preservados durante rebuilds do editor.
+
+Implementação funcional: `20e0f885bc14cea74852707a92164c58384e20e2`.
+
+Validação:
+- **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **72 casos**, com **69 passed / 3 skipped esperados**;
+- o teste de navegador agora exige **114% no desktop** na abertura inicial e no mobile exige escala inicial `<= 114%`;
+- Cloudflare Pages publicou o candidato com sucesso.
+
+Preview atualizado:
+- imutável: `https://a32de5a1.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+
+A 3C.6 **continua aberta**. Este ajuste faz parte do mesmo gate de homologação; nenhuma alteração foi feita em `main`, produção ou Google Drive.
+
+**Próxima ação exata:** retestar a abertura do visualizador no candidato acima e confirmar que o zoom inicial aparece em **114%** no desktop, sem perder o funcionamento de `+`, `−` e **Ajustar largura**; depois continuar o roteiro de homologação da 3C.6 já registrado abaixo.
+
 ## 3C.6 — correções de UX após homologação humana — 16/09/2026
 
 A primeira tentativa de homologação humana da 3C.6 **não foi aprovada**. Durante o uso do preview, o usuário identificou três problemas concretos de interação antes de conseguir concluir a comparação preview × PDF exportado:
@@ -104,22 +132,22 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Fase atual:** Fase 3 — Editor PDF essencial.
 - **Subfase atual:** 3C.6 — flatten/exportação local; correções de UX pós-homologação implementadas e aguardando novo reteste humano.
-- **Última ação concluída:** correção dos três problemas encontrados pelo usuário durante a homologação: arraste centralizado sob o ponteiro; file picker real em Adicionar imagem como página no laboratório; e painel Unir com importação local PDF/imagem + layout sem sobreposição.
+- **Última ação concluída:** além das três correções anteriores (arraste centralizado, file picker real para imagem como página e painel Unir autossuficiente/sem sobreposição), o zoom inicial foi alterado de fit-width (~174% no desktop do usuário) para **114%** por padrão.
 - **Branch atual:** `codex/central-docs-editor-superficie-unica`.
-- **Head funcional validado:** `57e132481cc9d21e4734695988cff37b7d1024c7`.
+- **Head funcional validado:** `20e0f885bc14cea74852707a92164c58384e20e2`.
 - **PR atual:** #179 — manter aberto e sem merge até o encerramento da Fase 3.
 - **Main atual conhecida:** `73997b4d108dd0392173e93640310d70dd3eeccf`, já reconciliada nesta branch pelo merge `95c660d6e74c4aafdbb5d7be4c4383ac11d46995`.
 - **Checks e testes:** 25/25 checks verdes; Playwright 72 casos = 69 passed / 3 skipped esperados; PDF.js real em Chromium e Cloudflare Pages verdes.
-- **Preview imutável do runtime corrigido:** `https://e35bf163.portal-regulacao-central-staging.pages.dev/`.
+- **Preview imutável do runtime corrigido:** `https://a32de5a1.portal-regulacao-central-staging.pages.dev/`.
 - **Alias da branch:** `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
-- **Decisões tomadas:** objeto arrastado segue o centro do ponteiro; laboratório deve reproduzir file picker real; arquivos locais no painel Unir ficam pendentes até confirmação explícita em Unir; desktop reserva faixa lateral para o painel e mobile empilha painel antes da grade.
-- **Justificativas:** reduzir deslocamento perceptivo no arraste; eliminar divergência entre laboratório e produto; tornar a união autossuficiente e previsível; impedir páginas ocultas pelo painel.
-- **Alternativas descartadas:** manter offset original de clique; imagem sintética automática como comportamento do botão; união local imediata após escolher arquivo; painel flutuante sobre a grade em telas estreitas.
+- **Decisões tomadas:** objeto arrastado segue o centro do ponteiro; laboratório usa file picker real; arquivos locais no painel Unir ficam pendentes até confirmação explícita em Unir; desktop reserva faixa lateral e mobile empilha o painel; abertura nova do visualizador usa 114% no desktop e limita a escala à largura disponível em telas menores.
+- **Justificativas:** reduzir deslocamento perceptivo no arraste; eliminar divergência entre laboratório e produto; tornar a união autossuficiente; impedir páginas ocultas pelo painel; evitar abertura excessivamente ampliada e enquadrar melhor a página sem remover a opção Ajustar largura.
+- **Alternativas descartadas:** manter offset original de clique; imagem sintética automática no botão; união local imediata após escolher arquivo; painel flutuante sobre a grade; manter fit-width automático como zoom inicial.
 - **Pendências e bloqueios:** homologação humana da UX corrigida e da fidelidade do PDF exportado. Fase 4 permanece bloqueada. Cloudflare Access ainda pendente, portanto staging somente com dados fictícios.
 - **Riscos conhecidos:** diferenças finas de fonte entre navegador/pdf-lib e combinações incomuns de crop/rotação ainda dependem da conferência visual humana final.
 - **Métricas / observabilidade:** nenhuma telemetria de conteúdo; união local registra somente operação técnica e bucket agregado de tamanho.
-- **Próxima ação exata:** retestar as três correções no preview `https://e35bf163.portal-regulacao-central-staging.pages.dev/`; depois exportar e reabrir o PDF final. Se aprovado, encerrar formalmente 3C.6/Fase 3; se houver defeito, manter 3C.6 aberta e corrigir somente o problema observado.
-- **Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `testing/central-docs/editor-harness.js`, `testing/browser/central-docs-editor.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md` e `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`.
+- **Próxima ação exata:** abrir `https://a32de5a1.portal-regulacao-central-staging.pages.dev/`, confirmar zoom inicial de 114% e retestar as demais correções; depois exportar e reabrir o PDF final. Se aprovado, encerrar formalmente 3C.6/Fase 3; se houver defeito, manter 3C.6 aberta e corrigir somente o problema observado.
+- **Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `testing/central-docs/editor-harness.js`, `testing/browser/central-docs-editor.spec.mjs`, `testing/browser/central-docs-viewer.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md` e `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`.
 
 ## 3C.6 — liberada após reconciliação verde com main — 16/09/2026
 
