@@ -56,7 +56,7 @@ test('Ferramentas mantém uma única matriz de autorização compartilhada', () 
   assert.ok(ids({ role: 'admin', emailVerified: true }).includes('social-moderation'));
 
   for (const filename of ['index.html', 'ferramentas/index.html']) {
-    assert.match(read(filename), /tools-catalog\.js\?v=20260910-2/);
+    assert.match(read(filename), /tools-catalog\.js\?v=20260916-1/);
   }
 });
 

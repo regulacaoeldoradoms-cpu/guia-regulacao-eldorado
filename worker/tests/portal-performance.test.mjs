@@ -198,6 +198,6 @@ test('login inicia o aquecimento antes de navegar e usa a marca oficial em cache
   assert.match(html, /portal-regulacao-header\.png\?v=20260910-1/);
   assert.match(html, /fetchpriority="high"/);
   assert.match(read('portal-sw.js'), /portal-regulacao-header\.png\?v=20260910-1/);
-  assert.match(html, /tools-catalog\.js\?v=20260910-2/);
+  assert.match(html, /tools-catalog\.js\?v=20260916-1/);
   assert.match(tools, /loading="lazy" decoding="async" fetchpriority="low"/);
 });

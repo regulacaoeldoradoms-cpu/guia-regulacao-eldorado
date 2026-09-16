@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0d3157">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests">
+  <title>Agenda | Portal da Regulação</title>
+  <link rel="icon" href="/assets/portal-regulacao-header_512x512.png?v=20260911-1" type="image/png">
+  <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
+  <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
+  <link rel="stylesheet" href="/css/agenda.css?v=20260916-1">
+</head>
+<body class="portal-page agenda-page">
+  <div class="portal-shell">
+    <header class="portal-topbar">
+      <div class="portal-topbar-inner">
+        <a class="portal-brand portal-brand--portal-identity" href="/">
+          <img class="portal-symbol" src="/assets/portal-regulacao-header_512x512.png?v=20260911-1" alt="Símbolo do Portal da Regulação de Saúde">
+          <div class="portal-brand-copy"><h1>Portal da Regulação de Saúde</h1><p>Agenda DigSaúde · Eldorado/MS</p></div>
+        </a>
+        <div class="portal-user">
+          <div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div>
+          <a class="portal-button ghost" href="/ferramentas/">Ferramentas</a>
+          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="portal-main agenda-main">
+      <section class="portal-hero agenda-hero">
+        <div class="portal-hero-copy">
+          <span class="portal-eyebrow">Telemedicina · Agenda</span>
+          <h2>Agendamentos do DigSaúde em uma fila operacional.</h2>
+          <p>O DigSaúde permanece como fonte oficial. Esta tela organiza somente os agendamentos sincronizados por uma sessão autorizada, com leitura individual e destaque para registros novos ou alterados.</p>
+        </div>
+        <div class="agenda-sync-state" id="agendaSyncState">Verificando sincronização…</div>
+      </section>
+
+      <div class="agenda-status" id="agendaStatus" role="status" aria-live="polite" hidden></div>
+
+      <section class="agenda-summary" aria-label="Resumo da Agenda">
+        <button class="agenda-stat is-active" type="button" data-agenda-scope="unread">
+          <span class="agenda-stat-icon" aria-hidden="true">●</span>
+          <strong id="agendaUnreadCount">0</strong>
+          <span>Novos / alterados</span>
+        </button>
+        <button class="agenda-stat" type="button" data-agenda-scope="today">
+          <span class="agenda-stat-icon" aria-hidden="true">◷</span>
+          <strong id="agendaTodayCount">0</strong>
+          <span>Hoje</span>
+        </button>
+        <button class="agenda-stat" type="button" data-agenda-scope="tomorrow">
+          <span class="agenda-stat-icon" aria-hidden="true">→</span>
+          <strong id="agendaTomorrowCount">0</strong>
+          <span>Amanhã</span>
+        </button>
+        <button class="agenda-stat" type="button" data-agenda-scope="week">
+          <span class="agenda-stat-icon" aria-hidden="true">7</span>
+          <strong id="agendaWeekCount">0</strong>
+          <span>Próximos 7 dias</span>
+        </button>
+        <button class="agenda-stat" type="button" data-agenda-scope="all">
+          <span class="agenda-stat-icon" aria-hidden="true">≡</span>
+          <strong id="agendaActiveCount">0</strong>
+          <span>Todos ativos</span>
+        </button>
+      </section>
+
+      <section class="portal-section agenda-tools" aria-labelledby="agendaToolsTitle">
+        <div class="portal-section-heading">
+          <div>
+            <h2 id="agendaToolsTitle">Acompanhamento</h2>
+            <p id="agendaLastSync">Nenhuma sincronização registrada.</p>
+          </div>
+          <a class="portal-button secondary" href="/agenda/digsaude-agenda-sync.user.js?v=20260916-3">Instalar / atualizar sincronizador</a>
+        </div>
+        <div class="agenda-toolbar">
+          <label class="agenda-search">
+            <span class="sr-only">Pesquisar agendamentos</span>
+            <input id="agendaSearch" type="search" autocomplete="off" maxlength="120" placeholder="Pesquisar paciente, especialidade ou profissional">
+          </label>
+          <select id="agendaSpecialty" aria-label="Filtrar por especialidade">
+            <option value="">Todas as especialidades</option>
+          </select>
+          <label class="agenda-checkbox"><input id="agendaIncludeInactive" type="checkbox"> Mostrar removidos da aba Agendados</label>
+          <button class="portal-button secondary" id="agendaRefresh" type="button">Atualizar</button>
+        </div>
+      </section>
+
+      <section class="portal-section agenda-list-section" aria-labelledby="agendaListTitle">
+        <div class="portal-section-heading">
+          <div><h2 id="agendaListTitle">Agendamentos</h2><p id="agendaResultCount">Carregando…</p></div>
+        </div>
+        <div class="agenda-list" id="agendaList" aria-live="polite">
+          <div class="agenda-empty">Carregando Agenda…</div>
+        </div>
+      </section>
+
+      <section class="portal-section agenda-help" aria-labelledby="agendaHelpTitle">
+        <div class="portal-section-heading"><h2 id="agendaHelpTitle">Como atualizar esta Agenda</h2></div>
+        <div class="agenda-help-body">
+          <p>O Portal não guarda senha, cookie nem token do DigSaúde. No computador autorizado, instale o sincronizador uma única vez. Depois, estando logado no DigSaúde, clique em <strong>Ativar sincronização automática</strong>. A ponte do Portal pode ser minimizada, mas deve permanecer aberta; enquanto o DigSaúde estiver aberto, a Agenda é verificada automaticamente a cada 15 minutos.</p>
+          <p>A verificação automática busca a aba Agendados em segundo plano, sem recarregar a tela em uso. Depois de ativada, o controle vira um chip discreto ⟳ no canto inferior esquerdo; passe o mouse ou clique para ver o status e forçar uma verificação imediata. Registros novos ou alterados ficam destacados até serem abertos por cada Técnico em Telemedicina.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260910-4"></script>
+  <script src="/js/tools-catalog.js?v=20260916-1"></script>
+  <script src="/js/agenda.js?v=20260916-1"></script>
+</body>
+</html>

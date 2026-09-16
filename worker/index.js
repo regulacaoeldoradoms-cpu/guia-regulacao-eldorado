@@ -11,6 +11,7 @@ import { handleCouncilRoute, isCouncilApi } from './council-access-policy.js';
 import { handleSystemReadinessRoute, isSystemReadinessApi } from './system-readiness.js';
 import { handlePushRoute, isPushApi } from './push-notifications.js';
 import { handleTelemedicineRoute, isTelemedicineApi } from './telemedicine-router-v2.js';
+import { handleAgendaRoute, isAgendaApi } from './agenda.js';
 import { handleDocumentsRoute, isDocumentsApi, isDocumentsOAuthCallback } from './documents-router.js';
 import { enforceDeveloperSeparation } from './role-migration.js';
 import {
@@ -217,6 +218,10 @@ export default {
     if (isSystemReadinessApi(url.pathname)) {
       try { return await handleSystemReadinessRoute(request, env, origin, originAllowed); }
       catch (error) { return jsonError(error?.message || 'Falha no diagnóstico técnico.', 500, origin, originAllowed); }
+    }
+    if (isAgendaApi(url.pathname)) {
+      try { return await handleAgendaRoute(request, env, origin, originAllowed); }
+      catch (error) { return jsonError(error?.message || 'Falha na Agenda.', Number(error?.status || 500), origin, originAllowed); }
     }
     if (isTelemedicineApi(url.pathname)) {
       try { return await handleTelemedicineRoute(request, env, origin, originAllowed); }
