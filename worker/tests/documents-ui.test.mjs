@@ -20,6 +20,13 @@ test('API pública do visualizador expõe a transição real do Organizar V2', (
   assert.match(viewer, /session\.root\.dataset\.organizerMode = next \? 'true' : 'false'/);
 });
 
+test('visualizador inicia em 114% sem impedir Ajustar largura', () => {
+  const viewer = read('js/document-viewer.js');
+  assert.match(viewer, /const DEFAULT_INITIAL_SCALE = 1\.14/);
+  assert.match(viewer, /Math\.min\(DEFAULT_INITIAL_SCALE, fitScale\)/);
+  assert.match(viewer, /const preserveFitScale = initialViewState\?\.fitMode === true/);
+});
+
 test('troca de modo serializa a renderização completa da miniatura e invalida geração antiga', () => {
   const viewer = read('js/document-viewer.js');
   const render = viewer.slice(viewer.indexOf('  async function renderThumbnail('), viewer.indexOf('  function installObservers('));
@@ -192,7 +199,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260916-2/);
+  assert.match(html, /document-viewer\.js\?v=20260916-3/);
   assert.match(html, /documents\.js\?v=20260916-3/);
   assert.match(html, /documents\.css\?v=20260916-2/);
 
@@ -272,7 +279,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260916-2/);
+  assert.match(html, /document-viewer\.js\?v=20260916-3/);
   assert.match(html, /documents\.js\?v=20260916-3/);
   assert.match(html, /documents\.css\?v=20260916-2/);
 
