@@ -16,6 +16,8 @@ Base atual: `main@d6d4c1600f71b3e915cb57e5ca51a12f01285072`
 
 As Fases 1, 2 e 3 estão encerradas. A Fase 4 continua aberta. As subfases 4A e 4B estão concluídas tecnicamente; a 4C está implementada e em validação final de navegador/staging antes de retomar a 4D.
 
+A **Fase 0** permanece encerrada e suas decisões de governança continuam válidas: escopo mínimo, segurança, privacidade, branches/PRs, não exposição de segredos e documentação persistente antes de avançar fases.
+
 Nenhuma escrita real no Google Drive foi habilitada nesta etapa. O feature gate `DOCUMENTS_DRIVE_WRITE_ENABLED` continua sendo a barreira de segurança para a homologação real controlada.
 
 ## 4A — preflight e conflito — concluída
@@ -139,3 +141,16 @@ Mantido:
 2. Confirmar o novo deployment do staging e retestar visualmente os cinco estados do botão.
 3. Se aprovado, marcar 4C como homologada e iniciar 4D com PDF descartável: primeiro autosync/`save_copy` controlado, depois substituição e conflito/revisão recuperável.
 4. Somente após 4D encerrar a Fase 4 e considerar merge do PR #201.
+
+## Handoff para o próximo chat
+
+Continuar a partir da branch `codex/central-docs-drive-sync-phase4` e do PR #201; não reiniciar a Fase 4. Antes de qualquer mudança, conferir `main`, este status, `docs/CENTRAL-DOCUMENTOS-FASE-4.md`, o estado dos workflows e o deployment mais recente do Cloudflare Pages.
+
+Estado funcional esperado ao retomar:
+- autosync apenas quando a `revision` do editor muda;
+- 1 segundo de ociosidade antes do envio;
+- sequência visual `normal → pending → syncing → success (1 s) → normal`;
+- falha usa `Drive_falha.png` e botão força retry;
+- sem alteração, sem upload;
+- escrita real ainda protegida por `DOCUMENTS_DRIVE_WRITE_ENABLED`;
+- 4D ainda não executada.
