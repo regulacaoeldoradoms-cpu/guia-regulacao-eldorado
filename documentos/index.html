@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260916-9">
+  <link rel="stylesheet" href="/css/documents.css?v=20260916-10">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -132,6 +132,7 @@
                 <input id="editorOverlayImageInput" type="file" accept="image/*" hidden>
                 <button class="documents-editor-tool documents-tool-icon documents-tool-icon-draw" id="editorDrawButton" type="button" title="Desenhar sobre a página" aria-label="Desenhar sobre a página" aria-pressed="false"></button>
                 <span class="documents-editor-tool-spacer"></span>
+                <button id="editorSyncButton" class="documents-editor-tool documents-art-button documents-art-sync" type="button" title="Sincronizar com Google Drive" aria-label="Sincronizar com Google Drive" hidden></button>
                 <button id="editorExportButton" class="documents-editor-tool documents-art-button documents-art-export" type="button" title="Exportar PDF final localmente" aria-label="Exportar PDF final localmente"></button>
                 <button id="editorPrintButton" class="documents-editor-tool documents-art-button documents-art-print" type="button" title="Imprimir PDF final (Ctrl+P)" aria-label="Imprimir PDF final"></button>
                 <button id="editorExitButton" class="documents-editor-tool documents-art-button documents-art-close" type="button" title="Sair do editor" aria-label="Sair do editor"></button>
@@ -202,6 +203,30 @@
                 </label>
                 <button class="portal-button primary" id="editorMergeApplyButton" type="button" disabled>Unir</button>
               </aside>
+              <aside class="documents-editor-panel documents-sync-panel" id="editorSyncPanel" hidden aria-label="Sincronizar PDF com Google Drive">
+                <div class="documents-editor-panel-head">
+                  <strong>Sincronizar com Google Drive</strong>
+                  <button class="documents-editor-panel-close documents-art-button documents-art-close" id="editorSyncCancelButton" type="button" aria-label="Fechar sincronização"></button>
+                </div>
+                <p>O Portal só confirma o salvamento depois da resposta final do Google Drive.</p>
+                <div class="documents-sync-options" role="radiogroup" aria-label="Modo de salvamento">
+                  <label class="documents-sync-option">
+                    <input type="radio" name="editorSyncOperation" value="save_copy" checked>
+                    <span><strong>Salvar como novo</strong><small>Mantém o arquivo original intacto.</small></span>
+                  </label>
+                  <label class="documents-sync-option">
+                    <input type="radio" name="editorSyncOperation" value="replace_pdf">
+                    <span><strong>Substituir original</strong><small>Reconfere a versão e preserva a revisão anterior antes de substituir.</small></span>
+                  </label>
+                </div>
+                <label class="documents-editor-field" id="editorSyncCopyNameField">
+                  <span>Nome do novo PDF</span>
+                  <input id="editorSyncCopyName" type="text" maxlength="300" autocomplete="off">
+                </label>
+                <div class="documents-sync-warning" id="editorSyncWarning" role="note"></div>
+                <div class="documents-sync-progress" id="editorSyncProgress" aria-live="polite"></div>
+                <button class="portal-button primary" id="editorSyncApplyButton" type="button">Sincronizar</button>
+              </aside>
             </div>
             <div class="documents-pdf-layout">
               <nav class="documents-pdf-thumbnails" id="pdfThumbnailRail" aria-label="Miniaturas das páginas"></nav>
@@ -222,6 +247,6 @@
   <script src="/js/document-cache.js?v=20260912-1"></script>
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-viewer.js?v=20260916-3"></script>
-  <script src="/js/documents.js?v=20260916-10"></script>
+  <script src="/js/documents.js?v=20260916-11"></script>
 </body>
 </html>
