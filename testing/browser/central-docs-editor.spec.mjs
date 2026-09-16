@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 
+const ONE_PIXEL_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z6K0AAAAASUVORK5CYII=', 'base64');
+
 function monitorPage(page) {
   const consoleErrors = [];
   const requests = [];
@@ -220,7 +222,14 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await enterEditor(page);
     await page.evaluate(() => { window.__centralDocsRoot = document.getElementById('pdfRoot'); });
 
+    const imageChooserPromise = page.waitForEvent('filechooser');
     await page.locator('#editorAddImage').click();
+    const imageChooser = await imageChooserPromise;
+    await imageChooser.setFiles({
+      name: 'imagem-sintetica.png',
+      mimeType: 'image/png',
+      buffer: ONE_PIXEL_PNG
+    });
     await waitForOrder(page, '0:0,0:1,0:2,1:0');
     await expect(page.locator('.portal-pdf-page')).toHaveCount(4);
     await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
@@ -247,6 +256,35 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     expect(await page.evaluate(() => window.__centralDocsRoot === document.getElementById('pdfRoot'))).toBe(true);
     finishMonitoring();
   });
+
+  test('painel Unir aceita PDF/imagem local e não deixa a grade escondida sob o painel', async ({ page }) => {
+    const finishMonitoring = monitorPage(page);
+    await openLab(page);
+    await enterEditor(page);
+
+    await page.locator('#editorMerge').click();
+    await expect(page.locator('#editorMergePanel')).toBeVisible();
+    await expect(page.locator('#editorMergeFileButton')).toBeVisible();
+
+    const panel = await page.locator('#editorMergePanel').boundingBox();
+    const firstThumb = await page.locator('.portal-pdf-thumb-wrap').first().boundingBox();
+    expect(firstThumb.x + firstThumb.width).toBeLessThanOrEqual(panel.x + 2);
+
+    const chooserPromise = page.waitForEvent('filechooser');
+    await page.locator('#editorMergeFileButton').click();
+    const chooser = await chooserPromise;
+    await chooser.setFiles({
+      name: 'imagem-para-unir.png',
+      mimeType: 'image/png',
+      buffer: ONE_PIXEL_PNG
+    });
+
+    await waitForOrder(page, '0:0,0:1,0:2,1:0');
+    await expect(page.locator('#editorMergePanel')).toBeHidden();
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
+    finishMonitoring();
+  });
+
   test('preserva página e zoom vivos ao atualizar e após rebuild de edição', async ({ page }) => {
     const finishMonitoring = monitorPage(page);
     await openLab(page);
