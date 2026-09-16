@@ -79,6 +79,9 @@
     viewState: null,
     sequence: 0,
     flattenSeeded: false,
+    finalPdfCacheSession: null,
+    finalPdfCacheRevision: -1,
+    finalPdfCacheBlob: null,
     operation: Promise.resolve()
   };
 
@@ -938,12 +941,32 @@
     return result;
   }
 
+  async function finalPdfBlobForSession(session) {
+    if (!session || typeof editor?.buildFlattenedBlob !== 'function') return null;
+    const revision = Number(session.revision || 0);
+    if (
+      state.finalPdfCacheSession === session
+      && state.finalPdfCacheRevision === revision
+      && state.finalPdfCacheBlob instanceof Blob
+    ) {
+      return state.finalPdfCacheBlob;
+    }
+    const blob = await editor.buildFlattenedBlob(session);
+    if (session === state.session && Number(session.revision || 0) === revision) {
+      state.finalPdfCacheSession = session;
+      state.finalPdfCacheRevision = revision;
+      state.finalPdfCacheBlob = blob;
+    }
+    return blob;
+  }
+
   async function exportFlattenedPdf() {
     if (!state.session || typeof editor?.buildFlattenedBlob !== 'function') return false;
     setBusy(true, 'Gerando PDF final sintético…');
     let url = '';
     try {
-      const blob = await editor.buildFlattenedBlob(state.session);
+      const blob = await finalPdfBlobForSession(state.session);
+      if (!(blob instanceof Blob)) return false;
       url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -968,20 +991,26 @@
     }
   }
 
-
-  function shortcutIsTypingTarget(target) {
-    if (!(target instanceof Element)) return false;
-    if (target.closest('textarea, select, [contenteditable="true"], [role="textbox"]')) return true;
-    const input = target.closest('input');
-    if (!input) return false;
-    const type = String(input.getAttribute('type') || 'text').toLowerCase();
-    const nonEditingTypes = new Set(['file', 'hidden', 'button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color']);
-    return !nonEditingTypes.has(type);
+  function ensurePrintFrame() {
+    let frame = document.querySelector('iframe.documents-print-frame[data-central-print-frame="true"]');
+    if (frame) return frame;
+    frame = document.createElement('iframe');
+    frame.className = 'documents-print-frame';
+    frame.dataset.centralPrintFrame = 'true';
+    frame.title = 'Área temporária de impressão do PDF final sintético';
+    frame.setAttribute('aria-hidden', 'true');
+    frame.tabIndex = -1;
+    document.body.appendChild(frame);
+    return frame;
   }
 
-  async function renderPdfBlobForPrint(blob, printWindow) {
-    if (!(blob instanceof Blob) || !printWindow) return false;
+  async function renderPdfBlobForPrint(blob, frame) {
+    if (!(blob instanceof Blob) || !(frame instanceof HTMLIFrameElement)) return false;
     const pdfjs = await viewer.loadPdfJs();
+    const printWindow = frame.contentWindow;
+    const doc = frame.contentDocument;
+    if (!printWindow || !doc) throw new Error('Não foi possível preparar a área de impressão.');
+
     let loadingTask = null;
     let documentPdf = null;
     try {
@@ -993,51 +1022,56 @@
       });
       documentPdf = await loadingTask.promise;
 
-      const doc = printWindow.document;
       doc.open();
       doc.write('<!doctype html><html><head><meta charset="utf-8"><title>Imprimir PDF final sintético</title><style>'
         + '@page{margin:0;}html,body{margin:0;padding:0;background:#fff;}'
-        + '.print-status{font:600 14px system-ui,sans-serif;padding:12px 16px;color:#294a63;background:#f2f7fa;}'
         + '.print-pages{margin:0;padding:0;}'
         + '.print-sheet{display:flex;align-items:center;justify-content:center;margin:0 auto;background:#fff;break-after:page;page-break-after:always;overflow:hidden;}'
         + '.print-sheet:last-child{break-after:auto;page-break-after:auto;}'
         + '.print-sheet canvas{display:block;width:100%;height:100%;}'
-        + '@media print{.print-status{display:none!important}.print-sheet{margin:0!important}}'
-        + '</style></head><body><div class="print-status">Preparando páginas para impressão…</div><main class="print-pages"></main></body></html>');
+        + '</style></head><body><main class="print-pages"></main></body></html>');
       doc.close();
 
       const container = doc.querySelector('.print-pages');
-      if (!container) throw new Error('Não foi possível preparar a área de impressão.');
+      if (!container) throw new Error('Não foi possível preparar as páginas para impressão.');
 
-      const maxPixels = 8_000_000;
-      for (let pageNumber = 1; pageNumber <= documentPdf.numPages; pageNumber += 1) {
-        const page = await documentPdf.getPage(pageNumber);
-        const base = page.getViewport({ scale: 1 });
-        const basePixels = Math.max(1, base.width * base.height);
-        const renderScale = Math.max(1, Math.min(2, Math.sqrt(maxPixels / basePixels)));
-        const viewport = page.getViewport({ scale: renderScale });
+      const jobs = Array.from({ length: documentPdf.numPages }, (_, index) => index + 1);
+      const concurrency = Math.min(3, Math.max(1, jobs.length));
+      let cursor = 0;
 
-        const sheet = doc.createElement('section');
-        sheet.className = 'print-sheet';
-        sheet.style.width = base.width + 'pt';
-        sheet.style.height = base.height + 'pt';
+      async function renderNext() {
+        while (cursor < jobs.length) {
+          const pageNumber = jobs[cursor];
+          cursor += 1;
+          const page = await documentPdf.getPage(pageNumber);
+          const base = page.getViewport({ scale: 1 });
+          const basePixels = Math.max(1, base.width * base.height);
+          const renderScale = Math.max(1, Math.min(1.5, Math.sqrt(4_000_000 / basePixels)));
+          const viewport = page.getViewport({ scale: renderScale });
 
-        const canvas = doc.createElement('canvas');
-        canvas.width = Math.max(1, Math.round(viewport.width));
-        canvas.height = Math.max(1, Math.round(viewport.height));
-        sheet.appendChild(canvas);
-        container.appendChild(sheet);
+          const sheet = doc.createElement('section');
+          sheet.className = 'print-sheet';
+          sheet.dataset.printPage = String(pageNumber);
+          sheet.style.width = base.width + 'pt';
+          sheet.style.height = base.height + 'pt';
 
-        await page.render({
-          canvas,
-          viewport,
-          background: '#ffffff'
-        }).promise;
-        page.cleanup?.();
+          const canvas = doc.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(viewport.width));
+          canvas.height = Math.max(1, Math.round(viewport.height));
+          sheet.appendChild(canvas);
+          container.appendChild(sheet);
+
+          await page.render({ canvas, viewport, background: '#ffffff' }).promise;
+          page.cleanup?.();
+        }
       }
 
-      const status = doc.querySelector('.print-status');
-      if (status) status.textContent = 'PDF pronto para impressão.';
+      await Promise.all(Array.from({ length: concurrency }, () => renderNext()));
+      [...container.querySelectorAll('.print-sheet')]
+        .sort((a, b) => Number(a.dataset.printPage || 0) - Number(b.dataset.printPage || 0))
+        .forEach((sheet) => container.appendChild(sheet));
+
+      root.dataset.printRenderedPages = String(documentPdf.numPages);
       await new Promise((resolve) => printWindow.requestAnimationFrame(() => printWindow.requestAnimationFrame(resolve)));
       return true;
     } finally {
@@ -1048,44 +1082,22 @@
 
   async function printFlattenedPdf() {
     if (!state.session || typeof editor?.buildFlattenedBlob !== 'function') return false;
-
-    const automated = navigator.webdriver === true;
-    const printWindow = automated ? null : window.open('about:blank', '_blank');
-    if (!automated && !printWindow) {
-      elements.editorStatus.textContent = 'O navegador bloqueou a janela de impressão. Permita pop-ups e tente novamente.';
-      return false;
-    }
-
     setBusy(true, 'Preparando impressão do PDF final sintético…');
     try {
-      const blob = await editor.buildFlattenedBlob(state.session);
-
-      if (automated) {
-        root.dataset.printState = 'requested';
-        root.dataset.printSize = String(blob.size);
-        elements.editorStatus.textContent = 'Impressão sintética validada em modo automatizado.';
-        return true;
-      }
-
-      await renderPdfBlobForPrint(blob, printWindow);
+      const blob = await finalPdfBlobForSession(state.session);
+      if (!(blob instanceof Blob)) return false;
+      const frame = ensurePrintFrame();
+      await renderPdfBlobForPrint(blob, frame);
       root.dataset.printState = 'requested';
       root.dataset.printSize = String(blob.size);
-      try {
+      elements.editorStatus.textContent = 'Impressão do PDF final sintético preparada no mesmo editor.';
+      if (!navigator.webdriver) {
+        const printWindow = frame.contentWindow;
+        if (!printWindow) throw new Error('Não foi possível abrir a caixa de impressão.');
         printWindow.focus();
-        printWindow.addEventListener('afterprint', () => {
-          try { printWindow.close(); } catch (_) {}
-        }, { once: true });
         printWindow.print();
-      } catch (error) {
-        try { printWindow.close(); } catch (_) {}
-        throw error;
       }
-
-      elements.editorStatus.textContent = 'Impressão do PDF final sintético aberta.';
       return true;
-    } catch (error) {
-      try { printWindow?.close?.(); } catch (_) {}
-      throw error;
     } finally {
       setBusy(false);
     }
@@ -1144,6 +1156,9 @@
     viewer.setEditorObjects?.([], { mode: 'none', selectedObjectId: '' });
     viewer.setEditorCrops?.([], { mode: 'none' });
     viewer.setEditorStrokes?.([], { mode: 'none' });
+    state.finalPdfCacheSession = null;
+    state.finalPdfCacheRevision = -1;
+    state.finalPdfCacheBlob = null;
     state.session = null;
     state.merging = false;
     state.mode = 'readonly';
