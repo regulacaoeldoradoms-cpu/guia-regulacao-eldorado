@@ -650,6 +650,8 @@
     if (els.editorObjectDelete) els.editorObjectDelete.disabled = busy || !selectedEditorObject();
     els.editorPreview.disabled = busy || !session;
     if (els.editorExport) els.editorExport.disabled = busy || !session || typeof editor?.buildFlattenedBlob !== 'function';
+    if (els.editorMergeLocal) els.editorMergeLocal.disabled = busy || !session;
+    if (els.editorMergeLocalInput) els.editorMergeLocalInput.disabled = busy || !session;
     if (els.editorMergeApply) els.editorMergeApply.disabled = busy || !session || !state.pendingMergeItem;
     if (els.editorMergeCancel) els.editorMergeCancel.disabled = busy || !session;
   }
