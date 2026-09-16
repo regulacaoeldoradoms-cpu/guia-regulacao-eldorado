@@ -192,6 +192,18 @@
       }
       session.objectWindowHandlers = null;
     }
+    if (session.drawHandlers) {
+      for (const [type, handler] of Object.entries(session.drawHandlers)) {
+        try { session.pagesRoot?.removeEventListener(type, handler, type === 'pointerdown'); } catch (_) {}
+      }
+      session.drawHandlers = null;
+    }
+    if (session.drawWindowHandlers) {
+      for (const [type, handler] of Object.entries(session.drawWindowHandlers)) {
+        try { window.removeEventListener(type, handler, true); } catch (_) {}
+      }
+      session.drawWindowHandlers = null;
+    }
     if (session.cropHandlers) {
       for (const [type, handler] of Object.entries(session.cropHandlers)) {
         try { session.pagesRoot?.removeEventListener(type, handler, type === 'pointerdown'); } catch (_) {}
@@ -576,6 +588,11 @@
     loading.className = 'portal-pdf-page-loading';
     loading.textContent = 'Carregando página…';
 
+    const drawLayer = document.createElement('div');
+    drawLayer.className = 'portal-pdf-draw-layer';
+    drawLayer.dataset.pageNumber = String(pageNumber);
+    drawLayer.setAttribute('aria-label', `Desenhos da página ${pageNumber}`);
+
     const objectLayer = document.createElement('div');
     objectLayer.className = 'portal-pdf-object-layer';
     objectLayer.dataset.pageNumber = String(pageNumber);
@@ -586,7 +603,7 @@
     cropLayer.dataset.pageNumber = String(pageNumber);
     cropLayer.setAttribute('aria-label', `Recorte da página ${pageNumber}`);
 
-    article.append(badge, canvas, loading, objectLayer, cropLayer);
+    article.append(badge, canvas, loading, drawLayer, objectLayer, cropLayer);
     session.pagesRoot.appendChild(article);
 
     const record = {
@@ -594,6 +611,7 @@
       container: article,
       canvas,
       loading,
+      drawLayer,
       objectLayer,
       cropLayer,
       page: null,
@@ -723,7 +741,7 @@
   }
 
   function applyPageCropViewport(record, crop) {
-    if (!record?.container || !record.canvas || !record.objectLayer) return;
+    if (!record?.container || !record.canvas || !record.objectLayer || !record.drawLayer) return;
     const fullWidth = Math.max(1, Number(record.fullPageWidth || 0));
     const fullHeight = Math.max(1, Number(record.fullPageHeight || 0));
     const rect = normalizeCropRect(crop);
@@ -752,6 +770,7 @@
         record.container.style.aspectRatio = `${fullWidth} / ${fullHeight}`;
       }
       resetContent(record.canvas, { canvas: true });
+      resetContent(record.drawLayer);
       resetContent(record.objectLayer);
       return;
     }
@@ -765,7 +784,7 @@
     const width = 100 / rect.width;
     const height = 100 / rect.height;
 
-    for (const element of [record.canvas, record.objectLayer]) {
+    for (const element of [record.canvas, record.drawLayer, record.objectLayer]) {
       element.style.position = 'absolute';
       element.style.inset = 'auto';
       element.style.left = `${left}%`;
@@ -1121,6 +1140,255 @@
   function normalizeObjectColor(value, fallback = '#111111') {
     const color = String(value || '').trim().toLowerCase();
     return /^#[0-9a-f]{6}$/.test(color) ? color : fallback;
+  }
+
+  function normalizeEditorStroke(stroke) {
+    const points = Array.isArray(stroke?.points)
+      ? stroke.points.map((point) => ({ x: clamp01(point?.x), y: clamp01(point?.y) }))
+        .filter((point, index, source) => !index || Math.abs(point.x - source[index - 1].x) > 0.00001 || Math.abs(point.y - source[index - 1].y) > 0.00001)
+      : [];
+    if (!stroke?.id || !(Number(stroke?.displayPage) > 0) || !points.length) return null;
+    return {
+      ...stroke,
+      id: String(stroke.id),
+      displayPage: Number(stroke.displayPage),
+      color: normalizeObjectColor(stroke.color, '#111111'),
+      width: Math.min(0.05, Math.max(0.001, Number(stroke.width) || 0.006)),
+      points
+    };
+  }
+
+  function strokePathData(points) {
+    const normalized = Array.isArray(points) ? points : [];
+    if (!normalized.length) return '';
+    return normalized.map((point, index) => {
+      const x = Math.round(clamp01(point.x) * 1000);
+      const y = Math.round(clamp01(point.y) * 1000);
+      return `${index ? 'L' : 'M'} ${x} ${y}`;
+    }).join(' ');
+  }
+
+  function createStrokeSvg(layer) {
+    let svg = layer?.querySelector?.('.portal-pdf-draw-svg');
+    if (svg) return svg;
+    svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('portal-pdf-draw-svg');
+    svg.setAttribute('viewBox', '0 0 1000 1000');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('aria-hidden', 'true');
+    layer?.appendChild(svg);
+    return svg;
+  }
+
+  function createStrokePath(svg, stroke, className = '') {
+    if (!svg || !stroke) return null;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.classList.add('portal-pdf-draw-path');
+    if (className) path.classList.add(className);
+    if (stroke.id) path.dataset.strokeId = String(stroke.id);
+    path.setAttribute('d', strokePathData(stroke.points));
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', normalizeObjectColor(stroke.color, '#111111'));
+    path.setAttribute('stroke-width', String(Math.max(1, Number(stroke.width || 0.006) * 1000)));
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.appendChild(path);
+    return path;
+  }
+
+  function renderEditorStrokesForPage(session, pageNumber) {
+    const record = session.pages.get(Number(pageNumber));
+    const layer = record?.drawLayer;
+    if (!layer) return;
+    const mode = String(session.drawMode || 'none');
+    layer.dataset.drawMode = mode;
+    layer.replaceChildren();
+    const svg = createStrokeSvg(layer);
+    for (const stroke of session.editorStrokes || []) {
+      if (Number(stroke.displayPage) !== Number(pageNumber)) continue;
+      const path = createStrokePath(svg, stroke);
+      if (path && session.eraseHits?.has?.(stroke.id)) path.classList.add('is-erasing');
+    }
+  }
+
+  function renderEditorStrokes(session) {
+    if (!isCurrentSession(session)) return false;
+    const pageCount = session.document?.numPages || 0;
+    for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+      renderEditorStrokesForPage(session, pageNumber);
+    }
+    session.root.dataset.drawMode = String(session.drawMode || 'none');
+    session.root.dataset.strokeCount = String((session.editorStrokes || []).length);
+    return true;
+  }
+
+  function normalizedPointInLayer(layer, clientX, clientY) {
+    const rect = layer?.getBoundingClientRect?.();
+    if (!rect || !(rect.width > 0) || !(rect.height > 0)) return null;
+    return {
+      x: clamp01((clientX - rect.left) / rect.width),
+      y: clamp01((clientY - rect.top) / rect.height),
+      rect
+    };
+  }
+
+  function pointSegmentDistance(point, a, b) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    if (Math.abs(dx) < 1e-9 && Math.abs(dy) < 1e-9) return Math.hypot(point.x - a.x, point.y - a.y);
+    const t = Math.max(0, Math.min(1, (((point.x - a.x) * dx) + ((point.y - a.y) * dy)) / ((dx * dx) + (dy * dy))));
+    const px = a.x + (t * dx);
+    const py = a.y + (t * dy);
+    return Math.hypot(point.x - px, point.y - py);
+  }
+
+  function strokeHitsPoint(stroke, point, radius) {
+    const points = Array.isArray(stroke?.points) ? stroke.points : [];
+    if (!points.length) return false;
+    const threshold = Math.max(radius, Number(stroke.width || 0.006) * 0.7);
+    if (points.length === 1) return Math.hypot(point.x - points[0].x, point.y - points[0].y) <= threshold;
+    for (let index = 1; index < points.length; index += 1) {
+      if (pointSegmentDistance(point, points[index - 1], points[index]) <= threshold) return true;
+    }
+    return false;
+  }
+
+  function markEraseHits(session, pageNumber, point) {
+    const radius = Math.max(0.012, Number(session.drawWidth || 0.006) * 2.4);
+    let changed = false;
+    for (const stroke of session.editorStrokes || []) {
+      if (Number(stroke.displayPage) !== Number(pageNumber) || session.eraseHits.has(stroke.id)) continue;
+      if (!strokeHitsPoint(stroke, point, radius)) continue;
+      session.eraseHits.add(stroke.id);
+      changed = true;
+    }
+    if (changed) {
+      const layer = session.pages.get(Number(pageNumber))?.drawLayer;
+      for (const id of session.eraseHits) {
+        layer?.querySelector?.(`[data-stroke-id="${CSS.escape(id)}"]`)?.classList.add('is-erasing');
+      }
+    }
+    return changed;
+  }
+
+  function installDrawHandlers(session) {
+    if (session.drawHandlers) return;
+    const pagesRoot = session.pagesRoot;
+
+    const pointerdown = (event) => {
+      if (!isCurrentSession(session) || session.organizerMode || !['draw', 'erase'].includes(String(session.drawMode || 'none'))) return;
+      const layer = event.target.closest?.('.portal-pdf-draw-layer');
+      if (!layer) return;
+      const pageNumber = Number(layer.dataset.pageNumber || 0);
+      const point = normalizedPointInLayer(layer, event.clientX, event.clientY);
+      if (!(pageNumber > 0) || !point) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      session.eraseHits = new Set();
+      session.drawGesture = {
+        pointerId: event.pointerId,
+        origin: event.target,
+        pageNumber,
+        pageIndex: pageNumber - 1,
+        kind: session.drawMode,
+        points: [{ x: point.x, y: point.y }],
+        path: null
+      };
+
+      if (session.drawMode === 'draw') {
+        const svg = createStrokeSvg(layer);
+        session.drawGesture.path = createStrokePath(svg, {
+          id: '',
+          color: session.drawColor,
+          width: session.drawWidth,
+          points: session.drawGesture.points
+        }, 'is-draft');
+      } else {
+        markEraseHits(session, pageNumber, point);
+      }
+
+      try { event.target.setPointerCapture?.(event.pointerId); } catch (_) {}
+      session.root.dataset.drawGesture = session.drawMode;
+    };
+
+    const pointermove = (event) => {
+      const gesture = session.drawGesture;
+      if (!gesture || !isCurrentSession(session) || (event.pointerId != null && gesture.pointerId !== event.pointerId)) return;
+      const layer = session.pages.get(Number(gesture.pageNumber))?.drawLayer;
+      const point = normalizedPointInLayer(layer, event.clientX, event.clientY);
+      if (!point) return;
+      event.preventDefault();
+
+      const previous = gesture.points[gesture.points.length - 1];
+      if (previous && Math.hypot(point.x - previous.x, point.y - previous.y) < 0.0015) return;
+      gesture.points.push({ x: point.x, y: point.y });
+      if (gesture.points.length > 12000) gesture.points.shift();
+
+      if (gesture.kind === 'draw') {
+        gesture.path?.setAttribute?.('d', strokePathData(gesture.points));
+      } else {
+        if (previous) {
+          markEraseHits(session, gesture.pageNumber, {
+            x: (previous.x + point.x) / 2,
+            y: (previous.y + point.y) / 2
+          });
+        }
+        markEraseHits(session, gesture.pageNumber, point);
+      }
+    };
+
+    const finish = (event) => {
+      const gesture = session.drawGesture;
+      if (!gesture || (event.pointerId != null && gesture.pointerId !== event.pointerId)) return;
+      try { gesture.origin?.releasePointerCapture?.(gesture.pointerId); } catch (_) {}
+      session.drawGesture = null;
+      session.root.dataset.drawGesture = '';
+
+      if (gesture.kind === 'draw') {
+        gesture.path?.remove?.();
+        if (gesture.points.length) {
+          session.onStrokeCommit?.(gesture.pageIndex, {
+            color: session.drawColor,
+            width: session.drawWidth,
+            points: gesture.points.map((point) => ({ ...point }))
+          });
+        }
+      } else {
+        const ids = [...session.eraseHits];
+        session.eraseHits.clear();
+        if (ids.length) session.onEraseCommit?.(ids);
+        else renderEditorStrokesForPage(session, gesture.pageNumber);
+      }
+    };
+
+    session.drawHandlers = { pointerdown };
+    pagesRoot.addEventListener('pointerdown', pointerdown, true);
+    session.drawWindowHandlers = { pointermove, pointerup: finish, pointercancel: finish };
+    for (const [type, handler] of Object.entries(session.drawWindowHandlers)) {
+      window.addEventListener(type, handler, { capture: true, passive: type !== 'pointermove' });
+    }
+  }
+
+  function setEditorStrokes(strokes = [], options = {}) {
+    const session = active;
+    if (!session || session.closed) return false;
+    session.editorStrokes = Array.isArray(strokes)
+      ? strokes.map(normalizeEditorStroke).filter(Boolean)
+      : [];
+    const requestedMode = String(options.mode || 'none');
+    session.drawMode = ['draw', 'erase'].includes(requestedMode) ? requestedMode : 'none';
+    session.drawColor = normalizeObjectColor(options.color, session.drawColor || '#111111');
+    session.drawWidth = Math.min(0.05, Math.max(0.001, Number(options.width) || session.drawWidth || 0.006));
+    session.onStrokeCommit = typeof options.onStrokeCommit === 'function' ? options.onStrokeCommit : session.onStrokeCommit;
+    session.onEraseCommit = typeof options.onEraseCommit === 'function' ? options.onEraseCommit : session.onEraseCommit;
+    if (session.drawMode === 'none') {
+      session.drawGesture = null;
+      session.eraseHits?.clear?.();
+    }
+    installDrawHandlers(session);
+    return renderEditorStrokes(session);
   }
 
   function normalizeColorPalette(value) {
@@ -2682,6 +2950,16 @@
       touchDrag: null,
       suppressThumbnailClickUntil: 0,
       editorObjects: [],
+      editorStrokes: [],
+      drawMode: 'none',
+      drawColor: '#111111',
+      drawWidth: 0.006,
+      drawGesture: null,
+      drawHandlers: null,
+      drawWindowHandlers: null,
+      eraseHits: new Set(),
+      onStrokeCommit: null,
+      onEraseCommit: null,
       objectMode: 'none',
       selectedObjectId: '',
       editingTextId: '',
@@ -2911,8 +3189,9 @@
     setOrganizerMode,
     setEditorObjects,
     setEditorCrops,
+    setEditorStrokes,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2s`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-drawing-v1`
   });
 })();
