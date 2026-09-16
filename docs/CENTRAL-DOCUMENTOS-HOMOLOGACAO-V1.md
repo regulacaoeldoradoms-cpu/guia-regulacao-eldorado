@@ -405,3 +405,54 @@ Roteiro humano final da 3C.4:
 10. se possível, repetir confirmação/cancelamento em celular físico.
 
 Aceite humano desse roteiro encerra a 3C.4 e libera **3C.5 — Desenhar/Borracha**.
+
+## Aceite humano final da 3C.4 e liberação da 3C.5 — 16/09/2026
+
+O usuário aprovou explicitamente o fluxo final de **Recortar** no staging sintético.
+
+Aceite confirmado:
+- ausência de recorte predefinido;
+- seleção inicial provisória;
+- botões **Confirmar recorte** e **Cancelar**;
+- cancelar não altera histórico;
+- confirmar aplica visualmente somente a área mantida;
+- **Ajustar** reabre o crop confirmado como draft;
+- cancelamento de ajuste restaura o crop anterior;
+- limite de 1 crop por página;
+- Undo/Redo sobre estado confirmado.
+
+Evidência técnica associada:
+- runtime funcional: `0c228c3fe5b6a50a3bd6cdcdd603574a61568bca`;
+- head documental anterior ao aceite: `17e42734a190253589d3cadec1bca41128cd2d5b`;
+- 25/25 checks verdes;
+- PR #179 aberto, mergeável e sem merge;
+- nenhuma alteração de produção, `main` ou Google Drive.
+
+Resultado:
+- **3C.4 encerrada**;
+- **3C.5 — Desenhar/Borracha liberada**.
+
+Critérios de implementação/homologação da 3C.5:
+1. traço livre renderizado como overlay vetorial local;
+2. cada traço ligado ao `pageId`;
+3. cor e espessura persistidas por traço;
+4. um gesto contínuo gera uma única entrada de Undo/Redo;
+5. borracha remove somente traços produzidos pelo modo Desenhar;
+6. borracha não toca no conteúdo original do PDF, textos, imagens overlay ou outros objetos;
+7. reorganizar/rotacionar/duplicar/excluir páginas preserva a semântica dos traços;
+8. duplicação cria novos IDs para os traços clonados;
+9. interação validada com mouse e touch;
+10. nenhuma telemetria contém coordenadas ou conteúdo do desenho;
+11. nenhum flatten/export antes da 3C.6.
+
+Roteiro humano previsto para o preview da 3C.5:
+- desenhar traço com mouse;
+- alterar cor e espessura;
+- desenhar em pelo menos duas páginas;
+- testar Undo/Redo por traço;
+- apagar apenas um traço com a borracha;
+- confirmar que o PDF original não é apagado;
+- reorganizar/girar página com desenho e confirmar acompanhamento;
+- repetir no touch quando possível.
+
+Somente após esse roteiro e checks verdes a 3C.5 poderá ser encerrada e a 3C.6 liberada.
