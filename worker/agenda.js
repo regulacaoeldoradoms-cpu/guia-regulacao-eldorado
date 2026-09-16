@@ -3,7 +3,7 @@
 import { validatePortalSession } from './auth-management-v2.js';
 import {
   firebaseConfigured,
-  firestoreCreate,
+  firestoreCommit,
   firestoreGet,
   firestoreList,
   firestorePatch
@@ -13,6 +13,7 @@ import { telemedicineAccessFor } from './telemedicine-access.js';
 const COLLECTION = 'telemedicine_digsaude_agenda';
 const MAX_RECORDS_PER_SYNC = 250;
 const MAX_LIST_PAGES = 20;
+const FIRESTORE_COMMIT_CHUNK = 450;
 
 function responseHeaders(origin, allowed = true) {
   const headers = {
@@ -161,6 +162,12 @@ function agendaSort(a, b) {
   return String(b.lastChangedAt || '').localeCompare(String(a.lastChangedAt || ''));
 }
 
+async function commitWrites(env, writes) {
+  for (let index = 0; index < writes.length; index += FIRESTORE_COMMIT_CHUNK) {
+    await firestoreCommit(env, writes.slice(index, index + FIRESTORE_COMMIT_CHUNK));
+  }
+}
+
 async function syncRecords(env, input, user) {
   const rows = Array.isArray(input?.records) ? input.records : [];
   if (!rows.length) throw Object.assign(new Error('Nenhum agendamento foi recebido.'), { status: 400 });
@@ -176,38 +183,59 @@ async function syncRecords(env, input, user) {
   }
 
   const now = new Date().toISOString();
+  const existingRecords = await listAll(env);
+  const existingBySourceId = new Map();
+  for (const existing of existingRecords) {
+    const sourceId = cleanSourceId(existing.sourceId);
+    if (sourceId) existingBySourceId.set(sourceId, existing);
+  }
+
+  const writes = [];
   let created = 0;
   let changed = 0;
   let unchanged = 0;
 
   for (const record of normalized) {
     const documentId = await digestId(record.sourceId);
-    const existing = await firestoreGet(env, `${COLLECTION}/${documentId}`);
+    const existing = existingBySourceId.get(record.sourceId) || null;
+
     if (!existing) {
-      await firestoreCreate(env, COLLECTION, documentId, {
-        ...record,
-        firstSeenAt: now,
-        lastSeenAt: now,
-        lastChangedAt: now,
-        active: true,
-        removedAt: '',
-        readBy: {},
-        lastSyncedBy: clean(user.username, 80)
+      writes.push({
+        documentPath: `${COLLECTION}/${documentId}`,
+        data: {
+          ...record,
+          firstSeenAt: now,
+          lastSeenAt: now,
+          lastChangedAt: now,
+          active: true,
+          removedAt: '',
+          readBy: {},
+          lastSyncedBy: clean(user.username, 80)
+        }
       });
       created += 1;
       continue;
     }
 
     const didChange = comparable(existing) !== comparable(record);
-    await firestorePatch(env, `${COLLECTION}/${documentId}`, {
-      ...record,
-      lastSeenAt: now,
-      ...(didChange ? { lastChangedAt: now } : {}),
-      active: true,
-      removedAt: '',
-      lastSyncedBy: clean(user.username, 80)
+    const stateChanged = didChange || existing.active === false;
+    const { id: _existingId, ...existingData } = existing;
+    writes.push({
+      documentPath: `${COLLECTION}/${existing.id || documentId}`,
+      data: {
+        ...existingData,
+        ...record,
+        firstSeenAt: clean(existing.firstSeenAt, 40) || now,
+        lastSeenAt: now,
+        lastChangedAt: stateChanged ? now : (clean(existing.lastChangedAt, 40) || now),
+        active: true,
+        removedAt: '',
+        readBy: existing.readBy && typeof existing.readBy === 'object' ? existing.readBy : {},
+        lastSyncedBy: clean(user.username, 80)
+      }
     });
-    if (didChange || existing.active === false) changed += 1;
+
+    if (stateChanged) changed += 1;
     else unchanged += 1;
   }
 
@@ -217,21 +245,27 @@ async function syncRecords(env, input, user) {
   const complete = declaredComplete && expectedTotal === normalized.length;
 
   if (complete) {
-    const existingRecords = await listAll(env);
     for (const existing of existingRecords) {
       if (existing.active === false) continue;
       const sourceId = cleanSourceId(existing.sourceId);
       if (!sourceId || seen.has(sourceId)) continue;
-      await firestorePatch(env, `${COLLECTION}/${existing.id}`, {
-        active: false,
-        removedAt: now,
-        lastChangedAt: now,
-        lastSeenAt: clean(existing.lastSeenAt, 40) || now,
-        lastSyncedBy: clean(user.username, 80)
+      const { id: _existingId, ...existingData } = existing;
+      writes.push({
+        documentPath: `${COLLECTION}/${existing.id}`,
+        data: {
+          ...existingData,
+          active: false,
+          removedAt: now,
+          lastChangedAt: now,
+          lastSeenAt: clean(existing.lastSeenAt, 40) || now,
+          lastSyncedBy: clean(user.username, 80)
+        }
       });
       deactivated += 1;
     }
   }
+
+  await commitWrites(env, writes);
 
   return {
     synchronizedAt: now,
