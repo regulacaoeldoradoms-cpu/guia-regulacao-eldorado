@@ -1404,6 +1404,27 @@
   color: #9a3434;
 }
 
+.portal-pdf-crop-actions .portal-pdf-crop-action--cancel {
+  width: 93px;
+  min-width: 93px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  background: url('/assets/editor-pdf-buttons/cancelar.svg') center / 100% 100% no-repeat;
+  color: transparent;
+  font-size: 0;
+  box-shadow: 0 2px 5px rgba(15, 54, 79, .12);
+}
+
+.portal-pdf-crop-actions .portal-pdf-crop-action--cancel:hover,
+.portal-pdf-crop-actions .portal-pdf-crop-action--cancel:focus-visible {
+  background: url('/assets/editor-pdf-buttons/cancelar.svg') center / 100% 100% no-repeat;
+  border-color: transparent;
+  filter: brightness(1.03);
+  outline: 3px solid rgba(19, 117, 184, .22);
+  outline-offset: 2px;
+}
+
 .portal-pdf-crop-action:hover,
 .portal-pdf-crop-action:focus-visible,
 .portal-pdf-crop-confirmed-action:hover,
