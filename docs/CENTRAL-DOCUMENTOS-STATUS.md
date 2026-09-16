@@ -6,7 +6,43 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.6 — editor funcional, assets individuais dos botões corrigidos no staging e aguardando reteste humano visual + fidelidade do PDF exportado**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
+Subfase atual: **3C.6 — editor funcional, kit visual completo das ferramentas aplicado e aguardando reteste humano visual + fidelidade do PDF exportado**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
+
+## 3C.6 — ícones restantes das ferramentas + remoção de “Atualizar PDF” — 16/09/2026
+
+O usuário adicionou diretamente à `main`, no commit `292ca917628dbb68b03b084021736f56349d28e6`, oito assets PNG aprovados para as ferramentas que ainda usavam glifos/texto. A branch do editor reutilizou exatamente esses blobs, sem recriar nem alterar as imagens.
+
+Aplicado no editor e no laboratório:
+- **Unir PDF** → `assets/Unir_PDF.png`;
+- **Inserir página em branco** → `assets/Inserir_pagina_branca.png`;
+- **Adicionar imagem como nova página** → `assets/Adicionar_imagem.png`;
+- **Recortar página** → `assets/Recortar_pagina.png`;
+- **Selecionar e mover** → `assets/Selecionar_mover.png`;
+- **Escrever** → `assets/Escrever.png`;
+- **Colar imagem** → `assets/Colar_imagem.png`;
+- **Desenhar** → `assets/Desenhar.png`.
+
+Decisão funcional aprovada nesta rodada:
+- o botão **“Atualizar PDF” foi removido da interface**, pois sua função era redundante com a atualização automática do editor;
+- a rotina interna de rebuild continua disponível somente para fluxo técnico/testes, sem controle visível ao usuário;
+- o espaço liberado fica reservado conceitualmente para uma futura ação explícita de **sincronização com o Google Drive**, a ser implementada somente na **Fase 4 — Sincronização segura com Drive**, com confirmação real do Drive e sem antecipar escrita nesta fase.
+
+Empacotamento e testes ajustados:
+- o bundle de staging copia explicitamente os oito PNGs;
+- o servidor Playwright passou a declarar `image/png`;
+- o teste visual de navegador verifica carregamento e `background-image` de todas as oito novas ferramentas e confirma ausência de `#editorRefresh`;
+- testes que precisavam forçar rebuild passaram a chamar helper exclusivamente de laboratório, sem reintroduzir o botão na UI;
+- cache do CSS avançado para `documents.css?v=20260916-9` e Service Worker para `CACHE_VERSION=20260916-10`.
+
+Estado de segurança:
+- nenhuma escrita documental no Google Drive;
+- nenhuma publicação/merge em produção realizada por esta alteração;
+- a `main` só contém os oito assets porque eles já haviam sido enviados pelo usuário antes desta implementação;
+- PR #179 continua aberto e deve permanecer sem merge até homologação final da 3C.6 e reconciliação com a `main` mais recente.
+
+**Gate atual:** CI completo + deployment de preview da branch, seguido de reteste humano dos oito novos ícones e da fidelidade do PDF exportado/reaberto.
+
+**Próxima ação exata:** após os checks e o preview concluírem, abrir o alias `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, fazer Ctrl+F5 e conferir visualmente **Unir PDF, Página em branco, Adicionar imagem, Recortar, Selecionar/mover, Escrever, Colar imagem e Desenhar**. Confirmar também que **Atualizar PDF não aparece**. Depois retomar a confirmação final da fidelidade do PDF exportado/reaberto.
 
 ## 3C.6 — correção definitiva dos ícones vazios no staging — 16/09/2026
 
