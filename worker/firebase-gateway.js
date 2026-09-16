@@ -198,7 +198,7 @@ export async function firestoreCommit(env, writes = []) {
 
   const projectId = String(env.FIREBASE_PROJECT_ID || '');
   const payloadWrites = items.map((item) => {
-    const documentPath = String(item?.documentPath || '').replace(/^\\/+|\\/+$/g, '');
+    const documentPath = String(item?.documentPath || '').replace(/^\/+|\/+$/g, '');
     if (!documentPath) throw new Error('Caminho de documento inválido para commit do Firestore.');
     return {
       update: {
