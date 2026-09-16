@@ -964,74 +964,61 @@
     return !nonEditingTypes.has(type);
   }
 
-  function printPdfBlob(blob) {
-    if (!(blob instanceof Blob)) return Promise.resolve(false);
-    const url = URL.createObjectURL(blob);
-    const frame = document.createElement('iframe');
-    frame.className = 'documents-print-frame';
-    frame.title = 'Impressão do PDF final';
-    frame.setAttribute('aria-hidden', 'true');
-
-    return new Promise((resolve, reject) => {
-      let requested = false;
-      let cleaned = false;
-      let fallbackTimer = 0;
-      let cleanupTimer = 0;
-
-      const cleanup = () => {
-        if (cleaned) return;
-        cleaned = true;
-        if (fallbackTimer) window.clearTimeout(fallbackTimer);
-        if (cleanupTimer) window.clearTimeout(cleanupTimer);
-        try { frame.remove(); } catch (_) {}
-        try { URL.revokeObjectURL(url); } catch (_) {}
-      };
-
-      const requestPrint = () => {
-        if (requested || cleaned) return;
-        const targetWindow = frame.contentWindow;
-        if (!targetWindow) return;
-        requested = true;
-        try {
-          targetWindow.focus();
-          targetWindow.addEventListener?.('afterprint', cleanup, { once: true });
-          targetWindow.print();
-          cleanupTimer = window.setTimeout(cleanup, 60000);
-          resolve(true);
-        } catch (error) {
-          cleanup();
-          reject(error);
-        }
-      };
-
-      frame.addEventListener('load', () => {
-        window.setTimeout(requestPrint, 120);
-      }, { once: true });
-
-      document.body.appendChild(frame);
-      frame.src = url;
-      fallbackTimer = window.setTimeout(requestPrint, 1800);
-    });
-  }
-
   async function printEditedPdfLocal() {
     const editor = window.PortalPdfEditor;
     const session = state.editorSession;
     if (!session || state.editorBusy || typeof editor?.buildFlattenedBlob !== 'function') return false;
 
+    const printWindow = window.open('about:blank', '_blank');
+    if (!printWindow) {
+      setEditorStatus('O navegador bloqueou a janela de impressão. Permita pop-ups para esta página e tente novamente.', 'warning');
+      return false;
+    }
+
+    try {
+      printWindow.opener = null;
+      printWindow.document.title = 'Preparando impressão…';
+      if (printWindow.document.body) {
+        printWindow.document.body.textContent = 'Preparando o PDF final para impressão…';
+      }
+    } catch (_) {}
+
     setEditorBusy(true);
     setEditorStatus('Preparando impressão do PDF final…');
+    let url = '';
     try {
       const blob = await editor.buildFlattenedBlob(session);
-      if (session !== state.editorSession) return false;
-      const requested = await printPdfBlob(blob);
-      if (!requested) return false;
-      setEditorStatus('Impressão do PDF final solicitada ao navegador. Nenhum arquivo foi enviado ao Google Drive.', 'success');
+      if (session !== state.editorSession) {
+        try { printWindow.close(); } catch (_) {}
+        return false;
+      }
+
+      url = URL.createObjectURL(blob);
+      printWindow.location.replace(url);
+
+      window.setTimeout(() => {
+        try {
+          if (!printWindow.closed) {
+            printWindow.focus();
+            printWindow.print();
+          }
+        } catch (_) {}
+      }, 1400);
+
+      setEditorStatus('PDF final aberto para impressão. Se a caixa de impressão não aparecer automaticamente, use Ctrl+P na nova aba.', 'success');
+      window.setTimeout(() => {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      }, 60000);
+      url = '';
       return true;
     } catch (error) {
+      try { printWindow.close(); } catch (_) {}
       setEditorStatus(error?.message || 'Não foi possível abrir a impressão do PDF final.', 'warning');
       return false;
     } finally {
+      if (url) {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      }
       if (session === state.editorSession) setEditorBusy(false);
     }
   }
@@ -2691,7 +2678,7 @@
       event.preventDefault();
       event.stopPropagation();
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-      window.setTimeout(() => printEditedPdfLocal().catch(() => {}), 0);
+      printEditedPdfLocal().catch(() => {});
       return;
     }
 
