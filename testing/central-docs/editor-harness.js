@@ -24,6 +24,7 @@
     organize: document.getElementById('editorOrganize'),
     merge: document.getElementById('editorMerge'),
     mergePanel: document.getElementById('editorMergePanel'),
+    mergeSelection: document.getElementById('editorMergeSelectionLab'),
     mergePosition: document.getElementById('editorMergePosition'),
     mergePageField: document.getElementById('editorMergePageField'),
     mergeAfterPage: document.getElementById('editorMergeAfterPage'),
@@ -63,6 +64,7 @@
     originalBlob: fixture?.blob?.() || null,
     session: null,
     merging: false,
+    mergeFiles: [],
     mode: 'readonly',
     selectedObjectId: '',
     colorPalette: ['#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'],
@@ -565,6 +567,7 @@
         }
       }
       state.merging = false;
+      state.mergeFiles = [];
       state.mode = 'organize';
       syncEditorState();
       await rebuild(viewState ? { ...viewState, activePage: firstInsertAt + 1 } : null, 'Atualizando documento…');
@@ -601,6 +604,7 @@
       insertAt
     });
     state.merging = false;
+    state.mergeFiles = [];
     state.mode = 'organize';
     await rebuild(viewState ? { ...viewState, activePage: insertAt + 1 } : null, 'Unindo segundo PDF sintético…');
   }
@@ -608,6 +612,9 @@
   function showMergePanel() {
     if (!state.session) return;
     state.merging = true;
+    state.mergeFiles = [];
+    if (elements.mergeFileInput) elements.mergeFileInput.value = '';
+    if (elements.mergeSelection) elements.mergeSelection.textContent = 'Segundo PDF sintético de 3 páginas selecionado para o laboratório. Você também pode adicionar PDF ou imagem do dispositivo; nada é enviado ao Google Drive.';
     state.mode = 'merge';
     elements.mergePosition.value = 'after-document';
     elements.mergeAfterPage.max = String(editor.pageCount(state.session));
@@ -620,6 +627,8 @@
 
   function cancelMerge() {
     state.merging = false;
+    state.mergeFiles = [];
+    if (elements.mergeFileInput) elements.mergeFileInput.value = '';
     state.mode = 'organize';
     syncEditorState();
     syncObjects();
@@ -908,12 +917,26 @@
   elements.redo.addEventListener('click', () => run(() => changeHistory('redo')));
   elements.organize.addEventListener('click', () => run(() => { state.mode = 'organize'; cancelMerge(); }));
   elements.merge.addEventListener('click', () => run(showMergePanel));
-  elements.mergeConfirm.addEventListener('click', () => run(mergeSyntheticPdf));
+  elements.mergeConfirm.addEventListener('click', () => run(() => state.mergeFiles.length ? mergeLocalFiles(state.mergeFiles) : mergeSyntheticPdf()));
   elements.mergeFileButton.addEventListener('click', () => {
     if (!state.session || !state.merging) return;
     elements.mergeFileInput.click();
   });
-  elements.mergeFileInput.addEventListener('change', () => run(() => mergeLocalFiles(elements.mergeFileInput.files)));
+  elements.mergeFileInput.addEventListener('change', () => run(() => {
+    const files = Array.from(elements.mergeFileInput.files || []).filter((file) => localMergeKind(file));
+    state.mergeFiles = files;
+    if (!files.length) {
+      if (elements.mergeSelection) elements.mergeSelection.textContent = 'Nenhum PDF ou imagem válido selecionado.';
+      elements.editorStatus.textContent = 'Selecione pelo menos um PDF ou uma imagem válida.';
+      return;
+    }
+    if (elements.mergeSelection) {
+      elements.mergeSelection.textContent = files.length === 1
+        ? '1 arquivo do dispositivo selecionado. Escolha a posição e confirme em Unir.'
+        : String(files.length) + ' arquivos do dispositivo selecionados. Escolha a posição e confirme em Unir.';
+    }
+    elements.editorStatus.textContent = 'Arquivo selecionado. Confirme em Unir.';
+  }));
   elements.mergeCancel.addEventListener('click', () => run(cancelMerge));
   elements.mergePosition.addEventListener('change', () => {
     elements.mergePageField.hidden = elements.mergePosition.value !== 'after-page';
