@@ -564,7 +564,8 @@ export async function driveConnectionStatus(env) {
       configured: configuration.ready,
       connected: false,
       databaseReady: false,
-      scope: DRIVE_SCOPE
+      scope: DRIVE_SCOPE,
+      writeEnabled: driveSyncWriteEnabled(env)
     };
   }
   const row = await oauthRow(env);
@@ -573,6 +574,7 @@ export async function driveConnectionStatus(env) {
     connected: Boolean(row?.refresh_token_cipher && row?.refresh_token_iv),
     databaseReady: true,
     scope: DRIVE_SCOPE,
+    writeEnabled: driveSyncWriteEnabled(env),
     connectedAt: row?.connected_at || '',
     updatedAt: row?.updated_at || ''
   };
@@ -1074,6 +1076,20 @@ export async function uploadDriveSyncChunk(env, username, syncId, request) {
   if (!request.body) {
     throw new DriveIntegrationError('DRIVE_SYNC_BODY_REQUIRED', 'Bloco de PDF ausente.', 400);
   }
+
+  let uploadBody = request.body;
+  if (range.start === 0) {
+    const firstChunk = new Uint8Array(await request.arrayBuffer());
+    if (firstChunk.byteLength !== range.length) {
+      throw new DriveIntegrationError('DRIVE_SYNC_LENGTH_INVALID', 'Tamanho real do primeiro bloco não corresponde à faixa informada.', 400);
+    }
+    const signature = new TextDecoder('ascii').decode(firstChunk.slice(0, 5));
+    if (signature !== '%PDF-') {
+      throw new DriveIntegrationError('DRIVE_SYNC_PDF_INVALID', 'O arquivo final não possui assinatura PDF válida.', 415);
+    }
+    uploadBody = firstChunk;
+  }
+
   const response = await driveFetch(env, session.sessionUrl, {
     method: 'PUT',
     headers: {
@@ -1081,7 +1097,7 @@ export async function uploadDriveSyncChunk(env, username, syncId, request) {
       'Content-Length': String(range.length),
       'Content-Range': `bytes ${range.start}-${range.end}/${range.total}`
     },
-    body: request.body
+    body: uploadBody
   }, false);
   return handleDriveSessionResponse(env, session, response);
 }
