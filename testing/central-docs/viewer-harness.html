@@ -45,18 +45,17 @@
           <button id="editorRedo" class="documents-editor-tool" type="button" title="Refazer (Ctrl+Y ou Ctrl+Shift+Z)">↷</button>
           <span class="documents-editor-tool-separator"></span>
           <button id="editorOrganize" class="documents-editor-tool active documents-art-button documents-art-grid" type="button" title="Organizar" aria-label="Organizar" aria-pressed="true"></button>
-          <button id="editorMerge" class="documents-editor-tool" type="button" title="Unir PDF sintético">⧉</button>
-          <button id="editorBlank" class="documents-editor-tool" type="button" title="Inserir página em branco">⊞</button>
-          <button id="editorAddImage" class="documents-editor-tool" type="button" title="Adicionar imagem como página">▧</button>
+          <button id="editorMerge" class="documents-editor-tool documents-tool-icon documents-tool-icon-merge" type="button" title="Unir PDF sintético" aria-label="Unir PDF sintético"></button>
+          <button id="editorBlank" class="documents-editor-tool documents-tool-icon documents-tool-icon-blank" type="button" title="Inserir página em branco" aria-label="Inserir página em branco"></button>
+          <button id="editorAddImage" class="documents-editor-tool documents-tool-icon documents-tool-icon-add-image" type="button" title="Adicionar imagem como página" aria-label="Adicionar imagem como página"></button>
           <input id="editorAddImageInput" type="file" accept="image/*" multiple hidden>
-          <button id="editorCrop" class="documents-editor-tool" type="button" title="Recortar página" aria-pressed="false">⌗</button>
-          <button id="editorSelect" class="documents-editor-tool" type="button" title="Selecionar e mover objetos">↖</button>
-          <button id="editorWrite" class="documents-editor-tool" type="button" title="Escrever sobre a página">T</button>
-          <button id="editorOverlayImage" class="documents-editor-tool" type="button" title="Colar imagem sobre a página">▣</button>
+          <button id="editorCrop" class="documents-editor-tool documents-tool-icon documents-tool-icon-crop" type="button" title="Recortar página" aria-label="Recortar página" aria-pressed="false"></button>
+          <button id="editorSelect" class="documents-editor-tool documents-tool-icon documents-tool-icon-select" type="button" title="Selecionar e mover objetos" aria-label="Selecionar e mover objetos"></button>
+          <button id="editorWrite" class="documents-editor-tool documents-tool-icon documents-tool-icon-write" type="button" title="Escrever sobre a página" aria-label="Escrever sobre a página"></button>
+          <button id="editorOverlayImage" class="documents-editor-tool documents-tool-icon documents-tool-icon-paste-image" type="button" title="Colar imagem sobre a página" aria-label="Colar imagem sobre a página"></button>
           <input id="editorOverlayImageInput" type="file" accept="image/*" hidden>
-          <button id="editorDraw" class="documents-editor-tool" type="button" title="Desenhar sobre a página" aria-pressed="false">✎</button>
+          <button id="editorDraw" class="documents-editor-tool documents-tool-icon documents-tool-icon-draw" type="button" title="Desenhar sobre a página" aria-label="Desenhar sobre a página" aria-pressed="false"></button>
           <span class="documents-editor-tool-spacer"></span>
-          <button id="editorRefresh" class="documents-editor-tool documents-art-button documents-art-refresh" type="button" title="Atualizar PDF" aria-label="Atualizar PDF"></button>
           <button id="editorExport" class="documents-editor-tool documents-art-button documents-art-export" type="button" title="Exportar PDF final localmente" aria-label="Exportar PDF final localmente"></button>
           <button id="editorPrint" class="documents-editor-tool documents-art-button documents-art-print" type="button" title="Imprimir PDF final (Ctrl+P)" aria-label="Imprimir PDF final"></button>
           <button id="editorExit" class="documents-editor-tool documents-art-button documents-art-close" type="button" title="Sair do editor" aria-label="Sair do editor"></button>
