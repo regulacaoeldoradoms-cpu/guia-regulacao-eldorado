@@ -180,7 +180,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260916-5/);
+  assert.match(html, /documents\.css\?v=20260916-6/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -201,7 +201,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260916-3/);
   assert.match(html, /documents\.js\?v=20260916-10/);
-  assert.match(html, /documents\.css\?v=20260916-5/);
+  assert.match(html, /documents\.css\?v=20260916-6/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -313,7 +313,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260916-3/);
   assert.match(html, /documents\.js\?v=20260916-10/);
-  assert.match(html, /documents\.css\?v=20260916-5/);
+  assert.match(html, /documents\.css\?v=20260916-6/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
