@@ -463,7 +463,7 @@
 
   function startCropMode() {
     setMode('crop');
-    elements.editorStatus.textContent = 'Recortar: arraste a moldura azul ou suas alças. A área escurecida fica fora do recorte; ↺ restaura a página.';
+    elements.editorStatus.textContent = 'Recortar: arraste diretamente sobre a página para selecionar uma única área. Sem seleção, a página permanece inteira. Depois, mova a moldura ou use as alças; ↺ remove o recorte.';
   }
 
   function startWriteMode() {
