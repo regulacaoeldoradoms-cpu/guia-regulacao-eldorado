@@ -8,6 +8,19 @@
 
 Subfase atual: **3C.6 — flatten/exportação local, correções de UX pós-homologação implementadas e aguardando novo reteste humano**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
 
+## 3C.6 — aceite humano da funcionalidade do editor; fidelidade final ainda pendente — 16/09/2026
+
+O usuário declarou explicitamente: **“pra mim o editor está completamente funcional agora”**.
+
+Interpretação de governança:
+- a **UX e o conjunto funcional do editor** ficam homologados pelo usuário nesta etapa;
+- não há nova correção funcional solicitada para organizar, unir, inserir página/imagem, escrever, colar imagem, recortar, desenhar/apagar, desfazer/refazer, excluir objetos, exportar ou imprimir;
+- a 3C.6 ainda não deve ser encerrada automaticamente porque o gate registrado exige uma última confirmação separada de **fidelidade preview × PDF final exportado/reaberto**;
+- se essa comparação final também for aprovada, encerrar formalmente a 3C.6 e a Fase 3, registrar o aceite e preparar a **Fase 4 — Sincronização segura com Drive**;
+- até esse aceite final, PR #179 permanece aberto e sem merge, e nenhuma escrita no Google Drive é liberada.
+
+**Próxima ação exata:** exportar um PDF final de teste contendo algumas das edições já homologadas, abrir o arquivo baixado fora do editor e confirmar que o resultado visual coincide com o preview (texto, imagem, desenho, crop, ordem e rotação). Se o usuário confirmar, encerrar 3C.6/Fase 3 e avançar para Fase 4.
+
 ## 3C.6 — terceira rodada de ajustes UX: campo condicional, impressão e atalhos — 16/09/2026
 
 Novo reteste humano da 3C.6 acrescentou três requisitos de ergonomia antes da homologação final:
@@ -226,10 +239,10 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 - **Decisões tomadas:** objeto arrastado segue o centro do ponteiro; laboratório usa file picker real; arquivos locais no painel Unir ficam pendentes até confirmação explícita em Unir; desktop reduz a largura real da grade para reservar o painel e forçar quebra de linha; o painel mostra preview local; `Após a página` é estritamente condicional a `after-page`; mobile empilha o painel; Colar imagem usa entrada em modo + abertura do seletor no clique seguinte; Delete remove texto/imagem selecionados sem interferir em campos de edição; Ctrl+Z desfaz, Ctrl+Y/Ctrl+Shift+Z refazem e Ctrl+P imprime; impressão usa o PDF final flatten em nova aba, sem iframe/embed/object; abertura nova usa 114% no desktop e limita a escala à largura disponível em telas menores.
 - **Justificativas:** reduzir deslocamento perceptivo no arraste; eliminar divergência entre laboratório e produto; tornar a união autossuficiente; impedir páginas ocultas pelo painel; evitar abertura excessivamente ampliada e enquadrar melhor a página sem remover a opção Ajustar largura.
 - **Alternativas descartadas:** manter offset original de clique; imagem sintética automática no botão; união local imediata após escolher arquivo; painel flutuante sobre a grade; manter fit-width automático como zoom inicial; usar iframe/embed/object temporário para impressão dentro do runtime documental.
-- **Pendências e bloqueios:** homologação humana da UX corrigida e da fidelidade do PDF exportado. Fase 4 permanece bloqueada. Cloudflare Access ainda pendente, portanto staging somente com dados fictícios.
+- **Pendências e bloqueios:** a UX/funcionalidade do editor foi homologada pelo usuário; falta somente a confirmação visual da fidelidade do PDF exportado/reaberto para encerrar 3C.6/Fase 3. Fase 4 permanece bloqueada até esse aceite. Cloudflare Access ainda pendente, portanto staging somente com dados fictícios.
 - **Riscos conhecidos:** diferenças finas de fonte entre navegador/pdf-lib e combinações incomuns de crop/rotação ainda dependem da conferência visual humana final.
 - **Métricas / observabilidade:** nenhuma telemetria de conteúdo; união local registra somente operação técnica e bucket agregado de tamanho.
-- **Próxima ação exata:** abrir `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`, fazer Ctrl+F5 e validar também o campo condicional `Após a página`, botão Imprimir, Ctrl+Z, Ctrl+Y/Ctrl+Shift+Z e Ctrl+P; depois exportar e reabrir o PDF final. Se aprovado, encerrar formalmente 3C.6/Fase 3; se houver defeito, manter 3C.6 aberta e corrigir somente o problema observado.
+- **Próxima ação exata:** a UX já foi aceita. Exportar um PDF final, reabri-lo fora do editor e comparar com o preview; se texto, imagem, desenho, crop, ordem e rotação estiverem fiéis, encerrar formalmente 3C.6/Fase 3 e preparar a Fase 4.
 - **Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `testing/central-docs/editor-harness.js`, `testing/browser/central-docs-editor.spec.mjs`, `testing/browser/central-docs-flatten.spec.mjs`, `testing/browser/central-docs-viewer.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md` e `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`.
 
 ## 3C.6 — liberada após reconciliação verde com main — 16/09/2026
