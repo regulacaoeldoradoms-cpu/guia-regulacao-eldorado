@@ -991,6 +991,16 @@
     }
   }
 
+  function shortcutIsTypingTarget(target) {
+    if (!(target instanceof Element)) return false;
+    if (target.closest('textarea, select, [contenteditable="true"], [role="textbox"]')) return true;
+    const input = target.closest('input');
+    if (!input) return false;
+    const type = String(input.getAttribute('type') || 'text').toLowerCase();
+    const nonEditingTypes = new Set(['file', 'hidden', 'button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color']);
+    return !nonEditingTypes.has(type);
+  }
+
   function ensurePrintFrame() {
     let frame = document.querySelector('iframe.documents-print-frame[data-central-print-frame="true"]');
     if (frame) return frame;
