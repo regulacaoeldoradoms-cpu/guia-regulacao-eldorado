@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260916-10">
+  <link rel="stylesheet" href="/css/documents.css?v=20260916-11">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -115,7 +115,7 @@
               <span class="documents-pdf-page-count" id="pdfPageCountLabel"></span>
             </div>
             <div class="documents-editor" id="documentsEditor" hidden aria-label="Controles de edição local do PDF">
-              <span class="sr-only">As alterações permanecem locais até você escolher explicitamente sincronizar com o Google Drive.</span>
+              <span class="sr-only">Quando a sincronização com Google Drive estiver habilitada, alterações confirmadas são sincronizadas automaticamente; o botão do Drive força uma nova tentativa quando necessário.</span>
               <div class="documents-editor-toolbar documents-editor-toolbar--compact" role="toolbar" aria-label="Ferramentas do editor PDF">
                 <button class="documents-editor-tool" id="editorUndoButton" type="button" title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button>
                 <button class="documents-editor-tool" id="editorRedoButton" type="button" title="Refazer (Ctrl+Y ou Ctrl+Shift+Z)" aria-label="Refazer">↷</button>
@@ -132,7 +132,7 @@
                 <input id="editorOverlayImageInput" type="file" accept="image/*" hidden>
                 <button class="documents-editor-tool documents-tool-icon documents-tool-icon-draw" id="editorDrawButton" type="button" title="Desenhar sobre a página" aria-label="Desenhar sobre a página" aria-pressed="false"></button>
                 <span class="documents-editor-tool-spacer"></span>
-                <button id="editorSyncButton" class="documents-editor-tool documents-art-button documents-art-sync" type="button" title="Forçar sincronização com Google Drive" aria-label="Forçar sincronização com Google Drive" hidden></button>
+                <button id="editorSyncButton" class="documents-editor-tool documents-art-button documents-art-sync" type="button" title="Forçar sincronização com Google Drive" aria-label="Forçar sincronização com Google Drive" data-sync-state="normal" hidden></button>
                 <button id="editorExportButton" class="documents-editor-tool documents-art-button documents-art-export" type="button" title="Exportar PDF final localmente" aria-label="Exportar PDF final localmente"></button>
                 <button id="editorPrintButton" class="documents-editor-tool documents-art-button documents-art-print" type="button" title="Imprimir PDF final (Ctrl+P)" aria-label="Imprimir PDF final"></button>
                 <button id="editorExitButton" class="documents-editor-tool documents-art-button documents-art-close" type="button" title="Sair do editor" aria-label="Sair do editor"></button>
@@ -247,6 +247,6 @@
   <script src="/js/document-cache.js?v=20260912-1"></script>
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-viewer.js?v=20260916-3"></script>
-  <script src="/js/documents.js?v=20260916-11"></script>
+  <script src="/js/documents.js?v=20260916-12"></script>
 </body>
 </html>
