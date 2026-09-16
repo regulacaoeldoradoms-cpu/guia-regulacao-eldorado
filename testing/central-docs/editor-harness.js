@@ -1072,7 +1072,6 @@
         .forEach((sheet) => container.appendChild(sheet));
 
       root.dataset.printRenderedPages = String(documentPdf.numPages);
-      await new Promise((resolve) => printWindow.requestAnimationFrame(() => printWindow.requestAnimationFrame(resolve)));
       return true;
     } finally {
       try { await documentPdf?.destroy?.(); } catch (_) {}
