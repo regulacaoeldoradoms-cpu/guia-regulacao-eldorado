@@ -1082,6 +1082,7 @@
 
   async function printFlattenedPdf() {
     if (!state.session || typeof editor?.buildFlattenedBlob !== 'function') return false;
+    const started = performance.now();
     setBusy(true, 'Preparando impressão do PDF final sintético…');
     try {
       const blob = await finalPdfBlobForSession(state.session);
@@ -1090,6 +1091,7 @@
       await renderPdfBlobForPrint(blob, frame);
       root.dataset.printState = 'requested';
       root.dataset.printSize = String(blob.size);
+      root.dataset.printPrepareMs = String(Math.round(performance.now() - started));
       elements.editorStatus.textContent = 'Impressão do PDF final sintético preparada no mesmo editor.';
       if (!navigator.webdriver) {
         const printWindow = frame.contentWindow;
