@@ -117,10 +117,50 @@
     }));
   }
 
+  function normalizeStrokePoints(points) {
+    const source = Array.isArray(points) ? points : [];
+    const normalized = [];
+    for (const point of source) {
+      const x = clamp01(point?.x, 0);
+      const y = clamp01(point?.y, 0);
+      const previous = normalized[normalized.length - 1];
+      if (previous && Math.abs(previous.x - x) < 0.00001 && Math.abs(previous.y - y) < 0.00001) continue;
+      normalized.push({ x, y });
+      if (normalized.length >= 12000) break;
+    }
+    return normalized;
+  }
+
+  function cloneStrokes(strokes) {
+    return (strokes || []).map((item) => ({
+      id: String(item.id || ''),
+      pageId: String(item.pageId || ''),
+      color: /^#[0-9a-f]{6}$/i.test(String(item.color || '')) ? String(item.color).toLowerCase() : '#111111',
+      width: Math.min(0.05, Math.max(0.001, Number(item.width) || 0.006)),
+      points: normalizeStrokePoints(item.points)
+    })).filter((item) => item.id && item.pageId && item.points.length > 0);
+  }
+
+  function rotateStrokePoints(points, quarterTurns = 1) {
+    const turns = ((Math.round(Number(quarterTurns) || 0) % 4) + 4) % 4;
+    return normalizeStrokePoints(points).map((point) => {
+      let x = point.x;
+      let y = point.y;
+      for (let index = 0; index < turns; index += 1) {
+        const nextX = 1 - y;
+        const nextY = x;
+        x = nextX;
+        y = nextY;
+      }
+      return { x: clamp01(x), y: clamp01(y) };
+    });
+  }
+
   function snapshot(session) {
     return {
       plan: clonePlan(session.plan),
-      objects: cloneObjects(session.objects)
+      objects: cloneObjects(session.objects),
+      strokes: cloneStrokes(session.strokes)
     };
   }
 
@@ -140,6 +180,7 @@
     session.historyIndex = index;
     session.plan = clonePlan(legacyPlan);
     session.objects = cloneObjects(Array.isArray(stored) ? [] : stored?.objects);
+    session.strokes = cloneStrokes(Array.isArray(stored) ? [] : stored?.strokes);
     session.revision += 1;
     return true;
   }
@@ -154,6 +195,12 @@
     const value = Math.max(1, Number(session.nextObjectId || 1));
     session.nextObjectId = value + 1;
     return `object-${value}`;
+  }
+
+  function nextStrokeId(session) {
+    const value = Math.max(1, Number(session.nextStrokeId || 1));
+    session.nextStrokeId = value + 1;
+    return `stroke-${value}`;
   }
 
   function clamp01(value, fallback = 0) {
@@ -276,11 +323,13 @@
       sources: [source],
       plan: [],
       objects: [],
+      strokes: [],
       history: [],
       historyIndex: 0,
       revision: 0,
       nextPageId: 1,
       nextObjectId: 1,
+      nextStrokeId: 1,
       createdAt: performance.now()
     };
     session.plan = Array.from({ length: source.pageCount }, (_, pageIndex) => ({
@@ -363,6 +412,10 @@
       .filter((item) => item.pageId === source.pageId)
       .map((item) => ({ ...item, id: nextObjectId(session), pageId: duplicate.pageId }));
     session.objects.push(...cloned);
+    const clonedStrokes = cloneStrokes(session.strokes)
+      .filter((item) => item.pageId === source.pageId)
+      .map((item) => ({ ...item, id: nextStrokeId(session), pageId: duplicate.pageId }));
+    session.strokes.push(...clonedStrokes);
     session.revision += 1;
     commitHistory(session);
     return insertAt;
@@ -372,7 +425,10 @@
     if (!session || session.plan.length <= 1) return false;
     if (!Number.isInteger(index) || index < 0 || index >= session.plan.length) return false;
     const [removed] = session.plan.splice(index, 1);
-    if (removed?.pageId) session.objects = session.objects.filter((item) => item.pageId !== removed.pageId);
+    if (removed?.pageId) {
+      session.objects = session.objects.filter((item) => item.pageId !== removed.pageId);
+      session.strokes = session.strokes.filter((item) => item.pageId !== removed.pageId);
+    }
     session.revision += 1;
     commitHistory(session);
     return true;
@@ -406,6 +462,9 @@
     const entry = session.plan[index];
     entry.rotation = normalizeRotation((entry.rotation || 0) + (turns * 90));
     if (entry.crop) entry.crop = rotateCropRect(entry.crop, turns);
+    for (const stroke of session.strokes || []) {
+      if (stroke.pageId === entry.pageId) stroke.points = rotateStrokePoints(stroke.points, turns);
+    }
     session.revision += 1;
     commitHistory(session);
     return true;
@@ -591,6 +650,60 @@
       .filter((object) => object.pageIndex >= 0 && (pageIndex == null || object.pageIndex === Number(pageIndex)));
   }
 
+  function addStroke(session, pageIndex, points, options = {}) {
+    const page = session?.plan?.[Number(pageIndex)];
+    const normalizedPoints = normalizeStrokePoints(points);
+    if (!page || !normalizedPoints.length) return null;
+    if (normalizedPoints.length === 1) {
+      normalizedPoints.push({
+        x: Math.min(1, normalizedPoints[0].x + 0.0005),
+        y: Math.min(1, normalizedPoints[0].y + 0.0005)
+      });
+    }
+    const stroke = {
+      id: nextStrokeId(session),
+      pageId: page.pageId,
+      color: /^#[0-9a-f]{6}$/i.test(String(options.color || '')) ? String(options.color).toLowerCase() : '#111111',
+      width: Math.min(0.05, Math.max(0.001, Number(options.width) || 0.006)),
+      points: normalizedPoints
+    };
+    session.strokes.push(stroke);
+    if (options.commit !== false) {
+      session.revision += 1;
+      commitHistory(session);
+    }
+    return stroke.id;
+  }
+
+  function removeStrokes(session, strokeIds, options = {}) {
+    if (!session) return 0;
+    const ids = new Set((Array.isArray(strokeIds) ? strokeIds : [strokeIds]).map((id) => String(id || '')).filter(Boolean));
+    if (!ids.size) return 0;
+    const before = session.strokes.length;
+    session.strokes = session.strokes.filter((stroke) => !ids.has(stroke.id));
+    const removed = before - session.strokes.length;
+    if (removed && options.commit !== false) {
+      session.revision += 1;
+      commitHistory(session);
+    }
+    return removed;
+  }
+
+  function strokeModel(session, pageIndex = null) {
+    if (!session) return [];
+    const pageById = new Map(session.plan.map((page, index) => [page.pageId, index]));
+    return cloneStrokes(session.strokes)
+      .map((stroke) => {
+        const index = pageById.get(stroke.pageId);
+        return {
+          ...stroke,
+          pageIndex: Number.isInteger(index) ? index : -1,
+          displayPage: Number.isInteger(index) ? index + 1 : 0
+        };
+      })
+      .filter((stroke) => stroke.pageIndex >= 0 && (pageIndex == null || stroke.pageIndex === Number(pageIndex)));
+  }
+
   function undo(session) {
     return restoreHistory(session, session.historyIndex - 1);
   }
@@ -678,6 +791,9 @@
     commitObjectMutation,
     removeObject,
     objectModel,
+    addStroke,
+    removeStrokes,
+    strokeModel,
     undo,
     redo,
     canUndo,
@@ -686,6 +802,6 @@
     pageCount,
     sourceCount,
     buildBlob,
-    version: 'phase3-v10'
+    version: 'phase3-v11-drawing'
   });
 })();
