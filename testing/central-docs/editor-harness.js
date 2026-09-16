@@ -979,71 +979,113 @@
     return !nonEditingTypes.has(type);
   }
 
-  function printPdfBlob(blob) {
-    if (!(blob instanceof Blob)) return Promise.resolve(false);
-    const url = URL.createObjectURL(blob);
-    const frame = document.createElement('iframe');
-    frame.className = 'documents-print-frame';
-    frame.title = 'Impressão do PDF final sintético';
-    frame.setAttribute('aria-hidden', 'true');
+  async function renderPdfBlobForPrint(blob, printWindow) {
+    if (!(blob instanceof Blob) || !printWindow) return false;
+    const pdfjs = await viewer.loadPdfJs();
+    let loadingTask = null;
+    let documentPdf = null;
+    try {
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      loadingTask = pdfjs.getDocument({
+        data: bytes,
+        isEvalSupported: false,
+        enableScripting: false
+      });
+      documentPdf = await loadingTask.promise;
 
-    return new Promise((resolve, reject) => {
-      let requested = false;
-      let cleaned = false;
-      let fallbackTimer = 0;
-      let cleanupTimer = 0;
+      const doc = printWindow.document;
+      doc.open();
+      doc.write('<!doctype html><html><head><meta charset="utf-8"><title>Imprimir PDF final sintético</title><style>'
+        + '@page{margin:0;}html,body{margin:0;padding:0;background:#fff;}'
+        + '.print-status{font:600 14px system-ui,sans-serif;padding:12px 16px;color:#294a63;background:#f2f7fa;}'
+        + '.print-pages{margin:0;padding:0;}'
+        + '.print-sheet{display:flex;align-items:center;justify-content:center;margin:0 auto;background:#fff;break-after:page;page-break-after:always;overflow:hidden;}'
+        + '.print-sheet:last-child{break-after:auto;page-break-after:auto;}'
+        + '.print-sheet canvas{display:block;width:100%;height:100%;}'
+        + '@media print{.print-status{display:none!important}.print-sheet{margin:0!important}}'
+        + '</style></head><body><div class="print-status">Preparando páginas para impressão…</div><main class="print-pages"></main></body></html>');
+      doc.close();
 
-      const cleanup = () => {
-        if (cleaned) return;
-        cleaned = true;
-        if (fallbackTimer) window.clearTimeout(fallbackTimer);
-        if (cleanupTimer) window.clearTimeout(cleanupTimer);
-        try { frame.remove(); } catch (_) {}
-        try { URL.revokeObjectURL(url); } catch (_) {}
-      };
+      const container = doc.querySelector('.print-pages');
+      if (!container) throw new Error('Não foi possível preparar a área de impressão.');
 
-      const requestPrint = () => {
-        if (requested || cleaned) return;
-        const targetWindow = frame.contentWindow;
-        if (!targetWindow) return;
-        requested = true;
-        root.dataset.printState = 'requested';
-        root.dataset.printSize = String(blob.size);
-        try {
-          if (!navigator.webdriver) {
-            targetWindow.focus();
-            targetWindow.addEventListener?.('afterprint', cleanup, { once: true });
-            targetWindow.print();
-            cleanupTimer = window.setTimeout(cleanup, 60000);
-          } else {
-            cleanupTimer = window.setTimeout(cleanup, 1200);
-          }
-          resolve(true);
-        } catch (error) {
-          cleanup();
-          reject(error);
-        }
-      };
+      const maxPixels = 8_000_000;
+      for (let pageNumber = 1; pageNumber <= documentPdf.numPages; pageNumber += 1) {
+        const page = await documentPdf.getPage(pageNumber);
+        const base = page.getViewport({ scale: 1 });
+        const basePixels = Math.max(1, base.width * base.height);
+        const renderScale = Math.max(1, Math.min(2, Math.sqrt(maxPixels / basePixels)));
+        const viewport = page.getViewport({ scale: renderScale });
 
-      frame.addEventListener('load', () => {
-        window.setTimeout(requestPrint, 120);
-      }, { once: true });
+        const sheet = doc.createElement('section');
+        sheet.className = 'print-sheet';
+        sheet.style.width = base.width + 'pt';
+        sheet.style.height = base.height + 'pt';
 
-      document.body.appendChild(frame);
-      frame.src = url;
-      fallbackTimer = window.setTimeout(requestPrint, 1800);
-    });
+        const canvas = doc.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(viewport.width));
+        canvas.height = Math.max(1, Math.round(viewport.height));
+        sheet.appendChild(canvas);
+        container.appendChild(sheet);
+
+        await page.render({
+          canvas,
+          viewport,
+          background: '#ffffff'
+        }).promise;
+        page.cleanup?.();
+      }
+
+      const status = doc.querySelector('.print-status');
+      if (status) status.textContent = 'PDF pronto para impressão.';
+      await new Promise((resolve) => printWindow.requestAnimationFrame(() => printWindow.requestAnimationFrame(resolve)));
+      return true;
+    } finally {
+      try { await documentPdf?.destroy?.(); } catch (_) {}
+      try { loadingTask?.destroy?.(); } catch (_) {}
+    }
   }
 
   async function printFlattenedPdf() {
     if (!state.session || typeof editor?.buildFlattenedBlob !== 'function') return false;
+
+    const automated = navigator.webdriver === true;
+    const printWindow = automated ? null : window.open('about:blank', '_blank');
+    if (!automated && !printWindow) {
+      elements.editorStatus.textContent = 'O navegador bloqueou a janela de impressão. Permita pop-ups e tente novamente.';
+      return false;
+    }
+
     setBusy(true, 'Preparando impressão do PDF final sintético…');
     try {
       const blob = await editor.buildFlattenedBlob(state.session);
-      const requested = await printPdfBlob(blob);
-      if (!requested) return false;
-      elements.editorStatus.textContent = 'Impressão do PDF final sintético solicitada ao navegador.';
+
+      if (automated) {
+        root.dataset.printState = 'requested';
+        root.dataset.printSize = String(blob.size);
+        elements.editorStatus.textContent = 'Impressão sintética validada em modo automatizado.';
+        return true;
+      }
+
+      await renderPdfBlobForPrint(blob, printWindow);
+      root.dataset.printState = 'requested';
+      root.dataset.printSize = String(blob.size);
+      try {
+        printWindow.focus();
+        printWindow.addEventListener('afterprint', () => {
+          try { printWindow.close(); } catch (_) {}
+        }, { once: true });
+        printWindow.print();
+      } catch (error) {
+        try { printWindow.close(); } catch (_) {}
+        throw error;
+      }
+
+      elements.editorStatus.textContent = 'Impressão do PDF final sintético aberta.';
       return true;
+    } catch (error) {
+      try { printWindow?.close?.(); } catch (_) {}
+      throw error;
     } finally {
       setBusy(false);
     }
@@ -1226,7 +1268,7 @@
       event.preventDefault();
       event.stopPropagation();
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-      run(printFlattenedPdf);
+      printFlattenedPdf().catch(fail);
       return;
     }
 
@@ -1237,7 +1279,7 @@
   }, true);
   elements.refresh.addEventListener('click', () => run(() => rebuild()));
   elements.exportPdf.addEventListener('click', () => run(exportFlattenedPdf));
-  elements.printPdf.addEventListener('click', () => run(printFlattenedPdf));
+  elements.printPdf.addEventListener('click', () => printFlattenedPdf().catch(fail));
   elements.exit.addEventListener('click', () => run(exitEditor));
 
   run(async () => {
