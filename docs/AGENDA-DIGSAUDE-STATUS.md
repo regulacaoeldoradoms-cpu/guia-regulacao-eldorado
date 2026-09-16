@@ -7,7 +7,7 @@ Atualizado em 16/09/2026.
 - Frente: Agenda DigSaúde V1.
 - Objetivo: disponibilizar no Portal uma fila somente de leitura dos agendamentos do DigSaúde para Técnico em Telemedicina e Desenvolvedor.
 - Branch: `feat/agenda-digsaude-v1`.
-- PR: pendente de abertura.
+- PR: #185 — Agenda DigSaúde V1 para Telemedicina.
 - Base inicial: `main` em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`.
 - Produção: nenhuma alteração publicada por esta frente.
 
@@ -59,7 +59,7 @@ Atualizado em 16/09/2026.
 - **Frente atual:** Agenda DigSaúde V1.
 - **Última ação concluída:** implementação inicial da interface, backend, sincronizador e testes na branch.
 - **Branch atual:** `feat/agenda-digsaude-v1`.
-- **PR atual:** pendente de abertura.
+- **PR atual:** #185 — aberto, aguardando checks.
 - **Checks e testes:** workflow criado; execução no GitHub ainda pendente.
 - **Próxima ação exata:** abrir o PR, aguardar os workflows e corrigir qualquer falha antes de solicitar homologação.
 - **Arquivos principais:** `docs/AGENDA-DIGSAUDE.md`, `worker/agenda.js`, `agenda/digsaude-agenda-sync.user.js`, `agenda/index.html`.
