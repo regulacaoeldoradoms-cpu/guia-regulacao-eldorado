@@ -201,6 +201,7 @@
     root.dataset.pageRotations = state.session ? editor.pageModel(state.session).map((page) => page.rotation).join(',') : '';
     root.dataset.pageKinds = state.session ? editor.pageModel(state.session).map((page) => page.sourceKind).join(',') : '';
     root.dataset.pageCrops = state.session ? editor.pageModel(state.session).map((page) => page.crop ? [page.crop.x, page.crop.y, page.crop.width, page.crop.height].map((value) => Number(value.toFixed(4))).join(':') : 'full').join(',') : '';
+    root.dataset.cropCount = state.session ? String(editor.pageModel(state.session).filter((page) => page.crop).length) : '0';
     elements.editorControls.hidden = !editing;
     elements.enterEditor.hidden = editing;
     elements.enterEditor.disabled = editing || root.dataset.viewerState !== 'ready';
