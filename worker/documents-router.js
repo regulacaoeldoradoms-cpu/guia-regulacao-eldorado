@@ -13,6 +13,7 @@ import {
   driveConnectionStatus,
   fetchDrivePdf,
   listDriveFolder,
+  preflightDriveSync,
   searchDrive
 } from './document-drive.js';
 
@@ -299,6 +300,18 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
         query: String(body.query || ''),
         pageToken: String(body.pageToken || ''),
         pageSize: body.pageSize
+      });
+      return json(result, 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/drive/sync/preflight' && request.method === 'POST') {
+      const denied = requireCapability(user, 'edit', origin);
+      if (denied) return denied;
+      const body = await safeJson(request);
+      const result = await preflightDriveSync(env, {
+        operation: String(body.operation || ''),
+        ref: String(body.ref || ''),
+        baseVersion: String(body.baseVersion || '')
       });
       return json(result, 200, origin);
     }
