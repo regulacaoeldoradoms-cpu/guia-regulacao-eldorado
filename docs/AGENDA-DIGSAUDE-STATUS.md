@@ -25,6 +25,9 @@ Atualizado em 16/09/2026.
 - Worker publicado com sucesso na versão Cloudflare `9dfd38af-4f3a-4f6e-a4ca-b177a377c0d6`.
 - Evidência real em 16/09/2026: a ponte `/agenda/sync/` exibiu `Automático ativo · última sincronização: 10:13 · 0 novo(s), 0 alterado(s)`, confirmando conexão persistente e primeira sincronização automática bem-sucedida sem mudanças.
 - Nova melhoria autorizada em 16/09/2026: **seletor de ordenação cronológica dos agendamentos**, com `Agendamento mais próximo` como padrão e alternativa `Agendamento mais distante`.
+- Implementação concluída no PR #196 — **Agenda: adicionar ordenação cronológica de agendamentos** — e mesclada na `main` em `9c4fd1fa6e4b1f06459224051a6f1933999eb818`.
+- PR #196: **21/21 checks** concluídos com sucesso antes do merge.
+- Pós-merge da `main`: **26/26 check-runs** concluídos com sucesso, incluindo build e deploy. Produção publicada; resta homologação visual/funcional no navegador autorizado.
 
 ## Objetivo da V2
 
@@ -137,15 +140,14 @@ Decisão funcional confirmada em 16/09/2026:
 
 ## Próximo passo exato
 
-1. publicar e homologar o seletor de ordenação cronológica na Agenda;
-2. no Portal, atualizar a página da Agenda com `Ctrl+F5`;
-3. confirmar que **Todos ativos** é a visão inicial e que **Agendamento mais próximo** é a ordenação padrão;
-4. alternar para **Agendamento mais distante** e confirmar inversão cronológica, preservando data e horário como chaves;
-5. marcar um agendamento como visto e confirmar que o card permanece na lista com borda de visualizado;
-6. executar uma sincronização do DigSaúde sem alteração real e confirmar que o mesmo agendamento continua visualizado;
-7. quando uma consulta sair da aba **Agendados** do DigSaúde, confirmar após a sincronização completa que ela desaparece de **Todos ativos** no Portal;
-8. quando ocorrer uma alteração real de data/horário/status em uma consulta ainda ativa, confirmar que o registro volta a ser destacado como alterado;
-9. registrar a homologação humana e encerrar esta correção.
+1. no Portal, atualizar a página da Agenda com `Ctrl+F5`;
+2. confirmar que **Todos ativos** é a visão inicial e que **Agendamento mais próximo** é a ordenação padrão;
+3. alternar para **Agendamento mais distante** e confirmar inversão cronológica, preservando data e horário como chaves;
+4. marcar um agendamento como visto e confirmar que o card permanece na lista com borda de visualizado;
+5. executar uma sincronização do DigSaúde sem alteração real e confirmar que o mesmo agendamento continua visualizado;
+6. quando uma consulta sair da aba **Agendados** do DigSaúde, confirmar após a sincronização completa que ela desaparece de **Todos ativos** no Portal;
+7. quando ocorrer uma alteração real de data/horário/status em uma consulta ainda ativa, confirmar que o registro volta a ser destacado como alterado;
+8. registrar a homologação humana e encerrar esta correção.
 
 ## Riscos restantes
 
