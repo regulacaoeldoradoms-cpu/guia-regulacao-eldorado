@@ -8,6 +8,34 @@
 
 Subfase atual: **3C.5 — Desenhar/Borracha, implementação técnica concluída no PR #179 e aguardando homologação humana do preview sintético**. Organizar V2, 3C.3 (Escrever + Colar imagem) e 3C.4 (Recortar com confirmação/cancelamento) estão aceitos. A 3C.6 (flatten/exportação local) permanece bloqueada até o aceite humano da 3C.5. **Não fazer merge nem escrever no Google Drive nesta fase.**
 
+## 3C.5 — aceite humano final; reconciliação com main liberada — 16/09/2026
+
+O usuário homologou explicitamente **Desenhar/Borracha** com a avaliação “ta ótimo” e autorizou o avanço.
+
+Aceite humano consolidado:
+- caneta com resposta visual considerada satisfatória;
+- alteração de cor e espessura aceita;
+- Undo/Redo por gesto/traço aceito;
+- borracha restrita aos traços de Desenhar aceita;
+- conteúdo original do PDF e objetos do editor permanecem preservados;
+- comportamento de desenho vinculado à página foi considerado adequado;
+- nenhuma correção visual adicional foi solicitada.
+
+Evidência técnica associada:
+- runtime funcional da 3C.5: `a2c28838df3138beec036baa809a5d7744eb21a5`;
+- matriz técnica já registrada: 25/25 checks verdes;
+- Playwright: 64 casos, 61 passed / 3 skips esperados;
+- PR #179 continua aberto e sem merge;
+- nenhuma escrita no Google Drive ou produção.
+
+Decisão:
+- **3C.5 está encerrada e aceita**;
+- antes de liberar efetivamente a 3C.6, cumprir o gate documental já definido: reconciliar esta branch com a `main` atual e executar novamente a matriz completa de CI;
+- somente após essa reconciliação verde a **3C.6 — flatten/exportação local** se torna a subfase corrente;
+- Fase 4 (sincronização segura com Drive) continua bloqueada até o encerramento integral da Fase 3.
+
+**Próxima ação exata:** integrar a `main` atual nesta branch sem alterar produção, resolver apenas eventuais conflitos reais, rodar a matriz completa e, ficando verde, registrar a liberação da 3C.6.
+
 ## 3C.5 — implementação técnica concluída; homologação humana pendente — 16/09/2026
 
 A unidade mínima autorizada da 3C.5 foi implementada na mesma superfície PDF.js do editor, ainda sem merge e sem qualquer persistência no Google Drive.
