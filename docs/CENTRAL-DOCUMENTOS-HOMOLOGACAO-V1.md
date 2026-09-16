@@ -539,3 +539,26 @@ Resultado:
 - com a reconciliação verde, fica liberada **3C.6 — flatten/exportação local**;
 - a Fase 4 continua fora de escopo até o fechamento de toda a Fase 3.
 
+## Liberação técnica da 3C.6 após reconciliação — 16/09/2026
+
+A branch da Central foi reconciliada com a `main` após o aceite humano da 3C.5.
+
+Evidência:
+- `main`: `73997b4d108dd0392173e93640310d70dd3eeccf`;
+- merge de reconciliação: `95c660d6e74c4aafdbb5d7be4c4383ac11d46995`;
+- branch ficou 0 commits atrás da `main`;
+- PR #179 continuou aberto, mergeável e sem merge;
+- **25/25 checks verdes**, incluindo Cloudflare Pages e PDF.js real em Chromium.
+
+Com esse gate concluído, fica liberada **3C.6 — flatten/exportação local**.
+
+Critérios de homologação desta unidade:
+1. `buildBlob()` estrutural continua reversível e sem overlays baked;
+2. saída final separada incorpora texto, imagem, crop e desenhos via pdf-lib;
+3. PDF original permanece vetorial/textual; rasterização integral de página não é permitida como atalho;
+4. PDF final é reaberto pelo PDF.js e comparado ao preview;
+5. rotação 0/90/180/270° e CropBox não padrão são cobertos;
+6. exportação permanece local; nenhuma escrita no Google Drive;
+7. desktop e mobile precisam permanecer funcionais;
+8. reeditabilidade após exportar fica fora da Fase 3.
+
