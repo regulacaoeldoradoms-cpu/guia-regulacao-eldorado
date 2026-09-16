@@ -263,3 +263,43 @@
 .agenda-sync-bridge-body img { width: 82px; height: 82px; object-fit: contain; }
 .agenda-sync-bridge-body h1 { margin: 14px 0 8px; color: #0d3157; font-size: 1.45rem; }
 .agenda-sync-bridge-body p { margin: 0 auto 20px; max-width: 430px; color: #60798f; line-height: 1.6; }
+
+
+.agenda-capacity-message {
+  display: grid;
+  gap: 7px;
+  margin-top: 14px;
+}
+.agenda-capacity-message > span {
+  color: #684a52;
+  font-size: .78rem;
+  font-weight: 800;
+}
+.agenda-capacity-message textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 132px;
+  border: 1px solid #e1bdc1;
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: #fff;
+  color: #493a3e;
+  font: inherit;
+  font-size: .84rem;
+  line-height: 1.45;
+}
+.agenda-capacity-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+@media (max-width: 680px) {
+  .agenda-capacity-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  .agenda-capacity-actions .portal-button {
+    width: 100%;
+    text-align: center;
+  }
+}
