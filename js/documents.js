@@ -133,6 +133,7 @@
     editorObjectOpacity: document.getElementById('editorObjectOpacity'),
     editorObjectDelete: document.getElementById('editorObjectDelete'),
     editorPreview: document.getElementById('editorPreviewButton'),
+    editorExport: document.getElementById('editorExportButton'),
     editorExit: document.getElementById('editorExitButton'),
     editorMergePanel: document.getElementById('editorMergePanel'),
     editorMergeSelection: document.getElementById('editorMergeSelection'),
@@ -646,6 +647,7 @@
     if (els.editorDrawEraser) els.editorDrawEraser.disabled = busy || !session;
     if (els.editorObjectDelete) els.editorObjectDelete.disabled = busy || !selectedEditorObject();
     els.editorPreview.disabled = busy || !session;
+    if (els.editorExport) els.editorExport.disabled = busy || !session || typeof editor?.buildFlattenedBlob !== 'function';
     if (els.editorMergeApply) els.editorMergeApply.disabled = busy || !session || !state.pendingMergeItem;
     if (els.editorMergeCancel) els.editorMergeCancel.disabled = busy || !session;
   }
@@ -890,6 +892,54 @@
       if (seq === state.editorBuildSeq && session === state.editorSession) setEditorBusy(false);
     }
     return opened && seq === state.editorBuildSeq && session === state.editorSession;
+  }
+
+
+  function localEditedPdfName() {
+    const source = String(state.pdfItem?.name || state.pdfItem?.label || 'documento').trim();
+    const base = source.replace(/\.pdf$/i, '')
+      .replace(/[<>:"/\\|?*\u0000-\u001f]+/g, '_')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 120) || 'documento';
+    return base + '-editado.pdf';
+  }
+
+  async function exportEditedPdfLocal() {
+    const editor = window.PortalPdfEditor;
+    const session = state.editorSession;
+    if (!session || state.editorBusy || typeof editor?.buildFlattenedBlob !== 'function') return false;
+
+    setEditorBusy(true);
+    setEditorStatus('Gerando PDF final localmente…');
+    let url = '';
+    try {
+      const blob = await editor.buildFlattenedBlob(session);
+      if (session !== state.editorSession) return false;
+      url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = localEditedPdfName();
+      link.rel = 'noopener';
+      link.hidden = true;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setEditorStatus('PDF final gerado no dispositivo. Nenhum arquivo foi enviado ao Google Drive.', 'success');
+      window.setTimeout(() => {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      }, 5000);
+      url = '';
+      return true;
+    } catch (error) {
+      setEditorStatus(error?.message || 'Não foi possível gerar o PDF final.', 'warning');
+      return false;
+    } finally {
+      if (url) {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      }
+      if (session === state.editorSession) setEditorBusy(false);
+    }
   }
 
   async function startEditor() {
@@ -2231,6 +2281,7 @@
     await addSelectedImages(files);
   });
   els.editorPreview.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
+  els.editorExport?.addEventListener('click', () => exportEditedPdfLocal().catch(() => {}));
   els.editorExit.addEventListener('click', exitEditor);
   els.editorMergePosition?.addEventListener('change', () => {
     if (els.editorMergePageField) {
