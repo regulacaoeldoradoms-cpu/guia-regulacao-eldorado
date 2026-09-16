@@ -28,6 +28,8 @@ Atualizado em 16/09/2026.
 - Implementação concluída no PR #196 — **Agenda: adicionar ordenação cronológica de agendamentos** — e mesclada na `main` em `9c4fd1fa6e4b1f06459224051a6f1933999eb818`.
 - PR #196: **21/21 checks** concluídos com sucesso antes do merge.
 - Pós-merge da `main`: **26/26 check-runs** concluídos com sucesso, incluindo build e deploy. Produção publicada; resta homologação visual/funcional no navegador autorizado.
+- Nova melhoria autorizada em 16/09/2026: **controle operacional automático das 2 salas de teleconsulta do Posto Manoel Gomes**, com janela direta de 30 minutos, Psiquiatria fora do cálculo e alerta de capacidade excedida.
+- Branch atual: `feat/agenda-capacidade-salas`. A implementação inclui aviso de 2/2 salas, grupo crítico para 3 ou mais agendamentos e abertura do WhatsApp de suporte com mensagem pré-preenchida; o envio continua manual.
 
 ## Objetivo da V2
 
@@ -138,16 +140,36 @@ Decisão funcional confirmada em 16/09/2026:
 - a ordenação é aplicada depois dos filtros de escopo, especialidade e pesquisa;
 - a mudança é somente de apresentação; não altera dados sincronizados nem a ordem na fonte DigSaúde.
 
+## Controle operacional das salas
+
+Decisão funcional aprovada em 16/09/2026:
+
+- existem **2 salas de teleconsulta** no Posto Manoel Gomes;
+- o cálculo usa uma **janela direta de até 30 minutos**, sem encadeamento transitivo: 08:00 e 09:00 não pertencem ao mesmo conflito apenas porque existe 08:30;
+- **Psiquiatria fica fora do cálculo**, pois é atendida pelo médico na própria Unidade Básica de Saúde e não ocupa essas duas salas;
+- 2 agendamentos elegíveis dentro da janela recebem aviso **2/2 salas no intervalo**, mas ainda são atendíveis;
+- 3 ou mais agendamentos elegíveis dentro da mesma janela direta geram **Capacidade excedida**;
+- o alerta crítico lista data, horários, nomes dos pacientes e especialidades;
+- a mensagem é preenchida automaticamente no Portal com data, horários, nomes dos pacientes e especialidades, iniciando por “Olá, identificamos conflito de horários...” e solicitando o remanejamento mínimo necessário;
+- por privacidade, os dados de pacientes não são colocados na URL do WhatsApp: o usuário usa **Copiar mensagem** e **Abrir WhatsApp do suporte** para o contato +55 67 8163-1815, revisa e confirma o envio;
+- o Portal não envia a mensagem automaticamente;
+- o cálculo usa somente os registros ativos já sincronizados e não modifica o DigSaúde;
+- a Agenda continua sem observabilidade de conteúdo de paciente.
+
+Justificativa: automatizar a conferência operacional antes feita pela planilha de conflitos, sem transformar o Portal em fonte oficial do agendamento e sem ampliar coleta de dados.
+
 ## Próximo passo exato
 
-1. no Portal, atualizar a página da Agenda com `Ctrl+F5`;
-2. confirmar que **Todos ativos** é a visão inicial e que **Agendamento mais próximo** é a ordenação padrão;
-3. alternar para **Agendamento mais distante** e confirmar inversão cronológica, preservando data e horário como chaves;
-4. marcar um agendamento como visto e confirmar que o card permanece na lista com borda de visualizado;
-5. executar uma sincronização do DigSaúde sem alteração real e confirmar que o mesmo agendamento continua visualizado;
-6. quando uma consulta sair da aba **Agendados** do DigSaúde, confirmar após a sincronização completa que ela desaparece de **Todos ativos** no Portal;
-7. quando ocorrer uma alteração real de data/horário/status em uma consulta ainda ativa, confirmar que o registro volta a ser destacado como alterado;
-8. registrar a homologação humana e encerrar esta correção.
+1. concluir os checks do PR #198 e publicar somente com CI verde;
+2. no Portal, atualizar a página da Agenda com `Ctrl+F5`;
+3. confirmar que **Todos ativos** é a visão inicial e que **Agendamento mais próximo** é a ordenação padrão;
+4. validar visualmente um cenário de **2/2 salas no intervalo**;
+5. validar um cenário de **Capacidade excedida** com 3 ou mais agendamentos dentro de uma janela direta de até 30 minutos;
+6. confirmar que **Psiquiatria** não participa da contagem;
+7. confirmar que 08:00 / 08:30 / 09:00 não forma grupo crítico transitivo;
+8. abrir o WhatsApp de um grupo crítico e conferir data, horários, pacientes e especialidades antes de enviar;
+9. confirmar que marcar como visto continua preservando o card enquanto ele permanece em Agendados;
+10. registrar a homologação humana desta melhoria no status.
 
 ## Riscos restantes
 

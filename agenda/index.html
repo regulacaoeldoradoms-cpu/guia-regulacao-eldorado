@@ -10,7 +10,7 @@
   <link rel="icon" href="/assets/portal-regulacao-header_512x512.png?v=20260911-1" type="image/png">
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
-  <link rel="stylesheet" href="/css/agenda.css?v=20260916-3">
+  <link rel="stylesheet" href="/css/agenda.css?v=20260916-4">
 </head>
 <body class="portal-page agenda-page">
   <div class="portal-shell">
@@ -33,7 +33,7 @@
         <div class="portal-hero-copy">
           <span class="portal-eyebrow">Telemedicina · Agenda</span>
           <h2>Agendamentos do DigSaúde em uma fila operacional.</h2>
-          <p>O DigSaúde permanece como fonte oficial. Esta tela organiza somente os agendamentos sincronizados por uma sessão autorizada, com leitura individual e destaque para registros novos ou alterados.</p>
+          <p>O DigSaúde permanece como fonte oficial. Esta tela organiza somente os agendamentos sincronizados por uma sessão autorizada, com leitura individual, destaque para registros novos ou alterados e controle operacional das duas salas de teleconsulta.</p>
         </div>
         <div class="agenda-sync-state" id="agendaSyncState">Verificando sincronização…</div>
       </section>
@@ -93,6 +93,17 @@
         </div>
       </section>
 
+      <section class="portal-section agenda-capacity-section" id="agendaCapacitySection" aria-labelledby="agendaCapacityTitle" hidden>
+        <div class="portal-section-heading">
+          <div>
+            <h2 id="agendaCapacityTitle">Capacidade das salas</h2>
+            <p>2 salas no Posto Manoel Gomes · janela direta de até 30 minutos · Psiquiatria fora do cálculo.</p>
+          </div>
+          <span class="agenda-capacity-badge" id="agendaCapacityBadge"></span>
+        </div>
+        <div class="agenda-capacity-alerts" id="agendaCapacityAlerts" aria-live="polite"></div>
+      </section>
+
       <section class="portal-section agenda-list-section" aria-labelledby="agendaListTitle">
         <div class="portal-section-heading">
           <div><h2 id="agendaListTitle">Agendamentos</h2><p id="agendaResultCount">Carregando…</p></div>
@@ -115,6 +126,7 @@
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260910-4"></script>
   <script src="/js/tools-catalog.js?v=20260916-1"></script>
-  <script src="/js/agenda.js?v=20260916-3"></script>
+  <script src="/js/agenda-capacity.js?v=20260916-1"></script>
+  <script src="/js/agenda.js?v=20260916-3.1"></script>
 </body>
 </html>

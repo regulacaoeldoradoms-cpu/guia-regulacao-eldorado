@@ -6,6 +6,8 @@
   if (!user) return;
 
   const DIGSAUDE_BASE = 'https://teleatendimento.saude.ms.gov.br/N%C3%BAcleo%20de%20Telessa%C3%BAde%20-%20SES-Fiocruz/consultas/';
+  const WHATSAPP_SUPPORT_NUMBER = '556781631815';
+  const capacityRules = window.AgendaCapacity;
   const els = {
     userName: document.getElementById('portalUserName'),
     userRole: document.getElementById('portalUserRole'),
@@ -15,6 +17,9 @@
     lastSync: document.getElementById('agendaLastSync'),
     list: document.getElementById('agendaList'),
     resultCount: document.getElementById('agendaResultCount'),
+    capacitySection: document.getElementById('agendaCapacitySection'),
+    capacityAlerts: document.getElementById('agendaCapacityAlerts'),
+    capacityBadge: document.getElementById('agendaCapacityBadge'),
     search: document.getElementById('agendaSearch'),
     specialty: document.getElementById('agendaSpecialty'),
     order: document.getElementById('agendaOrder'),
@@ -30,7 +35,13 @@
   const state = {
     records: [],
     scope: 'all',
-    justRead: new Set()
+    justRead: new Set(),
+    capacity: {
+      roomCapacity: 2,
+      windowMinutes: 30,
+      occupancyBySourceId: {},
+      criticalGroups: []
+    }
   };
 
   els.userName.textContent = user.name || user.username || 'Usuário';
@@ -137,6 +148,148 @@
     }).sort(compareAppointment);
   }
 
+  function minutesToClock(value) {
+    const minutes = Number(value);
+    if (!Number.isFinite(minutes)) return '—';
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(rest).padStart(2, '0')}`;
+  }
+
+  function capacityMessage(group) {
+    const count = group.records.length;
+    const excess = Math.max(1, count - state.capacity.roomCapacity);
+    const lines = group.records
+      .slice()
+      .sort((left, right) => String(left.appointmentTime || '').localeCompare(String(right.appointmentTime || '')))
+      .map((record) => `• ${record.appointmentTime || 'Horário não informado'} — ${record.patient || 'Paciente não informado'} — ${record.specialty || 'Especialidade não informada'}`);
+
+    const remanejamento = excess === 1
+      ? 'um dos agendamentos conflitantes'
+      : `pelo menos ${excess} dos agendamentos conflitantes`;
+
+    return [
+      `Olá, identificamos conflito de horários nas teleconsultas de Eldorado/MS para ${formatDate(group.date)}.`,
+      '',
+      'Agendamentos envolvidos:',
+      ...lines,
+      '',
+      `Temos apenas ${state.capacity.roomCapacity} salas de teleconsulta no Posto Manoel Gomes, portanto não conseguimos atender os ${count} pacientes dentro dessa janela de horário.`,
+      '',
+      `Solicitamos, por favor, o remanejamento de ${remanejamento}.`
+    ].join('\n');
+  }
+
+  function whatsappUrl() {
+    return `https://wa.me/${WHATSAPP_SUPPORT_NUMBER}`;
+  }
+
+  async function copyCapacityMessage(group, button) {
+    const message = capacityMessage(group);
+    try {
+      await navigator.clipboard.writeText(message);
+      if (button) {
+        const original = button.textContent;
+        button.textContent = 'Mensagem copiada';
+        window.setTimeout(() => { button.textContent = original; }, 2200);
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function renderCapacityAlerts() {
+    if (!els.capacitySection || !els.capacityAlerts || !els.capacityBadge) return;
+
+    const groups = state.capacity.criticalGroups || [];
+    els.capacityAlerts.replaceChildren();
+    els.capacitySection.hidden = groups.length === 0;
+
+    if (!groups.length) {
+      els.capacityBadge.textContent = '';
+      return;
+    }
+
+    els.capacityBadge.textContent = `${groups.length} conflito${groups.length === 1 ? '' : 's'} crítico${groups.length === 1 ? '' : 's'}`;
+
+    groups.forEach((group) => {
+      const alert = document.createElement('article');
+      alert.className = 'agenda-capacity-alert';
+
+      const head = document.createElement('div');
+      head.className = 'agenda-capacity-alert-head';
+
+      const titleWrap = document.createElement('div');
+      const title = document.createElement('strong');
+      title.textContent = 'Capacidade excedida';
+      const subtitle = document.createElement('span');
+      subtitle.textContent = `${formatDate(group.date)} · ${minutesToClock(group.startMinutes)}–${minutesToClock(group.endMinutes)} · ${group.records.length}/${state.capacity.roomCapacity} salas necessárias`;
+      titleWrap.append(title, subtitle);
+
+      const excess = document.createElement('span');
+      excess.className = 'agenda-capacity-excess';
+      excess.textContent = `+${group.records.length - state.capacity.roomCapacity}`;
+
+      head.append(titleWrap, excess);
+
+      const explanation = document.createElement('p');
+      explanation.textContent = `${group.records.length} teleconsultas estão concentradas em uma janela direta de até ${state.capacity.windowMinutes} minutos. É necessário remanejar pelo menos ${group.records.length - state.capacity.roomCapacity} agendamento${group.records.length - state.capacity.roomCapacity === 1 ? '' : 's'}.`;
+
+      const list = document.createElement('ul');
+      list.className = 'agenda-capacity-patients';
+      group.records
+        .slice()
+        .sort((left, right) => String(left.appointmentTime || '').localeCompare(String(right.appointmentTime || '')))
+        .forEach((record) => {
+          const item = document.createElement('li');
+          const time = document.createElement('strong');
+          time.textContent = record.appointmentTime || '—';
+          const details = document.createElement('span');
+          details.textContent = `${record.patient || 'Paciente não informado'} · ${record.specialty || 'Especialidade não informada'}`;
+          item.append(time, details);
+          list.appendChild(item);
+        });
+
+      const messageLabel = document.createElement('label');
+      messageLabel.className = 'agenda-capacity-message';
+      const messageTitle = document.createElement('span');
+      messageTitle.textContent = 'Mensagem pronta para o suporte';
+      const messagePreview = document.createElement('textarea');
+      messagePreview.readOnly = true;
+      messagePreview.rows = 7;
+      messagePreview.value = capacityMessage(group);
+      messageLabel.append(messageTitle, messagePreview);
+
+      const footer = document.createElement('div');
+      footer.className = 'agenda-capacity-footer';
+
+      const privacy = document.createElement('small');
+      privacy.textContent = 'A mensagem é preparada localmente. Copie o texto e confirme o envio no WhatsApp.';
+
+      const actions = document.createElement('div');
+      actions.className = 'agenda-capacity-actions';
+
+      const copy = document.createElement('button');
+      copy.type = 'button';
+      copy.className = 'portal-button secondary';
+      copy.textContent = 'Copiar mensagem';
+      copy.addEventListener('click', () => { copyCapacityMessage(group, copy); });
+
+      const whatsapp = document.createElement('a');
+      whatsapp.className = 'portal-button agenda-whatsapp-button';
+      whatsapp.href = whatsappUrl();
+      whatsapp.target = '_blank';
+      whatsapp.rel = 'noopener noreferrer';
+      whatsapp.textContent = 'Abrir WhatsApp do suporte';
+
+      actions.append(copy, whatsapp);
+      footer.append(privacy, actions);
+      alert.append(head, explanation, list, messageLabel, footer);
+      els.capacityAlerts.appendChild(alert);
+    });
+  }
+
   function metaBlock(label, value, className = '') {
     const wrap = document.createElement('div');
     wrap.className = `agenda-meta ${className}`.trim();
@@ -167,11 +320,13 @@
   }
 
   function createCard(record) {
+    const occupancy = Number(state.capacity.occupancyBySourceId?.[record.sourceId] || 0);
     const card = document.createElement('article');
     card.className = [
       'agenda-card',
       record.unread ? 'is-unread' : (record.active ? 'is-read' : ''),
-      record.active ? '' : 'is-inactive'
+      record.active ? '' : 'is-inactive',
+      occupancy > state.capacity.roomCapacity ? 'is-capacity-critical' : ''
     ].filter(Boolean).join(' ');
     card.dataset.sourceId = record.sourceId;
 
@@ -182,6 +337,16 @@
       chip.className = 'agenda-new-chip';
       chip.textContent = 'NOVO / ALTERADO';
       patient.appendChild(chip);
+    }
+    if (record.active && occupancy >= 2) {
+      const capacityChip = document.createElement('span');
+      capacityChip.className = occupancy > state.capacity.roomCapacity
+        ? 'agenda-capacity-chip is-critical'
+        : 'agenda-capacity-chip is-full';
+      capacityChip.textContent = occupancy > state.capacity.roomCapacity
+        ? `CAPACIDADE EXCEDIDA · ${occupancy}/${state.capacity.roomCapacity}`
+        : `${occupancy}/${state.capacity.roomCapacity} SALAS NO INTERVALO`;
+      patient.appendChild(capacityChip);
     }
     const name = document.createElement('strong');
     name.textContent = record.patient || 'Paciente não informado';
@@ -246,7 +411,11 @@
   }
 
   function render() {
+    state.capacity = capacityRules?.analyze
+      ? capacityRules.analyze(state.records)
+      : { roomCapacity: 2, windowMinutes: 30, occupancyBySourceId: {}, criticalGroups: [] };
     renderSummary();
+    renderCapacityAlerts();
     fillSpecialties();
     const records = filteredRecords();
     els.resultCount.textContent = `${records.length} agendamento${records.length === 1 ? '' : 's'} nesta visualização`;
