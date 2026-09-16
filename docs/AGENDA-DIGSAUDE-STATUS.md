@@ -150,8 +150,9 @@ Decisão funcional aprovada em 16/09/2026:
 - 2 agendamentos elegíveis dentro da janela recebem aviso **2/2 salas no intervalo**, mas ainda são atendíveis;
 - 3 ou mais agendamentos elegíveis dentro da mesma janela direta geram **Capacidade excedida**;
 - o alerta crítico lista data, horários, nomes dos pacientes e especialidades;
-- **Abrir WhatsApp do suporte** abre o contato +55 67 8163-1815 com mensagem iniciando por “Olá, identificamos conflito de horários...” e solicitando o remanejamento mínimo necessário;
-- a mensagem é apenas preparada no navegador; o Portal não envia automaticamente;
+- a mensagem é preenchida automaticamente no Portal com data, horários, nomes dos pacientes e especialidades, iniciando por “Olá, identificamos conflito de horários...” e solicitando o remanejamento mínimo necessário;
+- por privacidade, os dados de pacientes não são colocados na URL do WhatsApp: o usuário usa **Copiar mensagem** e **Abrir WhatsApp do suporte** para o contato +55 67 8163-1815, revisa e confirma o envio;
+- o Portal não envia a mensagem automaticamente;
 - o cálculo usa somente os registros ativos já sincronizados e não modifica o DigSaúde;
 - a Agenda continua sem observabilidade de conteúdo de paciente.
 
