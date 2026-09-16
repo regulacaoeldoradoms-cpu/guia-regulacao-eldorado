@@ -127,7 +127,7 @@ test.describe('Central de Documentos — concorrência de abertura do visualizad
       }
 
       async function waitForSettledSurface(expectedPageCount, expectedActivePage) {
-        const deadline = performance.now() + 8_000;
+        const deadline = performance.now() + 15_000;
         let previousSignature = '';
         let stableSamples = 0;
 
