@@ -63,7 +63,7 @@
 .agenda-list-section .portal-section-heading p { margin: 5px 0 0; color: #667d93; font-size: .82rem; }
 .agenda-toolbar {
   display: grid;
-  grid-template-columns: minmax(260px, 1.6fr) minmax(190px, .8fr) auto auto;
+  grid-template-columns: minmax(260px, 1.45fr) minmax(180px, .75fr) minmax(210px, .8fr) auto auto;
   gap: 12px;
   align-items: center;
   padding: 18px 22px;

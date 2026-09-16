@@ -10,7 +10,7 @@
   <link rel="icon" href="/assets/portal-regulacao-header_512x512.png?v=20260911-1" type="image/png">
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
-  <link rel="stylesheet" href="/css/agenda.css?v=20260916-2">
+  <link rel="stylesheet" href="/css/agenda.css?v=20260916-3">
 </head>
 <body class="portal-page agenda-page">
   <div class="portal-shell">
@@ -84,6 +84,10 @@
           <select id="agendaSpecialty" aria-label="Filtrar por especialidade">
             <option value="">Todas as especialidades</option>
           </select>
+          <select id="agendaOrder" aria-label="Ordenar por data do agendamento">
+            <option value="asc">Agendamento mais próximo</option>
+            <option value="desc">Agendamento mais distante</option>
+          </select>
           <label class="agenda-checkbox"><input id="agendaIncludeInactive" type="checkbox"> Mostrar removidos da aba Agendados</label>
           <button class="portal-button secondary" id="agendaRefresh" type="button">Atualizar</button>
         </div>
@@ -111,6 +115,6 @@
   <script src="/js/auth-config.js?v=20260815-1"></script>
   <script src="/js/auth-client.js?v=20260910-4"></script>
   <script src="/js/tools-catalog.js?v=20260916-1"></script>
-  <script src="/js/agenda.js?v=20260916-2"></script>
+  <script src="/js/agenda.js?v=20260916-3"></script>
 </body>
 </html>
