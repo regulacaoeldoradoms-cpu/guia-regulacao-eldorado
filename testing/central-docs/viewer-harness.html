@@ -52,7 +52,8 @@
           <button id="editorCrop" class="documents-editor-tool" type="button" title="Recortar página" aria-pressed="false">⌗</button>
           <button id="editorSelect" class="documents-editor-tool" type="button" title="Selecionar e mover objetos">↖</button>
           <button id="editorWrite" class="documents-editor-tool" type="button" title="Escrever sobre a página">T</button>
-          <button id="editorOverlayImage" class="documents-editor-tool" type="button" title="Colar imagem sintética sobre a página">▣</button>
+          <button id="editorOverlayImage" class="documents-editor-tool" type="button" title="Colar imagem sobre a página">▣</button>
+          <input id="editorOverlayImageInput" type="file" accept="image/*" hidden>
           <button id="editorDraw" class="documents-editor-tool" type="button" title="Desenhar sobre a página" aria-pressed="false">✎</button>
           <span class="documents-editor-tool-spacer"></span>
           <button id="editorRefresh" class="documents-editor-tool" type="button" title="Atualizar PDF">⟳</button>
@@ -96,6 +97,7 @@
         <p id="editorMergeSelectionLab">Segundo PDF sintético de 3 páginas selecionado para o laboratório. Você também pode adicionar PDF ou imagem do dispositivo; nada é enviado ao Google Drive.</p>
         <button id="editorMergeFileButton" class="portal-button documents-editor-local-import" type="button">Adicionar PDF ou imagem</button>
         <input id="editorMergeFileInput" type="file" accept=".pdf,application/pdf,image/*" multiple hidden>
+        <div id="editorMergePreviewLab" class="documents-editor-merge-preview" hidden aria-live="polite"></div>
         <label class="documents-editor-field">Inserir
           <select id="editorMergePosition">
             <option value="before-document">Antes do documento atual</option>
