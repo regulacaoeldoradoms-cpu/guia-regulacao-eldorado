@@ -125,6 +125,71 @@ sqliteTest('capabilities documentais são independentes do cargo e edit/extract 
   assert.deepEqual(untouched, { view: false, extract: false, edit: false, manage: false });
 });
 
+sqliteTest('paleta do editor é preferência por conta, editável e não contém conteúdo documental', async () => {
+  const env = environment();
+  const first = await register(env, 'documentos.paleta.um', '127.0.0.91');
+  const second = await register(env, 'documentos.paleta.dois', '127.0.0.92');
+
+  await setDocumentCapabilities(env, 'documentos.paleta.um', { view: true }, 'admin');
+  await setDocumentCapabilities(env, 'documentos.paleta.dois', { view: true }, 'admin');
+
+  const initialResponse = await handleDocumentsRoute(
+    documentRequest('/api/documents/preferences', first.token),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(initialResponse.status, 200);
+  const initial = await initialResponse.json();
+  assert.deepEqual(initial.colorPalette, ['#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825']);
+
+  const savedResponse = await handleDocumentsRoute(
+    documentRequest('/api/documents/preferences', first.token, {
+      method: 'PATCH',
+      body: { colorPalette: ['#102030', '#ffffff', '#ff0000'] }
+    }),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(savedResponse.status, 200);
+  assert.deepEqual((await savedResponse.json()).colorPalette, ['#102030', '#ffffff', '#ff0000']);
+
+  const reloaded = await handleDocumentsRoute(
+    documentRequest('/api/documents/preferences', first.token),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.deepEqual((await reloaded.json()).colorPalette, ['#102030', '#ffffff', '#ff0000']);
+
+  const isolated = await handleDocumentsRoute(
+    documentRequest('/api/documents/preferences', second.token),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.deepEqual((await isolated.json()).colorPalette, ['#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825']);
+
+  const invalid = await handleDocumentsRoute(
+    documentRequest('/api/documents/preferences', first.token, {
+      method: 'PATCH',
+      body: { colorPalette: ['red'] }
+    }),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(invalid.status, 400);
+  assert.equal((await invalid.json()).code, 'DOCUMENTS_EDITOR_PALETTE_INVALID');
+
+  const row = await env.AUTH_DB.prepare(
+    'SELECT username, color_palette_json FROM auth_document_editor_preferences WHERE username = ?'
+  ).bind('documentos.paleta.um').first();
+  assert.equal(row.username, 'documentos.paleta.um');
+  assert.equal(String(row.color_palette_json).includes('Texto'), false);
+});
+
 sqliteTest('cargo adicional Central de Documentos acumula com o perfil principal e concede leitura', async () => {
   const env = environment();
   await register(env, 'documentos.acumulado', '127.0.0.87');

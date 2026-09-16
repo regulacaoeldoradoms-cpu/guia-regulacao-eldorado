@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
-const root = path.resolve(new URL('../../', import.meta.url).pathname);
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (filename) => fs.readFileSync(path.join(root, filename), 'utf8');
 
 const ACTIVE_ROUTES = [
@@ -112,13 +113,14 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
 
 test('service worker armazena somente superfície pública e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260914-4'/);
+  assert.match(source, /CACHE_VERSION = '20260916-10'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.ok(source.includes("'/documentos/'"));
   assert.ok(read('js/portal-performance.js').includes("'/documentos/'"));
   assert.match(source, /portal-observability\.js\?v=20260911-1/);
   assert.match(source, /document-cache\.js\?v=20260912-1/);
-  assert.match(source, /document-editor\.js\?v=20260912-1/);
+  assert.match(source, /document-editor\.js\?v=20260916-2/);
+  assert.ok(source.includes("'/vendor/pdf-lib/pdf-lib.min.js'"));
   assert.match(read('js/portal-performance.js'), /portal-observability\.js\?v=20260911-1/);
   assert.match(source, /\/seguranca\//);
   assert.match(source, /\/configuracoes\//);
