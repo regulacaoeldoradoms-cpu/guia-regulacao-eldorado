@@ -213,6 +213,7 @@
     element.style.opacity = '1';
     element.style.transform = 'translateY(0)';
     element.style.pointerEvents = 'auto';
+    button()?.setAttribute('aria-expanded', 'true');
   }
 
   function hideDetails({ force = false } = {}) {
@@ -223,6 +224,7 @@
     element.style.opacity = '0';
     element.style.transform = 'translateY(6px)';
     element.style.pointerEvents = 'none';
+    button()?.setAttribute('aria-expanded', 'false');
     detailHideTimer = window.setTimeout(() => {
       if (!detailPinned) element.hidden = true;
     }, 160);
