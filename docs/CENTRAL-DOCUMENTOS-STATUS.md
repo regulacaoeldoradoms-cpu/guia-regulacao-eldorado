@@ -11,7 +11,7 @@ Subfase atual: **4C — correção de homologação visual: botão de força + d
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: **#201**  
 Base da fase: `main@ccaa15c0c7b46dd53f7f508635079131806144b8`  
-Head final de 4A–4C: `053e313dd45cab589a70c09b529b6c18a296b99f`
+Head atual da correção de 4C: `4a2df338fb4081cc726cda7675f544de9bf15a5b`
 
 ## Correção após homologação visual humana — 16/09/2026 19:04 (America/Campo_Grande)
 
@@ -39,7 +39,7 @@ Decisão:
 
 ## Estado consolidado
 
-As subfases **4A, 4B e 4C estão tecnicamente concluídas**. A Fase 4 ainda não pode ser encerrada porque o critério final do Guia Mestre exige confirmação real do Google Drive e homologação humana controlada. O gate de escrita continua desligado por padrão; nenhum documento real da Regulação foi gravado por esta implementação.
+As subfases **4A e 4B estão concluídas tecnicamente**. A base técnica originalmente chamada de 4C passou nos testes, porém a **4C foi reaberta** após o reteste humano porque o staging não mostrava a mudança e porque a semântica correta é sincronização automática como caminho normal, com botão de força como fallback. A Fase 4 ainda não pode ser encerrada. O gate de escrita continua desligado por padrão; nenhum documento real da Regulação foi gravado por esta implementação.
 
 ### 4A — contrato e preflight — CONCLUÍDA
 
