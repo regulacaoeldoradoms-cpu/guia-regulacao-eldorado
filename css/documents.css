@@ -1431,10 +1431,11 @@
   height: 38px;
   padding: 0;
   border: 0;
-  background-image: url('/assets/Bot%C3%B5es_Editor_PDF.png?v=20260916-1');
+  background-color: transparent;
+  background-image: url('/assets/editor-pdf-buttons/cancelar.svg?v=20260916-2');
   background-repeat: no-repeat;
-  background-size: 371.784px 278.838px;
-  background-position: -264.973px -36.716px;
+  background-position: center;
+  background-size: 100% 100%;
   color: transparent;
   font-size: 0;
   box-shadow: none;
@@ -1442,12 +1443,9 @@
 
 .portal-pdf-crop-actions .portal-pdf-crop-action--cancel:hover,
 .portal-pdf-crop-actions .portal-pdf-crop-action--cancel:focus-visible {
-  background-image: url('/assets/Bot%C3%B5es_Editor_PDF.png?v=20260916-1');
-  background-repeat: no-repeat;
-  background-size: 371.784px 278.838px;
-  background-position: -264.973px -36.716px;
+  background-image: url('/assets/editor-pdf-buttons/cancelar.svg?v=20260916-2');
   border-color: transparent;
-  filter: brightness(1.03);
+  filter: brightness(1.04);
   outline: 3px solid rgba(19, 117, 184, .22);
   outline-offset: 2px;
 }
