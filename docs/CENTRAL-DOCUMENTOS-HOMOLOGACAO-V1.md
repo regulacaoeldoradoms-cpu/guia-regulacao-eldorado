@@ -330,3 +330,32 @@ Consequência de governança:
 - a próxima unidade autorizada é 3C.4;
 - continuam proibidos merge, escrita no Google Drive e deploy de produção durante esta etapa.
 
+## Ajuste pós-feedback humano da 3C.4 — seleção explícita e única por página — 16/09/2026
+
+Durante a homologação visual, foi rejeitado o comportamento que desenhava uma moldura inicial de recorte com margem de 4% ao apenas entrar no modo **Recortar**. Embora aquele retângulo ainda não estivesse gravado no histórico, a apresentação visual sugeria corte parcial predefinido.
+
+Requisito funcional consolidado:
+- **sem seleção do usuário, não há recorte**;
+- a página deve permanecer visualmente inteira ao entrar no modo;
+- o primeiro arraste direto sobre a página cria a área mantida;
+- cada página aceita **no máximo uma área de recorte**;
+- depois de criada, a mesma área pode ser movida/redimensionada ou removida por ↺;
+- tentar iniciar uma segunda seleção fora da moldura não cria outro crop.
+
+Implementação:
+- removido o `defaultCropRect` de 4%/92%;
+- `crop: null` não renderiza frame nem máscara;
+- o gesto `create` nasce na própria `.portal-pdf-crop-layer` e só passa a existir quando largura e altura superam o limiar mínimo;
+- o modelo continua sendo um único campo `crop` por `pageId`, preservando a restrição estrutural de 1 por página;
+- mover, resize, Undo/Redo, rotação, duplicação, exclusão/reordenação e CropBox continuam usando o mesmo metadado reversível;
+- nenhuma materialização no PDF final foi antecipada: isso permanece para 3C.6.
+
+Validação do head `ca7801df7d6042a3d111a2185c21bd82b12923c8`:
+- **25/25 checks verdes**;
+- Cloudflare Pages: sucesso;
+- workflow de navegador: sucesso;
+- etapa Playwright: sucesso;
+- a suíte específica de Recortar passou a verificar explicitamente o estado inicial sem moldura, criação por seleção, bloqueio de segunda seleção, resize, histórico, CropBox, reordenação e touch.
+
+A 3C.4 permanece aguardando apenas o novo aceite humano dessa interação corrigida.
+
