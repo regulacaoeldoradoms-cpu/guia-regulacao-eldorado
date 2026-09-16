@@ -2,6 +2,7 @@
 
 Data de início: 16/09/2026  
 Branch: `codex/central-docs-drive-sync-phase4`  
+PR: `#201`  
 Base inicial: `main@ccaa15c0c7b46dd53f7f508635079131806144b8`
 
 ## Objetivo
@@ -23,7 +24,8 @@ Nenhum estado visual pode declarar que o arquivo foi salvo antes da confirmaçã
 - conflito de versão interrompe a substituição sem upload;
 - a revisão binária anterior deve permanecer recuperável antes de substituir;
 - upload interrompido/indeterminado nunca é apresentado como “salvo”;
-- nenhum teste automatizado desta fase usa documento real da Regulação.
+- nenhum teste automatizado desta fase usa documento real da Regulação;
+- escrita real depende do feature gate `DOCUMENTS_DRIVE_WRITE_ENABLED` e permanece desligada até a homologação controlada.
 
 ## Decisão técnica confirmada em documentação oficial do Google Drive
 
@@ -43,65 +45,89 @@ Referências oficiais verificadas em 16/09/2026:
 
 ## Subfases
 
-### 4A — Contrato e preflight de sincronização
+### 4A — Contrato e preflight de sincronização — CONCLUÍDA
 
-Escopo:
-- obter metadados atuais do Drive por referência opaca;
-- validar PDF, capacidade de edição e versão-base;
-- detectar conflito antes de qualquer escrita;
-- diferenciar `replace_pdf` e `save_copy`;
-- expor somente metadados técnicos mínimos ao frontend;
+Implementado:
+- metadados atuais do Drive por referência opaca;
+- validação de PDF, capacidade de edição e versão-base;
+- detecção de conflito antes de qualquer escrita;
+- diferenciação entre `replace_pdf` e `save_copy`;
+- resposta técnica sanitizada sem fileId bruto, nome do arquivo, parentId ou revisionId;
 - testes com Google Drive totalmente mockado.
 
-**Nenhuma escrita real ou simulada de upload é permitida nesta subfase.**
-
-Critério de aceite:
-- substituição com versão divergente termina em conflito explícito e zero chamadas de upload;
+Critério de aceite comprovado:
+- substituição com versão divergente termina em `DRIVE_VERSION_CONFLICT` e zero chamadas de upload;
 - usuário sem `documents_edit` é bloqueado no Worker;
-- resposta não contém fileId bruto nem nome do arquivo;
+- resposta não contém identificadores brutos do Drive nem nome do arquivo;
 - testes automatizados passam.
 
-### 4B — Transporte resumable + revisão recuperável
+### 4B — Transporte resumable + revisão recuperável — CONCLUÍDA TECNICAMENTE
 
-Escopo:
-- iniciar sessão resumable no backend;
-- manter a URI Google somente no backend;
-- preservar a revisão anterior antes de substituir;
-- transmitir bytes sem gravar PDF em D1/Cache Storage/logs;
-- concluir somente após resposta final válida do Drive;
-- tratar interrupção como pendente/indeterminada;
-- testes de sucesso, 308, 4xx/5xx e conflito com Google mockado.
+Implementado:
+- sessão resumable iniciada no backend;
+- URI Google cifrada no backend e nunca entregue ao navegador;
+- sessões técnicas com expiração e limpeza;
+- revisão anterior preservada com `keepForever=true` antes de `replace_pdf`;
+- envio em blocos com `Content-Range`;
+- tratamento de `308` e consulta explícita de status para retomada;
+- validação da assinatura `%PDF-` no primeiro bloco;
+- conteúdo PDF não é persistido em D1, Cache Storage do Worker ou logs;
+- conclusão somente após resposta final válida do Drive;
+- erro temporário/indeterminado não produz falso “salvo”;
+- testes de sucesso, interrupção, retomada, conflito e `save_copy` com Google mockado.
 
-Critério de aceite:
+Critério de aceite técnico comprovado:
 - nenhuma resposta de sucesso ocorre sem confirmação final do Drive;
-- falha/interrupção não perde o original e não gera falso positivo.
+- falha/interrupção mantém o original e não gera falso positivo;
+- escrita continua bloqueada pelo feature gate fora da homologação 4D.
 
-### 4C — Interface do editor + telemetria técnica
+### 4C — Interface do editor + telemetria técnica — CONCLUÍDA TECNICAMENTE
 
-Escopo:
-- ação explícita de sincronização no espaço liberado pelo antigo “Atualizar PDF”;
-- escolha entre “Salvar como novo” e “Substituir original”;
-- estados de progresso, conflito, falha e sucesso;
-- `drive_sync_started/completed/failed` somente com propriedades allowlisted;
-- invalidação/atualização do cache documental após sucesso.
+Implementado:
+- ação explícita **Sincronizar com Google Drive** no espaço liberado pelo antigo “Atualizar PDF”;
+- escolha entre **Salvar como novo** e **Substituir original**;
+- campo de nome para a nova cópia;
+- estados de validação, geração, envio, retomada, conflito, falha e sucesso;
+- `Salvo no Google Drive` só aparece depois da confirmação final;
+- atualização do estado/cache documental apenas após confirmação real;
+- `drive_sync_started`, `drive_sync_completed` e `drive_sync_failed` apenas com propriedades técnicas allowlisted.
 
-Critério de aceite:
-- feedback imediato;
-- somente confirmação real exibe “Salvo no Drive”;
-- telemetria não contém nome, referência, pasta, conteúdo ou dado clínico.
+Critério de aceite técnico comprovado:
+- feedback imediato e estado de progresso explícito;
+- somente confirmação final exibe sucesso;
+- telemetria não contém nome, referência, pasta, fileId, conteúdo ou dado clínico.
 
-### 4D — Homologação controlada no Drive institucional
+Validação do head técnico `b4fffce6c69ed85b2f69e613adc36dec9f3bf055`:
+- **25/25 workflows verdes**;
+- validação **Central de Documentos — Fases 1–4** verde;
+- governança e bundle de staging verdes;
+- **PDF.js real em Chromium** verde;
+- Playwright: **78 casos — 75 passed / 3 skipped esperados**, desktop e mobile.
+
+### 4D — Homologação controlada no Drive institucional — PENDENTE DE INTERAÇÃO HUMANA
 
 Escopo:
 - validação humana com arquivo de teste deliberadamente escolhido;
-- primeiro “Salvar como novo”;
-- depois substituição apenas em arquivo de teste descartável e com confirmação explícita;
+- primeiro **Salvar como novo**;
+- depois **Substituir original** somente em arquivo descartável e com confirmação explícita;
 - confirmar revisão recuperável e conflito;
-- registrar evidências sem conteúdo documental.
+- confirmar `drive_sync_started/completed/failed` sem conteúdo documental;
+- registrar evidências técnicas sem dados do arquivo.
+
+Procedimento obrigatório:
+1. escolher um PDF descartável, sem dado de paciente e sem valor operacional;
+2. habilitar temporariamente `DOCUMENTS_DRIVE_WRITE_ENABLED=true` no ambiente controlado;
+3. abrir o PDF pelo Portal e editar algo simples;
+4. executar **Salvar como novo** e confirmar a existência real do novo arquivo no Drive;
+5. abrir um arquivo descartável de teste e executar **Substituir original**;
+6. confirmar nova `version` e que a revisão anterior permaneceu recuperável;
+7. alterar o arquivo no Drive em paralelo, tentar substituir a versão antiga e confirmar que o conflito bloqueia a sobrescrita;
+8. conferir a telemetria técnica sem conteúdo sensível;
+9. registrar a homologação e decidir o estado final do feature gate.
 
 Critério de aceite da Fase 4:
 - `drive_sync_started/completed/failed` medidos;
-- save-copy e replace funcionam;
+- save-copy e replace funcionam no Drive real;
 - conflito impede sobrescrita;
 - revisão anterior permanece recuperável;
 - nenhum salvamento é declarado antes da confirmação do Google Drive;
@@ -118,4 +144,6 @@ Critério de aceite da Fase 4:
 
 ## Gate atual
 
-**4A em execução.** O primeiro incremento é deliberadamente read-only contra o Drive: somente metadados/preflight e testes mockados. Escrita real fica bloqueada até 4D.
+**4A, 4B e 4C concluídas tecnicamente. 4D é o único gate restante.**
+
+O PR #201 deve permanecer aberto e sem merge até a homologação real controlada. O feature gate de escrita deve permanecer desligado até que um operador escolha conscientemente um PDF descartável para o teste institucional.
