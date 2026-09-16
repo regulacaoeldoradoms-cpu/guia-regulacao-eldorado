@@ -137,6 +137,7 @@
     editorObjectDelete: document.getElementById('editorObjectDelete'),
     editorPreview: document.getElementById('editorPreviewButton'),
     editorExport: document.getElementById('editorExportButton'),
+    editorPrint: document.getElementById('editorPrintButton'),
     editorExit: document.getElementById('editorExitButton'),
     editorMergePanel: document.getElementById('editorMergePanel'),
     editorMergeSelection: document.getElementById('editorMergeSelection'),
@@ -654,6 +655,7 @@
     if (els.editorObjectDelete) els.editorObjectDelete.disabled = busy || !selectedEditorObject();
     els.editorPreview.disabled = busy || !session;
     if (els.editorExport) els.editorExport.disabled = busy || !session || typeof editor?.buildFlattenedBlob !== 'function';
+    if (els.editorPrint) els.editorPrint.disabled = busy || !session || typeof editor?.buildFlattenedBlob !== 'function';
     if (els.editorMergeLocal) els.editorMergeLocal.disabled = busy || !session;
     if (els.editorMergeLocalInput) els.editorMergeLocalInput.disabled = busy || !session;
     if (els.editorMergeApply) els.editorMergeApply.disabled = busy || !session || (!state.pendingMergeItem && !state.pendingMergeFiles.length);
@@ -948,6 +950,88 @@
       if (url) {
         try { URL.revokeObjectURL(url); } catch (_) {}
       }
+      if (session === state.editorSession) setEditorBusy(false);
+    }
+  }
+
+  function editorShortcutIsTypingTarget(target) {
+    if (!(target instanceof Element)) return false;
+    if (target.closest('textarea, select, [contenteditable="true"], [role="textbox"]')) return true;
+    const input = target.closest('input');
+    if (!input) return false;
+    const type = String(input.getAttribute('type') || 'text').toLowerCase();
+    const nonEditingTypes = new Set(['file', 'hidden', 'button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color']);
+    return !nonEditingTypes.has(type);
+  }
+
+  function printPdfBlob(blob) {
+    if (!(blob instanceof Blob)) return Promise.resolve(false);
+    const url = URL.createObjectURL(blob);
+    const frame = document.createElement('iframe');
+    frame.className = 'documents-print-frame';
+    frame.title = 'Impressão do PDF final';
+    frame.setAttribute('aria-hidden', 'true');
+
+    return new Promise((resolve, reject) => {
+      let requested = false;
+      let cleaned = false;
+      let fallbackTimer = 0;
+      let cleanupTimer = 0;
+
+      const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        if (fallbackTimer) window.clearTimeout(fallbackTimer);
+        if (cleanupTimer) window.clearTimeout(cleanupTimer);
+        try { frame.remove(); } catch (_) {}
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      };
+
+      const requestPrint = () => {
+        if (requested || cleaned) return;
+        const targetWindow = frame.contentWindow;
+        if (!targetWindow) return;
+        requested = true;
+        try {
+          targetWindow.focus();
+          targetWindow.addEventListener?.('afterprint', cleanup, { once: true });
+          targetWindow.print();
+          cleanupTimer = window.setTimeout(cleanup, 60000);
+          resolve(true);
+        } catch (error) {
+          cleanup();
+          reject(error);
+        }
+      };
+
+      frame.addEventListener('load', () => {
+        window.setTimeout(requestPrint, 120);
+      }, { once: true });
+
+      document.body.appendChild(frame);
+      frame.src = url;
+      fallbackTimer = window.setTimeout(requestPrint, 1800);
+    });
+  }
+
+  async function printEditedPdfLocal() {
+    const editor = window.PortalPdfEditor;
+    const session = state.editorSession;
+    if (!session || state.editorBusy || typeof editor?.buildFlattenedBlob !== 'function') return false;
+
+    setEditorBusy(true);
+    setEditorStatus('Preparando impressão do PDF final…');
+    try {
+      const blob = await editor.buildFlattenedBlob(session);
+      if (session !== state.editorSession) return false;
+      const requested = await printPdfBlob(blob);
+      if (!requested) return false;
+      setEditorStatus('Impressão do PDF final solicitada ao navegador. Nenhum arquivo foi enviado ao Google Drive.', 'success');
+      return true;
+    } catch (error) {
+      setEditorStatus(error?.message || 'Não foi possível abrir a impressão do PDF final.', 'warning');
+      return false;
+    } finally {
       if (session === state.editorSession) setEditorBusy(false);
     }
   }
@@ -2562,6 +2646,7 @@
   });
   els.editorPreview.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
   els.editorExport?.addEventListener('click', () => exportEditedPdfLocal().catch(() => {}));
+  els.editorPrint?.addEventListener('click', () => printEditedPdfLocal().catch(() => {}));
   els.editorExit.addEventListener('click', exitEditor);
   els.editorMergePosition?.addEventListener('change', () => {
     if (els.editorMergePageField) {
@@ -2580,15 +2665,37 @@
   }, true);
 
   document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Delete' || !state.editorSession || state.editorBusy || !state.selectedObjectId) return;
-    const target = event.target instanceof Element ? event.target : null;
-    if (target?.closest('textarea, select, [contenteditable="true"], [role="textbox"]')) return;
-    const focusedInput = target?.closest('input');
-    if (focusedInput) {
-      const type = String(focusedInput.getAttribute('type') || 'text').toLowerCase();
-      const nonEditingTypes = new Set(['file', 'hidden', 'button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color']);
-      if (!nonEditingTypes.has(type)) return;
+    if (!state.editorSession || state.editorBusy) return;
+
+    const key = String(event.key || '').toLowerCase();
+    const primary = (event.ctrlKey || event.metaKey) && !event.altKey;
+    const typingTarget = editorShortcutIsTypingTarget(event.target);
+
+    if (primary && key === 'z' && !event.shiftKey) {
+      if (typingTarget) return;
+      event.preventDefault();
+      event.stopPropagation();
+      undoEditor().catch(() => {});
+      return;
     }
+
+    if (primary && ((key === 'y' && !event.shiftKey) || (key === 'z' && event.shiftKey))) {
+      if (typingTarget) return;
+      event.preventDefault();
+      event.stopPropagation();
+      redoEditor().catch(() => {});
+      return;
+    }
+
+    if (primary && key === 'p') {
+      event.preventDefault();
+      event.stopPropagation();
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      window.setTimeout(() => printEditedPdfLocal().catch(() => {}), 0);
+      return;
+    }
+
+    if (event.key !== 'Delete' || !state.selectedObjectId || typingTarget) return;
     if (!deleteSelectedEditorObject()) return;
     event.preventDefault();
     event.stopPropagation();
