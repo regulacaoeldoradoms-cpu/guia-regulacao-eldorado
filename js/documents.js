@@ -14,6 +14,10 @@
     '#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'
   ]);
 
+  const DRIVE_AUTO_SYNC_IDLE_MS = 1000;
+  const DRIVE_SYNC_SUCCESS_VISIBLE_MS = 1000;
+  const DRIVE_SYNC_REVISION_POLL_MS = 200;
+
   if (user.mustChangePassword) {
     location.replace('/seguranca/?primeiro-acesso=1');
     return;
@@ -64,7 +68,18 @@
     finalPdfCacheSession: null,
     finalPdfCacheRevision: -1,
     finalPdfCacheBlob: null,
-    syncOperation: 'save_copy'
+    syncOperation: 'save_copy',
+    driveSyncVisualState: 'normal',
+    driveSyncLastObservedRevision: 0,
+    driveSyncLastConfirmedRevision: 0,
+    driveSyncTimer: null,
+    driveSyncObserver: null,
+    driveSyncSuccessTimer: null,
+    driveSyncInFlight: false,
+    driveSyncQueued: false,
+    driveSyncFailureRevision: -1,
+    driveSyncSafetyRevisionPreserved: false,
+    driveSyncGeneration: 0
   };
 
   const els = {
@@ -682,7 +697,7 @@
     if (els.editorPreview) els.editorPreview.disabled = busy || !session;
     if (els.editorSync) {
       els.editorSync.hidden = !(canSyncDocuments() && session);
-      els.editorSync.disabled = busy || !session || !canSyncDocuments() || typeof editor?.buildFlattenedBlob !== 'function';
+      els.editorSync.disabled = busy || state.driveSyncInFlight || !session || !canSyncDocuments() || typeof editor?.buildFlattenedBlob !== 'function';
     }
     if (els.editorSyncApply) els.editorSyncApply.disabled = busy || !session || !canSyncDocuments();
     if (els.editorSyncCancel) els.editorSyncCancel.disabled = busy;
@@ -696,6 +711,7 @@
     if (els.editorMergeLocalInput) els.editorMergeLocalInput.disabled = busy || !session;
     if (els.editorMergeApply) els.editorMergeApply.disabled = busy || !session || (!state.pendingMergeItem && !state.pendingMergeFiles.length);
     if (els.editorMergeCancel) els.editorMergeCancel.disabled = busy || !session;
+    if (els.editorExit) els.editorExit.disabled = busy || state.driveSyncInFlight || !session;
   }
 
   function setEditorBusy(busy) {
@@ -875,6 +891,7 @@
     clearEditorPreview();
     document.querySelector('iframe.documents-print-frame[data-central-print-frame="true"]')?.remove();
     state.editorColorGesture = null;
+    resetDriveSyncTracking();
     state.finalPdfCacheSession = null;
     state.finalPdfCacheRevision = -1;
     state.finalPdfCacheBlob = null;
@@ -979,6 +996,147 @@
       state.finalPdfCacheBlob = blob;
     }
     return blob;
+  }
+
+  function currentEditorRevision() {
+    return Math.max(0, Number(state.editorSession?.revision || 0));
+  }
+
+  function clearDriveSyncTimer() {
+    if (state.driveSyncTimer) window.clearTimeout(state.driveSyncTimer);
+    state.driveSyncTimer = null;
+  }
+
+  function clearDriveSyncSuccessTimer() {
+    if (state.driveSyncSuccessTimer) window.clearTimeout(state.driveSyncSuccessTimer);
+    state.driveSyncSuccessTimer = null;
+  }
+
+  function setDriveSyncVisualState(next = 'normal') {
+    const allowed = new Set(['normal', 'pending', 'syncing', 'success', 'failed']);
+    const value = allowed.has(next) ? next : 'normal';
+    state.driveSyncVisualState = value;
+    if (!els.editorSync) return value;
+
+    const labels = {
+      normal: 'Forçar sincronização com Google Drive',
+      pending: 'Alterações pendentes — aguardando sincronização automática',
+      syncing: 'Sincronizando com Google Drive',
+      success: 'Sincronizado com Google Drive',
+      failed: 'Falha na sincronização — clique para tentar novamente'
+    };
+    els.editorSync.dataset.syncState = value;
+    els.editorSync.title = labels[value];
+    els.editorSync.setAttribute('aria-label', labels[value]);
+    return value;
+  }
+
+  function resetDriveSyncTracking({ observe = false } = {}) {
+    clearDriveSyncTimer();
+    clearDriveSyncSuccessTimer();
+    if (state.driveSyncObserver) window.clearInterval(state.driveSyncObserver);
+    state.driveSyncObserver = null;
+    state.driveSyncInFlight = false;
+    state.driveSyncQueued = false;
+    state.driveSyncFailureRevision = -1;
+    state.driveSyncSafetyRevisionPreserved = false;
+    state.driveSyncGeneration += 1;
+    const revision = currentEditorRevision();
+    state.driveSyncLastObservedRevision = revision;
+    state.driveSyncLastConfirmedRevision = revision;
+    setDriveSyncVisualState('normal');
+
+    if (observe && state.editorSession) {
+      state.driveSyncObserver = window.setInterval(() => {
+        const session = state.editorSession;
+        if (!session) return;
+        const current = currentEditorRevision();
+        if (current === state.driveSyncLastObservedRevision) return;
+        state.driveSyncLastObservedRevision = current;
+        state.driveSyncFailureRevision = -1;
+        if (current !== state.driveSyncLastConfirmedRevision) {
+          scheduleAutomaticDriveSync(current);
+        }
+      }, DRIVE_SYNC_REVISION_POLL_MS);
+    }
+  }
+
+  function showDriveSyncSuccess(targetRevision) {
+    clearDriveSyncSuccessTimer();
+    if (currentEditorRevision() !== targetRevision) {
+      setDriveSyncVisualState('pending');
+      scheduleAutomaticDriveSync(currentEditorRevision());
+      return;
+    }
+    setDriveSyncVisualState('success');
+    state.driveSyncSuccessTimer = window.setTimeout(() => {
+      state.driveSyncSuccessTimer = null;
+      if (!state.editorSession) return;
+      if (currentEditorRevision() === state.driveSyncLastConfirmedRevision) {
+        setDriveSyncVisualState('normal');
+      } else {
+        setDriveSyncVisualState('pending');
+      }
+      syncEditorControls();
+    }, DRIVE_SYNC_SUCCESS_VISIBLE_MS);
+  }
+
+  function scheduleAutomaticDriveSync(revision = currentEditorRevision()) {
+    const session = state.editorSession;
+    if (!session || revision === state.driveSyncLastConfirmedRevision) {
+      if (session && !state.driveSyncInFlight) setDriveSyncVisualState('normal');
+      return false;
+    }
+
+    clearDriveSyncSuccessTimer();
+    if (state.driveSyncInFlight) {
+      state.driveSyncQueued = true;
+      return true;
+    }
+
+    clearDriveSyncTimer();
+    setDriveSyncVisualState('pending');
+    syncEditorControls();
+
+    if (!canSyncDocuments()) return false;
+    state.driveSyncTimer = window.setTimeout(() => {
+      state.driveSyncTimer = null;
+      if (!state.editorSession || currentEditorRevision() === state.driveSyncLastConfirmedRevision) return;
+      syncEditedPdfToDrive({
+        operation: 'replace_pdf',
+        automatic: true,
+        targetRevision: currentEditorRevision()
+      }).catch(() => {});
+    }, DRIVE_AUTO_SYNC_IDLE_MS);
+    return true;
+  }
+
+  function forceDriveSync() {
+    if (!state.editorSession || state.editorBusy) return false;
+    if (!canSyncDocuments()) {
+      setEditorStatus('A sincronização com Google Drive não está habilitada para este ambiente ou para esta conta.', 'warning');
+      return false;
+    }
+    if (state.driveSyncInFlight) {
+      state.driveSyncQueued = true;
+      setEditorStatus('Uma sincronização já está em andamento. A versão mais recente será conferida em seguida.', 'success');
+      return true;
+    }
+
+    clearDriveSyncTimer();
+    clearDriveSyncSuccessTimer();
+    const revision = currentEditorRevision();
+    if (revision === state.driveSyncLastConfirmedRevision && state.driveSyncVisualState !== 'failed') {
+      setEditorStatus('Não há alterações pendentes. O PDF já está sincronizado com o Google Drive.', 'success');
+      showDriveSyncSuccess(revision);
+      return true;
+    }
+
+    return syncEditedPdfToDrive({
+      operation: 'replace_pdf',
+      forced: true,
+      targetRevision: revision
+    });
   }
 
   function setDriveSyncProgress(message = '', type = '') {
@@ -1098,35 +1256,78 @@
     return next;
   }
 
-  async function syncEditedPdfToDrive() {
+  async function syncEditedPdfToDrive(options = {}) {
     const editor = window.PortalPdfEditor;
     const session = state.editorSession;
+    const operation = options.operation === 'replace_pdf' || options.operation === 'save_copy'
+      ? options.operation
+      : selectedDriveSyncOperation();
+    const copyName = operation === 'save_copy'
+      ? String(options.copyName ?? els.editorSyncCopyName?.value ?? '').trim()
+      : '';
+    const targetRevision = Number.isSafeInteger(Number(options.targetRevision))
+      ? Number(options.targetRevision)
+      : currentEditorRevision();
+    const replace = operation === 'replace_pdf';
+    const generation = state.driveSyncGeneration;
+
     if (
       !session
-      || state.editorBusy
       || !canSyncDocuments()
       || typeof editor?.buildFlattenedBlob !== 'function'
     ) return false;
 
-    const operation = selectedDriveSyncOperation();
-    const copyName = String(els.editorSyncCopyName?.value || '').trim();
     if (operation === 'save_copy' && !copyName) {
       setDriveSyncProgress('Informe um nome para o novo PDF.', 'warning');
       els.editorSyncCopyName?.focus?.();
       return false;
     }
 
+    if (replace && state.driveSyncInFlight) {
+      state.driveSyncQueued = true;
+      return false;
+    }
+
+    if (replace && targetRevision === state.driveSyncLastConfirmedRevision && state.driveSyncVisualState !== 'failed') {
+      showDriveSyncSuccess(targetRevision);
+      return true;
+    }
+
+    if (state.editorBusy) {
+      if (replace) scheduleAutomaticDriveSync(currentEditorRevision());
+      return false;
+    }
+
     const started = performance.now();
     let blob = null;
     let syncStarted = false;
-    setEditorBusy(true);
-    setDriveSyncProgress('Validando a versão atual no Google Drive…');
-    setEditorStatus('Validando sincronização com o Google Drive…');
+    let lockedEditor = false;
+
+    if (replace) {
+      state.driveSyncInFlight = true;
+      state.driveSyncQueued = false;
+      clearDriveSyncTimer();
+      clearDriveSyncSuccessTimer();
+      setDriveSyncVisualState('syncing');
+      syncEditorControls();
+    } else {
+      lockedEditor = true;
+      setEditorBusy(true);
+    }
+
+    setDriveSyncProgress('Gerando o PDF final…');
+    setEditorStatus(
+      replace ? 'Sincronizando alterações com o Google Drive…' : 'Preparando cópia para o Google Drive…'
+    );
 
     try {
-      setDriveSyncProgress('Gerando o PDF final…');
       blob = await finalPdfBlobForSession(session);
-      if (!(blob instanceof Blob) || session !== state.editorSession) return false;
+      if (!(blob instanceof Blob) || session !== state.editorSession || generation !== state.driveSyncGeneration) return false;
+
+      if (replace && currentEditorRevision() !== targetRevision) {
+        setDriveSyncVisualState('pending');
+        return false;
+      }
 
       capture('drive_sync_started', {
         route: '/documentos/',
@@ -1146,6 +1347,7 @@
       });
 
       setDriveSyncProgress('Iniciando envio seguro ao Google Drive…');
+      const preserveRevision = replace && !state.driveSyncSafetyRevisionPreserved;
       const startedSync = await driveSyncFetch('/api/documents/drive/sync/start', {
         method: 'POST',
         json: {
@@ -1153,9 +1355,14 @@
           ref: state.pdfItem.ref,
           baseVersion: String(state.pdfItem.version || ''),
           totalBytes: blob.size,
-          copyName: operation === 'save_copy' ? copyName : ''
+          copyName: operation === 'save_copy' ? copyName : '',
+          preserveRevision
         }
       });
+
+      if (replace && startedSync?.safetyRevisionPreserved === true) {
+        state.driveSyncSafetyRevisionPreserved = true;
+      }
 
       const syncId = String(startedSync?.syncId || '');
       const chunkSize = Math.max(256 * 1024, Number(startedSync?.chunkSize || (4 * 1024 * 1024)));
@@ -1207,16 +1414,30 @@
       if (!completed?.completed) {
         throw new Error('O Google Drive não confirmou a conclusão do upload.');
       }
+      if (session !== state.editorSession || generation !== state.driveSyncGeneration) return false;
 
       applyConfirmedDriveSync(operation, completed, blob, copyName);
       setDriveSyncProgress('Salvo no Google Drive.', 'success');
-      setEditorStatus('Salvo no Google Drive. A confirmação veio do próprio Google Drive.', 'success');
       capture('drive_sync_completed', {
         route: '/documentos/',
         duration_ms: duration(started),
         operation,
         size_bucket: sizeBucket(blob.size)
       });
+
+      if (replace) {
+        state.driveSyncLastConfirmedRevision = targetRevision;
+        state.driveSyncFailureRevision = -1;
+        if (currentEditorRevision() === targetRevision) {
+          setEditorStatus('Sincronizado com o Google Drive.', 'success');
+          showDriveSyncSuccess(targetRevision);
+        } else {
+          setDriveSyncVisualState('pending');
+          setEditorStatus('Uma versão foi sincronizada; há alterações mais recentes aguardando envio.', 'success');
+        }
+      } else {
+        setEditorStatus('Cópia salva no Google Drive. A confirmação veio do próprio Google Drive.', 'success');
+      }
       return true;
     } catch (error) {
       const conflict = error?.code === 'DRIVE_VERSION_CONFLICT';
@@ -1225,6 +1446,16 @@
         : (error?.message || 'Não foi possível sincronizar o PDF com o Google Drive.');
       setDriveSyncProgress(message, conflict ? 'warning' : 'error');
       setEditorStatus(message, 'warning');
+
+      if (replace && session === state.editorSession && generation === state.driveSyncGeneration) {
+        state.driveSyncFailureRevision = targetRevision;
+        if (currentEditorRevision() === targetRevision) {
+          setDriveSyncVisualState('failed');
+        } else {
+          setDriveSyncVisualState('pending');
+        }
+      }
+
       if (syncStarted) {
         capture('drive_sync_failed', {
           route: '/documentos/',
@@ -1236,7 +1467,21 @@
       }
       return false;
     } finally {
-      if (session === state.editorSession) setEditorBusy(false);
+      if (lockedEditor && session === state.editorSession) setEditorBusy(false);
+
+      if (replace && session === state.editorSession && generation === state.driveSyncGeneration) {
+        state.driveSyncInFlight = false;
+        syncEditorControls();
+        const current = currentEditorRevision();
+        const hasNewer = current !== state.driveSyncLastConfirmedRevision;
+        const failedSameRevision = state.driveSyncVisualState === 'failed'
+          && current === state.driveSyncFailureRevision;
+        const queued = state.driveSyncQueued;
+        state.driveSyncQueued = false;
+        if (hasNewer && !failedSameRevision && (queued || current !== targetRevision)) {
+          scheduleAutomaticDriveSync(current);
+        }
+      }
     }
   }
 
@@ -1450,6 +1695,7 @@
       if (!isCurrentStart()) return;
       state.editorSession = session;
       state.editorViewState = initialViewState;
+      resetDriveSyncTracking({ observe: true });
       state.pendingMergeItem = null;
       state.pendingMergeFiles = [];
       setEditorSurfaceMode(true);
@@ -3032,7 +3278,7 @@
     await addSelectedImages(files);
   });
   els.editorPreview?.addEventListener('click', () => buildEditorPreview({ explicit: true }).catch(() => {}));
-  els.editorSync?.addEventListener('click', openDriveSyncPanel);
+  els.editorSync?.addEventListener('click', () => forceDriveSync().catch?.(() => {}));
   document.querySelectorAll('input[name="editorSyncOperation"]').forEach((control) => {
     control.addEventListener('change', updateDriveSyncPanel);
   });
