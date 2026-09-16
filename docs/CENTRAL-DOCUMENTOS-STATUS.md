@@ -48,10 +48,18 @@ Privacidade e segurança:
 - nenhuma alteração foi feita em produção ou no Google Drive.
 
 Estado da `main`:
-- a `main` avançou para `abf7882f125cc9b3b3e322a2b14981e304aaec67` com **8 commits do módulo Agenda/DigSaúde**, posteriores ao ponto de separação desta branch;
-- a comparação confirma que esses commits não alteram os arquivos centrais do editor PDF; a branch está divergente, mas o PR #179 foi recalculado pelo GitHub como **mergeável** após a atualização documental;
+- a `main` atual é `73997b4d108dd0392173e93640310d70dd3eeccf`;
+- desde `abf7882f125cc9b3b3e322a2b14981e304aaec67`, houve apenas mais **1 commit documental do módulo Agenda/DigSaúde** (`docs/AGENDA-DIGSAUDE-STATUS.md`), sem alteração nos arquivos centrais do editor PDF;
+- a branch da Central continua **8 commits atrás da main e 243 commits à frente do merge-base**, mas o PR #179 permanece aberto e mergeável;
 - **não reconciliar/rebasear antes do gate humano da 3C.5**: isso adicionaria churn e nova rodada de CI sem benefício para a homologação visual atual;
 - após o aceite humano, antes de qualquer merge, sincronizar a branch com a `main` atual, resolver eventuais conflitos de testes compartilhados e executar novamente toda a matriz.
+
+
+Validação de continuidade antes da homologação (16/09/2026):
+- head atual da branch: `26e1f7237eb2ce9f93d8e566e61d93e3453449f7`;
+- **25/25 check-runs verdes** no head atual, inclusive Cloudflare Pages e PDF.js real em Chromium;
+- nenhuma falha técnica nova detectada na revisão de continuidade;
+- o próximo passo permanece a homologação humana de caneta/borracha no preview sintético; não houve motivo técnico para ampliar o escopo antes desse gate.
 
 **Gate atual:** homologação humana de Desenhar/Borracha. A 3C.5 ainda não está encerrada e a 3C.6 permanece bloqueada.
 
