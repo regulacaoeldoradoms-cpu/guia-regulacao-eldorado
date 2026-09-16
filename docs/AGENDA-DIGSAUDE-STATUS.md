@@ -29,7 +29,10 @@ Atualizado em 16/09/2026.
 - PR #196: **21/21 checks** concluídos com sucesso antes do merge.
 - Pós-merge da `main`: **26/26 check-runs** concluídos com sucesso, incluindo build e deploy. Produção publicada; resta homologação visual/funcional no navegador autorizado.
 - Nova melhoria autorizada em 16/09/2026: **controle operacional automático das 2 salas de teleconsulta do Posto Manoel Gomes**, com janela direta de 30 minutos, Psiquiatria fora do cálculo e alerta de capacidade excedida.
-- Branch atual: `feat/agenda-capacidade-salas`. A implementação inclui aviso de 2/2 salas, grupo crítico para 3 ou mais agendamentos e abertura do WhatsApp de suporte com mensagem pré-preenchida; o envio continua manual.
+- Implementação concluída no PR #198 — **Agenda: controlar capacidade das salas** — e mesclada na `main` em `1444f6bffa5d5fe9723b76fae8b8e812cddcaf51`.
+- PR #198: **21/21 checks** concluídos com sucesso antes do merge.
+- Pós-merge da `main`: **26/26 check-runs** concluídos com sucesso, incluindo build e deploy; produção publicada.
+- Fluxo final de remanejamento: a mensagem com data, horários, pacientes e especialidades é preparada localmente; o usuário copia o texto e abre o WhatsApp do suporte, sem colocar dados de pacientes na URL.
 
 ## Objetivo da V2
 
@@ -160,16 +163,15 @@ Justificativa: automatizar a conferência operacional antes feita pela planilha 
 
 ## Próximo passo exato
 
-1. concluir os checks do PR #198 e publicar somente com CI verde;
-2. no Portal, atualizar a página da Agenda com `Ctrl+F5`;
-3. confirmar que **Todos ativos** é a visão inicial e que **Agendamento mais próximo** é a ordenação padrão;
-4. validar visualmente um cenário de **2/2 salas no intervalo**;
-5. validar um cenário de **Capacidade excedida** com 3 ou mais agendamentos dentro de uma janela direta de até 30 minutos;
-6. confirmar que **Psiquiatria** não participa da contagem;
-7. confirmar que 08:00 / 08:30 / 09:00 não forma grupo crítico transitivo;
-8. abrir o WhatsApp de um grupo crítico e conferir data, horários, pacientes e especialidades antes de enviar;
-9. confirmar que marcar como visto continua preservando o card enquanto ele permanece em Agendados;
-10. registrar a homologação humana desta melhoria no status.
+1. no Portal, atualizar a página da Agenda com `Ctrl+F5`;
+2. confirmar que **Todos ativos** é a visão inicial e que **Agendamento mais próximo** é a ordenação padrão;
+3. validar visualmente um cenário de **2/2 salas no intervalo**;
+4. validar um cenário de **Capacidade excedida** com 3 ou mais agendamentos dentro de uma janela direta de até 30 minutos;
+5. confirmar que **Psiquiatria** não participa da contagem;
+6. confirmar que 08:00 / 08:30 / 09:00 não forma grupo crítico transitivo;
+7. conferir a mensagem pronta, usar **Copiar mensagem**, abrir o WhatsApp e revisar data, horários, pacientes e especialidades antes de enviar;
+8. confirmar que marcar como visto continua preservando o card enquanto ele permanece em Agendados;
+9. registrar a homologação humana desta melhoria no status.
 
 ## Riscos restantes
 
