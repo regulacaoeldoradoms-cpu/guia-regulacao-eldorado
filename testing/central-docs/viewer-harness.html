@@ -52,11 +52,18 @@
           <button id="editorSelect" class="documents-editor-tool" type="button" title="Selecionar e mover objetos">↖</button>
           <button id="editorWrite" class="documents-editor-tool" type="button" title="Escrever sobre a página">T</button>
           <button id="editorOverlayImage" class="documents-editor-tool" type="button" title="Colar imagem sintética sobre a página">▣</button>
+          <button id="editorDraw" class="documents-editor-tool" type="button" title="Desenhar sobre a página" aria-pressed="false">✎</button>
           <span class="documents-editor-tool-spacer"></span>
           <button id="editorRefresh" class="documents-editor-tool" type="button" title="Atualizar PDF">⟳</button>
           <button id="editorExit" class="documents-editor-tool" type="button" title="Sair do editor">×</button>
         </div>
         <div id="editorStatus" class="documents-editor-status lab-editor-status" aria-live="polite"></div>
+        <div id="editorDrawToolbar" class="documents-draw-toolbar" hidden aria-label="Ferramentas de desenho sintético">
+          <label class="documents-draw-field"><span>Cor</span><input id="editorDrawColor" type="color" value="#111111"></label>
+          <label class="documents-draw-field"><span>Espessura</span><input id="editorDrawWidth" type="range" min="1" max="20" step="1" value="4"></label>
+          <button id="editorDrawPen" class="documents-draw-mode active" type="button" aria-pressed="true">Caneta</button>
+          <button id="editorDrawEraser" class="documents-draw-mode" type="button" aria-pressed="false">Borracha</button>
+        </div>
         <div id="editorObjectToolbar" class="documents-object-toolbar" hidden>
           <label class="documents-object-field documents-object-field--font"><span>Fonte</span>
             <select id="editorObjectFont"><option>Arial</option><option>Helvetica</option><option>Times New Roman</option><option>Courier New</option></select>
