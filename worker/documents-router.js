@@ -329,7 +329,8 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
         ref: String(body.ref || ''),
         baseVersion: String(body.baseVersion || ''),
         totalBytes: body.totalBytes,
-        copyName: String(body.copyName || '')
+        copyName: String(body.copyName || ''),
+        preserveRevision: body.preserveRevision !== false
       });
       return json(result, 201, origin);
     }
