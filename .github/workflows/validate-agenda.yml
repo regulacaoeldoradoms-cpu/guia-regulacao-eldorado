@@ -6,11 +6,13 @@ on:
       - 'agenda/**'
       - 'css/agenda.css'
       - 'js/agenda.js'
+      - 'js/agenda-capacity.js'
       - 'js/agenda-sync-bridge.js'
       - 'js/tools-catalog.js'
       - 'worker/agenda.js'
       - 'worker/index.js'
       - 'worker/tests/agenda.test.mjs'
+      - 'worker/tests/agenda-capacity.test.mjs'
       - 'docs/AGENDA-DIGSAUDE*.md'
       - '.github/workflows/validate-agenda.yml'
   push:
@@ -38,9 +40,10 @@ jobs:
         shell: bash
         run: |
           node --check js/agenda.js
+          node --check js/agenda-capacity.js
           node --check js/agenda-sync-bridge.js
           node --check agenda/digsaude-agenda-sync.user.js
           node --input-type=module --check < worker/agenda.js
           node --input-type=module --check < worker/index.js
       - name: Executar testes da Agenda
-        run: node --test worker/tests/agenda.test.mjs
+        run: node --test worker/tests/agenda.test.mjs worker/tests/agenda-capacity.test.mjs
