@@ -2144,29 +2144,42 @@
 
       if (drag.kind === 'move') {
         const targetPage = pageAtPoint(session, event.clientX, event.clientY);
-        if (targetPage && targetPage.pageNumber !== drag.currentPageNumber) {
-          const x = Math.min(1 - object.width, Math.max(0,
-            ((event.clientX - targetPage.rect.left) / Math.max(1, targetPage.rect.width)) - (object.width / 2)
-          ));
-          const y = Math.min(1 - object.height, Math.max(0,
-            ((event.clientY - targetPage.rect.top) / Math.max(1, targetPage.rect.height)) - (object.height / 2)
-          ));
-          object.displayPage = targetPage.pageNumber;
-          object.pageIndex = targetPage.pageNumber - 1;
-          object.x = x;
-          object.y = y;
-          drag.currentPageNumber = targetPage.pageNumber;
-          drag.startX = event.clientX;
-          drag.startY = event.clientY;
-          drag.layerWidth = Math.max(1, targetPage.rect.width);
-          drag.layerHeight = Math.max(1, targetPage.rect.height);
-          drag.start = { ...object };
-          drag.changed = true;
+        if (!targetPage) return;
+
+        const width = Math.max(0.035, Number(object.width) || 0.2);
+        const height = Math.max(0.025, Number(object.height) || 0.08);
+        const x = Math.min(1 - width, Math.max(0,
+          ((event.clientX - targetPage.rect.left) / Math.max(1, targetPage.rect.width)) - (width / 2)
+        ));
+        const y = Math.min(1 - height, Math.max(0,
+          ((event.clientY - targetPage.rect.top) / Math.max(1, targetPage.rect.height)) - (height / 2)
+        ));
+        const pageChanged = targetPage.pageNumber !== drag.currentPageNumber;
+        const positionChanged = Math.abs(Number(object.x) - x) > 0.00001 || Math.abs(Number(object.y) - y) > 0.00001;
+        if (!pageChanged && !positionChanged) return;
+
+        object.displayPage = targetPage.pageNumber;
+        object.pageIndex = targetPage.pageNumber - 1;
+        object.x = x;
+        object.y = y;
+        drag.currentPageNumber = targetPage.pageNumber;
+        drag.changed = true;
+        session.root.dataset.objectGestureMoved = 'true';
+
+        if (pageChanged) {
           session.onObjectPageChange?.(drag.id, targetPage.pageNumber - 1, { x, y });
           renderEditorObjects(session);
           markSelectedObject(session, drag.id);
-          return;
+        } else {
+          session.onObjectChange?.(drag.id, { x, y });
+          const movingElement = pagesRoot.querySelector(`.portal-pdf-object[data-object-id="${CSS.escape(drag.id)}"]`);
+          if (movingElement) applyObjectGeometry(
+            movingElement,
+            object,
+            movingElement.closest('.portal-pdf-page')?.clientWidth || 760
+          );
         }
+        return;
       }
 
       const screenDx = event.clientX - drag.startX;
