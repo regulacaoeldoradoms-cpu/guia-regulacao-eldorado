@@ -111,6 +111,20 @@ Nenhuma dessas etapas deve usar documento real de paciente nem arquivo operacion
 
 Após a 4D ser aprovada: registrar as evidências sem conteúdo documental, encerrar formalmente a Fase 4, mesclar o PR #201 na `main` e somente então iniciar a **Fase 5 — IA documental**.
 
+## Fase 0 — governança preservada
+
+As decisões estruturais da Fase 0 continuam válidas e documentadas em `docs/CENTRAL-DOCUMENTOS-ARQUITETURA-V1.md`: OAuth/Drive pelo backend intermediário, menor privilégio, referências opacas, `Cache-Control: no-store` nas APIs sensíveis, controle de concorrência por `version`, política de segredos e observabilidade sem conteúdo documental. A Fase 4 não reduz nem substitui essas garantias.
+
 ## Histórico anterior
 
 A Fase 3 — Editor PDF essencial foi homologada pelo usuário em 16/09/2026 e mesclada na `main` pelo PR #179 no commit `ccaa15c0c7b46dd53f7f508635079131806144b8`. O histórico detalhado das etapas anteriores permanece preservado no histórico Git, em `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md` e nos commits anteriores deste arquivo.
+
+## Handoff para o próximo chat
+
+1. Ler o Guia Mestre e este arquivo antes de alterar código.
+2. Confirmar o estado real da `main`, do PR #201, da branch `codex/central-docs-drive-sync-phase4` e dos checks do head mais recente.
+3. Não reiniciar 4A, 4B ou 4C: elas estão tecnicamente concluídas.
+4. Não mesclar o PR #201 nem habilitar escrita real por padrão antes da 4D.
+5. Para 4D, usar somente PDF descartável sem dados de paciente e ambiente institucional controlado.
+6. Validar `save_copy`, `replace_pdf`, revisão recuperável, conflito e telemetria técnica; registrar evidências sem conteúdo documental.
+7. Se a 4D for aprovada, encerrar formalmente a Fase 4, atualizar este status, mesclar o PR #201 e só então iniciar a Fase 5.
