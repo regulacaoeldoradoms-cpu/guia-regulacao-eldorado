@@ -106,6 +106,19 @@ function documentRequest(path, token, options = {}) {
   });
 }
 
+function syncChunkRequest(path, token, bytes, start, end, total) {
+  return new Request(`https://worker.test${path}`, {
+    method: 'PUT',
+    headers: {
+      Origin: 'https://regulacaoeldoradoms.com.br',
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/pdf',
+      'Content-Range': `bytes ${start}-${end}/${total}`
+    },
+    body: bytes
+  });
+}
+
 sqliteTest('capabilities documentais são independentes do cargo e edit/extract implicam view', async () => {
   const env = environment();
   await register(env, 'documentos.um', '127.0.0.81');
@@ -614,6 +627,359 @@ sqliteTest('Fase 4A recusa substituir quando a conta Google não pode editar o a
     );
     assert.equal(response.status, 403);
     assert.equal((await response.json()).code, 'DRIVE_FILE_NOT_EDITABLE');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+
+sqliteTest('Fase 4B mantém escrita desligada por padrão mesmo para usuário editor', async () => {
+  const env = environment();
+  const user = await register(env, 'documentos.sync.disabled', '127.0.0.104');
+  await setDocumentCapabilities(env, 'documentos.sync.disabled', { view: true, edit: true }, 'admin');
+
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls += 1;
+    throw new Error('escrita desabilitada não deve consultar o Drive');
+  };
+
+  try {
+    const response = await handleDocumentsRoute(
+      documentRequest('/api/documents/drive/sync/start', user.token, {
+        method: 'POST',
+        body: {
+          operation: 'replace_pdf',
+          ref: 'opaque-ref-test',
+          baseVersion: '1',
+          totalBytes: 1024
+        }
+      }),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(response.status, 503);
+    assert.equal((await response.json()).code, 'DRIVE_SYNC_WRITE_DISABLED');
+    assert.equal(calls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+sqliteTest('Fase 4B substituição usa revisão preservada, resumable e só conclui após 200 final', async () => {
+  const env = environment();
+  env.DOCUMENTS_DRIVE_WRITE_ENABLED = 'true';
+  const user = await register(env, 'documentos.sync.upload', '127.0.0.105');
+  await setDocumentCapabilities(env, 'documentos.sync.upload', { view: true, edit: true }, 'admin');
+
+  const authorization = await createDriveAuthorizationUrl(env, 'documentos.sync.upload');
+  const state = new URL(authorization).searchParams.get('state');
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  let sessionPutCount = 0;
+
+  globalThis.fetch = async (url, options = {}) => {
+    const text = String(url);
+    const method = String(options.method || 'GET').toUpperCase();
+    const headers = new Headers(options.headers || {});
+    calls.push({ url: text, method, headers, body: options.body });
+
+    if (text === 'https://oauth2.googleapis.com/token') {
+      return new Response(JSON.stringify({
+        access_token: 'access-sync-upload',
+        refresh_token: 'refresh-sync-upload',
+        expires_in: 3600
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (text.includes('/drive/v3/files/raw-sync-upload-id/revisions/rev-7')) {
+      assert.equal(method, 'PATCH');
+      assert.deepEqual(JSON.parse(String(options.body || '{}')), { keepForever: true });
+      return new Response(JSON.stringify({ id: 'rev-7', keepForever: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (text.startsWith('https://www.googleapis.com/upload/drive/v3/files/raw-sync-upload-id?')) {
+      assert.equal(method, 'PATCH');
+      const u = new URL(text);
+      assert.equal(u.searchParams.get('uploadType'), 'resumable');
+      assert.equal(headers.get('X-Upload-Content-Type'), 'application/pdf');
+      assert.equal(headers.get('X-Upload-Content-Length'), '524288');
+      return new Response(null, {
+        status: 200,
+        headers: {
+          Location: 'https://www.googleapis.com/upload/drive/v3/files/raw-sync-upload-id?uploadType=resumable&upload_id=opaque-google-session'
+        }
+      });
+    }
+
+    if (text.includes('upload_id=opaque-google-session')) {
+      assert.equal(method, 'PUT');
+      sessionPutCount += 1;
+      if (sessionPutCount === 1) {
+        assert.equal(headers.get('Content-Range'), 'bytes 0-262143/524288');
+        return new Response('temporário', { status: 503 });
+      }
+      if (sessionPutCount === 2) {
+        assert.equal(headers.get('Content-Range'), 'bytes */524288');
+        return new Response(null, { status: 308 });
+      }
+      if (sessionPutCount === 3) {
+        assert.equal(headers.get('Content-Range'), 'bytes 0-262143/524288');
+        return new Response(null, { status: 308, headers: { Range: 'bytes=0-262143' } });
+      }
+      assert.equal(headers.get('Content-Range'), 'bytes 262144-524287/524288');
+      return new Response(JSON.stringify({
+        id: 'raw-sync-upload-id',
+        name: 'NAO-RETORNAR.pdf',
+        mimeType: 'application/pdf',
+        size: '524288',
+        modifiedTime: '2026-09-16T22:00:00Z',
+        version: '8',
+        md5Checksum: 'abcdefabcdefabcdefabcdefabcdefab',
+        headRevisionId: 'rev-8'
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (text.includes('/drive/v3/files/raw-sync-upload-id?')) {
+      assert.equal(method, 'GET');
+      return new Response(JSON.stringify({
+        id: 'raw-sync-upload-id',
+        name: 'ARQUIVO-ORIGINAL.pdf',
+        mimeType: 'application/pdf',
+        size: '500000',
+        modifiedTime: '2026-09-16T21:00:00Z',
+        version: '7',
+        md5Checksum: '0123456789abcdef0123456789abcdef',
+        headRevisionId: 'rev-7',
+        parents: ['parent-test'],
+        capabilities: { canDownload: true, canEdit: true, canModifyContent: true }
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    throw new Error('fetch não esperado: ' + method + ' ' + text);
+  };
+
+  try {
+    await completeDriveOAuth(env, 'authorization-code-sync-upload', state);
+    const ref = await sealDriveFileRef(env, 'raw-sync-upload-id', 'application/pdf');
+
+    const startResponse = await handleDocumentsRoute(
+      documentRequest('/api/documents/drive/sync/start', user.token, {
+        method: 'POST',
+        body: {
+          operation: 'replace_pdf',
+          ref,
+          baseVersion: '7',
+          totalBytes: 524288
+        }
+      }),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(startResponse.status, 201);
+    const started = await startResponse.json();
+    assert.match(started.syncId, /^[A-Za-z0-9_-]{20,80}$/);
+    assert.equal(started.operation, 'replace_pdf');
+    assert.equal(started.chunkSize, 4 * 1024 * 1024);
+    assert.equal(JSON.stringify(started).includes('upload_id='), false);
+    assert.equal(JSON.stringify(started).includes('raw-sync-upload-id'), false);
+
+    const stored = await env.AUTH_DB.prepare(`SELECT session_url_cipher, operation, total_bytes, next_offset
+      FROM document_drive_sync_sessions WHERE sync_id = ?`).bind(started.syncId).first();
+    assert.ok(stored?.session_url_cipher);
+    assert.equal(String(stored.session_url_cipher).includes('upload_id='), false);
+    assert.equal(stored.operation, 'replace_pdf');
+    assert.equal(Number(stored.total_bytes), 524288);
+    assert.equal(Number(stored.next_offset), 0);
+
+    const firstChunk = new Uint8Array(262144);
+    firstChunk.set([0x25, 0x50, 0x44, 0x46, 0x2d], 0);
+
+    const interrupted = await handleDocumentsRoute(
+      syncChunkRequest(
+        `/api/documents/drive/sync/upload/${started.syncId}`,
+        user.token,
+        firstChunk,
+        0,
+        262143,
+        524288
+      ),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(interrupted.status, 503);
+    assert.equal((await interrupted.json()).code, 'DRIVE_SYNC_INTERRUPTED');
+    assert.ok(await env.AUTH_DB.prepare(
+      'SELECT sync_id FROM document_drive_sync_sessions WHERE sync_id = ?'
+    ).bind(started.syncId).first());
+
+    const statusResponse = await handleDocumentsRoute(
+      documentRequest(`/api/documents/drive/sync/status/${started.syncId}`, user.token, { method: 'POST' }),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(statusResponse.status, 202);
+    assert.equal((await statusResponse.json()).nextOffset, 0);
+
+    const partial = await handleDocumentsRoute(
+      syncChunkRequest(
+        `/api/documents/drive/sync/upload/${started.syncId}`,
+        user.token,
+        firstChunk,
+        0,
+        262143,
+        524288
+      ),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(partial.status, 202);
+    const partialPayload = await partial.json();
+    assert.equal(partialPayload.completed, false);
+    assert.equal(partialPayload.nextOffset, 262144);
+
+    const finalChunk = new Uint8Array(262144);
+    const completed = await handleDocumentsRoute(
+      syncChunkRequest(
+        `/api/documents/drive/sync/upload/${started.syncId}`,
+        user.token,
+        finalChunk,
+        262144,
+        524287,
+        524288
+      ),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(completed.status, 200);
+    const finalPayload = await completed.json();
+    assert.equal(finalPayload.completed, true);
+    assert.equal(finalPayload.operation, 'replace_pdf');
+    assert.equal(finalPayload.currentVersion, '8');
+    assert.ok(finalPayload.ref.length > 30);
+    assert.match(finalPayload.cacheKey, /^[A-Za-z0-9_-]{32}$/);
+    assert.equal(JSON.stringify(finalPayload).includes('raw-sync-upload-id'), false);
+    assert.equal(JSON.stringify(finalPayload).includes('NAO-RETORNAR'), false);
+    assert.equal(await env.AUTH_DB.prepare(
+      'SELECT sync_id FROM document_drive_sync_sessions WHERE sync_id = ?'
+    ).bind(started.syncId).first(), null);
+
+    const revisionCall = calls.find((call) => call.url.includes('/revisions/rev-7'));
+    const initCall = calls.find((call) => call.url.includes('/upload/drive/v3/files/raw-sync-upload-id?') && !call.url.includes('upload_id='));
+    assert.ok(revisionCall);
+    assert.ok(initCall);
+    assert.ok(calls.indexOf(revisionCall) < calls.indexOf(initCall));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+sqliteTest('Fase 4B salvar como novo inicia create resumable no mesmo parent e pode ser cancelado', async () => {
+  const env = environment();
+  env.DOCUMENTS_DRIVE_WRITE_ENABLED = 'true';
+  const user = await register(env, 'documentos.sync.copy', '127.0.0.106');
+  await setDocumentCapabilities(env, 'documentos.sync.copy', { view: true, edit: true }, 'admin');
+
+  const authorization = await createDriveAuthorizationUrl(env, 'documentos.sync.copy');
+  const state = new URL(authorization).searchParams.get('state');
+  const originalFetch = globalThis.fetch;
+  let createMetadata = null;
+  let revisionCalls = 0;
+
+  globalThis.fetch = async (url, options = {}) => {
+    const text = String(url);
+    const method = String(options.method || 'GET').toUpperCase();
+
+    if (text === 'https://oauth2.googleapis.com/token') {
+      return new Response(JSON.stringify({
+        access_token: 'access-sync-copy',
+        refresh_token: 'refresh-sync-copy',
+        expires_in: 3600
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (text.includes('/revisions/')) {
+      revisionCalls += 1;
+      throw new Error('save_copy não deve preservar revisão do original');
+    }
+
+    if (text.startsWith('https://www.googleapis.com/upload/drive/v3/files?')) {
+      assert.equal(method, 'POST');
+      createMetadata = JSON.parse(String(options.body || '{}'));
+      return new Response(null, {
+        status: 200,
+        headers: {
+          Location: 'https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=copy-session'
+        }
+      });
+    }
+
+    if (text.includes('/drive/v3/files/raw-sync-copy-id?')) {
+      assert.equal(method, 'GET');
+      return new Response(JSON.stringify({
+        id: 'raw-sync-copy-id',
+        mimeType: 'application/pdf',
+        size: '100',
+        modifiedTime: '2026-09-16T21:00:00Z',
+        version: '5',
+        headRevisionId: 'rev-copy',
+        parents: ['copy-parent-id'],
+        capabilities: { canDownload: true, canEdit: false, canModifyContent: false }
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    throw new Error('fetch não esperado: ' + method + ' ' + text);
+  };
+
+  try {
+    await completeDriveOAuth(env, 'authorization-code-sync-copy', state);
+    const ref = await sealDriveFileRef(env, 'raw-sync-copy-id', 'application/pdf');
+
+    const response = await handleDocumentsRoute(
+      documentRequest('/api/documents/drive/sync/start', user.token, {
+        method: 'POST',
+        body: {
+          operation: 'save_copy',
+          ref,
+          baseVersion: '4',
+          totalBytes: 262144,
+          copyName: 'Cópia editada'
+        }
+      }),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(response.status, 201);
+    const started = await response.json();
+    assert.equal(started.operation, 'save_copy');
+    assert.equal(started.conflictDetected, true);
+    assert.equal(revisionCalls, 0);
+    assert.equal(createMetadata.name, 'Cópia editada.pdf');
+    assert.equal(createMetadata.mimeType, 'application/pdf');
+    assert.deepEqual(createMetadata.parents, ['copy-parent-id']);
+
+    const cancel = await handleDocumentsRoute(
+      documentRequest(`/api/documents/drive/sync/${started.syncId}`, user.token, { method: 'DELETE' }),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(cancel.status, 200);
+    assert.deepEqual(await cancel.json(), { cancelled: true, operation: 'save_copy' });
+    assert.equal(await env.AUTH_DB.prepare(
+      'SELECT sync_id FROM document_drive_sync_sessions WHERE sync_id = ?'
+    ).bind(started.syncId).first(), null);
   } finally {
     globalThis.fetch = originalFetch;
   }
