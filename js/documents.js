@@ -58,7 +58,9 @@
     editorPaletteWriteChain: Promise.resolve(),
     editorPaletteWriteGeneration: 0,
     pendingMergeItem: null,
-    pendingMergeFiles: []
+    pendingMergeFiles: [],
+    mergePreviewUrls: [],
+    mergePreviewGeneration: 0
   };
 
   const els = {
@@ -140,6 +142,7 @@
     editorMergeSelection: document.getElementById('editorMergeSelection'),
     editorMergeLocal: document.getElementById('editorMergeLocalButton'),
     editorMergeLocalInput: document.getElementById('editorMergeLocalInput'),
+    editorMergePreview: document.getElementById('editorMergePreview'),
     editorMergePosition: document.getElementById('editorMergePosition'),
     editorMergePageField: document.getElementById('editorMergePageField'),
     editorMergeAfterPage: document.getElementById('editorMergeAfterPage'),
@@ -1340,6 +1343,7 @@
       if (session !== state.editorSession) return false;
       state.pendingMergeItem = null;
       state.pendingMergeFiles = [];
+      clearMergePreview();
       syncEditorControls();
       refreshPdfListActions();
       const rebuilt = await buildEditorPreview({
@@ -1372,6 +1376,149 @@
     if (type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
     if (type.startsWith('image/')) return 'image';
     return '';
+  }
+
+  function mergePreviewSizeLabel(bytes) {
+    const size = Math.max(0, Number(bytes || 0));
+    if (size < 1024) return size ? size + ' B' : '';
+    if (size < 1024 * 1024) return (size / 1024).toFixed(size >= 10 * 1024 ? 0 : 1) + ' KB';
+    return (size / (1024 * 1024)).toFixed(size >= 10 * 1024 * 1024 ? 0 : 1) + ' MB';
+  }
+
+  function clearMergePreview() {
+    state.mergePreviewGeneration += 1;
+    for (const url of state.mergePreviewUrls.splice(0)) {
+      try { URL.revokeObjectURL(url); } catch (_) {}
+    }
+    if (!els.editorMergePreview) return;
+    els.editorMergePreview.replaceChildren();
+    els.editorMergePreview.hidden = true;
+  }
+
+  async function renderMergePdfPreview(file, canvas, generation) {
+    const pdfjs = await window.PortalPdfViewer?.loadPdfJs?.();
+    if (!pdfjs || generation !== state.mergePreviewGeneration || !(file instanceof Blob)) return;
+    let loadingTask = null;
+    let documentPdf = null;
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (generation !== state.mergePreviewGeneration) return;
+      loadingTask = pdfjs.getDocument({
+        data: bytes,
+        isEvalSupported: false,
+        enableScripting: false
+      });
+      documentPdf = await loadingTask.promise;
+      if (generation !== state.mergePreviewGeneration) return;
+      const page = await documentPdf.getPage(1);
+      const natural = page.getViewport({ scale: 1 });
+      const cssWidth = 54;
+      const cssHeight = 68;
+      const ratio = Math.min(cssWidth / natural.width, cssHeight / natural.height);
+      const pixelRatio = Math.max(1, Math.min(2, Number(window.devicePixelRatio || 1)));
+      const viewport = page.getViewport({ scale: ratio * pixelRatio });
+      canvas.width = Math.max(1, Math.round(viewport.width));
+      canvas.height = Math.max(1, Math.round(viewport.height));
+      const context = canvas.getContext('2d', { alpha: false });
+      if (!context) return;
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: context, viewport }).promise;
+    } catch (_) {
+      canvas.hidden = true;
+      const fallback = canvas.parentElement?.querySelector?.('[data-merge-preview-fallback]');
+      if (fallback) fallback.hidden = false;
+    } finally {
+      try { await documentPdf?.destroy?.(); } catch (_) {}
+      try { loadingTask?.destroy?.(); } catch (_) {}
+    }
+  }
+
+  function syncPendingMergeSelectionCopy() {
+    if (!els.editorMergeSelection) return;
+    const count = state.pendingMergeFiles.length;
+    els.editorMergeSelection.textContent = count
+      ? (count === 1
+        ? '1 arquivo do dispositivo selecionado.'
+        : count + ' arquivos do dispositivo selecionados.')
+      : 'Escolha outro PDF na lista da Central ou adicione um arquivo do dispositivo.';
+  }
+
+  function renderMergePreview(files = [], item = null) {
+    clearMergePreview();
+    if (!els.editorMergePreview) return;
+    const localFiles = Array.from(files || []).filter((file) => localMergeFileKind(file));
+    const generation = state.mergePreviewGeneration;
+    const entries = item ? [{ item, kind: 'pdf' }] : localFiles.map((file, index) => ({ file, index, kind: localMergeFileKind(file) }));
+    if (!entries.length) return;
+
+    for (const entry of entries) {
+      const card = document.createElement('div');
+      card.className = 'documents-editor-merge-preview-item';
+
+      const thumb = document.createElement('div');
+      thumb.className = 'documents-editor-merge-preview-thumb';
+
+      const copy = document.createElement('div');
+      copy.className = 'documents-editor-merge-preview-copy';
+      const name = document.createElement('span');
+      name.className = 'documents-editor-merge-preview-name';
+      name.textContent = entry.file?.name || entry.item?.name || 'PDF selecionado';
+      const meta = document.createElement('span');
+      meta.className = 'documents-editor-merge-preview-meta';
+      const size = mergePreviewSizeLabel(entry.file?.size || entry.item?.size);
+      meta.textContent = entry.kind === 'image'
+        ? ['Imagem', size].filter(Boolean).join(' · ')
+        : ['PDF', size].filter(Boolean).join(' · ');
+      copy.append(name, meta);
+
+      if (entry.kind === 'image' && entry.file) {
+        const image = document.createElement('img');
+        image.alt = '';
+        const url = URL.createObjectURL(entry.file);
+        state.mergePreviewUrls.push(url);
+        image.src = url;
+        thumb.appendChild(image);
+      } else if (entry.file) {
+        const fallback = document.createElement('span');
+        fallback.dataset.mergePreviewFallback = 'true';
+        fallback.textContent = 'PDF';
+        fallback.hidden = true;
+        const canvas = document.createElement('canvas');
+        canvas.setAttribute('aria-hidden', 'true');
+        thumb.append(canvas, fallback);
+        renderMergePdfPreview(entry.file, canvas, generation).catch(() => {});
+      } else {
+        const fallback = document.createElement('span');
+        fallback.textContent = 'PDF';
+        thumb.appendChild(fallback);
+      }
+
+      const remove = document.createElement('button');
+      remove.className = 'documents-editor-merge-preview-remove';
+      remove.type = 'button';
+      remove.title = entry.file ? 'Remover arquivo selecionado' : 'Limpar seleção';
+      remove.setAttribute('aria-label', remove.title);
+      remove.textContent = '×';
+      remove.addEventListener('click', () => {
+        if (entry.file) {
+          state.pendingMergeFiles = state.pendingMergeFiles.filter((_, index) => index !== entry.index);
+          state.pendingMergeItem = null;
+          if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
+          syncPendingMergeSelectionCopy();
+          renderMergePreview(state.pendingMergeFiles);
+        } else {
+          state.pendingMergeItem = null;
+          syncPendingMergeSelectionCopy();
+          renderMergePreview();
+        }
+        syncEditorControls();
+      });
+
+      card.append(thumb, copy, remove);
+      els.editorMergePreview.appendChild(card);
+    }
+    els.editorMergePreview.hidden = false;
   }
 
   async function mergeLocalFilesIntoEditor(files) {
@@ -1414,6 +1561,7 @@
       if (session !== state.editorSession) return false;
       state.pendingMergeItem = null;
       state.pendingMergeFiles = [];
+      clearMergePreview();
       setEditorWorkspaceMode('organize');
       refreshPdfListActions();
       syncEditorControls();
@@ -1460,6 +1608,7 @@
     if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
     setEditorWorkspaceMode('merge');
     if (els.editorMergeSelection) els.editorMergeSelection.textContent = item.name || 'PDF selecionado';
+    renderMergePreview([], item);
     if (els.editorMergeAfterPage) {
       els.editorMergeAfterPage.max = String(window.PortalPdfEditor.pageCount(session));
       els.editorMergeAfterPage.value = String(Math.max(1, currentViewerState()?.activePage || 1));
@@ -1493,6 +1642,7 @@
     state.pendingMergeItem = null;
     state.pendingMergeFiles = [];
     if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
+    clearMergePreview();
     if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF na lista da Central ou adicione um arquivo do dispositivo.';
     syncEditorControls();
     setEditorWorkspaceMode('organize');
@@ -1624,6 +1774,7 @@
     state.pendingMergeItem = null;
     state.pendingMergeFiles = [];
     if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
+    clearMergePreview();
     if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF na lista da Central ou adicione um arquivo do dispositivo.';
     if (els.editorMergePosition) els.editorMergePosition.value = 'after-document';
     if (els.editorMergePageField) els.editorMergePageField.hidden = true;
@@ -2345,8 +2496,14 @@
   });
   els.editorOverlayImage?.addEventListener('click', () => {
     if (!state.editorSession || state.editorBusy) return;
+    if (state.editorMode === 'image') {
+      els.editorOverlayImageInput?.click();
+      return;
+    }
+    state.selectedObjectId = '';
     setEditorWorkspaceMode('image');
-    els.editorOverlayImageInput?.click();
+    syncEditorControls();
+    setEditorStatus('Colar imagem ativo. Clique novamente no botão para escolher a imagem do dispositivo.', 'success');
   });
   els.editorOverlayImageInput?.addEventListener('change', () => {
     const file = els.editorOverlayImageInput.files?.[0];
@@ -2387,11 +2544,8 @@
     }
     state.pendingMergeItem = null;
     state.pendingMergeFiles = files;
-    if (els.editorMergeSelection) {
-      els.editorMergeSelection.textContent = files.length === 1
-        ? '1 arquivo do dispositivo selecionado.'
-        : String(files.length) + ' arquivos do dispositivo selecionados.';
-    }
+    syncPendingMergeSelectionCopy();
+    renderMergePreview(files);
     syncEditorControls();
     setEditorStatus('Arquivo selecionado. Escolha a posição e confirme em Unir.', 'success');
   });
@@ -2419,6 +2573,15 @@
 
   document.addEventListener('paste', (event) => {
     handleEditorPaste(event).catch(() => {});
+  }, true);
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Delete' || !state.editorSession || state.editorBusy || !state.selectedObjectId) return;
+    const target = event.target instanceof Element ? event.target : null;
+    if (target?.closest('input, textarea, select, [contenteditable="true"], [role="textbox"]')) return;
+    if (!deleteSelectedEditorObject()) return;
+    event.preventDefault();
+    event.stopPropagation();
   }, true);
 
   navigator.serviceWorker?.addEventListener('message', (event) => {
