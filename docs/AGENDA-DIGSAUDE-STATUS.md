@@ -109,14 +109,28 @@ A V2 continua sendo uma automação local assistida. Monitoramento com navegador
 
 A homologação funcional inicial está aprovada. Ainda faltam somente testes operacionais de continuidade ao longo do uso normal.
 
+## Ciclo de vida dos cards
+
+Decisão funcional confirmada em 16/09/2026:
+
+- **marcar como visto não remove o card** enquanto a consulta ainda estiver na aba **Agendados** do DigSaúde;
+- o Portal mantém esse card como ativo e apenas muda sua apresentação para **visualizado**;
+- quando uma sincronização completa confirmar que a consulta **não está mais na lista Agendados original**, o registro é marcado como inativo e desaparece da visão padrão do Portal;
+- a remoção da visão padrão é determinada pela **fonte oficial DigSaúde**, não apenas pela passagem da data no relógio local;
+- o histórico inativo continua recuperável somente se o usuário marcar manualmente **Mostrar removidos da aba Agendados**;
+- a memória de visualização continua armazenada separadamente para consistência, mas não mantém um card inativo visível.
+
+Justificativa: o objetivo da Agenda é acompanhamento operacional até o agendamento deixar a fila oficial; ela não deve se transformar em histórico permanente de pacientes após a saída do DigSaúde.
+
 ## Próximo passo exato
 
 1. no Portal, atualizar a página da Agenda com `Ctrl+F5`;
 2. confirmar que **Todos ativos** é a visão inicial;
 3. marcar um agendamento como visto e confirmar que o card permanece na lista com borda de visualizado;
 4. executar uma sincronização do DigSaúde sem alteração real e confirmar que o mesmo agendamento continua visualizado;
-5. quando ocorrer uma alteração real de data/horário/status, confirmar que o registro volta a ser destacado como alterado;
-6. registrar a homologação humana e encerrar esta correção.
+5. quando uma consulta sair da aba **Agendados** do DigSaúde, confirmar após a sincronização completa que ela desaparece de **Todos ativos** no Portal;
+6. quando ocorrer uma alteração real de data/horário/status em uma consulta ainda ativa, confirmar que o registro volta a ser destacado como alterado;
+7. registrar a homologação humana e encerrar esta correção.
 
 ## Riscos restantes
 
