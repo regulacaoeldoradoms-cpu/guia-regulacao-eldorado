@@ -1030,7 +1030,7 @@
     if (!state.editorSession || state.editorBusy) return;
     state.selectedObjectId = '';
     setEditorWorkspaceMode('crop');
-    setEditorStatus('Recortar: arraste a moldura azul ou suas alças. A área escurecida ficará fora do recorte; use ↺ dentro da moldura para restaurar a página.', 'success');
+    setEditorStatus('Recortar: arraste diretamente sobre a página para selecionar uma única área de recorte. Sem seleção, a página permanece inteira. Depois, mova a moldura ou use as alças; ↺ remove o recorte.', 'success');
   }
 
   function startSelectObjects() {
