@@ -711,14 +711,6 @@
   background-image: url('/assets/editor-pdf-buttons/grade-ativa.svg?v=20260916-2') !important;
 }
 
-.documents-art-refresh {
-  width: 38px !important;
-  min-width: 38px !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  background-image: url('/assets/editor-pdf-buttons/atualizar.svg?v=20260916-2') !important;
-}
-
 .documents-art-export {
   width: 123px !important;
   min-width: 123px !important;
@@ -769,6 +761,26 @@
   min-width: 38px !important;
   height: 38px !important;
 }
+
+/* Ícones individuais das ferramentas restantes do editor.
+   O fundo de seleção/hover continua sendo controlado por .documents-editor-tool. */
+.documents-tool-icon {
+  color: transparent !important;
+  font-size: 0 !important;
+  line-height: 0;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 30px 30px !important;
+}
+
+.documents-tool-icon-merge { background-image: url('/assets/Unir_PDF.png?v=20260916-1') !important; }
+.documents-tool-icon-blank { background-image: url('/assets/Inserir_pagina_branca.png?v=20260916-1') !important; }
+.documents-tool-icon-add-image { background-image: url('/assets/Adicionar_imagem.png?v=20260916-1') !important; }
+.documents-tool-icon-crop { background-image: url('/assets/Recortar_pagina.png?v=20260916-1') !important; }
+.documents-tool-icon-select { background-image: url('/assets/Selecionar_mover.png?v=20260916-1') !important; }
+.documents-tool-icon-write { background-image: url('/assets/Escrever.png?v=20260916-1') !important; }
+.documents-tool-icon-paste-image { background-image: url('/assets/Colar_imagem.png?v=20260916-1') !important; }
+.documents-tool-icon-draw { background-image: url('/assets/Desenhar.png?v=20260916-1') !important; }
 
 .portal-pdf-crop-action--cancel {
   width: 93px;
