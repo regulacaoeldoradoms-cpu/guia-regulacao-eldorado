@@ -4,67 +4,106 @@ Atualizado em 16/09/2026.
 
 ## Estado atual
 
-- Frente: Agenda DigSaúde V1.
+- Frente: Agenda DigSaúde.
 - V1 original mesclada na `main` pelo PR #185 em `77a1b7b55750ce19ba1c0d3cf8ddf5070ec6c751`.
-- Primeira homologação real iniciada em 16/09/2026 com sessão autorizada do DigSaúde.
-- O primeiro envio real de 40 agendamentos chegou à ponte do Portal, mas o Worker falhou com `Too many subrequests by single Worker invocation`.
-- Causa: a V1 fazia leitura e gravação individual no Firestore por registro, excedendo o limite de subrequests do Cloudflare.
-- Correção mesclada pelo PR #186 em `cd1d67232f34acd77d0b194be194a75d816fc8ce`.
-- Deploy de produção do Worker concluído com sucesso em 16/09/2026, versão Cloudflare `a790bd06-b51a-4a02-8bf2-fe2a28f84849`.
-- Próximo estado de homologação: repetir o mesmo envio real dos 40 agendamentos.
+- Correção do limite de subrequests mesclada pelo PR #186 em `cd1d67232f34acd77d0b194be194a75d816fc8ce`.
+- Deploy do Worker corrigido concluído com sucesso em 16/09/2026, versão Cloudflare `a790bd06-b51a-4a02-8bf2-fe2a28f84849`.
+- O usuário repetiu a sincronização real após o deploy e confirmou que **deu certo**; portanto a primeira sincronização funcional em produção está homologada.
+- Nova unidade autorizada: **V2 — sincronização automática enquanto o DigSaúde estiver aberto**.
+- Branch atual: `feat/agenda-auto-sync-v2`.
+- Produção: a V2 ainda não foi mesclada nem publicada.
 
-## Correção aplicada
+## Objetivo da V2
 
-- a sincronização carrega o estado existente do Firestore uma vez com `listAll`;
-- compara os registros em memória pelo `sourceId`;
-- acumula criações, atualizações, reativações e desativações;
-- grava pelo endpoint `documents:commit` do Firestore;
-- divide lotes em até 450 writes, abaixo do limite de 500 por commit;
-- preserva `readBy`, `firstSeenAt` e demais metadados;
-- reativação também atualiza `lastChangedAt`, fazendo o item voltar a ser não lido;
-- `markRead` continua unitário, pois atua em apenas um registro;
-- teste de regressão impede retorno ao padrão N+1 de subrequests.
+Eliminar a necessidade de clicar manualmente para cada atualização sem armazenar credenciais do DigSaúde e sem recarregar a tela que o técnico estiver usando.
 
-## Validação
+Comportamento planejado:
 
-- PR #186 validado com 21/21 workflows concluídos com sucesso no head `986e9d5bff87f23ee0e8abe40e1683b255331973`, incluindo `Validar Agenda DigSaúde V1`;
-- sintaxe do Worker e do gateway passou nas suítes de regressão;
-- build/deploy de produção do Worker concluído com sucesso após o merge;
-- homologação funcional real ainda depende de repetir o envio no navegador autorizado.
+- um clique inicial por sessão em **Ativar sincronização automática**;
+- ponte protegida do Portal permanece aberta e pode ser minimizada;
+- verificação em segundo plano a cada 15 minutos;
+- o userscript busca a própria página `consultas?activeTab=Agendados` no domínio do DigSaúde usando a sessão já autenticada pelo navegador;
+- a resposta HTML é interpretada em memória com `DOMParser`, sem navegar ou recarregar a interface do usuário;
+- snapshot só é enviado ao Portal quando houver diferença em relação à última sincronização confirmada;
+- clicar no botão enquanto o automático está ativo força uma verificação imediata;
+- ao voltar à aba/janela depois de mais de 15 minutos, uma verificação é antecipada;
+- se a ponte do Portal for fechada, o automático pausa e exige reativação explícita.
 
-## Por que foi feito assim
+## Implementação preparada na branch
 
-O erro não era do Tampermonkey, do DigSaúde ou da sessão do usuário. O snapshot chegou corretamente ao Portal; a falha ocorria ao persistir dezenas de registros com chamadas individuais. O commit em lote reduz dezenas de subrequests externos para poucas chamadas controladas, sem guardar credenciais do DigSaúde nem ampliar permissões.
+- userscript atualizado para V1.1.0;
+- `@updateURL` e `@downloadURL` adicionados para facilitar atualizações futuras do Tampermonkey;
+- GET same-origin do DigSaúde com `credentials: include` e `cache: no-store`;
+- nenhuma leitura de `document.cookie`, localStorage, sessionStorage, token CSRF ou Authorization;
+- assinatura local do snapshot para evitar POSTs sem mudança;
+- `syncId` por envio para deduplicação da ponte;
+- ponte `/agenda/sync/` deixou de fechar após uma sincronização e passou a aceitar múltiplos ciclos;
+- a ponte continua aceitando mensagens apenas da origem oficial do DigSaúde e revalida a sessão do Portal;
+- backend passou a aceitar snapshot completo com zero agendamentos, mas continua rejeitando vazio ambíguo;
+- tela da Agenda explica o novo fluxo e mantém sincronização manual imediata como contingência;
+- testes de regressão ampliados para automação, deduplicação, privacidade e snapshot vazio.
+
+## Decisões e justificativas
+
+### Intervalo de 15 minutos
+
+É frequente o bastante para acompanhamento operacional diário sem gerar tráfego e gravações desnecessárias. O script não envia novamente quando nada mudou.
+
+### Ponte persistente do Portal
+
+Navegadores bloqueiam a abertura silenciosa de pop-ups fora de um gesto do usuário. Por isso a automação é ativada com um clique consciente e reutiliza a mesma janela autenticada. A janela pode ser minimizada, mas precisa permanecer aberta.
+
+### Busca em segundo plano no próprio DigSaúde
+
+Em vez de recarregar a aba em uso ou depender de endpoints internos do Livewire, o userscript faz um GET autenticado da própria página Agendados. Isso usa a sessão já existente sem ler, copiar ou transmitir cookies.
+
+### Sem automação com navegador fechado
+
+A V2 continua sendo uma automação local assistida. Monitoramento com navegador fechado exigiria integração institucional apropriada; senha/cookie de usuário não serão armazenados no backend como atalho.
 
 ## Alternativas descartadas
 
-- aumentar artificialmente o limite de subrequests como solução principal;
-- dividir o envio em dezenas de requisições do navegador;
-- armazenar senha, cookie ou sessão do DigSaúde no backend;
-- remover comparação de registros ou leitura individual para economizar chamadas.
-
-Essas alternativas aumentariam fragilidade, exposição ou complexidade sem corrigir a causa arquitetural.
+- recarregar a tela atual do DigSaúde a cada intervalo: interromperia o trabalho do usuário;
+- tratar `/livewire/update` como API estável: acoplamento frágil ao framework interno;
+- abrir uma nova janela do Portal silenciosamente a cada 15 minutos: bloqueado por políticas normais do navegador;
+- guardar senha ou sessão do DigSaúde no Portal: risco de segurança e governança;
+- enviar snapshots idênticos continuamente: desperdício de chamadas e gravações.
 
 ## Segurança e privacidade
 
 - DigSaúde continua como fonte oficial;
 - Portal continua somente leitura em relação ao DigSaúde;
 - nenhuma senha, cookie, sessão ou token CSRF do DigSaúde é enviado ao Portal;
+- `credentials: include` é usado apenas no GET same-origin dentro do próprio DigSaúde;
 - Agenda continua sem PostHog/observabilidade de conteúdo clínico;
-- respostas da API permanecem `no-store`.
+- respostas da API permanecem `no-store`;
+- permissões permanecem Técnico em Telemedicina/Desenvolvedor.
+
+## Checks e testes
+
+- V1 e correção de subrequests já homologadas em produção.
+- Testes V2 adicionados em `worker/tests/agenda.test.mjs`.
+- Checks da branch V2 ainda pendentes até abertura do PR.
 
 ## Próximo passo exato
 
-1. no DigSaúde, manter a aba **Agendados** aberta;
-2. clicar novamente em **Enviar Agenda ao Portal**;
-3. confirmar que a janela `/agenda/sync/` conclui sem erro;
-4. voltar à `/agenda/` e clicar em **Atualizar**;
-5. validar que os 40 registros aparecem, com totais e estado de novos/alterados coerentes;
-6. testar abertura de um registro e confirmar leitura individual;
-7. registrar aqui o resultado final da homologação.
+1. abrir PR da branch `feat/agenda-auto-sync-v2` contra `main`;
+2. validar todos os workflows, especialmente `Validar Agenda DigSaúde V1` e regressões gerais;
+3. corrigir qualquer falha sem ampliar o escopo;
+4. mesclar somente com CI verde;
+5. aguardar deploy de produção;
+6. o usuário atualizar o userscript existente no Tampermonkey para a versão 1.1.0;
+7. no DigSaúde, clicar uma vez em **Ativar sincronização automática**, minimizar a ponte do Portal e homologar:
+   - sincronização inicial;
+   - botão indicando automático ativo;
+   - nova verificação sem mudança;
+   - verificação após alteração real ou forçada;
+   - pausa ao fechar a ponte e reativação posterior;
+8. registrar o resultado real desta homologação.
 
 ## Riscos restantes
 
+- timers de páginas em segundo plano podem ser atrasados pelo navegador; ao recuperar foco, o script antecipa a verificação vencida;
 - se a lista futura ultrapassar uma página do DigSaúde, snapshots parciais não podem desativar ausentes;
 - mudanças futuras no HTML Filament/Livewire podem exigir ajuste do extrator;
-- a homologação final desta correção ainda depende do reteste real descrito acima.
+- o Tampermonkey já instalado manualmente precisa receber esta atualização uma vez; a partir da V1.1.0 ficam registrados URLs de atualização.
