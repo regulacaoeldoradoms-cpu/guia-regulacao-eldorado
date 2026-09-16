@@ -227,7 +227,15 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(client, /openWithPortalViewer/);
   assert.match(client, /showPortalViewerFailure/);
   assert.match(client, /loadPdfBlobFallback/);
-  assert.doesNotMatch(client, /showIframeViewerSurface|documentsPdfFrame|els\.frame|createElement\(['"](?:iframe|embed|object)['"]\)/i);
+  const printStart = client.indexOf('  function ensurePrintFrame()');
+  const printEnd = client.indexOf('  async function startEditor()', printStart);
+  assert.ok(printStart >= 0 && printEnd > printStart, 'Bloco de impressão local deve existir.');
+  const printBlock = client.slice(printStart, printEnd);
+  const clientWithoutPrintBlock = client.slice(0, printStart) + client.slice(printEnd);
+  assert.doesNotMatch(clientWithoutPrintBlock, /showIframeViewerSurface|documentsPdfFrame|els\.frame|createElement\(['"](?:iframe|embed|object)['"]\)/i);
+  assert.match(printBlock, /createElement\(['"]iframe['"]\)/);
+  assert.match(printBlock, /documents-print-frame/);
+  assert.doesNotMatch(printBlock, /\.src\s*=|location\.replace\(|URL\.createObjectURL\(/);
   assert.doesNotMatch(viewer, /createElement\(['"](?:iframe|embed|object)['"]\)/i);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /pdf_first_page_visible/);
@@ -316,10 +324,14 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(client, /state\.editorMode === 'crop'/);
   assert.match(client, /async function printEditedPdfLocal\(/);
   assert.match(client, /async function renderPdfBlobForPrint\(/);
-  assert.match(client, /window\.open\('about:blank', '_blank'\)/);
+  assert.match(client, /function ensurePrintFrame\(/);
+  assert.doesNotMatch(client, /window\.open\(/);
   assert.doesNotMatch(client, /printWindow\.location\.replace\(/);
+  assert.match(client, /finalPdfCacheRevision/);
+  assert.match(client, /Promise\.all\(Array\.from\(\{ length: concurrency \}/);
   assert.match(harness, /async function renderPdfBlobForPrint\(/);
-  assert.doesNotMatch(harness, /createElement\(['"]iframe['"]\)|frame\.contentWindow|printWindow\.location\.replace\(/i);
+  assert.match(harness, /function ensurePrintFrame\(/);
+  assert.doesNotMatch(harness, /window\.open\(|location\.replace\(/i);
   assert.match(client, /primary && key === 'z'/);
   assert.match(client, /primary && key === 'p'/);
   assert.match(css, /\.documents-editor-field\[hidden\]/);
@@ -331,7 +343,10 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(css, /\.portal-pdf-crop-layer/);
   assert.match(css, /\.portal-pdf-crop-frame/);
   assert.doesNotMatch(html, /<(?:iframe|embed|object)\b/i);
-  assert.doesNotMatch(client, /createElement\(['"](?:iframe|embed|object)['"]\)/i);
+  const printStart2 = client.indexOf('  function ensurePrintFrame()');
+  const printEnd2 = client.indexOf('  async function startEditor()', printStart2);
+  const runtimeWithoutPrintFrame = client.slice(0, printStart2) + client.slice(printEnd2);
+  assert.doesNotMatch(runtimeWithoutPrintFrame, /createElement\(['"](?:iframe|embed|object)['"]\)/i);
 });
 
 test('ciclo assíncrono do editor não fecha um visualizador mais novo nem aceita mutações concorrentes', () => {
