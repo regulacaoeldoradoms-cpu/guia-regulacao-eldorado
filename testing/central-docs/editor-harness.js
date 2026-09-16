@@ -29,8 +29,11 @@
     mergeAfterPage: document.getElementById('editorMergeAfterPage'),
     mergeConfirm: document.getElementById('editorMergeConfirm'),
     mergeCancel: document.getElementById('editorMergeCancel'),
+    mergeFileButton: document.getElementById('editorMergeFileButton'),
+    mergeFileInput: document.getElementById('editorMergeFileInput'),
     blank: document.getElementById('editorBlank'),
     addImage: document.getElementById('editorAddImage'),
+    addImageInput: document.getElementById('editorAddImageInput'),
     crop: document.getElementById('editorCrop'),
     select: document.getElementById('editorSelect'),
     write: document.getElementById('editorWrite'),
@@ -281,11 +284,14 @@
     elements.organize.disabled = !editing;
     elements.merge.disabled = !editing;
     elements.mergeConfirm.disabled = !editing || !state.merging;
+    elements.mergeFileButton.disabled = !editing || !state.merging;
+    elements.mergeFileInput.disabled = !editing || !state.merging;
     elements.mergeCancel.disabled = !editing;
     elements.mergePosition.disabled = !editing;
     elements.mergeAfterPage.disabled = !editing;
     elements.blank.disabled = !editing;
     elements.addImage.disabled = !editing;
+    elements.addImageInput.disabled = !editing;
     elements.crop.disabled = !editing;
     elements.select.disabled = !editing;
     elements.write.disabled = !editing;
@@ -307,7 +313,7 @@
     elements.surface.setAttribute('aria-busy', active ? 'true' : 'false');
     if (message) elements.editorStatus.textContent = message;
     if (active) {
-      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.draw, elements.drawColor, elements.drawWidth, elements.drawPen, elements.drawEraser, elements.objectDelete, elements.refresh, elements.exportPdf, elements.exit]) {
+      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.mergeFileButton, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.draw, elements.drawColor, elements.drawWidth, elements.drawPen, elements.drawEraser, elements.objectDelete, elements.refresh, elements.exportPdf, elements.exit]) {
         button.disabled = true;
       }
       elements.thumbnails.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
@@ -465,6 +471,111 @@
     return new Promise((resolve, reject) => {
       canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Imagem sintética não pôde ser gerada.')), 'image/png');
     });
+  }
+
+  async function normalizeLocalImage(blob) {
+    if (!(blob instanceof Blob) || !String(blob.type || '').startsWith('image/')) {
+      throw new Error('Selecione uma imagem válida.');
+    }
+    const type = String(blob.type || '').toLowerCase();
+    if (type === 'image/png' || type === 'image/jpeg') return blob;
+
+    const bitmap = await createImageBitmap(blob).catch(() => null);
+    if (!bitmap) throw new Error('Este formato de imagem não pôde ser convertido pelo navegador.');
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, bitmap.width);
+      canvas.height = Math.max(1, bitmap.height);
+      const context = canvas.getContext('2d', { alpha: false });
+      if (!context) throw new Error('Não foi possível preparar a imagem.');
+      context.fillStyle = '#ffffff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(bitmap, 0, 0);
+      const converted = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (!(converted instanceof Blob)) throw new Error('Não foi possível converter a imagem.');
+      return converted;
+    } finally {
+      bitmap.close?.();
+    }
+  }
+
+  async function addLocalImagePages(files) {
+    if (!state.session) return false;
+    const images = Array.from(files || []).filter((file) => String(file?.type || '').startsWith('image/'));
+    if (!images.length) {
+      elements.editorStatus.textContent = 'Selecione pelo menos uma imagem.';
+      return false;
+    }
+    const viewState = viewer.getViewState() || state.viewState;
+    let firstInsertAt = editor.pageCount(state.session);
+    setBusy(true, images.length === 1 ? 'Adicionando imagem…' : 'Adicionando imagens…');
+    try {
+      let insertAt = editor.pageCount(state.session);
+      firstInsertAt = insertAt;
+      for (const file of images) {
+        const normalized = await normalizeLocalImage(file);
+        await editor.addImagePage(state.session, normalized, { label: 'Imagem local', insertAt });
+        insertAt += 1;
+      }
+      await rebuild(viewState ? { ...viewState, activePage: firstInsertAt + 1 } : null, 'Atualizando imagens…');
+      elements.editorStatus.textContent = images.length === 1
+        ? 'Imagem adicionada como nova página.'
+        : String(images.length) + ' imagens adicionadas como novas páginas.';
+      return true;
+    } finally {
+      if (elements.addImageInput) elements.addImageInput.value = '';
+      setBusy(false);
+    }
+  }
+
+  function localMergeKind(file) {
+    const type = String(file?.type || '').toLowerCase();
+    const name = String(file?.name || '').toLowerCase();
+    if (type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
+    if (type.startsWith('image/')) return 'image';
+    return '';
+  }
+
+  async function mergeLocalFiles(files) {
+    if (!state.session || !state.merging) return false;
+    const selected = Array.from(files || []).filter((file) => localMergeKind(file));
+    if (!selected.length) {
+      elements.editorStatus.textContent = 'Selecione pelo menos um PDF ou uma imagem válida.';
+      return false;
+    }
+    const viewState = viewer.getViewState() || state.viewState;
+    const count = editor.pageCount(state.session);
+    const position = elements.mergePosition.value;
+    if (position === 'after-page' && !elements.mergeAfterPage.reportValidity()) return false;
+    let insertAt = position === 'before-document' ? 0
+      : position === 'after-page' ? Math.max(1, Math.min(count, Number(elements.mergeAfterPage.value)))
+        : count;
+    const firstInsertAt = insertAt;
+    setBusy(true, selected.length === 1 ? 'Adicionando arquivo…' : 'Adicionando arquivos…');
+    try {
+      for (const file of selected) {
+        const kind = localMergeKind(file);
+        if (kind === 'pdf') {
+          const added = await editor.addDocument(state.session, file, { label: 'PDF local', insertAt });
+          insertAt += Number(added || 0);
+        } else {
+          const normalized = await normalizeLocalImage(file);
+          await editor.addImagePage(state.session, normalized, { label: 'Imagem local', insertAt });
+          insertAt += 1;
+        }
+      }
+      state.merging = false;
+      state.mode = 'organize';
+      syncEditorState();
+      await rebuild(viewState ? { ...viewState, activePage: firstInsertAt + 1 } : null, 'Atualizando documento…');
+      elements.editorStatus.textContent = selected.length === 1
+        ? 'Arquivo adicionado e painel de união fechado.'
+        : String(selected.length) + ' arquivos adicionados e painel de união fechado.';
+      return true;
+    } finally {
+      if (elements.mergeFileInput) elements.mergeFileInput.value = '';
+      setBusy(false);
+    }
   }
 
   async function addSyntheticImage() {
@@ -798,12 +909,21 @@
   elements.organize.addEventListener('click', () => run(() => { state.mode = 'organize'; cancelMerge(); }));
   elements.merge.addEventListener('click', () => run(showMergePanel));
   elements.mergeConfirm.addEventListener('click', () => run(mergeSyntheticPdf));
+  elements.mergeFileButton.addEventListener('click', () => {
+    if (!state.session || !state.merging) return;
+    elements.mergeFileInput.click();
+  });
+  elements.mergeFileInput.addEventListener('change', () => run(() => mergeLocalFiles(elements.mergeFileInput.files)));
   elements.mergeCancel.addEventListener('click', () => run(cancelMerge));
   elements.mergePosition.addEventListener('change', () => {
     elements.mergePageField.hidden = elements.mergePosition.value !== 'after-page';
   });
   elements.blank.addEventListener('click', () => run(addBlankPage));
-  elements.addImage.addEventListener('click', () => run(addSyntheticImage));
+  elements.addImage.addEventListener('click', () => {
+    if (!state.session) return;
+    elements.addImageInput.click();
+  });
+  elements.addImageInput.addEventListener('change', () => run(() => addLocalImagePages(elements.addImageInput.files)));
   elements.crop.addEventListener('click', () => run(startCropMode));
   elements.select.addEventListener('click', () => run(startSelectMode));
   elements.write.addEventListener('click', () => run(startWriteMode));
