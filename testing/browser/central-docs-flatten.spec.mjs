@@ -60,6 +60,25 @@ test.describe('Central de Documentos — 3C.6 flatten/exportação local', () =>
     expect(diagnostics.flattened.pages[3].height).toBeLessThan(diagnostics.structural.pages[3].height);
   });
 
+  test('botão Imprimir e Ctrl+P usam o PDF final sem sair do editor', async ({ page }) => {
+    await openEditor(page);
+    await page.evaluate(() => window.CentralDocsEditorHarness.seedFlattenFixture());
+
+    await page.locator('#editorPrint').click();
+    await expect(page.locator('html')).toHaveAttribute('data-print-state', 'requested');
+    expect(Number(await page.locator('html').getAttribute('data-print-size'))).toBeGreaterThan(500);
+    await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'editor');
+
+    await page.evaluate(() => {
+      delete document.documentElement.dataset.printState;
+      delete document.documentElement.dataset.printSize;
+    });
+    await page.keyboard.press('Control+p');
+    await expect(page.locator('html')).toHaveAttribute('data-print-state', 'requested');
+    expect(Number(await page.locator('html').getAttribute('data-print-size'))).toBeGreaterThan(500);
+    await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'editor');
+  });
+
   test('botão Exportar gera download local sem sair do editor', async ({ page }) => {
     await openEditor(page);
     await page.evaluate(() => window.CentralDocsEditorHarness.seedFlattenFixture());
