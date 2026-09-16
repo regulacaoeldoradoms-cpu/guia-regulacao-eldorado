@@ -105,10 +105,11 @@ test.describe('Central de Documentos — 3C.5 Desenhar/Borracha', () => {
 
     // Cria um objeto de texto para comprovar que a borracha não toca em outras ferramentas.
     await page.locator('#editorWrite').click();
-    const pageOne = page.locator('.portal-pdf-page').first();
-    const pageBox = await pageOne.boundingBox();
-    expect(pageBox).not.toBeNull();
-    await page.mouse.click(pageBox.x + pageBox.width * .48, pageBox.y + pageBox.height * .5);
+    const objectLayer = page.locator('.portal-pdf-object-layer').first();
+    await objectLayer.scrollIntoViewIfNeeded();
+    const objectBox = await objectLayer.boundingBox();
+    expect(objectBox).not.toBeNull();
+    await page.mouse.click(objectBox.x + objectBox.width * .35, objectBox.y + objectBox.height * .28);
     await expect(page.locator('html')).toHaveAttribute('data-object-count', '1');
 
     await eraseGesture(page, 0, { x: .17, y: .25 }, { x: .64, y: .30 });
