@@ -1,8 +1,8 @@
 # Central de Documentos — Homologação e testes de navegador V1
 
-Data: 15/09/2026  
+Data: 16/09/2026  
 Fase relacionada: 3 — Editor PDF essencial  
-Estado: laboratório local + CI + Cloudflare Pages operacionais; PR funcional em homologação, sem alteração em produção.
+Estado: laboratório local + CI + Cloudflare Pages operacionais; 3C.5 tecnicamente validada e aguardando homologação humana, sem alteração em produção.
 
 ## Objetivo
 
@@ -65,7 +65,7 @@ O ambiente de homologação não substitui os critérios do Guia Mestre. Ele acr
 
 `branch -> testes unitários/estáticos -> Playwright -> preview/homologação -> PR -> main -> produção`
 
-O Organizar V2 já foi aceito. A unidade atual é 3C.3 — Escrever + Colar imagem; o avanço para 3C.4 depende de sua homologação humana.
+Organizar V2, 3C.3 e 3C.4 já foram aceitos. A unidade atual é **3C.5 — Desenhar/Borracha**: a implementação automatizada está verde e o avanço para 3C.6 depende da homologação humana do preview sintético.
 
 
 ## Resultado do primeiro ciclo automatizado — 14/09/2026
@@ -456,3 +456,60 @@ Roteiro humano previsto para o preview da 3C.5:
 - repetir no touch quando possível.
 
 Somente após esse roteiro e checks verdes a 3C.5 poderá ser encerrada e a 3C.6 liberada.
+
+## Homologação candidata da 3C.5 — Desenhar/Borracha — 16/09/2026
+
+Head funcional candidato: `a2c28838df3138beec036baa809a5d7744eb21a5`.
+
+### Cobertura técnica aprovada
+
+- traços são vetores locais ligados a `pageId`;
+- cada traço persiste cor, espessura e pontos normalizados;
+- a camada de desenho é separada do canvas original do PDF;
+- um gesto contínuo de caneta consolida uma única entrada de Undo/Redo;
+- a borracha remove somente traços criados pela ferramenta Desenhar;
+- texto, imagem overlay, crop e conteúdo original do PDF permanecem fora do alvo da borracha;
+- rotação transforma os pontos do desenho junto da página;
+- reorganização preserva o vínculo por `pageId`;
+- duplicação cria novos IDs para os traços clonados;
+- exclusão de página remove apenas os traços vinculados à página eliminada;
+- Pointer Events cobrem mouse/pen/touch;
+- não existe flatten/exportação dos desenhos nesta unidade.
+
+### Resultado automatizado
+
+- **25/25 checks GitHub verdes**;
+- Cloudflare Pages: sucesso;
+- workflow **PDF.js real em Chromium**: sucesso;
+- Playwright: **64 casos**, com **61 passed / 3 skipped esperados**;
+- cenário de caneta/espessura/cor/Undo/Redo/borracha passou em desktop e mobile;
+- cenário de rotação/duplicação/exclusão por `pageId` passou em desktop e mobile;
+- cenário touch específico passou no perfil mobile;
+- nenhum erro conhecido de console/pageerror no fluxo validado.
+
+### Preview candidato
+
+- imutável: `https://ea2088f5.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+
+O staging continua restrito a **dados fictícios**, pois Cloudflare Access ainda não foi habilitado.
+
+### Roteiro humano obrigatório da 3C.5
+
+1. entrar em **Editar → Desenhar**;
+2. desenhar um traço com mouse e confirmar resposta visual imediata;
+3. alterar **cor** e **espessura** e criar um segundo traço visualmente diferente;
+4. criar pelo menos um traço em outra página;
+5. usar **Desfazer** e **Refazer**, confirmando operação por gesto/traço;
+6. selecionar **Borracha** e apagar somente um dos traços criados;
+7. confirmar visualmente que texto, imagem overlay, crop e conteúdo original do PDF permanecem intactos;
+8. girar uma página que contém desenho e confirmar que o traço acompanha a página;
+9. reorganizar/duplicar uma página desenhada e confirmar que o desenho acompanha/clona corretamente;
+10. se possível, repetir caneta + borracha em celular/touch.
+
+### Gate
+
+A 3C.5 só pode ser encerrada após o aceite humano desse roteiro. A 3C.6 — flatten/exportação local — continua bloqueada até esse aceite.
+
+Antes de qualquer merge posterior, a branch deverá ser sincronizada com a `main` atual e toda a matriz de CI deverá ser executada novamente, porque a `main` avançou com commits independentes do módulo Agenda/DigSaúde.
+
