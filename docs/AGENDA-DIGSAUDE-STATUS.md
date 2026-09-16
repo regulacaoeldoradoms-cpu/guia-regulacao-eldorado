@@ -19,7 +19,10 @@ Atualizado em 16/09/2026.
 - Produção: userscript **1.1.1** publicado; resta somente homologar visualmente o novo chip no navegador autorizado.
 - Nova correção autorizada em 16/09/2026: **persistência real de visualização dos agendamentos** e manutenção do card após marcar como visto.
 - Problema observado: ao marcar um card como visto, ele desaparecia porque a tela iniciava no filtro `Novos / alterados`; além disso, o estado de leitura podia voltar após uma nova sincronização porque a memória ficava embutida no mesmo documento que o sincronizador substitui.
-- Branch atual desta correção: `fix/agenda-read-memory`; produção ainda pendente de PR/checks/merge.
+- Correção implementada no PR #193 — **Agenda: manter visualizados na lista e persistir memória de leitura** — e mesclada na `main` em `dac9dbe006ada9fd68b033799a6ead3c4743843d`.
+- PR #193: **21/21 checks** concluídos com sucesso antes do merge.
+- Pós-merge da `main`: **26/26 check-runs** concluídos com sucesso, incluindo build, deploy, validação da Agenda e regressões gerais.
+- Worker publicado com sucesso na versão Cloudflare `9dfd38af-4f3a-4f6e-a4ca-b177a377c0d6`.
 - Evidência real em 16/09/2026: a ponte `/agenda/sync/` exibiu `Automático ativo · última sincronização: 10:13 · 0 novo(s), 0 alterado(s)`, confirmando conexão persistente e primeira sincronização automática bem-sucedida sem mudanças.
 
 ## Objetivo da V2
@@ -108,14 +111,12 @@ A homologação funcional inicial está aprovada. Ainda faltam somente testes op
 
 ## Próximo passo exato
 
-1. abrir PR da branch `fix/agenda-read-memory` contra `main`;
-2. validar o workflow da Agenda e regressões gerais;
-3. mesclar somente com CI verde e aguardar deploy;
-4. no Portal, confirmar que **Todos ativos** é a visão inicial;
-5. marcar um agendamento como visto e confirmar que o card permanece na lista com borda de visualizado;
-6. executar uma sincronização do DigSaúde sem alteração real e confirmar que o mesmo agendamento continua visualizado;
-7. quando ocorrer uma alteração real de data/horário/status, confirmar que o registro volta a ser destacado como alterado;
-8. registrar o resultado e encerrar esta correção.
+1. no Portal, atualizar a página da Agenda com `Ctrl+F5`;
+2. confirmar que **Todos ativos** é a visão inicial;
+3. marcar um agendamento como visto e confirmar que o card permanece na lista com borda de visualizado;
+4. executar uma sincronização do DigSaúde sem alteração real e confirmar que o mesmo agendamento continua visualizado;
+5. quando ocorrer uma alteração real de data/horário/status, confirmar que o registro volta a ser destacado como alterado;
+6. registrar a homologação humana e encerrar esta correção.
 
 ## Riscos restantes
 
