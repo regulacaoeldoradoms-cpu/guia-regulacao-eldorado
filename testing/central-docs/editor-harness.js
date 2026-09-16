@@ -480,7 +480,7 @@
     if (!state.session) return;
     const blob = await syntheticImageBlob();
     const activePage = Math.max(1, Number(viewer.getViewState()?.activePage || 1));
-    const id = await editor.addImageOverlay(state.session, activePage - 1, blob, { width: .3, height: .2 });
+    const id = await editor.addImageOverlay(state.session, activePage - 1, blob, { width: .3 });
     state.selectedObjectId = id || '';
     setMode('image');
     elements.editorStatus.textContent = 'Imagem sintética inserida sobre a página. Arraste, redimensione ou rotacione.';
