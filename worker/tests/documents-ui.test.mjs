@@ -134,7 +134,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260916-2/);
+  assert.match(html, /documents\.js\?v=20260916-3/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -173,7 +173,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260916-1/);
+  assert.match(html, /documents\.css\?v=20260916-2/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -192,9 +192,9 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260916-1/);
-  assert.match(html, /documents\.js\?v=20260916-2/);
-  assert.match(html, /documents\.css\?v=20260916-1/);
+  assert.match(html, /document-viewer\.js\?v=20260916-2/);
+  assert.match(html, /documents\.js\?v=20260916-3/);
+  assert.match(html, /documents\.css\?v=20260916-2/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -272,9 +272,9 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260916-1/);
-  assert.match(html, /documents\.js\?v=20260916-2/);
-  assert.match(html, /documents\.css\?v=20260916-1/);
+  assert.match(html, /document-viewer\.js\?v=20260916-2/);
+  assert.match(html, /documents\.js\?v=20260916-3/);
+  assert.match(html, /documents\.css\?v=20260916-2/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -375,6 +375,12 @@ test('editor V2 expõe união posicionada e sincroniza seleção do catálogo', 
   assert.match(client, /async function applyPendingMerge\(\)/);
   assert.match(client, /mergePdfIntoEditor\(state\.pendingMergeItem, \{ insertAt: mergeInsertAt\(\) \}\)/);
   assert.match(client, /prepareMergePdf\(item\)/);
+  assert.match(html, /id="editorMergeLocalButton"[^>]*>Adicionar PDF ou imagem<\/button>/);
+  assert.match(html, /id="editorMergeLocalInput"[^>]*accept="\.pdf,application\/pdf,image\/\*"/);
+  assert.match(client, /async function mergeLocalFilesIntoEditor\(/);
+  assert.match(client, /normalizeImageForPdf\(file\)/);
+  assert.match(client, /editor\.addDocument\(session, file/);
+  assert.match(client, /editor\.addImagePage\(session, normalized/);
 });
 
 test('editor diferencia imagem como nova página de Colar imagem sobre página', () => {
@@ -385,6 +391,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   const observability = read('js/portal-observability.js');
 
   assert.match(html, /id="editorImageButton"[^>]*title="Adicionar imagem como nova página"/);
+  assert.match(html, /id="editorImageInput"[^>]*type="file"[^>]*accept="image\/\*"/);
   assert.match(html, /id="editorOverlayImageButton"[^>]*title="Colar imagem sobre a página"/);
   assert.doesNotMatch(html, /id="editorOverlayImageButton"[^>]*disabled/);
   assert.match(html, /id="editorWriteButton"[^>]*title="Escrever sobre a página"/);
@@ -392,7 +399,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260916-2/);
+  assert.match(html, /documents\.js\?v=20260916-3/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -537,6 +544,12 @@ test('paleta contextual cria slot e usa painel RGB próprio arrastável', () => 
   assert.doesNotMatch(viewer, /data-text-palette-custom-picker/);
   assert.match(css, /\.portal-pdf-custom-color-panel[\s\S]*bottom:\s*calc\(100% \+ 8px\)/);
   assert.match(css, /\.portal-pdf-custom-color-drag[\s\S]*cursor:\s*move/);
+});
+
+test('arraste de objeto centraliza a caixa sob o ponteiro', () => {
+  const viewer = read('js/document-viewer.js');
+  assert.match(viewer, /\(\(event\.clientX - targetPage\.rect\.left\)[\s\S]{0,180}- \(width \/ 2\)/);
+  assert.match(viewer, /\(\(event\.clientY - targetPage\.rect\.top\)[\s\S]{0,180}- \(height \/ 2\)/);
 });
 
 test('transparência afeta somente o conteúdo e mantém controles opacos', () => {
