@@ -150,7 +150,8 @@ test.describe('Central de Documentos — superfície única do editor', () => {
       '/assets/Desenhar.png',
       '/assets/editor-pdf-buttons/salvar-pdf.svg',
       '/assets/editor-pdf-buttons/imprimir-normal.svg',
-      '/assets/editor-pdf-buttons/fechar.svg'
+      '/assets/editor-pdf-buttons/fechar.svg',
+      '/assets/editor-pdf-buttons/atualizar.svg'
     ];
 
     for (const asset of assets) {
@@ -159,7 +160,7 @@ test.describe('Central de Documentos — superfície única do editor', () => {
       expect((await response.body()).byteLength).toBeGreaterThan(100);
     }
 
-    for (const selector of ['#zoomOut', '#zoomIn', '#fitWidth', '#editorOrganize', '#editorExport', '#editorPrint', '#editorExit']) {
+    for (const selector of ['#zoomOut', '#zoomIn', '#fitWidth', '#editorOrganize', '#editorSync', '#editorExport', '#editorPrint', '#editorExit']) {
       const background = await page.locator(selector).evaluate((node) => getComputedStyle(node).backgroundImage);
       expect(background).toContain('/assets/editor-pdf-buttons/');
     }
@@ -179,6 +180,11 @@ test.describe('Central de Documentos — superfície única do editor', () => {
       expect(background).toContain('/assets/' + filename);
     }
     await expect(page.locator('#editorRefresh')).toHaveCount(0);
+    await expect(page.locator('#editorSync')).toBeVisible();
+    await expect(page.locator('#editorSync')).toHaveAttribute('title', 'Forçar sincronização com Google Drive');
+    await page.locator('#editorSync').click();
+    await expect(page.locator('html')).toHaveAttribute('data-sync-preview', 'force-visible');
+    await expect(page.locator('#editorStatus')).toContainText('não grava no Drive');
 
     const organizeBackground = await page.locator('#editorOrganize').evaluate((node) => getComputedStyle(node).backgroundImage);
     expect(organizeBackground).toContain('grade-ativa.svg');
