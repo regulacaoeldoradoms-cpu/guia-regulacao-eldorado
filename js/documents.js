@@ -57,7 +57,8 @@
     editorDrawWidth: 4,
     editorPaletteWriteChain: Promise.resolve(),
     editorPaletteWriteGeneration: 0,
-    pendingMergeItem: null
+    pendingMergeItem: null,
+    pendingMergeFiles: []
   };
 
   const els = {
@@ -652,7 +653,7 @@
     if (els.editorExport) els.editorExport.disabled = busy || !session || typeof editor?.buildFlattenedBlob !== 'function';
     if (els.editorMergeLocal) els.editorMergeLocal.disabled = busy || !session;
     if (els.editorMergeLocalInput) els.editorMergeLocalInput.disabled = busy || !session;
-    if (els.editorMergeApply) els.editorMergeApply.disabled = busy || !session || !state.pendingMergeItem;
+    if (els.editorMergeApply) els.editorMergeApply.disabled = busy || !session || (!state.pendingMergeItem && !state.pendingMergeFiles.length);
     if (els.editorMergeCancel) els.editorMergeCancel.disabled = busy || !session;
   }
 
@@ -834,6 +835,7 @@
     state.editorColorGesture = null;
     state.editorSession = null;
     state.pendingMergeItem = null;
+    state.pendingMergeFiles = [];
     state.selectedObjectId = '';
     state.editorMode = 'readonly';
     window.PortalPdfViewer?.setThumbnailActions?.(false);
@@ -978,6 +980,7 @@
       state.editorSession = session;
       state.editorViewState = initialViewState;
       state.pendingMergeItem = null;
+      state.pendingMergeFiles = [];
       setEditorSurfaceMode(true);
       setEditorWorkspaceMode('organize');
       els.viewerModeLabel.textContent = 'Editor PDF';
@@ -1409,6 +1412,7 @@
 
       if (session !== state.editorSession) return false;
       state.pendingMergeItem = null;
+      state.pendingMergeFiles = [];
       setEditorWorkspaceMode('organize');
       refreshPdfListActions();
       syncEditorControls();
@@ -1451,6 +1455,8 @@
       return false;
     }
     state.pendingMergeItem = item;
+    state.pendingMergeFiles = [];
+    if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
     setEditorWorkspaceMode('merge');
     if (els.editorMergeSelection) els.editorMergeSelection.textContent = item.name || 'PDF selecionado';
     if (els.editorMergeAfterPage) {
@@ -1476,12 +1482,16 @@
   }
 
   async function applyPendingMerge() {
-    if (!state.pendingMergeItem || state.editorBusy) return false;
+    if (state.editorBusy) return false;
+    if (state.pendingMergeFiles.length) return mergeLocalFilesIntoEditor(state.pendingMergeFiles);
+    if (!state.pendingMergeItem) return false;
     return mergePdfIntoEditor(state.pendingMergeItem, { insertAt: mergeInsertAt() });
   }
 
   function cancelPendingMerge() {
     state.pendingMergeItem = null;
+    state.pendingMergeFiles = [];
+    if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
     if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF na lista da Central ou adicione um arquivo do dispositivo.';
     syncEditorControls();
     setEditorWorkspaceMode('organize');
@@ -1611,6 +1621,8 @@
   function choosePdfToMerge() {
     if (!state.editorSession || state.editorBusy) return;
     state.pendingMergeItem = null;
+    state.pendingMergeFiles = [];
+    if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
     if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF na lista da Central ou adicione um arquivo do dispositivo.';
     if (els.editorMergePosition) els.editorMergePosition.value = 'after-document';
     if (els.editorMergePageField) els.editorMergePageField.hidden = true;
@@ -2363,8 +2375,22 @@
     els.editorMergeLocalInput?.click();
   });
   els.editorMergeLocalInput?.addEventListener('change', () => {
-    const files = els.editorMergeLocalInput.files;
-    if (files?.length) mergeLocalFilesIntoEditor(files).catch(() => {});
+    const files = Array.from(els.editorMergeLocalInput.files || []).filter((file) => localMergeFileKind(file));
+    if (!files.length) {
+      state.pendingMergeFiles = [];
+      syncEditorControls();
+      setEditorStatus('Selecione pelo menos um PDF ou uma imagem válida.', 'warning');
+      return;
+    }
+    state.pendingMergeItem = null;
+    state.pendingMergeFiles = files;
+    if (els.editorMergeSelection) {
+      els.editorMergeSelection.textContent = files.length === 1
+        ? '1 arquivo do dispositivo selecionado.'
+        : String(files.length) + ' arquivos do dispositivo selecionados.';
+    }
+    syncEditorControls();
+    setEditorStatus('Arquivo selecionado. Escolha a posição e confirme em Unir.', 'success');
   });
   els.editorBlankPage?.addEventListener('click', () => addBlankPageToEditor().catch(() => {}));
   els.editorImage.addEventListener('click', () => els.editorImageInput.click());
