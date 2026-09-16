@@ -66,7 +66,7 @@ for (const [position, expected] of [
   test(`união ${position}: ordem, rebuild, undo e redo`, async ({ page }) => {
     await merge(page, position);
     await order(page, expected);
-    await page.locator('#editorRefresh').click();
+    await page.evaluate(() => window.CentralDocsEditorHarness.refreshForTest());
     await order(page, expected);
     await page.locator('#editorUndo').click();
     await order(page, original);
@@ -81,7 +81,7 @@ test('rotação L/R, duplicação e branco preservam PDF e histórico', async ({
   await expect(cards(page).first()).toHaveClass(/rendered/);
   const canvas = page.locator('#thumbnails canvas').first();
   expect(await canvas.evaluate(c => c.width > c.height)).toBe(true);
-  await page.locator('#editorRefresh').click();
+  await page.evaluate(() => window.CentralDocsEditorHarness.refreshForTest());
   await ready(page);
   await expect(cards(page).first()).toHaveClass(/rendered/);
   expect(await canvas.evaluate(c => c.width > c.height)).toBe(true);
@@ -107,7 +107,7 @@ test('última página não pode ser excluída', async ({ page }) => {
   await action(page, 0, 'delete');
   await order(page, '0:2');
   await expect(page.locator('[data-thumbnail-action="delete"]')).toBeDisabled();
-  await page.locator('#editorRefresh').click();
+  await page.evaluate(() => window.CentralDocsEditorHarness.refreshForTest());
   await order(page, '0:2');
 });
 
