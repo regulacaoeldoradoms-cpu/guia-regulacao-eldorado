@@ -735,6 +735,372 @@
     }));
   }
 
+
+  function visibleBoxForPage(page) {
+    let box = null;
+    try { box = page?.getCropBox?.(); } catch (_) {}
+    if (!(box?.width > 0) || !(box?.height > 0)) {
+      try { box = page?.getMediaBox?.(); } catch (_) {}
+    }
+    if (!(box?.width > 0) || !(box?.height > 0)) {
+      try {
+        const size = page?.getSize?.();
+        if (size?.width > 0 && size?.height > 0) box = { x: 0, y: 0, width: size.width, height: size.height };
+      } catch (_) {}
+    }
+    if (!(box?.width > 0) || !(box?.height > 0)) {
+      throw new Error('A página possui geometria inválida para exportação.');
+    }
+    return {
+      x: Number(box.x || 0),
+      y: Number(box.y || 0),
+      width: Number(box.width),
+      height: Number(box.height)
+    };
+  }
+
+  function flattenedPageGeometry(sourcePage, ref) {
+    const box = visibleBoxForPage(sourcePage);
+    const sourceRotation = normalizeRotation(sourcePage?.getRotation?.()?.angle || 0);
+    const effectiveRotation = normalizeRotation(sourceRotation + normalizeRotation(ref?.rotation));
+    const sideways = effectiveRotation === 90 || effectiveRotation === 270;
+    return {
+      box,
+      sourceRotation,
+      effectiveRotation,
+      displayWidth: sideways ? box.height : box.width,
+      displayHeight: sideways ? box.width : box.height
+    };
+  }
+
+  function displayCartesianToPdf(geometry, displayX, displayY) {
+    const box = geometry.box;
+    const x = Number(displayX || 0);
+    const y = Number(displayY || 0);
+    let localX = x;
+    let localY = y;
+    if (geometry.effectiveRotation === 90) {
+      localX = box.width - y;
+      localY = x;
+    } else if (geometry.effectiveRotation === 180) {
+      localX = box.width - x;
+      localY = box.height - y;
+    } else if (geometry.effectiveRotation === 270) {
+      localX = y;
+      localY = box.height - x;
+    }
+    return { x: box.x + localX, y: box.y + localY };
+  }
+
+  function displayVectorToPdf(geometry, displayX, displayY) {
+    const x = Number(displayX || 0);
+    const y = Number(displayY || 0);
+    if (geometry.effectiveRotation === 90) return { x: -y, y: x };
+    if (geometry.effectiveRotation === 180) return { x: -x, y: -y };
+    if (geometry.effectiveRotation === 270) return { x: y, y: -x };
+    return { x, y };
+  }
+
+  function displayNormalizedToPdf(geometry, x, y) {
+    return displayCartesianToPdf(
+      geometry,
+      Number(x || 0) * geometry.displayWidth,
+      (1 - Number(y || 0)) * geometry.displayHeight
+    );
+  }
+
+  function flattenedCropBox(geometry, crop) {
+    const rect = normalizeCropRect(crop);
+    if (!rect) return null;
+    const corners = [
+      displayNormalizedToPdf(geometry, rect.x, rect.y),
+      displayNormalizedToPdf(geometry, rect.x + rect.width, rect.y),
+      displayNormalizedToPdf(geometry, rect.x, rect.y + rect.height),
+      displayNormalizedToPdf(geometry, rect.x + rect.width, rect.y + rect.height)
+    ];
+    const xs = corners.map((point) => point.x);
+    const ys = corners.map((point) => point.y);
+    const x = Math.min(...xs);
+    const y = Math.min(...ys);
+    return {
+      x,
+      y,
+      width: Math.max(0.01, Math.max(...xs) - x),
+      height: Math.max(0.01, Math.max(...ys) - y)
+    };
+  }
+
+  function pdfColor(lib, value, fallback = '#111111') {
+    const source = /^#[0-9a-f]{6}$/i.test(String(value || '')) ? String(value) : fallback;
+    const red = Number.parseInt(source.slice(1, 3), 16) / 255;
+    const green = Number.parseInt(source.slice(3, 5), 16) / 255;
+    const blue = Number.parseInt(source.slice(5, 7), 16) / 255;
+    return lib.rgb(red, green, blue);
+  }
+
+  function objectLocalDisplayPoint(object, geometry, localX, localY) {
+    const objectWidth = Math.max(0.001, Number(object.width || 0.2));
+    const objectHeight = Math.max(0.001, Number(object.height || 0.08));
+    const width = objectWidth * geometry.displayWidth;
+    const height = objectHeight * geometry.displayHeight;
+    const centerX = (clamp01(object.x) + (objectWidth / 2)) * geometry.displayWidth;
+    const centerY = (1 - (clamp01(object.y) + (objectHeight / 2))) * geometry.displayHeight;
+    const angle = -(Number(object.rotation || 0) * Math.PI / 180);
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    return {
+      x: centerX + (Number(localX || 0) * cosine) - (Number(localY || 0) * sine),
+      y: centerY + (Number(localX || 0) * sine) + (Number(localY || 0) * cosine),
+      width,
+      height
+    };
+  }
+
+  function objectLocalToPdf(object, geometry, localX, localY) {
+    const display = objectLocalDisplayPoint(object, geometry, localX, localY);
+    return displayCartesianToPdf(geometry, display.x, display.y);
+  }
+
+  function objectPdfAngle(object, geometry) {
+    const angle = -(Number(object.rotation || 0) * Math.PI / 180);
+    const axis = displayVectorToPdf(geometry, Math.cos(angle), Math.sin(angle));
+    return Math.atan2(axis.y, axis.x) * 180 / Math.PI;
+  }
+
+  function standardFontName(lib, object) {
+    const family = String(object?.fontFamily || 'Arial').toLowerCase();
+    const bold = object?.fontWeight === 'bold';
+    const italic = object?.fontStyle === 'italic';
+    const standard = lib.StandardFonts || {};
+    if (family.includes('times')) {
+      return standard[bold && italic ? 'TimesRomanBoldItalic' : bold ? 'TimesRomanBold' : italic ? 'TimesRomanItalic' : 'TimesRoman']
+        || standard.TimesRoman;
+    }
+    if (family.includes('courier')) {
+      return standard[bold && italic ? 'CourierBoldOblique' : bold ? 'CourierBold' : italic ? 'CourierOblique' : 'Courier']
+        || standard.Courier;
+    }
+    return standard[bold && italic ? 'HelveticaBoldOblique' : bold ? 'HelveticaBold' : italic ? 'HelveticaOblique' : 'Helvetica']
+      || standard.Helvetica;
+  }
+
+  function safeStandardText(font, value) {
+    let output = '';
+    for (const character of String(value ?? '').replace(/\t/g, '    ')) {
+      if (character === '\n') {
+        output += character;
+        continue;
+      }
+      try {
+        font.encodeText(character);
+        output += character;
+      } catch (_) {
+        output += '?';
+      }
+    }
+    return output;
+  }
+
+  function textWidth(font, text, size) {
+    try { return Number(font.widthOfTextAtSize(text, size) || 0); }
+    catch (_) { return String(text || '').length * size * 0.55; }
+  }
+
+  function wrapFlattenedText(font, value, size, maxWidth) {
+    const result = [];
+    const paragraphs = safeStandardText(font, value).replace(/\r/g, '').split('\n');
+    for (const paragraph of paragraphs) {
+      if (!paragraph) {
+        result.push('');
+        continue;
+      }
+      const words = paragraph.split(/\s+/).filter(Boolean);
+      let line = '';
+      for (const word of words) {
+        const candidate = line ? line + ' ' + word : word;
+        if (textWidth(font, candidate, size) <= maxWidth) {
+          line = candidate;
+          continue;
+        }
+        if (line) {
+          result.push(line);
+          line = '';
+        }
+        if (textWidth(font, word, size) <= maxWidth) {
+          line = word;
+          continue;
+        }
+        let fragment = '';
+        for (const character of word) {
+          const next = fragment + character;
+          if (fragment && textWidth(font, next, size) > maxWidth) {
+            result.push(fragment);
+            fragment = character;
+          } else {
+            fragment = next;
+          }
+        }
+        line = fragment;
+      }
+      if (line) result.push(line);
+    }
+    return result;
+  }
+
+  async function flattenedFont(output, lib, object, cache) {
+    const name = standardFontName(lib, object);
+    const key = String(name || 'Helvetica');
+    if (cache.has(key)) return cache.get(key);
+    const font = await output.embedFont(name);
+    cache.set(key, font);
+    return font;
+  }
+
+  async function drawFlattenedText(output, page, lib, object, geometry, fontCache) {
+    const font = await flattenedFont(output, lib, object, fontCache);
+    const boxWidth = Math.max(1, Number(object.width || 0.2) * geometry.displayWidth);
+    const boxHeight = Math.max(1, Number(object.height || 0.08) * geometry.displayHeight);
+    const size = Math.max(4, Number(object.fontSize || 0.032) * geometry.displayWidth);
+    const paddingX = Math.min(boxWidth * 0.12, Math.max(0.5, geometry.displayWidth * (5 / 760)));
+    const paddingY = Math.min(boxHeight * 0.18, Math.max(0.5, geometry.displayWidth * (3 / 760)));
+    const maxWidth = Math.max(1, boxWidth - (paddingX * 2));
+    const lineHeight = size * 1.18;
+    const maxLines = Math.max(1, Math.floor(Math.max(lineHeight, boxHeight - (paddingY * 2)) / lineHeight));
+    const lines = wrapFlattenedText(font, object.text, size, maxWidth).slice(0, maxLines);
+    const angle = objectPdfAngle(object, geometry);
+    const color = pdfColor(lib, object.color);
+    const opacity = clamp01(object.opacity, 1);
+
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
+      if (!line) continue;
+      const width = Math.min(maxWidth, textWidth(font, line, size));
+      let localX = (-boxWidth / 2) + paddingX;
+      if (object.textAlign === 'center') localX = -width / 2;
+      if (object.textAlign === 'right') localX = (boxWidth / 2) - paddingX - width;
+      const localY = (boxHeight / 2) - paddingY - (size * 0.82) - (index * lineHeight);
+      const origin = objectLocalToPdf(object, geometry, localX, localY);
+      page.drawText(line, {
+        x: origin.x,
+        y: origin.y,
+        size,
+        font,
+        color,
+        opacity,
+        rotate: lib.degrees(angle)
+      });
+
+      if (object.textDecoration === 'underline' && width > 0) {
+        const start = objectLocalToPdf(object, geometry, localX, localY - (size * 0.12));
+        const end = objectLocalToPdf(object, geometry, localX + width, localY - (size * 0.12));
+        page.drawLine({
+          start,
+          end,
+          thickness: Math.max(0.5, size * 0.055),
+          color,
+          opacity
+        });
+      }
+    }
+  }
+
+  async function flattenedImage(output, object, cache) {
+    if (!(object?.blob instanceof Blob)) return null;
+    if (cache.has(object.blob)) return cache.get(object.blob);
+    const bytes = new Uint8Array(await object.blob.arrayBuffer());
+    const type = String(object.mimeType || object.blob.type || '').toLowerCase();
+    let image = null;
+    if (type.includes('png')) image = await output.embedPng(bytes);
+    else if (type.includes('jpeg') || type.includes('jpg')) image = await output.embedJpg(bytes);
+    else throw new Error('Imagem sobreposta em formato não suportado na exportação final.');
+    cache.set(object.blob, image);
+    return image;
+  }
+
+  async function drawFlattenedImage(output, page, lib, object, geometry, imageCache) {
+    const image = await flattenedImage(output, object, imageCache);
+    if (!image) return;
+    const boxWidth = Math.max(1, Number(object.width || 0.2) * geometry.displayWidth);
+    const boxHeight = Math.max(1, Number(object.height || 0.08) * geometry.displayHeight);
+    const naturalRatio = Number(object.aspectRatio || 0) > 0
+      ? Number(object.aspectRatio)
+      : Number(image.width || 1) / Math.max(1, Number(image.height || 1));
+    const boxRatio = boxWidth / boxHeight;
+    const width = naturalRatio >= boxRatio ? boxWidth : boxHeight * naturalRatio;
+    const height = naturalRatio >= boxRatio ? boxWidth / naturalRatio : boxHeight;
+    const origin = objectLocalToPdf(object, geometry, -width / 2, -height / 2);
+    page.drawImage(image, {
+      x: origin.x,
+      y: origin.y,
+      width,
+      height,
+      opacity: clamp01(object.opacity, 1),
+      rotate: lib.degrees(objectPdfAngle(object, geometry))
+    });
+  }
+
+  function drawFlattenedStroke(page, lib, stroke, geometry) {
+    const points = normalizeStrokePoints(stroke?.points);
+    if (points.length < 2) return;
+    const color = pdfColor(lib, stroke.color);
+    const thickness = Math.max(0.5, Number(stroke.width || 0.006) * geometry.displayWidth);
+    for (let index = 1; index < points.length; index += 1) {
+      page.drawLine({
+        start: displayNormalizedToPdf(geometry, points[index - 1].x, points[index - 1].y),
+        end: displayNormalizedToPdf(geometry, points[index].x, points[index].y),
+        thickness,
+        color,
+        opacity: 1
+      });
+    }
+  }
+
+  async function buildFlattenedBlob(session) {
+    if (!session || !session.plan.length) throw new Error('Não há páginas para exportar.');
+    const lib = await loadLibrary();
+    const output = await lib.PDFDocument.create();
+    const fontCache = new Map();
+    const imageCache = new Map();
+
+    for (const ref of session.plan) {
+      const source = session.sources[ref.sourceIndex]?.document;
+      const sourcePage = source?.getPage?.(ref.pageIndex);
+      if (!source || !sourcePage) throw new Error('Fonte de página ausente na exportação final.');
+
+      const geometry = flattenedPageGeometry(sourcePage, ref);
+      const copied = await output.copyPages(source, [ref.pageIndex]);
+      const page = copied[0];
+      page.setRotation?.(lib.degrees(geometry.effectiveRotation));
+      output.addPage(page);
+
+      for (const stroke of session.strokes || []) {
+        if (stroke.pageId === ref.pageId) drawFlattenedStroke(page, lib, stroke, geometry);
+      }
+
+      for (const object of session.objects || []) {
+        if (object.pageId !== ref.pageId) continue;
+        if (object.type === 'text') {
+          await drawFlattenedText(output, page, lib, object, geometry, fontCache);
+        } else if (object.type === 'image') {
+          await drawFlattenedImage(output, page, lib, object, geometry, imageCache);
+        }
+      }
+
+      const crop = flattenedCropBox(geometry, ref.crop);
+      if (crop) page.setCropBox?.(crop.x, crop.y, crop.width, crop.height);
+    }
+
+    const bytes = await output.save({
+      useObjectStreams: false,
+      addDefaultPage: false,
+      updateFieldAppearances: false
+    });
+    if (!(bytes?.length > 4) || String.fromCharCode(...bytes.slice(0, 4)) !== '%PDF') {
+      throw new Error('O editor não conseguiu gerar o PDF final.');
+    }
+    return new Blob([bytes], { type: 'application/pdf' });
+  }
+
   async function buildBlob(session) {
     if (!session || !session.plan.length) throw new Error('Não há páginas para gerar.');
     const lib = await loadLibrary();
@@ -802,6 +1168,7 @@
     pageCount,
     sourceCount,
     buildBlob,
-    version: 'phase3-v11-drawing'
+    buildFlattenedBlob,
+    version: 'phase3-v12-flatten'
   });
 })();
