@@ -205,6 +205,34 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     const panel = palette.locator('[data-text-custom-color-panel]');
     await expect(panel).toBeVisible();
     await expect(panel.locator('[data-color-hex]')).toHaveValue('#E53935');
+
+    // An interrupted color-plane gesture is a cancellation, not a hidden edit:
+    // restore the starting color and keep history unchanged.
+    const revisionBeforeCancel = await page.locator('html').getAttribute('data-editor-revision');
+    const colorBeforeCancel = await text.evaluate((node) => getComputedStyle(node).color);
+    const plane = panel.locator('[data-color-plane]');
+    await plane.evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      const pointerId = 77;
+      node.dispatchEvent(new PointerEvent('pointerdown', {
+        bubbles: true, cancelable: true, pointerId,
+        clientX: rect.left + rect.width * .2,
+        clientY: rect.top + rect.height * .2
+      }));
+      node.dispatchEvent(new PointerEvent('pointermove', {
+        bubbles: true, cancelable: true, pointerId,
+        clientX: rect.left + rect.width * .82,
+        clientY: rect.top + rect.height * .72
+      }));
+      node.dispatchEvent(new PointerEvent('pointercancel', {
+        bubbles: true, cancelable: true, pointerId,
+        clientX: rect.left + rect.width * .82,
+        clientY: rect.top + rect.height * .72
+      }));
+    });
+    await expect(text).toHaveCSS('color', colorBeforeCancel);
+    await expect(page.locator('html')).toHaveAttribute('data-editor-revision', revisionBeforeCancel);
+
     const paletteBox = await palette.boundingBox();
     const panelBefore = await panel.boundingBox();
     expect(panelBefore.y + panelBefore.height).toBeLessThanOrEqual(paletteBox.y + 2);
@@ -298,6 +326,9 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await expect(image.locator('img')).toHaveAttribute('src', /^blob:/);
     await image.scrollIntoViewIfNeeded();
     await expect(image).toBeVisible();
+    const initialImageBox = await image.boundingBox();
+    expect(initialImageBox).not.toBeNull();
+    expect(Math.abs((initialImageBox.width / initialImageBox.height) - 1.5)).toBeLessThan(0.06);
 
     await page.locator('#editorObjectOpacity').fill('60');
     await page.locator('#editorObjectOpacity').dispatchEvent('change');
@@ -308,13 +339,41 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     const rotate = image.locator('[data-object-rotate]');
     await expect(rotate).toBeVisible();
     const rotateBox = await rotate.boundingBox();
+    const objectBoxBeforeRotate = await image.boundingBox();
     const imageBeforeRotate = await image.evaluate((node) => getComputedStyle(node).transform);
-    await page.mouse.move(rotateBox.x + rotateBox.width / 2, rotateBox.y + rotateBox.height / 2);
+    const center = {
+      x: objectBoxBeforeRotate.x + objectBoxBeforeRotate.width / 2,
+      y: objectBoxBeforeRotate.y + objectBoxBeforeRotate.height / 2
+    };
+    const rotateStart = {
+      x: rotateBox.x + rotateBox.width / 2,
+      y: rotateBox.y + rotateBox.height / 2
+    };
+    const vx = rotateStart.x - center.x;
+    const vy = rotateStart.y - center.y;
+    await page.mouse.move(rotateStart.x, rotateStart.y);
     await page.mouse.down();
     await expect(page.locator('#pdfRoot')).toHaveAttribute('data-object-gesture', 'rotate');
-    await page.mouse.move(rotateBox.x + 48, rotateBox.y - 24, { steps: 5 });
+    await page.mouse.move(center.x - vy, center.y + vx, { steps: 7 });
     await page.mouse.up();
     await expect.poll(() => image.evaluate((node) => getComputedStyle(node).transform)).not.toBe(imageBeforeRotate);
+
+    // At ~90°, the visible east handle moves vertically. Its screen-space
+    // vertical drag must increase the object's local width.
+    const east = image.locator('[data-object-resize="e"]');
+    await expect(east).toBeVisible();
+    await east.hover();
+    const eastBox = await east.boundingBox();
+    const localWidthBefore = await image.evaluate((node) => parseFloat(getComputedStyle(node).width));
+    await page.mouse.down();
+    await page.mouse.move(
+      eastBox.x + eastBox.width / 2,
+      eastBox.y + eastBox.height / 2 + 54,
+      { steps: 7 }
+    );
+    await page.mouse.up();
+    await expect.poll(() => image.evaluate((node) => parseFloat(getComputedStyle(node).width)))
+      .toBeGreaterThan(localWidthBefore + 12);
 
     const secondLayer = page.locator('.portal-pdf-object-layer').nth(1);
     const imageBox = await image.boundingBox();
