@@ -23,6 +23,7 @@ import {
   fetchDrivePdf,
   listDriveFolder,
   openDriveFileRef,
+  sealDriveFileRef,
   searchDrive
 } from '../document-drive.js';
 import { handleDocumentsRoute } from '../documents-router.js';
@@ -431,4 +432,189 @@ test('código da Central não contém logs de conteúdo nem segredos hardcoded',
   assert.doesNotMatch(sources, /GOCSPX-[0-9A-Za-z_-]+/);
   assert.doesNotMatch(sources, /AIza[0-9A-Za-z_-]{20,}/);
   assert.match(sources, /Cache-Control.*no-store/s);
+});
+
+
+sqliteTest('Fase 4A bloqueia preflight sem documents_edit antes de consultar o Drive', async () => {
+  const env = environment();
+  const user = await register(env, 'documentos.sync.bloqueado', '127.0.0.101');
+
+  const originalFetch = globalThis.fetch;
+  let externalCalls = 0;
+  globalThis.fetch = async () => {
+    externalCalls += 1;
+    throw new Error('nenhuma chamada externa era esperada');
+  };
+
+  try {
+    const response = await handleDocumentsRoute(
+      documentRequest('/api/documents/drive/sync/preflight', user.token, {
+        method: 'POST',
+        body: { operation: 'replace_pdf', ref: 'referencia-opaca-ficticia', baseVersion: '1' }
+      }),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).code, 'DOCUMENTS_ACCESS_DENIED');
+    assert.equal(externalCalls, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+sqliteTest('Fase 4A detecta conflito de versão sem upload e mantém resposta sem fileId/nome', async () => {
+  const env = environment();
+  const user = await register(env, 'documentos.sync', '127.0.0.102');
+  await setDocumentCapabilities(env, 'documentos.sync', { view: true, edit: true }, 'admin');
+
+  const authorization = await createDriveAuthorizationUrl(env, 'documentos.sync');
+  const state = new URL(authorization).searchParams.get('state');
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+
+  globalThis.fetch = async (url, options = {}) => {
+    const text = String(url);
+    calls.push({ url: text, method: String(options.method || 'GET').toUpperCase() });
+
+    if (text === 'https://oauth2.googleapis.com/token') {
+      return new Response(JSON.stringify({
+        access_token: 'access-sync-test',
+        refresh_token: 'refresh-sync-test',
+        expires_in: 3600
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    const driveUrl = new URL(text);
+    assert.equal(driveUrl.origin, 'https://www.googleapis.com');
+    assert.equal(options.method, 'GET');
+    assert.ok(driveUrl.pathname.includes('/drive/v3/files/raw-sync-pdf-id'));
+    assert.match(driveUrl.searchParams.get('fields') || '', /version/);
+    assert.match(driveUrl.searchParams.get('fields') || '', /md5Checksum/);
+    assert.match(driveUrl.searchParams.get('fields') || '', /headRevisionId/);
+
+    return new Response(JSON.stringify({
+      id: 'raw-sync-pdf-id',
+      name: 'NOME-QUE-NAO-PODE-VOLTAR.pdf',
+      mimeType: 'application/pdf',
+      size: '98765',
+      modifiedTime: '2026-09-16T20:00:00Z',
+      version: '9',
+      md5Checksum: '0123456789abcdef0123456789abcdef',
+      headRevisionId: 'revision-sensitive',
+      parents: ['parent-sensitive'],
+      capabilities: { canDownload: true, canEdit: true, canModifyContent: true }
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+
+  try {
+    await completeDriveOAuth(env, 'authorization-code-sync', state);
+    const ref = await sealDriveFileRef(env, 'raw-sync-pdf-id', 'application/pdf');
+
+    const conflictResponse = await handleDocumentsRoute(
+      documentRequest('/api/documents/drive/sync/preflight', user.token, {
+        method: 'POST',
+        body: { operation: 'replace_pdf', ref, baseVersion: '8' }
+      }),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(conflictResponse.status, 409);
+    const conflict = await conflictResponse.json();
+    assert.equal(conflict.code, 'DRIVE_VERSION_CONFLICT');
+    assert.equal(JSON.stringify(conflict).includes('raw-sync-pdf-id'), false);
+    assert.equal(JSON.stringify(conflict).includes('NOME-QUE-NAO-PODE-VOLTAR'), false);
+
+    const copyResponse = await handleDocumentsRoute(
+      documentRequest('/api/documents/drive/sync/preflight', user.token, {
+        method: 'POST',
+        body: { operation: 'save_copy', ref, baseVersion: '8' }
+      }),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(copyResponse.status, 200);
+    const copy = await copyResponse.json();
+    assert.equal(copy.operation, 'save_copy');
+    assert.equal(copy.conflict, true);
+    assert.equal(copy.blocking, false);
+    assert.equal(copy.currentVersion, '9');
+    assert.equal(JSON.stringify(copy).includes('raw-sync-pdf-id'), false);
+    assert.equal(JSON.stringify(copy).includes('NOME-QUE-NAO-PODE-VOLTAR'), false);
+    assert.equal(JSON.stringify(copy).includes('parent-sensitive'), false);
+    assert.equal(JSON.stringify(copy).includes('revision-sensitive'), false);
+
+    const replaceResponse = await handleDocumentsRoute(
+      documentRequest('/api/documents/drive/sync/preflight', user.token, {
+        method: 'POST',
+        body: { operation: 'replace_pdf', ref, baseVersion: '9' }
+      }),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(replaceResponse.status, 200);
+    const replace = await replaceResponse.json();
+    assert.equal(replace.operation, 'replace_pdf');
+    assert.equal(replace.conflict, false);
+    assert.equal(replace.blocking, false);
+    assert.equal(replace.canEditOriginal, true);
+
+    const driveCalls = calls.filter((call) => call.url.startsWith('https://www.googleapis.com/'));
+    assert.ok(driveCalls.length >= 3);
+    assert.ok(driveCalls.every((call) => call.method === 'GET'));
+    assert.equal(calls.some((call) => call.url.includes('/upload/')), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+sqliteTest('Fase 4A recusa substituir quando a conta Google não pode editar o arquivo', async () => {
+  const env = environment();
+  const user = await register(env, 'documentos.sync.readonly', '127.0.0.103');
+  await setDocumentCapabilities(env, 'documentos.sync.readonly', { view: true, edit: true }, 'admin');
+
+  const authorization = await createDriveAuthorizationUrl(env, 'documentos.sync.readonly');
+  const state = new URL(authorization).searchParams.get('state');
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async (url) => {
+    const text = String(url);
+    if (text === 'https://oauth2.googleapis.com/token') {
+      return new Response(JSON.stringify({
+        access_token: 'access-sync-readonly',
+        refresh_token: 'refresh-sync-readonly',
+        expires_in: 3600
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    return new Response(JSON.stringify({
+      id: 'raw-sync-readonly-id',
+      mimeType: 'application/pdf',
+      size: '1000',
+      modifiedTime: '2026-09-16T20:00:00Z',
+      version: '3',
+      capabilities: { canDownload: true, canEdit: false, canModifyContent: false }
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+
+  try {
+    await completeDriveOAuth(env, 'authorization-code-readonly', state);
+    const ref = await sealDriveFileRef(env, 'raw-sync-readonly-id', 'application/pdf');
+    const response = await handleDocumentsRoute(
+      documentRequest('/api/documents/drive/sync/preflight', user.token, {
+        method: 'POST',
+        body: { operation: 'replace_pdf', ref, baseVersion: '3' }
+      }),
+      env,
+      'https://regulacaoeldoradoms.com.br',
+      true
+    );
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).code, 'DRIVE_FILE_NOT_EDITABLE');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
