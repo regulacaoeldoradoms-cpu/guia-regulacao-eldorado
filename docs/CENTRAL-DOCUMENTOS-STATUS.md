@@ -4,9 +4,30 @@
 
 ## Fase atual
 
-**Fase 3 — Editor PDF essencial**
+**Fase 3 — Editor PDF essencial — ENCERRADA E HOMOLOGADA**
 
-Subfase atual: **3C.6 — editor funcional, kit visual completo das ferramentas aplicado e aguardando reteste humano visual + fidelidade do PDF exportado**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
+Homologação humana final: **APROVADA em 16/09/2026**. O usuário confirmou o estado final do editor e autorizou explicitamente avançar para a próxima fase. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar), 3C.5 (Desenhar/Borracha) e 3C.6 (flatten/exportação/impressão + kit visual) estão aceitos.
+
+## Encerramento formal da Fase 3 — 16/09/2026
+
+Critério de aceite do Guia Mestre: **cumprido** — as operações essenciais preservam PDF válido, têm cobertura automatizada em documentos sintéticos com estruturas distintas e foram homologadas visualmente pelo usuário.
+
+Evidências finais antes da promoção:
+- head funcional homologado antes da reconciliação: `83638aa07cc3cd017b23bc7ef8b3370b531fdd52`;
+- todos os **24 workflows** desse head concluíram com sucesso, incluindo **Central de Documentos — Fases 1–3**, **bundle de staging**, **governança** e **PDF.js real em Chromium**;
+- a branch foi reconciliada com a `main` vigente `292ca917628dbb68b03b084021736f56349d28e6` usando o merge calculado pelo GitHub, ficando **0 commits atrás da main**;
+- nenhuma operação da Fase 3 gravou conteúdo documental no Google Drive;
+- nenhuma ampliação de permissões foi introduzida;
+- telemetria continua restrita a eventos técnicos allowlisted, sem conteúdo clínico ou documental.
+
+Decisões consolidadas:
+- o botão **Atualizar PDF** permanece removido por redundância;
+- o espaço liberado fica reservado para uma futura ação explícita de sincronização na Fase 4;
+- assets dos botões permanecem self-hosted;
+- impressão permanece local, same-origin e sem depender do visualizador nativo;
+- exportação/flatten local é a base que a Fase 4 poderá enviar ao Drive somente após validação e confirmação real.
+
+**Próxima ação exata:** concluir a última matriz após a reconciliação, mesclar o PR #179 na `main` somente se todos os checks permanecerem verdes e então criar branch isolada para **Fase 4 — Sincronização segura com Drive**. Não iniciar escrita no Drive dentro deste PR da Fase 3.
 
 ## 3C.6 — ícones restantes das ferramentas + remoção de “Atualizar PDF” — 16/09/2026
 
