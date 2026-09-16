@@ -35,6 +35,12 @@
     select: document.getElementById('editorSelect'),
     write: document.getElementById('editorWrite'),
     overlayImage: document.getElementById('editorOverlayImage'),
+    draw: document.getElementById('editorDraw'),
+    drawToolbar: document.getElementById('editorDrawToolbar'),
+    drawColor: document.getElementById('editorDrawColor'),
+    drawWidth: document.getElementById('editorDrawWidth'),
+    drawPen: document.getElementById('editorDrawPen'),
+    drawEraser: document.getElementById('editorDrawEraser'),
     objectToolbar: document.getElementById('editorObjectToolbar'),
     objectFont: document.getElementById('editorObjectFont'),
     objectFontSize: document.getElementById('editorObjectFontSize'),
@@ -56,6 +62,9 @@
     mode: 'readonly',
     selectedObjectId: '',
     colorPalette: ['#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'],
+    drawTool: 'draw',
+    drawColor: '#111111',
+    drawWidth: 4,
     viewState: null,
     sequence: 0,
     operation: Promise.resolve()
@@ -110,6 +119,38 @@
       }
     }
     elements.objectOpacity.value = String(Math.round((object.opacity ?? 1) * 100));
+  }
+
+  function normalizedDrawWidth() {
+    return Math.min(0.05, Math.max(0.001, Number(state.drawWidth || 4) / 760));
+  }
+
+  function syncDraws() {
+    if (!state.session || !editor?.strokeModel || !viewer?.setEditorStrokes) return false;
+    const mode = state.mode === 'draw' && state.drawTool === 'erase' ? 'erase'
+      : state.mode === 'draw' ? 'draw'
+        : 'none';
+    const result = viewer.setEditorStrokes(editor.strokeModel(state.session), {
+      mode,
+      color: state.drawColor,
+      width: normalizedDrawWidth(),
+      onStrokeCommit(pageIndex, stroke) {
+        const id = editor.addStroke(state.session, pageIndex, stroke?.points, {
+          color: stroke?.color || state.drawColor,
+          width: stroke?.width || normalizedDrawWidth()
+        });
+        if (!id) return;
+        syncEditorState();
+        syncDraws();
+      },
+      onEraseCommit(strokeIds) {
+        const removed = editor.removeStrokes(state.session, strokeIds);
+        if (!removed) return;
+        syncEditorState();
+        syncDraws();
+      }
+    });
+    return result;
   }
 
   function syncObjects() {
@@ -176,8 +217,12 @@
       }
     });
     syncObjectToolbar();
+    syncDraws();
     root.dataset.objectCount = String(editor.objectModel(state.session).length);
     root.dataset.cropCount = String(editor.pageModel(state.session).filter((page) => page.crop).length);
+    root.dataset.strokeCount = String(editor.strokeModel(state.session).length);
+    root.dataset.strokePages = editor.strokeModel(state.session).map((stroke) => String(stroke.displayPage)).join(',');
+    root.dataset.strokeIds = editor.strokeModel(state.session).map((stroke) => String(stroke.id)).join(',');
     return result;
   }
 
@@ -199,6 +244,9 @@
     root.dataset.pageKinds = state.session ? editor.pageModel(state.session).map((page) => page.sourceKind).join(',') : '';
     root.dataset.pageCrops = state.session ? editor.pageModel(state.session).map((page) => page.crop ? [page.crop.x, page.crop.y, page.crop.width, page.crop.height].map((value) => Number(value.toFixed(4))).join(':') : 'full').join(',') : '';
     root.dataset.cropCount = state.session ? String(editor.pageModel(state.session).filter((page) => page.crop).length) : '0';
+    root.dataset.strokeCount = state.session ? String(editor.strokeModel(state.session).length) : '0';
+    root.dataset.strokePages = state.session ? editor.strokeModel(state.session).map((stroke) => String(stroke.displayPage)).join(',') : '';
+    root.dataset.strokeIds = state.session ? editor.strokeModel(state.session).map((stroke) => String(stroke.id)).join(',') : '';
     elements.editorControls.hidden = !editing;
     elements.enterEditor.hidden = editing;
     elements.enterEditor.disabled = editing || root.dataset.viewerState !== 'ready';
@@ -215,6 +263,15 @@
     elements.select.classList.toggle('active', editing && state.mode === 'select');
     elements.write.classList.toggle('active', editing && state.mode === 'write');
     elements.overlayImage.classList.toggle('active', editing && state.mode === 'image');
+    elements.draw.classList.toggle('active', editing && state.mode === 'draw');
+    elements.draw.setAttribute('aria-pressed', String(editing && state.mode === 'draw'));
+    elements.drawToolbar.hidden = !editing || state.mode !== 'draw';
+    const penActive = editing && state.mode === 'draw' && state.drawTool === 'draw';
+    const eraserActive = editing && state.mode === 'draw' && state.drawTool === 'erase';
+    elements.drawPen.classList.toggle('active', penActive);
+    elements.drawPen.setAttribute('aria-pressed', String(penActive));
+    elements.drawEraser.classList.toggle('active', eraserActive);
+    elements.drawEraser.setAttribute('aria-pressed', String(eraserActive));
     viewer.setOrganizerMode?.(editing && (state.mode === 'organize' || state.mode === 'merge'));
     elements.surface.setAttribute('aria-label', editing ? 'Editor visual PDF sintético' : 'Visualizador PDF sintético');
     elements.undo.disabled = !editing || !editor.canUndo(state.session);
@@ -231,6 +288,11 @@
     elements.select.disabled = !editing;
     elements.write.disabled = !editing;
     elements.overlayImage.disabled = !editing;
+    elements.draw.disabled = !editing;
+    elements.drawColor.disabled = !editing;
+    elements.drawWidth.disabled = !editing;
+    elements.drawPen.disabled = !editing;
+    elements.drawEraser.disabled = !editing;
     elements.objectDelete.disabled = !editing || !selectedObject();
     elements.refresh.disabled = !editing;
     elements.exit.disabled = !editing;
@@ -242,7 +304,7 @@
     elements.surface.setAttribute('aria-busy', active ? 'true' : 'false');
     if (message) elements.editorStatus.textContent = message;
     if (active) {
-      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.objectDelete, elements.refresh, elements.exit]) {
+      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.draw, elements.drawColor, elements.drawWidth, elements.drawPen, elements.drawEraser, elements.objectDelete, elements.refresh, elements.exit]) {
         button.disabled = true;
       }
       elements.thumbnails.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
@@ -473,6 +535,14 @@
     elements.editorStatus.textContent = 'Selecionar: clique no objeto para ajustar cor ou tamanho e arraste para mover; o conteúdo do texto fica protegido. Clique fora para confirmar e desmarcar.';
   }
 
+  function startDrawMode(tool = 'draw') {
+    state.drawTool = tool === 'erase' ? 'erase' : 'draw';
+    setMode('draw');
+    elements.editorStatus.textContent = state.drawTool === 'erase'
+      ? 'Borracha: arraste somente sobre traços feitos pela ferramenta Desenhar; o PDF original e outros objetos permanecem intactos.'
+      : 'Caneta: desenhe livremente. Cor e espessura são gravadas por traço e cada gesto ocupa uma única entrada do histórico.';
+  }
+
   async function addOverlayImage() {
     if (!state.session) return;
     const blob = await syntheticImageBlob();
@@ -517,6 +587,7 @@
     const viewState = viewer.getViewState() || state.viewState;
     viewer.setEditorObjects?.([], { mode: 'none', selectedObjectId: '' });
     viewer.setEditorCrops?.([], { mode: 'none' });
+    viewer.setEditorStrokes?.([], { mode: 'none' });
     state.session = null;
     state.merging = false;
     state.mode = 'readonly';
@@ -557,6 +628,19 @@
   elements.crop.addEventListener('click', () => run(startCropMode));
   elements.select.addEventListener('click', () => run(startSelectMode));
   elements.write.addEventListener('click', () => run(startWriteMode));
+  elements.draw.addEventListener('click', () => run(() => startDrawMode('draw')));
+  elements.drawPen.addEventListener('click', () => run(() => startDrawMode('draw')));
+  elements.drawEraser.addEventListener('click', () => run(() => startDrawMode('erase')));
+  elements.drawColor.addEventListener('input', () => run(() => {
+    state.drawColor = /^#[0-9a-f]{6}$/i.test(String(elements.drawColor.value || ''))
+      ? String(elements.drawColor.value).toLowerCase()
+      : '#111111';
+    syncDraws();
+  }));
+  elements.drawWidth.addEventListener('input', () => run(() => {
+    state.drawWidth = Math.max(1, Math.min(20, Number(elements.drawWidth.value || 4)));
+    syncDraws();
+  }));
   elements.overlayImage.addEventListener('click', () => run(addOverlayImage));
   elements.objectFont.addEventListener('change', () => run(() => updateSelectedObject({ fontFamily: elements.objectFont.value })));
   elements.objectFontSize.addEventListener('change', () => run(() => updateSelectedObject({ fontSize: Number(elements.objectFontSize.value || 18) / 560 })));
