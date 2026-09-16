@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.1.0
+// @version      1.1.1
 // @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
-// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-2
-// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-2
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-3
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-3
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -15,7 +15,11 @@
 
   const PORTAL_ORIGIN = 'https://regulacaoeldoradoms.com.br';
   const BRIDGE_URL = PORTAL_ORIGIN + '/agenda/sync/';
+  const WIDGET_ID = 'portal-agenda-sync-widget';
   const BUTTON_ID = 'portal-agenda-sync-button';
+  const PANEL_ID = 'portal-agenda-sync-panel';
+  const STATUS_ID = 'portal-agenda-sync-status';
+  const ACTION_ID = 'portal-agenda-sync-action';
   const AUTO_INTERVAL_MS = 15 * 60 * 1000;
   const RESULT_TIMEOUT_MS = 60 * 1000;
   const BRIDGE_WATCH_MS = 15 * 1000;
@@ -32,6 +36,11 @@
   let lastFingerprint = '';
   let lastCheckAt = 0;
   let syncInFlight = false;
+  let everActivated = false;
+  let detailPinned = false;
+  let detailHideTimer = null;
+  let currentStatusText = 'Sincronização automática ainda não ativada.';
+  let currentTone = '';
 
   function compact(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
@@ -170,15 +179,107 @@
     });
   }
 
+  function widget() {
+    return document.getElementById(WIDGET_ID);
+  }
+
   function button() {
     return document.getElementById(BUTTON_ID);
   }
 
-  function setButton(text, tone = '') {
-    const element = button();
+  function panel() {
+    return document.getElementById(PANEL_ID);
+  }
+
+  function statusNode() {
+    return document.getElementById(STATUS_ID);
+  }
+
+  function actionButton() {
+    return document.getElementById(ACTION_ID);
+  }
+
+  function clearDetailHideTimer() {
+    if (detailHideTimer) window.clearTimeout(detailHideTimer);
+    detailHideTimer = null;
+  }
+
+  function showDetails({ pin = false } = {}) {
+    clearDetailHideTimer();
+    if (pin) detailPinned = true;
+    const element = panel();
     if (!element) return;
-    element.textContent = text;
+    element.hidden = false;
+    element.style.opacity = '1';
+    element.style.transform = 'translateY(0)';
+    element.style.pointerEvents = 'auto';
+  }
+
+  function hideDetails({ force = false } = {}) {
+    if (detailPinned && !force) return;
+    clearDetailHideTimer();
+    const element = panel();
+    if (!element) return;
+    element.style.opacity = '0';
+    element.style.transform = 'translateY(6px)';
+    element.style.pointerEvents = 'none';
+    detailHideTimer = window.setTimeout(() => {
+      if (!detailPinned) element.hidden = true;
+    }, 160);
+  }
+
+  function scheduleHideDetails() {
+    clearDetailHideTimer();
+    detailHideTimer = window.setTimeout(() => hideDetails(), 220);
+  }
+
+  function toneBackground(tone) {
+    if (tone === 'error') return '#a33434';
+    if (tone === 'working') return '#315d86';
+    return '#0d3157';
+  }
+
+  function updateActionButton() {
+    const action = actionButton();
+    if (!action) return;
+    action.disabled = syncInFlight;
+    if (autoEnabled) {
+      action.textContent = syncInFlight ? 'Verificando…' : 'Verificar agora';
+      return;
+    }
+    action.textContent = everActivated ? 'Reativar automático' : 'Ativar agora';
+  }
+
+  function setButton(text, tone = '') {
+    currentStatusText = compact(text) || currentStatusText;
+    currentTone = tone;
+
+    const element = button();
+    const status = statusNode();
+    if (status) status.textContent = currentStatusText;
+    if (!element) {
+      updateActionButton();
+      return;
+    }
+
+    const compactMode = everActivated || autoEnabled;
     element.dataset.tone = tone;
+    element.dataset.compact = compactMode ? 'true' : 'false';
+    element.style.background = toneBackground(tone);
+    element.style.width = compactMode ? '38px' : 'auto';
+    element.style.height = '38px';
+    element.style.padding = compactMode ? '0' : '0 12px';
+    element.style.borderRadius = compactMode ? '999px' : '12px';
+    element.style.fontSize = compactMode ? '21px' : '12px';
+    element.style.lineHeight = '1';
+    element.style.minWidth = compactMode ? '38px' : '104px';
+    element.textContent = compactMode ? '⟳' : 'Ativar sync';
+    element.setAttribute(
+      'aria-label',
+      compactMode ? 'Status da sincronização automática da Agenda' : 'Ativar sincronização automática da Agenda'
+    );
+    element.setAttribute('aria-expanded', String(!panel()?.hidden));
+    updateActionButton();
   }
 
   function clock(value = new Date()) {
@@ -285,17 +386,39 @@
     );
 
     if (!portalWindow) {
-      setButton('Ativar sincronização automática', 'error');
+      setButton('Não foi possível abrir a ponte do Portal. Libere pop-ups e tente novamente.', 'error');
+      showDetails({ pin: true });
       window.alert('O navegador bloqueou a janela do Portal. Libere pop-ups para este site e tente novamente.');
       return;
     }
 
+    everActivated = true;
     autoEnabled = true;
+    detailPinned = false;
+    hideDetails({ force: true });
     setButton('Conectando sincronização automática…', 'working');
     startAutomaticTimers();
   }
 
   function onButtonClick() {
+    if (!everActivated && !autoEnabled) {
+      activateAutomaticSync();
+      return;
+    }
+
+    if (detailPinned) {
+      detailPinned = false;
+      hideDetails({ force: true });
+      return;
+    }
+
+    showDetails({ pin: true });
+  }
+
+  function onActionClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (syncInFlight) return;
     if (!autoEnabled) {
       activateAutomaticSync();
       return;
@@ -345,33 +468,113 @@
     if (Date.now() - lastCheckAt >= AUTO_INTERVAL_MS) runAutomaticSync();
   });
 
-  function mountButton() {
-    if (button()) return;
+  function mountWidget() {
+    if (widget()) return;
+
+    const container = document.createElement('div');
+    container.id = WIDGET_ID;
+    container.style.cssText = [
+      'position:fixed',
+      'left:18px',
+      'bottom:18px',
+      'z-index:2147483646',
+      'display:flex',
+      'flex-direction:column',
+      'align-items:flex-start',
+      'gap:8px',
+      'font-family:Inter,system-ui,sans-serif'
+    ].join(';');
+
+    const details = document.createElement('div');
+    details.id = PANEL_ID;
+    details.hidden = true;
+    details.style.cssText = [
+      'position:absolute',
+      'left:0',
+      'bottom:46px',
+      'width:280px',
+      'max-width:calc(100vw - 36px)',
+      'padding:12px',
+      'border:1px solid rgba(13,49,87,.16)',
+      'border-radius:14px',
+      'background:#fff',
+      'color:#17324d',
+      'box-shadow:0 12px 30px rgba(0,0,0,.18)',
+      'opacity:0',
+      'transform:translateY(6px)',
+      'pointer-events:none',
+      'transition:opacity .16s ease, transform .16s ease'
+    ].join(';');
+
+    const title = document.createElement('div');
+    title.textContent = 'Agenda automática';
+    title.style.cssText = 'font:700 13px Inter,system-ui,sans-serif;margin-bottom:5px;';
+
+    const status = document.createElement('div');
+    status.id = STATUS_ID;
+    status.textContent = currentStatusText;
+    status.style.cssText = 'font:500 12px/1.45 Inter,system-ui,sans-serif;color:#526779;margin-bottom:10px;';
+
+    const helper = document.createElement('div');
+    helper.textContent = 'Verificação a cada 15 min enquanto o DigSaúde e a ponte do Portal estiverem abertos.';
+    helper.style.cssText = 'font:400 11px/1.4 Inter,system-ui,sans-serif;color:#758697;margin-bottom:10px;';
+
+    const action = document.createElement('button');
+    action.id = ACTION_ID;
+    action.type = 'button';
+    action.style.cssText = [
+      'border:0',
+      'border-radius:9px',
+      'padding:8px 10px',
+      'background:#eef4fa',
+      'color:#0d3157',
+      'font:700 11px Inter,system-ui,sans-serif',
+      'cursor:pointer'
+    ].join(';');
+    action.addEventListener('click', onActionClick);
+
+    details.append(title, status, helper, action);
+
     const element = document.createElement('button');
     element.id = BUTTON_ID;
     element.type = 'button';
-    element.textContent = 'Ativar sincronização automática';
-    element.title = 'Atualiza a Agenda a cada 15 minutos enquanto o DigSaúde e a ponte do Portal permanecerem abertos.';
-    element.setAttribute('aria-label', 'Ativar sincronização automática da Agenda com o Portal da Regulação');
+    element.title = '';
     element.style.cssText = [
-      'position:fixed',
-      'right:22px',
-      'bottom:22px',
-      'z-index:2147483646',
       'border:0',
-      'border-radius:14px',
-      'padding:12px 16px',
+      'height:38px',
+      'min-width:104px',
+      'border-radius:12px',
+      'padding:0 12px',
       'background:#0d3157',
       'color:#fff',
-      'font:700 14px Inter,system-ui,sans-serif',
-      'box-shadow:0 10px 30px rgba(0,0,0,.22)',
+      'font:700 12px Inter,system-ui,sans-serif',
+      'box-shadow:0 6px 18px rgba(0,0,0,.18)',
       'cursor:pointer',
-      'max-width:360px'
+      'display:inline-flex',
+      'align-items:center',
+      'justify-content:center',
+      'transition:width .18s ease, min-width .18s ease, padding .18s ease, border-radius .18s ease, background .18s ease'
     ].join(';');
     element.addEventListener('click', onButtonClick);
-    document.body.appendChild(element);
+
+    container.addEventListener('mouseenter', () => showDetails());
+    container.addEventListener('mouseleave', scheduleHideDetails);
+    container.addEventListener('focusin', () => showDetails());
+    container.addEventListener('focusout', (event) => {
+      if (!container.contains(event.relatedTarget)) scheduleHideDetails();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      detailPinned = false;
+      hideDetails({ force: true });
+    });
+
+    container.append(details, element);
+    document.body.appendChild(container);
+    setButton(currentStatusText, currentTone);
   }
 
-  mountButton();
-  new MutationObserver(mountButton).observe(document.documentElement, { childList: true, subtree: true });
+  mountWidget();
+  new MutationObserver(mountWidget).observe(document.documentElement, { childList: true, subtree: true });
 })();
