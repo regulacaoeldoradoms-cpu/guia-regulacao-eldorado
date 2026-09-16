@@ -1310,7 +1310,10 @@
       if (event.button > 0) return;
       event.preventDefault();
       event.stopPropagation();
-      planeDrag = { pointerId: event.pointerId };
+      planeDrag = {
+        pointerId: event.pointerId,
+        startColor: normalizeObjectColor(object.color)
+      };
       try { plane.setPointerCapture?.(event.pointerId); } catch (_) {}
       updatePlane(event, false);
     });
@@ -1326,7 +1329,14 @@
       try { plane.releasePointerCapture?.(event.pointerId); } catch (_) {}
     };
     plane.addEventListener('pointerup', finishPlane);
-    plane.addEventListener('pointercancel', () => { planeDrag = null; });
+    plane.addEventListener('pointercancel', (event) => {
+      if (!planeDrag || (event.pointerId != null && planeDrag.pointerId !== event.pointerId)) return;
+      const startColor = normalizeObjectColor(planeDrag.startColor, normalizeObjectColor(object.color));
+      planeDrag = null;
+      syncCustomColorPanel(customPanel, startColor);
+      previewQuickbarColor(session, element, object, startColor);
+      try { plane.releasePointerCapture?.(event.pointerId); } catch (_) {}
+    });
 
     hue.addEventListener('input', (event) => {
       customPanel.dataset.colorHue = String(Number(event.target.value) || 0);
@@ -1681,8 +1691,13 @@
         }
       }
 
-      const dx = (event.clientX - drag.startX) / drag.layerWidth;
-      const dy = (event.clientY - drag.startY) / drag.layerHeight;
+      const screenDx = event.clientX - drag.startX;
+      const screenDy = event.clientY - drag.startY;
+      const dx = screenDx / drag.layerWidth;
+      const dy = screenDy / drag.layerHeight;
+      const theta = (Number(drag.start.rotation || 0) * Math.PI) / 180;
+      const localDx = ((Math.cos(theta) * screenDx) + (Math.sin(theta) * screenDy)) / drag.layerWidth;
+      const localDy = ((-Math.sin(theta) * screenDx) + (Math.cos(theta) * screenDy)) / drag.layerHeight;
       let patch = {};
 
       if (drag.kind === 'move') {
@@ -1725,15 +1740,15 @@
         let y = drag.start.y;
         let width = drag.start.width;
         let height = drag.start.height;
-        if (drag.handle.includes('e')) width = drag.start.width + dx;
-        if (drag.handle.includes('s')) height = drag.start.height + dy;
+        if (drag.handle.includes('e')) width = drag.start.width + localDx;
+        if (drag.handle.includes('s')) height = drag.start.height + localDy;
         if (drag.handle.includes('w')) {
-          x = drag.start.x + dx;
-          width = drag.start.width - dx;
+          x = drag.start.x + localDx;
+          width = drag.start.width - localDx;
         }
         if (drag.handle.includes('n')) {
-          y = drag.start.y + dy;
-          height = drag.start.height - dy;
+          y = drag.start.y + localDy;
+          height = drag.start.height - localDy;
         }
         width = Math.min(0.95, Math.max(0.035, width));
         height = Math.min(0.95, Math.max(0.025, height));
@@ -2682,6 +2697,6 @@
     setEditorCrops,
     loadPdfJs,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2r`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-objects-v2s`
   });
 })();
