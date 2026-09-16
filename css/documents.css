@@ -711,6 +711,19 @@
   background-image: url('/assets/editor-pdf-buttons/grade-ativa.svg?v=20260916-2') !important;
 }
 
+.documents-art-sync {
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  background-image: url('/assets/editor-pdf-buttons/atualizar.svg?v=20260916-3') !important;
+}
+
+.documents-art-sync.active,
+.documents-art-sync[aria-pressed="true"] {
+  filter: brightness(.92) saturate(1.08);
+}
+
 .documents-art-export {
   width: 123px !important;
   min-width: 123px !important;
@@ -1003,6 +1016,89 @@
   padding: 7px 9px;
   font: inherit;
 }
+
+.documents-sync-panel {
+  min-height: 350px;
+}
+
+.documents-sync-options {
+  display: grid;
+  gap: 9px;
+  margin: 0 0 12px;
+}
+
+.documents-sync-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 11px;
+  border: 1px solid #d3dee7;
+  border-radius: 10px;
+  background: #f8fbfd;
+  color: #23455f;
+  cursor: pointer;
+}
+
+.documents-sync-option:focus-within,
+.documents-sync-option:has(input:checked) {
+  border-color: #6fa9cc;
+  background: #edf7fc;
+  box-shadow: 0 0 0 2px rgba(29, 121, 168, .08);
+}
+
+.documents-sync-option input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 2px 0 0;
+  accent-color: #176fa2;
+}
+
+.documents-sync-option span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.documents-sync-option strong {
+  font-size: .82rem;
+  color: #173f5d;
+}
+
+.documents-sync-option small {
+  color: #60778a;
+  font-size: .72rem;
+  line-height: 1.35;
+}
+
+.documents-sync-warning {
+  min-height: 0;
+  margin: 0 0 10px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: #fff8e8;
+  border: 1px solid #ead9a7;
+  color: #725612;
+  font-size: .75rem;
+  line-height: 1.42;
+}
+
+.documents-sync-warning:empty {
+  display: none;
+}
+
+.documents-sync-progress {
+  min-height: 18px;
+  margin: 0 0 10px;
+  color: #49677e;
+  font-size: .75rem;
+  line-height: 1.4;
+}
+
+.documents-sync-progress.success { color: #176049; }
+.documents-sync-progress.warning { color: #8a5f0a; }
+.documents-sync-progress.error { color: #9b3434; }
 
 /* Organizar: a grade vira a representação principal das páginas */
 .documents-custom-viewer[data-organizer-mode="true"] .documents-pdf-toolbar {
