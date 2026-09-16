@@ -6,7 +6,50 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.6 — flatten/exportação local, implementação técnica concluída no PR #179 e aguardando homologação humana do PDF exportado**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **Não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
+Subfase atual: **3C.6 — flatten/exportação local, correções de UX pós-homologação implementadas e aguardando novo reteste humano**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
+
+## 3C.6 — correções de UX após homologação humana — 16/09/2026
+
+A primeira tentativa de homologação humana da 3C.6 **não foi aprovada**. Durante o uso do preview, o usuário identificou três problemas concretos de interação antes de conseguir concluir a comparação preview × PDF exportado:
+
+1. ao arrastar uma caixa de texto, o objeto permanecia deslocado em relação ao ponteiro; a expectativa é que **o centro da caixa acompanhe o ponteiro** durante o arraste;
+2. no laboratório, **Adicionar imagem como página** inseria uma imagem sintética automaticamente em vez de abrir o seletor de arquivos do dispositivo;
+3. no modo **Unir**, a grade podia ficar visualmente sob o painel lateral, e o próprio painel não oferecia uma ação direta para **Adicionar PDF ou imagem** do dispositivo.
+
+Diagnóstico e decisões:
+- o arraste dentro da mesma página usava o deslocamento relativo ao ponto original de clique, enquanto a transferência entre páginas já reposicionava pelo centro; o comportamento foi unificado para que o centro do objeto siga o ponteiro, com limites da página preservados;
+- o editor real já possuía `editorImageInput` com `type=file`; a divergência existia no **harness sintético**. O laboratório foi alinhado ao comportamento real e agora abre o seletor de imagens do dispositivo;
+- o painel **Unir** ganhou `Adicionar PDF ou imagem`, aceitando PDF e imagens locais. A escolha do arquivo fica **pendente** e só é aplicada após o usuário escolher a posição e clicar no botão existente **Unir**;
+- em desktop, a grade reserva espaço lateral para o painel de união; em mobile, o painel entra no fluxo acima da grade, em vez de sobrepor as páginas;
+- imagens locais escolhidas no painel são normalizadas localmente quando necessário e convertidas em páginas; PDFs locais são incorporados pela mesma sessão pdf-lib, sem backend e sem Drive;
+- o painel continua permitindo selecionar um PDF já listado na Central, preservando o fluxo anterior.
+
+Implementação funcional consolidada no head `57e132481cc9d21e4734695988cff37b7d1024c7`.
+
+Validação automatizada:
+- **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **72 casos**, com **69 passed / 3 skipped esperados**;
+- teste de arraste agora exige que o centro da caixa fique a até ~3 px do ponteiro final;
+- teste de **Adicionar imagem como página** exige a abertura real de `filechooser`;
+- teste do painel **Unir** cobre seleção de imagem local, confirmação explícita em **Unir** e ausência de sobreposição em desktop e mobile;
+- durante a primeira execução do novo teste, a asserção de layout tratava mobile como desktop e falhou apesar do comportamento responsivo estar correto; a asserção foi separada por viewport e a matriz voltou integralmente a verde;
+- Cloudflare Pages publicou o candidato corrigido com sucesso.
+
+Preview corrigido:
+- imutável: `https://e35bf163.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- usar somente dados fictícios enquanto Cloudflare Access estiver pendente.
+
+Privacidade e segurança:
+- nenhuma alteração em `main`, produção ou Google Drive;
+- os arquivos locais selecionados são processados no navegador;
+- a telemetria da operação de união local registra apenas o tipo técnico de operação e bucket agregado de tamanho, sem nome, conteúdo, texto, coordenadas ou identificadores de documento;
+- PR #179 continua sendo o veículo de trabalho; não fazer merge antes do encerramento da Fase 3.
+
+**Gate atual:** novo reteste humano da 3C.6. O usuário deve confirmar primeiro as três correções de UX e depois concluir o roteiro preview × PDF exportado/reaberto.
+
+**Próxima ação exata:** abrir `https://e35bf163.portal-regulacao-central-staging.pages.dev/`, confirmar que (a) a caixa de texto fica centrada sob o ponteiro durante o arraste, (b) Adicionar imagem como página abre o seletor do dispositivo, e (c) o painel Unir oferece Adicionar PDF ou imagem, aplica somente após **Unir** e não cobre a grade. Em seguida, exportar o PDF final e comparar visualmente texto, imagem, desenho, crop, ordem e rotação. Somente após aceite explícito encerrar a 3C.6 e a Fase 3.
 
 ## 3C.6 — implementação técnica concluída; homologação humana pendente — 16/09/2026
 
@@ -60,22 +103,23 @@ Privacidade e segurança:
 Este bloco prevalece sobre os handoffs históricos abaixo.
 
 - **Fase atual:** Fase 3 — Editor PDF essencial.
-- **Subfase atual:** 3C.6 — flatten/exportação local, tecnicamente concluída e aguardando homologação humana.
-- **Última ação concluída:** implementação + ampliação da matriz real da 3C.6 validadas no head `d8d5b2e1938a6e8916cd6c6bc7cdafb3f92953c7`.
+- **Subfase atual:** 3C.6 — flatten/exportação local; correções de UX pós-homologação implementadas e aguardando novo reteste humano.
+- **Última ação concluída:** correção dos três problemas encontrados pelo usuário durante a homologação: arraste centralizado sob o ponteiro; file picker real em Adicionar imagem como página no laboratório; e painel Unir com importação local PDF/imagem + layout sem sobreposição.
 - **Branch atual:** `codex/central-docs-editor-superficie-unica`.
-- **PR atual:** #179 — aberto, mergeável, sem merge.
+- **Head funcional validado:** `57e132481cc9d21e4734695988cff37b7d1024c7`.
+- **PR atual:** #179 — manter aberto e sem merge até o encerramento da Fase 3.
 - **Main atual conhecida:** `73997b4d108dd0392173e93640310d70dd3eeccf`, já reconciliada nesta branch pelo merge `95c660d6e74c4aafdbb5d7be4c4383ac11d46995`.
-- **Checks e testes:** 25/25 checks verdes; Playwright 70 casos = 67 passed / 3 skipped esperados.
-- **Preview imutável:** `https://afffb869.portal-regulacao-central-staging.pages.dev/`.
+- **Checks e testes:** 25/25 checks verdes; Playwright 72 casos = 69 passed / 3 skipped esperados; PDF.js real em Chromium e Cloudflare Pages verdes.
+- **Preview imutável do runtime corrigido:** `https://e35bf163.portal-regulacao-central-staging.pages.dev/`.
 - **Alias da branch:** `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
-- **Decisões tomadas:** preview estrutural continua separado do flatten; saída final usa pdf-lib e preserva a página base; exportação é somente local; Drive continua fora de escopo.
-- **Justificativas:** separar preview e saída final mantém Undo/Redo e evita overlays duplicados; preservar o PDF base evita perda de texto/vetor; exportação local fecha a Fase 3 sem antecipar a arquitetura de persistência da Fase 4.
-- **Alternativas descartadas:** rasterizar páginas inteiras; usar o mesmo Blob flattened durante edição; enviar o PDF a backend/Drive antes do encerramento da Fase 3.
-- **Pendências e bloqueios:** homologação visual humana do PDF exportado; Cloudflare Access ainda pendente, portanto somente dados fictícios no staging.
-- **Riscos conhecidos:** diferenças finas entre fontes padrão do navegador e fontes padrão do pdf-lib; posicionamento visual em combinações incomuns de rotação/crop deve ser confirmado pelo usuário.
-- **Métricas / observabilidade:** nenhuma telemetria de conteúdo; evidência baseada em CI, Playwright e staging sintético.
-- **Próxima ação exata:** homologar manualmente o download final no preview `https://afffb869.portal-regulacao-central-staging.pages.dev/`; se aprovado, encerrar 3C.6/Fase 3 e preparar Fase 4 conforme o Guia Mestre.
-- **Arquivos e fontes principais:** Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-STATUS.md`; `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`; PR #179; `js/document-editor.js`; `js/documents.js`; `testing/browser/central-docs-flatten.spec.mjs`.
+- **Decisões tomadas:** objeto arrastado segue o centro do ponteiro; laboratório deve reproduzir file picker real; arquivos locais no painel Unir ficam pendentes até confirmação explícita em Unir; desktop reserva faixa lateral para o painel e mobile empilha painel antes da grade.
+- **Justificativas:** reduzir deslocamento perceptivo no arraste; eliminar divergência entre laboratório e produto; tornar a união autossuficiente e previsível; impedir páginas ocultas pelo painel.
+- **Alternativas descartadas:** manter offset original de clique; imagem sintética automática como comportamento do botão; união local imediata após escolher arquivo; painel flutuante sobre a grade em telas estreitas.
+- **Pendências e bloqueios:** homologação humana da UX corrigida e da fidelidade do PDF exportado. Fase 4 permanece bloqueada. Cloudflare Access ainda pendente, portanto staging somente com dados fictícios.
+- **Riscos conhecidos:** diferenças finas de fonte entre navegador/pdf-lib e combinações incomuns de crop/rotação ainda dependem da conferência visual humana final.
+- **Métricas / observabilidade:** nenhuma telemetria de conteúdo; união local registra somente operação técnica e bucket agregado de tamanho.
+- **Próxima ação exata:** retestar as três correções no preview `https://e35bf163.portal-regulacao-central-staging.pages.dev/`; depois exportar e reabrir o PDF final. Se aprovado, encerrar formalmente 3C.6/Fase 3; se houver defeito, manter 3C.6 aberta e corrigir somente o problema observado.
+- **Arquivos principais:** `js/document-viewer.js`, `js/documents.js`, `documentos/index.html`, `css/documents.css`, `testing/central-docs/editor-harness.js`, `testing/browser/central-docs-editor.spec.mjs`, `docs/CENTRAL-DOCUMENTOS-STATUS.md` e `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`.
 
 ## 3C.6 — liberada após reconciliação verde com main — 16/09/2026
 
