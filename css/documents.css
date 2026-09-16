@@ -1028,6 +1028,7 @@
   font-weight: 800;
   box-shadow: 0 5px 16px rgba(15, 43, 64, .18);
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .portal-pdf-crop-action--confirm {

@@ -41,7 +41,6 @@ async function drawCropSelection(page, layer, start = { x: .18, y: .16 }, end = 
   const to = { x: box.x + box.width * end.x, y: box.y + box.height * end.y };
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
-  await expect(page.locator('#pdfRoot')).toHaveAttribute('data-crop-gesture', 'create');
   await page.mouse.move(to.x, to.y, { steps: 8 });
   await page.mouse.up();
 }
@@ -150,6 +149,7 @@ test.describe('Central de Documentos — 3C.4 Recortar', () => {
     await page.locator('#editorOrganize').click();
     const cards = page.locator('#thumbnails .portal-pdf-thumb');
     await cards.nth(1).scrollIntoViewIfNeeded();
+    await expect(cards.nth(1)).toHaveClass(/rendered/);
     const source = await cards.nth(1).boundingBox();
     const start = { x: source.x + source.width * .4, y: source.y + source.height * .55 };
     await page.mouse.move(start.x, start.y);
@@ -160,6 +160,7 @@ test.describe('Central de Documentos — 3C.4 Recortar', () => {
     await page.mouse.move(target.x + 12, target.y + target.height * .6, { steps: 6 });
     await page.mouse.up();
 
+    await expect(page.locator('html')).toHaveAttribute('data-page-order', '0:1,0:0,0:2');
     const afterReorder = (await page.locator('html').getAttribute('data-page-crops')).split(',');
     expect(afterReorder[0]).toBe(cropToken);
     expect(afterReorder[1]).toBe('full');

@@ -169,9 +169,6 @@
         editor.commitObjectMutation(state.session);
         syncEditorState();
       },
-      onCancel() {
-        syncEditorState();
-      },
       onReset(pageIndex) {
         if (!editor.clearPageCrop(state.session, pageIndex)) return;
         syncEditorState();

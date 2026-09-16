@@ -1051,7 +1051,6 @@
         const pageNumber = Number(frame?.dataset?.pageNumber || 0);
         if (!(pageNumber > 0)) return;
         clearCropDraft(session, pageNumber);
-        session.onCropCancel?.(pageNumber - 1);
         renderCropForPage(session, pageNumber);
         session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
         return;
@@ -1109,7 +1108,6 @@
     if (!session.cropDrafts) session.cropDrafts = new Map();
     if (nextMode !== 'crop') session.cropDrafts.clear();
     session.onCropConfirm = typeof options.onConfirm === 'function' ? options.onConfirm : session.onCropConfirm;
-    session.onCropCancel = typeof options.onCancel === 'function' ? options.onCancel : session.onCropCancel;
     session.onCropReset = typeof options.onReset === 'function' ? options.onReset : session.onCropReset;
     installCropHandlers(session);
     return renderEditorCrops(session);
@@ -2697,7 +2695,6 @@
       cropHandlers: null,
       cropWindowHandlers: null,
       onCropConfirm: null,
-      onCropCancel: null,
       onCropReset: null,
       onObjectChange: null,
       onObjectCommit: null,

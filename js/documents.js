@@ -515,10 +515,6 @@
           editor.commitObjectMutation(session);
           syncEditorControls();
         },
-        onCancel() {
-          if (session !== state.editorSession) return;
-          syncEditorControls();
-        },
         onReset(pageIndex) {
           if (session !== state.editorSession) return;
           if (!editor.clearPageCrop?.(session, pageIndex)) return;
