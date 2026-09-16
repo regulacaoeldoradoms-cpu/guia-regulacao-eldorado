@@ -5,12 +5,12 @@ import {
   firebaseConfigured,
   firestoreCommit,
   firestoreGet,
-  firestoreList,
-  firestorePatch
+  firestoreList
 } from './firebase-gateway.js';
 import { telemedicineAccessFor } from './telemedicine-access.js';
 
 const COLLECTION = 'telemedicine_digsaude_agenda';
+const READ_STATE_COLLECTION = 'telemedicine_digsaude_agenda_read_state';
 const MAX_RECORDS_PER_SYNC = 250;
 const MAX_LIST_PAGES = 20;
 const FIRESTORE_COMMIT_CHUNK = 450;
@@ -93,17 +93,45 @@ async function digestId(value) {
   return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('').slice(0, 40);
 }
 
-async function listAll(env) {
+async function listCollection(env, collectionPath) {
   const output = [];
   let pageToken = '';
   let guard = 0;
   do {
-    const page = await firestoreList(env, COLLECTION, { pageSize: 100, pageToken });
+    const page = await firestoreList(env, collectionPath, { pageSize: 100, pageToken });
     output.push(...(page.documents || []));
     pageToken = page.nextPageToken || '';
     guard += 1;
   } while (pageToken && guard < MAX_LIST_PAGES);
   return output;
+}
+
+async function listAll(env) {
+  return listCollection(env, COLLECTION);
+}
+
+async function readUserKey(username) {
+  const bytes = new TextEncoder().encode(`digsaude-agenda-read-user:${clean(username, 80)}`);
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('').slice(0, 40);
+}
+
+async function readReceiptCollection(username) {
+  return `${READ_STATE_COLLECTION}/${await readUserKey(username)}/records`;
+}
+
+async function listReadMemory(env, username) {
+  const collectionPath = await readReceiptCollection(username);
+  const receipts = await listCollection(env, collectionPath);
+  const memory = new Map();
+  for (const receipt of receipts) {
+    const sourceId = cleanSourceId(receipt.sourceId);
+    const readAt = clean(receipt.readAt, 40);
+    if (!sourceId || !readAt) continue;
+    const previous = memory.get(sourceId) || '';
+    if (readAt > previous) memory.set(sourceId, readAt);
+  }
+  return { collectionPath, memory };
 }
 
 async function authorizedUser(request, env) {
@@ -121,14 +149,20 @@ function readAtFor(record, username) {
   return clean(readBy[username], 40);
 }
 
-function isUnreadFor(record, username) {
+function effectiveReadAt(record, username, readMemory) {
+  const embedded = readAtFor(record, username);
+  const dedicated = clean(readMemory?.get(cleanSourceId(record?.sourceId)), 40);
+  return dedicated > embedded ? dedicated : embedded;
+}
+
+function isUnreadFor(record, readAt) {
   if (record?.active === false) return false;
-  const readAt = readAtFor(record, username);
   const changedAt = clean(record?.lastChangedAt || record?.firstSeenAt, 40);
   return !readAt || (changedAt && readAt < changedAt);
 }
 
-function publicRecord(record, username) {
+function publicRecord(record, username, readMemory) {
+  const readAt = effectiveReadAt(record, username, readMemory);
   return {
     sourceId: cleanSourceId(record.sourceId),
     requestedAt: clean(record.requestedAt, 40),
@@ -149,8 +183,8 @@ function publicRecord(record, username) {
     lastChangedAt: clean(record.lastChangedAt, 40),
     removedAt: clean(record.removedAt, 40),
     active: record.active !== false,
-    readAt: readAtFor(record, username),
-    unread: isUnreadFor(record, username)
+    readAt,
+    unread: isUnreadFor(record, readAt)
   };
 }
 
@@ -283,17 +317,47 @@ async function syncRecords(env, input, user) {
   };
 }
 
+async function migrateEmbeddedReadMemory(env, username, records, collectionPath, memory) {
+  const writes = [];
+
+  for (const record of records) {
+    const sourceId = cleanSourceId(record?.sourceId);
+    const embeddedReadAt = readAtFor(record, username);
+    if (!sourceId || !embeddedReadAt) continue;
+    const dedicatedReadAt = clean(memory.get(sourceId), 40);
+    if (dedicatedReadAt >= embeddedReadAt) continue;
+
+    const receiptId = await digestId(sourceId);
+    writes.push({
+      documentPath: `${collectionPath}/${receiptId}`,
+      data: { sourceId, readAt: embeddedReadAt }
+    });
+    memory.set(sourceId, embeddedReadAt);
+  }
+
+  if (writes.length) await commitWrites(env, writes);
+}
+
 async function markRead(env, sourceId, username) {
   const validSourceId = cleanSourceId(sourceId);
   if (!validSourceId) throw Object.assign(new Error('Agendamento inválido.'), { status: 400 });
+
   const documentId = await digestId(validSourceId);
   const existing = await firestoreGet(env, `${COLLECTION}/${documentId}`);
   if (!existing) throw Object.assign(new Error('Agendamento não encontrado.'), { status: 404 });
-  const readBy = existing.readBy && typeof existing.readBy === 'object' ? existing.readBy : {};
+
+  const collectionPath = await readReceiptCollection(username);
+  const receiptId = await digestId(validSourceId);
   const now = new Date().toISOString();
-  await firestorePatch(env, `${COLLECTION}/${documentId}`, {
-    readBy: { ...readBy, [username]: now }
-  });
+
+  await firestoreCommit(env, [{
+    documentPath: `${collectionPath}/${receiptId}`,
+    data: {
+      sourceId: validSourceId,
+      readAt: now
+    }
+  }]);
+
   return { sourceId: validSourceId, readAt: now };
 }
 
@@ -323,8 +387,12 @@ export async function handleAgendaRoute(request, env, origin = '', originAllowed
   if (!user) return json({ error: 'Acesso exclusivo da Telemedicina ou do Desenvolvedor.' }, 403, origin, originAllowed);
 
   if (url.pathname === '/api/agenda' && request.method === 'GET') {
-    const records = (await listAll(env))
-      .map((item) => publicRecord(item, user.username))
+    const sourceRecords = await listAll(env);
+    const { collectionPath, memory } = await listReadMemory(env, user.username);
+    await migrateEmbeddedReadMemory(env, user.username, sourceRecords, collectionPath, memory);
+
+    const records = sourceRecords
+      .map((item) => publicRecord(item, user.username, memory))
       .filter((item) => item.sourceId)
       .sort(agendaSort);
     const active = records.filter((item) => item.active);
