@@ -614,3 +614,56 @@ O staging continua restrito a **dados fictícios** enquanto Cloudflare Access es
 
 A 3C.6 e a Fase 3 só podem ser encerradas após esse aceite humano. A **Fase 4 — sincronização segura com Drive** permanece bloqueada até esse encerramento formal.
 
+## Reteste obrigatório da 3C.6 após feedback humano — 16/09/2026
+
+A primeira tentativa de homologação do candidato da 3C.6 **não foi aceita**. O usuário encontrou três problemas antes de concluir a comparação do PDF exportado:
+
+1. a caixa de texto ficava deslocada para baixo/lado do ponteiro durante o arraste;
+2. no laboratório, **Adicionar imagem como página** não abria o seletor de imagens do dispositivo;
+3. no modo **Unir**, páginas podiam ficar visualmente sob o painel e faltava uma ação direta para adicionar PDF/imagem nessa própria janela.
+
+### Correções implementadas
+
+- **Arraste de objetos:** o centro da caixa acompanha o ponteiro em movimento, tanto dentro da página quanto na transferência entre páginas, respeitando os limites da página.
+- **Adicionar imagem como página:** o laboratório foi alinhado ao produto real e agora usa `input[type=file]` com `accept="image/*"`; o usuário escolhe a imagem no gerenciador/seletor do dispositivo.
+- **Painel Unir:** foi incluído o botão **Adicionar PDF ou imagem**, aceitando PDF e imagens locais.
+- **Confirmação de união:** escolher arquivo local apenas prepara a seleção. A inserção só ocorre depois de escolher a posição e clicar em **Unir**.
+- **Layout do painel:** em desktop a grade reserva espaço lateral; em mobile o painel fica no fluxo acima da grade. As páginas não devem ficar escondidas atrás da janela.
+- **Privacidade:** processamento continua local; nenhum arquivo selecionado é enviado ao Drive/backend nesta fase.
+
+Head funcional corrigido: `57e132481cc9d21e4734695988cff37b7d1024c7`.
+
+### Validação automatizada
+
+- **25/25 check-runs verdes**;
+- PDF.js real em Chromium: sucesso;
+- Cloudflare Pages: sucesso;
+- Playwright: **72 casos**, com **69 passed / 3 skipped esperados**;
+- teste de arraste verifica que o centro do objeto termina praticamente sobre o ponto final do ponteiro;
+- teste de Adicionar imagem exige a abertura do `filechooser`;
+- teste de Unir seleciona imagem local, mantém a seleção pendente, confirma em **Unir** e verifica a nova página;
+- layout sem sobreposição é validado com regra própria para desktop e mobile.
+
+Na primeira execução do novo teste de layout, a asserção usava a geometria horizontal de desktop também no perfil mobile e falhou. O comportamento mobile pretendido — painel empilhado acima da grade — estava correto. O teste foi corrigido para validar cada viewport segundo seu layout e a matriz final ficou verde.
+
+### Preview para novo reteste
+
+- imutável: `https://e35bf163.portal-regulacao-central-staging.pages.dev/`;
+- alias: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+
+Usar somente dados fictícios enquanto Cloudflare Access estiver pendente.
+
+### Roteiro de reteste
+
+1. criar uma caixa de texto e arrastá-la; confirmar que o **centro da caixa acompanha o ponteiro**;
+2. clicar em **Adicionar imagem como página**; confirmar que abre o seletor/gerenciador de arquivos do dispositivo e que a imagem escolhida vira página;
+3. abrir **Unir**; confirmar a presença de **Adicionar PDF ou imagem**;
+4. escolher uma imagem ou PDF local e confirmar que nada é inserido até clicar em **Unir**;
+5. escolher a posição e clicar em **Unir**; confirmar que as páginas entram no local correto e que o painel não as esconde;
+6. concluir o roteiro já definido de texto + imagem overlay + desenho + recorte + rotação/reordenação;
+7. exportar o PDF final, reabri-lo fora do editor e comparar visualmente com o preview.
+
+### Gate
+
+A **3C.6 continua aberta**. A Fase 3 só pode ser encerrada após novo aceite humano explícito. A Fase 4 — sincronização segura com Drive — permanece bloqueada até esse encerramento.
+
