@@ -358,17 +358,18 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await page.mouse.up();
     await expect.poll(() => image.evaluate((node) => getComputedStyle(node).transform)).not.toBe(imageBeforeRotate);
 
-    // At ~90°, the visible east handle moves vertically. Its screen-space
-    // vertical drag must increase the object's local width.
-    const east = image.locator('[data-object-resize="e"]');
-    await expect(east).toBeVisible();
-    await east.hover();
-    const eastBox = await east.boundingBox();
+    // The UI deliberately exposes only the four corner resize points. At
+    // ~90°, the north-east point's local east axis is vertical on screen, so
+    // a vertical drag must increase the object's local width.
+    const northEast = image.locator('[data-object-resize="ne"]');
+    await expect(northEast).toBeVisible();
+    await northEast.hover();
+    const northEastBox = await northEast.boundingBox();
     const localWidthBefore = await image.evaluate((node) => parseFloat(getComputedStyle(node).width));
     await page.mouse.down();
     await page.mouse.move(
-      eastBox.x + eastBox.width / 2,
-      eastBox.y + eastBox.height / 2 + 54,
+      northEastBox.x + northEastBox.width / 2,
+      northEastBox.y + northEastBox.height / 2 + 54,
       { steps: 7 }
     );
     await page.mouse.up();
