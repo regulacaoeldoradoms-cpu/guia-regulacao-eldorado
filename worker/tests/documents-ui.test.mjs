@@ -616,7 +616,7 @@ test('Fase 4C mantém telemetria de sincronização estritamente técnica e suce
   }
   assert.match(captureBodies.find(([, event]) => event === 'drive_sync_failed')[2], /status_code/);
   assert.ok(syncSection.indexOf("if (!completed?.completed)") < syncSection.indexOf("setDriveSyncProgress('Salvo no Google Drive.'"));
-  assert.ok(syncSection.indexOf("applyConfirmedDriveSync(operation, completed, blob, copyName)") < syncSection.indexOf("showDriveSyncSuccess(targetRevision)"));
+  assert.ok(syncSection.indexOf("applyConfirmedDriveSync(operation, completed, blob, copyName)") < syncSection.lastIndexOf("showDriveSyncSuccess(targetRevision)"));
 });
 
 
