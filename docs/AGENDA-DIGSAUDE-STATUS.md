@@ -7,7 +7,7 @@ Atualizado em 16/09/2026.
 - Frente: Agenda DigSaúde V1.
 - Objetivo: disponibilizar no Portal uma fila somente de leitura dos agendamentos do DigSaúde para Técnico em Telemedicina e Desenvolvedor.
 - Branch: `feat/agenda-digsaude-v1`.
-- PR: #185 — Agenda DigSaúde V1 para Telemedicina.
+- PR: #185 — Agenda DigSaúde V1 para Telemedicina; aberto e tecnicamente validado.
 - Base inicial: `main` em `5859b77fc80e17ffdf98f9e6fb3fa34bc37721c3`.
 - Produção: nenhuma alteração publicada por esta frente.
 
@@ -43,7 +43,7 @@ Atualizado em 16/09/2026.
 
 ## Pendências e bloqueios
 
-- validar os checks do Pull Request;
+- homologar o fluxo real no navegador autorizado após merge/publicação;
 - homologar a primeira sincronização com uma sessão real do DigSaúde;
 - confirmar o comportamento quando a lista ultrapassar 50 itens em uma única página;
 - a sincronização totalmente automática depende de integração institucional apropriada e não faz parte da V1.
@@ -59,7 +59,7 @@ Atualizado em 16/09/2026.
 - **Frente atual:** Agenda DigSaúde V1.
 - **Última ação concluída:** implementação inicial da interface, backend, sincronizador e testes na branch.
 - **Branch atual:** `feat/agenda-digsaude-v1`.
-- **PR atual:** #185 — aberto, aguardando checks.
-- **Checks e testes:** workflow criado; execução no GitHub ainda pendente.
-- **Próxima ação exata:** abrir o PR, aguardar os workflows e corrigir qualquer falha antes de solicitar homologação.
+- **PR atual:** #185 — aberto; 28/28 workflows do commit `ceaa39e` concluídos com sucesso.
+- **Checks e testes:** 28/28 workflows do commit `ceaa39e` concluídos com sucesso, incluindo `Validar Agenda DigSaúde V1` e as suítes de regressão do Portal.
+- **Próxima ação exata:** homologar e, após aprovação humana, mesclar o PR #185; em seguida instalar o userscript nos navegadores autorizados de Telemedicina e executar a primeira sincronização real.
 - **Arquivos principais:** `docs/AGENDA-DIGSAUDE.md`, `worker/agenda.js`, `agenda/digsaude-agenda-sync.user.js`, `agenda/index.html`.
