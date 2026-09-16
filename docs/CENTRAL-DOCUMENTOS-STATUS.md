@@ -6,7 +6,43 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.6 — editor funcional, correção visual dos botões aplicada e aguardando reteste humano visual + fidelidade do PDF exportado**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
+Subfase atual: **3C.6 — editor funcional, assets individuais dos botões corrigidos no staging e aguardando reteste humano visual + fidelidade do PDF exportado**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **A tentativa de homologação anterior da 3C.6 não foi aprovada; não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
+
+## 3C.6 — correção definitiva dos ícones vazios no staging — 16/09/2026
+
+O usuário retestou o candidato visual e mostrou que os espaços dos novos botões apareciam, porém **os ícones/imagens continuavam vazios** no laboratório de staging.
+
+Diagnóstico definitivo:
+- o CSS já reservava corretamente largura/altura para Zoom −, Zoom +, Ajustar largura, Organizar, Atualizar, Salvar PDF, Imprimir e Fechar;
+- a branch continha os assets individuais em `assets/editor-pdf-buttons/`, mas o script `scripts/build-central-docs-staging.mjs` **não copiava essa pasta para `dist-staging`**;
+- por isso, todos os URLs `/assets/editor-pdf-buttons/*.svg` retornavam **404** no laboratório/Cloudflare Pages; esse fato foi reproduzido automaticamente no Playwright, que registrou os 404s;
+- o servidor local do Playwright também não declarava `image/svg+xml` para `.svg`, então o MIME do kit visual não estava formalmente coberto pelo teste de navegador.
+
+Correção aplicada:
+- abandonado o recorte CSS da folha PNG como runtime principal; ele era mais frágil para manutenção e escondia a causa real dos assets ausentes;
+- os botões principais agora usam **arquivos SVG individuais self-hosted**, todos com nomes ASCII e dimensões próprias: `zoom-menos.svg`, `zoom-mais.svg`, `ajustar-largura.svg`, `grade-ativa.svg`, `grade-inativa.svg`, `atualizar.svg`, `salvar-pdf.svg`, `imprimir-normal.svg`, `fechar.svg` e `cancelar.svg`;
+- o build de staging passou a copiar `assets/editor-pdf-buttons/` integralmente para `dist-staging/assets/editor-pdf-buttons/`;
+- o workflow de validação do bundle agora exige explicitamente a existência dos assets principais dentro de `dist-staging` e observa mudanças em `assets/editor-pdf-buttons/**`;
+- `testing/browser/serve-staging.mjs` passou a servir `.svg` com MIME `image/svg+xml`;
+- o Playwright ganhou um teste real que abre os assets no servidor de staging e verifica que os botões têm `background-image` apontando para `/assets/editor-pdf-buttons/`, inclusive o estado ativo de Organizar;
+- o CSS foi cache-bustado para `documents.css?v=20260916-8` e o Service Worker para `CACHE_VERSION=20260916-9`.
+
+Validação:
+- primeira tentativa do novo teste falhou de forma útil: **58 casos** acusaram 404 dos assets, confirmando que o problema estava no empacotamento do staging, não na geometria dos botões;
+- após corrigir o bundle e o MIME, o head funcional `5e0a849254ba838e62f1077ed91ac3749cda87f4` ficou com **25/25 check-runs verdes**;
+- **PDF.js real em Chromium: sucesso**;
+- Playwright: **78 casos — 75 passed / 3 skipped esperados**;
+- o cenário `assets visuais dos botões carregam no navegador` passou em **934 ms no desktop** e **1,0 s no mobile**;
+- Cloudflare Pages publicou o candidato com sucesso no deployment `5fb57b66-760a-4ddf-8583-64f3628aa69d`;
+- `main` vigente durante a correção: `48ac90fc254fd8c5d0cd479fd38883f5da17f151`; nenhuma alteração em `main`, produção ou Google Drive.
+
+Decisão:
+- **manter assets individuais** é a solução vigente. A folha `assets/Botões_Editor_PDF.png` pode permanecer como fonte visual original, mas não é mais necessária para renderizar os controles no staging/runtime;
+- não reintroduzir sprite CSS/recortes da folha enquanto não houver motivo técnico forte.
+
+**Gate atual:** reteste humano visual no alias de staging. Confirmar que os gráficos aparecem de fato e avaliar apenas tamanho/alinhamento/estética dos botões.
+
+**Próxima ação exata:** fazer **Ctrl+F5** em `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/` e conferir Zoom −/+, Ajustar largura, Organizar, Atualizar, Salvar PDF, Imprimir, Fechar e Cancelar. Se estiver visualmente aprovado, retomar somente a confirmação final da fidelidade do PDF exportado/reaberto para encerrar a 3C.6/Fase 3.
 
 ## 3C.6 — correção do kit visual dos botões após reteste humano — 16/09/2026
 
