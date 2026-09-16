@@ -1339,6 +1339,7 @@
       });
       if (session !== state.editorSession) return false;
       state.pendingMergeItem = null;
+      state.pendingMergeFiles = [];
       syncEditorControls();
       refreshPdfListActions();
       const rebuilt = await buildEditorPreview({
@@ -1629,7 +1630,7 @@
     setEditorWorkspaceMode('merge');
     syncEditorControls();
     refreshPdfListActions();
-    setEditorStatus('Selecione outro PDF na lista da Central; depois escolha a posição no painel.', 'success');
+    setEditorStatus('Selecione outro PDF na lista da Central ou use “Adicionar PDF ou imagem”; depois escolha a posição e confirme em Unir.', 'success');
     const candidate = [...els.list.querySelectorAll('[data-index]')].find((button) => {
       const item = state.items[Number(button.dataset.index)];
       return item?.isPdf && !editorContainsItem(item);
@@ -2319,6 +2320,8 @@
   els.editorOrganize?.addEventListener('click', () => {
     if (!state.editorSession || state.editorBusy) return;
     state.pendingMergeItem = null;
+    state.pendingMergeFiles = [];
+    if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
     state.selectedObjectId = '';
     setEditorWorkspaceMode('organize');
     syncEditorControls();
