@@ -41,7 +41,7 @@ test('backend da Agenda exige sessão e capacidade Telemedicina', () => {
 test('Agenda não carrega observabilidade em uma tela que contém nomes de pacientes', () => {
   const html = read('agenda/index.html');
   assert.match(html, /Agenda DigSaúde/);
-  assert.match(html, /js\/agenda\.js\?v=20260916-1/);
+  assert.match(html, /js\/agenda\.js\?v=20260916-2/);
   assert.doesNotMatch(html, /portal-observability|posthog|umami/i);
   assert.doesNotMatch(html, /portal-performance\.js/);
 });
@@ -124,4 +124,42 @@ test('sincronizador automático usa chip compacto no canto inferior esquerdo ap�
   assert.match(source, /mouseenter/);
   assert.match(source, /Verificar agora/);
   assert.doesNotMatch(source, /'right:22px'/);
+});
+
+
+test('visualização da Agenda permanece na lista e recebe borda de visualizado', () => {
+  const source = read('js/agenda.js');
+  const html = read('agenda/index.html');
+  const css = read('css/agenda.css');
+
+  assert.match(source, /scope: 'all'/);
+  assert.match(source, /justRead: new Set\(\)/);
+  assert.match(source, /record\.unread \? 'is-unread' : \(record\.active \? 'is-read' : ''\)/);
+  assert.match(source, /state\.justRead\.add\(record\.sourceId\)/);
+  assert.match(source, /record\.active && \(record\.unread \|\| state\.justRead\.has\(record\.sourceId\)\)/);
+  assert.match(html, /class="agenda-stat is-active" type="button" data-agenda-scope="all"/);
+  assert.match(css, /\.agenda-card\.is-read/);
+  assert.match(css, /border-color: #79b7a0/);
+});
+
+test('memória de visualização é persistida fora do documento sincronizado', () => {
+  const source = read('worker/agenda.js');
+  const syncBlock = source.slice(
+    source.indexOf('async function syncRecords'),
+    source.indexOf('async function migrateEmbeddedReadMemory')
+  );
+  const markBlock = source.slice(
+    source.indexOf('async function markRead'),
+    source.indexOf('export function isAgendaApi')
+  );
+
+  assert.match(source, /READ_STATE_COLLECTION = 'telemedicine_digsaude_agenda_read_state'/);
+  assert.match(source, /readReceiptCollection/);
+  assert.match(source, /listReadMemory/);
+  assert.match(source, /migrateEmbeddedReadMemory/);
+  assert.match(source, /effectiveReadAt/);
+  assert.match(markBlock, /firestoreCommit/);
+  assert.match(markBlock, /readAt: now/);
+  assert.doesNotMatch(markBlock, /readBy:/);
+  assert.doesNotMatch(syncBlock, /READ_STATE_COLLECTION/);
 });

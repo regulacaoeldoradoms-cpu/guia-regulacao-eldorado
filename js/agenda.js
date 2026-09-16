@@ -28,7 +28,8 @@
 
   const state = {
     records: [],
-    scope: 'unread'
+    scope: 'all',
+    justRead: new Set()
   };
 
   els.userName.textContent = user.name || user.username || 'Usuário';
@@ -88,7 +89,7 @@
 
   function recordMatchesScope(record) {
     if (!record.active && !els.includeInactive.checked) return false;
-    if (state.scope === 'unread') return record.active && record.unread;
+    if (state.scope === 'unread') return record.active && (record.unread || state.justRead.has(record.sourceId));
     if (state.scope === 'today') return record.active && record.appointmentDate === localIsoDate(0);
     if (state.scope === 'tomorrow') return record.active && record.appointmentDate === localIsoDate(1);
     if (state.scope === 'week') return record.active && futureWithin(record.appointmentDate, 7);
@@ -134,6 +135,7 @@
       });
       record.unread = false;
       record.readAt = result?.readAt || new Date().toISOString();
+      state.justRead.add(record.sourceId);
       render();
       return true;
     } catch (error) {
@@ -146,7 +148,7 @@
     const card = document.createElement('article');
     card.className = [
       'agenda-card',
-      record.unread ? 'is-unread' : '',
+      record.unread ? 'is-unread' : (record.active ? 'is-read' : ''),
       record.active ? '' : 'is-inactive'
     ].filter(Boolean).join(' ');
     card.dataset.sourceId = record.sourceId;
@@ -245,6 +247,7 @@
     try {
       const payload = await auth.api('/api/agenda', { method: 'GET' });
       state.records = Array.isArray(payload?.records) ? payload.records : [];
+      state.justRead.clear();
       const lastSync = payload?.summary?.lastSyncAt || '';
       els.lastSync.textContent = lastSync
         ? `Última sincronização: ${formatDateTime(lastSync)}`
@@ -264,7 +267,9 @@
 
   document.querySelectorAll('[data-agenda-scope]').forEach((button) => {
     button.addEventListener('click', () => {
-      state.scope = button.dataset.agendaScope || 'all';
+      const nextScope = button.dataset.agendaScope || 'all';
+      if (nextScope !== state.scope) state.justRead.clear();
+      state.scope = nextScope;
       document.querySelectorAll('[data-agenda-scope]').forEach((item) => item.classList.toggle('is-active', item === button));
       render();
     });
