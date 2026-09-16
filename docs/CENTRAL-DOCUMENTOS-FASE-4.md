@@ -2,136 +2,138 @@
 
 Data de início: 16/09/2026  
 Branch: `codex/central-docs-drive-sync-phase4`  
-PR: `#201`  
-Base inicial: `main@ccaa15c0c7b46dd53f7f508635079131806144b8`
+PR: `#201`
 
 ## Objetivo
 
-Permitir que o PDF final produzido pelo editor seja salvo no Google Drive institucional de duas formas:
+Permitir que o PDF final produzido pelo editor seja sincronizado com o Google Drive institucional com confirmação real do Drive, detecção de conflito e possibilidade de recuperação.
 
-1. **Salvar como novo** — cria um novo PDF sem modificar o arquivo original.
-2. **Substituir original** — cria uma nova revisão do mesmo arquivo somente após validação de concorrência e possibilidade de recuperação.
+A intenção funcional consolidada é:
+- sincronização automática quando o PDF realmente muda;
+- nenhuma sincronização quando não há mudança;
+- botão **Forçar sincronização com Google Drive** como fallback/retry e indicador de estado;
+- sucesso visual somente depois da confirmação final do Google Drive.
 
-Nenhum estado visual pode declarar que o arquivo foi salvo antes da confirmação real do Google Drive.
+## Regras permanentes
 
-## Regras permanentes desta fase
-
-- sessão do Portal + capability `documents_edit` são revalidadas no Worker em toda operação de sincronização;
-- o navegador nunca recebe refresh token, client secret, access token Google permanente, fileId bruto ou URL de sessão resumable do Google;
-- conteúdo PDF, nome de arquivo, fileId, pasta, paciente e dados clínicos nunca entram no PostHog;
-- o PDF final deve ser validado antes do upload;
-- substituir exige comparação da `version` atual do Drive com a versão-base aberta pelo usuário;
-- conflito de versão interrompe a substituição sem upload;
-- a revisão binária anterior deve permanecer recuperável antes de substituir;
+- sessão do Portal + capability `documents_edit` são revalidadas no Worker;
+- refresh token, client secret, access token Google permanente, fileId bruto e URI resumable não chegam ao navegador;
+- conteúdo PDF, nome do arquivo, fileId, pasta, paciente e dados clínicos não entram no PostHog;
+- substituir exige comparação da `version` atual do Drive com a versão-base;
+- conflito de versão interrompe a sobrescrita;
+- a revisão anterior deve permanecer recuperável antes de substituir;
 - upload interrompido/indeterminado nunca é apresentado como “salvo”;
-- nenhum teste automatizado desta fase usa documento real da Regulação;
-- escrita real depende do feature gate `DOCUMENTS_DRIVE_WRITE_ENABLED` e permanece desligada até a homologação controlada.
+- testes automatizados usam somente dados sintéticos;
+- escrita real depende de `DOCUMENTS_DRIVE_WRITE_ENABLED` e permanece bloqueada até homologação controlada.
 
-## Decisão técnica confirmada em documentação oficial do Google Drive
-
-- uploads resumable são adequados também para arquivos pequenos e recomendados quando há risco de interrupção;
-- criar arquivo usa `files.create`;
-- atualizar conteúdo existente usa `files.update` com `PATCH` na solicitação inicial;
-- o envio de dados de uma sessão resumable usa `PUT`;
-- a URI da sessão resumable vem no cabeçalho `Location`;
-- revisões binárias podem receber `keepForever=true`, com limite de 200 revisões preservadas por arquivo;
-- o campo `version` do arquivo continua sendo a base de detecção de concorrência definida na arquitetura da Central.
-
-Referências oficiais verificadas em 16/09/2026:
-- Google Drive API — Upload file data;
-- Google Drive API — files.update;
-- Google Drive API — Manage file revisions;
-- Google Drive API — revisions.update.
-
-## Subfases
-
-### 4A — Contrato e preflight de sincronização — CONCLUÍDA
+## 4A — preflight e conflito — CONCLUÍDA
 
 Implementado:
 - metadados atuais do Drive por referência opaca;
 - validação de PDF, capacidade de edição e versão-base;
-- detecção de conflito antes de qualquer escrita;
+- detecção de conflito antes de escrita;
 - diferenciação entre `replace_pdf` e `save_copy`;
-- resposta técnica sanitizada sem fileId bruto, nome do arquivo, parentId ou revisionId;
-- testes com Google Drive totalmente mockado.
+- resposta sanitizada sem fileId bruto, nome, parentId ou revisionId;
+- testes com Google Drive mockado.
 
-Critério de aceite comprovado:
-- substituição com versão divergente termina em `DRIVE_VERSION_CONFLICT` e zero chamadas de upload;
+Critério comprovado:
+- versão divergente bloqueia `replace_pdf` com `DRIVE_VERSION_CONFLICT` e zero upload;
 - usuário sem `documents_edit` é bloqueado no Worker;
-- resposta não contém identificadores brutos do Drive nem nome do arquivo;
-- testes automatizados passam.
+- respostas não expõem identificadores brutos do Drive.
 
-### 4B — Transporte resumable + revisão recuperável — CONCLUÍDA TECNICAMENTE
+## 4B — resumable + revisão recuperável — CONCLUÍDA TECNICAMENTE
 
 Implementado:
-- sessão resumable iniciada no backend;
-- URI Google cifrada no backend e nunca entregue ao navegador;
-- sessões técnicas com expiração e limpeza;
+- sessão resumable criada no backend;
+- URI Google cifrada e nunca entregue ao navegador;
+- upload em blocos com `Content-Range`;
+- tratamento de `308` e consulta explícita de status;
+- assinatura `%PDF-` validada no primeiro bloco;
 - revisão anterior preservada com `keepForever=true` antes de `replace_pdf`;
-- envio em blocos com `Content-Range`;
-- tratamento de `308` e consulta explícita de status para retomada;
-- validação da assinatura `%PDF-` no primeiro bloco;
-- conteúdo PDF não é persistido em D1, Cache Storage do Worker ou logs;
 - conclusão somente após resposta final válida do Drive;
-- erro temporário/indeterminado não produz falso “salvo”;
-- testes de sucesso, interrupção, retomada, conflito e `save_copy` com Google mockado.
+- erro temporário/indeterminado não produz falso sucesso;
+- `save_copy` cria novo PDF sem modificar o original.
 
-Critério de aceite técnico comprovado:
-- nenhuma resposta de sucesso ocorre sem confirmação final do Drive;
-- falha/interrupção mantém o original e não gera falso positivo;
-- escrita continua bloqueada pelo feature gate fora da homologação 4D.
+## 4C — autosync + interface + telemetria — IMPLEMENTADA, AGUARDANDO HOMOLOGAÇÃO VISUAL FINAL
 
-### 4C — Interface do editor + telemetria técnica — CONCLUÍDA TECNICAMENTE
+### Gatilho de autosync
 
-Implementado:
-- ação explícita **Sincronizar com Google Drive** no espaço liberado pelo antigo “Atualizar PDF”;
-- escolha entre **Salvar como novo** e **Substituir original**;
-- campo de nome para a nova cópia;
-- estados de validação, geração, envio, retomada, conflito, falha e sucesso;
-- `Salvo no Google Drive` só aparece depois da confirmação final;
-- atualização do estado/cache documental apenas após confirmação real;
-- `drive_sync_started`, `drive_sync_completed` e `drive_sync_failed` apenas com propriedades técnicas allowlisted.
+A sessão do editor possui uma `revision`. O Portal observa essa revisão a cada 200 ms apenas para detectar que houve uma mutação real.
 
-Critério de aceite técnico comprovado:
-- feedback imediato e estado de progresso explícito;
-- somente confirmação final exibe sucesso;
-- telemetria não contém nome, referência, pasta, fileId, conteúdo ou dado clínico.
+Quando a revisão muda:
+- o botão entra em `pending`;
+- é iniciado um período ocioso de 1 segundo;
+- cada nova alteração reinicia essa espera;
+- depois de 1 segundo sem novas mudanças, é iniciada a sincronização automática da revisão mais recente.
 
-Validação do head técnico `b4fffce6c69ed85b2f69e613adc36dec9f3bf055`:
-- **25/25 workflows verdes**;
-- validação **Central de Documentos — Fases 1–4** verde;
-- governança e bundle de staging verdes;
-- **PDF.js real em Chromium** verde;
-- Playwright: **78 casos — 75 passed / 3 skipped esperados**, desktop e mobile.
+Se a revisão não mudar, não há upload. Navegação, zoom e permanência ociosa no documento não criam sincronizações.
 
-### 4D — Homologação controlada no Drive institucional — PENDENTE DE INTERAÇÃO HUMANA
+### Concorrência entre edições e upload
 
-Escopo:
-- validação humana com arquivo de teste deliberadamente escolhido;
-- primeiro **Salvar como novo**;
-- depois **Substituir original** somente em arquivo descartável e com confirmação explícita;
-- confirmar revisão recuperável e conflito;
-- confirmar `drive_sync_started/completed/failed` sem conteúdo documental;
-- registrar evidências técnicas sem dados do arquivo.
+Se o usuário editar novamente enquanto uma revisão anterior está sendo enviada:
+- o upload em andamento pode concluir;
+- essa confirmação não é tratada como confirmação da revisão mais nova;
+- a nova revisão permanece pendente;
+- uma nova sincronização é agendada automaticamente.
 
-Procedimento obrigatório:
-1. escolher um PDF descartável, sem dado de paciente e sem valor operacional;
+### Feedback visual do botão
+
+Assets aprovados e enviados pelo usuário:
+- `Drive_normal.png` → estado `normal`;
+- `Drive_pendente.png` → estado `pending`;
+- `Drive_sincronizando.png` → estado `syncing`;
+- `Drive_sincronizado_1seg.png` → estado `success` por 1 segundo;
+- `Drive_falha.png` → estado `failed`.
+
+Fluxo nominal:
+
+`normal → pending → syncing → success (1 s) → normal`
+
+Fluxo de erro:
+
+`normal → pending → syncing → failed`
+
+O botão usa `data-sync-state` para alternar os PNGs. O estado `success` dura `DRIVE_SYNC_SUCCESS_VISIBLE_MS = 1000` e só aparece após a confirmação final do Drive.
+
+### Forçar sincronização
+
+O botão permanece clicável como fallback/retry:
+- se uma tentativa automática falhou, o clique tenta novamente a revisão atual;
+- se há uma revisão pendente, força a tentativa sem esperar o debounce;
+- se a revisão atual já está confirmada, não cria artificialmente outra alteração no PDF.
+
+### Telemetria
+
+Mantidos somente:
+- `drive_sync_started`;
+- `drive_sync_completed`;
+- `drive_sync_failed`.
+
+As propriedades continuam restritas a dados técnicos allowlisted. Nome, conteúdo, referência, IDs brutos e dados clínicos não são enviados.
+
+### Staging
+
+O laboratório sintético:
+- inclui os cinco PNGs;
+- simula todos os estados sem API de produção;
+- reproduz a sequência de autosync a partir de uma mutação sintética;
+- continua bloqueando endpoints Google e `/api/documents/` no bundle de staging.
+
+## 4D — homologação controlada no Drive institucional — PENDENTE
+
+Pré-condição: 4C verde no navegador + aceite visual humano do staging.
+
+Procedimento:
+1. escolher PDF descartável, sem dado de paciente e sem valor operacional;
 2. habilitar temporariamente `DOCUMENTS_DRIVE_WRITE_ENABLED=true` no ambiente controlado;
-3. abrir o PDF pelo Portal e editar algo simples;
-4. executar **Salvar como novo** e confirmar a existência real do novo arquivo no Drive;
-5. abrir um arquivo descartável de teste e executar **Substituir original**;
-6. confirmar nova `version` e que a revisão anterior permaneceu recuperável;
-7. alterar o arquivo no Drive em paralelo, tentar substituir a versão antiga e confirmar que o conflito bloqueia a sobrescrita;
-8. conferir a telemetria técnica sem conteúdo sensível;
-9. registrar a homologação e decidir o estado final do feature gate.
-
-Critério de aceite da Fase 4:
-- `drive_sync_started/completed/failed` medidos;
-- save-copy e replace funcionam no Drive real;
-- conflito impede sobrescrita;
-- revisão anterior permanece recuperável;
-- nenhum salvamento é declarado antes da confirmação do Google Drive;
-- homologação humana concluída.
+3. abrir o PDF e fazer uma edição simples;
+4. confirmar `pending → syncing → success → normal` com sincronização automática;
+5. confirmar a alteração real no Drive;
+6. testar falha/retry com o botão de força;
+7. testar substituição com revisão anterior recuperável;
+8. provocar conflito de `version` e confirmar bloqueio da sobrescrita;
+9. conferir telemetria técnica sem conteúdo sensível;
+10. registrar homologação e decidir estado final do feature gate.
 
 ## Fora de escopo
 
@@ -144,8 +146,10 @@ Critério de aceite da Fase 4:
 
 ## Gate atual
 
-**4C reaberta após homologação visual humana.** O staging anterior publicava apenas o harness sintético da Fase 3 e não mostrava a UI nova. O harness foi corrigido para exibir **Forçar sincronização com Google Drive** sem realizar escrita real.
+A 4C foi reaberta após o usuário apontar que o staging anterior não mostrava a nova UI e esclarecer que a sincronização automática deveria ser o caminho normal.
 
-A intenção funcional esclarecida pelo usuário é: **sincronização automática como caminho normal; botão de força como fallback/retry quando a automática falhar**. A implementação atual ainda é manual, portanto não deve ser promovida para 4D nem mesclada como conclusão da Fase 4.
+Essa semântica agora está implementada: autosync somente após mutação real, 1 segundo de ociosidade, botão de força como fallback e cinco estados visuais usando os PNGs aprovados.
 
-Próximo gate: definir e implementar o gatilho seguro da sincronização automática, manter conflito por `version`, revisão recuperável e confirmação final do Google, e somente então retomar 4D com PDF descartável.
+O último bloqueio técnico observado foi um hit-test flutuante no teste Playwright desktop ao clicar no botão de rotação usado somente para provocar uma mutação. O comportamento funcional passou no mobile; o teste foi estabilizado com clique forçado apenas nesse acionador sintético.
+
+Próximo gate: workflow de navegador verde no head final + reteste visual humano no novo staging. Depois disso, retomar 4D com PDF descartável.
