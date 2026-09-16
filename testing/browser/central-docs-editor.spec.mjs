@@ -268,7 +268,14 @@ test.describe('Central de Documentos — superfície única do editor', () => {
 
     const panel = await page.locator('#editorMergePanel').boundingBox();
     const firstThumb = await page.locator('.portal-pdf-thumb-wrap').first().boundingBox();
-    expect(firstThumb.x + firstThumb.width).toBeLessThanOrEqual(panel.x + 2);
+    const viewport = page.viewportSize();
+    if (viewport.width <= 720) {
+      // No mobile o painel entra no fluxo, acima da grade, em vez de cobri-la.
+      expect(panel.y + panel.height).toBeLessThanOrEqual(firstThumb.y + 2);
+    } else {
+      // No desktop a grade reserva a faixa lateral ocupada pelo painel.
+      expect(firstThumb.x + firstThumb.width).toBeLessThanOrEqual(panel.x + 2);
+    }
 
     const chooserPromise = page.waitForEvent('filechooser');
     await page.locator('#editorMergeFileButton').click();
