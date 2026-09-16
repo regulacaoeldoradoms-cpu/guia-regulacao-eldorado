@@ -713,9 +713,51 @@
     }
   }
 
+
+  async function flattenRotationDiagnostics() {
+    const matrix = await editor.createSession(fixture.blob(), { label: 'Matriz 3C.6' });
+    const duplicateIndex = editor.duplicatePage(matrix, 0);
+    editor.rotatePage(matrix, duplicateIndex, 1);
+    editor.rotatePage(matrix, duplicateIndex, 1);
+    editor.rotatePage(matrix, duplicateIndex, 1);
+    editor.movePageTo(matrix, duplicateIndex, 3);
+
+    editor.rotatePage(matrix, 1, 1);
+    editor.rotatePage(matrix, 2, 1);
+
+    const labels = ['ROT0', 'ROT90', 'ROT180', 'ROT270'];
+    labels.forEach((label, pageIndex) => {
+      editor.addTextObject(matrix, pageIndex, {
+        x: .2,
+        y: .24,
+        width: .44,
+        height: .12,
+        text: label,
+        fontFamily: 'Helvetica',
+        fontSize: .035,
+        fontWeight: 'bold',
+        color: '#111111'
+      });
+    });
+    editor.setPageCrop(matrix, 3, { x: .08, y: .1, width: .8, height: .76 });
+
+    const structural = await editor.buildBlob(matrix);
+    const flattened = await editor.buildFlattenedBlob(matrix);
+    return {
+      pageModel: editor.pageModel(matrix).map((item) => ({
+        sourcePage: item.sourcePage,
+        rotation: item.rotation,
+        crop: item.crop
+      })),
+      structural: await diagnosePdfBlob(structural),
+      flattened: await diagnosePdfBlob(flattened)
+    };
+  }
+
   window.CentralDocsEditorHarness = Object.freeze({
     seedFlattenFixture,
-    flattenDiagnostics
+    flattenDiagnostics,
+    flattenRotationDiagnostics
   });
 
   async function exitEditor() {
