@@ -21,6 +21,7 @@ Arquitetura revisada em 09/09/2026.
 - `/medico/`: Guia Médico e pré-regulação Gemini.
 - `/recepcao/`: Conferência da Recepção.
 - `/telemedicina/`: acompanhamento longitudinal de teleconsultas, retornos e lembretes operacionais.
+- `/agenda/`: espelho operacional somente leitura dos agendamentos do DigSaúde para Telemedicina/Desenvolvedor; sincronização sem credenciais do sistema estadual.
 - `/documentos/`: Central de Documentos; navegação Google Drive e PDFs conforme função adicional/capabilities documentais independentes do perfil principal.
 - `/admin/usuarios/`: gestão de usuários conforme hierarquia.
 - `/admin/monitoramento/`: monitoramento disponível para Coordenação e Desenvolvedor.
@@ -35,9 +36,7 @@ Arquitetura revisada em 09/09/2026.
 
 ## Desempenho e cache seguro
 
-Todas as entradas ativas registram `js/portal-performance.js`. Depois da
-autenticação, a matriz única de `PortalTools` define quais páginas podem ser
-pré-carregadas para cada conta. O service worker mantém somente páginas e assets
+Em regra, as entradas ativas registram `js/portal-performance.js`. A rota `/agenda/` é exceção deliberada porque renderiza identidade clínica no DOM e, na V1, não carrega observabilidade nem pré-aquecimento instrumentado. Nas demais rotas, depois da autenticação, a matriz única de `PortalTools` define quais páginas podem ser pré-carregadas para cada conta. O service worker mantém somente páginas e assets
 públicos versionados; navegações já preparadas abrem pelo cache e são atualizadas em
 segundo plano.
 
