@@ -274,6 +274,12 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await expect(page.locator('#editorMergePanel')).toBeVisible();
     await expect(page.locator('#editorMergeFileButton')).toBeVisible();
 
+    await expect(page.locator('#editorMergePageField')).toBeHidden();
+    await page.locator('#editorMergePosition').selectOption('after-page');
+    await expect(page.locator('#editorMergePageField')).toBeVisible();
+    await page.locator('#editorMergePosition').selectOption('after-document');
+    await expect(page.locator('#editorMergePageField')).toBeHidden();
+
     const panel = await page.locator('#editorMergePanel').boundingBox();
     const thumbs = await page.locator('.portal-pdf-thumb-wrap').evaluateAll((nodes) => nodes.map((node) => {
       const rect = node.getBoundingClientRect();
@@ -310,6 +316,41 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
     await expect(page.locator('#editorMergePanel')).toBeHidden();
     await expect(page.locator('.portal-pdf-thumb')).toHaveCount(6);
+    finishMonitoring();
+  });
+
+  test('atalhos de teclado desfazem/refazem sem capturar campos de edição', async ({ page }) => {
+    const finishMonitoring = monitorPage(page);
+    await openLab(page);
+    await enterEditor(page);
+
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(3);
+    await page.locator('#editorBlank').click();
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
+
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(3);
+
+    await page.keyboard.press('Control+Shift+z');
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
+
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(3);
+    await page.keyboard.press('Control+y');
+    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
+
+    await page.locator('#editorMerge').click();
+    await page.locator('#editorMergePosition').selectOption('after-page');
+    const pageField = page.locator('#editorMergeAfterPage');
+    await pageField.fill('2');
+    await pageField.press('Control+z');
+    await expect(page.locator('.portal-pdf-thumb')).toHaveCount(4);
+
     finishMonitoring();
   });
 
