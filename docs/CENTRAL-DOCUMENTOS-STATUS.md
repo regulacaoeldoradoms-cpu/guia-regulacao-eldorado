@@ -31,11 +31,13 @@ Correção aplicada:
 
 Implementação funcional corrigida: `80e270a8e3388ab821145848ee14851c2f6e6ddb`.
 
+Head de integração/cache validado: `2d9a07a4c91c5119d812193cf142d577d6181d75` (`documents.js?v=20260916-6`, Service Worker `CACHE_VERSION=20260916-5`).
+
 Validação:
 - **25/25 check-runs verdes**;
 - **PDF.js real em Chromium: sucesso**;
 - Playwright: **76 casos — 73 passed / 3 skipped esperados**;
-- Cloudflare Pages: sucesso no deployment `1532704a-fd8b-4310-b7b2-c4958bd8f2a1`;
+- Cloudflare Pages: sucesso no deployment funcional e no build com cache renovado; deployment mais recente validado `fce02e30-7378-4f98-ab1d-bf5a47a98a5d`;
 - o runtime continua proibido de criar iframe/embed/object para a superfície documental;
 - o teste automatizado de impressão continua verificando que o Blob utilizado é o PDF final flatten.
 
@@ -269,7 +271,7 @@ Este bloco prevalece sobre os handoffs históricos abaixo.
 - **Subfase atual:** 3C.6 — flatten/exportação local; correções de UX pós-homologação implementadas e aguardando novo reteste humano.
 - **Última ação concluída:** corrigida a impressão após erro cross-origin do visualizador PDF nativo; runtime e laboratório agora renderizam o PDF final com PDF.js em janela same-origin antes de chamar `print()`.
 - **Branch atual:** `codex/central-docs-editor-superficie-unica`.
-- **Head funcional validado:** `80e270a8e3388ab821145848ee14851c2f6e6ddb`.
+- **Head funcional validado:** `80e270a8e3388ab821145848ee14851c2f6e6ddb`; head de integração/cache totalmente verde: `2d9a07a4c91c5119d812193cf142d577d6181d75`.
 - **PR atual:** #179 — manter aberto e sem merge até o encerramento da Fase 3.
 - **Main atual conhecida:** `73997b4d108dd0392173e93640310d70dd3eeccf`, já reconciliada nesta branch pelo merge `95c660d6e74c4aafdbb5d7be4c4383ac11d46995`.
 - **Checks e testes:** 25/25 checks verdes; Playwright 76 casos = 73 passed / 3 skipped esperados; PDF.js real em Chromium e Cloudflare Pages verdes.
