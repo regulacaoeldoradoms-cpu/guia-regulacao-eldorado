@@ -11,7 +11,7 @@ Subfase atual: **4D — homologação controlada no Drive institucional**.
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: **#201**  
 Base da fase: `main@ccaa15c0c7b46dd53f7f508635079131806144b8`  
-Head técnico validado: `b4fffce6c69ed85b2f69e613adc36dec9f3bf055`
+Head final de 4A–4C: `053e313dd45cab589a70c09b529b6c18a296b99f`
 
 ## Estado consolidado
 
@@ -71,7 +71,7 @@ Privacidade:
 
 ## Validação técnica final de 4A–4C
 
-Head: `b4fffce6c69ed85b2f69e613adc36dec9f3bf055`.
+Head: `053e313dd45cab589a70c09b529b6c18a296b99f`.
 
 Resultado:
 - **25/25 workflows do PR concluídos com sucesso**;
@@ -80,6 +80,8 @@ Resultado:
 - **Validar bundle de staging da Central: sucesso**;
 - **PDF.js real em Chromium: sucesso**;
 - Playwright: **78 casos — 75 passed / 3 skipped esperados**, em desktop e mobile;
+- Cloudflare Pages: **deploy de staging concluído com sucesso** no preview imutável `https://1d846e38.portal-regulacao-central-staging.pages.dev`;
+- alias da branch: `https://codex-central-docs-drive-syn.portal-regulacao-central-staging.pages.dev`;
 - nenhuma regressão conhecida em visualização, edição, flatten, exportação local, impressão, crop, desenho, objetos, reorganização ou permissões.
 
 ## Decisões e alternativas descartadas
