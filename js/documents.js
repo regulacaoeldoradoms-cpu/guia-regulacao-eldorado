@@ -509,14 +509,14 @@
     if (viewer?.setEditorCrops && editor?.pageModel) {
       viewer.setEditorCrops(editor.pageModel(session), {
         mode: state.editorMode === 'crop' ? 'crop' : 'none',
-        onChange(pageIndex, crop) {
+        onConfirm(pageIndex, crop) {
           if (session !== state.editorSession) return;
-          editor.setPageCrop?.(session, pageIndex, crop, { commit: false });
-        },
-        onCommit(pageIndex, crop) {
-          if (session !== state.editorSession) return;
-          editor.setPageCrop?.(session, pageIndex, crop, { commit: false });
+          if (!editor.setPageCrop?.(session, pageIndex, crop, { commit: false })) return;
           editor.commitObjectMutation(session);
+          syncEditorControls();
+        },
+        onCancel() {
+          if (session !== state.editorSession) return;
           syncEditorControls();
         },
         onReset(pageIndex) {

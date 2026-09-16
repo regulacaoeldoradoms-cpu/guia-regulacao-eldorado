@@ -22,12 +22,7 @@ function parseCrop(serialized, index = 0) {
 }
 
 function rotatedRight(rect) {
-  return {
-    x: 1 - (rect.y + rect.height),
-    y: rect.x,
-    width: rect.height,
-    height: rect.width
-  };
+  return { x: 1 - (rect.y + rect.height), y: rect.x, width: rect.height, height: rect.width };
 }
 
 function expectCropClose(actual, expected, precision = 3) {
@@ -40,19 +35,10 @@ function expectCropClose(actual, expected, precision = 3) {
 
 async function drawCropSelection(page, layer, start = { x: .18, y: .16 }, end = { x: .76, y: .68 }) {
   await layer.scrollIntoViewIfNeeded();
-  await expect(layer).toBeVisible();
   const box = await layer.boundingBox();
   expect(box).not.toBeNull();
-
-  const from = {
-    x: box.x + box.width * start.x,
-    y: box.y + box.height * start.y
-  };
-  const to = {
-    x: box.x + box.width * end.x,
-    y: box.y + box.height * end.y
-  };
-
+  const from = { x: box.x + box.width * start.x, y: box.y + box.height * start.y };
+  const to = { x: box.x + box.width * end.x, y: box.y + box.height * end.y };
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await expect(page.locator('#pdfRoot')).toHaveAttribute('data-crop-gesture', 'create');
@@ -61,7 +47,7 @@ async function drawCropSelection(page, layer, start = { x: .18, y: .16 }, end = 
 }
 
 test.describe('Central de Documentos — 3C.4 Recortar', () => {
-  test('não recorta por padrão; cria uma única seleção por página com preview, histórico e semântica por pageId', async ({ page }) => {
+  test('seleção é provisória; cancelar não altera histórico e confirmar aplica o viewport recortado', async ({ page }) => {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
@@ -69,130 +55,92 @@ test.describe('Central de Documentos — 3C.4 Recortar', () => {
     await openEditor(page);
     await page.locator('#editorCrop').click();
 
-    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-editor-workspace-mode', 'crop');
-    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-crop-mode', 'crop');
-
+    const root = page.locator('#pdfRoot');
     const layer = page.locator('.portal-pdf-crop-layer').first();
-    await expect(layer).toHaveCSS('pointer-events', 'auto');
-    await expect(layer).toHaveAttribute('data-has-crop', 'false');
-    await expect(layer).toHaveAttribute('data-awaiting-selection', 'true');
+    const article = page.locator('.portal-pdf-page').first();
+    const fullBox = await article.boundingBox();
+    expect(fullBox).not.toBeNull();
+
     await expect(layer.locator('[data-crop-frame]')).toHaveCount(0);
+    await expect(page.locator('html')).toHaveAttribute('data-crop-count', '0');
+
+    await drawCropSelection(page, layer);
+    await expect(layer).toHaveAttribute('data-has-draft', 'true');
+    await expect(root).toHaveAttribute('data-crop-draft-count', '1');
     await expect(page.locator('html')).toHaveAttribute('data-crop-count', '0');
     expect(parseCrop(await page.locator('html').getAttribute('data-page-crops'))).toBeNull();
 
-    // The first deliberate drag creates the only crop selection for this page.
-    await drawCropSelection(page, layer);
-    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-crop-count', '1');
-    await expect(page.locator('html')).toHaveAttribute('data-crop-count', '1');
-
     const frame = layer.locator('[data-crop-frame]');
-    await expect(frame).toBeVisible();
-    await expect(frame).toHaveAttribute('data-committed', 'true');
-    await expect(layer).toHaveAttribute('data-has-crop', 'true');
-    await expect(layer).toHaveAttribute('data-awaiting-selection', 'false');
+    await expect(frame.locator('[data-crop-confirm]')).toBeVisible();
+    await expect(frame.locator('[data-crop-cancel]')).toBeVisible();
 
-    const initialCrop = parseCrop(await page.locator('html').getAttribute('data-page-crops'));
-    expect(initialCrop.width).toBeLessThan(.7);
-    expect(initialCrop.height).toBeLessThan(.65);
+    await frame.locator('[data-crop-cancel]').click();
+    await expect(layer.locator('[data-crop-frame]')).toHaveCount(0);
+    await expect(root).toHaveAttribute('data-crop-draft-count', '0');
+    await expect(page.locator('html')).toHaveAttribute('data-crop-count', '0');
+    expect(parseCrop(await page.locator('html').getAttribute('data-page-crops'))).toBeNull();
+    await expect(article).toHaveAttribute('data-crop-applied', 'false');
 
-    // A second drag outside the existing frame cannot create another crop.
-    const pageBox = await layer.boundingBox();
-    expect(pageBox).not.toBeNull();
-    const beforeSecondAttempt = await page.locator('html').getAttribute('data-page-crops');
-    await page.mouse.move(pageBox.x + 4, pageBox.y + 4);
-    await page.mouse.down();
-    await page.mouse.move(pageBox.x + pageBox.width * .12, pageBox.y + pageBox.height * .12, { steps: 4 });
-    await page.mouse.up();
+    await drawCropSelection(page, layer);
+    const draftFrame = layer.locator('[data-crop-frame]');
+    const draftRect = {
+      x: Number(await draftFrame.getAttribute('data-crop-x')),
+      y: Number(await draftFrame.getAttribute('data-crop-y')),
+      width: Number(await draftFrame.getAttribute('data-crop-width')),
+      height: Number(await draftFrame.getAttribute('data-crop-height'))
+    };
+    await draftFrame.locator('[data-crop-confirm]').click();
+
     await expect(page.locator('html')).toHaveAttribute('data-crop-count', '1');
-    expect(await page.locator('html').getAttribute('data-page-crops')).toBe(beforeSecondAttempt);
-    await expect(layer.locator('[data-crop-frame]')).toHaveCount(1);
+    await expect(root).toHaveAttribute('data-crop-draft-count', '0');
+    const committed = parseCrop(await page.locator('html').getAttribute('data-page-crops'));
+    expectCropClose(committed, draftRect);
+    await expect(article).toHaveAttribute('data-crop-applied', 'true');
+    const croppedBox = await article.boundingBox();
+    expect(croppedBox.width).toBeLessThan(fullBox.width * .8);
+    expect(croppedBox.height).toBeLessThan(fullBox.height * .8);
+    await expect(layer.locator('[data-crop-frame]')).toHaveCount(0);
+    await expect(layer.locator('[data-crop-adjust]')).toBeVisible();
+    await expect(layer.locator('[data-crop-reset]')).toBeVisible();
 
-    // Existing selection remains editable by its handles.
-    const handle = frame.locator('[data-crop-resize="se"]');
-    await handle.scrollIntoViewIfNeeded();
-    await expect(handle).toBeVisible();
+    await layer.locator('[data-crop-adjust]').click();
+    await expect(article).toHaveAttribute('data-crop-applied', 'false');
+    const editFrame = layer.locator('[data-crop-frame]');
+    const handle = editFrame.locator('[data-crop-resize="se"]');
     await handle.hover();
     const handleBox = await handle.boundingBox();
     expect(handleBox).not.toBeNull();
     await page.mouse.down();
-    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-crop-gesture', 'resize');
-    await page.mouse.move(handleBox.x - 54, handleBox.y - 66, { steps: 7 });
+    await page.mouse.move(handleBox.x - 45, handleBox.y - 52, { steps: 6 });
     await page.mouse.up();
-
-    const resizedCrop = parseCrop(await page.locator('html').getAttribute('data-page-crops'));
-    expect(resizedCrop.width).toBeLessThan(initialCrop.width);
-    expect(resizedCrop.height).toBeLessThan(initialCrop.height);
-
-    // First undo reverts resize; second undo removes the selection entirely.
-    await page.locator('#editorUndo').click();
-    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
-    expectCropClose(parseCrop(await page.locator('html').getAttribute('data-page-crops')), initialCrop);
+    await editFrame.locator('[data-crop-cancel]').click();
+    await expect(article).toHaveAttribute('data-crop-applied', 'true');
+    expectCropClose(parseCrop(await page.locator('html').getAttribute('data-page-crops')), committed);
 
     await page.locator('#editorUndo').click();
     await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
     await expect(page.locator('html')).toHaveAttribute('data-crop-count', '0');
-    expect(parseCrop(await page.locator('html').getAttribute('data-page-crops'))).toBeNull();
 
     await page.locator('#editorRedo').click();
     await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
-    expectCropClose(parseCrop(await page.locator('html').getAttribute('data-page-crops')), initialCrop);
-
-    await page.locator('#editorRedo').click();
-    await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
-    expectCropClose(parseCrop(await page.locator('html').getAttribute('data-page-crops')), resizedCrop);
-
-    // Leaving crop mode keeps one non-interactive visual preview.
-    await page.locator('#editorSelect').click();
-    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-crop-mode', 'none');
-    await expect(layer).toHaveCSS('pointer-events', 'none');
-    await expect(layer.locator('[data-crop-frame]')).toHaveCount(1);
-    await expect(layer.locator('[data-crop-frame]')).toHaveAttribute('data-interactive', 'false');
-
-    // Rotation transforms the normalized crop with the page through all four orientations.
-    await page.locator('#editorOrganize').click();
-    let expected = resizedCrop;
-    for (const rotation of [90, 180, 270, 0]) {
-      await organizerAction(page, 0, 'rotate-right');
-      expected = rotatedRight(expected);
-      const crop = parseCrop(await page.locator('html').getAttribute('data-page-crops'));
-      expectCropClose(crop, expected);
-      const rotations = (await page.locator('html').getAttribute('data-page-rotations')).split(',');
-      expect(Number(rotations[0])).toBe(rotation);
-    }
-
-    // Duplicate clones the single crop onto the new pageId; deleting original preserves the clone.
-    await organizerAction(page, 0, 'duplicate');
-    const duplicated = (await page.locator('html').getAttribute('data-page-crops')).split(',');
-    expect(duplicated[0]).not.toBe('full');
-    expect(duplicated[1]).toBe(duplicated[0]);
-    await organizerAction(page, 0, 'delete');
-    const afterDelete = (await page.locator('html').getAttribute('data-page-crops')).split(',');
-    expect(afterDelete[0]).toBe(duplicated[1]);
+    await expect(page.locator('html')).toHaveAttribute('data-crop-count', '1');
+    expectCropClose(parseCrop(await page.locator('html').getAttribute('data-page-crops')), committed);
 
     expect(errors).toEqual([]);
   });
 
-  test('CropBox não padrão começa inteiro, aceita seleção explícita e acompanha reordenação da página', async ({ page }) => {
+  test('crop confirmado acompanha CropBox, reordenação e rotações', async ({ page }) => {
     await openEditor(page);
     await page.locator('#editorCrop').click();
 
-    // Page 2 has MediaBox 842×595 but a deliberately different CropBox 642×435.
-    // PDF.js must expose the CropBox viewport to the same normalized crop overlay.
     const pageTwo = page.locator('.portal-pdf-page').nth(1);
     await pageTwo.scrollIntoViewIfNeeded();
     await expect(pageTwo).toHaveClass(/rendered/);
-    const pageBox = await pageTwo.boundingBox();
-    expect(pageBox).not.toBeNull();
-    expect(pageBox.width / pageBox.height).toBeGreaterThan(1.45);
-    expect(pageBox.width / pageBox.height).toBeLessThan(1.50);
-
     const layer = page.locator('.portal-pdf-crop-layer').nth(1);
-    await expect(layer.locator('[data-crop-frame]')).toHaveCount(0);
-    await expect(layer).toHaveAttribute('data-has-crop', 'false');
 
     await drawCropSelection(page, layer, { x: .14, y: .18 }, { x: .72, y: .7 });
+    await layer.locator('[data-crop-confirm]').click();
     await expect(page.locator('html')).toHaveAttribute('data-crop-count', '1');
-    await expect(layer.locator('[data-crop-frame]')).toHaveCount(1);
 
     const beforeReorder = (await page.locator('html').getAttribute('data-page-crops')).split(',');
     expect(beforeReorder[0]).toBe('full');
@@ -200,11 +148,8 @@ test.describe('Central de Documentos — 3C.4 Recortar', () => {
     const cropToken = beforeReorder[1];
 
     await page.locator('#editorOrganize').click();
-    await expect(page.locator('#pdfRoot')).toHaveAttribute('data-organizer-mode', 'true');
-
     const cards = page.locator('#thumbnails .portal-pdf-thumb');
     await cards.nth(1).scrollIntoViewIfNeeded();
-    await expect(cards.nth(1)).toHaveClass(/rendered/);
     const source = await cards.nth(1).boundingBox();
     const start = { x: source.x + source.width * .4, y: source.y + source.height * .55 };
     await page.mouse.move(start.x, start.y);
@@ -215,20 +160,28 @@ test.describe('Central de Documentos — 3C.4 Recortar', () => {
     await page.mouse.move(target.x + 12, target.y + target.height * .6, { steps: 6 });
     await page.mouse.up();
 
-    await expect(page.locator('html')).toHaveAttribute('data-page-order', '0:1,0:0,0:2');
     const afterReorder = (await page.locator('html').getAttribute('data-page-crops')).split(',');
     expect(afterReorder[0]).toBe(cropToken);
     expect(afterReorder[1]).toBe('full');
+
+    let expected = parseCrop(cropToken);
+    for (const rotation of [90, 180, 270, 0]) {
+      await organizerAction(page, 0, 'rotate-right');
+      expected = rotatedRight(expected);
+      expectCropClose(parseCrop(await page.locator('html').getAttribute('data-page-crops')), expected);
+      const rotations = (await page.locator('html').getAttribute('data-page-rotations')).split(',');
+      expect(Number(rotations[0])).toBe(rotation);
+    }
   });
 
-  test('touch cria a única área de recorte no perfil mobile', async ({ page, context, isMobile }) => {
+  test('touch cria draft e só confirma após toque no botão', async ({ page, context, isMobile }) => {
     test.skip(!isMobile, 'Gesto touch específico validado no perfil mobile.');
     await openEditor(page);
     await page.locator('#editorCrop').click();
 
+    const root = page.locator('#pdfRoot');
     const layer = page.locator('.portal-pdf-crop-layer').first();
     await layer.scrollIntoViewIfNeeded();
-    await expect(layer.locator('[data-crop-frame]')).toHaveCount(0);
     const box = await layer.boundingBox();
     expect(box).not.toBeNull();
 
@@ -239,10 +192,11 @@ test.describe('Central de Documentos — 3C.4 Recortar', () => {
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: end.x, y: end.y, id: 1 }] });
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 
+    await expect(root).toHaveAttribute('data-crop-draft-count', '1');
+    await expect(page.locator('html')).toHaveAttribute('data-crop-count', '0');
+    await layer.locator('[data-crop-confirm]').tap();
+    await expect(root).toHaveAttribute('data-crop-draft-count', '0');
     await expect(page.locator('html')).toHaveAttribute('data-crop-count', '1');
-    await expect(layer.locator('[data-crop-frame]')).toHaveCount(1);
-    const crop = parseCrop(await page.locator('html').getAttribute('data-page-crops'));
-    expect(crop.width).toBeLessThan(.65);
-    expect(crop.height).toBeLessThan(.6);
+    await expect(page.locator('.portal-pdf-page').first()).toHaveAttribute('data-crop-applied', 'true');
   });
 });

@@ -601,7 +601,9 @@
       pendingScale: 0,
       pendingGeneration: 0,
       renderedScale: 0,
-      renderGeneration: 0
+      renderGeneration: 0,
+      fullPageWidth: 0,
+      fullPageHeight: 0
     };
     session.pages.set(pageNumber, record);
     return record;
@@ -697,6 +699,84 @@
     return { x: 0, y: 0, width: 1, height: 1 };
   }
 
+  function cropRectsEqual(a, b) {
+    const left = normalizeCropRect(a);
+    const right = normalizeCropRect(b);
+    if (!left || !right) return !left && !right;
+    return ['x', 'y', 'width', 'height'].every((key) => Math.abs(left[key] - right[key]) < 0.000001);
+  }
+
+  function cropDraftForPage(session, pageNumber) {
+    return normalizeCropRect(session?.cropDrafts?.get?.(Number(pageNumber)));
+  }
+
+  function setCropDraft(session, pageNumber, crop) {
+    if (!session?.cropDrafts) session.cropDrafts = new Map();
+    const normalized = normalizeCropRect(crop);
+    if (normalized) session.cropDrafts.set(Number(pageNumber), { ...normalized });
+    else session.cropDrafts.delete(Number(pageNumber));
+    return normalized;
+  }
+
+  function clearCropDraft(session, pageNumber) {
+    session?.cropDrafts?.delete?.(Number(pageNumber));
+  }
+
+  function applyPageCropViewport(record, crop) {
+    if (!record?.container || !record.canvas || !record.objectLayer) return;
+    const fullWidth = Math.max(1, Number(record.fullPageWidth || 0));
+    const fullHeight = Math.max(1, Number(record.fullPageHeight || 0));
+    const rect = normalizeCropRect(crop);
+
+    const resetContent = (element, { canvas = false } = {}) => {
+      if (!element) return;
+      element.style.removeProperty('position');
+      element.style.removeProperty('inset');
+      element.style.removeProperty('left');
+      element.style.removeProperty('top');
+      element.style.removeProperty('right');
+      element.style.removeProperty('bottom');
+      if (canvas) {
+        element.style.width = '100%';
+        element.style.height = '100%';
+      } else {
+        element.style.removeProperty('width');
+        element.style.removeProperty('height');
+      }
+    };
+
+    if (!rect || !(record.fullPageWidth > 0) || !(record.fullPageHeight > 0)) {
+      record.container.dataset.cropApplied = 'false';
+      if (record.fullPageWidth > 0) record.container.style.setProperty('--page-width', `${Math.ceil(fullWidth)}px`);
+      if (record.fullPageWidth > 0 && record.fullPageHeight > 0) {
+        record.container.style.aspectRatio = `${fullWidth} / ${fullHeight}`;
+      }
+      resetContent(record.canvas, { canvas: true });
+      resetContent(record.objectLayer);
+      return;
+    }
+
+    record.container.dataset.cropApplied = 'true';
+    record.container.style.setProperty('--page-width', `${Math.max(1, Math.ceil(fullWidth * rect.width))}px`);
+    record.container.style.aspectRatio = `${Math.max(1, fullWidth * rect.width)} / ${Math.max(1, fullHeight * rect.height)}`;
+
+    const left = -(rect.x / rect.width) * 100;
+    const top = -(rect.y / rect.height) * 100;
+    const width = 100 / rect.width;
+    const height = 100 / rect.height;
+
+    for (const element of [record.canvas, record.objectLayer]) {
+      element.style.position = 'absolute';
+      element.style.inset = 'auto';
+      element.style.left = `${left}%`;
+      element.style.top = `${top}%`;
+      element.style.right = 'auto';
+      element.style.bottom = 'auto';
+      element.style.width = `${width}%`;
+      element.style.height = `${height}%`;
+    }
+  }
+
   function applyCropGeometry(element, crop) {
     const rect = normalizeCropRect(crop, fullCropRect());
     element.style.left = `${rect.x * 100}%`;
@@ -707,6 +787,7 @@
     element.dataset.cropY = String(rect.y);
     element.dataset.cropWidth = String(rect.width);
     element.dataset.cropHeight = String(rect.height);
+    element.classList.toggle('actions-above', rect.y + rect.height > 0.84);
   }
 
   function cropRectFromElement(element) {
@@ -718,6 +799,53 @@
     }, fullCropRect());
   }
 
+  function createCropDraftActions(frame, pageNumber) {
+    const actions = document.createElement('div');
+    actions.className = 'portal-pdf-crop-actions';
+    actions.dataset.cropActions = 'true';
+
+    const confirm = document.createElement('button');
+    confirm.type = 'button';
+    confirm.className = 'portal-pdf-crop-action portal-pdf-crop-action--confirm';
+    confirm.dataset.cropConfirm = 'true';
+    confirm.setAttribute('aria-label', `Confirmar recorte da página ${pageNumber}`);
+    confirm.textContent = '✓ Confirmar recorte';
+
+    const cancel = document.createElement('button');
+    cancel.type = 'button';
+    cancel.className = 'portal-pdf-crop-action portal-pdf-crop-action--cancel';
+    cancel.dataset.cropCancel = 'true';
+    cancel.setAttribute('aria-label', `Cancelar seleção de recorte da página ${pageNumber}`);
+    cancel.textContent = '✕ Cancelar';
+
+    actions.append(confirm, cancel);
+    frame.appendChild(actions);
+  }
+
+  function createConfirmedCropActions(layer, pageNumber) {
+    const actions = document.createElement('div');
+    actions.className = 'portal-pdf-crop-confirmed-actions';
+
+    const adjust = document.createElement('button');
+    adjust.type = 'button';
+    adjust.className = 'portal-pdf-crop-confirmed-action';
+    adjust.dataset.cropAdjust = 'true';
+    adjust.title = 'Ajustar recorte';
+    adjust.setAttribute('aria-label', `Ajustar recorte da página ${pageNumber}`);
+    adjust.textContent = 'Ajustar';
+
+    const reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'portal-pdf-crop-confirmed-action portal-pdf-crop-confirmed-action--reset';
+    reset.dataset.cropReset = 'true';
+    reset.title = 'Remover recorte desta página';
+    reset.setAttribute('aria-label', `Remover recorte da página ${pageNumber}`);
+    reset.textContent = '↺';
+
+    actions.append(adjust, reset);
+    layer.appendChild(actions);
+  }
+
   function renderCropForPage(session, pageNumber) {
     const record = session.pages.get(Number(pageNumber));
     const layer = record?.cropLayer;
@@ -726,44 +854,43 @@
 
     const entry = cropEntryForPage(session, pageNumber);
     const committed = normalizeCropRect(entry?.crop);
+    const draft = cropDraftForPage(session, pageNumber);
     const interactive = String(session.cropMode || 'none') === 'crop';
+    const editingDraft = interactive && Boolean(draft);
+
     layer.dataset.cropMode = interactive ? 'crop' : 'none';
     layer.dataset.hasCrop = committed ? 'true' : 'false';
-    layer.dataset.awaitingSelection = interactive && !committed ? 'true' : 'false';
+    layer.dataset.hasDraft = draft ? 'true' : 'false';
+    layer.dataset.awaitingSelection = interactive && !committed && !draft ? 'true' : 'false';
 
-    // Empty means genuinely uncropped. Do not show a preselected inset frame:
-    // the first crop is created only when the user drags a rectangle on the page.
-    if (!committed) return;
+    applyPageCropViewport(record, editingDraft ? null : committed);
 
-    const frame = document.createElement('div');
-    frame.className = 'portal-pdf-crop-frame';
-    frame.dataset.cropFrame = 'true';
-    frame.dataset.pageNumber = String(pageNumber);
-    frame.dataset.interactive = interactive ? 'true' : 'false';
-    frame.dataset.committed = 'true';
-    frame.tabIndex = interactive ? 0 : -1;
-    frame.setAttribute('aria-label', `Área mantida da página ${pageNumber}`);
-    applyCropGeometry(frame, committed);
+    if (draft) {
+      const frame = document.createElement('div');
+      frame.className = 'portal-pdf-crop-frame';
+      frame.dataset.cropFrame = 'true';
+      frame.dataset.pageNumber = String(pageNumber);
+      frame.dataset.interactive = interactive ? 'true' : 'false';
+      frame.dataset.committed = 'false';
+      frame.tabIndex = interactive ? 0 : -1;
+      frame.setAttribute('aria-label', `Seleção provisória de recorte da página ${pageNumber}`);
+      applyCropGeometry(frame, draft);
 
-    if (interactive) {
-      for (const handle of ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']) {
-        const node = document.createElement('span');
-        node.className = `portal-pdf-crop-handle portal-pdf-crop-handle--${handle}`;
-        node.dataset.cropResize = handle;
-        node.setAttribute('aria-hidden', 'true');
-        frame.appendChild(node);
+      if (interactive) {
+        for (const handle of ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']) {
+          const node = document.createElement('span');
+          node.className = `portal-pdf-crop-handle portal-pdf-crop-handle--${handle}`;
+          node.dataset.cropResize = handle;
+          node.setAttribute('aria-hidden', 'true');
+          frame.appendChild(node);
+        }
+        createCropDraftActions(frame, pageNumber);
       }
-      const reset = document.createElement('button');
-      reset.type = 'button';
-      reset.className = 'portal-pdf-crop-reset';
-      reset.dataset.cropReset = 'true';
-      reset.title = 'Remover recorte desta página';
-      reset.setAttribute('aria-label', `Remover recorte da página ${pageNumber}`);
-      reset.textContent = '↺';
-      frame.appendChild(reset);
+      layer.appendChild(frame);
+      return;
     }
 
-    layer.appendChild(frame);
+    if (committed && interactive) createConfirmedCropActions(layer, pageNumber);
   }
 
   function renderEditorCrops(session) {
@@ -773,6 +900,7 @@
     }
     session.root.dataset.cropMode = String(session.cropMode || 'none');
     session.root.dataset.cropCount = String((session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length);
+    session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
     return true;
   }
 
@@ -782,7 +910,7 @@
 
     const pointerdown = (event) => {
       if (!isCurrentSession(session) || session.organizerMode || String(session.cropMode || '') !== 'crop') return;
-      if (event.target.closest?.('[data-crop-reset]')) return;
+      if (event.target.closest?.('[data-crop-actions], [data-crop-reset], [data-crop-adjust]')) return;
 
       const frame = event.target.closest?.('[data-crop-frame]');
       const layer = frame?.closest('.portal-pdf-crop-layer') || event.target.closest?.('.portal-pdf-crop-layer');
@@ -792,10 +920,8 @@
       if (!(pageNumber > 0)) return;
       const entry = cropEntryForPage(session, pageNumber);
       const committed = normalizeCropRect(entry?.crop);
-
-      // One crop maximum per page. Once it exists, a drag outside the frame
-      // must not create a second selection; only the existing frame can move/resize.
-      if (!frame && committed) return;
+      const draft = cropDraftForPage(session, pageNumber);
+      if (!frame && (committed || draft)) return;
 
       const rect = layer.getBoundingClientRect();
       if (!(rect.width > 0) || !(rect.height > 0)) return;
@@ -843,15 +969,12 @@
         const y = Math.min(drag.startPoint.y, currentY);
         const width = Math.abs(currentX - drag.startPoint.x);
         const height = Math.abs(currentY - drag.startPoint.y);
-
-        // A click or tiny accidental movement is not a crop selection.
         if (width < minSize || height < minSize) return;
         crop = normalizeCropRect({ x, y, width, height });
       } else {
         const dx = (event.clientX - drag.startX) / drag.layerWidth;
         const dy = (event.clientY - drag.startY) / drag.layerHeight;
         let { x, y, width, height } = drag.start;
-
         if (drag.kind === 'move') {
           x = Math.min(1 - width, Math.max(0, x + dx));
           y = Math.min(1 - height, Math.max(0, y + dy));
@@ -873,14 +996,14 @@
       }
 
       if (!crop) return;
-      const entry = cropEntryForPage(session, drag.pageNumber);
-      if (entry) entry.crop = { ...crop };
+      const wasDraft = Boolean(cropDraftForPage(session, drag.pageNumber));
+      setCropDraft(session, drag.pageNumber, crop);
       drag.changed = true;
       session.root.dataset.cropGestureMoved = 'true';
-      session.onCropChange?.(drag.pageIndex, crop);
+      session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
 
       let frame = pagesRoot.querySelector(`.portal-pdf-crop-frame[data-page-number="${drag.pageNumber}"]`);
-      if (!frame) {
+      if (!frame || !wasDraft) {
         renderCropForPage(session, drag.pageNumber);
         frame = pagesRoot.querySelector(`.portal-pdf-crop-frame[data-page-number="${drag.pageNumber}"]`);
       }
@@ -893,37 +1016,78 @@
       session.cropDrag = null;
       session.root.dataset.cropGesture = '';
       session.root.dataset.cropGestureMoved = drag.changed ? 'true' : 'false';
-      if (!drag.changed) {
-        renderCropForPage(session, drag.pageNumber);
-        return;
-      }
-      const entry = cropEntryForPage(session, drag.pageNumber);
-      const crop = normalizeCropRect(entry?.crop, drag.start);
-      session.onCropCommit?.(drag.pageIndex, crop);
-      renderCropForPage(session, drag.pageNumber);
-      session.root.dataset.cropCount = String(
-        (session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length
-      );
+      if (drag.changed) renderCropForPage(session, drag.pageNumber);
     };
 
     const click = (event) => {
       if (!isCurrentSession(session) || String(session.cropMode || '') !== 'crop') return;
+
+      const confirm = event.target.closest?.('[data-crop-confirm]');
+      if (confirm) {
+        event.preventDefault();
+        event.stopPropagation();
+        const frame = confirm.closest('[data-crop-frame]');
+        const pageNumber = Number(frame?.dataset?.pageNumber || 0);
+        const draft = cropDraftForPage(session, pageNumber);
+        if (!(pageNumber > 0) || !draft) return;
+        const entry = cropEntryForPage(session, pageNumber);
+        const committed = normalizeCropRect(entry?.crop);
+        clearCropDraft(session, pageNumber);
+        if (!cropRectsEqual(committed, draft)) {
+          if (entry) entry.crop = { ...draft };
+          session.onCropConfirm?.(pageNumber - 1, { ...draft });
+        }
+        renderCropForPage(session, pageNumber);
+        session.root.dataset.cropCount = String((session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length);
+        session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
+        return;
+      }
+
+      const cancel = event.target.closest?.('[data-crop-cancel]');
+      if (cancel) {
+        event.preventDefault();
+        event.stopPropagation();
+        const frame = cancel.closest('[data-crop-frame]');
+        const pageNumber = Number(frame?.dataset?.pageNumber || 0);
+        if (!(pageNumber > 0)) return;
+        clearCropDraft(session, pageNumber);
+        session.onCropCancel?.(pageNumber - 1);
+        renderCropForPage(session, pageNumber);
+        session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
+        return;
+      }
+
+      const adjust = event.target.closest?.('[data-crop-adjust]');
+      if (adjust) {
+        event.preventDefault();
+        event.stopPropagation();
+        const layer = adjust.closest('.portal-pdf-crop-layer');
+        const pageNumber = Number(layer?.dataset?.pageNumber || 0);
+        const entry = cropEntryForPage(session, pageNumber);
+        const committed = normalizeCropRect(entry?.crop);
+        if (!(pageNumber > 0) || !committed) return;
+        setCropDraft(session, pageNumber, committed);
+        renderCropForPage(session, pageNumber);
+        session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
+        return;
+      }
+
       const reset = event.target.closest?.('[data-crop-reset]');
       if (!reset) return;
       event.preventDefault();
       event.stopPropagation();
-      const frame = reset.closest('[data-crop-frame]');
-      const pageNumber = Number(frame?.dataset?.pageNumber || 0);
+      const layer = reset.closest('.portal-pdf-crop-layer');
+      const pageNumber = Number(layer?.dataset?.pageNumber || 0);
       if (!(pageNumber > 0)) return;
       const entry = cropEntryForPage(session, pageNumber);
       if (entry) entry.crop = null;
+      clearCropDraft(session, pageNumber);
       session.onCropReset?.(pageNumber - 1);
       renderCropForPage(session, pageNumber);
       session.root.dataset.cropCount = String((session.editorCrops || []).filter((item) => normalizeCropRect(item.crop)).length);
+      session.root.dataset.cropDraftCount = String(session.cropDrafts?.size || 0);
     };
 
-    // Pointerdown is captured before page/object layers can consume the gesture.
-    // Move/up live on window so selection/resize keeps tracking across the page.
     session.cropHandlers = { pointerdown, click };
     for (const [type, handler] of Object.entries(session.cropHandlers)) {
       pagesRoot.addEventListener(type, handler, type === 'pointerdown');
@@ -940,9 +1104,12 @@
     session.editorCrops = Array.isArray(crops)
       ? crops.map((item) => ({ ...item, crop: normalizeCropRect(item?.crop) }))
       : [];
-    session.cropMode = String(options.mode || 'none') === 'crop' ? 'crop' : 'none';
-    session.onCropChange = typeof options.onChange === 'function' ? options.onChange : session.onCropChange;
-    session.onCropCommit = typeof options.onCommit === 'function' ? options.onCommit : session.onCropCommit;
+    const nextMode = String(options.mode || 'none') === 'crop' ? 'crop' : 'none';
+    session.cropMode = nextMode;
+    if (!session.cropDrafts) session.cropDrafts = new Map();
+    if (nextMode !== 'crop') session.cropDrafts.clear();
+    session.onCropConfirm = typeof options.onConfirm === 'function' ? options.onConfirm : session.onCropConfirm;
+    session.onCropCancel = typeof options.onCancel === 'function' ? options.onCancel : session.onCropCancel;
     session.onCropReset = typeof options.onReset === 'function' ? options.onReset : session.onCropReset;
     installCropHandlers(session);
     return renderEditorCrops(session);
@@ -1488,7 +1655,7 @@
       element.tabIndex = 0;
       element.setAttribute('aria-label', object.type === 'text' ? 'Caixa de texto' : 'Imagem inserida');
       if (session.selectedObjectId === object.id) element.classList.add('selected');
-      applyObjectGeometry(element, object, record.container.clientWidth || 760);
+      applyObjectGeometry(element, object, record.fullPageWidth || record.container.clientWidth || 760);
 
       if (object.type === 'text') {
         const content = document.createElement('div');
@@ -1522,7 +1689,7 @@
     const record = session.pages.get(Number(pageNumber));
     const layer = record?.objectLayer;
     if (!layer) return;
-    const width = record.container.clientWidth || 760;
+    const width = record.fullPageWidth || record.container.clientWidth || 760;
     for (const element of layer.querySelectorAll('.portal-pdf-object[data-object-id]')) {
       const object = objectForId(session, element.dataset.objectId);
       if (object) applyObjectGeometry(element, object, width);
@@ -2097,12 +2264,17 @@
     const pixelWidth = Math.max(1, Math.floor(viewport.width * outputScale));
     const pixelHeight = Math.max(1, Math.floor(viewport.height * outputScale));
 
+    record.fullPageWidth = viewport.width;
+    record.fullPageHeight = viewport.height;
     record.container.style.setProperty('--page-width', `${Math.ceil(viewport.width)}px`);
     record.container.style.aspectRatio = `${Math.max(1, viewport.width)} / ${Math.max(1, viewport.height)}`;
     record.canvas.width = pixelWidth;
     record.canvas.height = pixelHeight;
     record.canvas.style.width = '100%';
     record.canvas.style.height = '100%';
+    const cropEntry = cropEntryForPage(session, pageNumber);
+    const cropDraft = cropDraftForPage(session, pageNumber);
+    applyPageCropViewport(record, String(session.cropMode || 'none') === 'crop' && cropDraft ? null : cropEntry?.crop);
 
     const transform = outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0];
     record.loading.hidden = false;
@@ -2519,12 +2691,13 @@
       objectHandlers: null,
       objectWindowHandlers: null,
       editorCrops: [],
+      cropDrafts: new Map(),
       cropMode: 'none',
       cropDrag: null,
       cropHandlers: null,
       cropWindowHandlers: null,
-      onCropChange: null,
-      onCropCommit: null,
+      onCropConfirm: null,
+      onCropCancel: null,
       onCropReset: null,
       onObjectChange: null,
       onObjectCommit: null,

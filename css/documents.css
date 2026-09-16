@@ -997,6 +997,81 @@
   box-shadow: 0 0 0 9999px rgba(16, 33, 48, .28);
 }
 
+.portal-pdf-crop-actions {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
+.portal-pdf-crop-frame.actions-above .portal-pdf-crop-actions {
+  top: auto;
+  bottom: calc(100% + 10px);
+}
+
+.portal-pdf-crop-action,
+.portal-pdf-crop-confirmed-action {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid #c9d7e2;
+  border-radius: 9px;
+  background: #fff;
+  color: #24465f;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 800;
+  box-shadow: 0 5px 16px rgba(15, 43, 64, .18);
+  cursor: pointer;
+}
+
+.portal-pdf-crop-action--confirm {
+  border-color: #78b99a;
+  background: #eaf7f0;
+  color: #176b46;
+}
+
+.portal-pdf-crop-action--cancel {
+  border-color: #d7a3a3;
+  background: #fff3f3;
+  color: #9a3434;
+}
+
+.portal-pdf-crop-action:hover,
+.portal-pdf-crop-action:focus-visible,
+.portal-pdf-crop-confirmed-action:hover,
+.portal-pdf-crop-confirmed-action:focus-visible {
+  outline: 2px solid rgba(22, 132, 189, .25);
+  outline-offset: 1px;
+}
+
+.portal-pdf-crop-confirmed-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 8;
+  display: flex;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.portal-pdf-crop-confirmed-action {
+  min-height: 30px;
+  padding: 0 9px;
+  background: rgba(255,255,255,.96);
+}
+
+.portal-pdf-crop-confirmed-action--reset {
+  min-width: 34px;
+  padding: 0;
+  color: #0c628f;
+}
+
 .portal-pdf-crop-handle {
   position: absolute;
   width: 18px;

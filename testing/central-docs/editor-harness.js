@@ -164,12 +164,12 @@
     });
     viewer.setEditorCrops?.(editor.pageModel(state.session), {
       mode: state.mode === 'crop' ? 'crop' : 'none',
-      onChange(pageIndex, crop) {
-        editor.setPageCrop(state.session, pageIndex, crop, { commit: false });
-      },
-      onCommit(pageIndex, crop) {
-        editor.setPageCrop(state.session, pageIndex, crop, { commit: false });
+      onConfirm(pageIndex, crop) {
+        if (!editor.setPageCrop(state.session, pageIndex, crop, { commit: false })) return;
         editor.commitObjectMutation(state.session);
+        syncEditorState();
+      },
+      onCancel() {
         syncEditorState();
       },
       onReset(pageIndex) {
@@ -463,7 +463,7 @@
 
   function startCropMode() {
     setMode('crop');
-    elements.editorStatus.textContent = 'Recortar: arraste diretamente sobre a página para selecionar uma única área. Sem seleção, a página permanece inteira. Depois, mova a moldura ou use as alças; ↺ remove o recorte.';
+    elements.editorStatus.textContent = 'Recortar: arraste sobre a página, ajuste a seleção e use Confirmar recorte ou Cancelar. Só após confirmar o preview mostra apenas a área mantida; ↺ restaura a página.';
   }
 
   function startWriteMode() {
