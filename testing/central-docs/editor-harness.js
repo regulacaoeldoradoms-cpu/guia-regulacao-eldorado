@@ -1120,7 +1120,13 @@
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Delete' || !state.session || root.dataset.operationState === 'busy' || !state.selectedObjectId) return;
     const target = event.target instanceof Element ? event.target : null;
-    if (target?.closest('input, textarea, select, [contenteditable="true"], [role="textbox"]')) return;
+    if (target?.closest('textarea, select, [contenteditable="true"], [role="textbox"]')) return;
+    const focusedInput = target?.closest('input');
+    if (focusedInput) {
+      const type = String(focusedInput.getAttribute('type') || 'text').toLowerCase();
+      const nonEditingTypes = new Set(['file', 'hidden', 'button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color']);
+      if (!nonEditingTypes.has(type)) return;
+    }
     if (!selectedObject()) return;
     event.preventDefault();
     event.stopPropagation();
