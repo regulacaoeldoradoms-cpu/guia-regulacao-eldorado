@@ -23,16 +23,20 @@ A aba **Agendados** do DigSaúde é renderizada como uma tabela Filament/Livewir
 
 A V1 não trata endpoints internos do Livewire como API pública e não armazena credenciais do DigSaúde.
 
-## Fluxo de sincronização V1
+## Fluxo de sincronização V2 — automático enquanto o DigSaúde estiver aberto
 
 1. O usuário entra normalmente no DigSaúde com a conta institucional autorizada.
-2. Um userscript local adiciona o botão **Enviar Agenda ao Portal** na página de Consultas.
-3. O script lê somente as linhas da aba **Agendados** já renderizadas no navegador.
-4. O script abre `/agenda/sync/` no Portal e envia o snapshot por `postMessage`.
-5. A ponte do Portal aceita mensagens somente da origem `https://teleatendimento.saude.ms.gov.br`, valida a sessão do Portal e chama a API same-origin.
-6. O Worker persiste e compara os registros no Firestore.
+2. O userscript local adiciona **Ativar sincronização automática** à página de Consultas.
+3. Um clique consciente abre a ponte protegida `/agenda/sync/`; isso é necessário porque navegadores bloqueiam a criação silenciosa de janelas sem gesto do usuário.
+4. A ponte valida a sessão do Portal e permanece aberta; ela pode ser minimizada, mas não fechada enquanto a automação estiver ativa.
+5. A cada 15 minutos, o userscript faz um GET autenticado **somente no próprio domínio do DigSaúde** para `consultas?activeTab=Agendados`, com `credentials: include` e `cache: no-store`.
+6. A resposta HTML é interpretada em memória com `DOMParser`; a tela do DigSaúde em uso não é recarregada nem alterada.
+7. O script calcula uma assinatura local do snapshot. Se nada mudou desde a última sincronização confirmada, não envia novamente ao Portal.
+8. Quando há mudança — ou quando o usuário força uma verificação pelo botão — o snapshot é enviado à ponte por `postMessage`.
+9. A ponte aceita mensagens somente da origem oficial do DigSaúde, deduplica cada envio por `syncId`, valida a sessão do Portal e chama a API same-origin.
+10. O Worker compara e persiste os registros em lote no Firestore.
 
-A sessão, cookie, senha, token CSRF ou token de autenticação do DigSaúde não é coletado nem enviado ao Portal.
+A sessão, cookie, senha, token CSRF ou token de autenticação do DigSaúde não é coletado nem enviado ao Portal. O `credentials: include` é usado exclusivamente pelo navegador no GET same-origin do próprio DigSaúde; o userscript não lê nem exporta cookies.
 
 ## Integridade da sincronização
 
@@ -48,6 +52,8 @@ Estados principais:
 Registros que saem da aba Agendados não são apagados. Eles ficam inativos para preservar histórico operacional.
 
 O sincronizador somente considera um snapshot **completo** quando a quantidade de linhas lidas é igual ao contador da aba Agendados. Se houver mais registros do que a página carregada suporta, os itens recebidos podem ser atualizados, mas ausências não são interpretadas como remoção.
+
+Um snapshot completo com contador **0** é aceito como estado válido e pode desativar os registros anteriormente ativos. Um snapshot vazio sem essa comprovação é rejeitado para evitar apagar logicamente a fila por falha de carregamento.
 
 ## Campos armazenados
 
@@ -81,11 +87,13 @@ A página Agenda não carrega a camada de observabilidade do Portal. Nome de pac
 
 As respostas da API usam `Cache-Control: no-store`.
 
-## Limitação conhecida da V1
+## Limitações conhecidas da V2
 
-A V1 não faz login automático no DigSaúde e não monitora a conta quando nenhum navegador autorizado está aberto. A atualização é iniciada por um Técnico em Telemedicina enquanto estiver autenticado no DigSaúde.
+A V2 não faz login automático no DigSaúde e não monitora a conta quando o navegador autorizado está fechado. Para iniciar a automação em cada sessão de trabalho, o Técnico em Telemedicina precisa clicar uma vez em **Ativar sincronização automática** e manter a ponte do Portal aberta. Se a ponte for fechada, a automação pausa e exige reativação explícita.
 
-Monitoramento totalmente autônomo somente deve ser considerado se existir integração oficial ou credencial de serviço institucional apropriada. Não armazenar senha de usuário do DigSaúde no Portal como atalho.
+O intervalo de 15 minutos é uma escolha operacional para equilibrar atualização frequente e carga desnecessária. O userscript também verifica ao retornar à aba/janela se o intervalo já venceu.
+
+Monitoramento totalmente autônomo com navegador fechado somente deve ser considerado se existir integração oficial ou credencial de serviço institucional apropriada. Não armazenar senha de usuário do DigSaúde no Portal como atalho.
 
 ## Arquivos principais
 

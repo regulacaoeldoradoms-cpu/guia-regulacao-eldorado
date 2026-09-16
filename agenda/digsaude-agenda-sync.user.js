@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         Portal da Regulação - Sincronizar Agenda DigSaúde
 // @namespace    https://regulacaoeldoradoms.com.br/
-// @version      1.0.0
-// @description  Envia somente a lista visível de Agendados do DigSaúde para a Agenda protegida do Portal.
+// @version      1.1.0
+// @description  Sincroniza automaticamente a lista Agendados do DigSaúde com a Agenda protegida do Portal enquanto o DigSaúde estiver aberto.
 // @match        https://teleatendimento.saude.ms.gov.br/*/consultas*
+// @updateURL    https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-2
+// @downloadURL  https://regulacaoeldoradoms.com.br/agenda/digsaude-agenda-sync.user.js?v=20260916-2
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -14,11 +16,22 @@
   const PORTAL_ORIGIN = 'https://regulacaoeldoradoms.com.br';
   const BRIDGE_URL = PORTAL_ORIGIN + '/agenda/sync/';
   const BUTTON_ID = 'portal-agenda-sync-button';
-  const RESULT_TIMEOUT_MS = 5 * 60 * 1000;
+  const AUTO_INTERVAL_MS = 15 * 60 * 1000;
+  const RESULT_TIMEOUT_MS = 60 * 1000;
+  const BRIDGE_WATCH_MS = 15 * 1000;
+
   let portalWindow = null;
-  let pendingSnapshot = null;
+  let autoEnabled = false;
+  let autoTimer = null;
+  let bridgeWatchTimer = null;
   let retryTimer = null;
   let stopTimer = null;
+  let pendingSnapshot = null;
+  let pendingFingerprint = '';
+  let pendingSyncId = '';
+  let lastFingerprint = '';
+  let lastCheckAt = 0;
+  let syncInFlight = false;
 
   function compact(value) {
     return String(value || '').replace(/\s+/g, ' ').trim();
@@ -61,25 +74,18 @@
     return compact(checkbox?.value || '');
   }
 
-  function activeAgendadosTab() {
-    const buttons = [...document.querySelectorAll('.fi-tabs-item')];
-    return buttons.find((button) => {
-      const label = compact(button.querySelector('.fi-tabs-item-label')?.textContent);
-      const selected = button.classList.contains('fi-active') || button.getAttribute('aria-selected') === 'true' || button.hasAttribute('aria-selected');
-      return label === 'Agendados' && selected;
-    }) || null;
-  }
-
-  function agendadosTotal() {
-    const buttons = [...document.querySelectorAll('.fi-tabs-item')];
-    const button = buttons.find((item) => compact(item.querySelector('.fi-tabs-item-label')?.textContent) === 'Agendados');
-    const badge = compact(button?.querySelector('.fi-badge')?.textContent);
+  function agendadosTotal(root = document) {
+    const buttons = [...root.querySelectorAll('.fi-tabs-item')];
+    const tab = buttons.find((item) => compact(item.querySelector('.fi-tabs-item-label')?.textContent) === 'Agendados');
+    if (!tab) return null;
+    const badge = compact(tab.querySelector('.fi-badge')?.textContent);
+    if (!badge) return null;
     const total = Number.parseInt(badge.replace(/\D/g, ''), 10);
-    return Number.isFinite(total) ? total : 0;
+    return Number.isFinite(total) ? total : null;
   }
 
-  function extractRows() {
-    const rows = [...document.querySelectorAll('tr.fi-ta-row[wire\\:key*=".table.records."]')];
+  function extractRows(root = document) {
+    const rows = [...root.querySelectorAll('tr.fi-ta-row[wire\\:key*=".table.records."]')];
     const output = [];
     const seen = new Set();
 
@@ -89,7 +95,7 @@
       const cells = [...row.querySelectorAll(':scope > td')];
       if (cells.length < 10) continue;
 
-      const record = {
+      output.push({
         sourceId,
         requestedAt: requestedAt(cells[1]?.textContent),
         specialty: compact(cells[2]?.textContent),
@@ -104,29 +110,64 @@
         appointmentType: compact(cells[11]?.textContent),
         facility: compact(cells[12]?.textContent),
         status: compact(cells[13]?.textContent)
-      };
-      output.push(record);
+      });
       seen.add(sourceId);
     }
+
     return output;
   }
 
-  function snapshot() {
-    if (!activeAgendadosTab()) {
-      throw new Error('Abra a aba Agendados antes de sincronizar.');
+  function snapshotFrom(root) {
+    const records = extractRows(root);
+    const declaredTotal = agendadosTotal(root);
+
+    if (declaredTotal === null && !records.length) {
+      throw new Error('Não foi possível identificar a lista Agendados.');
     }
-    const records = extractRows();
-    if (!records.length) {
-      throw new Error('Nenhum agendamento foi encontrado na tabela.');
+    if (declaredTotal !== null && declaredTotal > 0 && !records.length) {
+      throw new Error('A lista Agendados não terminou de carregar.');
     }
-    const totalCount = agendadosTotal();
+
+    const totalCount = declaredTotal === null ? records.length : declaredTotal;
     return {
       source: 'digsaude-agendados-v1',
       capturedAt: new Date().toISOString(),
-      totalCount: totalCount || records.length,
-      complete: Boolean(totalCount && totalCount === records.length),
+      totalCount,
+      complete: declaredTotal !== null && declaredTotal === records.length,
       records
     };
+  }
+
+  function agendadosUrl() {
+    const url = new URL(window.location.href);
+    url.search = '';
+    url.searchParams.set('activeTab', 'Agendados');
+    return url.toString();
+  }
+
+  async function fetchSnapshot() {
+    const response = await fetch(agendadosUrl(), {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { Accept: 'text/html' }
+    });
+
+    if (!response.ok || /\/login(?:\?|$)/i.test(new URL(response.url).pathname)) {
+      throw new Error('A sessão do DigSaúde expirou. Entre novamente no sistema.');
+    }
+
+    const html = await response.text();
+    const root = new DOMParser().parseFromString(html, 'text/html');
+    return snapshotFrom(root);
+  }
+
+  function fingerprint(snapshot) {
+    return JSON.stringify({
+      totalCount: snapshot.totalCount,
+      complete: snapshot.complete,
+      records: snapshot.records
+    });
   }
 
   function button() {
@@ -140,7 +181,11 @@
     element.dataset.tone = tone;
   }
 
-  function stopRetry() {
+  function clock(value = new Date()) {
+    return value.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function stopDeliveryRetry() {
     if (retryTimer) window.clearInterval(retryTimer);
     if (stopTimer) window.clearTimeout(stopTimer);
     retryTimer = null;
@@ -148,39 +193,114 @@
   }
 
   function sendSnapshot() {
-    if (!portalWindow || portalWindow.closed || !pendingSnapshot) return;
+    if (!portalWindow || portalWindow.closed || !pendingSnapshot || !pendingSyncId) return;
     try {
       portalWindow.postMessage({
         type: 'PORTAL_AGENDA_DIGSAUDE_SYNC',
+        syncId: pendingSyncId,
         snapshot: pendingSnapshot
       }, PORTAL_ORIGIN);
     } catch (_) {}
   }
 
-  function startSync() {
-    try {
-      pendingSnapshot = snapshot();
-    } catch (error) {
-      window.alert(error.message || 'Não foi possível ler a aba Agendados.');
+  function scheduleDeliveryRetry() {
+    stopDeliveryRetry();
+    sendSnapshot();
+    retryTimer = window.setInterval(sendSnapshot, 800);
+    stopTimer = window.setTimeout(() => {
+      stopDeliveryRetry();
+      syncInFlight = false;
+      pendingSnapshot = null;
+      pendingFingerprint = '';
+      pendingSyncId = '';
+      setButton('Automático ativo · Portal não respondeu', 'error');
+    }, RESULT_TIMEOUT_MS);
+  }
+
+  function stopAutomaticTimers() {
+    if (autoTimer) window.clearInterval(autoTimer);
+    if (bridgeWatchTimer) window.clearInterval(bridgeWatchTimer);
+    autoTimer = null;
+    bridgeWatchTimer = null;
+  }
+
+  function pauseAutomatic(reason = 'Automático pausado · clique para reativar') {
+    autoEnabled = false;
+    stopAutomaticTimers();
+    stopDeliveryRetry();
+    syncInFlight = false;
+    pendingSnapshot = null;
+    pendingFingerprint = '';
+    pendingSyncId = '';
+    setButton(reason, 'error');
+  }
+
+  async function runAutomaticSync({ force = false } = {}) {
+    if (!autoEnabled || syncInFlight) return;
+
+    if (!portalWindow || portalWindow.closed) {
+      pauseAutomatic();
       return;
     }
 
-    setButton('Enviando ao Portal…', 'working');
-    portalWindow = window.open(BRIDGE_URL, 'portal-agenda-sync', 'popup=yes,width=620,height=620,resizable=yes,scrollbars=yes');
+    syncInFlight = true;
+    setButton('Automático ativo · verificando…', 'working');
+
+    try {
+      const nextSnapshot = await fetchSnapshot();
+      lastCheckAt = Date.now();
+      const nextFingerprint = fingerprint(nextSnapshot);
+
+      if (!force && nextFingerprint === lastFingerprint) {
+        syncInFlight = false;
+        setButton(`Automático ativo · sem mudanças · ${clock()}`, 'success');
+        return;
+      }
+
+      pendingSnapshot = nextSnapshot;
+      pendingFingerprint = nextFingerprint;
+      pendingSyncId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      setButton(`Automático ativo · enviando ${nextSnapshot.records.length}…`, 'working');
+      scheduleDeliveryRetry();
+    } catch (error) {
+      syncInFlight = false;
+      lastCheckAt = Date.now();
+      setButton(`Automático ativo · ${compact(error?.message) || 'falha na verificação'}`, 'error');
+    }
+  }
+
+  function startAutomaticTimers() {
+    stopAutomaticTimers();
+    autoTimer = window.setInterval(() => runAutomaticSync(), AUTO_INTERVAL_MS);
+    bridgeWatchTimer = window.setInterval(() => {
+      if (autoEnabled && (!portalWindow || portalWindow.closed)) pauseAutomatic();
+    }, BRIDGE_WATCH_MS);
+  }
+
+  function activateAutomaticSync() {
+    portalWindow = window.open(
+      BRIDGE_URL,
+      'portal-agenda-sync',
+      'popup=yes,width=560,height=420,resizable=yes,scrollbars=yes'
+    );
+
     if (!portalWindow) {
-      setButton('Enviar Agenda ao Portal', 'error');
+      setButton('Ativar sincronização automática', 'error');
       window.alert('O navegador bloqueou a janela do Portal. Libere pop-ups para este site e tente novamente.');
       return;
     }
 
-    stopRetry();
-    sendSnapshot();
-    retryTimer = window.setInterval(sendSnapshot, 800);
-    stopTimer = window.setTimeout(() => {
-      stopRetry();
-      pendingSnapshot = null;
-      setButton('Tentar sincronizar novamente', 'error');
-    }, RESULT_TIMEOUT_MS);
+    autoEnabled = true;
+    setButton('Conectando sincronização automática…', 'working');
+    startAutomaticTimers();
+  }
+
+  function onButtonClick() {
+    if (!autoEnabled) {
+      activateAutomaticSync();
+      return;
+    }
+    runAutomaticSync({ force: true });
   }
 
   window.addEventListener('message', (event) => {
@@ -188,22 +308,41 @@
     if (portalWindow && event.source !== portalWindow) return;
 
     if (event.data?.type === 'PORTAL_AGENDA_DIGSAUDE_READY') {
-      sendSnapshot();
+      if (!autoEnabled) return;
+      setButton('Automático ativo · primeira verificação…', 'working');
+      runAutomaticSync({ force: true });
       return;
     }
-    if (event.data?.type !== 'PORTAL_AGENDA_DIGSAUDE_RESULT') return;
 
-    stopRetry();
-    pendingSnapshot = null;
+    if (event.data?.type !== 'PORTAL_AGENDA_DIGSAUDE_RESULT') return;
+    if (!pendingSyncId || event.data?.syncId !== pendingSyncId) return;
+
+    stopDeliveryRetry();
+    syncInFlight = false;
+
     if (event.data.ok) {
+      lastFingerprint = pendingFingerprint;
       const created = Number(event.data.created || 0);
       const changed = Number(event.data.changed || 0);
-      setButton(`Agenda sincronizada · +${created} / ~${changed}`, 'success');
-      window.setTimeout(() => setButton('Enviar Agenda ao Portal', ''), 6000);
+      const suffix = created || changed ? `+${created} / ~${changed}` : 'sem mudanças';
+      setButton(`Automático ativo · ${suffix} · ${clock()}`, 'success');
     } else {
-      setButton('Falha ao sincronizar', 'error');
-      window.alert('O Portal não conseguiu receber a Agenda. Abra o Portal, confirme seu acesso e tente novamente.');
+      setButton('Automático ativo · falha ao enviar; tentará novamente', 'error');
     }
+
+    pendingSnapshot = null;
+    pendingFingerprint = '';
+    pendingSyncId = '';
+  });
+
+  window.addEventListener('focus', () => {
+    if (!autoEnabled || !lastCheckAt) return;
+    if (Date.now() - lastCheckAt >= AUTO_INTERVAL_MS) runAutomaticSync();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden || !autoEnabled || !lastCheckAt) return;
+    if (Date.now() - lastCheckAt >= AUTO_INTERVAL_MS) runAutomaticSync();
   });
 
   function mountButton() {
@@ -211,8 +350,9 @@
     const element = document.createElement('button');
     element.id = BUTTON_ID;
     element.type = 'button';
-    element.textContent = 'Enviar Agenda ao Portal';
-    element.setAttribute('aria-label', 'Sincronizar a aba Agendados com o Portal da Regulação');
+    element.textContent = 'Ativar sincronização automática';
+    element.title = 'Atualiza a Agenda a cada 15 minutos enquanto o DigSaúde e a ponte do Portal permanecerem abertos.';
+    element.setAttribute('aria-label', 'Ativar sincronização automática da Agenda com o Portal da Regulação');
     element.style.cssText = [
       'position:fixed',
       'right:22px',
@@ -225,9 +365,10 @@
       'color:#fff',
       'font:700 14px Inter,system-ui,sans-serif',
       'box-shadow:0 10px 30px rgba(0,0,0,.22)',
-      'cursor:pointer'
+      'cursor:pointer',
+      'max-width:360px'
     ].join(';');
-    element.addEventListener('click', startSync);
+    element.addEventListener('click', onButtonClick);
     document.body.appendChild(element);
   }
 

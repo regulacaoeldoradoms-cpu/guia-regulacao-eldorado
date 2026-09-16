@@ -170,7 +170,13 @@ async function commitWrites(env, writes) {
 
 async function syncRecords(env, input, user) {
   const rows = Array.isArray(input?.records) ? input.records : [];
-  if (!rows.length) throw Object.assign(new Error('Nenhum agendamento foi recebido.'), { status: 400 });
+  const declaredComplete = input?.complete === true;
+  const expectedTotal = Math.max(0, Number.parseInt(String(input?.totalCount ?? ''), 10) || 0);
+  const verifiedEmptySnapshot = declaredComplete && expectedTotal === 0 && rows.length === 0;
+
+  if (!rows.length && !verifiedEmptySnapshot) {
+    throw Object.assign(new Error('Nenhum agendamento foi recebido.'), { status: 400 });
+  }
   if (rows.length > MAX_RECORDS_PER_SYNC) throw Object.assign(new Error('Quantidade de agendamentos acima do limite de segurança.'), { status: 413 });
 
   const normalized = [];
@@ -240,8 +246,6 @@ async function syncRecords(env, input, user) {
   }
 
   let deactivated = 0;
-  const declaredComplete = input?.complete === true;
-  const expectedTotal = Math.max(0, Number.parseInt(String(input?.totalCount ?? ''), 10) || 0);
   const complete = declaredComplete && expectedTotal === normalized.length;
 
   if (complete) {
