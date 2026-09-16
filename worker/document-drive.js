@@ -8,6 +8,10 @@ const DRIVE_SHORTCUT_MIME = 'application/vnd.google-apps.shortcut';
 const PDF_MIME = 'application/pdf';
 const DRIVE_SYNC_OPERATIONS = new Set(['replace_pdf', 'save_copy']);
 const DRIVE_SYNC_FILE_FIELDS = 'id,mimeType,size,modifiedTime,version,md5Checksum,headRevisionId,parents,capabilities(canDownload,canEdit,canModifyContent)';
+const DRIVE_SYNC_SESSION_TTL_SECONDS = 6 * 24 * 60 * 60;
+const DRIVE_SYNC_CHUNK_BYTES = 4 * 1024 * 1024;
+const DRIVE_SYNC_MAX_CHUNK_BYTES = 8 * 1024 * 1024;
+const DRIVE_SYNC_MIN_CHUNK_UNIT = 256 * 1024;
 const TOKEN_ROW_ID = 'institutional';
 const tokenSchemaReady = new WeakSet();
 const tokenSchemaPromises = new WeakMap();
@@ -143,6 +147,19 @@ export async function ensureDriveOAuthSchema(env) {
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`).run();
     await binding.prepare('CREATE INDEX IF NOT EXISTS idx_document_drive_oauth_states_exp ON document_drive_oauth_states(expires_at)').run();
+    await binding.prepare(`CREATE TABLE IF NOT EXISTS document_drive_sync_sessions (
+      sync_id TEXT PRIMARY KEY,
+      username TEXT NOT NULL,
+      operation TEXT NOT NULL,
+      session_url_cipher TEXT NOT NULL,
+      session_url_iv TEXT NOT NULL,
+      total_bytes INTEGER NOT NULL,
+      next_offset INTEGER NOT NULL DEFAULT 0,
+      expires_at INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`).run();
+    await binding.prepare('CREATE INDEX IF NOT EXISTS idx_document_drive_sync_exp ON document_drive_sync_sessions(expires_at)').run();
     tokenSchemaReady.add(binding);
     return true;
   })().catch((error) => {
