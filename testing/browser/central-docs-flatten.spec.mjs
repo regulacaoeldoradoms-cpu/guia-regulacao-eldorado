@@ -60,22 +60,32 @@ test.describe('Central de Documentos — 3C.6 flatten/exportação local', () =>
     expect(diagnostics.flattened.pages[3].height).toBeLessThan(diagnostics.structural.pages[3].height);
   });
 
-  test('botão Imprimir e Ctrl+P usam o PDF final sem sair do editor', async ({ page }) => {
+  test('botão Imprimir e Ctrl+P usam o PDF final sem nova aba e com preparação responsiva', async ({ page, context }) => {
     await openEditor(page);
     await page.evaluate(() => window.CentralDocsEditorHarness.seedFlattenFixture());
 
+    const pageCountBefore = context.pages().length;
     await page.locator('#editorPrint').click();
     await expect(page.locator('html')).toHaveAttribute('data-print-state', 'requested');
     expect(Number(await page.locator('html').getAttribute('data-print-size'))).toBeGreaterThan(500);
+    expect(Number(await page.locator('html').getAttribute('data-print-rendered-pages'))).toBe(3);
+    expect(Number(await page.locator('html').getAttribute('data-print-prepare-ms'))).toBeLessThan(5000);
+    await expect(page.locator('iframe.documents-print-frame[data-central-print-frame="true"]')).toHaveCount(1);
+    expect(context.pages().length).toBe(pageCountBefore);
     await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'editor');
 
     await page.evaluate(() => {
       delete document.documentElement.dataset.printState;
       delete document.documentElement.dataset.printSize;
+      delete document.documentElement.dataset.printPrepareMs;
     });
     await page.keyboard.press('Control+p');
     await expect(page.locator('html')).toHaveAttribute('data-print-state', 'requested');
     expect(Number(await page.locator('html').getAttribute('data-print-size'))).toBeGreaterThan(500);
+    expect(Number(await page.locator('html').getAttribute('data-print-rendered-pages'))).toBe(3);
+    expect(Number(await page.locator('html').getAttribute('data-print-prepare-ms'))).toBeLessThan(5000);
+    await expect(page.locator('iframe.documents-print-frame[data-central-print-frame="true"]')).toHaveCount(1);
+    expect(context.pages().length).toBe(pageCountBefore);
     await expect(page.locator('html')).toHaveAttribute('data-editor-mode', 'editor');
   });
 
