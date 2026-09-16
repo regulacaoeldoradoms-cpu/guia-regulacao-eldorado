@@ -36,7 +36,7 @@
         <div class="portal-hero-copy">
           <span class="portal-eyebrow">Central de Documentos</span>
           <h2>Google Drive institucional dentro do Portal.</h2>
-          <p>Navegue por pastas, pesquise no acervo e abra PDFs autorizados com carregamento progressivo e cache local criptografado. Quando autorizado, o editor trabalha localmente; nenhuma alteração é enviada ao Google Drive nesta fase.</p>
+          <p>Navegue por pastas, pesquise no acervo e abra PDFs autorizados com carregamento progressivo e cache local criptografado. Quando autorizado, o editor trabalha localmente; o envio ao Google Drive só ocorre por uma ação explícita de sincronização, quando essa função estiver habilitada.</p>
         </div>
         <div class="documents-hero-state" id="driveConnectionBadge" aria-live="polite">Verificando conexão…</div>
       </section>
@@ -115,7 +115,7 @@
               <span class="documents-pdf-page-count" id="pdfPageCountLabel"></span>
             </div>
             <div class="documents-editor" id="documentsEditor" hidden aria-label="Controles de edição local do PDF">
-              <span class="sr-only">As alterações são locais e ainda não serão salvas no Google Drive.</span>
+              <span class="sr-only">As alterações permanecem locais até você escolher explicitamente sincronizar com o Google Drive.</span>
               <div class="documents-editor-toolbar documents-editor-toolbar--compact" role="toolbar" aria-label="Ferramentas do editor PDF">
                 <button class="documents-editor-tool" id="editorUndoButton" type="button" title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button>
                 <button class="documents-editor-tool" id="editorRedoButton" type="button" title="Refazer (Ctrl+Y ou Ctrl+Shift+Z)" aria-label="Refazer">↷</button>
