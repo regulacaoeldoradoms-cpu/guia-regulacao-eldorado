@@ -21,11 +21,13 @@ on:
       - 'agenda/**'
       - 'css/agenda.css'
       - 'js/agenda.js'
+      - 'js/agenda-capacity.js'
       - 'js/agenda-sync-bridge.js'
       - 'js/tools-catalog.js'
       - 'worker/agenda.js'
       - 'worker/index.js'
       - 'worker/tests/agenda.test.mjs'
+      - 'worker/tests/agenda-capacity.test.mjs'
       - 'docs/AGENDA-DIGSAUDE*.md'
 
 jobs:
