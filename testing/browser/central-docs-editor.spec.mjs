@@ -278,6 +278,8 @@ test.describe('Central de Documentos — superfície única do editor', () => {
       mimeType: 'image/png',
       buffer: ONE_PIXEL_PNG
     });
+    await expect(page.locator('#editorMergeSelectionLab')).toContainText('1 arquivo do dispositivo selecionado');
+    await page.locator('#editorMergeConfirm').click();
 
     await waitForOrder(page, '0:0,0:1,0:2,1:0');
     await expect(page.locator('#editorMergePanel')).toBeHidden();
