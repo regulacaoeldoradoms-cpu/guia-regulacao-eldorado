@@ -57,6 +57,7 @@
     objectAlign: document.getElementById('editorObjectAlign'),
     objectOpacity: document.getElementById('editorObjectOpacity'),
     objectDelete: document.getElementById('editorObjectDelete'),
+    syncDrive: document.getElementById('editorSync'),
     exportPdf: document.getElementById('editorExport'),
     printPdf: document.getElementById('editorPrint'),
     exit: document.getElementById('editorExit')
@@ -311,6 +312,7 @@
     elements.drawPen.disabled = !editing;
     elements.drawEraser.disabled = !editing;
     elements.objectDelete.disabled = !editing || !selectedObject();
+    elements.syncDrive.disabled = !editing;
     elements.exportPdf.disabled = !editing || typeof editor?.buildFlattenedBlob !== 'function';
     elements.printPdf.disabled = !editing || typeof editor?.buildFlattenedBlob !== 'function';
     elements.exit.disabled = !editing;
@@ -322,7 +324,7 @@
     elements.surface.setAttribute('aria-busy', active ? 'true' : 'false');
     if (message) elements.editorStatus.textContent = message;
     if (active) {
-      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.mergeFileButton, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.draw, elements.drawColor, elements.drawWidth, elements.drawPen, elements.drawEraser, elements.objectDelete, elements.exportPdf, elements.printPdf, elements.exit]) {
+      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.mergeFileButton, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.draw, elements.drawColor, elements.drawWidth, elements.drawPen, elements.drawEraser, elements.objectDelete, elements.syncDrive, elements.exportPdf, elements.printPdf, elements.exit]) {
         button.disabled = true;
       }
       elements.thumbnails.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
@@ -1302,6 +1304,10 @@
     event.stopPropagation();
     run(deleteSelectedObject);
   }, true);
+  elements.syncDrive.addEventListener('click', () => run(() => {
+    root.dataset.syncPreview = 'force-visible';
+    elements.editorStatus.textContent = 'Forçar sincronização com Google Drive: controle visível para homologação. Este laboratório usa somente dados fictícios e não grava no Drive.';
+  }));
   elements.exportPdf.addEventListener('click', () => run(exportFlattenedPdf));
   elements.printPdf.addEventListener('click', () => printFlattenedPdf().catch(fail));
   elements.exit.addEventListener('click', () => run(exitEditor));
