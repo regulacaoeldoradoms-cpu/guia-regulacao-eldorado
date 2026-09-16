@@ -2,7 +2,7 @@
 
 Data: 16/09/2026  
 Fase relacionada: 3 — Editor PDF essencial  
-Estado: laboratório local + CI + Cloudflare Pages operacionais; 3C.5 tecnicamente validada e aguardando homologação humana, sem alteração em produção.
+Estado: laboratório local + CI + Cloudflare Pages operacionais; 3C.6 tecnicamente concluída e aguardando homologação humana do PDF exportado, sem alteração em produção.
 
 ## Objetivo
 
@@ -65,7 +65,7 @@ O ambiente de homologação não substitui os critérios do Guia Mestre. Ele acr
 
 `branch -> testes unitários/estáticos -> Playwright -> preview/homologação -> PR -> main -> produção`
 
-Organizar V2, 3C.3 e 3C.4 já foram aceitos. A unidade atual é **3C.5 — Desenhar/Borracha**: a implementação automatizada está verde e o avanço para 3C.6 depende da homologação humana do preview sintético.
+Organizar V2, 3C.3, 3C.4 e 3C.5 já foram aceitos. A unidade atual é **3C.6 — flatten/exportação local**: a implementação automatizada está verde e o encerramento da Fase 3 depende da homologação humana do PDF final exportado e reaberto.
 
 
 ## Resultado do primeiro ciclo automatizado — 14/09/2026
@@ -561,4 +561,56 @@ Critérios de homologação desta unidade:
 6. exportação permanece local; nenhuma escrita no Google Drive;
 7. desktop e mobile precisam permanecer funcionais;
 8. reeditabilidade após exportar fica fora da Fase 3.
+
+## Homologação candidata da 3C.6 — flatten/exportação local — 16/09/2026
+
+Head funcional candidato: `d8d5b2e1938a6e8916cd6c6bc7cdafb3f92953c7`.
+
+### Implementação validada
+
+- `buildBlob()` continua gerando somente a estrutura de páginas para o preview reversível;
+- `buildFlattenedBlob()` é a saída final independente;
+- texto, imagem overlay, crop e desenhos são incorporados ao PDF final com pdf-lib;
+- conteúdo original permanece vetorial/textual e não é rasterizado integralmente;
+- crop vira `CropBox` final;
+- texto/imagem/desenho seguem as transformações visuais e a rotação da página;
+- exportação é feita pelo navegador usando Blob/Object URL e download local;
+- não há endpoint de upload, escrita no Drive ou persistência remota nessa ação.
+
+### Resultado automatizado
+
+- **25/25 checks GitHub verdes**;
+- Cloudflare Pages: sucesso;
+- workflow **PDF.js real em Chromium**: sucesso;
+- Playwright: **70 casos**, com **67 passed / 3 skipped esperados**;
+- testes específicos da 3C.6 passaram em desktop e mobile;
+- o PDF final foi gerado por pdf-lib e reaberto por PDF.js durante o teste;
+- conteúdo final comprovado automaticamente: texto, imagem, traçado vetorial e crop;
+- matriz de rotação comprovada em **0/90/180/270°**;
+- duplicação/reordenação e CropBox não padrão cobertos;
+- preview estrutural foi verificado para não conter os overlays já flattened, evitando duplicação.
+
+### Preview candidato
+
+- imutável: `https://afffb869.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+
+O staging continua restrito a **dados fictícios** enquanto Cloudflare Access estiver pendente.
+
+### Roteiro humano final da Fase 3
+
+1. abrir o preview e entrar no editor;
+2. criar/editar texto e confirmar posição, tamanho, estilo e cor;
+3. inserir uma imagem sobre a página e mover/redimensionar/rotacionar;
+4. desenhar pelo menos um traço;
+5. recortar uma página e confirmar o recorte;
+6. reorganizar ou girar pelo menos uma página;
+7. clicar em **↓ Exportar PDF final localmente**;
+8. abrir o PDF baixado fora do editor;
+9. comparar visualmente o arquivo reaberto com o preview, verificando texto, imagem, desenho, crop, ordem e rotação;
+10. confirmar que não há objetos duplicados, cortes indevidos ou deslocamentos perceptíveis.
+
+### Gate
+
+A 3C.6 e a Fase 3 só podem ser encerradas após esse aceite humano. A **Fase 4 — sincronização segura com Drive** permanece bloqueada até esse encerramento formal.
 

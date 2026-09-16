@@ -6,7 +6,76 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.6 — flatten/exportação local, liberada após aceite humano da 3C.5 e reconciliação verde com a main**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **Não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver concluída e homologada.**
+Subfase atual: **3C.6 — flatten/exportação local, implementação técnica concluída no PR #179 e aguardando homologação humana do PDF exportado**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **Não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver homologada e a Fase 3 não estiver formalmente encerrada.**
+
+## 3C.6 — implementação técnica concluída; homologação humana pendente — 16/09/2026
+
+A unidade técnica da 3C.6 foi concluída na branch `codex/central-docs-editor-superficie-unica`, sem merge e sem qualquer escrita no Google Drive.
+
+Implementação consolidada no head funcional `d8d5b2e1938a6e8916cd6c6bc7cdafb3f92953c7`:
+- `buildBlob()` permanece responsável pelo PDF estrutural usado durante a edição reversível;
+- novo `buildFlattenedBlob()` gera a saída final separada, incorporando **texto, imagem overlay, crop e desenhos** com pdf-lib;
+- o conteúdo vetorial/textual original do PDF é preservado; a página inteira **não é rasterizada** como atalho;
+- texto é materializado com fontes padrão do pdf-lib, preservando família aproximada, peso, itálico, sublinhado, alinhamento, cor, transparência e rotação;
+- imagens overlay são incorporadas localmente com proporção preservada, transparência e rotação;
+- traços vetoriais são gravados como linhas PDF, mantendo cor e espessura;
+- crop confirmado é materializado no `CropBox` final;
+- conversão de coordenadas cobre orientações efetivas de **0/90/180/270°**;
+- a semântica por `pageId` continua preservada após duplicação e reordenação;
+- novo botão **↓ Exportar PDF final localmente** baixa o PDF no dispositivo e não chama API de persistência;
+- a reeditabilidade dos overlays após reabrir o PDF exportado continua fora da Fase 3, conforme decisão já aprovada.
+
+Validação técnica:
+- **25/25 check-runs verdes** no head funcional;
+- workflow **PDF.js real em Chromium**: sucesso;
+- Playwright: **70 casos**, com **67 passed / 3 skipped esperados**;
+- a suíte da 3C.6 gera o PDF final com pdf-lib, reabre o resultado com o PDF.js real e confirma texto, imagem, desenho, crop e validade do arquivo;
+- matriz adicional confirmou rotações finais 0/90/180/270°, CropBox não padrão, duplicação e reordenação;
+- os cenários da 3C.6 passaram em Chromium desktop e mobile;
+- Cloudflare Pages publicou o candidato com sucesso.
+
+Preview candidato:
+- imutável: `https://afffb869.portal-regulacao-central-staging.pages.dev/`;
+- alias da branch: `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`;
+- staging continua **somente com dados fictícios** enquanto Cloudflare Access estiver pendente.
+
+Correção de regressão durante a unidade:
+- o incremento de cache do Service Worker para `20260916-2` fez um teste legado de primeiro acesso esperar a versão anterior;
+- a expectativa foi atualizada para a nova versão e a matriz completa voltou a 25/25 verde;
+- nenhuma regra funcional de primeiro acesso foi alterada.
+
+Privacidade e segurança:
+- exportação final ocorre inteiramente no navegador;
+- nenhuma rota nova de upload/salvamento foi criada;
+- nenhum conteúdo documental, coordenada, texto, imagem, nome de arquivo ou ID do Drive é enviado ao PostHog;
+- nenhuma alteração foi feita em produção ou na `main`;
+- PR #179 permanece aberto, mergeável e sem merge.
+
+**Gate atual:** homologação humana da fidelidade **preview × PDF exportado/reaberto**. A automação comprova estrutura e round-trip, mas não substitui a conferência visual final de posicionamento, tamanho, crop e rotação.
+
+**Próxima ação exata:** abrir o preview sintético, editar pelo menos duas páginas usando texto, imagem, desenho e recorte; reorganizar ou girar uma página; clicar em **↓ Exportar PDF final localmente**; abrir o arquivo baixado fora do editor e comparar com o preview. Se o usuário aprovar, registrar o encerramento da 3C.6 e da **Fase 3**, mantendo PR sem merge até o gate de promoção e só então preparar a **Fase 4 — sincronização segura com Drive**.
+
+## Handoff para o próximo chat — 3C.6, registro vigente
+
+Este bloco prevalece sobre os handoffs históricos abaixo.
+
+- **Fase atual:** Fase 3 — Editor PDF essencial.
+- **Subfase atual:** 3C.6 — flatten/exportação local, tecnicamente concluída e aguardando homologação humana.
+- **Última ação concluída:** implementação + ampliação da matriz real da 3C.6 validadas no head `d8d5b2e1938a6e8916cd6c6bc7cdafb3f92953c7`.
+- **Branch atual:** `codex/central-docs-editor-superficie-unica`.
+- **PR atual:** #179 — aberto, mergeável, sem merge.
+- **Main atual conhecida:** `73997b4d108dd0392173e93640310d70dd3eeccf`, já reconciliada nesta branch pelo merge `95c660d6e74c4aafdbb5d7be4c4383ac11d46995`.
+- **Checks e testes:** 25/25 checks verdes; Playwright 70 casos = 67 passed / 3 skipped esperados.
+- **Preview imutável:** `https://afffb869.portal-regulacao-central-staging.pages.dev/`.
+- **Alias da branch:** `https://codex-central-docs-editor-su.portal-regulacao-central-staging.pages.dev/`.
+- **Decisões tomadas:** preview estrutural continua separado do flatten; saída final usa pdf-lib e preserva a página base; exportação é somente local; Drive continua fora de escopo.
+- **Justificativas:** separar preview e saída final mantém Undo/Redo e evita overlays duplicados; preservar o PDF base evita perda de texto/vetor; exportação local fecha a Fase 3 sem antecipar a arquitetura de persistência da Fase 4.
+- **Alternativas descartadas:** rasterizar páginas inteiras; usar o mesmo Blob flattened durante edição; enviar o PDF a backend/Drive antes do encerramento da Fase 3.
+- **Pendências e bloqueios:** homologação visual humana do PDF exportado; Cloudflare Access ainda pendente, portanto somente dados fictícios no staging.
+- **Riscos conhecidos:** diferenças finas entre fontes padrão do navegador e fontes padrão do pdf-lib; posicionamento visual em combinações incomuns de rotação/crop deve ser confirmado pelo usuário.
+- **Métricas / observabilidade:** nenhuma telemetria de conteúdo; evidência baseada em CI, Playwright e staging sintético.
+- **Próxima ação exata:** homologar manualmente o download final no preview `https://afffb869.portal-regulacao-central-staging.pages.dev/`; se aprovado, encerrar 3C.6/Fase 3 e preparar Fase 4 conforme o Guia Mestre.
+- **Arquivos e fontes principais:** Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-STATUS.md`; `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-V1.md`; PR #179; `js/document-editor.js`; `js/documents.js`; `testing/browser/central-docs-flatten.spec.mjs`.
 
 ## 3C.6 — liberada após reconciliação verde com main — 16/09/2026
 
