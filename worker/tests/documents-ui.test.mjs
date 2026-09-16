@@ -391,7 +391,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.doesNotMatch(html, /id="editorWriteButton"[^>]*disabled/);
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
-  assert.match(html, /document-editor\.js\?v=20260915-5/);
+  assert.match(html, /document-editor\.js\?v=20260916-1/);
   assert.match(html, /documents\.js\?v=20260916-1/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
@@ -411,7 +411,7 @@ test('editor PDF é local, reversível e separado da escrita no Drive', () => {
   const client = read('js/documents.js');
   const editor = read('js/document-editor.js');
 
-  assert.match(html, /document-editor\.js\?v=20260915-5/);
+  assert.match(html, /document-editor\.js\?v=20260916-1/);
   assert.match(html, /Editar PDF/);
   assert.match(html, /id="editorExitButton"/);
   assert.match(editor, /\/vendor\/pdf-lib\/pdf-lib\.min\.js/);
@@ -551,6 +551,7 @@ test('transparência afeta somente o conteúdo e mantém controles opacos', () =
 
 test('3C.5 mantém objetos/crop reversíveis e habilita Desenhar/Borracha vetorial', () => {
   const html = read('documentos/index.html');
+  const client = read('js/documents.js');
   const editor = read('js/document-editor.js');
   const viewer = read('js/document-viewer.js');
   const css = read('css/documents.css');
@@ -606,7 +607,6 @@ test('3C.5 mantém objetos/crop reversíveis e habilita Desenhar/Borracha vetori
 
   // Review regressions: natural image ratio, rotated local-axis resize and
   // cancellation-safe color preview.
-  const client = read('js/documents.js');
   assert.match(editor, /function displayPageAspectRatio\(/);
   assert.match(editor, /width \* \(pageAspectRatio > 0 \? pageAspectRatio : 1\) \/ aspectRatio/);
   assert.doesNotMatch(client, /addImageOverlay\([\s\S]{0,220}height:\s*\.22/);
