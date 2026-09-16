@@ -192,9 +192,9 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260915-21/);
-  assert.match(html, /documents\.js\?v=20260915-9/);
-  assert.match(html, /documents\.css\?v=20260915-9/);
+  assert.match(html, /document-viewer\.js\?v=20260916-1/);
+  assert.match(html, /documents\.js\?v=20260916-1/);
+  assert.match(html, /documents\.css\?v=20260916-1/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -260,7 +260,13 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(viewerSurface, /id="editorWriteButton"[^>]*disabled/);
   assert.match(viewerSurface, /id="editorOverlayImageButton"/);
   assert.doesNotMatch(viewerSurface, /id="editorOverlayImageButton"[^>]*disabled/);
-  assert.match(viewerSurface, /id="editorDrawButton"[^>]*disabled/);
+  assert.match(viewerSurface, /id="editorDrawButton"/);
+  assert.doesNotMatch(viewerSurface, /id="editorDrawButton"[^>]*disabled/);
+  assert.match(viewerSurface, /id="editorDrawToolbar"/);
+  assert.match(viewerSurface, /id="editorDrawColor"/);
+  assert.match(viewerSurface, /id="editorDrawWidth"/);
+  assert.match(viewerSurface, /id="editorDrawPen"/);
+  assert.match(viewerSurface, /id="editorDrawEraser"/);
   assert.match(viewerSurface, /id="editorExitButton"/);
   assert.match(viewerSurface, /id="pdfThumbnailRail"/);
   assert.match(viewerSurface, /id="pdfPageScroll"/);
@@ -543,7 +549,7 @@ test('transparência afeta somente o conteúdo e mantém controles opacos', () =
   assert.match(css, /\.portal-pdf-object-image[\s\S]*opacity:\s*var\(--object-opacity, 1\)/);
 });
 
-test('3C.4 mantém objetos reversíveis, habilita Recortar e mantém Desenhar bloqueado', () => {
+test('3C.5 mantém objetos/crop reversíveis e habilita Desenhar/Borracha vetorial', () => {
   const html = read('documentos/index.html');
   const editor = read('js/document-editor.js');
   const viewer = read('js/document-viewer.js');
@@ -551,7 +557,8 @@ test('3C.4 mantém objetos reversíveis, habilita Recortar e mantém Desenhar bl
 
   assert.match(html, /id="editorCropButton"/);
   assert.doesNotMatch(html, /id="editorCropButton"[^>]*disabled/);
-  assert.match(html, /id="editorDrawButton"[^>]*disabled/);
+  assert.match(html, /id="editorDrawButton"/);
+  assert.doesNotMatch(html, /id="editorDrawButton"[^>]*disabled/);
   assert.match(html, /id="editorOverlayImageInput"[^>]*type="file"/);
   assert.match(editor, /objects:\s*\[\]/);
   assert.match(editor, /pageId:/);
@@ -584,6 +591,18 @@ test('3C.4 mantém objetos reversíveis, habilita Recortar e mantém Desenhar bl
   assert.match(viewer, /data-crop-resize/);
   assert.match(css, /\.portal-pdf-crop-layer/);
   assert.match(css, /\.portal-pdf-crop-frame/);
+  assert.match(editor, /strokes:\s*\[\]/);
+  assert.match(editor, /function addStroke\(/);
+  assert.match(editor, /function removeStrokes\(/);
+  assert.match(editor, /function strokeModel\(/);
+  assert.match(viewer, /function setEditorStrokes\(/);
+  assert.match(viewer, /portal-pdf-draw-layer/);
+  assert.match(viewer, /onStrokeCommit/);
+  assert.match(viewer, /onEraseCommit/);
+  assert.match(client, /function startDrawMode\(/);
+  assert.match(client, /state\.editorDrawTool/);
+  assert.match(css, /\.portal-pdf-draw-layer/);
+  assert.match(css, /\.documents-draw-toolbar/);
 
   // Review regressions: natural image ratio, rotated local-axis resize and
   // cancellation-safe color preview.
