@@ -28,6 +28,12 @@ Acesso ao módulo:
 
 A Coordenação não pode criar, editar, redefinir senha nem converter uma conta de Telemedicina. Somente o Desenvolvedor concede ou remove esse perfil.
 
+### Agenda DigSaúde
+
+O mesmo perfil autorizado também recebe a ferramenta `/agenda/`, dedicada ao acompanhamento da aba **Agendados** do DigSaúde. O DigSaúde permanece como fonte oficial; a Agenda do Portal é somente leitura e não armazena credenciais do sistema estadual.
+
+A arquitetura, privacidade, sincronização local e limitações estão em `docs/AGENDA-DIGSAUDE.md`.
+
 ### Implementação da identidade técnica
 
 Para preservar a compatibilidade com a autenticação já consolidada, o registro principal da conta no D1 utiliza internamente o papel-base `recepcao`. Uma tabela lateral `auth_telemedicine_access` marca a capacidade exclusiva de Telemedicina.
