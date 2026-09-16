@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260916-8">
+  <link rel="stylesheet" href="/css/documents.css?v=20260916-9">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -121,18 +121,17 @@
                 <button class="documents-editor-tool" id="editorRedoButton" type="button" title="Refazer (Ctrl+Y ou Ctrl+Shift+Z)" aria-label="Refazer">↷</button>
                 <span class="documents-editor-tool-separator" aria-hidden="true"></span>
                 <button id="editorOrganizeButton" class="documents-editor-tool active documents-art-button documents-art-grid" type="button" title="Organizar páginas" aria-label="Organizar páginas" aria-pressed="true"></button>
-                <button class="documents-editor-tool" id="editorMergeButton" type="button" title="Unir outro PDF" aria-label="Unir outro PDF">⧉</button>
-                <button class="documents-editor-tool" id="editorBlankPageButton" type="button" title="Inserir página em branco" aria-label="Inserir página em branco">⊞</button>
-                <button class="documents-editor-tool" id="editorImageButton" type="button" title="Adicionar imagem como nova página" aria-label="Adicionar imagem como nova página">▧</button>
+                <button class="documents-editor-tool documents-tool-icon documents-tool-icon-merge" id="editorMergeButton" type="button" title="Unir outro PDF" aria-label="Unir outro PDF"></button>
+                <button class="documents-editor-tool documents-tool-icon documents-tool-icon-blank" id="editorBlankPageButton" type="button" title="Inserir página em branco" aria-label="Inserir página em branco"></button>
+                <button class="documents-editor-tool documents-tool-icon documents-tool-icon-add-image" id="editorImageButton" type="button" title="Adicionar imagem como nova página" aria-label="Adicionar imagem como nova página"></button>
                 <input id="editorImageInput" type="file" accept="image/*" multiple hidden>
-                <button class="documents-editor-tool" id="editorCropButton" type="button" title="Recortar página" aria-label="Recortar página" aria-pressed="false">⌗</button>
-                <button class="documents-editor-tool" id="editorSelectButton" type="button" title="Selecionar e mover objetos" aria-label="Selecionar e mover objetos">↖</button>
-                <button class="documents-editor-tool" id="editorWriteButton" type="button" title="Escrever sobre a página" aria-label="Escrever sobre a página">T</button>
-                <button class="documents-editor-tool" id="editorOverlayImageButton" type="button" title="Colar imagem sobre a página" aria-label="Colar imagem sobre a página">▣</button>
+                <button class="documents-editor-tool documents-tool-icon documents-tool-icon-crop" id="editorCropButton" type="button" title="Recortar página" aria-label="Recortar página" aria-pressed="false"></button>
+                <button class="documents-editor-tool documents-tool-icon documents-tool-icon-select" id="editorSelectButton" type="button" title="Selecionar e mover objetos" aria-label="Selecionar e mover objetos"></button>
+                <button class="documents-editor-tool documents-tool-icon documents-tool-icon-write" id="editorWriteButton" type="button" title="Escrever sobre a página" aria-label="Escrever sobre a página"></button>
+                <button class="documents-editor-tool documents-tool-icon documents-tool-icon-paste-image" id="editorOverlayImageButton" type="button" title="Colar imagem sobre a página" aria-label="Colar imagem sobre a página"></button>
                 <input id="editorOverlayImageInput" type="file" accept="image/*" hidden>
-                <button class="documents-editor-tool" id="editorDrawButton" type="button" title="Desenhar sobre a página" aria-label="Desenhar sobre a página" aria-pressed="false">✎</button>
+                <button class="documents-editor-tool documents-tool-icon documents-tool-icon-draw" id="editorDrawButton" type="button" title="Desenhar sobre a página" aria-label="Desenhar sobre a página" aria-pressed="false"></button>
                 <span class="documents-editor-tool-spacer"></span>
-                <button id="editorPreviewButton" class="documents-editor-tool documents-art-button documents-art-refresh" type="button" title="Atualizar PDF" aria-label="Atualizar PDF"></button>
                 <button id="editorExportButton" class="documents-editor-tool documents-art-button documents-art-export" type="button" title="Exportar PDF final localmente" aria-label="Exportar PDF final localmente"></button>
                 <button id="editorPrintButton" class="documents-editor-tool documents-art-button documents-art-print" type="button" title="Imprimir PDF final (Ctrl+P)" aria-label="Imprimir PDF final"></button>
                 <button id="editorExitButton" class="documents-editor-tool documents-art-button documents-art-close" type="button" title="Sair do editor" aria-label="Sair do editor"></button>
