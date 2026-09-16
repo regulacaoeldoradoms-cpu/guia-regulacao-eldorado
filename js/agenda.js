@@ -17,6 +17,7 @@
     resultCount: document.getElementById('agendaResultCount'),
     search: document.getElementById('agendaSearch'),
     specialty: document.getElementById('agendaSpecialty'),
+    order: document.getElementById('agendaOrder'),
     includeInactive: document.getElementById('agendaIncludeInactive'),
     refresh: document.getElementById('agendaRefresh'),
     unread: document.getElementById('agendaUnreadCount'),
@@ -96,6 +97,27 @@
     return record.active || els.includeInactive.checked;
   }
 
+  function compareAppointment(left, right) {
+    const direction = els.order?.value === 'desc' ? -1 : 1;
+    const leftDate = String(left?.appointmentDate || '');
+    const rightDate = String(right?.appointmentDate || '');
+
+    if (!leftDate && !rightDate) return String(left?.patient || '').localeCompare(String(right?.patient || ''), 'pt-BR');
+    if (!leftDate) return 1;
+    if (!rightDate) return -1;
+
+    if (leftDate !== rightDate) return leftDate.localeCompare(rightDate) * direction;
+
+    const leftTime = String(left?.appointmentTime || '');
+    const rightTime = String(right?.appointmentTime || '');
+    if (!leftTime && !rightTime) return String(left?.patient || '').localeCompare(String(right?.patient || ''), 'pt-BR');
+    if (!leftTime) return 1;
+    if (!rightTime) return -1;
+    if (leftTime !== rightTime) return leftTime.localeCompare(rightTime) * direction;
+
+    return String(left?.patient || '').localeCompare(String(right?.patient || ''), 'pt-BR');
+  }
+
   function filteredRecords() {
     const query = normalized(els.search.value);
     const specialty = els.specialty.value;
@@ -112,7 +134,7 @@
         record.status,
         record.appointmentType
       ].some((value) => normalized(value).includes(query));
-    });
+    }).sort(compareAppointment);
   }
 
   function metaBlock(label, value, className = '') {
@@ -277,6 +299,7 @@
 
   els.search.addEventListener('input', render);
   els.specialty.addEventListener('change', render);
+  els.order.addEventListener('change', render);
   els.includeInactive.addEventListener('change', render);
   els.refresh.addEventListener('click', load);
 
