@@ -6,7 +6,35 @@
 
 **Fase 3 — Editor PDF essencial**
 
-Subfase atual: **3C.5 — Desenhar/Borracha, implementação técnica concluída no PR #179 e aguardando homologação humana do preview sintético**. Organizar V2, 3C.3 (Escrever + Colar imagem) e 3C.4 (Recortar com confirmação/cancelamento) estão aceitos. A 3C.6 (flatten/exportação local) permanece bloqueada até o aceite humano da 3C.5. **Não fazer merge nem escrever no Google Drive nesta fase.**
+Subfase atual: **3C.6 — flatten/exportação local, liberada após aceite humano da 3C.5 e reconciliação verde com a main**. Organizar V2, 3C.3 (Escrever + Colar imagem), 3C.4 (Recortar) e 3C.5 (Desenhar/Borracha) estão aceitos. **Não fazer merge nem escrever no Google Drive enquanto a 3C.6 não estiver concluída e homologada.**
+
+## 3C.6 — liberada após reconciliação verde com main — 16/09/2026
+
+Gate anterior concluído:
+- a 3C.5 foi aceita pelo usuário;
+- a `main` `73997b4d108dd0392173e93640310d70dd3eeccf` foi integrada nesta branch por merge commit `95c660d6e74c4aafdbb5d7be4c4383ac11d46995`;
+- a branch ficou **0 commits atrás da main** após a reconciliação;
+- PR #179 permaneceu aberto, mergeável e sem merge;
+- **25/25 check-runs concluíram com sucesso** no merge commit, incluindo Cloudflare Pages e **PDF.js real em Chromium**;
+- os dois testes compartilhados que tinham evolução simultânea na main (`portal-performance` e `social-ui`) foram reconciliados preservando as correções da Central e a nova versão do catálogo de ferramentas da Agenda.
+
+Escopo agora autorizado da 3C.6:
+- manter `buildBlob()` como montagem estrutural usada pelo preview reversível;
+- criar uma saída final separada que incorpore **texto, imagem overlay, crop e desenhos** ao PDF com pdf-lib;
+- preservar o conteúdo vetorial/textual original, sem rasterizar a página inteira;
+- comparar o PDF final reaberto no PDF.js com o preview do editor;
+- validar 0/90/180/270°, CropBox não padrão, páginas reorganizadas/duplicadas, desktop e mobile;
+- disponibilizar apenas **exportação local** nesta fase; nenhum upload/salvamento no Drive;
+- depois do flatten, os overlays deixam de ser reeditáveis ao reabrir o arquivo exportado, conforme decisão já documentada.
+
+Riscos prioritários:
+- conversão entre coordenadas visuais normalizadas e coordenadas PDF em páginas rotacionadas;
+- clipping correto por CropBox;
+- fidelidade de fonte/linha/alinhamento usando apenas fontes padrão já disponíveis no pdf-lib;
+- imagens com `object-fit: contain` e rotação arbitrária;
+- não duplicar overlays no preview estrutural.
+
+**Próxima ação exata:** implementar `buildFlattenedBlob()` separado de `buildBlob()`, adicionar exportação local explícita e criar testes que gerem, reabram e inspecionem o PDF final antes da homologação humana da 3C.6.
 
 ## 3C.5 — aceite humano final; reconciliação com main liberada — 16/09/2026
 
