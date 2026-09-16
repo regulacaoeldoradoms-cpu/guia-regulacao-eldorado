@@ -667,3 +667,27 @@ Usar somente dados fictícios enquanto Cloudflare Access estiver pendente.
 
 A **3C.6 continua aberta**. A Fase 3 só pode ser encerrada após novo aceite humano explícito. A Fase 4 — sincronização segura com Drive — permanece bloqueada até esse encerramento.
 
+## Ajuste adicional do reteste 3C.6 — zoom inicial em 114% — 16/09/2026
+
+No reteste do candidato corrigido, o usuário observou que o zoom inicial automático em aproximadamente **174%** deixava a página excessivamente ampliada e comparou com **114%**, que enquadrou melhor o documento.
+
+Ajuste aceito para novo candidato:
+- abertura inicial em desktop: **114%**;
+- telas menores: escala inicial limitada ao que cabe na largura disponível;
+- **Ajustar largura** permanece disponível como ação explícita;
+- zoom manual anterior continua preservado quando o editor reconstrói o preview.
+
+Head funcional: `20e0f885bc14cea74852707a92164c58384e20e2`.
+
+Validação:
+- 25/25 check-runs verdes;
+- PDF.js real em Chromium: sucesso;
+- Playwright: 72 casos = 69 passed / 3 skipped esperados;
+- teste automatizado exige 114% no desktop na abertura inicial;
+- Cloudflare Pages: sucesso.
+
+Preview para reteste:
+- `https://a32de5a1.portal-regulacao-central-staging.pages.dev/`.
+
+Este ajuste **não encerra a 3C.6**. Ainda é necessário aceite humano explícito do conjunto corrigido e da fidelidade do PDF exportado/reaberto.
+
