@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+const OVERLAY_IMAGE_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAIAAAASFvFNAAAAFUlEQVR4nGM0qjjBwMDAwMDAxAADABmqAXYGnJbKAAAAAElFTkSuQmCC',
+  'base64'
+);
+
 async function openEditor(page) {
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-viewer-state', 'ready');
@@ -322,9 +327,21 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await openEditor(page);
     await page.locator('.portal-pdf-thumb').nth(1).click();
     await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
+    // Primeiro clique entra no modo Colar imagem sem abrir o seletor nem
+    // inserir um objeto. Já dentro do modo, o clique seguinte abre o arquivo.
     await page.locator('#editorOverlayImage').click();
-
     await expect(page.locator('#pdfRoot')).toHaveAttribute('data-editor-workspace-mode', 'image');
+    await expect(page.locator('.portal-pdf-object--image')).toHaveCount(0);
+
+    const chooserPromise = page.waitForEvent('filechooser');
+    await page.locator('#editorOverlayImage').click();
+    const chooser = await chooserPromise;
+    await chooser.setFiles({
+      name: 'imagem-overlay.png',
+      mimeType: 'image/png',
+      buffer: OVERLAY_IMAGE_PNG
+    });
+
     await expect(page.locator('.portal-pdf-object--image')).toHaveCount(1);
     await expect(page.locator('html')).toHaveAttribute('data-object-count', '1');
     const image = page.locator('.portal-pdf-object--image');
@@ -394,7 +411,9 @@ test.describe('Central de Documentos — objetos sobre página', () => {
     await page.mouse.up();
     await expect(page.locator('.portal-pdf-object-layer').nth(1).locator('.portal-pdf-object--image')).toHaveCount(1);
 
-    await page.locator('#editorObjectDelete').click();
+    // Delete no teclado remove o objeto selecionado sem exigir o botão da
+    // barra contextual. O histórico compartilhado continua restaurando-o.
+    await page.keyboard.press('Delete');
     await expect(page.locator('.portal-pdf-object--image')).toHaveCount(0);
     await page.locator('#editorUndo').click();
     await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
