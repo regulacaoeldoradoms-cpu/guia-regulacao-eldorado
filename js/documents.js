@@ -63,7 +63,8 @@
     mergePreviewGeneration: 0,
     finalPdfCacheSession: null,
     finalPdfCacheRevision: -1,
-    finalPdfCacheBlob: null
+    finalPdfCacheBlob: null,
+    syncOperation: 'save_copy'
   };
 
   const els = {
@@ -139,6 +140,14 @@
     editorObjectOpacity: document.getElementById('editorObjectOpacity'),
     editorObjectDelete: document.getElementById('editorObjectDelete'),
     editorPreview: document.getElementById('editorPreviewButton'),
+    editorSync: document.getElementById('editorSyncButton'),
+    editorSyncPanel: document.getElementById('editorSyncPanel'),
+    editorSyncCancel: document.getElementById('editorSyncCancelButton'),
+    editorSyncApply: document.getElementById('editorSyncApplyButton'),
+    editorSyncCopyNameField: document.getElementById('editorSyncCopyNameField'),
+    editorSyncCopyName: document.getElementById('editorSyncCopyName'),
+    editorSyncWarning: document.getElementById('editorSyncWarning'),
+    editorSyncProgress: document.getElementById('editorSyncProgress'),
     editorExport: document.getElementById('editorExportButton'),
     editorPrint: document.getElementById('editorPrintButton'),
     editorExit: document.getElementById('editorExitButton'),
@@ -320,6 +329,15 @@
   function canEditDocuments() {
     const caps = state.access?.capabilities || state.user?.documentCapabilities || {};
     return caps.edit === true;
+  }
+
+  function canSyncDocuments() {
+    const drive = state.access?.drive || {};
+    const item = state.pdfItem;
+    return canEditDocuments()
+      && drive.connected === true
+      && drive.writeEnabled === true
+      && Boolean(item?.isPdf && item?.ref && item?.version);
   }
 
   function itemCacheIdentity(item) {
@@ -657,6 +675,13 @@
     if (els.editorDrawEraser) els.editorDrawEraser.disabled = busy || !session;
     if (els.editorObjectDelete) els.editorObjectDelete.disabled = busy || !selectedEditorObject();
     if (els.editorPreview) els.editorPreview.disabled = busy || !session;
+    if (els.editorSync) {
+      els.editorSync.hidden = !(canSyncDocuments() && session);
+      els.editorSync.disabled = busy || !session || !canSyncDocuments() || typeof editor?.buildFlattenedBlob !== 'function';
+    }
+    if (els.editorSyncApply) els.editorSyncApply.disabled = busy || !session || !canSyncDocuments();
+    if (els.editorSyncCancel) els.editorSyncCancel.disabled = busy;
+    if (els.editorSyncCopyName) els.editorSyncCopyName.disabled = busy;
     if (els.editorExport) els.editorExport.disabled = busy || !session || typeof editor?.buildFlattenedBlob !== 'function';
     if (els.editorPrint) els.editorPrint.disabled = busy || !session || typeof editor?.buildFlattenedBlob !== 'function';
     if (els.editorMergeLocal) els.editorMergeLocal.disabled = busy || !session;
@@ -2299,6 +2324,10 @@
 
     if (els.editPdf) els.editPdf.hidden = !(canEditDocuments() && state.pdfItem && !state.editorSession);
     if (els.editorRailEdit) els.editorRailEdit.hidden = !(canEditDocuments() && state.pdfItem);
+
+    if (els.editorSync) {
+      els.editorSync.hidden = !(canSyncDocuments() && state.editorSession);
+    }
 
     if (!canView && !canManage) {
       showStatus('Sua conta não possui acesso à Central de Documentos.', 'warning');
