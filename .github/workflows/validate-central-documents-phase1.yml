@@ -17,6 +17,9 @@ on:
       - 'worker/document-*.js'
       - 'worker/additional-roles.js'
       - 'worker/documents-router.js'
+      - 'worker/homologation-4d.js'
+      - 'worker/tests/homologation-4d.test.mjs'
+      - 'worker/migrations/central-documents-homologation-4d.sql'
       - 'worker/auth-management-flex.js'
       - 'worker/auth-management-v2.js'
       - 'worker/index.js'
@@ -46,6 +49,9 @@ on:
       - 'worker/document-*.js'
       - 'worker/additional-roles.js'
       - 'worker/documents-router.js'
+      - 'worker/homologation-4d.js'
+      - 'worker/tests/homologation-4d.test.mjs'
+      - 'worker/migrations/central-documents-homologation-4d.sql'
       - 'worker/auth-management-flex.js'
       - 'worker/auth-management-v2.js'
       - 'worker/tests/documents-*.test.mjs'
@@ -73,6 +79,7 @@ jobs:
         working-directory: worker
         run: |
           npm run check
+          node --check homologation-4d.js
           npm test
 
       - name: Conferir navegação, cache, editor e sincronização segura

@@ -4,6 +4,12 @@ Data: 16/09/2026
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: `#201`
 
+## Complemento de isolamento — 17/09/2026
+
+A retomada operacional usa `worker/homologation-4d.js`, entrypoint exclusivo de preview, e o procedimento de `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-ISOLAMENTO.md`. O Worker normal permanece com entrada `index.js`. O preview compartilha a conexão institucional existente, mas restringe usuário, arquivos descartáveis e sessões de sincronização por controle revogável e expirável no backend. OAuth/reconexão/desconexão e módulos alheios ficam bloqueados.
+
+Não basta usar uma URL diferente da produção nem trocar o alias ao terminar: a versão antiga possui URL estática. Desabilitar o controle no D1 é parte obrigatória do encerramento; com controle ausente, inválido, expirado ou revogado, o preview bloqueia o acesso. Nenhuma escrita real é aceita apenas porque a matriz sintética está verde.
+
 ## Objetivo
 
 Validar a sincronização automática do editor PDF contra o Google Drive real sem publicar a Fase 4 em produção e sem usar qualquer documento de paciente.

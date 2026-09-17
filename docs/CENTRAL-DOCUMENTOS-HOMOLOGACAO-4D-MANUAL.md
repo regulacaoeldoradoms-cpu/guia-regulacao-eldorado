@@ -4,6 +4,16 @@ Data: 17/09/2026
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: `#201`
 
+## Atualização operacional de 17/09/2026
+
+O conector Cloudflare voltou a estar disponível. A retomada verificou que ainda existia apenas o trigger de produção; a criação do trigger de preview foi recusada pela Builds API com `12002: Invalid request body`.
+
+O caminho atual é upload direto de **versão**, sem promover deployment, usando o entrypoint exclusivo `worker/homologation-4d.js`. Consulte `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-ISOLAMENTO.md` e o status antes de executar este roteiro.
+
+As instruções históricas A/C abaixo não autorizam ligar a escrita em um preview genérico do Worker. O ambiente de teste compartilha D1 e conexão OAuth com produção: é necessário limitar usuário, arquivo descartável e sessões, além de controlar revogação e expiração no backend. Não usar Conectar/Desconectar Drive no preview. Trocar o alias ou publicar outra versão com gate desligado não revoga a URL estática da versão anterior; desabilitar o controle de homologação no D1 e verificar o bloqueio também nessa URL.
+
+O frontend de homologação continua recebendo apenas a URL pública do preview. Login legítimo do Portal permanece obrigatório; não se emitem tokens artificiais nem se ampliam capabilities para facilitar testes.
+
 ## Objetivo
 
 Executar a homologação real do autosync com Google Drive sem depender do Codex e sem expor segredos no chat.

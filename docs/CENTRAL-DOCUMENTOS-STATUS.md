@@ -6,11 +6,49 @@
 
 **Fase 4 — Sincronização segura com Drive**
 
-Subfase atual: **4D — preparação da homologação controlada no Drive real**.
+Subfase atual: **4D — preparação e validação do preview controlado para homologação no Drive real**.
 
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: **#201**  
 Base atual: `main@336b647300faee2c958475a3b51b6b0522e0dd06`
+
+## Retomada pelo estado real — 17/09/2026
+
+Fontes conferidas antes das alterações: Guia Mestre Central de Documentos V1.1 (9 páginas integrais), Dossiê Mestre do Portal V1 (9 páginas integrais), delta de 11/09 da camada social, este status, documentos da Fase 4 e homologação, branch e PR #201. O checkout de continuidade foi obtido de `faa40f11d4a4c78464abdb218b483b86bfbb83ce`, sem modificar o checkout antigo de Telemedicina com alterações locais.
+
+A comparação com as integrações corrigiu duas informações desatualizadas:
+- o conector Cloudflare autenticado está disponível nesta sessão;
+- o resultado verde de `6f45b7c` era histórico: o head `faa40f1` tinha cinco workflows vermelhos e o navegador cancelado após falhas de inicialização. Governança, bundle e Pages estavam verdes.
+
+### Regressão posterior ao fechamento da 4C
+
+O commit `e2a8c76` substituiu grande parte de `testing/central-docs/editor-harness.js`, removeu impressão real e passou argumentos incompatíveis para abrir o visualizador. A falha real reproduzida foi `Superfície do visualizador incompleta.`; cinco workflows também falhavam pela mesma asserção de impressão ausente.
+
+Correção: restaurar o harness completo de `edd95fa`, preservando somente a duração sintética de 900 ms do estado `syncing`. Nenhum teste foi enfraquecido e nenhuma funcionalidade de produção foi reescrita.
+
+Validação local do reparo: 180/180 testes do Worker; Playwright completo com PDF.js real, desktop e mobile, 75 passed / 3 skipped previstos, sem retries; sintaxe e `git diff --check` aprovados. Os checks remotos precisam ser conferidos no novo commit publicado.
+
+### Infraestrutura real conferida
+
+- PR #201 aberto, sem merge e sem reviews humanas; `main` permanece na base indicada acima.
+- Pages da branch em `faa40f1`: deployment `aac31e36`, bem-sucedido, mas sem `CENTRAL_DOCS_HOMOLOGATION_WORKER_URL` configurada.
+- Worker de produção: versão `239cca88-9b19-400c-9cd1-82612f942ed0`, deployment `f2916211-e56e-4913-b3b2-e09294d99018`, 100% do tráfego. Gate de escrita ausente/desligado.
+- Único trigger de Builds encontrado: produção/main; token original de build `Workers Builds - 2026-08-11 14:26` realmente persistido. Não confundir esse token com credencial da Builds API.
+- Duas tentativas de criar trigger exclusivo de preview, usando o contrato documentado, retornaram `12002: Invalid request body`; leitura posterior confirmou que nenhum trigger foi criado ou alterado.
+- Conexão OAuth institucional presente no D1, confirmada apenas por contagem de registro configurado; nenhum segredo foi extraído ou exposto.
+- PDF descartável de três páginas sintéticas criado no Drive e verificado por leitura de metadados. Identificador permanece fora do repositório público.
+
+Decisão: preparar uma versão preview por upload de versão, sem promover deployment nem modificar o trigger de produção. O preview deve reutilizar a conexão OAuth existente, bloquear reconexão/desconexão e limitar acesso ao usuário de homologação e ao PDF descartável. A URL estática de uma versão antiga não é revogada apenas trocando o alias; o controle de homologação precisa ser consultado no backend, com expiração e revogação.
+
+Esta retomada **não reabre as fases concluídas nem comprova a 4D**. A matriz real de escrita, conflito, retry e recuperação continua pendente até execução com sessão legítima do Portal.
+
+### Preview restrito implementado e validado
+
+Novo entrypoint `worker/homologation-4d.js`, sem alteração da entrada de produção. O wrapper reutiliza autenticação, capabilities, handlers documentais e observabilidade existentes; permite somente host/origem autorizados, uma conta já autorizada, PDFs descartáveis listados no backend e sessões de upload emitidas pela própria homologação. OAuth e módulos alheios são bloqueados.
+
+O controle no D1 é consultado sem cache, expira e pode ser revogado. Tabela/linha ausente ou inválida bloqueia o acesso. A escrita exige também `DOCUMENTS_DRIVE_WRITE_ENABLED=true`; preparação e login usam `false`. Revisões anteriores são preservadas mesmo quando o cliente envia `preserveRevision:false`; a chave de cache é HMAC por arquivo, evitando troca de conteúdo após reordenar a lista permitida.
+
+Validação: 19/19 testes específicos, com revisão independente e integração dos handlers/autenticação reais usando somente Google mockado; suíte completa do Worker passou em **199/199**. Produção, autenticação e permissões não foram substituídas por mocks na implementação. O esquema idempotente de duas tabelas de controle foi aplicado no D1; nenhuma linha habilitada foi criada por essa migração. Detalhes: `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-ISOLAMENTO.md`.
 
 ## Preparação manual da 4D — 17/09/2026
 
@@ -205,33 +243,40 @@ Mantido:
 - criar nova revisão só porque o usuário clicou no botão sem alterações: descartado;
 - habilitar escrita real apenas porque mocks e staging passaram: descartado.
 
-## Riscos e bloqueios
+## Riscos e bloqueios atuais
 
-- a 4D exige um PDF descartável sem dado de paciente;
-- `DOCUMENTS_DRIVE_WRITE_ENABLED` não deve ser habilitado permanentemente antes da homologação controlada;
-- conflitos de `version` continuam bloqueando sobrescrita automática e manual;
-- a sessão atual não expõe uma integração Cloudflare autenticada para alterar o feature gate/deploy do Worker; a 4D será feita manualmente no painel, sem compartilhar segredos.
+- A 4D ainda não tem aceite real de autosync, retry, conflito e revisão recuperável; testes mockados não substituem esse aceite.
+- O preview compartilha a conexão institucional e o D1; usar somente o entrypoint restrito e manter OAuth bloqueado.
+- `DOCUMENTS_DRIVE_WRITE_ENABLED` permanece desligado durante preparação/login. A janela de escrita exige também controle D1 ativo e deve ser revogada ao encerrar.
+- Não trocar apenas o alias para desarmar versões anteriores; verificar bloqueio pelo controle e pelo host.
+- A Builds API recusou criação do trigger de preview. O caminho atual é upload direto de versão sem deployment, com segredos herdados dentro da Cloudflare.
+- Login real do operador deve ocorrer no navegador. Não fabricar sessão nem copiar segredos para chat, repositório ou frontend.
+- `save_copy` continua testado sinteticamente, mas é bloqueado no wrapper restrito e não está homologado no Drive real.
 
 ## Próxima ação exata
 
-1. No painel Cloudflare, obter um Worker preview da branch `codex/central-docs-drive-sync-phase4`, sem tocar no Worker de produção.
-2. Configurar no preview Pages da branch `CENTRAL_DOCS_HOMOLOGATION_WORKER_URL=https://<worker-preview>.workers.dev` e redeployar.
-3. Conferir que `/homologacao/homologation-manifest.json` informa `workerConfigured: true` e o Worker preview correto.
-4. Criar manualmente no Drive institucional um PDF descartável sem dados sensíveis.
-5. Habilitar temporariamente `DOCUMENTS_DRIVE_WRITE_ENABLED=true` somente no Worker preview.
-6. Executar a matriz descrita em `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-MANUAL.md`.
-7. Desligar o gate ao final, registrar evidências sem conteúdo documental e somente então encerrar a Fase 4/considerar merge do PR #201.
+1. Publicar o reparo e a preparação isolada na branch existente e conferir os checks do novo head.
+2. Enviar bundle do entrypoint `homologation-4d.js` como versão não produtiva, gate `false`, herdando somente os bindings necessários. Confirmar que o deployment de produção continua o mesmo.
+3. Configurar a origem pública do preview no Pages e verificar manifest, CSP e login.
+4. Criar janela D1 de leitura com usuário já autorizado e o PDF descartável preparado, mantendo escrita desligada; obter login legítimo do operador.
+5. Somente com sessão autenticada e arquivo validado, habilitar escrita temporária no preview e executar a matriz de `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-MANUAL.md` com as restrições de `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-ISOLAMENTO.md`.
+6. Desligar gate e revogar controle D1; verificar bloqueio, registrar evidências sem dados sensíveis e só então avaliar encerramento da fase/merge.
 
 ## Handoff para o próximo chat
 
-Continuar a partir da branch `codex/central-docs-drive-sync-phase4` e do PR #201; não reiniciar a Fase 4. Antes de qualquer mudança, conferir `main`, este status, `docs/CENTRAL-DOCUMENTOS-FASE-4.md`, `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-MANUAL.md`, o estado dos workflows e o deployment mais recente do Cloudflare Pages.
-
-Estado funcional esperado ao retomar:
-- autosync apenas quando a `revision` do editor muda;
-- 1 segundo de ociosidade antes do envio;
-- sequência visual `normal → pending → syncing → success (1 s) → normal`;
-- falha usa `Drive_falha.png` e botão força retry;
-- sem alteração, sem upload;
-- escrita real ainda protegida por `DOCUMENTS_DRIVE_WRITE_ENABLED`;
-- 4C verde em CI; 4D ainda não executada;
-- roteiro manual da 4D pronto para execução pelo painel Cloudflare.
+| Campo | Estado de continuidade |
+| --- | --- |
+| Fase/subfase | Fase 4, homologação real 4D; fases anteriores não reiniciadas |
+| Última ação concluída | Reparo do laboratório e wrapper restrito revisados; 199/199 testes Worker e 75 passed / 3 skipped previstos de navegador |
+| Branch/PR | `codex/central-docs-drive-sync-phase4`, PR #201 aberto e sem merge |
+| Último commit de entrada | `faa40f1`; continuação contém correção da regressão introduzida por `e2a8c76` |
+| Checks | Resultado local aprovado; verificar checks remotos sobre o head efetivamente publicado, não reaproveitar o verde histórico de `6f45b7c` |
+| Decisões | Preview próprio com autenticação real, usuário/arquivo/sessões restritos, preservação obrigatória de revisão, cache por identidade e controle D1 expirável/revogável |
+| Justificativa | URL de preview e storage separado não isolam D1/OAuth; alias novo não elimina URL estática antiga |
+| Alternativas descartadas | Habilitar gate em preview genérico; repetir OAuth; usar produção; enfraquecer testes; continuar tentando o mesmo formulário de Builds |
+| Ações externas concluídas | Conector Cloudflare funcional; produção e token de build verificados; OAuth existente confirmado sem leitura de segredos; PDF sintético criado/verificado; duas tabelas de controle provisionadas sem janela habilitada |
+| Pendências | Upload da versão restrita, configuração Pages, login legítimo, matriz real e encerramento com controle revogado |
+| Riscos | Conexão/D1 compartilhados; segredo não deve sair do backend; escrita deve ficar desligada fora da janela; save_copy não homologado no ambiente restrito |
+| Observabilidade | Eventos técnicos allowlisted; preview sem Workers Logs/tail não pode ser apresentado como evidência de privacidade por ausência de logs |
+| Próxima ação exata | Seguir sequência acima e conferir mudanças externas já concluídas antes de repetir qualquer ação |
+| Fontes principais | Este status, FASE-4, HOMOLOGACAO-4D-ISOLAMENTO, HOMOLOGACAO-4D-MANUAL, PR #201 e checks atuais |

@@ -4,6 +4,12 @@ Data de início: 16/09/2026
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: `#201`
 
+## Continuidade conferida em 17/09/2026
+
+O gate continua sendo a 4D. O verde de `6f45b7c` comprova o fechamento histórico da 4C, mas uma regressão posterior em `e2a8c76` quebrou o laboratório do head `faa40f1`. A retomada restaurou o harness completo, preservando a duração sintética de 900 ms em `syncing`, sem enfraquecer testes: 180/180 testes do Worker e 75 passed / 3 skipped previstos no navegador, desktop e mobile.
+
+O acesso Cloudflare autenticado está restabelecido. A homologação usa entrypoint exclusivo de preview com controle revogável/expirável, usuário e PDF descartável permitidos no backend; consulte `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-ISOLAMENTO.md` e o status para o estado operacional atual. Referências abaixo à indisponibilidade do conector descrevem a sessão anterior. Os resultados sintéticos não substituem a matriz real de Drive ainda pendente.
+
 ## Objetivo
 
 Permitir que o PDF final produzido pelo editor seja sincronizado com o Google Drive institucional com confirmação real do Drive, detecção de conflito e possibilidade de recuperação.
