@@ -12,6 +12,18 @@ Branch: `codex/central-docs-drive-sync-phase4`
 PR: **#201**  
 Base atual: `main@d6d4c1600f71b3e915cb57e5ca51a12f01285072`
 
+## Correção visual do ícone pendente — 16/09/2026 20:12 (America/Campo_Grande)
+
+O usuário substituiu em `main` o asset `assets/Drive_pendente.png` por uma versão corrigida, mantendo o mesmo nome. A versão anterior da branch apresentava falha de desenho.
+
+Ação aplicada nesta branch:
+- asset binário `Drive_pendente.png` atualizado a partir da versão corrigida existente em `main`;
+- cache-buster específico alterado de `v=20260916-1` para `v=20260916-2`, evitando reutilização da imagem defeituosa pelo navegador;
+- os demais estados visuais do Drive permanecem inalterados;
+- nenhuma escrita real no Google Drive foi habilitada.
+
+Próximo passo permanece: validar visualmente o estado **pendente** no staging e concluir a validação da 4C antes da 4D.
+
 ## Estado consolidado
 
 As Fases 1, 2 e 3 estão encerradas. A Fase 4 continua aberta. As subfases 4A e 4B estão concluídas tecnicamente; a 4C está implementada e em validação final de navegador/staging antes de retomar a 4D.

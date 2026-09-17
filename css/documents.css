@@ -724,7 +724,7 @@
 }
 
 .documents-art-sync[data-sync-state="pending"] {
-  background-image: url('/assets/Drive_pendente.png?v=20260916-1') !important;
+  background-image: url('/assets/Drive_pendente.png?v=20260916-2') !important;
 }
 
 .documents-art-sync[data-sync-state="syncing"] {
