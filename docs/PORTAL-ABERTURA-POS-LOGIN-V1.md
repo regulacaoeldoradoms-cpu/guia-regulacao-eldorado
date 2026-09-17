@@ -7,152 +7,163 @@ Escopo: mudança transversal de experiência do Portal, sem alterar o escopo fun
 
 O vídeo anexado pelo usuário em 17/09/2026 é o **vídeo oficial de abertura pós-login do Portal**.
 
-Requisitos aprovados:
+Requisitos vigentes:
 
-- reproduzir os aproximadamente **10 segundos completos** do vídeo;
+- reproduzir os aproximadamente **10 segundos completos**;
 - manter **som**;
-- ocupar a tela inteira no lugar do círculo de carregamento após o login;
-- manter o loader legado como fallback;
-- manter o carregamento real do Portal em paralelo, por baixo da abertura;
-- aproveitar os ~10 s como **janela de aquecimento** para autenticação, Home, assets e rotas autorizadas que já são pré-carregadas pelo Portal, sem prolongar artificialmente a abertura além do vídeo;
-- armazenar a mídia localmente após a primeira reprodução bem-sucedida;
-- fazer uma transição suave ao terminar;
-- nenhuma abertura pode ser declarada concluída antes do evento real `ended` do vídeo.
+- ocupar a tela inteira;
+- **não exibir botão intermediário para iniciar o vídeo ou o som**;
+- começar a baixar/preparar o vídeo enquanto o usuário ainda está na tela de login;
+- manter o botão **Entrar bloqueado até o MP4 completo estar disponível e decodificável localmente**;
+- após autenticação válida, reproduzir a abertura na própria página de login e somente depois navegar para o Portal;
+- manter o loader legado da Home como fallback para o carregamento normal do Portal;
+- aproveitar os ~10 s para o aquecimento já existente de Home, Ferramentas e rotas autorizadas;
+- armazenar/reutilizar a mídia em Cache Storage;
+- usar transição suave ao terminar;
+- não cortar o vídeo por cronômetro: a conclusão normal depende do evento real `ended`.
 
 ## Arquivo oficial
 
-Destino versionado no Portal:
-
 `/assets/portal-opening-v1.mp4`
 
-Características do arquivo recebido:
-
-- container: MP4;
-- vídeo: H.264;
-- áudio: AAC;
-- resolução: 1280 × 720;
+- MP4 / H.264 + AAC;
+- 1280 × 720;
 - 24 fps;
 - duração medida: 10,005 s;
 - tamanho: 2.393.970 bytes;
-- SHA-256 do arquivo recebido: `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766`.
+- SHA-256: `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766`.
 
-O binário foi incorporado à branch `feat/post-login-opening-video` no commit `2ba3533c3e14606e0ba7a2c285bfec142de30aaf`, com blob Git `6ab3032978f4a7e8c667e72edd691c5e4d3decc8` e tamanho de 2.393.970 bytes. A suíte do PR valida também o SHA-256 acima diretamente sobre o arquivo versionado, impedindo substituição silenciosa por outro binário.
+A suíte valida tamanho e SHA-256 diretamente sobre o binário versionado para impedir substituição silenciosa.
 
-## Fluxo de execução
+## Revisão arquitetural após homologação humana
 
-1. A Home reconhece que a navegação veio da rota `/login/`.
-2. Antes de exibir o loader tradicional, a superfície normal do Portal é ocultada para evitar um flash do spinner.
-3. A abertura é montada como camada `fixed` em tela inteira, com `object-fit: cover`.
-4. O Portal continua autenticando, aquecendo rotas permitidas e carregando a Home normalmente por baixo da abertura.
-5. Se a Home terminar primeiro, ela fica pronta em segundo plano e só aparece quando o vídeo terminar.
-6. Se o vídeo terminar primeiro, a camada some e o loader tradicional continua visível até a Home terminar.
-7. Se o vídeo falhar, a camada é removida e o loader tradicional volta a assumir imediatamente a experiência.
+A primeira implementação montava a abertura já na Home e, quando a política do navegador bloqueava autoplay com áudio, apresentava **“Iniciar abertura com som”**. Na homologação de 17/09/2026 o usuário rejeitou esse comportamento.
 
-A duração de aproximadamente 10 s foi mantida deliberadamente: além da identidade visual, ela oferece uma janela útil para o aquecimento já existente do Portal. Isso não transforma o vídeo em espera artificial; o sistema continua trabalhando em paralelo e não adiciona atraso extra depois do evento `ended`.
+A arquitetura foi então alterada: **a abertura agora pertence ao fluxo de login, não à Home**.
 
-## Som e política dos navegadores
+Motivos:
 
-A reprodução deve ser tentada **com áudio ativo**, sem fallback silencioso para `muted`.
+1. o vídeo pode ser totalmente preparado antes de o usuário tentar entrar;
+2. o clique real em **Entrar** pode ser aproveitado para preparar a reprodução com áudio dentro do mesmo documento;
+3. não há transição para uma tela de vídeo ainda sem mídia disponível;
+4. a Home deixa de ter qualquer botão ou gate de áudio da abertura;
+5. a navegação para o Portal só ocorre depois do término normal da abertura ou de uma falha excepcional de reprodução.
 
-Navegadores podem bloquear autoplay com som por política própria. Quando `video.play()` retornar `NotAllowedError`, a abertura permanece em tela inteira e exibe o botão **“Iniciar abertura com som”**. Um clique do usuário inicia o mesmo vídeo com áudio.
+A alternativa “pré-carregar no login, navegar para a Home e só então tocar” foi descartada porque a navegação pode perder a ativação do usuário e reintroduzir bloqueios de autoplay com som.
 
-Não converter automaticamente para reprodução muda apenas para contornar a política do navegador, porque isso contrariaria a decisão funcional aprovada.
+## Fluxo atual
+
+1. `login/index.html` solicita preload do MP4 e carrega `js/login-opening.js` antes de `js/login.js`.
+2. O botão **Entrar** nasce desabilitado com o texto **“Preparando abertura...”**.
+3. `js/login-opening.js` procura primeiro uma cópia válida em `portal-opening-media-v1`.
+4. Sem cache válido, baixa a resposta completa da rede.
+5. O Blob só é aceito se tiver exatamente **2.393.970 bytes**; mídia incompleta não libera o login.
+6. O Blob é convertido em URL local `blob:` e um `<video>` oculto é carregado até estado reproduzível.
+7. Somente então o botão muda para **Entrar** e é habilitado.
+8. O gesto no botão prepara o mesmo elemento de mídia sem reproduzir uma prévia audível.
+9. A autenticação real ocorre normalmente.
+10. Com usuário autenticado, `PortalPerformance.warmForUser(user, { immediate: true })` inicia/continua o aquecimento do Portal.
+11. O mesmo vídeo já preparado ocupa a tela inteira, com `muted=false` e volume 1.
+12. Após `ended`, ocorre fade e o `login.js` segue para a rota normal do usuário.
+13. A Home não possui mais implementação de abertura; `js/home.js` voltou a cuidar apenas da Home e preserva o loader legado.
+
+## Falha de preparação
+
+Se o MP4 não puder ser baixado por completo ou decodificado:
+
+- o botão **Entrar permanece desabilitado**;
+- a tela de login informa que a abertura ainda está sendo preparada;
+- ocorre nova tentativa automática;
+- não se autentica/navega para uma abertura incompleta.
+
+Esse bloqueio é intencional e foi solicitado explicitamente pelo usuário.
+
+## Falha excepcional de reprodução após autenticação
+
+Não existe mais botão **“Iniciar abertura com som”**.
+
+Se, apesar da preparação ligada ao gesto do login, o navegador ainda recusar a reprodução com áudio ou a mídia falhar naquele instante:
+
+- a camada de abertura é retirada;
+- não é solicitado um segundo clique;
+- a autenticação permanece válida;
+- o fluxo segue para a Home, cujo loader legado continua sendo o fallback seguro.
+
+Isso evita prender o usuário após as credenciais já terem sido aceitas.
 
 ## Cache local
 
-A implementação utiliza Cache Storage com nome versionado `portal-opening-media-v1`.
+Cache Storage: `portal-opening-media-v1`.
 
-Comportamento:
+Comportamento vigente:
 
-- primeira execução: o vídeo pode vir da rede/HTTP cache;
-- após reprodução concluída: é feita tentativa de persistir a resposta completa no Cache Storage;
-- execuções seguintes: uma cópia válida no Cache Storage é convertida em Blob local e reproduzida sem depender novamente da rede;
-- cache corrompido: é removido e ocorre uma única nova tentativa pela rede;
-- falha de Cache Storage, quota ou indisponibilidade: nunca bloqueia o Portal;
-- futuras versões devem alterar URL e nome lógico de cache para evitar conteúdo antigo apresentado como atual.
+- a cópia pode ser populada **já durante a preparação na tela de login**, sem esperar a primeira reprodução terminar;
+- execuções seguintes priorizam a cópia cacheada;
+- a resposta cacheada também precisa resultar no tamanho exato esperado;
+- cache inválido é removido e a rede é tentada novamente;
+- o vídeo preparado é reproduzido por URL `blob:` local;
+- indisponibilidade/quota do Cache Storage não impede a preparação pela rede.
 
-### Correção de CSP para o cache
+A CSP permanece restrita a `media-src 'self' blob:`; nenhuma origem externa de mídia foi liberada.
 
-Durante a revisão do fluxo de segunda execução foi identificado um ponto de segurança/compatibilidade: o vídeo recuperado do Cache Storage é convertido em uma URL `blob:`. A CSP anterior da Home não declarava `media-src`, portanto `default-src 'self'` poderia bloquear a reprodução desse Blob e forçar a abertura a voltar para a rede.
+## Janela de aquecimento de ~10 s
 
-Correção aplicada:
+Os 10 segundos continuam sendo deliberados também como orçamento de carregamento em segundo plano.
 
-- a Home passa a declarar `media-src 'self' blob:`;
-- a política continua restrita a mídia same-origin e Blob local criado pelo próprio Portal;
-- o teste de contrato exige essa diretiva e exige também `URL.createObjectURL(blob)` no caminho de cache;
-- nenhuma origem externa de mídia foi liberada.
+O Portal reutiliza `PortalPerformance.warmForUser()` e o Service Worker existentes. Não foi criado um segundo prefetch independente. Em conexões restritas/Save-Data, as regras existentes de contenção continuam prevalecendo.
 
-Justificativa: sem essa diretiva o cache poderia existir, mas a segunda reprodução não seria realmente utilizável sob a própria CSP do Portal.
+A abertura não acrescenta espera depois de `ended` para concluir prefetch; a Home assume o fluxo normal e, se necessário, mostra seu loader legado.
 
-## Pré-carregamento durante a abertura
+## Service Worker
 
-O Portal já possui `PortalPerformance.warmForUser()`, chamado no fluxo de autenticação, que aquece imediatamente a Home, Ferramentas e demais rotas autorizadas conforme o perfil. O Service Worker pré-carrega a página e seus assets estáticos de forma controlada.
+O Service Worker mantém a versão contratual `20260916-10`, mas seu script foi alterado para incluir `/js/login-opening.js?v=20260917-1` no conjunto de recursos centrais.
 
-A abertura de 10 s passa a ser tratada como uma **janela útil para esse trabalho em segundo plano**, não como substituta do mecanismo de performance. Não foi adotado um novo carregador paralelo independente, porque duplicaria requisições e estado; a decisão é reutilizar o aquecimento existente e manter a abertura desacoplada da conclusão dessas requisições.
+Como o próprio script do Service Worker mudou e usa `skipWaiting()` + `clients.claim()`, uma nova instalação atualiza as páginas `/login/` e `/` no cache existente sem exigir mudança do identificador que é protegido por contratos históricos da suíte.
 
-Em conexões restritas/Save-Data, as regras existentes de contenção de pré-carregamento continuam prevalecendo.
+Foi descartada a troca desnecessária da versão do cache após ela provocar falhas em contratos legados sem trazer benefício funcional adicional.
 
-## Laboratório sintético de navegador
+## Laboratório sintético e Playwright
 
-Para não depender de dados reais nem da autenticação institucional durante a validação visual, foi criado um laboratório isolado em `testing/post-login-opening/`.
+O laboratório `/opening/` foi remodelado para reproduzir o novo fluxo:
 
-Esse laboratório:
+- formulário de login fictício;
+- botão inicialmente bloqueado até o MP4 estar completamente preparado;
+- mesma `js/login-opening.js` usada pelo Portal;
+- autenticação fictícia sem dados reais;
+- destino sintético `/opening/complete.html` após a abertura;
+- mesmo MP4 oficial;
+- sem Google Drive, D1, Worker de produção, pacientes, usuários reais ou segredos.
 
-- usa o **mesmo `js/home.js`** da implementação real;
-- usa o **mesmo MP4 oficial** versionado;
-- simula somente uma sessão fictícia e mantém o loader legado ativo em segundo plano;
-- não carrega Google Drive, Worker de produção, D1, dados clínicos, usuários reais ou segredos;
-- é incluído no bundle sintético de staging em `/opening/`;
-- possui CSP com `media-src 'self' blob:` igual ao requisito da Home;
-- recebe validação Playwright própria em navegador desktop e mobile.
+A suíte de navegador cobre desktop e mobile e verifica:
 
-A suíte de navegador cobre: duração real do MP4 próxima de 10,005 s, tela cheia, áudio não mutado, cache persistido e reutilizado sem rede, gesto explícito quando autoplay é bloqueado e retorno ao loader legado quando a mídia falha.
+- botão de login só habilita após o MP4 completo estar no cache/preparado;
+- nenhum `portalOpeningStartWithSound` é criado;
+- vídeo usa Blob local, tela inteira, `muted=false` e volume 1;
+- segunda preparação funciona com a rede do MP4 bloqueada, provando reutilização do cache;
+- `NotAllowedError` excepcional não cria botão intermediário;
+- sem MP4 completo, autenticação não é iniciada.
 
-### Resultado automatizado
+## Fallback e privacidade
 
-No head `8ddc14f81ecee36fa9a494cee6997b886415a21a`:
-
-- **26/26 workflows associados ao PR concluíram com sucesso**;
-- o workflow **Validar abertura pós-login — navegador** ficou verde;
-- o MP4 oficial passou pela validação de tamanho e SHA-256 antes do browser test;
-- o Playwright executou **8/8 cenários aprovados** em Chrome desktop e mobile;
-- foram comprovados em navegador real: tela inteira, áudio ativo, cache local na segunda abertura, gesto explícito para autoplay bloqueado e fallback do loader legado.
-
-O deployment Cloudflare do mesmo head também foi concluído com sucesso.
-
-Preview sintético para homologação humana:
-
-`https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev/opening/`
-
-Esse preview não usa dados reais e serve somente para validar visual, som, enquadramento, cache e caminhos de fallback.
-
-## Fallback e antirregressão
-
-O elemento `#homeLoading` e `.home-loading-spinner` permanecem no código. Eles não são removidos porque são a proteção para falha de mídia e para o caso em que o vídeo termina antes de a Home estar pronta.
-
-A preparação inicial possui proteção temporal para não deixar a Home invisível caso o JavaScript da abertura não inicialize.
-
-## Privacidade e observabilidade
-
-A abertura não envia ao PostHog nome de usuário, rota clínica, documento, arquivo, ID do Drive ou qualquer conteúdo sensível. Nenhuma nova telemetria de usuário é necessária para esta V1.
+O loader antigo da Home continua preservado. A abertura não adiciona telemetria com identidade, dados clínicos, documentos ou IDs do Drive.
 
 ## Relação com a Central de Documentos
 
-A fase oficial em andamento continua sendo **Fase 4 — Sincronização segura com Drive**, subfase 4D, no PR #201 e branch `codex/central-docs-drive-sync-phase4`.
+A fase oficial continua sendo **Fase 4 — Sincronização segura com Drive, subfase 4D**, no PR #201. A abertura permanece isolada no PR #202 e não altera os critérios da Fase 4.
 
-Esta mudança de abertura é uma melhoria transversal do Portal em branch própria e **não conclui, reabre nem modifica os critérios de aceite da Fase 4**.
+## Critérios de aceite atualizados
 
-## Critérios de aceite desta mudança transversal
-
-- binário oficial presente em `/assets/portal-opening-v1.mp4` com SHA-256 correspondente ao arquivo aprovado — **atendido**;
-- tela cheia em desktop e mobile — **automatizado e aprovado**;
-- áudio presente e audível quando permitido pelo navegador — **automatizado quanto ao estado do elemento; homologação auditiva humana pendente**;
-- botão de gesto explícito quando autoplay com som for bloqueado — **automatizado e aprovado**;
-- reprodução termina pelo evento real `ended`, preservando os ~10 s completos — **automatizado e aprovado**;
-- transição suave ao término — **implementada; homologação visual humana pendente**;
-- loader antigo continua funcionando em falha de mídia e enquanto a Home ainda estiver carregando — **automatizado e aprovado**;
-- cache local é populado após a primeira execução e reaproveitado em uma segunda autenticação — **automatizado e aprovado no laboratório**;
-- CSP permite somente mídia same-origin e Blob local necessário à reprodução cacheada — **atendido**;
-- aquecimento do Portal continua em paralelo, sem aguardar artificialmente além do vídeo — **atendido por arquitetura existente**;
-- testes de contrato + Playwright desktop/mobile e checks do PR verdes — **atendido**;
-- validação visual e sonora humana no preview `/opening/` antes do merge — **pendente**.
+- binário oficial presente e protegido por SHA-256;
+- login desabilitado até o vídeo completo estar preparado;
+- nenhum botão intermediário para iniciar vídeo/som;
+- abertura em tela inteira em desktop e mobile;
+- áudio ativo quando o navegador permitir a reprodução preparada pelo gesto de login;
+- ~10 s completos e finalização por `ended`;
+- fade final;
+- aquecimento do Portal em paralelo;
+- cache reutilizado em nova autenticação;
+- falha de preparação impede Login e tenta novamente;
+- falha excepcional de reprodução não perde a autenticação e cai para o fluxo normal;
+- Home sem implementação duplicada da abertura;
+- testes de contrato e Playwright verdes;
+- homologação visual/sonora humana do novo preview antes de retirar o PR #202 de draft.
