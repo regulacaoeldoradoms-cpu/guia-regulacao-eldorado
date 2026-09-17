@@ -15,7 +15,7 @@ PR da Fase 4: **#201 — aberto, sem merge**
 Head conferido: `a92bbcc40b7c38eb126dbe375c3db31272efde72`  
 Base oficial `main`: `336b647300faee2c958475a3b51b6b0522e0dd06`
 
-As Fases 1, 2 e 3 permanecem encerradas. As subfases 4A, 4B e 4C estão concluídas tecnicamente. A 4D ainda não está aprovada e o PR #201 não deve ser mesclado antes do fechamento da homologação real controlada.
+As Fases **0, 1, 2 e 3** permanecem encerradas. As subfases 4A, 4B e 4C estão concluídas tecnicamente. A 4D ainda não está aprovada e o PR #201 não deve ser mesclado antes do fechamento da homologação real controlada.
 
 ## Mudança transversal em andamento — abertura pós-login em vídeo
 
@@ -23,7 +23,7 @@ Em 17/09/2026 o usuário aprovou uma melhoria transversal do Portal que **não a
 
 Branch isolada: `feat/post-login-opening-video`  
 PR: **#202 — draft, aberto, sem merge**  
-Último commit funcional antes deste registro: `86dd5e0a1472cc53affbb919aec37c0dc74f088d`
+Último commit funcional antes deste registro: `5ca990e627f5a1d7e496239485dd6a331cd002f4`
 
 Documento de decisão: `docs/PORTAL-ABERTURA-POS-LOGIN-V1.md`
 
@@ -73,9 +73,9 @@ O hash acima deve ser usado para impedir substituição silenciosa por outro bin
 - o antigo `#homeLoading` e `.home-loading-spinner` foram preservados;
 - não foi adicionada telemetria contendo identidade, dados clínicos, documento ou Drive.
 
-### Testes criados
+### Testes criados e regressão corrigida
 
-Arquivo: `worker/tests/post-login-opening.test.mjs`
+Arquivo novo: `worker/tests/post-login-opening.test.mjs`
 
 Cobertura de contrato adicionada para:
 
@@ -90,7 +90,9 @@ Cobertura de contrato adicionada para:
 - remoção de cache inválido;
 - fallback em erro de mídia.
 
-Validação local já feita fora do repositório: `node --check` do novo `home.js` aprovado. Os checks remotos do PR #202 ainda precisam ser consolidados depois que o binário oficial for incorporado.
+A primeira rodada remota executou **176 testes**, com **175 aprovados e 1 falha**. A falha não era funcional da abertura: o teste legado `worker/tests/social-ui.test.mjs` ainda exigia a versão antiga `/js/home.js?v=20260910-2`. O contrato foi atualizado para a versão intencional `20260917-1`, preservando toda a cobertura original do arquivo. A regra de governança também apontou a ausência literal de “Fase 0” após a compactação do status; esta atualização restaura explicitamente a referência à Fase 0 encerrada. Nova rodada de checks deve confirmar ambos os reparos.
+
+Validação local já feita fora do repositório: `node --check` do novo `home.js` aprovado.
 
 ## Bloqueio atual da abertura pós-login
 
@@ -121,17 +123,17 @@ Até o binário existir em `assets/portal-opening-v1.mp4`, a branch não atende 
 
 **Fase atual:** Fase 4 — Sincronização segura com Drive.  
 **Subfase / objetivo atual:** 4D continua no PR #201; em paralelo existe a mudança transversal de abertura pós-login no PR #202.  
-**Última ação concluída:** implementação de código, proteção de autoplay/cache/fallback, teste de contrato e documentação da abertura no PR #202.  
+**Última ação concluída:** implementação de código, proteção de autoplay/cache/fallback, teste de contrato, correção da regressão de cachebuster e documentação da abertura no PR #202.  
 **Branch atual desta mudança:** `feat/post-login-opening-video`.  
 **PR atual desta mudança:** #202, draft, não mesclado.  
-**Último commit funcional registrado:** `86dd5e0a1472cc53affbb919aec37c0dc74f088d` antes do commit deste status.  
-**Checks e testes:** `node --check` local do `home.js` aprovado; checks GitHub devem ser conferidos após inclusão do binário.  
+**Último commit funcional registrado:** `5ca990e627f5a1d7e496239485dd6a331cd002f4` antes do commit deste status.  
+**Checks e testes:** primeira rodada: 176 testes, 175 aprovados/1 falha por cachebuster legado; correção aplicada. Governança também corrigida para manter referência explícita à Fase 0. Nova rodada remota pendente de confirmação.  
 **Decisões tomadas:** vídeo de 10,005 s com som é oficial; tela inteira; cache local; loader antigo como fallback; gesto explícito se autoplay com som for bloqueado.  
 **Justificativas:** preservar experiência visual aprovada sem sacrificar recuperação, desempenho ou política dos navegadores.  
 **Alternativas descartadas:** GIF, vídeo mudo automático, remoção do spinner, bloqueio do carregamento da Home, mistura com PR #201 e hospedagem externa improvisada.  
 **Ações externas concluídas:** nenhuma necessária para esta mudança.  
-**Pendências e bloqueios:** incorporar o binário oficial exato em `assets/portal-opening-v1.mp4`; depois executar checks e homologação visual/sonora.  
+**Pendências e bloqueios:** incorporar o binário oficial exato em `assets/portal-opening-v1.mp4`; depois consolidar checks e homologação visual/sonora.  
 **Riscos conhecidos:** bloqueio de autoplay com som; crop periférico por `cover`; cache indisponível; regressão se #202 for mesclado sem mídia.  
 **Métricas / observabilidade:** nenhuma nova telemetria sensível adicionada; esta V1 não depende de PostHog.  
-**Próxima ação exata:** adicionar ao PR #202 o arquivo MP4 aprovado com SHA-256 `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766`, conferir checks e abrir o preview para validar áudio, duração, enquadramento, cache na segunda autenticação e fallback.  
-**Arquivos e fontes principais:** `docs/PORTAL-ABERTURA-POS-LOGIN-V1.md`, `index.html`, `js/home.js`, `worker/tests/post-login-opening.test.mjs`, PR #202; para a Fase 4, PR #201 e `docs/CENTRAL-DOCUMENTOS-STATUS.md` na branch `codex/central-docs-drive-sync-phase4`.
+**Próxima ação exata:** adicionar ao PR #202 o arquivo MP4 aprovado com SHA-256 `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766`, confirmar checks e abrir o preview para validar áudio, duração, enquadramento, cache na segunda autenticação e fallback.  
+**Arquivos e fontes principais:** `docs/PORTAL-ABERTURA-POS-LOGIN-V1.md`, `index.html`, `js/home.js`, `worker/tests/post-login-opening.test.mjs`, `worker/tests/social-ui.test.mjs`, PR #202; para a Fase 4, PR #201 e `docs/CENTRAL-DOCUMENTOS-STATUS.md` na branch `codex/central-docs-drive-sync-phase4`.
