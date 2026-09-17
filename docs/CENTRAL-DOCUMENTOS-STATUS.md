@@ -38,99 +38,106 @@ Esta mudança permanece independente da Fase 4 e não altera os critérios do PR
 
 O binário permanece protegido por teste de tamanho + SHA-256.
 
-### Mudança de arquitetura aprovada em homologação
+### Decisão humana mais recente
 
-A homologação humana mostrou que a implementação anterior podia apresentar **“Iniciar abertura com som”** por política de autoplay do navegador. O usuário rejeitou explicitamente esse botão e definiu novo comportamento obrigatório:
+O usuário esclareceu que a preparação do vídeo é **operacional interno** e não deve aparecer na interface.
 
-- o vídeo deve começar a carregar **ainda na tela de login**;
-- o botão **Entrar não pode ser liberado até o vídeo completo estar preparado em segundo plano**;
-- depois de autenticar, a abertura deve iniciar sem botão intermediário;
-- a abertura deve manter som, 10 s completos, tela inteira, cache e aquecimento do Portal.
+Comportamento obrigatório atual:
 
-A abertura foi movida da Home para o próprio fluxo de login.
+- o vídeo começa a carregar na própria tela de login;
+- o usuário vê o botão normalmente como **Entrar** durante todo o tempo;
+- não aparece **“Preparando abertura...”**, aviso equivalente ou indicador operacional no `loginStatus`;
+- a autenticação/navegação só prossegue quando o MP4 completo estiver disponível e decodificável;
+- depois da autenticação, a abertura começa sem botão intermediário;
+- o vídeo mantém som, tela inteira, aproximadamente 10 s completos, cache e aquecimento do Portal.
 
-### Implementação atual
+### Implementação atual — gate silencioso
 
-Novo arquivo: `js/login-opening.js`.
+Arquivo principal: `js/login-opening.js`.
 
 Fluxo:
 
-1. `login/index.html` solicita preload do MP4 e inicia o botão **Entrar** desabilitado como **“Preparando abertura...”**.
-2. `js/login-opening.js` procura o MP4 em `portal-opening-media-v1`; sem cache válido, baixa a resposta completa.
-3. O Blob só é aceito se tiver exatamente **2.393.970 bytes**.
-4. O vídeo oculto é carregado até estado reproduzível.
-5. Somente depois o botão **Entrar** é habilitado.
-6. O gesto do próprio Login prepara o elemento de mídia para reprodução com áudio, sem reproduzir uma prévia audível.
-7. A autenticação real acontece normalmente.
-8. Após autenticação válida, `PortalPerformance.warmForUser(user, { immediate: true })` continua o aquecimento do Portal.
-9. O vídeo já preparado ocupa a tela inteira na própria página de login, com `muted=false` e volume 1.
-10. O fluxo normal termina pelo evento real `ended`, aplica fade e só então o `login.js` navega para a rota do usuário.
+1. a tela de login solicita preload de `assets/portal-opening-v1.mp4`;
+2. `js/login-opening.js` aplica um gate técnico interno enquanto preserva visual/texto **Entrar**;
+3. o controlador consulta primeiro `portal-opening-media-v1`;
+4. sem cache válido, baixa a resposta completa;
+5. o Blob só é aceito com exatamente **2.393.970 bytes**;
+6. o `<video>` oculto é preparado até estado reproduzível;
+7. somente então o gate interno é retirado;
+8. o clique efetivo em **Entrar** prepara a reprodução com áudio no mesmo documento;
+9. a autenticação ocorre normalmente;
+10. `PortalPerformance.warmForUser(user, { immediate: true })` aquece o Portal em paralelo;
+11. o vídeo já preparado ocupa toda a tela, com `muted=false`, volume 1 e `object-fit: cover`;
+12. o fluxo normal termina pelo evento real `ended`, aplica fade e só então `login.js` navega para a rota do usuário.
 
-`index.html` não dispara mais abertura por referrer e `js/home.js` teve toda a implementação antiga de abertura/gate de áudio removida. O loader tradicional da Home foi preservado.
+O gate continua tecnicamente retendo a ação até a mídia estar pronta porque liberar o clique antes e aguardar de forma assíncrona poderia consumir a ativação transitória do navegador e reintroduzir bloqueio de áudio. Essa retenção é invisível na apresentação do botão.
 
-### Sem botão intermediário
+### Sem botão ou texto intermediário
 
-O código novo não cria `portalOpeningStartWithSound`, `portal-opening-sound-gate` nem o texto **“Iniciar abertura com som”**.
+O código vigente não cria `portalOpeningStartWithSound`, `portal-opening-sound-gate` nem **“Iniciar abertura com som”**.
 
-Se o navegador, excepcionalmente, ainda bloquear a reprodução mesmo após a preparação ligada ao gesto de login:
+A preparação também não publica mensagem operacional de carregamento.
+
+Se o navegador excepcionalmente recusar a reprodução mesmo após a preparação ligada ao gesto de login:
 
 - não aparece segundo botão;
 - a camada é removida;
 - a autenticação não é perdida;
 - a navegação segue para a Home;
-- o loader legado continua sendo o fallback seguro.
+- o loader legado continua como fallback seguro.
 
 ### Falha de preparação
 
 Se o MP4 não puder ser obtido integralmente ou ficar reproduzível:
 
-- **Entrar permanece desabilitado**;
-- o usuário recebe mensagem de que a abertura ainda está sendo preparada;
+- o gate interno permanece ativo;
+- visualmente o botão continua **Entrar**;
+- não aparece mensagem operacional;
 - uma nova tentativa ocorre automaticamente;
-- nenhuma autenticação é iniciada enquanto o vídeo não estiver pronto.
+- nenhuma autenticação/navegação é iniciada enquanto o vídeo não estiver pronto.
 
-Esse bloqueio é intencional e corresponde ao requisito explícito aprovado pelo usuário.
+### Cache, CSP e Service Worker
 
-### Cache e CSP
+Cache Storage da mídia: `portal-opening-media-v1`.
 
-Cache Storage: `portal-opening-media-v1`.
+A cópia pode ser gravada já durante a preparação do login. Nova autenticação prioriza o Blob local e pode funcionar sem nova transferência do MP4.
 
-A cópia pode ser gravada já durante a preparação do login. A segunda autenticação prioriza o Blob local e pode funcionar sem nova transferência do MP4.
+O staging sintético mantém CSP `media-src 'self' blob:`. Nenhuma origem externa de mídia foi liberada.
 
-O staging sintético mantém CSP `media-src 'self' blob:`. Nenhuma origem externa de mídia foi aberta.
+O Service Worker preserva a versão contratual `CACHE_VERSION = '20260916-10'` e pré-carrega `/js/login-opening.js?v=20260917-1`. A tentativa anterior de alterar a versão para `20260917-1` foi descartada porque rompeu contratos históricos sem benefício funcional necessário.
 
-### Service Worker
+### Descoberta no CI e correção
 
-Foi mantida a versão contratual `CACHE_VERSION = '20260916-10'` para não quebrar contratos históricos da suíte.
+No head anterior `95098e0d29b520fd8af2f666bdea6a8e883b73a7`, todos os workflows do PR ficaram verdes exceto **Validar abertura pós-login — navegador**.
 
-O próprio `portal-sw.js` foi alterado para pré-cachear `/js/login-opening.js?v=20260917-1`. Como o script do Service Worker mudou e já usa `skipWaiting()` + `clients.claim()`, a instalação nova atualiza `/login/` e `/` no cache existente sem exigir troca do identificador histórico.
+Diagnóstico do log: os 8 cenários falharam antes de executar a lógica do vídeo porque o servidor local de staging tratava `/opening/` como diretório e não resolvia `index.html`; o locator `#loginSubmit` portanto não existia.
 
-Uma tentativa de elevar `CACHE_VERSION` para `20260917-1` foi descartada depois de revelar três falhas de contrato legado que não representavam problema funcional. A versão foi restaurada, preservando a atualização do precache.
+Correção aplicada em `testing/browser/serve-staging.mjs`:
 
-### Laboratório e testes
+- rotas de diretório passam a resolver `<diretório>/index.html`;
+- proteção contra path traversal permanece ativa.
 
-O laboratório sintético `/opening/` agora reproduz um login fictício, sem Drive, D1, pacientes, usuários reais ou segredos.
+O laboratório também foi atualizado para não exibir estado operacional durante a preparação.
 
-Cobertura automatizada atualizada:
+### Validação atual
 
-- Login começa desabilitado;
-- MP4 completo é exigido antes de habilitar Entrar;
-- tamanho/hash oficial continuam protegidos;
-- nenhum botão adicional de som existe;
-- vídeo usa tela inteira, Blob local, `muted=false` e volume 1;
-- segunda preparação usa Cache Storage mesmo com rede do MP4 bloqueada;
-- `NotAllowedError` excepcional não cria botão intermediário;
-- MP4 indisponível mantém Login bloqueado e impede chamada de autenticação;
-- Home não contém mais a implementação antiga da abertura;
-- Service Worker preserva a versão contratual e pré-carrega o novo controlador do login.
+No head funcional `47a7280e8331c6e42be39722e55b53f1ee45b8e4`:
 
-A matriz de CI do novo fluxo está sendo consolidada no head atual. O PR #202 deve permanecer draft até a matriz ficar verde e o novo preview ser homologado pelo usuário.
+- o workflow dedicado **Validar abertura pós-login — navegador** concluiu com **sucesso**;
+- a suíte cobre desktop e mobile;
+- o MP4 oficial passa por validação de tamanho e SHA-256 antes do browser test;
+- os testes validam gate silencioso, botão apresentado como **Entrar**, ausência de mensagem operacional, tela inteira, áudio ativo, Blob local, reutilização de Cache Storage, ausência de botão extra e bloqueio de autenticação quando a mídia não está disponível;
+- os demais workflows já concluídos desse head estavam verdes na última conferência;
+- **Validar Central de Documentos — navegador** ainda estava em execução na última conferência e precisa ser checado antes de declarar toda a matriz concluída.
+
+Após essa validação, a documentação de decisão foi atualizada para refletir o gate silencioso. O PR continua draft.
 
 ## Decisões e alternativas descartadas
 
 - **Descartado:** botão “Iniciar abertura com som”. Motivo: rejeitado na homologação e adiciona interação não desejada.
+- **Descartado:** texto “Preparando abertura...” ou aviso equivalente. Motivo: detalhe operacional que não deve ser exposto ao usuário.
+- **Descartado:** aceitar o clique antes de a mídia estar pronta e aguardar depois. Motivo: pode perder a ativação transitória necessária para áudio e recriar o problema de autoplay.
 - **Descartado:** tocar somente depois de navegar para a Home. Motivo: navegação pode perder ativação do usuário e reintroduzir autoplay bloqueado.
-- **Descartado:** liberar Login antes de terminar o download. Motivo: pode abrir a superfície de vídeo sem mídia pronta.
 - **Descartado:** GIF. Motivo: sem áudio, peso/qualidade inferiores.
 - **Descartado:** autoplay mudo automático. Motivo: contraria o requisito de som.
 - **Descartado:** remover loader legado. Motivo: ele continua sendo a recuperação segura da Home.
@@ -140,7 +147,7 @@ A matriz de CI do novo fluxo está sendo consolidada no head atual. O PR #202 de
 ## Riscos conhecidos
 
 - em navegadores com política muito restritiva, a reprodução com áudio ainda pode ser recusada; nesse caso não há prompt extra e o Portal segue para a Home;
-- se o MP4 não puder ser preparado, Login permanece bloqueado por decisão funcional aprovada;
+- se a rede/cache não permitir preparar o MP4, a ação de entrada permanece retida silenciosamente até nova tentativa bem-sucedida;
 - `object-fit: cover` pode cortar periferia em proporções muito diferentes de 16:9;
 - Cache Storage pode estar indisponível; nesse caso a preparação usa a rede;
 - o staging Cloudflare é sintético e deve permanecer sem dados reais;
@@ -148,23 +155,23 @@ A matriz de CI do novo fluxo está sendo consolidada no head atual. O PR #202 de
 
 ## Próxima ação exata
 
-1. consolidar a matriz de CI do head atual e corrigir qualquer regressão real;
+1. confirmar a conclusão de **Validar Central de Documentos — navegador** no head atual;
 2. confirmar o deployment Cloudflare atualizado da branch;
-3. abrir `https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev/opening/` após o novo deploy;
-4. conferir que **Preparando abertura...** aparece antes de Entrar quando necessário;
-5. confirmar que **Entrar só habilita depois do vídeo pronto**;
-6. clicar Entrar e confirmar que o vídeo começa sem qualquer botão adicional;
-7. validar som, 10 s completos, enquadramento, fade e segunda execução cacheada;
-8. após aceite humano explícito, atualizar este status, retirar #202 de draft e só então considerar merge;
-9. manter PR #201/Fase 4 independente.
+3. abrir `https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev/opening/` após o deploy;
+4. confirmar visualmente que o botão aparece sempre como **Entrar**, sem “Preparando abertura...” e sem qualquer aviso operacional;
+5. clicar **Entrar** e confirmar que a abertura começa imediatamente, sem botão adicional;
+6. validar som, ~10 s completos, enquadramento, fade e segunda execução cacheada;
+7. após aceite humano explícito, atualizar este status, retirar #202 de draft e só então considerar merge;
+8. manter PR #201/Fase 4 independente.
 
 ## Handoff para o próximo chat
 
 **Fase oficial:** Fase 4 — Sincronização segura com Drive, subfase 4D, PR #201.  
 **Mudança transversal:** abertura pós-login, PR #202.  
-**Última decisão humana:** remover completamente o botão “Iniciar abertura com som” e impedir Login enquanto o MP4 não estiver totalmente preparado.  
-**Arquitetura atual:** preparação integral + cache na página de login; reprodução após autenticação ainda no mesmo documento; navegação somente depois da abertura/fallback.  
-**Arquivos principais:** `login/index.html`, `js/login-opening.js`, `js/login.js`, `index.html`, `js/home.js`, `portal-sw.js`, `testing/post-login-opening/*`, `testing/browser/post-login-opening.spec.mjs`, `worker/tests/post-login-opening.test.mjs`.  
+**Última decisão humana:** preparação do vídeo deve ser invisível; o usuário vê somente o botão normal **Entrar** e nunca detalhes operacionais.  
+**Arquitetura atual:** gate técnico silencioso + preparação integral/cache na página de login + reprodução após autenticação no mesmo documento + navegação depois da abertura/fallback.  
+**Último head funcional validado da abertura:** `47a7280e8331c6e42be39722e55b53f1ee45b8e4`; workflow dedicado de navegador verde.  
+**Arquivos principais:** `login/index.html`, `js/login-opening.js`, `js/login.js`, `index.html`, `js/home.js`, `portal-sw.js`, `testing/post-login-opening/*`, `testing/browser/post-login-opening.spec.mjs`, `testing/browser/serve-staging.mjs`, `worker/tests/post-login-opening.test.mjs`.  
 **PR:** #202 continua draft e sem merge.  
-**Pendência:** CI final + deploy atualizado + homologação humana do novo fluxo.  
-**Próximo passo:** testar o preview renovado somente depois de CI/deploy confirmados; não fazer merge antes do aceite.
+**Pendência:** finalizar matriz do head atual + deploy atualizado + homologação humana do preview.  
+**Próximo passo:** testar o preview renovado somente depois da confirmação do CI/deploy; não fazer merge antes do aceite.
