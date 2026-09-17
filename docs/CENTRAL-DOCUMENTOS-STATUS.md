@@ -2,6 +2,17 @@
 
 Última atualização: 17/09/2026.
 
+## Retomada após interrupção — 17/09/2026
+
+O pedido de continuidade chegou com um screenshot, sem o executável do procedimento. O commit `9f295ca2766b890285b912b7ab714adeb63d2bc7` já registra a preparação local do V2 e seus testes anteriores, mas o arquivo `liberar-escrita-preview-4d-v2.mjs` não foi recuperado nas fontes consultadas nem está presente no ambiente desta retomada. A entrega efetiva ao operador e a execução continuam **não confirmadas**. Não confundir documentação de preparo com posse do artefato, upload ou liberação de escrita.
+
+- Consulta do PR #201 nesta retomada: aberto, sem merge, head `9f295ca2766b890285b912b7ab714adeb63d2bc7`, base main `336b647300faee2c958475a3b51b6b0522e0dd06`, `mergeable:false`. A referência 3dc193c abaixo é o snapshot da etapa anterior, não a main mais recente.
+- Nenhum upload, deploy, promoção, alteração de segredo ou operação no D1/Drive foi executado nesta retomada. Não houve nova leitura autenticada da Cloudflare; f8848c45/83a620d7 continua sendo o último estado informado pelo operador, a reconferir antes de qualquer envio.
+- Os 27 testes do V2 abaixo são evidências registradas pela sessão anterior, não testes reexecutados nesta retomada. Não atribuí-los a um arquivo reconstruído ou modificado.
+- Próxima ação imediata: obter do operador o script `liberar-escrita-preview-4d.mjs` que efetivamente executou; caso tenha recebido o V2, obter esse arquivo em vez do antigo. Não solicitar tokens, arquivos `.env`, credenciais nem registros locais completos que possam conter identificadores.
+- Conferir o SHA-256 do artefato recebido e revisar a implementação antes de entregar qualquer comando de execução. SHA-256 histórico do original: `53b6cc137149b69ea3fb6a650e6a6c9e40918b68f2ef5154cdcc5814fbc212d5`; do V2: o indicado na seção própria. Se for necessária reconstrução, dar nova identificação/hash e executar os testes, sem apresentar o resultado como o mesmo V2 já validado.
+- Manter prazo original de 17/09/2026 20:10:01 UTC, escopo de uma conta/um PDF, conferências de produção e confirmação humana. Não executar o script antigo inalterado, trocar apenas UUIDs, dispensar proteções nem ampliar a janela para compensar a interrupção.
+
 ## Fase atual
 
 **Fase 4 — Sincronização segura com Drive.**
@@ -53,7 +64,7 @@ Decisão: **preservar f8848c45 e seu deployment**, sem rollback. A versão 239cc
 
 ## Procedimento operacional V2 preparado
 
-Arquivo entregue localmente: `liberar-escrita-preview-4d-v2.mjs`.
+Arquivo registrado como preparado localmente na sessão anterior: `liberar-escrita-preview-4d-v2.mjs`. Entrega ao operador ainda não confirmada; ver a nota de retomada acima.
 
 SHA-256: `eb7688dd10335bf145cf8f883600faba4eb867996fa4ff97fe8d37b4cce14e18`.
 
@@ -71,7 +82,7 @@ O V2 não muda código do editor. Ele prepara a mesma janela/preview para o test
 
 **Validação local V2:** 27 testes Node aprovados, sintaxe aprovada e SELECT exercitado em SQLite de memória com dados fictícios. Inclui produção antiga/nova/divergente, dependências ausentes/tipos errados, recursos extras, herança ampla, metadados multipart, concorrência, expiração, privacidade e ordem das proteções. Não foi executado upload autenticado deste V2 pelo assistente; o dry-run do Wrangler com o payload V2 e a confirmação final dependem da execução do operador.
 
-Próxima ação exata: operador executa o V2 no mesmo Windows com o preparo local existente. Receber apenas o relatório final. Se houver `PREVIEW_COM_ESCRITA_LIBERADA`, conferir acesso atualizado e iniciar a matriz real. Se houver interrupção, distinguir `uploadAttempted` falso/verdadeiro antes de orientar qualquer nova execução. Não editar o PDF com estado de envio incerto.
+Após recuperar e conferir o artefato, a próxima etapa operacional prevista é executar o V2 no mesmo Windows com o preparo local existente, somente após revalidar estado, prazo e ausência de tentativa incerta. Receber apenas o relatório final. Se houver `PREVIEW_COM_ESCRITA_LIBERADA`, conferir acesso atualizado e iniciar a matriz real. Se houver interrupção, distinguir `uploadAttempted` falso/verdadeiro antes de orientar qualquer nova execução. Não editar o PDF com estado de envio incerto.
 
 ## Estado técnico do editor e evidências anteriores
 
@@ -115,14 +126,14 @@ A nova janela encerra em 20:10:01 UTC, sem extensão automática. Ao terminar: a
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 4D, sem aceite; fases anteriores não reiniciadas |
-| Última ação concluída | Operador identificou nova produção f8848c45/83a620d7 a 100%; V2 do procedimento foi preparado e testado localmente, sem execução real confirmada |
+| Última ação concluída | Estado e PR recuperados após interrupção; constatada lacuna de acesso/entrega do executável V2. Preparação/testes anteriores preservados como registros, sem nova execução real |
 | Branch/PR | codex/central-docs-drive-sync-phase4, #201 aberto, sem merge, conflito de integração indicado |
 | Código do reteste | 2fee19e; preview-base a17473ce, gate false informado; main conferida 3dc193c |
 | Produção a preservar | f8848c45-0bfc-40d6-8508-92b33dea6f43, deployment 83a620d7-82cc-47ae-9779-f7002f45482d, 100%, conforme saída Wrangler do operador |
 | Janela e leitura | Uma conta e um PDF sintético, janela nova até 17/09 20:10:01 UTC; leitura/3 páginas conferidas às 14:17 locais |
 | Decisão | Não fazer rollback; distinguir produção atual, histórico local e preview-base; restringir herança a recursos necessários; não estender janela |
 | Testes | V2 operacional: 27 testes locais + sintaxe + SELECT SQLite; ainda não executado no Windows/Cloudflare. Histórico do produto em RESULTADOS: 274 Worker, 75 navegador/3 skips |
-| Próxima ação exata | Receber saída de liberar-escrita-preview-4d-v2.mjs; conferir tentativa/upload/gate/produção/prazo antes de primeira edição. Interrupção pós-envio exige conferir/revogar, não repetir |
+| Próxima ação exata | Receber o script original executado ou o V2, se já entregue; verificar hash e revisar antes de orientar execução. Depois conferir tentativa/upload/gate/produção/prazo antes de primeira edição. Interrupção pós-envio exige conferir/revogar, não repetir |
 | Riscos | D1/OAuth compartilhados, publicação concorrente, prazo, herança de segredos, estados antigos em cache; merge com main pendente |
 | Observabilidade | Apenas dados técnicos; nunca arquivos, usuários, credenciais ou conteúdo em evidências públicas |
 | Fontes | STATUS, RESULTADOS, ISOLAMENTO, CONTINUIDADE-20260917-TARDE, PR #201, registros locais ultimo-preview.json/ultimo-preview-escrita.json e script V2 identificado pelo SHA-256 acima |
