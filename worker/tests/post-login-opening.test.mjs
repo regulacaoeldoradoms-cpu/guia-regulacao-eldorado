@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..', '..');
 const homeIndex = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const home = fs.readFileSync(path.join(root, 'js', 'home.js'), 'utf8');
 const loginIndex = fs.readFileSync(path.join(root, 'login', 'index.html'), 'utf8');
 const loginOpening = fs.readFileSync(path.join(root, 'js', 'login-opening.js'), 'utf8');
 const loadingCss = fs.readFileSync(path.join(root, 'css', 'home-loading.css'), 'utf8');
@@ -59,8 +60,10 @@ test('a autenticação aguarda a abertura e aquece o Portal em paralelo', () => 
   assert.match(loginOpening, /PortalPerformance\?\.warmForUser\?\.\(user, \{ immediate: true \}\)/);
 });
 
-test('a Home não dispara uma segunda abertura e preserva o loader legado', () => {
+test('a Home não contém a abertura antiga nem dispara uma segunda abertura', () => {
   assert.doesNotMatch(homeIndex, /__PORTAL_POST_LOGIN_OPENING_PENDING__/);
+  assert.doesNotMatch(home, /portalOpeningStartWithSound|Iniciar abertura com som|portal-opening-sound-gate/);
+  assert.doesNotMatch(home, /OPENING_ASSET|startPostLoginOpening|openingRequested/);
   assert.match(homeIndex, /id="homeLoading"/);
   assert.match(homeIndex, /home-loading-spinner/);
   assert.match(loadingCss, /\.home-loading-spinner/);
