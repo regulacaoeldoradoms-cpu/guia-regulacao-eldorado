@@ -1,6 +1,6 @@
 # Central de Documentos — Status
 
-Última atualização: 16/09/2026
+Última atualização: 17/09/2026
 
 ## Fase atual
 
@@ -11,6 +11,32 @@ Subfase atual: **4D — preparação da homologação controlada no Drive real**
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: **#201**  
 Base atual: `main@336b647300faee2c958475a3b51b6b0522e0dd06`
+
+## Preparação manual da 4D — 17/09/2026
+
+O usuário confirmou que prefere concluir a homologação 4D manualmente pelo painel Cloudflare, sem depender do Codex enquanto o limite de uso estiver indisponível.
+
+Foi criado o roteiro persistente:
+
+`docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-MANUAL.md`
+
+O roteiro registra, sem segredos:
+- como obter/criar um Worker preview da branch;
+- como configurar o Pages de staging com `CENTRAL_DOCS_HOMOLOGATION_WORKER_URL`;
+- como habilitar temporariamente `DOCUMENTS_DRIVE_WRITE_ENABLED=true` apenas no ambiente de homologação;
+- como preparar um PDF descartável sem dado de paciente;
+- a matriz completa de teste real: autosync, ausência de sync sem alteração, retry manual, fechamento com pendência, conflito de versão, revisão recuperável e privacidade;
+- encerramento obrigatório com gate desligado e registro do resultado.
+
+A branch já contém a infraestrutura necessária para essa homologação manual:
+- `scripts/build-central-docs-staging.mjs` gera `/homologacao/documentos/`, `/homologacao/login/`, auth-config isolado, manifest e CSP específica;
+- o build fica desarmado se `CENTRAL_DOCS_HOMOLOGATION_WORKER_URL` não estiver configurado;
+- o build rejeita explicitamente o Worker de produção como alvo 4D;
+- `worker/wrangler.toml` já allowlista temporariamente a origem estável do preview Pages `https://codex-central-docs-drive-syn.portal-regulacao-central-staging.pages.dev` e registra `DOCUMENTS_HOMOLOGATION_ORIGIN` para a 4D;
+- nenhuma variável secreta foi versionada;
+- nenhuma escrita real no Drive foi habilitada.
+
+Decisão: **não é necessário usar o Codex para executar a 4D**. O trabalho restante pode ser feito manualmente no painel Cloudflare, com orientação passo a passo, desde que o Worker usado seja preview/não-produção e o PDF de teste seja descartável e sem dados sensíveis.
 
 ## Fechamento técnico da 4C — 16/09/2026 21:39 (America/Campo_Grande)
 
@@ -184,18 +210,21 @@ Mantido:
 - a 4D exige um PDF descartável sem dado de paciente;
 - `DOCUMENTS_DRIVE_WRITE_ENABLED` não deve ser habilitado permanentemente antes da homologação controlada;
 - conflitos de `version` continuam bloqueando sobrescrita automática e manual;
-- a sessão atual não expõe uma integração Cloudflare autenticada para alterar o feature gate/deploy do Worker; não contornar isso por credenciais manuais ou segredos em chat.
+- a sessão atual não expõe uma integração Cloudflare autenticada para alterar o feature gate/deploy do Worker; a 4D será feita manualmente no painel, sem compartilhar segredos.
 
 ## Próxima ação exata
 
-1. Preparar a 4D em ambiente controlado com um PDF descartável, sem dado de paciente e sem valor operacional.
-2. Habilitar temporariamente `DOCUMENTS_DRIVE_WRITE_ENABLED=true` somente no ambiente de homologação, usando integração Cloudflare autorizada.
-3. Validar no Drive real: autosync após edição, confirmação visual, retry manual, proteção ao fechar, conflito por `version` e revisão anterior recuperável.
-4. Desabilitar/reavaliar o gate conforme resultado, registrar evidências sem conteúdo documental e somente então encerrar a Fase 4/considerar merge do PR #201.
+1. No painel Cloudflare, obter um Worker preview da branch `codex/central-docs-drive-sync-phase4`, sem tocar no Worker de produção.
+2. Configurar no preview Pages da branch `CENTRAL_DOCS_HOMOLOGATION_WORKER_URL=https://<worker-preview>.workers.dev` e redeployar.
+3. Conferir que `/homologacao/homologation-manifest.json` informa `workerConfigured: true` e o Worker preview correto.
+4. Criar manualmente no Drive institucional um PDF descartável sem dados sensíveis.
+5. Habilitar temporariamente `DOCUMENTS_DRIVE_WRITE_ENABLED=true` somente no Worker preview.
+6. Executar a matriz descrita em `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-MANUAL.md`.
+7. Desligar o gate ao final, registrar evidências sem conteúdo documental e somente então encerrar a Fase 4/considerar merge do PR #201.
 
 ## Handoff para o próximo chat
 
-Continuar a partir da branch `codex/central-docs-drive-sync-phase4` e do PR #201; não reiniciar a Fase 4. Antes de qualquer mudança, conferir `main`, este status, `docs/CENTRAL-DOCUMENTOS-FASE-4.md`, o estado dos workflows e o deployment mais recente do Cloudflare Pages.
+Continuar a partir da branch `codex/central-docs-drive-sync-phase4` e do PR #201; não reiniciar a Fase 4. Antes de qualquer mudança, conferir `main`, este status, `docs/CENTRAL-DOCUMENTOS-FASE-4.md`, `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-MANUAL.md`, o estado dos workflows e o deployment mais recente do Cloudflare Pages.
 
 Estado funcional esperado ao retomar:
 - autosync apenas quando a `revision` do editor muda;
@@ -204,4 +233,5 @@ Estado funcional esperado ao retomar:
 - falha usa `Drive_falha.png` e botão força retry;
 - sem alteração, sem upload;
 - escrita real ainda protegida por `DOCUMENTS_DRIVE_WRITE_ENABLED`;
-- 4C verde em CI; 4D ainda não executada.
+- 4C verde em CI; 4D ainda não executada;
+- roteiro manual da 4D pronto para execução pelo painel Cloudflare.
