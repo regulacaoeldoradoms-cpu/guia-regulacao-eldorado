@@ -4,80 +4,85 @@
 
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive.** Subfase **4D — homologação real controlada em andamento**. **Fase 0 encerrada**; Fases 1–3 encerradas; 4A–4C concluídas tecnicamente. Não reiniciar fases encerradas.
+**Fase 4 — Sincronização segura com Drive**, subfase **4D — homologação real controlada em andamento**. **Fase 0 encerrada**; Fases 1–3 encerradas; 4A–4C concluídas tecnicamente. Não reiniciar fases encerradas.
 
-Branch da Central: `codex/central-docs-drive-sync-phase4`. PR **#201 aberto, sem merge**; último head observado na consulta de PRs: `954dc620a4cf008703c5dd847e984aff2e99c3f9`. A branch está sendo atualizada em paralelo e deve ser relida antes de retomá-la. Seus critérios de aceite não são alterados por esta correção.
+Branch da Central: `codex/central-docs-drive-sync-phase4`. **PR #201 aberto e sem merge**, último head observado: `9f295ca2766b890285b912b7ab714adeb63d2bc7`. Há trabalho paralelo nessa branch; reler PR, status e testes antes de retomá-la. Ela não foi alterada pelo hotfix abaixo.
 
-Main conferida para esta intervenção: `3dc193c34d5f0f02c0a50b2f51ba2e29e022f77f`. PR #202 integrou a abertura no merge `f28a1d4d88bb16dd71bf61231ceb6830580c058d`; PR #203 registrou a conclusão anterior.
+Base anterior da intervenção: main `3dc193c34d5f0f02c0a50b2f51ba2e29e022f77f`. Main funcional após a correção: `8cefaf639a9399f77658867ef10f82a0fb694222` (merge #204). O histórico completo das decisões permanece no Git e nos PRs #202–#204.
 
-## Prioridade imediata — regressão no botão Entrar
+## Correção concluída — botão Entrar e abertura
 
-O usuário relatou após a publicação que **Entrar permanece bloqueado**, esclarecendo novamente que queria aguardar somente o redirecionamento enquanto o vídeo carrega.
+**PR #204 mesclado em main**, branch `fix/login-opening-transition-only`. Commit funcional: `22397c8c1162cc726695d980e4ca449c1e4d4166`; head final validado antes do merge: `44ab1357d8fe89c21c6cf7e1d3bf7622975c7861`.
 
-**Correção de interpretação:** o bloqueio antecipado da autenticação e do botão não é uma escolha do usuário. A descrição anterior de bloqueio "aprovado" estava incorreta e é substituída por este registro. A abertura é reaberta exclusivamente para corrigir esta regressão comprovada, sem reiniciar o projeto.
+**Última decisão humana:** aceitar o primeiro clique e autenticar normalmente; aguardar somente a transição enquanto o vídeo carrega em segundo plano. Sem texto operacional e sem botão intermediário para iniciar som/vídeo.
 
-Branch da correção: `fix/login-opening-transition-only`, criada da main conferida. PR corretivo **#204 — draft, sem merge**. Commit funcional: `22397c8c1162cc726695d980e4ca449c1e4d4166`.
+**Correção de interpretação:** o bloqueio antecipado do botão, implementado em #202, não era uma escolha do usuário. A descrição anterior de bloqueio "aprovado" estava incorreta. A regressão foi reaberta para correção, não para reiniciar fases do projeto.
 
-Documento técnico vigente: `docs/PORTAL-ABERTURA-POS-LOGIN-V1.md`.
+## Diagnóstico e implementação
 
-## Diagnóstico e justificativas
+O HTML continha `disabled`; `setSubmitPreparing()` e retries infinitos mantinham o bloqueio. Aparência habilitada não tornava Entrar clicável. O prazo do fetch também terminava antes da leitura completa do corpo e `play()` podia ficar pendente fora da proteção temporal. Não se presume a causa específica de rede/decodificação no dispositivo do usuário, que não foi inspecionado.
 
-O HTML inicial continha `disabled` e o controlador chamava `setSubmitPreparing()` durante preparação e retries infinitos. Estilizar o botão como habilitado não o tornava clicável. Além disso, o prazo do fetch era encerrado antes da leitura completa do corpo e `play()` podia ficar pendente fora da proteção temporal.
+A solução separa autenticação de mídia:
 
-A correção separa as responsabilidades: **autenticação imediatamente no clique; somente `beforeNavigate()` espera a mídia**. O controlador visual não substitui mais `RegulationAuth.login` nem escreve no botão. O erro exato de rede/decodificação do dispositivo do usuário não foi inspecionado; não se presume uma causa específica para esse dispositivo.
+- **Entrar habilitado desde o HTML inicial**; clique, toque ou Enter inicia a autenticação imediatamente.
+- Somente envios duplicados durante uma tentativa já iniciada são bloqueados; feedback normal **Entrando...** depois do clique.
+- Credenciais incorretas são informadas sem esperar o vídeo e permitem nova tentativa.
+- `js/login-opening.js` não modifica botão, credenciais ou `RegulationAuth.login`.
+- Após autenticar, `warmForUser()` aquece recursos autorizados e somente `beforeNavigate()` espera o vídeo, mantendo o documento de login enquanto a mídia é preparada.
+- O clique é preservado: com a mídia pronta, a abertura começa e a navegação continua automaticamente depois de `ended` e fade.
+- Preparação com prazo total de 20 s desde o início, cobrindo cache, cabeçalhos, corpo completo e decodificação. Falha conhecida usa fallback de imediato, sem repetição infinita.
+- Falha de mídia/controlador ou recusa de áudio não perde autenticação e segue pelo loader legado. Reprodução com `play()` pendente também tem prazo finito de 20 s; o término normal permanece pelo evento `ended`.
+- Troca de senha, verificação de e-mail, destinos e permissões existentes preservados. Resposta tardia de `me()` não atropela tentativa já iniciada.
 
-## Implementação da correção
+## Mídia e atualização de cache
 
-- HTML real e laboratório começam com **Entrar habilitado**, sem gate escondido.
-- Um clique/toque/Enter inicia a autenticação sem aguardar o MP4; tentativas simultâneas duplicadas são evitadas apenas após o submit.
-- Feedback normal **Entrando...** depois do clique, sem texto operacional sobre abertura.
-- Credenciais incorretas são tratadas de imediato e permitem tentar novamente.
-- Depois de autenticar, o Portal é aquecido e a navegação espera o resultado da preparação na página de login, sem perder o clique.
-- Preparação completa/decodificação com prazo total de 20 s a partir do início; falha conhecida aplica fallback imediatamente. Sem retry infinito.
-- Vídeo oficial preservado: 10,005 s, som, tela inteira, término real por `ended`, fade e cache `portal-opening-media-v1`.
-- Falha/indisponibilidade de mídia ou do controlador não invalida autenticação; usa navegação normal e loader legado. `play()` pendente também tem prazo finito.
-- Scripts versionados `20260917-2`; Service Worker invalida apenas as URLs antigas de login e renova `/login/`, preservando o cache do MP4 e demais recursos.
-- Resposta tardia da checagem automática de sessão não atropela o login já iniciado.
+Mesmo vídeo oficial `assets/portal-opening-v1.mp4`: 10,005 s, som, 1280 × 720, H.264/AAC, 24 fps, **2.393.970 bytes**. SHA-256 `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766`. Nenhum byte do MP4 foi alterado.
 
-Arquivo oficial: `assets/portal-opening-v1.mp4`, **2.393.970 bytes**; SHA-256 `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766`. Nenhuma alteração no binário.
+Cache independente `portal-opening-media-v1`; somente mídia completa e reproduzível é persistida. Cache inválido é removido e a rede é tentada. Cache indisponível não bloqueia login.
 
-## Evidências e pendências de validação
+HTML/precache usam `login-opening.js?v=20260917-2` e `login.js?v=20260917-2`. O Service Worker remove especificamente as URLs antigas dos controladores e renova `/login/`, preservando cache da mídia e demais recursos. Uma aba já aberta precisa recarregar o documento para executar o código novo.
 
-**Concluído localmente:** 182/182 testes Node da suíte completa; 9/9 testes específicos incluindo execução do login em VM; sintaxe dos controladores válida; bundle sintético de staging gerado e varrido sem referência a dados/APIs proibidos.
+## Validação concluída
 
-**CI do commit funcional:** suites rápidas concluídas com sucesso; browser da abertura e da Central em execução na última consulta. O check de governança apontou ausência do texto literal `Fase 0` após condensação para `Fases 0–3`; esta revisão restaura o marcador sem alterar o significado nem enfraquecer o check.
+**Local:** 182/182 testes Node da suíte completa; 9/9 específicos da abertura; sintaxe válida e bundle sintético de staging verificado.
 
-**A concluir no CI:** Playwright ampliado para 24 execuções desktop/mobile, incluindo o primeiro clique durante download artificialmente retido por 6 segundos, duração real de 10 s, cache, teclado, falhas de mídia, senha incorreta, JavaScript ausente e prazos finitos. Não há navegador instalado nesta execução local; não declarar browser aprovado antes do CI.
+**Pré-merge no head exato 44ab135...:** todos os workflows GitHub Actions consultados aprovados. Abertura: **24/24 casos Playwright, sem retry**, run `35262044619`, job `105339916247`. Central de Documentos navegador: sucesso, run `35262044644`, job `105339916360`.
 
-**Publicação pendente:** após merge, verificar por GET público o HTML de login e hashes dos JS, Service Worker e MP4 no domínio oficial. Foi incluído `scripts/verify-login-publication.mjs` no workflow pós-merge. Nenhuma autenticação real ou consulta de API ocorre nesse teste. Pages staging sintético não comprova publicação no domínio oficial.
+Cobertura principal: clique durante download retido por 6 s, autenticação imediata e única, permanência na página até mídia pronta, 10 s reais por `ended`, teclado, senha incorreta/retry, cache sem rede, 404, MP4 incompleto, Cache Storage indisponível, controlador ausente, rede e `play()` pendentes.
 
-## Decisões e alternativas descartadas
+O primeiro check de governança falhou somente porque a condensação documental retirou o marcador literal `Fase 0`; ele foi restaurado sem alterar a fase nem enfraquecer o check, e a revisão final passou.
 
-Descartados o botão desabilitado com aparência normal, descartar cliques precoces e espera infinita: contradizem o requisito e impedem o acesso. Descartados também o botão adicional de som, texto "Preparando abertura...", GIF, vídeo automaticamente mudo e remoção do loader legado.
+## Publicação verificada no domínio oficial
 
-Mantidos o mesmo MP4, reprodução no documento do login, prefetch existente e escopos de autorização. Não se altera Drive, Worker, D1, cargo ou política de dados. Aumentar o namespace de todos os caches é desnecessário para esta correção: a invalidação pontual dos controladores e as novas URLs tratam a atualização sem apagar a mídia.
+Merge #204: **`8cefaf639a9399f77658867ef10f82a0fb694222`**.
 
-## Riscos e rollback
+Workflow pós-merge **`35262579705`**, job **`105341702943`**, concluído com **success**, incluindo contratos, testes de navegador e a etapa **Confirmar publicação estática em produção sem autenticar**.
 
-Políticas restritivas de autoplay ainda podem recusar som, sobretudo se o clique ocorreu antes de a mídia ficar pronta. Nesse caso não se inventa segundo botão nem se mantém o usuário preso: segue o fallback. Cache indisponível usa rede; mídia ausente/incompleta não é reproduzida; `cover` mantém o risco conhecido de corte periférico.
+Essa etapa executou `scripts/verify-login-publication.mjs`: GET público em `regulacaoeldoradoms.com.br/login/` confirmou HTML com Entrar habilitado e versões novas; os hashes públicos de `js/login.js`, `js/login-opening.js`, `portal-sw.js` e MP4 conferiram com o commit. Portanto a publicação não foi inferida apenas do preview Pages sintético.
 
-A aba já aberta pode executar código antigo até recarregar. O teste público pós-merge deve confirmar publicação; teste sintético não equivale a ouvir áudio no computador do usuário.
+O teste não autenticou usuário real nem consultou API, Drive, D1, dados clínicos ou segredos. Ele confirma publicação estática, não equivale a ouvir o som no computador do usuário.
 
-Rollback seguro: retirar somente a chamada opcional da abertura/referência ao controlador por PR corretivo, preservando botão habilitado e autenticação. Não restaurar o bloqueio anterior.
+## Decisões descartadas, riscos e rollback
+
+Descartados: botão desabilitado disfarçado de habilitado; descartar o primeiro clique; retries/espera infinitos; botão adicional de som; texto "Preparando abertura..."; GIF; abertura automaticamente muda; remoção do loader legado. Mantidos MP4 oficial, prefetch existente e controles de acesso.
+
+Riscos residuais: políticas restritivas de autoplay podem recusar som mesmo com mídia pronta, especialmente após clique precoce; aplica-se fallback sem segundo botão. `cover` mantém o corte periférico em outras proporções. Cache/rede podem falhar, mas agora possuem saída finita e não impedem a autenticação.
+
+Rollback seguro, se necessário: retirar apenas a chamada opcional da abertura e sua referência por PR corretivo, mantendo botão habilitado e autenticação. Nunca restaurar o bloqueio do PR #202.
 
 ## Próxima ação exata
 
-Validar CI do PR #204 no head exato e revisar diff restrito. Com os testes verdes, concluir a correção solicitada, verificar publicação no domínio oficial sem dados reais e registrar os SHAs/resultados. Depois retomar a Fase 4D somente a partir do estado atualizado de #201.
+A correção solicitada está publicada e verificada. Na aba antiga bloqueada, recarregar a página para obter o novo documento. Não há nova etapa de implementação da abertura pendente; eventuais diferenças no navegador real devem ser tratadas a partir de evidências novas.
+
+Retomar Fase 4D somente pela leitura atual de #201 e da branch correspondente; não fazer merge da Central antes de sua homologação real controlada.
 
 ## Handoff para o próximo chat
 
-**Fase oficial:** Fase 4 / 4D, PR #201, não alterada.  
-**Prioridade atual:** hotfix do botão Entrar após PR #202/#203.  
-**Base:** main `3dc193c34d5f0f02c0a50b2f51ba2e29e022f77f`.  
-**Branch:** `fix/login-opening-transition-only`; PR #204 draft.  
-**Último commit funcional:** `22397c8c1162cc726695d980e4ca449c1e4d4166`.  
-**Última decisão humana:** aceitar clique/autenticar normalmente; aguardar somente a transição enquanto a mídia carrega, sem detalhes operacionais.  
-**Última ação concluída:** implementação, diff restrito revisado e 182 testes Node aprovados; browser/CI final e publicação ainda não confirmados.  
-**Fontes principais:** `js/login.js`, `js/login-opening.js`, `login/index.html`, `portal-sw.js`, testes de abertura, `scripts/verify-login-publication.mjs`, documento de abertura V1.  
-**Próximo passo:** conferir CI da correção, corrigir regressões se existirem e publicar de forma verificável.  
-**Privacidade:** sem usuários reais, conteúdo clínico, Drive, segredos ou nova telemetria.
+**Fase oficial:** Fase 4 / 4D, PR #201, independente.  
+**Correção encerrada:** PR #204, bloqueio indevido de Entrar.  
+**Merge funcional:** `8cefaf639a9399f77658867ef10f82a0fb694222`.  
+**Resultado:** primeiro clique autentica; somente transição espera mídia; sem texto operacional; prazos finitos e fallback.  
+**Evidências:** 182 testes Node locais, 24 casos Playwright no PR, Central navegador aprovada, workflow pós-merge `35262579705` com publicação pública validada por hash.  
+**Pendência do dispositivo:** aba antiga precisa recarregar; não houve acesso ao computador ou à conta real do usuário.  
+**Próximo passo:** acompanhar eventual retorno do usuário; para continuar a Central, reconstruir o estado atual da 4D/#201 sem reiniciar fases.  
+**Privacidade:** sem dados sensíveis, autenticação real, escrita no Drive ou nova telemetria.
