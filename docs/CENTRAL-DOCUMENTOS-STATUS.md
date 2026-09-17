@@ -15,7 +15,7 @@ PR da Fase 4: **#201 — aberto, sem merge**
 Head conferido da Fase 4: `a92bbcc40b7c38eb126dbe375c3db31272efde72`  
 Base oficial `main`: `336b647300faee2c958475a3b51b6b0522e0dd06`
 
-As Fases **0, 1, 2 e 3** permanecem encerradas. As subfases 4A, 4B e 4C estão concluídas tecnicamente. A 4D ainda não está aprovada e o PR #201 não deve ser mesclado antes do fechamento da homologação real controlada.
+A **Fase 0** permanece encerrada. As Fases **1, 2 e 3** também permanecem encerradas. As subfases 4A, 4B e 4C estão concluídas tecnicamente. A 4D ainda não está aprovada e o PR #201 não deve ser mesclado antes do fechamento da homologação real controlada.
 
 ## Mudança transversal em andamento — abertura pós-login em vídeo
 
