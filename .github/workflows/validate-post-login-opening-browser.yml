@@ -3,6 +3,9 @@ name: Validar abertura pós-login — navegador
 on:
   pull_request:
     paths:
+      - 'login/index.html'
+      - 'js/login-opening.js'
+      - 'js/login.js'
       - 'index.html'
       - 'js/home.js'
       - 'assets/portal-opening-v1.mp4'
