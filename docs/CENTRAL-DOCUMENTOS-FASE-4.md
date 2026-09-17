@@ -152,4 +152,4 @@ Essa semântica agora está implementada: autosync somente após mutação real,
 
 O último bloqueio técnico observado foi um hit-test flutuante no teste Playwright desktop ao clicar no botão de rotação usado somente para provocar uma mutação. O comportamento funcional passou no mobile; o teste foi estabilizado com clique forçado apenas nesse acionador sintético.
 
-Próximo gate: workflow de navegador verde no head final + reteste visual humano no novo staging. Depois disso, retomar 4D com PDF descartável.
+Próximo gate: workflow de navegador verde no head reconciliado + reteste visual humano no novo staging. Depois disso, retomar 4D com PDF descartável.
