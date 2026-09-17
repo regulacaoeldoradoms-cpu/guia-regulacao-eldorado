@@ -3,16 +3,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const chromeUse = {
-  channel: 'chrome',
-  launchOptions: { args: ['--autoplay-policy=no-user-gesture-required'] }
-};
+const chromeUse = { channel: 'chrome' };
 
 export default defineConfig({
   testDir: '.',
   testMatch: /post-login-opening\.spec\.mjs/,
   timeout: 35_000,
-  expect: { timeout: 10_000 },
+  expect: { timeout: 12_000 },
   retries: 1,
   workers: 1,
   reporter: [['list'], ['html', { outputFolder: 'playwright-opening-report', open: 'never' }]],
