@@ -3,87 +3,119 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(here, '..', '..');
-const homeIndex = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const home = fs.readFileSync(path.join(root, 'js', 'home.js'), 'utf8');
-const loginIndex = fs.readFileSync(path.join(root, 'login', 'index.html'), 'utf8');
-const loginOpening = fs.readFileSync(path.join(root, 'js', 'login-opening.js'), 'utf8');
-const loadingCss = fs.readFileSync(path.join(root, 'css', 'home-loading.css'), 'utf8');
-const openingVideo = fs.readFileSync(path.join(root, 'assets', 'portal-opening-v1.mp4'));
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const read = (name) => fs.readFileSync(path.join(root, name), 'utf8');
+const loginIndex = read('login/index.html');
+const login = read('js/login.js');
+const opening = read('js/login-opening.js');
 
-test('o binário oficial da abertura é exatamente o arquivo aprovado', () => {
-  assert.equal(openingVideo.byteLength, 2393970);
-  assert.equal(
-    crypto.createHash('sha256').update(openingVideo).digest('hex'),
-    '98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766'
-  );
+function loginHarness({ loginResult = { role: 'admin' }, mediaPromise = Promise.resolve(), rejectLogin = false } = {}) {
+  const elements = new Map();
+  let handler;
+  const state = { calls: 0, destination: null, mediaCalls: 0 };
+  for (const id of ['loginForm', 'loginUsername', 'loginPassword', 'loginRemember', 'loginSubmit', 'loginStatus']) {
+    elements.set(id, { value: 'ficticio', checked: false, disabled: false, textContent: '', className: '',
+      setAttribute() {}, removeAttribute() {}, addEventListener(type, fn) { if (type === 'submit') handler = fn; } });
+  }
+  const window = {
+    REGULATION_AUTH_CONFIG: { homePath: '/' },
+    RegulationAuth: { enforcementEnabled: true, getToken: () => '', me: async () => null,
+      async login() { state.calls++; if (rejectLogin) throw new Error('Senha inválida.'); return loginResult; } },
+    PortalPerformance: { warmForUser() {} },
+    PortalLoginOpening: { primeFromGesture() {}, async beforeNavigate() { state.mediaCalls++; await mediaPromise; } }
+  };
+  vm.runInNewContext(login, { window, document: {
+    body: { classList: { contains: () => false } }, getElementById: (id) => elements.get(id)
+  }, location: { hostname: 'localhost', protocol: 'http:', search: '', replace: (url) => { state.destination = url; } }, URL, URLSearchParams });
+  return { state, submit: () => handler({ preventDefault() {} }), button: elements.get('loginSubmit'), status: elements.get('loginStatus') };
+}
+
+test('o MP4 oficial permanece byte a byte inalterado', () => {
+  const data = fs.readFileSync(path.join(root, 'assets/portal-opening-v1.mp4'));
+  assert.equal(data.byteLength, 2393970);
+  assert.equal(crypto.createHash('sha256').update(data).digest('hex'), '98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766');
 });
 
-test('o login mantém o gate interno sem expor o estado operacional no botão', () => {
-  assert.match(loginIndex, /portal-opening-v1\.mp4\?v=20260917-1/);
-  assert.match(loginIndex, /as="video"/);
-  assert.match(loginIndex, /id="loginSubmit"[^>]*disabled[^>]*aria-disabled="true"[^>]*data-opening-gate="pending"[^>]*>Entrar<\/button>/);
-  assert.match(loginIndex, /\/js\/login-opening\.js\?v=20260917-1/);
-  assert.doesNotMatch(loginIndex, /Preparando abertura|Preparando a abertura do Portal|ainda não terminou de carregar/);
-  assert.match(loginOpening, /submit\.dataset\.openingGate = 'pending'/);
-  assert.match(loginOpening, /submit\.textContent = 'Entrar'/);
-  assert.match(loginOpening, /submit\.setAttribute\('aria-label', 'Entrar'\)/);
-  assert.match(loginOpening, /portalLoginOpeningGateStyles/);
-  assert.doesNotMatch(loginOpening, /Preparando abertura|Preparando a abertura do Portal|ainda não terminou de carregar/);
+test('HTML real e laboratório começam com Entrar habilitado', () => {
+  for (const html of [loginIndex, read('testing/post-login-opening/harness.html')]) {
+    const button = html.match(/<button\b[^>]*id="loginSubmit"[^>]*>[^<]*<\/button>/)?.[0];
+    assert.ok(button);
+    assert.match(button, />Entrar<\/button>/);
+    assert.doesNotMatch(button, /disabled|opening-gate|opacity/);
+    assert.doesNotMatch(html, /Preparando abertura/);
+    assert.match(html, /login-opening\.js\?v=20260917-2/);
+    assert.match(html, /login\.js\?v=20260917-2/);
+  }
 });
 
-test('a abertura é preparada integralmente antes de liberar o login', () => {
-  assert.match(loginOpening, /OPENING_EXPECTED_BYTES\s*=\s*2393970/);
-  assert.match(loginOpening, /response\.blob\(\)/);
-  assert.match(loginOpening, /blob\.size\s*!==\s*OPENING_EXPECTED_BYTES/);
-  assert.match(loginOpening, /URL\.createObjectURL\(blob\)/);
-  assert.match(loginOpening, /await waitForMediaReady\(video\)/);
-  assert.match(loginOpening, /submit\.disabled\s*=\s*false/);
-  assert.match(loginOpening, /portal-opening-media-v1/);
-  assert.match(loginOpening, /caches\.open\(OPENING_CACHE\)/);
+test('o controlador não pode desabilitar Entrar nem substituir a autenticação', () => {
+  assert.doesNotMatch(opening, /loginSubmit|\.disabled\s*=|aria-disabled|openingGate|auth\.login\s*=|RegulationAuth/);
+  assert.doesNotMatch(opening, /Preparando abertura|Iniciar abertura com som|portalOpeningStartWithSound/);
+  assert.match(opening, /PortalLoginOpening = Object\.freeze/);
 });
 
-test('o mesmo clique de login prepara áudio e a abertura não cria botão adicional', () => {
-  assert.match(loginOpening, /primeOpeningPlayback/);
-  assert.match(loginOpening, /submit\.addEventListener\('pointerdown'/);
-  assert.match(loginOpening, /video\.muted\s*=\s*false/);
-  assert.match(loginOpening, /video\.defaultMuted\s*=\s*false/);
-  assert.match(loginOpening, /video\.volume\s*=\s*1/);
-  assert.match(loginOpening, /video\.addEventListener\('ended'/);
-  assert.match(loginOpening, /object-fit:cover/);
-  assert.doesNotMatch(loginOpening, /Iniciar abertura com som/);
-  assert.doesNotMatch(loginOpening, /portalOpeningStartWithSound/);
+test('o primeiro clique autentica antes de a mídia ficar pronta e retém só a transição', async () => {
+  let ready;
+  const h = loginHarness({ mediaPromise: new Promise((resolve) => { ready = resolve; }) });
+  assert.equal(h.button.disabled, false);
+  const attempt = h.submit();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(h.state.calls, 1);
+  assert.equal(h.state.mediaCalls, 1);
+  assert.equal(h.state.destination, null);
+  await h.submit();
+  assert.equal(h.state.calls, 1, 'submits repetidos não duplicam autenticação');
+  ready();
+  await attempt;
+  assert.equal(h.state.destination, '/');
 });
 
-test('a autenticação aguarda a abertura e aquece o Portal em paralelo', () => {
-  assert.match(loginOpening, /const originalLogin = auth\.login\.bind\(auth\)/);
-  assert.match(loginOpening, /auth\.login = async/);
-  assert.match(loginOpening, /await playOpeningForAuthenticatedUser\(user\)/);
-  assert.match(loginOpening, /PortalPerformance\?\.warmForUser\?\.\(user, \{ immediate: true \}\)/);
+test('senha incorreta é informada sem aguardar vídeo e permite nova tentativa', async () => {
+  const h = loginHarness({ rejectLogin: true, mediaPromise: new Promise(() => {}) });
+  await h.submit();
+  assert.equal(h.state.calls, 1);
+  assert.equal(h.state.mediaCalls, 0);
+  assert.equal(h.state.destination, null);
+  assert.equal(h.button.disabled, false);
+  assert.equal(h.status.textContent, 'Senha inválida.');
 });
 
-test('a Home não contém a abertura antiga nem dispara uma segunda abertura', () => {
-  assert.doesNotMatch(homeIndex, /__PORTAL_POST_LOGIN_OPENING_PENDING__/);
-  assert.doesNotMatch(home, /portalOpeningStartWithSound|Iniciar abertura com som|portal-opening-sound-gate/);
-  assert.doesNotMatch(home, /OPENING_ASSET|startPostLoginOpening|openingRequested/);
-  assert.match(homeIndex, /id="homeLoading"/);
-  assert.match(homeIndex, /home-loading-spinner/);
-  assert.match(loadingCss, /\.home-loading-spinner/);
+test('falha da abertura não vira falha de credenciais nem muda o destino seguro', async () => {
+  const mediaPromise = Promise.reject(new Error('mídia indisponível'));
+  mediaPromise.catch(() => {});
+  const h = loginHarness({ mediaPromise, loginResult: { mustChangePassword: true } });
+  await h.submit();
+  assert.equal(h.state.calls, 1);
+  assert.equal(h.state.destination, '/seguranca/?primeiro-acesso=1');
+  assert.equal(h.status.textContent, '');
 });
 
-test('falha excepcional de reprodução não exige gesto extra e cai para o fluxo normal', () => {
-  assert.match(loginOpening, /catch \(_\) \{\n      \/\/ Não exibe botão extra/);
-  assert.match(loginOpening, /return finish\(false\)/);
-  assert.match(loginOpening, /sessionStorage\.setItem\('portal-opening-played-v2', '1'\)/);
+test('espera finita cobre resposta completa, mídia e play pendente; normal termina em ended', () => {
+  assert.match(opening, /OPENING_PREPARE_TIMEOUT_MS = 20000/);
+  assert.match(opening, /OPENING_PLAYBACK_TIMEOUT_MS = 20000/);
+  assert.match(opening, /await response\.blob\(\)/);
+  assert.match(opening, /blob\.size !== OPENING_EXPECTED_BYTES/);
+  assert.match(opening, /await waitForMediaReady|await ready/);
+  assert.match(opening, /Promise\.race\(\[work\.catch/);
+  assert.match(opening, /addEventListener\('ended', onEnded\)/);
+  assert.match(opening, /Promise\.resolve\(element\.play\(\)\)\.catch\(onError\)/);
+  assert.doesNotMatch(opening, /OPENING_RETRY_MS|setSubmitPreparing/);
 });
 
-test('service worker preserva versão contratual e pré-carrega o novo controlador da abertura', () => {
-  const sw = fs.readFileSync(path.join(root, 'portal-sw.js'), 'utf8');
-  assert.match(sw, /const CACHE_VERSION = '20260916-10'/);
-  assert.match(sw, /'\/js\/login-opening\.js\?v=20260917-1'/);
-  assert.match(sw, /self\.skipWaiting\(\)/);
-  assert.match(sw, /self\.clients\.claim\(\)/);
+test('Home preserva loader legado sem duplicar abertura', () => {
+  assert.match(read('index.html'), /id="homeLoading"/);
+  assert.match(read('css/home-loading.css'), /\.home-loading-spinner/);
+  assert.doesNotMatch(read('js/home.js'), /portalOpeningStartWithSound|startPostLoginOpening/);
+});
+
+test('cache de páginas e scripts é invalidado sem apagar cache do MP4', () => {
+  const sw = read('portal-sw.js');
+  assert.match(sw, /loginCache\.delete\('\/js\/login-opening\.js\?v=20260917-1'\)/);
+  assert.match(sw, /'\/js\/login-opening\.js\?v=20260917-2'/);
+  assert.match(sw, /'\/js\/login\.js\?v=20260917-2'/);
+  assert.match(sw, /PORTAL_CACHE_PREFIXES = \['portal-static-', 'portal-pages-'\]/);
+  assert.match(opening, /portal-opening-media-v1/);
 });

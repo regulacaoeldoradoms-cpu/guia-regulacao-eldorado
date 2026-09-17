@@ -276,7 +276,11 @@
     return requested || defaultDestination(user);
   }
 
+  let loginInFlight = false;
+  let loginStarted = false;
+
   async function redirectIfAuthenticated() {
+    if (loginStarted) return;
     if (!window.RegulationAuth?.enforcementEnabled) return;
     const cached = window.RegulationAuth.getToken?.() && window.RegulationAuth.getCachedUser?.();
     if (cached && window.RegulationAuth.sessionValidationAge?.() < 45000) {
@@ -285,7 +289,7 @@
       return;
     }
     const user = await window.RegulationAuth.me().catch(() => null);
-    if (user) {
+    if (user && !loginStarted) {
       window.PortalPerformance?.warmForUser?.(user, { immediate: true });
       location.replace(destinationFor(user));
     }
@@ -297,12 +301,19 @@
 
   form?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (loginInFlight) return;
+    loginStarted = true;
+    loginInFlight = true;
+    try { window.PortalLoginOpening?.primeFromGesture?.(); } catch (_) {}
     submit.disabled = true;
+    submit.setAttribute('aria-busy', 'true');
     submit.textContent = 'Entrando...';
     status.className = 'login-status';
     try {
       const user = await window.RegulationAuth.login(username.value, password.value, remember.checked);
-      window.PortalPerformance?.warmForUser?.(user, { immediate: true });
+      try { window.PortalPerformance?.warmForUser?.(user, { immediate: true }); } catch (_) {}
+      // Autenticação já concluída. Apenas a transição aguarda a mídia, com prazo e fallback.
+      try { await window.PortalLoginOpening?.beforeNavigate?.(); } catch (_) {}
       location.replace(destinationFor(user));
     } catch (error) {
       let message;
@@ -315,6 +326,8 @@
       }
       showStatus(message, 'error');
     } finally {
+      loginInFlight = false;
+      submit.removeAttribute('aria-busy');
       submit.disabled = false;
       submit.textContent = 'Entrar';
     }
