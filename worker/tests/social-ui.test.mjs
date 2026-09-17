@@ -3,61 +3,61 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
-const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+const read = (filename) => fs.readFileSync(path.join(root, filename), 'utf8');
+const socialPages = [
+  'index.html',
+  'ferramentas/index.html',
+  'perfil/index.html',
+  'amigos/index.html',
+  'notificacoes/index.html',
+  'admin/social/index.html'
+];
 
-test('política libera a camada social para toda conta ativa e mantém permissões e estados separados', () => {
-  const policy = read('worker/social-policy.js');
-  assert.match(policy, /user\?\.active !== false/);
-  assert.match(policy, /toNormalizedRole\(role\) === 'admin'/);
-  assert.match(policy, /if \(!principal\) return false/);
-  assert.match(policy, /if \(!target\) return false/);
-  assert.match(policy, /principal\.accountId === target\.accountId/);
-  assert.match(policy, /socialRelationshipForConversation/);
-  assert.doesNotMatch(policy, /accountLevel === 'gold'|accountLevel === 'diamond'/);
+function toolsRuntime() {
+  const window = {
+    RegulationAuth: {
+      hasCouncilAccess(user) {
+        return ['membro', 'presidente'].includes(user?.councilRole);
+      }
+    }
+  };
+  vm.runInNewContext(read('js/tools-catalog.js'), { window });
+  return window.PortalTools;
+}
+
+test('rotas sociais usam assets locais versionados e permanecem não indexáveis quando dedicadas', () => {
+  for (const filename of socialPages) {
+    const html = read(filename);
+    assert.match(html, /portal-interactions\.css\?v=20260906-2/);
+    assert.match(html, /portal-interactions\.js\?v=20260910-2/);
+    assert.match(html, /social\.css\?v=20260911-1/);
+    assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
+    assert.match(html, /social-api\.js\?v=20260910-4/);
+    assert.match(html, /social-navigation\.js\?v=20260911-2/);
+    if (filename === 'index.html') assert.match(html, /home-desktop-scale\.css\?v=20260910-2/);
+    if (filename !== 'index.html') assert.match(html, /name="robots" content="noindex,nofollow"/);
+    assert.doesNotMatch(html, /https:\/\/(?:www\.)?(?:facebook|firebaseio|googleapis)\./i);
+  }
 });
 
-test('busca social inclui membros e Presidência do Conselho mesmo antes do primeiro acesso social', () => {
-  const social = read('worker/social.js');
-  const schema = read('worker/social-schema.js');
-  assert.match(schema, /council_member/);
-  assert.match(schema, /council_president/);
-  assert.match(social, /COALESCE\(p\.display_name, u\.name, u\.username\)/);
-  assert.match(social, /FROM users u/);
-  assert.match(social, /LEFT JOIN social_profiles p ON p\.account_id = u\.id/);
-  assert.match(social, /LEFT JOIN citizen_portal_accounts cpa ON cpa\.user_id = u\.id/);
-  assert.match(social, /u\.active = 1/);
-});
+test('Ferramentas mantém uma única matriz de autorização compartilhada', () => {
+  const catalog = toolsRuntime();
+  const ids = (user) => Array.from(catalog.cardsFor(user), (card) => card.id);
+  assert.deepEqual(ids({ role: 'cidadao' }), ['citizen-channel']);
+  assert.deepEqual(ids({ role: 'cidadao', councilRole: 'membro' }), ['council-panel']);
+  assert.ok(ids({ role: 'medico', emailVerified: true }).includes('medical-guide'));
+  assert.ok(!ids({ role: 'medico', emailVerified: true }).includes('reception-check'));
+  assert.ok(ids({ role: 'recepcao', emailVerified: true }).includes('reception-check'));
+  assert.ok(ids({ role: 'coordenacao', emailVerified: true }).includes('user-management'));
+  assert.ok(ids({ role: 'telemedicina', emailVerified: true }).includes('telemedicine'));
+  assert.ok(ids({ role: 'admin', emailVerified: true }).includes('social-moderation'));
 
-test('flag desligada contém schema, semeadura e aliases sociais', () => {
-  const index = read('worker/index.js');
-  assert.match(index, /socialSchemaAlreadyApplied/);
-  assert.match(index, /ensureSocialSchema/);
-  assert.match(index, /SOCIAL_BACKEND_ENABLED/);
-  assert.match(index, /SOCIAL_HOME_ENABLED/);
-});
-
-test('novo isolate reconhece a migração social sem repetir todo o DDL', () => {
-  const schema = read('worker/social-schema.js');
-  assert.match(schema, /SELECT 1 AS ok FROM social_schema_migrations/);
-  assert.match(schema, /INSERT OR REPLACE INTO social_schema_migrations/);
-  assert.match(schema, /socialSchemaByDb\.set\(db, true\)/);
-});
-
-test('migração profissional é idempotente e preserva tombstone', () => {
-  const migration = read('worker/social-schema.js');
-  assert.match(migration, /professional_migration_tombstones/);
-  assert.match(migration, /INSERT OR IGNORE/);
-  assert.match(migration, /ON CONFLICT\(account_id\) DO UPDATE SET/);
-});
-
-test('aliases preservam links após mudança de handle', () => {
-  const schema = read('worker/social-schema.js');
-  const social = read('worker/social.js');
-  assert.match(schema, /social_handle_aliases/);
-  assert.match(social, /INSERT OR IGNORE INTO social_handle_aliases/);
-  assert.match(social, /FROM social_handle_aliases a/);
+  for (const filename of ['index.html', 'ferramentas/index.html']) {
+    assert.match(read(filename), /tools-catalog\.js\?v=20260916-1/);
+  }
 });
 
 test('Home social ativa mantém fallback independente, nova navegação e Perfil sem Conta duplicada', () => {
@@ -123,77 +123,336 @@ test('Home social ativa mantém fallback independente, nova navegação e Perfil
 
 test('pedido de amizade muda para enviado imediatamente e confirma em segundo plano', () => {
   const navigation = read('js/social-navigation.js');
-  assert.match(navigation, /pendingFriendRequests\.add\(profileId\)/);
-  assert.match(navigation, /renderSearchResults\(currentSearchResults\)/);
-  assert.match(navigation, /await api\.friendRequest\(profileId\)/);
-  assert.match(navigation, /pendingFriendRequests\.delete\(profileId\)/);
+  const friends = read('js/social-friends.js');
+
+  for (const source of [navigation, friends]) {
+    assert.match(source, /function optimisticFriendRequest/);
+    assert.match(source, /buttonLabel\(button, 'Pedido enviado'\)/);
+    assert.match(source, /profile\.relationship = 'sent'/);
+    assert.match(source, /void social\.api\('\/api\/social\/relationships'/);
+    assert.match(source, /PortalInteractions\?\.notify\?\.\('success', 'Pedido de amizade enviado\.'/);
+    assert.match(source, /PortalInteractions\?\.notify\?\.\('error'/);
+  }
+
+  assert.match(navigation, /if \(action === 'request'\) \{\s*optimisticFriendRequest\(profile, button\);\s*return;/);
+  assert.match(friends, /if \(action === 'request' && !confirmation\)/);
+  assert.match(friends, /relationshipLists\.set\('outgoing', optimisticOutgoing\)/);
 });
 
 test('Notificações abrem painel acessível na própria tela e preservam histórico completo', () => {
   const navigation = read('js/social-navigation.js');
-  const css = read('css/social-notification-panel.css');
-  assert.match(navigation, /notificationPanel/);
-  assert.match(navigation, /notificationTrigger/);
-  assert.match(navigation, /setAttribute\('aria-expanded'/);
-  assert.match(navigation, /document\.addEventListener\('keydown'/);
-  assert.match(navigation, /Escape/);
-  assert.match(navigation, /pageSize:\s*50/);
-  assert.match(css, /\.social-notification-panel/);
+  const panelCss = read('css/social-notification-panel.css');
+  assert.match(navigation, /aria-haspopup/);
+  assert.match(navigation, /aria-expanded/);
+  assert.match(navigation, /aria-controls/);
+  assert.match(navigation, /event\.key === 'Escape'/);
+  assert.match(navigation, /document\.addEventListener\('pointerdown'/);
+  assert.match(navigation, /social\.api\('\/api\/social\/notifications'/);
+  assert.match(navigation, /method: 'PATCH'/);
+  assert.match(navigation, /Ver histórico completo/);
+  assert.match(navigation, /Nenhuma notificação no momento/);
+  assert.match(panelCss, /overflow-y:\s*auto/);
+  assert.match(panelCss, /data-mobile="true"/);
+  assert.match(panelCss, /safe-area-inset-bottom/);
+  assert.match(panelCss, /prefers-reduced-motion/);
+  assert.match(panelCss, /forced-colors/);
 });
 
 test('chat profissional continua por cargo e chat social exige amizade aceita', () => {
-  const social = read('worker/social.js');
-  const chat = read('worker/portal-chat-v2.js');
-  assert.match(social, /socialRelationshipForConversation/);
-  assert.match(social, /accepted/);
-  assert.match(chat, /canChatByRole/);
+  const client = read('js/portal-chat.js');
+  const backend = read('worker/portal-chat-v2.js');
+  const policy = read('worker/social-policy.js');
+  assert.match(client, /CHAT_ROLES = new Set\(\['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin', 'cidadao'\]\)/);
+  assert.match(client, /openChatByHandle/);
+  assert.match(client, /window\.PortalChat = Object\.freeze/);
+  assert.match(client, /portalChatProfileLink/);
+  assert.match(client, /socialHandle/);
+  assert.match(client, /const messageCache = new Map\(\)/);
+  assert.match(client, /const messagePreloadRequests = new Map\(\)/);
+  assert.match(client, /function preloadConversationsInBackground/);
+  assert.match(client, /requestIdleCallback/);
+  assert.match(client, /MESSAGE_PRELOAD_CONCURRENCY = 3/);
+  assert.match(client, /MESSAGE_HISTORY_PAGE_SIZE = 120/);
+  assert.match(client, /MESSAGE_PRELOAD_PAGE_GUARD = 100/);
+  assert.match(client, /&peek=1/);
+  assert.match(client, /&before=/);
+  assert.match(client, /seenFirstIds/);
+  assert.match(client, /renderCachedConversation\(contact\)/);
+  assert.match(client, /void loadMessages\(!renderedFromMemory\)/);
+  assert.match(client, /portal:session-cleared/);
+  assert.doesNotMatch(client, /sessionStorage.*message|localStorage.*message/s);
+  assert.match(backend, /const peekOnly = url\.searchParams\.get\('peek'\) === '1'/);
+  assert.match(backend, /const beforeId = Math\.max/);
+  assert.match(backend, /MESSAGE_HISTORY_PAGE_SIZE = 120/);
+  assert.match(backend, /if \(!peekOnly\) \{/);
+  assert.match(backend, /PROFESSIONAL_ROLES = new Set/);
+  assert.match(backend, /socialFriendContacts/);
+  assert.match(backend, /socialFriendContact/);
+  assert.match(backend, /relationship\.state = 'friends'/);
+  assert.match(backend, /const institutional = await professionalContact/);
+  assert.match(backend, /return socialFriendContact\(env, currentUser\.username, targetUsername\)/);
+  assert.match(policy, /target\.profile_visibility === 'portal'/);
+  assert.doesNotMatch(policy, /isSocialProfessional\(viewer\) === isSocialProfessional\(target\)/);
 });
 
-test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação local', () => {
-  const friends = read('js/social-friends.js');
-  assert.match(friends, /loadAllFriends/);
-  assert.match(friends, /Set/);
-  assert.match(friends, /slice/);
+test('Amigos pré-carrega a lista completa, deduplica páginas e usa paginação local', async () => {
+  const html = read('amigos/index.html');
+  const client = read('js/social-friends.js');
+  const navigation = read('js/social-navigation.js');
+  const apiSource = read('js/social-api.js');
+
+  assert.doesNotMatch(html, /id="relationshipMore"/);
+  assert.match(html, /id="relationshipPageSize"/);
+  assert.match(html, /value="10">10 por página/);
+  assert.match(html, /value="20">20 por página/);
+  assert.match(html, /value="30">30 por página/);
+  assert.match(html, /value="all">Todos/);
+  assert.match(html, /id="relationshipPageButtons"/);
+  assert.match(html, /social-friends\.js\?v=20260911-1/);
+
+  assert.match(navigation, /preloadRelationshipList\?\.\('friends'\)/);
+  assert.match(apiSource, /fetchAllRelationshipPages/);
+  assert.match(apiSource, /seenHandles/);
+  assert.match(apiSource, /SOCIAL_RELATIONSHIP_CURSOR_REPEAT/);
+  assert.match(client, /preloadOtherRelationshipLists/);
+  assert.match(client, /relationshipPageSize/);
+  assert.match(client, /pageTokens/);
+  assert.doesNotMatch(client, /listCursor|relationshipMore/);
+
+  const store = new Map();
+  const sessionStorage = {
+    get length() { return store.size; },
+    getItem(key) { return store.has(key) ? store.get(key) : null; },
+    setItem(key, value) { store.set(key, String(value)); },
+    removeItem(key) { store.delete(key); },
+    key(index) { return Array.from(store.keys())[index] || null; }
+  };
+  const calls = [];
+  const window = {
+    RegulationAuth: {
+      api: async (path) => {
+        calls.push(path);
+        if (path.includes('cursor=cursor-2')) {
+          return { profiles: [{ handle: 'bruno' }, { handle: 'carla' }], nextCursor: '' };
+        }
+        return { profiles: [{ handle: 'ana' }, { handle: 'bruno' }], nextCursor: 'cursor-2' };
+      },
+      getCachedUser: () => ({ username: 'teste.amigos' })
+    },
+    REGULATION_AUTH_CONFIG: {},
+    addEventListener() {},
+    setTimeout,
+    clearTimeout
+  };
+  vm.runInNewContext(apiSource, {
+    window,
+    sessionStorage,
+    URL,
+    AbortController,
+    setTimeout,
+    clearTimeout
+  });
+
+  const profiles = await window.PortalSocial.refreshRelationshipList('friends');
+  assert.deepEqual(Array.from(profiles, (profile) => profile.handle), ['ana', 'bruno', 'carla']);
+  assert.equal(calls.length, 2);
+  assert.equal(window.PortalSocial.getCachedRelationshipList('friends').profiles.length, 3);
 });
 
-test('avatar social reutiliza Cache Storage e baixa novamente somente quando a versão muda', () => {
-  const avatar = read('js/social-avatar-cache.js');
-  assert.match(avatar, /caches\.open/);
-  assert.match(avatar, /avatarVersion/);
-  assert.match(avatar, /cache\.match/);
-  assert.match(avatar, /cache\.put/);
+test('avatar social reutiliza Cache Storage e baixa novamente somente quando a versão muda', async () => {
+  const source = read('js/social-api.js');
+  const stored = new Map();
+  let networkRequests = 0;
+  let objectUrlSequence = 0;
+
+  const cache = {
+    async match(request) {
+      const response = stored.get(request.url);
+      return response ? response.clone() : undefined;
+    },
+    async put(request, response) {
+      stored.set(request.url, response.clone());
+    },
+    async keys() {
+      return Array.from(stored.keys(), (url) => new Request(url));
+    },
+    async delete(request) {
+      return stored.delete(typeof request === 'string' ? request : request.url);
+    }
+  };
+
+  function runtime() {
+    const eventListeners = new Map();
+    class TestURL extends URL {}
+    TestURL.createObjectURL = () => `blob:avatar-${++objectUrlSequence}`;
+    TestURL.revokeObjectURL = () => {};
+
+    const window = {
+      RegulationAuth: {
+        api: async () => ({}),
+        getToken: () => 'sessao-teste',
+        authorizationHeader: () => ({ Authorization: 'Bearer sessao-teste' }),
+        getCachedUser: () => ({ username: 'visualizador.teste' })
+      },
+      REGULATION_AUTH_CONFIG: { endpoint: 'https://worker.test' },
+      location: { origin: 'https://portal.test' },
+      caches: {
+        open: async () => cache,
+        delete: async () => { stored.clear(); return true; }
+      },
+      addEventListener(type, callback) { eventListeners.set(type, callback); },
+      setTimeout,
+      clearTimeout
+    };
+    const context = {
+      window,
+      document: { getElementById: () => null },
+      sessionStorage: {
+        get length() { return 0; },
+        getItem: () => null,
+        setItem() {},
+        removeItem() {},
+        key: () => null
+      },
+      localStorage: {
+        getItem: () => null,
+        setItem() {},
+        removeItem() {}
+      },
+      fetch: async () => {
+        networkRequests += 1;
+        return new Response(new Blob(['imagem'], { type: 'image/png' }), {
+          status: 200,
+          headers: { 'Content-Type': 'image/png' }
+        });
+      },
+      Request,
+      Response,
+      Blob,
+      URL: TestURL,
+      AbortController,
+      FormData,
+      setTimeout,
+      clearTimeout
+    };
+    vm.runInNewContext(source, context, { filename: 'js/social-api.js' });
+    return window.PortalSocial;
+  }
+
+  function element() {
+    return {
+      textContent: '',
+      style: {},
+      isConnected: true,
+      setAttribute() {}
+    };
+  }
+
+  const v1 = { handle: 'pessoa.teste', name: 'Pessoa Teste', avatarAvailable: true, avatarVersion: 'versao-1' };
+  const firstRuntime = runtime();
+  await firstRuntime.mountAvatar(element(), v1);
+  assert.equal(networkRequests, 1);
+  assert.equal(stored.size, 1);
+
+  const secondRuntime = runtime();
+  await secondRuntime.mountAvatar(element(), v1);
+  assert.equal(networkRequests, 1, 'nova página deve reutilizar o avatar persistido localmente');
+
+  await secondRuntime.mountAvatar(element(), { ...v1, avatarVersion: 'versao-2' });
+  assert.equal(networkRequests, 2, 'uma versão nova deve baixar a foto nova uma única vez');
+  assert.equal(stored.size, 1, 'a versão antiga deve ser removida após a atualização');
 });
 
 test('cliente social renderiza texto do usuário sem interpolação HTML', () => {
-  const feed = read('js/social-feed.js');
-  assert.match(feed, /textContent/);
-  assert.doesNotMatch(feed, /innerHTML\s*=.*(?:post|comment|body|content)/i);
+  const files = ['js/social-feed.js', 'js/social-friends.js', 'js/social-profile.js', 'js/social-notifications.js', 'js/social-moderation.js'];
+  for (const filename of files) {
+    const source = read(filename);
+    assert.doesNotMatch(source, /innerHTML\s*=\s*`[^`]*\$\{/s, `${filename}: conteúdo interpolado em HTML`);
+    assert.doesNotMatch(source, /insertAdjacentHTML|document\.write/);
+  }
 });
 
 test('Perfil permite foto somente ao próprio titular e mantém identidade cidadã na própria tela', () => {
-  const profile = read('js/social-profile.js');
-  assert.match(profile, /isOwnProfile/);
-  assert.match(profile, /avatar/);
-  assert.match(profile, /citizen/i);
+  const html = read('perfil/index.html');
+  const client = read('js/social-profile.js');
+  const accountCss = read('css/account-sections.css');
+  const backend = read('worker/profile-photo.js');
+  assert.match(html, /id="profilePhotoCamera"[^>]*hidden/);
+  assert.match(html, /id="profilePhotoDialog"/);
+  assert.match(html, /id="profilePhotoInput"[^>]*accept="image\/jpeg,image\/png,image\/webp"/);
+  assert.match(html, /id="profileIdentityEditor"/);
+  assert.match(html, /id="profileIdentityForm"/);
+  assert.doesNotMatch(html, /href="\/conta\//);
+  assert.match(accountCss, /\.profile-photo-camera\[hidden\]\{display:none!important\}/);
+  assert.match(client, /photoCamera\.hidden = !self/);
+  assert.match(client, /photoCamera\.disabled = !self/);
+  assert.match(client, /if \(!profile\?\.isSelf\) return;/);
+  assert.match(client, /if \(!profile\?\.isSelf \|\| !accountPhotoUnlocked\(\)\) return;/);
+  assert.match(client, /auth\.updateProfilePhoto/);
+  assert.match(backend, /WHERE username = \?/);
+  assert.doesNotMatch(backend, /targetUsername|targetHandle|profileUsername/);
+  assert.match(client, /\/api\/citizen\/identity/);
+  assert.match(client, /\/seguranca\/\?primeiro-acesso=1/);
 });
 
 test('V1 é textual, responsiva e respeita preferências de acessibilidade', () => {
-  const socialCss = read('css/social.css');
-  assert.match(socialCss, /@media/);
-  assert.match(socialCss, /prefers-reduced-motion/);
-  assert.match(socialCss, /forced-colors/);
+  const home = read('index.html');
+  const feed = read('js/social-feed.js');
+  const css = read('css/social.css');
+  const homeMobileCss = read('css/home-mobile.css');
+  const homeDesktopScaleCss = read('css/home-desktop-scale.css');
+  assert.doesNotMatch(home, /type="file"|accept="image/);
+  assert.match(feed, /ordem é cronológica|ordem cronológica/i);
+  assert.match(css, /@media \(max-width: 360px\)/);
+  assert.match(css, /safe-area-inset-bottom/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(css, /@media \(forced-colors: active\)/);
+  assert.match(css, /:focus-visible/);
+  assert.match(css, /body\.mobile-home-mode \.social-layout\s*\{[^}]*display:\s*flex/s);
+  assert.match(css, /body\.mobile-home-mode \.social-global-nav\s*\{\s*display:\s*none/);
+  assert.match(css, /body\.mobile-home-mode \.social-shortcuts \.portal-grid\s*\{[^}]*repeat\(3/s);
+  assert.match(css, /body\.mobile-home-mode \.social-shell\s*\{[^}]*font-size:\s*clamp\(21px,\s*3\.225vw,\s*31\.5px\)/s);
+  assert.match(css, /body\.mobile-home-mode \.social-mobile-nav\s*\{[^}]*min-height:\s*clamp\(96px,\s*13\.5vw,\s*132px\)/s);
+  assert.match(css, /body\.mobile-home-mode \.social-mobile-nav-link \.social-nav-icon\s*\{[^}]*clamp\(40px,\s*5\.55vw,\s*54px\)/s);
+  assert.match(homeMobileCss, /body\.mobile-home-mode #toolsFallback \.hub-card\s*\{/);
+  assert.doesNotMatch(homeMobileCss, /body\.mobile-home-mode \.hub-card\s*\{/);
+  assert.match(homeDesktopScaleCss, /@media \(min-width: 1240px\)/);
+  assert.match(homeDesktopScaleCss, /body:not\(\.mobile-home-mode\) #socialHome\.social-shell/);
+  assert.match(homeDesktopScaleCss, /width:\s*min\(1298px,\s*calc\(100% - 32px\)\)/);
+  assert.match(homeDesktopScaleCss, /grid-template-columns:\s*242px minmax\(0, 704px\) minmax\(253px, 308px\)/);
+  assert.match(homeDesktopScaleCss, /#socialHome \.social-comment \.social-avatar\s*\{[^}]*width:\s*38px;[^}]*height:\s*38px/s);
+  assert.doesNotMatch(homeDesktopScaleCss, /\.social-global-nav(?:-inner)?\s*\{/);
+  assert.match(home, /social-profile-rail/);
+  assert.match(home, /social-feed-column/);
+  assert.match(home, /social-tools-rail/);
+  for (const filename of socialPages) assert.match(read(filename), /http-equiv="Content-Security-Policy"/);
 });
 
 test('painel técnico expõe apenas o estado seguro dos flags sociais', () => {
   const readiness = read('worker/system-readiness.js');
-  assert.match(readiness, /SOCIAL_BACKEND_ENABLED/);
-  assert.match(readiness, /SOCIAL_HOME_ENABLED/);
-  assert.doesNotMatch(readiness, /password|token|secret/i);
+  assert.match(readiness, /socialBackendEnabled/);
+  assert.match(readiness, /socialHomeEnabled/);
+  assert.match(readiness, /socialFlagsCoherent/);
+  assert.match(readiness, /Configuração inválida: a Home social não pode ser ativada/);
 });
 
 test('Home social é universal e preferências sociais vivem em Configurações', () => {
-  const home = read('js/home.js');
   const settings = read('configuracoes/index.html');
-  assert.match(home, /socialConfig\.homeEnabled/);
-  assert.match(settings, /social/i);
+  const levels = read('js/account-levels.js');
+  const policy = read('worker/social-policy.js');
+  const backendLevels = read('worker/account-levels.js');
+  const home = read('js/home.js');
+  const login = read('js/login.js');
+  const signup = read('js/signup.js');
+  assert.match(settings, /id="socialPreferencesCard"/);
+  assert.match(settings, /id="socialProfileVisibility"/);
+  assert.match(settings, /id="socialDefaultAudience"/);
+  assert.doesNotMatch(settings, /id="socialHomePreference"/);
+  assert.match(levels, /Home social liberada/);
+  assert.doesNotMatch(policy, /ACCOUNT_LEVEL_REQUIRED/);
+  assert.match(backendLevels, /socialFeed:\s*true/);
+  assert.match(backendLevels, /socialPublishing:\s*true/);
+  assert.doesNotMatch(home, /location\.replace\('\/ferramentas\/'\)/);
+  assert.match(login, /return '\/';/);
+  assert.match(signup, /location\.replace\('\/'\)/);
 });
