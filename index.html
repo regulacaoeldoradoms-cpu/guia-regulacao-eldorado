@@ -30,21 +30,6 @@
 <body class="portal-page home-loading-active">
   <script>
     (() => {
-      try {
-        const source = new URL(document.referrer || '', location.href);
-        if (source.origin === location.origin && /^\/login\/?$/.test(source.pathname)) {
-          window.__PORTAL_POST_LOGIN_OPENING_PENDING__ = true;
-          document.body.classList.add('post-login-opening-pending');
-          const openingBootStyle = document.createElement('style');
-          openingBootStyle.id = 'portalOpeningBootStyle';
-          openingBootStyle.textContent = 'body.post-login-opening-pending{background:#000!important}body.post-login-opening-pending .portal-shell{visibility:hidden}';
-          document.head.appendChild(openingBootStyle);
-          window.setTimeout(() => document.body.classList.remove('post-login-opening-pending'), 5000);
-        }
-      } catch (_) {
-        // Falha desta detecção nunca deve bloquear o carregamento tradicional.
-      }
-
       const ua = navigator.userAgent || '';
       const mobileUA = /Android|iPhone|iPad|iPod|Mobile|webOS|IEMobile|Opera Mini/i.test(ua);
       const compactTouch = navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) <= 700;
