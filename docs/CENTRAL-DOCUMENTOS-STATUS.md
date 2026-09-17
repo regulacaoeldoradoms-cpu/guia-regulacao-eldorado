@@ -4,106 +4,132 @@
 
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive.**
+**Fase 4 — Sincronização segura com Drive.** Subfase **4D — homologação real ainda sem aceite; próximo passo exclusivamente de leitura para reconciliar produção e possíveis tentativas concorrentes.**
 
-Subfase: **4D — leitura real confirmada; liberação de escrita interrompida por mudança da produção; script operacional V2-R1 reemitido e testado localmente, aguardando execução do operador.**
+A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. As subfases 4A–4C têm implementação e evidências técnicas; elas não substituem a matriz real 4D. Não reiniciar fases, mesclar o PR #201 nem iniciar outra fase para cumprir prazo.
 
 - Branch: `codex/central-docs-drive-sync-phase4`.
-- PR: **#201 aberto e sem merge**; última consulta indicou `mergeable:false`.
-- Main conferida: `3dc193c34d5f0f02c0a50b2f51ba2e29e022f77f`, após conclusão da abertura pós-login, PRs #202/#203. Não desfazer essa mudança.
-- Código congelado do reteste restrito: `2fee19e69e06ecd128be2b103354fc6c2fb4e431`.
-- Preview-base informado e conferido anteriormente pelo operador: `a17473ce-ad9a-480c-8e53-901f2fcc3c92`, escrita false.
+- PR **#201 aberto, sem merge**; última consulta indicou `mergeable:false`.
+- Ref efetiva da `main` conferida: **`8cefaf639a9399f77658867ef10f82a0fb694222`**, merge do PR #204, correção do bloqueio do login. Preservar também a abertura pós-login dos PRs #202/#203. O `base_sha=336b6473` retornado pelo objeto do PR não representava a ref atual da main; não usá-lo como snapshot produtivo.
+- Código do reteste restrito continua congelado em `2fee19e69e06ecd128be2b103354fc6c2fb4e431`; esta revisão não altera editor, wrapper, autenticação ou capacidades.
+- Preview-base informado e anteriormente conferido pelo operador: `a17473ce-ad9a-480c-8e53-901f2fcc3c92`, gate false. Não presumir que ele ainda atenda o alias.
 
-Fases 0–3 permanecem encerradas. A implementação/testes técnicos de 4A–4C não substituem a matriz real 4D. **Não encerrar a Fase 4, iniciar fase nova nem mesclar o PR por causa do prazo operacional.**
+## Retomadas paralelas: decisão operacional vigente
 
-## Fontes e histórico preservado
+O usuário anexou nesta conversa o original `liberar-escrita-preview-4d.mjs`. Seu SHA-256 foi calculado e corresponde exatamente ao histórico: `53b6cc137149b69ea3fb6a650e6a6c9e40918b68f2ef5154cdcc5814fbc212d5`.
 
-Este é o registro operacional atual. O detalhamento anterior continua versionado em `9f295ca2766b890285b912b7ab714adeb63d2bc7:docs/CENTRAL-DOCUMENTOS-STATUS.md` e `2caa4797eaccf9e86d69e1d699161855bc22205b:docs/CENTRAL-DOCUMENTOS-STATUS.md`.
+Durante a revisão, nova consulta da ref da branch revelou o commit **`103ccd63a14f91963ff511112091002ce95c21fa`**, de outra retomada, registrando a reemissão do **V2-R1**. Esse registro documenta o executável `liberar-escrita-preview-4d-v2-r1.mjs`, SHA-256 `812255aa8194f301b3a96c3be286f1e15adfc60f8201f5bf0de52e89f56703f8`, pacote `preview-4d-liberar-escrita-v2-r1.zip` e 31 testes locais. Esses são registros daquela revisão, não testes reexecutados nesta. Não foi recuperado resultado do operador confirmando execução, upload ou liberação do V2-R1.
 
-Fontes complementares obrigatórias: Guia Mestre V1.1; Dossiê/deltas aplicáveis; `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-RESULTADOS.md`, `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-ISOLAMENTO.md`, `CENTRAL-DOCUMENTOS-4D-CONTINUIDADE-20260917-TARDE.md`, FASE-4, ARQUITETURA-V1 e HOMOLOGACAO-V1.
+**A instrução anterior de executar diretamente V2-R1 fica suspensa até conferir o estado real.** Não executar dois procedimentos de liberação, apagar locks ou repetir upload para garantir. A evolução da main não prova, sozinha, qual versão atende a Cloudflare.
 
-Relatos antigos de ausência de conector, de produção em 239cca88 e de gate desligado valem para seus respectivos horários/sessões. Não tratá-los como estado atual sem conferir. Resultado verde antigo também não descreve automaticamente o head atual.
+O V3 foi preparado do original recebido com identificação própria. Para esta entrega, executar **apenas `--verificar`**. A existência do modo `--liberar-teste` no arquivo não dispensa a reconciliação desta pendência. Não decidir automaticamente entre V2-R1 e V3 pelo nome mais recente.
 
-## Evidências recebidas do operador
+Justificativa: a versão de produção pode ter mudado e a outra retomada pode ter alcançado uma tentativa de envio. É necessário distinguir ausência de tentativa de resultado incerto antes de permitir nova escrita. A verificação preserva evidências locais e retorna somente metadados técnicos.
 
-1. Login normal do Wrangler concluído no Windows 10 Pro; Node 24.17.0, npm 11.13.0 e Wrangler fixado em 4.133.0. Compilação local dry-run da entrada exclusiva de homologação concluiu com `PREPARO_LOCAL_OK`.
-2. `enviar-preview-4d-seguro.mjs` informou `PREVIEW_ENVIADO_DESARMADO`: versão a17473ce, código 2fee19e, gate false e produção então inalterada em 239cca88, 100%. Registros locais: `CentralDocumentos4D/ultimo-preview.json` e configuração separada.
-3. Novo controle D1 criado sem prorrogar o anterior, copiando somente a conta e o único PDF descartável autorizados. Resultado: enabled=1, vencimento **17/09/2026 20:10:01 UTC — 16:10:01 em Eldorado/MS**.
-4. Screenshot aproximadamente às 14:17 locais: `/homologacao/documentos/` lista um nome sintético e abre o PDF; visualizador reconhece três páginas e mostra miniaturas. Isso comprova leitura, não salvamento com a nova versão.
-5. O script original `liberar-escrita-preview-4d.mjs` interrompeu em `CONFERIR_PREVIEW_E_PRODUCAO`, código `VERSAO_DE_PRODUCAO_DIVERGENTE`, antes de qualquer upload. Exigia produção histórica 239cca88; não foi defeito do PDF.
-6. Consulta posterior fornecida pelo operador: produção **f8848c45-0bfc-40d6-8508-92b33dea6f43, 100%**, deployment **83a620d7-82cc-47ae-9779-f7002f45482d**, criado em 18:26:45.063 UTC. Últimas versões: a17473ce às 18:02:13.211, eabef99f às 18:23:39.339 e f8848c45 às 18:26:44.579 UTC.
+## Evidências operacionais anteriores preservadas
 
-A leitura da Cloudflare acima foi feita pelo operador, não pelo assistente nesta retomada. A atualização da main foi confirmada separadamente pelo GitHub; proximidade de horário não basta para atribuir o conteúdo de uma versão Cloudflare a um PR.
+- Login normal do Wrangler e preparo local no Windows já ocorreram. Não repetir OAuth institucional, criação do PDF, download do código ou formulário de Builds. O registro anterior informa Windows 10 Pro, Node 24.17.0, npm 11.13.0 e Wrangler 4.133.0.
+- `enviar-preview-4d-seguro.mjs` informou `PREVIEW_ENVIADO_DESARMADO`, versão a17473ce, código 2fee19e, escrita false e produção então em 239cca88/100%.
+- O operador criou uma nova janela D1, sem prorrogar a anterior, copiando somente a conta e um PDF descartável autorizados. Prazo original: **17/09/2026 20:10:01 UTC — 16:10:01 em Eldorado/MS**.
+- Screenshot recebido aproximadamente às 14:17 locais confirmou listagem restrita e leitura de três páginas. Isso não comprova autosync com esta versão.
+- O original interrompeu em `CONFERIR_PREVIEW_E_PRODUCAO`, código `VERSAO_DE_PRODUCAO_DIVERGENTE`, antes de qualquer upload; exigia a versão histórica 239cca88.
+- Último deployment informado pelo operador: **`83a620d7-82cc-47ae-9779-f7002f45482d`**, versão **`f8848c45-0bfc-40d6-8508-92b33dea6f43`**, **100%**, criado às 18:26:45.063 UTC. Versões informadas: a17473ce às 18:02:13.211, eabef99f às 18:23:39.339 e f8848c45 às 18:26:44.579 UTC.
 
-**Decisão: preservar a produção f8848c45 e seu deployment.** Não restaurar 239cca88 para fazer o script antigo passar. Não repetir OAuth, criação do PDF, download do código ou formulário de Builds.
+Esses são metadados recebidos do operador, não nova leitura autenticada da Cloudflare nesta intervenção. A descoberta de plugins desta sessão não retornou Cloudflare. Nenhum comando autenticado de upload/deploy, acesso a PDF ou alteração de linha D1 foi executado pelo assistente. Não houve modificação da main ou merge do PR.
 
-## Retomada após resposta interrompida — V2-R1
+## Artefato V3 efetivamente versionado
 
-A tentativa anterior registrou um V2 e um hash no status, mas a mensagem final falhou. Nesta retomada o executável original do ZIP foi recuperado e seu SHA-256 conferido como `53b6cc137149b69ea3fb6a650e6a6c9e40918b68f2ef5154cdcc5814fbc212d5`. O executável V2 descrito no registro anterior não foi localizado nos arquivos disponíveis; não se presumiu entrega ou execução.
+Para evitar outra perda do executável entre conversas, os próprios arquivos estão na branch:
 
-Foi reemitido um arquivo de revisão própria, **`liberar-escrita-preview-4d-v2-r1.mjs`**, a partir do script recuperado e das decisões persistidas. Esta entrega substitui os arquivos de liberação anteriores.
+- `scripts/central-docs/liberar-escrita-preview-4d-v3.mjs`, commit de criação **`89fa77590d675ce7edb5f91ddeded66405f2ce8f`**;
+- `scripts/central-docs/liberar-escrita-preview-4d-v3.test.mjs`, commit **`831935b932bd86d62e6d74aac1fbc70406730758`**;
+- `.github/workflows/validate-central-docs-operational-v3.yml`, commit **`4018be8c23befd0591efd09d43b9a6cea36b1b0b`**, executa somente testes com transporte simulado e permissão contents:read, sem credenciais de Cloudflare/Drive.
 
-**SHA-256 executável V2-R1:** `812255aa8194f301b3a96c3be286f1e15adfc60f8201f5bf0de52e89f56703f8`.
+SHA-256 do executável V3: **`0b58085dc14cf274d94be117117c8417de0d3ad8e0723b94358db71b25892234`**.
 
-Pacote local: `preview-4d-liberar-escrita-v2-r1.zip`, contendo executável, testes, LEIA-ME e resultados. Cópia TXT idêntica para contingência de download. Os artefatos foram criados e a correspondência do hash dentro do ZIP foi verificada. Não houve nova publicação na Cloudflare nem acesso ao PDF pelo assistente.
+SHA-256 dos testes: `92c17049baaca1134651ee6bd4399e64fea3b4caec1d24d9fd6cd84acb45ec1b`.
 
-### Proteções do procedimento
+Os blobs retornados pelo GitHub foram conferidos contra os bytes locais: executável `c7e5e00322dfda484ab5a1c9c7b01909ea2392f3`; testes `9438cfb9301c178e9e9e6c26a63d08703d236187`. O V3 não é apresentado como o V2 perdido ou como o V2-R1.
 
-- Exige exatamente f8848c45/83a620d7/100% antes e depois. Outra produção não é aceita automaticamente.
-- Preserva o snapshot antigo de 239cca88/f2916211 como histórico; não o compara indevidamente com a produção nova.
-- Só arquiva tentativa anterior registrada como uploadAttempted=false, uploaded=false e sem ID novo. Tentativa inconclusiva ou envio anterior bloqueia repetição. Há trava local contra execuções simultâneas e gravação do registro antes da tentativa de envio.
-- Confere a17473ce como base desarmada, o mesmo release, controle, origens, runtime e D1. A última versão esperada para a herança passa a ser f8848c45, não a17473ce.
-- Confere na produção os nomes/tipos dos seis segredos necessários e o mesmo D1/dependências públicas. Não extrai, compara nem copia valores de segredo; presença de nomes não comprova igualdade de valores entre versões.
-- Usa secrets.required para seis bindings inherit e unsafe.metadata.keep_bindings=[] para impedir herança ampla na nova versão. Isso não exclui segredos da produção. Comportamento verificado no fonte fixado do Wrangler 4.133.0.
-- Exige dry-run e inspeciona o multipart efetivamente produzido: um módulo de homologação, dez variáveis permitidas, AUTH_DB e seis referências de herança sem valores secretos. Bloqueia módulos, metadados, bindings adicionais ou herança ampla. Se o contrato gerado pelo Wrangler diferir, para antes de enviar.
-- Verifica snapshot dos fontes locais antes/depois da compilação e antes de enviar; não muda código do editor.
-- Executa somente SELECT no D1: prazo, flags, igualdade do escopo e contagens, sem projetar usuário/fileId. Exige um PDF, mesma conta/escopo, ausência de outra janela ativa e de sessões pendentes, prazo original e pelo menos 20 minutos restantes. Não prolonga a autorização.
-- Após confirmação humana `LIBERAR TESTE`, revalida estado/prazo e usa somente versions upload. Não executa deploy, promoção, rollback, comando de segredo, INSERT, UPDATE ou DELETE no D1.
-- Após o envio confere configuração, alias informado, predecessor da nova versão, produção e prazo. Essas conferências não são um bloqueio remoto transacional: evitar publicações concorrentes durante o procedimento. Incerteza após tentativa exige inspeção/revogação, nunca repetição cega.
+### Modo permitido para a próxima execução: verificar
 
-### Validação desta reentrega
+`node .\liberar-escrita-preview-4d-v3.mjs --verificar`
 
-**31 testes Node locais aprovados, zero falhas/skips**, mais sintaxe e SELECT exercitado em SQLite de memória com dados sintéticos. Inclui produção antiga/nova/divergente, dependências, herança restrita, multipart, concorrência, expiração, privacidade, confirmação humana e fluxo completo simulado. O dry-run real do Wrangler e o upload autenticado do V2-R1 ainda dependem da execução no Windows do operador. Não apresentar testes locais como homologação real do editor.
+Reutiliza o preparo em `%LOCALAPPDATA%\CentralDocumentos4D` e o login normal do Wrangler. Cria somente uma configuração local separada para as consultas. Não sobrescreve o registro de tentativa, não arquiva/apaga evidências, não remove locks, não compila e não chama upload ou deploy.
 
-## Estado técnico e evidências de produto
+Consulta deployment, últimas versões, configuração do preview-base e o SELECT restrito do D1. Retorna prazo, flags de igualdade do escopo, contagens e metadados UUID/percentuais. Lê o resumo da tentativa local antes e depois das consultas. Estado desconhecido permanece null, não vira false. O bloco de saída é `VERIFICACAO_SOMENTE_LEITURA`; não solicitar o ledger completo, configurações, IDs de arquivos, nomes de usuários ou credenciais.
 
-- Visualizador PDF.js, editor essencial, operações locais reversíveis, exportação e impressão pertencem às fases anteriores encerradas.
-- Preflight revalida sessão, documents_edit, metadados e conflito. Upload resumable em blocos, assinatura PDF no primeiro bloco, revisão anterior preservada e confirmação final obrigatória.
-- Autosync observa mutação da revisão e espera um segundo sem alteração. Zoom/navegação/ociosidade não geram upload. Botão: normal → pending → syncing → success (1 s) → normal; failed permite retry. Assets aprovados mantidos, inclusive correção do PNG pendente v=20260916-2.
-- Confirmação de uma revisão anterior não comprova salvamento de edição nova feita durante upload. X, saída e troca de documento passam pelo guard. Beforeunload é aviso, não garantia de upload depois do encerramento do navegador.
-- Primeiras tentativas reais gravaram revisões sintéticas e comprovaram preservação/recuperação; success observado por cerca de 963 ms. Envios seguintes tiveram conflito indevido; X com falha foi corrigido e retestado.
-- Diagnóstico identificado observou base 16 e versão atual 18, sem revisão externa adicional observada; causa específica no keepForever não foi comprovada.
-- Correção 2fee19e: confirmação por recibo/metadados e baseline certificada na ref, vinculada a usuário/arquivo/versão/identidade/contexto/origens/controle, validade 30 minutos. Revisão externa, mesmo com bytes iguais, permanece conflito. Não torna preflight/upload atômicos.
-- RESULTADOS registra 274/274 testes do Worker e 75 passed / 3 skipped de navegador para essa correção. São evidências registradas, não novo aceite nem descrição dos checks de todo head posterior.
+O modo de leitura não declara que o preview atualmente servido está desarmado: confirma a versão-base e apresenta a lista de versões para posterior reconciliação. `matchesReviewedProduction=false` é informação para análise, não aprovação automática de outra produção. Mesmo sem erros de consulta, o relatório não autoriza edição do PDF.
 
-## Isolamento, encerramento e riscos
+### Correções implementadas para eventual liberação posterior
 
-O preview usa `worker/homologation-4d.js`; **jamais promover esse wrapper para produção**. Autenticação/capabilities reais, D1 e OAuth compartilhados; isolamento por host/origem exatos, conta/arquivos permitidos, controle revogável/expirável e sessões. OAuth/reconexão/desconexão/rotas alheias bloqueados. Wrapper permite replace_pdf, bloqueia save_copy; cópia continua sem homologação real nesse ambiente.
+- Separa snapshot histórico da produção atual; exige f8848c45/83a620d7/100% antes e depois, sem rollback ou aceitação automática de outra versão.
+- Confere preview-base, release, controle, origens, runtime, mesmo D1 e dependências públicas compartilhadas. Verifica presença/tipo dos seis segredos necessários sem ler valores.
+- Restringe a herança a seis nomes com `secrets.required` e `unsafe.metadata.keep_bindings=[]`. O fonte fixado do Wrangler 4.133.0 foi consultado: required produz bindings inherit; o upload normalmente preserva todos os segredos; unsafe.metadata substitui o campo no multipart.
+- Exige dois dry-runs com os mesmos argumentos e valida cada multipart: um módulo de homologação, dez variáveis, AUTH_DB e seis inherit sem valores. Bloqueia recursos, módulos e metadados extras ou herança ampla. Compara também o pacote emitido pelo upload após a tentativa; divergência posterior nunca é sucesso.
+- Confere hash Git do wrapper local e estabilidade dos fontes/configuração durante o procedimento. O snapshot de estabilidade não é uma atestação independente de todos os imports contra o commit remoto.
+- Só arquiva tentativa claramente anterior ao envio. Trava local, registro atômico e marcador persistente precedem o subprocesso de upload. Tentativa incerta bloqueia repetição.
+- SELECT exige prazo original, um PDF, mesma conta/escopo, nenhuma outra janela ativa e nenhuma sessão pendente. Liberação exige pelo menos 20 minutos restantes e confirmação humana `LIBERAR TESTE`, sem estender prazo.
+- Confere alias retornado, nova versão e predecessor esperado para detectar concorrência. Não oferece exclusão remota transacional nem coordenação garantida entre scripts de revisões distintas. Manter outras publicações e liberações paradas.
 
-Não registrar dados pessoais, nomes/IDs de arquivo, ref, URL resumable, conteúdo, CPF, CNS, CID, diagnóstico ou credenciais no repositório/PostHog. Somente drive_sync_started/completed/failed e propriedades técnicas allowlisted. Ausência de logs do preview não prova privacidade.
+Limite adicional: a comparação de deployment não atesta todos os metadados não versionados do serviço. O fonte do Wrangler contém reconciliação de tags de serviço/ambiente em versões upload; não prometer ausência universal de efeitos em tags. Nenhum upload real V3 foi executado nesta sessão.
 
-Ao encerrar: aguardar requisições em voo, revogar o controle D1, confirmar bloqueio e preparar gate false. Revogação não desfaz upload já aceito. Troca de alias não revoga por si só versões antigas. Janela termina em 20:10:01 UTC sem extensão automática.
+### Validação desta intervenção
+
+**87 testes Node locais aprovados, zero falhas/skips**, em Node 22.16.0, mais sintaxe. Inclui seis casos específicos do modo de leitura e fluxo completo com transporte simulado, confirmação, mudanças de produção, expiração, herança/multipart, resultado incerto, não repetição e sanitização.
+
+O SELECT exato foi exercitado em SQLite de memória em **três cenários sintéticos**: escopo válido, JSON inválido e sessão pendente. Nenhuma identidade real foi usada.
+
+Não foi possível executar o Wrangler real neste ambiente; portanto o dry-run efetivo com Wrangler 4.133.0, o Windows real e o upload autenticado continuam sem comprovação nesta revisão. O workflow foi criado; seu resultado deve ser consultado, não presumido verde a partir dos testes locais. Esses 87 testes não substituem o aceite real do editor.
+
+## Produto: situação preservada e pendências de aceite
+
+Visualizador PDF.js, editor essencial, operações reversíveis, exportação e impressão pertencem às fases encerradas. Autosync observa revisão real com um segundo de ociosidade; zoom/navegação não enviam. Estados normal/pending/syncing/success de um segundo/failed permanecem. Uma revisão anterior confirmada não significa que edição nova feita durante upload já esteja salva.
+
+As primeiras provas reais registraram preservação/recuperação de revisão e confirmação visual, mas envios seguintes apresentaram conflito indevido. A proteção do X foi corrigida/retestada. O diagnóstico observou base 16/atual 18 sem nova revisão externa conhecida, sem provar causalidade específica do keepForever.
+
+A correção 2fee19e relê recibo/metadados e certifica baseline na referência opaca, associada a usuário, arquivo, versão, identidade e contexto, com TTL de 30 minutos. Revisão externa, inclusive com bytes iguais, continua bloqueada. Não torna preflight/upload atômicos.
+
+RESULTADOS registra para essa correção 274/274 testes Worker e 75 passed/3 skipped de navegador. São evidências históricas do produto, não novo resultado de todos os checks do head atual.
+
+Ainda faltam salvamentos consecutivos reais com 2fee19e, edição durante upload, ausência de reenvio sem mudança, retry, fechamento com sucesso/falha, conflito externo verdadeiro, reabertura final e recuperação, seguidos de encerramento dos controles e registro da matriz.
+
+## Isolamento, privacidade e encerramento
+
+Jamais promover `worker/homologation-4d.js` para produção. D1/OAuth compartilhados; autenticação/capabilities reais e isolamento por host/origem, conta/PDF permitido, controle expirável/revogável e sessões. OAuth/reconexão/desconexão e rotas alheias bloqueados. replace_pdf permitido; save_copy continua sem homologação real nesse ambiente.
+
+Não registrar no GitHub/PostHog nomes/IDs de arquivos, usuários, conteúdo de PDF, referências opacas, revisão, URL resumable, credenciais, CPF, CNS, CID ou diagnóstico. Telemetria restrita a drive_sync_started/completed/failed e propriedades técnicas allowlisted. Ausência de logs não prova privacidade.
+
+O prazo original termina em **20:10:01 UTC**, sem extensão automática. A margem mínima de liberação é 20 minutos, não uma autorização para apressar a matriz. Ao encerrar: aguardar operações em voo, revogar controle D1, confirmar bloqueio e preparar gate false. Revogação não desfaz upload aceito; trocar alias não revoga versões antigas.
 
 ## Próxima ação exata
 
-1. Operador executa **V2-R1** no mesmo Windows, com preparo/login já existentes, sem outras publicações simultâneas. Digita LIBERAR TESTE somente após os checks. Receber somente o relatório final.
-2. Se PREVIEW_COM_ESCRITA_LIBERADA: conferir acesso atualizado e repetir autosync consecutivo, edição durante upload, ausência de reenvio sem mudança, retry, fechamento com sucesso/falha, conflito externo, reabertura e recuperação. O script sozinho não grava PDF nem aprova a 4D.
-3. Se interrupção: conferir se uploadAttempted foi falso ou verdadeiro antes de orientar ação. Envio tentado/inconclusivo exige revogar e inspecionar; não repetir nem editar o PDF. Não contornar expiração.
-4. Encerrar controles/gate e registrar a matriz. Reconciliar o PR #201 com a main em etapa própria, preservando a abertura pós-login e rodando checks do candidato reconciliado. Nunca escolher automaticamente um lado do conflito nem descartar a main para cumprir prazo.
+1. Operador executa **somente V3 --verificar**, no mesmo Windows e sem iniciar V2-R1 ou outra liberação paralela. Receber somente o bloco sanitizado final.
+2. Conferir tentativas antes/depois, locks, versões, deployment e prazo. Havendo envio tentado/estado incerto: não repetir nem editar; inspecionar e revogar conforme necessário. Havendo mudança de produção: preservar a nova implantação, revisar dependências e referência explicitamente, sem apenas trocar UUIDs.
+3. Só após reconciliar esses fatos escolher um único procedimento de liberação, ainda dentro da janela válida. Expiração não autoriza prorrogação ou nova janela automática.
+4. Executar a matriz real e encerramento. Reconciliar #201 com a main em etapa própria, preservando os PRs #202–#204 e rodando checks do candidato reconciliado. Não escolher automaticamente um lado do conflito.
 
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 4D, sem aceite; fases anteriores não reiniciadas |
-| Última ação concluída | Executável V2-R1 reemitido com hash próprio, 31 testes locais e SELECT SQLite; nenhum upload real desta revisão |
-| Branch/PR | codex/central-docs-drive-sync-phase4, #201 aberto, sem merge e conflito indicado |
-| Código/preview | 2fee19e; a17473ce desarmado; main conferida 3dc193c |
-| Produção a preservar | f8848c45 / deployment 83a620d7 / 100%, informado pelo operador; script confere novamente |
-| Janela | Mesma conta/PDF sintético; prazo 17/09 20:10:01 UTC; leitura de três páginas recebida |
-| Decisões/porquê | Preservar nova produção e histórico, restringir herança e validar multipart; erro antigo era referência desatualizada |
-| Descartado | Rollback, remover guards, prolongar janela, repetir OAuth/Builds ou aceitar produção desconhecida |
-| Testes | 31 testes locais V2-R1 + sintaxe/SQLite; produto histórico em RESULTADOS; execução autenticada e matriz real pendentes |
-| Próximo passo | Executar V2-R1, conferir relatório/versão/gate/produção/prazo; só então teste real no descartável |
-| Riscos | D1/OAuth compartilhados, publicação concorrente, expiração, herança, cache antigo e reconciliação com main |
-| Fontes | STATUS, RESULTADOS, ISOLAMENTO, CONTINUIDADE-TARDE, PR #201, ultimo-preview.json, ultimo-preview-escrita.json, V2-R1 e hash acima |
+| Fase/subfase | Fase 4D, sem aceite; Fase 0 e Fases 1–3 encerradas |
+| Última ação concluída | Original recebido/hash confirmado; V3 e 87 testes efetivamente versionados; retomada paralela V2-R1 identificada e instrução operacional reconciliada |
+| Branch/PR | codex/central-docs-drive-sync-phase4; #201 aberto/sem merge, conflito indicado |
+| Commits relevantes | V2-R1 documentado em 103ccd6; V3 em 89fa775; testes em 831935b; CI em 4018be8 |
+| Main | Ref real 8cefaf6, merge #204; não confundir com base_sha antigo do PR |
+| Código/preview | Reteste 2fee19e; preview-base a17473ce; versão atualmente servida ainda a reconferir |
+| Produção | Último relato do operador f8848c45/83a620d7/100%; não reconfirmada pela Cloudflare nesta intervenção |
+| Janela | Uma conta/um PDF sintético; prazo 17/09 20:10:01 UTC; sem extensão; margem de liberação 20 min |
+| Decisão/porquê | Verificação somente leitura antes de qualquer envio, pois há retomadas paralelas e produção potencialmente alterada |
+| Descartado | Rollback, remover guards, trocar só UUID, apagar locks/ledger, prolongar janela, repetir OAuth ou executar dois scripts |
+| Testes | V3 87 locais + sintaxe + 3 SELECT SQLite; CI novo a conferir; V2-R1 31 somente conforme registro anterior; matriz real pendente |
+| Ações externas | Preparo/OAuth/preview-base anteriores preservados; nenhuma nova execução autenticada de upload/Drive/D1 nesta intervenção |
+| Riscos | Tentativa concorrente/incerta, D1/OAuth compartilhados, prazo, herança, cache, tags não versionadas e reconciliação com main |
+| Observabilidade | Somente eventos/propriedades técnicos allowlisted, sem dados sensíveis |
+| Próximo passo | Receber VERIFICACAO_SOMENTE_LEITURA do V3; decidir a partir de evidências, sem orientar --liberar-teste antecipadamente |
+| Fontes | Este status; scripts/central-docs/V3 e testes; Guia Mestre; Dossiê/deltas; RESULTADOS; ISOLAMENTO; CONTINUIDADE-TARDE; PR #201 |
+
+## Histórico recuperável
+
+O conteúdo integral da reentrega V2-R1 permanece em `103ccd63a14f91963ff511112091002ce95c21fa:docs/CENTRAL-DOCUMENTOS-STATUS.md`; a retomada anterior em d36facb; preparação V2 em 9f295ca; histórico operacional anterior em 2caa479. Documentos FASE-4, ARQUITETURA-V1, HOMOLOGACAO-V1, STAGING-OPERACIONAL-V1 e deltas continuam complementares. Ler somente o necessário à próxima ação; não reiniciar investigações encerradas.
