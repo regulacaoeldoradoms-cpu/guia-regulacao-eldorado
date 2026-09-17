@@ -10,7 +10,7 @@ Subfase atual: **4C — sincronização automática + botão de força + feedbac
 
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: **#201**  
-Base atual: `main@d6d4c1600f71b3e915cb57e5ca51a12f01285072`
+Base atual: `main@336b647300faee2c958475a3b51b6b0522e0dd06`
 
 ## Correção visual do ícone pendente — 16/09/2026 20:12 (America/Campo_Grande)
 
@@ -23,6 +23,12 @@ Ação aplicada nesta branch:
 - nenhuma escrita real no Google Drive foi habilitada.
 
 Próximo passo permanece: validar visualmente o estado **pendente** no staging e concluir a validação da 4C antes da 4D.
+
+## Reconciliação com a main — 16/09/2026 20:23 (America/Campo_Grande)
+
+A branch da Fase 4 foi reconciliada com a `main` vigente `336b647300faee2c958475a3b51b6b0522e0dd06` usando o merge calculado pelo próprio GitHub (`eeb544e633cbc198d3082e5460c271cca1dae593`). A `main` havia recebido somente a correção do asset `Drive_pendente.png` por exclusão/reupload; a branch já incorporava esse mesmo blob corrigido e preservou o cache-buster `v=20260916-2`.
+
+Nenhuma mudança funcional adicional foi introduzida por essa reconciliação. O PR #201 continua aberto, sem merge, e a escrita real no Drive continua bloqueada.
 
 ## Estado consolidado
 
