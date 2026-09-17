@@ -6,11 +6,27 @@
 
 **Fase 4 — Sincronização segura com Drive**
 
-Subfase atual: **4D — homologação real iniciada; correções de conflito e proteção de fechamento em andamento**.
+Subfase atual: **4D — leitura real confirmada na nova janela; liberação restrita e reteste da correção `2fee19e` ainda pendentes**.
 
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: **#201**  
 Base atual: `main@336b647300faee2c958475a3b51b6b0522e0dd06`
+
+## Continuidade manual — 17/09/2026, tarde
+
+Este bloco e o handoff final são o estado operacional mais recente. As seções anteriores da execução abaixo permanecem como histórico, não como autorização de reativação de controles vencidos.
+
+- Relatório recebido do operador: preview não produtivo `a17473ce-ad9a-480c-8e53-901f2fcc3c92`, release `2fee19e69e06ecd128be2b103354fc6c2fb4e431`, escrita `false`, deployment de produção inalterado em `239cca88-9b19-400c-9cd1-82612f942ed0` (100%).
+- Nova autorização D1 criada pelo operador, copiando somente a restrição de usuário e de um PDF descartável. O controle anterior não foi prorrogado. Resultado da consulta: habilitado e vencimento em **17/09/2026 20:10:01 UTC**.
+- Screenshot do operador, aproximadamente **14:17 em Eldorado/MS**: `/homologacao/documentos/` lista apenas um arquivo com nome sintético; o visualizador reconhece três páginas, exibe a primeira e suas miniaturas. Isso comprova leitura, não gravação/autosync com a nova versão.
+- A correção causal `2fee19e` já está no preview informado. Não reiniciar OAuth, criação do PDF ou configuração de Builds.
+- Próxima operação preparada localmente: `liberar-escrita-preview-4d.mjs`, mesma versão de código/conta/PDF/janela; publicação somente por `versions upload`, nunca promoção de deployment. Consulta prazo e escopo no D1 sem expor usuário/fileId; exige confirmação local, verifica produção antes/depois e recusa outra versão recém-enviada, outra janela ativa, sessões pendentes ou prazo insuficiente. Não amplia a validade.
+- Validação do script operacional: **15 testes Node locais aprovados**, sintaxe e SELECT em SQLite de memória aprovados com dados sintéticos. Esse resultado não comprova execução autenticada no Windows/Cloudflare, nem a homologação do editor.
+- **A liberação de escrita e o reteste ainda não foram executados nesta etapa pelo assistente.** A resposta real do operador deve ser registrada antes de avançar.
+
+Justificativa: a preparação/login ocorreu com escrita bloqueada; só agora a leitura do arquivo permitido foi conferida. Não reativar o controle vencido, não substituir tokens e não promover o wrapper restrito para produção como atalho.
+
+Registro complementar: `docs/CENTRAL-DOCUMENTOS-4D-CONTINUIDADE-20260917-TARDE.md`.
 
 ## Retomada pelo estado real — 17/09/2026
 
@@ -141,7 +157,7 @@ As Fases 1, 2 e 3 estão encerradas. A Fase 4 continua aberta. As subfases 4A, 4
 
 A **Fase 0** permanece encerrada e suas decisões de governança continuam válidas: escopo mínimo, segurança, privacidade, branches/PRs, não exposição de segredos e documentação persistente antes de avançar fases.
 
-Nenhuma escrita real no Google Drive foi habilitada nesta etapa. O feature gate `DOCUMENTS_DRIVE_WRITE_ENABLED` continua sendo a barreira de segurança para a homologação real controlada.
+Na retomada manual da tarde, o preview publicado foi confirmado desarmado pelo relatório do operador. Houve escritas reais em tentativas anteriores registradas em RESULTADOS, mas elas não homologam a correção atual. O feature gate `DOCUMENTS_DRIVE_WRITE_ENABLED` e a autorização D1 continuam sendo barreiras cumulativas.
 
 ## 4A — preflight e conflito — concluída
 
@@ -262,36 +278,37 @@ Mantido:
 
 ## Riscos e bloqueios atuais
 
-- A 4D ainda não tem aceite real de autosync, retry, conflito e revisão recuperável; testes mockados não substituem esse aceite.
+- A 4D ainda não tem aceite real final de autosync, retry, conflito e revisão recuperável; testes mockados não substituem esse aceite.
 - O preview compartilha a conexão institucional e o D1; usar somente o entrypoint restrito e manter OAuth bloqueado.
 - `DOCUMENTS_DRIVE_WRITE_ENABLED` permanece desligado durante preparação/login. A janela de escrita exige também controle D1 ativo e deve ser revogada ao encerrar.
-- Não trocar apenas o alias para desarmar versões anteriores; verificar bloqueio pelo controle e pelo host.
+- Não trocar apenas o alias para desarmar versões anteriores; verificar bloqueio pelo controle e pelo host. Não prorrogar nem reativar o controle vencido.
 - A Builds API recusou criação do trigger de preview. O caminho atual é upload direto de versão sem deployment, com segredos herdados dentro da Cloudflare.
 - Login real do operador deve ocorrer no navegador. Não fabricar sessão nem copiar segredos para chat, repositório ou frontend.
 - `save_copy` continua testado sinteticamente, mas é bloqueado no wrapper restrito e não está homologado no Drive real.
+- A janela nova vence às 20:10:01 UTC de 17/09. Não habilitar escrita quando restar prazo insuficiente para uma tentativa controlada; não interpretar a expiração como falha de integridade do editor.
 
 ## Próxima ação exata
 
-1. Corrigir e testar o conflito após upload e o fechamento do cabeçalho que contorna a proteção de alterações pendentes.
-2. Publicar a correção na mesma branch/preview; conferir checks e recarregar a UI. A sessão legítima já existe; não copiar tokens nem refazer OAuth.
-3. Reativar somente o controle do mesmo usuário/PDF sintético, após conferir a expiração, e repetir a matriz real registrada em `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-RESULTADOS.md`.
-4. Desligar gate e manter controle D1 revogado; verificar bloqueio, registrar evidências sem dados sensíveis e só então avaliar encerramento da fase/merge.
+1. Conferir o resultado da execução local de `liberar-escrita-preview-4d.mjs` antes de declarar gate ativo. Esse script não altera o prazo D1 e não toca no deployment produtivo.
+2. Com versão/controle/produção conferidos, recarregar a interface e testar somente o PDF descartável: primeiro salvamentos consecutivos, depois edição durante envio, retry e proteção de fechamento.
+3. Completar a matriz de conflito externo, reabertura e revisão recuperável registrada em RESULTADOS. Não considerar o primeiro sucesso isolado como conclusão da 4D.
+4. Revogar o controle novo e desligar o gate no preview ao encerrar; conferir bloqueio e registrar evidências antes de avaliar merge.
 
 ## Handoff para o próximo chat
 
 | Campo | Estado de continuidade |
 | --- | --- |
-| Fase/subfase | Fase 4, homologação real 4D; fases anteriores não reiniciadas |
-| Última ação concluída | Primeiro autosync real e recuperação da revisão anterior confirmados; janela revogada após falhas encontradas na matriz |
-| Branch/PR | `codex/central-docs-drive-sync-phase4`, PR #201 aberto e sem merge |
-| Commits | Entrada `faa40f1`; implementação restrita e reparo em `63b56afd`; correção de build Pages em `125dcbe` |
-| Checks | Local: 199/199 Worker, 75 passed / 3 skipped navegador. Remoto `125dcbe`: 26/26 Actions e Pages aprovados. Workers Builds automático com bloqueio externo de acesso a previews. Falhas reais 4D exigem novas regressões |
-| Decisões | Preview próprio com autenticação real, usuário/arquivo/sessões restritos, preservação obrigatória de revisão, cache por identidade e controle D1 expirável/revogável |
-| Justificativa | URL de preview e storage separado não isolam D1/OAuth; alias novo não elimina URL estática antiga |
-| Alternativas descartadas | Habilitar gate em preview genérico; repetir OAuth; usar produção; enfraquecer testes; continuar tentando o mesmo formulário de Builds |
-| Ações externas concluídas | Preview atual `64dedfd6` gate true porém controle D1 revogado; Pages `3c3cb671`; sessão legítima; um PDF sintético com duas revisões e anterior preservada/recuperada |
-| Pendências | Corrigir conflito indevido e fechamento com pendência; repetir matriz real; desligar gate do preview ao encerrar |
-| Riscos | Conexão/D1 compartilhados; segredo não deve sair do backend; escrita deve ficar desligada fora da janela; save_copy não homologado no ambiente restrito |
-| Observabilidade | Eventos técnicos allowlisted; preview sem Workers Logs/tail não pode ser apresentado como evidência de privacidade por ausência de logs |
-| Próxima ação exata | Concluir as correções causais, atualizar preview e repetir o teste no mesmo PDF, com reativação temporária do controle D1 existente |
-| Fontes principais | Este status, FASE-4, HOMOLOGACAO-4D-ISOLAMENTO, HOMOLOGACAO-4D-MANUAL, HOMOLOGACAO-4D-RESULTADOS, PR #201 e checks atuais |
+| Fase/subfase | Fase 4, homologação real 4D; sem aceite, fases anteriores não reiniciadas |
+| Última ação concluída | Operador publicou preview a17473ce com gate false, criou nova janela D1 até 20:10:01 UTC e mostrou o PDF sintético aberto com três páginas em 17/09, 14:17 local |
+| Branch/PR | `codex/central-docs-drive-sync-phase4`, PR #201 aberto e sem merge; main preservada |
+| Commits | Código do reteste 2fee19e; upload do diagnóstico em a92bbcc; documentação de continuidade da tarde complementa o histórico |
+| Checks | RESULTADOS registra 274/274 Worker e 75 passed / 3 skipped navegador para correção causal, mas reteste real ainda pendente. Script operacional novo: 15 testes locais + SELECT SQLite, não execução autenticada |
+| Decisões | Preservar mesmo usuário/PDF, novo controle não reutilizado; não estender prazo; liberação local explícita por versions upload; verificar produção antes/depois |
+| Justificativa | Leitura real conferida após preparação desarmada; D1/OAuth compartilhados exigem wrapper, controle e escopo restritos |
+| Alternativas descartadas | Reativar controle vencido; habilitar gate na produção; repetir OAuth; insistir na caixa de Builds; assumir sucesso do autosync pelo preview abrir |
+| Ações externas concluídas | Relatório local confirmou a17473ce e produção 239cca88 a 100%; D1 habilitou janela nova por duas horas; screenshot comprova leitura. Liberação de escrita ainda não recebida |
+| Pendências | Receber resultado da liberação; repetir salvamentos e matriz real; revogar controle e desarmar preview no fim |
+| Riscos | Prazo limitado; D1/OAuth compartilhados; upload pode concluir antes de revogação; salvar cópia não homologado neste wrapper |
+| Observabilidade | Eventos somente técnicos; não publicar usuário, fileId, ref, PDF ou credenciais; ausência de Workers Logs não comprova privacidade |
+| Próxima ação exata | Ler a saída do script de liberação e conferir nova versão/gate/produção; só então orientar a primeira edição controlada |
+| Fontes principais | Este status, 4D-CONTINUIDADE-20260917-TARDE, HOMOLOGACAO-4D-RESULTADOS, ISOLAMENTO, PR #201 e registros locais ultimo-preview.json/ultimo-preview-escrita.json |
