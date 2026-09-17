@@ -13,17 +13,18 @@ Subfase atual: **4D — homologação real iniciada; correções de conflito e p
 Branch da Fase 4: `codex/central-docs-drive-sync-phase4`  
 PR da Fase 4: **#201 — aberto, sem merge**  
 Head conferido da Fase 4: `a92bbcc40b7c38eb126dbe375c3db31272efde72`  
-Base oficial `main`: `336b647300faee2c958475a3b51b6b0522e0dd06`
+Base oficial `main`: `f28a1d4d88bb16dd71bf61231ceb6830580c058d`
 
 A **Fase 0** permanece encerrada. As Fases **1, 2 e 3** também permanecem encerradas. As subfases 4A, 4B e 4C estão concluídas tecnicamente. A 4D ainda não está aprovada e o PR #201 não deve ser mesclado antes do fechamento da homologação real controlada.
 
-## Mudança transversal homologada — abertura pós-login em vídeo
+## Mudança transversal concluída — abertura pós-login em vídeo
 
-Branch: `feat/post-login-opening-video`  
-PR: **#202 — homologado pelo usuário; pronto para sair de draft e ser mesclado**  
+Branch de desenvolvimento: `feat/post-login-opening-video`  
+PR: **#202 — homologado e mesclado em `main`**  
+Merge commit: `f28a1d4d88bb16dd71bf61231ceb6830580c058d`  
 Documento de decisão: `docs/PORTAL-ABERTURA-POS-LOGIN-V1.md`
 
-Esta mudança permanece independente da Fase 4 e não altera os critérios do PR #201.
+Esta mudança foi encerrada como melhoria transversal do Portal e não altera os critérios do PR #201/Fase 4.
 
 ### Arquivo oficial
 
@@ -38,150 +39,154 @@ Esta mudança permanece independente da Fase 4 e não altera os critérios do PR
 
 O binário permanece protegido por teste de tamanho + SHA-256.
 
-### Decisão humana final desta mudança
+### Decisão humana final
 
-Em 17/09/2026, após a revisão do fluxo revisado, o usuário deu **aceite explícito para implementar** a abertura pós-login.
+Em 17/09/2026 o usuário deu **aceite explícito para implementação** após a revisão do fluxo final.
 
-O comportamento aprovado e agora congelado para esta V1 é:
+Comportamento final aprovado:
 
 - o vídeo começa a carregar na própria tela de login;
-- o usuário vê o botão normalmente como **Entrar** durante todo o tempo;
-- não aparece **“Preparando abertura...”**, aviso equivalente ou indicador operacional no `loginStatus`;
+- o usuário vê somente o botão normal **Entrar**;
+- não aparece **“Preparando abertura...”**, aviso equivalente ou detalhe operacional no `loginStatus`;
 - a autenticação/navegação só prossegue quando o MP4 completo estiver disponível e decodificável;
-- depois da autenticação, a abertura começa sem botão intermediário;
-- o vídeo mantém som, tela inteira e aproximadamente 10 s completos;
-- a conclusão normal depende do evento real `ended`;
-- há fade suave ao final;
-- Cache Storage é reutilizado nas autenticações seguintes;
-- durante a abertura, o Portal continua aquecendo Home, Ferramentas e rotas autorizadas pelo mecanismo já existente.
+- depois da autenticação, a abertura começa no mesmo documento, sem botão intermediário;
+- som ativo, tela inteira e aproximadamente 10 s completos;
+- término normal pelo evento real `ended`;
+- fade suave ao final;
+- reutilização do Cache Storage nas autenticações seguintes;
+- durante a abertura, o Portal continua aquecendo Home, Ferramentas e rotas autorizadas pelo mecanismo existente.
 
-### Implementação consolidada — gate silencioso
+### Arquitetura implementada
 
 Arquivo principal: `js/login-opening.js`.
 
-Fluxo:
+Fluxo consolidado:
 
-1. a tela de login solicita preload de `assets/portal-opening-v1.mp4`;
-2. o próprio `login/index.html` já renderiza o botão como **Entrar**, evitando qualquer flash transitório de texto operacional;
-3. `js/login-opening.js` aplica um gate técnico interno enquanto preserva visual/texto **Entrar**;
+1. `login/index.html` inicia o preload do MP4;
+2. o próprio HTML inicial já mostra **Entrar**, evitando flash de texto operacional;
+3. `js/login-opening.js` mantém um gate técnico interno sem alterar a aparência do botão;
 4. o controlador consulta primeiro `portal-opening-media-v1`;
-5. sem cache válido, baixa a resposta completa;
+5. sem cache válido, baixa o MP4 integralmente;
 6. o Blob só é aceito com exatamente **2.393.970 bytes**;
-7. o `<video>` oculto é preparado até estado reproduzível;
+7. o `<video>` oculto é carregado até estado reproduzível;
 8. somente então o gate interno é retirado;
 9. o clique efetivo em **Entrar** prepara a reprodução com áudio no mesmo documento;
 10. a autenticação ocorre normalmente;
 11. `PortalPerformance.warmForUser(user, { immediate: true })` aquece o Portal em paralelo;
-12. o vídeo já preparado ocupa toda a tela, com `muted=false`, volume 1 e `object-fit: cover`;
-13. o fluxo normal termina pelo evento real `ended`, aplica fade e só então `login.js` navega para a rota do usuário.
+12. o vídeo ocupa toda a tela, com `muted=false`, volume 1 e `object-fit: cover`;
+13. após `ended`, ocorre fade e só então `login.js` navega para a rota do usuário.
 
-O gate retém a ação até a mídia estar pronta porque aceitar o clique antes e aguardar posteriormente pode consumir a ativação transitória do navegador e reintroduzir bloqueio de áudio. Essa retenção é invisível ao usuário.
+A retenção interna antes de o vídeo estar pronto é deliberada: aceitar o clique cedo e aguardar depois poderia consumir a ativação transitória do navegador e reintroduzir bloqueio de áudio. Esse mecanismo permanece invisível ao usuário.
 
-### Sem botão ou texto intermediário
+### Fallbacks e falhas
 
-O código vigente não cria `portalOpeningStartWithSound`, `portal-opening-sound-gate` nem **“Iniciar abertura com som”**.
+Não existe `portalOpeningStartWithSound`, `portal-opening-sound-gate` nem botão **“Iniciar abertura com som”**.
 
-A preparação também não publica mensagem operacional de carregamento.
+Se o navegador excepcionalmente recusar a reprodução após autenticação:
 
-Se o navegador excepcionalmente recusar a reprodução mesmo após a preparação ligada ao gesto de login:
-
-- não aparece segundo botão;
-- a camada é removida;
+- nenhum segundo botão é exibido;
+- a camada de abertura é retirada;
 - a autenticação não é perdida;
-- a navegação segue para a Home;
-- o loader legado continua como fallback seguro.
+- o fluxo segue para a Home;
+- o loader legado permanece como fallback seguro.
 
-### Falha de preparação
-
-Se o MP4 não puder ser obtido integralmente ou ficar reproduzível:
+Se o MP4 não puder ser preparado integralmente:
 
 - o gate interno permanece ativo;
 - visualmente o botão continua **Entrar**;
 - não aparece mensagem operacional;
-- uma nova tentativa ocorre automaticamente;
-- nenhuma autenticação/navegação é iniciada enquanto o vídeo não estiver pronto.
+- ocorre nova tentativa automática;
+- nenhuma autenticação/navegação inicia enquanto a mídia não estiver pronta.
 
 ### Cache, CSP e Service Worker
 
 Cache Storage da mídia: `portal-opening-media-v1`.
 
-A cópia pode ser gravada já durante a preparação do login. Nova autenticação prioriza o Blob local e pode funcionar sem nova transferência do MP4.
+A cópia pode ser gravada já durante a preparação na tela de login. Autenticações seguintes priorizam o Blob local.
 
-O staging sintético mantém CSP `media-src 'self' blob:`. Nenhuma origem externa de mídia foi liberada.
+A CSP necessária para o fluxo cacheado permanece restrita a `media-src 'self' blob:`; nenhuma origem externa de mídia foi liberada.
 
-O Service Worker preserva a versão contratual `CACHE_VERSION = '20260916-10'` e pré-carrega `/js/login-opening.js?v=20260917-1`. A tentativa anterior de alterar a versão para `20260917-1` foi descartada porque rompeu contratos históricos sem benefício funcional necessário.
+O Service Worker mantém `CACHE_VERSION = '20260916-10'` e pré-carrega `/js/login-opening.js?v=20260917-1`. A alternativa de alterar a versão histórica do cache foi descartada porque rompeu contratos legados sem trazer benefício funcional necessário.
 
-### Descoberta no CI e correção
+### Correção descoberta durante o CI
 
-No head anterior `95098e0d29b520fd8af2f666bdea6a8e883b73a7`, o workflow dedicado de abertura falhou antes de executar a lógica funcional porque o servidor local de staging tratava `/opening/` como diretório e não resolvia `index.html`; o locator `#loginSubmit` portanto não existia.
+O workflow de abertura chegou a falhar porque o servidor local do laboratório não resolvia `/opening/` para `/opening/index.html`.
 
 Correção aplicada em `testing/browser/serve-staging.mjs`:
 
-- rotas de diretório passam a resolver `<diretório>/index.html`;
+- diretórios passam a resolver `index.html`;
 - proteção contra path traversal permanece ativa.
 
-O laboratório também foi atualizado para não expor estado operacional durante a preparação.
+Essa correção foi validada também pela suíte de navegador da Central de Documentos, sem regressão.
 
-### Validação técnica final antes do merge
+### Validação pré-merge
 
-Head atual conferido do PR #202: `22309dfa2f8b49cc675c240cd6f3f1e382d4c289`.
+Head homologado antes do merge: `4a6593a3194055395161c339d8ec9b08ee2e5421`.
 
-Resultados:
+Resultados relevantes:
 
-- **todos os workflows GitHub Actions associados ao head concluíram com `success`**;
+- todos os workflows GitHub Actions associados ao head concluíram com `success`;
 - **Validar abertura pós-login — navegador:** sucesso;
 - Playwright da abertura: **8/8 cenários aprovados** em Chrome desktop e mobile;
 - **Validar Central de Documentos — navegador:** sucesso;
-- suíte de contrato/sintaxe e demais módulos: verdes;
-- o MP4 oficial passou por validação de tamanho e SHA-256 antes dos testes de navegador;
-- a suíte comprova gate silencioso, botão apresentado como **Entrar**, ausência de mensagem operacional, tela inteira, áudio ativo, Blob local, reutilização de Cache Storage, ausência de botão extra e nenhuma autenticação quando a mídia está indisponível.
+- integridade do MP4 validada por tamanho e SHA-256;
+- Cloudflare Pages staging publicado com sucesso.
 
-### Cloudflare Pages
+### Merge e validação pós-merge
 
-O GitHub App da Cloudflare confirmou deployment do head `22309df` com **sucesso**.
+O PR #202 foi retirado de draft e mesclado em `main` em 17/09/2026.
 
-Preview imutável do deployment: `https://04cd2383.portal-regulacao-central-staging.pages.dev`  
-Branch preview: `https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev`  
-Laboratório de homologação: `https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev/opening/`
+Merge commit oficial:
 
-O mesmo conjunto de checks pode registrar falha ao tentar criar **Worker Preview** de `yellow-wave-d0a1guia-regulacao-ia`, porque a conta não possui acesso a Worker Previews. Isso é **não bloqueante para esta mudança**: o Pages staging foi publicado com sucesso, o laboratório não usa o Worker de produção e nenhum código de Worker é necessário para a abertura.
+`f28a1d4d88bb16dd71bf61231ceb6830580c058d`
+
+Após o merge:
+
+- `main` passou a apontar para `f28a1d4...`;
+- os checks pós-merge concluíram sem falhas detectadas;
+- Cloudflare Pages concluiu o deployment do commit `f28a1d4` com **sucesso**;
+- o build do Worker também concluiu com **sucesso** nesta execução pós-merge.
+
+Deployment Pages associado ao merge:
+
+`https://756e5e79.portal-regulacao-central-staging.pages.dev`
 
 ## Decisões e alternativas descartadas
 
-- **Descartado:** botão “Iniciar abertura com som”. Motivo: rejeitado na homologação e adiciona interação não desejada.
-- **Descartado:** texto “Preparando abertura...” ou aviso equivalente. Motivo: detalhe operacional que não deve ser exposto ao usuário.
-- **Descartado:** aceitar o clique antes de a mídia estar pronta e aguardar depois. Motivo: pode perder a ativação transitória necessária para áudio e recriar o problema de autoplay.
-- **Descartado:** tocar somente depois de navegar para a Home. Motivo: navegação pode perder ativação do usuário e reintroduzir autoplay bloqueado.
-- **Descartado:** GIF. Motivo: sem áudio, peso/qualidade inferiores.
-- **Descartado:** autoplay mudo automático. Motivo: contraria o requisito de som.
+- **Descartado:** botão “Iniciar abertura com som”. Motivo: adiciona interação não desejada e foi rejeitado na homologação.
+- **Descartado:** texto “Preparando abertura...” ou equivalente. Motivo: detalhe operacional que não deve ser exposto ao usuário.
+- **Descartado:** aceitar o clique antes de a mídia estar pronta e aguardar depois. Motivo: risco de perder a ativação transitória necessária ao áudio.
+- **Descartado:** tocar somente depois de navegar para a Home. Motivo: navegação pode reintroduzir bloqueio de autoplay com som.
+- **Descartado:** GIF. Motivo: ausência de áudio e pior relação peso/qualidade.
+- **Descartado:** autoplay mudo automático. Motivo: contraria o requisito aprovado de som.
 - **Descartado:** remover loader legado. Motivo: ele continua sendo a recuperação segura da Home.
 - **Descartado:** segundo sistema de prefetch. Motivo: `PortalPerformance` + Service Worker já executam o aquecimento autorizado.
 - **Descartado:** mudança desnecessária do identificador histórico do cache do Service Worker.
 
-## Riscos conhecidos
+## Riscos residuais
 
-- em navegadores com política muito restritiva, a reprodução com áudio ainda pode ser recusada; nesse caso não há prompt extra e o Portal segue para a Home;
-- se a rede/cache não permitir preparar o MP4, a ação de entrada permanece retida silenciosamente até nova tentativa bem-sucedida;
+- navegadores com política excepcionalmente restritiva ainda podem recusar áudio; nesse caso o Portal segue sem prompt adicional;
+- se a rede/cache não permitir preparar o MP4, a entrada fica retida silenciosamente até nova tentativa bem-sucedida;
 - `object-fit: cover` pode cortar periferia em proporções muito diferentes de 16:9;
-- Cache Storage pode estar indisponível; nesse caso a preparação usa a rede;
-- o staging Cloudflare é sintético e deve permanecer sem dados reais;
-- o check de Worker Preview continua não relacionado e não deve ser confundido com a validação do Pages staging.
+- Cache Storage pode estar indisponível; nesse caso a preparação usa a rede.
+
+Esses riscos possuem fallback definido e não bloqueiam o encerramento da V1.
 
 ## Próxima ação exata
 
-1. retirar o PR #202 de draft;
-2. mesclar o PR #202 em `main`, preservando o head homologado;
-3. conferir o novo SHA de `main` e o deployment pós-merge;
-4. registrar em `docs/CENTRAL-DOCUMENTOS-STATUS.md` que a mudança transversal foi incorporada à `main`;
-5. encerrar esta mudança transversal e retomar como trabalho prioritário a **Fase 4 / subfase 4D** no PR #201.
+1. considerar a mudança transversal da abertura **encerrada**;
+2. não reabrir o PR #202 nem voltar a tratar essa tarefa como fase ativa salvo nova decisão explícita;
+3. retomar o trabalho prioritário da **Fase 4 — subfase 4D**, branch `codex/central-docs-drive-sync-phase4`, PR #201;
+4. antes de qualquer nova alteração da Central, reconstruir o estado real do PR #201, branch, testes e pendências de homologação;
+5. manter a abertura pós-login apenas como funcionalidade já incorporada à `main`.
 
 ## Handoff para o próximo chat
 
 **Fase oficial:** Fase 4 — Sincronização segura com Drive, subfase 4D, PR #201.  
-**Mudança transversal:** abertura pós-login, PR #202, **homologada e autorizada para merge**.  
-**Última decisão humana:** usuário deu aceite explícito para implementar a abertura revisada; preparação do vídeo permanece invisível e a interface mostra somente **Entrar**.  
-**Arquitetura final:** gate técnico silencioso + preparação integral/cache na página de login + reprodução após autenticação no mesmo documento + navegação depois da abertura/fallback.  
-**Head atual do PR:** `22309dfa2f8b49cc675c240cd6f3f1e382d4c289`.  
-**Validação:** GitHub Actions integralmente verde; abertura Playwright 8/8; Central navegador verde; Cloudflare Pages staging publicado com sucesso.  
-**Bloqueio externo não relacionado:** Worker Preview indisponível na conta Cloudflare; não afeta o Pages staging nem a abertura.  
-**Próximo passo:** retirar #202 de draft, fazer merge, registrar o SHA final de `main` e então retornar à Fase 4D do PR #201.
+**Mudança transversal concluída:** abertura pós-login em vídeo, PR #202, mesclada em `main`.  
+**Merge commit:** `f28a1d4d88bb16dd71bf61231ceb6830580c058d`.  
+**Resultado:** vídeo oficial de ~10 s com som, gate silencioso no login, cache local, fade, fallback legado e aquecimento do Portal em paralelo.  
+**Validação:** Playwright 8/8 desktop/mobile; checks pré-merge verdes; checks pós-merge sem falhas; Cloudflare Pages pós-merge com sucesso.  
+**Decisões descartadas:** botão de som, texto operacional, GIF, autoplay mudo, remoção do loader legado e segundo prefetch independente.  
+**Riscos residuais:** política extrema de autoplay, falha de rede/cache e corte periférico por `cover`, todos com comportamento de fallback definido.  
+**Próximo passo:** reconstruir o estado atual da Fase 4D/PR #201 e continuar exatamente de sua pendência real, sem reiniciar fases encerradas.
