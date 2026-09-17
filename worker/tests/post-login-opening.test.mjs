@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(here, '..', '..');
+const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const home = fs.readFileSync(path.join(root, 'js', 'home.js'), 'utf8');
+const loadingCss = fs.readFileSync(path.join(root, 'css', 'home-loading.css'), 'utf8');
+
+test('a abertura pós-login mantém o loader legado como fallback', () => {
+  assert.match(index, /__PORTAL_POST_LOGIN_OPENING_PENDING__/);
+  assert.match(index, /source\.pathname\).*\/login/);
+  assert.match(index, /id="homeLoading"/);
+  assert.match(index, /home-loading-spinner/);
+  assert.match(loadingCss, /\.home-loading-spinner/);
+  assert.match(index, /\/js\/home\.js\?v=20260917-1/);
+});
+
+test('o vídeo oficial abre em tela cheia, com som e sem corte por temporizador', () => {
+  assert.match(home, /\/assets\/portal-opening-v1\.mp4\?v=20260917-1/);
+  assert.match(home, /object-fit:\s*cover/);
+  assert.match(home, /video\.muted\s*=\s*false/);
+  assert.match(home, /video\.defaultMuted\s*=\s*false/);
+  assert.match(home, /video\.volume\s*=\s*1/);
+  assert.doesNotMatch(home, /video\.muted\s*=\s*true/);
+  assert.match(home, /video\.addEventListener\('ended'/);
+  assert.match(home, /Iniciar abertura com som/);
+  assert.match(home, /NotAllowedError/);
+});
+
+test('a abertura usa Cache Storage e volta ao carregamento tradicional se a mídia falhar', () => {
+  assert.match(home, /portal-opening-media-v1/);
+  assert.match(home, /caches\.open\(OPENING_CACHE\)/);
+  assert.match(home, /cache\.match\(OPENING_ASSET\)/);
+  assert.match(home, /cache\.put\(OPENING_ASSET, response\.clone\(\)\)/);
+  assert.match(home, /deleteOldOpeningCaches/);
+  assert.match(home, /evictOpeningCache/);
+  assert.match(home, /video\.addEventListener\('error'/);
+  assert.match(home, /document\.body\.classList\.remove\('portal-opening-active', 'post-login-opening-pending'\)/);
+});
