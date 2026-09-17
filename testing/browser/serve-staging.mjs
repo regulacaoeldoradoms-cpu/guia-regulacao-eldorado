@@ -54,13 +54,23 @@ function requestedRange(value, size) {
   return { start, end };
 }
 
+function isInsideRoot(candidate) {
+  return candidate === root || candidate.startsWith(`${root}${path.sep}`);
+}
+
 http.createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url || '/', 'http://127.0.0.1').pathname);
     const relative = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
-    const candidate = path.resolve(root, relative);
-    if (candidate !== root && !candidate.startsWith(`${root}${path.sep}`)) throw new Error('invalid_path');
-    const info = await stat(candidate);
+    let candidate = path.resolve(root, relative);
+    if (!isInsideRoot(candidate)) throw new Error('invalid_path');
+
+    let info = await stat(candidate);
+    if (info.isDirectory()) {
+      candidate = path.join(candidate, 'index.html');
+      if (!isInsideRoot(candidate)) throw new Error('invalid_path');
+      info = await stat(candidate);
+    }
     if (!info.isFile()) throw new Error('not_file');
 
     const contentType = types.get(path.extname(candidate).toLowerCase()) || 'application/octet-stream';
