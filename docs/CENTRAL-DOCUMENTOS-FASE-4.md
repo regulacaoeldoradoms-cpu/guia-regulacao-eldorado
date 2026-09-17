@@ -54,7 +54,7 @@ Implementado:
 - erro temporário/indeterminado não produz falso sucesso;
 - `save_copy` cria novo PDF sem modificar o original.
 
-## 4C — autosync + interface + telemetria — IMPLEMENTADA, AGUARDANDO HOMOLOGAÇÃO VISUAL FINAL
+## 4C — autosync + interface + telemetria — CONCLUÍDA TECNICAMENTE
 
 ### Gatilho de autosync
 
@@ -119,6 +119,19 @@ Mantidos somente:
 
 As propriedades continuam restritas a dados técnicos allowlisted. Nome, conteúdo, referência, IDs brutos e dados clínicos não são enviados.
 
+### Validação final da 4C
+
+Head funcional validado: `6f45b7ca5d9cccf884c6dca2c964367dc0671bcd`.
+
+Resultado:
+- Fases 1–4: verde;
+- bundle de staging: verde;
+- governança: verde;
+- navegador/PDF.js real em Chromium: verde;
+- Playwright: **78 casos, 75 passed e 3 skipped esperados**, desktop e mobile.
+
+As falhas anteriores eram incompatibilidades do teste com o harness atual (IDs antigos, toolbar intencionalmente oculta em Organizar, hit-test sintético e quebra responsiva mobile). Foram corrigidas somente na camada de teste, sem rollback do autosync ou da UI de produção.
+
 ### Staging
 
 O laboratório sintético:
@@ -127,9 +140,9 @@ O laboratório sintético:
 - reproduz a sequência de autosync a partir de uma mutação sintética;
 - continua bloqueando endpoints Google e `/api/documents/` no bundle de staging.
 
-## 4D — homologação controlada no Drive institucional — PENDENTE
+## 4D — homologação controlada no Drive institucional — GATE ATUAL
 
-Pré-condição: 4C verde no navegador + aceite visual humano do staging.
+Pré-condição técnica da 4C: **cumprida**.
 
 Procedimento:
 1. escolher PDF descartável, sem dado de paciente e sem valor operacional;
@@ -143,6 +156,8 @@ Procedimento:
 9. conferir telemetria técnica sem conteúdo sensível;
 10. registrar homologação e decidir estado final do feature gate.
 
+A escrita real não deve ser habilitada em produção por atalho. Nesta sessão, não há integração Cloudflare autenticada disponível para alterar o feature gate/deploy do Worker; esse acesso precisa ser restabelecido antes de executar a 4D. Não usar credenciais, tokens ou segredos colados no chat como substituição.
+
 ## Fora de escopo
 
 - IA documental (Fase 5);
@@ -154,10 +169,10 @@ Procedimento:
 
 ## Gate atual
 
-A 4C foi reaberta após o usuário apontar que o staging anterior não mostrava a nova UI e esclarecer que a sincronização automática deveria ser o caminho normal.
+**4D — homologação real controlada.** A implementação e a matriz sintética da 4C estão verdes. O próximo trabalho não é acrescentar lógica de autosync: é comprovar o comportamento contra o Google Drive real em ambiente controlado, mantendo o gate desligado fora dessa homologação.
 
-Essa semântica agora está implementada: autosync somente após mutação real, 1 segundo de ociosidade, botão de força como fallback e cinco estados visuais usando os PNGs aprovados.
+Bloqueios objetivos atuais:
+- acesso Cloudflare autenticado nesta sessão para habilitar temporariamente o feature gate no ambiente de homologação;
+- PDF descartável de teste sem dado sensível.
 
-O último bloqueio técnico observado foi um hit-test flutuante no teste Playwright desktop ao clicar no botão de rotação usado somente para provocar uma mutação. O comportamento funcional passou no mobile; o teste foi estabilizado com clique forçado apenas nesse acionador sintético.
-
-Próximo gate: workflow de navegador verde no head reconciliado + reteste visual humano no novo staging. Depois disso, retomar 4D com PDF descartável.
+Depois desses dois itens, executar a matriz 4D, registrar evidências técnicas sem conteúdo documental e somente então considerar encerramento da Fase 4 e merge do PR #201.
