@@ -31,9 +31,8 @@ Documento de decisão: `docs/PORTAL-ABERTURA-POS-LOGIN-V1.md`
 - upload realizado no commit `2ba3533c3e14606e0ba7a2c285bfec142de30aaf`;
 - blob Git: `6ab3032978f4a7e8c667e72edd691c5e4d3decc8`;
 - tamanho confirmado pelo GitHub: **2.393.970 bytes**;
-- a suíte passou a validar diretamente o SHA-256 esperado `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766` sobre o arquivo versionado;
-- commit que adicionou essa validação: `006031e99469ee1ace7a95adf49b89461b024301`;
-- documentação atualizada no commit `2147ffbb07d133e1bf5c2f283b89f204bbeb2d39`.
+- a suíte valida diretamente o SHA-256 esperado `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766` sobre o arquivo versionado;
+- a Home continua usando o mesmo `js/home.js` real para a abertura e o mesmo mecanismo de aquecimento existente do Portal.
 
 ### Decisão funcional consolidada
 
@@ -60,10 +59,40 @@ A decisão técnica é **reutilizar o mecanismo de performance já existente**, 
 
 Justificativa: os 10 s funcionam como **orçamento útil de carregamento em segundo plano**, mascarando parte da latência sem bloquear a aplicação nem duplicar requisições.
 
+### Descoberta e correção de CSP do cache
+
+Ao revisar especificamente a segunda execução, foi identificado que o caminho cacheado cria uma URL `blob:` com `URL.createObjectURL(blob)`. A CSP anterior da Home não declarava `media-src`, então `default-src 'self'` poderia bloquear o Blob e tornar o cache inutilizável na prática.
+
+Correção aplicada:
+- `index.html` agora declara `media-src 'self' blob:`;
+- nenhuma origem externa de mídia foi liberada;
+- o teste de contrato passou a exigir essa diretiva e o uso do Blob local;
+- a política do staging sintético recebeu a mesma diretiva.
+
+Alternativa descartada: abrir exceção ampla de mídia/CDN. Não é necessária; same-origin + Blob local é suficiente.
+
+### Laboratório sintético e Playwright
+
+Foi criado um laboratório isolado em `testing/post-login-opening/`, incorporado ao bundle de staging em `/opening/`.
+
+Características:
+- usa o mesmo `js/home.js` e o mesmo MP4 oficial;
+- sessão e loader são totalmente fictícios;
+- não usa Google Drive, D1, Worker de produção, usuários reais, dados clínicos ou segredos;
+- `testing/browser/post-login-opening.spec.mjs` valida Chromium desktop e mobile;
+- workflow dedicado: `.github/workflows/validate-post-login-opening-browser.yml`.
+
+Cobertura de navegador:
+- duração real próxima de 10,005 s;
+- camada ocupando todo o viewport;
+- áudio não mutado e volume 1;
+- Cache Storage populado e segunda abertura usando URL `blob:` mesmo com a rede do MP4 bloqueada;
+- gesto **Iniciar abertura com som** quando `NotAllowedError` é simulado;
+- falha de mídia removendo a abertura e devolvendo a interface ao loader legado.
+
 ### Testes e checks
 
 Cobertura de `worker/tests/post-login-opening.test.mjs` protege:
-
 - binário oficial por tamanho + SHA-256;
 - detecção de navegação pós-login;
 - loader legado preservado;
@@ -72,10 +101,11 @@ Cobertura de `worker/tests/post-login-opening.test.mjs` protege:
 - bloqueio de autoplay com gesto explícito;
 - finalização por `ended`;
 - Cache Storage versionado;
+- CSP compatível com Blob local;
 - remoção de cache inválido;
 - fallback em erro de mídia.
 
-No commit de upload `2ba3533c...`, **22 de 23 workflows já concluíram com sucesso** no momento desta atualização; `Validar carregamento resiliente dos protocolos` ainda estava em fila, sem falha registrada. Uma nova rodada foi disparada pelas alterações de teste/documentação e deve ser consolidada antes da homologação.
+A rodada anterior mostrou 22/23 workflows verdes e revelou apenas um contrato literal de governança (`Fase 0`/handoff), já corrigido. As alterações posteriores de CSP e laboratório dispararam nova matriz, que precisa ficar integralmente verde antes da homologação humana.
 
 ## O que foi descartado
 
@@ -84,6 +114,7 @@ No commit de upload `2ba3533c...`, **22 de 23 workflows já concluíram com suce
 - remoção do spinner legado;
 - bloquear a Home até o fim do vídeo;
 - criar um segundo sistema de prefetch concorrente ao `PortalPerformance`;
+- liberar mídia externa na CSP;
 - misturar esta alteração no PR #201;
 - hospedagem externa improvisada do vídeo.
 
@@ -93,23 +124,26 @@ No commit de upload `2ba3533c...`, **22 de 23 workflows já concluíram com suce
 - `object-fit: cover` pode cortar periferia em telas muito diferentes de 16:9;
 - Cache Storage pode estar indisponível ou sem quota, devendo cair para rede/fallback;
 - pré-carregamento excessivo em rede lenta deve continuar sendo limitado pelo mecanismo atual;
-- não mesclar #202 sem validar áudio, enquadramento, duração completa, segunda autenticação usando cache e fallback real.
+- o staging Cloudflare é sintético e deve continuar sem dados reais;
+- não mesclar #202 sem validar áudio, enquadramento, duração completa, segunda abertura cacheada e fallback real.
 
 ## Próxima ação exata
 
 1. aguardar/conferir a matriz completa de checks do head atualizado da branch `feat/post-login-opening-video`;
-2. confirmar que o novo teste de SHA-256 passa no CI, provando que o binário versionado é exatamente o aprovado;
-3. disponibilizar/abrir preview da branch e homologar visual e sonoramente em desktop e mobile;
-4. repetir uma segunda autenticação para validar reutilização do cache local;
-5. testar o caminho de fallback e, se possível, o cenário em que autoplay com som é bloqueado;
-6. somente após aceite humano explícito retirar #202 de draft e considerar merge;
-7. manter PR #201/Fase 4 independente durante todo esse processo.
+2. corrigir qualquer falha real do novo Playwright da abertura e repetir até ficar verde;
+3. confirmar deployment Cloudflare do bundle sintético;
+4. abrir `/opening/` no preview da branch e homologar visual e sonoramente em desktop e mobile;
+5. repetir a abertura para confirmar o cache local;
+6. testar o caminho de fallback e, se possível, o bloqueio real de autoplay com som;
+7. somente após aceite humano explícito retirar #202 de draft e considerar merge;
+8. manter PR #201/Fase 4 independente durante todo esse processo.
 
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 4 — Sincronização segura com Drive, subfase 4D, PR #201.  
 **Mudança transversal paralela:** abertura pós-login, PR #202.  
-**Última ação concluída:** vídeo oficial incorporado ao repositório; validação criptográfica adicionada; documentação atualizada; duração de ~10 s registrada também como janela de aquecimento do Portal.  
+**Última ação concluída:** vídeo oficial incorporado; integridade criptográfica protegida; CSP corrigida para o Blob cacheado; laboratório sintético `/opening/` e Playwright desktop/mobile adicionados.  
 **Branch da abertura:** `feat/post-login-opening-video`.  
-**Pendência:** checks finais + homologação visual/sonora/cache/fallback.  
-**Próximo passo:** consolidar CI e testar o preview antes de qualquer merge.
+**Pendência:** CI do novo laboratório + homologação visual/sonora/cache/fallback.  
+**Risco principal atual:** autoplay com som depende da política do navegador; cache depende de `media-src 'self' blob:` já corrigido.  
+**Próximo passo:** consolidar a matriz do head atual e, ficando verde, testar o preview `/opening/` antes de qualquer merge.
