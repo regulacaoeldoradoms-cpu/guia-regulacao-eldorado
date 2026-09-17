@@ -9,7 +9,7 @@ enabled = true
 head_sampling_rate = 1
 
 [vars]
-ALLOWED_ORIGINS = "https://regulacaoeldoradoms.com.br,https://www.regulacaoeldoradoms.com.br"
+ALLOWED_ORIGINS = "https://regulacaoeldoradoms.com.br,https://www.regulacaoeldoradoms.com.br,https://codex-central-docs-drive-syn.portal-regulacao-central-staging.pages.dev"
 GEMINI_MODEL = "gemini-3.5-flash-lite"
 GEMINI_FALLBACK_MODELS = "gemini-3.6-flash"
 GEMINI_REQUEST_TIMEOUT_MS = "5000"
@@ -33,6 +33,9 @@ SOCIAL_HOME_ENABLED = "true"
 # Central de Documentos: URLs públicas, sem credenciais.
 GOOGLE_DRIVE_OAUTH_REDIRECT_URI = "https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/documents/oauth/callback"
 DOCUMENTS_PORTAL_RETURN_URL = "https://regulacaoeldoradoms.com.br/documentos/"
+# Fase 4D — TEMPORÁRIO nesta branch: a origem abaixo é o preview estável do Pages usado
+# exclusivamente para homologação real com PDF descartável. Remover antes do merge final.
+DOCUMENTS_HOMOLOGATION_ORIGIN = "https://codex-central-docs-drive-syn.portal-regulacao-central-staging.pages.dev"
 
 [ai]
 binding = "AI"
