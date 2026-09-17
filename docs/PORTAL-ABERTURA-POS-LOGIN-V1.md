@@ -104,7 +104,7 @@ Comportamento vigente:
 - o vídeo preparado é reproduzido por URL `blob:` local;
 - indisponibilidade/quota do Cache Storage não impede a preparação pela rede.
 
-A CSP permanece restrita a `media-src 'self' blob:`; nenhuma origem externa de mídia foi liberada.
+O staging sintético usa CSP `media-src 'self' blob:`; nenhuma origem externa de mídia foi liberada.
 
 ## Janela de aquecimento de ~10 s
 
