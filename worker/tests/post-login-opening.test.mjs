@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
@@ -9,6 +10,15 @@ const root = path.resolve(here, '..', '..');
 const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const home = fs.readFileSync(path.join(root, 'js', 'home.js'), 'utf8');
 const loadingCss = fs.readFileSync(path.join(root, 'css', 'home-loading.css'), 'utf8');
+const openingVideo = fs.readFileSync(path.join(root, 'assets', 'portal-opening-v1.mp4'));
+
+test('o binário oficial da abertura é exatamente o arquivo aprovado', () => {
+  assert.equal(openingVideo.byteLength, 2393970);
+  assert.equal(
+    crypto.createHash('sha256').update(openingVideo).digest('hex'),
+    '98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766'
+  );
+});
 
 test('a abertura pós-login mantém o loader legado como fallback', () => {
   assert.match(index, /__PORTAL_POST_LOGIN_OPENING_PENDING__/);
