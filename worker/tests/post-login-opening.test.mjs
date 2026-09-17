@@ -22,12 +22,16 @@ test('o binário oficial da abertura é exatamente o arquivo aprovado', () => {
   );
 });
 
-test('o login inicia bloqueado e só referencia a abertura pré-carregada', () => {
+test('o login mantém o gate interno sem expor o estado operacional no botão', () => {
   assert.match(loginIndex, /portal-opening-v1\.mp4\?v=20260917-1/);
   assert.match(loginIndex, /as="video"/);
   assert.match(loginIndex, /id="loginSubmit"[^>]*disabled[^>]*aria-disabled="true"/);
-  assert.match(loginIndex, /Preparando abertura\.\.\./);
   assert.match(loginIndex, /\/js\/login-opening\.js\?v=20260917-1/);
+  assert.match(loginOpening, /submit\.dataset\.openingGate = 'pending'/);
+  assert.match(loginOpening, /submit\.textContent = 'Entrar'/);
+  assert.match(loginOpening, /submit\.setAttribute\('aria-label', 'Entrar'\)/);
+  assert.match(loginOpening, /portalLoginOpeningGateStyles/);
+  assert.doesNotMatch(loginOpening, /Preparando abertura|Preparando a abertura do Portal|ainda não terminou de carregar/);
 });
 
 test('a abertura é preparada integralmente antes de liberar o login', () => {
