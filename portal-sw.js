@@ -35,6 +35,7 @@ const CORE_RESOURCES = Object.freeze([
   '/js/portal-observability.js?v=20260911-1',
   '/js/portal-pwa.js?v=20260911-1',
   '/js/auth-client.js?v=20260910-4',
+  '/js/login-opening.js?v=20260917-1',
   '/js/tools-catalog.js?v=20260911-3',
   '/js/document-cache.js?v=20260912-1',
   '/js/document-editor.js?v=20260916-2',
