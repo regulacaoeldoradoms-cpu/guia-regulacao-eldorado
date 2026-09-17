@@ -79,7 +79,7 @@ Características:
 - usa o mesmo `js/home.js` e o mesmo MP4 oficial;
 - sessão e loader são totalmente fictícios;
 - não usa Google Drive, D1, Worker de produção, usuários reais, dados clínicos ou segredos;
-- `testing/browser/post-login-opening.spec.mjs` valida Chromium desktop e mobile;
+- `testing/browser/post-login-opening.spec.mjs` valida navegador desktop e mobile;
 - workflow dedicado: `.github/workflows/validate-post-login-opening-browser.yml`.
 
 Cobertura de navegador:
@@ -90,7 +90,7 @@ Cobertura de navegador:
 - gesto **Iniciar abertura com som** quando `NotAllowedError` é simulado;
 - falha de mídia removendo a abertura e devolvendo a interface ao loader legado.
 
-### Testes e checks
+### Testes e checks — concluídos
 
 Cobertura de `worker/tests/post-login-opening.test.mjs` protege:
 - binário oficial por tamanho + SHA-256;
@@ -105,7 +105,24 @@ Cobertura de `worker/tests/post-login-opening.test.mjs` protege:
 - remoção de cache inválido;
 - fallback em erro de mídia.
 
-A rodada anterior mostrou 22/23 workflows verdes e revelou apenas um contrato literal de governança (`Fase 0`/handoff), já corrigido. As alterações posteriores de CSP e laboratório dispararam nova matriz, que precisa ficar integralmente verde antes da homologação humana.
+No head `8ddc14f81ecee36fa9a494cee6997b886415a21a`, a matriz de **26 workflows associados ao PR concluiu integralmente com sucesso**. O workflow dedicado **Validar abertura pós-login — navegador** também ficou verde.
+
+O laboratório executou **8/8 testes Playwright aprovados** em navegador Chrome desktop e mobile, cobrindo:
+- MP4 real + tela inteira + áudio ativo;
+- segunda abertura usando Cache Storage sem depender da rede do MP4;
+- bloqueio de autoplay com som exibindo o gesto explícito sem silenciar o vídeo;
+- falha da mídia devolvendo a experiência ao loader legado.
+
+O binário oficial também foi validado no próprio workflow por tamanho e SHA-256 antes da execução do navegador.
+
+### Preview de homologação disponível
+
+O deployment Cloudflare do head `8ddc14f` foi concluído com sucesso.
+
+Branch preview: `https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev`  
+Abertura sintética para homologação: `https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev/opening/`
+
+Esse preview continua sintético: serve apenas para validar a abertura, som, enquadramento, cache e fallback, sem acessar dados reais do Portal.
 
 ## O que foi descartado
 
@@ -125,25 +142,25 @@ A rodada anterior mostrou 22/23 workflows verdes e revelou apenas um contrato li
 - Cache Storage pode estar indisponível ou sem quota, devendo cair para rede/fallback;
 - pré-carregamento excessivo em rede lenta deve continuar sendo limitado pelo mecanismo atual;
 - o staging Cloudflare é sintético e deve continuar sem dados reais;
-- não mesclar #202 sem validar áudio, enquadramento, duração completa, segunda abertura cacheada e fallback real.
+- não mesclar #202 sem aceite humano de áudio, enquadramento, duração completa, segunda abertura cacheada e fallback.
 
 ## Próxima ação exata
 
-1. aguardar/conferir a matriz completa de checks do head atualizado da branch `feat/post-login-opening-video`;
-2. corrigir qualquer falha real do novo Playwright da abertura e repetir até ficar verde;
-3. confirmar deployment Cloudflare do bundle sintético;
-4. abrir `/opening/` no preview da branch e homologar visual e sonoramente em desktop e mobile;
-5. repetir a abertura para confirmar o cache local;
-6. testar o caminho de fallback e, se possível, o bloqueio real de autoplay com som;
-7. somente após aceite humano explícito retirar #202 de draft e considerar merge;
-8. manter PR #201/Fase 4 independente durante todo esse processo.
+1. abrir `https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev/opening/` e homologar visual e sonoramente em desktop;
+2. repetir em celular para validar o enquadramento `cover` e o comportamento do áudio;
+3. executar a abertura uma segunda vez para confirmar a experiência cacheada;
+4. usar o modo de teste do laboratório para validar fallback e o gesto **Iniciar abertura com som**, quando aplicável;
+5. registrar o aceite humano ou qualquer ajuste visual encontrado;
+6. somente após aceite humano explícito retirar #202 de draft e considerar merge;
+7. manter PR #201/Fase 4 independente durante todo esse processo.
 
 ## Handoff para o próximo chat
 
 **Fase atual:** Fase 4 — Sincronização segura com Drive, subfase 4D, PR #201.  
 **Mudança transversal paralela:** abertura pós-login, PR #202.  
-**Última ação concluída:** vídeo oficial incorporado; integridade criptográfica protegida; CSP corrigida para o Blob cacheado; laboratório sintético `/opening/` e Playwright desktop/mobile adicionados.  
+**Última ação concluída:** vídeo oficial incorporado; integridade criptográfica protegida; CSP corrigida para o Blob cacheado; laboratório sintético `/opening/` disponível; matriz de 26 workflows verde; Playwright 8/8 verde em desktop/mobile.  
 **Branch da abertura:** `feat/post-login-opening-video`.  
-**Pendência:** CI do novo laboratório + homologação visual/sonora/cache/fallback.  
-**Risco principal atual:** autoplay com som depende da política do navegador; cache depende de `media-src 'self' blob:` já corrigido.  
-**Próximo passo:** consolidar a matriz do head atual e, ficando verde, testar o preview `/opening/` antes de qualquer merge.
+**Head validado:** `8ddc14f81ecee36fa9a494cee6997b886415a21a`.  
+**Pendência:** apenas homologação humana visual/sonora/cache/fallback antes de retirar o PR #202 de draft.  
+**Risco principal atual:** autoplay com som depende da política do navegador; por isso o gesto explícito permanece como fallback aprovado.  
+**Próximo passo:** usuário testar o preview `/opening/` e registrar aceite ou ajustes; não fazer merge antes disso.
