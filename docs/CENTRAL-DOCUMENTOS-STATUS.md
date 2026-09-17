@@ -129,6 +129,20 @@ No head `1089e320ad01c1055a6d134040765c41d99355f8`, 24 workflows ficaram verdes 
 
 Correção aplicada em `0a0f359de5ac73044672fbfb558f8868555cd1dd`: o teste de estado visual usa clique forçado apenas nesse acionador sintético, eliminando a flutuação de hit-test sem alterar o comportamento de produção.
 
+## Proteção ao fechar o editor — 16/09/2026 20:24 (America/Campo_Grande)
+
+Durante a revisão da 4C foi identificado um caso limite relevante: uma alteração feita imediatamente antes de fechar o editor poderia ainda estar dentro do debounce de 1 segundo e, portanto, ser descartada localmente antes de o autosync iniciar.
+
+Correção implementada:
+- ao clicar em **Fechar** com revisão ainda não confirmada pelo Drive, o Portal cancela o debounce e tenta sincronizar imediatamente a revisão atual;
+- o editor só fecha depois de a revisão mais recente ser confirmada;
+- se houver falha ou conflito, o editor permanece aberto e informa que a confirmação ainda não ocorreu;
+- enquanto um upload está em andamento, o botão Fechar permanece indisponível;
+- o navegador recebe um guard de `beforeunload` quando há sincronização pendente/em andamento, reduzindo risco de perda por fechamento acidental da aba;
+- nenhuma sincronização adicional é criada quando a revisão atual já está confirmada.
+
+O cache do frontend avançou para `documents.js?v=20260916-13` / `CACHE_VERSION=20260916-13`.
+
 ## Privacidade e observabilidade
 
 Mantido:
@@ -155,7 +169,7 @@ Mantido:
 
 ## Próxima ação exata
 
-1. Confirmar que o workflow **Validar Central de Documentos — navegador** está verde no head atual após a correção do hit-test.
+1. Confirmar a matriz do head atual após a proteção de saída e a reconciliação com a main.
 2. Confirmar o novo deployment do staging e retestar visualmente os cinco estados do botão.
 3. Se aprovado, marcar 4C como homologada e iniciar 4D com PDF descartável: primeiro autosync/`save_copy` controlado, depois substituição e conflito/revisão recuperável.
 4. Somente após 4D encerrar a Fase 4 e considerar merge do PR #201.
