@@ -82,7 +82,7 @@ jobs:
           grep -q '"syntheticOnly": true' dist-staging/staging-manifest.json
           grep -q '"available": true' dist-staging/staging-manifest.json
           grep -q '"workerConfigured": false' dist-staging/staging-manifest.json
-          grep -q "endpoint: ''" dist-staging/homologacao/js/auth-config.js
+          grep -q 'endpoint: ""' dist-staging/homologacao/js/auth-config.js
           grep -q 'HOMOLOGAÇÃO 4D' dist-staging/homologacao/documentos/index.html
           grep -q "Disallow: /" dist-staging/robots.txt
           ! grep -R -F --exclude-dir=homologacao "yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" dist-staging
