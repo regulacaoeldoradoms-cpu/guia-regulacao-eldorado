@@ -1,0 +1,61 @@
+name: Validar abertura pós-login — navegador
+
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'js/home.js'
+      - 'assets/portal-opening-v1.mp4'
+      - 'scripts/build-central-docs-staging.mjs'
+      - 'testing/post-login-opening/**'
+      - 'testing/browser/post-login-opening.spec.mjs'
+      - 'testing/browser/playwright-opening.config.mjs'
+      - 'testing/browser/serve-staging.mjs'
+      - 'worker/tests/post-login-opening.test.mjs'
+      - '.github/workflows/validate-post-login-opening-browser.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  playwright:
+    name: Vídeo real em Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar Playwright
+        working-directory: testing/browser
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Conferir binário oficial
+        run: |
+          test -s assets/portal-opening-v1.mp4
+          test "$(stat -c%s assets/portal-opening-v1.mp4)" = "2393970"
+          echo "98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766  assets/portal-opening-v1.mp4" | sha256sum -c -
+
+      - name: Executar laboratório da abertura
+        working-directory: testing/browser
+        run: npx playwright test --config playwright-opening.config.mjs
+
+      - name: Publicar diagnóstico em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-login-opening-playwright-diagnostics
+          path: |
+            testing/browser/test-results/
+            testing/browser/playwright-opening-report/
+          if-no-files-found: ignore
+          retention-days: 7
