@@ -6,7 +6,7 @@
 
 **Fase 4 — Sincronização segura com Drive**
 
-Subfase atual: **4D — preparação e validação do preview controlado para homologação no Drive real**.
+Subfase atual: **4D — preview controlado publicado; acesso legítimo e matriz no Drive real pendentes**.
 
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: **#201**  
@@ -50,7 +50,19 @@ O controle no D1 é consultado sem cache, expira e pode ser revogado. Tabela/lin
 
 Validação: 19/19 testes específicos, com revisão independente e integração dos handlers/autenticação reais usando somente Google mockado; suíte completa do Worker passou em **199/199**. Produção, autenticação e permissões não foram substituídas por mocks na implementação. O esquema idempotente de duas tabelas de controle foi aplicado no D1; nenhuma linha habilitada foi criada por essa migração. Detalhes: `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-ISOLAMENTO.md`.
 
-## Preparação manual da 4D — 17/09/2026
+### Publicação do preview — 17/09/2026, 13:07 UTC
+
+- Implementação publicada no PR #201 em `63b56afd7938f9b19d8ce5d3ca3660d2b46767e6`.
+- Versão não produtiva do Worker: `c8dab951-58a7-4264-817f-4578562ef55f`, alias `central-docs-phase4d`, bundle SHA256 `6e3de31eaa930384a0c9cd726b02b3210c503c3addffd31d0d786df2b1748224`.
+- A API recusou herança por UUID e aceitou somente `version_id:latest`. Antes do upload foi confirmado, na mesma operação, que `latest` ainda era a versão de produção `239cca88-9b19-400c-9cd1-82612f942ed0`; apenas os dez bindings necessários foram herdados, sem leitura de segredos. Upload não criou deployment.
+- Leitura posterior confirmou o mesmo deployment de produção, 100% na versão anterior. Preview com `DOCUMENTS_DRIVE_WRITE_ENABLED=false`.
+- Configuração **preview** do Pages atualizada com `CENTRAL_DOCS_HOMOLOGATION_WORKER_URL` apontando para `https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
+- Janela de leitura criada no D1 para uma conta já autorizada e um único PDF sintético, com expiração em 17/09/2026 às 15:08:57 UTC (11:08:57 em Cuiabá). Não publicar o identificador do arquivo.
+- Verificação HTTP real: antes da janela, `403 HOMOLOGATION_DISABLED`; com janela ativa e sem sessão, `401 AUTH_REQUIRED`; rota administrativa e origem divergente retornam `403`. Nenhuma escrita no Drive foi habilitada.
+- Os primeiros builds Pages do commit falharam porque o scanner confundiu o hostname de preview prefixado com o hostname de produção por busca de substring em `_headers`. Corrigido para comparar o hostname completo; `_headers` continua inspecionado. Build local aprovado com alias real, sem configuração e com rejeição das variantes de produção, porta e path. O workflow passou a cobrir essa regressão.
+- Checks GitHub Actions do primeiro commit: 25 workflows concluídos com sucesso na leitura intermediária; navegador ainda em execução. O check automático Workers Builds informou falta de acesso a Worker Previews; ele não representa o upload manual de versão concluído e verificado acima. Conferir o head mais recente antes de atribuir um resultado final.
+
+## Preparação manual anterior da 4D — 17/09/2026
 
 O usuário confirmou que prefere concluir a homologação 4D manualmente pelo painel Cloudflare, sem depender do Codex enquanto o limite de uso estiver indisponível.
 
@@ -202,7 +214,7 @@ Se a revisão do editor mudar enquanto o upload anterior está em andamento, o s
 
 ## Staging e testes
 
-O laboratório sintético mostra o botão e simula os cinco estados sem acessar APIs reais do Drive. O bundle de staging inclui os cinco PNGs e continua proibindo `googleapis.com`, `/api/documents/` e outros endpoints de produção.
+O laboratório sintético mostra o botão e simula os cinco estados sem acessar APIs reais do Drive. O bundle sintético inclui os cinco PNGs e continua proibindo `googleapis.com`, `/api/documents/` e outros endpoints de produção. A rota separada `/homologacao/` usa somente o Worker preview restrito configurado para a 4D.
 
 Cobertura de navegador validada:
 - cada um dos cinco arquivos é servido e possui conteúdo;
@@ -255,27 +267,25 @@ Mantido:
 
 ## Próxima ação exata
 
-1. Publicar o reparo e a preparação isolada na branch existente e conferir os checks do novo head.
-2. Enviar bundle do entrypoint `homologation-4d.js` como versão não produtiva, gate `false`, herdando somente os bindings necessários. Confirmar que o deployment de produção continua o mesmo.
-3. Configurar a origem pública do preview no Pages e verificar manifest, CSP e login.
-4. Criar janela D1 de leitura com usuário já autorizado e o PDF descartável preparado, mantendo escrita desligada; obter login legítimo do operador.
-5. Somente com sessão autenticada e arquivo validado, habilitar escrita temporária no preview e executar a matriz de `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-MANUAL.md` com as restrições de `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-ISOLAMENTO.md`.
-6. Desligar gate e revogar controle D1; verificar bloqueio, registrar evidências sem dados sensíveis e só então avaliar encerramento da fase/merge.
+1. Concluir a correção dirigida do scanner do bundle, conferir Pages, manifest, CSP, login e checks do novo head.
+2. Obter login legítimo do operador em `/homologacao/login/`, com escrita desligada. Conferir a janela D1 existente antes de criar ou renovar qualquer controle.
+3. Somente com sessão autenticada e arquivo validado, habilitar escrita temporária no preview e executar a matriz de `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-MANUAL.md` com as restrições de `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-ISOLAMENTO.md`.
+4. Desligar gate e revogar controle D1; verificar bloqueio, registrar evidências sem dados sensíveis e só então avaliar encerramento da fase/merge.
 
 ## Handoff para o próximo chat
 
 | Campo | Estado de continuidade |
 | --- | --- |
 | Fase/subfase | Fase 4, homologação real 4D; fases anteriores não reiniciadas |
-| Última ação concluída | Reparo do laboratório e wrapper restrito revisados; 199/199 testes Worker e 75 passed / 3 skipped previstos de navegador |
+| Última ação concluída | Reparo e wrapper publicados; versão preview criada sem deployment e com escrita desligada; 199/199 testes Worker e 75 passed / 3 skipped previstos de navegador |
 | Branch/PR | `codex/central-docs-drive-sync-phase4`, PR #201 aberto e sem merge |
-| Último commit de entrada | `faa40f1`; continuação contém correção da regressão introduzida por `e2a8c76` |
+| Commits | Entrada `faa40f1`; implementação restrita e reparo do harness em `63b56afd` |
 | Checks | Resultado local aprovado; verificar checks remotos sobre o head efetivamente publicado, não reaproveitar o verde histórico de `6f45b7c` |
 | Decisões | Preview próprio com autenticação real, usuário/arquivo/sessões restritos, preservação obrigatória de revisão, cache por identidade e controle D1 expirável/revogável |
 | Justificativa | URL de preview e storage separado não isolam D1/OAuth; alias novo não elimina URL estática antiga |
 | Alternativas descartadas | Habilitar gate em preview genérico; repetir OAuth; usar produção; enfraquecer testes; continuar tentando o mesmo formulário de Builds |
-| Ações externas concluídas | Conector Cloudflare funcional; produção e token de build verificados; OAuth existente confirmado sem leitura de segredos; PDF sintético criado/verificado; duas tabelas de controle provisionadas sem janela habilitada |
-| Pendências | Upload da versão restrita, configuração Pages, login legítimo, matriz real e encerramento com controle revogado |
+| Ações externas concluídas | Preview Worker `c8dab951` com gate false; Pages preview configurado; OAuth existente preservado; PDF sintético preparado; controle D1 de leitura expira 17/09 às 15:08:57 UTC |
+| Pendências | Build Pages corrigido, login legítimo, matriz real e encerramento com controle revogado |
 | Riscos | Conexão/D1 compartilhados; segredo não deve sair do backend; escrita deve ficar desligada fora da janela; save_copy não homologado no ambiente restrito |
 | Observabilidade | Eventos técnicos allowlisted; preview sem Workers Logs/tail não pode ser apresentado como evidência de privacidade por ausência de logs |
 | Próxima ação exata | Seguir sequência acima e conferir mudanças externas já concluídas antes de repetir qualquer ação |

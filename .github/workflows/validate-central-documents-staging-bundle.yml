@@ -91,9 +91,9 @@ jobs:
           ! grep -R -F "cdn.jsdelivr.net" dist-staging
           ! grep -R -E "GOOGLE_DRIVE_OAUTH_CLIENT_SECRET|DRIVE_TOKEN_ENCRYPTION_KEY|AUTH_SESSION_SECRET" dist-staging
 
-      - name: Construir staging com Worker preview fictício
+      - name: Construir staging com alias preview que contém o hostname de produção
         env:
-          CENTRAL_DOCS_HOMOLOGATION_WORKER_URL: https://preview-yellow-wave-d0a1guia-regulacao-ia.test.workers.dev
+          CENTRAL_DOCS_HOMOLOGATION_WORKER_URL: https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev
         run: node scripts/build-central-docs-staging.mjs
 
       - name: Validar materialização segura da 4D
@@ -101,8 +101,9 @@ jobs:
           set -euo pipefail
           grep -q '"workerConfigured": true' dist-staging/staging-manifest.json
           grep -q '"workerConfigured": true' dist-staging/homologacao/homologation-manifest.json
-          grep -q 'https://preview-yellow-wave-d0a1guia-regulacao-ia.test.workers.dev' dist-staging/homologacao/js/auth-config.js
-          grep -q 'connect-src.*https://preview-yellow-wave-d0a1guia-regulacao-ia.test.workers.dev' dist-staging/_headers
+          grep -q 'https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' dist-staging/homologacao/js/auth-config.js
+          grep -q 'connect-src.*https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' dist-staging/_headers
+          ! grep -R -F --exclude-dir=homologacao --exclude=_headers 'https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' dist-staging
           ! grep -R -F "https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" dist-staging/homologacao
           grep -q 'DOCUMENTS_HOMOLOGATION_ORIGIN' worker/wrangler.toml
           grep -q 'codex-central-docs-drive-syn.portal-regulacao-central-staging.pages.dev' worker/wrangler.toml
@@ -116,10 +117,23 @@ jobs:
             exit 1
           fi
 
+      - name: Rejeitar variantes de origem com porta ou path
+        run: |
+          set -euo pipefail
+          for invalid_origin in \
+            'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev:8443' \
+            'https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev:8443' \
+            'https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/'; do
+            if CENTRAL_DOCS_HOMOLOGATION_WORKER_URL="$invalid_origin" node scripts/build-central-docs-staging.mjs; then
+              echo 'ERRO: build aceitou variante indevida de origem.' >&2
+              exit 1
+            fi
+          done
+
       - name: Smoke test HTTP estático
         run: |
           set -euo pipefail
-          CENTRAL_DOCS_HOMOLOGATION_WORKER_URL='https://preview-yellow-wave-d0a1guia-regulacao-ia.test.workers.dev' node scripts/build-central-docs-staging.mjs
+          CENTRAL_DOCS_HOMOLOGATION_WORKER_URL='https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' node scripts/build-central-docs-staging.mjs
           cd dist-staging
           python3 -m http.server 4174 --bind 127.0.0.1 >/tmp/central-docs-staging-http.log 2>&1 &
           server_pid=$!

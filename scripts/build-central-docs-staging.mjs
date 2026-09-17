@@ -7,6 +7,11 @@ const root = path.resolve(here, '..');
 const out = path.join(root, 'dist-staging');
 const homologationRoot = path.join(out, 'homologacao');
 const PRODUCTION_WORKER_ORIGIN = 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev';
+const PRODUCTION_WORKER_HOST = new URL(PRODUCTION_WORKER_ORIGIN).hostname;
+const productionWorkerHostPattern = new RegExp(
+  `(^|[^a-z0-9.-])${PRODUCTION_WORKER_HOST.replaceAll('.', '\\.')}(?:\\.)?(?=$|[^a-z0-9.-])`,
+  'i'
+);
 const DISABLED_WORKER_ORIGIN = 'https://disabled.invalid';
 
 function normalizeHomologationWorkerUrl(value) {
@@ -21,10 +26,10 @@ function normalizeHomologationWorkerUrl(value) {
   if (url.protocol !== 'https:' || !url.hostname.endsWith('.workers.dev')) {
     throw new Error('CENTRAL_DOCS_HOMOLOGATION_WORKER_URL deve apontar para um preview *.workers.dev via HTTPS.');
   }
-  if (url.username || url.password || url.search || url.hash || (url.pathname && url.pathname !== '/')) {
-    throw new Error('CENTRAL_DOCS_HOMOLOGATION_WORKER_URL deve conter somente a origem do Worker, sem credenciais, path, query ou hash.');
+  if (url.username || url.password || url.port || url.search || url.hash || (url.pathname && url.pathname !== '/')) {
+    throw new Error('CENTRAL_DOCS_HOMOLOGATION_WORKER_URL deve conter somente a origem do Worker, sem credenciais, porta, path, query ou hash.');
   }
-  if (url.origin === PRODUCTION_WORKER_ORIGIN) {
+  if (url.hostname === PRODUCTION_WORKER_HOST) {
     throw new Error('A homologação 4D não pode apontar para o Worker de produção. Use uma versão/preview isolada.');
   }
   return url.origin;
@@ -198,7 +203,7 @@ const headers = `/*\n${commonHeaders}\n/index.html\n  Content-Security-Policy: d
 await writeFile(path.join(out, '_headers'), headers, 'utf8');
 
 const forbiddenSynthetic = [
-  PRODUCTION_WORKER_ORIGIN.replace('https://', ''),
+  PRODUCTION_WORKER_HOST,
   'regulacaoeldoradoms.com.br/api/',
   'portal-regulacao-users',
   'googleapis.com',
@@ -232,7 +237,12 @@ async function scan(dir, tokens, options = {}) {
     if (!textExtensions.has(path.extname(name)) && name !== '_headers') continue;
     const value = await readFile(full, 'utf8').catch(() => '');
     for (const token of tokens) {
-      if (value.includes(token)) {
+      // Preview aliases prefix the production hostname. Match the complete DNS
+      // host here without exempting _headers or weakening any other token check.
+      const forbidden = token === PRODUCTION_WORKER_HOST
+        ? productionWorkerHostPattern.test(value)
+        : value.includes(token);
+      if (forbidden) {
         throw new Error(`Bundle de staging contém referência proibida: ${token} em ${rel}`);
       }
     }
