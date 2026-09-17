@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <title>Laboratório — Abertura pós-login</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f3f7fb;color:#173b5d}
+    body{min-height:100vh}
+    .portal-shell{min-height:100vh;display:grid;grid-template-rows:auto 1fr;background:linear-gradient(180deg,#eef6fb 0%,#fff 100%)}
+    .lab-header{padding:14px 18px;background:#0d3157;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .lab-header strong{font-size:1rem}
+    .lab-header span{font-size:.78rem;opacity:.82}
+    .home-loading{display:grid;place-items:center;min-height:70vh;padding:32px;text-align:center}
+    .home-loading-spinner{width:52px;height:52px;border:4px solid #d5e5ef;border-top-color:#1267b6;border-right-color:#0c8f94;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+    .lab-note{max-width:600px;line-height:1.55;color:#557085}
+    #toolsFallback,#socialHome{padding:24px}
+    [hidden]{display:none!important}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(prefers-reduced-motion:reduce){.home-loading-spinner{animation:none}}
+  </style>
+</head>
+<body class="portal-page home-loading-active post-login-opening-pending">
+  <script src="/opening/harness.js"></script>
+  <div class="portal-shell">
+    <header class="lab-header">
+      <strong>Laboratório da abertura pós-login</strong>
+      <span>DADOS FICTÍCIOS · sem autenticação/Drive</span>
+    </header>
+
+    <main class="home-loading" id="homeLoading" role="status" aria-live="polite" aria-label="Carregando o Portal" aria-busy="true">
+      <div>
+        <span class="home-loading-spinner" aria-hidden="true"></span>
+        <p class="lab-note">Este loader é o fallback legado. A abertura oficial deve cobrir toda a tela enquanto o Portal sintético permanece carregando em segundo plano.</p>
+      </div>
+    </main>
+
+    <main id="toolsFallback" hidden>
+      <div id="homeFallbackNotice" hidden></div>
+      <div id="hubGrid"></div>
+    </main>
+    <main id="socialHome" hidden></main>
+  </div>
+
+  <div hidden>
+    <strong id="portalUserName"></strong>
+    <span id="portalUserRole"></span>
+    <button id="portalLogout" type="button">Sair</button>
+  </div>
+
+  <script src="/js/home.js?v=20260917-1"></script>
+</body>
+</html>
