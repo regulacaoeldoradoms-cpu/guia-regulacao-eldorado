@@ -104,9 +104,27 @@ Esse laboratório:
 - não carrega Google Drive, Worker de produção, D1, dados clínicos, usuários reais ou segredos;
 - é incluído no bundle sintético de staging em `/opening/`;
 - possui CSP com `media-src 'self' blob:` igual ao requisito da Home;
-- recebe validação Playwright própria em Chromium desktop e mobile.
+- recebe validação Playwright própria em navegador desktop e mobile.
 
 A suíte de navegador cobre: duração real do MP4 próxima de 10,005 s, tela cheia, áudio não mutado, cache persistido e reutilizado sem rede, gesto explícito quando autoplay é bloqueado e retorno ao loader legado quando a mídia falha.
+
+### Resultado automatizado
+
+No head `8ddc14f81ecee36fa9a494cee6997b886415a21a`:
+
+- **26/26 workflows associados ao PR concluíram com sucesso**;
+- o workflow **Validar abertura pós-login — navegador** ficou verde;
+- o MP4 oficial passou pela validação de tamanho e SHA-256 antes do browser test;
+- o Playwright executou **8/8 cenários aprovados** em Chrome desktop e mobile;
+- foram comprovados em navegador real: tela inteira, áudio ativo, cache local na segunda abertura, gesto explícito para autoplay bloqueado e fallback do loader legado.
+
+O deployment Cloudflare do mesmo head também foi concluído com sucesso.
+
+Preview sintético para homologação humana:
+
+`https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev/opening/`
+
+Esse preview não usa dados reais e serve somente para validar visual, som, enquadramento, cache e caminhos de fallback.
 
 ## Fallback e antirregressão
 
@@ -126,15 +144,15 @@ Esta mudança de abertura é uma melhoria transversal do Portal em branch própr
 
 ## Critérios de aceite desta mudança transversal
 
-- binário oficial presente em `/assets/portal-opening-v1.mp4` com SHA-256 correspondente ao arquivo aprovado;
-- tela cheia em desktop e mobile;
-- áudio presente e audível quando permitido pelo navegador;
-- botão de gesto explícito quando autoplay com som for bloqueado;
-- reprodução termina pelo evento real `ended`, preservando os ~10 s completos;
-- transição suave ao término;
-- loader antigo continua funcionando em falha de mídia e enquanto a Home ainda estiver carregando;
-- cache local é populado após a primeira execução e reaproveitado em uma segunda autenticação;
-- CSP permite somente mídia same-origin e Blob local necessário à reprodução cacheada;
-- aquecimento do Portal continua em paralelo, sem aguardar artificialmente além do vídeo;
-- testes de contrato + Playwright desktop/mobile e checks do PR verdes;
-- validação visual e sonora humana no preview `/opening/` antes do merge.
+- binário oficial presente em `/assets/portal-opening-v1.mp4` com SHA-256 correspondente ao arquivo aprovado — **atendido**;
+- tela cheia em desktop e mobile — **automatizado e aprovado**;
+- áudio presente e audível quando permitido pelo navegador — **automatizado quanto ao estado do elemento; homologação auditiva humana pendente**;
+- botão de gesto explícito quando autoplay com som for bloqueado — **automatizado e aprovado**;
+- reprodução termina pelo evento real `ended`, preservando os ~10 s completos — **automatizado e aprovado**;
+- transição suave ao término — **implementada; homologação visual humana pendente**;
+- loader antigo continua funcionando em falha de mídia e enquanto a Home ainda estiver carregando — **automatizado e aprovado**;
+- cache local é populado após a primeira execução e reaproveitado em uma segunda autenticação — **automatizado e aprovado no laboratório**;
+- CSP permite somente mídia same-origin e Blob local necessário à reprodução cacheada — **atendido**;
+- aquecimento do Portal continua em paralelo, sem aguardar artificialmente além do vídeo — **atendido por arquitetura existente**;
+- testes de contrato + Playwright desktop/mobile e checks do PR verdes — **atendido**;
+- validação visual e sonora humana no preview `/opening/` antes do merge — **pendente**.
