@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 async function syntheticPortal(page, { holdProfile = null, badCredentials = false, mustChangePassword = false } = {}) {
+  // O cenário bloqueia SW; simula também ausência de Push para não aguardar SW.ready no logout.
+  await page.addInitScript(() => { delete window.PushManager; });
   const calls = [];
   let loggedIn = false;
   const user = { id:'fixture-user', username:'fixture', name:'Usuário fictício', role:'admin', emailVerified:true, accountLevel:'prata', mustChangePassword };
@@ -75,9 +77,11 @@ test('Home REAL inicia durante os 10 s; revela o mesmo documento sem flash nem r
   expect(await page.locator('.portal-shell').evaluate((shell) => shell.inert)).toBe(false);
   expect(calls.filter((call) => call.path === '/api/auth/login')).toHaveLength(1);
   expect(calls.filter((call) => call.navigation)).toHaveLength(1);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
   expect(errors).toEqual([]);
   await page.locator('#portalLogout').click();
   await expect(page).toHaveURL(/\/login\/$/);
+  expect(calls.filter((call) => call.path === '/api/auth/logout')).toHaveLength(1);
 });
 
 test('Home lenta mantém último quadro; não revela login/loader enquanto perfil está pendente', async ({ page }) => {

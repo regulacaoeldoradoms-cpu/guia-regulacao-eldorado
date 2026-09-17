@@ -36,6 +36,8 @@ Preservados: MP4 oficial de 10,005 s com som, cache `portal-opening-media-v1`, p
 
 ## Evidências atuais
 
+PR **#207**, head inicial `8a29a9bb70f225bc7f563e6e4cba5ed4b01fc728`: 24/24 testes anteriores passaram. Nos 8 cenários novos, 6 passaram e 2 chegaram ao final da entrada sem qualquer flash, mas aguardaram no logout. Diagnóstico: o fixture bloqueia Service Worker e o PWA esperava `serviceWorker.ready` para retirar Push; não era falha da transição. O fixture agora simula ausência de Push, preservando autenticação/logout reais com API fictícia e verificando POST de saída. Ajustada também a rolagem inicial da Home mobile para não herdar a posição do formulário. A nova execução de CI permanece necessária.
+
 - 184/184 testes Node locais, incluindo 11 testes específicos da abertura; sintaxe válida.
 - Bundle sintético de staging gerado e validado.
 - Testes sociais mantidos; somente contrato de versão e marcador do HTML atualizado para corresponder à implementação.
@@ -54,14 +56,14 @@ Rollback por PR: desativar apenas handoff no mesmo documento, preservando login 
 
 ## Próxima ação exata
 
-Publicar o conjunto atomicamente na branch existente, abrir PR, conferir diff e executar CI do head exato. Corrigir somente falhas verificadas. Com testes relevantes verdes, integrar a correção solicitada e confirmar os arquivos publicados no domínio oficial; registrar evidências finais neste status. Não mesclar #201 nem #206 como parte desta tarefa.
+Conferir CI final do PR #207 no head exato e diff restrito. Corrigir somente falhas verificadas. Com testes relevantes verdes, integrar a correção solicitada e confirmar os arquivos publicados no domínio oficial; registrar evidências finais neste status. Não mesclar #201 nem #206 como parte desta tarefa.
 
 ## Handoff para o próximo chat
 
 **Fase oficial:** 4D, PR #201, independente.  
 **Objetivo atual:** Home real iniciada durante vídeo, sem flash de login/loader ao final.  
 **Base main:** `e36ac882e4fec626ba3edcad26a2dbdc6777d3ed`.  
-**Branch:** `fix/opening-home-ready-handoff`; PR ainda a abrir nesta revisão.  
+**Branch:** `fix/opening-home-ready-handoff`; PR #207, draft até CI final.  
 **Última ação concluída:** implementação local e 184 testes Node aprovados; browser/CI e publicação pendentes.  
 **Decisão:** mesmo documento, `PortalHomeReady` + `ended`; sem nova navegação normal.  
 **Arquivos:** `js/login-home-transition.js`, `js/login-opening.js`, `js/home.js`, `js/login.js`, HTML/SW, testes e documento `PORTAL-ABERTURA-POS-LOGIN-V1.md`.  

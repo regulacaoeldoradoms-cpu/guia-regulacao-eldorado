@@ -110,11 +110,14 @@
         document.getElementById('loginForm')?.closest('main')?.remove();
         document.body.classList.remove('login-page', 'mobile-login-mode', 'login-intro-collapsed');
         document.body.classList.add('portal-page', 'home-loading-active');
-        if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.matchMedia('(max-width: 860px)').matches) {
+        if (/Android|iPhone|iPad|iPod|Mobile|webOS|IEMobile|Opera Mini/i.test(navigator.userAgent)
+          || (navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) <= 700)
+          || window.matchMedia('(max-width: 860px)').matches) {
           document.body.classList.add('mobile-home-mode');
         }
         document.getElementById('mobile-login-height-fill')?.remove();
         document.title = source.doc.title;
+        window.scrollTo(0, 0); // Não herdar a rolagem do formulário mobile na Home revelada.
         // Os módulos existentes enxergam a rota correta e mantêm suas próprias autorizações.
         history.replaceState(history.state, '', target.pathname + target.search + target.hash);
         for (const url of source.scripts) {
