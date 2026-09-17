@@ -14,6 +14,7 @@ Requisitos aprovados:
 - ocupar a tela inteira no lugar do círculo de carregamento após o login;
 - manter o loader legado como fallback;
 - manter o carregamento real do Portal em paralelo, por baixo da abertura;
+- aproveitar os ~10 s como **janela de aquecimento** para autenticação, Home, assets e rotas autorizadas que já são pré-carregadas pelo Portal, sem prolongar artificialmente a abertura além do vídeo;
 - armazenar a mídia localmente após a primeira reprodução bem-sucedida;
 - fazer uma transição suave ao terminar;
 - nenhuma abertura pode ser declarada concluída antes do evento real `ended` do vídeo.
@@ -35,17 +36,19 @@ Características do arquivo recebido:
 - tamanho: 2.393.970 bytes;
 - SHA-256 do arquivo recebido: `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766`.
 
-Esse hash é a referência para confirmar que o binário incorporado ao repositório é exatamente o vídeo aprovado, sem troca silenciosa de conteúdo.
+O binário foi incorporado à branch `feat/post-login-opening-video` no commit `2ba3533c3e14606e0ba7a2c285bfec142de30aaf`, com blob Git `6ab3032978f4a7e8c667e72edd691c5e4d3decc8` e tamanho de 2.393.970 bytes. A suíte do PR valida também o SHA-256 acima diretamente sobre o arquivo versionado, impedindo substituição silenciosa por outro binário.
 
 ## Fluxo de execução
 
 1. A Home reconhece que a navegação veio da rota `/login/`.
 2. Antes de exibir o loader tradicional, a superfície normal do Portal é ocultada para evitar um flash do spinner.
 3. A abertura é montada como camada `fixed` em tela inteira, com `object-fit: cover`.
-4. O Portal continua autenticando e carregando a Home normalmente por baixo da abertura.
+4. O Portal continua autenticando, aquecendo rotas permitidas e carregando a Home normalmente por baixo da abertura.
 5. Se a Home terminar primeiro, ela fica pronta em segundo plano e só aparece quando o vídeo terminar.
 6. Se o vídeo terminar primeiro, a camada some e o loader tradicional continua visível até a Home terminar.
 7. Se o vídeo falhar, a camada é removida e o loader tradicional volta a assumir imediatamente a experiência.
+
+A duração de aproximadamente 10 s foi mantida deliberadamente: além da identidade visual, ela oferece uma janela útil para o aquecimento já existente do Portal. Isso não transforma o vídeo em espera artificial; o sistema continua trabalhando em paralelo e não adiciona atraso extra depois do evento `ended`.
 
 ## Som e política dos navegadores
 
@@ -67,6 +70,14 @@ Comportamento:
 - cache corrompido: é removido e ocorre uma única nova tentativa pela rede;
 - falha de Cache Storage, quota ou indisponibilidade: nunca bloqueia o Portal;
 - futuras versões devem alterar URL e nome lógico de cache para evitar conteúdo antigo apresentado como atual.
+
+## Pré-carregamento durante a abertura
+
+O Portal já possui `PortalPerformance.warmForUser()`, chamado no fluxo de autenticação, que aquece imediatamente a Home, Ferramentas e demais rotas autorizadas conforme o perfil. O Service Worker pré-carrega a página e seus assets estáticos de forma controlada.
+
+A abertura de 10 s passa a ser tratada como uma **janela útil para esse trabalho em segundo plano**, não como substituta do mecanismo de performance. Não foi adotado um novo carregador paralelo independente, porque duplicaria requisições e estado; a decisão é reutilizar o aquecimento existente e manter a abertura desacoplada da conclusão dessas requisições.
+
+Em conexões restritas/Save-Data, as regras existentes de contenção de pré-carregamento continuam prevalecendo.
 
 ## Fallback e antirregressão
 
@@ -94,5 +105,6 @@ Esta mudança de abertura é uma melhoria transversal do Portal em branch própr
 - transição suave ao término;
 - loader antigo continua funcionando em falha de mídia e enquanto a Home ainda estiver carregando;
 - cache local é populado após a primeira execução e reaproveitado em uma segunda autenticação;
+- aquecimento do Portal continua em paralelo, sem aguardar artificialmente além do vídeo;
 - testes automatizados relevantes e checks do PR verdes;
 - validação visual e sonora humana em preview antes do merge.
