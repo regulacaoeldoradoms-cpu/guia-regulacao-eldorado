@@ -6,11 +6,37 @@
 
 **Fase 4 — Sincronização segura com Drive**
 
-Subfase atual: **4C — sincronização automática + botão de força + feedback visual por estado**.
+Subfase atual: **4D — preparação da homologação controlada no Drive real**.
 
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: **#201**  
 Base atual: `main@336b647300faee2c958475a3b51b6b0522e0dd06`
+
+## Fechamento técnico da 4C — 16/09/2026 21:39 (America/Campo_Grande)
+
+A matriz final da 4C ficou verde no head funcional `6f45b7ca5d9cccf884c6dca2c964367dc0671bcd`.
+
+Evidências:
+- `Validar Central de Documentos — Fases 1–4`: sucesso;
+- `Validar bundle de staging da Central`: sucesso;
+- `Validar governança Central de Documentos`: sucesso;
+- `Validar Central de Documentos — navegador`: sucesso;
+- Playwright/PDF.js real: **78 casos, 75 passed e 3 skipped esperados**, desktop e mobile;
+- staging sintético continua sem acesso a Google APIs/rotas de produção.
+
+Durante a validação foram descobertas falhas apenas no contrato antigo dos testes de navegador, não no autosync:
+- seletores antigos da janela **Unir** ainda procuravam IDs removidos do harness;
+- um clique sintético de duplicação sofria interceptação pelo canvas da miniatura no Chromium desktop;
+- o teste de zoom tentava usar a toolbar depois de entrar no modo Organizar, onde ela é intencionalmente ocultada;
+- o teste de layout exigia uma única linha de miniaturas também no mobile, contrariando o comportamento responsivo real.
+
+Correções aplicadas sem rollback de produto:
+- testes alinhados aos IDs atuais do harness (`editorMergeConfirm`, `editorMergeSelectionLab`, `editorMergeFileInput`, `editorMergePreviewLab`);
+- clique forçado restrito ao acionador sintético afetado pelo hit-test;
+- estado de zoom/página estabelecido antes de entrar no editor;
+- asserção de layout passou a respeitar quebra responsiva no mobile.
+
+Decisão: **4C tecnicamente concluída**. O próximo gate é 4D. Nenhuma escrita real foi ativada para conseguir esse resultado.
 
 ## Correção visual do ícone pendente — 16/09/2026 20:12 (America/Campo_Grande)
 
@@ -22,8 +48,6 @@ Ação aplicada nesta branch:
 - os demais estados visuais do Drive permanecem inalterados;
 - nenhuma escrita real no Google Drive foi habilitada.
 
-Próximo passo permanece: validar visualmente o estado **pendente** no staging e concluir a validação da 4C antes da 4D.
-
 ## Reconciliação com a main — 16/09/2026 20:23 (America/Campo_Grande)
 
 A branch da Fase 4 foi reconciliada com a `main` vigente `336b647300faee2c958475a3b51b6b0522e0dd06` usando o merge calculado pelo próprio GitHub (`eeb544e633cbc198d3082e5460c271cca1dae593`). A `main` havia recebido somente a correção do asset `Drive_pendente.png` por exclusão/reupload; a branch já incorporava esse mesmo blob corrigido e preservou o cache-buster `v=20260916-2`.
@@ -32,7 +56,7 @@ Nenhuma mudança funcional adicional foi introduzida por essa reconciliação. O
 
 ## Estado consolidado
 
-As Fases 1, 2 e 3 estão encerradas. A Fase 4 continua aberta. As subfases 4A e 4B estão concluídas tecnicamente; a 4C está implementada e em validação final de navegador/staging antes de retomar a 4D.
+As Fases 1, 2 e 3 estão encerradas. A Fase 4 continua aberta. As subfases 4A, 4B e 4C estão concluídas tecnicamente. A 4D ainda precisa comprovar o fluxo contra o Google Drive real em ambiente controlado.
 
 A **Fase 0** permanece encerrada e suas decisões de governança continuam válidas: escopo mínimo, segurança, privacidade, branches/PRs, não exposição de segredos e documentação persistente antes de avançar fases.
 
@@ -60,7 +84,7 @@ Implementado:
 - sucesso só existe após resposta final válida do Google Drive;
 - conteúdo PDF não é persistido em D1, logs ou PostHog.
 
-## 4C — sincronização automática e feedback visual — implementada
+## 4C — sincronização automática e feedback visual — concluída tecnicamente
 
 ### Comportamento funcional aprovado
 
@@ -114,20 +138,15 @@ Se a revisão do editor mudar enquanto o upload anterior está em andamento, o s
 
 ## Staging e testes
 
-O laboratório sintético foi atualizado para mostrar o botão e simular os cinco estados sem acessar APIs reais do Drive. O bundle de staging inclui os cinco PNGs e continua proibindo `googleapis.com`, `/api/documents/` e outros endpoints de produção.
+O laboratório sintético mostra o botão e simula os cinco estados sem acessar APIs reais do Drive. O bundle de staging inclui os cinco PNGs e continua proibindo `googleapis.com`, `/api/documents/` e outros endpoints de produção.
 
-Cobertura de navegador adicionada:
+Cobertura de navegador validada:
 - cada um dos cinco arquivos é servido e possui conteúdo;
 - cada valor de `data-sync-state` aponta para o PNG correspondente;
 - uma mutação real do editor produz a sequência `pending → syncing → success → normal`;
 - o sucesso dura aproximadamente 1 segundo;
-- o botão de força é verificável no laboratório sem gravar no Drive.
-
-### Descoberta durante CI
-
-No head `1089e320ad01c1055a6d134040765c41d99355f8`, 24 workflows ficaram verdes e somente o workflow de navegador falhou. A falha não foi de autosync: no perfil desktop do Playwright, o canvas da miniatura interceptou o hit-test do botão de rotação usado exclusivamente para provocar uma mutação no teste. No mobile o mesmo cenário passou.
-
-Correção aplicada em `0a0f359de5ac73044672fbfb558f8868555cd1dd`: o teste de estado visual usa clique forçado apenas nesse acionador sintético, eliminando a flutuação de hit-test sem alterar o comportamento de produção.
+- o botão de força é verificável no laboratório sem gravar no Drive;
+- desktop e mobile passam na matriz real PDF.js/Chromium.
 
 ## Proteção ao fechar o editor — 16/09/2026 20:24 (America/Campo_Grande)
 
@@ -162,17 +181,17 @@ Mantido:
 
 ## Riscos e bloqueios
 
-- a 4C só pode ser considerada homologada depois do workflow de navegador e do staging final verdes;
-- a 4D ainda exige um PDF descartável sem dado de paciente;
-- `DOCUMENTS_DRIVE_WRITE_ENABLED` não deve ser habilitado em produção antes da homologação controlada;
-- conflitos de `version` continuam bloqueando sobrescrita automática e manual.
+- a 4D exige um PDF descartável sem dado de paciente;
+- `DOCUMENTS_DRIVE_WRITE_ENABLED` não deve ser habilitado permanentemente antes da homologação controlada;
+- conflitos de `version` continuam bloqueando sobrescrita automática e manual;
+- a sessão atual não expõe uma integração Cloudflare autenticada para alterar o feature gate/deploy do Worker; não contornar isso por credenciais manuais ou segredos em chat.
 
 ## Próxima ação exata
 
-1. Confirmar a matriz do head atual após a proteção de saída e a reconciliação com a main.
-2. Confirmar o novo deployment do staging e retestar visualmente os cinco estados do botão.
-3. Se aprovado, marcar 4C como homologada e iniciar 4D com PDF descartável: primeiro autosync/`save_copy` controlado, depois substituição e conflito/revisão recuperável.
-4. Somente após 4D encerrar a Fase 4 e considerar merge do PR #201.
+1. Preparar a 4D em ambiente controlado com um PDF descartável, sem dado de paciente e sem valor operacional.
+2. Habilitar temporariamente `DOCUMENTS_DRIVE_WRITE_ENABLED=true` somente no ambiente de homologação, usando integração Cloudflare autorizada.
+3. Validar no Drive real: autosync após edição, confirmação visual, retry manual, proteção ao fechar, conflito por `version` e revisão anterior recuperável.
+4. Desabilitar/reavaliar o gate conforme resultado, registrar evidências sem conteúdo documental e somente então encerrar a Fase 4/considerar merge do PR #201.
 
 ## Handoff para o próximo chat
 
@@ -185,4 +204,4 @@ Estado funcional esperado ao retomar:
 - falha usa `Drive_falha.png` e botão força retry;
 - sem alteração, sem upload;
 - escrita real ainda protegida por `DOCUMENTS_DRIVE_WRITE_ENABLED`;
-- 4D ainda não executada.
+- 4C verde em CI; 4D ainda não executada.
