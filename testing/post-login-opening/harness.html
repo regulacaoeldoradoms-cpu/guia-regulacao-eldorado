@@ -18,8 +18,8 @@
     .portal-field{display:grid;gap:7px;margin-bottom:15px}
     .portal-field label{font-weight:800;font-size:.9rem}
     .portal-field input{width:100%;min-height:48px;padding:11px 13px;border:1px solid #bdd0df;border-radius:12px;font:inherit}
-    .login-submit{width:100%;min-height:50px;border:0;border-radius:13px;background:#0d3157;color:#fff;font:800 1rem system-ui;cursor:pointer}
-    .login-submit:disabled{cursor:wait;opacity:.62}
+    .login-submit{width:100%;min-height:50px;border:0;border-radius:13px;background:#0d3157;color:#fff;font:800 1rem system-ui;cursor:pointer;box-shadow:0 9px 20px rgba(18,101,200,.2)}
+    .login-submit:disabled{cursor:pointer;opacity:1}
     .login-status{display:none;margin-top:14px;padding:12px;border-radius:11px;font-size:.88rem;line-height:1.4}
     .login-status.visible{display:block}
     .login-status.info{background:#eef8ff;border:1px solid #b9dcec;color:#174b73}
@@ -32,7 +32,7 @@
   <main class="lab-shell">
     <form class="login-card" id="loginForm" autocomplete="off">
       <h1>Laboratório da abertura</h1>
-      <p>Login fictício. O botão só é liberado quando o MP4 oficial terminou de carregar localmente.</p>
+      <p>Login fictício para homologar a transição de entrada do Portal.</p>
 
       <div class="portal-field">
         <label for="loginUsername">Usuário fictício</label>
@@ -46,7 +46,7 @@
         <input id="loginRemember" type="checkbox"> Manter acesso neste computador
       </label>
 
-      <button class="login-submit" id="loginSubmit" type="submit" disabled aria-disabled="true">Preparando abertura...</button>
+      <button class="login-submit" id="loginSubmit" type="submit" disabled aria-disabled="true">Entrar</button>
       <div id="loginStatus" class="login-status" role="status" aria-live="polite"></div>
 
       <div class="lab-note">DADOS FICTÍCIOS · sem autenticação real, Drive, D1, pacientes ou segredos. O vídeo e o código da abertura são os mesmos da branch.</div>
