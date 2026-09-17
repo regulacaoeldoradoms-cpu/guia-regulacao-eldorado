@@ -12,7 +12,10 @@ const files = [
   ['testing/central-docs/editor-harness.js', 'testing/central-docs/editor-harness.js'],
   ['testing/post-login-opening/harness.html', 'opening/index.html'],
   ['testing/post-login-opening/harness.js', 'opening/harness.js'],
+  ['testing/post-login-opening/complete.html', 'opening/complete.html'],
   ['assets/portal-opening-v1.mp4', 'assets/portal-opening-v1.mp4'],
+  ['js/login-opening.js', 'js/login-opening.js'],
+  ['js/login.js', 'js/login.js'],
   ['js/home.js', 'js/home.js'],
   ['assets/editor-pdf-buttons', 'assets/editor-pdf-buttons'],
   ['assets/Unir_PDF.png', 'assets/Unir_PDF.png'],
@@ -61,7 +64,7 @@ const headers = `/*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
-  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'
 `;
 await writeFile(path.join(out, '_headers'), headers, 'utf8');
 
