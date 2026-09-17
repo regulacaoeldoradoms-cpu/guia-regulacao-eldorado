@@ -10,7 +10,6 @@
 
   const form = document.getElementById('loginForm');
   const submit = document.getElementById('loginSubmit');
-  const status = document.getElementById('loginStatus');
   const auth = window.RegulationAuth;
 
   if (!form || !submit || !auth?.login) return;
@@ -23,31 +22,37 @@
   let openingPrimePromise = null;
   let openingTransitionActive = false;
 
+  function installSilentGateStyles() {
+    if (document.getElementById('portalLoginOpeningGateStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'portalLoginOpeningGateStyles';
+    style.textContent = `
+      body.login-page #loginSubmit[data-opening-gate="pending"] {
+        opacity: 1 !important;
+        filter: none !important;
+        cursor: pointer !important;
+        box-shadow: 0 9px 20px rgba(18, 101, 200, .2) !important;
+        transform: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   function setSubmitPreparing() {
     submit.disabled = true;
     submit.setAttribute('aria-disabled', 'true');
-    if (!openingTransitionActive) submit.textContent = 'Preparando abertura...';
+    submit.dataset.openingGate = 'pending';
+    submit.textContent = 'Entrar';
+    submit.setAttribute('aria-label', 'Entrar');
   }
 
   function setSubmitReady() {
     if (!openingReady || openingTransitionActive) return;
     submit.disabled = false;
     submit.setAttribute('aria-disabled', 'false');
+    delete submit.dataset.openingGate;
     submit.textContent = 'Entrar';
-  }
-
-  function showPreparationStatus(message) {
-    if (!status) return;
-    status.dataset.openingPreparation = 'true';
-    status.textContent = message;
-    status.className = 'login-status visible info';
-  }
-
-  function clearPreparationStatus() {
-    if (!status || status.dataset.openingPreparation !== 'true') return;
-    delete status.dataset.openingPreparation;
-    status.textContent = '';
-    status.className = 'login-status';
+    submit.setAttribute('aria-label', 'Entrar');
   }
 
   function installOpeningStyles() {
@@ -208,13 +213,11 @@
 
         openingVideo = video;
         openingReady = true;
-        clearPreparationStatus();
         setSubmitReady();
         return true;
       } catch (_) {
         openingReady = false;
         setSubmitPreparing();
-        showPreparationStatus('Preparando a abertura do Portal. O vídeo ainda não terminou de carregar; uma nova tentativa será feita automaticamente.');
         window.clearTimeout(openingRetryTimer);
         openingRetryTimer = window.setTimeout(() => void prepareOpeningMedia(), OPENING_RETRY_MS);
         return false;
@@ -348,6 +351,7 @@
     if (openingObjectUrl) URL.revokeObjectURL(openingObjectUrl);
   }, { once: true });
 
+  installSilentGateStyles();
   setSubmitPreparing();
   void prepareOpeningMedia();
 })();
