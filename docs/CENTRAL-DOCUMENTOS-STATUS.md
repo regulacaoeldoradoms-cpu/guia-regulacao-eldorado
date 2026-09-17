@@ -97,7 +97,7 @@ Cache Storage: `portal-opening-media-v1`.
 
 A cópia pode ser gravada já durante a preparação do login. A segunda autenticação prioriza o Blob local e pode funcionar sem nova transferência do MP4.
 
-A CSP continua permitindo somente `media-src 'self' blob:`. Nenhuma origem externa de mídia foi aberta.
+O staging sintético mantém CSP `media-src 'self' blob:`. Nenhuma origem externa de mídia foi aberta.
 
 ### Service Worker
 
