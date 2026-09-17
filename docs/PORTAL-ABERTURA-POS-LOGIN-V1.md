@@ -71,6 +71,19 @@ Comportamento:
 - falha de Cache Storage, quota ou indisponibilidade: nunca bloqueia o Portal;
 - futuras versões devem alterar URL e nome lógico de cache para evitar conteúdo antigo apresentado como atual.
 
+### Correção de CSP para o cache
+
+Durante a revisão do fluxo de segunda execução foi identificado um ponto de segurança/compatibilidade: o vídeo recuperado do Cache Storage é convertido em uma URL `blob:`. A CSP anterior da Home não declarava `media-src`, portanto `default-src 'self'` poderia bloquear a reprodução desse Blob e forçar a abertura a voltar para a rede.
+
+Correção aplicada:
+
+- a Home passa a declarar `media-src 'self' blob:`;
+- a política continua restrita a mídia same-origin e Blob local criado pelo próprio Portal;
+- o teste de contrato exige essa diretiva e exige também `URL.createObjectURL(blob)` no caminho de cache;
+- nenhuma origem externa de mídia foi liberada.
+
+Justificativa: sem essa diretiva o cache poderia existir, mas a segunda reprodução não seria realmente utilizável sob a própria CSP do Portal.
+
 ## Pré-carregamento durante a abertura
 
 O Portal já possui `PortalPerformance.warmForUser()`, chamado no fluxo de autenticação, que aquece imediatamente a Home, Ferramentas e demais rotas autorizadas conforme o perfil. O Service Worker pré-carrega a página e seus assets estáticos de forma controlada.
@@ -78,6 +91,22 @@ O Portal já possui `PortalPerformance.warmForUser()`, chamado no fluxo de auten
 A abertura de 10 s passa a ser tratada como uma **janela útil para esse trabalho em segundo plano**, não como substituta do mecanismo de performance. Não foi adotado um novo carregador paralelo independente, porque duplicaria requisições e estado; a decisão é reutilizar o aquecimento existente e manter a abertura desacoplada da conclusão dessas requisições.
 
 Em conexões restritas/Save-Data, as regras existentes de contenção de pré-carregamento continuam prevalecendo.
+
+## Laboratório sintético de navegador
+
+Para não depender de dados reais nem da autenticação institucional durante a validação visual, foi criado um laboratório isolado em `testing/post-login-opening/`.
+
+Esse laboratório:
+
+- usa o **mesmo `js/home.js`** da implementação real;
+- usa o **mesmo MP4 oficial** versionado;
+- simula somente uma sessão fictícia e mantém o loader legado ativo em segundo plano;
+- não carrega Google Drive, Worker de produção, D1, dados clínicos, usuários reais ou segredos;
+- é incluído no bundle sintético de staging em `/opening/`;
+- possui CSP com `media-src 'self' blob:` igual ao requisito da Home;
+- recebe validação Playwright própria em Chromium desktop e mobile.
+
+A suíte de navegador cobre: duração real do MP4 próxima de 10,005 s, tela cheia, áudio não mutado, cache persistido e reutilizado sem rede, gesto explícito quando autoplay é bloqueado e retorno ao loader legado quando a mídia falha.
 
 ## Fallback e antirregressão
 
@@ -105,6 +134,7 @@ Esta mudança de abertura é uma melhoria transversal do Portal em branch própr
 - transição suave ao término;
 - loader antigo continua funcionando em falha de mídia e enquanto a Home ainda estiver carregando;
 - cache local é populado após a primeira execução e reaproveitado em uma segunda autenticação;
+- CSP permite somente mídia same-origin e Blob local necessário à reprodução cacheada;
 - aquecimento do Portal continua em paralelo, sem aguardar artificialmente além do vídeo;
-- testes automatizados relevantes e checks do PR verdes;
-- validação visual e sonora humana em preview antes do merge.
+- testes de contrato + Playwright desktop/mobile e checks do PR verdes;
+- validação visual e sonora humana no preview `/opening/` antes do merge.
