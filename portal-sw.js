@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260916-10';
+const CACHE_VERSION = '20260917-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -35,6 +35,7 @@ const CORE_RESOURCES = Object.freeze([
   '/js/portal-observability.js?v=20260911-1',
   '/js/portal-pwa.js?v=20260911-1',
   '/js/auth-client.js?v=20260910-4',
+  '/js/login-opening.js?v=20260917-1',
   '/js/tools-catalog.js?v=20260911-3',
   '/js/document-cache.js?v=20260912-1',
   '/js/document-editor.js?v=20260916-2',
