@@ -10,6 +10,19 @@ import { openDriveFileRef, preflightDriveSync, sealDriveFileRef } from './docume
 const PRODUCTION_ORIGIN = 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev';
 const PDF_MIME = 'application/pdf';
 const MAX_JSON_BYTES = 16 * 1024;
+const DIAGNOSTIC_STAGES = new Set(['preflight', 'start', 'upload', 'status']);
+const DIAGNOSTIC_CODES = new Set([
+  'DRIVE_VERSION_CONFLICT', 'DRIVE_VERSION_INVALID', 'DRIVE_BASE_VERSION_REQUIRED',
+  'DRIVE_FILE_NOT_EDITABLE', 'DRIVE_FILE_NOT_FOUND', 'DRIVE_FILE_REF_INVALID',
+  'DRIVE_FORBIDDEN', 'DRIVE_NOT_CONNECTED', 'DRIVE_PDF_REQUIRED', 'DRIVE_RATE_LIMITED',
+  'DRIVE_REQUEST_FAILED', 'DRIVE_REVISION_PRESERVE_FAILED', 'DRIVE_REVISION_UNAVAILABLE',
+  'DRIVE_SYNC_ACTOR_INVALID', 'DRIVE_SYNC_BODY_REQUIRED', 'DRIVE_SYNC_CHUNK_INVALID',
+  'DRIVE_SYNC_CONFIRMATION_INVALID', 'DRIVE_SYNC_INTERRUPTED', 'DRIVE_SYNC_LENGTH_INVALID',
+  'DRIVE_SYNC_OPERATION_INVALID', 'DRIVE_SYNC_PDF_INVALID', 'DRIVE_SYNC_PDF_REQUIRED',
+  'DRIVE_SYNC_RANGE_INVALID', 'DRIVE_SYNC_SESSION_EXPIRED', 'DRIVE_SYNC_SESSION_INVALID',
+  'DRIVE_SYNC_SESSION_MISSING', 'DRIVE_SYNC_SESSION_NOT_FOUND', 'DRIVE_SYNC_SESSION_RESTART_REQUIRED',
+  'DRIVE_SYNC_SIZE_INVALID', 'DRIVE_SYNC_WRITE_DISABLED'
+]);
 const SIMPLE_ROUTES = new Map([
   ['POST /api/auth/login', 'login'],
   ['GET /api/auth/me', 'read'],
@@ -136,6 +149,41 @@ async function homologationCacheKey(env, controlId, fileId) {
   return 'homologation-4d:' + Array.from(digest, (value) => value.toString(16).padStart(2, '0')).join('');
 }
 
+function diagnosticVersion(value) {
+  if (typeof value === 'number') return Number.isSafeInteger(value) && value >= 0 ? String(value) : '';
+  return typeof value === 'string' && /^\d{1,40}$/.test(value) ? value : '';
+}
+
+async function recordDiagnostic(env, control, user, fileId, route, input, response, preflight) {
+  if (env.DOCUMENTS_HOMOLOGATION_DIAGNOSTICS !== 'true' || !DIAGNOSTIC_STAGES.has(route.kind)) return;
+  try {
+    const allowed = async () => {
+      const active = await controlFor(env);
+      return active && active.id === control.id && active.username === user.username && active.fileIds.includes(fileId);
+    };
+    if (!await allowed()) return;
+    const payload = await response.clone().json().catch(() => ({}));
+    let currentVersion = diagnosticVersion(payload.currentVersion);
+    if (response.status === 409 && (route.kind === 'preflight' || route.kind === 'start')) {
+      // A read-only observation after the rejected attempt; never retries the write.
+      try {
+        const observed = await preflight(env, { operation: 'save_copy', ref: input.ref });
+        currentVersion = diagnosticVersion(observed.currentVersion);
+      } catch (_) {
+        currentVersion = '';
+      }
+      if (!await allowed()) return;
+    }
+    await env.AUTH_DB.prepare(`INSERT INTO document_drive_homologation_diagnostics
+      (control_id, observed_at, stage, status, base_version, current_version, code) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      .bind(control.id, Math.floor(Date.now() / 1000), route.kind, response.status,
+        diagnosticVersion(input.baseVersion), currentVersion,
+        DIAGNOSTIC_CODES.has(payload.code) ? payload.code : '').run();
+  } catch (_) {
+    // Diagnostics must neither change the operation's response nor emit logs.
+  }
+}
+
 // Dependency injection is for synthetic tests only; the default uses the real
 // Portal authentication and Drive implementation, never a preview-issued token.
 export function createHomologation4dWorker({
@@ -193,6 +241,7 @@ export function createHomologation4dWorker({
         }
 
         let fileId = '';
+        let diagnosticInput = {};
         if (route.kind === 'content') {
           const file = await openRef(env, route.ref);
           if (file.mime !== PDF_MIME || !control.fileIds.includes(file.id)) {
@@ -207,6 +256,7 @@ export function createHomologation4dWorker({
             return blocked(origin, 'HOMOLOGATION_FILE_DENIED');
           }
           fileId = file.id;
+          diagnosticInput = { baseVersion: body.baseVersion, ref: String(body.ref || '') };
           // Every controlled replacement must preserve its previous revision,
           // including retries and callers explicitly asking to skip preservation.
           if (route.kind === 'start') body.preserveRevision = true;
@@ -255,6 +305,7 @@ export function createHomologation4dWorker({
             || (fileId && !control.fileIds.includes(fileId))) return blocked(origin);
         }
         const response = await portalFetch(request, env, ctx);
+        await recordDiagnostic(env, control, user, fileId, route, diagnosticInput, response, preflight);
         if (route.kind === 'start' && response.ok) {
           const payload = await response.clone().json();
           if (!/^[A-Za-z0-9_-]{20,80}$/.test(String(payload.syncId || ''))) return blocked(origin, 'HOMOLOGATION_SESSION_DENIED');

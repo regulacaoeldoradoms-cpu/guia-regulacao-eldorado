@@ -14,6 +14,10 @@ const FILE = 'DISPOSABLE_FILE_4D_01';
 const OTHER_FILE = 'DISPOSABLE_OTHER_4D_02';
 const SYNC = 'synthetic_session_identifier_4d_0001';
 const SCHEMA = readFileSync(new URL('../migrations/central-documents-homologation-4d.sql', import.meta.url), 'utf8');
+const DIAGNOSTIC_SCHEMA = `CREATE TABLE document_drive_homologation_diagnostics (
+  control_id TEXT NOT NULL, observed_at INTEGER NOT NULL, stage TEXT NOT NULL, status INTEGER NOT NULL,
+  base_version TEXT NOT NULL, current_version TEXT NOT NULL, code TEXT NOT NULL
+)`;
 
 test('default entrypoint identifies its configured release on a 403 without D1 or authentication', async () => {
   const release = 'abcdef01'.repeat(5);
@@ -471,4 +475,118 @@ test('cache identity follows the file, not its position in the controlled allowl
   assert.equal(first.cacheKey, reordered[1].cacheKey);
   assert.notEqual(first.cacheKey, reordered[0].cacheKey);
   assert.equal(first.cacheKey.includes(FILE), false);
+});
+
+test('diagnostics record only authorized technical fields and observe current version after a 409', async (t) => {
+  const f = fixture(t, { dependencies: {
+    portalFetch: async () => Response.json({ code: 'DRIVE_VERSION_CONFLICT', error: 'not stored', ref: 'not stored' }, { status: 409 })
+  } });
+  f.db.exec(DIAGNOSTIC_SCHEMA);
+  f.env.DOCUMENTS_HOMOLOGATION_DIAGNOSTICS = 'true';
+  const ref = await sealDriveFileRef(f.env, FILE, 'application/pdf');
+  for (const stage of ['preflight', 'start']) {
+    const response = await f.worker.fetch(request('/api/documents/drive/sync/' + stage, {
+      method: 'POST', body: { operation: 'replace_pdf', ref, baseVersion: '1', totalBytes: 100 }
+    }), f.env, {});
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).error, 'not stored');
+  }
+  const rows = f.db.prepare('SELECT * FROM document_drive_homologation_diagnostics').all();
+  assert.deepEqual(rows.map((row) => [row.stage, row.status, row.base_version, row.current_version, row.code]), [
+    ['preflight', 409, '1', '2', 'DRIVE_VERSION_CONFLICT'], ['start', 409, '1', '2', 'DRIVE_VERSION_CONFLICT']
+  ]);
+  assert.ok(rows.every((row) => row.control_id === f.env.DOCUMENTS_HOMOLOGATION_CONTROL_ID && Number.isSafeInteger(row.observed_at)));
+  const serialized = JSON.stringify(rows);
+  for (const privateValue of [FILE, USERNAME, ref, 'not stored', 'synthetic-session']) assert.equal(serialized.includes(privateValue), false);
+  assert.equal(f.calls.google.length, 2);
+  assert.ok(f.calls.google.every((call) => call.method === 'GET'));
+});
+
+test('diagnostics capture start/upload/status without extra Drive reads on success', async (t) => {
+  const f = fixture(t);
+  f.db.exec(DIAGNOSTIC_SCHEMA);
+  f.env.DOCUMENTS_HOMOLOGATION_DIAGNOSTICS = 'true';
+  assert.equal((await start(f)).status, 201);
+  assert.equal((await f.worker.fetch(request(`/api/documents/drive/sync/upload/${SYNC}`, { method: 'PUT' }), f.env, {})).status, 200);
+  assert.equal((await f.worker.fetch(request(`/api/documents/drive/sync/status/${SYNC}`, { method: 'POST' }), f.env, {})).status, 200);
+  const rows = f.db.prepare('SELECT stage, base_version, current_version FROM document_drive_homologation_diagnostics').all();
+  assert.deepEqual(rows.map((row) => [row.stage, row.base_version, row.current_version]), [
+    ['start', '1', ''], ['upload', '', ''], ['status', '', '']
+  ]);
+  assert.equal(f.calls.google.length, 3);
+});
+
+test('diagnostics stay disabled without exact flag and cannot change responses when storage is absent', async (t) => {
+  const f = fixture(t, { dependencies: { portalFetch: async () => Response.json({ currentVersion: '2' }) } });
+  f.db.exec(DIAGNOSTIC_SCHEMA);
+  const ref = await sealDriveFileRef(f.env, FILE, 'application/pdf');
+  const send = () => f.worker.fetch(request('/api/documents/drive/sync/preflight', {
+    method: 'POST', body: { operation: 'replace_pdf', ref, baseVersion: '1' }
+  }), f.env, {});
+  for (const flag of [undefined, false, true, 'false', 'TRUE', ' true ']) {
+    f.env.DOCUMENTS_HOMOLOGATION_DIAGNOSTICS = flag;
+    assert.equal((await send()).status, 200);
+  }
+  assert.equal(f.db.prepare('SELECT count(*) AS n FROM document_drive_homologation_diagnostics').get().n, 0);
+  f.db.exec('DROP TABLE document_drive_homologation_diagnostics');
+  f.env.DOCUMENTS_HOMOLOGATION_DIAGNOSTICS = 'true';
+  assert.deepEqual(await (await send()).json(), { currentVersion: '2' });
+  assertNoUpstream(f);
+});
+
+test('diagnostic versions reject booleans and unsafe values and preserve up to 40 decimal digits', async (t) => {
+  let currentVersion;
+  const f = fixture(t, { dependencies: { portalFetch: async () => Response.json({ currentVersion, code: FILE }) } });
+  f.db.exec(DIAGNOSTIC_SCHEMA);
+  f.env.DOCUMENTS_HOMOLOGATION_DIAGNOSTICS = 'true';
+  const ref = await sealDriveFileRef(f.env, FILE, 'application/pdf');
+  for (const value of [true, false, null, {}, [], -1, 1.5, Number.MAX_SAFE_INTEGER + 1, '1e3', 'invalid', '9'.repeat(41), '9'.repeat(40), '0', 0, Number.MAX_SAFE_INTEGER]) {
+    currentVersion = value;
+    await f.worker.fetch(request('/api/documents/drive/sync/preflight', {
+      method: 'POST', body: { operation: 'replace_pdf', ref, baseVersion: value }
+    }), f.env, {});
+    const row = f.db.prepare('SELECT * FROM document_drive_homologation_diagnostics ORDER BY rowid DESC LIMIT 1').get();
+    const expected = typeof value === 'string' && /^\d{1,40}$/.test(value) ? value
+      : typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? String(value) : '';
+    assert.equal(row.base_version, expected);
+    assert.equal(row.current_version, expected);
+    assert.equal(row.code, '');
+  }
+});
+
+test('revocation, expiration and file removal during the operation prevent diagnostic reads and storage', async (t) => {
+  let revoke;
+  const f = fixture(t, { dependencies: { portalFetch: async () => {
+    revoke();
+    return Response.json({ code: 'DRIVE_VERSION_CONFLICT' }, { status: 409 });
+  } } });
+  f.db.exec(DIAGNOSTIC_SCHEMA);
+  f.env.DOCUMENTS_HOMOLOGATION_DIAGNOSTICS = 'true';
+  for (const mutation of [
+    'UPDATE document_drive_homologation_controls SET enabled = 0',
+    'UPDATE document_drive_homologation_controls SET expires_at = 1',
+    `UPDATE document_drive_homologation_controls SET allowed_file_ids_json = '["${OTHER_FILE}"]'`
+  ]) {
+    f.db.prepare('UPDATE document_drive_homologation_controls SET enabled = 1, expires_at = 9999999999, allowed_file_ids_json = ?')
+      .run(JSON.stringify([FILE]));
+    revoke = () => f.db.exec(mutation);
+    const response = await start(f);
+    assert.equal(response.status, 409);
+    assert.equal(f.db.prepare('SELECT count(*) AS n FROM document_drive_homologation_diagnostics').get().n, 0);
+    assertNoUpstream(f);
+  }
+});
+
+test('a failed diagnostic metadata read preserves the original conflict and records empty current version', async (t) => {
+  const f = fixture(t, { dependencies: {
+    portalFetch: async () => Response.json({ code: 'DRIVE_VERSION_CONFLICT' }, { status: 409 }),
+    preflight: async () => { throw new Error('synthetic read failure'); }
+  } });
+  f.db.exec(DIAGNOSTIC_SCHEMA);
+  f.env.DOCUMENTS_HOMOLOGATION_DIAGNOSTICS = 'true';
+  assert.equal((await start(f)).status, 409);
+  const row = f.db.prepare('SELECT * FROM document_drive_homologation_diagnostics').get();
+  assert.equal(row.base_version, '1');
+  assert.equal(row.current_version, '');
+  assert.equal(row.code, 'DRIVE_VERSION_CONFLICT');
 });
