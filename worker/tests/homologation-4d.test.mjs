@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
-import { createHomologation4dWorker } from '../homologation-4d.js';
+import homologationWorker, { createHomologation4dWorker } from '../homologation-4d.js';
 import { completeDriveOAuth, createDriveAuthorizationUrl, openDriveFileRef, sealDriveFileRef } from '../document-drive.js';
 import { handlePortalRoute } from '../auth-management-v2.js';
 import { setDocumentCapabilities } from '../document-access.js';
@@ -14,6 +14,26 @@ const FILE = 'DISPOSABLE_FILE_4D_01';
 const OTHER_FILE = 'DISPOSABLE_OTHER_4D_02';
 const SYNC = 'synthetic_session_identifier_4d_0001';
 const SCHEMA = readFileSync(new URL('../migrations/central-documents-homologation-4d.sql', import.meta.url), 'utf8');
+
+test('default entrypoint identifies its configured release on a 403 without D1 or authentication', async () => {
+  const release = 'abcdef01'.repeat(5);
+  const response = await homologationWorker.fetch(new Request(WORKER + '/api/documents/access'), {
+    DOCUMENTS_HOMOLOGATION_RELEASE: release.toUpperCase()
+  }, {});
+  assert.equal(response.status, 403);
+  assert.equal(response.headers.get('X-Central-Docs-Preview-Release'), release);
+  assert.equal((await response.json()).code, 'HOMOLOGATION_DISABLED');
+});
+
+test('default entrypoint never reflects an invalid or absent release value', async () => {
+  for (const release of ['', 'branch-name', 'a'.repeat(39), 'a'.repeat(41), 'a'.repeat(40) + '\r\nInjected: yes']) {
+    const response = await homologationWorker.fetch(new Request(WORKER + '/api/documents/access'), {
+      DOCUMENTS_HOMOLOGATION_RELEASE: release
+    }, {});
+    assert.equal(response.status, 403);
+    assert.equal(response.headers.has('X-Central-Docs-Preview-Release'), false);
+  }
+});
 
 class Statement {
   constructor(db, sql, values = []) { Object.assign(this, { db, sql, values }); }

@@ -288,4 +288,15 @@ export function createHomologation4dWorker({
   };
 }
 
-export default createHomologation4dWorker();
+const homologationWorker = createHomologation4dWorker();
+
+export default {
+  async fetch(request, env, ctx) {
+    const response = await homologationWorker.fetch(request, env, ctx);
+    const release = String(env.DOCUMENTS_HOMOLOGATION_RELEASE || '').trim();
+    if (!/^[a-f0-9]{40}$/i.test(release)) return response;
+    const headers = new Headers(response.headers);
+    headers.set('X-Central-Docs-Preview-Release', release.toLowerCase());
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+  }
+};

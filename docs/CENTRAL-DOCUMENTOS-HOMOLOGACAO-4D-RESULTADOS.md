@@ -31,6 +31,15 @@ Na leitura do PostHog foram consultadas somente contagens, horários e **nomes d
 
 ## Critérios ainda pendentes
 
+### Repetição com frontend `5058844`
+
+- Pages `7371f9f6` publicado, frontend `documents.js?v=20260917-1` confirmado no DOM; 26/26 Actions aprovados (navegador 75 passed / 3 skipped).
+- Worker com correção enviado como versão `dbc7e8b0` às 13:40:26 UTC. A versão efetivamente servida pelo alias ainda precisa ser identificada por marcador técnico, evitando atribuir a uma versão uma resposta que pode ter sido servida durante propagação.
+- Autosync de uma alteração confirmado no Drive às 13:42:53.954 UTC: terceira revisão, 3.741 bytes. `success` observado até retornar a `normal` após 963 ms.
+- Novo envio, acompanhado de outra edição enquanto `syncing`, voltou a falhar por conflito; continuaram três revisões, portanto esse envio não gerou uma quarta revisão. Não declarar a correção do conflito aprovada.
+- Clique no X com essa falha iniciou nova tentativa, recebeu falha e **manteve o editor aberto**, exibindo mensagem de proteção. Correção do fechamento com falha aprovada nessa repetição.
+- Controle D1 novamente revogado durante diagnóstico. Não relaxar a verificação de conflito sem evidência causal.
+
 Correções preparadas após essa execução:
 
 - Confirmar o upload com releitura da versão somente se arquivo, revisão, MD5 e tamanho coincidirem com o recibo; rejeitar uma revisão externa, inclusive com bytes iguais. Não desativar o preflight estrito do próximo envio.

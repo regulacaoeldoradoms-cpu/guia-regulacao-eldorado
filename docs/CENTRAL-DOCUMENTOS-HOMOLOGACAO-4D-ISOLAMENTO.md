@@ -15,6 +15,7 @@ Uma versão preview com D1 e segredos herdados usa a mesma conexão OAuth instit
 - `DOCUMENTS_HOMOLOGATION_WORKER_ORIGIN`: origem HTTPS exata do preview autorizado, preferencialmente alias conhecido antes do upload. Precisa terminar em `.workers.dev`; a origem de produção é rejeitada explicitamente.
 - `DOCUMENTS_HOMOLOGATION_ORIGIN`: origem HTTPS exata do Pages de homologação, terminada em `.pages.dev`.
 - `DOCUMENTS_HOMOLOGATION_CONTROL_ID`: identificador técnico único da janela, de 8 a 80 caracteres alfanuméricos, `_` ou `-`. Não reutilizar o identificador para uma janela futura.
+- `DOCUMENTS_HOMOLOGATION_RELEASE`: SHA completo de 40 caracteres hexadecimais do código preparado. O entrypoint externo o devolve em `X-Central-Docs-Preview-Release` em todas as respostas, inclusive bloqueios sem sessão/D1, para verificar a versão atendida pelo alias. Valor ausente ou inválido não é refletido. Esse marcador técnico não autoriza acesso.
 - `DOCUMENTS_DRIVE_WRITE_ENABLED`: manter `false` durante preparação e leitura. A escrita depende de `true` **e** de controle ativo no D1.
 
 Todas as requisições precisam chegar pelo host exato e apresentar a origem Pages exata. Sem `Origin`, host diferente, query string ou rota não permitida, o wrapper bloqueia antes de encaminhar. CORS não substitui a autenticação: usuário e capabilities são verificados no backend.
