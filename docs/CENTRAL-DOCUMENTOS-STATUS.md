@@ -121,7 +121,8 @@ Cobertura automatizada atualizada:
 - segunda preparação usa Cache Storage mesmo com rede do MP4 bloqueada;
 - `NotAllowedError` excepcional não cria botão intermediário;
 - MP4 indisponível mantém Login bloqueado e impede chamada de autenticação;
-- Home não contém mais a implementação antiga da abertura.
+- Home não contém mais a implementação antiga da abertura;
+- Service Worker preserva a versão contratual e pré-carrega o novo controlador do login.
 
 A matriz de CI do novo fluxo está sendo consolidada no head atual. O PR #202 deve permanecer draft até a matriz ficar verde e o novo preview ser homologado pelo usuário.
 
