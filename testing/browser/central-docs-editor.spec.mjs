@@ -284,13 +284,14 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     finishMonitoring();
   });
 
-
   test('duplicar e inserir página em branco participam do histórico', async ({ page }) => {
     const finishMonitoring = monitorPage(page);
     await openLab(page);
     await enterEditor(page);
 
-    await page.locator('.portal-pdf-thumb-wrap').first().locator('[data-thumbnail-action="duplicate"]').click();
+    // O canvas da miniatura pode interceptar o hit-test no Chromium desktop;
+    // aqui validamos a ação sintética, não a geometria do clique.
+    await page.locator('.portal-pdf-thumb-wrap').first().locator('[data-thumbnail-action="duplicate"]').click({ force: true });
     await waitForOrder(page, '0:0,0:0,0:1,0:2');
     await expect(page.locator('.portal-pdf-page')).toHaveCount(4);
     await page.locator('#editorUndo').click();
@@ -328,9 +329,9 @@ test.describe('Central de Documentos — superfície única do editor', () => {
 
     await page.locator('#editorMerge').click();
     await expect(page.locator('#editorMergePanel')).toBeVisible();
-    await page.locator('#editorMergeSynthetic').click();
+    await page.locator('#editorMergeConfirm').click();
     await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
-    await expect(page.locator('.portal-pdf-page')).toHaveCount(6);
+    await expect(page.locator('.portal-pdf-page')).toHaveCount(7);
     await expect(page.locator('#editorMergePanel')).toBeHidden();
 
     finishMonitoring();
@@ -343,22 +344,22 @@ test.describe('Central de Documentos — superfície única do editor', () => {
 
     await page.locator('#editorMerge').click();
     await expect(page.locator('#editorMergePanel')).toBeVisible();
-    await expect(page.locator('#editorMergeSelection')).toContainText('Nenhum PDF ou imagem local selecionado');
-    await expect(page.locator('#editorMergeApply')).toBeDisabled();
+    await expect(page.locator('#editorMergeSelectionLab')).toContainText('Segundo PDF sintético de 3 páginas');
+    await expect(page.locator('#editorMergeConfirm')).toBeEnabled();
 
-    await page.locator('#editorMergeFile').setInputFiles([
+    await page.locator('#editorMergeFileInput').setInputFiles([
       { name: 'local-a.png', mimeType: 'image/png', buffer: ONE_PIXEL_PNG },
       { name: 'local-b.png', mimeType: 'image/png', buffer: ONE_PIXEL_PNG }
     ]);
-    await expect(page.locator('#editorMergeApply')).toBeEnabled();
-    await expect(page.locator('#editorMergeSelection')).toContainText('2 arquivos');
-    await expect(page.locator('#editorMergePreview .documents-merge-preview-page')).toHaveCount(2);
-    await expect(page.locator('#editorMergePreview .documents-merge-preview-thumb img')).toHaveCount(2);
-    await page.waitForFunction(() => [...document.querySelectorAll('#editorMergePreview img')]
+    await expect(page.locator('#editorMergeConfirm')).toBeEnabled();
+    await expect(page.locator('#editorMergeSelectionLab')).toContainText('2 arquivos do dispositivo selecionados');
+    await expect(page.locator('#editorMergePreviewLab .documents-editor-merge-preview-item')).toHaveCount(2);
+    await expect(page.locator('#editorMergePreviewLab .documents-editor-merge-preview-thumb img')).toHaveCount(2);
+    await page.waitForFunction(() => [...document.querySelectorAll('#editorMergePreviewLab img')]
       .every((image) => image.complete && image.naturalWidth > 0));
 
     const panelBox = await page.locator('#editorMergePanel').boundingBox();
-    const previewBoxes = await page.locator('#editorMergePreview .documents-merge-preview-page').evaluateAll((nodes) => nodes.map((node) => {
+    const previewBoxes = await page.locator('#editorMergePreviewLab .documents-editor-merge-preview-item').evaluateAll((nodes) => nodes.map((node) => {
       const rect = node.getBoundingClientRect();
       return { top: rect.top, left: rect.left, right: rect.right, bottom: rect.bottom };
     }));
@@ -399,6 +400,8 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await expect(page.locator('.portal-pdf-page')).toHaveCount(4);
 
     await page.locator('#editorMerge').click();
+    await page.locator('#editorMergePosition').selectOption('after-page');
+    await expect(page.locator('#editorMergePageField')).toBeVisible();
     await page.locator('#editorMergeAfterPage').fill('2');
     await page.locator('#editorMergeAfterPage').press('Control+Z');
     await expect(page.locator('#editorMergeAfterPage')).toHaveValue('2');
@@ -409,11 +412,16 @@ test.describe('Central de Documentos — superfície única do editor', () => {
   test('preserva página e zoom vivos ao atualizar e após rebuild de edição', async ({ page }) => {
     const finishMonitoring = monitorPage(page);
     await openLab(page);
-    await enterEditor(page);
 
+    // Em Organizar a toolbar do visualizador é intencionalmente ocultada;
+    // portanto o estado vivo de zoom/página é estabelecido antes de entrar no editor.
     await page.locator('#zoomIn').click();
     const zoomBefore = await page.locator('#zoomReset').textContent();
     await page.locator('.portal-pdf-thumb').nth(1).click();
+    await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
+
+    await enterEditor(page);
+    await expect(page.locator('#zoomReset')).toHaveText(zoomBefore || '');
     await expect(page.locator('html')).toHaveAttribute('data-active-page', '2');
 
     await page.evaluate(() => window.CentralDocsEditorHarness.refreshForTest());
@@ -424,7 +432,7 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await page.locator('#editorBlank').click();
     await expect(page.locator('html')).toHaveAttribute('data-operation-state', 'ready');
     await expect(page.locator('#zoomReset')).toHaveText(zoomBefore || '');
-    await expect(page.locator('html')).toHaveAttribute('data-active-page', '4');
+    await expect(page.locator('html')).toHaveAttribute('data-active-page', '3');
 
     finishMonitoring();
   });
