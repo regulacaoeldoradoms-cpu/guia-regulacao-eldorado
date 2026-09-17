@@ -54,6 +54,11 @@ jobs:
           test -s dist-staging/assets/Escrever.png
           test -s dist-staging/assets/Colar_imagem.png
           test -s dist-staging/assets/Desenhar.png
+          test -s dist-staging/assets/Drive_normal.png
+          test -s dist-staging/assets/Drive_pendente.png
+          test -s dist-staging/assets/Drive_sincronizando.png
+          test -s dist-staging/assets/Drive_sincronizado_1seg.png
+          test -s dist-staging/assets/Drive_falha.png
           test -s dist-staging/js/document-editor.js
           test -s dist-staging/js/document-viewer.js
           test -s dist-staging/vendor/pdf-lib/pdf-lib.min.js
