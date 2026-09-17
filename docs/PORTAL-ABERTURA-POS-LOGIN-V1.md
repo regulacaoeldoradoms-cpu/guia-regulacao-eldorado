@@ -1,74 +1,47 @@
 # Portal — Abertura pós-login V1
 
-Atualização: 17/09/2026 — regressão de acesso corrigida e publicada pelo PR #204.
+Atualizado em 17/09/2026. Continuação após #204/#205: corrigir Home iniciada tarde e flash do login ao terminar o vídeo.
 
 ## Requisito vigente
 
-O vídeo oficial mantém som, aproximadamente 10 segundos completos, tela inteira, cache e fade. A preparação começa silenciosamente na tela de login. **Entrar aceita o primeiro clique imediatamente; somente a transição aguarda o vídeo.**
+Entrar permanece habilitado, autentica no primeiro clique e não expõe preparo de mídia. A abertura oficial mantém som e 10,005 segundos completos. Durante a reprodução deve iniciar a Home de fato, não apenas baixar scripts. O fim normal é vídeo encerrado **e Home utilizável**, sem flash de login, loader intermediário ou reinicialização por nova navegação.
 
-O bloqueio do botão durante a preparação foi uma interpretação incorreta da implementação anterior, não uma decisão do usuário. Esta revisão substitui as descrições anteriores de "gate silencioso" no botão. O relato posterior à publicação motivou o hotfix.
+## Diagnóstico
 
-## Arquivo oficial preservado
+`warmForUser()` aquece arquivos/rotas por Service Worker. Isso não monta o DOM, executa os módulos da Home nem espera perfil/feed. Em #204 a Home só iniciava após `location.replace`. Além disso, `playOpening()` removia a cobertura antes de navegar: a tela de login ficava visível durante o fade. São duas causas distintas confirmadas no código; a conexão do usuário não foi inspecionada.
 
-`assets/portal-opening-v1.mp4`: MP4/H.264 + AAC, 1280 × 720, 24 fps, 10,005 segundos, 2.393.970 bytes.
+## Entrada da Home no mesmo documento
 
-SHA-256: `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766`. O binário não foi modificado; os testes calculam tamanho e hash reais.
+`js/login-home-transition.js` prepara o HTML público da Home somente depois de autenticar. Não é roteador genérico nem iframe persistente. Aceita somente destinos locais `/`, `/home/`, `/index.html`; segurança, Conselho e demais destinos preservam navegação normal.
 
-## Fluxo corrigido
+Quando a camada de vídeo opaca existe, importa a `.portal-shell` do HTML oficial, retira o formulário de login e aplica estilos/módulos da própria Home atrás do vídeo. Não há segunda cópia independente do markup. Globais compartilhados de autenticação, catálogo e desempenho são reutilizados. A URL é atualizada por `history.replaceState`; permissões continuam verificadas pelos módulos existentes.
 
-1. HTML inicial contém **Entrar habilitado**, sem `disabled`, `aria-disabled` ou estilo que disfarce bloqueio.
-2. `js/login-opening.js` prepara a mídia de forma independente, sem modificar botão, credenciais, permissões ou `RegulationAuth.login`.
-3. Clique, toque ou Enter inicia a autenticação imediatamente. Submits duplicados durante a mesma tentativa são ignorados. Depois do clique existe apenas o feedback normal **Entrando...**.
-4. Credenciais incorretas são informadas sem esperar a mídia, permitindo nova tentativa.
-5. Com autenticação válida, o aquecimento autorizado começa e `login.js` chama `PortalLoginOpening.beforeNavigate()` antes de navegar.
-6. Enquanto a mídia é preparada, a página de login permanece visível. O primeiro clique não é perdido e não precisa ser repetido.
-7. Somente com o Blob completo e o elemento reproduzível a abertura ocupa a tela. Após o evento real `ended`, há fade de 450 ms e navegação para o destino normal do usuário.
+`window.PortalHomeReady` resolve quando a Home terminou configuração social, perfil e feed ou montou o fallback existente de Ferramentas. O controlador aguarda também CSS e a primeira pintura antes de revelar. O login recebe `{handled:true}` e não chama `location.replace` no caminho normal, preservando a página já inicializada.
 
-Troca obrigatória de senha, verificação de e-mail e destinos existentes permanecem preservados. Uma resposta tardia de `me()` não pode atropelar uma tentativa de login já iniciada.
+Se a Home demorar mais que o vídeo, o último quadro permanece até o resultado, com prazo de inicialização de 20 s desde o início da preparação da Home. Não há promessa de carregar todos os módulos do Portal em 10 s. Não se baixa em massa conteúdo clínico nem se remove validação de sessão para ganhar velocidade.
 
-## Preparação e cache
+## Segurança, som e fallback
 
-Cache `portal-opening-media-v1` consultado primeiro. Cópia de tamanho inválido ou não decodificável é removida e a rede é tentada. Nova cópia só é persistida após mídia reproduzível. Falha de Cache Storage não é falha de autenticação.
+HTML deve conter marcador de bootstrap e estrutura esperada. Scripts externos, iframe, objeto, embed e handlers inline na shell são rejeitados. Apenas caminhos de scripts locais allowlisted são carregados; nenhuma avaliação de script arbitrário. A CSP oficial da Home é mantida. A shell fica `inert` durante a abertura e recupera foco/interação na revelação.
 
-O download exige resposta completa, rejeita `206` e valida 2.393.970 bytes. A reprodução usa `blob:`. MIME `application/octet-stream` é normalizado para `video/mp4` sem alterar os bytes. Nenhuma mídia externa é usada.
+Mídia, script ou Home indisponíveis usam o fallback com navegação normal. Quando a cobertura já existe, ela permanece opaca até navegar; nunca se faz fade de volta ao login. Políticas restritivas de áudio ainda podem recusar `play()`; isso não exige segundo botão nem perde autenticação. Os prazos finitos de mídia e reprodução da correção #204 permanecem.
 
-## Prazos e fallback
+## Mídia e cache preservados
 
-Prazo total de preparação: **20 segundos a partir de seu início**, incluindo cache, cabeçalhos, corpo completo e decodificação. Não acrescenta espera quando o vídeo já está pronto. Falha confirmada aplica fallback imediatamente; não há repetição infinita.
+`assets/portal-opening-v1.mp4`: 2.393.970 bytes; SHA-256 `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766`; H.264/AAC, 1280×720, 24 fps, 10,005 s. Binário inalterado e cache `portal-opening-media-v1` preservado.
 
-Se a mídia falhar ou o prazo expirar, não se abre vídeo incompleto: o login válido segue para o Portal com loader legado. `play()` rejeitado ou pendente também possui saída finita de 20 segundos. A duração normal permanece controlada por `ended`, preservando os 10 segundos oficiais.
+Controladores de login, abertura, Home e helper usam versão `20260917-3`. O Service Worker atualiza pontualmente URLs anteriores, sem apagar sessão, documentos ou o cache da mídia.
 
-A ausência do controlador opcional da abertura não desabilita o login nem impede a navegação válida.
+## Validação e implantação
 
-## Som e limites
+Local: 184/184 testes Node aprovados, 11/11 específicos da abertura, sintaxe válida e bundle sintético validado. Ajustados somente os contratos do HTML/versão que mudaram; testes de permissão e privacidade preservados.
 
-Com vídeo já pronto, o submit real prepara o mesmo elemento dentro do gesto do usuário. O início visível usa `muted=false`, `defaultMuted=false`, volume 1 e `playsinline`.
+Pendente no CI: os 24 cenários existentes e 8 execuções adicionais de Home real desktop/mobile, com APIs fictícias interceptadas. Cobrem inicialização de perfil/feed durante o vídeo, ausência de flash frame a frame, mesma página sem segunda navegação, Home lenta, erro de credenciais, troca de senha e logout.
 
-Pré-carregamento não elimina políticas de autoplay. Após clique anterior à mídia pronta, alguns navegadores/configurações podem recusar reprodução com áudio. Nesse caso aplica-se fallback, sem segundo botão, novo clique obrigatório ou abertura silenciosamente muda. Não se promete áudio universal.
+Branch `fix/opening-home-ready-handoff`, baseada em main `e36ac882e4fec626ba3edcad26a2dbdc6777d3ed`. Sem merge/publicação nesta revisão. Após merge, verificar HTML e hashes dos arquivos no domínio oficial pelo smoke já existente; Pages sintético não comprova produção.
 
-## Atualização de cache
+## Decisões e continuidade
 
-HTML e precache usam `login-opening.js?v=20260917-2` e `login.js?v=20260917-2`. O SW remove especificamente as duas URLs antigas dos controladores do cache estático e renova `/login/` pelo fluxo existente com `cache: reload`.
+Descartados: confiar só no prefetch, temporizador fixo em vez de prontidão, fade sobre login, iframe seguido de recarga, bloqueio de Entrar, remover loader de recuperação e alterar permissões. Fase 4D/#201 e incidente Agenda/#206 permanecem independentes.
 
-Namespace geral `20260916-10`, mídia, documentos e sessão preservados. Uma aba já aberta executa o documento antigo até ser recarregada.
-
-## Validação e publicação concluídas
-
-PR #204, head testado `44ab1357d8fe89c21c6cf7e1d3bf7622975c7861`; merge `8cefaf639a9399f77658867ef10f82a0fb694222`.
-
-- 182/182 testes Node locais; 9/9 específicos incluindo execução do login em VM.
-- 24/24 Playwright sem retry no PR: run `35262044619`, job `105339916247`.
-- Teste compartilhado da Central aprovado: run `35262044644`.
-- Pós-merge aprovado: run `35262579705`, job `105341702943`, incluindo browser e verificação de publicação estática no domínio oficial.
-
-Cobertura: download retido por 6 s com primeiro clique aceito, 10 s reais de reprodução, cache sem rede, 404, mídia incompleta, erro de credenciais/retry, teclado, recusa de áudio, play/rede pendentes, controlador ausente e cache bloqueado.
-
-`verify-login-publication.mjs` confirmou por GET público o HTML habilitado e as versões dos scripts em `regulacaoeldoradoms.com.br/login/`; comparou hashes dos dois controladores, Service Worker e MP4 com o commit. Essa evidência é distinta do deploy do Pages sintético. Não houve autenticação real, acesso a APIs, Drive, pacientes ou segredos, nem homologação auditiva no dispositivo do usuário.
-
-## Escopo, alternativas e rollback
-
-Fase 4D/PR #201 não foi alterada. Não há nova telemetria nem mudança de regras de autenticação.
-
-Descartados bloqueio do botão, cliques ignorados, espera infinita, botão adicional de som, texto operacional, GIF e abertura automaticamente muda. Mantidos vídeo oficial, loader legado e prefetch autorizado existente.
-
-Rollback seguro: remover somente chamada opcional `beforeNavigate` e referência ao controlador da abertura por PR corretivo, mantendo HTML habilitado e login normal. Não reverter para o bloqueio do PR #202.
+Rollback seguro: retirar somente helper/retorno handled, mantendo autenticação imediata e cobertura opaca até navegação. Não retornar ao botão bloqueado do PR #202. Estado e próximos passos em `docs/CENTRAL-DOCUMENTOS-STATUS.md`.

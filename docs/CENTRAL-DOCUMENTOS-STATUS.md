@@ -6,83 +6,64 @@
 
 **Fase 4 — Sincronização segura com Drive**, subfase **4D — homologação real controlada em andamento**. **Fase 0 encerrada**; Fases 1–3 encerradas; 4A–4C concluídas tecnicamente. Não reiniciar fases encerradas.
 
-Branch da Central: `codex/central-docs-drive-sync-phase4`. **PR #201 aberto e sem merge**, último head observado: `9f295ca2766b890285b912b7ab714adeb63d2bc7`. Há trabalho paralelo nessa branch; reler PR, status e testes antes de retomá-la. Ela não foi alterada pelo hotfix abaixo.
+A Central permanece na branch `codex/central-docs-drive-sync-phase4`, PR #201 aberto e sem merge. Último head observado nesta retomada: `4d64c5df54da096b4e4cb12ed79ac3fa8c97b530`; há trabalho paralelo, reler antes de retomar. Nenhuma escrita no Drive ou alteração dessa branch nesta intervenção.
 
-Base anterior da intervenção: main `3dc193c34d5f0f02c0a50b2f51ba2e29e022f77f`. Main funcional após a correção: `8cefaf639a9399f77658867ef10f82a0fb694222` (merge #204). O histórico completo das decisões permanece no Git e nos PRs #202–#204.
+Base main conferida: `e36ac882e4fec626ba3edcad26a2dbdc6777d3ed`. PR #204 corrigiu o bloqueio indevido de Entrar no merge `8cefaf639a9399f77658867ef10f82a0fb694222`; #205 registrou a publicação. Essa correção permanece preservada.
 
-## Correção concluída — botão Entrar e abertura
+O incidente Agenda/Firebase está registrado separadamente no draft #206, branch `docs/agenda-firebase-indisponivel-20260917`. Não foi resolvido nem alterado aqui; não confundir com a abertura.
 
-**PR #204 mesclado em main**, branch `fix/login-opening-transition-only`. Commit funcional: `22397c8c1162cc726695d980e4ca449c1e4d4166`; head final validado antes do merge: `44ab1357d8fe89c21c6cf7e1d3bf7622975c7861`.
+## Objetivo transversal atual — Home pronta ao terminar a abertura
 
-**Última decisão humana:** aceitar o primeiro clique e autenticar normalmente; aguardar somente a transição enquanto o vídeo carrega em segundo plano. Sem texto operacional e sem botão intermediário para iniciar som/vídeo.
+O usuário relatou que, após o vídeo, apareciam novamente login e loader. Solicitou continuação após interrupção do chat. A branch **`fix/opening-home-ready-handoff`** já existia apontando para main sem alterações e foi reutilizada, sem duplicar trabalho.
 
-**Correção de interpretação:** o bloqueio antecipado do botão, implementado em #202, não era uma escolha do usuário. A descrição anterior de bloqueio "aprovado" estava incorreta. A regressão foi reaberta para correção, não para reiniciar fases do projeto.
+**Última decisão humana:** o vídeo deve ser aproveitado para pré-carregar/inicializar o Portal; a transição não deve exibir login nem novo carregamento normal ao terminar. Entrar deve continuar habilitado, com autenticação no primeiro clique e sem texto operacional ou botão intermediário.
 
-## Diagnóstico e implementação
+## Diagnóstico confirmado
 
-O HTML continha `disabled`; `setSubmitPreparing()` e retries infinitos mantinham o bloqueio. Aparência habilitada não tornava Entrar clicável. O prazo do fetch também terminava antes da leitura completa do corpo e `play()` podia ficar pendente fora da proteção temporal. Não se presume a causa específica de rede/decodificação no dispositivo do usuário, que não foi inspecionado.
+O aquecimento `PortalPerformance.warmForUser()` baixa recursos, mas não executa a inicialização da Home. `location.replace` só a iniciava depois do vídeo. O fade/removal da cobertura ocorria sobre o login, expondo-o antes da navegação. Não foi medido o navegador do usuário; o diagnóstico deriva do fluxo implementado.
 
-A solução separa autenticação de mídia:
+## Decisão e implementação em validação
 
-- **Entrar habilitado desde o HTML inicial**; clique, toque ou Enter inicia a autenticação imediatamente.
-- Somente envios duplicados durante uma tentativa já iniciada são bloqueados; feedback normal **Entrando...** depois do clique.
-- Credenciais incorretas são informadas sem esperar o vídeo e permitem nova tentativa.
-- `js/login-opening.js` não modifica botão, credenciais ou `RegulationAuth.login`.
-- Após autenticar, `warmForUser()` aquece recursos autorizados e somente `beforeNavigate()` espera o vídeo, mantendo o documento de login enquanto a mídia é preparada.
-- O clique é preservado: com a mídia pronta, a abertura começa e a navegação continua automaticamente depois de `ended` e fade.
-- Preparação com prazo total de 20 s desde o início, cobrindo cache, cabeçalhos, corpo completo e decodificação. Falha conhecida usa fallback de imediato, sem repetição infinita.
-- Falha de mídia/controlador ou recusa de áudio não perde autenticação e segue pelo loader legado. Reprodução com `play()` pendente também tem prazo finito de 20 s; o término normal permanece pelo evento `ended`.
-- Troca de senha, verificação de e-mail, destinos e permissões existentes preservados. Resposta tardia de `me()` não atropela tentativa já iniciada.
+A Home é inicializada no **mesmo documento**, sob a camada opaca da abertura: HTML oficial e módulos existentes, sem iframe permanente, sem template duplicado e sem segunda navegação no caminho normal.
 
-## Mídia e atualização de cache
+Novo `js/login-home-transition.js`: aceita somente Home local; valida marcador/estrutura do HTML, caminhos allowlisted de scripts e CSS, rejeita conteúdo executável inline na shell e preserva CSP. Reutiliza auth/catálogo/desempenho e deixa a shell `inert` enquanto coberta. Nenhuma API privada recebe novo cache ou telemetria.
 
-Mesmo vídeo oficial `assets/portal-opening-v1.mp4`: 10,005 s, som, 1280 × 720, H.264/AAC, 24 fps, **2.393.970 bytes**. SHA-256 `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766`. Nenhum byte do MP4 foi alterado.
+`js/home.js` fornece `PortalHomeReady` após configuração, perfil/feed ou fallback existente de Ferramentas. A abertura só faz fade com `ended` e Home pronta, CSS e primeira pintura. Em seguida libera interação/foco e retorna `handled:true`, impedindo que o login recarregue a Home já pronta.
 
-Cache independente `portal-opening-media-v1`; somente mídia completa e reproduzível é persistida. Cache inválido é removido e a rede é tentada. Cache indisponível não bloqueia login.
+Se a Home ainda não terminou, mantém o último quadro, com prazo de bootstrap de 20 s. Falhas usam navegação normal; uma cobertura já exibida não é removida/fadeada para o login. Rotas de segurança, Conselho e outros destinos continuam com navegação normal e controles existentes.
 
-HTML/precache usam `login-opening.js?v=20260917-2` e `login.js?v=20260917-2`. O Service Worker remove especificamente as URLs antigas dos controladores e renova `/login/`, preservando cache da mídia e demais recursos. Uma aba já aberta precisa recarregar o documento para executar o código novo.
+Preservados: MP4 oficial de 10,005 s com som, cache `portal-opening-media-v1`, prazos finitos/fallback do #204, Entrar habilitado, credenciais/rotas/autorizações e prefetch já existente. Scripts atualizados para `20260917-3` com invalidação pontual do SW.
 
-## Validação concluída
+## Evidências atuais
 
-**Local:** 182/182 testes Node da suíte completa; 9/9 específicos da abertura; sintaxe válida e bundle sintético de staging verificado.
+- 184/184 testes Node locais, incluindo 11 testes específicos da abertura; sintaxe válida.
+- Bundle sintético de staging gerado e validado.
+- Testes sociais mantidos; somente contrato de versão e marcador do HTML atualizado para corresponder à implementação.
+- Novos testes usam HTML/controladores/DOM reais da Home e interceptam todas as APIs externas com dados fictícios, sem conta real.
+- **Browser/CI ainda pendente:** 24 cenários existentes e 8 execuções adicionais desktop/mobile (Home durante os 10 s, mesma página, flash frame a frame, Home lenta, senha incorreta, rota de segurança, logout).
+- Navegação no navegador local foi bloqueada pela política do ambiente; não declarar homologação local de navegador. A execução real será pelo GitHub Actions.
+- Sem merge ou publicação desta revisão. Após merge, smoke público verificará HTML e hashes no domínio oficial, não apenas Pages sintético.
 
-**Pré-merge no head exato 44ab135...:** todos os workflows GitHub Actions consultados aprovados. Abertura: **24/24 casos Playwright, sem retry**, run `35262044619`, job `105339916247`. Central de Documentos navegador: sucesso, run `35262044644`, job `105339916360`.
+## Alternativas descartadas, riscos e rollback
 
-Cobertura principal: clique durante download retido por 6 s, autenticação imediata e única, permanência na página até mídia pronta, 10 s reais por `ended`, teclado, senha incorreta/retry, cache sem rede, 404, MP4 incompleto, Cache Storage indisponível, controlador ausente, rede e `play()` pendentes.
+Descartados: só prefetch; espera fixa de 10 s sem sinal de prontidão; iframe com recarga posterior; fade que revela login; novo bloqueio do botão; esconder falha de autorização ou alterar backend para acelerar.
 
-O primeiro check de governança falhou somente porque a condensação documental retirou o marcador literal `Fase 0`; ele foi restaurado sem alterar a fase nem enfraquecer o check, e a revisão final passou.
+Riscos: rede/backend podem exceder 10 s; política de autoplay pode recusar som; mudanças futuras nos scripts da Home exigem atualizar allowlist. Fallback é finito e mantém autenticação, não uma garantia de carregar todos os módulos/dados. Não foi executada autenticação real nem medição de áudio no dispositivo do usuário.
 
-## Publicação verificada no domínio oficial
-
-Merge #204: **`8cefaf639a9399f77658867ef10f82a0fb694222`**.
-
-Workflow pós-merge **`35262579705`**, job **`105341702943`**, concluído com **success**, incluindo contratos, testes de navegador e a etapa **Confirmar publicação estática em produção sem autenticar**.
-
-Essa etapa executou `scripts/verify-login-publication.mjs`: GET público em `regulacaoeldoradoms.com.br/login/` confirmou HTML com Entrar habilitado e versões novas; os hashes públicos de `js/login.js`, `js/login-opening.js`, `portal-sw.js` e MP4 conferiram com o commit. Portanto a publicação não foi inferida apenas do preview Pages sintético.
-
-O teste não autenticou usuário real nem consultou API, Drive, D1, dados clínicos ou segredos. Ele confirma publicação estática, não equivale a ouvir o som no computador do usuário.
-
-## Decisões descartadas, riscos e rollback
-
-Descartados: botão desabilitado disfarçado de habilitado; descartar o primeiro clique; retries/espera infinitos; botão adicional de som; texto "Preparando abertura..."; GIF; abertura automaticamente muda; remoção do loader legado. Mantidos MP4 oficial, prefetch existente e controles de acesso.
-
-Riscos residuais: políticas restritivas de autoplay podem recusar som mesmo com mídia pronta, especialmente após clique precoce; aplica-se fallback sem segundo botão. `cover` mantém o corte periférico em outras proporções. Cache/rede podem falhar, mas agora possuem saída finita e não impedem a autenticação.
-
-Rollback seguro, se necessário: retirar apenas a chamada opcional da abertura e sua referência por PR corretivo, mantendo botão habilitado e autenticação. Nunca restaurar o bloqueio do PR #202.
+Rollback por PR: desativar apenas handoff no mesmo documento, preservando login imediato e cobertura opaca até navegação. Não restaurar o botão bloqueado do PR #202.
 
 ## Próxima ação exata
 
-A correção solicitada está publicada e verificada. Na aba antiga bloqueada, recarregar a página para obter o novo documento. Não há nova etapa de implementação da abertura pendente; eventuais diferenças no navegador real devem ser tratadas a partir de evidências novas.
-
-Retomar Fase 4D somente pela leitura atual de #201 e da branch correspondente; não fazer merge da Central antes de sua homologação real controlada.
+Publicar o conjunto atomicamente na branch existente, abrir PR, conferir diff e executar CI do head exato. Corrigir somente falhas verificadas. Com testes relevantes verdes, integrar a correção solicitada e confirmar os arquivos publicados no domínio oficial; registrar evidências finais neste status. Não mesclar #201 nem #206 como parte desta tarefa.
 
 ## Handoff para o próximo chat
 
-**Fase oficial:** Fase 4 / 4D, PR #201, independente.  
-**Correção encerrada:** PR #204, bloqueio indevido de Entrar.  
-**Merge funcional:** `8cefaf639a9399f77658867ef10f82a0fb694222`.  
-**Resultado:** primeiro clique autentica; somente transição espera mídia; sem texto operacional; prazos finitos e fallback.  
-**Evidências:** 182 testes Node locais, 24 casos Playwright no PR, Central navegador aprovada, workflow pós-merge `35262579705` com publicação pública validada por hash.  
-**Pendência do dispositivo:** aba antiga precisa recarregar; não houve acesso ao computador ou à conta real do usuário.  
-**Próximo passo:** acompanhar eventual retorno do usuário; para continuar a Central, reconstruir o estado atual da 4D/#201 sem reiniciar fases.  
-**Privacidade:** sem dados sensíveis, autenticação real, escrita no Drive ou nova telemetria.
+**Fase oficial:** 4D, PR #201, independente.  
+**Objetivo atual:** Home real iniciada durante vídeo, sem flash de login/loader ao final.  
+**Base main:** `e36ac882e4fec626ba3edcad26a2dbdc6777d3ed`.  
+**Branch:** `fix/opening-home-ready-handoff`; PR ainda a abrir nesta revisão.  
+**Última ação concluída:** implementação local e 184 testes Node aprovados; browser/CI e publicação pendentes.  
+**Decisão:** mesmo documento, `PortalHomeReady` + `ended`; sem nova navegação normal.  
+**Arquivos:** `js/login-home-transition.js`, `js/login-opening.js`, `js/home.js`, `js/login.js`, HTML/SW, testes e documento `PORTAL-ABERTURA-POS-LOGIN-V1.md`.  
+**Próximo passo:** conferir PR/CI, resolver regressões reais, publicar e validar hashes oficiais.  
+**Privacidade:** nenhum dado clínico, conta real, segredo, escrita no Drive ou telemetria nova.

@@ -5,6 +5,7 @@ on:
     paths:
       - 'login/index.html'
       - 'js/login-opening.js'
+      - 'js/login-home-transition.js'
       - 'js/login.js'
       - 'portal-sw.js'
       - 'index.html'
@@ -15,6 +16,9 @@ on:
       - 'testing/post-login-opening/**'
       - 'testing/browser/post-login-opening.spec.mjs'
       - 'testing/browser/playwright-opening.config.mjs'
+      - 'testing/browser/opening-home-ready.spec.mjs'
+      - 'testing/browser/playwright-home-opening.config.mjs'
+      - 'testing/browser/serve-opening-home.mjs'
       - 'testing/browser/serve-staging.mjs'
       - 'worker/tests/post-login-opening.test.mjs'
       - '.github/workflows/validate-post-login-opening-browser.yml'
@@ -23,7 +27,10 @@ on:
     paths:
       - 'login/index.html'
       - 'js/login-opening.js'
+      - 'js/login-home-transition.js'
       - 'js/login.js'
+      - 'js/home.js'
+      - 'index.html'
       - 'portal-sw.js'
       - 'assets/portal-opening-v1.mp4'
       - 'scripts/verify-login-publication.mjs'
@@ -56,6 +63,9 @@ jobs:
       - name: Executar laboratório da abertura
         working-directory: testing/browser
         run: npx playwright test --config playwright-opening.config.mjs
+      - name: Validar Home real durante vídeo com APIs fictícias
+        working-directory: testing/browser
+        run: npx playwright test --config playwright-home-opening.config.mjs
       - name: Confirmar publicação estática em produção sem autenticar
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: node scripts/verify-login-publication.mjs
