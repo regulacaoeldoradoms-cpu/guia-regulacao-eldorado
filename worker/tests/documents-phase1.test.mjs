@@ -23,8 +23,11 @@ import {
   fetchDrivePdf,
   listDriveFolder,
   openDriveFileRef,
+  queryDriveSyncStatus,
   sealDriveFileRef,
-  searchDrive
+  searchDrive,
+  startDriveSync,
+  uploadDriveSyncChunk
 } from '../document-drive.js';
 import { handleDocumentsRoute } from '../documents-router.js';
 
@@ -757,7 +760,11 @@ sqliteTest('Fase 4B substituição usa revisão preservada, resumable e só conc
         md5Checksum: '0123456789abcdef0123456789abcdef',
         headRevisionId: 'rev-7',
         parents: ['parent-test'],
-        capabilities: { canDownload: true, canEdit: true, canModifyContent: true }
+        capabilities: { canDownload: true, canEdit: true, canModifyContent: true },
+        ...(sessionPutCount >= 4 ? {
+          size: '524288', version: '8', headRevisionId: 'rev-8',
+          md5Checksum: 'abcdefabcdefabcdefabcdefabcdefab', modifiedTime: '2026-09-16T22:00:00Z'
+        } : {})
       }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
@@ -884,6 +891,75 @@ sqliteTest('Fase 4B substituição usa revisão preservada, resumable e só conc
     globalThis.fetch = originalFetch;
   }
 });
+
+for (const scenario of [
+  { name: 'outra revisão com os mesmos bytes', current: { headRevisionId: 'external-head' } },
+  { name: 'outro checksum', current: { md5Checksum: 'b'.repeat(32) } },
+  { name: 'outro tamanho', current: { size: '999' } },
+  { name: 'outro arquivo', current: { id: 'external-file' } },
+  { name: 'recibo sem checksum', receipt: { md5Checksum: '' }, code: 'DRIVE_SYNC_CONFIRMATION_INVALID', status: 502 },
+  { name: 'recibo sem revisão', receipt: { headRevisionId: '' }, code: 'DRIVE_SYNC_CONFIRMATION_INVALID', status: 502 },
+  { name: 'recibo com tamanho incorreto', receipt: { size: '999' }, code: 'DRIVE_SYNC_CONFIRMATION_INVALID', status: 502 },
+  { name: 'versão lida anterior ao recibo', current: { version: '7' }, code: 'DRIVE_SYNC_INTERRUPTED', status: 503, recover: true }
+]) {
+  sqliteTest('Fase 4D confirmação não adota ' + scenario.name, async () => {
+    const env = environment();
+    env.DOCUMENTS_DRIVE_WRITE_ENABLED = 'true';
+    const pdf = new TextEncoder().encode('%PDF-1.7\nconfirmation-test\n');
+    const username = 'confirmation.test';
+    const base = { id: 'synthetic-confirmation-file', mimeType: 'application/pdf', size: String(pdf.length),
+      version: '7', headRevisionId: 'head-7', md5Checksum: '0'.repeat(32), capabilities: { canEdit: true } };
+    const receipt = { ...base, version: '8', headRevisionId: 'head-8', md5Checksum: 'a'.repeat(32), ...scenario.receipt };
+    let current = { ...receipt, version: '9', ...scenario.current };
+    let uploaded = false;
+    let metadataReads = 0;
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (url, init = {}) => {
+      const value = new URL(String(url));
+      if (value.hostname === 'oauth2.googleapis.com') return Response.json({
+        access_token: 'synthetic-access', refresh_token: 'synthetic-refresh', expires_in: 3600
+      });
+      if (value.pathname.endsWith('/revisions/head-7')) {
+        assert.equal(JSON.parse(init.body).keepForever, true);
+        return Response.json({ keepForever: true });
+      }
+      if (value.pathname.startsWith('/upload/') && !value.searchParams.has('upload_id')) {
+        return new Response(null, { headers: {
+          Location: 'https://www.googleapis.com/upload/drive/v3/files/synthetic-confirmation-file?upload_id=confirmation'
+        } });
+      }
+      if (value.searchParams.has('upload_id')) {
+        uploaded = true;
+        return Response.json(receipt);
+      }
+      assert.equal(init.method, 'GET');
+      metadataReads += 1;
+      return Response.json(uploaded ? current : base);
+    };
+    try {
+      const authorization = await createDriveAuthorizationUrl(env, username);
+      await completeDriveOAuth(env, 'synthetic-code', new URL(authorization).searchParams.get('state'));
+      const ref = await sealDriveFileRef(env, base.id, 'application/pdf');
+      const { syncId } = await startDriveSync(env, username, {
+        operation: 'replace_pdf', ref, baseVersion: '7', totalBytes: pdf.length, preserveRevision: true
+      });
+      await assert.rejects(uploadDriveSyncChunk(env, username, syncId,
+        syncChunkRequest('/synthetic-upload', 'synthetic-token', pdf, 0, pdf.length - 1, pdf.length)),
+      (error) => error.code === (scenario.code || 'DRIVE_VERSION_CONFLICT') && error.status === (scenario.status || 409));
+      assert.equal(metadataReads, scenario.receipt ? 1 : 2, 'invalid receipts must fail before adopting files.get');
+      assert.ok(await env.AUTH_DB.prepare('SELECT sync_id FROM document_drive_sync_sessions WHERE sync_id = ?').bind(syncId).first());
+      if (scenario.recover) {
+        current = { ...receipt, version: '9' };
+        const completed = await queryDriveSyncStatus(env, username, syncId);
+        assert.equal(completed.completed, true);
+        assert.equal(completed.currentVersion, '9');
+      }
+    } finally {
+      globalThis.fetch = originalFetch;
+      env.AUTH_DB.database.close();
+    }
+  });
+}
 
 sqliteTest('Fase 4B salvar como novo inicia create resumable no mesmo parent e pode ser cancelado', async () => {
   const env = environment();

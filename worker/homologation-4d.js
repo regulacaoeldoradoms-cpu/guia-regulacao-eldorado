@@ -264,9 +264,18 @@ export function createHomologation4dWorker({
         }
         if (route.syncId && response.ok) {
           const payload = await response.clone().json();
+          if (payload.completed === true) {
+            // List and completion must identify the same controlled PDF in cache.
+            payload.cacheKey = await homologationCacheKey(env, control.id, fileId);
+          }
           if (payload.completed === true || payload.cancelled === true) {
             await env.AUTH_DB.prepare(`DELETE FROM document_drive_homologation_sessions
               WHERE control_id = ? AND sync_id = ?`).bind(control.id, route.syncId).run();
+          }
+          if (payload.completed === true) {
+            const headers = new Headers(response.headers);
+            headers.delete('Content-Length');
+            return new Response(JSON.stringify(payload), { status: response.status, headers });
           }
         }
         return response;

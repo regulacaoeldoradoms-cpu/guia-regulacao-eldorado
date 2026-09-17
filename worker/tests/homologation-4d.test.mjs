@@ -306,7 +306,8 @@ test('real Portal/Drive handlers integrate login, listing, content, gate off and
     GOOGLE_DRIVE_OAUTH_REDIRECT_URI: WORKER + '/api/documents/oauth/callback'
   });
   const pdf = '%PDF-1.7\nsynthetic only\n';
-  const metadata = { id: FILE, mimeType: 'application/pdf', version: '7', size: String(pdf.length),
+  let metadata = { id: FILE, mimeType: 'application/pdf', version: '7', size: String(pdf.length),
+    md5Checksum: 'a'.repeat(32),
     headRevisionId: 'synthetic-revision-7', parents: ['SYNTHETIC_FOLDER_01'],
     capabilities: { canDownload: true, canEdit: true } };
   t.mock.method(globalThis, 'fetch', async (url, init = {}) => {
@@ -319,17 +320,23 @@ test('real Portal/Drive handlers integrate login, listing, content, gate off and
     assert.equal(value.hostname, 'www.googleapis.com');
     assert.ok(value.pathname.includes(FILE), 'no unrelated Drive file may be fetched');
     if (value.searchParams.get('alt') === 'media') return new Response(pdf, { headers: { 'Content-Type': 'application/pdf' } });
-    if (value.pathname.endsWith('/revisions/synthetic-revision-7')) {
+    if (value.pathname.includes('/revisions/')) {
       assert.equal(method, 'PATCH');
       assert.equal(JSON.parse(init.body).keepForever, true);
-      return Response.json({ id: 'synthetic-revision-7', keepForever: true });
+      assert.ok(value.pathname.endsWith('/revisions/' + metadata.headRevisionId));
+      return Response.json({ id: metadata.headRevisionId, keepForever: true });
     }
     if (value.pathname.startsWith('/upload/') && method === 'PATCH') return new Response(null, { headers: {
       Location: `https://www.googleapis.com/upload/drive/v3/files/${FILE}?upload_id=synthetic-4d-upload`
     } });
     if (value.searchParams.has('upload_id')) {
       assert.equal(method, 'PUT');
-      return Response.json({ ...metadata, version: '8' });
+      const version = String(Number(metadata.version) + 1);
+      const receipt = { ...metadata, version, headRevisionId: 'synthetic-revision-' + version };
+      // Model a receipt preceding a metadata-only version increment. The binary
+      // head/hash/size remain identical; the next queued edit must use files.get.
+      metadata = { ...receipt, version: String(Number(version) + 1) };
+      return Response.json(receipt);
     }
     assert.equal(method, 'GET');
     return Response.json(metadata);
@@ -390,7 +397,31 @@ test('real Portal/Drive handlers integrate login, listing, content, gate off and
   assert.equal(upload.status, 200);
   const completed = await upload.json();
   assert.equal(completed.completed, true);
-  assert.equal(completed.currentVersion, '8');
+  assert.equal(completed.currentVersion, '9');
+  assert.equal(completed.cacheKey, item.cacheKey);
+  const nextStart = await worker.fetch(request('/api/documents/drive/sync/start', {
+    method: 'POST', token, body: { ...body, ref: completed.ref, baseVersion: completed.currentVersion }
+  }), f.env, {});
+  assert.equal(nextStart.status, 201, 'a queued edit must not conflict with its own completed upload');
+  const nextSession = await nextStart.json();
+  assert.equal(nextSession.safetyRevisionPreserved, true);
+  assert.ok(f.calls.google.some((call) => call.method === 'PATCH' && call.url.includes('/revisions/synthetic-revision-8')));
+  const nextUpload = await worker.fetch(new Request(`${WORKER}/api/documents/drive/sync/upload/${nextSession.syncId}`, {
+    method: 'PUT', headers: { Origin: PAGES, Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/pdf', 'Content-Range': `bytes 0-${pdf.length - 1}/${pdf.length}` }, body: pdf
+  }), f.env, {});
+  assert.equal(nextUpload.status, 200);
+  const nextCompleted = await nextUpload.json();
+  assert.equal(nextCompleted.currentVersion, '11');
+  assert.equal(nextCompleted.cacheKey, item.cacheKey);
+  metadata = { ...metadata, version: '12', headRevisionId: 'synthetic-external-head' };
+  const beforeExternalConflict = f.calls.google.length;
+  const externalConflict = await worker.fetch(request('/api/documents/drive/sync/start', {
+    method: 'POST', token, body: { ...body, ref: nextCompleted.ref, baseVersion: nextCompleted.currentVersion }
+  }), f.env, {});
+  assert.equal(externalConflict.status, 409);
+  assert.equal((await externalConflict.json()).code, 'DRIVE_VERSION_CONFLICT');
+  assert.ok(f.calls.google.slice(beforeExternalConflict).every((call) => call.method === 'GET'));
   assert.equal(f.db.prepare('SELECT count(*) AS n FROM document_drive_homologation_sessions').get().n, 0);
   assert.equal(f.db.prepare('SELECT count(*) AS n FROM document_drive_sync_sessions').get().n, 0);
   assert.equal(f.db.prepare("SELECT role FROM auth_users WHERE username = 'unrelated.legacy'").get().role, 'telemedicina');

@@ -45,7 +45,7 @@ Para encerrar, atualizar a linha para `enabled = 0` ou removê-la no backend, al
 
 A listagem/pesquisa consulta individualmente metadados apenas dos fileIds permitidos e apresenta nomes sintéticos (`PDF descartável 4D 1.pdf`, etc.). Não navega pastas, não usa listagem global do Drive nem devolve nomes reais. Metadados de versão/capacidade usam o preflight existente; abertura e substituição usam os handlers reais.
 
-A identidade do cache é um HMAC-SHA-256 de controle e fileId, com separação de domínio `homologation-4d` e chave de proteção do Drive no backend. Não expõe ID ou controle, nem depende da posição na lista. Reordenar ou trocar PDFs permitidos não reutiliza o cache de outro arquivo.
+A identidade do cache é um HMAC-SHA-256 de controle e fileId, com separação de domínio `homologation-4d` e chave de proteção do Drive no backend. Não expõe ID ou controle, nem depende da posição na lista. Reordenar ou trocar PDFs permitidos não reutiliza o cache de outro arquivo. A confirmação do upload retorna essa mesma chave do preview; não repassa a chave do namespace normal de produção.
 
 Antes de conteúdo/preflight/start, a referência opaca é aberta no backend e o fileId precisa constar da lista de descartáveis. A homologação restrita permite `replace_pdf`; `save_copy` fica bloqueado porque produziria um novo fileId não autorizado previamente. Isso não altera a implementação normal de produção e não homologa salvamento de cópia no Drive real.
 
@@ -54,6 +54,14 @@ Todo start autorizado desta homologação força `preserveRevision: true` antes 
 `document_drive_homologation_sessions` vincula cada `sync_id` emitido pelo start real ao controle, usuário, fileId e expiração. O registro precisa existir antes de upload/status/cancel; o arquivo precisa continuar autorizado, o usuário continuar sendo o responsável e a janela continuar ativa. Sessões existentes de produção ou de outra janela não passam. A existência da tabela é verificada antes de iniciar qualquer mutação Google.
 
 Na confirmação ou cancelamento, remove-se o vínculo da homologação. O core existente já remove sua própria sessão quando conclui/cancela; o wrapper não introduz nova política de retry depois da conclusão. Uma falha de registro após start não encaminha bytes de PDF e deixa a sessão sem autorização para upload; não é mostrada como sucesso.
+
+## Confirmação de versão após upload
+
+A primeira execução real registrou uma revisão preservada e uma nova revisão, mas a edição feita durante o primeiro upload terminou com conflito sem alteração externa conhecida. A hipótese de diferença entre a versão do recibo resumable e a versão imediatamente lida pelo próximo preflight ainda precisa de repetição real para ser confirmada. A documentação do Drive define `version` como contador de alterações do servidor, inclusive alterações de metadados; ela não comprova que `keepForever` causou o episódio observado.
+
+O core compartilhado `document-drive.js` agora relê os metadados depois do recibo final 200/201. Só conclui e retorna a versão atual se fileId, revisão de conteúdo (`headRevisionId`), MD5 e tamanho coincidirem com o recibo do próprio upload. O recibo precisa trazer revisão, checksum válido e tamanho igual ao upload autorizado. Outra revisão é conflito 409 mesmo quando os bytes têm o mesmo checksum. Uma versão numérica anterior à do recibo retorna interrupção 503 e permite nova consulta de status. A comparação estrita de versão no próximo preflight permanece inalterada.
+
+Isso adiciona uma leitura de metadados a cada confirmação, incluindo retomada por status, e evita confirmar sucesso com identidade incompleta. Não torna upload e leitura uma transação: uma alteração posterior à leitura continua a ser detectada no próximo preflight. O teste sintético cobre duas edições sequenciais com recibos v8/v10 e metadados v9/v11, preservação obrigatória em ambas e conflito externo subsequente. Não substitui a repetição da prova real.
 
 ## Rotas e observabilidade
 
@@ -76,5 +84,7 @@ Esses testes não substituem a matriz real 4D, nem autorizam merge ou promoção
 - [Cloudflare — D1 Database](https://developers.cloudflare.com/d1/worker-api/d1-database/): consultas diretas no primário; sessões são necessárias para leitura replicada.
 - [Cloudflare — Preview URLs](https://developers.cloudflare.com/workers/versions-and-deployments/preview-urls/): URLs estáticas por versão, aliases e limites de logs.
 - [Cloudflare — Workers best practices](https://developers.cloudflare.com/workers/best-practices/workers-best-practices/): bindings, limites de leitura, segredos e promessas aguardadas.
+- [Google Drive — File](https://developers.google.com/workspace/drive/api/reference/rest/v3/files): significado de `version`, `headRevisionId`, `md5Checksum` e `size`.
+- [Google Drive — Upload file data](https://developers.google.com/workspace/drive/api/guides/manage-uploads): resposta final e consulta de status de sessões resumable.
 
 Tipos consultados: `@cloudflare/workers-types` 5.20260917.1, sem acrescentar dependência ao projeto. Nenhuma mudança na compatibilidade ou configuração produtiva é necessária para este wrapper.

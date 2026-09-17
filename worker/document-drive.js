@@ -981,7 +981,11 @@ function nextOffsetFromRange(value, totalBytes) {
 async function completedDriveSyncResult(env, session, response) {
   const payload = await response.json().catch(() => ({}));
   const version = normalizeDriveVersion(payload.version, { required: true });
-  if (!payload?.id || payload.mimeType !== PDF_MIME) {
+  const size = Number(payload.size);
+  if (!payload?.id || payload.mimeType !== PDF_MIME
+    || !String(payload.headRevisionId || '').trim()
+    || !/^[a-f0-9]{32}$/i.test(String(payload.md5Checksum || ''))
+    || !Number.isSafeInteger(size) || size !== session.totalBytes) {
     throw new DriveIntegrationError(
       'DRIVE_SYNC_CONFIRMATION_INVALID',
       'O Google Drive concluiu a solicitação sem metadados suficientes para confirmar o salvamento.',
@@ -992,13 +996,34 @@ async function completedDriveSyncResult(env, session, response) {
     sealDriveFileRef(env, String(payload.id), PDF_MIME),
     stableDriveCacheKey(env, String(payload.id))
   ]);
+  // Drive's version includes metadata changes, not only binary revisions. Re-read
+  // it after the resumable receipt so the next queued edit starts from the current
+  // version, but never adopt a different head (even with identical PDF bytes).
+  const current = await currentDrivePdfMetadata(env, ref);
+  if (current.id !== String(payload.id)
+    || current.headRevisionId !== String(payload.headRevisionId)
+    || current.md5Checksum.toLowerCase() !== String(payload.md5Checksum).toLowerCase()
+    || current.size !== size) {
+    throw new DriveIntegrationError(
+      'DRIVE_VERSION_CONFLICT',
+      'O arquivo foi alterado no Google Drive durante a confirmação do salvamento. Reabra o documento antes de substituir o original.',
+      409
+    );
+  }
+  if (BigInt(current.version) < BigInt(version)) {
+    throw new DriveIntegrationError(
+      'DRIVE_SYNC_INTERRUPTED',
+      'O Google Drive ainda não confirmou a versão atual do upload. Consulte o status antes de retomar.',
+      503
+    );
+  }
   await deleteDriveSyncSession(env, session.syncId);
   return {
     completed: true,
     operation: session.operation,
-    currentVersion: version,
-    modifiedTime: String(payload.modifiedTime || ''),
-    size: Number.isFinite(Number(payload.size)) ? Number(payload.size) : null,
+    currentVersion: current.version,
+    modifiedTime: current.modifiedTime,
+    size: current.size,
     ref,
     cacheKey
   };

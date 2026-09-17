@@ -6,7 +6,7 @@
 
 **Fase 4 — Sincronização segura com Drive**
 
-Subfase atual: **4D — preview controlado publicado; acesso legítimo e matriz no Drive real pendentes**.
+Subfase atual: **4D — homologação real iniciada; correções de conflito e proteção de fechamento em andamento**.
 
 Branch: `codex/central-docs-drive-sync-phase4`  
 PR: **#201**  
@@ -60,7 +60,12 @@ Validação: 19/19 testes específicos, com revisão independente e integração
 - Janela de leitura criada no D1 para uma conta já autorizada e um único PDF sintético, com expiração em 17/09/2026 às 15:08:57 UTC (11:08:57 em Cuiabá). Não publicar o identificador do arquivo.
 - Verificação HTTP real: antes da janela, `403 HOMOLOGATION_DISABLED`; com janela ativa e sem sessão, `401 AUTH_REQUIRED`; rota administrativa e origem divergente retornam `403`. Nenhuma escrita no Drive foi habilitada.
 - Os primeiros builds Pages do commit falharam porque o scanner confundiu o hostname de preview prefixado com o hostname de produção por busca de substring em `_headers`. Corrigido para comparar o hostname completo; `_headers` continua inspecionado. Build local aprovado com alias real, sem configuração e com rejeição das variantes de produção, porta e path. O workflow passou a cobrir essa regressão.
-- Checks GitHub Actions do primeiro commit: 25 workflows concluídos com sucesso na leitura intermediária; navegador ainda em execução. O check automático Workers Builds informou falta de acesso a Worker Previews; ele não representa o upload manual de versão concluído e verificado acima. Conferir o head mais recente antes de atribuir um resultado final.
+- Checks GitHub Actions de `63b56afd`: **26/26 workflows concluídos com sucesso**, incluindo navegador com 75 passed / 3 skipped previstos. O check automático Workers Builds informou falta de acesso a Worker Previews; ele não representa o upload manual de versão concluído e verificado acima.
+- Correção do builder publicada em `125dcbe8c4c0197306490dbd387ffd9a7e13fed3`. Pages `3c3cb671-c18b-46a6-a602-89a5093198a8` concluiu com sucesso às 13:12:08 UTC, mantendo o alias estável da branch. HTTP real confirmou `200` em login/documentos, `workerConfigured:true` no manifest e CSP `connect-src` limitada à própria origem e ao Worker preview.
+- Login habitual concluído pelo operador no Chrome, sem sessão artificial nem token copiado. Listagem e conteúdo do único PDF sintético foram conferidos.
+- Preview `64dedfd6-2bd8-4272-b4fc-eb65f84c0181` ativou gate `true` após essa conferência. Primeiro autosync real gravou uma nova revisão; a revisão anterior foi marcada `keepForever:true` e recuperada pelo conector.
+- Edição durante upload mostrou conflito indevido após o primeiro envio. O **X do visualizador** também fechou com edição pendente, contornando a proteção de `exitEditor`. Controle D1 revogado (`enabled=0`) durante a correção, com zero sessões de homologação restantes. O gate da versão preview permanece `true`, mas a revogação bloqueia suas requisições; desligá-lo ao encerrar.
+- Evidências e critérios ainda pendentes: `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-RESULTADOS.md`. **A 4D não está aprovada.**
 
 ## Preparação manual anterior da 4D — 17/09/2026
 
@@ -267,26 +272,26 @@ Mantido:
 
 ## Próxima ação exata
 
-1. Concluir a correção dirigida do scanner do bundle, conferir Pages, manifest, CSP, login e checks do novo head.
-2. Obter login legítimo do operador em `/homologacao/login/`, com escrita desligada. Conferir a janela D1 existente antes de criar ou renovar qualquer controle.
-3. Somente com sessão autenticada e arquivo validado, habilitar escrita temporária no preview e executar a matriz de `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-MANUAL.md` com as restrições de `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-ISOLAMENTO.md`.
-4. Desligar gate e revogar controle D1; verificar bloqueio, registrar evidências sem dados sensíveis e só então avaliar encerramento da fase/merge.
+1. Corrigir e testar o conflito após upload e o fechamento do cabeçalho que contorna a proteção de alterações pendentes.
+2. Publicar a correção na mesma branch/preview; conferir checks e recarregar a UI. A sessão legítima já existe; não copiar tokens nem refazer OAuth.
+3. Reativar somente o controle do mesmo usuário/PDF sintético, após conferir a expiração, e repetir a matriz real registrada em `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-RESULTADOS.md`.
+4. Desligar gate e manter controle D1 revogado; verificar bloqueio, registrar evidências sem dados sensíveis e só então avaliar encerramento da fase/merge.
 
 ## Handoff para o próximo chat
 
 | Campo | Estado de continuidade |
 | --- | --- |
 | Fase/subfase | Fase 4, homologação real 4D; fases anteriores não reiniciadas |
-| Última ação concluída | Reparo e wrapper publicados; versão preview criada sem deployment e com escrita desligada; 199/199 testes Worker e 75 passed / 3 skipped previstos de navegador |
+| Última ação concluída | Primeiro autosync real e recuperação da revisão anterior confirmados; janela revogada após falhas encontradas na matriz |
 | Branch/PR | `codex/central-docs-drive-sync-phase4`, PR #201 aberto e sem merge |
-| Commits | Entrada `faa40f1`; implementação restrita e reparo do harness em `63b56afd` |
-| Checks | Resultado local aprovado; verificar checks remotos sobre o head efetivamente publicado, não reaproveitar o verde histórico de `6f45b7c` |
+| Commits | Entrada `faa40f1`; implementação restrita e reparo em `63b56afd`; correção de build Pages em `125dcbe` |
+| Checks | Local: 199/199 Worker, 75 passed / 3 skipped navegador. Remoto `125dcbe`: 26/26 Actions e Pages aprovados. Workers Builds automático com bloqueio externo de acesso a previews. Falhas reais 4D exigem novas regressões |
 | Decisões | Preview próprio com autenticação real, usuário/arquivo/sessões restritos, preservação obrigatória de revisão, cache por identidade e controle D1 expirável/revogável |
 | Justificativa | URL de preview e storage separado não isolam D1/OAuth; alias novo não elimina URL estática antiga |
 | Alternativas descartadas | Habilitar gate em preview genérico; repetir OAuth; usar produção; enfraquecer testes; continuar tentando o mesmo formulário de Builds |
-| Ações externas concluídas | Preview Worker `c8dab951` com gate false; Pages preview configurado; OAuth existente preservado; PDF sintético preparado; controle D1 de leitura expira 17/09 às 15:08:57 UTC |
-| Pendências | Build Pages corrigido, login legítimo, matriz real e encerramento com controle revogado |
+| Ações externas concluídas | Preview atual `64dedfd6` gate true porém controle D1 revogado; Pages `3c3cb671`; sessão legítima; um PDF sintético com duas revisões e anterior preservada/recuperada |
+| Pendências | Corrigir conflito indevido e fechamento com pendência; repetir matriz real; desligar gate do preview ao encerrar |
 | Riscos | Conexão/D1 compartilhados; segredo não deve sair do backend; escrita deve ficar desligada fora da janela; save_copy não homologado no ambiente restrito |
 | Observabilidade | Eventos técnicos allowlisted; preview sem Workers Logs/tail não pode ser apresentado como evidência de privacidade por ausência de logs |
-| Próxima ação exata | Seguir sequência acima e conferir mudanças externas já concluídas antes de repetir qualquer ação |
-| Fontes principais | Este status, FASE-4, HOMOLOGACAO-4D-ISOLAMENTO, HOMOLOGACAO-4D-MANUAL, PR #201 e checks atuais |
+| Próxima ação exata | Concluir as correções causais, atualizar preview e repetir o teste no mesmo PDF, com reativação temporária do controle D1 existente |
+| Fontes principais | Este status, FASE-4, HOMOLOGACAO-4D-ISOLAMENTO, HOMOLOGACAO-4D-MANUAL, HOMOLOGACAO-4D-RESULTADOS, PR #201 e checks atuais |

@@ -47,6 +47,7 @@
     pdfCustomFallbackStarted: false,
     cachePrefetchGeneration: 0,
     editorSession: null,
+    editorSyncRequired: false,
     editorViewState: null,
     editorFocusRestore: null,
     editorBuildSeq: 0,
@@ -676,6 +677,7 @@
     const editor = window.PortalPdfEditor;
     const session = state.editorSession;
     const busy = state.editorBusy;
+    if (session && canSyncDocuments()) state.editorSyncRequired = true;
     els.editorUndo.disabled = busy || !editor || !session || !editor.canUndo(session);
     els.editorRedo.disabled = busy || !editor || !session || !editor.canRedo(session);
     if (els.editorOrganize) els.editorOrganize.disabled = busy || !session;
@@ -712,6 +714,7 @@
     if (els.editorMergeApply) els.editorMergeApply.disabled = busy || !session || (!state.pendingMergeItem && !state.pendingMergeFiles.length);
     if (els.editorMergeCancel) els.editorMergeCancel.disabled = busy || !session;
     if (els.editorExit) els.editorExit.disabled = busy || state.driveSyncInFlight || !session;
+    if (els.closeViewer) els.closeViewer.disabled = Boolean(session && (busy || state.driveSyncInFlight));
   }
 
   function setEditorBusy(busy) {
@@ -896,6 +899,7 @@
     state.finalPdfCacheRevision = -1;
     state.finalPdfCacheBlob = null;
     state.editorSession = null;
+    state.editorSyncRequired = false;
     state.pendingMergeItem = null;
     state.pendingMergeFiles = [];
     clearMergePreview();
@@ -1276,6 +1280,7 @@
       || !canSyncDocuments()
       || typeof editor?.buildFlattenedBlob !== 'function'
     ) return false;
+    state.editorSyncRequired = true;
 
     if (operation === 'save_copy' && !copyName) {
       setDriveSyncProgress('Informe um nome para o novo PDF.', 'warning');
@@ -1694,6 +1699,7 @@
       });
       if (!isCurrentStart()) return;
       state.editorSession = session;
+      state.editorSyncRequired = canSyncDocuments();
       state.editorViewState = initialViewState;
       resetDriveSyncTracking({ observe: true });
       state.pendingMergeItem = null;
@@ -2536,7 +2542,7 @@
     }
   }
 
-  async function exitEditor() {
+  async function exitEditor({ restoreOriginal = true } = {}) {
     const session = state.editorSession;
     if (!session || state.editorBusy || state.driveSyncInFlight) return false;
 
@@ -2544,7 +2550,18 @@
     const hasPendingChanges = revision !== state.driveSyncLastConfirmedRevision
       || state.driveSyncVisualState === 'failed';
 
-    if (hasPendingChanges && canSyncDocuments()) {
+    const syncAvailable = canSyncDocuments();
+    if (hasPendingChanges && !syncAvailable) {
+      if (state.editorSyncRequired || state.driveSyncVisualState === 'failed') {
+        setEditorStatus(
+          'A sincronização com o Google Drive está indisponível. O editor permanecerá aberto para evitar perder alterações.',
+          'warning'
+        );
+        syncEditorControls();
+        return false;
+      }
+      if (!confirm('Fechar o editor e descartar as alterações locais? Se quiser guardá-las, cancele e exporte o PDF primeiro.')) return false;
+    } else if (hasPendingChanges) {
       clearDriveSyncTimer();
       clearDriveSyncSuccessTimer();
       setEditorStatus('Sincronizando alterações antes de fechar o editor…');
@@ -2568,7 +2585,7 @@
       }
     }
 
-    resetEditorState({ restoreOriginal: true });
+    resetEditorState({ restoreOriginal });
     return true;
   }
 
@@ -3057,8 +3074,20 @@
     els.viewerState.textContent = 'Preparando PDF…';
   }
 
-  async function openPdf(item) {
+  async function requestClosePdf() {
+    const openId = state.pdfOpenId;
+    if (state.editorSession && !(await exitEditor({ restoreOriginal: false }))) return false;
+    if (openId !== state.pdfOpenId || state.editorSession) return false;
     closePdf();
+    return true;
+  }
+
+  async function openPdf(item) {
+    if (state.editorSession) {
+      if (!(await requestClosePdf())) return;
+    } else {
+      closePdf();
+    }
     const openId = state.pdfOpenId;
     state.pdfItem = item;
     els.viewer.hidden = false;
@@ -3151,8 +3180,8 @@
     if (!confirm('Desconectar a conta institucional da Central? Os arquivos do Google Drive não serão apagados.')) return;
     els.disconnect.disabled = true;
     try {
+      if (!(await requestClosePdf())) return;
       await api('/api/documents/oauth/disconnect', { method: 'POST', body: '{}' });
-      closePdf();
       if (documentCache?.clearAll) await documentCache.clearAll().catch(() => {});
       await loadAccess();
       showStatus('Google Drive desconectado da Central.', 'info');
@@ -3210,7 +3239,7 @@
     else loadFolder({ append: true, pageToken: state.nextPageToken });
   });
 
-  els.closeViewer.addEventListener('click', closePdf);
+  els.closeViewer.addEventListener('click', () => requestClosePdf().catch(() => {}));
   els.editPdf.addEventListener('click', startEditor);
   els.editorRailEdit?.addEventListener('click', () => {
     if (state.editorSession) setEditorWorkspaceMode('organize');
@@ -3336,8 +3365,8 @@
   }, true);
 
   window.addEventListener('beforeunload', (event) => {
-    if (!state.editorSession || !canSyncDocuments()) return;
-    const hasPendingChanges = state.driveSyncInFlight
+    if (!state.editorSession) return;
+    const hasPendingChanges = state.editorBusy || state.driveSyncInFlight
       || currentEditorRevision() !== state.driveSyncLastConfirmedRevision
       || state.driveSyncVisualState === 'failed';
     if (!hasPendingChanges) return;
@@ -3396,7 +3425,7 @@
   });
 
   els.logout.addEventListener('click', async () => {
-    closePdf();
+    if (!(await requestClosePdf())) return;
     if (documentCache?.clearAll) await documentCache.clearAll().catch(() => {});
     await auth.logout();
     location.replace('/login/');
