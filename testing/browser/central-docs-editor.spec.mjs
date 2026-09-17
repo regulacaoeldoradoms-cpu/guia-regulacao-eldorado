@@ -381,7 +381,12 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     expect(currentRects.length).toBe(currentThumbs);
     if (currentRects.length > 1) {
       const distinctRows = [...new Set(currentRects.map((rect) => Math.round(rect.top)))];
-      expect(distinctRows.length).toBe(1);
+      const viewport = page.viewportSize();
+      if ((viewport?.width || 0) <= 720) {
+        expect(distinctRows.length).toBeGreaterThan(1);
+      } else {
+        expect(distinctRows.length).toBe(1);
+      }
     }
 
     finishMonitoring();
