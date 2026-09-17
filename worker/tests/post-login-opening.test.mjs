@@ -42,9 +42,11 @@ test('o vídeo oficial abre em tela cheia, com som e sem corte por temporizador'
 });
 
 test('a abertura usa Cache Storage e volta ao carregamento tradicional se a mídia falhar', () => {
+  assert.match(index, /media-src 'self' blob:/);
   assert.match(home, /portal-opening-media-v1/);
   assert.match(home, /caches\.open\(OPENING_CACHE\)/);
   assert.match(home, /cache\.match\(OPENING_ASSET\)/);
+  assert.match(home, /URL\.createObjectURL\(blob\)/);
   assert.match(home, /cache\.put\(OPENING_ASSET, response\.clone\(\)\)/);
   assert.match(home, /deleteOldOpeningCaches/);
   assert.match(home, /evictOpeningCache/);
