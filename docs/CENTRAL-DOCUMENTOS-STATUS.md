@@ -58,17 +58,18 @@ Arquivo principal: `js/login-opening.js`.
 Fluxo:
 
 1. a tela de login solicita preload de `assets/portal-opening-v1.mp4`;
-2. `js/login-opening.js` aplica um gate técnico interno enquanto preserva visual/texto **Entrar**;
-3. o controlador consulta primeiro `portal-opening-media-v1`;
-4. sem cache válido, baixa a resposta completa;
-5. o Blob só é aceito com exatamente **2.393.970 bytes**;
-6. o `<video>` oculto é preparado até estado reproduzível;
-7. somente então o gate interno é retirado;
-8. o clique efetivo em **Entrar** prepara a reprodução com áudio no mesmo documento;
-9. a autenticação ocorre normalmente;
-10. `PortalPerformance.warmForUser(user, { immediate: true })` aquece o Portal em paralelo;
-11. o vídeo já preparado ocupa toda a tela, com `muted=false`, volume 1 e `object-fit: cover`;
-12. o fluxo normal termina pelo evento real `ended`, aplica fade e só então `login.js` navega para a rota do usuário.
+2. o próprio `login/index.html` já renderiza o botão como **Entrar**, evitando flash transitório de texto operacional antes do JavaScript;
+3. `js/login-opening.js` aplica um gate técnico interno enquanto preserva visual/texto **Entrar**;
+4. o controlador consulta primeiro `portal-opening-media-v1`;
+5. sem cache válido, baixa a resposta completa;
+6. o Blob só é aceito com exatamente **2.393.970 bytes**;
+7. o `<video>` oculto é preparado até estado reproduzível;
+8. somente então o gate interno é retirado;
+9. o clique efetivo em **Entrar** prepara a reprodução com áudio no mesmo documento;
+10. a autenticação ocorre normalmente;
+11. `PortalPerformance.warmForUser(user, { immediate: true })` aquece o Portal em paralelo;
+12. o vídeo já preparado ocupa toda a tela, com `muted=false`, volume 1 e `object-fit: cover`;
+13. o fluxo normal termina pelo evento real `ended`, aplica fade e só então `login.js` navega para a rota do usuário.
 
 O gate continua tecnicamente retendo a ação até a mídia estar pronta porque liberar o clique antes e aguardar de forma assíncrona poderia consumir a ativação transitória do navegador e reintroduzir bloqueio de áudio. Essa retenção é invisível na apresentação do botão.
 
@@ -108,29 +109,38 @@ O Service Worker preserva a versão contratual `CACHE_VERSION = '20260916-10'` e
 
 ### Descoberta no CI e correção
 
-No head anterior `95098e0d29b520fd8af2f666bdea6a8e883b73a7`, todos os workflows do PR ficaram verdes exceto **Validar abertura pós-login — navegador**.
-
-Diagnóstico do log: os 8 cenários falharam antes de executar a lógica do vídeo porque o servidor local de staging tratava `/opening/` como diretório e não resolvia `index.html`; o locator `#loginSubmit` portanto não existia.
+No head anterior `95098e0d29b520fd8af2f666bdea6a8e883b73a7`, o workflow dedicado de abertura falhou antes de executar a lógica funcional porque o servidor local de staging tratava `/opening/` como diretório e não resolvia `index.html`; o locator `#loginSubmit` portanto não existia.
 
 Correção aplicada em `testing/browser/serve-staging.mjs`:
 
 - rotas de diretório passam a resolver `<diretório>/index.html`;
 - proteção contra path traversal permanece ativa.
 
-O laboratório também foi atualizado para não exibir estado operacional durante a preparação.
+O laboratório também foi atualizado para não expor estado operacional durante a preparação.
 
-### Validação atual
+### Validação técnica concluída
 
-No head funcional `47a7280e8331c6e42be39722e55b53f1ee45b8e4`:
+Head funcional validado: `472511b6d197b5547d8ce41532f044d5ca38357b`.
 
-- o workflow dedicado **Validar abertura pós-login — navegador** concluiu com **sucesso**;
-- a suíte cobre desktop e mobile;
-- o MP4 oficial passa por validação de tamanho e SHA-256 antes do browser test;
-- os testes validam gate silencioso, botão apresentado como **Entrar**, ausência de mensagem operacional, tela inteira, áudio ativo, Blob local, reutilização de Cache Storage, ausência de botão extra e bloqueio de autenticação quando a mídia não está disponível;
-- os demais workflows já concluídos desse head estavam verdes na última conferência;
-- **Validar Central de Documentos — navegador** ainda estava em execução na última conferência e precisa ser checado antes de declarar toda a matriz concluída.
+Resultados:
 
-Após essa validação, a documentação de decisão foi atualizada para refletir o gate silencioso. O PR continua draft.
+- **todos os workflows GitHub Actions associados ao head concluíram com `success`**;
+- **Validar abertura pós-login — navegador:** sucesso;
+- Playwright da abertura: **8/8 cenários aprovados** em Chrome desktop e mobile;
+- **Validar Central de Documentos — navegador:** sucesso, confirmando que a correção compartilhada do servidor de staging não regrediu a Central;
+- suíte de contrato/sintaxe e demais módulos: verdes;
+- o MP4 oficial passou por validação de tamanho e SHA-256 antes dos testes de navegador;
+- a suíte comprova gate silencioso, botão apresentado como **Entrar**, ausência de mensagem operacional, tela inteira, áudio ativo, Blob local, reutilização de Cache Storage, ausência de botão extra e nenhuma autenticação quando a mídia está indisponível.
+
+### Cloudflare Pages
+
+O GitHub App da Cloudflare confirmou deployment do head `472511b` com **sucesso**.
+
+Preview imutável do deployment: `https://005352f8.portal-regulacao-central-staging.pages.dev`  
+Branch preview: `https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev`  
+Laboratório de homologação: `https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev/opening/`
+
+O mesmo check suite registrou falha ao tentar criar **Worker Preview** de `yellow-wave-d0a1guia-regulacao-ia`, com a mensagem de que a conta não possui acesso a Worker Previews. Isso é **não bloqueante para esta mudança**: o Pages staging foi publicado com sucesso, o laboratório não usa o Worker de produção e nenhum código de Worker é necessário para a abertura.
 
 ## Decisões e alternativas descartadas
 
@@ -155,14 +165,13 @@ Após essa validação, a documentação de decisão foi atualizada para refleti
 
 ## Próxima ação exata
 
-1. confirmar a conclusão de **Validar Central de Documentos — navegador** no head atual;
-2. confirmar o deployment Cloudflare atualizado da branch;
-3. abrir `https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev/opening/` após o deploy;
-4. confirmar visualmente que o botão aparece sempre como **Entrar**, sem “Preparando abertura...” e sem qualquer aviso operacional;
-5. clicar **Entrar** e confirmar que a abertura começa imediatamente, sem botão adicional;
-6. validar som, ~10 s completos, enquadramento, fade e segunda execução cacheada;
-7. após aceite humano explícito, atualizar este status, retirar #202 de draft e só então considerar merge;
-8. manter PR #201/Fase 4 independente.
+1. abrir `https://feat-post-login-opening-vide.portal-regulacao-central-staging.pages.dev/opening/`;
+2. confirmar visualmente que o botão aparece desde o primeiro instante somente como **Entrar**, sem “Preparando abertura...” e sem qualquer aviso operacional;
+3. clicar **Entrar** e confirmar que a abertura começa sem qualquer botão adicional;
+4. validar som, ~10 s completos, enquadramento e fade;
+5. repetir uma segunda vez para confirmar a experiência cacheada;
+6. após aceite humano explícito, atualizar este status, retirar #202 de draft e só então considerar merge;
+7. manter PR #201/Fase 4 independente.
 
 ## Handoff para o próximo chat
 
@@ -170,8 +179,10 @@ Após essa validação, a documentação de decisão foi atualizada para refleti
 **Mudança transversal:** abertura pós-login, PR #202.  
 **Última decisão humana:** preparação do vídeo deve ser invisível; o usuário vê somente o botão normal **Entrar** e nunca detalhes operacionais.  
 **Arquitetura atual:** gate técnico silencioso + preparação integral/cache na página de login + reprodução após autenticação no mesmo documento + navegação depois da abertura/fallback.  
-**Último head funcional validado da abertura:** `47a7280e8331c6e42be39722e55b53f1ee45b8e4`; workflow dedicado de navegador verde.  
+**Head funcional validado:** `472511b6d197b5547d8ce41532f044d5ca38357b`.  
+**Validação:** GitHub Actions integralmente verde; abertura Playwright 8/8; Central navegador verde; Cloudflare Pages staging publicado com sucesso.  
+**Bloqueio externo não relacionado:** Worker Preview indisponível na conta Cloudflare; não afeta o Pages staging nem a abertura.  
 **Arquivos principais:** `login/index.html`, `js/login-opening.js`, `js/login.js`, `index.html`, `js/home.js`, `portal-sw.js`, `testing/post-login-opening/*`, `testing/browser/post-login-opening.spec.mjs`, `testing/browser/serve-staging.mjs`, `worker/tests/post-login-opening.test.mjs`.  
 **PR:** #202 continua draft e sem merge.  
-**Pendência:** finalizar matriz do head atual + deploy atualizado + homologação humana do preview.  
-**Próximo passo:** testar o preview renovado somente depois da confirmação do CI/deploy; não fazer merge antes do aceite.
+**Pendência:** apenas homologação humana do preview revisado antes de retirar o draft.  
+**Próximo passo:** usuário testar o preview e registrar aceite ou ajuste; não fazer merge antes disso.
