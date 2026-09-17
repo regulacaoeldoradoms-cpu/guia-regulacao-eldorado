@@ -125,14 +125,27 @@ test('bloqueio excepcional de autoplay não cria botão adicional e cai para o l
   await expect(page.locator('#portalOpeningStartWithSound')).toHaveCount(0);
 });
 
-test('sem MP4 completo o botão de login permanece bloqueado e nenhuma abertura inicia', async ({ page }) => {
+test('durante a preparação o botão continua visualmente normal e nenhum detalhe operacional aparece', async ({ page }) => {
   await page.route('**/assets/portal-opening-v1.mp4*', (route) => route.abort());
   await page.goto('/opening/');
 
   const submit = page.locator('#loginSubmit');
   await expect(submit).toBeDisabled();
-  await expect(submit).toHaveText('Preparando abertura...');
-  await expect(page.locator('#loginStatus')).toContainText('ainda não terminou de carregar');
+  await expect(submit).toHaveText('Entrar');
+  await expect(submit).toHaveAttribute('aria-label', 'Entrar');
+  await expect(page.locator('#loginStatus')).toHaveText('');
   await expect(page.locator('#portalOpening')).toHaveCount(0);
+
+  const visual = await submit.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      opacity: style.opacity,
+      filter: style.filter,
+      cursor: style.cursor
+    };
+  });
+  expect(visual.opacity).toBe('1');
+  expect(visual.filter).toBe('none');
+  expect(visual.cursor).toBe('pointer');
   expect(await page.evaluate(() => window.__LAB_LOGIN_CALLS__)).toBe(0);
 });
