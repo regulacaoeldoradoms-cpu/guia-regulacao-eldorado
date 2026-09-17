@@ -51,3 +51,18 @@ Correções preparadas após essa execução:
 Repetir autosync após as correções, edição durante upload, confirmação visual transitória, ausência de reenvio sem alteração, falha/retry, fechamento com sucesso e com falha, conflito provocado externamente no mesmo PDF, reabertura da versão final, privacidade dos eventos técnicos e encerramento com controle revogado e preview gate `false`.
 
 O wrapper bloqueia `save_copy`; esse fluxo permanece validado sinteticamente, sem homologação real neste ambiente restrito. Checks automáticos e publicação do preview não substituem a matriz acima.
+
+### Diagnóstico com versão servida comprovada
+
+- Worker `e37fccb3`, código `2185b21`, identificado pelo cabeçalho `X-Central-Docs-Preview-Release` na resposta real do alias. Actions 26/26 e Pages `9932e234` aprovados.
+- Primeiro envio nessa repetição criou a quarta revisão sintética (3.742 bytes, 13:52:55.788 UTC); UI observou `syncing → success`. Segundo envio, desta vez **sem edição concorrente**, voltou a receber conflito.
+- Diagnóstico opt-in publicado em `5645185`, Worker `da1f2bc8`, com release confirmado antes da tentativa. O retry registrou somente: etapa `preflight`, HTTP 409, versão-base `16`, versão atual `18`, código `DRIVE_VERSION_CONFLICT` às 13:57:53 UTC. O PDF permaneceu com quatro revisões; nenhum envio externo ocorreu nesse intervalo.
+- Isso demonstra divergência numérica após confirmação, mas não comprova qual operação interna do Google causou o incremento. Não atribuir causalidade ao `keepForever` sem evidência adicional.
+- Teste executando o frontend real confirmou que a versão devolvida é usada no preflight/start seguinte. Dois defeitos visuais independentes foram reproduzidos: subtítulo da lista desatualizado e documento salvo reaparecendo como selecionável para unir. A correção preserva as fontes originais do editor e atualiza a identidade do alvo atual e o subtítulo após confirmação.
+- Diagnósticos ficam em tabela própria do controle, somente com horário, etapa, status, versões numéricas e código allowlisted. Não registram usuário, arquivo, ref, checksum, token, URL de upload ou PDF. Controle revogado entre execuções.
+
+### Correção causal preparada para repetição real
+
+O Worker emite a referência opaca com baseline certificada somente após confirmar recibo e metadados do upload. A tolerância a incremento posterior de versão exige mesmo usuário, arquivo, versão-base, escopo e revisão/checksum/tamanho; expira após 30 minutos. Referências comuns continuam estritas e uma revisão externa é conflito mesmo com bytes iguais. Isso reconhece conteúdo certificado, sem presumir a origem de alterações de metadados.
+
+Validação integrada: **274/274 testes do Worker**, incluindo 28 casos de baseline e integração real dos handlers com Google sintético; **75 passed / 3 skipped previstos** no navegador desktop/mobile, sem retries. Execução local usa Chrome instalado e vídeo desligado; os skips são casos de toque inaplicáveis ao desktop. Sintaxe, diff e runtime do bundle aprovados. Revisões independentes verificaram escopo, adulteração, expiração, duas abas, metadados ausentes, tamanho máximo da ref, revalidação no start e preservação dos gates. Frontend/cache em `20260917-2`.

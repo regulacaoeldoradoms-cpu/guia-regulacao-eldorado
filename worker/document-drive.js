@@ -3,6 +3,7 @@
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const OAUTH_STATE_TTL_SECONDS = 10 * 60;
 const FILE_REF_TTL_SECONDS = 12 * 60 * 60;
+const CONFIRMED_BASELINE_TTL_SECONDS = 30 * 60;
 const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder';
 const DRIVE_SHORTCUT_MIME = 'application/vnd.google-apps.shortcut';
 const PDF_MIME = 'application/pdf';
@@ -470,7 +471,7 @@ async function fileRefKey(env) {
   return deriveAesKey(secret, 'central-documents-file-ref-v1');
 }
 
-export async function sealDriveFileRef(env, id, mimeType) {
+async function sealDriveFileRefPayload(env, id, mimeType, confirmed = null) {
   const fileId = String(id || '').trim();
   if (!fileId || fileId.length > 300) throw new DriveIntegrationError('DRIVE_FILE_REF_INVALID', 'Referência de arquivo inválida.', 400);
   const iv = new Uint8Array(12);
@@ -479,7 +480,8 @@ export async function sealDriveFileRef(env, id, mimeType) {
   const payload = JSON.stringify({
     id: fileId,
     mime: safeMime(mimeType),
-    exp: nowSeconds() + FILE_REF_TTL_SECONDS
+    exp: nowSeconds() + FILE_REF_TTL_SECONDS,
+    ...(confirmed ? { confirmed } : {})
   });
   const cipher = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv, additionalData: utf8('central-documents-file-ref-v1') },
@@ -489,7 +491,12 @@ export async function sealDriveFileRef(env, id, mimeType) {
   return `${base64UrlBytes(iv)}.${base64UrlBytes(new Uint8Array(cipher))}`;
 }
 
-export async function openDriveFileRef(env, ref) {
+export async function sealDriveFileRef(env, id, mimeType) {
+  // Listing/opening a file never certifies that an editor saved its contents.
+  return sealDriveFileRefPayload(env, id, mimeType);
+}
+
+async function openDriveFileRefPayload(env, ref) {
   const parts = String(ref || '').split('.');
   if (parts.length !== 2 || parts[0].length > 80 || parts[1].length > 1000) {
     throw new DriveIntegrationError('DRIVE_FILE_REF_INVALID', 'Referência de arquivo inválida.', 400);
@@ -507,11 +514,19 @@ export async function openDriveFileRef(env, ref) {
     );
     const payload = JSON.parse(new TextDecoder().decode(clear));
     if (!payload?.id || Number(payload.exp || 0) < nowSeconds()) throw new Error('expired');
-    return { id: String(payload.id), mime: safeMime(payload.mime) };
+    return {
+      id: String(payload.id), mime: safeMime(payload.mime),
+      ...(payload.confirmed ? { confirmed: payload.confirmed } : {})
+    };
   } catch (error) {
     if (error instanceof DriveIntegrationError) throw error;
     throw new DriveIntegrationError('DRIVE_FILE_REF_INVALID', 'Referência de arquivo inválida ou expirada.', 400);
   }
+}
+
+export async function openDriveFileRef(env, ref) {
+  const file = await openDriveFileRefPayload(env, ref);
+  return { id: file.id, mime: file.mime };
 }
 
 function normalizedDriveItem(file, ref, cacheKey, effectiveMime, shortcut = false) {
@@ -648,8 +663,60 @@ function normalizeDriveVersion(value, { required = false } = {}) {
   return version;
 }
 
-async function currentDrivePdfMetadata(env, ref) {
-  const file = await openDriveFileRef(env, ref);
+async function confirmedBaselineDigest(value) {
+  const digest = await crypto.subtle.digest('SHA-256', utf8(JSON.stringify(value)));
+  return base64UrlBytes(new Uint8Array(digest));
+}
+
+async function confirmedContentIdentity(current) {
+  if (!current.id || !String(current.headRevisionId || '').trim()
+    || !/^[a-f0-9]{32}$/i.test(String(current.md5Checksum || ''))
+    || !Number.isSafeInteger(current.size) || current.size <= 0) return '';
+  return confirmedBaselineDigest([
+    'central-documents-confirmed-content-v1', current.id, PDF_MIME,
+    current.headRevisionId, current.md5Checksum.toLowerCase(), current.size
+  ]);
+}
+
+async function confirmedBaselineScope(env) {
+  const control = String(env.DOCUMENTS_HOMOLOGATION_CONTROL_ID || '').trim();
+  const workerOrigin = String(env.DOCUMENTS_HOMOLOGATION_WORKER_ORIGIN || '').trim();
+  const preview = Boolean(control || workerOrigin);
+  // The normal Worker can also have a Pages CORS origin configured. Only the
+  // restricted preview has a control/Worker origin and may share that scope.
+  return confirmedBaselineDigest([
+    'central-documents-confirmed-scope-v1', preview ? 'preview' : 'core',
+    preview ? control : '', preview ? workerOrigin : '',
+    preview ? String(env.DOCUMENTS_HOMOLOGATION_ORIGIN || '').trim() : ''
+  ]);
+}
+
+async function sealConfirmedDriveFileRef(env, current, username) {
+  return sealDriveFileRefPayload(env, current.id, PDF_MIME, {
+    kind: 1,
+    actor: normalizeUsername(username),
+    version: current.version,
+    identity: await confirmedContentIdentity(current),
+    scope: await confirmedBaselineScope(env),
+    expiresAt: nowSeconds() + CONFIRMED_BASELINE_TTL_SECONDS
+  });
+}
+
+async function confirmedBaselineMatches(env, file, current, baseVersion, username) {
+  const proof = file.confirmed;
+  const actor = normalizeUsername(username);
+  if (!proof || proof.kind !== 1 || !actor || proof.actor !== actor
+    || file.id !== current.id || proof.version !== baseVersion
+    || !Number.isSafeInteger(proof.expiresAt) || proof.expiresAt <= nowSeconds()
+    || !/^[A-Za-z0-9_-]{43}$/.test(String(proof.identity || ''))
+    || !/^[A-Za-z0-9_-]{43}$/.test(String(proof.scope || ''))
+    || BigInt(current.version) <= BigInt(baseVersion)) return false;
+  return proof.scope === await confirmedBaselineScope(env)
+    && proof.identity === await confirmedContentIdentity(current);
+}
+
+async function currentDrivePdfMetadata(env, ref, openedFile = null) {
+  const file = openedFile || await openDriveFileRef(env, ref);
   if (file.mime !== PDF_MIME) {
     throw new DriveIntegrationError('DRIVE_PDF_REQUIRED', 'Somente arquivos PDF podem ser sincronizados.', 415);
   }
@@ -680,7 +747,7 @@ async function currentDrivePdfMetadata(env, ref) {
   };
 }
 
-async function driveSyncPreflightState(env, input = {}) {
+async function driveSyncPreflightState(env, input = {}, username = '') {
   const operation = String(input.operation || '').trim();
   if (!DRIVE_SYNC_OPERATIONS.has(operation)) {
     throw new DriveIntegrationError('DRIVE_SYNC_OPERATION_INVALID', 'Operação de sincronização inválida.', 400);
@@ -692,8 +759,9 @@ async function driveSyncPreflightState(env, input = {}) {
   }
 
   const baseVersion = normalizeDriveVersion(input.baseVersion, { required: operation === 'replace_pdf' });
-  const current = await currentDrivePdfMetadata(env, ref);
-  const conflict = Boolean(baseVersion && current.version !== baseVersion);
+  const file = await openDriveFileRefPayload(env, ref);
+  const current = await currentDrivePdfMetadata(env, ref, file);
+  let conflict = Boolean(baseVersion && current.version !== baseVersion);
 
   if (operation === 'replace_pdf') {
     if (!current.canEdit) {
@@ -702,6 +770,11 @@ async function driveSyncPreflightState(env, input = {}) {
         'A conta institucional não possui permissão para substituir este arquivo.',
         403
       );
+    }
+    // Only a receipt minted after our own confirmed upload can reconcile a
+    // later metadata version. Another head remains a conflict even with equal bytes.
+    if (conflict && await confirmedBaselineMatches(env, file, current, baseVersion, username)) {
+      conflict = false;
     }
     if (conflict) {
       throw new DriveIntegrationError(
@@ -730,8 +803,8 @@ async function driveSyncPreflightState(env, input = {}) {
   };
 }
 
-export async function preflightDriveSync(env, input = {}) {
-  return (await driveSyncPreflightState(env, input)).publicResult;
+export async function preflightDriveSync(env, input = {}, username = '') {
+  return (await driveSyncPreflightState(env, input, username)).publicResult;
 }
 
 function driveSyncWriteEnabled(env) {
@@ -945,7 +1018,7 @@ async function initiateDriveResumableUpload(env, input) {
 export async function startDriveSync(env, username, input = {}) {
   requireDriveSyncWriteEnabled(env);
   const totalBytes = normalizeSyncTotalBytes(input.totalBytes);
-  const prepared = await driveSyncPreflightState(env, input);
+  const prepared = await driveSyncPreflightState(env, input, username);
   const sessionUrl = await initiateDriveResumableUpload(env, {
     operation: prepared.operation,
     current: prepared.current,
@@ -1017,6 +1090,7 @@ async function completedDriveSyncResult(env, session, response) {
       503
     );
   }
+  const confirmedRef = await sealConfirmedDriveFileRef(env, current, session.username);
   await deleteDriveSyncSession(env, session.syncId);
   return {
     completed: true,
@@ -1024,7 +1098,7 @@ async function completedDriveSyncResult(env, session, response) {
     currentVersion: current.version,
     modifiedTime: current.modifiedTime,
     size: current.size,
-    ref,
+    ref: confirmedRef,
     cacheKey
   };
 }

@@ -423,8 +423,40 @@ test('real Portal/Drive handlers integrate login, listing, content, gate off and
   assert.equal(completed.completed, true);
   assert.equal(completed.currentVersion, '9');
   assert.equal(completed.cacheKey, item.cacheKey);
+  // The Drive may advance metadata after the confirmation read. A completed ref
+  // certifies the same binary head, while a listing ref does not carry that proof.
+  metadata = { ...metadata, version: '10' };
+  const nextBody = { ...body, ref: completed.ref, baseVersion: completed.currentVersion };
+  const nextRequest = (path, input = nextBody) => request('/api/documents/drive/sync/' + path, {
+    method: 'POST', token, body: input
+  });
+  const listRefConflict = await worker.fetch(nextRequest('start', { ...nextBody, ref: item.ref }), f.env, {});
+  assert.equal(listRefConflict.status, 409);
+  assert.equal((await listRefConflict.json()).code, 'DRIVE_VERSION_CONFLICT');
+
+  const originalControl = f.env.DOCUMENTS_HOMOLOGATION_CONTROL_ID;
+  const otherControl = 'synthetic-different-control-4d';
+  f.db.prepare(`INSERT INTO document_drive_homologation_controls
+    SELECT ?, enabled, expires_at, allowed_username, allowed_file_ids_json
+    FROM document_drive_homologation_controls WHERE control_id = ?`).run(otherControl, originalControl);
+  f.env.DOCUMENTS_HOMOLOGATION_CONTROL_ID = otherControl;
+  const beforeScopeConflict = f.calls.google.length;
+  const scopeConflict = await worker.fetch(nextRequest('start'), f.env, {});
+  assert.equal(scopeConflict.status, 409, 'another control window cannot reuse the certified baseline');
+  assert.ok(f.calls.google.slice(beforeScopeConflict).every((call) => call.method === 'GET'));
+  f.env.DOCUMENTS_HOMOLOGATION_CONTROL_ID = originalControl;
+
+  f.db.prepare('UPDATE document_drive_homologation_controls SET enabled = 0 WHERE control_id = ?').run(originalControl);
+  const beforeRevokedProof = f.calls.google.length;
+  assert.equal((await worker.fetch(nextRequest('start'), f.env, {})).status, 403);
+  assert.equal(f.calls.google.length, beforeRevokedProof, 'a proof never bypasses control revocation');
+  f.db.prepare('UPDATE document_drive_homologation_controls SET enabled = 1 WHERE control_id = ?').run(originalControl);
+
+  const nextPreflight = await worker.fetch(nextRequest('preflight'), f.env, {});
+  assert.equal(nextPreflight.status, 200);
+  assert.equal((await nextPreflight.json()).currentVersion, '10');
   const nextStart = await worker.fetch(request('/api/documents/drive/sync/start', {
-    method: 'POST', token, body: { ...body, ref: completed.ref, baseVersion: completed.currentVersion }
+    method: 'POST', token, body: nextBody
   }), f.env, {});
   assert.equal(nextStart.status, 201, 'a queued edit must not conflict with its own completed upload');
   const nextSession = await nextStart.json();
@@ -436,9 +468,9 @@ test('real Portal/Drive handlers integrate login, listing, content, gate off and
   }), f.env, {});
   assert.equal(nextUpload.status, 200);
   const nextCompleted = await nextUpload.json();
-  assert.equal(nextCompleted.currentVersion, '11');
+  assert.equal(nextCompleted.currentVersion, '12');
   assert.equal(nextCompleted.cacheKey, item.cacheKey);
-  metadata = { ...metadata, version: '12', headRevisionId: 'synthetic-external-head' };
+  metadata = { ...metadata, version: '13', headRevisionId: 'synthetic-external-head' };
   const beforeExternalConflict = f.calls.google.length;
   const externalConflict = await worker.fetch(request('/api/documents/drive/sync/start', {
     method: 'POST', token, body: { ...body, ref: nextCompleted.ref, baseVersion: nextCompleted.currentVersion }

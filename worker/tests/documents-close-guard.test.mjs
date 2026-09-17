@@ -36,13 +36,14 @@ class ElementStub {
 
 const drainTasks = () => new Promise((resolve) => setImmediate(resolve));
 
-async function createClient({ failure = '', holdUpload = false, incomplete = false, initialWriteEnabled = true, confirmResponse = true } = {}) {
+async function createClient({ failure = '', holdUpload = false, incomplete = false, initialWriteEnabled = true, confirmResponse = true, receipts = [] } = {}) {
   const elements = new Map();
   const element = (id) => {
     if (!elements.has(id)) elements.set(id, new ElementStub());
     return elements.get(id);
   };
-  const calls = { requests: [], api: [], logout: 0, close: 0, revoked: [], navigation: [], streams: [], confirms: [], downloads: [] };
+  const calls = { requests: [], api: [], logout: 0, close: 0, revoked: [], navigation: [], streams: [], confirms: [], downloads: [], cached: [] };
+  let uploadCount = 0;
   const session = { revision: 1 };
   const timers = new Map();
   let nextTimer = 0;
@@ -74,8 +75,16 @@ async function createClient({ failure = '', holdUpload = false, incomplete = fal
       logout: async () => { calls.logout += 1; }
     },
     REGULATION_AUTH_CONFIG: { endpoint: 'https://worker.invalid' },
+    PortalDocumentCache: {
+      get: async () => null,
+      put: async (entry) => { calls.cached.push(entry); return true; }
+    },
     PortalPdfEditor: {
-      createSession: async () => session,
+      createSession: async (_, options) => {
+        session.sources = [{ cacheIdentity: options.cacheIdentity }];
+        session.plan = [{ sourceIndex: 0, pageIndex: 0 }];
+        return session;
+      },
       canUndo: () => true,
       canRedo: () => false,
       buildFlattenedBlob: async () => new Blob(['%PDF-1.7\nsynthetic test bytes'], { type: 'application/pdf' })
@@ -123,7 +132,7 @@ async function createClient({ failure = '', holdUpload = false, incomplete = fal
         payload = { syncId: 'test-session', chunkSize: 262144, safetyRevisionPreserved: true };
       } else if (url.includes('/upload/')) {
         if (uploadWait) await uploadWait;
-        payload = incomplete ? { completed: true } : {
+        payload = incomplete ? { completed: true } : receipts[uploadCount++] || {
           completed: true, ref: 'confirmed-ref', cacheKey: 'confirmed-cache', currentVersion: '2'
         };
       } else assert.fail(`Unexpected request: ${url}`);
@@ -140,15 +149,33 @@ async function createClient({ failure = '', holdUpload = false, incomplete = fal
   const { state } = window.__closeGuardTest;
   const item = { ref: 'original-ref', cacheKey: 'original-cache', version: '1', name: 'Synthetic.pdf', isPdf: true };
   state.pdfItem = item;
+  let rows = [];
+  function showListItems(items) {
+    state.items = items;
+    rows = items.map((entry, index) => {
+      const button = new ElementStub();
+      const action = new ElementStub();
+      const subtitle = new ElementStub();
+      subtitle.textContent = `PDF · previous metadata for ${entry.name}`;
+      button.dataset.index = String(index);
+      button.closest = () => button;
+      button.querySelector = (selector) => selector === '.documents-item-action' ? action
+        : selector === '.documents-item-copy > span' ? subtitle : null;
+      return { button, action, subtitle };
+    });
+    element('documentsList').querySelectorAll = (selector) => selector === '[data-index]' ? rows.map(({ button }) => button) : [];
+    return rows;
+  }
+  showListItems([item]);
   element('documentsViewer').hidden = false;
   element('documentsEditor').hidden = false;
   calls.api.length = 0;
 
-  async function dispatch(target, type) {
+  async function dispatch(target, type, eventTarget = target) {
     const listeners = target.listeners.get(type) || [];
     assert.ok(listeners.length, `Expected real ${type} listener.`);
     const errors = [];
-    const event = { target, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+    const event = { target: eventTarget, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
     for (const listener of listeners) {
       Promise.resolve(listener(event)).catch((error) => errors.push(error));
     }
@@ -165,9 +192,11 @@ async function createClient({ failure = '', holdUpload = false, incomplete = fal
   session.revision = 2;
   state.driveSyncLastObservedRevision = 2;
   state.driveSyncVisualState = 'pending';
+  calls.cached.length = 0;
 
-  return { state, session, item, calls, element, finishUpload,
+  return { state, session, item, calls, element, finishUpload, showListItems,
     click: (id) => dispatch(element(id), 'click'),
+    selectListItem: (index) => dispatch(element('documentsList'), 'click', rows[index].button),
     beforeunload: () => dispatch(window, 'beforeunload'),
     pagehide: () => dispatch(window, 'pagehide') };
 }
@@ -241,6 +270,72 @@ test('real X listener retains a newer edit made while the prior revision uploads
   assert.equal(client.state.driveSyncLastConfirmedRevision, 2);
   assert.equal(client.element('documentsViewer').hidden, false);
   assert.equal(client.calls.close, 0);
+});
+
+test('two sequential real synchronizations send the confirmed version and update list and cache metadata', async () => {
+  const receipts = [
+    { completed: true, ref: 'confirmed-ref-2', cacheKey: 'original-cache', currentVersion: '2', modifiedTime: '2026-09-17T16:00:00Z' },
+    { completed: true, ref: 'confirmed-ref-3', cacheKey: 'original-cache', currentVersion: '3', modifiedTime: '2026-09-17T16:01:00Z' }
+  ];
+  const client = await createClient({ receipts });
+  for (let index = 0; index < receipts.length; index += 1) {
+    if (index) client.session.revision += 1;
+    await client.click('editorSyncButton');
+    assert.equal(client.state.driveSyncInFlight, false);
+    assert.equal(client.state.driveSyncVisualState, 'success');
+    assert.equal(client.state.driveSyncLastConfirmedRevision, client.session.revision);
+    const receipt = receipts[index];
+    for (const item of [client.state.pdfItem, client.state.items[0]]) {
+      assert.equal(item.ref, receipt.ref);
+      assert.equal(item.cacheKey, receipt.cacheKey);
+      assert.equal(item.version, receipt.currentVersion);
+      assert.equal(item.modifiedTime, receipt.modifiedTime);
+    }
+    assert.equal(client.calls.cached[index].version, receipt.currentVersion);
+    assert.equal(client.calls.cached[index].cacheKey, receipt.cacheKey);
+  }
+  const preflights = client.calls.requests.filter(({ url }) => url.endsWith('/preflight'));
+  const starts = client.calls.requests.filter(({ url }) => url.endsWith('/start'));
+  assert.equal(preflights.length, 2);
+  assert.equal(starts.length, 2);
+  for (const requests of [preflights, starts]) {
+    const bodies = requests.map(({ options }) => JSON.parse(options.body));
+    assert.deepEqual(bodies.map(({ baseVersion }) => baseVersion), ['1', '2']);
+    assert.deepEqual(bodies.map(({ ref }) => ref), ['original-ref', 'confirmed-ref-2']);
+  }
+  assert.equal(client.state.editorSession, client.session);
+  assert.equal(client.calls.close, 0);
+});
+
+test('a saved current PDF remains in the editor while other source revisions retain their identity', async () => {
+  const client = await createClient({ receipts: [
+    { completed: true, ref: 'confirmed-ref', cacheKey: 'original-cache', currentVersion: '2' }
+  ] });
+  const other = { isPdf: true, ref: 'other-ref', cacheKey: 'other-cache', version: '7', name: 'Other.pdf' };
+  client.session.sources.push({ cacheIdentity: 'other-cache:7' });
+  client.session.plan.push({ sourceIndex: 1, pageIndex: 0 });
+  const originalSources = JSON.stringify(client.session.sources);
+  const rows = client.showListItems([client.item, other, { ...other, ref: 'other-new-ref', version: '8' }]);
+  await client.click('editorSyncButton');
+  assert.equal(rows[0].action.textContent, 'Já no editor');
+  assert.equal(rows[1].action.textContent, 'Já no editor');
+  assert.equal(rows[2].action.textContent, 'Selecionar para unir');
+  assert.equal(JSON.stringify(client.session.sources), originalSources, 'Saving must not relabel the original source bytes.');
+  await client.selectListItem(0);
+  assert.equal(client.state.pendingMergeItem, null, 'The actual list handler must reject merging the current document into itself.');
+  assert.match(client.element('documentsEditorStatus').textContent, /já faz parte/);
+});
+
+test('confirmed Drive metadata refreshes the visible list subtitle without replacing its row', async () => {
+  const modifiedTime = '2026-09-17T16:01:00Z';
+  const client = await createClient({ receipts: [
+    { completed: true, ref: 'confirmed-ref', cacheKey: 'original-cache', currentVersion: '2', modifiedTime, size: 4096 }
+  ] });
+  const [row] = client.showListItems([client.item]);
+  await client.click('editorSyncButton');
+  const formattedTime = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(modifiedTime));
+  assert.equal(row.subtitle.textContent, `PDF · 4.0 KB · modificado ${formattedTime}`);
+  assert.equal(client.element('documentsList').querySelectorAll('[data-index]')[0], row.button);
 });
 
 for (const gate of ['writeEnabled', 'connected', 'edit']) {

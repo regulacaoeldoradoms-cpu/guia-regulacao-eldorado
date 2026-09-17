@@ -16,6 +16,7 @@ Uma versão preview com D1 e segredos herdados usa a mesma conexão OAuth instit
 - `DOCUMENTS_HOMOLOGATION_ORIGIN`: origem HTTPS exata do Pages de homologação, terminada em `.pages.dev`.
 - `DOCUMENTS_HOMOLOGATION_CONTROL_ID`: identificador técnico único da janela, de 8 a 80 caracteres alfanuméricos, `_` ou `-`. Não reutilizar o identificador para uma janela futura.
 - `DOCUMENTS_HOMOLOGATION_RELEASE`: SHA completo de 40 caracteres hexadecimais do código preparado. O entrypoint externo o devolve em `X-Central-Docs-Preview-Release` em todas as respostas, inclusive bloqueios sem sessão/D1, para verificar a versão atendida pelo alias. Valor ausente ou inválido não é refletido. Esse marcador técnico não autoriza acesso.
+- `DOCUMENTS_HOMOLOGATION_DIAGNOSTICS`: somente a string exata `true` habilita o diagnóstico técnico no D1. Ausência, booleanos e demais valores mantêm-no desligado.
 - `DOCUMENTS_DRIVE_WRITE_ENABLED`: manter `false` durante preparação e leitura. A escrita depende de `true` **e** de controle ativo no D1.
 
 Todas as requisições precisam chegar pelo host exato e apresentar a origem Pages exata. Sem `Origin`, host diferente, query string ou rota não permitida, o wrapper bloqueia antes de encaminhar. CORS não substitui a autenticação: usuário e capabilities são verificados no backend.
@@ -58,11 +59,17 @@ Na confirmação ou cancelamento, remove-se o vínculo da homologação. O core 
 
 ## Confirmação de versão após upload
 
-A primeira execução real registrou uma revisão preservada e uma nova revisão, mas a edição feita durante o primeiro upload terminou com conflito sem alteração externa conhecida. A hipótese de diferença entre a versão do recibo resumable e a versão imediatamente lida pelo próximo preflight ainda precisa de repetição real para ser confirmada. A documentação do Drive define `version` como contador de alterações do servidor, inclusive alterações de metadados; ela não comprova que `keepForever` causou o episódio observado.
+A primeira execução real registrou uma revisão preservada e uma nova revisão, mas a edição seguinte terminou com conflito sem alteração externa conhecida. Depois de confirmar pelo cabeçalho técnico qual release atendia o alias, o diagnóstico registrou preflight 409 com versão-base 16 e versão atual 18, sem revisão externa adicional observada. A documentação do Drive define `version` como contador de alterações do servidor, inclusive alterações de metadados; ela não comprova que `keepForever` causou cada incremento observado.
 
-O core compartilhado `document-drive.js` agora relê os metadados depois do recibo final 200/201. Só conclui e retorna a versão atual se fileId, revisão de conteúdo (`headRevisionId`), MD5 e tamanho coincidirem com o recibo do próprio upload. O recibo precisa trazer revisão, checksum válido e tamanho igual ao upload autorizado. Outra revisão é conflito 409 mesmo quando os bytes têm o mesmo checksum. Uma versão numérica anterior à do recibo retorna interrupção 503 e permite nova consulta de status. A comparação estrita de versão no próximo preflight permanece inalterada.
+O core compartilhado `document-drive.js` relê os metadados depois do recibo final 200/201. Só conclui e retorna a versão atual se fileId, revisão de conteúdo (`headRevisionId`), MD5 e tamanho coincidirem com o recibo do próprio upload. O recibo precisa trazer revisão, checksum válido e tamanho igual ao upload autorizado. Outra revisão é conflito 409 mesmo quando os bytes têm o mesmo checksum. Uma versão numérica anterior à do recibo retorna interrupção 503 e permite nova consulta de status.
 
-Isso adiciona uma leitura de metadados a cada confirmação, incluindo retomada por status, e evita confirmar sucesso com identidade incompleta. Não torna upload e leitura uma transação: uma alteração posterior à leitura continua a ser detectada no próximo preflight. O teste sintético cobre duas edições sequenciais com recibos v8/v10 e metadados v9/v11, preservação obrigatória em ambas e conflito externo subsequente. Não substitui a repetição da prova real.
+A confirmação inclui uma baseline certificada dentro da própria referência opaca `ref`, cifrada e autenticada com AES-GCM pelo mecanismo existente. Não cria token de sessão nem campo novo no corpo da API. Referências de listagem não recebem essa certificação. A prova associa usuário, arquivo, versão confirmada, identidade binária e contexto; a identidade é o SHA-256 canônico de fileId, MIME PDF, headRevisionId, MD5 e tamanho, e o contexto distingue produção de preview e vincula controle e origens do preview.
+
+A prova vale por 30 minutos. Seu vencimento não invalida antecipadamente a referência de leitura: apenas encerra a exceção à comparação estrita de versões. Para aceitar uma versão numérica superior à base, o preflight/start precisa validar a prova, exigir que a base recebida seja exatamente a versão certificada e ler novamente os mesmos head, checksum e tamanho. Prova de outro usuário, arquivo, janela ou origem não serve. Alteração de revisão externa permanece conflito, inclusive quando o checksum é igual; divergência sem prova válida também permanece 409. Versão regressiva não é aceita pela exceção.
+
+A prova nunca dispensa autenticação, capabilities, permissão atual do Drive, feature gate, controle/TTL/allowlist ou registro da sessão resumable. Não entra no diagnóstico nem em logs ou PostHog. O editor já recebe a nova referência após cada conclusão e a reutiliza no próximo envio; o contrato do frontend permanece o mesmo.
+
+Isso adiciona uma leitura de metadados a cada confirmação, incluindo retomada por status, e evita confirmar sucesso com identidade incompleta. Não torna preflight e upload uma transação atômica. O teste integrado cobre incremento adicional de metadados depois da primeira confirmação, continuação com prova válida, rejeição de referência sem prova ou de outra janela, revogação, preservação obrigatória em ambos os uploads e conflito externo subsequente. Não substitui a repetição da prova real.
 
 ## Rotas e observabilidade
 
@@ -71,6 +78,30 @@ Permitidas: login da conta configurada, `auth/me`, logout, acesso/status/prefer�
 Exceção intencional: `/api/observability` mantém o contrato técnico público sem bearer do frontend existente, inclusive `sendBeacon`. Exige host/origem exatos e controle ativo e reutiliza a allowlist de eventos e propriedades do backend; não dá acesso ao Drive. Login é encaminhado à autenticação normal somente para o nome de usuário autorizado, sem contornar senha ou sessão.
 
 O wrapper não registra erros, queries, IDs, tokens, referências ou conteúdo em logs. Evidência de integração deve usar respostas sanitizadas, interface, confirmação no Drive e eventos técnicos. A documentação Cloudflare informa que Preview URLs não oferecem Workers Logs, tail ou Logpush; ausência de logs não prova execução nem privacidade.
+
+## Diagnóstico temporário de versões
+
+O diagnóstico opcional pertence somente ao entrypoint de preview. A tabela abaixo é provisionada separadamente, sem semeadura e sem criação automática pelo wrapper:
+
+```sql
+CREATE TABLE IF NOT EXISTS document_drive_homologation_diagnostics (
+  control_id TEXT NOT NULL,
+  observed_at INTEGER NOT NULL,
+  stage TEXT NOT NULL,
+  status INTEGER NOT NULL,
+  base_version TEXT NOT NULL,
+  current_version TEXT NOT NULL,
+  code TEXT NOT NULL
+);
+```
+
+Cada linha contém somente controle da janela, instante Unix em segundos, etapa (`preflight`, `start`, `upload` ou `status`), status HTTP, versão-base recebida, versão atual devolvida e código de erro de uma lista fixa. Versões são texto decimal de até 40 dígitos, preservando inteiros maiores que a precisão do JavaScript; números JavaScript só são aceitos se inteiros seguros não negativos. Ausências e valores inválidos, inclusive booleanos, viram string vazia. O `rowid` implícito pode ordenar eventos ocorridos no mesmo segundo.
+
+Não se armazenam nome de usuário, fileId, referência opaca, prova de sincronização, checksum, ID de revisão, syncId, token, URL Google, corpo de erro ou PDF. A captura ocorre após o handler real, somente para operação previamente autorizada. Antes de observar ou inserir, o controle ainda precisa estar ativo, não expirado e permitir o mesmo usuário e arquivo; essas verificações não acrescentam campos identificadores à linha.
+
+Somente após um 409 de `preflight` ou `start`, o wrapper faz uma leitura adicional pelo helper de preflight com operação `save_copy`, para obter a versão observada **depois** da tentativa rejeitada. Esse helper não cria cópia nem inicia upload, e a rota pública de cópia continua bloqueada. O controle é conferido novamente depois dessa leitura. A coluna não deve ser interpretada como uma captura atômica do instante exato da rejeição.
+
+Falha dessa leitura mantém o código original e deixa a versão atual vazia. Falha de inserção ou tabela ausente não altera a resposta original e não produz logs. Por isso ausência de linha não comprova ausência de tentativa. Desligar o flag ou revogar a janela encerra novas observações; linhas existentes permanecem até limpeza operacional explícita.
 
 ## Validação sintética
 

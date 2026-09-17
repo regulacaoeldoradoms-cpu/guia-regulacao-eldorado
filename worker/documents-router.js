@@ -316,7 +316,7 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
         operation: String(body.operation || ''),
         ref: String(body.ref || ''),
         baseVersion: String(body.baseVersion || '')
-      });
+      }, user.username);
       return json(result, 200, origin);
     }
 

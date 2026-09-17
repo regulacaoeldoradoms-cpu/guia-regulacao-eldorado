@@ -365,6 +365,13 @@
     const session = state.editorSession;
     const identity = itemCacheIdentity(item);
     if (!session || !identity) return false;
+    const current = state.pdfItem;
+    // The save target stays in this editor even after its confirmed version changes.
+    // Source identities still describe the original bytes used by the page plan.
+    if (current && (
+      (item.ref && item.ref === current.ref)
+      || (item.cacheKey && item.cacheKey === current.cacheKey)
+    )) return true;
     const sourceIndexes = new Set(
       session.sources
         .map((source, index) => source?.cacheIdentity === identity ? index : -1)
@@ -745,6 +752,14 @@
         ? (editorContainsItem(item) ? 'Já no editor' : 'Selecionar para unir')
         : 'Abrir PDF';
       button.disabled = Boolean(state.editorSession && state.editorBusy);
+    });
+  }
+
+  function refreshPdfListMetadata() {
+    els.list?.querySelectorAll('[data-index]').forEach((button) => {
+      const item = state.items[Number(button.dataset.index)];
+      const subtitle = button.querySelector('.documents-item-copy > span');
+      if (item?.isPdf && subtitle) subtitle.textContent = itemSubtitle(item);
     });
   }
 
@@ -1257,6 +1272,7 @@
     if (els.viewerTitle) els.viewerTitle.textContent = nextName;
     storeCachedPdf(next, blob).catch(() => false);
     refreshPdfListActions();
+    refreshPdfListMetadata();
     return next;
   }
 

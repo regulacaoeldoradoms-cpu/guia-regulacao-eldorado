@@ -26,7 +26,7 @@ A intenção funcional consolidada é:
 - refresh token, client secret, access token Google permanente, fileId bruto e URI resumable não chegam ao navegador;
 - conteúdo PDF, nome do arquivo, fileId, pasta, paciente e dados clínicos não entram no PostHog;
 - substituir exige comparação da `version` atual do Drive com a versão-base;
-- conflito de versão interrompe a sobrescrita;
+- divergência de versão interrompe a sobrescrita, exceto quando prova opaca de upload previamente confirmado pelo Worker certifica a mesma revisão binária atual; essa exceção exige validação de identidade e não dispensa autenticação nem permissões;
 - a revisão anterior deve permanecer recuperável antes de substituir;
 - upload interrompido/indeterminado nunca é apresentado como “salvo”;
 - testes automatizados usam somente dados sintéticos;
@@ -43,7 +43,7 @@ Implementado:
 - testes com Google Drive mockado.
 
 Critério comprovado:
-- versão divergente bloqueia `replace_pdf` com `DRIVE_VERSION_CONFLICT` e zero upload;
+- versão divergente sem prova válida de conteúdo já confirmado bloqueia `replace_pdf` com `DRIVE_VERSION_CONFLICT` e zero upload;
 - usuário sem `documents_edit` é bloqueado no Worker;
 - respostas não expõem identificadores brutos do Drive.
 
@@ -59,6 +59,16 @@ Implementado:
 - conclusão somente após resposta final válida do Drive;
 - erro temporário/indeterminado não produz falso sucesso;
 - `save_copy` cria novo PDF sem modificar o original.
+
+### Ajuste 4D — versão de metadados e conteúdo confirmado
+
+Na homologação real, o diagnóstico restrito do preview registrou preflight 409 com versão-base 16 e versão atual 18 depois de um upload confirmado, sem nova revisão externa observada. O `version` do Drive inclui alterações de metadados; a causa específica de cada incremento não foi estabelecida. Reler a versão imediatamente depois do upload não basta para cobrir um incremento posterior.
+
+A correção em validação emite uma prova opaca somente depois da confirmação final, vinculada ao conteúdo certificado pelo Worker. Em uma tentativa seguinte, a exceção para divergência de `version` exige prova válida correspondente ao usuário, arquivo e versão-base, além de nova leitura do Drive com a mesma `headRevisionId`, MD5 e tamanho. Outra revisão é conflito mesmo quando conserva os mesmos bytes. Sem prova válida, permanece a comparação estrita de versões.
+
+A prova não autoriza acesso nem escrita por si: sessão Portal, capability, permissão atual no Drive e feature gate continuam obrigatórios. No preview, permanecem obrigatórios também controle ativo, TTL, usuário/arquivo permitidos e registro da sessão resumable. A prova não vai para diagnóstico, PostHog ou logs. Cada novo upload confirmado substitui a prova anterior usada pelo editor.
+
+Isso não transforma o preflight e o upload em transação atômica, nem comprova por teste sintético o resultado do Drive real. Repetir a matriz 4D com duas edições sequenciais, edição durante envio e conflito de conteúdo externo antes de declarar o gate concluído. O schema e o escopo do diagnóstico temporário estão em `CENTRAL-DOCUMENTOS-HOMOLOGACAO-4D-ISOLAMENTO.md`.
 
 ## 4C — autosync + interface + telemetria — CONCLUÍDA TECNICAMENTE
 
@@ -158,11 +168,11 @@ Procedimento:
 5. confirmar a alteração real no Drive;
 6. testar falha/retry com o botão de força;
 7. testar substituição com revisão anterior recuperável;
-8. provocar conflito de `version` e confirmar bloqueio da sobrescrita;
+8. confirmar continuidade com avanço apenas de metadados e prova válida; provocar alteração externa da revisão binária e confirmar bloqueio da sobrescrita;
 9. conferir telemetria técnica sem conteúdo sensível;
 10. registrar homologação e decidir estado final do feature gate.
 
-A escrita real não deve ser habilitada em produção por atalho. Nesta sessão, não há integração Cloudflare autenticada disponível para alterar o feature gate/deploy do Worker; esse acesso precisa ser restabelecido antes de executar a 4D. Não usar credenciais, tokens ou segredos colados no chat como substituição.
+A escrita real não deve ser habilitada em produção por atalho. O acesso Cloudflare foi restabelecido e a execução usa versão preview com controle revogável, sem promover deployment produtivo. Não usar credenciais, tokens ou segredos colados no chat como substituição. O estado operacional e os resultados de cada tentativa permanecem no status e no registro da homologação.
 
 ## Fora de escopo
 
@@ -177,8 +187,4 @@ A escrita real não deve ser habilitada em produção por atalho. Nesta sessão,
 
 **4D — homologação real controlada.** A implementação e a matriz sintética da 4C estão verdes. O próximo trabalho não é acrescentar lógica de autosync: é comprovar o comportamento contra o Google Drive real em ambiente controlado, mantendo o gate desligado fora dessa homologação.
 
-Bloqueios objetivos atuais:
-- acesso Cloudflare autenticado nesta sessão para habilitar temporariamente o feature gate no ambiente de homologação;
-- PDF descartável de teste sem dado sensível.
-
-Depois desses dois itens, executar a matriz 4D, registrar evidências técnicas sem conteúdo documental e somente então considerar encerramento da Fase 4 e merge do PR #201.
+O acesso técnico e o PDF descartável estão disponíveis. O impedimento atual ao aceite é concluir a repetição da matriz real depois da correção de versões, com preservação da revisão, continuidade de edições e bloqueio de conflito externo comprovados. Registrar evidências técnicas sem conteúdo documental antes de considerar encerramento da Fase 4 e merge do PR #201.
