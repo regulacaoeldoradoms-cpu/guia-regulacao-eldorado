@@ -102,6 +102,14 @@ O botão permanece clicável como fallback/retry:
 - se há uma revisão pendente, força a tentativa sem esperar o debounce;
 - se a revisão atual já está confirmada, não cria artificialmente outra alteração no PDF.
 
+### Proteção ao sair do editor
+
+- se a revisão atual ainda não foi confirmada, clicar em **Fechar** cancela o debounce e força a sincronização imediatamente;
+- o editor só fecha depois que a revisão atual estiver confirmada;
+- falha ou conflito mantém o editor aberto, preservando o estado local para retry;
+- enquanto um upload está em andamento, o controle de fechamento permanece indisponível;
+- fechamento/recarregamento da aba com alteração pendente ou upload em andamento aciona proteção de `beforeunload`.
+
 ### Telemetria
 
 Mantidos somente:
