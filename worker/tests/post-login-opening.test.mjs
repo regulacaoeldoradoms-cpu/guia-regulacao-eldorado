@@ -74,3 +74,11 @@ test('falha excepcional de reprodução não exige gesto extra e cai para o flux
   assert.match(loginOpening, /return finish\(false\)/);
   assert.match(loginOpening, /sessionStorage\.setItem\('portal-opening-played-v2', '1'\)/);
 });
+
+test('service worker preserva versão contratual e pré-carrega o novo controlador da abertura', () => {
+  const sw = fs.readFileSync(path.join(root, 'portal-sw.js'), 'utf8');
+  assert.match(sw, /const CACHE_VERSION = '20260916-10'/);
+  assert.match(sw, /'\/js\/login-opening\.js\?v=20260917-1'/);
+  assert.match(sw, /self\.skipWaiting\(\)/);
+  assert.match(sw, /self\.clients\.claim\(\)/);
+});
