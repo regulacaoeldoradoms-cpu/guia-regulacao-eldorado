@@ -105,7 +105,7 @@ No commit de upload `2ba3533c...`, **22 de 23 workflows já concluíram com suce
 6. somente após aceite humano explícito retirar #202 de draft e considerar merge;
 7. manter PR #201/Fase 4 independente durante todo esse processo.
 
-## Handoff
+## Handoff para o próximo chat
 
 **Fase atual:** Fase 4 — Sincronização segura com Drive, subfase 4D, PR #201.  
 **Mudança transversal paralela:** abertura pós-login, PR #202.  
