@@ -12,7 +12,7 @@ const loadingCss = fs.readFileSync(path.join(root, 'css', 'home-loading.css'), '
 
 test('a abertura pós-login mantém o loader legado como fallback', () => {
   assert.match(index, /__PORTAL_POST_LOGIN_OPENING_PENDING__/);
-  assert.match(index, /source\.pathname\).*\/login/);
+  assert.ok(index.includes("source.origin === location.origin && /^\\/login\\/?$/.test(source.pathname)"));
   assert.match(index, /id="homeLoading"/);
   assert.match(index, /home-loading-spinner/);
   assert.match(loadingCss, /\.home-loading-spinner/);
