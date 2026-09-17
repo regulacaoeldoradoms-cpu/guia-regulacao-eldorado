@@ -86,3 +86,23 @@ Retomar Fase 4D somente pela leitura atual de #201 e da branch correspondente; n
 **Pendência do dispositivo:** aba antiga precisa recarregar; não houve acesso ao computador ou à conta real do usuário.  
 **Próximo passo:** acompanhar eventual retorno do usuário; para continuar a Central, reconstruir o estado atual da 4D/#201 sem reiniciar fases.  
 **Privacidade:** sem dados sensíveis, autenticação real, escrita no Drive ou nova telemetria.
+
+### Incidente paralelo — Agenda indisponível em 17/09/2026
+
+**Estado:** diagnóstico do caminho de erro concluído; restauração operacional **não concluída**. Esta entrada não encerra o incidente nem modifica a Fase 4D da Central.
+
+**Base conferida:** main `e36ac882e4fec626ba3edcad26a2dbdc6777d3ed` (merge documental #205). Na leitura dos PRs abertos, #201 continuava aberto, com head `103ccd63a14f91963ff511112091002ce95c21fa`; não foi alterado.
+
+**Branch deste registro:** `docs/agenda-firebase-indisponivel-20260917`. PR documental a abrir; sem merge ou publicação de código nesta intervenção.
+
+**Evidência e alcance:** a captura enviada pelo usuário mostra `/agenda/` com “Armazenamento da Agenda indisponível.”. Na main, `worker/agenda.js` emite exatamente essa mensagem/503 somente quando `firebaseConfigured(env)` é falso, antes de autorização e de qualquer consulta ao Firestore. `worker/firebase-gateway.js` exige a presença conjunta de `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` e `FIREBASE_PRIVATE_KEY`. `worker/index.js` encaminha o `env` diretamente à rota. Foi identificada a condição de configuração ausente/falsy, mas não qual nome falta, o motivo da ausência ou a versão efetivamente ativa no servidor. Uma tentativa de consulta pública via ferramenta web não retornou evidência utilizável; não contar como validação de produção.
+
+**Continuidade recuperada:** `docs/AGENDA-DIGSAUDE.md` estabelece Firestore como armazenamento da Agenda; `docs/AGENDA-DIGSAUDE-STATUS.md` registra sincronização real bem-sucedida em 16/09. Não tratar como instalação inicial nem concluir perda de dados a partir dos contadores zerados. `worker/wrangler.toml` já contém `keep_vars = true`; não há correção a fazer simplesmente acrescentando essa opção.
+
+**Bloqueio externo:** GitHub acessível; integração Cloudflare não foi encontrada na descoberta de plugins desta sessão. Não foi possível inspecionar os nomes/presença das configurações ativas nem restaurá-las. Nenhum segredo foi lido ou solicitado.
+
+**Decisão e justificativa:** interromper alterações de runtime até conferir a configuração real. Trocar mensagens, reexecutar uma bateria geral ou republicar o mesmo código não comprovaria restauração da dependência. Não migrar para D1, não criar armazenamento vazio alternativo, não relaxar permissões e não remover o guard. Isso evitará mascarar a falha ou dividir os registros entre fontes.
+
+**Checks/testes desta intervenção:** inspeção dirigida do guard, dependências, configuração versionada e documentação operacional. Nenhum teste de runtime novo executado ou declarado aprovado; nenhum dado de paciente, conteúdo do Drive/D1/Firestore ou telemetria foi acessado. Os resultados de testes anteriores acima pertencem à abertura/login, não a este incidente.
+
+**Próxima ação exata:** no Worker de produção `yellow-wave-d0a1guia-regulacao-ia`, conferir Settings → Variables and Secrets e a presença dos três nomes do Firebase. Solicitar somente captura dos nomes/tipos, com todos os valores ocultos. Confirmar produção, não preview, Pages ou variáveis exclusivas de build. Restaurar apenas a configuração ausente usando o valor institucional já existente, sem copiar valores para chat/GitHub e sem rotacionar chaves desnecessariamente. Depois, validar uma abertura autenticada da Agenda; somente então validar uma sincronização autorizada, preservando registros e memória de leitura. Registrar a evidência real e encerrar o incidente sem repetir testes não relacionados.
