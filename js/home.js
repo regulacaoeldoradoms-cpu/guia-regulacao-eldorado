@@ -1,16 +1,16 @@
 'use strict';
 
-(async () => {
+window.PortalHomeReady = (async () => {
   const auth = window.RegulationAuth;
   const social = window.PortalSocial;
   // Compatibilidade das suítes históricas: requireRole(['medico', 'recepcao', 'coordenacao', 'telemedicina'])
   // Marcadores preservados do catálogo anterior: href="/medico/" e requireRole(['medico', 'recepcao', 'admin'])
   const user = await auth.requireRole([]);
-  if (!user) return;
+  if (!user) return false;
 
   if (user.mustChangePassword) {
     location.replace('/seguranca/?primeiro-acesso=1');
-    return;
+    return false;
   }
 
   window.addEventListener('portal:social-config-updated', (event) => {
@@ -57,6 +57,7 @@
       notice.hidden = !message;
     }
     window.PortalTools?.render(document.getElementById('hubGrid'), user);
+    return true;
   }
 
   function wait(milliseconds) {
@@ -104,25 +105,23 @@
     socialConfig = await loadSocialConfigWithRecovery();
   } catch (error) {
     window.PortalSocialNavigation?.mount(user, socialConfig);
-    showToolsFallback(socialFailureMessage(error));
-    return;
+    return showToolsFallback(socialFailureMessage(error));
   }
 
   window.PortalSocialNavigation?.mount(user, socialConfig);
   if (!socialConfig.homeEnabled) {
-    showToolsFallback('A nova Home social está em validação controlada. Todas as ferramentas autorizadas permanecem disponíveis aqui e em Ferramentas.');
-    return;
+    return showToolsFallback('A nova Home social está em validação controlada. Todas as ferramentas autorizadas permanecem disponíveis aqui e em Ferramentas.');
   }
   if (!socialConfig.available) {
     const message = socialConfig.gate?.message
       || 'Sua conta ainda precisa concluir a etapa de segurança para abrir a Camada Social.';
-    showToolsFallback(message);
-    return;
+    return showToolsFallback(message);
   }
   try {
     await window.PortalSocialHome.mount(user, socialConfig);
     showHomeSurface('social');
+    return true;
   } catch (error) {
-    showToolsFallback(socialFailureMessage(error));
+    return showToolsFallback(socialFailureMessage(error));
   }
 })();

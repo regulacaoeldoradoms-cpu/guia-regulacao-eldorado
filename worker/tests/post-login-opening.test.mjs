@@ -25,7 +25,7 @@ function loginHarness({ loginResult = { role: 'admin' }, mediaPromise = Promise.
     RegulationAuth: { enforcementEnabled: true, getToken: () => '', me: async () => null,
       async login() { state.calls++; if (rejectLogin) throw new Error('Senha inválida.'); return loginResult; } },
     PortalPerformance: { warmForUser() {} },
-    PortalLoginOpening: { primeFromGesture() {}, async beforeNavigate() { state.mediaCalls++; await mediaPromise; } }
+    PortalLoginOpening: { primeFromGesture() {}, async beforeNavigate() { state.mediaCalls++; return await mediaPromise; } }
   };
   vm.runInNewContext(login, { window, document: {
     body: { classList: { contains: () => false } }, getElementById: (id) => elements.get(id)
@@ -46,8 +46,8 @@ test('HTML real e laboratório começam com Entrar habilitado', () => {
     assert.match(button, />Entrar<\/button>/);
     assert.doesNotMatch(button, /disabled|opening-gate|opacity/);
     assert.doesNotMatch(html, /Preparando abertura/);
-    assert.match(html, /login-opening\.js\?v=20260917-2/);
-    assert.match(html, /login\.js\?v=20260917-2/);
+    assert.match(html, /login-opening\.js\?v=20260917-3/);
+    assert.match(html, /login\.js\?v=20260917-3/);
   }
 });
 
@@ -114,8 +114,27 @@ test('Home preserva loader legado sem duplicar abertura', () => {
 test('cache de páginas e scripts é invalidado sem apagar cache do MP4', () => {
   const sw = read('portal-sw.js');
   assert.match(sw, /loginCache\.delete\('\/js\/login-opening\.js\?v=20260917-1'\)/);
-  assert.match(sw, /'\/js\/login-opening\.js\?v=20260917-2'/);
-  assert.match(sw, /'\/js\/login\.js\?v=20260917-2'/);
+  assert.match(sw, /'\/js\/login-opening\.js\?v=20260917-3'/);
+  assert.match(sw, /'\/js\/login\.js\?v=20260917-3'/);
   assert.match(sw, /PORTAL_CACHE_PREFIXES = \['portal-static-', 'portal-pages-'\]/);
   assert.match(opening, /portal-opening-media-v1/);
+});
+
+
+test('Home já inicializada encerra login sem nova navegação que reiniciaria a página', async () => {
+  const h = loginHarness({ mediaPromise: Promise.resolve({ handled: true }) });
+  await h.submit();
+  assert.equal(h.state.calls, 1);
+  assert.equal(h.state.mediaCalls, 1);
+  assert.equal(h.state.destination, null);
+});
+
+test('bootstrap é restrito à Home local e não cria iframe ou executa script arbitrário', () => {
+  const source = read('js/login-home-transition.js');
+  assert.match(source, /url.origin !== location.origin/);
+  assert.match(source, /SCRIPT_GLOBALS.has/);
+  assert.match(source, /portalHomeBootstrap !== '1'/);
+  assert.match(source, /window.PortalHomeReady/);
+  assert.doesNotMatch(source, /eval\(|new Function|document.write|createElement\('iframe'\)/);
+  assert.match(read('js/home.js'), /window.PortalHomeReady = \(async/);
 });

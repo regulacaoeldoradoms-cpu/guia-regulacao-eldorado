@@ -313,8 +313,9 @@
       const user = await window.RegulationAuth.login(username.value, password.value, remember.checked);
       try { window.PortalPerformance?.warmForUser?.(user, { immediate: true }); } catch (_) {}
       // Autenticação já concluída. Apenas a transição aguarda a mídia, com prazo e fallback.
-      try { await window.PortalLoginOpening?.beforeNavigate?.(); } catch (_) {}
-      location.replace(destinationFor(user));
+      let transition;
+      try { transition = await window.PortalLoginOpening?.beforeNavigate?.({ destination: destinationFor(user) }); } catch (_) {}
+      if (!transition?.handled) location.replace(destinationFor(user));
     } catch (error) {
       let message;
       if (error.status === 404) {

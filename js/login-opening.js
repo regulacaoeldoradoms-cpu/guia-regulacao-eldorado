@@ -185,7 +185,7 @@
     document.head.appendChild(style);
   }
 
-  async function playOpening() {
+  async function playOpening(home) {
     if (!prepared || !video) return false;
     installOpeningStyles();
     transitioning = true;
@@ -204,6 +204,8 @@
     root.appendChild(element);
     document.body.appendChild(root);
     document.body.classList.add('login-opening-active');
+    // A Home real monta DOM, perfil e feed DURANTE a reprodução, sob a camada opaca.
+    const homeReady = home ? home.mount(root) : Promise.resolve(false);
 
     const played = await new Promise((resolve) => {
       let settled = false;
@@ -227,29 +229,36 @@
       try { Promise.resolve(element.play()).catch(onError); } catch (_) { onError(); }
     });
     element.pause();
-    if (played) {
+    if (played && await homeReady) {
+      // O último quadro permanece até interface, estilos e primeira pintura estarem prontos.
       root.classList.add('is-leaving');
       if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         await new Promise((resolve) => window.setTimeout(resolve, OPENING_FADE_MS + 40));
       }
+      root.remove();
+      document.body.classList.remove('login-opening-active');
+      releaseMedia();
+      transitioning = false;
+      home.reveal();
+      return { handled: true };
     }
-    root.remove();
-    document.body.classList.remove('login-opening-active');
+    home?.cancel();
+    // Fallback/rotas especiais: manter cobertura OPACA até a navegação, nunca fazer fade para login.
     releaseMedia();
-    transitioning = false;
-    return played;
+    return false;
   }
 
-  async function beforeNavigate() {
+  async function beforeNavigate(options = {}) {
+    let home;
     try {
-      if (!await prepareOpeningMedia()) return false;
+      home = window.PortalHomeTransition?.prepare?.(options.destination);
+      if (!await prepareOpeningMedia()) { home?.cancel(); return false; }
       if (primePromise) await primePromise;
-      return await playOpening();
+      return await playOpening(home);
     } catch (_) {
-      // Falha visual não muda o resultado da autenticação nem cria um segundo botão.
+      // Falha visual não muda credenciais. Cobertura existente permanece até o fallback navegar.
+      home?.cancel();
       cancelPlayback?.();
-      document.getElementById('portalOpening')?.remove();
-      document.body.classList.remove('login-opening-active');
       releaseMedia();
       transitioning = false;
       return false;

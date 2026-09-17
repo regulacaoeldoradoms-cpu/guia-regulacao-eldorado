@@ -5,13 +5,13 @@ import { readFile } from 'node:fs/promises';
 
 const origin = 'https://regulacaoeldoradoms.com.br';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
-const files = ['js/login.js', 'js/login-opening.js', 'portal-sw.js', 'assets/portal-opening-v1.mp4'];
+const files = ['js/login-home-transition.js', 'js/home.js', 'index.html', 'js/login.js', 'js/login-opening.js', 'portal-sw.js', 'assets/portal-opening-v1.mp4'];
 const expected = new Map(await Promise.all(files.map(async (file) => [file, hash(await readFile(file))])));
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let lastError;
 for (let attempt = 1; attempt <= 20; attempt++) {
   try {
-    const login = await fetch(`${origin}/login/?publication=20260917-2`, {
+    const login = await fetch(`${origin}/login/?publication=20260917-3`, {
       cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(15000)
     });
     assert.equal(login.status, 200, 'login_public_status');
@@ -19,10 +19,10 @@ for (let attempt = 1; attempt <= 20; attempt++) {
     const button = html.match(/<button\b[^>]*id="loginSubmit"[^>]*>[^<]*<\/button>/)?.[0];
     assert.ok(button, 'login_button_missing');
     assert.doesNotMatch(button, /disabled|opening-gate/, 'login_button_still_blocked');
-    assert.match(html, /login-opening\.js\?v=20260917-2/, 'opening_controller_version');
-    assert.match(html, /login\.js\?v=20260917-2/, 'login_controller_version');
+    assert.match(html, /login-opening\.js\?v=20260917-3/, 'opening_controller_version');
+    assert.match(html, /login\.js\?v=20260917-3/, 'login_controller_version');
     for (const file of files) {
-      const response = await fetch(`${origin}/${file}?v=20260917-2`, {
+      const response = await fetch(`${origin}/${file}?v=20260917-3`, {
         cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(15000)
       });
       assert.equal(response.status, 200, `public_status:${file}`);
