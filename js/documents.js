@@ -2536,8 +2536,40 @@
     }
   }
 
-  function exitEditor() {
+  async function exitEditor() {
+    const session = state.editorSession;
+    if (!session || state.editorBusy || state.driveSyncInFlight) return false;
+
+    const revision = currentEditorRevision();
+    const hasPendingChanges = revision !== state.driveSyncLastConfirmedRevision
+      || state.driveSyncVisualState === 'failed';
+
+    if (hasPendingChanges && canSyncDocuments()) {
+      clearDriveSyncTimer();
+      clearDriveSyncSuccessTimer();
+      setEditorStatus('Sincronizando alterações antes de fechar o editor…');
+      const synced = await syncEditedPdfToDrive({
+        operation: 'replace_pdf',
+        forced: true,
+        targetRevision: revision
+      });
+
+      if (
+        !synced
+        || session !== state.editorSession
+        || currentEditorRevision() !== state.driveSyncLastConfirmedRevision
+      ) {
+        setEditorStatus(
+          'O Google Drive ainda não confirmou a versão mais recente. O editor permanecerá aberto para evitar perder alterações.',
+          'warning'
+        );
+        syncEditorControls();
+        return false;
+      }
+    }
+
     resetEditorState({ restoreOriginal: true });
+    return true;
   }
 
   function randomViewId() {
@@ -3286,7 +3318,7 @@
   els.editorSyncCancel?.addEventListener('click', cancelDriveSyncPanel);
   els.editorExport?.addEventListener('click', () => exportEditedPdfLocal().catch(() => {}));
   els.editorPrint?.addEventListener('click', () => printEditedPdfLocal().catch(() => {}));
-  els.editorExit.addEventListener('click', exitEditor);
+  els.editorExit.addEventListener('click', () => exitEditor().catch(() => {}));
   els.editorMergePosition?.addEventListener('change', () => {
     if (els.editorMergePageField) {
       els.editorMergePageField.hidden = els.editorMergePosition.value !== 'after-page';
@@ -3302,6 +3334,16 @@
   document.addEventListener('paste', (event) => {
     handleEditorPaste(event).catch(() => {});
   }, true);
+
+  window.addEventListener('beforeunload', (event) => {
+    if (!state.editorSession || !canSyncDocuments()) return;
+    const hasPendingChanges = state.driveSyncInFlight
+      || currentEditorRevision() !== state.driveSyncLastConfirmedRevision
+      || state.driveSyncVisualState === 'failed';
+    if (!hasPendingChanges) return;
+    event.preventDefault();
+    event.returnValue = '';
+  });
 
   document.addEventListener('keydown', (event) => {
     if (!state.editorSession || state.editorBusy) return;
