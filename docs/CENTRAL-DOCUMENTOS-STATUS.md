@@ -256,9 +256,31 @@ Conclusão: **Fase 4 publicada em produção**. A Central de Documentos pode ser
 
 Próxima fase pelo Guia Mestre: **Fase 5 — IA documental**, em branch/PR separados. Não reabrir a Fase 4 por hardening não bloqueante.
 
+## Fase 5 iniciada — IA documental — 18/09/2026
+
+A Fase 4 permanece encerrada e publicada. Antes de abrir esta frente, o ajuste transversal da abertura pós-login foi finalizado: PR #213 passou nos checks e foi mesclado em `87b88c0e7e37df1c56a25933f2f27aad2795e35c`. A branch da Fase 5 foi criada diretamente desse `main`.
+
+Branch atual: `feat/central-docs-phase5-document-ai`.
+
+Subfase inicial: **5A — fundação segura**. Documento de escopo: `docs/CENTRAL-DOCUMENTOS-FASE-5.md`.
+
+Decisões de arquitetura recuperadas e confirmadas:
+
+- não reutilizar nem enfraquecer `worker/gemini-assistant.js`, que continua reservado à pré-regulação anonimizada;
+- IA documental terá módulo backend próprio e usará a capability documental `extract`, já existente;
+- rotinas restritivas trabalham por página isolada, com proveniência obrigatória;
+- prompts serão artefatos independentes e versionados;
+- saída institucional será estruturada antes da formatação visual;
+- conteúdo documental/PII não entra no PostHog, D1, cache estático ou logs técnicos;
+- 5A não habilita processamento real de PDFs clínicos; primeiro serão construídos contratos, feature gate, painel lateral e testes sintéticos.
+
+Limitações remanescentes da Fase 4 continuam registradas, mas não reabrem a fase: `save_copy` sem homologação real própria e latência de sync reservada para Fase 7.
+
+Próxima ação exata: implementar a fundação 5A em código e testes, mantendo a IA documental desabilitada por padrão até existir homologação sintética e configuração explícita.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** A **Fase 4 está concluída e publicada em produção**; não reiniciar a 4D. A Fase 5 deve começar como nova frente isolada, preservando privacidade e os contratos já publicados.
+**Fase 5 — IA documental.** Subfase **5A — fundação segura**, iniciada em branch própria. A **Fase 4 está concluída e publicada em produção**; não reiniciar a 4D.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
