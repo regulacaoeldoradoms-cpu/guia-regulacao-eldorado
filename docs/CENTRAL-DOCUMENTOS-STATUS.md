@@ -57,9 +57,24 @@ Artefato de teste: `scripts/central-docs/preparar-nova-janela-4d-v4.test.mjs`. W
 
 Nenhuma janela nova foi criada ainda; não houve INSERT/UPDATE D1, upload de versão, alteração de alias, Drive ou produção nesta preparação de código.
 
+## Nova janela 4D preparada — 18/09/2026
+
+O operador executou o V4 CI-validado no Windows autenticado no Wrangler. Resultado sanitizado:
+
+- preview version: `16ebdf23-f3a6-403a-88f7-972996d83df1`;
+- controle novo: `phase4d_d28ac0d37fe3409f8751fac02007e777`;
+- expiração: `2026-09-18T08:11:26.000Z`;
+- release servido esperado: `1d4decd03e0047a1bad678d60cee36ba6822d5b5`;
+- `DOCUMENTS_DRIVE_WRITE_ENABLED=false`;
+- produção reconfirmada imediatamente antes: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%.
+
+O V4 concluiu as sete etapas: runtime fixo e blobs conferidos; produção/preview-base reconfirmados; controle novo criado desabilitado; dry-run inspecionado; versão preview enviada sem deployment de produção; controle da janela ativado com gate de escrita ainda desligado; alias/release/barreira de autenticação confirmados.
+
+**Estado de segurança:** a nova janela existe e está ativa no D1, mas a escrita no Google Drive continua bloqueada pelo feature gate. Nenhum PDF foi alterado por esta preparação. O próximo passo é validar login e leitura real no frontend de homologação com o gate ainda `false`; somente depois deve existir nova confirmação humana para habilitar escrita temporária.
+
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; produção reconfirmada; V4 de preparo validado; nova janela 4D ainda não aberta.**
+**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; nova janela preparada e ativa; gate de escrita false; validar login/leitura antes de habilitar escrita.**
 
 A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. 4A–4C têm implementação e evidências técnicas, não aceite real da 4D. Encerrar uma autorização não homologa o produto. Não reiniciar etapas encerradas.
 
@@ -172,21 +187,21 @@ Artefatos anteriores preservados:
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 4D sem aceite; Fase 0 e Fases 1–3 encerradas |
-| Última ação concluída | Produção reconfirmada `91eae913…/250b3d7b…/100%`; V4 de nova janela criado e validado em CI |
+| Última ação concluída | Nova janela 4D preparada pelo V4: preview `16ebdf23…`, controle novo ativo, release `1d4decd…`, gate de escrita false |
 | Branch/PR | `codex/central-docs-drive-sync-phase4`; #201 aberto, **draft**, sem merge; tecnicamente mergeável após reconciliação |
 | Main | `cd71ad566a443cd2f89b1d98285856c22baf73d7` incorporada à branch; 0 commits atrás; login/abertura/Home preservados |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
-| Código/preview | Wrapper/reteste antigo `2fee19e` e base `a17473ce` pertencem à janela encerrada; não reutilizar. Nova versão preview ainda não foi criada |
+| Código/preview | Nova preview `16ebdf23-f3a6-403a-88f7-972996d83df1`, release `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; wrapper antigo `2fee19e` é apenas histórico |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
-| Janela | Revogada: enabled0, expires_at1789675801, sessões0; não repetir SQL nem reabilitar |
+| Janela | Nova: `phase4d_d28ac0d37fe3409f8751fac02007e777`, expira `2026-09-18T08:11:26Z`, controle ativo; escrita Drive continua bloqueada por gate false |
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
 | Checks/testes | Head funcional `1d4decd`: 285/285 Worker; staging/governança verdes; navegador Central 75/3 skipped; abertura 11+24+8. V4: run `35315648867`, 87/87 V3 + 9/9 V4, sintaxe aprovada |
-| Bloqueios | Para criar a nova janela é necessária execução no Windows autenticado no Wrangler; o V4 exige confirmação humana e mantém escrita Drive desligada |
+| Bloqueios | Próximo passo exige login real no frontend de homologação para validar leitura com gate false; escrita não deve ser habilitada antes dessa evidência |
 | Riscos | D1/OAuth continuam compartilhados; alias/produção podem mudar entre preparo e execução; gate deve permanecer false até a janela nova ser confirmada; preflight/upload não são atômicos |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Executar o V4 CI-validado (`886b02a…`) no Windows com `--preparar`; ele reconfirma produção, cria controle/prazo novos e publica preview com gate false. Enviar somente o bloco `NOVA_JANELA_4D_PREPARADA` |
+| Próxima ação exata | Abrir `/homologacao/login/` no Pages de staging, autenticar com a conta já autorizada e confirmar que a Central lista/abre o PDF descartável sem permitir sincronização; registrar somente evidência técnica, sem nome/ID do arquivo |
 | Depois | Executar a matriz real 4D restante, revogar a janela, confirmar bloqueio/gate false, registrar evidências e só então avaliar o aceite/merge da Fase 4 |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
