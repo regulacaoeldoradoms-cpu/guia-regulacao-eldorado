@@ -2172,3 +2172,132 @@
   background: #fff;
   color: #173b5c;
 }
+
+
+/* Fase 5A — painel lateral da IA documental */
+.documents-ai-panel[hidden] { display: none !important; }
+
+.documents-ai-panel {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 18;
+  width: min(360px, calc(100% - 52px));
+  background: #ffffff;
+  color: #18354d;
+  border-left: 1px solid #cfdbe5;
+  box-shadow: -16px 0 34px rgba(10, 37, 61, .18);
+  overflow-y: auto;
+}
+
+.documents-ai-panel-head {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px 12px 16px;
+  background: #102f4d;
+  color: #fff;
+  border-bottom: 1px solid rgba(255,255,255,.12);
+}
+
+.documents-ai-panel-head span {
+  display: block;
+  font-size: .68rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  opacity: .72;
+}
+
+.documents-ai-panel-head strong {
+  display: block;
+  margin-top: 4px;
+  font-size: .9rem;
+}
+
+.documents-ai-close {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.1);
+  color: #fff;
+  font: inherit;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.documents-ai-close:hover,
+.documents-ai-close:focus-visible {
+  background: rgba(255,255,255,.18);
+  outline: none;
+}
+
+.documents-ai-panel-body {
+  padding: 16px;
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.documents-ai-panel-body > p {
+  margin: 0 0 14px;
+  color: #47657f;
+}
+
+.documents-ai-safety {
+  padding: 11px 12px;
+  border-radius: 11px;
+  border: 1px solid #cde2d8;
+  background: #eef9f4;
+  color: #176049;
+  font-weight: 750;
+}
+
+.documents-ai-routines-section {
+  margin-top: 18px;
+}
+
+.documents-ai-routines-section > strong {
+  display: block;
+  margin-bottom: 9px;
+  color: #153854;
+}
+
+.documents-ai-routines {
+  display: grid;
+  gap: 8px;
+}
+
+.documents-ai-routine {
+  padding: 10px 11px;
+  border: 1px solid #d8e5ee;
+  border-radius: 10px;
+  background: #f8fbfd;
+}
+
+.documents-ai-routine strong {
+  display: block;
+  font-size: .76rem;
+  color: #244c69;
+}
+
+.documents-ai-routine span {
+  display: block;
+  margin-top: 3px;
+  color: #6b7f91;
+  font-size: .72rem;
+}
+
+.documents-ai-rail-tool[aria-pressed="true"] {
+  background: #e8eefb;
+  border-color: #b9caec;
+  color: #244a8a;
+}
+
+@media (max-width: 720px) {
+  .documents-ai-panel {
+    width: calc(100% - 52px);
+  }
+}
