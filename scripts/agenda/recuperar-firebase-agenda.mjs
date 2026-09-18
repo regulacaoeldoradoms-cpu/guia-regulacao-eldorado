@@ -861,23 +861,30 @@ export async function recoverAgenda(options) {
     const recoveryPlan = firebaseRecoveryPlan(recoveryView);
     const serviceAccountText = readSmallFile(options.serviceAccountJson, 'ARQUIVO_CONTA_SERVICO_NAO_ENCONTRADO');
     const serviceAccount = parseServiceAccount(serviceAccountText, recoveryPlan.vars);
+    const effectivePlan = applyServiceAccountIdentity(recoveryPlan, serviceAccount);
+
+    const permissionCheck = await validateServiceAccountFirestorePermissions(serviceAccount);
+    must(permissionCheck.ok, 'CONTA_SERVICO_FIREBASE_NAO_VALIDADA');
+
     const webApiKey = options.webApiKeyFile
       ? readSmallFile(options.webApiKeyFile, 'ARQUIVO_WEB_API_KEY_NAO_ENCONTRADO', 16 * 1024).trim()
       : '';
-    const localFirebaseSecrets = buildLocalFirebaseSecrets(recoveryPlan, serviceAccount, webApiKey);
+    const localFirebaseSecrets = buildLocalFirebaseSecrets(effectivePlan, serviceAccount, webApiKey);
     const secretsFile = path.join(baseRoot, 'firebase-recovery-secrets.json');
     writeJson(secretsFile, localFirebaseSecrets);
 
-    const recoveredDeployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId, recoveryView);
+    const recoveredDeployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId, recoveryView, effectivePlan);
     dryRunCurrentMain(downloadedRoot, dryDir, recoveredDeployConfig.path, secretsFile);
     const currentSecrets = new Set(currentSecretBindingNames(currentView));
-    const optionalWebKeyPending = recoveryPlan.secrets.includes('FIREBASE_WEB_API_KEY')
+    const optionalWebKeyPending = effectivePlan.secrets.includes('FIREBASE_WEB_API_KEY')
       && !currentSecrets.has('FIREBASE_WEB_API_KEY')
       && !Object.prototype.hasOwnProperty.call(localFirebaseSecrets, 'FIREBASE_WEB_API_KEY');
-    safeLine('firebasePublicosRecuperados', Object.keys(recoveryPlan.vars).length);
+    safeLine('firebasePublicosRecuperados', Object.keys(effectivePlan.vars).length);
     safeLine('firebaseSegredosFornecidosLocalmente', Object.keys(localFirebaseSecrets).length);
     safeLine('segredosAtuaisAPreservar', currentSecrets.size);
     safeLine('credencialContaServico', 'VALIDADA');
+    safeLine('clientEmailContaServico', serviceAccount.historicalClientEmailMatches ? 'MESMO_DA_REFERENCIA' : 'NOVO_NO_MESMO_PROJETO');
+    safeLine('permissoesFirestore', 'OK_' + permissionCheck.granted);
     safeLine('firebaseWebApiKey', optionalWebKeyPending ? 'PENDENTE_OPCIONAL_PARA_AGENDA' : 'OK_OU_JA_EXISTENTE');
 
     await confirmHuman(originalVersion, recovery.id, optionalWebKeyPending);
@@ -895,7 +902,7 @@ export async function recoverAgenda(options) {
     console.log('7/8 Validando Firebase, AUTH_DB e segredos preservados ainda sem tráfego...');
     const preparedView = versionView(preparedVersion, minimalConfig, baseRoot);
     must(preparedView, 'VERSAO_PREPARADA_NAO_LIDA');
-    validatePreparedBindings(preparedView, currentView, recoveryPlan, localFirebaseSecrets, databaseId);
+    validatePreparedBindings(preparedView, currentView, effectivePlan, localFirebaseSecrets, databaseId);
     must(activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot)) === originalVersion, 'PRODUCAO_MUDOU_DURANTE_VALIDACAO');
 
     console.log('8/8 Promovendo somente a versão validada e confirmando a Agenda...');
@@ -907,7 +914,7 @@ export async function recoverAgenda(options) {
     const finalVersion = activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot));
     must(finalVersion === preparedVersion, 'DEPLOY_FINAL_NAO_E_VERSAO_PREPARADA');
     const finalView = versionView(finalVersion, minimalConfig, baseRoot);
-    validatePreparedBindings(finalView, currentView, recoveryPlan, localFirebaseSecrets, databaseId);
+    validatePreparedBindings(finalView, currentView, effectivePlan, localFirebaseSecrets, databaseId);
     completed = true;
     console.log('');
     console.log('AGENDA_RECUPERADA');
