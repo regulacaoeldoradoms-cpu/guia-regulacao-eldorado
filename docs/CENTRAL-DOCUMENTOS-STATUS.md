@@ -465,9 +465,26 @@ Bloqueio deliberado restante: a existência de `GEMINI_API_KEY` na baseline prod
 
 Próxima ação exata: abrir PR do preparo 5E, executar os checks e corrigir regressões. Se verde, integrar **somente o preparo**. Parar antes de executar o script real/ativar preview, pois esse é o próximo ponto que exige o operador.
 
+## Preparo 5E integrado e bloqueio externo confirmado — 18/09/2026
+
+O PR #237 foi validado e mesclado em `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`. Ele integra **somente o preparo técnico fail-closed** da homologação 5E; nenhuma chamada real ao provedor foi executada e os gates produtivos continuam desligados.
+
+Evidências pós-merge:
+
+- suíte Central em `main`: **348/348**, zero falhas;
+- procedimentos operacionais 5E: **9/9 wrapper + 8/8 preparo + 2/2 encerramento + 4/4 harness**, zero falhas;
+- navegador/PDF.js, staging, governança, site e checks transversais: sucesso;
+- Cloudflare Workers Build: sucesso, versão produtiva `342a4a84-2b45-416e-b63c-0ce0bad2be85`;
+- Cloudflare Pages staging do commit homologável: `https://3683715a.portal-regulacao-central-staging.pages.dev`;
+- source ref congelado para a 5E: `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`.
+
+Bloqueio externo agora confirmado: `docs/AGENDA-DIGSAUDE-STATUS.md` registra que a baseline produtiva atual **não expõe `GEMINI_API_KEY` como binding**. Portanto o procedimento 5E interromperá antes de upload/ativação com `INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE` até que o operador configure esse secret na Cloudflare. Isso é deliberado; não contornar nem migrar silenciosamente a 5E para outro provedor.
+
+Próxima ação humana exata: configurar `GEMINI_API_KEY` como secret do Worker institucional. Depois executar o preparo 5E usando o source ref e a origem Pages congelados acima. O script ainda exigirá a frase humana `PREPARAR HOMOLOGACAO 5E` antes de criar/ativar a janela.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — homologação real controlada: preparo técnico implementado, ainda sem chamada real ao provedor**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — preparo técnico integrado; homologação real bloqueada somente pela ausência confirmada de `GEMINI_API_KEY` na baseline produtiva**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -580,22 +597,22 @@ Artefatos anteriores preservados:
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 5E — preparo da homologação real controlada; sem provider real ainda |
-| Última ação concluída | Wrapper/harness/fixtures e procedimentos de preparo/encerramento 5E implementados; nenhuma chamada real executada |
-| Branch/PR | `feat/central-docs-phase5e-controlled-homologation`; PR de preparo ainda não aberto |
-| Main | `8fba51979aba95c31ec7ef6644949c8c508530f6` — Fase 5D integrada via PR #218 |
+| Última ação concluída | PR #237 mesclado; preparo 5E integrado e validado em main; nenhuma chamada real ao provedor executada |
+| Branch/PR | Preparo 5E integrado via PR #237; próxima execução é operacional e depende do secret Gemini |
+| Main | `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0` — preparo 5E integrado via PR #237 |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
-| Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
+| Produção | Workers Build do merge #237: versão `342a4a84-2b45-416e-b63c-0ce0bad2be85`; gates produtivos da IA documental continuam false/false |
 | Janela | `phase4d_d28ac0d37fe3409f8751fac02007e777` encerrada: controlEnabled=false, writeGate=false, httpBlocked=true |
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
-| Checks/testes | 5D reconciliada: Worker/contratos 320/320; navegador 75 passed/3 skipped; staging, governança e site verdes no PR #218 |
-| Bloqueios | Nenhum para validar/integrar o preparo. Execução real 5E depende de confirmação humana; `GEMINI_API_KEY` pode exigir intervenção se ausente |
+| Checks/testes | main após #237: 348/348; operacionais 5E 9+8+2+4; navegador/staging/governança/site/transversais verdes |
+| Bloqueios | `GEMINI_API_KEY` confirmadamente ausente da baseline produtiva; operador precisa configurar o secret antes do preparo real 5E |
 | Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Abrir/validar PR do preparo 5E; integrar se verde; depois parar no ponto anterior à execução do script real |
-| Depois | Operador executa preparo 5E em Windows/Wrangler e matriz sintética; em seguida encerra janela fail-closed e só então se avalia aceite da Fase 5 |
+| Próxima ação exata | Operador configura `GEMINI_API_KEY`; depois roda `preparar-homologacao-5e.mjs --preparar --source-ref 408bff833f9437b0c8c2f8ec1bf2ffb8926609b0 --pages-origin https://3683715a.portal-regulacao-central-staging.pages.dev` e envia somente o bloco final |
+| Depois | Executar matriz sintética real 5E, encerrar janela fail-closed e só então avaliar aceite/publicação da Fase 5 |
 | Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
 
 ## Histórico recuperável
