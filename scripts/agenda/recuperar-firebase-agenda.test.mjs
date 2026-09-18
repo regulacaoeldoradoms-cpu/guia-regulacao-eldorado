@@ -19,7 +19,7 @@ import {
   remoteMainSha,
   locateExtractedRepository,
   wranglerArgs,
-  windowsWranglerCommand
+  npxCliPath
 } from './recuperar-firebase-agenda.mjs';
 
 function version(bindings) {
@@ -173,13 +173,26 @@ test('classifica falhas do Wrangler sem precisar exibir stdout ou stderr', () =>
   assert.equal(classifyWranglerFailure({ status: null, stderr: '' }), 'PROCESSO_NAO_INICIADO');
 });
 
-test('Windows inicia Wrangler pelo PowerShell chamando npx.cmd', () => {
-  const command = windowsWranglerCommand(['deployments', 'status', '--json']);
-  assert.match(command, /& npx\.cmd/);
-  assert.match(command, /wrangler@4\.133\.0/);
-  assert.match(command, /'deployments' 'status' '--json'/);
-  assert.match(command, /exit \$LASTEXITCODE/);
-  assert.doesNotMatch(command, /FIREBASE_PRIVATE_KEY|AUTH_SESSION_SECRET|GOOGLE_DRIVE_OAUTH_CLIENT_SECRET/);
+test('Windows resolve o npx-cli.js ao lado da instalação do Node', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'agenda-npx-cli-test-'));
+  try {
+    const node = path.join(root, 'node.exe');
+    const cli = path.join(root, 'node_modules', 'npm', 'bin', 'npx-cli.js');
+    fs.mkdirSync(path.dirname(cli), { recursive: true });
+    fs.writeFileSync(node, '');
+    fs.writeFileSync(cli, '');
+    assert.equal(npxCliPath(node), cli);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('launcher do Windows não depende de powershell.exe nem npx.cmd', () => {
+  const source = fs.readFileSync(new URL('./recuperar-firebase-agenda.mjs', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /windowsWranglerCommand/);
+  assert.doesNotMatch(source, /npx\.cmd/);
+  assert.match(source, /process\.execPath/);
+  assert.match(source, /npx-cli\.js/);
 });
 
 test('comando Wrangler fixa versão e não embute credenciais', () => {
@@ -201,6 +214,5 @@ test('script não contém valor real de segredo nem imprime payload de bindings'
   assert.doesNotMatch(source, /git\s+clone|ls-remote|rev-parse/);
   assert.match(source, /codeload\.github\.com/);
   assert.match(source, /Expand-Archive/);
-  assert.match(source, /powershell\.exe/);
-  assert.match(source, /npx\.cmd/);
+  assert.match(source, /npx-cli\.js/);
 });

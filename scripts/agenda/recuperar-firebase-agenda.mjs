@@ -15,7 +15,7 @@
  * 6. confirma que /api/agenda voltou a alcançar a barreira de autenticação.
  *
  * Nenhum segredo é impresso, copiado para arquivo ou enviado ao GitHub.
- * No Windows, o Wrangler é iniciado pelo PowerShell chamando npx.cmd, o mesmo padrão já homologado pelos scripts da Central de Documentos.
+ * No Windows, o Wrangler é iniciado pelo próprio node.exe atual executando diretamente o npx-cli.js que acompanha essa instalação. Isso evita depender da execução de arquivos .cmd por subprocessos.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -227,14 +227,10 @@ export function wranglerArgs(args) {
   return ['--yes', 'wrangler@' + FIXED.wranglerVersion, ...args];
 }
 
-function psQuote(value) {
-  return "'" + String(value).replace(/'/g, "''") + "'";
-}
-
-export function windowsWranglerCommand(args) {
-  return "$OutputEncoding=[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); & npx.cmd "
-    + wranglerArgs(args).map(psQuote).join(' ')
-    + '; exit $LASTEXITCODE';
+export function npxCliPath(execPath = process.execPath) {
+  const candidate = path.join(path.dirname(execPath), 'node_modules', 'npm', 'bin', 'npx-cli.js');
+  must(fs.existsSync(candidate), 'NPX_CLI_NAO_ENCONTRADO');
+  return candidate;
 }
 
 export function classifyWranglerFailure(result = {}) {
@@ -248,14 +244,18 @@ export function classifyWranglerFailure(result = {}) {
 }
 
 function runWrangler(args, cwd, code = 'WRANGLER_FALHOU', allowFailure = false) {
-  const result = process.platform === 'win32'
-    ? run(
-        'powershell.exe',
-        ['-NoProfile', '-NonInteractive', '-Command', windowsWranglerCommand(args)],
-        cwd,
-        { timeout: 300000 }
-      )
-    : run('npx', wranglerArgs(args), cwd, { timeout: 300000 });
+  let result;
+  if (process.platform === 'win32') {
+    const cli = npxCliPath();
+    result = run(
+      process.execPath,
+      [cli, ...wranglerArgs(args)],
+      cwd,
+      { timeout: 300000 }
+    );
+  } else {
+    result = run('npx', wranglerArgs(args), cwd, { timeout: 300000 });
+  }
 
   if (!result.ok && !allowFailure) {
     safeLine('wranglerFalhaCategoria', classifyWranglerFailure(result));
