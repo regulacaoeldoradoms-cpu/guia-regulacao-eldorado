@@ -57,9 +57,9 @@ O operador executou a listagem somente leitura com Wrangler 4.133.0 usando a con
 - preview-base a17473ce presente na lista;
 - versões com anotação workers/alias=central-docs-phase4d: a17473ce (18:02:13Z), 9ae11ff5 (14:06:10Z), da1f2bc8 (13:57:15Z) e e37fccb3 (13:50:24Z).
 
-A documentação Cloudflare define alias como endereço estável associado a uma versão no upload. Entre as dez versões mais recentes, a17473ce é a associação mais recente desse alias; nenhuma versão posterior consultada traz a mesma anotação. Combinado ao relatório V3 anterior, que validou a17473ce como configuração desarmada, o melhor estado comprovado é: alias atual aponta para a17473ce e essa base tem DOCUMENTS_DRIVE_WRITE_ENABLED=false. Ainda falta uma confirmação HTTP do endereço servido após a revogação do controle.
+A documentação Cloudflare define alias como endereço estável associado a uma versão no upload. Entre as dez versões mais recentes, a17473ce é a associação mais recente desse alias; nenhuma versão posterior consultada traz a mesma anotação. Combinado ao relatório V3 anterior, que validou a17473ce como configuração desarmada, naquele instante o melhor estado comprovado era: alias apontando para a17473ce e base com DOCUMENTS_DRIVE_WRITE_ENABLED=false. **Essa pendência foi superada pela confirmação HTTP registrada acima (403 + release 2fee19e); não repetir a consulta.**
 
-A tentativa anterior que falhou em LER_PREPARO_LOCAL não alterou nada e foi superada. Não repetir download, OAuth, D1, V3 completo ou liberação. Próxima ação: fazer uma única requisição HTTP sem credenciais ao alias, com Origin Pages correto, capturando somente status e X-Central-Docs-Preview-Release. Esperado: bloqueio HTTP do wrapper revogado; não seguir redirects nem enviar cookies/tokens.
+A tentativa anterior que falhou em LER_PREPARO_LOCAL não alterou nada e foi superada. Não repetir download, OAuth, D1, V3 completo ou liberação. **A requisição HTTP prevista nesta etapa já foi executada posteriormente e confirmou o bloqueio; este trecho é histórico, não uma ação pendente.**
 
 ## Evidência nova — linha do preview e menu, 18/09 aproximadamente 01:43 local
 
@@ -73,7 +73,7 @@ O menu aberto da linha a17473ce contém somente **Rollback, Split versions e Vie
 
 Fonte: screenshot fornecido pelo operador; não publicar imagem, autores, caminhos pessoais ou credenciais no repositório. O aviso Latest build failed continua visível, sem causa/branch/commit/relação com 4D identificados. Não inferir indisponibilidade nem acionar retry.
 
-## Próxima ação exata — listagem restrita do alias, somente leitura
+## Histórico superado — listagem restrita do alias (já executada)
 
 No mesmo Windows, usar o PowerShell e o `configPath` já registrado em `%LOCALAPPDATA%\CentralDocumentos4D\ultimo-preview.json`. Invocar somente:
 
@@ -85,7 +85,7 @@ O bloco de resposta será **ALIAS_PREVIEW_SOMENTE_LEITURA**, com a quantidade re
 
 A instrução fornecida captura erros sem expor saída bruta; em falha retorna CONSULTA_NAO_CONCLUIDA. Não repetir em laço ou executar publicação para corrigir uma listagem. O comando reutiliza a configuração local sem reescrevê-la e não executa o V3 inteiro, SQL, versions upload, deploy, rollback ou comando de segredo.
 
-**Execução ainda pendente do operador.** Não afirmar que o alias já foi conferido a partir da preparação do comando. Depois do relatório: confrontar a versão candidata com a base cuja configuração já foi validada; se houver outra versão, consultar somente seus metadados necessários. Confirmar também bloqueio real no endereço autorizado. Não abrir nova janela até resolver o encerramento; não reabilitar o controle antigo.
+**Esta execução foi concluída posteriormente.** O resultado sanitizado e a confirmação HTTP estão registrados acima; não repetir a listagem nem o GET antigo. A janela anterior está encerrada e não deve ser reabilitada.
 
 ## Etapa D1 concluída — não repetir
 
