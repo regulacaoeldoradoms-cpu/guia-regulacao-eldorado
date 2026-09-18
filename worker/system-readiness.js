@@ -163,12 +163,14 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
     },
     {
       id: 'gemini-key',
-      label: 'Chave do Gemini no Worker',
+      label: 'Provedor Gemini primário',
       ok: gemini.apiKey,
-      requiredBeforeDeploy: true,
+      requiredBeforeDeploy: false,
       detail: gemini.apiKey
-        ? 'GEMINI_API_KEY está configurada como segredo.'
-        : 'Configure GEMINI_API_KEY como segredo no painel da Cloudflare.'
+        ? 'GEMINI_API_KEY está configurada como segredo e o Gemini pode atuar como provedor primário.'
+        : cloudflareAiReady
+          ? 'Gemini não está configurado; a pré-regulação continua operacional pelo Workers AI, sem bloquear deploy.'
+          : 'Gemini não está configurado e o provedor alternativo também não está pronto.'
     },
     {
       id: 'gemini-resilience',
