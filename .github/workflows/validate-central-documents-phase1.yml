@@ -1,4 +1,4 @@
-name: Validar Central de Documentos — Fases 1–5D
+name: Validar Central de Documentos — Fases 1–5E (preparo)
 
 on:
   pull_request:
@@ -18,7 +18,9 @@ on:
       - 'worker/additional-roles.js'
       - 'worker/documents-router.js'
       - 'worker/homologation-4d.js'
+      - 'worker/homologation-5e.js'
       - 'worker/tests/homologation-4d.test.mjs'
+      - 'worker/tests/homologation-5e.test.mjs'
       - 'worker/migrations/central-documents-homologation-4d.sql'
       - 'worker/auth-management-flex.js'
       - 'worker/auth-management-v2.js'
@@ -32,6 +34,7 @@ on:
       - 'worker/tests/developer-self-edit-session.test.mjs'
       - 'scripts/build-central-docs-staging.mjs'
       - 'testing/central-docs/**'
+      - 'testing/central-docs-ai/**'
       - 'testing/browser/**'
       - 'vendor/pdf-lib/**'
       - 'docs/CENTRAL-DOCUMENTOS-**'
@@ -82,6 +85,7 @@ jobs:
         run: |
           npm run check
           node --check homologation-4d.js
+          node --check homologation-5e.js
           npm test
 
       - name: Conferir navegação, cache, editor e sincronização segura
@@ -96,10 +100,15 @@ jobs:
           test -f worker/document-ai-provider.js
           test -f worker/document-drive.js
           test -f worker/documents-router.js
+          test -f worker/homologation-5e.js
+          test -f testing/central-docs-ai/phase5e-harness.html
+          test -f testing/central-docs-ai/phase5e-harness.js
           grep -q "/api/documents/ai/config" worker/documents-router.js
           grep -q "/api/documents/ai/page/classify" worker/documents-router.js
           grep -q "/api/documents/ai/page/extract" worker/documents-router.js
           grep -q "/api/documents/ai/chat" worker/documents-router.js
+          grep -q "phase5e-synthetic-v1" worker/homologation-5e.js
+          grep -q "AI_HOMOLOGATION_ROUTE_DENIED" worker/homologation-5e.js
           grep -q "normalizeDocumentAiExtraction" worker/document-ai.js
           grep -q "extractDocumentAiPage" worker/document-ai-provider.js
           grep -q "exportPageImage" js/document-viewer.js
@@ -120,6 +129,7 @@ jobs:
           ! grep -q "Acessos à Central" documentos/index.html
           ! grep -R -E "localStorage|sessionStorage|indexedDB" js/documents.js
           node --check js/documents.js
+          node --check testing/central-docs-ai/phase5e-harness.js
           node --check js/document-cache.js
           node --check js/document-editor.js
           node --check js/document-viewer.js
