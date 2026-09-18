@@ -38,6 +38,32 @@ function normalizeHomologationWorkerUrl(value) {
 const homologationWorkerUrl = normalizeHomologationWorkerUrl(process.env.CENTRAL_DOCS_HOMOLOGATION_WORKER_URL);
 const effectiveWorkerOrigin = homologationWorkerUrl || DISABLED_WORKER_ORIGIN;
 
+function normalizeAiHomologationWorkerUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  let url;
+  try {
+    url = new URL(raw);
+  } catch (_) {
+    throw new Error('CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL precisa ser uma URL HTTPS válida.');
+  }
+  if (url.protocol !== 'https:' || !url.hostname.endsWith('.workers.dev')) {
+    throw new Error('CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL deve apontar para um preview *.workers.dev via HTTPS.');
+  }
+  if (url.username || url.password || url.port || url.search || url.hash || (url.pathname && url.pathname !== '/')) {
+    throw new Error('CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL deve conter somente a origem do Worker.');
+  }
+  if (url.hostname === PRODUCTION_WORKER_HOST) {
+    throw new Error('A homologação 5E não pode apontar para o Worker de produção.');
+  }
+  return url.origin;
+}
+
+const aiHomologationWorkerUrl = normalizeAiHomologationWorkerUrl(
+  process.env.CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL
+);
+const effectiveAiWorkerOrigin = aiHomologationWorkerUrl || DISABLED_WORKER_ORIGIN;
+
 const files = [
   ['testing/central-docs/viewer-harness.html', 'testing/central-docs/viewer-harness.html'],
   ['testing/central-docs/fixture.js', 'testing/central-docs/fixture.js'],
@@ -190,6 +216,13 @@ const manifest = {
     path: '/homologacao/documentos/',
     workerConfigured: Boolean(homologationWorkerUrl),
     productionWorkerBlocked: true
+  },
+  homologation5e: {
+    available: true,
+    path: '/homologacao-5e/',
+    syntheticOnly: true,
+    workerConfigured: Boolean(aiHomologationWorkerUrl),
+    productionWorkerBlocked: true
   }
 };
 await writeFile(path.join(out, 'staging-manifest.json'), JSON.stringify(manifest, null, 2) + '\n', 'utf8');
@@ -205,8 +238,35 @@ await writeFile(
   'utf8'
 );
 
+const aiHomologationRoot = path.join(out, 'homologacao-5e');
+await mkdir(aiHomologationRoot, { recursive: true });
+for (const [source, target] of [
+  ['testing/central-docs-ai/phase5e-harness.html', 'index.html'],
+  ['testing/central-docs-ai/phase5e-harness.js', 'phase5e.js'],
+  ['testing/central-docs-ai/phase5e-harness.css', 'phase5e.css']
+]) {
+  await cp(path.join(root, source), path.join(aiHomologationRoot, target));
+}
+await writeFile(
+  path.join(aiHomologationRoot, 'config.js'),
+  `'use strict';\nwindow.CENTRAL_DOCS_AI_HOMOLOGATION = Object.freeze({\n  phase: '5E',\n  syntheticOnly: true,\n  workerConfigured: ${Boolean(aiHomologationWorkerUrl)},\n  workerOrigin: ${JSON.stringify(aiHomologationWorkerUrl)}\n});\n`,
+  'utf8'
+);
+await writeFile(
+  path.join(aiHomologationRoot, 'homologation-manifest.json'),
+  JSON.stringify({
+    environment: 'central-docs-ai-homologation-5e',
+    syntheticOnly: true,
+    workerConfigured: Boolean(aiHomologationWorkerUrl),
+    workerOrigin: aiHomologationWorkerUrl || null,
+    productionWorkerBlocked: true,
+    productionAiGatesExpected: false
+  }, null, 2) + '\n',
+  'utf8'
+);
+
 const commonHeaders = `  X-Robots-Tag: noindex, nofollow, noarchive\n  Cache-Control: no-store\n  Referrer-Policy: no-referrer\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()\n`;
-const headers = `/*\n${commonHeaders}\n/index.html\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/testing/*\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/opening/*\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'\n\n/homologacao/*\n${commonHeaders}  Content-Security-Policy: default-src 'self'; connect-src 'self' ${effectiveWorkerOrigin}; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'\n`;
+const headers = `/*\n${commonHeaders}\n/index.html\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/testing/*\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/opening/*\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'\n\n/homologacao-5e/*\n${commonHeaders}  Content-Security-Policy: default-src 'self'; connect-src 'self' ${effectiveAiWorkerOrigin}; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; worker-src 'none'; child-src 'none'; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'\n\n/homologacao/*\n${commonHeaders}  Content-Security-Policy: default-src 'self'; connect-src 'self' ${effectiveWorkerOrigin}; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'\n`;
 await writeFile(path.join(out, '_headers'), headers, 'utf8');
 
 const forbiddenSynthetic = [
@@ -235,7 +295,12 @@ async function scan(dir, tokens, options = {}) {
   for (const name of await readdir(dir)) {
     const full = path.join(dir, name);
     const rel = path.relative(out, full);
-    if (options.skipHomologation && (rel === 'homologacao' || rel.startsWith(`homologacao${path.sep}`))) continue;
+    if (options.skipHomologation && (
+      rel === 'homologacao'
+      || rel.startsWith(`homologacao${path.sep}`)
+      || rel === 'homologacao-5e'
+      || rel.startsWith(`homologacao-5e${path.sep}`)
+    )) continue;
     const info = await stat(full);
     if (info.isDirectory()) {
       await scan(full, tokens, options);
@@ -263,5 +328,14 @@ if (homologationWorkerUrl) {
   if (!homologationText.includes(homologationWorkerUrl)) throw new Error('Configuração do Worker de homologação não foi materializada.');
 }
 
+if (aiHomologationWorkerUrl) {
+  const aiConfigText = await readFile(path.join(aiHomologationRoot, 'config.js'), 'utf8');
+  if (!aiConfigText.includes(aiHomologationWorkerUrl)) {
+    throw new Error('Configuração do Worker 5E não foi materializada.');
+  }
+}
+
 console.log(`Bundle de staging criado em ${out}`);
 console.log(`Homologação 4D: ${homologationWorkerUrl ? 'configurada para Worker preview' : 'aguardando CENTRAL_DOCS_HOMOLOGATION_WORKER_URL'}`);
+
+console.log(`Homologação 5E: ${aiHomologationWorkerUrl ? 'configurada para Worker preview' : 'aguardando CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL'}`);
