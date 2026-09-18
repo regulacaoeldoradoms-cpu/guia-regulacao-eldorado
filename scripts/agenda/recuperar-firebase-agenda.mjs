@@ -11,7 +11,7 @@
  * 2. inspeciona somente nomes/tipos de bindings, nunca valores, e injeta no arquivo temporário apenas o ID técnico do D1 já ligado a AUTH_DB;
  * 3. localiza uma versão já homologada da Agenda com os três bindings;
  * 4. após confirmação humana, faz rollback temporário para essa versão;
- * 5. republica a main atual com keep_vars=true, herdando a configuração recuperada;
+ * 5. recupera da versão homologada os valores Firebase não secretos e os nomes dos segredos; a main atual é republicada com esses bindings declarados explicitamente em configuração temporária;
  * 6. confirma que /api/agenda voltou a alcançar a barreira de autenticação.
  *
  * Nenhum segredo é impresso, copiado para arquivo ou enviado ao GitHub.
@@ -43,6 +43,14 @@ export const REQUIRED_FIREBASE_BINDINGS = Object.freeze([
   'FIREBASE_PROJECT_ID',
   'FIREBASE_CLIENT_EMAIL',
   'FIREBASE_PRIVATE_KEY'
+]);
+
+export const FIREBASE_RECOVERY_BINDINGS = Object.freeze([
+  'FIREBASE_PROJECT_ID',
+  'FIREBASE_CLIENT_EMAIL',
+  'FIREBASE_PRIVATE_KEY',
+  'FIREBASE_WEB_API_KEY',
+  'FIREBASE_STORAGE_BUCKET'
 ]);
 
 const UUID = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
@@ -108,6 +116,90 @@ export function authDbDatabaseId(version) {
   return id;
 }
 
+export function firebaseRecoveryPlan(version) {
+  const bindings = Array.isArray(version?.resources?.bindings) ? version.resources.bindings : [];
+  const byName = new Map(bindings.filter((item) => item && typeof item.name === 'string').map((item) => [item.name, item]));
+  const vars = {};
+  const secrets = [];
+
+  for (const name of FIREBASE_RECOVERY_BINDINGS) {
+    const binding = byName.get(name);
+    if (!binding) continue;
+    if (binding.type === 'plain_text') {
+      const value = String(binding.text || '').trim();
+      must(value, 'FIREBASE_BINDING_PUBLICO_VAZIO');
+      vars[name] = value;
+      continue;
+    }
+    if (binding.type === 'secret_text') {
+      secrets.push(name);
+      continue;
+    }
+    throw new SafeError('FIREBASE_BINDING_TIPO_NAO_SUPORTADO');
+  }
+
+  for (const name of REQUIRED_FIREBASE_BINDINGS) {
+    must(name in vars || secrets.includes(name), 'FIREBASE_RECOVERY_BINDING_AUSENTE');
+  }
+  must(secrets.includes('FIREBASE_PRIVATE_KEY'), 'FIREBASE_PRIVATE_KEY_NAO_E_SEGREDO');
+
+  return { vars, secrets: [...new Set(secrets)].sort() };
+}
+
+function tomlValue(value) {
+  return JSON.stringify(String(value));
+}
+
+export function injectVars(toml, values = {}) {
+  const entries = Object.entries(values);
+  if (!entries.length) return String(toml || '');
+  const lines = String(toml || '').replace(/\r\n/g, '\n').split('\n');
+  const start = lines.findIndex((line) => /^\s*\[vars\]\s*$/.test(line));
+  must(start >= 0, 'VARS_CONFIG_NAO_ENCONTRADO');
+  let end = lines.length;
+  for (let index = start + 1; index < lines.length; index += 1) {
+    if (sectionStart(lines[index])) { end = index; break; }
+  }
+
+  for (const [name, value] of entries) {
+    const existing = lines.findIndex((line, index) => index > start && index < end && line.trimStart().startsWith(name + ' ='));
+    const replacement = name + ' = ' + tomlValue(value);
+    if (existing >= 0) lines[existing] = replacement;
+    else { lines.splice(end, 0, replacement); end += 1; }
+  }
+  return lines.join('\n');
+}
+
+export function injectRequiredSecrets(toml, names = []) {
+  const required = [...new Set(names)].sort();
+  if (!required.length) return String(toml || '');
+  const lines = String(toml || '').replace(/\r\n/g, '\n').split('\n');
+  const requiredLine = 'required = [ ' + required.map(tomlValue).join(', ') + ' ]';
+  let start = lines.findIndex((line) => /^\s*\[secrets\]\s*$/.test(line));
+  if (start < 0) {
+    while (lines.length && lines[lines.length - 1] === '') lines.pop();
+    lines.push('', '[secrets]', requiredLine, '');
+    return lines.join('\n');
+  }
+  let end = lines.length;
+  for (let index = start + 1; index < lines.length; index += 1) {
+    if (sectionStart(lines[index])) { end = index; break; }
+  }
+  const existing = lines.findIndex((line, index) => index > start && index < end && /^\s*required\s*=/.test(line));
+  if (existing >= 0) lines[existing] = requiredLine;
+  else lines.splice(end, 0, requiredLine);
+  return lines.join('\n');
+}
+
+export function buildRecoveryToml(toml, databaseId, recoveryVersion) {
+  const plan = firebaseRecoveryPlan(recoveryVersion);
+  let output = injectAuthDbDatabaseId(toml, databaseId);
+  output = injectVars(output, plan.vars);
+  output = injectRequiredSecrets(output, plan.secrets);
+  must(/\bkeep_vars\s*=\s*true\b/.test(output), 'KEEP_VARS_NAO_CONFIRMADO');
+  return { toml: output, plan };
+}
+
 function sectionStart(line) {
   return /^\s*\[\[?[^\]]+\]?\]\s*$/.test(line);
 }
@@ -163,13 +255,16 @@ export function injectAuthDbDatabaseId(toml, databaseId) {
   return output;
 }
 
-function createRecoveryDeployConfig(repositoryRoot, databaseId) {
+function createRecoveryDeployConfig(repositoryRoot, databaseId, recoveryVersion = null) {
   const original = path.join(repositoryRoot, 'worker', 'wrangler.toml');
   must(fs.existsSync(original), 'WRANGLER_TOML_AUSENTE');
-  const patched = injectAuthDbDatabaseId(fs.readFileSync(original, 'utf8'), databaseId);
+  const source = fs.readFileSync(original, 'utf8');
+  const built = recoveryVersion
+    ? buildRecoveryToml(source, databaseId, recoveryVersion)
+    : { toml: injectAuthDbDatabaseId(source, databaseId), plan: { vars: {}, secrets: [] } };
   const target = path.join(repositoryRoot, 'worker', 'wrangler.agenda-recovery.toml');
-  fs.writeFileSync(target, patched, { encoding: 'utf8', mode: 0o600 });
-  return target;
+  fs.writeFileSync(target, built.toml, { encoding: 'utf8', mode: 0o600 });
+  return { path: target, plan: built.plan };
 }
 
 export function classifyAgendaProbe(status) {
@@ -518,10 +613,10 @@ export async function recoverAgenda() {
     originalVersion = activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot));
     const currentView = versionView(originalVersion, minimalConfig, baseRoot);
     const databaseId = authDbDatabaseId(currentView);
-    const deployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId);
+    const initialDeployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId);
 
     console.log('3/8 Validando o deploy atual sem alterar produção...');
-    dryRunCurrentMain(downloadedRoot, dryDir, deployConfig);
+    dryRunCurrentMain(downloadedRoot, dryDir, initialDeployConfig.path);
     const currentBindings = inspectFirebaseBindings(currentView);
     safeLine('firebaseBindingsAtuais', currentBindings.ready ? 'OK' : 'INCOMPLETOS');
     safeLine('firebaseBindingsAusentes', currentBindings.missing.join(',') || 'nenhum');
@@ -541,14 +636,19 @@ export async function recoverAgenda() {
     must(restoredProbe.storageGuardPassed, 'ROLLBACK_NAO_RESTAUROU_FIREBASE');
 
     const rollbackActive = activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot));
-    const rollbackBindings = inspectFirebaseBindings(versionView(rollbackActive, minimalConfig, baseRoot));
+    const rollbackView = versionView(rollbackActive, minimalConfig, baseRoot);
+    const rollbackBindings = inspectFirebaseBindings(rollbackView);
     must(rollbackBindings.ready, 'BINDINGS_FIREBASE_NAO_RESTAURADOS');
 
-    console.log('6/8 Reconfirmando que a main não mudou...');
+    console.log('6/8 Reconfirmando a main e preparando os bindings recuperados...');
     must(localSha === await remoteMainSha(), 'MAIN_MUDOU_ANTES_DA_REPUBLICACAO');
+    const recoveredDeployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId, rollbackView);
+    safeLine('firebasePublicosRecuperados', Object.keys(recoveredDeployConfig.plan.vars).length);
+    safeLine('firebaseSegredosExigidos', recoveredDeployConfig.plan.secrets.length);
+    dryRunCurrentMain(downloadedRoot, dryDir, recoveredDeployConfig.path);
 
-    console.log('7/8 Republicando a main atual com os bindings preservados...');
-    deployCurrentMain(downloadedRoot, deployConfig);
+    console.log('7/8 Republicando a main atual com os bindings Firebase explícitos...');
+    deployCurrentMain(downloadedRoot, recoveredDeployConfig.path);
 
     console.log('8/8 Confirmando armazenamento e autenticação da Agenda...');
     const finalProbe = await waitForStorageGuard(true);
