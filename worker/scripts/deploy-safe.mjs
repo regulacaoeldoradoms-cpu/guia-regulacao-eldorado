@@ -18,7 +18,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 export const SAFE_DEPLOY = Object.freeze({
   account: '467be828c364ccf084240c34bb609b42',
@@ -99,13 +99,19 @@ function run(command, args, cwd, timeout = 300000) {
   };
 }
 
+export function wranglerCliPath(workerRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')) {
+  const cli = path.join(workerRoot, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+  must(fs.existsSync(cli), 'WRANGLER_LOCAL_NAO_ENCONTRADO');
+  return cli;
+}
+
 export function wranglerArgs(args) {
-  return ['--no-install', 'wrangler', ...args];
+  return [...args];
 }
 
 function runWrangler(args, cwd, code) {
-  const executable = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  const result = run(executable, wranglerArgs(args), cwd);
+  const cli = wranglerCliPath();
+  const result = run(process.execPath, [cli, ...wranglerArgs(args)], cwd);
   if (!result.ok) {
     const text = (result.stderr + '\n' + result.stdout).toLowerCase();
     const category =
@@ -443,6 +449,8 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
 
   try {
     console.log('1/7 Conferindo produção e cadeia de versões...');
+    safeLine('wranglerLocal', SAFE_DEPLOY.wranglerVersion);
+    safeLine('authBuildToken', process.env.CLOUDFLARE_API_TOKEN ? 'PRESENTE' : 'AUSENTE');
     writeJson(readConfig, {
       name: SAFE_DEPLOY.worker,
       account_id: SAFE_DEPLOY.account,
