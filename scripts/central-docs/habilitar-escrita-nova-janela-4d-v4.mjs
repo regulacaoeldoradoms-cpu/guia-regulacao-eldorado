@@ -21,7 +21,7 @@ const CONTROL = /^phase4d_[a-f0-9]{32}$/;
 const TAG = 'central-docs-phase4d-v4-write';
 const MESSAGE = 'Central Docs 4D V4: escrita temporaria controlada';
 
-function readLedger(base) {
+export function readLedger(base) {
   const file = path.join(base, 'nova-janela-v4.json');
   const value = parseJson(fs.readFileSync(file, 'utf8'));
   if (value?.revision !== '4.0.0'
@@ -40,7 +40,7 @@ function readLedger(base) {
   return { file, value };
 }
 
-function preparedBase(version, ledger) {
+export function preparedBase(version, ledger) {
   if (version?.id !== ledger.previewVersionId) throw new SafeError('PREVIEW_PREPARADO_DIVERGENTE');
   const b = inspectBindings(version);
   if (b.vars.DOCUMENTS_DRIVE_WRITE_ENABLED !== 'false') throw new SafeError('PREVIEW_JA_TEM_ESCRITA');
@@ -56,12 +56,12 @@ function preparedBase(version, ledger) {
   return { ...b, compatibilityDate: runtime.compatibility_date, compatibilityFlags: flags };
 }
 
-function sessionSql(controlId) {
+export function sessionSql(controlId) {
   if (!CONTROL.test(controlId)) throw new SafeError('CONTROLE_NOVO_INVALIDO');
   return "SELECT count(*) AS sessions FROM document_drive_homologation_sessions WHERE control_id='" + controlId + "';";
 }
 
-function firstRow(value) {
+export function firstRow(value) {
   if (Array.isArray(value)) {
     for (const block of value) if (Array.isArray(block?.results) && block.results.length) return block.results[0];
   }
