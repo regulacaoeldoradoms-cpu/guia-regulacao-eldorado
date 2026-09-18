@@ -323,15 +323,33 @@ A primeira execução de CI da 5A encontrou apenas contratos antigos de cache-bu
 
 **Decisão:** 5A aceita para merge. Nenhum PDF/imagem/texto foi enviado a provedor de IA. A próxima subfase é **5B — classificação isolada por página**, ainda fail-closed em produção até homologação própria.
 
+## Fase 5B em implementação — classificação isolada por página — 18/09/2026
+
+A Fase 5A foi mesclada na `main` pelo PR #215, merge `04c09c74236545d068116109809f5236646e622c`. A 5B foi aberta em branch própria `feat/central-docs-phase5b-page-classification` diretamente desse estado.
+
+Implementação preparada nesta branch:
+
+- PDF.js exporta somente a página ativa para um Blob efêmero JPEG/PNG, sem persistência;
+- frontend envia ao backend somente o Blob da página + `X-Document-Page-Number`; nome do arquivo, ref/ID do Drive e demais páginas não acompanham a requisição;
+- rota `POST /api/documents/ai/page/classify` exige capability `extract`, limita imagem a 3 MiB e continua bloqueada enquanto o gate produtivo estiver false;
+- provider multimodal separado usa exclusivamente `PROMPT_CLASSIFICACAO_PAGINAS_V1`, exige JSON fechado e rejeita proveniência divergente;
+- tipos permitidos: `comprovante_atendimento`, `pagina_medica_autorizada`, `outro`;
+- UI 5B mostra classificação e página de origem, sem persistir resultado;
+- produção permanece com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
+
+Nenhum PDF clínico ou imagem real foi enviado a provedor nesta etapa. Os testes do provider usam transporte simulado e payloads sintéticos.
+
+Próxima ação: executar a suíte integrada/CI da 5B, corrigir regressões de contrato se houver e só então avaliar aceite sintético/merge. Habilitação real do provedor continua fora deste passo.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5A concluída e aceita para merge**; próxima após integração: **5B — classificação isolada por página**. A **Fase 4 permanece concluída/publicada**.
+**Fase 5 — IA documental.** Subfase **5B — classificação isolada por página**, em implementação e validação sintética. A **Fase 4 permanece concluída/publicada** e a 5A já foi integrada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
-- Branch: `codex/central-docs-drive-sync-phase4`.
-- PR **#201 pronto para sair de draft e ser mesclado após este registro final**; branch 0 commits atrás da main antes do merge.
-- Ref real da `main` reconferida: **`cd71ad566a443cd2f89b1d98285856c22baf73d7`**. Preservar login/abertura/Home. A ref Git não identifica deployment Cloudflare.
+- Branch atual: `feat/central-docs-phase5b-page-classification`.
+- Fase 5A: PR **#215 mesclado**. A 5B ainda não possui PR aberto neste ponto do registro.
+- Ref de base real da 5B: **`04c09c74236545d068116109809f5236646e622c`**. Preservar login/abertura/Home, editor e sincronização já publicados.
 - Código congelado do reteste: **`2fee19e69e06ecd128be2b103354fc6c2fb4e431`**.
 - Preview-base: **`a17473ce-ad9a-480c-8e53-901f2fcc3c92`**, configuração desarmada validada anteriormente pelo relatório V3. Não presumir que ainda atenda o alias `central-docs-phase4d`.
 
@@ -437,10 +455,10 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5A concluída/aceita; próxima: 5B — classificação isolada por página |
-| Última ação concluída | Fundação 5A implementada e validada: 298/298, staging/governança/site verdes; processamento clínico continua hard-locked |
-| Branch/PR | `feat/central-docs-phase5-document-ai`; PR da Fase 5 ainda não aberto |
-| Main | `7947815ef50881621b7aed50a7cabc50708e7272` — base reconciliada da Fase 5 após fechamento do vídeo |
+| Fase/subfase | Fase 5B — classificação isolada por página; implementação sintética em andamento |
+| Última ação concluída | 5A mesclada no PR #215; 5B implementada até provider mockável + raster isolado + UI de proveniência, com gates produtivos false |
+| Branch/PR | `feat/central-docs-phase5b-page-classification`; PR 5B ainda não aberto |
+| Main | `04c09c74236545d068116109809f5236646e622c` — Fase 5A integrada via PR #215 |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
@@ -449,11 +467,11 @@ Artefatos anteriores preservados:
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
 | Checks/testes | Produção: abertura `35323251451` success com smoke público; Pages `35323249977`, Fases 1–4 `35323251417`, governança `35323251482` e site `35323251448` success |
-| Bloqueios | Nenhum para merge da 5A; 5B poderá ser implementada sinteticamente, mas uso real do provedor continuará bloqueado até homologação |
+| Bloqueios | Nenhum para validação sintética 5B; uso real do provedor permanece bloqueado pelos dois gates false até homologação própria |
 | Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Integrar PR #215; criar branch 5B da main resultante e implementar rasterização/classificação de uma página por vez atrás do gate de processamento |
-| Depois | Validar 5B com imagens sintéticas e mock de provedor; manter flags produtivas desligadas |
+| Próxima ação exata | Rodar CI da 5B com provider simulado, isolamento de página, provenance mismatch, limites MIME/tamanho, UI e regressão do viewer |
+| Depois | Se verde, aceitar/mesclar 5B sem ligar flags; iniciar 5C — extração restritiva, ainda sintética/fail-closed |
 | Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
 
 ## Histórico recuperável
