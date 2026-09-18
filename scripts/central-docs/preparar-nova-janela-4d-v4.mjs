@@ -298,7 +298,7 @@ export function runWrangler(args, cwd, runner = spawnSync) {
   return result.stdout;
 }
 
-function writeJson(file, value) {
+export function writeJson(file, value) {
   const temp = file + '.tmp-' + randomUUID();
   const fd = fs.openSync(temp, 'wx', 0o600);
   try {
@@ -308,7 +308,7 @@ function writeJson(file, value) {
   fs.renameSync(temp, file);
 }
 
-async function downloadRuntime(root) {
+export async function downloadRuntime(root) {
   for (const [file, expected] of Object.entries(SOURCE_BLOBS)) {
     const url = RAW_BASE + FIXED.sourceRef + '/' + file.split('/').map(encodeURIComponent).join('/');
     const response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(20000) });
@@ -323,7 +323,7 @@ async function downloadRuntime(root) {
   return path.join(root, 'worker', 'homologation-4d.js');
 }
 
-async function inspectMultipart(bytes, config) {
+export async function inspectMultipart(bytes, config) {
   must(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= 20 * 1024 * 1024, 'MULTIPART_TAMANHO_INVALIDO');
   const firstEnd = bytes.indexOf('\r\n');
   must(firstEnd > 2 && firstEnd < 200, 'MULTIPART_SEM_BOUNDARY');
