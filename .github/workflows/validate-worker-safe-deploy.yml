@@ -1,0 +1,84 @@
+name: Validar gate de deploy seguro do Worker
+
+on:
+  pull_request:
+    paths:
+      - 'worker/scripts/deploy-safe.mjs'
+      - 'worker/tests/deploy-safe.test.mjs'
+      - 'worker/package.json'
+      - 'worker/wrangler.toml'
+      - 'docs/WORKER-SAFE-DEPLOY.md'
+      - 'docs/AGENDA-DIGSAUDE-STATUS.md'
+      - '.github/workflows/validate-worker-safe-deploy.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'worker/scripts/deploy-safe.mjs'
+      - 'worker/tests/deploy-safe.test.mjs'
+      - 'worker/package.json'
+      - 'worker/wrangler.toml'
+      - 'docs/WORKER-SAFE-DEPLOY.md'
+      - 'docs/AGENDA-DIGSAUDE-STATUS.md'
+      - '.github/workflows/validate-worker-safe-deploy.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-safe-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validar sintaxe e testes específicos
+        run: |
+          node --check worker/scripts/deploy-safe.mjs
+          node --test worker/tests/deploy-safe.test.mjs
+
+      - name: Conferir package scripts protegidos
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const pkg = JSON.parse(fs.readFileSync('worker/package.json', 'utf8'));
+          if (pkg.scripts?.deploy !== 'node scripts/deploy-safe.mjs') {
+            throw new Error('worker/package.json voltou a permitir deploy sem gate');
+          }
+          if (pkg.scripts?.['deploy:safe'] !== 'node scripts/deploy-safe.mjs') {
+            throw new Error('deploy:safe ausente ou divergente');
+          }
+          if (!String(pkg.scripts?.predeploy || '').includes('npm test')) {
+            throw new Error('predeploy precisa executar testes');
+          }
+          if (!String(pkg.scripts?.['predeploy:safe'] || '').includes('npm test')) {
+            throw new Error('predeploy:safe precisa executar testes');
+          }
+          NODE
+
+      - name: Conferir fail-closed e promoção desacoplada
+        shell: bash
+        run: |
+          grep -q "ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE" worker/scripts/deploy-safe.mjs
+          grep -q "'versions', 'upload'" worker/scripts/deploy-safe.mjs
+          grep -q "'versions', 'deploy'" worker/scripts/deploy-safe.mjs
+          grep -q -- "--experimental-provision=false" worker/scripts/deploy-safe.mjs
+          grep -q -- "--experimental-auto-create=false" worker/scripts/deploy-safe.mjs
+          grep -q "FIREBASE_PRIVATE_KEY" worker/scripts/deploy-safe.mjs
+          grep -q "AUTH_SESSION_SECRET" worker/scripts/deploy-safe.mjs
+          grep -q "AUTH_RATE_LIMIT_SECRET" worker/scripts/deploy-safe.mjs
+          grep -q "GEMINI_API_KEY" worker/scripts/deploy-safe.mjs
+          grep -q "ROLLBACK_DE_SEGURANCA=OK" worker/scripts/deploy-safe.mjs
+          grep -q "AGENDA_FIREBASE_503_APOS_DEPLOY" worker/scripts/deploy-safe.mjs
+          if grep -Eq '["'\'' ]deploy["'\'']?[[:space:]]*:[[:space:]]*["'\'']wrangler deploy' worker/package.json; then
+            echo 'Deploy monolítico voltou ao package.json.' >&2
+            exit 1
+          fi
+
+      - name: Conferir que nenhum segredo foi versionado
+        shell: bash
+        run: |
+          ! grep -REq -- '-----BEGIN PRIVATE KEY-----' worker/scripts/deploy-safe.mjs worker/tests/deploy-safe.test.mjs docs/WORKER-SAFE-DEPLOY.md
+          ! grep -REq 'AIza[0-9A-Za-z_-]{20,}' worker/scripts/deploy-safe.mjs worker/tests/deploy-safe.test.mjs docs/WORKER-SAFE-DEPLOY.md
