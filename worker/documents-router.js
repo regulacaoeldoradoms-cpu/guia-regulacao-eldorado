@@ -5,6 +5,7 @@ import {
   hasDocumentCapability,
   setDocumentCapabilities
 } from './document-access.js';
+import { documentAiPublicConfig } from './document-ai.js';
 import {
   DriveIntegrationError,
   cancelDriveSync,
@@ -239,6 +240,21 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
       const denied = requireCapability(user, 'view', origin);
       if (denied) return denied;
       return json(await editorPreferencesFor(env, user.username), 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/ai/config' && request.method === 'GET') {
+      const denied = requireCapability(user, 'extract', origin);
+      if (denied) return denied;
+      return json({ ai: documentAiPublicConfig(env) }, 200, origin);
+    }
+
+    if (url.pathname.startsWith('/api/documents/ai/') && request.method !== 'GET') {
+      const denied = requireCapability(user, 'extract', origin);
+      if (denied) return denied;
+      return json({
+        error: 'O processamento da IA documental ainda não está habilitado nesta etapa.',
+        code: 'DOCUMENT_AI_PROCESSING_DISABLED'
+      }, 503, origin);
     }
 
     if (url.pathname === '/api/documents/preferences' && request.method === 'PATCH') {
