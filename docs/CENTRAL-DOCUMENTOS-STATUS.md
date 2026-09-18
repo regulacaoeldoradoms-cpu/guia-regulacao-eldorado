@@ -1,16 +1,28 @@
 # Central de Documentos — Status
 
-Última atualização: 17/09/2026.
+Última atualização: 18/09/2026.
+
+## Atualização operacional — arquivo não encontrado no Windows
+
+Screenshot do operador em 18/09 mostra duas tentativas de `node .\liberar-escrita-preview-4d-v3.mjs --verificar` a partir de Downloads. Ambas terminaram com `MODULE_NOT_FOUND`, apontando para o próprio arquivo de entrada, e `requireStack: []`. Essas duas tentativas não iniciaram o script nem suas consultas. Isso não prova ausência de outras tentativas em sessões anteriores e não diagnostica problema no editor/Drive. Não registrar o caminho pessoal do Windows ou a imagem no repositório.
+
+O pacote `central-4d-v3-download.zip` foi inspecionado localmente: contém o executável na raiz do ZIP e LEIA-ME.txt. O SHA-256 do executável continua `0b58085dc14cf274d94be117117c8417de0d3ad8e0723b94358db71b25892234`, sem alteração de código. Não foi possível determinar pelo screenshot se o ZIP está sem extração, se foi extraído em subpasta ou se o arquivo não foi baixado. Decisão: orientar extração do ZIP em pasta local nova, conferir o hash e executar o caminho absoluto com **somente --verificar**, evitando depender da pasta atual. Não sobrescrever o preparo em LOCALAPPDATA, não apagar locks/ledger e não reinstalar Node ou repetir OAuth por causa desse erro.
+
+**A janela documentada venceu em 17/09/2026 20:10:01 UTC (16:10:01 em Eldorado/MS).** Não orientar liberação dessa janela nem alterar o prazo. Expiração pelo relógio não comprova revogação explícita da linha D1 ou gate false em todas as versões. Continua necessário receber o relatório somente leitura, conferir tentativas/versões/controle e tratar o encerramento antes de planejar outra janela com confirmação apropriada.
+
+Main reconferida pela ref real: `cd71ad566a443cd2f89b1d98285856c22baf73d7`. Seu status registra a melhoria transversal de inicialização da Home incorporada pelo PR #207 e a continuidade da Central no PR #201, sem aceite 4D. As referências 8cefaf6 e produção f8848c45 nas seções históricas abaixo são snapshots anteriores; não são novas confirmações da produção Cloudflare. Nenhuma alteração de main, código do V3, upload ou consulta autenticada Cloudflare/D1/Drive nesta atualização. Não foram repetidas suítes do produto para resolver localização de arquivo; foram conferidos pacote e hash.
+
+**Próxima ação imediata:** operador localiza o ZIP em Downloads, extrai para pasta nova, confere o SHA-256 e executa o arquivo por caminho absoluto com --verificar. Receber apenas VERIFICACAO_SOMENTE_LEITURA ou as últimas linhas sanitizadas do erro. Não pedir configuração ou ledger completos. A solução do erro local e a execução real ainda não foram confirmadas pelo operador.
 
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive.** Subfase **4D — homologação real ainda sem aceite; próximo passo exclusivamente de leitura para reconciliar produção e possíveis tentativas concorrentes.**
+**Fase 4 — Sincronização segura com Drive.** Subfase **4D — homologação real ainda sem aceite; janela anterior vencida e verificação somente leitura bloqueada localmente por arquivo não localizado.**
 
 A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. As subfases 4A–4C têm implementação e evidências técnicas; elas não substituem a matriz real 4D. Não reiniciar fases, mesclar o PR #201 nem iniciar outra fase para cumprir prazo.
 
 - Branch: `codex/central-docs-drive-sync-phase4`.
-- PR **#201 aberto, sem merge**; última consulta indicou `mergeable:false`.
-- Ref efetiva da `main` conferida: **`8cefaf639a9399f77658867ef10f82a0fb694222`**, merge do PR #204, correção do bloqueio do login. Preservar também a abertura pós-login dos PRs #202/#203. O `base_sha=336b6473` retornado pelo objeto do PR não representava a ref atual da main; não usá-lo como snapshot produtivo.
+- PR **#201 aberto, sem merge** segundo o status consultado na main; consulta anterior do PR indicou `mergeable:false`.
+- Ref efetiva da `main` reconferida em 18/09: **`cd71ad566a443cd2f89b1d98285856c22baf73d7`**. Preservar as melhorias transversais já incorporadas. Snapshot da intervenção anterior: 8cefaf6, merge do PR #204; o `base_sha=336b6473` retornado então pelo objeto do PR não representava a ref atual da main.
 - Código do reteste restrito continua congelado em `2fee19e69e06ecd128be2b103354fc6c2fb4e431`; esta revisão não altera editor, wrapper, autenticação ou capacidades.
 - Preview-base informado e anteriormente conferido pelo operador: `a17473ce-ad9a-480c-8e53-901f2fcc3c92`, gate false. Não presumir que ele ainda atenda o alias.
 
@@ -35,7 +47,7 @@ Justificativa: a versão de produção pode ter mudado e a outra retomada pode t
 - O original interrompeu em `CONFERIR_PREVIEW_E_PRODUCAO`, código `VERSAO_DE_PRODUCAO_DIVERGENTE`, antes de qualquer upload; exigia a versão histórica 239cca88.
 - Último deployment informado pelo operador: **`83a620d7-82cc-47ae-9779-f7002f45482d`**, versão **`f8848c45-0bfc-40d6-8508-92b33dea6f43`**, **100%**, criado às 18:26:45.063 UTC. Versões informadas: a17473ce às 18:02:13.211, eabef99f às 18:23:39.339 e f8848c45 às 18:26:44.579 UTC.
 
-Esses são metadados recebidos do operador, não nova leitura autenticada da Cloudflare nesta intervenção. A descoberta de plugins desta sessão não retornou Cloudflare. Nenhum comando autenticado de upload/deploy, acesso a PDF ou alteração de linha D1 foi executado pelo assistente. Não houve modificação da main ou merge do PR.
+Esses são metadados recebidos do operador, não nova leitura autenticada da Cloudflare nesta intervenção. A descoberta de plugins da sessão de preparação não retornou Cloudflare; isso é histórico daquela sessão. Nenhum comando autenticado de upload/deploy, acesso a PDF ou alteração de linha D1 foi executado pelo assistente nas intervenções descritas. Não houve modificação da main ou merge do PR.
 
 ## Artefato V3 efetivamente versionado
 
@@ -55,6 +67,8 @@ Os blobs retornados pelo GitHub foram conferidos contra os bytes locais: execut�
 
 `node .\liberar-escrita-preview-4d-v3.mjs --verificar`
 
+O exemplo acima pressupõe estar na pasta que contém o arquivo extraído; usar caminho absoluto para evitar o erro MODULE_NOT_FOUND registrado em 18/09.
+
 Reutiliza o preparo em `%LOCALAPPDATA%\CentralDocumentos4D` e o login normal do Wrangler. Cria somente uma configuração local separada para as consultas. Não sobrescreve o registro de tentativa, não arquiva/apaga evidências, não remove locks, não compila e não chama upload ou deploy.
 
 Consulta deployment, últimas versões, configuração do preview-base e o SELECT restrito do D1. Retorna prazo, flags de igualdade do escopo, contagens e metadados UUID/percentuais. Lê o resumo da tentativa local antes e depois das consultas. Estado desconhecido permanece null, não vira false. O bloco de saída é `VERIFICACAO_SOMENTE_LEITURA`; não solicitar o ledger completo, configurações, IDs de arquivos, nomes de usuários ou credenciais.
@@ -62,6 +76,8 @@ Consulta deployment, últimas versões, configuração do preview-base e o SELEC
 O modo de leitura não declara que o preview atualmente servido está desarmado: confirma a versão-base e apresenta a lista de versões para posterior reconciliação. `matchesReviewedProduction=false` é informação para análise, não aprovação automática de outra produção. Mesmo sem erros de consulta, o relatório não autoriza edição do PDF.
 
 ### Correções implementadas para eventual liberação posterior
+
+Esta seção descreve a implementação histórica; a janela fixada já venceu e não está autorizada para liberação agora.
 
 - Separa snapshot histórico da produção atual; exige f8848c45/83a620d7/100% antes e depois, sem rollback ou aceitação automática de outra versão.
 - Confere preview-base, release, controle, origens, runtime, mesmo D1 e dependências públicas compartilhadas. Verifica presença/tipo dos seis segredos necessários sem ler valores.
@@ -72,15 +88,15 @@ O modo de leitura não declara que o preview atualmente servido está desarmado:
 - SELECT exige prazo original, um PDF, mesma conta/escopo, nenhuma outra janela ativa e nenhuma sessão pendente. Liberação exige pelo menos 20 minutos restantes e confirmação humana `LIBERAR TESTE`, sem estender prazo.
 - Confere alias retornado, nova versão e predecessor esperado para detectar concorrência. Não oferece exclusão remota transacional nem coordenação garantida entre scripts de revisões distintas. Manter outras publicações e liberações paradas.
 
-Limite adicional: a comparação de deployment não atesta todos os metadados não versionados do serviço. O fonte do Wrangler contém reconciliação de tags de serviço/ambiente em versões upload; não prometer ausência universal de efeitos em tags. Nenhum upload real V3 foi executado nesta sessão.
+Limite adicional: a comparação de deployment não atesta todos os metadados não versionados do serviço. O fonte do Wrangler contém reconciliação de tags de serviço/ambiente em versões upload; não prometer ausência universal de efeitos em tags. Nenhum upload real V3 foi executado pelo assistente.
 
-### Validação desta intervenção
+### Validação registrada na preparação do V3
 
 **87 testes Node locais aprovados, zero falhas/skips**, em Node 22.16.0, mais sintaxe. Inclui seis casos específicos do modo de leitura e fluxo completo com transporte simulado, confirmação, mudanças de produção, expiração, herança/multipart, resultado incerto, não repetição e sanitização.
 
 O SELECT exato foi exercitado em SQLite de memória em **três cenários sintéticos**: escopo válido, JSON inválido e sessão pendente. Nenhuma identidade real foi usada.
 
-Não foi possível executar o Wrangler real neste ambiente; portanto o dry-run efetivo com Wrangler 4.133.0, o Windows real e o upload autenticado continuam sem comprovação nesta revisão. O workflow foi criado; seu resultado deve ser consultado, não presumido verde a partir dos testes locais. Esses 87 testes não substituem o aceite real do editor.
+Não foi possível executar o Wrangler real no ambiente da preparação; portanto o dry-run efetivo com Wrangler 4.133.0, o Windows real e o upload autenticado continuam sem comprovação nesta revisão. O workflow foi criado; seu resultado deve ser consultado, não presumido verde a partir dos testes locais. Esses 87 testes não substituem o aceite real do editor e não foram reexecutados para o erro local de caminho em 18/09.
 
 ## Produto: situação preservada e pendências de aceite
 
@@ -100,36 +116,36 @@ Jamais promover `worker/homologation-4d.js` para produção. D1/OAuth compartilh
 
 Não registrar no GitHub/PostHog nomes/IDs de arquivos, usuários, conteúdo de PDF, referências opacas, revisão, URL resumable, credenciais, CPF, CNS, CID ou diagnóstico. Telemetria restrita a drive_sync_started/completed/failed e propriedades técnicas allowlisted. Ausência de logs não prova privacidade.
 
-O prazo original termina em **20:10:01 UTC**, sem extensão automática. A margem mínima de liberação é 20 minutos, não uma autorização para apressar a matriz. Ao encerrar: aguardar operações em voo, revogar controle D1, confirmar bloqueio e preparar gate false. Revogação não desfaz upload aceito; trocar alias não revoga versões antigas.
+O prazo original terminou em **17/09/2026 20:10:01 UTC**, sem extensão automática. A margem mínima de liberação era 20 minutos, não uma autorização para apressar a matriz. Ao encerrar: aguardar operações em voo, revogar controle D1, confirmar bloqueio e preparar gate false. Revogação não desfaz upload aceito; trocar alias não revoga versões antigas. Expiração não substitui evidência de encerramento operacional.
 
 ## Próxima ação exata
 
-1. Operador executa **somente V3 --verificar**, no mesmo Windows e sem iniciar V2-R1 ou outra liberação paralela. Receber somente o bloco sanitizado final.
+1. Corrigir a localização/extração do arquivo no Windows e executar **somente V3 --verificar** por caminho absoluto, sem iniciar V2-R1 ou outra liberação paralela. Receber somente o bloco sanitizado final.
 2. Conferir tentativas antes/depois, locks, versões, deployment e prazo. Havendo envio tentado/estado incerto: não repetir nem editar; inspecionar e revogar conforme necessário. Havendo mudança de produção: preservar a nova implantação, revisar dependências e referência explicitamente, sem apenas trocar UUIDs.
-3. Só após reconciliar esses fatos escolher um único procedimento de liberação, ainda dentro da janela válida. Expiração não autoriza prorrogação ou nova janela automática.
-4. Executar a matriz real e encerramento. Reconciliar #201 com a main em etapa própria, preservando os PRs #202–#204 e rodando checks do candidato reconciliado. Não escolher automaticamente um lado do conflito.
+3. A janela anterior está vencida. Conferir encerramento e pendências; eventual nova janela requer procedimento/escopo revistos e confirmação apropriada, sem prolongar a linha antiga, reaproveitar seu identificador ou mudar apenas a data do script.
+4. Em uma janela futura validamente autorizada, executar a matriz real e encerramento. Reconciliar #201 com a main em etapa própria, preservando melhorias transversais incorporadas e rodando checks do candidato reconciliado. Não escolher automaticamente um lado do conflito.
 
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 4D, sem aceite; Fase 0 e Fases 1–3 encerradas |
-| Última ação concluída | Original recebido/hash confirmado; V3 e 87 testes efetivamente versionados; retomada paralela V2-R1 identificada e instrução operacional reconciliada |
-| Branch/PR | codex/central-docs-drive-sync-phase4; #201 aberto/sem merge, conflito indicado |
-| Commits relevantes | V2-R1 documentado em 103ccd6; V3 em 89fa775; testes em 831935b; CI em 4018be8 |
-| Main | Ref real 8cefaf6, merge #204; não confundir com base_sha antigo do PR |
+| Última ação concluída | Screenshot diagnosticado como arquivo de entrada não localizado; ZIP e hash V3 conferidos; solução de extração/caminho absoluto orientada, execução do operador ainda pendente |
+| Branch/PR | codex/central-docs-drive-sync-phase4; #201 sem merge segundo o status atual da main; conflito indicado em consulta anterior |
+| Commits relevantes | V2-R1 documentado em 103ccd6; V3 em 89fa775; testes em 831935b; CI em 4018be8; continuidade anterior em 4d64c5d |
+| Main | Ref real cd71ad5 conferida em 18/09; status registra PR #207 incorporado; preservar melhorias transversais |
 | Código/preview | Reteste 2fee19e; preview-base a17473ce; versão atualmente servida ainda a reconferir |
 | Produção | Último relato do operador f8848c45/83a620d7/100%; não reconfirmada pela Cloudflare nesta intervenção |
-| Janela | Uma conta/um PDF sintético; prazo 17/09 20:10:01 UTC; sem extensão; margem de liberação 20 min |
-| Decisão/porquê | Verificação somente leitura antes de qualquer envio, pois há retomadas paralelas e produção potencialmente alterada |
-| Descartado | Rollback, remover guards, trocar só UUID, apagar locks/ledger, prolongar janela, repetir OAuth ou executar dois scripts |
-| Testes | V3 87 locais + sintaxe + 3 SELECT SQLite; CI novo a conferir; V2-R1 31 somente conforme registro anterior; matriz real pendente |
-| Ações externas | Preparo/OAuth/preview-base anteriores preservados; nenhuma nova execução autenticada de upload/Drive/D1 nesta intervenção |
-| Riscos | Tentativa concorrente/incerta, D1/OAuth compartilhados, prazo, herança, cache, tags não versionadas e reconciliação com main |
+| Janela | Prazo anterior vencido em 17/09 20:10:01 UTC; nenhuma extensão/nova janela autorizada nesta atualização |
+| Decisão/porquê | Resolver extração/caminho sem alterar o script; somente leitura para distinguir tentativas passadas e conferir encerramento |
+| Descartado | Reinstalar Node, repetir OAuth, rollback, remover guards, trocar só UUID/data, apagar locks/ledger ou executar dois scripts |
+| Testes | Nesta atualização: inspeção do ZIP e SHA-256 idêntico. V3 87 locais/SQLite e produto conforme registros anteriores, sem repetição |
+| Ações externas | As duas tentativas do screenshot não iniciaram V3. Outras tentativas permanecem a conferir. Nenhuma operação autenticada Cloudflare/D1/Drive nesta atualização |
+| Riscos | Tentativa concorrente/incerta, D1/OAuth compartilhados, janela vencida sem revogação confirmada, herança, cache, tags e integração com main |
 | Observabilidade | Somente eventos/propriedades técnicos allowlisted, sem dados sensíveis |
-| Próximo passo | Receber VERIFICACAO_SOMENTE_LEITURA do V3; decidir a partir de evidências, sem orientar --liberar-teste antecipadamente |
+| Próximo passo | Receber VERIFICACAO_SOMENTE_LEITURA do V3 após resolver localização; não orientar --liberar-teste para a janela vencida |
 | Fontes | Este status; scripts/central-docs/V3 e testes; Guia Mestre; Dossiê/deltas; RESULTADOS; ISOLAMENTO; CONTINUIDADE-TARDE; PR #201 |
 
 ## Histórico recuperável
 
-O conteúdo integral da reentrega V2-R1 permanece em `103ccd63a14f91963ff511112091002ce95c21fa:docs/CENTRAL-DOCUMENTOS-STATUS.md`; a retomada anterior em d36facb; preparação V2 em 9f295ca; histórico operacional anterior em 2caa479. Documentos FASE-4, ARQUITETURA-V1, HOMOLOGACAO-V1, STAGING-OPERACIONAL-V1 e deltas continuam complementares. Ler somente o necessário à próxima ação; não reiniciar investigações encerradas.
+O conteúdo integral da reentrega V2-R1 permanece em `103ccd63a14f91963ff511112091002ce95c21fa:docs/CENTRAL-DOCUMENTOS-STATUS.md`; a retomada anterior em d36facb; preparação V2 em 9f295ca; histórico operacional anterior em 2caa479; estado integral anterior ao erro de localização em 4d64c5d. Documentos FASE-4, ARQUITETURA-V1, HOMOLOGACAO-V1, STAGING-OPERACIONAL-V1 e deltas continuam complementares. Ler somente o necessário à próxima ação; não reiniciar investigações encerradas.
