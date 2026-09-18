@@ -50,6 +50,8 @@
     documentAiBusy: false,
     documentAiClassification: null,
     documentAiExtraction: null,
+    documentAiEvidence: new Map(),
+    documentAiChatHistory: [],
     stack: [],
     items: [],
     nextPageToken: '',
@@ -158,6 +160,10 @@
     documentAiExtractionFields: document.getElementById('documentsAiExtractionFields'),
     documentAiCopyBlock: document.getElementById('documentsAiCopyBlockButton'),
     documentAiViewSource: document.getElementById('documentsAiViewSourceButton'),
+    documentAiChatQuestion: document.getElementById('documentsAiChatQuestion'),
+    documentAiChatSend: document.getElementById('documentsAiChatSendButton'),
+    documentAiChatStatus: document.getElementById('documentsAiChatStatus'),
+    documentAiChatMessages: document.getElementById('documentsAiChatMessages'),
     documentAiRoutines: document.getElementById('documentsAiRoutines'),
     closeViewer: document.getElementById('closeViewerButton'),
     editor: document.getElementById('documentsEditor'),
@@ -3002,17 +3008,130 @@
     return copied;
   }
 
+  function canChatDocumentAi() {
+    return Boolean(
+      state.pdfItem
+      && !state.documentAiBusy
+      && state.documentAiConfig?.processingEnabled === true
+      && state.documentAiConfig?.features?.documentChat === true
+      && state.documentAiEvidence instanceof Map
+      && state.documentAiEvidence.size > 0
+    );
+  }
+
+  function renderDocumentAiChat() {
+    if (els.documentAiChatSend) els.documentAiChatSend.disabled = !canChatDocumentAi();
+    if (els.documentAiChatQuestion) {
+      els.documentAiChatQuestion.disabled = !(state.documentAiConfig?.processingEnabled === true);
+    }
+    if (els.documentAiChatMessages) {
+      const history = Array.isArray(state.documentAiChatHistory) ? state.documentAiChatHistory : [];
+      els.documentAiChatMessages.innerHTML = history.map((entry, index) => {
+        const pages = Array.isArray(entry.pages) ? entry.pages : [];
+        const pageButtons = pages.length
+          ? `<div class="documents-ai-chat-pages">${pages.map((page) =>
+              `<button type="button" class="documents-ai-chat-page" data-ai-chat-page="${Number(page)}">p. ${Number(page)}</button>`
+            ).join('')}</div>`
+          : '';
+        return `<article class="documents-ai-chat-message" data-ai-chat-index="${index}">
+          <strong>Pergunta documental</strong>
+          <p>${escapeHtml(entry.answer || '')}</p>
+          ${pageButtons}
+        </article>`;
+      }).join('');
+    }
+    if (els.documentAiChatStatus && !state.documentAiBusy) {
+      els.documentAiChatStatus.className = 'documents-ai-chat-status';
+      if (state.documentAiConfig?.processingEnabled !== true) {
+        els.documentAiChatStatus.textContent = 'Perguntas bloqueadas por feature gate.';
+      } else if (!(state.documentAiEvidence instanceof Map) || state.documentAiEvidence.size === 0) {
+        els.documentAiChatStatus.textContent = 'Extraia ao menos uma página para criar evidências antes de perguntar.';
+      } else if (!els.documentAiChatStatus.textContent) {
+        els.documentAiChatStatus.textContent = `${state.documentAiEvidence.size} página(s) com evidência disponível(is) somente nesta sessão.`;
+      }
+    }
+  }
+
+  async function askDocumentAiQuestion() {
+    const question = String(els.documentAiChatQuestion?.value || '').trim();
+    if (!question || !canChatDocumentAi()) {
+      if (els.documentAiChatStatus) {
+        els.documentAiChatStatus.className = 'documents-ai-chat-status warning';
+        els.documentAiChatStatus.textContent = question
+          ? 'Extraia ao menos uma página antes de perguntar.'
+          : 'Digite uma pergunta documental.';
+      }
+      return;
+    }
+
+    const evidence = [...state.documentAiEvidence.values()].map((item) => ({
+      pageNumber: Number(item.pageNumber),
+      pageType: String(item.pageType || ''),
+      fields: item.fields
+    }));
+
+    state.documentAiBusy = true;
+    if (els.documentAiChatStatus) {
+      els.documentAiChatStatus.className = 'documents-ai-chat-status';
+      els.documentAiChatStatus.textContent = 'Consultando somente as evidências paginadas desta sessão…';
+    }
+    renderDocumentAiPanel();
+
+    try {
+      const response = await fetch(`${endpoint}/api/documents/ai/chat`, {
+        method: 'POST',
+        headers: {
+          ...auth.authorizationHeader(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ question, evidence }),
+        cache: 'no-store',
+        credentials: 'omit'
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error || 'Não foi possível responder à pergunta documental.');
+
+      const chat = payload?.chat;
+      if (!chat || typeof chat.answer !== 'string' || !Array.isArray(chat.pages)) {
+        throw new Error('A resposta documental retornou estrutura inválida.');
+      }
+      const allowedPages = new Set(evidence.map((item) => item.pageNumber));
+      if (chat.pages.some((page) => !allowedPages.has(Number(page)))) {
+        throw new Error('A resposta citou uma página fora das evidências desta sessão.');
+      }
+
+      state.documentAiChatHistory.push({
+        answer: String(chat.answer),
+        pages: [...new Set(chat.pages.map((page) => Number(page)))].filter(Number.isInteger)
+      });
+      if (state.documentAiChatHistory.length > 12) state.documentAiChatHistory.shift();
+      if (els.documentAiChatQuestion) els.documentAiChatQuestion.value = '';
+      if (els.documentAiChatStatus) {
+        els.documentAiChatStatus.className = 'documents-ai-chat-status success';
+        els.documentAiChatStatus.textContent = 'Resposta baseada somente nas evidências paginadas desta sessão.';
+      }
+    } catch (error) {
+      if (els.documentAiChatStatus) {
+        els.documentAiChatStatus.className = 'documents-ai-chat-status warning';
+        els.documentAiChatStatus.textContent = error?.message || 'Falha na pergunta documental.';
+      }
+    } finally {
+      state.documentAiBusy = false;
+      renderDocumentAiPanel();
+    }
+  }
+
   function renderDocumentAiPanel() {
     const config = state.documentAiConfig || {};
     if (els.documentAiDescription) {
       els.documentAiDescription.textContent = config.processingEnabled
-        ? 'A classificação 5B está disponível com isolamento e proveniência obrigatórios por página.'
-        : 'A classificação por página está preparada, mas o processamento permanece bloqueado até a homologação.';
+        ? 'Classificação, extração restritiva e perguntas por evidência estão disponíveis com proveniência obrigatória por página.'
+        : 'A IA documental está preparada, mas o processamento permanece bloqueado até a homologação controlada.';
     }
     if (els.documentAiSafety) {
       els.documentAiSafety.textContent = config.processingEnabled
-        ? 'Somente a imagem da página selecionada é enviada nesta operação; nome do arquivo, ID do Drive e demais páginas não acompanham a requisição.'
-        : 'O processamento permanece desabilitado até a homologação da classificação por página.';
+        ? 'Classificação e extração enviam uma página por vez; perguntas usam somente evidências estruturadas já extraídas nesta sessão.'
+        : 'O processamento permanece desabilitado até a homologação controlada da Fase 5E.';
     }
     if (els.documentAiClassify) {
       const ready = config.processingEnabled === true && config.features?.classifyPage === true;
@@ -3031,6 +3150,7 @@
     }
     renderDocumentAiClassification();
     renderDocumentAiExtraction();
+    renderDocumentAiChat();
     if (els.documentAiRoutines) {
       const routines = Array.isArray(config.routines) ? config.routines : [];
       els.documentAiRoutines.innerHTML = routines.length
@@ -3213,6 +3333,11 @@
         pageType: String(classification.pageType)
       };
       state.documentAiExtraction = extraction;
+      state.documentAiEvidence.set(pageNumber, {
+        pageNumber: Number(extraction.pageNumber),
+        pageType: String(extraction.pageType || ''),
+        fields: extraction.fields
+      });
       if (els.documentAiExtractionStatus) {
         els.documentAiExtractionStatus.className = 'documents-ai-extraction-status success';
         els.documentAiExtractionStatus.textContent = `Campos da página ${pageNumber} extraídos sem combinar outras páginas.`;
@@ -3444,6 +3569,11 @@
     state.documentAiBusy = false;
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
+    state.documentAiEvidence.clear();
+    state.documentAiChatHistory = [];
+    if (els.documentAiChatQuestion) els.documentAiChatQuestion.value = '';
+    if (els.documentAiChatStatus) els.documentAiChatStatus.textContent = '';
+    if (els.documentAiChatMessages) els.documentAiChatMessages.replaceChildren();
     resetEditorState();
     state.pdfOpenId += 1;
     releaseProgressiveStream();
@@ -3487,6 +3617,8 @@
     state.pdfItem = item;
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
+    state.documentAiEvidence.clear();
+    state.documentAiChatHistory = [];
     renderDocumentAiAvailability();
     els.viewer.hidden = false;
     els.viewerModeLabel.textContent = 'Visualização';
@@ -3652,6 +3784,20 @@
   });
   els.documentAiExtract?.addEventListener('click', () => {
     extractActiveDocumentPage().catch(() => {});
+  });
+  els.documentAiChatSend?.addEventListener('click', () => {
+    askDocumentAiQuestion().catch(() => {});
+  });
+  els.documentAiChatQuestion?.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      event.preventDefault();
+      askDocumentAiQuestion().catch(() => {});
+    }
+  });
+  els.documentAiChatMessages?.addEventListener('click', (event) => {
+    const button = event.target.closest?.('[data-ai-chat-page]');
+    const pageNumber = Number(button?.dataset?.aiChatPage || 0);
+    if (pageNumber > 0) window.PortalPdfViewer?.scrollToPage?.(pageNumber);
   });
   els.documentAiExtractionFields?.addEventListener('click', (event) => {
     const button = event.target.closest?.('[data-ai-copy-field]');

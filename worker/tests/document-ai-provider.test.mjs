@@ -7,7 +7,8 @@ import {
   MAX_DOCUMENT_AI_IMAGE_BYTES,
   classifyAndExtractDocumentAiPage,
   classifyDocumentAiPage,
-  extractDocumentAiPage
+  extractDocumentAiPage,
+  chatDocumentAi
 } from '../document-ai-provider.js';
 
 function enabledEnv() {
@@ -308,4 +309,72 @@ test('pipeline 5C usa duas chamadas na mesma página e devolve classificação +
   assert.equal(seenBodies.every((body) =>
     (body.contents?.[0]?.parts || []).filter((part) => part?.inlineData).length === 1
   ), true);
+});
+
+
+test('chat 5D envia somente pergunta e evidências estruturadas por página', async () => {
+  const fields = Object.fromEntries(
+    DOCUMENT_AI_EXTRACTION_FIELDS.pagina_medica_autorizada.map((key) => [
+      key,
+      { state: 'nao_consta', value: '' }
+    ])
+  );
+  fields.procedimento_solicitado = { state: 'encontrado', value: 'PROCEDIMENTO TESTE' };
+
+  const calls = [];
+  const result = await chatDocumentAi(enabledEnv(), {
+    question: 'Qual procedimento consta?',
+    evidence: [{ pageNumber: 3, pageType: 'pagina_medica_autorizada', fields }]
+  }, {
+    fetchImpl: async (url, options) => {
+      calls.push({ url: String(url), options });
+      return okResponse({ answer: 'PROCEDIMENTO TESTE [p. 3].', pages: [3] });
+    }
+  });
+
+  assert.equal(result.chat.answer, 'PROCEDIMENTO TESTE [p. 3].');
+  assert.deepEqual(result.chat.pages, [3]);
+  assert.equal(calls.length, 1);
+  const body = JSON.parse(calls[0].options.body);
+  const serialized = JSON.stringify(body);
+  assert.match(serialized, /Qual procedimento consta/);
+  assert.match(serialized, /PROCEDIMENTO TESTE/);
+  assert.match(body.systemInstruction.parts[0].text, /evidência/i);
+  assert.doesNotMatch(serialized, /filename|fileId|drive[-_ ]?id|item\.ref|searchQuery/i);
+  assert.equal((body.contents?.[0]?.parts || []).some((part) => part?.inlineData), false);
+});
+
+test('chat 5D falha fechado para citação fora das evidências e para gate desligado', async () => {
+  const fields = Object.fromEntries(
+    DOCUMENT_AI_EXTRACTION_FIELDS.comprovante_atendimento.map((key) => [
+      key,
+      { state: 'nao_consta', value: '' }
+    ])
+  );
+  const input = {
+    question: 'O que consta?',
+    evidence: [{ pageNumber: 1, pageType: 'comprovante_atendimento', fields }]
+  };
+
+  await assert.rejects(
+    () => chatDocumentAi(enabledEnv(), input, {
+      fetchImpl: async () => okResponse({ answer: 'Algo [p. 2].', pages: [2] })
+    }),
+    (error) => error?.code === 'DOCUMENT_AI_CHAT_PROVENANCE_MISMATCH'
+  );
+
+  let called = false;
+  await assert.rejects(
+    () => chatDocumentAi({
+      ...enabledEnv(),
+      DOCUMENTS_AI_PROCESSING_ENABLED: 'false'
+    }, input, {
+      fetchImpl: async () => {
+        called = true;
+        return okResponse({ answer: 'NÃO CONSTA', pages: [] });
+      }
+    }),
+    (error) => error?.code === 'DOCUMENT_AI_PROCESSING_DISABLED'
+  );
+  assert.equal(called, false);
 });

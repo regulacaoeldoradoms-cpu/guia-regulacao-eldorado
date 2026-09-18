@@ -14,7 +14,8 @@ import {
 import {
   MAX_DOCUMENT_AI_IMAGE_BYTES,
   classifyAndExtractDocumentAiPage,
-  classifyDocumentAiPage
+  classifyDocumentAiPage,
+  chatDocumentAi
 } from './document-ai-provider.js';
 import {
   DriveIntegrationError,
@@ -35,6 +36,7 @@ import {
 const API_PREFIX = '/api/documents/';
 const OAUTH_CALLBACK = '/api/documents/oauth/callback';
 const MAX_JSON_BODY_BYTES = 16 * 1024;
+const MAX_DOCUMENT_AI_CHAT_BODY_BYTES = 64 * 1024;
 const DEFAULT_EDITOR_COLOR_PALETTE = Object.freeze([
   '#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'
 ]);
@@ -157,13 +159,13 @@ function genericError(error, origin, allowed = true) {
   return json({ error: 'Falha temporária na Central de Documentos.', code: 'DOCUMENTS_TEMPORARILY_UNAVAILABLE' }, 500, origin, allowed);
 }
 
-async function safeJson(request) {
+async function safeJson(request, maximumBytes = MAX_JSON_BODY_BYTES) {
   const declared = Number(request.headers.get('Content-Length') || 0);
-  if (declared > MAX_JSON_BODY_BYTES) {
+  if (declared > maximumBytes) {
     throw new DriveIntegrationError('DOCUMENTS_BODY_TOO_LARGE', 'Solicitação maior do que o permitido.', 413);
   }
   const text = await request.text();
-  if (new TextEncoder().encode(text).byteLength > MAX_JSON_BODY_BYTES) {
+  if (new TextEncoder().encode(text).byteLength > maximumBytes) {
     throw new DriveIntegrationError('DOCUMENTS_BODY_TOO_LARGE', 'Solicitação maior do que o permitido.', 413);
   }
   if (!text.trim()) return {};
@@ -334,6 +336,24 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
         pageNumber,
         mimeType,
         bytes: body
+      });
+      return json(result, 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/ai/chat' && request.method === 'POST') {
+      const denied = requireCapability(user, 'extract', origin);
+      if (denied) return denied;
+      if (!documentAiProcessingEnabled(env)) {
+        return json({
+          error: 'O processamento da IA documental ainda não está habilitado neste ambiente.',
+          code: 'DOCUMENT_AI_PROCESSING_DISABLED'
+        }, 503, origin);
+      }
+
+      const body = await safeJson(request, MAX_DOCUMENT_AI_CHAT_BODY_BYTES);
+      const result = await chatDocumentAi(env, {
+        question: body.question,
+        evidence: body.evidence
       });
       return json(result, 200, origin);
     }

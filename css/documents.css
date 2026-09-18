@@ -2452,3 +2452,115 @@
   justify-content: center;
   font-size: .72rem;
 }
+
+
+/* Fase 5D — perguntas documentais */
+.documents-ai-chat {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #d9e4ed;
+  border-radius: 12px;
+  background: #fbfdff;
+}
+
+.documents-ai-chat > strong {
+  display: block;
+  color: #153854;
+}
+
+.documents-ai-chat > p {
+  margin: 5px 0 10px;
+  color: #6b7f91;
+  font-size: .75rem;
+  line-height: 1.45;
+}
+
+.documents-ai-chat textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 78px;
+  max-height: 180px;
+  border: 1px solid #cbd9e4;
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: #fff;
+  color: #173b5c;
+  font: inherit;
+  font-size: .78rem;
+  line-height: 1.45;
+}
+
+.documents-ai-chat textarea:focus {
+  outline: 2px solid #9bc7e7;
+  outline-offset: 1px;
+}
+
+.documents-ai-chat .portal-button {
+  width: 100%;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.documents-ai-chat-status {
+  min-height: 0;
+  margin-top: 8px;
+  color: #5a7084;
+  font-size: .74rem;
+}
+
+.documents-ai-chat-status.warning { color: #8a5f0a; }
+.documents-ai-chat-status.success { color: #176049; }
+
+.documents-ai-chat-messages {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.documents-ai-chat-message {
+  border: 1px solid #d5e2eb;
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: #fff;
+}
+
+.documents-ai-chat-message strong {
+  display: block;
+  color: #244c69;
+  font-size: .73rem;
+  margin-bottom: 4px;
+}
+
+.documents-ai-chat-message p {
+  margin: 0;
+  color: #243f55;
+  font-size: .76rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.documents-ai-chat-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 7px;
+}
+
+.documents-ai-chat-page {
+  border: 1px solid #bdd2e2;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: #eef6fc;
+  color: #245b83;
+  font: inherit;
+  font-size: .7rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.documents-ai-chat-page:hover,
+.documents-ai-chat-page:focus-visible {
+  background: #dfeefa;
+  outline: none;
+}

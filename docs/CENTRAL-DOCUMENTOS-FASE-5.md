@@ -179,9 +179,31 @@ Aceite 5C: **314/314 testes** na suíte integrada, navegador **75 passed / 3 ski
 
 ### 5D — Perguntas sobre o documento
 
+Estado: **concluída e aceita sinteticamente para integração**.
+
+Implementação:
 - painel conversacional separado da extração institucional;
-- respostas sempre com página(s) de origem;
-- nenhuma resposta livre pode contaminar os resultados estruturados da extração.
+- chat recebe somente evidências estruturadas já extraídas na sessão atual;
+- nenhuma imagem, nome de arquivo, ref ou ID do Drive acompanha a pergunta 5D;
+- evidências permanecem somente em memória e são descartadas ao fechar/trocar o PDF;
+- máximo de 12 páginas de evidência por pergunta;
+- respostas comuns exigem ao menos uma citação textual `[p. N]` e lista de páginas coerente com as evidências;
+- citações para páginas ausentes são rejeitadas no backend;
+- `NÃO CONSTA` e `ILEGÍVEL` permanecem respostas terminais explícitas;
+- respostas livres entram somente em `documentAiChatHistory` e não alteram classificação/extração institucional;
+- botões das páginas citadas levam à origem no visualizador;
+- produção continua com os dois gates da IA documental desligados.
+
+Critérios sintéticos da 5D:
+1. pergunta sem evidência não é enviada;
+2. evidência duplicada ou estruturalmente inválida falha fechado;
+3. provider recebe somente pergunta + evidência estruturada paginada;
+4. resposta sem proveniência é rejeitada;
+5. resposta citando página fora das evidências é rejeitada;
+6. histórico de chat é efêmero e separado dos resultados 5C;
+7. nenhum conteúdo do chat entra em telemetria técnica.
+
+Aceite 5D: **320/320 testes** na suíte integrada, navegador **75 passed / 3 skipped esperados**, staging, governança e site verdes após reconciliação com a `main` atual. A reconciliação incorporou 83 commits posteriores sem arquivos sobrepostos ao escopo 5D. Nenhum documento real foi enviado ao provedor e os gates produtivos permaneceram desligados.
 
 ### 5E — Homologação real controlada
 
@@ -204,4 +226,4 @@ Aceite 5C: **314/314 testes** na suíte integrada, navegador **75 passed / 3 ski
 
 ## Próximo passo atual
 
-Integrar a 5C e iniciar a 5D em branch própria. A 5D deve receber somente evidências paginadas já estruturadas/explicitamente fornecidas pelo fluxo documental e não pode alterar os resultados estruturados da 5C. Os gates produtivos permanecem desligados até a homologação 5E.
+Integrar a 5D e preparar a **5E — homologação real controlada** em branch separada. Todo o harness, fixtures sintéticos, wrapper preview-only e procedimentos fail-closed devem ser preparados antes de qualquer ativação. A primeira execução com provedor real exigirá confirmação do operador; até lá os gates produtivos permanecem desligados.

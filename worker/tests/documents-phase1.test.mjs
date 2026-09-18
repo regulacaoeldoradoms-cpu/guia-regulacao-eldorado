@@ -1122,4 +1122,19 @@ sqliteTest('IA documental 5C exige extract e produção bloqueia classificação
   );
   assert.equal(blockedExtraction.status, 503);
   assert.equal((await blockedExtraction.json()).code, 'DOCUMENT_AI_PROCESSING_DISABLED');
+
+  const blockedChat = await handleDocumentsRoute(
+    documentRequest('/api/documents/ai/chat', user.token, {
+      method: 'POST',
+      body: {
+        question: 'não deve ser processada',
+        evidence: [{ pageNumber: 1, pageType: 'comprovante_atendimento', fields: {} }]
+      }
+    }),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(blockedChat.status, 503);
+  assert.equal((await blockedChat.json()).code, 'DOCUMENT_AI_PROCESSING_DISABLED');
 });

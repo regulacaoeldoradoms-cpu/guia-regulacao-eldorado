@@ -16,7 +16,7 @@ function functionSlice(source, name, nextName) {
   return source.slice(start, end);
 }
 
-test('painel 5C permanece oculto e produção continua fail-closed', async () => {
+test('painel 5D permanece oculto e produção continua fail-closed', async () => {
   const [html, js, css, router, wrangler] = await Promise.all([
     read('documentos/index.html'),
     read('js/documents.js'),
@@ -60,7 +60,7 @@ test('classificação envia somente Blob da página e metadado técnico de prove
   assert.match(viewer, /exportPageImage,/);
 });
 
-test('extração 5C também envia somente Blob da página e preserva origem', async () => {
+test('extração 5D também envia somente Blob da página e preserva origem', async () => {
   const js = await read('js/documents.js');
   const extract = functionSlice(js, 'extractActiveDocumentPage', 'loadAccess');
 
@@ -72,7 +72,7 @@ test('extração 5C também envia somente Blob da página e preserva origem', as
   assert.doesNotMatch(extract, /state\.pdfItem\.(?:name|ref)|fileId|filename|searchQuery|page_text|inlineData/);
 });
 
-test('UI 5C possui copiar campo, copiar bloco e Ver origem sem persistência', async () => {
+test('UI 5D possui copiar campo, copiar bloco e Ver origem sem persistência', async () => {
   const js = await read('js/documents.js');
   assert.match(js, /data-ai-copy-field/);
   assert.match(js, /documentAiExtractionBlock/);
@@ -83,7 +83,7 @@ test('UI 5C possui copiar campo, copiar bloco e Ver origem sem persistência', a
   assert.doesNotMatch(js, /indexedDB.*documentAi/i);
 });
 
-test('frontend 5C não contém segredo de provedor nem codifica a página em base64', async () => {
+test('frontend 5D não contém segredo de provedor nem codifica a página em base64', async () => {
   const [html, js] = await Promise.all([
     read('documentos/index.html'),
     read('js/documents.js')
@@ -98,4 +98,37 @@ test('rotinas públicas exibidas no painel não incluem instrução interna', as
   assert.match(js, /routine\.id/);
   assert.match(js, /routine\.purpose/);
   assert.doesNotMatch(js, /routine\.system/);
+});
+
+
+test('chat 5D usa somente evidências estruturadas em memória e não identidade do arquivo', async () => {
+  const [html, js, router] = await Promise.all([
+    read('documentos/index.html'),
+    read('js/documents.js'),
+    read('worker/documents-router.js')
+  ]);
+
+  assert.match(html, /id="documentsAiChatQuestion"/);
+  assert.match(html, /id="documentsAiChatSendButton"[^>]*disabled/);
+  assert.match(html, /id="documentsAiChatMessages"/);
+  assert.match(js, /documentAiEvidence: new Map\(\)/);
+  assert.match(js, /documentAiChatHistory: \[\]/);
+  assert.match(js, /\/api\/documents\/ai\/chat/);
+  assert.match(js, /evidence = \[\.\.\.state\.documentAiEvidence\.values\(\)\]/);
+  assert.match(js, /state\.documentAiEvidence\.set\(pageNumber/);
+  assert.match(js, /data-ai-chat-page/);
+  assert.match(router, /url\.pathname === '\/api\/documents\/ai\/chat'/);
+  assert.doesNotMatch(js, /body:\s*JSON\.stringify\([^)]*(?:state\.pdfItem|filename|fileId|item\.ref)/s);
+  assert.doesNotMatch(js, /localStorage.*documentAi|sessionStorage.*documentAi|indexedDB.*documentAi/i);
+});
+
+test('chat 5D permanece separado da extração institucional', async () => {
+  const js = await read('js/documents.js');
+  const start = js.indexOf('  async function askDocumentAiQuestion(');
+  const end = js.indexOf('  function renderDocumentAiPanel()', start);
+  assert.ok(start >= 0 && end > start);
+  const chat = js.slice(start, end);
+  assert.match(chat, /state\.documentAiChatHistory\.push/);
+  assert.doesNotMatch(chat, /state\.documentAiExtraction\s*=/);
+  assert.doesNotMatch(chat, /state\.documentAiClassification\s*=/);
 });

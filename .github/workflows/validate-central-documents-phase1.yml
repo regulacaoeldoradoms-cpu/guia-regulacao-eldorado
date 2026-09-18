@@ -1,4 +1,4 @@
-name: Validar Central de Documentos — Fases 1–5C
+name: Validar Central de Documentos — Fases 1–5D
 
 on:
   pull_request:
@@ -99,11 +99,14 @@ jobs:
           grep -q "/api/documents/ai/config" worker/documents-router.js
           grep -q "/api/documents/ai/page/classify" worker/documents-router.js
           grep -q "/api/documents/ai/page/extract" worker/documents-router.js
+          grep -q "/api/documents/ai/chat" worker/documents-router.js
           grep -q "normalizeDocumentAiExtraction" worker/document-ai.js
           grep -q "extractDocumentAiPage" worker/document-ai-provider.js
           grep -q "exportPageImage" js/document-viewer.js
           grep -q "PROMPT_CLASSIFICACAO_PAGINAS_V1" worker/document-ai-prompts.js
           grep -q "PROMPT_EXTRACAO_REGULACAO_V1" worker/document-ai-prompts.js
+          grep -q "PROMPT_DOCUMENT_CHAT_V1" worker/document-ai-prompts.js
+          grep -q "chatDocumentAi" worker/document-ai-provider.js
           grep -q 'DOCUMENTS_AI_ENABLED = "false"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_PROCESSING_ENABLED = "false"' worker/wrangler.toml
           grep -q 'id="documentAiButton"' documentos/index.html

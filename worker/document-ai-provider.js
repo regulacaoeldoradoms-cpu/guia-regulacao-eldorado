@@ -2,7 +2,8 @@
 
 import {
   PROMPT_CLASSIFICACAO_PAGINAS_V1,
-  PROMPT_EXTRACAO_REGULACAO_V1
+  PROMPT_EXTRACAO_REGULACAO_V1,
+  PROMPT_DOCUMENT_CHAT_V1
 } from './document-ai-prompts.js';
 import {
   DocumentAiError,
@@ -10,7 +11,10 @@ import {
   documentAiProcessingEnabled,
   normalizeDocumentAiClassification,
   normalizeDocumentAiExtraction,
-  normalizeDocumentAiPageNumber
+  normalizeDocumentAiPageNumber,
+  normalizeDocumentAiQuestion,
+  normalizeDocumentAiEvidence,
+  normalizeDocumentAiChatResponse
 } from './document-ai.js';
 
 export const MAX_DOCUMENT_AI_IMAGE_BYTES = 3 * 1024 * 1024;
@@ -326,6 +330,102 @@ export async function classifyAndExtractDocumentAiPage(env, input = {}, options 
     routines: {
       classification: classified.routine,
       extraction: extracted.routine
+    }
+  };
+}
+
+
+export async function chatDocumentAi(env, input = {}, options = {}) {
+  if (!documentAiProcessingEnabled(env)) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PROCESSING_DISABLED',
+      'O processamento da IA documental está desabilitado.',
+      503
+    );
+  }
+  if (!env.GEMINI_API_KEY) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PROVIDER_NOT_CONFIGURED',
+      'O provedor da IA documental não está configurado.',
+      503
+    );
+  }
+
+  const question = normalizeDocumentAiQuestion(input.question);
+  const evidence = normalizeDocumentAiEvidence(input.evidence);
+  const model = String(env.DOCUMENTS_AI_MODEL || env.GEMINI_MODEL || 'gemini-3.5-flash-lite').trim();
+  const timeoutMs = boundedInteger(env.DOCUMENTS_AI_TIMEOUT_MS, DEFAULT_TIMEOUT_MS, 2000, 30000);
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const fetchImpl = options.fetchImpl || fetch;
+  const signal = options.signal || AbortSignal.timeout(timeoutMs);
+
+  const evidencePayload = evidence.map((item) => ({
+    pageNumber: item.pageNumber,
+    pageType: item.pageType,
+    fields: item.fields
+  }));
+
+  let response;
+  try {
+    response = await fetchImpl(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': env.GEMINI_API_KEY
+      },
+      signal,
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: PROMPT_DOCUMENT_CHAT_V1.system }]
+        },
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: [
+              `PERGUNTA: ${question}`,
+              '',
+              'EVIDÊNCIAS ESTRUTURADAS POR PÁGINA:',
+              JSON.stringify(evidencePayload),
+              '',
+              'Responda JSON no formato {"answer":"texto com [p. N]","pages":[N]}.',
+              'Se não constar, use exatamente {"answer":"NÃO CONSTA","pages":[]}.',
+              'Se a evidência pertinente estiver ilegível, use exatamente {"answer":"ILEGÍVEL","pages":[]}.'
+            ].join('\n')
+          }]
+        }],
+        generationConfig: {
+          maxOutputTokens: 1200,
+          responseMimeType: 'application/json'
+        }
+      })
+    });
+  } catch (cause) {
+    const timedOut = signal?.aborted || ['AbortError', 'TimeoutError'].includes(cause?.name);
+    throw new DocumentAiError(
+      timedOut ? 'DOCUMENT_AI_PROVIDER_TIMEOUT' : 'DOCUMENT_AI_PROVIDER_NETWORK_ERROR',
+      timedOut
+        ? 'A pergunta documental excedeu o tempo seguro desta tentativa.'
+        : 'Não foi possível acessar o provedor da IA documental nesta tentativa.',
+      timedOut ? 504 : 502
+    );
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PROVIDER_HTTP_ERROR',
+      'O provedor da IA documental não concluiu a pergunta nesta tentativa.',
+      [408, 429, 500, 502, 503, 504].includes(response.status) ? response.status : 502
+    );
+  }
+
+  const parsed = parseJsonCandidate(candidateText(payload));
+  const chat = normalizeDocumentAiChatResponse(parsed, evidence);
+  return {
+    chat,
+    routine: {
+      id: PROMPT_DOCUMENT_CHAT_V1.id,
+      version: PROMPT_DOCUMENT_CHAT_V1.version
     }
   };
 }

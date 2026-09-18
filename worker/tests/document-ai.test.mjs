@@ -11,10 +11,13 @@ import {
   normalizeDocumentAiClassification,
   normalizeDocumentAiExtraction,
   normalizeDocumentAiField,
+  normalizeDocumentAiQuestion,
+  normalizeDocumentAiEvidence,
+  normalizeDocumentAiChatResponse,
   documentAiTechnicalEvent
 } from '../document-ai.js';
 
-test('IA documental 5C só processa quando os dois gates estão ligados', () => {
+test('IA documental 5D só processa quando os dois gates estão ligados', () => {
   assert.equal(documentAiEnabled({}), false);
   assert.equal(documentAiProcessingEnabled({ DOCUMENTS_AI_PROCESSING_ENABLED: 'true' }), false);
   assert.equal(documentAiEnabled({ DOCUMENTS_AI_ENABLED: 'true' }), true);
@@ -35,8 +38,8 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
 
   assert.equal(config.phase, DOCUMENT_AI_PHASE);
   assert.equal(config.version, DOCUMENT_AI_VERSION);
-  assert.equal(config.phase, '5C');
-  assert.equal(config.version, 'phase5c-v1');
+  assert.equal(config.phase, '5D');
+  assert.equal(config.version, 'phase5d-v1');
   assert.equal(config.enabled, true);
   assert.equal(config.processingEnabled, false);
   assert.equal(config.pageIsolation, true);
@@ -44,7 +47,7 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
   assert.equal(config.persistence, 'none');
   assert.equal(config.features.classifyPage, true);
   assert.equal(config.features.extractPage, true);
-  assert.equal(config.features.documentChat, false);
+  assert.equal(config.features.documentChat, true);
   assert.equal(Array.isArray(config.routines), true);
   const serialized = JSON.stringify(config);
   assert.doesNotMatch(serialized, /segredo-nao-pode-sair|outro-segredo|GEMINI_API_KEY|AUTH_SESSION_SECRET/);
@@ -173,4 +176,73 @@ test('extração recusa troca de página, troca de tipo e tipo outro', () => {
     pageType: 'outro',
     fields: {}
   }), /não possui rotina de extração autorizada/);
+});
+
+
+test('chat 5D aceita somente evidências estruturadas por página e rejeita duplicidade', () => {
+  const fields = Object.fromEntries(
+    DOCUMENT_AI_EXTRACTION_FIELDS.comprovante_atendimento.map((key) => [
+      key,
+      { state: 'nao_consta', value: '' }
+    ])
+  );
+  fields.nome_paciente = { state: 'encontrado', value: 'PESSOA SINTÉTICA' };
+  const evidence = normalizeDocumentAiEvidence([{
+    pageNumber: 2,
+    pageType: 'comprovante_atendimento',
+    fields
+  }]);
+
+  assert.equal(evidence.length, 1);
+  assert.equal(evidence[0].pageNumber, 2);
+  assert.equal(evidence[0].fields.nome_paciente.value, 'PESSOA SINTÉTICA');
+  assert.throws(() => normalizeDocumentAiEvidence([...evidence, ...evidence]), /mesma página/i);
+  assert.throws(() => normalizeDocumentAiQuestion('   '), /Digite uma pergunta/);
+});
+
+test('chat 5D exige citações dentro das páginas de evidência', () => {
+  const fields = Object.fromEntries(
+    DOCUMENT_AI_EXTRACTION_FIELDS.pagina_medica_autorizada.map((key) => [
+      key,
+      { state: 'nao_consta', value: '' }
+    ])
+  );
+  fields.procedimento_solicitado = { state: 'encontrado', value: 'PROCEDIMENTO TESTE' };
+  const evidence = [{
+    pageNumber: 4,
+    pageType: 'pagina_medica_autorizada',
+    fields
+  }];
+
+  assert.deepEqual(
+    normalizeDocumentAiChatResponse({
+      answer: 'Consta PROCEDIMENTO TESTE [p. 4].',
+      pages: [4]
+    }, evidence),
+    { answer: 'Consta PROCEDIMENTO TESTE [p. 4].', pages: [4] }
+  );
+  assert.throws(() => normalizeDocumentAiChatResponse({
+    answer: 'Resposta sem citação.',
+    pages: [4]
+  }, evidence), /citação de página/i);
+  assert.throws(() => normalizeDocumentAiChatResponse({
+    answer: 'Página indevida [p. 5].',
+    pages: [5]
+  }, evidence), /fora das evidências/i);
+  assert.throws(() => normalizeDocumentAiChatResponse({
+    answer: 'Lista divergente [p. 4].',
+    pages: []
+  }, evidence), /citação de página|proveniência/i);
+  assert.deepEqual(
+    normalizeDocumentAiChatResponse({ answer: 'NÃO CONSTA', pages: [] }, evidence),
+    { answer: 'NÃO CONSTA', pages: [] }
+  );
+  assert.deepEqual(
+    normalizeDocumentAiChatResponse({ answer: 'ILEGÍVEL', pages: [] }, evidence),
+    { answer: 'ILEGÍVEL', pages: [] }
+  );
+  assert.throws(() => normalizeDocumentAiChatResponse({
+    answer: 'NÃO CONSTA',
+    pages: [4]
+  }, evidence), /não deve declarar páginas/i);
 });

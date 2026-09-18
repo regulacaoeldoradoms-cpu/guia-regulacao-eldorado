@@ -6,8 +6,8 @@ import {
   documentAiRoutineMetadata
 } from './document-ai-prompts.js';
 
-export const DOCUMENT_AI_PHASE = '5C';
-export const DOCUMENT_AI_VERSION = 'phase5c-v1';
+export const DOCUMENT_AI_PHASE = '5D';
+export const DOCUMENT_AI_VERSION = 'phase5d-v1';
 const DOCUMENT_AI_RUNTIME_READY = true;
 
 export const DOCUMENT_AI_EXTRACTION_FIELDS = Object.freeze({
@@ -68,7 +68,7 @@ export function documentAiPublicConfig(env = {}) {
     features: {
       classifyPage: true,
       extractPage: true,
-      documentChat: false
+      documentChat: true
     },
     routines: documentAiRoutineMetadata()
   };
@@ -163,6 +163,117 @@ export function normalizeDocumentAiExtraction(value, expected = {}) {
   return { pageNumber, pageType, fields };
 }
 
+
+const DOCUMENT_AI_MAX_EVIDENCE_PAGES = 12;
+const DOCUMENT_AI_MAX_QUESTION_CHARS = 1200;
+const DOCUMENT_AI_MAX_FIELD_CHARS = 4000;
+const DOCUMENT_AI_MAX_ANSWER_CHARS = 6000;
+
+export function normalizeDocumentAiQuestion(value) {
+  const question = String(value || '').trim();
+  if (!question) {
+    throw new DocumentAiError('DOCUMENT_AI_QUESTION_REQUIRED', 'Digite uma pergunta sobre as evidências extraídas.', 400);
+  }
+  if (question.length > DOCUMENT_AI_MAX_QUESTION_CHARS) {
+    throw new DocumentAiError('DOCUMENT_AI_QUESTION_TOO_LONG', 'Pergunta maior do que o limite da IA documental.', 413);
+  }
+  return question;
+}
+
+export function normalizeDocumentAiEvidence(value) {
+  if (!Array.isArray(value) || value.length < 1) {
+    throw new DocumentAiError('DOCUMENT_AI_EVIDENCE_REQUIRED', 'Extraia ao menos uma página antes de perguntar.', 400);
+  }
+  if (value.length > DOCUMENT_AI_MAX_EVIDENCE_PAGES) {
+    throw new DocumentAiError('DOCUMENT_AI_EVIDENCE_TOO_LARGE', 'Há páginas demais nesta consulta documental.', 413);
+  }
+
+  const seen = new Set();
+  return value.map((item) => {
+    const normalized = normalizeDocumentAiExtraction(item);
+    if (seen.has(normalized.pageNumber)) {
+      throw new DocumentAiError('DOCUMENT_AI_EVIDENCE_DUPLICATE_PAGE', 'A mesma página não pode aparecer duas vezes nas evidências.', 400);
+    }
+    seen.add(normalized.pageNumber);
+    const fields = Object.fromEntries(Object.entries(normalized.fields).map(([key, field]) => [
+      key,
+      field.state === 'encontrado'
+        ? { state: field.state, value: String(field.value).slice(0, DOCUMENT_AI_MAX_FIELD_CHARS) }
+        : { state: field.state, value: '' }
+    ]));
+    return {
+      pageNumber: normalized.pageNumber,
+      pageType: normalized.pageType,
+      fields
+    };
+  });
+}
+
+export function normalizeDocumentAiChatResponse(value, evidence) {
+  const normalizedEvidence = normalizeDocumentAiEvidence(evidence);
+  const allowedPages = new Set(normalizedEvidence.map((item) => item.pageNumber));
+  const answer = String(value?.answer || '').trim();
+  if (!answer || answer.length > DOCUMENT_AI_MAX_ANSWER_CHARS) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_CHAT_ANSWER_INVALID',
+      'A resposta documental retornou formato inválido.',
+      502
+    );
+  }
+
+  const pages = Array.isArray(value?.pages)
+    ? [...new Set(value.pages.map((page) => normalizeDocumentAiPageNumber(page)))]
+    : [];
+  if (pages.some((page) => !allowedPages.has(page))) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_CHAT_PROVENANCE_MISMATCH',
+      'A resposta citou página fora das evidências fornecidas.',
+      502
+    );
+  }
+
+  const citations = [...answer.matchAll(/\[p\.\s*(\d+)\]/gi)]
+    .map((match) => Number(match[1]))
+    .filter(Number.isInteger);
+  if (citations.some((page) => !allowedPages.has(page))) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_CHAT_PROVENANCE_MISMATCH',
+      'A resposta textual citou página fora das evidências fornecidas.',
+      502
+    );
+  }
+
+  const terminal = /^(NÃO CONSTA|ILEGÍVEL)[.!]?$/iu.test(answer);
+  if (terminal) {
+    if (pages.length || citations.length) {
+      throw new DocumentAiError(
+        'DOCUMENT_AI_CHAT_PROVENANCE_MISMATCH',
+        'Resposta terminal não deve declarar páginas contraditórias.',
+        502
+      );
+    }
+  } else {
+    if (!pages.length || !citations.length) {
+      throw new DocumentAiError(
+        'DOCUMENT_AI_CHAT_PROVENANCE_REQUIRED',
+        'A resposta documental perdeu a citação de página obrigatória.',
+        502
+      );
+    }
+    const declared = [...pages].sort((a, b) => a - b);
+    const cited = [...new Set(citations)].sort((a, b) => a - b);
+    if (declared.length !== cited.length || declared.some((page, index) => page !== cited[index])) {
+      throw new DocumentAiError(
+        'DOCUMENT_AI_CHAT_PROVENANCE_MISMATCH',
+        'A resposta e a lista de páginas possuem proveniência divergente.',
+        502
+      );
+    }
+  }
+
+  return { answer, pages };
+}
+
 export function documentAiTechnicalEvent(name, properties = {}) {
   const allowedNames = new Set([
     'document_ai_panel_opened',
@@ -171,7 +282,10 @@ export function documentAiTechnicalEvent(name, properties = {}) {
     'document_ai_classification_failed',
     'document_ai_extraction_started',
     'document_ai_extraction_completed',
-    'document_ai_extraction_failed'
+    'document_ai_extraction_failed',
+    'document_ai_chat_started',
+    'document_ai_chat_completed',
+    'document_ai_chat_failed'
   ]);
   if (!allowedNames.has(String(name || ''))) return null;
 
