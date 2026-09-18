@@ -136,9 +136,20 @@ Observação de desempenho: o intervalo entre `syncing` e `success` foi percebid
 
 Para acelerar a publicação sem remover salvaguardas, a matriz real será reduzida ao caminho crítico de aceite da Fase 4: (1) ausência de reenvio sem mudança + segundo salvamento consecutivo; (2) fechamento/reabertura confirmando persistência; (3) conflito externo verdadeiro sem sobrescrita silenciosa; (4) encerramento fail-closed da janela. Casos adicionais de edição durante upload, falha/retry e refinamento de latência permanecem registrados como hardening posterior, cobertos por testes automatizados nesta versão.
 
+## Segundo autosync e ausência de reenvio aprovados — 18/09/2026
+
+O operador confirmou duas evidências reais consecutivas no frontend de homologação:
+
+- sem interação com o PDF, **não ocorreu nova sincronização**;
+- uma segunda alteração simples provocou novo autosync e terminou novamente com sucesso.
+
+Resultado: aprovados os critérios reais de **ausência de reenvio sem mudança** e **salvamentos consecutivos**. O autosync está reagindo à revisão do editor, não a tempo/zoom/navegação isolados.
+
+Próxima ação crítica: fechar o editor/visualização de forma normal, reabrir o mesmo PDF descartável e confirmar que as alterações persistiram no documento carregado do Drive. Não fazer nova edição antes dessa conferência.
+
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; primeiro autosync real aprovado; executar caminho crítico restante para publicação.**
+**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; salvamentos consecutivos e ausência de reenvio aprovados; validar fechar/reabrir e persistência.**
 
 A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. 4A–4C têm implementação e evidências técnicas, não aceite real da 4D. Encerrar uma autorização não homologa o produto. Não reiniciar etapas encerradas.
 
@@ -251,7 +262,7 @@ Artefatos anteriores preservados:
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 4D sem aceite; Fase 0 e Fases 1–3 encerradas |
-| Última ação concluída | Primeiro autosync real isolado aprovado após rotação da página 1; sucesso confirmado visualmente e modificação refletida na listagem |
+| Última ação concluída | Segundo autosync real aprovado e confirmado que não há reenvio sem mudança |
 | Branch/PR | `codex/central-docs-drive-sync-phase4`; #201 aberto, **draft**, sem merge; tecnicamente mergeável após reconciliação |
 | Main | `cd71ad566a443cd2f89b1d98285856c22baf73d7` incorporada à branch; 0 commits atrás; login/abertura/Home preservados |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
@@ -265,8 +276,8 @@ Artefatos anteriores preservados:
 | Bloqueios | Nenhum bloqueio técnico imediato; matriz real deve terminar antes da expiração e ser seguida de encerramento fail-closed |
 | Riscos | D1/OAuth compartilhados; preflight/upload não atômicos; latência percebida maior que Lumin foi registrada para Fase 7 e não deve ser mascarada com falso sucesso otimista |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Sem tocar no editor por alguns segundos, confirmar que não ocorre novo sync sem mudança; depois fazer uma segunda alteração simples e aguardar um segundo autosync completo |
-| Depois | Fechar/reabrir para confirmar persistência, provocar um conflito externo real controlado, encerrar a janela fail-closed e então avaliar aceite/merge/publicação |
+| Próxima ação exata | Fechar normalmente o editor/visualização, reabrir o mesmo PDF descartável e confirmar que as duas alterações persistiram após recarga do Drive; não editar antes da conferência |
+| Depois | Provocar um conflito externo real controlado, encerrar a janela fail-closed e então avaliar aceite/merge/publicação |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
 ## Histórico recuperável
