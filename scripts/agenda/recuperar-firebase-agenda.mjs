@@ -9,12 +9,13 @@
  * 1. confirma que /api/agenda ainda está no erro específico de armazenamento;
  *    a main é baixada como snapshot ZIP autenticado pela referência pública do GitHub, sem exigir Git instalado;
  * 2. inspeciona somente nomes/tipos de bindings, nunca valores, e injeta no arquivo temporário apenas o ID técnico do D1 já ligado a AUTH_DB;
- * 3. localiza uma versão já homologada da Agenda com os três bindings;
- * 4. após confirmação humana, faz rollback temporário para essa versão;
- * 5. recupera da versão homologada os valores Firebase não secretos e os nomes dos segredos; a main atual é enviada como NOVA VERSÃO, sem tráfego, com auto-provisionamento desativado;
- * 6. inspeciona essa versão enviada (Firebase + AUTH_DB) antes de promovê-la a 100% e só então confirma a Agenda.
+ * 3. localiza uma versão já homologada da Agenda para recuperar somente os valores Firebase não secretos;
+ * 4. valida localmente uma nova chave da conta de serviço Firebase, sem imprimir ou versionar o conteúdo;
+ * 5. envia a main como NOVA VERSÃO, sem tráfego, usando --secrets-file temporário apenas para os segredos Firebase fornecidos localmente;
+ * 6. confirma Firebase, AUTH_DB e preservação dos segredos atuais antes de promover exatamente essa versão a 100%.
  *
- * Nenhum segredo é impresso, copiado para arquivo ou enviado ao GitHub.
+ * Valores secretos nunca são impressos nem enviados ao GitHub. O arquivo temporário de segredos
+ * existe somente no diretório temporário desta execução e é removido no finally.
  * No Windows, o Wrangler é iniciado pelo próprio node.exe atual executando diretamente o npx-cli.js que acompanha essa instalação. Isso evita depender da execução de arquivos .cmd por subprocessos.
  */
 import fs from 'node:fs';
@@ -150,6 +151,94 @@ function tomlValue(value) {
   return JSON.stringify(String(value));
 }
 
+export function parseServiceAccount(value, historicalVars = {}) {
+  const payload = typeof value === 'string' ? parseJson(value) : value;
+  must(payload && typeof payload === 'object' && !Array.isArray(payload), 'CONTA_SERVICO_FIREBASE_INVALIDA');
+
+  const projectId = String(payload.project_id || '').trim();
+  const clientEmail = String(payload.client_email || '').trim();
+  const privateKey = String(payload.private_key || '').replace(/\\n/g, '\n').trim();
+
+  must(projectId, 'CONTA_SERVICO_SEM_PROJECT_ID');
+  must(clientEmail && clientEmail.includes('@'), 'CONTA_SERVICO_SEM_CLIENT_EMAIL');
+  must(
+    privateKey.startsWith('-----BEGIN PRIVATE KEY-----') &&
+      privateKey.endsWith('-----END PRIVATE KEY-----'),
+    'CONTA_SERVICO_SEM_PRIVATE_KEY'
+  );
+
+  if (historicalVars.FIREBASE_PROJECT_ID) {
+    must(projectId === String(historicalVars.FIREBASE_PROJECT_ID).trim(), 'PROJECT_ID_FIREBASE_DIVERGENTE');
+  }
+  if (historicalVars.FIREBASE_CLIENT_EMAIL) {
+    must(
+      clientEmail.toLowerCase() === String(historicalVars.FIREBASE_CLIENT_EMAIL).trim().toLowerCase(),
+      'CLIENT_EMAIL_FIREBASE_DIVERGENTE'
+    );
+  }
+
+  return { projectId, clientEmail, privateKey };
+}
+
+function readSmallFile(file, code, maxBytes = 256 * 1024) {
+  const target = path.resolve(String(file || ''));
+  must(target && fs.existsSync(target), code);
+  const stat = fs.lstatSync(target);
+  must(stat.isFile() && !stat.isSymbolicLink() && stat.size > 0 && stat.size <= maxBytes, code);
+  return fs.readFileSync(target, 'utf8');
+}
+
+export function buildLocalFirebaseSecrets(plan, serviceAccount, webApiKey = '') {
+  must(plan && Array.isArray(plan.secrets), 'PLANO_FIREBASE_INVALIDO');
+  const allowed = new Set(['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY', 'FIREBASE_WEB_API_KEY']);
+  for (const name of plan.secrets) must(allowed.has(name), 'SEGREDO_FIREBASE_NAO_SUPORTADO');
+
+  const secrets = {};
+  if (plan.secrets.includes('FIREBASE_PROJECT_ID')) secrets.FIREBASE_PROJECT_ID = serviceAccount.projectId;
+  if (plan.secrets.includes('FIREBASE_CLIENT_EMAIL')) secrets.FIREBASE_CLIENT_EMAIL = serviceAccount.clientEmail;
+  if (plan.secrets.includes('FIREBASE_PRIVATE_KEY')) secrets.FIREBASE_PRIVATE_KEY = serviceAccount.privateKey;
+
+  const webKey = String(webApiKey || '').trim();
+  if (webKey) secrets.FIREBASE_WEB_API_KEY = webKey;
+
+  must(typeof secrets.FIREBASE_PRIVATE_KEY === 'string' && secrets.FIREBASE_PRIVATE_KEY.length > 100, 'PRIVATE_KEY_FIREBASE_LOCAL_AUSENTE');
+  return secrets;
+}
+
+export function currentSecretBindingNames(version) {
+  const bindings = Array.isArray(version?.resources?.bindings) ? version.resources.bindings : [];
+  return bindings
+    .filter((item) => item && (item.type === 'secret_text' || item.type === 'secret_key'))
+    .map((item) => item.name)
+    .filter(Boolean)
+    .sort();
+}
+
+export function validatePreparedBindings(preparedVersion, currentVersion, plan, providedSecrets, databaseId) {
+  const bindings = Array.isArray(preparedVersion?.resources?.bindings) ? preparedVersion.resources.bindings : [];
+  const byName = new Map(bindings.filter((item) => item && typeof item.name === 'string').map((item) => [item.name, item]));
+
+  for (const name of currentSecretBindingNames(currentVersion)) {
+    const binding = byName.get(name);
+    must(binding && (binding.type === 'secret_text' || binding.type === 'secret_key'), 'SEGREDO_ATUAL_NAO_PRESERVADO');
+  }
+
+  for (const [name, value] of Object.entries(plan?.vars || {})) {
+    const binding = byName.get(name);
+    must(binding?.type === 'plain_text' && binding.text === value, 'FIREBASE_PUBLICO_DIVERGENTE_NA_VERSAO');
+  }
+
+  for (const name of Object.keys(providedSecrets || {})) {
+    const binding = byName.get(name);
+    must(binding?.type === 'secret_text' || binding?.type === 'secret_key', 'SEGREDO_FIREBASE_NAO_APLICADO');
+  }
+
+  must(inspectFirebaseBindings(preparedVersion).ready, 'VERSAO_PREPARADA_SEM_FIREBASE');
+  must(authDbDatabaseId(preparedVersion) === databaseId, 'VERSAO_PREPARADA_COM_D1_DIVERGENTE');
+  return true;
+}
+
+
 export function injectVars(toml, values = {}) {
   const entries = Object.entries(values);
   if (!entries.length) return String(toml || '');
@@ -170,33 +259,12 @@ export function injectVars(toml, values = {}) {
   return lines.join('\n');
 }
 
-export function injectRequiredSecrets(toml, names = []) {
-  const required = [...new Set(names)].sort();
-  if (!required.length) return String(toml || '');
-  const lines = String(toml || '').replace(/\r\n/g, '\n').split('\n');
-  const requiredLine = 'required = [ ' + required.map(tomlValue).join(', ') + ' ]';
-  let start = lines.findIndex((line) => /^\s*\[secrets\]\s*$/.test(line));
-  if (start < 0) {
-    while (lines.length && lines[lines.length - 1] === '') lines.pop();
-    lines.push('', '[secrets]', requiredLine, '');
-    return lines.join('\n');
-  }
-  let end = lines.length;
-  for (let index = start + 1; index < lines.length; index += 1) {
-    if (sectionStart(lines[index])) { end = index; break; }
-  }
-  const existing = lines.findIndex((line, index) => index > start && index < end && /^\s*required\s*=/.test(line));
-  if (existing >= 0) lines[existing] = requiredLine;
-  else lines.splice(end, 0, requiredLine);
-  return lines.join('\n');
-}
-
 export function buildRecoveryToml(toml, databaseId, recoveryVersion) {
   const plan = firebaseRecoveryPlan(recoveryVersion);
   let output = injectAuthDbDatabaseId(toml, databaseId);
   output = injectVars(output, plan.vars);
-  output = injectRequiredSecrets(output, plan.secrets);
   must(/\bkeep_vars\s*=\s*true\b/.test(output), 'KEEP_VARS_NAO_CONFIRMADO');
+  must(!/^\s*\[secrets\]\s*$/m.test(output), 'SECRETS_REQUIRED_NAO_PERMITIDO_NA_RECUPERACAO');
   return { toml: output, plan };
 }
 
