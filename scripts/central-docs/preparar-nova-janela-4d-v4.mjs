@@ -323,7 +323,7 @@ export async function downloadRuntime(root) {
   return path.join(root, 'worker', 'homologation-4d.js');
 }
 
-export async function inspectMultipart(bytes, config) {
+export async function inspectMultipart(bytes, config, expectedAnnotations = null) {
   must(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= 20 * 1024 * 1024, 'MULTIPART_TAMANHO_INVALIDO');
   const firstEnd = bytes.indexOf('\r\n');
   must(firstEnd > 2 && firstEnd < 200, 'MULTIPART_SEM_BOUNDARY');
@@ -340,9 +340,10 @@ export async function inspectMultipart(bytes, config) {
   const m = parseJson(form.get('metadata'));
   must(m.main_module === moduleName && moduleName === 'homologation-4d.js', 'MODULO_DIVERGENTE');
   must(Array.isArray(m.keep_bindings) && m.keep_bindings.length === 0, 'HERANCA_AMPLA_BLOQUEADA');
-  must(canonical(m.annotations) === canonical({
+  const annotations = expectedAnnotations || {
     'workers/alias': FIXED.alias, 'workers/tag': UPLOAD_TAG, 'workers/message': UPLOAD_MESSAGE
-  }), 'ANOTACOES_MULTIPART_DIVERGENTES');
+  };
+  must(canonical(m.annotations) === canonical(annotations), 'ANOTACOES_MULTIPART_DIVERGENTES');
   must(Array.isArray(m.bindings) && m.bindings.length === PUBLIC_NAMES.length + SECRET_NAMES.length + 1,
     'BINDINGS_MULTIPART_DIVERGENTES');
   const seen = new Set();
