@@ -7,6 +7,7 @@
  *
  * Estratégia:
  * 1. confirma que /api/agenda ainda está no erro específico de armazenamento;
+ *    a main é baixada como snapshot ZIP autenticado pela referência pública do GitHub, sem exigir Git instalado;
  * 2. inspeciona somente nomes/tipos de bindings, nunca valores;
  * 3. localiza uma versão já homologada da Agenda com os três bindings;
  * 4. após confirmação humana, faz rollback temporário para essa versão;
@@ -26,7 +27,8 @@ import { pathToFileURL } from 'node:url';
 export const FIXED = Object.freeze({
   account: '467be828c364ccf084240c34bb609b42',
   worker: 'yellow-wave-d0a1guia-regulacao-ia',
-  repository: 'https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado.git',
+  repositoryOwner: 'regulacaoeldoradoms-cpu',
+  repositoryName: 'guia-regulacao-eldorado',
   agendaApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/agenda',
   wranglerVersion: '4.133.0',
   knownGoodVersions: Object.freeze([
@@ -174,18 +176,89 @@ function writeJson(file, value) {
   fs.renameSync(temp, file);
 }
 
-function remoteMainSha(cloneRoot) {
-  const output = runChecked('git', ['ls-remote', 'origin', 'refs/heads/main'], cloneRoot, 'GIT_REMOTO_INDISPONIVEL');
-  const sha = output.trim().split(/\s+/)[0] || '';
+export function mainBranchApiUrl() {
+  return `https://api.github.com/repos/${FIXED.repositoryOwner}/${FIXED.repositoryName}/branches/main`;
+}
+
+export function mainArchiveUrl(sha) {
+  must(GIT_SHA.test(sha), 'SHA_MAIN_REMOTA_INVALIDA');
+  return `https://codeload.github.com/${FIXED.repositoryOwner}/${FIXED.repositoryName}/zip/${sha}`;
+}
+
+export async function remoteMainSha(fetcher = fetch) {
+  let response;
+  try {
+    response = await fetcher(mainBranchApiUrl(), {
+      method: 'GET',
+      redirect: 'error',
+      cache: 'no-store',
+      headers: {
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'Portal-Regulacao-Agenda-Recovery/1.1'
+      },
+      signal: AbortSignal.timeout(15000)
+    });
+  } catch {
+    throw new SafeError('GITHUB_MAIN_INDISPONIVEL');
+  }
+  must(response.ok, 'GITHUB_MAIN_INDISPONIVEL');
+  const payload = await response.json().catch(() => ({}));
+  const sha = String(payload?.commit?.sha || '');
   must(GIT_SHA.test(sha), 'SHA_MAIN_REMOTA_INVALIDA');
   return sha;
 }
 
-function localHeadSha(cloneRoot) {
-  const output = runChecked('git', ['rev-parse', 'HEAD'], cloneRoot, 'GIT_HEAD_INDISPONIVEL');
-  const sha = output.trim();
-  must(GIT_SHA.test(sha), 'SHA_LOCAL_INVALIDA');
-  return sha;
+function powershellCommand() {
+  if (process.platform === 'win32') return 'powershell.exe';
+  return 'pwsh';
+}
+
+function expandZip(zipFile, destination, cwd) {
+  const script = [
+    "$ErrorActionPreference='Stop'",
+    "Expand-Archive -LiteralPath $args[0] -DestinationPath $args[1] -Force"
+  ].join('; ');
+  runChecked(
+    powershellCommand(),
+    ['-NoProfile', '-NonInteractive', '-Command', script, zipFile, destination],
+    cwd,
+    'FALHA_AO_EXTRAIR_MAIN',
+    { timeout: 180000 }
+  );
+}
+
+export function locateExtractedRepository(root) {
+  const entries = fs.readdirSync(root, { withFileTypes: true })
+    .filter((item) => item.isDirectory() && item.name.startsWith(FIXED.repositoryName + '-'));
+  must(entries.length === 1, 'ARQUIVO_MAIN_ESTRUTURA_INVALIDA');
+  const repositoryRoot = path.join(root, entries[0].name);
+  must(fs.existsSync(path.join(repositoryRoot, 'worker', 'wrangler.toml')), 'WRANGLER_TOML_AUSENTE');
+  return repositoryRoot;
+}
+
+export async function downloadMainSnapshot(baseRoot, sha, fetcher = fetch) {
+  must(GIT_SHA.test(sha), 'SHA_MAIN_REMOTA_INVALIDA');
+  const zipFile = path.join(baseRoot, 'main.zip');
+  const extractRoot = path.join(baseRoot, 'main-source');
+  let response;
+  try {
+    response = await fetcher(mainArchiveUrl(sha), {
+      method: 'GET',
+      redirect: 'follow',
+      cache: 'no-store',
+      headers: { 'User-Agent': 'Portal-Regulacao-Agenda-Recovery/1.1' },
+      signal: AbortSignal.timeout(60000)
+    });
+  } catch {
+    throw new SafeError('DOWNLOAD_MAIN_FALHOU');
+  }
+  must(response.ok, 'DOWNLOAD_MAIN_FALHOU');
+  const bytes = Buffer.from(await response.arrayBuffer());
+  must(bytes.length > 1000 && bytes.length < 80 * 1024 * 1024, 'DOWNLOAD_MAIN_TAMANHO_INVALIDO');
+  fs.writeFileSync(zipFile, bytes, { mode: 0o600 });
+  fs.mkdirSync(extractRoot, { recursive: true });
+  expandZip(zipFile, extractRoot, baseRoot);
+  return locateExtractedRepository(extractRoot);
 }
 
 async function probeAgenda(fetcher = fetch) {
@@ -332,7 +405,6 @@ export async function recoverAgenda() {
   must(initialProbe.incidentConfirmed, 'RESPOSTA_AGENDA_NAO_CORRESPONDE_AO_INCIDENTE');
 
   const baseRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'agenda-firebase-recovery-'));
-  const cloneRoot = path.join(baseRoot, 'repo');
   const minimalConfig = path.join(baseRoot, 'wrangler.readonly.json');
   const dryDir = path.join(baseRoot, 'dry-run');
   let originalVersion = '';
@@ -341,19 +413,12 @@ export async function recoverAgenda() {
 
   try {
     console.log('1/8 Baixando a main atual e validando a Agenda...');
-    runChecked(
-      'git',
-      ['clone', '--depth', '1', '--branch', 'main', '--single-branch', FIXED.repository, cloneRoot],
-      baseRoot,
-      'GIT_CLONE_FALHOU',
-      { timeout: 180000 }
-    );
-    const localSha = localHeadSha(cloneRoot);
-    must(localSha === remoteMainSha(cloneRoot), 'MAIN_MUDOU_DURANTE_PREPARACAO');
-    validateCurrentMain(cloneRoot);
+    const localSha = await remoteMainSha();
+    const downloadedRoot = await downloadMainSnapshot(baseRoot, localSha);
+    validateCurrentMain(downloadedRoot);
 
     console.log('2/8 Validando o deploy atual sem alterar produção...');
-    dryRunCurrentMain(cloneRoot, dryDir);
+    dryRunCurrentMain(downloadedRoot, dryDir);
     writeJson(minimalConfig, { name: FIXED.worker, account_id: FIXED.account, send_metrics: false });
 
     console.log('3/8 Inspecionando somente nomes e tipos dos bindings...');
@@ -382,10 +447,10 @@ export async function recoverAgenda() {
     must(rollbackBindings.ready, 'BINDINGS_FIREBASE_NAO_RESTAURADOS');
 
     console.log('6/8 Reconfirmando que a main não mudou...');
-    must(localHeadSha(cloneRoot) === remoteMainSha(cloneRoot), 'MAIN_MUDOU_ANTES_DA_REPUBLICACAO');
+    must(localSha === await remoteMainSha(), 'MAIN_MUDOU_ANTES_DA_REPUBLICACAO');
 
     console.log('7/8 Republicando a main atual com os bindings preservados...');
-    deployCurrentMain(cloneRoot);
+    deployCurrentMain(downloadedRoot);
 
     console.log('8/8 Confirmando armazenamento e autenticação da Agenda...');
     const finalProbe = await waitForStorageGuard(true);
