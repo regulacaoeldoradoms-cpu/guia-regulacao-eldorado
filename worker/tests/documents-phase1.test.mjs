@@ -1062,3 +1062,53 @@ sqliteTest('Fase 4B salvar como novo inicia create resumable no mesmo parent e p
     globalThis.fetch = originalFetch;
   }
 });
+
+
+sqliteTest('IA documental exige capability extract e permanece fail-closed na 5A', async () => {
+  const env = environment();
+  const user = await register(env, 'documentos.ia', '127.0.0.93');
+  await setDocumentCapabilities(env, 'documentos.ia', { view: true }, 'admin');
+
+  const denied = await handleDocumentsRoute(
+    documentRequest('/api/documents/ai/config', user.token),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(denied.status, 403);
+  assert.equal((await denied.json()).code, 'DOCUMENTS_ACCESS_DENIED');
+
+  await setDocumentCapabilities(env, 'documentos.ia', { extract: true }, 'admin');
+  const disabled = await handleDocumentsRoute(
+    documentRequest('/api/documents/ai/config', user.token),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(disabled.status, 200);
+  assert.deepEqual((await disabled.json()).ai.enabled, false);
+
+  env.DOCUMENTS_AI_ENABLED = 'true';
+  env.DOCUMENTS_AI_PROCESSING_ENABLED = 'false';
+  const enabled = await handleDocumentsRoute(
+    documentRequest('/api/documents/ai/config', user.token),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  const enabledPayload = await enabled.json();
+  assert.equal(enabled.status, 200);
+  assert.equal(enabledPayload.ai.enabled, true);
+  assert.equal(enabledPayload.ai.processingEnabled, false);
+  assert.equal(enabledPayload.ai.pageIsolation, true);
+  assert.equal(enabledPayload.ai.provenanceRequired, true);
+
+  const blockedProcessing = await handleDocumentsRoute(
+    documentRequest('/api/documents/ai/page/analyze', user.token, { method: 'POST', body: { pageNumber: 1 } }),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(blockedProcessing.status, 503);
+  assert.equal((await blockedProcessing.json()).code, 'DOCUMENT_AI_PROCESSING_DISABLED');
+});
