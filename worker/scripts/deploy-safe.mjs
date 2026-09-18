@@ -25,6 +25,8 @@ export const SAFE_DEPLOY = Object.freeze({
   worker: 'yellow-wave-d0a1guia-regulacao-ia',
   wranglerVersion: '4.133.0',
   agendaApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/agenda',
+  candidateMessage: 'Portal: candidato validado pelo gate de deploy seguro',
+  candidateTag: 'portal-safe-deploy',
   postDeployAttempts: 15,
   postDeployDelayMs: 2000
 });
@@ -147,7 +149,7 @@ export function activeVersionFromDeployment(value) {
   return active[0].version_id;
 }
 
-export function latestVersionFromList(values) {
+export function latestVersionEntry(values) {
   must(Array.isArray(values) && values.length > 0, 'LISTA_DE_VERSOES_INVALIDA');
   const valid = values
     .filter((item) => UUID.test(item?.id || '') && Number.isFinite(Date.parse(item?.metadata?.created_on || '')))
@@ -159,7 +161,29 @@ export function latestVersionFromList(values) {
       'ORDEM_DE_VERSOES_AMBIGUA'
     );
   }
-  return valid[0].id;
+  return valid[0];
+}
+
+export function latestVersionFromList(values) {
+  return latestVersionEntry(values).id;
+}
+
+function versionAnnotation(value, key) {
+  for (const source of [
+    value?.annotations,
+    value?.metadata?.annotations,
+    value?.metadata
+  ]) {
+    const found = source?.[key];
+    if (typeof found === 'string' && found) return found;
+  }
+  return '';
+}
+
+export function isSafeDeployCandidateVersion(...values) {
+  const message = values.map((value) => versionAnnotation(value, 'workers/message')).find(Boolean) || '';
+  const tag = values.map((value) => versionAnnotation(value, 'workers/tag')).find(Boolean) || '';
+  return message === SAFE_DEPLOY.candidateMessage || tag === SAFE_DEPLOY.candidateTag;
 }
 
 function deploymentStatus(config, cwd) {
@@ -289,6 +313,16 @@ function sectionStart(line) {
   return /^\s*\[\[?[^\]]+\]?\]\s*$/.test(line);
 }
 
+export function injectRequiredSecrets(toml, names) {
+  const required = [...new Set((Array.isArray(names) ? names : []).map(String).filter(Boolean))].sort();
+  must(required.length > 0, 'SEGREDOS_OBRIGATORIOS_NAO_IDENTIFICADOS');
+
+  const source = String(toml || '').replace(/\r\n/g, '\n');
+  must(!/^\s*\[secrets\]\s*$/m.test(source), 'SECAO_SECRETS_JA_EXISTE_NO_WRANGLER');
+  const encoded = required.map((name) => JSON.stringify(name)).join(', ');
+  return source.replace(/\s*$/, '') + '\n\n[secrets]\nrequired = [ ' + encoded + ' ]\n';
+}
+
 export function injectAuthDbDatabaseId(toml, databaseId) {
   must(UUID.test(databaseId), 'AUTH_DB_ID_INVALIDO');
   const lines = String(toml || '').replace(/\r\n/g, '\n').split('\n');
@@ -391,7 +425,9 @@ function uploadCandidate(workerRoot, config) {
       'versions', 'upload',
       '--experimental-provision=false',
       '--experimental-auto-create=false',
-      '--message', 'Portal: candidato validado pelo gate de deploy seguro',
+      '--message', SAFE_DEPLOY.candidateMessage,
+      '--tag', SAFE_DEPLOY.candidateTag,
+      '--strict',
       '--config', config
     ],
     workerRoot,
@@ -421,6 +457,7 @@ function dryRun(workerRoot, config) {
       '--dry-run',
       '--experimental-provision=false',
       '--experimental-auto-create=false',
+      '--strict',
       '--config', config
     ],
     workerRoot,
@@ -460,18 +497,32 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     originalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
     const activeView = versionView(originalVersion, readConfig, tempRoot);
     const activeDbId = authDbDatabaseId(activeView);
+    const activeValidation = validateCandidateBindings(activeView, activeView);
 
     const versionsBefore = versionsList(readConfig, tempRoot);
-    const latestBefore = latestVersionFromList(versionsBefore);
-    must(latestBefore === originalVersion, 'ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE');
+    const latestBefore = latestVersionEntry(versionsBefore);
+    if (latestBefore.id !== originalVersion) {
+      const latestView = versionView(latestBefore.id, readConfig, tempRoot);
+      must(
+        isSafeDeployCandidateVersion(latestBefore, latestView),
+        'ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE'
+      );
+      const orphanValidation = validateCandidateBindings(activeView, latestView);
+      safeLine('candidataOrfaAnterior', 'VALIDADA');
+      safeLine('versaoOrfaAnterior', latestBefore.id);
+      safeLine('segredosOrfaPreservados', orphanValidation.preservedSecrets);
+    }
 
     safeLine('versaoProducao', originalVersion);
-    safeLine('segredosAtuais', currentSecretBindingNames(activeView).length);
+    safeLine('segredosAtuais', activeValidation.preservedSecrets);
 
     console.log('2/7 Preparando configuração efêmera e executando dry-run...');
     fs.writeFileSync(
       deployConfig,
-      injectAuthDbDatabaseId(sourceToml, activeDbId),
+      injectRequiredSecrets(
+        injectAuthDbDatabaseId(sourceToml, activeDbId),
+        currentSecretBindingNames(activeView)
+      ),
       { encoding: 'utf8', mode: 0o600 }
     );
     dryRun(root, deployConfig);
