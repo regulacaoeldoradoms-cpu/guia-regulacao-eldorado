@@ -13,6 +13,7 @@ import {
   parseArgs,
   runWrangler,
   stateControlSql,
+  templateControlSql,
   validateControl,
   validatePagesOrigin,
   validateTemplateControl,
