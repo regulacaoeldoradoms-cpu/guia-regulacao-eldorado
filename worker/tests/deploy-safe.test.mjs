@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 import {
   SAFE_DEPLOY,
@@ -13,7 +15,8 @@ import {
   validateCandidateBindings,
   injectAuthDbDatabaseId,
   classifyAgendaProbe,
-  wranglerArgs
+  wranglerArgs,
+  wranglerCliPath
 } from '../scripts/deploy-safe.mjs';
 
 function version(bindings) {
@@ -164,13 +167,20 @@ test('probe anônimo da Agenda distingue saudável de Firebase ausente', () => {
   assert.deepEqual(classifyAgendaProbe(503), { status: 503, healthy: false, firebaseBroken: true });
 });
 
-test('gate usa apenas o Wrangler local fixado pelo package.json', () => {
-  assert.deepEqual(
-    wranglerArgs(['versions', 'list']).slice(0, 2),
-    ['--no-install', 'wrangler']
-  );
+test('gate usa Wrangler local fixado pelo package.json sem passar por npx', () => {
+  assert.deepEqual(wranglerArgs(['versions', 'list']), ['versions', 'list']);
   const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
   assert.equal(pkg.devDependencies?.wrangler, SAFE_DEPLOY.wranglerVersion);
+
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'safe-deploy-wrangler-'));
+  try {
+    const cli = path.join(root, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
+    fs.mkdirSync(path.dirname(cli), { recursive: true });
+    fs.writeFileSync(cli, '#!/usr/bin/env node\n');
+    assert.equal(wranglerCliPath(root), cli);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('fonte do gate não usa deploy monolítico nem contém credenciais', () => {
@@ -184,6 +194,9 @@ test('fonte do gate não usa deploy monolítico nem contém credenciais', () => 
   assert.match(source, /--experimental-auto-create=false/);
   assert.match(source, /CLOUDFLARE_ACCOUNT_ID: SAFE_DEPLOY\.account/);
   assert.match(source, /account_id: SAFE_DEPLOY\.account/);
+  assert.match(source, /node_modules', 'wrangler', 'bin', 'wrangler\.js'/);
+  assert.match(source, /run\(process\.execPath, \[cli, \.\.\.wranglerArgs\(args\)\]/);
+  assert.doesNotMatch(source, /npx\.cmd|run\('npx'/);
   assert.match(source, /ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE/);
   assert.match(source, /path\.join\(root, '\.wrangler\.safe-deploy-'/);
   assert.match(source, /fs\.rmSync\(deployConfig/);

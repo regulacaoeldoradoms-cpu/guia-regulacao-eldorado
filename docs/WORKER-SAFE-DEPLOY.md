@@ -84,6 +84,7 @@ No último caso, novos deploys devem ser interrompidos até conferência manual.
 - `worker/tests/deploy-safe.test.mjs`: testes de regressão;
 - `.github/workflows/validate-worker-safe-deploy.yml`: protege o próprio gate;
 - `worker/package.json`: `deploy` e `deploy:safe` apontam para o gate; `wrangler` fica fixado exatamente em `4.133.0` para que Workers Builds e validações usem a mesma versão.
+- o gate executa diretamente `node_modules/wrangler/bin/wrangler.js` com o `node` corrente; não chama `npx` em subprocesso. Isso evita diferenças de resolução/execução do wrapper no ambiente do Workers Builds.
 
 ## Configuração Cloudflare necessária
 
