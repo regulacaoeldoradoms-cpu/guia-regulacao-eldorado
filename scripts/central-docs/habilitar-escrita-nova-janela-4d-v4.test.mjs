@@ -111,5 +111,6 @@ test('fonte exige confirmação explícita e fail-closed antes do upload', async
   assert.match(source, /DOCUMENTS_DRIVE_WRITE_ENABLED = 'true'/);
   assert.match(source, /habilitar-v4-upload-tentado\.json/);
   assert.match(source, /productionSnapshot\(queryMinimal\(\['deployments', 'status'\]\)\)/);
+  assert.match(source, /inspectMultipart\(fs\.readFileSync\(dry\), config, \{[\s\S]*'workers\/alias': FIXED\.alias,[\s\S]*'workers\/tag': TAG,[\s\S]*'workers\/message': MESSAGE/);
   assert.doesNotMatch(source, /deploy\b/);
 });
