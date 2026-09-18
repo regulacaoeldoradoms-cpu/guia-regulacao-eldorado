@@ -397,9 +397,32 @@ Critérios 5C aceitos sinteticamente: schema restrito por tipo, estados `encontr
 
 Decisão: 5C pode ser integrada. Próxima subfase: **5D — perguntas sobre o documento**, em branch separada e ainda fail-closed em produção.
 
+## Fase 5D — perguntas documentais implementadas — 18/09/2026
+
+A Fase 5C foi integrada à `main` pelo PR #217, merge `06db4b2e473603a460c815a55c9859dad6088ccc`. A 5D foi aberta em branch separada `feat/central-docs-phase5d-document-chat`.
+
+Decisão arquitetural: o chat documental **não recebe o PDF inteiro nem imagens novas**. Ele recebe somente evidências estruturadas, já extraídas pela 5C e mantidas em memória da sessão. Isso preserva proveniência e impede que uma resposta livre altere os resultados institucionais.
+
+Implementado:
+
+- `DOCUMENT_AI_PHASE=5D`, `phase5d-v1`, `documentChat=true`;
+- normalização estrita de pergunta, evidências e resposta;
+- no máximo 12 páginas de evidência por consulta;
+- rejeição de página duplicada e citação fora do conjunto fornecido;
+- respostas comuns exigem citação `[p. N]`; `NÃO CONSTA`/`ILEGÍVEL` são terminais;
+- provider usa `PROMPT_DOCUMENT_CHAT_V1` e envia somente pergunta + JSON estruturado paginado;
+- rota `POST /api/documents/ai/chat` exige capability `extract` e feature gates ativos;
+- frontend mantém `documentAiEvidence` e `documentAiChatHistory` apenas em memória;
+- ao fechar/trocar o PDF, evidências e conversa são descartadas;
+- respostas do chat não escrevem em `documentAiExtraction` nem `documentAiClassification`;
+- UI permite navegar pelas páginas citadas;
+- gates produtivos da IA continuam `false/false`.
+
+Próxima ação: abrir PR da 5D e executar a validação sintética completa. Se verde, registrar aceite e integrar; depois preparar a 5E controlada sem ativar produção automaticamente.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5C concluída e aceita sinteticamente**; próxima após integração: **5D — perguntas sobre o documento**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5D — perguntas documentais implementadas e em validação sintética**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -511,10 +534,10 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5C concluída/aceita sinteticamente; próxima: 5D — perguntas documentais |
-| Última ação concluída | 5C validada: 314/314 + navegador 75/3 + staging/governança/site verdes; nenhum documento real enviado à IA |
-| Branch/PR | `feat/central-docs-phase5c-restricted-extraction`; PR #217 em draft |
-| Main | `f1a5f22c10584ae8ce970ddde6dd42be4f43c441` — Fase 5B integrada via PR #216 |
+| Fase/subfase | Fase 5D — perguntas documentais implementadas; validação sintética pendente |
+| Última ação concluída | 5D implementada em branch separada: chat usa somente evidências estruturadas paginadas e efêmeras |
+| Branch/PR | `feat/central-docs-phase5d-document-chat`; PR ainda não aberto |
+| Main | `06db4b2e473603a460c815a55c9859dad6088ccc` — Fase 5C integrada via PR #217 |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
@@ -526,8 +549,8 @@ Artefatos anteriores preservados:
 | Bloqueios | Nenhum para merge da 5C; uso real do provedor continua bloqueado pelos gates false até homologação 5E |
 | Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Marcar PR #217 ready e mesclar; criar branch 5D da main resultante mantendo gates produtivos false |
-| Depois | Implementar 5D com respostas livres separadas da extração institucional, sempre citando página e sem persistir conteúdo |
+| Próxima ação exata | Abrir PR 5D, validar Worker/navegador/staging/governança/site e corrigir apenas regressões reais |
+| Depois | Se 5D verde, integrar e preparar 5E controlada; não ativar IA real sem procedimento de homologação |
 | Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
 
 ## Histórico recuperável
