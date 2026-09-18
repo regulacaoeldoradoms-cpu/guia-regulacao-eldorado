@@ -99,6 +99,6 @@ Não alterar os Runtime variables and secrets para ativar o gate.
 
 - nenhum valor de secret é lido ou impresso pelo gate;
 - nenhum token ou credencial é versionado;
-- a configuração temporária é criada fora do repositório e apagada ao final;
+- a configuração temporária de leitura é criada fora do repositório; a configuração efêmera usada pelo Wrangler para upload fica temporariamente dentro de `/worker` para que `main = "index.js"` continue sendo resolvido corretamente, e é apagada no `finally`;
 - o gate trabalha somente com nomes/tipos dos secrets e com valores `plain_text` que a própria API de versão já expõe;
 - a verificação pós-deploy da Agenda é anônima e não acessa dados de pacientes.

@@ -430,7 +430,10 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
 
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'portal-worker-safe-deploy-'));
   const readConfig = path.join(tempRoot, 'wrangler.readonly.json');
-  const deployConfig = path.join(tempRoot, 'wrangler.safe-deploy.toml');
+  // Wrangler resolve "main" e outros caminhos relativos a partir do diretório
+  // do arquivo de configuração. Por isso a configuração efêmera de deploy
+  // precisa ficar dentro do workerRoot, não no diretório temporário externo.
+  const deployConfig = path.join(root, '.wrangler.safe-deploy-' + randomUUID() + '.toml');
   let originalVersion = '';
   let candidateVersion = '';
   let promotionStarted = false;
@@ -527,6 +530,7 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     }
     throw error;
   } finally {
+    try { fs.rmSync(deployConfig, { force: true }); } catch {}
     try { fs.rmSync(tempRoot, { recursive: true, force: true }); } catch {}
   }
 }
