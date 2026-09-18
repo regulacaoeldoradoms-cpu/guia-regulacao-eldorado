@@ -18,7 +18,8 @@ import {
   mainArchiveUrl,
   remoteMainSha,
   locateExtractedRepository,
-  wranglerArgs
+  wranglerArgs,
+  windowsWranglerCommand
 } from './recuperar-firebase-agenda.mjs';
 
 function version(bindings) {
@@ -172,6 +173,15 @@ test('classifica falhas do Wrangler sem precisar exibir stdout ou stderr', () =>
   assert.equal(classifyWranglerFailure({ status: null, stderr: '' }), 'PROCESSO_NAO_INICIADO');
 });
 
+test('Windows inicia Wrangler pelo PowerShell chamando npx.cmd', () => {
+  const command = windowsWranglerCommand(['deployments', 'status', '--json']);
+  assert.match(command, /& npx\.cmd/);
+  assert.match(command, /wrangler@4\.133\.0/);
+  assert.match(command, /'deployments' 'status' '--json'/);
+  assert.match(command, /exit \$LASTEXITCODE/);
+  assert.doesNotMatch(command, /FIREBASE_PRIVATE_KEY|AUTH_SESSION_SECRET|GOOGLE_DRIVE_OAUTH_CLIENT_SECRET/);
+});
+
 test('comando Wrangler fixa versão e não embute credenciais', () => {
   const args = wranglerArgs(['deployments', 'status']);
   assert.deepEqual(args.slice(0, 2), ['--yes', 'wrangler@' + FIXED.wranglerVersion]);
@@ -191,4 +201,6 @@ test('script não contém valor real de segredo nem imprime payload de bindings'
   assert.doesNotMatch(source, /git\s+clone|ls-remote|rev-parse/);
   assert.match(source, /codeload\.github\.com/);
   assert.match(source, /Expand-Archive/);
+  assert.match(source, /powershell\.exe/);
+  assert.match(source, /npx\.cmd/);
 });
