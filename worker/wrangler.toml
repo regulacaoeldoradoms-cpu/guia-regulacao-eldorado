@@ -45,6 +45,8 @@ DOCUMENTS_HOMOLOGATION_ORIGIN = ""
 binding = "AI"
 
 # Integração GitHub -> Cloudflare ativa. Commits na branch main disparam o deploy do Worker.
+# O comando de deploy da Cloudflare DEVE ser "npm run deploy:safe" com root /worker.
+# Não restaurar "npx wrangler deploy": o gate envia versão sem tráfego, valida bindings/secrets e só então promove.
 # O Wrangler 4 provisiona automaticamente esta base D1 no primeiro deploy.
 # O D1 mantém autenticação, permissões, índices técnicos, rate limits e notificações.
 # O conteúdo das manifestações do Conselho é armazenado no Firebase/Firestore.
