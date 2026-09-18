@@ -9,6 +9,10 @@ import {
   REQUIRED_FIREBASE_BINDINGS,
   activeVersionFromDeployment,
   inspectFirebaseBindings,
+  firebaseRecoveryPlan,
+  injectVars,
+  injectRequiredSecrets,
+  buildRecoveryToml,
   authDbDatabaseId,
   injectAuthDbDatabaseId,
   classifyWranglerFailure,
@@ -67,6 +71,83 @@ test('chave privada precisa continuar como secret_text', () => {
   assert.ok(summary.missing.includes('FIREBASE_PRIVATE_KEY'));
 });
 
+test('plano de recuperação copia apenas valores públicos e nomes de segredos Firebase', () => {
+  const plan = firebaseRecoveryPlan(version([
+    { name: 'FIREBASE_PROJECT_ID', type: 'plain_text', text: 'projeto-a' },
+    { name: 'FIREBASE_CLIENT_EMAIL', type: 'plain_text', text: 'svc@example.test' },
+    { name: 'FIREBASE_PRIVATE_KEY', type: 'secret_text' },
+    { name: 'FIREBASE_WEB_API_KEY', type: 'secret_text' },
+    { name: 'FIREBASE_STORAGE_BUCKET', type: 'plain_text', text: 'bucket-a' }
+  ]));
+  assert.deepEqual(plan.vars, {
+    FIREBASE_PROJECT_ID: 'projeto-a',
+    FIREBASE_CLIENT_EMAIL: 'svc@example.test',
+    FIREBASE_STORAGE_BUCKET: 'bucket-a'
+  });
+  assert.deepEqual(plan.secrets, ['FIREBASE_PRIVATE_KEY', 'FIREBASE_WEB_API_KEY']);
+});
+
+test('plano rejeita chave privada Firebase fora de secret_text', () => {
+  assert.throws(() => firebaseRecoveryPlan(version([
+    { name: 'FIREBASE_PROJECT_ID', type: 'plain_text', text: 'projeto-a' },
+    { name: 'FIREBASE_CLIENT_EMAIL', type: 'plain_text', text: 'svc@example.test' },
+    { name: 'FIREBASE_PRIVATE_KEY', type: 'plain_text', text: 'nao-aceitar' }
+  ])), /FIREBASE_PRIVATE_KEY_NAO_E_SEGREDO/);
+});
+
+test('injeta variáveis Firebase na seção vars sem alterar as demais', () => {
+  const source = [
+    'name = "worker"',
+    'keep_vars = true',
+    '',
+    '[vars]',
+    'ALLOWED_ORIGINS = "https://example.test"',
+    '',
+    '[ai]',
+    'binding = "AI"',
+    ''
+  ].join('\n');
+  const patched = injectVars(source, { FIREBASE_PROJECT_ID: 'projeto-a', FIREBASE_CLIENT_EMAIL: 'svc@example.test' });
+  assert.match(patched, /ALLOWED_ORIGINS = "https:\/\/example\.test"/);
+  assert.match(patched, /FIREBASE_PROJECT_ID = "projeto-a"/);
+  assert.match(patched, /FIREBASE_CLIENT_EMAIL = "svc@example\.test"/);
+  assert.ok(patched.indexOf('FIREBASE_PROJECT_ID') < patched.indexOf('[ai]'));
+});
+
+test('declara segredos Firebase exigidos sem gravar valores', () => {
+  const source = 'name = "worker"\nkeep_vars = true\n';
+  const patched = injectRequiredSecrets(source, ['FIREBASE_PRIVATE_KEY', 'FIREBASE_WEB_API_KEY']);
+  assert.match(patched, /\[secrets\]/);
+  assert.match(patched, /required = \[ "FIREBASE_PRIVATE_KEY", "FIREBASE_WEB_API_KEY" \]/);
+  assert.doesNotMatch(patched, /PRIVATE KEY-----|AIza/);
+});
+
+test('configuração final combina D1, vars públicos e segredo obrigatório do Firebase', () => {
+  const id = '11111111-2222-3333-4444-555555555555';
+  const source = [
+    'name = "worker"',
+    'keep_vars = true',
+    '',
+    '[vars]',
+    'ALLOWED_ORIGINS = "https://example.test"',
+    '',
+    '[[d1_databases]]',
+    'binding = "AUTH_DB"',
+    'database_name = "portal-regulacao-users"',
+    ''
+  ].join('\n');
+  const recovered = version([
+    { name: 'FIREBASE_PROJECT_ID', type: 'plain_text', text: 'projeto-a' },
+    { name: 'FIREBASE_CLIENT_EMAIL', type: 'plain_text', text: 'svc@example.test' },
+    { name: 'FIREBASE_PRIVATE_KEY', type: 'secret_text' },
+    { name: 'FIREBASE_STORAGE_BUCKET', type: 'plain_text', text: 'bucket-a' }
+  ]);
+  const built = buildRecoveryToml(source, id, recovered);
+  assert.match(built.toml, new RegExp('database_id = "' + id + '"'));
+  assert.match(built.toml, /FIREBASE_PROJECT_ID = "projeto-a"/);
+  assert.match(built.toml, /required = \[ "FIREBASE_PRIVATE_KEY" \]/);
+  assert.deepEqual(built.plan.secrets, ['FIREBASE_PRIVATE_KEY']);
+});
 test('recuperação reaproveita o ID D1 já ligado ao AUTH_DB', () => {
   const id = '11111111-2222-3333-4444-555555555555';
   assert.equal(authDbDatabaseId(version([
@@ -210,7 +291,9 @@ test('script não contém valor real de segredo nem imprime payload de bindings'
   assert.doesNotMatch(source, /console\.log\([^\n]*(binding\.text|stdout|stderr)/);
   assert.match(source, /firebaseBindingsAusentes/);
   assert.match(source, /ROLLBACK_DE_SEGURANCA/);
-  assert.match(source, /keep_vars=true/);
+  assert.match(source, /bindings Firebase explícitos/);
+  assert.match(source, /firebaseSegredosExigidos/);
+  assert.doesNotMatch(source, /safeLine\([^\n]*(FIREBASE_PROJECT_ID|FIREBASE_CLIENT_EMAIL|FIREBASE_WEB_API_KEY|FIREBASE_STORAGE_BUCKET)/);
   assert.doesNotMatch(source, /git\s+clone|ls-remote|rev-parse/);
   assert.match(source, /codeload\.github\.com/);
   assert.match(source, /Expand-Archive/);
