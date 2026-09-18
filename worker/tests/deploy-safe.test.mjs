@@ -118,6 +118,24 @@ test('candidata íntegra preserva críticos, secrets e Firebase público', () =>
   assert.equal(result.authDbId, DB);
 });
 
+test('Gemini não é requisito fixo do gate quando já está ausente na produção', () => {
+  const withoutGemini = activeBindings().filter((binding) => binding.name !== 'GEMINI_API_KEY');
+  const active = version(withoutGemini);
+  const candidate = version(withoutGemini.map((binding) => ({ ...binding })));
+  const result = validateCandidateBindings(active, candidate);
+  assert.equal(result.critical, CRITICAL_BINDINGS.length);
+  assert.equal(result.preservedSecrets, 6);
+});
+
+test('se Gemini existir na produção, o gate continua bloqueando seu desaparecimento', () => {
+  const active = version(activeBindings());
+  const candidate = version(activeBindings().filter((binding) => binding.name !== 'GEMINI_API_KEY'));
+  assert.throws(
+    () => validateCandidateBindings(active, candidate),
+    /SEGREDO_ATUAL_NAO_PRESERVADO_GEMINI_API_KEY/
+  );
+});
+
 test('bloqueia candidata sem chave privada Firebase', () => {
   const active = version(activeBindings());
   const candidate = version(activeBindings().filter((binding) => binding.name !== 'FIREBASE_PRIVATE_KEY'));
