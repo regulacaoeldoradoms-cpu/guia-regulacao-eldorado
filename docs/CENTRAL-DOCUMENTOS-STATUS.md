@@ -30,9 +30,36 @@ Isso **não alterou Cloudflare, D1, Drive, OAuth ou o repositório**: a checagem
 
 **Decisão:** para a reconferência produtiva, usar uma configuração Wrangler efêmera e mínima, somente com `name`, `account_id` e `send_metrics=false`, criada em arquivo temporário e apagada ao final. Não copiar segredos, bindings, D1, controle antigo ou variáveis da homologação. Essa consulta será somente leitura e utilizará a autenticação Wrangler já existente do operador.
 
+## Produção reconfirmada e preparo V4 — 18/09/2026
+
+O operador executou a consulta Wrangler efêmera e somente leitura criada após o `configPath` antigo ter desaparecido. Resultado sanitizado e atual:
+
+- `deployment=250b3d7b-9012-4073-9986-de36dd14bc3d`;
+- `version=91eae913-ebaa-4550-8e88-f701f6cef777`;
+- `percentage=100`.
+
+A produção permanece exatamente no snapshot já revisado. A consulta não continha D1, segredos, controle 4D nem comando de escrita; o arquivo temporário foi removido ao final.
+
+Com essa pré-condição confirmada, foi criado `scripts/central-docs/preparar-nova-janela-4d-v4.mjs`. O V4 **não reutiliza** controle, prazo ou gate da janela antiga. Ele:
+
+- reconfirma a produção imediatamente antes de qualquer alteração;
+- baixa o runtime Worker do commit funcional validado `1d4decd03e0047a1bad678d60cee36ba6822d5b5` e verifica 15 blobs Git alcançáveis pelo entrypoint;
+- valida o preview-base antigo apenas como template de bindings/origens, mantendo o gate em `false`;
+- copia no D1 o mesmo escopo autorizado sem imprimir usuário ou fileId;
+- cria identificador novo e prazo de 90 minutos somente após confirmação humana;
+- cria primeiro o controle **desabilitado**;
+- gera e inspeciona dry-run multipart com herança restrita de segredos;
+- envia somente uma nova **versão preview**, sem deployment de produção;
+- confirma alias/versão e somente então ativa o controle da janela, ainda com `DOCUMENTS_DRIVE_WRITE_ENABLED=false`;
+- em falha após criação do controle, tenta revogá-lo automaticamente e bloqueia repetição cega se o upload já tiver sido tentado.
+
+Artefato de teste: `scripts/central-docs/preparar-nova-janela-4d-v4.test.mjs`. Workflow `Central de Documentos — Procedimentos operacionais 4D`, run `35315648867`, job `105506595777`: **87/87 V3 + 9/9 V4, zero falhas**, além de sintaxe V4 aprovada. Commit CI-validado para download do V4: `886b02a24f7f2848739d3476bde80d51d428f8dd`.
+
+Nenhuma janela nova foi criada ainda; não houve INSERT/UPDATE D1, upload de versão, alteração de alias, Drive ou produção nesta preparação de código.
+
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; janela antiga encerrada/revogada; branch reconciliada com a main; nova janela 4D ainda não aberta.**
+**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; produção reconfirmada; V4 de preparo validado; nova janela 4D ainda não aberta.**
 
 A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. 4A–4C têm implementação e evidências técnicas, não aceite real da 4D. Encerrar uma autorização não homologa o produto. Não reiniciar etapas encerradas.
 
@@ -145,21 +172,21 @@ Artefatos anteriores preservados:
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 4D sem aceite; Fase 0 e Fases 1–3 encerradas |
-| Última ação concluída | PR #201 reconciliado com main; regressão de contrato corrigida; head `1d4decd` validado por CI e navegador |
+| Última ação concluída | Produção reconfirmada `91eae913…/250b3d7b…/100%`; V4 de nova janela criado e validado em CI |
 | Branch/PR | `codex/central-docs-drive-sync-phase4`; #201 aberto, **draft**, sem merge; tecnicamente mergeável após reconciliação |
 | Main | `cd71ad566a443cd2f89b1d98285856c22baf73d7` incorporada à branch; 0 commits atrás; login/abertura/Home preservados |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Wrapper/reteste antigo `2fee19e` e base `a17473ce` pertencem à janela encerrada; não reutilizar. Nova versão preview ainda não foi criada |
-| Produção | Último snapshot explícito: versão `91eae913…`, deployment `250b3d7b…`, 100%; **reconfirmar imediatamente antes da nova janela** |
+| Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
 | Janela | Revogada: enabled0, expires_at1789675801, sessões0; não repetir SQL nem reabilitar |
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
-| Checks/testes | Head `1d4decd`: 285/285 Worker; staging/governança/V3 verdes; navegador Central 75 passed/3 skipped; abertura 11 + 24 + 8 testes aprovados |
-| Bloqueios | Nova janela 4D depende de ação externa Cloudflare/D1 e confirmação humana antes de habilitar escrita real; conector Cloudflare não está disponível nesta sessão |
+| Checks/testes | Head funcional `1d4decd`: 285/285 Worker; staging/governança verdes; navegador Central 75/3 skipped; abertura 11+24+8. V4: run `35315648867`, 87/87 V3 + 9/9 V4, sintaxe aprovada |
+| Bloqueios | Para criar a nova janela é necessária execução no Windows autenticado no Wrangler; o V4 exige confirmação humana e mantém escrita Drive desligada |
 | Riscos | D1/OAuth continuam compartilhados; alias/produção podem mudar entre preparo e execução; gate deve permanecer false até a janela nova ser confirmada; preflight/upload não são atômicos |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Abrir **nova** janela 4D: reconferir produção, gerar novo controle/prazo, provisionar D1 de forma restrita e preparar preview com gate false; só então pedir confirmação para habilitar escrita |
+| Próxima ação exata | Executar o V4 CI-validado (`886b02a…`) no Windows com `--preparar`; ele reconfirma produção, cria controle/prazo novos e publica preview com gate false. Enviar somente o bloco `NOVA_JANELA_4D_PREPARADA` |
 | Depois | Executar a matriz real 4D restante, revogar a janela, confirmar bloqueio/gate false, registrar evidências e só então avaliar o aceite/merge da Fase 4 |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
