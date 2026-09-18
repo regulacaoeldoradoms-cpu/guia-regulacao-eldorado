@@ -783,56 +783,59 @@ export async function recoverAgenda() {
     safeLine('firebaseBindingsAusentes', currentBindings.missing.join(',') || 'nenhum');
     must(!currentBindings.ready, 'WORKER_DECLARA_FIREBASE_PRONTO_MAS_API_RETORNA_503');
 
-    console.log('4/8 Localizando versão homologada com Firebase íntegro...');
+    console.log('4/8 Localizando versão homologada e montando herança explícita de bindings...');
     const recovery = await findRecoveryVersion(minimalConfig, baseRoot);
-    must(UUID.test(recovery.id), 'VERSAO_HOMOLOGADA_COM_FIREBASE_NAO_ENCONTRADA');
+    must(UUID.test(recovery.id) && recovery.view, 'VERSAO_HOMOLOGADA_COM_FIREBASE_NAO_ENCONTRADA');
     safeLine('versaoRecuperacaoEncontrada', recovery.id);
+
+    const bindingPlan = buildBindingInheritancePlan(currentView, recovery.view, originalVersion, recovery.id);
+    must(bindingPlan.expected.find((item) => item.name === 'AUTH_DB')?.id === databaseId, 'AUTH_DB_PLANO_DIVERGENTE');
+    const recoveredDeployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId, bindingPlan);
+    const recoveryDry = dryRunCurrentMain(downloadedRoot, dryDir, recoveredDeployConfig.path, 'agenda-recovery-final.multipart');
+    const drySummary = await inspectRecoveryMultipart(recoveryDry, bindingPlan);
+    safeLine('firebasePublicosRecuperados', bindingPlan.firebasePublic);
+    safeLine('firebaseSegredosHerdados', bindingPlan.firebaseSecrets);
+    safeLine('segredosAtuaisPreservados', bindingPlan.currentSecrets);
+    safeLine('bindingsValidadosNoDryRun', drySummary.totalBindings);
 
     await confirmHuman(originalVersion, recovery.id);
 
-    console.log('5/8 Restaurando temporariamente a configuração homologada...');
-    mutationStarted = true;
-    rollback(recovery.id, minimalConfig, baseRoot, 'Recuperar bindings Firebase da Agenda');
-    const restoredProbe = await waitForStorageGuard(true);
-    must(restoredProbe.storageGuardPassed, 'ROLLBACK_NAO_RESTAUROU_FIREBASE');
-
-    const rollbackActive = activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot));
-    const rollbackView = versionView(rollbackActive, minimalConfig, baseRoot);
-    const rollbackBindings = inspectFirebaseBindings(rollbackView);
-    must(rollbackBindings.ready, 'BINDINGS_FIREBASE_NAO_RESTAURADOS');
-
-    console.log('6/8 Reconfirmando a main e preparando os bindings recuperados...');
+    console.log('5/8 Reconfirmando main e produção antes do upload sem tráfego...');
     must(localSha === await remoteMainSha(), 'MAIN_MUDOU_ANTES_DA_REPUBLICACAO');
-    const recoveredDeployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId, rollbackView);
-    safeLine('firebasePublicosRecuperados', Object.keys(recoveredDeployConfig.plan.vars).length);
-    safeLine('firebaseSegredosExigidos', recoveredDeployConfig.plan.secrets.length);
-    dryRunCurrentMain(downloadedRoot, dryDir, recoveredDeployConfig.path);
+    must(activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot)) === originalVersion, 'PRODUCAO_MUDOU_ANTES_DO_UPLOAD');
 
-    console.log('7/8 Enviando a main como nova versão sem alterar o tráfego...');
-    const preparedVersion = uploadCurrentMain(downloadedRoot, recoveredDeployConfig.path, minimalConfig, baseRoot);
-    const preparedView = versionView(preparedVersion, minimalConfig, baseRoot);
-    must(preparedView, 'VERSAO_PREPARADA_NAO_LIDA');
-    must(inspectFirebaseBindings(preparedView).ready, 'VERSAO_PREPARADA_SEM_FIREBASE');
-    must(authDbDatabaseId(preparedView) === databaseId, 'VERSAO_PREPARADA_COM_D1_DIVERGENTE');
+    console.log('6/8 Enviando a main como nova versão sem alterar o tráfego...');
+    const preparedVersion = await uploadCurrentMain(
+      downloadedRoot, recoveredDeployConfig.path, minimalConfig, baseRoot, bindingPlan
+    );
     safeLine('versaoPreparada', preparedVersion);
 
-    console.log('8/8 Promovendo versão validada e confirmando a Agenda...');
+    console.log('7/8 Validando todos os bindings da nova versão ainda sem tráfego...');
+    const preparedView = versionView(preparedVersion, minimalConfig, baseRoot);
+    must(preparedView, 'VERSAO_PREPARADA_NAO_LIDA');
+    validateUploadedBindingPlan(preparedView, bindingPlan);
+    must(inspectFirebaseBindings(preparedView).ready, 'VERSAO_PREPARADA_SEM_FIREBASE');
+    must(authDbDatabaseId(preparedView) === databaseId, 'VERSAO_PREPARADA_COM_D1_DIVERGENTE');
+    must(activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot)) === originalVersion, 'PRODUCAO_MUDOU_DURANTE_VALIDACAO');
+
+    console.log('8/8 Promovendo somente a versão validada e confirmando a Agenda...');
+    mutationStarted = true;
     deployUploadedVersion(preparedVersion, minimalConfig, baseRoot);
     const finalProbe = await waitForStorageGuard(true);
     must(finalProbe.storageGuardPassed, 'AGENDA_CONTINUA_SEM_ARMAZENAMENTO');
 
     const finalVersion = activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot));
     must(finalVersion === preparedVersion, 'DEPLOY_FINAL_NAO_E_VERSAO_PREPARADA');
-    const finalBindings = inspectFirebaseBindings(versionView(finalVersion, minimalConfig, baseRoot));
-    must(finalBindings.ready, 'DEPLOY_FINAL_PERDEU_BINDINGS_FIREBASE');
-
+    const finalView = versionView(finalVersion, minimalConfig, baseRoot);
+    validateUploadedBindingPlan(finalView, bindingPlan);
+    must(inspectFirebaseBindings(finalView).ready, 'DEPLOY_FINAL_PERDEU_BINDINGS_FIREBASE');
     completed = true;
     console.log('');
     console.log('AGENDA_RECUPERADA');
     safeLine('main', localSha);
     safeLine('workerVersion', finalVersion);
     safeLine('httpAnonimo', finalProbe.status);
-    console.log('resultado=Firestore voltou a ficar configurado; a API alcança novamente a barreira de autenticação');
+    console.log('resultado=Firestore voltou a ficar configurado; segredos foram herdados por version_id sem leitura dos valores');
     console.log('proximaAcao=atualizar /agenda/ e executar uma sincronizacao autorizada');
     return { changed: true, status: finalProbe.status, mainSha: localSha, versionId: finalVersion };
   } catch (error) {
