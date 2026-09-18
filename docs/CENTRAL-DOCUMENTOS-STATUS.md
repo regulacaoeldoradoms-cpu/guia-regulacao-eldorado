@@ -83,9 +83,23 @@ Workflow `Central de Documentos — Procedimentos operacionais 4D`, run `3531641
 
 Nenhum desses dois procedimentos foi executado contra Cloudflare/D1. A janela preparada continua com `DOCUMENTS_DRIVE_WRITE_ENABLED=false`.
 
+## Login e leitura real validados com gate false — 18/09/2026
+
+O operador validou no frontend real de homologação, mantendo `DOCUMENTS_DRIVE_WRITE_ENABLED=false`:
+
+- autenticação concluída;
+- listagem do único PDF descartável autorizado exibida com nome genérico `PDF descartável 4D 1.pdf`;
+- interface marcou o ambiente como `Somente leitura`;
+- PDF abriu no visualizador próprio com 3 páginas e miniaturas;
+- conteúdo exibido era sintético de homologação, sem dados pessoais ou clínicos.
+
+Esta evidência confirma o requisito intermediário de **login + listagem + abertura/leitura antes de habilitar escrita**. Não foi executada edição, sincronização ou upload nesta validação.
+
+Próxima ação: usar o procedimento V4 de habilitação de escrita, já testado no run `35316410717`, que reconfirma produção/janela/sessões e exige confirmação humana explícita antes de publicar uma versão preview com `DOCUMENTS_DRIVE_WRITE_ENABLED=true`.
+
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; nova janela preparada e ativa; gate de escrita false; validar login/leitura antes de habilitar escrita.**
+**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; login/listagem/leitura reais validados com gate false; próxima etapa é habilitar escrita temporária para a matriz real.**
 
 A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. 4A–4C têm implementação e evidências técnicas, não aceite real da 4D. Encerrar uma autorização não homologa o produto. Não reiniciar etapas encerradas.
 
@@ -198,7 +212,7 @@ Artefatos anteriores preservados:
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 4D sem aceite; Fase 0 e Fases 1–3 encerradas |
-| Última ação concluída | Nova janela 4D preparada pelo V4: preview `16ebdf23…`, controle novo ativo, release `1d4decd…`, gate de escrita false |
+| Última ação concluída | Login, listagem e leitura reais validados no frontend de homologação com gate false; PDF sintético abriu em 3 páginas |
 | Branch/PR | `codex/central-docs-drive-sync-phase4`; #201 aberto, **draft**, sem merge; tecnicamente mergeável após reconciliação |
 | Main | `cd71ad566a443cd2f89b1d98285856c22baf73d7` incorporada à branch; 0 commits atrás; login/abertura/Home preservados |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
@@ -209,10 +223,10 @@ Artefatos anteriores preservados:
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
 | Checks/testes | Head funcional `1d4decd`: 285/285 Worker; staging/governança verdes; navegador Central 75/3 skipped; abertura 11+24+8. Operacionais 4D run `35316410717`: 87 V3 + 9 preparo + 5 habilitação + 4 encerramento, zero falhas |
-| Bloqueios | Próximo passo exige login real no frontend de homologação para validar leitura com gate false; escrita não deve ser habilitada antes dessa evidência |
+| Bloqueios | Evidência de leitura sem escrita concluída; próxima mudança é habilitar escrita temporária no preview mediante confirmação humana explícita |
 | Riscos | D1/OAuth continuam compartilhados; alias/produção podem mudar entre preparo e execução; gate deve permanecer false até a janela nova ser confirmada; preflight/upload não são atômicos |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Abrir `/homologacao/login/` no Pages de staging, autenticar com a conta já autorizada e confirmar que a Central lista/abre o PDF descartável sem permitir sincronização; registrar somente evidência técnica, sem nome/ID do arquivo |
+| Próxima ação exata | Executar `habilitar-escrita-nova-janela-4d-v4.mjs --liberar` a partir do commit CI-validado `6b6dab820690449c24f30814b1fe8c8cf515cae7`; enviar somente o bloco `ESCRITA_4D_LIBERADA` ou `OPERACAO_INTERROMPIDA` |
 | Depois | Executar a matriz real 4D restante, revogar a janela, confirmar bloqueio/gate false, registrar evidências e só então avaliar o aceite/merge da Fase 4 |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
