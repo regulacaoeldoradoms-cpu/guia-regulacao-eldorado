@@ -715,7 +715,7 @@ async function confirmHuman(originalVersion, recoveryVersion, optionalWebKeyPend
   }
 }
 
-export async function recoverAgenda() {
+export async function recoverAgenda(options) {
   const initialProbe = await probeAgenda();
   if (initialProbe.storageGuardPassed) {
     console.log('AGENDA_JA_DISPONIVEL');
@@ -751,56 +751,70 @@ export async function recoverAgenda() {
     safeLine('firebaseBindingsAusentes', currentBindings.missing.join(',') || 'nenhum');
     must(!currentBindings.ready, 'WORKER_DECLARA_FIREBASE_PRONTO_MAS_API_RETORNA_503');
 
-    console.log('4/8 Localizando versão homologada com Firebase íntegro...');
+    console.log('4/8 Localizando referência Firebase e validando credencial local...');
     const recovery = await findRecoveryVersion(minimalConfig, baseRoot);
     must(UUID.test(recovery.id), 'VERSAO_HOMOLOGADA_COM_FIREBASE_NAO_ENCONTRADA');
-    safeLine('versaoRecuperacaoEncontrada', recovery.id);
+    safeLine('versaoReferenciaFirebase', recovery.id);
+    const recoveryView = versionView(recovery.id, minimalConfig, baseRoot);
+    must(recoveryView, 'VERSAO_REFERENCIA_FIREBASE_NAO_LIDA');
 
-    await confirmHuman(originalVersion, recovery.id);
+    const recoveryPlan = firebaseRecoveryPlan(recoveryView);
+    const serviceAccountText = readSmallFile(options.serviceAccountJson, 'ARQUIVO_CONTA_SERVICO_NAO_ENCONTRADO');
+    const serviceAccount = parseServiceAccount(serviceAccountText, recoveryPlan.vars);
+    const webApiKey = options.webApiKeyFile
+      ? readSmallFile(options.webApiKeyFile, 'ARQUIVO_WEB_API_KEY_NAO_ENCONTRADO', 16 * 1024).trim()
+      : '';
+    const localFirebaseSecrets = buildLocalFirebaseSecrets(recoveryPlan, serviceAccount, webApiKey);
+    const secretsFile = path.join(baseRoot, 'firebase-recovery-secrets.json');
+    writeJson(secretsFile, localFirebaseSecrets);
 
-    console.log('5/8 Restaurando temporariamente a configuração homologada...');
-    mutationStarted = true;
-    rollback(recovery.id, minimalConfig, baseRoot, 'Recuperar bindings Firebase da Agenda');
-    const restoredProbe = await waitForStorageGuard(true);
-    must(restoredProbe.storageGuardPassed, 'ROLLBACK_NAO_RESTAUROU_FIREBASE');
+    const recoveredDeployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId, recoveryView);
+    dryRunCurrentMain(downloadedRoot, dryDir, recoveredDeployConfig.path, secretsFile);
+    const currentSecrets = new Set(currentSecretBindingNames(currentView));
+    const optionalWebKeyPending = recoveryPlan.secrets.includes('FIREBASE_WEB_API_KEY')
+      && !currentSecrets.has('FIREBASE_WEB_API_KEY')
+      && !Object.prototype.hasOwnProperty.call(localFirebaseSecrets, 'FIREBASE_WEB_API_KEY');
+    safeLine('firebasePublicosRecuperados', Object.keys(recoveryPlan.vars).length);
+    safeLine('firebaseSegredosFornecidosLocalmente', Object.keys(localFirebaseSecrets).length);
+    safeLine('segredosAtuaisAPreservar', currentSecrets.size);
+    safeLine('credencialContaServico', 'VALIDADA');
+    safeLine('firebaseWebApiKey', optionalWebKeyPending ? 'PENDENTE_OPCIONAL_PARA_AGENDA' : 'OK_OU_JA_EXISTENTE');
 
-    const rollbackActive = activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot));
-    const rollbackView = versionView(rollbackActive, minimalConfig, baseRoot);
-    const rollbackBindings = inspectFirebaseBindings(rollbackView);
-    must(rollbackBindings.ready, 'BINDINGS_FIREBASE_NAO_RESTAURADOS');
+    await confirmHuman(originalVersion, recovery.id, optionalWebKeyPending);
 
-    console.log('6/8 Reconfirmando a main e preparando os bindings recuperados...');
+    console.log('5/8 Reconfirmando main e produção antes do upload sem tráfego...');
     must(localSha === await remoteMainSha(), 'MAIN_MUDOU_ANTES_DA_REPUBLICACAO');
-    const recoveredDeployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId, rollbackView);
-    safeLine('firebasePublicosRecuperados', Object.keys(recoveredDeployConfig.plan.vars).length);
-    safeLine('firebaseSegredosExigidos', recoveredDeployConfig.plan.secrets.length);
-    dryRunCurrentMain(downloadedRoot, dryDir, recoveredDeployConfig.path);
+    must(activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot)) === originalVersion, 'PRODUCAO_MUDOU_ANTES_DO_UPLOAD');
 
-    console.log('7/8 Enviando a main como nova versão sem alterar o tráfego...');
-    const preparedVersion = uploadCurrentMain(downloadedRoot, recoveredDeployConfig.path, minimalConfig, baseRoot);
-    const preparedView = versionView(preparedVersion, minimalConfig, baseRoot);
-    must(preparedView, 'VERSAO_PREPARADA_NAO_LIDA');
-    must(inspectFirebaseBindings(preparedView).ready, 'VERSAO_PREPARADA_SEM_FIREBASE');
-    must(authDbDatabaseId(preparedView) === databaseId, 'VERSAO_PREPARADA_COM_D1_DIVERGENTE');
+    console.log('6/8 Enviando a main como nova versão sem alterar o tráfego...');
+    const preparedVersion = uploadCurrentMain(
+      downloadedRoot, recoveredDeployConfig.path, secretsFile, minimalConfig, baseRoot
+    );
     safeLine('versaoPreparada', preparedVersion);
 
-    console.log('8/8 Promovendo versão validada e confirmando a Agenda...');
+    console.log('7/8 Validando Firebase, AUTH_DB e segredos preservados ainda sem tráfego...');
+    const preparedView = versionView(preparedVersion, minimalConfig, baseRoot);
+    must(preparedView, 'VERSAO_PREPARADA_NAO_LIDA');
+    validatePreparedBindings(preparedView, currentView, recoveryPlan, localFirebaseSecrets, databaseId);
+    must(activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot)) === originalVersion, 'PRODUCAO_MUDOU_DURANTE_VALIDACAO');
+
+    console.log('8/8 Promovendo somente a versão validada e confirmando a Agenda...');
+    mutationStarted = true;
     deployUploadedVersion(preparedVersion, minimalConfig, baseRoot);
     const finalProbe = await waitForStorageGuard(true);
     must(finalProbe.storageGuardPassed, 'AGENDA_CONTINUA_SEM_ARMAZENAMENTO');
 
     const finalVersion = activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot));
     must(finalVersion === preparedVersion, 'DEPLOY_FINAL_NAO_E_VERSAO_PREPARADA');
-    const finalBindings = inspectFirebaseBindings(versionView(finalVersion, minimalConfig, baseRoot));
-    must(finalBindings.ready, 'DEPLOY_FINAL_PERDEU_BINDINGS_FIREBASE');
-
+    const finalView = versionView(finalVersion, minimalConfig, baseRoot);
+    validatePreparedBindings(finalView, currentView, recoveryPlan, localFirebaseSecrets, databaseId);
     completed = true;
     console.log('');
     console.log('AGENDA_RECUPERADA');
     safeLine('main', localSha);
     safeLine('workerVersion', finalVersion);
     safeLine('httpAnonimo', finalProbe.status);
-    console.log('resultado=Firestore voltou a ficar configurado; a API alcança novamente a barreira de autenticação');
+    console.log('resultado=Agenda voltou ao Firestore usando nova credencial Firebase fornecida somente no computador local');
     console.log('proximaAcao=atualizar /agenda/ e executar uma sincronizacao autorizada');
     return { changed: true, status: finalProbe.status, mainSha: localSha, versionId: finalVersion };
   } catch (error) {
@@ -808,7 +822,12 @@ export async function recoverAgenda() {
       try {
         console.log('');
         console.log('Falha após iniciar a recuperação. Restaurando a versão produtiva anterior...');
-        rollback(originalVersion, minimalConfig, baseRoot, 'Rollback de segurança após falha na recuperação da Agenda');
+        deployUploadedVersion(
+          originalVersion,
+          minimalConfig,
+          baseRoot,
+          'Agenda: restaurar versão anterior após falha na promoção'
+        );
         console.log('ROLLBACK_DE_SEGURANCA=OK');
       } catch {
         console.log('ROLLBACK_DE_SEGURANCA=FALHOU');
@@ -821,10 +840,41 @@ export async function recoverAgenda() {
   }
 }
 
+export function parseRecoveryArgs(argv) {
+  const args = Array.isArray(argv) ? [...argv] : [];
+  const options = { recuperar: false, serviceAccountJson: '', webApiKeyFile: '' };
+  const seen = new Set();
+
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index];
+    if (token === '--recuperar') {
+      must(!seen.has(token), 'ARGUMENTO_DUPLICADO');
+      seen.add(token);
+      options.recuperar = true;
+      continue;
+    }
+    if (token === '--service-account-json' || token === '--web-api-key-file') {
+      must(!seen.has(token), 'ARGUMENTO_DUPLICADO');
+      seen.add(token);
+      const value = args[index + 1];
+      must(value && !String(value).startsWith('--'), 'ARGUMENTO_SEM_VALOR');
+      if (token === '--service-account-json') options.serviceAccountJson = String(value);
+      else options.webApiKeyFile = String(value);
+      index += 1;
+      continue;
+    }
+    throw new SafeError('ARGUMENTO_NAO_RECONHECIDO');
+  }
+
+  must(options.recuperar, 'USAR_RECUPERAR');
+  must(options.serviceAccountJson, 'INFORMAR_SERVICE_ACCOUNT_JSON');
+  return options;
+}
+
 export async function main() {
-  must(process.argv.length === 3 && process.argv[2] === '--recuperar', 'USAR_RECUPERAR');
+  const options = parseRecoveryArgs(process.argv.slice(2));
   must(Number(process.versions.node.split('.')[0]) >= 22, 'NODE_22_OU_SUPERIOR_NECESSARIO');
-  await recoverAgenda();
+  await recoverAgenda(options);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
