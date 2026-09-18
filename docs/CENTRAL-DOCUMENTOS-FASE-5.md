@@ -134,7 +134,7 @@ A fundação foi concluída com gates fail-closed, capability `extract`, painel 
 
 ### 5B — Classificação por página
 
-Estado: **em implementação/validação sintética**.
+Estado: **concluída e aceita sinteticamente para integração**.
 
 Implementação:
 - gerar representação efêmera de uma página por vez no PDF.js;
@@ -147,6 +147,8 @@ Implementação:
 - manter os gates produtivos desligados durante toda a validação 5B.
 
 Aceite pendente: suíte integrada e regressão de navegador verdes; nenhum uso real do provedor é necessário para o aceite sintético desta subfase.
+
+Aceite 5B: 306/306 testes, navegador 75 passed/3 skipped esperados, staging/governança/site verdes; nenhum conteúdo clínico real foi enviado ao provedor e os gates produtivos permanecem desligados.
 
 ### 5C — Extração restritiva
 
@@ -182,4 +184,4 @@ Aceite pendente: suíte integrada e regressão de navegador verdes; nenhum uso r
 
 ## Próximo passo atual
 
-Concluir a validação sintética da 5B. Se os contratos de isolamento/proveniência e regressões permanecerem verdes, integrar a 5B mantendo os gates produtivos desligados e iniciar a 5C em branch separada.
+Integrar a 5B mantendo os gates produtivos desligados e iniciar a 5C em branch separada, com extração de uma única página autorizada e validação estrutural rígida.
