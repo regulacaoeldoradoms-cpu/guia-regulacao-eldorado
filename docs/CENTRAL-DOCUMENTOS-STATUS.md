@@ -2,6 +2,25 @@
 
 Última atualização: 18/09/2026.
 
+## Publicação do novo vídeo de abertura — CONCLUÍDA — 18/09/2026
+
+A mudança transversal foi encerrada com sucesso. A PR **#212** integrou o novo MP4 à `main` no merge `9b409e4c59470c4b37ab9d5e3d1a8a16ed735e82`; a PR **#213** corrigiu exclusivamente o verificador público e foi mesclada em `87b88c0e7e37df1c56a25933f2f27aad2795e35c`.
+
+Evidências finais de publicação:
+
+- GitHub Pages build/deploy `35323249977`: **success**;
+- abertura pós-login em `main`, run `35323251451`: **success**;
+- no mesmo run, o passo **Confirmar publicação estática em produção sem autenticar**: **success**, comparando hashes dos arquivos públicos em `regulacaoeldoradoms.com.br` com o commit;
+- Fases 1–4 `35323251417`: **success**;
+- governança `35323251482`: **success**;
+- site `35323251448`: **success**.
+
+O MP4 oficial permanece com **3.275.007 bytes**, SHA-256 `21aae188af40d816ef392380d5ae6b775453571e2c413c31ec0c7b8efb07b489`, URL `/assets/portal-opening-v1.mp4?v=20260918-1` e controlador `login-opening.js?v=20260918-1`. Os testes reais confirmaram aproximadamente 10 segundos, áudio habilitado, 1280×720, desktop/mobile, cache e fallbacks.
+
+A PR antiga **#211** foi fechada sem merge; nenhum histórico obsoleto daquela branch entrou na `main`. O run pós-merge anterior `35322605460`, baseado no verificador ainda antigo, é histórico e foi substituído pela correção #213 e pela confirmação verde `35323251451`.
+
+Conclusão: **nenhuma pendência do vídeo de abertura**. A Central permanece na **Fase 5 — IA documental**; a próxima frente deve ser criada em branch separada conforme o Guia Mestre.
+
 ## Publicação do novo vídeo — merge concluído; verificador público em correção — 18/09/2026
 
 A PR **#212** foi mesclada na `main` pelo commit `9b409e4c59470c4b37ab9d5e3d1a8a16ed735e82`. O GitHub Pages concluiu build/deploy com sucesso no run `35322604005`, e os checks de site, governança e Fases 1–4 do merge também ficaram verdes.
@@ -370,10 +389,10 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5 segue vigente; tarefa transversal do vídeo em fechamento pós-publicação |
-| Última ação concluída | PR #212 mesclada em `9b409e4c`; GitHub Pages `35322604005` verde; verificador público antigo identificado como incompatível com `20260918-1` |
-| Branch/PR | `fix/opening-publication-verifier-20260918`; follow-up do smoke público após merge da #212 |
-| Main | `9b409e4c59470c4b37ab9d5e3d1a8a16ed735e82` — novo MP4 e cache-buster já integrados |
+| Fase/subfase | Fase 5 — IA documental; tarefa transversal do vídeo encerrada e publicada |
+| Última ação concluída | Produção confirmada no run `35323251451`, inclusive hashes públicos/HTML; Pages `35323249977` verde |
+| Branch/PR | Vídeo: #212 e #213 mescladas; nenhuma branch funcional do vídeo permanece pendente |
+| Main | `87b88c0e7e37df1c56a25933f2f27aad2795e35c` — novo MP4 + verificador público corrigido |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
@@ -381,13 +400,13 @@ Artefatos anteriores preservados:
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
-| Checks/testes | PR #212: abertura, staging, Fases 1–4, governança e site verdes; Pages pós-merge `35322604005` sucesso. Falta apenas smoke público com verificador corrigido |
-| Bloqueios | Verificador pós-publicação ainda apontava `20260917-3`; correção isolada preparada, sem mudança funcional no Portal |
-| Riscos | Cache antigo de mídia/controlador; mitigado por nova URL `20260918-1` e invalidação pontual do controlador, sem purge amplo |
+| Checks/testes | Produção: abertura `35323251451` success com smoke público; Pages `35323249977`, Fases 1–4 `35323251417`, governança `35323251482` e site `35323251448` success |
+| Bloqueios | Nenhum bloqueio do vídeo de abertura |
+| Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Abrir/validar/mesclar o follow-up do verificador e confirmar em `main` o passo público de hash/HTML contra regulacaoeldoradoms.com.br |
-| Depois | Registrar confirmação produtiva final e retomar a Fase 5 em branch separada |
-| Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
+| Próxima ação exata | Retomar a Fase 5 em branch separada: recuperar Dossiê/deltas de IA documental e definir o escopo mínimo do painel lateral + proveniência por página |
+| Depois | Implementar Fase 5 por módulos versionados; latência de sincronização continua reservada para a Fase 7 |
+| Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
 
 ## Histórico recuperável
 
