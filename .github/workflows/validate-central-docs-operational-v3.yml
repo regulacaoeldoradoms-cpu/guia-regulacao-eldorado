@@ -9,6 +9,8 @@ on:
       - 'scripts/central-docs/preparar-nova-janela-4d-v4.test.mjs'
       - 'scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.mjs'
       - 'scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.test.mjs'
+      - 'scripts/central-docs/encerrar-janela-4d-v4.mjs'
+      - 'scripts/central-docs/encerrar-janela-4d-v4.test.mjs'
       - '.github/workflows/validate-central-docs-operational-v3.yml'
 
 permissions:
@@ -32,3 +34,5 @@ jobs:
           node --test scripts/central-docs/preparar-nova-janela-4d-v4.test.mjs
           node --check scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.mjs
           node --test scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.test.mjs
+          node --check scripts/central-docs/encerrar-janela-4d-v4.mjs
+          node --test scripts/central-docs/encerrar-janela-4d-v4.test.mjs
