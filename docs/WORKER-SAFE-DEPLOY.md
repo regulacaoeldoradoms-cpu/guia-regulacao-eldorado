@@ -44,10 +44,11 @@ O gate exige atualmente:
 - `FIREBASE_PRIVATE_KEY` como secret;
 - `FIREBASE_STORAGE_BUCKET`;
 - `AUTH_SESSION_SECRET`;
-- `AUTH_RATE_LIMIT_SECRET`;
-- `GEMINI_API_KEY`.
+- `AUTH_RATE_LIMIT_SECRET`.
 
 Além da lista fixa, todos os bindings `secret_text` ou `secret_key` presentes na versão produtiva são preservados dinamicamente. Assim, secrets adicionados no futuro também não podem desaparecer silenciosamente.
+
+`GEMINI_API_KEY` não é um requisito fixo do gate. Se ela existir na produção, é preservada obrigatoriamente pela regra dinâmica de secrets e seu desaparecimento bloqueia a candidata. Se já estiver ausente da baseline produtiva, o gate não usa essa ausência pré-existente para bloquear todo deploy; a disponibilidade operacional do Gemini continua sendo verificada separadamente pelo diagnóstico do Portal.
 
 `FIREBASE_WEB_API_KEY` não é requisito do gate da Agenda porque a rota Firestore da Agenda não depende dela. Se esse recurso voltar a ser necessário como requisito global, a decisão deve ser documentada e testada antes de incluí-lo como bloqueador fixo.
 
