@@ -173,14 +173,41 @@ Resultado: aprovada a evidência de que o conflito bloqueou a aba com baseline a
 
 Próxima ação: encerrar imediatamente a janela V4 pelo procedimento fail-closed, revogando primeiro o controle D1 e depois recolocando o alias em gate `false`, com bloqueio HTTP final confirmado.
 
+## Encerramento da nova janela 4D e aceite da Fase 4 — 18/09/2026
+
+O procedimento V4 de encerramento foi executado depois da matriz real. Resultado sanitizado:
+
+- controle `phase4d_d28ac0d37fe3409f8751fac02007e777` revogado (`controlEnabled=false`);
+- preview final bloqueado `1864a072-a76a-4a7d-8709-23c5b9045b73`;
+- `DOCUMENTS_DRIVE_WRITE_ENABLED=false` confirmado;
+- release `1d4decd03e0047a1bad678d60cee36ba6822d5b5`;
+- bloqueio HTTP final confirmado (`httpBlocked=true`).
+
+A matriz real desta janela aprovou o caminho crítico de substituição segura:
+
+- login/listagem/leitura com gate false;
+- primeiro autosync real com confirmação visual após resposta do Drive;
+- ausência de reenvio sem alteração;
+- segundo autosync consecutivo;
+- persistência depois de fechar/reabrir;
+- conflito externo real entre duas abas, sem sobrescrita silenciosa;
+- revisão vencedora preservada após reabertura;
+- encerramento fail-closed com revogação D1, gate false e bloqueio HTTP.
+
+Observabilidade: a instrumentação permanece restrita a `drive_sync_started`, `drive_sync_completed` e `drive_sync_failed`, com propriedades técnicas allowlisted. A homologação real anterior já comprovou recepção desses três eventos no PostHog (2 started, 1 completed e 1 failed) sem campos clínicos/documentais sensíveis; a nova janela também exercitou sucesso e conflito real. Não foi feita nova consulta ao PostHog nesta sessão porque o conector disponível não corresponde ao projeto do Portal.
+
+Limitação aceita e registrada: `save_copy` permanece validado sinteticamente e bloqueado pelo wrapper restrito da 4D; o caminho real homologado foi `replace_pdf`. Isso não reduz as proteções do fluxo de substituição publicado. A latência percebida entre `syncing` e `success` ficou maior que no Lumin e foi explicitamente adiada para a Fase 7; não será mascarada por sucesso otimista.
+
+**Decisão de aceite:** a Fase 4 é considerada concluída para publicação do fluxo atual da Central de Documentos. O PR #201 pode sair de draft, ser mesclado e publicado. Após confirmar produção, a próxima fase do Guia Mestre é a **Fase 5 — IA documental**, que deve começar como frente separada, sem reabrir a Fase 4 por pendências de hardening não bloqueantes.
+
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive.** Subfase **4D — caminho crítico funcional aprovado; revisão vencedora confirmada; encerrar janela fail-closed antes de avaliar aceite/merge.**
+**Fase 4 — Sincronização segura com Drive: CONCLUÍDA e aceita para publicação.** A 4D terminou com matriz real aprovada e janela fail-closed encerrada. **Próxima fase após publicação: Fase 5 — IA documental.**
 
-A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. 4A–4C têm implementação e evidências técnicas, não aceite real da 4D. Encerrar uma autorização não homologa o produto. Não reiniciar etapas encerradas.
+A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
 - Branch: `codex/central-docs-drive-sync-phase4`.
-- PR **#201 aberto, em draft e sem merge**; head funcional validado `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; `main` incorporada e PR 0 commits atrás.
+- PR **#201 pronto para sair de draft e ser mesclado após este registro final**; branch 0 commits atrás da main antes do merge.
 - Ref real da `main` reconferida: **`cd71ad566a443cd2f89b1d98285856c22baf73d7`**. Preservar login/abertura/Home. A ref Git não identifica deployment Cloudflare.
 - Código congelado do reteste: **`2fee19e69e06ecd128be2b103354fc6c2fb4e431`**.
 - Preview-base: **`a17473ce-ad9a-480c-8e53-901f2fcc3c92`**, configuração desarmada validada anteriormente pelo relatório V3. Não presumir que ainda atenda o alias `central-docs-phase4d`.
@@ -287,23 +314,23 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 4D sem aceite; Fase 0 e Fases 1–3 encerradas |
-| Última ação concluída | Revisão vencedora confirmada após conflito; alteração da aba B permaneceu no Drive após reabrir |
-| Branch/PR | `codex/central-docs-drive-sync-phase4`; #201 aberto, **draft**, sem merge; tecnicamente mergeável após reconciliação |
+| Fase/subfase | Fase 4 concluída/aceita; próxima após publicação: Fase 5 — IA documental |
+| Última ação concluída | Janela V4 encerrada fail-closed: controle revogado, gate false e bloqueio HTTP confirmado |
+| Branch/PR | `codex/central-docs-drive-sync-phase4`; #201 apto para sair de draft/merge após aceite final |
 | Main | `cd71ad566a443cd2f89b1d98285856c22baf73d7` incorporada à branch; 0 commits atrás; login/abertura/Home preservados |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
-| Código/preview | Preview de leitura `16ebdf23…`; preview atual com escrita temporária `7a3418c6-af84-4709-b361-bf185f49bdea`; release `1d4decd…` |
+| Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
-| Janela | `phase4d_d28ac0d37fe3409f8751fac02007e777`, expira `2026-09-18T08:11:26Z`, controle ativo; escrita temporária true somente no preview |
+| Janela | `phase4d_d28ac0d37fe3409f8751fac02007e777` encerrada: controlEnabled=false, writeGate=false, httpBlocked=true |
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
 | Checks/testes | Head funcional `1d4decd`: 285/285 Worker; navegador Central 75/3 skipped; abertura 11+24+8. Operacionais 4D corrigidos run `35317193310`: 87 V3 + 9 preparo + 5 habilitação + 5 encerramento, zero falhas |
-| Bloqueios | Nenhum bloqueio técnico imediato; matriz real deve terminar antes da expiração e ser seguida de encerramento fail-closed |
+| Bloqueios | Nenhum bloqueio da Fase 4; resta integrar/publicar e confirmar o domínio oficial |
 | Riscos | D1/OAuth compartilhados; preflight/upload não atômicos; latência percebida maior que Lumin foi registrada para Fase 7 e não deve ser mascarada com falso sucesso otimista |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Executar `encerrar-janela-4d-v4.mjs --encerrar` do commit funcional CI-validado `cf241735415a3e527bb285e82983edce50818bcd`; esperar `JANELA_4D_ENCERRADA` |
-| Depois | Encerrar a janela fail-closed, confirmar gate false/bloqueio HTTP e então avaliar aceite/merge/publicação |
+| Próxima ação exata | Marcar PR #201 ready, mesclar em main, acompanhar GitHub Pages/checks e confirmar a Central publicada no domínio oficial |
+| Depois | Registrar merge/publicação e iniciar Fase 5 em frente separada; latência de sync fica para Fase 7 |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
 ## Histórico recuperável

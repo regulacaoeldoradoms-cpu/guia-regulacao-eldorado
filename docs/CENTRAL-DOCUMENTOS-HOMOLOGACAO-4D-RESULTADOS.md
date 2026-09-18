@@ -2,7 +2,7 @@
 
 Data: 17/09/2026. PR #201, branch `codex/central-docs-drive-sync-phase4`.
 
-**Estado: em execução, sem aceite final e sem merge.** Usado somente um PDF descartável de três páginas com marcadores sintéticos. Nenhum identificador bruto do Drive, token ou conteúdo pessoal integra este registro.
+**Estado: homologação real concluída; Fase 4 aceita para merge/publicação.** Usado somente um PDF descartável de três páginas com marcadores sintéticos. Nenhum identificador bruto do Drive, token ou conteúdo pessoal integra este registro.
 
 ## Ambiente e limites
 
@@ -66,3 +66,28 @@ O wrapper bloqueia `save_copy`; esse fluxo permanece validado sinteticamente, se
 O Worker emite a referência opaca com baseline certificada somente após confirmar recibo e metadados do upload. A tolerância a incremento posterior de versão exige mesmo usuário, arquivo, versão-base, escopo e revisão/checksum/tamanho; expira após 30 minutos. Referências comuns continuam estritas e uma revisão externa é conflito mesmo com bytes iguais. Isso reconhece conteúdo certificado, sem presumir a origem de alterações de metadados.
 
 Validação integrada: **274/274 testes do Worker**, incluindo 28 casos de baseline e integração real dos handlers com Google sintético; **75 passed / 3 skipped previstos** no navegador desktop/mobile, sem retries. Execução local usa Chrome instalado e vídeo desligado; os skips são casos de toque inaplicáveis ao desktop. Sintaxe, diff e runtime do bundle aprovados. Revisões independentes verificaram escopo, adulteração, expiração, duas abas, metadados ausentes, tamanho máximo da ref, revalidação no start e preservação dos gates. Frontend/cache em `20260917-2`.
+
+## Matriz final V4 — aceite
+
+Em 18/09/2026 foi aberta uma nova janela controlada após reconciliar o PR #201 com a main. O preview de escrita foi `7a3418c6-af84-4709-b361-bf185f49bdea`, release `1d4decd03e0047a1bad678d60cee36ba6822d5b5`, sem promoção do Worker de produção.
+
+| Caso final | Evidência | Resultado |
+| --- | --- | --- |
+| Login/leitura com gate false | PDF descartável listado com nome genérico e aberto no visualizador próprio em 3 páginas | Aprovado |
+| Autosync isolado | Uma rotação iniciou sync e terminou em `Sincronizado com o Google Drive` somente após confirmação final | Aprovado |
+| Sem mudança | Período sem interação não iniciou novo sync | Aprovado |
+| Segundo autosync | Segunda alteração gerou novo sync e sucesso | Aprovado |
+| Fechar/reabrir | Alterações anteriores permaneceram ao reabrir o PDF | Aprovado |
+| Conflito externo | Segunda aba criou revisão; aba antiga recebeu `Conflito detectado: o arquivo foi alterado no Google Drive...` | Aprovado; sem sobrescrita silenciosa |
+| Revisão vencedora | Alteração da aba vencedora permaneceu após reabrir | Aprovado |
+| Encerramento | controle desabilitado, preview final `1864a072-a76a-4a7d-8709-23c5b9045b73`, gate false e HTTP bloqueado | Aprovado |
+
+Observabilidade real já comprovada nesta homologação: PostHog recebeu `drive_sync_started`, `drive_sync_completed` e `drive_sync_failed` com propriedades técnicas allowlisted e sem conteúdo clínico/documental. A nova janela exerceu novamente caminhos de sucesso e conflito; não foi necessário ampliar telemetria.
+
+Limitações não bloqueantes para esta publicação:
+
+- `save_copy` segue validado sinteticamente; o wrapper de homologação deliberadamente permite apenas `replace_pdf` real para não criar fileId novo fora da allowlist;
+- edição durante upload, falha/retry e refinamento de latência continuam cobertos por regressão automatizada e ficam como hardening posterior;
+- latência percebida entre `syncing` e `success` foi maior que no Lumin e deve ser otimizada na Fase 7 sem antecipar sucesso antes da resposta real do Drive.
+
+**Conclusão:** Fase 4 aceita para merge/publicação do fluxo atual.
