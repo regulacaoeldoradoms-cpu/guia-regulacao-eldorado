@@ -379,9 +379,27 @@ A primeira execução do workflow da Central encontrou somente contratos antigos
 
 Próxima ação: aguardar o rerun do PR #217; se Worker, navegador, staging, governança e site permanecerem verdes, registrar o aceite sintético da 5C, retirar draft e mesclar. Depois iniciar 5D em branch separada, mantendo IA real desligada.
 
+## Aceite sintético da Fase 5C — 18/09/2026
+
+PR #217 validado após correção exclusiva de contratos antigos de cache-buster.
+
+Evidências:
+
+- suíte integrada da Central: **314/314**, zero falhas e zero skips;
+- navegador/PDF.js real: **75 passed / 3 skipped esperados**;
+- bundle de staging: sucesso;
+- governança: sucesso;
+- site: sucesso;
+- gates produtivos da IA documental continuam `false/false`;
+- nenhum documento clínico real foi enviado ao provedor.
+
+Critérios 5C aceitos sinteticamente: schema restrito por tipo, estados `encontrado/nao_consta/ilegivel`, proveniência por página, reclassificação antes da extração, bloqueio de tipo `outro`, rejeição de campos extras/ausentes, copiar campo/bloco e `Ver origem`, sem persistência.
+
+Decisão: 5C pode ser integrada. Próxima subfase: **5D — perguntas sobre o documento**, em branch separada e ainda fail-closed em produção.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5C — extração restritiva implementada e em validação sintética no PR #217**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5C concluída e aceita sinteticamente**; próxima após integração: **5D — perguntas sobre o documento**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -493,8 +511,8 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5C — extração restritiva implementada; validação sintética em andamento |
-| Última ação concluída | 5C implementada; falhas iniciais eram somente cache-busters de teste e foram corrigidas |
+| Fase/subfase | Fase 5C concluída/aceita sinteticamente; próxima: 5D — perguntas documentais |
+| Última ação concluída | 5C validada: 314/314 + navegador 75/3 + staging/governança/site verdes; nenhum documento real enviado à IA |
 | Branch/PR | `feat/central-docs-phase5c-restricted-extraction`; PR #217 em draft |
 | Main | `f1a5f22c10584ae8ce970ddde6dd42be4f43c441` — Fase 5B integrada via PR #216 |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
@@ -504,12 +522,12 @@ Artefatos anteriores preservados:
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
-| Checks/testes | Produção: abertura `35323251451` success com smoke público; Pages `35323249977`, Fases 1–4 `35323251417`, governança `35323251482` e site `35323251448` success |
-| Bloqueios | Nenhum funcional conhecido; aguarda rerun do PR #217. Uso real do provedor continua bloqueado pelos gates false até homologação 5E |
+| Checks/testes | 5C: Worker/contratos 314/314; navegador 75 passed/3 skipped; staging, governança e site verdes no PR #217 |
+| Bloqueios | Nenhum para merge da 5C; uso real do provedor continua bloqueado pelos gates false até homologação 5E |
 | Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Conferir rerun do PR #217; se verde, registrar aceite 5C, marcar ready e mesclar |
-| Depois | Criar 5D da main resultante e implementar perguntas documentais baseadas somente em evidências paginadas já estruturadas; manter gates false |
+| Próxima ação exata | Marcar PR #217 ready e mesclar; criar branch 5D da main resultante mantendo gates produtivos false |
+| Depois | Implementar 5D com respostas livres separadas da extração institucional, sempre citando página e sem persistir conteúdo |
 | Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
 
 ## Histórico recuperável
