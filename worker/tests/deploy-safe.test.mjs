@@ -181,6 +181,9 @@ test('fonte do gate não usa deploy monolítico nem contém credenciais', () => 
   assert.match(source, /--experimental-provision=false/);
   assert.match(source, /--experimental-auto-create=false/);
   assert.match(source, /ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE/);
+  assert.match(source, /path\.join\(root, '\.wrangler\.safe-deploy-'/);
+  assert.match(source, /fs\.rmSync\(deployConfig/);
+  assert.doesNotMatch(source, /path\.join\(tempRoot, 'wrangler\.safe-deploy\.toml'\)/);
   assert.match(source, /ROLLBACK_DE_SEGURANCA=OK/);
   assert.match(source, /AGENDA_FIREBASE_503_APOS_DEPLOY/);
 });
