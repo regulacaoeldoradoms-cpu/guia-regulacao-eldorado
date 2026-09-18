@@ -359,9 +359,29 @@ Primeiras falhas da suíte 5B eram exclusivamente contratos de teste ainda apont
 
 **Decisão:** 5B aceita para merge sintético. Produção permanece com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`; portanto o merge não habilita processamento de documento real. Próxima subfase: **5C — extração restritiva por página**.
 
+## Fase 5C — extração restritiva implementada — 18/09/2026
+
+A 5B já está integrada à `main` pelo merge `f1a5f22c10584ae8ce970ddde6dd42be4f43c441` (PR #216). A branch `feat/central-docs-phase5c-restricted-extraction` foi criada dessa base e o PR #217 está aberto em draft para validação sintética.
+
+Implementação 5C concluída em código, mantendo produção fail-closed:
+
+- `DOCUMENT_AI_PHASE=5C`, `phase5c-v1`;
+- extração somente para `comprovante_atendimento` e `pagina_medica_autorizada`;
+- schemas fechados de 8 campos por tipo;
+- estados `encontrado`, `nao_consta`, `ilegivel` normalizados no backend;
+- campos extras, ausentes, página divergente e tipo divergente são rejeitados;
+- pipeline reclassifica a mesma página antes de extrair;
+- provider recebe uma única imagem da página por chamada e nenhum nome/ref/ID do arquivo;
+- UI permite copiar campo, copiar bloco e `Ver origem`, sem persistência;
+- gates produtivos continuam `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
+
+A primeira execução do workflow da Central encontrou somente contratos antigos de cache-buster em `documents-ui.test.mjs`: a página já usava `documents.css/js?v=20260918-3`, mas cinco testes ainda exigiam `20260918-2`. A implementação 5C propriamente dita passou nos testes específicos. O contrato foi alinhado ao asset real e o workflow foi renomeado para `Fases 1–5C`.
+
+Próxima ação: aguardar o rerun do PR #217; se Worker, navegador, staging, governança e site permanecerem verdes, registrar o aceite sintético da 5C, retirar draft e mesclar. Depois iniciar 5D em branch separada, mantendo IA real desligada.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5B concluída e aceita para merge sintético**; próxima após integração: **5C — extração restritiva por página**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5C — extração restritiva implementada e em validação sintética no PR #217**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -473,10 +493,10 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5B concluída/aceita sinteticamente; próxima: 5C — extração restritiva |
-| Última ação concluída | 5B validada: 306/306 + navegador 75/3 + staging/governança/site verdes; nenhum documento real enviado a IA |
-| Branch/PR | `feat/central-docs-phase5b-page-classification`; PR #216 aberto em draft, apto a sair de draft/merge após este registro |
-| Main | `04c09c74236545d068116109809f5236646e622c` — Fase 5A integrada via PR #215 |
+| Fase/subfase | Fase 5C — extração restritiva implementada; validação sintética em andamento |
+| Última ação concluída | 5C implementada; falhas iniciais eram somente cache-busters de teste e foram corrigidas |
+| Branch/PR | `feat/central-docs-phase5c-restricted-extraction`; PR #217 em draft |
+| Main | `f1a5f22c10584ae8ce970ddde6dd42be4f43c441` — Fase 5B integrada via PR #216 |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
@@ -485,11 +505,11 @@ Artefatos anteriores preservados:
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
 | Checks/testes | Produção: abertura `35323251451` success com smoke público; Pages `35323249977`, Fases 1–4 `35323251417`, governança `35323251482` e site `35323251448` success |
-| Bloqueios | Nenhum para merge da 5B; uso real do provedor continua bloqueado pelos gates false até homologação 5E |
+| Bloqueios | Nenhum funcional conhecido; aguarda rerun do PR #217. Uso real do provedor continua bloqueado pelos gates false até homologação 5E |
 | Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Marcar PR #216 ready e mesclar; criar branch 5C da main resultante, mantendo gates produtivos false |
-| Depois | Implementar 5C com schemas restritos, estados `encontrado/nao_consta/ilegivel`, `Ver origem` e testes sem PII em telemetria |
+| Próxima ação exata | Conferir rerun do PR #217; se verde, registrar aceite 5C, marcar ready e mesclar |
+| Depois | Criar 5D da main resultante e implementar perguntas documentais baseadas somente em evidências paginadas já estruturadas; manter gates false |
 | Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
 
 ## Histórico recuperável
