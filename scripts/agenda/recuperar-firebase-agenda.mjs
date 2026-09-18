@@ -199,7 +199,12 @@ export function buildLocalFirebaseSecrets(plan, serviceAccount, webApiKey = '') 
   if (plan.secrets.includes('FIREBASE_PRIVATE_KEY')) secrets.FIREBASE_PRIVATE_KEY = serviceAccount.privateKey;
 
   const webKey = String(webApiKey || '').trim();
-  if (webKey) secrets.FIREBASE_WEB_API_KEY = webKey;
+  if (webKey && plan.vars?.FIREBASE_WEB_API_KEY) {
+    must(webKey === String(plan.vars.FIREBASE_WEB_API_KEY).trim(), 'WEB_API_KEY_FIREBASE_DIVERGENTE');
+  } else if (webKey) {
+    must(webKey.length >= 20, 'WEB_API_KEY_FIREBASE_LOCAL_INVALIDA');
+    secrets.FIREBASE_WEB_API_KEY = webKey;
+  }
 
   must(typeof secrets.FIREBASE_PRIVATE_KEY === 'string' && secrets.FIREBASE_PRIVATE_KEY.length > 100, 'PRIVATE_KEY_FIREBASE_LOCAL_AUSENTE');
   return secrets;
@@ -652,12 +657,12 @@ function uploadCurrentMain(repositoryRoot, config, secretsFile, minimalConfig, c
   return newUploadedVersion(before, after);
 }
 
-function deployUploadedVersion(versionId, minimalConfig, cwd) {
+function deployUploadedVersion(versionId, minimalConfig, cwd, message = 'Agenda: promover main com Firebase recuperado') {
   must(UUID.test(versionId), 'VERSAO_PREPARADA_INVALIDA');
   runWrangler(
     [
       'versions', 'deploy', `${versionId}@100%`, '-y',
-      '--message', 'Agenda: promover main com Firebase recuperado',
+      '--message', message,
       '--config', minimalConfig
     ],
     cwd,
