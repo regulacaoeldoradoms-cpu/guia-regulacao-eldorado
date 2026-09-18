@@ -26,6 +26,8 @@
   const state = {
     user,
     access: null,
+    documentAiConfig: null,
+    documentAiPanelOpen: false,
     stack: [],
     items: [],
     nextPageToken: '',
@@ -120,6 +122,11 @@
     pdfFitWidth: document.getElementById('pdfFitWidthButton'),
     editPdf: document.getElementById('editPdfButton'),
     editorRailEdit: document.getElementById('editorRailEditButton'),
+    documentAiButton: document.getElementById('documentAiButton'),
+    documentAiPanel: document.getElementById('documentsAiPanel'),
+    documentAiClose: document.getElementById('documentsAiCloseButton'),
+    documentAiDescription: document.getElementById('documentsAiDescription'),
+    documentAiRoutines: document.getElementById('documentsAiRoutines'),
     closeViewer: document.getElementById('closeViewerButton'),
     editor: document.getElementById('documentsEditor'),
     editorStatus: document.getElementById('documentsEditorStatus'),
@@ -2856,9 +2863,62 @@
     return auth.api(path, options);
   }
 
+  function documentAiCapabilities() {
+    return state.access?.capabilities || state.user?.documentCapabilities || {};
+  }
+
+  function canUseDocumentAi() {
+    return documentAiCapabilities().extract === true
+      && state.documentAiConfig?.enabled === true;
+  }
+
+  function renderDocumentAiPanel() {
+    const config = state.documentAiConfig || {};
+    if (els.documentAiDescription) {
+      els.documentAiDescription.textContent = config.processingEnabled
+        ? 'A IA documental está habilitada com isolamento e proveniência obrigatórios por página.'
+        : 'A fundação da IA documental está pronta, mas o processamento de conteúdo permanece bloqueado nesta etapa.';
+    }
+    if (els.documentAiRoutines) {
+      const routines = Array.isArray(config.routines) ? config.routines : [];
+      els.documentAiRoutines.innerHTML = routines.length
+        ? routines.map((routine) => `<div class="documents-ai-routine">
+            <strong>${escapeHtml(routine.id || 'Rotina')}</strong>
+            <span>${escapeHtml(routine.purpose || '')}</span>
+          </div>`).join('')
+        : '<div class="documents-ai-routine"><span>Nenhuma rotina pública disponível.</span></div>';
+    }
+  }
+
+  function setDocumentAiPanelOpen(open) {
+    const next = Boolean(open && canUseDocumentAi() && state.pdfItem);
+    state.documentAiPanelOpen = next;
+    if (els.documentAiPanel) els.documentAiPanel.hidden = !next;
+    if (els.documentAiButton) els.documentAiButton.setAttribute('aria-pressed', next ? 'true' : 'false');
+    if (next) renderDocumentAiPanel();
+  }
+
+  function renderDocumentAiAvailability() {
+    const available = Boolean(canUseDocumentAi() && state.pdfItem);
+    if (els.documentAiButton) els.documentAiButton.hidden = !available;
+    if (!available && state.documentAiPanelOpen) setDocumentAiPanelOpen(false);
+  }
+
+  async function loadDocumentAiConfig() {
+    state.documentAiConfig = null;
+    if (documentAiCapabilities().extract !== true) return;
+    try {
+      const payload = await api('/api/documents/ai/config', { method: 'GET' });
+      state.documentAiConfig = payload?.ai || null;
+    } catch (_) {
+      state.documentAiConfig = null;
+    }
+  }
+
   async function loadAccess() {
     state.access = await api('/api/documents/access', { method: 'GET' });
     state.user = auth.getCachedUser() || state.user;
+    await loadDocumentAiConfig();
     renderAccessState();
   }
 
@@ -2908,6 +2968,8 @@
     if (els.editorSync) {
       els.editorSync.hidden = !(canSyncDocuments() && state.editorSession);
     }
+
+    renderDocumentAiAvailability();
 
     if (!canView && !canManage) {
       showStatus('Sua conta não possui acesso à Central de Documentos.', 'warning');
@@ -3065,6 +3127,7 @@
   }
 
   function closePdf() {
+    setDocumentAiPanelOpen(false);
     resetEditorState();
     state.pdfOpenId += 1;
     releaseProgressiveStream();
@@ -3106,6 +3169,7 @@
     }
     const openId = state.pdfOpenId;
     state.pdfItem = item;
+    renderDocumentAiAvailability();
     els.viewer.hidden = false;
     els.viewerModeLabel.textContent = 'Visualização';
     els.editPdf.hidden = !canEditDocuments();
@@ -3261,6 +3325,10 @@
     if (state.editorSession) setEditorWorkspaceMode('organize');
     else startEditor();
   });
+  els.documentAiButton?.addEventListener('click', () => {
+    setDocumentAiPanelOpen(!state.documentAiPanelOpen);
+  });
+  els.documentAiClose?.addEventListener('click', () => setDocumentAiPanelOpen(false));
   els.editorUndo.addEventListener('click', undoEditor);
   els.editorRedo.addEventListener('click', redoEditor);
   els.editorOrganize?.addEventListener('click', () => {
