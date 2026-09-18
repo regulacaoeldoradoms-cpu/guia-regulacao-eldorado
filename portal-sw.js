@@ -415,14 +415,15 @@ self.addEventListener('activate', (event) => {
     }));
     const staticCache = await caches.open(STATIC_CACHE);
     await staticCache.delete('/js/telemedicina.js?v=20260906-1');
-    // Preserva a invalidação seletiva da abertura/Home incorporada na main.
-    // O cache independente do MP4 e os demais recursos do Portal não são apagados.
+    // A atualização do SW renova /login/ e remove somente os controladores regressivos.
+    // O cache independente do MP4 e os demais recursos do Portal são preservados.
+    const loginCache = await caches.open(STATIC_CACHE);
     await Promise.all([
-      staticCache.delete('/js/login-opening.js?v=20260917-1'),
-      staticCache.delete('/js/login-opening.js?v=20260917-2'),
-      staticCache.delete('/js/login.js?v=20260917-2'),
-      staticCache.delete('/js/home.js?v=20260917-1'),
-      staticCache.delete('/js/login.js?v=20260910-2')
+      loginCache.delete('/js/login-opening.js?v=20260917-1'),
+      loginCache.delete('/js/login-opening.js?v=20260917-2'),
+      loginCache.delete('/js/login.js?v=20260917-2'),
+      loginCache.delete('/js/home.js?v=20260917-1'),
+      loginCache.delete('/js/login.js?v=20260910-2')
     ]);
     if (self.registration.navigationPreload) {
       await self.registration.navigationPreload.enable().catch(() => {});
