@@ -128,6 +128,10 @@ Nenhum campo pode ser completado a partir de outra página.
 
 Nenhum PDF real precisa ser enviado a um provedor externo nesta subfase.
 
+### Aceite 5A — concluído
+
+A fundação foi concluída com gates fail-closed, capability `extract`, painel oculto, prompts versionados, contratos estruturados e testes de privacidade/autorização. Nenhum conteúdo documental foi enviado a provedor externo. A integração pode ser feita sem ativar a IA em produção.
+
 ### 5B — Classificação por página
 
 - gerar representação de uma página por vez;
