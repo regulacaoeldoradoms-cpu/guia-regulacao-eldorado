@@ -134,9 +134,19 @@ A fundação foi concluída com gates fail-closed, capability `extract`, painel 
 
 ### 5B — Classificação por página
 
-- gerar representação de uma página por vez;
+Estado: **em implementação/validação sintética**.
+
+Implementação:
+- gerar representação efêmera de uma página por vez no PDF.js;
+- enviar somente a imagem dessa página e o número técnico ao backend;
+- limitar MIME a JPEG/PNG e tamanho a 3 MiB;
 - classificar `comprovante_atendimento`, `pagina_medica_autorizada` ou `outro`;
-- exibir classificação e proveniência sem persistir conteúdo.
+- validar que o número devolvido pelo provider coincide exatamente com a página enviada;
+- exibir classificação e proveniência sem persistir conteúdo;
+- usar provider mockável em testes, sem documento clínico real;
+- manter os gates produtivos desligados durante toda a validação 5B.
+
+Aceite pendente: suíte integrada e regressão de navegador verdes; nenhum uso real do provedor é necessário para o aceite sintético desta subfase.
 
 ### 5C — Extração restritiva
 
@@ -170,6 +180,6 @@ A fundação foi concluída com gates fail-closed, capability `extract`, painel 
 - gravar automaticamente resultados de IA em sistemas externos;
 - ampliar permissões de usuário por causa da IA.
 
-## Primeiro próximo passo
+## Próximo passo atual
 
-Implementar a subfase 5A sem habilitar processamento real de dados clínicos: contratos backend, feature gate, painel lateral, prompts versionados e testes. Depois validar a base antes de integrar chamadas multimodais reais.
+Concluir a validação sintética da 5B. Se os contratos de isolamento/proveniência e regressões permanecerem verdes, integrar a 5B mantendo os gates produtivos desligados e iniciar a 5C em branch separada.
