@@ -508,7 +508,7 @@ async function confirmPrepare() {
 }
 
 async function httpProbe(pagesOrigin, expectedStatus) {
-  const response = await fetch(FIXED_5E.workerOrigin + '/api/documents/access', {
+  const response = await fetch(FIXED_5E.workerOrigin + '/api/documents/ai/config', {
     method: 'GET',
     redirect: 'manual',
     cache: 'no-store',
