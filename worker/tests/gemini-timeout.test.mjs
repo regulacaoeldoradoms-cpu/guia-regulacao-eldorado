@@ -113,6 +113,46 @@ test('envia a restrição de Psicologia para TEA como regra operacional pertinen
   }
 });
 
+test('usa Cloudflare imediatamente quando GEMINI_API_KEY não está configurada', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalConsoleWarn = console.warn;
+  const originalConsoleError = console.error;
+  let googleCalls = 0;
+  let cloudflareCalls = 0;
+
+  globalThis.fetch = async () => {
+    googleCalls += 1;
+    return Response.json({ error: { message: 'não deveria chamar Gemini' } }, { status: 503 });
+  };
+  console.warn = () => {};
+  console.error = () => {};
+
+  try {
+    const response = await portalWorker.fetch(aiRequest(), workerEnv({
+      GEMINI_API_KEY: '',
+      AI: {
+        async run(model, input, options) {
+          cloudflareCalls += 1;
+          assert.equal(model, '@cf/meta/llama-3.1-8b-instruct-fast');
+          assert.equal(input.messages[0].role, 'system');
+          assert.ok(options.signal instanceof AbortSignal);
+          return { response: 'Resposta Cloudflare sem depender do Gemini.' };
+        }
+      }
+    }), {});
+    const payload = await response.json();
+    assert.equal(response.status, 200);
+    assert.equal(payload.answer, 'Resposta Cloudflare sem depender do Gemini.');
+    assert.equal(payload.provider, 'Cloudflare Workers AI');
+    assert.equal(googleCalls, 0);
+    assert.equal(cloudflareCalls, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+    console.warn = originalConsoleWarn;
+    console.error = originalConsoleError;
+  }
+});
+
 test('usa a Cloudflare como segundo provedor quando os dois modelos Gemini falham', async () => {
   const originalFetch = globalThis.fetch;
   const originalConsoleWarn = console.warn;
