@@ -432,6 +432,7 @@ export function npxCliPath(execPath = process.execPath) {
 
 export function classifyWranglerFailure(result = {}) {
   const text = `${result.stderr || ''}\n${result.stdout || ''}`.toLowerCase();
+  if (/cannot inherit bindings|inherit binding|binding.*inherit/.test(text)) return 'HERANCA_BINDING_FALHOU';
   if (/required secrets|missing.*secret|secret.*required|secret.*not.*configured/.test(text)) return 'SEGREDOS_AUSENTES';
   if (/(missing|invalid|not found).*database_id|database_id.*(missing|invalid|not found)|d1 database.*(missing|invalid|not found)|d1_databases.*(missing|invalid)/.test(text)) return 'CONFIG_D1';
   if (/not logged in|login|api token|authentication|unauthorized|forbidden/.test(text)) return 'AUTENTICACAO_CLOUDFLARE';
@@ -612,7 +613,7 @@ async function findRecoveryVersion(minimalConfig, cwd) {
     }
     const summary = inspectFirebaseBindings(view);
     candidates.push({ id, ready: summary.ready });
-    if (summary.ready) return { id, candidates };
+    if (summary.ready) return { id, view, candidates };
   }
 
   const listed = runWrangler(
@@ -632,10 +633,10 @@ async function findRecoveryVersion(minimalConfig, cwd) {
     const view = versionView(item.id, minimalConfig, cwd, true);
     if (!view) continue;
     const summary = inspectFirebaseBindings(view);
-    if (summary.ready) return { id: item.id, candidates };
+    if (summary.ready) return { id: item.id, view, candidates };
   }
 
-  return { id: '', candidates };
+  return { id: '', view: null, candidates };
 }
 
 function rollback(versionId, minimalConfig, cwd, message) {
@@ -666,19 +667,23 @@ export function newUploadedVersion(beforeIds, afterIds) {
   return created[0];
 }
 
-function uploadCurrentMain(repositoryRoot, config, minimalConfig, cwd) {
+async function uploadCurrentMain(repositoryRoot, config, minimalConfig, cwd, bindingPlan) {
   must(fs.existsSync(config), 'WRANGLER_RECOVERY_CONFIG_AUSENTE');
   const before = versionIdSet(minimalConfig, cwd);
+  const sentPath = path.join(cwd, 'agenda-recovery-sent.multipart');
   runWrangler(
     [
       'versions', 'upload',
+      '--experimental-provision=false',
       '--experimental-auto-create=false',
       '--message', 'Agenda: recuperar Firebase e republicar main',
+      '--outfile', sentPath,
       '--config', config
     ],
     repositoryRoot,
     'UPLOAD_MAIN_FALHOU'
   );
+  await inspectRecoveryMultipart(sentPath, bindingPlan);
   const after = versionIdSet(minimalConfig, cwd);
   return newUploadedVersion(before, after);
 }
@@ -707,20 +712,23 @@ function validateCurrentMain(cloneRoot) {
   );
 }
 
-function dryRunCurrentMain(repositoryRoot, dryDir, config) {
+function dryRunCurrentMain(repositoryRoot, dryDir, config, fileName = 'agenda-recovery.multipart') {
   must(fs.existsSync(config), 'WRANGLER_RECOVERY_CONFIG_AUSENTE');
   fs.mkdirSync(dryDir, { recursive: true });
+  const outfile = path.join(dryDir, fileName);
   runWrangler(
     [
       'versions', 'upload',
       '--dry-run',
+      '--experimental-provision=false',
       '--experimental-auto-create=false',
-      '--outfile', path.join(dryDir, 'agenda-recovery.multipart'),
+      '--outfile', outfile,
       '--config', config
     ],
     repositoryRoot,
     'DRY_RUN_MAIN_FALHOU'
   );
+  return outfile;
 }
 
 async function confirmHuman(originalVersion, recoveryVersion) {
@@ -730,7 +738,7 @@ async function confirmHuman(originalVersion, recoveryVersion) {
     console.log('DIAGNOSTICO=bindings Firebase ausentes na versão produtiva atual');
     safeLine('versaoAtual', originalVersion);
     safeLine('versaoRecuperacao', recoveryVersion);
-    console.log('acao=rollback temporario -> confirmar Firebase -> republicar a main atual');
+    console.log('acao=upload sem trafego -> validar bindings herdados -> promover a main atual');
     console.log('segredos=nenhum valor sera exibido ou gravado');
     const answer = await rl.question('Para continuar, digite RECUPERAR AGENDA: ');
     must(answer.trim() === 'RECUPERAR AGENDA', 'CANCELADO_PELO_OPERADOR');
