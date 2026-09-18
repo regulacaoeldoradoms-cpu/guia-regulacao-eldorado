@@ -19,6 +19,15 @@
       <h1>Validação controlada da IA documental</h1>
       <p>Este laboratório exercita o mesmo backend de classificação, extração e perguntas da Central, mas com páginas criadas sinteticamente no navegador. O token de sessão fica apenas na memória desta aba.</p>
       <div id="phase5eEnvironment" class="phase5e-note">Verificando configuração do preview…</div>
+      <div id="phase5eWorkerSetup" class="phase5e-worker-setup" hidden>
+        <label for="phase5eWorkerOrigin">Worker preview 5E</label>
+        <div class="phase5e-worker-row">
+          <input id="phase5eWorkerOrigin" type="url" inputmode="url" autocomplete="off" spellcheck="false"
+            placeholder="https://central-docs-phase5e-…workers.dev">
+          <button type="button" id="phase5eWorkerApply">Usar preview</button>
+        </div>
+        <small>O endereço fica somente na memória desta aba e precisa ser o alias oficial 5E.</small>
+      </div>
     </section>
 
     <section class="phase5e-card" id="phase5eLoginCard">
