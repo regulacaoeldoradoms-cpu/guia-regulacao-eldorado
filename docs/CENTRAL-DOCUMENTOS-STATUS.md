@@ -438,15 +438,42 @@ Produção permanece fail-closed: `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_P
 
 Decisão: **5D pode ser integrada**. Próxima subfase: **5E — homologação real controlada**, que deve ser preparada sem ativar o provedor até existir confirmação humana.
 
+## Preparo técnico da Fase 5E implementado — 18/09/2026
+
+A Fase 5D foi integrada pela PR #218 no merge `8fba51979aba95c31ec7ef6644949c8c508530f6`. Em seguida foi criada a branch `feat/central-docs-phase5e-controlled-homologation` diretamente dessa `main`.
+
+Todo o trabalho realizado nesta etapa permanece **sintético e fail-closed**: nenhum PDF clínico, imagem de paciente ou conteúdo real foi enviado a provedor de IA; não houve mudança de D1, Cloudflare preview, secret, Google Drive ou gates de produção.
+
+Artefatos 5E já preparados:
+
+- `worker/homologation-5e.js`: entrypoint exclusivo de preview, não importado por produção;
+- allowlist de rotas limitada a auth + config/classificação/extração/chat documental;
+- origem Pages e origem Worker exatas, conta/capability `extract` e controle D1 temporário obrigatórios;
+- header adicional `X-Document-Ai-Homologation: phase5e-synthetic-v1` para qualquer chamada de IA;
+- escrita do Drive obrigatoriamente `false` durante a janela;
+- controle D1 revalidado imediatamente antes do provider;
+- laboratório `/homologacao-5e/` com token e alias apenas em memória;
+- fixtures sintéticos: comprovante, duas páginas médicas conflitantes, página `outro` com prompt injection, campo ausente e CID propositalmente ilegível;
+- chat da matriz recebe somente evidências estruturadas extraídas, sem reenviar imagens;
+- `scripts/central-docs/preparar-homologacao-5e.mjs`: baixa runtime por commit fixo, valida git blobs, reconfirma produção, inspeciona bindings/secrets por nome/tipo, faz dry-run e cria somente Worker Version preview;
+- `scripts/central-docs/encerrar-homologacao-5e.mjs`: revoga D1 primeiro, volta gates do alias a `false`, confirma produção intacta e HTTP 403;
+- workflows/testes próprios para wrapper, harness, preparo, encerramento e bundle staging.
+
+Decisão operacional: o Pages da 5E não precisa ser reconstruído com o endpoint Worker embutido. O laboratório pode receber **somente o alias oficial 5E** em um campo efêmero, validado no navegador e nunca persistido. Isso permite usar o preview Pages normal do PR e elimina dependência de um deploy Pages especial com variável dinâmica.
+
+Bloqueio deliberado restante: a existência de `GEMINI_API_KEY` na baseline produtiva é desconhecida e não deve ser inferida. O procedimento 5E verifica somente metadata de binding; se a chave estiver ausente, para com `INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE` antes de upload/ativação. Se estiver presente, ainda exige a frase humana `PREPARAR HOMOLOGACAO 5E`.
+
+Próxima ação exata: abrir PR do preparo 5E, executar os checks e corrigir regressões. Se verde, integrar **somente o preparo**. Parar antes de executar o script real/ativar preview, pois esse é o próximo ponto que exige o operador.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5D concluída e aceita sinteticamente**; próxima após integração: **5E — homologação real controlada**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — homologação real controlada: preparo técnico implementado, ainda sem chamada real ao provedor**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
-- Branch atual: `feat/central-docs-phase5b-page-classification`.
-- Fase 5A: PR **#215 mesclado**. A 5B ainda não possui PR aberto neste ponto do registro.
-- Ref de base real da 5B: **`04c09c74236545d068116109809f5236646e622c`**. Preservar login/abertura/Home, editor e sincronização já publicados.
+- Branch atual: `feat/central-docs-phase5e-controlled-homologation`.
+- Fases 5A–5D: PRs **#215–#218 mesclados**. 5E está em preparo técnico, ainda sem ativação real.
+- Ref de base real da 5E: **`8fba51979aba95c31ec7ef6644949c8c508530f6`**. Preservar login/abertura/Home, editor, sincronização e gate seguro do Worker.
 - Código congelado do reteste: **`2fee19e69e06ecd128be2b103354fc6c2fb4e431`**.
 - Preview-base: **`a17473ce-ad9a-480c-8e53-901f2fcc3c92`**, configuração desarmada validada anteriormente pelo relatório V3. Não presumir que ainda atenda o alias `central-docs-phase4d`.
 
@@ -552,10 +579,10 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5D concluída/aceita sinteticamente; próxima: 5E — homologação real controlada |
-| Última ação concluída | 5D reconciliada com main e validada: 320/320 + navegador 75/3 + staging/governança/site verdes |
-| Branch/PR | `feat/central-docs-phase5d-document-chat`; PR #218 em draft, apto a sair de draft/merge após este registro |
-| Main | `e990e768fdbf26c88225eace66e923c949cc0fac` incorporada à branch 5D sem sobreposição de arquivos |
+| Fase/subfase | Fase 5E — preparo da homologação real controlada; sem provider real ainda |
+| Última ação concluída | Wrapper/harness/fixtures e procedimentos de preparo/encerramento 5E implementados; nenhuma chamada real executada |
+| Branch/PR | `feat/central-docs-phase5e-controlled-homologation`; PR de preparo ainda não aberto |
+| Main | `8fba51979aba95c31ec7ef6644949c8c508530f6` — Fase 5D integrada via PR #218 |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
@@ -564,11 +591,11 @@ Artefatos anteriores preservados:
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
 | Checks/testes | 5D reconciliada: Worker/contratos 320/320; navegador 75 passed/3 skipped; staging, governança e site verdes no PR #218 |
-| Bloqueios | Nenhum para merge da 5D; 5E real dependerá depois de confirmação humana e preview temporário |
+| Bloqueios | Nenhum para validar/integrar o preparo. Execução real 5E depende de confirmação humana; `GEMINI_API_KEY` pode exigir intervenção se ausente |
 | Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Marcar PR #218 ready e mesclar; criar branch 5E da main resultante e preparar harness/procedimentos sem ativar provedor |
-| Depois | Preparar 5E inteira de forma fail-closed; parar somente no ponto que exigir ativação temporária e intervenção do operador |
+| Próxima ação exata | Abrir/validar PR do preparo 5E; integrar se verde; depois parar no ponto anterior à execução do script real |
+| Depois | Operador executa preparo 5E em Windows/Wrangler e matriz sintética; em seguida encerra janela fail-closed e só então se avalia aceite da Fase 5 |
 | Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
 
 ## Histórico recuperável
