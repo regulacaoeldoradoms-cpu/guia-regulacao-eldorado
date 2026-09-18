@@ -38,6 +38,10 @@ const CORE_RESOURCES = Object.freeze([
   '/js/tools-catalog.js?v=20260911-3',
   '/js/document-cache.js?v=20260912-1',
   '/js/document-editor.js?v=20260916-2',
+  '/js/login-home-transition.js?v=20260917-3',
+  '/js/home.js?v=20260917-3',
+  '/js/login-opening.js?v=20260917-3',
+  '/js/login.js?v=20260917-3',
   '/vendor/pdf-lib/pdf-lib.min.js',
   '/js/social-navigation.js?v=20260911-2',
   '/js/portal-chat.js?v=20260911-3',
@@ -411,6 +415,15 @@ self.addEventListener('activate', (event) => {
     }));
     const staticCache = await caches.open(STATIC_CACHE);
     await staticCache.delete('/js/telemedicina.js?v=20260906-1');
+    // Preserva a invalidação seletiva da abertura/Home incorporada na main.
+    // O cache independente do MP4 e os demais recursos do Portal não são apagados.
+    await Promise.all([
+      staticCache.delete('/js/login-opening.js?v=20260917-1'),
+      staticCache.delete('/js/login-opening.js?v=20260917-2'),
+      staticCache.delete('/js/login.js?v=20260917-2'),
+      staticCache.delete('/js/home.js?v=20260917-1'),
+      staticCache.delete('/js/login.js?v=20260910-2')
+    ]);
     if (self.registration.navigationPreload) {
       await self.registration.navigationPreload.enable().catch(() => {});
     }

@@ -2,6 +2,14 @@
 
 Última atualização: 18/09/2026.
 
+## Reconciliação com a main atual — 18/09/2026
+
+A branch da Fase 4 foi reconciliada tecnicamente com a main `cd71ad5` antes de abrir outra janela 4D. O PR #201 foi colocado em **draft** para impedir integração acidental antes da homologação real.
+
+A comparação desde a base comum mostrou somente três arquivos alterados nos dois lados: `docs/CENTRAL-DOCUMENTOS-STATUS.md`, `portal-sw.js` e `scripts/build-central-docs-staging.mjs`. A resolução preserva simultaneamente a Fase 4 e as mudanças recentes da abertura/Home da main: cache/versionamento da Central + aquecimento/invalidação seletiva da abertura no Service Worker; bundle 4D + harness/vídeo/scripts de abertura no staging. Para `/opening/*`, a CSP da main foi preservada de forma específica, sem afrouxar os caminhos sintéticos/4D existentes.
+
+Não houve merge em main, escrita no Drive, nova janela Cloudflare, SQL, OAuth ou alteração de segredo nesta reconciliação. A próxima validação é somente CI/testes relevantes do novo head; falhas verificadas devem ser corrigidas antes de preparar a nova janela 4D.
+
 ## Fase atual
 
 **Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; revogação D1 concluída; preview-base localizado no histórico; vínculo atual do alias e bloqueio servido ainda pendentes.**
@@ -9,7 +17,7 @@
 A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. 4A–4C têm implementação e evidências técnicas, não aceite real da 4D. Encerrar uma autorização não homologa o produto. Não reiniciar etapas encerradas.
 
 - Branch: `codex/central-docs-drive-sync-phase4`.
-- PR **#201 aberto e sem merge conforme último registro**; `mergeable:false` na última consulta registrada. PR/checks não foram reconsultados nesta atualização operacional.
+- PR **#201 aberto, em draft e sem merge**; reconciliação com a main executada nesta atualização. Checks do novo head ainda precisam ser observados.
 - Ref real da `main` reconferida: **`cd71ad566a443cd2f89b1d98285856c22baf73d7`**. Preservar login/abertura/Home. A ref Git não identifica deployment Cloudflare.
 - Código congelado do reteste: **`2fee19e69e06ecd128be2b103354fc6c2fb4e431`**.
 - Preview-base: **`a17473ce-ad9a-480c-8e53-901f2fcc3c92`**, configuração desarmada validada anteriormente pelo relatório V3. Não presumir que ainda atenda o alias `central-docs-phase4d`.

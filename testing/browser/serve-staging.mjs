@@ -13,6 +13,7 @@ const types = new Map([
   ['.css', 'text/css; charset=utf-8'],
   ['.svg', 'image/svg+xml'],
   ['.png', 'image/png'],
+  ['.mp4', 'video/mp4'],
   ['.json', 'application/json; charset=utf-8'],
   ['.txt', 'text/plain; charset=utf-8'],
   ['.wasm', 'application/wasm'],
@@ -22,20 +23,97 @@ const types = new Map([
   ['.ttf', 'font/ttf']
 ]);
 
+function requestedRange(value, size) {
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(String(value || '').trim());
+  if (!match || !size) return null;
+
+  const startValue = match[1];
+  const endValue = match[2];
+  if (!startValue && !endValue) return null;
+
+  let start;
+  let end;
+
+  if (!startValue) {
+    const suffixLength = Number(endValue);
+    if (!Number.isInteger(suffixLength) || suffixLength <= 0) return null;
+    start = Math.max(0, size - suffixLength);
+    end = size - 1;
+  } else {
+    start = Number(startValue);
+    if (!Number.isInteger(start) || start < 0 || start >= size) return null;
+    if (endValue) {
+      end = Number(endValue);
+      if (!Number.isInteger(end) || end < start) return null;
+      end = Math.min(end, size - 1);
+    } else {
+      end = size - 1;
+    }
+  }
+
+  return { start, end };
+}
+
+function isInsideRoot(candidate) {
+  return candidate === root || candidate.startsWith(`${root}${path.sep}`);
+}
+
 http.createServer(async (request, response) => {
   try {
     const pathname = decodeURIComponent(new URL(request.url || '/', 'http://127.0.0.1').pathname);
     const relative = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
-    const candidate = path.resolve(root, relative);
-    if (candidate !== root && !candidate.startsWith(`${root}${path.sep}`)) throw new Error('invalid_path');
-    const info = await stat(candidate);
+    let candidate = path.resolve(root, relative);
+    if (!isInsideRoot(candidate)) throw new Error('invalid_path');
+
+    let info = await stat(candidate);
+    if (info.isDirectory()) {
+      candidate = path.join(candidate, 'index.html');
+      if (!isInsideRoot(candidate)) throw new Error('invalid_path');
+      info = await stat(candidate);
+    }
     if (!info.isFile()) throw new Error('not_file');
-    const body = await readFile(candidate);
+
+    const contentType = types.get(path.extname(candidate).toLowerCase()) || 'application/octet-stream';
+    const commonHeaders = {
+      'Content-Type': contentType,
+      'Cache-Control': 'no-store',
+      'Accept-Ranges': 'bytes'
+    };
+    const rangeHeader = request.headers.range;
+
+    if (rangeHeader) {
+      const range = requestedRange(rangeHeader, info.size);
+      if (!range) {
+        response.writeHead(416, {
+          ...commonHeaders,
+          'Content-Range': `bytes */${info.size}`
+        });
+        response.end();
+        return;
+      }
+
+      const body = await readFile(candidate);
+      const chunk = body.subarray(range.start, range.end + 1);
+      response.writeHead(206, {
+        ...commonHeaders,
+        'Content-Range': `bytes ${range.start}-${range.end}/${info.size}`,
+        'Content-Length': String(chunk.byteLength)
+      });
+      if (request.method === 'HEAD') response.end();
+      else response.end(chunk);
+      return;
+    }
+
     response.writeHead(200, {
-      'Content-Type': types.get(path.extname(candidate).toLowerCase()) || 'application/octet-stream',
-      'Cache-Control': 'no-store'
+      ...commonHeaders,
+      'Content-Length': String(info.size)
     });
-    response.end(body);
+    if (request.method === 'HEAD') {
+      response.end();
+      return;
+    }
+
+    response.end(await readFile(candidate));
   } catch (_) {
     response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     response.end('Not found');

@@ -42,6 +42,13 @@ const files = [
   ['testing/central-docs/viewer-harness.html', 'testing/central-docs/viewer-harness.html'],
   ['testing/central-docs/fixture.js', 'testing/central-docs/fixture.js'],
   ['testing/central-docs/editor-harness.js', 'testing/central-docs/editor-harness.js'],
+  ['testing/post-login-opening/harness.html', 'opening/index.html'],
+  ['testing/post-login-opening/harness.js', 'opening/harness.js'],
+  ['testing/post-login-opening/complete.html', 'opening/complete.html'],
+  ['assets/portal-opening-v1.mp4', 'assets/portal-opening-v1.mp4'],
+  ['js/login-opening.js', 'js/login-opening.js'],
+  ['js/login.js', 'js/login.js'],
+  ['js/home.js', 'js/home.js'],
   ['assets/editor-pdf-buttons', 'assets/editor-pdf-buttons'],
   ['assets/Unir_PDF.png', 'assets/Unir_PDF.png'],
   ['assets/Inserir_pagina_branca.png', 'assets/Inserir_pagina_branca.png'],
@@ -199,7 +206,7 @@ await writeFile(
 );
 
 const commonHeaders = `  X-Robots-Tag: noindex, nofollow, noarchive\n  Cache-Control: no-store\n  Referrer-Policy: no-referrer\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()\n`;
-const headers = `/*\n${commonHeaders}\n/index.html\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/testing/*\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/homologacao/*\n${commonHeaders}  Content-Security-Policy: default-src 'self'; connect-src 'self' ${effectiveWorkerOrigin}; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'\n`;
+const headers = `/*\n${commonHeaders}\n/index.html\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/testing/*\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/opening/*\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'\n\n/homologacao/*\n${commonHeaders}  Content-Security-Policy: default-src 'self'; connect-src 'self' ${effectiveWorkerOrigin}; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'\n`;
 await writeFile(path.join(out, '_headers'), headers, 'utf8');
 
 const forbiddenSynthetic = [
