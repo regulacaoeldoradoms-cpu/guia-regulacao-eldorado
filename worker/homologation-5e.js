@@ -14,7 +14,6 @@ const SIMPLE_ROUTES = new Map([
   ['POST /api/auth/login', 'login'],
   ['GET /api/auth/me', 'read'],
   ['POST /api/auth/logout', 'read'],
-  ['GET /api/documents/access', 'read'],
   ['GET /api/documents/ai/config', 'read'],
   ['POST /api/documents/ai/page/classify', 'ai'],
   ['POST /api/documents/ai/page/extract', 'ai'],
