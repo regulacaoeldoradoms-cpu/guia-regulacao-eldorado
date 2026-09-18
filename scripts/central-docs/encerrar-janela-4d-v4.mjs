@@ -138,7 +138,11 @@ export async function closeWindow() {
       const flags = ['--preview-alias', FIXED.alias, '--tag', TAG, '--message', MESSAGE];
       const dry = path.join(work, 'closed-dry.multipart');
       runWrangler(['versions','upload',...flags,'--dry-run','--outfile',dry,'--config',configPath], work);
-      await inspectMultipart(fs.readFileSync(dry), config);
+      await inspectMultipart(fs.readFileSync(dry), config, {
+      'workers/alias': FIXED.alias,
+      'workers/tag': TAG,
+      'workers/message': MESSAGE
+    });
 
       console.log('4/5 Enviando somente versão preview bloqueada...');
       const sent = path.join(work, 'closed-enviado.multipart');
