@@ -114,28 +114,35 @@ async function fetchAiResilient(request, env, ctx, origin, originAllowed) {
   const totalTimeoutMs = boundedInteger(env.GEMINI_TOTAL_TIMEOUT_MS, DEFAULT_GEMINI_TOTAL_TIMEOUT_MS, requestTimeoutMs, 40000);
   const startedAt = Date.now();
   let lastResponse = null;
+  const geminiConfigured = Boolean(String(env.GEMINI_API_KEY || '').trim());
 
-  for (const model of models) {
-    const remainingMs = totalTimeoutMs - (Date.now() - startedAt);
-    if (remainingMs < 1000) break;
+  if (geminiConfigured) {
+    for (const model of models) {
+      const remainingMs = totalTimeoutMs - (Date.now() - startedAt);
+      if (remainingMs < 1000) break;
 
-    const modelEnv = envForGeminiModel(env, model, Math.min(requestTimeoutMs, remainingMs));
-    const response = await aiWorker.fetch(request.clone(), modelEnv, ctx);
-    if (!(await isTransientAiResponse(response))) return response;
+      const modelEnv = envForGeminiModel(env, model, Math.min(requestTimeoutMs, remainingMs));
+      const response = await aiWorker.fetch(request.clone(), modelEnv, ctx);
+      if (!(await isTransientAiResponse(response))) return response;
 
-    lastResponse = response;
-    logAiEvent('warn', 'gemini_model_failed', {
-      model,
-      status: response.status,
+      lastResponse = response;
+      logAiEvent('warn', 'gemini_model_failed', {
+        model,
+        status: response.status,
+        elapsedMs: Date.now() - startedAt
+      });
+    }
+
+    logAiEvent('warn', 'gemini_resilience_exhausted', {
+      status: lastResponse?.status || 0,
+      elapsedMs: Date.now() - startedAt,
+      modelsAttempted: models.length
+    });
+  } else {
+    logAiEvent('warn', 'gemini_not_configured_skipping_to_cloudflare', {
       elapsedMs: Date.now() - startedAt
     });
   }
-
-  logAiEvent('warn', 'gemini_resilience_exhausted', {
-    status: lastResponse?.status || 0,
-    elapsedMs: Date.now() - startedAt,
-    modelsAttempted: models.length
-  });
 
   if (String(env.CLOUDFLARE_AI_FALLBACK_ENABLED || '').toLowerCase() === 'true') {
     logAiEvent('warn', 'cloudflare_ai_fallback_started', {
