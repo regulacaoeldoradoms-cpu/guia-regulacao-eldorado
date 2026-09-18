@@ -13,6 +13,7 @@ const productionWorkerHostPattern = new RegExp(
   'i'
 );
 const DISABLED_WORKER_ORIGIN = 'https://disabled.invalid';
+const AI_HOMOLOGATION_WORKER_ORIGIN = 'https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev';
 
 function normalizeHomologationWorkerUrl(value) {
   const raw = String(value || '').trim();
@@ -47,14 +48,16 @@ function normalizeAiHomologationWorkerUrl(value) {
   } catch (_) {
     throw new Error('CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL precisa ser uma URL HTTPS válida.');
   }
-  if (url.protocol !== 'https:' || !url.hostname.endsWith('.workers.dev')) {
-    throw new Error('CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL deve apontar para um preview *.workers.dev via HTTPS.');
-  }
-  if (url.username || url.password || url.port || url.search || url.hash || (url.pathname && url.pathname !== '/')) {
-    throw new Error('CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL deve conter somente a origem do Worker.');
-  }
-  if (url.hostname === PRODUCTION_WORKER_HOST) {
-    throw new Error('A homologação 5E não pode apontar para o Worker de produção.');
+  if (
+    url.origin !== AI_HOMOLOGATION_WORKER_ORIGIN
+    || url.href !== AI_HOMOLOGATION_WORKER_ORIGIN + '/'
+    || url.username
+    || url.password
+    || url.port
+    || url.search
+    || url.hash
+  ) {
+    throw new Error('CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL deve ser exatamente o alias oficial 5E.');
   }
   return url.origin;
 }
