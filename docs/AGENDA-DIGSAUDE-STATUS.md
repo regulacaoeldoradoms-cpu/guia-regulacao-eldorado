@@ -1,8 +1,39 @@
 # Agenda DigSaúde — Status
 
-Atualizado em 16/09/2026.
+Atualizado em 18/09/2026.
 
 ## Estado atual
+
+## Incidente de armazenamento — 17–18/09/2026
+
+- Sintoma em produção: a rota `/agenda/` exibe **Falha ao consultar a Agenda** e **Armazenamento da Agenda indisponível.**
+- Diagnóstico confirmado no código atual: essa mensagem/HTTP 503 é retornada por `worker/agenda.js` antes de qualquer leitura do Firestore quando `firebaseConfigured(env)` é falso.
+- O guard depende conjuntamente de `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL` e `FIREBASE_PRIVATE_KEY`. Portanto os contadores zerados na interface não comprovam perda dos registros; a consulta ao armazenamento nem chega a acontecer.
+- A Agenda já havia sido homologada com sincronização real em 16/09/2026. Não tratar o incidente como instalação inicial nem criar uma base vazia substituta.
+- `worker/wrangler.toml` já possui `keep_vars = true`; republicar o mesmo código sem recuperar a configuração externa não é correção suficiente.
+- O PR documental #206 registrou corretamente o bloqueio, mas não restaurou produção porque a sessão não tinha acesso à configuração ativa da Cloudflare.
+- Em 18/09 foi preparada a recuperação controlada `scripts/agenda/recuperar-firebase-agenda.mjs`. Ela não recebe nem imprime segredos. O fluxo confirma o 503, inspeciona apenas nomes/tipos dos bindings, localiza uma versão da Agenda previamente homologada, faz rollback temporário, confirma que o guard de armazenamento voltou a passar e republica a `main` atual com os bindings preservados.
+- Versões históricas priorizadas por terem evidência real de Agenda funcional: `9dfd38af-4f3a-4f6e-a4ca-b177a377c0d6`, `8fcc9e5f-868b-4c0a-be59-9e16744c72b3` e `a790bd06-b51a-4a02-8bf2-fe2a28f84849`. O script valida os bindings antes de usar qualquer uma delas.
+- Se a republicação da `main` falhar depois do rollback temporário, o script tenta restaurar automaticamente a versão produtiva que estava ativa antes da intervenção.
+- A validação anônima não acessa pacientes: com o Firebase ausente a API responde 503; com o armazenamento restaurado a requisição sem sessão alcança novamente a barreira de autenticação (401/403).
+- Estado neste documento: **ferramenta de recuperação preparada; resta executar no ambiente Cloudflare autenticado e depois homologar a Agenda real**. Não declarar o incidente encerrado antes dessa evidência.
+
+### Execução controlada
+
+A partir de uma máquina já autorizada no Cloudflare/Wrangler, com Node.js 22+ e Git disponíveis:
+
+```powershell
+node scripts/agenda/recuperar-firebase-agenda.mjs --recuperar
+```
+
+O operador deve confirmar digitando `RECUPERAR AGENDA` somente depois de o script mostrar a versão produtiva atual e a versão de recuperação. Não colar chave Firebase, token Cloudflare ou outro segredo no terminal além da autenticação normal do Wrangler, e nunca enviar esses valores por chat ou GitHub.
+
+Depois de `AGENDA_RECUPERADA`:
+
+1. atualizar `/agenda/`;
+2. confirmar que os registros anteriores reapareceram;
+3. executar uma sincronização autorizada pelo fluxo já homologado;
+4. registrar a evidência e encerrar o incidente/PR #206.
 
 - Frente: Agenda DigSaúde.
 - V1 original mesclada na `main` pelo PR #185 em `77a1b7b55750ce19ba1c0d3cf8ddf5070ec6c751`.
