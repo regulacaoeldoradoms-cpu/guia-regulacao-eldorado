@@ -427,7 +427,6 @@ function uploadCandidate(workerRoot, config) {
       '--experimental-auto-create=false',
       '--message', SAFE_DEPLOY.candidateMessage,
       '--tag', SAFE_DEPLOY.candidateTag,
-      '--strict',
       '--config', config
     ],
     workerRoot,
@@ -457,7 +456,6 @@ function dryRun(workerRoot, config) {
       '--dry-run',
       '--experimental-provision=false',
       '--experimental-auto-create=false',
-      '--strict',
       '--config', config
     ],
     workerRoot,
