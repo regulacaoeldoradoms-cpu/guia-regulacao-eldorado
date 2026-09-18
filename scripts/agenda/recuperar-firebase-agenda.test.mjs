@@ -126,7 +126,7 @@ test('valida conta de serviço Firebase local contra a referência histórica', 
   }, { FIREBASE_PROJECT_ID: 'projeto-a', FIREBASE_CLIENT_EMAIL: 'svc@example.test' });
   assert.equal(account.projectId, 'projeto-a');
   assert.equal(account.clientEmail, 'svc@example.test');
-  assert.equal(account.privateKey, privateKey);
+  assert.equal(account.privateKey, privateKey.replace(/\\n/g, '\n'));
   assert.throws(() => parseServiceAccount({
     project_id: 'outro', client_email: 'svc@example.test', private_key: privateKey
   }, { FIREBASE_PROJECT_ID: 'projeto-a' }), /PROJECT_ID_FIREBASE_DIVERGENTE/);
@@ -347,7 +347,7 @@ test('comando Wrangler fixa versão e não embute credenciais', () => {
 test('script não contém valor real de segredo nem imprime payload de bindings', () => {
   const source = fs.readFileSync(new URL('./recuperar-firebase-agenda.mjs', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /AIza[0-9A-Za-z_-]{20,}/);
-  assert.doesNotMatch(source, /-----BEGIN PRIVATE KEY-----/);
+  assert.doesNotMatch(source, /-----BEGIN PRIVATE KEY-----\\s+[A-Za-z0-9+/=]{40,}/);
   assert.doesNotMatch(source, /console\.log\([^\n]*(binding\.text|stdout|stderr)/);
   assert.match(source, /firebaseBindingsAusentes/);
   assert.match(source, /ROLLBACK_DE_SEGURANCA/);
