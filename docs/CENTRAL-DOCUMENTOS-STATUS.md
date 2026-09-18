@@ -165,9 +165,17 @@ Resultado: aprovado o critério real de **detecção de conflito externo antes d
 
 Próxima verificação mínima: confirmar em uma sessão atualizada que a alteração salva pela aba que venceu o conflito permaneceu no Drive. A aba em conflito não deve ser forçada a sincronizar novamente.
 
+## Revisão vencedora confirmada após conflito — 18/09/2026
+
+Após o conflito externo real, o operador fechou/reabriu a sessão que havia criado a revisão vencedora e confirmou que a alteração salva por essa sessão permaneceu no Drive.
+
+Resultado: aprovada a evidência de que o conflito bloqueou a aba com baseline antiga **sem desfazer nem sobrescrever** a revisão mais recente. O caminho crítico funcional da 4D está concluído.
+
+Próxima ação: encerrar imediatamente a janela V4 pelo procedimento fail-closed, revogando primeiro o controle D1 e depois recolocando o alias em gate `false`, com bloqueio HTTP final confirmado.
+
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; conflito externo real aprovado; confirmar revisão vencedora e encerrar janela fail-closed.**
+**Fase 4 — Sincronização segura com Drive.** Subfase **4D — caminho crítico funcional aprovado; revisão vencedora confirmada; encerrar janela fail-closed antes de avaliar aceite/merge.**
 
 A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. 4A–4C têm implementação e evidências técnicas, não aceite real da 4D. Encerrar uma autorização não homologa o produto. Não reiniciar etapas encerradas.
 
@@ -280,7 +288,7 @@ Artefatos anteriores preservados:
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 4D sem aceite; Fase 0 e Fases 1–3 encerradas |
-| Última ação concluída | Conflito externo real aprovado: aba com versão antiga recebeu conflito e não declarou sincronização bem-sucedida |
+| Última ação concluída | Revisão vencedora confirmada após conflito; alteração da aba B permaneceu no Drive após reabrir |
 | Branch/PR | `codex/central-docs-drive-sync-phase4`; #201 aberto, **draft**, sem merge; tecnicamente mergeável após reconciliação |
 | Main | `cd71ad566a443cd2f89b1d98285856c22baf73d7` incorporada à branch; 0 commits atrás; login/abertura/Home preservados |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
@@ -294,7 +302,7 @@ Artefatos anteriores preservados:
 | Bloqueios | Nenhum bloqueio técnico imediato; matriz real deve terminar antes da expiração e ser seguida de encerramento fail-closed |
 | Riscos | D1/OAuth compartilhados; preflight/upload não atômicos; latência percebida maior que Lumin foi registrada para Fase 7 e não deve ser mascarada com falso sucesso otimista |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Confirmar em sessão atualizada que a alteração salva pela aba B permanece; não forçar retry na aba A em conflito; depois executar encerramento V4 fail-closed |
+| Próxima ação exata | Executar `encerrar-janela-4d-v4.mjs --encerrar` do commit funcional CI-validado `cf241735415a3e527bb285e82983edce50818bcd`; esperar `JANELA_4D_ENCERRADA` |
 | Depois | Encerrar a janela fail-closed, confirmar gate false/bloqueio HTTP e então avaliar aceite/merge/publicação |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
