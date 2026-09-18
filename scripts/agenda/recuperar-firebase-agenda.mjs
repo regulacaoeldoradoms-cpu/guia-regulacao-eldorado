@@ -230,9 +230,22 @@ export function wranglerArgs(args) {
   return ['--yes', 'wrangler@' + FIXED.wranglerVersion, ...args];
 }
 
+export function classifyWranglerFailure(result = {}) {
+  const text = `${result.stderr || ''}\n${result.stdout || ''}`.toLowerCase();
+  if (/database_id|d1 database|d1_databases/.test(text)) return 'CONFIG_D1';
+  if (/not logged in|login|api token|authentication|unauthorized|forbidden/.test(text)) return 'AUTENTICACAO_CLOUDFLARE';
+  if (/enotfound|econnreset|etimedout|network|network request failed|fetch failed/.test(text)) return 'REDE';
+  if (/npm|npx|package/.test(text) && /error|failed|not found/.test(text)) return 'NPX_WRANGLER';
+  if (/toml|config/.test(text) && /error|invalid|missing/.test(text)) return 'CONFIG_WRANGLER';
+  return result.status === null ? 'PROCESSO_NAO_INICIADO' : 'WRANGLER';
+}
+
 function runWrangler(args, cwd, code = 'WRANGLER_FALHOU', allowFailure = false) {
   const result = run(npxCommand(), wranglerArgs(args), cwd, { timeout: 300000 });
-  if (!allowFailure) must(result.ok, code);
+  if (!result.ok && !allowFailure) {
+    safeLine('wranglerFalhaCategoria', classifyWranglerFailure(result));
+    throw new SafeError(code);
+  }
   return result;
 }
 
