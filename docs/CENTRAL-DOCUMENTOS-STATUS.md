@@ -420,9 +420,27 @@ Implementado:
 
 Próxima ação: abrir PR da 5D e executar a validação sintética completa. Se verde, registrar aceite e integrar; depois preparar a 5E controlada sem ativar produção automaticamente.
 
+## Aceite sintético da Fase 5D — 18/09/2026
+
+A branch 5D foi reconciliada com a `main` `e990e768fdbf26c88225eace66e923c949cc0fac` por merge de dois pais em `f99a93c54bb3075c6d69eaf833265e441666d3d6`. A comparação desde a base mostrou **83 commits posteriores na main e nenhum arquivo sobreposto** aos 14 arquivos alterados pela 5D; portanto foram preservadas integralmente as correções recentes de Agenda/Worker e o escopo documental.
+
+Validação do head reconciliado:
+
+- suíte integrada Central: **320/320**, zero falhas;
+- navegador/PDF.js real: **75 passed / 3 skipped esperados**;
+- bundle de staging: sucesso;
+- governança Central: sucesso;
+- site: sucesso.
+
+Critérios 5D aceitos: chat usa somente evidências estruturadas paginadas da sessão; não envia nova imagem/arquivo/ref/ID do Drive; respostas comuns exigem correspondência exata entre lista de páginas e citações `[p. N]`; `NÃO CONSTA` e `ILEGÍVEL` são terminais; histórico é efêmero; resposta livre não altera classificação nem extração institucional.
+
+Produção permanece fail-closed: `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`. Nenhum documento real foi enviado ao provedor.
+
+Decisão: **5D pode ser integrada**. Próxima subfase: **5E — homologação real controlada**, que deve ser preparada sem ativar o provedor até existir confirmação humana.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5D — perguntas documentais implementadas e em validação sintética**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5D concluída e aceita sinteticamente**; próxima após integração: **5E — homologação real controlada**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -534,10 +552,10 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5D — perguntas documentais implementadas; validação sintética pendente |
-| Última ação concluída | 5D implementada em branch separada: chat usa somente evidências estruturadas paginadas e efêmeras |
-| Branch/PR | `feat/central-docs-phase5d-document-chat`; PR ainda não aberto |
-| Main | `06db4b2e473603a460c815a55c9859dad6088ccc` — Fase 5C integrada via PR #217 |
+| Fase/subfase | Fase 5D concluída/aceita sinteticamente; próxima: 5E — homologação real controlada |
+| Última ação concluída | 5D reconciliada com main e validada: 320/320 + navegador 75/3 + staging/governança/site verdes |
+| Branch/PR | `feat/central-docs-phase5d-document-chat`; PR #218 em draft, apto a sair de draft/merge após este registro |
+| Main | `e990e768fdbf26c88225eace66e923c949cc0fac` incorporada à branch 5D sem sobreposição de arquivos |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
@@ -545,12 +563,12 @@ Artefatos anteriores preservados:
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
-| Checks/testes | 5C: Worker/contratos 314/314; navegador 75 passed/3 skipped; staging, governança e site verdes no PR #217 |
-| Bloqueios | Nenhum para merge da 5C; uso real do provedor continua bloqueado pelos gates false até homologação 5E |
+| Checks/testes | 5D reconciliada: Worker/contratos 320/320; navegador 75 passed/3 skipped; staging, governança e site verdes no PR #218 |
+| Bloqueios | Nenhum para merge da 5D; 5E real dependerá depois de confirmação humana e preview temporário |
 | Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Abrir PR 5D, validar Worker/navegador/staging/governança/site e corrigir apenas regressões reais |
-| Depois | Se 5D verde, integrar e preparar 5E controlada; não ativar IA real sem procedimento de homologação |
+| Próxima ação exata | Marcar PR #218 ready e mesclar; criar branch 5E da main resultante e preparar harness/procedimentos sem ativar provedor |
+| Depois | Preparar 5E inteira de forma fail-closed; parar somente no ponto que exigir ativação temporária e intervenção do operador |
 | Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
 
 ## Histórico recuperável

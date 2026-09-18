@@ -179,7 +179,7 @@ Aceite 5C: **314/314 testes** na suíte integrada, navegador **75 passed / 3 ski
 
 ### 5D — Perguntas sobre o documento
 
-Estado: **implementada; em validação sintética**.
+Estado: **concluída e aceita sinteticamente para integração**.
 
 Implementação:
 - painel conversacional separado da extração institucional;
@@ -203,6 +203,8 @@ Critérios sintéticos da 5D:
 6. histórico de chat é efêmero e separado dos resultados 5C;
 7. nenhum conteúdo do chat entra em telemetria técnica.
 
+Aceite 5D: **320/320 testes** na suíte integrada, navegador **75 passed / 3 skipped esperados**, staging, governança e site verdes após reconciliação com a `main` atual. A reconciliação incorporou 83 commits posteriores sem arquivos sobrepostos ao escopo 5D. Nenhum documento real foi enviado ao provedor e os gates produtivos permaneceram desligados.
+
 ### 5E — Homologação real controlada
 
 - PDFs sintéticos com campos conflitantes entre páginas;
@@ -224,4 +226,4 @@ Critérios sintéticos da 5D:
 
 ## Próximo passo atual
 
-Concluir a validação sintética da 5D. Se Worker, navegador, staging, governança e site permanecerem verdes, integrar a subfase e preparar a 5E em branch separada. A 5E será a primeira etapa que poderá exigir ativação controlada do provedor e intervenção do operador; até lá os gates produtivos permanecem desligados.
+Integrar a 5D e preparar a **5E — homologação real controlada** em branch separada. Todo o harness, fixtures sintéticos, wrapper preview-only e procedimentos fail-closed devem ser preparados antes de qualquer ativação. A primeira execução com provedor real exigirá confirmação do operador; até lá os gates produtivos permanecem desligados.
