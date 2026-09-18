@@ -111,9 +111,24 @@ Validação: workflow `Central de Documentos — Procedimentos operacionais 4D`,
 
 Próxima ação: repetir somente a habilitação V4 corrigida; não recriar a janela, não repetir o preparo V4 e não alterar o PDF até receber `ESCRITA_4D_LIBERADA`.
 
+## Escrita temporária 4D habilitada — 18/09/2026
+
+O operador executou o procedimento V4 corrigido de habilitação. Resultado sanitizado:
+
+- preview com escrita: `7a3418c6-af84-4709-b361-bf185f49bdea`;
+- controle: `phase4d_d28ac0d37fe3409f8751fac02007e777`;
+- expiração preservada: `2026-09-18T08:11:26.000Z`;
+- release: `1d4decd03e0047a1bad678d60cee36ba6822d5b5`;
+- `DOCUMENTS_DRIVE_WRITE_ENABLED=true` somente no preview;
+- produção permaneceu em `91eae913-ebaa-4550-8e88-f701f6cef777` / `250b3d7b-9012-4073-9986-de36dd14bc3d` / 100%.
+
+O procedimento concluiu as seis etapas, incluindo reconfirmação da produção, janela/controle e ausência de sessão de upload antes de publicar a versão preview com escrita temporária. A matriz real 4D pode agora começar. Não alterar produção, não reutilizar a janela antiga e não prolongar o prazo.
+
+Próxima ação operacional: recarregar o frontend de homologação para obter capabilities/gate atualizados e executar primeiro um autosync normal isolado, sem edição concorrente, observando `pending → syncing → success → normal`. Depois validar ausência de reenvio sem mudança antes de avançar para edição durante upload.
+
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; leitura real validada; primeira habilitação interrompida com segurança no dry-run; correção CI-validada; repetir somente a habilitação V4.**
+**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; escrita temporária habilitada somente no preview; iniciar matriz real por autosync isolado.**
 
 A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. 4A–4C têm implementação e evidências técnicas, não aceite real da 4D. Encerrar uma autorização não homologa o produto. Não reiniciar etapas encerradas.
 
@@ -226,21 +241,21 @@ Artefatos anteriores preservados:
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 4D sem aceite; Fase 0 e Fases 1–3 encerradas |
-| Última ação concluída | Falha `ANOTACOES_MULTIPART_DIVERGENTES` diagnosticada/corrigida antes de upload; CI `35317193310` verde; gate continua false |
+| Última ação concluída | Escrita temporária liberada no preview `7a3418c6…`; controle/prazo preservados; produção reconfirmada e inalterada |
 | Branch/PR | `codex/central-docs-drive-sync-phase4`; #201 aberto, **draft**, sem merge; tecnicamente mergeável após reconciliação |
 | Main | `cd71ad566a443cd2f89b1d98285856c22baf73d7` incorporada à branch; 0 commits atrás; login/abertura/Home preservados |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
-| Código/preview | Nova preview `16ebdf23-f3a6-403a-88f7-972996d83df1`, release `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; wrapper antigo `2fee19e` é apenas histórico |
+| Código/preview | Preview de leitura `16ebdf23…`; preview atual com escrita temporária `7a3418c6-af84-4709-b361-bf185f49bdea`; release `1d4decd…` |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
-| Janela | Nova: `phase4d_d28ac0d37fe3409f8751fac02007e777`, expira `2026-09-18T08:11:26Z`, controle ativo; escrita Drive continua bloqueada por gate false |
+| Janela | `phase4d_d28ac0d37fe3409f8751fac02007e777`, expira `2026-09-18T08:11:26Z`, controle ativo; escrita temporária true somente no preview |
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
 | Checks/testes | Head funcional `1d4decd`: 285/285 Worker; navegador Central 75/3 skipped; abertura 11+24+8. Operacionais 4D corrigidos run `35317193310`: 87 V3 + 9 preparo + 5 habilitação + 5 encerramento, zero falhas |
-| Bloqueios | Nenhum bloqueio técnico após a correção; repetir somente o procedimento de habilitação V4 corrigido enquanto a janela permanecer válida |
+| Bloqueios | Nenhum bloqueio técnico imediato; matriz real deve terminar antes da expiração e ser seguida de encerramento fail-closed |
 | Riscos | D1/OAuth continuam compartilhados; alias/produção podem mudar entre preparo e execução; gate deve permanecer false até a janela nova ser confirmada; preflight/upload não são atômicos |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Executar novamente apenas `habilitar-escrita-nova-janela-4d-v4.mjs --liberar`, agora a partir do commit corrigido CI-validado `cf241735415a3e527bb285e82983edce50818bcd`; enviar somente `ESCRITA_4D_LIBERADA` ou `OPERACAO_INTERROMPIDA` |
+| Próxima ação exata | Recarregar a homologação, abrir o PDF descartável e fazer uma única alteração reversível; observar autosync completo sem nova edição e registrar o estado visual final antes de qualquer segundo gesto |
 | Depois | Executar a matriz real 4D restante, revogar a janela, confirmar bloqueio/gate false, registrar evidências e só então avaliar o aceite/merge da Fase 4 |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
