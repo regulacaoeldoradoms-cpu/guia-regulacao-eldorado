@@ -14,6 +14,18 @@ A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. 4A–4C têm impleme
 - Código congelado do reteste: **`2fee19e69e06ecd128be2b103354fc6c2fb4e431`**.
 - Preview-base: **`a17473ce-ad9a-480c-8e53-901f2fcc3c92`**, configuração desarmada validada anteriormente pelo relatório V3. Não presumir que ainda atenda o alias `central-docs-phase4d`.
 
+## Evidência nova — alias consultado por Wrangler, 18/09 aproximadamente 02:02 local
+
+O operador executou a listagem somente leitura com Wrangler 4.133.0 usando a configuração de verificação já existente. Resultado sanitizado:
+
+- 10 versões consultadas;
+- preview-base a17473ce presente na lista;
+- versões com anotação workers/alias=central-docs-phase4d: a17473ce (18:02:13Z), 9ae11ff5 (14:06:10Z), da1f2bc8 (13:57:15Z) e e37fccb3 (13:50:24Z).
+
+A documentação Cloudflare define alias como endereço estável associado a uma versão no upload. Entre as dez versões mais recentes, a17473ce é a associação mais recente desse alias; nenhuma versão posterior consultada traz a mesma anotação. Combinado ao relatório V3 anterior, que validou a17473ce como configuração desarmada, o melhor estado comprovado é: alias atual aponta para a17473ce e essa base tem DOCUMENTS_DRIVE_WRITE_ENABLED=false. Ainda falta uma confirmação HTTP do endereço servido após a revogação do controle.
+
+A tentativa anterior que falhou em LER_PREPARO_LOCAL não alterou nada e foi superada. Não repetir download, OAuth, D1, V3 completo ou liberação. Próxima ação: fazer uma única requisição HTTP sem credenciais ao alias, com Origin Pages correto, capturando somente status e X-Central-Docs-Preview-Release. Esperado: bloqueio HTTP do wrapper revogado; não seguir redirects nem enviar cookies/tokens.
+
 ## Evidência nova — linha do preview e menu, 18/09 aproximadamente 01:43 local
 
 O operador enviou a parte inferior da primeira página de Version History. A linha **a17473ce** está visível com a mensagem **Central Docs 4D: nova janela; escrita bloqueada**, rótulo **central-docs-phase4d** e origem Wrangler. A localização dessa versão no histórico está concluída: não pedir outra rolagem para encontrá-la.
