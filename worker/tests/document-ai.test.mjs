@@ -229,6 +229,10 @@ test('chat 5D exige citações dentro das páginas de evidência', () => {
     answer: 'Página indevida [p. 5].',
     pages: [5]
   }, evidence), /fora das evidências/i);
+  assert.throws(() => normalizeDocumentAiChatResponse({
+    answer: 'Lista divergente [p. 4].',
+    pages: []
+  }, evidence), /citação de página|proveniência/i);
   assert.deepEqual(
     normalizeDocumentAiChatResponse({ answer: 'NÃO CONSTA', pages: [] }, evidence),
     { answer: 'NÃO CONSTA', pages: [] }
@@ -237,4 +241,8 @@ test('chat 5D exige citações dentro das páginas de evidência', () => {
     normalizeDocumentAiChatResponse({ answer: 'ILEGÍVEL', pages: [] }, evidence),
     { answer: 'ILEGÍVEL', pages: [] }
   );
+  assert.throws(() => normalizeDocumentAiChatResponse({
+    answer: 'NÃO CONSTA',
+    pages: [4]
+  }, evidence), /não deve declarar páginas/i);
 });
