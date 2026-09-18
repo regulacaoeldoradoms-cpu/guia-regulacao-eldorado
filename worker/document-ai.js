@@ -6,9 +6,18 @@ import {
   documentAiRoutineMetadata
 } from './document-ai-prompts.js';
 
-export const DOCUMENT_AI_PHASE = '5A';
-export const DOCUMENT_AI_VERSION = 'phase5a-v1';
-const DOCUMENT_AI_RUNTIME_READY = false;
+export const DOCUMENT_AI_PHASE = '5B';
+export const DOCUMENT_AI_VERSION = 'phase5b-v1';
+const DOCUMENT_AI_RUNTIME_READY = true;
+
+export class DocumentAiError extends Error {
+  constructor(code, message, status = 400) {
+    super(message);
+    this.name = 'DocumentAiError';
+    this.code = code;
+    this.status = status;
+  }
+}
 
 function flag(value) {
   return String(value || '').trim().toLowerCase() === 'true';
@@ -33,6 +42,11 @@ export function documentAiPublicConfig(env = {}) {
     pageIsolation: true,
     provenanceRequired: true,
     persistence: 'none',
+    features: {
+      classifyPage: true,
+      extractPage: false,
+      documentChat: false
+    },
     routines: documentAiRoutineMetadata()
   };
 }
@@ -40,10 +54,7 @@ export function documentAiPublicConfig(env = {}) {
 export function normalizeDocumentAiPageNumber(value) {
   const pageNumber = Number(value);
   if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > 5000) {
-    const error = new Error('Número de página inválido.');
-    error.code = 'DOCUMENT_AI_PAGE_INVALID';
-    error.status = 400;
-    throw error;
+    throw new DocumentAiError('DOCUMENT_AI_PAGE_INVALID', 'Número de página inválido.', 400);
   }
   return pageNumber;
 }
@@ -51,17 +62,11 @@ export function normalizeDocumentAiPageNumber(value) {
 export function normalizeDocumentAiField(value) {
   const state = String(value?.state || '').trim();
   if (!DOCUMENT_AI_FIELD_STATES.includes(state)) {
-    const error = new Error('Estado de campo inválido.');
-    error.code = 'DOCUMENT_AI_FIELD_STATE_INVALID';
-    error.status = 400;
-    throw error;
+    throw new DocumentAiError('DOCUMENT_AI_FIELD_STATE_INVALID', 'Estado de campo inválido.', 400);
   }
   const text = state === 'encontrado' ? String(value?.value || '').trim() : '';
   if (state === 'encontrado' && !text) {
-    const error = new Error('Campo encontrado precisa conter valor literal.');
-    error.code = 'DOCUMENT_AI_FIELD_VALUE_REQUIRED';
-    error.status = 400;
-    throw error;
+    throw new DocumentAiError('DOCUMENT_AI_FIELD_VALUE_REQUIRED', 'Campo encontrado precisa conter valor literal.', 400);
   }
   return { state, value: text };
 }
@@ -70,10 +75,7 @@ export function normalizeDocumentAiClassification(value) {
   const pageNumber = normalizeDocumentAiPageNumber(value?.pageNumber);
   const pageType = String(value?.pageType || '').trim();
   if (!DOCUMENT_AI_PAGE_TYPES.includes(pageType)) {
-    const error = new Error('Classificação de página inválida.');
-    error.code = 'DOCUMENT_AI_PAGE_TYPE_INVALID';
-    error.status = 400;
-    throw error;
+    throw new DocumentAiError('DOCUMENT_AI_PAGE_TYPE_INVALID', 'Classificação de página inválida.', 400);
   }
   return { pageNumber, pageType };
 }

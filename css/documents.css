@@ -2301,3 +2301,61 @@
     width: calc(100% - 52px);
   }
 }
+
+
+/* Fase 5B — classificação isolada por página */
+.documents-ai-classification {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #d9e4ed;
+  border-radius: 12px;
+  background: #fbfdff;
+}
+
+.documents-ai-classification > strong {
+  display: block;
+  color: #153854;
+}
+
+.documents-ai-classification > p {
+  margin: 5px 0 11px;
+  color: #6b7f91;
+  font-size: .75rem;
+  line-height: 1.45;
+}
+
+.documents-ai-classification .portal-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.documents-ai-classification-status {
+  min-height: 0;
+  margin-top: 9px;
+  color: #5a7084;
+  font-size: .74rem;
+}
+
+.documents-ai-classification-status.warning { color: #8a5f0a; }
+.documents-ai-classification-status.success { color: #176049; }
+
+.documents-ai-classification-result {
+  margin-top: 10px;
+  padding: 10px 11px;
+  border-radius: 10px;
+  border: 1px solid #cbddea;
+  background: #eef6fc;
+}
+
+.documents-ai-classification-result strong {
+  display: block;
+  color: #153854;
+  font-size: .8rem;
+}
+
+.documents-ai-classification-result span {
+  display: block;
+  margin-top: 3px;
+  color: #567086;
+  font-size: .72rem;
+}

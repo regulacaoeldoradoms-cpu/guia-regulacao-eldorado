@@ -3193,6 +3193,65 @@
     }
   }
 
+  async function exportPageImage(pageNumber, options = {}) {
+    const session = active;
+    if (!isCurrentSession(session) || !session.document) {
+      throw new Error('Nenhum PDF ativo para preparar a página.');
+    }
+
+    const targetPage = Math.round(Number(pageNumber));
+    if (!Number.isInteger(targetPage) || targetPage < 1 || targetPage > session.document.numPages) {
+      throw new Error('Página inválida para a IA documental.');
+    }
+
+    const page = await getPage(session, targetPage);
+    if (!page || !isCurrentSession(session)) {
+      throw new Error('A página não está mais disponível.');
+    }
+
+    const baseViewport = page.getViewport({ scale: 1 });
+    const requestedMaxEdge = clamp(Number(options.maxEdge || 1800), 800, 2200);
+    let scale = clamp(
+      requestedMaxEdge / Math.max(1, baseViewport.width, baseViewport.height),
+      0.6,
+      3
+    );
+    let viewport = page.getViewport({ scale });
+    const pixels = Math.max(1, viewport.width * viewport.height);
+    if (pixels > MAX_CANVAS_PIXELS) {
+      scale *= Math.sqrt(MAX_CANVAS_PIXELS / pixels);
+      viewport = page.getViewport({ scale });
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.floor(viewport.width));
+    canvas.height = Math.max(1, Math.floor(viewport.height));
+
+    const task = page.render({
+      canvas,
+      viewport,
+      intent: 'display'
+    });
+    await task.promise;
+    if (!isCurrentSession(session)) {
+      canvas.width = 0;
+      canvas.height = 0;
+      throw new Error('O documento mudou durante a preparação da página.');
+    }
+
+    const mimeType = options.mimeType === 'image/png' ? 'image/png' : 'image/jpeg';
+    const quality = clamp(Number(options.quality || 0.9), 0.72, 0.95);
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((value) => {
+        if (value instanceof Blob && value.size > 0) resolve(value);
+        else reject(new Error('Não foi possível preparar a imagem da página.'));
+      }, mimeType, mimeType === 'image/jpeg' ? quality : undefined);
+    });
+    canvas.width = 0;
+    canvas.height = 0;
+    return blob;
+  }
+
   function supported() {
     return typeof HTMLCanvasElement !== 'undefined'
       && typeof Promise !== 'undefined'
@@ -3214,7 +3273,8 @@
     setEditorCrops,
     setEditorStrokes,
     loadPdfJs,
+    exportPageImage,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-drawing-v1`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-drawing-page-export-v1`
   });
 })();

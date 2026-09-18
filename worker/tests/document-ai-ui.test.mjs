@@ -8,7 +8,15 @@ async function read(path) {
   return fs.readFile(new URL(path, root), 'utf8');
 }
 
-test('painel 5A existe mas permanece oculto sem feature gate e capability extract', async () => {
+function functionSlice(source, name, nextName) {
+  const start = source.indexOf(`  async function ${name}(`);
+  assert.ok(start >= 0, `função ${name} ausente`);
+  const end = source.indexOf(`  async function ${nextName}(`, start + 1);
+  assert.ok(end > start, `limite de ${name} ausente`);
+  return source.slice(start, end);
+}
+
+test('painel 5B permanece oculto e produção continua fail-closed', async () => {
   const [html, js, css, router, wrangler] = await Promise.all([
     read('documentos/index.html'),
     read('js/documents.js'),
@@ -19,8 +27,9 @@ test('painel 5A existe mas permanece oculto sem feature gate e capability extrac
 
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(html, /id="documentsAiPanel"[^>]*hidden/);
-  assert.match(html, /nenhum conteúdo deste PDF é enviado a um provedor de IA/i);
+  assert.match(html, /id="documentsAiClassifyButton"[^>]*disabled/);
   assert.match(css, /\.documents-ai-panel\[hidden\]/);
+  assert.match(css, /\.documents-ai-classification/);
   assert.match(js, /\/api\/documents\/ai\/config/);
   assert.match(js, /documentAiCapabilities\(\)\.extract === true/);
   assert.match(js, /state\.documentAiConfig\?\.enabled === true/);
@@ -29,15 +38,33 @@ test('painel 5A existe mas permanece oculto sem feature gate e capability extrac
   assert.match(wrangler, /DOCUMENTS_AI_PROCESSING_ENABLED = "false"/);
 });
 
-test('frontend 5A não contém segredo de provedor nem rota de envio de página', async () => {
+test('classificação envia somente Blob da página e metadado técnico de proveniência', async () => {
+  const [js, viewer] = await Promise.all([
+    read('js/documents.js'),
+    read('js/document-viewer.js')
+  ]);
+  const classify = functionSlice(js, 'classifyActiveDocumentPage', 'loadAccess');
+
+  assert.match(classify, /const exporter = window\.PortalPdfViewer\?\.exportPageImage/);
+  assert.match(classify, /await exporter\(pageNumber/);
+  assert.match(classify, /\/api\/documents\/ai\/page\/classify/);
+  assert.match(classify, /'X-Document-Page-Number': String\(pageNumber\)/);
+  assert.match(classify, /body: blob/);
+  assert.match(classify, /credentials: 'omit'/);
+  assert.doesNotMatch(classify, /state\.pdfItem\.(?:name|ref)|fileId|filename|searchQuery|page_text|inlineData/);
+  assert.match(viewer, /async function exportPageImage\(pageNumber/);
+  assert.match(viewer, /canvas\.toBlob/);
+  assert.match(viewer, /exportPageImage,/);
+});
+
+test('frontend 5B não contém segredo de provedor nem codifica a página em base64', async () => {
   const [html, js] = await Promise.all([
     read('documentos/index.html'),
     read('js/documents.js')
   ]);
   const frontend = html + '\n' + js;
   assert.doesNotMatch(frontend, /GEMINI_API_KEY|DRIVE_TOKEN_ENCRYPTION_KEY|AUTH_SESSION_SECRET/);
-  assert.doesNotMatch(frontend, /\/api\/documents\/ai\/page\/analyze/);
-  assert.doesNotMatch(frontend, /inlineData|base64.*page|page_text/i);
+  assert.doesNotMatch(frontend, /inlineData|bytesToBase64|page_text/i);
 });
 
 test('rotinas públicas exibidas no painel não incluem instrução interna', async () => {

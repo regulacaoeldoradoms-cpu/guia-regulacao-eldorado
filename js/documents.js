@@ -28,6 +28,8 @@
     access: null,
     documentAiConfig: null,
     documentAiPanelOpen: false,
+    documentAiBusy: false,
+    documentAiClassification: null,
     stack: [],
     items: [],
     nextPageToken: '',
@@ -126,6 +128,10 @@
     documentAiPanel: document.getElementById('documentsAiPanel'),
     documentAiClose: document.getElementById('documentsAiCloseButton'),
     documentAiDescription: document.getElementById('documentsAiDescription'),
+    documentAiSafety: document.getElementById('documentsAiSafety'),
+    documentAiClassify: document.getElementById('documentsAiClassifyButton'),
+    documentAiClassificationStatus: document.getElementById('documentsAiClassificationStatus'),
+    documentAiClassificationResult: document.getElementById('documentsAiClassificationResult'),
     documentAiRoutines: document.getElementById('documentsAiRoutines'),
     closeViewer: document.getElementById('closeViewerButton'),
     editor: document.getElementById('documentsEditor'),
@@ -2872,13 +2878,51 @@
       && state.documentAiConfig?.enabled === true;
   }
 
+  function documentAiPageTypeLabel(value) {
+    return ({
+      comprovante_atendimento: 'Comprovante de Atendimento',
+      pagina_medica_autorizada: 'Página médica autorizada',
+      outro: 'Outro'
+    })[String(value || '')] || 'Classificação desconhecida';
+  }
+
+  function renderDocumentAiClassification() {
+    if (!els.documentAiClassificationResult) return;
+    const value = state.documentAiClassification;
+    els.documentAiClassificationResult.hidden = !value;
+    if (!value) {
+      els.documentAiClassificationResult.replaceChildren();
+      return;
+    }
+    els.documentAiClassificationResult.innerHTML = `<strong>Página ${Number(value.pageNumber || 0)}</strong>
+      <span>${escapeHtml(documentAiPageTypeLabel(value.pageType))}</span>`;
+  }
+
   function renderDocumentAiPanel() {
     const config = state.documentAiConfig || {};
     if (els.documentAiDescription) {
       els.documentAiDescription.textContent = config.processingEnabled
-        ? 'A IA documental está habilitada com isolamento e proveniência obrigatórios por página.'
-        : 'A fundação da IA documental está pronta, mas o processamento de conteúdo permanece bloqueado nesta etapa.';
+        ? 'A classificação 5B está disponível com isolamento e proveniência obrigatórios por página.'
+        : 'A classificação por página está preparada, mas o processamento permanece bloqueado até a homologação.';
     }
+    if (els.documentAiSafety) {
+      els.documentAiSafety.textContent = config.processingEnabled
+        ? 'Somente a imagem da página selecionada é enviada nesta operação; nome do arquivo, ID do Drive e demais páginas não acompanham a requisição.'
+        : 'O processamento permanece desabilitado até a homologação da classificação por página.';
+    }
+    if (els.documentAiClassify) {
+      const ready = config.processingEnabled === true && config.features?.classifyPage === true;
+      els.documentAiClassify.disabled = !ready || state.documentAiBusy || !state.pdfItem;
+    }
+    if (els.documentAiClassificationStatus && !state.documentAiBusy) {
+      els.documentAiClassificationStatus.className = 'documents-ai-classification-status';
+      if (!config.processingEnabled) {
+        els.documentAiClassificationStatus.textContent = 'Classificação bloqueada por feature gate.';
+      } else if (!els.documentAiClassificationStatus.textContent) {
+        els.documentAiClassificationStatus.textContent = 'Pronta para classificar a página atual.';
+      }
+    }
+    renderDocumentAiClassification();
     if (els.documentAiRoutines) {
       const routines = Array.isArray(config.routines) ? config.routines : [];
       els.documentAiRoutines.innerHTML = routines.length
@@ -2912,6 +2956,84 @@
       state.documentAiConfig = payload?.ai || null;
     } catch (_) {
       state.documentAiConfig = null;
+    }
+  }
+
+  async function classifyActiveDocumentPage() {
+    if (state.documentAiBusy || !state.pdfItem || state.documentAiConfig?.processingEnabled !== true) return;
+    const pageNumber = Math.max(1, Math.round(Number(currentViewerState()?.activePage || 1)));
+    const exporter = window.PortalPdfViewer?.exportPageImage;
+    if (typeof exporter !== 'function') {
+      if (els.documentAiClassificationStatus) {
+        els.documentAiClassificationStatus.className = 'documents-ai-classification-status warning';
+        els.documentAiClassificationStatus.textContent = 'O visualizador ainda não consegue preparar esta página para classificação.';
+      }
+      return;
+    }
+
+    state.documentAiBusy = true;
+    state.documentAiClassification = null;
+    if (els.documentAiClassificationStatus) {
+      els.documentAiClassificationStatus.className = 'documents-ai-classification-status';
+      els.documentAiClassificationStatus.textContent = `Preparando página ${pageNumber}…`;
+    }
+    renderDocumentAiPanel();
+
+    try {
+      const blob = await exporter(pageNumber, {
+        maxEdge: 1800,
+        mimeType: 'image/jpeg',
+        quality: 0.9
+      });
+      if (!(blob instanceof Blob) || blob.size <= 0) throw new Error('Não foi possível preparar a página.');
+
+      if (els.documentAiClassificationStatus) {
+        els.documentAiClassificationStatus.textContent = `Classificando página ${pageNumber}…`;
+      }
+
+      const response = await fetch(`${endpoint}/api/documents/ai/page/classify`, {
+        method: 'POST',
+        headers: {
+          ...auth.authorizationHeader(),
+          'Content-Type': blob.type || 'image/jpeg',
+          'X-Document-Page-Number': String(pageNumber)
+        },
+        body: blob,
+        cache: 'no-store',
+        credentials: 'omit'
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(payload?.error || 'Não foi possível classificar esta página.');
+        error.code = String(payload?.code || '');
+        throw error;
+      }
+
+      const classification = payload?.classification || null;
+      if (
+        !classification
+        || Number(classification.pageNumber) !== pageNumber
+        || !['comprovante_atendimento', 'pagina_medica_autorizada', 'outro'].includes(String(classification.pageType || ''))
+      ) {
+        throw new Error('A classificação retornou uma proveniência inválida.');
+      }
+
+      state.documentAiClassification = {
+        pageNumber,
+        pageType: String(classification.pageType)
+      };
+      if (els.documentAiClassificationStatus) {
+        els.documentAiClassificationStatus.className = 'documents-ai-classification-status success';
+        els.documentAiClassificationStatus.textContent = `Página ${pageNumber} classificada com proveniência confirmada.`;
+      }
+    } catch (error) {
+      if (els.documentAiClassificationStatus) {
+        els.documentAiClassificationStatus.className = 'documents-ai-classification-status warning';
+        els.documentAiClassificationStatus.textContent = error?.message || 'Falha ao classificar a página.';
+      }
+    } finally {
+      state.documentAiBusy = false;
+      renderDocumentAiPanel();
     }
   }
 
@@ -3128,6 +3250,8 @@
 
   function closePdf() {
     setDocumentAiPanelOpen(false);
+    state.documentAiBusy = false;
+    state.documentAiClassification = null;
     resetEditorState();
     state.pdfOpenId += 1;
     releaseProgressiveStream();
@@ -3169,6 +3293,7 @@
     }
     const openId = state.pdfOpenId;
     state.pdfItem = item;
+    state.documentAiClassification = null;
     renderDocumentAiAvailability();
     els.viewer.hidden = false;
     els.viewerModeLabel.textContent = 'Visualização';
@@ -3329,6 +3454,9 @@
     setDocumentAiPanelOpen(!state.documentAiPanelOpen);
   });
   els.documentAiClose?.addEventListener('click', () => setDocumentAiPanelOpen(false));
+  els.documentAiClassify?.addEventListener('click', () => {
+    classifyActiveDocumentPage().catch(() => {});
+  });
   els.editorUndo.addEventListener('click', undoEditor);
   els.editorRedo.addEventListener('click', redoEditor);
   els.editorOrganize?.addEventListener('click', () => {

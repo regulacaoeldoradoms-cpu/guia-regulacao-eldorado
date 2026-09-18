@@ -1,4 +1,4 @@
-name: Validar Central de Documentos — Fases 1–5A
+name: Validar Central de Documentos — Fases 1–5B
 
 on:
   pull_request:
@@ -93,9 +93,12 @@ jobs:
           test -f worker/document-access.js
           test -f worker/document-ai-prompts.js
           test -f worker/document-ai.js
+          test -f worker/document-ai-provider.js
           test -f worker/document-drive.js
           test -f worker/documents-router.js
           grep -q "/api/documents/ai/config" worker/documents-router.js
+          grep -q "/api/documents/ai/page/classify" worker/documents-router.js
+          grep -q "exportPageImage" js/document-viewer.js
           grep -q "PROMPT_CLASSIFICACAO_PAGINAS_V1" worker/document-ai-prompts.js
           grep -q "PROMPT_EXTRACAO_REGULACAO_V1" worker/document-ai-prompts.js
           grep -q 'DOCUMENTS_AI_ENABLED = "false"' worker/wrangler.toml

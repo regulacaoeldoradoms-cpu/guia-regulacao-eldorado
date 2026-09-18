@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260918-1">
+  <link rel="stylesheet" href="/css/documents.css?v=20260918-2">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -115,15 +115,22 @@
               <div class="documents-ai-panel-head">
                 <div>
                   <span>IA documental</span>
-                  <strong>Fundação segura · Fase 5A</strong>
+                  <strong>Classificação por página · Fase 5B</strong>
                 </div>
                 <button class="documents-ai-close" id="documentsAiCloseButton" type="button" aria-label="Fechar IA documental">×</button>
               </div>
               <div class="documents-ai-panel-body">
                 <p id="documentsAiDescription">A IA documental está sendo preparada em módulo separado e com proveniência obrigatória por página.</p>
-                <div class="documents-ai-safety" role="note">
-                  Nesta etapa, nenhum conteúdo deste PDF é enviado a um provedor de IA.
+                <div class="documents-ai-safety" id="documentsAiSafety" role="note">
+                  O processamento permanece desabilitado até a homologação da classificação por página.
                 </div>
+                <section class="documents-ai-classification" aria-labelledby="documentsAiClassificationTitle">
+                  <strong id="documentsAiClassificationTitle">Página atual</strong>
+                  <p>A classificação envia somente a imagem da página selecionada, sem nome de arquivo ou ID do Drive.</p>
+                  <button class="portal-button secondary" id="documentsAiClassifyButton" type="button" disabled>Classificar página atual</button>
+                  <div class="documents-ai-classification-status" id="documentsAiClassificationStatus" aria-live="polite"></div>
+                  <div class="documents-ai-classification-result" id="documentsAiClassificationResult" hidden></div>
+                </section>
                 <section class="documents-ai-routines-section" aria-labelledby="documentsAiRoutinesTitle">
                   <strong id="documentsAiRoutinesTitle">Rotinas versionadas</strong>
                   <div class="documents-ai-routines" id="documentsAiRoutines"></div>
@@ -269,7 +276,7 @@
   <script src="/js/tools-catalog.js?v=20260911-3"></script>
   <script src="/js/document-cache.js?v=20260912-1"></script>
   <script src="/js/document-editor.js?v=20260916-2"></script>
-  <script src="/js/document-viewer.js?v=20260916-3"></script>
-  <script src="/js/documents.js?v=20260918-1"></script>
+  <script src="/js/document-viewer.js?v=20260918-1"></script>
+  <script src="/js/documents.js?v=20260918-2"></script>
 </body>
 </html>

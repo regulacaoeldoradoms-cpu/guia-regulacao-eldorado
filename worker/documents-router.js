@@ -5,7 +5,16 @@ import {
   hasDocumentCapability,
   setDocumentCapabilities
 } from './document-access.js';
-import { documentAiPublicConfig } from './document-ai.js';
+import {
+  DocumentAiError,
+  documentAiProcessingEnabled,
+  documentAiPublicConfig,
+  normalizeDocumentAiPageNumber
+} from './document-ai.js';
+import {
+  MAX_DOCUMENT_AI_IMAGE_BYTES,
+  classifyDocumentAiPage
+} from './document-ai-provider.js';
 import {
   DriveIntegrationError,
   cancelDriveSync,
@@ -135,13 +144,13 @@ function preflight(origin, allowed) {
   if (!allowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
   const value = headers(origin, true);
   value['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
-  value['Access-Control-Allow-Headers'] = 'Authorization, Content-Type, Range, Content-Range';
+  value['Access-Control-Allow-Headers'] = 'Authorization, Content-Type, Range, Content-Range, X-Document-Page-Number';
   value['Access-Control-Max-Age'] = '600';
   return new Response(null, { status: 204, headers: value });
 }
 
 function genericError(error, origin, allowed = true) {
-  if (error instanceof DriveIntegrationError) {
+  if (error instanceof DriveIntegrationError || error instanceof DocumentAiError) {
     return json({ error: error.message, code: error.code }, error.status || 500, origin, allowed);
   }
   return json({ error: 'Falha temporária na Central de Documentos.', code: 'DOCUMENTS_TEMPORARILY_UNAVAILABLE' }, 500, origin, allowed);
@@ -246,6 +255,46 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
       const denied = requireCapability(user, 'extract', origin);
       if (denied) return denied;
       return json({ ai: documentAiPublicConfig(env) }, 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/ai/page/classify' && request.method === 'POST') {
+      const denied = requireCapability(user, 'extract', origin);
+      if (denied) return denied;
+      if (!documentAiProcessingEnabled(env)) {
+        return json({
+          error: 'O processamento da IA documental ainda não está habilitado neste ambiente.',
+          code: 'DOCUMENT_AI_PROCESSING_DISABLED'
+        }, 503, origin);
+      }
+
+      const declared = Number(request.headers.get('Content-Length') || 0);
+      if (declared > MAX_DOCUMENT_AI_IMAGE_BYTES) {
+        throw new DocumentAiError(
+          'DOCUMENT_AI_IMAGE_TOO_LARGE',
+          'Imagem de página maior do que o limite da IA documental.',
+          413
+        );
+      }
+
+      const pageNumber = normalizeDocumentAiPageNumber(
+        request.headers.get('X-Document-Page-Number')
+      );
+      const mimeType = String(request.headers.get('Content-Type') || '');
+      const body = new Uint8Array(await request.arrayBuffer());
+      if (body.byteLength > MAX_DOCUMENT_AI_IMAGE_BYTES) {
+        throw new DocumentAiError(
+          'DOCUMENT_AI_IMAGE_TOO_LARGE',
+          'Imagem de página maior do que o limite da IA documental.',
+          413
+        );
+      }
+
+      const result = await classifyDocumentAiPage(env, {
+        pageNumber,
+        mimeType,
+        bytes: body
+      });
+      return json(result, 200, origin);
     }
 
     if (url.pathname.startsWith('/api/documents/ai/') && request.method !== 'GET') {
