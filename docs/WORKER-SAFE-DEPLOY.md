@@ -19,8 +19,8 @@ O fluxo aprovado é:
 3. consultar a Worker Version mais recente; se ela não for a produção, aceitá-la somente quando for identificada como candidata criada pelo próprio gate e quando todos os bindings críticos, secrets, Firebase estável e `AUTH_DB` continuarem equivalentes à produção;
 4. obter o `database_id` de `AUTH_DB` e a lista de nomes dos secrets da produção;
 5. criar configuração efêmera com `AUTH_DB` explícito e `secrets.required` dinâmico, sem gravar valores secretos;
-6. executar `wrangler versions upload --dry-run --strict`;
-7. enviar uma nova Worker Version sem tráfego usando `--strict`, mensagem e tag próprias do gate;
+6. executar `wrangler versions upload --dry-run` com a configuração efêmera protegida;
+7. enviar uma nova Worker Version sem tráfego usando mensagem e tag próprias do gate;
 8. inspecionar a candidata;
 9. exigir todos os bindings críticos;
 10. exigir que todos os secrets existentes na produção continuem presentes na candidata;
@@ -58,7 +58,7 @@ O gate para antes da promoção quando:
 - a produção não estiver em uma única versão a 100%;
 - a Worker Version mais recente não for a produção e também não puder ser comprovada como candidata do próprio gate com bindings equivalentes aos da produção;
 - uma candidata órfã do gate perder qualquer binding crítico, secret, referência Firebase estável ou o `AUTH_DB`;
-- o dry-run estrito falhar;
+- o dry-run protegido falhar;
 - o upload falhar;
 - faltar qualquer binding crítico;
 - desaparecer qualquer secret que existia na produção;
@@ -68,7 +68,7 @@ O gate para antes da promoção quando:
 
 Se uma execução anterior já tiver enviado uma candidata mas não a tiver promovido, a versão permanece sem tráfego. Na tentativa seguinte, o gate não exige exclusão manual: ele reconhece somente candidatas com a mensagem/tag reservada do próprio gate e revalida a versão órfã integralmente contra a produção antes de permitir novo upload. Versões mais recentes de origem desconhecida continuam bloqueando o processo.
 
-A configuração efêmera também declara dinamicamente em `secrets.required` todos os nomes de secrets encontrados na produção e usa `--strict` no dry-run e no upload real. Assim, uma herança de secret que não puder ser resolvida é tratada como erro antes da promoção, em vez de ser silenciosamente descartada.
+A configuração efêmera também declara dinamicamente em `secrets.required` todos os nomes de secrets encontrados na produção. O gate não usa o modo global `--strict`, porque o Worker mantém bindings e variáveis legítimos gerenciados remotamente com `keep_vars=true`; esse modo pode bloquear o upload por conflito de configuração mesmo quando a herança é intencional. A proteção continua fail-closed em três camadas: validação da versão anterior, exigência explícita dos nomes de secrets e inspeção integral da candidata antes de qualquer promoção.
 
 ## Rollback automático
 
