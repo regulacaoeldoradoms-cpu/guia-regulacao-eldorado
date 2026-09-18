@@ -632,12 +632,15 @@ export function newUploadedVersion(beforeIds, afterIds) {
   return created[0];
 }
 
-function uploadCurrentMain(repositoryRoot, config, minimalConfig, cwd) {
+function uploadCurrentMain(repositoryRoot, config, secretsFile, minimalConfig, cwd) {
   must(fs.existsSync(config), 'WRANGLER_RECOVERY_CONFIG_AUSENTE');
+  must(fs.existsSync(secretsFile), 'ARQUIVO_SEGREDOS_FIREBASE_AUSENTE');
   const before = versionIdSet(minimalConfig, cwd);
   runWrangler(
     [
       'versions', 'upload',
+      '--secrets-file', secretsFile,
+      '--experimental-provision=false',
       '--experimental-auto-create=false',
       '--message', 'Agenda: recuperar Firebase e republicar main',
       '--config', config
@@ -673,31 +676,33 @@ function validateCurrentMain(cloneRoot) {
   );
 }
 
-function dryRunCurrentMain(repositoryRoot, dryDir, config) {
+function dryRunCurrentMain(repositoryRoot, dryDir, config, secretsFile = '') {
   must(fs.existsSync(config), 'WRANGLER_RECOVERY_CONFIG_AUSENTE');
   fs.mkdirSync(dryDir, { recursive: true });
-  runWrangler(
-    [
-      'versions', 'upload',
-      '--dry-run',
-      '--experimental-auto-create=false',
-      '--outfile', path.join(dryDir, 'agenda-recovery.multipart'),
-      '--config', config
-    ],
-    repositoryRoot,
-    'DRY_RUN_MAIN_FALHOU'
-  );
+  const args = [
+    'versions', 'upload',
+    '--dry-run',
+    '--experimental-provision=false',
+    '--experimental-auto-create=false'
+  ];
+  if (secretsFile) {
+    must(fs.existsSync(secretsFile), 'ARQUIVO_SEGREDOS_FIREBASE_AUSENTE');
+    args.push('--secrets-file', secretsFile);
+  }
+  args.push('--config', config);
+  runWrangler(args, repositoryRoot, 'DRY_RUN_MAIN_FALHOU');
 }
 
-async function confirmHuman(originalVersion, recoveryVersion) {
+async function confirmHuman(originalVersion, recoveryVersion, optionalWebKeyPending) {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
     console.log('');
     console.log('DIAGNOSTICO=bindings Firebase ausentes na versão produtiva atual');
     safeLine('versaoAtual', originalVersion);
-    safeLine('versaoRecuperacao', recoveryVersion);
-    console.log('acao=rollback temporario -> confirmar Firebase -> republicar a main atual');
-    console.log('segredos=nenhum valor sera exibido ou gravado');
+    safeLine('versaoReferenciaFirebase', recoveryVersion);
+    console.log('acao=upload sem trafego com credencial Firebase local -> validar -> promover');
+    console.log('segredos=valores ficam somente em arquivo temporario local e nao serao exibidos');
+    if (optionalWebKeyPending) console.log('observacao=FIREBASE_WEB_API_KEY nao foi fornecida; a Agenda pode ser restaurada sem ela');
     const answer = await rl.question('Para continuar, digite RECUPERAR AGENDA: ');
     must(answer.trim() === 'RECUPERAR AGENDA', 'CANCELADO_PELO_OPERADOR');
   } finally {
