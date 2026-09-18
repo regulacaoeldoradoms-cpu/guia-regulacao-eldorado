@@ -1,0 +1,171 @@
+# Central de Documentos — Fase 5: IA documental
+
+Data de início: 18/09/2026.
+
+## Estado
+
+Fase 4 encerrada e publicada. Esta frente começa da `main` após o merge do ajuste transversal da abertura pós-login. A Fase 5 não reabre sincronização, editor, OAuth ou permissões já homologadas.
+
+## Objetivo da fase
+
+Adicionar IA documental à Central sem transformar o assistente de pré-regulação existente em um processador de dados identificáveis. O novo domínio deve:
+
+- exibir um painel de IA ao lado do PDF;
+- trabalhar com rotinas oficiais versionadas;
+- processar uma página por vez quando a regra exigir isolamento;
+- devolver proveniência explícita por página;
+- implementar extração restritiva do Comprovante de Atendimento;
+- implementar extração restritiva de páginas médicas autorizadas;
+- oferecer perguntas livres sobre o documento somente em fluxo separado da extração institucional.
+
+## Critério de aceite do Guia Mestre
+
+A Fase 5 só pode ser encerrada quando a IA:
+
+1. informa a página de origem;
+2. não mistura campos de páginas diferentes;
+3. respeita `NÃO CONSTA`;
+4. respeita `ILEGÍVEL`;
+5. mantém transcrição literal nos campos em que a rotina exige literalidade.
+
+## Fronteira de segurança
+
+### Separação obrigatória
+
+`worker/gemini-assistant.js` continua sendo o assistente de pré-regulação anonimizada e mantém sua recusa a dados pessoais identificáveis.
+
+A IA documental será implementada em módulo próprio, inicialmente `worker/document-ai.js`, usando a capability documental `extract`. Alterar o comportamento de privacidade do assistente de pré-regulação para acomodar documentos identificáveis está descartado.
+
+### Dados e logs
+
+Conteúdo do PDF, imagem de página, OCR/texto extraído, nome de paciente, CPF, CNS, telefone, endereço, nascimento, CID, diagnóstico, prescrição, nome de arquivo e ID do Drive:
+
+- não entram no PostHog;
+- não entram em logs técnicos;
+- não são persistidos no D1 como conteúdo;
+- não são incorporados ao cache estático/PWA;
+- não são versionados no GitHub.
+
+Telemetria da Fase 5 deve usar apenas eventos e propriedades técnicas allowlisted, como operação, duração, resultado técnico e faixa de tamanho.
+
+## Princípio de isolamento por página
+
+Para as rotinas restritivas, o modelo não deve receber o PDF inteiro e ser instruído apenas por texto a “não misturar páginas”.
+
+Fluxo obrigatório:
+
+1. o Portal identifica a página candidata;
+2. somente aquela página é preparada para a chamada de IA;
+3. a chamada recebe o número da página como metadado técnico da requisição;
+4. o resultado retorna o mesmo número como proveniência;
+5. cada página médica autorizada é extraída em chamada própria;
+6. a montagem da resposta final apenas concatena blocos já vinculados à origem.
+
+Isso transforma “não misturar páginas” em restrição de arquitetura, não somente em instrução linguística.
+
+## Artefatos de prompt versionados
+
+A implementação deve manter rotinas independentes:
+
+- `PROMPT_CLASSIFICACAO_PAGINAS_V1`;
+- `PROMPT_EXTRACAO_REGULACAO_V1`;
+- `PROMPT_DOCUMENT_CHAT_V1`;
+- `PROMPT_VALIDACAO_V1`.
+
+Cada versão registra objetivo, entrada permitida, saída esperada e casos de teste. Alterar uma rotina não altera automaticamente as demais.
+
+## Saída estruturada
+
+A extração institucional deve retornar JSON tipado antes de qualquer formatação visual. Cada campo deve ter estado explícito:
+
+- `encontrado`;
+- `nao_consta`;
+- `ilegivel`.
+
+A camada visual converte esses estados para o texto institucional correspondente.
+
+### Comprovante de Atendimento
+
+Bloco inicial previsto:
+
+- nome do paciente;
+- CPF;
+- CNS;
+- data de nascimento;
+- nome da mãe;
+- telefone;
+- endereço;
+- agente.
+
+Transformações automáticas devem ser mínimas e explicitamente autorizadas. O padrão inicial é preservar literalidade.
+
+### Página médica autorizada
+
+Cada página válida gera bloco próprio com proveniência, incluindo quando disponível:
+
+- título encontrado;
+- motivo do encaminhamento;
+- médico;
+- CRM/RMS;
+- procedimento solicitado;
+- código do procedimento;
+- CID;
+- descrição do CID.
+
+Nenhum campo pode ser completado a partir de outra página.
+
+## Subfases
+
+### 5A — Fundação segura
+
+- módulo backend separado;
+- feature gate da IA documental;
+- contratos de permissão `extract`;
+- painel lateral inicialmente controlado por flag;
+- prompts/versionamento;
+- schemas estruturados;
+- testes de privacidade e autorização.
+
+Nenhum PDF real precisa ser enviado a um provedor externo nesta subfase.
+
+### 5B — Classificação por página
+
+- gerar representação de uma página por vez;
+- classificar `comprovante_atendimento`, `pagina_medica_autorizada` ou `outro`;
+- exibir classificação e proveniência sem persistir conteúdo.
+
+### 5C — Extração restritiva
+
+- extrair somente páginas classificadas e autorizadas;
+- respeitar `NÃO CONSTA`, `ILEGÍVEL` e literalidade;
+- botões de copiar campo/bloco;
+- “Ver origem” leva à página correta.
+
+### 5D — Perguntas sobre o documento
+
+- painel conversacional separado da extração institucional;
+- respostas sempre com página(s) de origem;
+- nenhuma resposta livre pode contaminar os resultados estruturados da extração.
+
+### 5E — Homologação real controlada
+
+- PDFs sintéticos com campos conflitantes entre páginas;
+- campo ausente;
+- campo ilegível;
+- páginas fora de ordem;
+- mais de uma página médica;
+- página não autorizada contendo dado tentador;
+- confirmação de ausência de mistura entre páginas;
+- revisão de privacidade/telemetria.
+
+## Fora de escopo da Fase 5
+
+- acelerar autosync do Drive: Fase 7;
+- automação antecipatória em segundo plano: Fase 6;
+- diagnóstico, prescrição, classificação de risco ou decisão clínica;
+- gravar automaticamente resultados de IA em sistemas externos;
+- ampliar permissões de usuário por causa da IA.
+
+## Primeiro próximo passo
+
+Implementar a subfase 5A sem habilitar processamento real de dados clínicos: contratos backend, feature gate, painel lateral, prompts versionados e testes. Depois validar a base antes de integrar chamadas multimodais reais.
