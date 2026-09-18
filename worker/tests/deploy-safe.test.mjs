@@ -231,7 +231,7 @@ test('fonte do gate não usa deploy monolítico nem contém credenciais', () => 
   assert.match(source, /'versions', 'deploy'/);
   assert.match(source, /--experimental-provision=false/);
   assert.match(source, /--experimental-auto-create=false/);
-  assert.match(source, /'--strict'/);
+  assert.doesNotMatch(source, /'--strict'/);
   assert.match(source, /'--tag', SAFE_DEPLOY\.candidateTag/);
   assert.match(source, /injectRequiredSecrets\(/);
   assert.match(source, /candidataOrfaAnterior/);
