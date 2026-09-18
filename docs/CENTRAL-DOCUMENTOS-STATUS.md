@@ -140,7 +140,7 @@ Artefatos anteriores preservados:
 | Última ação concluída | PR #201 reconciliado com main; regressão de contrato corrigida; head `1d4decd` validado por CI e navegador |
 | Branch/PR | `codex/central-docs-drive-sync-phase4`; #201 aberto, **draft**, sem merge; tecnicamente mergeável após reconciliação |
 | Main | `cd71ad566a443cd2f89b1d98285856c22baf73d7` incorporada à branch; 0 commits atrás; login/abertura/Home preservados |
-| Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; documentação/handoff `d75fa453e6b22ba3f822f96f0669358e923a96e7` |
+| Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Wrapper/reteste antigo `2fee19e` e base `a17473ce` pertencem à janela encerrada; não reutilizar. Nova versão preview ainda não foi criada |
 | Produção | Último snapshot explícito: versão `91eae913…`, deployment `250b3d7b…`, 100%; **reconfirmar imediatamente antes da nova janela** |
 | Janela | Revogada: enabled0, expires_at1789675801, sessões0; não repetir SQL nem reabilitar |
