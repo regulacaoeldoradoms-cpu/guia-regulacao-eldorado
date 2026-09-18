@@ -36,7 +36,7 @@ function loginHarness({ loginResult = { role: 'admin' }, mediaPromise = Promise.
 test('o MP4 oficial permanece byte a byte inalterado', () => {
   const data = fs.readFileSync(path.join(root, 'assets/portal-opening-v1.mp4'));
   assert.equal(data.byteLength, 3275007);
-  assert.equal(crypto.createHash('sha256').update(data).digest('hex'), '98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766');
+  assert.equal(crypto.createHash('sha256').update(data).digest('hex'), '21aae188af40d816ef392380d5ae6b775453571e2c413c31ec0c7b8efb07b489');
 });
 
 test('HTML real e laboratório começam com Entrar habilitado', () => {
@@ -46,7 +46,7 @@ test('HTML real e laboratório começam com Entrar habilitado', () => {
     assert.match(button, />Entrar<\/button>/);
     assert.doesNotMatch(button, /disabled|opening-gate|opacity/);
     assert.doesNotMatch(html, /Preparando abertura/);
-    assert.match(html, /login-opening\.js\?v=20260917-3/);
+    assert.match(html, /login-opening\.js\?v=20260918-1/);
     assert.match(html, /login\.js\?v=20260917-3/);
   }
 });
@@ -114,7 +114,8 @@ test('Home preserva loader legado sem duplicar abertura', () => {
 test('cache de páginas e scripts é invalidado sem apagar cache do MP4', () => {
   const sw = read('portal-sw.js');
   assert.match(sw, /loginCache\.delete\('\/js\/login-opening\.js\?v=20260917-1'\)/);
-  assert.match(sw, /'\/js\/login-opening\.js\?v=20260917-3'/);
+  assert.match(sw, /loginCache\.delete\('\/js\/login-opening\.js\?v=20260917-3'\)/);
+  assert.match(sw, /'\/js\/login-opening\.js\?v=20260918-1'/);
   assert.match(sw, /'\/js\/login\.js\?v=20260917-3'/);
   assert.match(sw, /PORTAL_CACHE_PREFIXES = \['portal-static-', 'portal-pages-'\]/);
   assert.match(opening, /portal-opening-media-v1/);

@@ -1,9 +1,9 @@
 'use strict';
 
 (() => {
-  const OPENING_ASSET = '/assets/portal-opening-v1.mp4?v=20260917-1';
+  const OPENING_ASSET = '/assets/portal-opening-v1.mp4?v=20260918-1';
   const OPENING_CACHE = 'portal-opening-media-v1';
-  const OPENING_EXPECTED_BYTES = 2393970;
+  const OPENING_EXPECTED_BYTES = 3275007;
   const OPENING_FADE_MS = 450;
   const OPENING_PREPARE_TIMEOUT_MS = 20000;
   const OPENING_PLAYBACK_TIMEOUT_MS = 20000;

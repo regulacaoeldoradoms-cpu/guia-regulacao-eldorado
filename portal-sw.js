@@ -40,7 +40,7 @@ const CORE_RESOURCES = Object.freeze([
   '/js/document-editor.js?v=20260916-2',
   '/js/login-home-transition.js?v=20260917-3',
   '/js/home.js?v=20260917-3',
-  '/js/login-opening.js?v=20260917-3',
+  '/js/login-opening.js?v=20260918-1',
   '/js/login.js?v=20260917-3',
   '/vendor/pdf-lib/pdf-lib.min.js',
   '/js/social-navigation.js?v=20260911-2',
@@ -421,6 +421,7 @@ self.addEventListener('activate', (event) => {
     await Promise.all([
       loginCache.delete('/js/login-opening.js?v=20260917-1'),
       loginCache.delete('/js/login-opening.js?v=20260917-2'),
+      loginCache.delete('/js/login-opening.js?v=20260917-3'),
       loginCache.delete('/js/login.js?v=20260917-2'),
       loginCache.delete('/js/home.js?v=20260917-1'),
       loginCache.delete('/js/login.js?v=20260910-2')

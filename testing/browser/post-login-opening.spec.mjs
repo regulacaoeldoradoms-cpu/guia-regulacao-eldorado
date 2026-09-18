@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
-const ASSET = '/assets/portal-opening-v1.mp4?v=20260917-1';
+const ASSET = '/assets/portal-opening-v1.mp4?v=20260918-1';
 const CACHE = 'portal-opening-media-v1';
 const MP4 = await readFile(new URL('../../assets/portal-opening-v1.mp4', import.meta.url));
 const root = (page) => page.locator('#portalOpening');
@@ -19,9 +19,11 @@ async function assertPlaying(page) {
   await expect(root(page)).toBeVisible();
   await expect(page.locator('#portalOpeningStartWithSound')).toHaveCount(0);
   await expect.poll(() => video(page).evaluate((v) => !v.paused && v.currentTime > 0)).toBe(true);
-  const data = await video(page).evaluate((v) => ({ duration: v.duration, muted: v.muted, volume: v.volume, src: v.currentSrc }));
+  const data = await video(page).evaluate((v) => ({ duration: v.duration, width: v.videoWidth, height: v.videoHeight, muted: v.muted, volume: v.volume, src: v.currentSrc }));
   expect(data.duration).toBeGreaterThan(9.9);
   expect(data.duration).toBeLessThan(10.1);
+  expect(data.width).toBe(1280);
+  expect(data.height).toBe(720);
   expect(data.muted).toBe(false);
   expect(data.volume).toBe(1);
   expect(data.src.startsWith('blob:')).toBe(true);
@@ -77,7 +79,7 @@ test('MP4 preparado toca os 10 segundos reais com som, tela inteira e fade', asy
 test('segunda preparação reutiliza Cache Storage sem baixar o MP4', async ({ page }) => {
   await page.goto('/opening/');
   expect(await prepare(page)).toBe(true);
-  await expect.poll(() => cacheSize(page)).toBe(2393970);
+  await expect.poll(() => cacheSize(page)).toBe(3275007);
   await page.route('**/assets/portal-opening-v1.mp4*', (route) => route.abort());
   await page.reload();
   await submit(page).click();
