@@ -10,8 +10,11 @@ import {
   activeVersionFromDeployment,
   inspectFirebaseBindings,
   firebaseRecoveryPlan,
+  parseServiceAccount,
+  buildLocalFirebaseSecrets,
+  currentSecretBindingNames,
+  validatePreparedBindings,
   injectVars,
-  injectRequiredSecrets,
   buildRecoveryToml,
   authDbDatabaseId,
   injectAuthDbDatabaseId,
@@ -24,7 +27,8 @@ import {
   locateExtractedRepository,
   wranglerArgs,
   npxCliPath,
-  newUploadedVersion
+  newUploadedVersion,
+  parseRecoveryArgs
 } from './recuperar-firebase-agenda.mjs';
 
 function version(bindings) {
@@ -115,27 +119,36 @@ test('injeta variáveis Firebase na seção vars sem alterar as demais', () => {
   assert.ok(patched.indexOf('FIREBASE_PROJECT_ID') < patched.indexOf('[ai]'));
 });
 
-test('declara segredos Firebase exigidos sem gravar valores', () => {
-  const source = 'name = "worker"\nkeep_vars = true\n';
-  const patched = injectRequiredSecrets(source, ['FIREBASE_PRIVATE_KEY', 'FIREBASE_WEB_API_KEY']);
-  assert.match(patched, /\[secrets\]/);
-  assert.match(patched, /required = \[ "FIREBASE_PRIVATE_KEY", "FIREBASE_WEB_API_KEY" \]/);
-  assert.doesNotMatch(patched, /PRIVATE KEY-----|AIza/);
+test('valida conta de serviço Firebase local contra a referência histórica', () => {
+  const privateKey = "-----BEGIN PRIVATE KEY-----\\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\\n-----END PRIVATE KEY-----";
+  const account = parseServiceAccount({
+    project_id: 'projeto-a', client_email: 'svc@example.test', private_key: privateKey
+  }, { FIREBASE_PROJECT_ID: 'projeto-a', FIREBASE_CLIENT_EMAIL: 'svc@example.test' });
+  assert.equal(account.projectId, 'projeto-a');
+  assert.equal(account.clientEmail, 'svc@example.test');
+  assert.equal(account.privateKey, privateKey);
+  assert.throws(() => parseServiceAccount({
+    project_id: 'outro', client_email: 'svc@example.test', private_key: privateKey
+  }, { FIREBASE_PROJECT_ID: 'projeto-a' }), /PROJECT_ID_FIREBASE_DIVERGENTE/);
 });
 
-test('configuração final combina D1, vars públicos e segredo obrigatório do Firebase', () => {
+test('monta secrets-file somente com valores Firebase fornecidos localmente', () => {
+  const privateKey = "-----BEGIN PRIVATE KEY-----\\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\\n-----END PRIVATE KEY-----";
+  const plan = { vars: {}, secrets: ['FIREBASE_PRIVATE_KEY', 'FIREBASE_WEB_API_KEY'] };
+  const account = { projectId: 'projeto-a', clientEmail: 'svc@example.test', privateKey };
+  const onlyAgenda = buildLocalFirebaseSecrets(plan, account);
+  assert.deepEqual(Object.keys(onlyAgenda), ['FIREBASE_PRIVATE_KEY']);
+  const complete = buildLocalFirebaseSecrets(plan, account, 'AIzaTESTE_LOCAL_12345678901234567890');
+  assert.equal(complete.FIREBASE_PRIVATE_KEY, privateKey);
+  assert.equal(complete.FIREBASE_WEB_API_KEY, 'AIzaTESTE_LOCAL_12345678901234567890');
+});
+
+test('configuração de recuperação injeta D1 e variáveis públicas sem secrets.required', () => {
   const id = '11111111-2222-3333-4444-555555555555';
   const source = [
-    'name = "worker"',
-    'keep_vars = true',
-    '',
-    '[vars]',
-    'ALLOWED_ORIGINS = "https://example.test"',
-    '',
-    '[[d1_databases]]',
-    'binding = "AUTH_DB"',
-    'database_name = "portal-regulacao-users"',
-    ''
+    'name = "worker"', 'keep_vars = true', '', '[vars]',
+    'ALLOWED_ORIGINS = "https://example.test"', '', '[[d1_databases]]',
+    'binding = "AUTH_DB"', 'database_name = "portal-regulacao-users"', ''
   ].join('\n');
   const recovered = version([
     { name: 'FIREBASE_PROJECT_ID', type: 'plain_text', text: 'projeto-a' },
@@ -146,8 +159,43 @@ test('configuração final combina D1, vars públicos e segredo obrigatório do 
   const built = buildRecoveryToml(source, id, recovered);
   assert.match(built.toml, new RegExp('database_id = "' + id + '"'));
   assert.match(built.toml, /FIREBASE_PROJECT_ID = "projeto-a"/);
-  assert.match(built.toml, /required = \[ "FIREBASE_PRIVATE_KEY" \]/);
+  assert.match(built.toml, /FIREBASE_CLIENT_EMAIL = "svc@example.test"/);
+  assert.doesNotMatch(built.toml, /^\s*\[secrets\]\s*$/m);
   assert.deepEqual(built.plan.secrets, ['FIREBASE_PRIVATE_KEY']);
+});
+
+test('valida nova versão preservando segredos atuais e aplicando Firebase local', () => {
+  const db = '11111111-2222-3333-4444-555555555555';
+  const current = version([
+    { name: 'AUTH_SESSION_SECRET', type: 'secret_text' },
+    { name: 'GOOGLE_DRIVE_OAUTH_CLIENT_SECRET', type: 'secret_text' },
+    { name: 'AUTH_DB', type: 'd1', id: db }
+  ]);
+  const plan = { vars: { FIREBASE_PROJECT_ID: 'projeto-a', FIREBASE_CLIENT_EMAIL: 'svc@example.test' }, secrets: ['FIREBASE_PRIVATE_KEY'] };
+  const provided = { FIREBASE_PRIVATE_KEY: 'valor-local-nao-exibido' };
+  const prepared = version([
+    { name: 'AUTH_SESSION_SECRET', type: 'secret_text' },
+    { name: 'GOOGLE_DRIVE_OAUTH_CLIENT_SECRET', type: 'secret_text' },
+    { name: 'AUTH_DB', type: 'd1', id: db },
+    { name: 'FIREBASE_PROJECT_ID', type: 'plain_text', text: 'projeto-a' },
+    { name: 'FIREBASE_CLIENT_EMAIL', type: 'plain_text', text: 'svc@example.test' },
+    { name: 'FIREBASE_PRIVATE_KEY', type: 'secret_text' }
+  ]);
+  assert.deepEqual(currentSecretBindingNames(current), ['AUTH_SESSION_SECRET', 'GOOGLE_DRIVE_OAUTH_CLIENT_SECRET']);
+  assert.equal(validatePreparedBindings(prepared, current, plan, provided, db), true);
+  prepared.resources.bindings = prepared.resources.bindings.filter((b) => b.name !== 'AUTH_SESSION_SECRET');
+  assert.throws(() => validatePreparedBindings(prepared, current, plan, provided, db), /SEGREDO_ATUAL_NAO_PRESERVADO/);
+});
+
+test('argumentos exigem arquivo local de conta de serviço e aceitam chave web opcional', () => {
+  assert.deepEqual(parseRecoveryArgs(['--recuperar', '--service-account-json', 'firebase.json']), {
+    recuperar: true, serviceAccountJson: 'firebase.json', webApiKeyFile: ''
+  });
+  assert.deepEqual(parseRecoveryArgs([
+    '--recuperar', '--service-account-json', 'firebase.json', '--web-api-key-file', 'web-key.txt'
+  ]), { recuperar: true, serviceAccountJson: 'firebase.json', webApiKeyFile: 'web-key.txt' });
+  assert.throws(() => parseRecoveryArgs(['--recuperar']), /INFORMAR_SERVICE_ACCOUNT_JSON/);
+  assert.throws(() => parseRecoveryArgs(['--recuperar', '--service-account-json']), /ARGUMENTO_SEM_VALOR/);
 });
 test('recuperação reaproveita o ID D1 já ligado ao AUTH_DB', () => {
   const id = '11111111-2222-3333-4444-555555555555';
@@ -303,12 +351,17 @@ test('script não contém valor real de segredo nem imprime payload de bindings'
   assert.doesNotMatch(source, /console\.log\([^\n]*(binding\.text|stdout|stderr)/);
   assert.match(source, /firebaseBindingsAusentes/);
   assert.match(source, /ROLLBACK_DE_SEGURANCA/);
-  assert.match(source, /Firebase explícitos|bindings recuperados/);
-  assert.match(source, /firebaseSegredosExigidos/);
+  assert.match(source, /--service-account-json/);
+  assert.match(source, /--secrets-file/);
+  assert.match(source, /firebaseSegredosFornecidosLocalmente/);
+  assert.match(source, /credencialContaServico/);
   assert.match(source, /versions', 'upload/);
   assert.match(source, /versions', 'deploy/);
+  assert.match(source, /--experimental-provision=false/);
   assert.match(source, /--experimental-auto-create=false/);
   assert.match(source, /versaoPreparada/);
+  assert.doesNotMatch(source, /5\/8 Restaurando temporariamente/);
+  assert.doesNotMatch(source, /--outfile/);
   assert.doesNotMatch(source, /runWrangler\(\['deploy'/);
   assert.doesNotMatch(source, /safeLine\([^\n]*(FIREBASE_PROJECT_ID|FIREBASE_CLIENT_EMAIL|FIREBASE_WEB_API_KEY|FIREBASE_STORAGE_BUCKET)/);
   assert.doesNotMatch(source, /git\s+clone|ls-remote|rev-parse/);
