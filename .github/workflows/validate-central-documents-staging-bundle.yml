@@ -106,7 +106,49 @@ jobs:
           ! grep -R -F --exclude-dir=homologacao --exclude=_headers 'https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' dist-staging
           ! grep -R -F "https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" dist-staging/homologacao
           grep -q 'DOCUMENTS_HOMOLOGATION_ORIGIN' worker/wrangler.toml
-          grep -q 'codex-central-docs-drive-syn.portal-regulacao-central-staging.pages.dev' worker/wrangler.toml
+          grep -q '^DOCUMENTS_HOMOLOGATION_ORIGIN = ""
+          ! grep -R -E "GOOGLE_DRIVE_OAUTH_CLIENT_SECRET|DRIVE_TOKEN_ENCRYPTION_KEY|AUTH_SESSION_SECRET" dist-staging
+
+      - name: Rejeitar Worker de produção como alvo 4D
+        run: |
+          set -euo pipefail
+          if CENTRAL_DOCS_HOMOLOGATION_WORKER_URL='https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' node scripts/build-central-docs-staging.mjs; then
+            echo 'ERRO: build aceitou Worker de produção como homologação.' >&2
+            exit 1
+          fi
+
+      - name: Rejeitar variantes de origem com porta ou path
+        run: |
+          set -euo pipefail
+          for invalid_origin in \
+            'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev:8443' \
+            'https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev:8443' \
+            'https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/'; do
+            if CENTRAL_DOCS_HOMOLOGATION_WORKER_URL="$invalid_origin" node scripts/build-central-docs-staging.mjs; then
+              echo 'ERRO: build aceitou variante indevida de origem.' >&2
+              exit 1
+            fi
+          done
+
+      - name: Smoke test HTTP estático
+        run: |
+          set -euo pipefail
+          CENTRAL_DOCS_HOMOLOGATION_WORKER_URL='https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' node scripts/build-central-docs-staging.mjs
+          cd dist-staging
+          python3 -m http.server 4174 --bind 127.0.0.1 >/tmp/central-docs-staging-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:4174/ >/dev/null \
+              && curl --fail --silent http://127.0.0.1:4174/homologacao/documentos/ >/dev/null \
+              && curl --fail --silent http://127.0.0.1:4174/homologacao/login/ >/dev/null; then
+              exit 0
+            fi
+            sleep 0.25
+          done
+          cat /tmp/central-docs-staging-http.log
+          exit 1
+ worker/wrangler.toml
           ! grep -R -E "GOOGLE_DRIVE_OAUTH_CLIENT_SECRET|DRIVE_TOKEN_ENCRYPTION_KEY|AUTH_SESSION_SECRET" dist-staging
 
       - name: Rejeitar Worker de produção como alvo 4D

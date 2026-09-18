@@ -10,7 +10,9 @@ Metadados do candidato oficial: **3.275.007 bytes**, SHA-256 `21aae188af40d816ef
 
 Contratos preservados: Entrar continua autenticando no primeiro clique; o vídeo não controla credenciais; Home continua sendo preparada durante a reprodução; fallback legado permanece disponível; áudio permanece habilitado; o teste real exige ~10 s e 1280×720. Esta tarefa é transversal ao Portal e **não reabre a Fase 4** nem inicia por conta própria a Fase 5.
 
-Validação em andamento nesta branch: o primeiro CI falhou apenas porque detectou corretamente o binário antigo esperado; tamanho e SHA-256 novos foram obtidos dos próprios checks. A validação final deve executar os contratos Node + Chromium antes de retirar o draft.
+Validação direcionada aprovada no run `35321759169`: **11/11 contratos Node**, **24/24 cenários Chromium da abertura** (desktop/mobile) e **8/8 cenários de Home durante o vídeo**, todos verdes. Esses testes confirmaram 1280×720, duração real próxima de 10 s, áudio habilitado, reprodução integral, cache local, fallback e ausência de regressão no primeiro clique. Fases 1–4 também passaram no run `35321759254` e a governança passou no run `35321759083`.
+
+Um check transversal de bundle de staging (`35321759063`) revelou uma asserção obsoleta do próprio workflow: ele ainda exigia que `worker/wrangler.toml` contivesse o antigo hostname `codex-central-docs-drive-syn...`, embora a publicação final da Fase 4 tenha neutralizado corretamente `DOCUMENTS_HOMOLOGATION_ORIGIN=""`. A PR #212 corrige somente essa asserção para exigir o valor vazio em produção; o teste com `CENTRAL_DOCS_HOMOLOGATION_WORKER_URL` explícito continua validando a materialização segura do preview. Isso não foi causado pelo MP4 nem altera a configuração produtiva.
 
 ## Reconciliação com a main atual — concluída em 18/09/2026
 
@@ -371,11 +373,11 @@ Artefatos anteriores preservados:
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
-| Checks/testes | CI inicial confirmou novo tamanho 3.275.007 e SHA-256 `21aae188…`; contratos Node/Chromium finais ainda precisam ficar verdes após atualização dos metadados |
-| Bloqueios | Nenhum bloqueio externo; falta apenas validação final da PR #212 antes de merge/publicação |
+| Checks/testes | Abertura run `35321759169`: 11/11 Node + 24/24 Chromium + 8/8 Home; Fases 1–4 `35321759254` sucesso; governança `35321759083` sucesso. Bundle staging detectou asserção histórica obsoleta e foi corrigido para o estado produtivo atual |
+| Bloqueios | Nenhum bloqueio externo; falta apenas o rerun final após alinhar a asserção obsoleta do bundle staging |
 | Riscos | Cache antigo de mídia/controlador; mitigado por nova URL `20260918-1` e invalidação pontual do controlador, sem purge amplo |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Validar os checks direcionados da PR #212; se Node + Chromium passarem, registrar evidência final, retirar draft e mesclar/publicar |
+| Próxima ação exata | Conferir o rerun final da PR #212; se os checks direcionados permanecerem verdes, registrar o head final, retirar draft e mesclar/publicar |
 | Depois | Retomar a Fase 5 em branch separada; latência de sync continua reservada para Fase 7 |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
