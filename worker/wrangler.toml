@@ -33,6 +33,9 @@ SOCIAL_HOME_ENABLED = "true"
 # Central de Documentos: URLs públicas, sem credenciais.
 GOOGLE_DRIVE_OAUTH_REDIRECT_URI = "https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/documents/oauth/callback"
 DOCUMENTS_PORTAL_RETURN_URL = "https://regulacaoeldoradoms.com.br/documentos/"
+# Fase 5A — fundação da IA documental. UI e processamento permanecem fail-closed até homologação própria.
+DOCUMENTS_AI_ENABLED = "false"
+DOCUMENTS_AI_PROCESSING_ENABLED = "false"
 # Fase 4 concluída: escrita real liberada em produção; origem de homologação neutralizada.
 # Como keep_vars=true preserva variáveis omitidas, mantemos valor vazio para remover efetivamente o preview da configuração produtiva.
 DOCUMENTS_DRIVE_WRITE_ENABLED = "true"

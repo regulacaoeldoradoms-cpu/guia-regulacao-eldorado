@@ -1,4 +1,4 @@
-name: Validar Central de Documentos — Fases 1–4
+name: Validar Central de Documentos — Fases 1–5A
 
 on:
   pull_request:
@@ -27,6 +27,7 @@ on:
       - 'worker/wrangler.toml'
       - 'worker/package.json'
       - 'worker/tests/documents-*.test.mjs'
+      - 'worker/tests/document-ai*.test.mjs'
       - 'worker/tests/document-editor.test.mjs'
       - 'worker/tests/developer-self-edit-session.test.mjs'
       - 'scripts/build-central-docs-staging.mjs'
@@ -55,6 +56,7 @@ on:
       - 'worker/auth-management-flex.js'
       - 'worker/auth-management-v2.js'
       - 'worker/tests/documents-*.test.mjs'
+      - 'worker/tests/document-ai*.test.mjs'
       - 'worker/tests/document-editor.test.mjs'
       - 'worker/tests/developer-self-edit-session.test.mjs'
       - 'scripts/build-central-docs-staging.mjs'
@@ -89,8 +91,17 @@ jobs:
           test -f js/documents.js
           test -f worker/additional-roles.js
           test -f worker/document-access.js
+          test -f worker/document-ai-prompts.js
+          test -f worker/document-ai.js
           test -f worker/document-drive.js
           test -f worker/documents-router.js
+          grep -q "/api/documents/ai/config" worker/documents-router.js
+          grep -q "PROMPT_CLASSIFICACAO_PAGINAS_V1" worker/document-ai-prompts.js
+          grep -q "PROMPT_EXTRACAO_REGULACAO_V1" worker/document-ai-prompts.js
+          grep -q 'DOCUMENTS_AI_ENABLED = "false"' worker/wrangler.toml
+          grep -q 'DOCUMENTS_AI_PROCESSING_ENABLED = "false"' worker/wrangler.toml
+          grep -q 'id="documentAiButton"' documentos/index.html
+          grep -q 'id="documentsAiPanel"' documentos/index.html
           grep -q "https://www.googleapis.com/auth/drive" worker/document-drive.js
           grep -q "Cache-Control.*no-store" worker/documents-router.js
           grep -q "URL.revokeObjectURL" js/documents.js
@@ -145,3 +156,4 @@ jobs:
           ! grep -R -E 'GOCSPX-[0-9A-Za-z_-]+' worker/document-*.js worker/documents-router.js js/documents.js
           ! grep -R -E 'AIza[0-9A-Za-z_-]{20,}' worker/document-*.js worker/documents-router.js js/documents.js
           ! grep -R -E "capture\([^\n]*(fileId|filename|item\.name|item\.ref|searchQuery)" js/documents.js
+          ! grep -R -E "GEMINI_API_KEY|DRIVE_TOKEN_ENCRYPTION_KEY|AUTH_SESSION_SECRET" documentos/index.html js/documents.js

@@ -275,9 +275,57 @@ Conclusão: **Fase 4 publicada em produção**. A Central de Documentos pode ser
 
 Próxima fase pelo Guia Mestre: **Fase 5 — IA documental**, em branch/PR separados. Não reabrir a Fase 4 por hardening não bloqueante.
 
+## Fase 5 iniciada — IA documental — 18/09/2026
+
+A Fase 4 permanece encerrada e publicada. Antes de abrir esta frente, o ajuste transversal da abertura pós-login foi finalizado: PR #213 passou nos checks e foi mesclado em `87b88c0e7e37df1c56a25933f2f27aad2795e35c`. A branch da Fase 5 foi criada diretamente desse `main`.
+
+Branch atual: `feat/central-docs-phase5-document-ai`.
+
+Subfase inicial: **5A — fundação segura**. Documento de escopo: `docs/CENTRAL-DOCUMENTOS-FASE-5.md`.
+
+Decisões de arquitetura recuperadas e confirmadas:
+
+- não reutilizar nem enfraquecer `worker/gemini-assistant.js`, que continua reservado à pré-regulação anonimizada;
+- IA documental terá módulo backend próprio e usará a capability documental `extract`, já existente;
+- rotinas restritivas trabalham por página isolada, com proveniência obrigatória;
+- prompts serão artefatos independentes e versionados;
+- saída institucional será estruturada antes da formatação visual;
+- conteúdo documental/PII não entra no PostHog, D1, cache estático ou logs técnicos;
+- 5A não habilita processamento real de PDFs clínicos; primeiro serão construídos contratos, feature gate, painel lateral e testes sintéticos.
+
+Limitações remanescentes da Fase 4 continuam registradas, mas não reabrem a fase: `save_copy` sem homologação real própria e latência de sync reservada para Fase 7.
+
+Próxima ação exata: implementar a fundação 5A em código e testes, mantendo a IA documental desabilitada por padrão até existir homologação sintética e configuração explícita.
+
+## Fase 5A — fundação segura concluída — 18/09/2026
+
+A subfase 5A foi implementada sem habilitar processamento real de documentos clínicos. O escopo concluído inclui:
+
+- módulo backend próprio `worker/document-ai.js`, separado da pré-regulação anonimizada;
+- prompts independentes/versionados em `worker/document-ai-prompts.js`;
+- endpoint `/api/documents/ai/config` protegido pela capability `extract`;
+- feature gates produtivos `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`;
+- hard lock interno `DOCUMENT_AI_RUNTIME_READY=false`, impedindo processamento mesmo se as flags forem ligadas por engano nesta versão;
+- painel lateral da IA no visualizador, oculto enquanto o gate estiver desligado e sem envio de conteúdo;
+- contratos estruturados de página, classificação e estados `encontrado`, `nao_consta` e `ilegivel`;
+- allowlist de telemetria técnica que descarta nome de arquivo, IDs, paciente, CPF/CNS e conteúdo;
+- suíte e CI atualizados sem criar workflow duplicado.
+
+Validação:
+
+- run `35325260057`: **298/298 testes**, zero falhas/skips;
+- staging bundle `35325260581`: sucesso;
+- governança `35325260069`: sucesso;
+- site `35325260628`: sucesso;
+- navegador/PDF.js no frontend equivalente anterior à trava backend final: run `35324925407`, sucesso. O commit final de hardening alterou somente `worker/document-ai.js` e seu teste, sem tocar HTML/CSS/JS.
+
+A primeira execução de CI da 5A encontrou apenas contratos antigos de cache-buster do HTML; os testes foram alinhados ao novo `20260918-1`. Não houve falha funcional de IA, autorização ou privacidade.
+
+**Decisão:** 5A aceita para merge. Nenhum PDF/imagem/texto foi enviado a provedor de IA. A próxima subfase é **5B — classificação isolada por página**, ainda fail-closed em produção até homologação própria.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** A **Fase 4 está concluída e publicada em produção**; não reiniciar a 4D. A Fase 5 deve começar como nova frente isolada, preservando privacidade e os contratos já publicados.
+**Fase 5 — IA documental.** Subfase **5A concluída e aceita para merge**; próxima após integração: **5B — classificação isolada por página**. A **Fase 4 permanece concluída/publicada**.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -389,10 +437,10 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5 — IA documental; tarefa transversal do vídeo encerrada e publicada |
-| Última ação concluída | Produção confirmada no run `35323251451`, inclusive hashes públicos/HTML; Pages `35323249977` verde |
-| Branch/PR | Vídeo: #212 e #213 mescladas; nenhuma branch funcional do vídeo permanece pendente |
-| Main | `87b88c0e7e37df1c56a25933f2f27aad2795e35c` — novo MP4 + verificador público corrigido |
+| Fase/subfase | Fase 5A concluída/aceita; próxima: 5B — classificação isolada por página |
+| Última ação concluída | Fundação 5A implementada e validada: 298/298, staging/governança/site verdes; processamento clínico continua hard-locked |
+| Branch/PR | `feat/central-docs-phase5-document-ai`; PR da Fase 5 ainda não aberto |
+| Main | `7947815ef50881621b7aed50a7cabc50708e7272` — base reconciliada da Fase 5 após fechamento do vídeo |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
@@ -401,11 +449,11 @@ Artefatos anteriores preservados:
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
 | Checks/testes | Produção: abertura `35323251451` success com smoke público; Pages `35323249977`, Fases 1–4 `35323251417`, governança `35323251482` e site `35323251448` success |
-| Bloqueios | Nenhum bloqueio do vídeo de abertura |
+| Bloqueios | Nenhum para merge da 5A; 5B poderá ser implementada sinteticamente, mas uso real do provedor continuará bloqueado até homologação |
 | Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Retomar a Fase 5 em branch separada: recuperar Dossiê/deltas de IA documental e definir o escopo mínimo do painel lateral + proveniência por página |
-| Depois | Implementar Fase 5 por módulos versionados; latência de sincronização continua reservada para a Fase 7 |
+| Próxima ação exata | Integrar PR #215; criar branch 5B da main resultante e implementar rasterização/classificação de uma página por vez atrás do gate de processamento |
+| Depois | Validar 5B com imagens sintéticas e mock de provedor; manter flags produtivas desligadas |
 | Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
 
 ## Histórico recuperável
