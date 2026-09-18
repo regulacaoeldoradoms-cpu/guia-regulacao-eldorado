@@ -7,6 +7,7 @@ on:
       - 'login/index.html'
       - 'scripts/build-central-docs-staging.mjs'
       - 'testing/central-docs/**'
+      - 'testing/central-docs-ai/**'
       - 'testing/browser/**'
       - 'assets/editor-pdf-buttons/**'
       - 'assets/*.png'
@@ -77,23 +78,34 @@ jobs:
           test -s dist-staging/homologacao/css/documents.css
           test -s dist-staging/homologacao/assets/Drive_pendente.png
           test -s dist-staging/homologacao/vendor/pdfjs-legacy/pdf.min.mjs
+          test -s dist-staging/homologacao-5e/index.html
+          test -s dist-staging/homologacao-5e/phase5e.js
+          test -s dist-staging/homologacao-5e/phase5e.css
+          test -s dist-staging/homologacao-5e/config.js
+          test -s dist-staging/homologacao-5e/homologation-manifest.json
           test -s dist-staging/_headers
           test -s dist-staging/robots.txt
           grep -q '"syntheticOnly": true' dist-staging/staging-manifest.json
           grep -q '"available": true' dist-staging/staging-manifest.json
           grep -q '"workerConfigured": false' dist-staging/staging-manifest.json
           grep -q 'endpoint: ""' dist-staging/homologacao/js/auth-config.js
+          grep -q 'workerConfigured: false' dist-staging/homologacao-5e/config.js
+          grep -q 'DADOS 100% SINTÉTICOS' dist-staging/homologacao-5e/phase5e.js
+          grep -q 'phase5eWorkerOrigin' dist-staging/homologacao-5e/index.html
+          grep -q 'OFFICIAL_WORKER_ORIGIN' dist-staging/homologacao-5e/phase5e.js
+          ! grep -R -E 'localStorage|sessionStorage|indexedDB' dist-staging/homologacao-5e
           grep -q 'HOMOLOGAÇÃO 4D' dist-staging/homologacao/documentos/index.html
           grep -q "Disallow: /" dist-staging/robots.txt
-          ! grep -R -F --exclude-dir=homologacao "yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" dist-staging
-          ! grep -R -F --exclude-dir=homologacao "regulacaoeldoradoms.com.br/api/" dist-staging
-          ! grep -R -F --exclude-dir=homologacao "/api/documents/" dist-staging
+          ! grep -R -F --exclude-dir=homologacao --exclude-dir=homologacao-5e "yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" dist-staging
+          ! grep -R -F --exclude-dir=homologacao --exclude-dir=homologacao-5e "regulacaoeldoradoms.com.br/api/" dist-staging
+          ! grep -R -F --exclude-dir=homologacao --exclude-dir=homologacao-5e "/api/documents/" dist-staging
           ! grep -R -F "cdn.jsdelivr.net" dist-staging
           ! grep -R -E "GOOGLE_DRIVE_OAUTH_CLIENT_SECRET|DRIVE_TOKEN_ENCRYPTION_KEY|AUTH_SESSION_SECRET" dist-staging
 
       - name: Construir staging com alias preview que contém o hostname de produção
         env:
           CENTRAL_DOCS_HOMOLOGATION_WORKER_URL: https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev
+          CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL: https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev
         run: node scripts/build-central-docs-staging.mjs
 
       - name: Validar materialização segura da 4D
@@ -109,11 +121,28 @@ jobs:
           grep -q '^DOCUMENTS_HOMOLOGATION_ORIGIN = ""$' worker/wrangler.toml
           ! grep -R -E "GOOGLE_DRIVE_OAUTH_CLIENT_SECRET|DRIVE_TOKEN_ENCRYPTION_KEY|AUTH_SESSION_SECRET" dist-staging
 
+      - name: Validar materialização segura da 5E
+        run: |
+          set -euo pipefail
+          grep -q 'workerConfigured: true' dist-staging/homologacao-5e/config.js
+          grep -q 'https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' dist-staging/homologacao-5e/config.js
+          grep -q 'connect-src.*https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' dist-staging/_headers
+          ! grep -R -F --exclude-dir=homologacao-5e --exclude=_headers 'https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' dist-staging
+          ! grep -R -E "GEMINI_API_KEY|AUTH_SESSION_SECRET|AUTH_RATE_LIMIT_SECRET" dist-staging/homologacao-5e
+
       - name: Rejeitar Worker de produção como alvo 4D
         run: |
           set -euo pipefail
           if CENTRAL_DOCS_HOMOLOGATION_WORKER_URL='https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' node scripts/build-central-docs-staging.mjs; then
             echo 'ERRO: build aceitou Worker de produção como homologação.' >&2
+            exit 1
+          fi
+
+      - name: Rejeitar Worker de produção como alvo 5E
+        run: |
+          set -euo pipefail
+          if CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL='https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' node scripts/build-central-docs-staging.mjs; then
+            echo 'ERRO: build aceitou Worker de produção como homologação 5E.' >&2
             exit 1
           fi
 
@@ -129,11 +158,22 @@ jobs:
               exit 1
             fi
           done
+          for invalid_origin in \
+            'https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev:8443' \
+            'https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/' \
+            'https://outro-preview-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev'; do
+            if CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL="$invalid_origin" node scripts/build-central-docs-staging.mjs; then
+              echo 'ERRO: build aceitou variante indevida da origem 5E.' >&2
+              exit 1
+            fi
+          done
 
       - name: Smoke test HTTP estático
         run: |
           set -euo pipefail
-          CENTRAL_DOCS_HOMOLOGATION_WORKER_URL='https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' node scripts/build-central-docs-staging.mjs
+          CENTRAL_DOCS_HOMOLOGATION_WORKER_URL='https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' \
+          CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL='https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' \
+          node scripts/build-central-docs-staging.mjs
           cd dist-staging
           python3 -m http.server 4174 --bind 127.0.0.1 >/tmp/central-docs-staging-http.log 2>&1 &
           server_pid=$!
@@ -141,7 +181,8 @@ jobs:
           for i in {1..20}; do
             if curl --fail --silent http://127.0.0.1:4174/ >/dev/null \
               && curl --fail --silent http://127.0.0.1:4174/homologacao/documentos/ >/dev/null \
-              && curl --fail --silent http://127.0.0.1:4174/homologacao/login/ >/dev/null; then
+              && curl --fail --silent http://127.0.0.1:4174/homologacao/login/ >/dev/null \
+              && curl --fail --silent http://127.0.0.1:4174/homologacao-5e/ >/dev/null; then
               exit 0
             fi
             sleep 0.25

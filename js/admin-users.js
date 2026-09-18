@@ -35,6 +35,7 @@
   const newAdditionalRoleDocuments = document.getElementById('newAdditionalRoleDocuments');
   const editAdditionalRolesWrap = document.getElementById('editAdditionalRolesWrap');
   const editAdditionalRoleDocuments = document.getElementById('editAdditionalRoleDocuments');
+  const editDocumentAiPermission = document.getElementById('editDocumentAiPermission');
   const editDocumentPdfPermission = document.getElementById('editDocumentPdfPermission');
 
   if (isDeveloper) {
@@ -56,21 +57,24 @@
     el.className = `account-status visible ${type}`;
   }
 
-  function syncDocumentEditPermissionState() {
-    if (!editDocumentPdfPermission || !editAdditionalRoleDocuments) return;
+  function syncDocumentPermissionState() {
+    if (!editAdditionalRoleDocuments) return;
     const enabled = isDeveloper && editAdditionalRoleDocuments.checked;
-    editDocumentPdfPermission.disabled = !enabled;
-    if (!enabled) editDocumentPdfPermission.checked = false;
+    for (const control of [editDocumentAiPermission, editDocumentPdfPermission]) {
+      if (!control) continue;
+      control.disabled = !enabled;
+      if (!enabled) control.checked = false;
+    }
   }
 
-  async function updateDocumentCapabilities(username, user, regulatorEnabled, allowEdit) {
+  async function updateDocumentCapabilities(username, user, regulatorEnabled, allowExtract, allowEdit) {
     if (!isDeveloper || !username) return null;
     const existing = user?.documentCapabilities || {};
     return auth.api(`/api/documents/admin/access/${encodeURIComponent(username)}`, {
       method: 'PATCH',
       body: JSON.stringify({
         view: regulatorEnabled === true,
-        extract: regulatorEnabled === true && existing.extract === true,
+        extract: regulatorEnabled === true && allowExtract === true,
         edit: regulatorEnabled === true && allowEdit === true,
         manage: user?.role === 'admin' ? false : existing.manage === true
       })
@@ -197,10 +201,13 @@
       if (editAdditionalRoleDocuments) {
         editAdditionalRoleDocuments.checked = Array.isArray(user.additionalRoles) && user.additionalRoles.includes('documentos');
       }
+      if (editDocumentAiPermission) {
+        editDocumentAiPermission.checked = Boolean(user.documentCapabilities?.extract);
+      }
       if (editDocumentPdfPermission) {
         editDocumentPdfPermission.checked = Boolean(user.documentCapabilities?.edit);
       }
-      syncDocumentEditPermissionState();
+      syncDocumentPermissionState();
       document.getElementById('editActive').checked = Boolean(user.active);
       document.getElementById('editStatus').className = 'account-status full';
       openModal('editUserModal');
@@ -237,6 +244,7 @@
           state.editing,
           editingUser,
           Boolean(editAdditionalRoleDocuments?.checked),
+          Boolean(editDocumentAiPermission?.checked),
           Boolean(editDocumentPdfPermission?.checked)
         );
       }
@@ -261,7 +269,7 @@
     }
   });
 
-  editAdditionalRoleDocuments?.addEventListener('change', syncDocumentEditPermissionState);
+  editAdditionalRoleDocuments?.addEventListener('change', syncDocumentPermissionState);
   searchEl.addEventListener('input', render);
   document.querySelectorAll('[data-close-modal]').forEach((button) => button.addEventListener('click', () => closeModal(button.dataset.closeModal)));
   document.querySelectorAll('.modal-backdrop').forEach((modal) => modal.addEventListener('click', (event) => { if (event.target === modal) closeModal(modal.id); }));

@@ -1,0 +1,67 @@
+name: Central de Documentos — Procedimentos operacionais 5E
+
+on:
+  pull_request:
+    paths:
+      - 'worker/homologation-5e.js'
+      - 'worker/tests/homologation-5e.test.mjs'
+      - 'scripts/central-docs/preparar-homologacao-5e.mjs'
+      - 'scripts/central-docs/preparar-homologacao-5e.test.mjs'
+      - 'scripts/central-docs/encerrar-homologacao-5e.mjs'
+      - 'scripts/central-docs/encerrar-homologacao-5e.test.mjs'
+      - 'testing/central-docs-ai/**'
+      - 'scripts/build-central-docs-staging.mjs'
+      - '.github/workflows/validate-central-docs-operational-5e.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validar sintaxe dos procedimentos 5E
+        run: |
+          node --check worker/homologation-5e.js
+          node --check scripts/central-docs/preparar-homologacao-5e.mjs
+          node --check scripts/central-docs/encerrar-homologacao-5e.mjs
+          node --check testing/central-docs-ai/phase5e-harness.js
+
+      - name: Executar testes do wrapper 5E
+        working-directory: worker
+        run: node --test tests/homologation-5e.test.mjs
+
+      - name: Executar testes do preparo 5E
+        run: node --test scripts/central-docs/preparar-homologacao-5e.test.mjs
+
+      - name: Executar testes do encerramento 5E
+        run: node --test scripts/central-docs/encerrar-homologacao-5e.test.mjs
+
+      - name: Executar contratos do laboratório sintético 5E
+        run: node --test testing/central-docs-ai/phase5e-harness.test.mjs
+
+      - name: Garantir que procedimentos não promovem produção
+        run: |
+          set -euo pipefail
+          ! grep -R -E "versions['\"], *['\"]deploy|wrangler +deploy" \
+            scripts/central-docs/preparar-homologacao-5e.mjs \
+            scripts/central-docs/encerrar-homologacao-5e.mjs
+          grep -q "DOCUMENTS_DRIVE_WRITE_ENABLED: 'false'" scripts/central-docs/preparar-homologacao-5e.mjs
+          grep -q "INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE" scripts/central-docs/preparar-homologacao-5e.mjs
+          grep -q "INTERVENCAO_NECESSARIA_CAPABILITY_EXTRACT_AUSENTE" scripts/central-docs/preparar-homologacao-5e.mjs
+          grep -q "phase5e-synthetic-v1" worker/homologation-5e.js
+          ! grep -E "AIza[0-9A-Za-z_-]{20,}|-----BEGIN PRIVATE KEY-----" \
+            worker/homologation-5e.js \
+            scripts/central-docs/preparar-homologacao-5e.mjs \
+            scripts/central-docs/encerrar-homologacao-5e.mjs \
+            testing/central-docs-ai/phase5e-harness.js

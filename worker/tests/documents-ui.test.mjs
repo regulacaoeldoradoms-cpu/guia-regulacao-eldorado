@@ -625,15 +625,20 @@ test('Fase 4C mantém telemetria de sincronização estritamente técnica e suce
 });
 
 
-test('permissão de edição é explícita e não é herdada automaticamente de Regulador(a)', () => {
+test('permissões de IA documental e edição são explícitas e não são herdadas automaticamente de Regulador(a)', () => {
   const html = read('admin/usuarios/index.html');
   const client = read('js/admin-users.js');
 
+  assert.match(html, /editDocumentAiPermission/);
+  assert.match(html, /Permitir IA documental/);
+  assert.match(html, /proveniência por página/);
   assert.match(html, /editDocumentPdfPermission/);
   assert.match(html, /Permitir editor de PDF/);
   assert.match(html, /inclui sincronização segura com o Drive quando habilitada no ambiente/);
+  assert.match(client, /documentCapabilities\?\.extract/);
   assert.match(client, /documentCapabilities\?\.edit/);
   assert.match(client, /\/api\/documents\/admin\/access\//);
+  assert.match(client, /extract: regulatorEnabled === true && allowExtract === true/);
   assert.match(client, /edit: regulatorEnabled === true && allowEdit === true/);
   assert.match(client, /editAdditionalRoleDocuments\.checked/);
   assert.doesNotMatch(client, /additionalRoles.*edit:\s*true/);

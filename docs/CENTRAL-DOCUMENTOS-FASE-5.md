@@ -207,14 +207,43 @@ Aceite 5D: **320/320 testes** na suíte integrada, navegador **75 passed / 3 ski
 
 ### 5E — Homologação real controlada
 
-- PDFs sintéticos com campos conflitantes entre páginas;
+Estado: **preparo técnico implementado; nenhuma chamada real ao provedor executada ainda**.
+
+Artefatos preparados:
+- wrapper Worker preview-only `worker/homologation-5e.js`;
+- laboratório sintético em `/homologacao-5e/`;
+- seis fixtures adversariais geradas em canvas no navegador;
+- procedimento de preparo `preparar-homologacao-5e.mjs`;
+- procedimento fail-closed de encerramento `encerrar-homologacao-5e.mjs`;
+- workflow operacional específico da 5E;
+- documentação completa em `CENTRAL-DOCUMENTOS-HOMOLOGACAO-5E.md`.
+
+Matriz planejada:
+- comprovante sintético completo;
+- duas páginas médicas com valores conflitantes para detectar mistura;
 - campo ausente;
-- campo ilegível;
-- páginas fora de ordem;
-- mais de uma página médica;
-- página não autorizada contendo dado tentador;
+- campo ilegível/borrado;
+- página não autorizada contendo prompt injection;
+- classificação `outro` sem extração;
+- perguntas por evidência para páginas específicas;
+- `NÃO CONSTA` e `ILEGÍVEL` no chat;
 - confirmação de ausência de mistura entre páginas;
-- revisão de privacidade/telemetria.
+- encerramento D1 + gates false + HTTP bloqueado.
+
+Isolamento:
+- somente uma versão preview do Worker pode ter os gates da IA `true`;
+- `DOCUMENTS_DRIVE_WRITE_ENABLED=false` é obrigatório;
+- produção não é promovida pelo procedimento;
+- login é restrito ao usuário autorizado pelo controle D1;
+- cada rota de IA exige marcador sintético adicional;
+- o laboratório aceita o alias Worker 5E apenas em memória, sem persistência;
+- o endereço aceito é exatamente o alias oficial `central-docs-phase5e-...workers.dev`;
+- conteúdo real de paciente é proibido nesta homologação.
+
+Possível intervenção futura:
+- o preparo consulta a versão produtiva e verifica apenas a **existência/tipo** de `GEMINI_API_KEY`, sem ler o valor;
+- se a chave não existir na baseline, o script para antes de qualquer upload/controle ativo com `INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE`;
+- se existir, o usuário ainda precisará confirmar explicitamente a abertura da janela 5E e executar a matriz no navegador.
 
 ## Fora de escopo da Fase 5
 
@@ -226,4 +255,4 @@ Aceite 5D: **320/320 testes** na suíte integrada, navegador **75 passed / 3 ski
 
 ## Próximo passo atual
 
-Integrar a 5D e preparar a **5E — homologação real controlada** em branch separada. Todo o harness, fixtures sintéticos, wrapper preview-only e procedimentos fail-closed devem ser preparados antes de qualquer ativação. A primeira execução com provedor real exigirá confirmação do operador; até lá os gates produtivos permanecem desligados.
+Validar e integrar o **preparo técnico da 5E** mantendo os gates produtivos desligados. Depois usar um preview Pages comum da branch/PR, selecionar o alias Worker 5E somente em memória e executar o procedimento local de preparo. A primeira chamada real ao provedor continua bloqueada até confirmação explícita do operador.
