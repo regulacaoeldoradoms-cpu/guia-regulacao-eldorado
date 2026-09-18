@@ -8,6 +8,7 @@ import {
 
 export const DOCUMENT_AI_PHASE = '5A';
 export const DOCUMENT_AI_VERSION = 'phase5a-v1';
+const DOCUMENT_AI_RUNTIME_READY = false;
 
 function flag(value) {
   return String(value || '').trim().toLowerCase() === 'true';
@@ -18,7 +19,9 @@ export function documentAiEnabled(env = {}) {
 }
 
 export function documentAiProcessingEnabled(env = {}) {
-  return documentAiEnabled(env) && flag(env.DOCUMENTS_AI_PROCESSING_ENABLED);
+  return DOCUMENT_AI_RUNTIME_READY
+    && documentAiEnabled(env)
+    && flag(env.DOCUMENTS_AI_PROCESSING_ENABLED);
 }
 
 export function documentAiPublicConfig(env = {}) {

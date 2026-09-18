@@ -12,14 +12,14 @@ import {
   documentAiTechnicalEvent
 } from '../document-ai.js';
 
-test('IA documental começa fail-closed e separa visibilidade de processamento', () => {
+test('IA documental 5A permanece fail-closed mesmo se flags forem ligadas por engano', () => {
   assert.equal(documentAiEnabled({}), false);
   assert.equal(documentAiProcessingEnabled({ DOCUMENTS_AI_PROCESSING_ENABLED: 'true' }), false);
   assert.equal(documentAiEnabled({ DOCUMENTS_AI_ENABLED: 'true' }), true);
   assert.equal(documentAiProcessingEnabled({
     DOCUMENTS_AI_ENABLED: 'true',
     DOCUMENTS_AI_PROCESSING_ENABLED: 'true'
-  }), true);
+  }), false);
 });
 
 test('configuração pública não expõe segredos nem conteúdo', () => {
