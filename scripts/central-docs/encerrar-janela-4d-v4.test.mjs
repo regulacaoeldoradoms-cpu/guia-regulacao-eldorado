@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
 
 import {
   FIXED, PUBLIC_NAMES, SECRET_NAMES, inspectOldPreview
@@ -104,4 +105,10 @@ test('encerramento recusa versão ou controle divergente',()=>{
   const wrong=version({gate:false,id:prepared});
   wrong.resources.bindings.find(x=>x.name==='DOCUMENTS_HOMOLOGATION_CONTROL_ID').text=FIXED.oldControl;
   assert.throws(()=>currentPreviewBase(wrong,ledger),/CONTROLE_PREVIEW_DIVERGENTE/);
+});
+
+
+test('encerramento passa suas próprias anotações ao inspecionar o multipart', async()=>{
+  const source=await fs.readFile(new URL('./encerrar-janela-4d-v4.mjs', import.meta.url),'utf8');
+  assert.match(source,/inspectMultipart\(fs\.readFileSync\(dry\), config, \{[\s\S]*'workers\/alias': FIXED\.alias,[\s\S]*'workers\/tag': TAG,[\s\S]*'workers\/message': MESSAGE/);
 });
