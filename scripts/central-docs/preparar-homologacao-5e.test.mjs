@@ -158,9 +158,14 @@ test('controle 5E nasce desabilitado, tem prazo fixo e só ativa sem outra janel
   assert.match(enableControlSql(CONTROL, expiresAt), /expires_at>CAST/);
   assert.match(stateControlSql(CONTROL), /other_active_controls/);
 
+  assert.match(templateControlSql(), /auth_document_access/);
+  assert.match(templateControlSql(), /can_extract=1/);
   assert.equal(validateTemplateControl([{
-    results: [{ enabled: 0, active_controls: 0 }]
+    results: [{ enabled: 0, active_controls: 0, extract_allowed: 1 }]
   }]), true);
+  assert.throws(() => validateTemplateControl([{
+    results: [{ enabled: 0, active_controls: 0, extract_allowed: 0 }]
+  }]), /INTERVENCAO_NECESSARIA_CAPABILITY_EXTRACT_AUSENTE/);
   assert.equal(validateControl([{
     results: [{ enabled: 0, expires_at: expiresAt, other_active_controls: 0 }]
   }], expiresAt, 0), true);
