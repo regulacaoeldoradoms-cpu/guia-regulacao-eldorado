@@ -12,14 +12,14 @@ import {
   documentAiTechnicalEvent
 } from '../document-ai.js';
 
-test('IA documental 5A permanece fail-closed mesmo se flags forem ligadas por engano', () => {
+test('IA documental 5B só processa quando os dois gates estão ligados', () => {
   assert.equal(documentAiEnabled({}), false);
   assert.equal(documentAiProcessingEnabled({ DOCUMENTS_AI_PROCESSING_ENABLED: 'true' }), false);
   assert.equal(documentAiEnabled({ DOCUMENTS_AI_ENABLED: 'true' }), true);
   assert.equal(documentAiProcessingEnabled({
     DOCUMENTS_AI_ENABLED: 'true',
     DOCUMENTS_AI_PROCESSING_ENABLED: 'true'
-  }), false);
+  }), true);
 });
 
 test('configuração pública não expõe segredos nem conteúdo', () => {
@@ -33,11 +33,16 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
 
   assert.equal(config.phase, DOCUMENT_AI_PHASE);
   assert.equal(config.version, DOCUMENT_AI_VERSION);
+  assert.equal(config.phase, '5B');
+  assert.equal(config.version, 'phase5b-v1');
   assert.equal(config.enabled, true);
   assert.equal(config.processingEnabled, false);
   assert.equal(config.pageIsolation, true);
   assert.equal(config.provenanceRequired, true);
   assert.equal(config.persistence, 'none');
+  assert.equal(config.features.classifyPage, true);
+  assert.equal(config.features.extractPage, false);
+  assert.equal(config.features.documentChat, false);
   assert.equal(Array.isArray(config.routines), true);
   const serialized = JSON.stringify(config);
   assert.doesNotMatch(serialized, /segredo-nao-pode-sair|outro-segredo|GEMINI_API_KEY|AUTH_SESSION_SECRET/);
