@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260916-10';
+const CACHE_VERSION = '20260917-2';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -35,13 +35,13 @@ const CORE_RESOURCES = Object.freeze([
   '/js/portal-observability.js?v=20260911-1',
   '/js/portal-pwa.js?v=20260911-1',
   '/js/auth-client.js?v=20260910-4',
+  '/js/tools-catalog.js?v=20260911-3',
+  '/js/document-cache.js?v=20260912-1',
+  '/js/document-editor.js?v=20260916-2',
   '/js/login-home-transition.js?v=20260917-3',
   '/js/home.js?v=20260917-3',
   '/js/login-opening.js?v=20260917-3',
   '/js/login.js?v=20260917-3',
-  '/js/tools-catalog.js?v=20260911-3',
-  '/js/document-cache.js?v=20260912-1',
-  '/js/document-editor.js?v=20260916-2',
   '/vendor/pdf-lib/pdf-lib.min.js',
   '/js/social-navigation.js?v=20260911-2',
   '/js/portal-chat.js?v=20260911-3',
@@ -388,16 +388,6 @@ async function warmRoutes(values) {
 }
 
 async function precacheCore() {
-  // A atualização do SW renova /login/ e remove somente os controladores regressivos.
-  // O cache independente do MP4 e os demais recursos do Portal são preservados.
-  const loginCache = await caches.open(STATIC_CACHE);
-  await Promise.all([
-    loginCache.delete('/js/login-opening.js?v=20260917-1'),
-    loginCache.delete('/js/login-opening.js?v=20260917-2'),
-    loginCache.delete('/js/login.js?v=20260917-2'),
-    loginCache.delete('/js/home.js?v=20260917-1'),
-    loginCache.delete('/js/login.js?v=20260910-2')
-  ]);
   const pageValues = CORE_RESOURCES.filter((value) => pagePath(value));
   const assetValues = CORE_RESOURCES.filter((value) => !pagePath(value));
   await Promise.allSettled([
@@ -425,6 +415,16 @@ self.addEventListener('activate', (event) => {
     }));
     const staticCache = await caches.open(STATIC_CACHE);
     await staticCache.delete('/js/telemedicina.js?v=20260906-1');
+    // A atualização do SW renova /login/ e remove somente os controladores regressivos.
+    // O cache independente do MP4 e os demais recursos do Portal são preservados.
+    const loginCache = await caches.open(STATIC_CACHE);
+    await Promise.all([
+      loginCache.delete('/js/login-opening.js?v=20260917-1'),
+      loginCache.delete('/js/login-opening.js?v=20260917-2'),
+      loginCache.delete('/js/login.js?v=20260917-2'),
+      loginCache.delete('/js/home.js?v=20260917-1'),
+      loginCache.delete('/js/login.js?v=20260910-2')
+    ]);
     if (self.registration.navigationPreload) {
       await self.registration.navigationPreload.enable().catch(() => {});
     }

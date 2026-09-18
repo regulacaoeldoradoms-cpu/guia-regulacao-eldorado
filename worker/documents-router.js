@@ -7,13 +7,18 @@ import {
 } from './document-access.js';
 import {
   DriveIntegrationError,
+  cancelDriveSync,
   completeDriveOAuth,
   createDriveAuthorizationUrl,
   disconnectDrive,
   driveConnectionStatus,
   fetchDrivePdf,
   listDriveFolder,
-  searchDrive
+  preflightDriveSync,
+  queryDriveSyncStatus,
+  searchDrive,
+  startDriveSync,
+  uploadDriveSyncChunk
 } from './document-drive.js';
 
 const API_PREFIX = '/api/documents/';
@@ -128,8 +133,8 @@ function json(body, status, origin = '', allowed = true) {
 function preflight(origin, allowed) {
   if (!allowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
   const value = headers(origin, true);
-  value['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, OPTIONS';
-  value['Access-Control-Allow-Headers'] = 'Authorization, Content-Type, Range';
+  value['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
+  value['Access-Control-Allow-Headers'] = 'Authorization, Content-Type, Range, Content-Range';
   value['Access-Control-Max-Age'] = '600';
   return new Response(null, { status: 204, headers: value });
 }
@@ -301,6 +306,56 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
         pageSize: body.pageSize
       });
       return json(result, 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/drive/sync/preflight' && request.method === 'POST') {
+      const denied = requireCapability(user, 'edit', origin);
+      if (denied) return denied;
+      const body = await safeJson(request);
+      const result = await preflightDriveSync(env, {
+        operation: String(body.operation || ''),
+        ref: String(body.ref || ''),
+        baseVersion: String(body.baseVersion || '')
+      }, user.username);
+      return json(result, 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/drive/sync/start' && request.method === 'POST') {
+      const denied = requireCapability(user, 'edit', origin);
+      if (denied) return denied;
+      const body = await safeJson(request);
+      const result = await startDriveSync(env, user.username, {
+        operation: String(body.operation || ''),
+        ref: String(body.ref || ''),
+        baseVersion: String(body.baseVersion || ''),
+        totalBytes: body.totalBytes,
+        copyName: String(body.copyName || ''),
+        preserveRevision: body.preserveRevision !== false
+      });
+      return json(result, 201, origin);
+    }
+
+    const uploadMatch = url.pathname.match(/^\/api\/documents\/drive\/sync\/upload\/([A-Za-z0-9_-]{20,80})$/);
+    if (uploadMatch && request.method === 'PUT') {
+      const denied = requireCapability(user, 'edit', origin);
+      if (denied) return denied;
+      const result = await uploadDriveSyncChunk(env, user.username, uploadMatch[1], request);
+      return json(result, result.completed ? 200 : 202, origin);
+    }
+
+    const statusMatch = url.pathname.match(/^\/api\/documents\/drive\/sync\/status\/([A-Za-z0-9_-]{20,80})$/);
+    if (statusMatch && request.method === 'POST') {
+      const denied = requireCapability(user, 'edit', origin);
+      if (denied) return denied;
+      const result = await queryDriveSyncStatus(env, user.username, statusMatch[1]);
+      return json(result, result.completed ? 200 : 202, origin);
+    }
+
+    const cancelMatch = url.pathname.match(/^\/api\/documents\/drive\/sync\/([A-Za-z0-9_-]{20,80})$/);
+    if (cancelMatch && request.method === 'DELETE') {
+      const denied = requireCapability(user, 'edit', origin);
+      if (denied) return denied;
+      return json(await cancelDriveSync(env, user.username, cancelMatch[1]), 200, origin);
     }
 
     const contentMatch = url.pathname.match(/^\/api\/documents\/drive\/content\/([A-Za-z0-9._-]{20,1200})$/);

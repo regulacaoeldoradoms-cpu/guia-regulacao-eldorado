@@ -1,0 +1,38 @@
+name: Central de Documentos — Procedimentos operacionais 4D
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/central-docs/liberar-escrita-preview-4d-v3.mjs'
+      - 'scripts/central-docs/liberar-escrita-preview-4d-v3.test.mjs'
+      - 'scripts/central-docs/preparar-nova-janela-4d-v4.mjs'
+      - 'scripts/central-docs/preparar-nova-janela-4d-v4.test.mjs'
+      - 'scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.mjs'
+      - 'scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.test.mjs'
+      - 'scripts/central-docs/encerrar-janela-4d-v4.mjs'
+      - 'scripts/central-docs/encerrar-janela-4d-v4.test.mjs'
+      - '.github/workflows/validate-central-docs-operational-v3.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-procedure-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe
+        run: node --check scripts/central-docs/liberar-escrita-preview-4d-v3.mjs
+      - name: Testar protecoes V3 e nova janela V4 com transporte simulado
+        run: |
+          node --check scripts/central-docs/preparar-nova-janela-4d-v4.mjs
+          node --test scripts/central-docs/liberar-escrita-preview-4d-v3.test.mjs
+          node --test scripts/central-docs/preparar-nova-janela-4d-v4.test.mjs
+          node --check scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.mjs
+          node --test scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.test.mjs
+          node --check scripts/central-docs/encerrar-janela-4d-v4.mjs
+          node --test scripts/central-docs/encerrar-janela-4d-v4.test.mjs

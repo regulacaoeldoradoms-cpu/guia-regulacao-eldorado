@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260916-9">
+  <link rel="stylesheet" href="/css/documents.css?v=20260916-11">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -36,7 +36,7 @@
         <div class="portal-hero-copy">
           <span class="portal-eyebrow">Central de Documentos</span>
           <h2>Google Drive institucional dentro do Portal.</h2>
-          <p>Navegue por pastas, pesquise no acervo e abra PDFs autorizados com carregamento progressivo e cache local criptografado. Quando autorizado, o editor trabalha localmente; nenhuma alteração é enviada ao Google Drive nesta fase.</p>
+          <p>Navegue por pastas, pesquise no acervo e abra PDFs autorizados com carregamento progressivo e cache local criptografado. Quando autorizado, o editor trabalha localmente; o envio ao Google Drive só ocorre por uma ação explícita de sincronização, quando essa função estiver habilitada.</p>
         </div>
         <div class="documents-hero-state" id="driveConnectionBadge" aria-live="polite">Verificando conexão…</div>
       </section>
@@ -115,7 +115,7 @@
               <span class="documents-pdf-page-count" id="pdfPageCountLabel"></span>
             </div>
             <div class="documents-editor" id="documentsEditor" hidden aria-label="Controles de edição local do PDF">
-              <span class="sr-only">As alterações são locais e ainda não serão salvas no Google Drive.</span>
+              <span class="sr-only">Quando a sincronização com Google Drive estiver habilitada, alterações confirmadas são sincronizadas automaticamente; o botão do Drive força uma nova tentativa quando necessário.</span>
               <div class="documents-editor-toolbar documents-editor-toolbar--compact" role="toolbar" aria-label="Ferramentas do editor PDF">
                 <button class="documents-editor-tool" id="editorUndoButton" type="button" title="Desfazer (Ctrl+Z)" aria-label="Desfazer">↶</button>
                 <button class="documents-editor-tool" id="editorRedoButton" type="button" title="Refazer (Ctrl+Y ou Ctrl+Shift+Z)" aria-label="Refazer">↷</button>
@@ -132,6 +132,7 @@
                 <input id="editorOverlayImageInput" type="file" accept="image/*" hidden>
                 <button class="documents-editor-tool documents-tool-icon documents-tool-icon-draw" id="editorDrawButton" type="button" title="Desenhar sobre a página" aria-label="Desenhar sobre a página" aria-pressed="false"></button>
                 <span class="documents-editor-tool-spacer"></span>
+                <button id="editorSyncButton" class="documents-editor-tool documents-art-button documents-art-sync" type="button" title="Forçar sincronização com Google Drive" aria-label="Forçar sincronização com Google Drive" data-sync-state="normal" hidden></button>
                 <button id="editorExportButton" class="documents-editor-tool documents-art-button documents-art-export" type="button" title="Exportar PDF final localmente" aria-label="Exportar PDF final localmente"></button>
                 <button id="editorPrintButton" class="documents-editor-tool documents-art-button documents-art-print" type="button" title="Imprimir PDF final (Ctrl+P)" aria-label="Imprimir PDF final"></button>
                 <button id="editorExitButton" class="documents-editor-tool documents-art-button documents-art-close" type="button" title="Sair do editor" aria-label="Sair do editor"></button>
@@ -202,6 +203,30 @@
                 </label>
                 <button class="portal-button primary" id="editorMergeApplyButton" type="button" disabled>Unir</button>
               </aside>
+              <aside class="documents-editor-panel documents-sync-panel" id="editorSyncPanel" hidden aria-label="Sincronizar PDF com Google Drive">
+                <div class="documents-editor-panel-head">
+                  <strong>Sincronizar com Google Drive</strong>
+                  <button class="documents-editor-panel-close documents-art-button documents-art-close" id="editorSyncCancelButton" type="button" aria-label="Fechar sincronização"></button>
+                </div>
+                <p>O Portal só confirma o salvamento depois da resposta final do Google Drive.</p>
+                <div class="documents-sync-options" role="radiogroup" aria-label="Modo de salvamento">
+                  <label class="documents-sync-option">
+                    <input type="radio" name="editorSyncOperation" value="save_copy" checked>
+                    <span><strong>Salvar como novo</strong><small>Mantém o arquivo original intacto.</small></span>
+                  </label>
+                  <label class="documents-sync-option">
+                    <input type="radio" name="editorSyncOperation" value="replace_pdf">
+                    <span><strong>Substituir original</strong><small>Reconfere a versão e preserva a revisão anterior antes de substituir.</small></span>
+                  </label>
+                </div>
+                <label class="documents-editor-field" id="editorSyncCopyNameField">
+                  <span>Nome do novo PDF</span>
+                  <input id="editorSyncCopyName" type="text" maxlength="300" autocomplete="off">
+                </label>
+                <div class="documents-sync-warning" id="editorSyncWarning" role="note"></div>
+                <div class="documents-sync-progress" id="editorSyncProgress" aria-live="polite"></div>
+                <button class="portal-button primary" id="editorSyncApplyButton" type="button">Sincronizar</button>
+              </aside>
             </div>
             <div class="documents-pdf-layout">
               <nav class="documents-pdf-thumbnails" id="pdfThumbnailRail" aria-label="Miniaturas das páginas"></nav>
@@ -222,6 +247,6 @@
   <script src="/js/document-cache.js?v=20260912-1"></script>
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-viewer.js?v=20260916-3"></script>
-  <script src="/js/documents.js?v=20260916-10"></script>
+  <script src="/js/documents.js?v=20260917-2"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-name: Validar Central de Documentos — Fases 1–3
+name: Validar Central de Documentos — Fases 1–4
 
 on:
   pull_request:
@@ -17,6 +17,9 @@ on:
       - 'worker/document-*.js'
       - 'worker/additional-roles.js'
       - 'worker/documents-router.js'
+      - 'worker/homologation-4d.js'
+      - 'worker/tests/homologation-4d.test.mjs'
+      - 'worker/migrations/central-documents-homologation-4d.sql'
       - 'worker/auth-management-flex.js'
       - 'worker/auth-management-v2.js'
       - 'worker/index.js'
@@ -46,6 +49,9 @@ on:
       - 'worker/document-*.js'
       - 'worker/additional-roles.js'
       - 'worker/documents-router.js'
+      - 'worker/homologation-4d.js'
+      - 'worker/tests/homologation-4d.test.mjs'
+      - 'worker/migrations/central-documents-homologation-4d.sql'
       - 'worker/auth-management-flex.js'
       - 'worker/auth-management-v2.js'
       - 'worker/tests/documents-*.test.mjs'
@@ -73,9 +79,10 @@ jobs:
         working-directory: worker
         run: |
           npm run check
+          node --check homologation-4d.js
           npm test
 
-      - name: Conferir navegação, cache e editor local
+      - name: Conferir navegação, cache, editor e sincronização segura
         run: |
           test -f documentos/index.html
           test -f css/documents.css
@@ -113,10 +120,24 @@ jobs:
           test -s vendor/pdfjs/LICENSE
           ! grep -R -F "cdn.jsdelivr.net" documentos/index.html js/document-editor.js
           grep -q "sha512-z8IYLHO8bTgFqj+yrPyIJnzBDf7DDhWwiEsk4sY+Oe6J2M+WQequeGS7qioI5vT6rXgVRb4K1UVQC5ER7MKzKQ==" js/document-editor.js
-          grep -qi "ainda não serão salvas no Google Drive" documentos/index.html
+          grep -qi "sincronizadas automaticamente" documentos/index.html
           grep -q "editDocumentPdfPermission" admin/usuarios/index.html
           grep -q "pdf_edit_completed" js/documents.js
-          ! grep -R -E "/api/documents/drive/(upload|update|replace)|drive_sync_(started|completed|failed)" js/document-editor.js js/documents.js documentos/index.html
+          grep -q "drive_sync_started" js/documents.js
+          grep -q "drive_sync_completed" js/documents.js
+          grep -q "drive_sync_failed" js/documents.js
+          grep -q "DRIVE_AUTO_SYNC_IDLE_MS = 1000" js/documents.js
+          grep -q "Drive_normal.png" css/documents.css
+          grep -q "Drive_pendente.png" css/documents.css
+          grep -q "Drive_sincronizando.png" css/documents.css
+          grep -q "Drive_sincronizado_1seg.png" css/documents.css
+          grep -q "Drive_falha.png" css/documents.css
+          grep -q "/api/documents/drive/sync/preflight" js/documents.js
+          grep -q "/api/documents/drive/sync/start" js/documents.js
+          grep -q "DOCUMENTS_DRIVE_WRITE_ENABLED" worker/document-drive.js
+          grep -q "DRIVE_VERSION_CONFLICT" worker/document-drive.js
+          grep -q "keepForever" worker/document-drive.js
+          ! grep -R -E "https://www.googleapis.com/upload/drive" js/document-editor.js js/documents.js documentos/index.html
 
       - name: Bloquear segredos e telemetria identificável
         run: |

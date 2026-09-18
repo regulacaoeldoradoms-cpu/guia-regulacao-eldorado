@@ -1,0 +1,286 @@
+# Standalone read-only diagnostic. No Cloudflare token or Portal session is used.
+# Target branch only: do not upload this file to main to start this test.
+name: Conferir preview 4D - somente leitura
+
+on:
+  push:
+    branches: ['codex/central-docs-drive-sync-phase4']
+    paths: ['.github/workflows/central-docs-diagnostico-4d.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Preparar e testar diagnostico sem rede
+        shell: bash
+        run: |
+          mkdir -p .central-preview-check/scripts .central-preview-check/testing/diagnostics
+          cat > .central-preview-check/scripts/inspect-central-docs-preview.mjs <<'CENTRAL_SCRIPT'
+          import { writeFile } from 'node:fs/promises';
+          import { pathToFileURL } from 'node:url';
+          
+          // Fixed public preview endpoints: never accept a host, token or document ref from input.
+          export const TARGETS = Object.freeze({
+            pages: 'https://codex-central-docs-drive-syn.portal-regulacao-central-staging.pages.dev',
+            worker: 'https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev'
+          });
+          export const EXPECTED_WORKER_RELEASE = '2fee19e69e06ecd128be2b103354fc6c2fb4e431';
+          const MAX_RESPONSE_BYTES = 64 * 1024;
+          const sha = (value) => typeof value === 'string' && /^[a-f0-9]{40}$/i.test(value) ? value.toLowerCase() : '';
+          const CODES = new Set(['AUTH_REQUIRED', 'HOMOLOGATION_DISABLED', 'HOMOLOGATION_UNAVAILABLE', 'HOMOLOGATION_ROUTE_DENIED']);
+          
+          async function boundedJson(response) {
+            if (!/^application\/json\b/i.test(response.headers.get('content-type') || '')) throw new Error('INVALID_JSON');
+            const reader = response.body?.getReader();
+            if (!reader) throw new Error('INVALID_JSON');
+            const chunks = [];
+            let size = 0;
+            try {
+              while (true) {
+                const chunk = await reader.read();
+                if (chunk.done) break;
+                size += chunk.value.byteLength;
+                if (size > MAX_RESPONSE_BYTES) {
+                  await reader.cancel();
+                  throw new Error('BODY_TOO_LARGE');
+                }
+                chunks.push(chunk.value);
+              }
+            } finally { reader.releaseLock(); }
+            const bytes = new Uint8Array(size);
+            let offset = 0;
+            for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+            const data = JSON.parse(new TextDecoder().decode(bytes));
+            if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('INVALID_JSON');
+            return data;
+          }
+          
+          async function observe(fetcher, url, origin = '') {
+            let status = 0;
+            let release = '';
+            let corsMatches = false;
+            try {
+              const response = await fetcher(url, {
+                method: 'GET', redirect: 'manual', credentials: 'omit', cache: 'no-store',
+                headers: { Accept: 'application/json', ...(origin ? { Origin: origin } : {}) },
+                signal: AbortSignal.timeout(12000)
+              });
+              status = response.status;
+              release = sha(response.headers.get('X-Central-Docs-Preview-Release'));
+              corsMatches = response.headers.get('Access-Control-Allow-Origin') === TARGETS.pages;
+              if (status >= 300 && status < 400) {
+                await response.body?.cancel();
+                return { status, release, corsMatches, issue: 'REDIRECT_REFUSED' };
+              }
+              return { status, release, corsMatches, data: await boundedJson(response), issue: '' };
+            } catch (error) {
+              // Do not reflect response bodies, request URLs, stack traces or arbitrary errors.
+              const issue = ['INVALID_JSON', 'BODY_TOO_LARGE'].includes(error?.message)
+                ? error.message : 'NETWORK_OR_RESPONSE_ERROR';
+              return { status, release, corsMatches, issue };
+            }
+          }
+          
+          export async function inspectPreview({ expectedPagesSha, fetcher = globalThis.fetch, now = () => new Date() } = {}) {
+            const expected = sha(expectedPagesSha);
+            if (!expected) throw new Error('EXPECTED_PAGES_SHA_REQUIRED');
+            const [pages, config, worker] = await Promise.all([
+              observe(fetcher, TARGETS.pages + '/staging-manifest.json'),
+              observe(fetcher, TARGETS.pages + '/homologacao/homologation-manifest.json'),
+              observe(fetcher, TARGETS.worker + '/api/documents/access', TARGETS.pages)
+            ]);
+            const deployedSha = sha(pages.data?.sourceSha);
+            const workerCode = CODES.has(worker.data?.code) ? worker.data.code : '';
+            const blockers = [];
+            if (pages.status !== 200 || pages.issue) blockers.push('PAGES_MANIFEST_UNAVAILABLE');
+            if (deployedSha !== expected) blockers.push('PAGES_RELEASE_NOT_CONFIRMED');
+            const configured = config.status === 200 && !config.issue
+              && config.data?.environment === 'central-docs-homologation-4d'
+              && config.data?.workerConfigured === true && config.data?.workerOrigin === TARGETS.worker
+              && config.data?.disposablePdfOnly === true
+              && pages.data?.homologation4d?.workerConfigured === true
+              && pages.data?.homologation4d?.productionWorkerBlocked === true;
+            if (!configured) blockers.push('PREVIEW_CONFIGURATION_NOT_CONFIRMED');
+            if (worker.release !== EXPECTED_WORKER_RELEASE) blockers.push('WORKER_RELEASE_NOT_CONFIRMED');
+            if (worker.issue) blockers.push('WORKER_RESPONSE_UNAVAILABLE');
+            if (!worker.corsMatches) blockers.push('PREVIEW_ORIGIN_NOT_CONFIRMED');
+            const loginAvailable = worker.status === 401 && workerCode === 'AUTH_REQUIRED' && !worker.issue;
+            const restricted = worker.status === 403 && workerCode === 'HOMOLOGATION_DISABLED' && !worker.issue;
+            if (restricted) blockers.push('HOMOLOGATION_WINDOW_DISABLED');
+            else if (!loginAvailable) blockers.push('EXPECTED_AUTHENTICATION_BARRIER_NOT_CONFIRMED');
+            return {
+              observedAt: now().toISOString(), mode: 'public-preview-read-only',
+              expectedPagesSha: expected, observedPagesSha: deployedSha || null,
+              expectedWorkerRelease: EXPECTED_WORKER_RELEASE, observedWorkerRelease: worker.release || null,
+              pagesStatus: pages.status, configurationStatus: config.status, workerStatus: worker.status,
+              workerCode: workerCode || null, previewConfigurationMatches: configured,
+              previewCorsMatches: worker.corsMatches,
+              accessObservation: loginAvailable ? 'authentication-required' : restricted ? 'blocked' : 'unconfirmed',
+              infrastructureReadyForLogin: blockers.length === 0, blockers,
+              authenticatedChecksPerformed: false, driveWritePerformed: false,
+              homologationApproved: false, mergeAuthorized: false
+            };
+          }
+          
+          export function reportMarkdown(report) {
+            return [
+              '# Central de Documentos — conferência pública do preview',
+              '', '**Este diagnóstico não aprova a 4D e não autoriza merge ou escrita.**', '',
+              `Observado em: ${report.observedAt}`,
+              `Frontend esperado: ${report.expectedPagesSha}`,
+              `Frontend observado: ${report.observedPagesSha || 'não confirmado'}`,
+              `Worker esperado: ${report.expectedWorkerRelease}`,
+              `Worker observado: ${report.observedWorkerRelease || 'não confirmado'}`,
+              `HTTP Pages / configuração / Worker: ${report.pagesStatus} / ${report.configurationStatus} / ${report.workerStatus}`,
+              `Resposta de acesso: ${report.workerCode || 'não confirmada'}`,
+              `Pronto somente para iniciar login humano: ${report.infrastructureReadyForLogin ? 'sim' : 'não'}`,
+              '', 'Bloqueios observados:', ...(report.blockers.length ? report.blockers.map((code) => '- ' + code) : ['- Nenhum nesta sondagem pública.']),
+              '', 'A sondagem fez somente três GETs, sem sessão, cookie, token, PDF ou alteração no Drive/D1.',
+              'HTTP 401 apenas confirma a barreira de autenticação. Não confirma permissão, gate de escrita nem autosync.',
+              'Uma versão divergente é uma observação pontual: conferir propagação e publicação antes de atribuir a causa.', ''
+            ].join('\n');
+          }
+          
+          if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+            const index = process.argv.indexOf('--expected-pages-sha');
+            try {
+              const report = await inspectPreview({ expectedPagesSha: index >= 0 ? process.argv[index + 1] : '' });
+              await writeFile('central-docs-preview-report.json', JSON.stringify(report, null, 2) + '\n');
+              await writeFile('central-docs-preview-report.md', reportMarkdown(report));
+              console.log(JSON.stringify(report, null, 2));
+              if (!report.infrastructureReadyForLogin) process.exitCode = 2;
+            } catch (_) {
+              console.error('Conferência não executada: informe --expected-pages-sha com o SHA completo validado.');
+              process.exitCode = 1;
+            }
+          }
+          CENTRAL_SCRIPT
+          cat > .central-preview-check/testing/diagnostics/central-docs-preview.test.mjs <<'CENTRAL_TESTS'
+          import test from 'node:test';
+          import assert from 'node:assert/strict';
+          import { inspectPreview, reportMarkdown, TARGETS, EXPECTED_WORKER_RELEASE } from '../../scripts/inspect-central-docs-preview.mjs';
+          
+          const EXPECTED = 'a'.repeat(40);
+          const JSON_HEADERS = { 'Content-Type': 'application/json' };
+          const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(body), { status, headers: { ...JSON_HEADERS, ...headers } });
+          function responses({ sourceSha = EXPECTED, workerOrigin = TARGETS.worker, workerConfigured = true, release = EXPECTED_WORKER_RELEASE, status = 401, code = 'AUTH_REQUIRED', cors = TARGETS.pages } = {}) {
+            return [
+              json({ sourceSha, homologation4d: { workerConfigured, productionWorkerBlocked: true } }),
+              json({ environment: 'central-docs-homologation-4d', workerConfigured, workerOrigin, disposablePdfOnly: true }),
+              json({ code, secret: 'NEVER_REPORT_THIS' }, status, { 'X-Central-Docs-Preview-Release': release, 'Access-Control-Allow-Origin': cors })
+            ];
+          }
+          async function run(options = {}, replacement) {
+            const queue = replacement || responses(options);
+            const calls = [];
+            const report = await inspectPreview({
+              expectedPagesSha: EXPECTED, now: () => new Date('2026-09-17T15:00:00Z'),
+              fetcher: async (url, init) => { calls.push({ url, init }); return queue.shift(); }
+            });
+            return { report, calls };
+          }
+          
+          test('faz só três GETs fixos, sem credenciais, redirects ou arquivo do Drive', async () => {
+            const { report, calls } = await run();
+            assert.deepEqual(calls.map((call) => call.url), [TARGETS.pages + '/staging-manifest.json', TARGETS.pages + '/homologacao/homologation-manifest.json', TARGETS.worker + '/api/documents/access']);
+            for (const { init } of calls) {
+              assert.equal(init.method, 'GET'); assert.equal(init.redirect, 'manual'); assert.equal(init.credentials, 'omit');
+              assert.equal(init.headers.Authorization, undefined); assert.equal(init.headers.Cookie, undefined); assert.equal(init.body, undefined);
+            }
+            assert.equal(calls[2].init.headers.Origin, TARGETS.pages);
+            assert.equal(report.infrastructureReadyForLogin, true);
+            assert.equal(report.authenticatedChecksPerformed, false); assert.equal(report.driveWritePerformed, false);
+            assert.equal(report.homologationApproved, false); assert.equal(report.mergeAuthorized, false);
+            assert.doesNotMatch(JSON.stringify(report) + reportMarkdown(report), /NEVER_REPORT_THIS/);
+          });
+          test('controle revogado é bloqueio, não falta de implementação nem sucesso', async () => {
+            const { report } = await run({ status: 403, code: 'HOMOLOGATION_DISABLED' });
+            assert.equal(report.accessObservation, 'blocked');
+            assert.deepEqual(report.blockers, ['HOMOLOGATION_WINDOW_DISABLED']);
+            assert.equal(report.infrastructureReadyForLogin, false);
+          });
+          test('versão antiga no Worker não é aprovada por causa de HTTP 401', async () => {
+            const { report } = await run({ release: 'b'.repeat(40) });
+            assert.ok(report.blockers.includes('WORKER_RELEASE_NOT_CONFIRMED'));
+            assert.equal(report.infrastructureReadyForLogin, false);
+          });
+          test('frontend de outro commit exige conferência, sem afirmar causa de propagação', async () => {
+            const { report } = await run({ sourceSha: 'c'.repeat(40) });
+            assert.ok(report.blockers.includes('PAGES_RELEASE_NOT_CONFIRMED'));
+          });
+          test('URL devolvida no manifest nunca redireciona a sondagem', async () => {
+            const { report, calls } = await run({ workerOrigin: 'https://production.example' });
+            assert.ok(report.blockers.includes('PREVIEW_CONFIGURATION_NOT_CONFIRMED'));
+            assert.equal(calls[2].url, TARGETS.worker + '/api/documents/access');
+          });
+          test('HTTP 200 sem sessão não é sucesso de autenticação', async () => {
+            const { report } = await run({ status: 200, code: '' });
+            assert.ok(report.blockers.includes('EXPECTED_AUTHENTICATION_BARRIER_NOT_CONFIRMED'));
+            assert.equal(report.infrastructureReadyForLogin, false);
+          });
+          test('origem CORS errada não autoriza iniciar login', async () => {
+            const { report } = await run({ cors: '*' });
+            assert.ok(report.blockers.includes('PREVIEW_ORIGIN_NOT_CONFIRMED'));
+          });
+          test('recusa redirect e não reflete Location nem texto de erro', async () => {
+            const queue = responses(); queue[2] = new Response(null, { status: 302, headers: { Location: 'https://example.com/NEVER_REPORT_THIS' } });
+            const { report, calls } = await run({}, queue);
+            assert.equal(calls.length, 3); assert.ok(report.blockers.includes('WORKER_RESPONSE_UNAVAILABLE'));
+            assert.doesNotMatch(JSON.stringify(report), /NEVER_REPORT_THIS|example\.com/);
+          });
+          test('descarta HTML e respostas JSON acima do limite', async () => {
+            for (const response of [new Response('<html>NEVER_REPORT_THIS</html>'), json({ payload: 'NEVER_REPORT_THIS'.repeat(5000) })]) {
+              const queue = responses(); queue[2] = response;
+              const { report } = await run({}, queue);
+              assert.ok(report.blockers.includes('WORKER_RESPONSE_UNAVAILABLE'));
+              assert.doesNotMatch(JSON.stringify(report), /NEVER_REPORT_THIS/);
+            }
+          });
+          test('erros de rede permanecem sanitizados e não viram confirmação', async () => {
+            const report = await inspectPreview({ expectedPagesSha: EXPECTED, fetcher: async () => { throw new Error('NEVER_REPORT_THIS'); } });
+            assert.equal(report.infrastructureReadyForLogin, false); assert.doesNotMatch(JSON.stringify(report), /NEVER_REPORT_THIS/);
+          });
+          test('SHA de resposta e código não allowlisted não são refletidos no relatório', async () => {
+            const { report } = await run({ sourceSha: 'NEVER_REPORT_THIS', release: 'NEVER_REPORT_THIS', code: 'NEVER_REPORT_THIS' });
+            assert.equal(report.observedPagesSha, null); assert.equal(report.observedWorkerRelease, null);
+            assert.equal(report.workerCode, null); assert.doesNotMatch(reportMarkdown(report), /NEVER_REPORT_THIS/);
+          });
+          test('não executa rede sem SHA esperado explícito', async () => {
+            let called = false;
+            await assert.rejects(inspectPreview({ expectedPagesSha: 'invalid', fetcher: () => { called = true; } }), /EXPECTED_PAGES_SHA_REQUIRED/);
+            assert.equal(called, false);
+          });
+          CENTRAL_TESTS
+          node --check .central-preview-check/scripts/inspect-central-docs-preview.mjs
+          node --test .central-preview-check/testing/diagnostics/central-docs-preview.test.mjs
+      - name: Aguardar publicacao assincrona do Pages
+        run: sleep 45
+      - name: Observar somente endpoints publicos do preview
+        run: node .central-preview-check/scripts/inspect-central-docs-preview.mjs --expected-pages-sha "$GITHUB_SHA"
+      - name: Registrar resultado sem conteudo sensivel
+        if: always()
+        run: |
+          if [ -f central-docs-preview-report.md ]; then
+            cat central-docs-preview-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Preservar evidencia sanitizada
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: central-docs-preview-readonly
+          path: |
+            central-docs-preview-report.json
+            central-docs-preview-report.md
+          if-no-files-found: warn
+          retention-days: 7

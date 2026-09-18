@@ -113,7 +113,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260916-10'/);
+  assert.match(source, /CACHE_VERSION = '20260917-2'/);
 });
 
 test('observabilidade documental continua sem propriedades identificáveis', () => {
@@ -141,7 +141,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260916-10/);
+  assert.match(html, /documents\.js\?v=20260917-2/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -180,7 +180,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260916-9/);
+  assert.match(html, /documents\.css\?v=20260916-11/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -200,8 +200,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260916-3/);
-  assert.match(html, /documents\.js\?v=20260916-10/);
-  assert.match(html, /documents\.css\?v=20260916-9/);
+  assert.match(html, /documents\.js\?v=20260917-2/);
+  assert.match(html, /documents\.css\?v=20260916-11/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -357,8 +357,8 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260916-3/);
-  assert.match(html, /documents\.js\?v=20260916-10/);
-  assert.match(html, /documents\.css\?v=20260916-9/);
+  assert.match(html, /documents\.js\?v=20260917-2/);
+  assert.match(html, /documents\.css\?v=20260916-11/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -499,7 +499,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260916-10/);
+  assert.match(html, /documents\.js\?v=20260917-2/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -513,29 +513,64 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(observability, /'insert_image'/);
 });
 
-test('editor PDF é local, reversível e separado da escrita no Drive', () => {
+test('editor PDF sincroniza automaticamente apenas após alteração e mantém força manual como fallback', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
+  const css = read('css/documents.css');
   const editor = read('js/document-editor.js');
 
   assert.match(html, /document-editor\.js\?v=20260916-2/);
   assert.match(html, /Editar PDF/);
   assert.match(html, /id="editorExitButton"/);
+  assert.match(html, /id="editorSyncButton"[^>]*data-sync-state="normal"/);
+  assert.match(html, /Forçar sincronização com Google Drive/);
+  assert.match(html, /sincronizadas automaticamente/);
   assert.match(editor, /\/vendor\/pdf-lib\/pdf-lib\.min\.js/);
   assert.doesNotMatch(editor, /https?:\/\//);
   assert.doesNotMatch(html, /cdn\.jsdelivr\.net/);
   assert.ok(fs.statSync(path.join(root, 'vendor/pdf-lib/pdf-lib.min.js')).size > 100_000);
 
   assert.match(client, /canEditDocuments/);
-  assert.match(client, /caps\.edit === true/);
-  assert.match(client, /startEditor/);
-  assert.match(client, /mergePdfIntoEditor/);
-  assert.match(client, /delete_page/);
-  assert.match(client, /reorder_page/);
-  assert.match(client, /rotate_page/);
-  assert.match(client, /merge_pdf/);
-  assert.match(client, /pdf_edit_completed/);
-  assert.doesNotMatch(client, /drive_sync_started|drive_sync_completed|replace_pdf|save_copy/);
+  assert.match(client, /canSyncDocuments/);
+  assert.match(client, /drive\.writeEnabled === true/);
+  assert.match(client, /DRIVE_AUTO_SYNC_IDLE_MS = 1000/);
+  assert.match(client, /DRIVE_SYNC_SUCCESS_VISIBLE_MS = 1000/);
+  assert.match(client, /DRIVE_SYNC_REVISION_POLL_MS = 200/);
+  assert.match(client, /scheduleAutomaticDriveSync/);
+  assert.match(client, /driveSyncLastObservedRevision/);
+  assert.match(client, /driveSyncLastConfirmedRevision/);
+  assert.match(client, /forceDriveSync/);
+  assert.match(client, /async function exitEditor/);
+  assert.match(client, /Sincronizando alterações antes de fechar o editor/);
+  assert.match(client, /O editor permanecerá aberto para evitar perder alterações/);
+  assert.match(client, /window\.addEventListener\('beforeunload'/);
+  assert.match(client, /currentEditorRevision\(\) !== state\.driveSyncLastConfirmedRevision/);
+  assert.match(client, /operation: 'replace_pdf'/);
+  assert.match(client, /preserveRevision/);
+  assert.match(client, /safetyRevisionPreserved/);
+  assert.match(client, /\/api\/documents\/drive\/sync\/preflight/);
+  assert.match(client, /\/api\/documents\/drive\/sync\/start/);
+  assert.match(client, /\/api\/documents\/drive\/sync\/upload\//);
+  assert.match(client, /\/api\/documents\/drive\/sync\/status\//);
+  assert.match(client, /drive_sync_started/);
+  assert.match(client, /drive_sync_completed/);
+  assert.match(client, /drive_sync_failed/);
+  assert.match(client, /if \(!completed\?\.completed\)/);
+  assert.match(client, /showDriveSyncSuccess/);
+  assert.match(client, /setDriveSyncVisualState\('failed'\)/);
+  assert.match(client, /Content-Range/);
+  assert.match(client, /finalPdfBlobForSession/);
+
+  for (const asset of [
+    'Drive_normal.png',
+    'Drive_pendente.png',
+    'Drive_sincronizando.png',
+    'Drive_sincronizado_1seg.png',
+    'Drive_falha.png'
+  ]) {
+    assert.ok(fs.existsSync(path.join(root, 'assets', asset)), asset);
+    assert.match(css, new RegExp('assets/' + asset.replace('.', '\\.') ));
+  }
 
   assert.match(editor, /removePage/);
   assert.match(editor, /movePage/);
@@ -549,6 +584,46 @@ test('editor PDF é local, reversível e separado da escrita no Drive', () => {
   assert.match(editor, /buildBlob/);
   assert.match(editor, /session\.plan\.length <= 1/);
 });
+test('Fase 4C mantém telemetria de sincronização estritamente técnica e sucesso condicionado', () => {
+  const html = read('documentos/index.html');
+  const client = read('js/documents.js');
+  const observability = read('js/portal-observability.js');
+  const serverObservability = read('worker/observability.js');
+
+  assert.match(html, /id="editorSyncButton"/);
+  assert.match(client, /drive\.writeEnabled === true/);
+  assert.match(client, /if \(!completed\?\.completed\)/);
+  assert.match(client, /applyConfirmedDriveSync\(operation, completed, blob, copyName\)/);
+  assert.match(client, /currentEditorRevision\(\) === targetRevision/);
+  assert.match(client, /setDriveSyncVisualState\('syncing'\)/);
+  assert.match(client, /setDriveSyncVisualState\('success'\)/);
+  assert.match(client, /setDriveSyncVisualState\('failed'\)/);
+
+  for (const event of ['drive_sync_started', 'drive_sync_completed', 'drive_sync_failed']) {
+    assert.match(client, new RegExp(`capture\\('${event}'`));
+    assert.match(observability, new RegExp(`${event}: new Set`));
+    assert.match(serverObservability, new RegExp(`${event}: new Set`));
+  }
+
+  const syncSection = client.slice(
+    client.indexOf('async function syncEditedPdfToDrive'),
+    client.indexOf('async function exportEditedPdfLocal')
+  );
+  const captureBodies = [...syncSection.matchAll(
+    /capture\('(drive_sync_(?:started|completed|failed))',\s*\{([\s\S]*?)\}\);/g
+  )];
+  assert.equal(captureBodies.length, 3);
+  for (const [, event, properties] of captureBodies) {
+    assert.doesNotMatch(properties, /fileId|filename|item\.name|item\.ref|copyName|patient|cpf|cns|diagnostico|cid/i, event);
+    assert.match(properties, /route:\s*'\/documentos\/'/);
+    assert.match(properties, /operation/);
+    assert.match(properties, /size_bucket/);
+  }
+  assert.match(captureBodies.find(([, event]) => event === 'drive_sync_failed')[2], /status_code/);
+  assert.ok(syncSection.indexOf("if (!completed?.completed)") < syncSection.indexOf("setDriveSyncProgress('Salvo no Google Drive.'"));
+  assert.ok(syncSection.indexOf("applyConfirmedDriveSync(operation, completed, blob, copyName)") < syncSection.lastIndexOf("showDriveSyncSuccess(targetRevision)"));
+});
+
 
 test('permissão de edição é explícita e não é herdada automaticamente de Regulador(a)', () => {
   const html = read('admin/usuarios/index.html');
@@ -556,7 +631,7 @@ test('permissão de edição é explícita e não é herdada automaticamente de 
 
   assert.match(html, /editDocumentPdfPermission/);
   assert.match(html, /Permitir editor de PDF/);
-  assert.match(html, /salvar no Drive continua indisponível nesta fase/);
+  assert.match(html, /inclui sincronização segura com o Drive quando habilitada no ambiente/);
   assert.match(client, /documentCapabilities\?\.edit/);
   assert.match(client, /\/api\/documents\/admin\/access\//);
   assert.match(client, /edit: regulatorEnabled === true && allowEdit === true/);

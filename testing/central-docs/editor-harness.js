@@ -57,6 +57,7 @@
     objectAlign: document.getElementById('editorObjectAlign'),
     objectOpacity: document.getElementById('editorObjectOpacity'),
     objectDelete: document.getElementById('editorObjectDelete'),
+    syncDrive: document.getElementById('editorSync'),
     exportPdf: document.getElementById('editorExport'),
     printPdf: document.getElementById('editorPrint'),
     exit: document.getElementById('editorExit')
@@ -81,6 +82,10 @@
     finalPdfCacheSession: null,
     finalPdfCacheRevision: -1,
     finalPdfCacheBlob: null,
+    syncState: 'normal',
+    syncLastRevision: 0,
+    syncTimer: null,
+    syncSuccessTimer: null,
     operation: Promise.resolve()
   };
 
@@ -98,6 +103,72 @@
   function run(operation) {
     state.operation = state.operation.then(operation, operation).catch(fail);
     return state.operation;
+  }
+
+  function clearSyntheticSyncTimers() {
+    if (state.syncTimer) window.clearTimeout(state.syncTimer);
+    if (state.syncSuccessTimer) window.clearTimeout(state.syncSuccessTimer);
+    state.syncTimer = null;
+    state.syncSuccessTimer = null;
+  }
+
+  function setSyntheticSyncState(next = 'normal') {
+    const allowed = new Set(['normal', 'pending', 'syncing', 'success', 'failed']);
+    const value = allowed.has(next) ? next : 'normal';
+    state.syncState = value;
+    root.dataset.syncState = value;
+    elements.syncDrive.dataset.syncState = value;
+    const labels = {
+      normal: 'Forçar sincronização com Google Drive',
+      pending: 'Alterações pendentes — aguardando sincronização automática',
+      syncing: 'Sincronizando com Google Drive',
+      success: 'Sincronizado com Google Drive',
+      failed: 'Falha na sincronização — clique para tentar novamente'
+    };
+    elements.syncDrive.title = labels[value];
+    elements.syncDrive.setAttribute('aria-label', labels[value]);
+    return value;
+  }
+
+  function scheduleSyntheticSync({ forced = false } = {}) {
+    if (!state.session) return false;
+    clearSyntheticSyncTimers();
+
+    const begin = () => {
+      state.syncTimer = null;
+      setSyntheticSyncState('syncing');
+      elements.editorStatus.textContent = 'Simulação visual: sincronizando dados fictícios. Nenhuma chamada ao Google Drive é feita neste laboratório.';
+      // O laboratório mantém o estado azul tempo suficiente para ser percebido por uma pessoa
+      // e observado de forma determinística pelos testes. Isso não altera o tempo do autosync real.
+      state.syncTimer = window.setTimeout(() => {
+        state.syncTimer = null;
+        setSyntheticSyncState('success');
+        elements.editorStatus.textContent = 'Simulação visual: sincronização confirmada. O ícone verde fica visível por 1 segundo.';
+        state.syncSuccessTimer = window.setTimeout(() => {
+          state.syncSuccessTimer = null;
+          if (!state.session) return;
+          setSyntheticSyncState('normal');
+          elements.editorStatus.textContent = 'Organizador pronto. Novas alterações reiniciam a simulação automática.';
+        }, 1000);
+      }, 900);
+    };
+
+    if (forced) {
+      begin();
+    } else {
+      setSyntheticSyncState('pending');
+      elements.editorStatus.textContent = 'Alteração detectada. Simulação visual aguardando a sincronização automática…';
+      state.syncTimer = window.setTimeout(begin, 1000);
+    }
+    return true;
+  }
+
+  function observeSyntheticSyncRevision() {
+    if (!state.session) return;
+    const revision = Number(state.session.revision || 0);
+    if (revision === state.syncLastRevision) return;
+    state.syncLastRevision = revision;
+    scheduleSyntheticSync();
   }
 
   function pageOrder() {
@@ -311,9 +382,11 @@
     elements.drawPen.disabled = !editing;
     elements.drawEraser.disabled = !editing;
     elements.objectDelete.disabled = !editing || !selectedObject();
+    elements.syncDrive.disabled = !editing;
     elements.exportPdf.disabled = !editing || typeof editor?.buildFlattenedBlob !== 'function';
     elements.printPdf.disabled = !editing || typeof editor?.buildFlattenedBlob !== 'function';
     elements.exit.disabled = !editing;
+    if (editing) observeSyntheticSyncRevision();
   }
 
   function setBusy(busy, message = '') {
@@ -322,7 +395,7 @@
     elements.surface.setAttribute('aria-busy', active ? 'true' : 'false');
     if (message) elements.editorStatus.textContent = message;
     if (active) {
-      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.mergeFileButton, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.draw, elements.drawColor, elements.drawWidth, elements.drawPen, elements.drawEraser, elements.objectDelete, elements.exportPdf, elements.printPdf, elements.exit]) {
+      for (const button of [elements.undo, elements.redo, elements.organize, elements.merge, elements.mergeConfirm, elements.mergeCancel, elements.mergePosition, elements.mergeAfterPage, elements.mergeFileButton, elements.blank, elements.addImage, elements.crop, elements.select, elements.write, elements.overlayImage, elements.draw, elements.drawColor, elements.drawWidth, elements.drawPen, elements.drawEraser, elements.objectDelete, elements.syncDrive, elements.exportPdf, elements.printPdf, elements.exit]) {
         button.disabled = true;
       }
       elements.thumbnails.querySelectorAll('[data-thumbnail-action]').forEach((button) => {
@@ -451,6 +524,9 @@
     state.viewState = viewState;
     state.mode = 'organize';
     state.selectedObjectId = '';
+    state.syncLastRevision = Number(state.session.revision || 0);
+    clearSyntheticSyncTimers();
+    setSyntheticSyncState('normal');
     syncEditorState();
     const installed = viewer.setThumbnailActions(true, handleThumbnailAction);
     if (!installed) {
@@ -1156,7 +1232,9 @@
     seedFlattenFixture,
     flattenDiagnostics,
     flattenRotationDiagnostics,
-    refreshForTest: () => run(() => rebuild())
+    refreshForTest: () => run(() => rebuild()),
+    setSyncStateForTest: (value) => setSyntheticSyncState(value),
+    forceSyncVisualForTest: () => scheduleSyntheticSync({ forced: true })
   });
 
   async function exitEditor() {
@@ -1166,6 +1244,9 @@
     viewer.setEditorObjects?.([], { mode: 'none', selectedObjectId: '' });
     viewer.setEditorCrops?.([], { mode: 'none' });
     viewer.setEditorStrokes?.([], { mode: 'none' });
+    clearSyntheticSyncTimers();
+    setSyntheticSyncState('normal');
+    state.syncLastRevision = 0;
     state.finalPdfCacheSession = null;
     state.finalPdfCacheRevision = -1;
     state.finalPdfCacheBlob = null;
@@ -1302,6 +1383,10 @@
     event.stopPropagation();
     run(deleteSelectedObject);
   }, true);
+  elements.syncDrive.addEventListener('click', () => run(() => {
+    root.dataset.syncPreview = 'force-visible';
+    return scheduleSyntheticSync({ forced: true });
+  }));
   elements.exportPdf.addEventListener('click', () => run(exportFlattenedPdf));
   elements.printPdf.addEventListener('click', () => printFlattenedPdf().catch(fail));
   elements.exit.addEventListener('click', () => run(exitEditor));
