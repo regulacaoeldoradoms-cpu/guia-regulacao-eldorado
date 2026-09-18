@@ -199,15 +199,30 @@
       ctx.fillStyle = '#36536a';
       ctx.font = '700 23px Arial';
       ctx.fillText(label + ':', 95, y);
+
+      // O valor existe visualmente, mas não pode ser transcrito. Não há legenda
+      // dizendo "ilegível" dentro da imagem: o provider precisa reconhecer o estado.
       ctx.save();
-      ctx.filter = 'blur(11px)';
-      ctx.fillStyle = '#111827';
-      ctx.font = '24px Arial';
+      ctx.fillStyle = '#edf1f4';
+      ctx.fillRect(375, y - 31, 250, 43);
+      ctx.filter = 'blur(28px)';
+      ctx.fillStyle = '#1f2937';
+      ctx.font = '700 30px Arial';
       ctx.fillText(value, 390, y);
       ctx.restore();
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '18px Arial';
-      ctx.fillText('(valor propositalmente ilegível)', 600, y);
+
+      ctx.save();
+      ctx.strokeStyle = '#394957';
+      ctx.lineWidth = 11;
+      ctx.lineCap = 'round';
+      for (let index = 0; index < 7; index += 1) {
+        const offset = index * 31;
+        ctx.beginPath();
+        ctx.moveTo(382 + offset, y - 23 + (index % 2) * 13);
+        ctx.lineTo(420 + offset, y + 5 - (index % 3) * 8);
+        ctx.stroke();
+      }
+      ctx.restore();
       y += 78;
     }
 
