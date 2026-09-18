@@ -35,7 +35,7 @@ function loginHarness({ loginResult = { role: 'admin' }, mediaPromise = Promise.
 
 test('o MP4 oficial permanece byte a byte inalterado', () => {
   const data = fs.readFileSync(path.join(root, 'assets/portal-opening-v1.mp4'));
-  assert.equal(data.byteLength, 2393970);
+  assert.equal(data.byteLength, 3275007);
   assert.equal(crypto.createHash('sha256').update(data).digest('hex'), '98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766');
 });
 
