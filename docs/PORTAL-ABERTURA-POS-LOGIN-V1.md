@@ -1,10 +1,10 @@
 # Portal — Abertura pós-login V1
 
-Atualizado em 17/09/2026. PR #207 incorporado e publicado: Home inicializada durante o vídeo, sem flash de login no fim normal.
+Atualizado em 18/09/2026. PR #207 incorporado e publicado: Home inicializada durante o vídeo, sem flash de login no fim normal.
 
 ## Requisito vigente
 
-Entrar permanece habilitado, autentica no primeiro clique e não expõe preparo de mídia. A abertura oficial mantém som e 10,005 segundos completos. Durante a reprodução inicia a Home de fato, não apenas baixa scripts. O fim normal depende de vídeo encerrado **e Home utilizável**, sem loader intermediário ou reinicialização por nova navegação.
+Entrar permanece habilitado, autentica no primeiro clique e não expõe preparo de mídia. A abertura oficial mantém som e cerca de 10 segundos completos. Durante a reprodução inicia a Home de fato, não apenas baixa scripts. O fim normal depende de vídeo encerrado **e Home utilizável**, sem loader intermediário ou reinicialização por nova navegação.
 
 ## Diagnóstico
 
@@ -28,9 +28,9 @@ Falha de mídia/script/Home usa navegação normal. Cobertura já exibida perman
 
 ## Mídia e cache
 
-MP4 oficial `assets/portal-opening-v1.mp4`: 2.393.970 bytes; SHA-256 `98b866963ccf1debbca9d942e647307e8ed4e045c231af17117d150da4c9d766`; H.264/AAC, 1280×720, 24 fps, 10,005 s. Binário inalterado e cache `portal-opening-media-v1` preservado.
+MP4 oficial `assets/portal-opening-v1.mp4`: 3.275.007 bytes; SHA-256 `21aae188af40d816ef392380d5ae6b775453571e2c413c31ec0c7b8efb07b489`. O contrato de navegador valida resolução 1280×720, duração entre 9,9 e 10,1 s, reprodução integral e áudio não silenciado.
 
-Controladores de login, abertura, Home e helper usam versão `20260917-3`. SW atualiza pontualmente URLs anteriores, sem apagar sessão, documentos ou mídia. Aba antiga precisa recarregar o documento para usar a nova versão.
+O cache local continua `portal-opening-media-v1`, mas a URL da mídia foi renovada para `?v=20260918-1`; assim, o vídeo anterior não é reutilizado como se fosse o novo. Somente o controlador de abertura mudou para `login-opening.js?v=20260918-1`; login/Home/handoff permanecem nas versões já publicadas. O Service Worker remove pontualmente a versão anterior do controlador e preserva sessão, documentos e demais mídias.
 
 ## Validação e publicação
 

@@ -2,6 +2,18 @@
 
 Última atualização: 18/09/2026.
 
+## Mudança transversal — novo vídeo oficial de abertura pós-login — 18/09/2026
+
+Sem alterar a fase corrente da Central de Documentos, foi aberta a PR **#212** na branch `feat/post-login-opening-video-refresh-20260918`, criada diretamente da `main` atual `b962e124ea69a7d1136c608f716dc978aa047192`. A branch antiga `feat/post-login-opening-video` não será mesclada; dela foi reaproveitado somente o blob do novo `assets/portal-opening-v1.mp4`.
+
+Metadados do candidato oficial: **3.275.007 bytes**, SHA-256 `21aae188af40d816ef392380d5ae6b775453571e2c413c31ec0c7b8efb07b489`. O cache-buster da mídia foi renovado para `20260918-1`, o controlador para `login-opening.js?v=20260918-1`, e o Service Worker passou a remover pontualmente a versão anterior do controlador sem apagar sessão, documentos ou o cache independente de mídia.
+
+Contratos preservados: Entrar continua autenticando no primeiro clique; o vídeo não controla credenciais; Home continua sendo preparada durante a reprodução; fallback legado permanece disponível; áudio permanece habilitado; o teste real exige ~10 s e 1280×720. Esta tarefa é transversal ao Portal e **não reabre a Fase 4** nem inicia por conta própria a Fase 5.
+
+Validação direcionada aprovada no run `35321759169`: **11/11 contratos Node**, **24/24 cenários Chromium da abertura** (desktop/mobile) e **8/8 cenários de Home durante o vídeo**, todos verdes. Esses testes confirmaram 1280×720, duração real próxima de 10 s, áudio habilitado, reprodução integral, cache local, fallback e ausência de regressão no primeiro clique. Fases 1–4 também passaram no run `35321759254` e a governança passou no run `35321759083`.
+
+Um check transversal de bundle de staging (`35321759063`) revelou uma asserção obsoleta do próprio workflow: ele ainda exigia que `worker/wrangler.toml` contivesse o antigo hostname `codex-central-docs-drive-syn...`, embora a publicação final da Fase 4 tenha neutralizado corretamente `DOCUMENTS_HOMOLOGATION_ORIGIN=""`. A PR #212 corrige somente essa asserção para exigir o valor vazio em produção; o teste com `CENTRAL_DOCS_HOMOLOGATION_WORKER_URL` explícito continua validando a materialização segura do preview. Isso não foi causado pelo MP4 nem altera a configuração produtiva.
+
 ## Reconciliação com a main atual — concluída em 18/09/2026
 
 A branch da Fase 4 incorporou a main `cd71ad566a443cd2f89b1d98285856c22baf73d7` por merge de dois pais no commit `b28999c6d0f0fb415783f7d3c85abf3cad82edf7`. O PR #201 foi colocado em **draft** para impedir integração acidental antes da homologação real 4D. Depois da reconciliação, a branch ficou **0 commits atrás da main**, o PR tornou-se tecnicamente mergeável, mas continua deliberadamente sem merge.
@@ -350,10 +362,10 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5 — IA documental; Fase 4 concluída e publicada |
-| Última ação concluída | Publicação produtiva da Fase 4 confirmada: PR #209 merge `8f49c12`, Worker `a08c7135…`, GitHub Pages deploy verde |
-| Branch/PR | Fase 4 encerrada: #201 e #209 mesclados; próxima frente deve usar branch nova para Fase 5 |
-| Main | `8f49c12e35e09def3ff1fe34eaeae6dd2ac05096` — release produtiva final da Fase 4 |
+| Fase/subfase | Fase 5 segue vigente; tarefa transversal ativa: atualização do vídeo oficial pós-login |
+| Última ação concluída | Novo MP4 isolado sobre a main atual; tamanho/SHA-256 identificados e contratos/cache-buster atualizados na PR #212 |
+| Branch/PR | `feat/post-login-opening-video-refresh-20260918`; PR #212 em draft durante validação; PR #211 antiga não deve ser mesclada |
+| Main | `b962e124ea69a7d1136c608f716dc978aa047192` — base usada para a branch limpa do vídeo |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
@@ -361,12 +373,12 @@ Artefatos anteriores preservados:
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
-| Checks/testes | Head funcional `1d4decd`: 285/285 Worker; navegador Central 75/3 skipped; abertura 11+24+8. Operacionais 4D corrigidos run `35317193310`: 87 V3 + 9 preparo + 5 habilitação + 5 encerramento, zero falhas |
-| Bloqueios | Nenhum bloqueio da Fase 4. Para Fase 5, definir primeiro o módulo/versionamento de IA sem misturar com o editor |
-| Riscos | D1/OAuth compartilhados; preflight/upload não atômicos; latência percebida maior que Lumin foi registrada para Fase 7 e não deve ser mascarada com falso sucesso otimista |
+| Checks/testes | Abertura run `35321759169`: 11/11 Node + 24/24 Chromium + 8/8 Home; Fases 1–4 `35321759254` sucesso; governança `35321759083` sucesso. Bundle staging detectou asserção histórica obsoleta e foi corrigido para o estado produtivo atual |
+| Bloqueios | Nenhum bloqueio externo; falta apenas o rerun final após alinhar a asserção obsoleta do bundle staging |
+| Riscos | Cache antigo de mídia/controlador; mitigado por nova URL `20260918-1` e invalidação pontual do controlador, sem purge amplo |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Iniciar Fase 5 em branch separada: recuperar Dossiê/deltas de IA documental e definir escopo mínimo do painel lateral + proveniência por página |
-| Depois | Implementar Fase 5 por módulos versionados; latência de sync continua reservada para Fase 7 |
+| Próxima ação exata | Conferir o rerun final da PR #212; se os checks direcionados permanecerem verdes, registrar o head final, retirar draft e mesclar/publicar |
+| Depois | Retomar a Fase 5 em branch separada; latência de sync continua reservada para Fase 7 |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
 ## Histórico recuperável

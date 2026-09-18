@@ -106,7 +106,7 @@ jobs:
           ! grep -R -F --exclude-dir=homologacao --exclude=_headers 'https://central-docs-phase4d-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' dist-staging
           ! grep -R -F "https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" dist-staging/homologacao
           grep -q 'DOCUMENTS_HOMOLOGATION_ORIGIN' worker/wrangler.toml
-          grep -q 'codex-central-docs-drive-syn.portal-regulacao-central-staging.pages.dev' worker/wrangler.toml
+          grep -q '^DOCUMENTS_HOMOLOGATION_ORIGIN = ""$' worker/wrangler.toml
           ! grep -R -E "GOOGLE_DRIVE_OAUTH_CLIENT_SECRET|DRIVE_TOKEN_ENCRYPTION_KEY|AUTH_SESSION_SECRET" dist-staging
 
       - name: Rejeitar Worker de produção como alvo 4D
