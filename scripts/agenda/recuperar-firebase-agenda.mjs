@@ -9,12 +9,13 @@
  * 1. confirma que /api/agenda ainda está no erro específico de armazenamento;
  *    a main é baixada como snapshot ZIP autenticado pela referência pública do GitHub, sem exigir Git instalado;
  * 2. inspeciona somente nomes/tipos de bindings, nunca valores, e injeta no arquivo temporário apenas o ID técnico do D1 já ligado a AUTH_DB;
- * 3. localiza uma versão já homologada da Agenda com os três bindings;
- * 4. monta um pacote explícito de bindings: segredos atuais herdam da versão produtiva e segredos Firebase herdam da versão homologada, sempre por version_id;
- * 5. valida o multipart real em dry-run e, após confirmação humana, envia a main como NOVA VERSÃO sem tráfego e com auto-provisionamento desativado;
- * 6. inspeciona a versão criada (todos os bindings + AUTH_DB), confirma que produção ainda está intacta e só então promove exatamente essa versão a 100%.
+ * 3. localiza uma versão já homologada da Agenda para recuperar somente os valores Firebase não secretos;
+ * 4. valida localmente uma nova chave da conta de serviço Firebase, sem imprimir ou versionar o conteúdo;
+ * 5. envia a main como NOVA VERSÃO, sem tráfego, usando --secrets-file temporário apenas para os segredos Firebase fornecidos localmente;
+ * 6. confirma Firebase, AUTH_DB e preservação dos segredos atuais antes de promover exatamente essa versão a 100%.
  *
- * Nenhum segredo é impresso, copiado para arquivo ou enviado ao GitHub.
+ * Valores secretos nunca são impressos nem enviados ao GitHub. O arquivo temporário de segredos
+ * existe somente no diretório temporário desta execução e é removido no finally.
  * No Windows, o Wrangler é iniciado pelo próprio node.exe atual executando diretamente o npx-cli.js que acompanha essa instalação. Isso evita depender da execução de arquivos .cmd por subprocessos.
  */
 import fs from 'node:fs';
@@ -131,131 +132,147 @@ export function firebaseRecoveryPlan(version) {
       vars[name] = value;
       continue;
     }
-    if (binding.type === 'secret_text' || binding.type === 'secret_key') { secrets.push(name); continue; }
+    if (binding.type === 'secret_text') {
+      secrets.push(name);
+      continue;
+    }
     throw new SafeError('FIREBASE_BINDING_TIPO_NAO_SUPORTADO');
   }
 
-  for (const name of REQUIRED_FIREBASE_BINDINGS) must(name in vars || secrets.includes(name), 'FIREBASE_RECOVERY_BINDING_AUSENTE');
+  for (const name of REQUIRED_FIREBASE_BINDINGS) {
+    must(name in vars || secrets.includes(name), 'FIREBASE_RECOVERY_BINDING_AUSENTE');
+  }
   must(secrets.includes('FIREBASE_PRIVATE_KEY'), 'FIREBASE_PRIVATE_KEY_NAO_E_SEGREDO');
+
   return { vars, secrets: [...new Set(secrets)].sort() };
 }
 
-function cloneNonSecretBinding(binding) {
-  must(binding && typeof binding.name === 'string' && binding.name, 'BINDING_INVALIDO');
-  if (binding.type === 'plain_text') {
-    must(typeof binding.text === 'string', 'VARIAVEL_PUBLICA_INVALIDA');
-    return { name: binding.name, type: 'plain_text', text: binding.text };
-  }
-  if (binding.type === 'd1') {
-    must(UUID.test(String(binding.id || '')), 'D1_BINDING_INVALIDO');
-    return { name: binding.name, type: 'd1', id: String(binding.id) };
-  }
-  if (binding.type === 'ai') return { name: binding.name, type: 'ai' };
-  throw new SafeError('TIPO_DE_BINDING_NAO_SUPORTADO_NA_RECUPERACAO');
+function tomlValue(value) {
+  return JSON.stringify(String(value));
 }
 
-export function buildBindingInheritancePlan(currentVersion, recoveryVersion, currentVersionId, recoveryVersionId) {
-  must(UUID.test(currentVersionId), 'VERSAO_ATUAL_INVALIDA');
-  must(UUID.test(recoveryVersionId), 'VERSAO_RECUPERACAO_INVALIDA');
-  const current = Array.isArray(currentVersion?.resources?.bindings) ? currentVersion.resources.bindings : [];
-  const recovery = Array.isArray(recoveryVersion?.resources?.bindings) ? recoveryVersion.resources.bindings : [];
-  must(current.length > 0 && recovery.length > 0, 'BINDINGS_NAO_IDENTIFICADOS');
-  const recoveryByName = new Map(recovery.filter((item) => item && typeof item.name === 'string').map((item) => [item.name, item]));
-  const upload = [];
-  const expected = [];
-  const firebaseNames = new Set(FIREBASE_RECOVERY_BINDINGS);
-  let currentSecrets = 0;
-  let firebaseSecrets = 0;
-  let firebasePublic = 0;
-  const pushBinding = (wire, actual) => { upload.push(wire); expected.push(actual); };
+export function parseServiceAccount(value, historicalVars = {}) {
+  const payload = typeof value === 'string' ? parseJson(value) : value;
+  must(payload && typeof payload === 'object' && !Array.isArray(payload), 'CONTA_SERVICO_FIREBASE_INVALIDA');
 
-  for (const binding of current) {
-    must(binding && typeof binding.name === 'string' && binding.name, 'BINDING_ATUAL_INVALIDO');
-    if (firebaseNames.has(binding.name)) continue;
-    if (binding.type === 'secret_text' || binding.type === 'secret_key') {
-      pushBinding({ name: binding.name, type: 'inherit', version_id: currentVersionId }, { name: binding.name, type: binding.type });
-      currentSecrets += 1;
-      continue;
-    }
-    const safe = cloneNonSecretBinding(binding);
-    pushBinding(safe, safe);
+  const projectId = String(payload.project_id || '').trim();
+  const clientEmail = String(payload.client_email || '').trim();
+  const privateKey = String(payload.private_key || '').replace(/\\n/g, '\n').trim();
+
+  must(projectId, 'CONTA_SERVICO_SEM_PROJECT_ID');
+  must(clientEmail && clientEmail.includes('@'), 'CONTA_SERVICO_SEM_CLIENT_EMAIL');
+  must(
+    privateKey.startsWith('-----BEGIN PRIVATE KEY-----') &&
+      privateKey.endsWith('-----END PRIVATE KEY-----'),
+    'CONTA_SERVICO_SEM_PRIVATE_KEY'
+  );
+
+  if (historicalVars.FIREBASE_PROJECT_ID) {
+    must(projectId === String(historicalVars.FIREBASE_PROJECT_ID).trim(), 'PROJECT_ID_FIREBASE_DIVERGENTE');
+  }
+  if (historicalVars.FIREBASE_CLIENT_EMAIL) {
+    must(
+      clientEmail.toLowerCase() === String(historicalVars.FIREBASE_CLIENT_EMAIL).trim().toLowerCase(),
+      'CLIENT_EMAIL_FIREBASE_DIVERGENTE'
+    );
   }
 
-  for (const name of FIREBASE_RECOVERY_BINDINGS) {
-    const binding = recoveryByName.get(name);
-    if (!binding) continue;
-    if (binding.type === 'secret_text' || binding.type === 'secret_key') {
-      pushBinding({ name, type: 'inherit', version_id: recoveryVersionId }, { name, type: binding.type });
-      firebaseSecrets += 1;
-      continue;
-    }
-    const safe = cloneNonSecretBinding(binding);
-    must(safe.type === 'plain_text', 'FIREBASE_PUBLICO_TIPO_INVALIDO');
-    pushBinding(safe, safe);
-    firebasePublic += 1;
-  }
-
-  const names = upload.map((item) => item.name);
-  must(new Set(names).size === names.length, 'BINDING_DUPLICADO_NO_PLANO');
-  for (const name of REQUIRED_FIREBASE_BINDINGS) must(names.includes(name), 'FIREBASE_RECOVERY_BINDING_AUSENTE');
-  const privateKey = expected.find((item) => item.name === 'FIREBASE_PRIVATE_KEY');
-  must(privateKey?.type === 'secret_text', 'FIREBASE_PRIVATE_KEY_NAO_E_SEGREDO');
-  const db = expected.find((item) => item.name === 'AUTH_DB');
-  must(db?.type === 'd1' && UUID.test(String(db.id || '')), 'AUTH_DB_AUSENTE_DO_PLANO');
-
-  const order = names.map((name, index) => [name, index]).sort((a, b) => a[0].localeCompare(b[0])).map((item) => item[1]);
-  return {
-    bindings: order.map((index) => upload[index]),
-    expected: order.map((index) => expected[index]),
-    currentSecrets, firebaseSecrets, firebasePublic
-  };
+  return { projectId, clientEmail, privateKey };
 }
 
-function tomlValue(value) { return JSON.stringify(String(value)); }
-
-function tomlInlineBinding(binding) {
-  const allowed = ['name', 'type', 'text', 'id', 'version_id'];
-  const keys = Object.keys(binding);
-  must(keys.every((key) => allowed.includes(key)), 'BINDING_TOML_CAMPO_NAO_PERMITIDO');
-  const parts = [];
-  for (const key of allowed) {
-    if (!(key in binding)) continue;
-    must(typeof binding[key] === 'string', 'BINDING_TOML_VALOR_INVALIDO');
-    parts.push(key + ' = ' + tomlValue(binding[key]));
-  }
-  return '{ ' + parts.join(', ') + ' }';
+function readSmallFile(file, code, maxBytes = 256 * 1024) {
+  const target = path.resolve(String(file || ''));
+  must(target && fs.existsSync(target), code);
+  const stat = fs.lstatSync(target);
+  must(stat.isFile() && !stat.isSymbolicLink() && stat.size > 0 && stat.size <= maxBytes, code);
+  return fs.readFileSync(target, 'utf8');
 }
 
-function removeSecretsSection(toml) {
+export function buildLocalFirebaseSecrets(plan, serviceAccount, webApiKey = '') {
+  must(plan && Array.isArray(plan.secrets), 'PLANO_FIREBASE_INVALIDO');
+  const allowed = new Set(['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY', 'FIREBASE_WEB_API_KEY']);
+  for (const name of plan.secrets) must(allowed.has(name), 'SEGREDO_FIREBASE_NAO_SUPORTADO');
+
+  const secrets = {};
+  if (plan.secrets.includes('FIREBASE_PROJECT_ID')) secrets.FIREBASE_PROJECT_ID = serviceAccount.projectId;
+  if (plan.secrets.includes('FIREBASE_CLIENT_EMAIL')) secrets.FIREBASE_CLIENT_EMAIL = serviceAccount.clientEmail;
+  if (plan.secrets.includes('FIREBASE_PRIVATE_KEY')) secrets.FIREBASE_PRIVATE_KEY = serviceAccount.privateKey;
+
+  const webKey = String(webApiKey || '').trim();
+  if (webKey && plan.vars?.FIREBASE_WEB_API_KEY) {
+    must(webKey === String(plan.vars.FIREBASE_WEB_API_KEY).trim(), 'WEB_API_KEY_FIREBASE_DIVERGENTE');
+  } else if (webKey) {
+    must(webKey.length >= 20, 'WEB_API_KEY_FIREBASE_LOCAL_INVALIDA');
+    secrets.FIREBASE_WEB_API_KEY = webKey;
+  }
+
+  must(typeof secrets.FIREBASE_PRIVATE_KEY === 'string' && secrets.FIREBASE_PRIVATE_KEY.length > 100, 'PRIVATE_KEY_FIREBASE_LOCAL_AUSENTE');
+  return secrets;
+}
+
+export function currentSecretBindingNames(version) {
+  const bindings = Array.isArray(version?.resources?.bindings) ? version.resources.bindings : [];
+  return bindings
+    .filter((item) => item && (item.type === 'secret_text' || item.type === 'secret_key'))
+    .map((item) => item.name)
+    .filter(Boolean)
+    .sort();
+}
+
+export function validatePreparedBindings(preparedVersion, currentVersion, plan, providedSecrets, databaseId) {
+  const bindings = Array.isArray(preparedVersion?.resources?.bindings) ? preparedVersion.resources.bindings : [];
+  const byName = new Map(bindings.filter((item) => item && typeof item.name === 'string').map((item) => [item.name, item]));
+
+  for (const name of currentSecretBindingNames(currentVersion)) {
+    const binding = byName.get(name);
+    must(binding && (binding.type === 'secret_text' || binding.type === 'secret_key'), 'SEGREDO_ATUAL_NAO_PRESERVADO');
+  }
+
+  for (const [name, value] of Object.entries(plan?.vars || {})) {
+    const binding = byName.get(name);
+    must(binding?.type === 'plain_text' && binding.text === value, 'FIREBASE_PUBLICO_DIVERGENTE_NA_VERSAO');
+  }
+
+  for (const name of Object.keys(providedSecrets || {})) {
+    const binding = byName.get(name);
+    must(binding?.type === 'secret_text' || binding?.type === 'secret_key', 'SEGREDO_FIREBASE_NAO_APLICADO');
+  }
+
+  must(inspectFirebaseBindings(preparedVersion).ready, 'VERSAO_PREPARADA_SEM_FIREBASE');
+  must(authDbDatabaseId(preparedVersion) === databaseId, 'VERSAO_PREPARADA_COM_D1_DIVERGENTE');
+  return true;
+}
+
+
+export function injectVars(toml, values = {}) {
+  const entries = Object.entries(values);
+  if (!entries.length) return String(toml || '');
   const lines = String(toml || '').replace(/\r\n/g, '\n').split('\n');
-  const start = lines.findIndex((line) => /^\s*\[secrets\]\s*$/.test(line));
-  if (start < 0) return lines.join('\n');
+  const start = lines.findIndex((line) => /^\s*\[vars\]\s*$/.test(line));
+  must(start >= 0, 'VARS_CONFIG_NAO_ENCONTRADO');
   let end = lines.length;
-  for (let index = start + 1; index < lines.length; index += 1) { if (/^\s*\[/.test(lines[index])) { end = index; break; } }
-  lines.splice(start, end - start);
+  for (let index = start + 1; index < lines.length; index += 1) {
+    if (sectionStart(lines[index])) { end = index; break; }
+  }
+
+  for (const [name, value] of entries) {
+    const existing = lines.findIndex((line, index) => index > start && index < end && line.trimStart().startsWith(name + ' ='));
+    const replacement = name + ' = ' + tomlValue(value);
+    if (existing >= 0) lines[existing] = replacement;
+    else { lines.splice(end, 0, replacement); end += 1; }
+  }
   return lines.join('\n');
 }
 
-export function injectUnsafeMetadataBindings(toml, bindings) {
-  must(Array.isArray(bindings) && bindings.length > 0, 'BINDINGS_METADATA_VAZIOS');
-  let output = removeSecretsSection(toml);
-  must(!/^\s*\[unsafe\.metadata\]\s*$/m.test(output), 'UNSAFE_METADATA_JA_EXISTE');
-  const lines = output.replace(/\s+$/g, '').split('\n');
-  lines.push('', '[unsafe.metadata]', 'keep_bindings = []', 'bindings = [');
-  for (const binding of bindings) lines.push('  ' + tomlInlineBinding(binding) + ',');
-  lines.push(']', '');
-  output = lines.join('\n');
-  must(!/^\s*\[secrets\]\s*$/m.test(output), 'SECRETS_REQUIRED_NAO_REMOVIDO');
-  return output;
+export function buildRecoveryToml(toml, databaseId, recoveryVersion) {
+  const plan = firebaseRecoveryPlan(recoveryVersion);
+  let output = injectAuthDbDatabaseId(toml, databaseId);
+  output = injectVars(output, plan.vars);
+  must(/\bkeep_vars\s*=\s*true\b/.test(output), 'KEEP_VARS_NAO_CONFIRMADO');
+  must(!/^\s*\[secrets\]\s*$/m.test(output), 'SECRETS_REQUIRED_NAO_PERMITIDO_NA_RECUPERACAO');
+  return { toml: output, plan };
 }
 
-export function buildRecoveryToml(toml, databaseId, bindingPlan) {
-  must(bindingPlan && Array.isArray(bindingPlan.bindings), 'PLANO_BINDINGS_AUSENTE');
-  let output = injectAuthDbDatabaseId(toml, databaseId);
-  output = injectUnsafeMetadataBindings(output, bindingPlan.bindings);
-  must(/\bkeep_vars\s*=\s*true\b/.test(output), 'KEEP_VARS_NAO_CONFIRMADO');
-  return { toml: output, plan: bindingPlan };
-}
 function sectionStart(line) {
   return /^\s*\[\[?[^\]]+\]?\]\s*$/.test(line);
 }
@@ -311,64 +328,18 @@ export function injectAuthDbDatabaseId(toml, databaseId) {
   return output;
 }
 
-function createRecoveryDeployConfig(repositoryRoot, databaseId, bindingPlan = null) {
+function createRecoveryDeployConfig(repositoryRoot, databaseId, recoveryVersion = null) {
   const original = path.join(repositoryRoot, 'worker', 'wrangler.toml');
   must(fs.existsSync(original), 'WRANGLER_TOML_AUSENTE');
   const source = fs.readFileSync(original, 'utf8');
-  const built = bindingPlan
-    ? buildRecoveryToml(source, databaseId, bindingPlan)
-    : { toml: injectAuthDbDatabaseId(source, databaseId), plan: null };
+  const built = recoveryVersion
+    ? buildRecoveryToml(source, databaseId, recoveryVersion)
+    : { toml: injectAuthDbDatabaseId(source, databaseId), plan: { vars: {}, secrets: [] } };
   const target = path.join(repositoryRoot, 'worker', 'wrangler.agenda-recovery.toml');
   fs.writeFileSync(target, built.toml, { encoding: 'utf8', mode: 0o600 });
   return { path: target, plan: built.plan };
 }
 
-function canonical(value) {
-  return JSON.stringify(value, (_, item) => (
-    item && typeof item === 'object' && !Array.isArray(item)
-      ? Object.fromEntries(Object.keys(item).sort().map((key) => [key, item[key]]))
-      : item
-  ));
-}
-
-export async function inspectRecoveryMultipart(file, bindingPlan) {
-  must(fs.existsSync(file), 'MULTIPART_RECUPERACAO_AUSENTE');
-  const bytes = fs.readFileSync(file);
-  must(bytes.length > 0 && bytes.length <= 32 * 1024 * 1024, 'MULTIPART_RECUPERACAO_TAMANHO_INVALIDO');
-  const firstEnd = bytes.indexOf('\r\n');
-  must(firstEnd > 2 && firstEnd < 200, 'MULTIPART_RECUPERACAO_SEM_BOUNDARY');
-  const first = bytes.subarray(0, firstEnd).toString('ascii');
-  must(/^--[A-Za-z0-9_-]+$/.test(first), 'MULTIPART_RECUPERACAO_BOUNDARY_INVALIDO');
-  let form;
-  try {
-    form = await new Response(bytes, { headers: { 'Content-Type': 'multipart/form-data; boundary=' + first.slice(2) } }).formData();
-  } catch { throw new SafeError('MULTIPART_RECUPERACAO_NAO_RECONHECIDO'); }
-  must(typeof form.get('metadata') === 'string', 'MULTIPART_METADATA_AUSENTE');
-  const metadata = parseJson(form.get('metadata'));
-  must(Array.isArray(metadata.bindings), 'MULTIPART_BINDINGS_AUSENTES');
-  must(Array.isArray(metadata.keep_bindings) && metadata.keep_bindings.length === 0, 'HERANCA_AMPLA_NAO_BLOQUEADA');
-  must(canonical(metadata.bindings) === canonical(bindingPlan.bindings), 'MULTIPART_BINDINGS_DIVERGENTES');
-  for (const binding of metadata.bindings) {
-    if (binding.type !== 'inherit') continue;
-    must(UUID.test(String(binding.version_id || '')), 'HERANCA_SEM_VERSION_ID');
-    must(Object.keys(binding).every((key) => ['name', 'type', 'version_id'].includes(key)), 'HERANCA_COM_CAMPO_NAO_PERMITIDO');
-  }
-  must(!metadata.bindings.some((binding) => binding.type === 'secret_text' && 'text' in binding), 'SEGREDO_PRESENTE_NO_MULTIPART');
-  return { totalBindings: metadata.bindings.length, inheritedBindings: metadata.bindings.filter((binding) => binding.type === 'inherit').length };
-}
-
-export function validateUploadedBindingPlan(version, bindingPlan) {
-  const bindings = Array.isArray(version?.resources?.bindings) ? version.resources.bindings : [];
-  const actualByName = new Map(bindings.filter((item) => item && typeof item.name === 'string').map((item) => [item.name, item]));
-  must(actualByName.size === bindingPlan.expected.length, 'VERSAO_PREPARADA_BINDINGS_EXTRAS_OU_AUSENTES');
-  for (const expected of bindingPlan.expected) {
-    const actual = actualByName.get(expected.name);
-    must(actual && actual.type === expected.type, 'VERSAO_PREPARADA_TIPO_BINDING_DIVERGENTE');
-    if (expected.type === 'plain_text') must(actual.text === expected.text, 'VERSAO_PREPARADA_VAR_DIVERGENTE');
-    if (expected.type === 'd1') must(actual.id === expected.id, 'VERSAO_PREPARADA_D1_DIVERGENTE');
-  }
-  return true;
-}
 export function classifyAgendaProbe(status) {
   const code = Number(status || 0);
   return {
@@ -432,7 +403,6 @@ export function npxCliPath(execPath = process.execPath) {
 
 export function classifyWranglerFailure(result = {}) {
   const text = `${result.stderr || ''}\n${result.stdout || ''}`.toLowerCase();
-  if (/cannot inherit bindings|inherit binding|binding.*inherit/.test(text)) return 'HERANCA_BINDING_FALHOU';
   if (/required secrets|missing.*secret|secret.*required|secret.*not.*configured/.test(text)) return 'SEGREDOS_AUSENTES';
   if (/(missing|invalid|not found).*database_id|database_id.*(missing|invalid|not found)|d1 database.*(missing|invalid|not found)|d1_databases.*(missing|invalid)/.test(text)) return 'CONFIG_D1';
   if (/not logged in|login|api token|authentication|unauthorized|forbidden/.test(text)) return 'AUTENTICACAO_CLOUDFLARE';
@@ -613,7 +583,7 @@ async function findRecoveryVersion(minimalConfig, cwd) {
     }
     const summary = inspectFirebaseBindings(view);
     candidates.push({ id, ready: summary.ready });
-    if (summary.ready) return { id, view, candidates };
+    if (summary.ready) return { id, candidates };
   }
 
   const listed = runWrangler(
@@ -633,10 +603,10 @@ async function findRecoveryVersion(minimalConfig, cwd) {
     const view = versionView(item.id, minimalConfig, cwd, true);
     if (!view) continue;
     const summary = inspectFirebaseBindings(view);
-    if (summary.ready) return { id: item.id, view, candidates };
+    if (summary.ready) return { id: item.id, candidates };
   }
 
-  return { id: '', view: null, candidates };
+  return { id: '', candidates };
 }
 
 function rollback(versionId, minimalConfig, cwd, message) {
@@ -667,33 +637,32 @@ export function newUploadedVersion(beforeIds, afterIds) {
   return created[0];
 }
 
-async function uploadCurrentMain(repositoryRoot, config, minimalConfig, cwd, bindingPlan) {
+function uploadCurrentMain(repositoryRoot, config, secretsFile, minimalConfig, cwd) {
   must(fs.existsSync(config), 'WRANGLER_RECOVERY_CONFIG_AUSENTE');
+  must(fs.existsSync(secretsFile), 'ARQUIVO_SEGREDOS_FIREBASE_AUSENTE');
   const before = versionIdSet(minimalConfig, cwd);
-  const sentPath = path.join(cwd, 'agenda-recovery-sent.multipart');
   runWrangler(
     [
       'versions', 'upload',
+      '--secrets-file', secretsFile,
       '--experimental-provision=false',
       '--experimental-auto-create=false',
       '--message', 'Agenda: recuperar Firebase e republicar main',
-      '--outfile', sentPath,
       '--config', config
     ],
     repositoryRoot,
     'UPLOAD_MAIN_FALHOU'
   );
-  await inspectRecoveryMultipart(sentPath, bindingPlan);
   const after = versionIdSet(minimalConfig, cwd);
   return newUploadedVersion(before, after);
 }
 
-function deployUploadedVersion(versionId, minimalConfig, cwd) {
+function deployUploadedVersion(versionId, minimalConfig, cwd, message = 'Agenda: promover main com Firebase recuperado') {
   must(UUID.test(versionId), 'VERSAO_PREPARADA_INVALIDA');
   runWrangler(
     [
       'versions', 'deploy', `${versionId}@100%`, '-y',
-      '--message', 'Agenda: promover main com Firebase recuperado',
+      '--message', message,
       '--config', minimalConfig
     ],
     cwd,
@@ -712,34 +681,33 @@ function validateCurrentMain(cloneRoot) {
   );
 }
 
-function dryRunCurrentMain(repositoryRoot, dryDir, config, fileName = 'agenda-recovery.multipart') {
+function dryRunCurrentMain(repositoryRoot, dryDir, config, secretsFile = '') {
   must(fs.existsSync(config), 'WRANGLER_RECOVERY_CONFIG_AUSENTE');
   fs.mkdirSync(dryDir, { recursive: true });
-  const outfile = path.join(dryDir, fileName);
-  runWrangler(
-    [
-      'versions', 'upload',
-      '--dry-run',
-      '--experimental-provision=false',
-      '--experimental-auto-create=false',
-      '--outfile', outfile,
-      '--config', config
-    ],
-    repositoryRoot,
-    'DRY_RUN_MAIN_FALHOU'
-  );
-  return outfile;
+  const args = [
+    'versions', 'upload',
+    '--dry-run',
+    '--experimental-provision=false',
+    '--experimental-auto-create=false'
+  ];
+  if (secretsFile) {
+    must(fs.existsSync(secretsFile), 'ARQUIVO_SEGREDOS_FIREBASE_AUSENTE');
+    args.push('--secrets-file', secretsFile);
+  }
+  args.push('--config', config);
+  runWrangler(args, repositoryRoot, 'DRY_RUN_MAIN_FALHOU');
 }
 
-async function confirmHuman(originalVersion, recoveryVersion) {
+async function confirmHuman(originalVersion, recoveryVersion, optionalWebKeyPending) {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
     console.log('');
     console.log('DIAGNOSTICO=bindings Firebase ausentes na versão produtiva atual');
     safeLine('versaoAtual', originalVersion);
-    safeLine('versaoRecuperacao', recoveryVersion);
-    console.log('acao=upload sem trafego -> validar bindings herdados -> promover a main atual');
-    console.log('segredos=nenhum valor sera exibido ou gravado');
+    safeLine('versaoReferenciaFirebase', recoveryVersion);
+    console.log('acao=upload sem trafego com credencial Firebase local -> validar -> promover');
+    console.log('segredos=valores ficam somente em arquivo temporario local e nao serao exibidos');
+    if (optionalWebKeyPending) console.log('observacao=FIREBASE_WEB_API_KEY nao foi fornecida; a Agenda pode ser restaurada sem ela');
     const answer = await rl.question('Para continuar, digite RECUPERAR AGENDA: ');
     must(answer.trim() === 'RECUPERAR AGENDA', 'CANCELADO_PELO_OPERADOR');
   } finally {
@@ -747,7 +715,7 @@ async function confirmHuman(originalVersion, recoveryVersion) {
   }
 }
 
-export async function recoverAgenda() {
+export async function recoverAgenda(options) {
   const initialProbe = await probeAgenda();
   if (initialProbe.storageGuardPassed) {
     console.log('AGENDA_JA_DISPONIVEL');
@@ -783,39 +751,51 @@ export async function recoverAgenda() {
     safeLine('firebaseBindingsAusentes', currentBindings.missing.join(',') || 'nenhum');
     must(!currentBindings.ready, 'WORKER_DECLARA_FIREBASE_PRONTO_MAS_API_RETORNA_503');
 
-    console.log('4/8 Localizando versão homologada e montando herança explícita de bindings...');
+    console.log('4/8 Localizando referência Firebase e validando credencial local...');
     const recovery = await findRecoveryVersion(minimalConfig, baseRoot);
-    must(UUID.test(recovery.id) && recovery.view, 'VERSAO_HOMOLOGADA_COM_FIREBASE_NAO_ENCONTRADA');
-    safeLine('versaoRecuperacaoEncontrada', recovery.id);
+    must(UUID.test(recovery.id), 'VERSAO_HOMOLOGADA_COM_FIREBASE_NAO_ENCONTRADA');
+    safeLine('versaoReferenciaFirebase', recovery.id);
+    const recoveryView = versionView(recovery.id, minimalConfig, baseRoot);
+    must(recoveryView, 'VERSAO_REFERENCIA_FIREBASE_NAO_LIDA');
 
-    const bindingPlan = buildBindingInheritancePlan(currentView, recovery.view, originalVersion, recovery.id);
-    must(bindingPlan.expected.find((item) => item.name === 'AUTH_DB')?.id === databaseId, 'AUTH_DB_PLANO_DIVERGENTE');
-    const recoveredDeployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId, bindingPlan);
-    const recoveryDry = dryRunCurrentMain(downloadedRoot, dryDir, recoveredDeployConfig.path, 'agenda-recovery-final.multipart');
-    const drySummary = await inspectRecoveryMultipart(recoveryDry, bindingPlan);
-    safeLine('firebasePublicosRecuperados', bindingPlan.firebasePublic);
-    safeLine('firebaseSegredosHerdados', bindingPlan.firebaseSecrets);
-    safeLine('segredosAtuaisPreservados', bindingPlan.currentSecrets);
-    safeLine('bindingsValidadosNoDryRun', drySummary.totalBindings);
+    const recoveryPlan = firebaseRecoveryPlan(recoveryView);
+    const serviceAccountText = readSmallFile(options.serviceAccountJson, 'ARQUIVO_CONTA_SERVICO_NAO_ENCONTRADO');
+    const serviceAccount = parseServiceAccount(serviceAccountText, recoveryPlan.vars);
+    const webApiKey = options.webApiKeyFile
+      ? readSmallFile(options.webApiKeyFile, 'ARQUIVO_WEB_API_KEY_NAO_ENCONTRADO', 16 * 1024).trim()
+      : '';
+    const localFirebaseSecrets = buildLocalFirebaseSecrets(recoveryPlan, serviceAccount, webApiKey);
+    const secretsFile = path.join(baseRoot, 'firebase-recovery-secrets.json');
+    writeJson(secretsFile, localFirebaseSecrets);
 
-    await confirmHuman(originalVersion, recovery.id);
+    const recoveredDeployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId, recoveryView);
+    dryRunCurrentMain(downloadedRoot, dryDir, recoveredDeployConfig.path, secretsFile);
+    const currentSecrets = new Set(currentSecretBindingNames(currentView));
+    const optionalWebKeyPending = recoveryPlan.secrets.includes('FIREBASE_WEB_API_KEY')
+      && !currentSecrets.has('FIREBASE_WEB_API_KEY')
+      && !Object.prototype.hasOwnProperty.call(localFirebaseSecrets, 'FIREBASE_WEB_API_KEY');
+    safeLine('firebasePublicosRecuperados', Object.keys(recoveryPlan.vars).length);
+    safeLine('firebaseSegredosFornecidosLocalmente', Object.keys(localFirebaseSecrets).length);
+    safeLine('segredosAtuaisAPreservar', currentSecrets.size);
+    safeLine('credencialContaServico', 'VALIDADA');
+    safeLine('firebaseWebApiKey', optionalWebKeyPending ? 'PENDENTE_OPCIONAL_PARA_AGENDA' : 'OK_OU_JA_EXISTENTE');
+
+    await confirmHuman(originalVersion, recovery.id, optionalWebKeyPending);
 
     console.log('5/8 Reconfirmando main e produção antes do upload sem tráfego...');
     must(localSha === await remoteMainSha(), 'MAIN_MUDOU_ANTES_DA_REPUBLICACAO');
     must(activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot)) === originalVersion, 'PRODUCAO_MUDOU_ANTES_DO_UPLOAD');
 
     console.log('6/8 Enviando a main como nova versão sem alterar o tráfego...');
-    const preparedVersion = await uploadCurrentMain(
-      downloadedRoot, recoveredDeployConfig.path, minimalConfig, baseRoot, bindingPlan
+    const preparedVersion = uploadCurrentMain(
+      downloadedRoot, recoveredDeployConfig.path, secretsFile, minimalConfig, baseRoot
     );
     safeLine('versaoPreparada', preparedVersion);
 
-    console.log('7/8 Validando todos os bindings da nova versão ainda sem tráfego...');
+    console.log('7/8 Validando Firebase, AUTH_DB e segredos preservados ainda sem tráfego...');
     const preparedView = versionView(preparedVersion, minimalConfig, baseRoot);
     must(preparedView, 'VERSAO_PREPARADA_NAO_LIDA');
-    validateUploadedBindingPlan(preparedView, bindingPlan);
-    must(inspectFirebaseBindings(preparedView).ready, 'VERSAO_PREPARADA_SEM_FIREBASE');
-    must(authDbDatabaseId(preparedView) === databaseId, 'VERSAO_PREPARADA_COM_D1_DIVERGENTE');
+    validatePreparedBindings(preparedView, currentView, recoveryPlan, localFirebaseSecrets, databaseId);
     must(activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot)) === originalVersion, 'PRODUCAO_MUDOU_DURANTE_VALIDACAO');
 
     console.log('8/8 Promovendo somente a versão validada e confirmando a Agenda...');
@@ -827,15 +807,14 @@ export async function recoverAgenda() {
     const finalVersion = activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot));
     must(finalVersion === preparedVersion, 'DEPLOY_FINAL_NAO_E_VERSAO_PREPARADA');
     const finalView = versionView(finalVersion, minimalConfig, baseRoot);
-    validateUploadedBindingPlan(finalView, bindingPlan);
-    must(inspectFirebaseBindings(finalView).ready, 'DEPLOY_FINAL_PERDEU_BINDINGS_FIREBASE');
+    validatePreparedBindings(finalView, currentView, recoveryPlan, localFirebaseSecrets, databaseId);
     completed = true;
     console.log('');
     console.log('AGENDA_RECUPERADA');
     safeLine('main', localSha);
     safeLine('workerVersion', finalVersion);
     safeLine('httpAnonimo', finalProbe.status);
-    console.log('resultado=Firestore voltou a ficar configurado; segredos foram herdados por version_id sem leitura dos valores');
+    console.log('resultado=Agenda voltou ao Firestore usando nova credencial Firebase fornecida somente no computador local');
     console.log('proximaAcao=atualizar /agenda/ e executar uma sincronizacao autorizada');
     return { changed: true, status: finalProbe.status, mainSha: localSha, versionId: finalVersion };
   } catch (error) {
@@ -843,7 +822,12 @@ export async function recoverAgenda() {
       try {
         console.log('');
         console.log('Falha após iniciar a recuperação. Restaurando a versão produtiva anterior...');
-        rollback(originalVersion, minimalConfig, baseRoot, 'Rollback de segurança após falha na recuperação da Agenda');
+        deployUploadedVersion(
+          originalVersion,
+          minimalConfig,
+          baseRoot,
+          'Agenda: restaurar versão anterior após falha na promoção'
+        );
         console.log('ROLLBACK_DE_SEGURANCA=OK');
       } catch {
         console.log('ROLLBACK_DE_SEGURANCA=FALHOU');
@@ -856,10 +840,41 @@ export async function recoverAgenda() {
   }
 }
 
+export function parseRecoveryArgs(argv) {
+  const args = Array.isArray(argv) ? [...argv] : [];
+  const options = { recuperar: false, serviceAccountJson: '', webApiKeyFile: '' };
+  const seen = new Set();
+
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index];
+    if (token === '--recuperar') {
+      must(!seen.has(token), 'ARGUMENTO_DUPLICADO');
+      seen.add(token);
+      options.recuperar = true;
+      continue;
+    }
+    if (token === '--service-account-json' || token === '--web-api-key-file') {
+      must(!seen.has(token), 'ARGUMENTO_DUPLICADO');
+      seen.add(token);
+      const value = args[index + 1];
+      must(value && !String(value).startsWith('--'), 'ARGUMENTO_SEM_VALOR');
+      if (token === '--service-account-json') options.serviceAccountJson = String(value);
+      else options.webApiKeyFile = String(value);
+      index += 1;
+      continue;
+    }
+    throw new SafeError('ARGUMENTO_NAO_RECONHECIDO');
+  }
+
+  must(options.recuperar, 'USAR_RECUPERAR');
+  must(options.serviceAccountJson, 'INFORMAR_SERVICE_ACCOUNT_JSON');
+  return options;
+}
+
 export async function main() {
-  must(process.argv.length === 3 && process.argv[2] === '--recuperar', 'USAR_RECUPERAR');
+  const options = parseRecoveryArgs(process.argv.slice(2));
   must(Number(process.versions.node.split('.')[0]) >= 22, 'NODE_22_OU_SUPERIOR_NECESSARIO');
-  await recoverAgenda();
+  await recoverAgenda(options);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
