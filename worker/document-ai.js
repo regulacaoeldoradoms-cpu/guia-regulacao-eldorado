@@ -6,9 +6,32 @@ import {
   documentAiRoutineMetadata
 } from './document-ai-prompts.js';
 
-export const DOCUMENT_AI_PHASE = '5B';
-export const DOCUMENT_AI_VERSION = 'phase5b-v1';
+export const DOCUMENT_AI_PHASE = '5C';
+export const DOCUMENT_AI_VERSION = 'phase5c-v1';
 const DOCUMENT_AI_RUNTIME_READY = true;
+
+export const DOCUMENT_AI_EXTRACTION_FIELDS = Object.freeze({
+  comprovante_atendimento: Object.freeze([
+    'nome_paciente',
+    'cpf',
+    'cns',
+    'data_nascimento',
+    'nome_mae',
+    'telefone',
+    'endereco',
+    'agente'
+  ]),
+  pagina_medica_autorizada: Object.freeze([
+    'titulo',
+    'motivo_encaminhamento',
+    'medico',
+    'crm_rms',
+    'procedimento_solicitado',
+    'codigo_procedimento',
+    'cid',
+    'descricao_cid'
+  ])
+});
 
 export class DocumentAiError extends Error {
   constructor(code, message, status = 400) {
@@ -44,7 +67,7 @@ export function documentAiPublicConfig(env = {}) {
     persistence: 'none',
     features: {
       classifyPage: true,
-      extractPage: false,
+      extractPage: true,
       documentChat: false
     },
     routines: documentAiRoutineMetadata()
@@ -78,6 +101,66 @@ export function normalizeDocumentAiClassification(value) {
     throw new DocumentAiError('DOCUMENT_AI_PAGE_TYPE_INVALID', 'Classificação de página inválida.', 400);
   }
   return { pageNumber, pageType };
+}
+
+export function normalizeDocumentAiExtraction(value, expected = {}) {
+  const pageNumber = normalizeDocumentAiPageNumber(value?.pageNumber);
+  const pageType = String(value?.pageType || '').trim();
+  const allowedFields = DOCUMENT_AI_EXTRACTION_FIELDS[pageType];
+  if (!allowedFields) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_EXTRACTION_TYPE_INVALID',
+      'Esta página não possui rotina de extração autorizada.',
+      422
+    );
+  }
+
+  if (expected.pageNumber != null && pageNumber !== normalizeDocumentAiPageNumber(expected.pageNumber)) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PAGE_PROVENANCE_MISMATCH',
+      'A extração perdeu a proveniência da página.',
+      502
+    );
+  }
+  if (expected.pageType && pageType !== String(expected.pageType)) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PAGE_TYPE_MISMATCH',
+      'A extração não corresponde à classificação autorizada.',
+      502
+    );
+  }
+
+  const sourceFields = value?.fields;
+  if (!sourceFields || typeof sourceFields !== 'object' || Array.isArray(sourceFields)) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_FIELDS_INVALID',
+      'A extração não retornou campos estruturados.',
+      502
+    );
+  }
+
+  const unknown = Object.keys(sourceFields).filter((key) => !allowedFields.includes(key));
+  if (unknown.length) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_FIELDS_UNEXPECTED',
+      'A extração retornou campos fora do schema autorizado.',
+      502
+    );
+  }
+
+  const fields = {};
+  for (const key of allowedFields) {
+    if (!(key in sourceFields)) {
+      throw new DocumentAiError(
+        'DOCUMENT_AI_FIELD_MISSING',
+        'A extração não retornou todos os campos obrigatórios do schema.',
+        502
+      );
+    }
+    fields[key] = normalizeDocumentAiField(sourceFields[key]);
+  }
+
+  return { pageNumber, pageType, fields };
 }
 
 export function documentAiTechnicalEvent(name, properties = {}) {
