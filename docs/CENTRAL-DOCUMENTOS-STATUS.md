@@ -72,6 +72,17 @@ O V4 concluiu as sete etapas: runtime fixo e blobs conferidos; produção/previe
 
 **Estado de segurança:** a nova janela existe e está ativa no D1, mas a escrita no Google Drive continua bloqueada pelo feature gate. Nenhum PDF foi alterado por esta preparação. O próximo passo é validar login e leitura real no frontend de homologação com o gate ainda `false`; somente depois deve existir nova confirmação humana para habilitar escrita temporária.
 
+## Salvaguardas preparadas antes da escrita — 18/09/2026
+
+Enquanto o gate permanece `false`, foram preparados e validados dois procedimentos adicionais, sem execução remota:
+
+- `scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.mjs`: somente poderá publicar uma versão preview com gate `true` depois de reconfirmar produção, preview preparado, controle D1 ativo, ausência de sessão de upload, tempo mínimo restante e confirmação humana explícita de que a leitura sem escrita foi validada. Não altera deployment de produção.
+- `scripts/central-docs/encerrar-janela-4d-v4.mjs`: encerramento fail-closed; revoga primeiro o controle D1 e, se a escrita tiver sido ligada, tenta recolocar o alias em uma versão com gate `false`, confirmando bloqueio HTTP final.
+
+Workflow `Central de Documentos — Procedimentos operacionais 4D`, run `35316410717`, job `105508900999`: sintaxe aprovada e **87/87 V3 + 9/9 preparo V4 + 5/5 habilitação V4 + 4/4 encerramento V4**, zero falhas.
+
+Nenhum desses dois procedimentos foi executado contra Cloudflare/D1. A janela preparada continua com `DOCUMENTS_DRIVE_WRITE_ENABLED=false`.
+
 ## Fase atual
 
 **Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; nova janela preparada e ativa; gate de escrita false; validar login/leitura antes de habilitar escrita.**
@@ -197,7 +208,7 @@ Artefatos anteriores preservados:
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
-| Checks/testes | Head funcional `1d4decd`: 285/285 Worker; staging/governança verdes; navegador Central 75/3 skipped; abertura 11+24+8. V4: run `35315648867`, 87/87 V3 + 9/9 V4, sintaxe aprovada |
+| Checks/testes | Head funcional `1d4decd`: 285/285 Worker; staging/governança verdes; navegador Central 75/3 skipped; abertura 11+24+8. Operacionais 4D run `35316410717`: 87 V3 + 9 preparo + 5 habilitação + 4 encerramento, zero falhas |
 | Bloqueios | Próximo passo exige login real no frontend de homologação para validar leitura com gate false; escrita não deve ser habilitada antes dessa evidência |
 | Riscos | D1/OAuth continuam compartilhados; alias/produção podem mudar entre preparo e execução; gate deve permanecer false até a janela nova ser confirmada; preflight/upload não são atômicos |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
