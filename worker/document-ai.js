@@ -244,7 +244,15 @@ export function normalizeDocumentAiChatResponse(value, evidence) {
   }
 
   const terminal = /^(NÃO CONSTA|ILEGÍVEL)[.!]?$/iu.test(answer);
-  if (!terminal) {
+  if (terminal) {
+    if (pages.length || citations.length) {
+      throw new DocumentAiError(
+        'DOCUMENT_AI_CHAT_PROVENANCE_MISMATCH',
+        'Resposta terminal não deve declarar páginas contraditórias.',
+        502
+      );
+    }
+  } else {
     if (!pages.length || !citations.length) {
       throw new DocumentAiError(
         'DOCUMENT_AI_CHAT_PROVENANCE_REQUIRED',
@@ -252,14 +260,14 @@ export function normalizeDocumentAiChatResponse(value, evidence) {
         502
       );
     }
-    for (const page of pages) {
-      if (!citations.includes(page)) {
-        throw new DocumentAiError(
-          'DOCUMENT_AI_CHAT_PROVENANCE_MISMATCH',
-          'A resposta não vinculou todas as páginas declaradas.',
-          502
-        );
-      }
+    const declared = [...pages].sort((a, b) => a - b);
+    const cited = [...new Set(citations)].sort((a, b) => a - b);
+    if (declared.length !== cited.length || declared.some((page, index) => page !== cited[index])) {
+      throw new DocumentAiError(
+        'DOCUMENT_AI_CHAT_PROVENANCE_MISMATCH',
+        'A resposta e a lista de páginas possuem proveniência divergente.',
+        502
+      );
     }
   }
 
