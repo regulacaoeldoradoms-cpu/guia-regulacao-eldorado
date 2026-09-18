@@ -1064,7 +1064,7 @@ sqliteTest('Fase 4B salvar como novo inicia create resumable no mesmo parent e p
 });
 
 
-sqliteTest('IA documental exige capability extract e permanece fail-closed na 5A', async () => {
+sqliteTest('IA documental 5B exige extract e produção bloqueia classificação antes de ler a página', async () => {
   const env = environment();
   const user = await register(env, 'documentos.ia', '127.0.0.93');
   await setDocumentCapabilities(env, 'documentos.ia', { view: true }, 'admin');
@@ -1102,9 +1102,11 @@ sqliteTest('IA documental exige capability extract e permanece fail-closed na 5A
   assert.equal(enabledPayload.ai.processingEnabled, false);
   assert.equal(enabledPayload.ai.pageIsolation, true);
   assert.equal(enabledPayload.ai.provenanceRequired, true);
+  assert.equal(enabledPayload.ai.features.classifyPage, true);
+  assert.equal(enabledPayload.ai.features.extractPage, false);
 
   const blockedProcessing = await handleDocumentsRoute(
-    documentRequest('/api/documents/ai/page/analyze', user.token, { method: 'POST', body: { pageNumber: 1 } }),
+    documentRequest('/api/documents/ai/page/classify', user.token, { method: 'POST', body: { ignored: true } }),
     env,
     'https://regulacaoeldoradoms.com.br',
     true
