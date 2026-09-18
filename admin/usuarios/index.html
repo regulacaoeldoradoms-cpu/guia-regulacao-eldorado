@@ -97,10 +97,14 @@
             Regulador(a) — acesso à Central de Documentos e leitura do Google Drive institucional
           </label>
           <label style="display:flex;gap:9px;align-items:center;padding:9px 0 4px 24px">
+            <input id="editDocumentAiPermission" type="checkbox">
+            Permitir IA documental — classificação, extração e perguntas com proveniência por página
+          </label>
+          <label style="display:flex;gap:9px;align-items:center;padding:9px 0 4px 24px">
             <input id="editDocumentPdfPermission" type="checkbox">
             Permitir editor de PDF — inclui sincronização segura com o Drive quando habilitada no ambiente
           </label>
-          <div class="password-meter">A edição é uma permissão documental separada. Ela só pode ser usada por quem também mantém a função Regulador(a).</div>
+          <div class="password-meter">IA documental e edição são permissões separadas. Ambas exigem que a conta mantenha a função Regulador(a).</div>
         </div>
         <div class="portal-field full"><label style="display:flex;gap:9px;align-items:center"><input id="editActive" type="checkbox"> Acesso ativo</label></div>
         <div class="full account-actions"><button class="portal-button primary" type="submit">Salvar alterações</button><button class="portal-button secondary" type="button" data-close-modal="editUserModal">Cancelar</button></div>
