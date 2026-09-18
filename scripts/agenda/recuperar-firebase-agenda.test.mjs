@@ -23,7 +23,8 @@ import {
   remoteMainSha,
   locateExtractedRepository,
   wranglerArgs,
-  npxCliPath
+  npxCliPath,
+  newUploadedVersion
 } from './recuperar-firebase-agenda.mjs';
 
 function version(bindings) {
@@ -197,6 +198,15 @@ test('substitui database_id antigo no bloco AUTH_DB sem duplicar a chave', () =>
   assert.doesNotMatch(patched, /aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/);
 });
 
+test('identifica exatamente uma nova versão após upload desacoplado', () => {
+  const oldA = '11111111-2222-3333-4444-555555555555';
+  const oldB = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+  const fresh = '99999999-8888-7777-6666-555555555555';
+  assert.equal(newUploadedVersion(new Set([oldA, oldB]), new Set([fresh, oldA, oldB])), fresh);
+  assert.throws(() => newUploadedVersion(new Set([oldA]), new Set([oldA])), /VERSAO_ENVIADA_NAO_IDENTIFICADA/);
+  assert.throws(() => newUploadedVersion(new Set([oldA]), new Set([oldA, oldB, fresh])), /VERSAO_ENVIADA_NAO_IDENTIFICADA/);
+});
+
 test('distingue incidente de armazenamento da barreira de autenticação', () => {
   assert.deepEqual(classifyAgendaProbe(503), {
     status: 503,
@@ -249,6 +259,8 @@ test('localiza repositório extraído pelo nome do snapshot', () => {
 
 test('classifica falhas do Wrangler sem precisar exibir stdout ou stderr', () => {
   assert.equal(classifyWranglerFailure({ status: 1, stderr: 'Missing database_id for D1 binding' }), 'CONFIG_D1');
+  assert.equal(classifyWranglerFailure({ status: 1, stderr: 'Missing required secrets: FIREBASE_PRIVATE_KEY' }), 'SEGREDOS_AUSENTES');
+  assert.equal(classifyWranglerFailure({ status: 1, stderr: 'config includes d1_databases but secret is not configured' }), 'SEGREDOS_AUSENTES');
   assert.equal(classifyWranglerFailure({ status: 1, stderr: 'You are not logged in. Please login.' }), 'AUTENTICACAO_CLOUDFLARE');
   assert.equal(classifyWranglerFailure({ status: 1, stderr: 'fetch failed ETIMEDOUT' }), 'REDE');
   assert.equal(classifyWranglerFailure({ status: null, stderr: '' }), 'PROCESSO_NAO_INICIADO');
@@ -291,8 +303,13 @@ test('script não contém valor real de segredo nem imprime payload de bindings'
   assert.doesNotMatch(source, /console\.log\([^\n]*(binding\.text|stdout|stderr)/);
   assert.match(source, /firebaseBindingsAusentes/);
   assert.match(source, /ROLLBACK_DE_SEGURANCA/);
-  assert.match(source, /bindings Firebase explícitos/);
+  assert.match(source, /Firebase explícitos|bindings recuperados/);
   assert.match(source, /firebaseSegredosExigidos/);
+  assert.match(source, /versions', 'upload/);
+  assert.match(source, /versions', 'deploy/);
+  assert.match(source, /--experimental-auto-create=false/);
+  assert.match(source, /versaoPreparada/);
+  assert.doesNotMatch(source, /runWrangler\(\['deploy'/);
   assert.doesNotMatch(source, /safeLine\([^\n]*(FIREBASE_PROJECT_ID|FIREBASE_CLIENT_EMAIL|FIREBASE_WEB_API_KEY|FIREBASE_STORAGE_BUCKET)/);
   assert.doesNotMatch(source, /git\s+clone|ls-remote|rev-parse/);
   assert.match(source, /codeload\.github\.com/);
