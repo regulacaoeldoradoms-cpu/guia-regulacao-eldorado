@@ -91,6 +91,9 @@ jobs:
           grep -q 'endpoint: ""' dist-staging/homologacao/js/auth-config.js
           grep -q 'workerConfigured: false' dist-staging/homologacao-5e/config.js
           grep -q 'DADOS 100% SINTÉTICOS' dist-staging/homologacao-5e/phase5e.js
+          grep -q 'phase5eWorkerOrigin' dist-staging/homologacao-5e/index.html
+          grep -q 'OFFICIAL_WORKER_ORIGIN' dist-staging/homologacao-5e/phase5e.js
+          ! grep -R -E 'localStorage|sessionStorage|indexedDB' dist-staging/homologacao-5e
           grep -q 'HOMOLOGAÇÃO 4D' dist-staging/homologacao/documentos/index.html
           grep -q "Disallow: /" dist-staging/robots.txt
           ! grep -R -F --exclude-dir=homologacao --exclude-dir=homologacao-5e "yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" dist-staging
@@ -157,7 +160,8 @@ jobs:
           done
           for invalid_origin in \
             'https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev:8443' \
-            'https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/'; do
+            'https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/' \
+            'https://outro-preview-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev'; do
             if CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL="$invalid_origin" node scripts/build-central-docs-staging.mjs; then
               echo 'ERRO: build aceitou variante indevida da origem 5E.' >&2
               exit 1
