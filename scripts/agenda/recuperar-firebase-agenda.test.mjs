@@ -9,6 +9,9 @@ import {
   REQUIRED_FIREBASE_BINDINGS,
   activeVersionFromDeployment,
   inspectFirebaseBindings,
+  authDbDatabaseId,
+  injectAuthDbDatabaseId,
+  classifyWranglerFailure,
   classifyAgendaProbe,
   chooseKnownGoodVersion,
   mainBranchApiUrl,
@@ -63,6 +66,55 @@ test('chave privada precisa continuar como secret_text', () => {
   assert.ok(summary.missing.includes('FIREBASE_PRIVATE_KEY'));
 });
 
+test('recuperação reaproveita o ID D1 já ligado ao AUTH_DB', () => {
+  const id = '11111111-2222-3333-4444-555555555555';
+  assert.equal(authDbDatabaseId(version([
+    { name: 'AUTH_DB', type: 'd1', id }
+  ])), id);
+  assert.throws(() => authDbDatabaseId(version([
+    { name: 'AUTH_DB', type: 'd1', id: 'invalido' }
+  ])), /AUTH_DB_ID_NAO_IDENTIFICADO/);
+});
+
+test('injeta database_id somente no bloco AUTH_DB do wrangler temporário', () => {
+  const id = '11111111-2222-3333-4444-555555555555';
+  const source = [
+    'name = "worker"',
+    'keep_vars = true',
+    '',
+    '[[d1_databases]]',
+    'binding = "OUTRA_DB"',
+    'database_name = "outra"',
+    '',
+    '[[d1_databases]]',
+    'binding = "AUTH_DB"',
+    'database_name = "portal-regulacao-users"',
+    '',
+    '[ai]',
+    'binding = "AI"',
+    ''
+  ].join('\n');
+  const patched = injectAuthDbDatabaseId(source, id);
+  assert.match(patched, /binding = "AUTH_DB"\ndatabase_name = "portal-regulacao-users"\ndatabase_id = "11111111-2222-3333-4444-555555555555"/);
+  assert.doesNotMatch(patched, /binding = "OUTRA_DB"\ndatabase_name = "outra"\ndatabase_id/);
+  assert.equal((patched.match(/database_id =/g) || []).length, 1);
+});
+
+test('substitui database_id antigo no bloco AUTH_DB sem duplicar a chave', () => {
+  const id = '11111111-2222-3333-4444-555555555555';
+  const source = [
+    '[[d1_databases]]',
+    'binding = "AUTH_DB"',
+    'database_name = "portal-regulacao-users"',
+    'database_id = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"',
+    ''
+  ].join('\n');
+  const patched = injectAuthDbDatabaseId(source, id);
+  assert.equal((patched.match(/database_id =/g) || []).length, 1);
+  assert.match(patched, new RegExp(id));
+  assert.doesNotMatch(patched, /aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee/);
+});
+
 test('distingue incidente de armazenamento da barreira de autenticação', () => {
   assert.deepEqual(classifyAgendaProbe(503), {
     status: 503,
@@ -111,6 +163,13 @@ test('localiza repositório extraído pelo nome do snapshot', () => {
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('classifica falhas do Wrangler sem precisar exibir stdout ou stderr', () => {
+  assert.equal(classifyWranglerFailure({ status: 1, stderr: 'Missing database_id for D1 binding' }), 'CONFIG_D1');
+  assert.equal(classifyWranglerFailure({ status: 1, stderr: 'You are not logged in. Please login.' }), 'AUTENTICACAO_CLOUDFLARE');
+  assert.equal(classifyWranglerFailure({ status: 1, stderr: 'fetch failed ETIMEDOUT' }), 'REDE');
+  assert.equal(classifyWranglerFailure({ status: null, stderr: '' }), 'PROCESSO_NAO_INICIADO');
 });
 
 test('comando Wrangler fixa versão e não embute credenciais', () => {

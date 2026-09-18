@@ -18,6 +18,7 @@ Atualizado em 18/09/2026.
 - A validação anônima não acessa pacientes: com o Firebase ausente a API responde 503; com o armazenamento restaurado a requisição sem sessão alcança novamente a barreira de autenticação (401/403).
 - Estado neste documento: **ferramenta de recuperação preparada; resta executar no ambiente Cloudflare autenticado e depois homologar a Agenda real**. Não declarar o incidente encerrado antes dessa evidência.
 - Primeira tentativa em 18/09 parou na etapa 1 com `RECUPERACAO_INTERROMPIDA=GIT_CLONE_FALHOU`, antes de qualquer alteração na Cloudflare. A ferramenta foi revisada para não depender do Git local: a `main` passa a ser obtida pela API pública do GitHub e por snapshot ZIP do commit exato, com reconfirmação do SHA antes da republicação.
+- Segunda tentativa em 18/09 avançou até a etapa 2 e parou com `RECUPERACAO_INTERROMPIDA=DRY_RUN_MAIN_FALHOU`, também antes de qualquer alteração na Cloudflare. A inspeção do código mostrou uma fragilidade concreta: o `worker/wrangler.toml` versionado declara `AUTH_DB` por `database_name`, enquanto os scripts Cloudflare já homologados do projeto sempre fornecem também o `database_id` explícito em operações locais. A recuperação foi ajustada para ler o ID técnico de `AUTH_DB` da versão produtiva ativa, injetá-lo somente numa cópia temporária do `wrangler.toml` e usar essa cópia tanto no dry-run quanto na republicação. Nenhum segredo Firebase é lido ou gravado nesse processo.
 
 ### Execução controlada
 

@@ -8,7 +8,7 @@
  * Estratégia:
  * 1. confirma que /api/agenda ainda está no erro específico de armazenamento;
  *    a main é baixada como snapshot ZIP autenticado pela referência pública do GitHub, sem exigir Git instalado;
- * 2. inspeciona somente nomes/tipos de bindings, nunca valores;
+ * 2. inspeciona somente nomes/tipos de bindings, nunca valores, e injeta no arquivo temporário apenas o ID técnico do D1 já ligado a AUTH_DB;
  * 3. localiza uma versão já homologada da Agenda com os três bindings;
  * 4. após confirmação humana, faz rollback temporário para essa versão;
  * 5. republica a main atual com keep_vars=true, herdando a configuração recuperada;
@@ -99,6 +99,78 @@ export function inspectFirebaseBindings(version) {
   return { ready: missing.length === 0, present, types, missing };
 }
 
+export function authDbDatabaseId(version) {
+  const bindings = Array.isArray(version?.resources?.bindings) ? version.resources.bindings : [];
+  const binding = bindings.find((item) => item?.name === 'AUTH_DB' && item?.type === 'd1');
+  const id = String(binding?.id || '');
+  must(UUID.test(id), 'AUTH_DB_ID_NAO_IDENTIFICADO');
+  return id;
+}
+
+function sectionStart(line) {
+  return /^\s*\[\[?[^\]]+\]?\]\s*$/.test(line);
+}
+
+export function injectAuthDbDatabaseId(toml, databaseId) {
+  must(UUID.test(databaseId), 'AUTH_DB_ID_INVALIDO');
+  const lines = String(toml || '').replace(/\r\n/g, '\n').split('\n');
+  let blockStart = -1;
+  let blockEnd = lines.length;
+  let found = false;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (/^\s*\[\[d1_databases\]\]\s*$/.test(lines[index])) {
+      if (blockStart >= 0 && found) {
+        blockEnd = index;
+        break;
+      }
+      blockStart = index;
+      found = false;
+      continue;
+    }
+    if (blockStart >= 0 && sectionStart(lines[index])) {
+      if (found) {
+        blockEnd = index;
+        break;
+      }
+      blockStart = -1;
+      continue;
+    }
+    if (blockStart >= 0 && /^\s*binding\s*=\s*["']AUTH_DB["']\s*$/.test(lines[index])) {
+      found = true;
+    }
+  }
+
+  must(blockStart >= 0 && found, 'AUTH_DB_CONFIG_NAO_ENCONTRADO');
+
+  let databaseIdLine = -1;
+  let databaseNameLine = -1;
+  for (let index = blockStart + 1; index < blockEnd; index += 1) {
+    if (/^\s*database_id\s*=/.test(lines[index])) databaseIdLine = index;
+    if (/^\s*database_name\s*=/.test(lines[index])) databaseNameLine = index;
+  }
+
+  const line = `database_id = "${databaseId}"`;
+  if (databaseIdLine >= 0) lines[databaseIdLine] = line;
+  else {
+    const insertAt = databaseNameLine >= 0 ? databaseNameLine + 1 : blockEnd;
+    lines.splice(insertAt, 0, line);
+  }
+
+  const output = lines.join('\n');
+  must(output.includes(line), 'AUTH_DB_ID_NAO_INJETADO');
+  return output;
+}
+
+function createRecoveryDeployConfig(repositoryRoot, databaseId) {
+  const original = path.join(repositoryRoot, 'worker', 'wrangler.toml');
+  must(fs.existsSync(original), 'WRANGLER_TOML_AUSENTE');
+  const patched = injectAuthDbDatabaseId(fs.readFileSync(original, 'utf8'), databaseId);
+  const target = path.join(repositoryRoot, 'worker', 'wrangler.agenda-recovery.toml');
+  fs.writeFileSync(target, patched, { encoding: 'utf8', mode: 0o600 });
+  return target;
+}
+
 export function classifyAgendaProbe(status) {
   const code = Number(status || 0);
   return {
@@ -158,9 +230,22 @@ export function wranglerArgs(args) {
   return ['--yes', 'wrangler@' + FIXED.wranglerVersion, ...args];
 }
 
+export function classifyWranglerFailure(result = {}) {
+  const text = `${result.stderr || ''}\n${result.stdout || ''}`.toLowerCase();
+  if (/database_id|d1 database|d1_databases/.test(text)) return 'CONFIG_D1';
+  if (/not logged in|login|api token|authentication|unauthorized|forbidden/.test(text)) return 'AUTENTICACAO_CLOUDFLARE';
+  if (/enotfound|econnreset|etimedout|network|network request failed|fetch failed/.test(text)) return 'REDE';
+  if (/npm|npx|package/.test(text) && /error|failed|not found/.test(text)) return 'NPX_WRANGLER';
+  if (/toml|config/.test(text) && /error|invalid|missing/.test(text)) return 'CONFIG_WRANGLER';
+  return result.status === null ? 'PROCESSO_NAO_INICIADO' : 'WRANGLER';
+}
+
 function runWrangler(args, cwd, code = 'WRANGLER_FALHOU', allowFailure = false) {
   const result = run(npxCommand(), wranglerArgs(args), cwd, { timeout: 300000 });
-  if (!allowFailure) must(result.ok, code);
+  if (!result.ok && !allowFailure) {
+    safeLine('wranglerFalhaCategoria', classifyWranglerFailure(result));
+    throw new SafeError(code);
+  }
   return result;
 }
 
@@ -349,10 +434,9 @@ function rollback(versionId, minimalConfig, cwd, message) {
   );
 }
 
-function deployCurrentMain(cloneRoot) {
-  const config = path.join(cloneRoot, 'worker', 'wrangler.toml');
-  must(fs.existsSync(config), 'WRANGLER_TOML_AUSENTE');
-  runWrangler(['deploy', '--config', config], cloneRoot, 'DEPLOY_MAIN_FALHOU');
+function deployCurrentMain(repositoryRoot, config) {
+  must(fs.existsSync(config), 'WRANGLER_RECOVERY_CONFIG_AUSENTE');
+  runWrangler(['deploy', '--config', config], repositoryRoot, 'DEPLOY_MAIN_FALHOU');
 }
 
 function validateCurrentMain(cloneRoot) {
@@ -366,12 +450,12 @@ function validateCurrentMain(cloneRoot) {
   );
 }
 
-function dryRunCurrentMain(cloneRoot, dryDir) {
-  const config = path.join(cloneRoot, 'worker', 'wrangler.toml');
+function dryRunCurrentMain(repositoryRoot, dryDir, config) {
+  must(fs.existsSync(config), 'WRANGLER_RECOVERY_CONFIG_AUSENTE');
   fs.mkdirSync(dryDir, { recursive: true });
   runWrangler(
     ['deploy', '--dry-run', '--outdir', dryDir, '--config', config],
-    cloneRoot,
+    repositoryRoot,
     'DRY_RUN_MAIN_FALHOU'
   );
 }
@@ -414,13 +498,15 @@ export async function recoverAgenda() {
     const downloadedRoot = await downloadMainSnapshot(baseRoot, localSha);
     validateCurrentMain(downloadedRoot);
 
-    console.log('2/8 Validando o deploy atual sem alterar produção...');
-    dryRunCurrentMain(downloadedRoot, dryDir);
+    console.log('2/8 Conferindo o Worker produtivo e preparando o deploy local...');
     writeJson(minimalConfig, { name: FIXED.worker, account_id: FIXED.account, send_metrics: false });
-
-    console.log('3/8 Inspecionando somente nomes e tipos dos bindings...');
     originalVersion = activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot));
     const currentView = versionView(originalVersion, minimalConfig, baseRoot);
+    const databaseId = authDbDatabaseId(currentView);
+    const deployConfig = createRecoveryDeployConfig(downloadedRoot, databaseId);
+
+    console.log('3/8 Validando o deploy atual sem alterar produção...');
+    dryRunCurrentMain(downloadedRoot, dryDir, deployConfig);
     const currentBindings = inspectFirebaseBindings(currentView);
     safeLine('firebaseBindingsAtuais', currentBindings.ready ? 'OK' : 'INCOMPLETOS');
     safeLine('firebaseBindingsAusentes', currentBindings.missing.join(',') || 'nenhum');
@@ -447,7 +533,7 @@ export async function recoverAgenda() {
     must(localSha === await remoteMainSha(), 'MAIN_MUDOU_ANTES_DA_REPUBLICACAO');
 
     console.log('7/8 Republicando a main atual com os bindings preservados...');
-    deployCurrentMain(downloadedRoot);
+    deployCurrentMain(downloadedRoot, deployConfig);
 
     console.log('8/8 Confirmando armazenamento e autenticação da Agenda...');
     const finalProbe = await waitForStorageGuard(true);
