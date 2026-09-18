@@ -7,6 +7,8 @@ on:
       - 'scripts/central-docs/liberar-escrita-preview-4d-v3.test.mjs'
       - 'scripts/central-docs/preparar-nova-janela-4d-v4.mjs'
       - 'scripts/central-docs/preparar-nova-janela-4d-v4.test.mjs'
+      - 'scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.mjs'
+      - 'scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.test.mjs'
       - '.github/workflows/validate-central-docs-operational-v3.yml'
 
 permissions:
@@ -28,3 +30,5 @@ jobs:
           node --check scripts/central-docs/preparar-nova-janela-4d-v4.mjs
           node --test scripts/central-docs/liberar-escrita-preview-4d-v3.test.mjs
           node --test scripts/central-docs/preparar-nova-janela-4d-v4.test.mjs
+          node --check scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.mjs
+          node --test scripts/central-docs/habilitar-escrita-nova-janela-4d-v4.test.mjs
