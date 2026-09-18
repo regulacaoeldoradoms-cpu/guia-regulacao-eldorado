@@ -47,6 +47,9 @@ jobs:
       - name: Executar testes do encerramento 5E
         run: node --test scripts/central-docs/encerrar-homologacao-5e.test.mjs
 
+      - name: Executar contratos do laboratório sintético 5E
+        run: node --test testing/central-docs-ai/phase5e-harness.test.mjs
+
       - name: Garantir que procedimentos não promovem produção
         run: |
           set -euo pipefail
