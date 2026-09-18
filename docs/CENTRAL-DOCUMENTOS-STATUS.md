@@ -213,9 +213,32 @@ Correção preparada em branch separada `fix/central-docs-production-phase4-rele
 
 Esse ajuste não muda código de edição nem permissões; apenas conclui a configuração de release produtiva já aprovada pela homologação 4D. Próxima ação: validar CI, mesclar o PR de configuração e confirmar novo deployment do Worker e publicação do site.
 
+## Publicação produtiva da Fase 4 confirmada — 18/09/2026
+
+PR #201 foi mesclado em `98d1a073d5c131c61b8d045e822ec650098178d1`, incorporando a Fase 4 à `main`. Em seguida, o ajuste final de release produtiva foi concluído no PR #209, merge `8f49c12e35e09def3ff1fe34eaeae6dd2ac05096`.
+
+Evidências de publicação do merge final:
+
+- Cloudflare Worker build **success**, check `Workers Builds: yellow-wave-d0a1guia-regulacao-ia`, versão produtiva `a08c7135-76cd-4f0d-a376-a9e495f031a6`;
+- GitHub Pages build/deploy **success**, run `35319720667`; build, report e deploy concluídos;
+- Cloudflare Pages staging **success** no mesmo commit, preview `74b9cffd.portal-regulacao-central-staging.pages.dev`;
+- validação Fases 1–4 em `main`: run `35319722008`, sucesso;
+- governança Central: run `35319722072`, sucesso.
+
+Configuração produtiva final do Worker:
+
+- `DOCUMENTS_DRIVE_WRITE_ENABLED=true`;
+- `ALLOWED_ORIGINS` contém somente os domínios oficiais do Portal;
+- `DOCUMENTS_HOMOLOGATION_ORIGIN=""`, neutralizando explicitamente o preview apesar de `keep_vars=true`;
+- nenhum segredo foi adicionado ao repositório.
+
+Conclusão: **Fase 4 publicada em produção**. A Central de Documentos pode ser usada com sincronização segura no fluxo `replace_pdf`. `save_copy` permanece coberto por testes sintéticos e deve ser tratado como limitação conhecida até uma homologação real própria. A latência percebida maior que no Lumin permanece adiada para a Fase 7.
+
+Próxima fase pelo Guia Mestre: **Fase 5 — IA documental**, em branch/PR separados. Não reabrir a Fase 4 por hardening não bloqueante.
+
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive: CONCLUÍDA e aceita para publicação.** A 4D terminou com matriz real aprovada e janela fail-closed encerrada. **Próxima fase após publicação: Fase 5 — IA documental.**
+**Fase 5 — IA documental.** A **Fase 4 está concluída e publicada em produção**; não reiniciar a 4D. A Fase 5 deve começar como nova frente isolada, preservando privacidade e os contratos já publicados.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -327,10 +350,10 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 4 concluída/aceita; próxima após publicação: Fase 5 — IA documental |
-| Última ação concluída | Janela V4 encerrada fail-closed: controle revogado, gate false e bloqueio HTTP confirmado |
-| Branch/PR | `codex/central-docs-drive-sync-phase4`; #201 apto para sair de draft/merge após aceite final |
-| Main | `cd71ad566a443cd2f89b1d98285856c22baf73d7` incorporada à branch; 0 commits atrás; login/abertura/Home preservados |
+| Fase/subfase | Fase 5 — IA documental; Fase 4 concluída e publicada |
+| Última ação concluída | Publicação produtiva da Fase 4 confirmada: PR #209 merge `8f49c12`, Worker `a08c7135…`, GitHub Pages deploy verde |
+| Branch/PR | Fase 4 encerrada: #201 e #209 mesclados; próxima frente deve usar branch nova para Fase 5 |
+| Main | `8f49c12e35e09def3ff1fe34eaeae6dd2ac05096` — release produtiva final da Fase 4 |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
@@ -339,11 +362,11 @@ Artefatos anteriores preservados:
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
 | Checks/testes | Head funcional `1d4decd`: 285/285 Worker; navegador Central 75/3 skipped; abertura 11+24+8. Operacionais 4D corrigidos run `35317193310`: 87 V3 + 9 preparo + 5 habilitação + 5 encerramento, zero falhas |
-| Bloqueios | PR #201 já mesclado; resta aplicar o ajuste final de configuração produtiva do Worker e confirmar site/Worker oficiais |
+| Bloqueios | Nenhum bloqueio da Fase 4. Para Fase 5, definir primeiro o módulo/versionamento de IA sem misturar com o editor |
 | Riscos | D1/OAuth compartilhados; preflight/upload não atômicos; latência percebida maior que Lumin foi registrada para Fase 7 e não deve ser mascarada com falso sucesso otimista |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Validar/mesclar `fix/central-docs-production-phase4-release`, acompanhar deploy do Worker/GitHub Pages e confirmar a Central no domínio oficial |
-| Depois | Registrar merge/publicação e iniciar Fase 5 em frente separada; latência de sync fica para Fase 7 |
+| Próxima ação exata | Iniciar Fase 5 em branch separada: recuperar Dossiê/deltas de IA documental e definir escopo mínimo do painel lateral + proveniência por página |
+| Depois | Implementar Fase 5 por módulos versionados; latência de sync continua reservada para Fase 7 |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
 ## Histórico recuperável
