@@ -2,22 +2,34 @@
 
 Última atualização: 18/09/2026.
 
-## Reconciliação com a main atual — 18/09/2026
+## Reconciliação com a main atual — concluída em 18/09/2026
 
-A branch da Fase 4 foi reconciliada tecnicamente com a main `cd71ad5` antes de abrir outra janela 4D. O PR #201 foi colocado em **draft** para impedir integração acidental antes da homologação real.
+A branch da Fase 4 incorporou a main `cd71ad566a443cd2f89b1d98285856c22baf73d7` por merge de dois pais no commit `b28999c6d0f0fb415783f7d3c85abf3cad82edf7`. O PR #201 foi colocado em **draft** para impedir integração acidental antes da homologação real 4D. Depois da reconciliação, a branch ficou **0 commits atrás da main**, o PR tornou-se tecnicamente mergeável, mas continua deliberadamente sem merge.
 
-A comparação desde a base comum mostrou somente três arquivos alterados nos dois lados: `docs/CENTRAL-DOCUMENTOS-STATUS.md`, `portal-sw.js` e `scripts/build-central-docs-staging.mjs`. A resolução preserva simultaneamente a Fase 4 e as mudanças recentes da abertura/Home da main: cache/versionamento da Central + aquecimento/invalidação seletiva da abertura no Service Worker; bundle 4D + harness/vídeo/scripts de abertura no staging. Para `/opening/*`, a CSP da main foi preservada de forma específica, sem afrouxar os caminhos sintéticos/4D existentes.
+A comparação desde a base comum mostrou somente três arquivos alterados nos dois lados: `docs/CENTRAL-DOCUMENTOS-STATUS.md`, `portal-sw.js` e `scripts/build-central-docs-staging.mjs`. A resolução preservou simultaneamente a Fase 4 e a abertura/Home já publicada na main: cache/versionamento da Central + aquecimento/invalidação seletiva da abertura no Service Worker; bundle 4D + harness/vídeo/scripts da abertura no staging. Para `/opening/*`, a CSP da main foi preservada de forma específica, sem afrouxar os caminhos sintéticos/4D existentes.
 
-Não houve merge em main, escrita no Drive, nova janela Cloudflare, SQL, OAuth ou alteração de segredo nesta reconciliação. A próxima validação é somente CI/testes relevantes do novo head; falhas verificadas devem ser corrigidas antes de preparar a nova janela 4D.
+A primeira execução após o merge detectou uma regressão **somente de contrato automatizado**: a invalidação da abertura usava o mesmo cache por meio da variável `staticCache`, mas o teste oficial exige a forma incorporada na main com `loginCache`. O código foi alinhado exatamente ao contrato da main em `1d4decd03e0047a1bad678d60cee36ba6822d5b5`, sem mudar escopo, cache apagado ou permissões.
+
+Validação do head funcional `1d4decd`:
+- Fases 1–4: run `35314098073`, **285/285 testes**, zero falhas.
+- Bundle de staging: run `35314098147`, sucesso.
+- Governança: run `35314098169`, sucesso.
+- Procedimento operacional V3: run `35314098114`, sucesso.
+- PDF.js real em Chromium: run `35314098112`, **75 passed / 3 skipped esperados**, sem falha.
+- Abertura pós-login: run `35314098062`; **11/11 contratos**, **24/24** cenários de abertura e **8/8** de Home real aprovados.
+
+A mudança transversal da main também permanece preservada: PR #207 incorporou Home inicializada durante o vídeo no merge `702471c7b180e31faa8e281ee0fefe04ee759474`, e PR #208 registrou a conclusão/publicação. Não restaurar o bloqueio antigo do botão Entrar nem remover o handoff `PortalHomeReady + ended`.
+
+Não houve merge em main, escrita no Drive, nova janela Cloudflare, SQL, OAuth ou alteração de segredo nesta reconciliação. A janela 4D antiga continua revogada e não deve ser reutilizada.
 
 ## Fase atual
 
-**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; revogação D1 concluída; preview-base localizado no histórico; vínculo atual do alias e bloqueio servido ainda pendentes.**
+**Fase 4 — Sincronização segura com Drive.** Subfase **4D — sem aceite; janela antiga encerrada/revogada; branch reconciliada com a main; nova janela 4D ainda não aberta.**
 
 A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. 4A–4C têm implementação e evidências técnicas, não aceite real da 4D. Encerrar uma autorização não homologa o produto. Não reiniciar etapas encerradas.
 
 - Branch: `codex/central-docs-drive-sync-phase4`.
-- PR **#201 aberto, em draft e sem merge**; reconciliação com a main executada nesta atualização. Checks do novo head ainda precisam ser observados.
+- PR **#201 aberto, em draft e sem merge**; head funcional validado `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; `main` incorporada e PR 0 commits atrás.
 - Ref real da `main` reconferida: **`cd71ad566a443cd2f89b1d98285856c22baf73d7`**. Preservar login/abertura/Home. A ref Git não identifica deployment Cloudflare.
 - Código congelado do reteste: **`2fee19e69e06ecd128be2b103354fc6c2fb4e431`**.
 - Preview-base: **`a17473ce-ad9a-480c-8e53-901f2fcc3c92`**, configuração desarmada validada anteriormente pelo relatório V3. Não presumir que ainda atenda o alias `central-docs-phase4d`.
@@ -35,7 +47,7 @@ Combinada às evidências anteriores — enabled=0, revogada=1, upload_sessions=
 
 Limite: o 403 confirma o bloqueio daquela requisição e o release servido; não é prova retrospectiva sobre requisições já aceitas antes da revogação. A ausência de sessões registrada continua não sendo inventário universal de operações externas.
 
-**Próxima ação exata:** preparar uma nova janela 4D limpa, com identificador novo, prazo novo aprovado, mesma conta/PDF descartável autorizados, e procedimento de liberação reconstruído a partir da produção real atual 91eae913/250b3d7b em vez das referências históricas. Antes de qualquer upload, reconciliar a branch #201 com a main atual em etapa própria ou justificar tecnicamente manter o código congelado de homologação, preservando as melhorias transversais da main. A nova janela exige confirmação apropriada; não reabilitar o controle antigo.
+**Próxima ação exata:** preparar uma nova janela 4D limpa, com identificador e prazo novos, mantendo a mesma conta e PDF descartável autorizados. A reconciliação com a main já foi concluída e validada; não reutilizar o V3/janela vencida. Antes de qualquer escrita real, reconferir a produção Cloudflare atual, criar novo controle D1 revogável e manter o gate `DOCUMENTS_DRIVE_WRITE_ENABLED=false` até a confirmação humana da janela.
 
 ## Evidência nova — alias consultado por Wrangler, 18/09 aproximadamente 02:02 local
 
@@ -125,9 +137,9 @@ Artefatos anteriores preservados:
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 4D sem aceite; Fase 0 e Fases 1–3 encerradas |
-| Última ação concluída | Linha a17473ce localizada no histórico e menu inspecionado; revogação D1 já confirmada |
-| Branch/PR | codex/central-docs-drive-sync-phase4; #201 aberto/sem merge conforme último registro; mergeable:false histórico |
-| Main | cd71ad5, ref real reconferida; preservar login/abertura/Home |
+| Última ação concluída | PR #201 reconciliado com main; regressão de contrato corrigida; head `1d4decd` validado por CI e navegador |
+| Branch/PR | `codex/central-docs-drive-sync-phase4`; #201 aberto, **draft**, sem merge; tecnicamente mergeável após reconciliação |
+| Main | `cd71ad566a443cd2f89b1d98285856c22baf73d7` incorporada à branch; 0 commits atrás; login/abertura/Home preservados |
 | Último commit anterior | c1767a219389b660f59d3c8631bc1a96b12bec1e |
 | Código/preview | Reteste2fee19e; basea17473ce desarmada conforme V3; rótulo repetido não comprova alias atual |
 | Produção | Active deployment91eae913; último snapshot explícito91eae913/250b3d7b/100%, relato anterior |
@@ -135,12 +147,12 @@ Artefatos anteriores preservados:
 | Decisão/porquê | Consultar workers/alias por listagem read-only, pois menu não oferece configuração e rótulo visual pode ser tag |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Operador localizou versão; assistente apenas documentação GitHub; nenhum novo acesso autenticado Cloudflare |
-| Checks/testes | Nenhuma suíte/CI repetida; comando PowerShell não executado pelo assistente |
-| Bloqueios | Metadados privados dependem de execução somente leitura do operador; plugin Cloudflare não encontrado nesta sessão |
-| Riscos | D1/OAuth compartilhados; limite de dez versões da listagem; alias pode mudar; gate/bloqueio servido ainda pendentes; conflito com main |
+| Checks/testes | Head `1d4decd`: 285/285 Worker; staging/governança/V3 verdes; navegador Central 75 passed/3 skipped; abertura 11 + 24 + 8 testes aprovados |
+| Bloqueios | Nova janela 4D depende de ação externa Cloudflare/D1 e confirmação humana antes de habilitar escrita real; conector Cloudflare não está disponível nesta sessão |
+| Riscos | D1/OAuth continuam compartilhados; alias/produção podem mudar entre preparo e execução; gate deve permanecer false até a janela nova ser confirmada; preflight/upload não são atômicos |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Receber ALIAS_PREVIEW_SOMENTE_LEITURA de versions list com filtro workers/alias; ausência nas dez não prova ausência global |
-| Depois | Confrontar candidato com base validada, consultar configuração restrita se diferente e conferir bloqueio real; planejar nova janela com confirmação/ID novo, matriz4D e reconciliação |
+| Próxima ação exata | Abrir **nova** janela 4D: reconferir produção, gerar novo controle/prazo, provisionar D1 de forma restrita e preparar preview com gate false; só então pedir confirmação para habilitar escrita |
+| Depois | Executar a matriz real 4D restante, revogar a janela, confirmar bloqueio/gate false, registrar evidências e só então avaliar o aceite/merge da Fase 4 |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
 ## Histórico recuperável
