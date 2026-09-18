@@ -138,7 +138,11 @@ export async function enableWrite() {
     const flags = ['--preview-alias', FIXED.alias, '--tag', TAG, '--message', MESSAGE];
     const dry = path.join(work, 'write-dry.multipart');
     runWrangler(['versions','upload',...flags,'--dry-run','--outfile',dry,'--config',previewConfig], work);
-    await inspectMultipart(fs.readFileSync(dry), config);
+    await inspectMultipart(fs.readFileSync(dry), config, {
+      'workers/alias': FIXED.alias,
+      'workers/tag': TAG,
+      'workers/message': MESSAGE
+    });
 
     console.log('4/6 Reconfirmando produção e marcando tentativa...');
     productionSnapshot(queryMinimal(['deployments', 'status']));
