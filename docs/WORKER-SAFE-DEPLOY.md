@@ -16,21 +16,22 @@ O fluxo aprovado é:
 
 1. executar sintaxe e testes do Worker;
 2. consultar a versão que está em 100% da produção;
-3. exigir que a Worker Version mais recente seja exatamente essa versão produtiva;
-4. obter o `database_id` de `AUTH_DB` da produção e criar uma configuração efêmera;
-5. executar `wrangler versions upload --dry-run`;
-6. enviar uma nova Worker Version sem tráfego;
-7. inspecionar a candidata;
-8. exigir todos os bindings críticos;
-9. exigir que todos os secrets existentes na produção continuem presentes na candidata;
-10. exigir o mesmo `AUTH_DB`;
-11. preservar exatamente os valores públicos estáveis do Firebase quando eles forem `plain_text`;
-12. reconfirmar que a produção não mudou durante a inspeção;
-13. promover somente a versão candidata validada para 100%;
-14. consultar anonimamente `/api/agenda`;
-15. considerar 401/403 saudável, porque significa que a requisição alcançou a barreira de autenticação;
-16. considerar 503 falha de Firebase/armazenamento e restaurar automaticamente a versão produtiva anterior;
-17. reconfirmar versão e bindings depois da promoção.
+3. consultar a Worker Version mais recente; se ela não for a produção, aceitá-la somente quando for identificada como candidata criada pelo próprio gate e quando todos os bindings críticos, secrets, Firebase estável e `AUTH_DB` continuarem equivalentes à produção;
+4. obter o `database_id` de `AUTH_DB` e a lista de nomes dos secrets da produção;
+5. criar configuração efêmera com `AUTH_DB` explícito e `secrets.required` dinâmico, sem gravar valores secretos;
+6. executar `wrangler versions upload --dry-run --strict`;
+7. enviar uma nova Worker Version sem tráfego usando `--strict`, mensagem e tag próprias do gate;
+8. inspecionar a candidata;
+9. exigir todos os bindings críticos;
+10. exigir que todos os secrets existentes na produção continuem presentes na candidata;
+11. exigir o mesmo `AUTH_DB`;
+12. preservar exatamente os valores públicos estáveis do Firebase quando eles forem `plain_text`;
+13. reconfirmar que a produção não mudou durante a inspeção;
+14. promover somente a versão candidata validada para 100%;
+15. consultar anonimamente `/api/agenda`;
+16. considerar 401/403 saudável, porque significa que a requisição alcançou a barreira de autenticação;
+17. considerar 503 falha de Firebase/armazenamento e restaurar automaticamente a versão produtiva anterior;
+18. reconfirmar versão e bindings depois da promoção.
 
 ## Bindings críticos fixos
 
@@ -55,8 +56,9 @@ Além da lista fixa, todos os bindings `secret_text` ou `secret_key` presentes n
 O gate para antes da promoção quando:
 
 - a produção não estiver em uma única versão a 100%;
-- a Worker Version mais recente não for a mesma que está em produção;
-- o dry-run falhar;
+- a Worker Version mais recente não for a produção e também não puder ser comprovada como candidata do próprio gate com bindings equivalentes aos da produção;
+- uma candidata órfã do gate perder qualquer binding crítico, secret, referência Firebase estável ou o `AUTH_DB`;
+- o dry-run estrito falhar;
 - o upload falhar;
 - faltar qualquer binding crítico;
 - desaparecer qualquer secret que existia na produção;
@@ -64,7 +66,9 @@ O gate para antes da promoção quando:
 - project ID, client email ou bucket Firebase mudarem silenciosamente quando armazenados como `plain_text`;
 - a produção mudar enquanto a candidata está sendo validada.
 
-Se a candidata já tiver sido enviada mas ainda não promovida, ela permanece sem tráfego e o processo termina. Não é permitido repetir automaticamente nesse estado, porque o próximo upload poderia herdar secrets de uma versão não produtiva.
+Se uma execução anterior já tiver enviado uma candidata mas não a tiver promovido, a versão permanece sem tráfego. Na tentativa seguinte, o gate não exige exclusão manual: ele reconhece somente candidatas com a mensagem/tag reservada do próprio gate e revalida a versão órfã integralmente contra a produção antes de permitir novo upload. Versões mais recentes de origem desconhecida continuam bloqueando o processo.
+
+A configuração efêmera também declara dinamicamente em `secrets.required` todos os nomes de secrets encontrados na produção e usa `--strict` no dry-run e no upload real. Assim, uma herança de secret que não puder ser resolvida é tratada como erro antes da promoção, em vez de ser silenciosamente descartada.
 
 ## Rollback automático
 
@@ -84,7 +88,8 @@ No último caso, novos deploys devem ser interrompidos até conferência manual.
 - `worker/tests/deploy-safe.test.mjs`: testes de regressão;
 - `.github/workflows/validate-worker-safe-deploy.yml`: protege o próprio gate;
 - `worker/package.json`: `deploy` e `deploy:safe` apontam para o gate; `wrangler` fica fixado exatamente em `4.133.0` para que Workers Builds e validações usem a mesma versão.
-- o gate executa diretamente `node_modules/wrangler/bin/wrangler.js` com o `node` corrente; não chama `npx` em subprocesso. Isso evita diferenças de resolução/execução do wrapper no ambiente do Workers Builds.
+- o gate executa diretamente `node_modules/wrangler/bin/wrangler.js` com o `node` corrente; não chama `npx` em subprocesso. Isso evita diferenças de resolução/execução do wrapper no ambiente do Workers Builds;
+- candidatas criadas pelo gate usam a mensagem `Portal: candidato validado pelo gate de deploy seguro` e a tag `portal-safe-deploy`; a mensagem também mantém compatibilidade com candidatas órfãs criadas antes da introdução da tag.
 
 ## Configuração Cloudflare necessária
 
