@@ -15,6 +15,7 @@
  * 6. confirma que /api/agenda voltou a alcançar a barreira de autenticação.
  *
  * Nenhum segredo é impresso, copiado para arquivo ou enviado ao GitHub.
+ * No Windows, o Wrangler é iniciado pelo PowerShell chamando npx.cmd, o mesmo padrão já homologado pelos scripts da Central de Documentos.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -222,12 +223,18 @@ function runChecked(command, args, cwd, code, options = {}) {
   return result.stdout;
 }
 
-function npxCommand() {
-  return process.platform === 'win32' ? 'npx.cmd' : 'npx';
-}
-
 export function wranglerArgs(args) {
   return ['--yes', 'wrangler@' + FIXED.wranglerVersion, ...args];
+}
+
+function psQuote(value) {
+  return "'" + String(value).replace(/'/g, "''") + "'";
+}
+
+export function windowsWranglerCommand(args) {
+  return "$OutputEncoding=[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false); & npx.cmd "
+    + wranglerArgs(args).map(psQuote).join(' ')
+    + '; exit $LASTEXITCODE';
 }
 
 export function classifyWranglerFailure(result = {}) {
@@ -241,7 +248,15 @@ export function classifyWranglerFailure(result = {}) {
 }
 
 function runWrangler(args, cwd, code = 'WRANGLER_FALHOU', allowFailure = false) {
-  const result = run(npxCommand(), wranglerArgs(args), cwd, { timeout: 300000 });
+  const result = process.platform === 'win32'
+    ? run(
+        'powershell.exe',
+        ['-NoProfile', '-NonInteractive', '-Command', windowsWranglerCommand(args)],
+        cwd,
+        { timeout: 300000 }
+      )
+    : run('npx', wranglerArgs(args), cwd, { timeout: 300000 });
+
   if (!result.ok && !allowFailure) {
     safeLine('wranglerFalhaCategoria', classifyWranglerFailure(result));
     throw new SafeError(code);
