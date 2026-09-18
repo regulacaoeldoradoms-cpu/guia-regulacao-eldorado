@@ -830,3 +830,12 @@ test('3C.6 mantém preview estrutural separado e exporta flatten somente para o 
   assert.doesNotMatch(exportBlock, /auth\.api|capture\(|\/api\/documents|fetch\(/);
 });
 
+
+
+test('viewer expõe exportPageImage para isolamento da IA documental', () => {
+  const viewer = read('js/document-viewer.js');
+  assert.match(viewer, /async function exportPageImage\(pageNumber/);
+  assert.match(viewer, /page\.render\(\{/);
+  assert.match(viewer, /canvas\.toBlob/);
+  assert.match(viewer, /exportPageImage,/);
+});
