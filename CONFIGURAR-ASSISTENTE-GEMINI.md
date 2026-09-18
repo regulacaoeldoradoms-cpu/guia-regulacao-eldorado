@@ -1,76 +1,73 @@
-# Configuração do Assistente Gemini
+# Configuração da IA multiprovedor do Portal
 
-O site contém a interface do assistente e um backend preparado para Cloudflare Workers. A interface funciona imediatamente em modo de consulta local. Para ativar respostas do Gemini, faça a configuração abaixo.
+Atualizado em 18/09/2026.
 
-## 1. Criar uma chave gratuita do Gemini
+O Portal usa uma camada de pré-regulação com proteção de dados identificáveis e contingência entre provedores. O Worker oficial é `yellow-wave-d0a1guia-regulacao-ia` e o deploy produtivo deve passar pelo gate seguro documentado em `docs/WORKER-SAFE-DEPLOY.md`.
 
-1. Acesse o Google AI Studio.
-2. Crie uma chave da API Gemini em um projeto destinado ao guia.
-3. Não cole a chave no GitHub, no `index.html` ou em qualquer arquivo JavaScript público.
+## Provedores
 
-O nível gratuito possui limites de requisições e o conteúdo enviado pode ser usado pelo Google para melhorar os produtos. Por esse motivo, o assistente bloqueia CPF, CNS, telefone, e-mail e outros identificadores. Os médicos devem usar somente perguntas gerais ou casos anonimizados.
+### Gemini
 
-## 2. Publicar o Cloudflare Worker
+Quando `GEMINI_API_KEY` está configurada como secret do Worker, o Portal tenta primeiro o Gemini.
 
-### Pelo terminal
+Configuração versionada atual:
 
-```bash
-cd worker
-npx wrangler login
-npx wrangler secret put GEMINI_API_KEY
-npx wrangler deploy
-```
+- `GEMINI_MODEL=gemini-3.5-flash-lite`;
+- `GEMINI_FALLBACK_MODELS=gemini-3.6-flash`;
+- `GEMINI_REQUEST_TIMEOUT_MS=5000`;
+- `GEMINI_TOTAL_TIMEOUT_MS=11000`.
 
-Quando solicitado, informe a chave criada no Google AI Studio. Ela será armazenada como segredo e não aparecerá no repositório.
+A chave nunca deve ser gravada no GitHub, no frontend, em documentação pública ou no chat.
 
-O deploy retornará um endereço semelhante a:
+### Cloudflare Workers AI
+
+O binding `AI` é a contingência independente do Portal. A configuração atual usa:
+
+- `CLOUDFLARE_AI_FALLBACK_ENABLED=true`;
+- modelo primário `@cf/meta/llama-3.1-8b-instruct-fast`;
+- modelo alternativo `@cf/zai-org/glm-4.7-flash`;
+- timeout por tentativa de 16 segundos;
+- orçamento total de 30 segundos.
+
+Se `GEMINI_API_KEY` estiver ausente, a pré-regulação não deve gastar tentativas inúteis no Gemini: o Worker segue diretamente para Workers AI. Se o Gemini estiver configurado e falhar de forma transitória, o fluxo tenta os modelos Gemini previstos e depois aciona Workers AI.
+
+A resposta da API informa qual provedor e modelo efetivamente responderam.
+
+## Deploy
+
+Não usar `wrangler deploy` diretamente em produção.
+
+O comando oficial do Workers Builds é:
 
 ```text
-https://guia-regulacao-ia.seu-subdominio.workers.dev
+npm run deploy:safe
 ```
 
-A rota do chat será:
+O gate envia uma candidata sem tráfego, valida bindings e secrets em relação à produção, promove somente depois da validação e testa a Agenda após a promoção.
 
-```text
-https://guia-regulacao-ia.seu-subdominio.workers.dev/api/ia
-```
+`GEMINI_API_KEY` não é requisito fixo do gate de deploy. Se existir na produção, é preservada obrigatoriamente como qualquer outro secret produtivo. Se já estiver ausente da baseline, essa ausência não bloqueia o deploy porque Workers AI mantém uma rota de contingência independente.
 
-### Pelo painel da Cloudflare
+## Diagnóstico
 
-Também é possível criar um Worker pelo painel, copiar o conteúdo de `worker/gemini-assistant.js`, cadastrar a variável secreta `GEMINI_API_KEY` e as variáveis comuns:
+O diagnóstico técnico deve distinguir:
 
-- `GEMINI_MODEL`: `gemini-3.5-flash-lite`
-- `ALLOWED_ORIGINS`: `https://regulacaoeldoradoms.com.br,https://www.regulacaoeldoradoms.com.br`
+- **Gemini primário disponível**: `GEMINI_API_KEY` presente;
+- **Gemini ausente, IA operacional por contingência**: Workers AI íntegro e fallback habilitado;
+- **IA indisponível**: nem Gemini utilizável nem Workers AI operacional.
 
-## 3. Conectar o site ao Worker
+A ausência da chave Gemini é um alerta de capacidade do provedor primário, não deve ser confundida automaticamente com indisponibilidade total da IA.
 
-Abra `js/ai-config.js` e informe a URL completa:
-
-```javascript
-window.REGULATION_AI_CONFIG = Object.freeze({
-  endpoint: 'https://guia-regulacao-ia.seu-subdominio.workers.dev/api/ia',
-  provider: 'Gemini',
-  maxQuestionLength: 800,
-  maxHistoryMessages: 6
-});
-```
-
-Depois publique a alteração na branch `main`.
-
-## Comportamento de segurança
+## Segurança
 
 O assistente:
 
-- responde somente com os protocolos enviados pelo próprio site;
-- informa quando a resposta não consta na base;
-- diferencia exames obrigatórios, condicionais e recomendados;
-- não realiza diagnóstico, prescrição ou classificação definitiva de risco;
-- bloqueia identificadores pessoais comuns;
-- não mantém histórico após a página ser fechada;
-- utiliza os ajustes operacionais atuais do site, como a indisponibilidade temporária da Dermatologia no teleatendimento.
+- exige autenticação e papéis autorizados quando `AUTH_ENFORCE_AI=true`;
+- responde com base nos protocolos e fatos operacionais fornecidos pelo Portal;
+- bloqueia CPF, CNS, telefone, e-mail e outros identificadores antes de consultar qualquer provedor;
+- não deve receber dados de pacientes identificáveis;
+- não substitui avaliação clínica nem decisão do médico regulador;
+- mantém logs técnicos sem conteúdo clínico integral.
 
-## Modo de consulta local
+## Restauração do Gemini
 
-Enquanto o campo `endpoint` estiver vazio, o botão permanece utilizável. As respostas são montadas diretamente com os dados estruturados dos protocolos, sem enviar informações a serviços externos. A janela mostra o indicador `Consulta local`.
-
-Quando o Worker estiver configurado, o indicador muda para `Gemini conectado`.
+Se a instituição decidir restaurar o Gemini como provedor primário, criar ou validar uma chave no serviço oficial do Google e cadastrá-la apenas como secret `GEMINI_API_KEY` no runtime do Worker. Depois, executar um deploy seguro normal. Não versionar nem transmitir a chave em texto.
