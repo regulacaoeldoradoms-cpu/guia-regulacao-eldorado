@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 import {
   FIXED,
@@ -9,6 +11,10 @@ import {
   inspectFirebaseBindings,
   classifyAgendaProbe,
   chooseKnownGoodVersion,
+  mainBranchApiUrl,
+  mainArchiveUrl,
+  remoteMainSha,
+  locateExtractedRepository,
   wranglerArgs
 } from './recuperar-firebase-agenda.mjs';
 
@@ -77,6 +83,36 @@ test('prioriza primeira versão conhecida que tenha bindings íntegros', () => {
   assert.equal(chooseKnownGoodVersion([]), '');
 });
 
+
+test('baixa a main por API/ZIP público sem depender de Git instalado', async () => {
+  const sha = '1234567890abcdef1234567890abcdef12345678';
+  assert.equal(
+    mainBranchApiUrl(),
+    'https://api.github.com/repos/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/branches/main'
+  );
+  assert.equal(
+    mainArchiveUrl(sha),
+    'https://codeload.github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/zip/' + sha
+  );
+  const observed = await remoteMainSha(async () => ({
+    ok: true,
+    async json() { return { commit: { sha } }; }
+  }));
+  assert.equal(observed, sha);
+});
+
+test('localiza repositório extraído pelo nome do snapshot', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'agenda-recovery-test-'));
+  try {
+    const folder = path.join(root, 'guia-regulacao-eldorado-1234567');
+    fs.mkdirSync(path.join(folder, 'worker'), { recursive: true });
+    fs.writeFileSync(path.join(folder, 'worker', 'wrangler.toml'), 'name = "teste"\n');
+    assert.equal(locateExtractedRepository(root), folder);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('comando Wrangler fixa versão e não embute credenciais', () => {
   const args = wranglerArgs(['deployments', 'status']);
   assert.deepEqual(args.slice(0, 2), ['--yes', 'wrangler@' + FIXED.wranglerVersion]);
@@ -93,4 +129,7 @@ test('script não contém valor real de segredo nem imprime payload de bindings'
   assert.match(source, /firebaseBindingsAusentes/);
   assert.match(source, /ROLLBACK_DE_SEGURANCA/);
   assert.match(source, /keep_vars=true/);
+  assert.doesNotMatch(source, /git\s+clone|ls-remote|rev-parse/);
+  assert.match(source, /codeload\.github\.com/);
+  assert.match(source, /Expand-Archive/);
 });
