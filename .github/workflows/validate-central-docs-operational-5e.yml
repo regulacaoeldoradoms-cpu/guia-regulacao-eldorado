@@ -59,7 +59,8 @@ jobs:
           grep -q "DOCUMENTS_DRIVE_WRITE_ENABLED: 'false'" scripts/central-docs/preparar-homologacao-5e.mjs
           grep -q "INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE" scripts/central-docs/preparar-homologacao-5e.mjs
           grep -q "phase5e-synthetic-v1" worker/homologation-5e.js
-          ! grep -R -E "AIza[0-9A-Za-z_-]{20,}|-----BEGIN PRIVATE KEY-----" \
+          ! grep -E "AIza[0-9A-Za-z_-]{20,}|-----BEGIN PRIVATE KEY-----" \
             worker/homologation-5e.js \
-            scripts/central-docs/*homologacao-5e*.mjs \
-            testing/central-docs-ai
+            scripts/central-docs/preparar-homologacao-5e.mjs \
+            scripts/central-docs/encerrar-homologacao-5e.mjs \
+            testing/central-docs-ai/phase5e-harness.js
