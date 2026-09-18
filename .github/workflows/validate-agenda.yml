@@ -14,6 +14,7 @@ on:
       - 'worker/tests/agenda.test.mjs'
       - 'worker/tests/agenda-capacity.test.mjs'
       - 'docs/AGENDA-DIGSAUDE*.md'
+      - 'scripts/agenda/**'
       - '.github/workflows/validate-agenda.yml'
   push:
     branches: [main]
@@ -29,6 +30,7 @@ on:
       - 'worker/tests/agenda.test.mjs'
       - 'worker/tests/agenda-capacity.test.mjs'
       - 'docs/AGENDA-DIGSAUDE*.md'
+      - 'scripts/agenda/**'
 
 jobs:
   validate:
@@ -47,5 +49,6 @@ jobs:
           node --check agenda/digsaude-agenda-sync.user.js
           node --input-type=module --check < worker/agenda.js
           node --input-type=module --check < worker/index.js
+          node --check scripts/agenda/recuperar-firebase-agenda.mjs
       - name: Executar testes da Agenda
-        run: node --test worker/tests/agenda.test.mjs worker/tests/agenda-capacity.test.mjs
+        run: node --test worker/tests/agenda.test.mjs worker/tests/agenda-capacity.test.mjs scripts/agenda/recuperar-firebase-agenda.test.mjs
