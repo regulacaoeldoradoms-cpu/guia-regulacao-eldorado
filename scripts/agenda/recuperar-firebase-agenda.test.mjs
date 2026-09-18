@@ -11,6 +11,7 @@ import {
   inspectFirebaseBindings,
   authDbDatabaseId,
   injectAuthDbDatabaseId,
+  classifyWranglerFailure,
   classifyAgendaProbe,
   chooseKnownGoodVersion,
   mainBranchApiUrl,
@@ -162,6 +163,13 @@ test('localiza repositório extraído pelo nome do snapshot', () => {
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('classifica falhas do Wrangler sem precisar exibir stdout ou stderr', () => {
+  assert.equal(classifyWranglerFailure({ status: 1, stderr: 'Missing database_id for D1 binding' }), 'CONFIG_D1');
+  assert.equal(classifyWranglerFailure({ status: 1, stderr: 'You are not logged in. Please login.' }), 'AUTENTICACAO_CLOUDFLARE');
+  assert.equal(classifyWranglerFailure({ status: 1, stderr: 'fetch failed ETIMEDOUT' }), 'REDE');
+  assert.equal(classifyWranglerFailure({ status: null, stderr: '' }), 'PROCESSO_NAO_INICIADO');
 });
 
 test('comando Wrangler fixa versão e não embute credenciais', () => {
