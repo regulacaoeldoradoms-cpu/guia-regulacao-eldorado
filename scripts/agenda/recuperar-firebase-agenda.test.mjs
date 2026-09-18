@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { generateKeyPairSync } from 'node:crypto';
 
 import {
   FIXED,
@@ -12,6 +13,9 @@ import {
   firebaseRecoveryPlan,
   parseServiceAccount,
   buildLocalFirebaseSecrets,
+  applyServiceAccountIdentity,
+  validateServiceAccountFirestorePermissions,
+  REQUIRED_FIRESTORE_PERMISSIONS,
   currentSecretBindingNames,
   validatePreparedBindings,
   injectVars,
@@ -119,17 +123,87 @@ test('injeta variáveis Firebase na seção vars sem alterar as demais', () => {
   assert.ok(patched.indexOf('FIREBASE_PROJECT_ID') < patched.indexOf('[ai]'));
 });
 
-test('valida conta de serviço Firebase local contra a referência histórica', () => {
+test('aceita nova conta de serviço do mesmo projeto e sinaliza e-mail diferente', () => {
   const privateKey = "-----BEGIN PRIVATE KEY-----\\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\\n-----END PRIVATE KEY-----";
   const account = parseServiceAccount({
-    project_id: 'projeto-a', client_email: 'svc@example.test', private_key: privateKey
-  }, { FIREBASE_PROJECT_ID: 'projeto-a', FIREBASE_CLIENT_EMAIL: 'svc@example.test' });
+    project_id: 'projeto-a', client_email: 'novo-adminsdk@example.test', private_key: privateKey
+  }, { FIREBASE_PROJECT_ID: 'projeto-a', FIREBASE_CLIENT_EMAIL: 'antigo@example.test' });
   assert.equal(account.projectId, 'projeto-a');
-  assert.equal(account.clientEmail, 'svc@example.test');
+  assert.equal(account.clientEmail, 'novo-adminsdk@example.test');
   assert.equal(account.privateKey, privateKey.replace(/\\n/g, '\n'));
+  assert.equal(account.historicalClientEmailMatches, false);
   assert.throws(() => parseServiceAccount({
-    project_id: 'outro', client_email: 'svc@example.test', private_key: privateKey
+    project_id: 'outro', client_email: 'novo-adminsdk@example.test', private_key: privateKey
   }, { FIREBASE_PROJECT_ID: 'projeto-a' }), /PROJECT_ID_FIREBASE_DIVERGENTE/);
+});
+
+test('substitui identidade pública Firebase pela nova conta de serviço', () => {
+  const plan = {
+    vars: {
+      FIREBASE_PROJECT_ID: 'projeto-a',
+      FIREBASE_CLIENT_EMAIL: 'antigo@example.test',
+      FIREBASE_STORAGE_BUCKET: 'bucket-a'
+    },
+    secrets: ['FIREBASE_PRIVATE_KEY']
+  };
+  const effective = applyServiceAccountIdentity(plan, {
+    projectId: 'projeto-a',
+    clientEmail: 'novo-adminsdk@example.test'
+  });
+  assert.equal(effective.vars.FIREBASE_PROJECT_ID, 'projeto-a');
+  assert.equal(effective.vars.FIREBASE_CLIENT_EMAIL, 'novo-adminsdk@example.test');
+  assert.equal(effective.vars.FIREBASE_STORAGE_BUCKET, 'bucket-a');
+  assert.deepEqual(effective.secrets, ['FIREBASE_PRIVATE_KEY']);
+});
+
+test('valida permissões Firestore da nova conta sem ler documentos', async () => {
+  const { privateKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    publicKeyEncoding: { type: 'spki', format: 'pem' }
+  });
+  const serviceAccount = {
+    projectId: 'projeto-a',
+    clientEmail: 'novo-adminsdk@example.test',
+    privateKey
+  };
+  const calls = [];
+  const fetcher = async (url, options) => {
+    calls.push({ url: String(url), options });
+    if (String(url).includes('oauth2.googleapis.com/token')) {
+      return { ok: true, json: async () => ({ access_token: 'x'.repeat(64) }) };
+    }
+    return { ok: true, json: async () => ({ permissions: [...REQUIRED_FIRESTORE_PERMISSIONS] }) };
+  };
+  const result = await validateServiceAccountFirestorePermissions(serviceAccount, fetcher);
+  assert.deepEqual(result, { ok: true, granted: REQUIRED_FIRESTORE_PERMISSIONS.length });
+  assert.equal(calls.length, 2);
+  assert.match(calls[1].url, /cloudresourcemanager\.googleapis\.com\/v3\/projects\/projeto-a:testIamPermissions/);
+  const body = JSON.parse(calls[1].options.body);
+  assert.deepEqual(body.permissions, [...REQUIRED_FIRESTORE_PERMISSIONS]);
+});
+
+test('bloqueia conta nova sem todas as permissões de leitura e escrita do Firestore', async () => {
+  const { privateKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    publicKeyEncoding: { type: 'spki', format: 'pem' }
+  });
+  const serviceAccount = {
+    projectId: 'projeto-a',
+    clientEmail: 'sem-write@example.test',
+    privateKey
+  };
+  let call = 0;
+  const fetcher = async () => {
+    call += 1;
+    if (call === 1) return { ok: true, json: async () => ({ access_token: 'y'.repeat(64) }) };
+    return { ok: true, json: async () => ({ permissions: ['datastore.databases.get', 'datastore.entities.get', 'datastore.entities.list'] }) };
+  };
+  await assert.rejects(
+    validateServiceAccountFirestorePermissions(serviceAccount, fetcher),
+    /CONTA_SERVICO_SEM_PERMISSOES_FIRESTORE/
+  );
 });
 
 test('monta secrets-file somente com valores Firebase fornecidos localmente', () => {
@@ -355,6 +429,10 @@ test('script não contém valor real de segredo nem imprime payload de bindings'
   assert.match(source, /--secrets-file/);
   assert.match(source, /firebaseSegredosFornecidosLocalmente/);
   assert.match(source, /credencialContaServico/);
+  assert.match(source, /cloudresourcemanager\.googleapis\.com/);
+  assert.match(source, /testIamPermissions/);
+  assert.match(source, /clientEmailContaServico/);
+  assert.match(source, /permissoesFirestore/);
   assert.match(source, /versions', 'upload/);
   assert.match(source, /versions', 'deploy/);
   assert.match(source, /--experimental-provision=false/);
