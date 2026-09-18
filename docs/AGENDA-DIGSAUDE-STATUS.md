@@ -17,10 +17,11 @@ Atualizado em 18/09/2026.
 - Se a republicação da `main` falhar depois do rollback temporário, o script tenta restaurar automaticamente a versão produtiva que estava ativa antes da intervenção.
 - A validação anônima não acessa pacientes: com o Firebase ausente a API responde 503; com o armazenamento restaurado a requisição sem sessão alcança novamente a barreira de autenticação (401/403).
 - Estado neste documento: **ferramenta de recuperação preparada; resta executar no ambiente Cloudflare autenticado e depois homologar a Agenda real**. Não declarar o incidente encerrado antes dessa evidência.
+- Primeira tentativa em 18/09 parou na etapa 1 com `RECUPERACAO_INTERROMPIDA=GIT_CLONE_FALHOU`, antes de qualquer alteração na Cloudflare. A ferramenta foi revisada para não depender do Git local: a `main` passa a ser obtida pela API pública do GitHub e por snapshot ZIP do commit exato, com reconfirmação do SHA antes da republicação.
 
 ### Execução controlada
 
-A partir de uma máquina já autorizada no Cloudflare/Wrangler, com Node.js 22+ e Git disponíveis:
+A partir de uma máquina já autorizada no Cloudflare/Wrangler, com Node.js 22+ disponível; Git local não é mais necessário:
 
 ```powershell
 node scripts/agenda/recuperar-firebase-agenda.mjs --recuperar
