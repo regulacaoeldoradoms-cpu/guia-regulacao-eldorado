@@ -31,12 +31,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
 
       - name: Validar sintaxe e testes específicos
         run: |
           node --check worker/scripts/deploy-safe.mjs
           node --test worker/tests/deploy-safe.test.mjs
+
+      - name: Simular predeploy do Workers Builds
+        working-directory: worker
+        run: |
+          npm run check
+          npm test
 
       - name: Conferir package scripts protegidos
         shell: bash
