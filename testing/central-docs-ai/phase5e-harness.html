@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="referrer" content="no-referrer">
+  <title>Homologação 5E · IA documental</title>
+  <link rel="stylesheet" href="/homologacao/ia/phase5e.css">
+</head>
+<body>
+  <header class="phase5e-banner">
+    <strong>HOMOLOGAÇÃO 5E · IA DOCUMENTAL</strong>
+    <span>Somente conteúdo sintético. Nenhum documento de paciente deve ser usado nesta página.</span>
+  </header>
+
+  <main class="phase5e-shell">
+    <section class="phase5e-card">
+      <h1>Validação controlada da IA documental</h1>
+      <p>Este laboratório exercita o mesmo backend de classificação, extração e perguntas da Central, mas com páginas criadas sinteticamente no navegador. O token de sessão fica apenas na memória desta aba.</p>
+      <div id="phase5eEnvironment" class="phase5e-note">Verificando configuração do preview…</div>
+    </section>
+
+    <section class="phase5e-card" id="phase5eLoginCard">
+      <h2>1. Autenticação</h2>
+      <form id="phase5eLoginForm" autocomplete="off">
+        <label>Usuário autorizado
+          <input id="phase5eUsername" name="username" autocomplete="username" required>
+        </label>
+        <label>Senha
+          <input id="phase5ePassword" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit" id="phase5eLoginButton">Entrar no preview 5E</button>
+      </form>
+      <div id="phase5eLoginStatus" class="phase5e-status" aria-live="polite"></div>
+    </section>
+
+    <section class="phase5e-card" id="phase5eMatrixCard" hidden>
+      <div class="phase5e-heading-row">
+        <div>
+          <h2>2. Matriz sintética</h2>
+          <p>As páginas abaixo contêm somente nomes, números e situações fictícias.</p>
+        </div>
+        <button type="button" id="phase5eRunButton">Executar matriz</button>
+      </div>
+      <div id="phase5eMatrixStatus" class="phase5e-status" aria-live="polite"></div>
+      <div class="phase5e-grid" id="phase5eFixtureGrid"></div>
+    </section>
+
+    <section class="phase5e-card" id="phase5eResultsCard" hidden>
+      <h2>3. Resultados</h2>
+      <div id="phase5eSummary" class="phase5e-summary"></div>
+      <div id="phase5eResults" class="phase5e-results"></div>
+    </section>
+
+    <section class="phase5e-card" id="phase5eChatCard" hidden>
+      <h2>4. Perguntas por evidência</h2>
+      <p>O chat recebe somente os blocos estruturados gerados na etapa anterior. As imagens das páginas não são reenviadas.</p>
+      <div id="phase5eChatResults" class="phase5e-results"></div>
+    </section>
+  </main>
+
+  <script src="/homologacao/ia/config.js"></script>
+  <script src="/homologacao/ia/phase5e.js"></script>
+</body>
+</html>
