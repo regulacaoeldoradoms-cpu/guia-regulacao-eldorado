@@ -23,7 +23,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createSign } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 
 export const FIXED = Object.freeze({
@@ -170,14 +170,114 @@ export function parseServiceAccount(value, historicalVars = {}) {
   if (historicalVars.FIREBASE_PROJECT_ID) {
     must(projectId === String(historicalVars.FIREBASE_PROJECT_ID).trim(), 'PROJECT_ID_FIREBASE_DIVERGENTE');
   }
-  if (historicalVars.FIREBASE_CLIENT_EMAIL) {
-    must(
-      clientEmail.toLowerCase() === String(historicalVars.FIREBASE_CLIENT_EMAIL).trim().toLowerCase(),
-      'CLIENT_EMAIL_FIREBASE_DIVERGENTE'
-    );
-  }
 
-  return { projectId, clientEmail, privateKey };
+  const historicalEmail = String(historicalVars.FIREBASE_CLIENT_EMAIL || '').trim().toLowerCase();
+  return {
+    projectId,
+    clientEmail,
+    privateKey,
+    historicalClientEmailMatches: !historicalEmail || clientEmail.toLowerCase() === historicalEmail
+  };
+}
+
+function base64UrlJson(value) {
+  return Buffer.from(JSON.stringify(value)).toString('base64url');
+}
+
+export function createServiceAccountAssertion(serviceAccount, nowMs = Date.now()) {
+  const now = Math.floor(Number(nowMs) / 1000);
+  must(Number.isSafeInteger(now) && now > 0, 'RELOGIO_LOCAL_INVALIDO');
+  const encodedHeader = base64UrlJson({ alg: 'RS256', typ: 'JWT' });
+  const encodedPayload = base64UrlJson({
+    iss: serviceAccount.clientEmail,
+    scope: 'https://www.googleapis.com/auth/cloud-platform',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600
+  });
+  const unsigned = encodedHeader + '.' + encodedPayload;
+  let signature;
+  try {
+    const signer = createSign('RSA-SHA256');
+    signer.update(unsigned);
+    signer.end();
+    signature = signer.sign(serviceAccount.privateKey).toString('base64url');
+  } catch {
+    throw new SafeError('CHAVE_PRIVADA_FIREBASE_NAO_ASSINA');
+  }
+  return unsigned + '.' + signature;
+}
+
+export async function serviceAccountAccessToken(serviceAccount, fetcher = fetch) {
+  const assertion = createServiceAccountAssertion(serviceAccount);
+  let response;
+  try {
+    response = await fetcher('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion
+      }),
+      signal: AbortSignal.timeout(15000)
+    });
+  } catch {
+    throw new SafeError('OAUTH_FIREBASE_INDISPONIVEL');
+  }
+  must(response.ok, 'OAUTH_FIREBASE_REJEITOU_CREDENCIAL');
+  const payload = await response.json().catch(() => ({}));
+  const token = String(payload?.access_token || '');
+  must(token.length > 20, 'OAUTH_FIREBASE_SEM_TOKEN');
+  return token;
+}
+
+export const REQUIRED_FIRESTORE_PERMISSIONS = Object.freeze([
+  'datastore.databases.get',
+  'datastore.entities.get',
+  'datastore.entities.list',
+  'datastore.entities.create',
+  'datastore.entities.update',
+  'datastore.entities.delete'
+]);
+
+export async function validateServiceAccountFirestorePermissions(serviceAccount, fetcher = fetch) {
+  const token = await serviceAccountAccessToken(serviceAccount, fetcher);
+  let response;
+  try {
+    response = await fetcher(
+      'https://cloudresourcemanager.googleapis.com/v3/projects/' +
+        encodeURIComponent(serviceAccount.projectId) +
+        ':testIamPermissions',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ permissions: REQUIRED_FIRESTORE_PERMISSIONS }),
+        signal: AbortSignal.timeout(15000)
+      }
+    );
+  } catch {
+    throw new SafeError('IAM_FIREBASE_INDISPONIVEL');
+  }
+  must(response.ok, 'IAM_FIREBASE_NAO_VALIDOU_PERMISSOES');
+  const payload = await response.json().catch(() => ({}));
+  const granted = new Set(Array.isArray(payload?.permissions) ? payload.permissions : []);
+  const missing = REQUIRED_FIRESTORE_PERMISSIONS.filter((permission) => !granted.has(permission));
+  must(missing.length === 0, 'CONTA_SERVICO_SEM_PERMISSOES_FIRESTORE');
+  return { ok: true, granted: REQUIRED_FIRESTORE_PERMISSIONS.length };
+}
+
+export function applyServiceAccountIdentity(plan, serviceAccount) {
+  must(plan && typeof plan === 'object', 'PLANO_FIREBASE_INVALIDO');
+  const next = {
+    vars: { ...(plan.vars || {}) },
+    secrets: [...(plan.secrets || [])]
+  };
+  if ('FIREBASE_PROJECT_ID' in next.vars) next.vars.FIREBASE_PROJECT_ID = serviceAccount.projectId;
+  if ('FIREBASE_CLIENT_EMAIL' in next.vars) next.vars.FIREBASE_CLIENT_EMAIL = serviceAccount.clientEmail;
+  return next;
 }
 
 function readSmallFile(file, code, maxBytes = 256 * 1024) {
@@ -264,8 +364,8 @@ export function injectVars(toml, values = {}) {
   return lines.join('\n');
 }
 
-export function buildRecoveryToml(toml, databaseId, recoveryVersion) {
-  const plan = firebaseRecoveryPlan(recoveryVersion);
+export function buildRecoveryToml(toml, databaseId, recoveryVersion, planOverride = null) {
+  const plan = planOverride || firebaseRecoveryPlan(recoveryVersion);
   let output = injectAuthDbDatabaseId(toml, databaseId);
   output = injectVars(output, plan.vars);
   must(/\bkeep_vars\s*=\s*true\b/.test(output), 'KEEP_VARS_NAO_CONFIRMADO');
@@ -328,12 +428,12 @@ export function injectAuthDbDatabaseId(toml, databaseId) {
   return output;
 }
 
-function createRecoveryDeployConfig(repositoryRoot, databaseId, recoveryVersion = null) {
+function createRecoveryDeployConfig(repositoryRoot, databaseId, recoveryVersion = null, planOverride = null) {
   const original = path.join(repositoryRoot, 'worker', 'wrangler.toml');
   must(fs.existsSync(original), 'WRANGLER_TOML_AUSENTE');
   const source = fs.readFileSync(original, 'utf8');
   const built = recoveryVersion
-    ? buildRecoveryToml(source, databaseId, recoveryVersion)
+    ? buildRecoveryToml(source, databaseId, recoveryVersion, planOverride)
     : { toml: injectAuthDbDatabaseId(source, databaseId), plan: { vars: {}, secrets: [] } };
   const target = path.join(repositoryRoot, 'worker', 'wrangler.agenda-recovery.toml');
   fs.writeFileSync(target, built.toml, { encoding: 'utf8', mode: 0o600 });
