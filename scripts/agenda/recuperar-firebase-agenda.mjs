@@ -214,10 +214,7 @@ function powershellCommand() {
 }
 
 function expandZip(zipFile, destination, cwd) {
-  const script = [
-    "$ErrorActionPreference='Stop'",
-    "Expand-Archive -LiteralPath $args[0] -DestinationPath $args[1] -Force"
-  ].join('; ');
+  const script = "& { param([string]$zip,[string]$dest) $ErrorActionPreference='Stop'; Expand-Archive -LiteralPath $zip -DestinationPath $dest -Force }";
   runChecked(
     powershellCommand(),
     ['-NoProfile', '-NonInteractive', '-Command', script, zipFile, destination],
