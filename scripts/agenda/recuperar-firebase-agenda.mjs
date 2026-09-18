@@ -311,18 +311,64 @@ export function injectAuthDbDatabaseId(toml, databaseId) {
   return output;
 }
 
-function createRecoveryDeployConfig(repositoryRoot, databaseId, recoveryVersion = null) {
+function createRecoveryDeployConfig(repositoryRoot, databaseId, bindingPlan = null) {
   const original = path.join(repositoryRoot, 'worker', 'wrangler.toml');
   must(fs.existsSync(original), 'WRANGLER_TOML_AUSENTE');
   const source = fs.readFileSync(original, 'utf8');
-  const built = recoveryVersion
-    ? buildRecoveryToml(source, databaseId, recoveryVersion)
-    : { toml: injectAuthDbDatabaseId(source, databaseId), plan: { vars: {}, secrets: [] } };
+  const built = bindingPlan
+    ? buildRecoveryToml(source, databaseId, bindingPlan)
+    : { toml: injectAuthDbDatabaseId(source, databaseId), plan: null };
   const target = path.join(repositoryRoot, 'worker', 'wrangler.agenda-recovery.toml');
   fs.writeFileSync(target, built.toml, { encoding: 'utf8', mode: 0o600 });
   return { path: target, plan: built.plan };
 }
 
+function canonical(value) {
+  return JSON.stringify(value, (_, item) => (
+    item && typeof item === 'object' && !Array.isArray(item)
+      ? Object.fromEntries(Object.keys(item).sort().map((key) => [key, item[key]]))
+      : item
+  ));
+}
+
+export async function inspectRecoveryMultipart(file, bindingPlan) {
+  must(fs.existsSync(file), 'MULTIPART_RECUPERACAO_AUSENTE');
+  const bytes = fs.readFileSync(file);
+  must(bytes.length > 0 && bytes.length <= 32 * 1024 * 1024, 'MULTIPART_RECUPERACAO_TAMANHO_INVALIDO');
+  const firstEnd = bytes.indexOf('\r\n');
+  must(firstEnd > 2 && firstEnd < 200, 'MULTIPART_RECUPERACAO_SEM_BOUNDARY');
+  const first = bytes.subarray(0, firstEnd).toString('ascii');
+  must(/^--[A-Za-z0-9_-]+$/.test(first), 'MULTIPART_RECUPERACAO_BOUNDARY_INVALIDO');
+  let form;
+  try {
+    form = await new Response(bytes, { headers: { 'Content-Type': 'multipart/form-data; boundary=' + first.slice(2) } }).formData();
+  } catch { throw new SafeError('MULTIPART_RECUPERACAO_NAO_RECONHECIDO'); }
+  must(typeof form.get('metadata') === 'string', 'MULTIPART_METADATA_AUSENTE');
+  const metadata = parseJson(form.get('metadata'));
+  must(Array.isArray(metadata.bindings), 'MULTIPART_BINDINGS_AUSENTES');
+  must(Array.isArray(metadata.keep_bindings) && metadata.keep_bindings.length === 0, 'HERANCA_AMPLA_NAO_BLOQUEADA');
+  must(canonical(metadata.bindings) === canonical(bindingPlan.bindings), 'MULTIPART_BINDINGS_DIVERGENTES');
+  for (const binding of metadata.bindings) {
+    if (binding.type !== 'inherit') continue;
+    must(UUID.test(String(binding.version_id || '')), 'HERANCA_SEM_VERSION_ID');
+    must(Object.keys(binding).every((key) => ['name', 'type', 'version_id'].includes(key)), 'HERANCA_COM_CAMPO_NAO_PERMITIDO');
+  }
+  must(!metadata.bindings.some((binding) => binding.type === 'secret_text' && 'text' in binding), 'SEGREDO_PRESENTE_NO_MULTIPART');
+  return { totalBindings: metadata.bindings.length, inheritedBindings: metadata.bindings.filter((binding) => binding.type === 'inherit').length };
+}
+
+export function validateUploadedBindingPlan(version, bindingPlan) {
+  const bindings = Array.isArray(version?.resources?.bindings) ? version.resources.bindings : [];
+  const actualByName = new Map(bindings.filter((item) => item && typeof item.name === 'string').map((item) => [item.name, item]));
+  must(actualByName.size === bindingPlan.expected.length, 'VERSAO_PREPARADA_BINDINGS_EXTRAS_OU_AUSENTES');
+  for (const expected of bindingPlan.expected) {
+    const actual = actualByName.get(expected.name);
+    must(actual && actual.type === expected.type, 'VERSAO_PREPARADA_TIPO_BINDING_DIVERGENTE');
+    if (expected.type === 'plain_text') must(actual.text === expected.text, 'VERSAO_PREPARADA_VAR_DIVERGENTE');
+    if (expected.type === 'd1') must(actual.id === expected.id, 'VERSAO_PREPARADA_D1_DIVERGENTE');
+  }
+  return true;
+}
 export function classifyAgendaProbe(status) {
   const code = Number(status || 0);
   return {
