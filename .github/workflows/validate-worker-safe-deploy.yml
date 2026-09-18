@@ -72,6 +72,10 @@ jobs:
           grep -q "'versions', 'deploy'" worker/scripts/deploy-safe.mjs
           grep -q -- "--experimental-provision=false" worker/scripts/deploy-safe.mjs
           grep -q -- "--experimental-auto-create=false" worker/scripts/deploy-safe.mjs
+          grep -q -- "'--strict'" worker/scripts/deploy-safe.mjs
+          grep -q "candidateTag: 'portal-safe-deploy'" worker/scripts/deploy-safe.mjs
+          grep -q "candidataOrfaAnterior" worker/scripts/deploy-safe.mjs
+          grep -q "injectRequiredSecrets" worker/scripts/deploy-safe.mjs
           grep -q "FIREBASE_PRIVATE_KEY" worker/scripts/deploy-safe.mjs
           grep -q "AUTH_SESSION_SECRET" worker/scripts/deploy-safe.mjs
           grep -q "AUTH_RATE_LIMIT_SECRET" worker/scripts/deploy-safe.mjs
