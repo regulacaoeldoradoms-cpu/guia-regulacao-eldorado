@@ -331,7 +331,7 @@ export function npxCliPath(execPath = process.execPath) {
 export function classifyWranglerFailure(result = {}) {
   const text = `${result.stderr || ''}\n${result.stdout || ''}`.toLowerCase();
   if (/required secrets|missing.*secret|secret.*required|secret.*not.*configured/.test(text)) return 'SEGREDOS_AUSENTES';
-  if (/database_id.*(missing|invalid|not found)|d1 database.*(missing|invalid|not found)|d1_databases.*(missing|invalid)/.test(text)) return 'CONFIG_D1';
+  if (/(missing|invalid|not found).*database_id|database_id.*(missing|invalid|not found)|d1 database.*(missing|invalid|not found)|d1_databases.*(missing|invalid)/.test(text)) return 'CONFIG_D1';
   if (/not logged in|login|api token|authentication|unauthorized|forbidden/.test(text)) return 'AUTENTICACAO_CLOUDFLARE';
   if (/enotfound|econnreset|etimedout|network|network request failed|fetch failed/.test(text)) return 'REDE';
   if (/npm|npx|package/.test(text) && /error|failed|not found/.test(text)) return 'NPX_WRANGLER';
