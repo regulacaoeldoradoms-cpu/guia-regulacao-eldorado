@@ -2,7 +2,8 @@
 
 (() => {
   const config = window.CENTRAL_DOCS_AI_HOMOLOGATION || {};
-  const workerOrigin = String(config.workerOrigin || '').replace(/\/$/, '');
+  const OFFICIAL_WORKER_ORIGIN = 'https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev';
+  let workerOrigin = String(config.workerOrigin || '').replace(/\/$/, '');
   const fixtureMarker = 'phase5e-synthetic-v1';
 
   const state = {
@@ -15,6 +16,9 @@
 
   const els = {
     environment: document.getElementById('phase5eEnvironment'),
+    workerSetup: document.getElementById('phase5eWorkerSetup'),
+    workerInput: document.getElementById('phase5eWorkerOrigin'),
+    workerApply: document.getElementById('phase5eWorkerApply'),
     loginCard: document.getElementById('phase5eLoginCard'),
     loginForm: document.getElementById('phase5eLoginForm'),
     username: document.getElementById('phase5eUsername'),
@@ -254,8 +258,8 @@
   }
 
   async function api(path, options = {}) {
-    if (!workerOrigin || !/^https:\/\/[^/]+\.workers\.dev$/.test(workerOrigin)) {
-      throw new Error('Worker preview 5E não configurado.');
+    if (workerOrigin !== OFFICIAL_WORKER_ORIGIN) {
+      throw new Error('Worker preview 5E não configurado com o alias oficial.');
     }
     const headers = new Headers(options.headers || {});
     if (state.token) headers.set('Authorization', 'Bearer ' + state.token);
@@ -482,6 +486,53 @@
     }
   }
 
+  function setLoginEnabled(enabled) {
+    els.loginForm.querySelectorAll('input,button').forEach((control) => {
+      control.disabled = !enabled;
+    });
+  }
+
+  function normalizeWorkerOrigin(value) {
+    let url;
+    try {
+      url = new URL(String(value || '').trim());
+    } catch (_) {
+      return '';
+    }
+    if (
+      url.origin !== OFFICIAL_WORKER_ORIGIN
+      || url.href !== OFFICIAL_WORKER_ORIGIN + '/'
+      || url.username
+      || url.password
+      || url.port
+    ) return '';
+    return url.origin;
+  }
+
+  function applyWorkerOrigin() {
+    const candidate = normalizeWorkerOrigin(els.workerInput?.value);
+    if (!candidate) {
+      status(
+        els.environment,
+        'Use somente o alias oficial do Worker preview 5E. O endereço não é salvo.',
+        'error'
+      );
+      workerOrigin = '';
+      setLoginEnabled(false);
+      return false;
+    }
+    workerOrigin = candidate;
+    if (els.workerInput) els.workerInput.value = candidate;
+    if (els.workerSetup) els.workerSetup.hidden = true;
+    setLoginEnabled(true);
+    status(
+      els.environment,
+      'Alias oficial 5E selecionado somente em memória. O controle D1 e a origem Pages ainda precisam estar autorizados.',
+      'success'
+    );
+    return true;
+  }
+
   async function login(event) {
     event.preventDefault();
     if (!workerOrigin) return;
@@ -534,33 +585,37 @@
 
   function init() {
     renderFixtures();
-    const configured = Boolean(
-      config.workerConfigured
-      && /^https:\/\/[^/]+\.workers\.dev$/.test(workerOrigin)
-    );
-    if (!configured) {
-      status(
-        els.environment,
-        'Preview 5E ainda não configurado. Nenhuma chamada de IA está disponível.',
-        'warning'
-      );
-      els.loginForm.querySelectorAll('input,button').forEach((control) => {
-        control.disabled = true;
-      });
-      return;
-    }
-
-    status(
-      els.environment,
-      'Preview 5E configurado. Use somente a conta autorizada e as páginas sintéticas desta tela.',
-      'success'
-    );
     els.loginForm.addEventListener('submit', login);
     els.run.addEventListener('click', () => runMatrix().catch((error) => {
       status(els.matrixStatus, error.message || 'Falha inesperada na matriz.', 'error');
       state.running = false;
       els.run.disabled = false;
     }));
+    els.workerApply?.addEventListener('click', applyWorkerOrigin);
+
+    const configuredOrigin = normalizeWorkerOrigin(workerOrigin);
+    if (config.workerConfigured === true && configuredOrigin) {
+      workerOrigin = configuredOrigin;
+      if (els.workerInput) els.workerInput.value = configuredOrigin;
+      if (els.workerSetup) els.workerSetup.hidden = true;
+      setLoginEnabled(true);
+      status(
+        els.environment,
+        'Preview 5E configurado no bundle. Use somente a conta autorizada e as páginas sintéticas desta tela.',
+        'success'
+      );
+      return;
+    }
+
+    workerOrigin = '';
+    setLoginEnabled(false);
+    if (els.workerSetup) els.workerSetup.hidden = false;
+    if (els.workerInput) els.workerInput.value = OFFICIAL_WORKER_ORIGIN;
+    status(
+      els.environment,
+      'Bundle estático sem endpoint ativo. Depois de preparar a janela 5E, confirme o alias oficial abaixo; ele ficará somente na memória desta aba.',
+      'warning'
+    );
   }
 
   init();
