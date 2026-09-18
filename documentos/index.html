@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260918-2">
+  <link rel="stylesheet" href="/css/documents.css?v=20260918-3">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -115,7 +115,7 @@
               <div class="documents-ai-panel-head">
                 <div>
                   <span>IA documental</span>
-                  <strong>Classificação por página · Fase 5B</strong>
+                  <strong>Extração restritiva · Fase 5C</strong>
                 </div>
                 <button class="documents-ai-close" id="documentsAiCloseButton" type="button" aria-label="Fechar IA documental">×</button>
               </div>
@@ -130,6 +130,15 @@
                   <button class="portal-button secondary" id="documentsAiClassifyButton" type="button" disabled>Classificar página atual</button>
                   <div class="documents-ai-classification-status" id="documentsAiClassificationStatus" aria-live="polite"></div>
                   <div class="documents-ai-classification-result" id="documentsAiClassificationResult" hidden></div>
+                  <button class="portal-button primary documents-ai-extract-button" id="documentsAiExtractButton" type="button" disabled>Extrair campos desta página</button>
+                  <div class="documents-ai-extraction-status" id="documentsAiExtractionStatus" aria-live="polite"></div>
+                  <div class="documents-ai-extraction-result" id="documentsAiExtractionResult" hidden>
+                    <div class="documents-ai-extraction-fields" id="documentsAiExtractionFields"></div>
+                    <div class="documents-ai-extraction-actions">
+                      <button class="portal-button secondary" id="documentsAiCopyBlockButton" type="button">Copiar bloco</button>
+                      <button class="portal-button ghost" id="documentsAiViewSourceButton" type="button">Ver origem</button>
+                    </div>
+                  </div>
                 </section>
                 <section class="documents-ai-routines-section" aria-labelledby="documentsAiRoutinesTitle">
                   <strong id="documentsAiRoutinesTitle">Rotinas versionadas</strong>
@@ -277,6 +286,6 @@
   <script src="/js/document-cache.js?v=20260912-1"></script>
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-viewer.js?v=20260918-1"></script>
-  <script src="/js/documents.js?v=20260918-2"></script>
+  <script src="/js/documents.js?v=20260918-3"></script>
 </body>
 </html>

@@ -2359,3 +2359,96 @@
   color: #567086;
   font-size: .72rem;
 }
+
+
+/* Fase 5C — extração restritiva por página */
+.documents-ai-extract-button {
+  margin-top: 10px;
+}
+
+.documents-ai-extraction-status {
+  min-height: 0;
+  margin-top: 9px;
+  color: #5a7084;
+  font-size: .74rem;
+}
+
+.documents-ai-extraction-status.warning { color: #8a5f0a; }
+.documents-ai-extraction-status.success { color: #176049; }
+
+.documents-ai-extraction-result {
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #d4e1ea;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.documents-ai-extraction-fields {
+  display: grid;
+  gap: 7px;
+}
+
+.documents-ai-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+  padding: 8px 9px;
+  border: 1px solid #e1e9ef;
+  border-radius: 9px;
+  background: #f9fbfd;
+}
+
+.documents-ai-field-copy {
+  min-width: 0;
+}
+
+.documents-ai-field-copy strong {
+  display: block;
+  color: #294b65;
+  font-size: .69rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.documents-ai-field-copy span {
+  display: block;
+  margin-top: 3px;
+  color: #334e63;
+  font-size: .76rem;
+  overflow-wrap: anywhere;
+}
+
+.documents-ai-field-copy span.is-missing { color: #788b9b; font-style: italic; }
+.documents-ai-field-copy span.is-illegible { color: #8a5f0a; font-style: italic; }
+
+.documents-ai-field button {
+  min-width: 66px;
+  padding: 6px 8px;
+  border: 1px solid #cfdeea;
+  border-radius: 8px;
+  background: #fff;
+  color: #2b6fa7;
+  font: inherit;
+  font-size: .68rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.documents-ai-field button:disabled {
+  cursor: default;
+  opacity: .5;
+}
+
+.documents-ai-extraction-actions {
+  display: flex;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.documents-ai-extraction-actions .portal-button {
+  flex: 1 1 auto;
+  justify-content: center;
+  font-size: .72rem;
+}

@@ -152,10 +152,30 @@ Aceite 5B: 306/306 testes, navegador 75 passed/3 skipped esperados, staging/gove
 
 ### 5C — Extração restritiva
 
-- extrair somente páginas classificadas e autorizadas;
-- respeitar `NÃO CONSTA`, `ILEGÍVEL` e literalidade;
-- botões de copiar campo/bloco;
-- “Ver origem” leva à página correta.
+Estado: **concluída e aceita sinteticamente no PR #217**.
+
+Implementação:
+- reclassificar a mesma página imediatamente antes da extração, evitando confiar somente em estado antigo do frontend;
+- permitir extração apenas de `comprovante_atendimento` e `pagina_medica_autorizada`;
+- enviar uma única imagem JPEG/PNG da página, com número técnico e tipo autorizado; nenhum nome de arquivo, ref ou ID do Drive;
+- usar schema fechado por tipo de página e rejeitar campos extras, campos ausentes, tipo divergente ou proveniência divergente;
+- representar cada campo com `encontrado`, `nao_consta` ou `ilegivel`;
+- limpar qualquer valor quando o estado não for `encontrado`;
+- exigir literalidade para todo campo `encontrado`;
+- exibir resultado estruturado no painel sem persistência;
+- permitir copiar um campo ou o bloco estruturado no navegador;
+- “Ver origem” navega para a página vinculada ao resultado;
+- manter `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false` em produção.
+
+Critérios sintéticos da 5C:
+1. página `outro` nunca alcança a rotina de extração;
+2. o provider recebe uma única página por chamada;
+3. proveniência ou tipo divergente falha fechado;
+4. `NÃO CONSTA` e `ILEGÍVEL` nunca carregam texto residual;
+5. nenhum identificador documental entra na chamada técnica fora do conteúdo visual da própria página;
+6. resultados estruturados da extração permanecem separados de futuras respostas livres da 5D.
+
+Aceite 5C: **314/314 testes** na suíte integrada, navegador **75 passed / 3 skipped esperados**, staging, governança e site verdes. Nenhum documento clínico real foi enviado ao provedor; os gates produtivos permaneceram desligados.
 
 ### 5D — Perguntas sobre o documento
 
@@ -184,4 +204,4 @@ Aceite 5B: 306/306 testes, navegador 75 passed/3 skipped esperados, staging/gove
 
 ## Próximo passo atual
 
-Integrar a 5B mantendo os gates produtivos desligados e iniciar a 5C em branch separada, com extração de uma única página autorizada e validação estrutural rígida.
+Integrar a 5C e iniciar a 5D em branch própria. A 5D deve receber somente evidências paginadas já estruturadas/explicitamente fornecidas pelo fluxo documental e não pode alterar os resultados estruturados da 5C. Os gates produtivos permanecem desligados até a homologação 5E.

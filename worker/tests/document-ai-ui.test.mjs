@@ -16,7 +16,7 @@ function functionSlice(source, name, nextName) {
   return source.slice(start, end);
 }
 
-test('painel 5B permanece oculto e produção continua fail-closed', async () => {
+test('painel 5C permanece oculto e produção continua fail-closed', async () => {
   const [html, js, css, router, wrangler] = await Promise.all([
     read('documentos/index.html'),
     read('js/documents.js'),
@@ -28,6 +28,9 @@ test('painel 5B permanece oculto e produção continua fail-closed', async () =>
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(html, /id="documentsAiPanel"[^>]*hidden/);
   assert.match(html, /id="documentsAiClassifyButton"[^>]*disabled/);
+  assert.match(html, /id="documentsAiExtractButton"[^>]*disabled/);
+  assert.match(html, /id="documentsAiCopyBlockButton"/);
+  assert.match(html, /id="documentsAiViewSourceButton"/);
   assert.match(css, /\.documents-ai-panel\[hidden\]/);
   assert.match(css, /\.documents-ai-classification/);
   assert.match(js, /\/api\/documents\/ai\/config/);
@@ -43,7 +46,7 @@ test('classificação envia somente Blob da página e metadado técnico de prove
     read('js/documents.js'),
     read('js/document-viewer.js')
   ]);
-  const classify = functionSlice(js, 'classifyActiveDocumentPage', 'loadAccess');
+  const classify = functionSlice(js, 'classifyActiveDocumentPage', 'extractActiveDocumentPage');
 
   assert.match(classify, /const exporter = window\.PortalPdfViewer\?\.exportPageImage/);
   assert.match(classify, /await exporter\(pageNumber/);
@@ -57,7 +60,30 @@ test('classificação envia somente Blob da página e metadado técnico de prove
   assert.match(viewer, /exportPageImage,/);
 });
 
-test('frontend 5B não contém segredo de provedor nem codifica a página em base64', async () => {
+test('extração 5C também envia somente Blob da página e preserva origem', async () => {
+  const js = await read('js/documents.js');
+  const extract = functionSlice(js, 'extractActiveDocumentPage', 'loadAccess');
+
+  assert.match(extract, /\/api\/documents\/ai\/page\/extract/);
+  assert.match(extract, /'X-Document-Page-Number': String\(pageNumber\)/);
+  assert.match(extract, /body: blob/);
+  assert.match(extract, /credentials: 'omit'/);
+  assert.match(extract, /state\.documentAiExtraction = extraction/);
+  assert.doesNotMatch(extract, /state\.pdfItem\.(?:name|ref)|fileId|filename|searchQuery|page_text|inlineData/);
+});
+
+test('UI 5C possui copiar campo, copiar bloco e Ver origem sem persistência', async () => {
+  const js = await read('js/documents.js');
+  assert.match(js, /data-ai-copy-field/);
+  assert.match(js, /documentAiExtractionBlock/);
+  assert.match(js, /documentAiCopyBlock/);
+  assert.match(js, /documentAiViewSource/);
+  assert.match(js, /PortalPdfViewer\?\.scrollToPage\?\.\(pageNumber\)/);
+  assert.doesNotMatch(js, /localStorage\.(?:setItem|getItem).*documentAi/i);
+  assert.doesNotMatch(js, /indexedDB.*documentAi/i);
+});
+
+test('frontend 5C não contém segredo de provedor nem codifica a página em base64', async () => {
   const [html, js] = await Promise.all([
     read('documentos/index.html'),
     read('js/documents.js')

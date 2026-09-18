@@ -14,6 +14,25 @@
     '#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'
   ]);
 
+  const DOCUMENT_AI_FIELD_LABELS = Object.freeze({
+    nome_paciente: 'Nome do paciente',
+    cpf: 'CPF',
+    cns: 'CNS',
+    data_nascimento: 'Data de nascimento',
+    nome_mae: 'Nome da mãe',
+    telefone: 'Telefone',
+    endereco: 'Endereço',
+    agente: 'Agente',
+    titulo: 'Título',
+    motivo_encaminhamento: 'Motivo do encaminhamento',
+    medico: 'Médico',
+    crm_rms: 'CRM/RMS',
+    procedimento_solicitado: 'Procedimento solicitado',
+    codigo_procedimento: 'Código do procedimento',
+    cid: 'CID',
+    descricao_cid: 'Descrição do CID'
+  });
+
   const DRIVE_AUTO_SYNC_IDLE_MS = 1000;
   const DRIVE_SYNC_SUCCESS_VISIBLE_MS = 1000;
   const DRIVE_SYNC_REVISION_POLL_MS = 200;
@@ -30,6 +49,7 @@
     documentAiPanelOpen: false,
     documentAiBusy: false,
     documentAiClassification: null,
+    documentAiExtraction: null,
     stack: [],
     items: [],
     nextPageToken: '',
@@ -132,6 +152,12 @@
     documentAiClassify: document.getElementById('documentsAiClassifyButton'),
     documentAiClassificationStatus: document.getElementById('documentsAiClassificationStatus'),
     documentAiClassificationResult: document.getElementById('documentsAiClassificationResult'),
+    documentAiExtract: document.getElementById('documentsAiExtractButton'),
+    documentAiExtractionStatus: document.getElementById('documentsAiExtractionStatus'),
+    documentAiExtractionResult: document.getElementById('documentsAiExtractionResult'),
+    documentAiExtractionFields: document.getElementById('documentsAiExtractionFields'),
+    documentAiCopyBlock: document.getElementById('documentsAiCopyBlockButton'),
+    documentAiViewSource: document.getElementById('documentsAiViewSourceButton'),
     documentAiRoutines: document.getElementById('documentsAiRoutines'),
     closeViewer: document.getElementById('closeViewerButton'),
     editor: document.getElementById('documentsEditor'),
@@ -2898,6 +2924,84 @@
       <span>${escapeHtml(documentAiPageTypeLabel(value.pageType))}</span>`;
   }
 
+  function activeDocumentAiPageNumber() {
+    return Math.max(1, Math.round(Number(currentViewerState()?.activePage || 1)));
+  }
+
+  function documentAiFieldDisplay(field) {
+    const stateName = String(field?.state || '');
+    if (stateName === 'encontrado') return String(field?.value || '');
+    if (stateName === 'ilegivel') return 'ILEGÍVEL';
+    return 'NÃO CONSTA';
+  }
+
+  function documentAiExtractionBlock(extraction = state.documentAiExtraction) {
+    if (!extraction?.fields) return '';
+    const lines = [
+      `Página ${Number(extraction.pageNumber || 0)} — ${documentAiPageTypeLabel(extraction.pageType)}`
+    ];
+    for (const [key, field] of Object.entries(extraction.fields)) {
+      const label = DOCUMENT_AI_FIELD_LABELS[key] || key;
+      lines.push(`${label}: ${documentAiFieldDisplay(field)}`);
+    }
+    return lines.join('\n');
+  }
+
+  function renderDocumentAiExtraction() {
+    const extraction = state.documentAiExtraction;
+    if (els.documentAiExtractionResult) els.documentAiExtractionResult.hidden = !extraction;
+    if (!els.documentAiExtractionFields) return;
+
+    if (!extraction?.fields) {
+      els.documentAiExtractionFields.replaceChildren();
+      return;
+    }
+
+    els.documentAiExtractionFields.innerHTML = Object.entries(extraction.fields).map(([key, field]) => {
+      const label = DOCUMENT_AI_FIELD_LABELS[key] || key;
+      const display = documentAiFieldDisplay(field);
+      const stateClass = field?.state === 'ilegivel'
+        ? 'is-illegible'
+        : field?.state === 'nao_consta'
+          ? 'is-missing'
+          : '';
+      return `<div class="documents-ai-field">
+        <div class="documents-ai-field-copy">
+          <strong>${escapeHtml(label)}</strong>
+          <span class="${stateClass}">${escapeHtml(display)}</span>
+        </div>
+        <button type="button" data-ai-copy-field="${escapeHtml(key)}">Copiar</button>
+      </div>`;
+    }).join('');
+  }
+
+  function canExtractCurrentDocumentAiPage() {
+    const value = state.documentAiClassification;
+    if (!value || value.pageType === 'outro') return false;
+    return Number(value.pageNumber) === activeDocumentAiPageNumber()
+      && state.documentAiConfig?.processingEnabled === true
+      && state.documentAiConfig?.features?.extractPage === true;
+  }
+
+  async function copyDocumentAiText(text) {
+    const value = String(text || '');
+    if (!value) return false;
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+    const area = document.createElement('textarea');
+    area.value = value;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    const copied = document.execCommand?.('copy') === true;
+    area.remove();
+    return copied;
+  }
+
   function renderDocumentAiPanel() {
     const config = state.documentAiConfig || {};
     if (els.documentAiDescription) {
@@ -2914,6 +3018,9 @@
       const ready = config.processingEnabled === true && config.features?.classifyPage === true;
       els.documentAiClassify.disabled = !ready || state.documentAiBusy || !state.pdfItem;
     }
+    if (els.documentAiExtract) {
+      els.documentAiExtract.disabled = state.documentAiBusy || !canExtractCurrentDocumentAiPage();
+    }
     if (els.documentAiClassificationStatus && !state.documentAiBusy) {
       els.documentAiClassificationStatus.className = 'documents-ai-classification-status';
       if (!config.processingEnabled) {
@@ -2923,6 +3030,7 @@
       }
     }
     renderDocumentAiClassification();
+    renderDocumentAiExtraction();
     if (els.documentAiRoutines) {
       const routines = Array.isArray(config.routines) ? config.routines : [];
       els.documentAiRoutines.innerHTML = routines.length
@@ -2973,6 +3081,11 @@
 
     state.documentAiBusy = true;
     state.documentAiClassification = null;
+    state.documentAiExtraction = null;
+    if (els.documentAiExtractionStatus) {
+      els.documentAiExtractionStatus.textContent = '';
+      els.documentAiExtractionStatus.className = 'documents-ai-extraction-status';
+    }
     if (els.documentAiClassificationStatus) {
       els.documentAiClassificationStatus.className = 'documents-ai-classification-status';
       els.documentAiClassificationStatus.textContent = `Preparando página ${pageNumber}…`;
@@ -3030,6 +3143,84 @@
       if (els.documentAiClassificationStatus) {
         els.documentAiClassificationStatus.className = 'documents-ai-classification-status warning';
         els.documentAiClassificationStatus.textContent = error?.message || 'Falha ao classificar a página.';
+      }
+    } finally {
+      state.documentAiBusy = false;
+      renderDocumentAiPanel();
+    }
+  }
+
+  async function extractActiveDocumentPage() {
+    if (state.documentAiBusy || !state.pdfItem || !canExtractCurrentDocumentAiPage()) {
+      if (els.documentAiExtractionStatus) {
+        els.documentAiExtractionStatus.className = 'documents-ai-extraction-status warning';
+        els.documentAiExtractionStatus.textContent = 'Classifique novamente a página atual antes de extrair.';
+      }
+      return;
+    }
+
+    const pageNumber = activeDocumentAiPageNumber();
+    const exporter = window.PortalPdfViewer?.exportPageImage;
+    if (typeof exporter !== 'function') return;
+
+    state.documentAiBusy = true;
+    state.documentAiExtraction = null;
+    if (els.documentAiExtractionStatus) {
+      els.documentAiExtractionStatus.className = 'documents-ai-extraction-status';
+      els.documentAiExtractionStatus.textContent = `Preparando página ${pageNumber} para extração…`;
+    }
+    renderDocumentAiPanel();
+
+    try {
+      const blob = await exporter(pageNumber, {
+        maxEdge: 1800,
+        mimeType: 'image/jpeg',
+        quality: 0.9
+      });
+      if (!(blob instanceof Blob) || blob.size <= 0) throw new Error('Não foi possível preparar a página.');
+
+      const response = await fetch(`${endpoint}/api/documents/ai/page/extract`, {
+        method: 'POST',
+        headers: {
+          ...auth.authorizationHeader(),
+          'Content-Type': blob.type || 'image/jpeg',
+          'X-Document-Page-Number': String(pageNumber)
+        },
+        body: blob,
+        cache: 'no-store',
+        credentials: 'omit'
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error || 'Não foi possível extrair esta página.');
+
+      const classification = payload?.classification;
+      const extraction = payload?.extraction;
+      if (
+        !classification
+        || !extraction
+        || Number(classification.pageNumber) !== pageNumber
+        || Number(extraction.pageNumber) !== pageNumber
+        || String(classification.pageType || '') !== String(extraction.pageType || '')
+        || !['comprovante_atendimento', 'pagina_medica_autorizada'].includes(String(extraction.pageType || ''))
+        || !extraction.fields
+        || typeof extraction.fields !== 'object'
+      ) {
+        throw new Error('A extração retornou proveniência ou estrutura inválida.');
+      }
+
+      state.documentAiClassification = {
+        pageNumber,
+        pageType: String(classification.pageType)
+      };
+      state.documentAiExtraction = extraction;
+      if (els.documentAiExtractionStatus) {
+        els.documentAiExtractionStatus.className = 'documents-ai-extraction-status success';
+        els.documentAiExtractionStatus.textContent = `Campos da página ${pageNumber} extraídos sem combinar outras páginas.`;
+      }
+    } catch (error) {
+      if (els.documentAiExtractionStatus) {
+        els.documentAiExtractionStatus.className = 'documents-ai-extraction-status warning';
+        els.documentAiExtractionStatus.textContent = error?.message || 'Falha ao extrair a página.';
       }
     } finally {
       state.documentAiBusy = false;
@@ -3252,6 +3443,7 @@
     setDocumentAiPanelOpen(false);
     state.documentAiBusy = false;
     state.documentAiClassification = null;
+    state.documentAiExtraction = null;
     resetEditorState();
     state.pdfOpenId += 1;
     releaseProgressiveStream();
@@ -3294,6 +3486,7 @@
     const openId = state.pdfOpenId;
     state.pdfItem = item;
     state.documentAiClassification = null;
+    state.documentAiExtraction = null;
     renderDocumentAiAvailability();
     els.viewer.hidden = false;
     els.viewerModeLabel.textContent = 'Visualização';
@@ -3456,6 +3649,36 @@
   els.documentAiClose?.addEventListener('click', () => setDocumentAiPanelOpen(false));
   els.documentAiClassify?.addEventListener('click', () => {
     classifyActiveDocumentPage().catch(() => {});
+  });
+  els.documentAiExtract?.addEventListener('click', () => {
+    extractActiveDocumentPage().catch(() => {});
+  });
+  els.documentAiExtractionFields?.addEventListener('click', (event) => {
+    const button = event.target.closest?.('[data-ai-copy-field]');
+    if (!button || !state.documentAiExtraction?.fields) return;
+    const key = String(button.dataset.aiCopyField || '');
+    const field = state.documentAiExtraction.fields[key];
+    const label = DOCUMENT_AI_FIELD_LABELS[key] || key;
+    copyDocumentAiText(`${label}: ${documentAiFieldDisplay(field)}`).then((ok) => {
+      if (!els.documentAiExtractionStatus) return;
+      els.documentAiExtractionStatus.className = ok
+        ? 'documents-ai-extraction-status success'
+        : 'documents-ai-extraction-status warning';
+      els.documentAiExtractionStatus.textContent = ok ? 'Campo copiado.' : 'Não foi possível copiar o campo.';
+    }).catch(() => {});
+  });
+  els.documentAiCopyBlock?.addEventListener('click', () => {
+    copyDocumentAiText(documentAiExtractionBlock()).then((ok) => {
+      if (!els.documentAiExtractionStatus) return;
+      els.documentAiExtractionStatus.className = ok
+        ? 'documents-ai-extraction-status success'
+        : 'documents-ai-extraction-status warning';
+      els.documentAiExtractionStatus.textContent = ok ? 'Bloco copiado.' : 'Não foi possível copiar o bloco.';
+    }).catch(() => {});
+  });
+  els.documentAiViewSource?.addEventListener('click', () => {
+    const pageNumber = Number(state.documentAiExtraction?.pageNumber || 0);
+    if (pageNumber > 0) window.PortalPdfViewer?.scrollToPage?.(pageNumber);
   });
   els.editorUndo.addEventListener('click', undoEditor);
   els.editorRedo.addEventListener('click', redoEditor);

@@ -1064,7 +1064,7 @@ sqliteTest('Fase 4B salvar como novo inicia create resumable no mesmo parent e p
 });
 
 
-sqliteTest('IA documental 5B exige extract e produção bloqueia classificação antes de ler a página', async () => {
+sqliteTest('IA documental 5C exige extract e produção bloqueia classificação/extração antes de ler a página', async () => {
   const env = environment();
   const user = await register(env, 'documentos.ia', '127.0.0.93');
   await setDocumentCapabilities(env, 'documentos.ia', { view: true }, 'admin');
@@ -1103,7 +1103,7 @@ sqliteTest('IA documental 5B exige extract e produção bloqueia classificação
   assert.equal(enabledPayload.ai.pageIsolation, true);
   assert.equal(enabledPayload.ai.provenanceRequired, true);
   assert.equal(enabledPayload.ai.features.classifyPage, true);
-  assert.equal(enabledPayload.ai.features.extractPage, false);
+  assert.equal(enabledPayload.ai.features.extractPage, true);
 
   const blockedProcessing = await handleDocumentsRoute(
     documentRequest('/api/documents/ai/page/classify', user.token, { method: 'POST', body: { ignored: true } }),
@@ -1113,4 +1113,13 @@ sqliteTest('IA documental 5B exige extract e produção bloqueia classificação
   );
   assert.equal(blockedProcessing.status, 503);
   assert.equal((await blockedProcessing.json()).code, 'DOCUMENT_AI_PROCESSING_DISABLED');
+
+  const blockedExtraction = await handleDocumentsRoute(
+    documentRequest('/api/documents/ai/page/extract', user.token, { method: 'POST', body: { ignored: true } }),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(blockedExtraction.status, 503);
+  assert.equal((await blockedExtraction.json()).code, 'DOCUMENT_AI_PROCESSING_DISABLED');
 });

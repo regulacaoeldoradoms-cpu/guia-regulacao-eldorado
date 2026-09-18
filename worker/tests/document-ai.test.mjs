@@ -2,17 +2,19 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  DOCUMENT_AI_EXTRACTION_FIELDS,
   DOCUMENT_AI_PHASE,
   DOCUMENT_AI_VERSION,
   documentAiEnabled,
   documentAiProcessingEnabled,
   documentAiPublicConfig,
   normalizeDocumentAiClassification,
+  normalizeDocumentAiExtraction,
   normalizeDocumentAiField,
   documentAiTechnicalEvent
 } from '../document-ai.js';
 
-test('IA documental 5B só processa quando os dois gates estão ligados', () => {
+test('IA documental 5C só processa quando os dois gates estão ligados', () => {
   assert.equal(documentAiEnabled({}), false);
   assert.equal(documentAiProcessingEnabled({ DOCUMENTS_AI_PROCESSING_ENABLED: 'true' }), false);
   assert.equal(documentAiEnabled({ DOCUMENTS_AI_ENABLED: 'true' }), true);
@@ -33,15 +35,15 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
 
   assert.equal(config.phase, DOCUMENT_AI_PHASE);
   assert.equal(config.version, DOCUMENT_AI_VERSION);
-  assert.equal(config.phase, '5B');
-  assert.equal(config.version, 'phase5b-v1');
+  assert.equal(config.phase, '5C');
+  assert.equal(config.version, 'phase5c-v1');
   assert.equal(config.enabled, true);
   assert.equal(config.processingEnabled, false);
   assert.equal(config.pageIsolation, true);
   assert.equal(config.provenanceRequired, true);
   assert.equal(config.persistence, 'none');
   assert.equal(config.features.classifyPage, true);
-  assert.equal(config.features.extractPage, false);
+  assert.equal(config.features.extractPage, true);
   assert.equal(config.features.documentChat, false);
   assert.equal(Array.isArray(config.routines), true);
   const serialized = JSON.stringify(config);
@@ -104,4 +106,71 @@ test('telemetria descarta propriedades documentais e identificáveis', () => {
     }
   });
   assert.equal(documentAiTechnicalEvent('evento_nao_autorizado', { duration_ms: 1 }), null);
+});
+
+
+test('extração restritiva exige todos os campos e recusa campos inesperados', () => {
+  const fields = Object.fromEntries(
+    DOCUMENT_AI_EXTRACTION_FIELDS.comprovante_atendimento.map((key) => [
+      key,
+      { state: 'nao_consta', value: '' }
+    ])
+  );
+  fields.nome_paciente = { state: 'encontrado', value: 'NOME LITERAL' };
+  fields.cpf = { state: 'ilegivel', value: 'não deve sobreviver' };
+
+  const normalized = normalizeDocumentAiExtraction({
+    pageNumber: 4,
+    pageType: 'comprovante_atendimento',
+    fields
+  }, {
+    pageNumber: 4,
+    pageType: 'comprovante_atendimento'
+  });
+
+  assert.equal(normalized.pageNumber, 4);
+  assert.equal(normalized.fields.nome_paciente.value, 'NOME LITERAL');
+  assert.deepEqual(normalized.fields.cpf, { state: 'ilegivel', value: '' });
+  assert.equal(Object.keys(normalized.fields).length, DOCUMENT_AI_EXTRACTION_FIELDS.comprovante_atendimento.length);
+
+  assert.throws(() => normalizeDocumentAiExtraction({
+    pageNumber: 4,
+    pageType: 'comprovante_atendimento',
+    fields: { ...fields, campo_inventado: { state: 'encontrado', value: 'X' } }
+  }), /fora do schema autorizado/);
+
+  const missing = { ...fields };
+  delete missing.cns;
+  assert.throws(() => normalizeDocumentAiExtraction({
+    pageNumber: 4,
+    pageType: 'comprovante_atendimento',
+    fields: missing
+  }), /todos os campos obrigatórios/);
+});
+
+test('extração recusa troca de página, troca de tipo e tipo outro', () => {
+  const fields = Object.fromEntries(
+    DOCUMENT_AI_EXTRACTION_FIELDS.pagina_medica_autorizada.map((key) => [
+      key,
+      { state: 'nao_consta', value: '' }
+    ])
+  );
+
+  assert.throws(() => normalizeDocumentAiExtraction({
+    pageNumber: 3,
+    pageType: 'pagina_medica_autorizada',
+    fields
+  }, { pageNumber: 2, pageType: 'pagina_medica_autorizada' }), /proveniência/);
+
+  assert.throws(() => normalizeDocumentAiExtraction({
+    pageNumber: 3,
+    pageType: 'pagina_medica_autorizada',
+    fields
+  }, { pageNumber: 3, pageType: 'comprovante_atendimento' }), /classificação autorizada/);
+
+  assert.throws(() => normalizeDocumentAiExtraction({
+    pageNumber: 3,
+    pageType: 'outro',
+    fields: {}
+  }), /não possui rotina de extração autorizada/);
 });
