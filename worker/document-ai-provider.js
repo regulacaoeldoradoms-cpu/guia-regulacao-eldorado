@@ -1,10 +1,15 @@
 'use strict';
 
-import { PROMPT_CLASSIFICACAO_PAGINAS_V1 } from './document-ai-prompts.js';
+import {
+  PROMPT_CLASSIFICACAO_PAGINAS_V1,
+  PROMPT_EXTRACAO_REGULACAO_V1
+} from './document-ai-prompts.js';
 import {
   DocumentAiError,
+  DOCUMENT_AI_EXTRACTION_FIELDS,
   documentAiProcessingEnabled,
   normalizeDocumentAiClassification,
+  normalizeDocumentAiExtraction,
   normalizeDocumentAiPageNumber
 } from './document-ai.js';
 
@@ -178,6 +183,149 @@ export async function classifyDocumentAiPage(env, input = {}, options = {}) {
     routine: {
       id: PROMPT_CLASSIFICACAO_PAGINAS_V1.id,
       version: PROMPT_CLASSIFICACAO_PAGINAS_V1.version
+    }
+  };
+}
+
+
+function extractionTemplate(pageType) {
+  const keys = DOCUMENT_AI_EXTRACTION_FIELDS[pageType];
+  if (!keys) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_EXTRACTION_TYPE_INVALID',
+      'Esta página não possui rotina de extração autorizada.',
+      422
+    );
+  }
+  return {
+    pageNumber: 0,
+    pageType,
+    fields: Object.fromEntries(keys.map((key) => [
+      key,
+      { state: 'nao_consta', value: '' }
+    ]))
+  };
+}
+
+export async function extractDocumentAiPage(env, input = {}, options = {}) {
+  if (!documentAiProcessingEnabled(env)) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PROCESSING_DISABLED',
+      'O processamento da IA documental está desabilitado.',
+      503
+    );
+  }
+  if (!env.GEMINI_API_KEY) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PROVIDER_NOT_CONFIGURED',
+      'O provedor da IA documental não está configurado.',
+      503
+    );
+  }
+
+  const pageNumber = normalizeDocumentAiPageNumber(input.pageNumber);
+  const pageType = String(input.pageType || '').trim();
+  const template = extractionTemplate(pageType);
+  template.pageNumber = pageNumber;
+  const mimeType = normalizeMimeType(input.mimeType);
+  const bytes = normalizeImageBytes(input.bytes);
+  const model = String(env.DOCUMENTS_AI_MODEL || env.GEMINI_MODEL || 'gemini-3.5-flash-lite').trim();
+  const timeoutMs = boundedInteger(env.DOCUMENTS_AI_TIMEOUT_MS, DEFAULT_TIMEOUT_MS, 2000, 30000);
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const fetchImpl = options.fetchImpl || fetch;
+  const signal = options.signal || AbortSignal.timeout(timeoutMs);
+
+  let response;
+  try {
+    response = await fetchImpl(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': env.GEMINI_API_KEY
+      },
+      signal,
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: PROMPT_EXTRACAO_REGULACAO_V1.system }]
+        },
+        contents: [{
+          role: 'user',
+          parts: [
+            {
+              text: [
+                `Número técnico da página: ${pageNumber}.`,
+                `Tipo autorizado: ${pageType}.`,
+                'Retorne TODOS os campos deste schema, sem adicionar outros:',
+                JSON.stringify(template)
+              ].join('\n')
+            },
+            {
+              inlineData: {
+                mimeType,
+                data: bytesToBase64(bytes)
+              }
+            }
+          ]
+        }],
+        generationConfig: {
+          maxOutputTokens: 1800,
+          responseMimeType: 'application/json'
+        }
+      })
+    });
+  } catch (cause) {
+    const timedOut = signal?.aborted || ['AbortError', 'TimeoutError'].includes(cause?.name);
+    throw new DocumentAiError(
+      timedOut ? 'DOCUMENT_AI_PROVIDER_TIMEOUT' : 'DOCUMENT_AI_PROVIDER_NETWORK_ERROR',
+      timedOut
+        ? 'A extração da página excedeu o tempo seguro desta tentativa.'
+        : 'Não foi possível acessar o provedor da IA documental nesta tentativa.',
+      timedOut ? 504 : 502
+    );
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PROVIDER_HTTP_ERROR',
+      'O provedor da IA documental não concluiu a extração nesta tentativa.',
+      [408, 429, 500, 502, 503, 504].includes(response.status) ? response.status : 502
+    );
+  }
+
+  const parsed = parseJsonCandidate(candidateText(payload));
+  const extraction = normalizeDocumentAiExtraction(parsed, { pageNumber, pageType });
+  return {
+    extraction,
+    routine: {
+      id: PROMPT_EXTRACAO_REGULACAO_V1.id,
+      version: PROMPT_EXTRACAO_REGULACAO_V1.version
+    }
+  };
+}
+
+export async function classifyAndExtractDocumentAiPage(env, input = {}, options = {}) {
+  const classified = await classifyDocumentAiPage(env, input, options);
+  const pageType = classified.classification.pageType;
+  if (!DOCUMENT_AI_EXTRACTION_FIELDS[pageType]) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PAGE_NOT_AUTHORIZED',
+      'Esta página não foi classificada para extração institucional.',
+      422
+    );
+  }
+
+  const extracted = await extractDocumentAiPage(env, {
+    ...input,
+    pageType
+  }, options);
+
+  return {
+    classification: classified.classification,
+    extraction: extracted.extraction,
+    routines: {
+      classification: classified.routine,
+      extraction: extracted.routine
     }
   };
 }
