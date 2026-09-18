@@ -11,8 +11,8 @@
  * 2. inspeciona somente nomes/tipos de bindings, nunca valores, e injeta no arquivo temporário apenas o ID técnico do D1 já ligado a AUTH_DB;
  * 3. localiza uma versão já homologada da Agenda com os três bindings;
  * 4. após confirmação humana, faz rollback temporário para essa versão;
- * 5. recupera da versão homologada os valores Firebase não secretos e os nomes dos segredos; a main atual é republicada com esses bindings declarados explicitamente em configuração temporária;
- * 6. confirma que /api/agenda voltou a alcançar a barreira de autenticação.
+ * 5. recupera da versão homologada os valores Firebase não secretos e os nomes dos segredos; a main atual é enviada como NOVA VERSÃO, sem tráfego, com auto-provisionamento desativado;
+ * 6. inspeciona essa versão enviada (Firebase + AUTH_DB) antes de promovê-la a 100% e só então confirma a Agenda.
  *
  * Nenhum segredo é impresso, copiado para arquivo ou enviado ao GitHub.
  * No Windows, o Wrangler é iniciado pelo próprio node.exe atual executando diretamente o npx-cli.js que acompanha essa instalação. Isso evita depender da execução de arquivos .cmd por subprocessos.
@@ -544,9 +544,53 @@ function rollback(versionId, minimalConfig, cwd, message) {
   );
 }
 
-function deployCurrentMain(repositoryRoot, config) {
+function versionIdSet(minimalConfig, cwd) {
+  const result = runWrangler(
+    ['versions', 'list', '--json', '--config', minimalConfig],
+    cwd,
+    'FALHA_AO_LISTAR_VERSOES'
+  );
+  const values = parseJson(result.stdout);
+  must(Array.isArray(values), 'LISTA_DE_VERSOES_INVALIDA');
+  return new Set(values.map((item) => String(item?.id || '')).filter((id) => UUID.test(id)));
+}
+
+export function newUploadedVersion(beforeIds, afterIds) {
+  const before = beforeIds instanceof Set ? beforeIds : new Set(beforeIds || []);
+  const after = afterIds instanceof Set ? afterIds : new Set(afterIds || []);
+  const created = [...after].filter((id) => UUID.test(id) && !before.has(id));
+  must(created.length === 1, 'VERSAO_ENVIADA_NAO_IDENTIFICADA');
+  return created[0];
+}
+
+function uploadCurrentMain(repositoryRoot, config, minimalConfig, cwd) {
   must(fs.existsSync(config), 'WRANGLER_RECOVERY_CONFIG_AUSENTE');
-  runWrangler(['deploy', '--config', config], repositoryRoot, 'DEPLOY_MAIN_FALHOU');
+  const before = versionIdSet(minimalConfig, cwd);
+  runWrangler(
+    [
+      'versions', 'upload',
+      '--experimental-auto-create=false',
+      '--message', 'Agenda: recuperar Firebase e republicar main',
+      '--config', config
+    ],
+    repositoryRoot,
+    'UPLOAD_MAIN_FALHOU'
+  );
+  const after = versionIdSet(minimalConfig, cwd);
+  return newUploadedVersion(before, after);
+}
+
+function deployUploadedVersion(versionId, minimalConfig, cwd) {
+  must(UUID.test(versionId), 'VERSAO_PREPARADA_INVALIDA');
+  runWrangler(
+    [
+      'versions', 'deploy', `${versionId}@100%`, '-y',
+      '--message', 'Agenda: promover main com Firebase recuperado',
+      '--config', minimalConfig
+    ],
+    cwd,
+    'PROMOCAO_VERSAO_FALHOU'
+  );
 }
 
 function validateCurrentMain(cloneRoot) {
@@ -564,7 +608,13 @@ function dryRunCurrentMain(repositoryRoot, dryDir, config) {
   must(fs.existsSync(config), 'WRANGLER_RECOVERY_CONFIG_AUSENTE');
   fs.mkdirSync(dryDir, { recursive: true });
   runWrangler(
-    ['deploy', '--dry-run', '--outdir', dryDir, '--config', config],
+    [
+      'versions', 'upload',
+      '--dry-run',
+      '--experimental-auto-create=false',
+      '--outfile', path.join(dryDir, 'agenda-recovery.multipart'),
+      '--config', config
+    ],
     repositoryRoot,
     'DRY_RUN_MAIN_FALHOU'
   );
@@ -647,14 +697,21 @@ export async function recoverAgenda() {
     safeLine('firebaseSegredosExigidos', recoveredDeployConfig.plan.secrets.length);
     dryRunCurrentMain(downloadedRoot, dryDir, recoveredDeployConfig.path);
 
-    console.log('7/8 Republicando a main atual com os bindings Firebase explícitos...');
-    deployCurrentMain(downloadedRoot, recoveredDeployConfig.path);
+    console.log('7/8 Enviando a main como nova versão sem alterar o tráfego...');
+    const preparedVersion = uploadCurrentMain(downloadedRoot, recoveredDeployConfig.path, minimalConfig, baseRoot);
+    const preparedView = versionView(preparedVersion, minimalConfig, baseRoot);
+    must(preparedView, 'VERSAO_PREPARADA_NAO_LIDA');
+    must(inspectFirebaseBindings(preparedView).ready, 'VERSAO_PREPARADA_SEM_FIREBASE');
+    must(authDbDatabaseId(preparedView) === databaseId, 'VERSAO_PREPARADA_COM_D1_DIVERGENTE');
+    safeLine('versaoPreparada', preparedVersion);
 
-    console.log('8/8 Confirmando armazenamento e autenticação da Agenda...');
+    console.log('8/8 Promovendo versão validada e confirmando a Agenda...');
+    deployUploadedVersion(preparedVersion, minimalConfig, baseRoot);
     const finalProbe = await waitForStorageGuard(true);
     must(finalProbe.storageGuardPassed, 'AGENDA_CONTINUA_SEM_ARMAZENAMENTO');
 
     const finalVersion = activeVersionFromDeployment(deploymentStatus(minimalConfig, baseRoot));
+    must(finalVersion === preparedVersion, 'DEPLOY_FINAL_NAO_E_VERSAO_PREPARADA');
     const finalBindings = inspectFirebaseBindings(versionView(finalVersion, minimalConfig, baseRoot));
     must(finalBindings.ready, 'DEPLOY_FINAL_PERDEU_BINDINGS_FIREBASE');
 
