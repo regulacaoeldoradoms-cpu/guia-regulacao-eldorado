@@ -12,6 +12,6 @@
     "test:deploy-safe": "node --test tests/deploy-safe.test.mjs"
   },
   "devDependencies": {
-    "wrangler": "^4.0.0"
+    "wrangler": "4.133.0"
   }
 }

@@ -83,7 +83,7 @@ No último caso, novos deploys devem ser interrompidos até conferência manual.
 - `worker/scripts/deploy-safe.mjs`: gate produtivo;
 - `worker/tests/deploy-safe.test.mjs`: testes de regressão;
 - `.github/workflows/validate-worker-safe-deploy.yml`: protege o próprio gate;
-- `worker/package.json`: `deploy` e `deploy:safe` apontam para o gate.
+- `worker/package.json`: `deploy` e `deploy:safe` apontam para o gate; `wrangler` fica fixado exatamente em `4.133.0` para que Workers Builds e validações usem a mesma versão.
 
 ## Configuração Cloudflare necessária
 
@@ -98,6 +98,7 @@ Não alterar os Runtime variables and secrets para ativar o gate.
 ## Segurança
 
 - nenhum valor de secret é lido ou impresso pelo gate;
+- o gate fixa explicitamente o Account ID técnico já usado pelo projeto e também o injeta no config somente-leitura, evitando seleção ambígua de conta no Workers Builds;
 - nenhum token ou credencial é versionado;
 - a configuração temporária de leitura é criada fora do repositório; a configuração efêmera usada pelo Wrangler para upload fica temporariamente dentro de `/worker` para que `main = "index.js"` continue sendo resolvido corretamente, e é apagada no `finally`;
 - o gate trabalha somente com nomes/tipos dos secrets e com valores `plain_text` que a própria API de versão já expõe;

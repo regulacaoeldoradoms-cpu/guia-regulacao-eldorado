@@ -164,11 +164,13 @@ test('probe anônimo da Agenda distingue saudável de Firebase ausente', () => {
   assert.deepEqual(classifyAgendaProbe(503), { status: 503, healthy: false, firebaseBroken: true });
 });
 
-test('Wrangler do gate fica fixado em versão conhecida', () => {
+test('gate usa apenas o Wrangler local fixado pelo package.json', () => {
   assert.deepEqual(
     wranglerArgs(['versions', 'list']).slice(0, 2),
-    ['--yes', 'wrangler@' + SAFE_DEPLOY.wranglerVersion]
+    ['--no-install', 'wrangler']
   );
+  const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(pkg.devDependencies?.wrangler, SAFE_DEPLOY.wranglerVersion);
 });
 
 test('fonte do gate não usa deploy monolítico nem contém credenciais', () => {
@@ -180,6 +182,8 @@ test('fonte do gate não usa deploy monolítico nem contém credenciais', () => 
   assert.match(source, /'versions', 'deploy'/);
   assert.match(source, /--experimental-provision=false/);
   assert.match(source, /--experimental-auto-create=false/);
+  assert.match(source, /CLOUDFLARE_ACCOUNT_ID: SAFE_DEPLOY\.account/);
+  assert.match(source, /account_id: SAFE_DEPLOY\.account/);
   assert.match(source, /ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE/);
   assert.match(source, /path\.join\(root, '\.wrangler\.safe-deploy-'/);
   assert.match(source, /fs\.rmSync\(deployConfig/);

@@ -21,6 +21,7 @@ import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 
 export const SAFE_DEPLOY = Object.freeze({
+  account: '467be828c364ccf084240c34bb609b42',
   worker: 'yellow-wave-d0a1guia-regulacao-ia',
   wranglerVersion: '4.133.0',
   agendaApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/agenda',
@@ -86,7 +87,8 @@ function run(command, args, cwd, timeout = 300000) {
       WRANGLER_SEND_METRICS: 'false',
       NO_COLOR: '1',
       FORCE_COLOR: '0',
-      CI: 'true'
+      CI: 'true',
+      CLOUDFLARE_ACCOUNT_ID: SAFE_DEPLOY.account
     }
   });
   return {
@@ -98,7 +100,7 @@ function run(command, args, cwd, timeout = 300000) {
 }
 
 export function wranglerArgs(args) {
-  return ['--yes', 'wrangler@' + SAFE_DEPLOY.wranglerVersion, ...args];
+  return ['--no-install', 'wrangler', ...args];
 }
 
 function runWrangler(args, cwd, code) {
@@ -441,7 +443,11 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
 
   try {
     console.log('1/7 Conferindo produção e cadeia de versões...');
-    writeJson(readConfig, { name: SAFE_DEPLOY.worker, send_metrics: false });
+    writeJson(readConfig, {
+      name: SAFE_DEPLOY.worker,
+      account_id: SAFE_DEPLOY.account,
+      send_metrics: false
+    });
 
     originalVersion = activeVersionFromDeployment(deploymentStatus(readConfig, tempRoot));
     const activeView = versionView(originalVersion, readConfig, tempRoot);
