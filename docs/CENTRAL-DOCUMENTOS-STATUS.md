@@ -2,6 +2,14 @@
 
 Última atualização: 18/09/2026.
 
+## Publicação do novo vídeo — merge concluído; verificador público em correção — 18/09/2026
+
+A PR **#212** foi mesclada na `main` pelo commit `9b409e4c59470c4b37ab9d5e3d1a8a16ed735e82`. O GitHub Pages concluiu build/deploy com sucesso no run `35322604005`, e os checks de site, governança e Fases 1–4 do merge também ficaram verdes.
+
+Durante a verificação pós-merge foi detectado um bloqueio **somente no smoke público**: `scripts/verify-login-publication.mjs` ainda procurava `login-opening.js?v=20260917-3`, embora o HTML oficial agora use `20260918-1`. Isso não reverte o MP4 nem o deploy; torna apenas impossível o próprio verificador reconhecer a nova versão. Foi criada a branch `fix/opening-publication-verifier-20260918` para alinhar o smoke à versão atual. O run pós-merge antigo `35322605460` pode falhar por essa asserção histórica e não deve ser interpretado como regressão do vídeo.
+
+Próxima ação: validar e mesclar o ajuste do verificador; no push seguinte à `main`, exigir sucesso do passo **Confirmar publicação estática em produção sem autenticar** antes de encerrar esta mudança transversal. A Fase 5 continua sendo a fase corrente da Central.
+
 ## Mudança transversal — novo vídeo oficial de abertura pós-login — 18/09/2026
 
 Sem alterar a fase corrente da Central de Documentos, foi aberta a PR **#212** na branch `feat/post-login-opening-video-refresh-20260918`, criada diretamente da `main` atual `b962e124ea69a7d1136c608f716dc978aa047192`. A branch antiga `feat/post-login-opening-video` não será mesclada; dela foi reaproveitado somente o blob do novo `assets/portal-opening-v1.mp4`.
@@ -362,10 +370,10 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5 segue vigente; tarefa transversal ativa: atualização do vídeo oficial pós-login |
-| Última ação concluída | Novo MP4 isolado sobre a main atual; tamanho/SHA-256 identificados e contratos/cache-buster atualizados na PR #212 |
-| Branch/PR | `feat/post-login-opening-video-refresh-20260918`; PR #212 em draft durante validação; PR #211 antiga não deve ser mesclada |
-| Main | `b962e124ea69a7d1136c608f716dc978aa047192` — base usada para a branch limpa do vídeo |
+| Fase/subfase | Fase 5 segue vigente; tarefa transversal do vídeo em fechamento pós-publicação |
+| Última ação concluída | PR #212 mesclada em `9b409e4c`; GitHub Pages `35322604005` verde; verificador público antigo identificado como incompatível com `20260918-1` |
+| Branch/PR | `fix/opening-publication-verifier-20260918`; follow-up do smoke público após merge da #212 |
+| Main | `9b409e4c59470c4b37ab9d5e3d1a8a16ed735e82` — novo MP4 e cache-buster já integrados |
 | Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
 | Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
 | Produção | Reconfirmada pelo operador: versão `91eae913-ebaa-4550-8e88-f701f6cef777`, deployment `250b3d7b-9012-4073-9986-de36dd14bc3d`, 100%; V4 reconfirma de novo antes de escrever |
@@ -373,12 +381,12 @@ Artefatos anteriores preservados:
 | Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
-| Checks/testes | Abertura run `35321759169`: 11/11 Node + 24/24 Chromium + 8/8 Home; Fases 1–4 `35321759254` sucesso; governança `35321759083` sucesso. Bundle staging detectou asserção histórica obsoleta e foi corrigido para o estado produtivo atual |
-| Bloqueios | Nenhum bloqueio externo; falta apenas o rerun final após alinhar a asserção obsoleta do bundle staging |
+| Checks/testes | PR #212: abertura, staging, Fases 1–4, governança e site verdes; Pages pós-merge `35322604005` sucesso. Falta apenas smoke público com verificador corrigido |
+| Bloqueios | Verificador pós-publicação ainda apontava `20260917-3`; correção isolada preparada, sem mudança funcional no Portal |
 | Riscos | Cache antigo de mídia/controlador; mitigado por nova URL `20260918-1` e invalidação pontual do controlador, sem purge amplo |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Conferir o rerun final da PR #212; se os checks direcionados permanecerem verdes, registrar o head final, retirar draft e mesclar/publicar |
-| Depois | Retomar a Fase 5 em branch separada; latência de sync continua reservada para Fase 7 |
+| Próxima ação exata | Abrir/validar/mesclar o follow-up do verificador e confirmar em `main` o passo público de hash/HTML contra regulacaoeldoradoms.com.br |
+| Depois | Registrar confirmação produtiva final e retomar a Fase 5 em branch separada |
 | Fontes | STATUS; Guia MestreV1.1; Dossiê/deltas relevantes; wrapper2fee19e; RESULTADOS; ISOLAMENTO; PR#201; docs oficiais Cloudflare |
 
 ## Histórico recuperável
