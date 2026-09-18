@@ -45,7 +45,8 @@ test('classificação envia somente Blob da página e metadado técnico de prove
   ]);
   const classify = functionSlice(js, 'classifyActiveDocumentPage', 'loadAccess');
 
-  assert.match(classify, /exportPageImage\(pageNumber/);
+  assert.match(classify, /const exporter = window\.PortalPdfViewer\?\.exportPageImage/);
+  assert.match(classify, /await exporter\(pageNumber/);
   assert.match(classify, /\/api\/documents\/ai\/page\/classify/);
   assert.match(classify, /'X-Document-Page-Number': String\(pageNumber\)/);
   assert.match(classify, /body: blob/);
