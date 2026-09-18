@@ -144,3 +144,44 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   #phase5eLoginForm { grid-template-columns: 1fr; }
   .phase5e-heading-row { align-items: stretch; flex-direction: column; }
 }
+
+
+.phase5e-worker-setup {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #d7e2ea;
+  border-radius: 10px;
+  background: #f8fbfd;
+}
+.phase5e-worker-setup[hidden] { display: none !important; }
+.phase5e-worker-setup label {
+  display: block;
+  margin-bottom: 6px;
+  color: #34556e;
+  font-size: .82rem;
+  font-weight: 800;
+}
+.phase5e-worker-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.phase5e-worker-row input {
+  min-height: 42px;
+  width: 100%;
+  border: 1px solid #c7d6e2;
+  border-radius: 9px;
+  padding: 8px 10px;
+  color: #17364e;
+  background: #fff;
+  font: inherit;
+}
+.phase5e-worker-setup small {
+  display: block;
+  margin-top: 7px;
+  color: #667d8f;
+  line-height: 1.4;
+}
+@media (max-width: 720px) {
+  .phase5e-worker-row { grid-template-columns: 1fr; }
+}
