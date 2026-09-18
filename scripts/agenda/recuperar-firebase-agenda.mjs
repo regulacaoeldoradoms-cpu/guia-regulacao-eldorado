@@ -10,9 +10,9 @@
  *    a main é baixada como snapshot ZIP autenticado pela referência pública do GitHub, sem exigir Git instalado;
  * 2. inspeciona somente nomes/tipos de bindings, nunca valores, e injeta no arquivo temporário apenas o ID técnico do D1 já ligado a AUTH_DB;
  * 3. localiza uma versão já homologada da Agenda com os três bindings;
- * 4. após confirmação humana, faz rollback temporário para essa versão;
- * 5. recupera da versão homologada os valores Firebase não secretos e os nomes dos segredos; a main atual é enviada como NOVA VERSÃO, sem tráfego, com auto-provisionamento desativado;
- * 6. inspeciona essa versão enviada (Firebase + AUTH_DB) antes de promovê-la a 100% e só então confirma a Agenda.
+ * 4. monta um pacote explícito de bindings: segredos atuais herdam da versão produtiva e segredos Firebase herdam da versão homologada, sempre por version_id;
+ * 5. valida o multipart real em dry-run e, após confirmação humana, envia a main como NOVA VERSÃO sem tráfego e com auto-provisionamento desativado;
+ * 6. inspeciona a versão criada (todos os bindings + AUTH_DB), confirma que produção ainda está intacta e só então promove exatamente essa versão a 100%.
  *
  * Nenhum segredo é impresso, copiado para arquivo ou enviado ao GitHub.
  * No Windows, o Wrangler é iniciado pelo próprio node.exe atual executando diretamente o npx-cli.js que acompanha essa instalação. Isso evita depender da execução de arquivos .cmd por subprocessos.
@@ -131,75 +131,131 @@ export function firebaseRecoveryPlan(version) {
       vars[name] = value;
       continue;
     }
-    if (binding.type === 'secret_text') {
-      secrets.push(name);
-      continue;
-    }
+    if (binding.type === 'secret_text' || binding.type === 'secret_key') { secrets.push(name); continue; }
     throw new SafeError('FIREBASE_BINDING_TIPO_NAO_SUPORTADO');
   }
 
-  for (const name of REQUIRED_FIREBASE_BINDINGS) {
-    must(name in vars || secrets.includes(name), 'FIREBASE_RECOVERY_BINDING_AUSENTE');
-  }
+  for (const name of REQUIRED_FIREBASE_BINDINGS) must(name in vars || secrets.includes(name), 'FIREBASE_RECOVERY_BINDING_AUSENTE');
   must(secrets.includes('FIREBASE_PRIVATE_KEY'), 'FIREBASE_PRIVATE_KEY_NAO_E_SEGREDO');
-
   return { vars, secrets: [...new Set(secrets)].sort() };
 }
 
-function tomlValue(value) {
-  return JSON.stringify(String(value));
+function cloneNonSecretBinding(binding) {
+  must(binding && typeof binding.name === 'string' && binding.name, 'BINDING_INVALIDO');
+  if (binding.type === 'plain_text') {
+    must(typeof binding.text === 'string', 'VARIAVEL_PUBLICA_INVALIDA');
+    return { name: binding.name, type: 'plain_text', text: binding.text };
+  }
+  if (binding.type === 'd1') {
+    must(UUID.test(String(binding.id || '')), 'D1_BINDING_INVALIDO');
+    return { name: binding.name, type: 'd1', id: String(binding.id) };
+  }
+  if (binding.type === 'ai') return { name: binding.name, type: 'ai' };
+  throw new SafeError('TIPO_DE_BINDING_NAO_SUPORTADO_NA_RECUPERACAO');
 }
 
-export function injectVars(toml, values = {}) {
-  const entries = Object.entries(values);
-  if (!entries.length) return String(toml || '');
-  const lines = String(toml || '').replace(/\r\n/g, '\n').split('\n');
-  const start = lines.findIndex((line) => /^\s*\[vars\]\s*$/.test(line));
-  must(start >= 0, 'VARS_CONFIG_NAO_ENCONTRADO');
-  let end = lines.length;
-  for (let index = start + 1; index < lines.length; index += 1) {
-    if (sectionStart(lines[index])) { end = index; break; }
+export function buildBindingInheritancePlan(currentVersion, recoveryVersion, currentVersionId, recoveryVersionId) {
+  must(UUID.test(currentVersionId), 'VERSAO_ATUAL_INVALIDA');
+  must(UUID.test(recoveryVersionId), 'VERSAO_RECUPERACAO_INVALIDA');
+  const current = Array.isArray(currentVersion?.resources?.bindings) ? currentVersion.resources.bindings : [];
+  const recovery = Array.isArray(recoveryVersion?.resources?.bindings) ? recoveryVersion.resources.bindings : [];
+  must(current.length > 0 && recovery.length > 0, 'BINDINGS_NAO_IDENTIFICADOS');
+  const recoveryByName = new Map(recovery.filter((item) => item && typeof item.name === 'string').map((item) => [item.name, item]));
+  const upload = [];
+  const expected = [];
+  const firebaseNames = new Set(FIREBASE_RECOVERY_BINDINGS);
+  let currentSecrets = 0;
+  let firebaseSecrets = 0;
+  let firebasePublic = 0;
+  const pushBinding = (wire, actual) => { upload.push(wire); expected.push(actual); };
+
+  for (const binding of current) {
+    must(binding && typeof binding.name === 'string' && binding.name, 'BINDING_ATUAL_INVALIDO');
+    if (firebaseNames.has(binding.name)) continue;
+    if (binding.type === 'secret_text' || binding.type === 'secret_key') {
+      pushBinding({ name: binding.name, type: 'inherit', version_id: currentVersionId }, { name: binding.name, type: binding.type });
+      currentSecrets += 1;
+      continue;
+    }
+    const safe = cloneNonSecretBinding(binding);
+    pushBinding(safe, safe);
   }
 
-  for (const [name, value] of entries) {
-    const existing = lines.findIndex((line, index) => index > start && index < end && line.trimStart().startsWith(name + ' ='));
-    const replacement = name + ' = ' + tomlValue(value);
-    if (existing >= 0) lines[existing] = replacement;
-    else { lines.splice(end, 0, replacement); end += 1; }
+  for (const name of FIREBASE_RECOVERY_BINDINGS) {
+    const binding = recoveryByName.get(name);
+    if (!binding) continue;
+    if (binding.type === 'secret_text' || binding.type === 'secret_key') {
+      pushBinding({ name, type: 'inherit', version_id: recoveryVersionId }, { name, type: binding.type });
+      firebaseSecrets += 1;
+      continue;
+    }
+    const safe = cloneNonSecretBinding(binding);
+    must(safe.type === 'plain_text', 'FIREBASE_PUBLICO_TIPO_INVALIDO');
+    pushBinding(safe, safe);
+    firebasePublic += 1;
   }
+
+  const names = upload.map((item) => item.name);
+  must(new Set(names).size === names.length, 'BINDING_DUPLICADO_NO_PLANO');
+  for (const name of REQUIRED_FIREBASE_BINDINGS) must(names.includes(name), 'FIREBASE_RECOVERY_BINDING_AUSENTE');
+  const privateKey = expected.find((item) => item.name === 'FIREBASE_PRIVATE_KEY');
+  must(privateKey?.type === 'secret_text', 'FIREBASE_PRIVATE_KEY_NAO_E_SEGREDO');
+  const db = expected.find((item) => item.name === 'AUTH_DB');
+  must(db?.type === 'd1' && UUID.test(String(db.id || '')), 'AUTH_DB_AUSENTE_DO_PLANO');
+
+  const order = names.map((name, index) => [name, index]).sort((a, b) => a[0].localeCompare(b[0])).map((item) => item[1]);
+  return {
+    bindings: order.map((index) => upload[index]),
+    expected: order.map((index) => expected[index]),
+    currentSecrets, firebaseSecrets, firebasePublic
+  };
+}
+
+function tomlValue(value) { return JSON.stringify(String(value)); }
+
+function tomlInlineBinding(binding) {
+  const allowed = ['name', 'type', 'text', 'id', 'version_id'];
+  const keys = Object.keys(binding);
+  must(keys.every((key) => allowed.includes(key)), 'BINDING_TOML_CAMPO_NAO_PERMITIDO');
+  const parts = [];
+  for (const key of allowed) {
+    if (!(key in binding)) continue;
+    must(typeof binding[key] === 'string', 'BINDING_TOML_VALOR_INVALIDO');
+    parts.push(key + ' = ' + tomlValue(binding[key]));
+  }
+  return '{ ' + parts.join(', ') + ' }';
+}
+
+function removeSecretsSection(toml) {
+  const lines = String(toml || '').replace(/\r\n/g, '\n').split('\n');
+  const start = lines.findIndex((line) => /^\s*\[secrets\]\s*$/.test(line));
+  if (start < 0) return lines.join('\n');
+  let end = lines.length;
+  for (let index = start + 1; index < lines.length; index += 1) { if (/^\s*\[/.test(lines[index])) { end = index; break; } }
+  lines.splice(start, end - start);
   return lines.join('\n');
 }
 
-export function injectRequiredSecrets(toml, names = []) {
-  const required = [...new Set(names)].sort();
-  if (!required.length) return String(toml || '');
-  const lines = String(toml || '').replace(/\r\n/g, '\n').split('\n');
-  const requiredLine = 'required = [ ' + required.map(tomlValue).join(', ') + ' ]';
-  let start = lines.findIndex((line) => /^\s*\[secrets\]\s*$/.test(line));
-  if (start < 0) {
-    while (lines.length && lines[lines.length - 1] === '') lines.pop();
-    lines.push('', '[secrets]', requiredLine, '');
-    return lines.join('\n');
-  }
-  let end = lines.length;
-  for (let index = start + 1; index < lines.length; index += 1) {
-    if (sectionStart(lines[index])) { end = index; break; }
-  }
-  const existing = lines.findIndex((line, index) => index > start && index < end && /^\s*required\s*=/.test(line));
-  if (existing >= 0) lines[existing] = requiredLine;
-  else lines.splice(end, 0, requiredLine);
-  return lines.join('\n');
+export function injectUnsafeMetadataBindings(toml, bindings) {
+  must(Array.isArray(bindings) && bindings.length > 0, 'BINDINGS_METADATA_VAZIOS');
+  let output = removeSecretsSection(toml);
+  must(!/^\s*\[unsafe\.metadata\]\s*$/m.test(output), 'UNSAFE_METADATA_JA_EXISTE');
+  const lines = output.replace(/\s+$/g, '').split('\n');
+  lines.push('', '[unsafe.metadata]', 'keep_bindings = []', 'bindings = [');
+  for (const binding of bindings) lines.push('  ' + tomlInlineBinding(binding) + ',');
+  lines.push(']', '');
+  output = lines.join('\n');
+  must(!/^\s*\[secrets\]\s*$/m.test(output), 'SECRETS_REQUIRED_NAO_REMOVIDO');
+  return output;
 }
 
-export function buildRecoveryToml(toml, databaseId, recoveryVersion) {
-  const plan = firebaseRecoveryPlan(recoveryVersion);
+export function buildRecoveryToml(toml, databaseId, bindingPlan) {
+  must(bindingPlan && Array.isArray(bindingPlan.bindings), 'PLANO_BINDINGS_AUSENTE');
   let output = injectAuthDbDatabaseId(toml, databaseId);
-  output = injectVars(output, plan.vars);
-  output = injectRequiredSecrets(output, plan.secrets);
+  output = injectUnsafeMetadataBindings(output, bindingPlan.bindings);
   must(/\bkeep_vars\s*=\s*true\b/.test(output), 'KEEP_VARS_NAO_CONFIRMADO');
-  return { toml: output, plan };
+  return { toml: output, plan: bindingPlan };
 }
-
 function sectionStart(line) {
   return /^\s*\[\[?[^\]]+\]?\]\s*$/.test(line);
 }
