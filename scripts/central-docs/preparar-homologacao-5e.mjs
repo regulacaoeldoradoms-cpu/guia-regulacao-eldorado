@@ -311,10 +311,12 @@ export function buildPreviewConfig(base, entry, input) {
 }
 
 export function templateControlSql() {
-  return "SELECT enabled,expires_at," +
+  return "SELECT c.enabled,c.expires_at," +
+    " EXISTS(SELECT 1 FROM auth_users u JOIN auth_document_access a ON a.username=u.username" +
+    " WHERE u.username=c.allowed_username AND u.active=1 AND a.can_extract=1 AND a.can_view=1) AS extract_allowed," +
     " (SELECT count(*) FROM document_drive_homologation_controls" +
     " WHERE enabled=1 AND expires_at>CAST(strftime('%s','now') AS INTEGER)) AS active_controls" +
-    " FROM document_drive_homologation_controls WHERE control_id='" +
+    " FROM document_drive_homologation_controls c WHERE c.control_id='" +
     FIXED_5E.templateControl + "';";
 }
 
@@ -367,6 +369,10 @@ export function validateTemplateControl(value) {
   const row = firstRow(value);
   must(row && Number(row.enabled) === 0, 'CONTROLE_TEMPLATE_5E_NAO_REVOGADO');
   must(Number(row.active_controls) === 0, 'OUTRA_JANELA_CONTROLADA_ATIVA');
+  must(
+    Number(row.extract_allowed) === 1,
+    'INTERVENCAO_NECESSARIA_CAPABILITY_EXTRACT_AUSENTE'
+  );
   return true;
 }
 
