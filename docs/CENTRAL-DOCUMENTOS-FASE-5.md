@@ -152,7 +152,7 @@ Aceite 5B: 306/306 testes, navegador 75 passed/3 skipped esperados, staging/gove
 
 ### 5C — Extração restritiva
 
-Estado: **implementada; em validação sintética no PR #217**.
+Estado: **concluída e aceita sinteticamente no PR #217**.
 
 Implementação:
 - reclassificar a mesma página imediatamente antes da extração, evitando confiar somente em estado antigo do frontend;
@@ -174,6 +174,8 @@ Critérios sintéticos da 5C:
 4. `NÃO CONSTA` e `ILEGÍVEL` nunca carregam texto residual;
 5. nenhum identificador documental entra na chamada técnica fora do conteúdo visual da própria página;
 6. resultados estruturados da extração permanecem separados de futuras respostas livres da 5D.
+
+Aceite 5C: **314/314 testes** na suíte integrada, navegador **75 passed / 3 skipped esperados**, staging, governança e site verdes. Nenhum documento clínico real foi enviado ao provedor; os gates produtivos permaneceram desligados.
 
 ### 5D — Perguntas sobre o documento
 
@@ -202,4 +204,4 @@ Critérios sintéticos da 5C:
 
 ## Próximo passo atual
 
-Concluir a validação sintética da 5C no PR #217; se os checks permanecerem verdes, registrar aceite e integrar. Depois iniciar a 5D em branch própria, mantendo os gates produtivos desligados até a homologação 5E.
+Integrar a 5C e iniciar a 5D em branch própria. A 5D deve receber somente evidências paginadas já estruturadas/explicitamente fornecidas pelo fluxo documental e não pode alterar os resultados estruturados da 5C. Os gates produtivos permanecem desligados até a homologação 5E.
