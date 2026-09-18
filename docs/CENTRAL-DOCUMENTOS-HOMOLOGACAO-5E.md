@@ -13,6 +13,18 @@ Produção permanece com:
 - `DOCUMENTS_AI_ENABLED=false`;
 - `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
 
+## Referência congelada para a execução real
+
+Após integrar o preparo 5E, a execução real deve usar:
+
+- source ref: `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`;
+- Pages origin: `https://3683715a.portal-regulacao-central-staging.pages.dev`;
+- Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
+
+Esses valores foram gerados/validados pelo merge do PR #237. Não substituir por produção nem por outro alias arbitrário.
+
+Pré-condição ainda ausente: a baseline produtiva atual não contém `GEMINI_API_KEY`, conforme evidência persistente em `docs/AGENDA-DIGSAUDE-STATUS.md`. O operador deve configurar o secret antes da execução real; o script permanece fail-closed se isso não ocorrer.
+
 ## Objetivo
 
 Homologar o comportamento real do provedor usando somente conteúdo sintético e controlado, sem documento de paciente, sem escrita no Google Drive e sem promoção de Worker preview para produção.
