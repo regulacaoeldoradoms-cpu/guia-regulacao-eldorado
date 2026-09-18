@@ -8,12 +8,15 @@ import {
   SAFE_DEPLOY,
   CRITICAL_BINDINGS,
   activeVersionFromDeployment,
+  latestVersionEntry,
   latestVersionFromList,
+  isSafeDeployCandidateVersion,
   newUploadedVersion,
   authDbDatabaseId,
   currentSecretBindingNames,
   validateCandidateBindings,
   injectAuthDbDatabaseId,
+  injectRequiredSecrets,
   classifyAgendaProbe,
   wranglerArgs,
   wranglerCliPath
@@ -60,10 +63,24 @@ test('aceita somente deployment produtivo único em 100%', () => {
 test('identifica a Worker Version mais recente por created_on', () => {
   const oldId = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
   const newId = '99999999-8888-7777-6666-555555555555';
-  assert.equal(latestVersionFromList([
+  const values = [
     { id: oldId, metadata: { created_on: '2026-09-18T10:00:00.000Z' } },
     { id: newId, metadata: { created_on: '2026-09-18T11:00:00.000Z' } }
-  ]), newId);
+  ];
+  assert.equal(latestVersionEntry(values).id, newId);
+  assert.equal(latestVersionFromList(values), newId);
+});
+
+test('reconhece somente candidata órfã criada pelo próprio gate', () => {
+  assert.equal(isSafeDeployCandidateVersion({
+    annotations: { 'workers/message': SAFE_DEPLOY.candidateMessage }
+  }), true);
+  assert.equal(isSafeDeployCandidateVersion({
+    annotations: { 'workers/tag': SAFE_DEPLOY.candidateTag }
+  }), true);
+  assert.equal(isSafeDeployCandidateVersion({
+    annotations: { 'workers/message': 'upload manual qualquer' }
+  }), false);
 });
 
 test('identifica exatamente uma candidata nova', () => {
@@ -142,6 +159,28 @@ test('bloqueia candidata apontando para outro D1', () => {
   assert.throws(() => validateCandidateBindings(active, version(bindings)), /AUTH_DB_DIVERGENTE/);
 });
 
+test('injeta secrets.required dinamicamente sem gravar valores', () => {
+  const source = [
+    'name = "yellow-wave-d0a1guia-regulacao-ia"',
+    'keep_vars = true',
+    ''
+  ].join('\n');
+  const patched = injectRequiredSecrets(source, [
+    'FIREBASE_PRIVATE_KEY',
+    'AUTH_SESSION_SECRET',
+    'AUTH_SESSION_SECRET'
+  ]);
+  assert.match(
+    patched,
+    /\[secrets\]\nrequired = \[ "AUTH_SESSION_SECRET", "FIREBASE_PRIVATE_KEY" \]/
+  );
+  assert.doesNotMatch(patched, /secret-value|private-key-value/);
+  assert.throws(
+    () => injectRequiredSecrets(patched, ['AUTH_SESSION_SECRET']),
+    /SECAO_SECRETS_JA_EXISTE_NO_WRANGLER/
+  );
+});
+
 test('injeta database_id somente no AUTH_DB e exige keep_vars', () => {
   const source = [
     'name = "yellow-wave-d0a1guia-regulacao-ia"',
@@ -192,6 +231,11 @@ test('fonte do gate não usa deploy monolítico nem contém credenciais', () => 
   assert.match(source, /'versions', 'deploy'/);
   assert.match(source, /--experimental-provision=false/);
   assert.match(source, /--experimental-auto-create=false/);
+  assert.match(source, /'--strict'/);
+  assert.match(source, /'--tag', SAFE_DEPLOY\.candidateTag/);
+  assert.match(source, /injectRequiredSecrets\(/);
+  assert.match(source, /candidataOrfaAnterior/);
+  assert.doesNotMatch(source, /must\(latestBefore === originalVersion/);
   assert.match(source, /CLOUDFLARE_ACCOUNT_ID: SAFE_DEPLOY\.account/);
   assert.match(source, /account_id: SAFE_DEPLOY\.account/);
   assert.match(source, /node_modules', 'wrangler', 'bin', 'wrangler\.js'/);
