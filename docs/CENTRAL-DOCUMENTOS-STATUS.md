@@ -14,6 +14,21 @@ A **Fase 0** e as Fases **1, 2 e 3** permanecem encerradas. 4A–4C têm impleme
 - Código congelado do reteste: **`2fee19e69e06ecd128be2b103354fc6c2fb4e431`**.
 - Preview-base: **`a17473ce-ad9a-480c-8e53-901f2fcc3c92`**, configuração desarmada validada anteriormente pelo relatório V3. Não presumir que ainda atenda o alias `central-docs-phase4d`.
 
+## Evidência nova — bloqueio HTTP do preview confirmado, 18/09 aproximadamente 02:04 local
+
+O operador executou uma única requisição GET sem credenciais ao alias de homologação, com Origin Pages autorizado, sem redirecionamento. Resultado sanitizado:
+
+- status HTTP: **403**;
+- header **X-Central-Docs-Preview-Release: 2fee19e69e06ecd128be2b103354fc6c2fb4e431**.
+
+Isso confirma conjuntamente que o endereço `central-docs-phase4d` está servindo o wrapper/release congelado 2fee19e e que, após a revogação explícita do controle no D1, a requisição é bloqueada antes do acesso documental. A evidência não depende apenas da descrição visual da versão nem de cache do Pages.
+
+Combinada às evidências anteriores — enabled=0, revogada=1, upload_sessions=0; alias mais recente associado a a17473ce; configuração-base validada com DOCUMENTS_DRIVE_WRITE_ENABLED=false — a **janela antiga 4D está operacionalmente encerrada**. Não repetir SQL, HTTP, V3, OAuth ou downloads para confirmar de novo.
+
+Limite: o 403 confirma o bloqueio daquela requisição e o release servido; não é prova retrospectiva sobre requisições já aceitas antes da revogação. A ausência de sessões registrada continua não sendo inventário universal de operações externas.
+
+**Próxima ação exata:** preparar uma nova janela 4D limpa, com identificador novo, prazo novo aprovado, mesma conta/PDF descartável autorizados, e procedimento de liberação reconstruído a partir da produção real atual 91eae913/250b3d7b em vez das referências históricas. Antes de qualquer upload, reconciliar a branch #201 com a main atual em etapa própria ou justificar tecnicamente manter o código congelado de homologação, preservando as melhorias transversais da main. A nova janela exige confirmação apropriada; não reabilitar o controle antigo.
+
 ## Evidência nova — alias consultado por Wrangler, 18/09 aproximadamente 02:02 local
 
 O operador executou a listagem somente leitura com Wrangler 4.133.0 usando a configuração de verificação já existente. Resultado sanitizado:
