@@ -122,7 +122,13 @@ test('classificação envia uma imagem data URI sem identidade do arquivo', asyn
   });
   assert.equal(calls.length, 1);
   assert.equal(calls[0].model, DOCUMENT_AI_PRIMARY_FREE_MODEL);
-  assert.match(calls[0].input.image, /^data:image\/jpeg;base64,/);
+  assert.equal(calls[0].input.image, undefined);
+  const userContent = calls[0].input.messages[1].content;
+  assert.ok(Array.isArray(userContent));
+  assert.equal(userContent[0].type, 'image_url');
+  assert.match(userContent[0].image_url.url, /^data:image\/jpeg;base64,/);
+  assert.equal(userContent[1].type, 'text');
+  assert.match(userContent[1].text, /Classifique somente esta página/);
   assert.equal(calls[0].input.temperature, 0);
   assert.equal(calls[0].input.store, false);
   assert.equal(calls[0].input.reasoning_effort, null);
@@ -168,7 +174,10 @@ test('análise integrada classifica e extrai página autorizada em uma única in
 
   const serialized = JSON.stringify(calls[0].input);
   assert.match(serialized, /PROMPT|Analise somente esta página|pageType/i);
-  assert.match(calls[0].input.image, /^data:image\/png;base64,/);
+  const multimodal = calls[0].input.messages[1].content;
+  assert.equal(multimodal[0].type, 'image_url');
+  assert.match(multimodal[0].image_url.url, /^data:image\/png;base64,/);
+  assert.equal(multimodal[1].type, 'text');
 });
 
 test('pipeline público classifyAndExtract usa a análise integrada de uma chamada', async () => {
@@ -359,7 +368,9 @@ test('extração explícita recebe tipo autorizado e usa uma única imagem', asy
   assert.equal(result.extraction.pageType, 'pagina_medica_autorizada');
   assert.equal(result.extraction.fields.medico.value, 'DR. TEXTO LITERAL');
   assert.deepEqual(result.extraction.fields.cid, { state: 'ilegivel', value: '' });
-  assert.match(call.input.image, /^data:image\/jpeg;base64,/);
+  assert.equal(call.input.image, undefined);
+  assert.equal(call.input.messages[1].content[0].type, 'image_url');
+  assert.match(call.input.messages[1].content[0].image_url.url, /^data:image\/jpeg;base64,/);
 });
 
 test('tipo MIME inválido e imagem acima do limite falham antes do provider', async () => {
@@ -423,6 +434,9 @@ test('source do provider não registra conteúdo, não chama Gemini API e não u
   assert.doesNotMatch(source, /GEMINI_API_KEY/);
   assert.doesNotMatch(source, /gateway\.ai\.cloudflare\.com/);
   assert.match(source, /env\.AI\.run/);
+  assert.match(source, /type: 'image_url'/);
+  assert.match(source, /image_url: \{ url: image \}/);
+  assert.doesNotMatch(source, /messages:\s*\[[\s\S]{0,300}\{ role: 'user', content: prompt \}[\s\S]{0,200}\]\s*,\s*image,/);
   assert.match(source, /rejectIfBusy: true/);
   assert.match(source, /enable_thinking: false/);
   assert.match(source, /reasoning_effort: null/);
