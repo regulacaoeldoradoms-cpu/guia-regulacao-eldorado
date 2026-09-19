@@ -356,18 +356,6 @@
     return String(field.value || '') === '';
   }
 
-  async function classifyFixture(fixture, blob) {
-    return api('/api/documents/ai/page/classify', {
-      method: 'POST',
-      ai: true,
-      headers: {
-        'Content-Type': blob.type || 'image/png',
-        'X-Document-Page-Number': String(fixture.pageNumber)
-      },
-      body: blob
-    });
-  }
-
   async function extractFixture(fixture, blob) {
     return api('/api/documents/ai/page/extract', {
       method: 'POST',
@@ -414,6 +402,7 @@
       failed ? 'MATRIZ_5E_SINTETICA=FALHOU' : 'MATRIZ_5E_SINTETICA=APROVADA',
       'aprovados=' + passed,
       'falhas=' + failed,
+      'duracao_extracao_ms=' + Math.max(0, Math.round(Number(state.extractionDurationMs || 0))),
       'duracao_total_ms=' + Math.max(0, Math.round(Number(state.durationMs || 0)))
     ];
 
@@ -467,6 +456,7 @@
     state.results = [];
     state.evidence.clear();
     state.durationMs = 0;
+    state.extractionDurationMs = 0;
     const matrixStarted = performance.now();
     if (els.copySafeSummary) els.copySafeSummary.disabled = true;
     if (els.safeSummaryStatus) els.safeSummaryStatus.textContent = '';
@@ -475,10 +465,15 @@
     els.resultsCard.hidden = false;
     els.chatCard.hidden = false;
     els.run.disabled = true;
-    status(els.matrixStatus, 'Executando análise integrada: uma inferência por página…');
+    status(els.matrixStatus, 'Executando análise integrada em até 3 páginas simultâneas…');
 
     try {
-      for (const fixture of fixtures) {
+      const extractionStarted = performance.now();
+      let nextFixture = 0;
+      const pageResults = new Array(fixtures.length);
+      const concurrency = Math.min(3, fixtures.length);
+
+      const analyzeFixture = async (fixture, index) => {
         const canvas = els.fixtureGrid.querySelector('canvas[data-fixture-id="' + fixture.id + '"]');
         const blob = await blobFromCanvas(canvas);
 
@@ -503,26 +498,52 @@
             }
           }
 
-          addResult(
-            'Página ' + fixture.pageNumber + ' · análise integrada',
+          pageResults[index] = {
+            fixture,
             passed,
-            JSON.stringify({
+            detail: JSON.stringify({
               classification: observed,
               extraction
-            }, null, 2)
-          );
-
-          if (passed && extraction) {
-            state.evidence.set(fixture.pageNumber, extraction);
-          }
+            }, null, 2),
+            extraction: passed ? extraction : null
+          };
         } catch (error) {
-          addResult(
-            'Página ' + fixture.pageNumber + ' · análise integrada',
-            false,
-            (error.code ? error.code + ': ' : '') + (error.message || 'Falha não identificada.')
+          pageResults[index] = {
+            fixture,
+            passed: false,
+            detail: (error.code ? error.code + ': ' : '') + (error.message || 'Falha não identificada.'),
+            extraction: null
+          };
+        }
+      };
+
+      const worker = async () => {
+        while (true) {
+          const index = nextFixture;
+          nextFixture += 1;
+          if (index >= fixtures.length) return;
+          await analyzeFixture(fixtures[index], index);
+          const completed = pageResults.filter(Boolean).length;
+          status(
+            els.matrixStatus,
+            'Analisando páginas… ' + completed + ' de ' + fixtures.length + ' concluída(s).'
           );
         }
-      }
+      };
+
+      await Promise.all(Array.from({ length: concurrency }, () => worker()));
+      state.extractionDurationMs = performance.now() - extractionStarted;
+
+      pageResults.forEach((item) => {
+        addResult(
+          'Página ' + item.fixture.pageNumber + ' · análise integrada',
+          item.passed,
+          item.detail
+        );
+        if (item.passed && item.extraction) {
+          state.evidence.set(item.fixture.pageNumber, item.extraction);
+        }
+      });
 
       status(els.matrixStatus, 'Executando perguntas somente com as evidências estruturadas aprovadas…');
 
@@ -559,12 +580,13 @@
       state.durationMs = performance.now() - matrixStarted;
       renderSummary();
       const failed = state.results.some((item) => !item.passed);
-      const seconds = (state.durationMs / 1000).toFixed(1).replace('.', ',');
+      const extractionSeconds = (state.extractionDurationMs / 1000).toFixed(1).replace('.', ',');
+      const totalSeconds = (state.durationMs / 1000).toFixed(1).replace('.', ',');
       status(
         els.matrixStatus,
         failed
-          ? 'Matriz concluída com falhas em ' + seconds + ' s. Não habilite produção; envie o resumo seguro.'
-          : 'Matriz sintética concluída em ' + seconds + ' s. Ainda falta revisão humana antes de qualquer produção.',
+          ? 'Matriz concluída com falhas. Extração: ' + extractionSeconds + ' s; total com chat: ' + totalSeconds + ' s.'
+          : 'Matriz aprovada. Extração: ' + extractionSeconds + ' s; total com chat: ' + totalSeconds + ' s.',
         failed ? 'warning' : 'success'
       );
     } finally {
