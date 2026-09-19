@@ -23,19 +23,21 @@ A próxima rodada 5E substitui o provider **somente da IA documental** por Cloud
 
 ## Referência congelada para a próxima execução real
 
-As referências da rodada Gemini (`39ded96...` / Pages `56753b53...`) são **históricas e não devem ser reutilizadas** depois da migração de provider.
+A próxima rodada Workers AI deve usar exatamente:
 
-A próxima janela 5E só pode ser aberta depois de:
-1. mesclar a branch Workers AI;
-2. congelar o novo source ref da `main`;
-3. publicar/congelar um novo Pages imutável com o harness atualizado;
-4. atualizar o verificador operacional para essas duas referências;
-5. encerrar fail-closed qualquer janela anterior ainda ativa.
+- source ref: `a49ecd22e922267179fd8502f08fc5950df8fb0a`;
+- Pages origin: `https://60f66c8b.portal-regulacao-central-staging.pages.dev`;
+- Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
-O Worker preview alias permanece:
-`https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
+Essas referências correspondem ao merge da PR #260 e ao deployment Pages imutável observado imediatamente após o merge. Não substituir por produção nem por outro alias arbitrário.
 
-A precondição externa de usuário/capability continua: conta ativa, `view=true` e `extract=true`.
+Antes da abertura:
+1. encerrar a janela anterior;
+2. confirmar conta Workers **Free**;
+3. confirmar que este fluxo não usa AI Gateway/prepaid/unified billing;
+4. executar o verificador somente leitura.
+
+A conta/capability documental continua exigindo usuário ativo, `view=true` e `extract=true`.
 
 ## Objetivo
 
@@ -388,8 +390,8 @@ Ela não autoriza automaticamente ativação produtiva. Depois da matriz aprovad
 
 Antes do reteste Workers AI:
 1. encerrar a janela atual pelo procedimento fail-closed;
-2. concluir checks e merge da branch de migração;
-3. congelar novo source ref + Pages;
+2. confirmar plano Workers Free e ausência de cobrança por AI Gateway;
+3. executar o verificador read-only já congelado em `a49ecd22e922267179fd8502f08fc5950df8fb0a` + `https://60f66c8b.portal-regulacao-central-staging.pages.dev`;
 4. abrir nova janela 5E;
 5. executar a matriz e copiar o resumo seguro com as duas durações;
 6. encerrar a janela imediatamente depois.
