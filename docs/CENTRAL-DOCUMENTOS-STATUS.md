@@ -563,14 +563,33 @@ A branch `chore/central-docs-phase5e-acceptance-tightening` corrige isso sem toc
 
 **Implicação operacional resolvida:** o Cloudflare Pages publicou com sucesso o commit `003da4d` na origem imutável `https://764243d1.portal-regulacao-central-staging.pages.dev`, já contendo a matriz reforçada. Essa origem foi congelada no verificador/atalho 5E e substitui `67dd934e...` para a execução real. A origem antiga permanece apenas como evidência histórica e não deve ser usada na homologação final.
 
+## PR #244 integrada — Fase 5E pronta para intervenção externa — 18/09/2026
+
+A PR **#244** foi mesclada na `main` pelo commit `e4fbda06e67752dafdd50b5746655ad3908f86d3`. O endurecimento da matriz 5E está agora integrado: cada página autorizada valida os **oito campos** do schema, inclusive os casos especiais `nao_consta` e `ilegivel`.
+
+Evidências direcionadas da PR #244 antes do merge:
+- Procedimentos operacionais 5E: run `35413947781`, **success**;
+- Fases 1–5E (preparo): run `35413947712`, **success**;
+- bundle de staging: run `35413947796`, **success**;
+- governança: run `35413947803`, **success**;
+- Cloudflare Pages: **success**, com deployment imutável reforçado `https://764243d1.portal-regulacao-central-staging.pages.dev`.
+
+O check **Workers Builds** da branch da PR falhou apenas ao tentar criar Worker Preview, recurso indisponível naquele contexto. Isso não foi tratado como falha de produção. Após o merge, o build produtivo concluiu com **success**, versão `ac1d3d5e-b75c-4220-95d4-68028edd43c2`. O Cloudflare Pages da `main` também concluiu com sucesso no deployment `https://67d26d3e.portal-regulacao-central-staging.pages.dev`.
+
+A origem 5E deliberadamente congelada continua sendo `764243d1...`: ela é imutável, contém a matriz reforçada e já está fixada no verificador/atalho. O deployment posterior da `main` serve como confirmação adicional do merge, não como nova origem obrigatória.
+
+**Estado agora:** não existe mais trabalho funcional de GitHub que bloqueie a homologação real. Produção continua com IA documental desligada, nenhuma janela 5E foi aberta, nenhum segredo foi alterado e nenhuma chamada real ao Gemini foi executada.
+
+**Próxima intervenção humana única:** configurar `GEMINI_API_KEY` como secret do Worker na Cloudflare, sem compartilhar o valor. Em seguida, executar o verificador somente leitura e somente avançar se retornar `PRECONDICOES_5E_OK`.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
-- Branch atual: `feat/central-docs-phase5e-controlled-homologation`.
-- Fases 5A–5D: PRs **#215–#218 mesclados**. 5E está em preparo técnico, ainda sem ativação real.
+- Branch funcional atual: nenhuma; PR #244 já integrada. Esta atualização de status usa somente branch documental.
+- Fases 5A–5D: PRs **#215–#218 mesclados**. 5E está tecnicamente pronta e integrada, ainda sem ativação real do provider.
 - Ref de base real da 5E: **`8fba51979aba95c31ec7ef6644949c8c508530f6`**. Preservar login/abertura/Home, editor, sincronização e gate seguro do Worker.
 - Código congelado do reteste: **`2fee19e69e06ecd128be2b103354fc6c2fb4e431`**.
 - Preview-base: **`a17473ce-ad9a-480c-8e53-901f2fcc3c92`**, configuração desarmada validada anteriormente pelo relatório V3. Não presumir que ainda atenda o alias `central-docs-phase4d`.
@@ -677,24 +696,24 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — homologação real controlada; endurecimento final do aceite antes do provider real |
-| Última ação concluída | PR #244 reforçada: matriz valida 8 campos por página e Pages imutável `764243d1…` foi publicado e congelado |
-| Branch/PR | `chore/central-docs-phase5e-acceptance-tightening`; PR **#244** aberta |
-| Main | `0ee65228a8b19ddf72112957c0ee7c87ae005d34`; source ref do runtime 5E permanece `408bff8…` |
-| Último commit relevante | head funcional da PR #244 antes deste status: `7b6d21baad216c0f41ede638c50760e058845c8a` |
-| Código/preview | runtime Worker 5E segue em `408bff8…`; Pages reforçado congelado em `https://764243d1.portal-regulacao-central-staging.pages.dev` |
-| Produção | Worker produtivo permanece com gates IA false/false e `preview_urls=false`; nenhuma chamada documental real ao Gemini |
+| Fase/subfase | Fase 5E — homologação real controlada; preparo e matriz integral concluídos |
+| Última ação concluída | PR #244 mesclada em `e4fbda06…`; matriz real agora valida 8 campos por página autorizada; build produtivo Worker voltou verde |
+| Branch/PR | nenhuma frente funcional aberta; esta branch é somente documentação final de handoff |
+| Main | `e4fbda06e67752dafdd50b5746655ad3908f86d3`; runtime Worker 5E continua congelado em `408bff8…` |
+| Último commit relevante | merge funcional `e4fbda06…`; produção Worker gerada na versão `ac1d3d5e-b75c-4220-95d4-68028edd43c2` |
+| Código/preview | Pages 5E congelado: `https://764243d1.portal-regulacao-central-staging.pages.dev`; contém matriz reforçada e está fixado no verificador/atalho |
+| Produção | IA documental continua false/false; `preview_urls=false`; nenhum provider documental real executado |
 | Janela | nenhuma janela 5E ativa; janela 4D antiga continua revogada |
-| Decisão/porquê | endurecer a própria evidência de aceite antes do provider real, porque campos-amostra não comprovavam literalidade integral nem ausência total de mistura |
-| Descartado | iniciar 5E imediatamente com o preview antigo; isso homologaria um harness mais fraco do que o critério de aceite atual |
-| Ações externas | nenhuma nesta branch; não houve Cloudflare/D1/Drive/secret |
-| Checks/testes | Cloudflare Pages do commit `003da4d` concluído com sucesso; checks GitHub direcionados da PR #244 em validação após congelamento da nova origem |
-| Bloqueios | Pages reforçado já identificado e congelado; resta somente concluir os checks da PR #244 e, depois do merge, a configuração externa de `GEMINI_API_KEY` |
-| Riscos | usar a origem antiga produziria falso senso de cobertura; mitigação aplicada: verificador/atalho fixados em `764243d1…` |
-| Observabilidade | sem mudança; somente eventos/propriedades técnicos allowlisted, nunca conteúdo documental |
-| Próxima ação exata | concluir checks e merge da PR #244; então solicitar ao operador apenas `GEMINI_API_KEY` e executar o verificador read-only até `PRECONDICOES_5E_OK` |
-| Depois | abrir janela 5E, executar matriz sintética real integral, encerrar fail-closed e avaliar aceite da Fase 5 |
-| Fontes | Guia Mestre V1.1; STATUS; FASE-5; HOMOLOGACAO-5E; PRs #237–#244 |
+| Decisão/porquê | exigir os 8 campos evita aceite parcial e comprova literalidade + isolamento entre páginas antes do Gemini real |
+| Descartado | usar o Pages antigo `67dd934e…`; iniciar homologação antes de reforçar a matriz; interpretar falha de Worker Preview da PR como falha produtiva |
+| Ações externas | nenhuma alteração de Cloudflare/D1/Drive/secret nesta etapa; apenas builds automáticos do merge |
+| Checks/testes | operacionais 5E `35413947781` success; Fases 1–5E `35413947712` success; staging `35413947796` success; governança `35413947803` success; Worker main success |
+| Bloqueios | somente `GEMINI_API_KEY` ainda precisa ser configurada externamente |
+| Riscos | provider real ainda não homologado; mitigação é janela preview-only, fixtures 100% sintéticos, Drive write false e encerramento fail-closed |
+| Observabilidade | somente propriedades técnicas allowlisted; nunca conteúdo documental, paciente, arquivo, Drive ID ou resposta bruta |
+| Próxima ação exata | operador configura `GEMINI_API_KEY`; depois executa `verificar-precondicoes-5e.mjs --verificar`; somente com `PRECONDICOES_5E_OK` executa `iniciar-homologacao-5e.mjs --iniciar` |
+| Depois | executar matriz sintética real, copiar somente o resumo seguro, encerrar 5E fail-closed e avaliar aceite/publicação da Fase 5 |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #237–#244; runs acima |
 
 ## Histórico recuperável
 
