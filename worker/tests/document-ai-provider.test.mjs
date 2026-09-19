@@ -23,8 +23,6 @@ function enabledEnv(overrides = {}) {
     DOCUMENTS_AI_FREE_ONLY: 'true',
     DOCUMENTS_AI_PRIMARY_MODEL: DOCUMENT_AI_PRIMARY_FREE_MODEL,
     DOCUMENTS_AI_FALLBACK_MODELS: DOCUMENT_AI_FALLBACK_FREE_MODEL,
-    DOCUMENTS_AI_TIMEOUT_MS: '6000',
-    DOCUMENTS_AI_TOTAL_TIMEOUT_MS: '10000',
     AI: { run: async () => ({ response: '{}' }) },
     ...overrides
   };
@@ -127,6 +125,13 @@ test('classificação envia uma imagem data URI sem identidade do arquivo', asyn
   assert.match(calls[0].input.image, /^data:image\/jpeg;base64,/);
   assert.equal(calls[0].input.temperature, 0);
   assert.equal(calls[0].input.store, false);
+  assert.equal(calls[0].input.reasoning_effort, null);
+  assert.deepEqual(calls[0].input.chat_template_kwargs, {
+    enable_thinking: false,
+    clear_thinking: true
+  });
+  assert.equal('max_tokens' in calls[0].input, false);
+  assert.equal(calls[0].input.max_completion_tokens, 120);
   assert.deepEqual(calls[0].input.response_format, { type: 'json_object' });
   assert.deepEqual(calls[0].runOptions, { rejectIfBusy: true });
 
@@ -238,6 +243,64 @@ test('Qwen entra somente como fallback quando Gemma não produz resposta válida
     DOCUMENT_AI_FALLBACK_FREE_MODEL
   ]);
   assert.equal(result.provider.model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
+});
+
+test('capacidade ocupada no Gemma cai imediatamente para Qwen sem fila paga', async () => {
+  const models = [];
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 4,
+    mimeType: 'image/jpeg',
+    bytes: new Uint8Array([4])
+  }, {
+    aiRun: async (model) => {
+      models.push(model);
+      if (model === DOCUMENT_AI_PRIMARY_FREE_MODEL) {
+        const error = new Error('Capacity temporarily exceeded, please try again.');
+        error.code = 3040;
+        error.status = 429;
+        throw error;
+      }
+      return workersResponse({
+        pageType: 'comprovante_atendimento',
+        fields: fieldsFor('comprovante_atendimento')
+      });
+    }
+  });
+
+  assert.deepEqual(models, [
+    DOCUMENT_AI_PRIMARY_FREE_MODEL,
+    DOCUMENT_AI_FALLBACK_FREE_MODEL
+  ]);
+  assert.equal(result.provider.model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
+  assert.equal(result.provider.attempts[0].result, 'DOCUMENT_AI_PROVIDER_BUSY');
+  assert.equal(result.provider.attempts[1].result, 'success');
+});
+
+test('timeout nativo do provider pode cair para o fallback gratuito', async () => {
+  const models = [];
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 1,
+    mimeType: 'image/jpeg',
+    bytes: new Uint8Array([1])
+  }, {
+    aiRun: async (model) => {
+      models.push(model);
+      if (model === DOCUMENT_AI_PRIMARY_FREE_MODEL) {
+        const error = new Error('3007 Request timeout');
+        error.code = 3007;
+        error.status = 408;
+        throw error;
+      }
+      return workersResponse({
+        pageType: 'comprovante_atendimento',
+        fields: fieldsFor('comprovante_atendimento')
+      });
+    }
+  });
+
+  assert.deepEqual(models, DOCUMENT_AI_FREE_MODELS);
+  assert.equal(result.provider.model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
+  assert.equal(result.provider.attempts[0].result, 'DOCUMENT_AI_PROVIDER_TIMEOUT');
 });
 
 test('limite gratuito diário interrompe sem tentar modelo pago ou fallback inútil', async () => {
@@ -361,5 +424,10 @@ test('source do provider não registra conteúdo, não chama Gemini API e não u
   assert.doesNotMatch(source, /gateway\.ai\.cloudflare\.com/);
   assert.match(source, /env\.AI\.run/);
   assert.match(source, /rejectIfBusy: true/);
+  assert.match(source, /enable_thinking: false/);
+  assert.match(source, /reasoning_effort: null/);
+  assert.doesNotMatch(source, /DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT/);
+  assert.doesNotMatch(source, /Promise\.race/);
+  assert.doesNotMatch(source, /setTimeout\(/);
   assert.doesNotMatch(source, /\{ signal \}/);
 });
