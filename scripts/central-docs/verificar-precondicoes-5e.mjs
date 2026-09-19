@@ -75,7 +75,8 @@ export async function check5eReadiness() {
     console.log('');
     console.log('PRECONDICOES_5E_OK');
     console.log('productionVersion=' + productionVersion);
-    console.log('geminiSecretPresent=true');
+    console.log('workersAiBindingPresent=true');
+    console.log('freeOnlyModels=true');
     console.log('extractCapability=true');
     console.log('activeControlledWindow=false');
     console.log('sourceRef=' + FROZEN_5E_SOURCE_REF);
