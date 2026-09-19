@@ -2816,6 +2816,7 @@
           if (openId !== state.pdfOpenId) return;
           els.viewerState.textContent = 'Visualizador do Portal pronto.';
           markViewerReady(openId, bucket, cacheState, progressive, sourceLabel);
+          if (state.documentAiPanelOpen) renderDocumentAiPanel();
         },
         onError: () => {
           if (openId !== state.pdfOpenId || state.pdfCustomFallbackStarted) return;
