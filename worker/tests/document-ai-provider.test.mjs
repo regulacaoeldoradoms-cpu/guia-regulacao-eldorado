@@ -5,6 +5,7 @@ import fs from 'node:fs/promises';
 import { DOCUMENT_AI_EXTRACTION_FIELDS } from '../document-ai.js';
 import {
   DOCUMENT_AI_FALLBACK_FREE_MODEL,
+  DOCUMENT_AI_FAST_VISION_FREE_MODEL,
   DOCUMENT_AI_FREE_MODELS,
   DOCUMENT_AI_PRIMARY_FREE_MODEL,
   MAX_DOCUMENT_AI_IMAGE_BYTES,
@@ -13,6 +14,7 @@ import {
   classifyAndExtractDocumentAiPage,
   classifyDocumentAiPage,
   documentAiFreeModelSequence,
+  documentAiVisionModelSequence,
   extractDocumentAiPage
 } from '../document-ai-provider.js';
 
@@ -59,6 +61,98 @@ test('provider documental usa somente Gemma 4 + Qwen aprovados para free-only', 
     () => documentAiFreeModelSequence(enabledEnv({ DOCUMENTS_AI_FREE_ONLY: 'false' })),
     (error) => error?.code === 'DOCUMENT_AI_FREE_ONLY_REQUIRED'
   );
+});
+
+test('modo V7 coloca Moondream antes de Gemma/Qwen somente para visão', async () => {
+  const env = enabledEnv({
+    DOCUMENTS_AI_FAST_VISION_ENABLED: 'true',
+    DOCUMENTS_AI_FAST_VISION_MODEL: DOCUMENT_AI_FAST_VISION_FREE_MODEL
+  });
+  assert.deepEqual(documentAiVisionModelSequence(env), [
+    DOCUMENT_AI_FAST_VISION_FREE_MODEL,
+    DOCUMENT_AI_PRIMARY_FREE_MODEL,
+    DOCUMENT_AI_FALLBACK_FREE_MODEL
+  ]);
+
+  const calls = [];
+  const result = await analyzeDocumentAiPage(env, {
+    pageNumber: 3,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([3, 3, 3])
+  }, {
+    aiRun: async (model, input, runOptions) => {
+      calls.push({ model, input, runOptions });
+      return { answer: JSON.stringify({ pageType: 'outro', fields: {} }) };
+    }
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].model, DOCUMENT_AI_FAST_VISION_FREE_MODEL);
+  assert.equal(calls[0].input.task, 'query');
+  assert.match(calls[0].input.image, /^data:image\/png;base64,/);
+  assert.match(calls[0].input.question, /Analise somente esta página/);
+  assert.equal(calls[0].input.reasoning, false);
+  assert.equal(calls[0].input.messages, undefined);
+  assert.deepEqual(calls[0].runOptions, { rejectIfBusy: true });
+  assert.equal(result.classification.pageType, 'outro');
+  assert.equal(result.provider.model, DOCUMENT_AI_FAST_VISION_FREE_MODEL);
+});
+
+test('Moondream que reconhece ilegível encerra no fast path sem revisão sequencial', async () => {
+  const env = enabledEnv({
+    DOCUMENTS_AI_FAST_VISION_ENABLED: 'true',
+    DOCUMENTS_AI_FAST_VISION_MODEL: DOCUMENT_AI_FAST_VISION_FREE_MODEL
+  });
+  let calls = 0;
+  const result = await analyzeDocumentAiPage(env, {
+    pageNumber: 6,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([6, 6])
+  }, {
+    aiRun: async (model) => {
+      calls += 1;
+      assert.equal(model, DOCUMENT_AI_FAST_VISION_FREE_MODEL);
+      return { answer: JSON.stringify({
+        pageType: 'pagina_medica_autorizada',
+        fields: fieldsFor('pagina_medica_autorizada', {
+          titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
+          motivo_encaminhamento: { state: 'encontrado', value: 'MOTIVO' },
+          medico: { state: 'encontrado', value: 'DR. TESTE' },
+          crm_rms: { state: 'encontrado', value: 'CRM/MS 1' },
+          procedimento_solicitado: { state: 'encontrado', value: 'PROC' },
+          codigo_procedimento: { state: 'encontrado', value: '0001' },
+          cid: { state: 'ilegivel', value: '' },
+          descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL' }
+        })
+      }) };
+    }
+  });
+
+  assert.equal(calls, 1);
+  assert.equal(result.provider.reviewed, false);
+  assert.equal(result.extraction.fields.cid.state, 'ilegivel');
+});
+
+test('fast path de visão não substitui Gemma no chat textual', async () => {
+  const env = enabledEnv({
+    DOCUMENTS_AI_FAST_VISION_ENABLED: 'true',
+    DOCUMENTS_AI_FAST_VISION_MODEL: DOCUMENT_AI_FAST_VISION_FREE_MODEL
+  });
+  const fields = fieldsFor('pagina_medica_autorizada', {
+    procedimento_solicitado: { state: 'encontrado', value: 'PROC' }
+  });
+  let modelUsed = '';
+  const result = await chatDocumentAi(env, {
+    question: 'Qual procedimento consta?',
+    evidence: [{ pageNumber: 2, pageType: 'pagina_medica_autorizada', fields }]
+  }, {
+    aiRun: async (model) => {
+      modelUsed = model;
+      return workersResponse({ answer: 'PROC [p. 2]', pages: [2] });
+    }
+  });
+  assert.equal(modelUsed, DOCUMENT_AI_PRIMARY_FREE_MODEL);
+  assert.equal(result.chat.answer, 'PROC [p. 2]');
 });
 
 test('gate false impede qualquer chamada ao Workers AI', async () => {
