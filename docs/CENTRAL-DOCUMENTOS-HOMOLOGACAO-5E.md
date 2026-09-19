@@ -25,11 +25,11 @@ A próxima rodada 5E substitui o provider **somente da IA documental** por Cloud
 
 O **reteste V7 de baixa latência** deve usar exatamente:
 
-- source ref: `8faf51af286eb631077645ee84bc34170c8d45a2`;
-- Pages origin: `https://b8dd14db.portal-regulacao-central-staging.pages.dev`;
+- source ref: `28a4916840f450b2caa7d93138d0e127a5db1a88`;
+- Pages origin: `https://0c46e41f.portal-regulacao-central-staging.pages.dev`;
 - Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
-O source ref corresponde ao merge da PR #280. O Pages imutável foi gerado no head `31b11a0e145d1b41b54aed98b53a9aa6fb474da9`; a comparação GitHub entre esse head e o merge `8faf51af286eb631077645ee84bc34170c8d45a2` mostrou **zero arquivos diferentes**, portanto ambos representam exatamente a mesma árvore de arquivos da V7. As referências V6 anteriores são históricas e não devem ser reutilizadas.
+O source ref corresponde ao merge da PR #286, que fecha a instrumentação final da V7 sem alterar modelo, concorrência, resolução ou fallback. O Pages imutável foi publicado no head `341b13d77fcacc7cb0b48ecfacf8eaf19aa545be`; a comparação GitHub entre esse head e o merge `28a4916840f450b2caa7d93138d0e127a5db1a88` mostrou **zero arquivos diferentes**, portanto runtime e laboratório representam a mesma árvore final da V7. Referências V7 anteriores ficam históricas e não devem ser reutilizadas no próximo reteste.
 
 Antes da abertura V7:
 1. encerrar fail-closed a janela V6 atualmente aberta;
@@ -459,3 +459,15 @@ A PR #282 integrou a correção do contrato Moondream. O próximo reteste deve u
 O Pages foi publicado no commit `d8b41104240903edaeda0a4a29e63d82cb8bf099`. A comparação GitHub até o merge `8faf51af286eb631077645ee84bc34170c8d45a2` mostrou somente alteração posterior em `testing/central-docs-ai/phase5e-harness.test.mjs`; os arquivos funcionais servidos pelo laboratório são equivalentes.
 
 Não reutilizar as referências V7 anteriores.
+
+
+## Congelamento final da V7 antes do reteste — 19/09/2026
+
+Referências finais:
+- source ref: `28a4916840f450b2caa7d93138d0e127a5db1a88`;
+- Pages: `https://0c46e41f.portal-regulacao-central-staging.pages.dev`;
+- head funcional do Pages: `341b13d77fcacc7cb0b48ecfacf8eaf19aa545be`.
+
+A PR #286 alterou apenas o laboratório e documentação para medir latência com maior precisão. O provider V7 stream-safe continua funcionalmente igual ao já validado; produção permanece com os gates de IA desligados.
+
+O próximo resumo seguro deverá permitir decompor cada página em `preparo_ms`, `provider_ms`, `transporte_backend_ms`, número de tentativas, revisão e cadeia de modelos.
