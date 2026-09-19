@@ -30,6 +30,7 @@ export const FIXED_5E = Object.freeze({
   wranglerVersion: '4.133.0',
   tag: 'central-docs-phase5e',
   message: 'Central Docs 5E: homologacao sintetica controlada',
+  fastVisionModel: '@cf/moondream/moondream3.1-9B-A2B',
   primaryModel: '@cf/google/gemma-4-26b-a4b-it',
   fallbackModel: '@cf/qwen/qwen3.8-27b'
 });
@@ -289,6 +290,8 @@ export function buildPreviewConfig(base, entry, input) {
     DOCUMENTS_AI_ENABLED: 'true',
     DOCUMENTS_AI_PROCESSING_ENABLED: 'true',
     DOCUMENTS_AI_FREE_ONLY: 'true',
+    DOCUMENTS_AI_FAST_VISION_ENABLED: 'true',
+    DOCUMENTS_AI_FAST_VISION_MODEL: FIXED_5E.fastVisionModel,
     DOCUMENTS_AI_PRIMARY_MODEL: FIXED_5E.primaryModel,
     DOCUMENTS_AI_FALLBACK_MODELS: FIXED_5E.fallbackModel,
     DOCUMENTS_AI_TIMEOUT_MS: '6000',
