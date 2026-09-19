@@ -3869,8 +3869,17 @@
     state.documentAiBusy = false;
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
+    state.documentAiResults = [];
+    state.documentAiScanCompleted = false;
+    state.documentAiIgnoredPages = 0;
     state.documentAiEvidence.clear();
     state.documentAiChatHistory = [];
+    if (els.documentAiDocumentStatus) {
+      els.documentAiDocumentStatus.textContent = '';
+      els.documentAiDocumentStatus.className = 'documents-ai-document-status';
+    }
+    if (els.documentAiDocumentResults) els.documentAiDocumentResults.replaceChildren();
+    if (els.documentAiDocumentActions) els.documentAiDocumentActions.hidden = true;
     if (els.documentAiChatQuestion) els.documentAiChatQuestion.value = '';
     if (els.documentAiChatStatus) els.documentAiChatStatus.textContent = '';
     if (els.documentAiChatMessages) els.documentAiChatMessages.replaceChildren();
@@ -3917,6 +3926,9 @@
     state.pdfItem = item;
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
+    state.documentAiResults = [];
+    state.documentAiScanCompleted = false;
+    state.documentAiIgnoredPages = 0;
     state.documentAiEvidence.clear();
     state.documentAiChatHistory = [];
     renderDocumentAiAvailability();
@@ -4079,6 +4091,9 @@
     setDocumentAiPanelOpen(!state.documentAiPanelOpen);
   });
   els.documentAiClose?.addEventListener('click', () => setDocumentAiPanelOpen(false));
+  els.documentAiExtractDocument?.addEventListener('click', () => {
+    extractWholeDocumentAi().catch(() => {});
+  });
   els.documentAiClassify?.addEventListener('click', () => {
     classifyActiveDocumentPage().catch(() => {});
   });
@@ -4098,6 +4113,36 @@
     const button = event.target.closest?.('[data-ai-chat-page]');
     const pageNumber = Number(button?.dataset?.aiChatPage || 0);
     if (pageNumber > 0) window.PortalPdfViewer?.scrollToPage?.(pageNumber);
+  });
+  els.documentAiDocumentResults?.addEventListener('click', (event) => {
+    const source = event.target.closest?.('[data-ai-source-page]');
+    if (source) {
+      const pageNumber = Number(source.dataset.aiSourcePage || 0);
+      if (pageNumber > 0) window.PortalPdfViewer?.scrollToPage?.(pageNumber);
+      return;
+    }
+    const copy = event.target.closest?.('[data-ai-copy-result-index]');
+    if (copy) {
+      const index = Number(copy.dataset.aiCopyResultIndex);
+      const extraction = Number.isInteger(index) ? state.documentAiResults[index] : null;
+      if (!extraction) return;
+      copyDocumentAiText(documentAiFormattedBlock(extraction)).then((ok) => {
+        if (!els.documentAiDocumentStatus) return;
+        els.documentAiDocumentStatus.className = ok
+          ? 'documents-ai-document-status success'
+          : 'documents-ai-document-status warning';
+        els.documentAiDocumentStatus.textContent = ok ? 'Bloco copiado.' : 'Não foi possível copiar o bloco.';
+      }).catch(() => {});
+    }
+  });
+  els.documentAiCopyAll?.addEventListener('click', () => {
+    copyDocumentAiText(documentAiAllResultsBlock()).then((ok) => {
+      if (!els.documentAiDocumentStatus) return;
+      els.documentAiDocumentStatus.className = ok
+        ? 'documents-ai-document-status success'
+        : 'documents-ai-document-status warning';
+      els.documentAiDocumentStatus.textContent = ok ? 'Dados extraídos copiados.' : 'Não foi possível copiar os dados.';
+    }).catch(() => {});
   });
   els.documentAiExtractionFields?.addEventListener('click', (event) => {
     const button = event.target.closest?.('[data-ai-copy-field]');
