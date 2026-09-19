@@ -20,8 +20,8 @@ import {
   writeJson
 } from './preparar-homologacao-5e.mjs';
 
-export const FROZEN_5E_SOURCE_REF = '8faf51af286eb631077645ee84bc34170c8d45a2';
-export const FROZEN_5E_PAGES_ORIGIN = 'https://b8dd14db.portal-regulacao-central-staging.pages.dev';
+export const FROZEN_5E_SOURCE_REF = '28a4916840f450b2caa7d93138d0e127a5db1a88';
+export const FROZEN_5E_PAGES_ORIGIN = 'https://0c46e41f.portal-regulacao-central-staging.pages.dev';
 
 function must(value, code) {
   if (!value) throw new Safe5eError(code);
