@@ -652,6 +652,33 @@ Como a tentativa pela interface não persistiu a capability, foi preparado um ha
 
 **Próxima ação exata:** executar o habilitador controlado; somente depois repetir o verificador read-only da 5E.
 
+## Capability extract habilitada e pré-condições 5E aprovadas — 18/09/2026
+
+O operador executou o habilitador estreito integrado no PR #249. O procedimento revalidou a mesma conta já autorizada e, após confirmação humana explícita, alterou somente `can_extract` de 0 para 1.
+
+Resultado sanitizado:
+
+- `CAPABILITY_EXTRACT_5E_HABILITADA`;
+- `userActive=true`;
+- `regulatorRole=true`;
+- `canView=true`;
+- `canExtract=true`;
+- `activeControlledWindow=false`.
+
+Em seguida, o operador repetiu o verificador somente leitura da Fase 5E. Resultado:
+
+- `PRECONDICOES_5E_OK`;
+- produção ativa observada: `604cde0b-e4f9-444a-8486-3ede9417baa7`;
+- `geminiSecretPresent=true`;
+- `extractCapability=true`;
+- `activeControlledWindow=false`;
+- source ref: `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`;
+- Pages origin congelada: `https://764243d1.portal-regulacao-central-staging.pages.dev`.
+
+Nenhuma janela 5E foi criada ainda, nenhum controle novo foi ativado, nenhum PDF/Drive foi tocado e nenhuma chamada documental real ao Gemini ocorreu até este ponto.
+
+**Próxima ação exata:** executar `scripts/central-docs/iniciar-homologacao-5e.mjs --iniciar`. O atalho repetirá a verificação read-only e, somente se continuar verde, chamará o preparo existente, que ainda exige a confirmação humana `PREPARAR HOMOLOGACAO 5E` antes de criar a janela temporária.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
@@ -778,10 +805,10 @@ Artefatos anteriores preservados:
 | Descartado | usar o Pages antigo `67dd934e…`; iniciar homologação antes de reforçar a matriz; interpretar falha de Worker Preview da PR como falha produtiva |
 | Ações externas | nenhuma alteração de Cloudflare/D1/Drive/secret nesta etapa; apenas builds automáticos do merge |
 | Checks/testes | operacionais 5E `35413947781` success; Fases 1–5E `35413947712` success; staging `35413947796` success; governança `35413947803` success; Worker main success |
-| Bloqueios | diagnóstico confirmou apenas `canExtract=false`; habilitador estreito preparado e aguarda confirmação humana |
+| Bloqueios | nenhum bloqueio de pré-condição: `GEMINI_API_KEY` presente, `extract=true` e nenhuma janela controlada ativa |
 | Riscos | provider real ainda não homologado; mitigação é janela preview-only, fixtures 100% sintéticos, Drive write false e encerramento fail-closed |
 | Observabilidade | somente propriedades técnicas allowlisted; nunca conteúdo documental, paciente, arquivo, Drive ID ou resposta bruta |
-| Próxima ação exata | executar `habilitar-extract-5e.mjs --habilitar`, confirmar `HABILITAR EXTRACT 5E`, depois repetir `verificar-precondicoes-5e.mjs --verificar` |
+| Próxima ação exata | executar `iniciar-homologacao-5e.mjs --iniciar`; somente após nova verificação verde confirmar `PREPARAR HOMOLOGACAO 5E` |
 | Depois | executar matriz sintética real, copiar somente o resumo seguro, encerrar 5E fail-closed e avaliar aceite/publicação da Fase 5 |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #237–#244; runs acima |
 
