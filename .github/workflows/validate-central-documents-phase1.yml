@@ -111,6 +111,7 @@ jobs:
           grep -q "AI_HOMOLOGATION_ROUTE_DENIED" worker/homologation-5e.js
           grep -q "normalizeDocumentAiExtraction" worker/document-ai.js
           grep -q "analyzeDocumentAiPage" worker/document-ai-provider.js
+          grep -q "@cf/moondream/moondream3.1-9B-A2B" worker/document-ai-provider.js
           grep -q "@cf/google/gemma-4-26b-a4b-it" worker/document-ai-provider.js
           grep -q "@cf/qwen/qwen3.8-27b" worker/document-ai-provider.js
           grep -q "env.AI.run" worker/document-ai-provider.js
