@@ -127,6 +127,7 @@ test('classificação envia uma imagem data URI sem identidade do arquivo', asyn
   assert.match(calls[0].input.image, /^data:image\/jpeg;base64,/);
   assert.equal(calls[0].input.temperature, 0);
   assert.equal(calls[0].input.store, false);
+  assert.deepEqual(calls[0].input.response_format, { type: 'json_object' });
   assert.deepEqual(calls[0].runOptions, { rejectIfBusy: true });
 
   const serialized = JSON.stringify(calls[0].input);
