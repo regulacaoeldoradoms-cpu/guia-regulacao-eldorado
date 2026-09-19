@@ -1328,9 +1328,29 @@ Decisão: a estratégia de visão direta **continua viável**, pois a V5 já apr
 
 **Próxima ação:** concluir CI/merge da V6; encerrar a janela V5 atual fail-closed antes de abrir qualquer reteste V6; congelar novo runtime + Pages e repetir a matriz.
 
+## V6 de precisão textual integrada e reteste congelado — 19/09/2026
+
+A PR **#276** foi integrada na `main` pelo merge `76bfefa17bae0729090277525186bdc7dcfc0068`.
+
+Referências congeladas do próximo reteste:
+- source ref: `76bfefa17bae0729090277525186bdc7dcfc0068`;
+- Pages imutável: `https://27a15b34.portal-regulacao-central-staging.pages.dev`.
+
+Entregas da V6:
+- até 6 páginas independentes processadas em paralelo;
+- PNG 1800 como padrão e JPEG 0,92 apenas se PNG ultrapassar ~2,8 MiB;
+- prompt integrado V2 para literalidade e `ilegivel` versus `nao_consta`;
+- revisão focal no Qwen somente para campos médicos ambíguos;
+- CID + descrição revisados em conjunto quando o CID é ambíguo;
+- diagnóstico de `pagina_XX_campos_divergentes` no resumo seguro sem copiar valores.
+
+A janela V5 que produziu **8/10** ainda precisa ser encerrada fail-closed antes da abertura V6. Não executar outra matriz nela.
+
+**Próxima ação exata:** encerrar a janela V5; atualizar scripts locais para a `main`; rodar readiness V6; se verde, preparar a nova janela e executar a matriz.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — V5 alcançou 8/10; V6 de precisão textual em desenvolvimento para eliminar a única falha documental restante**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — V6 de precisão textual integrada; reteste aguarda encerramento fail-closed da janela V5 8/10**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -1442,19 +1462,19 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V5 multimodal integrada; teste decisivo ainda não aberto |
-| Último resultado real | V4: 1/10; página administrativa passou, páginas autorizadas viraram `outro`; indício de imagem não entregue no formato multimodal correto |
-| Main funcional V5 | `20488871ce2556c06795367ededbdb49791c23f5` |
-| Runtime próximo reteste | `20488871ce2556c06795367ededbdb49791c23f5` |
-| Pages próximo reteste | `https://e8003492.portal-regulacao-central-staging.pages.dev` |
-| Provider | Gemma 4 principal; Qwen 3.8 fallback; Workers Free |
+| Fase/subfase | Fase 5E — V6 integrada; reteste ainda não aberto |
+| Último resultado real | V5: 8/10; páginas 1–5 e 3 chats aprovados; página 6 ilegível é a única falha raiz |
+| Main funcional V6 | `76bfefa17bae0729090277525186bdc7dcfc0068` |
+| Runtime próximo reteste | `76bfefa17bae0729090277525186bdc7dcfc0068` |
+| Pages próximo reteste | `https://27a15b34.portal-regulacao-central-staging.pages.dev` |
+| Provider | Gemma 4 principal; Qwen 3.8 fallback/revisor focal; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
-| Correção V5 | imagem enviada em `messages[].content` com `image_url` + `text`; thinking off; JSON mode; isolamento por página |
-| Janela V4 | encerrada fail-closed; HTTP bloqueado confirmado |
+| V6 | PNG 1800 adaptativo; concorrência 6; prompt literal V2; revisão focal CID+descrição; campos divergentes no resumo seguro |
+| Janela V5 | ainda ativa/precisa encerramento fail-closed antes do V6 |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | atualizar scripts locais; readiness V5; se verde, abrir nova janela e executar a matriz uma vez |
-| Regra de decisão | se V5 reconhecer/extrair páginas autorizadas, seguir refinamento; se não, migrar para text-layer/OCR local + IA textual |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #273 |
+| Próxima ação exata | encerrar V5; atualizar scripts; readiness V6; abrir nova janela e executar matriz |
+| Meta | 10/10 e reduzir extração de seis páginas para uma única onda concorrente |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #276 |
 
 ## Histórico recuperável
 
