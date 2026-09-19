@@ -779,13 +779,56 @@ A primeira janela permanece encerrada e não foi reutilizada. A segunda janela �
 
 **Próxima ação exata:** abrir `https://915c3113.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz sintética e copiar somente o resumo seguro. Depois encerrar imediatamente a janela em modo fail-closed.
 
+## Matriz 5E executada e correções Titon em desenvolvimento — 18/09/2026
+
+A segunda janela 5E abriu corretamente na origem `915c3113...`, o login foi autorizado e o operador executou a matriz sintética. Os seis fixtures falharam antes de produzir evidência homologável, todos com:
+
+`DOCUMENT_AI_PAGE_INVALID: Número de página inválido.`
+
+Não houve escrita no Drive; `driveWriteGate=false` permaneceu preservado. O resultado não deve ser interpretado como falha de compreensão do Gemini, porque a execução não chegou a produzir classificação/extração válida para avaliação.
+
+### Diagnóstico e correção técnica
+
+O contrato antigo confiava no JSON do provider para repetir `pageNumber`/`pageType`, embora esses valores já sejam metadados autorizados pelo backend. A correção passa a ancorar a proveniência no backend:
+
+- classificação usa o `pageNumber` recebido em `X-Document-Page-Number`;
+- extração usa o `pageNumber` da rota e o `pageType` autorizado após classificação;
+- resposta do modelo não pode deslocar a origem técnica da página;
+- schemas fechados e campos obrigatórios continuam validados.
+
+### UX aprovada do Titon
+
+O usuário aprovou substituir a sequência manual classificar/extrair por **um único botão `Extrair dados do PDF`**. A separação por página permanece interna como barreira de segurança.
+
+Implementado na branch `feat/titon-one-click-document-ai`:
+
+- PDF.js expõe apenas a contagem de páginas e a exportação efêmera de uma página por vez;
+- Titon percorre páginas sequencialmente e chama `/api/documents/ai/page/extract` por página;
+- páginas `outro` são ignoradas; cada página autorizada gera bloco independente;
+- comprovante reconhece `COMPROVANTE DE ATENDIMENTO`, `CONTROLE DE ATENDIMENTO` ou `DADOS`;
+- páginas médicas reconhecem guia/encaminhamento, receita simples, laudo médico, receituário médico e solicitações definidas pelo operador;
+- `NÃO CONSTA` e `ILEGÍVEL` permanecem estados obrigatórios;
+- CNS é normalizado somente para sequência numérica sem espaços e data de nascimento somente para `dd/mm/aaaa` quando inequívoca;
+- demais campos preservam literalidade;
+- múltiplas páginas médicas aparecem separadas com número da página e `Ver página`;
+- `Copiar dados` produz o modelo institucional completo;
+- chat permanece secundário e recebe somente evidências estruturadas da extração concluída;
+- qualquer erro inesperado durante a varredura descarta o resultado parcial, evitando apresentar documento incompleto como completo;
+- produção continua com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
+
+### Janela atual
+
+A segunda janela 5E `phase5e_bd4d3fe2717e45678fc71e88aaff18c1` permanece associada ao runtime antigo `408bff...`. **Ela não deve ser reutilizada para o reteste do código novo.** Antes de congelar/abrir nova janela, deve ser encerrada em modo fail-closed pelo procedimento oficial.
+
+**Próxima ação técnica:** concluir testes/PR desta branch. Em seguida encerrar a janela 5E atual, mesclar a correção, congelar novo source ref e novo Pages imutável e somente então repetir a matriz real.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — homologação real controlada em andamento; primeira janela precisará ser substituída por nova origem Pages com CSP corrigida**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — homologação real controlada em andamento; matriz encontrou `DOCUMENT_AI_PAGE_INVALID` e a correção/UX Titon está em branch funcional**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
-- Branch funcional atual: nenhuma; PR #244 já integrada. Esta atualização de status usa somente branch documental.
+- Branch funcional atual: `feat/titon-one-click-document-ai`.
 - Fases 5A–5D: PRs **#215–#218 mesclados**. 5E está tecnicamente pronta e integrada, ainda sem ativação real do provider.
 - Ref de base real da 5E: **`8fba51979aba95c31ec7ef6644949c8c508530f6`**. Preservar login/abertura/Home, editor, sincronização e gate seguro do Worker.
 - Código congelado do reteste: **`2fee19e69e06ecd128be2b103354fc6c2fb4e431`**.
@@ -893,17 +936,21 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — homologação real controlada; segunda janela ativa na origem Pages com CSP corrigida |
-| Última ação concluída | nova janela preparada com `PRECONDICOES_5E_OK`, `aiGate=true`, `driveWriteGate=false` |
-| Main | `28af0577ec0691f9c76a14d88c0383ba672e4cf9` |
-| Código/preview | Pages ativo para a matriz: `https://915c3113.portal-regulacao-central-staging.pages.dev`; Worker runtime `408bff8…` |
-| Produção | IA documental continua false/false; produção reconfirmada `298ba237-78f9-4d24-bad1-47e66b4c1e15`; Drive não alterado |
-| Janela | ativa: `phase5e_bd4d3fe2717e45678fc71e88aaff18c1`; preview `8d09f2b5…`; expira `2026-09-19T05:20:08Z` |
-| Decisão/porquê | reabrir somente depois de encerrar a primeira janela e trocar para Pages com CSP corrigida evita controles concorrentes e bloqueio de browser |
-| Bloqueios | nenhum conhecido antes da matriz; falta homologar o provider real |
-| Próxima ação exata | abrir `/homologacao-5e/` na origem `915c3113…`, autenticar, executar matriz, copiar resumo seguro |
-| Depois | encerrar imediatamente a janela fail-closed e avaliar o aceite da Fase 5 |
-| Fontes | Guia Mestre V1.1; HOMOLOGACAO-5E; STATUS; PRs #253–#254; saídas sanitizadas do operador |
+| Fase/subfase | Fase 5E — correção pós-primeira matriz útil + UX Titon de extração integral |
+| Última ação concluída | matriz da segunda janela retornou `DOCUMENT_AI_PAGE_INVALID` nas 6 páginas; correção de proveniência e botão único implementados em branch |
+| Branch/PR | `feat/titon-one-click-document-ai`; PR ainda deve ser aberta após fechar documentação/testes |
+| Main de base | `c646b98b130370fbf4360143580bc21a76ef8a4b` |
+| Runtime da janela atual | antigo `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`; não usar para reteste do código novo |
+| Pages da janela atual | `https://915c3113.portal-regulacao-central-staging.pages.dev` |
+| Produção | IA documental false/false; Drive write produtivo preservado; nenhuma ativação produtiva autorizada |
+| Janela | segunda janela `phase5e_bd4d3fe2717e45678fc71e88aaff18c1` ainda deve ser encerrada fail-closed antes do próximo runtime |
+| Correção PAGE_INVALID | pageNumber/pageType técnicos agora são ancorados pelo backend; provider não é fonte de verdade para proveniência |
+| UX aprovada | um botão `Extrair dados do PDF`; varredura sequencial isolada por página; resultados separados; copiar tudo; chat secundário |
+| Regras | comprovante/controle/dados; lista médica aprovada; literalidade; NÃO CONSTA; ILEGÍVEL; CNS sem espaços; data dd/mm/aaaa |
+| Privacidade | nenhuma persistência dos resultados; nenhuma identidade de arquivo enviada à IA; telemetria somente allowlist técnica |
+| Próxima ação exata | concluir testes/checks e PR; encerrar janela atual; depois merge, congelar novo source ref/Pages e reabrir 5E para repetir matriz |
+| Depois | somente com matriz sintética aprovada + encerramento fail-closed avaliar ativação produtiva da Fase 5 |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; evidência do operador; branch funcional atual |
 
 ## Histórico recuperável
 
