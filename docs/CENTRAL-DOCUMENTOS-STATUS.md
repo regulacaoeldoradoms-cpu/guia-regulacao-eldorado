@@ -1642,21 +1642,45 @@ Correção preparada:
 
 **Veredito:** não foi encontrado motivo técnico para alterar modelo, concorrência, resolução ou fallback antes da medição. A estrutura V7 permanece a melhor condição para o próximo teste. Se a meta de 2x falhar, o caminho seguinte continua sendo V8 híbrida com text-layer PDF.js + visão seletiva.
 
+## Congelamento final V7 após última revisão — 19/09/2026
+
+A PR #286 foi integrada na `main` pelo merge `28a4916840f450b2caa7d93138d0e127a5db1a88` com **23 checks verdes** no head funcional, incluindo Fases 1–5E, procedimentos 5E, staging, governança e site.
+
+Essa última unidade não alterou o provider V7, modelo, concorrência, resolução ou fallback. Ela corrigiu somente a qualidade da medição:
+- `pagina_ms` começa antes da preparação da imagem;
+- `preparo_ms` mede canvas → Blob;
+- `provider_ms` soma as tentativas do Worker;
+- `transporte_backend_ms` isola requisição/backend fora do provider;
+- `tentativas`, `revisado` e `modelos` tornam fallback/revisão identificáveis sem conteúdo documental.
+
+Referências finais do próximo reteste:
+- source ref `28a4916840f450b2caa7d93138d0e127a5db1a88`;
+- Pages `https://0c46e41f.portal-regulacao-central-staging.pages.dev`;
+- head do Pages `341b13d77fcacc7cb0b48ecfacf8eaf19aa545be`.
+
+A comparação GitHub entre o head do Pages e o merge final mostrou **zero arquivos diferentes**, portanto ambos representam a mesma árvore V7.
+
+Revisão final de arquitetura: não foi encontrado motivo para alterar Moondream, concorrência 6, PNG 1800 ou a cadeia de fallback antes da medição. O próximo passo deve permanecer comparável. Se a V7 não alcançar 2x, a frente seguinte será V8 híbrida com PDF.js text-layer + visão seletiva.
+
+A janela V6 continua sendo a janela controlada anterior e deve ser encerrada fail-closed antes de preparar V7.
+
+**Próxima ação exata quando o operador voltar ao computador:** baixar os scripts atuais da `main`, encerrar V6, executar `iniciar-homologacao-5e.mjs --iniciar`, conferir source `28a4916840f450b2caa7d93138d0e127a5db1a88` + Pages `https://0c46e41f.portal-regulacao-central-staging.pages.dev`, preparar nova janela e executar a matriz uma única vez.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 5E — V7 stream-safe integrada; reteste aguarda encerramento V6 |
 | Último resultado real | V7 integrada com CI verde; V6 continua sendo a última execução real e foi considerada lenta pelo operador |
-| Runtime funcional V7 | `8faf51af286eb631077645ee84bc34170c8d45a2` |
-| Runtime próximo reteste | `8faf51af286eb631077645ee84bc34170c8d45a2` |
-| Pages próximo reteste | `https://b8dd14db.portal-regulacao-central-staging.pages.dev` |
+| Runtime funcional V7 | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
+| Runtime próximo reteste | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
+| Pages próximo reteste | `https://0c46e41f.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | ainda deve ser encerrada fail-closed antes de abrir qualquer preview V7 |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | encerrar V6 fail-closed; atualizar scripts; readiness V7 stream-safe; preparar janela nova; executar matriz uma vez |
+| Próxima ação exata | encerrar V6 fail-closed; atualizar scripts; readiness V7 final; preparar janela nova; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
