@@ -1016,6 +1016,23 @@ Essa diferença entre `main` e source ref do reteste é intencional: `bbfdcec...
 
 **Próxima ação humana permanece:** antes de qualquer inferência Workers AI, confirmar plano Workers Free e ausência de AI Gateway pago; depois encerrar a janela 5E antiga e executar o verificador read-only.
 
+## Regra permanente do Titon: custo de IA documental = R$ 0 — 18/09/2026
+
+O operador definiu como requisito permanente que a **IA documental do Titon deve operar 100% sem cobrança**.
+
+Consequências obrigatórias:
+- usar somente Cloudflare Workers AI dentro da franquia gratuita aplicável à conta;
+- manter `DOCUMENTS_AI_FREE_ONLY=true`;
+- permitir somente a allowlist aprovada: Gemma 4 principal e Qwen 3.8 fallback;
+- não usar AI Gateway com unified billing, créditos prepaid ou qualquer mecanismo pay-as-you-go;
+- não usar modelo que exija plano pago;
+- não trocar automaticamente para API externa paga;
+- ao atingir o limite gratuito diário, falhar fechado e informar indisponibilidade até a renovação da franquia;
+- qualquer futura mudança de provider/modelo deve ser revisada primeiro contra esta regra de custo zero;
+- se uma mudança comercial da Cloudflare tornar o fluxo potencialmente cobrável, o Titon deve permanecer bloqueado até nova decisão explícita do operador.
+
+Essa regra é de governança do projeto e não deve ser tratada como preferência temporária.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — Workers AI free-only integrado; novo reteste aguarda confirmação de plano Free e encerramento da janela antiga**. Produção continua com IA documental desligada.
@@ -1132,11 +1149,11 @@ Artefatos anteriores preservados:
 | --- | --- |
 | Fase/subfase | Fase 5E — Workers AI free-only integrado; próximo reteste ainda não aberto |
 | Última ação concluída | PR #260 mesclada; runtime e Pages do reteste congelados |
-| Main | `bbfdcec20b7d0e2629f9be1c93ea82d3136e3c32`; runtime do reteste permanece congelado em `a49ecd22…` |
+| Main | `3c46414e7490f236cfe1d29abb413cb3eaa1667a`; runtime do reteste permanece congelado em `a49ecd22…` |
 | Runtime reteste | `a49ecd22e922267179fd8502f08fc5950df8fb0a` |
 | Pages reteste | `https://60f66c8b.portal-regulacao-central-staging.pages.dev` |
 | Provider | `@cf/google/gemma-4-26b-a4b-it` principal; `@cf/qwen/qwen3.8-27b` fallback |
-| Custo | free-only + allowlist + sem Gateway; antes de inferir, confirmar plano Workers Free para garantir hard-stop sem cobrança |
+| Custo | requisito permanente: **R$ 0**; free-only + allowlist + sem Gateway/prepaid/pay-as-you-go; limite gratuito deve falhar fechado |
 | Pipeline | uma inferência por página; até 3 páginas paralelas; JSON mode; backend ancora proveniência |
 | Latência | JPEG 1600/0,85; rejectIfBusy; limite local 6 s por tentativa / 10 s total; matriz mede extração separada do chat |
 | Janela antiga | `phase5e_502e857dd0424fbe92ea406048e7ad7f`; deve ser encerrada fail-closed |
