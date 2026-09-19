@@ -58,7 +58,7 @@
       expectedFields: {
         nome_paciente: ['encontrado', 'PESSOA SINTÉTICA ALFA'],
         cpf: ['encontrado', '111.111.111-11'],
-        cns: ['encontrado', '111 1111 1111 1111'],
+        cns: ['encontrado', '111111111111111'],
         data_nascimento: ['encontrado', '01/01/2000'],
         nome_mae: ['encontrado', 'MÃE SINTÉTICA ALFA'],
         telefone: ['encontrado', '(67) 99999-0000'],
