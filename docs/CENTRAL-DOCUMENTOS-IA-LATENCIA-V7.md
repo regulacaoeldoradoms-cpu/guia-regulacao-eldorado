@@ -99,3 +99,12 @@ Esse desenho pode tornar PDFs digitais quase instantâneos, mas não é necessá
 - Cloudflare Workers AI — Reject busy requests.
 - Cloudflare Workers AI — Asynchronous Batch API.
 - Cloudflare Workers AI — Markdown Conversion / How it works.
+
+
+## Revisão de contrato Moondream — 19/09/2026
+
+A documentação oficial do modelo registra `stream=true` como padrão para a tarefa `query`. Como o Titon precisa validar o JSON completo antes de aceitar qualquer página, o runtime V7 deve solicitar explicitamente `stream=false`. Sem isso, o fast path pode receber resposta incremental em vez do objeto final esperado pelo parser, causando fallback desnecessário ou falha de contrato.
+
+Também foi endurecido o parser para um caso frequente em VLMs rápidos: se a resposta contiver um único objeto JSON válido envolvido por uma frase curta, o backend extrai apenas o objeto delimitado e aplica imediatamente o mesmo schema estrito. Isso não afrouxa campos, estados ou proveniência; apenas evita cair para Gemma por embalagem textual superficial.
+
+Essas duas mudanças são consideradas correção de contrato/desempenho, não mudança de escopo funcional. A V7 anterior não deve ser homologada antes desta correção ser integrada e as referências congeladas serem renovadas.

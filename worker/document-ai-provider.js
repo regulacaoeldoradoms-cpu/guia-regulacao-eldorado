@@ -138,11 +138,26 @@ function parseJsonCandidate(payload) {
     );
   }
 
-  try {
-    const parsed = JSON.parse(cleaned);
+  const parseObject = (value) => {
+    const parsed = JSON.parse(value);
     if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') throw new Error('shape');
     return parsed;
+  };
+
+  try {
+    return parseObject(cleaned);
   } catch (_) {
+    // Alguns modelos visuais rápidos podem envolver o JSON em uma frase curta
+    // mesmo quando instruídos a responder apenas JSON. Extraímos somente um
+    // objeto delimitado completo; o schema estrito da operação continua sendo
+    // aplicado imediatamente depois e rejeita campos/estados inesperados.
+    const first = cleaned.indexOf('{');
+    const last = cleaned.lastIndexOf('}');
+    if (first >= 0 && last > first) {
+      try {
+        return parseObject(cleaned.slice(first, last + 1));
+      } catch (_) {}
+    }
     throw new DocumentAiError(
       'DOCUMENT_AI_PROVIDER_INVALID_RESPONSE',
       'A IA documental não retornou JSON válido.',
@@ -314,7 +329,8 @@ function visionInput(model, system, prompt, image, maxTokens = 1400) {
       reasoning: false,
       temperature: 0,
       top_p: 0.1,
-      max_tokens: maxTokens
+      max_tokens: maxTokens,
+      stream: false
     };
   }
 
