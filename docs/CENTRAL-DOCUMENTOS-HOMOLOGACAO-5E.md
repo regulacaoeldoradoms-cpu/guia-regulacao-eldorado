@@ -395,10 +395,10 @@ Evidência visual:
 Logo, há **uma única falha documental raiz** na página adversarial de ilegibilidade.
 
 O reteste V6 deve avaliar:
-1. imagem PNG sem perda, 1800 px no fluxo final;
+1. imagem PNG sem perda, 1800 px no fluxo final, com fallback JPEG 0,92 apenas para arquivos grandes;
 2. distinção rígida entre campo ausente e campo presente porém ilegível;
 3. literalidade caractere a caractere;
-4. revisão focal gratuita somente em página médica ambígua;
+4. revisão focal gratuita somente nos campos ambíguos de página médica;
 5. diagnóstico seguro das chaves divergentes;
 6. preservação de prompt injection, ausência de mistura e custo zero.
 
