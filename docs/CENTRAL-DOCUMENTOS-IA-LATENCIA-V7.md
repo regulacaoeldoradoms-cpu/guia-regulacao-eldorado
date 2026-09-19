@@ -103,7 +103,7 @@ Esse desenho pode tornar PDFs digitais quase instantâneos, mas não é necessá
 
 ## Revisão de contrato Moondream — 19/09/2026
 
-A documentação oficial do modelo registra `stream=true` como padrão para a tarefa `query`. Como o Titon precisa validar o JSON completo antes de aceitar qualquer página, o runtime V7 deve solicitar explicitamente `stream=false`. Sem isso, o fast path pode receber resposta incremental em vez do objeto final esperado pelo parser, causando fallback desnecessário ou falha de contrato.
+A documentação oficial atual do modelo registra `stream=false` como padrão para `query`. O Titon mantém `stream=false` explicitamente para congelar o contrato e não depender de default do provedor. Isso preserva resposta completa e validável e protege contra futura mudança de default.
 
 Também foi endurecido o parser para um caso frequente em VLMs rápidos: se a resposta contiver um único objeto JSON válido envolvido por uma frase curta, o backend extrai apenas o objeto delimitado e aplica imediatamente o mesmo schema estrito. Isso não afrouxa campos, estados ou proveniência; apenas evita cair para Gemma por embalagem textual superficial.
 
@@ -135,3 +135,45 @@ O próximo teste não deve gerar nova rodada de mudanças especulativas. Usar o 
 5. Não alterar resolução, prompt e modelo simultaneamente. Medir uma variável por vez.
 
 Decisão: **nenhuma outra mudança funcional será empilhada antes da homologação V7 stream-safe**. Isso evita transformar a fase em polimento infinito e preserva um experimento comparável.
+
+## Veredito arquitetural após nova revisão — 19/09/2026
+
+A estrutura atual é a melhor **próxima arquitetura experimental** para a Fase 5E, mas não deve ser tratada como arquitetura final irrevogável.
+
+### Por que manter V7 agora
+
+1. **Uma inferência integrada por página** continua superior ao desenho antigo `classify -> extract -> reclassify`: reduz chamadas e elimina divergência de classificação.
+2. **Moondream como fast path** é adequado ao caso: é Image-to-Text dedicado, 9B/2B ativos, com OCR e structured output; Gemma e Qwen permanecem como rede de segurança de maior capacidade.
+3. **Seis páginas concorrentes** estão muito abaixo do limite padrão atual de Image-to-Text de 720 req/min. O gargalo precisa ser medido antes de reduzir concorrência.
+4. **`rejectIfBusy=true`** está corretamente no terceiro argumento de `env.AI.run`, portanto capacidade indisponível falha rápido e permite fallback sem esperar fila.
+5. **Produção fail-closed** permanece separada do preview: fast path e IA documental continuam desligados em produção.
+6. **A medição agora é suficiente para decidir**: o laboratório separa provider, overhead, tentativas e modelo por página.
+
+### Melhor arquitetura de longo prazo se V7 não entregar 2x
+
+O caminho preferencial é **híbrido por página**, não outro VLM em cascata:
+
+- PDF.js `getTextContent()` para detectar e extrair camada textual de PDFs digitais;
+- roteador local classifica a página como digital-confiável, escaneada ou ambígua;
+- em página digital-confiável, evitar renderização de canvas e visão;
+- parser determinístico por rótulos/layout para campos óbvios; modelo textual apenas para ambiguidade;
+- Moondream para páginas escaneadas/sem text layer;
+- Gemma/Qwen somente para fallback/revisão;
+- proveniência continua ancorada pelo número técnico da página;
+- nenhum texto/documento entra no PostHog; cache de conteúdo permanece apenas em memória da sessão.
+
+O `env.AI.toMarkdown()` foi reavaliado e **não é preferido** para esta fronteira: em PDFs ele pode extrair texto/StructTree sem visão, mas a API pública retorna o documento convertido como uma única saída e não oferece, no contrato consultado, a mesma proveniência explícita por página exigida pela Central. PDF.js já possui a página isolada e expõe `getTextContent()`, portanto preserva melhor a arquitetura atual.
+
+### Ajustes que não devem ser feitos antes da medição V7
+
+- hedged requests (Moondream + Gemma em paralelo): desperdiçam franquia e a inferência perdedora não é cancelável;
+- Batch API: fila assíncrona/polling pior para ação interativa;
+- AI Gateway/prepaid: viola o requisito R$0 e adiciona outra camada;
+- reduzir 1800 px/PNG sem evidência: pode regredir o caso de ilegibilidade;
+- OCR WASM/Tesseract no navegador: adiciona peso e CPU local sem evidência de ganho;
+- Smart Placement/prompt cache: não atacam o gargalo visual comprovado e não há benefício documentado para Moondream neste fluxo;
+- mudar modelo, resolução e prompt na mesma rodada: impede atribuir causa ao ganho ou regressão.
+
+### Observação de UX
+
+Depois da medição de latência, a UI pode renderizar blocos aprovados progressivamente conforme cada página termina. Isso melhora tempo percebido, mas deve ser medido separadamente do ganho real de inferência para não mascarar o objetivo de 2x.
