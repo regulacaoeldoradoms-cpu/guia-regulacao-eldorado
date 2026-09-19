@@ -5,8 +5,8 @@
  * Segurança:
  * - nunca promove versão para produção;
  * - exige produção estável em uma única versão a 100%;
- * - exige GEMINI_API_KEY já existente como secret, sem ler seu valor;
- * - usa somente AUTH_DB + secrets mínimos de autenticação/provedor;
+ * - exige binding Workers AI existente na baseline, sem API key externa;
+ * - usa somente AUTH_DB + AI + secrets mínimos de autenticação;
  * - mantém escrita do Drive explicitamente false;
  * - cria controle D1 revogável e inicialmente desabilitado;
  * - só ativa o controle depois de validar preview, alias, CORS e bloqueio;
@@ -29,13 +29,14 @@ export const FIXED_5E = Object.freeze({
   windowMinutes: 90,
   wranglerVersion: '4.133.0',
   tag: 'central-docs-phase5e',
-  message: 'Central Docs 5E: homologacao sintetica controlada'
+  message: 'Central Docs 5E: homologacao sintetica controlada',
+  primaryModel: '@cf/google/gemma-4-26b-a4b-it',
+  fallbackModel: '@cf/qwen/qwen3.8-27b'
 });
 
 export const REQUIRED_SECRETS_5E = Object.freeze([
   'AUTH_SESSION_SECRET',
-  'AUTH_RATE_LIMIT_SECRET',
-  'GEMINI_API_KEY'
+  'AUTH_RATE_LIMIT_SECRET'
 ]);
 
 export const OPTIONAL_SECRETS_5E = Object.freeze([
@@ -242,12 +243,12 @@ export function inspectProductionVersion(version) {
       .map((binding) => binding.name)
   );
 
-  for (const required of ['AUTH_SESSION_SECRET', 'AUTH_RATE_LIMIT_SECRET']) {
+  for (const required of REQUIRED_SECRETS_5E) {
     must(secrets.has(required), 'SEGREDO_5E_NECESSARIO_AUSENTE_' + required);
   }
-  if (!secrets.has('GEMINI_API_KEY')) {
-    throw new Safe5eError('INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE');
-  }
+
+  const ai = map.get('AI');
+  must(ai?.type === 'ai', 'INTERVENCAO_NECESSARIA_WORKERS_AI_BINDING_AUSENTE');
 
   const plainVars = {};
   for (const binding of map.values()) {
@@ -284,6 +285,11 @@ export function buildPreviewConfig(base, entry, input) {
     ALLOWED_ORIGINS: input.pagesOrigin,
     DOCUMENTS_AI_ENABLED: 'true',
     DOCUMENTS_AI_PROCESSING_ENABLED: 'true',
+    DOCUMENTS_AI_FREE_ONLY: 'true',
+    DOCUMENTS_AI_PRIMARY_MODEL: FIXED_5E.primaryModel,
+    DOCUMENTS_AI_FALLBACK_MODELS: FIXED_5E.fallbackModel,
+    DOCUMENTS_AI_TIMEOUT_MS: '6000',
+    DOCUMENTS_AI_TOTAL_TIMEOUT_MS: '10000',
     DOCUMENTS_DRIVE_WRITE_ENABLED: 'false',
     DOCUMENTS_AI_HOMOLOGATION_CONTROL_ID: input.controlId,
     DOCUMENTS_AI_HOMOLOGATION_ORIGIN: input.pagesOrigin,
@@ -305,6 +311,7 @@ export function buildPreviewConfig(base, entry, input) {
       database_name: 'portal-regulacao-users',
       database_id: base.dbId
     }],
+    ai: { binding: 'AI' },
     secrets: { required: [...base.secretNames] },
     unsafe: { metadata: { keep_bindings: [] } },
     upload_source_maps: false
@@ -420,7 +427,7 @@ export async function inspectMultipart(bytes, config) {
     'workers/message': FIXED_5E.message
   }), 'ANOTACOES_5E_DIVERGENTES');
 
-  const expectedCount = Object.keys(config.vars).length + config.secrets.required.length + 1;
+  const expectedCount = Object.keys(config.vars).length + config.secrets.required.length + 2;
   must(Array.isArray(metadata.bindings) && metadata.bindings.length === expectedCount, 'BINDINGS_5E_MULTIPART_DIVERGENTES');
 
   const seen = new Set();
@@ -441,6 +448,12 @@ export async function inspectMultipart(bytes, config) {
         binding.type === 'd1'
         && binding.id === config.d1_databases[0].database_id,
         'AUTH_DB_5E_MULTIPART_DIVERGENTE'
+      );
+    } else if (binding.name === 'AI') {
+      must(
+        binding.type === 'ai'
+        && Object.keys(binding).every((key) => key === 'name' || key === 'type'),
+        'WORKERS_AI_5E_MULTIPART_DIVERGENTE'
       );
     } else {
       throw new Safe5eError('BINDING_5E_MULTIPART_FORA_DO_ESCOPO');
@@ -484,6 +497,8 @@ export function verifyPreviewVersion(version, config, id) {
   }
   const db = map.get('AUTH_DB');
   must(db?.type === 'd1' && db.id === config.d1_databases[0].database_id, 'AUTH_DB_5E_PREVIEW_DIVERGENTE');
+  const ai = map.get('AI');
+  must(ai?.type === 'ai', 'WORKERS_AI_5E_PREVIEW_AUSENTE');
 
   must(version.annotations?.['workers/alias'] === FIXED_5E.alias, 'ALIAS_5E_VERSION_DIVERGENTE');
   must(version.annotations?.['workers/tag'] === FIXED_5E.tag, 'TAG_5E_VERSION_DIVERGENTE');
