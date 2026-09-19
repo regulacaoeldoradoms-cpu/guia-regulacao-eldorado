@@ -104,20 +104,22 @@ test('classificação envia exatamente uma imagem e somente o número técnico d
   assert.match(body.systemInstruction.parts[0].text, /exatamente UMA página/i);
 });
 
-test('proveniência divergente do provedor é rejeitada', async () => {
-  await assert.rejects(
-    () => classifyDocumentAiPage(enabledEnv(), {
-      pageNumber: 2,
-      mimeType: 'image/png',
-      bytes: new Uint8Array([9, 8, 7])
-    }, {
-      fetchImpl: async () => okResponse({
-        pageNumber: 3,
-        pageType: 'pagina_medica_autorizada'
-      })
-    }),
-    (error) => error?.code === 'DOCUMENT_AI_PAGE_PROVENANCE_MISMATCH'
-  );
+test('proveniência técnica da classificação é ancorada pelo backend, não pelo eco do modelo', async () => {
+  const result = await classifyDocumentAiPage(enabledEnv(), {
+    pageNumber: 2,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([9, 8, 7])
+  }, {
+    fetchImpl: async () => okResponse({
+      pageNumber: 999,
+      pageType: 'pagina_medica_autorizada'
+    })
+  });
+
+  assert.deepEqual(result.classification, {
+    pageNumber: 2,
+    pageType: 'pagina_medica_autorizada'
+  });
 });
 
 test('tipo MIME inválido e imagem acima do limite falham antes do fetch', async () => {
@@ -216,34 +218,20 @@ test('extração envia uma única imagem e preserva literalidade no schema autor
   assert.match(body.systemInstruction.parts[0].text, /Nunca complete um campo com informação de outra página/i);
 });
 
-test('extração rejeita proveniência, tipo e campo fora do schema', async () => {
-  await assert.rejects(
-    () => extractDocumentAiPage(enabledEnv(), {
-      pageNumber: 6,
-      pageType: 'comprovante_atendimento',
-      mimeType: 'image/jpeg',
-      bytes: new Uint8Array([1, 6])
-    }, {
-      fetchImpl: async () => extractionResponse(
-        extractionPayload(7, 'comprovante_atendimento')
-      )
-    }),
-    (error) => error?.code === 'DOCUMENT_AI_PAGE_PROVENANCE_MISMATCH'
-  );
+test('extração ancora página/tipo no backend e ainda rejeita campo fora do schema', async () => {
+  const providerPayload = extractionPayload(777, 'comprovante_atendimento');
+  providerPayload.pageType = 'pagina_medica_autorizada';
+  const anchored = await extractDocumentAiPage(enabledEnv(), {
+    pageNumber: 6,
+    pageType: 'comprovante_atendimento',
+    mimeType: 'image/jpeg',
+    bytes: new Uint8Array([1, 6])
+  }, {
+    fetchImpl: async () => extractionResponse(providerPayload)
+  });
 
-  await assert.rejects(
-    () => extractDocumentAiPage(enabledEnv(), {
-      pageNumber: 6,
-      pageType: 'comprovante_atendimento',
-      mimeType: 'image/jpeg',
-      bytes: new Uint8Array([1, 6])
-    }, {
-      fetchImpl: async () => extractionResponse(
-        extractionPayload(6, 'pagina_medica_autorizada')
-      )
-    }),
-    (error) => error?.code === 'DOCUMENT_AI_PAGE_TYPE_MISMATCH'
-  );
+  assert.equal(anchored.extraction.pageNumber, 6);
+  assert.equal(anchored.extraction.pageType, 'comprovante_atendimento');
 
   const invalid = extractionPayload(6, 'comprovante_atendimento');
   invalid.fields.campo_extra = { state: 'encontrado', value: 'X' };
