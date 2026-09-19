@@ -1620,7 +1620,7 @@ O laboratório já informa `provider_ms`, `overhead_ms`, número de tentativas e
 Nova revisão do código atual, do pipeline PDF.js, do provider e da documentação oficial Cloudflare confirmou:
 
 - a V7 stream-safe continua sendo o **melhor próximo experimento**; não há evidência suficiente para substituí-la antes da medição;
-- a documentação oficial atual do Moondream registra `stream=false` como default. O runtime continua definindo `stream=false` explicitamente para congelar o contrato; a justificativa anterior de que o default seria true foi corrigida na documentação;
+- a documentação oficial atual do Moondream registra `stream=true` como default para `query`; o runtime define `stream=false` explicitamente para receber a resposta completa e validável;
 - Moondream permanece o melhor fast path entre os modelos avaliados para este caso por ser Image-to-Text dedicado a OCR/structured output; Gemma/Qwen permanecem como fallback/revisão;
 - seis requisições concorrentes estão muito abaixo do limite atual de Image-to-Text (720 req/min);
 - a arquitetura de longo prazo, caso V7 não entregue 2x, deve ser híbrida por página com `PDFPageProxy.getTextContent()` + roteamento para visão somente quando necessário;
@@ -1629,13 +1629,26 @@ Nova revisão do código atual, do pipeline PDF.js, do provider e da documentaç
 
 **Decisão:** manter o próximo passo já congelado. Depois do teste, decidir com dados: provider lento -> modelo/prompt; fallback frequente -> capacidade/contrato; overhead alto -> render/compressão; V7 correta porém <2x -> V8 híbrida text-layer + visão seletiva.
 
+## Última revisão técnica antes do reteste V7 — 19/09/2026
+
+A revisão final encontrou apenas um ajuste material antes da próxima homologação: a decomposição de latência do laboratório não contabilizava a conversão canvas → Blob dentro da métrica por página. Isso não alterava a duração total, mas poderia levar a uma conclusão errada sobre o gargalo.
+
+Correção preparada:
+- tempo por página agora começa antes da preparação da imagem;
+- resumo seguro separa `preparo_ms`, `provider_ms` e `transporte_backend_ms`;
+- registra também `tentativas`, `revisado` e a cadeia técnica `modelos`;
+- nenhuma dessas propriedades contém conteúdo documental ou identidade;
+- a documentação foi corrigida para o contrato oficial atual do Moondream: `stream=true` por default, com `stream=false` explicitamente fixado no Titon.
+
+**Veredito:** não foi encontrado motivo técnico para alterar modelo, concorrência, resolução ou fallback antes da medição. A estrutura V7 permanece a melhor condição para o próximo teste. Se a meta de 2x falhar, o caminho seguinte continua sendo V8 híbrida com text-layer PDF.js + visão seletiva.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 5E — V7 stream-safe integrada; reteste aguarda encerramento V6 |
 | Último resultado real | V7 integrada com CI verde; V6 continua sendo a última execução real e foi considerada lenta pelo operador |
-| Main funcional V7 | `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` |
+| Runtime funcional V7 | `8faf51af286eb631077645ee84bc34170c8d45a2` |
 | Runtime próximo reteste | `8faf51af286eb631077645ee84bc34170c8d45a2` |
 | Pages próximo reteste | `https://b8dd14db.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
