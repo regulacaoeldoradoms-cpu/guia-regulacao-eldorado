@@ -1246,9 +1246,34 @@ Essa correção ataca o ponto central observado na matriz: a página administrat
 
 A janela V4 atual deve ser encerrada fail-closed antes de qualquer teste V5. Não reutilizar o preview V4.
 
+## V4 encerrada fail-closed; V5 multimodal congelada para teste decisivo — 18/09/2026
+
+O operador encerrou com sucesso a janela V4 após o teste 1/10.
+
+Evidência sanitizada do encerramento:
+- controle: `phase5e_a306e08ec60f46ac8102cc021c163164`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado: `f31277f5-bf69-4235-af85-b458192c20d8`;
+- release encerrado: `8ee43cfafcb35fd03834701acc4f3e96fcde1368`;
+- `httpBlocked=true`.
+
+A correção multimodal V5 foi integrada pela PR #273 no merge `20488871ce2556c06795367ededbdb49791c23f5`.
+
+Referências congeladas do próximo reteste:
+- source ref: `20488871ce2556c06795367ededbdb49791c23f5`;
+- Pages: `https://e8003492.portal-regulacao-central-staging.pages.dev`.
+
+Objetivo do próximo teste: verificar se, com a imagem efetivamente enviada como `image_url` dentro da mensagem multimodal, Gemma/Qwen passam a reconhecer `comprovante_atendimento` e `pagina_medica_autorizada` e extraem campos. Esse é o teste decisivo da estratégia de visão direta.
+
+**Regra de parada:** se a V5 ainda classificar páginas visuais autorizadas como `outro` ou não produzir extração consistente, não insistir indefinidamente nesses modelos; migrar o Titon para text-layer PDF.js/OCR local + IA apenas sobre texto estruturado.
+
+**Próxima ação:** atualizar scripts locais, rodar readiness V5 e, se verde, abrir nova janela 5E V5 e executar a matriz uma única vez.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — V4 confirmou falha de payload visual; correção V5 multimodal em desenvolvimento**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — V5 multimodal integrada; reteste decisivo aguarda nova janela**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -1360,19 +1385,19 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V4 de latência integrada; novo reteste ainda não aberto |
-| Último resultado real | 0/10 no runtime antigo por `DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT`; não avaliou qualidade dos modelos |
-| Main funcional V4 | `8ee43cfafcb35fd03834701acc4f3e96fcde1368` |
-| Runtime próximo reteste | `8ee43cfafcb35fd03834701acc4f3e96fcde1368` |
-| Pages próximo reteste | `https://c92471f6.portal-regulacao-central-staging.pages.dev` |
+| Fase/subfase | Fase 5E — V5 multimodal integrada; teste decisivo ainda não aberto |
+| Último resultado real | V4: 1/10; página administrativa passou, páginas autorizadas viraram `outro`; indício de imagem não entregue no formato multimodal correto |
+| Main funcional V5 | `20488871ce2556c06795367ededbdb49791c23f5` |
+| Runtime próximo reteste | `20488871ce2556c06795367ededbdb49791c23f5` |
+| Pages próximo reteste | `https://e8003492.portal-regulacao-central-staging.pages.dev` |
 | Provider | Gemma 4 principal; Qwen 3.8 fallback; Workers Free |
-| Custo | requisito permanente R$ 0; 3036/5035 fail-closed; sem Gateway/prepaid/pay-as-you-go |
-| Correção V4 | sem timeout artificial; thinking off; rejectIfBusy; fallback em 3040/3007/3008/schema; JPEG 0,85; métricas por página/modelo |
-| Janela 0/10 | encerrada fail-closed; HTTP bloqueado confirmado |
+| Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
+| Correção V5 | imagem enviada em `messages[].content` com `image_url` + `text`; thinking off; JSON mode; isolamento por página |
+| Janela V4 | encerrada fail-closed; HTTP bloqueado confirmado |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | janela V4 preparada; abrir `c92471f6.../homologacao-5e/`, executar matriz uma vez, copiar resumo seguro e encerrar fail-closed |
-| Evidência esperada nova | aprovados/falhas + duração extração/total + `gemma_paginas`/`qwen_paginas` + latência/modelo por página |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #269 |
+| Próxima ação exata | atualizar scripts locais; readiness V5; se verde, abrir nova janela e executar a matriz uma vez |
+| Regra de decisão | se V5 reconhecer/extrair páginas autorizadas, seguir refinamento; se não, migrar para text-layer/OCR local + IA textual |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #273 |
 
 ## Histórico recuperável
 
