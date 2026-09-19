@@ -96,7 +96,7 @@ test('matriz 5E usa uma análise por página, concorrência limitada e não envi
   assert.match(js, /phase5e-synthetic-v1/);
   assert.doesNotMatch(js, /function classifyFixture/);
   assert.match(js, /\/api\/documents\/ai\/page\/extract/);
-  assert.match(js, /const concurrency = Math\.min\(3, fixtures\.length\)/);
+  assert.match(js, /const concurrency = Math\.min\(6, fixtures\.length\)/);
   assert.match(js, /Promise\.all\(Array\.from\(\{ length: concurrency \}/);
   assert.match(js, /\/api\/documents\/ai\/chat/);
   assert.doesNotMatch(js, /\/api\/documents\/drive\//);
