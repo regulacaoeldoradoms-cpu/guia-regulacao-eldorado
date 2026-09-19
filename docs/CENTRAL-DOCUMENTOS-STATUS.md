@@ -594,6 +594,20 @@ Nenhum valor da chave foi compartilhado no chat ou versionado no GitHub. Esta co
 
 **Próxima ação exata:** executar `scripts/central-docs/verificar-precondicoes-5e.mjs --verificar`, que é somente leitura. Somente se retornar `PRECONDICOES_5E_OK` iniciar a homologação controlada 5E.
 
+## Verificador 5E bloqueado por capability extract — 18/09/2026
+
+O operador executou o verificador somente leitura da Fase 5E após configurar `GEMINI_API_KEY` como Secret no Worker. Resultado sanitizado:
+
+`PRECONDICOES_5E_BLOQUEADAS=INTERVENCAO_NECESSARIA_CAPABILITY_EXTRACT_AUSENTE`
+
+Interpretação objetiva:
+- a presença nominal de `GEMINI_API_KEY` já foi superada pelo verificador; caso estivesse ausente, o código teria parado antes com `INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE`;
+- o bloqueio ocorreu ao validar a conta autorizada herdada do controle 4D no D1;
+- para a 5E, essa conta precisa estar ativa e possuir simultaneamente `view=true` e `extract=true`;
+- nenhuma janela 5E foi criada, nenhum controle novo foi ativado, nenhum upload de Worker foi feito e nenhuma chamada real ao Gemini ocorreu.
+
+**Próxima ação humana:** no Portal, em **Usuários e acessos**, editar a mesma conta usada na Central/homologação e manter **Regulador(a)** habilitado; ativar **Permitir IA documental — classificação, extração e perguntas com proveniência por página**. Preservar as demais permissões existentes. Depois repetir somente o verificador read-only.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
@@ -720,10 +734,10 @@ Artefatos anteriores preservados:
 | Descartado | usar o Pages antigo `67dd934e…`; iniciar homologação antes de reforçar a matriz; interpretar falha de Worker Preview da PR como falha produtiva |
 | Ações externas | nenhuma alteração de Cloudflare/D1/Drive/secret nesta etapa; apenas builds automáticos do merge |
 | Checks/testes | operacionais 5E `35413947781` success; Fases 1–5E `35413947712` success; staging `35413947796` success; governança `35413947803` success; Worker main success |
-| Bloqueios | `GEMINI_API_KEY` confirmada como Secret no Cloudflare; resta executar o verificador read-only e depois a homologação controlada |
+| Bloqueios | `GEMINI_API_KEY` confirmada; verificador read-only bloqueou em `INTERVENCAO_NECESSARIA_CAPABILITY_EXTRACT_AUSENTE` |
 | Riscos | provider real ainda não homologado; mitigação é janela preview-only, fixtures 100% sintéticos, Drive write false e encerramento fail-closed |
 | Observabilidade | somente propriedades técnicas allowlisted; nunca conteúdo documental, paciente, arquivo, Drive ID ou resposta bruta |
-| Próxima ação exata | executar `verificar-precondicoes-5e.mjs --verificar`; somente com `PRECONDICOES_5E_OK` executar `iniciar-homologacao-5e.mjs --iniciar` |
+| Próxima ação exata | habilitar a capability `extract` na mesma conta autorizada da Central, preservando Regulador(a) e demais permissões; depois repetir somente `verificar-precondicoes-5e.mjs --verificar` |
 | Depois | executar matriz sintética real, copiar somente o resumo seguro, encerrar 5E fail-closed e avaliar aceite/publicação da Fase 5 |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #237–#244; runs acima |
 
