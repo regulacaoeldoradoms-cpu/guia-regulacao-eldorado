@@ -23,23 +23,17 @@ A próxima rodada 5E substitui o provider **somente da IA documental** por Cloud
 
 ## Referência congelada para a próxima execução real
 
-O **reteste V4** deve usar exatamente:
+O **reteste V5 multimodal** deve usar exatamente:
 
-- source ref: `8ee43cfafcb35fd03834701acc4f3e96fcde1368`;
-- Pages origin: `https://c92471f6.portal-regulacao-central-staging.pages.dev`;
+- source ref: `20488871ce2556c06795367ededbdb49791c23f5`;
+- Pages origin: `https://e8003492.portal-regulacao-central-staging.pages.dev`;
 - Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
-Essas referências correspondem à correção de latência integrada pela PR #269. As referências anteriores `a49ecd22...` / `60f66c8b...` são históricas e **não devem ser reutilizadas**.
+Essas referências correspondem à correção da PR #273, que passa a enviar a imagem dentro do conteúdo multimodal da mensagem (`image_url` + `text`). As referências V4 anteriores são históricas e não devem ser reutilizadas.
 
-Antes da nova abertura:
-1. encerrar fail-closed a janela do teste 0/10, controle `phase5e_53f22db9f82345c1b01425299595cad9`;
-2. executar o verificador somente leitura;
-3. exigir `PRECONDICOES_5E_OK` com source/Pages V4;
-4. somente então preparar uma nova janela.
+A janela V4 do teste 1/10 já foi encerrada fail-closed pelo operador. Antes de nova abertura, executar o verificador somente leitura e exigir `PRECONDICOES_5E_OK` com estas referências V5.
 
-Workers Free já foi confirmado pelo operador e o Titon continua sem AI Gateway/prepaid/unified billing.
-
-A conta/capability documental continua exigindo usuário ativo, `view=true` e `extract=true`.
+Workers Free continua confirmado; o Titon continua sem AI Gateway/prepaid/unified billing.
 
 ## Objetivo
 
