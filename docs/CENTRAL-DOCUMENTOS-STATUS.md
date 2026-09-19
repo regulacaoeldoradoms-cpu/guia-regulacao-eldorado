@@ -1536,21 +1536,45 @@ Implementação isolada em andamento na branch `feat/titon-v7-low-latency-vision
 
 A janela V6 existente não foi modificada por este desenvolvimento. Ela continua vinculada ao runtime V6 e deve ser encerrada fail-closed antes de qualquer janela V7; não reutilizar seu controle para o novo runtime.
 
+## V7 de baixa latência integrada e reteste congelado — 19/09/2026
+
+A PR **#280** foi integrada à `main` pelo merge `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` depois de os checks do head funcional ficarem verdes, incluindo Fases 1–5E, procedimentos 5E, staging, governança, site e gate de deploy seguro.
+
+O Pages imutável congelado para a próxima homologação é `https://a09f45c7.portal-regulacao-central-staging.pages.dev`, publicado a partir do head `31b11a0e145d1b41b54aed98b53a9aa6fb474da9`. A comparação GitHub entre esse head e o merge `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` retornou **zero arquivos diferentes**; o merge apenas acrescenta o commit de integração e preserva a mesma árvore funcional. Assim, runtime e laboratório congelados correspondem ao mesmo conteúdo V7.
+
+Entregas integradas:
+- fast path visual opt-in com `@cf/moondream/moondream3.1-9B-A2B`;
+- contrato nativo `task=query`, `reasoning=false` e `rejectIfBusy=true`;
+- Gemma 4 mantido como fallback visual e modelo de chat textual;
+- Qwen 3.8 mantido como fallback final/revisor focal;
+- fast path não pode ser usado como modelo textual;
+- quando Moondream já retorna `ilegivel` de forma estruturalmente válida, a página termina sem segunda inferência Qwen;
+- a inconsistência `cid=nao_consta` + `descricao_cid=encontrado` continua acionando revisão focal;
+- concorrência de seis páginas preservada;
+- resumo seguro passa a contar páginas processadas por Moondream;
+- produção mantém `DOCUMENTS_AI_FAST_VISION_ENABLED=false`, além de `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
+
+Critério de aceite do próximo reteste: **10/10 e `duracao_extracao_ms` V7 <= 50% da V6** em comparação operacional equivalente. Não inventar o baseline numérico da V6: o operador forneceu captura visual, mas não o resumo seguro textual.
+
+A janela V6 aberta anteriormente **não foi alterada** pelo desenvolvimento V7. Ela deve ser encerrada fail-closed antes de qualquer preparo V7. O verificador/readiness já foi atualizado para bloquear a nova abertura enquanto existir outra janela controlada ativa.
+
+**Próxima ação exata:** quando o operador retornar, baixar os scripts atuais da `main` e executar primeiro `node .\encerrar-homologacao-5e.mjs --encerrar` para fechar a janela V6. Depois executar `node .\iniciar-homologacao-5e.mjs --iniciar`; o readiness deve mostrar source `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` e Pages `https://a09f45c7.portal-regulacao-central-staging.pages.dev`. Somente então confirmar o preparo V7 e executar a matriz uma única vez.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7 de baixa latência em desenvolvimento isolado |
-| Último resultado real | V6 foi executada pelo operador; desempenho considerado lento; resumo seguro numérico não foi fornecido |
-| Main funcional V6 | `76bfefa17bae0729090277525186bdc7dcfc0068` |
-| Runtime próximo reteste | `76bfefa17bae0729090277525186bdc7dcfc0068` |
-| Pages próximo reteste | `https://27a15b34.portal-regulacao-central-staging.pages.dev` |
+| Fase/subfase | Fase 5E — V7 integrada; reteste congelado e aguardando encerramento V6 |
+| Último resultado real | V7 integrada com CI verde; V6 continua sendo a última execução real e foi considerada lenta pelo operador |
+| Main funcional V7 | `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` |
+| Runtime próximo reteste | `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` |
+| Pages próximo reteste | `https://a09f45c7.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
-| V7 candidata | Moondream reasoning=false; concorrência 6; imagem atual preservada; sem segunda revisão se fast path já marcar ilegivel |
+| V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | ainda deve ser encerrada fail-closed antes de abrir qualquer preview V7 |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | concluir CI/revisão da branch V7; integrar se verde; congelar source/Pages V7; encerrar V6; só então abrir homologação V7 |
+| Próxima ação exata | encerrar V6 fail-closed no Windows do operador; atualizar scripts; readiness V7; preparar nova janela; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
