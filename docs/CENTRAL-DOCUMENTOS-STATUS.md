@@ -1620,7 +1620,7 @@ O laboratório já informa `provider_ms`, `overhead_ms`, número de tentativas e
 Nova revisão do código atual, do pipeline PDF.js, do provider e da documentação oficial Cloudflare confirmou:
 
 - a V7 stream-safe continua sendo o **melhor próximo experimento**; não há evidência suficiente para substituí-la antes da medição;
-- a documentação oficial atual do Moondream registra `stream=true` como default para `query`; o runtime define `stream=false` explicitamente para receber a resposta completa e validável;
+- a documentação oficial atual do Moondream registra `stream=false` como default para `query`; o runtime mantém `stream=false` explícito para congelar o contrato e receber a resposta completa e validável;
 - Moondream permanece o melhor fast path entre os modelos avaliados para este caso por ser Image-to-Text dedicado a OCR/structured output; Gemma/Qwen permanecem como fallback/revisão;
 - seis requisições concorrentes estão muito abaixo do limite atual de Image-to-Text (720 req/min);
 - a arquitetura de longo prazo, caso V7 não entregue 2x, deve ser híbrida por página com `PDFPageProxy.getTextContent()` + roteamento para visão somente quando necessário;
@@ -1638,7 +1638,7 @@ Correção preparada:
 - resumo seguro separa `preparo_ms`, `provider_ms` e `transporte_backend_ms`;
 - registra também `tentativas`, `revisado` e a cadeia técnica `modelos`;
 - nenhuma dessas propriedades contém conteúdo documental ou identidade;
-- a documentação foi corrigida para o contrato oficial atual do Moondream: `stream=true` por default, com `stream=false` explicitamente fixado no Titon.
+- a documentação foi conferida contra a página oficial atual do Moondream: `stream=false` é o default, e o Titon mantém `stream=false` explicitamente para congelar o contrato.
 
 **Veredito:** não foi encontrado motivo técnico para alterar modelo, concorrência, resolução ou fallback antes da medição. A estrutura V7 permanece a melhor condição para o próximo teste. Se a meta de 2x falhar, o caminho seguinte continua sendo V8 híbrida com text-layer PDF.js + visão seletiva.
 
