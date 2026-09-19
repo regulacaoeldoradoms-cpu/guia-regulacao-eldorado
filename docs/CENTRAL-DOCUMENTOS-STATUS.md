@@ -1573,21 +1573,43 @@ Correção preparada em branch isolada:
 
 Decisão: **não abrir a homologação com o runtime V7 congelado anteriormente**. Primeiro integrar esta correção e renovar source ref + Pages imutável. Isso evita gastar uma nova janela em um contrato conhecido como potencialmente incompatível.
 
+## V7 stream-safe integrada e referências renovadas — 19/09/2026
+
+A PR #282 foi integrada pelo merge `8faf51af286eb631077645ee84bc34170c8d45a2`.
+
+Correções confirmadas:
+- Moondream `query` agora envia `stream=false` explicitamente, compatível com o parser JSON completo do Titon;
+- respostas com um único JSON válido envolvido por texto curto não acionam fallback desnecessário; o mesmo schema estrito continua obrigatório;
+- o resumo seguro da homologação agora separa `provider_ms` de `overhead_ms` e registra quantidade de tentativas por página, permitindo localizar gargalo sem conteúdo clínico;
+- 23 checks do head da PR #282 passaram, incluindo Fases 1–5E, procedimentos 5E, staging, governança e site.
+
+Referências congeladas renovadas:
+- source ref: `8faf51af286eb631077645ee84bc34170c8d45a2`;
+- Pages: `https://b8dd14db.portal-regulacao-central-staging.pages.dev`.
+
+O Pages foi publicado em `d8b41104240903edaeda0a4a29e63d82cb8bf099`; a comparação até o merge mostra apenas o arquivo de teste do harness alterado depois disso, sem diferença funcional no laboratório servido.
+
+A revisão arquitetural também confirmou o plano de contingência: se o V7 não atingir 2x, o próximo caminho é usar `PDFPageProxy.getTextContent()` do PDF.js para páginas digitais e reservar visão para páginas escaneadas/ambíguas. Esse caminho ainda não foi ativado, pois primeiro precisamos medir o fast path corrigido.
+
+A janela V6 continua a última janela aberta e precisa ser encerrada fail-closed pelo operador quando ele voltar ao computador. Não preparar V7 antes disso.
+
+**Próxima ação exata:** encerrar V6; atualizar scripts locais da main; executar readiness V7 e confirmar exatamente source `8faf51af...` + Pages `b8dd14db...`; preparar nova janela e rodar a matriz uma única vez.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7 em correção de contrato Moondream antes do reteste |
+| Fase/subfase | Fase 5E — V7 stream-safe integrada; reteste aguarda encerramento V6 |
 | Último resultado real | V7 integrada com CI verde; V6 continua sendo a última execução real e foi considerada lenta pelo operador |
 | Main funcional V7 | `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` |
-| Runtime próximo reteste | `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` |
-| Pages próximo reteste | `https://a09f45c7.portal-regulacao-central-staging.pages.dev` |
+| Runtime próximo reteste | `8faf51af286eb631077645ee84bc34170c8d45a2` |
+| Pages próximo reteste | `https://b8dd14db.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | ainda deve ser encerrada fail-closed antes de abrir qualquer preview V7 |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | integrar correção stream=false/parser; renovar referências V7; depois encerrar V6 e somente então abrir nova janela |
+| Próxima ação exata | encerrar V6 fail-closed; atualizar scripts; readiness V7 stream-safe; preparar janela nova; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
