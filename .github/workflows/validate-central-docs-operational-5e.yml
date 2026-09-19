@@ -9,6 +9,9 @@ on:
       - 'scripts/central-docs/preparar-homologacao-5e.test.mjs'
       - 'scripts/central-docs/encerrar-homologacao-5e.mjs'
       - 'scripts/central-docs/encerrar-homologacao-5e.test.mjs'
+      - 'scripts/central-docs/operator-readiness-5e.test.mjs'
+      - 'scripts/central-docs/iniciar-homologacao-5e.mjs'
+      - 'scripts/central-docs/verificar-precondicoes-5e.mjs'
       - 'testing/central-docs-ai/**'
       - 'scripts/build-central-docs-staging.mjs'
       - '.github/workflows/validate-central-docs-operational-5e.yml'
@@ -35,6 +38,8 @@ jobs:
           node --check worker/homologation-5e.js
           node --check scripts/central-docs/preparar-homologacao-5e.mjs
           node --check scripts/central-docs/encerrar-homologacao-5e.mjs
+          node --check scripts/central-docs/verificar-precondicoes-5e.mjs
+          node --check scripts/central-docs/iniciar-homologacao-5e.mjs
           node --check testing/central-docs-ai/phase5e-harness.js
 
       - name: Executar testes do wrapper 5E
@@ -49,6 +54,9 @@ jobs:
 
       - name: Executar contratos do laboratório sintético 5E
         run: node --test testing/central-docs-ai/phase5e-harness.test.mjs
+
+      - name: Executar contratos do atalho operacional 5E
+        run: node --test scripts/central-docs/operator-readiness-5e.test.mjs
 
       - name: Garantir que procedimentos não promovem produção
         run: |
