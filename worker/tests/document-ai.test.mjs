@@ -39,12 +39,14 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
   assert.equal(config.phase, DOCUMENT_AI_PHASE);
   assert.equal(config.version, DOCUMENT_AI_VERSION);
   assert.equal(config.phase, '5E');
-  assert.equal(config.version, 'phase5e-v2');
+  assert.equal(config.version, 'phase5e-v3-workers-ai-free');
   assert.equal(config.enabled, true);
   assert.equal(config.processingEnabled, false);
   assert.equal(config.pageIsolation, true);
   assert.equal(config.provenanceRequired, true);
   assert.equal(config.persistence, 'none');
+  assert.equal(config.provider, 'cloudflare-workers-ai');
+  assert.equal(config.freeOnly, true);
   assert.equal(config.features.classifyPage, true);
   assert.equal(config.features.extractPage, true);
   assert.equal(config.features.extractDocument, true);
