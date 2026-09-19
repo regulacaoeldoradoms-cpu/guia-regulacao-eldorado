@@ -103,7 +103,7 @@ Esse desenho pode tornar PDFs digitais quase instantâneos, mas não é necessá
 
 ## Revisão de contrato Moondream — 19/09/2026
 
-A documentação oficial atual do modelo registra `stream=false` como padrão para `query`. O Titon mantém `stream=false` explicitamente para congelar o contrato e não depender de default do provedor. Isso preserva resposta completa e validável e protege contra futura mudança de default.
+A documentação oficial atual do modelo registra `stream=true` como padrão para `query`. O Titon mantém `stream=false` explicitamente para congelar o contrato e não depender de default do provedor. Isso preserva resposta completa e validável e protege contra futura mudança de default.
 
 Também foi endurecido o parser para um caso frequente em VLMs rápidos: se a resposta contiver um único objeto JSON válido envolvido por uma frase curta, o backend extrai apenas o objeto delimitado e aplica imediatamente o mesmo schema estrito. Isso não afrouxa campos, estados ou proveniência; apenas evita cair para Gemma por embalagem textual superficial.
 
@@ -177,3 +177,19 @@ O `env.AI.toMarkdown()` foi reavaliado e **não é preferido** para esta frontei
 ### Observação de UX
 
 Depois da medição de latência, a UI pode renderizar blocos aprovados progressivamente conforme cada página termina. Isso melhora tempo percebido, mas deve ser medido separadamente do ganho real de inferência para não mascarar o objetivo de 2x.
+
+
+## Última revisão de instrumentação — 19/09/2026
+
+Foi encontrado um detalhe no laboratório que poderia prejudicar o diagnóstico sem alterar o tempo real da matriz: a métrica por página começava **depois** de converter o canvas em PNG. Assim, o antigo `overhead_ms` não incluía toda a preparação local da imagem.
+
+O laboratório passou a registrar, por página:
+- `pagina_ms`: tempo total da página desde o início da preparação;
+- `preparo_ms`: conversão canvas → Blob;
+- `provider_ms`: soma das tentativas medidas no Worker;
+- `transporte_backend_ms`: diferença entre duração da requisição e tempo efetivo de provider;
+- `tentativas`;
+- `revisado`;
+- `modelos`: cadeia técnica de modelos usados.
+
+Essas métricas são estritamente técnicas e não incluem conteúdo, identidade ou valores extraídos. O objetivo é evitar novo ciclo de otimização às cegas: a próxima mudança só deve atacar o componente que dominar a latência.
