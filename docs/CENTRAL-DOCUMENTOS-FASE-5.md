@@ -306,16 +306,21 @@ Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado pa
 
 ## Próximo passo atual
 
-A V5 multimodal comprovou que a estratégia de visão direta funciona: **8/10 casos passaram**. As páginas 1–5 foram aceitas e os três primeiros chats também. A única falha documental restante foi a página 6, construída especificamente com CID ilegível; o chat correspondente falhou apenas porque essa página não entrou nas evidências.
+A V6 de precisão textual foi integrada pela PR #276.
 
-A V6 de precisão textual está sendo preparada para esse caso:
-- PNG 1800 px como padrão, com fallback JPEG 0,92 apenas para página grande;
-- prompt integrado V2 com regra inequívoca `campo/rótulo presente + valor ilegível = ilegivel`, nunca `nao_consta`;
-- revisão visual caractere a caractere;
-- texto aparentemente imperativo dentro de um valor continua sendo dado literal;
-- revisão focal no Qwen apenas nos campos ambíguos de páginas médicas; CID e descrição são revisados juntos quando houver ambiguidade, sem penalizar todas as páginas;
-- diagnóstico seguro das chaves divergentes no laboratório.
+Referências congeladas para o próximo reteste:
+- source ref: `76bfefa17bae0729090277525186bdc7dcfc0068`;
+- Pages imutável: `https://27a15b34.portal-regulacao-central-staging.pages.dev`;
+- versão IA documental: `phase5e-v6-text-accuracy`.
 
-A janela V5 atual deve ser encerrada fail-closed antes do reteste V6. Depois do merge, congelar novo source ref + Pages e repetir a matriz.
+A V6 combina:
+- até 6 páginas independentes em paralelo;
+- PNG 1800 como padrão, com fallback JPEG 0,92 para página acima de ~2,8 MiB;
+- prompt V2 com distinção rígida entre ausente e ilegível;
+- conferência literal caractere a caractere;
+- revisão focal Qwen apenas em campos médicos ambíguos; CID e descrição são revisados juntos;
+- diagnóstico seguro das chaves divergentes.
+
+A janela V5 que produziu 8/10 continua sendo a janela atualmente aberta e deve ser encerrada fail-closed antes do reteste V6. Depois, executar o verificador read-only com as referências congeladas acima e somente então abrir nova janela.
 
 Produção permanece com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.

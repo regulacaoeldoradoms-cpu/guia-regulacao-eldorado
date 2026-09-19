@@ -23,17 +23,21 @@ A próxima rodada 5E substitui o provider **somente da IA documental** por Cloud
 
 ## Referência congelada para a próxima execução real
 
-O **reteste V5 multimodal** deve usar exatamente:
+O **reteste V6 de precisão textual** deve usar exatamente:
 
-- source ref: `20488871ce2556c06795367ededbdb49791c23f5`;
-- Pages origin: `https://e8003492.portal-regulacao-central-staging.pages.dev`;
+- source ref: `76bfefa17bae0729090277525186bdc7dcfc0068`;
+- Pages origin: `https://27a15b34.portal-regulacao-central-staging.pages.dev`;
 - Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
-Essas referências correspondem à correção da PR #273, que passa a enviar a imagem dentro do conteúdo multimodal da mensagem (`image_url` + `text`). As referências V4 anteriores são históricas e não devem ser reutilizadas.
+Essas referências correspondem ao merge da PR #276. As referências V5 anteriores são históricas e não devem ser reutilizadas.
 
-A janela V4 do teste 1/10 já foi encerrada fail-closed pelo operador. Antes de nova abertura, executar o verificador somente leitura e exigir `PRECONDICOES_5E_OK` com estas referências V5.
+Antes da abertura V6:
+1. encerrar fail-closed a janela V5 que produziu 8/10;
+2. executar o verificador somente leitura;
+3. exigir `PRECONDICOES_5E_OK` com source/Pages V6;
+4. somente então preparar nova janela.
 
-Workers Free continua confirmado; o Titon continua sem AI Gateway/prepaid/unified billing.
+Workers Free e a política R$0 permanecem obrigatórios.
 
 ## Objetivo
 
