@@ -3375,6 +3375,12 @@
       els.documentAiDocumentStatus.textContent = `Preparando análise de ${pageCount} página(s)…`;
     }
     renderDocumentAiPanel();
+    capture('document_ai_started', {
+      route: '/documentos/',
+      operation: 'extract',
+      size_bucket: sizeBucket(state.pdfItem?.size),
+      source: 'gemini'
+    });
 
     try {
       for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
@@ -3460,12 +3466,12 @@
           ? `Concluído: ${extractedCount} página(s) autorizada(s) extraída(s); ${state.documentAiIgnoredPages} página(s) ignorada(s).`
           : `Concluído: nenhuma página autorizada encontrada; ${state.documentAiIgnoredPages} página(s) ignorada(s).`;
       }
-      capture('document_ai_document_extraction_completed', {
+      capture('document_ai_completed', {
         route: '/documentos/',
         duration_ms: duration(started),
-        operation: 'document',
-        result: 'success',
-        page_count_bucket: Math.min(20, pageCount)
+        operation: 'extract',
+        size_bucket: sizeBucket(state.pdfItem?.size),
+        source: 'gemini'
       });
       return true;
     } catch (error) {
@@ -3479,12 +3485,12 @@
         els.documentAiDocumentStatus.className = 'documents-ai-document-status warning';
         els.documentAiDocumentStatus.textContent = error?.message || 'A extração do documento foi interrompida.';
       }
-      capture('document_ai_document_extraction_failed', {
+      capture('document_ai_failed', {
         route: '/documentos/',
         duration_ms: duration(started),
-        operation: 'document',
-        result: 'failed',
-        page_count_bucket: Math.min(20, pageCount)
+        operation: 'extract',
+        size_bucket: sizeBucket(state.pdfItem?.size),
+        source: 'gemini'
       });
       return false;
     } finally {
