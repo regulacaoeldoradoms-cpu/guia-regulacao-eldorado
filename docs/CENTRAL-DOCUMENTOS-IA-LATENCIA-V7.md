@@ -115,7 +115,7 @@ Essas duas mudanças são consideradas correção de contrato/desempenho, não m
 Revisão cruzada com a documentação atual do Cloudflare Workers AI:
 
 - Moondream 3.1 é Image-to-Text, 9B totais / 2B ativos, com OCR e structured output como casos de uso; o changelog publica p50 aproximado de 770 ms para `query` em imagem simples, mas isso não é SLO para nossos documentos.
-- `query` usa `stream=true` por padrão; o Titon agora fixa `stream=false`, porque precisa do JSON completo antes de validar a página.
+- `query` usa `stream=false` por padrão; o Titon também fixa `stream=false` explicitamente para congelar o contrato e receber o JSON completo antes de validar a página.
 - `rejectIfBusy=true` está no lugar correto: terceiro argumento de `env.AI.run()`. Assim não esperamos em fila de capacidade; erro 3040 cai para o fallback gratuito.
 - O limite padrão atual de Image-to-Text é 720 req/min por conta, muito acima da concorrência de 6 páginas do Titon. Isso não elimina indisponibilidade de capacidade, mas afasta rate limit como razão para reduzir a concorrência preventivamente.
 - Workers Free mantém 10.000 Neurons/dia sem cobrança; ao esgotar, retorna 3036. Moondream não consta na lista atual de modelos que exigem Workers Paid. A política do Titon continua: sem AI Gateway/prepaid/unified billing.
@@ -177,3 +177,19 @@ O `env.AI.toMarkdown()` foi reavaliado e **não é preferido** para esta frontei
 ### Observação de UX
 
 Depois da medição de latência, a UI pode renderizar blocos aprovados progressivamente conforme cada página termina. Isso melhora tempo percebido, mas deve ser medido separadamente do ganho real de inferência para não mascarar o objetivo de 2x.
+
+
+## Última revisão de instrumentação — 19/09/2026
+
+Foi encontrado um detalhe no laboratório que poderia prejudicar o diagnóstico sem alterar o tempo real da matriz: a métrica por página começava **depois** de converter o canvas em PNG. Assim, o antigo `overhead_ms` não incluía toda a preparação local da imagem.
+
+O laboratório passou a registrar, por página:
+- `pagina_ms`: tempo total da página desde o início da preparação;
+- `preparo_ms`: conversão canvas → Blob;
+- `provider_ms`: soma das tentativas medidas no Worker;
+- `transporte_backend_ms`: diferença entre duração da requisição e tempo efetivo de provider;
+- `tentativas`;
+- `revisado`;
+- `modelos`: cadeia técnica de modelos usados.
+
+Essas métricas são estritamente técnicas e não incluem conteúdo, identidade ou valores extraídos. O objetivo é evitar novo ciclo de otimização às cegas: a próxima mudança só deve atacar o componente que dominar a latência.
