@@ -2829,6 +2829,12 @@
     });
   }
 
+  function getPageCount() {
+    const session = active;
+    if (!session || session.closed) return 0;
+    return Math.max(0, Number(session.document?.numPages || 0));
+  }
+
   function setThumbnailActions(enabled, onThumbnailAction = null) {
     const session = active;
     if (!session || session.closed) return false;
@@ -3267,6 +3273,7 @@
     resetZoom,
     scrollToPage,
     getViewState,
+    getPageCount,
     setThumbnailActions,
     setOrganizerMode,
     setEditorObjects,
@@ -3275,6 +3282,6 @@
     loadPdfJs,
     exportPageImage,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-drawing-page-export-v1`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-drawing-page-export-v2`
   });
 })();

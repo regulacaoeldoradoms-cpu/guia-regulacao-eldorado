@@ -10,9 +10,10 @@ Fase 4 encerrada e publicada. Esta frente começa da `main` após o merge do aju
 
 Adicionar IA documental à Central sem transformar o assistente de pré-regulação existente em um processador de dados identificáveis. O novo domínio deve:
 
-- exibir um painel de IA ao lado do PDF;
+- exibir um painel de IA do Titon ao lado do PDF;
+- oferecer **um único botão** `Extrair dados do PDF` como fluxo principal;
 - trabalhar com rotinas oficiais versionadas;
-- processar uma página por vez quando a regra exigir isolamento;
+- percorrer o documento inteiro no cliente, mas enviar/processar **uma página por vez** para preservar isolamento;
 - devolver proveniência explícita por página;
 - implementar extração restritiva do Comprovante de Atendimento;
 - implementar extração restritiva de páginas médicas autorizadas;
@@ -57,7 +58,7 @@ Fluxo obrigatório:
 1. o Portal identifica a página candidata;
 2. somente aquela página é preparada para a chamada de IA;
 3. a chamada recebe o número da página como metadado técnico da requisição;
-4. o resultado retorna o mesmo número como proveniência;
+4. o backend ancora a proveniência nesse metadado e **não confia no modelo para ecoar o número da página**;
 5. cada página médica autorizada é extraída em chamada própria;
 6. a montagem da resposta final apenas concatena blocos já vinculados à origem.
 
@@ -86,7 +87,9 @@ A camada visual converte esses estados para o texto institucional correspondente
 
 ### Comprovante de Atendimento
 
-Bloco inicial previsto:
+A página é autorizada quando o título/cabeçalho/nome visível identifica claramente **COMPROVANTE DE ATENDIMENTO**, **CONTROLE DE ATENDIMENTO** ou **DADOS**.
+
+Bloco previsto:
 
 - nome do paciente;
 - CPF;
@@ -97,9 +100,20 @@ Bloco inicial previsto:
 - endereço;
 - agente.
 
-Transformações automáticas devem ser mínimas e explicitamente autorizadas. O padrão inicial é preservar literalidade.
+Transformações automáticas são mínimas e explicitamente autorizadas: **CNS sem espaços/apenas sequência numérica** e **data de nascimento em `dd/mm/aaaa` quando a leitura for inequívoca**. Todo o restante preserva literalidade.
 
 ### Página médica autorizada
+
+São autorizadas páginas cujo título/cabeçalho/nome visível identifique claramente, com pequenas variações de caixa, acentuação ou singular/plural:
+
+- GUIA DE ENCAMINHAMENTO;
+- ENCAMINHAMENTO / ENCAMINHAMENTOS;
+- RECEITA SIMPLES;
+- LAUDO MÉDICO;
+- RECEITUÁRIO MÉDICO;
+- SOLICITAÇÃO DE EXAMES;
+- SOLICITAÇÃO DE AGENDAMENTO;
+- SOLICITAÇÃO DE AGENDAMENTO RETORNO.
 
 Cada página válida gera bloco próprio com proveniência, incluindo quando disponível:
 
@@ -141,7 +155,7 @@ Implementação:
 - enviar somente a imagem dessa página e o número técnico ao backend;
 - limitar MIME a JPEG/PNG e tamanho a 3 MiB;
 - classificar `comprovante_atendimento`, `pagina_medica_autorizada` ou `outro`;
-- validar que o número devolvido pelo provider coincide exatamente com a página enviada;
+- ancorar o número da página no backend usando o header técnico; qualquer número ausente/divergente devolvido pelo modelo é ignorado para fins de proveniência;
 - exibir classificação e proveniência sem persistir conteúdo;
 - usar provider mockável em testes, sem documento clínico real;
 - manter os gates produtivos desligados durante toda a validação 5B.
@@ -207,7 +221,7 @@ Aceite 5D: **320/320 testes** na suíte integrada, navegador **75 passed / 3 ski
 
 ### 5E — Homologação real controlada
 
-Estado: **preparo técnico implementado; nenhuma chamada real ao provedor executada ainda**.
+Estado: **homologação real em andamento; primeira execução real alcançou o provedor, mas a matriz falhou por `DOCUMENT_AI_PAGE_INVALID` antes do aceite**.
 
 Artefatos preparados:
 - wrapper Worker preview-only `worker/homologation-5e.js`;
@@ -218,7 +232,7 @@ Artefatos preparados:
 - workflow operacional específico da 5E;
 - documentação completa em `CENTRAL-DOCUMENTOS-HOMOLOGACAO-5E.md`.
 
-Matriz planejada:
+Matriz real:
 - comprovante sintético completo;
 - duas páginas médicas com valores conflitantes para detectar mistura;
 - campo ausente;
@@ -245,6 +259,25 @@ Possível intervenção futura:
 - se a chave não existir na baseline, o script para antes de qualquer upload/controle ativo com `INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE`;
 - se existir, o usuário ainda precisará confirmar explicitamente a abertura da janela 5E e executar a matriz no navegador.
 
+## UX aprovada do Titon — extração em um clique
+
+A classificação e a extração permanecem separadas **internamente**, mas deixam de ser etapas manuais da interface final.
+
+Fluxo aprovado:
+
+1. usuário abre o PDF;
+2. clica **Extrair dados do PDF**;
+3. Titon obtém a quantidade de páginas no PDF.js;
+4. percorre as páginas sequencialmente;
+5. cada página é enviada isoladamente para classificação;
+6. páginas `outro` são ignoradas;
+7. páginas autorizadas são extraídas em chamada própria e armazenadas somente em memória;
+8. o resultado final mostra um bloco de comprovante e um bloco separado para cada página médica autorizada, sempre com número de página e ação **Ver página**;
+9. **Copiar dados** gera o modelo institucional completo;
+10. o chat permanece opcional/secundário e recebe somente evidências estruturadas já extraídas.
+
+Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado parcial em vez de apresentá-lo como documento completo.
+
 ## Fora de escopo da Fase 5
 
 - acelerar autosync do Drive: Fase 7;
@@ -255,6 +288,6 @@ Possível intervenção futura:
 
 ## Próximo passo atual
 
-O preparo técnico e operacional da **5E** já está integrado à `main`, com produção mantendo os gates da IA documental desligados. Antes da primeira chamada real ao provedor, a matriz foi endurecida para comparar todos os oito campos de cada página autorizada, incluindo os casos `nao_consta` e `ilegivel`.
+A segunda janela 5E está ativa no runtime antigo `408bff...` e já executou a matriz real. Todas as páginas falharam com `DOCUMENT_AI_PAGE_INVALID`. A correção funcional está sendo preparada nesta branch: proveniência técnica ancorada no backend, regras de títulos/literalidade ampliadas e UX Titon de extração integral em um clique.
 
-A próxima intervenção externa continua sendo configurar `GEMINI_API_KEY` como secret do Worker sem expor o valor. Depois disso, executar o verificador somente leitura e, apenas se retornar `PRECONDICOES_5E_OK`, iniciar a janela controlada 5E. A homologação usa somente fixtures sintéticos, não escreve no Drive e deve ser encerrada em modo fail-closed antes de qualquer avaliação de publicação da Fase 5.
+Antes de qualquer reteste com o runtime corrigido, a janela 5E atual deve ser **encerrada fail-closed**. Depois dos checks/merge desta correção, deve-se congelar um novo source ref do Worker e um novo Pages imutável, abrir nova janela controlada e repetir a matriz sintética real. Produção permanece com os dois gates da IA documental desligados.

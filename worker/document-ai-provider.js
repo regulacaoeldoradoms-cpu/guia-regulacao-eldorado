@@ -137,7 +137,7 @@ export async function classifyDocumentAiPage(env, input = {}, options = {}) {
         contents: [{
           role: 'user',
           parts: [
-            { text: `Número técnico da página: ${pageNumber}. Classifique somente esta página.` },
+            { text: `Número técnico da página: ${pageNumber}. Classifique somente esta página. Retorne JSON apenas com o campo pageType.` },
             {
               inlineData: {
                 mimeType,
@@ -173,14 +173,12 @@ export async function classifyDocumentAiPage(env, input = {}, options = {}) {
   }
 
   const parsed = parseJsonCandidate(candidateText(payload));
-  const classification = normalizeDocumentAiClassification(parsed);
-  if (classification.pageNumber !== pageNumber) {
-    throw new DocumentAiError(
-      'DOCUMENT_AI_PAGE_PROVENANCE_MISMATCH',
-      'A classificação perdeu a proveniência da página.',
-      502
-    );
-  }
+  // A proveniência da página é metadado técnico do backend, não conteúdo a ser
+  // confiado ao modelo. O provedor decide apenas o tipo; o número vem da rota.
+  const classification = normalizeDocumentAiClassification({
+    ...parsed,
+    pageNumber
+  });
 
   return {
     classification,
@@ -202,8 +200,6 @@ function extractionTemplate(pageType) {
     );
   }
   return {
-    pageNumber: 0,
-    pageType,
     fields: Object.fromEntries(keys.map((key) => [
       key,
       { state: 'nao_consta', value: '' }
@@ -230,7 +226,6 @@ export async function extractDocumentAiPage(env, input = {}, options = {}) {
   const pageNumber = normalizeDocumentAiPageNumber(input.pageNumber);
   const pageType = String(input.pageType || '').trim();
   const template = extractionTemplate(pageType);
-  template.pageNumber = pageNumber;
   const mimeType = normalizeMimeType(input.mimeType);
   const bytes = normalizeImageBytes(input.bytes);
   const model = String(env.DOCUMENTS_AI_MODEL || env.GEMINI_MODEL || 'gemini-3.5-flash-lite').trim();
@@ -259,7 +254,7 @@ export async function extractDocumentAiPage(env, input = {}, options = {}) {
               text: [
                 `Número técnico da página: ${pageNumber}.`,
                 `Tipo autorizado: ${pageType}.`,
-                'Retorne TODOS os campos deste schema, sem adicionar outros:',
+                'Retorne somente o objeto fields deste schema, com TODOS os campos e sem adicionar outros:',
                 JSON.stringify(template)
               ].join('\n')
             },
@@ -298,7 +293,13 @@ export async function extractDocumentAiPage(env, input = {}, options = {}) {
   }
 
   const parsed = parseJsonCandidate(candidateText(payload));
-  const extraction = normalizeDocumentAiExtraction(parsed, { pageNumber, pageType });
+  // Número e tipo já foram autorizados pelo backend. Nunca dependemos de a IA
+  // ecoar corretamente esses metadados para preservar a origem da extração.
+  const extraction = normalizeDocumentAiExtraction({
+    ...parsed,
+    pageNumber,
+    pageType
+  }, { pageNumber, pageType });
   return {
     extraction,
     routine: {

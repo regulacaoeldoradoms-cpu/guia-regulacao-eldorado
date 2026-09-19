@@ -194,6 +194,39 @@ test('rotas de IA exigem marcador sintético e gates corretos', async () => {
   assert.equal(downstream, 0);
 });
 
+test('wrapper 5E preserva o número técnico da página até o backend documental', async () => {
+  let observedPage = '';
+  let reads = 0;
+  const worker = createHomologation5eWorker(dependencies({
+    readControl: async () => {
+      reads += 1;
+      return control();
+    },
+    documentsFetch: async (req) => {
+      observedPage = req.headers.get('X-Document-Page-Number') || '';
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }));
+
+  const response = await worker.fetch(request('/api/documents/ai/page/classify', {
+    method: 'POST',
+    token: true,
+    fixture: true,
+    headers: {
+      'Content-Type': 'image/png',
+      'X-Document-Page-Number': '6'
+    },
+    body: new Uint8Array([1, 2, 3])
+  }), env());
+
+  assert.equal(response.status, 200);
+  assert.equal(observedPage, '6');
+  assert.equal(reads, 2);
+});
+
 test('revogação entre autenticação e chamada de IA vence antes do provider', async () => {
   let reads = 0;
   let downstream = 0;

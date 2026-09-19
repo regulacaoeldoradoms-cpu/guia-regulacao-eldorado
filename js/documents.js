@@ -20,7 +20,7 @@
     cns: 'CNS',
     data_nascimento: 'Data de nascimento',
     nome_mae: 'Nome da mãe',
-    telefone: 'Telefone',
+    telefone: 'Fone do paciente',
     endereco: 'Endereço',
     agente: 'Agente',
     titulo: 'Título',
@@ -50,6 +50,9 @@
     documentAiBusy: false,
     documentAiClassification: null,
     documentAiExtraction: null,
+    documentAiResults: [],
+    documentAiScanCompleted: false,
+    documentAiIgnoredPages: 0,
     documentAiEvidence: new Map(),
     documentAiChatHistory: [],
     stack: [],
@@ -160,6 +163,11 @@
     documentAiExtractionFields: document.getElementById('documentsAiExtractionFields'),
     documentAiCopyBlock: document.getElementById('documentsAiCopyBlockButton'),
     documentAiViewSource: document.getElementById('documentsAiViewSourceButton'),
+    documentAiExtractDocument: document.getElementById('documentsAiExtractDocumentButton'),
+    documentAiDocumentStatus: document.getElementById('documentsAiDocumentStatus'),
+    documentAiDocumentResults: document.getElementById('documentsAiDocumentResults'),
+    documentAiDocumentActions: document.getElementById('documentsAiDocumentActions'),
+    documentAiCopyAll: document.getElementById('documentsAiCopyAllButton'),
     documentAiChatQuestion: document.getElementById('documentsAiChatQuestion'),
     documentAiChatSend: document.getElementById('documentsAiChatSendButton'),
     documentAiChatStatus: document.getElementById('documentsAiChatStatus'),
@@ -2808,6 +2816,7 @@
           if (openId !== state.pdfOpenId) return;
           els.viewerState.textContent = 'Visualizador do Portal pronto.';
           markViewerReady(openId, bucket, cacheState, progressive, sourceLabel);
+          if (state.documentAiPanelOpen) renderDocumentAiPanel();
         },
         onError: () => {
           if (openId !== state.pdfOpenId || state.pdfCustomFallbackStarted) return;
@@ -2981,6 +2990,129 @@
     }).join('');
   }
 
+  function documentAiResultHeading(extraction) {
+    const pageNumber = Number(extraction?.pageNumber || 0);
+    if (extraction?.pageType === 'comprovante_atendimento') {
+      return `DADOS DO COMPROVANTE DE ATENDIMENTO · Página ${pageNumber}`;
+    }
+    const titleField = extraction?.fields?.titulo;
+    const title = documentAiFieldDisplay(titleField);
+    return `PÁGINA MÉDICA AUTORIZADA · Página ${pageNumber} · ${title}`;
+  }
+
+  function documentAiFormattedBlock(extraction) {
+    if (!extraction?.fields) return '';
+    const pageNumber = Number(extraction.pageNumber || 0);
+    const value = (key) => documentAiFieldDisplay(extraction.fields[key]);
+
+    if (extraction.pageType === 'comprovante_atendimento') {
+      return [
+        `[DADOS DO COMPROVANTE DE ATENDIMENTO - Página ${pageNumber}]`,
+        `Nome do paciente: ${value('nome_paciente')}`,
+        `CPF: ${value('cpf')}`,
+        `CNS: ${value('cns')}`,
+        `Data de nascimento: ${value('data_nascimento')}`,
+        `Nome da mãe: ${value('nome_mae')}`,
+        `Fone do paciente: ${value('telefone')}`,
+        `Endereço: ${value('endereco')}`,
+        `Agente: ${value('agente')}`
+      ].join('\n');
+    }
+
+    const title = value('titulo');
+    return [
+      `[DADOS DA PÁGINA MÉDICA AUTORIZADA - Página ${pageNumber} - Título encontrado: ${title}]`,
+      `Motivo do encaminhamento: ${value('motivo_encaminhamento')}`,
+      `Nome do(a) médico(a): ${value('medico')}`,
+      `CRM ou RMS: ${value('crm_rms')}`,
+      `Procedimento solicitado: ${value('procedimento_solicitado')}`,
+      `Código do procedimento: ${value('codigo_procedimento')}`,
+      `CID: ${value('cid')}`,
+      `Descrição do CID: ${value('descricao_cid')}`
+    ].join('\n');
+  }
+
+  function documentAiAllResultsBlock() {
+    const results = Array.isArray(state.documentAiResults)
+      ? [...state.documentAiResults].sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber))
+      : [];
+    const comprovantes = results.filter((item) => item.pageType === 'comprovante_atendimento');
+    const medical = results.filter((item) => item.pageType === 'pagina_medica_autorizada');
+    const blocks = [];
+
+    if (comprovantes.length) {
+      blocks.push(...comprovantes.map(documentAiFormattedBlock));
+    } else {
+      blocks.push('PÁGINA "COMPROVANTE DE ATENDIMENTO" NÃO ENCONTRADA');
+    }
+
+    if (medical.length) {
+      blocks.push(...medical.map(documentAiFormattedBlock));
+    } else {
+      blocks.push('NENHUMA PÁGINA MÉDICA AUTORIZADA FOI ENCONTRADA');
+    }
+
+    return blocks.join('\n\n');
+  }
+
+  function renderDocumentAiDocumentResults() {
+    const results = Array.isArray(state.documentAiResults)
+      ? [...state.documentAiResults].sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber))
+      : [];
+    const completed = state.documentAiScanCompleted === true;
+
+    if (els.documentAiDocumentResults) {
+      els.documentAiDocumentResults.hidden = !completed;
+      if (!completed) {
+        els.documentAiDocumentResults.replaceChildren();
+      } else {
+        const cards = results.map((extraction, index) => {
+          const fields = Object.entries(extraction.fields || {}).map(([key, field]) => {
+            const label = DOCUMENT_AI_FIELD_LABELS[key] || key;
+            const display = documentAiFieldDisplay(field);
+            const stateClass = field?.state === 'ilegivel'
+              ? 'is-illegible'
+              : field?.state === 'nao_consta'
+                ? 'is-missing'
+                : '';
+            return `<div class="documents-ai-field">
+              <div class="documents-ai-field-copy">
+                <strong>${escapeHtml(label)}</strong>
+                <span class="${stateClass}">${escapeHtml(display)}</span>
+              </div>
+            </div>`;
+          }).join('');
+
+          return `<article class="documents-ai-result-card">
+            <div class="documents-ai-result-head">
+              <strong>${escapeHtml(documentAiResultHeading(extraction))}</strong>
+              <button type="button" class="portal-button ghost" data-ai-source-page="${Number(extraction.pageNumber)}">Ver página</button>
+            </div>
+            <div class="documents-ai-extraction-fields">${fields}</div>
+            <button type="button" class="portal-button ghost documents-ai-copy-result" data-ai-copy-result-index="${index}">Copiar este bloco</button>
+          </article>`;
+        });
+
+        const hasReceipt = results.some((item) => item.pageType === 'comprovante_atendimento');
+        const hasMedical = results.some((item) => item.pageType === 'pagina_medica_autorizada');
+        if (!hasReceipt) {
+          cards.unshift('<div class="documents-ai-empty-result">PÁGINA "COMPROVANTE DE ATENDIMENTO" NÃO ENCONTRADA</div>');
+        }
+        if (!hasMedical) {
+          cards.push('<div class="documents-ai-empty-result">NENHUMA PÁGINA MÉDICA AUTORIZADA FOI ENCONTRADA</div>');
+        }
+        els.documentAiDocumentResults.innerHTML = cards.join('');
+      }
+    }
+
+    if (els.documentAiDocumentActions) {
+      els.documentAiDocumentActions.hidden = !completed;
+    }
+    if (els.documentAiCopyAll) {
+      els.documentAiCopyAll.disabled = !completed;
+    }
+  }
+
   function canExtractCurrentDocumentAiPage() {
     const value = state.documentAiClassification;
     if (!value || value.pageType === 'outro') return false;
@@ -3012,10 +3144,12 @@
     return Boolean(
       state.pdfItem
       && !state.documentAiBusy
+      && state.documentAiScanCompleted === true
       && state.documentAiConfig?.processingEnabled === true
       && state.documentAiConfig?.features?.documentChat === true
       && state.documentAiEvidence instanceof Map
       && state.documentAiEvidence.size > 0
+      && state.documentAiEvidence.size <= 12
     );
   }
 
@@ -3044,8 +3178,12 @@
       els.documentAiChatStatus.className = 'documents-ai-chat-status';
       if (state.documentAiConfig?.processingEnabled !== true) {
         els.documentAiChatStatus.textContent = 'Perguntas bloqueadas por feature gate.';
+      } else if (state.documentAiScanCompleted !== true) {
+        els.documentAiChatStatus.textContent = 'Extraia os dados do PDF antes de perguntar.';
       } else if (!(state.documentAiEvidence instanceof Map) || state.documentAiEvidence.size === 0) {
-        els.documentAiChatStatus.textContent = 'Extraia ao menos uma página para criar evidências antes de perguntar.';
+        els.documentAiChatStatus.textContent = 'Nenhuma página autorizada foi extraída para perguntas.';
+      } else if (state.documentAiEvidence.size > 12) {
+        els.documentAiChatStatus.textContent = 'Há mais de 12 páginas autorizadas. Os dados podem ser copiados, mas o chat permanece bloqueado para não perder proveniência.';
       } else if (!els.documentAiChatStatus.textContent) {
         els.documentAiChatStatus.textContent = `${state.documentAiEvidence.size} página(s) com evidência disponível(is) somente nesta sessão.`;
       }
@@ -3058,7 +3196,7 @@
       if (els.documentAiChatStatus) {
         els.documentAiChatStatus.className = 'documents-ai-chat-status warning';
         els.documentAiChatStatus.textContent = question
-          ? 'Extraia ao menos uma página antes de perguntar.'
+          ? 'Extraia os dados do PDF antes de perguntar.'
           : 'Digite uma pergunta documental.';
       }
       return;
@@ -3125,13 +3263,28 @@
     const config = state.documentAiConfig || {};
     if (els.documentAiDescription) {
       els.documentAiDescription.textContent = config.processingEnabled
-        ? 'Classificação, extração restritiva e perguntas por evidência estão disponíveis com proveniência obrigatória por página.'
-        : 'A IA documental está preparada, mas o processamento permanece bloqueado até a homologação controlada.';
+        ? 'Um clique percorre o PDF inteiro. Cada página é classificada e extraída isoladamente; páginas não autorizadas são ignoradas.'
+        : 'A IA documental do Titon está preparada, mas o processamento permanece bloqueado até a homologação controlada.';
     }
     if (els.documentAiSafety) {
       els.documentAiSafety.textContent = config.processingEnabled
-        ? 'Classificação e extração enviam uma página por vez; perguntas usam somente evidências estruturadas já extraídas nesta sessão.'
+        ? 'Sem mistura entre páginas: NÃO CONSTA para campo ausente, ILEGÍVEL para campo presente sem leitura segura; CNS e data recebem apenas as normalizações autorizadas.'
         : 'O processamento permanece desabilitado até a homologação controlada da Fase 5E.';
+    }
+    if (els.documentAiExtractDocument) {
+      const ready = config.processingEnabled === true
+        && config.features?.extractDocument === true
+        && Number(window.PortalPdfViewer?.getPageCount?.() || 0) > 0;
+      els.documentAiExtractDocument.disabled = !ready || state.documentAiBusy || !state.pdfItem;
+      els.documentAiExtractDocument.textContent = state.documentAiBusy
+        ? 'Extraindo dados…'
+        : 'Extrair dados do PDF';
+    }
+    if (els.documentAiDocumentStatus && !state.documentAiBusy && !els.documentAiDocumentStatus.textContent) {
+      els.documentAiDocumentStatus.className = 'documents-ai-document-status';
+      els.documentAiDocumentStatus.textContent = config.processingEnabled
+        ? 'Pronto para analisar todas as páginas deste PDF.'
+        : 'Extração automática bloqueada por feature gate.';
     }
     if (els.documentAiClassify) {
       const ready = config.processingEnabled === true && config.features?.classifyPage === true;
@@ -3140,16 +3293,9 @@
     if (els.documentAiExtract) {
       els.documentAiExtract.disabled = state.documentAiBusy || !canExtractCurrentDocumentAiPage();
     }
-    if (els.documentAiClassificationStatus && !state.documentAiBusy) {
-      els.documentAiClassificationStatus.className = 'documents-ai-classification-status';
-      if (!config.processingEnabled) {
-        els.documentAiClassificationStatus.textContent = 'Classificação bloqueada por feature gate.';
-      } else if (!els.documentAiClassificationStatus.textContent) {
-        els.documentAiClassificationStatus.textContent = 'Pronta para classificar a página atual.';
-      }
-    }
     renderDocumentAiClassification();
     renderDocumentAiExtraction();
+    renderDocumentAiDocumentResults();
     renderDocumentAiChat();
     if (els.documentAiRoutines) {
       const routines = Array.isArray(config.routines) ? config.routines : [];
@@ -3184,6 +3330,173 @@
       state.documentAiConfig = payload?.ai || null;
     } catch (_) {
       state.documentAiConfig = null;
+    }
+  }
+
+  async function extractWholeDocumentAi() {
+    const viewer = window.PortalPdfViewer;
+    const exporter = viewer?.exportPageImage;
+    const pageCount = Number(viewer?.getPageCount?.() || 0);
+    const ready = Boolean(
+      !state.documentAiBusy
+      && state.pdfItem
+      && state.documentAiConfig?.processingEnabled === true
+      && state.documentAiConfig?.features?.extractDocument === true
+      && typeof exporter === 'function'
+      && Number.isInteger(pageCount)
+      && pageCount > 0
+    );
+
+    if (!ready) {
+      if (els.documentAiDocumentStatus) {
+        els.documentAiDocumentStatus.className = 'documents-ai-document-status warning';
+        els.documentAiDocumentStatus.textContent = pageCount > 0
+          ? 'A extração automática ainda não está habilitada neste ambiente.'
+          : 'Aguarde o PDF terminar de carregar antes de extrair os dados.';
+      }
+      return false;
+    }
+
+    const openId = state.pdfOpenId;
+    const item = state.pdfItem;
+    const started = performance.now();
+
+    state.documentAiBusy = true;
+    state.documentAiScanCompleted = false;
+    state.documentAiIgnoredPages = 0;
+    state.documentAiResults = [];
+    state.documentAiClassification = null;
+    state.documentAiExtraction = null;
+    state.documentAiEvidence.clear();
+    state.documentAiChatHistory = [];
+    if (els.documentAiChatMessages) els.documentAiChatMessages.replaceChildren();
+    if (els.documentAiChatQuestion) els.documentAiChatQuestion.value = '';
+    if (els.documentAiDocumentStatus) {
+      els.documentAiDocumentStatus.className = 'documents-ai-document-status';
+      els.documentAiDocumentStatus.textContent = `Preparando análise de ${pageCount} página(s)…`;
+    }
+    renderDocumentAiPanel();
+    capture('document_ai_started', {
+      route: '/documentos/',
+      operation: 'extract',
+      size_bucket: sizeBucket(state.pdfItem?.size),
+      source: 'gemini'
+    });
+
+    try {
+      for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
+        if (openId !== state.pdfOpenId || item !== state.pdfItem) {
+          throw new Error('O documento mudou durante a extração. Abra o PDF novamente e tente outra vez.');
+        }
+
+        if (els.documentAiDocumentStatus) {
+          els.documentAiDocumentStatus.className = 'documents-ai-document-status';
+          els.documentAiDocumentStatus.textContent = `Analisando página ${pageNumber} de ${pageCount}…`;
+        }
+
+        const blob = await exporter(pageNumber, {
+          maxEdge: 1800,
+          mimeType: 'image/jpeg',
+          quality: 0.9
+        });
+        if (!(blob instanceof Blob) || blob.size <= 0) {
+          throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
+        }
+
+        const response = await fetch(`${endpoint}/api/documents/ai/page/extract`, {
+          method: 'POST',
+          headers: {
+            ...auth.authorizationHeader(),
+            'Content-Type': blob.type || 'image/jpeg',
+            'X-Document-Page-Number': String(pageNumber)
+          },
+          body: blob,
+          cache: 'no-store',
+          credentials: 'omit'
+        });
+        const payload = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          if (response.status === 422 && payload?.code === 'DOCUMENT_AI_PAGE_NOT_AUTHORIZED') {
+            state.documentAiIgnoredPages += 1;
+            continue;
+          }
+          const error = new Error(payload?.error || `Não foi possível analisar a página ${pageNumber}.`);
+          error.code = String(payload?.code || '');
+          throw error;
+        }
+
+        const classification = payload?.classification;
+        const extraction = payload?.extraction;
+        if (
+          !classification
+          || !extraction
+          || Number(classification.pageNumber) !== pageNumber
+          || Number(extraction.pageNumber) !== pageNumber
+          || String(classification.pageType || '') !== String(extraction.pageType || '')
+          || !['comprovante_atendimento', 'pagina_medica_autorizada'].includes(String(extraction.pageType || ''))
+          || !extraction.fields
+          || typeof extraction.fields !== 'object'
+        ) {
+          throw new Error(`A página ${pageNumber} retornou proveniência ou estrutura inválida.`);
+        }
+
+        const normalized = {
+          pageNumber,
+          pageType: String(extraction.pageType),
+          fields: extraction.fields
+        };
+        state.documentAiResults.push(normalized);
+        state.documentAiEvidence.set(pageNumber, normalized);
+      }
+
+      state.documentAiResults.sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber));
+      state.documentAiExtraction = state.documentAiResults[0] || null;
+      state.documentAiClassification = state.documentAiExtraction
+        ? {
+            pageNumber: Number(state.documentAiExtraction.pageNumber),
+            pageType: String(state.documentAiExtraction.pageType)
+          }
+        : null;
+      state.documentAiScanCompleted = true;
+
+      const extractedCount = state.documentAiResults.length;
+      if (els.documentAiDocumentStatus) {
+        els.documentAiDocumentStatus.className = 'documents-ai-document-status success';
+        els.documentAiDocumentStatus.textContent = extractedCount
+          ? `Concluído: ${extractedCount} página(s) autorizada(s) extraída(s); ${state.documentAiIgnoredPages} página(s) ignorada(s).`
+          : `Concluído: nenhuma página autorizada encontrada; ${state.documentAiIgnoredPages} página(s) ignorada(s).`;
+      }
+      capture('document_ai_completed', {
+        route: '/documentos/',
+        duration_ms: duration(started),
+        operation: 'extract',
+        size_bucket: sizeBucket(state.pdfItem?.size),
+        source: 'gemini'
+      });
+      return true;
+    } catch (error) {
+      // Resultado parcial não é apresentado como se fosse documento completo.
+      state.documentAiResults = [];
+      state.documentAiEvidence.clear();
+      state.documentAiExtraction = null;
+      state.documentAiClassification = null;
+      state.documentAiScanCompleted = false;
+      if (els.documentAiDocumentStatus) {
+        els.documentAiDocumentStatus.className = 'documents-ai-document-status warning';
+        els.documentAiDocumentStatus.textContent = error?.message || 'A extração do documento foi interrompida.';
+      }
+      capture('document_ai_failed', {
+        route: '/documentos/',
+        duration_ms: duration(started),
+        operation: 'extract',
+        size_bucket: sizeBucket(state.pdfItem?.size),
+        source: 'gemini'
+      });
+      return false;
+    } finally {
+      state.documentAiBusy = false;
+      renderDocumentAiPanel();
     }
   }
 
@@ -3569,8 +3882,17 @@
     state.documentAiBusy = false;
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
+    state.documentAiResults = [];
+    state.documentAiScanCompleted = false;
+    state.documentAiIgnoredPages = 0;
     state.documentAiEvidence.clear();
     state.documentAiChatHistory = [];
+    if (els.documentAiDocumentStatus) {
+      els.documentAiDocumentStatus.textContent = '';
+      els.documentAiDocumentStatus.className = 'documents-ai-document-status';
+    }
+    if (els.documentAiDocumentResults) els.documentAiDocumentResults.replaceChildren();
+    if (els.documentAiDocumentActions) els.documentAiDocumentActions.hidden = true;
     if (els.documentAiChatQuestion) els.documentAiChatQuestion.value = '';
     if (els.documentAiChatStatus) els.documentAiChatStatus.textContent = '';
     if (els.documentAiChatMessages) els.documentAiChatMessages.replaceChildren();
@@ -3617,6 +3939,9 @@
     state.pdfItem = item;
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
+    state.documentAiResults = [];
+    state.documentAiScanCompleted = false;
+    state.documentAiIgnoredPages = 0;
     state.documentAiEvidence.clear();
     state.documentAiChatHistory = [];
     renderDocumentAiAvailability();
@@ -3779,6 +4104,9 @@
     setDocumentAiPanelOpen(!state.documentAiPanelOpen);
   });
   els.documentAiClose?.addEventListener('click', () => setDocumentAiPanelOpen(false));
+  els.documentAiExtractDocument?.addEventListener('click', () => {
+    extractWholeDocumentAi().catch(() => {});
+  });
   els.documentAiClassify?.addEventListener('click', () => {
     classifyActiveDocumentPage().catch(() => {});
   });
@@ -3798,6 +4126,36 @@
     const button = event.target.closest?.('[data-ai-chat-page]');
     const pageNumber = Number(button?.dataset?.aiChatPage || 0);
     if (pageNumber > 0) window.PortalPdfViewer?.scrollToPage?.(pageNumber);
+  });
+  els.documentAiDocumentResults?.addEventListener('click', (event) => {
+    const source = event.target.closest?.('[data-ai-source-page]');
+    if (source) {
+      const pageNumber = Number(source.dataset.aiSourcePage || 0);
+      if (pageNumber > 0) window.PortalPdfViewer?.scrollToPage?.(pageNumber);
+      return;
+    }
+    const copy = event.target.closest?.('[data-ai-copy-result-index]');
+    if (copy) {
+      const index = Number(copy.dataset.aiCopyResultIndex);
+      const extraction = Number.isInteger(index) ? state.documentAiResults[index] : null;
+      if (!extraction) return;
+      copyDocumentAiText(documentAiFormattedBlock(extraction)).then((ok) => {
+        if (!els.documentAiDocumentStatus) return;
+        els.documentAiDocumentStatus.className = ok
+          ? 'documents-ai-document-status success'
+          : 'documents-ai-document-status warning';
+        els.documentAiDocumentStatus.textContent = ok ? 'Bloco copiado.' : 'Não foi possível copiar o bloco.';
+      }).catch(() => {});
+    }
+  });
+  els.documentAiCopyAll?.addEventListener('click', () => {
+    copyDocumentAiText(documentAiAllResultsBlock()).then((ok) => {
+      if (!els.documentAiDocumentStatus) return;
+      els.documentAiDocumentStatus.className = ok
+        ? 'documents-ai-document-status success'
+        : 'documents-ai-document-status warning';
+      els.documentAiDocumentStatus.textContent = ok ? 'Dados extraídos copiados.' : 'Não foi possível copiar os dados.';
+    }).catch(() => {});
   });
   els.documentAiExtractionFields?.addEventListener('click', (event) => {
     const button = event.target.closest?.('[data-ai-copy-field]');

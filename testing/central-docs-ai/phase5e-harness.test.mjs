@@ -68,6 +68,7 @@ test('matriz 5E valida os oito campos de cada página autorizada, não apenas am
     }
   }
 
+  assert.match(js, /cns: \['encontrado', '111111111111111'\]/);
   assert.match(js, /data_nascimento: \['encontrado', '01\/01\/2000'\]/);
   assert.match(js, /agente: \['encontrado', 'AGENTE SINTÉTICO A'\]/);
   assert.match(js, /codigo_procedimento: \['encontrado', '000001'\]/);

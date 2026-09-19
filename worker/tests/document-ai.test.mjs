@@ -17,7 +17,7 @@ import {
   documentAiTechnicalEvent
 } from '../document-ai.js';
 
-test('IA documental 5D só processa quando os dois gates estão ligados', () => {
+test('IA documental 5E só processa quando os dois gates estão ligados', () => {
   assert.equal(documentAiEnabled({}), false);
   assert.equal(documentAiProcessingEnabled({ DOCUMENTS_AI_PROCESSING_ENABLED: 'true' }), false);
   assert.equal(documentAiEnabled({ DOCUMENTS_AI_ENABLED: 'true' }), true);
@@ -38,8 +38,8 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
 
   assert.equal(config.phase, DOCUMENT_AI_PHASE);
   assert.equal(config.version, DOCUMENT_AI_VERSION);
-  assert.equal(config.phase, '5D');
-  assert.equal(config.version, 'phase5d-v1');
+  assert.equal(config.phase, '5E');
+  assert.equal(config.version, 'phase5e-v2');
   assert.equal(config.enabled, true);
   assert.equal(config.processingEnabled, false);
   assert.equal(config.pageIsolation, true);
@@ -47,6 +47,7 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
   assert.equal(config.persistence, 'none');
   assert.equal(config.features.classifyPage, true);
   assert.equal(config.features.extractPage, true);
+  assert.equal(config.features.extractDocument, true);
   assert.equal(config.features.documentChat, true);
   assert.equal(Array.isArray(config.routines), true);
   const serialized = JSON.stringify(config);
@@ -149,6 +150,46 @@ test('extração restritiva exige todos os campos e recusa campos inesperados', 
     pageType: 'comprovante_atendimento',
     fields: missing
   }), /todos os campos obrigatórios/);
+});
+
+
+test('comprovante aplica somente normalizações autorizadas de CNS e data', () => {
+  const fields = Object.fromEntries(
+    DOCUMENT_AI_EXTRACTION_FIELDS.comprovante_atendimento.map((key) => [
+      key,
+      { state: 'nao_consta', value: '' }
+    ])
+  );
+  fields.cns = { state: 'encontrado', value: '123 4567 8901 2345' };
+  fields.data_nascimento = { state: 'encontrado', value: '1-2-2000' };
+  fields.endereco = { state: 'encontrado', value: 'RUA Teste, 10 - Centro' };
+
+  const normalized = normalizeDocumentAiExtraction({
+    pageNumber: 1,
+    pageType: 'comprovante_atendimento',
+    fields
+  });
+
+  assert.equal(normalized.fields.cns.value, '123456789012345');
+  assert.equal(normalized.fields.data_nascimento.value, '01/02/2000');
+  assert.equal(normalized.fields.endereco.value, 'RUA Teste, 10 - Centro');
+
+  fields.cns = { state: 'encontrado', value: '1234X6789012345' };
+  let preserved = normalizeDocumentAiExtraction({
+    pageNumber: 1,
+    pageType: 'comprovante_atendimento',
+    fields
+  });
+  assert.equal(preserved.fields.cns.value, '1234X6789012345');
+
+  fields.cns = { state: 'encontrado', value: '123 4567 8901 2345' };
+  fields.data_nascimento = { state: 'encontrado', value: 'texto não normalizável' };
+  preserved = normalizeDocumentAiExtraction({
+    pageNumber: 1,
+    pageType: 'comprovante_atendimento',
+    fields
+  });
+  assert.equal(preserved.fields.data_nascimento.value, 'texto não normalizável');
 });
 
 test('extração recusa troca de página, troca de tipo e tipo outro', () => {

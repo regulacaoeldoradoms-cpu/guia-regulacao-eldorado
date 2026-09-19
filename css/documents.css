@@ -2454,6 +2454,124 @@
 }
 
 
+/* Titon — extração integral do documento em um clique */
+.documents-ai-batch {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #cfe0ec;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.documents-ai-batch > strong {
+  display: block;
+  color: #153854;
+  font-size: .84rem;
+}
+
+.documents-ai-batch > p {
+  margin: 5px 0 11px;
+  color: #63798c;
+  font-size: .75rem;
+  line-height: 1.45;
+}
+
+.documents-ai-run-button {
+  width: 100%;
+  justify-content: center;
+  min-height: 42px;
+}
+
+.documents-ai-document-status {
+  margin-top: 9px;
+  color: #5a7084;
+  font-size: .74rem;
+  line-height: 1.45;
+}
+
+.documents-ai-document-status.warning { color: #8a5f0a; }
+.documents-ai-document-status.success { color: #176049; }
+
+.documents-ai-document-results {
+  display: grid;
+  gap: 10px;
+  margin-top: 11px;
+}
+
+.documents-ai-result-card {
+  border: 1px solid #d4e1ea;
+  border-radius: 11px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.documents-ai-result-head {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 9px 10px;
+  background: #eef6fc;
+  border-bottom: 1px solid #d8e5ee;
+}
+
+.documents-ai-result-head strong {
+  color: #153854;
+  font-size: .76rem;
+  line-height: 1.35;
+}
+
+.documents-ai-result-head .portal-button {
+  flex: 0 0 auto;
+  padding: 5px 7px;
+  font-size: .66rem;
+}
+
+.documents-ai-result-card .documents-ai-extraction-fields {
+  padding: 9px;
+}
+
+.documents-ai-result-card .documents-ai-field {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.documents-ai-copy-result {
+  width: calc(100% - 18px);
+  margin: 0 9px 9px;
+  justify-content: center;
+  font-size: .7rem;
+}
+
+.documents-ai-empty-result {
+  padding: 10px 11px;
+  border: 1px dashed #c8d8e4;
+  border-radius: 10px;
+  background: #f9fbfd;
+  color: #63798c;
+  font-size: .73rem;
+  font-weight: 750;
+}
+
+.documents-ai-document-actions {
+  margin-top: 10px;
+}
+
+.documents-ai-document-actions .portal-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.documents-ai-routines-section summary {
+  cursor: pointer;
+  color: #4d6679;
+  font-size: .75rem;
+  font-weight: 800;
+}
+
+.documents-ai-routines-section[open] summary {
+  margin-bottom: 9px;
+}
+
 /* Fase 5D — perguntas documentais */
 .documents-ai-chat {
   margin-top: 16px;

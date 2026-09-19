@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260918-4">
+  <link rel="stylesheet" href="/css/documents.css?v=20260919-1">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -111,48 +111,45 @@
                 <span class="sr-only">IA documental</span>
               </button>
             </nav>
-            <aside class="documents-ai-panel" id="documentsAiPanel" hidden aria-label="IA documental">
+            <aside class="documents-ai-panel" id="documentsAiPanel" hidden aria-label="Titon · IA documental">
               <div class="documents-ai-panel-head">
                 <div>
-                  <span>IA documental</span>
-                  <strong>Perguntas documentais · Fase 5D</strong>
+                  <span>Titon · IA documental</span>
+                  <strong>Extrair dados do PDF</strong>
                 </div>
                 <button class="documents-ai-close" id="documentsAiCloseButton" type="button" aria-label="Fechar IA documental">×</button>
               </div>
               <div class="documents-ai-panel-body">
-                <p id="documentsAiDescription">A IA documental usa somente evidências extraídas e vinculadas às páginas deste PDF.</p>
+                <p id="documentsAiDescription">O Titon percorre o PDF, identifica as páginas autorizadas e extrai os campos sem misturar informações entre páginas.</p>
                 <div class="documents-ai-safety" id="documentsAiSafety" role="note">
-                  O processamento permanece desabilitado em produção até a homologação controlada da Fase 5E.
+                  Cada página é processada isoladamente. Campos ausentes retornam NÃO CONSTA e campos presentes porém ilegíveis retornam ILEGÍVEL.
                 </div>
-                <section class="documents-ai-classification" aria-labelledby="documentsAiClassificationTitle">
-                  <strong id="documentsAiClassificationTitle">Página atual</strong>
-                  <p>A classificação envia somente a imagem da página selecionada, sem nome de arquivo ou ID do Drive.</p>
-                  <button class="portal-button secondary" id="documentsAiClassifyButton" type="button" disabled>Classificar página atual</button>
-                  <div class="documents-ai-classification-status" id="documentsAiClassificationStatus" aria-live="polite"></div>
-                  <div class="documents-ai-classification-result" id="documentsAiClassificationResult" hidden></div>
-                  <button class="portal-button primary documents-ai-extract-button" id="documentsAiExtractButton" type="button" disabled>Extrair campos desta página</button>
-                  <div class="documents-ai-extraction-status" id="documentsAiExtractionStatus" aria-live="polite"></div>
-                  <div class="documents-ai-extraction-result" id="documentsAiExtractionResult" hidden>
-                    <div class="documents-ai-extraction-fields" id="documentsAiExtractionFields"></div>
-                    <div class="documents-ai-extraction-actions">
-                      <button class="portal-button secondary" id="documentsAiCopyBlockButton" type="button">Copiar bloco</button>
-                      <button class="portal-button ghost" id="documentsAiViewSourceButton" type="button">Ver origem</button>
-                    </div>
+
+                <section class="documents-ai-batch" aria-labelledby="documentsAiBatchTitle">
+                  <strong id="documentsAiBatchTitle">Extração automática</strong>
+                  <p>Um único clique analisa todas as páginas do PDF. Páginas não autorizadas são ignoradas; cada página médica válida gera um bloco separado.</p>
+                  <button class="portal-button primary documents-ai-run-button" id="documentsAiExtractDocumentButton" type="button" disabled>Extrair dados do PDF</button>
+                  <div class="documents-ai-document-status" id="documentsAiDocumentStatus" aria-live="polite"></div>
+                  <div class="documents-ai-document-results" id="documentsAiDocumentResults" hidden></div>
+                  <div class="documents-ai-document-actions" id="documentsAiDocumentActions" hidden>
+                    <button class="portal-button secondary" id="documentsAiCopyAllButton" type="button">Copiar dados</button>
                   </div>
                 </section>
+
                 <section class="documents-ai-chat" aria-labelledby="documentsAiChatTitle">
-                  <strong id="documentsAiChatTitle">Perguntar sobre evidências extraídas</strong>
-                  <p>As respostas usam somente campos já extraídos e preservam a página de origem. Extraia as páginas relevantes antes de perguntar.</p>
+                  <strong id="documentsAiChatTitle">Perguntar sobre os dados extraídos</strong>
+                  <p>Opcional. As respostas usam somente os blocos já extraídos e preservam as páginas de origem.</p>
                   <label class="sr-only" for="documentsAiChatQuestion">Pergunta documental</label>
-                  <textarea id="documentsAiChatQuestion" maxlength="1200" rows="3" placeholder="Ex.: Qual procedimento solicitado consta nas páginas extraídas?"></textarea>
-                  <button class="portal-button primary" id="documentsAiChatSendButton" type="button" disabled>Perguntar</button>
+                  <textarea id="documentsAiChatQuestion" maxlength="1200" rows="3" placeholder="Ex.: Qual procedimento solicitado consta no documento?"></textarea>
+                  <button class="portal-button secondary" id="documentsAiChatSendButton" type="button" disabled>Perguntar</button>
                   <div class="documents-ai-chat-status" id="documentsAiChatStatus" aria-live="polite"></div>
                   <div class="documents-ai-chat-messages" id="documentsAiChatMessages" aria-live="polite"></div>
                 </section>
-                <section class="documents-ai-routines-section" aria-labelledby="documentsAiRoutinesTitle">
-                  <strong id="documentsAiRoutinesTitle">Rotinas versionadas</strong>
+
+                <details class="documents-ai-routines-section">
+                  <summary id="documentsAiRoutinesTitle">Rotinas técnicas</summary>
                   <div class="documents-ai-routines" id="documentsAiRoutines"></div>
-                </section>
+                </details>
               </div>
             </aside>
             <div class="documents-pdf-toolbar" role="toolbar" aria-label="Controles do PDF">
@@ -294,7 +291,7 @@
   <script src="/js/tools-catalog.js?v=20260911-3"></script>
   <script src="/js/document-cache.js?v=20260912-1"></script>
   <script src="/js/document-editor.js?v=20260916-2"></script>
-  <script src="/js/document-viewer.js?v=20260918-1"></script>
-  <script src="/js/documents.js?v=20260918-4"></script>
+  <script src="/js/document-viewer.js?v=20260919-1"></script>
+  <script src="/js/documents.js?v=20260919-1"></script>
 </body>
 </html>

@@ -6,8 +6,8 @@ import {
   documentAiRoutineMetadata
 } from './document-ai-prompts.js';
 
-export const DOCUMENT_AI_PHASE = '5D';
-export const DOCUMENT_AI_VERSION = 'phase5d-v1';
+export const DOCUMENT_AI_PHASE = '5E';
+export const DOCUMENT_AI_VERSION = 'phase5e-v2';
 const DOCUMENT_AI_RUNTIME_READY = true;
 
 export const DOCUMENT_AI_EXTRACTION_FIELDS = Object.freeze({
@@ -68,6 +68,7 @@ export function documentAiPublicConfig(env = {}) {
     features: {
       classifyPage: true,
       extractPage: true,
+      extractDocument: true,
       documentChat: true
     },
     routines: documentAiRoutineMetadata()
@@ -101,6 +102,44 @@ export function normalizeDocumentAiClassification(value) {
     throw new DocumentAiError('DOCUMENT_AI_PAGE_TYPE_INVALID', 'Classificação de página inválida.', 400);
   }
   return { pageNumber, pageType };
+}
+
+function normalizeCnsForOutput(value) {
+  const source = String(value || '').trim();
+  // Normalização autorizada é apenas de separadores. Se houver qualquer
+  // caractere alfabético/inesperado, preservamos o literal em vez de "corrigir".
+  if (!/^[0-9\s.\/-]+$/.test(source)) return source;
+  const digits = source.replace(/\D/g, '');
+  return digits || source;
+}
+
+function normalizeBirthDateForOutput(value) {
+  const source = String(value || '').trim();
+  let match = source.match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
+  if (match) {
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      return String(day).padStart(2, '0') + '/' + String(month).padStart(2, '0') + '/' + match[3];
+    }
+  }
+  match = source.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (match) {
+    const month = Number(match[2]);
+    const day = Number(match[3]);
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      return String(day).padStart(2, '0') + '/' + String(month).padStart(2, '0') + '/' + match[1];
+    }
+  }
+  return source;
+}
+
+function normalizeDocumentAiFieldForSchema(pageType, key, value) {
+  const field = normalizeDocumentAiField(value);
+  if (field.state !== 'encontrado' || pageType !== 'comprovante_atendimento') return field;
+  if (key === 'cns') return { ...field, value: normalizeCnsForOutput(field.value) };
+  if (key === 'data_nascimento') return { ...field, value: normalizeBirthDateForOutput(field.value) };
+  return field;
 }
 
 export function normalizeDocumentAiExtraction(value, expected = {}) {
@@ -157,7 +196,7 @@ export function normalizeDocumentAiExtraction(value, expected = {}) {
         502
       );
     }
-    fields[key] = normalizeDocumentAiField(sourceFields[key]);
+    fields[key] = normalizeDocumentAiFieldForSchema(pageType, key, sourceFields[key]);
   }
 
   return { pageNumber, pageType, fields };
