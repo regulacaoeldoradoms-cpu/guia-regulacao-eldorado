@@ -173,14 +173,12 @@ export async function classifyDocumentAiPage(env, input = {}, options = {}) {
   }
 
   const parsed = parseJsonCandidate(candidateText(payload));
-  const classification = normalizeDocumentAiClassification(parsed);
-  if (classification.pageNumber !== pageNumber) {
-    throw new DocumentAiError(
-      'DOCUMENT_AI_PAGE_PROVENANCE_MISMATCH',
-      'A classificação perdeu a proveniência da página.',
-      502
-    );
-  }
+  // A proveniência da página é metadado técnico do backend, não conteúdo a ser
+  // confiado ao modelo. O provedor decide apenas o tipo; o número vem da rota.
+  const classification = normalizeDocumentAiClassification({
+    ...parsed,
+    pageNumber
+  });
 
   return {
     classification,
@@ -298,7 +296,13 @@ export async function extractDocumentAiPage(env, input = {}, options = {}) {
   }
 
   const parsed = parseJsonCandidate(candidateText(payload));
-  const extraction = normalizeDocumentAiExtraction(parsed, { pageNumber, pageType });
+  // Número e tipo já foram autorizados pelo backend. Nunca dependemos de a IA
+  // ecoar corretamente esses metadados para preservar a origem da extração.
+  const extraction = normalizeDocumentAiExtraction({
+    ...parsed,
+    pageNumber,
+    pageType
+  }, { pageNumber, pageType });
   return {
     extraction,
     routine: {
