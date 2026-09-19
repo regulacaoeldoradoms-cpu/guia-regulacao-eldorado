@@ -255,4 +255,6 @@ Possível intervenção futura:
 
 ## Próximo passo atual
 
-Validar e integrar o **preparo técnico da 5E** mantendo os gates produtivos desligados. Depois usar um preview Pages comum da branch/PR, selecionar o alias Worker 5E somente em memória e executar o procedimento local de preparo. A primeira chamada real ao provedor continua bloqueada até confirmação explícita do operador.
+O preparo técnico e operacional da **5E** já está integrado à `main`, com produção mantendo os gates da IA documental desligados. Antes da primeira chamada real ao provedor, a matriz foi endurecida para comparar todos os oito campos de cada página autorizada, incluindo os casos `nao_consta` e `ilegivel`.
+
+A próxima intervenção externa continua sendo configurar `GEMINI_API_KEY` como secret do Worker sem expor o valor. Depois disso, executar o verificador somente leitura e, apenas se retornar `PRECONDICOES_5E_OK`, iniciar a janela controlada 5E. A homologação usa somente fixtures sintéticos, não escreve no Drive e deve ser encerrada em modo fail-closed antes de qualquer avaliação de publicação da Fase 5.
