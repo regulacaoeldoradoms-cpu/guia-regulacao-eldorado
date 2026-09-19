@@ -1033,6 +1033,19 @@ Consequências obrigatórias:
 
 Essa regra é de governança do projeto e não deve ser tratada como preferência temporária.
 
+## Incidente controlado: encerramento da janela 5E legado bloqueado — 18/09/2026
+
+O operador tentou encerrar a janela 5E anterior após a migração do Titon para Workers AI. O procedimento parou na etapa `1/5 Reconfirmando preview e banco da janela...` com:
+`INTERVENCAO_NECESSARIA_WORKERS_AI_BINDING_AUSENTE`.
+
+Impacto: **nenhuma revogação D1, upload, alteração de alias, Drive ou produção ocorreu nessa tentativa**, porque a falha aconteceu antes da etapa 2/5 (`disableControlSql`).
+
+Causa: `encerrar-homologacao-5e.mjs` reutilizava `inspectProductionVersion()` sobre o preview antigo. Após a migração da PR #260, essa função passou a exigir binding `AI` por padrão. O preview legado foi criado antes dessa exigência e, corretamente, não contém o binding Workers AI.
+
+Correção: a inspeção agora aceita `requireWorkersAi:false` somente no caminho de encerramento. O preparo/verificador de **nova** janela continua exigindo Workers AI normalmente. O fechamento legado ainda preserva D1, runtime, secrets mínimos, upload preview bloqueado e confirmação HTTP final.
+
+**Próxima ação:** após CI/merge desta correção, o operador deve baixar novamente os scripts da `main`, repetir apenas `encerrar-homologacao-5e.mjs --encerrar` e depois rodar o verificador read-only. Não recriar controle/janela antiga.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — Workers AI free-only integrado; novo reteste aguarda confirmação de plano Free e encerramento da janela antiga**. Produção continua com IA documental desligada.
