@@ -16,6 +16,8 @@ on:
       - 'scripts/central-docs/diagnosticar-capability-5e.test.mjs'
       - 'scripts/central-docs/habilitar-extract-5e.mjs'
       - 'scripts/central-docs/habilitar-extract-5e.test.mjs'
+      - 'scripts/central-docs/diagnosticar-conectividade-browser-5e.mjs'
+      - 'scripts/central-docs/diagnosticar-conectividade-browser-5e.test.mjs'
       - 'testing/central-docs-ai/**'
       - 'scripts/build-central-docs-staging.mjs'
       - '.github/workflows/validate-central-docs-operational-5e.yml'
@@ -45,6 +47,7 @@ jobs:
           node --check scripts/central-docs/verificar-precondicoes-5e.mjs
           node --check scripts/central-docs/diagnosticar-capability-5e.mjs
           node --check scripts/central-docs/habilitar-extract-5e.mjs
+          node --check scripts/central-docs/diagnosticar-conectividade-browser-5e.mjs
           node --check scripts/central-docs/iniciar-homologacao-5e.mjs
           node --check testing/central-docs-ai/phase5e-harness.js
 
@@ -69,6 +72,9 @@ jobs:
 
       - name: Executar contrato da habilitação estreita de extract 5E
         run: node --test scripts/central-docs/habilitar-extract-5e.test.mjs
+
+      - name: Executar contrato do diagnóstico Browser -> Worker 5E
+        run: node --test scripts/central-docs/diagnosticar-conectividade-browser-5e.test.mjs
 
       - name: Garantir que procedimentos não promovem produção
         run: |
