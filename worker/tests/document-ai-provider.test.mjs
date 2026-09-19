@@ -104,14 +104,13 @@ test('classificação envia exatamente uma imagem e somente o número técnico d
   assert.match(body.systemInstruction.parts[0].text, /exatamente UMA página/i);
 });
 
-test('proveniência técnica da classificação é ancorada pelo backend, não pelo eco do modelo', async () => {
+test('proveniência técnica da classificação é ancorada pelo backend mesmo sem eco de pageNumber', async () => {
   const result = await classifyDocumentAiPage(enabledEnv(), {
     pageNumber: 2,
     mimeType: 'image/png',
     bytes: new Uint8Array([9, 8, 7])
   }, {
     fetchImpl: async () => okResponse({
-      pageNumber: 999,
       pageType: 'pagina_medica_autorizada'
     })
   });
@@ -220,7 +219,8 @@ test('extração envia uma única imagem e preserva literalidade no schema autor
 
 test('extração ancora página/tipo no backend e ainda rejeita campo fora do schema', async () => {
   const providerPayload = extractionPayload(777, 'comprovante_atendimento');
-  providerPayload.pageType = 'pagina_medica_autorizada';
+  delete providerPayload.pageNumber;
+  delete providerPayload.pageType;
   const anchored = await extractDocumentAiPage(enabledEnv(), {
     pageNumber: 6,
     pageType: 'comprovante_atendimento',
