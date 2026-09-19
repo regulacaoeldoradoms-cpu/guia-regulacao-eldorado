@@ -433,15 +433,21 @@
       .sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber))
       .forEach((item) => {
         const totalMs = Math.max(0, Math.round(Number(item.durationMs || 0)));
+        const prepareMs = Math.max(0, Math.round(Number(item.prepareMs || 0)));
         const providerMs = Math.max(0, Math.round(Number(item.providerDurationMs || 0)));
-        const overheadMs = Math.max(0, totalMs - providerMs);
+        const transportMs = Math.max(0, Math.round(Number(item.transportBackendMs || 0)));
+        const modelChain = Array.isArray(item.attemptModels) && item.attemptModels.length
+          ? item.attemptModels.join('>')
+          : String(item.model || 'nenhum');
         lines.push(
           'pagina_' + String(item.pageNumber).padStart(2, '0')
           + '_ms=' + totalMs
+          + ' | preparo_ms=' + prepareMs
           + ' | provider_ms=' + providerMs
-          + ' | overhead_ms=' + overheadMs
+          + ' | transporte_backend_ms=' + transportMs
           + ' | tentativas=' + Math.max(0, Math.round(Number(item.attemptCount || 0)))
-          + ' | modelo=' + String(item.model || 'nenhum').replace(/[\r\n=|]+/g, ' ').slice(0, 100)
+          + ' | revisado=' + (item.reviewed === true ? 'sim' : 'nao')
+          + ' | modelos=' + String(modelChain).replace(/[\r\n=|]+/g, ' ').slice(0, 180)
         );
       });
 
@@ -524,9 +530,12 @@
       const concurrency = Math.min(6, fixtures.length);
 
       const analyzeFixture = async (fixture, index) => {
-        const canvas = els.fixtureGrid.querySelector('canvas[data-fixture-id="' + fixture.id + '"]');
-        const blob = await blobFromCanvas(canvas);
         const pageStarted = performance.now();
+        const canvas = els.fixtureGrid.querySelector('canvas[data-fixture-id="' + fixture.id + '"]');
+        const blobStarted = performance.now();
+        const blob = await blobFromCanvas(canvas);
+        const prepareMs = performance.now() - blobStarted;
+        const requestStarted = performance.now();
 
         try {
           const payload = await extractFixture(fixture, blob);
@@ -553,6 +562,7 @@
             state.mismatchFields.set(fixture.pageNumber, mismatches);
           }
 
+          const requestDurationMs = performance.now() - requestStarted;
           const durationMs = performance.now() - pageStarted;
           const provider = payload?.provider || {};
           const providerModel = String(provider?.model || '');
@@ -561,6 +571,10 @@
             (sum, attempt) => sum + Math.max(0, Number(attempt?.durationMs || 0)),
             0
           );
+          const transportBackendMs = Math.max(0, requestDurationMs - providerDurationMs);
+          const attemptModels = providerAttempts
+            .map((attempt) => String(attempt?.model || '').trim())
+            .filter(Boolean);
           pageResults[index] = {
             fixture,
             passed,
@@ -583,8 +597,12 @@
             extraction: passed ? extraction : null,
             providerModel,
             durationMs,
+            prepareMs,
             providerDurationMs,
-            attemptCount: providerAttempts.length
+            transportBackendMs,
+            attemptCount: providerAttempts.length,
+            attemptModels,
+            reviewed: provider?.reviewed === true
           };
         } catch (error) {
           pageResults[index] = {
@@ -594,8 +612,12 @@
             extraction: null,
             providerModel: '',
             durationMs: performance.now() - pageStarted,
+            prepareMs,
             providerDurationMs: 0,
-            attemptCount: 0
+            transportBackendMs: Math.max(0, performance.now() - requestStarted),
+            attemptCount: 0,
+            attemptModels: [],
+            reviewed: false
           };
         }
       };
@@ -622,8 +644,12 @@
           pageNumber: item.fixture.pageNumber,
           model: item.providerModel,
           durationMs: item.durationMs,
+          prepareMs: item.prepareMs,
           providerDurationMs: item.providerDurationMs,
-          attemptCount: item.attemptCount
+          transportBackendMs: item.transportBackendMs,
+          attemptCount: item.attemptCount,
+          attemptModels: item.attemptModels,
+          reviewed: item.reviewed
         });
         addResult(
           'Página ' + item.fixture.pageNumber + ' · análise integrada',
