@@ -313,7 +313,7 @@ A V6 de precisão textual está sendo preparada para esse caso:
 - prompt integrado V2 com regra inequívoca `campo/rótulo presente + valor ilegível = ilegivel`, nunca `nao_consta`;
 - revisão visual caractere a caractere;
 - texto aparentemente imperativo dentro de um valor continua sendo dado literal;
-- revisão focal no Qwen apenas nos campos ambíguos de páginas médicas, sem penalizar todas as páginas;
+- revisão focal no Qwen apenas nos campos ambíguos de páginas médicas; CID e descrição são revisados juntos quando houver ambiguidade, sem penalizar todas as páginas;
 - diagnóstico seguro das chaves divergentes no laboratório.
 
 A janela V5 atual deve ser encerrada fail-closed antes do reteste V6. Depois do merge, congelar novo source ref + Pages e repetir a matriz.
