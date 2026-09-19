@@ -98,6 +98,7 @@ test('modo V7 coloca Moondream antes de Gemma/Qwen somente para visão', async (
   assert.match(calls[0].input.image, /^data:image\/png;base64,/);
   assert.match(calls[0].input.question, /Analise somente esta página/);
   assert.equal(calls[0].input.reasoning, false);
+  assert.equal(calls[0].input.stream, false);
   assert.equal(calls[0].input.messages, undefined);
   assert.deepEqual(calls[0].runOptions, { rejectIfBusy: true });
   assert.equal(result.classification.pageType, 'outro');
