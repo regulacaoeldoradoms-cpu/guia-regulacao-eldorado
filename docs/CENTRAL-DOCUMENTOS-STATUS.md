@@ -1595,6 +1595,26 @@ A janela V6 continua a última janela aberta e precisa ser encerrada fail-closed
 
 **Próxima ação exata:** encerrar V6; atualizar scripts locais da main; executar readiness V7 e confirmar exatamente source `8faf51af...` + Pages `b8dd14db...`; preparar nova janela e rodar a matriz uma única vez.
 
+## Revisão final de estratégia V7 — 19/09/2026
+
+A revisão adicional concluiu que o melhor próximo passo é **medir o V7 stream-safe já congelado antes de adicionar outra otimização**.
+
+Evidências técnicas:
+- contrato Moondream revisado e corrigido (`stream=false`, `reasoning=false`, `task=query`);
+- `rejectIfBusy=true` está conforme a API atual do Workers AI;
+- concorrência 6 está muito abaixo do limite padrão de Image-to-Text (720 req/min), portanto não há motivo documental para reduzi-la preventivamente;
+- Workers Free permanece com 10.000 Neurons/dia e falha ao exceder; Moondream não está na lista atual de modelos que exigem Workers Paid;
+- Batch API e Markdown Conversion não melhoram o caminho interativo de imagem;
+- prompt caching/Smart Placement não têm benefício comprovado para este caso e não serão adicionados especulativamente.
+
+O laboratório já informa `provider_ms`, `overhead_ms`, número de tentativas e modelo por página. Esses dados determinam a próxima otimização:
+- provider lento + 1 tentativa: avaliar prompt/modelo;
+- muitas tentativas: tratar fallback/capacidade;
+- overhead alto: otimizar render/compressão/transporte;
+- V7 correto porém ainda <2x: iniciar V8 híbrida com text-layer PDF.js + visão seletiva, mantendo autorização backend.
+
+**Decisão de governança:** não empilhar mudança de resolução, prompt, modelo ou text-layer antes desta medição. O próximo passo continua sendo a homologação V7 stream-safe após o encerramento fail-closed da janela V6.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |

@@ -108,3 +108,30 @@ A documentação oficial do modelo registra `stream=true` como padrão para a ta
 Também foi endurecido o parser para um caso frequente em VLMs rápidos: se a resposta contiver um único objeto JSON válido envolvido por uma frase curta, o backend extrai apenas o objeto delimitado e aplica imediatamente o mesmo schema estrito. Isso não afrouxa campos, estados ou proveniência; apenas evita cair para Gemma por embalagem textual superficial.
 
 Essas duas mudanças são consideradas correção de contrato/desempenho, não mudança de escopo funcional. A V7 anterior não deve ser homologada antes desta correção ser integrada e as referências congeladas serem renovadas.
+
+
+## Revisão final antes da homologação V7 — 19/09/2026
+
+Revisão cruzada com a documentação atual do Cloudflare Workers AI:
+
+- Moondream 3.1 é Image-to-Text, 9B totais / 2B ativos, com OCR e structured output como casos de uso; o changelog publica p50 aproximado de 770 ms para `query` em imagem simples, mas isso não é SLO para nossos documentos.
+- `query` usa `stream=true` por padrão; o Titon agora fixa `stream=false`, porque precisa do JSON completo antes de validar a página.
+- `rejectIfBusy=true` está no lugar correto: terceiro argumento de `env.AI.run()`. Assim não esperamos em fila de capacidade; erro 3040 cai para o fallback gratuito.
+- O limite padrão atual de Image-to-Text é 720 req/min por conta, muito acima da concorrência de 6 páginas do Titon. Isso não elimina indisponibilidade de capacidade, mas afasta rate limit como razão para reduzir a concorrência preventivamente.
+- Workers Free mantém 10.000 Neurons/dia sem cobrança; ao esgotar, retorna 3036. Moondream não consta na lista atual de modelos que exigem Workers Paid. A política do Titon continua: sem AI Gateway/prepaid/unified billing.
+- Prompt caching não é assumido para Moondream. A documentação diz que cache de prefixo só existe em modelos selecionados e depende de compatibilidade/modelo; não há benefício comprovado aqui que justifique acoplar session affinity antes da medição.
+- Smart Placement também não entra nesta rodada: o gargalo candidato é a própria inferência no binding Workers AI, não um backend externo single-homed.
+- Batch API permanece descartada para o clique interativo: a Cloudflare a descreve como fila assíncrona com polling para workloads sem interação humana.
+- Markdown Conversion em imagens adiciona object detection + Gemma 4; portanto não é um atalho para esta visão. Em PDF digital, a extração textual sem visão pode ser útil no futuro, mas precisa ser validada contra literalidade e permissões antes de substituir qualquer resultado visual.
+
+### Regra de decisão após o próximo teste
+
+O próximo teste não deve gerar nova rodada de mudanças especulativas. Usar o resumo seguro para localizar o gargalo:
+
+1. Se `provider_ms` dominar e Moondream resolver a maioria das páginas em 1 tentativa, manter a arquitetura e medir se o objetivo 2x foi cumprido.
+2. Se `provider_ms` dominar, mas houver muitas tentativas/fallbacks, ajustar apenas a causa observada: prompt fast-path, concorrência ou regra de fallback.
+3. Se `overhead_ms` dominar, otimizar preparação/transporte da imagem; só então experimentar edge menor/compressão, preservando a página ilegível como teste de regressão.
+4. Se mesmo com Moondream 1-shot a meta 2x não for alcançada, avançar para V8 híbrida: text-layer do PDF.js para detectar páginas digitais e caminho visual apenas para escaneadas/ambíguas. A saída final não deve ser aceita localmente sem respeitar a capability `extract` no backend.
+5. Não alterar resolução, prompt e modelo simultaneamente. Medir uma variável por vez.
+
+Decisão: **nenhuma outra mudança funcional será empilhada antes da homologação V7 stream-safe**. Isso evita transformar a fase em polimento infinito e preserva um experimento comparável.
