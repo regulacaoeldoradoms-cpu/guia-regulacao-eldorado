@@ -168,6 +168,12 @@ O laboratório gera canvases no navegador; não carrega PDF clínico ou arquivo 
    - o campo deve retornar `ilegivel`;
    - a IA não deve inferir o CID pela descrição ou conhecimento externo.
 
+### Regra de literalidade da matriz
+
+Para cada página autorizada, a homologação compara **todos os oito campos do schema**, não apenas campos-amostra. Nas páginas completas, cada valor precisa coincidir literalmente com o fixture da própria página. Nas páginas de campo ausente ou ilegível, os sete campos restantes também precisam permanecer literais e isolados, enquanto o campo especial deve retornar respectivamente `nao_consta` ou `ilegivel` com valor vazio.
+
+Isso faz a matriz real comprovar simultaneamente literalidade e ausência de mistura entre páginas conflitantes.
+
 ### Perguntas da matriz
 
 Depois das extrações aprovadas, o harness pergunta, entre outros casos:
