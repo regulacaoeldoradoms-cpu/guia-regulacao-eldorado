@@ -393,10 +393,8 @@ function extractionTemplate(pageType) {
 
 function analysisTemplate() {
   return {
-    pageType: 'comprovante_atendimento | pagina_medica_autorizada | outro',
-    fields: {
-      observacao: 'Para outro, use {}. Para página autorizada, use exatamente o schema do tipo.'
-    }
+    pageType: 'outro',
+    fields: {}
   };
 }
 
@@ -416,9 +414,12 @@ export async function analyzeDocumentAiPage(env, input = {}, options = {}) {
 
   const prompt = [
     'Analise somente esta página.',
-    'Retorne JSON no formato exato:',
+    'Retorne JSON somente com as chaves pageType e fields.',
+    'pageType deve ser comprovante_atendimento, pagina_medica_autorizada ou outro.',
+    'Exemplo mínimo para página não autorizada:',
     JSON.stringify(analysisTemplate()),
     '',
+    'Para página autorizada, fields deve seguir exatamente um dos schemas abaixo:',
     'Schemas de fields permitidos:',
     'comprovante_atendimento:',
     JSON.stringify(extractionTemplate('comprovante_atendimento')),
