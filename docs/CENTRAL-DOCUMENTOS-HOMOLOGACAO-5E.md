@@ -23,19 +23,20 @@ A próxima rodada 5E substitui o provider **somente da IA documental** por Cloud
 
 ## Referência congelada para a próxima execução real
 
-O **reteste V6 de precisão textual** deve usar exatamente:
+O **reteste V7 de baixa latência** deve usar exatamente:
 
-- source ref: `76bfefa17bae0729090277525186bdc7dcfc0068`;
-- Pages origin: `https://27a15b34.portal-regulacao-central-staging.pages.dev`;
+- source ref: `cfda5b47d2eafe5dac90685952a3c9429a7dda9f`;
+- Pages origin: `https://a09f45c7.portal-regulacao-central-staging.pages.dev`;
 - Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
-Essas referências correspondem ao merge da PR #276. As referências V5 anteriores são históricas e não devem ser reutilizadas.
+O source ref corresponde ao merge da PR #280. O Pages imutável foi gerado no head `31b11a0e145d1b41b54aed98b53a9aa6fb474da9`; a comparação GitHub entre esse head e o merge `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` mostrou **zero arquivos diferentes**, portanto ambos representam exatamente a mesma árvore de arquivos da V7. As referências V6 anteriores são históricas e não devem ser reutilizadas.
 
-Antes da abertura V6:
-1. encerrar fail-closed a janela V5 que produziu 8/10;
-2. executar o verificador somente leitura;
-3. exigir `PRECONDICOES_5E_OK` com source/Pages V6;
-4. somente então preparar nova janela.
+Antes da abertura V7:
+1. encerrar fail-closed a janela V6 atualmente aberta;
+2. atualizar os scripts locais para a `main` que contém as referências V7 congeladas;
+3. executar o verificador somente leitura;
+4. exigir `PRECONDICOES_5E_OK` com source/Pages V7;
+5. somente então preparar uma nova janela, com controle e prazo novos.
 
 Workers Free e a política R$0 permanecem obrigatórios.
 
@@ -407,6 +408,23 @@ O reteste V6 deve avaliar:
 6. preservação de prompt injection, ausência de mistura e custo zero.
 
 A janela V5 usada neste resultado deve ser encerrada fail-closed antes de qualquer runtime V6. Nenhuma ativação produtiva é automática.
+
+
+## Reteste V7 de baixa latência
+
+A V6 foi executada pelo operador e a percepção operacional registrada foi de latência ainda excessiva. O resumo seguro numérico da V6 não foi fornecido, portanto não há duração exata nem 10/10 registrados a partir da captura visual.
+
+A V7 foi integrada pela PR #280 com:
+- fast path visual opt-in `@cf/moondream/moondream3.1-9B-A2B`;
+- `reasoning=false` no contrato nativo do Moondream;
+- até seis páginas independentes em paralelo;
+- Gemma 4 preservado como fallback visual e modelo do chat textual;
+- Qwen 3.8 preservado como fallback final/revisor focal;
+- remoção da segunda revisão sequencial quando o fast path já retorna `ilegivel` de forma estruturalmente válida;
+- revisão focal ainda obrigatória no caso suspeito `cid=nao_consta` + `descricao_cid=encontrado`;
+- produção com `DOCUMENTS_AI_FAST_VISION_ENABLED=false`, além dos gates documentais produtivos já desligados.
+
+Critério adicional da V7: além de 10/10 na mesma matriz, `duracao_extracao_ms` deve ficar em **no máximo 50%** da V6 numa comparação operacional equivalente. Se isso não ocorrer, a próxima estratégia aprovada é o caminho híbrido PDF.js text-layer + visão somente para páginas escaneadas/ambíguas, conforme `CENTRAL-DOCUMENTOS-IA-LATENCIA-V7.md`.
 
 ## Privacidade
 
