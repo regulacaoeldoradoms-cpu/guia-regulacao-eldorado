@@ -112,8 +112,8 @@ test('classificação envia uma imagem data URI sem identidade do arquivo', asyn
     mimeType: 'image/jpeg',
     bytes: new Uint8Array([1, 2, 3, 4])
   }, {
-    aiRun: async (model, input) => {
-      calls.push({ model, input });
+    aiRun: async (model, input, runOptions) => {
+      calls.push({ model, input, runOptions });
       return workersResponse({ pageType: 'comprovante_atendimento' });
     }
   });
@@ -127,6 +127,7 @@ test('classificação envia uma imagem data URI sem identidade do arquivo', asyn
   assert.match(calls[0].input.image, /^data:image\/jpeg;base64,/);
   assert.equal(calls[0].input.temperature, 0);
   assert.equal(calls[0].input.store, false);
+  assert.deepEqual(calls[0].runOptions, { rejectIfBusy: true });
 
   const serialized = JSON.stringify(calls[0].input);
   assert.doesNotMatch(serialized, /filename|fileId|drive[-_ ]?id|item\.ref|patient|cpf|cns/i);
@@ -358,4 +359,6 @@ test('source do provider não registra conteúdo, não chama Gemini API e não u
   assert.doesNotMatch(source, /GEMINI_API_KEY/);
   assert.doesNotMatch(source, /gateway\.ai\.cloudflare\.com/);
   assert.match(source, /env\.AI\.run/);
+  assert.match(source, /rejectIfBusy: true/);
+  assert.doesNotMatch(source, /\{ signal \}/);
 });
