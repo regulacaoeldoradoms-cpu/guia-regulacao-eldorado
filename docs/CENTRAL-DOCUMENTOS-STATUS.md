@@ -582,6 +582,18 @@ A origem 5E deliberadamente congelada continua sendo `764243d1...`: ela é imut�
 
 **Próxima intervenção humana única:** configurar `GEMINI_API_KEY` como secret do Worker na Cloudflare, sem compartilhar o valor. Em seguida, executar o verificador somente leitura e somente avançar se retornar `PRECONDICOES_5E_OK`.
 
+## GEMINI_API_KEY configurada no Worker — 18/09/2026
+
+O operador confirmou visualmente no painel Cloudflare do Worker `yellow-wave-d0a1guia-regulacao-ia` que existe uma entrada:
+
+- tipo: `Secret`;
+- nome: `GEMINI_API_KEY`;
+- valor: oculto pelo Cloudflare (`Value encrypted`).
+
+Nenhum valor da chave foi compartilhado no chat ou versionado no GitHub. Esta confirmação resolve o bloqueio externo registrado para a Fase 5E.
+
+**Próxima ação exata:** executar `scripts/central-docs/verificar-precondicoes-5e.mjs --verificar`, que é somente leitura. Somente se retornar `PRECONDICOES_5E_OK` iniciar a homologação controlada 5E.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
@@ -708,10 +720,10 @@ Artefatos anteriores preservados:
 | Descartado | usar o Pages antigo `67dd934e…`; iniciar homologação antes de reforçar a matriz; interpretar falha de Worker Preview da PR como falha produtiva |
 | Ações externas | nenhuma alteração de Cloudflare/D1/Drive/secret nesta etapa; apenas builds automáticos do merge |
 | Checks/testes | operacionais 5E `35413947781` success; Fases 1–5E `35413947712` success; staging `35413947796` success; governança `35413947803` success; Worker main success |
-| Bloqueios | somente `GEMINI_API_KEY` ainda precisa ser configurada externamente |
+| Bloqueios | `GEMINI_API_KEY` confirmada como Secret no Cloudflare; resta executar o verificador read-only e depois a homologação controlada |
 | Riscos | provider real ainda não homologado; mitigação é janela preview-only, fixtures 100% sintéticos, Drive write false e encerramento fail-closed |
 | Observabilidade | somente propriedades técnicas allowlisted; nunca conteúdo documental, paciente, arquivo, Drive ID ou resposta bruta |
-| Próxima ação exata | operador configura `GEMINI_API_KEY`; depois executa `verificar-precondicoes-5e.mjs --verificar`; somente com `PRECONDICOES_5E_OK` executa `iniciar-homologacao-5e.mjs --iniciar` |
+| Próxima ação exata | executar `verificar-precondicoes-5e.mjs --verificar`; somente com `PRECONDICOES_5E_OK` executar `iniciar-homologacao-5e.mjs --iniciar` |
 | Depois | executar matriz sintética real, copiar somente o resumo seguro, encerrar 5E fail-closed e avaliar aceite/publicação da Fase 5 |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #237–#244; runs acima |
 
