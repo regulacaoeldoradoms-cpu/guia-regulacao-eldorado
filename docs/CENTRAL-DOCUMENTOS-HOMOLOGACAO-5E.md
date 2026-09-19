@@ -20,11 +20,11 @@ A segunda janela controlada alcançou o provedor real em 18/09/2026. O login/bro
 
 Após integrar o preparo 5E, a execução real deve usar:
 
-- source ref: `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`;
-- Pages origin: `https://915c3113.portal-regulacao-central-staging.pages.dev`;
+- source ref do reteste corrigido: `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2`;
+- Pages origin do reteste corrigido: `https://56753b53.portal-regulacao-central-staging.pages.dev`;
 - Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
-**Atenção:** o source ref abaixo descreve a janela atualmente aberta e ficará histórico após o encerramento. A correção de `DOCUMENT_AI_PAGE_INVALID` exige um novo source ref, que só será congelado depois do merge e dos checks da branch funcional. O source ref do Worker permanece o runtime congelado do PR #237. A Pages origin foi renovada novamente na PR #253 porque o deployment anterior bloqueava o alias 5E pela CSP quando `workerConfigured=false`; o deployment imutável `915c3113` inclui a matriz integral e permite somente o alias oficial em `connect-src`. Não substituir por produção nem por outro alias arbitrário.
+A janela que encontrou `DOCUMENT_AI_PAGE_INVALID` usou historicamente o runtime `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0` e Pages `https://915c3113.portal-regulacao-central-staging.pages.dev`. Para o reteste, o runtime corrigido foi congelado no merge da PR #256 (`39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2`) e o bundle Pages imutável correspondente é `https://56753b53.portal-regulacao-central-staging.pages.dev`. Esse bundle mantém a CSP restrita ao alias oficial 5E. Não substituir por produção nem por outro alias arbitrário.
 
 Pré-condições externas já resolvidas nesta execução: `GEMINI_API_KEY` foi confirmada como Secret no Worker sem expor o valor, e a conta autorizada possui `view=true` e `extract=true`. O verificador continua fail-closed e deve reconfirmar esses estados antes de cada nova janela.
 
@@ -353,3 +353,10 @@ Nunca registrar em GitHub/PostHog/logs:
 - secret ou chave de API.
 
 Os fixtures desta homologação são explicitamente sintéticos e podem aparecer apenas na própria interface de teste e nos testes de código.
+
+
+## Reteste pós-PAGE_INVALID
+
+Antes de abrir a nova janela, a janela anterior `phase5e_bd4d3fe2717e45678fc71e88aaff18c1` deve ser encerrada pelo procedimento fail-closed, mesmo se já estiver expirada. Depois disso, o verificador read-only deve confirmar `PRECONDICOES_5E_OK` usando exatamente o source ref e Pages origin congelados acima.
+
+O merge da PR #256 teve checks direcionados verdes (Fases 1–5E, staging, governança, site, procedimentos 5E e navegador/Chromium) e Pages publicado com sucesso. O check automático **Workers Builds** do Cloudflare para o merge reportou falha sem detalhe técnico suficiente no GitHub; isso permanece como pendência de publicação produtiva e **não autoriza ativação dos gates em produção**. O reteste 5E continua preview-only e baixa o runtime diretamente do source ref Git congelado.
