@@ -40,6 +40,9 @@ DOCUMENTS_AI_ENABLED = "false"
 DOCUMENTS_AI_PROCESSING_ENABLED = "false"
 # Titon: IA documental sem API paga. Apenas modelos Cloudflare-hosted aprovados no Free Tier.
 DOCUMENTS_AI_FREE_ONLY = "true"
+# Fast path V7 permanece desligado em produção até homologação real de latência/precisão.
+DOCUMENTS_AI_FAST_VISION_ENABLED = "false"
+DOCUMENTS_AI_FAST_VISION_MODEL = "@cf/moondream/moondream3.1-9B-A2B"
 DOCUMENTS_AI_PRIMARY_MODEL = "@cf/google/gemma-4-26b-a4b-it"
 DOCUMENTS_AI_FALLBACK_MODELS = "@cf/qwen/qwen3.8-27b"
 DOCUMENTS_AI_TIMEOUT_MS = "6000"
