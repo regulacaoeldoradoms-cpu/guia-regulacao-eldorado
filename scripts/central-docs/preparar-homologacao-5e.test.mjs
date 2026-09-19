@@ -106,6 +106,8 @@ test('config preview 5E liga somente IA e mantém escrita Drive false', () => {
   assert.equal(config.d1_databases[0].database_id, DB);
   assert.equal(config.ai.binding, 'AI');
   assert.equal(config.vars.DOCUMENTS_AI_FREE_ONLY, 'true');
+  assert.equal(config.vars.DOCUMENTS_AI_FAST_VISION_ENABLED, 'true');
+  assert.equal(config.vars.DOCUMENTS_AI_FAST_VISION_MODEL, FIXED_5E.fastVisionModel);
   assert.equal(config.vars.DOCUMENTS_AI_PRIMARY_MODEL, FIXED_5E.primaryModel);
   assert.equal(config.vars.DOCUMENTS_AI_FALLBACK_MODELS, FIXED_5E.fallbackModel);
   assert.deepEqual(config.unsafe.metadata.keep_bindings, []);

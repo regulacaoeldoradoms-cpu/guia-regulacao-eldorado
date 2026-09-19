@@ -1503,23 +1503,56 @@ Nenhum documento real de paciente deve ser usado nesta janela. O laboratório pe
 
 **Próxima ação exata:** abrir o Pages congelado em `/homologacao-5e/`, autenticar com a conta previamente autorizada e executar a matriz sintética V6 uma única vez. Ao final, copiar somente o **resumo seguro** do laboratório e retornar o resultado para avaliação. Não copiar respostas detalhadas, credenciais ou conteúdo das páginas.
 
+## Refinamento V7 de baixa latência iniciado — 19/09/2026
+
+O operador executou a matriz V6 e forneceu evidência visual de conclusão, porém não colou o resumo seguro numérico. Portanto, **não registrar 10/10 nem duração exata sem evidência textual**. A decisão operacional confirmada pelo operador é suficiente: a latência continua alta e o novo requisito é tornar a extração **pelo menos 2x mais rápida**.
+
+Foi feita pesquisa técnica atualizada na documentação oficial do Cloudflare Workers AI. Estratégia escolhida:
+
+- fast path visual opt-in com `@cf/moondream/moondream3.1-9B-A2B`;
+- Moondream é um modelo de visão 9B/2B ativos, direcionado a OCR e saída estruturada; a Cloudflare publica p50 aproximado de 770 ms para `query` em imagem simples e cita extração de campos de documento como caso de uso;
+- no fast path, `reasoning=false` e a inferência continua síncrona com `rejectIfBusy=true`;
+- Gemma 4 permanece fallback e modelo principal do chat textual;
+- Qwen 3.8 permanece fallback final/revisor focal;
+- se Moondream já retornar `ilegivel` de forma estruturalmente válida, a V7 não executa automaticamente uma segunda inferência Qwen; o revisor continua obrigatório para a inconsistência suspeita `cid=nao_consta` + `descricao_cid=encontrado`;
+- concorrência de seis páginas permanece;
+- produção recebe configuração explícita `DOCUMENTS_AI_FAST_VISION_ENABLED=false`; o fast path só pode ser ligado pelo preview controlado da 5E.
+
+Alternativas descartadas nesta rodada:
+- **Batch API assíncrona:** adiciona fila/polling e é indicada pela Cloudflare para workloads duráveis, não para menor latência interativa;
+- **Markdown Conversion como OCR principal:** em imagens adiciona detecção de objetos e depois Gemma 4, portanto não elimina o gargalo visual;
+- **reduzir resolução agora:** adiado para não desfazer o ganho de precisão da V6 no caso ilegível;
+- **modelo pago/AI Gateway:** proibidos pelo requisito R$0.
+
+Critério de aceite V7:
+1. mesma matriz sintética 5E em 10/10;
+2. `duracao_extracao_ms` <= 50% da V6 na mesma máquina/rede;
+3. nenhum modelo pago e nenhuma escrita Drive;
+4. encerramento fail-closed.
+
+Se o ganho real ficar abaixo de 2x, a segunda estratégia já definida é um caminho híbrido: usar primeiro `PDF.js getTextContent()` localmente em PDFs digitais e recorrer à visão somente em páginas escaneadas/ambíguas. Esse passo não foi implementado ainda porque o Moondream pode resolver o gargalo com mudança menor e reversível.
+
+Implementação isolada em andamento na branch `feat/titon-v7-low-latency-vision`. Documento técnico: `docs/CENTRAL-DOCUMENTOS-IA-LATENCIA-V7.md`.
+
+A janela V6 existente não foi modificada por este desenvolvimento. Ela continua vinculada ao runtime V6 e deve ser encerrada fail-closed antes de qualquer janela V7; não reutilizar seu controle para o novo runtime.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V6 integrada; janela de reteste preparada |
-| Último resultado real | V6 readiness aprovado e nova janela preview preparada; matriz ainda não executada |
+| Fase/subfase | Fase 5E — V7 de baixa latência em desenvolvimento isolado |
+| Último resultado real | V6 foi executada pelo operador; desempenho considerado lento; resumo seguro numérico não foi fornecido |
 | Main funcional V6 | `76bfefa17bae0729090277525186bdc7dcfc0068` |
 | Runtime próximo reteste | `76bfefa17bae0729090277525186bdc7dcfc0068` |
 | Pages próximo reteste | `https://27a15b34.portal-regulacao-central-staging.pages.dev` |
-| Provider | Gemma 4 principal; Qwen 3.8 fallback/revisor focal; Workers Free |
+| Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
-| V6 | PNG 1800 adaptativo; concorrência 6; prompt literal V2; revisão focal CID+descrição; campos divergentes no resumo seguro |
-| Janela V5 | encerrada fail-closed; janela V6 nova preparada e ativa |
+| V7 candidata | Moondream reasoning=false; concorrência 6; imagem atual preservada; sem segunda revisão se fast path já marcar ilegivel |
+| Janela V6 | ainda deve ser encerrada fail-closed antes de abrir qualquer preview V7 |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | abrir /homologacao-5e/ no Pages congelado; executar a matriz V6 uma vez; copiar resumo seguro |
-| Meta | 10/10 e reduzir extração de seis páginas para uma única onda concorrente |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #276 |
+| Próxima ação exata | concluir CI/revisão da branch V7; integrar se verde; congelar source/Pages V7; encerrar V6; só então abrir homologação V7 |
+| Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
 ## Histórico recuperável
 

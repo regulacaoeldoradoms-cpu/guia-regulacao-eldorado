@@ -116,6 +116,7 @@ test('resumo seguro 5E não copia detalhes, respostas, credenciais ou conteúdo 
   assert.match(js, /MATRIZ_5E_SINTETICA=APROVADA/);
   assert.match(js, /duracao_extracao_ms=/);
   assert.match(js, /duracao_total_ms=/);
+  assert.match(js, /moondream_paginas=/);
   assert.match(js, /gemma_paginas=/);
   assert.match(js, /qwen_paginas=/);
   assert.match(js, /'_ms='/);
@@ -155,6 +156,7 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   const start = js.indexOf('  function safeSummaryText()');
   const end = js.indexOf('  async function copySafeSummary()', start);
   const safe = js.slice(start, end);
+  assert.match(safe, /moondream_paginas/);
   assert.match(safe, /gemma_paginas/);
   assert.match(safe, /qwen_paginas/);
   assert.match(safe, /campos_divergentes/);
