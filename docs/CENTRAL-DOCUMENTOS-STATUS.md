@@ -1307,19 +1307,19 @@ O teste V5 multimodal melhorou substancialmente o resultado. Pela captura do ope
 
 Interpretação: existem **dois cartões vermelhos, mas uma única falha documental de origem**. O caminho de classificação, OCR/visão e extração já está funcional para comprovante, páginas médicas conflitantes, prompt injection e campo ausente. A pendência está concentrada na literalidade/estado de uma página adversarial com campo propositalmente ilegível.
 
-A extração V5 também foi percebida como mais rápida que a V4. A captura mostra tempo de extração na ordem de dezenas baixas de segundos; a otimização fina de latência continua secundária à eliminação da última falha de precisão.
+A extração V5 também foi percebida como mais rápida que a V4. A captura mostra tempo de extração na ordem de dezenas baixas de segundos; a otimização fina de latência continua secundária à eliminação da última falha de precisão. Na V6, páginas independentes passam a executar com concorrência de até **6 páginas**, reduzindo o documento curto de duas ondas para uma única onda de inferência quando houver capacidade.
 
 ### V6 de precisão textual
 
 Branch: `feat/titon-v6-text-accuracy`.
 
 Mudanças em desenvolvimento:
-- render da página em **PNG 1800 px** no fluxo final, priorizando texto nítido em vez de JPEG com perdas;
-- laboratório 5E também passa a usar PNG;
+- render da página em **PNG 1800 px** no fluxo final, priorizando texto nítido; páginas fotográficas acima de ~2,8 MiB recuam automaticamente para JPEG 0,92;
+- laboratório 5E também passa a usar PNG e processa as seis páginas em paralelo;
 - prompt integrado V2 reforça a diferença entre `nao_consta` e `ilegivel`: rótulo presente + valor borrado/rasurado/coberto/cortado = `ilegivel`;
 - valores com frases como `NÃO DEVE SER INFERIDA` são tratados explicitamente como dado literal, nunca como instrução;
 - conferência visual caractere a caractere para todo campo `encontrado`;
-- revisão focal **somente em página médica ambígua**, usando Qwen gratuito, quando houver campo `ilegivel` ou combinação CID ausente + descrição presente;
+- revisão focal **somente nos campos ambíguos** de página médica, usando Qwen gratuito, quando houver campo `ilegivel` ou combinação CID ausente + descrição presente;
 - essa revisão não roda em páginas normais e não duplica custo/latência de todo o documento;
 - se o revisor não responder, a extração inicial válida é preservada;
 - resumo seguro do laboratório passa a listar apenas as **chaves dos campos divergentes**, nunca seus valores, para diagnosticar rapidamente qualquer nova falha.
