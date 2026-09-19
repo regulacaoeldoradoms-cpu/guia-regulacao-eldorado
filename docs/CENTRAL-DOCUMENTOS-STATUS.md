@@ -1218,9 +1218,37 @@ Esta janela contém a correção V4: sem timeout artificial local, thinking desl
 
 **Próxima ação operacional:** abrir exatamente `https://c92471f6.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz uma única vez, aguardar conclusão e usar `Copiar resumo seguro`. Registrar `MATRIZ_5E_SINTETICA`, contagens, `duracao_extracao_ms`, `duracao_total_ms`, `gemma_paginas`, `qwen_paginas` e linhas `pagina_XX_ms`. Depois encerrar a janela fail-closed independentemente do resultado.
 
+## Segundo teste Workers AI: imagem não estava no formato multimodal correto — 18/09/2026
+
+O operador executou a matriz V4. Resultado visual:
+- `MATRIZ_5E_SINTETICA=FALHOU`;
+- **1 aprovado / 9 falhas**;
+- extração: aproximadamente **30,9 s**;
+- total com chat: aproximadamente **54,1 s**;
+- a única página aprovada foi a página administrativa esperada como `outro`.
+
+Nas páginas 1, 2, 4, 5 e 6, o detalhe mostra classificação `pageType: "outro"` e `extraction: null`. As tentativas indicam Gemma falhando estruturalmente e Qwen retornando `success`, porém classificando as páginas visuais autorizadas como `outro`.
+
+Diagnóstico: o provider V4 enviava a imagem em uma propriedade top-level `image`, enquanto os modelos modernos de chat multimodal do Workers AI usam conteúdo multimodal dentro da mensagem do usuário (`content` em array com `image_url` + `text`). O comportamento observado é compatível com modelo recebendo as instruções textuais mas não interpretando a página visual.
+
+### Correção V5
+
+Branch: `fix/titon-workers-ai-multimodal-payload-v5`.
+
+Mudança principal:
+- remover `image` top-level;
+- enviar a página como `messages[1].content = [{type:'image_url', image_url:{url:dataUri}}, {type:'text', text:prompt}]`;
+- manter isolamento de uma página, thinking off, fallback gratuito, JSON mode e proveniência backend-owned.
+
+Essa correção ataca o ponto central observado na matriz: a página administrativa passa porque `outro` é a resposta segura quando o modelo não vê a imagem; as páginas autorizadas falham exatamente por serem classificadas da mesma forma.
+
+**Critério de continuidade:** vale seguir com o projeto se, após a V5 multimodal correta, as páginas autorizadas começarem a ser reconhecidas/extrair campos. Se a V5 ainda falhar em reconhecer as páginas visuais, interromper a insistência nesses dois modelos e mudar a arquitetura para OCR/text-layer local + modelo apenas sobre texto estruturado.
+
+A janela V4 atual deve ser encerrada fail-closed antes de qualquer teste V5. Não reutilizar o preview V4.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — correção V4 de latência integrada; reteste aguarda encerramento fail-closed da janela 0/10**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — V4 confirmou falha de payload visual; correção V5 multimodal em desenvolvimento**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
