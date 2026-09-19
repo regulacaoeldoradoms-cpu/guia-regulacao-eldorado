@@ -964,9 +964,47 @@ A janela atualmente aberta pertence ao runtime anterior e deve ser encerrada fai
 
 **Próxima ação técnica:** concluir testes/CI da branch, atualizar a documentação/controle operacional, encerrar a janela 5E antiga, mesclar a migração, congelar novo runtime + Pages e executar a matriz Workers AI.
 
+## PR #260 integrada: Workers AI free-only pronto para novo reteste — 18/09/2026
+
+A PR **#260 — Titon: migrar IA documental para Gemma 4 + Qwen free-only** foi mesclada na `main` pelo commit `a49ecd22e922267179fd8502f08fc5950df8fb0a`.
+
+Entrega integrada:
+- IA documental usa binding nativo `AI`, sem chamada ao Gemini API;
+- Gemma 4 26B A4B principal e Qwen 3.8 27B fallback;
+- allowlist rígida e `DOCUMENTS_AI_FREE_ONLY=true`;
+- erro de franquia gratuita (3036) encerra sem fallback pago;
+- erro de modelo que exige plano pago (5035) falha fechado;
+- nenhum AI Gateway é configurado pelo provider;
+- `rejectIfBusy=true` evita espera em fila de capacidade; capacidade indisponível pode cair para o único fallback aprovado;
+- classificação + extração foram unificadas em **uma inferência por página**;
+- Titon processa no máximo 3 páginas independentes em paralelo;
+- imagem do fluxo final: JPEG 1600 px / qualidade 0,85;
+- saída solicitada em `json_object` e validada novamente pelo backend;
+- matriz 5E mede separadamente tempo de extração e tempo total com chat.
+
+Checks direcionados da PR #260 ficaram verdes: Fases 1–5E, procedimentos 5E, staging bundle, governança e site. O navegador/Chromium do mesmo conteúdo de frontend já havia concluído com sucesso no head anterior; entre esse head e o head final mudaram apenas arquivos do provider backend.
+
+O Pages da `main` publicou com sucesso o merge #260. A origem imutável observada imediatamente após o merge e congelada para o reteste é:
+`https://60f66c8b.portal-regulacao-central-staging.pages.dev`.
+
+Source ref congelado do reteste:
+`a49ecd22e922267179fd8502f08fc5950df8fb0a`.
+
+### Regra de custo zero
+
+O código reduz risco de cobrança ao limitar modelos e não usar Gateway, mas **não consegue determinar o plano comercial da conta Cloudflare**. Portanto, antes da primeira inferência Workers AI desta rodada, o operador deve confirmar no painel:
+- plano Workers = **Free**;
+- nenhum AI Gateway com créditos/prepaid/unified billing será usado pelo Titon.
+
+Essa confirmação é obrigatória porque no Workers Free a franquia de 10.000 Neurons/dia é hard-stop; no Workers Paid, excedente acima da franquia pode gerar cobrança.
+
+A janela 5E anterior `phase5e_502e857dd0424fbe92ea406048e7ad7f` pertence ao runtime antigo e deve ser encerrada fail-closed antes de abrir a janela Workers AI.
+
+**Próxima ação humana:** confirmar o plano Workers Free e encerrar a janela antiga. Depois executar o verificador read-only; somente com `PRECONDICOES_5E_OK` iniciar uma nova janela usando as referências congeladas acima.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — migração para Workers AI free-only e otimização de uma inferência por página em desenvolvimento/homologação**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — Workers AI free-only integrado; novo reteste aguarda confirmação de plano Free e encerramento da janela antiga**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -1078,22 +1116,21 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — migração Titon documental para Workers AI free-only + otimização de latência |
-| Última evidência real | runtime Gemini corrigido: 8 aprovados / 2 falhas; página 2 divergiu na reclassificação e chat falhou em cascata; latência acima do aceitável |
-| Main base da branch | `19572c63766e7d2ab7e5926dda58466669a201f1` |
-| Branch funcional | `feat/titon-workers-ai-free` |
-| Provider novo | Workers AI; Gemma 4 26B A4B principal; Qwen 3.8 27B fallback |
-| Política custo | `DOCUMENTS_AI_FREE_ONLY=true`; nenhum modelo fora da allowlist; sem AI Gateway; limite gratuito/paid-only falham fechado |
-| Pipeline | uma inferência por página; até 3 páginas paralelas; backend ancora pageNumber; chat secundário |
-| Imagem/timeout | JPEG 1600 / 0,85; 6 s por tentativa, 10 s total |
-| Homologação | preparo 5E exige binding `AI`; não exige Gemini key para IA documental; Drive write continua false |
-| Janela antiga | `phase5e_502e857dd0424fbe92ea406048e7ad7f` pertence ao runtime anterior; encerrar fail-closed antes de reteste novo |
-| PR #259 | direção Gemini-Free intermediária superada; fechada sem merge como superseded |
-| Produção | `DOCUMENTS_AI_ENABLED=false`, `DOCUMENTS_AI_PROCESSING_ENABLED=false`; não ativar antes do aceite 5E |
-| Privacidade | conteúdo não entra em GitHub/PostHog/logs/D1; cada imagem é uma página isolada; nenhum nome/ref/id de arquivo enviado ao provider |
-| Próxima ação exata | terminar testes/CI desta branch; encerrar janela antiga; merge; congelar novo source ref/Pages; abrir nova 5E; medir `duracao_extracao_ms` e `duracao_total_ms` |
-| Critério | matriz sem falhas + extração típica curta próxima de 5–10 s; limite gratuito deve falhar sem cobrança |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; resultado 8/2; política Cloudflare Workers AI |
+| Fase/subfase | Fase 5E — Workers AI free-only integrado; próximo reteste ainda não aberto |
+| Última ação concluída | PR #260 mesclada; runtime e Pages do reteste congelados |
+| Main | `a49ecd22e922267179fd8502f08fc5950df8fb0a` |
+| Runtime reteste | `a49ecd22e922267179fd8502f08fc5950df8fb0a` |
+| Pages reteste | `https://60f66c8b.portal-regulacao-central-staging.pages.dev` |
+| Provider | `@cf/google/gemma-4-26b-a4b-it` principal; `@cf/qwen/qwen3.8-27b` fallback |
+| Custo | free-only + allowlist + sem Gateway; antes de inferir, confirmar plano Workers Free para garantir hard-stop sem cobrança |
+| Pipeline | uma inferência por página; até 3 páginas paralelas; JSON mode; backend ancora proveniência |
+| Latência | JPEG 1600/0,85; rejectIfBusy; limite local 6 s por tentativa / 10 s total; matriz mede extração separada do chat |
+| Janela antiga | `phase5e_502e857dd0424fbe92ea406048e7ad7f`; deve ser encerrada fail-closed |
+| PR #259 | fechada sem merge como direção Gemini-Free superada |
+| Produção | IA documental false/false; não ativar antes do aceite 5E |
+| Próxima ação exata | operador confirma Workers Free + ausência de Gateway pago; encerra janela antiga; roda verificador read-only; se verde, abre nova 5E |
+| Depois | executar matriz Workers AI, copiar resumo seguro com durações, encerrar janela fail-closed e avaliar aceite |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #260; Pages do merge |
 
 ## Histórico recuperável
 

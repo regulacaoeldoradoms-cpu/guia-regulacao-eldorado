@@ -306,18 +306,18 @@ Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado pa
 
 ## Próximo passo atual
 
-A matriz no runtime Gemini corrigido confirmou o contrato principal em 8 casos, mas mostrou duas limitações que impedem o aceite: reclassificação redundante da mesma página e latência incompatível com a rotina operacional.
+A migração da IA documental para Workers AI foi integrada pela PR #260 no merge `a49ecd22e922267179fd8502f08fc5950df8fb0a`.
 
-A branch atual migra somente a **IA documental do Titon** para Cloudflare Workers AI em modo free-only:
-- Gemma 4 26B A4B como principal;
-- Qwen 3.8 27B como fallback;
-- uma inferência por página;
-- até 3 páginas simultâneas;
-- JPEG 1600 px / qualidade 0,85 no fluxo final;
-- timeout de 6 s por tentativa e 10 s total por operação;
-- erro de limite gratuito encerra o fluxo sem fallback pago;
-- chat continua fora do tempo principal de extração.
+Referências congeladas do próximo reteste 5E:
+- source ref: `a49ecd22e922267179fd8502f08fc5950df8fb0a`;
+- Pages imutável: `https://60f66c8b.portal-regulacao-central-staging.pages.dev`;
+- provider: Gemma 4 principal + Qwen 3.8 fallback;
+- `DOCUMENTS_AI_FREE_ONLY=true`.
 
-A janela 5E atualmente aberta pertence ao runtime anterior e deve ser encerrada fail-closed antes de qualquer reteste desta branch. Depois do merge e dos checks, congelar novo source ref + novo Pages imutável e repetir a matriz real, medindo separadamente `duracao_extracao_ms` e `duracao_total_ms`.
+Antes de executar qualquer inferência Workers AI, há duas pré-condições humanas:
+1. encerrar fail-closed a janela 5E anterior, ainda vinculada ao runtime Gemini;
+2. confirmar no painel Cloudflare que o plano de Workers é **Free** e que não há AI Gateway com créditos/prepaid/unified billing sendo usado por este fluxo. Essa confirmação é necessária porque, no Workers Paid, uso acima da franquia gratuita pode gerar cobrança; o código bloqueia modelos pagos/Gateway, mas não consegue inferir o plano comercial da conta.
+
+Depois disso, executar o verificador read-only. Somente com `PRECONDICOES_5E_OK` abrir a nova janela e rodar a matriz. O resumo seguro deve trazer `duracao_extracao_ms` e `duracao_total_ms`.
 
 Produção continua com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
