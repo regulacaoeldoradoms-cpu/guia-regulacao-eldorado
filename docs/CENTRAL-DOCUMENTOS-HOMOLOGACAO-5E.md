@@ -171,6 +171,46 @@ Depois das extrações aprovadas, o harness pergunta, entre outros casos:
 
 O chat recebe somente os JSONs estruturados das páginas extraídas; as imagens não são reenviadas.
 
+## Verificação de prontidão sem alteração
+
+Antes do preparo real existe agora um verificador **somente leitura**:
+
+`scripts/central-docs/verificar-precondicoes-5e.mjs --verificar`
+
+Ele reconfirma:
+
+- versão produtiva ativa;
+- presença nominal dos secrets necessários, sem ler valores;
+- presença de `GEMINI_API_KEY`;
+- capability documental `extract` da conta homologada;
+- ausência de outra janela controlada ativa;
+- source ref e Pages origin congelados para a 5E.
+
+Marcador de sucesso:
+
+`PRECONDICOES_5E_OK`
+
+Se o Gemini continuar ausente, o resultado esperado é:
+
+`PRECONDICOES_5E_BLOQUEADAS=INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE`
+
+O verificador não executa `INSERT`, `UPDATE`, upload de versão, alteração de alias ou deployment.
+
+### Atalho operacional
+
+Depois de a precondição ficar verde, o operador pode usar:
+
+`scripts/central-docs/iniciar-homologacao-5e.mjs --iniciar`
+
+O atalho:
+
+1. executa a verificação somente leitura;
+2. usa automaticamente o source ref e Pages origin homologados;
+3. chama o preparo 5E existente;
+4. **continua exigindo a confirmação humana** `PREPARAR HOMOLOGACAO 5E` antes de qualquer criação de controle.
+
+Assim o operador não precisa redigitar SHA/origem e reduzimos risco de apontar a janela para uma referência incorreta.
+
 ## Procedimentos operacionais
 
 ### Preparar
