@@ -920,9 +920,53 @@ Meta operacional para o Titon: extração típica de documentos curtos em aproxi
 
 **Próxima ação:** encerrar a janela 5E atual após copiar o resumo seguro; implementar a redução de chamadas em uma nova branch, validar sinteticamente e repetir a 5E com o runtime otimizado.
 
+## Migração aprovada: Titon documental em Workers AI free-only — 18/09/2026
+
+Após o reteste Gemini com 8 aprovados / 2 falhas e latência excessiva, o operador definiu duas restrições permanentes para a IA documental:
+- **não pagar pela IA documental**;
+- não aceitar automaticamente fallback para serviço/modelo que possa gerar cobrança.
+
+A decisão anterior de permanecer no Gemini Free Tier foi superada porque esse nível não é adequado para documentos reais sensíveis segundo a política atual do serviço. A PR #259, criada apenas para registrar aquela direção intermediária, **não deve ser mesclada** e deve ser fechada como superseded.
+
+### Provider aprovado para o Titon
+
+- plataforma: Cloudflare Workers AI pelo binding nativo `AI` já existente no Worker;
+- principal: `@cf/google/gemma-4-26b-a4b-it`;
+- fallback: `@cf/qwen/qwen3.8-27b`;
+- `DOCUMENTS_AI_FREE_ONLY=true`;
+- sem AI Gateway, créditos pré-pagos ou fallback externo;
+- modelos fora dessa allowlist são bloqueados pelo provider;
+- franquia gratuita esgotada gera `DOCUMENT_AI_FREE_LIMIT_REACHED` e o Titon informa indisponibilidade até a renovação;
+- erro de modelo que exige plano pago gera `DOCUMENT_AI_PAID_MODEL_BLOCKED`.
+
+Essa migração é **somente da IA documental**. O módulo `worker/gemini-assistant.js` da pré-regulação permanece separado e não deve ser reutilizado para documentos identificáveis.
+
+### Correção de desempenho/consistência
+
+O pipeline anterior fazia classificação e extração separadas e podia reclassificar a mesma página. Isso produziu a falha da página 2 e multiplicou chamadas.
+
+Novo desenho na branch `feat/titon-workers-ai-free`:
+- `PROMPT_ANALISE_REGULACAO_V1` classifica + extrai uma página em uma única inferência;
+- uma página `outro` retorna classificação e nenhum bloco de campos;
+- `pageNumber` continua pertencendo ao backend, nunca ao modelo;
+- o Titon processa até **3 páginas independentes em paralelo**;
+- imagens do fluxo final usam JPEG `maxEdge=1600`, qualidade `0.85`;
+- timeout padrão: 6 s por tentativa / 10 s total por operação;
+- Gemma é usado primeiro; Qwen entra apenas em falha recuperável;
+- chat permanece opcional e fora do tempo principal de `Extrair dados do PDF`;
+- a matriz 5E passa a medir `duracao_extracao_ms` separadamente de `duracao_total_ms`.
+
+### Homologação 5E
+
+O preparo 5E foi ajustado para exigir o binding `AI`, não `GEMINI_API_KEY`, para a IA documental. O preview continua com escrita no Drive obrigatoriamente `false` e produção continua com os gates da IA documental desligados.
+
+A janela atualmente aberta pertence ao runtime anterior e deve ser encerrada fail-closed antes de qualquer reteste do Workers AI. As referências de source/Pages atuais do verificador são históricas até o merge desta branch; não abrir nova janela antes de congelar as referências novas.
+
+**Próxima ação técnica:** concluir testes/CI da branch, atualizar a documentação/controle operacional, encerrar a janela 5E antiga, mesclar a migração, congelar novo runtime + Pages e executar a matriz Workers AI.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — correção `PAGE_INVALID`/UX Titon integrada; reteste controlado aguarda encerramento da janela antiga e nova abertura com referências congeladas**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — migração para Workers AI free-only e otimização de uma inferência por página em desenvolvimento/homologação**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -1034,19 +1078,22 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — nova janela corrigida preparada; matriz real ainda não executada nesta janela |
-| Última ação concluída | janela antiga encerrada fail-closed; verificador verde; nova janela criada no runtime corrigido |
-| Main | `a6a047403031d09c3a5e219ede66097568e6deb3` |
-| Runtime do reteste | `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2` |
-| Pages do reteste | `https://56753b53.portal-regulacao-central-staging.pages.dev` |
-| Janela ativa | `phase5e_502e857dd0424fbe92ea406048e7ad7f`; preview `c08c989a…`; expira `2026-09-19T06:07:45Z` |
-| Gates | preview `aiGate=true`; `driveWriteGate=false`; produção continua sem ativação da IA documental |
-| Janela anterior | `phase5e_bd4d3fe2717e45678fc71e88aaff18c1` encerrada; HTTP bloqueado confirmado |
-| Correções no runtime | PAGE_INVALID corrigido; proveniência ancorada no backend; JSON do provider sem metadados técnicos obrigatórios; UX Titon em um clique |
-| Próxima ação exata | abrir `/homologacao-5e/` em `56753b53…`, autenticar, executar matriz e copiar resumo seguro |
-| Depois | encerrar imediatamente a janela fail-closed; somente com matriz aprovada avaliar aceite da Fase 5 |
-| Produção | não promover nem ativar gates; Workers Builds produtivo continua pendência separada |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #256–#257; saída sanitizada do operador |
+| Fase/subfase | Fase 5E — migração Titon documental para Workers AI free-only + otimização de latência |
+| Última evidência real | runtime Gemini corrigido: 8 aprovados / 2 falhas; página 2 divergiu na reclassificação e chat falhou em cascata; latência acima do aceitável |
+| Main base da branch | `19572c63766e7d2ab7e5926dda58466669a201f1` |
+| Branch funcional | `feat/titon-workers-ai-free` |
+| Provider novo | Workers AI; Gemma 4 26B A4B principal; Qwen 3.8 27B fallback |
+| Política custo | `DOCUMENTS_AI_FREE_ONLY=true`; nenhum modelo fora da allowlist; sem AI Gateway; limite gratuito/paid-only falham fechado |
+| Pipeline | uma inferência por página; até 3 páginas paralelas; backend ancora pageNumber; chat secundário |
+| Imagem/timeout | JPEG 1600 / 0,85; 6 s por tentativa, 10 s total |
+| Homologação | preparo 5E exige binding `AI`; não exige Gemini key para IA documental; Drive write continua false |
+| Janela antiga | `phase5e_502e857dd0424fbe92ea406048e7ad7f` pertence ao runtime anterior; encerrar fail-closed antes de reteste novo |
+| PR #259 | direção Gemini-Free intermediária, agora superada; não mesclar, fechar como superseded |
+| Produção | `DOCUMENTS_AI_ENABLED=false`, `DOCUMENTS_AI_PROCESSING_ENABLED=false`; não ativar antes do aceite 5E |
+| Privacidade | conteúdo não entra em GitHub/PostHog/logs/D1; cada imagem é uma página isolada; nenhum nome/ref/id de arquivo enviado ao provider |
+| Próxima ação exata | terminar testes/CI desta branch; encerrar janela antiga; merge; congelar novo source ref/Pages; abrir nova 5E; medir `duracao_extracao_ms` e `duracao_total_ms` |
+| Critério | matriz sem falhas + extração típica curta próxima de 5–10 s; limite gratuito deve falhar sem cobrança |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; resultado 8/2; política Cloudflare Workers AI |
 
 ## Histórico recuperável
 
