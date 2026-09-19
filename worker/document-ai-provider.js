@@ -20,6 +20,7 @@ import {
 } from './document-ai.js';
 
 export const MAX_DOCUMENT_AI_IMAGE_BYTES = 3 * 1024 * 1024;
+export const DOCUMENT_AI_FAST_VISION_FREE_MODEL = '@cf/moondream/moondream3.1-9B-A2B';
 export const DOCUMENT_AI_PRIMARY_FREE_MODEL = '@cf/google/gemma-4-26b-a4b-it';
 export const DOCUMENT_AI_FALLBACK_FREE_MODEL = '@cf/qwen/qwen3.8-27b';
 export const DOCUMENT_AI_FREE_MODELS = Object.freeze([
@@ -27,7 +28,10 @@ export const DOCUMENT_AI_FREE_MODELS = Object.freeze([
   DOCUMENT_AI_FALLBACK_FREE_MODEL
 ]);
 
-const FREE_MODEL_SET = new Set(DOCUMENT_AI_FREE_MODELS);
+const FREE_MODEL_SET = new Set([
+  DOCUMENT_AI_FAST_VISION_FREE_MODEL,
+  ...DOCUMENT_AI_FREE_MODELS
+]);
 const TRANSIENT_CODES = new Set([
   'DOCUMENT_AI_PROVIDER_TIMEOUT',
   'DOCUMENT_AI_PROVIDER_NETWORK_ERROR',
@@ -102,6 +106,7 @@ function candidateValue(payload) {
     return payload.result;
   }
   if (typeof payload?.result === 'string') return payload.result;
+  if (typeof payload?.answer === 'string') return payload.answer;
 
   const choiceContent = payload?.choices?.[0]?.message?.content;
   const choiceText = contentText(choiceContent);
@@ -179,6 +184,27 @@ export function documentAiFreeModelSequence(env = {}) {
   }
 
   return [...new Set(requested)];
+}
+
+function fastVisionEnabled(env = {}) {
+  return String(env.DOCUMENTS_AI_FAST_VISION_ENABLED ?? 'false').trim().toLowerCase() === 'true';
+}
+
+export function documentAiVisionModelSequence(env = {}) {
+  const base = documentAiFreeModelSequence(env);
+  if (!fastVisionEnabled(env)) return base;
+
+  const fastModel = String(
+    env.DOCUMENTS_AI_FAST_VISION_MODEL || DOCUMENT_AI_FAST_VISION_FREE_MODEL
+  ).trim();
+  if (!FREE_MODEL_SET.has(fastModel)) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_NON_FREE_MODEL_BLOCKED',
+      'Modelo de visão rápida fora da lista gratuita aprovada do Titon.',
+      503
+    );
+  }
+  return [...new Set([fastModel, ...base])];
 }
 
 function requireWorkersAi(env = {}) {
@@ -267,6 +293,8 @@ function reasoningControls(model) {
     }
   };
 
+  // Moondream usa contrato próprio e recebe reasoning=false no input nativo.
+  if (normalized === DOCUMENT_AI_FAST_VISION_FREE_MODEL) return {};
   // Gemma 4 documenta explicitamente enable_thinking=false. Qwen 3.8 também
   // expõe os mesmos controles de raciocínio no schema do Workers AI.
   if (!FREE_MODEL_SET.has(normalized)) return {};
@@ -274,6 +302,18 @@ function reasoningControls(model) {
 }
 
 function visionInput(model, system, prompt, image, maxTokens = 1400) {
+  if (String(model || '') === DOCUMENT_AI_FAST_VISION_FREE_MODEL) {
+    return {
+      task: 'query',
+      image,
+      question: [system, prompt].join('\n\n'),
+      reasoning: false,
+      temperature: 0,
+      top_p: 0.1,
+      max_tokens: maxTokens
+    };
+  }
+
   return {
     messages: [
       { role: 'system', content: system },
@@ -445,12 +485,15 @@ function providerMetadata(result, review = null) {
   };
 }
 
-function medicalReviewFocus(extraction) {
+function medicalReviewFocus(extraction, initialModel = '') {
   if (extraction?.pageType !== 'pagina_medica_autorizada') return [];
   const fields = extraction?.fields || {};
-  const focus = Object.entries(fields)
-    .filter(([, field]) => String(field?.state || '') === 'ilegivel')
-    .map(([key]) => key);
+  const trustFastExplicitIllegible = String(initialModel || '') === DOCUMENT_AI_FAST_VISION_FREE_MODEL;
+  const focus = trustFastExplicitIllegible
+    ? []
+    : Object.entries(fields)
+      .filter(([, field]) => String(field?.state || '') === 'ilegivel')
+      .map(([key]) => key);
 
   if (
     String(fields?.cid?.state || '') === 'nao_consta'
@@ -469,8 +512,8 @@ function medicalReviewFocus(extraction) {
   return focus;
 }
 
-async function reviewMedicalExtraction(env, input, originalExtraction, options = {}) {
-  const focus = medicalReviewFocus(originalExtraction);
+async function reviewMedicalExtraction(env, input, originalExtraction, options = {}, initialModel = '') {
+  const focus = medicalReviewFocus(originalExtraction, initialModel);
   if (!focus.length) return null;
 
   const currentFocus = Object.fromEntries(
@@ -599,7 +642,8 @@ export async function analyzeDocumentAiPage(env, input = {}, options = {}) {
       return { classification, extraction };
     },
     options,
-    'análise da página'
+    'análise da página',
+    documentAiVisionModelSequence(env)
   );
 
   let extraction = result.value.extraction;
@@ -608,7 +652,7 @@ export async function analyzeDocumentAiPage(env, input = {}, options = {}) {
     review = await reviewMedicalExtraction(env, {
       pageNumber,
       image
-    }, extraction, options);
+    }, extraction, options, result.model);
     if (review?.value) {
       extraction = {
         ...extraction,
@@ -661,7 +705,8 @@ export async function classifyDocumentAiPage(env, input = {}, options = {}) {
       pageType: String(parsed?.pageType || '')
     }),
     options,
-    'classificação da página'
+    'classificação da página',
+    documentAiVisionModelSequence(env)
   );
 
   return {
@@ -705,7 +750,8 @@ export async function extractDocumentAiPage(env, input = {}, options = {}) {
       fields: parsed?.fields
     }, { pageNumber, pageType }),
     options,
-    'extração da página'
+    'extração da página',
+    documentAiVisionModelSequence(env)
   );
 
   return {
