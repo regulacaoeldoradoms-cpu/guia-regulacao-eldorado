@@ -7,7 +7,7 @@ import {
 } from './document-ai-prompts.js';
 
 export const DOCUMENT_AI_PHASE = '5E';
-export const DOCUMENT_AI_VERSION = 'phase5e-v3-workers-ai-free';
+export const DOCUMENT_AI_VERSION = 'phase5e-v4-workers-ai-latency';
 const DOCUMENT_AI_RUNTIME_READY = true;
 
 export const DOCUMENT_AI_EXTRACTION_FIELDS = Object.freeze({
