@@ -57,8 +57,8 @@ test('botão único percorre o PDF e envia somente uma página por chamada', asy
   assert.match(extract, /const concurrency = Math\.min\(3, pageCount\)/);
   assert.match(extract, /Promise\.all\(Array\.from\(\{ length: concurrency \}/);
   assert.match(extract, /await exporter\(pageNumber/);
-  assert.match(extract, /maxEdge: 1600/);
-  assert.match(extract, /quality: 0\.85/);
+  assert.match(extract, /maxEdge: 1800/);
+  assert.match(extract, /mimeType: 'image\/png'/);
   assert.match(extract, /\/api\/documents\/ai\/page\/extract/);
   assert.match(extract, /'X-Document-Page-Number': String\(pageNumber\)/);
   assert.match(extract, /body: blob/);
