@@ -7,7 +7,7 @@ import {
 } from './document-ai-prompts.js';
 
 export const DOCUMENT_AI_PHASE = '5E';
-export const DOCUMENT_AI_VERSION = 'phase5e-v2';
+export const DOCUMENT_AI_VERSION = 'phase5e-v3-workers-ai-free';
 const DOCUMENT_AI_RUNTIME_READY = true;
 
 export const DOCUMENT_AI_EXTRACTION_FIELDS = Object.freeze({
@@ -65,6 +65,8 @@ export function documentAiPublicConfig(env = {}) {
     pageIsolation: true,
     provenanceRequired: true,
     persistence: 'none',
+    provider: 'cloudflare-workers-ai',
+    freeOnly: true,
     features: {
       classifyPage: true,
       extractPage: true,
