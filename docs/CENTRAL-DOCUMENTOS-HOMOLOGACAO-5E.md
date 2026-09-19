@@ -13,6 +13,9 @@ Produção permanece com:
 - `DOCUMENTS_AI_ENABLED=false`;
 - `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
 
+A segunda janela controlada alcançou o provedor real em 18/09/2026. O login/browser/CORS funcionaram, mas os seis casos da matriz falharam com `DOCUMENT_AI_PAGE_INVALID`. Esse resultado **não é aceite do modelo**; a causa está no contrato técnico de proveniência/número da página e está sendo corrigida antes do reteste.
+
+
 ## Referência congelada para a execução real
 
 Após integrar o preparo 5E, a execução real deve usar:
@@ -21,7 +24,7 @@ Após integrar o preparo 5E, a execução real deve usar:
 - Pages origin: `https://915c3113.portal-regulacao-central-staging.pages.dev`;
 - Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
-O source ref do Worker permanece o runtime congelado do PR #237. A Pages origin foi renovada novamente na PR #253 porque o deployment anterior bloqueava o alias 5E pela CSP quando `workerConfigured=false`; o deployment imutável `915c3113` inclui a matriz integral e permite somente o alias oficial em `connect-src`. Não substituir por produção nem por outro alias arbitrário.
+**Atenção:** o source ref abaixo descreve a janela atualmente aberta e ficará histórico após o encerramento. A correção de `DOCUMENT_AI_PAGE_INVALID` exige um novo source ref, que só será congelado depois do merge e dos checks da branch funcional. O source ref do Worker permanece o runtime congelado do PR #237. A Pages origin foi renovada novamente na PR #253 porque o deployment anterior bloqueava o alias 5E pela CSP quando `workerConfigured=false`; o deployment imutável `915c3113` inclui a matriz integral e permite somente o alias oficial em `connect-src`. Não substituir por produção nem por outro alias arbitrário.
 
 Pré-condições externas já resolvidas nesta execução: `GEMINI_API_KEY` foi confirmada como Secret no Worker sem expor o valor, e a conta autorizada possui `view=true` e `extract=true`. O verificador continua fail-closed e deve reconfirmar esses estados antes de cada nova janela.
 
@@ -41,6 +44,18 @@ A 5E deve comprovar, com o provedor real:
 8. chat baseado somente em evidências estruturadas e paginadas;
 9. proveniência obrigatória em respostas comuns;
 10. encerramento fail-closed da janela.
+
+## Correção do contrato de proveniência
+
+O número da página é **metadado técnico confiável do backend**, recebido em `X-Document-Page-Number`. O modelo não é fonte de verdade para esse valor.
+
+No runtime corrigido:
+- classificação normaliza a resposta com o `pageNumber` recebido pela rota;
+- extração normaliza a resposta com `pageNumber` e `pageType` já autorizados pelo backend;
+- o modelo continua responsável pelo tipo/classificação e pelos campos visuais, mas não pode deslocar a proveniência;
+- isso elimina a dependência de o provider repetir corretamente o número técnico no JSON.
+
+O erro observado `DOCUMENT_AI_PAGE_INVALID` deve ser retestado somente em uma nova janela, após o runtime corrigido ser congelado.
 
 ## Arquitetura de isolamento
 
@@ -141,6 +156,18 @@ Arquivos-fonte:
 O login é enviado diretamente ao Worker preview. O token existe somente em memória Javascript da aba e não é gravado em `localStorage`, `sessionStorage`, IndexedDB ou logs.
 
 O laboratório gera canvases no navegador; não carrega PDF clínico ou arquivo do Drive.
+
+### Regras de identificação que o reteste deve cobrir
+
+Comprovante autorizado: `COMPROVANTE DE ATENDIMENTO`, `CONTROLE DE ATENDIMENTO` ou `DADOS`.
+
+Páginas médicas autorizadas: `GUIA DE ENCAMINHAMENTO`, `ENCAMINHAMENTO(S)`, `RECEITA SIMPLES`, `LAUDO MÉDICO`, `RECEITUÁRIO MÉDICO`, `SOLICITAÇÃO DE EXAMES`, `SOLICITAÇÃO DE AGENDAMENTO` e `SOLICITAÇÃO DE AGENDAMENTO RETORNO`.
+
+O reteste também deve preservar as duas únicas normalizações de saída explicitamente autorizadas:
+- CNS sem espaços, apenas sequência numérica contínua;
+- data de nascimento em `dd/mm/aaaa` quando a leitura for inequívoca.
+
+Todos os demais campos permanecem literais.
 
 ### Fixtures
 
@@ -282,6 +309,12 @@ Se o upload final falhar depois da revogação, o controle já permanece bloquea
 
 - `CONTROLE_5E_REVOGADO=true`;
 - `ENCERRAMENTO_5E_PREVIEW_PENDENTE=true`.
+
+## Fluxo final do Titon a preservar após a homologação
+
+A UI produtiva aprovada não expõe classificação e extração como dois passos manuais. O usuário verá **Extrair dados do PDF**; internamente o Titon percorre o documento inteiro e processa cada página isoladamente. Cada página médica autorizada gera bloco próprio, o comprovante gera bloco próprio, páginas `outro` são ignoradas e o chat permanece opcional após a extração.
+
+A homologação 5E continua testando as rotas unitárias por página porque elas são a fronteira de segurança que sustenta esse botão único.
 
 ## Critérios de parada
 
