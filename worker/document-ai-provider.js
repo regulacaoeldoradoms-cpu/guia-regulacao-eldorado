@@ -459,6 +459,13 @@ function medicalReviewFocus(extraction) {
   ) {
     focus.push('cid');
   }
+
+  // CID e descrição formam um par semântico no formulário. Quando o CID é
+  // ambíguo, revisamos também a descrição para impedir inferência cruzada e
+  // preservar literalmente textos como "NÃO DEVE SER INFERIDA".
+  if (focus.includes('cid') && !focus.includes('descricao_cid')) {
+    focus.push('descricao_cid');
+  }
   return focus;
 }
 
