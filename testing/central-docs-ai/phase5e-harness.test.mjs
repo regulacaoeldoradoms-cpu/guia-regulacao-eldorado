@@ -120,6 +120,9 @@ test('resumo seguro 5E não copia detalhes, respostas, credenciais ou conteúdo 
   assert.match(js, /gemma_paginas=/);
   assert.match(js, /qwen_paginas=/);
   assert.match(js, /'_ms='/);
+  assert.match(js, /provider_ms=/);
+  assert.match(js, /overhead_ms=/);
+  assert.match(js, /tentativas=/);
   assert.match(js, /_campos_divergentes=/);
   assert.match(js, /item\.passed \? 'APROVADO' : 'FALHOU'/);
 
@@ -151,6 +154,8 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   assert.match(js, /providerModel/);
   assert.match(js, /provider\.attempts/);
   assert.match(js, /durationMs/);
+  assert.match(js, /providerDurationMs/);
+  assert.match(js, /attemptCount/);
   assert.match(js, /mismatchFields/);
   assert.match(js, /mismatchedFields/);
   const start = js.indexOf('  function safeSummaryText()');
@@ -159,6 +164,9 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   assert.match(safe, /moondream_paginas/);
   assert.match(safe, /gemma_paginas/);
   assert.match(safe, /qwen_paginas/);
+  assert.match(safe, /provider_ms/);
+  assert.match(safe, /overhead_ms/);
+  assert.match(safe, /tentativas/);
   assert.match(safe, /campos_divergentes/);
   assert.doesNotMatch(safe, /item\.detail|classification|answer|evidence|cpf|cns|diagnostico/i);
 });
