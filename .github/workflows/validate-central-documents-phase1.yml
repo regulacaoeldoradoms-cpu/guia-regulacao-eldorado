@@ -121,7 +121,8 @@ jobs:
           grep -q 'id="documentsAiExtractDocumentButton"' documentos/index.html
           grep -q "extractWholeDocumentAi" js/documents.js
           grep -q "const concurrency = Math.min(3, pageCount)" js/documents.js
-          grep -q "maxEdge: 1600" js/documents.js
+          grep -q "maxEdge: 1800" js/documents.js
+          grep -q "mimeType: 'image/png'" js/documents.js
           grep -q "PROMPT_ANALISE_REGULACAO_V1" worker/document-ai-prompts.js
           grep -q "CONTROLE DE ATENDIMENTO" worker/document-ai-prompts.js
           grep -q "RECEITA SIMPLES" worker/document-ai-prompts.js
