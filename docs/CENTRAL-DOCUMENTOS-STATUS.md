@@ -822,13 +822,41 @@ A segunda janela 5E `phase5e_bd4d3fe2717e45678fc71e88aaff18c1` permanece associa
 
 **Próxima ação técnica:** concluir testes/PR desta branch. Em seguida encerrar a janela 5E atual, mesclar a correção, congelar novo source ref e novo Pages imutável e somente então repetir a matriz real.
 
+## PR #256 integrada e referências do reteste 5E congeladas — 18/09/2026
+
+A PR **#256 — Titon: corrigir PAGE_INVALID e extrair PDF inteiro em um clique** foi mesclada na `main` pelo commit `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2`.
+
+Entrega integrada:
+- correção do `DOCUMENT_AI_PAGE_INVALID` ancorando `pageNumber`/`pageType` no backend;
+- JSON solicitado ao provider não exige mais que o modelo ecoe os metadados técnicos da página;
+- prompts v2 com títulos autorizados e regras literais aprovadas;
+- CNS/data com apenas as normalizações explicitamente autorizadas;
+- Titon com um único botão **Extrair dados do PDF**;
+- varredura sequencial página a página, páginas `outro` ignoradas e blocos separados por origem;
+- copiar bloco/todos os dados, `Ver página` e chat secundário;
+- resultado parcial descartado em falha inesperada;
+- nenhuma persistência de conteúdo documental e telemetria restrita à allowlist técnica.
+
+Evidências da PR #256 antes do merge: Fases 1–5E, staging bundle, governança, site, procedimentos operacionais 5E e navegador/Chromium concluíram com **success**. O Cloudflare Pages do merge publicou com sucesso a origem imutável `https://56753b53.portal-regulacao-central-staging.pages.dev`.
+
+O check automático **Workers Builds** do Cloudflare no merge `39ded96...` concluiu com **failure** e o resumo do GitHub não expôs causa suficiente para atribuir o erro. Não inferir causa. Isso fica como bloqueio separado para futura publicação produtiva; a produção não deve ter os gates da IA documental ativados até essa frente ser resolvida.
+
+Para o **reteste preview-only 5E**, foram congelados:
+- source ref: `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2`;
+- Pages origin: `https://56753b53.portal-regulacao-central-staging.pages.dev`;
+- Worker preview alias oficial permanece `central-docs-phase5e-...workers.dev`.
+
+A janela antiga `phase5e_bd4d3fe2717e45678fc71e88aaff18c1`, que executou a matriz no runtime `408bff...`, **não deve ser reutilizada**. Deve ser encerrada fail-closed antes da abertura da nova janela.
+
+**Próxima ação humana:** encerrar a janela 5E antiga com `encerrar-homologacao-5e.mjs --encerrar`. Depois disso, executar o verificador read-only já com as referências novas; somente com `PRECONDICOES_5E_OK` iniciar a nova janela e repetir a matriz.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — homologação real controlada em andamento; matriz encontrou `DOCUMENT_AI_PAGE_INVALID` e a correção/UX Titon está em branch funcional**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — correção `PAGE_INVALID`/UX Titon integrada; reteste controlado aguarda encerramento da janela antiga e nova abertura com referências congeladas**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
-- Branch funcional atual: `feat/titon-one-click-document-ai`.
+- Branch funcional da correção #256: integrada. Branch atual é somente congelamento/documentação do reteste 5E.
 - Fases 5A–5D: PRs **#215–#218 mesclados**. 5E está tecnicamente pronta e integrada, ainda sem ativação real do provider.
 - Ref de base real da 5E: **`8fba51979aba95c31ec7ef6644949c8c508530f6`**. Preservar login/abertura/Home, editor, sincronização e gate seguro do Worker.
 - Código congelado do reteste: **`2fee19e69e06ecd128be2b103354fc6c2fb4e431`**.
@@ -936,21 +964,20 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — correção pós-primeira matriz útil + UX Titon de extração integral |
-| Última ação concluída | matriz da segunda janela retornou `DOCUMENT_AI_PAGE_INVALID` nas 6 páginas; correção de proveniência e botão único implementados em branch |
-| Branch/PR | `feat/titon-one-click-document-ai`; PR ainda deve ser aberta após fechar documentação/testes |
-| Main de base | `c646b98b130370fbf4360143580bc21a76ef8a4b` |
-| Runtime da janela atual | antigo `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`; não usar para reteste do código novo |
-| Pages da janela atual | `https://915c3113.portal-regulacao-central-staging.pages.dev` |
-| Produção | IA documental false/false; Drive write produtivo preservado; nenhuma ativação produtiva autorizada |
-| Janela | segunda janela `phase5e_bd4d3fe2717e45678fc71e88aaff18c1` ainda deve ser encerrada fail-closed antes do próximo runtime |
-| Correção PAGE_INVALID | pageNumber/pageType técnicos agora são ancorados pelo backend; provider não é fonte de verdade para proveniência |
-| UX aprovada | um botão `Extrair dados do PDF`; varredura sequencial isolada por página; resultados separados; copiar tudo; chat secundário |
-| Regras | comprovante/controle/dados; lista médica aprovada; literalidade; NÃO CONSTA; ILEGÍVEL; CNS sem espaços; data dd/mm/aaaa |
-| Privacidade | nenhuma persistência dos resultados; nenhuma identidade de arquivo enviada à IA; telemetria somente allowlist técnica |
-| Próxima ação exata | concluir testes/checks e PR; encerrar janela atual; depois merge, congelar novo source ref/Pages e reabrir 5E para repetir matriz |
-| Depois | somente com matriz sintética aprovada + encerramento fail-closed avaliar ativação produtiva da Fase 5 |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; evidência do operador; branch funcional atual |
+| Fase/subfase | Fase 5E — correção PAGE_INVALID + UX Titon integrada; reteste real ainda não executado no runtime novo |
+| Última ação concluída | PR #256 mesclada em `39ded96…`; source ref e Pages do reteste congelados |
+| Main | `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2` |
+| Runtime novo do reteste | `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2` |
+| Pages novo do reteste | `https://56753b53.portal-regulacao-central-staging.pages.dev` |
+| Runtime da janela antiga | `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`; não reutilizar |
+| Janela antiga | `phase5e_bd4d3fe2717e45678fc71e88aaff18c1`; deve ser encerrada fail-closed antes da nova |
+| Correções | backend ancora proveniência; JSON do provider sem pageNumber/pageType; prompts/títulos/literalidade; Titon um clique; CNS/data autorizados; chat secundário |
+| Checks | PR #256: Fases 1–5E, staging, governança, site, procedimentos 5E e navegador verdes; Pages do merge `56753b53…` success |
+| Worker produção | check Cloudflare Workers Builds do merge #256 = failure sem causa suficiente exposta no GitHub; tratar separadamente antes de ativação produtiva |
+| Produção IA | gates continuam false/false; nenhuma ativação produtiva autorizada |
+| Próxima ação exata | operador encerra janela antiga; depois roda verificador read-only e, só com `PRECONDICOES_5E_OK`, abre nova 5E nas referências congeladas |
+| Depois | executar matriz sintética real, copiar resumo seguro, encerrar nova janela fail-closed; só então avaliar aceite/publicação da Fase 5 |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #256; checks do merge |
 
 ## Histórico recuperável
 
