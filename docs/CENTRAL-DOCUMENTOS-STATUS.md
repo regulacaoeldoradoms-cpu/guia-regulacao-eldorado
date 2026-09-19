@@ -1117,9 +1117,42 @@ Esta é a primeira janela 5E da migração Workers AI free-only. O laboratório 
 
 **Próxima ação operacional:** abrir exatamente `https://60f66c8b.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz, aguardar a conclusão, clicar `Copiar resumo seguro` e registrar `MATRIZ_5E_SINTETICA`, `aprovados`, `falhas`, `duracao_extracao_ms`, `duracao_total_ms` e nomes dos casos. Depois encerrar a janela fail-closed independentemente de aprovação/falha.
 
+## Primeiro teste Gemma/Qwen: falha por timeout artificial do Titon, não por qualidade do modelo — 18/09/2026
+
+O operador executou a matriz sintética na janela Workers AI preparada. Resultado visual:
+- `MATRIZ_5E_SINTETICA=FALHOU`;
+- **0 aprovados / 10 falhas**;
+- extração das seis páginas: **27,2 s**;
+- total com chat: **49,7 s**;
+- as seis páginas falharam com o mesmo erro: `DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT`;
+- os quatro casos de chat falharam em cascata porque nenhuma página gerou evidência aprovada.
+
+Diagnóstico: esse resultado **não mede a capacidade do Gemma 4 nem do Qwen de extrair os documentos**. O provider local tinha um `Promise.race` de 6 s por tentativa. Quando esse relógio disparava, a chamada era abandonada pelo código mesmo sem erro nativo do Workers AI. Além disso, `DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT` era terminal, então **Qwen não era tentado** após o timeout do Gemma.
+
+Outro gargalo encontrado: Gemma 4 e Qwen 3.8 são modelos com raciocínio. O input documental não desativava thinking. A documentação atual do Workers AI mostra `chat_template_kwargs.enable_thinking=false` para Gemma 4 e expõe controles de raciocínio para Qwen; manter thinking ligado é desnecessário para OCR/extração literal e aumenta latência.
+
+### Correção V4 em desenvolvimento
+
+Branch: `feat/titon-workers-ai-latency-v2`.
+
+Mudanças:
+- remover o timeout artificial `Promise.race`; usar o timeout nativo do Workers AI (`3007/3008`);
+- manter `rejectIfBusy=true`; erro de capacidade `3040` vira fallback imediato para o Qwen gratuito;
+- timeout nativo, resposta inválida e schema inválido também podem cair para Qwen;
+- `3036` (franquia gratuita esgotada) continua terminal e sem cobrança;
+- `5035` (modelo exige plano pago) continua terminal/fail-closed;
+- desativar raciocínio com `reasoning_effort:null` e `chat_template_kwargs.enable_thinking=false`/`clear_thinking=true`;
+- usar `max_completion_tokens` e prompt integrado mais curto;
+- matriz passa a enviar JPEG 0,85, igual ao perfil do fluxo final;
+- resumo seguro passa a registrar Gemma/Qwen usados e latência por página, sem conteúdo documental.
+
+A janela atual do teste fracassado deve ser **encerrada fail-closed antes de qualquer novo preview/runtime**. Não repetir a matriz nessa mesma janela, pois ela serve o release antigo `a49ecd22...`.
+
+**Próxima ação:** encerrar a janela atual; concluir CI/merge da correção; congelar novo source ref + Pages; abrir nova janela 5E e repetir a matriz.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — Workers AI free-only integrado; novo reteste aguarda confirmação de plano Free e encerramento da janela antiga**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — primeiro teste Workers AI revelou timeout artificial do Titon; correção V4 de latência em desenvolvimento**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 

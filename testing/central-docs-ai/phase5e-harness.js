@@ -11,6 +11,7 @@
     user: null,
     evidence: new Map(),
     results: [],
+    pageMetrics: [],
     running: false
   };
 
@@ -301,7 +302,7 @@
       canvas.toBlob((blob) => {
         if (blob) resolve(blob);
         else reject(new Error('Não foi possível gerar a imagem sintética.'));
-      }, 'image/png');
+      }, 'image/jpeg', 0.85);
     });
   }
 
@@ -398,13 +399,32 @@
   function safeSummaryText() {
     const passed = state.results.filter((item) => item.passed).length;
     const failed = state.results.length - passed;
+    const gemmaPages = state.pageMetrics.filter((item) =>
+      String(item.model || '') === '@cf/google/gemma-4-26b-a4b-it'
+    ).length;
+    const qwenPages = state.pageMetrics.filter((item) =>
+      String(item.model || '') === '@cf/qwen/qwen3.8-27b'
+    ).length;
     const lines = [
       failed ? 'MATRIZ_5E_SINTETICA=FALHOU' : 'MATRIZ_5E_SINTETICA=APROVADA',
       'aprovados=' + passed,
       'falhas=' + failed,
       'duracao_extracao_ms=' + Math.max(0, Math.round(Number(state.extractionDurationMs || 0))),
-      'duracao_total_ms=' + Math.max(0, Math.round(Number(state.durationMs || 0)))
+      'duracao_total_ms=' + Math.max(0, Math.round(Number(state.durationMs || 0))),
+      'gemma_paginas=' + gemmaPages,
+      'qwen_paginas=' + qwenPages
     ];
+
+    state.pageMetrics
+      .slice()
+      .sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber))
+      .forEach((item) => {
+        lines.push(
+          'pagina_' + String(item.pageNumber).padStart(2, '0')
+          + '_ms=' + Math.max(0, Math.round(Number(item.durationMs || 0)))
+          + ' | modelo=' + String(item.model || 'nenhum').replace(/[\r\n=|]+/g, ' ').slice(0, 100)
+        );
+      });
 
     state.results.forEach((item, index) => {
       lines.push(
@@ -455,6 +475,7 @@
     state.running = true;
     state.results = [];
     state.evidence.clear();
+    state.pageMetrics = [];
     state.durationMs = 0;
     state.extractionDurationMs = 0;
     const matrixStarted = performance.now();
@@ -476,6 +497,7 @@
       const analyzeFixture = async (fixture, index) => {
         const canvas = els.fixtureGrid.querySelector('canvas[data-fixture-id="' + fixture.id + '"]');
         const blob = await blobFromCanvas(canvas);
+        const pageStarted = performance.now();
 
         try {
           const payload = await extractFixture(fixture, blob);
@@ -498,21 +520,39 @@
             }
           }
 
+          const durationMs = performance.now() - pageStarted;
+          const provider = payload?.provider || {};
+          const providerModel = String(provider?.model || '');
           pageResults[index] = {
             fixture,
             passed,
             detail: JSON.stringify({
               classification: observed,
-              extraction
+              extraction,
+              provider: {
+                model: providerModel,
+                attempts: Array.isArray(provider?.attempts)
+                  ? provider.attempts.map((attempt) => ({
+                      model: String(attempt?.model || ''),
+                      result: String(attempt?.result || ''),
+                      durationMs: Math.max(0, Math.round(Number(attempt?.durationMs || 0)))
+                    }))
+                  : []
+              },
+              durationMs: Math.max(0, Math.round(durationMs))
             }, null, 2),
-            extraction: passed ? extraction : null
+            extraction: passed ? extraction : null,
+            providerModel,
+            durationMs
           };
         } catch (error) {
           pageResults[index] = {
             fixture,
             passed: false,
             detail: (error.code ? error.code + ': ' : '') + (error.message || 'Falha não identificada.'),
-            extraction: null
+            extraction: null,
+            providerModel: '',
+            durationMs: performance.now() - pageStarted
           };
         }
       };
@@ -535,6 +575,11 @@
       state.extractionDurationMs = performance.now() - extractionStarted;
 
       pageResults.forEach((item) => {
+        state.pageMetrics.push({
+          pageNumber: item.fixture.pageNumber,
+          model: item.providerModel,
+          durationMs: item.durationMs
+        });
         addResult(
           'Página ' + item.fixture.pageNumber + ' · análise integrada',
           item.passed,

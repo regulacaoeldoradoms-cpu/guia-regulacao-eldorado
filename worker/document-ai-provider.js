@@ -26,21 +26,15 @@ export const DOCUMENT_AI_FREE_MODELS = Object.freeze([
   DOCUMENT_AI_FALLBACK_FREE_MODEL
 ]);
 
-const DEFAULT_REQUEST_TIMEOUT_MS = 6000;
-const DEFAULT_TOTAL_TIMEOUT_MS = 10000;
 const FREE_MODEL_SET = new Set(DOCUMENT_AI_FREE_MODELS);
 const TRANSIENT_CODES = new Set([
   'DOCUMENT_AI_PROVIDER_TIMEOUT',
   'DOCUMENT_AI_PROVIDER_NETWORK_ERROR',
   'DOCUMENT_AI_PROVIDER_INVALID_RESPONSE',
   'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
-  'DOCUMENT_AI_PROVIDER_UNAVAILABLE'
+  'DOCUMENT_AI_PROVIDER_UNAVAILABLE',
+  'DOCUMENT_AI_PROVIDER_BUSY'
 ]);
-
-function boundedInteger(value, fallback, minimum, maximum) {
-  const parsed = Number.parseInt(String(value || ''), 10);
-  return Number.isFinite(parsed) ? Math.min(maximum, Math.max(minimum, parsed)) : fallback;
-}
 
 function normalizeMimeType(value) {
   const mimeType = String(value || '').split(';')[0].trim().toLowerCase();
@@ -148,8 +142,7 @@ function parseJsonCandidate(payload) {
 }
 
 function freeOnly(env = {}) {
-  const value = String(env.DOCUMENTS_AI_FREE_ONLY ?? 'true').trim().toLowerCase();
-  return value === 'true';
+  return String(env.DOCUMENTS_AI_FREE_ONLY ?? 'true').trim().toLowerCase() === 'true';
 }
 
 function parseModelList(value) {
@@ -219,8 +212,13 @@ function isPaidModelError(error) {
   return /(?:\b5035\b|requires (?:a )?workers paid plan|paid billing method|prepaid ai gateway)/i.test(errorText(error));
 }
 
+function isCapacityBusyError(error) {
+  return /(?:\b3040\b|capacity temporarily exceeded|out of capacity)/i.test(errorText(error));
+}
+
 function normalizeProviderError(error, operation) {
   if (error instanceof DocumentAiError) return error;
+
   if (isFreeLimitError(error)) {
     return new DocumentAiError(
       'DOCUMENT_AI_FREE_LIMIT_REACHED',
@@ -228,6 +226,7 @@ function normalizeProviderError(error, operation) {
       429
     );
   }
+
   if (isPaidModelError(error)) {
     return new DocumentAiError(
       'DOCUMENT_AI_PAID_MODEL_BLOCKED',
@@ -236,148 +235,156 @@ function normalizeProviderError(error, operation) {
     );
   }
 
+  if (isCapacityBusyError(error)) {
+    return new DocumentAiError(
+      'DOCUMENT_AI_PROVIDER_BUSY',
+      'O modelo principal estava sem capacidade imediata; o fallback gratuito pode ser tentado.',
+      429
+    );
+  }
+
   const name = String(error?.name || '');
   const timedOut = ['AbortError', 'TimeoutError'].includes(name)
     || /timeout|timed out|request timeout|\b3007\b|\b3008\b/i.test(errorText(error));
+
   return new DocumentAiError(
     timedOut ? 'DOCUMENT_AI_PROVIDER_TIMEOUT' : 'DOCUMENT_AI_PROVIDER_UNAVAILABLE',
     timedOut
-      ? `A ${operation} excedeu o tempo seguro desta tentativa.`
+      ? `A ${operation} excedeu o prazo nativo do provedor nesta tentativa.`
       : 'Workers AI não concluiu esta tentativa.',
     timedOut ? 504 : 502
   );
 }
 
-function providerTimeouts(env = {}) {
-  return {
-    request: boundedInteger(
-      env.DOCUMENTS_AI_TIMEOUT_MS,
-      DEFAULT_REQUEST_TIMEOUT_MS,
-      2000,
-      12000
-    ),
-    total: boundedInteger(
-      env.DOCUMENTS_AI_TOTAL_TIMEOUT_MS,
-      DEFAULT_TOTAL_TIMEOUT_MS,
-      3000,
-      20000
-    )
+function reasoningControls(model) {
+  const normalized = String(model || '');
+  const controls = {
+    reasoning_effort: null,
+    chat_template_kwargs: {
+      enable_thinking: false,
+      clear_thinking: true
+    }
   };
+
+  // Gemma 4 documenta explicitamente enable_thinking=false. Qwen 3.8 também
+  // expõe os mesmos controles de raciocínio no schema do Workers AI.
+  if (!FREE_MODEL_SET.has(normalized)) return {};
+  return controls;
 }
 
-function visionInput(system, prompt, image, maxTokens = 1800) {
+function visionInput(model, system, prompt, image, maxTokens = 1400) {
   return {
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: prompt }
     ],
     image,
+    ...reasoningControls(model),
     temperature: 0,
     top_p: 0.1,
     seed: 1,
-    max_tokens: maxTokens,
+    max_completion_tokens: maxTokens,
     response_format: { type: 'json_object' },
     store: false
   };
 }
 
-function textInput(system, prompt, maxTokens = 1200) {
+function textInput(model, system, prompt, maxTokens = 400) {
   return {
     messages: [
       { role: 'system', content: system },
       { role: 'user', content: prompt }
     ],
+    ...reasoningControls(model),
     temperature: 0,
     top_p: 0.1,
     seed: 1,
-    max_tokens: maxTokens,
+    max_completion_tokens: maxTokens,
     response_format: { type: 'json_object' },
     store: false
   };
 }
 
-async function withLocalTimeout(promise, timeoutMs, operation) {
-  let timer = null;
-  try {
-    return await Promise.race([
-      promise,
-      new Promise((_, reject) => {
-        timer = setTimeout(() => {
-          reject(new DocumentAiError(
-            'DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT',
-            `A ${operation} excedeu o limite local de tempo desta tentativa.`,
-            504
-          ));
-        }, timeoutMs);
-      })
-    ]);
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
+function shouldTryFallback(error) {
+  if (!(error instanceof DocumentAiError)) return true;
+  if (TRANSIENT_CODES.has(error.code)) return true;
+  return [
+    'DOCUMENT_AI_PAGE_TYPE_INVALID',
+    'DOCUMENT_AI_FIELDS_INVALID',
+    'DOCUMENT_AI_FIELDS_UNEXPECTED',
+    'DOCUMENT_AI_FIELD_MISSING',
+    'DOCUMENT_AI_FIELD_STATE_INVALID',
+    'DOCUMENT_AI_FIELD_VALUE_REQUIRED',
+    'DOCUMENT_AI_CHAT_ANSWER_INVALID',
+    'DOCUMENT_AI_CHAT_PROVENANCE_MISMATCH',
+    'DOCUMENT_AI_CHAT_PROVENANCE_REQUIRED'
+  ].includes(error.code);
 }
 
 async function runWorkersAi(env, makeInput, validate, options = {}, operation = 'extração') {
   requireWorkersAi(env);
   const models = documentAiFreeModelSequence(env);
-  const timeouts = providerTimeouts(env);
-  const started = Date.now();
   const run = options.aiRun || ((model, input, runOptions) => env.AI.run(model, input, runOptions));
+  const attempts = [];
   let lastError = null;
 
   for (const model of models) {
-    const remaining = timeouts.total - (Date.now() - started);
-    if (remaining <= 0) break;
-    const timeoutMs = Math.max(1000, Math.min(timeouts.request, remaining));
+    const started = Date.now();
 
     try {
-      const payload = await withLocalTimeout(
-        run(model, makeInput(model), { rejectIfBusy: true }),
-        timeoutMs,
-        operation
-      );
+      // Não use timeout artificial com Promise.race: env.AI.run não é cancelável
+      // pelo chamador e a inferência pode continuar consumindo franquia depois
+      // de a resposta local já ter sido abandonada. Confiamos no timeout nativo
+      // do Workers AI (3007/3008) e rejeitamos fila de capacidade com rejectIfBusy.
+      const payload = await run(model, makeInput(model), { rejectIfBusy: true });
       const parsed = parseJsonCandidate(payload);
       const value = validate(parsed);
-      return { value, model };
+      attempts.push({
+        model,
+        result: 'success',
+        durationMs: Math.max(0, Date.now() - started)
+      });
+      return { value, model, attempts };
     } catch (error) {
       const normalized = normalizeProviderError(error, operation);
+      attempts.push({
+        model,
+        result: normalized.code || 'DOCUMENT_AI_PROVIDER_ERROR',
+        durationMs: Math.max(0, Date.now() - started)
+      });
+
       if (
         normalized.code === 'DOCUMENT_AI_FREE_LIMIT_REACHED'
         || normalized.code === 'DOCUMENT_AI_PAID_MODEL_BLOCKED'
         || normalized.code === 'DOCUMENT_AI_FREE_ONLY_REQUIRED'
         || normalized.code === 'DOCUMENT_AI_NON_FREE_MODEL_BLOCKED'
-        || normalized.code === 'DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT'
       ) {
         throw normalized;
       }
 
       lastError = normalized;
-      if (
-        normalized instanceof DocumentAiError
-        && !TRANSIENT_CODES.has(normalized.code)
-        && ![
-          'DOCUMENT_AI_PAGE_TYPE_INVALID',
-          'DOCUMENT_AI_FIELDS_INVALID',
-          'DOCUMENT_AI_FIELDS_UNEXPECTED',
-          'DOCUMENT_AI_FIELD_MISSING',
-          'DOCUMENT_AI_FIELD_STATE_INVALID',
-          'DOCUMENT_AI_FIELD_VALUE_REQUIRED',
-          'DOCUMENT_AI_CHAT_ANSWER_INVALID',
-          'DOCUMENT_AI_CHAT_PROVENANCE_MISMATCH',
-          'DOCUMENT_AI_CHAT_PROVENANCE_REQUIRED'
-        ].includes(normalized.code)
-      ) {
-        throw normalized;
-      }
-      // Próximo modelo aprovado funciona como fallback somente da mesma operação.
+      if (!shouldTryFallback(normalized)) throw normalized;
     }
   }
 
   if (lastError) throw lastError;
   throw new DocumentAiError(
-    'DOCUMENT_AI_PROVIDER_TIMEOUT',
-    `A ${operation} excedeu o tempo total permitido.`,
-    504
+    'DOCUMENT_AI_PROVIDER_UNAVAILABLE',
+    `A ${operation} não pôde ser concluída pelos modelos gratuitos autorizados.`,
+    503
   );
+}
+
+function fieldContract(pageType) {
+  const keys = DOCUMENT_AI_EXTRACTION_FIELDS[pageType];
+  if (!keys) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_EXTRACTION_TYPE_INVALID',
+      'Esta página não possui rotina de extração autorizada.',
+      422
+    );
+  }
+  return keys.join(',');
 }
 
 function extractionTemplate(pageType) {
@@ -397,10 +404,11 @@ function extractionTemplate(pageType) {
   };
 }
 
-function analysisTemplate() {
+function providerMetadata(result) {
   return {
-    pageType: 'outro',
-    fields: {}
+    kind: 'workers-ai',
+    model: result.model,
+    attempts: result.attempts
   };
 }
 
@@ -420,23 +428,18 @@ export async function analyzeDocumentAiPage(env, input = {}, options = {}) {
 
   const prompt = [
     'Analise somente esta página.',
-    'Retorne JSON somente com as chaves pageType e fields.',
-    'pageType deve ser comprovante_atendimento, pagina_medica_autorizada ou outro.',
-    'Exemplo mínimo para página não autorizada:',
-    JSON.stringify(analysisTemplate()),
-    '',
-    'Para página autorizada, fields deve seguir exatamente um dos schemas abaixo:',
-    'Schemas de fields permitidos:',
-    'comprovante_atendimento:',
-    JSON.stringify(extractionTemplate('comprovante_atendimento')),
-    'pagina_medica_autorizada:',
-    JSON.stringify(extractionTemplate('pagina_medica_autorizada')),
-    'outro: {}'
+    'Retorne JSON com EXATAMENTE as chaves pageType e fields.',
+    'pageType: comprovante_atendimento, pagina_medica_autorizada ou outro.',
+    'Cada field autorizado deve ser {"state":"encontrado|nao_consta|ilegivel","value":"texto"}.',
+    `Se comprovante_atendimento, fields deve conter exatamente: ${fieldContract('comprovante_atendimento')}.`,
+    `Se pagina_medica_autorizada, fields deve conter exatamente: ${fieldContract('pagina_medica_autorizada')}.`,
+    'Se outro, use exatamente {"pageType":"outro","fields":{}}.',
+    'Não inclua explicações fora do JSON.'
   ].join('\n');
 
   const result = await runWorkersAi(
     env,
-    () => visionInput(PROMPT_ANALISE_REGULACAO_V1.system, prompt, image, 1700),
+    (model) => visionInput(model, PROMPT_ANALISE_REGULACAO_V1.system, prompt, image, 1400),
     (parsed) => {
       const pageType = String(parsed?.pageType || '').trim();
       const classification = normalizeDocumentAiClassification({ pageNumber, pageType });
@@ -477,7 +480,7 @@ export async function analyzeDocumentAiPage(env, input = {}, options = {}) {
 
   return {
     ...result.value,
-    provider: { kind: 'workers-ai', model: result.model },
+    provider: providerMetadata(result),
     routines: {
       analysis: {
         id: PROMPT_ANALISE_REGULACAO_V1.id,
@@ -503,11 +506,12 @@ export async function classifyDocumentAiPage(env, input = {}, options = {}) {
 
   const result = await runWorkersAi(
     env,
-    () => visionInput(
+    (model) => visionInput(
+      model,
       PROMPT_CLASSIFICACAO_PAGINAS_V1.system,
       'Classifique somente esta página. Retorne JSON apenas como {"pageType":"..."}.',
       image,
-      180
+      120
     ),
     (parsed) => normalizeDocumentAiClassification({
       pageNumber,
@@ -519,7 +523,7 @@ export async function classifyDocumentAiPage(env, input = {}, options = {}) {
 
   return {
     classification: result.value,
-    provider: { kind: 'workers-ai', model: result.model },
+    provider: providerMetadata(result),
     routine: {
       id: PROMPT_CLASSIFICACAO_PAGINAS_V1.id,
       version: PROMPT_CLASSIFICACAO_PAGINAS_V1.version
@@ -551,7 +555,7 @@ export async function extractDocumentAiPage(env, input = {}, options = {}) {
 
   const result = await runWorkersAi(
     env,
-    () => visionInput(PROMPT_EXTRACAO_REGULACAO_V1.system, prompt, image, 1600),
+    (model) => visionInput(model, PROMPT_EXTRACAO_REGULACAO_V1.system, prompt, image, 1400),
     (parsed) => normalizeDocumentAiExtraction({
       pageNumber,
       pageType,
@@ -563,7 +567,7 @@ export async function extractDocumentAiPage(env, input = {}, options = {}) {
 
   return {
     extraction: result.value,
-    provider: { kind: 'workers-ai', model: result.model },
+    provider: providerMetadata(result),
     routine: {
       id: PROMPT_EXTRACAO_REGULACAO_V1.id,
       version: PROMPT_EXTRACAO_REGULACAO_V1.version
@@ -605,7 +609,7 @@ export async function chatDocumentAi(env, input = {}, options = {}) {
 
   const result = await runWorkersAi(
     env,
-    () => textInput(PROMPT_DOCUMENT_CHAT_V1.system, prompt, 1000),
+    (model) => textInput(model, PROMPT_DOCUMENT_CHAT_V1.system, prompt, 400),
     (parsed) => normalizeDocumentAiChatResponse(parsed, evidence),
     options,
     'pergunta documental'
@@ -613,7 +617,7 @@ export async function chatDocumentAi(env, input = {}, options = {}) {
 
   return {
     chat: result.value,
-    provider: { kind: 'workers-ai', model: result.model },
+    provider: providerMetadata(result),
     routine: {
       id: PROMPT_DOCUMENT_CHAT_V1.id,
       version: PROMPT_DOCUMENT_CHAT_V1.version
