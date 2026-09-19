@@ -759,6 +759,26 @@ A PR #253 já está mesclada na `main` (`028c2dd33160b792d905b5f54955a6e83b49536
 
 **Próxima ação exata:** repetir o verificador read-only e, se retornar `PRECONDICOES_5E_OK`, iniciar uma nova janela 5E. A nova janela deverá nascer já vinculada ao Pages `915c3113...`; depois abrir o laboratório corrigido e executar a matriz sintética.
 
+## Segunda janela 5E preparada na origem Pages com CSP corrigida — 18/09/2026
+
+O operador repetiu o verificador read-only já com a origem corrigida e obteve novamente `PRECONDICOES_5E_OK`.
+
+Resultado sanitizado da nova preparação:
+
+- Pages origin: `https://915c3113.portal-regulacao-central-staging.pages.dev`;
+- `HOMOLOGACAO_5E_PREPARADA`;
+- preview version: `8d09f2b5-69f9-496c-9fb6-b823ff2f19ce`;
+- control ID: `phase5e_bd4d3fe2717e45678fc71e88aaff18c1`;
+- expiração: `2026-09-19T05:20:08.000Z`;
+- release: `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`;
+- `aiGate=true`;
+- `driveWriteGate=false`;
+- produção reconfirmada: `298ba237-78f9-4d24-bad1-47e66b4c1e15`.
+
+A primeira janela permanece encerrada e não foi reutilizada. A segunda janela é a única janela 5E ativa e está vinculada ao Pages com CSP corrigida.
+
+**Próxima ação exata:** abrir `https://915c3113.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz sintética e copiar somente o resumo seguro. Depois encerrar imediatamente a janela em modo fail-closed.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — homologação real controlada em andamento; primeira janela precisará ser substituída por nova origem Pages com CSP corrigida**. Produção continua com IA documental desligada.
@@ -873,19 +893,17 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — homologação real controlada; primeira janela encerrada, pronta para reabrir com CSP corrigida |
-| Última ação concluída | PR #253 mesclada; janela antiga encerrada com `controlEnabled=false`, `aiGate=false`, `driveWriteGate=false`, `httpBlocked=true` |
-| Branch/PR | `main` em `028c2dd33160b792d905b5f54955a6e83b495369`; esta branch é somente atualização documental pós-encerramento |
-| Código/preview | nova origem congelada: `https://915c3113.portal-regulacao-central-staging.pages.dev`; runtime Worker 5E segue `408bff8…` |
-| Produção | IA documental continua false/false; nenhuma chamada real ao Gemini concluída; Drive produtivo não foi alterado |
-| Janela | `phase5e_b541f0a9505f44b3aa12dc57cf5766be` encerrada; preview bloqueado `ed1547cc…`; HTTP 403 confirmado |
-| Decisão/porquê | fechar a janela antiga antes da nova evita controle concorrente e garante que a segunda janela use a CSP corrigida |
-| Descartado | reutilizar `764243d1…`; contornar CSP no navegador; manter janela antiga ativa |
-| Checks/testes | PR #253: Pages, bundle staging, procedimentos 5E, Fases 1–5E, governança e site verdes |
-| Bloqueios | nenhum bloqueio conhecido antes do novo verificador; `GEMINI_API_KEY` e `extract` já estavam verdes na janela anterior |
-| Próxima ação exata | executar `verificar-precondicoes-5e.mjs --verificar`; somente com `PRECONDICOES_5E_OK` executar `iniciar-homologacao-5e.mjs --iniciar` para a origem `915c3113…` |
-| Depois | abrir laboratório corrigido, autenticar, executar matriz sintética real, copiar resumo seguro e encerrar a nova janela fail-closed |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #249–#253; saídas sanitizadas do operador |
+| Fase/subfase | Fase 5E — homologação real controlada; segunda janela ativa na origem Pages com CSP corrigida |
+| Última ação concluída | nova janela preparada com `PRECONDICOES_5E_OK`, `aiGate=true`, `driveWriteGate=false` |
+| Main | `28af0577ec0691f9c76a14d88c0383ba672e4cf9` |
+| Código/preview | Pages ativo para a matriz: `https://915c3113.portal-regulacao-central-staging.pages.dev`; Worker runtime `408bff8…` |
+| Produção | IA documental continua false/false; produção reconfirmada `298ba237-78f9-4d24-bad1-47e66b4c1e15`; Drive não alterado |
+| Janela | ativa: `phase5e_bd4d3fe2717e45678fc71e88aaff18c1`; preview `8d09f2b5…`; expira `2026-09-19T05:20:08Z` |
+| Decisão/porquê | reabrir somente depois de encerrar a primeira janela e trocar para Pages com CSP corrigida evita controles concorrentes e bloqueio de browser |
+| Bloqueios | nenhum conhecido antes da matriz; falta homologar o provider real |
+| Próxima ação exata | abrir `/homologacao-5e/` na origem `915c3113…`, autenticar, executar matriz, copiar resumo seguro |
+| Depois | encerrar imediatamente a janela fail-closed e avaliar o aceite da Fase 5 |
+| Fontes | Guia Mestre V1.1; HOMOLOGACAO-5E; STATUS; PRs #253–#254; saídas sanitizadas do operador |
 
 ## Histórico recuperável
 
