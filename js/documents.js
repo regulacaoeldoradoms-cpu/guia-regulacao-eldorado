@@ -3195,7 +3195,7 @@
       if (els.documentAiChatStatus) {
         els.documentAiChatStatus.className = 'documents-ai-chat-status warning';
         els.documentAiChatStatus.textContent = question
-          ? 'Extraia ao menos uma página antes de perguntar.'
+          ? 'Extraia os dados do PDF antes de perguntar.'
           : 'Digite uma pergunta documental.';
       }
       return;
@@ -3278,6 +3278,12 @@
       els.documentAiExtractDocument.textContent = state.documentAiBusy
         ? 'Extraindo dados…'
         : 'Extrair dados do PDF';
+    }
+    if (els.documentAiDocumentStatus && !state.documentAiBusy && !els.documentAiDocumentStatus.textContent) {
+      els.documentAiDocumentStatus.className = 'documents-ai-document-status';
+      els.documentAiDocumentStatus.textContent = config.processingEnabled
+        ? 'Pronto para analisar todas as páginas deste PDF.'
+        : 'Extração automática bloqueada por feature gate.';
     }
     if (els.documentAiClassify) {
       const ready = config.processingEnabled === true && config.features?.classifyPage === true;
