@@ -23,7 +23,7 @@ Após integrar o preparo 5E, a execução real deve usar:
 
 O source ref do Worker permanece o runtime congelado do PR #237. A Pages origin foi renovada novamente na PR #253 porque o deployment anterior bloqueava o alias 5E pela CSP quando `workerConfigured=false`; o deployment imutável `915c3113` inclui a matriz integral e permite somente o alias oficial em `connect-src`. Não substituir por produção nem por outro alias arbitrário.
 
-Pré-condição ainda ausente: a baseline produtiva atual não contém `GEMINI_API_KEY`, conforme evidência persistente em `docs/AGENDA-DIGSAUDE-STATUS.md`. O operador deve configurar o secret antes da execução real; o script permanece fail-closed se isso não ocorrer.
+Pré-condições externas já resolvidas nesta execução: `GEMINI_API_KEY` foi confirmada como Secret no Worker sem expor o valor, e a conta autorizada possui `view=true` e `extract=true`. O verificador continua fail-closed e deve reconfirmar esses estados antes de cada nova janela.
 
 ## Objetivo
 
