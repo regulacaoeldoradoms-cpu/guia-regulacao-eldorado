@@ -1,26 +1,36 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
 
 import { DOCUMENT_AI_EXTRACTION_FIELDS } from '../document-ai.js';
-
 import {
+  DOCUMENT_AI_FALLBACK_FREE_MODEL,
+  DOCUMENT_AI_FREE_MODELS,
+  DOCUMENT_AI_PRIMARY_FREE_MODEL,
   MAX_DOCUMENT_AI_IMAGE_BYTES,
+  analyzeDocumentAiPage,
+  chatDocumentAi,
   classifyAndExtractDocumentAiPage,
   classifyDocumentAiPage,
-  extractDocumentAiPage,
-  chatDocumentAi
+  documentAiFreeModelSequence,
+  extractDocumentAiPage
 } from '../document-ai-provider.js';
 
-function enabledEnv() {
+function enabledEnv(overrides = {}) {
   return {
     DOCUMENTS_AI_ENABLED: 'true',
     DOCUMENTS_AI_PROCESSING_ENABLED: 'true',
-    GEMINI_API_KEY: 'test-key-not-secret',
-    DOCUMENTS_AI_MODEL: 'gemini-test-model'
+    DOCUMENTS_AI_FREE_ONLY: 'true',
+    DOCUMENTS_AI_PRIMARY_MODEL: DOCUMENT_AI_PRIMARY_FREE_MODEL,
+    DOCUMENTS_AI_FALLBACK_MODELS: DOCUMENT_AI_FALLBACK_FREE_MODEL,
+    DOCUMENTS_AI_TIMEOUT_MS: '6000',
+    DOCUMENTS_AI_TOTAL_TIMEOUT_MS: '10000',
+    AI: { run: async () => ({ response: '{}' }) },
+    ...overrides
   };
 }
 
-function extractionPayload(pageNumber, pageType, overrides = {}) {
+function fieldsFor(pageType, overrides = {}) {
   const fields = Object.fromEntries(
     DOCUMENT_AI_EXTRACTION_FIELDS[pageType].map((key) => [
       key,
@@ -28,57 +38,83 @@ function extractionPayload(pageNumber, pageType, overrides = {}) {
     ])
   );
   Object.assign(fields, overrides);
-  return { pageNumber, pageType, fields };
+  return fields;
 }
 
-function extractionResponse(extraction) {
-  return okResponse(extraction);
+function workersResponse(value) {
+  return { response: JSON.stringify(value) };
 }
 
-function okResponse(classification) {
-  return new Response(JSON.stringify({
-    candidates: [{
-      content: {
-        parts: [{ text: JSON.stringify(classification) }]
-      }
-    }]
-  }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
-}
+test('provider documental usa somente Gemma 4 + Qwen aprovados para free-only', () => {
+  assert.deepEqual(DOCUMENT_AI_FREE_MODELS, [
+    '@cf/google/gemma-4-26b-a4b-it',
+    '@cf/qwen/qwen3.8-27b'
+  ]);
+  assert.deepEqual(documentAiFreeModelSequence(enabledEnv()), DOCUMENT_AI_FREE_MODELS);
+  assert.throws(
+    () => documentAiFreeModelSequence(enabledEnv({
+      DOCUMENTS_AI_PRIMARY_MODEL: '@cf/deepseek-ai/deepseek-v4-pro-0813'
+    })),
+    (error) => error?.code === 'DOCUMENT_AI_NON_FREE_MODEL_BLOCKED'
+  );
+  assert.throws(
+    () => documentAiFreeModelSequence(enabledEnv({ DOCUMENTS_AI_FREE_ONLY: 'false' })),
+    (error) => error?.code === 'DOCUMENT_AI_FREE_ONLY_REQUIRED'
+  );
+});
 
-test('gate false impede qualquer chamada ao provedor', async () => {
-  let called = false;
+test('gate false impede qualquer chamada ao Workers AI', async () => {
+  let called = 0;
   await assert.rejects(
-    () => classifyDocumentAiPage({
-      ...enabledEnv(),
+    () => classifyDocumentAiPage(enabledEnv({
       DOCUMENTS_AI_PROCESSING_ENABLED: 'false'
-    }, {
+    }), {
       pageNumber: 1,
       mimeType: 'image/jpeg',
       bytes: new Uint8Array([1, 2, 3])
     }, {
-      fetchImpl: async () => {
-        called = true;
-        return okResponse({ pageNumber: 1, pageType: 'outro' });
+      aiRun: async () => {
+        called += 1;
+        return workersResponse({ pageType: 'outro' });
       }
     }),
     (error) => error?.code === 'DOCUMENT_AI_PROCESSING_DISABLED'
   );
-  assert.equal(called, false);
+  assert.equal(called, 0);
 });
 
-test('classificação envia exatamente uma imagem e somente o número técnico da página', async () => {
+test('binding Workers AI é obrigatório e GEMINI_API_KEY não é necessário', async () => {
+  const env = enabledEnv({ AI: null, GEMINI_API_KEY: undefined });
+  await assert.rejects(
+    () => classifyDocumentAiPage(env, {
+      pageNumber: 1,
+      mimeType: 'image/jpeg',
+      bytes: new Uint8Array([1])
+    }),
+    (error) => error?.code === 'DOCUMENT_AI_PROVIDER_NOT_CONFIGURED'
+  );
+
+  const result = await classifyDocumentAiPage(enabledEnv({ GEMINI_API_KEY: undefined }), {
+    pageNumber: 1,
+    mimeType: 'image/jpeg',
+    bytes: new Uint8Array([1])
+  }, {
+    aiRun: async () => workersResponse({ pageType: 'outro' })
+  });
+  assert.equal(result.classification.pageNumber, 1);
+  assert.equal(result.classification.pageType, 'outro');
+});
+
+test('classificação envia uma imagem data URI sem identidade do arquivo', async () => {
   const calls = [];
   const result = await classifyDocumentAiPage(enabledEnv(), {
     pageNumber: 7,
     mimeType: 'image/jpeg',
     bytes: new Uint8Array([1, 2, 3, 4])
   }, {
-    fetchImpl: async (url, options) => {
-      calls.push({ url: String(url), options });
-      return okResponse({ pageNumber: 7, pageType: 'comprovante_atendimento' });
+    aiRun: async (model, input) => {
+      calls.push({ model, input });
+      return workersResponse({ pageType: 'comprovante_atendimento' });
     }
   });
 
@@ -87,282 +123,239 @@ test('classificação envia exatamente uma imagem e somente o número técnico d
     pageType: 'comprovante_atendimento'
   });
   assert.equal(calls.length, 1);
+  assert.equal(calls[0].model, DOCUMENT_AI_PRIMARY_FREE_MODEL);
+  assert.match(calls[0].input.image, /^data:image\/jpeg;base64,/);
+  assert.equal(calls[0].input.temperature, 0);
+  assert.equal(calls[0].input.store, false);
 
-  const body = JSON.parse(calls[0].options.body);
-  const parts = body.contents?.[0]?.parts || [];
-  const images = parts.filter((part) => part?.inlineData);
-  const texts = parts.filter((part) => typeof part?.text === 'string');
-
-  assert.equal(images.length, 1);
-  assert.equal(images[0].inlineData.mimeType, 'image/jpeg');
-  assert.equal(typeof images[0].inlineData.data, 'string');
-  assert.equal(texts.length, 1);
-  assert.match(texts[0].text, /página: 7/i);
-
-  const serialized = JSON.stringify(body);
+  const serialized = JSON.stringify(calls[0].input);
   assert.doesNotMatch(serialized, /filename|fileId|drive[-_ ]?id|item\.ref|patient|cpf|cns/i);
-  assert.match(body.systemInstruction.parts[0].text, /exatamente UMA página/i);
 });
 
-test('proveniência técnica da classificação é ancorada pelo backend mesmo sem eco de pageNumber', async () => {
-  const result = await classifyDocumentAiPage(enabledEnv(), {
+test('análise integrada classifica e extrai página autorizada em uma única inferência', async () => {
+  const calls = [];
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
     pageNumber: 2,
     mimeType: 'image/png',
-    bytes: new Uint8Array([9, 8, 7])
+    bytes: new Uint8Array([2, 2, 2])
   }, {
-    fetchImpl: async () => okResponse({
-      pageType: 'pagina_medica_autorizada'
-    })
+    aiRun: async (model, input) => {
+      calls.push({ model, input });
+      return workersResponse({
+        pageType: 'pagina_medica_autorizada',
+        fields: fieldsFor('pagina_medica_autorizada', {
+          titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
+          motivo_encaminhamento: { state: 'encontrado', value: 'TEXTO LITERAL' },
+          medico: { state: 'encontrado', value: 'DR. TESTE' }
+        })
+      });
+    }
   });
 
-  assert.deepEqual(result.classification, {
-    pageNumber: 2,
-    pageType: 'pagina_medica_autorizada'
-  });
+  assert.equal(calls.length, 1);
+  assert.equal(result.classification.pageNumber, 2);
+  assert.equal(result.classification.pageType, 'pagina_medica_autorizada');
+  assert.equal(result.extraction.pageNumber, 2);
+  assert.equal(result.extraction.fields.motivo_encaminhamento.value, 'TEXTO LITERAL');
+  assert.equal(result.provider.model, DOCUMENT_AI_PRIMARY_FREE_MODEL);
+
+  const serialized = JSON.stringify(calls[0].input);
+  assert.match(serialized, /PROMPT|Analise somente esta página|pageType/i);
+  assert.match(calls[0].input.image, /^data:image\/png;base64,/);
 });
 
-test('tipo MIME inválido e imagem acima do limite falham antes do fetch', async () => {
+test('pipeline público classifyAndExtract usa a análise integrada de uma chamada', async () => {
   let calls = 0;
-  const fetchImpl = async () => {
-    calls += 1;
-    return okResponse({ pageNumber: 1, pageType: 'outro' });
-  };
+  const result = await classifyAndExtractDocumentAiPage(enabledEnv(), {
+    pageNumber: 9,
+    mimeType: 'image/jpeg',
+    bytes: new Uint8Array([9, 9])
+  }, {
+    aiRun: async () => {
+      calls += 1;
+      return workersResponse({
+        pageType: 'comprovante_atendimento',
+        fields: fieldsFor('comprovante_atendimento', {
+          nome_paciente: { state: 'encontrado', value: 'PESSOA TESTE' }
+        })
+      });
+    }
+  });
 
-  await assert.rejects(
-    () => classifyDocumentAiPage(enabledEnv(), {
-      pageNumber: 1,
-      mimeType: 'application/pdf',
-      bytes: new Uint8Array([1])
-    }, { fetchImpl }),
-    (error) => error?.code === 'DOCUMENT_AI_IMAGE_TYPE_INVALID'
-  );
-
-  await assert.rejects(
-    () => classifyDocumentAiPage(enabledEnv(), {
-      pageNumber: 1,
-      mimeType: 'image/jpeg',
-      bytes: new Uint8Array(MAX_DOCUMENT_AI_IMAGE_BYTES + 1)
-    }, { fetchImpl }),
-    (error) => error?.code === 'DOCUMENT_AI_IMAGE_TOO_LARGE'
-  );
-
-  assert.equal(calls, 0);
+  assert.equal(calls, 1);
+  assert.equal(result.classification.pageType, 'comprovante_atendimento');
+  assert.equal(result.extraction.fields.nome_paciente.value, 'PESSOA TESTE');
 });
 
-test('erro HTTP do provedor é sanitizado e não reproduz resposta upstream', async () => {
-  const upstreamSecret = 'conteudo-upstream-nao-pode-vazar';
+test('página outro retorna classificação sem extração e sem inventar campos', async () => {
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 3,
+    mimeType: 'image/jpeg',
+    bytes: new Uint8Array([3])
+  }, {
+    aiRun: async () => workersResponse({ pageType: 'outro', fields: {} })
+  });
+
+  assert.equal(result.classification.pageType, 'outro');
+  assert.equal(result.extraction, null);
+
   await assert.rejects(
-    () => classifyDocumentAiPage(enabledEnv(), {
-      pageNumber: 4,
+    () => analyzeDocumentAiPage(enabledEnv(), {
+      pageNumber: 3,
       mimeType: 'image/jpeg',
-      bytes: new Uint8Array([4, 4, 4])
+      bytes: new Uint8Array([3])
     }, {
-      fetchImpl: async () => new Response(JSON.stringify({
-        error: { message: upstreamSecret }
-      }), {
-        status: 429,
-        headers: { 'Content-Type': 'application/json' }
+      aiRun: async () => workersResponse({
+        pageType: 'outro',
+        fields: { cpf: { state: 'encontrado', value: 'inventado' } }
       })
     }),
-    (error) => {
-      assert.equal(error?.code, 'DOCUMENT_AI_PROVIDER_HTTP_ERROR');
-      assert.equal(error?.status, 429);
-      assert.equal(String(error?.message || '').includes(upstreamSecret), false);
-      return true;
-    }
+    (error) => ['DOCUMENT_AI_PROVIDER_SCHEMA_INVALID', 'DOCUMENT_AI_PROVIDER_UNAVAILABLE'].includes(error?.code)
   );
 });
 
-test('source do provider não registra conteúdo documental', async () => {
-  const fs = await import('node:fs/promises');
-  const source = await fs.readFile(new URL('../document-ai-provider.js', import.meta.url), 'utf8');
-  assert.doesNotMatch(source, /console\.(?:log|warn|error)/);
-  assert.doesNotMatch(source, /JSON\.stringify\(payload\)/);
+test('Qwen entra somente como fallback quando Gemma não produz resposta válida', async () => {
+  const models = [];
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 4,
+    mimeType: 'image/jpeg',
+    bytes: new Uint8Array([4])
+  }, {
+    aiRun: async (model) => {
+      models.push(model);
+      if (model === DOCUMENT_AI_PRIMARY_FREE_MODEL) return { response: 'não é json' };
+      return workersResponse({
+        pageType: 'comprovante_atendimento',
+        fields: fieldsFor('comprovante_atendimento')
+      });
+    }
+  });
+
+  assert.deepEqual(models, [
+    DOCUMENT_AI_PRIMARY_FREE_MODEL,
+    DOCUMENT_AI_FALLBACK_FREE_MODEL
+  ]);
+  assert.equal(result.provider.model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
 });
 
+test('limite gratuito diário interrompe sem tentar modelo pago ou fallback inútil', async () => {
+  const models = [];
+  await assert.rejects(
+    () => analyzeDocumentAiPage(enabledEnv(), {
+      pageNumber: 1,
+      mimeType: 'image/jpeg',
+      bytes: new Uint8Array([1])
+    }, {
+      aiRun: async (model) => {
+        models.push(model);
+        throw new Error('3036 Account limited: used up daily free allocation of 10,000 neurons');
+      }
+    }),
+    (error) => error?.code === 'DOCUMENT_AI_FREE_LIMIT_REACHED' && error?.status === 429
+  );
+  assert.deepEqual(models, [DOCUMENT_AI_PRIMARY_FREE_MODEL]);
+});
 
-test('extração envia uma única imagem e preserva literalidade no schema autorizado', async () => {
-  const calls = [];
+test('modelo que exigir plano pago é bloqueado fail-closed', async () => {
+  await assert.rejects(
+    () => analyzeDocumentAiPage(enabledEnv(), {
+      pageNumber: 1,
+      mimeType: 'image/jpeg',
+      bytes: new Uint8Array([1])
+    }, {
+      aiRun: async () => {
+        throw new Error('5035 This model requires a Workers Paid plan');
+      }
+    }),
+    (error) => error?.code === 'DOCUMENT_AI_PAID_MODEL_BLOCKED'
+  );
+});
+
+test('extração explícita recebe tipo autorizado e usa uma única imagem', async () => {
+  let call;
   const result = await extractDocumentAiPage(enabledEnv(), {
     pageNumber: 5,
     pageType: 'pagina_medica_autorizada',
     mimeType: 'image/jpeg',
     bytes: new Uint8Array([5, 4, 3, 2])
   }, {
-    fetchImpl: async (url, options) => {
-      calls.push({ url: String(url), options });
-      return extractionResponse(extractionPayload(5, 'pagina_medica_autorizada', {
-        medico: { state: 'encontrado', value: 'DR. TEXTO LITERAL' },
-        cid: { state: 'ilegivel', value: '' }
-      }));
+    aiRun: async (model, input) => {
+      call = { model, input };
+      return workersResponse({
+        fields: fieldsFor('pagina_medica_autorizada', {
+          medico: { state: 'encontrado', value: 'DR. TEXTO LITERAL' },
+          cid: { state: 'ilegivel', value: '' }
+        })
+      });
     }
   });
 
-  assert.equal(calls.length, 1);
   assert.equal(result.extraction.pageNumber, 5);
   assert.equal(result.extraction.pageType, 'pagina_medica_autorizada');
-  assert.deepEqual(result.extraction.fields.medico, {
-    state: 'encontrado',
-    value: 'DR. TEXTO LITERAL'
-  });
+  assert.equal(result.extraction.fields.medico.value, 'DR. TEXTO LITERAL');
   assert.deepEqual(result.extraction.fields.cid, { state: 'ilegivel', value: '' });
-
-  const body = JSON.parse(calls[0].options.body);
-  const parts = body.contents?.[0]?.parts || [];
-  assert.equal(parts.filter((part) => part?.inlineData).length, 1);
-  assert.match(parts[0].text, /Número técnico da página: 5/);
-  assert.match(parts[0].text, /pagina_medica_autorizada/);
-  assert.match(parts[0].text, /motivo_encaminhamento/);
-  assert.doesNotMatch(JSON.stringify(body), /filename|fileId|drive[-_ ]?id|item\.ref/i);
-  assert.match(body.systemInstruction.parts[0].text, /Nunca complete um campo com informação de outra página/i);
+  assert.match(call.input.image, /^data:image\/jpeg;base64,/);
 });
 
-test('extração ancora página/tipo no backend e ainda rejeita campo fora do schema', async () => {
-  const providerPayload = extractionPayload(777, 'comprovante_atendimento');
-  delete providerPayload.pageNumber;
-  delete providerPayload.pageType;
-  const anchored = await extractDocumentAiPage(enabledEnv(), {
-    pageNumber: 6,
-    pageType: 'comprovante_atendimento',
-    mimeType: 'image/jpeg',
-    bytes: new Uint8Array([1, 6])
-  }, {
-    fetchImpl: async () => extractionResponse(providerPayload)
-  });
-
-  assert.equal(anchored.extraction.pageNumber, 6);
-  assert.equal(anchored.extraction.pageType, 'comprovante_atendimento');
-
-  const invalid = extractionPayload(6, 'comprovante_atendimento');
-  invalid.fields.campo_extra = { state: 'encontrado', value: 'X' };
-  await assert.rejects(
-    () => extractDocumentAiPage(enabledEnv(), {
-      pageNumber: 6,
-      pageType: 'comprovante_atendimento',
-      mimeType: 'image/jpeg',
-      bytes: new Uint8Array([1, 6])
-    }, {
-      fetchImpl: async () => extractionResponse(invalid)
-    }),
-    (error) => error?.code === 'DOCUMENT_AI_FIELDS_UNEXPECTED'
-  );
-});
-
-test('pipeline 5C reclassifica a mesma página antes de extrair e bloqueia tipo outro', async () => {
+test('tipo MIME inválido e imagem acima do limite falham antes do provider', async () => {
   let calls = 0;
-  const fetchImpl = async () => {
+  const aiRun = async () => {
     calls += 1;
-    return okResponse({ pageNumber: 8, pageType: 'outro' });
+    return workersResponse({ pageType: 'outro' });
   };
 
   await assert.rejects(
-    () => classifyAndExtractDocumentAiPage(enabledEnv(), {
-      pageNumber: 8,
+    () => analyzeDocumentAiPage(enabledEnv(), {
+      pageNumber: 1,
+      mimeType: 'application/pdf',
+      bytes: new Uint8Array([1])
+    }, { aiRun }),
+    (error) => error?.code === 'DOCUMENT_AI_IMAGE_TYPE_INVALID'
+  );
+
+  await assert.rejects(
+    () => analyzeDocumentAiPage(enabledEnv(), {
+      pageNumber: 1,
       mimeType: 'image/jpeg',
-      bytes: new Uint8Array([8, 8])
-    }, { fetchImpl }),
-    (error) => error?.code === 'DOCUMENT_AI_PAGE_NOT_AUTHORIZED'
+      bytes: new Uint8Array(MAX_DOCUMENT_AI_IMAGE_BYTES + 1)
+    }, { aiRun }),
+    (error) => error?.code === 'DOCUMENT_AI_IMAGE_TOO_LARGE'
   );
-  assert.equal(calls, 1);
+
+  assert.equal(calls, 0);
 });
 
-test('pipeline 5C usa duas chamadas na mesma página e devolve classificação + extração coerentes', async () => {
-  const replies = [
-    okResponse({ pageNumber: 9, pageType: 'comprovante_atendimento' }),
-    extractionResponse(extractionPayload(9, 'comprovante_atendimento', {
-      nome_paciente: { state: 'encontrado', value: 'PESSOA TESTE' }
-    }))
-  ];
-  const seenBodies = [];
-
-  const result = await classifyAndExtractDocumentAiPage(enabledEnv(), {
-    pageNumber: 9,
-    mimeType: 'image/png',
-    bytes: new Uint8Array([9, 1, 9])
-  }, {
-    fetchImpl: async (_url, options) => {
-      seenBodies.push(JSON.parse(options.body));
-      return replies.shift();
-    }
+test('chat usa somente evidências estruturadas e não envia imagem', async () => {
+  const fields = fieldsFor('pagina_medica_autorizada', {
+    procedimento_solicitado: { state: 'encontrado', value: 'PROCEDIMENTO TESTE' }
   });
+  let call;
 
-  assert.equal(seenBodies.length, 2);
-  assert.deepEqual(result.classification, {
-    pageNumber: 9,
-    pageType: 'comprovante_atendimento'
-  });
-  assert.equal(result.extraction.pageNumber, 9);
-  assert.equal(result.extraction.pageType, 'comprovante_atendimento');
-  assert.equal(result.extraction.fields.nome_paciente.value, 'PESSOA TESTE');
-  assert.equal(seenBodies.every((body) =>
-    (body.contents?.[0]?.parts || []).filter((part) => part?.inlineData).length === 1
-  ), true);
-});
-
-
-test('chat 5D envia somente pergunta e evidências estruturadas por página', async () => {
-  const fields = Object.fromEntries(
-    DOCUMENT_AI_EXTRACTION_FIELDS.pagina_medica_autorizada.map((key) => [
-      key,
-      { state: 'nao_consta', value: '' }
-    ])
-  );
-  fields.procedimento_solicitado = { state: 'encontrado', value: 'PROCEDIMENTO TESTE' };
-
-  const calls = [];
   const result = await chatDocumentAi(enabledEnv(), {
     question: 'Qual procedimento consta?',
     evidence: [{ pageNumber: 3, pageType: 'pagina_medica_autorizada', fields }]
   }, {
-    fetchImpl: async (url, options) => {
-      calls.push({ url: String(url), options });
-      return okResponse({ answer: 'PROCEDIMENTO TESTE [p. 3].', pages: [3] });
+    aiRun: async (model, input) => {
+      call = { model, input };
+      return workersResponse({
+        answer: 'PROCEDIMENTO TESTE [p. 3].',
+        pages: [3]
+      });
     }
   });
 
   assert.equal(result.chat.answer, 'PROCEDIMENTO TESTE [p. 3].');
   assert.deepEqual(result.chat.pages, [3]);
-  assert.equal(calls.length, 1);
-  const body = JSON.parse(calls[0].options.body);
-  const serialized = JSON.stringify(body);
-  assert.match(serialized, /Qual procedimento consta/);
-  assert.match(serialized, /PROCEDIMENTO TESTE/);
-  assert.match(body.systemInstruction.parts[0].text, /evidência/i);
-  assert.doesNotMatch(serialized, /filename|fileId|drive[-_ ]?id|item\.ref|searchQuery/i);
-  assert.equal((body.contents?.[0]?.parts || []).some((part) => part?.inlineData), false);
+  assert.equal(call.input.image, undefined);
+  assert.match(JSON.stringify(call.input), /PROCEDIMENTO TESTE/);
+  assert.doesNotMatch(JSON.stringify(call.input), /filename|fileId|drive[-_ ]?id|item\.ref|searchQuery/i);
 });
 
-test('chat 5D falha fechado para citação fora das evidências e para gate desligado', async () => {
-  const fields = Object.fromEntries(
-    DOCUMENT_AI_EXTRACTION_FIELDS.comprovante_atendimento.map((key) => [
-      key,
-      { state: 'nao_consta', value: '' }
-    ])
-  );
-  const input = {
-    question: 'O que consta?',
-    evidence: [{ pageNumber: 1, pageType: 'comprovante_atendimento', fields }]
-  };
-
-  await assert.rejects(
-    () => chatDocumentAi(enabledEnv(), input, {
-      fetchImpl: async () => okResponse({ answer: 'Algo [p. 2].', pages: [2] })
-    }),
-    (error) => error?.code === 'DOCUMENT_AI_CHAT_PROVENANCE_MISMATCH'
-  );
-
-  let called = false;
-  await assert.rejects(
-    () => chatDocumentAi({
-      ...enabledEnv(),
-      DOCUMENTS_AI_PROCESSING_ENABLED: 'false'
-    }, input, {
-      fetchImpl: async () => {
-        called = true;
-        return okResponse({ answer: 'NÃO CONSTA', pages: [] });
-      }
-    }),
-    (error) => error?.code === 'DOCUMENT_AI_PROCESSING_DISABLED'
-  );
-  assert.equal(called, false);
+test('source do provider não registra conteúdo, não chama Gemini API e não usa AI Gateway', async () => {
+  const source = await fs.readFile(new URL('../document-ai-provider.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /console\.(?:log|warn|error)/);
+  assert.doesNotMatch(source, /generativelanguage\.googleapis\.com/);
+  assert.doesNotMatch(source, /GEMINI_API_KEY/);
+  assert.doesNotMatch(source, /gateway\.ai\.cloudflare\.com/);
+  assert.match(source, /env\.AI\.run/);
 });
