@@ -288,6 +288,26 @@ function textInput(system, prompt, maxTokens = 1200) {
   };
 }
 
+async function withLocalTimeout(promise, timeoutMs, operation) {
+  let timer = null;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new DocumentAiError(
+            'DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT',
+            `A ${operation} excedeu o limite local de tempo desta tentativa.`,
+            504
+          ));
+        }, timeoutMs);
+      })
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function runWorkersAi(env, makeInput, validate, options = {}, operation = 'extração') {
   requireWorkersAi(env);
   const models = documentAiFreeModelSequence(env);
@@ -300,10 +320,13 @@ async function runWorkersAi(env, makeInput, validate, options = {}, operation = 
     const remaining = timeouts.total - (Date.now() - started);
     if (remaining <= 0) break;
     const timeoutMs = Math.max(1000, Math.min(timeouts.request, remaining));
-    const signal = AbortSignal.timeout(timeoutMs);
 
     try {
-      const payload = await run(model, makeInput(model), { signal });
+      const payload = await withLocalTimeout(
+        run(model, makeInput(model), { rejectIfBusy: true }),
+        timeoutMs,
+        operation
+      );
       const parsed = parseJsonCandidate(payload);
       const value = validate(parsed);
       return { value, model };
@@ -314,6 +337,7 @@ async function runWorkersAi(env, makeInput, validate, options = {}, operation = 
         || normalized.code === 'DOCUMENT_AI_PAID_MODEL_BLOCKED'
         || normalized.code === 'DOCUMENT_AI_FREE_ONLY_REQUIRED'
         || normalized.code === 'DOCUMENT_AI_NON_FREE_MODEL_BLOCKED'
+        || normalized.code === 'DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT'
       ) {
         throw normalized;
       }
