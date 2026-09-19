@@ -41,6 +41,9 @@ test('painel Titon permanece oculto e produção continua fail-closed', async ()
   assert.match(router, /requireCapability\(user, 'extract', origin\)/);
   assert.match(wrangler, /DOCUMENTS_AI_ENABLED = "false"/);
   assert.match(wrangler, /DOCUMENTS_AI_PROCESSING_ENABLED = "false"/);
+  assert.match(wrangler, /DOCUMENTS_AI_FREE_ONLY = "true"/);
+  assert.match(wrangler, /@cf\/google\/gemma-4-26b-a4b-it/);
+  assert.match(wrangler, /@cf\/qwen\/qwen3\.8-27b/);
 });
 
 test('botão único percorre o PDF e envia somente uma página por chamada', async () => {
@@ -51,14 +54,18 @@ test('botão único percorre o PDF e envia somente uma página por chamada', asy
   const extract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'classifyActiveDocumentPage');
 
   assert.match(extract, /getPageCount\?\.\(\)/);
-  assert.match(extract, /for \(let pageNumber = 1; pageNumber <= pageCount; pageNumber \+= 1\)/);
+  assert.match(extract, /const concurrency = Math\.min\(3, pageCount\)/);
+  assert.match(extract, /Promise\.all\(Array\.from\(\{ length: concurrency \}/);
   assert.match(extract, /await exporter\(pageNumber/);
+  assert.match(extract, /maxEdge: 1600/);
+  assert.match(extract, /quality: 0\.85/);
   assert.match(extract, /\/api\/documents\/ai\/page\/extract/);
   assert.match(extract, /'X-Document-Page-Number': String\(pageNumber\)/);
   assert.match(extract, /body: blob/);
   assert.match(extract, /credentials: 'omit'/);
-  assert.match(extract, /DOCUMENT_AI_PAGE_NOT_AUTHORIZED/);
+  assert.match(extract, /if \(pageType === 'outro'\)/);
   assert.match(extract, /state\.documentAiEvidence\.set\(pageNumber, normalized\)/);
+  assert.doesNotMatch(extract, /DOCUMENT_AI_PAGE_NOT_AUTHORIZED/);
   assert.doesNotMatch(extract, /state\.pdfItem\.(?:name|ref)|fileId|filename|searchQuery|page_text|inlineData/);
 
   assert.match(viewer, /async function exportPageImage\(pageNumber/);
@@ -93,7 +100,7 @@ test('falha intermediária descarta resultado parcial para não simular document
   const js = await read('js/documents.js');
   const extract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'classifyActiveDocumentPage');
 
-  assert.match(extract, /Resultado parcial não é apresentado/);
+  assert.match(extract, /if \(failure\) throw failure/);
   assert.match(extract, /state\.documentAiResults = \[\]/);
   assert.match(extract, /state\.documentAiEvidence\.clear\(\)/);
   assert.match(extract, /state\.documentAiScanCompleted = false/);
