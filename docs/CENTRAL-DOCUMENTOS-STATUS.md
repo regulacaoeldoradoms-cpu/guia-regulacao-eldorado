@@ -716,6 +716,28 @@ O diagnóstico não usa credenciais reais, não lê username autorizado, não ch
 
 **Próxima ação exata:** executar o diagnóstico no mesmo Windows e usar somente os marcadores `getProtected`, `preflightLogin`, `postSynthetic`, `workerReachable`, `corsReady` e `releaseMatch` para decidir se o defeito é do preview/CORS ou específico do navegador.
 
+## Causa do Failed to fetch confirmada: CSP do Pages bloqueava o alias 5E — 18/09/2026
+
+O diagnóstico executado no mesmo Windows confirmou:
+
+- `getProtected=OK`;
+- `preflightLogin=OK`;
+- `postSynthetic=OK`;
+- `workerReachable=true`;
+- `corsReady=true`;
+- `releaseMatch=true`.
+
+Portanto Worker preview, CORS e release estavam corretos fora do contexto da página. A inspeção do bundle congelado mostrou a causa específica: quando o Cloudflare Pages constrói o staging sem `CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL`, o laboratório fica com `workerConfigured=false` e permite selecionar manualmente apenas o alias oficial em memória, porém a CSP de `/homologacao-5e/*` ainda usava `https://disabled.invalid` em `connect-src`. O navegador bloqueava o `fetch` antes da requisição chegar ao Worker, resultando em `Failed to fetch`.
+
+Correção na branch `fix/central-docs-phase5e-csp-official-alias`:
+- a CSP 5E passa a permitir **sempre e somente** o alias oficial hardcoded `central-docs-phase5e-...workers.dev`;
+- `workerConfigured=false` continua significando que o usuário precisa selecionar o alias na UI; não há autoativação;
+- nenhuma origem arbitrária é liberada;
+- produção, D1, Drive, secrets e gates não são alterados;
+- teste de staging passa a exigir o alias oficial em `connect-src` mesmo no build desarmado.
+
+A janela 5E atualmente ativa ainda está vinculada à origem antiga `764243d1...`, cujo deploy é imutável e não pode receber a correção. Ela deve ser encerrada fail-closed e substituída por uma nova janela apontando para um novo preview Pages imutável com a CSP corrigida.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
@@ -842,10 +864,10 @@ Artefatos anteriores preservados:
 | Descartado | usar o Pages antigo `67dd934e…`; iniciar homologação antes de reforçar a matriz; interpretar falha de Worker Preview da PR como falha produtiva |
 | Ações externas | nenhuma alteração de Cloudflare/D1/Drive/secret nesta etapa; apenas builds automáticos do merge |
 | Checks/testes | operacionais 5E `35413947781` success; Fases 1–5E `35413947712` success; staging `35413947796` success; governança `35413947803` success; Worker main success |
-| Bloqueios | laboratório abre, mas login no browser retornou `Failed to fetch`; diagnóstico read-only Browser -> Worker preparado |
+| Bloqueios | causa identificada: CSP do Pages antigo bloqueia alias 5E; correção em branch e nova origem imutável necessária |
 | Riscos | provider real ainda não homologado; mitigação é janela preview-only, fixtures 100% sintéticos, Drive write false e encerramento fail-closed |
 | Observabilidade | somente propriedades técnicas allowlisted; nunca conteúdo documental, paciente, arquivo, Drive ID ou resposta bruta |
-| Próxima ação exata | executar `diagnosticar-conectividade-browser-5e.mjs --diagnosticar`; corrigir somente a camada que falhar antes de repetir login |
+| Próxima ação exata | validar PR da correção CSP, congelar novo Pages imutável, encerrar a janela antiga fail-closed e abrir nova 5E para a nova origem |
 | Depois | executar matriz sintética real, copiar somente o resumo seguro, encerrar 5E fail-closed e avaliar aceite/publicação da Fase 5 |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #237–#244; runs acima |
 
