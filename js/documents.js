@@ -3360,7 +3360,7 @@
     const openId = state.pdfOpenId;
     const item = state.pdfItem;
     const started = performance.now();
-    const concurrency = Math.min(3, pageCount);
+    const concurrency = Math.min(6, pageCount);
 
     state.documentAiBusy = true;
     state.documentAiScanCompleted = false;
@@ -3393,11 +3393,23 @@
         throw new Error('O documento mudou durante a extração. Abra o PDF novamente e tente outra vez.');
       }
 
-      const blob = await exporter(pageNumber, {
-        maxEdge: 1600,
-        mimeType: 'image/jpeg',
-        quality: 0.85
+      let blob = await exporter(pageNumber, {
+        maxEdge: 1800,
+        mimeType: 'image/png'
       });
+      if (!(blob instanceof Blob) || blob.size <= 0) {
+        throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
+      }
+
+      // Texto e formulários ficam mais nítidos em PNG. Para páginas fotográficas
+      // muito grandes, recuamos para JPEG de alta qualidade antes do limite de 3 MiB.
+      if (blob.size > 2.8 * 1024 * 1024) {
+        blob = await exporter(pageNumber, {
+          maxEdge: 1800,
+          mimeType: 'image/jpeg',
+          quality: 0.92
+        });
+      }
       if (!(blob instanceof Blob) || blob.size <= 0) {
         throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
       }
@@ -3406,7 +3418,7 @@
         method: 'POST',
         headers: {
           ...auth.authorizationHeader(),
-          'Content-Type': blob.type || 'image/jpeg',
+          'Content-Type': blob.type || 'image/png',
           'X-Document-Page-Number': String(pageNumber)
         },
         body: blob,

@@ -17,7 +17,7 @@ test('prompts da Fase 5 são artefatos separados e versionados', () => {
   assert.equal([...ids].every((id) => /_V1$/.test(id)), true);
   assert.equal(PROMPT_CLASSIFICACAO_PAGINAS_V1.version, 'v2');
   assert.equal(PROMPT_EXTRACAO_REGULACAO_V1.version, 'v2');
-  assert.equal(PROMPT_ANALISE_REGULACAO_V1.version, 'v1');
+  assert.equal(PROMPT_ANALISE_REGULACAO_V1.version, 'v2');
   assert.equal(PROMPT_DOCUMENT_CHAT_V1.version, 'v1');
   assert.equal(PROMPT_VALIDACAO_V1.version, 'v1');
 });
@@ -57,6 +57,9 @@ test('análise integrada combina tipo e campos sem pedir pageNumber ao modelo', 
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /CONTROLE DE ATENDIMENTO/);
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /RECEITA SIMPLES/);
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /NÃO CONFIÁVEL/i);
+  assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /rótulo.*visível.*ilegivel/is);
+  assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /caractere por caractere/i);
+  assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /NÃO DEVE SER INFERIDA/);
 });
 
 test('chat exige origem por página e validação não inventa correções', () => {

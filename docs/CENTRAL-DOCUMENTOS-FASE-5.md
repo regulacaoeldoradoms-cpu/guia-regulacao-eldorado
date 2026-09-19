@@ -306,22 +306,16 @@ Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado pa
 
 ## Próximo passo atual
 
-O segundo teste Workers AI no runtime V4 confirmou que o timeout artificial foi removido, porém as páginas visuais autorizadas continuaram classificadas como `outro`. A página administrativa esperada como `outro` foi a única aprovada.
+A V5 multimodal comprovou que a estratégia de visão direta funciona: **8/10 casos passaram**. As páginas 1–5 foram aceitas e os três primeiros chats também. A única falha documental restante foi a página 6, construída especificamente com CID ilegível; o chat correspondente falhou apenas porque essa página não entrou nas evidências.
 
-Diagnóstico técnico: o provider enviava a imagem em uma propriedade top-level `image`, enquanto o formato multimodal esperado para estes modelos usa conteúdo da mensagem com `image_url` + `text`.
+A V6 de precisão textual está sendo preparada para esse caso:
+- PNG 1800 px como padrão, com fallback JPEG 0,92 apenas para página grande;
+- prompt integrado V2 com regra inequívoca `campo/rótulo presente + valor ilegível = ilegivel`, nunca `nao_consta`;
+- revisão visual caractere a caractere;
+- texto aparentemente imperativo dentro de um valor continua sendo dado literal;
+- revisão focal no Qwen apenas nos campos ambíguos de páginas médicas; CID e descrição são revisados juntos quando houver ambiguidade, sem penalizar todas as páginas;
+- diagnóstico seguro das chaves divergentes no laboratório.
 
-A correção V5 foi integrada pela PR #273:
-- source ref: `20488871ce2556c06795367ededbdb49791c23f5`;
-- Pages imutável do reteste: `https://e8003492.portal-regulacao-central-staging.pages.dev`;
-- versão pública da IA documental: `phase5e-v5-multimodal-image-url`.
-
-A V5 envia cada página como conteúdo multimodal explícito, preservando isolamento por página, thinking off, fallback gratuito Gemma→Qwen, JSON mode e proveniência backend-owned.
-
-A janela V4 que produziu o teste 1/10 foi encerrada fail-closed pelo operador:
-- controle `phase5e_a306e08ec60f46ac8102cc021c163164`;
-- preview final bloqueado `f31277f5-bf69-4235-af85-b458192c20d8`;
-- `httpBlocked=true`.
-
-Próximo passo: executar o verificador read-only já apontando para a V5; somente com `PRECONDICOES_5E_OK` abrir nova janela e executar a matriz decisiva. Se a V5 ainda não reconhecer páginas visuais autorizadas, mudar a arquitetura para text-layer/OCR local + IA sobre texto, em vez de insistir em visão direta.
+A janela V5 atual deve ser encerrada fail-closed antes do reteste V6. Depois do merge, congelar novo source ref + Pages e repetir a matriz.
 
 Produção permanece com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
