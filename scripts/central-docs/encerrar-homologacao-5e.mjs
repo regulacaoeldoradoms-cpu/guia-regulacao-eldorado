@@ -101,7 +101,9 @@ export async function close5e() {
 
     console.log('1/5 Reconfirmando preview e banco da janela...');
     const preview = queryMinimal(['versions', 'view', ledger.previewVersion]);
-    const base = inspectProductionVersion(preview);
+    // Janelas 5E anteriores à migração para Workers AI podem não conter o binding AI.
+    // O encerramento só precisa de D1/runtime/secrets mínimos para revogar e bloquear.
+    const base = inspectProductionVersion(preview, { requireWorkersAi: false });
 
     const d1Path = path.join(work, 'wrangler.d1.json');
     writeJson(d1Path, {
