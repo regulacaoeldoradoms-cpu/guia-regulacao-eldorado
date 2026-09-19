@@ -306,18 +306,15 @@ Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado pa
 
 ## Próximo passo atual
 
-A migração da IA documental para Workers AI foi integrada pela PR #260 no merge `a49ecd22e922267179fd8502f08fc5950df8fb0a`.
+A primeira matriz Workers AI do runtime `a49ecd22...` falhou com **0/10** porque todas as seis páginas atingiram `DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT`. A extração levou 27,2 s e o total com chat 49,7 s. Como nenhuma página gerou evidência, as quatro falhas de chat foram consequências e não provas independentes.
 
-Referências congeladas do próximo reteste 5E:
-- source ref: `a49ecd22e922267179fd8502f08fc5950df8fb0a`;
-- Pages imutável: `https://60f66c8b.portal-regulacao-central-staging.pages.dev`;
-- provider: Gemma 4 principal + Qwen 3.8 fallback;
-- `DOCUMENTS_AI_FREE_ONLY=true`.
+A causa está no próprio Titon:
+- timeout artificial local de 6 s via `Promise.race`;
+- timeout local era terminal, impedindo o fallback Qwen;
+- thinking dos modelos não estava explicitamente desabilitado.
 
-Antes de executar qualquer inferência Workers AI, há duas pré-condições humanas:
-1. encerrar fail-closed a janela 5E anterior, ainda vinculada ao runtime Gemini;
-2. confirmar no painel Cloudflare que o plano de Workers é **Free** e que não há AI Gateway com créditos/prepaid/unified billing sendo usado por este fluxo. Essa confirmação é necessária porque, no Workers Paid, uso acima da franquia gratuita pode gerar cobrança; o código bloqueia modelos pagos/Gateway, mas não consegue inferir o plano comercial da conta.
+A correção V4 remove o timeout artificial, usa somente erros/timeouts nativos do Workers AI, desativa raciocínio para o fluxo documental, mantém `rejectIfBusy`, faz fallback gratuito em capacidade/timeout/schema e acrescenta métricas por modelo/página.
 
-Depois disso, executar o verificador read-only. Somente com `PRECONDICOES_5E_OK` abrir a nova janela e rodar a matriz. O resumo seguro deve trazer `duracao_extracao_ms` e `duracao_total_ms`.
+Antes de novo teste, a janela que serviu `a49ecd22...` deve ser encerrada fail-closed. Após CI/merge, congelar novo runtime + Pages e repetir a 5E.
 
-Produção continua com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
+Produção permanece com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
