@@ -314,7 +314,8 @@ function visionInput(model, system, prompt, image, maxTokens = 1400) {
       reasoning: false,
       temperature: 0,
       top_p: 0.1,
-      max_tokens: maxTokens
+      max_tokens: maxTokens,
+      stream: false
     };
   }
 
