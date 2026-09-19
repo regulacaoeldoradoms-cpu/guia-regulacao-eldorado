@@ -79,6 +79,13 @@ test('produção 5E precisa de AUTH_DB, sessão, rate limit e binding Workers AI
     (error) => error instanceof Safe5eError
       && error.message === 'INTERVENCAO_NECESSARIA_WORKERS_AI_BINDING_AUSENTE'
   );
+
+  const legacyPreview = inspectProductionVersion(
+    production({ workersAi: false }),
+    { requireWorkersAi: false }
+  );
+  assert.equal(legacyPreview.workersAiBindingPresent, false);
+  assert.equal(legacyPreview.dbId, DB);
 });
 
 test('config preview 5E liga somente IA e mantém escrita Drive false', () => {
