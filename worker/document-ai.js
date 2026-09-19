@@ -319,9 +319,6 @@ export function documentAiTechnicalEvent(name, properties = {}) {
     'document_ai_extraction_started',
     'document_ai_extraction_completed',
     'document_ai_extraction_failed',
-    'document_ai_document_extraction_started',
-    'document_ai_document_extraction_completed',
-    'document_ai_document_extraction_failed',
     'document_ai_chat_started',
     'document_ai_chat_completed',
     'document_ai_chat_failed'
@@ -332,7 +329,7 @@ export function documentAiTechnicalEvent(name, properties = {}) {
   if (Number.isFinite(Number(properties.duration_ms))) {
     safe.duration_ms = Math.max(0, Math.round(Number(properties.duration_ms)));
   }
-  if (['classification', 'extraction', 'document', 'chat', 'validation'].includes(properties.operation)) {
+  if (['classification', 'extraction', 'chat', 'validation'].includes(properties.operation)) {
     safe.operation = properties.operation;
   }
   if (['success', 'failed', 'disabled'].includes(properties.result)) {
