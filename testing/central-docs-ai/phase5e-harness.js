@@ -505,13 +505,13 @@
     els.resultsCard.hidden = false;
     els.chatCard.hidden = false;
     els.run.disabled = true;
-    status(els.matrixStatus, 'Executando análise integrada em até 3 páginas simultâneas…');
+    status(els.matrixStatus, 'Executando análise integrada em até 6 páginas simultâneas…');
 
     try {
       const extractionStarted = performance.now();
       let nextFixture = 0;
       const pageResults = new Array(fixtures.length);
-      const concurrency = Math.min(3, fixtures.length);
+      const concurrency = Math.min(6, fixtures.length);
 
       const analyzeFixture = async (fixture, index) => {
         const canvas = els.fixtureGrid.querySelector('canvas[data-fixture-id="' + fixture.id + '"]');
