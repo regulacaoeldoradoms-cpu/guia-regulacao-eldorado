@@ -49,18 +49,33 @@ Conteúdo do PDF, imagem de página, OCR/texto extraído, nome de paciente, CPF,
 
 Telemetria da Fase 5 deve usar apenas eventos e propriedades técnicas allowlisted, como operação, duração, resultado técnico e faixa de tamanho.
 
+### Provider documental aprovado — custo zero
+
+Por decisão do operador, a IA documental do Titon **não pode gerar cobrança automática**.
+
+Provider aprovado para esta frente:
+- runtime: **Cloudflare Workers AI** pelo binding nativo `AI`;
+- principal: `@cf/google/gemma-4-26b-a4b-it`;
+- fallback: `@cf/qwen/qwen3.8-27b`;
+- `DOCUMENTS_AI_FREE_ONLY=true`;
+- nenhum AI Gateway pago, crédito pré-pago ou modelo fora da allowlist pode ser usado como fallback silencioso;
+- ao esgotar a franquia gratuita, o fluxo deve falhar fechado com aviso de limite diário, nunca migrar para modelo pago.
+
+O Gemini API deixa de ser provider da **IA documental** do Titon. `GEMINI_API_KEY` e as variáveis Gemini existentes podem continuar no Worker por outros módulos do Portal, especialmente a pré-regulação; essa separação não autoriza reutilizar o assistente de pré-regulação para documentos identificáveis.
+
 ## Princípio de isolamento por página
 
 Para as rotinas restritivas, o modelo não deve receber o PDF inteiro e ser instruído apenas por texto a “não misturar páginas”.
 
 Fluxo obrigatório:
 
-1. o Portal identifica a página candidata;
-2. somente aquela página é preparada para a chamada de IA;
-3. a chamada recebe o número da página como metadado técnico da requisição;
-4. o backend ancora a proveniência nesse metadado e **não confia no modelo para ecoar o número da página**;
-5. cada página médica autorizada é extraída em chamada própria;
-6. a montagem da resposta final apenas concatena blocos já vinculados à origem.
+1. o Portal prepara uma página por vez;
+2. cada página é enviada isoladamente ao provider;
+3. **uma única inferência multimodal por página** retorna `pageType` e, quando autorizada, os campos estruturados;
+4. o número da página permanece metadado técnico do backend e nunca depende do modelo;
+5. páginas `outro` retornam sem bloco de extração;
+6. páginas independentes podem ser processadas com concorrência limitada, sem compartilhar contexto entre elas;
+7. a montagem da resposta final apenas concatena blocos já vinculados à origem.
 
 Isso transforma “não misturar páginas” em restrição de arquitetura, não somente em instrução linguística.
 
@@ -70,6 +85,7 @@ A implementação deve manter rotinas independentes:
 
 - `PROMPT_CLASSIFICACAO_PAGINAS_V1`;
 - `PROMPT_EXTRACAO_REGULACAO_V1`;
+- `PROMPT_ANALISE_REGULACAO_V1` — caminho principal de classificação + extração em uma inferência;
 - `PROMPT_DOCUMENT_CHAT_V1`;
 - `PROMPT_VALIDACAO_V1`.
 
@@ -169,7 +185,7 @@ Aceite 5B: 306/306 testes, navegador 75 passed/3 skipped esperados, staging/gove
 Estado: **concluída e aceita sinteticamente no PR #217**.
 
 Implementação:
-- reclassificar a mesma página imediatamente antes da extração, evitando confiar somente em estado antigo do frontend;
+- histórico 5C: reclassificar a mesma página imediatamente antes da extração. **Esse desenho foi supersedido na 5E otimizada**, pois produzia duas inferências e podia classificar a mesma página de forma divergente;
 - permitir extração apenas de `comprovante_atendimento` e `pagina_medica_autorizada`;
 - enviar uma única imagem JPEG/PNG da página, com número técnico e tipo autorizado; nenhum nome de arquivo, ref ou ID do Drive;
 - usar schema fechado por tipo de página e rejeitar campos extras, campos ausentes, tipo divergente ou proveniência divergente;
@@ -221,7 +237,7 @@ Aceite 5D: **320/320 testes** na suíte integrada, navegador **75 passed / 3 ski
 
 ### 5E — Homologação real controlada
 
-Estado: **homologação real em andamento; primeira execução real alcançou o provedor, mas a matriz falhou por `DOCUMENT_AI_PAGE_INVALID` antes do aceite**.
+Estado: **homologação real em andamento. O runtime Gemini corrigido chegou a 8 aprovados / 2 falhas, revelou reclassificação redundante e latência excessiva; a próxima rodada migra a IA documental para Workers AI free-only com uma inferência por página.**
 
 Artefatos preparados:
 - wrapper Worker preview-only `worker/homologation-5e.js`;
@@ -254,10 +270,11 @@ Isolamento:
 - o endereço aceito é exatamente o alias oficial `central-docs-phase5e-...workers.dev`;
 - conteúdo real de paciente é proibido nesta homologação.
 
-Possível intervenção futura:
-- o preparo consulta a versão produtiva e verifica apenas a **existência/tipo** de `GEMINI_API_KEY`, sem ler o valor;
-- se a chave não existir na baseline, o script para antes de qualquer upload/controle ativo com `INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE`;
-- se existir, o usuário ainda precisará confirmar explicitamente a abertura da janela 5E e executar a matriz no navegador.
+Pré-condição do provider:
+- o preparo 5E exige o binding nativo `AI` do Workers AI;
+- a homologação não exige mais `GEMINI_API_KEY` para a IA documental;
+- o preview força `DOCUMENTS_AI_FREE_ONLY=true`, Gemma 4 como principal e Qwen 3.8 como único fallback;
+- a confirmação humana `PREPARAR HOMOLOGACAO 5E` continua obrigatória antes de qualquer janela real.
 
 ## UX aprovada do Titon — extração em um clique
 
@@ -268,13 +285,14 @@ Fluxo aprovado:
 1. usuário abre o PDF;
 2. clica **Extrair dados do PDF**;
 3. Titon obtém a quantidade de páginas no PDF.js;
-4. percorre as páginas sequencialmente;
-5. cada página é enviada isoladamente para classificação;
-6. páginas `outro` são ignoradas;
-7. páginas autorizadas são extraídas em chamada própria e armazenadas somente em memória;
-8. o resultado final mostra um bloco de comprovante e um bloco separado para cada página médica autorizada, sempre com número de página e ação **Ver página**;
-9. **Copiar dados** gera o modelo institucional completo;
-10. o chat permanece opcional/secundário e recebe somente evidências estruturadas já extraídas.
+4. prepara JPEG efêmero de cada página, sem nome/ID do Drive;
+5. processa até **3 páginas independentes em paralelo**;
+6. cada página usa **uma inferência** para classificar e extrair;
+7. páginas `outro` são ignoradas;
+8. páginas autorizadas são armazenadas somente em memória e geram blocos separados;
+9. o resultado final mostra número da página e ação **Ver página**;
+10. **Copiar dados** gera o modelo institucional completo;
+11. o chat permanece opcional/secundário e recebe somente evidências estruturadas já extraídas.
 
 Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado parcial em vez de apresentá-lo como documento completo.
 
@@ -288,8 +306,18 @@ Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado pa
 
 ## Próximo passo atual
 
-A correção funcional foi integrada à `main` pela PR #256 no commit `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2`. O reteste 5E está congelado nesse source ref e no Pages imutável `https://56753b53.portal-regulacao-central-staging.pages.dev`.
+A matriz no runtime Gemini corrigido confirmou o contrato principal em 8 casos, mas mostrou duas limitações que impedem o aceite: reclassificação redundante da mesma página e latência incompatível com a rotina operacional.
 
-Antes de qualquer reteste, a segunda janela 5E antiga, que executou a matriz no runtime `408bff...`, deve ser **encerrada fail-closed**. Depois, o operador deve executar o verificador read-only; somente com `PRECONDICOES_5E_OK` pode abrir nova janela controlada apontando para as referências corrigidas e repetir a matriz sintética real.
+A branch atual migra somente a **IA documental do Titon** para Cloudflare Workers AI em modo free-only:
+- Gemma 4 26B A4B como principal;
+- Qwen 3.8 27B como fallback;
+- uma inferência por página;
+- até 3 páginas simultâneas;
+- JPEG 1600 px / qualidade 0,85 no fluxo final;
+- timeout de 6 s por tentativa e 10 s total por operação;
+- erro de limite gratuito encerra o fluxo sem fallback pago;
+- chat continua fora do tempo principal de extração.
 
-Produção permanece com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`. O check automático Workers Builds do Cloudflare no merge #256 falhou e precisa ser tratado separadamente antes de qualquer publicação produtiva da Fase 5; isso não muda o fluxo preview-only do reteste.
+A janela 5E atualmente aberta pertence ao runtime anterior e deve ser encerrada fail-closed antes de qualquer reteste desta branch. Depois do merge e dos checks, congelar novo source ref + novo Pages imutável e repetir a matriz real, medindo separadamente `duracao_extracao_ms` e `duracao_total_ms`.
+
+Produção continua com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
