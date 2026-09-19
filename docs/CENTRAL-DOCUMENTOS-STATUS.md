@@ -1065,6 +1065,25 @@ A tentativa anterior que falhou por ausência de binding Workers AI não produzi
 
 **Próxima ação:** executar somente o verificador read-only 5E da `main` atual. Antes de abrir a nova janela Gemma/Qwen, confirmar também no painel Cloudflare que a conta está em Workers Free e que este fluxo não usa AI Gateway/prepaid/unified billing.
 
+## Readiness 5E Workers AI confirmado — 18/09/2026
+
+O operador executou o verificador somente leitura após o encerramento fail-closed da janela anterior.
+
+Resultado sanitizado:
+- `PRECONDICOES_5E_OK`;
+- produção ativa observada: `298ba237-78f9-4d24-bad1-47e66b4c1e15`;
+- `workersAiBindingPresent=true`;
+- `freeOnlyModels=true`;
+- `extractCapability=true`;
+- `activeControlledWindow=false`;
+- source ref congelado: `a49ecd22e922267179fd8502f08fc5950df8fb0a`;
+- Pages congelado: `https://60f66c8b.portal-regulacao-central-staging.pages.dev`;
+- próxima ação técnica retornada pelo verificador: `PREPARAR_HOMOLOGACAO_5E`.
+
+Interpretação: as precondições técnicas para abrir uma nova janela Gemma/Qwen estão satisfeitas. A única trava restante antes da primeira inferência é a regra de custo zero: confirmar no painel Cloudflare que a conta usa Workers Free e que o fluxo Titon não está associado a AI Gateway/prepaid/unified billing.
+
+**Próxima ação humana:** confirmar Workers Free + ausência de cobrança por Gateway. Depois executar o preparo 5E e rodar a matriz sintética Workers AI, medindo `duracao_extracao_ms` e `duracao_total_ms`.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — Workers AI free-only integrado; novo reteste aguarda confirmação de plano Free e encerramento da janela antiga**. Produção continua com IA documental desligada.
@@ -1181,7 +1200,7 @@ Artefatos anteriores preservados:
 | --- | --- |
 | Fase/subfase | Fase 5E — Workers AI free-only integrado; próximo reteste ainda não aberto |
 | Última ação concluída | PR #260 mesclada; runtime e Pages do reteste congelados |
-| Main | `81079a13b2fe0a031a3bfeb44dd9f545d30c6dba`; runtime do reteste permanece congelado em `a49ecd22…` |
+| Main | `c31f8f3d59a5a0e8d373a858cdd3a1a18e478d67`; runtime do reteste permanece congelado em `a49ecd22…` |
 | Runtime reteste | `a49ecd22e922267179fd8502f08fc5950df8fb0a` |
 | Pages reteste | `https://60f66c8b.portal-regulacao-central-staging.pages.dev` |
 | Provider | `@cf/google/gemma-4-26b-a4b-it` principal; `@cf/qwen/qwen3.8-27b` fallback |
@@ -1191,7 +1210,7 @@ Artefatos anteriores preservados:
 | Janela antiga | `phase5e_502e857dd0424fbe92ea406048e7ad7f` encerrada fail-closed; HTTP bloqueado confirmado |
 | PR #259 | fechada sem merge como direção Gemini-Free superada |
 | Produção | IA documental false/false; não ativar antes do aceite 5E |
-| Próxima ação exata | rodar verificador read-only; confirmar Workers Free + ausência de Gateway/prepaid; se ambos verdes, abrir nova 5E |
+| Próxima ação exata | readiness já verde; confirmar Workers Free + ausência de Gateway/prepaid; depois abrir nova 5E |
 | Depois | executar matriz Workers AI, copiar resumo seguro com durações, encerrar janela fail-closed e avaliar aceite |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #260; Pages do merge |
 
