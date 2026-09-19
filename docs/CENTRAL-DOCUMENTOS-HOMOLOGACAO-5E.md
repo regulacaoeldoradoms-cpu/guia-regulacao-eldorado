@@ -13,20 +13,29 @@ Produção permanece com:
 - `DOCUMENTS_AI_ENABLED=false`;
 - `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
 
-A segunda janela controlada alcançou o provedor real em 18/09/2026. O login/browser/CORS funcionaram, mas os seis casos da matriz falharam com `DOCUMENT_AI_PAGE_INVALID`. Esse resultado **não é aceite do modelo**; a causa está no contrato técnico de proveniência/número da página e está sendo corrigida antes do reteste.
+Histórico de homologação:
+- a janela antiga em Gemini encontrou `DOCUMENT_AI_PAGE_INVALID`, corrigido depois no backend;
+- o reteste seguinte chegou a **8 aprovados / 2 falhas**, mas revelou que `/page/extract` reclassificava a mesma página e podia divergir da classificação anterior;
+- o mesmo desenho fazia até 20 inferências na matriz completa e até 12 inferências sequenciais para um PDF de seis páginas no fluxo final, causando latência excessiva.
+
+A próxima rodada 5E substitui o provider **somente da IA documental** por Cloudflare Workers AI free-only, usando Gemma 4 como principal e Qwen 3.8 como fallback.
 
 
-## Referência congelada para a execução real
+## Referência congelada para a próxima execução real
 
-Após integrar o preparo 5E, a execução real deve usar:
+As referências da rodada Gemini (`39ded96...` / Pages `56753b53...`) são **históricas e não devem ser reutilizadas** depois da migração de provider.
 
-- source ref do reteste corrigido: `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2`;
-- Pages origin do reteste corrigido: `https://56753b53.portal-regulacao-central-staging.pages.dev`;
-- Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
+A próxima janela 5E só pode ser aberta depois de:
+1. mesclar a branch Workers AI;
+2. congelar o novo source ref da `main`;
+3. publicar/congelar um novo Pages imutável com o harness atualizado;
+4. atualizar o verificador operacional para essas duas referências;
+5. encerrar fail-closed qualquer janela anterior ainda ativa.
 
-A janela que encontrou `DOCUMENT_AI_PAGE_INVALID` usou historicamente o runtime `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0` e Pages `https://915c3113.portal-regulacao-central-staging.pages.dev`. Para o reteste, o runtime corrigido foi congelado no merge da PR #256 (`39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2`) e o bundle Pages imutável correspondente é `https://56753b53.portal-regulacao-central-staging.pages.dev`. Esse bundle mantém a CSP restrita ao alias oficial 5E. Não substituir por produção nem por outro alias arbitrário.
+O Worker preview alias permanece:
+`https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
-Pré-condições externas já resolvidas nesta execução: `GEMINI_API_KEY` foi confirmada como Secret no Worker sem expor o valor, e a conta autorizada possui `view=true` e `extract=true`. O verificador continua fail-closed e deve reconfirmar esses estados antes de cada nova janela.
+A precondição externa de usuário/capability continua: conta ativa, `view=true` e `extract=true`.
 
 ## Objetivo
 
@@ -34,8 +43,8 @@ Homologar o comportamento real do provedor usando somente conteúdo sintético e
 
 A 5E deve comprovar, com o provedor real:
 
-1. classificação de uma página por vez;
-2. extração restrita por página;
+1. análise isolada de uma página por vez em **uma única inferência**;
+2. classificação + extração restrita no mesmo retorno estruturado;
 3. literalidade dos campos encontrados;
 4. `NÃO CONSTA` para campo ausente;
 5. `ILEGÍVEL` para campo visivelmente presente, porém propositalmente borrado;
@@ -43,7 +52,9 @@ A 5E deve comprovar, com o provedor real:
 7. ausência de mistura entre duas páginas médicas com valores conflitantes;
 8. chat baseado somente em evidências estruturadas e paginadas;
 9. proveniência obrigatória em respostas comuns;
-10. encerramento fail-closed da janela.
+10. encerramento fail-closed da janela;
+11. medição separada do tempo de extração e do tempo total com chat;
+12. fallback Gemma → Qwen somente em falha recuperável, nunca para modelo pago.
 
 ## Correção do contrato de proveniência
 
@@ -56,6 +67,25 @@ No runtime corrigido:
 - isso elimina a dependência de o provider repetir corretamente o número técnico no JSON.
 
 O erro observado `DOCUMENT_AI_PAGE_INVALID` deve ser retestado somente em uma nova janela, após o runtime corrigido ser congelado.
+
+## Provider e política de custo da próxima rodada
+
+A IA documental 5E passa a usar o binding nativo `AI` do Cloudflare Workers AI.
+
+Allowlist:
+- principal: `@cf/google/gemma-4-26b-a4b-it`;
+- fallback: `@cf/qwen/qwen3.8-27b`.
+
+Controles:
+- `DOCUMENTS_AI_FREE_ONLY=true`;
+- nenhum endpoint Gemini é chamado pelo `document-ai-provider.js`;
+- nenhum AI Gateway é usado;
+- nenhum modelo fora da allowlist é aceito;
+- erro Cloudflare 3036 (franquia gratuita diária esgotada) vira `DOCUMENT_AI_FREE_LIMIT_REACHED` e encerra a tentativa;
+- erro 5035 (modelo exige plano pago) vira `DOCUMENT_AI_PAID_MODEL_BLOCKED` e falha fechado;
+- a existência de `GEMINI_API_KEY` deixa de ser precondição da **IA documental**, embora o secret possa continuar no Worker por outros módulos.
+
+A garantia operacional de custo zero também depende de manter a conta Workers/Workers AI sem mecanismo de cobrança de excedente habilitado. O código impede fallback para modelos pagos, mas não deve ser usado para inferir o plano comercial da conta.
 
 ## Arquitetura de isolamento
 
@@ -111,15 +141,15 @@ O preview 5E recebe:
 - `AUTH_DB`;
 - `AUTH_SESSION_SECRET`;
 - `AUTH_RATE_LIMIT_SECRET`;
-- `GEMINI_API_KEY`;
+- binding nativo `AI` do Workers AI;
 - `AUTH_USERS_JSON` somente se já existir na versão de origem;
 - variáveis `plain_text` da produção, com sobrescritas explícitas de homologação.
 
-O script nunca lê o valor dos secrets; valida apenas presença/tipo pela metadata de Worker Version.
+O script nunca lê valores de secrets; valida apenas presença/tipo pela metadata de Worker Version.
 
-Se `GEMINI_API_KEY` não existir na baseline produtiva, o preparo para com:
+Se o binding `AI` não existir na baseline produtiva, o preparo para com:
 
-`INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE`
+`INTERVENCAO_NECESSARIA_WORKERS_AI_BINDING_AUSENTE`
 
 Nesse estado não há upload, controle ativo ou mudança de produção.
 
@@ -137,6 +167,8 @@ Somente a versão preview 5E usa:
 
 - `DOCUMENTS_AI_ENABLED=true`;
 - `DOCUMENTS_AI_PROCESSING_ENABLED=true`;
+- `DOCUMENTS_AI_FREE_ONLY=true`;
+- Gemma 4 principal + Qwen 3.8 fallback;
 - `DOCUMENTS_DRIVE_WRITE_ENABLED=false`.
 
 O Worker de produção não é alterado.
@@ -195,6 +227,18 @@ Todos os demais campos permanecem literais.
    - o campo deve retornar `ilegivel`;
    - a IA não deve inferir o CID pela descrição ou conhecimento externo.
 
+### Regra de chamada e desempenho
+
+Para cada fixture, o harness chama apenas `POST /api/documents/ai/page/extract`. O backend executa uma inferência integrada que devolve `classification` e, quando a página é autorizada, `extraction`.
+
+Não existe mais a sequência externa `classify -> extract -> reclassify`.
+
+As seis páginas sintéticas são processadas com concorrência máxima de **3**, mantendo contextos separados. O resumo seguro registra:
+- `duracao_extracao_ms` — somente análise das páginas;
+- `duracao_total_ms` — páginas + perguntas opcionais do chat.
+
+Meta operacional: documentos curtos típicos devem se aproximar da faixa de 5–10 s para a extração principal; o chat não entra nessa meta.
+
 ### Regra de literalidade da matriz
 
 Para cada página autorizada, a homologação compara **todos os oito campos do schema**, não apenas campos-amostra. Nas páginas completas, cada valor precisa coincidir literalmente com o fixture da própria página. Nas páginas de campo ausente ou ilegível, os sete campos restantes também precisam permanecer literais e isolados, enquanto o campo especial deve retornar respectivamente `nao_consta` ou `ilegivel` com valor vazio.
@@ -222,7 +266,7 @@ Ele reconfirma:
 
 - versão produtiva ativa;
 - presença nominal dos secrets necessários, sem ler valores;
-- presença de `GEMINI_API_KEY`;
+- presença do binding `AI` do Workers AI;
 - capability documental `extract` da conta homologada;
 - ausência de outra janela controlada ativa;
 - source ref e Pages origin congelados para a 5E.
@@ -231,9 +275,9 @@ Marcador de sucesso:
 
 `PRECONDICOES_5E_OK`
 
-Se o Gemini continuar ausente, o resultado esperado é:
+Se o binding Workers AI estiver ausente, o resultado esperado é:
 
-`PRECONDICOES_5E_BLOQUEADAS=INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE`
+`PRECONDICOES_5E_BLOQUEADAS=INTERVENCAO_NECESSARIA_WORKERS_AI_BINDING_AUSENTE`
 
 O verificador não executa `INSERT`, `UPDATE`, upload de versão, alteração de alias ou deployment.
 
@@ -329,7 +373,9 @@ Não prosseguir para produção se ocorrer qualquer um:
 - qualquer uso de documento real de paciente;
 - qualquer escrita no Drive;
 - qualquer mudança no deployment de produção durante a janela;
-- ausência de `GEMINI_API_KEY`;
+- ausência do binding Workers AI;
+- tentativa de usar modelo fora da allowlist gratuita;
+- limite gratuito esgotado durante a matriz;
 - falha no encerramento fail-closed.
 
 ## Limite do aceite
@@ -337,6 +383,18 @@ Não prosseguir para produção se ocorrer qualquer um:
 A 5E homologará a IA documental com **dados sintéticos em chamadas reais ao provedor**.
 
 Ela não autoriza automaticamente ativação produtiva. Depois da matriz aprovada e da janela encerrada, o status deve registrar as evidências e haverá uma decisão separada para publicar a Fase 5 com os gates produtivos.
+
+## Próximo reteste
+
+Antes do reteste Workers AI:
+1. encerrar a janela atual pelo procedimento fail-closed;
+2. concluir checks e merge da branch de migração;
+3. congelar novo source ref + Pages;
+4. abrir nova janela 5E;
+5. executar a matriz e copiar o resumo seguro com as duas durações;
+6. encerrar a janela imediatamente depois.
+
+O aceite exige matriz sem falhas e tempo de extração compatível com a rotina; nenhuma ativação produtiva é automática.
 
 ## Privacidade
 

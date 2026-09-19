@@ -356,18 +356,6 @@
     return String(field.value || '') === '';
   }
 
-  async function classifyFixture(fixture, blob) {
-    return api('/api/documents/ai/page/classify', {
-      method: 'POST',
-      ai: true,
-      headers: {
-        'Content-Type': blob.type || 'image/png',
-        'X-Document-Page-Number': String(fixture.pageNumber)
-      },
-      body: blob
-    });
-  }
-
   async function extractFixture(fixture, blob) {
     return api('/api/documents/ai/page/extract', {
       method: 'POST',
@@ -413,7 +401,9 @@
     const lines = [
       failed ? 'MATRIZ_5E_SINTETICA=FALHOU' : 'MATRIZ_5E_SINTETICA=APROVADA',
       'aprovados=' + passed,
-      'falhas=' + failed
+      'falhas=' + failed,
+      'duracao_extracao_ms=' + Math.max(0, Math.round(Number(state.extractionDurationMs || 0))),
+      'duracao_total_ms=' + Math.max(0, Math.round(Number(state.durationMs || 0)))
     ];
 
     state.results.forEach((item, index) => {
@@ -465,6 +455,9 @@
     state.running = true;
     state.results = [];
     state.evidence.clear();
+    state.durationMs = 0;
+    state.extractionDurationMs = 0;
+    const matrixStarted = performance.now();
     if (els.copySafeSummary) els.copySafeSummary.disabled = true;
     if (els.safeSummaryStatus) els.safeSummaryStatus.textContent = '';
     els.results.replaceChildren();
@@ -472,64 +465,85 @@
     els.resultsCard.hidden = false;
     els.chatCard.hidden = false;
     els.run.disabled = true;
-    status(els.matrixStatus, 'Executando classificação e extração página por página…');
+    status(els.matrixStatus, 'Executando análise integrada em até 3 páginas simultâneas…');
 
     try {
-      for (const fixture of fixtures) {
+      const extractionStarted = performance.now();
+      let nextFixture = 0;
+      const pageResults = new Array(fixtures.length);
+      const concurrency = Math.min(3, fixtures.length);
+
+      const analyzeFixture = async (fixture, index) => {
         const canvas = els.fixtureGrid.querySelector('canvas[data-fixture-id="' + fixture.id + '"]');
         const blob = await blobFromCanvas(canvas);
 
         try {
-          const classified = await classifyFixture(fixture, blob);
-          const observed = classified?.classification || {};
-          const classificationPass = Number(observed.pageNumber) === fixture.pageNumber
+          const payload = await extractFixture(fixture, blob);
+          const observed = payload?.classification || {};
+          const extraction = payload?.extraction ?? null;
+          let passed = Number(observed.pageNumber) === fixture.pageNumber
             && String(observed.pageType || '') === fixture.expectedType;
-          addResult(
-            'Página ' + fixture.pageNumber + ' · classificação',
-            classificationPass,
-            JSON.stringify(observed, null, 2)
-          );
 
-          if (fixture.expectedType === 'outro') continue;
-          if (!classificationPass) {
-            addResult(
-              'Página ' + fixture.pageNumber + ' · extração',
-              false,
-              'Extração não executada porque a classificação esperada não foi confirmada.'
+          if (fixture.expectedType === 'outro') {
+            passed = passed && extraction === null;
+          } else {
+            passed = passed && Boolean(
+              extraction
+              && Number(extraction.pageNumber) === fixture.pageNumber
+              && String(extraction.pageType || '') === fixture.expectedType
+              && extraction.fields
             );
-            continue;
+            for (const [key, expected] of Object.entries(fixture.expectedFields || {})) {
+              passed = passed && fieldMatches(extraction?.fields?.[key], expected);
+            }
           }
 
-          const extracted = await extractFixture(fixture, blob);
-          const extraction = extracted?.extraction;
-          let extractionPass = Boolean(
-            extraction
-            && Number(extraction.pageNumber) === fixture.pageNumber
-            && String(extraction.pageType || '') === fixture.expectedType
-            && extraction.fields
-          );
-
-          for (const [key, expected] of Object.entries(fixture.expectedFields || {})) {
-            extractionPass = extractionPass && fieldMatches(extraction?.fields?.[key], expected);
-          }
-
-          addResult(
-            'Página ' + fixture.pageNumber + ' · extração restritiva',
-            extractionPass,
-            JSON.stringify(extraction || {}, null, 2)
-          );
-
-          if (extractionPass) {
-            state.evidence.set(fixture.pageNumber, extraction);
-          }
+          pageResults[index] = {
+            fixture,
+            passed,
+            detail: JSON.stringify({
+              classification: observed,
+              extraction
+            }, null, 2),
+            extraction: passed ? extraction : null
+          };
         } catch (error) {
-          addResult(
-            'Página ' + fixture.pageNumber + ' · execução',
-            false,
-            (error.code ? error.code + ': ' : '') + (error.message || 'Falha não identificada.')
+          pageResults[index] = {
+            fixture,
+            passed: false,
+            detail: (error.code ? error.code + ': ' : '') + (error.message || 'Falha não identificada.'),
+            extraction: null
+          };
+        }
+      };
+
+      const worker = async () => {
+        while (true) {
+          const index = nextFixture;
+          nextFixture += 1;
+          if (index >= fixtures.length) return;
+          await analyzeFixture(fixtures[index], index);
+          const completed = pageResults.filter(Boolean).length;
+          status(
+            els.matrixStatus,
+            'Analisando páginas… ' + completed + ' de ' + fixtures.length + ' concluída(s).'
           );
         }
-      }
+      };
+
+      await Promise.all(Array.from({ length: concurrency }, () => worker()));
+      state.extractionDurationMs = performance.now() - extractionStarted;
+
+      pageResults.forEach((item) => {
+        addResult(
+          'Página ' + item.fixture.pageNumber + ' · análise integrada',
+          item.passed,
+          item.detail
+        );
+        if (item.passed && item.extraction) {
+          state.evidence.set(item.fixture.pageNumber, item.extraction);
+        }
+      });
 
       status(els.matrixStatus, 'Executando perguntas somente com as evidências estruturadas aprovadas…');
 
@@ -563,16 +577,20 @@
         );
       }
 
+      state.durationMs = performance.now() - matrixStarted;
       renderSummary();
       const failed = state.results.some((item) => !item.passed);
+      const extractionSeconds = (state.extractionDurationMs / 1000).toFixed(1).replace('.', ',');
+      const totalSeconds = (state.durationMs / 1000).toFixed(1).replace('.', ',');
       status(
         els.matrixStatus,
         failed
-          ? 'Matriz concluída com falhas. Não habilite produção; envie o resultado para revisão.'
-          : 'Matriz sintética concluída sem falhas. Ainda falta revisão humana antes de qualquer produção.',
+          ? 'Matriz concluída com falhas. Extração: ' + extractionSeconds + ' s; total com chat: ' + totalSeconds + ' s.'
+          : 'Matriz aprovada. Extração: ' + extractionSeconds + ' s; total com chat: ' + totalSeconds + ' s.',
         failed ? 'warning' : 'success'
       );
     } finally {
+      if (!state.durationMs) state.durationMs = performance.now() - matrixStarted;
       state.running = false;
       els.run.disabled = false;
     }

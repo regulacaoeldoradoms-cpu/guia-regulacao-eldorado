@@ -3360,6 +3360,7 @@
     const openId = state.pdfOpenId;
     const item = state.pdfItem;
     const started = performance.now();
+    const concurrency = Math.min(3, pageCount);
 
     state.documentAiBusy = true;
     state.documentAiScanCompleted = false;
@@ -3380,75 +3381,105 @@
       route: '/documentos/',
       operation: 'extract',
       size_bucket: sizeBucket(state.pdfItem?.size),
-      source: 'gemini'
+      source: 'cloudflare'
     });
 
-    try {
-      for (let pageNumber = 1; pageNumber <= pageCount; pageNumber += 1) {
-        if (openId !== state.pdfOpenId || item !== state.pdfItem) {
-          throw new Error('O documento mudou durante a extração. Abra o PDF novamente e tente outra vez.');
-        }
+    let nextPage = 1;
+    let completed = 0;
+    let failure = null;
 
-        if (els.documentAiDocumentStatus) {
-          els.documentAiDocumentStatus.className = 'documents-ai-document-status';
-          els.documentAiDocumentStatus.textContent = `Analisando página ${pageNumber} de ${pageCount}…`;
-        }
-
-        const blob = await exporter(pageNumber, {
-          maxEdge: 1800,
-          mimeType: 'image/jpeg',
-          quality: 0.9
-        });
-        if (!(blob instanceof Blob) || blob.size <= 0) {
-          throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
-        }
-
-        const response = await fetch(`${endpoint}/api/documents/ai/page/extract`, {
-          method: 'POST',
-          headers: {
-            ...auth.authorizationHeader(),
-            'Content-Type': blob.type || 'image/jpeg',
-            'X-Document-Page-Number': String(pageNumber)
-          },
-          body: blob,
-          cache: 'no-store',
-          credentials: 'omit'
-        });
-        const payload = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          if (response.status === 422 && payload?.code === 'DOCUMENT_AI_PAGE_NOT_AUTHORIZED') {
-            state.documentAiIgnoredPages += 1;
-            continue;
-          }
-          const error = new Error(payload?.error || `Não foi possível analisar a página ${pageNumber}.`);
-          error.code = String(payload?.code || '');
-          throw error;
-        }
-
-        const classification = payload?.classification;
-        const extraction = payload?.extraction;
-        if (
-          !classification
-          || !extraction
-          || Number(classification.pageNumber) !== pageNumber
-          || Number(extraction.pageNumber) !== pageNumber
-          || String(classification.pageType || '') !== String(extraction.pageType || '')
-          || !['comprovante_atendimento', 'pagina_medica_autorizada'].includes(String(extraction.pageType || ''))
-          || !extraction.fields
-          || typeof extraction.fields !== 'object'
-        ) {
-          throw new Error(`A página ${pageNumber} retornou proveniência ou estrutura inválida.`);
-        }
-
-        const normalized = {
-          pageNumber,
-          pageType: String(extraction.pageType),
-          fields: extraction.fields
-        };
-        state.documentAiResults.push(normalized);
-        state.documentAiEvidence.set(pageNumber, normalized);
+    const analyzePage = async (pageNumber) => {
+      if (openId !== state.pdfOpenId || item !== state.pdfItem) {
+        throw new Error('O documento mudou durante a extração. Abra o PDF novamente e tente outra vez.');
       }
+
+      const blob = await exporter(pageNumber, {
+        maxEdge: 1600,
+        mimeType: 'image/jpeg',
+        quality: 0.85
+      });
+      if (!(blob instanceof Blob) || blob.size <= 0) {
+        throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
+      }
+
+      const response = await fetch(`${endpoint}/api/documents/ai/page/extract`, {
+        method: 'POST',
+        headers: {
+          ...auth.authorizationHeader(),
+          'Content-Type': blob.type || 'image/jpeg',
+          'X-Document-Page-Number': String(pageNumber)
+        },
+        body: blob,
+        cache: 'no-store',
+        credentials: 'omit'
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const error = new Error(payload?.error || `Não foi possível analisar a página ${pageNumber}.`);
+        error.code = String(payload?.code || '');
+        throw error;
+      }
+
+      const classification = payload?.classification;
+      const pageType = String(classification?.pageType || '');
+      if (
+        !classification
+        || Number(classification.pageNumber) !== pageNumber
+        || !['comprovante_atendimento', 'pagina_medica_autorizada', 'outro'].includes(pageType)
+      ) {
+        throw new Error(`A página ${pageNumber} retornou classificação ou proveniência inválida.`);
+      }
+
+      if (pageType === 'outro') {
+        state.documentAiIgnoredPages += 1;
+        return;
+      }
+
+      const extraction = payload?.extraction;
+      if (
+        !extraction
+        || Number(extraction.pageNumber) !== pageNumber
+        || String(extraction.pageType || '') !== pageType
+        || !extraction.fields
+        || typeof extraction.fields !== 'object'
+      ) {
+        throw new Error(`A página ${pageNumber} retornou extração ou proveniência inválida.`);
+      }
+
+      const normalized = {
+        pageNumber,
+        pageType,
+        fields: extraction.fields
+      };
+      state.documentAiResults.push(normalized);
+      state.documentAiEvidence.set(pageNumber, normalized);
+    };
+
+    const worker = async () => {
+      while (!failure) {
+        const pageNumber = nextPage;
+        nextPage += 1;
+        if (pageNumber > pageCount) return;
+
+        try {
+          await analyzePage(pageNumber);
+          completed += 1;
+          if (els.documentAiDocumentStatus) {
+            els.documentAiDocumentStatus.className = 'documents-ai-document-status';
+            els.documentAiDocumentStatus.textContent =
+              `Analisando PDF… ${completed} de ${pageCount} página(s) concluída(s).`;
+          }
+        } catch (error) {
+          failure = error;
+          return;
+        }
+      }
+    };
+
+    try {
+      await Promise.all(Array.from({ length: concurrency }, () => worker()));
+      if (failure) throw failure;
 
       state.documentAiResults.sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber));
       state.documentAiExtraction = state.documentAiResults[0] || null;
@@ -3472,11 +3503,10 @@
         duration_ms: duration(started),
         operation: 'extract',
         size_bucket: sizeBucket(state.pdfItem?.size),
-        source: 'gemini'
+        source: 'cloudflare'
       });
       return true;
     } catch (error) {
-      // Resultado parcial não é apresentado como se fosse documento completo.
       state.documentAiResults = [];
       state.documentAiEvidence.clear();
       state.documentAiExtraction = null;
@@ -3484,14 +3514,16 @@
       state.documentAiScanCompleted = false;
       if (els.documentAiDocumentStatus) {
         els.documentAiDocumentStatus.className = 'documents-ai-document-status warning';
-        els.documentAiDocumentStatus.textContent = error?.message || 'A extração do documento foi interrompida.';
+        els.documentAiDocumentStatus.textContent = error?.code === 'DOCUMENT_AI_FREE_LIMIT_REACHED'
+          ? 'Limite gratuito diário da IA atingido. A extração volta após a renovação da franquia.'
+          : (error?.message || 'A extração do documento foi interrompida.');
       }
       capture('document_ai_failed', {
         route: '/documentos/',
         duration_ms: duration(started),
         operation: 'extract',
         size_bucket: sizeBucket(state.pdfItem?.size),
-        source: 'gemini'
+        source: 'cloudflare'
       });
       return false;
     } finally {
