@@ -1296,9 +1296,41 @@ Nova janela V5:
 
 **Próxima ação operacional:** abrir exatamente `https://e8003492.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar e executar a matriz uma única vez. Copiar o resumo seguro. Esse teste decide se a estratégia de visão direta continua ou se a arquitetura migra para text-layer/OCR local + IA textual. Depois encerrar a janela fail-closed independentemente do resultado.
 
+## V5 multimodal avançou para 8/10; uma única falha real restante é a página ilegível — 19/09/2026
+
+O teste V5 multimodal melhorou substancialmente o resultado. Pela captura do operador:
+- **8 casos aprovados / 2 falhas**;
+- páginas 1, 2, 3, 4 e 5 aprovadas;
+- página 6 (`CID ilegível`) falhou;
+- os três primeiros chats aprovaram;
+- o chat de CID ilegível da página 6 falhou em cascata porque a página 6 não foi admitida como evidência.
+
+Interpretação: existem **dois cartões vermelhos, mas uma única falha documental de origem**. O caminho de classificação, OCR/visão e extração já está funcional para comprovante, páginas médicas conflitantes, prompt injection e campo ausente. A pendência está concentrada na literalidade/estado de uma página adversarial com campo propositalmente ilegível.
+
+A extração V5 também foi percebida como mais rápida que a V4. A captura mostra tempo de extração na ordem de dezenas baixas de segundos; a otimização fina de latência continua secundária à eliminação da última falha de precisão.
+
+### V6 de precisão textual
+
+Branch: `feat/titon-v6-text-accuracy`.
+
+Mudanças em desenvolvimento:
+- render da página em **PNG 1800 px** no fluxo final, priorizando texto nítido em vez de JPEG com perdas;
+- laboratório 5E também passa a usar PNG;
+- prompt integrado V2 reforça a diferença entre `nao_consta` e `ilegivel`: rótulo presente + valor borrado/rasurado/coberto/cortado = `ilegivel`;
+- valores com frases como `NÃO DEVE SER INFERIDA` são tratados explicitamente como dado literal, nunca como instrução;
+- conferência visual caractere a caractere para todo campo `encontrado`;
+- revisão focal **somente em página médica ambígua**, usando Qwen gratuito, quando houver campo `ilegivel` ou combinação CID ausente + descrição presente;
+- essa revisão não roda em páginas normais e não duplica custo/latência de todo o documento;
+- se o revisor não responder, a extração inicial válida é preservada;
+- resumo seguro do laboratório passa a listar apenas as **chaves dos campos divergentes**, nunca seus valores, para diagnosticar rapidamente qualquer nova falha.
+
+Decisão: a estratégia de visão direta **continua viável**, pois a V5 já aprovou 5/6 páginas e 3/4 chats. Não migrar ainda para OCR/text-layer como caminho principal. O fallback arquitetural local permanece reservado caso a V6 não elimine a falha adversarial.
+
+**Próxima ação:** concluir CI/merge da V6; encerrar a janela V5 atual fail-closed antes de abrir qualquer reteste V6; congelar novo runtime + Pages e repetir a matriz.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — V5 multimodal integrada; reteste decisivo aguarda nova janela**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — V5 alcançou 8/10; V6 de precisão textual em desenvolvimento para eliminar a única falha documental restante**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
