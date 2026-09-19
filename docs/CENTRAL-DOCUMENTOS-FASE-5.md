@@ -319,21 +319,15 @@ A janela V6 existente deve ser encerrada fail-closed antes de qualquer preparo V
 
 ## Próximo passo atual
 
-A V6 de precisão textual foi integrada pela PR #276.
+A V7 de baixa latência foi integrada pela PR #280.
 
-Referências congeladas para o próximo reteste:
-- source ref: `76bfefa17bae0729090277525186bdc7dcfc0068`;
-- Pages imutável: `https://27a15b34.portal-regulacao-central-staging.pages.dev`;
-- versão IA documental: `phase5e-v6-text-accuracy`.
+Referências congeladas do próximo reteste:
+- source ref: `cfda5b47d2eafe5dac90685952a3c9429a7dda9f`;
+- Pages imutável: `https://a09f45c7.portal-regulacao-central-staging.pages.dev`;
+- versão IA documental: `phase5e-v7-low-latency-vision`.
 
-A V6 combina:
-- até 6 páginas independentes em paralelo;
-- PNG 1800 como padrão, com fallback JPEG 0,92 para página acima de ~2,8 MiB;
-- prompt V2 com distinção rígida entre ausente e ilegível;
-- conferência literal caractere a caractere;
-- revisão focal Qwen apenas em campos médicos ambíguos; CID e descrição são revisados juntos;
-- diagnóstico seguro das chaves divergentes.
+A janela V6 aberta pelo operador continua sendo a janela controlada anterior e deve ser encerrada fail-closed antes de qualquer preparo V7. Depois do encerramento, atualizar os scripts locais para a `main`, executar o readiness e confirmar que ele aponta exatamente para as referências V7 acima. Somente então abrir uma nova janela e executar a matriz uma única vez.
 
-A janela V5 que produziu 8/10 continua sendo a janela atualmente aberta e deve ser encerrada fail-closed antes do reteste V6. Depois, executar o verificador read-only com as referências congeladas acima e somente então abrir nova janela.
+O aceite da V7 exige simultaneamente **10/10** e `duracao_extracao_ms` em no máximo 50% da V6 numa comparação operacional equivalente. Se a meta de 2x não for atingida, avançar para o caminho híbrido text-layer + visão seletiva já documentado, sem reduzir privacidade ou precisão.
 
-Produção permanece com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
+Produção permanece com `DOCUMENTS_AI_ENABLED=false`, `DOCUMENTS_AI_PROCESSING_ENABLED=false` e `DOCUMENTS_AI_FAST_VISION_ENABLED=false`.
