@@ -1271,6 +1271,31 @@ Objetivo do próximo teste: verificar se, com a imagem efetivamente enviada como
 
 **Próxima ação:** atualizar scripts locais, rodar readiness V5 e, se verde, abrir nova janela 5E V5 e executar a matriz uma única vez.
 
+## Janela 5E V5 multimodal preparada — 19/09/2026
+
+O operador executou o atalho 5E atualizado para a V5 multimodal. O readiness foi reconfirmado imediatamente antes do preparo.
+
+Evidência sanitizada:
+- `PRECONDICOES_5E_OK`;
+- produção ativa: `298ba237-78f9-4d24-bad1-47e66b4c1e15`;
+- `workersAiBindingPresent=true`;
+- `freeOnlyModels=true`;
+- `extractCapability=true`;
+- `activeControlledWindow=false` antes da abertura;
+- source ref: `20488871ce2556c06795367ededbdb49791c23f5`;
+- Pages: `https://e8003492.portal-regulacao-central-staging.pages.dev`.
+
+Nova janela V5:
+- preview version: `70ac2526-24ff-4eb0-9ef6-67b9a153753d`;
+- controle: `phase5e_df6907b25f2a46e3b228ffb89b039461`;
+- expiração: `2026-09-19T09:01:20.000Z`;
+- release: `20488871ce2556c06795367ededbdb49791c23f5`;
+- `aiGate=true` somente no preview;
+- `driveWriteGate=false`;
+- produção permaneceu inalterada.
+
+**Próxima ação operacional:** abrir exatamente `https://e8003492.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar e executar a matriz uma única vez. Copiar o resumo seguro. Esse teste decide se a estratégia de visão direta continua ou se a arquitetura migra para text-layer/OCR local + IA textual. Depois encerrar a janela fail-closed independentemente do resultado.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — V5 multimodal integrada; reteste decisivo aguarda nova janela**. Produção continua com IA documental desligada.
