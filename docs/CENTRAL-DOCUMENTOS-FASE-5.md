@@ -288,6 +288,8 @@ Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado pa
 
 ## Próximo passo atual
 
-A segunda janela 5E está ativa no runtime antigo `408bff...` e já executou a matriz real. Todas as páginas falharam com `DOCUMENT_AI_PAGE_INVALID`. A correção funcional está sendo preparada nesta branch: proveniência técnica ancorada no backend, regras de títulos/literalidade ampliadas e UX Titon de extração integral em um clique.
+A correção funcional foi integrada à `main` pela PR #256 no commit `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2`. O reteste 5E está congelado nesse source ref e no Pages imutável `https://56753b53.portal-regulacao-central-staging.pages.dev`.
 
-Antes de qualquer reteste com o runtime corrigido, a janela 5E atual deve ser **encerrada fail-closed**. Depois dos checks/merge desta correção, deve-se congelar um novo source ref do Worker e um novo Pages imutável, abrir nova janela controlada e repetir a matriz sintética real. Produção permanece com os dois gates da IA documental desligados.
+Antes de qualquer reteste, a segunda janela 5E antiga, que executou a matriz no runtime `408bff...`, deve ser **encerrada fail-closed**. Depois, o operador deve executar o verificador read-only; somente com `PRECONDICOES_5E_OK` pode abrir nova janela controlada apontando para as referências corrigidas e repetir a matriz sintética real.
+
+Produção permanece com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`. O check automático Workers Builds do Cloudflare no merge #256 falhou e precisa ser tratado separadamente antes de qualquer publicação produtiva da Fase 5; isso não muda o fluxo preview-only do reteste.
