@@ -628,6 +628,30 @@ O diagnóstico não contém INSERT/UPDATE/DELETE, não altera D1, não lê valor
 
 **Próxima ação exata:** executar esse diagnóstico no mesmo Windows autenticado e usar os booleanos retornados para determinar qual ajuste humano ainda falta. Não repetir alterações às cegas em permissões.
 
+## Diagnóstico confirmou único bloqueio: canExtract=false — 18/09/2026
+
+O diagnóstico booleano da Fase 5E retornou:
+
+- userExists=true;
+- userActive=true;
+- accessRow=true;
+- regulatorRole=true;
+- canView=true;
+- canExtract=false;
+- activeControlledWindow=false.
+
+Conclusão: a conta referenciada pelo controle-template é a conta válida e ativa da Central, possui Regulador(a) e leitura, e não há outra janela ativa. O **único** estado faltante é `can_extract=1`.
+
+Como a tentativa pela interface não persistiu a capability, foi preparado um habilitador estreito e auditável: `scripts/central-docs/habilitar-extract-5e.mjs`. Ele:
+- revalida todas as pré-condições;
+- exige confirmação humana explícita `HABILITAR EXTRACT 5E`;
+- altera somente `can_extract` de 0 para 1 na mesma conta já autorizada pelo template;
+- não imprime username;
+- não altera role, Regulador(a), view, edit, manage, secrets, Worker, Drive ou produção;
+- revalida o estado após a mudança.
+
+**Próxima ação exata:** executar o habilitador controlado; somente depois repetir o verificador read-only da 5E.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
@@ -754,10 +778,10 @@ Artefatos anteriores preservados:
 | Descartado | usar o Pages antigo `67dd934e…`; iniciar homologação antes de reforçar a matriz; interpretar falha de Worker Preview da PR como falha produtiva |
 | Ações externas | nenhuma alteração de Cloudflare/D1/Drive/secret nesta etapa; apenas builds automáticos do merge |
 | Checks/testes | operacionais 5E `35413947781` success; Fases 1–5E `35413947712` success; staging `35413947796` success; governança `35413947803` success; Worker main success |
-| Bloqueios | `GEMINI_API_KEY` confirmada; `extract` continua ausente para a conta referenciada pelo template 4D mesmo após ajuste visual; diagnóstico booleano preparado |
+| Bloqueios | diagnóstico confirmou apenas `canExtract=false`; habilitador estreito preparado e aguarda confirmação humana |
 | Riscos | provider real ainda não homologado; mitigação é janela preview-only, fixtures 100% sintéticos, Drive write false e encerramento fail-closed |
 | Observabilidade | somente propriedades técnicas allowlisted; nunca conteúdo documental, paciente, arquivo, Drive ID ou resposta bruta |
-| Próxima ação exata | executar `diagnosticar-capability-5e.mjs --diagnosticar`; corrigir somente o booleano faltante e depois repetir o verificador read-only |
+| Próxima ação exata | executar `habilitar-extract-5e.mjs --habilitar`, confirmar `HABILITAR EXTRACT 5E`, depois repetir `verificar-precondicoes-5e.mjs --verificar` |
 | Depois | executar matriz sintética real, copiar somente o resumo seguro, encerrar 5E fail-closed e avaliar aceite/publicação da Fase 5 |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #237–#244; runs acima |
 
