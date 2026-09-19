@@ -105,6 +105,28 @@ test('modo V7 coloca Moondream antes de Gemma/Qwen somente para visão', async (
   assert.equal(result.provider.model, DOCUMENT_AI_FAST_VISION_FREE_MODEL);
 });
 
+test('Moondream com texto curto envolvendo JSON não cai para fallback', async () => {
+  const env = enabledEnv({
+    DOCUMENTS_AI_FAST_VISION_ENABLED: 'true',
+    DOCUMENTS_AI_FAST_VISION_MODEL: DOCUMENT_AI_FAST_VISION_FREE_MODEL
+  });
+  const models = [];
+  const result = await analyzeDocumentAiPage(env, {
+    pageNumber: 3,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([3, 3])
+  }, {
+    aiRun: async (model) => {
+      models.push(model);
+      return { answer: 'Resultado: {"pageType":"outro","fields":{}}.' };
+    }
+  });
+
+  assert.deepEqual(models, [DOCUMENT_AI_FAST_VISION_FREE_MODEL]);
+  assert.equal(result.classification.pageType, 'outro');
+  assert.equal(result.provider.model, DOCUMENT_AI_FAST_VISION_FREE_MODEL);
+});
+
 test('Moondream que reconhece ilegível encerra no fast path sem revisão sequencial', async () => {
   const env = enabledEnv({
     DOCUMENTS_AI_FAST_VISION_ENABLED: 'true',
