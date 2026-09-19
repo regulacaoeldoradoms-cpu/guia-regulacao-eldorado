@@ -1046,6 +1046,25 @@ Correção: a inspeção agora aceita `requireWorkersAi:false` somente no caminh
 
 **Próxima ação:** após CI/merge desta correção, o operador deve baixar novamente os scripts da `main`, repetir apenas `encerrar-homologacao-5e.mjs --encerrar` e depois rodar o verificador read-only. Não recriar controle/janela antiga.
 
+## Janela 5E legado encerrada com sucesso — 18/09/2026
+
+O operador repetiu o encerramento com a correção da PR #264 e o procedimento concluiu as cinco etapas.
+
+Evidência sanitizada:
+- controle revogado: `phase5e_502e857dd0424fbe92ea406048e7ad7f`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado: `12ca457e-5035-403c-8b5e-f9c2e5d98142`;
+- release histórico encerrado: `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2`;
+- `httpBlocked=true`.
+
+Resultado: a janela Gemini anterior está **fail-closed**. Ela não deve ser reutilizada.
+
+A tentativa anterior que falhou por ausência de binding Workers AI não produziu mutação remota; esta execução subsequente confirmou revogação D1 e bloqueio HTTP final.
+
+**Próxima ação:** executar somente o verificador read-only 5E da `main` atual. Antes de abrir a nova janela Gemma/Qwen, confirmar também no painel Cloudflare que a conta está em Workers Free e que este fluxo não usa AI Gateway/prepaid/unified billing.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — Workers AI free-only integrado; novo reteste aguarda confirmação de plano Free e encerramento da janela antiga**. Produção continua com IA documental desligada.
@@ -1162,17 +1181,17 @@ Artefatos anteriores preservados:
 | --- | --- |
 | Fase/subfase | Fase 5E — Workers AI free-only integrado; próximo reteste ainda não aberto |
 | Última ação concluída | PR #260 mesclada; runtime e Pages do reteste congelados |
-| Main | `3c46414e7490f236cfe1d29abb413cb3eaa1667a`; runtime do reteste permanece congelado em `a49ecd22…` |
+| Main | `81079a13b2fe0a031a3bfeb44dd9f545d30c6dba`; runtime do reteste permanece congelado em `a49ecd22…` |
 | Runtime reteste | `a49ecd22e922267179fd8502f08fc5950df8fb0a` |
 | Pages reteste | `https://60f66c8b.portal-regulacao-central-staging.pages.dev` |
 | Provider | `@cf/google/gemma-4-26b-a4b-it` principal; `@cf/qwen/qwen3.8-27b` fallback |
 | Custo | requisito permanente: **R$ 0**; free-only + allowlist + sem Gateway/prepaid/pay-as-you-go; limite gratuito deve falhar fechado |
 | Pipeline | uma inferência por página; até 3 páginas paralelas; JSON mode; backend ancora proveniência |
 | Latência | JPEG 1600/0,85; rejectIfBusy; limite local 6 s por tentativa / 10 s total; matriz mede extração separada do chat |
-| Janela antiga | `phase5e_502e857dd0424fbe92ea406048e7ad7f`; deve ser encerrada fail-closed |
+| Janela antiga | `phase5e_502e857dd0424fbe92ea406048e7ad7f` encerrada fail-closed; HTTP bloqueado confirmado |
 | PR #259 | fechada sem merge como direção Gemini-Free superada |
 | Produção | IA documental false/false; não ativar antes do aceite 5E |
-| Próxima ação exata | operador confirma Workers Free + ausência de Gateway pago; encerra janela antiga; roda verificador read-only; se verde, abre nova 5E |
+| Próxima ação exata | rodar verificador read-only; confirmar Workers Free + ausência de Gateway/prepaid; se ambos verdes, abrir nova 5E |
 | Depois | executar matriz Workers AI, copiar resumo seguro com durações, encerrar janela fail-closed e avaliar aceite |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #260; Pages do merge |
 
