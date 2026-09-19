@@ -608,6 +608,26 @@ Interpretação objetiva:
 
 **Próxima ação humana:** no Portal, em **Usuários e acessos**, editar a mesma conta usada na Central/homologação e manter **Regulador(a)** habilitado; ativar **Permitir IA documental — classificação, extração e perguntas com proveniência por página**. Preservar as demais permissões existentes. Depois repetir somente o verificador read-only.
 
+## Capability extract ainda ausente após ajuste visual — diagnóstico preparado — 18/09/2026
+
+Após a intervenção no painel de **Usuários e acessos**, o operador repetiu somente o verificador read-only e o resultado permaneceu:
+
+`PRECONDICOES_5E_BLOQUEADAS=INTERVENCAO_NECESSARIA_CAPABILITY_EXTRACT_AUSENTE`
+
+Isso prova apenas que a conta referenciada pelo controle-template 4D ainda não satisfaz simultaneamente `active=1`, `can_view=1` e `can_extract=1`. Não é seguro presumir que a conta editada manualmente é exatamente a mesma conta usada pelo template.
+
+Foi preparado `scripts/central-docs/diagnosticar-capability-5e.mjs`, somente leitura, que não imprime username e retorna apenas booleanos técnicos:
+- existência/atividade da conta referenciada;
+- existência da linha fina de acesso documental;
+- função adicional Regulador(a);
+- `canView`;
+- `canExtract`;
+- existência de outra janela controlada ativa.
+
+O diagnóstico não contém INSERT/UPDATE/DELETE, não altera D1, não lê valor de secret, não faz upload/deploy e não inicia a 5E.
+
+**Próxima ação exata:** executar esse diagnóstico no mesmo Windows autenticado e usar os booleanos retornados para determinar qual ajuste humano ainda falta. Não repetir alterações às cegas em permissões.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
@@ -734,10 +754,10 @@ Artefatos anteriores preservados:
 | Descartado | usar o Pages antigo `67dd934e…`; iniciar homologação antes de reforçar a matriz; interpretar falha de Worker Preview da PR como falha produtiva |
 | Ações externas | nenhuma alteração de Cloudflare/D1/Drive/secret nesta etapa; apenas builds automáticos do merge |
 | Checks/testes | operacionais 5E `35413947781` success; Fases 1–5E `35413947712` success; staging `35413947796` success; governança `35413947803` success; Worker main success |
-| Bloqueios | `GEMINI_API_KEY` confirmada; verificador read-only bloqueou em `INTERVENCAO_NECESSARIA_CAPABILITY_EXTRACT_AUSENTE` |
+| Bloqueios | `GEMINI_API_KEY` confirmada; `extract` continua ausente para a conta referenciada pelo template 4D mesmo após ajuste visual; diagnóstico booleano preparado |
 | Riscos | provider real ainda não homologado; mitigação é janela preview-only, fixtures 100% sintéticos, Drive write false e encerramento fail-closed |
 | Observabilidade | somente propriedades técnicas allowlisted; nunca conteúdo documental, paciente, arquivo, Drive ID ou resposta bruta |
-| Próxima ação exata | habilitar a capability `extract` na mesma conta autorizada da Central, preservando Regulador(a) e demais permissões; depois repetir somente `verificar-precondicoes-5e.mjs --verificar` |
+| Próxima ação exata | executar `diagnosticar-capability-5e.mjs --diagnosticar`; corrigir somente o booleano faltante e depois repetir o verificador read-only |
 | Depois | executar matriz sintética real, copiar somente o resumo seguro, encerrar 5E fail-closed e avaliar aceite/publicação da Fase 5 |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #237–#244; runs acima |
 
