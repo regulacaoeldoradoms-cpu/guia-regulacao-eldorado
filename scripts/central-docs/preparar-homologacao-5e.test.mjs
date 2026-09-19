@@ -92,6 +92,7 @@ test('config preview 5E liga somente IA e mantém escrita Drive false', () => {
     controlId: CONTROL
   });
 
+  assert.equal(config.preview_urls, true);
   assert.equal(config.vars.DOCUMENTS_AI_ENABLED, 'true');
   assert.equal(config.vars.DOCUMENTS_AI_PROCESSING_ENABLED, 'true');
   assert.equal(config.vars.DOCUMENTS_DRIVE_WRITE_ENABLED, 'false');

@@ -108,6 +108,14 @@ Se `GEMINI_API_KEY` não existir na baseline produtiva, o preparo para com:
 
 Nesse estado não há upload, controle ativo ou mudança de produção.
 
+### Preview URLs da 5E
+
+A configuração produtiva mantém `preview_urls = false`.
+
+O preparo 5E cria uma configuração efêmera separada com `preview_urls = true`, porque esta homologação depende intencionalmente do alias `central-docs-phase5e`. Esse opt-in não altera a configuração versionada de produção e não promove tráfego.
+
+Se o upload 5E retornar erro informando que Worker Previews não estão disponíveis, **não repetir em loop**. A janela deve permanecer desarmada/revogada e o operador deve habilitar Preview URLs para o Worker ou revisar a disponibilidade desse recurso antes de nova tentativa.
+
 ### Gates do preview
 
 Somente a versão preview 5E usa:
