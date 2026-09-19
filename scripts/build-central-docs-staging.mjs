@@ -65,7 +65,10 @@ function normalizeAiHomologationWorkerUrl(value) {
 const aiHomologationWorkerUrl = normalizeAiHomologationWorkerUrl(
   process.env.CENTRAL_DOCS_AI_HOMOLOGATION_WORKER_URL
 );
-const effectiveAiWorkerOrigin = aiHomologationWorkerUrl || DISABLED_WORKER_ORIGIN;
+// O laboratório 5E permite seleção manual apenas do alias oficial. A CSP precisa
+// permitir esse alias mesmo quando o bundle não o recebe por variável de build;
+// caso contrário o navegador bloqueia fetch antes que o CORS do Worker seja avaliado.
+const effectiveAiWorkerOrigin = AI_HOMOLOGATION_WORKER_ORIGIN;
 
 const files = [
   ['testing/central-docs/viewer-harness.html', 'testing/central-docs/viewer-harness.html'],
