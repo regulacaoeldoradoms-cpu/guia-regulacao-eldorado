@@ -270,6 +270,7 @@ function visionInput(system, prompt, image, maxTokens = 1800) {
     top_p: 0.1,
     seed: 1,
     max_tokens: maxTokens,
+    response_format: { type: 'json_object' },
     store: false
   };
 }
@@ -284,6 +285,7 @@ function textInput(system, prompt, maxTokens = 1200) {
     top_p: 0.1,
     seed: 1,
     max_tokens: maxTokens,
+    response_format: { type: 'json_object' },
     store: false
   };
 }
