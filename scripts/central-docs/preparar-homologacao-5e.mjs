@@ -298,6 +298,7 @@ export function buildPreviewConfig(base, entry, input) {
     compatibility_date: base.compatibilityDate,
     ...(base.compatibilityFlags.length ? { compatibility_flags: [...base.compatibilityFlags] } : {}),
     send_metrics: false,
+    preview_urls: true,
     vars,
     d1_databases: [{
       binding: 'AUTH_DB',
