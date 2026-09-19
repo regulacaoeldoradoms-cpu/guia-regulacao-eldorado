@@ -17,6 +17,7 @@ test('encerramento 5E revoga D1 antes de qualquer upload e fecha gates', async (
   assert.match(source, /DOCUMENTS_AI_PROCESSING_ENABLED = 'false'/);
   assert.match(source, /DOCUMENTS_DRIVE_WRITE_ENABLED = 'false'/);
   assert.match(source, /JANELA_5E_ENCERRADA/);
+  assert.match(source, /inspectProductionVersion\(preview, \{ requireWorkersAi: false \}\)/);
   assert.match(source, /CONTROLE_5E_REVOGADO=true/);
   assert.match(source, /HTTP_5E_NAO_BLOQUEADO_APOS_ENCERRAMENTO/);
   assert.doesNotMatch(source, /versions['"],\s*['"]deploy/);

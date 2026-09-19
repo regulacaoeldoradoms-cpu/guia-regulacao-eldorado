@@ -230,7 +230,7 @@ function bindingMap(version) {
   return map;
 }
 
-export function inspectProductionVersion(version) {
+export function inspectProductionVersion(version, options = {}) {
   must(version && UUID.test(version.id || ''), 'VERSAO_PRODUTIVA_5E_INVALIDA');
   const map = bindingMap(version);
 
@@ -248,7 +248,9 @@ export function inspectProductionVersion(version) {
   }
 
   const ai = map.get('AI');
-  must(ai?.type === 'ai', 'INTERVENCAO_NECESSARIA_WORKERS_AI_BINDING_AUSENTE');
+  if (options.requireWorkersAi !== false) {
+    must(ai?.type === 'ai', 'INTERVENCAO_NECESSARIA_WORKERS_AI_BINDING_AUSENTE');
+  }
 
   const plainVars = {};
   for (const binding of map.values()) {
@@ -270,7 +272,8 @@ export function inspectProductionVersion(version) {
       .filter((name) => REQUIRED_SECRETS_5E.includes(name) || OPTIONAL_SECRETS_5E.includes(name))
       .sort(),
     compatibilityDate: runtime.compatibility_date,
-    compatibilityFlags: flags
+    compatibilityFlags: flags,
+    workersAiBindingPresent: ai?.type === 'ai'
   };
 }
 
