@@ -1560,11 +1560,24 @@ A janela V6 aberta anteriormente **não foi alterada** pelo desenvolvimento V7. 
 
 **Próxima ação exata:** quando o operador retornar, baixar os scripts atuais da `main` e executar primeiro `node .\encerrar-homologacao-5e.mjs --encerrar` para fechar a janela V6. Depois executar `node .\iniciar-homologacao-5e.mjs --iniciar`; o readiness deve mostrar source `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` e Pages `https://a09f45c7.portal-regulacao-central-staging.pages.dev`. Somente então confirmar o preparo V7 e executar a matriz uma única vez.
 
+## Revisão V7 — correção de contrato Moondream antes do reteste — 19/09/2026
+
+Durante revisão técnica da V7 já integrada, a documentação oficial do Moondream 3.1 revelou um detalhe que não deve ser deixado para o operador descobrir na homologação: na tarefa `query`, o parâmetro `stream` tem padrão **true**. O Titon precisa da resposta completa para validar JSON/schema antes de aceitar uma extração.
+
+Correção preparada em branch isolada:
+- `stream=false` explícito no fast path Moondream;
+- teste de regressão confirma que o input enviado ao provider permanece não-streaming;
+- parser aceita um único objeto JSON válido mesmo quando o VLM o envolve em uma frase curta, evitando fallback caro por mero invólucro textual;
+- o schema estrito continua validando pageType, campos, estados e proveniência logo depois;
+- nenhuma configuração produtiva é ativada e a janela V6 atual não é tocada.
+
+Decisão: **não abrir a homologação com o runtime V7 congelado anteriormente**. Primeiro integrar esta correção e renovar source ref + Pages imutável. Isso evita gastar uma nova janela em um contrato conhecido como potencialmente incompatível.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7 integrada; reteste congelado e aguardando encerramento V6 |
+| Fase/subfase | Fase 5E — V7 em correção de contrato Moondream antes do reteste |
 | Último resultado real | V7 integrada com CI verde; V6 continua sendo a última execução real e foi considerada lenta pelo operador |
 | Main funcional V7 | `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` |
 | Runtime próximo reteste | `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` |
@@ -1574,7 +1587,7 @@ A janela V6 aberta anteriormente **não foi alterada** pelo desenvolvimento V7. 
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | ainda deve ser encerrada fail-closed antes de abrir qualquer preview V7 |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | encerrar V6 fail-closed no Windows do operador; atualizar scripts; readiness V7; preparar nova janela; executar matriz uma vez |
+| Próxima ação exata | integrar correção stream=false/parser; renovar referências V7; depois encerrar V6 e somente então abrir nova janela |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
