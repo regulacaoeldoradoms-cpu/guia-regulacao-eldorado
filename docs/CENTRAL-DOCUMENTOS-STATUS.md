@@ -496,6 +496,23 @@ Foram adicionados testes específicos para provar que o verificador é read-only
 
 Produção continua com IA documental desligada; nenhuma chamada real ao Gemini, alteração D1, upload de preview ou escrita no Drive ocorreu nesta etapa.
 
+## Descoberta técnica — Worker Preview não disponível no build de main — 18/09/2026
+
+Após o merge do PR #239, o check `Workers Builds: yellow-wave-d0a1guia-regulacao-ia` falhou antes de concluir novo deploy com a mensagem: `Preview creation failed: You do not have access to use Worker Previews. Please ensure it is enabled.`
+
+Impacto observado: o merge de prontidão operacional foi incorporado ao GitHub e o Pages staging publicou normalmente, mas o Workers Build desse commit não reportou nova versão produtiva concluída. O último deployment de Worker confirmado com sucesso antes dessa falha permanece o anterior; não inferir promoção a partir do commit do GitHub.
+
+Causa arquitetural identificada: o gate produtivo usa `wrangler versions upload` para criar uma candidata sem tráfego. Sem configuração explícita, essa operação tenta participar do mecanismo de Preview URLs do Worker. O gate não precisa de URL de preview para validar bindings/secrets/D1 nem para promover a candidata.
+
+Correção preparada em branch `fix/worker-preview-opt-in-phase5e`:
+
+- produção declara `preview_urls = false` em `worker/wrangler.toml`;
+- o gate produtivo continua usando versões desacopladas, mas sem depender de URL de preview;
+- somente a homologação 5E declara `preview_urls: true` na configuração efêmera, pois ela realmente precisa do alias `central-docs-phase5e`;
+- testes e workflows passam a proteger essa separação.
+
+Essa correção não ativa a IA documental, não adiciona secret, não altera D1 e não escreve no Drive. A homologação 5E continua bloqueada por `GEMINI_API_KEY` ausente e, se Preview URLs também estiverem indisponíveis no momento da 5E, o preparo deve falhar fechado antes de qualquer uso real.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico integrado e prontidão operacional adiantada; homologação real ainda bloqueada somente pela ausência confirmada de `GEMINI_API_KEY`**. Produção continua com IA documental desligada.
@@ -622,10 +639,10 @@ Artefatos anteriores preservados:
 | Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
 | Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
 | Checks/testes | main após #237: 348/348; operacionais 5E 9+8+2+4; navegador/staging/governança/site/transversais verdes |
-| Bloqueios | `GEMINI_API_KEY` confirmadamente ausente da baseline produtiva; operador precisa configurar o secret antes do preparo real 5E |
+| Bloqueios | 5E real ainda exige `GEMINI_API_KEY`; adicionalmente, Worker Preview precisa estar disponível para a janela 5E. O deploy produtivo está sendo desacoplado dessa dependência com `preview_urls=false` |
 | Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Concluir/mesclar a prontidão operacional. Depois o operador configura `GEMINI_API_KEY`, roda primeiro `verificar-precondicoes-5e.mjs --verificar`; se `PRECONDICOES_5E_OK`, usa `iniciar-homologacao-5e.mjs --iniciar` |
+| Próxima ação exata | Validar/mesclar `fix/worker-preview-opt-in-phase5e` e confirmar novo Workers Build produtivo; depois seguir para o secret Gemini e a janela 5E |
 | Depois | Executar matriz sintética real 5E, encerrar janela fail-closed e só então avaliar aceite/publicação da Fase 5 |
 | Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
 
