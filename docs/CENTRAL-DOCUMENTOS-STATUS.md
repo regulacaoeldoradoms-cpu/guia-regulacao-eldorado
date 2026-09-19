@@ -926,7 +926,7 @@ Após o reteste Gemini com 8 aprovados / 2 falhas e latência excessiva, o opera
 - **não pagar pela IA documental**;
 - não aceitar automaticamente fallback para serviço/modelo que possa gerar cobrança.
 
-A decisão anterior de permanecer no Gemini Free Tier foi superada porque esse nível não é adequado para documentos reais sensíveis segundo a política atual do serviço. A PR #259, criada apenas para registrar aquela direção intermediária, **não deve ser mesclada** e deve ser fechada como superseded.
+A decisão anterior de permanecer no Gemini Free Tier foi superada porque esse nível não é adequado para documentos reais sensíveis segundo a política atual do serviço. A PR #259, criada apenas para registrar aquela direção intermediária, foi **fechada sem merge como superseded**.
 
 ### Provider aprovado para o Titon
 
@@ -1088,7 +1088,7 @@ Artefatos anteriores preservados:
 | Imagem/timeout | JPEG 1600 / 0,85; 6 s por tentativa, 10 s total |
 | Homologação | preparo 5E exige binding `AI`; não exige Gemini key para IA documental; Drive write continua false |
 | Janela antiga | `phase5e_502e857dd0424fbe92ea406048e7ad7f` pertence ao runtime anterior; encerrar fail-closed antes de reteste novo |
-| PR #259 | direção Gemini-Free intermediária, agora superada; não mesclar, fechar como superseded |
+| PR #259 | direção Gemini-Free intermediária superada; fechada sem merge como superseded |
 | Produção | `DOCUMENTS_AI_ENABLED=false`, `DOCUMENTS_AI_PROCESSING_ENABLED=false`; não ativar antes do aceite 5E |
 | Privacidade | conteúdo não entra em GitHub/PostHog/logs/D1; cada imagem é uma página isolada; nenhum nome/ref/id de arquivo enviado ao provider |
 | Próxima ação exata | terminar testes/CI desta branch; encerrar janela antiga; merge; congelar novo source ref/Pages; abrir nova 5E; medir `duracao_extracao_ms` e `duracao_total_ms` |
