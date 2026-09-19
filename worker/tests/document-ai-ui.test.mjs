@@ -42,6 +42,8 @@ test('painel Titon permanece oculto e produção continua fail-closed', async ()
   assert.match(wrangler, /DOCUMENTS_AI_ENABLED = "false"/);
   assert.match(wrangler, /DOCUMENTS_AI_PROCESSING_ENABLED = "false"/);
   assert.match(wrangler, /DOCUMENTS_AI_FREE_ONLY = "true"/);
+  assert.match(wrangler, /DOCUMENTS_AI_FAST_VISION_ENABLED = "false"/);
+  assert.match(wrangler, /@cf\/moondream\/moondream3\.1-9B-A2B/);
   assert.match(wrangler, /@cf\/google\/gemma-4-26b-a4b-it/);
   assert.match(wrangler, /@cf\/qwen\/qwen3\.8-27b/);
 });
