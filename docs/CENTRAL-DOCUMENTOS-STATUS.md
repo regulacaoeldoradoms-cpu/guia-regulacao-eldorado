@@ -882,6 +882,44 @@ Nova janela preparada:
 
 **Próxima ação exata:** abrir `https://56753b53.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz sintética corrigida, copiar somente o resumo seguro e encerrar a nova janela fail-closed imediatamente depois.
 
+## Reteste 5E corrigido: 8 aprovados / 2 falhas; gargalo de latência identificado — 18/09/2026
+
+O operador executou a matriz na nova janela corrigida. A captura visual mostra **8 casos aprovados e 2 falhas**.
+
+Falhas observadas:
+- a classificação da página 2 aprovou `pagina_medica_autorizada`, mas a etapa de extração da mesma página falhou com `DOCUMENT_AI_PAGE_NOT_AUTHORIZED: Esta página não foi classificada para extração institucional.`;
+- o chat sobre o procedimento da página 2 respondeu `NÃO CONSTA` porque a extração da página 2 não gerou evidência aprovada. Essa segunda falha é consequência da primeira, não um defeito independente do chat.
+
+### Causa técnica provável da inconsistência
+
+O laboratório executa `/page/classify` para cada fixture e, depois, `/page/extract`. Porém `/page/extract` chama `classifyAndExtractDocumentAiPage()`, que **classifica a mesma página novamente antes de extrair**. Assim uma página autorizada pode ser classificada corretamente na primeira chamada e divergir na segunda chamada, como ocorreu na página 2.
+
+### Gargalo de latência confirmado pelo fluxo atual
+
+Na matriz de seis páginas:
+- 6 chamadas ao provider para a classificação explícita do harness;
+- 5 páginas autorizadas chamam `/page/extract`, e cada uma realiza internamente mais 2 chamadas ao provider (reclassificação + extração) = 10;
+- 4 perguntas de chat realizam mais 4 chamadas;
+- total potencial da matriz: **20 chamadas sequenciais ao Gemini**.
+
+No Titon final, o botão único não executa a classificação externa do harness, mas ainda chama `/page/extract` sequencialmente e esse endpoint faz duas chamadas ao Gemini por página. Um PDF de seis páginas pode portanto exigir até **12 chamadas sequenciais** antes do chat. Isso explica grande parte da diferença para a experiência integrada do Google Drive.
+
+### Direção de correção proposta
+
+Preservar isolamento por página, mas reduzir chamadas e variabilidade:
+1. substituir `classificar -> extrair` por **uma única chamada multimodal por página** que retorne `pageType` e, somente quando autorizado, os campos estruturados;
+2. manter `pageNumber` ancorado no backend e validar schema por `pageType`; páginas `outro` retornam sem campos;
+3. executar páginas independentes com pool limitado de concorrência (por exemplo 3), em vez de serializar o documento inteiro;
+4. usar `temperature` baixa/zero e `responseSchema`/structured output para reduzir variação e respostas inválidas;
+5. reduzir a imagem enviada (JPEG adaptativo) e usar resolução maior apenas em retry quando necessário;
+6. alinhar timeouts específicos da IA documental; hoje o provider usa `DOCUMENTS_AI_TIMEOUT_MS` com fallback de 12 s por chamada e não usa automaticamente os timeouts `GEMINI_*` já existentes;
+7. manter retry/fallback somente para erro transitório/timeout/schema inválido, nunca para `422` de regra de negócio;
+8. no fluxo real, chat continua opcional e não participa do tempo de `Extrair dados do PDF`.
+
+Meta operacional para o Titon: extração típica de documentos curtos em aproximadamente **5–10 segundos**, sem abrir o PDF inteiro no mesmo contexto do modelo e sem perder isolamento/proveniência.
+
+**Próxima ação:** encerrar a janela 5E atual após copiar o resumo seguro; implementar a redução de chamadas em uma nova branch, validar sinteticamente e repetir a 5E com o runtime otimizado.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — correção `PAGE_INVALID`/UX Titon integrada; reteste controlado aguarda encerramento da janela antiga e nova abertura com referências congeladas**. Produção continua com IA documental desligada.
