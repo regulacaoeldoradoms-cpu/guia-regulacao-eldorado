@@ -1002,6 +1002,20 @@ A janela 5E anterior `phase5e_502e857dd0424fbe92ea406048e7ad7f` pertence ao runt
 
 **Próxima ação humana:** confirmar o plano Workers Free e encerrar a janela antiga. Depois executar o verificador read-only; somente com `PRECONDICOES_5E_OK` iniciar uma nova janela usando as referências congeladas acima.
 
+## PR #261 integrada — reteste Workers AI congelado — 18/09/2026
+
+A PR **#261** foi mesclada na `main` pelo commit `bbfdcec20b7d0e2629f9be1c93ea82d3136e3c32`.
+
+Estado persistente após o merge:
+- `main`: `bbfdcec20b7d0e2629f9be1c93ea82d3136e3c32`;
+- runtime **intencionalmente congelado** para o reteste 5E: `a49ecd22e922267179fd8502f08fc5950df8fb0a` (merge funcional da PR #260);
+- Pages imutável congelado: `https://60f66c8b.portal-regulacao-central-staging.pages.dev`;
+- produção da IA documental continua com gates `false/false`.
+
+Essa diferença entre `main` e source ref do reteste é intencional: `bbfdcec...` adiciona apenas congelamento/documentação do reteste; o runtime funcional homologado continua sendo `a49ecd22...`.
+
+**Próxima ação humana permanece:** antes de qualquer inferência Workers AI, confirmar plano Workers Free e ausência de AI Gateway pago; depois encerrar a janela 5E antiga e executar o verificador read-only.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — Workers AI free-only integrado; novo reteste aguarda confirmação de plano Free e encerramento da janela antiga**. Produção continua com IA documental desligada.
@@ -1118,7 +1132,7 @@ Artefatos anteriores preservados:
 | --- | --- |
 | Fase/subfase | Fase 5E — Workers AI free-only integrado; próximo reteste ainda não aberto |
 | Última ação concluída | PR #260 mesclada; runtime e Pages do reteste congelados |
-| Main | `a49ecd22e922267179fd8502f08fc5950df8fb0a` |
+| Main | `bbfdcec20b7d0e2629f9be1c93ea82d3136e3c32`; runtime do reteste permanece congelado em `a49ecd22…` |
 | Runtime reteste | `a49ecd22e922267179fd8502f08fc5950df8fb0a` |
 | Pages reteste | `https://60f66c8b.portal-regulacao-central-staging.pages.dev` |
 | Provider | `@cf/google/gemma-4-26b-a4b-it` principal; `@cf/qwen/qwen3.8-27b` fallback |
