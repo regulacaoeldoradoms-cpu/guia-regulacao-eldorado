@@ -90,6 +90,7 @@ jobs:
           grep -q '"workerConfigured": false' dist-staging/staging-manifest.json
           grep -q 'endpoint: ""' dist-staging/homologacao/js/auth-config.js
           grep -q 'workerConfigured: false' dist-staging/homologacao-5e/config.js
+          grep -q 'connect-src.*https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev' dist-staging/_headers
           grep -q 'DADOS 100% SINTÉTICOS' dist-staging/homologacao-5e/phase5e.js
           grep -q 'phase5eWorkerOrigin' dist-staging/homologacao-5e/index.html
           grep -q 'OFFICIAL_WORKER_ORIGIN' dist-staging/homologacao-5e/phase5e.js
