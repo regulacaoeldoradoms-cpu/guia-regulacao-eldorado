@@ -2989,6 +2989,129 @@
     }).join('');
   }
 
+  function documentAiResultHeading(extraction) {
+    const pageNumber = Number(extraction?.pageNumber || 0);
+    if (extraction?.pageType === 'comprovante_atendimento') {
+      return `DADOS DO COMPROVANTE DE ATENDIMENTO · Página ${pageNumber}`;
+    }
+    const titleField = extraction?.fields?.titulo;
+    const title = documentAiFieldDisplay(titleField);
+    return `PÁGINA MÉDICA AUTORIZADA · Página ${pageNumber} · ${title}`;
+  }
+
+  function documentAiFormattedBlock(extraction) {
+    if (!extraction?.fields) return '';
+    const pageNumber = Number(extraction.pageNumber || 0);
+    const value = (key) => documentAiFieldDisplay(extraction.fields[key]);
+
+    if (extraction.pageType === 'comprovante_atendimento') {
+      return [
+        `[DADOS DO COMPROVANTE DE ATENDIMENTO - Página ${pageNumber}]`,
+        `Nome do paciente: ${value('nome_paciente')}`,
+        `CPF: ${value('cpf')}`,
+        `CNS: ${value('cns')}`,
+        `Data de nascimento: ${value('data_nascimento')}`,
+        `Nome da mãe: ${value('nome_mae')}`,
+        `Fone do paciente: ${value('telefone')}`,
+        `Endereço: ${value('endereco')}`,
+        `Agente: ${value('agente')}`
+      ].join('\n');
+    }
+
+    const title = value('titulo');
+    return [
+      `[DADOS DA PÁGINA MÉDICA AUTORIZADA - Página ${pageNumber} - Título encontrado: ${title}]`,
+      `Motivo do encaminhamento: ${value('motivo_encaminhamento')}`,
+      `Nome do(a) médico(a): ${value('medico')}`,
+      `CRM ou RMS: ${value('crm_rms')}`,
+      `Procedimento solicitado: ${value('procedimento_solicitado')}`,
+      `Código do procedimento: ${value('codigo_procedimento')}`,
+      `CID: ${value('cid')}`,
+      `Descrição do CID: ${value('descricao_cid')}`
+    ].join('\n');
+  }
+
+  function documentAiAllResultsBlock() {
+    const results = Array.isArray(state.documentAiResults)
+      ? [...state.documentAiResults].sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber))
+      : [];
+    const comprovantes = results.filter((item) => item.pageType === 'comprovante_atendimento');
+    const medical = results.filter((item) => item.pageType === 'pagina_medica_autorizada');
+    const blocks = [];
+
+    if (comprovantes.length) {
+      blocks.push(...comprovantes.map(documentAiFormattedBlock));
+    } else {
+      blocks.push('PÁGINA "COMPROVANTE DE ATENDIMENTO" NÃO ENCONTRADA');
+    }
+
+    if (medical.length) {
+      blocks.push(...medical.map(documentAiFormattedBlock));
+    } else {
+      blocks.push('NENHUMA PÁGINA MÉDICA AUTORIZADA FOI ENCONTRADA');
+    }
+
+    return blocks.join('\n\n');
+  }
+
+  function renderDocumentAiDocumentResults() {
+    const results = Array.isArray(state.documentAiResults)
+      ? [...state.documentAiResults].sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber))
+      : [];
+    const completed = state.documentAiScanCompleted === true;
+
+    if (els.documentAiDocumentResults) {
+      els.documentAiDocumentResults.hidden = !completed;
+      if (!completed) {
+        els.documentAiDocumentResults.replaceChildren();
+      } else {
+        const cards = results.map((extraction, index) => {
+          const fields = Object.entries(extraction.fields || {}).map(([key, field]) => {
+            const label = DOCUMENT_AI_FIELD_LABELS[key] || key;
+            const display = documentAiFieldDisplay(field);
+            const stateClass = field?.state === 'ilegivel'
+              ? 'is-illegible'
+              : field?.state === 'nao_consta'
+                ? 'is-missing'
+                : '';
+            return `<div class="documents-ai-field">
+              <div class="documents-ai-field-copy">
+                <strong>${escapeHtml(label)}</strong>
+                <span class="${stateClass}">${escapeHtml(display)}</span>
+              </div>
+            </div>`;
+          }).join('');
+
+          return `<article class="documents-ai-result-card">
+            <div class="documents-ai-result-head">
+              <strong>${escapeHtml(documentAiResultHeading(extraction))}</strong>
+              <button type="button" class="portal-button ghost" data-ai-source-page="${Number(extraction.pageNumber)}">Ver página</button>
+            </div>
+            <div class="documents-ai-extraction-fields">${fields}</div>
+            <button type="button" class="portal-button ghost documents-ai-copy-result" data-ai-copy-result-index="${index}">Copiar este bloco</button>
+          </article>`;
+        });
+
+        const hasReceipt = results.some((item) => item.pageType === 'comprovante_atendimento');
+        const hasMedical = results.some((item) => item.pageType === 'pagina_medica_autorizada');
+        if (!hasReceipt) {
+          cards.unshift('<div class="documents-ai-empty-result">PÁGINA "COMPROVANTE DE ATENDIMENTO" NÃO ENCONTRADA</div>');
+        }
+        if (!hasMedical) {
+          cards.push('<div class="documents-ai-empty-result">NENHUMA PÁGINA MÉDICA AUTORIZADA FOI ENCONTRADA</div>');
+        }
+        els.documentAiDocumentResults.innerHTML = cards.join('');
+      }
+    }
+
+    if (els.documentAiDocumentActions) {
+      els.documentAiDocumentActions.hidden = !completed;
+    }
+    if (els.documentAiCopyAll) {
+      els.documentAiCopyAll.disabled = !completed;
+    }
+  }
+
   function canExtractCurrentDocumentAiPage() {
     const value = state.documentAiClassification;
     if (!value || value.pageType === 'outro') return false;
