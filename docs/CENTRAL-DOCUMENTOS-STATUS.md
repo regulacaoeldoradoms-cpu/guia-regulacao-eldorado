@@ -561,7 +561,7 @@ A branch `chore/central-docs-phase5e-acceptance-tightening` corrige isso sem toc
 - teste de contrato garante que a matriz real não volte a aceitar apenas campos-amostra;
 - documentação da 5E explicita essa regra de aceite integral.
 
-**Implicação operacional:** a antiga Pages origin congelada `67dd934e...` contém o harness anterior e não deve ser usada para a execução real depois desta correção. Antes de pedir a intervenção do operador, é necessário aguardar o novo preview imutável de Pages da PR #244, congelar essa nova origem no verificador/atalho 5E e validar os checks direcionados. Até lá, não configurar janela 5E nem fazer chamada real ao Gemini.
+**Implicação operacional resolvida:** o Cloudflare Pages publicou com sucesso o commit `003da4d` na origem imutável `https://764243d1.portal-regulacao-central-staging.pages.dev`, já contendo a matriz reforçada. Essa origem foi congelada no verificador/atalho 5E e substitui `67dd934e...` para a execução real. A origem antiga permanece apenas como evidência histórica e não deve ser usada na homologação final.
 
 ## Fase atual
 
@@ -678,21 +678,21 @@ Artefatos anteriores preservados:
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 5E — homologação real controlada; endurecimento final do aceite antes do provider real |
-| Última ação concluída | PR #243 mesclada na main `0ee65228…`; PR #244 aberta para exigir literalidade dos 8 campos por página autorizada |
+| Última ação concluída | PR #244 reforçada: matriz valida 8 campos por página e Pages imutável `764243d1…` foi publicado e congelado |
 | Branch/PR | `chore/central-docs-phase5e-acceptance-tightening`; PR **#244** aberta |
 | Main | `0ee65228a8b19ddf72112957c0ee7c87ae005d34`; source ref do runtime 5E permanece `408bff8…` |
-| Último commit relevante | head inicial da PR #244 `ac09554a1b6a038cfc8b6d7c5d062287df4084bc`; status/handoff ainda será atualizado nesta branch |
-| Código/preview | runtime Worker 5E continua congelado; Pages origin `67dd934e…` ficou obsoleta para a matriz reforçada e não deve ser usada na execução real |
+| Último commit relevante | head funcional da PR #244 antes deste status: `7b6d21baad216c0f41ede638c50760e058845c8a` |
+| Código/preview | runtime Worker 5E segue em `408bff8…`; Pages reforçado congelado em `https://764243d1.portal-regulacao-central-staging.pages.dev` |
 | Produção | Worker produtivo permanece com gates IA false/false e `preview_urls=false`; nenhuma chamada documental real ao Gemini |
 | Janela | nenhuma janela 5E ativa; janela 4D antiga continua revogada |
 | Decisão/porquê | endurecer a própria evidência de aceite antes do provider real, porque campos-amostra não comprovavam literalidade integral nem ausência total de mistura |
 | Descartado | iniciar 5E imediatamente com o preview antigo; isso homologaria um harness mais fraco do que o critério de aceite atual |
 | Ações externas | nenhuma nesta branch; não houve Cloudflare/D1/Drive/secret |
-| Checks/testes | aguardando checks direcionados da PR #244 e novo preview imutável de Pages |
-| Bloqueios | novo Pages preview da PR #244 ainda precisa ser identificado/congelado; depois permanece a configuração externa de `GEMINI_API_KEY` |
-| Riscos | usar a origem antiga produziria falso senso de cobertura; mitigação é congelar somente o preview que contém o harness integral |
+| Checks/testes | Cloudflare Pages do commit `003da4d` concluído com sucesso; checks GitHub direcionados da PR #244 em validação após congelamento da nova origem |
+| Bloqueios | Pages reforçado já identificado e congelado; resta somente concluir os checks da PR #244 e, depois do merge, a configuração externa de `GEMINI_API_KEY` |
+| Riscos | usar a origem antiga produziria falso senso de cobertura; mitigação aplicada: verificador/atalho fixados em `764243d1…` |
 | Observabilidade | sem mudança; somente eventos/propriedades técnicos allowlisted, nunca conteúdo documental |
-| Próxima ação exata | esperar checks/Pages da PR #244; congelar a nova origem e atualizar verificador/atalho; somente depois solicitar ao operador `GEMINI_API_KEY` e executar `PRECONDICOES_5E_OK` |
+| Próxima ação exata | concluir checks e merge da PR #244; então solicitar ao operador apenas `GEMINI_API_KEY` e executar o verificador read-only até `PRECONDICOES_5E_OK` |
 | Depois | abrir janela 5E, executar matriz sintética real integral, encerrar fail-closed e avaliar aceite da Fase 5 |
 | Fontes | Guia Mestre V1.1; STATUS; FASE-5; HOMOLOGACAO-5E; PRs #237–#244 |
 
