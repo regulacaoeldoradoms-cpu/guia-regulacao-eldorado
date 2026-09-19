@@ -310,8 +310,8 @@ Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado pa
 A V7 foi integrada pela PR #280 para atender ao novo requisito operacional de reduzir o tempo de extração em pelo menos 2x sem reabrir fases anteriores nem reduzir as proteções da 5E.
 
 Referências congeladas do próximo reteste:
-- source ref: `cfda5b47d2eafe5dac90685952a3c9429a7dda9f`;
-- Pages imutável: `https://a09f45c7.portal-regulacao-central-staging.pages.dev`.
+- source ref: `8faf51af286eb631077645ee84bc34170c8d45a2`;
+- Pages imutável: `https://b8dd14db.portal-regulacao-central-staging.pages.dev`.
 
 O fast path usa Moondream 3.1 somente no preview controlado; produção permanece com o fast path e a IA documental desligados. Gemma/Qwen continuam como rede de segurança. O aceite exige a matriz 10/10 e `duracao_extracao_ms` <= 50% da V6 em comparação operacional equivalente.
 
@@ -322,8 +322,8 @@ A janela V6 existente deve ser encerrada fail-closed antes de qualquer preparo V
 A V7 de baixa latência foi integrada pela PR #280.
 
 Referências congeladas do próximo reteste:
-- source ref: `cfda5b47d2eafe5dac90685952a3c9429a7dda9f`;
-- Pages imutável: `https://a09f45c7.portal-regulacao-central-staging.pages.dev`;
+- source ref: `8faf51af286eb631077645ee84bc34170c8d45a2`;
+- Pages imutável: `https://b8dd14db.portal-regulacao-central-staging.pages.dev`;
 - versão IA documental: `phase5e-v7-low-latency-vision`.
 
 A janela V6 aberta pelo operador continua sendo a janela controlada anterior e deve ser encerrada fail-closed antes de qualquer preparo V7. Depois do encerramento, atualizar os scripts locais para a `main`, executar o readiness e confirmar que ele aponta exatamente para as referências V7 acima. Somente então abrir uma nova janela e executar a matriz uma única vez.
