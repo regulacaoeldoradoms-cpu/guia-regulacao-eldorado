@@ -12,6 +12,9 @@ test('verificador 5E é somente leitura e não possui operações mutáveis', as
   const source = await read('verificar-precondicoes-5e.mjs');
 
   assert.match(source, /PRECONDICOES_5E_OK/);
+  assert.match(source, /workersAiBindingPresent=true/);
+  assert.match(source, /freeOnlyModels=true/);
+  assert.doesNotMatch(source, /geminiSecretPresent=true/);
   assert.match(source, /deployments', 'status/);
   assert.match(source, /versions', 'view/);
   assert.match(source, /templateControlSql\(\)/);
