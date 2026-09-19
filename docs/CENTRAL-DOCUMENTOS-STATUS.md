@@ -1192,6 +1192,32 @@ As referências congeladas do reteste V4 permanecem:
 
 **Próxima ação exata:** baixar os scripts atuais da `main`, executar `iniciar-homologacao-5e.mjs --iniciar`, confirmar `PREPARAR HOMOLOGACAO 5E`, abrir o laboratório V4 e executar a matriz.
 
+## Janela 5E V4 preparada para reteste Gemma/Qwen — 18/09/2026
+
+O operador executou o atalho 5E já atualizado para a correção V4. O readiness foi reconfirmado imediatamente antes do preparo.
+
+Evidência sanitizada do readiness:
+- `PRECONDICOES_5E_OK`;
+- `workersAiBindingPresent=true`;
+- `freeOnlyModels=true`;
+- `extractCapability=true`;
+- `activeControlledWindow=false`;
+- source ref: `8ee43cfafcb35fd03834701acc4f3e96fcde1368`;
+- Pages: `https://c92471f6.portal-regulacao-central-staging.pages.dev`.
+
+Nova janela V4 preparada:
+- preview version: `051fae80-27ae-42c6-bcad-cb23fafc8f2f`;
+- controle: `phase5e_a306e08ec60f46ac8102cc021c163164`;
+- expiração: `2026-09-19T08:19:41.000Z`;
+- release: `8ee43cfafcb35fd03834701acc4f3e96fcde1368`;
+- `aiGate=true` apenas no preview;
+- `driveWriteGate=false`;
+- produção permaneceu em `298ba237-78f9-4d24-bad1-47e66b4c1e15`.
+
+Esta janela contém a correção V4: sem timeout artificial local, thinking desligado, fallback Gemma→Qwen em erros recuperáveis, JPEG 0,85 e métricas por página/modelo.
+
+**Próxima ação operacional:** abrir exatamente `https://c92471f6.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz uma única vez, aguardar conclusão e usar `Copiar resumo seguro`. Registrar `MATRIZ_5E_SINTETICA`, contagens, `duracao_extracao_ms`, `duracao_total_ms`, `gemma_paginas`, `qwen_paginas` e linhas `pagina_XX_ms`. Depois encerrar a janela fail-closed independentemente do resultado.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — correção V4 de latência integrada; reteste aguarda encerramento fail-closed da janela 0/10**. Produção continua com IA documental desligada.
@@ -1316,7 +1342,7 @@ Artefatos anteriores preservados:
 | Correção V4 | sem timeout artificial; thinking off; rejectIfBusy; fallback em 3040/3007/3008/schema; JPEG 0,85; métricas por página/modelo |
 | Janela 0/10 | encerrada fail-closed; HTTP bloqueado confirmado |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | baixar scripts atuais da main; iniciar nova janela V4; executar matriz no Pages `c92471f6...` |
+| Próxima ação exata | janela V4 preparada; abrir `c92471f6.../homologacao-5e/`, executar matriz uma vez, copiar resumo seguro e encerrar fail-closed |
 | Evidência esperada nova | aprovados/falhas + duração extração/total + `gemma_paginas`/`qwen_paginas` + latência/modelo por página |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #269 |
 
