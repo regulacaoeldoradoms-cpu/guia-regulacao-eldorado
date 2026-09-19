@@ -26,18 +26,17 @@ const CONTROL = 'phase5e_' + '1'.repeat(32);
 const SOURCE = 'a'.repeat(40);
 const PAGES = 'https://abc123.portal-regulacao-central-staging.pages.dev';
 
-function production({ gemini = true } = {}) {
+function production({ workersAi = true } = {}) {
   const bindings = [
     { name: 'AUTH_DB', type: 'd1', id: DB },
     { name: 'AUTH_SESSION_SECRET', type: 'secret_text' },
     { name: 'AUTH_RATE_LIMIT_SECRET', type: 'secret_text' },
     { name: 'AUTH_USERS_JSON', type: 'secret_text' },
-    { name: 'GEMINI_MODEL', type: 'plain_text', text: 'gemini-test-model' },
     { name: 'DOCUMENTS_AI_ENABLED', type: 'plain_text', text: 'false' },
     { name: 'DOCUMENTS_AI_PROCESSING_ENABLED', type: 'plain_text', text: 'false' },
     { name: 'DOCUMENTS_DRIVE_WRITE_ENABLED', type: 'plain_text', text: 'true' }
   ];
-  if (gemini) bindings.push({ name: 'GEMINI_API_KEY', type: 'secret_text' });
+  if (workersAi) bindings.push({ name: 'AI', type: 'ai' });
   return {
     id: VERSION,
     resources: {
@@ -67,20 +66,18 @@ test('argumentos 5E exigem commit fixo e origem Pages HTTPS limpa', () => {
   assert.throws(() => validatePagesOrigin(PAGES + '/rota'), /PAGES_ORIGIN_5E_INVALIDA/);
 });
 
-test('produção 5E precisa de AUTH_DB, sessão, rate limit e Gemini sem ler valores', () => {
+test('produção 5E precisa de AUTH_DB, sessão, rate limit e binding Workers AI', () => {
   const base = inspectProductionVersion(production());
   assert.equal(base.dbId, DB);
-  assert.equal(base.plainVars.GEMINI_MODEL, 'gemini-test-model');
   assert.deepEqual(base.secretNames, [
     'AUTH_RATE_LIMIT_SECRET',
     'AUTH_SESSION_SECRET',
-    'AUTH_USERS_JSON',
-    'GEMINI_API_KEY'
+    'AUTH_USERS_JSON'
   ]);
   assert.throws(
-    () => inspectProductionVersion(production({ gemini: false })),
+    () => inspectProductionVersion(production({ workersAi: false })),
     (error) => error instanceof Safe5eError
-      && error.message === 'INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE'
+      && error.message === 'INTERVENCAO_NECESSARIA_WORKERS_AI_BINDING_AUSENTE'
   );
 });
 
@@ -100,8 +97,12 @@ test('config preview 5E liga somente IA e mantém escrita Drive false', () => {
   assert.equal(config.vars.DOCUMENTS_AI_HOMOLOGATION_CONTROL_ID, CONTROL);
   assert.equal(config.vars.DOCUMENTS_AI_HOMOLOGATION_RELEASE, SOURCE);
   assert.equal(config.d1_databases[0].database_id, DB);
+  assert.equal(config.ai.binding, 'AI');
+  assert.equal(config.vars.DOCUMENTS_AI_FREE_ONLY, 'true');
+  assert.equal(config.vars.DOCUMENTS_AI_PRIMARY_MODEL, FIXED_5E.primaryModel);
+  assert.equal(config.vars.DOCUMENTS_AI_FALLBACK_MODELS, FIXED_5E.fallbackModel);
   assert.deepEqual(config.unsafe.metadata.keep_bindings, []);
-  assert.ok(config.secrets.required.includes('GEMINI_API_KEY'));
+  assert.equal(config.secrets.required.includes('GEMINI_API_KEY'), false);
   assert.equal(JSON.stringify(config).includes('secret-value'), false);
 });
 
@@ -126,7 +127,8 @@ test('dry-run multipart aceita só vars explícitas, inherits restritos e AUTH_D
         name, type: 'plain_text', text
       })),
       ...config.secrets.required.map((name) => ({ name, type: 'inherit' })),
-      { name: 'AUTH_DB', type: 'd1', id: DB }
+      { name: 'AUTH_DB', type: 'd1', id: DB },
+      { name: 'AI', type: 'ai' }
     ]
   };
 
@@ -142,7 +144,7 @@ test('dry-run multipart aceita só vars explícitas, inherits restritos e AUTH_D
   const bytes = Buffer.from(await request.arrayBuffer());
   await assert.doesNotReject(() => inspectMultipart(bytes, config));
 
-  metadata.bindings.find((item) => item.name === 'GEMINI_API_KEY').type = 'plain_text';
+  metadata.bindings.find((item) => item.name === 'AUTH_SESSION_SECRET').type = 'plain_text';
   const bad = new FormData();
   bad.append('metadata', JSON.stringify(metadata));
   bad.append('homologation-5e.js', new Blob(['export default {};']), 'homologation-5e.js');
@@ -198,7 +200,8 @@ test('versão preview confirma alias, vars, secrets e D1 esperados', () => {
       name, type: 'plain_text', text
     })),
     ...config.secrets.required.map((name) => ({ name, type: 'secret_text' })),
-    { name: 'AUTH_DB', type: 'd1', id: DB }
+    { name: 'AUTH_DB', type: 'd1', id: DB },
+    { name: 'AI', type: 'ai' }
   ];
   const preview = {
     id: VERSION,
