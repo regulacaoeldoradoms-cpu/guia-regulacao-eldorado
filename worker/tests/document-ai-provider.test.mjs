@@ -345,6 +345,128 @@ test('modelo que exigir plano pago é bloqueado fail-closed', async () => {
   );
 });
 
+test('página médica com campo ilegível recebe revisão focal gratuita no Qwen', async () => {
+  const calls = [];
+  const initialFields = fieldsFor('pagina_medica_autorizada', {
+    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
+    motivo_encaminhamento: { state: 'encontrado', value: 'MOTIVO' },
+    medico: { state: 'encontrado', value: 'DR. TESTE' },
+    crm_rms: { state: 'encontrado', value: 'CRM/MS 1' },
+    procedimento_solicitado: { state: 'encontrado', value: 'PROC' },
+    codigo_procedimento: { state: 'encontrado', value: '0001' },
+    cid: { state: 'ilegivel', value: '' },
+    descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL' }
+  });
+  const reviewedFields = {
+    ...initialFields,
+    descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL CORRETA' }
+  };
+
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 6,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([6, 6])
+  }, {
+    aiRun: async (model, input) => {
+      calls.push({ model, input });
+      if (calls.length === 1) {
+        return workersResponse({
+          pageType: 'pagina_medica_autorizada',
+          fields: initialFields
+        });
+      }
+      assert.equal(model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
+      assert.match(input.messages[1].content[1].text, /REVISÃO DE PRECISÃO/);
+      assert.match(input.messages[1].content[1].text, /cid/);
+      return workersResponse({ fields: reviewedFields });
+    }
+  });
+
+  assert.equal(calls.length, 2);
+  assert.equal(result.provider.reviewed, true);
+  assert.equal(result.provider.model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
+  assert.equal(result.extraction.fields.cid.state, 'ilegivel');
+  assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO LITERAL CORRETA');
+  assert.equal(result.provider.attempts.length, 2);
+});
+
+test('revisão focal indisponível preserva extração inicial válida', async () => {
+  let calls = 0;
+  const initialFields = fieldsFor('pagina_medica_autorizada', {
+    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
+    motivo_encaminhamento: { state: 'encontrado', value: 'MOTIVO' },
+    medico: { state: 'encontrado', value: 'DR. TESTE' },
+    crm_rms: { state: 'encontrado', value: 'CRM/MS 1' },
+    procedimento_solicitado: { state: 'encontrado', value: 'PROC' },
+    codigo_procedimento: { state: 'encontrado', value: '0001' },
+    cid: { state: 'ilegivel', value: '' },
+    descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO' }
+  });
+
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 6,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([6])
+  }, {
+    aiRun: async () => {
+      calls += 1;
+      if (calls === 1) {
+        return workersResponse({
+          pageType: 'pagina_medica_autorizada',
+          fields: initialFields
+        });
+      }
+      throw new Error('3040 Capacity temporarily exceeded');
+    }
+  });
+
+  assert.equal(calls, 2);
+  assert.equal(result.provider.reviewed, false);
+  assert.equal(result.extraction.fields.cid.state, 'ilegivel');
+  assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO');
+});
+
+test('CID ausente com descrição presente também ativa revisão focal', async () => {
+  const models = [];
+  const initialFields = fieldsFor('pagina_medica_autorizada', {
+    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
+    motivo_encaminhamento: { state: 'encontrado', value: 'MOTIVO' },
+    medico: { state: 'encontrado', value: 'DR. TESTE' },
+    crm_rms: { state: 'encontrado', value: 'CRM/MS 1' },
+    procedimento_solicitado: { state: 'encontrado', value: 'PROC' },
+    codigo_procedimento: { state: 'encontrado', value: '0001' },
+    cid: { state: 'nao_consta', value: '' },
+    descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO' }
+  });
+  const reviewedFields = {
+    ...initialFields,
+    cid: { state: 'ilegivel', value: '' }
+  };
+
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 6,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([6])
+  }, {
+    aiRun: async (model) => {
+      models.push(model);
+      if (models.length === 1) {
+        return workersResponse({
+          pageType: 'pagina_medica_autorizada',
+          fields: initialFields
+        });
+      }
+      return workersResponse({ fields: reviewedFields });
+    }
+  });
+
+  assert.deepEqual(models, [
+    DOCUMENT_AI_PRIMARY_FREE_MODEL,
+    DOCUMENT_AI_FALLBACK_FREE_MODEL
+  ]);
+  assert.equal(result.extraction.fields.cid.state, 'ilegivel');
+});
+
 test('extração explícita recebe tipo autorizado e usa uma única imagem', async () => {
   let call;
   const result = await extractDocumentAiPage(enabledEnv(), {
@@ -440,6 +562,8 @@ test('source do provider não registra conteúdo, não chama Gemini API e não u
   assert.match(source, /rejectIfBusy: true/);
   assert.match(source, /enable_thinking: false/);
   assert.match(source, /reasoning_effort: null/);
+  assert.match(source, /REVISÃO DE PRECISÃO DA MESMA PÁGINA MÉDICA/);
+  assert.match(source, /\[DOCUMENT_AI_FALLBACK_FREE_MODEL\]/);
   assert.doesNotMatch(source, /DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT/);
   assert.doesNotMatch(source, /function withLocalTimeout|return await Promise\.race|new Promise\(\(_, reject\)/);
   assert.doesNotMatch(source, /setTimeout\(/);
