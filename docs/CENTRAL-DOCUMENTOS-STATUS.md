@@ -1171,6 +1171,27 @@ A janela que produziu o resultado 0/10 ainda pertence ao runtime antigo:
 
 **Próxima ação obrigatória:** encerrar essa janela fail-closed. Só depois executar readiness com as referências V4 e preparar outra janela. Não repetir a matriz no preview antigo.
 
+## Janela 0/10 encerrada fail-closed; V4 liberada para nova abertura — 18/09/2026
+
+O operador encerrou com sucesso a janela que executou a primeira matriz Workers AI 0/10.
+
+Evidência sanitizada:
+- controle encerrado: `phase5e_53f22db9f82345c1b01425299595cad9`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado: `85f57743-6c96-41d5-92ca-050ac864ef40`;
+- release encerrado: `a49ecd22e922267179fd8502f08fc5950df8fb0a`;
+- `httpBlocked=true`.
+
+Resultado: o runtime antigo está fail-closed e não deve ser reutilizado.
+
+As referências congeladas do reteste V4 permanecem:
+- source ref: `8ee43cfafcb35fd03834701acc4f3e96fcde1368`;
+- Pages: `https://c92471f6.portal-regulacao-central-staging.pages.dev`.
+
+**Próxima ação exata:** baixar os scripts atuais da `main`, executar `iniciar-homologacao-5e.mjs --iniciar`, confirmar `PREPARAR HOMOLOGACAO 5E`, abrir o laboratório V4 e executar a matriz.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — correção V4 de latência integrada; reteste aguarda encerramento fail-closed da janela 0/10**. Produção continua com IA documental desligada.
@@ -1293,9 +1314,9 @@ Artefatos anteriores preservados:
 | Provider | Gemma 4 principal; Qwen 3.8 fallback; Workers Free |
 | Custo | requisito permanente R$ 0; 3036/5035 fail-closed; sem Gateway/prepaid/pay-as-you-go |
 | Correção V4 | sem timeout artificial; thinking off; rejectIfBusy; fallback em 3040/3007/3008/schema; JPEG 0,85; métricas por página/modelo |
-| Janela 0/10 ainda a encerrar | `phase5e_53f22db9f82345c1b01425299595cad9`, preview `388d2847-d9d8-478a-8d27-1618a869989f`, release antigo `a49ecd22…` |
+| Janela 0/10 | encerrada fail-closed; HTTP bloqueado confirmado |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | encerrar janela 0/10 fail-closed; rodar readiness V4; se verde, abrir nova 5E e executar matriz |
+| Próxima ação exata | baixar scripts atuais da main; iniciar nova janela V4; executar matriz no Pages `c92471f6...` |
 | Evidência esperada nova | aprovados/falhas + duração extração/total + `gemma_paginas`/`qwen_paginas` + latência/modelo por página |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #269 |
 
