@@ -71,6 +71,21 @@ Se uma execução anterior já tiver enviado uma candidata mas não a tiver prom
 
 A configuração efêmera também declara dinamicamente em `secrets.required` todos os nomes de secrets encontrados na produção. O gate não usa o modo global `--strict`, porque o Worker mantém bindings e variáveis legítimos gerenciados remotamente com `keep_vars=true`; esse modo pode bloquear o upload por conflito de configuração mesmo quando a herança é intencional. A proteção continua fail-closed em três camadas: validação da versão anterior, exigência explícita dos nomes de secrets e inspeção integral da candidata antes de qualquer promoção.
 
+## Preview URLs em produção
+
+O gate produtivo **não depende de Worker Preview URLs**. O `worker/wrangler.toml` declara explicitamente:
+
+`preview_urls = false`
+
+Motivo: um merge documental em 18/09/2026 acionou Workers Builds e falhou com `Preview creation failed: You do not have access to use Worker Previews`, antes de concluir um novo deploy seguro. O upload de candidata do gate não precisa publicar URL de preview para validar bindings, secrets, D1 ou a Agenda.
+
+As homologações que realmente precisam de alias de preview, como a Central 5E, optam explicitamente por `preview_urls = true` em configuração efêmera própria. Assim:
+
+- produção fica independente da disponibilidade de Preview URLs;
+- homologações continuam explicitamente opt-in;
+- um problema de Preview URL não deve derrubar o pipeline normal de publicação do Worker;
+- a configuração produtiva não precisa habilitar preview público permanentemente.
+
 ## Rollback automático
 
 Depois que a promoção começa, qualquer falha do pós-deploy faz o script tentar colocar a versão produtiva anterior novamente em 100%.

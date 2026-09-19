@@ -2,6 +2,8 @@ name = "yellow-wave-d0a1guia-regulacao-ia"
 main = "index.js"
 compatibility_date = "2026-08-25"
 workers_dev = true
+# Produção não depende de Worker Preview URLs; homologações optam explicitamente quando necessário.
+preview_urls = false
 keep_vars = true
 
 [observability]

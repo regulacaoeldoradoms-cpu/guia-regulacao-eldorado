@@ -266,3 +266,10 @@ test('fonte do gate não usa deploy monolítico nem contém credenciais', () => 
   assert.match(source, /ROLLBACK_DE_SEGURANCA=OK/);
   assert.match(source, /AGENDA_FIREBASE_503_APOS_DEPLOY/);
 });
+
+
+test('produção desativa Preview URLs para o gate seguro', () => {
+  const wrangler = fs.readFileSync(new URL('../wrangler.toml', import.meta.url), 'utf8');
+  assert.match(wrangler, /^preview_urls\s*=\s*false\s*$/m);
+  assert.match(wrangler, /^workers_dev\s*=\s*true\s*$/m);
+});
