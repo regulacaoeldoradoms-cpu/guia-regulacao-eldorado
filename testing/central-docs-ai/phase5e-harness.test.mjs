@@ -37,6 +37,45 @@ test('laboratório 5E contém somente fixtures declaradamente sintéticos e matr
   assert.match(js, /cid: \['ilegivel', ''\]/);
 });
 
+test('matriz 5E valida os oito campos de cada página autorizada, não apenas amostras', async () => {
+  const js = await read('testing/central-docs-ai/phase5e-harness.js');
+  const receiptKeys = [
+    'nome_paciente', 'cpf', 'cns', 'data_nascimento',
+    'nome_mae', 'telefone', 'endereco', 'agente'
+  ];
+  const medicalKeys = [
+    'titulo', 'motivo_encaminhamento', 'medico', 'crm_rms',
+    'procedimento_solicitado', 'codigo_procedimento', 'cid', 'descricao_cid'
+  ];
+
+  function fixtureBlock(id) {
+    const marker = "id: '" + id + "'";
+    const start = js.indexOf(marker);
+    assert.ok(start >= 0, 'fixture ausente: ' + id);
+    const next = js.indexOf("\n    {\n      id: '", start + marker.length);
+    const end = next >= 0 ? next : js.indexOf("\n  ];", start);
+    assert.ok(end > start, 'fim do fixture ausente: ' + id);
+    return js.slice(start, end);
+  }
+
+  for (const key of receiptKeys) {
+    assert.match(fixtureBlock('receipt'), new RegExp('\\b' + key + ': \\['));
+  }
+  for (const id of ['medical-a', 'medical-b', 'missing', 'illegible']) {
+    const block = fixtureBlock(id);
+    for (const key of medicalKeys) {
+      assert.match(block, new RegExp('\\b' + key + ': \\['));
+    }
+  }
+
+  assert.match(js, /data_nascimento: \['encontrado', '01\/01\/2000'\]/);
+  assert.match(js, /agente: \['encontrado', 'AGENTE SINTÉTICO A'\]/);
+  assert.match(js, /codigo_procedimento: \['encontrado', '000001'\]/);
+  assert.match(js, /descricao_cid: \['encontrado', 'DESCRIÇÃO SINTÉTICA BETA'\]/);
+  assert.match(js, /codigo_procedimento: \['nao_consta', ''\]/);
+  assert.match(js, /cid: \['ilegivel', ''\]/);
+});
+
 test('chat 5E recebe apenas evidence estruturada e não reenvia canvas ou blob', async () => {
   const js = await read('testing/central-docs-ai/phase5e-harness.js');
   const start = js.indexOf('  async function chat(');

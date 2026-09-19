@@ -548,6 +548,21 @@ Estado final antes da intervenção do operador:
 
 Não criar nova branch funcional antes desse passo: a próxima ação real é operacional, não desenvolvimento adicional.
 
+## Endurecimento do aceite real 5E — PR #244 — 18/09/2026
+
+Antes da primeira chamada real ao provedor foi encontrada uma lacuna de **cobertura da própria homologação**, não do backend: o harness 5E comparava apenas campos-amostra em páginas autorizadas, embora o critério da Fase 5 exija literalidade dos campos e ausência de mistura entre páginas.
+
+A branch `chore/central-docs-phase5e-acceptance-tightening` corrige isso sem tocar produção, D1, Drive ou secrets:
+
+- comprovante completo passa a validar os 8 campos do schema;
+- páginas médicas A e B passam a validar os 8 campos de cada página, tornando a detecção de mistura integral;
+- página com código ausente valida os outros 7 campos literalmente e exige `nao_consta` no código;
+- página com CID borrado valida os outros 7 campos literalmente e exige `ilegivel` no CID;
+- teste de contrato garante que a matriz real não volte a aceitar apenas campos-amostra;
+- documentação da 5E explicita essa regra de aceite integral.
+
+**Implicação operacional resolvida:** o Cloudflare Pages publicou com sucesso o commit `003da4d` na origem imutável `https://764243d1.portal-regulacao-central-staging.pages.dev`, já contendo a matriz reforçada. Essa origem foi congelada no verificador/atalho 5E e substitui `67dd934e...` para a execução real. A origem antiga permanece apenas como evidência histórica e não deve ser usada na homologação final.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
@@ -662,24 +677,24 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — preparo e prontidão operacional; sem provider real ainda |
-| Última ação concluída | Prontidão 5E consolidada: PRs #239/#240/#241 mesclados, Worker produtivo voltou a publicar e preview final sintético congelado |
-| Branch/PR | Prontidão integrada; branch final `chore/central-docs-phase5e-final-readiness` registra apenas handoff/origem congelada |
-| Main | `0fddc74450127c7c979d15f01471203095de4262` na abertura desta atualização; source ref 5E permanece `408bff8…` |
-| Último commit relevante | funcional `1d4decd03e0047a1bad678d60cee36ba6822d5b5`; commits posteriores na branch são somente documentação/handoff da reconciliação |
-| Código/preview | Preview final bloqueado `1864a072…`; gate false; release `1d4decd…`; previews de escrita anteriores são históricos |
-| Produção | Após #241: Worker versão `c94de153-8de7-4784-a909-15d207b1209a`; gates IA continuam false/false; `preview_urls=false` em produção |
-| Janela | `phase4d_d28ac0d37fe3409f8751fac02007e777` encerrada: controlEnabled=false, writeGate=false, httpBlocked=true |
-| Decisão/porquê | Reconciliar #201 com a main antes da nova 4D para preservar abertura/Home e eliminar base Git obsoleta; nova janela deve usar controle/prazo novos |
-| Descartado | Rollback, Split versions, View logs para inferir configuração, inventar botão de detalhes, repetir V3 inteiro/download/SQL/OAuth, publicar para localizar alias |
-| Ações externas | Janela antiga revogada; alias e bloqueio HTTP confirmados. Nenhuma nova alteração Cloudflare/D1/Drive foi feita durante a reconciliação GitHub |
-| Checks/testes | main após #237: 348/348; operacionais 5E 9+8+2+4; navegador/staging/governança/site/transversais verdes |
-| Bloqueios | `GEMINI_API_KEY` ainda ausente. A janela 5E também exige disponibilidade de Worker Preview, mas isso não bloqueia mais deploy produtivo |
-| Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
-| Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Operador configura `GEMINI_API_KEY` na Cloudflare sem compartilhar valor; depois roda o verificador read-only e, somente se `PRECONDICOES_5E_OK`, usa o atalho de início da 5E |
-| Depois | Executar matriz sintética real 5E, encerrar janela fail-closed e só então avaliar aceite/publicação da Fase 5 |
-| Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
+| Fase/subfase | Fase 5E — homologação real controlada; endurecimento final do aceite antes do provider real |
+| Última ação concluída | PR #244 reforçada: matriz valida 8 campos por página e Pages imutável `764243d1…` foi publicado e congelado |
+| Branch/PR | `chore/central-docs-phase5e-acceptance-tightening`; PR **#244** aberta |
+| Main | `0ee65228a8b19ddf72112957c0ee7c87ae005d34`; source ref do runtime 5E permanece `408bff8…` |
+| Último commit relevante | head funcional da PR #244 antes deste status: `7b6d21baad216c0f41ede638c50760e058845c8a` |
+| Código/preview | runtime Worker 5E segue em `408bff8…`; Pages reforçado congelado em `https://764243d1.portal-regulacao-central-staging.pages.dev` |
+| Produção | Worker produtivo permanece com gates IA false/false e `preview_urls=false`; nenhuma chamada documental real ao Gemini |
+| Janela | nenhuma janela 5E ativa; janela 4D antiga continua revogada |
+| Decisão/porquê | endurecer a própria evidência de aceite antes do provider real, porque campos-amostra não comprovavam literalidade integral nem ausência total de mistura |
+| Descartado | iniciar 5E imediatamente com o preview antigo; isso homologaria um harness mais fraco do que o critério de aceite atual |
+| Ações externas | nenhuma nesta branch; não houve Cloudflare/D1/Drive/secret |
+| Checks/testes | Cloudflare Pages do commit `003da4d` concluído com sucesso; checks GitHub direcionados da PR #244 em validação após congelamento da nova origem |
+| Bloqueios | Pages reforçado já identificado e congelado; resta somente concluir os checks da PR #244 e, depois do merge, a configuração externa de `GEMINI_API_KEY` |
+| Riscos | usar a origem antiga produziria falso senso de cobertura; mitigação aplicada: verificador/atalho fixados em `764243d1…` |
+| Observabilidade | sem mudança; somente eventos/propriedades técnicos allowlisted, nunca conteúdo documental |
+| Próxima ação exata | concluir checks e merge da PR #244; então solicitar ao operador apenas `GEMINI_API_KEY` e executar o verificador read-only até `PRECONDICOES_5E_OK` |
+| Depois | abrir janela 5E, executar matriz sintética real integral, encerrar fail-closed e avaliar aceite da Fase 5 |
+| Fontes | Guia Mestre V1.1; STATUS; FASE-5; HOMOLOGACAO-5E; PRs #237–#244 |
 
 ## Histórico recuperável
 
