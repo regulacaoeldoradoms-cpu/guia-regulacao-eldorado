@@ -1475,21 +1475,49 @@ Conclusão: a janela V5 está encerrada e não deve ser reutilizada. A produçã
 
 **Próxima ação exata:** atualizar os scripts locais para a versão atual da `main` e executar o verificador somente leitura V6. Somente após `PRECONDICOES_5E_OK` abrir uma nova janela 5E com identificador/prazo novos.
 
+## Janela V6 preparada — 19/09/2026
+
+O operador executou o readiness V6 e o preparo oficial da homologação 5E. As pré-condições foram aprovadas antes de qualquer ativação real:
+
+- `PRECONDICOES_5E_OK`;
+- produção ativa `298ba237-78f9-4d24-bad1-47e66b4c1e15`;
+- binding Workers AI presente;
+- somente modelos gratuitos permitidos;
+- capability `extract` presente;
+- nenhuma outra janela controlada ativa;
+- source ref congelado `76bfefa17bae0729090277525186bdc7dcfc0068`;
+- Pages congelado `https://27a15b34.portal-regulacao-central-staging.pages.dev`.
+
+Depois da confirmação humana `PREPARAR HOMOLOGACAO 5E`, o procedimento concluiu 8/8 etapas e retornou:
+
+- `HOMOLOGACAO_5E_PREPARADA`;
+- preview version `a8665b05-004d-41d7-b7d4-5ed73a9a7146`;
+- controle novo `phase5e_fcbad5b5cfcf4de78064a73f4097dcd7`;
+- expiração `2026-09-19T10:14:08.000Z`;
+- release V6 `76bfefa17bae0729090277525186bdc7dcfc0068`;
+- `aiGate=true` somente no preview;
+- `driveWriteGate=false`;
+- produção permaneceu na versão reconfirmada acima.
+
+Nenhum documento real de paciente deve ser usado nesta janela. O laboratório permanece restrito a fixtures sintéticos. A escrita no Google Drive continua bloqueada.
+
+**Próxima ação exata:** abrir o Pages congelado em `/homologacao-5e/`, autenticar com a conta previamente autorizada e executar a matriz sintética V6 uma única vez. Ao final, copiar somente o **resumo seguro** do laboratório e retornar o resultado para avaliação. Não copiar respostas detalhadas, credenciais ou conteúdo das páginas.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V6 integrada; reteste ainda não aberto |
-| Último resultado real | V5: 8/10; depois janela encerrada fail-closed com HTTP bloqueado confirmado |
+| Fase/subfase | Fase 5E — V6 integrada; janela de reteste preparada |
+| Último resultado real | V6 readiness aprovado e nova janela preview preparada; matriz ainda não executada |
 | Main funcional V6 | `76bfefa17bae0729090277525186bdc7dcfc0068` |
 | Runtime próximo reteste | `76bfefa17bae0729090277525186bdc7dcfc0068` |
 | Pages próximo reteste | `https://27a15b34.portal-regulacao-central-staging.pages.dev` |
 | Provider | Gemma 4 principal; Qwen 3.8 fallback/revisor focal; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V6 | PNG 1800 adaptativo; concorrência 6; prompt literal V2; revisão focal CID+descrição; campos divergentes no resumo seguro |
-| Janela V5 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
+| Janela V5 | encerrada fail-closed; janela V6 nova preparada e ativa |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | atualizar scripts locais para a main; readiness V6; se verde, abrir nova janela e executar matriz |
+| Próxima ação exata | abrir /homologacao-5e/ no Pages congelado; executar a matriz V6 uma vez; copiar resumo seguro |
 | Meta | 10/10 e reduzir extração de seis páginas para uma única onda concorrente |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #276 |
 
