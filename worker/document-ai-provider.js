@@ -137,7 +137,7 @@ export async function classifyDocumentAiPage(env, input = {}, options = {}) {
         contents: [{
           role: 'user',
           parts: [
-            { text: `Número técnico da página: ${pageNumber}. Classifique somente esta página.` },
+            { text: `Número técnico da página: ${pageNumber}. Classifique somente esta página. Retorne JSON apenas com o campo pageType.` },
             {
               inlineData: {
                 mimeType,
@@ -200,8 +200,6 @@ function extractionTemplate(pageType) {
     );
   }
   return {
-    pageNumber: 0,
-    pageType,
     fields: Object.fromEntries(keys.map((key) => [
       key,
       { state: 'nao_consta', value: '' }
@@ -228,7 +226,6 @@ export async function extractDocumentAiPage(env, input = {}, options = {}) {
   const pageNumber = normalizeDocumentAiPageNumber(input.pageNumber);
   const pageType = String(input.pageType || '').trim();
   const template = extractionTemplate(pageType);
-  template.pageNumber = pageNumber;
   const mimeType = normalizeMimeType(input.mimeType);
   const bytes = normalizeImageBytes(input.bytes);
   const model = String(env.DOCUMENTS_AI_MODEL || env.GEMINI_MODEL || 'gemini-3.5-flash-lite').trim();
@@ -257,7 +254,7 @@ export async function extractDocumentAiPage(env, input = {}, options = {}) {
               text: [
                 `Número técnico da página: ${pageNumber}.`,
                 `Tipo autorizado: ${pageType}.`,
-                'Retorne TODOS os campos deste schema, sem adicionar outros:',
+                'Retorne somente o objeto fields deste schema, com TODOS os campos e sem adicionar outros:',
                 JSON.stringify(template)
               ].join('\n')
             },
