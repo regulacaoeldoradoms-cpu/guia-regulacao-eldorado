@@ -1084,6 +1084,21 @@ Interpretação: as precondições técnicas para abrir uma nova janela Gemma/Qw
 
 **Próxima ação humana:** confirmar Workers Free + ausência de cobrança por Gateway. Depois executar o preparo 5E e rodar a matriz sintética Workers AI, medindo `duracao_extracao_ms` e `duracao_total_ms`.
 
+## Workers Free confirmado pelo operador — 18/09/2026
+
+O operador enviou evidência visual do painel Cloudflare `Manage Account > Billing > Subscriptions`.
+
+Evidência observada:
+- produto `Workers` com status `Active`;
+- plano exibido: **Workers Free**;
+- a própria tela oferece `Upgrade to Workers Paid`, confirmando que o plano pago não está ativo.
+
+Como o Titon documental chama o binding nativo `AI` diretamente e o provider não configura AI Gateway, a precondição de custo zero para esta rodada está satisfeita.
+
+Resultado: **nenhuma trava humana de custo permanece para abrir a nova janela 5E**.
+
+**Próxima ação:** executar o preparo 5E com as referências congeladas `a49ecd22e922267179fd8502f08fc5950df8fb0a` + `https://60f66c8b.portal-regulacao-central-staging.pages.dev`, mantendo `DOCUMENTS_DRIVE_WRITE_ENABLED=false`, e depois rodar a matriz Gemma 4 + Qwen.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — Workers AI free-only integrado; novo reteste aguarda confirmação de plano Free e encerramento da janela antiga**. Produção continua com IA documental desligada.
@@ -1200,7 +1215,7 @@ Artefatos anteriores preservados:
 | --- | --- |
 | Fase/subfase | Fase 5E — Workers AI free-only integrado; próximo reteste ainda não aberto |
 | Última ação concluída | PR #260 mesclada; runtime e Pages do reteste congelados |
-| Main | `c31f8f3d59a5a0e8d373a858cdd3a1a18e478d67`; runtime do reteste permanece congelado em `a49ecd22…` |
+| Main | `fc8779e8568ec2f59604c66d53597ca0dafb9f49`; runtime do reteste permanece congelado em `a49ecd22…` |
 | Runtime reteste | `a49ecd22e922267179fd8502f08fc5950df8fb0a` |
 | Pages reteste | `https://60f66c8b.portal-regulacao-central-staging.pages.dev` |
 | Provider | `@cf/google/gemma-4-26b-a4b-it` principal; `@cf/qwen/qwen3.8-27b` fallback |
@@ -1210,7 +1225,7 @@ Artefatos anteriores preservados:
 | Janela antiga | `phase5e_502e857dd0424fbe92ea406048e7ad7f` encerrada fail-closed; HTTP bloqueado confirmado |
 | PR #259 | fechada sem merge como direção Gemini-Free superada |
 | Produção | IA documental false/false; não ativar antes do aceite 5E |
-| Próxima ação exata | readiness já verde; confirmar Workers Free + ausência de Gateway/prepaid; depois abrir nova 5E |
+| Próxima ação exata | Workers Free confirmado; abrir nova 5E com refs congeladas e executar matriz Gemma/Qwen |
 | Depois | executar matriz Workers AI, copiar resumo seguro com durações, encerrar janela fail-closed e avaliar aceite |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #260; Pages do merge |
 
