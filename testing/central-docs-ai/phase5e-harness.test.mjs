@@ -83,6 +83,6 @@ test('resumo seguro 5E não copia detalhes, respostas, credenciais ou conteúdo 
 test('cópia do resumo seguro é explícita e não ocorre automaticamente', async () => {
   const js = await read('testing/central-docs-ai/phase5e-harness.js');
   assert.match(js, /els\.copySafeSummary\?\.addEventListener\('click'/);
-  assert.match(js, /navigator\.clipboard\?\.writeText\(text\)/);
+  assert.match(js, /navigator\.clipboard\.writeText\(text\)/);
   assert.doesNotMatch(js, /renderSummary\([^)]*\)[\s\S]{0,200}copySafeSummary\(/);
 });
