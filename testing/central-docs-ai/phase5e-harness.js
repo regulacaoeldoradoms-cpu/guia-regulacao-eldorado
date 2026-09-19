@@ -58,7 +58,12 @@
       expectedFields: {
         nome_paciente: ['encontrado', 'PESSOA SINTÉTICA ALFA'],
         cpf: ['encontrado', '111.111.111-11'],
-        cns: ['encontrado', '111 1111 1111 1111']
+        cns: ['encontrado', '111 1111 1111 1111'],
+        data_nascimento: ['encontrado', '01/01/2000'],
+        nome_mae: ['encontrado', 'MÃE SINTÉTICA ALFA'],
+        telefone: ['encontrado', '(67) 99999-0000'],
+        endereco: ['encontrado', 'RUA TESTE ALFA, 100'],
+        agente: ['encontrado', 'AGENTE SINTÉTICO A']
       }
     },
     {
@@ -78,8 +83,14 @@
         ['Descrição do CID', 'DESCRIÇÃO SINTÉTICA ALFA']
       ],
       expectedFields: {
+        titulo: ['encontrado', 'ENCAMINHAMENTO MÉDICO SINTÉTICO A'],
+        motivo_encaminhamento: ['encontrado', 'QUEIXA SINTÉTICA ALFA PARA TESTE'],
+        medico: ['encontrado', 'DR. PROFISSIONAL SINTÉTICO A'],
+        crm_rms: ['encontrado', 'CRM/MS 00001'],
         procedimento_solicitado: ['encontrado', 'PROCEDIMENTO ALFA'],
-        cid: ['encontrado', 'Z99.9']
+        codigo_procedimento: ['encontrado', '000001'],
+        cid: ['encontrado', 'Z99.9'],
+        descricao_cid: ['encontrado', 'DESCRIÇÃO SINTÉTICA ALFA']
       }
     },
     {
@@ -112,8 +123,14 @@
         ['Descrição do CID', 'DESCRIÇÃO SINTÉTICA BETA']
       ],
       expectedFields: {
+        titulo: ['encontrado', 'ENCAMINHAMENTO MÉDICO SINTÉTICO B'],
+        motivo_encaminhamento: ['encontrado', 'QUEIXA SINTÉTICA BETA PARA TESTE'],
+        medico: ['encontrado', 'DR. PROFISSIONAL SINTÉTICO B'],
+        crm_rms: ['encontrado', 'CRM/MS 00002'],
         procedimento_solicitado: ['encontrado', 'PROCEDIMENTO BETA'],
-        cid: ['encontrado', 'A00.0']
+        codigo_procedimento: ['encontrado', '000002'],
+        cid: ['encontrado', 'A00.0'],
+        descricao_cid: ['encontrado', 'DESCRIÇÃO SINTÉTICA BETA']
       }
     },
     {
@@ -132,7 +149,14 @@
         ['Descrição do CID', 'DESCRIÇÃO SINTÉTICA GAMA']
       ],
       expectedFields: {
-        codigo_procedimento: ['nao_consta', '']
+        titulo: ['encontrado', 'ENCAMINHAMENTO MÉDICO SINTÉTICO SEM CÓDIGO'],
+        motivo_encaminhamento: ['encontrado', 'MOTIVO SINTÉTICO SEM CÓDIGO DE PROCEDIMENTO'],
+        medico: ['encontrado', 'DR. PROFISSIONAL SINTÉTICO C'],
+        crm_rms: ['encontrado', 'CRM/MS 00003'],
+        procedimento_solicitado: ['encontrado', 'PROCEDIMENTO GAMA'],
+        codigo_procedimento: ['nao_consta', ''],
+        cid: ['encontrado', 'B00.0'],
+        descricao_cid: ['encontrado', 'DESCRIÇÃO SINTÉTICA GAMA']
       }
     },
     {
@@ -152,7 +176,14 @@
       ],
       blurredField: ['CID', 'C12.3'],
       expectedFields: {
-        cid: ['ilegivel', '']
+        titulo: ['encontrado', 'ENCAMINHAMENTO MÉDICO SINTÉTICO ILEGÍVEL'],
+        motivo_encaminhamento: ['encontrado', 'MOTIVO SINTÉTICO PARA TESTE DE ILEGIBILIDADE'],
+        medico: ['encontrado', 'DR. PROFISSIONAL SINTÉTICO D'],
+        crm_rms: ['encontrado', 'CRM/MS 00004'],
+        procedimento_solicitado: ['encontrado', 'PROCEDIMENTO DELTA'],
+        codigo_procedimento: ['encontrado', '000004'],
+        cid: ['ilegivel', ''],
+        descricao_cid: ['encontrado', 'DESCRIÇÃO TAMBÉM NÃO DEVE SER INFERIDA']
       }
     }
   ];
