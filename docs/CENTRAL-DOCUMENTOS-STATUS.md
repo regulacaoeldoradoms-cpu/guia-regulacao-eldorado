@@ -1458,21 +1458,38 @@ Artefatos anteriores preservados:
 - Históricos: V3 87 testes Node/sintaxe/três casos SQLite; revogação cinco casos sintéticos em9c491c2; RESULTADOS registra274/274 Worker e75 passed/3 skipped navegador para2fee19e. Não são novos resultados do head atual.
 - Proteções V3: herança restrita por nome, multipart, lock/registro/marcador antes de tentativa, confirmação/revalidação. Sem exclusão remota transacional; Wrangler pode reconciliar tags não versionadas no upload. Liberação continua vinculada à janela vencida/revogada: não usar.
 
+## Janela V5 encerrada fail-closed — 19/09/2026
+
+O operador concluiu o procedimento oficial `encerrar-homologacao-5e.mjs --encerrar` para a janela V5 que produziu o resultado 8/10.
+
+Evidências sanitizadas do encerramento:
+- `JANELA_5E_ENCERRADA`;
+- controle D1 desabilitado (`controlEnabled=false`);
+- gate de IA desligado (`aiGate=false`);
+- gate de escrita Drive desligado (`driveWriteGate=false`);
+- versão preview final bloqueada `1e4a404e-ba4d-4cc8-834c-f7598a2a3af7`;
+- release encerrado `20488871ce2556c06795367ededbdb49791c23f5`;
+- bloqueio HTTP final confirmado (`httpBlocked=true`).
+
+Conclusão: a janela V5 está encerrada e não deve ser reutilizada. A produção continua com IA documental desligada. O runtime V6 congelado permanece `76bfefa17bae0729090277525186bdc7dcfc0068` e o Pages congelado permanece `https://27a15b34.portal-regulacao-central-staging.pages.dev`.
+
+**Próxima ação exata:** atualizar os scripts locais para a versão atual da `main` e executar o verificador somente leitura V6. Somente após `PRECONDICOES_5E_OK` abrir uma nova janela 5E com identificador/prazo novos.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 5E — V6 integrada; reteste ainda não aberto |
-| Último resultado real | V5: 8/10; páginas 1–5 e 3 chats aprovados; página 6 ilegível é a única falha raiz |
+| Último resultado real | V5: 8/10; depois janela encerrada fail-closed com HTTP bloqueado confirmado |
 | Main funcional V6 | `76bfefa17bae0729090277525186bdc7dcfc0068` |
 | Runtime próximo reteste | `76bfefa17bae0729090277525186bdc7dcfc0068` |
 | Pages próximo reteste | `https://27a15b34.portal-regulacao-central-staging.pages.dev` |
 | Provider | Gemma 4 principal; Qwen 3.8 fallback/revisor focal; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V6 | PNG 1800 adaptativo; concorrência 6; prompt literal V2; revisão focal CID+descrição; campos divergentes no resumo seguro |
-| Janela V5 | ainda ativa/precisa encerramento fail-closed antes do V6 |
+| Janela V5 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | encerrar V5; atualizar scripts; readiness V6; abrir nova janela e executar matriz |
+| Próxima ação exata | atualizar scripts locais para a main; readiness V6; se verde, abrir nova janela e executar matriz |
 | Meta | 10/10 e reduzir extração de seis páginas para uma única onda concorrente |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #276 |
 
