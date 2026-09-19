@@ -235,7 +235,7 @@ Para cada fixture, o harness chama apenas `POST /api/documents/ai/page/extract`.
 
 Não existe mais a sequência externa `classify -> extract -> reclassify`.
 
-As seis páginas sintéticas são processadas com concorrência máxima de **3**, mantendo contextos separados. O resumo seguro registra:
+As seis páginas sintéticas são processadas com concorrência máxima de **6**, mantendo contextos separados. O resumo seguro registra:
 - `duracao_extracao_ms` — somente análise das páginas;
 - `duracao_total_ms` — páginas + perguntas opcionais do chat.
 
