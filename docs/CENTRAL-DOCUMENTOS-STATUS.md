@@ -1615,6 +1615,20 @@ O laboratório já informa `provider_ms`, `overhead_ms`, número de tentativas e
 
 **Decisão de governança:** não empilhar mudança de resolução, prompt, modelo ou text-layer antes desta medição. O próximo passo continua sendo a homologação V7 stream-safe após o encerramento fail-closed da janela V6.
 
+## Revisão arquitetural adicional — veredito V7/V8 — 19/09/2026
+
+Nova revisão do código atual, do pipeline PDF.js, do provider e da documentação oficial Cloudflare confirmou:
+
+- a V7 stream-safe continua sendo o **melhor próximo experimento**; não há evidência suficiente para substituí-la antes da medição;
+- a documentação oficial atual do Moondream registra `stream=false` como default. O runtime continua definindo `stream=false` explicitamente para congelar o contrato; a justificativa anterior de que o default seria true foi corrigida na documentação;
+- Moondream permanece o melhor fast path entre os modelos avaliados para este caso por ser Image-to-Text dedicado a OCR/structured output; Gemma/Qwen permanecem como fallback/revisão;
+- seis requisições concorrentes estão muito abaixo do limite atual de Image-to-Text (720 req/min);
+- a arquitetura de longo prazo, caso V7 não entregue 2x, deve ser híbrida por página com `PDFPageProxy.getTextContent()` + roteamento para visão somente quando necessário;
+- `env.AI.toMarkdown()` foi reavaliado: embora PDF use StructTree/texto e normalmente não precise de visão, o contrato público consultado retorna uma saída única do documento e não garante a proveniência por página que a Central exige; portanto não substitui o caminho PDF.js;
+- não usar requests hedged, Batch API, Gateway pago, redução de resolução ou OCR local antes de observar as métricas V7.
+
+**Decisão:** manter o próximo passo já congelado. Depois do teste, decidir com dados: provider lento -> modelo/prompt; fallback frequente -> capacidade/contrato; overhead alto -> render/compressão; V7 correta porém <2x -> V8 híbrida text-layer + visão seletiva.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
