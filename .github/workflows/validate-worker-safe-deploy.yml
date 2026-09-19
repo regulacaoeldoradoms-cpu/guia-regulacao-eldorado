@@ -82,17 +82,7 @@ jobs:
           grep -q "currentSecretBindingNames" worker/scripts/deploy-safe.mjs
           grep -q "ROLLBACK_DE_SEGURANCA=OK" worker/scripts/deploy-safe.mjs
           grep -q "AGENDA_FIREBASE_503_APOS_DEPLOY" worker/scripts/deploy-safe.mjs
-          grep -q '^preview_urls = false          if grep -Eq '["'\'' ]deploy["'\'']?[[:space:]]*:[[:space:]]*["'\'']wrangler deploy' worker/package.json; then
-            echo 'Deploy monolítico voltou ao package.json.' >&2
-            exit 1
-          fi
-
-      - name: Conferir que nenhum segredo foi versionado
-        shell: bash
-        run: |
-          ! grep -REq -- '-----BEGIN PRIVATE KEY-----' worker/scripts/deploy-safe.mjs worker/tests/deploy-safe.test.mjs docs/WORKER-SAFE-DEPLOY.md
-          ! grep -REq 'AIza[0-9A-Za-z_-]{20,}' worker/scripts/deploy-safe.mjs worker/tests/deploy-safe.test.mjs docs/WORKER-SAFE-DEPLOY.md
- worker/wrangler.toml
+          grep -q '^preview_urls = false$' worker/wrangler.toml
           if grep -Eq '["'\'' ]deploy["'\'']?[[:space:]]*:[[:space:]]*["'\'']wrangler deploy' worker/package.json; then
             echo 'Deploy monolítico voltou ao package.json.' >&2
             exit 1
