@@ -3143,10 +3143,12 @@
     return Boolean(
       state.pdfItem
       && !state.documentAiBusy
+      && state.documentAiScanCompleted === true
       && state.documentAiConfig?.processingEnabled === true
       && state.documentAiConfig?.features?.documentChat === true
       && state.documentAiEvidence instanceof Map
       && state.documentAiEvidence.size > 0
+      && state.documentAiEvidence.size <= 12
     );
   }
 
@@ -3175,8 +3177,12 @@
       els.documentAiChatStatus.className = 'documents-ai-chat-status';
       if (state.documentAiConfig?.processingEnabled !== true) {
         els.documentAiChatStatus.textContent = 'Perguntas bloqueadas por feature gate.';
+      } else if (state.documentAiScanCompleted !== true) {
+        els.documentAiChatStatus.textContent = 'Extraia os dados do PDF antes de perguntar.';
       } else if (!(state.documentAiEvidence instanceof Map) || state.documentAiEvidence.size === 0) {
-        els.documentAiChatStatus.textContent = 'Extraia ao menos uma página para criar evidências antes de perguntar.';
+        els.documentAiChatStatus.textContent = 'Nenhuma página autorizada foi extraída para perguntas.';
+      } else if (state.documentAiEvidence.size > 12) {
+        els.documentAiChatStatus.textContent = 'Há mais de 12 páginas autorizadas. Os dados podem ser copiados, mas o chat permanece bloqueado para não perder proveniência.';
       } else if (!els.documentAiChatStatus.textContent) {
         els.documentAiChatStatus.textContent = `${state.documentAiEvidence.size} página(s) com evidência disponível(is) somente nesta sessão.`;
       }
@@ -3256,13 +3262,22 @@
     const config = state.documentAiConfig || {};
     if (els.documentAiDescription) {
       els.documentAiDescription.textContent = config.processingEnabled
-        ? 'Classificação, extração restritiva e perguntas por evidência estão disponíveis com proveniência obrigatória por página.'
-        : 'A IA documental está preparada, mas o processamento permanece bloqueado até a homologação controlada.';
+        ? 'Um clique percorre o PDF inteiro. Cada página é classificada e extraída isoladamente; páginas não autorizadas são ignoradas.'
+        : 'A IA documental do Titon está preparada, mas o processamento permanece bloqueado até a homologação controlada.';
     }
     if (els.documentAiSafety) {
       els.documentAiSafety.textContent = config.processingEnabled
-        ? 'Classificação e extração enviam uma página por vez; perguntas usam somente evidências estruturadas já extraídas nesta sessão.'
+        ? 'Sem mistura entre páginas: NÃO CONSTA para campo ausente, ILEGÍVEL para campo presente sem leitura segura; CNS e data recebem apenas as normalizações autorizadas.'
         : 'O processamento permanece desabilitado até a homologação controlada da Fase 5E.';
+    }
+    if (els.documentAiExtractDocument) {
+      const ready = config.processingEnabled === true
+        && config.features?.extractDocument === true
+        && Number(window.PortalPdfViewer?.getPageCount?.() || 0) > 0;
+      els.documentAiExtractDocument.disabled = !ready || state.documentAiBusy || !state.pdfItem;
+      els.documentAiExtractDocument.textContent = state.documentAiBusy
+        ? 'Extraindo dados…'
+        : 'Extrair dados do PDF';
     }
     if (els.documentAiClassify) {
       const ready = config.processingEnabled === true && config.features?.classifyPage === true;
@@ -3271,16 +3286,9 @@
     if (els.documentAiExtract) {
       els.documentAiExtract.disabled = state.documentAiBusy || !canExtractCurrentDocumentAiPage();
     }
-    if (els.documentAiClassificationStatus && !state.documentAiBusy) {
-      els.documentAiClassificationStatus.className = 'documents-ai-classification-status';
-      if (!config.processingEnabled) {
-        els.documentAiClassificationStatus.textContent = 'Classificação bloqueada por feature gate.';
-      } else if (!els.documentAiClassificationStatus.textContent) {
-        els.documentAiClassificationStatus.textContent = 'Pronta para classificar a página atual.';
-      }
-    }
     renderDocumentAiClassification();
     renderDocumentAiExtraction();
+    renderDocumentAiDocumentResults();
     renderDocumentAiChat();
     if (els.documentAiRoutines) {
       const routines = Array.isArray(config.routines) ? config.routines : [];
