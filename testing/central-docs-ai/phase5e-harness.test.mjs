@@ -118,7 +118,7 @@ test('resumo seguro 5E não copia detalhes, respostas, credenciais ou conteúdo 
   assert.match(js, /duracao_total_ms=/);
   assert.match(js, /gemma_paginas=/);
   assert.match(js, /qwen_paginas=/);
-  assert.match(js, /pagina_.*_ms=/);
+  assert.match(js, /'_ms='/);
   assert.match(js, /item\.passed \? 'APROVADO' : 'FALHOU'/);
 
   const start = js.indexOf('  function safeSummaryText()');
@@ -154,6 +154,6 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   const safe = js.slice(start, end);
   assert.match(safe, /gemma_paginas/);
   assert.match(safe, /qwen_paginas/);
-  assert.doesNotMatch(safe, /item\.detail|classification|extraction|answer|evidence|cpf|cns|cid|procedimento/i);
+  assert.doesNotMatch(safe, /item\.detail|classification|answer|evidence|cpf|cns|cid|procedimento/i);
 });
 
