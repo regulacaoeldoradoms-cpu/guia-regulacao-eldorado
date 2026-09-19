@@ -358,8 +358,7 @@ test('página médica com campo ilegível recebe revisão focal gratuita no Qwen
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL' }
   });
   const reviewedFields = {
-    ...initialFields,
-    descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL CORRETA' }
+    cid: { state: 'ilegivel', value: '' }
   };
 
   const result = await analyzeDocumentAiPage(enabledEnv(), {
@@ -376,7 +375,7 @@ test('página médica com campo ilegível recebe revisão focal gratuita no Qwen
         });
       }
       assert.equal(model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
-      assert.match(input.messages[1].content[1].text, /REVISÃO DE PRECISÃO/);
+      assert.match(input.messages[1].content[1].text, /REVISÃO FOCAL DE PRECISÃO/);
       assert.match(input.messages[1].content[1].text, /cid/);
       return workersResponse({ fields: reviewedFields });
     }
@@ -386,7 +385,7 @@ test('página médica com campo ilegível recebe revisão focal gratuita no Qwen
   assert.equal(result.provider.reviewed, true);
   assert.equal(result.provider.model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
   assert.equal(result.extraction.fields.cid.state, 'ilegivel');
-  assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO LITERAL CORRETA');
+  assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO LITERAL');
   assert.equal(result.provider.attempts.length, 2);
 });
 
@@ -439,7 +438,6 @@ test('CID ausente com descrição presente também ativa revisão focal', async 
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO' }
   });
   const reviewedFields = {
-    ...initialFields,
     cid: { state: 'ilegivel', value: '' }
   };
 
@@ -562,7 +560,7 @@ test('source do provider não registra conteúdo, não chama Gemini API e não u
   assert.match(source, /rejectIfBusy: true/);
   assert.match(source, /enable_thinking: false/);
   assert.match(source, /reasoning_effort: null/);
-  assert.match(source, /REVISÃO DE PRECISÃO DA MESMA PÁGINA MÉDICA/);
+  assert.match(source, /REVISÃO FOCAL DE PRECISÃO DA MESMA PÁGINA MÉDICA/);
   assert.match(source, /\[DOCUMENT_AI_FALLBACK_FREE_MODEL\]/);
   assert.doesNotMatch(source, /DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT/);
   assert.doesNotMatch(source, /function withLocalTimeout|return await Promise\.race|new Promise\(\(_, reject\)/);
