@@ -25,11 +25,11 @@ A próxima rodada 5E substitui o provider **somente da IA documental** por Cloud
 
 O **reteste V7 de baixa latência** deve usar exatamente:
 
-- source ref: `cfda5b47d2eafe5dac90685952a3c9429a7dda9f`;
-- Pages origin: `https://a09f45c7.portal-regulacao-central-staging.pages.dev`;
+- source ref: `8faf51af286eb631077645ee84bc34170c8d45a2`;
+- Pages origin: `https://b8dd14db.portal-regulacao-central-staging.pages.dev`;
 - Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
-O source ref corresponde ao merge da PR #280. O Pages imutável foi gerado no head `31b11a0e145d1b41b54aed98b53a9aa6fb474da9`; a comparação GitHub entre esse head e o merge `cfda5b47d2eafe5dac90685952a3c9429a7dda9f` mostrou **zero arquivos diferentes**, portanto ambos representam exatamente a mesma árvore de arquivos da V7. As referências V6 anteriores são históricas e não devem ser reutilizadas.
+O source ref corresponde ao merge da PR #280. O Pages imutável foi gerado no head `31b11a0e145d1b41b54aed98b53a9aa6fb474da9`; a comparação GitHub entre esse head e o merge `8faf51af286eb631077645ee84bc34170c8d45a2` mostrou **zero arquivos diferentes**, portanto ambos representam exatamente a mesma árvore de arquivos da V7. As referências V6 anteriores são históricas e não devem ser reutilizadas.
 
 Antes da abertura V7:
 1. encerrar fail-closed a janela V6 atualmente aberta;
@@ -448,3 +448,14 @@ Os fixtures desta homologação são explicitamente sintéticos e podem aparecer
 Antes de abrir a nova janela, a janela anterior `phase5e_bd4d3fe2717e45678fc71e88aaff18c1` deve ser encerrada pelo procedimento fail-closed, mesmo se já estiver expirada. Depois disso, o verificador read-only deve confirmar `PRECONDICOES_5E_OK` usando exatamente o source ref e Pages origin congelados acima.
 
 O merge da PR #256 teve checks direcionados verdes (Fases 1–5E, staging, governança, site, procedimentos 5E e navegador/Chromium) e Pages publicado com sucesso. O check automático **Workers Builds** do Cloudflare para o merge reportou falha sem detalhe técnico suficiente no GitHub; isso permanece como pendência de publicação produtiva e **não autoriza ativação dos gates em produção**. O reteste 5E continua preview-only e baixa o runtime diretamente do source ref Git congelado.
+
+
+## Referências renovadas após correção stream-safe — 19/09/2026
+
+A PR #282 integrou a correção do contrato Moondream. O próximo reteste deve usar:
+- source ref: `8faf51af286eb631077645ee84bc34170c8d45a2`;
+- Pages: `https://b8dd14db.portal-regulacao-central-staging.pages.dev`.
+
+O Pages foi publicado no commit `d8b41104240903edaeda0a4a29e63d82cb8bf099`. A comparação GitHub até o merge `8faf51af286eb631077645ee84bc34170c8d45a2` mostrou somente alteração posterior em `testing/central-docs-ai/phase5e-harness.test.mjs`; os arquivos funcionais servidos pelo laboratório são equivalentes.
+
+Não reutilizar as referências V7 anteriores.
