@@ -276,9 +276,20 @@ function visionInput(model, system, prompt, image, maxTokens = 1400) {
   return {
     messages: [
       { role: 'system', content: system },
-      { role: 'user', content: prompt }
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'image_url',
+            image_url: { url: image }
+          },
+          {
+            type: 'text',
+            text: prompt
+          }
+        ]
+      }
     ],
-    image,
     ...reasoningControls(model),
     temperature: 0,
     top_p: 0.1,
