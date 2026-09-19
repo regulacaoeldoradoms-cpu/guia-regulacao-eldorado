@@ -382,27 +382,27 @@ A 5E homologará a IA documental com **dados sintéticos em chamadas reais ao pr
 
 Ela não autoriza automaticamente ativação produtiva. Depois da matriz aprovada e da janela encerrada, o status deve registrar as evidências e haverá uma decisão separada para publicar a Fase 5 com os gates produtivos.
 
-## Resultado da primeira matriz Workers AI e próximo reteste
+## Resultado atual e reteste V6
 
-Primeira execução Gemma/Qwen no runtime histórico `a49ecd22...`:
-- 0 aprovados / 10 falhas;
-- `duracao_extracao_ms` ≈ 27.200;
-- `duracao_total_ms` ≈ 49.700;
-- seis páginas: `DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT`;
-- quatro chats sem evidência por consequência.
+A V5 multimodal corrigiu a fronteira visual e avançou a matriz para **8 aprovados / 2 falhas**.
 
-Esse resultado **não aceita nem reprova a qualidade dos modelos**. O timeout era produzido localmente pelo Titon após 6 s e interrompia a tentativa antes de um resultado nativo; o Qwen também não recebia chance de fallback.
+Evidência visual:
+- páginas 1–5 aprovadas;
+- página 6 (CID propositalmente ilegível) reprovada;
+- chats das páginas 2, 4 e código ausente da página 5 aprovados;
+- chat do CID da página 6 reprovado por ausência de evidência aprovada.
 
-A correção V4 integrada em `8ee43cfafcb35fd03834701acc4f3e96fcde1368`:
-1. remove o timeout artificial/cancelamento falso;
-2. desativa thinking;
-3. mantém `rejectIfBusy=true` e trata capacidade 3040 como fallback;
-4. permite fallback em timeout nativo 3007/3008 e schema/resposta inválidos;
-5. mantém 3036/5035 como parada terminal de custo zero;
-6. mede modelo + latência por página;
-7. usa JPEG 0,85 no laboratório.
+Logo, há **uma única falha documental raiz** na página adversarial de ilegibilidade.
 
-A janela do teste 0/10 precisa ser encerrada antes da nova rodada. O reteste seguinte deve usar somente as referências V4 congeladas nesta documentação. Nenhuma ativação produtiva é automática.
+O reteste V6 deve avaliar:
+1. imagem PNG sem perda, 1800 px no fluxo final;
+2. distinção rígida entre campo ausente e campo presente porém ilegível;
+3. literalidade caractere a caractere;
+4. revisão focal gratuita somente em página médica ambígua;
+5. diagnóstico seguro das chaves divergentes;
+6. preservação de prompt injection, ausência de mistura e custo zero.
+
+A janela V5 usada neste resultado deve ser encerrada fail-closed antes de qualquer runtime V6. Nenhuma ativação produtiva é automática.
 
 ## Privacidade
 
