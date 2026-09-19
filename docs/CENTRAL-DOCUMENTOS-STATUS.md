@@ -701,6 +701,21 @@ O preparo concluiu as oito etapas previstas: runtime fixo/blobs, produção e bi
 
 **Próxima ação exata:** abrir `https://764243d1.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, selecionar/confirmar o alias oficial do Worker preview 5E, autenticar com a conta autorizada e executar a matriz sintética. Ao final, copiar apenas o **resumo seguro** e depois encerrar a janela em modo fail-closed.
 
+## Laboratório 5E abriu, mas login retornou Failed to fetch — 18/09/2026
+
+O operador abriu corretamente a origem congelada `https://764243d1.portal-regulacao-central-staging.pages.dev/homologacao-5e/`. A página carregou e confirmou o alias oficial 5E em memória, porém o primeiro login exibiu **Failed to fetch** no navegador.
+
+Esse erro não comprova senha inválida nem falha do Gemini. Como o navegador não recebeu uma resposta HTTP utilizável, a causa pode estar na conectividade/CORS/preview entre Pages e Worker. O preparo anterior havia conseguido alcançar o alias por Node com Origin autorizado, portanto é necessário distinguir problema do ambiente browser de problema do Worker sem alterar a janela.
+
+Foi preparado `scripts/central-docs/diagnosticar-conectividade-browser-5e.mjs`, somente leitura. Ele usa a própria origem registrada no ledger local e executa:
+- GET protegido em `/api/documents/ai/config` com Origin autorizado, esperando 401 + CORS + release;
+- preflight OPTIONS de `/api/auth/login`, esperando POST/content-type autorizados;
+- POST sintético com usuário deliberadamente inválido, que é rejeitado no wrapper antes da autenticação real.
+
+O diagnóstico não usa credenciais reais, não lê username autorizado, não chama Gemini, não altera D1/Drive/Worker e não promove produção.
+
+**Próxima ação exata:** executar o diagnóstico no mesmo Windows e usar somente os marcadores `getProtected`, `preflightLogin`, `postSynthetic`, `workerReachable`, `corsReady` e `releaseMatch` para decidir se o defeito é do preview/CORS ou específico do navegador.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
@@ -827,10 +842,10 @@ Artefatos anteriores preservados:
 | Descartado | usar o Pages antigo `67dd934e…`; iniciar homologação antes de reforçar a matriz; interpretar falha de Worker Preview da PR como falha produtiva |
 | Ações externas | nenhuma alteração de Cloudflare/D1/Drive/secret nesta etapa; apenas builds automáticos do merge |
 | Checks/testes | operacionais 5E `35413947781` success; Fases 1–5E `35413947712` success; staging `35413947796` success; governança `35413947803` success; Worker main success |
-| Bloqueios | nenhum para iniciar a matriz: janela 5E ativa e preparada; resta executar laboratório sintético e encerrar fail-closed |
+| Bloqueios | laboratório abre, mas login no browser retornou `Failed to fetch`; diagnóstico read-only Browser -> Worker preparado |
 | Riscos | provider real ainda não homologado; mitigação é janela preview-only, fixtures 100% sintéticos, Drive write false e encerramento fail-closed |
 | Observabilidade | somente propriedades técnicas allowlisted; nunca conteúdo documental, paciente, arquivo, Drive ID ou resposta bruta |
-| Próxima ação exata | abrir o laboratório 5E no Pages congelado, autenticar, executar a matriz sintética e copiar somente o resumo seguro |
+| Próxima ação exata | executar `diagnosticar-conectividade-browser-5e.mjs --diagnosticar`; corrigir somente a camada que falhar antes de repetir login |
 | Depois | executar matriz sintética real, copiar somente o resumo seguro, encerrar 5E fail-closed e avaliar aceite/publicação da Fase 5 |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #237–#244; runs acima |
 
