@@ -65,6 +65,7 @@ jobs:
             scripts/central-docs/preparar-homologacao-5e.mjs \
             scripts/central-docs/encerrar-homologacao-5e.mjs
           grep -q "DOCUMENTS_DRIVE_WRITE_ENABLED: 'false'" scripts/central-docs/preparar-homologacao-5e.mjs
+          grep -q "preview_urls: true" scripts/central-docs/preparar-homologacao-5e.mjs
           grep -q "INTERVENCAO_NECESSARIA_GEMINI_API_KEY_AUSENTE" scripts/central-docs/preparar-homologacao-5e.mjs
           grep -q "INTERVENCAO_NECESSARIA_CAPABILITY_EXTRACT_AUSENTE" scripts/central-docs/preparar-homologacao-5e.mjs
           grep -q "phase5e-synthetic-v1" worker/homologation-5e.js
