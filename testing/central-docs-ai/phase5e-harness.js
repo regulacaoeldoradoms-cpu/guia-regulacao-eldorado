@@ -31,6 +31,8 @@
     run: document.getElementById('phase5eRunButton'),
     resultsCard: document.getElementById('phase5eResultsCard'),
     summary: document.getElementById('phase5eSummary'),
+    copySafeSummary: document.getElementById('phase5eCopySafeSummaryButton'),
+    safeSummaryStatus: document.getElementById('phase5eSafeSummaryStatus'),
     results: document.getElementById('phase5eResults'),
     chatCard: document.getElementById('phase5eChatCard'),
     chatResults: document.getElementById('phase5eChatResults')
@@ -374,9 +376,51 @@
     }
   }
 
+  function safeSummaryText() {
+    const passed = state.results.filter((item) => item.passed).length;
+    const failed = state.results.length - passed;
+    const lines = [
+      failed ? 'MATRIZ_5E_SINTETICA=FALHOU' : 'MATRIZ_5E_SINTETICA=APROVADA',
+      'aprovados=' + passed,
+      'falhas=' + failed
+    ];
+
+    state.results.forEach((item, index) => {
+      lines.push(
+        'caso_' + String(index + 1).padStart(2, '0')
+        + '=' + (item.passed ? 'APROVADO' : 'FALHOU')
+        + ' | ' + String(item.label || '').replace(/[\r\n=|]+/g, ' ').slice(0, 160)
+      );
+    });
+
+    return lines.join('\n');
+  }
+
+  async function copySafeSummary() {
+    const text = safeSummaryText();
+    if (!text || !state.results.length) return false;
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+
+    const area = document.createElement('textarea');
+    area.value = text;
+    area.setAttribute('readonly', '');
+    area.style.position = 'fixed';
+    area.style.opacity = '0';
+    document.body.appendChild(area);
+    area.select();
+    const copied = document.execCommand?.('copy') === true;
+    area.remove();
+    return copied;
+  }
+
   function renderSummary() {
     const passed = state.results.filter((item) => item.passed).length;
     const failed = state.results.length - passed;
+    if (els.copySafeSummary) els.copySafeSummary.disabled = state.results.length === 0;
     els.summary.innerHTML = [
       '<span class="phase5e-chip ' + (failed ? 'fail' : 'pass') + '">'
         + (failed ? 'MATRIZ_5E_SINTETICA=FALHOU' : 'MATRIZ_5E_SINTETICA=APROVADA') + '</span>',
@@ -390,6 +434,8 @@
     state.running = true;
     state.results = [];
     state.evidence.clear();
+    if (els.copySafeSummary) els.copySafeSummary.disabled = true;
+    if (els.safeSummaryStatus) els.safeSummaryStatus.textContent = '';
     els.results.replaceChildren();
     els.chatResults.replaceChildren();
     els.resultsCard.hidden = false;
@@ -607,6 +653,20 @@
       els.run.disabled = false;
     }));
     els.workerApply?.addEventListener('click', applyWorkerOrigin);
+    els.copySafeSummary?.addEventListener('click', () => {
+      copySafeSummary().then((ok) => {
+        status(
+          els.safeSummaryStatus,
+          ok
+            ? 'Resumo seguro copiado. Ele contém apenas resultado técnico e nomes dos casos, sem respostas do provedor.'
+            : 'Não foi possível copiar o resumo seguro.',
+          ok ? 'success' : 'error'
+        );
+      }).catch(() => {
+        status(els.safeSummaryStatus, 'Não foi possível copiar o resumo seguro.', 'error');
+      });
+    });
+
 
     const configuredOrigin = normalizeWorkerOrigin(workerOrigin);
     if (config.workerConfigured === true && configuredOrigin) {
