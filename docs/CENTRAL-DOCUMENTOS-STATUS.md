@@ -850,6 +850,20 @@ A janela antiga `phase5e_bd4d3fe2717e45678fc71e88aaff18c1`, que executou a matri
 
 **Próxima ação humana:** encerrar a janela 5E antiga com `encerrar-homologacao-5e.mjs --encerrar`. Depois disso, executar o verificador read-only já com as referências novas; somente com `PRECONDICOES_5E_OK` iniciar a nova janela e repetir a matriz.
 
+## Decisão de custo: Gemini somente no Free Tier — 18/09/2026
+
+O operador definiu que o projeto **não terá faturamento pago da Gemini API** e deve permanecer no nível sem custo financeiro.
+
+Implicações técnicas e de privacidade:
+- homologação e desenvolvimento com **fixtures 100% sintéticos** podem continuar usando Gemini Free Tier;
+- documentos reais com dados pessoais/sensíveis de pacientes **não devem ser enviados ao serviço não pago** da Gemini API, porque os termos atuais do Google informam que conteúdo de Serviços Não Pagos pode ser usado para melhorar produtos/modelos e pode ser revisado por humanos, além de orientar a não enviar informações sensíveis, confidenciais ou pessoais;
+- portanto a ativação produtiva do Titon para PDFs reais deve permanecer bloqueada para Gemini Free Tier;
+- para manter custo zero em produção, a direção arquitetural aprovada passa a ser **local-first/local-only para documentos reais**: usar camada de texto do PDF.js quando disponível e OCR/extração no navegador/dispositivo quando necessário, sem enviar o conteúdo real a provedor externo não pago;
+- Gemini Free Tier continua útil como bancada de homologação sintética e como referência de qualidade/latência;
+- limites gratuitos de RPM/TPM/RPD são por projeto e podem variar; qualquer paralelismo futuro deve respeitar `429 RESOURCE_EXHAUSTED` e degradar de forma controlada.
+
+Esta decisão não altera os gates atuais: produção continua com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false` até que a estratégia local para dados reais seja homologada.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — correção `PAGE_INVALID`/UX Titon integrada; reteste controlado aguarda encerramento da janela antiga e nova abertura com referências congeladas**. Produção continua com IA documental desligada.
