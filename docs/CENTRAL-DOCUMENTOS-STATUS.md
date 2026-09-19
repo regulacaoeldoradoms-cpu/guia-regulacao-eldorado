@@ -531,6 +531,23 @@ Bloqueio externo remanescente: `GEMINI_API_KEY` ainda precisa ser configurada co
 
 Nenhuma chamada real ao Gemini, alteração D1, janela 5E ativa ou escrita no Drive foi executada neste preparo.
 
+## Handoff operacional 5E pronto — 18/09/2026
+
+PR **#242** foi mesclado no commit `bb84ec75f12816e3f085d54e3b807ee5e608b9bd`, consolidando a prontidão final da homologação 5E.
+
+Estado final antes da intervenção do operador:
+
+- source ref da IA/wrapper congelado: `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`;
+- Pages origin congelada: `https://67dd934e.portal-regulacao-central-staging.pages.dev`;
+- Worker produtivo voltou a publicar com sucesso após #241; versão confirmada `c94de153-8de7-4784-a909-15d207b1209a`;
+- produção permanece com IA documental `false/false`;
+- 5E não possui janela ativa, controle D1 novo ou chamada real ao Gemini;
+- verificador read-only, atalho de início, encerramento fail-closed e resumo seguro da matriz estão integrados e testados.
+
+**Intervenção externa remanescente:** configurar `GEMINI_API_KEY` como secret do Worker na Cloudflare, sem compartilhar o valor no chat. Depois disso, executar o verificador read-only; somente com `PRECONDICOES_5E_OK` iniciar a janela 5E.
+
+Não criar nova branch funcional antes desse passo: a próxima ação real é operacional, não desenvolvimento adicional.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
@@ -660,7 +677,7 @@ Artefatos anteriores preservados:
 | Bloqueios | `GEMINI_API_KEY` ainda ausente. A janela 5E também exige disponibilidade de Worker Preview, mas isso não bloqueia mais deploy produtivo |
 | Riscos | Cache antigo mitigado por `20260918-1` e invalidação pontual; fallback legado preservado; nenhuma regressão conhecida após confirmação pública |
 | Observabilidade | Somente UUIDs/timestamps/flags/contagens técnicos; nunca saída JSON bruta de configuração/autores |
-| Próxima ação exata | Operador configura `GEMINI_API_KEY` sem compartilhar valor; depois roda `verificar-precondicoes-5e.mjs --verificar` e, se verde, `iniciar-homologacao-5e.mjs --iniciar` |
+| Próxima ação exata | Operador configura `GEMINI_API_KEY` na Cloudflare sem compartilhar valor; depois roda o verificador read-only e, somente se `PRECONDICOES_5E_OK`, usa o atalho de início da 5E |
 | Depois | Executar matriz sintética real 5E, encerrar janela fail-closed e só então avaliar aceite/publicação da Fase 5 |
 | Fontes | STATUS; Guia Mestre V1.1; PRs #212/#213; runs `35323251451`, `35323249977`, `35323251417`, `35323251482`, `35323251448`; Dossiê/deltas relevantes |
 
