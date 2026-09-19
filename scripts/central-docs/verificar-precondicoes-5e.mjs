@@ -21,7 +21,7 @@ import {
 } from './preparar-homologacao-5e.mjs';
 
 export const FROZEN_5E_SOURCE_REF = '408bff833f9437b0c8c2f8ec1bf2ffb8926609b0';
-export const FROZEN_5E_PAGES_ORIGIN = 'https://3683715a.portal-regulacao-central-staging.pages.dev';
+export const FROZEN_5E_PAGES_ORIGIN = 'https://67dd934e.portal-regulacao-central-staging.pages.dev';
 
 function must(value, code) {
   if (!value) throw new Safe5eError(code);

@@ -18,7 +18,7 @@ Produção permanece com:
 Após integrar o preparo 5E, a execução real deve usar:
 
 - source ref: `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`;
-- Pages origin: `https://3683715a.portal-regulacao-central-staging.pages.dev`;
+- Pages origin: `https://67dd934e.portal-regulacao-central-staging.pages.dev`;
 - Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
 Esses valores foram gerados/validados pelo merge do PR #237. Não substituir por produção nem por outro alias arbitrário.
@@ -218,6 +218,18 @@ O atalho:
 4. **continua exigindo a confirmação humana** `PREPARAR HOMOLOGACAO 5E` antes de qualquer criação de controle.
 
 Assim o operador não precisa redigitar SHA/origem e reduzimos risco de apontar a janela para uma referência incorreta.
+
+### Resumo seguro da matriz
+
+O laboratório inclui o botão **Copiar resumo seguro** depois da execução da matriz.
+
+Esse resumo contém somente:
+
+- `MATRIZ_5E_SINTETICA=APROVADA` ou `MATRIZ_5E_SINTETICA=FALHOU`;
+- contagem de casos aprovados e falhos;
+- nome técnico de cada caso e seu resultado `APROVADO`/`FALHOU`.
+
+Ele **não copia** detalhes da resposta do provedor, evidências, valores dos campos sintéticos, credenciais, token ou conteúdo das páginas. Quando o operador precisar devolver evidência ao chat, deve preferir esse resumo em vez de copiar o painel detalhado.
 
 ## Procedimentos operacionais
 
