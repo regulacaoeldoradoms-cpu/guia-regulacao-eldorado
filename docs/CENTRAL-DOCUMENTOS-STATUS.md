@@ -1099,6 +1099,24 @@ Resultado: **nenhuma trava humana de custo permanece para abrir a nova janela 5E
 
 **Próxima ação:** executar o preparo 5E com as referências congeladas `a49ecd22e922267179fd8502f08fc5950df8fb0a` + `https://60f66c8b.portal-regulacao-central-staging.pages.dev`, mantendo `DOCUMENTS_DRIVE_WRITE_ENABLED=false`, e depois rodar a matriz Gemma 4 + Qwen.
 
+## Nova janela 5E Gemma/Qwen preparada — 18/09/2026
+
+O operador executou o preparo 5E após readiness verde, Workers Free confirmado e encerramento fail-closed da janela Gemini anterior.
+
+Resultado sanitizado da nova janela:
+- preview version: `388d2847-d9d8-478a-8d27-1618a869989f`;
+- controle: `phase5e_53f22db9f82345c1b01425299595cad9`;
+- expiração: `2026-09-19T07:53:15.000Z`;
+- release funcional: `a49ecd22e922267179fd8502f08fc5950df8fb0a`;
+- `aiGate=true` somente no preview;
+- `driveWriteGate=false`;
+- produção permaneceu em `298ba237-78f9-4d24-bad1-47e66b4c1e15`;
+- próxima ação retornada pelo procedimento: `ABRIR_LABORATORIO_5E`.
+
+Esta é a primeira janela 5E da migração Workers AI free-only. O laboratório continua 100% sintético, não acessa Drive e não contém dados reais de pacientes.
+
+**Próxima ação operacional:** abrir exatamente `https://60f66c8b.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz, aguardar a conclusão, clicar `Copiar resumo seguro` e registrar `MATRIZ_5E_SINTETICA`, `aprovados`, `falhas`, `duracao_extracao_ms`, `duracao_total_ms` e nomes dos casos. Depois encerrar a janela fail-closed independentemente de aprovação/falha.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — Workers AI free-only integrado; novo reteste aguarda confirmação de plano Free e encerramento da janela antiga**. Produção continua com IA documental desligada.
@@ -1215,7 +1233,7 @@ Artefatos anteriores preservados:
 | --- | --- |
 | Fase/subfase | Fase 5E — Workers AI free-only integrado; próximo reteste ainda não aberto |
 | Última ação concluída | PR #260 mesclada; runtime e Pages do reteste congelados |
-| Main | `fc8779e8568ec2f59604c66d53597ca0dafb9f49`; runtime do reteste permanece congelado em `a49ecd22…` |
+| Main | `ff6a83b44eaaed8ff3e2fac7552c512c639d7a7c`; runtime do reteste permanece congelado em `a49ecd22…` |
 | Runtime reteste | `a49ecd22e922267179fd8502f08fc5950df8fb0a` |
 | Pages reteste | `https://60f66c8b.portal-regulacao-central-staging.pages.dev` |
 | Provider | `@cf/google/gemma-4-26b-a4b-it` principal; `@cf/qwen/qwen3.8-27b` fallback |
@@ -1225,7 +1243,7 @@ Artefatos anteriores preservados:
 | Janela antiga | `phase5e_502e857dd0424fbe92ea406048e7ad7f` encerrada fail-closed; HTTP bloqueado confirmado |
 | PR #259 | fechada sem merge como direção Gemini-Free superada |
 | Produção | IA documental false/false; não ativar antes do aceite 5E |
-| Próxima ação exata | Workers Free confirmado; abrir nova 5E com refs congeladas e executar matriz Gemma/Qwen |
+| Próxima ação exata | janela Gemma/Qwen já preparada; abrir laboratório `60f66c8b.../homologacao-5e/`, executar matriz e copiar resumo seguro |
 | Depois | executar matriz Workers AI, copiar resumo seguro com durações, encerrar janela fail-closed e avaliar aceite |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #260; Pages do merge |
 
