@@ -135,6 +135,8 @@ jobs:
           grep -q 'DOCUMENTS_AI_ENABLED = "false"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_PROCESSING_ENABLED = "false"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_FREE_ONLY = "true"' worker/wrangler.toml
+          grep -q 'DOCUMENTS_AI_FAST_VISION_ENABLED = "false"' worker/wrangler.toml
+          grep -q 'DOCUMENTS_AI_FAST_VISION_MODEL = "@cf/moondream/moondream3.1-9B-A2B"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_PRIMARY_MODEL = "@cf/google/gemma-4-26b-a4b-it"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_FALLBACK_MODELS = "@cf/qwen/qwen3.8-27b"' worker/wrangler.toml
           grep -q 'id="documentAiButton"' documentos/index.html
