@@ -740,6 +740,25 @@ A janela 5E atualmente ativa ainda está vinculada à origem antiga `764243d1...
 
 O Cloudflare Pages da PR #253 concluiu **success** para o commit `310d2f65454122780bd98d20413daad8b1b2942e`, gerando a origem imutável corrigida `https://915c3113.portal-regulacao-central-staging.pages.dev`. Essa origem foi congelada no verificador/atalho 5E e substitui `764243d1...` para a próxima janela. O bundle direcionado, procedimentos 5E, Fases 1–5E, governança e site ficaram verdes nesta branch.
 
+## Primeira janela 5E encerrada fail-closed após correção CSP — 18/09/2026
+
+O operador encerrou corretamente a primeira janela 5E, que ainda estava vinculada ao Pages antigo `764243d1...`. Resultado sanitizado:
+
+- `JANELA_5E_ENCERRADA`;
+- control ID: `phase5e_b541f0a9505f44b3aa12dc57cf5766be`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado: `ed1547cc-9fed-4aae-9554-40a654476ab8`;
+- release: `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`;
+- `httpBlocked=true`.
+
+Isso fecha a janela antiga antes de qualquer nova abertura e evita controles concorrentes. Nenhuma chamada real ao Gemini foi concluída nessa primeira janela, porque o navegador era bloqueado pela CSP do Pages antigo antes do login.
+
+A PR #253 já está mesclada na `main` (`028c2dd33160b792d905b5f54955a6e83b495369`). O verificador/atalho 5E agora está congelado para a origem corrigida `https://915c3113.portal-regulacao-central-staging.pages.dev`.
+
+**Próxima ação exata:** repetir o verificador read-only e, se retornar `PRECONDICOES_5E_OK`, iniciar uma nova janela 5E. A nova janela deverá nascer já vinculada ao Pages `915c3113...`; depois abrir o laboratório corrigido e executar a matriz sintética.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — homologação real controlada em andamento; primeira janela precisará ser substituída por nova origem Pages com CSP corrigida**. Produção continua com IA documental desligada.
@@ -854,24 +873,19 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — homologação real controlada; correção CSP concluída em branch, antes da matriz real |
-| Última ação concluída | diagnóstico confirmou Worker/CORS/release OK; causa do browser foi CSP do Pages antigo; novo Pages `915c3113…` publicado e congelado |
-| Branch/PR | `fix/central-docs-phase5e-csp-official-alias`; PR **#253** aberta e mergeável |
-| Main | `8a42987fa7689cba10ae02a1322a32983a2f70b1`; runtime Worker 5E continua congelado em `408bff8…` |
-| Último commit relevante | head da PR #253 após congelar nova origem Pages |
-| Código/preview | próxima origem 5E: `https://915c3113.portal-regulacao-central-staging.pages.dev`; CSP permite somente o alias oficial 5E em `connect-src` |
+| Fase/subfase | Fase 5E — homologação real controlada; primeira janela encerrada, pronta para reabrir com CSP corrigida |
+| Última ação concluída | PR #253 mesclada; janela antiga encerrada com `controlEnabled=false`, `aiGate=false`, `driveWriteGate=false`, `httpBlocked=true` |
+| Branch/PR | `main` em `028c2dd33160b792d905b5f54955a6e83b495369`; esta branch é somente atualização documental pós-encerramento |
+| Código/preview | nova origem congelada: `https://915c3113.portal-regulacao-central-staging.pages.dev`; runtime Worker 5E segue `408bff8…` |
 | Produção | IA documental continua false/false; nenhuma chamada real ao Gemini concluída; Drive produtivo não foi alterado |
-| Janela | janela 5E antiga `phase5e_b541f0a9505f44b3aa12dc57cf5766be` ainda vinculada a `764243d1…`; deve ser encerrada fail-closed antes de abrir a substituta |
-| Decisão/porquê | o build desarmado permitia seleção manual do alias, mas CSP apontava para `disabled.invalid`; browser bloqueava fetch antes do CORS. Corrigir CSP é mais seguro que contornar no navegador |
-| Descartado | desabilitar CSP no browser; usar console/local page; afrouxar CSP para `*.workers.dev`; continuar com Pages imutável antigo |
-| Ações externas | primeira janela 5E preparada; nenhuma escrita no Drive; nova origem Pages publicada automaticamente pela PR #253 |
-| Checks/testes | PR #253: Pages success; bundle staging success; procedimentos 5E success; Fases 1–5E success; governança/site success |
-| Bloqueios | nenhum técnico na nova origem; falta encerrar a janela antiga e abrir nova janela 5E para `915c3113…` |
-| Riscos | manter duas janelas/controles concorrentes; mitigação: encerramento fail-closed da janela antiga antes do novo preparo |
-| Observabilidade | sem mudança; somente propriedades técnicas allowlisted, nunca conteúdo documental/credenciais |
-| Próxima ação exata | mesclar PR #253; operador executa encerramento fail-closed da janela antiga; depois roda verificador/início novamente já com Pages `915c3113…` |
-| Depois | abrir laboratório corrigido, autenticar, executar matriz sintética real, copiar resumo seguro e encerrar a nova janela |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #249–#253; diagnóstico browser-worker |
+| Janela | `phase5e_b541f0a9505f44b3aa12dc57cf5766be` encerrada; preview bloqueado `ed1547cc…`; HTTP 403 confirmado |
+| Decisão/porquê | fechar a janela antiga antes da nova evita controle concorrente e garante que a segunda janela use a CSP corrigida |
+| Descartado | reutilizar `764243d1…`; contornar CSP no navegador; manter janela antiga ativa |
+| Checks/testes | PR #253: Pages, bundle staging, procedimentos 5E, Fases 1–5E, governança e site verdes |
+| Bloqueios | nenhum bloqueio conhecido antes do novo verificador; `GEMINI_API_KEY` e `extract` já estavam verdes na janela anterior |
+| Próxima ação exata | executar `verificar-precondicoes-5e.mjs --verificar`; somente com `PRECONDICOES_5E_OK` executar `iniciar-homologacao-5e.mjs --iniciar` para a origem `915c3113…` |
+| Depois | abrir laboratório corrigido, autenticar, executar matriz sintética real, copiar resumo seguro e encerrar a nova janela fail-closed |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #249–#253; saídas sanitizadas do operador |
 
 ## Histórico recuperável
 
