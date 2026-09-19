@@ -120,9 +120,12 @@ test('resumo seguro 5E não copia detalhes, respostas, credenciais ou conteúdo 
   assert.match(js, /gemma_paginas=/);
   assert.match(js, /qwen_paginas=/);
   assert.match(js, /'_ms='/);
+  assert.match(js, /preparo_ms=/);
   assert.match(js, /provider_ms=/);
-  assert.match(js, /overhead_ms=/);
+  assert.match(js, /transporte_backend_ms=/);
   assert.match(js, /tentativas=/);
+  assert.match(js, /revisado=/);
+  assert.match(js, /modelos=/);
   assert.match(js, /_campos_divergentes=/);
   assert.match(js, /item\.passed \? 'APROVADO' : 'FALHOU'/);
 
@@ -154,8 +157,12 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   assert.match(js, /providerModel/);
   assert.match(js, /provider\.attempts/);
   assert.match(js, /durationMs/);
+  assert.match(js, /prepareMs/);
   assert.match(js, /providerDurationMs/);
+  assert.match(js, /transportBackendMs/);
   assert.match(js, /attemptCount/);
+  assert.match(js, /attemptModels/);
+  assert.match(js, /reviewed/);
   assert.match(js, /mismatchFields/);
   assert.match(js, /mismatchedFields/);
   const start = js.indexOf('  function safeSummaryText()');
@@ -164,9 +171,12 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   assert.match(safe, /moondream_paginas/);
   assert.match(safe, /gemma_paginas/);
   assert.match(safe, /qwen_paginas/);
+  assert.match(safe, /preparo_ms/);
   assert.match(safe, /provider_ms/);
-  assert.match(safe, /overhead_ms/);
+  assert.match(safe, /transporte_backend_ms/);
   assert.match(safe, /tentativas/);
+  assert.match(safe, /revisado/);
+  assert.match(safe, /modelos/);
   assert.match(safe, /campos_divergentes/);
   assert.doesNotMatch(safe, /item\.detail|classification|answer|evidence|cpf|cns|diagnostico/i);
 });
@@ -181,4 +191,20 @@ test('laboratório lista somente chaves de campos divergentes, nunca valores esp
   const safe = js.slice(start, end);
   assert.match(safe, /keys\.join\(','\)/);
   assert.doesNotMatch(safe, /expectedFields|expectedValue|field\.value/);
+});
+
+test('métrica por página inclui preparação da imagem antes da chamada ao provider', async () => {
+  const js = await read('testing/central-docs-ai/phase5e-harness.js');
+  const analyze = js.indexOf('      const analyzeFixture = async (fixture, index) => {');
+  const pageStart = js.indexOf('const pageStarted = performance.now()', analyze);
+  const blobStart = js.indexOf('const blobStarted = performance.now()', analyze);
+  const blob = js.indexOf('await blobFromCanvas(canvas)', analyze);
+  const requestStart = js.indexOf('const requestStarted = performance.now()', analyze);
+  const request = js.indexOf('await extractFixture(fixture, blob)', analyze);
+  assert.ok(analyze >= 0);
+  assert.ok(pageStart > analyze);
+  assert.ok(blobStart > pageStart);
+  assert.ok(blob > blobStart);
+  assert.ok(requestStart > blob);
+  assert.ok(request > requestStart);
 });
