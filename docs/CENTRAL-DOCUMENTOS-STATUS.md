@@ -1666,11 +1666,28 @@ A janela V6 continua sendo a janela controlada anterior e deve ser encerrada fai
 
 **Próxima ação exata quando o operador voltar ao computador:** baixar os scripts atuais da `main`, encerrar V6, executar `iniciar-homologacao-5e.mjs --iniciar`, conferir source `28a4916840f450b2caa7d93138d0e127a5db1a88` + Pages `https://0c46e41f.portal-regulacao-central-staging.pages.dev`, preparar nova janela e executar a matriz uma única vez.
 
+## Janela V6 encerrada fail-closed — 19/09/2026
+
+O operador executou o procedimento oficial de encerramento da janela V6. Evidências sanitizadas:
+
+- `JANELA_5E_ENCERRADA`;
+- controle `phase5e_fcbad5b5cfcf4de78064a73f4097dcd7`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado `220155fd-478f-4171-a658-16e73a484c4c`;
+- release encerrado `76bfefa17bae0729090277525186bdc7dcfc0068`;
+- `httpBlocked=true`.
+
+Conclusão: a janela V6 está encerrada e não deve ser reutilizada. O bloqueio para abrir a V7 foi removido de forma fail-closed.
+
+**Próxima ação exata:** executar o readiness/início V7 com os scripts atuais já baixados. O readiness deve retornar source `28a4916840f450b2caa7d93138d0e127a5db1a88` e Pages `https://0c46e41f.portal-regulacao-central-staging.pages.dev`. Somente após isso confirmar `PREPARAR HOMOLOGACAO 5E`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7 stream-safe integrada; reteste aguarda encerramento V6 |
+| Fase/subfase | Fase 5E — V7 final pronta; V6 encerrada fail-closed |
 | Último resultado real | V7 integrada com CI verde; V6 continua sendo a última execução real e foi considerada lenta pelo operador |
 | Runtime funcional V7 | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
 | Runtime próximo reteste | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
@@ -1678,9 +1695,9 @@ A janela V6 continua sendo a janela controlada anterior e deve ser encerrada fai
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
-| Janela V6 | ainda deve ser encerrada fail-closed antes de abrir qualquer preview V7 |
+| Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | encerrar V6 fail-closed; atualizar scripts; readiness V7 final; preparar janela nova; executar matriz uma vez |
+| Próxima ação exata | readiness V7 final; confirmar referências; preparar nova janela; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
