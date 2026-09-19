@@ -174,8 +174,17 @@ test('comprovante aplica somente normalizações autorizadas de CNS e data', () 
   assert.equal(normalized.fields.data_nascimento.value, '01/02/2000');
   assert.equal(normalized.fields.endereco.value, 'RUA Teste, 10 - Centro');
 
+  fields.cns = { state: 'encontrado', value: '1234X6789012345' };
+  let preserved = normalizeDocumentAiExtraction({
+    pageNumber: 1,
+    pageType: 'comprovante_atendimento',
+    fields
+  });
+  assert.equal(preserved.fields.cns.value, '1234X6789012345');
+
+  fields.cns = { state: 'encontrado', value: '123 4567 8901 2345' };
   fields.data_nascimento = { state: 'encontrado', value: 'texto não normalizável' };
-  const preserved = normalizeDocumentAiExtraction({
+  preserved = normalizeDocumentAiExtraction({
     pageNumber: 1,
     pageType: 'comprovante_atendimento',
     fields
