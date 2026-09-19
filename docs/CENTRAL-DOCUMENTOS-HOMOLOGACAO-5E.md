@@ -18,10 +18,10 @@ Produção permanece com:
 Após integrar o preparo 5E, a execução real deve usar:
 
 - source ref: `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`;
-- Pages origin: `https://764243d1.portal-regulacao-central-staging.pages.dev`;
+- Pages origin: `https://915c3113.portal-regulacao-central-staging.pages.dev`;
 - Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
-O source ref do Worker permanece o runtime congelado do PR #237. A Pages origin foi renovada na PR #244 para incluir a matriz que valida os oito campos por página; o deployment imutável `764243d1` foi publicado com sucesso a partir do commit `003da4d`. Não substituir por produção nem por outro alias arbitrário.
+O source ref do Worker permanece o runtime congelado do PR #237. A Pages origin foi renovada novamente na PR #253 porque o deployment anterior bloqueava o alias 5E pela CSP quando `workerConfigured=false`; o deployment imutável `915c3113` inclui a matriz integral e permite somente o alias oficial em `connect-src`. Não substituir por produção nem por outro alias arbitrário.
 
 Pré-condição ainda ausente: a baseline produtiva atual não contém `GEMINI_API_KEY`, conforme evidência persistente em `docs/AGENDA-DIGSAUDE-STATUS.md`. O operador deve configurar o secret antes da execução real; o script permanece fail-closed se isso não ocorrer.
 
