@@ -408,6 +408,9 @@
   function safeSummaryText() {
     const passed = state.results.filter((item) => item.passed).length;
     const failed = state.results.length - passed;
+    const moondreamPages = state.pageMetrics.filter((item) =>
+      String(item.model || '') === '@cf/moondream/moondream3.1-9B-A2B'
+    ).length;
     const gemmaPages = state.pageMetrics.filter((item) =>
       String(item.model || '') === '@cf/google/gemma-4-26b-a4b-it'
     ).length;
@@ -420,6 +423,7 @@
       'falhas=' + failed,
       'duracao_extracao_ms=' + Math.max(0, Math.round(Number(state.extractionDurationMs || 0))),
       'duracao_total_ms=' + Math.max(0, Math.round(Number(state.durationMs || 0))),
+      'moondream_paginas=' + moondreamPages,
       'gemma_paginas=' + gemmaPages,
       'qwen_paginas=' + qwenPages
     ];
