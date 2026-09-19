@@ -304,6 +304,19 @@ Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado pa
 - gravar automaticamente resultados de IA em sistemas externos;
 - ampliar permissões de usuário por causa da IA.
 
+
+### V7 — baixa latência visual
+
+A V7 foi integrada pela PR #280 para atender ao novo requisito operacional de reduzir o tempo de extração em pelo menos 2x sem reabrir fases anteriores nem reduzir as proteções da 5E.
+
+Referências congeladas do próximo reteste:
+- source ref: `cfda5b47d2eafe5dac90685952a3c9429a7dda9f`;
+- Pages imutável: `https://a09f45c7.portal-regulacao-central-staging.pages.dev`.
+
+O fast path usa Moondream 3.1 somente no preview controlado; produção permanece com o fast path e a IA documental desligados. Gemma/Qwen continuam como rede de segurança. O aceite exige a matriz 10/10 e `duracao_extracao_ms` <= 50% da V6 em comparação operacional equivalente.
+
+A janela V6 existente deve ser encerrada fail-closed antes de qualquer preparo V7. Não reutilizar o controle V6.
+
 ## Próximo passo atual
 
 A V6 de precisão textual foi integrada pela PR #276.
