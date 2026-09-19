@@ -850,6 +850,76 @@ A janela antiga `phase5e_bd4d3fe2717e45678fc71e88aaff18c1`, que executou a matri
 
 **Próxima ação humana:** encerrar a janela 5E antiga com `encerrar-homologacao-5e.mjs --encerrar`. Depois disso, executar o verificador read-only já com as referências novas; somente com `PRECONDICOES_5E_OK` iniciar a nova janela e repetir a matriz.
 
+## Janela 5E antiga encerrada e reteste corrigido preparado — 18/09/2026
+
+O operador encerrou corretamente a janela 5E que havia executado a matriz no runtime antigo e, em seguida, abriu uma nova janela controlada já usando as referências congeladas da correção #256.
+
+Encerramento da janela antiga:
+- control ID: `phase5e_bd4d3fe2717e45678fc71e88aaff18c1`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado: `df900b9e-7fcf-462a-98e8-fb0bf8ad266d`;
+- release histórico: `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`;
+- `httpBlocked=true`.
+
+Em seguida, o verificador read-only retornou `PRECONDICOES_5E_OK` com:
+- `geminiSecretPresent=true`;
+- `extractCapability=true`;
+- `activeControlledWindow=false`;
+- source ref corrigido: `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2`;
+- Pages origin corrigida: `https://56753b53.portal-regulacao-central-staging.pages.dev`.
+
+Nova janela preparada:
+- `HOMOLOGACAO_5E_PREPARADA`;
+- preview version: `c08c989a-4255-4b86-906c-b26da5dcab66`;
+- control ID: `phase5e_502e857dd0424fbe92ea406048e7ad7f`;
+- expiração: `2026-09-19T06:07:45.000Z`;
+- release: `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2`;
+- `aiGate=true` somente no preview;
+- `driveWriteGate=false`;
+- produção reconfirmada durante o preparo: `298ba237-78f9-4d24-bad1-47e66b4c1e15`.
+
+**Próxima ação exata:** abrir `https://56753b53.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz sintética corrigida, copiar somente o resumo seguro e encerrar a nova janela fail-closed imediatamente depois.
+
+## Reteste 5E corrigido: 8 aprovados / 2 falhas; gargalo de latência identificado — 18/09/2026
+
+O operador executou a matriz na nova janela corrigida. A captura visual mostra **8 casos aprovados e 2 falhas**.
+
+Falhas observadas:
+- a classificação da página 2 aprovou `pagina_medica_autorizada`, mas a etapa de extração da mesma página falhou com `DOCUMENT_AI_PAGE_NOT_AUTHORIZED: Esta página não foi classificada para extração institucional.`;
+- o chat sobre o procedimento da página 2 respondeu `NÃO CONSTA` porque a extração da página 2 não gerou evidência aprovada. Essa segunda falha é consequência da primeira, não um defeito independente do chat.
+
+### Causa técnica provável da inconsistência
+
+O laboratório executa `/page/classify` para cada fixture e, depois, `/page/extract`. Porém `/page/extract` chama `classifyAndExtractDocumentAiPage()`, que **classifica a mesma página novamente antes de extrair**. Assim uma página autorizada pode ser classificada corretamente na primeira chamada e divergir na segunda chamada, como ocorreu na página 2.
+
+### Gargalo de latência confirmado pelo fluxo atual
+
+Na matriz de seis páginas:
+- 6 chamadas ao provider para a classificação explícita do harness;
+- 5 páginas autorizadas chamam `/page/extract`, e cada uma realiza internamente mais 2 chamadas ao provider (reclassificação + extração) = 10;
+- 4 perguntas de chat realizam mais 4 chamadas;
+- total potencial da matriz: **20 chamadas sequenciais ao Gemini**.
+
+No Titon final, o botão único não executa a classificação externa do harness, mas ainda chama `/page/extract` sequencialmente e esse endpoint faz duas chamadas ao Gemini por página. Um PDF de seis páginas pode portanto exigir até **12 chamadas sequenciais** antes do chat. Isso explica grande parte da diferença para a experiência integrada do Google Drive.
+
+### Direção de correção proposta
+
+Preservar isolamento por página, mas reduzir chamadas e variabilidade:
+1. substituir `classificar -> extrair` por **uma única chamada multimodal por página** que retorne `pageType` e, somente quando autorizado, os campos estruturados;
+2. manter `pageNumber` ancorado no backend e validar schema por `pageType`; páginas `outro` retornam sem campos;
+3. executar páginas independentes com pool limitado de concorrência (por exemplo 3), em vez de serializar o documento inteiro;
+4. usar `temperature` baixa/zero e `responseSchema`/structured output para reduzir variação e respostas inválidas;
+5. reduzir a imagem enviada (JPEG adaptativo) e usar resolução maior apenas em retry quando necessário;
+6. alinhar timeouts específicos da IA documental; hoje o provider usa `DOCUMENTS_AI_TIMEOUT_MS` com fallback de 12 s por chamada e não usa automaticamente os timeouts `GEMINI_*` já existentes;
+7. manter retry/fallback somente para erro transitório/timeout/schema inválido, nunca para `422` de regra de negócio;
+8. no fluxo real, chat continua opcional e não participa do tempo de `Extrair dados do PDF`.
+
+Meta operacional para o Titon: extração típica de documentos curtos em aproximadamente **5–10 segundos**, sem abrir o PDF inteiro no mesmo contexto do modelo e sem perder isolamento/proveniência.
+
+**Próxima ação:** encerrar a janela 5E atual após copiar o resumo seguro; implementar a redução de chamadas em uma nova branch, validar sinteticamente e repetir a 5E com o runtime otimizado.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — correção `PAGE_INVALID`/UX Titon integrada; reteste controlado aguarda encerramento da janela antiga e nova abertura com referências congeladas**. Produção continua com IA documental desligada.
@@ -964,20 +1034,19 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — correção PAGE_INVALID + UX Titon integrada; reteste real ainda não executado no runtime novo |
-| Última ação concluída | PR #256 mesclada em `39ded96…`; source ref e Pages do reteste congelados |
-| Main | `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2` |
-| Runtime novo do reteste | `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2` |
-| Pages novo do reteste | `https://56753b53.portal-regulacao-central-staging.pages.dev` |
-| Runtime da janela antiga | `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`; não reutilizar |
-| Janela antiga | `phase5e_bd4d3fe2717e45678fc71e88aaff18c1`; deve ser encerrada fail-closed antes da nova |
-| Correções | backend ancora proveniência; JSON do provider sem pageNumber/pageType; prompts/títulos/literalidade; Titon um clique; CNS/data autorizados; chat secundário |
-| Checks | PR #256: Fases 1–5E, staging, governança, site, procedimentos 5E e navegador verdes; Pages do merge `56753b53…` success |
-| Worker produção | check Cloudflare Workers Builds do merge #256 = failure sem causa suficiente exposta no GitHub; tratar separadamente antes de ativação produtiva |
-| Produção IA | gates continuam false/false; nenhuma ativação produtiva autorizada |
-| Próxima ação exata | operador encerra janela antiga; depois roda verificador read-only e, só com `PRECONDICOES_5E_OK`, abre nova 5E nas referências congeladas |
-| Depois | executar matriz sintética real, copiar resumo seguro, encerrar nova janela fail-closed; só então avaliar aceite/publicação da Fase 5 |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #256; checks do merge |
+| Fase/subfase | Fase 5E — nova janela corrigida preparada; matriz real ainda não executada nesta janela |
+| Última ação concluída | janela antiga encerrada fail-closed; verificador verde; nova janela criada no runtime corrigido |
+| Main | `a6a047403031d09c3a5e219ede66097568e6deb3` |
+| Runtime do reteste | `39ded96a1ef1e2f707f8cf96ae33c96ee405c5d2` |
+| Pages do reteste | `https://56753b53.portal-regulacao-central-staging.pages.dev` |
+| Janela ativa | `phase5e_502e857dd0424fbe92ea406048e7ad7f`; preview `c08c989a…`; expira `2026-09-19T06:07:45Z` |
+| Gates | preview `aiGate=true`; `driveWriteGate=false`; produção continua sem ativação da IA documental |
+| Janela anterior | `phase5e_bd4d3fe2717e45678fc71e88aaff18c1` encerrada; HTTP bloqueado confirmado |
+| Correções no runtime | PAGE_INVALID corrigido; proveniência ancorada no backend; JSON do provider sem metadados técnicos obrigatórios; UX Titon em um clique |
+| Próxima ação exata | abrir `/homologacao-5e/` em `56753b53…`, autenticar, executar matriz e copiar resumo seguro |
+| Depois | encerrar imediatamente a janela fail-closed; somente com matriz aprovada avaliar aceite da Fase 5 |
+| Produção | não promover nem ativar gates; Workers Builds produtivo continua pendência separada |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #256–#257; saída sanitizada do operador |
 
 ## Histórico recuperável
 
