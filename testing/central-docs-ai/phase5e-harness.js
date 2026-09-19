@@ -432,9 +432,15 @@
       .slice()
       .sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber))
       .forEach((item) => {
+        const totalMs = Math.max(0, Math.round(Number(item.durationMs || 0)));
+        const providerMs = Math.max(0, Math.round(Number(item.providerDurationMs || 0)));
+        const overheadMs = Math.max(0, totalMs - providerMs);
         lines.push(
           'pagina_' + String(item.pageNumber).padStart(2, '0')
-          + '_ms=' + Math.max(0, Math.round(Number(item.durationMs || 0)))
+          + '_ms=' + totalMs
+          + ' | provider_ms=' + providerMs
+          + ' | overhead_ms=' + overheadMs
+          + ' | tentativas=' + Math.max(0, Math.round(Number(item.attemptCount || 0)))
           + ' | modelo=' + String(item.model || 'nenhum').replace(/[\r\n=|]+/g, ' ').slice(0, 100)
         );
       });
@@ -550,6 +556,11 @@
           const durationMs = performance.now() - pageStarted;
           const provider = payload?.provider || {};
           const providerModel = String(provider?.model || '');
+          const providerAttempts = Array.isArray(provider?.attempts) ? provider.attempts : [];
+          const providerDurationMs = providerAttempts.reduce(
+            (sum, attempt) => sum + Math.max(0, Number(attempt?.durationMs || 0)),
+            0
+          );
           pageResults[index] = {
             fixture,
             passed,
@@ -571,7 +582,9 @@
             }, null, 2),
             extraction: passed ? extraction : null,
             providerModel,
-            durationMs
+            durationMs,
+            providerDurationMs,
+            attemptCount: providerAttempts.length
           };
         } catch (error) {
           pageResults[index] = {
@@ -580,7 +593,9 @@
             detail: (error.code ? error.code + ': ' : '') + (error.message || 'Falha não identificada.'),
             extraction: null,
             providerModel: '',
-            durationMs: performance.now() - pageStarted
+            durationMs: performance.now() - pageStarted,
+            providerDurationMs: 0,
+            attemptCount: 0
           };
         }
       };
@@ -606,7 +621,9 @@
         state.pageMetrics.push({
           pageNumber: item.fixture.pageNumber,
           model: item.providerModel,
-          durationMs: item.durationMs
+          durationMs: item.durationMs,
+          providerDurationMs: item.providerDurationMs,
+          attemptCount: item.attemptCount
         });
         addResult(
           'Página ' + item.fixture.pageNumber + ' · análise integrada',
