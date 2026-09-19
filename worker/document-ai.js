@@ -7,7 +7,7 @@ import {
 } from './document-ai-prompts.js';
 
 export const DOCUMENT_AI_PHASE = '5E';
-export const DOCUMENT_AI_VERSION = 'phase5e-v5-multimodal-image-url';
+export const DOCUMENT_AI_VERSION = 'phase5e-v6-text-accuracy';
 const DOCUMENT_AI_RUNTIME_READY = true;
 
 export const DOCUMENT_AI_EXTRACTION_FIELDS = Object.freeze({
