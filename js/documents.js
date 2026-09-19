@@ -3394,9 +3394,8 @@
       }
 
       const blob = await exporter(pageNumber, {
-        maxEdge: 1600,
-        mimeType: 'image/jpeg',
-        quality: 0.85
+        maxEdge: 1800,
+        mimeType: 'image/png'
       });
       if (!(blob instanceof Blob) || blob.size <= 0) {
         throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
@@ -3406,7 +3405,7 @@
         method: 'POST',
         headers: {
           ...auth.authorizationHeader(),
-          'Content-Type': blob.type || 'image/jpeg',
+          'Content-Type': blob.type || 'image/png',
           'X-Document-Page-Number': String(pageNumber)
         },
         body: blob,
