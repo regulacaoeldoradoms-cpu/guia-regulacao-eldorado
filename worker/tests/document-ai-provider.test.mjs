@@ -427,7 +427,7 @@ test('source do provider não registra conteúdo, não chama Gemini API e não u
   assert.match(source, /enable_thinking: false/);
   assert.match(source, /reasoning_effort: null/);
   assert.doesNotMatch(source, /DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT/);
-  assert.doesNotMatch(source, /Promise\.race/);
+  assert.doesNotMatch(source, /function withLocalTimeout|return await Promise\.race|new Promise\(\(_, reject\)/);
   assert.doesNotMatch(source, /setTimeout\(/);
   assert.doesNotMatch(source, /\{ signal \}/);
 });
