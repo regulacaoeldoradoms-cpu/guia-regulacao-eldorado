@@ -14,7 +14,7 @@ test('API pública do visualizador expõe a transição real do Organizar V2', (
   assert.match(publicApi[1], /\bsetOrganizerMode\s*,/);
   const sandbox = { window: {} };
   vm.runInNewContext(viewer, sandbox);
-  for (const method of ['open', 'close', 'getViewState', 'setThumbnailActions', 'setOrganizerMode', 'setEditorObjects', 'scrollToPage', 'zoomIn', 'zoomOut', 'fitWidth']) {
+  for (const method of ['open', 'close', 'getViewState', 'getPageCount', 'setThumbnailActions', 'setOrganizerMode', 'setEditorObjects', 'scrollToPage', 'zoomIn', 'zoomOut', 'fitWidth']) {
     assert.equal(typeof sandbox.window.PortalPdfViewer[method], 'function', `API pública: ${method}`);
   }
   assert.match(viewer, /session\.root\.dataset\.organizerMode = next \? 'true' : 'false'/);
@@ -141,7 +141,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260918-4/);
+  assert.match(html, /documents\.js\?v=20260919-1/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -180,7 +180,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260918-4/);
+  assert.match(html, /documents\.css\?v=20260919-1/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -199,9 +199,9 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260918-1/);
-  assert.match(html, /documents\.js\?v=20260918-4/);
-  assert.match(html, /documents\.css\?v=20260918-4/);
+  assert.match(html, /document-viewer\.js\?v=20260919-1/);
+  assert.match(html, /documents\.js\?v=20260919-1/);
+  assert.match(html, /documents\.css\?v=20260919-1/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -356,9 +356,9 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260918-1/);
-  assert.match(html, /documents\.js\?v=20260918-4/);
-  assert.match(html, /documents\.css\?v=20260918-4/);
+  assert.match(html, /document-viewer\.js\?v=20260919-1/);
+  assert.match(html, /documents\.js\?v=20260919-1/);
+  assert.match(html, /documents\.css\?v=20260919-1/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -381,6 +381,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewer, /ORGANIZER_THUMB_WIDTH = 210/);
   assert.match(viewer, /if \(!session\.fitMode \|\| session\.organizerMode \|\| !isCurrentSession\(session\)\) return;/);
   assert.match(viewer, /getViewState,/);
+  assert.match(viewer, /getPageCount,/);
   assert.match(viewer, /setThumbnailActions,/);
   assert.match(viewer, /dataset\.thumbnailAction/);
   assert.match(viewer, /portal-pdf-thumb-actions/);
@@ -499,7 +500,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260918-4/);
+  assert.match(html, /documents\.js\?v=20260919-1/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
