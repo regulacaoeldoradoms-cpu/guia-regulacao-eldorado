@@ -1319,7 +1319,7 @@ Mudanças em desenvolvimento:
 - prompt integrado V2 reforça a diferença entre `nao_consta` e `ilegivel`: rótulo presente + valor borrado/rasurado/coberto/cortado = `ilegivel`;
 - valores com frases como `NÃO DEVE SER INFERIDA` são tratados explicitamente como dado literal, nunca como instrução;
 - conferência visual caractere a caractere para todo campo `encontrado`;
-- revisão focal **somente nos campos ambíguos** de página médica, usando Qwen gratuito, quando houver campo `ilegivel` ou combinação CID ausente + descrição presente;
+- revisão focal **somente nos campos ambíguos** de página médica, usando Qwen gratuito; quando CID é ambíguo, CID + descrição são revisados juntos, quando houver campo `ilegivel` ou combinação CID ausente + descrição presente;
 - essa revisão não roda em páginas normais e não duplica custo/latência de todo o documento;
 - se o revisor não responder, a extração inicial válida é preservada;
 - resumo seguro do laboratório passa a listar apenas as **chaves dos campos divergentes**, nunca seus valores, para diagnosticar rapidamente qualquer nova falha.
