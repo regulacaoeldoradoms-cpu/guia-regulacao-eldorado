@@ -23,19 +23,21 @@ A próxima rodada 5E substitui o provider **somente da IA documental** por Cloud
 
 ## Referência congelada para a próxima execução real
 
-A próxima rodada Workers AI deve usar exatamente:
+O **reteste V4** deve usar exatamente:
 
-- source ref: `a49ecd22e922267179fd8502f08fc5950df8fb0a`;
-- Pages origin: `https://60f66c8b.portal-regulacao-central-staging.pages.dev`;
+- source ref: `8ee43cfafcb35fd03834701acc4f3e96fcde1368`;
+- Pages origin: `https://c92471f6.portal-regulacao-central-staging.pages.dev`;
 - Worker preview alias: `https://central-docs-phase5e-yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev`.
 
-Essas referências correspondem ao merge da PR #260 e ao deployment Pages imutável observado imediatamente após o merge. Não substituir por produção nem por outro alias arbitrário.
+Essas referências correspondem à correção de latência integrada pela PR #269. As referências anteriores `a49ecd22...` / `60f66c8b...` são históricas e **não devem ser reutilizadas**.
 
-Antes da abertura:
-1. encerrar a janela anterior;
-2. confirmar conta Workers **Free**;
-3. confirmar que este fluxo não usa AI Gateway/prepaid/unified billing;
-4. executar o verificador somente leitura.
+Antes da nova abertura:
+1. encerrar fail-closed a janela do teste 0/10, controle `phase5e_53f22db9f82345c1b01425299595cad9`;
+2. executar o verificador somente leitura;
+3. exigir `PRECONDICOES_5E_OK` com source/Pages V4;
+4. somente então preparar uma nova janela.
+
+Workers Free já foi confirmado pelo operador e o Titon continua sem AI Gateway/prepaid/unified billing.
 
 A conta/capability documental continua exigindo usuário ativo, `view=true` e `extract=true`.
 
@@ -388,25 +390,25 @@ Ela não autoriza automaticamente ativação produtiva. Depois da matriz aprovad
 
 ## Resultado da primeira matriz Workers AI e próximo reteste
 
-Primeira execução Gemma/Qwen:
+Primeira execução Gemma/Qwen no runtime histórico `a49ecd22...`:
 - 0 aprovados / 10 falhas;
 - `duracao_extracao_ms` ≈ 27.200;
 - `duracao_total_ms` ≈ 49.700;
 - seis páginas: `DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT`;
 - quatro chats sem evidência por consequência.
 
-Esse resultado não aceita nem reprova a qualidade dos modelos. O timeout foi gerado pelo código local após 6 s, antes de erro nativo do Workers AI, e impedia o fallback Qwen.
+Esse resultado **não aceita nem reprova a qualidade dos modelos**. O timeout era produzido localmente pelo Titon após 6 s e interrompia a tentativa antes de um resultado nativo; o Qwen também não recebia chance de fallback.
 
-Correção obrigatória antes do reteste:
-1. remover timeout artificial/cancelamento falso;
-2. desativar thinking;
-3. manter `rejectIfBusy=true` e tratar 3040 como fallback;
-4. permitir fallback em timeout nativo 3007/3008 e schema inválido;
-5. manter 3036/5035 como falha terminal de custo zero;
-6. medir modelo e latência por página;
-7. encerrar a janela atual antes de publicar outro runtime.
+A correção V4 integrada em `8ee43cfafcb35fd03834701acc4f3e96fcde1368`:
+1. remove o timeout artificial/cancelamento falso;
+2. desativa thinking;
+3. mantém `rejectIfBusy=true` e trata capacidade 3040 como fallback;
+4. permite fallback em timeout nativo 3007/3008 e schema/resposta inválidos;
+5. mantém 3036/5035 como parada terminal de custo zero;
+6. mede modelo + latência por página;
+7. usa JPEG 0,85 no laboratório.
 
-O próximo reteste só pode usar novo source ref/Pages congelados após merge da correção V4. Nenhuma ativação produtiva é automática.
+A janela do teste 0/10 precisa ser encerrada antes da nova rodada. O reteste seguinte deve usar somente as referências V4 congeladas nesta documentação. Nenhuma ativação produtiva é automática.
 
 ## Privacidade
 
