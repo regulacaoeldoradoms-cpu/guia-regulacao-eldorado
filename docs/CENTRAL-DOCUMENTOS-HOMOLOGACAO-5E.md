@@ -386,17 +386,27 @@ A 5E homologará a IA documental com **dados sintéticos em chamadas reais ao pr
 
 Ela não autoriza automaticamente ativação produtiva. Depois da matriz aprovada e da janela encerrada, o status deve registrar as evidências e haverá uma decisão separada para publicar a Fase 5 com os gates produtivos.
 
-## Próximo reteste
+## Resultado da primeira matriz Workers AI e próximo reteste
 
-Antes do reteste Workers AI:
-1. encerrar a janela atual pelo procedimento fail-closed;
-2. confirmar plano Workers Free e ausência de cobrança por AI Gateway;
-3. executar o verificador read-only já congelado em `a49ecd22e922267179fd8502f08fc5950df8fb0a` + `https://60f66c8b.portal-regulacao-central-staging.pages.dev`;
-4. abrir nova janela 5E;
-5. executar a matriz e copiar o resumo seguro com as duas durações;
-6. encerrar a janela imediatamente depois.
+Primeira execução Gemma/Qwen:
+- 0 aprovados / 10 falhas;
+- `duracao_extracao_ms` ≈ 27.200;
+- `duracao_total_ms` ≈ 49.700;
+- seis páginas: `DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT`;
+- quatro chats sem evidência por consequência.
 
-O aceite exige matriz sem falhas e tempo de extração compatível com a rotina; nenhuma ativação produtiva é automática.
+Esse resultado não aceita nem reprova a qualidade dos modelos. O timeout foi gerado pelo código local após 6 s, antes de erro nativo do Workers AI, e impedia o fallback Qwen.
+
+Correção obrigatória antes do reteste:
+1. remover timeout artificial/cancelamento falso;
+2. desativar thinking;
+3. manter `rejectIfBusy=true` e tratar 3040 como fallback;
+4. permitir fallback em timeout nativo 3007/3008 e schema inválido;
+5. manter 3036/5035 como falha terminal de custo zero;
+6. medir modelo e latência por página;
+7. encerrar a janela atual antes de publicar outro runtime.
+
+O próximo reteste só pode usar novo source ref/Pages congelados após merge da correção V4. Nenhuma ativação produtiva é automática.
 
 ## Privacidade
 
