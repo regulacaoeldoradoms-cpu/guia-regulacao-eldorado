@@ -306,24 +306,22 @@ Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado pa
 
 ## Próximo passo atual
 
-A primeira matriz Workers AI do runtime histórico `a49ecd22...` falhou com **0/10** por `DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT`; esse resultado não mediu a qualidade de leitura do Gemma/Qwen.
+O segundo teste Workers AI no runtime V4 confirmou que o timeout artificial foi removido, porém as páginas visuais autorizadas continuaram classificadas como `outro`. A página administrativa esperada como `outro` foi a única aprovada.
 
-A correção V4 foi integrada pela PR #269 no merge:
-- source ref funcional: `8ee43cfafcb35fd03834701acc4f3e96fcde1368`;
-- Pages imutável do reteste: `https://c92471f6.portal-regulacao-central-staging.pages.dev`.
+Diagnóstico técnico: o provider enviava a imagem em uma propriedade top-level `image`, enquanto o formato multimodal esperado para estes modelos usa conteúdo da mensagem com `image_url` + `text`.
 
-A V4:
-- remove o timeout artificial local;
-- desativa thinking/raciocínio no fluxo documental;
-- usa timeout/capacidade nativos do Workers AI;
-- mantém `rejectIfBusy=true`;
-- permite fallback Gemma → Qwen apenas em falhas recuperáveis;
-- mantém 3036/5035 como parada fail-closed de custo zero;
-- mede modelo e latência por página;
-- usa JPEG 0,85 na matriz, mais próximo do fluxo final.
+A correção V5 foi integrada pela PR #273:
+- source ref: `20488871ce2556c06795367ededbdb49791c23f5`;
+- Pages imutável do reteste: `https://e8003492.portal-regulacao-central-staging.pages.dev`;
+- versão pública da IA documental: `phase5e-v5-multimodal-image-url`.
 
-**Antes de abrir o reteste V4**, a janela que executou o teste 0/10 (`phase5e_53f22db9f82345c1b01425299595cad9`) deve ser encerrada fail-closed. Não repetir a matriz nessa janela, pois ela serve o runtime antigo.
+A V5 envia cada página como conteúdo multimodal explícito, preservando isolamento por página, thinking off, fallback gratuito Gemma→Qwen, JSON mode e proveniência backend-owned.
 
-Depois do encerramento, executar o verificador read-only com as referências V4 congeladas acima; somente com `PRECONDICOES_5E_OK` abrir uma nova janela.
+A janela V4 que produziu o teste 1/10 foi encerrada fail-closed pelo operador:
+- controle `phase5e_a306e08ec60f46ac8102cc021c163164`;
+- preview final bloqueado `f31277f5-bf69-4235-af85-b458192c20d8`;
+- `httpBlocked=true`.
+
+Próximo passo: executar o verificador read-only já apontando para a V5; somente com `PRECONDICOES_5E_OK` abrir nova janela e executar a matriz decisiva. Se a V5 ainda não reconhecer páginas visuais autorizadas, mudar a arquitetura para text-layer/OCR local + IA sobre texto, em vez de insistir em visão direta.
 
 Produção permanece com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.
