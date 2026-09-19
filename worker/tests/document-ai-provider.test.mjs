@@ -58,6 +58,12 @@ test('provider documental usa somente Gemma 4 + Qwen aprovados para free-only', 
     (error) => error?.code === 'DOCUMENT_AI_NON_FREE_MODEL_BLOCKED'
   );
   assert.throws(
+    () => documentAiFreeModelSequence(enabledEnv({
+      DOCUMENTS_AI_PRIMARY_MODEL: DOCUMENT_AI_FAST_VISION_FREE_MODEL
+    })),
+    (error) => error?.code === 'DOCUMENT_AI_NON_FREE_MODEL_BLOCKED'
+  );
+  assert.throws(
     () => documentAiFreeModelSequence(enabledEnv({ DOCUMENTS_AI_FREE_ONLY: 'false' })),
     (error) => error?.code === 'DOCUMENT_AI_FREE_ONLY_REQUIRED'
   );
