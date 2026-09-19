@@ -28,9 +28,13 @@ export const DOCUMENT_AI_FREE_MODELS = Object.freeze([
   DOCUMENT_AI_FALLBACK_FREE_MODEL
 ]);
 
-const FREE_MODEL_SET = new Set([
-  DOCUMENT_AI_FAST_VISION_FREE_MODEL,
-  ...DOCUMENT_AI_FREE_MODELS
+const TEXT_FREE_MODEL_SET = new Set(DOCUMENT_AI_FREE_MODELS);
+const FAST_VISION_FREE_MODEL_SET = new Set([
+  DOCUMENT_AI_FAST_VISION_FREE_MODEL
+]);
+const APPROVED_FREE_MODEL_SET = new Set([
+  ...FAST_VISION_FREE_MODEL_SET,
+  ...TEXT_FREE_MODEL_SET
 ]);
 const TRANSIENT_CODES = new Set([
   'DOCUMENT_AI_PROVIDER_TIMEOUT',
@@ -175,7 +179,7 @@ export function documentAiFreeModelSequence(env = {}) {
   );
 
   const requested = [configuredPrimary, ...configuredFallbacks];
-  if (requested.some((model) => !FREE_MODEL_SET.has(model))) {
+  if (requested.some((model) => !TEXT_FREE_MODEL_SET.has(model))) {
     throw new DocumentAiError(
       'DOCUMENT_AI_NON_FREE_MODEL_BLOCKED',
       'Modelo fora da lista gratuita aprovada do Titon.',
@@ -197,7 +201,7 @@ export function documentAiVisionModelSequence(env = {}) {
   const fastModel = String(
     env.DOCUMENTS_AI_FAST_VISION_MODEL || DOCUMENT_AI_FAST_VISION_FREE_MODEL
   ).trim();
-  if (!FREE_MODEL_SET.has(fastModel)) {
+  if (!FAST_VISION_FREE_MODEL_SET.has(fastModel)) {
     throw new DocumentAiError(
       'DOCUMENT_AI_NON_FREE_MODEL_BLOCKED',
       'Modelo de visão rápida fora da lista gratuita aprovada do Titon.',
@@ -297,7 +301,7 @@ function reasoningControls(model) {
   if (normalized === DOCUMENT_AI_FAST_VISION_FREE_MODEL) return {};
   // Gemma 4 documenta explicitamente enable_thinking=false. Qwen 3.8 também
   // expõe os mesmos controles de raciocínio no schema do Workers AI.
-  if (!FREE_MODEL_SET.has(normalized)) return {};
+  if (!TEXT_FREE_MODEL_SET.has(normalized)) return {};
   return controls;
 }
 
@@ -385,7 +389,7 @@ async function runWorkersAi(
   const models = Array.isArray(modelSequence) && modelSequence.length
     ? [...new Set(modelSequence.map((model) => String(model || '').trim()))]
     : documentAiFreeModelSequence(env);
-  if (models.some((model) => !FREE_MODEL_SET.has(model))) {
+  if (models.some((model) => !APPROVED_FREE_MODEL_SET.has(model))) {
     throw new DocumentAiError(
       'DOCUMENT_AI_NON_FREE_MODEL_BLOCKED',
       'Modelo fora da lista gratuita aprovada do Titon.',
