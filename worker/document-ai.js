@@ -106,6 +106,9 @@ export function normalizeDocumentAiClassification(value) {
 
 function normalizeCnsForOutput(value) {
   const source = String(value || '').trim();
+  // Normalização autorizada é apenas de separadores. Se houver qualquer
+  // caractere alfabético/inesperado, preservamos o literal em vez de "corrigir".
+  if (!/^[0-9\s.\/-]+$/.test(source)) return source;
   const digits = source.replace(/\D/g, '');
   return digits || source;
 }
