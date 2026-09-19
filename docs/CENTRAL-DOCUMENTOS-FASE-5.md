@@ -306,15 +306,24 @@ Se ocorrer erro inesperado no meio da varredura, o Titon descarta o resultado pa
 
 ## Próximo passo atual
 
-A primeira matriz Workers AI do runtime `a49ecd22...` falhou com **0/10** porque todas as seis páginas atingiram `DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT`. A extração levou 27,2 s e o total com chat 49,7 s. Como nenhuma página gerou evidência, as quatro falhas de chat foram consequências e não provas independentes.
+A primeira matriz Workers AI do runtime histórico `a49ecd22...` falhou com **0/10** por `DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT`; esse resultado não mediu a qualidade de leitura do Gemma/Qwen.
 
-A causa está no próprio Titon:
-- timeout artificial local de 6 s via `Promise.race`;
-- timeout local era terminal, impedindo o fallback Qwen;
-- thinking dos modelos não estava explicitamente desabilitado.
+A correção V4 foi integrada pela PR #269 no merge:
+- source ref funcional: `8ee43cfafcb35fd03834701acc4f3e96fcde1368`;
+- Pages imutável do reteste: `https://c92471f6.portal-regulacao-central-staging.pages.dev`.
 
-A correção V4 remove o timeout artificial, usa somente erros/timeouts nativos do Workers AI, desativa raciocínio para o fluxo documental, mantém `rejectIfBusy`, faz fallback gratuito em capacidade/timeout/schema e acrescenta métricas por modelo/página.
+A V4:
+- remove o timeout artificial local;
+- desativa thinking/raciocínio no fluxo documental;
+- usa timeout/capacidade nativos do Workers AI;
+- mantém `rejectIfBusy=true`;
+- permite fallback Gemma → Qwen apenas em falhas recuperáveis;
+- mantém 3036/5035 como parada fail-closed de custo zero;
+- mede modelo e latência por página;
+- usa JPEG 0,85 na matriz, mais próximo do fluxo final.
 
-Antes de novo teste, a janela que serviu `a49ecd22...` deve ser encerrada fail-closed. Após CI/merge, congelar novo runtime + Pages e repetir a 5E.
+**Antes de abrir o reteste V4**, a janela que executou o teste 0/10 (`phase5e_53f22db9f82345c1b01425299595cad9`) deve ser encerrada fail-closed. Não repetir a matriz nessa janela, pois ela serve o runtime antigo.
+
+Depois do encerramento, executar o verificador read-only com as referências V4 congeladas acima; somente com `PRECONDICOES_5E_OK` abrir uma nova janela.
 
 Produção permanece com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`.

@@ -1150,9 +1150,30 @@ A janela atual do teste fracassado deve ser **encerrada fail-closed antes de qua
 
 **Próxima ação:** encerrar a janela atual; concluir CI/merge da correção; congelar novo source ref + Pages; abrir nova janela 5E e repetir a matriz.
 
+## Correção V4 de latência integrada e reteste congelado — 18/09/2026
+
+A PR **#269** foi integrada no merge `8ee43cfafcb35fd03834701acc4f3e96fcde1368` após checks direcionados verdes de Fases 1–5E, procedimentos 5E, staging bundle, governança e site.
+
+Pages imutável observado após o merge:
+`https://c92471f6.portal-regulacao-central-staging.pages.dev`.
+
+Referências congeladas do próximo reteste:
+- source ref: `8ee43cfafcb35fd03834701acc4f3e96fcde1368`;
+- Pages: `https://c92471f6.portal-regulacao-central-staging.pages.dev`.
+
+A V4 remove o timeout artificial que causou 0/10, desativa thinking, mantém fallback gratuito Gemma→Qwen para erros recuperáveis e acrescenta métricas técnicas por página/modelo.
+
+A janela que produziu o resultado 0/10 ainda pertence ao runtime antigo:
+- controle: `phase5e_53f22db9f82345c1b01425299595cad9`;
+- preview: `388d2847-d9d8-478a-8d27-1618a869989f`;
+- release: `a49ecd22e922267179fd8502f08fc5950df8fb0a`;
+- Drive write permaneceu false.
+
+**Próxima ação obrigatória:** encerrar essa janela fail-closed. Só depois executar readiness com as referências V4 e preparar outra janela. Não repetir a matriz no preview antigo.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — primeiro teste Workers AI revelou timeout artificial do Titon; correção V4 de latência em desenvolvimento**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — correção V4 de latência integrada; reteste aguarda encerramento fail-closed da janela 0/10**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -1264,21 +1285,19 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — Workers AI free-only integrado; próximo reteste ainda não aberto |
-| Última ação concluída | PR #260 mesclada; runtime e Pages do reteste congelados |
-| Main | `ff6a83b44eaaed8ff3e2fac7552c512c639d7a7c`; runtime do reteste permanece congelado em `a49ecd22…` |
-| Runtime reteste | `a49ecd22e922267179fd8502f08fc5950df8fb0a` |
-| Pages reteste | `https://60f66c8b.portal-regulacao-central-staging.pages.dev` |
-| Provider | `@cf/google/gemma-4-26b-a4b-it` principal; `@cf/qwen/qwen3.8-27b` fallback |
-| Custo | requisito permanente: **R$ 0**; free-only + allowlist + sem Gateway/prepaid/pay-as-you-go; limite gratuito deve falhar fechado |
-| Pipeline | uma inferência por página; até 3 páginas paralelas; JSON mode; backend ancora proveniência |
-| Latência | JPEG 1600/0,85; rejectIfBusy; limite local 6 s por tentativa / 10 s total; matriz mede extração separada do chat |
-| Janela antiga | `phase5e_502e857dd0424fbe92ea406048e7ad7f` encerrada fail-closed; HTTP bloqueado confirmado |
-| PR #259 | fechada sem merge como direção Gemini-Free superada |
-| Produção | IA documental false/false; não ativar antes do aceite 5E |
-| Próxima ação exata | janela Gemma/Qwen já preparada; abrir laboratório `60f66c8b.../homologacao-5e/`, executar matriz e copiar resumo seguro |
-| Depois | executar matriz Workers AI, copiar resumo seguro com durações, encerrar janela fail-closed e avaliar aceite |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #260; Pages do merge |
+| Fase/subfase | Fase 5E — V4 de latência integrada; novo reteste ainda não aberto |
+| Último resultado real | 0/10 no runtime antigo por `DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT`; não avaliou qualidade dos modelos |
+| Main funcional V4 | `8ee43cfafcb35fd03834701acc4f3e96fcde1368` |
+| Runtime próximo reteste | `8ee43cfafcb35fd03834701acc4f3e96fcde1368` |
+| Pages próximo reteste | `https://c92471f6.portal-regulacao-central-staging.pages.dev` |
+| Provider | Gemma 4 principal; Qwen 3.8 fallback; Workers Free |
+| Custo | requisito permanente R$ 0; 3036/5035 fail-closed; sem Gateway/prepaid/pay-as-you-go |
+| Correção V4 | sem timeout artificial; thinking off; rejectIfBusy; fallback em 3040/3007/3008/schema; JPEG 0,85; métricas por página/modelo |
+| Janela 0/10 ainda a encerrar | `phase5e_53f22db9f82345c1b01425299595cad9`, preview `388d2847-d9d8-478a-8d27-1618a869989f`, release antigo `a49ecd22…` |
+| Produção | IA documental false/false; não ativar antes do aceite |
+| Próxima ação exata | encerrar janela 0/10 fail-closed; rodar readiness V4; se verde, abrir nova 5E e executar matriz |
+| Evidência esperada nova | aprovados/falhas + duração extração/total + `gemma_paginas`/`qwen_paginas` + latência/modelo por página |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PR #269 |
 
 ## Histórico recuperável
 
