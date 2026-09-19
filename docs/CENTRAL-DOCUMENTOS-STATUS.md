@@ -738,9 +738,11 @@ Correção na branch `fix/central-docs-phase5e-csp-official-alias`:
 
 A janela 5E atualmente ativa ainda está vinculada à origem antiga `764243d1...`, cujo deploy é imutável e não pode receber a correção. Ela deve ser encerrada fail-closed e substituída por uma nova janela apontando para um novo preview Pages imutável com a CSP corrigida.
 
+O Cloudflare Pages da PR #253 concluiu **success** para o commit `310d2f65454122780bd98d20413daad8b1b2942e`, gerando a origem imutável corrigida `https://915c3113.portal-regulacao-central-staging.pages.dev`. Essa origem foi congelada no verificador/atalho 5E e substitui `764243d1...` para a próxima janela. O bundle direcionado, procedimentos 5E, Fases 1–5E, governança e site ficaram verdes nesta branch.
+
 ## Fase atual
 
-**Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
+**Fase 5 — IA documental.** Subfase **5E — homologação real controlada em andamento; primeira janela precisará ser substituída por nova origem Pages com CSP corrigida**. Produção continua com IA documental desligada.
 
 A **Fase 0** e as Fases **1, 2, 3 e 4** permanecem encerradas após o merge/publicação desta entrega. Não reiniciar etapas encerradas; hardening de latência pertence à Fase 7.
 
@@ -852,24 +854,24 @@ Artefatos anteriores preservados:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — homologação real controlada; preparo e matriz integral concluídos |
-| Última ação concluída | PR #244 mesclada em `e4fbda06…`; matriz real agora valida 8 campos por página autorizada; build produtivo Worker voltou verde |
-| Branch/PR | nenhuma frente funcional aberta; esta branch é somente documentação final de handoff |
-| Main | `e4fbda06e67752dafdd50b5746655ad3908f86d3`; runtime Worker 5E continua congelado em `408bff8…` |
-| Último commit relevante | merge funcional `e4fbda06…`; produção Worker gerada na versão `ac1d3d5e-b75c-4220-95d4-68028edd43c2` |
-| Código/preview | Pages 5E congelado: `https://764243d1.portal-regulacao-central-staging.pages.dev`; contém matriz reforçada e está fixado no verificador/atalho |
-| Produção | IA documental continua false/false; `preview_urls=false`; nenhum provider documental real executado |
-| Janela | nenhuma janela 5E ativa; janela 4D antiga continua revogada |
-| Decisão/porquê | exigir os 8 campos evita aceite parcial e comprova literalidade + isolamento entre páginas antes do Gemini real |
-| Descartado | usar o Pages antigo `67dd934e…`; iniciar homologação antes de reforçar a matriz; interpretar falha de Worker Preview da PR como falha produtiva |
-| Ações externas | nenhuma alteração de Cloudflare/D1/Drive/secret nesta etapa; apenas builds automáticos do merge |
-| Checks/testes | operacionais 5E `35413947781` success; Fases 1–5E `35413947712` success; staging `35413947796` success; governança `35413947803` success; Worker main success |
-| Bloqueios | causa identificada: CSP do Pages antigo bloqueia alias 5E; correção em branch e nova origem imutável necessária |
-| Riscos | provider real ainda não homologado; mitigação é janela preview-only, fixtures 100% sintéticos, Drive write false e encerramento fail-closed |
-| Observabilidade | somente propriedades técnicas allowlisted; nunca conteúdo documental, paciente, arquivo, Drive ID ou resposta bruta |
-| Próxima ação exata | validar PR da correção CSP, congelar novo Pages imutável, encerrar a janela antiga fail-closed e abrir nova 5E para a nova origem |
-| Depois | executar matriz sintética real, copiar somente o resumo seguro, encerrar 5E fail-closed e avaliar aceite/publicação da Fase 5 |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #237–#244; runs acima |
+| Fase/subfase | Fase 5E — homologação real controlada; correção CSP concluída em branch, antes da matriz real |
+| Última ação concluída | diagnóstico confirmou Worker/CORS/release OK; causa do browser foi CSP do Pages antigo; novo Pages `915c3113…` publicado e congelado |
+| Branch/PR | `fix/central-docs-phase5e-csp-official-alias`; PR **#253** aberta e mergeável |
+| Main | `8a42987fa7689cba10ae02a1322a32983a2f70b1`; runtime Worker 5E continua congelado em `408bff8…` |
+| Último commit relevante | head da PR #253 após congelar nova origem Pages |
+| Código/preview | próxima origem 5E: `https://915c3113.portal-regulacao-central-staging.pages.dev`; CSP permite somente o alias oficial 5E em `connect-src` |
+| Produção | IA documental continua false/false; nenhuma chamada real ao Gemini concluída; Drive produtivo não foi alterado |
+| Janela | janela 5E antiga `phase5e_b541f0a9505f44b3aa12dc57cf5766be` ainda vinculada a `764243d1…`; deve ser encerrada fail-closed antes de abrir a substituta |
+| Decisão/porquê | o build desarmado permitia seleção manual do alias, mas CSP apontava para `disabled.invalid`; browser bloqueava fetch antes do CORS. Corrigir CSP é mais seguro que contornar no navegador |
+| Descartado | desabilitar CSP no browser; usar console/local page; afrouxar CSP para `*.workers.dev`; continuar com Pages imutável antigo |
+| Ações externas | primeira janela 5E preparada; nenhuma escrita no Drive; nova origem Pages publicada automaticamente pela PR #253 |
+| Checks/testes | PR #253: Pages success; bundle staging success; procedimentos 5E success; Fases 1–5E success; governança/site success |
+| Bloqueios | nenhum técnico na nova origem; falta encerrar a janela antiga e abrir nova janela 5E para `915c3113…` |
+| Riscos | manter duas janelas/controles concorrentes; mitigação: encerramento fail-closed da janela antiga antes do novo preparo |
+| Observabilidade | sem mudança; somente propriedades técnicas allowlisted, nunca conteúdo documental/credenciais |
+| Próxima ação exata | mesclar PR #253; operador executa encerramento fail-closed da janela antiga; depois roda verificador/início novamente já com Pages `915c3113…` |
+| Depois | abrir laboratório corrigido, autenticar, executar matriz sintética real, copiar resumo seguro e encerrar a nova janela |
+| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #249–#253; diagnóstico browser-worker |
 
 ## Histórico recuperável
 
