@@ -12,6 +12,7 @@
     evidence: new Map(),
     results: [],
     pageMetrics: [],
+    mismatchFields: new Map(),
     running: false
   };
 
@@ -302,7 +303,7 @@
       canvas.toBlob((blob) => {
         if (blob) resolve(blob);
         else reject(new Error('Não foi possível gerar a imagem sintética.'));
-      }, 'image/jpeg', 0.85);
+      }, 'image/png');
     });
   }
 
@@ -355,6 +356,14 @@
       return String(field.value || '').trim() === String(expectedValue || '').trim();
     }
     return String(field.value || '') === '';
+  }
+
+  function mismatchedFields(extraction, expectedFields) {
+    const mismatches = [];
+    for (const [key, expected] of Object.entries(expectedFields || {})) {
+      if (!fieldMatches(extraction?.fields?.[key], expected)) mismatches.push(key);
+    }
+    return mismatches;
   }
 
   async function extractFixture(fixture, blob) {
@@ -426,6 +435,15 @@
         );
       });
 
+    [...state.mismatchFields.entries()]
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .forEach(([pageNumber, keys]) => {
+        lines.push(
+          'pagina_' + String(pageNumber).padStart(2, '0')
+          + '_campos_divergentes=' + keys.join(',')
+        );
+      });
+
     state.results.forEach((item, index) => {
       lines.push(
         'caso_' + String(index + 1).padStart(2, '0')
@@ -476,6 +494,7 @@
     state.results = [];
     state.evidence.clear();
     state.pageMetrics = [];
+    state.mismatchFields.clear();
     state.durationMs = 0;
     state.extractionDurationMs = 0;
     const matrixStarted = performance.now();
@@ -506,6 +525,7 @@
           let passed = Number(observed.pageNumber) === fixture.pageNumber
             && String(observed.pageType || '') === fixture.expectedType;
 
+          let mismatches = [];
           if (fixture.expectedType === 'outro') {
             passed = passed && extraction === null;
           } else {
@@ -515,9 +535,12 @@
               && String(extraction.pageType || '') === fixture.expectedType
               && extraction.fields
             );
-            for (const [key, expected] of Object.entries(fixture.expectedFields || {})) {
-              passed = passed && fieldMatches(extraction?.fields?.[key], expected);
-            }
+            mismatches = mismatchedFields(extraction, fixture.expectedFields);
+            passed = passed && mismatches.length === 0;
+          }
+
+          if (mismatches.length) {
+            state.mismatchFields.set(fixture.pageNumber, mismatches);
           }
 
           const durationMs = performance.now() - pageStarted;
@@ -539,7 +562,8 @@
                     }))
                   : []
               },
-              durationMs: Math.max(0, Math.round(durationMs))
+              durationMs: Math.max(0, Math.round(durationMs)),
+              mismatchFields: mismatches
             }, null, 2),
             extraction: passed ? extraction : null,
             providerModel,
