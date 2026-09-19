@@ -679,6 +679,28 @@ Nenhuma janela 5E foi criada ainda, nenhum controle novo foi ativado, nenhum PDF
 
 **Próxima ação exata:** executar `scripts/central-docs/iniciar-homologacao-5e.mjs --iniciar`. O atalho repetirá a verificação read-only e, somente se continuar verde, chamará o preparo existente, que ainda exige a confirmação humana `PREPARAR HOMOLOGACAO 5E` antes de criar a janela temporária.
 
+## Janela 5E preparada com sucesso — 18/09/2026
+
+O operador executou `iniciar-homologacao-5e.mjs --iniciar`. O atalho repetiu as pré-condições read-only com sucesso e o preparo foi confirmado humanamente com `PREPARAR HOMOLOGACAO 5E`.
+
+Resultado sanitizado:
+
+- `HOMOLOGACAO_5E_PREPARADA`;
+- preview version: `47d891d6-fb1a-4e59-a369-cc9defe56a9e`;
+- control ID: `phase5e_b541f0a9505f44b3aa12dc57cf5766be`;
+- expiração: `2026-09-19T05:00:50.000Z`;
+- release: `408bff833f9437b0c8c2f8ec1bf2ffb8926609b0`;
+- `aiGate=true`;
+- `driveWriteGate=false`;
+- produção reconfirmada durante o preparo: `298ba237-78f9-4d24-bad1-47e66b4c1e15`;
+- próxima ação operacional: `ABRIR_LABORATORIO_5E`.
+
+O preparo concluiu as oito etapas previstas: runtime fixo/blobs, produção e bindings, controle inicialmente desabilitado, dry-run, upload somente de versão preview, bloqueio pré-ativação, ativação temporária do controle e confirmação de autenticação obrigatória com produção intacta.
+
+**Estado de segurança:** somente o preview 5E está com IA documental habilitada; `DOCUMENTS_DRIVE_WRITE_ENABLED=false`; produção não foi promovida; nenhuma operação de Drive faz parte da matriz. A partir deste ponto, a primeira chamada real ao Gemini ocorrerá somente no laboratório sintético controlado.
+
+**Próxima ação exata:** abrir `https://764243d1.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, selecionar/confirmar o alias oficial do Worker preview 5E, autenticar com a conta autorizada e executar a matriz sintética. Ao final, copiar apenas o **resumo seguro** e depois encerrar a janela em modo fail-closed.
+
 ## Fase atual
 
 **Fase 5 — IA documental.** Subfase **5E — preparo técnico e operacional concluído; homologação real aguarda `GEMINI_API_KEY` e execução controlada pelo operador**. Produção continua com IA documental desligada.
@@ -805,10 +827,10 @@ Artefatos anteriores preservados:
 | Descartado | usar o Pages antigo `67dd934e…`; iniciar homologação antes de reforçar a matriz; interpretar falha de Worker Preview da PR como falha produtiva |
 | Ações externas | nenhuma alteração de Cloudflare/D1/Drive/secret nesta etapa; apenas builds automáticos do merge |
 | Checks/testes | operacionais 5E `35413947781` success; Fases 1–5E `35413947712` success; staging `35413947796` success; governança `35413947803` success; Worker main success |
-| Bloqueios | nenhum bloqueio de pré-condição: `GEMINI_API_KEY` presente, `extract=true` e nenhuma janela controlada ativa |
+| Bloqueios | nenhum para iniciar a matriz: janela 5E ativa e preparada; resta executar laboratório sintético e encerrar fail-closed |
 | Riscos | provider real ainda não homologado; mitigação é janela preview-only, fixtures 100% sintéticos, Drive write false e encerramento fail-closed |
 | Observabilidade | somente propriedades técnicas allowlisted; nunca conteúdo documental, paciente, arquivo, Drive ID ou resposta bruta |
-| Próxima ação exata | executar `iniciar-homologacao-5e.mjs --iniciar`; somente após nova verificação verde confirmar `PREPARAR HOMOLOGACAO 5E` |
+| Próxima ação exata | abrir o laboratório 5E no Pages congelado, autenticar, executar a matriz sintética e copiar somente o resumo seguro |
 | Depois | executar matriz sintética real, copiar somente o resumo seguro, encerrar 5E fail-closed e avaliar aceite/publicação da Fase 5 |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; STATUS; PRs #237–#244; runs acima |
 
