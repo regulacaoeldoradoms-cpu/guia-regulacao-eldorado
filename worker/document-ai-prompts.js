@@ -78,7 +78,7 @@ REGRAS DO COMPROVANTE/CONTROLE/DADOS:
 - Exceção de normalização autorizada: a data de nascimento será normalizada pelo sistema para dd/mm/aaaa quando a leitura for inequívoca.
 
 REGRAS DA PÁGINA MÉDICA AUTORIZADA:
-- O campo titulo deve conter o título/cabeçalho visível que autorizou a página.
+- O campo titulo deve usar primeiro o valor de um campo explicitamente rotulado "Título", se houver; caso contrário, use o título/cabeçalho visível que autorizou a página.
 - O motivo_encaminhamento deve transcrever EXATA E INTEGRALMENTE o campo "Motivo do encaminhamento", "Justificativa do procedimento" ou "Informações para solicitação do atendimento", quando houver.
 - Não resuma, reorganize, corrija ou interprete o motivo.
 - medico, crm_rms, procedimento_solicitado, codigo_procedimento, cid e descricao_cid devem vir somente desta mesma página.
