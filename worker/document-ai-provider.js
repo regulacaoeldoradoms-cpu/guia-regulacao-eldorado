@@ -199,10 +199,16 @@ function requireWorkersAi(env = {}) {
 
 function errorText(error) {
   return [
+    error?.code,
+    error?.status,
     error?.message,
+    error?.cause?.code,
+    error?.cause?.status,
     error?.cause?.message,
     error?.stack
-  ].filter(Boolean).join(' ').slice(0, 5000);
+  ].filter((value) => value !== undefined && value !== null && value !== '')
+    .join(' ')
+    .slice(0, 5000);
 }
 
 function isFreeLimitError(error) {
