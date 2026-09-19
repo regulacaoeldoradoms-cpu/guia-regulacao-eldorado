@@ -103,7 +103,7 @@ Esse desenho pode tornar PDFs digitais quase instantâneos, mas não é necessá
 
 ## Revisão de contrato Moondream — 19/09/2026
 
-A documentação oficial atual do modelo registra `stream=true` como padrão para `query`. O Titon mantém `stream=false` explicitamente para congelar o contrato e não depender de default do provedor. Isso preserva resposta completa e validável e protege contra futura mudança de default.
+A documentação oficial atual do modelo registra `stream=false` como padrão para `query`. O Titon mantém `stream=false` explicitamente para congelar o contrato e não depender de default do provedor. Isso preserva resposta completa e validável e protege contra futura mudança de default.
 
 Também foi endurecido o parser para um caso frequente em VLMs rápidos: se a resposta contiver um único objeto JSON válido envolvido por uma frase curta, o backend extrai apenas o objeto delimitado e aplica imediatamente o mesmo schema estrito. Isso não afrouxa campos, estados ou proveniência; apenas evita cair para Gemma por embalagem textual superficial.
 
@@ -115,7 +115,7 @@ Essas duas mudanças são consideradas correção de contrato/desempenho, não m
 Revisão cruzada com a documentação atual do Cloudflare Workers AI:
 
 - Moondream 3.1 é Image-to-Text, 9B totais / 2B ativos, com OCR e structured output como casos de uso; o changelog publica p50 aproximado de 770 ms para `query` em imagem simples, mas isso não é SLO para nossos documentos.
-- `query` usa `stream=true` por padrão; o Titon agora fixa `stream=false`, porque precisa do JSON completo antes de validar a página.
+- `query` usa `stream=false` por padrão; o Titon também fixa `stream=false` explicitamente para congelar o contrato e receber o JSON completo antes de validar a página.
 - `rejectIfBusy=true` está no lugar correto: terceiro argumento de `env.AI.run()`. Assim não esperamos em fila de capacidade; erro 3040 cai para o fallback gratuito.
 - O limite padrão atual de Image-to-Text é 720 req/min por conta, muito acima da concorrência de 6 páginas do Titon. Isso não elimina indisponibilidade de capacidade, mas afasta rate limit como razão para reduzir a concorrência preventivamente.
 - Workers Free mantém 10.000 Neurons/dia sem cobrança; ao esgotar, retorna 3036. Moondream não consta na lista atual de modelos que exigem Workers Paid. A política do Titon continua: sem AI Gateway/prepaid/unified billing.
