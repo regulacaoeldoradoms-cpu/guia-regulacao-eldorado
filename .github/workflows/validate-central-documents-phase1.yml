@@ -110,12 +110,19 @@ jobs:
           grep -q "phase5e-synthetic-v1" worker/homologation-5e.js
           grep -q "AI_HOMOLOGATION_ROUTE_DENIED" worker/homologation-5e.js
           grep -q "normalizeDocumentAiExtraction" worker/document-ai.js
-          grep -q "extractDocumentAiPage" worker/document-ai-provider.js
+          grep -q "analyzeDocumentAiPage" worker/document-ai-provider.js
+          grep -q "@cf/google/gemma-4-26b-a4b-it" worker/document-ai-provider.js
+          grep -q "@cf/qwen/qwen3.8-27b" worker/document-ai-provider.js
+          grep -q "env.AI.run" worker/document-ai-provider.js
+          ! grep -q "generativelanguage.googleapis.com" worker/document-ai-provider.js
+          ! grep -q "GEMINI_API_KEY" worker/document-ai-provider.js
           grep -q "exportPageImage" js/document-viewer.js
           grep -q "function getPageCount" js/document-viewer.js
           grep -q 'id="documentsAiExtractDocumentButton"' documentos/index.html
           grep -q "extractWholeDocumentAi" js/documents.js
-          grep -q "DOCUMENT_AI_PAGE_NOT_AUTHORIZED" js/documents.js
+          grep -q "const concurrency = Math.min(3, pageCount)" js/documents.js
+          grep -q "maxEdge: 1600" js/documents.js
+          grep -q "PROMPT_ANALISE_REGULACAO_V1" worker/document-ai-prompts.js
           grep -q "CONTROLE DE ATENDIMENTO" worker/document-ai-prompts.js
           grep -q "RECEITA SIMPLES" worker/document-ai-prompts.js
           grep -q "PROMPT_CLASSIFICACAO_PAGINAS_V1" worker/document-ai-prompts.js
@@ -124,6 +131,9 @@ jobs:
           grep -q "chatDocumentAi" worker/document-ai-provider.js
           grep -q 'DOCUMENTS_AI_ENABLED = "false"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_PROCESSING_ENABLED = "false"' worker/wrangler.toml
+          grep -q 'DOCUMENTS_AI_FREE_ONLY = "true"' worker/wrangler.toml
+          grep -q 'DOCUMENTS_AI_PRIMARY_MODEL = "@cf/google/gemma-4-26b-a4b-it"' worker/wrangler.toml
+          grep -q 'DOCUMENTS_AI_FALLBACK_MODELS = "@cf/qwen/qwen3.8-27b"' worker/wrangler.toml
           grep -q 'id="documentAiButton"' documentos/index.html
           grep -q 'id="documentsAiPanel"' documentos/index.html
           grep -q "https://www.googleapis.com/auth/drive" worker/document-drive.js
