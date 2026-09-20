@@ -4,7 +4,7 @@ Data de início: 20/09/2026.
 
 ## Estado
 
-**IMPLEMENTAÇÃO 6A–6E CONCLUÍDA EM BRANCH; aguardando CI e validação operacional.**
+**6A–6E INTEGRADAS NA `main`; validação operacional real pendente antes do encerramento formal.**
 
 A Fase 6 começa da `main` com as Fases 0–5 encerradas. Não reabre editor, sincronização, permissões, arquitetura da IA documental nem a frente de micro-otimização de latência da Fase 5.
 
@@ -252,3 +252,33 @@ Após CI verde e merge, ainda é necessário comprovar em uso real:
 4. quando o gate de IA antecipatória for homologado separadamente, o clique em extração reutiliza preparo sem misturar documentos.
 
 Até essa medição, a Fase 6 fica **implementada, mas não formalmente encerrada**.
+
+
+## Integração da implementação — 20/09/2026
+
+A PR **#342** foi integrada na `main` pelo merge
+`87b7b7b274d8d6392bfacd85e18eab19dc672885`.
+
+Evidências:
+- head funcional validado da PR: `de1ddc5de6346da0911e6e2fc7ca86abb2b260a9`;
+- **27 workflows/checks da PR concluídos com sucesso**, incluindo Fases 1–6, staging, governança, safe deploy e navegador/Chromium;
+- Cloudflare Pages staging da PR publicado com sucesso no preview imutável
+  `https://a2d88ca3.portal-regulacao-central-staging.pages.dev`;
+- após o merge, validação integrada da Central, governança e gate de deploy seguro na `main` concluíram com sucesso;
+- build e deploy do GitHub Pages na `main` concluíram com sucesso.
+
+A integração não alterou a decisão de segurança:
+- `DOCUMENTS_AI_BACKGROUND_ENABLED=false` continua o padrão produtivo;
+- nenhuma nova escrita automática no Drive foi introduzida;
+- a Fase 6 continua **não encerrada** até haver medição operacional real.
+
+## Próxima validação operacional
+
+A parte que não depende de ativar IA antecipatória já está disponível para medição após a publicação:
+1. abertura/primeira página sem regressão;
+2. prefetch/cache dos próximos PDFs elegíveis;
+3. cancelamento ao trocar/fechar PDF;
+4. preempção ao entrar no editor;
+5. eventos técnicos `document_background_task` sem propriedades documentais.
+
+A unidade 6C permanece implementada e feature-gated. Ativá-la exige homologação controlada própria; não faz parte da publicação automática desta integração.
