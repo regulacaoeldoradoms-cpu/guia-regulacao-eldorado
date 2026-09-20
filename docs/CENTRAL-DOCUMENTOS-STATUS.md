@@ -1880,12 +1880,33 @@ Conclusão: o preparo anterior foi reconciliado e encerrado sem ativar a janela.
 
 **Próxima ação exata:** atualizar os quatro scripts operacionais a partir da `main` e executar `iniciar-homologacao-5e.mjs --iniciar`. O readiness correto deve mostrar source `09bf379f306579bcb7ca049ad02d4c6a94c1df67` e Pages `https://20627e1a.portal-regulacao-central-staging.pages.dev`.
 
+## Janela V7B probe-fixed preparada — 20/09/2026
+
+O operador concluiu o preparo oficial da janela V7B probe-fixed.
+
+Evidências sanitizadas:
+- `PRECONDICOES_5E_OK`;
+- nenhuma janela controlada ativa no readiness;
+- source `09bf379f306579bcb7ca049ad02d4c6a94c1df67`;
+- Pages `https://20627e1a.portal-regulacao-central-staging.pages.dev`;
+- `HOMOLOGACAO_5E_PREPARADA`;
+- preview version `3d166f16-9a3b-4a30-b928-2e9162810637`;
+- controle `phase5e_767dfb6c3d2f458a90d7914a7af8d66a`;
+- expiração `2026-09-20T02:23:17.000Z`;
+- `aiGate=true` somente no preview;
+- `driveWriteGate=false`;
+- produção permaneceu `298ba237-78f9-4d24-bad1-47e66b4c1e15`.
+
+A janela chegou a 8/8 com a semântica 403/401 restaurada. O próximo teste deve ser executado uma única vez e o resumo seguro deve ser copiado integralmente, com atenção especial a `resultados=`, `modelos=`, `transporte_backend_ms` e `provider_ms`.
+
+**Próxima ação exata:** abrir `https://20627e1a.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz uma vez e copiar o resumo seguro completo.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7B probe-fixed integrada; recuperação local concluída; readiness pronto |
-| Último resultado real | preparo interrompido recuperado fail-closed; markerCleared=true; produção intacta |
+| Fase/subfase | Fase 5E — V7B probe-fixed preparada; matriz aguardando execução |
+| Último resultado real | V7B preparada 8/8; release correto; Drive false; produção intacta |
 | Runtime funcional V7B | `09bf379f306579bcb7ca049ad02d4c6a94c1df67` |
 | Runtime próximo reteste | `09bf379f306579bcb7ca049ad02d4c6a94c1df67` |
 | Pages próximo reteste | `https://20627e1a.portal-regulacao-central-staging.pages.dev` |
@@ -1894,7 +1915,7 @@ Conclusão: o preparo anterior foi reconciliado e encerrado sem ativar a janela.
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | atualizar scripts; readiness V7B probe-fixed; preparar nova janela; executar matriz uma vez |
+| Próxima ação exata | abrir laboratório V7B; executar matriz uma vez; copiar resumo seguro completo |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
