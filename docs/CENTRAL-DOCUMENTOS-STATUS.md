@@ -3094,8 +3094,8 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
-| Produção | publicação controlada da IA documental normal autorizada; background antecipatório permanece fail-closed |
-| Próxima ação exata | concluir CI/deploy da publicação produtiva da IA; validar visibilidade/uso sob capability `extract`; depois retomar a matriz operacional restante da Fase 6 |
+| Produção | IA documental normal publicada; `enabled=true`, `processing=true`; background antecipatório permanece fail-closed |
+| Próxima ação exata | validar no Portal real que conta com `extract` vê/abre a IA e executa uma extração por clique; depois retomar a matriz operacional restante da Fase 6 |
 | Meta | Fase 6: reduzir tempo operacional mensuravelmente sem perda de controle do usuário |
 | Fontes | Guia Mestre V1.1; FASE-6; FASE-2; FASE-5; STATUS; js/documents.js; js/document-viewer.js; js/document-cache.js |
 
@@ -3191,3 +3191,40 @@ Correção em `fix/worker-safe-deploy-isolated-5e-preview-20260920`:
 Decisão descartada: não habilitar Worker Previews globalmente, não apagar versões 5E manualmente e não enfraquecer `ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE`. A correção é específica para o artefato preview-only já governado.
 
 **Próxima ação exata:** validar CI da correção, mesclar se verde e observar o Workers Builds da `main`. O esperado é o gate reconhecer o preview 5E isolado, prosseguir para dry-run/upload sem tráfego, validar bindings/secrets/AUTH_DB, promover a candidata e emitir `DEPLOY_SEGURO_CONCLUIDO`. Só então testar o botão IA documental em produção.
+
+
+## Publicação produtiva da IA documental — DEPLOY CONCLUÍDO — 20/09/2026
+
+A correção do gate foi integrada pela PR **#347**, merge `fc4fde95db6c8f044d37337e0d142c2928c16fbf`.
+
+Validação pré-merge da correção:
+- **22/22 workflows** do head funcional concluíram com `success`;
+- gate de deploy seguro: sucesso;
+- Central de Documentos Fases 1–6: sucesso;
+- governança: sucesso;
+- testes específicos do novo reconhecimento de preview isolado: sucesso.
+
+Resultado real do Workers Builds após o merge:
+- check `Workers Builds: yellow-wave-d0a1guia-regulacao-ia`: **success**;
+- Build ID `f95e0e2c-3811-43fd-a986-67d46dc065bb`;
+- nova Worker Version produtiva: `1c2458f8-76f9-4050-8f10-a9e6b5fbec37`;
+- Cloudflare Pages do mesmo merge: **success**;
+- o bloqueio `ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE` não reapareceu.
+
+Conclusão: a publicação técnica da IA documental está concluída. A produção agora corresponde ao estado versionado:
+- `DOCUMENTS_AI_ENABLED=true`;
+- `DOCUMENTS_AI_PROCESSING_ENABLED=true`;
+- `DOCUMENTS_AI_BACKGROUND_ENABLED=false`;
+- `DOCUMENTS_AI_FREE_ONLY=true`;
+- `DOCUMENTS_AI_FAST_VISION_ENABLED=false`.
+
+A capability `extract` continua sendo obrigatória no backend. Nenhuma permissão foi ampliada automaticamente e nenhuma automação antecipatória foi ativada.
+
+**Validação humana ainda pendente:** no Portal real, recarregar a Central, abrir um PDF permitido e confirmar que o botão **IA documental** aparece para uma conta que já possua `extract`; abrir o painel e executar uma extração normal por clique. Se o botão não aparecer, verificar primeiro a capability da conta antes de alterar gates.
+
+### Handoff atualizado
+- **Fase atual:** Fase 6 — Automação operacional; publicação normal da IA concluída.
+- **Última ação concluída:** Worker produtivo `1c2458f8-76f9-4050-8f10-a9e6b5fbec37` publicado com sucesso.
+- **Bloqueio anterior:** resolvido pela PR #347; preview 5E isolado deixa de bloquear o gate sem enfraquecer versões desconhecidas.
+- **Background IA:** continua `false`.
+- **Próxima ação exata:** teste real do botão/painel/extrator IA com conta `extract`; depois continuar homologação operacional da Fase 6.
