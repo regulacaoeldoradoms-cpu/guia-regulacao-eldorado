@@ -200,6 +200,17 @@
 .documents-editor-status.success { color: #176049; background: #eef9f4; }
 .documents-viewer-state { padding: 10px 14px; background: #edf5fb; color: #49677e; font-size: .78rem; }
 .documents-viewer-state.ready { display: none; }
+.documents-automation-status {
+  margin: 8px 14px 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f3f8fc;
+  color: #315f7c;
+  font-size: .78rem;
+  line-height: 1.35;
+}
+.documents-automation-status.success { background: #eef9f4; color: #176049; }
+.documents-automation-status.warning { background: #fff8e8; color: #8a5f0a; }
 
 .sr-only {
   position: absolute !important; width: 1px !important; height: 1px !important;
