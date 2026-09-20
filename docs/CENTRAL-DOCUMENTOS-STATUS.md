@@ -2837,12 +2837,58 @@ Conclusão: a janela corresponde exatamente ao runtime V8C.1 congelado e produç
 
 **Próxima ação exata:** abrir `https://62b72fe5.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada e executar a matriz **uma única vez**. Critérios: 10/10, `formato_compacto_paginas=6`, `formato_legado_paginas=0`, nenhuma divergência em `titulo` e completion tokens ainda materialmente abaixo do baseline V8B de 1.024. Não encerrar a janela antes de analisar o resumo seguro.
 
+## Resultado V8C.1 — 7/10; fallback sistemático nas páginas médicas — 20/09/2026
+
+Resumo seguro real:
+- **7 aprovados / 3 falhas**;
+- extração **14,469 s**;
+- total **17,313 s**;
+- `formato_compacto_paginas=6`;
+- `formato_legado_paginas=0`;
+- Gemma final: 2 páginas;
+- Qwen final: 4 páginas;
+- prompt tokens reportados: 19.157;
+- completion tokens reportados: 678;
+- cached prompt tokens: 0;
+- divergências: `medico` nas páginas 5 e 6.
+
+Comportamento por página:
+- páginas 1 e 3: Gemma em uma tentativa;
+- páginas 2, 4 e 5: Gemma retornou `DOCUMENT_AI_PROVIDER_SCHEMA_INVALID` e Qwen concluiu a segunda tentativa;
+- página 6: Gemma schema-invalid → Qwen extração → Qwen revisão; a revisão não alterou nenhum campo;
+- páginas 2 e 4 passaram após fallback;
+- páginas 5 e 6 falharam somente em `medico`;
+- falha do chat da página 6 foi efeito cascata da evidência reprovada.
+
+Conclusão: a âncora isolada de `titulo` corrigiu o problema anterior, mas o restante do vetor posicional continuou frágil e o novo shape `h+f[7]` foi incompatível com a resposta inicial do Gemma em todas as páginas médicas. O custo de retries tornou a V8C.1 muito mais lenta.
+
+Observação de telemetria: o provider anterior só anexava `usage` à tentativa que passava na validação; portanto os 19.157/678 tokens não incluem necessariamente todos os tokens gerados pelas quatro respostas Gemma que falharam no schema. Isso será corrigido na próxima versão.
+
+## V8C.2 implementada — compacto semântico + JSON Schema — 20/09/2026
+
+Branch: `feat/central-docs-5e-v8c2-semantic-json`.
+
+Mudanças:
+- elimina vetores posicionais para significado de campos;
+- envelope `t+v`;
+- chaves curtas semânticas fixas por campo (ex.: `ti=titulo`, `me=medico`, `ci=cid`);
+- mantém pares compactos `[s,v]`;
+- backend exige conjunto exato de chaves e expande para o schema público atual;
+- usa JSON Mode estruturado do Workers AI com `response_format.type=json_schema` para garantir o shape mínimo `t+v`;
+- validação documental estrita continua no backend;
+- `usage` passa a ser preservado também em tentativas que falham após o provider responder;
+- revisão focal redundante é evitada quando Gemma **ou Qwen** já retornam exclusivamente CID ilegível com descrição encontrada.
+
+A documentação oficial atual do Cloudflare declara suporte a JSON Mode/JSON Schema no Workers AI e o modelo Gemma 4 expõe `response_format`; essa capacidade é usada somente para estrutura, nunca para relaxar regras documentais.
+
+**Próxima ação exata:** validar CI da V8C.2. Se verde, integrar e congelar source/Pages; depois encerrar a janela V8C.1 fail-closed, executar readiness e abrir uma nova janela V8C.2. Não repetir a matriz V8C.1.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8C.1 janela preparada; aguardando uma única matriz real |
-| Último resultado real | V8C 3/10; completion 579 tokens; divergência isolada em titulo nas páginas médicas 2/4/5/6 |
+| Fase/subfase | Fase 5E — V8C.1 reprovada; V8C.2 semântica implementada e aguardando CI |
+| Último resultado real | V8C.1 7/10 em 14,469 s; schema-invalid Gemma em 4 páginas médicas; divergência medico nas páginas 5/6 |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `22318ff06cb893733b9794001cd880380d237f64` |
 | Pages próximo reteste | `https://62b72fe5.portal-regulacao-central-staging.pages.dev` |
@@ -2851,7 +2897,7 @@ Conclusão: a janela corresponde exatamente ao runtime V8C.1 congelado e produç
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | executar uma única matriz V8C.1 no Pages congelado, copiar resumo seguro e analisar precisão/tokens/latência antes de qualquer nova alteração |
+| Próxima ação exata | validar CI da V8C.2; se verde, integrar/congelar, encerrar V8C.1 fail-closed e abrir nova janela V8C.2 |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
