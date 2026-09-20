@@ -348,8 +348,15 @@
       ...options,
       scope: state.backgroundScope,
       onSettled: (result) => {
+        const operation = String(options.type || 'suggestion');
+        const stateValue = (
+          operation === 'warm_pdf'
+          && result.state === 'prepared'
+          && result.value !== true
+        ) ? 'skipped' : result.state;
         captureBackgroundTask(result, {
-          operation: String(options.type || 'suggestion'),
+          operation,
+          state: stateValue,
           source: String(options.source || 'local'),
           cacheState: String(options.cacheState || 'unknown'),
           count: Number(options.count || 0)
@@ -500,8 +507,9 @@
             },
             onSettled: (result) => captureBackgroundTask(result, {
               operation: 'warm_pdf',
+              state: result.state === 'prepared' && result.value !== true ? 'skipped' : result.state,
               source: 'cache',
-              cacheState: result.value === true ? 'hit' : 'miss',
+              cacheState: 'unknown',
               count: 1
             })
           });
@@ -536,8 +544,9 @@
         },
         onSettled: (result) => captureBackgroundTask(result, {
           operation: 'warm_pdf',
+          state: result.state === 'prepared' && result.value !== true ? 'skipped' : result.state,
           source: 'cache',
-          cacheState: result.value === true ? 'hit' : 'miss',
+          cacheState: 'unknown',
           count: 1
         })
       });
