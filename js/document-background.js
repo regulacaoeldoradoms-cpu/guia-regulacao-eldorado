@@ -31,19 +31,19 @@
     if (task.settled) return;
     task.settled = true;
     const durationMs = Math.max(0, Math.round(now() - task.startedAt));
-    try {
-      task.onSettled?.({
-        id: task.id,
-        key: task.key,
-        type: task.type,
-        scope: task.scope,
-        state,
-        reason: String(reason || ''),
-        durationMs,
-        value,
-        error
-      });
-    } catch (_) {}
+    const outcome = Object.freeze({
+      id: task.id,
+      key: task.key,
+      type: task.type,
+      scope: task.scope,
+      state,
+      reason: String(reason || ''),
+      durationMs,
+      value,
+      error
+    });
+    try { task.onSettled?.(outcome); } catch (_) {}
+    try { task.resolveDone?.(outcome); } catch (_) {}
   }
 
   function schedulePump() {
@@ -128,6 +128,8 @@
       || Array.from(running.values()).find((task) => task.key === key && !task.settled);
     if (duplicate) return duplicate.id;
 
+    let resolveDone = null;
+    const done = new Promise((resolve) => { resolveDone = resolve; });
     const task = {
       id: nextId++,
       key,
@@ -141,7 +143,9 @@
       cancelled: false,
       cancelReason: '',
       startedAt: now(),
-      settled: false
+      settled: false,
+      done,
+      resolveDone
     };
 
     queue.push(task);
@@ -158,6 +162,25 @@
     }
     if (!running.has(task.id)) settle(task, 'cancelled', task.cancelReason);
     return true;
+  }
+
+  function join(key) {
+    const target = String(key || '').trim();
+    if (!target) return null;
+    const task = Array.from(running.values()).find((item) => item.key === target && !item.settled);
+    return task?.done || null;
+  }
+
+  function cancelQueuedScope(scope, reason = 'scope_cancelled') {
+    const target = String(scope || '');
+    if (!target) return 0;
+    let count = 0;
+    for (let index = queue.length - 1; index >= 0; index -= 1) {
+      if (queue[index].scope !== target) continue;
+      const [task] = queue.splice(index, 1);
+      if (cancelTask(task, reason)) count += 1;
+    }
+    return count;
   }
 
   function cancelScope(scope, reason = 'scope_cancelled') {
@@ -218,6 +241,8 @@
 
   window.PortalDocumentBackground = Object.freeze({
     schedule,
+    join,
+    cancelQueuedScope,
     cancelScope,
     cancelAll,
     setPaused,
