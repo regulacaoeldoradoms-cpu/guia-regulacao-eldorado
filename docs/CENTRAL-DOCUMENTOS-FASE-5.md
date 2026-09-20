@@ -4,7 +4,7 @@ Data de início: 18/09/2026.
 
 ## Estado
 
-Fase 4 encerrada e publicada. Esta frente começa da `main` após o merge do ajuste transversal da abertura pós-login. A Fase 5 não reabre sincronização, editor, OAuth ou permissões já homologadas.
+**ENCERRADA E ACEITA em 20/09/2026.** Fase 4 permanece encerrada e publicada. A Fase 5 não reabre sincronização, editor, OAuth ou permissões já homologadas.
 
 ## Objetivo da fase
 
@@ -548,3 +548,38 @@ O valor exato da V6 não foi persistido, portanto não declarar formalmente a ra
 
 Pendência única antes de encerrar a Fase 5: encerrar a janela V8C.2 fail-closed e confirmar `httpBlocked=true`. Após isso, registrar o aceite final e avançar para a **Fase 6 — Automação operacional**.
 
+
+
+## Encerramento formal da Fase 5 — 20/09/2026
+
+A Fase 5 foi encerrada após a V8C.2 comprovar o critério funcional do Guia Mestre e após o fechamento fail-closed da janela controlada.
+
+Evidência funcional final:
+- matriz 5E sintética **10/10**;
+- extração **4,524 s**;
+- Gemma 6/6 páginas;
+- uma tentativa por página;
+- compacto 6/6 e legado 0/6;
+- nenhuma divergência;
+- proveniência por página preservada;
+- ausência de mistura entre páginas;
+- `NÃO CONSTA` e `ILEGÍVEL` validados;
+- transcrição literal preservada nos campos exigidos.
+
+Evidência de encerramento da janela:
+- `JANELA_5E_ENCERRADA`;
+- controle `phase5e_c5fb89ad6616463d8a427fe5885cc1dd`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado `a3d8dd66-c4b7-4f55-8399-34ab2334919a`;
+- release encerrado `32bda4f6753d434cc134eafb3610de16b00e272d`;
+- `httpBlocked=true`.
+
+Decisão:
+- não criar V8C.3/V8D somente para reduzir mais latência;
+- V8C.2 passa a ser o baseline funcional aprovado da IA documental;
+- p75/p95/p99, cache, PDFs grandes, mobile/desktop e novas otimizações de tempo pertencem à Fase 7;
+- produção continua com gates da IA documental desligados até a estratégia específica de publicação/ativação ser conduzida de forma controlada; o encerramento da Fase 5 não autoriza mudança silenciosa de gate.
+
+Próxima fase autorizada pelo Guia Mestre: **Fase 6 — Automação operacional**.
