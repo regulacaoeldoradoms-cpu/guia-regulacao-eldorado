@@ -1701,12 +1701,35 @@ A release corresponde exatamente ao runtime V7 final congelado. A escrita no Goo
 
 **Próxima ação exata:** abrir o laboratório V7 em `https://0c46e41f.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta previamente autorizada, executar a matriz **uma única vez** e copiar somente o resumo seguro completo. Esse resumo deve conter `duracao_extracao_ms`, `preparo_ms`, `provider_ms`, `transporte_backend_ms`, `tentativas`, `revisado` e `modelos` por página.
 
+## V7 executada — precisão visualmente concluída; latência ainda insatisfatória — 19/09/2026
+
+O operador executou a matriz V7 final e forneceu captura de tela do laboratório com resultados concluídos. A percepção operacional permanece: **a extração ainda está lenta demais para o uso desejado**.
+
+Importante: a captura visual não substitui o resumo seguro numérico. Não registrar ainda 10/10, duração, distribuição por modelo ou gargalo dominante sem o texto copiado pelo botão **Copiar resumo seguro**.
+
+A V7 final já mede por página:
+- `pagina_ms`;
+- `preparo_ms`;
+- `provider_ms`;
+- `transporte_backend_ms`;
+- `tentativas`;
+- `revisado`;
+- `modelos`.
+
+**Próxima ação exata:** obter o resumo seguro desta execução, sem repetir a matriz. A partir dele:
+- provider dominante → otimizar modelo/prompt/fallback;
+- preparo dominante → reduzir custo de renderização/serialização;
+- transporte/backend dominante → otimizar payload/rota;
+- V7 correta porém ainda <2x → iniciar V8 híbrida com PDF.js text-layer para páginas digitais e visão seletiva para páginas escaneadas/ambíguas.
+
+Não executar a matriz novamente só para obter o resumo; usar o botão de cópia da execução já concluída.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7 final preparada; matriz real aguardando execução |
-| Último resultado real | janela V7 final preparada; release e produção reconfirmadas; matriz ainda não executada |
+| Fase/subfase | Fase 5E — V7 executada; análise de latência aguarda resumo seguro |
+| Último resultado real | matriz V7 executada; operador relata latência ainda alta; resumo numérico ainda não fornecido |
 | Runtime funcional V7 | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
 | Runtime próximo reteste | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
 | Pages próximo reteste | `https://0c46e41f.portal-regulacao-central-staging.pages.dev` |
@@ -1715,7 +1738,7 @@ A release corresponde exatamente ao runtime V7 final congelado. A escrita no Goo
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | abrir laboratório V7; executar matriz uma vez; copiar resumo seguro completo |
+| Próxima ação exata | copiar o resumo seguro da execução V7 já concluída e analisar gargalo sem repetir a matriz |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
