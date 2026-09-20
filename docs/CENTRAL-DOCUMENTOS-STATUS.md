@@ -2819,11 +2819,29 @@ Conclusão: a janela V8C anterior não está mais ativa e o ambiente local apont
 
 **Próxima ação exata:** executar `iniciar-homologacao-5e.mjs --iniciar`; quando solicitado, confirmar `PREPARAR HOMOLOGACAO 5E`. A nova janela deve usar release `22318ff06cb893733b9794001cd880380d237f64`, `aiGate=true` somente no preview e `driveWriteGate=false`.
 
+## Janela V8C.1 preparada — 20/09/2026
+
+O operador concluiu o preparo oficial da nova janela V8C.1.
+
+Evidências sanitizadas:
+- `HOMOLOGACAO_5E_PREPARADA`;
+- preview version `0a26903d-921c-4e18-a646-ab7e6c0dad9c`;
+- controle `phase5e_bd8ef3177d284d64b7a50846c075d016`;
+- expiração `2026-09-20T06:44:15.000Z`;
+- release `22318ff06cb893733b9794001cd880380d237f64`;
+- `aiGate=true` somente no preview;
+- `driveWriteGate=false`;
+- produção permaneceu `298ba237-78f9-4d24-bad1-47e66b4c1e15`.
+
+Conclusão: a janela corresponde exatamente ao runtime V8C.1 congelado e produção não foi promovida.
+
+**Próxima ação exata:** abrir `https://62b72fe5.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada e executar a matriz **uma única vez**. Critérios: 10/10, `formato_compacto_paginas=6`, `formato_legado_paginas=0`, nenhuma divergência em `titulo` e completion tokens ainda materialmente abaixo do baseline V8B de 1.024. Não encerrar a janela antes de analisar o resumo seguro.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8C.1 readiness aprovado; pronta para preparar nova janela |
+| Fase/subfase | Fase 5E — V8C.1 janela preparada; aguardando uma única matriz real |
 | Último resultado real | V8C 3/10; completion 579 tokens; divergência isolada em titulo nas páginas médicas 2/4/5/6 |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `22318ff06cb893733b9794001cd880380d237f64` |
@@ -2833,7 +2851,7 @@ Conclusão: a janela V8C anterior não está mais ativa e o ambiente local apont
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | executar `iniciar-homologacao-5e.mjs --iniciar`, confirmar `PREPARAR HOMOLOGACAO 5E` e validar release/gates da nova janela V8C.1 |
+| Próxima ação exata | executar uma única matriz V8C.1 no Pages congelado, copiar resumo seguro e analisar precisão/tokens/latência antes de qualquer nova alteração |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
