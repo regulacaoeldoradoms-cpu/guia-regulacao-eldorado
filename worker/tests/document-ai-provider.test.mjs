@@ -574,6 +574,7 @@ test('página médica com campo ilegível recebe revisão focal gratuita no Qwen
   assert.equal(calls.length, 2);
   assert.equal(result.provider.reviewed, true);
   assert.equal(result.provider.model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
+  assert.deepEqual(result.provider.reviewChangedKeys, ['descricao_cid']);
   assert.equal(result.extraction.fields.cid.state, 'ilegivel');
   assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO LITERAL CORRETA');
   assert.equal(result.provider.attempts.length, 2);
