@@ -431,3 +431,16 @@ Meta: 10/10 e aproximadamente 6–6,5 s. Se não ocorrer, não criar V7G; avanç
 - recorte remove somente áreas vazias, com text layer apenas como salvaguarda geométrica;
 - resumo seguro mede `imagem_area_pct`;
 - critério: 10/10 e ganho material sobre 6,830 s.
+
+### V8B — diagnóstico por token usage
+- source ref: `96ce5dec060c98c582a8925ae03bc25973b0f3bd`;
+- Pages: `https://255ecf24.portal-regulacao-central-staging.pages.dev`;
+- head funcional do Pages: `29d6eea3baf9e9a5d58164ffa901313fec9aa048`;
+- comparação head funcional → merge final: zero arquivos diferentes;
+- preserva exatamente a imagem, resolução, prompt, modelo, concorrência 5 e limites de saída da V8A;
+- adiciona somente métricas técnicas de `usage`: prompt, completion, total e cached prompt tokens;
+- objetivo: decidir com medição se a próxima otimização deve atacar saída textual ou entrada visual;
+- V8A 10/10 em 5,388 s e V7F 10/10 em 6,830 s permanecem baselines de rollback.
+
+Antes de abrir a V8B, a janela V8A anterior deve ser encerrada fail-closed e não pode ser reutilizada.
+
