@@ -62,6 +62,7 @@ function dependencies(overrides = {}) {
     authFetch: async () => new Response(JSON.stringify({ ok: true }), { status: 200 }),
     documentsFetch: async () => new Response(JSON.stringify({ ok: true }), { status: 200 }),
     validateSession: async () => user(),
+    authorizeAi: async () => ({ state: 'ok', user: user(), control: control() }),
     readControl: async () => control(),
     ...overrides
   };
@@ -251,11 +252,11 @@ test('wrapper 5E encaminha a sessão documental já validada sem segunda autenti
 
 test('wrapper 5E preserva o número técnico da página até o backend documental', async () => {
   let observedPage = '';
-  let reads = 0;
+  let authorizations = 0;
   const worker = createHomologation5eWorker(dependencies({
-    readControl: async () => {
-      reads += 1;
-      return control();
+    authorizeAi: async () => {
+      authorizations += 1;
+      return { state: 'ok', user: user(), control: control() };
     },
     documentsFetch: async (req) => {
       observedPage = req.headers.get('X-Document-Page-Number') || '';
@@ -279,16 +280,16 @@ test('wrapper 5E preserva o número técnico da página até o backend documenta
 
   assert.equal(response.status, 200);
   assert.equal(observedPage, '6');
-  assert.equal(reads, 1);
+  assert.equal(authorizations, 1);
 });
 
-test('controle revogado na leitura imediatamente anterior à IA bloqueia o provider', async () => {
-  let reads = 0;
+test('controle revogado na autorização imediatamente anterior à IA bloqueia o provider', async () => {
+  let authorizations = 0;
   let downstream = 0;
   const worker = createHomologation5eWorker(dependencies({
-    readControl: async () => {
-      reads += 1;
-      return null;
+    authorizeAi: async () => {
+      authorizations += 1;
+      return { state: 'disabled' };
     },
     documentsFetch: async () => {
       downstream += 1;
@@ -308,8 +309,44 @@ test('controle revogado na leitura imediatamente anterior à IA bloqueia o provi
   }), env());
 
   assert.equal(response.status, 403);
-  assert.equal(reads, 1);
+  assert.equal(authorizations, 1);
   assert.equal(downstream, 0);
+});
+
+test('rota IA usa autorização consolidada e não chama validação/readControl legados', async () => {
+  let legacyValidations = 0;
+  let legacyControlReads = 0;
+  let authorizations = 0;
+  const worker = createHomologation5eWorker(dependencies({
+    validateSession: async () => {
+      legacyValidations += 1;
+      return user();
+    },
+    readControl: async () => {
+      legacyControlReads += 1;
+      return control();
+    },
+    authorizeAi: async () => {
+      authorizations += 1;
+      return { state: 'ok', user: user(), control: control() };
+    }
+  }));
+
+  const response = await worker.fetch(request('/api/documents/ai/page/extract', {
+    method: 'POST',
+    token: true,
+    fixture: true,
+    headers: {
+      'Content-Type': 'image/png',
+      'X-Document-Page-Number': '2'
+    },
+    body: new Uint8Array([1, 2, 3])
+  }), env());
+
+  assert.equal(response.status, 200);
+  assert.equal(authorizations, 1);
+  assert.equal(legacyValidations, 0);
+  assert.equal(legacyControlReads, 0);
 });
 
 test('rotas Drive e demais APIs permanecem indisponíveis no wrapper 5E', async () => {
@@ -358,8 +395,10 @@ test('caminho rápido documental preserva autenticação e evita decoração alh
     fs.readFile(new URL('../documents-router.js', import.meta.url), 'utf8'),
     fs.readFile(new URL('../auth-management-flex.js', import.meta.url), 'utf8')
   ]);
-  assert.match(wrapper, /validateDocumentSession/);
-  assert.match(wrapper, /documentsFetch\(request, env, origin, user\)/);
+  assert.match(wrapper, /verifyPortalSessionToken/);
+  assert.match(wrapper, /authorizeAiSession/);
+  assert.match(wrapper, /withSession\('first-primary'\)/);
+  assert.match(wrapper, /documentsFetch\(request, env, origin, authorization\.user\)/);
   assert.match(router, /options\?\.prevalidatedUser \|\| await validatePortalSession/);
   assert.match(auth, /export async function validateDocumentSession/);
   assert.doesNotMatch(
@@ -375,7 +414,8 @@ test('fonte do wrapper 5E não registra conteúdo ou segredos', async () => {
   assert.doesNotMatch(source, /GEMINI_API_KEY\s*=|AUTH_SESSION_SECRET\s*=/);
   assert.match(source, /DOCUMENTS_DRIVE_WRITE_ENABLED/);
   assert.match(source, /DOCUMENTS_AI_PROCESSING_ENABLED/);
-  assert.match(source, /validateDocumentSession/);
+  assert.match(source, /verifyPortalSessionToken/);
+  assert.match(source, /withSession\('first-primary'\)/);
   assert.match(source, /prevalidatedUser/);
   assert.match(source, /Access-Control-Max-Age', '600'/);
 });

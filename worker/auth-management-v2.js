@@ -172,6 +172,10 @@ function bearerToken(request) {
   return match ? match[1].trim() : '';
 }
 
+export async function verifyPortalSessionToken(request, env) {
+  return verifySessionToken(bearerToken(request), env);
+}
+
 function randomHex(length = 16) {
   const bytes = new Uint8Array(length);
   crypto.getRandomValues(bytes);
