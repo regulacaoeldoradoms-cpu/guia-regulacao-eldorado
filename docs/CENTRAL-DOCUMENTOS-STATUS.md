@@ -1927,21 +1927,53 @@ A janela V7B atual não foi modificada por esse desenvolvimento. Produção cont
 
 **Próxima ação exata:** concluir CI/revisão V7C; se verde, integrar e congelar novo source/Pages. Depois encerrar a janela V7B atual fail-closed e abrir uma única rodada V7C.
 
+## V7C integrada e reteste congelado — 20/09/2026
+
+A PR #298 foi integrada na `main` pelo merge `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7`.
+
+O head funcional `985197e652b73a8a7f101da7f7394598d3aba6ce` passou os checks relevantes da Central e publicou o Pages imutável `https://82985cc2.portal-regulacao-central-staging.pages.dev`. A comparação GitHub entre esse head e o merge final mostrou **zero arquivos diferentes**.
+
+Resultado que motivou a V7C:
+- V7B: **10/10**;
+- extração: **17,154 s**;
+- total com chat: **33,432 s**;
+- Moondream final: **0/6**;
+- erro Moondream em todas as páginas: `DOCUMENT_AI_PAGE_TYPE_INVALID`;
+- overhead fora do provider: ~4,8–5,0 s/página.
+
+Mudanças V7C:
+- `pageType` pode ser derivado pelo conjunto exato de chaves de `fields` quando o token retornado não é canônico;
+- `fields={}` identifica somente `outro`;
+- shapes diferentes continuam inválidos e acionam fallback;
+- assinatura do token é verificada localmente;
+- usuário + session version + capability documental + role adicional + controle 5E são validados em **uma única consulta D1 `first-primary`**;
+- o controle continua sendo lido do primário para preservar revogação imediata;
+- o resumo seguro inclui `tentativas_ms=`.
+
+Referências congeladas:
+- source ref `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7`;
+- Pages `https://82985cc2.portal-regulacao-central-staging.pages.dev`;
+- head funcional `985197e652b73a8a7f101da7f7394598d3aba6ce`.
+
+A janela V7B atualmente ativa não foi alterada por essa integração e deve ser encerrada fail-closed antes de preparar V7C.
+
+**Próxima ação exata:** encerrar a janela V7B atual; atualizar scripts locais; executar readiness V7C e confirmar source `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7` + Pages `https://82985cc2.portal-regulacao-central-staging.pages.dev`; preparar nova janela e executar a matriz uma única vez.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7B 10/10; V7C corrige pageType e round-trip D1 |
-| Último resultado real | V7B 10/10; extração 17,154 s; Moondream 0/6 por PAGE_TYPE_INVALID; overhead ~5 s/página |
-| Runtime funcional V7B | `09bf379f306579bcb7ca049ad02d4c6a94c1df67` |
-| Runtime próximo reteste | `09bf379f306579bcb7ca049ad02d4c6a94c1df67` |
-| Pages próximo reteste | `https://20627e1a.portal-regulacao-central-staging.pages.dev` |
+| Fase/subfase | Fase 5E — V7C integrada; reteste aguarda encerramento V7B |
+| Último resultado real | V7B 10/10; extração 17,154 s; V7C integrada para pageType e D1 consolidado |
+| Runtime funcional V7C | `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7` |
+| Runtime próximo reteste | `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7` |
+| Pages próximo reteste | `https://82985cc2.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | concluir CI V7C; integrar/congelar; encerrar V7B; retestar V7C uma vez |
+| Próxima ação exata | encerrar V7B fail-closed; atualizar scripts; readiness V7C; preparar janela nova; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 

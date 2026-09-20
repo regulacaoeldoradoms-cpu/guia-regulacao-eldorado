@@ -357,3 +357,18 @@ Referências finais para o próximo reteste:
 - Pages: `https://20627e1a.portal-regulacao-central-staging.pages.dev`.
 
 O procedimento de recuperação local `recuperar-preparo-5e.mjs --recuperar` deve ser executado antes de repetir o readiness, pois existe um marcador de upload anterior incerto criado por desenho fail-closed.
+
+
+### V7C — pageType estrutural + autorização D1 consolidada
+
+A V7B real passou 10/10, mas manteve 17,154 s de extração. A V7C ataca os dois gargalos restantes medidos:
+- `DOCUMENT_AI_PAGE_TYPE_INVALID` em todas as tentativas Moondream;
+- ~5 s/página fora do provider.
+
+Referências congeladas:
+- source ref: `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7`;
+- Pages: `https://82985cc2.portal-regulacao-central-staging.pages.dev`.
+
+O tipo da página só é derivado quando o conjunto de chaves de `fields` coincide **exatamente** com um dos contratos autorizados, ou quando `fields={}`. Não há inferência de valores nem ampliação de schema.
+
+No caminho quente 5E, assinatura do token é verificada localmente e uma única consulta D1 `first-primary` reúne usuário ativo, versão da sessão, capability documental, role adicional e controle revogável. O router continua recebendo usuário pré-validado.
