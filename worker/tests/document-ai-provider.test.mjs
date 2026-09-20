@@ -633,6 +633,7 @@ test('CID ausente com descrição presente também ativa revisão focal', async 
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO' }
   });
   const reviewedFields = {
+    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
     cid: { state: 'ilegivel', value: '' },
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO' }
   };
