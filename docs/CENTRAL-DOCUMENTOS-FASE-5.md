@@ -413,3 +413,11 @@ Referências congeladas:
 - Pages: `https://58d9fc14.portal-regulacao-central-staging.pages.dev`.
 
 Meta: 10/10 e aproximadamente 6–6,5 s. Se não ocorrer, não criar V7G; avançar para V8 híbrida.
+
+
+### V7G — teste final image-only
+- source ref: `ba7d8a369940a9613a436b6b0f572bdedb99375f`;
+- Pages: `https://0e5a1474.portal-regulacao-central-staging.pages.dev`;
+- única mudança funcional: concorrência de páginas 5 → 6;
+- V7F permanece baseline de rollback: 10/10 em 6,830 s;
+- se V7G não mantiver 10/10 ou não melhorar de forma material, encerrar V7.x e avançar para V8 híbrida.
