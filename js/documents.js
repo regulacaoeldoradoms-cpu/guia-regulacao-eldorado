@@ -297,7 +297,7 @@
   function backgroundCancelReason(value = '') {
     const reason = String(value || 'unknown');
     return [
-      'document_changed', 'session', 'hidden', 'foreground',
+      'none', 'document_changed', 'session', 'hidden', 'foreground',
       'editor', 'stale', 'unsupported', 'unknown'
     ].includes(reason) ? reason : 'unknown';
   }
