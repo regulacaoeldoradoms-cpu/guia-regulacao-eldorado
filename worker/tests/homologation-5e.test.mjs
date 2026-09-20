@@ -194,6 +194,30 @@ test('rotas de IA exigem marcador sintético e gates corretos', async () => {
   assert.equal(downstream, 0);
 });
 
+test('wrapper 5E encaminha a sessão documental já validada sem segunda autenticação', async () => {
+  const expectedUser = user();
+  let forwardedUser = null;
+  let validations = 0;
+  const worker = createHomologation5eWorker(dependencies({
+    validateSession: async () => {
+      validations += 1;
+      return expectedUser;
+    },
+    documentsFetch: async (_req, _env, _origin, prevalidatedUser) => {
+      forwardedUser = prevalidatedUser;
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    }
+  }));
+
+  const response = await worker.fetch(request('/api/documents/ai/config', {
+    token: true
+  }), env());
+
+  assert.equal(response.status, 200);
+  assert.equal(validations, 1);
+  assert.equal(forwardedUser, expectedUser);
+});
+
 test('wrapper 5E preserva o número técnico da página até o backend documental', async () => {
   let observedPage = '';
   let reads = 0;
@@ -224,16 +248,16 @@ test('wrapper 5E preserva o número técnico da página até o backend documenta
 
   assert.equal(response.status, 200);
   assert.equal(observedPage, '6');
-  assert.equal(reads, 2);
+  assert.equal(reads, 1);
 });
 
-test('revogação entre autenticação e chamada de IA vence antes do provider', async () => {
+test('controle revogado na leitura imediatamente anterior à IA bloqueia o provider', async () => {
   let reads = 0;
   let downstream = 0;
   const worker = createHomologation5eWorker(dependencies({
     readControl: async () => {
       reads += 1;
-      return reads === 1 ? control() : null;
+      return null;
     },
     documentsFetch: async () => {
       downstream += 1;
@@ -253,7 +277,7 @@ test('revogação entre autenticação e chamada de IA vence antes do provider',
   }), env());
 
   assert.equal(response.status, 403);
-  assert.equal(reads, 2);
+  assert.equal(reads, 1);
   assert.equal(downstream, 0);
 });
 
@@ -274,8 +298,14 @@ test('rotas Drive e demais APIs permanecem indisponíveis no wrapper 5E', async 
   }
 });
 
-test('preflight CORS 5E permite apenas cabeçalhos técnicos necessários', async () => {
-  const worker = createHomologation5eWorker(dependencies());
+test('preflight CORS 5E não consulta D1 e pode ser cacheado sem liberar a operação real', async () => {
+  let reads = 0;
+  const worker = createHomologation5eWorker(dependencies({
+    readControl: async () => {
+      reads += 1;
+      return control();
+    }
+  }));
   const response = await worker.fetch(new Request(workerOrigin + '/api/documents/ai/chat', {
     method: 'OPTIONS',
     headers: {
@@ -285,9 +315,10 @@ test('preflight CORS 5E permite apenas cabeçalhos técnicos necessários', asyn
   }), env());
 
   assert.equal(response.status, 200);
+  assert.equal(reads, 0);
   assert.equal(response.headers.get('Access-Control-Allow-Origin'), pagesOrigin);
   assert.match(response.headers.get('Access-Control-Allow-Headers') || '', /X-Document-Ai-Homologation/);
-  assert.equal(response.headers.get('Access-Control-Max-Age'), '0');
+  assert.equal(response.headers.get('Access-Control-Max-Age'), '600');
 });
 
 test('fonte do wrapper 5E não registra conteúdo ou segredos', async () => {
@@ -297,4 +328,7 @@ test('fonte do wrapper 5E não registra conteúdo ou segredos', async () => {
   assert.doesNotMatch(source, /GEMINI_API_KEY\s*=|AUTH_SESSION_SECRET\s*=/);
   assert.match(source, /DOCUMENTS_DRIVE_WRITE_ENABLED/);
   assert.match(source, /DOCUMENTS_AI_PROCESSING_ENABLED/);
+  assert.match(source, /validateDocumentSession/);
+  assert.match(source, /prevalidatedUser/);
+  assert.match(source, /Access-Control-Max-Age', '600'/);
 });
