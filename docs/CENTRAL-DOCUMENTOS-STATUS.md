@@ -3086,7 +3086,7 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 6 — 6A–6E integradas na main; aguardando somente validação operacional real |
-| Último resultado real | Fase 5 encerrada: V8C.2 10/10 em 4,524 s; IA documental publicada; Worker atual `2ee1b3f2-77f6-4f78-a19f-327eabcb0d8d`; 27/27 checks verdes |
+| Último resultado real | Fase 5 encerrada: V8C.2 10/10 em 4,524 s; IA documental publicada; PR #349 pós-merge com 27/27 checks e Workers Builds verdes |
 | Baseline IA documental | V8C.2 — `phase5e-v8c2-semantic-json` |
 | Runtime próximo reteste | nenhum — publicação produtiva concluída |
 | Pages próximo reteste | nenhum — Fase 6 já está integrada; falta validação operacional real |
@@ -3224,7 +3224,7 @@ A capability `extract` continua sendo obrigatória no backend. Nenhuma permissã
 
 ### Handoff atualizado
 - **Fase atual:** Fase 6 — Automação operacional; publicação normal da IA concluída.
-- **Última ação concluída:** Worker produtivo atual `2ee1b3f2-77f6-4f78-a19f-327eabcb0d8d` confirmado após novo deploy seguro bem-sucedido.
+- **Última ação concluída:** PR #349 integrada; pós-merge com 27/27 checks verdes e deploy seguro do Worker concluído com sucesso.
 - **Bloqueio anterior:** resolvido pela PR #347; preview 5E isolado deixa de bloquear o gate sem enfraquecer versões desconhecidas.
 - **Background IA:** continua `false`.
 - **Próxima ação exata:** teste real do botão/painel/extrator IA com conta `extract`; depois continuar homologação operacional da Fase 6.
@@ -3257,5 +3257,9 @@ Correções de manutenção identificadas nesta revisão:
 - PR antiga **#172** da 3C.1f estava aberta, não mergeável e fortemente divergente da arquitetura atual; foi encerrada como obsoleta/supersedida, com justificativa registrada no próprio PR.
 
 Nenhuma alteração funcional da IA, editor, Drive, OAuth, permissões ou observabilidade foi necessária nesta revisão.
+
+Nota de governança: o UUID da Worker Version **não deve ser tratado como identificador estável no handoff**, porque qualquer commit novo em `main` aciona o Workers Builds e gera outra versão mesmo quando a mudança é somente documental. A referência operacional correta é: `main` + check `Workers Builds` concluído com sucesso; UUIDs específicos permanecem apenas como evidência histórica do commit que os gerou.
+
+A PR #349, que integrou estas correções de manutenção, concluiu o pós-merge com **27/27 checks verdes** e Workers Builds `success`. A versão gerada por esse commit foi `ca0197db-1f06-4151-87fb-5162c3747ecb`; não tratá-la como constante eterna.
 
 **Próxima ação exata:** validar no navegador real o botão/painel/extrator com conta que possua `extract`; depois concluir a matriz operacional da Fase 6.
