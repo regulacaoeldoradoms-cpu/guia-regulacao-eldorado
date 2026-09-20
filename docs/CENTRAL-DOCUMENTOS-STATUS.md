@@ -2124,21 +2124,56 @@ A janela V7D atual não foi alterada por esse desenvolvimento. Produção contin
 
 **Próxima ação exata:** concluir CI/revisão V7E; integrar/congelar se verde; encerrar V7D fail-closed; executar uma única rodada V7E.
 
+## V7E integrada e reteste congelado — 20/09/2026
+
+A PR #306 foi integrada na `main` pelo merge `5fe6d24bb1b26b039a0221b0224201692cdf11ef`.
+
+O head funcional `1f15869d7bb37d7a466433952f87377d60cb833c` passou os checks centrais da Central de Documentos e publicou o Pages imutável `https://ffdd1515.portal-regulacao-central-staging.pages.dev`. A comparação GitHub entre esse head e o merge final mostrou **zero arquivos diferentes**.
+
+Resultado que motivou a V7E:
+- V7D: **8/10**;
+- extração: **15,386 s**;
+- página 6 divergiu em `titulo`;
+- chat de CID ilegível falhou por depender da página 6;
+- página 5 teve Gemma em **14,818 s** numa única tentativa;
+- Qwen revisou a página 6 mas `revisao_alterou=nenhum`;
+- V7C continua sendo o baseline 10/10 mais rápido: **13,748 s**.
+
+Mudanças V7E:
+- Gemma direto preservado;
+- concorrência documental reduzida de 6 para **4**;
+- análise integrada limitada a **700 tokens**;
+- revisão focal limitada a **350 tokens**;
+- quando já existe revisão por CID/ilegibilidade, `titulo` entra na mesma chamada Qwen, sem inferência adicional;
+- backend D1 consolidado preservado;
+- Moondream permanece desligado.
+
+Referências congeladas:
+- source ref `5fe6d24bb1b26b039a0221b0224201692cdf11ef`;
+- Pages `https://ffdd1515.portal-regulacao-central-staging.pages.dev`;
+- head funcional `1f15869d7bb37d7a466433952f87377d60cb833c`.
+
+Critério do próximo reteste: recuperar **10/10** e superar os **13,748 s** da V7C. Se V7E não cumprir os dois critérios, encerrar refinamentos V7.x e avançar para V8 híbrida PDF.js text-layer + visão seletiva.
+
+A janela V7D atualmente ativa não foi alterada por essa integração e deve ser encerrada fail-closed antes de preparar V7E.
+
+**Próxima ação exata:** encerrar V7D; atualizar scripts locais; executar readiness V7E e confirmar source `5fe6d24bb1b26b039a0221b0224201692cdf11ef` + Pages `https://ffdd1515.portal-regulacao-central-staging.pages.dev`; preparar nova janela e executar a matriz uma única vez.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7D regrediu; V7E Gemma controlado em validação |
-| Último resultado real | V7D 8/10; extração 15,386 s; V7C permanece baseline 10/10 em 13,748 s |
-| Runtime funcional V7D | `208639f021ca9d5f86a2df97a9bd8a5978e5224f` |
-| Runtime próximo reteste | `208639f021ca9d5f86a2df97a9bd8a5978e5224f` |
-| Pages próximo reteste | `https://b5b3f33e.portal-regulacao-central-staging.pages.dev` |
+| Fase/subfase | Fase 5E — V7E integrada; reteste aguarda encerramento V7D |
+| Último resultado real | V7D 8/10; extração 15,386 s; V7E integrada para concorrência/tokens/revisão controlados |
+| Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
+| Runtime próximo reteste | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
+| Pages próximo reteste | `https://ffdd1515.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | concluir CI V7E; integrar/congelar; encerrar V7D; retestar V7E uma vez |
+| Próxima ação exata | encerrar V7D fail-closed; atualizar scripts; readiness V7E; preparar janela nova; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
