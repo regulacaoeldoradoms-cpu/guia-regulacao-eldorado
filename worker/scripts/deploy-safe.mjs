@@ -31,6 +31,14 @@ export const SAFE_DEPLOY = Object.freeze({
   postDeployDelayMs: 2000
 });
 
+export const ISOLATED_PREVIEW_PROFILES = Object.freeze([
+  Object.freeze({
+    alias: 'central-docs-phase5e',
+    tag: 'central-docs-phase5e',
+    message: 'Central Docs 5E: homologacao sintetica controlada'
+  })
+]);
+
 export const CRITICAL_BINDINGS = Object.freeze([
   Object.freeze({ name: 'AUTH_DB', types: Object.freeze(['d1']) }),
   Object.freeze({ name: 'AI', types: Object.freeze(['ai']) }),
@@ -183,6 +191,19 @@ export function isSafeDeployCandidateVersion(...values) {
   const message = values.map((value) => versionAnnotation(value, 'workers/message')).find(Boolean) || '';
   const tag = values.map((value) => versionAnnotation(value, 'workers/tag')).find(Boolean) || '';
   return message === SAFE_DEPLOY.candidateMessage || tag === SAFE_DEPLOY.candidateTag;
+}
+
+export function isKnownIsolatedPreviewVersion(...values) {
+  return values.some((value) => {
+    const alias = versionAnnotation(value, 'workers/alias');
+    const tag = versionAnnotation(value, 'workers/tag');
+    const message = versionAnnotation(value, 'workers/message');
+    return ISOLATED_PREVIEW_PROFILES.some((profile) => (
+      alias === profile.alias
+      && tag === profile.tag
+      && message === profile.message
+    ));
+  });
 }
 
 function deploymentStatus(config, cwd) {
@@ -500,14 +521,20 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
     const latestBefore = latestVersionEntry(versionsBefore);
     if (latestBefore.id !== originalVersion) {
       const latestView = versionView(latestBefore.id, readConfig, tempRoot);
-      must(
-        isSafeDeployCandidateVersion(latestBefore, latestView),
-        'ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE'
-      );
-      const orphanValidation = validateCandidateBindings(activeView, latestView);
-      safeLine('candidataOrfaAnterior', 'VALIDADA');
-      safeLine('versaoOrfaAnterior', latestBefore.id);
-      safeLine('segredosOrfaPreservados', orphanValidation.preservedSecrets);
+      if (isSafeDeployCandidateVersion(latestBefore, latestView)) {
+        const orphanValidation = validateCandidateBindings(activeView, latestView);
+        safeLine('candidataOrfaAnterior', 'VALIDADA');
+        safeLine('versaoOrfaAnterior', latestBefore.id);
+        safeLine('segredosOrfaPreservados', orphanValidation.preservedSecrets);
+      } else if (isKnownIsolatedPreviewVersion(latestBefore, latestView)) {
+        // Homologações preview-only usam propositalmente um conjunto reduzido de bindings.
+        // A produção já foi confirmada acima como outra versão única em 100%; portanto
+        // este artefato conhecido pode ser ignorado sem tratá-lo como candidata produtiva.
+        safeLine('previewIsoladoAnterior', 'RECONHECIDO_SEM_TRAFEGO_PRODUTIVO');
+        safeLine('versaoPreviewIsoladoAnterior', latestBefore.id);
+      } else {
+        throw new SafeDeployError('ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE');
+      }
     }
 
     safeLine('versaoProducao', originalVersion);
