@@ -6,11 +6,13 @@ import path from 'node:path';
 
 import {
   SAFE_DEPLOY,
+  ISOLATED_PREVIEW_PROFILES,
   CRITICAL_BINDINGS,
   activeVersionFromDeployment,
   latestVersionEntry,
   latestVersionFromList,
   isSafeDeployCandidateVersion,
+  isKnownIsolatedPreviewVersion,
   newUploadedVersion,
   authDbDatabaseId,
   currentSecretBindingNames,
@@ -81,6 +83,51 @@ test('reconhece somente candidata órfã criada pelo próprio gate', () => {
   assert.equal(isSafeDeployCandidateVersion({
     annotations: { 'workers/message': 'upload manual qualquer' }
   }), false);
+});
+
+test('reconhece somente o preview 5E isolado pelo trio exato de annotations', () => {
+  const profile = ISOLATED_PREVIEW_PROFILES[0];
+  const exact = {
+    annotations: {
+      'workers/alias': profile.alias,
+      'workers/tag': profile.tag,
+      'workers/message': profile.message
+    }
+  };
+  assert.equal(isKnownIsolatedPreviewVersion(exact), true);
+  assert.equal(isKnownIsolatedPreviewVersion({
+    annotations: {
+      'workers/alias': profile.alias,
+      'workers/tag': profile.tag,
+      'workers/message': 'mensagem divergente'
+    }
+  }), false);
+  assert.equal(isKnownIsolatedPreviewVersion({
+    annotations: {
+      'workers/alias': profile.alias,
+      'workers/tag': 'tag divergente',
+      'workers/message': profile.message
+    }
+  }), false);
+  assert.equal(isKnownIsolatedPreviewVersion({
+    annotations: {
+      'workers/tag': profile.tag,
+      'workers/message': profile.message
+    }
+  }), false);
+  assert.equal(isKnownIsolatedPreviewVersion({
+    annotations: {
+      'workers/message': SAFE_DEPLOY.candidateMessage
+    }
+  }), false);
+});
+
+test('fonte do gate diferencia candidata produtiva de preview isolado conhecido', () => {
+  const source = fs.readFileSync(new URL('../scripts/deploy-safe.mjs', import.meta.url), 'utf8');
+  assert.match(source, /previewIsoladoAnterior/);
+  assert.match(source, /RECONHECIDO_SEM_TRAFEGO_PRODUTIVO/);
+  assert.match(source, /isKnownIsolatedPreviewVersion/);
+  assert.match(source, /ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE/);
 });
 
 test('identifica exatamente uma candidata nova', () => {

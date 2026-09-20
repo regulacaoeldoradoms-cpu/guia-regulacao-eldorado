@@ -3163,3 +3163,31 @@ Risco conhecido: a configuração desejada já está na `main`; quando o pipelin
 - **Bloqueio:** Workers Builds externo falha antes de comprovar promoção do Worker.
 - **Produção comprovada:** não assumir que os gates true estão ativos até check do Worker verde + nova versão confirmada.
 - **Próxima ação exata:** corrigir/verificar Branch control/Build settings na Cloudflare, retry do build de `eab164bf...`, depois teste real do botão IA sob capability `extract`.
+
+
+## Diagnóstico definitivo do bloqueio do deploy da IA — gate confundia preview 5E com candidata produtiva — 20/09/2026
+
+O operador forneceu o log integral do Workers Builds. A hipótese anterior de falha na configuração **Branch control / Preview URLs** foi descartada.
+
+Evidências do log real:
+- ambiente inicializado e repositório clonado normalmente;
+- Node 24.18.0 e Wrangler 4.133.0 corretos;
+- `npm run deploy:safe` foi executado;
+- predeploy completo: **384 testes / 384 pass / 0 fail**;
+- teste específico `produção libera Drive e IA documental normal sem automação antecipatória`: **pass**;
+- a falha ocorreu somente em **1/7 Conferindo produção e cadeia de versões**;
+- marcador exato: `DEPLOY_SEGURO_INTERROMPIDO=ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE`;
+- nenhum upload de candidata, promoção ou alteração de tráfego ocorreu nessa execução.
+
+Causa: o gate `worker/scripts/deploy-safe.mjs` exige que a Worker Version mais recente seja a produção ou uma candidata órfã criada pelo próprio `portal-safe-deploy`. A homologação 5E, porém, encerrou corretamente criando uma Worker Version **preview-only** mais recente, com alias/tag próprios `central-docs-phase5e`, sem promovê-la à produção. O gate interpretava esse artefato legítimo e isolado como versão de origem desconhecida.
+
+Correção em `fix/worker-safe-deploy-isolated-5e-preview-20260920`:
+- reconhecer preview 5E somente quando **alias + tag + mensagem** coincidirem exatamente com o perfil oficial;
+- não tratar esse preview como candidata produtiva nem exigir equivalência de bindings, pois o wrapper 5E é deliberadamente reduzido;
+- preservar a prova anterior de que produção é outra versão única em 100%;
+- manter fail-closed para qualquer versão desconhecida ou annotation divergente;
+- adicionar regressões automatizadas para o trio exato e casos negativos.
+
+Decisão descartada: não habilitar Worker Previews globalmente, não apagar versões 5E manualmente e não enfraquecer `ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE`. A correção é específica para o artefato preview-only já governado.
+
+**Próxima ação exata:** validar CI da correção, mesclar se verde e observar o Workers Builds da `main`. O esperado é o gate reconhecer o preview 5E isolado, prosseguir para dry-run/upload sem tráfego, validar bindings/secrets/AUTH_DB, promover a candidata e emitir `DEPLOY_SEGURO_CONCLUIDO`. Só então testar o botão IA documental em produção.
