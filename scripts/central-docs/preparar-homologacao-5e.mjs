@@ -748,6 +748,7 @@ export async function prepare5e(options) {
 
     if (uploadAttempted) {
       safeLine('NAO_REPETIR_SEM_CONFERIR_PREVIEW', 'true');
+      safeLine('proxima_acao', 'RECUPERAR_PREPARO_5E');
     }
     throw error;
   } finally {
