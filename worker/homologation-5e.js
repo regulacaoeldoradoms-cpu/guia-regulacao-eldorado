@@ -2,6 +2,7 @@
 
 // Preview-only entrypoint for Fase 5E. Production never imports this module.
 import { handlePortalRoute, validateDocumentSession } from './auth-management-flex.js';
+import { verifyPortalSessionToken } from './auth-management-v2.js';
 import { handleDocumentsRoute } from './documents-router.js';
 import { augmentAuthResponse, portalEnvForAuthRoute } from './portal-safety.js';
 
@@ -85,6 +86,84 @@ async function controlFor(env) {
   };
 }
 
+async function authorizeAiSession(request, env) {
+  const tokenUser = await verifyPortalSessionToken(request, env);
+  if (!tokenUser) return { state: 'auth_required' };
+
+  const controlId = String(env.DOCUMENTS_AI_HOMOLOGATION_CONTROL_ID || '').trim();
+  if (!/^phase5e_[a-f0-9]{32}$/i.test(controlId) || !env.AUTH_DB) {
+    return { state: 'disabled' };
+  }
+
+  // Uma única consulta consistente ao primário substitui as múltiplas leituras
+  // sequenciais de usuário, roles, capability e controle. Isso preserva
+  // revogação imediata do controle e reduz round-trips D1 no caminho quente.
+  const db = typeof env.AUTH_DB.withSession === 'function'
+    ? env.AUTH_DB.withSession('first-primary')
+    : env.AUTH_DB;
+
+  const row = await db.prepare(`SELECT
+      u.username,
+      u.role,
+      u.active,
+      u.session_version,
+      COALESCE(d.can_view, 0) AS can_view,
+      COALESCE(d.can_extract, 0) AS can_extract,
+      COALESCE(d.can_edit, 0) AS can_edit,
+      COALESCE(d.can_manage, 0) AS can_manage,
+      EXISTS(
+        SELECT 1 FROM auth_user_additional_roles ar
+        WHERE ar.username = u.username AND ar.role_id = 'documentos'
+      ) AS has_document_role,
+      c.control_id,
+      c.enabled,
+      c.expires_at,
+      c.allowed_username
+    FROM auth_users u
+    LEFT JOIN auth_document_access d ON d.username = u.username
+    LEFT JOIN document_drive_homologation_controls c ON c.control_id = ?
+    WHERE u.username = ?
+    LIMIT 1`).bind(controlId, tokenUser.username).first();
+
+  const now = Math.floor(Date.now() / 1000);
+  if (
+    !row
+    || Number(row.active) !== 1
+    || Number(row.session_version || 1) !== Number(tokenUser.sessionVersion)
+  ) return { state: 'auth_required' };
+
+  if (
+    String(row.control_id || '') !== controlId
+    || Number(row.enabled) !== 1
+    || !Number.isSafeInteger(Number(row.expires_at))
+    || Number(row.expires_at) <= now
+    || String(row.allowed_username || '') !== tokenUser.username
+  ) return { state: 'disabled' };
+
+  const view = Number(row.can_view || 0) === 1 || Number(row.has_document_role || 0) === 1;
+  const extract = view && Number(row.can_extract || 0) === 1;
+  if (!extract) return { state: 'denied' };
+
+  return {
+    state: 'ok',
+    user: {
+      username: tokenUser.username,
+      role: String(row.role || tokenUser.role || ''),
+      documentCapabilities: {
+        view,
+        extract: true,
+        edit: view && Number(row.can_edit || 0) === 1,
+        manage: String(row.role || '') === 'admin' || Number(row.can_manage || 0) === 1
+      }
+    },
+    control: {
+      id: controlId,
+      username: tokenUser.username,
+      expiresAt: Number(row.expires_at)
+    }
+  };
+}
+
 async function boundedJson(request, maximum = MAX_LOGIN_BODY_BYTES) {
   const declared = Number(request.headers.get('Content-Length') || 0);
   if (declared > maximum) throw new Error('body');
@@ -131,6 +210,7 @@ export function createHomologation5eWorker({
   authFetch = forwardAuth,
   documentsFetch = forwardDocuments,
   validateSession = validateDocumentSession,
+  authorizeAi = authorizeAiSession,
   readControl = controlFor
 } = {}) {
   return {
@@ -198,46 +278,6 @@ export function createHomologation5eWorker({
         }
       }
 
-      // Rotas de leitura preservam a semântica operacional da homologação:
-      // controle desabilitado => 403 antes da autenticação; controle ativo =>
-      // autenticação obrigatória => 401 quando não há sessão. Isso permite ao
-      // preparador provar fail-closed antes de ativar a janela sem impactar o
-      // caminho quente das páginas de IA.
-      let control = null;
-      if (route.kind === 'read') {
-        try {
-          control = await readControl(env);
-        } catch (_) {
-          return blocked(origin, 'AI_HOMOLOGATION_UNAVAILABLE', 503);
-        }
-        if (!control) return blocked(origin);
-      }
-
-      let user;
-      try {
-        user = await validateSession(request, env);
-      } catch (_) {
-        user = null;
-      }
-      if (!user) return blocked(origin, 'AUTH_REQUIRED', 401);
-
-      // Para IA, a única leitura do controle ocorre depois da sessão e
-      // imediatamente antes do provider. Assim revogação continua fail-closed
-      // sem duplicar round-trips D1 no caminho quente.
-      if (route.kind === 'ai') {
-        try {
-          control = await readControl(env);
-        } catch (_) {
-          return blocked(origin, 'AI_HOMOLOGATION_UNAVAILABLE', 503);
-        }
-      }
-
-      if (
-        !control
-        || user.username !== control.username
-        || user.documentCapabilities?.extract !== true
-      ) return blocked(origin, control ? 'AI_HOMOLOGATION_USER_DENIED' : 'AI_HOMOLOGATION_DISABLED');
-
       if (route.kind === 'ai') {
         if (request.headers.get(FIXTURE_HEADER) !== FIXTURE_VALUE) {
           return blocked(origin, 'AI_HOMOLOGATION_FIXTURE_REQUIRED');
@@ -246,7 +286,54 @@ export function createHomologation5eWorker({
           String(env.DOCUMENTS_AI_ENABLED || '').trim().toLowerCase() !== 'true'
           || String(env.DOCUMENTS_AI_PROCESSING_ENABLED || '').trim().toLowerCase() !== 'true'
         ) return blocked(origin, 'DOCUMENT_AI_PROCESSING_DISABLED', 503);
+
+        let authorization;
+        try {
+          authorization = await authorizeAi(request, env);
+        } catch (_) {
+          return blocked(origin, 'AI_HOMOLOGATION_UNAVAILABLE', 503);
+        }
+        if (authorization?.state === 'auth_required') {
+          return blocked(origin, 'AUTH_REQUIRED', 401);
+        }
+        if (authorization?.state !== 'ok') {
+          return blocked(
+            origin,
+            authorization?.state === 'denied'
+              ? 'AI_HOMOLOGATION_USER_DENIED'
+              : 'AI_HOMOLOGATION_DISABLED'
+          );
+        }
+
+        try {
+          return await documentsFetch(request, env, origin, authorization.user);
+        } catch (_) {
+          return blocked(origin, 'AI_HOMOLOGATION_UNAVAILABLE', 503);
+        }
       }
+
+      // Rotas de leitura preservam a semântica operacional da homologação:
+      // controle desabilitado => 403 antes da autenticação; controle ativo =>
+      // autenticação obrigatória => 401 quando não há sessão.
+      let control;
+      try {
+        control = await readControl(env);
+      } catch (_) {
+        return blocked(origin, 'AI_HOMOLOGATION_UNAVAILABLE', 503);
+      }
+      if (!control) return blocked(origin);
+
+      let user;
+      try {
+        user = await validateSession(request, env);
+      } catch (_) {
+        user = null;
+      }
+      if (!user) return blocked(origin, 'AUTH_REQUIRED', 401);
+      if (
+        user.username !== control.username
+        || user.documentCapabilities?.extract !== true
+      ) return blocked(origin, 'AI_HOMOLOGATION_USER_DENIED');
 
       try {
         return url.pathname.startsWith('/api/documents/')
