@@ -120,6 +120,9 @@ test('resumo seguro 5E não copia detalhes, respostas, credenciais ou conteúdo 
   assert.match(js, /gemma_paginas=/);
   assert.match(js, /qwen_paginas=/);
   assert.match(js, /concorrencia_paginas=5/);
+  assert.match(js, /formato_compacto_paginas=/);
+  assert.match(js, /formato_legado_paginas=/);
+  assert.match(js, /formato_resposta=/);
   assert.match(js, /'_ms='/);
   assert.match(js, /preparo_ms=/);
   assert.match(js, /imagem_area_pct=/);
@@ -167,6 +170,7 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   const js = await read('testing/central-docs-ai/phase5e-harness.js');
   assert.match(js, /pageMetrics:\s*\[\]/);
   assert.match(js, /providerModel/);
+  assert.match(js, /responseFormat/);
   assert.match(js, /provider\.attempts/);
   assert.match(js, /durationMs/);
   assert.match(js, /prepareMs/);
@@ -191,6 +195,9 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   assert.match(safe, /moondream_paginas/);
   assert.match(safe, /gemma_paginas/);
   assert.match(safe, /qwen_paginas/);
+  assert.match(safe, /formato_compacto_paginas/);
+  assert.match(safe, /formato_legado_paginas/);
+  assert.match(safe, /formato_resposta/);
   assert.match(safe, /preparo_ms/);
   assert.match(safe, /imagem_area_pct/);
   assert.match(safe, /provider_ms/);
@@ -241,6 +248,16 @@ test('métrica por página inclui preparação da imagem antes da chamada ao pro
   assert.ok(request > requestStart);
 });
 
+
+test('V8C confirma no resumo seguro se o provider respondeu no formato compacto ou legado', async () => {
+  const js = await read('testing/central-docs-ai/phase5e-harness.js');
+  assert.match(js, /const compactPages = state\.pageMetrics\.filter/);
+  assert.match(js, /const legacyPages = state\.pageMetrics\.filter/);
+  assert.match(js, /responseFormat = String\(provider\?\.responseFormat/);
+  assert.match(js, /formato_compacto_paginas=/);
+  assert.match(js, /formato_legado_paginas=/);
+  assert.match(js, /formato_resposta=/);
+});
 
 test('V8A recorta somente a imagem renderizada e não usa text layer como fonte de dados', async () => {
   const js = await read('testing/central-docs-ai/phase5e-harness.js');
