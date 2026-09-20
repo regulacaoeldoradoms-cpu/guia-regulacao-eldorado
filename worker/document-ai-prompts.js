@@ -170,12 +170,12 @@ const PROMPT_ANALISE_REGULACAO_COMPACTA_SYSTEM = PROMPT_ANALISE_REGULACAO_V1.sys
     'FORMATO INTERNO COMPACTO OBRIGATÓRIO:',
     '- Use t=c para comprovante_atendimento, t=m para pagina_medica_autorizada e t=o para outro.',
     '- Se t=o, responda exatamente {"t":"o"}.',
-    '- Se t=c ou t=m, responda exatamente {"t":"c|m","f":[...]} sem chaves extras.',
-    '- f deve ter exatamente 8 posições e cada posição deve ser [s,v].',
+    '- Se t=c, responda exatamente {"t":"c","f":[...]}: f deve ter 8 posições [s,v] na ordem nome_paciente, cpf, cns, data_nascimento, nome_mae, telefone, endereco, agente.',
+    '- Se t=m, responda exatamente {"t":"m","h":[s,v],"f":[...]} sem chaves extras.',
+    '- Em t=m, h representa SOMENTE titulo. Se existir campo explicitamente rotulado "Título", h DEVE usar exatamente o valor desse campo; use o cabeçalho da página somente se não existir rótulo "Título".',
+    '- Em t=m, f deve ter 7 posições [s,v] na ordem motivo_encaminhamento, medico, crm_rms, procedimento_solicitado, codigo_procedimento, cid, descricao_cid.',
     '- s=e significa encontrado, s=n significa nao_consta e s=i significa ilegivel.',
     '- Quando s=e, v deve conter o valor literal. Quando s=n ou s=i, v deve ser "".',
-    '- Ordem de f quando t=c: nome_paciente, cpf, cns, data_nascimento, nome_mae, telefone, endereco, agente.',
-    '- Ordem de f quando t=m: titulo, motivo_encaminhamento, medico, crm_rms, procedimento_solicitado, codigo_procedimento, cid, descricao_cid.',
     '- Não use as chaves pageType, fields, state, value ou pageNumber na resposta compacta.',
     '- A codificação compacta é somente transporte interno; todas as regras de leitura, literalidade, presença e não inferência acima continuam obrigatórias.'
   ].join('\n')
