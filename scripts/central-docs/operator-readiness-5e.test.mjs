@@ -28,8 +28,8 @@ test('verificador 5E é somente leitura e não possui operações mutáveis', as
 
 test('verificador fixa a referência e origem homologadas sem produção', async () => {
   const source = await read('verificar-precondicoes-5e.mjs');
-  assert.match(source, /09bf379f306579bcb7ca049ad02d4c6a94c1df67/);
-  assert.match(source, /https:\/\/20627e1a\.portal-regulacao-central-staging\.pages\.dev/);
+  assert.match(source, /d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7/);
+  assert.match(source, /https:\/\/82985cc2\.portal-regulacao-central-staging\.pages\.dev/);
   assert.doesNotMatch(source, /regulacaoeldoradoms\.com\.br\/documentos/);
 });
 
