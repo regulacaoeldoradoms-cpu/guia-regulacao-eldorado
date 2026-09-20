@@ -3509,6 +3509,7 @@
       && state.documentAiConfig?.enabled === true
       && state.documentAiConfig?.processingEnabled === true
       && state.documentAiConfig?.features?.extractDocument === true
+      && state.documentAiConfig?.features?.backgroundPreparation === true
       && documentAiCapabilities().extract === true
       && typeof viewer?.exportPageImage === 'function'
       && Number.isInteger(pageCount)
