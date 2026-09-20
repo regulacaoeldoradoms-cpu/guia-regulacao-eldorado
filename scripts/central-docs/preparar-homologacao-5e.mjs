@@ -290,7 +290,7 @@ export function buildPreviewConfig(base, entry, input) {
     DOCUMENTS_AI_ENABLED: 'true',
     DOCUMENTS_AI_PROCESSING_ENABLED: 'true',
     DOCUMENTS_AI_FREE_ONLY: 'true',
-    DOCUMENTS_AI_FAST_VISION_ENABLED: 'true',
+    DOCUMENTS_AI_FAST_VISION_ENABLED: 'false',
     DOCUMENTS_AI_FAST_VISION_MODEL: FIXED_5E.fastVisionModel,
     DOCUMENTS_AI_PRIMARY_MODEL: FIXED_5E.primaryModel,
     DOCUMENTS_AI_FALLBACK_MODELS: FIXED_5E.fallbackModel,
