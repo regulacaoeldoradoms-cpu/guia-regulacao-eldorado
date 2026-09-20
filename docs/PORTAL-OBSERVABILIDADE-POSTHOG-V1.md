@@ -99,4 +99,5 @@ agendada com \`waitUntil\`, portanto a interface não espera a ingestão externa
 - envio de \`$process_person_profile=false\` e \`$geoip_disable=true\`;
 - ausência de URL completa e username;
 - bloqueio de origem não autorizada;
-- comportamento neutro quando o token ainda não estiver configurado.
+- comportamento neutro quando o token ainda não estiver configurado;
+- telemetria de background da Fase 6 aceita somente propriedades técnicas e rejeita campos documentais extras.
