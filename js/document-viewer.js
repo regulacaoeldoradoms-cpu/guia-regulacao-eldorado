@@ -3338,6 +3338,32 @@
     }
   }
 
+  async function prewarmThumbnails(pageNumbers = []) {
+    const session = active;
+    if (!isCurrentSession(session) || !session.document) return 0;
+    const requested = Array.isArray(pageNumbers) ? pageNumbers : [pageNumbers];
+    const targets = [...new Set(
+      requested
+        .map((value) => Math.round(Number(value)))
+        .filter((value) => Number.isInteger(value) && value >= 1 && value <= session.document.numPages)
+    )].slice(0, 6);
+    let prepared = 0;
+    for (const pageNumber of targets) {
+      if (!isCurrentSession(session)) break;
+      const record = session.thumbs.get(pageNumber);
+      if (!record) continue;
+      const targetWidth = Number(session.thumbnailWidth || THUMB_WIDTH);
+      if (record.rendered && record.renderedWidth === targetWidth) {
+        prepared += 1;
+        continue;
+      }
+      await renderThumbnail(session, pageNumber);
+      if (!isCurrentSession(session)) break;
+      if (record.rendered) prepared += 1;
+    }
+    return prepared;
+  }
+
   async function exportPageImage(pageNumber, options = {}) {
     const session = active;
     if (!isCurrentSession(session) || !session.document) {
@@ -3447,8 +3473,9 @@
     setEditorCrops,
     setEditorStrokes,
     loadPdfJs,
+    prewarmThumbnails,
     exportPageImage,
     supported,
-    version: `pdfjs-${PDFJS_VERSION}-legacy-drawing-page-export-v2`
+    version: `pdfjs-${PDFJS_VERSION}-legacy-drawing-page-export-v3-phase6`
   });
 })();
