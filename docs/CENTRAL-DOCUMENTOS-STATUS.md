@@ -2619,12 +2619,27 @@ Conclusão: a janela V8A está encerrada e não deve ser reutilizada. A barreira
 
 **Próxima ação exata:** atualizar os scripts locais a partir da `main` atual; executar `verificar-precondicoes-5e.mjs --verificar`; confirmar `activeControlledWindow=false`, source `96ce5dec060c98c582a8925ae03bc25973b0f3bd` e Pages `https://255ecf24.portal-regulacao-central-staging.pages.dev`. Somente depois preparar a nova janela V8B.
 
+## Resultado V8B — 20/09/2026
+
+A matriz V8B foi aprovada: 10/10, extração 6,179 s e total 10,160 s.
+
+Métricas agregadas:
+- prompt: 9.020 tokens;
+- completion: 1.024 tokens;
+- total: 10.044 tokens;
+- prompt em cache: 2.048 tokens;
+- área visual: 100% nas seis páginas.
+
+Conclusão: V8B ficou entre V8A (5,388 s) e V7F (6,830 s), reforçando variabilidade relevante do provider. A página com saída mínima (11 completion tokens) foi muito mais rápida que as páginas autorizadas (~196–212 completion tokens), então o próximo experimento deve compactar a saída estruturada antes de alterar resolução ou imagem.
+
+Próxima frente V8C: manter contrato público e regras atuais, usar formato interno JSON mais compacto e expandi-lo no backend, medir novamente completion tokens e latência. Cache de prompt permanece hipótese secundária.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 5E — V8B diagnóstica: medir token usage real antes de alterar saída/imagem |
-| Último resultado real | V8A encerrada fail-closed; controle desabilitado, aiGate=false, driveWriteGate=false e HTTP bloqueado confirmado |
+| Último resultado real | V8B 10/10 em 6,179 s; 9.020 prompt tokens, 1.024 completion tokens e 2.048 cached prompt tokens |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `96ce5dec060c98c582a8925ae03bc25973b0f3bd` |
 | Pages próximo reteste | `https://255ecf24.portal-regulacao-central-staging.pages.dev` |
@@ -2633,7 +2648,7 @@ Conclusão: a janela V8A está encerrada e não deve ser reutilizada. A barreira
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | atualizar scripts locais da main; executar readiness V8B e confirmar activeControlledWindow=false + source `96ce5dec...` + Pages `255ecf24...`; só então preparar nova janela V8B |
+| Próxima ação exata | implementar V8C com saída interna compacta e contrato público preservado; validar CI antes da próxima homologação |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
