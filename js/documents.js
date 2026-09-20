@@ -3360,7 +3360,7 @@
     const openId = state.pdfOpenId;
     const item = state.pdfItem;
     const started = performance.now();
-    const concurrency = Math.min(6, pageCount);
+    const concurrency = Math.min(5, pageCount);
 
     state.documentAiBusy = true;
     state.documentAiScanCompleted = false;
@@ -3395,7 +3395,8 @@
 
       let blob = await exporter(pageNumber, {
         maxEdge: 1800,
-        mimeType: 'image/png'
+        mimeType: 'image/png',
+        cropWhitespace: true
       });
       if (!(blob instanceof Blob) || blob.size <= 0) {
         throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
@@ -3407,7 +3408,8 @@
         blob = await exporter(pageNumber, {
           maxEdge: 1800,
           mimeType: 'image/jpeg',
-          quality: 0.92
+          quality: 0.92,
+          cropWhitespace: true
         });
       }
       if (!(blob instanceof Blob) || blob.size <= 0) {
