@@ -386,12 +386,13 @@
     return !['slow-2g', '2g'].includes(String(connection?.effectiveType || ''));
   }
 
-  async function fetchPdfBlob(item) {
+  async function fetchPdfBlob(item, { signal = null } = {}) {
     const response = await fetch(`${endpoint}/api/documents/drive/content/${encodeURIComponent(item.ref)}`, {
       method: 'GET',
       headers: auth.authorizationHeader(),
       cache: 'no-store',
-      credentials: 'omit'
+      credentials: 'omit',
+      ...(signal ? { signal } : {})
     });
     if (!response.ok) {
       let message = `Não foi possível abrir o PDF (${response.status}).`;
@@ -424,7 +425,7 @@
     return documentCache.put({ ...descriptor, blob }).catch(() => false);
   }
 
-  async function warmPdfCache(item, { prefetch = false } = {}) {
+  async function warmPdfCache(item, { prefetch = false, signal = null } = {}) {
     const descriptor = cacheDescriptor(item);
     if (!descriptor || !documentCache?.has || !documentCache?.put) return false;
     const size = Number(item?.size || 0);
@@ -440,9 +441,12 @@
     const task = (async () => {
       if (await documentCache.has(descriptor).catch(() => false)) return true;
       try {
-        const blob = await fetchPdfBlob(item);
+        if (signal?.aborted) throw new DOMException('Prefetch cancelado.', 'AbortError');
+        const blob = await fetchPdfBlob(item, { signal });
+        if (signal?.aborted) throw new DOMException('Prefetch cancelado.', 'AbortError');
         return await storeCachedPdf(item, blob);
-      } catch (_) {
+      } catch (error) {
+        if (signal?.aborted || error?.name === 'AbortError') throw error;
         return false;
       }
     })();
@@ -459,24 +463,58 @@
     if (!documentCache?.supported?.() || !connectionAllowsPrefetch()) return;
     if (cacheWarmTimer) clearTimeout(cacheWarmTimer);
     const generation = ++state.cachePrefetchGeneration;
-    const run = async () => {
-      cacheWarmTimer = null;
+    background?.cancelScope?.('list', 'stale');
+
+    const candidates = state.items
+      .filter((item) => item?.isPdf && item.cacheKey && item.version)
+      .filter((item) => Number(item.size || 0) > 0)
+      .filter((item) => Number(item.size || 0) <= Number(documentCache.limits?.prefetchFileBytes || 0))
+      .map((item, index) => ({
+        item,
+        index,
+        identity: itemCacheIdentity(item),
+        recentRank: state.backgroundRecentPdfs.indexOf(itemCacheIdentity(item))
+      }))
+      .sort((a, b) => {
+        const ar = a.recentRank >= 0 ? a.recentRank : 999;
+        const br = b.recentRank >= 0 ? b.recentRank : 999;
+        return ar !== br ? ar - br : a.index - b.index;
+      })
+      .slice(0, 3);
+
+    const enqueue = () => {
       if (generation !== state.cachePrefetchGeneration || document.visibilityState === 'hidden') return;
-      const candidates = state.items
-        .filter((item) => item?.isPdf && item.cacheKey && item.version)
-        .filter((item) => Number(item.size || 0) > 0)
-        .filter((item) => Number(item.size || 0) <= Number(documentCache.limits?.prefetchFileBytes || 0))
-        .slice(0, 3);
-      for (const item of candidates) {
-        if (generation !== state.cachePrefetchGeneration || document.visibilityState === 'hidden') break;
-        await warmPdfCache(item, { prefetch: true });
+      for (const candidate of candidates) {
+        const key = candidate.identity || `list:${generation}:${candidate.index}`;
+        if (background?.schedule) {
+          background.schedule({
+            key: `warm_pdf:${key}`,
+            type: 'warm_pdf',
+            scope: 'list',
+            priority: candidate.recentRank >= 0 ? 60 - candidate.recentRank : 30 - candidate.index,
+            run: async ({ signal, throwIfCancelled }) => {
+              throwIfCancelled();
+              const ok = await warmPdfCache(candidate.item, { prefetch: true, signal });
+              throwIfCancelled();
+              return ok;
+            },
+            onSettled: (result) => captureBackgroundTask(result, {
+              operation: 'warm_pdf',
+              source: 'cache',
+              cacheState: result.value === true ? 'hit' : 'miss',
+              count: 1
+            })
+          });
+        } else {
+          warmPdfCache(candidate.item, { prefetch: true }).catch(() => {});
+        }
       }
     };
 
     if (typeof requestIdleCallback === 'function') {
-      cacheWarmTimer = window.setTimeout(() => requestIdleCallback(run, { timeout: 1800 }), 700);
+      cacheWarmTimer = window.setTimeout(() => requestIdleCallback(enqueue, { timeout: 1800 }), 700);
     } else {
-      cacheWarmTimer = window.setTimeout(run, 1200);
+      cacheWarmTimer = window.setTimeout(enqueue, 1200);
     }
   }
 
@@ -485,7 +523,27 @@
     if (!button) return;
     const item = state.items[Number(button.dataset.index)];
     if (!item?.isPdf) return;
-    warmPdfCache(item, { prefetch: true }).catch(() => {});
+    const identity = itemCacheIdentity(item) || `hover:${button.dataset.index}`;
+    if (background?.schedule) {
+      background.schedule({
+        key: `warm_pdf:${identity}`,
+        type: 'warm_pdf',
+        scope: 'list',
+        priority: 100,
+        run: ({ signal, throwIfCancelled }) => {
+          throwIfCancelled();
+          return warmPdfCache(item, { prefetch: true, signal });
+        },
+        onSettled: (result) => captureBackgroundTask(result, {
+          operation: 'warm_pdf',
+          source: 'cache',
+          cacheState: result.value === true ? 'hit' : 'miss',
+          count: 1
+        })
+      });
+    } else {
+      warmPdfCache(item, { prefetch: true }).catch(() => {});
+    }
   }
 
   function canEditDocuments() {
