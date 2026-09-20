@@ -3041,11 +3041,32 @@ Não alterado:
 
 **Próxima ação exata:** abrir PR da implementação completa da Fase 6, validar CI direcionado e staging. Se verde, integrar na `main`. Depois executar validação operacional da Fase 6 em uso real; somente essa medição pode encerrar formalmente a fase.
 
+## Fase 6 integrada na main; homologação operacional preparada — 20/09/2026
+
+A implementação completa 6A–6E foi integrada pela PR **#342** no merge `87b7b7b274d8d6392bfacd85e18eab19dc672885`.
+
+Validação do head funcional `de1ddc5de6346da0911e6e2fc7ca86abb2b260a9`:
+- **27 workflows/checks verdes**;
+- Fases 1–6: sucesso;
+- navegador Central: sucesso;
+- bundle de staging: sucesso;
+- governança: sucesso;
+- deploy seguro do Worker: sucesso.
+
+Cloudflare Pages staging do head funcional:
+- `https://a2d88ca3.portal-regulacao-central-staging.pages.dev`.
+
+A comparação GitHub head funcional → merge final mostrou **zero arquivos diferentes**.
+
+Foi criado `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-6.md` com a matriz final de aceite operacional. Não há mais implementação estrutural pendente da Fase 6.
+
+**Pendência única da Fase 6:** comprovar em uso real redução mensurável de tempo sem perda de controle do usuário. IA antecipatória permanece fail-closed em produção; a Fase 6 pode ser homologada pelo cache/prefetch, cancelamento e prioridade foreground sem ligar esse gate.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 6 — 6A–6E implementadas em branch; aguardando CI e validação operacional |
+| Fase/subfase | Fase 6 — 6A–6E integradas na main; aguardando somente validação operacional real |
 | Último resultado real | Fase 5 encerrada: V8C.2 10/10 em 4,524 s e janela final fail-closed com httpBlocked=true |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | nenhum — Fase 5 encerrada |
@@ -3055,7 +3076,7 @@ Não alterado:
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental permanece fail-closed; Fase 6 não autoriza ativação silenciosa de IA nem escrita automática |
-| Próxima ação exata | validar CI/PR da implementação 6A–6E; se verde, integrar e então medir em uso real redução de tempo sem perda de controle |
+| Próxima ação exata | executar a matriz de `CENTRAL-DOCUMENTOS-HOMOLOGACAO-6.md` em uso real; coletar evidência de ganho/cancelamento/controle; se aprovada, encerrar Fase 6 e iniciar Fase 7 |
 | Meta | Fase 6: reduzir tempo operacional mensuravelmente sem perda de controle do usuário |
 | Fontes | Guia Mestre V1.1; FASE-6; FASE-2; FASE-5; STATUS; js/documents.js; js/document-viewer.js; js/document-cache.js |
 
