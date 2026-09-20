@@ -535,7 +535,7 @@ test('modelo que exigir plano pago é bloqueado fail-closed', async () => {
   );
 });
 
-test('página médica com campo ilegível recebe revisão focal gratuita no Qwen', async () => {
+test('CID explicitamente ilegível com descrição encontrada encerra no Gemma sem revisão redundante', async () => {
   const calls = [];
   const initialFields = fieldsFor('pagina_medica_autorizada', {
     titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
@@ -547,53 +547,39 @@ test('página médica com campo ilegível recebe revisão focal gratuita no Qwen
     cid: { state: 'ilegivel', value: '' },
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL' }
   });
-  const reviewedFields = {
-    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
-    cid: { state: 'ilegivel', value: '' },
-    descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL CORRETA' }
-  };
 
   const result = await analyzeDocumentAiPage(enabledEnv(), {
     pageNumber: 6,
     mimeType: 'image/png',
     bytes: new Uint8Array([6, 6])
   }, {
-    aiRun: async (model, input) => {
-      calls.push({ model, input });
-      if (calls.length === 1) {
-        return workersResponse({
-          pageType: 'pagina_medica_autorizada',
-          fields: initialFields
-        });
-      }
-      assert.equal(model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
-      assert.match(input.messages[1].content[1].text, /REVISÃO FOCAL DE PRECISÃO/);
-      assert.match(input.messages[1].content[1].text, /cid/);
-      assert.match(input.messages[1].content[1].text, /titulo/);
-      assert.equal(input.max_completion_tokens, 350);
-      return workersResponse({ fields: reviewedFields });
+    aiRun: async (model) => {
+      calls.push(model);
+      return workersResponse({
+        pageType: 'pagina_medica_autorizada',
+        fields: initialFields
+      });
     }
   });
 
-  assert.equal(calls.length, 2);
-  assert.equal(result.provider.reviewed, true);
-  assert.equal(result.provider.model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
-  assert.deepEqual(result.provider.reviewChangedKeys, ['descricao_cid']);
+  assert.deepEqual(calls, [DOCUMENT_AI_PRIMARY_FREE_MODEL]);
+  assert.equal(result.provider.reviewed, false);
+  assert.deepEqual(result.provider.reviewChangedKeys, []);
   assert.equal(result.extraction.fields.cid.state, 'ilegivel');
-  assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO LITERAL CORRETA');
-  assert.equal(result.provider.attempts.length, 2);
+  assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO LITERAL');
+  assert.equal(result.provider.attempts.length, 1);
 });
 
-test('revisão focal indisponível preserva extração inicial válida', async () => {
+test('revisão focal indisponível preserva extração inicial válida para outra ambiguidade', async () => {
   let calls = 0;
   const initialFields = fieldsFor('pagina_medica_autorizada', {
     titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
     motivo_encaminhamento: { state: 'encontrado', value: 'MOTIVO' },
-    medico: { state: 'encontrado', value: 'DR. TESTE' },
+    medico: { state: 'ilegivel', value: '' },
     crm_rms: { state: 'encontrado', value: 'CRM/MS 1' },
     procedimento_solicitado: { state: 'encontrado', value: 'PROC' },
     codigo_procedimento: { state: 'encontrado', value: '0001' },
-    cid: { state: 'ilegivel', value: '' },
+    cid: { state: 'encontrado', value: 'A00' },
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO' }
   });
 
@@ -616,8 +602,8 @@ test('revisão focal indisponível preserva extração inicial válida', async (
 
   assert.equal(calls, 2);
   assert.equal(result.provider.reviewed, false);
-  assert.equal(result.extraction.fields.cid.state, 'ilegivel');
-  assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO');
+  assert.equal(result.extraction.fields.medico.state, 'ilegivel');
+  assert.equal(result.extraction.fields.cid.value, 'A00');
 });
 
 test('CID ausente com descrição presente também ativa revisão focal', async () => {
