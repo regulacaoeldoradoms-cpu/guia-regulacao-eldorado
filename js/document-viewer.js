@@ -96,7 +96,55 @@
     return clamp(Math.min(deviceScale, memoryScale), 1, MAX_DEVICE_SCALE);
   }
 
-  function meaningfulContentBounds(canvas, options = {}) {
+  async function pageTextSafetyBounds(page, viewport) {
+    if (!page?.getTextContent || !viewport?.convertToViewportPoint) return null;
+    let content;
+    try {
+      content = await page.getTextContent({ disableNormalization: false });
+    } catch (_) {
+      return null;
+    }
+
+    let minX = Number.POSITIVE_INFINITY;
+    let minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY;
+    let maxY = Number.NEGATIVE_INFINITY;
+    let count = 0;
+
+    for (const item of Array.isArray(content?.items) ? content.items : []) {
+      if (!String(item?.str || '').trim()) continue;
+      const transform = Array.isArray(item?.transform) ? item.transform : null;
+      if (!transform || transform.length < 6) continue;
+      const x = Number(transform[4]);
+      const y = Number(transform[5]);
+      const width = Math.max(0, Number(item?.width || 0));
+      const height = Math.max(1, Number(item?.height || 0));
+      if (![x, y, width, height].every(Number.isFinite)) continue;
+
+      const corners = [
+        viewport.convertToViewportPoint(x, y),
+        viewport.convertToViewportPoint(x + width, y),
+        viewport.convertToViewportPoint(x, y + height),
+        viewport.convertToViewportPoint(x + width, y + height)
+      ];
+      for (const point of corners) {
+        const px = Number(point?.[0]);
+        const py = Number(point?.[1]);
+        if (!Number.isFinite(px) || !Number.isFinite(py)) continue;
+        minX = Math.min(minX, px);
+        minY = Math.min(minY, py);
+        maxX = Math.max(maxX, px);
+        maxY = Math.max(maxY, py);
+      }
+      count += 1;
+    }
+
+    if (!count || ![minX, minY, maxX, maxY].every(Number.isFinite)) return null;
+    if (maxX <= minX || maxY <= minY) return null;
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  }
+
+  function meaningfulContentBounds(canvas, options = {}, safetyBounds = null) {
     const width = Math.max(1, Number(canvas?.width || 0));
     const height = Math.max(1, Number(canvas?.height || 0));
     if (width < 120 || height < 120) return null;
@@ -149,6 +197,19 @@
           maxX = Math.max(maxX, right);
           maxY = Math.max(maxY, bottom);
         }
+      }
+    }
+
+    if (safetyBounds) {
+      const sx = clamp(Math.floor(Number(safetyBounds.x || 0)), 0, width);
+      const sy = clamp(Math.floor(Number(safetyBounds.y || 0)), 0, height);
+      const sr = clamp(Math.ceil(sx + Number(safetyBounds.width || 0)), 0, width);
+      const sb = clamp(Math.ceil(sy + Number(safetyBounds.height || 0)), 0, height);
+      if (sr > sx && sb > sy) {
+        minX = Math.min(minX, sx);
+        minY = Math.min(minY, sy);
+        maxX = Math.max(maxX, sr);
+        maxY = Math.max(maxY, sb);
       }
     }
 
@@ -3326,7 +3387,8 @@
     let outputCanvas = canvas;
     let croppedCanvas = null;
     if (options.cropWhitespace === true) {
-      const bounds = meaningfulContentBounds(canvas, options.cropOptions || {});
+      const safetyBounds = await pageTextSafetyBounds(page, viewport);
+      const bounds = meaningfulContentBounds(canvas, options.cropOptions || {}, safetyBounds);
       if (bounds) {
         croppedCanvas = document.createElement('canvas');
         croppedCanvas.width = bounds.width;
