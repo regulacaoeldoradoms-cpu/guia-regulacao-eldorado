@@ -2265,21 +2265,52 @@ Critério V7F:
 
 A decisão V8 permanece válida e pronta como fallback arquitetural. A V7F apenas testa uma hipótese de scheduling/revisão diretamente derivada dos dados V7E.
 
+## V7F integrada e reteste congelado — 20/09/2026
+
+A PR #311 foi integrada na `main` pelo merge `6e30117a1e0c342cb84d4cdf1f1a2f7351d86c82`.
+
+O head funcional `1df84d2f53b8378d49854b285234ad4aefffcf20` publicou o Pages imutável `https://58d9fc14.portal-regulacao-central-staging.pages.dev`; a comparação GitHub com o merge final mostrou **zero arquivos diferentes**.
+
+A V7F é o último experimento image-only autorizado antes da V8:
+- concorrência documental 5;
+- análise Gemma permanece com teto 700 tokens;
+- backend D1 consolidado preservado;
+- Qwen não é chamado somente quando Gemma retorna exatamente um único campo ilegível (`cid`), descrição do CID encontrada e nenhum outro campo ilegível;
+- `cid=nao_consta` com descrição encontrada e outras ambiguidades continuam revisadas.
+
+Base da hipótese:
+- V7E 10/10 em 12,008 s;
+- com as durações observadas, concorrência 5 + remoção da revisão Qwen no-op projeta makespan próximo de ~6,0 s se o provider mantiver latências semelhantes.
+
+Referências congeladas:
+- source ref `6e30117a1e0c342cb84d4cdf1f1a2f7351d86c82`;
+- Pages `https://58d9fc14.portal-regulacao-central-staging.pages.dev`;
+- head funcional `1df84d2f53b8378d49854b285234ad4aefffcf20`.
+
+Critério:
+- manter 10/10;
+- alvo operacional <= 6,5 s;
+- se não cumprir, não criar nova variação V7.x; iniciar V8 híbrida.
+
+A janela V7E permanece ativa e deve ser encerrada fail-closed antes de preparar V7F.
+
+**Próxima ação exata:** encerrar V7E; atualizar scripts locais; readiness V7F; preparar nova janela e executar a matriz uma única vez.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7F final image-only em validação; V8 permanece próximo passo se não atingir ~6 s |
+| Fase/subfase | Fase 5E — V7F integrada; último teste image-only aguarda encerramento V7E |
 | Último resultado real | V7E 10/10; extração 12,008 s; image-only atingiu plateau prático; V8 híbrida é o próximo passo |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
-| Runtime próximo reteste | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
-| Pages próximo reteste | `https://ffdd1515.portal-regulacao-central-staging.pages.dev` |
+| Runtime próximo reteste | `6e30117a1e0c342cb84d4cdf1f1a2f7351d86c82` |
+| Pages próximo reteste | `https://58d9fc14.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | validar CI V7F; integrar/congelar; encerrar V7E; executar uma rodada V7F; se falhar, iniciar V8 |
+| Próxima ação exata | encerrar V7E fail-closed; atualizar scripts; readiness V7F; preparar janela; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
