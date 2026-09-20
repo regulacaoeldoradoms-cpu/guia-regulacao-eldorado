@@ -198,6 +198,21 @@ export function createHomologation5eWorker({
         }
       }
 
+      // Rotas de leitura preservam a semântica operacional da homologação:
+      // controle desabilitado => 403 antes da autenticação; controle ativo =>
+      // autenticação obrigatória => 401 quando não há sessão. Isso permite ao
+      // preparador provar fail-closed antes de ativar a janela sem impactar o
+      // caminho quente das páginas de IA.
+      let control = null;
+      if (route.kind === 'read') {
+        try {
+          control = await readControl(env);
+        } catch (_) {
+          return blocked(origin, 'AI_HOMOLOGATION_UNAVAILABLE', 503);
+        }
+        if (!control) return blocked(origin);
+      }
+
       let user;
       try {
         user = await validateSession(request, env);
@@ -206,15 +221,17 @@ export function createHomologation5eWorker({
       }
       if (!user) return blocked(origin, 'AUTH_REQUIRED', 401);
 
-      // Uma única leitura do controle ocorre depois da sessão e imediatamente
-      // antes das rotas documentais/IA. Isso mantém a revogação fail-closed sem
-      // duplicar round-trips D1 na mesma chamada.
-      let control;
-      try {
-        control = await readControl(env);
-      } catch (_) {
-        control = null;
+      // Para IA, a única leitura do controle ocorre depois da sessão e
+      // imediatamente antes do provider. Assim revogação continua fail-closed
+      // sem duplicar round-trips D1 no caminho quente.
+      if (route.kind === 'ai') {
+        try {
+          control = await readControl(env);
+        } catch (_) {
+          return blocked(origin, 'AI_HOMOLOGATION_UNAVAILABLE', 503);
+        }
       }
+
       if (
         !control
         || user.username !== control.username
