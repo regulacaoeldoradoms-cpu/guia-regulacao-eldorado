@@ -53,8 +53,8 @@ test('botão único percorre o PDF e envia somente uma página por chamada', asy
     read('js/documents.js'),
     read('js/document-viewer.js')
   ]);
-  const prepare = asyncFunctionSlice(js, 'prepareDocumentAiPageBlob', 'normalizeDocumentAiPagePayload');
-  const request = asyncFunctionSlice(js, 'requestDocumentAiPage', 'schedulePreparedPageAnalysis');
+  const prepare = asyncFunctionSlice(js, 'prepareDocumentAiPageBlob', 'requestDocumentAiPage');
+  const request = asyncFunctionSlice(js, 'requestDocumentAiPage', 'extractWholeDocumentAi');
   const extract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'classifyActiveDocumentPage');
 
   assert.match(extract, /getPageCount\?\.\(\)/);
