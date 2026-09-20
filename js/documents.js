@@ -3484,6 +3484,115 @@
     }
   }
 
+  function documentAiBackgroundReady() {
+    const viewer = window.PortalPdfViewer;
+    const pageCount = Number(viewer?.getPageCount?.() || 0);
+    return Boolean(
+      !state.documentAiBusy
+      && !state.editorSession
+      && state.pdfItem
+      && state.documentAiConfig?.enabled === true
+      && state.documentAiConfig?.processingEnabled === true
+      && state.documentAiConfig?.features?.extractDocument === true
+      && documentAiCapabilities().extract === true
+      && typeof viewer?.exportPageImage === 'function'
+      && Number.isInteger(pageCount)
+      && pageCount > 0
+    );
+  }
+
+  async function prepareDocumentAiPageBlob(pageNumber, { signal = null } = {}) {
+    const exporter = window.PortalPdfViewer?.exportPageImage;
+    if (typeof exporter !== 'function') throw new Error('O visualizador não pode preparar páginas para a IA.');
+    if (signal?.aborted) throw new DOMException('Preparação cancelada.', 'AbortError');
+
+    let blob = await exporter(pageNumber, {
+      maxEdge: 1800,
+      mimeType: 'image/png',
+      cropWhitespace: true
+    });
+    if (signal?.aborted) throw new DOMException('Preparação cancelada.', 'AbortError');
+    if (!(blob instanceof Blob) || blob.size <= 0) {
+      throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
+    }
+
+    if (blob.size > 2.8 * 1024 * 1024) {
+      blob = await exporter(pageNumber, {
+        maxEdge: 1800,
+        mimeType: 'image/jpeg',
+        quality: 0.92,
+        cropWhitespace: true
+      });
+    }
+    if (signal?.aborted) throw new DOMException('Preparação cancelada.', 'AbortError');
+    if (!(blob instanceof Blob) || blob.size <= 0) {
+      throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
+    }
+    return blob;
+  }
+
+  function normalizeDocumentAiPagePayload(pageNumber, payload = {}) {
+    const classification = payload?.classification;
+    const pageType = String(classification?.pageType || '');
+    if (
+      !classification
+      || Number(classification.pageNumber) !== pageNumber
+      || !['comprovante_atendimento', 'pagina_medica_autorizada', 'outro'].includes(pageType)
+    ) {
+      throw new Error(`A página ${pageNumber} retornou classificação ou proveniência inválida.`);
+    }
+
+    if (pageType === 'outro') {
+      return { pageNumber, pageType, extraction: null };
+    }
+
+    const extraction = payload?.extraction;
+    if (
+      !extraction
+      || Number(extraction.pageNumber) !== pageNumber
+      || String(extraction.pageType || '') !== pageType
+      || !extraction.fields
+      || typeof extraction.fields !== 'object'
+    ) {
+      throw new Error(`A página ${pageNumber} retornou extração ou proveniência inválida.`);
+    }
+
+    return {
+      pageNumber,
+      pageType,
+      extraction: {
+        pageNumber,
+        pageType,
+        fields: extraction.fields
+      }
+    };
+  }
+
+  async function requestDocumentAiPage(pageNumber, blob, { signal = null } = {}) {
+    if (!(blob instanceof Blob) || blob.size <= 0) {
+      throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
+    }
+    const response = await fetch(`${endpoint}/api/documents/ai/page/extract`, {
+      method: 'POST',
+      headers: {
+        ...auth.authorizationHeader(),
+        'Content-Type': blob.type || 'image/png',
+        'X-Document-Page-Number': String(pageNumber)
+      },
+      body: blob,
+      cache: 'no-store',
+      credentials: 'omit',
+      ...(signal ? { signal } : {})
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(payload?.error || `Não foi possível analisar a página ${pageNumber}.`);
+      error.code = String(payload?.code || '');
+      throw error;
+    }
+    return normalizeDocumentAiPagePayload(pageNumber, payload);
+  }
+
   async function extractWholeDocumentAi() {
     const viewer = window.PortalPdfViewer;
     const exporter = viewer?.exportPageImage;
