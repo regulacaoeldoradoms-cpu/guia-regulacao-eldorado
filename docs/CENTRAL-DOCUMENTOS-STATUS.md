@@ -2942,11 +2942,29 @@ Conclusão: o ambiente local está limpo, sem janela controlada ativa, e aponta 
 
 **Próxima ação exata:** executar `iniciar-homologacao-5e.mjs --iniciar`; quando solicitado, confirmar `PREPARAR HOMOLOGACAO 5E`. A nova janela deve usar release `32bda4f6753d434cc134eafb3610de16b00e272d`, `aiGate=true` somente no preview e `driveWriteGate=false`.
 
+## Janela V8C.2 preparada — 20/09/2026
+
+O operador concluiu o preparo oficial da nova janela V8C.2.
+
+Evidências sanitizadas:
+- `HOMOLOGACAO_5E_PREPARADA`;
+- preview version `30b6d644-a3f1-43d9-8357-5618683de288`;
+- controle `phase5e_c5fb89ad6616463d8a427fe5885cc1dd`;
+- expiração `2026-09-20T07:06:06.000Z`;
+- release `32bda4f6753d434cc134eafb3610de16b00e272d`;
+- `aiGate=true` somente no preview;
+- `driveWriteGate=false`;
+- produção permaneceu `298ba237-78f9-4d24-bad1-47e66b4c1e15`.
+
+Conclusão: a janela corresponde exatamente ao runtime V8C.2 congelado e produção não foi promovida.
+
+**Próxima ação exata:** abrir `https://821db519.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada e executar a matriz **uma única vez**. Critérios: 10/10, `formato_compacto_paginas=6`, `formato_legado_paginas=0`, nenhum `campos_divergentes`, ausência de fallback sistemático por schema nas páginas médicas e telemetria de tokens contabilizando todas as tentativas. Não encerrar a janela antes de analisar o resumo seguro.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8C.2 readiness aprovado; pronta para preparar nova janela |
+| Fase/subfase | Fase 5E — V8C.2 janela preparada; aguardando uma única matriz real |
 | Último resultado real | V8C.1 7/10 em 14,469 s; schema-invalid Gemma em 4 páginas médicas; divergência medico nas páginas 5/6 |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `32bda4f6753d434cc134eafb3610de16b00e272d` |
@@ -2956,7 +2974,7 @@ Conclusão: o ambiente local está limpo, sem janela controlada ativa, e aponta 
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | executar `iniciar-homologacao-5e.mjs --iniciar`, confirmar `PREPARAR HOMOLOGACAO 5E` e validar release/gates da nova janela V8C.2 |
+| Próxima ação exata | executar uma única matriz V8C.2 no Pages congelado, copiar resumo seguro e analisar precisão/fallback/tokens/latência antes de qualquer nova alteração |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
