@@ -2236,11 +2236,40 @@ A janela V7E continua ativa apenas para encerramento formal posterior; não deve
 
 **Próxima ação exata:** desenvolver V8 em branch isolada com text-layer PDF.js + rota backend segura + fallback visual seletivo; validar testes e só depois encerrar V7E e abrir uma nova homologação V8.
 
+## Exceção final V7F antes da V8 — 20/09/2026
+
+Após registrar a decisão V8, a decomposição temporal da V7E mostrou uma oportunidade image-only mensurável que justifica **uma única última rodada V7.x** antes da mudança arquitetural.
+
+Dados V7E usados:
+- concorrência 4;
+- primeira onda: páginas 1–4;
+- página 3 concluiu em ~2,15 s e liberou página 5;
+- página 1 liberou página 6 apenas em ~5,85 s;
+- página 6 gastou Gemma 2,455 s + Qwen 3,225 s;
+- Qwen retornou `revisao_alterou=nenhum`.
+
+Simulação simples usando as durações observadas:
+- mantendo concorrência 4 e removendo a revisão redundante da página 6, makespan estimado ~8,8 s;
+- com concorrência 5 e sem essa revisão redundante, makespan estimado ~6,0 s **se as latências individuais se mantiverem próximas da V7E**.
+
+Por isso a V7F é autorizada como **último experimento image-only**, com duas mudanças somente:
+1. concorrência de páginas 4 → **5**;
+2. quando Gemma retorna **somente CID=ilegivel**, descrição encontrada e nenhum outro campo ilegível, não chamar Qwen.
+
+Qualquer outro caso ambíguo continua com revisão Qwen. O skip não se aplica a `cid=nao_consta` + descrição encontrada, nem a outros campos ilegíveis.
+
+Critério V7F:
+- manter **10/10**;
+- buscar `duracao_extracao_ms <= 6500` como alvo operacional;
+- se não atingir precisão total ou ficar materialmente acima dessa faixa, **encerrar V7.x sem nova variação** e iniciar V8 híbrida.
+
+A decisão V8 permanece válida e pronta como fallback arquitetural. A V7F apenas testa uma hipótese de scheduling/revisão diretamente derivada dos dados V7E.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7E 10/10 em 12,008 s; V8 híbrida iniciada para meta ~6 s |
+| Fase/subfase | Fase 5E — V7F final image-only em validação; V8 permanece próximo passo se não atingir ~6 s |
 | Último resultado real | V7E 10/10; extração 12,008 s; image-only atingiu plateau prático; V8 híbrida é o próximo passo |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
@@ -2250,7 +2279,7 @@ A janela V7E continua ativa apenas para encerramento formal posterior; não deve
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | desenvolver/validar V8 text-layer + visão seletiva; depois encerrar V7E e homologar V8 |
+| Próxima ação exata | validar CI V7F; integrar/congelar; encerrar V7E; executar uma rodada V7F; se falhar, iniciar V8 |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
