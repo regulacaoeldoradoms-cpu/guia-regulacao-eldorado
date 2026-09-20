@@ -2634,11 +2634,40 @@ Conclusão: V8B ficou entre V8A (5,388 s) e V7F (6,830 s), reforçando variabili
 
 Próxima frente V8C: manter contrato público e regras atuais, usar formato interno JSON mais compacto e expandi-lo no backend, medir novamente completion tokens e latência. Cache de prompt permanece hipótese secundária.
 
+## V8C implementada em branch isolada — aguardando CI — 20/09/2026
+
+Branch: `feat/central-docs-5e-v8c-compact-output`.
+
+Implementação:
+- novo artefato versionado `PROMPT_ANALISE_REGULACAO_COMPACTA_V1`, derivado das mesmas regras de isolamento/literalidade da análise integrada atual;
+- resposta interna compacta com `t=c|m|o` e, para páginas autorizadas, vetor ordenado de 8 pares `[s,v]`;
+- estados internos `e/n/i` expandidos imediatamente no backend para `encontrado/nao_consta/ilegivel`;
+- contrato público de classificação, extração, evidências e chat permanece inalterado;
+- formato legado continua aceito somente como compatibilidade/fallback, sem ser solicitado ao modelo;
+- provider passa a informar tecnicamente `responseFormat=compact|legacy`;
+- laboratório 5E mede `formato_compacto_paginas`, `formato_legado_paginas` e `formato_resposta` por página;
+- runtime público versionado como `phase5e-v8c-compact-output`;
+- imagem, resolução, concorrência 5, Gemma/Qwen, `max_completion_tokens=700`, revisão seletiva, gates, Drive e produção não foram alterados.
+
+Critério antes de homologar:
+- testes do provider comprovarem expansão compacta para o mesmo schema público;
+- prompts continuarem separados/versionados;
+- checks da Central, governança e procedimentos 5E verdes;
+- nenhuma promoção de produção.
+
+Critério da matriz real V8C:
+- 10/10;
+- seis páginas em formato compacto e zero em legado;
+- completion tokens agregados materialmente abaixo do baseline V8B de 1.024, alvo operacional <= 700;
+- medir latência, mas não declarar ganho estrutural com base em uma única variação favorável do provider.
+
+A janela V8B segue ativa apenas até o código V8C ser validado. Não reutilizar essa janela para V8C: após CI/merge/freeze, encerrar V8B fail-closed e só então abrir nova janela.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8B diagnóstica: medir token usage real antes de alterar saída/imagem |
+| Fase/subfase | Fase 5E — V8C saída interna compacta implementada; aguardando CI/merge |
 | Último resultado real | V8B 10/10 em 6,179 s; 9.020 prompt tokens, 1.024 completion tokens e 2.048 cached prompt tokens |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `96ce5dec060c98c582a8925ae03bc25973b0f3bd` |
@@ -2648,7 +2677,7 @@ Próxima frente V8C: manter contrato público e regras atuais, usar formato inte
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | implementar V8C com saída interna compacta e contrato público preservado; validar CI antes da próxima homologação |
+| Próxima ação exata | abrir PR V8C, validar checks; se verde, integrar e congelar source/Pages; depois encerrar V8B fail-closed e preparar nova homologação V8C |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
