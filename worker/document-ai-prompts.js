@@ -163,6 +163,31 @@ Não inclua pageNumber. A proveniência é definida pelo backend.
   'v2'
 );
 
+
+const PROMPT_ANALISE_REGULACAO_COMPACTA_SYSTEM = PROMPT_ANALISE_REGULACAO_V1.system.replace(
+  /Responda SOMENTE JSON:[\s\S]*$/u,
+  [
+    'FORMATO INTERNO COMPACTO OBRIGATÓRIO:',
+    '- Use t=c para comprovante_atendimento, t=m para pagina_medica_autorizada e t=o para outro.',
+    '- Se t=o, responda exatamente {"t":"o"}.',
+    '- Se t=c ou t=m, responda exatamente {"t":"c|m","f":[...]} sem chaves extras.',
+    '- f deve ter exatamente 8 posições e cada posição deve ser [s,v].',
+    '- s=e significa encontrado, s=n significa nao_consta e s=i significa ilegivel.',
+    '- Quando s=e, v deve conter o valor literal. Quando s=n ou s=i, v deve ser "".',
+    '- Ordem de f quando t=c: nome_paciente, cpf, cns, data_nascimento, nome_mae, telefone, endereco, agente.',
+    '- Ordem de f quando t=m: titulo, motivo_encaminhamento, medico, crm_rms, procedimento_solicitado, codigo_procedimento, cid, descricao_cid.',
+    '- Não use as chaves pageType, fields, state, value ou pageNumber na resposta compacta.',
+    '- A codificação compacta é somente transporte interno; todas as regras de leitura, literalidade, presença e não inferência acima continuam obrigatórias.'
+  ].join('\n')
+);
+
+export const PROMPT_ANALISE_REGULACAO_COMPACTA_V1 = routine(
+  'PROMPT_ANALISE_REGULACAO_COMPACTA_V1',
+  'Classificar e extrair uma única página em uma inferência com transporte interno compacto e contrato público preservado.',
+  PROMPT_ANALISE_REGULACAO_COMPACTA_SYSTEM,
+  'v1'
+);
+
 export const PROMPT_DOCUMENT_CHAT_V1 = routine(
   'PROMPT_DOCUMENT_CHAT_V1',
   'Responder perguntas livres somente a partir de evidências documentais já vinculadas a páginas.',
@@ -196,6 +221,7 @@ export const DOCUMENT_AI_ROUTINES = Object.freeze([
   PROMPT_CLASSIFICACAO_PAGINAS_V1,
   PROMPT_EXTRACAO_REGULACAO_V1,
   PROMPT_ANALISE_REGULACAO_V1,
+  PROMPT_ANALISE_REGULACAO_COMPACTA_V1,
   PROMPT_DOCUMENT_CHAT_V1,
   PROMPT_VALIDACAO_V1
 ]);

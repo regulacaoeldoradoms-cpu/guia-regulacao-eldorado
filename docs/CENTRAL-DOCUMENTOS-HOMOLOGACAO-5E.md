@@ -639,3 +639,16 @@ Escopo desta homologação:
 
 A janela V8A anterior deve ser encerrada fail-closed antes do readiness V8B. Depois, executar uma única matriz sintética 10/10 e copiar o resumo seguro completo. A decisão seguinte depende dos tokens medidos: compactar saída se completion for relevante; otimizar input visual somente se prompt/entrada for o gargalo dominante.
 
+## V8C — saída interna compacta — 20/09/2026
+
+A próxima homologação mantém o mesmo input visual da V8B e altera apenas o protocolo interno de resposta da análise integrada.
+
+Critérios:
+- 10/10;
+- seis páginas respondendo em formato compacto e zero em legado;
+- contrato público final idêntico ao atual após expansão no backend;
+- completion tokens agregados materialmente abaixo do baseline V8B de 1.024, alvo <= 700;
+- registrar `prompt_tokens`, `completion_tokens`, `total_tokens`, cache, formato e latência por página.
+
+A janela V8B atualmente ativa deve permanecer isolada até o código V8C ser validado. Antes de abrir a homologação V8C, encerrar V8B fail-closed e congelar novas referências source/Pages.
+

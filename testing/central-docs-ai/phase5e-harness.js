@@ -505,6 +505,12 @@
     const qwenPages = state.pageMetrics.filter((item) =>
       String(item.model || '') === '@cf/qwen/qwen3.8-27b'
     ).length;
+    const compactPages = state.pageMetrics.filter((item) =>
+      String(item.responseFormat || '') === 'compact'
+    ).length;
+    const legacyPages = state.pageMetrics.filter((item) =>
+      String(item.responseFormat || '') === 'legacy'
+    ).length;
     const promptTokensTotal = state.pageMetrics.reduce(
       (sum, item) => sum + Math.max(0, Number(item.promptTokens || 0)),
       0
@@ -531,6 +537,8 @@
       'gemma_paginas=' + gemmaPages,
       'qwen_paginas=' + qwenPages,
       'concorrencia_paginas=5',
+      'formato_compacto_paginas=' + compactPages,
+      'formato_legado_paginas=' + legacyPages,
       'prompt_tokens_extracao=' + Math.round(promptTokensTotal),
       'completion_tokens_extracao=' + Math.round(completionTokensTotal),
       'total_tokens_extracao=' + Math.round(totalTokens),
@@ -561,6 +569,7 @@
           + ' | imagem_area_pct=' + Math.max(1, Math.min(100, Math.round(Number(item.imageAreaPct || 100))))
           + ' | provider_ms=' + providerMs
           + ' | transporte_backend_ms=' + transportMs
+          + ' | formato_resposta=' + String(item.responseFormat || 'nenhum').replace(/[\r\n=|]+/g, ' ').slice(0, 40)
           + ' | prompt_tokens=' + Math.max(0, Math.round(Number(item.promptTokens || 0)))
           + ' | completion_tokens=' + Math.max(0, Math.round(Number(item.completionTokens || 0)))
           + ' | total_tokens=' + Math.max(0, Math.round(Number(item.totalTokens || 0)))
@@ -695,6 +704,7 @@
           const durationMs = performance.now() - pageStarted;
           const provider = payload?.provider || {};
           const providerModel = String(provider?.model || '');
+          const responseFormat = String(provider?.responseFormat || '');
           const providerAttempts = Array.isArray(provider?.attempts) ? provider.attempts : [];
           const providerDurationMs = providerAttempts.reduce(
             (sum, attempt) => sum + Math.max(0, Number(attempt?.durationMs || 0)),
@@ -755,6 +765,7 @@
             }, null, 2),
             extraction: passed ? extraction : null,
             providerModel,
+            responseFormat,
             durationMs,
             prepareMs,
             imageAreaPct,
@@ -778,6 +789,7 @@
             detail: (error.code ? error.code + ': ' : '') + (error.message || 'Falha não identificada.'),
             extraction: null,
             providerModel: '',
+            responseFormat: '',
             durationMs: performance.now() - pageStarted,
             prepareMs,
             imageAreaPct,
@@ -818,6 +830,7 @@
         state.pageMetrics.push({
           pageNumber: item.fixture.pageNumber,
           model: item.providerModel,
+          responseFormat: item.responseFormat,
           durationMs: item.durationMs,
           prepareMs: item.prepareMs,
           imageAreaPct: item.imageAreaPct,

@@ -6,18 +6,20 @@ import {
   PROMPT_CLASSIFICACAO_PAGINAS_V1,
   PROMPT_EXTRACAO_REGULACAO_V1,
   PROMPT_ANALISE_REGULACAO_V1,
+  PROMPT_ANALISE_REGULACAO_COMPACTA_V1,
   PROMPT_DOCUMENT_CHAT_V1,
   PROMPT_VALIDACAO_V1
 } from '../document-ai-prompts.js';
 
 test('prompts da Fase 5 são artefatos separados e versionados', () => {
-  assert.equal(DOCUMENT_AI_ROUTINES.length, 5);
+  assert.equal(DOCUMENT_AI_ROUTINES.length, 6);
   const ids = new Set(DOCUMENT_AI_ROUTINES.map((routine) => routine.id));
-  assert.equal(ids.size, 5);
+  assert.equal(ids.size, 6);
   assert.equal([...ids].every((id) => /_V1$/.test(id)), true);
   assert.equal(PROMPT_CLASSIFICACAO_PAGINAS_V1.version, 'v2');
   assert.equal(PROMPT_EXTRACAO_REGULACAO_V1.version, 'v2');
   assert.equal(PROMPT_ANALISE_REGULACAO_V1.version, 'v2');
+  assert.equal(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.version, 'v1');
   assert.equal(PROMPT_DOCUMENT_CHAT_V1.version, 'v1');
   assert.equal(PROMPT_VALIDACAO_V1.version, 'v1');
 });
@@ -60,6 +62,23 @@ test('análise integrada combina tipo e campos sem pedir pageNumber ao modelo', 
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /rótulo.*visível.*ilegivel/is);
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /caractere por caractere/i);
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /NÃO DEVE SER INFERIDA/);
+});
+
+test('V8C mantém as regras da análise integrada e troca apenas o transporte interno por JSON compacto', () => {
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /exatamente UMA página/i);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /DADO NÃO CONFIÁVEL/i);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /FORMATO INTERNO COMPACTO/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /t=c/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /t=m/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /t=o/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /s=e/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /s=n/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /s=i/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /nome_paciente, cpf, cns/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /titulo, motivo_encaminhamento, medico/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /não inferência/i);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /NÃO DEVE SER INFERIDA/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /Não use as chaves pageType, fields, state, value ou pageNumber/);
 });
 
 test('chat exige origem por página e validação não inventa correções', () => {
