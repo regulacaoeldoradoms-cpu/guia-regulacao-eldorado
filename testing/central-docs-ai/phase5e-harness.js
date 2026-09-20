@@ -442,6 +442,9 @@
         const resultChain = Array.isArray(item.attemptResults) && item.attemptResults.length
           ? item.attemptResults.join('>')
           : 'nenhum';
+        const durationChain = Array.isArray(item.attemptDurations) && item.attemptDurations.length
+          ? item.attemptDurations.join('>')
+          : 'nenhum';
         lines.push(
           'pagina_' + String(item.pageNumber).padStart(2, '0')
           + '_ms=' + totalMs
@@ -449,6 +452,7 @@
           + ' | provider_ms=' + providerMs
           + ' | transporte_backend_ms=' + transportMs
           + ' | tentativas=' + Math.max(0, Math.round(Number(item.attemptCount || 0)))
+          + ' | tentativas_ms=' + durationChain
           + ' | revisado=' + (item.reviewed === true ? 'sim' : 'nao')
           + ' | resultados=' + String(resultChain).replace(/[\r\n=|]+/g, ' ').slice(0, 180)
           + ' | modelos=' + String(modelChain).replace(/[\r\n=|]+/g, ' ').slice(0, 180)
@@ -582,6 +586,8 @@
           const attemptResults = providerAttempts
             .map((attempt) => String(attempt?.result || '').trim())
             .filter(Boolean);
+          const attemptDurations = providerAttempts
+            .map((attempt) => Math.max(0, Math.round(Number(attempt?.durationMs || 0))));
           pageResults[index] = {
             fixture,
             passed,
@@ -610,6 +616,7 @@
             attemptCount: providerAttempts.length,
             attemptModels,
             attemptResults,
+            attemptDurations,
             reviewed: provider?.reviewed === true
           };
         } catch (error) {
@@ -626,6 +633,7 @@
             attemptCount: 0,
             attemptModels: [],
             attemptResults: [],
+            attemptDurations: [],
             reviewed: false
           };
         }
@@ -659,6 +667,7 @@
           attemptCount: item.attemptCount,
           attemptModels: item.attemptModels,
           attemptResults: item.attemptResults,
+          attemptDurations: item.attemptDurations,
           reviewed: item.reviewed
         });
         addResult(
