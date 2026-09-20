@@ -2995,23 +2995,43 @@ O valor numérico exato da V6 não foi persistido, portanto não registrar uma r
 
 **Estado da Fase 5:** critérios funcionais comprovados; **pendência operacional única** para encerramento formal: fechar a janela V8C.2 com o procedimento fail-closed e confirmar `httpBlocked=true`. Depois disso, registrar Fase 5 encerrada e avançar para **Fase 6 — Automação operacional**.
 
+## Fase 5 encerrada; Fase 6 iniciada — 20/09/2026
+
+A janela final V8C.2 foi encerrada oficialmente após a matriz 10/10.
+
+Evidências sanitizadas:
+- `JANELA_5E_ENCERRADA`;
+- controle `phase5e_c5fb89ad6616463d8a427fe5885cc1dd`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado `a3d8dd66-c4b7-4f55-8399-34ab2334919a`;
+- release encerrado `32bda4f6753d434cc134eafb3610de16b00e272d`;
+- `httpBlocked=true`.
+
+**Conclusão da Fase 5:** encerrada e aceita. O critério funcional do Guia Mestre foi comprovado pela V8C.2 10/10; a janela foi fechada fail-closed; não existem gates de IA documental ativos em produção por efeito desta homologação.
+
+**Decisão de avanço:** a fase atual passa a ser **Fase 6 — Automação operacional**. A Fase 6 deve preparar recursos em background e sugerir próximas ações, sem executar mudanças destrutivas automaticamente. A medição de p75/p95/p99 e micro-otimizações de latência ficam para a Fase 7.
+
+Foi criado `docs/CENTRAL-DOCUMENTOS-FASE-6.md` com o diagnóstico inicial e as subfases 6A–6E. A primeira unidade é **6A — orquestrador de background e métricas**, sem nova chamada antecipatória de IA nesta unidade.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8C.2 aprovada 10/10; encerramento fail-closed pendente antes da Fase 6 |
-| Último resultado real | V8C.2 10/10 em 4,524 s; Gemma 6/6, uma tentativa por página, compacto 6/6, completion 622 |
+| Fase/subfase | Fase 6 — Automação operacional / 6A orquestrador de background e métricas |
+| Último resultado real | Fase 5 encerrada: V8C.2 10/10 em 4,524 s e janela final fail-closed com httpBlocked=true |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
-| Runtime próximo reteste | `32bda4f6753d434cc134eafb3610de16b00e272d` |
-| Pages próximo reteste | `https://821db519.portal-regulacao-central-staging.pages.dev` |
+| Runtime próximo reteste | nenhum — Fase 5 encerrada |
+| Pages próximo reteste | nenhum — iniciar implementação 6A em branch isolada |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
-| Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | encerrar a janela V8C.2 fail-closed; confirmar `JANELA_5E_ENCERRADA` + `httpBlocked=true`; então marcar Fase 5 encerrada e iniciar Fase 6 |
-| Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
-| Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
+| Produção | IA documental permanece fail-closed; Fase 6 não autoriza ativação silenciosa de IA nem escrita automática |
+| Próxima ação exata | implementar 6A: auditar/codificar orquestrador de tarefas de background com cancelamento, prioridade e telemetria técnica allowlisted, sem nova chamada antecipatória de IA |
+| Meta | Fase 6: reduzir tempo operacional mensuravelmente sem perda de controle do usuário |
+| Fontes | Guia Mestre V1.1; FASE-6; FASE-2; FASE-5; STATUS; js/documents.js; js/document-viewer.js; js/document-cache.js |
 
 ## Histórico recuperável
 
