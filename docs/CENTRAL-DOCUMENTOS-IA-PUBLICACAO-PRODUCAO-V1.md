@@ -68,11 +68,11 @@ Não há migração de banco, alteração de documento nem rollback de Drive ass
 Esta é uma mudança transversal autorizada pelo operador. A Fase 6 continua aberta até comprovar seu próprio critério: redução mensurável de tempo operacional sem perda de controle do usuário.
 
 
-## Estado pós-merge de 20/09/2026
+## Estado intermediário pós-merge #345 — histórico
 
-A PR #345 foi integrada na `main`, mas a publicação ainda **não pode ser declarada concluída**. O check externo do Workers Builds falhou antes de comprovar nova Worker Version produtiva. O código, os gates desejados e os testes estão integrados; falta a promoção efetiva do Worker.
+A PR #345 foi integrada na `main`, mas naquele instante a publicação ainda **não podia ser declarada concluída**. O check externo do Workers Builds falhou antes de comprovar nova Worker Version produtiva. Esse estado foi transitório e foi resolvido posteriormente pela PR #347, sem reabrir a Fase 5 nem alterar o contrato V8C.2.
 
-Até que o Workers Builds conclua com sucesso (ou que o gate `npm run deploy:safe` seja executado por uma máquina autenticada no Wrangler), tratar a IA documental produtiva como **pendente de deploy**, não como ativa.
+Esta seção é preservada somente como histórico do rollout; o estado vigente é o descrito em **Deploy produtivo concluído** abaixo.
 
 
 ## Deploy produtivo concluído
@@ -81,7 +81,9 @@ Em 20/09/2026, após a correção do gate pela PR #347, o Workers Builds conclui
 
 - merge: `fc4fde95db6c8f044d37337e0d142c2928c16fbf`;
 - Build ID: `f95e0e2c-3811-43fd-a986-67d46dc065bb`;
-- Worker Version: `1c2458f8-76f9-4050-8f10-a9e6b5fbec37`;
+- primeira Worker Version produtiva após a correção: `1c2458f8-76f9-4050-8f10-a9e6b5fbec37`;
 - Cloudflare Pages: sucesso.
+
+A PR documental #348 disparou novamente o mesmo gate seguro e também concluiu com sucesso. **Worker Version produtiva atual confirmada nesta revisão:** `2ee1b3f2-77f6-4f78-a19f-327eabcb0d8d`.
 
 O rollout técnico está concluído. Falta somente a validação funcional no navegador com uma conta que já tenha capability `extract`.

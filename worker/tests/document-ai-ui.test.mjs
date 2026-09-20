@@ -16,7 +16,7 @@ function asyncFunctionSlice(source, name, nextName) {
   return source.slice(start, end);
 }
 
-test('painel Titon permanece oculto e produção continua fail-closed', async () => {
+test('painel Titon inicia oculto e produção mantém IA normal ativa com background desligado', async () => {
   const [html, js, css, router, wrangler] = await Promise.all([
     read('documentos/index.html'),
     read('js/documents.js'),

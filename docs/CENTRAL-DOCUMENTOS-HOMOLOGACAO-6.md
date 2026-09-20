@@ -133,7 +133,7 @@ A lógica de gate permaneceu fail-closed e o clique não abriu o painel nem ativ
 
 Após o deploy da correção, validar:
 - com IA documental desabilitada, botão IA ausente;
-- quando futuramente `enabled=true` de forma controlada, o mesmo botão pode ser exibido e deve abrir o painel normalmente.
+- com a IA documental normal habilitada de forma controlada, o botão aparece somente para conta autorizada e deve abrir o painel normalmente.
 
 ## Publicação controlada da IA documental normal
 
