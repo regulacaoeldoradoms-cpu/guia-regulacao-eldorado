@@ -505,6 +505,22 @@
     const qwenPages = state.pageMetrics.filter((item) =>
       String(item.model || '') === '@cf/qwen/qwen3.8-27b'
     ).length;
+    const promptTokensTotal = state.pageMetrics.reduce(
+      (sum, item) => sum + Math.max(0, Number(item.promptTokens || 0)),
+      0
+    );
+    const completionTokensTotal = state.pageMetrics.reduce(
+      (sum, item) => sum + Math.max(0, Number(item.completionTokens || 0)),
+      0
+    );
+    const totalTokens = state.pageMetrics.reduce(
+      (sum, item) => sum + Math.max(0, Number(item.totalTokens || 0)),
+      0
+    );
+    const cachedPromptTokensTotal = state.pageMetrics.reduce(
+      (sum, item) => sum + Math.max(0, Number(item.cachedPromptTokens || 0)),
+      0
+    );
     const lines = [
       failed ? 'MATRIZ_5E_SINTETICA=FALHOU' : 'MATRIZ_5E_SINTETICA=APROVADA',
       'aprovados=' + passed,
@@ -514,7 +530,11 @@
       'moondream_paginas=' + moondreamPages,
       'gemma_paginas=' + gemmaPages,
       'qwen_paginas=' + qwenPages,
-      'concorrencia_paginas=5'
+      'concorrencia_paginas=5',
+      'prompt_tokens_extracao=' + Math.round(promptTokensTotal),
+      'completion_tokens_extracao=' + Math.round(completionTokensTotal),
+      'total_tokens_extracao=' + Math.round(totalTokens),
+      'cached_prompt_tokens_extracao=' + Math.round(cachedPromptTokensTotal)
     ];
 
     state.pageMetrics
@@ -541,6 +561,10 @@
           + ' | imagem_area_pct=' + Math.max(1, Math.min(100, Math.round(Number(item.imageAreaPct || 100))))
           + ' | provider_ms=' + providerMs
           + ' | transporte_backend_ms=' + transportMs
+          + ' | prompt_tokens=' + Math.max(0, Math.round(Number(item.promptTokens || 0)))
+          + ' | completion_tokens=' + Math.max(0, Math.round(Number(item.completionTokens || 0)))
+          + ' | total_tokens=' + Math.max(0, Math.round(Number(item.totalTokens || 0)))
+          + ' | cached_prompt_tokens=' + Math.max(0, Math.round(Number(item.cachedPromptTokens || 0)))
           + ' | tentativas=' + Math.max(0, Math.round(Number(item.attemptCount || 0)))
           + ' | tentativas_ms=' + durationChain
           + ' | revisado=' + (item.reviewed === true ? 'sim' : 'nao')
@@ -685,6 +709,22 @@
             .filter(Boolean);
           const attemptDurations = providerAttempts
             .map((attempt) => Math.max(0, Math.round(Number(attempt?.durationMs || 0))));
+          const promptTokens = providerAttempts.reduce(
+            (sum, attempt) => sum + Math.max(0, Number(attempt?.usage?.promptTokens || 0)),
+            0
+          );
+          const completionTokens = providerAttempts.reduce(
+            (sum, attempt) => sum + Math.max(0, Number(attempt?.usage?.completionTokens || 0)),
+            0
+          );
+          const totalTokens = providerAttempts.reduce(
+            (sum, attempt) => sum + Math.max(0, Number(attempt?.usage?.totalTokens || 0)),
+            0
+          );
+          const cachedPromptTokens = providerAttempts.reduce(
+            (sum, attempt) => sum + Math.max(0, Number(attempt?.usage?.cachedPromptTokens || 0)),
+            0
+          );
           const reviewChangedKeys = Array.isArray(provider?.reviewChangedKeys)
             ? provider.reviewChangedKeys.map((key) => String(key || '').trim()).filter(Boolean)
             : [];
@@ -700,7 +740,13 @@
                   ? provider.attempts.map((attempt) => ({
                       model: String(attempt?.model || ''),
                       result: String(attempt?.result || ''),
-                      durationMs: Math.max(0, Math.round(Number(attempt?.durationMs || 0)))
+                      durationMs: Math.max(0, Math.round(Number(attempt?.durationMs || 0))),
+                      usage: {
+                        promptTokens: Math.max(0, Math.round(Number(attempt?.usage?.promptTokens || 0))),
+                        completionTokens: Math.max(0, Math.round(Number(attempt?.usage?.completionTokens || 0))),
+                        totalTokens: Math.max(0, Math.round(Number(attempt?.usage?.totalTokens || 0))),
+                        cachedPromptTokens: Math.max(0, Math.round(Number(attempt?.usage?.cachedPromptTokens || 0)))
+                      }
                     }))
                   : []
               },
@@ -718,6 +764,10 @@
             attemptModels,
             attemptResults,
             attemptDurations,
+            promptTokens,
+            completionTokens,
+            totalTokens,
+            cachedPromptTokens,
             reviewed: provider?.reviewed === true,
             reviewChangedKeys
           };
@@ -737,6 +787,10 @@
             attemptModels: [],
             attemptResults: [],
             attemptDurations: [],
+            promptTokens: 0,
+            completionTokens: 0,
+            totalTokens: 0,
+            cachedPromptTokens: 0,
             reviewed: false,
             reviewChangedKeys: []
           };
@@ -773,6 +827,10 @@
           attemptModels: item.attemptModels,
           attemptResults: item.attemptResults,
           attemptDurations: item.attemptDurations,
+          promptTokens: item.promptTokens,
+          completionTokens: item.completionTokens,
+          totalTokens: item.totalTokens,
+          cachedPromptTokens: item.cachedPromptTokens,
           reviewed: item.reviewed,
           reviewChangedKeys: item.reviewChangedKeys
         });

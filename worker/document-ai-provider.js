@@ -166,6 +166,36 @@ function parseJsonCandidate(payload) {
   }
 }
 
+function providerTokenUsage(payload) {
+  const usage = payload?.usage;
+  if (!usage || typeof usage !== 'object' || Array.isArray(usage)) return null;
+
+  const count = (value) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) && numeric >= 0 ? Math.round(numeric) : 0;
+  };
+  const hasAny = [
+    'prompt_tokens',
+    'completion_tokens',
+    'total_tokens'
+  ].some((key) => Object.prototype.hasOwnProperty.call(usage, key));
+  if (!hasAny) return null;
+
+  const promptTokens = count(usage.prompt_tokens);
+  const completionTokens = count(usage.completion_tokens);
+  const totalTokens = count(
+    usage.total_tokens ?? (promptTokens + completionTokens)
+  );
+  const cachedPromptTokens = count(usage?.prompt_tokens_details?.cached_tokens);
+
+  return {
+    promptTokens,
+    completionTokens,
+    totalTokens,
+    cachedPromptTokens
+  };
+}
+
 function freeOnly(env = {}) {
   return String(env.DOCUMENTS_AI_FREE_ONLY ?? 'true').trim().toLowerCase() === 'true';
 }
@@ -430,7 +460,8 @@ async function runWorkersAi(
       attempts.push({
         model,
         result: 'success',
-        durationMs: Math.max(0, Date.now() - started)
+        durationMs: Math.max(0, Date.now() - started),
+        usage: providerTokenUsage(payload)
       });
       return { value, model, attempts };
     } catch (error) {

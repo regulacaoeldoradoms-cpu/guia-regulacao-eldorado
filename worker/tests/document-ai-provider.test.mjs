@@ -41,8 +41,11 @@ function fieldsFor(pageType, overrides = {}) {
   return fields;
 }
 
-function workersResponse(value) {
-  return { response: JSON.stringify(value) };
+function workersResponse(value, usage = null) {
+  return {
+    response: JSON.stringify(value),
+    ...(usage ? { usage } : {})
+  };
 }
 
 test('provider documental usa somente Gemma 4 + Qwen aprovados para free-only', () => {
@@ -350,6 +353,11 @@ test('análise integrada classifica e extrai página autorizada em uma única in
           motivo_encaminhamento: { state: 'encontrado', value: 'TEXTO LITERAL' },
           medico: { state: 'encontrado', value: 'DR. TESTE' }
         })
+      }, {
+        prompt_tokens: 321,
+        completion_tokens: 87,
+        total_tokens: 408,
+        prompt_tokens_details: { cached_tokens: 64 }
       });
     }
   });
@@ -360,6 +368,12 @@ test('análise integrada classifica e extrai página autorizada em uma única in
   assert.equal(result.extraction.pageNumber, 2);
   assert.equal(result.extraction.fields.motivo_encaminhamento.value, 'TEXTO LITERAL');
   assert.equal(result.provider.model, DOCUMENT_AI_PRIMARY_FREE_MODEL);
+  assert.deepEqual(result.provider.attempts[0].usage, {
+    promptTokens: 321,
+    completionTokens: 87,
+    totalTokens: 408,
+    cachedPromptTokens: 64
+  });
 
   const serialized = JSON.stringify(calls[0].input);
   assert.match(serialized, /PROMPT|Analise somente esta página|pageType/i);
