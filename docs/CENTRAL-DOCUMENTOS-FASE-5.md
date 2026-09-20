@@ -444,3 +444,21 @@ Meta: 10/10 e aproximadamente 6–6,5 s. Se não ocorrer, não criar V7G; avanç
 
 Antes de abrir a V8B, a janela V8A anterior deve ser encerrada fail-closed e não pode ser reutilizada.
 
+### V8C — saída interna compacta
+A V8B confirmou 10/10 em 6,179 s, com 9.020 prompt tokens e 1.024 completion tokens. A V8C testa somente a redução do protocolo de resposta do modelo, antes de mexer em resolução ou conteúdo visual.
+
+Desenho:
+- imagem, resolução, Gemma/Qwen, concorrência 5, `max_completion_tokens=700` e revisão seletiva permanecem;
+- novo artefato versionado `PROMPT_ANALISE_REGULACAO_COMPACTA_V1` preserva as regras de classificação, literalidade, isolamento, `nao_consta` e `ilegivel`;
+- resposta interna usa `t=c|m|o` e, para páginas autorizadas, vetor `f` com 8 pares `[s,v]`;
+- estados internos: `e=encontrado`, `n=nao_consta`, `i=ilegivel`;
+- o backend expande imediatamente para o contrato público completo atual; frontend/chat/evidências não recebem o formato compacto;
+- resposta legada continua aceita apenas como compatibilidade/fallback e é marcada na telemetria técnica;
+- resumo seguro passa a medir `formato_compacto_paginas`, `formato_legado_paginas` e `formato_resposta`.
+
+Critério da V8C:
+- 10/10 obrigatório;
+- `formato_compacto_paginas=6` e `formato_legado_paginas=0` para considerar o experimento válido;
+- reduzir materialmente os 1.024 completion tokens da V8B, com alvo operacional <= 700;
+- comparar latência sem atribuir ganho/regressão a uma única rodada se a variação do provider dominar.
+
