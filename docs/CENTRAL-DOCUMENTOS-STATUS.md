@@ -2177,12 +2177,30 @@ Conclusão: a janela V7D está encerrada e não deve ser reutilizada. O bloqueio
 
 **Próxima ação exata:** atualizar os quatro scripts operacionais a partir da `main` e executar `iniciar-homologacao-5e.mjs --iniciar`. O readiness correto deve mostrar source `5fe6d24bb1b26b039a0221b0224201692cdf11ef` e Pages `https://ffdd1515.portal-regulacao-central-staging.pages.dev`. Somente então confirmar `PREPARAR HOMOLOGACAO 5E`.
 
+## Janela V7E preparada — 20/09/2026
+
+O operador concluiu o preparo oficial da janela V7E.
+
+Evidências sanitizadas:
+- `HOMOLOGACAO_5E_PREPARADA`;
+- preview version `b6a9e988-d93a-44d1-861d-e13ddb4ff637`;
+- controle `phase5e_0c471718c5db4733974504c844088460`;
+- expiração `2026-09-20T03:39:33.000Z`;
+- release `5fe6d24bb1b26b039a0221b0224201692cdf11ef`;
+- `aiGate=true` somente no preview;
+- `driveWriteGate=false`;
+- produção permaneceu `298ba237-78f9-4d24-bad1-47e66b4c1e15`.
+
+A janela corresponde exatamente ao runtime V7E congelado. Produção não foi promovida.
+
+**Próxima ação exata:** abrir `https://ffdd1515.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz **uma única vez** e copiar o resumo seguro completo. Os critérios são simultâneos: **10/10** e `duracao_extracao_ms < 13748`. Conferir também `concorrencia_paginas=4`, `tentativas_ms`, `revisado` e `revisao_alterou`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7E integrada; V7D encerrada fail-closed; reteste pronto para abertura |
-| Último resultado real | V7D 8/10; extração 15,386 s; V7E integrada para concorrência/tokens/revisão controlados |
+| Fase/subfase | Fase 5E — V7E preparada; matriz aguardando execução |
+| Último resultado real | janela V7E preparada; release correto; Drive false; produção intacta |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Pages próximo reteste | `https://ffdd1515.portal-regulacao-central-staging.pages.dev` |
@@ -2191,7 +2209,7 @@ Conclusão: a janela V7D está encerrada e não deve ser reutilizada. O bloqueio
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | atualizar scripts; readiness V7E; preparar janela nova; executar matriz uma vez |
+| Próxima ação exata | abrir laboratório V7E; executar matriz uma vez; copiar resumo seguro completo |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
