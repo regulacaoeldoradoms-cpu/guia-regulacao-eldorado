@@ -554,3 +554,26 @@ Próximo reteste:
 A comparação GitHub entre o head funcional e o merge final mostrou zero arquivos diferentes.
 
 A janela V7C atualmente ativa deve ser encerrada fail-closed antes da nova abertura V7D.
+
+
+## V7E — referências congeladas após regressão V7D — 20/09/2026
+
+A V7D regrediu para 8/10 e 15,386 s. A página 6 divergiu em `titulo`, o chat dependente falhou e a página 5 teve um outlier Gemma de 14,818 s.
+
+A PR #306 integrou a V7E:
+- Gemma direto permanece;
+- concorrência de páginas reduzida de 6 para 4;
+- análise integrada limitada a 700 tokens;
+- revisão focal limitada a 350 tokens;
+- quando uma página médica já exige revisão por CID/ilegibilidade, `titulo` entra na mesma chamada Qwen;
+- backend D1 consolidado permanece;
+- Moondream continua desligado.
+
+Próximo reteste:
+- source ref: `5fe6d24bb1b26b039a0221b0224201692cdf11ef`;
+- Pages: `https://ffdd1515.portal-regulacao-central-staging.pages.dev`;
+- head funcional do Pages: `1f15869d7bb37d7a466433952f87377d60cb833c`.
+
+A comparação GitHub entre o head funcional e o merge final mostrou zero arquivos diferentes.
+
+A janela V7D atualmente ativa deve ser encerrada fail-closed antes da nova abertura V7E.
