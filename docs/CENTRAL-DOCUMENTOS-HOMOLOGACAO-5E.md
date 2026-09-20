@@ -534,3 +534,23 @@ Próximo reteste:
 A comparação GitHub entre o head funcional e o merge final mostrou zero arquivos diferentes.
 
 A janela V7B atualmente ativa deve ser encerrada fail-closed antes da nova abertura V7C.
+
+
+## V7D — referências congeladas após V7C 10/10 — 20/09/2026
+
+A V7C atingiu 10/10 e reduziu a extração para 13,748 s. O backend deixou de ser o gargalo principal, mas Moondream permaneceu 0/6 e adicionou ~2,1–5,0 s antes de Gemma em todas as páginas.
+
+A PR #302 integrou a V7D:
+- fast path Moondream desligado somente no preview 5E;
+- Gemma 4 passa a ser a primeira tentativa visual;
+- Qwen permanece fallback/revisor focal;
+- resumo seguro adiciona `revisao_alterou=` apenas com nomes de campos.
+
+Próximo reteste:
+- source ref: `208639f021ca9d5f86a2df97a9bd8a5978e5224f`;
+- Pages: `https://b5b3f33e.portal-regulacao-central-staging.pages.dev`;
+- head funcional do Pages: `ffb5f9c485396378f6abc72bbadbe83c34e392ed`.
+
+A comparação GitHub entre o head funcional e o merge final mostrou zero arquivos diferentes.
+
+A janela V7C atualmente ativa deve ser encerrada fail-closed antes da nova abertura V7D.
