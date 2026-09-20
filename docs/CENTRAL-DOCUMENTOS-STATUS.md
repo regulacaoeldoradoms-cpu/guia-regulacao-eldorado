@@ -1,6 +1,6 @@
 # Central de Documentos — Status
 
-Última atualização: 18/09/2026.
+Última atualização: 20/09/2026.
 
 ## Publicação do novo vídeo de abertura — CONCLUÍDA — 18/09/2026
 
@@ -2550,11 +2550,36 @@ Decisão estratégica antes da próxima implementação:
 
 Meta: reduzir estruturalmente a entrada visual sem trocar a fonte de verdade e sem criar novas inferências. Se a compactação não reduzir `imagem_area_pct`/tempo de forma material, considerar 5–6 s como teto prático do caminho visual remoto e avançar para arquitetura híbrida com validação visual explícita.
 
+## V8B — medição de tokens antes de nova transformação visual — 20/09/2026
+
+Após o resultado V8A (10/10 em 5,388 s, porém com `imagem_area_pct=100` em todas as páginas), a estratégia foi refinada com base no contrato atual do Workers AI e no código real da `main`.
+
+A documentação oficial atual do Cloudflare para `@cf/google/gemma-4-26b-a4b-it` declara resposta síncrona com objeto `usage`, incluindo `prompt_tokens`, `completion_tokens` e `total_tokens`; a documentação de prompt caching também expõe `prompt_tokens_details.cached_tokens`. O provider do Titon já recebe esse payload de `env.AI.run()`, mas descartava essas contagens ao normalizar a resposta.
+
+**Decisão:** antes de compactar faixas brancas, reduzir resolução ou alterar o protocolo de saída, medir o orçamento real de tokens do caminho visual atual. Isso separa três hipóteses que até agora estavam misturadas: custo de entrada visual/prompt, custo de geração do JSON e latência intrínseca do provider.
+
+Branch isolada: `feat/central-docs-5e-v8b-token-metrics`.
+
+Escopo desta subetapa:
+- preservar modelo, prompt, imagem, resolução, concorrência 5, `max_completion_tokens=700`, revisão seletiva e regras de precisão exatamente como estão;
+- propagar somente contagens técnicas de `usage` por tentativa: prompt, completion, total e cached prompt tokens;
+- exibir as contagens no resumo seguro sintético por página e no agregado da extração;
+- não registrar conteúdo de prompt, resposta, imagem, identidade clínica, nome de arquivo ou credenciais;
+- nenhuma alteração de produção, gate, Drive, D1 ou permissões.
+
+Ordem de decisão após a medição:
+1. medir tokens em uma matriz real 10/10;
+2. se `completion_tokens` forem relevantes, compactar primeiro o formato de saída sem perder estados/campos e medir novamente;
+3. somente se o gargalo estiver principalmente no input visual, testar resolução/compactação visual;
+4. deixar arquitetura híbrida text-layer + validação visual como etapa posterior, pois text layer não pode ser aceita como verdade documental sem confirmação visual.
+
+Essa ordem substitui a ideia anterior de partir imediatamente para compactação visual V8B. V8A e V7F permanecem baselines de rollback.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8A 10/10 em 5,388 s; estratégia V8B em definição |
+| Fase/subfase | Fase 5E — V8B diagnóstica: medir token usage real antes de alterar saída/imagem |
 | Último resultado real | V8A 10/10 em 5,388 s; imagem_area_pct=100 em todas as páginas; ganho não atribuído ao crop |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9` |
@@ -2564,7 +2589,7 @@ Meta: reduzir estruturalmente a entrada visual sem trocar a fonte de verdade e s
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | definir/implementar V8B de compactação visual segura; preservar V8A/V7F como rollback |
+| Próxima ação exata | validar CI da instrumentação V8B; depois executar uma única matriz 10/10 e comparar prompt/completion/total/cached tokens por página antes de escolher a próxima otimização |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
