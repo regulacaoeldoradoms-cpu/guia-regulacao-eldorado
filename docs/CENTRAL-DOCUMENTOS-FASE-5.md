@@ -471,3 +471,16 @@ Referências congeladas V8C:
 
 Antes da matriz V8C, encerrar a janela V8B anterior fail-closed. O readiness V8C deve confirmar source e Pages acima antes de criar nova janela.
 
+### V8C.1 — âncora semântica do título
+A V8C reduziu completion tokens de 1.024 para 579, mas falhou precisão porque o formato médico totalmente posicional perdeu a âncora semântica de `titulo`.
+
+Correção mínima:
+- comprovante permanece `t=c + f[8]`;
+- página médica usa `t=m + h + f[7]`;
+- `h` representa somente `titulo` e deve priorizar o valor de campo explicitamente rotulado "Título";
+- os demais sete campos médicos continuam compactos e posicionais;
+- formato médico V8C antigo (`f[8]` sem `h`) é rejeitado;
+- contrato público permanece inalterado.
+
+Critério: recuperar 10/10, manter 6/6 compacto e 0/6 legado, e preservar completion tokens materialmente abaixo do baseline V8B de 1.024.
+

@@ -75,7 +75,9 @@ test('V8C mantém as regras da análise integrada e troca apenas o transporte in
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /s=n/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /s=i/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /nome_paciente, cpf, cns/);
-  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /titulo, motivo_encaminhamento, medico/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /h representa SOMENTE titulo/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /explicitamente rotulado "Título"/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /motivo_encaminhamento, medico, crm_rms/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /não inferência/i);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /NÃO DEVE SER INFERIDA/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /Não use as chaves pageType, fields, state, value ou pageNumber/);
