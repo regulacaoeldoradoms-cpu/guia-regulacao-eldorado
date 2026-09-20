@@ -66,3 +66,10 @@ Não há migração de banco, alteração de documento nem rollback de Drive ass
 ## Relação com a Fase 6
 
 Esta é uma mudança transversal autorizada pelo operador. A Fase 6 continua aberta até comprovar seu próprio critério: redução mensurável de tempo operacional sem perda de controle do usuário.
+
+
+## Estado pós-merge de 20/09/2026
+
+A PR #345 foi integrada na `main`, mas a publicação ainda **não pode ser declarada concluída**. O check externo do Workers Builds falhou antes de comprovar nova Worker Version produtiva. O código, os gates desejados e os testes estão integrados; falta a promoção efetiva do Worker.
+
+Até que o Workers Builds conclua com sucesso (ou que o gate `npm run deploy:safe` seja executado por uma máquina autenticada no Wrangler), tratar a IA documental produtiva como **pendente de deploy**, não como ativa.

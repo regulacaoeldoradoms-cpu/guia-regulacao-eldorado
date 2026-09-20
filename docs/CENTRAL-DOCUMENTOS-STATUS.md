@@ -3125,3 +3125,41 @@ Rollback: recolocar somente `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESS
 Branch de publicação: `release/central-docs-ai-production-20260920`.
 
 **Próxima ação exata:** validar CI completo da branch, abrir/mesclar PR somente se verde e confirmar o deploy seguro do Worker. Depois validar em produção que uma conta que já possua `extract` vê o botão IA e que uma conta sem `extract` continua sem acesso.
+
+
+## Publicação produtiva da IA — código integrado; deploy do Worker BLOQUEADO externamente — 20/09/2026
+
+A PR **#345** foi mesclada na `main` pelo commit `eab164bf4956d08a8f83e75a5e1172aebd0d385e`. O estado versionado passou a exigir:
+- `DOCUMENTS_AI_ENABLED=true`;
+- `DOCUMENTS_AI_PROCESSING_ENABLED=true`;
+- `DOCUMENTS_AI_BACKGROUND_ENABLED=false`;
+- `DOCUMENTS_AI_FREE_ONLY=true`;
+- `DOCUMENTS_AI_FAST_VISION_ENABLED=false`;
+- binding Workers AI `AI` preservado e capability `extract` obrigatória no backend.
+
+Validação de código:
+- PR #345: workflows relevantes verdes, inclusive **Central de Documentos — Fases 1–6**, governança, bundle e gate de deploy seguro;
+- após o merge, **23/23 workflows GitHub Actions** do push concluíram com `success`;
+- Cloudflare Pages também publicou o merge com sucesso.
+
+**Bloqueio real:** o check externo `Workers Builds: yellow-wave-d0a1guia-regulacao-ia` do merge terminou em `failure` (build `c99d6f51-ec8b-40ae-9854-39cb82ca9d89`). No commit imediatamente anterior, o mesmo pipeline expôs a mensagem `Preview creation failed: You do not have access to use Worker Previews. Please ensure it is enabled.`. Portanto, **não declarar a IA ativa em produção ainda**: a `main` contém a configuração desejada, mas não há evidência de que uma nova Worker Version tenha sido promovida.
+
+Reconciliação: `worker/wrangler.toml` continua contendo `preview_urls=false`, proteção introduzida pela PR #241. A mesma configuração já publicou com sucesso anteriormente (merge #241, Worker Version `c94de153-8de7-4784-a909-15d207b1209a`). A falha atual é, portanto, do pipeline/controle externo do Workers Builds, não uma remoção dessa proteção no repositório.
+
+Próxima ação externa exata:
+1. no Worker `yellow-wave-d0a1guia-regulacao-ia`, conferir **Settings > Build > Branch control** e garantir que a production branch é `main`;
+2. desabilitar **Builds for non-production branches** se estiver ativo, pois o projeto não depende de Worker Previews para PRs;
+3. em **Settings > Build**, manter root directory `/worker` e Deploy command `npm run deploy:safe`;
+4. salvar e **Retry build** do commit `eab164bf...` (ou disparar nova build de `main`);
+5. somente depois de `Workers Builds=success`, confirmar a nova Worker Version e validar em produção que uma conta com capability `extract` vê/abre a IA documental.
+
+Alternativa operacional segura, caso o Workers Builds continue indisponível: executar `npm run deploy:safe` a partir do commit fixo `eab164bf...` em uma máquina já autenticada no Wrangler. O gate envia candidata sem tráfego, valida bindings/secrets/AUTH_DB, promove apenas se íntegra e possui rollback automático.
+
+Risco conhecido: a configuração desejada já está na `main`; quando o pipeline externo voltar a funcionar, ela poderá ser publicada automaticamente. Isso é compatível com a autorização explícita do operador, mas exige validação pós-deploy antes de declarar encerrada a publicação.
+
+### Handoff complementar — publicação da IA
+- **Fase atual:** Fase 6 — Automação operacional; publicação da IA é mudança transversal autorizada.
+- **Última ação concluída:** PR #345 mesclada; código e gates produtivos desejados integrados.
+- **Bloqueio:** Workers Builds externo falha antes de comprovar promoção do Worker.
+- **Produção comprovada:** não assumir que os gates true estão ativos até check do Worker verde + nova versão confirmada.
+- **Próxima ação exata:** corrigir/verificar Branch control/Build settings na Cloudflare, retry do build de `eab164bf...`, depois teste real do botão IA sob capability `extract`.
