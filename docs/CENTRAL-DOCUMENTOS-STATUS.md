@@ -1840,21 +1840,44 @@ Branch isolada `fix/titon-v7b-prep-probe-recovery`:
 
 **Próxima ação exata:** concluir CI e integrar a correção; congelar novo source/Pages; então, no Windows do operador, baixar e executar `recuperar-preparo-5e.mjs --recuperar`. Somente após `PREPARO_5E_RECUPERADO` atualizar os scripts/readiness e abrir uma nova janela V7B.
 
+## V7B probe-fixed integrada e congelada — 20/09/2026
+
+A PR #294 foi integrada na `main` pelo merge `09bf379f306579bcb7ca049ad02d4c6a94c1df67`.
+
+O head funcional `1f5f4b9baf3179afe195880e2c08568ee7e311a7` passou os checks relevantes, incluindo Fases 1–5E, procedimentos 5E, staging, governança e site. O Pages imutável é `https://20627e1a.portal-regulacao-central-staging.pages.dev`. A comparação GitHub entre esse head e o merge final mostrou **zero arquivos diferentes**.
+
+Correções da PR #294:
+- restaura a prova HTTP operacional **403 antes / 401 depois** apenas na rota de leitura usada pelo preparador;
+- mantém preflight OPTIONS sem D1 e cacheável;
+- preserva o caminho quente de IA otimizado, sem recolocar leituras redundantes;
+- adiciona recuperador fail-closed `recuperar-preparo-5e.mjs`;
+- o recuperador nunca habilita controle, nunca faz upload/deploy/promoção e só remove o marcador local depois de confirmar controle desligado e preview correspondente;
+- o preparador passa a sinalizar `proxima_acao=RECUPERAR_PREPARO_5E` em falhas após upload.
+
+Referências finais para o próximo reteste:
+- source ref `09bf379f306579bcb7ca049ad02d4c6a94c1df67`;
+- Pages `https://20627e1a.portal-regulacao-central-staging.pages.dev`;
+- head funcional do Pages `1f5f4b9baf3179afe195880e2c08568ee7e311a7`.
+
+Existe um marcador local `upload-5e-incerto.json` deixado deliberadamente pela tentativa interrompida. **Não apagar manualmente.**
+
+**Próxima ação exata:** no Windows do operador, baixar `preparar-homologacao-5e.mjs` e `recuperar-preparo-5e.mjs` atuais da `main` e executar `node .\recuperar-preparo-5e.mjs --recuperar`. Somente após `PREPARO_5E_RECUPERADO` baixar/atualizar os quatro scripts operacionais, executar readiness e confirmar source `09bf379f306579bcb7ca049ad02d4c6a94c1df67` + Pages `https://20627e1a.portal-regulacao-central-staging.pages.dev`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — preparo V7B interrompido em 6/8; correção/recovery em validação |
-| Último resultado real | readiness V7B verde; upload preview ocorreu; probe 6/8 rejeitou 401 vs 403 esperado; controle não chegou à ativação |
-| Runtime funcional V7B | `5e27d58a09751363392b1ee1c7560be3f5f473cc` |
-| Runtime próximo reteste | `5e27d58a09751363392b1ee1c7560be3f5f473cc` |
-| Pages próximo reteste | `https://18727b6f.portal-regulacao-central-staging.pages.dev` |
+| Fase/subfase | Fase 5E — V7B probe-fixed integrada; recuperação local pendente |
+| Último resultado real | preparo V7B interrompido em 6/8 por semântica de probe; correção integrada; marcador local preservado |
+| Runtime funcional V7B | `09bf379f306579bcb7ca049ad02d4c6a94c1df67` |
+| Runtime próximo reteste | `09bf379f306579bcb7ca049ad02d4c6a94c1df67` |
+| Pages próximo reteste | `https://20627e1a.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | integrar correção; congelar refs; executar recuperar-preparo-5e; só depois abrir nova janela V7B |
+| Próxima ação exata | recuperar preparo 5E interrompido; depois readiness V7B probe-fixed; preparar nova janela |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
