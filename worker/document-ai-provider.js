@@ -557,12 +557,29 @@ function providerMetadata(result, review = null, reviewChangedKeys = []) {
 function medicalReviewFocus(extraction, initialModel = '') {
   if (extraction?.pageType !== 'pagina_medica_autorizada') return [];
   const fields = extraction?.fields || {};
-  const trustFastExplicitIllegible = String(initialModel || '') === DOCUMENT_AI_FAST_VISION_FREE_MODEL;
-  const focus = trustFastExplicitIllegible
+  const normalizedInitialModel = String(initialModel || '');
+  const trustFastExplicitIllegible = normalizedInitialModel === DOCUMENT_AI_FAST_VISION_FREE_MODEL;
+
+  const illegibleKeys = Object.entries(fields)
+    .filter(([, field]) => String(field?.state || '') === 'ilegivel')
+    .map(([key]) => key);
+
+  // Evidência V7E: quando Gemma retorna CID explicitamente ILEGÍVEL, descrição
+  // encontrada e nenhum outro campo está ilegível, a revisão Qwen não alterou
+  // nenhum campo e adicionou ~3,2 s ao caminho crítico. Nesse caso exato,
+  // preservamos a leitura conservadora do Gemma e evitamos uma inferência
+  // redundante. Qualquer outra ambiguidade continua revisável.
+  const trustGemmaExplicitCidIllegible = (
+    normalizedInitialModel === DOCUMENT_AI_PRIMARY_FREE_MODEL
+    && illegibleKeys.length === 1
+    && illegibleKeys[0] === 'cid'
+    && String(fields?.cid?.state || '') === 'ilegivel'
+    && String(fields?.descricao_cid?.state || '') === 'encontrado'
+  );
+
+  const focus = (trustFastExplicitIllegible || trustGemmaExplicitCidIllegible)
     ? []
-    : Object.entries(fields)
-      .filter(([, field]) => String(field?.state || '') === 'ilegivel')
-      .map(([key]) => key);
+    : [...illegibleKeys];
 
   if (
     String(fields?.cid?.state || '') === 'nao_consta'
