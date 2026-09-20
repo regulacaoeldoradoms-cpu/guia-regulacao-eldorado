@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 
+import { FIXED_5E } from './preparar-homologacao-5e.mjs';
 import {
   markerValue,
   recentCandidate,
@@ -20,9 +21,9 @@ function previewVersion(overrides = {}) {
     id: '11111111-1111-4111-8111-111111111111',
     metadata: { created_on: new Date().toISOString() },
     annotations: {
-      'workers/alias': 'central-docs-phase5e',
-      'workers/tag': 'central-docs-phase5e',
-      'workers/message': 'Central Docs 5E: IA documental controlada'
+      'workers/alias': FIXED_5E.alias,
+      'workers/tag': FIXED_5E.tag,
+      'workers/message': FIXED_5E.message
     },
     resources: {
       bindings: [
