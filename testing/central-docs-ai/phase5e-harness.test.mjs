@@ -96,7 +96,7 @@ test('matriz 5E usa uma análise por página, concorrência limitada e não envi
   assert.match(js, /phase5e-synthetic-v1/);
   assert.doesNotMatch(js, /function classifyFixture/);
   assert.match(js, /\/api\/documents\/ai\/page\/extract/);
-  assert.match(js, /const concurrency = Math\.min\(4, fixtures\.length\)/);
+  assert.match(js, /const concurrency = Math\.min\(5, fixtures\.length\)/);
   assert.match(js, /Promise\.all\(Array\.from\(\{ length: concurrency \}/);
   assert.match(js, /\/api\/documents\/ai\/chat/);
   assert.doesNotMatch(js, /\/api\/documents\/drive\//);
@@ -119,7 +119,7 @@ test('resumo seguro 5E não copia detalhes, respostas, credenciais ou conteúdo 
   assert.match(js, /moondream_paginas=/);
   assert.match(js, /gemma_paginas=/);
   assert.match(js, /qwen_paginas=/);
-  assert.match(js, /concorrencia_paginas=4/);
+  assert.match(js, /concorrencia_paginas=5/);
   assert.match(js, /'_ms='/);
   assert.match(js, /preparo_ms=/);
   assert.match(js, /provider_ms=/);
