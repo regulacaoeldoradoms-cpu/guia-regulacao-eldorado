@@ -2369,21 +2369,42 @@ Critério V7G:
 - idealmente <6,0 s e obrigatoriamente não regredir materialmente sobre 6,830 s;
 - se houver outlier/queda de precisão, manter V7F como ápice image-only e iniciar V8 híbrida.
 
+## V7G integrada e reteste congelado — 20/09/2026
+
+A PR #315 foi integrada pelo merge `ba7d8a369940a9613a436b6b0f572bdedb99375f`. O Pages imutável `https://0e5a1474.portal-regulacao-central-staging.pages.dev` foi publicado no head funcional `0c5fc5b44bb885cd17179eaa4c0f836b9d494dc7`; a comparação GitHub mostrou zero arquivos diferentes entre esse head e o merge final.
+
+A V7G altera somente concorrência 5 → 6. Gemma 700 tokens, backend D1 consolidado e o skip Qwen seletivo da V7F permanecem iguais.
+
+Hipótese medida a partir da V7F: com seis páginas iniciando juntas, o makespan pode cair de 6,830 s para aproximadamente 5,5 s se as latências individuais não sofrerem contenção.
+
+Referências congeladas:
+- source ref `ba7d8a369940a9613a436b6b0f572bdedb99375f`;
+- Pages `https://0e5a1474.portal-regulacao-central-staging.pages.dev`.
+
+Critério final image-only:
+- 10/10;
+- idealmente <6,0 s;
+- qualquer regressão de precisão ou outlier relevante encerra V7.x e mantém V7F como baseline, seguindo para V8 híbrida.
+
+A janela V7F atual permanece ativa e deve ser encerrada fail-closed antes de preparar V7G.
+
+**Próxima ação exata:** encerrar V7F; atualizar scripts locais; readiness V7G; preparar nova janela e executar uma única matriz.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7F 10/10 em 6,830 s; V7G concorrência 6 em validação final |
+| Fase/subfase | Fase 5E — V7G integrada; teste final image-only aguarda encerramento V7F |
 | Último resultado real | V7F 10/10; extração 6,830 s; apenas 330 ms acima do alvo 6,5 s |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
-| Runtime próximo reteste | `6e30117a1e0c342cb84d4cdf1f1a2f7351d86c82` |
-| Pages próximo reteste | `https://58d9fc14.portal-regulacao-central-staging.pages.dev` |
+| Runtime próximo reteste | `ba7d8a369940a9613a436b6b0f572bdedb99375f` |
+| Pages próximo reteste | `https://0e5a1474.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | concluir CI V7G; integrar/congelar; encerrar V7F; executar uma última rodada V7G |
+| Próxima ação exata | encerrar V7F fail-closed; atualizar scripts; readiness V7G; preparar janela; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
