@@ -162,6 +162,7 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   assert.match(js, /transportBackendMs/);
   assert.match(js, /attemptCount/);
   assert.match(js, /attemptModels/);
+  assert.match(js, /attemptResults/);
   assert.match(js, /reviewed/);
   assert.match(js, /mismatchFields/);
   assert.match(js, /mismatchedFields/);
@@ -175,6 +176,7 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   assert.match(safe, /provider_ms/);
   assert.match(safe, /transporte_backend_ms/);
   assert.match(safe, /tentativas/);
+  assert.match(safe, /resultados/);
   assert.match(safe, /revisado/);
   assert.match(safe, /modelos/);
   assert.match(safe, /campos_divergentes/);
