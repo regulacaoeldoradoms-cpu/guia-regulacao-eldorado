@@ -412,3 +412,12 @@ Meta:
 - PDFs digitais: buscar <6 s para 6 páginas, com possibilidade de ficar muito abaixo disso quando todas as páginas forem resolvidas deterministicamente;
 - PDFs mistos: reduzir proporcionalmente ao número de páginas que evitarem visão;
 - PDFs 100% escaneados: usar V7E como fallback e não prometer 6 s.
+
+
+## V7F 10/10 em 6,830 s e V7G final — 20/09/2026
+
+A V7F atingiu 10/10 com 6,830 s de extração. O backend e a revisão já deixaram de dominar o tempo. A diferença restante até ~5,5–6 s vem do scheduling com concorrência 5: a página 6 aguarda o primeiro slot livre.
+
+Com as durações reais V7F, iniciar as seis páginas simultaneamente teria makespan teórico ~5,483 s se o provider mantiver latências equivalentes.
+
+A V7G testa **somente concorrência 6**. Nenhuma outra variável muda. É a última rodada image-only; qualquer regressão encerra a linha V7.x e mantém V7F como baseline final, com V8 híbrida como próximo avanço.
