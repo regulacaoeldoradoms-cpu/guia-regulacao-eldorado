@@ -2332,12 +2332,49 @@ A janela corresponde exatamente ao runtime V7F congelado. Produção não foi pr
 
 **Próxima ação exata:** abrir `https://58d9fc14.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz **uma única vez** e copiar o resumo seguro completo. Critério: **10/10** e alvo operacional `duracao_extracao_ms <= 6500`. Se não cumprir, encerrar V7.x e iniciar V8 híbrida.
 
+## Resultado V7F — 10/10 em 6,830 s; V7G final proposta — 20/09/2026
+
+Resumo seguro real da V7F:
+- `MATRIZ_5E_SINTETICA=APROVADA`;
+- **10 aprovados / 0 falhas**;
+- `duracao_extracao_ms=6830`;
+- `duracao_total_ms=10215`;
+- `concorrencia_paginas=5`;
+- Gemma final: 6 páginas;
+- Qwen final: 0 páginas;
+- nenhuma revisão adicional;
+- backend fora do provider ~0,25–0,60 s/página.
+
+Tempos totais por página:
+- p1 5,483 s;
+- p2 4,234 s;
+- p3 1,873 s;
+- p4 4,989 s;
+- p5 4,297 s;
+- p6 4,957 s.
+
+A V7F ficou apenas **330 ms acima** do alvo de 6,5 s. O makespan observado é explicado pela fila de concorrência 5: páginas 1–5 iniciam juntas, a página 3 libera o primeiro slot em ~1,873 s e só então a página 6 começa; 1,873 + 4,957 ≈ 6,830 s.
+
+Isso revela uma última oportunidade estritamente de scheduling: concorrência **6**, sem alterar modelo, prompt, tokens, backend ou regras de precisão. Se as latências individuais permanecerem próximas da V7F, o limite observado seria aproximadamente o máximo das seis páginas, ~5,5 s. Há risco de contenção de provider, portanto esta deve ser a **última** rodada image-only.
+
+V7G preparada em branch isolada:
+- única mudança funcional: concorrência 5 → 6;
+- Gemma 700 tokens preservado;
+- skip Qwen seletivo da V7F preservado;
+- backend D1 consolidado preservado;
+- nenhuma outra alteração de prompt, modelo ou resolução.
+
+Critério V7G:
+- 10/10;
+- idealmente <6,0 s e obrigatoriamente não regredir materialmente sobre 6,830 s;
+- se houver outlier/queda de precisão, manter V7F como ápice image-only e iniciar V8 híbrida.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7F preparada; último teste image-only aguardando execução |
-| Último resultado real | janela V7F preparada; release correto; Drive false; produção intacta |
+| Fase/subfase | Fase 5E — V7F 10/10 em 6,830 s; V7G concorrência 6 em validação final |
+| Último resultado real | V7F 10/10; extração 6,830 s; apenas 330 ms acima do alvo 6,5 s |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `6e30117a1e0c342cb84d4cdf1f1a2f7351d86c82` |
 | Pages próximo reteste | `https://58d9fc14.portal-regulacao-central-staging.pages.dev` |
@@ -2346,7 +2383,7 @@ A janela corresponde exatamente ao runtime V7F congelado. Produção não foi pr
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | abrir laboratório V7F; executar matriz uma vez; copiar resumo seguro completo |
+| Próxima ação exata | concluir CI V7G; integrar/congelar; encerrar V7F; executar uma última rodada V7G |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
