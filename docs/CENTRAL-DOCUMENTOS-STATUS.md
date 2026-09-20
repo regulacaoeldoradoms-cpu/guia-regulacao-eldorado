@@ -2663,21 +2663,62 @@ Critério da matriz real V8C:
 
 A janela V8B segue ativa apenas até o código V8C ser validado. Não reutilizar essa janela para V8C: após CI/merge/freeze, encerrar V8B fail-closed e só então abrir nova janela.
 
+## V8C integrada e referências congeladas — 20/09/2026
+
+A PR **#327** foi integrada na `main` pelo merge `cf8ed89cd2e5fa9ba7ed5c02d6f0cc1f50e2021e`.
+
+Validação do head funcional `19c54c5609b8435b85a2e9ab8ea411149bbefcb8`:
+- **23 workflows/checks verdes**;
+- governança Central: sucesso;
+- Fases 1–5E/preparo: sucesso;
+- procedimentos operacionais 5E: sucesso;
+- bundle de staging: sucesso;
+- site e regressões transversais: sucesso.
+
+O Cloudflare Pages publicou o preview imutável:
+- `https://06b2c2ec.portal-regulacao-central-staging.pages.dev`.
+
+A comparação GitHub entre o head funcional e o merge final mostrou **zero arquivos diferentes**. Portanto o Pages acima corresponde ao conteúdo funcional integrado.
+
+V8C preserva:
+- imagem/resolução da V8B;
+- concorrência 5;
+- Gemma/Qwen gratuitos;
+- `max_completion_tokens=700`;
+- revisão seletiva;
+- contrato público de classificação/extração/chat;
+- gates de produção e Drive inalterados.
+
+V8C altera somente o transporte interno da resposta principal:
+- `t=c|m|o`;
+- 8 pares `[s,v]` nas páginas autorizadas;
+- expansão imediata no backend para o schema público atual;
+- telemetria técnica distingue `compact` de `legacy`.
+
+Referências congeladas:
+- source ref `cf8ed89cd2e5fa9ba7ed5c02d6f0cc1f50e2021e`;
+- Pages `https://06b2c2ec.portal-regulacao-central-staging.pages.dev`;
+- head funcional `19c54c5609b8435b85a2e9ab8ea411149bbefcb8`.
+
+**Estado operacional:** a última evidência persistente da janela V8B mostra controle `phase5e_7296053755eb4142b94a80d2c2b5daa5`, preview `ff5d104b-b5e4-478b-8395-83a3d4dc4e1c`, release `96ce5dec060c98c582a8925ae03bc25973b0f3bd`, `aiGate=true` e `driveWriteGate=false`. Essa janela não pode ser reutilizada para V8C.
+
+**Próxima ação exata:** encerrar V8B fail-closed; atualizar os scripts locais a partir da `main`; executar readiness V8C confirmando `activeControlledWindow=false`, source `cf8ed89...` e Pages `06b2c2ec...`; somente então preparar nova janela e rodar uma única matriz V8C.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8C saída interna compacta implementada; aguardando CI/merge |
+| Fase/subfase | Fase 5E — V8C integrada e congelada; V8B precisa ser encerrada antes da nova janela |
 | Último resultado real | V8B 10/10 em 6,179 s; 9.020 prompt tokens, 1.024 completion tokens e 2.048 cached prompt tokens |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
-| Runtime próximo reteste | `96ce5dec060c98c582a8925ae03bc25973b0f3bd` |
-| Pages próximo reteste | `https://255ecf24.portal-regulacao-central-staging.pages.dev` |
+| Runtime próximo reteste | `cf8ed89cd2e5fa9ba7ed5c02d6f0cc1f50e2021e` |
+| Pages próximo reteste | `https://06b2c2ec.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | abrir PR V8C, validar checks; se verde, integrar e congelar source/Pages; depois encerrar V8B fail-closed e preparar nova homologação V8C |
+| Próxima ação exata | encerrar V8B fail-closed; atualizar scripts locais da main; readiness V8C com source `cf8ed89...` + Pages `06b2c2ec...`; preparar nova janela e executar uma única matriz |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
