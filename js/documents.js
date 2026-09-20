@@ -3732,6 +3732,7 @@
 
     background?.cancelScope?.(state.backgroundScope, 'foreground');
     pauseDocumentBackground('foreground');
+    setAutomationStatus('');
     state.documentAiBusy = true;
     state.documentAiScanCompleted = false;
     state.documentAiIgnoredPages = 0;
@@ -4379,9 +4380,23 @@
           });
           if (openId !== state.pdfOpenId || state.pdfFallbackStarted) return;
 
-          const warm = () => warmPdfCache(item, { prefetch: false }).catch(() => {});
-          if (typeof requestIdleCallback === 'function') requestIdleCallback(warm, { timeout: 2200 });
-          else window.setTimeout(warm, 1400);
+          if (background?.schedule) {
+            scheduleDocumentBackgroundTask({
+              key: `warm-open:${openId}`,
+              type: 'warm_pdf',
+              priority: 45,
+              source: 'cache',
+              count: 1,
+              run: ({ signal, throwIfCancelled }) => {
+                throwIfCancelled();
+                return warmPdfCache(item, { prefetch: false, signal });
+              }
+            });
+          } else {
+            const warm = () => warmPdfCache(item, { prefetch: false }).catch(() => {});
+            if (typeof requestIdleCallback === 'function') requestIdleCallback(warm, { timeout: 2200 });
+            else window.setTimeout(warm, 1400);
+          }
 
           if (!customOpened) {
             await loadPdfBlobFallback(item, openId, bucket);
