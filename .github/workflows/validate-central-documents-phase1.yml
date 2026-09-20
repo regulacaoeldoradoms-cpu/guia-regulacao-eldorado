@@ -148,8 +148,8 @@ jobs:
           grep -q "PROMPT_EXTRACAO_REGULACAO_V1" worker/document-ai-prompts.js
           grep -q "PROMPT_DOCUMENT_CHAT_V1" worker/document-ai-prompts.js
           grep -q "chatDocumentAi" worker/document-ai-provider.js
-          grep -q 'DOCUMENTS_AI_ENABLED = "false"' worker/wrangler.toml
-          grep -q 'DOCUMENTS_AI_PROCESSING_ENABLED = "false"' worker/wrangler.toml
+          grep -q 'DOCUMENTS_AI_ENABLED = "true"' worker/wrangler.toml
+          grep -q 'DOCUMENTS_AI_PROCESSING_ENABLED = "true"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_BACKGROUND_ENABLED = "false"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_FREE_ONLY = "true"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_FAST_VISION_ENABLED = "false"' worker/wrangler.toml

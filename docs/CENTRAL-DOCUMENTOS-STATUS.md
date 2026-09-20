@@ -3094,8 +3094,8 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
-| Produção | IA documental permanece fail-closed; Fase 6 não autoriza ativação silenciosa de IA nem escrita automática |
-| Próxima ação exata | executar a matriz de `CENTRAL-DOCUMENTOS-HOMOLOGACAO-6.md` em uso real; coletar evidência de ganho/cancelamento/controle; se aprovada, encerrar Fase 6 e iniciar Fase 7 |
+| Produção | publicação controlada da IA documental normal autorizada; background antecipatório permanece fail-closed |
+| Próxima ação exata | concluir CI/deploy da publicação produtiva da IA; validar visibilidade/uso sob capability `extract`; depois retomar a matriz operacional restante da Fase 6 |
 | Meta | Fase 6: reduzir tempo operacional mensuravelmente sem perda de controle do usuário |
 | Fontes | Guia Mestre V1.1; FASE-6; FASE-2; FASE-5; STATUS; js/documents.js; js/document-viewer.js; js/document-cache.js |
 
@@ -3104,3 +3104,24 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 Status integral anterior: `c1767a219389b660f59d3c8631bc1a96b12bec1e:docs/CENTRAL-DOCUMENTOS-STATUS.md`. Etapas anteriores emc90b774,5b1507c,9c491c2,402199d,f1824c7,4d64c5d; V2-R1 em103ccd6; V2 em9f295ca. RESULTADOS, ISOLAMENTO, CONTINUIDADE-20260917-TARDE, FASE-4, ARQUITETURA-V1, HOMOLOGACAO-V1 e STAGING-OPERACIONAL-V1 preservam critérios/detalhes. Consultar apenas o necessário sem reiniciar etapas concluídas.
 
 Referências externas desta etapa: Cloudflare Workers Preview URLs (versões e aliases, limitações de logs) e Wrangler Commands/Workers (versions list: dez recentes; versions view: detalhes de uma versão). Essas referências não comprovam configuração privada deste ambiente.
+
+
+## Publicação produtiva da IA documental — AUTORIZADA, AGUARDANDO CI/DEPLOY — 20/09/2026
+
+Após o encerramento formal da Fase 5 e a matriz V8C.2 10/10, o operador autorizou explicitamente disponibilizar a IA documental para uso real na Central. A decisão corrige a situação em que a funcionalidade já estava aprovada, porém os gates produtivos normais permaneciam desligados por cautela de rollout.
+
+Escopo aprovado:
+- ativar `DOCUMENTS_AI_ENABLED=true`;
+- ativar `DOCUMENTS_AI_PROCESSING_ENABLED=true`;
+- preservar `DOCUMENTS_AI_BACKGROUND_ENABLED=false` para não ligar preextração automática da Fase 6;
+- preservar `DOCUMENTS_AI_FREE_ONLY=true` e `DOCUMENTS_AI_FAST_VISION_ENABLED=false`;
+- preservar o binding Workers AI, o baseline V8C.2, a capability `extract` e todas as validações de backend;
+- não ampliar permissões, não alterar OAuth, Drive, autosync, editor ou observabilidade.
+
+Justificativa: a IA documental já cumpriu o aceite funcional da Fase 5; esconder/bloquear permanentemente a ferramenta impediria o uso do recurso aprovado. A publicação normal continua sob ação explícita do usuário e não habilita automação antecipatória.
+
+Rollback: recolocar somente `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`, mantendo background `false`; nenhuma migração de dados ou alteração destrutiva é necessária.
+
+Branch de publicação: `release/central-docs-ai-production-20260920`.
+
+**Próxima ação exata:** validar CI completo da branch, abrir/mesclar PR somente se verde e confirmar o deploy seguro do Worker. Depois validar em produção que uma conta que já possua `extract` vê o botão IA e que uma conta sem `extract` continua sem acesso.

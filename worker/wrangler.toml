@@ -35,9 +35,10 @@ SOCIAL_HOME_ENABLED = "true"
 # Central de Documentos: URLs públicas, sem credenciais.
 GOOGLE_DRIVE_OAUTH_REDIRECT_URI = "https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/documents/oauth/callback"
 DOCUMENTS_PORTAL_RETURN_URL = "https://regulacaoeldoradoms.com.br/documentos/"
-# Fase 5A — fundação da IA documental. UI e processamento permanecem fail-closed até homologação própria.
-DOCUMENTS_AI_ENABLED = "false"
-DOCUMENTS_AI_PROCESSING_ENABLED = "false"
+# Fase 5 publicada em produção: IA documental normal ativa sob capability extract.
+# A automação antecipatória da Fase 6 permanece fail-closed até homologação própria.
+DOCUMENTS_AI_ENABLED = "true"
+DOCUMENTS_AI_PROCESSING_ENABLED = "true"
 DOCUMENTS_AI_BACKGROUND_ENABLED = "false"
 # Titon: IA documental sem API paga. Apenas modelos Cloudflare-hosted aprovados no Free Tier.
 DOCUMENTS_AI_FREE_ONLY = "true"

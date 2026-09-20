@@ -39,8 +39,9 @@ test('painel Titon permanece oculto e produção continua fail-closed', async ()
   assert.match(js, /documentAiCapabilities\(\)\.extract === true/);
   assert.match(js, /state\.documentAiConfig\?\.enabled === true/);
   assert.match(router, /requireCapability\(user, 'extract', origin\)/);
-  assert.match(wrangler, /DOCUMENTS_AI_ENABLED = "false"/);
-  assert.match(wrangler, /DOCUMENTS_AI_PROCESSING_ENABLED = "false"/);
+  assert.match(wrangler, /DOCUMENTS_AI_ENABLED = "true"/);
+  assert.match(wrangler, /DOCUMENTS_AI_PROCESSING_ENABLED = "true"/);
+  assert.match(wrangler, /DOCUMENTS_AI_BACKGROUND_ENABLED = "false"/);
   assert.match(wrangler, /DOCUMENTS_AI_FREE_ONLY = "true"/);
   assert.match(wrangler, /DOCUMENTS_AI_FAST_VISION_ENABLED = "false"/);
   assert.match(wrangler, /@cf\/moondream\/moondream3\.1-9B-A2B/);
