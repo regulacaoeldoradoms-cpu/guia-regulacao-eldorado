@@ -59,7 +59,14 @@ Reserva já validada para o módulo documental:
 - \`drive_sync_failed\`
 - \`document_ai_started\`
 - \`document_ai_completed\`
-- \`document_ai_failed\`
+- `document_ai_failed`
+- `document_background_task`
+
+Na Fase 6, `document_background_task` aceita somente propriedades técnicas: duração,
+operação (`warm_pdf`, `prepare_page`, `preextract_page` ou `suggestion`), source
+allowlisted, estado do cache, estado técnico
+(`prepared|used|cancelled|expired|failed|skipped`), motivo técnico de cancelamento e
+faixa de contagem. Nenhum nome, ref, fileId, cacheKey ou conteúdo documental é enviado.
 
 Os eventos documentais aceitam apenas classificações técnicas como duração, operação,
 faixa de tamanho e estado de cache. Nunca recebem nome ou ID do documento.
