@@ -125,6 +125,14 @@ test('resumo seguro 5E não copia detalhes, respostas, credenciais ou conteúdo 
   assert.match(js, /imagem_area_pct=/);
   assert.match(js, /provider_ms=/);
   assert.match(js, /transporte_backend_ms=/);
+  assert.match(js, /prompt_tokens_extracao=/);
+  assert.match(js, /completion_tokens_extracao=/);
+  assert.match(js, /total_tokens_extracao=/);
+  assert.match(js, /cached_prompt_tokens_extracao=/);
+  assert.match(js, /prompt_tokens=/);
+  assert.match(js, /completion_tokens=/);
+  assert.match(js, /total_tokens=/);
+  assert.match(js, /cached_prompt_tokens=/);
   assert.match(js, /tentativas=/);
   assert.match(js, /tentativas_ms=/);
   assert.match(js, /revisado=/);
@@ -137,7 +145,7 @@ test('resumo seguro 5E não copia detalhes, respostas, credenciais ou conteúdo 
   const end = js.indexOf('  async function copySafeSummary()', start);
   assert.ok(start >= 0 && end > start);
   const safe = js.slice(start, end);
-  assert.doesNotMatch(safe, /item\.detail|token|password|username|answer|evidence|cpf|cns|cid|procedimento/i);
+  assert.doesNotMatch(safe, /item\.detail|password|username|authorization|state\.token|answer|evidence|cpf|cns|cid|procedimento/i);
 });
 
 test('cópia do resumo seguro é explícita e não ocorre automaticamente', async () => {
@@ -169,6 +177,10 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   assert.match(js, /attemptModels/);
   assert.match(js, /attemptResults/);
   assert.match(js, /attemptDurations/);
+  assert.match(js, /promptTokens/);
+  assert.match(js, /completionTokens/);
+  assert.match(js, /totalTokens/);
+  assert.match(js, /cachedPromptTokens/);
   assert.match(js, /reviewed/);
   assert.match(js, /reviewChangedKeys/);
   assert.match(js, /mismatchFields/);
@@ -183,6 +195,14 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   assert.match(safe, /imagem_area_pct/);
   assert.match(safe, /provider_ms/);
   assert.match(safe, /transporte_backend_ms/);
+  assert.match(safe, /prompt_tokens_extracao/);
+  assert.match(safe, /completion_tokens_extracao/);
+  assert.match(safe, /total_tokens_extracao/);
+  assert.match(safe, /cached_prompt_tokens_extracao/);
+  assert.match(safe, /prompt_tokens/);
+  assert.match(safe, /completion_tokens/);
+  assert.match(safe, /total_tokens/);
+  assert.match(safe, /cached_prompt_tokens/);
   assert.match(safe, /tentativas/);
   assert.match(safe, /tentativas_ms/);
   assert.match(safe, /resultados/);
