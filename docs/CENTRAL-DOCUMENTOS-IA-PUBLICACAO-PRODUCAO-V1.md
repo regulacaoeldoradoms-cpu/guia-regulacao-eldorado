@@ -4,7 +4,7 @@ Data: 20/09/2026.
 
 ## Estado
 
-**CANDIDATA DE RELEASE.** A Fase 5 está encerrada e a V8C.2 é o baseline funcional aprovado. Esta mudança publica o fluxo normal da IA documental em produção sem ligar automação antecipatória.
+**PUBLICADA EM PRODUÇÃO; VALIDAÇÃO FUNCIONAL HUMANA PENDENTE.** A Fase 5 está encerrada e a V8C.2 é o baseline funcional aprovado. O fluxo normal da IA documental foi publicado sem ligar automação antecipatória.
 
 ## Escopo
 
@@ -73,3 +73,15 @@ Esta é uma mudança transversal autorizada pelo operador. A Fase 6 continua abe
 A PR #345 foi integrada na `main`, mas a publicação ainda **não pode ser declarada concluída**. O check externo do Workers Builds falhou antes de comprovar nova Worker Version produtiva. O código, os gates desejados e os testes estão integrados; falta a promoção efetiva do Worker.
 
 Até que o Workers Builds conclua com sucesso (ou que o gate `npm run deploy:safe` seja executado por uma máquina autenticada no Wrangler), tratar a IA documental produtiva como **pendente de deploy**, não como ativa.
+
+
+## Deploy produtivo concluído
+
+Em 20/09/2026, após a correção do gate pela PR #347, o Workers Builds concluiu com sucesso:
+
+- merge: `fc4fde95db6c8f044d37337e0d142c2928c16fbf`;
+- Build ID: `f95e0e2c-3811-43fd-a986-67d46dc065bb`;
+- Worker Version: `1c2458f8-76f9-4050-8f10-a9e6b5fbec37`;
+- Cloudflare Pages: sucesso.
+
+O rollout técnico está concluído. Falta somente a validação funcional no navegador com uma conta que já tenha capability `extract`.
