@@ -1895,6 +1895,10 @@
 
   async function startEditor() {
     background?.cancelScope?.(state.backgroundScope, 'editor');
+    state.backgroundPreparedImages.clear();
+    state.backgroundPreparedAnalysis.clear();
+    state.backgroundSuggestionShown = false;
+    setAutomationStatus('');
     pauseDocumentBackground('editor');
     if (!canEditDocuments()) {
       resumeDocumentBackground();
