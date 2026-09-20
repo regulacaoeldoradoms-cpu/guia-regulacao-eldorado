@@ -372,3 +372,16 @@ Referências congeladas:
 O tipo da página só é derivado quando o conjunto de chaves de `fields` coincide **exatamente** com um dos contratos autorizados, ou quando `fields={}`. Não há inferência de valores nem ampliação de schema.
 
 No caminho quente 5E, assinatura do token é verificada localmente e uma única consulta D1 `first-primary` reúne usuário ativo, versão da sessão, capability documental, role adicional e controle revogável. O router continua recebendo usuário pré-validado.
+
+
+### V7D — Gemma direto
+
+A V7C real passou 10/10 em 13,748 s, mas Moondream terminou 0/6 e consumiu ~2,1–5,0 s por página antes do Gemma.
+
+A V7D desliga o fast path Moondream no preview 5E e usa Gemma 4 diretamente. Qwen permanece como fallback/revisor focal.
+
+Referências congeladas:
+- source ref: `208639f021ca9d5f86a2df97a9bd8a5978e5224f`;
+- Pages: `https://b5b3f33e.portal-regulacao-central-staging.pages.dev`.
+
+O resumo seguro também passa a informar `revisao_alterou=` com nomes de campos, sem valores. Isso permitirá decidir com evidência se a revisão Qwen da página ilegível é necessária ou apenas custo extra.
