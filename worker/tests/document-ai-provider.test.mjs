@@ -50,14 +50,21 @@ function workersResponse(value, usage = null) {
 
 function compactAnalysis(pageType, fields = {}) {
   if (pageType === 'outro') return { t: 'o' };
-  const typeCode = pageType === 'comprovante_atendimento' ? 'c' : 'm';
   const stateCode = { encontrado: 'e', nao_consta: 'n', ilegivel: 'i' };
+  const tupleFor = (key) => {
+    const field = fields[key] || { state: 'nao_consta', value: '' };
+    return [stateCode[field.state], field.state === 'encontrado' ? String(field.value || '') : ''];
+  };
+  if (pageType === 'comprovante_atendimento') {
+    return {
+      t: 'c',
+      f: DOCUMENT_AI_EXTRACTION_FIELDS[pageType].map(tupleFor)
+    };
+  }
   return {
-    t: typeCode,
-    f: DOCUMENT_AI_EXTRACTION_FIELDS[pageType].map((key) => {
-      const field = fields[key] || { state: 'nao_consta', value: '' };
-      return [stateCode[field.state], field.state === 'encontrado' ? String(field.value || '') : ''];
-    })
+    t: 'm',
+    h: tupleFor('titulo'),
+    f: DOCUMENT_AI_EXTRACTION_FIELDS[pageType].slice(1).map(tupleFor)
   };
 }
 
@@ -392,7 +399,29 @@ test('V8C expande JSON compacto internamente e preserva o contrato público comp
   const serialized = JSON.stringify(calls[0].input);
   assert.match(serialized, /FORMATO INTERNO COMPACTO/);
   assert.match(serialized, /Use exclusivamente o FORMATO INTERNO COMPACTO/);
+  assert.match(serialized, /h representa SOMENTE titulo|h é SOMENTE titulo/);
+  assert.match(serialized, /rótulo.*Título/i);
   assert.equal(calls[0].input.max_completion_tokens, 700);
+});
+
+test('V8C.1 rejeita o formato posicional médico antigo sem âncora explícita de título', async () => {
+  const legacyCompact = {
+    t: 'm',
+    f: Array.from({ length: 8 }, () => ['n', ''])
+  };
+
+  await assert.rejects(
+    () => analyzeDocumentAiPage(enabledEnv({
+      DOCUMENTS_AI_FALLBACK_MODELS: ''
+    }), {
+      pageNumber: 2,
+      mimeType: 'image/png',
+      bytes: new Uint8Array([2])
+    }, {
+      aiRun: async () => workersResponse(legacyCompact)
+    }),
+    (error) => ['DOCUMENT_AI_PROVIDER_SCHEMA_INVALID', 'DOCUMENT_AI_PROVIDER_UNAVAILABLE'].includes(error?.code)
+  );
 });
 
 test('V8C aceita resposta legada como compatibilidade de fallback sem alterar o contrato público', async () => {
