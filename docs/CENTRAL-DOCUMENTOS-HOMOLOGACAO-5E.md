@@ -471,3 +471,23 @@ Referências finais:
 A PR #286 alterou apenas o laboratório e documentação para medir latência com maior precisão. O provider V7 stream-safe continua funcionalmente igual ao já validado; produção permanece com os gates de IA desligados.
 
 O próximo resumo seguro deverá permitir decompor cada página em `preparo_ms`, `provider_ms`, `transporte_backend_ms`, número de tentativas, revisão e cadeia de modelos.
+
+
+## Referências V7B congeladas após diagnóstico de latência — 19/09/2026
+
+A V7 real atingiu 10/10, porém com `duracao_extracao_ms=21428`. O diagnóstico revelou fallback Moondream→Gemma em todas as páginas e ~8 s de overhead fora do provider.
+
+A PR #291 integrou a V7B com correções focadas nesses dois gargalos.
+
+Próximo reteste:
+- source ref: `5e27d58a09751363392b1ee1c7560be3f5f473cc`;
+- Pages: `https://18727b6f.portal-regulacao-central-staging.pages.dev`;
+- head funcional do Pages: `5fecf9350295140ddb9f74003375fe52b8fc53da`.
+
+A comparação GitHub entre o head funcional e o merge mostrou zero arquivos diferentes. A janela V7 atual deve ser encerrada fail-closed antes da nova abertura V7B.
+
+Critérios do reteste V7B:
+- manter 10/10;
+- reduzir drasticamente `transporte_backend_ms`;
+- preferencialmente concluir páginas em uma única tentativa Moondream;
+- registrar `resultados=` e `modelos=` por página no resumo seguro.

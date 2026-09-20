@@ -331,3 +331,18 @@ A janela V6 aberta pelo operador continua sendo a janela controlada anterior e d
 O aceite da V7 exige simultaneamente **10/10** e `duracao_extracao_ms` em no máximo 50% da V6 numa comparação operacional equivalente. Se a meta de 2x não for atingida, avançar para o caminho híbrido text-layer + visão seletiva já documentado, sem reduzir privacidade ou precisão.
 
 Produção permanece com `DOCUMENTS_AI_ENABLED=false`, `DOCUMENTS_AI_PROCESSING_ENABLED=false` e `DOCUMENTS_AI_FAST_VISION_ENABLED=false`.
+
+
+### V7B — correção de gargalos medidos
+
+A V7 real passou 10/10, mas levou 21,428 s. A V7B corrige apenas causas observadas:
+- round-trips D1 redundantes no wrapper 5E;
+- preflight não cacheado;
+- dupla validação da sessão documental;
+- prompt Moondream longo que não resultou em nenhuma página final aceita.
+
+Referências congeladas:
+- source ref: `5e27d58a09751363392b1ee1c7560be3f5f473cc`;
+- Pages: `https://18727b6f.portal-regulacao-central-staging.pages.dev`.
+
+A V7B não altera produção, modelo principal de fallback, resolução ou política de custo. O aceite exige manter 10/10 e demonstrar redução objetiva do overhead e do número de tentativas.
