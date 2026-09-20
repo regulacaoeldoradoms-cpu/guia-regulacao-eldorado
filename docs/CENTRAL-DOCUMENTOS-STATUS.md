@@ -3041,11 +3041,46 @@ Não alterado:
 
 **Próxima ação exata:** abrir PR da implementação completa da Fase 6, validar CI direcionado e staging. Se verde, integrar na `main`. Depois executar validação operacional da Fase 6 em uso real; somente essa medição pode encerrar formalmente a fase.
 
+## Fase 6 integrada na main — validação operacional pendente — 20/09/2026
+
+A implementação completa 6A–6E foi integrada pela PR **#342** no merge
+`87b7b7b274d8d6392bfacd85e18eab19dc672885`.
+
+Validação do head funcional `de1ddc5de6346da0911e6e2fc7ca86abb2b260a9`:
+- **27 workflows/checks verdes**;
+- validação integrada Fases 1–6: sucesso;
+- bundle de staging: sucesso;
+- governança: sucesso;
+- safe deploy do Worker: sucesso;
+- Central em Chromium/PDF.js: sucesso;
+- abertura pós-login em Chromium: sucesso;
+- Cloudflare Pages staging: `https://a2d88ca3.portal-regulacao-central-staging.pages.dev`.
+
+Após o merge:
+- validação Fases 1–6 na `main`: sucesso;
+- governança: sucesso;
+- gate de deploy seguro: sucesso;
+- build do GitHub Pages: sucesso;
+- deploy do GitHub Pages: sucesso.
+
+Estado funcional:
+- 6A orquestrador integrado;
+- 6B preparação antecipatória local integrada;
+- 6C preextração integrada mas bloqueada pelo novo gate produtivo
+  `DOCUMENTS_AI_BACKGROUND_ENABLED=false`;
+- 6D aquecimento de próximos PDFs por sinais não clínicos integrado;
+- 6E sugestão/telemetria técnica integrada;
+- nenhuma escrita automática nova no Drive;
+- nenhuma ampliação de permissão;
+- IA antecipatória não foi ativada silenciosamente.
+
+**Próxima ação exata:** executar validação operacional real de 6A/6B/6D na Central publicada e reunir eventos técnicos para comprovar redução de tempo/cancelamento. A Fase 6 só pode ser encerrada depois dessa evidência. A 6C exige homologação controlada separada antes de qualquer ativação produtiva.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 6 — 6A–6E implementadas em branch; aguardando CI e validação operacional |
+| Fase/subfase | Fase 6 — 6A–6E integradas na main; validação operacional real pendente |
 | Último resultado real | Fase 5 encerrada: V8C.2 10/10 em 4,524 s e janela final fail-closed com httpBlocked=true |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | nenhum — Fase 5 encerrada |
@@ -3055,7 +3090,7 @@ Não alterado:
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental permanece fail-closed; Fase 6 não autoriza ativação silenciosa de IA nem escrita automática |
-| Próxima ação exata | validar CI/PR da implementação 6A–6E; se verde, integrar e então medir em uso real redução de tempo sem perda de controle |
+| Próxima ação exata | validar em uso real 6A/6B/6D na Central publicada; medir ganho/cancelamento; manter 6C feature-gated até homologação controlada própria |
 | Meta | Fase 6: reduzir tempo operacional mensuravelmente sem perda de controle do usuário |
 | Fontes | Guia Mestre V1.1; FASE-6; FASE-2; FASE-5; STATUS; js/documents.js; js/document-viewer.js; js/document-cache.js |
 
