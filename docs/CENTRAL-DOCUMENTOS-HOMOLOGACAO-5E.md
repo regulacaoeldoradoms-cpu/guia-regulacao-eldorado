@@ -511,3 +511,26 @@ Semântica preservada pelo wrapper:
 - GET de probe com controle desligado: 403;
 - GET de probe com controle ativo e sem sessão: 401;
 - rota IA autenticada: sessão documental específica → uma leitura do controle → provider.
+
+
+## V7C — referências congeladas após V7B 10/10 — 20/09/2026
+
+A V7B atingiu 10/10 e reduziu a extração para 17,154 s, porém:
+- Moondream terminou 0/6 páginas;
+- todas as tentativas Moondream falharam com `DOCUMENT_AI_PAGE_TYPE_INVALID`;
+- `transporte_backend_ms` permaneceu ~4,8–5,0 s/página.
+
+A PR #298 integrou a V7C, que:
+- deriva `pageType` somente pelo shape exato de `fields` quando o token não é canônico;
+- consolida autorização 5E em uma única consulta D1 `first-primary`;
+- preserva revogação imediata do controle;
+- adiciona `tentativas_ms=` ao resumo seguro.
+
+Próximo reteste:
+- source ref: `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7`;
+- Pages: `https://82985cc2.portal-regulacao-central-staging.pages.dev`;
+- head funcional do Pages: `985197e652b73a8a7f101da7f7394598d3aba6ce`.
+
+A comparação GitHub entre o head funcional e o merge final mostrou zero arquivos diferentes.
+
+A janela V7B atualmente ativa deve ser encerrada fail-closed antes da nova abertura V7C.
