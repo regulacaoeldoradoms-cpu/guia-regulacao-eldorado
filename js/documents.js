@@ -282,6 +282,92 @@
     return '100+';
   }
 
+  function setAutomationStatus(message = '', type = '') {
+    if (!els.automationStatus) return;
+    const value = String(message || '').trim();
+    els.automationStatus.hidden = !value;
+    els.automationStatus.textContent = value;
+    els.automationStatus.className = `documents-automation-status${type ? ` ${type}` : ''}`;
+  }
+
+  function documentBackgroundScope(openId = state.pdfOpenId) {
+    return `pdf:${Number(openId || 0)}`;
+  }
+
+  function backgroundCancelReason(value = '') {
+    const reason = String(value || 'unknown');
+    return [
+      'document_changed', 'session', 'hidden', 'foreground',
+      'editor', 'stale', 'unsupported', 'unknown'
+    ].includes(reason) ? reason : 'unknown';
+  }
+
+  function captureBackgroundTask(result = {}, extras = {}) {
+    const operation = String(extras.operation || result.type || 'suggestion');
+    const stateValue = String(extras.state || result.state || 'failed');
+    capture('document_background_task', {
+      route: '/documentos/',
+      duration_ms: Math.max(0, Number(extras.durationMs ?? result.durationMs ?? 0)),
+      operation: [
+        'warm_pdf', 'prepare_page', 'preextract_page', 'suggestion'
+      ].includes(operation) ? operation : 'suggestion',
+      source: String(extras.source || 'local'),
+      cache_state: String(extras.cacheState || 'unknown'),
+      background_state: [
+        'prepared', 'used', 'cancelled', 'expired', 'failed', 'skipped'
+      ].includes(stateValue) ? stateValue : 'failed',
+      cancel_reason: backgroundCancelReason(extras.reason || result.reason || 'none') === 'unknown'
+        && !(extras.reason || result.reason)
+        ? 'none'
+        : backgroundCancelReason(extras.reason || result.reason || 'unknown'),
+      result_count_bucket: resultCountBucket(extras.count ?? 0)
+    });
+  }
+
+  function resetDocumentBackgroundState(reason = 'document_changed') {
+    const scope = state.backgroundScope;
+    if (scope) background?.cancelScope?.(scope, reason);
+    state.backgroundScope = '';
+    state.backgroundPreparedImages.clear();
+    state.backgroundPreparedAnalysis.clear();
+    state.backgroundSuggestionShown = false;
+    setAutomationStatus('');
+  }
+
+  function pauseDocumentBackground(reason = 'foreground') {
+    background?.setPaused?.(true, reason);
+  }
+
+  function resumeDocumentBackground() {
+    background?.setPaused?.(false);
+  }
+
+  function scheduleDocumentBackgroundTask(options = {}) {
+    if (!background?.schedule || !state.backgroundScope) return null;
+    return background.schedule({
+      ...options,
+      scope: state.backgroundScope,
+      onSettled: (result) => {
+        captureBackgroundTask(result, {
+          operation: String(options.type || 'suggestion'),
+          source: String(options.source || 'local'),
+          cacheState: String(options.cacheState || 'unknown'),
+          count: Number(options.count || 0)
+        });
+        try { options.onSettled?.(result); } catch (_) {}
+      }
+    });
+  }
+
+  function rememberOpenedPdf(item) {
+    const identity = itemCacheIdentity(item);
+    if (!identity) return;
+    state.backgroundRecentPdfs = [
+      identity,
+      ...state.backgroundRecentPdfs.filter((value) => value !== identity)
+    ].slice(0, 6);
+  }
+
   function currentToken() {
     return String(auth.getToken?.() || '');
   }
