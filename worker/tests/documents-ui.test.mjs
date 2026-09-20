@@ -845,3 +845,82 @@ test('viewer expõe exportPageImage para isolamento da IA documental', () => {
   assert.match(viewer, /outputCanvas\.toBlob/);
   assert.match(viewer, /exportPageImage,/);
 });
+
+test('Fase 6 carrega orquestrador de background antes do cliente documental', () => {
+  const html = read('documentos/index.html');
+  const backgroundIndex = html.indexOf('/js/document-background.js');
+  const documentsIndex = html.indexOf('/js/documents.js');
+  assert.ok(backgroundIndex >= 0);
+  assert.ok(documentsIndex > backgroundIndex);
+  assert.match(html, /id="documentsAutomationStatus"/);
+});
+
+test('6A orquestrador é idle, cancelável e com concorrência unitária', () => {
+  const source = read('js/document-background.js');
+  assert.match(source, /MAX_CONCURRENT = 1/);
+  assert.match(source, /requestIdleCallback/);
+  assert.match(source, /AbortController/);
+  assert.match(source, /cancelScope/);
+  assert.match(source, /cancelAll/);
+  assert.match(source, /portal:session-cleared/);
+  assert.match(source, /visibilitychange/);
+  assert.doesNotMatch(source, /localStorage|sessionStorage|indexedDB/);
+});
+
+test('6B prepara somente recursos efêmeros e reaproveita miniaturas lazy', () => {
+  const client = read('js/documents.js');
+  const viewer = read('js/document-viewer.js');
+  assert.match(viewer, /async function prewarmThumbnails/);
+  assert.match(viewer, /await renderThumbnail\(session, pageNumber\)/);
+  assert.match(client, /scheduleActiveDocumentPreparation/);
+  assert.match(client, /backgroundPreparedImages: new Map\(\)/);
+  assert.match(client, /prepareDocumentAiPageBlob/);
+  assert.match(client, /Math\.min\(2, pageCount\)/);
+});
+
+test('6C só antecipa IA com capability e gates corretos e reutiliza resultado na ação humana', () => {
+  const client = read('js/documents.js');
+  const readiness = client.slice(
+    client.indexOf('  function documentAiBackgroundReady()'),
+    client.indexOf('  async function prepareDocumentAiPageBlob')
+  );
+  assert.match(readiness, /processingEnabled === true/);
+  assert.match(readiness, /features\?\.extractDocument === true/);
+  assert.match(readiness, /documentAiCapabilities\(\)\.extract === true/);
+  assert.match(client, /backgroundPreparedAnalysis\.get\(pageNumber\)/);
+  assert.match(client, /background_state/);
+  assert.doesNotMatch(readiness, /drive\/sync|replace_pdf|save_copy/);
+});
+
+test('6D aquece próximos PDFs apenas por sinais operacionais não clínicos', () => {
+  const client = read('js/documents.js');
+  const start = client.indexOf('  function scheduleLikelyPdfWarmup()');
+  const end = client.indexOf('  function canEditDocuments()', start);
+  const block = client.slice(start, end);
+  assert.match(block, /backgroundRecentPdfs/);
+  assert.match(block, /slice\(0, 3\)/);
+  assert.match(block, /warmPdfCache/);
+  assert.doesNotMatch(block, /cid|diagnostico|nome_paciente|cpf|cns|texto extraído|extraction\.fields/i);
+});
+
+test('6E sugestões permanecem informativas e nenhuma escrita é automática', () => {
+  const client = read('js/documents.js');
+  assert.match(client, /Titon preparou .*página\(s\).*segundo plano/);
+  assert.match(client, /operation: 'suggestion'/);
+  assert.match(client, /state: 'used'/);
+  const backgroundSection = client.slice(
+    client.indexOf('  function schedulePreparedPageAnalysis'),
+    client.indexOf('  async function extractWholeDocumentAi')
+  );
+  assert.doesNotMatch(backgroundSection, /replace_pdf|save_copy|drive\/sync|delete_page/);
+});
+
+test('Fase 6 cancela background ao fechar PDF e preempta ao editar', () => {
+  const client = read('js/documents.js');
+  const close = client.slice(client.indexOf('  function closePdf()'), client.indexOf('  async function requestClosePdf'));
+  const editor = client.slice(client.indexOf('  async function startEditor()'), client.indexOf('  async function normalizeImageForPdf'));
+  assert.match(close, /resetDocumentBackgroundState\('document_changed'\)/);
+  assert.match(editor, /cancelScope\?\.\(state\.backgroundScope, 'editor'\)/);
+  assert.match(editor, /pauseDocumentBackground\('editor'\)/);
+});
+
