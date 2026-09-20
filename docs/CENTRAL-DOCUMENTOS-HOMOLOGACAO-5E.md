@@ -491,3 +491,23 @@ Critérios do reteste V7B:
 - reduzir drasticamente `transporte_backend_ms`;
 - preferencialmente concluir páginas em uma única tentativa Moondream;
 - registrar `resultados=` e `modelos=` por página no resumo seguro.
+
+
+## V7B probe-fixed — referências finais após recuperação — 20/09/2026
+
+A tentativa anterior de preparo V7B foi interrompida com segurança no passo 6/8 porque a otimização do wrapper alterou a semântica usada pelo probe de readiness. A PR #294 corrigiu isso sem recolocar round-trips extras no caminho quente da IA.
+
+Referências do próximo reteste:
+- source ref: `09bf379f306579bcb7ca049ad02d4c6a94c1df67`;
+- Pages: `https://20627e1a.portal-regulacao-central-staging.pages.dev`;
+- head funcional do Pages: `1f5f4b9baf3179afe195880e2c08568ee7e311a7`.
+
+A comparação GitHub entre o head funcional e o merge da PR #294 mostrou zero arquivos diferentes.
+
+Antes de usar essas referências, o operador deve recuperar o preparo interrompido com `recuperar-preparo-5e.mjs --recuperar`. Somente após `PREPARO_5E_RECUPERADO` o marcador local é removido e o readiness pode prosseguir.
+
+Semântica preservada pelo wrapper:
+- preflight OPTIONS: 200 sem D1 e cacheável;
+- GET de probe com controle desligado: 403;
+- GET de probe com controle ativo e sem sessão: 401;
+- rota IA autenticada: sessão documental específica → uma leitura do controle → provider.

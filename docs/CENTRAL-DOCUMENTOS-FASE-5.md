@@ -346,3 +346,14 @@ Referências congeladas:
 - Pages: `https://18727b6f.portal-regulacao-central-staging.pages.dev`.
 
 A V7B não altera produção, modelo principal de fallback, resolução ou política de custo. O aceite exige manter 10/10 e demonstrar redução objetiva do overhead e do número de tentativas.
+
+
+### V7B probe-fixed
+
+A primeira abertura V7B foi interrompida em 6/8 por divergência do probe HTTP, antes de qualquer ativação deliberada do controle. A PR #294 restaurou a prova operacional 403 antes / 401 depois apenas na rota de leitura usada pelo preparador e preservou o caminho quente otimizado da IA.
+
+Referências finais para o próximo reteste:
+- source ref: `09bf379f306579bcb7ca049ad02d4c6a94c1df67`;
+- Pages: `https://20627e1a.portal-regulacao-central-staging.pages.dev`.
+
+O procedimento de recuperação local `recuperar-preparo-5e.mjs --recuperar` deve ser executado antes de repetir o readiness, pois existe um marcador de upload anterior incerto criado por desenho fail-closed.
