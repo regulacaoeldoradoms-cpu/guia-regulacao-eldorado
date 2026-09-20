@@ -2498,12 +2498,30 @@ Referências congeladas do próximo reteste:
 
 **Próxima ação exata:** atualizar scripts locais; executar readiness V8A; confirmar source `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9` + Pages `https://09560ba9.portal-regulacao-central-staging.pages.dev`; preparar nova janela e executar a matriz uma única vez. Critério: 10/10 e ganho material sobre 6,830 s, observando `imagem_area_pct`.
 
+## Janela V8A preparada — 20/09/2026
+
+O operador concluiu o preparo oficial da janela V8A.
+
+Evidências sanitizadas:
+- `HOMOLOGACAO_5E_PREPARADA`;
+- preview version `fb0be219-dafa-466d-bc4e-88cd600093f5`;
+- controle `phase5e_a074973e4760415081b04205fe3197ba`;
+- expiração `2026-09-20T05:03:45.000Z`;
+- release `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9`;
+- `aiGate=true` somente no preview;
+- `driveWriteGate=false`;
+- produção permaneceu `298ba237-78f9-4d24-bad1-47e66b4c1e15`.
+
+A janela corresponde exatamente ao runtime V8A congelado. Produção não foi promovida.
+
+**Próxima ação exata:** abrir `https://09560ba9.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz **uma única vez** e copiar o resumo seguro completo. Critério V8A: manter **10/10** e obter ganho material sobre o baseline V7F de **6,830 s**. Analisar especialmente `imagem_area_pct`, `provider_ms`, `transporte_backend_ms` e `tentativas_ms`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8A integrada e congelada; reteste pronto para abertura |
-| Último resultado real | V7G 10/10 em 7,202 s; V7F baseline final 6,830 s; V8A integrada com 24 checks verdes |
+| Fase/subfase | Fase 5E — V8A preparada; matriz aguardando execução |
+| Último resultado real | janela V8A preparada; release correto; Drive false; produção intacta |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9` |
 | Pages próximo reteste | `https://09560ba9.portal-regulacao-central-staging.pages.dev` |
@@ -2512,7 +2530,7 @@ Referências congeladas do próximo reteste:
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | atualizar scripts; readiness V8A; preparar janela; executar matriz uma vez; analisar imagem_area_pct |
+| Próxima ação exata | abrir laboratório V8A; executar matriz uma vez; copiar resumo seguro com imagem_area_pct |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
