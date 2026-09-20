@@ -2195,12 +2195,53 @@ A janela corresponde exatamente ao runtime V7E congelado. Produção não foi pr
 
 **Próxima ação exata:** abrir `https://ffdd1515.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz **uma única vez** e copiar o resumo seguro completo. Os critérios são simultâneos: **10/10** e `duracao_extracao_ms < 13748`. Conferir também `concorrencia_paginas=4`, `tentativas_ms`, `revisado` e `revisao_alterou`.
 
+## Resultado V7E — 10/10 em 12,008 s; decisão de encerrar V7.x e iniciar V8 híbrida — 20/09/2026
+
+Resumo seguro real da V7E:
+- `MATRIZ_5E_SINTETICA=APROVADA`;
+- **10 aprovados / 0 falhas**;
+- `duracao_extracao_ms=12008`;
+- `duracao_total_ms=15980`;
+- `concorrencia_paginas=4`;
+- Gemma final: 5 páginas;
+- Qwen final: 1 página;
+- backend fora do provider: ~0,26–0,55 s/página;
+- página 6: Gemma 2,455 s + Qwen 3,225 s;
+- `revisao_alterou=nenhum` na página 6.
+
+Ganho acumulado:
+- V7: 21,428 s;
+- V7B: 17,154 s;
+- V7C: 13,748 s;
+- V7D: 15,386 s e 8/10 (regressão);
+- V7E: **12,008 s e 10/10**.
+
+A V7E é o melhor baseline image-only atual. O overhead de navegador/backend está suficientemente baixo; o tempo dominante é inferência visual Gemma/Qwen. Portanto, perseguir ~6 s apenas ajustando concorrência/tokens/modelos dentro da mesma arquitetura tem baixa previsibilidade e risco de nova regressão.
+
+Nova meta solicitada pelo operador: tentar aproximadamente **metade dos 12,008 s (~6 s)**.
+
+Decisão arquitetural:
+- **encerrar refinamentos V7.x**;
+- iniciar V8 híbrida por página;
+- PDFs digitais com camada textual devem usar PDF.js `getTextContent()` antes de qualquer renderização de imagem;
+- páginas sem text layer suficiente, escaneadas ou ambíguas continuam usando visão;
+- manter autorização `extract` no backend, proveniência por página, sessão sem persistência e nenhuma telemetria de conteúdo;
+- medir separadamente páginas resolvidas por texto e por visão.
+
+Honestidade de meta:
+- ~6 s é **plausível** para PDFs digitais ou mistos com boa text layer, porque várias páginas podem deixar de chamar Gemma;
+- ~6 s **não é garantível** para PDFs 100% escaneados/imagem, pois a V7E já mostra ~4–6 s por página visual e a latência do provider não é controlável pelo Portal.
+
+A janela V7E continua ativa apenas para encerramento formal posterior; não deve ser reutilizada para V8.
+
+**Próxima ação exata:** desenvolver V8 em branch isolada com text-layer PDF.js + rota backend segura + fallback visual seletivo; validar testes e só depois encerrar V7E e abrir uma nova homologação V8.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7E preparada; matriz aguardando execução |
-| Último resultado real | janela V7E preparada; release correto; Drive false; produção intacta |
+| Fase/subfase | Fase 5E — V7E 10/10 em 12,008 s; V8 híbrida iniciada para meta ~6 s |
+| Último resultado real | V7E 10/10; extração 12,008 s; image-only atingiu plateau prático; V8 híbrida é o próximo passo |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Pages próximo reteste | `https://ffdd1515.portal-regulacao-central-staging.pages.dev` |
@@ -2209,7 +2250,7 @@ A janela corresponde exatamente ao runtime V7E congelado. Produção não foi pr
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | abrir laboratório V7E; executar matriz uma vez; copiar resumo seguro completo |
+| Próxima ação exata | desenvolver/validar V8 text-layer + visão seletiva; depois encerrar V7E e homologar V8 |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
