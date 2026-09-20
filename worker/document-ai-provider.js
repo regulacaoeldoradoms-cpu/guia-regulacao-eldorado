@@ -351,7 +351,7 @@ function reasoningControls(model) {
   return controls;
 }
 
-function visionInput(model, system, prompt, image, maxTokens = 700, fastQuestion = '') {
+function visionInput(model, system, prompt, image, maxTokens = 700, fastQuestion = '', responseFormat = null) {
   if (String(model || '') === DOCUMENT_AI_FAST_VISION_FREE_MODEL) {
     return {
       task: 'query',
@@ -387,7 +387,7 @@ function visionInput(model, system, prompt, image, maxTokens = 700, fastQuestion
     top_p: 0.1,
     seed: 1,
     max_completion_tokens: maxTokens,
-    response_format: { type: 'json_object' },
+    response_format: responseFormat || { type: 'json_object' },
     store: false
   };
 }
