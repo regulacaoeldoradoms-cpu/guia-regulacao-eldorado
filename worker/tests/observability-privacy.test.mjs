@@ -228,3 +228,50 @@ test('aceita edição PDF somente com operação técnica allowlisted', () => {
     }
   }), null);
 });
+
+test('Fase 6 aceita somente telemetria técnica de background', () => {
+  const clean = sanitizeObservabilityEvent({
+    event: 'document_background_task',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 85,
+      operation: 'prepare_page',
+      source: 'local',
+      cache_state: 'unknown',
+      background_state: 'prepared',
+      cancel_reason: 'none',
+      result_count_bucket: '1-5'
+    }
+  });
+
+  assert.ok(clean);
+  assert.equal(clean.event, 'document_background_task');
+  assert.deepEqual(clean.properties, {
+    route: '/documentos/',
+    duration_ms: 85,
+    operation: 'prepare_page',
+    source: 'local',
+    cache_state: 'unknown',
+    background_state: 'prepared',
+    cancel_reason: 'none',
+    result_count_bucket: '1-5'
+  });
+
+  assert.equal(sanitizeObservabilityEvent({
+    event: 'document_background_task',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 85,
+      operation: 'preextract_page',
+      source: 'cloudflare',
+      cache_state: 'hit',
+      background_state: 'used',
+      cancel_reason: 'none',
+      result_count_bucket: '1-5',
+      file_name: 'proibido.pdf'
+    }
+  }), null);
+});
+
