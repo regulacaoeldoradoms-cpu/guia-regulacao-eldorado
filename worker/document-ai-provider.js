@@ -449,6 +449,7 @@ async function runWorkersAi(
 
   for (const model of models) {
     const started = Date.now();
+    let usage = null;
 
     try {
       // Não use timeout artificial com Promise.race: env.AI.run não é cancelável
@@ -456,13 +457,14 @@ async function runWorkersAi(
       // de a resposta local já ter sido abandonada. Confiamos no timeout nativo
       // do Workers AI (3007/3008) e rejeitamos fila de capacidade com rejectIfBusy.
       const payload = await run(model, makeInput(model), { rejectIfBusy: true });
+      usage = providerTokenUsage(payload);
       const parsed = parseJsonCandidate(payload);
       const value = validate(parsed);
       attempts.push({
         model,
         result: 'success',
         durationMs: Math.max(0, Date.now() - started),
-        usage: providerTokenUsage(payload)
+        usage
       });
       return { value, model, attempts };
     } catch (error) {
@@ -470,7 +472,8 @@ async function runWorkersAi(
       attempts.push({
         model,
         result: normalized.code || 'DOCUMENT_AI_PROVIDER_ERROR',
-        durationMs: Math.max(0, Date.now() - started)
+        durationMs: Math.max(0, Date.now() - started),
+        usage
       });
 
       if (
