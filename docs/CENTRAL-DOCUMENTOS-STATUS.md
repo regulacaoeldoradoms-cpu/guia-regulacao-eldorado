@@ -2575,6 +2575,32 @@ Ordem de decisão após a medição:
 
 Essa ordem substitui a ideia anterior de partir imediatamente para compactação visual V8B. V8A e V7F permanecem baselines de rollback.
 
+## V8B integrada; referências congeladas para homologação — 20/09/2026
+
+A PR **#323** foi integrada na `main` pelo merge `96ce5dec060c98c582a8925ae03bc25973b0f3bd`. Antes do merge, os **23 workflows/checks** associados ao head funcional `29d6eea3baf9e9a5d58164ffa901313fec9aa048` concluíram com sucesso, incluindo governança, Fases 1–5E, bundle de staging e procedimentos operacionais 5E. O workflow operacional 5E confirmou sintaxe, preparo, encerramento, contratos do laboratório sintético, capability/readiness e a garantia de não promover produção.
+
+O Cloudflare Pages publicou para esse head funcional o preview imutável:
+- `https://255ecf24.portal-regulacao-central-staging.pages.dev`.
+
+A comparação GitHub entre o head funcional `29d6eea3...` e o merge final `96ce5dec...` mostrou **zero arquivos diferentes**. Portanto esse Pages imutável representa o conteúdo funcional integrado.
+
+A instrumentação V8B altera somente telemetria técnica do laboratório:
+- `prompt_tokens`;
+- `completion_tokens`;
+- `total_tokens`;
+- `cached_prompt_tokens` quando o provider expuser esse detalhe.
+
+Não houve mudança de prompt, imagem, resolução, modelo, concorrência, gates, Drive, D1, permissões ou produção.
+
+**Estado operacional importante:** a última evidência persistente mostra a janela V8A preparada e usada, mas não registra seu encerramento fail-closed. Ela **não deve ser reutilizada** para V8B. Antes de abrir nova janela, executar o encerramento oficial no Windows do operador; se o ledger já estiver fechado/expirado, o procedimento deve reportar isso e o readiness seguinte confirmará `activeControlledWindow=false`.
+
+Referências congeladas V8B:
+- source ref: `96ce5dec060c98c582a8925ae03bc25973b0f3bd`;
+- Pages: `https://255ecf24.portal-regulacao-central-staging.pages.dev`;
+- head funcional: `29d6eea3baf9e9a5d58164ffa901313fec9aa048`.
+
+**Próxima ação exata:** encerrar a janela V8A fail-closed; atualizar os scripts locais a partir da `main`; executar o readiness 5E e confirmar exatamente source/pages acima; então preparar uma nova janela V8B e rodar **uma única matriz**. A decisão de otimização só será tomada depois de observar as contagens reais de tokens.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
@@ -2582,14 +2608,14 @@ Essa ordem substitui a ideia anterior de partir imediatamente para compactação
 | Fase/subfase | Fase 5E — V8B diagnóstica: medir token usage real antes de alterar saída/imagem |
 | Último resultado real | V8A 10/10 em 5,388 s; imagem_area_pct=100 em todas as páginas; ganho não atribuído ao crop |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
-| Runtime próximo reteste | `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9` |
-| Pages próximo reteste | `https://09560ba9.portal-regulacao-central-staging.pages.dev` |
+| Runtime próximo reteste | `96ce5dec060c98c582a8925ae03bc25973b0f3bd` |
+| Pages próximo reteste | `https://255ecf24.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | validar CI da instrumentação V8B; depois executar uma única matriz 10/10 e comparar prompt/completion/total/cached tokens por página antes de escolher a próxima otimização |
+| Próxima ação exata | encerrar V8A fail-closed; atualizar scripts locais da main; readiness V8B com source `96ce5dec...` + Pages `255ecf24...`; preparar nova janela e executar uma única matriz 10/10 com token usage |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
