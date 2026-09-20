@@ -16,7 +16,7 @@ O fluxo aprovado é:
 
 1. executar sintaxe e testes do Worker;
 2. consultar a versão que está em 100% da produção;
-3. consultar a Worker Version mais recente; se ela não for a produção, aceitá-la somente quando for identificada como candidata criada pelo próprio gate e quando todos os bindings críticos, secrets, Firebase estável e `AUTH_DB` continuarem equivalentes à produção;
+3. consultar a Worker Version mais recente; se ela não for a produção, aceitá-la somente em dois casos estritos: (a) candidata criada pelo próprio gate, validando bindings críticos, secrets, Firebase estável e `AUTH_DB`; ou (b) preview isolado conhecido de homologação, identificado por alias + tag + mensagem exatos e já comprovado como fora do tráfego produtivo;
 4. obter o `database_id` de `AUTH_DB` e a lista de nomes dos secrets da produção;
 5. criar configuração efêmera com `AUTH_DB` explícito e `secrets.required` dinâmico, sem gravar valores secretos;
 6. executar `wrangler versions upload --dry-run` com a configuração efêmera protegida;
@@ -57,7 +57,7 @@ Além da lista fixa, todos os bindings `secret_text` ou `secret_key` presentes n
 O gate para antes da promoção quando:
 
 - a produção não estiver em uma única versão a 100%;
-- a Worker Version mais recente não for a produção e também não puder ser comprovada como candidata do próprio gate com bindings equivalentes aos da produção;
+- a Worker Version mais recente não for a produção e também não puder ser comprovada como candidata do próprio gate com bindings equivalentes **nem** como preview isolado conhecido por annotations exatas;
 - uma candidata órfã do gate perder qualquer binding crítico, secret, referência Firebase estável ou o `AUTH_DB`;
 - o dry-run protegido falhar;
 - o upload falhar;
@@ -68,6 +68,19 @@ O gate para antes da promoção quando:
 - a produção mudar enquanto a candidata está sendo validada.
 
 Se uma execução anterior já tiver enviado uma candidata mas não a tiver promovido, a versão permanece sem tráfego. Na tentativa seguinte, o gate não exige exclusão manual: ele reconhece somente candidatas com a mensagem/tag reservada do próprio gate e revalida a versão órfã integralmente contra a produção antes de permitir novo upload. Versões mais recentes de origem desconhecida continuam bloqueando o processo.
+
+
+### Previews isolados conhecidos
+
+O gate pode ignorar, na etapa de ordenação de Worker Versions, uma versão mais recente que a produção **somente** quando ela corresponde exatamente a um perfil de homologação isolada allowlisted no código. Para a Central 5E, o perfil exige simultaneamente:
+
+- `workers/alias=central-docs-phase5e`;
+- `workers/tag=central-docs-phase5e`;
+- `workers/message=Central Docs 5E: homologacao sintetica controlada`.
+
+Essa exceção não promove, reutiliza nem valida o preview como candidata produtiva. Antes dela, o gate já confirma que a produção está em outra versão única a 100%. Como o wrapper 5E usa intencionalmente bindings reduzidos, ele não é submetido à equivalência completa de bindings da produção; apenas sua identidade preview-only exata é reconhecida para que não bloqueie um deploy produtivo independente.
+
+Qualquer divergência de alias, tag ou mensagem continua resultando em `ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE`.
 
 A configuração efêmera também declara dinamicamente em `secrets.required` todos os nomes de secrets encontrados na produção. O gate não usa o modo global `--strict`, porque o Worker mantém bindings e variáveis legítimos gerenciados remotamente com `keep_vars=true`; esse modo pode bloquear o upload por conflito de configuração mesmo quando a herança é intencional. A proteção continua fail-closed em três camadas: validação da versão anterior, exigência explícita dos nomes de secrets e inspeção integral da candidata antes de qualquer promoção.
 
