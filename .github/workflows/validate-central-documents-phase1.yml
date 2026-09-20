@@ -142,6 +142,7 @@ jobs:
           grep -q "chatDocumentAi" worker/document-ai-provider.js
           grep -q 'DOCUMENTS_AI_ENABLED = "false"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_PROCESSING_ENABLED = "false"' worker/wrangler.toml
+          grep -q 'DOCUMENTS_AI_BACKGROUND_ENABLED = "false"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_FREE_ONLY = "true"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_FAST_VISION_ENABLED = "false"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_FAST_VISION_MODEL = "@cf/moondream/moondream3.1-9B-A2B"' worker/wrangler.toml
