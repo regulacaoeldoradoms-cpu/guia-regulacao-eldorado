@@ -2516,12 +2516,46 @@ A janela corresponde exatamente ao runtime V8A congelado. Produção não foi pr
 
 **Próxima ação exata:** abrir `https://09560ba9.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz **uma única vez** e copiar o resumo seguro completo. Critério V8A: manter **10/10** e obter ganho material sobre o baseline V7F de **6,830 s**. Analisar especialmente `imagem_area_pct`, `provider_ms`, `transporte_backend_ms` e `tentativas_ms`.
 
+## Resultado V8A — 10/10 em 5,388 s; crop não foi a causa do ganho — 20/09/2026
+
+Resumo seguro real:
+- `MATRIZ_5E_SINTETICA=APROVADA`;
+- **10 aprovados / 0 falhas**;
+- `duracao_extracao_ms=5388`;
+- `duracao_total_ms=9514`;
+- `concorrencia_paginas=5`;
+- Gemma final: 6 páginas;
+- Qwen final: 0 páginas;
+- `imagem_area_pct=100` em todas as 6 páginas.
+
+Conclusão quantitativa:
+- V7F baseline anterior: 6,830 s;
+- V8A: 5,388 s;
+- ganho observado: ~21,1%.
+
+Porém, como `imagem_area_pct=100` em todas as páginas, o mecanismo de crop não reduziu a área enviada no laboratório. Portanto o ganho de 5,388 s **não pode ser atribuído ao crop**; ele é compatível com variação favorável de latência do provider.
+
+Diagnóstico de limite atual:
+- preparo local: 23–81 ms;
+- transporte/backend: ~0,25–0,57 s/página;
+- provider Gemma: ~1,25–4,78 s/página;
+- gargalo dominante continua sendo inferência visual remota.
+
+Decisão estratégica antes da próxima implementação:
+1. não voltar a ajustar concorrência/modelo/tokens da linha V7;
+2. não aceitar text layer como verdade documental, por risco de texto subjacente oculto/redigido;
+3. avaliar V8B por **compactação visual sem descarte de conteúdo visível** (remoção/compactação de grandes faixas de espaço em branco, preservando os pixels de conteúdo);
+4. manter V8A/V7F como baselines de rollback;
+5. somente depois avaliar orçamento visual/resolução Gemma menor, se houver parâmetro suportado pela implementação Cloudflare e matriz comprovar 10/10.
+
+Meta: reduzir estruturalmente a entrada visual sem trocar a fonte de verdade e sem criar novas inferências. Se a compactação não reduzir `imagem_area_pct`/tempo de forma material, considerar 5–6 s como teto prático do caminho visual remoto e avançar para arquitetura híbrida com validação visual explícita.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8A preparada; matriz aguardando execução |
-| Último resultado real | janela V8A preparada; release correto; Drive false; produção intacta |
+| Fase/subfase | Fase 5E — V8A 10/10 em 5,388 s; estratégia V8B em definição |
+| Último resultado real | V8A 10/10 em 5,388 s; imagem_area_pct=100 em todas as páginas; ganho não atribuído ao crop |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9` |
 | Pages próximo reteste | `https://09560ba9.portal-regulacao-central-staging.pages.dev` |
@@ -2530,7 +2564,7 @@ A janela corresponde exatamente ao runtime V8A congelado. Produção não foi pr
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | abrir laboratório V8A; executar matriz uma vez; copiar resumo seguro com imagem_area_pct |
+| Próxima ação exata | definir/implementar V8B de compactação visual segura; preservar V8A/V7F como rollback |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
