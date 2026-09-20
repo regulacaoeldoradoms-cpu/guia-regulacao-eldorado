@@ -652,3 +652,18 @@ Critérios:
 
 A janela V8B atualmente ativa deve permanecer isolada até o código V8C ser validado. Antes de abrir a homologação V8C, encerrar V8B fail-closed e congelar novas referências source/Pages.
 
+### Referências operacionais congeladas V8C
+
+- source ref: `cf8ed89cd2e5fa9ba7ed5c02d6f0cc1f50e2021e`;
+- Pages: `https://06b2c2ec.portal-regulacao-central-staging.pages.dev`;
+- head funcional: `19c54c5609b8435b85a2e9ab8ea411149bbefcb8`;
+- comparação GitHub head funcional → merge final: zero arquivos diferentes;
+- CI funcional: 23 workflows/checks verdes.
+
+Ordem operacional:
+1. encerrar V8B fail-closed;
+2. atualizar scripts locais a partir da `main`;
+3. readiness deve confirmar `activeControlledWindow=false` e as referências V8C acima;
+4. preparar nova janela;
+5. executar uma única matriz sintética e copiar o resumo seguro.
+
