@@ -4,7 +4,7 @@ Data de início: 20/09/2026.
 
 ## Estado
 
-**IMPLEMENTAÇÃO 6A–6E CONCLUÍDA EM BRANCH; aguardando CI e validação operacional.**
+**IMPLEMENTAÇÃO 6A–6E INTEGRADA NA `main`; aguardando somente validação operacional real para encerramento formal.**
 
 A Fase 6 começa da `main` com as Fases 0–5 encerradas. Não reabre editor, sincronização, permissões, arquitetura da IA documental nem a frente de micro-otimização de latência da Fase 5.
 
@@ -159,7 +159,7 @@ Proibido:
 
 ## Próxima ação exata
 
-Validar em CI a implementação 6A–6E desta branch e, se verde, integrá-la na `main`. Depois, executar a validação operacional real de ganho de tempo e controle do usuário antes de encerrar formalmente a Fase 6.
+Executar a validação operacional real documentada em `CENTRAL-DOCUMENTOS-HOMOLOGACAO-6.md`. Nenhuma nova implementação estrutural deve ser feita antes dessa medição, salvo correção de regressão encontrada.
 
 
 ## Implementação 6A–6E — 20/09/2026
@@ -252,3 +252,28 @@ Após CI verde e merge, ainda é necessário comprovar em uso real:
 4. quando o gate de IA antecipatória for homologado separadamente, o clique em extração reutiliza preparo sem misturar documentos.
 
 Até essa medição, a Fase 6 fica **implementada, mas não formalmente encerrada**.
+
+
+## Integração da implementação 6A–6E — 20/09/2026
+
+A PR **#342** foi integrada na `main` pelo merge `87b7b7b274d8d6392bfacd85e18eab19dc672885`.
+
+Evidências:
+- head funcional `de1ddc5de6346da0911e6e2fc7ca86abb2b260a9`;
+- comparação head funcional → merge final: **zero arquivos diferentes**;
+- **27 workflows/checks verdes** no head funcional;
+- validação Fases 1–6: sucesso;
+- navegador Central: sucesso;
+- staging bundle: sucesso;
+- governança: sucesso;
+- deploy seguro do Worker: sucesso;
+- Cloudflare Pages staging publicado em `https://a2d88ca3.portal-regulacao-central-staging.pages.dev`.
+
+Estado após merge:
+- código 6A–6E está integrado;
+- produção mantém `DOCUMENTS_AI_BACKGROUND_ENABLED=false`;
+- cache/prefetch não clínico pode operar com a infraestrutura já autorizada;
+- IA antecipatória continua desligada em produção;
+- nenhuma escrita automática foi introduzida.
+
+A Fase 6 **não está encerrada ainda**. Falta somente a evidência operacional do critério do Guia Mestre: redução mensurável de tempo sem perda de controle do usuário.
