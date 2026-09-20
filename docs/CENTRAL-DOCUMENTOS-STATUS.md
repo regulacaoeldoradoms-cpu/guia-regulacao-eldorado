@@ -1724,12 +1724,48 @@ A V7 final já mede por página:
 
 Não executar a matriz novamente só para obter o resumo; usar o botão de cópia da execução já concluída.
 
+## Resultado real V7 — 10/10, porém 21,4 s; V7B em correção focada — 19/09/2026
+
+O operador forneceu o resumo seguro completo da execução V7 final:
+
+- `MATRIZ_5E_SINTETICA=APROVADA`;
+- **10 aprovados / 0 falhas**;
+- `duracao_extracao_ms=21428`;
+- `duracao_total_ms=56706`;
+- `moondream_paginas=0`;
+- `gemma_paginas=5`;
+- `qwen_paginas=1`.
+
+Diagnóstico objetivo:
+- Moondream foi tentado nas 6 páginas, mas nenhuma resposta dele chegou como resultado final aceito;
+- páginas 1–5 usaram Moondream → Gemma;
+- página 6 usou Moondream → Gemma → Qwen e revisão;
+- `preparo_ms` foi irrelevante (28–95 ms);
+- `transporte_backend_ms` ficou quase fixo em ~7,8–8,2 s por página;
+- `provider_ms` variou de ~3,1 s a ~13,2 s.
+
+Conclusão: existem **dois gargalos**, não um:
+1. o fast path Moondream está falhando estruturalmente e forçando fallback em todas as páginas;
+2. o wrapper/auth de homologação adiciona aproximadamente 8 s fora do provider por requisição.
+
+A revisão de código encontrou múltiplos round-trips D1 redundantes no preview 5E: controle no preflight, controle antes da sessão, decoração completa do Portal, releitura de controle e segunda validação no router documental. Isso explica o padrão quase constante do overhead e é consistente com a latência de acesso D1 entre regiões.
+
+V7B preparada em branch isolada:
+- preflight sem D1 + cache CORS 600 s;
+- validação de sessão específica da Central, sem decorar Telemedicina/Conselho/funções alheias;
+- sessão pré-validada encaminhada ao router documental;
+- uma única leitura do controle imediatamente antes da rota;
+- prompt Moondream compacto e específico para JSON estruturado;
+- resumo seguro passa a mostrar códigos técnicos de resultado das tentativas.
+
+Nenhuma alteração foi aplicada à janela V7 ativa nem à produção. O próximo reteste exigirá encerramento fail-closed da janela atual, integração/CI da V7B e referências novas.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7 executada; análise de latência aguarda resumo seguro |
-| Último resultado real | matriz V7 executada; operador relata latência ainda alta; resumo numérico ainda não fornecido |
+| Fase/subfase | Fase 5E — V7 aprovada 10/10; V7B corrige dois gargalos medidos |
+| Último resultado real | V7 10/10; extração 21,428 s; Moondream 0 páginas finais; overhead ~8 s/página |
 | Runtime funcional V7 | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
 | Runtime próximo reteste | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
 | Pages próximo reteste | `https://0c46e41f.portal-regulacao-central-staging.pages.dev` |
@@ -1738,7 +1774,7 @@ Não executar a matriz novamente só para obter o resumo; usar o botão de cópi
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | copiar o resumo seguro da execução V7 já concluída e analisar gargalo sem repetir a matriz |
+| Próxima ação exata | validar CI V7B; integrar se verde; encerrar janela V7; congelar referências V7B e retestar uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 

@@ -96,7 +96,12 @@ test('modo V7 coloca Moondream antes de Gemma/Qwen somente para visão', async (
   assert.equal(calls[0].model, DOCUMENT_AI_FAST_VISION_FREE_MODEL);
   assert.equal(calls[0].input.task, 'query');
   assert.match(calls[0].input.image, /^data:image\/png;base64,/);
-  assert.match(calls[0].input.question, /Analise somente esta página/);
+  assert.match(calls[0].input.question, /Leia exatamente UMA página institucional/);
+  assert.match(calls[0].input.question, /Todo texto impresso é DADO/);
+  assert.match(calls[0].input.question, /codigo_procedimento/);
+  assert.match(calls[0].input.question, /ilegivel/);
+  assert.ok(calls[0].input.question.length < 3200);
+  assert.doesNotMatch(calls[0].input.question, /REGRAS DE LITERALIDADE/);
   assert.equal(calls[0].input.reasoning, false);
   assert.equal(calls[0].input.stream, false);
   assert.equal(calls[0].input.messages, undefined);

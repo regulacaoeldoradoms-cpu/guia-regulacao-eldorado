@@ -1,7 +1,7 @@
 'use strict';
 
 // Preview-only entrypoint for Fase 5E. Production never imports this module.
-import { handlePortalRoute, validatePortalSession } from './auth-management-flex.js';
+import { handlePortalRoute, validateDocumentSession } from './auth-management-flex.js';
 import { handleDocumentsRoute } from './documents-router.js';
 import { augmentAuthResponse, portalEnvForAuthRoute } from './portal-safety.js';
 
@@ -123,14 +123,14 @@ async function forwardAuth(request, env, origin) {
     : response;
 }
 
-async function forwardDocuments(request, env, origin) {
-  return handleDocumentsRoute(request, env, origin, true);
+async function forwardDocuments(request, env, origin, user) {
+  return handleDocumentsRoute(request, env, origin, true, { prevalidatedUser: user });
 }
 
 export function createHomologation5eWorker({
   authFetch = forwardAuth,
   documentsFetch = forwardDocuments,
-  validateSession = validatePortalSession,
+  validateSession = validateDocumentSession,
   readControl = controlFor
 } = {}) {
   return {
@@ -160,22 +160,16 @@ export function createHomologation5eWorker({
       const route = routeFor(method, url.pathname);
       if (!route || url.search) return blocked(origin, 'AI_HOMOLOGATION_ROUTE_DENIED');
 
-      let control;
-      try {
-        control = await readControl(env);
-      } catch (_) {
-        return blocked(origin, 'AI_HOMOLOGATION_UNAVAILABLE', 503);
-      }
-      if (!control) return blocked(origin);
-
       if (request.method === 'OPTIONS') {
+        // Preflight não acessa dados nem provider. A operação real continua
+        // validando sessão, controle revogável e gates antes de qualquer IA.
         const response = reply({}, 200, origin);
         response.headers.set('Access-Control-Allow-Methods', method);
         response.headers.set(
           'Access-Control-Allow-Headers',
           'Authorization, Content-Type, X-Document-Page-Number, ' + FIXTURE_HEADER
         );
-        response.headers.set('Access-Control-Max-Age', '0');
+        response.headers.set('Access-Control-Max-Age', '600');
         return response;
       }
 
@@ -184,6 +178,14 @@ export function createHomologation5eWorker({
       ) return blocked(origin, 'AI_HOMOLOGATION_DRIVE_GATE_INVALID', 503);
 
       if (route.kind === 'login') {
+        let control;
+        try {
+          control = await readControl(env);
+        } catch (_) {
+          return blocked(origin, 'AI_HOMOLOGATION_UNAVAILABLE', 503);
+        }
+        if (!control) return blocked(origin);
+
         try {
           const body = await boundedJson(request);
           if (
@@ -198,15 +200,26 @@ export function createHomologation5eWorker({
 
       let user;
       try {
-        user = await validateSession(request, env, []);
+        user = await validateSession(request, env);
       } catch (_) {
         user = null;
       }
       if (!user) return blocked(origin, 'AUTH_REQUIRED', 401);
+
+      // Uma única leitura do controle ocorre depois da sessão e imediatamente
+      // antes das rotas documentais/IA. Isso mantém a revogação fail-closed sem
+      // duplicar round-trips D1 na mesma chamada.
+      let control;
+      try {
+        control = await readControl(env);
+      } catch (_) {
+        control = null;
+      }
       if (
-        user.username !== control.username
+        !control
+        || user.username !== control.username
         || user.documentCapabilities?.extract !== true
-      ) return blocked(origin, 'AI_HOMOLOGATION_USER_DENIED');
+      ) return blocked(origin, control ? 'AI_HOMOLOGATION_USER_DENIED' : 'AI_HOMOLOGATION_DISABLED');
 
       if (route.kind === 'ai') {
         if (request.headers.get(FIXTURE_HEADER) !== FIXTURE_VALUE) {
@@ -216,22 +229,11 @@ export function createHomologation5eWorker({
           String(env.DOCUMENTS_AI_ENABLED || '').trim().toLowerCase() !== 'true'
           || String(env.DOCUMENTS_AI_PROCESSING_ENABLED || '').trim().toLowerCase() !== 'true'
         ) return blocked(origin, 'DOCUMENT_AI_PROCESSING_DISABLED', 503);
-
-        // Re-read immediately before every provider call so revocation wins.
-        let fresh;
-        try {
-          fresh = await readControl(env);
-        } catch (_) {
-          fresh = null;
-        }
-        if (!fresh || fresh.id !== control.id || fresh.username !== user.username) {
-          return blocked(origin);
-        }
       }
 
       try {
         return url.pathname.startsWith('/api/documents/')
-          ? await documentsFetch(request, env, origin)
+          ? await documentsFetch(request, env, origin, user)
           : await authFetch(request, env, origin);
       } catch (_) {
         return blocked(origin, 'AI_HOMOLOGATION_UNAVAILABLE', 503);

@@ -89,6 +89,15 @@ export async function validatePortalSession(request, env, allowedRoles = []) {
   return roleCanAccess(user.role, allowedRoles) ? user : null;
 }
 
+export async function validateDocumentSession(request, env) {
+  const baseUser = await validatePortalSessionBase(request, env, []);
+  if (!baseUser) return null;
+  // A Central de Documentos só precisa da identidade base e das capabilities
+  // documentais. Evitamos decorar Telemedicina, Conselho e demais funções
+  // alheias à rota documental, reduzindo leituras D1 sem afrouxar autorização.
+  return decorateDocumentUser(env, baseUser);
+}
+
 async function normalizeSecurityPrivacy(response) {
   if (!response?.ok) return response;
   const type = response.headers.get('Content-Type') || '';
