@@ -81,7 +81,7 @@ test('botão único percorre o PDF e envia somente uma página por chamada', asy
   assert.match(viewer, /function meaningfulContentBounds\(canvas/);
   assert.match(viewer, /minimumDarkFraction/);
   assert.match(viewer, /cropWhitespace === true/);
-  assert.match(viewer, /canvas\.toBlob/);
+  assert.match(viewer, /outputCanvas\.toBlob/);
 });
 
 test('resultado Titon segue o formato operacional e mantém cada página separada', async () => {
