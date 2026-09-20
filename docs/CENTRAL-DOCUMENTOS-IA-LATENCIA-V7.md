@@ -421,3 +421,12 @@ A V7F atingiu 10/10 com 6,830 s de extração. O backend e a revisão já deixar
 Com as durações reais V7F, iniciar as seis páginas simultaneamente teria makespan teórico ~5,483 s se o provider mantiver latências equivalentes.
 
 A V7G testa **somente concorrência 6**. Nenhuma outra variável muda. É a última rodada image-only; qualquer regressão encerra a linha V7.x e mantém V7F como baseline final, com V8 híbrida como próximo avanço.
+
+
+## V7G regrediu para 7,202 s; V8A visual segura — 20/09/2026
+
+A V7G manteve 10/10, porém concorrência 6 aumentou o makespan para 7,202 s. A V7F de concorrência 5 permanece o baseline image-only mais rápido em 6,830 s.
+
+A V8A muda o eixo de otimização: não aumenta concorrência e não reduz resolução do texto. Ela recorta somente áreas visualmente vazias da página renderizada, com salvaguarda dos limites da text layer. A text layer não fornece valores ao extrator; serve apenas para impedir que texto pequeno seja cortado.
+
+Essa escolha preserva a semântica visual de `ilegivel` e evita o risco de aceitar texto PDF subjacente que esteja visualmente oculto.
