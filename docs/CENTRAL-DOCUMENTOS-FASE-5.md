@@ -522,3 +522,29 @@ Referências congeladas V8C.2:
 
 Antes da matriz V8C.2, encerrar a janela V8C.1 atual fail-closed. O readiness V8C.2 deve confirmar source e Pages acima antes de criar nova janela.
 
+### Resultado V8C.2 — candidata final da Fase 5
+
+Matriz real controlada:
+- **10/10 aprovados**;
+- `duracao_extracao_ms=4524`;
+- `duracao_total_ms=8281`;
+- Gemma final em 6/6 páginas;
+- Qwen final em 0/6;
+- todas as páginas em uma única tentativa;
+- `formato_compacto_paginas=6`;
+- `formato_legado_paginas=0`;
+- nenhuma divergência de campo;
+- nenhuma revisão focal acionada;
+- `prompt_tokens_extracao=10683`;
+- `completion_tokens_extracao=622`;
+- `total_tokens_extracao=11305`;
+- `cached_prompt_tokens_extracao=2944`.
+
+Leitura: a V8C.2 recuperou precisão total, eliminou o fallback sistemático da V8C.1 e manteve a saída compacta abaixo do alvo operacional de 700 completion tokens. O tempo de 4,524 s é o melhor resultado 10/10 persistido desta linha experimental (V8A 5,388 s; V7F 6,830 s).
+
+Decisão: **encerrar a frente de micro-otimização de latência dentro da Fase 5**. O Guia Mestre orienta não polir indefinidamente uma fase encerrada; novas otimizações de p75/p95/p99, cache e tempo de IA pertencem à **Fase 7 — Robustez e otimização contínua**. Não reduzir resolução, qualidade de imagem ou proteções documentais nesta fase.
+
+O valor exato da V6 não foi persistido, portanto não declarar formalmente a razão <=50% contra V6. O critério de aceite da Fase 5 do Guia Mestre, porém, está demonstrado pela matriz: proveniência por página, ausência de mistura, NÃO CONSTA/ILEGÍVEL e literalidade.
+
+Pendência única antes de encerrar a Fase 5: encerrar a janela V8C.2 fail-closed e confirmar `httpBlocked=true`. Após isso, registrar o aceite final e avançar para a **Fase 6 — Automação operacional**.
+
