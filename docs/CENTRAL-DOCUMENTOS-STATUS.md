@@ -2779,21 +2779,42 @@ V8C.1:
 
 A janela V8C atual permanece aberta somente até o código V8C.1 ser validado. Não repetir a matriz V8C e não reutilizar esta janela para V8C.1.
 
+## V8C.1 integrada e referências congeladas — 20/09/2026
+
+A correção focal da V8C foi integrada pela PR **#331** no merge `22318ff06cb893733b9794001cd880380d237f64`.
+
+Head funcional validado: `cbbcc6c3c858c983ab9f10320598f4a24a3c295f`.
+Pages imutável: `https://62b72fe5.portal-regulacao-central-staging.pages.dev`.
+A comparação GitHub head funcional → merge final mostrou **zero arquivos diferentes**.
+
+A V8C.1 corrige somente o ponto que falhou na V8C real:
+- `titulo` deixa de ser o primeiro item anônimo do vetor médico;
+- passa a ser `h=[s,v]`, semanticamente dedicado ao título;
+- se houver campo explicitamente rotulado "Título", `h` deve usar exatamente esse valor;
+- os demais sete campos médicos permanecem no vetor compacto;
+- comprovante permanece `f[8]`;
+- formato médico V8C antigo `f[8]` sem `h` é rejeitado;
+- contrato público continua idêntico.
+
+A janela V8C atualmente ativa permanece no controle `phase5e_90b936fbb3d344ecb43d69b99891043c`, release `cf8ed89cd2e5fa9ba7ed5c02d6f0cc1f50e2021e`, e **não deve ser reutilizada** para V8C.1.
+
+**Próxima ação exata:** encerrar V8C fail-closed; atualizar os scripts locais da `main`; executar readiness V8C.1 confirmando source `22318ff...`, Pages `62b72fe5...` e `activeControlledWindow=false`; só então preparar nova janela.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8C reprovada por título; V8C.1 em correção isolada |
+| Fase/subfase | Fase 5E — V8C.1 integrada e congelada; janela V8C precisa ser encerrada |
 | Último resultado real | V8C 3/10; completion 579 tokens; divergência isolada em titulo nas páginas médicas 2/4/5/6 |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
-| Runtime próximo reteste | `cf8ed89cd2e5fa9ba7ed5c02d6f0cc1f50e2021e` |
-| Pages próximo reteste | `https://06b2c2ec.portal-regulacao-central-staging.pages.dev` |
+| Runtime próximo reteste | `22318ff06cb893733b9794001cd880380d237f64` |
+| Pages próximo reteste | `https://62b72fe5.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | validar CI da V8C.1 com âncora semântica de titulo; se verde, integrar/congelar, encerrar V8C fail-closed e abrir nova janela |
+| Próxima ação exata | encerrar V8C fail-closed; atualizar scripts locais da main; readiness V8C.1 com source `22318ff...` + Pages `62b72fe5...`; preparar nova janela e executar uma única matriz |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
