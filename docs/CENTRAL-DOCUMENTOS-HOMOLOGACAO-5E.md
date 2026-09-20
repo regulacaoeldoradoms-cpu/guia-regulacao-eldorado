@@ -716,3 +716,17 @@ A próxima homologação deve validar:
 
 A janela V8C.1 atual não deve ser reutilizada para V8C.2. Após CI/merge/freeze, encerrar fail-closed, atualizar scripts e abrir nova janela.
 
+### Referências operacionais congeladas V8C.2
+
+- source ref: `32bda4f6753d434cc134eafb3610de16b00e272d`;
+- Pages: `https://821db519.portal-regulacao-central-staging.pages.dev`;
+- head funcional: `636d500580ea4083d131f96c0bf73e73f6ee86d7`;
+- comparação GitHub head funcional → merge final: zero arquivos diferentes.
+
+Ordem:
+1. encerrar V8C.1 fail-closed;
+2. atualizar scripts locais a partir da `main`;
+3. readiness deve confirmar `activeControlledWindow=false` e as referências V8C.2 acima;
+4. preparar nova janela;
+5. executar uma única matriz V8C.2.
+

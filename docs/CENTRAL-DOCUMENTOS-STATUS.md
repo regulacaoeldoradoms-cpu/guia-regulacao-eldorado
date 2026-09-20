@@ -2883,21 +2883,43 @@ A documentação oficial atual do Cloudflare declara suporte a JSON Mode/JSON Sc
 
 **Próxima ação exata:** validar CI da V8C.2. Se verde, integrar e congelar source/Pages; depois encerrar a janela V8C.1 fail-closed, executar readiness e abrir uma nova janela V8C.2. Não repetir a matriz V8C.1.
 
+## V8C.2 integrada e referências congeladas — 20/09/2026
+
+A PR **#335** foi integrada na `main` pelo merge `32bda4f6753d434cc134eafb3610de16b00e272d`.
+
+Head funcional validado: `636d500580ea4083d131f96c0bf73e73f6ee86d7`.
+Pages imutável: `https://821db519.portal-regulacao-central-staging.pages.dev`.
+A comparação GitHub head funcional → merge final mostrou **zero arquivos diferentes**.
+
+A V8C.2 substitui o significado posicional por chaves curtas semânticas:
+- envelope `t+v`;
+- comprovante: `np,cp,cn,dn,nm,te,en,ag`;
+- página médica: `ti,mo,me,cr,ps,pc,ci,dc`;
+- cada campo permanece no par compacto `[s,v]`;
+- backend exige exatamente as chaves autorizadas e expande para o contrato público atual;
+- `response_format=json_schema` do Workers AI é usado apenas para garantir o shape mínimo `t+v`;
+- token usage passa a ser preservado inclusive em respostas do provider que depois falhem no schema;
+- revisão focal redundante é evitada também quando Qwen já retorna exclusivamente CID ilegível + descrição encontrada.
+
+A janela V8C.1 atualmente ativa continua no controle `phase5e_bd8ef3177d284d64b7a50846c075d016`, release `22318ff06cb893733b9794001cd880380d237f64`, e **não deve ser reutilizada** para V8C.2.
+
+**Próxima ação exata:** encerrar V8C.1 fail-closed; atualizar scripts locais da `main`; executar readiness V8C.2 confirmando source `32bda4f...`, Pages `821db519...` e `activeControlledWindow=false`; só então preparar nova janela.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8C.1 reprovada; V8C.2 semântica implementada e aguardando CI |
+| Fase/subfase | Fase 5E — V8C.2 integrada e congelada; janela V8C.1 precisa ser encerrada |
 | Último resultado real | V8C.1 7/10 em 14,469 s; schema-invalid Gemma em 4 páginas médicas; divergência medico nas páginas 5/6 |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
-| Runtime próximo reteste | `22318ff06cb893733b9794001cd880380d237f64` |
-| Pages próximo reteste | `https://62b72fe5.portal-regulacao-central-staging.pages.dev` |
+| Runtime próximo reteste | `32bda4f6753d434cc134eafb3610de16b00e272d` |
+| Pages próximo reteste | `https://821db519.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | validar CI da V8C.2; se verde, integrar/congelar, encerrar V8C.1 fail-closed e abrir nova janela V8C.2 |
+| Próxima ação exata | encerrar V8C.1 fail-closed; atualizar scripts locais da main; readiness V8C.2 com source `32bda4f...` + Pages `821db519...`; preparar nova janela e executar uma única matriz |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 

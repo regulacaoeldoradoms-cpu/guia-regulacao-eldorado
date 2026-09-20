@@ -513,3 +513,12 @@ V8C.2 substitui posição por chaves curtas semânticas:
 
 Critério: 10/10, 6/6 compacto, 0/6 legado, sem divergências e sem fallback sistemático nas páginas médicas. Prioridade é recuperar precisão e eliminar retries; tokens devem permanecer materialmente abaixo do formato público completo.
 
+Referências congeladas V8C.2:
+- PR #335 integrada na `main` pelo merge `32bda4f6753d434cc134eafb3610de16b00e272d`;
+- head funcional: `636d500580ea4083d131f96c0bf73e73f6ee86d7`;
+- Pages imutável: `https://821db519.portal-regulacao-central-staging.pages.dev`;
+- comparação head funcional → merge final: zero arquivos diferentes;
+- checks funcionais da PR #335 concluídos com sucesso.
+
+Antes da matriz V8C.2, encerrar a janela V8C.1 atual fail-closed. O readiness V8C.2 deve confirmar source e Pages acima antes de criar nova janela.
+
