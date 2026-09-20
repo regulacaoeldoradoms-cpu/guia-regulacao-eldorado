@@ -22,8 +22,9 @@ A implementação 6A–6E já está integrada na `main`. Esta homologação não
 ## Regras de segurança
 
 Durante a homologação:
-- não ativar `DOCUMENTS_AI_BACKGROUND_ENABLED` em produção;
-- não alterar `DOCUMENTS_AI_ENABLED` ou `DOCUMENTS_AI_PROCESSING_ENABLED` em produção;
+- manter `DOCUMENTS_AI_BACKGROUND_ENABLED=false` em produção;
+- a IA documental normal pode permanecer ativa após a publicação controlada V1, com `DOCUMENTS_AI_ENABLED=true` e `DOCUMENTS_AI_PROCESSING_ENABLED=true`;
+- a ativação normal não amplia permissões: toda rota continua exigindo capability `extract`;
 - não testar escrita automática;
 - não usar nome, CID, diagnóstico ou conteúdo clínico como sinal de prioridade;
 - não registrar nome de arquivo, ref, fileId, cacheKey ou conteúdo no PostHog;
@@ -134,9 +135,21 @@ Após o deploy da correção, validar:
 - com IA documental desabilitada, botão IA ausente;
 - quando futuramente `enabled=true` de forma controlada, o mesmo botão pode ser exibido e deve abrir o painel normalmente.
 
+## Publicação controlada da IA documental normal
+
+Em 20/09/2026 o operador autorizou explicitamente o uso produtivo da IA documental já aprovada na Fase 5. A publicação ativa somente o fluxo iniciado por clique do usuário:
+
+- `DOCUMENTS_AI_ENABLED=true`;
+- `DOCUMENTS_AI_PROCESSING_ENABLED=true`;
+- `DOCUMENTS_AI_BACKGROUND_ENABLED=false`;
+- `DOCUMENTS_AI_FREE_ONLY=true`;
+- `DOCUMENTS_AI_FAST_VISION_ENABLED=false`.
+
+A mudança não liga preextração em background, não altera Drive/autosync e não concede capability a contas que não possuam `extract`.
+
 ## Resultado
 
-Pendente de conclusão da validação operacional real após a correção visual.
+Pendente de conclusão da validação operacional real da Fase 6; a publicação normal da IA é uma mudança transversal autorizada e não encerra a Fase 6 por si só.
 
 ## Próxima ação
 
