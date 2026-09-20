@@ -2967,6 +2967,7 @@
           if (openId !== state.pdfOpenId) return;
           els.viewerState.textContent = 'Visualizador do Portal pronto.';
           markViewerReady(openId, bucket, cacheState, progressive, sourceLabel);
+          scheduleActiveDocumentPreparation(openId);
           if (state.documentAiPanelOpen) renderDocumentAiPanel();
         },
         onError: () => {
@@ -3479,6 +3480,7 @@
     try {
       const payload = await api('/api/documents/ai/config', { method: 'GET' });
       state.documentAiConfig = payload?.ai || null;
+      if (state.pdfItem) scheduleActiveDocumentPreparation(state.pdfOpenId);
     } catch (_) {
       state.documentAiConfig = null;
     }
@@ -3591,6 +3593,98 @@
       throw error;
     }
     return normalizeDocumentAiPagePayload(pageNumber, payload);
+  }
+
+  function schedulePreparedPageAnalysis(pageNumber, blob, openId) {
+    if (!documentAiBackgroundReady() || openId !== state.pdfOpenId || !(blob instanceof Blob)) return;
+    scheduleDocumentBackgroundTask({
+      key: `preextract:${openId}:${pageNumber}`,
+      type: 'preextract_page',
+      priority: 55 - pageNumber,
+      source: 'cloudflare',
+      count: 1,
+      run: async ({ signal, throwIfCancelled }) => {
+        throwIfCancelled();
+        const analyzed = await requestDocumentAiPage(pageNumber, blob, { signal });
+        throwIfCancelled();
+        return analyzed;
+      },
+      onSettled: (result) => {
+        if (
+          result.state !== 'prepared'
+          || openId !== state.pdfOpenId
+          || state.editorSession
+          || !result.value
+        ) return;
+        state.backgroundPreparedAnalysis.set(pageNumber, result.value);
+        const prepared = state.backgroundPreparedAnalysis.size;
+        setAutomationStatus(
+          `Titon preparou ${prepared} página(s) em segundo plano. Ao extrair, essa preparação será reaproveitada.`,
+          'success'
+        );
+        if (!state.backgroundSuggestionShown) {
+          state.backgroundSuggestionShown = true;
+          captureBackgroundTask({}, {
+            operation: 'suggestion',
+            state: 'prepared',
+            source: 'local',
+            cacheState: 'hit',
+            count: prepared
+          });
+        }
+      }
+    });
+  }
+
+  function scheduleActiveDocumentPreparation(openId = state.pdfOpenId) {
+    if (openId !== state.pdfOpenId || !state.pdfItem || state.editorSession) return;
+    const viewer = window.PortalPdfViewer;
+    const pageCount = Number(viewer?.getPageCount?.() || 0);
+    if (!Number.isInteger(pageCount) || pageCount <= 0) return;
+
+    if (!state.backgroundScope) state.backgroundScope = documentBackgroundScope(openId);
+
+    if (typeof viewer?.prewarmThumbnails === 'function') {
+      scheduleDocumentBackgroundTask({
+        key: `thumbs:${openId}`,
+        type: 'prepare_page',
+        priority: 80,
+        source: 'local',
+        count: Math.min(3, pageCount),
+        run: async ({ throwIfCancelled }) => {
+          throwIfCancelled();
+          return viewer.prewarmThumbnails(
+            Array.from({ length: Math.min(3, pageCount) }, (_, index) => index + 1)
+          );
+        }
+      });
+    }
+
+    if (!canUseDocumentAi()) return;
+    const pageLimit = Math.min(2, pageCount);
+    for (let pageNumber = 1; pageNumber <= pageLimit; pageNumber += 1) {
+      scheduleDocumentBackgroundTask({
+        key: `prepare:${openId}:${pageNumber}`,
+        type: 'prepare_page',
+        priority: 70 - pageNumber,
+        source: 'local',
+        count: 1,
+        run: ({ signal, throwIfCancelled }) => {
+          throwIfCancelled();
+          return prepareDocumentAiPageBlob(pageNumber, { signal });
+        },
+        onSettled: (result) => {
+          if (
+            result.state !== 'prepared'
+            || openId !== state.pdfOpenId
+            || state.editorSession
+            || !(result.value instanceof Blob)
+          ) return;
+          state.backgroundPreparedImages.set(pageNumber, result.value);
+          schedulePreparedPageAnalysis(pageNumber, result.value, openId);
+        }
+      });
+    }
   }
 
   async function extractWholeDocumentAi() {
