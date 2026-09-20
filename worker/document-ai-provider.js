@@ -463,6 +463,30 @@ async function runWorkersAi(
   );
 }
 
+function integratedPageType(parsed) {
+  const raw = String(parsed?.pageType || '').trim();
+  if (['comprovante_atendimento', 'pagina_medica_autorizada', 'outro'].includes(raw)) {
+    return raw;
+  }
+
+  const fields = parsed?.fields;
+  if (!fields || typeof fields !== 'object' || Array.isArray(fields)) return raw;
+  const keys = Object.keys(fields).sort();
+  if (!keys.length) return 'outro';
+
+  const exactKeysFor = (pageType) => (
+    [...DOCUMENT_AI_EXTRACTION_FIELDS[pageType]].sort()
+  );
+  const sameKeys = (expected) => (
+    keys.length === expected.length
+    && keys.every((key, index) => key === expected[index])
+  );
+
+  if (sameKeys(exactKeysFor('comprovante_atendimento'))) return 'comprovante_atendimento';
+  if (sameKeys(exactKeysFor('pagina_medica_autorizada'))) return 'pagina_medica_autorizada';
+  return raw;
+}
+
 function fieldContract(pageType) {
   const keys = DOCUMENT_AI_EXTRACTION_FIELDS[pageType];
   if (!keys) {
@@ -655,7 +679,7 @@ export async function analyzeDocumentAiPage(env, input = {}, options = {}) {
       fastIntegratedAnalysisQuestion()
     ),
     (parsed) => {
-      const pageType = String(parsed?.pageType || '').trim();
+      const pageType = integratedPageType(parsed);
       const classification = normalizeDocumentAiClassification({ pageNumber, pageType });
 
       if (classification.pageType === 'outro') {
