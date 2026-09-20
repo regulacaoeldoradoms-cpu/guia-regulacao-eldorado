@@ -367,6 +367,7 @@ test('análise integrada classifica e extrai página autorizada em uma única in
   assert.equal(multimodal[0].type, 'image_url');
   assert.match(multimodal[0].image_url.url, /^data:image\/png;base64,/);
   assert.equal(multimodal[1].type, 'text');
+  assert.equal(calls[0].input.max_completion_tokens, 700);
 });
 
 test('pipeline público classifyAndExtract usa a análise integrada de uma chamada', async () => {
