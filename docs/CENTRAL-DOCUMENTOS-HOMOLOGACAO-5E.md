@@ -605,3 +605,11 @@ Critério V7F:
 - única mudança funcional: concorrência de páginas 5 → 6;
 - V7F permanece baseline de rollback: 10/10 em 6,830 s;
 - critério: manter 10/10 e buscar <6,0 s; se houver regressão, encerrar V7.x e avançar para V8 híbrida.
+
+
+### V7G — teste final image-only
+- source ref: `ba7d8a369940a9613a436b6b0f572bdedb99375f`;
+- Pages: `https://0e5a1474.portal-regulacao-central-staging.pages.dev`;
+- única mudança funcional: concorrência de páginas 5 → 6;
+- V7F permanece baseline de rollback: 10/10 em 6,830 s;
+- critério: manter 10/10 e buscar <6,0 s; se houver regressão, encerrar V7.x e avançar para V8 híbrida.
