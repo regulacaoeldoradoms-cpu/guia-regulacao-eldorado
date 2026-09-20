@@ -842,6 +842,6 @@ test('viewer expõe exportPageImage para isolamento da IA documental', () => {
   const viewer = read('js/document-viewer.js');
   assert.match(viewer, /async function exportPageImage\(pageNumber/);
   assert.match(viewer, /page\.render\(\{/);
-  assert.match(viewer, /canvas\.toBlob/);
+  assert.match(viewer, /outputCanvas\.toBlob/);
   assert.match(viewer, /exportPageImage,/);
 });

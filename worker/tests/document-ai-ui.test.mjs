@@ -56,11 +56,12 @@ test('botão único percorre o PDF e envia somente uma página por chamada', asy
   const extract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'classifyActiveDocumentPage');
 
   assert.match(extract, /getPageCount\?\.\(\)/);
-  assert.match(extract, /const concurrency = Math\.min\(6, pageCount\)/);
+  assert.match(extract, /const concurrency = Math\.min\(5, pageCount\)/);
   assert.match(extract, /Promise\.all\(Array\.from\(\{ length: concurrency \}/);
   assert.match(extract, /await exporter\(pageNumber/);
   assert.match(extract, /maxEdge: 1800/);
   assert.match(extract, /mimeType: 'image\/png'/);
+  assert.match(extract, /cropWhitespace: true/);
   assert.match(extract, /blob\.size > 2\.8 \* 1024 \* 1024/);
   assert.match(extract, /mimeType: 'image\/jpeg'/);
   assert.match(extract, /quality: 0\.92/);
@@ -77,7 +78,12 @@ test('botão único percorre o PDF e envia somente uma página por chamada', asy
   assert.match(viewer, /function getPageCount\(\)/);
   assert.match(viewer, /session\.document\?\.numPages/);
   assert.match(viewer, /getPageCount,/);
-  assert.match(viewer, /canvas\.toBlob/);
+  assert.match(viewer, /async function pageTextSafetyBounds\(page, viewport\)/);
+  assert.match(viewer, /function meaningfulContentBounds\(canvas/);
+  assert.match(viewer, /minimumDarkFraction/);
+  assert.match(viewer, /cropWhitespace === true/);
+  assert.match(viewer, /pageTextSafetyBounds\(page, viewport\)/);
+  assert.match(viewer, /outputCanvas\.toBlob/);
 });
 
 test('resultado Titon segue o formato operacional e mantém cada página separada', async () => {

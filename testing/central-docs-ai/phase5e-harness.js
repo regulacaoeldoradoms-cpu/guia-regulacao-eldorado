@@ -298,11 +298,99 @@
     }
   }
 
+  function meaningfulContentBounds(canvas) {
+    const width = Math.max(1, Number(canvas?.width || 0));
+    const height = Math.max(1, Number(canvas?.height || 0));
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx || width < 120 || height < 120) return null;
+
+    let imageData;
+    try {
+      imageData = ctx.getImageData(0, 0, width, height);
+    } catch (_) {
+      return null;
+    }
+
+    const data = imageData.data;
+    const tile = 64;
+    const step = 3;
+    const darkness = 242;
+    const minimumFraction = 0.055;
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+
+    for (let top = 0; top < height; top += tile) {
+      const bottom = Math.min(height, top + tile);
+      for (let left = 0; left < width; left += tile) {
+        const right = Math.min(width, left + tile);
+        let dark = 0;
+        let sampled = 0;
+        for (let y = top; y < bottom; y += step) {
+          for (let x = left; x < right; x += step) {
+            const offset = (y * width + x) * 4;
+            if (data[offset + 3] < 24) continue;
+            sampled += 1;
+            if (
+              data[offset] < darkness
+              || data[offset + 1] < darkness
+              || data[offset + 2] < darkness
+            ) dark += 1;
+          }
+        }
+        if (sampled > 0 && (dark / sampled) >= minimumFraction) {
+          minX = Math.min(minX, left);
+          minY = Math.min(minY, top);
+          maxX = Math.max(maxX, right);
+          maxY = Math.max(maxY, bottom);
+        }
+      }
+    }
+
+    if (maxX <= minX || maxY <= minY) return null;
+    const padding = 56;
+    minX = Math.max(0, minX - padding);
+    minY = Math.max(0, minY - padding);
+    maxX = Math.min(width, maxX + padding);
+    maxY = Math.min(height, maxY + padding);
+    const cropWidth = Math.max(1, maxX - minX);
+    const cropHeight = Math.max(1, maxY - minY);
+    const areaRatio = (cropWidth * cropHeight) / (width * height);
+    if (areaRatio >= 0.90 || cropWidth < 160 || cropHeight < 160) return null;
+
+    return { x: minX, y: minY, width: cropWidth, height: cropHeight, areaRatio };
+  }
+
   function blobFromCanvas(canvas) {
+    let outputCanvas = canvas;
+    let croppedCanvas = null;
+    const bounds = meaningfulContentBounds(canvas);
+
+    if (bounds) {
+      croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = bounds.width;
+      croppedCanvas.height = bounds.height;
+      const ctx = croppedCanvas.getContext('2d', { alpha: false });
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, bounds.width, bounds.height);
+      ctx.drawImage(
+        canvas,
+        bounds.x, bounds.y, bounds.width, bounds.height,
+        0, 0, bounds.width, bounds.height
+      );
+      outputCanvas = croppedCanvas;
+    }
+
+    const areaPct = Math.round((bounds?.areaRatio || 1) * 100);
     return new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (blob) resolve(blob);
+      outputCanvas.toBlob((blob) => {
+        if (blob) resolve({ blob, areaPct });
         else reject(new Error('Não foi possível gerar a imagem sintética.'));
+        if (croppedCanvas) {
+          croppedCanvas.width = 0;
+          croppedCanvas.height = 0;
+        }
       }, 'image/png');
     });
   }
@@ -426,7 +514,7 @@
       'moondream_paginas=' + moondreamPages,
       'gemma_paginas=' + gemmaPages,
       'qwen_paginas=' + qwenPages,
-      'concorrencia_paginas=6'
+      'concorrencia_paginas=5'
     ];
 
     state.pageMetrics
@@ -450,6 +538,7 @@
           'pagina_' + String(item.pageNumber).padStart(2, '0')
           + '_ms=' + totalMs
           + ' | preparo_ms=' + prepareMs
+          + ' | imagem_area_pct=' + Math.max(1, Math.min(100, Math.round(Number(item.imageAreaPct || 100))))
           + ' | provider_ms=' + providerMs
           + ' | transporte_backend_ms=' + transportMs
           + ' | tentativas=' + Math.max(0, Math.round(Number(item.attemptCount || 0)))
@@ -535,19 +624,21 @@
     els.resultsCard.hidden = false;
     els.chatCard.hidden = false;
     els.run.disabled = true;
-    status(els.matrixStatus, 'Executando análise integrada em até 6 páginas simultâneas…');
+    status(els.matrixStatus, 'Executando análise integrada em até 5 páginas simultâneas com crop visual…');
 
     try {
       const extractionStarted = performance.now();
       let nextFixture = 0;
       const pageResults = new Array(fixtures.length);
-      const concurrency = Math.min(6, fixtures.length);
+      const concurrency = Math.min(5, fixtures.length);
 
       const analyzeFixture = async (fixture, index) => {
         const pageStarted = performance.now();
         const canvas = els.fixtureGrid.querySelector('canvas[data-fixture-id="' + fixture.id + '"]');
         const blobStarted = performance.now();
-        const blob = await blobFromCanvas(canvas);
+        const preparedImage = await blobFromCanvas(canvas);
+        const blob = preparedImage.blob;
+        const imageAreaPct = preparedImage.areaPct;
         const prepareMs = performance.now() - blobStarted;
         const requestStarted = performance.now();
 
@@ -620,6 +711,7 @@
             providerModel,
             durationMs,
             prepareMs,
+            imageAreaPct,
             providerDurationMs,
             transportBackendMs,
             attemptCount: providerAttempts.length,
@@ -638,6 +730,7 @@
             providerModel: '',
             durationMs: performance.now() - pageStarted,
             prepareMs,
+            imageAreaPct,
             providerDurationMs: 0,
             transportBackendMs: Math.max(0, performance.now() - requestStarted),
             attemptCount: 0,
@@ -673,6 +766,7 @@
           model: item.providerModel,
           durationMs: item.durationMs,
           prepareMs: item.prepareMs,
+          imageAreaPct: item.imageAreaPct,
           providerDurationMs: item.providerDurationMs,
           transportBackendMs: item.transportBackendMs,
           attemptCount: item.attemptCount,
