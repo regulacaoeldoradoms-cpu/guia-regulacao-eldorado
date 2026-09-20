@@ -331,3 +331,49 @@ Estimativa baseada nas durações reais da V7C, mantendo a revisão Qwen atual: 
 A V7D também registra `revisao_alterou=` com **somente nomes de campos**, nunca valores. O objetivo é verificar se a revisão Qwen da página 6 realmente modifica a extração inicial Gemma. Se `revisao_alterou=nenhum` e a matriz continuar 10/10, a revisão explícita de `ilegivel` pode ser reavaliada numa rodada posterior com evidência, em vez de removida por suposição.
 
 Decisão: não iniciar V8 híbrida ainda. O caminho Gemma direto é menor, reversível e já tem ganho mensurável provável. V8 fica como próximo salto se V7D ainda não atender a experiência desejada.
+
+
+## Resultado real V7D e decisão V7E — 20/09/2026
+
+A V7D removeu Moondream da cadeia, mas **regrediu** em precisão e também ficou mais lenta que a V7C:
+
+- matriz: **8/10**;
+- extração: **15.386 ms**;
+- total com chat: **18.753 ms**;
+- página 6 falhou no campo `titulo`;
+- o chat sobre CID ilegível falhou por depender da evidência da página 6;
+- página 5 teve um outlier Gemma de **14.818 ms** em uma única tentativa;
+- página 6: Gemma **5.363 ms** + Qwen **2.226 ms**;
+- `revisao_alterou=nenhum`: a revisão Qwen da página 6 não mudou CID, descrição nem qualquer outro campo que estava no foco anterior.
+
+Conclusões:
+1. Remover Moondream sozinho não garante menor latência; seis chamadas Gemma iniciadas simultaneamente produziram um outlier que passou a dominar o makespan.
+2. O gargalo de backend continua resolvido: ~0,46–0,56 s/página.
+3. A revisão Qwen já existente não corrigiu a divergência de `titulo`, porque esse campo não fazia parte do foco.
+4. A V7C continua sendo o último baseline 10/10 mais rápido: **13.748 ms**.
+
+### V7E — Gemma controlado
+
+A próxima rodada mantém Gemma direto, mas reduz variabilidade e usa a revisão existente de forma mais útil:
+
+- concorrência de páginas: **4**, em vez de 6;
+- teto da análise integrada: **700 tokens**, em vez de 1400;
+- teto da revisão focal: **350 tokens**, em vez de 500;
+- quando uma página médica já exige revisão por CID/ilegibilidade, `titulo` entra no **mesmo** pedido de revisão, sem criar outra inferência;
+- Qwen permanece somente como fallback/revisor;
+- Moondream continua desligado nesta rodada;
+- backend D1 consolidado da V7C/V7D é preservado.
+
+Justificativa:
+- a saída JSON autorizada tem oito campos e não precisa de 1400 tokens no caminho normal;
+- reduzir o teto limita respostas anormalmente longas sem adicionar nova chamada;
+- concorrência 4 suaviza o burst de seis inferências Gemma simultâneas e será comparada com a V7D, sem assumir antecipadamente que a causa do outlier foi contenção;
+- adicionar `titulo` ao foco não aumenta o número de inferências da página 6 e ataca exatamente o campo que divergiu na V7D.
+
+Critério V7E:
+- voltar a **10/10**;
+- ficar abaixo dos **13.748 ms** da V7C;
+- observar se o outlier da página 5 desaparece;
+- observar `revisao_alterou=` na página 6 para saber se Qwen efetivamente corrige o título.
+
+Se V7E não superar a V7C com 10/10, encerrar a linha V7.x e avançar para a V8 híbrida PDF.js text-layer + visão seletiva.

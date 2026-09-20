@@ -367,6 +367,7 @@ test('análise integrada classifica e extrai página autorizada em uma única in
   assert.equal(multimodal[0].type, 'image_url');
   assert.match(multimodal[0].image_url.url, /^data:image\/png;base64,/);
   assert.equal(multimodal[1].type, 'text');
+  assert.equal(calls[0].input.max_completion_tokens, 700);
 });
 
 test('pipeline público classifyAndExtract usa a análise integrada de uma chamada', async () => {
@@ -547,6 +548,7 @@ test('página médica com campo ilegível recebe revisão focal gratuita no Qwen
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL' }
   });
   const reviewedFields = {
+    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
     cid: { state: 'ilegivel', value: '' },
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL CORRETA' }
   };
@@ -567,6 +569,8 @@ test('página médica com campo ilegível recebe revisão focal gratuita no Qwen
       assert.equal(model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
       assert.match(input.messages[1].content[1].text, /REVISÃO FOCAL DE PRECISÃO/);
       assert.match(input.messages[1].content[1].text, /cid/);
+      assert.match(input.messages[1].content[1].text, /titulo/);
+      assert.equal(input.max_completion_tokens, 350);
       return workersResponse({ fields: reviewedFields });
     }
   });
@@ -629,6 +633,7 @@ test('CID ausente com descrição presente também ativa revisão focal', async 
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO' }
   });
   const reviewedFields = {
+    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
     cid: { state: 'ilegivel', value: '' },
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO' }
   };

@@ -2094,12 +2094,42 @@ A janela corresponde exatamente ao runtime V7D congelado. Produção não foi pr
 
 **Próxima ação exata:** abrir `https://b5b3f33e.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz **uma única vez** e copiar o resumo seguro completo. Conferir especialmente `duracao_extracao_ms`, `tentativas`, `tentativas_ms`, `revisado`, `revisao_alterou`, `provider_ms` e `transporte_backend_ms`.
 
+## Resultado V7D — 8/10 e 15,386 s; V7E em validação — 20/09/2026
+
+Resumo seguro real da V7D:
+- `MATRIZ_5E_SINTETICA=FALHOU`;
+- **8 aprovados / 2 falhas**;
+- `duracao_extracao_ms=15386`;
+- `duracao_total_ms=18753`;
+- página 6 divergiu em `titulo`;
+- chat de CID ilegível falhou por depender da página 6;
+- página 5 teve Gemma em `14818 ms`, dominando a extração;
+- página 6 usou Gemma `5363 ms` + Qwen `2226 ms`;
+- `revisao_alterou=nenhum`.
+
+A V7D foi pior que a V7C (10/10 em 13,748 s), portanto **não é candidata a baseline**.
+
+V7E preparada em branch isolada:
+- Gemma continua direto;
+- concorrência documental reduzida de 6 para 4;
+- análise integrada limitada a 700 tokens;
+- revisão focal limitada a 350 tokens;
+- se uma página médica já exige revisão por CID/ilegibilidade, `titulo` é revisado na mesma chamada Qwen;
+- backend D1 consolidado preservado;
+- Moondream permanece desligado.
+
+Critério: recuperar 10/10 e superar os 13,748 s da V7C. Se isso não acontecer, encerrar refinamentos V7.x e avançar para V8 híbrida.
+
+A janela V7D atual não foi alterada por esse desenvolvimento. Produção continua com IA documental desligada.
+
+**Próxima ação exata:** concluir CI/revisão V7E; integrar/congelar se verde; encerrar V7D fail-closed; executar uma única rodada V7E.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7D preparada; matriz aguardando execução |
-| Último resultado real | janela V7D preparada; release correto; Drive false; produção intacta |
+| Fase/subfase | Fase 5E — V7D regrediu; V7E Gemma controlado em validação |
+| Último resultado real | V7D 8/10; extração 15,386 s; V7C permanece baseline 10/10 em 13,748 s |
 | Runtime funcional V7D | `208639f021ca9d5f86a2df97a9bd8a5978e5224f` |
 | Runtime próximo reteste | `208639f021ca9d5f86a2df97a9bd8a5978e5224f` |
 | Pages próximo reteste | `https://b5b3f33e.portal-regulacao-central-staging.pages.dev` |
@@ -2108,7 +2138,7 @@ A janela corresponde exatamente ao runtime V7D congelado. Produção não foi pr
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | abrir laboratório V7D; executar matriz uma vez; copiar resumo seguro completo |
+| Próxima ação exata | concluir CI V7E; integrar/congelar; encerrar V7D; retestar V7E uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 

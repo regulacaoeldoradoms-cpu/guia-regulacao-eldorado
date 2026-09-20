@@ -320,7 +320,7 @@ function reasoningControls(model) {
   return controls;
 }
 
-function visionInput(model, system, prompt, image, maxTokens = 1400, fastQuestion = '') {
+function visionInput(model, system, prompt, image, maxTokens = 700, fastQuestion = '') {
   if (String(model || '') === DOCUMENT_AI_FAST_VISION_FREE_MODEL) {
     return {
       task: 'query',
@@ -578,6 +578,17 @@ function medicalReviewFocus(extraction, initialModel = '') {
   if (focus.includes('cid') && !focus.includes('descricao_cid')) {
     focus.push('descricao_cid');
   }
+
+  // Quando já existe uma revisão focal por ambiguidade clínica, revisar também
+  // o título não adiciona uma nova inferência e protege contra variações
+  // observadas na página 6. Continua sendo revisão literal da mesma imagem.
+  if (
+    focus.length
+    && fields?.titulo
+    && !focus.includes('titulo')
+  ) {
+    focus.unshift('titulo');
+  }
   return focus;
 }
 
@@ -610,7 +621,7 @@ async function reviewMedicalExtraction(env, input, originalExtraction, options =
         PROMPT_EXTRACAO_REGULACAO_V1.system,
         prompt,
         input.image,
-        500
+        350
       ),
       (parsed) => {
         const fields = parsed?.fields;
@@ -680,7 +691,7 @@ export async function analyzeDocumentAiPage(env, input = {}, options = {}) {
       PROMPT_ANALISE_REGULACAO_V1.system,
       prompt,
       image,
-      1400,
+      700,
       fastIntegratedAnalysisQuestion()
     ),
     (parsed) => {
@@ -824,7 +835,7 @@ export async function extractDocumentAiPage(env, input = {}, options = {}) {
 
   const result = await runWorkersAi(
     env,
-    (model) => visionInput(model, PROMPT_EXTRACAO_REGULACAO_V1.system, prompt, image, 1400),
+    (model) => visionInput(model, PROMPT_EXTRACAO_REGULACAO_V1.system, prompt, image, 700),
     (parsed) => normalizeDocumentAiExtraction({
       pageNumber,
       pageType,
