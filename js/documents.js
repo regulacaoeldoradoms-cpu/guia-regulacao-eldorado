@@ -4172,6 +4172,7 @@
 
   async function loadFolder({ append = false, pageToken = '' } = {}) {
     if (state.loading) return;
+    background?.cancelScope?.('list', 'stale');
     state.loading = true;
     const started = performance.now();
     if (!append) {
@@ -4219,6 +4220,7 @@
       return;
     }
     if (state.loading) return;
+    background?.cancelScope?.('list', 'stale');
     state.loading = true;
     const started = performance.now();
     if (!append) {
