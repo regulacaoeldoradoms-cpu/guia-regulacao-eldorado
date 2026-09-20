@@ -608,6 +608,11 @@
   border-right: 1px solid #d8e0e8;
 }
 
+.documents-rail-tool[hidden],
+.documents-editor-tool[hidden] {
+  display: none !important;
+}
+
 .documents-rail-tool,
 .documents-editor-tool {
   width: 38px;

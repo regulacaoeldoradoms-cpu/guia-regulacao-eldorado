@@ -124,9 +124,19 @@ A Fase 6 pode ser encerrada quando houver evidência real de:
 
 Não é necessário ligar IA antecipatória em produção para encerrar a Fase 6. O gate pode permanecer `false`; a infraestrutura e o controle humano podem ser homologados independentemente.
 
+## Achado durante a validação — botão IA fantasma
+
+Foi encontrada uma regressão visual: o botão lateral IA documental aparecia mesmo com a IA produtiva desabilitada. A causa era CSS autoral de `.documents-rail-tool` sobrescrevendo o comportamento nativo de `hidden`.
+
+A lógica de gate permaneceu fail-closed e o clique não abriu o painel nem ativou IA. A correção exige que ferramentas laterais com `hidden` usem `display:none !important`.
+
+Após o deploy da correção, validar:
+- com IA documental desabilitada, botão IA ausente;
+- quando futuramente `enabled=true` de forma controlada, o mesmo botão pode ser exibido e deve abrir o painel normalmente.
+
 ## Resultado
 
-Pendente de validação operacional real.
+Pendente de conclusão da validação operacional real após a correção visual.
 
 ## Próxima ação
 

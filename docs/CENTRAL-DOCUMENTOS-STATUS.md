@@ -3062,6 +3062,25 @@ Foi criado `docs/CENTRAL-DOCUMENTOS-HOMOLOGACAO-6.md` com a matriz final de acei
 
 **Pendência única da Fase 6:** comprovar em uso real redução mensurável de tempo sem perda de controle do usuário. IA antecipatória permanece fail-closed em produção; a Fase 6 pode ser homologada pelo cache/prefetch, cancelamento e prioridade foreground sem ligar esse gate.
 
+## Regressão visual encontrada na homologação 6 — botão IA fantasma — 20/09/2026
+
+Durante a validação operacional em produção, o operador observou o botão lateral **IA documental** visível no editor, porém sem qualquer efeito ao clicar.
+
+Diagnóstico no código da `main`:
+- o botão nasce com atributo HTML `hidden`;
+- a regra `.documents-rail-tool { display: inline-grid; }` tinha origem autoral e sobrescrevia o `display:none` padrão do navegador para `[hidden]`;
+- a lógica JavaScript permanecia correta: `setDocumentAiPanelOpen()` exige `canUseDocumentAi()`;
+- produção permanece com `DOCUMENTS_AI_ENABLED=false` e `DOCUMENTS_AI_PROCESSING_ENABLED=false`, portanto o clique era corretamente recusado pelo gate, mas o ícone não deveria estar visível.
+
+Conclusão: **não era comportamento correto**; era uma regressão exclusivamente visual de CSS. Não houve ativação de IA, chamada antecipatória ao provider, mudança de permissão ou escrita no Drive.
+
+Correção em `fix/central-docs-phase6-hidden-rail-tools`:
+- `.documents-rail-tool[hidden]` e `.documents-editor-tool[hidden]` passam a usar `display:none !important`;
+- cache-buster de `documents.css` renovado para `20260920-3`;
+- teste automatizado garante que ferramentas laterais com `hidden` não reapareçam por regras de display.
+
+**Próxima ação exata:** validar CI/preview da correção, integrar se verde e repetir somente o caso visual em produção: com IA documental desabilitada, o botão IA não deve aparecer. A homologação operacional restante da Fase 6 continua conforme `CENTRAL-DOCUMENTOS-HOMOLOGACAO-6.md`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
