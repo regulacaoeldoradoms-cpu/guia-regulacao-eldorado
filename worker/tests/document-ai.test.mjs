@@ -7,6 +7,7 @@ import {
   DOCUMENT_AI_VERSION,
   documentAiEnabled,
   documentAiProcessingEnabled,
+  documentAiBackgroundEnabled,
   documentAiPublicConfig,
   normalizeDocumentAiClassification,
   normalizeDocumentAiExtraction,
@@ -25,6 +26,23 @@ test('IA documental 5E só processa quando os dois gates estão ligados', () => 
     DOCUMENTS_AI_ENABLED: 'true',
     DOCUMENTS_AI_PROCESSING_ENABLED: 'true'
   }), true);
+});
+
+test('IA antecipatória da Fase 6 exige terceiro gate explícito', () => {
+  assert.equal(documentAiBackgroundEnabled({
+    DOCUMENTS_AI_ENABLED: 'true',
+    DOCUMENTS_AI_PROCESSING_ENABLED: 'true'
+  }), false);
+  assert.equal(documentAiBackgroundEnabled({
+    DOCUMENTS_AI_ENABLED: 'true',
+    DOCUMENTS_AI_PROCESSING_ENABLED: 'true',
+    DOCUMENTS_AI_BACKGROUND_ENABLED: 'true'
+  }), true);
+  assert.equal(documentAiBackgroundEnabled({
+    DOCUMENTS_AI_ENABLED: 'false',
+    DOCUMENTS_AI_PROCESSING_ENABLED: 'true',
+    DOCUMENTS_AI_BACKGROUND_ENABLED: 'true'
+  }), false);
 });
 
 test('configuração pública não expõe segredos nem conteúdo', () => {
@@ -51,6 +69,7 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
   assert.equal(config.features.extractPage, true);
   assert.equal(config.features.extractDocument, true);
   assert.equal(config.features.documentChat, true);
+  assert.equal(config.features.backgroundPreparation, false);
   assert.equal(Array.isArray(config.routines), true);
   const serialized = JSON.stringify(config);
   assert.doesNotMatch(serialized, /segredo-nao-pode-sair|outro-segredo|GEMINI_API_KEY|AUTH_SESSION_SECRET/);

@@ -1,4 +1,4 @@
-name: Validar Central de Documentos — Fases 1–5E (preparo)
+name: Validar Central de Documentos — Fases 1–6
 
 on:
   pull_request:
@@ -7,6 +7,8 @@ on:
       - 'css/documents.css'
       - 'js/documents.js'
       - 'js/document-cache.js'
+      - 'js/document-background.js'
+      - 'js/portal-observability.js'
       - 'js/document-editor.js'
       - 'js/document-viewer.js'
       - 'js/admin-users.js'
@@ -17,6 +19,7 @@ on:
       - 'worker/document-*.js'
       - 'worker/additional-roles.js'
       - 'worker/documents-router.js'
+      - 'worker/observability.js'
       - 'worker/homologation-4d.js'
       - 'worker/homologation-5e.js'
       - 'worker/tests/homologation-4d.test.mjs'
@@ -31,6 +34,7 @@ on:
       - 'worker/tests/documents-*.test.mjs'
       - 'worker/tests/document-ai*.test.mjs'
       - 'worker/tests/document-editor.test.mjs'
+      - 'worker/tests/observability-privacy.test.mjs'
       - 'worker/tests/developer-self-edit-session.test.mjs'
       - 'scripts/build-central-docs-staging.mjs'
       - 'scripts/central-docs/recuperar-preparo-5e.mjs'
@@ -48,6 +52,8 @@ on:
       - 'css/documents.css'
       - 'js/documents.js'
       - 'js/document-cache.js'
+      - 'js/document-background.js'
+      - 'js/portal-observability.js'
       - 'js/document-editor.js'
       - 'js/document-viewer.js'
       - 'js/admin-users.js'
@@ -55,6 +61,7 @@ on:
       - 'worker/document-*.js'
       - 'worker/additional-roles.js'
       - 'worker/documents-router.js'
+      - 'worker/observability.js'
       - 'worker/homologation-4d.js'
       - 'worker/tests/homologation-4d.test.mjs'
       - 'worker/migrations/central-documents-homologation-4d.sql'
@@ -63,6 +70,7 @@ on:
       - 'worker/tests/documents-*.test.mjs'
       - 'worker/tests/document-ai*.test.mjs'
       - 'worker/tests/document-editor.test.mjs'
+      - 'worker/tests/observability-privacy.test.mjs'
       - 'worker/tests/developer-self-edit-session.test.mjs'
       - 'scripts/build-central-docs-staging.mjs'
       - 'scripts/central-docs/recuperar-preparo-5e.mjs'
@@ -97,6 +105,8 @@ jobs:
           test -f documentos/index.html
           test -f css/documents.css
           test -f js/documents.js
+          test -f js/document-background.js
+          test -f docs/CENTRAL-DOCUMENTOS-FASE-6.md
           test -f worker/additional-roles.js
           test -f worker/document-access.js
           test -f worker/document-ai-prompts.js
@@ -140,6 +150,7 @@ jobs:
           grep -q "chatDocumentAi" worker/document-ai-provider.js
           grep -q 'DOCUMENTS_AI_ENABLED = "false"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_PROCESSING_ENABLED = "false"' worker/wrangler.toml
+          grep -q 'DOCUMENTS_AI_BACKGROUND_ENABLED = "false"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_FREE_ONLY = "true"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_FAST_VISION_ENABLED = "false"' worker/wrangler.toml
           grep -q 'DOCUMENTS_AI_FAST_VISION_MODEL = "@cf/moondream/moondream3.1-9B-A2B"' worker/wrangler.toml
@@ -155,7 +166,13 @@ jobs:
           grep -q "Cargos/funções adicionais (acumuláveis)" admin/usuarios/index.html
           ! grep -q "Acessos à Central" documentos/index.html
           ! grep -R -E "localStorage|sessionStorage|indexedDB" js/documents.js
+          ! grep -R -E "localStorage|sessionStorage|indexedDB" js/document-background.js
+          grep -q "PortalDocumentBackground" js/document-background.js
+          grep -q "document_background_task" js/portal-observability.js
+          grep -q "document_background_task" worker/observability.js
+          node --check js/document-background.js
           node --check js/documents.js
+          node --check js/document-viewer.js
           node --check testing/central-docs-ai/phase5e-harness.js
           node --check js/document-cache.js
           node --check js/document-editor.js

@@ -59,7 +59,14 @@ Reserva já validada para o módulo documental:
 - \`drive_sync_failed\`
 - \`document_ai_started\`
 - \`document_ai_completed\`
-- \`document_ai_failed\`
+- `document_ai_failed`
+- `document_background_task`
+
+Na Fase 6, `document_background_task` aceita somente propriedades técnicas: duração,
+operação (`warm_pdf`, `prepare_page`, `preextract_page` ou `suggestion`), source
+allowlisted, estado do cache, estado técnico
+(`prepared|used|cancelled|expired|failed|skipped`), motivo técnico de cancelamento e
+faixa de contagem. Nenhum nome, ref, fileId, cacheKey ou conteúdo documental é enviado.
 
 Os eventos documentais aceitam apenas classificações técnicas como duração, operação,
 faixa de tamanho e estado de cache. Nunca recebem nome ou ID do documento.
@@ -99,4 +106,5 @@ agendada com \`waitUntil\`, portanto a interface não espera a ingestão externa
 - envio de \`$process_person_profile=false\` e \`$geoip_disable=true\`;
 - ausência de URL completa e username;
 - bloqueio de origem não autorizada;
-- comportamento neutro quando o token ainda não estiver configurado.
+- comportamento neutro quando o token ainda não estiver configurado;
+- telemetria de background da Fase 6 aceita somente propriedades técnicas e rejeita campos documentais extras.

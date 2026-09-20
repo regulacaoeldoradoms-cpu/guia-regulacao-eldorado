@@ -96,6 +96,7 @@ const files = [
   ['assets/Drive_sincronizado_1seg.png', 'assets/Drive_sincronizado_1seg.png'],
   ['assets/Drive_falha.png', 'assets/Drive_falha.png'],
   ['css/documents.css', 'css/documents.css'],
+  ['js/document-background.js', 'js/document-background.js'],
   ['js/document-editor.js', 'js/document-editor.js'],
   ['js/document-viewer.js', 'js/document-viewer.js'],
   ['vendor/pdf-lib', 'vendor/pdf-lib'],
@@ -170,6 +171,7 @@ const homologationCopies = [
   ['js/portal-interactions.js', 'js/portal-interactions.js', true],
   ['js/portal-observability.js', 'js/portal-observability.js', true],
   ['js/document-cache.js', 'js/document-cache.js', true],
+  ['js/document-background.js', 'js/document-background.js', true],
   ['js/document-editor.js', 'js/document-editor.js', true],
   ['js/document-viewer.js', 'js/document-viewer.js', true],
   ['js/documents.js', 'js/documents.js', true]

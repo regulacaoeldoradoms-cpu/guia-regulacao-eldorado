@@ -5,6 +5,7 @@
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
   const documentCache = window.PortalDocumentCache || null;
+  const background = window.PortalDocumentBackground || null;
   const cacheWarmInFlight = new Map();
   let cacheWarmTimer = null;
   const user = await auth.requireRole([]);
@@ -75,6 +76,11 @@
     pdfReadyEmitted: false,
     pdfCustomFallbackStarted: false,
     cachePrefetchGeneration: 0,
+    backgroundScope: '',
+    backgroundPreparedImages: new Map(),
+    backgroundPreparedAnalysis: new Map(),
+    backgroundRecentPdfs: [],
+    backgroundSuggestionShown: false,
     editorSession: null,
     editorSyncRequired: false,
     editorViewState: null,
@@ -137,6 +143,7 @@
     viewerModeLabel: document.getElementById('documentsViewerModeLabel'),
     viewerTitle: document.getElementById('documentsViewerTitle'),
     viewerState: document.getElementById('documentsViewerState'),
+    automationStatus: document.getElementById('documentsAutomationStatus'),
     customViewer: document.getElementById('documentsCustomViewer'),
     pdfPageScroll: document.getElementById('pdfPageScroll'),
     pdfPages: document.getElementById('pdfPages'),
@@ -275,6 +282,101 @@
     return '100+';
   }
 
+  function setAutomationStatus(message = '', type = '') {
+    if (!els.automationStatus) return;
+    const value = String(message || '').trim();
+    els.automationStatus.hidden = !value;
+    els.automationStatus.textContent = value;
+    els.automationStatus.className = `documents-automation-status${type ? ` ${type}` : ''}`;
+  }
+
+  function documentBackgroundScope(openId = state.pdfOpenId) {
+    return `pdf:${Number(openId || 0)}`;
+  }
+
+  function backgroundCancelReason(value = '') {
+    const reason = String(value || 'unknown');
+    return [
+      'none', 'document_changed', 'session', 'hidden', 'foreground',
+      'editor', 'stale', 'unsupported', 'unknown'
+    ].includes(reason) ? reason : 'unknown';
+  }
+
+  function captureBackgroundTask(result = {}, extras = {}) {
+    const operation = String(extras.operation || result.type || 'suggestion');
+    const stateValue = String(extras.state || result.state || 'failed');
+    capture('document_background_task', {
+      route: '/documentos/',
+      duration_ms: Math.max(0, Number(extras.durationMs ?? result.durationMs ?? 0)),
+      operation: [
+        'warm_pdf', 'prepare_page', 'preextract_page', 'suggestion'
+      ].includes(operation) ? operation : 'suggestion',
+      source: String(extras.source || 'local'),
+      cache_state: String(extras.cacheState || 'unknown'),
+      background_state: [
+        'prepared', 'used', 'cancelled', 'expired', 'failed', 'skipped'
+      ].includes(stateValue) ? stateValue : 'failed',
+      cancel_reason: backgroundCancelReason(extras.reason || result.reason || 'none') === 'unknown'
+        && !(extras.reason || result.reason)
+        ? 'none'
+        : backgroundCancelReason(extras.reason || result.reason || 'unknown'),
+      result_count_bucket: resultCountBucket(extras.count ?? 0)
+    });
+  }
+
+  function resetDocumentBackgroundState(reason = 'document_changed') {
+    const scope = state.backgroundScope;
+    if (scope) background?.cancelScope?.(scope, reason);
+    state.backgroundScope = '';
+    state.backgroundPreparedImages.clear();
+    state.backgroundPreparedAnalysis.clear();
+    state.backgroundSuggestionShown = false;
+    setAutomationStatus('');
+  }
+
+  function pauseDocumentBackground(reason = 'foreground') {
+    background?.setPaused?.(true, reason);
+  }
+
+  function resumeDocumentBackground() {
+    background?.setPaused?.(false);
+  }
+
+  function scheduleDocumentBackgroundTask(options = {}) {
+    if (!background?.schedule || !state.backgroundScope) return null;
+    return background.schedule({
+      ...options,
+      scope: state.backgroundScope,
+      onSettled: (result) => {
+        const operation = String(options.type || 'suggestion');
+        const stateValue = (
+          operation === 'warm_pdf'
+          && result.state === 'prepared'
+          && result.value !== true
+        ) ? 'skipped' : result.state;
+        captureBackgroundTask(result, {
+          operation,
+          state: stateValue,
+          source: String(options.source || 'local'),
+          cacheState: String(options.cacheState || 'unknown'),
+          count: Number.isFinite(Number(result.value))
+            ? Number(result.value)
+            : Number(options.count || 0)
+        });
+        try { options.onSettled?.(result); } catch (_) {}
+      }
+    });
+  }
+
+  function rememberOpenedPdf(item) {
+    const identity = itemCacheIdentity(item);
+    if (!identity) return;
+    state.backgroundRecentPdfs = [
+      identity,
+      ...state.backgroundRecentPdfs.filter((value) => value !== identity)
+    ].slice(0, 6);
+  }
+
   function currentToken() {
     return String(auth.getToken?.() || '');
   }
@@ -293,12 +395,13 @@
     return !['slow-2g', '2g'].includes(String(connection?.effectiveType || ''));
   }
 
-  async function fetchPdfBlob(item) {
+  async function fetchPdfBlob(item, { signal = null } = {}) {
     const response = await fetch(`${endpoint}/api/documents/drive/content/${encodeURIComponent(item.ref)}`, {
       method: 'GET',
       headers: auth.authorizationHeader(),
       cache: 'no-store',
-      credentials: 'omit'
+      credentials: 'omit',
+      ...(signal ? { signal } : {})
     });
     if (!response.ok) {
       let message = `Não foi possível abrir o PDF (${response.status}).`;
@@ -331,7 +434,7 @@
     return documentCache.put({ ...descriptor, blob }).catch(() => false);
   }
 
-  async function warmPdfCache(item, { prefetch = false } = {}) {
+  async function warmPdfCache(item, { prefetch = false, signal = null } = {}) {
     const descriptor = cacheDescriptor(item);
     if (!descriptor || !documentCache?.has || !documentCache?.put) return false;
     const size = Number(item?.size || 0);
@@ -347,9 +450,12 @@
     const task = (async () => {
       if (await documentCache.has(descriptor).catch(() => false)) return true;
       try {
-        const blob = await fetchPdfBlob(item);
+        if (signal?.aborted) throw new DOMException('Prefetch cancelado.', 'AbortError');
+        const blob = await fetchPdfBlob(item, { signal });
+        if (signal?.aborted) throw new DOMException('Prefetch cancelado.', 'AbortError');
         return await storeCachedPdf(item, blob);
-      } catch (_) {
+      } catch (error) {
+        if (signal?.aborted || error?.name === 'AbortError') throw error;
         return false;
       }
     })();
@@ -366,24 +472,59 @@
     if (!documentCache?.supported?.() || !connectionAllowsPrefetch()) return;
     if (cacheWarmTimer) clearTimeout(cacheWarmTimer);
     const generation = ++state.cachePrefetchGeneration;
-    const run = async () => {
-      cacheWarmTimer = null;
+    background?.cancelScope?.('list', 'stale');
+
+    const candidates = state.items
+      .filter((item) => item?.isPdf && item.cacheKey && item.version)
+      .filter((item) => Number(item.size || 0) > 0)
+      .filter((item) => Number(item.size || 0) <= Number(documentCache.limits?.prefetchFileBytes || 0))
+      .map((item, index) => ({
+        item,
+        index,
+        identity: itemCacheIdentity(item),
+        recentRank: state.backgroundRecentPdfs.indexOf(itemCacheIdentity(item))
+      }))
+      .sort((a, b) => {
+        const ar = a.recentRank >= 0 ? a.recentRank : 999;
+        const br = b.recentRank >= 0 ? b.recentRank : 999;
+        return ar !== br ? ar - br : a.index - b.index;
+      })
+      .slice(0, 3);
+
+    const enqueue = () => {
       if (generation !== state.cachePrefetchGeneration || document.visibilityState === 'hidden') return;
-      const candidates = state.items
-        .filter((item) => item?.isPdf && item.cacheKey && item.version)
-        .filter((item) => Number(item.size || 0) > 0)
-        .filter((item) => Number(item.size || 0) <= Number(documentCache.limits?.prefetchFileBytes || 0))
-        .slice(0, 3);
-      for (const item of candidates) {
-        if (generation !== state.cachePrefetchGeneration || document.visibilityState === 'hidden') break;
-        await warmPdfCache(item, { prefetch: true });
+      for (const candidate of candidates) {
+        const key = candidate.identity || `list:${generation}:${candidate.index}`;
+        if (background?.schedule) {
+          background.schedule({
+            key: `warm_pdf:${key}`,
+            type: 'warm_pdf',
+            scope: 'list',
+            priority: candidate.recentRank >= 0 ? 60 - candidate.recentRank : 30 - candidate.index,
+            run: async ({ signal, throwIfCancelled }) => {
+              throwIfCancelled();
+              const ok = await warmPdfCache(candidate.item, { prefetch: true, signal });
+              throwIfCancelled();
+              return ok;
+            },
+            onSettled: (result) => captureBackgroundTask(result, {
+              operation: 'warm_pdf',
+              state: result.state === 'prepared' && result.value !== true ? 'skipped' : result.state,
+              source: 'cache',
+              cacheState: 'unknown',
+              count: 1
+            })
+          });
+        } else {
+          warmPdfCache(candidate.item, { prefetch: true }).catch(() => {});
+        }
       }
     };
 
     if (typeof requestIdleCallback === 'function') {
-      cacheWarmTimer = window.setTimeout(() => requestIdleCallback(run, { timeout: 1800 }), 700);
+      cacheWarmTimer = window.setTimeout(() => requestIdleCallback(enqueue, { timeout: 1800 }), 700);
     } else {
-      cacheWarmTimer = window.setTimeout(run, 1200);
+      cacheWarmTimer = window.setTimeout(enqueue, 1200);
     }
   }
 
@@ -392,7 +533,28 @@
     if (!button) return;
     const item = state.items[Number(button.dataset.index)];
     if (!item?.isPdf) return;
-    warmPdfCache(item, { prefetch: true }).catch(() => {});
+    const identity = itemCacheIdentity(item) || `hover:${button.dataset.index}`;
+    if (background?.schedule) {
+      background.schedule({
+        key: `warm_pdf:${identity}`,
+        type: 'warm_pdf',
+        scope: 'list',
+        priority: 100,
+        run: ({ signal, throwIfCancelled }) => {
+          throwIfCancelled();
+          return warmPdfCache(item, { prefetch: true, signal });
+        },
+        onSettled: (result) => captureBackgroundTask(result, {
+          operation: 'warm_pdf',
+          state: result.state === 'prepared' && result.value !== true ? 'skipped' : result.state,
+          source: 'cache',
+          cacheState: 'unknown',
+          count: 1
+        })
+      });
+    } else {
+      warmPdfCache(item, { prefetch: true }).catch(() => {});
+    }
   }
 
   function canEditDocuments() {
@@ -952,7 +1114,7 @@
     return false;
   }
 
-  function resetEditorState({ restoreOriginal = false } = {}) {
+  function resetEditorState({ restoreOriginal = false, resumeAutomation = true } = {}) {
     const session = state.editorSession;
     const shouldRestoreOriginal = restoreOriginal && Boolean(session?.revision > 0);
     const viewState = currentViewerState();
@@ -987,6 +1149,10 @@
     if (els.editorRailEdit) els.editorRailEdit.hidden = !(canEditDocuments() && state.pdfItem);
     setEditorStatus('');
     refreshPdfListActions();
+    if (resumeAutomation) {
+      resumeDocumentBackground();
+      if (state.pdfItem) scheduleActiveDocumentPreparation(state.pdfOpenId);
+    }
     if (shouldRestoreOriginal && state.pdfObjectUrl) {
       restoreOriginalPortalViewer(viewState).catch(() => {
         if (!state.editorSession) {
@@ -1739,11 +1905,22 @@
   }
 
   async function startEditor() {
+    background?.cancelScope?.(state.backgroundScope, 'editor');
+    state.backgroundPreparedImages.clear();
+    state.backgroundPreparedAnalysis.clear();
+    state.backgroundSuggestionShown = false;
+    setAutomationStatus('');
+    pauseDocumentBackground('editor');
     if (!canEditDocuments()) {
+      resumeDocumentBackground();
       showStatus('Sua conta não possui permissão de edição de PDF.', 'warning');
       return;
     }
-    if (!state.pdfItem || !window.PortalPdfEditor || state.editorSession) return;
+    if (!state.pdfItem || !window.PortalPdfEditor) {
+      resumeDocumentBackground();
+      return;
+    }
+    if (state.editorSession) return;
 
     const item = state.pdfItem;
     const openId = state.pdfOpenId;
@@ -1805,6 +1982,8 @@
       window.PortalPdfViewer?.setThumbnailActions?.(false);
       setEditorSurfaceMode(false);
       els.viewerState.className = 'documents-viewer-state ready';
+      resumeDocumentBackground();
+      scheduleActiveDocumentPreparation(openId);
       showStatus(error.message || 'Não foi possível iniciar o editor PDF.', 'warning');
     } finally {
       if (startSeq === state.editorStartSeq) els.editPdf.disabled = false;
@@ -2816,6 +2995,7 @@
           if (openId !== state.pdfOpenId) return;
           els.viewerState.textContent = 'Visualizador do Portal pronto.';
           markViewerReady(openId, bucket, cacheState, progressive, sourceLabel);
+          scheduleActiveDocumentPreparation(openId);
           if (state.documentAiPanelOpen) renderDocumentAiPanel();
         },
         onError: () => {
@@ -3328,8 +3508,211 @@
     try {
       const payload = await api('/api/documents/ai/config', { method: 'GET' });
       state.documentAiConfig = payload?.ai || null;
+      if (state.pdfItem) scheduleActiveDocumentPreparation(state.pdfOpenId);
     } catch (_) {
       state.documentAiConfig = null;
+    }
+  }
+
+  function documentAiBackgroundReady() {
+    const viewer = window.PortalPdfViewer;
+    const pageCount = Number(viewer?.getPageCount?.() || 0);
+    return Boolean(
+      !state.documentAiBusy
+      && !state.editorSession
+      && state.pdfItem
+      && state.documentAiConfig?.enabled === true
+      && state.documentAiConfig?.processingEnabled === true
+      && state.documentAiConfig?.features?.extractDocument === true
+      && state.documentAiConfig?.features?.backgroundPreparation === true
+      && documentAiCapabilities().extract === true
+      && typeof viewer?.exportPageImage === 'function'
+      && Number.isInteger(pageCount)
+      && pageCount > 0
+    );
+  }
+
+  async function prepareDocumentAiPageBlob(pageNumber, { signal = null } = {}) {
+    const exporter = window.PortalPdfViewer?.exportPageImage;
+    if (typeof exporter !== 'function') throw new Error('O visualizador não pode preparar páginas para a IA.');
+    if (signal?.aborted) throw new DOMException('Preparação cancelada.', 'AbortError');
+
+    let blob = await exporter(pageNumber, {
+      maxEdge: 1800,
+      mimeType: 'image/png',
+      cropWhitespace: true
+    });
+    if (signal?.aborted) throw new DOMException('Preparação cancelada.', 'AbortError');
+    if (!(blob instanceof Blob) || blob.size <= 0) {
+      throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
+    }
+
+    if (blob.size > 2.8 * 1024 * 1024) {
+      blob = await exporter(pageNumber, {
+        maxEdge: 1800,
+        mimeType: 'image/jpeg',
+        quality: 0.92,
+        cropWhitespace: true
+      });
+    }
+    if (signal?.aborted) throw new DOMException('Preparação cancelada.', 'AbortError');
+    if (!(blob instanceof Blob) || blob.size <= 0) {
+      throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
+    }
+    return blob;
+  }
+
+  function normalizeDocumentAiPagePayload(pageNumber, payload = {}) {
+    const classification = payload?.classification;
+    const pageType = String(classification?.pageType || '');
+    if (
+      !classification
+      || Number(classification.pageNumber) !== pageNumber
+      || !['comprovante_atendimento', 'pagina_medica_autorizada', 'outro'].includes(pageType)
+    ) {
+      throw new Error(`A página ${pageNumber} retornou classificação ou proveniência inválida.`);
+    }
+
+    if (pageType === 'outro') {
+      return { pageNumber, pageType, extraction: null };
+    }
+
+    const extraction = payload?.extraction;
+    if (
+      !extraction
+      || Number(extraction.pageNumber) !== pageNumber
+      || String(extraction.pageType || '') !== pageType
+      || !extraction.fields
+      || typeof extraction.fields !== 'object'
+    ) {
+      throw new Error(`A página ${pageNumber} retornou extração ou proveniência inválida.`);
+    }
+
+    return {
+      pageNumber,
+      pageType,
+      extraction: {
+        pageNumber,
+        pageType,
+        fields: extraction.fields
+      }
+    };
+  }
+
+  async function requestDocumentAiPage(pageNumber, blob, { signal = null } = {}) {
+    if (!(blob instanceof Blob) || blob.size <= 0) {
+      throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
+    }
+    const response = await fetch(`${endpoint}/api/documents/ai/page/extract`, {
+      method: 'POST',
+      headers: {
+        ...auth.authorizationHeader(),
+        'Content-Type': blob.type || 'image/png',
+        'X-Document-Page-Number': String(pageNumber)
+      },
+      body: blob,
+      cache: 'no-store',
+      credentials: 'omit',
+      ...(signal ? { signal } : {})
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(payload?.error || `Não foi possível analisar a página ${pageNumber}.`);
+      error.code = String(payload?.code || '');
+      throw error;
+    }
+    return normalizeDocumentAiPagePayload(pageNumber, payload);
+  }
+
+  function schedulePreparedPageAnalysis(pageNumber, blob, openId) {
+    if (!documentAiBackgroundReady() || openId !== state.pdfOpenId || !(blob instanceof Blob)) return;
+    scheduleDocumentBackgroundTask({
+      key: `preextract:${openId}:${pageNumber}`,
+      type: 'preextract_page',
+      priority: 55 - pageNumber,
+      source: 'cloudflare',
+      count: 1,
+      run: async ({ signal, throwIfCancelled }) => {
+        throwIfCancelled();
+        const analyzed = await requestDocumentAiPage(pageNumber, blob, { signal });
+        throwIfCancelled();
+        return analyzed;
+      },
+      onSettled: (result) => {
+        if (
+          result.state !== 'prepared'
+          || openId !== state.pdfOpenId
+          || state.editorSession
+          || !result.value
+        ) return;
+        state.backgroundPreparedAnalysis.set(pageNumber, result.value);
+        const prepared = state.backgroundPreparedAnalysis.size;
+        setAutomationStatus(
+          `Titon preparou ${prepared} página(s) em segundo plano. Ao extrair, essa preparação será reaproveitada.`,
+          'success'
+        );
+        if (!state.backgroundSuggestionShown) {
+          state.backgroundSuggestionShown = true;
+          captureBackgroundTask({}, {
+            operation: 'suggestion',
+            state: 'prepared',
+            source: 'local',
+            cacheState: 'hit',
+            count: prepared
+          });
+        }
+      }
+    });
+  }
+
+  function scheduleActiveDocumentPreparation(openId = state.pdfOpenId) {
+    if (openId !== state.pdfOpenId || !state.pdfItem || state.editorSession) return;
+    const viewer = window.PortalPdfViewer;
+    const pageCount = Number(viewer?.getPageCount?.() || 0);
+    if (!Number.isInteger(pageCount) || pageCount <= 0) return;
+
+    if (!state.backgroundScope) state.backgroundScope = documentBackgroundScope(openId);
+
+    if (typeof viewer?.prewarmThumbnails === 'function') {
+      scheduleDocumentBackgroundTask({
+        key: `thumbs:${openId}`,
+        type: 'prepare_page',
+        priority: 80,
+        source: 'local',
+        count: Math.min(3, pageCount),
+        run: async ({ throwIfCancelled }) => {
+          throwIfCancelled();
+          return viewer.prewarmThumbnails(
+            Array.from({ length: Math.min(3, pageCount) }, (_, index) => index + 1)
+          );
+        }
+      });
+    }
+
+    if (!canUseDocumentAi()) return;
+    const pageLimit = Math.min(2, pageCount);
+    for (let pageNumber = 1; pageNumber <= pageLimit; pageNumber += 1) {
+      scheduleDocumentBackgroundTask({
+        key: `prepare:${openId}:${pageNumber}`,
+        type: 'prepare_page',
+        priority: 70 - pageNumber,
+        source: 'local',
+        count: 1,
+        run: ({ signal, throwIfCancelled }) => {
+          throwIfCancelled();
+          return prepareDocumentAiPageBlob(pageNumber, { signal });
+        },
+        onSettled: (result) => {
+          if (
+            result.state !== 'prepared'
+            || openId !== state.pdfOpenId
+            || state.editorSession
+            || !(result.value instanceof Blob)
+          ) return;
+          state.backgroundPreparedImages.set(pageNumber, result.value);
+          schedulePreparedPageAnalysis(pageNumber, result.value, openId);
+        }
+      });
     }
   }
 
@@ -3362,6 +3745,9 @@
     const started = performance.now();
     const concurrency = Math.min(5, pageCount);
 
+    pauseDocumentBackground('foreground');
+    background?.cancelQueuedScope?.(state.backgroundScope, 'foreground');
+    setAutomationStatus('');
     state.documentAiBusy = true;
     state.documentAiScanCompleted = false;
     state.documentAiIgnoredPages = 0;
@@ -3393,79 +3779,79 @@
         throw new Error('O documento mudou durante a extração. Abra o PDF novamente e tente outra vez.');
       }
 
-      let blob = await exporter(pageNumber, {
-        maxEdge: 1800,
-        mimeType: 'image/png',
-        cropWhitespace: true
-      });
-      if (!(blob instanceof Blob) || blob.size <= 0) {
-        throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
-      }
-
-      // Texto e formulários ficam mais nítidos em PNG. Para páginas fotográficas
-      // muito grandes, recuamos para JPEG de alta qualidade antes do limite de 3 MiB.
-      if (blob.size > 2.8 * 1024 * 1024) {
-        blob = await exporter(pageNumber, {
-          maxEdge: 1800,
-          mimeType: 'image/jpeg',
-          quality: 0.92,
-          cropWhitespace: true
+      let analyzed = state.backgroundPreparedAnalysis.get(pageNumber) || null;
+      if (analyzed) {
+        state.backgroundPreparedAnalysis.delete(pageNumber);
+        captureBackgroundTask({}, {
+          operation: 'preextract_page',
+          state: 'used',
+          source: 'local',
+          cacheState: 'hit',
+          count: 1
         });
       }
-      if (!(blob instanceof Blob) || blob.size <= 0) {
-        throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
+
+      if (!analyzed) {
+        const joinedAnalysis = await background?.join?.(`preextract:${openId}:${pageNumber}`);
+        if (
+          joinedAnalysis?.state === 'prepared'
+          && openId === state.pdfOpenId
+          && joinedAnalysis.value
+        ) {
+          analyzed = joinedAnalysis.value;
+          state.backgroundPreparedAnalysis.delete(pageNumber);
+          captureBackgroundTask(joinedAnalysis, {
+            operation: 'preextract_page',
+            state: 'used',
+            source: 'local',
+            cacheState: 'hit',
+            count: 1
+          });
+        }
       }
 
-      const response = await fetch(`${endpoint}/api/documents/ai/page/extract`, {
-        method: 'POST',
-        headers: {
-          ...auth.authorizationHeader(),
-          'Content-Type': blob.type || 'image/png',
-          'X-Document-Page-Number': String(pageNumber)
-        },
-        body: blob,
-        cache: 'no-store',
-        credentials: 'omit'
-      });
-      const payload = await response.json().catch(() => ({}));
+      if (!analyzed) {
+        let blob = state.backgroundPreparedImages.get(pageNumber) || null;
+        if (blob) {
+          state.backgroundPreparedImages.delete(pageNumber);
+          captureBackgroundTask({}, {
+            operation: 'prepare_page',
+            state: 'used',
+            source: 'local',
+            cacheState: 'hit',
+            count: 1
+          });
+        }
 
-      if (!response.ok) {
-        const error = new Error(payload?.error || `Não foi possível analisar a página ${pageNumber}.`);
-        error.code = String(payload?.code || '');
-        throw error;
+        if (!blob) {
+          const joinedPrepare = await background?.join?.(`prepare:${openId}:${pageNumber}`);
+          if (
+            joinedPrepare?.state === 'prepared'
+            && openId === state.pdfOpenId
+            && joinedPrepare.value instanceof Blob
+          ) {
+            blob = joinedPrepare.value;
+            state.backgroundPreparedImages.delete(pageNumber);
+            captureBackgroundTask(joinedPrepare, {
+              operation: 'prepare_page',
+              state: 'used',
+              source: 'local',
+              cacheState: 'hit',
+              count: 1
+            });
+          }
+        }
+
+        if (!blob) blob = await prepareDocumentAiPageBlob(pageNumber);
+        analyzed = await requestDocumentAiPage(pageNumber, blob);
       }
 
-      const classification = payload?.classification;
-      const pageType = String(classification?.pageType || '');
-      if (
-        !classification
-        || Number(classification.pageNumber) !== pageNumber
-        || !['comprovante_atendimento', 'pagina_medica_autorizada', 'outro'].includes(pageType)
-      ) {
-        throw new Error(`A página ${pageNumber} retornou classificação ou proveniência inválida.`);
-      }
-
-      if (pageType === 'outro') {
+      if (analyzed.pageType === 'outro') {
         state.documentAiIgnoredPages += 1;
         return;
       }
 
-      const extraction = payload?.extraction;
-      if (
-        !extraction
-        || Number(extraction.pageNumber) !== pageNumber
-        || String(extraction.pageType || '') !== pageType
-        || !extraction.fields
-        || typeof extraction.fields !== 'object'
-      ) {
-        throw new Error(`A página ${pageNumber} retornou extração ou proveniência inválida.`);
-      }
-
-      const normalized = {
-        pageNumber,
-        pageType,
-        fields: extraction.fields
-      };
+      const normalized = analyzed.extraction;
       state.documentAiResults.push(normalized);
       state.documentAiEvidence.set(pageNumber, normalized);
     };
@@ -3542,6 +3928,8 @@
       return false;
     } finally {
       state.documentAiBusy = false;
+      background?.cancelScope?.(state.backgroundScope, 'foreground');
+      resumeDocumentBackground();
       renderDocumentAiPanel();
     }
   }
@@ -3842,6 +4230,7 @@
 
   async function loadFolder({ append = false, pageToken = '' } = {}) {
     if (state.loading) return;
+    background?.cancelScope?.('list', 'stale');
     state.loading = true;
     const started = performance.now();
     if (!append) {
@@ -3889,6 +4278,7 @@
       return;
     }
     if (state.loading) return;
+    background?.cancelScope?.('list', 'stale');
     state.loading = true;
     const started = performance.now();
     if (!append) {
@@ -3924,6 +4314,7 @@
   }
 
   function closePdf() {
+    resetDocumentBackgroundState('document_changed');
     setDocumentAiPanelOpen(false);
     state.documentAiBusy = false;
     state.documentAiClassification = null;
@@ -3942,7 +4333,7 @@
     if (els.documentAiChatQuestion) els.documentAiChatQuestion.value = '';
     if (els.documentAiChatStatus) els.documentAiChatStatus.textContent = '';
     if (els.documentAiChatMessages) els.documentAiChatMessages.replaceChildren();
-    resetEditorState();
+    resetEditorState({ resumeAutomation: false });
     state.pdfOpenId += 1;
     releaseProgressiveStream();
     window.PortalPdfViewer?.close?.();
@@ -3965,6 +4356,7 @@
     els.viewer.hidden = true;
     els.viewerState.className = 'documents-viewer-state';
     els.viewerState.textContent = 'Preparando PDF…';
+    scheduleLikelyPdfWarmup();
   }
 
   async function requestClosePdf() {
@@ -3982,7 +4374,10 @@
       closePdf();
     }
     const openId = state.pdfOpenId;
+    background?.cancelScope?.('list', 'foreground');
     state.pdfItem = item;
+    state.backgroundScope = documentBackgroundScope(openId);
+    rememberOpenedPdf(item);
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
     state.documentAiResults = [];
@@ -4041,9 +4436,23 @@
           });
           if (openId !== state.pdfOpenId || state.pdfFallbackStarted) return;
 
-          const warm = () => warmPdfCache(item, { prefetch: false }).catch(() => {});
-          if (typeof requestIdleCallback === 'function') requestIdleCallback(warm, { timeout: 2200 });
-          else window.setTimeout(warm, 1400);
+          if (background?.schedule) {
+            scheduleDocumentBackgroundTask({
+              key: `warm-open:${openId}`,
+              type: 'warm_pdf',
+              priority: 45,
+              source: 'cache',
+              count: 1,
+              run: ({ signal, throwIfCancelled }) => {
+                throwIfCancelled();
+                return warmPdfCache(item, { prefetch: false, signal });
+              }
+            });
+          } else {
+            const warm = () => warmPdfCache(item, { prefetch: false }).catch(() => {});
+            if (typeof requestIdleCallback === 'function') requestIdleCallback(warm, { timeout: 2200 });
+            else window.setTimeout(warm, 1400);
+          }
 
           if (!customOpened) {
             await loadPdfBlobFallback(item, openId, bucket);
@@ -4115,6 +4524,19 @@
 
   els.list.addEventListener('mouseover', warmPdfFromListEvent);
   els.list.addEventListener('focusin', warmPdfFromListEvent);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (state.pdfItem && !state.editorSession) scheduleActiveDocumentPreparation(state.pdfOpenId);
+    else scheduleLikelyPdfWarmup();
+  });
+
+  window.addEventListener('portal:session-cleared', () => {
+    state.backgroundPreparedImages.clear();
+    state.backgroundPreparedAnalysis.clear();
+    state.backgroundRecentPdfs = [];
+    setAutomationStatus('');
+  });
 
   els.list.addEventListener('click', (event) => {
     const button = event.target.closest('[data-index]');

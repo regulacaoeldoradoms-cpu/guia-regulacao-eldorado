@@ -3015,11 +3015,37 @@ Evidências sanitizadas:
 
 Foi criado `docs/CENTRAL-DOCUMENTOS-FASE-6.md` com o diagnóstico inicial e as subfases 6A–6E. A primeira unidade é **6A — orquestrador de background e métricas**, sem nova chamada antecipatória de IA nesta unidade.
 
+## Fase 6A–6E implementada em branch isolada — aguardando CI — 20/09/2026
+
+Branch: `feat/central-docs-phase6-automation`.
+
+Implementado:
+- orquestrador `js/document-background.js` com idle queue, concorrência 1, deduplicação, `AbortController`, cancelamento por escopo e prioridade foreground;
+- miniaturas iniciais pré-aquecidas após `pdf_ready`, reutilizando o viewer lazy;
+- preparo efêmero de até duas páginas para futura IA;
+- novo gate `DOCUMENTS_AI_BACKGROUND_ENABLED=false` em produção;
+- preextração somente quando IA habilitada + processing habilitado + gate background + capability `extract`;
+- reutilização do preparo quando o usuário clica em `Extrair dados do PDF`;
+- aquecimento de próximos PDFs por posição, hover/focus e histórico opaco da sessão;
+- sugestão discreta quando preparo de IA já está disponível;
+- telemetria técnica `document_background_task` allowlisted no frontend e backend;
+- staging atualizado para incluir o novo módulo;
+- testes de contratos 6A–6E e privacidade adicionados.
+
+Não alterado:
+- produção continua com IA documental e IA antecipatória fail-closed;
+- Drive não recebe escrita automática nova;
+- autosync/editor/permissões não foram reabertos;
+- nenhum conteúdo clínico entra na telemetria;
+- V8C.2 continua baseline da IA documental.
+
+**Próxima ação exata:** abrir PR da implementação completa da Fase 6, validar CI direcionado e staging. Se verde, integrar na `main`. Depois executar validação operacional da Fase 6 em uso real; somente essa medição pode encerrar formalmente a fase.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 6 — Automação operacional / 6A orquestrador de background e métricas |
+| Fase/subfase | Fase 6 — 6A–6E implementadas em branch; aguardando CI e validação operacional |
 | Último resultado real | Fase 5 encerrada: V8C.2 10/10 em 4,524 s e janela final fail-closed com httpBlocked=true |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | nenhum — Fase 5 encerrada |
@@ -3029,7 +3055,7 @@ Foi criado `docs/CENTRAL-DOCUMENTOS-FASE-6.md` com o diagnóstico inicial e as s
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental permanece fail-closed; Fase 6 não autoriza ativação silenciosa de IA nem escrita automática |
-| Próxima ação exata | implementar 6A: auditar/codificar orquestrador de tarefas de background com cancelamento, prioridade e telemetria técnica allowlisted, sem nova chamada antecipatória de IA |
+| Próxima ação exata | validar CI/PR da implementação 6A–6E; se verde, integrar e então medir em uso real redução de tempo sem perda de controle |
 | Meta | Fase 6: reduzir tempo operacional mensuravelmente sem perda de controle do usuário |
 | Fontes | Guia Mestre V1.1; FASE-6; FASE-2; FASE-5; STATUS; js/documents.js; js/document-viewer.js; js/document-cache.js |
 
