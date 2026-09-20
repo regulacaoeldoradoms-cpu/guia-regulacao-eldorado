@@ -56,6 +56,11 @@ export function documentAiProcessingEnabled(env = {}) {
     && flag(env.DOCUMENTS_AI_PROCESSING_ENABLED);
 }
 
+export function documentAiBackgroundEnabled(env = {}) {
+  return documentAiProcessingEnabled(env)
+    && flag(env.DOCUMENTS_AI_BACKGROUND_ENABLED);
+}
+
 export function documentAiPublicConfig(env = {}) {
   return {
     enabled: documentAiEnabled(env),
@@ -71,7 +76,8 @@ export function documentAiPublicConfig(env = {}) {
       classifyPage: true,
       extractPage: true,
       extractDocument: true,
-      documentChat: true
+      documentChat: true,
+      backgroundPreparation: documentAiBackgroundEnabled(env)
     },
     routines: documentAiRoutineMetadata()
   };
