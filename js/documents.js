@@ -5,6 +5,7 @@
   const config = window.REGULATION_AUTH_CONFIG || {};
   const endpoint = String(config.endpoint || '').replace(/\/$/, '');
   const documentCache = window.PortalDocumentCache || null;
+  const background = window.PortalDocumentBackground || null;
   const cacheWarmInFlight = new Map();
   let cacheWarmTimer = null;
   const user = await auth.requireRole([]);
@@ -75,6 +76,11 @@
     pdfReadyEmitted: false,
     pdfCustomFallbackStarted: false,
     cachePrefetchGeneration: 0,
+    backgroundScope: '',
+    backgroundPreparedImages: new Map(),
+    backgroundPreparedAnalysis: new Map(),
+    backgroundRecentPdfs: [],
+    backgroundSuggestionShown: false,
     editorSession: null,
     editorSyncRequired: false,
     editorViewState: null,
@@ -137,6 +143,7 @@
     viewerModeLabel: document.getElementById('documentsViewerModeLabel'),
     viewerTitle: document.getElementById('documentsViewerTitle'),
     viewerState: document.getElementById('documentsViewerState'),
+    automationStatus: document.getElementById('documentsAutomationStatus'),
     customViewer: document.getElementById('documentsCustomViewer'),
     pdfPageScroll: document.getElementById('pdfPageScroll'),
     pdfPages: document.getElementById('pdfPages'),
