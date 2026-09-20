@@ -547,6 +547,7 @@ test('página médica com campo ilegível recebe revisão focal gratuita no Qwen
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL' }
   });
   const reviewedFields = {
+    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
     cid: { state: 'ilegivel', value: '' },
     descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL CORRETA' }
   };
@@ -567,6 +568,8 @@ test('página médica com campo ilegível recebe revisão focal gratuita no Qwen
       assert.equal(model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
       assert.match(input.messages[1].content[1].text, /REVISÃO FOCAL DE PRECISÃO/);
       assert.match(input.messages[1].content[1].text, /cid/);
+      assert.match(input.messages[1].content[1].text, /titulo/);
+      assert.equal(input.max_completion_tokens, 350);
       return workersResponse({ fields: reviewedFields });
     }
   });
