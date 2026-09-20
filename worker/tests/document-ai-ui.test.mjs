@@ -56,7 +56,7 @@ test('botão único percorre o PDF e envia somente uma página por chamada', asy
   const extract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'classifyActiveDocumentPage');
 
   assert.match(extract, /getPageCount\?\.\(\)/);
-  assert.match(extract, /const concurrency = Math\.min\(5, pageCount\)/);
+  assert.match(extract, /const concurrency = Math\.min\(6, pageCount\)/);
   assert.match(extract, /Promise\.all\(Array\.from\(\{ length: concurrency \}/);
   assert.match(extract, /await exporter\(pageNumber/);
   assert.match(extract, /maxEdge: 1800/);

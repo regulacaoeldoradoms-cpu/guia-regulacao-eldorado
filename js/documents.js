@@ -3360,7 +3360,7 @@
     const openId = state.pdfOpenId;
     const item = state.pdfItem;
     const started = performance.now();
-    const concurrency = Math.min(5, pageCount);
+    const concurrency = Math.min(6, pageCount);
 
     state.documentAiBusy = true;
     state.documentAiScanCompleted = false;
