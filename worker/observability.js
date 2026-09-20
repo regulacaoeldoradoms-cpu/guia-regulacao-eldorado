@@ -35,7 +35,8 @@ const EVENT_PROPERTIES = Object.freeze({
   drive_sync_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'status_code']),
   document_ai_started: new Set(['route', 'operation', 'size_bucket', 'source']),
   document_ai_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'source']),
-  document_ai_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'source', 'status_code'])
+  document_ai_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'source', 'status_code']),
+  document_background_task: new Set(['route', 'duration_ms', 'operation', 'source', 'cache_state', 'background_state', 'cancel_reason', 'result_count_bucket'])
 });
 
 const REQUIRED = Object.freeze({
@@ -45,7 +46,8 @@ const REQUIRED = Object.freeze({
   drive_sync_completed: new Set(['route', 'duration_ms', 'operation']),
   drive_sync_failed: new Set(['route', 'operation']),
   document_ai_completed: new Set(['route', 'duration_ms', 'operation']),
-  document_ai_failed: new Set(['route', 'operation'])
+  document_ai_failed: new Set(['route', 'operation']),
+  document_background_task: new Set(['route', 'duration_ms', 'operation', 'background_state'])
 });
 
 const ENUMS = Object.freeze({
@@ -56,9 +58,11 @@ const ENUMS = Object.freeze({
   cache_state: new Set(['hit', 'miss', 'stale', 'bypass', 'unknown']),
   size_bucket: new Set(['tiny', 'small', 'medium', 'large', 'very_large', 'unknown']),
   result_count_bucket: new Set(['0', '1-5', '6-20', '21-100', '100+', 'unknown']),
+  background_state: new Set(['prepared', 'used', 'cancelled', 'expired', 'failed', 'skipped']),
+  cancel_reason: new Set(['none', 'document_changed', 'session', 'hidden', 'foreground', 'editor', 'stale', 'unsupported', 'unknown']),
   operation: new Set([
     'open_folder', 'search', 'open_pdf', 'delete_page', 'reorder_page', 'rotate_page',
-    'merge_pdf', 'save_copy', 'replace_pdf', 'extract', 'document_chat', 'request', 'unknown'
+    'merge_pdf', 'save_copy', 'replace_pdf', 'extract', 'document_chat', 'warm_pdf', 'prepare_page', 'preextract_page', 'suggestion', 'request', 'unknown'
   ])
 });
 
