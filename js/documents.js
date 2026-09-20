@@ -3622,6 +3622,8 @@
     const started = performance.now();
     const concurrency = Math.min(5, pageCount);
 
+    background?.cancelScope?.(state.backgroundScope, 'foreground');
+    pauseDocumentBackground('foreground');
     state.documentAiBusy = true;
     state.documentAiScanCompleted = false;
     state.documentAiIgnoredPages = 0;
@@ -3653,79 +3655,39 @@
         throw new Error('O documento mudou durante a extração. Abra o PDF novamente e tente outra vez.');
       }
 
-      let blob = await exporter(pageNumber, {
-        maxEdge: 1800,
-        mimeType: 'image/png',
-        cropWhitespace: true
-      });
-      if (!(blob instanceof Blob) || blob.size <= 0) {
-        throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
-      }
-
-      // Texto e formulários ficam mais nítidos em PNG. Para páginas fotográficas
-      // muito grandes, recuamos para JPEG de alta qualidade antes do limite de 3 MiB.
-      if (blob.size > 2.8 * 1024 * 1024) {
-        blob = await exporter(pageNumber, {
-          maxEdge: 1800,
-          mimeType: 'image/jpeg',
-          quality: 0.92,
-          cropWhitespace: true
+      let analyzed = state.backgroundPreparedAnalysis.get(pageNumber) || null;
+      if (analyzed) {
+        state.backgroundPreparedAnalysis.delete(pageNumber);
+        captureBackgroundTask({}, {
+          operation: 'preextract_page',
+          state: 'used',
+          source: 'local',
+          cacheState: 'hit',
+          count: 1
         });
-      }
-      if (!(blob instanceof Blob) || blob.size <= 0) {
-        throw new Error(`Não foi possível preparar a página ${pageNumber}.`);
-      }
-
-      const response = await fetch(`${endpoint}/api/documents/ai/page/extract`, {
-        method: 'POST',
-        headers: {
-          ...auth.authorizationHeader(),
-          'Content-Type': blob.type || 'image/png',
-          'X-Document-Page-Number': String(pageNumber)
-        },
-        body: blob,
-        cache: 'no-store',
-        credentials: 'omit'
-      });
-      const payload = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        const error = new Error(payload?.error || `Não foi possível analisar a página ${pageNumber}.`);
-        error.code = String(payload?.code || '');
-        throw error;
+      } else {
+        let blob = state.backgroundPreparedImages.get(pageNumber) || null;
+        if (blob) {
+          state.backgroundPreparedImages.delete(pageNumber);
+          captureBackgroundTask({}, {
+            operation: 'prepare_page',
+            state: 'used',
+            source: 'local',
+            cacheState: 'hit',
+            count: 1
+          });
+        } else {
+          blob = await prepareDocumentAiPageBlob(pageNumber);
+        }
+        analyzed = await requestDocumentAiPage(pageNumber, blob);
       }
 
-      const classification = payload?.classification;
-      const pageType = String(classification?.pageType || '');
-      if (
-        !classification
-        || Number(classification.pageNumber) !== pageNumber
-        || !['comprovante_atendimento', 'pagina_medica_autorizada', 'outro'].includes(pageType)
-      ) {
-        throw new Error(`A página ${pageNumber} retornou classificação ou proveniência inválida.`);
-      }
-
-      if (pageType === 'outro') {
+      if (analyzed.pageType === 'outro') {
         state.documentAiIgnoredPages += 1;
         return;
       }
 
-      const extraction = payload?.extraction;
-      if (
-        !extraction
-        || Number(extraction.pageNumber) !== pageNumber
-        || String(extraction.pageType || '') !== pageType
-        || !extraction.fields
-        || typeof extraction.fields !== 'object'
-      ) {
-        throw new Error(`A página ${pageNumber} retornou extração ou proveniência inválida.`);
-      }
-
-      const normalized = {
-        pageNumber,
-        pageType,
-        fields: extraction.fields
-      };
+      const normalized = analyzed.extraction;
       state.documentAiResults.push(normalized);
       state.documentAiEvidence.set(pageNumber, normalized);
     };
@@ -3802,6 +3764,7 @@
       return false;
     } finally {
       state.documentAiBusy = false;
+      resumeDocumentBackground();
       renderDocumentAiPanel();
     }
   }
