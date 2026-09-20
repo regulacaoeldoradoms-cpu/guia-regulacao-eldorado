@@ -49,22 +49,39 @@ function workersResponse(value, usage = null) {
 }
 
 function compactAnalysis(pageType, fields = {}) {
-  if (pageType === 'outro') return { t: 'o' };
   const stateCode = { encontrado: 'e', nao_consta: 'n', ilegivel: 'i' };
   const tupleFor = (key) => {
     const field = fields[key] || { state: 'nao_consta', value: '' };
     return [stateCode[field.state], field.state === 'encontrado' ? String(field.value || '') : ''];
   };
+  if (pageType === 'outro') return { t: 'o', v: {} };
   if (pageType === 'comprovante_atendimento') {
     return {
       t: 'c',
-      f: DOCUMENT_AI_EXTRACTION_FIELDS[pageType].map(tupleFor)
+      v: {
+        np: tupleFor('nome_paciente'),
+        cp: tupleFor('cpf'),
+        cn: tupleFor('cns'),
+        dn: tupleFor('data_nascimento'),
+        nm: tupleFor('nome_mae'),
+        te: tupleFor('telefone'),
+        en: tupleFor('endereco'),
+        ag: tupleFor('agente')
+      }
     };
   }
   return {
     t: 'm',
-    h: tupleFor('titulo'),
-    f: DOCUMENT_AI_EXTRACTION_FIELDS[pageType].slice(1).map(tupleFor)
+    v: {
+      ti: tupleFor('titulo'),
+      mo: tupleFor('motivo_encaminhamento'),
+      me: tupleFor('medico'),
+      cr: tupleFor('crm_rms'),
+      ps: tupleFor('procedimento_solicitado'),
+      pc: tupleFor('codigo_procedimento'),
+      ci: tupleFor('cid'),
+      dc: tupleFor('descricao_cid')
+    }
   };
 }
 
