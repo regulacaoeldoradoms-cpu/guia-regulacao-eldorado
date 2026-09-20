@@ -695,3 +695,24 @@ Ordem:
 4. preparar nova janela;
 5. executar uma única matriz V8C.1.
 
+## V8C.2 — compacto semântico + JSON Schema — 20/09/2026
+
+Baseline imediatamente anterior (V8C.1):
+- 7/10;
+- 14,469 s de extração;
+- Gemma final em 2 páginas e Qwen final em 4;
+- quatro `DOCUMENT_AI_PROVIDER_SCHEMA_INVALID` no Gemma das páginas médicas;
+- divergências somente em `medico` nas páginas 5 e 6;
+- página 6 com revisão Qwen sem alteração.
+
+A próxima homologação deve validar:
+- 10/10;
+- `formato_compacto_paginas=6`;
+- `formato_legado_paginas=0`;
+- nenhum `campos_divergentes`;
+- ausência de fallback sistemático por schema nas páginas médicas;
+- token usage real de todas as tentativas, inclusive schema-invalid;
+- nenhuma revisão redundante quando fallback Qwen já retornar CID=ilegivel + descrição encontrada.
+
+A janela V8C.1 atual não deve ser reutilizada para V8C.2. Após CI/merge/freeze, encerrar fail-closed, atualizar scripts e abrir nova janela.
+
