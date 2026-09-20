@@ -3253,7 +3253,8 @@ Correções de manutenção identificadas nesta revisão:
 - nomenclatura de um teste ainda dizia “produção continua fail-closed”, embora suas próprias asserções já exigissem IA normal ativa; corrigido apenas o nome do teste;
 - documento de publicação mantinha uma seção intermediária que podia ser lida como estado atual; marcada explicitamente como histórica;
 - handoff/status ainda apontava para a primeira Worker Version do rollout e para referências V7; atualizado para V8C.2 e para a Worker Version produtiva atual;
-- texto da homologação 6 ainda tratava `enabled=true` como futuro; alinhado ao estado atual.
+- texto da homologação 6 ainda tratava `enabled=true` como futuro; alinhado ao estado atual;
+- PR antiga **#172** da 3C.1f estava aberta, não mergeável e fortemente divergente da arquitetura atual; foi encerrada como obsoleta/supersedida, com justificativa registrada no próprio PR.
 
 Nenhuma alteração funcional da IA, editor, Drive, OAuth, permissões ou observabilidade foi necessária nesta revisão.
 
