@@ -1,4 +1,4 @@
-name: Validar Central de Documentos — Fases 1–5E (preparo)
+name: Validar Central de Documentos — Fases 1–6
 
 on:
   pull_request:
