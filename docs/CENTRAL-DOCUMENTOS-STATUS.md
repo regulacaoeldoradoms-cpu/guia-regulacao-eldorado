@@ -2426,12 +2426,46 @@ A janela corresponde exatamente ao runtime V7G congelado. Produção não foi pr
 
 **Próxima ação exata:** abrir `https://0e5a1474.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz **uma única vez** e copiar o resumo seguro completo. Critério final image-only: **10/10** e idealmente `duracao_extracao_ms < 6000`. Se houver regressão de precisão ou outlier relevante, manter V7F como baseline image-only e avançar para V8 híbrida.
 
+## Resultado V7G — 10/10 em 7,202 s; V7F confirmado como ápice image-only — 20/09/2026
+
+Resumo seguro real da V7G:
+- `MATRIZ_5E_SINTETICA=APROVADA`;
+- **10 aprovados / 0 falhas**;
+- `duracao_extracao_ms=7202`;
+- `duracao_total_ms=11381`;
+- `concorrencia_paginas=6`;
+- Gemma final: 6 páginas;
+- Qwen final: 0 páginas.
+
+Comparação:
+- V7F concorrência 5: **6,830 s**;
+- V7G concorrência 6: **7,202 s**.
+
+Com seis chamadas Gemma simultâneas, as páginas médicas ficaram mais lentas individualmente (~5,9–6,6 s de provider em várias páginas). Isso confirma contenção/variabilidade no provider: mais concorrência não reduz o makespan neste ponto.
+
+**Veredito image-only:** V7F é o melhor baseline comprovado, 10/10 em 6,830 s. Não criar V7H/V7I por ajuste de concorrência/modelo/tokens.
+
+### Próximo avanço: V8A de entrada visual adaptativa
+
+A revisão da ideia de usar a text layer diretamente como fonte de valores encontrou um risco semântico importante: PDFs podem conter texto subjacente que esteja visualmente coberto, borrado ou redigido. Como a Central distingue `ilegivel` de valor encontrado, text layer pura não deve virar verdade documental sem uma prova de visibilidade.
+
+Portanto a primeira V8 será mais conservadora:
+- continuar usando a **imagem renderizada como fonte de verdade**;
+- recortar automaticamente somente margens/áreas realmente brancas da imagem renderizada antes do envio à IA;
+- manter a mesma resolução do texto, reduzindo apenas pixels vazios;
+- nunca usar text layer para preencher valores nesta etapa;
+- preservar pageNumber técnico, capability `extract`, produção fail-closed e política de não persistência.
+
+Isso ataca o próximo custo controlável sem reintroduzir risco de texto oculto. Se o crop não produzir ganho material, a V8 seguinte poderá avaliar OCR local sobre a imagem renderizada ou text layer com validação visual explícita.
+
+A janela V7G atual permanece ativa e deve ser encerrada fail-closed antes de qualquer homologação V8.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7G preparada; teste final image-only aguardando execução |
-| Último resultado real | janela V7G preparada; release correto; Drive false; produção intacta |
+| Fase/subfase | Fase 5E — V7G 10/10 em 7,202 s; V7F baseline final 6,830 s; V8A iniciada |
+| Último resultado real | V7G 10/10 em 7,202 s; concorrência 6 regrediu; V7F permanece melhor baseline 6,830 s |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `ba7d8a369940a9613a436b6b0f572bdedb99375f` |
 | Pages próximo reteste | `https://0e5a1474.portal-regulacao-central-staging.pages.dev` |
@@ -2440,7 +2474,7 @@ A janela corresponde exatamente ao runtime V7G congelado. Produção não foi pr
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | abrir laboratório V7G; executar matriz uma vez; copiar resumo seguro completo |
+| Próxima ação exata | desenvolver/validar V8A crop visual adaptativo; depois encerrar V7G e homologar V8A |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
