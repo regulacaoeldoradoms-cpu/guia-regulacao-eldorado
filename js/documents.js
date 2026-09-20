@@ -1103,7 +1103,7 @@
     return false;
   }
 
-  function resetEditorState({ restoreOriginal = false } = {}) {
+  function resetEditorState({ restoreOriginal = false, resumeAutomation = true } = {}) {
     const session = state.editorSession;
     const shouldRestoreOriginal = restoreOriginal && Boolean(session?.revision > 0);
     const viewState = currentViewerState();
@@ -1138,8 +1138,10 @@
     if (els.editorRailEdit) els.editorRailEdit.hidden = !(canEditDocuments() && state.pdfItem);
     setEditorStatus('');
     refreshPdfListActions();
-    resumeDocumentBackground();
-    if (state.pdfItem) scheduleActiveDocumentPreparation(state.pdfOpenId);
+    if (resumeAutomation) {
+      resumeDocumentBackground();
+      if (state.pdfItem) scheduleActiveDocumentPreparation(state.pdfOpenId);
+    }
     if (shouldRestoreOriginal && state.pdfObjectUrl) {
       restoreOriginalPortalViewer(viewState).catch(() => {
         if (!state.editorSession) {
@@ -1899,10 +1901,11 @@
       showStatus('Sua conta não possui permissão de edição de PDF.', 'warning');
       return;
     }
-    if (!state.pdfItem || !window.PortalPdfEditor || state.editorSession) {
+    if (!state.pdfItem || !window.PortalPdfEditor) {
       resumeDocumentBackground();
       return;
     }
+    if (state.editorSession) return;
 
     const item = state.pdfItem;
     const openId = state.pdfOpenId;
@@ -4270,7 +4273,7 @@
     if (els.documentAiChatQuestion) els.documentAiChatQuestion.value = '';
     if (els.documentAiChatStatus) els.documentAiChatStatus.textContent = '';
     if (els.documentAiChatMessages) els.documentAiChatMessages.replaceChildren();
-    resetEditorState();
+    resetEditorState({ resumeAutomation: false });
     state.pdfOpenId += 1;
     releaseProgressiveStream();
     window.PortalPdfViewer?.close?.();
