@@ -886,6 +886,7 @@ test('6C só antecipa IA com capability e gates corretos e reutiliza resultado n
   );
   assert.match(readiness, /processingEnabled === true/);
   assert.match(readiness, /features\?\.extractDocument === true/);
+  assert.match(readiness, /features\?\.backgroundPreparation === true/);
   assert.match(readiness, /documentAiCapabilities\(\)\.extract === true/);
   assert.match(client, /backgroundPreparedAnalysis\.get\(pageNumber\)/);
   assert.match(client, /background_state/);
