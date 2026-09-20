@@ -748,20 +748,20 @@ function medicalReviewFocus(extraction, initialModel = '') {
     .filter(([, field]) => String(field?.state || '') === 'ilegivel')
     .map(([key]) => key);
 
-  // Evidência V7E: quando Gemma retorna CID explicitamente ILEGÍVEL, descrição
-  // encontrada e nenhum outro campo está ilegível, a revisão Qwen não alterou
-  // nenhum campo e adicionou ~3,2 s ao caminho crítico. Nesse caso exato,
-  // preservamos a leitura conservadora do Gemma e evitamos uma inferência
-  // redundante. Qualquer outra ambiguidade continua revisável.
-  const trustGemmaExplicitCidIllegible = (
-    normalizedInitialModel === DOCUMENT_AI_PRIMARY_FREE_MODEL
+  // Evidência acumulada V7E + V8C.1: quando um modelo textual aprovado
+  // retorna exclusivamente CID=ilegivel com descrição encontrada, a revisão Qwen
+  // não alterou o conteúdo e apenas alongou o caminho crítico. Preservamos esse
+  // estado conservador para Gemma ou Qwen; qualquer outra ambiguidade continua
+  // revisável normalmente.
+  const trustTextModelExplicitCidIllegible = (
+    TEXT_FREE_MODEL_SET.has(normalizedInitialModel)
     && illegibleKeys.length === 1
     && illegibleKeys[0] === 'cid'
     && String(fields?.cid?.state || '') === 'ilegivel'
     && String(fields?.descricao_cid?.state || '') === 'encontrado'
   );
 
-  const focus = (trustFastExplicitIllegible || trustGemmaExplicitCidIllegible)
+  const focus = (trustFastExplicitIllegible || trustTextModelExplicitCidIllegible)
     ? []
     : [...illegibleKeys];
 
