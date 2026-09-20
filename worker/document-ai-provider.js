@@ -555,31 +555,7 @@ function compactIntegratedCandidate(parsed) {
     return { pageType, fields: {}, responseFormat: 'compact' };
   }
 
-  if (
-    keys.length !== 2
-    || keys[0] !== 'f'
-    || keys[1] !== 't'
-    || !Array.isArray(parsed.f)
-  ) {
-    throw new DocumentAiError(
-      'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
-      'A resposta compacta não corresponde ao schema autorizado.',
-      502
-    );
-  }
-
-  const fieldKeys = DOCUMENT_AI_EXTRACTION_FIELDS[pageType];
-  if (!fieldKeys || parsed.f.length !== fieldKeys.length) {
-    throw new DocumentAiError(
-      'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
-      'A resposta compacta não contém todos os campos obrigatórios.',
-      502
-    );
-  }
-
-  const fields = {};
-  fieldKeys.forEach((key, index) => {
-    const tuple = parsed.f[index];
+  const parseTuple = (tuple) => {
     if (!Array.isArray(tuple) || tuple.length !== 2) {
       throw new DocumentAiError(
         'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
@@ -596,8 +572,56 @@ function compactIntegratedCandidate(parsed) {
         502
       );
     }
-    fields[key] = { state, value };
-  });
+    return { state, value };
+  };
+
+  const fieldKeys = DOCUMENT_AI_EXTRACTION_FIELDS[pageType];
+  if (!fieldKeys) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
+      'A resposta compacta não corresponde a um contrato autorizado.',
+      502
+    );
+  }
+
+  const fields = {};
+  if (pageType === 'comprovante_atendimento') {
+    if (
+      keys.length !== 2
+      || keys[0] !== 'f'
+      || keys[1] !== 't'
+      || !Array.isArray(parsed.f)
+      || parsed.f.length !== fieldKeys.length
+    ) {
+      throw new DocumentAiError(
+        'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
+        'A resposta compacta do comprovante não corresponde ao schema autorizado.',
+        502
+      );
+    }
+    fieldKeys.forEach((key, index) => {
+      fields[key] = parseTuple(parsed.f[index]);
+    });
+  } else {
+    if (
+      keys.length !== 3
+      || keys[0] !== 'f'
+      || keys[1] !== 'h'
+      || keys[2] !== 't'
+      || !Array.isArray(parsed.f)
+      || parsed.f.length !== fieldKeys.length - 1
+    ) {
+      throw new DocumentAiError(
+        'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
+        'A resposta compacta da página médica não corresponde ao schema autorizado.',
+        502
+      );
+    }
+    fields.titulo = parseTuple(parsed.h);
+    fieldKeys.slice(1).forEach((key, index) => {
+      fields[key] = parseTuple(parsed.f[index]);
+    });
+  }
 
   return { pageType, fields, responseFormat: 'compact' };
 }
@@ -648,10 +672,11 @@ function fastIntegratedAnalysisQuestion() {
     'Responda SOMENTE JSON compacto, sem markdown ou explicação.',
     'Use t=c para comprovante, t=m para página médica autorizada e t=o para outro.',
     'Se t=o, responda exatamente {"t":"o"}.',
-    'Se t=c ou t=m, responda {"t":"c|m","f":[...]} com exatamente 8 itens [s,v].',
+    'Se t=c, responda {"t":"c","f":[...]} com 8 itens [s,v] na ordem nome_paciente, cpf, cns, data_nascimento, nome_mae, telefone, endereco, agente.',
+    'Se t=m, responda {"t":"m","h":[s,v],"f":[...]}: h é SOMENTE titulo e f tem 7 itens.',
+    'Se houver campo explicitamente rotulado Título, h DEVE ser exatamente o valor desse campo; use o cabeçalho só quando o rótulo Título não existir.',
+    'Ordem de f em t=m: motivo_encaminhamento, medico, crm_rms, procedimento_solicitado, codigo_procedimento, cid, descricao_cid.',
     's=e significa encontrado, s=n significa nao_consta, s=i significa ilegivel; n/i exigem v="".',
-    'Ordem t=c: nome_paciente, cpf, cns, data_nascimento, nome_mae, telefone, endereco, agente.',
-    'Ordem t=m: titulo, motivo_encaminhamento, medico, crm_rms, procedimento_solicitado, codigo_procedimento, cid, descricao_cid.',
     'Use t=c somente se o cabeçalho/título visível for COMPROVANTE DE ATENDIMENTO, CONTROLE DE ATENDIMENTO ou DADOS.',
     'Use t=m somente se o cabeçalho/título visível for GUIA DE ENCAMINHAMENTO, ENCAMINHAMENTO, ENCAMINHAMENTOS, RECEITA SIMPLES, LAUDO MÉDICO, RECEITUÁRIO MÉDICO, SOLICITAÇÃO DE EXAMES, SOLICITAÇÃO DE AGENDAMENTO ou SOLICITAÇÃO DE AGENDAMENTO RETORNO.',
     'Nunca invente, corrija ou reconstrua CID, código, CRM, nomes ou outros valores. Preserve o texto visível literalmente.'
