@@ -159,7 +159,7 @@ Proibido:
 
 ## Próxima ação exata
 
-Implementar **6A — orquestrador de background e métricas**, começando por auditoria dos pontos de cancelamento/prioridade em `js/documents.js`, `js/document-viewer.js` e `js/document-cache.js`, sem ativar nova automação de IA nesta primeira unidade.
+Validar em CI a implementação 6A–6E desta branch e, se verde, integrá-la na `main`. Depois, executar a validação operacional real de ganho de tempo e controle do usuário antes de encerrar formalmente a Fase 6.
 
 
 ## Implementação 6A–6E — 20/09/2026
