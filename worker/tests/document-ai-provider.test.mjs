@@ -745,6 +745,41 @@ test('CID explicitamente ilegível com descrição encontrada encerra no Gemma s
   assert.equal(result.provider.attempts.length, 1);
 });
 
+test('CID explicitamente ilegível no fallback Qwen também encerra sem revisão redundante', async () => {
+  const models = [];
+  const fields = fieldsFor('pagina_medica_autorizada', {
+    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
+    motivo_encaminhamento: { state: 'encontrado', value: 'MOTIVO' },
+    medico: { state: 'encontrado', value: 'DR. TESTE' },
+    crm_rms: { state: 'encontrado', value: 'CRM/MS 1' },
+    procedimento_solicitado: { state: 'encontrado', value: 'PROC' },
+    codigo_procedimento: { state: 'encontrado', value: '0001' },
+    cid: { state: 'ilegivel', value: '' },
+    descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL' }
+  });
+
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 6,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([6, 6])
+  }, {
+    aiRun: async (model) => {
+      models.push(model);
+      if (model === DOCUMENT_AI_PRIMARY_FREE_MODEL) {
+        return workersResponse({ t: 'm', v: { ti: ['e', 'ENCAMINHAMENTO'] } });
+      }
+      return workersResponse(compactAnalysis('pagina_medica_autorizada', fields));
+    }
+  });
+
+  assert.deepEqual(models, [DOCUMENT_AI_PRIMARY_FREE_MODEL, DOCUMENT_AI_FALLBACK_FREE_MODEL]);
+  assert.equal(result.provider.model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
+  assert.equal(result.provider.reviewed, false);
+  assert.equal(result.provider.attempts.length, 2);
+  assert.equal(result.extraction.fields.cid.state, 'ilegivel');
+  assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO LITERAL');
+});
+
 test('revisão focal indisponível preserva extração inicial válida para outra ambiguidade', async () => {
   let calls = 0;
   const initialFields = fieldsFor('pagina_medica_autorizada', {
