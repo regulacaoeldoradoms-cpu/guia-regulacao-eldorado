@@ -2601,12 +2601,30 @@ Referências congeladas V8B:
 
 **Próxima ação exata:** encerrar a janela V8A fail-closed; atualizar os scripts locais a partir da `main`; executar o readiness 5E e confirmar exatamente source/pages acima; então preparar uma nova janela V8B e rodar **uma única matriz**. A decisão de otimização só será tomada depois de observar as contagens reais de tokens.
 
+## Janela V8A encerrada fail-closed — 20/09/2026
+
+O operador encerrou oficialmente a janela V8A anterior antes da abertura da V8B diagnóstica.
+
+Evidências sanitizadas:
+- `JANELA_5E_ENCERRADA`;
+- controle `phase5e_a074973e4760415081b04205fe3197ba`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado `bd89b5ca-8c85-4b16-a80a-44563d183c6d`;
+- release encerrado `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9`;
+- `httpBlocked=true`.
+
+Conclusão: a janela V8A está encerrada e não deve ser reutilizada. A barreira operacional para o readiness da V8B foi removida de forma fail-closed. Produção permaneceu fora deste procedimento.
+
+**Próxima ação exata:** atualizar os scripts locais a partir da `main` atual; executar `verificar-precondicoes-5e.mjs --verificar`; confirmar `activeControlledWindow=false`, source `96ce5dec060c98c582a8925ae03bc25973b0f3bd` e Pages `https://255ecf24.portal-regulacao-central-staging.pages.dev`. Somente depois preparar a nova janela V8B.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 5E — V8B diagnóstica: medir token usage real antes de alterar saída/imagem |
-| Último resultado real | V8A 10/10 em 5,388 s; imagem_area_pct=100 em todas as páginas; ganho não atribuído ao crop |
+| Último resultado real | V8A encerrada fail-closed; controle desabilitado, aiGate=false, driveWriteGate=false e HTTP bloqueado confirmado |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `96ce5dec060c98c582a8925ae03bc25973b0f3bd` |
 | Pages próximo reteste | `https://255ecf24.portal-regulacao-central-staging.pages.dev` |
@@ -2615,7 +2633,7 @@ Referências congeladas V8B:
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | encerrar V8A fail-closed; atualizar scripts locais da main; readiness V8B com source `96ce5dec...` + Pages `255ecf24...`; preparar nova janela e executar uma única matriz 10/10 com token usage |
+| Próxima ação exata | atualizar scripts locais da main; executar readiness V8B e confirmar activeControlledWindow=false + source `96ce5dec...` + Pages `255ecf24...`; só então preparar nova janela V8B |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
