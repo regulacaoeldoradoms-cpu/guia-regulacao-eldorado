@@ -2076,12 +2076,30 @@ Conclusão: a janela V7C está encerrada e não deve ser reutilizada. O bloqueio
 
 **Próxima ação exata:** atualizar os quatro scripts operacionais a partir da `main` e executar `iniciar-homologacao-5e.mjs --iniciar`. O readiness correto deve mostrar source `208639f021ca9d5f86a2df97a9bd8a5978e5224f` e Pages `https://b5b3f33e.portal-regulacao-central-staging.pages.dev`. Somente então confirmar `PREPARAR HOMOLOGACAO 5E`.
 
+## Janela V7D preparada — 20/09/2026
+
+O operador concluiu o preparo oficial da janela V7D.
+
+Evidências sanitizadas:
+- `HOMOLOGACAO_5E_PREPARADA`;
+- preview version `db442013-8c7a-4567-a708-8e62526f4f1e`;
+- controle `phase5e_fa146f1c69b249cf8752337043ea5bee`;
+- expiração `2026-09-20T03:12:40.000Z`;
+- release `208639f021ca9d5f86a2df97a9bd8a5978e5224f`;
+- `aiGate=true` somente no preview;
+- `driveWriteGate=false`;
+- produção permaneceu `298ba237-78f9-4d24-bad1-47e66b4c1e15`.
+
+A janela corresponde exatamente ao runtime V7D congelado. Produção não foi promovida.
+
+**Próxima ação exata:** abrir `https://b5b3f33e.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz **uma única vez** e copiar o resumo seguro completo. Conferir especialmente `duracao_extracao_ms`, `tentativas`, `tentativas_ms`, `revisado`, `revisao_alterou`, `provider_ms` e `transporte_backend_ms`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7D integrada; V7C encerrada fail-closed; reteste pronto para abertura |
-| Último resultado real | V7C 10/10; extração 13,748 s; V7D remove Moondream da cadeia |
+| Fase/subfase | Fase 5E — V7D preparada; matriz aguardando execução |
+| Último resultado real | janela V7D preparada; release correto; Drive false; produção intacta |
 | Runtime funcional V7D | `208639f021ca9d5f86a2df97a9bd8a5978e5224f` |
 | Runtime próximo reteste | `208639f021ca9d5f86a2df97a9bd8a5978e5224f` |
 | Pages próximo reteste | `https://b5b3f33e.portal-regulacao-central-staging.pages.dev` |
@@ -2090,7 +2108,7 @@ Conclusão: a janela V7C está encerrada e não deve ser reutilizada. O bloqueio
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | atualizar scripts; readiness V7D; preparar janela nova; executar matriz uma vez |
+| Próxima ação exata | abrir laboratório V7D; executar matriz uma vez; copiar resumo seguro completo |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
