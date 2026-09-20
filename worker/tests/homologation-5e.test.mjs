@@ -104,6 +104,37 @@ test('5E bloqueia controle ausente ou revogado', async () => {
   assert.equal(downstream, 0);
 });
 
+test('probe de preparo distingue controle bloqueado de autenticação obrigatória', async () => {
+  let validations = 0;
+  const blockedWorker = createHomologation5eWorker(dependencies({
+    readControl: async () => null,
+    validateSession: async () => {
+      validations += 1;
+      return null;
+    }
+  }));
+  const blocked = await blockedWorker.fetch(
+    request('/api/documents/ai/config'),
+    env()
+  );
+  assert.equal(blocked.status, 403);
+  assert.equal(validations, 0);
+
+  const activeWorker = createHomologation5eWorker(dependencies({
+    readControl: async () => control(),
+    validateSession: async () => {
+      validations += 1;
+      return null;
+    }
+  }));
+  const active = await activeWorker.fetch(
+    request('/api/documents/ai/config'),
+    env()
+  );
+  assert.equal(active.status, 401);
+  assert.equal(validations, 1);
+});
+
 test('login 5E só encaminha o usuário autorizado e não persiste credenciais', async () => {
   const bodies = [];
   const worker = createHomologation5eWorker(dependencies({
