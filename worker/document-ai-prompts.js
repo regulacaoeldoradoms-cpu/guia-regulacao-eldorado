@@ -167,15 +167,19 @@ Não inclua pageNumber. A proveniência é definida pelo backend.
 const PROMPT_ANALISE_REGULACAO_COMPACTA_SYSTEM = PROMPT_ANALISE_REGULACAO_V1.system.replace(
   /Responda SOMENTE JSON:[\s\S]*$/u,
   [
-    'FORMATO INTERNO COMPACTO OBRIGATÓRIO:',
-    '- Use t=c para comprovante_atendimento, t=m para pagina_medica_autorizada e t=o para outro.',
-    '- Se t=o, responda exatamente {"t":"o"}.',
-    '- Se t=c, responda exatamente {"t":"c","f":[...]}: f deve ter 8 posições [s,v] na ordem nome_paciente, cpf, cns, data_nascimento, nome_mae, telefone, endereco, agente.',
-    '- Se t=m, responda exatamente {"t":"m","h":[s,v],"f":[...]} sem chaves extras.',
-    '- Em t=m, h representa SOMENTE titulo. Se existir campo explicitamente rotulado "Título", h DEVE usar exatamente o valor desse campo; use o cabeçalho da página somente se não existir rótulo "Título".',
-    '- Em t=m, f deve ter 7 posições [s,v] na ordem motivo_encaminhamento, medico, crm_rms, procedimento_solicitado, codigo_procedimento, cid, descricao_cid.',
-    '- s=e significa encontrado, s=n significa nao_consta e s=i significa ilegivel.',
-    '- Quando s=e, v deve conter o valor literal. Quando s=n ou s=i, v deve ser "".',
+    'FORMATO INTERNO COMPACTO SEMÂNTICO OBRIGATÓRIO:',
+    '- Responda exatamente com as chaves t e v. Não adicione outras chaves de primeiro nível.',
+    '- t=c para comprovante_atendimento, t=m para pagina_medica_autorizada e t=o para outro.',
+    '- v é sempre um objeto.',
+    '- Se t=o, responda exatamente {"t":"o","v":{}}.',
+    '- Cada campo em v deve ser [s,v], onde s=e significa encontrado, s=n significa nao_consta e s=i significa ilegivel.',
+    '- Quando s=e, o segundo item deve conter o valor literal. Quando s=n ou s=i, o segundo item deve ser "".',
+    '- Se t=c, v deve ter EXATAMENTE as chaves: np,cp,cn,dn,nm,te,en,ag.',
+    '- Mapeamento t=c: np=nome_paciente, cp=cpf, cn=cns, dn=data_nascimento, nm=nome_mae, te=telefone, en=endereco, ag=agente.',
+    '- Se t=m, v deve ter EXATAMENTE as chaves: ti,mo,me,cr,ps,pc,ci,dc.',
+    '- Mapeamento t=m: ti=titulo, mo=motivo_encaminhamento, me=medico, cr=crm_rms, ps=procedimento_solicitado, pc=codigo_procedimento, ci=cid, dc=descricao_cid.',
+    '- Para ti, se existir campo explicitamente rotulado "Título", use exatamente o valor desse campo; use o cabeçalho da página somente se não existir rótulo "Título".',
+    '- Não use posição do vetor para deduzir o significado de um campo; cada chave curta acima possui significado fixo.',
     '- Não use as chaves pageType, fields, state, value ou pageNumber na resposta compacta.',
     '- A codificação compacta é somente transporte interno; todas as regras de leitura, literalidade, presença e não inferência acima continuam obrigatórias.'
   ].join('\n')
@@ -183,9 +187,9 @@ const PROMPT_ANALISE_REGULACAO_COMPACTA_SYSTEM = PROMPT_ANALISE_REGULACAO_V1.sys
 
 export const PROMPT_ANALISE_REGULACAO_COMPACTA_V1 = routine(
   'PROMPT_ANALISE_REGULACAO_COMPACTA_V1',
-  'Classificar e extrair uma única página em uma inferência com transporte interno compacto e contrato público preservado.',
+  'Classificar e extrair uma única página em uma inferência com transporte interno compacto semântico e contrato público preservado.',
   PROMPT_ANALISE_REGULACAO_COMPACTA_SYSTEM,
-  'v1'
+  'v2'
 );
 
 export const PROMPT_DOCUMENT_CHAT_V1 = routine(
