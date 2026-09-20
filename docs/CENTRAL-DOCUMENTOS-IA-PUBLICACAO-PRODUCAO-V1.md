@@ -84,6 +84,8 @@ Em 20/09/2026, após a correção do gate pela PR #347, o Workers Builds conclui
 - primeira Worker Version produtiva após a correção: `1c2458f8-76f9-4050-8f10-a9e6b5fbec37`;
 - Cloudflare Pages: sucesso.
 
-A PR documental #348 disparou novamente o mesmo gate seguro e também concluiu com sucesso. **Worker Version produtiva atual confirmada nesta revisão:** `2ee1b3f2-77f6-4f78-a19f-327eabcb0d8d`.
+A PR documental #348 disparou novamente o mesmo gate seguro e também concluiu com sucesso; esse commit gerou a Worker Version `2ee1b3f2-77f6-4f78-a19f-327eabcb0d8d`. Posteriormente, a PR #349 de manutenção documental também passou pelo gate e gerou `ca0197db-1f06-4151-87fb-5162c3747ecb`.
+
+Esses UUIDs são evidências históricas de deploy, **não uma referência estável de "versão atual"**: qualquer commit em `main` pode gerar outra Worker Version. Para confirmar o estado produtivo, usar sempre o último check `Workers Builds` bem-sucedido da `main`.
 
 O rollout técnico está concluído. Falta somente a validação funcional no navegador com uma conta que já tenha capability `extract`.
