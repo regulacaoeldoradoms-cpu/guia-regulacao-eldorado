@@ -3743,8 +3743,8 @@
     const started = performance.now();
     const concurrency = Math.min(5, pageCount);
 
-    background?.cancelScope?.(state.backgroundScope, 'foreground');
     pauseDocumentBackground('foreground');
+    background?.cancelQueuedScope?.(state.backgroundScope, 'foreground');
     setAutomationStatus('');
     state.documentAiBusy = true;
     state.documentAiScanCompleted = false;
@@ -3787,7 +3787,28 @@
           cacheState: 'hit',
           count: 1
         });
-      } else {
+      }
+
+      if (!analyzed) {
+        const joinedAnalysis = await background?.join?.(`preextract:${openId}:${pageNumber}`);
+        if (
+          joinedAnalysis?.state === 'prepared'
+          && openId === state.pdfOpenId
+          && joinedAnalysis.value
+        ) {
+          analyzed = joinedAnalysis.value;
+          state.backgroundPreparedAnalysis.delete(pageNumber);
+          captureBackgroundTask(joinedAnalysis, {
+            operation: 'preextract_page',
+            state: 'used',
+            source: 'local',
+            cacheState: 'hit',
+            count: 1
+          });
+        }
+      }
+
+      if (!analyzed) {
         let blob = state.backgroundPreparedImages.get(pageNumber) || null;
         if (blob) {
           state.backgroundPreparedImages.delete(pageNumber);
@@ -3798,9 +3819,28 @@
             cacheState: 'hit',
             count: 1
           });
-        } else {
-          blob = await prepareDocumentAiPageBlob(pageNumber);
         }
+
+        if (!blob) {
+          const joinedPrepare = await background?.join?.(`prepare:${openId}:${pageNumber}`);
+          if (
+            joinedPrepare?.state === 'prepared'
+            && openId === state.pdfOpenId
+            && joinedPrepare.value instanceof Blob
+          ) {
+            blob = joinedPrepare.value;
+            state.backgroundPreparedImages.delete(pageNumber);
+            captureBackgroundTask(joinedPrepare, {
+              operation: 'prepare_page',
+              state: 'used',
+              source: 'local',
+              cacheState: 'hit',
+              count: 1
+            });
+          }
+        }
+
+        if (!blob) blob = await prepareDocumentAiPageBlob(pageNumber);
         analyzed = await requestDocumentAiPage(pageNumber, blob);
       }
 
@@ -3886,6 +3926,7 @@
       return false;
     } finally {
       state.documentAiBusy = false;
+      background?.cancelScope?.(state.backgroundScope, 'foreground');
       resumeDocumentBackground();
       renderDocumentAiPanel();
     }
