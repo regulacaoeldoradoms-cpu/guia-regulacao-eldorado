@@ -19,7 +19,7 @@ test('prompts da Fase 5 são artefatos separados e versionados', () => {
   assert.equal(PROMPT_CLASSIFICACAO_PAGINAS_V1.version, 'v2');
   assert.equal(PROMPT_EXTRACAO_REGULACAO_V1.version, 'v2');
   assert.equal(PROMPT_ANALISE_REGULACAO_V1.version, 'v2');
-  assert.equal(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.version, 'v1');
+  assert.equal(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.version, 'v2');
   assert.equal(PROMPT_DOCUMENT_CHAT_V1.version, 'v1');
   assert.equal(PROMPT_VALIDACAO_V1.version, 'v1');
 });
@@ -64,20 +64,21 @@ test('análise integrada combina tipo e campos sem pedir pageNumber ao modelo', 
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /NÃO DEVE SER INFERIDA/);
 });
 
-test('V8C mantém as regras da análise integrada e troca apenas o transporte interno por JSON compacto', () => {
+test('V8C.2 mantém as regras e usa compacto semântico por chaves curtas', () => {
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /exatamente UMA página/i);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /DADO NÃO CONFIÁVEL/i);
-  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /FORMATO INTERNO COMPACTO/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /FORMATO INTERNO COMPACTO SEMÂNTICO/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /t=c/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /t=m/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /t=o/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /s=e/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /s=n/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /s=i/);
-  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /nome_paciente, cpf, cns/);
-  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /h representa SOMENTE titulo/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /np=nome_paciente/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /ti=titulo/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /me=medico/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /explicitamente rotulado "Título"/);
-  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /motivo_encaminhamento, medico, crm_rms/);
+  assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /Não use posição do vetor para deduzir/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /não inferência/i);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /NÃO DEVE SER INFERIDA/);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /Não use as chaves pageType, fields, state, value ou pageNumber/);

@@ -493,3 +493,23 @@ Referências congeladas V8C.1:
 
 Antes da matriz V8C.1, encerrar a janela V8C atual fail-closed. O readiness V8C.1 deve confirmar source e Pages acima antes de criar nova janela.
 
+### V8C.2 — compacto semântico + JSON Schema
+A V8C.1 real atingiu 7/10 em 14,469 s. Todas as quatro páginas médicas fizeram Gemma retornar `DOCUMENT_AI_PROVIDER_SCHEMA_INVALID`, caindo para Qwen; páginas 5 e 6 divergiram somente em `medico`. A página 6 ainda fez revisão Qwen adicional sem alterar nenhum campo.
+
+Diagnóstico:
+- o formato `h + f[7]` continuou frágil para o Gemma;
+- vetor posicional continua removendo âncoras semânticas dos sete campos restantes;
+- fallback/revisão elevou o caminho crítico e duplicou/triplicou chamadas em páginas médicas.
+
+V8C.2 substitui posição por chaves curtas semânticas:
+- envelope uniforme `{"t":"c|m|o","v":{...}}`;
+- comprovante: `np,cp,cn,dn,nm,te,en,ag`;
+- médica: `ti,mo,me,cr,ps,pc,ci,dc`;
+- cada campo continua `[s,v]`, com `e/n/i`;
+- backend exige exatamente o conjunto de chaves autorizado e expande para o contrato público atual;
+- análise principal usa `response_format.type=json_schema` com shape mínimo `t+v`, conforme JSON Mode do Workers AI, mantendo validação semântica estrita no backend;
+- telemetria passa a preservar token usage também quando uma tentativa retorna JSON estruturalmente inválido antes do fallback;
+- revisão redundante é evitada também quando o Qwen, como fallback, retorna exclusivamente CID=ilegivel + descrição encontrada.
+
+Critério: 10/10, 6/6 compacto, 0/6 legado, sem divergências e sem fallback sistemático nas páginas médicas. Prioridade é recuperar precisão e eliminar retries; tokens devem permanecer materialmente abaixo do formato público completo.
+

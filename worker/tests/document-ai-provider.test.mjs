@@ -49,22 +49,39 @@ function workersResponse(value, usage = null) {
 }
 
 function compactAnalysis(pageType, fields = {}) {
-  if (pageType === 'outro') return { t: 'o' };
   const stateCode = { encontrado: 'e', nao_consta: 'n', ilegivel: 'i' };
   const tupleFor = (key) => {
     const field = fields[key] || { state: 'nao_consta', value: '' };
     return [stateCode[field.state], field.state === 'encontrado' ? String(field.value || '') : ''];
   };
+  if (pageType === 'outro') return { t: 'o', v: {} };
   if (pageType === 'comprovante_atendimento') {
     return {
       t: 'c',
-      f: DOCUMENT_AI_EXTRACTION_FIELDS[pageType].map(tupleFor)
+      v: {
+        np: tupleFor('nome_paciente'),
+        cp: tupleFor('cpf'),
+        cn: tupleFor('cns'),
+        dn: tupleFor('data_nascimento'),
+        nm: tupleFor('nome_mae'),
+        te: tupleFor('telefone'),
+        en: tupleFor('endereco'),
+        ag: tupleFor('agente')
+      }
     };
   }
   return {
     t: 'm',
-    h: tupleFor('titulo'),
-    f: DOCUMENT_AI_EXTRACTION_FIELDS[pageType].slice(1).map(tupleFor)
+    v: {
+      ti: tupleFor('titulo'),
+      mo: tupleFor('motivo_encaminhamento'),
+      me: tupleFor('medico'),
+      cr: tupleFor('crm_rms'),
+      ps: tupleFor('procedimento_solicitado'),
+      pc: tupleFor('codigo_procedimento'),
+      ci: tupleFor('cid'),
+      dc: tupleFor('descricao_cid')
+    }
   };
 }
 
@@ -357,7 +374,7 @@ test('classificação envia uma imagem data URI sem identidade do arquivo', asyn
   assert.doesNotMatch(serialized, /filename|fileId|drive[-_ ]?id|item\.ref|patient|cpf|cns/i);
 });
 
-test('V8C expande JSON compacto internamente e preserva o contrato público completo', async () => {
+test('V8C.2 expande JSON compacto semântico e preserva o contrato público completo', async () => {
   const calls = [];
   const fields = fieldsFor('pagina_medica_autorizada', {
     titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
@@ -397,14 +414,17 @@ test('V8C expande JSON compacto internamente e preserva o contrato público comp
   assert.equal(result.provider.attempts[0].usage.completionTokens, 92);
 
   const serialized = JSON.stringify(calls[0].input);
-  assert.match(serialized, /FORMATO INTERNO COMPACTO/);
+  assert.match(serialized, /FORMATO INTERNO COMPACTO SEMÂNTICO/);
   assert.match(serialized, /Use exclusivamente o FORMATO INTERNO COMPACTO/);
-  assert.match(serialized, /h representa SOMENTE titulo|h é SOMENTE titulo/);
+  assert.match(serialized, /ti.*titulo/i);
+  assert.match(serialized, /me.*medico/i);
   assert.match(serialized, /rótulo.*Título/i);
   assert.equal(calls[0].input.max_completion_tokens, 700);
+  assert.equal(calls[0].input.response_format.type, 'json_schema');
+  assert.deepEqual(calls[0].input.response_format.json_schema.required, ['t', 'v']);
 });
 
-test('V8C.1 rejeita o formato posicional médico antigo sem âncora explícita de título', async () => {
+test('V8C.2 rejeita o formato posicional médico antigo e exige chaves semânticas', async () => {
   const legacyCompact = {
     t: 'm',
     f: Array.from({ length: 8 }, () => ['n', ''])
@@ -422,6 +442,46 @@ test('V8C.1 rejeita o formato posicional médico antigo sem âncora explícita d
     }),
     (error) => ['DOCUMENT_AI_PROVIDER_SCHEMA_INVALID', 'DOCUMENT_AI_PROVIDER_UNAVAILABLE'].includes(error?.code)
   );
+});
+
+test('V8C.2 preserva usage de tentativa que falha no schema antes do fallback', async () => {
+  const models = [];
+  const fields = fieldsFor('pagina_medica_autorizada', {
+    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
+    medico: { state: 'encontrado', value: 'DR. TESTE' }
+  });
+
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 2,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([2])
+  }, {
+    aiRun: async (model) => {
+      models.push(model);
+      if (model === DOCUMENT_AI_PRIMARY_FREE_MODEL) {
+        return workersResponse({ t: 'm', v: { ti: ['e', 'ENCAMINHAMENTO'] } }, {
+          prompt_tokens: 1500,
+          completion_tokens: 30,
+          total_tokens: 1530
+        });
+      }
+      return workersResponse(compactAnalysis('pagina_medica_autorizada', fields), {
+        prompt_tokens: 1550,
+        completion_tokens: 80,
+        total_tokens: 1630
+      });
+    }
+  });
+
+  assert.deepEqual(models, [DOCUMENT_AI_PRIMARY_FREE_MODEL, DOCUMENT_AI_FALLBACK_FREE_MODEL]);
+  assert.equal(result.provider.attempts[0].result, 'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID');
+  assert.deepEqual(result.provider.attempts[0].usage, {
+    promptTokens: 1500,
+    completionTokens: 30,
+    totalTokens: 1530,
+    cachedPromptTokens: 0
+  });
+  assert.equal(result.provider.attempts[1].result, 'success');
 });
 
 test('V8C aceita resposta legada como compatibilidade de fallback sem alterar o contrato público', async () => {
@@ -683,6 +743,41 @@ test('CID explicitamente ilegível com descrição encontrada encerra no Gemma s
   assert.equal(result.extraction.fields.cid.state, 'ilegivel');
   assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO LITERAL');
   assert.equal(result.provider.attempts.length, 1);
+});
+
+test('CID explicitamente ilegível no fallback Qwen também encerra sem revisão redundante', async () => {
+  const models = [];
+  const fields = fieldsFor('pagina_medica_autorizada', {
+    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
+    motivo_encaminhamento: { state: 'encontrado', value: 'MOTIVO' },
+    medico: { state: 'encontrado', value: 'DR. TESTE' },
+    crm_rms: { state: 'encontrado', value: 'CRM/MS 1' },
+    procedimento_solicitado: { state: 'encontrado', value: 'PROC' },
+    codigo_procedimento: { state: 'encontrado', value: '0001' },
+    cid: { state: 'ilegivel', value: '' },
+    descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL' }
+  });
+
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 6,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([6, 6])
+  }, {
+    aiRun: async (model) => {
+      models.push(model);
+      if (model === DOCUMENT_AI_PRIMARY_FREE_MODEL) {
+        return workersResponse({ t: 'm', v: { ti: ['e', 'ENCAMINHAMENTO'] } });
+      }
+      return workersResponse(compactAnalysis('pagina_medica_autorizada', fields));
+    }
+  });
+
+  assert.deepEqual(models, [DOCUMENT_AI_PRIMARY_FREE_MODEL, DOCUMENT_AI_FALLBACK_FREE_MODEL]);
+  assert.equal(result.provider.model, DOCUMENT_AI_FALLBACK_FREE_MODEL);
+  assert.equal(result.provider.reviewed, false);
+  assert.equal(result.provider.attempts.length, 2);
+  assert.equal(result.extraction.fields.cid.state, 'ilegivel');
+  assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO LITERAL');
 });
 
 test('revisão focal indisponível preserva extração inicial válida para outra ambiguidade', async () => {
