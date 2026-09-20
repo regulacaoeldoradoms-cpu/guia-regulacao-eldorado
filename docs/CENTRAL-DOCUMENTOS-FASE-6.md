@@ -4,7 +4,7 @@ Data de início: 20/09/2026.
 
 ## Estado
 
-**INICIADA após o encerramento formal da Fase 5.**
+**IMPLEMENTAÇÃO 6A–6E CONCLUÍDA EM BRANCH; aguardando CI e validação operacional.**
 
 A Fase 6 começa da `main` com as Fases 0–5 encerradas. Não reabre editor, sincronização, permissões, arquitetura da IA documental nem a frente de micro-otimização de latência da Fase 5.
 
@@ -160,3 +160,95 @@ Proibido:
 ## Próxima ação exata
 
 Implementar **6A — orquestrador de background e métricas**, começando por auditoria dos pontos de cancelamento/prioridade em `js/documents.js`, `js/document-viewer.js` e `js/document-cache.js`, sem ativar nova automação de IA nesta primeira unidade.
+
+
+## Implementação 6A–6E — 20/09/2026
+
+Branch: `feat/central-docs-phase6-automation`.
+
+### 6A implementada
+- novo `js/document-background.js`;
+- fila de baixa prioridade com concorrência máxima 1;
+- `requestIdleCallback` quando disponível;
+- deduplicação por chave;
+- `AbortController` por tarefa;
+- cancelamento por escopo e cancelamento global;
+- pausa durante ação foreground/editor;
+- cancelamento em ocultação da aba e limpeza de sessão;
+- telemetria allowlisted `document_background_task`.
+
+Estados de telemetria:
+- `prepared`;
+- `used`;
+- `cancelled`;
+- `expired`;
+- `failed`;
+- `skipped`.
+
+Nenhum nome, ref, fileId, cacheKey ou conteúdo é enviado à observabilidade.
+
+### 6B implementada
+- `PortalPdfViewer.prewarmThumbnails()` reutiliza a renderização lazy existente;
+- até três miniaturas iniciais podem ser pré-aquecidas somente depois de o viewer estar pronto;
+- até duas imagens efêmeras para futura IA podem ser preparadas quando a IA documental está disponível;
+- blobs ficam somente em memória do documento aberto e são apagados ao trocar/fechar PDF;
+- primeira página e ações do usuário continuam prioritárias.
+
+### 6C implementada com gate adicional
+- novo gate `DOCUMENTS_AI_BACKGROUND_ENABLED`;
+- produção mantém `DOCUMENTS_AI_BACKGROUND_ENABLED=false`;
+- a preextração só ocorre se `enabled + processingEnabled + backgroundPreparation + capability extract` estiverem todos ativos;
+- no máximo duas páginas são antecipadas;
+- resultado fica somente em `Map` efêmero da sessão do PDF;
+- ao clicar `Extrair dados do PDF`, resultados antecipados válidos são reaproveitados;
+- ação humana cancela qualquer tarefa ainda em execução e assume prioridade;
+- escrita no Drive não faz parte desse caminho.
+
+### 6D implementada
+O aquecimento de PDFs prováveis usa somente sinais operacionais:
+- itens recentes da sessão representados por identidade opaca de cache;
+- posição na lista;
+- hover/focus;
+- pasta/lista atual.
+
+Continua proibido usar nome de paciente, CID, diagnóstico, texto extraído ou conteúdo do PDF para ranking. O cache usado continua sendo o cache criptografado da Fase 2.
+
+### 6E implementada
+- quando uma página de IA já foi preparada em background, o Portal mostra sugestão discreta de que o preparo será reaproveitado;
+- nenhuma extração destrutiva, edição ou sincronização é disparada pela sugestão;
+- o clique do usuário continua sendo a ação que materializa o fluxo principal;
+- telemetria registra apenas preparo/uso/cancelamento técnico.
+
+## Segurança adicional
+
+A Fase 6 não liga automaticamente a IA de produção. O novo gate `DOCUMENTS_AI_BACKGROUND_ENABLED=false` impede chamada antecipatória ao provider até ativação explícita em ambiente autorizado.
+
+A implementação também não altera:
+- OAuth;
+- capability `edit`;
+- gates de escrita;
+- autosync;
+- contrato V8C.2;
+- armazenamento do cache criptografado.
+
+## Validação automatizada prevista
+
+A suíte passa a exigir:
+- orquestrador carregado antes de `documents.js`;
+- concorrência unitária/cancelamento;
+- gate triplo da IA antecipatória;
+- reutilização efêmera;
+- ranking não clínico;
+- ausência de escrita automática;
+- allowlist de observabilidade frontend/backend;
+- bundle de staging contendo o novo módulo.
+
+## Pendência para aceite final da Fase 6
+
+Após CI verde e merge, ainda é necessário comprovar em uso real:
+1. nenhuma regressão de abertura/primeira página;
+2. tarefas canceladas ao trocar documento ou entrar no editor;
+3. cache/prefetch reduz tempo de abertura ou de próxima ação em pelo menos um fluxo observado;
+4. quando o gate de IA antecipatória for homologado separadamente, o clique em extração reutiliza preparo sem misturar documentos.
+
+Até essa medição, a Fase 6 fica **implementada, mas não formalmente encerrada**.
