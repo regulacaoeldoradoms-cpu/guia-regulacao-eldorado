@@ -321,6 +321,22 @@ test('preflight CORS 5E não consulta D1 e pode ser cacheado sem liberar a opera
   assert.equal(response.headers.get('Access-Control-Max-Age'), '600');
 });
 
+test('caminho rápido documental preserva autenticação e evita decoração alheia', async () => {
+  const [wrapper, router, auth] = await Promise.all([
+    fs.readFile(new URL('../homologation-5e.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../documents-router.js', import.meta.url), 'utf8'),
+    fs.readFile(new URL('../auth-management-flex.js', import.meta.url), 'utf8')
+  ]);
+  assert.match(wrapper, /validateDocumentSession/);
+  assert.match(wrapper, /documentsFetch\(request, env, origin, user\)/);
+  assert.match(router, /options\?\.prevalidatedUser \|\| await validatePortalSession/);
+  assert.match(auth, /export async function validateDocumentSession/);
+  assert.doesNotMatch(
+    auth.slice(auth.indexOf('export async function validateDocumentSession'), auth.indexOf('async function normalizeSecurityPrivacy')),
+    /decorateTelemedicineUser|decorateCouncilViceUser|decorateAdditionalRolesUser/
+  );
+});
+
 test('fonte do wrapper 5E não registra conteúdo ou segredos', async () => {
   const source = await fs.readFile(new URL('../homologation-5e.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /console\.(?:log|warn|error)/);
