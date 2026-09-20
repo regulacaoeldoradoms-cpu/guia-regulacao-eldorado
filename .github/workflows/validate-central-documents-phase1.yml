@@ -97,6 +97,8 @@ jobs:
           test -f documentos/index.html
           test -f css/documents.css
           test -f js/documents.js
+          test -f js/document-background.js
+          test -f docs/CENTRAL-DOCUMENTOS-FASE-6.md
           test -f worker/additional-roles.js
           test -f worker/document-access.js
           test -f worker/document-ai-prompts.js
@@ -155,7 +157,13 @@ jobs:
           grep -q "Cargos/funções adicionais (acumuláveis)" admin/usuarios/index.html
           ! grep -q "Acessos à Central" documentos/index.html
           ! grep -R -E "localStorage|sessionStorage|indexedDB" js/documents.js
+          ! grep -R -E "localStorage|sessionStorage|indexedDB" js/document-background.js
+          grep -q "PortalDocumentBackground" js/document-background.js
+          grep -q "document_background_task" js/portal-observability.js
+          grep -q "document_background_task" worker/observability.js
+          node --check js/document-background.js
           node --check js/documents.js
+          node --check js/document-viewer.js
           node --check testing/central-docs-ai/phase5e-harness.js
           node --check js/document-cache.js
           node --check js/document-editor.js
