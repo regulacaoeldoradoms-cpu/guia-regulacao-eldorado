@@ -426,7 +426,7 @@
       'moondream_paginas=' + moondreamPages,
       'gemma_paginas=' + gemmaPages,
       'qwen_paginas=' + qwenPages,
-      'concorrencia_paginas=5'
+      'concorrencia_paginas=6'
     ];
 
     state.pageMetrics
@@ -535,13 +535,13 @@
     els.resultsCard.hidden = false;
     els.chatCard.hidden = false;
     els.run.disabled = true;
-    status(els.matrixStatus, 'Executando análise integrada em até 5 páginas simultâneas…');
+    status(els.matrixStatus, 'Executando análise integrada em até 6 páginas simultâneas…');
 
     try {
       const extractionStarted = performance.now();
       let nextFixture = 0;
       const pageResults = new Array(fixtures.length);
-      const concurrency = Math.min(5, fixtures.length);
+      const concurrency = Math.min(6, fixtures.length);
 
       const analyzeFixture = async (fixture, index) => {
         const pageStarted = performance.now();
