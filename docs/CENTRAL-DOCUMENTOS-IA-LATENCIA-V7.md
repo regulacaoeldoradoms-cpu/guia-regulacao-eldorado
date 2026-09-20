@@ -377,3 +377,38 @@ Critério V7E:
 - observar `revisao_alterou=` na página 6 para saber se Qwen efetivamente corrige o título.
 
 Se V7E não superar a V7C com 10/10, encerrar a linha V7.x e avançar para a V8 híbrida PDF.js text-layer + visão seletiva.
+
+
+## Fechamento da linha V7.x — V7E 10/10 em 12,008 s — 20/09/2026
+
+A V7E recuperou precisão total e melhorou o baseline image-only:
+- 10/10;
+- 12,008 s de extração;
+- 15,980 s total com chat;
+- backend ~0,26–0,55 s/página;
+- Gemma domina o tempo;
+- página 6 ainda usa Qwen, mas `revisao_alterou=nenhum`.
+
+O ganho sobre a V7 inicial foi de ~44% no tempo de extração, mas a nova meta operacional é aproximadamente 6 s.
+
+### Veredito
+
+A arquitetura image-only atingiu um plateau prático para este ambiente. O próximo salto deve remover chamadas visuais, não apenas afiná-las.
+
+### V8 híbrida
+
+Para cada página real:
+1. obter `PDFPageProxy.getTextContent()` no PDF.js;
+2. avaliar se existe text layer suficiente e coerente;
+3. enviar ao backend somente a página textual isolada, com número técnico, sob capability `extract`;
+4. parser determinístico classifica e extrai campos autorizados quando os rótulos/layout forem suficientes;
+5. páginas sem texto suficiente, escaneadas, ou com ambiguidade crítica seguem para o caminho visual V7E;
+6. manter cada página isolada e com proveniência;
+7. não persistir conteúdo nem enviar texto ao PostHog.
+
+A API oficial do PDF.js expõe `getTextContent()` por página, o que preserva exatamente a unidade de isolamento já exigida pela Central.
+
+Meta:
+- PDFs digitais: buscar <6 s para 6 páginas, com possibilidade de ficar muito abaixo disso quando todas as páginas forem resolvidas deterministicamente;
+- PDFs mistos: reduzir proporcionalmente ao número de páginas que evitarem visão;
+- PDFs 100% escaneados: usar V7E como fallback e não prometer 6 s.
