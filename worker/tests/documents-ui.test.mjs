@@ -922,6 +922,8 @@ test('Fase 6 cancela background ao fechar PDF e preempta ao editar', () => {
   const editor = client.slice(client.indexOf('  async function startEditor()'), client.indexOf('  async function normalizeImageForPdf'));
   assert.match(close, /resetDocumentBackgroundState\('document_changed'\)/);
   assert.match(editor, /cancelScope\?\.\(state\.backgroundScope, 'editor'\)/);
+  assert.match(editor, /backgroundPreparedImages\.clear\(\)/);
+  assert.match(editor, /backgroundPreparedAnalysis\.clear\(\)/);
   assert.match(editor, /pauseDocumentBackground\('editor'\)/);
 });
 
