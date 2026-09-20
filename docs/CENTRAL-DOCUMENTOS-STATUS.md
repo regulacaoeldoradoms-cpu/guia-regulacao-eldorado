@@ -2027,21 +2027,52 @@ A janela V7C atual permanece ativa e deve ser encerrada fail-closed antes de qua
 
 **Próxima ação exata:** concluir CI da V7D; integrar/congelar se verde; encerrar V7C; abrir uma única rodada V7D.
 
+## V7D integrada e reteste congelado — 20/09/2026
+
+A PR #302 foi integrada na `main` pelo merge `208639f021ca9d5f86a2df97a9bd8a5978e5224f`.
+
+O head funcional `ffb5f9c485396378f6abc72bbadbe83c34e392ed` passou os checks relevantes da Central e publicou o Pages imutável `https://b5b3f33e.portal-regulacao-central-staging.pages.dev`. A comparação GitHub entre esse head e o merge final mostrou **zero arquivos diferentes**.
+
+Resultado que motivou a V7D:
+- V7C: **10/10**;
+- extração: **13,748 s**;
+- total com chat: **17,489 s**;
+- Moondream final: **0/6**;
+- overhead backend já reduzido para ~0,63–0,88 s/página;
+- tentativa Moondream ainda custa ~2,1–5,0 s/página antes do Gemma.
+
+Mudanças V7D:
+- `DOCUMENTS_AI_FAST_VISION_ENABLED=false` no preview 5E;
+- Gemma 4 vira primeira tentativa visual;
+- Qwen permanece fallback/revisor;
+- resumo seguro inclui `revisao_alterou=` apenas com chaves dos campos modificados pela revisão focal.
+
+Estimativa baseada na V7C: mantendo a revisão Qwen, o gargalo da página 6 pode cair de ~13,7 s para ~8,7–9 s. Isso é somente estimativa até a homologação.
+
+Referências congeladas:
+- source ref `208639f021ca9d5f86a2df97a9bd8a5978e5224f`;
+- Pages `https://b5b3f33e.portal-regulacao-central-staging.pages.dev`;
+- head funcional `ffb5f9c485396378f6abc72bbadbe83c34e392ed`.
+
+A janela V7C atualmente ativa não foi alterada por essa integração e deve ser encerrada fail-closed antes de preparar V7D.
+
+**Próxima ação exata:** encerrar V7C; atualizar scripts locais; executar readiness V7D e confirmar source `208639f021ca9d5f86a2df97a9bd8a5978e5224f` + Pages `https://b5b3f33e.portal-regulacao-central-staging.pages.dev`; preparar nova janela e executar a matriz uma única vez.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7C 10/10; V7D Gemma direto em validação |
-| Último resultado real | V7C 10/10; extração 13,748 s; overhead backend resolvido; Moondream continua 0/6 |
-| Runtime funcional V7C | `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7` |
-| Runtime próximo reteste | `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7` |
-| Pages próximo reteste | `https://82985cc2.portal-regulacao-central-staging.pages.dev` |
+| Fase/subfase | Fase 5E — V7D integrada; reteste aguarda encerramento V7C |
+| Último resultado real | V7C 10/10; extração 13,748 s; V7D remove Moondream da cadeia |
+| Runtime funcional V7D | `208639f021ca9d5f86a2df97a9bd8a5978e5224f` |
+| Runtime próximo reteste | `208639f021ca9d5f86a2df97a9bd8a5978e5224f` |
+| Pages próximo reteste | `https://b5b3f33e.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | concluir CI V7D; integrar/congelar; encerrar V7C; retestar Gemma direto uma vez |
+| Próxima ação exata | encerrar V7C fail-closed; atualizar scripts; readiness V7D; preparar janela nova; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
