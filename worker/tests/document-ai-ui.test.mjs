@@ -78,9 +78,11 @@ test('botão único percorre o PDF e envia somente uma página por chamada', asy
   assert.match(viewer, /function getPageCount\(\)/);
   assert.match(viewer, /session\.document\?\.numPages/);
   assert.match(viewer, /getPageCount,/);
+  assert.match(viewer, /async function pageTextSafetyBounds\(page, viewport\)/);
   assert.match(viewer, /function meaningfulContentBounds\(canvas/);
   assert.match(viewer, /minimumDarkFraction/);
   assert.match(viewer, /cropWhitespace === true/);
+  assert.match(viewer, /pageTextSafetyBounds\(page, viewport\)/);
   assert.match(viewer, /outputCanvas\.toBlob/);
 });
 
