@@ -577,3 +577,23 @@ Próximo reteste:
 A comparação GitHub entre o head funcional e o merge final mostrou zero arquivos diferentes.
 
 A janela V7D atualmente ativa deve ser encerrada fail-closed antes da nova abertura V7E.
+
+
+## V7F — referências congeladas para último teste image-only — 20/09/2026
+
+A V7E atingiu 10/10 em 12,008 s. A análise do makespan mostrou uma última hipótese image-only mensurável:
+- concorrência 5;
+- Qwen omitido somente quando Gemma retorna exclusivamente CID=ilegivel com descrição encontrada;
+- qualquer outra ambiguidade continua revisada.
+
+Próximo reteste:
+- source ref: `6e30117a1e0c342cb84d4cdf1f1a2f7351d86c82`;
+- Pages: `https://58d9fc14.portal-regulacao-central-staging.pages.dev`;
+- head funcional do Pages: `1df84d2f53b8378d49854b285234ad4aefffcf20`.
+
+A comparação GitHub entre o head funcional e o merge final mostrou zero arquivos diferentes.
+
+Critério V7F:
+- 10/10;
+- alvo operacional <= 6,5 s;
+- se falhar precisão ou ficar materialmente acima da meta, encerrar V7.x e iniciar V8 híbrida.

@@ -400,3 +400,16 @@ Referências congeladas:
 - Pages: `https://ffdd1515.portal-regulacao-central-staging.pages.dev`.
 
 Critério: recuperar 10/10 e superar os 13,748 s da V7C. Se não ocorrer, encerrar a linha V7.x e avançar para V8 híbrida.
+
+
+### V7F — último experimento image-only
+
+A V7E passou 10/10 em 12,008 s. A V7F testa uma última hipótese derivada do scheduling observado:
+- concorrência 5;
+- sem Qwen apenas no caso exato Gemma CID=ilegivel + descrição encontrada + nenhum outro campo ilegível.
+
+Referências congeladas:
+- source ref: `6e30117a1e0c342cb84d4cdf1f1a2f7351d86c82`;
+- Pages: `https://58d9fc14.portal-regulacao-central-staging.pages.dev`.
+
+Meta: 10/10 e aproximadamente 6–6,5 s. Se não ocorrer, não criar V7G; avançar para V8 híbrida.
