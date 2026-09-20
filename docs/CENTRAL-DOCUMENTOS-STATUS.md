@@ -2740,12 +2740,51 @@ Conclusão: a janela corresponde ao runtime V8C congelado e produção não foi 
 
 **Próxima ação exata:** abrir `https://06b2c2ec.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada e executar a matriz **uma única vez**. Critérios V8C: 10/10, `formato_compacto_paginas=6`, `formato_legado_paginas=0` e redução material de `completion_tokens_extracao` em relação ao baseline V8B de 1.024 (alvo operacional <=700). Não encerrar a janela antes de analisar o resumo seguro.
 
+## Resultado V8C — redução de tokens aprovada, precisão reprovada — 20/09/2026
+
+Resumo seguro real:
+- matriz: **3 aprovados / 7 falhas**;
+- extração: **6,389 s**;
+- total com chat: **8,998 s**;
+- Gemma: 6 páginas; Qwen: 0;
+- formato compacto: **6/6**;
+- formato legado: **0/6**;
+- prompt tokens: **9.679**;
+- completion tokens: **579**;
+- total tokens: **10.258**;
+- cached prompt tokens: **2.560**;
+- área visual: 100% nas seis páginas.
+
+A meta de compactação foi atingida: completion caiu de **1.024 → 579 tokens** (~43,5% de redução), abaixo do alvo operacional de 700. Porém o critério principal de precisão falhou.
+
+Falha localizada:
+- páginas 2, 4, 5 e 6 divergiram **somente no campo `titulo`**;
+- página 1 e página 3 passaram;
+- os três chats dependentes das páginas médicas rejeitadas falharam por efeito cascata;
+- o chat de código ausente da página 5 ainda retornou corretamente NÃO CONSTA;
+- todas as seis chamadas do provider terminaram `success`, em formato compacto, sem fallback e sem revisão.
+
+Diagnóstico: o vetor posicional compacto de oito campos retirou a âncora semântica explícita do campo `titulo`. Os outros sete campos médicos permaneceram corretos, o que isola a regressão no primeiro item do vetor. A regra antiga "usar primeiro o campo explicitamente rotulado Título" continuava no prompt-base, mas sem uma chave semântica na saída o Gemma passou a preferir o cabeçalho da folha em todas as páginas médicas sintéticas.
+
+**Decisão:** não abandonar a compactação, porque ela comprovou redução forte de completion tokens. Corrigir apenas a perda semântica do título.
+
+V8C.1:
+- comprovante continua com `{"t":"c","f":[8 pares]}`;
+- página médica passa a usar `{"t":"m","h":[s,v],"f":[7 pares]}`;
+- `h` representa exclusivamente `titulo`;
+- se existir rótulo explícito "Título", `h` deve usar exatamente esse valor; cabeçalho somente quando o rótulo não existir;
+- os sete demais campos médicos continuam no vetor compacto;
+- o backend rejeita o formato médico posicional antigo de oito itens para impedir regressão silenciosa;
+- contrato público final permanece idêntico.
+
+A janela V8C atual permanece aberta somente até o código V8C.1 ser validado. Não repetir a matriz V8C e não reutilizar esta janela para V8C.1.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8C janela preparada; aguardando uma única matriz real |
-| Último resultado real | V8B 10/10 em 6,179 s; 9.020 prompt tokens, 1.024 completion tokens e 2.048 cached prompt tokens |
+| Fase/subfase | Fase 5E — V8C reprovada por título; V8C.1 em correção isolada |
+| Último resultado real | V8C 3/10; completion 579 tokens; divergência isolada em titulo nas páginas médicas 2/4/5/6 |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `cf8ed89cd2e5fa9ba7ed5c02d6f0cc1f50e2021e` |
 | Pages próximo reteste | `https://06b2c2ec.portal-regulacao-central-staging.pages.dev` |
@@ -2754,7 +2793,7 @@ Conclusão: a janela corresponde ao runtime V8C congelado e produção não foi 
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | executar uma única matriz V8C no Pages congelado, copiar resumo seguro e analisar formato/tokens/latência antes de qualquer nova alteração |
+| Próxima ação exata | validar CI da V8C.1 com âncora semântica de titulo; se verde, integrar/congelar, encerrar V8C fail-closed e abrir nova janela |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
