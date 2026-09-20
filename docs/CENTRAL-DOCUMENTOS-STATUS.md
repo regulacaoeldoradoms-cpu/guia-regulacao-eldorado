@@ -1901,12 +1901,38 @@ A janela chegou a 8/8 com a semântica 403/401 restaurada. O próximo teste deve
 
 **Próxima ação exata:** abrir `https://20627e1a.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada, executar a matriz uma vez e copiar o resumo seguro completo.
 
+## Resultado V7B — 10/10 e 17,154 s; V7C em desenvolvimento focado — 20/09/2026
+
+Resumo seguro real da V7B:
+- `MATRIZ_5E_SINTETICA=APROVADA`;
+- **10 aprovados / 0 falhas**;
+- `duracao_extracao_ms=17154`;
+- `duracao_total_ms=33432`;
+- `moondream_paginas=0`;
+- `gemma_paginas=5`;
+- `qwen_paginas=1`.
+
+Ganho sobre V7: 21,428 s → 17,154 s na extração (~20%). O overhead fora do provider caiu de ~8 s para ~5 s por página, confirmando que a redução de round-trips D1 ajudou, mas ainda não é suficiente.
+
+Causa exata do fallback Moondream nas seis páginas: `DOCUMENT_AI_PAGE_TYPE_INVALID`. A resposta chega parseável, porém o token `pageType` não é canônico.
+
+V7C preparada em branch isolada `feat/titon-v7c-page-type-auth-latency`:
+- normalização determinística de `pageType` pelo **shape exato** de `fields`, sem inferência semântica e sem alteração de valores;
+- uma única consulta D1 `first-primary` para usuário + session version + capability documental + role adicional + controle revogável;
+- assinatura do token verificada localmente antes da consulta;
+- router continua recebendo usuário pré-validado;
+- resumo seguro adiciona `tentativas_ms=` para medir cada provider individualmente.
+
+A janela V7B atual não foi modificada por esse desenvolvimento. Produção continua com IA documental desligada.
+
+**Próxima ação exata:** concluir CI/revisão V7C; se verde, integrar e congelar novo source/Pages. Depois encerrar a janela V7B atual fail-closed e abrir uma única rodada V7C.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7B probe-fixed preparada; matriz aguardando execução |
-| Último resultado real | V7B preparada 8/8; release correto; Drive false; produção intacta |
+| Fase/subfase | Fase 5E — V7B 10/10; V7C corrige pageType e round-trip D1 |
+| Último resultado real | V7B 10/10; extração 17,154 s; Moondream 0/6 por PAGE_TYPE_INVALID; overhead ~5 s/página |
 | Runtime funcional V7B | `09bf379f306579bcb7ca049ad02d4c6a94c1df67` |
 | Runtime próximo reteste | `09bf379f306579bcb7ca049ad02d4c6a94c1df67` |
 | Pages próximo reteste | `https://20627e1a.portal-regulacao-central-staging.pages.dev` |
@@ -1915,7 +1941,7 @@ A janela chegou a 8/8 com a semântica 403/401 restaurada. O próximo teste deve
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | abrir laboratório V7B; executar matriz uma vez; copiar resumo seguro completo |
+| Próxima ação exata | concluir CI V7C; integrar/congelar; encerrar V7B; retestar V7C uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
