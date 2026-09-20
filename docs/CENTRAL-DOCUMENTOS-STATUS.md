@@ -1863,12 +1863,29 @@ Existe um marcador local `upload-5e-incerto.json` deixado deliberadamente pela t
 
 **Próxima ação exata:** no Windows do operador, baixar `preparar-homologacao-5e.mjs` e `recuperar-preparo-5e.mjs` atuais da `main` e executar `node .\recuperar-preparo-5e.mjs --recuperar`. Somente após `PREPARO_5E_RECUPERADO` baixar/atualizar os quatro scripts operacionais, executar readiness e confirmar source `09bf379f306579bcb7ca049ad02d4c6a94c1df67` + Pages `https://20627e1a.portal-regulacao-central-staging.pages.dev`.
 
+## Preparo V7B interrompido recuperado com sucesso — 20/09/2026
+
+O operador executou o recuperador fail-closed oficial após a interrupção do preparo em 6/8.
+
+Evidências sanitizadas:
+- `PREPARO_5E_RECUPERADO`;
+- `controlEnabled=false`;
+- `driveWriteGate=false`;
+- preview localizado `3fa566d5-75d4-47bb-b16f-70eef05e7ab1`;
+- release recuperado `5e27d58a09751363392b1ee1c7560be3f5f473cc`;
+- produção permaneceu `298ba237-78f9-4d24-bad1-47e66b4c1e15`;
+- `markerCleared=true`.
+
+Conclusão: o preparo anterior foi reconciliado e encerrado sem ativar a janela. O marcador local que bloqueava repetição foi removido pelo procedimento oficial. A próxima tentativa deve usar as referências probe-fixed atuais, não o release recuperado anterior.
+
+**Próxima ação exata:** atualizar os quatro scripts operacionais a partir da `main` e executar `iniciar-homologacao-5e.mjs --iniciar`. O readiness correto deve mostrar source `09bf379f306579bcb7ca049ad02d4c6a94c1df67` e Pages `https://20627e1a.portal-regulacao-central-staging.pages.dev`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7B probe-fixed integrada; recuperação local pendente |
-| Último resultado real | preparo V7B interrompido em 6/8 por semântica de probe; correção integrada; marcador local preservado |
+| Fase/subfase | Fase 5E — V7B probe-fixed integrada; recuperação local concluída; readiness pronto |
+| Último resultado real | preparo interrompido recuperado fail-closed; markerCleared=true; produção intacta |
 | Runtime funcional V7B | `09bf379f306579bcb7ca049ad02d4c6a94c1df67` |
 | Runtime próximo reteste | `09bf379f306579bcb7ca049ad02d4c6a94c1df67` |
 | Pages próximo reteste | `https://20627e1a.portal-regulacao-central-staging.pages.dev` |
@@ -1877,7 +1894,7 @@ Existe um marcador local `upload-5e-incerto.json` deixado deliberadamente pela t
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | recuperar preparo 5E interrompido; depois readiness V7B probe-fixed; preparar nova janela |
+| Próxima ação exata | atualizar scripts; readiness V7B probe-fixed; preparar nova janela; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
