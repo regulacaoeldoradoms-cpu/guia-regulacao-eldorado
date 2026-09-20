@@ -385,3 +385,18 @@ Referências congeladas:
 - Pages: `https://b5b3f33e.portal-regulacao-central-staging.pages.dev`.
 
 O resumo seguro também passa a informar `revisao_alterou=` com nomes de campos, sem valores. Isso permitirá decidir com evidência se a revisão Qwen da página ilegível é necessária ou apenas custo extra.
+
+
+### V7E — Gemma controlado
+
+A V7D real falhou 2 casos e ficou mais lenta que a V7C. A V7E busca reduzir variabilidade sem reintroduzir Moondream:
+- concorrência 4;
+- máximo 700 tokens na análise integrada;
+- máximo 350 tokens na revisão;
+- `titulo` revisado na mesma chamada Qwen quando já houver revisão por CID/ilegibilidade.
+
+Referências congeladas:
+- source ref: `5fe6d24bb1b26b039a0221b0224201692cdf11ef`;
+- Pages: `https://ffdd1515.portal-regulacao-central-staging.pages.dev`.
+
+Critério: recuperar 10/10 e superar os 13,748 s da V7C. Se não ocorrer, encerrar a linha V7.x e avançar para V8 híbrida.
