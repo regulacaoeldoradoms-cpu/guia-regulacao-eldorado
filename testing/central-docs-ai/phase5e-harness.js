@@ -454,6 +454,11 @@
           + ' | tentativas=' + Math.max(0, Math.round(Number(item.attemptCount || 0)))
           + ' | tentativas_ms=' + durationChain
           + ' | revisado=' + (item.reviewed === true ? 'sim' : 'nao')
+          + ' | revisao_alterou=' + (
+            Array.isArray(item.reviewChangedKeys) && item.reviewChangedKeys.length
+              ? item.reviewChangedKeys.join(',')
+              : 'nenhum'
+          )
           + ' | resultados=' + String(resultChain).replace(/[\r\n=|]+/g, ' ').slice(0, 180)
           + ' | modelos=' + String(modelChain).replace(/[\r\n=|]+/g, ' ').slice(0, 180)
         );
@@ -588,6 +593,9 @@
             .filter(Boolean);
           const attemptDurations = providerAttempts
             .map((attempt) => Math.max(0, Math.round(Number(attempt?.durationMs || 0))));
+          const reviewChangedKeys = Array.isArray(provider?.reviewChangedKeys)
+            ? provider.reviewChangedKeys.map((key) => String(key || '').trim()).filter(Boolean)
+            : [];
           pageResults[index] = {
             fixture,
             passed,
@@ -617,7 +625,8 @@
             attemptModels,
             attemptResults,
             attemptDurations,
-            reviewed: provider?.reviewed === true
+            reviewed: provider?.reviewed === true,
+            reviewChangedKeys
           };
         } catch (error) {
           pageResults[index] = {
@@ -634,7 +643,8 @@
             attemptModels: [],
             attemptResults: [],
             attemptDurations: [],
-            reviewed: false
+            reviewed: false,
+            reviewChangedKeys: []
           };
         }
       };
@@ -668,7 +678,8 @@
           attemptModels: item.attemptModels,
           attemptResults: item.attemptResults,
           attemptDurations: item.attemptDurations,
-          reviewed: item.reviewed
+          reviewed: item.reviewed,
+          reviewChangedKeys: item.reviewChangedKeys
         });
         addResult(
           'Página ' + item.fixture.pageNumber + ' · análise integrada',

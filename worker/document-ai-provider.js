@@ -536,7 +536,7 @@ function fastIntegratedAnalysisQuestion() {
   ].join('\n');
 }
 
-function providerMetadata(result, review = null) {
+function providerMetadata(result, review = null, reviewChangedKeys = []) {
   const attempts = [
     ...(Array.isArray(result?.attempts) ? result.attempts : []),
     ...(Array.isArray(review?.attempts) ? review.attempts : [])
@@ -545,6 +545,11 @@ function providerMetadata(result, review = null) {
     kind: 'workers-ai',
     model: review?.model || result.model,
     reviewed: Boolean(review),
+    reviewChangedKeys: [...new Set(
+      (Array.isArray(reviewChangedKeys) ? reviewChangedKeys : [])
+        .map((key) => String(key || '').trim())
+        .filter(Boolean)
+    )].sort(),
     attempts
   };
 }
@@ -719,12 +724,17 @@ export async function analyzeDocumentAiPage(env, input = {}, options = {}) {
 
   let extraction = result.value.extraction;
   let review = null;
+  let reviewChangedKeys = [];
   if (extraction) {
     review = await reviewMedicalExtraction(env, {
       pageNumber,
       image
     }, extraction, options, result.model);
     if (review?.value) {
+      reviewChangedKeys = Object.keys(review.value).filter((key) => (
+        JSON.stringify(extraction.fields?.[key] ?? null)
+        !== JSON.stringify(review.value[key] ?? null)
+      ));
       extraction = {
         ...extraction,
         fields: {
@@ -738,7 +748,7 @@ export async function analyzeDocumentAiPage(env, input = {}, options = {}) {
   return {
     classification: result.value.classification,
     extraction,
-    provider: providerMetadata(result, review),
+    provider: providerMetadata(result, review, reviewChangedKeys),
     routines: {
       analysis: {
         id: PROMPT_ANALISE_REGULACAO_V1.id,
