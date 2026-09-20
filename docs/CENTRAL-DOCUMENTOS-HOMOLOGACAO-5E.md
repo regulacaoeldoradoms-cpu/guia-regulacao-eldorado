@@ -730,3 +730,23 @@ Ordem:
 4. preparar nova janela;
 5. executar uma única matriz V8C.2.
 
+## Resultado V8C.2 — aceite funcional e de latência operacional — 20/09/2026
+
+Resumo seguro:
+- 10/10;
+- extração 4,524 s;
+- total 8,281 s;
+- Gemma 6/6;
+- Qwen 0/6;
+- 6/6 compacto, 0/6 legado;
+- uma tentativa por página;
+- nenhuma divergência;
+- nenhuma revisão;
+- 10.683 prompt tokens;
+- 622 completion tokens;
+- 2.944 prompt tokens em cache.
+
+A V8C.2 atende aos critérios próprios desta rodada e ao critério funcional da Fase 5. A linha de otimização de latência é encerrada aqui; melhorias adicionais de distribuição real (p75/p95/p99), cache e tempo de IA ficam para a Fase 7.
+
+A janela V8C.2 ainda deve ser encerrada pelo procedimento oficial fail-closed. Somente depois do `JANELA_5E_ENCERRADA` com `httpBlocked=true` a Fase 5 pode ser marcada como encerrada e a Fase 6 iniciada.
+
