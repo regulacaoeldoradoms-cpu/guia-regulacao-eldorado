@@ -33,6 +33,8 @@ on:
       - 'worker/tests/document-editor.test.mjs'
       - 'worker/tests/developer-self-edit-session.test.mjs'
       - 'scripts/build-central-docs-staging.mjs'
+      - 'scripts/central-docs/recuperar-preparo-5e.mjs'
+      - 'scripts/central-docs/recuperar-preparo-5e.test.mjs'
       - 'testing/central-docs/**'
       - 'testing/central-docs-ai/**'
       - 'testing/browser/**'
@@ -63,6 +65,8 @@ on:
       - 'worker/tests/document-editor.test.mjs'
       - 'worker/tests/developer-self-edit-session.test.mjs'
       - 'scripts/build-central-docs-staging.mjs'
+      - 'scripts/central-docs/recuperar-preparo-5e.mjs'
+      - 'scripts/central-docs/recuperar-preparo-5e.test.mjs'
       - 'testing/central-docs/**'
       - 'testing/browser/**'
       - 'vendor/pdf-lib/**'
@@ -156,6 +160,8 @@ jobs:
           node --check js/document-viewer.js
           node --check js/admin-users.js
           node --check portal-sw.js
+          node --check scripts/central-docs/recuperar-preparo-5e.mjs
+          node --test scripts/central-docs/recuperar-preparo-5e.test.mjs
           grep -q "PORTAL_DOCUMENT_STREAM_REGISTER" portal-sw.js
           grep -q "pdf_first_page_visible" js/documents.js
           grep -q "AES-GCM" js/document-cache.js

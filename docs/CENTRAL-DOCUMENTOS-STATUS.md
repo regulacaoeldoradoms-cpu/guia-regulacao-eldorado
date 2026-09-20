@@ -1798,12 +1798,54 @@ Conclusão: a janela V7 está encerrada e não deve ser reutilizada. O bloqueio 
 
 **Próxima ação exata:** atualizar os scripts locais para a `main` atual e executar `iniciar-homologacao-5e.mjs --iniciar`. O readiness V7B deve retornar source `5e27d58a09751363392b1ee1c7560be3f5f473cc` e Pages `https://18727b6f.portal-regulacao-central-staging.pages.dev`. Somente então confirmar `PREPARAR HOMOLOGACAO 5E`.
 
+## Preparo V7B interrompido com segurança em 6/8 — diagnóstico e correção — 20/09/2026
+
+O operador iniciou a abertura da V7B com readiness correto:
+- `PRECONDICOES_5E_OK`;
+- produção `298ba237-78f9-4d24-bad1-47e66b4c1e15`;
+- nenhuma janela controlada ativa;
+- source `5e27d58a09751363392b1ee1c7560be3f5f473cc`;
+- Pages `https://18727b6f.portal-regulacao-central-staging.pages.dev`.
+
+O procedimento avançou até **6/8 — Confirmando bloqueio antes de ativar controle** e interrompeu com:
+- `NAO_REPETIR_SEM_CONFERIR_PREVIEW=true`;
+- `OPERACAO_INTERROMPIDA=HTTP_5E_STATUS_DIVERGENTE`.
+
+A etapa 7/8 **não foi alcançada**, portanto o controle novo nunca foi deliberadamente ativado pelo procedimento. O handler de erro executa desativação best-effort quando o controle foi criado e mantém o marcador local `upload-5e-incerto.json` justamente para impedir repetição cega.
+
+### Causa encontrada
+
+A otimização V7B alterou a ordem do wrapper 5E no caminho de leitura:
+- antes, `GET /api/documents/ai/config` consultava o controle antes da sessão;
+- com controle desabilitado, o probe de preparo recebia **403**;
+- depois da ativação, o mesmo GET sem sessão recebia **401**.
+
+Na V7B otimizada, a sessão passou a ser validada antes do controle também para a rota de leitura. Assim, com o controle ainda desabilitado, o probe retornou **401**, embora o estado continuasse fail-closed. O preparador corretamente rejeitou a divergência porque sua prova operacional exige 403 antes da ativação.
+
+### Correção preparada
+
+Branch isolada `fix/titon-v7b-prep-probe-recovery`:
+- restaura a semântica **403 antes / 401 depois** apenas nas rotas de leitura usadas pelo probe;
+- preserva o caminho quente de IA otimizado: sessão → uma única leitura do controle → provider;
+- preflight continua sem D1 e cacheável;
+- adiciona teste explícito para a prova 403/401;
+- adiciona `recuperar-preparo-5e.mjs`, que nunca habilita controle, nunca faz upload/deploy e só limpa o marcador local depois de:
+  - desabilitar idempotentemente o controle;
+  - confirmar `enabled=0` no D1;
+  - localizar exatamente uma versão preview recente com alias/tag/release/controlId correspondentes;
+  - confirmar IA/free-only, Drive false, D1/AI bindings e que a versão não é produção;
+- o preparador passa a imprimir `proxima_acao=RECUPERAR_PREPARO_5E` quando um upload já ocorreu e a preparação falha.
+
+**Não apagar manualmente o marcador e não repetir `iniciar-homologacao-5e.mjs` antes da recuperação.**
+
+**Próxima ação exata:** concluir CI e integrar a correção; congelar novo source/Pages; então, no Windows do operador, baixar e executar `recuperar-preparo-5e.mjs --recuperar`. Somente após `PREPARO_5E_RECUPERADO` atualizar os scripts/readiness e abrir uma nova janela V7B.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7B integrada; V7 encerrada fail-closed; reteste pronto para abertura |
-| Último resultado real | V7 10/10; extração 21,428 s; V7B integrada para remover overhead e fallback |
+| Fase/subfase | Fase 5E — preparo V7B interrompido em 6/8; correção/recovery em validação |
+| Último resultado real | readiness V7B verde; upload preview ocorreu; probe 6/8 rejeitou 401 vs 403 esperado; controle não chegou à ativação |
 | Runtime funcional V7B | `5e27d58a09751363392b1ee1c7560be3f5f473cc` |
 | Runtime próximo reteste | `5e27d58a09751363392b1ee1c7560be3f5f473cc` |
 | Pages próximo reteste | `https://18727b6f.portal-regulacao-central-staging.pages.dev` |
@@ -1812,7 +1854,7 @@ Conclusão: a janela V7 está encerrada e não deve ser reutilizada. O bloqueio 
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | atualizar scripts; readiness V7B; preparar janela nova; executar matriz uma vez |
+| Próxima ação exata | integrar correção; congelar refs; executar recuperar-preparo-5e; só depois abrir nova janela V7B |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
