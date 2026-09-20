@@ -291,3 +291,43 @@ Ou seja, a resposta do Moondream chega parseável, mas o campo `pageType` não u
 O uso de uma única consulta ao primário foi escolhido em vez de read replica para o controle porque a janela 5E exige estado revogável atual. Se depois desta consolidação o round-trip D1 ainda dominar, a próxima avaliação deve separar autorização estática (candidata a Sessions/read replica) do controle revogável primário.
 
 O resumo seguro V7C também registra `tentativas_ms=` para mostrar a duração individual de Moondream, Gemma e Qwen quando houver fallback.
+
+
+## Resultado real V7C e decisão V7D — 20/09/2026
+
+A V7C manteve precisão total e reduziu novamente a latência:
+
+- matriz: **10/10**;
+- extração: **13.748 ms**;
+- total com chat: **17.489 ms**;
+- Moondream como resultado final: **0 páginas**;
+- Gemma final: **5 páginas**;
+- Qwen final: **1 página**.
+
+Comparação:
+- V7: 21.428 ms;
+- V7B: 17.154 ms;
+- V7C: 13.748 ms.
+
+O overhead fora do provider caiu para **~0,63–0,88 s/página**, portanto a consolidação D1 resolveu a maior parte do gargalo de backend.
+
+O gargalo dominante agora é o próprio encadeamento de modelos. O resumo por tentativa mostrou:
+- Moondream: ~2,1–5,0 s por página;
+- depois Gemma: ~0,8–5,4 s;
+- página 6 ainda adiciona Qwen: ~2,6 s.
+
+E o Moondream continuou falhando em **6/6** com `DOCUMENT_AI_PAGE_TYPE_INVALID`, mesmo após prompt compacto e normalização estrutural de pageType. Além disso, em 4 das 6 páginas sua tentativa foi mais lenta do que a tentativa Gemma subsequente. Portanto, mantê-lo na frente da cadeia não é mais justificável pelos dados.
+
+### V7D — Gemma direto
+
+A próxima rodada desliga o fast path Moondream **somente no preview 5E**:
+- primeira tentativa visual passa a ser Gemma 4;
+- Qwen permanece fallback/revisor focal;
+- produção continua com IA documental desligada;
+- código Moondream permanece disponível, mas não é usado nesta rodada.
+
+Estimativa baseada nas durações reais da V7C, mantendo a revisão Qwen atual: a extração pode cair de ~13,7 s para aproximadamente **8,7–9 s**, porque o gargalo da página 6 perde a tentativa Moondream de 5,0 s. Isso é estimativa, não resultado homologado.
+
+A V7D também registra `revisao_alterou=` com **somente nomes de campos**, nunca valores. O objetivo é verificar se a revisão Qwen da página 6 realmente modifica a extração inicial Gemma. Se `revisao_alterou=nenhum` e a matriz continuar 10/10, a revisão explícita de `ilegivel` pode ser reavaliada numa rodada posterior com evidência, em vez de removida por suposição.
+
+Decisão: não iniciar V8 híbrida ainda. O caminho Gemma direto é menor, reversível e já tem ganho mensurável provável. V8 fica como próximo salto se V7D ainda não atender a experiência desejada.
