@@ -529,6 +529,54 @@ const COMPACT_FIELD_STATES = Object.freeze({
   n: 'nao_consta',
   i: 'ilegivel'
 });
+const COMPACT_FIELD_KEYS = Object.freeze({
+  comprovante_atendimento: Object.freeze({
+    np: 'nome_paciente',
+    cp: 'cpf',
+    cn: 'cns',
+    dn: 'data_nascimento',
+    nm: 'nome_mae',
+    te: 'telefone',
+    en: 'endereco',
+    ag: 'agente'
+  }),
+  pagina_medica_autorizada: Object.freeze({
+    ti: 'titulo',
+    mo: 'motivo_encaminhamento',
+    me: 'medico',
+    cr: 'crm_rms',
+    ps: 'procedimento_solicitado',
+    pc: 'codigo_procedimento',
+    ci: 'cid',
+    dc: 'descricao_cid'
+  })
+});
+
+function compactSemanticResponseFormat() {
+  return {
+    type: 'json_schema',
+    json_schema: {
+      type: 'object',
+      properties: {
+        t: {
+          type: 'string',
+          enum: ['c', 'm', 'o']
+        },
+        v: {
+          type: 'object',
+          additionalProperties: {
+            type: 'array',
+            minItems: 2,
+            maxItems: 2,
+            items: { type: 'string' }
+          }
+        }
+      },
+      required: ['t', 'v'],
+      additionalProperties: false
+    }
+  };
+}
 
 function compactIntegratedCandidate(parsed) {
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
@@ -544,22 +592,51 @@ function compactIntegratedCandidate(parsed) {
   }
 
   const keys = Object.keys(parsed).sort();
+  if (
+    keys.length !== 2
+    || keys[0] !== 't'
+    || keys[1] !== 'v'
+    || !parsed.v
+    || typeof parsed.v !== 'object'
+    || Array.isArray(parsed.v)
+  ) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
+      'A resposta compacta semântica não corresponde ao schema autorizado.',
+      502
+    );
+  }
+
   if (pageType === 'outro') {
-    if (keys.length !== 1 || keys[0] !== 't') {
+    if (Object.keys(parsed.v).length !== 0) {
       throw new DocumentAiError(
         'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
-        'Página não autorizada compacta retornou dados indevidos.',
+        'Página não autorizada compacta retornou campos indevidos.',
         502
       );
     }
     return { pageType, fields: {}, responseFormat: 'compact' };
   }
 
+  const keyMap = COMPACT_FIELD_KEYS[pageType];
+  const compactKeys = Object.keys(parsed.v).sort();
+  const expectedKeys = Object.keys(keyMap).sort();
+  if (
+    compactKeys.length !== expectedKeys.length
+    || compactKeys.some((key, index) => key !== expectedKeys[index])
+  ) {
+    throw new DocumentAiError(
+      'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
+      'A resposta compacta semântica não contém exatamente os campos autorizados.',
+      502
+    );
+  }
+
   const parseTuple = (tuple) => {
     if (!Array.isArray(tuple) || tuple.length !== 2) {
       throw new DocumentAiError(
         'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
-        'Campo compacto inválido.',
+        'Campo compacto semântico inválido.',
         502
       );
     }
@@ -568,60 +645,17 @@ function compactIntegratedCandidate(parsed) {
     if (!state || value === null || (state !== 'encontrado' && value !== '')) {
       throw new DocumentAiError(
         'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
-        'Estado ou valor compacto inválido.',
+        'Estado ou valor compacto semântico inválido.',
         502
       );
     }
     return { state, value };
   };
 
-  const fieldKeys = DOCUMENT_AI_EXTRACTION_FIELDS[pageType];
-  if (!fieldKeys) {
-    throw new DocumentAiError(
-      'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
-      'A resposta compacta não corresponde a um contrato autorizado.',
-      502
-    );
-  }
-
   const fields = {};
-  if (pageType === 'comprovante_atendimento') {
-    if (
-      keys.length !== 2
-      || keys[0] !== 'f'
-      || keys[1] !== 't'
-      || !Array.isArray(parsed.f)
-      || parsed.f.length !== fieldKeys.length
-    ) {
-      throw new DocumentAiError(
-        'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
-        'A resposta compacta do comprovante não corresponde ao schema autorizado.',
-        502
-      );
-    }
-    fieldKeys.forEach((key, index) => {
-      fields[key] = parseTuple(parsed.f[index]);
-    });
-  } else {
-    if (
-      keys.length !== 3
-      || keys[0] !== 'f'
-      || keys[1] !== 'h'
-      || keys[2] !== 't'
-      || !Array.isArray(parsed.f)
-      || parsed.f.length !== fieldKeys.length - 1
-    ) {
-      throw new DocumentAiError(
-        'DOCUMENT_AI_PROVIDER_SCHEMA_INVALID',
-        'A resposta compacta da página médica não corresponde ao schema autorizado.',
-        502
-      );
-    }
-    fields.titulo = parseTuple(parsed.h);
-    fieldKeys.slice(1).forEach((key, index) => {
-      fields[key] = parseTuple(parsed.f[index]);
-    });
-  }
+  Object.entries(keyMap).forEach(([shortKey, fieldKey]) => {
+    fields[fieldKey] = parseTuple(parsed.v[shortKey]);
+  });
 
   return { pageType, fields, responseFormat: 'compact' };
 }
