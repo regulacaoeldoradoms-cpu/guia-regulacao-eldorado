@@ -245,3 +245,49 @@ Proteções preservadas:
 - nenhuma mudança de resolução/modelo/fallback foi combinada nesta rodada.
 
 Meta operacional da V7B: manter 10/10 e reduzir drasticamente `transporte_backend_ms`; idealmente Moondream deve resolver páginas em uma tentativa. Se Moondream continuar rejeitado, os novos códigos `resultados=` permitirão corrigir a causa exata sem outro ciclo às cegas.
+
+
+## Resultado real V7B e decisão V7C — 20/09/2026
+
+A V7B manteve precisão total e reduziu latência, mas ainda não atingiu a experiência desejada:
+
+- matriz: **10/10**;
+- extração: **17.154 ms**;
+- total com chat: **33.432 ms**;
+- Moondream como resultado final: **0 páginas**;
+- Gemma final: **5 páginas**;
+- Qwen final: **1 página**.
+
+Comparação com V7:
+- extração: 21.428 ms → 17.154 ms, melhora real de ~20%;
+- overhead fora do provider: ~7,8–8,2 s/página → ~4,8–5,0 s/página;
+- preparação local continua irrelevante: 21–92 ms/página.
+
+O novo resumo seguro revelou a causa exata da queda de Moondream em todas as páginas:
+
+`DOCUMENT_AI_PAGE_TYPE_INVALID`
+
+Ou seja, a resposta do Moondream chega parseável, mas o campo `pageType` não usa exatamente um dos três tokens internos aceitos. O fallback acontece antes de aproveitar uma extração que pode já conter a estrutura correta.
+
+### V7C — duas correções diretamente derivadas dos dados
+
+1. **Normalização estrutural de pageType**
+   - se `pageType` já for canônico, nada muda;
+   - se não for canônico, o backend observa somente o conjunto de chaves de `fields`;
+   - conjunto exato dos 8 campos de comprovante → `comprovante_atendimento`;
+   - conjunto exato dos 8 campos médicos → `pagina_medica_autorizada`;
+   - `fields={}` → `outro`;
+   - qualquer shape diferente continua inválido e cai no fallback.
+   
+   Isso não infere conteúdo, não altera valores e não amplia o schema; apenas deriva o tipo a partir do contrato estrutural exato que o próprio modelo já retornou.
+
+2. **Uma única consulta D1 no caminho quente**
+   - a V7B ainda fazia leituras separadas de sessão, capabilities e controle;
+   - a V7C verifica a assinatura do token localmente;
+   - depois executa **uma única consulta D1 `first-primary`** que combina usuário ativo, versão da sessão, capability documental, role adicional e controle 5E;
+   - `first-primary` preserva a exigência de revogação imediata do controle;
+   - o router recebe o usuário pré-validado, portanto não repete autenticação.
+
+O uso de uma única consulta ao primário foi escolhido em vez de read replica para o controle porque a janela 5E exige estado revogável atual. Se depois desta consolidação o round-trip D1 ainda dominar, a próxima avaliação deve separar autorização estática (candidata a Sessions/read replica) do controle revogável primário.
+
+O resumo seguro V7C também registra `tentativas_ms=` para mostrar a duração individual de Moondream, Gemma e Qwen quando houver fallback.
