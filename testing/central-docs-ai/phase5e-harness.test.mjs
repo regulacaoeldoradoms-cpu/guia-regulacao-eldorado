@@ -124,6 +124,7 @@ test('resumo seguro 5E não copia detalhes, respostas, credenciais ou conteúdo 
   assert.match(js, /provider_ms=/);
   assert.match(js, /transporte_backend_ms=/);
   assert.match(js, /tentativas=/);
+  assert.match(js, /tentativas_ms=/);
   assert.match(js, /revisado=/);
   assert.match(js, /modelos=/);
   assert.match(js, /_campos_divergentes=/);
@@ -163,6 +164,7 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   assert.match(js, /attemptCount/);
   assert.match(js, /attemptModels/);
   assert.match(js, /attemptResults/);
+  assert.match(js, /attemptDurations/);
   assert.match(js, /reviewed/);
   assert.match(js, /mismatchFields/);
   assert.match(js, /mismatchedFields/);
@@ -176,6 +178,7 @@ test('matriz registra somente métricas técnicas do provider por página', asyn
   assert.match(safe, /provider_ms/);
   assert.match(safe, /transporte_backend_ms/);
   assert.match(safe, /tentativas/);
+  assert.match(safe, /tentativas_ms/);
   assert.match(safe, /resultados/);
   assert.match(safe, /revisado/);
   assert.match(safe, /modelos/);
