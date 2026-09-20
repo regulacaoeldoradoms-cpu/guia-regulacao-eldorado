@@ -1959,11 +1959,29 @@ A janela V7B atualmente ativa não foi alterada por essa integração e deve ser
 
 **Próxima ação exata:** encerrar a janela V7B atual; atualizar scripts locais; executar readiness V7C e confirmar source `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7` + Pages `https://82985cc2.portal-regulacao-central-staging.pages.dev`; preparar nova janela e executar a matriz uma única vez.
 
+## Janela V7B encerrada fail-closed — 20/09/2026
+
+O operador encerrou oficialmente a janela V7B após a matriz 10/10 e a análise de latência.
+
+Evidências sanitizadas:
+- `JANELA_5E_ENCERRADA`;
+- controle `phase5e_767dfb6c3d2f458a90d7914a7af8d66a`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado `9eb547ba-2f0f-4a11-ac00-161df592cec3`;
+- release encerrado `09bf379f306579bcb7ca049ad02d4c6a94c1df67`;
+- `httpBlocked=true`.
+
+Conclusão: a janela V7B está encerrada e não deve ser reutilizada. O bloqueio para abrir a V7C foi removido de forma fail-closed.
+
+**Próxima ação exata:** atualizar os quatro scripts operacionais a partir da `main` e executar `iniciar-homologacao-5e.mjs --iniciar`. O readiness correto deve mostrar source `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7` e Pages `https://82985cc2.portal-regulacao-central-staging.pages.dev`. Somente então confirmar `PREPARAR HOMOLOGACAO 5E`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7C integrada; reteste aguarda encerramento V7B |
+| Fase/subfase | Fase 5E — V7C integrada; V7B encerrada fail-closed; reteste pronto para abertura |
 | Último resultado real | V7B 10/10; extração 17,154 s; V7C integrada para pageType e D1 consolidado |
 | Runtime funcional V7C | `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7` |
 | Runtime próximo reteste | `d99a6642dc38b6d9a9bb27d2a7ba06f9335ffce7` |
@@ -1973,7 +1991,7 @@ A janela V7B atualmente ativa não foi alterada por essa integração e deve ser
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | encerrar V7B fail-closed; atualizar scripts; readiness V7C; preparar janela nova; executar matriz uma vez |
+| Próxima ação exata | atualizar scripts; readiness V7C; preparar janela nova; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
