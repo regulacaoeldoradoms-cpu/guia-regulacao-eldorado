@@ -36,7 +36,7 @@ function must(value, code) {
   if (!value) throw new Safe5eError(code);
 }
 
-function markerValue(value) {
+export function markerValue(value) {
   must(value && typeof value === 'object' && !Array.isArray(value), 'MARCADOR_5E_INVALIDO');
   const sourceRef = String(value.sourceRef || '').trim().toLowerCase();
   const controlId = String(value.controlId || '').trim();
@@ -81,7 +81,7 @@ function exactPagesOrigin(value) {
   }
 }
 
-function recentCandidate(item, attemptedAt) {
+export function recentCandidate(item, attemptedAt) {
   if (!UUID.test(String(item?.id || ''))) return false;
   if (item?.annotations?.['workers/alias'] !== FIXED_5E.alias) return false;
   if (item?.annotations?.['workers/tag'] !== FIXED_5E.tag) return false;
@@ -93,7 +93,7 @@ function recentCandidate(item, attemptedAt) {
     && created <= Date.now() + (5 * 60 * 1000);
 }
 
-function matchesMarker(version, marker, dbId, productionVersion) {
+export function matchesMarker(version, marker, dbId, productionVersion) {
   if (!version || !UUID.test(String(version.id || ''))) return false;
   if (String(version.id) === String(productionVersion)) return false;
   if (version.annotations?.['workers/alias'] !== FIXED_5E.alias) return false;
