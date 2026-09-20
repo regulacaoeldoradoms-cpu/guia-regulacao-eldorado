@@ -1760,21 +1760,41 @@ V7B preparada em branch isolada:
 
 Nenhuma alteração foi aplicada à janela V7 ativa nem à produção. O próximo reteste exigirá encerramento fail-closed da janela atual, integração/CI da V7B e referências novas.
 
+## V7B integrada e reteste congelado — 19/09/2026
+
+A PR #291 foi integrada na `main` pelo merge `5e27d58a09751363392b1ee1c7560be3f5f473cc` depois de os checks direcionados da Central ficarem verdes, incluindo Fases 1–5E, procedimentos 5E, staging, governança e site.
+
+O Pages imutável congelado é `https://18727b6f.portal-regulacao-central-staging.pages.dev`, publicado no head `5fecf9350295140ddb9f74003375fe52b8fc53da`. A comparação GitHub entre esse head e o merge final mostrou **zero arquivos diferentes**.
+
+Mudanças V7B:
+- preflight 5E sem consulta D1 e com `Access-Control-Max-Age=600`;
+- uma única leitura do controle revogável por chamada autenticada, imediatamente antes da rota;
+- validação de sessão específica para a Central de Documentos;
+- sessão pré-validada encaminhada ao router, evitando segunda autenticação;
+- prompt compacto específico para Moondream;
+- resumo seguro inclui códigos técnicos `resultados=` de cada tentativa.
+
+Objetivo do próximo reteste: manter **10/10** e reduzir os dois gargalos medidos na V7: ~8 s de overhead fora do provider e fallback Moondream→Gemma em todas as páginas.
+
+A janela V7 atualmente ativa continua vinculada ao release anterior e deve ser encerrada fail-closed antes de preparar V7B.
+
+**Próxima ação exata:** encerrar a janela V7 atual; atualizar scripts locais; executar readiness V7B e confirmar source `5e27d58a09751363392b1ee1c7560be3f5f473cc` + Pages `https://18727b6f.portal-regulacao-central-staging.pages.dev`; preparar nova janela e executar a matriz uma única vez.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7 aprovada 10/10; V7B corrige dois gargalos medidos |
-| Último resultado real | V7 10/10; extração 21,428 s; Moondream 0 páginas finais; overhead ~8 s/página |
-| Runtime funcional V7 | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
-| Runtime próximo reteste | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
-| Pages próximo reteste | `https://0c46e41f.portal-regulacao-central-staging.pages.dev` |
+| Fase/subfase | Fase 5E — V7B integrada; reteste aguarda encerramento V7 |
+| Último resultado real | V7 10/10; extração 21,428 s; V7B integrada para remover overhead e fallback |
+| Runtime funcional V7B | `5e27d58a09751363392b1ee1c7560be3f5f473cc` |
+| Runtime próximo reteste | `5e27d58a09751363392b1ee1c7560be3f5f473cc` |
+| Pages próximo reteste | `https://18727b6f.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | validar CI V7B; integrar se verde; encerrar janela V7; congelar referências V7B e retestar uma vez |
+| Próxima ação exata | encerrar V7 fail-closed; atualizar scripts; readiness V7B; preparar janela nova; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
