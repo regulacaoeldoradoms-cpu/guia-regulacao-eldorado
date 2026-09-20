@@ -484,3 +484,12 @@ Correção mínima:
 
 Critério: recuperar 10/10, manter 6/6 compacto e 0/6 legado, e preservar completion tokens materialmente abaixo do baseline V8B de 1.024.
 
+Referências congeladas V8C.1:
+- PR #331 integrada na `main` pelo merge `22318ff06cb893733b9794001cd880380d237f64`;
+- head funcional: `cbbcc6c3c858c983ab9f10320598f4a24a3c295f`;
+- Pages imutável: `https://62b72fe5.portal-regulacao-central-staging.pages.dev`;
+- comparação head funcional → merge final: zero arquivos diferentes;
+- checks funcionais da PR #331 concluídos com sucesso, incluindo governança e Fases 1–5E.
+
+Antes da matriz V8C.1, encerrar a janela V8C atual fail-closed. O readiness V8C.1 deve confirmar source e Pages acima antes de criar nova janela.
+
