@@ -2460,21 +2460,59 @@ Critério V8A: manter 10/10 e produzir ganho material sobre 6,830 s. Se não hou
 
 A janela V7G permanece ativa e deve ser encerrada fail-closed antes de homologar V8A.
 
+## Janela V7G encerrada e V8A integrada/congelada — 20/09/2026
+
+O operador encerrou oficialmente a janela V7G após a matriz 10/10 em 7,202 s.
+
+Evidências sanitizadas do encerramento:
+- `JANELA_5E_ENCERRADA`;
+- controle `phase5e_da3833884e1041eaaa92456590b8c86a`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado `463a5a76-5a92-4cc3-915f-549f2e1567a1`;
+- release encerrado `ba7d8a369940a9613a436b6b0f572bdedb99375f`;
+- `httpBlocked=true`.
+
+Conclusão V7.x:
+- V7G manteve 10/10, mas regrediu para 7,202 s;
+- V7F permanece o melhor baseline image-only comprovado: **10/10 em 6,830 s**;
+- refinamentos por concorrência/modelo/tokens estão encerrados.
+
+A PR #319 integrou a V8A na `main` pelo merge `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9` após **24 checks verdes** no head funcional `9b81e8a93b901b062761ff7b6574176bea60d2c5`.
+O Pages imutável congelado é `https://09560ba9.portal-regulacao-central-staging.pages.dev`. A comparação GitHub entre o head funcional e o merge final mostrou **zero arquivos diferentes**.
+
+V8A:
+- concorrência volta para 5;
+- imagem renderizada continua sendo a fonte de verdade;
+- recorte automático remove somente margens/áreas predominantemente brancas;
+- a text layer serve apenas como **limite de segurança do recorte**, nunca como fonte de valores;
+- se o crop economizar menos de 10% da área, a página inteira é enviada;
+- resumo seguro mede `imagem_area_pct` por página;
+- Gemma 700 tokens, backend D1 consolidado e skip Qwen seletivo permanecem.
+
+Referências congeladas do próximo reteste:
+- source ref `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9`;
+- Pages `https://09560ba9.portal-regulacao-central-staging.pages.dev`;
+- head funcional `9b81e8a93b901b062761ff7b6574176bea60d2c5`.
+
+**Próxima ação exata:** atualizar scripts locais; executar readiness V8A; confirmar source `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9` + Pages `https://09560ba9.portal-regulacao-central-staging.pages.dev`; preparar nova janela e executar a matriz uma única vez. Critério: 10/10 e ganho material sobre 6,830 s, observando `imagem_area_pct`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7G 10/10 em 7,202 s; V7F baseline 6,830 s; V8A crop visual em validação |
-| Último resultado real | V7G 10/10 em 7,202 s; concorrência 6 regrediu; V7F permanece melhor baseline 6,830 s |
+| Fase/subfase | Fase 5E — V8A integrada e congelada; reteste pronto para abertura |
+| Último resultado real | V7G 10/10 em 7,202 s; V7F baseline final 6,830 s; V8A integrada com 24 checks verdes |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
-| Runtime próximo reteste | `ba7d8a369940a9613a436b6b0f572bdedb99375f` |
-| Pages próximo reteste | `https://0e5a1474.portal-regulacao-central-staging.pages.dev` |
+| Runtime próximo reteste | `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9` |
+| Pages próximo reteste | `https://09560ba9.portal-regulacao-central-staging.pages.dev` |
 | Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | concluir CI V8A; integrar/congelar; encerrar V7G; executar uma rodada V8A |
+| Próxima ação exata | atualizar scripts; readiness V8A; preparar janela; executar matriz uma vez; analisar imagem_area_pct |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
