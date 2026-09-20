@@ -193,3 +193,55 @@ O laboratório passou a registrar, por página:
 - `modelos`: cadeia técnica de modelos usados.
 
 Essas métricas são estritamente técnicas e não incluem conteúdo, identidade ou valores extraídos. O objetivo é evitar novo ciclo de otimização às cegas: a próxima mudança só deve atacar o componente que dominar a latência.
+
+
+## Resultado real V7 e diagnóstico de gargalo — 19/09/2026
+
+Resumo seguro real da matriz V7 final:
+
+- matriz: **10/10**;
+- `duracao_extracao_ms=21428`;
+- `duracao_total_ms=56706`;
+- `moondream_paginas=0`;
+- `gemma_paginas=5`;
+- `qwen_paginas=1`.
+
+Todas as seis páginas tentaram Moondream e caíram para Gemma; a página 6 ainda exigiu Qwen. Logo, o fast path V7 **não foi aceito estruturalmente em nenhuma página** e acrescentou uma tentativa antes do modelo que efetivamente produziu a resposta aceita.
+
+A decomposição por página também mostrou um segundo gargalo independente: `transporte_backend_ms` ficou praticamente constante entre ~7,8 s e ~8,2 s, enquanto `preparo_ms` ficou abaixo de 100 ms. Portanto:
+
+1. renderização/canvas não é o gargalo atual;
+2. o provider é caro por causa de fallback em todas as páginas;
+3. existe ~8 s fixos fora do provider por requisição.
+
+Revisão do wrapper 5E identificou a causa estrutural provável do overhead fixo:
+- o preflight CORS consultava D1 e usava `Access-Control-Max-Age: 0`;
+- cada chamada autenticada lia o controle D1 antes da sessão;
+- a sessão usava a decoração completa do Portal, consultando acessos de módulos que não participam da Central;
+- a rota de IA relia o controle D1;
+- o router documental validava/decorava a mesma sessão novamente.
+
+Isso podia produzir várias leituras D1 sequenciais para uma única página, especialmente caras quando o banco primário está distante da região do Worker.
+
+### V7B — correção focada no gargalo medido
+
+A V7B preparada nesta branch faz somente mudanças diretamente justificadas pelas métricas:
+
+- preflight 5E não consulta D1; a operação real continua fail-closed;
+- preflight pode ser cacheado por 600 s;
+- sessão específica da Central carrega somente identidade base + capabilities documentais;
+- o router aceita internamente a sessão já validada pelo wrapper, evitando segunda autenticação;
+- o controle revogável é lido uma única vez, depois da sessão e imediatamente antes da rota documental/IA;
+- Moondream recebe um prompt compacto específico para structured extraction, em vez do prompt multimodal longo usado por Gemma/Qwen;
+- o resumo seguro passa a informar também os códigos técnicos de resultado de cada tentativa.
+
+Proteções preservadas:
+- origem exata e alias preview continuam obrigatórios;
+- login continua restrito ao username do controle;
+- operação real continua exigindo sessão válida + capability `extract` + controle ativo + fixture marker + gates de IA;
+- revogação continua bloqueando a chamada antes do provider;
+- produção não usa o wrapper 5E;
+- Drive continua `false`;
+- nenhuma mudança de resolução/modelo/fallback foi combinada nesta rodada.
+
+Meta operacional da V7B: manter 10/10 e reduzir drasticamente `transporte_backend_ms`; idealmente Moondream deve resolver páginas em uma tentativa. Se Moondream continuar rejeitado, os novos códigos `resultados=` permitirão corrigir a causa exata sem outro ciclo às cegas.
