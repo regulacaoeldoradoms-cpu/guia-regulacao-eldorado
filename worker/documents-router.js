@@ -230,14 +230,14 @@ export function isDocumentsOAuthCallback(pathname) {
   return String(pathname || '') === OAUTH_CALLBACK;
 }
 
-export async function handleDocumentsRoute(request, env, origin, originAllowed = true) {
+export async function handleDocumentsRoute(request, env, origin, originAllowed = true, options = {}) {
   const url = new URL(request.url);
 
   if (url.pathname === OAUTH_CALLBACK) return handleOAuthCallback(request, env);
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
   if (!originAllowed) return json({ error: 'Origem não autorizada.' }, 403, origin, false);
 
-  const user = await validatePortalSession(request, env, []);
+  const user = options?.prevalidatedUser || await validatePortalSession(request, env, []);
   if (!user) return json({ error: 'Sessão inválida ou expirada.', code: 'AUTH_REQUIRED' }, 401, origin);
 
   try {
