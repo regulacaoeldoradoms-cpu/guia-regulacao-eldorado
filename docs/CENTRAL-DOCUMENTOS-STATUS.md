@@ -2960,12 +2960,47 @@ Conclusão: a janela corresponde exatamente ao runtime V8C.2 congelado e produç
 
 **Próxima ação exata:** abrir `https://821db519.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta autorizada e executar a matriz **uma única vez**. Critérios: 10/10, `formato_compacto_paginas=6`, `formato_legado_paginas=0`, nenhum `campos_divergentes`, ausência de fallback sistemático por schema nas páginas médicas e telemetria de tokens contabilizando todas as tentativas. Não encerrar a janela antes de analisar o resumo seguro.
 
+## Resultado V8C.2 — 10/10 em 4,524 s; encerrar otimização de latência da Fase 5 — 20/09/2026
+
+Resumo seguro real:
+- `MATRIZ_5E_SINTETICA=APROVADA`;
+- **10 aprovados / 0 falhas**;
+- `duracao_extracao_ms=4524`;
+- `duracao_total_ms=8281`;
+- Gemma: 6 páginas;
+- Qwen: 0 páginas;
+- concorrência 5;
+- `formato_compacto_paginas=6`;
+- `formato_legado_paginas=0`;
+- `prompt_tokens_extracao=10683`;
+- `completion_tokens_extracao=622`;
+- `total_tokens_extracao=11305`;
+- `cached_prompt_tokens_extracao=2944`;
+- todas as seis páginas concluíram em **uma única tentativa**;
+- nenhuma revisão focal;
+- nenhum `campos_divergentes`;
+- os quatro casos de chat também passaram.
+
+Comparação com baselines persistidos:
+- V8C.2: **4,524 s**;
+- V8A: 5,388 s;
+- V8B: 6,179 s;
+- V7F: 6,830 s.
+
+A V8C.2 é o melhor resultado 10/10 persistido da linha atual. Ela também mantém completion tokens abaixo do alvo operacional de 700 e elimina o fallback/retry que havia degradado a V8C.1.
+
+**Decisão de governança:** não continuar criando V8C.3/V8D apenas para reduzir algumas centenas de milissegundos numa única rodada. O Guia Mestre determina avançar quando o critério da fase está comprovado e não polir indefinidamente; análise de p75/p95/p99, cache e otimização contínua pertencem à **Fase 7**.
+
+O valor numérico exato da V6 não foi persistido, portanto não registrar uma razão formal <=50% contra V6. Isso não bloqueia o aceite funcional da Fase 5: a matriz comprovou proveniência por página, ausência de mistura, NÃO CONSTA, ILEGÍVEL e literalidade, além de fluxo adversarial e chat por evidência.
+
+**Estado da Fase 5:** critérios funcionais comprovados; **pendência operacional única** para encerramento formal: fechar a janela V8C.2 com o procedimento fail-closed e confirmar `httpBlocked=true`. Depois disso, registrar Fase 5 encerrada e avançar para **Fase 6 — Automação operacional**.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8C.2 janela preparada; aguardando uma única matriz real |
-| Último resultado real | V8C.1 7/10 em 14,469 s; schema-invalid Gemma em 4 páginas médicas; divergência medico nas páginas 5/6 |
+| Fase/subfase | Fase 5E — V8C.2 aprovada 10/10; encerramento fail-closed pendente antes da Fase 6 |
+| Último resultado real | V8C.2 10/10 em 4,524 s; Gemma 6/6, uma tentativa por página, compacto 6/6, completion 622 |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `32bda4f6753d434cc134eafb3610de16b00e272d` |
 | Pages próximo reteste | `https://821db519.portal-regulacao-central-staging.pages.dev` |
@@ -2974,7 +3009,7 @@ Conclusão: a janela corresponde exatamente ao runtime V8C.2 congelado e produç
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | executar uma única matriz V8C.2 no Pages congelado, copiar resumo seguro e analisar precisão/fallback/tokens/latência antes de qualquer nova alteração |
+| Próxima ação exata | encerrar a janela V8C.2 fail-closed; confirmar `JANELA_5E_ENCERRADA` + `httpBlocked=true`; então marcar Fase 5 encerrada e iniciar Fase 6 |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
