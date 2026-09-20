@@ -1683,12 +1683,30 @@ Conclusão: a janela V6 está encerrada e não deve ser reutilizada. O bloqueio 
 
 **Próxima ação exata:** executar o readiness/início V7 com os scripts atuais já baixados. O readiness deve retornar source `28a4916840f450b2caa7d93138d0e127a5db1a88` e Pages `https://0c46e41f.portal-regulacao-central-staging.pages.dev`. Somente após isso confirmar `PREPARAR HOMOLOGACAO 5E`.
 
+## Janela V7 final preparada — 19/09/2026
+
+O operador concluiu o preparo oficial da janela V7 final.
+
+Evidências sanitizadas:
+- `HOMOLOGACAO_5E_PREPARADA`;
+- preview version `c281181c-8498-49fe-acf1-244c4f6ca400`;
+- controle `phase5e_e43ea9c37bce46d8a598bbdf3fe3371c`;
+- expiração `2026-09-20T01:30:18.000Z`;
+- release `28a4916840f450b2caa7d93138d0e127a5db1a88`;
+- `aiGate=true` somente no preview;
+- `driveWriteGate=false`;
+- produção reconfirmada em `298ba237-78f9-4d24-bad1-47e66b4c1e15`.
+
+A release corresponde exatamente ao runtime V7 final congelado. A escrita no Google Drive permanece bloqueada e produção não foi promovida.
+
+**Próxima ação exata:** abrir o laboratório V7 em `https://0c46e41f.portal-regulacao-central-staging.pages.dev/homologacao-5e/`, autenticar com a conta previamente autorizada, executar a matriz **uma única vez** e copiar somente o resumo seguro completo. Esse resumo deve conter `duracao_extracao_ms`, `preparo_ms`, `provider_ms`, `transporte_backend_ms`, `tentativas`, `revisado` e `modelos` por página.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7 final pronta; V6 encerrada fail-closed |
-| Último resultado real | V7 integrada com CI verde; V6 continua sendo a última execução real e foi considerada lenta pelo operador |
+| Fase/subfase | Fase 5E — V7 final preparada; matriz real aguardando execução |
+| Último resultado real | janela V7 final preparada; release e produção reconfirmadas; matriz ainda não executada |
 | Runtime funcional V7 | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
 | Runtime próximo reteste | `28a4916840f450b2caa7d93138d0e127a5db1a88` |
 | Pages próximo reteste | `https://0c46e41f.portal-regulacao-central-staging.pages.dev` |
@@ -1697,7 +1715,7 @@ Conclusão: a janela V6 está encerrada e não deve ser reutilizada. O bloqueio 
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | readiness V7 final; confirmar referências; preparar nova janela; executar matriz uma vez |
+| Próxima ação exata | abrir laboratório V7; executar matriz uma vez; copiar resumo seguro completo |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
