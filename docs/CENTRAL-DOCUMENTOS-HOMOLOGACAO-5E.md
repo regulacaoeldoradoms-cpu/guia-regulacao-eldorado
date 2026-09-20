@@ -613,3 +613,13 @@ Critério V7F:
 - única mudança funcional: concorrência de páginas 5 → 6;
 - V7F permanece baseline de rollback: 10/10 em 6,830 s;
 - critério: manter 10/10 e buscar <6,0 s; se houver regressão, encerrar V7.x e avançar para V8 híbrida.
+
+
+### V8A — crop visual adaptativo
+- source ref: `5268ed9984c6d792e1f3eb12e1d8f168d32d39a9`;
+- Pages: `https://09560ba9.portal-regulacao-central-staging.pages.dev`;
+- baseline de comparação: V7F 10/10 em 6,830 s;
+- imagem renderizada continua sendo fonte de verdade;
+- recorte remove somente áreas vazias, com text layer apenas como salvaguarda geométrica;
+- resumo seguro mede `imagem_area_pct`;
+- critério: 10/10 e ganho material sobre 6,830 s.
