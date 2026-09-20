@@ -2704,11 +2704,29 @@ Referências congeladas:
 
 **Próxima ação exata:** encerrar V8B fail-closed; atualizar os scripts locais a partir da `main`; executar readiness V8C confirmando `activeControlledWindow=false`, source `cf8ed89...` e Pages `06b2c2ec...`; somente então preparar nova janela e rodar uma única matriz V8C.
 
+## Readiness V8C aprovado — 20/09/2026
+
+O operador executou o verificador 5E após a preparação da V8C e obteve:
+
+- `PRECONDICOES_5E_OK`;
+- produção ativa `298ba237-78f9-4d24-bad1-47e66b4c1e15`;
+- `workersAiBindingPresent=true`;
+- `freeOnlyModels=true`;
+- `extractCapability=true`;
+- `activeControlledWindow=false`;
+- source ref `cf8ed89cd2e5fa9ba7ed5c02d6f0cc1f50e2021e`;
+- Pages `https://06b2c2ec.portal-regulacao-central-staging.pages.dev`;
+- próxima ação declarada pelo verificador: `PREPARAR_HOMOLOGACAO_5E`.
+
+Conclusão: não há janela controlada ativa e as referências congeladas da V8C coincidem com o readiness local. A condição operacional para preparar uma nova janela V8C está satisfeita. Produção não foi alterada.
+
+**Próxima ação exata:** executar `iniciar-homologacao-5e.mjs --iniciar` e, quando solicitado, confirmar `PREPARAR HOMOLOGACAO 5E`. Depois validar que a nova janela usa release `cf8ed89cd...`, `aiGate=true` somente no preview e `driveWriteGate=false`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8C integrada e congelada; V8B precisa ser encerrada antes da nova janela |
+| Fase/subfase | Fase 5E — V8C readiness aprovado; pronta para preparar nova janela controlada |
 | Último resultado real | V8B 10/10 em 6,179 s; 9.020 prompt tokens, 1.024 completion tokens e 2.048 cached prompt tokens |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `cf8ed89cd2e5fa9ba7ed5c02d6f0cc1f50e2021e` |
@@ -2718,7 +2736,7 @@ Referências congeladas:
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | encerrar V8B fail-closed; atualizar scripts locais da main; readiness V8C com source `cf8ed89...` + Pages `06b2c2ec...`; preparar nova janela e executar uma única matriz |
+| Próxima ação exata | executar `iniciar-homologacao-5e.mjs --iniciar`, confirmar `PREPARAR HOMOLOGACAO 5E` e validar release/gates da nova janela V8C |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
