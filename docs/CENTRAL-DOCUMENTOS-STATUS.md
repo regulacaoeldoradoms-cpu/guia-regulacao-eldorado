@@ -2905,11 +2905,29 @@ A janela V8C.1 atualmente ativa continua no controle `phase5e_bd8ef3177d284d64b7
 
 **Próxima ação exata:** encerrar V8C.1 fail-closed; atualizar scripts locais da `main`; executar readiness V8C.2 confirmando source `32bda4f...`, Pages `821db519...` e `activeControlledWindow=false`; só então preparar nova janela.
 
+## Janela V8C.1 encerrada fail-closed — 20/09/2026
+
+O operador encerrou oficialmente a janela V8C.1 antes de qualquer abertura da V8C.2.
+
+Evidências sanitizadas:
+- `JANELA_5E_ENCERRADA`;
+- controle `phase5e_bd8ef3177d284d64b7a50846c075d016`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado `768fb0f9-9483-4229-a671-a07caaee6862`;
+- release encerrado `22318ff06cb893733b9794001cd880380d237f64`;
+- `httpBlocked=true`.
+
+Conclusão: a janela V8C.1 está encerrada e não pode ser reutilizada. O próximo passo operacional é somente leitura: atualizar os scripts locais da `main` e executar o readiness V8C.2.
+
+**Próxima ação exata:** executar `verificar-precondicoes-5e.mjs --verificar` após atualizar os scripts locais, confirmando `activeControlledWindow=false`, source `32bda4f6753d434cc134eafb3610de16b00e272d` e Pages `https://821db519.portal-regulacao-central-staging.pages.dev`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V8C.2 integrada e congelada; janela V8C.1 precisa ser encerrada |
+| Fase/subfase | Fase 5E — V8C.2 integrada e congelada; V8C.1 encerrada fail-closed |
 | Último resultado real | V8C.1 7/10 em 14,469 s; schema-invalid Gemma em 4 páginas médicas; divergência medico nas páginas 5/6 |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `32bda4f6753d434cc134eafb3610de16b00e272d` |
@@ -2919,7 +2937,7 @@ A janela V8C.1 atualmente ativa continua no controle `phase5e_bd8ef3177d284d64b7
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | encerrar V8C.1 fail-closed; atualizar scripts locais da main; readiness V8C.2 com source `32bda4f...` + Pages `821db519...`; preparar nova janela e executar uma única matriz |
+| Próxima ação exata | atualizar scripts locais da main e executar readiness V8C.2 com source `32bda4f...` + Pages `821db519...`; só então preparar nova janela |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
