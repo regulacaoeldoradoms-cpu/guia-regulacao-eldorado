@@ -53,23 +53,27 @@ test('botão único percorre o PDF e envia somente uma página por chamada', asy
     read('js/documents.js'),
     read('js/document-viewer.js')
   ]);
+  const prepare = asyncFunctionSlice(js, 'prepareDocumentAiPageBlob', 'normalizeDocumentAiPagePayload');
+  const request = asyncFunctionSlice(js, 'requestDocumentAiPage', 'schedulePreparedPageAnalysis');
   const extract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'classifyActiveDocumentPage');
 
   assert.match(extract, /getPageCount\?\.\(\)/);
   assert.match(extract, /const concurrency = Math\.min\(5, pageCount\)/);
   assert.match(extract, /Promise\.all\(Array\.from\(\{ length: concurrency \}/);
-  assert.match(extract, /await exporter\(pageNumber/);
-  assert.match(extract, /maxEdge: 1800/);
-  assert.match(extract, /mimeType: 'image\/png'/);
-  assert.match(extract, /cropWhitespace: true/);
-  assert.match(extract, /blob\.size > 2\.8 \* 1024 \* 1024/);
-  assert.match(extract, /mimeType: 'image\/jpeg'/);
-  assert.match(extract, /quality: 0\.92/);
-  assert.match(extract, /\/api\/documents\/ai\/page\/extract/);
-  assert.match(extract, /'X-Document-Page-Number': String\(pageNumber\)/);
-  assert.match(extract, /body: blob/);
-  assert.match(extract, /credentials: 'omit'/);
-  assert.match(extract, /if \(pageType === 'outro'\)/);
+  assert.match(extract, /prepareDocumentAiPageBlob\(pageNumber\)/);
+  assert.match(extract, /requestDocumentAiPage\(pageNumber, blob\)/);
+  assert.match(prepare, /await exporter\(pageNumber/);
+  assert.match(prepare, /maxEdge: 1800/);
+  assert.match(prepare, /mimeType: 'image\/png'/);
+  assert.match(prepare, /cropWhitespace: true/);
+  assert.match(prepare, /blob\.size > 2\.8 \* 1024 \* 1024/);
+  assert.match(prepare, /mimeType: 'image\/jpeg'/);
+  assert.match(prepare, /quality: 0\.92/);
+  assert.match(request, /\/api\/documents\/ai\/page\/extract/);
+  assert.match(request, /'X-Document-Page-Number': String\(pageNumber\)/);
+  assert.match(request, /body: blob/);
+  assert.match(request, /credentials: 'omit'/);
+  assert.match(extract, /if \(analyzed\.pageType === 'outro'\)/);
   assert.match(extract, /state\.documentAiEvidence\.set\(pageNumber, normalized\)/);
   assert.doesNotMatch(extract, /DOCUMENT_AI_PAGE_NOT_AUTHORIZED/);
   assert.doesNotMatch(extract, /state\.pdfItem\.(?:name|ref)|fileId|filename|searchQuery|page_text|inlineData/);
