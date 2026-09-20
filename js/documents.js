@@ -1138,6 +1138,8 @@
     if (els.editorRailEdit) els.editorRailEdit.hidden = !(canEditDocuments() && state.pdfItem);
     setEditorStatus('');
     refreshPdfListActions();
+    resumeDocumentBackground();
+    if (state.pdfItem) scheduleActiveDocumentPreparation(state.pdfOpenId);
     if (shouldRestoreOriginal && state.pdfObjectUrl) {
       restoreOriginalPortalViewer(viewState).catch(() => {
         if (!state.editorSession) {
@@ -1890,11 +1892,17 @@
   }
 
   async function startEditor() {
+    background?.cancelScope?.(state.backgroundScope, 'editor');
+    pauseDocumentBackground('editor');
     if (!canEditDocuments()) {
+      resumeDocumentBackground();
       showStatus('Sua conta não possui permissão de edição de PDF.', 'warning');
       return;
     }
-    if (!state.pdfItem || !window.PortalPdfEditor || state.editorSession) return;
+    if (!state.pdfItem || !window.PortalPdfEditor || state.editorSession) {
+      resumeDocumentBackground();
+      return;
+    }
 
     const item = state.pdfItem;
     const openId = state.pdfOpenId;
@@ -1956,6 +1964,8 @@
       window.PortalPdfViewer?.setThumbnailActions?.(false);
       setEditorSurfaceMode(false);
       els.viewerState.className = 'documents-viewer-state ready';
+      resumeDocumentBackground();
+      scheduleActiveDocumentPreparation(openId);
       showStatus(error.message || 'Não foi possível iniciar o editor PDF.', 'warning');
     } finally {
       if (startSeq === state.editorStartSeq) els.editPdf.disabled = false;
@@ -4241,6 +4251,7 @@
   }
 
   function closePdf() {
+    resetDocumentBackgroundState('document_changed');
     setDocumentAiPanelOpen(false);
     state.documentAiBusy = false;
     state.documentAiClassification = null;
@@ -4282,6 +4293,7 @@
     els.viewer.hidden = true;
     els.viewerState.className = 'documents-viewer-state';
     els.viewerState.textContent = 'Preparando PDF…';
+    scheduleLikelyPdfWarmup();
   }
 
   async function requestClosePdf() {
@@ -4299,7 +4311,10 @@
       closePdf();
     }
     const openId = state.pdfOpenId;
+    background?.cancelScope?.('list', 'foreground');
     state.pdfItem = item;
+    state.backgroundScope = documentBackgroundScope(openId);
+    rememberOpenedPdf(item);
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
     state.documentAiResults = [];
@@ -4432,6 +4447,19 @@
 
   els.list.addEventListener('mouseover', warmPdfFromListEvent);
   els.list.addEventListener('focusin', warmPdfFromListEvent);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (state.pdfItem && !state.editorSession) scheduleActiveDocumentPreparation(state.pdfOpenId);
+    else scheduleLikelyPdfWarmup();
+  });
+
+  window.addEventListener('portal:session-cleared', () => {
+    state.backgroundPreparedImages.clear();
+    state.backgroundPreparedAnalysis.clear();
+    state.backgroundRecentPdfs = [];
+    setAutomationStatus('');
+  });
 
   els.list.addEventListener('click', (event) => {
     const button = event.target.closest('[data-index]');
