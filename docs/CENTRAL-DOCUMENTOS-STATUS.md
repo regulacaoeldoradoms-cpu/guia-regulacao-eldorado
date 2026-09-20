@@ -3086,13 +3086,13 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase/subfase | Fase 6 — 6A–6E integradas na main; aguardando somente validação operacional real |
-| Último resultado real | Fase 5 encerrada: V8C.2 10/10 em 4,524 s e janela final fail-closed com httpBlocked=true |
-| Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
-| Runtime próximo reteste | nenhum — Fase 5 encerrada |
-| Pages próximo reteste | nenhum — iniciar implementação 6A em branch isolada |
-| Provider | V7 candidata: Moondream 3.1 fast vision; Gemma 4 fallback/chat; Qwen 3.8 fallback/revisor; Workers Free |
+| Último resultado real | Fase 5 encerrada: V8C.2 10/10 em 4,524 s; IA documental publicada; Worker atual `2ee1b3f2-77f6-4f78-a19f-327eabcb0d8d`; 27/27 checks verdes |
+| Baseline IA documental | V8C.2 — `phase5e-v8c2-semantic-json` |
+| Runtime próximo reteste | nenhum — publicação produtiva concluída |
+| Pages próximo reteste | nenhum — Fase 6 já está integrada; falta validação operacional real |
+| Provider | V8C.2: Gemma 4 principal; Qwen 3.8 fallback; Moondream configurado, mas fast vision desligado em produção; Workers AI free-only |
 | Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
-| V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
+| Fast vision | `DOCUMENTS_AI_FAST_VISION_ENABLED=false` em produção; não faz parte do caminho normal publicado |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental normal publicada; `enabled=true`, `processing=true`; background antecipatório permanece fail-closed |
 | Próxima ação exata | validar no Portal real que conta com `extract` vê/abre a IA e executa uma extração por clique; depois retomar a matriz operacional restante da Fase 6 |
@@ -3224,7 +3224,37 @@ A capability `extract` continua sendo obrigatória no backend. Nenhuma permissã
 
 ### Handoff atualizado
 - **Fase atual:** Fase 6 — Automação operacional; publicação normal da IA concluída.
-- **Última ação concluída:** Worker produtivo `1c2458f8-76f9-4050-8f10-a9e6b5fbec37` publicado com sucesso.
+- **Última ação concluída:** Worker produtivo atual `2ee1b3f2-77f6-4f78-a19f-327eabcb0d8d` confirmado após novo deploy seguro bem-sucedido.
 - **Bloqueio anterior:** resolvido pela PR #347; preview 5E isolado deixa de bloquear o gate sem enfraquecer versões desconhecidas.
 - **Background IA:** continua `false`.
 - **Próxima ação exata:** teste real do botão/painel/extrator IA com conta `extract`; depois continuar homologação operacional da Fase 6.
+
+
+## Revisão geral pós-publicação — sem regressão funcional encontrada — 20/09/2026
+
+Revisão somente de consistência realizada após a publicação da IA documental.
+
+Evidências:
+- `main` em `f40b8dffc75e188cf302b8a2346719c91ec7520f` na entrada da revisão;
+- **27/27 check-runs** do commit concluídos com `success`;
+- Workers Builds `success`, Worker Version `2ee1b3f2-77f6-4f78-a19f-327eabcb0d8d`;
+- Cloudflare Pages `success`;
+- `DOCUMENTS_AI_ENABLED=true`;
+- `DOCUMENTS_AI_PROCESSING_ENABLED=true`;
+- `DOCUMENTS_AI_BACKGROUND_ENABLED=false`;
+- `DOCUMENTS_AI_FREE_ONLY=true`;
+- `DOCUMENTS_AI_FAST_VISION_ENABLED=false`;
+- binding `AI` presente;
+- rotas de IA continuam exigindo capability `extract` no backend;
+- provider documental continua sem `GEMINI_API_KEY`, sem endpoint Gemini externo e sem AI Gateway;
+- observabilidade documental/background permanece sob allowlist técnica, sem conteúdo documental.
+
+Correções de manutenção identificadas nesta revisão:
+- nomenclatura de um teste ainda dizia “produção continua fail-closed”, embora suas próprias asserções já exigissem IA normal ativa; corrigido apenas o nome do teste;
+- documento de publicação mantinha uma seção intermediária que podia ser lida como estado atual; marcada explicitamente como histórica;
+- handoff/status ainda apontava para a primeira Worker Version do rollout e para referências V7; atualizado para V8C.2 e para a Worker Version produtiva atual;
+- texto da homologação 6 ainda tratava `enabled=true` como futuro; alinhado ao estado atual.
+
+Nenhuma alteração funcional da IA, editor, Drive, OAuth, permissões ou observabilidade foi necessária nesta revisão.
+
+**Próxima ação exata:** validar no navegador real o botão/painel/extrator com conta que possua `extract`; depois concluir a matriz operacional da Fase 6.
