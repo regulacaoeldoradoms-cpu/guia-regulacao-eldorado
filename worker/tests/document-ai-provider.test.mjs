@@ -48,6 +48,19 @@ function workersResponse(value, usage = null) {
   };
 }
 
+function compactAnalysis(pageType, fields = {}) {
+  if (pageType === 'outro') return { t: 'o' };
+  const typeCode = pageType === 'comprovante_atendimento' ? 'c' : 'm';
+  const stateCode = { encontrado: 'e', nao_consta: 'n', ilegivel: 'i' };
+  return {
+    t: typeCode,
+    f: DOCUMENT_AI_EXTRACTION_FIELDS[pageType].map((key) => {
+      const field = fields[key] || { state: 'nao_consta', value: '' };
+      return [stateCode[field.state], field.state === 'encontrado' ? String(field.value || '') : ''];
+    })
+  };
+}
+
 test('provider documental usa somente Gemma 4 + Qwen aprovados para free-only', () => {
   assert.deepEqual(DOCUMENT_AI_FREE_MODELS, [
     '@cf/google/gemma-4-26b-a4b-it',
@@ -335,6 +348,65 @@ test('classificação envia uma imagem data URI sem identidade do arquivo', asyn
 
   const serialized = JSON.stringify(calls[0].input);
   assert.doesNotMatch(serialized, /filename|fileId|drive[-_ ]?id|item\.ref|patient|cpf|cns/i);
+});
+
+test('V8C expande JSON compacto internamente e preserva o contrato público completo', async () => {
+  const calls = [];
+  const fields = fieldsFor('pagina_medica_autorizada', {
+    titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
+    motivo_encaminhamento: { state: 'encontrado', value: 'TEXTO LITERAL' },
+    medico: { state: 'encontrado', value: 'DR. TESTE' },
+    crm_rms: { state: 'encontrado', value: 'CRM/MS 1' },
+    procedimento_solicitado: { state: 'encontrado', value: 'PROC' },
+    codigo_procedimento: { state: 'encontrado', value: '0001' },
+    cid: { state: 'ilegivel', value: '' },
+    descricao_cid: { state: 'encontrado', value: 'DESCRIÇÃO LITERAL' }
+  });
+
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 6,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([6, 6, 6])
+  }, {
+    aiRun: async (model, input) => {
+      calls.push({ model, input });
+      return workersResponse(compactAnalysis('pagina_medica_autorizada', fields), {
+        prompt_tokens: 1400,
+        completion_tokens: 92,
+        total_tokens: 1492
+      });
+    }
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(result.classification.pageType, 'pagina_medica_autorizada');
+  assert.equal(result.extraction.pageNumber, 6);
+  assert.equal(result.extraction.fields.titulo.value, 'ENCAMINHAMENTO');
+  assert.equal(result.extraction.fields.cid.state, 'ilegivel');
+  assert.equal(result.extraction.fields.descricao_cid.value, 'DESCRIÇÃO LITERAL');
+  assert.equal(result.provider.responseFormat, 'compact');
+  assert.equal(result.provider.reviewed, false);
+  assert.equal(result.routines.analysis.id, 'PROMPT_ANALISE_REGULACAO_COMPACTA_V1');
+  assert.equal(result.provider.attempts[0].usage.completionTokens, 92);
+
+  const serialized = JSON.stringify(calls[0].input);
+  assert.match(serialized, /FORMATO INTERNO COMPACTO/);
+  assert.match(serialized, /Use exclusivamente o FORMATO INTERNO COMPACTO/);
+  assert.equal(calls[0].input.max_completion_tokens, 700);
+});
+
+test('V8C aceita resposta legada como compatibilidade de fallback sem alterar o contrato público', async () => {
+  const result = await analyzeDocumentAiPage(enabledEnv(), {
+    pageNumber: 3,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([3])
+  }, {
+    aiRun: async () => workersResponse({ pageType: 'outro', fields: {} })
+  });
+
+  assert.equal(result.classification.pageType, 'outro');
+  assert.equal(result.extraction, null);
+  assert.equal(result.provider.responseFormat, 'legacy');
 });
 
 test('análise integrada classifica e extrai página autorizada em uma única inferência', async () => {
@@ -758,6 +830,10 @@ test('source do provider não registra conteúdo, não chama Gemini API e não u
   assert.match(source, /enable_thinking: false/);
   assert.match(source, /reasoning_effort: null/);
   assert.match(source, /REVISÃO FOCAL DE PRECISÃO DA MESMA PÁGINA MÉDICA/);
+  assert.match(source, /COMPACT_PAGE_TYPES/);
+  assert.match(source, /COMPACT_FIELD_STATES/);
+  assert.match(source, /responseFormat: 'compact'/);
+  assert.match(source, /PROMPT_ANALISE_REGULACAO_COMPACTA_V1/);
   assert.match(source, /\[DOCUMENT_AI_FALLBACK_FREE_MODEL\]/);
   assert.match(source, /focus\.includes\('cid'\).*descricao_cid/s);
   assert.doesNotMatch(source, /DOCUMENT_AI_PROVIDER_LOCAL_TIMEOUT/);
