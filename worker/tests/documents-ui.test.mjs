@@ -860,6 +860,8 @@ test('6A orquestrador é idle, cancelável e com concorrência unitária', () =>
   assert.match(source, /MAX_CONCURRENT = 1/);
   assert.match(source, /requestIdleCallback/);
   assert.match(source, /AbortController/);
+  assert.match(source, /join/);
+  assert.match(source, /cancelQueuedScope/);
   assert.match(source, /cancelScope/);
   assert.match(source, /cancelAll/);
   assert.match(source, /portal:session-cleared/);
@@ -889,6 +891,8 @@ test('6C só antecipa IA com capability e gates corretos e reutiliza resultado n
   assert.match(readiness, /features\?\.backgroundPreparation === true/);
   assert.match(readiness, /documentAiCapabilities\(\)\.extract === true/);
   assert.match(client, /backgroundPreparedAnalysis\.get\(pageNumber\)/);
+  assert.match(client, /background\?\.join\?\.\(\`preextract:/);
+  assert.match(client, /cancelQueuedScope\?\.\(state\.backgroundScope, 'foreground'\)/);
   assert.match(client, /background_state/);
   assert.doesNotMatch(readiness, /drive\/sync|replace_pdf|save_copy/);
 });
