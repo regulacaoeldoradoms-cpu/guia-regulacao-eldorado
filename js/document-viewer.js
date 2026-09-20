@@ -96,6 +96,84 @@
     return clamp(Math.min(deviceScale, memoryScale), 1, MAX_DEVICE_SCALE);
   }
 
+  function meaningfulContentBounds(canvas, options = {}) {
+    const width = Math.max(1, Number(canvas?.width || 0));
+    const height = Math.max(1, Number(canvas?.height || 0));
+    if (width < 120 || height < 120) return null;
+
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) return null;
+
+    let imageData;
+    try {
+      imageData = context.getImageData(0, 0, width, height);
+    } catch (_) {
+      return null;
+    }
+
+    const data = imageData.data;
+    const tile = clamp(Math.round(Number(options.tileSize || 64)), 32, 96);
+    const sampleStep = clamp(Math.round(Number(options.sampleStep || 3)), 2, 6);
+    const darkness = clamp(Math.round(Number(options.darkThreshold || 242)), 220, 252);
+    const minimumFraction = clamp(Number(options.minimumDarkFraction || 0.055), 0.02, 0.12);
+
+    let minX = width;
+    let minY = height;
+    let maxX = -1;
+    let maxY = -1;
+
+    for (let top = 0; top < height; top += tile) {
+      const bottom = Math.min(height, top + tile);
+      for (let left = 0; left < width; left += tile) {
+        const right = Math.min(width, left + tile);
+        let dark = 0;
+        let sampled = 0;
+
+        for (let y = top; y < bottom; y += sampleStep) {
+          for (let x = left; x < right; x += sampleStep) {
+            const offset = (y * width + x) * 4;
+            const alpha = data[offset + 3];
+            if (alpha < 24) continue;
+            sampled += 1;
+            if (
+              data[offset] < darkness
+              || data[offset + 1] < darkness
+              || data[offset + 2] < darkness
+            ) dark += 1;
+          }
+        }
+
+        if (sampled > 0 && (dark / sampled) >= minimumFraction) {
+          minX = Math.min(minX, left);
+          minY = Math.min(minY, top);
+          maxX = Math.max(maxX, right);
+          maxY = Math.max(maxY, bottom);
+        }
+      }
+    }
+
+    if (maxX <= minX || maxY <= minY) return null;
+
+    const padding = clamp(Math.round(Number(options.padding || 56)), 24, 140);
+    minX = Math.max(0, minX - padding);
+    minY = Math.max(0, minY - padding);
+    maxX = Math.min(width, maxX + padding);
+    maxY = Math.min(height, maxY + padding);
+
+    const cropWidth = Math.max(1, maxX - minX);
+    const cropHeight = Math.max(1, maxY - minY);
+    const areaRatio = (cropWidth * cropHeight) / (width * height);
+    if (areaRatio >= 0.90 || cropWidth < 160 || cropHeight < 160) return null;
+
+    return {
+      x: minX,
+      y: minY,
+      width: cropWidth,
+      height: cropHeight,
+      areaRatio
+    };
+  }
+
   function sourceParameters(source) {
     if (source instanceof Blob) {
       return source.arrayBuffer().then((buffer) => ({ data: new Uint8Array(buffer) }));
@@ -3245,14 +3323,41 @@
       throw new Error('O documento mudou durante a preparação da página.');
     }
 
+    let outputCanvas = canvas;
+    let croppedCanvas = null;
+    if (options.cropWhitespace === true) {
+      const bounds = meaningfulContentBounds(canvas, options.cropOptions || {});
+      if (bounds) {
+        croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = bounds.width;
+        croppedCanvas.height = bounds.height;
+        const croppedContext = croppedCanvas.getContext('2d', { alpha: false });
+        if (croppedContext) {
+          croppedContext.fillStyle = '#ffffff';
+          croppedContext.fillRect(0, 0, bounds.width, bounds.height);
+          croppedContext.drawImage(
+            canvas,
+            bounds.x, bounds.y, bounds.width, bounds.height,
+            0, 0, bounds.width, bounds.height
+          );
+          outputCanvas = croppedCanvas;
+        }
+      }
+    }
+
     const mimeType = options.mimeType === 'image/png' ? 'image/png' : 'image/jpeg';
     const quality = clamp(Number(options.quality || 0.9), 0.72, 0.95);
     const blob = await new Promise((resolve, reject) => {
-      canvas.toBlob((value) => {
+      outputCanvas.toBlob((value) => {
         if (value instanceof Blob && value.size > 0) resolve(value);
         else reject(new Error('Não foi possível preparar a imagem da página.'));
       }, mimeType, mimeType === 'image/jpeg' ? quality : undefined);
     });
+
+    if (croppedCanvas) {
+      croppedCanvas.width = 0;
+      croppedCanvas.height = 0;
+    }
     canvas.width = 0;
     canvas.height = 0;
     return blob;
