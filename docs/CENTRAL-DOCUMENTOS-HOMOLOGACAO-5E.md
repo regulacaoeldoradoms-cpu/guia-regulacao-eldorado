@@ -667,3 +667,17 @@ Ordem operacional:
 4. preparar nova janela;
 5. executar uma única matriz sintética e copiar o resumo seguro.
 
+## V8C.1 — correção focal de título — 20/09/2026
+
+A V8C comprovou a redução de output (579 completion tokens), mas falhou quatro páginas médicas somente em `titulo`.
+
+A próxima homologação deve validar:
+- 10/10;
+- `formato_compacto_paginas=6`;
+- `formato_legado_paginas=0`;
+- nenhuma divergência em `titulo`;
+- completion tokens ainda materialmente abaixo dos 1.024 da V8B;
+- sem alteração de imagem, resolução, concorrência, provider, Drive ou produção.
+
+A janela V8C atual deve ser encerrada fail-closed após CI/merge/freeze da V8C.1 e nunca reutilizada.
+
