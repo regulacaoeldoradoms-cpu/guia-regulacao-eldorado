@@ -462,3 +462,12 @@ Critério da V8C:
 - reduzir materialmente os 1.024 completion tokens da V8B, com alvo operacional <= 700;
 - comparar latência sem atribuir ganho/regressão a uma única rodada se a variação do provider dominar.
 
+Referências congeladas V8C:
+- PR #327 integrada na `main` pelo merge `cf8ed89cd2e5fa9ba7ed5c02d6f0cc1f50e2021e`;
+- head funcional: `19c54c5609b8435b85a2e9ab8ea411149bbefcb8`;
+- Pages imutável: `https://06b2c2ec.portal-regulacao-central-staging.pages.dev`;
+- comparação head funcional → merge final: zero arquivos diferentes;
+- 23 workflows/checks do head funcional concluíram com sucesso, incluindo governança, Fases 1–5E, bundle e procedimentos operacionais 5E.
+
+Antes da matriz V8C, encerrar a janela V8B anterior fail-closed. O readiness V8C deve confirmar source e Pages acima antes de criar nova janela.
+
