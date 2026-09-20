@@ -623,3 +623,19 @@ Critério V7F:
 - recorte remove somente áreas vazias, com text layer apenas como salvaguarda geométrica;
 - resumo seguro mede `imagem_area_pct`;
 - critério: 10/10 e ganho material sobre 6,830 s.
+
+## V8B — janela diagnóstica por token usage — 20/09/2026
+
+Referências congeladas:
+- source ref: `96ce5dec060c98c582a8925ae03bc25973b0f3bd`;
+- Pages: `https://255ecf24.portal-regulacao-central-staging.pages.dev`;
+- head funcional do Pages: `29d6eea3baf9e9a5d58164ffa901313fec9aa048`;
+- comparação GitHub head funcional → merge final: zero arquivos diferentes.
+
+Escopo desta homologação:
+- mesma V8A funcional: imagem, resolução, prompt, Gemma/Qwen, concorrência 5, `max_completion_tokens=700` e revisão seletiva inalterados;
+- coletar no resumo seguro somente contagens técnicas de `prompt_tokens`, `completion_tokens`, `total_tokens` e `cached_prompt_tokens`;
+- nenhuma alteração de Drive, permissões, produção ou conteúdo documental.
+
+A janela V8A anterior deve ser encerrada fail-closed antes do readiness V8B. Depois, executar uma única matriz sintética 10/10 e copiar o resumo seguro completo. A decisão seguinte depende dos tokens medidos: compactar saída se completion for relevante; otimizar input visual somente se prompt/entrada for o gargalo dominante.
+
