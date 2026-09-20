@@ -2390,11 +2390,29 @@ A janela V7F atual permanece ativa e deve ser encerrada fail-closed antes de pre
 
 **Próxima ação exata:** encerrar V7F; atualizar scripts locais; readiness V7G; preparar nova janela e executar uma única matriz.
 
+## Janela V7F encerrada fail-closed — 20/09/2026
+
+O operador encerrou oficialmente a janela V7F após a matriz 10/10 em 6,830 s.
+
+Evidências sanitizadas:
+- `JANELA_5E_ENCERRADA`;
+- controle `phase5e_6534697d4d83487fbb98effbd0d9f371`;
+- `controlEnabled=false`;
+- `aiGate=false`;
+- `driveWriteGate=false`;
+- preview final bloqueado `d020c9a9-2180-4a58-abb1-58966ab01f07`;
+- release encerrado `6e30117a1e0c342cb84d4cdf1f1a2f7351d86c82`;
+- `httpBlocked=true`.
+
+Conclusão: a janela V7F está encerrada e não deve ser reutilizada. O bloqueio para abrir a V7G foi removido de forma fail-closed.
+
+**Próxima ação exata:** atualizar os quatro scripts operacionais a partir da `main` e executar `iniciar-homologacao-5e.mjs --iniciar`. O readiness correto deve mostrar source `ba7d8a369940a9613a436b6b0f572bdedb99375f` e Pages `https://0e5a1474.portal-regulacao-central-staging.pages.dev`. Somente então confirmar `PREPARAR HOMOLOGACAO 5E`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 5E — V7G integrada; teste final image-only aguarda encerramento V7F |
+| Fase/subfase | Fase 5E — V7G integrada; V7F encerrada fail-closed; teste final pronto para abertura |
 | Último resultado real | V7F 10/10; extração 6,830 s; apenas 330 ms acima do alvo 6,5 s |
 | Runtime funcional V7E | `5fe6d24bb1b26b039a0221b0224201692cdf11ef` |
 | Runtime próximo reteste | `ba7d8a369940a9613a436b6b0f572bdedb99375f` |
@@ -2404,7 +2422,7 @@ A janela V7F atual permanece ativa e deve ser encerrada fail-closed antes de pre
 | V7 integrada | Moondream reasoning=false; concorrência 6; imagem atual preservada; Gemma/Qwen fallback; revisão sequencial evitada quando fast path já confirma ilegivel |
 | Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
 | Produção | IA documental false/false; não ativar antes do aceite |
-| Próxima ação exata | encerrar V7F fail-closed; atualizar scripts; readiness V7G; preparar janela; executar matriz uma vez |
+| Próxima ação exata | atualizar scripts; readiness V7G; preparar janela; executar matriz uma vez |
 | Meta | 10/10 e duracao_extracao_ms V7 <= 50% da V6 na mesma máquina/rede |
 | Fontes | Guia Mestre V1.1; FASE-5; HOMOLOGACAO-5E; IA-LATENCIA-V7; STATUS; documentação Cloudflare Workers AI |
 
