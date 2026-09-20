@@ -359,7 +359,9 @@
           state: stateValue,
           source: String(options.source || 'local'),
           cacheState: String(options.cacheState || 'unknown'),
-          count: Number(options.count || 0)
+          count: Number.isFinite(Number(result.value))
+            ? Number(result.value)
+            : Number(options.count || 0)
         });
         try { options.onSettled?.(result); } catch (_) {}
       }
