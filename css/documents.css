@@ -135,8 +135,8 @@
 .documents-item:hover,
 .documents-item:focus-visible { background: #f2f8fd; outline: none; }
 .documents-item.selected {
-  background: #e8f4ff;
-  box-shadow: inset 3px 0 0 #1765a7;
+  background: #fff3f0;
+  box-shadow: inset 3px 0 0 #ff2800;
 }
 .documents-item.unsupported { cursor: default; opacity: .67; }
 .documents-item.unsupported:hover { background: transparent; }
@@ -167,8 +167,8 @@
   border-radius: 10px;
   display: grid;
   place-items: center;
-  background: #edf6ff;
-  color: #1765a7;
+  background: #fff0ed;
+  color: #ff2800;
   font-size: 1.08rem;
   font-weight: 900;
 }
@@ -177,6 +177,7 @@
 .documents-item-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .87rem; color: #153854; }
 .documents-item-copy span { display: block; margin-top: 3px; color: var(--portal-muted); font-size: .74rem; }
 .documents-item-action { color: #2b6fa7; font-size: .74rem; font-weight: 850; white-space: nowrap; }
+.documents-item-action:empty { display: none; }
 .documents-pagination { padding: 12px; text-align: center; border-top: 1px solid #edf2f6; }
 
 .documents-viewer {
