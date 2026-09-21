@@ -4301,8 +4301,8 @@
       if (els.documentAiDocumentStatus) {
         els.documentAiDocumentStatus.className = 'documents-ai-document-status success';
         els.documentAiDocumentStatus.textContent = extractedCount
-          ? `Concluído: ${extractedCount} página(s) autorizada(s) extraída(s); ${state.documentAiIgnoredPages} página(s) ignorada(s).`
-          : `Concluído: nenhuma página autorizada encontrada; ${state.documentAiIgnoredPages} página(s) ignorada(s).`;
+          ? `Dados extraídos em ${extractedCount} página(s).`
+          : 'Nenhum dado autorizado encontrado.';
       }
       capture('document_ai_completed', {
         route: '/documentos/',
