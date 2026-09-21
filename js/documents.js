@@ -108,6 +108,7 @@
     searchQuery: '',
     searchMode: false,
     loading: false,
+    folderSnapshot: null,
     selectedListIndex: -1,
     browserForegroundReason: '',
     pdfObjectUrl: '',
@@ -1667,9 +1668,13 @@
     }
 
     const started = performance.now();
+    const buildStarted = performance.now();
     let blob = null;
     let syncStarted = false;
     let lockedEditor = false;
+    let buildMs = 0;
+    let driveStartMs = 0;
+    let driveUploadMs = 0;
 
     if (replace) {
       state.driveSyncInFlight = true;
@@ -1690,6 +1695,7 @@
 
     try {
       blob = await finalPdfBlobForSession(session);
+      buildMs = duration(buildStarted);
       if (!(blob instanceof Blob) || session !== state.editorSession || generation !== state.driveSyncGeneration) return false;
 
       if (replace && currentEditorRevision() !== targetRevision) {
@@ -1710,6 +1716,7 @@
       // conflito de versão.
       setDriveSyncProgress('Validando e iniciando envio seguro ao Google Drive…');
       const preserveRevision = replace && !state.driveSyncSafetyRevisionPreserved;
+      const driveStartStarted = performance.now();
       const startedSync = await driveSyncFetch('/api/documents/drive/sync/start', {
         method: 'POST',
         json: {
@@ -1722,6 +1729,7 @@
         }
       });
 
+      driveStartMs = duration(driveStartStarted);
       if (replace && startedSync?.safetyRevisionPreserved === true) {
         state.driveSyncSafetyRevisionPreserved = true;
       }
@@ -1732,6 +1740,7 @@
 
       let offset = 0;
       let completed = null;
+      const uploadStarted = performance.now();
 
       while (offset < blob.size) {
         const endExclusive = Math.min(blob.size, offset + chunkSize);
@@ -1773,6 +1782,7 @@
         offset = nextOffset;
       }
 
+      driveUploadMs = duration(uploadStarted);
       if (!completed?.completed) {
         throw new Error('O Google Drive não confirmou a conclusão do upload.');
       }
@@ -1784,7 +1794,10 @@
         route: '/documentos/',
         duration_ms: duration(started),
         operation,
-        size_bucket: sizeBucket(blob.size)
+        size_bucket: sizeBucket(blob.size),
+        build_ms: buildMs,
+        drive_start_ms: driveStartMs,
+        drive_upload_ms: driveUploadMs
       });
 
       if (replace) {
@@ -5083,6 +5096,18 @@
     });
   }
 
+  function normalizedSearchText(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('pt-BR');
+  }
+
+  function driveTimingValue(payload, key) {
+    const value = Number(payload?.timing?.[key] || 0);
+    return Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
+  }
+
   function currentParentRef() {
     return state.stack.length ? state.stack[state.stack.length - 1].ref : '';
   }
@@ -5219,12 +5244,21 @@
     background?.cancelScope?.('list', 'stale');
     state.loading = true;
     const started = performance.now();
+    const parentRef = currentParentRef();
+
     if (!append) {
       state.searchMode = false;
       state.searchQuery = '';
       state.selectedListIndex = -1;
       els.search.value = '';
-      els.list.innerHTML = '<div class="documents-loading">Carregando pasta…</div>';
+      const snapshot = state.folderSnapshot;
+      if (snapshot && snapshot.parentRef === parentRef && Array.isArray(snapshot.items)) {
+        state.items = snapshot.items.slice();
+        state.nextPageToken = String(snapshot.nextPageToken || '');
+        renderItems();
+      } else {
+        els.list.innerHTML = '<div class="documents-loading">Carregando pasta…</div>';
+      }
     } else {
       els.loadMore.disabled = true;
     }
@@ -5233,23 +5267,33 @@
       const payload = await api('/api/documents/drive/list', {
         method: 'POST',
         body: JSON.stringify({
-          parentRef: currentParentRef(),
+          parentRef,
           pageToken,
-          pageSize: 80
+          pageSize: append ? 80 : 40
         })
       });
       const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
       state.items = append ? sortItems([...state.items, ...incoming]) : incoming;
       state.nextPageToken = String(payload?.nextPageToken || '');
+      state.folderSnapshot = {
+        parentRef,
+        items: state.items.slice(),
+        nextPageToken: state.nextPageToken
+      };
       renderItems();
       capture('drive_folder_opened', {
         route: '/documentos/',
         duration_ms: duration(started),
         source: 'drive',
-        cache_state: 'miss'
+        cache_state: 'miss',
+        drive_token_ms: driveTimingValue(payload, 'tokenMs'),
+        drive_api_ms: driveTimingValue(payload, 'apiMs'),
+        drive_map_ms: driveTimingValue(payload, 'mapMs')
       });
     } catch (error) {
-      if (!append) els.list.innerHTML = '<div class="documents-empty">Não foi possível carregar esta pasta.</div>';
+      if (!append && !state.items.length) {
+        els.list.innerHTML = '<div class="documents-empty">Não foi possível carregar esta pasta.</div>';
+      }
       showStatus(error.message || 'Não foi possível acessar o Google Drive.', 'warning');
     } finally {
       state.loading = false;
@@ -5268,11 +5312,25 @@
     background?.cancelScope?.('list', 'stale');
     state.loading = true;
     const started = performance.now();
+
     if (!append) {
       state.searchMode = true;
       state.searchQuery = value;
       state.selectedListIndex = -1;
-      els.list.innerHTML = '<div class="documents-loading">Pesquisando no Drive…</div>';
+
+      const snapshot = state.folderSnapshot;
+      const needle = normalizedSearchText(value);
+      const localMatches = snapshot && snapshot.parentRef === currentParentRef()
+        ? snapshot.items.filter((item) => normalizedSearchText(item?.name).includes(needle))
+        : [];
+
+      if (localMatches.length) {
+        state.items = sortItems(localMatches);
+        state.nextPageToken = '';
+        renderItems();
+      } else {
+        els.list.innerHTML = '<div class="documents-loading">Pesquisando no Drive…</div>';
+      }
     } else {
       els.loadMore.disabled = true;
     }
@@ -5280,7 +5338,7 @@
     try {
       const payload = await api('/api/documents/drive/search', {
         method: 'POST',
-        body: JSON.stringify({ query: value, pageToken, pageSize: 80 })
+        body: JSON.stringify({ query: value, pageToken, pageSize: append ? 80 : 40 })
       });
       const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
       state.items = append ? sortItems([...state.items, ...incoming]) : incoming;
@@ -5290,10 +5348,15 @@
         route: '/documentos/',
         duration_ms: duration(started),
         source: 'drive',
-        result_count_bucket: resultCountBucket(state.items.length)
+        result_count_bucket: resultCountBucket(state.items.length),
+        drive_token_ms: driveTimingValue(payload, 'tokenMs'),
+        drive_api_ms: driveTimingValue(payload, 'apiMs'),
+        drive_map_ms: driveTimingValue(payload, 'mapMs')
       });
     } catch (error) {
-      if (!append) els.list.innerHTML = '<div class="documents-empty">Não foi possível concluir a pesquisa.</div>';
+      if (!append && !state.items.length) {
+        els.list.innerHTML = '<div class="documents-empty">Não foi possível concluir a pesquisa.</div>';
+      }
       showStatus(error.message || 'Não foi possível pesquisar no Google Drive.', 'warning');
     } finally {
       state.loading = false;
