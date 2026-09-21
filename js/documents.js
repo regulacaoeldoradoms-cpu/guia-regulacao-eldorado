@@ -37,6 +37,7 @@
   const DRIVE_AUTO_SYNC_IDLE_MS = 1000;
   const DRIVE_SYNC_SUCCESS_VISIBLE_MS = 1000;
   const DRIVE_SYNC_REVISION_POLL_MS = 200;
+  const DOCUMENT_PRESENCE_HEARTBEAT_MS = 25_000;
 
   if (user.mustChangePassword) {
     location.replace('/seguranca/?primeiro-acesso=1');
@@ -77,6 +78,13 @@
     pdfFirstPageEmitted: false,
     pdfReadyEmitted: false,
     pdfCustomFallbackStarted: false,
+    titleSelected: false,
+    titleEditing: false,
+    renameBusy: false,
+    presenceSessionId: '',
+    presenceMode: 'view',
+    presenceTimer: null,
+    presenceGeneration: 0,
     cachePrefetchGeneration: 0,
     backgroundScope: '',
     backgroundPreparedImages: new Map(),
@@ -144,7 +152,12 @@
     loadMore: document.getElementById('loadMoreButton'),
     viewer: document.getElementById('documentsViewer'),
     viewerModeLabel: document.getElementById('documentsViewerModeLabel'),
+    viewerTitleShell: document.getElementById('documentsViewerTitleShell'),
     viewerTitle: document.getElementById('documentsViewerTitle'),
+    viewerRenameControl: document.getElementById('documentsViewerRenameControl'),
+    viewerRenameInput: document.getElementById('documentsViewerRenameInput'),
+    presenceNotice: document.getElementById('documentsPresenceNotice'),
+    presenceText: document.getElementById('documentsPresenceText'),
     viewerState: document.getElementById('documentsViewerState'),
     automationStatus: document.getElementById('documentsAutomationStatus'),
     customViewer: document.getElementById('documentsCustomViewer'),
