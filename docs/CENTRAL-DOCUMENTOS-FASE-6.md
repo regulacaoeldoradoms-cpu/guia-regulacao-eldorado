@@ -487,3 +487,32 @@ Após a primeira publicação do rascunho temporário, o operador confirmou sua 
 - trocar/fechar o PDF limpa geometria e texto, sem persistência local ou remota.
 
 O campo de texto continua independente dos gestos da janela: selecionar, digitar, `Ctrl+A` e `Ctrl+C` não iniciam movimento.
+
+## Encerramento formal da Fase 6 — APROVADA — 21/09/2026
+
+O responsável operacional aprovou explicitamente a Fase 6 em uso real com a instrução **“fase 6 aprovada, pode encerrar”**.
+
+Com esse aceite humano final:
+- a implementação 6A–6E é considerada homologada para o fluxo operacional atual;
+- os refinamentos aprovados durante a homologação — ordem dos campos, confirmação de cópia, renomeação sincronizada, seleção textual, OCR local e bloco de notas temporário móvel/redimensionável — passam a compor a baseline produtiva da Central;
+- as proteções de autenticação, capabilities, gates de escrita, conflitos do Drive, privacidade e observabilidade sem conteúdo sensível permanecem obrigatórias;
+- `DOCUMENTS_AI_BACKGROUND_ENABLED=false` continua preservado até existir decisão específica posterior.
+
+### Evidência e limitação de medição
+
+A Fase 6 teve uso real gravado e homologações operacionais sucessivas, inclusive aprovação explícita do OCR local em documento digitalizado e aceite final global da fase pelo responsável.
+
+Não existe, nos artefatos persistentes atuais, uma série final antes/depois suficientemente completa para registrar com rigor um percentual único de redução de tempo da Fase 6. **Nenhum número retroativo foi inventado.** O aceite final do responsável é registrado como evidência humana de que o fluxo ficou operacionalmente adequado e mais eficiente para o trabalho real.
+
+A quantificação contínua passa a ser responsabilidade explícita da **Fase 7 — Robustez e otimização contínua**, cujo próprio critério exige p75/p95/p99, SLOs e decisões baseadas em dados reais.
+
+### Pendências não bloqueantes transferidas
+
+- consolidar baselines quantitativas de desempenho em produção;
+- definir SLOs a partir de dados reais;
+- acompanhar PDFs grandes, cache hit/miss, falhas de Drive, mobile/desktop e tempo de IA;
+- tratar regressões de p75/p95 antes de ampliar funcionalidade.
+
+**Estado:** Fase 6 encerrada.  
+**Próxima fase:** Fase 7 — Robustez e otimização contínua.
+

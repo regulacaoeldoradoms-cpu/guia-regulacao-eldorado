@@ -405,3 +405,19 @@ Aceite:
 - fechar/reabrir a janelinha preserva posição/tamanho manual no mesmo PDF;
 - trocar/fechar o PDF volta ao posicionamento padrão e continua apagando o texto;
 - nenhum dado de posição, tamanho ou conteúdo é persistido fora da memória da sessão.
+
+## Aceite final global da Fase 6 — APROVADO — 21/09/2026
+
+O responsável operacional declarou explicitamente **“fase 6 aprovada, pode encerrar”** após o ciclo de uso real e refinamentos da Central/Titon.
+
+Esse aceite:
+- encerra a homologação humana pendente da Fase 6;
+- considera aceitos, em nível de fase, os casos operacionais que ainda não tinham uma linha individual de aceite persistida;
+- não altera as limitações já documentadas, especialmente manuscritos médicos potencialmente ilegíveis e OCR fail-soft;
+- não autoriza ampliar permissões, persistir conteúdo sensível, ativar escrita automática ou ligar IA antecipatória;
+- não cria uma métrica histórica fictícia de economia de tempo.
+
+Limitação documental: não foi preservado um comparativo numérico único antes/depois para todos os fluxos. O aceite operacional final é a evidência humana de fechamento; a instrumentação quantitativa contínua e os SLOs seguem para a Fase 7.
+
+**Resultado:** homologação da Fase 6 encerrada e aprovada.
+
