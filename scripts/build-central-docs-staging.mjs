@@ -98,8 +98,10 @@ const files = [
   ['css/documents.css', 'css/documents.css'],
   ['js/document-background.js', 'js/document-background.js'],
   ['js/document-editor.js', 'js/document-editor.js'],
+  ['js/document-ocr.js', 'js/document-ocr.js'],
   ['js/document-viewer.js', 'js/document-viewer.js'],
   ['vendor/pdf-lib', 'vendor/pdf-lib'],
+  ['vendor/tesseract', 'vendor/tesseract'],
   ['vendor/pdfjs-legacy', 'vendor/pdfjs-legacy'],
   ['vendor/pdfjs/cmaps', 'vendor/pdfjs/cmaps'],
   ['vendor/pdfjs/standard_fonts', 'vendor/pdfjs/standard_fonts'],
@@ -173,6 +175,7 @@ const homologationCopies = [
   ['js/document-cache.js', 'js/document-cache.js', true],
   ['js/document-background.js', 'js/document-background.js', true],
   ['js/document-editor.js', 'js/document-editor.js', true],
+  ['js/document-ocr.js', 'js/document-ocr.js', true],
   ['js/document-viewer.js', 'js/document-viewer.js', true],
   ['js/documents.js', 'js/documents.js', true]
 ];
@@ -180,6 +183,7 @@ const homologationCopies = [
 await mkdir(homologationRoot, { recursive: true });
 await cp(path.join(root, 'assets'), path.join(homologationRoot, 'assets'), { recursive: true });
 await cp(path.join(root, 'vendor/pdf-lib'), path.join(homologationRoot, 'vendor/pdf-lib'), { recursive: true });
+await cp(path.join(root, 'vendor/tesseract'), path.join(homologationRoot, 'vendor/tesseract'), { recursive: true });
 await cp(path.join(root, 'vendor/pdfjs-legacy'), path.join(homologationRoot, 'vendor/pdfjs-legacy'), { recursive: true });
 await cp(path.join(root, 'vendor/pdfjs/cmaps'), path.join(homologationRoot, 'vendor/pdfjs/cmaps'), { recursive: true });
 await cp(path.join(root, 'vendor/pdfjs/standard_fonts'), path.join(homologationRoot, 'vendor/pdfjs/standard_fonts'), { recursive: true });
@@ -274,7 +278,7 @@ await writeFile(
 );
 
 const commonHeaders = `  X-Robots-Tag: noindex, nofollow, noarchive\n  Cache-Control: no-store\n  Referrer-Policy: no-referrer\n  X-Content-Type-Options: nosniff\n  X-Frame-Options: DENY\n  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()\n`;
-const headers = `/*\n${commonHeaders}\n/index.html\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/testing/*\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/opening/*\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'\n\n/homologacao-5e/*\n${commonHeaders}  Content-Security-Policy: default-src 'self'; connect-src 'self' ${effectiveAiWorkerOrigin}; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; worker-src 'none'; child-src 'none'; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'\n\n/homologacao/*\n${commonHeaders}  Content-Security-Policy: default-src 'self'; connect-src 'self' ${effectiveWorkerOrigin}; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'\n`;
+const headers = `/*\n${commonHeaders}\n/index.html\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/testing/*\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'\n\n/opening/*\n  Content-Security-Policy: default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'\n\n/homologacao-5e/*\n${commonHeaders}  Content-Security-Policy: default-src 'self'; connect-src 'self' ${effectiveAiWorkerOrigin}; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; worker-src 'none'; child-src 'none'; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'\n\n/homologacao/*\n${commonHeaders}  Content-Security-Policy: default-src 'self'; connect-src 'self' ${effectiveWorkerOrigin}; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; worker-src 'self' blob:; child-src 'self' blob:; frame-src 'none'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'\n`;
 await writeFile(path.join(out, '_headers'), headers, 'utf8');
 
 const forbiddenSynthetic = [
