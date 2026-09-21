@@ -555,6 +555,13 @@
         || record.textLayerInstance !== textLayer
       ) return false;
 
+      const cropEntry = cropEntryForPage(session, record.pageNumber);
+      const cropDraft = cropDraftForPage(session, record.pageNumber);
+      applyPageCropViewport(
+        record,
+        String(session.cropMode || 'none') === 'crop' && cropDraft ? null : cropEntry?.crop
+      );
+
       const hasText = Array.isArray(textLayer.textDivs)
         && textLayer.textDivs.some((node) => String(node?.textContent || '').trim());
       if (hasText) {
