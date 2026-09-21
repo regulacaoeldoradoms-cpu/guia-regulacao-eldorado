@@ -3599,6 +3599,22 @@
     return blocks.join('\n\n');
   }
 
+  function documentAiResultGroups(extraction) {
+    const fields = extraction?.fields && typeof extraction.fields === 'object'
+      ? extraction.fields
+      : {};
+    const known = new Set();
+    const groups = DOCUMENT_AI_FIELD_GROUPS.map((group) => {
+      const keys = group.fields.filter((key) => Object.prototype.hasOwnProperty.call(fields, key));
+      for (const key of keys) known.add(key);
+      return { id: group.id, label: group.label, keys };
+    }).filter((group) => group.keys.length > 0);
+
+    const extras = Object.keys(fields).filter((key) => !known.has(key));
+    if (extras.length) groups.push({ id: 'outros', label: 'Outros', keys: extras });
+    return groups;
+  }
+
   function renderDocumentAiDocumentResults() {
     const results = Array.isArray(state.documentAiResults)
       ? [...state.documentAiResults].sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber))
@@ -3610,30 +3626,43 @@
       if (!completed) {
         els.documentAiDocumentResults.replaceChildren();
       } else {
-        const cards = results.map((extraction, index) => {
-          const fields = Object.entries(extraction.fields || {}).map(([key, field]) => {
-            const label = DOCUMENT_AI_FIELD_LABELS[key] || key;
-            const display = documentAiFieldDisplay(field);
-            const stateClass = field?.state === 'ilegivel'
-              ? 'is-illegible'
-              : field?.state === 'nao_consta'
-                ? 'is-missing'
-                : '';
-            return `<div class="documents-ai-field">
-              <div class="documents-ai-field-copy">
-                <strong>${escapeHtml(label)}</strong>
-                <span class="${stateClass}">${escapeHtml(display)}</span>
-              </div>
-            </div>`;
+        const cards = results.map((extraction) => {
+          const pageNumber = Number(extraction.pageNumber);
+          const categories = documentAiResultGroups(extraction).map((group) => {
+            const fields = group.keys.map((key) => {
+              const field = extraction.fields?.[key];
+              const label = DOCUMENT_AI_FIELD_LABELS[key] || key;
+              const display = documentAiFieldDisplay(field);
+              const stateClass = field?.state === 'ilegivel'
+                ? 'is-illegible'
+                : field?.state === 'nao_consta'
+                  ? 'is-missing'
+                  : '';
+              return `<div class="documents-ai-field">
+                <div class="documents-ai-field-copy">
+                  <strong>${escapeHtml(label)}</strong>
+                  <span class="${stateClass}">${escapeHtml(display)}</span>
+                </div>
+                <button type="button"
+                  data-ai-copy-document-field="${escapeHtml(key)}"
+                  data-ai-copy-document-page="${pageNumber}"
+                  aria-label="Copiar ${escapeHtml(label)}">Copiar</button>
+              </div>`;
+            }).join('');
+
+            return `<section class="documents-ai-result-category" data-ai-category="${escapeHtml(group.id)}">
+              <div class="documents-ai-result-category-title">${escapeHtml(group.label)}</div>
+              <div class="documents-ai-extraction-fields">${fields}</div>
+            </section>`;
           }).join('');
 
           return `<article class="documents-ai-result-card">
             <div class="documents-ai-result-head">
               <strong>${escapeHtml(documentAiResultHeading(extraction))}</strong>
-              <button type="button" class="portal-button ghost" data-ai-source-page="${Number(extraction.pageNumber)}">Ver página</button>
+              <button type="button" class="portal-button ghost" data-ai-source-page="${pageNumber}">Ver página</button>
             </div>
-            <div class="documents-ai-extraction-fields">${fields}</div>
-            <button type="button" class="portal-button ghost documents-ai-copy-result" data-ai-copy-result-index="${index}">Copiar este bloco</button>
+            ${categories}
+            <button type="button" class="portal-button ghost documents-ai-copy-result" data-ai-copy-result-page="${pageNumber}">Copiar esta página</button>
           </article>`;
         });
 
