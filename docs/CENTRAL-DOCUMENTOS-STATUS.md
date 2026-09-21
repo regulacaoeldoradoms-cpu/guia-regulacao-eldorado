@@ -3088,8 +3088,8 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
 | Subfase / objetivo atual | **7A observabilidade + 7E otimização guiada por evidência do sync Google Drive** |
 | Última ação concluída | PR **#386** integrada na `main`: removido apenas o preflight HTTP duplicado do frontend; o preflight autoritativo permanece dentro de `/sync/start` |
-| Branch atual | `docs/central-docs-sync-fastpath-status-20260921` apenas para reconciliar este handoff pós-merge |
-| PR atual | PR funcional **#386 mesclada**; PR documental deste handoff ainda a abrir |
+| Branch atual | nenhuma branch funcional pendente; `docs/central-docs-sync-fastpath-status-20260921` contém somente este registro de handoff |
+| PR atual | PR funcional **#386 mesclada**; PR documental **#387** registra exclusivamente o handoff pós-merge |
 | Último commit relevante | merge funcional `f0aa1ab62778d09c85ee82ff31df3f714bc27635` |
 | Checks e testes | PR funcional: **24 checks funcionais verdes**; branch-only Workers Preview falhou por preview indisponível, sem relação com o código. Pós-merge: checks funcionais verdes; deploy GitHub Pages ainda em andamento no último ponto observado |
 | Decisões tomadas | `/sync/start` continua fazendo `driveSyncPreflightState()` antes de preservar revisão/iniciar upload; confirmação final, headRevisionId, MD5, tamanho, versão, resumable upload e conflito permanecem obrigatórios |
