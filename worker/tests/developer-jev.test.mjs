@@ -25,8 +25,8 @@ test('Jev roteia tarefa simples sem enviar segredos do ambiente', async () => {
   const env = {
     AUTH_SESSION_SECRET: 'nao-pode-sair',
     AI: {
-      async run(model, input) {
-        captured = { model, input };
+      async run(model, input, options) {
+        captured = { model, input, options };
         return response();
       }
     }
@@ -35,6 +35,7 @@ test('Jev roteia tarefa simples sem enviar segredos do ambiente', async () => {
   const result = await evaluateDeveloperTask(env, 'Trocar a cor de um botão.');
   assert.equal(captured.model, 'typesafe/jev');
   assert.equal(captured.input.state.task, 'Trocar a cor de um botão.');
+  assert.deepEqual(captured.options, { gateway: { id: 'default' } });
   assert.equal(JSON.stringify(captured.input).includes('nao-pode-sair'), false);
   assert.equal(result.routing.modelTier, 'economical');
   assert.equal(result.routing.testScope, 'focal');
