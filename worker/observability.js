@@ -32,10 +32,12 @@ const EVENT_PROPERTIES = Object.freeze({
   pdf_edit_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket']),
   drive_sync_started: new Set(['route', 'operation', 'size_bucket']),
   drive_sync_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket']),
-  drive_sync_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'status_code']),
+  drive_sync_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'status_code', 'failure_kind']),
   document_ai_started: new Set(['route', 'operation', 'size_bucket', 'source']),
   document_ai_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'source']),
-  document_ai_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'source', 'status_code']),
+  document_ai_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'source', 'status_code', 'failure_kind']),
+  document_text_layer_ready: new Set(['route', 'duration_ms', 'text_mode', 'source']),
+  document_text_layer_failed: new Set(['route', 'duration_ms', 'text_mode', 'source', 'failure_kind']),
   document_background_task: new Set(['route', 'duration_ms', 'operation', 'source', 'cache_state', 'background_state', 'cancel_reason', 'result_count_bucket'])
 });
 
@@ -46,7 +48,9 @@ const REQUIRED = Object.freeze({
   drive_sync_completed: new Set(['route', 'duration_ms', 'operation']),
   drive_sync_failed: new Set(['route', 'operation']),
   document_ai_completed: new Set(['route', 'duration_ms', 'operation']),
-  document_ai_failed: new Set(['route', 'operation']),
+  document_ai_failed: new Set(['route', 'operation', 'failure_kind']),
+  document_text_layer_ready: new Set(['route', 'duration_ms', 'text_mode']),
+  document_text_layer_failed: new Set(['route', 'duration_ms', 'text_mode', 'failure_kind']),
   document_background_task: new Set(['route', 'duration_ms', 'operation', 'background_state'])
 });
 
@@ -60,11 +64,16 @@ const ENUMS = Object.freeze({
   result_count_bucket: new Set(['0', '1-5', '6-20', '21-100', '100+', 'unknown']),
   background_state: new Set(['prepared', 'used', 'cancelled', 'expired', 'failed', 'skipped']),
   cancel_reason: new Set(['none', 'document_changed', 'session', 'hidden', 'foreground', 'editor', 'stale', 'unsupported', 'unknown']),
+  viewport_class: new Set(['mobile', 'desktop']),
+  text_mode: new Set(['native', 'ocr', 'none']),
+  failure_kind: new Set(['conflict', 'network', 'session', 'authorization', 'rate_limit', 'validation', 'provider', 'runtime', 'no_text', 'unsupported', 'unknown']),
   operation: new Set([
     'open_folder', 'search', 'open_pdf', 'delete_page', 'reorder_page', 'rotate_page',
     'merge_pdf', 'save_copy', 'replace_pdf', 'extract', 'document_chat', 'warm_pdf', 'prepare_page', 'preextract_page', 'suggestion', 'request', 'unknown'
   ])
 });
+
+const GLOBAL_EVENT_PROPERTIES = new Set(['viewport_class']);
 
 function responseHeaders(origin = '') {
   const headers = {
@@ -130,7 +139,10 @@ export function sanitizeObservabilityEvent(value) {
   const properties = value.properties;
   if (!properties || Array.isArray(properties) || typeof properties !== 'object') return null;
   const keys = Object.keys(properties);
-  if (keys.length > 10 || keys.some((key) => !allowedKeys.has(key))) return null;
+  if (
+    keys.length > 10
+    || keys.some((key) => !allowedKeys.has(key) && !GLOBAL_EVENT_PROPERTIES.has(key))
+  ) return null;
 
   const clean = {};
   for (const key of keys) {
@@ -162,7 +174,7 @@ async function deliverEvent(event, env) {
     distinct_id: 'page:' + event.page_id,
     '$process_person_profile': false,
     '$geoip_disable': true,
-    portal_observability_version: '1',
+    portal_observability_version: '2',
     ...event.properties
   };
 
