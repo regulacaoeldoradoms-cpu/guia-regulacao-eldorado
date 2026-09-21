@@ -26,7 +26,6 @@ Arquitetura revisada em 09/09/2026.
 - `/admin/usuarios/`: gestão de usuários conforme hierarquia.
 - `/admin/monitoramento/`: monitoramento disponível para Coordenação e Desenvolvedor.
 - `/admin/configuracao/`: diagnóstico técnico exclusivo do Desenvolvedor.
-- `/admin/jev/`: roteador de desenvolvimento com Jev, exclusivo do Desenvolvedor; classifica tarefas antes do Codex sem controlar automaticamente a sessão do Codex.
 - `/admin/social/`: denúncias, moderação e observabilidade das migrações sociais,
   exclusivo do Desenvolvedor.
 - `/cidadao/`: Hub do Cidadão, manifestações, notificações e acompanhamento.
