@@ -4090,6 +4090,8 @@ Limitação de publicação:
 
 ## Fase 7C — renomeação ainda falha após correção de versionamento — NOVA EVIDÊNCIA / EM CORREÇÃO — 21/09/2026
 
+PR de correção: **#381** — confirmação pós-PATCH estabilizada e diagnóstico de erro exposto no feedback inline.
+
 Após a PR #379 ter sido integrada e o Worker correspondente ter sido publicado com sucesso pela build produtiva subsequente, o operador repetiu o fluxo real e a renomeação ainda exibiu **Falha: o nome não foi alterado no Google Drive**.
 
 Nova evidência:
