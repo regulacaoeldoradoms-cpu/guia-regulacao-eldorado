@@ -4088,3 +4088,30 @@ Limitação de publicação:
 **Fase atual:** Fase 7 — robustez e otimização contínua.  
 **Próxima ação exata:** após o deploy da `main`, executar `Ctrl+F5` e repetir o caso real: unir PDF → aguardar **Sincronizado com o Google Drive** → alterar o nome → confirmar com Enter ou clique fora. O nome deve ser alterado no Drive sem exigir reabertura. Se existir mudança concorrente real, o conflito deve continuar bloqueado.
 
+## Fase 7C — renomeação ainda falha após correção de versionamento — NOVA EVIDÊNCIA / EM CORREÇÃO — 21/09/2026
+
+PR de correção: **#381** — confirmação pós-PATCH estabilizada e diagnóstico de erro exposto no feedback inline.
+
+Após a PR #379 ter sido integrada e o Worker correspondente ter sido publicado com sucesso pela build produtiva subsequente, o operador repetiu o fluxo real e a renomeação ainda exibiu **Falha: o nome não foi alterado no Google Drive**.
+
+Nova evidência:
+- a build produtiva do Worker está atualizada; portanto o problema remanescente não é cache nem ausência de deploy;
+- o feedback continuou genérico, o que torna improvável que a falha atual seja o mesmo `DRIVE_VERSION_CONFLICT` já tratado;
+- o backend hoje confirma o PATCH do nome e em seguida faz uma leitura imediata do metadado para verificar nome/conteúdo/versão;
+- essa leitura única pode observar metadado ainda não estabilizado e gerar `DRIVE_RENAME_CONFIRMATION_INVALID` mesmo após PATCH aceito pelo Google Drive.
+
+Correção desta rodada:
+- manter o PATCH único — **não repetir renomeação**;
+- estabilizar apenas a leitura de confirmação do metadado com poucas tentativas curtas e limitadas;
+- sucesso continua exigindo que o GET por ID observe exatamente o nome esperado;
+- mudança concorrente de nome/conteúdo continua bloqueada;
+- o frontend passará a mostrar a mensagem real devolvida pelo backend em vez do rótulo genérico, permitindo diagnóstico imediato caso reste outra causa.
+
+Alternativas descartadas:
+- repetir o PATCH: poderia sobrescrever alteração concorrente;
+- remover a releitura pós-PATCH: perderia a detecção de conflito de conteúdo;
+- declarar sucesso só pela resposta do PATCH: menos conservador do que o contrato atual.
+
+**Fase atual:** Fase 7C — robustez/recuperação.  
+**Próxima ação exata:** implementar confirmação estabilizada, renovar cache do cliente, validar CI/navegador/Worker e retestar o mesmo caso real.
+

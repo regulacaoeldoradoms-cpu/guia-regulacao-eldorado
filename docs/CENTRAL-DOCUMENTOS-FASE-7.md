@@ -177,3 +177,23 @@ Aceite de regressão:
 - mudança concorrente real de conteúdo continua bloqueada;
 - sucesso só aparece após PATCH confirmado pelo Google Drive.
 
+## 7C — confirmação estabilizada de renomeação — 21/09/2026
+
+Depois da primeira correção de versionamento, o caso real ainda falhou mesmo com Worker atualizado. A falha remanescente foi tratada como problema de **confirmação pós-PATCH**, não como novo conflito de versionamento.
+
+A Files API confirma o PATCH de nome primeiro; em seguida o Titon faz GET direto por ID para confirmar nome, versão e identidade do conteúdo. Uma leitura única e imediata pode observar metadado ainda não estabilizado.
+
+A correção desta rodada:
+- mantém exatamente **um** PATCH de renomeação;
+- faz até quatro leituras de confirmação por ID com esperas curtas: 0 ms, 120 ms, 320 ms e 700 ms;
+- encerra assim que o nome esperado aparece;
+- se o nome esperado não aparecer, continua retornando falha;
+- detecção de conflito de conteúdo permanece;
+- não há retry do PATCH e não há sobrescrita cega;
+- o cliente mostra a mensagem real do backend quando não for conflito de versão.
+
+Critério de regressão:
+- um metadado temporariamente antigo depois do PATCH não deve produzir falso erro;
+- uma renomeação concorrente ou mudança real continua impedindo confirmação;
+- nenhuma falha pode ser apresentada como sucesso sem GET confirmando o nome esperado.
+

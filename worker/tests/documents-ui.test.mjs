@@ -141,7 +141,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260921-8/);
+  assert.match(html, /documents\.js\?v=20260921-9/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -200,7 +200,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260921-2/);
-  assert.match(html, /documents\.js\?v=20260921-8/);
+  assert.match(html, /documents\.js\?v=20260921-9/);
   assert.match(html, /documents\.css\?v=20260921-9/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
@@ -442,7 +442,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260921-2/);
-  assert.match(html, /documents\.js\?v=20260921-8/);
+  assert.match(html, /documents\.js\?v=20260921-9/);
   assert.match(html, /documents\.css\?v=20260921-9/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -585,7 +585,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260921-8/);
+  assert.match(html, /documents\.js\?v=20260921-9/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -978,7 +978,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
   assert.match(html, /documents\.css\?v=20260921-9/);
-  assert.match(html, /documents\.js\?v=20260921-8/);
+  assert.match(html, /documents\.js\?v=20260921-9/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
@@ -1047,7 +1047,7 @@ test('Titon renomeia o PDF real no Drive com extensão protegida e confirmação
   assert.match(client, /viewerRenameInput\?\.addEventListener\('blur',[\s\S]*commitPdfRename\(\)/);
   assert.match(client, /Sincronizando nome com o Google Drive…/);
   assert.match(client, /Nome alterado e sincronizado com o Google Drive\./);
-  assert.match(client, /Falha: o nome não foi alterado no Google Drive\./);
+  assert.match(client, /Falha: \$\{failureMessage\}/);
   assert.ok(router.includes("url.pathname === '/api/documents/drive/rename'"));
   assert.ok(router.includes("requireCapability(user, 'edit', origin)"));
   assert.match(router, /baseName:\s*String\(body\.baseName \|\| ''\)/);
@@ -1078,8 +1078,13 @@ test('renomeação após sync aceita apenas drift técnico confirmado e preserva
     rename.indexOf('before.name === baseName') < rename.indexOf('confirmedBaselineMatches('),
     'nome-base precisa ser validado antes de aceitar a prova confirmada'
   );
+  assert.match(drive, /async function waitForConfirmedDriveRename\(env, ref, expectedName\)/);
+  assert.match(drive, /const delays = \[0, 120, 320, 700\]/);
+  assert.match(rename, /await waitForConfirmedDriveRename\(env, nextRef, name\)/);
   assert.doesNotMatch(rename, /versionConflict = false;[\s\S]*before\.name !== baseName/);
   assert.match(client, /Conflito: o arquivo mudou no Google Drive\. Reabra antes de renomear\./);
+  assert.match(client, /const failureMessage = String\([\s\S]*error\?\.message/);
+  assert.match(client, /Falha: \$\{failureMessage\}/);
 });
 
 test('zoom do Titon mantém porcentagem em tempo real legível sobre fundo claro', () => {
@@ -1219,7 +1224,7 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
   assert.match(html, /documents\.css\?v=20260921-9/);
-  assert.match(html, /documents\.js\?v=20260921-8/);
+  assert.match(html, /documents\.js\?v=20260921-9/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-notepad-head[\s\S]*cursor:\s*grab/);
