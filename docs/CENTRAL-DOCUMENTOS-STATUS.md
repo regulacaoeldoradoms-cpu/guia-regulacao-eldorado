@@ -3294,3 +3294,34 @@ Alternativa descartada: letreiro/marquee para nomes longos. O problema é resolv
 Risco principal tratado: a união de outro PDF dependia da lista lateral visível. A nova ação **Escolher PDF da Central** preserva esse fluxo sem reintroduzir a divisão permanente.
 
 **Próxima ação exata:** CI/PR desta implementação; se verde, integrar e publicar. Depois o operador fará validação visual real de largura, duplo clique, Enter, botão mobile, X com retorno ao mesmo ponto e união de PDFs. A Fase 6 continua aberta até seu aceite operacional completo.
+
+
+## UX lista integral + Titon integral — INTEGRADA E PUBLICADA PARA VALIDAÇÃO — 21/09/2026
+
+A implementação aprovada pelo operador foi integrada pela PR **#351**, merge `d0bdbfa1ed8122af97bb0e59a746eeb632858744`.
+
+Evidências antes do merge:
+- head funcional final: `6647b4c498be90cfd60d0f2186b263dc5ef2384e`;
+- **23/23 workflows** do PR concluídos com `success`;
+- workflow de navegador com PDF.js real: **75 passed / 3 skipped esperados** em desktop e mobile;
+- validação Fases 1–6, bundle de staging, governança e demais checks: verdes;
+- revisão final removeu `aria-hidden` da alternância entre superfícies e manteve `inert`, evitando conflito de foco/acessibilidade ao trazer a lista para o primeiro plano durante a união de PDFs.
+
+Evidências pós-merge:
+- **27/27 checks** do merge concluídos com `success`;
+- Cloudflare Pages: `success`;
+- Workers Builds: `success`;
+- Worker Version gerada pelo merge: `599d1a5c-dd43-4b87-8d28-6221fac8d141` — evidência histórica, não identificador permanente.
+
+Estado publicado para validação humana:
+- lista usa toda a largura da Central;
+- desktop: clique simples seleciona PDF, duplo clique abre no Titon e `Enter` abre o selecionado;
+- mobile/touch: botão **Abrir no Titon**;
+- Titon usa a mesma superfície integral em primeiro plano;
+- lista permanece viva em segundo plano, sem nova consulta ao Drive apenas por fechar o Titon;
+- X retorna à lista preservada e devolve foco ao item selecionado;
+- **Unir PDF** preservado pela ação **Escolher PDF da Central**, que alterna temporariamente a lista para primeiro plano sem destruir a sessão do editor.
+
+A **Fase 6 continua formalmente aberta**. Esta publicação não substitui a homologação operacional real.
+
+**Próxima ação exata:** o operador deve validar no navegador real: largura integral da lista; seleção por clique; abertura por duplo clique e Enter; botão mobile; Titon integral; X retornando à mesma pesquisa/pasta/posição; união via **Escolher PDF da Central**; e depois concluir os demais casos da matriz operacional da Fase 6.
