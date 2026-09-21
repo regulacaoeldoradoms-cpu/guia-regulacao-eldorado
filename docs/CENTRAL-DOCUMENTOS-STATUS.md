@@ -3503,3 +3503,22 @@ Validação:
 
 **Fase atual:** Fase 6 ainda aberta para homologação operacional humana.
 **Próxima ação exata:** operador validar visualmente a lista em produção; depois continuar a matriz restante da Fase 6.
+
+
+## Navegação da lista — pastas com a mesma lógica dos PDFs — EM IMPLEMENTAÇÃO — 21/09/2026
+
+Ajuste solicitado na homologação da Fase 6 para eliminar comportamento inconsistente entre arquivos e pastas.
+
+Contrato:
+- desktop: um clique em PDF **ou pasta** apenas seleciona/destaca;
+- duplo clique abre o item selecionado;
+- `Enter` permanece como atalho de teclado aprovado;
+- a pasta deixa de abrir no primeiro clique;
+- o texto lateral **Abrir pasta** deixa de aparecer no desktop;
+- em mobile/touch, onde duplo clique não é confiável, permanece uma ação explícita **Abrir pasta**, equivalente ao **Abrir no Titon** dos PDFs.
+
+Nenhuma alteração em Google Drive, pesquisa, breadcrumbs, Titon, IA, permissões ou cache.
+
+Branch: `feat/central-docs-folder-double-click-20260921`.
+
+**Próxima ação exata:** validar CI/PR; se verde, publicar e confirmar no navegador real que pasta/PDF têm o mesmo comportamento de seleção no desktop. A Fase 6 continua aberta.
