@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="/js/portal-performance.js?v=20260921-1" async></script>
+  <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
+  <link rel="preload" href="/js/auth-client.js?v=20260910-4" as="script">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0d3157">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <title>Jev · Roteador de Desenvolvimento | Portal da Regulação</title>
+  <link rel="icon" href="/assets/app-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
+  <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
+  <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
+  <style>
+    .jev-layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:18px;margin-top:22px}
+    .jev-panel{background:#fff;border:1px solid var(--portal-border);border-radius:18px;box-shadow:var(--portal-shadow);padding:22px}
+    .jev-panel h2,.jev-panel h3{margin-top:0;color:#173b5d}
+    .jev-label{display:block;font-weight:800;color:#294b69;margin-bottom:8px}
+    .jev-textarea{width:100%;min-height:210px;resize:vertical;border:1px solid #cbd9e5;border-radius:14px;padding:14px 15px;font:inherit;line-height:1.55;color:#173b5d;background:#fbfdff}
+    .jev-textarea:focus{outline:3px solid rgba(18,101,200,.13);border-color:#1265c8}
+    .jev-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+    .jev-hint{margin:10px 0 0;color:#6c8193;font-size:.84rem;line-height:1.5}
+    .jev-results{display:none}
+    .jev-results.visible{display:block}
+    .jev-routing{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .jev-chip{border:1px solid #dbe6ef;border-radius:13px;padding:12px;background:#f8fbfd}
+    .jev-chip span{display:block;color:#6c8193;font-size:.75rem;margin-bottom:3px}
+    .jev-chip strong{color:#173b5d;font-size:.94rem}
+    .jev-model{margin:0 0 14px;padding:16px;border-radius:15px;background:linear-gradient(135deg,#eaf3ff,#f3fbff);border:1px solid #c8ddf3}
+    .jev-model span{display:block;color:#57748c;font-size:.78rem}
+    .jev-model strong{display:block;margin-top:3px;color:#0d3157;font-size:1.15rem}
+    .jev-prompt{white-space:pre-wrap;word-break:break-word;background:#0b2034;color:#eaf4ff;border-radius:14px;padding:15px;max-height:380px;overflow:auto;font: .8rem/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .jev-status{margin-top:12px;min-height:22px;color:#5f778b;font-size:.85rem}
+    .jev-status.error{color:#9b2f37}.jev-status.success{color:#246b3e}
+    .jev-usage{margin-top:12px;color:#6c8193;font-size:.78rem}
+    .jev-note{padding:14px;border-radius:14px;background:#fff8e9;border:1px solid #ead9ac;color:#70521d;font-size:.84rem;line-height:1.55}
+    @media(max-width:860px){.jev-layout{grid-template-columns:1fr}.jev-routing{grid-template-columns:1fr}}
+  </style>
+</head>
+<body class="portal-page">
+  <div class="portal-shell">
+    <header class="portal-topbar">
+      <div class="portal-topbar-inner">
+        <div class="portal-brand">
+          <img src="/assets/app-icon.svg" alt="">
+          <div><h1>Jev · Roteador de Desenvolvimento</h1><p>Triagem de tarefas · Desenvolvedor</p></div>
+        </div>
+        <div class="portal-user">
+          <a class="portal-button ghost linklike" href="/ferramentas/">← Ferramentas</a>
+          <div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span>Desenvolvedor</span></div>
+          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="portal-main">
+      <section class="portal-hero">
+        <div class="portal-hero-copy">
+          <span class="portal-eyebrow">Antes do Codex</span>
+          <h2>Use o Jev para decidir quanto poder de IA a tarefa realmente precisa.</h2>
+          <p>O Jev faz a triagem fora da franquia do Codex: classifica complexidade, risco, escopo, testes e sugere o nível de modelo. Depois você usa o resultado para iniciar a tarefa no Codex com um contexto mais delimitado.</p>
+        </div>
+      </section>
+
+      <div class="jev-layout">
+        <section class="jev-panel">
+          <h2>Nova tarefa</h2>
+          <label class="jev-label" for="jevTask">O que você quer desenvolver?</label>
+          <textarea id="jevTask" class="jev-textarea" maxlength="12000" placeholder="Ex.: Ajuste a Agenda para deixar o card inteiro amarelo quando a capacidade chegar a 2/2."></textarea>
+          <div class="jev-actions">
+            <button id="jevEvaluate" class="portal-button primary" type="button">Avaliar com Jev</button>
+            <button id="jevClear" class="portal-button secondary" type="button">Limpar</button>
+          </div>
+          <p class="jev-hint">Envie apenas a descrição da tarefa. Não cole chaves, senhas, tokens, dados de pacientes ou dumps completos do repositório.</p>
+          <div id="jevStatus" class="jev-status" role="status" aria-live="polite"></div>
+        </section>
+
+        <aside class="jev-panel">
+          <h3>Como usar</h3>
+          <div class="jev-note">
+            Esta tela <strong>não troca automaticamente o modelo da sessão do Codex aberta no ChatGPT</strong>. Ela funciona como a porta de entrada: o Jev recomenda o nível adequado e prepara o pedido. A automação de abrir o Codex/CLI já com o modelo escolhido pode ser adicionada depois.
+          </div>
+        </aside>
+      </div>
+
+      <section id="jevResults" class="jev-panel jev-results" style="margin-top:18px">
+        <div class="jev-model"><span>Modelo sugerido</span><strong id="jevModel">—</strong></div>
+        <div class="jev-routing">
+          <div class="jev-chip"><span>Complexidade</span><strong id="jevComplexity">—</strong></div>
+          <div class="jev-chip"><span>Risco</span><strong id="jevRisk">—</strong></div>
+          <div class="jev-chip"><span>Escopo</span><strong id="jevScope">—</strong></div>
+          <div class="jev-chip"><span>Esforço</span><strong id="jevEffort">—</strong></div>
+          <div class="jev-chip"><span>Testes</span><strong id="jevTests">—</strong></div>
+          <div class="jev-chip"><span>Confiança mínima</span><strong id="jevConfidence">—</strong></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:22px">
+          <h3 style="margin:0">Prompt preparado para o Codex</h3>
+          <button id="jevCopy" class="portal-button secondary" type="button">Copiar prompt</button>
+        </div>
+        <pre id="jevPrompt" class="jev-prompt"></pre>
+        <div id="jevUsage" class="jev-usage"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260910-4"></script>
+  <script src="/js/portal-interactions.js?v=20260910-2"></script>
+  <script src="/js/developer-jev.js?v=20260921-1"></script>
+</body>
+</html>

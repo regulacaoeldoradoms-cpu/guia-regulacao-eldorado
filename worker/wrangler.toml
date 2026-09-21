@@ -21,6 +21,10 @@ CLOUDFLARE_AI_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast"
 CLOUDFLARE_AI_FALLBACK_MODELS = "@cf/zai-org/glm-4.7-flash"
 CLOUDFLARE_AI_TIMEOUT_MS = "16000"
 CLOUDFLARE_AI_TOTAL_TIMEOUT_MS = "30000"
+# Jev: roteador de desenvolvimento exclusivo do perfil Desenvolvedor.
+# Usa o mesmo binding Workers AI; não envia segredos e não controla automaticamente a sessão do Codex.
+DEVELOPER_JEV_ENABLED = "true"
+DEVELOPER_JEV_MODEL = "typesafe/jev"
 AUTH_ENFORCE_AI = "true"
 # A exigência de e-mail verificado fica desligada durante a migração.
 # Ativar somente depois que o fluxo de confirmação estiver funcionando em produção controlada.
