@@ -3364,3 +3364,43 @@ Riscos tratados:
 - fechamento abrupto pode não executar release; TTL de 75 s remove presença órfã.
 
 **Próxima ação exata:** concluir integração do cliente/testes, abrir PR, validar suíte e navegador, corrigir qualquer regressão antes de merge. Após publicação, validar com duas contas reais e concluir junto da matriz operacional da Fase 6.
+
+
+## Titon — renomeação real, zoom legível e presença simultânea — INTEGRADO E PUBLICADO — 21/09/2026
+
+A implementação foi integrada pela PR **#353**, merge `b7ef4ad6d91a001ef0af998b7d38821218b12846`.
+
+Validação pré-merge do head funcional `7ec5fef8426697d74f5d774bcae95a4bdc63dbc8`:
+- **23/23 workflows GitHub Actions** do conjunto final concluídos com `success`;
+- navegador/PDF.js real: **75 passed / 3 skipped esperados** em desktop e mobile;
+- Cloudflare Pages da branch: `success`;
+- o check externo Workers Builds da branch falhou apenas ao tentar criar Worker Preview, recurso desabilitado para branches não-`main`; isso foi registrado no PR e não houve promoção/bypass produtivo;
+- testes adicionados validaram renomeação real via Drive PATCH, versionamento, presença por HMAC, deduplicação de abas do mesmo operador e ausência de identidade documental no armazenamento/telemetria de presença.
+
+Resultado pós-merge em `main`:
+- **27/27 check-runs** concluídos com `success`;
+- Cloudflare Pages: `success`;
+- Workers Builds produtivo: `success`;
+- gate seguro do Worker não foi contornado;
+- Worker Version gerada por esse merge: `a887b4fa-4a08-4b8b-887f-051d1c0696df` — somente evidência histórica do deploy, não identificador permanente.
+
+Estado publicado:
+- título do PDF selecionável com um clique;
+- duplo clique habilita renomeação;
+- `.pdf` permanece protegido;
+- `Enter` confirma no arquivo real do Google Drive e `Escape` cancela;
+- renomeação disponível em visualização e edição para conta com capability `edit` e escrita Drive habilitada;
+- percentual de zoom agora é legível em cor escura e continua atualizado pelo PDF.js;
+- presença simultânea usa heartbeat de 25 s / TTL 75 s;
+- outro operador no mesmo PDF gera borda laranja + aviso;
+- outro operador editando gera destaque mais forte e alerta explícito contra solicitação duplicada;
+- presença é informativa, não bloqueante;
+- conflito/versionamento do Drive continua autoridade final;
+- D1 de presença guarda chave HMAC opaca, sessão efêmera, identidade institucional, modo e expiração — sem fileId/nome/ref/conteúdo do documento;
+- presença não é enviada ao PostHog.
+
+Regra permanente preservada: alterações confirmadas no Titon devem refletir o arquivo real no Drive; estados provisórios continuam locais até confirmação.
+
+**Fase atual:** Fase 6 — Automação operacional, ainda não formalmente encerrada.
+
+**Próxima ação exata:** validação humana no Portal real: renomear em visualização e editor, confirmar nome no Drive, testar Enter/Escape, verificar zoom, abrir o mesmo PDF com duas contas para observar presença view/edit e então continuar/encerrar a matriz operacional da Fase 6 conforme os critérios já documentados.
