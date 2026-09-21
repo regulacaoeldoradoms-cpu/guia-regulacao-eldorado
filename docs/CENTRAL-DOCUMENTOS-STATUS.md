@@ -3640,3 +3640,35 @@ Arquivos em alteração:
 
 **Próxima ação exata:** validar sintaxe e CI da branch, integrar apenas se os checks relevantes ficarem verdes e então executar o Caso 13 em um PDF textual real e um PDF escaneado.
 
+## Titon — seleção e cópia direta de texto do PDF — INTEGRADO NA MAIN — 21/09/2026
+
+A implementação foi integrada pela PR **#364**, merge `4758a9848258aed0e268a2f239b13325e46a359e`.
+
+Validação do head funcional final `83b632243860fcf31c1da1811d51ad4354a35f40`:
+- **23/23 workflows GitHub Actions** concluídos com `success`;
+- Central de Documentos — Fases 1–6: `success`;
+- navegador/PDF.js real em Chromium: `success`;
+- governança, bundle de staging e validações transversais: `success`;
+- branch ficou **0 commits atrás da main** antes da integração e a PR foi mesclada com `expected_head_sha`, sem bypass de proteção.
+
+Estado integrado:
+- PDFs com texto interno recebem uma `TextLayer` do PDF.js sobre o canvas do Titon;
+- o usuário pode selecionar texto nativamente com o mouse e copiar com `Ctrl+C`/ação de copiar do navegador;
+- o texto da camada permanece transparente; somente o realce de seleção é visível sobre a página;
+- a camada acompanha escala/zoom, rotação da página e o mesmo viewport de recorte do canvas;
+- carregamento e descarregamento permanecem lazy junto das páginas visíveis;
+- Selecionar/mover, Escrever, Colar imagem, Desenhar/Borracha e Recortar assumem os gestos da página enquanto ativos, desabilitando a captura de ponteiros da camada textual;
+- voltar ao modo sem ferramenta interativa reabilita a seleção;
+- seleção/cópia não modifica o PDF, não sincroniza com Drive, não chama IA e não envia conteúdo à observabilidade;
+- PDF puramente escaneado/imagem continua abrindo normalmente, porém sem texto selecionável; OCR continua fora deste escopo.
+
+Cache-busters integrados:
+- `/js/document-viewer.js?v=20260921-1`;
+- `/css/documents.css?v=20260921-6`.
+
+Limitação de evidência pós-merge: o navegador de pesquisa externo não conseguiu acessar diretamente a rota pública `/documentos/`; portanto a evidência final disponível neste ponto é a integração na `main` + CI integral verde. A homologação real deve ser feita pelo operador no Portal autenticado.
+
+**Fase atual:** Fase 6 — Automação operacional, ainda aberta para homologação operacional humana.
+
+**Próxima ação exata:** atualizar a Central com `Ctrl+F5`, abrir um PDF textual real, selecionar uma palavra/linha/parágrafo e copiar com `Ctrl+C`; repetir após mudar o zoom e depois confirmar que as ferramentas do editor continuam recebendo seus gestos. Em seguida abrir um PDF escaneado para confirmar que ele permanece visualizável sem seleção textual.
+
