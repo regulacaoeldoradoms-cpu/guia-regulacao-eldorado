@@ -3904,3 +3904,41 @@ Decisão técnica:
 **Fase atual:** Fase 6 — Automação operacional, homologação humana ainda aberta.
 
 **Próxima ação exata:** validar sintaxe/CI da branch, integrar se verde e então testar no Portal real posição inicial, arraste do cabeçalho e as oito direções de redimensionamento.
+
+
+## Titon — bloco de notas móvel e redimensionável — INTEGRADO E PUBLICADO PARA VALIDAÇÃO — 21/09/2026
+
+O refinamento foi integrado pela PR **#374**, merge `099e70ca98e16295e3384398f5ee393e38f7f2cd`.
+
+Evidência pré-merge do head funcional `f8de32460b631a5f423bfb10433944f88c72e25f`:
+- **23/23 workflows GitHub Actions** concluídos com `success`;
+- Central de Documentos — Fases 1–6: sucesso;
+- navegador/PDF.js real: sucesso;
+- bundle de staging e governança: sucesso;
+- branch **0 commits atrás da main** antes do merge.
+
+Evidência pós-merge:
+- **27/27 check-runs** concluídos com `success`;
+- **Cloudflare Pages: success**;
+- **Workers Builds: success**;
+- **build / deploy / report-build-status: success**.
+
+Comportamento publicado:
+- ao abrir pela primeira vez em um PDF, o bloco mede a superfície de `#pdfPageScroll` e a `.portal-pdf-page` mais visível;
+- quando existe largura suficiente, posiciona e dimensiona a janela na **maior margem escura lateral**, evitando cobrir a folha por padrão;
+- o cabeçalho funciona como alça de mover por clique + arraste;
+- as quatro bordas possuem zonas de redimensionamento;
+- os quatro cantos possuem zonas de redimensionamento;
+- movimento e resize ficam contidos na superfície de páginas do PDF;
+- fechar/reabrir apenas a janelinha preserva posição e tamanho manual no mesmo PDF;
+- fechar/trocar o PDF apaga texto e geometria, retornando ao padrão na próxima abertura;
+- o `textarea` continua independente para digitação, seleção, `Ctrl+A` e `Ctrl+C`;
+- posição, tamanho e conteúdo permanecem somente em memória: sem D1, localStorage, sessionStorage, IndexedDB, Drive, IA ou PostHog.
+
+Cache-busters publicados:
+- `/css/documents.css?v=20260921-9`;
+- `/js/documents.js?v=20260921-7`.
+
+**Fase atual:** Fase 6 — Automação operacional, ainda aberta para homologação humana dos casos restantes.
+
+**Próxima ação exata:** no Portal real, executar `Ctrl+F5`, abrir um PDF e o bloco de notas; confirmar que nasce na margem escura sem cobrir a folha quando houver espaço, mover pelo cabeçalho e testar redimensionamento pelas quatro bordas e quatro quinas. Depois fechar/reabrir só o bloco para confirmar retenção da geometria e trocar de PDF para confirmar reset.
