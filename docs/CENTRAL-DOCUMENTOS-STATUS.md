@@ -3805,6 +3805,12 @@ Esta correção **não altera a fase corrente da Central de Documentos**. A Cent
 **Próxima ação exata:** uso normal de `/telemedicina/`; se `Failed to fetch` reaparecer apesar das três tentativas totais, registrar horário e contexto para investigar uma indisponibilidade mais longa. Não provocar falha de rede artificial em produção.
 
 
+## Titon — OCR local homologado em uso real — APROVADO — 21/09/2026
+
+O operador confirmou no Portal autenticado que o OCR local integrado pela PR #368 está funcionando perfeitamente no fluxo real. A limitação observada não é uma regressão do OCR: manuscritos médicos podem continuar semanticamente ilegíveis mesmo quando há reconhecimento parcial.
+
+Decisão: considerar o Caso 14 do OCR local aprovado em uso real e tratar a leitura manual de caligrafia como necessidade operacional separada, atendida por um rascunho efêmero que não altera nem persiste o documento.
+
 ## Titon — bloco de notas temporário para manuscritos — EM IMPLEMENTAÇÃO — 21/09/2026
 
 Durante a validação real do OCR local, o operador confirmou que o reconhecimento está funcional e solicitou uma ferramenta mínima para os casos em que manuscritos médicos continuam ilegíveis para OCR.
