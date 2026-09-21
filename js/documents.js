@@ -78,6 +78,7 @@
     access: null,
     documentAiConfig: null,
     documentAiPanelOpen: false,
+    temporaryNotepadOpen: false,
     documentAiBusy: false,
     documentAiClassification: null,
     documentAiExtraction: null,
@@ -209,6 +210,10 @@
     editPdf: document.getElementById('editPdfButton'),
     editorRailEdit: document.getElementById('editorRailEditButton'),
     documentAiButton: document.getElementById('documentAiButton'),
+    documentNotepadButton: document.getElementById('documentNotepadButton'),
+    documentNotepadPanel: document.getElementById('documentsNotepadPanel'),
+    documentNotepadClose: document.getElementById('documentNotepadCloseButton'),
+    documentNotepadText: document.getElementById('documentNotepadText'),
     documentAiPanel: document.getElementById('documentsAiPanel'),
     documentAiInfoButton: document.getElementById('documentsAiInfoButton'),
     documentAiInfoPanel: document.getElementById('documentsAiInfoPanel'),
@@ -4062,6 +4067,22 @@
     if (next) renderDocumentAiPanel();
   }
 
+  function setTemporaryNotepadOpen(open, { focus = true } = {}) {
+    const next = Boolean(open && state.pdfItem);
+    state.temporaryNotepadOpen = next;
+    if (els.documentNotepadPanel) els.documentNotepadPanel.hidden = !next;
+    if (els.documentNotepadButton) els.documentNotepadButton.setAttribute('aria-pressed', next ? 'true' : 'false');
+    if (next && focus) {
+      requestAnimationFrame(() => els.documentNotepadText?.focus?.({ preventScroll: true }));
+    }
+    return next;
+  }
+
+  function resetTemporaryNotepad() {
+    setTemporaryNotepadOpen(false, { focus: false });
+    if (els.documentNotepadText) els.documentNotepadText.value = '';
+  }
+
   function renderDocumentAiAvailability() {
     const available = Boolean(canUseDocumentAi() && state.pdfItem);
     if (els.documentAiButton) els.documentAiButton.hidden = !available;
@@ -4965,6 +4986,7 @@
     setPdfRenameFeedback('');
     resetDocumentBackgroundState('document_changed');
     setDocumentAiPanelOpen(false);
+    resetTemporaryNotepad();
     state.documentAiBusy = false;
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
@@ -5345,6 +5367,19 @@
   });
   els.documentAiButton?.addEventListener('click', () => {
     setDocumentAiPanelOpen(!state.documentAiPanelOpen);
+  });
+  els.documentNotepadButton?.addEventListener('click', () => {
+    setTemporaryNotepadOpen(!state.temporaryNotepadOpen);
+  });
+  els.documentNotepadClose?.addEventListener('click', () => {
+    setTemporaryNotepadOpen(false, { focus: false });
+    els.documentNotepadButton?.focus?.({ preventScroll: true });
+  });
+  els.documentNotepadText?.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    event.preventDefault();
+    setTemporaryNotepadOpen(false, { focus: false });
+    els.documentNotepadButton?.focus?.({ preventScroll: true });
   });
   els.documentAiInfoButton?.addEventListener('click', () => {
     setDocumentAiInfoOpen(els.documentAiInfoButton.getAttribute('aria-expanded') !== 'true');
