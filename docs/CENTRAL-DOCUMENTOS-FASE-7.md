@@ -1,0 +1,145 @@
+# CENTRAL DE DOCUMENTOS — FASE 7
+
+## Robustez e otimização contínua
+
+Data de abertura: 21/09/2026  
+Estado: **ATIVA**  
+Pré-condição: Fase 6 formalmente encerrada por aceite humano do responsável operacional.
+
+## Objetivo
+
+Consolidar a Central de Documentos/Titon como ferramenta robusta e previsível, corrigindo gargalos com base em dados reais e testes de regressão.
+
+O Guia Mestre define para esta fase:
+- analisar **p75/p95/p99**;
+- analisar **cache hit/miss**;
+- analisar **falhas de Google Drive**;
+- validar **PDFs grandes**;
+- comparar **mobile/desktop**;
+- acompanhar **tempo da IA**;
+- corrigir gargalos com base em dados e testes de regressão.
+
+Critério de aceite da Fase 7:
+- **SLOs definidos a partir de dados reais**;
+- **falhas recuperáveis**;
+- **painel de observabilidade estável**.
+
+## Regras permanentes
+
+- nenhuma otimização pode reduzir integridade documental ou consistência com o Google Drive;
+- estado definitivo de salvamento continua dependendo de confirmação real do Drive;
+- PostHog recebe apenas telemetria técnica allowlisted;
+- nunca enviar nome de paciente, CPF, CNS, telefone, endereço, nascimento, diagnóstico, CID, encaminhamento, prescrição, resultado, texto digitado, nome do arquivo, Drive ID ou conteúdo do PDF;
+- não ampliar permissões;
+- não colocar segredos no frontend/GitHub;
+- mudanças experimentais seguem branch + testes + PR;
+- regressão relevante de p75/p95 deve ser tratada antes de ampliar funcionalidade.
+
+## Escopo operacional da fase
+
+### 7A — Inventário de observabilidade e baseline real
+
+Objetivo:
+- levantar os eventos/propriedades técnicos já emitidos;
+- identificar quais métricas realmente possuem amostra suficiente;
+- medir p75/p95/p99 onde houver base confiável;
+- separar desktop/mobile quando isso puder ser feito sem identificar pessoas;
+- identificar lacunas antes de adicionar qualquer evento novo.
+
+Entram:
+- abertura e primeira página do PDF;
+- PDF pronto;
+- cache hit/miss;
+- sincronização/falha do Drive;
+- duração técnica de IA;
+- falhas recuperáveis;
+- tamanho/faixa técnica de documento quando já allowlisted e não identificável.
+
+Não entra:
+- conteúdo documental;
+- identidade clínica;
+- nome/ID/caminho de arquivo;
+- ranking clínico.
+
+### 7B — SLOs
+
+Definir SLOs somente após baseline real.
+
+Cada SLO deve registrar:
+- métrica;
+- população/ambiente;
+- p75/p95/p99 quando aplicável;
+- janela de medição;
+- limite inicial;
+- justificativa;
+- estratégia de alerta/revisão.
+
+Não definir metas por sensação isolada.
+
+### 7C — Robustez e recuperação
+
+Cobrir falhas recuperáveis em:
+- rede;
+- Google Drive;
+- cache;
+- PDF.js;
+- OCR local;
+- IA documental;
+- cancelamento/troca de documento;
+- conflito de versão;
+- documentos grandes.
+
+A recuperação nunca pode declarar sucesso antes da confirmação da fonte autoritativa.
+
+### 7D — Matrizes de desempenho
+
+Comparar:
+- desktop vs mobile;
+- PDF pequeno vs grande;
+- texto nativo vs PDF-imagem/OCR;
+- cache frio vs cache aquecido;
+- abertura, navegação, edição e sincronização.
+
+### 7E — Otimização guiada por evidência
+
+Somente corrigir gargalos demonstrados por dados/testes.
+
+Preferir:
+- mudanças pequenas;
+- reversíveis;
+- com medição antes/depois;
+- sem nova funcionalidade de produto quando uma otimização suficiente resolver o problema.
+
+## Estado inicial recuperado
+
+A baseline funcional ao abrir a Fase 7 inclui:
+- PDF.js próprio;
+- editor Titon;
+- sincronização controlada com Drive;
+- IA documental V8C.2;
+- cache/prefetch da Fase 6;
+- TextLayer nativa;
+- OCR local para PDFs digitalizados;
+- bloco de notas temporário móvel/redimensionável;
+- confirmações visuais de cópia e renomeação.
+
+A Fase 7 não deve reabrir essas decisões sem evidência de regressão.
+
+## Limitação externa conhecida ao abrir a fase
+
+O conector PostHog disponível nesta sessão não está apontando para o projeto analítico do Portal. Portanto, nenhum baseline do Portal será inferido ou consultado por esse conector até o acesso correto ser identificado.
+
+Isso não bloqueia:
+- auditoria da instrumentação existente no repositório;
+- identificação da allowlist;
+- preparação das consultas/SLOs;
+- testes sintéticos de robustez.
+
+## Próxima ação exata
+
+1. auditar no código todos os eventos/propriedades allowlisted da Central;
+2. mapear cada evento para as métricas exigidas pelo Guia;
+3. identificar o acesso correto ao projeto PostHog do Portal;
+4. somente então coletar baseline p75/p95/p99 e cache hit/miss;
+5. definir os primeiros SLOs a partir dos dados reais;
+6. abrir correções de gargalo apenas depois dessa baseline.
