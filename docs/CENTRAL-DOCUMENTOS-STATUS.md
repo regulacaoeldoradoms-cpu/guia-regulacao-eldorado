@@ -4005,3 +4005,21 @@ Limitação preservada: não há percentual histórico único e confiável de ec
 
 **Próxima ação exata:** executar 7A — inventariar eventos/propriedades técnicos allowlisted no frontend/backend, mapear quais suportam p75/p95/p99, cache hit/miss, falhas de Drive, PDFs grandes, mobile/desktop e tempo de IA, e identificar o acesso correto ao projeto PostHog do Portal antes de definir qualquer SLO.
 
+## Fase 7A — projeto PostHog do Portal reconciliado — 21/09/2026
+
+O bloqueio de acesso analítico registrado na abertura da Fase 7 foi resolvido.
+
+Estado real:
+- organização PostHog acessível: **Regulação de saúde**;
+- projeto analítico da Central: **Default project** (id 602473);
+- o conector foi alterado para esse projeto;
+- a taxonomia do projeto contém os eventos técnicos esperados da Central/Titon, incluindo abertura/prontidão de PDF, cache/Drive, edição, IA documental e tarefas de background.
+
+Conclusão:
+- esse é o projeto correto para a baseline da subfase 7A;
+- não é necessário alterar o envio de telemetria do Portal, pois os eventos já estão chegando nesse projeto;
+- nenhum token/chave foi registrado no status;
+- sessões futuras do conector devem confirmar organização/projeto antes de consultar métricas.
+
+**Próxima ação exata:** executar a baseline 7A no projeto correto: confirmar propriedades de cada evento, calcular p75/p95/p99 para abertura/prontidão/sincronização/IA, medir cache hit/miss e taxas de falha do Drive, então propor SLOs iniciais sem conteúdo sensível.
+
