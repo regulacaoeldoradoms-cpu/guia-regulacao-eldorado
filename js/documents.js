@@ -3116,6 +3116,291 @@
     return auth.api(path, options);
   }
 
+  function pdfBaseName(value) {
+    return String(value || '').replace(/\.pdf$/i, '').trim();
+  }
+
+  function renderViewerTitle(name = state.pdfItem?.name || 'PDF') {
+    const display = String(name || 'PDF');
+    if (els.viewerTitle) {
+      els.viewerTitle.textContent = display;
+      els.viewerTitle.title = display;
+      els.viewerTitle.classList.toggle('is-selectable', Boolean(state.pdfItem));
+      els.viewerTitle.classList.toggle('is-selected', state.titleSelected && !state.titleEditing);
+    }
+    if (els.viewerRenameInput && !state.titleEditing) {
+      els.viewerRenameInput.value = pdfBaseName(display);
+    }
+  }
+
+  function selectViewerTitleText() {
+    if (!els.viewerTitle || state.titleEditing || !state.pdfItem) return false;
+    state.titleSelected = true;
+    renderViewerTitle();
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(els.viewerTitle);
+      const selection = window.getSelection?.();
+      selection?.removeAllRanges?.();
+      selection?.addRange?.(range);
+    } catch (_) {}
+    return true;
+  }
+
+  function cancelPdfRename({ restoreFocus = true } = {}) {
+    state.titleEditing = false;
+    state.renameBusy = false;
+    if (els.viewerRenameControl) els.viewerRenameControl.hidden = true;
+    if (els.viewerTitle) els.viewerTitle.hidden = false;
+    renderViewerTitle();
+    if (restoreFocus) els.viewerTitle?.focus?.({ preventScroll: true });
+    return true;
+  }
+
+  function beginPdfRename() {
+    if (!state.pdfItem || state.titleEditing || state.renameBusy) return false;
+    if (!canSyncDocuments()) {
+      showStatus('Sua conta não possui permissão para renomear este PDF no Google Drive.', 'warning');
+      return false;
+    }
+    if (state.driveSyncInFlight || state.editorBusy) {
+      showStatus('Aguarde a operação atual terminar antes de renomear o PDF.', 'warning');
+      return false;
+    }
+
+    state.titleSelected = false;
+    state.titleEditing = true;
+    const base = pdfBaseName(state.pdfItem.name || state.pdfItem.label || '');
+    if (els.viewerTitle) els.viewerTitle.hidden = true;
+    if (els.viewerRenameControl) els.viewerRenameControl.hidden = false;
+    if (els.viewerRenameInput) {
+      els.viewerRenameInput.value = base;
+      requestAnimationFrame(() => {
+        if (!state.titleEditing) return;
+        els.viewerRenameInput.focus?.({ preventScroll: true });
+        els.viewerRenameInput.select?.();
+      });
+    }
+    return true;
+  }
+
+  function applyRenamedPdfResult(previous, result) {
+    const previousRef = String(previous?.ref || '');
+    const previousCacheKey = String(previous?.cacheKey || '');
+    const contentConflict = result?.contentConflict === true;
+    const nextName = String(result?.name || previous?.name || 'PDF');
+    const next = {
+      ...previous,
+      ref: String(result?.ref || previous?.ref || ''),
+      cacheKey: String(result?.cacheKey || previous?.cacheKey || ''),
+      version: contentConflict
+        ? String(previous?.version || '')
+        : String(result?.currentVersion || previous?.version || ''),
+      modifiedTime: String(result?.modifiedTime || previous?.modifiedTime || ''),
+      size: Number.isFinite(Number(result?.size)) ? Number(result.size) : previous?.size,
+      name: nextName,
+      label: nextName
+    };
+
+    state.items = state.items.map((item) => (
+      (previousRef && item?.ref === previousRef)
+      || (previousCacheKey && item?.cacheKey === previousCacheKey)
+        ? { ...item, ...next }
+        : item
+    ));
+    state.pdfItem = next;
+    renderViewerTitle(nextName);
+    refreshPdfListMetadata();
+    refreshPdfListActions();
+    return { next, contentConflict };
+  }
+
+  async function commitPdfRename() {
+    if (!state.titleEditing || state.renameBusy || !state.pdfItem) return false;
+    const base = String(els.viewerRenameInput?.value || '').trim().replace(/\.pdf$/i, '').trim();
+    if (!base) {
+      showStatus('O nome do PDF não pode ficar vazio.', 'warning');
+      els.viewerRenameInput?.focus?.();
+      return false;
+    }
+    if (!canSyncDocuments()) {
+      cancelPdfRename({ restoreFocus: false });
+      showStatus('A sincronização com Google Drive não está disponível para renomear este PDF.', 'warning');
+      return false;
+    }
+    if (state.driveSyncInFlight || state.editorBusy) {
+      showStatus('Aguarde a operação atual terminar antes de renomear o PDF.', 'warning');
+      return false;
+    }
+
+    const previous = state.pdfItem;
+    const oldName = String(previous.name || '');
+    const nextName = base + '.pdf';
+    if (nextName === oldName) {
+      cancelPdfRename();
+      return true;
+    }
+
+    state.renameBusy = true;
+    if (els.viewerRenameInput) els.viewerRenameInput.disabled = true;
+    clearDriveSyncTimer();
+
+    try {
+      const result = await api('/api/documents/drive/rename', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          ref: previous.ref,
+          baseVersion: previous.version,
+          name: nextName
+        })
+      });
+
+      if (state.pdfItem !== previous) return false;
+      const applied = applyRenamedPdfResult(previous, result);
+      state.titleEditing = false;
+      state.titleSelected = true;
+      if (els.viewerRenameControl) els.viewerRenameControl.hidden = true;
+      if (els.viewerTitle) els.viewerTitle.hidden = false;
+      renderViewerTitle(applied.next.name);
+
+      if (applied.contentConflict) {
+        showStatus(
+          'O nome foi alterado no Drive, mas o conteúdo também mudou durante a operação. Reabra o PDF antes de continuar editando.',
+          'warning'
+        );
+      } else {
+        showStatus('Nome do PDF atualizado no Google Drive.', 'success');
+        if (
+          state.editorSession
+          && currentEditorRevision() !== state.driveSyncLastConfirmedRevision
+        ) {
+          scheduleAutomaticDriveSync(currentEditorRevision());
+        }
+      }
+      heartbeatDocumentPresence().catch(() => {});
+      return true;
+    } catch (error) {
+      showStatus(error?.message || 'Não foi possível renomear o PDF no Google Drive.', 'warning');
+      return false;
+    } finally {
+      state.renameBusy = false;
+      if (els.viewerRenameInput) els.viewerRenameInput.disabled = false;
+      if (state.titleEditing) els.viewerRenameInput?.focus?.();
+    }
+  }
+
+  function clearDocumentPresenceVisual() {
+    if (els.viewer) {
+      els.viewer.classList.remove('has-shared-presence', 'has-shared-editor');
+    }
+    if (els.presenceNotice) els.presenceNotice.hidden = true;
+    if (els.presenceText) els.presenceText.textContent = '';
+  }
+
+  function renderDocumentPresence(payload = {}) {
+    const others = Array.isArray(payload?.others) ? payload.others : [];
+    const editing = others.filter((item) => item?.mode === 'edit');
+    if (!others.length) {
+      clearDocumentPresenceVisual();
+      return;
+    }
+
+    const lead = others[0]?.name || 'Outro usuário';
+    const suffix = others.length > 1 ? ` e mais ${others.length - 1}` : '';
+    const editingLead = editing[0]?.name || lead;
+    const editingSuffix = editing.length > 1 ? ` e mais ${editing.length - 1}` : '';
+
+    els.viewer?.classList.toggle('has-shared-editor', editing.length > 0);
+    els.viewer?.classList.toggle('has-shared-presence', editing.length === 0);
+    if (els.presenceNotice) els.presenceNotice.hidden = false;
+    if (els.presenceText) {
+      els.presenceText.textContent = editing.length
+        ? `${editingLead}${editingSuffix} está editando este PDF. Atenção para evitar uma solicitação duplicada.`
+        : `${lead}${suffix} também está visualizando este PDF.`;
+    }
+  }
+
+  async function heartbeatDocumentPresence() {
+    const item = state.pdfItem;
+    const sessionId = String(state.presenceSessionId || '');
+    const generation = state.presenceGeneration;
+    if (!item?.ref || !sessionId) return false;
+    try {
+      const payload = await api('/api/documents/presence/heartbeat', {
+        method: 'POST',
+        body: JSON.stringify({
+          ref: item.ref,
+          sessionId,
+          mode: state.presenceMode === 'edit' ? 'edit' : 'view'
+        })
+      });
+      if (
+        generation !== state.presenceGeneration
+        || sessionId !== state.presenceSessionId
+        || !state.pdfItem
+        || state.pdfItem.cacheKey !== item.cacheKey
+      ) return false;
+      renderDocumentPresence(payload);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function startDocumentPresence(item) {
+    if (state.presenceTimer) clearInterval(state.presenceTimer);
+    state.presenceTimer = null;
+    state.presenceGeneration += 1;
+    state.presenceSessionId = randomViewId();
+    state.presenceMode = 'view';
+    clearDocumentPresenceVisual();
+    if (!item?.ref) return false;
+    heartbeatDocumentPresence().catch(() => {});
+    state.presenceTimer = window.setInterval(() => {
+      heartbeatDocumentPresence().catch(() => {});
+    }, DOCUMENT_PRESENCE_HEARTBEAT_MS);
+    return true;
+  }
+
+  function setDocumentPresenceMode(mode) {
+    const next = mode === 'edit' ? 'edit' : 'view';
+    if (!state.presenceSessionId || !state.pdfItem) return false;
+    state.presenceMode = next;
+    heartbeatDocumentPresence().catch(() => {});
+    return true;
+  }
+
+  function releaseDocumentPresence({ keepalive = false } = {}) {
+    const item = state.pdfItem;
+    const sessionId = String(state.presenceSessionId || '');
+    if (state.presenceTimer) clearInterval(state.presenceTimer);
+    state.presenceTimer = null;
+    state.presenceGeneration += 1;
+    state.presenceSessionId = '';
+    state.presenceMode = 'view';
+    clearDocumentPresenceVisual();
+    if (!item?.ref || !sessionId) return Promise.resolve(false);
+
+    const body = JSON.stringify({ ref: item.ref, sessionId });
+    if (keepalive) {
+      const headers = new Headers(auth.authorizationHeader?.() || {});
+      headers.set('Content-Type', 'application/json');
+      return fetch(endpoint + '/api/documents/presence', {
+        method: 'DELETE',
+        headers,
+        body,
+        keepalive: true,
+        cache: 'no-store',
+        credentials: 'omit'
+      }).then((response) => response.ok).catch(() => false);
+    }
+
+    return api('/api/documents/presence', {
+      method: 'DELETE',
+      body
+    }).then(() => true).catch(() => false);
+  }
+
   function documentAiCapabilities() {
     return state.access?.capabilities || state.user?.documentCapabilities || {};
   }
