@@ -350,6 +350,45 @@
     return 'very_large';
   }
 
+  function observabilityFailureKind(error, domain = 'generic') {
+    const code = String(error?.code || '').trim().toUpperCase();
+    const status = Number(error?.status || 0);
+
+    if (code.includes('VERSION_CONFLICT')) return 'conflict';
+    if (code.includes('SESSION')) return 'session';
+    if (code.includes('RATE') || code.includes('QUOTA') || status === 429) return 'rate_limit';
+    if (
+      code.includes('AUTH')
+      || code.includes('FORBIDDEN')
+      || code.includes('NOT_EDITABLE')
+      || code.includes('WRITE_DISABLED')
+      || status === 401
+      || status === 403
+    ) return 'authorization';
+    if (
+      code.includes('INVALID')
+      || code.includes('REQUIRED')
+      || code.includes('RANGE')
+      || code.includes('SIZE')
+      || status === 400
+      || status === 415
+      || status === 422
+    ) return 'validation';
+    if (
+      code.includes('NETWORK')
+      || code.includes('INTERRUPTED')
+      || status === 408
+      || status === 503
+      || status === 504
+      || status === 0
+    ) return 'network';
+    if (
+      domain === 'ai'
+      && (code.includes('AI_') || code.includes('PROVIDER') || status === 502)
+    ) return 'provider';
+    return 'unknown';
+  }
+
   function resultCountBucket(count) {
     const value = Number(count || 0);
     if (value <= 0) return '0';
@@ -1786,12 +1825,16 @@
       }
 
       if (syncStarted) {
+        const statusCode = Number(error?.status || 0);
         capture('drive_sync_failed', {
           route: '/documentos/',
           duration_ms: duration(started),
           operation,
           size_bucket: sizeBucket(blob?.size || 0),
-          status_code: Number(error?.status || 0)
+          failure_kind: observabilityFailureKind(error, 'drive'),
+          ...(Number.isInteger(statusCode) && statusCode >= 100 && statusCode <= 599
+            ? { status_code: statusCode }
+            : {})
         });
       }
       return false;
@@ -4786,12 +4829,17 @@
           ? 'Limite gratuito diário da IA atingido. A extração volta após a renovação da franquia.'
           : (error?.message || 'A extração do documento foi interrompida.');
       }
+      const statusCode = Number(error?.status || 0);
       capture('document_ai_failed', {
         route: '/documentos/',
         duration_ms: duration(started),
         operation: 'extract',
         size_bucket: sizeBucket(state.pdfItem?.size),
-        source: 'cloudflare'
+        source: 'cloudflare',
+        failure_kind: observabilityFailureKind(error, 'ai'),
+        ...(Number.isInteger(statusCode) && statusCode >= 100 && statusCode <= 599
+          ? { status_code: statusCode }
+          : {})
       });
       return false;
     } finally {
