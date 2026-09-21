@@ -3762,3 +3762,18 @@ Evidência de publicação externa:
 
 **Próxima ação exata:** operador deve atualizar a Central com `Ctrl+F5`, abrir um PDF real digitalizado pelo HP Smart, aguardar **Texto pronto para selecionar**, selecionar/copyar trechos e confirmar alinhamento/qualidade; em seguida alterar o zoom e repetir. Se aprovado, registrar o aceite do Caso 14 e continuar a matriz restante da Fase 6.
 
+
+
+## Telemedicina — retry conservador da leitura do dashboard V41 — EM IMPLEMENTAÇÃO — 21/09/2026
+
+Incidente transversal observado durante a Fase 6: `/telemedicina/` carregou a interface, mas a leitura do dashboard exibiu `Failed to fetch`; minutos depois voltou ao normal sem alteração de código. A abertura direta do endpoint respondeu corretamente com a barreira de autorização, confirmando que a rota e o Worker estavam acessíveis naquele momento.
+
+Decisão: absorver somente falhas transitórias de rede na leitura `GET /api/telemedicina/dashboard`, com até duas repetições (350 ms e 900 ms). Erros HTTP reais não são repetidos e nenhuma operação `POST/PATCH/DELETE` entra no mecanismo, para não criar risco de duplicidade.
+
+Branch isolada: `fix/telemedicina-dashboard-network-retry-20260921`.
+
+Arquitetura: helper compartilhado `js/telemedicina-network-retry-v41.js`, consumido pelo carregamento desktop e pelo cache mobile. Teste focal prova sucesso após duas falhas de rede, ausência de retry em HTTP 503 e limite máximo de três tentativas totais.
+
+Esta correção é transversal e **não altera a fase corrente da Central de Documentos**, que permanece na Fase 6 — Automação operacional, ainda aguardando homologação humana.
+
+**Próxima ação exata:** abrir PR, executar os checks focais/transversais e integrar somente se verdes; depois confirmar em produção que a Telemedicina carrega normalmente. Não é necessário provocar uma falha de rede real para aceite.
