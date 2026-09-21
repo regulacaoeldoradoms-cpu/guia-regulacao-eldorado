@@ -124,12 +124,14 @@ async function createClient({ failure = '', holdUpload = false, incomplete = fal
       let payload;
       let status = 200;
       if (url.endsWith('/preflight')) {
+        assert.fail('O cliente não deve mais chamar o preflight separado.');
+      } else if (url.endsWith('/start')) {
         if (failure) {
           status = failure === 'DRIVE_VERSION_CONFLICT' ? 409 : 503;
           payload = { code: failure, error: 'Falha de sincronização simulada' };
-        } else payload = { allowed: true };
-      } else if (url.endsWith('/start')) {
-        payload = { syncId: 'test-session', chunkSize: 262144, safetyRevisionPreserved: true };
+        } else {
+          payload = { syncId: 'test-session', chunkSize: 262144, safetyRevisionPreserved: true };
+        }
       } else if (url.includes('/upload/')) {
         if (uploadWait) await uploadWait;
         payload = incomplete ? { completed: true } : receipts[uploadCount++] || {
@@ -225,7 +227,7 @@ for (const failure of ['DRIVE_VERSION_CONFLICT', 'DRIVE_SYNC_UNAVAILABLE']) {
     await client.click('closeViewerButton');
     assertStillOpen(client);
     assert.equal(client.calls.requests.length, 1);
-    assert.match(client.calls.requests[0].url, /\/sync\/preflight$/);
+    assert.match(client.calls.requests[0].url, /\/sync\/start$/);
     assert.equal(client.state.driveSyncLastConfirmedRevision, 1);
     assert.equal(client.state.driveSyncVisualState, 'failed');
     assert.match(client.element('documentsEditorStatus').textContent, /permanecerá aberto/i);
@@ -237,13 +239,16 @@ test('real X listener waits for confirmed upload before destroying the viewer', 
   await client.click('closeViewerButton');
   assertStillOpen(client);
   assert.equal(client.state.driveSyncInFlight, true);
-  assert.equal(client.calls.requests.length, 3);
-  assert.deepEqual(JSON.parse(client.calls.requests[0].options.body), {
-    operation: 'replace_pdf', ref: 'original-ref', baseVersion: '1'
-  });
+  assert.equal(client.calls.requests.length, 2);
+  const startBody = JSON.parse(client.calls.requests[0].options.body);
+  assert.equal(startBody.operation, 'replace_pdf');
+  assert.equal(startBody.ref, 'original-ref');
+  assert.equal(startBody.baseVersion, '1');
+  assert.equal(startBody.preserveRevision, true);
+  assert.ok(Number(startBody.totalBytes) > 0);
   await client.click('closeViewerButton');
   assertStillOpen(client);
-  assert.equal(client.calls.requests.length, 3, 'A second click must not start another upload.');
+  assert.equal(client.calls.requests.length, 2, 'A second click must not start another upload.');
   client.finishUpload();
   await drainTasks();
   assert.equal(client.state.editorSession, null);
@@ -296,13 +301,11 @@ test('two sequential real synchronizations send the confirmed version and update
   }
   const preflights = client.calls.requests.filter(({ url }) => url.endsWith('/preflight'));
   const starts = client.calls.requests.filter(({ url }) => url.endsWith('/start'));
-  assert.equal(preflights.length, 2);
+  assert.equal(preflights.length, 0);
   assert.equal(starts.length, 2);
-  for (const requests of [preflights, starts]) {
-    const bodies = requests.map(({ options }) => JSON.parse(options.body));
-    assert.deepEqual(bodies.map(({ baseVersion }) => baseVersion), ['1', '2']);
-    assert.deepEqual(bodies.map(({ ref }) => ref), ['original-ref', 'confirmed-ref-2']);
-  }
+  const startBodies = starts.map(({ options }) => JSON.parse(options.body));
+  assert.deepEqual(startBodies.map(({ baseVersion }) => baseVersion), ['1', '2']);
+  assert.deepEqual(startBodies.map(({ ref }) => ref), ['original-ref', 'confirmed-ref-2']);
   assert.equal(client.state.editorSession, client.session);
   assert.equal(client.calls.close, 0);
 });
@@ -465,7 +468,7 @@ for (const button of ['portalLogout', 'disconnectDriveButton']) {
     await client.click(button);
     assert.equal(client.state.editorSession, null);
     assert.equal(client.element('documentsViewer').hidden, true);
-    assert.equal(client.calls.requests.length, 3);
+    assert.equal(client.calls.requests.length, 2);
     if (button === 'portalLogout') {
       assert.equal(client.calls.logout, 1);
       assert.deepEqual(client.calls.navigation, ['/login/']);

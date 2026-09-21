@@ -243,3 +243,22 @@ Hipótese operacional a verificar, não fato: parte desse tráfego pode vir de a
 
 Conclusão preservada: cache miss/Drive e warmup cancelado continuam os principais candidatos de investigação, mas otimização só deve começar após a nova instrumentação gerar amostra suficiente por viewport/failure_kind/text_mode.
 
+
+
+## Evidência adicional — sync Drive ainda lento antes da primeira otimização 7E — 21/09/2026
+
+Após nova queixa em uso real, a telemetria confirmou que a latência de `replace_pdf` permanece material:
+
+| Segmento | n | p50 | p75 | p95 | p99 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| small / V1 | 26 | 16.369 ms | 17.109 ms | 18.719 ms | 19.402 ms |
+| small / V2 | 2 | 16.586 ms | 17.040 ms | 17.403 ms | 17.476 ms |
+| medium / V2 | 4 | 22.707 ms | 23.994 ms | 25.654 ms | 25.986 ms |
+
+Último evento observado antes da correção: `small / V2`, **15.677 ms**.
+
+A inspeção do fluxo encontrou uma chamada redundante: o cliente executava `/sync/preflight` e depois `/sync/start`, enquanto `startDriveSync()` já repete o mesmo `driveSyncPreflightState()` antes de qualquer upload.
+
+A primeira otimização 7E remove apenas o preflight HTTP duplicado do cliente. O preflight autoritativo, a preservação de revisão, a sessão resumable e a confirmação final continuam no Worker.
+
+Esta seção é a **baseline pré-otimização**. O ganho será avaliado somente com amostras pós-publicação.

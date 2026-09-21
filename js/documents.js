@@ -1704,17 +1704,11 @@
       });
       syncStarted = true;
 
-      setDriveSyncProgress('Validando a versão atual no Google Drive…');
-      await driveSyncFetch('/api/documents/drive/sync/preflight', {
-        method: 'POST',
-        json: {
-          operation,
-          ref: state.pdfItem.ref,
-          baseVersion: String(state.pdfItem.version || '')
-        }
-      });
-
-      setDriveSyncProgress('Iniciando envio seguro ao Google Drive…');
+      // /sync/start executa o mesmo preflight autoritativo no Worker antes de
+      // preservar revisão ou iniciar o upload. Evitar um preflight HTTP separado
+      // remove uma leitura duplicada do Google Drive sem reduzir a proteção contra
+      // conflito de versão.
+      setDriveSyncProgress('Validando e iniciando envio seguro ao Google Drive…');
       const preserveRevision = replace && !state.driveSyncSafetyRevisionPreserved;
       const startedSync = await driveSyncFetch('/api/documents/drive/sync/start', {
         method: 'POST',
