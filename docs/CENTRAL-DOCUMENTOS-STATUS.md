@@ -4207,3 +4207,29 @@ Bloqueio analítico externo:
 **Fase atual:** Fase 7A — inventário/baseline real.  
 **Próxima ação exata:** CI/PR da instrumentação; se verde, integrar/publicar e aguardar amostra real suficiente para recalcular por viewport/text_mode/failure_kind. Só depois abrir 7B/SLOs.
 
+## Fase 7A — painel de observabilidade técnica consolidado — 21/09/2026
+
+A continuidade da Fase 7 foi retomada pelo estado real da `main` após a PR #384.
+
+Trabalho concluído:
+- PostHog confirmado no projeto `602473`;
+- dashboard existente **Portal Regulação — Observabilidade Técnica** reutilizado;
+- nova seção **Central de Documentos — Fase 7** adicionada;
+- seis insights técnicos salvos para PDF/cache, Drive, IA, background, viewport e texto nativo/OCR;
+- queries validadas antes de salvar;
+- nenhuma propriedade sensível ou conteúdo documental incluído.
+
+Nova evidência pós-publicação:
+- backend de observabilidade V2 está recebendo eventos;
+- as novas dimensões `viewport_class`, `failure_kind` e `text_mode` ainda não têm amostra suficiente na taxonomia;
+- portanto a Fase 7A **não é encerrada** e a 7B/SLOs ainda não deve ser aberta.
+
+Baseline de 7 dias atualizada:
+- PDF cache hit p95 ~519 ms;
+- PDF cache miss p95 ~17.278 ms;
+- Drive sync: 53 completed / 26 failed, falhas ainda legadas/sem classificação coarse;
+- IA small p95 ~48.443 ms;
+- warm_pdf/cancelled p95 ~18.476 ms.
+
+**Próxima ação exata:** acumular tráfego após recarga real do frontend instrumentado e repetir a coleta até existirem amostras não legadas de viewport/failure_kind/text_mode. Em paralelo, usar o painel criado para observar regressões. Só então fechar 7A e abrir 7B.
+

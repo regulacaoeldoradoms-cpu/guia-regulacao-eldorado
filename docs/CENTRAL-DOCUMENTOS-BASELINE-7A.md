@@ -199,3 +199,47 @@ A instrumentação adicional é deliberadamente pequena, allowlisted e sem conte
 4. separar falhas recuperáveis de conflitos legítimos;
 5. só então abrir **7B — SLOs**;
 6. primeira otimização candidata, se os dados se mantiverem: caminho de abertura **cache miss / Drive**.
+
+## Painel PostHog da Fase 7A — CRIADO/ATUALIZADO — 21/09/2026
+
+Foi reutilizado o painel existente **Portal Regulação — Observabilidade Técnica** (dashboard id `2087919`) em vez de criar um dashboard duplicado.
+
+Nova seção: **Central de Documentos — Fase 7**.
+
+Insights adicionados:
+- `9JVfMY1F` — **Central 7 — PDF pronto por cache**;
+- `1m7X2CJM` — **Central 7 — Sincronização Drive**;
+- `Bm9my01U` — **Central 7 — IA documental por tamanho**;
+- `53aWB8al` — **Central 7 — Background prepared/cancelled**;
+- `2BG73duF` — **Central 7 — PDF por viewport e cache**;
+- `V1jDy4Hx` — **Central 7 — Texto selecionável nativo/OCR**.
+
+Todos usam somente eventos/propriedades técnicos allowlisted e janelas temporais explícitas. Não há nome de paciente, CPF/CNS, CID, conteúdo de PDF, nome/ref/Drive ID ou texto da IA.
+
+### Verificação após publicação da instrumentação 7A
+
+A instrumentação da PR #384 foi publicada com Cloudflare Pages e Workers Builds em `success`.
+
+Consulta pós-publicação encontrou eventos com `portal_observability_version=2`, confirmando que o backend novo está recebendo tráfego.
+
+Até esta coleta, porém:
+- `viewport_class` ainda não apareceu na taxonomia;
+- `document_text_layer_ready/failed` ainda não apareceu na taxonomia;
+- `failure_kind` ainda não apareceu em `drive_sync_failed`;
+- houve pelo menos um `pdf_ready` V2 sem `viewport_class`.
+
+Isso significa que **a cobertura nova ainda não possui amostra real suficiente**. Não concluir 7A nem abrir 7B com base nisso.
+
+Hipótese operacional a verificar, não fato: parte desse tráfego pode vir de abas abertas antes da atualização do frontend, pois o backend V2 pode receber eventos de clientes antigos. A confirmação depende de eventos novos após recarga real do Portal.
+
+### Baseline corrente de 7 dias no momento desta revisão
+
+- `pdf_ready / hit`: n=101; p75 394 ms; p95 519 ms; p99 770 ms;
+- `pdf_ready / miss`: n=42; p75 7.394 ms; p95 17.278 ms; p99 25.497 ms;
+- Drive sync: 53 concluídas; 26 falhas ainda classificadas como `legacy_or_unknown`;
+- IA documental small: n=30; p95 48.443 ms;
+- IA documental medium: n=2; amostra insuficiente;
+- warm_pdf/cancelled: n=357; p95 18.476 ms.
+
+Conclusão preservada: cache miss/Drive e warmup cancelado continuam os principais candidatos de investigação, mas otimização só deve começar após a nova instrumentação gerar amostra suficiente por viewport/failure_kind/text_mode.
+
