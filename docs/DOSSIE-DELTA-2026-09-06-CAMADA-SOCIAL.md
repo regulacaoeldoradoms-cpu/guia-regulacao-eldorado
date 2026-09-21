@@ -28,8 +28,7 @@ permanentes mais recentes prevalecem.
 - `/perfil/?u=handle` — perfil social autenticado;
 - `/amigos/` — relações e descoberta;
 - `/notificacoes/` — avisos sociais;
-- `/admin/social/` — moderação exclusiva do Desenvolvedor;
-- `/admin/jev/` — triagem de tarefas de desenvolvimento com Jev, exclusiva do Desenvolvedor. O backend usa o binding Workers AI existente, não registra o texto da tarefa nos logs e não concede acesso ao Codex nem troca seu modelo automaticamente.
+- `/admin/social/` — moderação exclusiva do Desenvolvedor.
 
 ## Novo mapa de persistência
 
