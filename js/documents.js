@@ -62,6 +62,8 @@
     searchQuery: '',
     searchMode: false,
     loading: false,
+    selectedListIndex: -1,
+    browserForegroundReason: '',
     pdfObjectUrl: '',
     pdfOpenedAt: 0,
     pdfOpenId: 0,
@@ -130,6 +132,7 @@
     manageAccess: document.getElementById('manageDocumentsAccessLink'),
     disconnect: document.getElementById('disconnectDriveButton'),
     workspace: document.getElementById('documentsWorkspace'),
+    browser: document.getElementById('documentsBrowser'),
     searchForm: document.getElementById('documentsSearchForm'),
     search: document.getElementById('documentsSearch'),
     refreshFolder: document.getElementById('refreshFolderButton'),
@@ -229,6 +232,7 @@
     editorExit: document.getElementById('editorExitButton'),
     editorMergePanel: document.getElementById('editorMergePanel'),
     editorMergeSelection: document.getElementById('editorMergeSelection'),
+    editorMergeBrowse: document.getElementById('editorMergeBrowseButton'),
     editorMergeLocal: document.getElementById('editorMergeLocalButton'),
     editorMergeLocalInput: document.getElementById('editorMergeLocalInput'),
     editorMergePreview: document.getElementById('editorMergePreview'),
@@ -965,8 +969,13 @@
       if (!item?.isPdf || !action) return;
       action.textContent = state.editorSession
         ? (editorContainsItem(item) ? 'Já no editor' : 'Selecionar para unir')
-        : 'Abrir PDF';
+        : 'Duplo clique ou Enter';
       button.disabled = Boolean(state.editorSession && state.editorBusy);
+      const openTiton = button.parentElement?.querySelector?.('[data-open-titon-index]');
+      if (openTiton) {
+        openTiton.hidden = Boolean(state.editorSession);
+        openTiton.disabled = Boolean(state.editorSession || state.editorBusy);
+      }
     });
   }
 
@@ -2583,6 +2592,11 @@
     }
     syncEditorControls();
     setEditorStatus('Escolha onde o documento deve entrar e confirme em Unir.', 'success');
+    if (state.browserForegroundReason === 'merge') {
+      state.browserForegroundReason = '';
+      syncWorkspaceLayers();
+      els.editorMergePosition?.focus?.({ preventScroll: true });
+    }
     return true;
   }
 
@@ -2607,6 +2621,10 @@
   }
 
   function cancelPendingMerge() {
+    if (state.browserForegroundReason === 'merge') {
+      state.browserForegroundReason = '';
+      syncWorkspaceLayers();
+    }
     state.pendingMergeItem = null;
     state.pendingMergeFiles = [];
     if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
@@ -2743,19 +2761,14 @@
     state.pendingMergeFiles = [];
     if (els.editorMergeLocalInput) els.editorMergeLocalInput.value = '';
     clearMergePreview();
-    if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF na lista da Central ou adicione um arquivo do dispositivo.';
+    if (els.editorMergeSelection) els.editorMergeSelection.textContent = 'Escolha outro PDF da Central ou adicione um arquivo do dispositivo.';
     if (els.editorMergePosition) els.editorMergePosition.value = 'after-document';
     if (els.editorMergePageField) els.editorMergePageField.hidden = true;
     setEditorWorkspaceMode('merge');
     syncEditorControls();
     refreshPdfListActions();
-    setEditorStatus('Selecione outro PDF na lista da Central ou use “Adicionar PDF ou imagem”; depois escolha a posição e confirme em Unir.', 'success');
-    const candidate = [...els.list.querySelectorAll('[data-index]')].find((button) => {
-      const item = state.items[Number(button.dataset.index)];
-      return item?.isPdf && !editorContainsItem(item);
-    });
-    (candidate || els.list).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    candidate?.focus?.({ preventScroll: true });
+    setEditorStatus('Escolha um PDF da Central ou use “Adicionar PDF ou imagem”; depois escolha a posição e confirme em Unir.', 'success');
+    els.editorMergeBrowse?.focus?.({ preventScroll: true });
   }
 
   async function addBlankPageToEditor() {
@@ -4176,6 +4189,62 @@
     return state.stack.length ? state.stack[state.stack.length - 1].ref : '';
   }
 
+  function syncWorkspaceLayers() {
+    const viewerOpen = Boolean(state.pdfItem && els.viewer && !els.viewer.hidden);
+    const browserForeground = Boolean(viewerOpen && state.browserForegroundReason === 'merge');
+    els.workspace?.classList.toggle('is-viewer-open', viewerOpen);
+    els.workspace?.classList.toggle('is-browser-foreground', browserForeground);
+
+    if (els.browser) {
+      els.browser.inert = viewerOpen && !browserForeground;
+    }
+    if (els.viewer) {
+      els.viewer.inert = browserForeground;
+    }
+  }
+
+  function selectListItem(index, { focus = false } = {}) {
+    const selected = Number(index);
+    if (!Number.isInteger(selected) || selected < 0 || selected >= state.items.length) return false;
+    state.selectedListIndex = selected;
+    const controls = [...els.list.querySelectorAll('[data-index]')];
+    for (const control of controls) {
+      const active = Number(control.dataset.index) === selected;
+      control.classList.toggle('selected', active);
+      if (active) control.setAttribute('aria-current', 'true');
+      else control.removeAttribute('aria-current');
+    }
+    if (focus) controls.find((control) => Number(control.dataset.index) === selected)?.focus?.({ preventScroll: true });
+    return true;
+  }
+
+  function focusSelectedListItem() {
+    const selected = Number(state.selectedListIndex);
+    if (!Number.isInteger(selected) || selected < 0) return false;
+    const control = [...els.list.querySelectorAll('[data-index]')]
+      .find((item) => Number(item.dataset.index) === selected);
+    control?.focus?.({ preventScroll: true });
+    return Boolean(control);
+  }
+
+  function showMergeBrowserSelection() {
+    if (!state.editorSession || state.editorBusy) return false;
+    state.browserForegroundReason = 'merge';
+    syncWorkspaceLayers();
+    refreshPdfListActions();
+    const candidate = [...els.list.querySelectorAll('[data-index]')].find((control) => {
+      const item = state.items[Number(control.dataset.index)];
+      return item?.isPdf && !editorContainsItem(item);
+    });
+    if (candidate) {
+      candidate.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+      candidate.focus?.({ preventScroll: true });
+    } else {
+      els.search?.focus?.({ preventScroll: true });
+    }
+    return true;
+  }
+
   function renderBreadcrumbs() {
     const parts = [
       '<button class="documents-crumb" type="button" data-depth="-1">Meu Drive</button>'
@@ -4192,6 +4261,7 @@
 
   function renderItems() {
     renderBreadcrumbs();
+    if (state.selectedListIndex >= state.items.length) state.selectedListIndex = -1;
     els.listTitle.textContent = state.searchMode
       ? `Pesquisa: ${state.searchQuery}`
       : (state.stack.length ? state.stack[state.stack.length - 1].name : 'Meu Drive');
@@ -4204,22 +4274,35 @@
     } else {
       els.list.innerHTML = state.items.map((item, index) => {
         const supported = item.isFolder || item.isPdf;
-        const classes = ['documents-item', item.isFolder ? 'folder' : '', supported ? '' : 'unsupported'].filter(Boolean).join(' ');
+        const selected = index === state.selectedListIndex;
+        const classes = [
+          'documents-item',
+          item.isFolder ? 'folder' : '',
+          item.isPdf ? 'pdf' : '',
+          selected ? 'selected' : '',
+          supported ? '' : 'unsupported'
+        ].filter(Boolean).join(' ');
         const editorHasItem = Boolean(state.editorSession && editorContainsItem(item));
         const action = item.isFolder
           ? 'Abrir pasta'
           : item.isPdf
-            ? (state.editorSession ? (editorHasItem ? 'Já no editor' : 'Selecionar para unir') : 'Abrir PDF')
+            ? (state.editorSession ? (editorHasItem ? 'Já no editor' : 'Selecionar para unir') : 'Duplo clique ou Enter')
             : 'Não suportado nesta fase';
         const icon = item.isFolder ? '▰' : item.isPdf ? 'PDF' : '•';
-        return `<button class="${classes}" type="button" data-index="${index}" ${supported ? '' : 'aria-disabled="true"'}>
-          <span class="documents-item-icon" aria-hidden="true">${icon}</span>
-          <span class="documents-item-copy">
-            <strong title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</strong>
-            <span>${escapeHtml(itemSubtitle(item))}</span>
-          </span>
-          <span class="documents-item-action">${action}</span>
-        </button>`;
+        const openTiton = item.isPdf
+          ? `<button class="documents-item-open-titon" type="button" data-open-titon-index="${index}" aria-label="Abrir ${escapeHtml(item.name)} no Titon" ${state.editorSession ? 'hidden' : ''}>Abrir no Titon</button>`
+          : '';
+        return `<div class="documents-item-row${item.isPdf ? ' pdf' : ''}">
+          <button class="${classes}" type="button" data-index="${index}" ${supported ? '' : 'aria-disabled="true"'} ${selected ? 'aria-current="true"' : ''}>
+            <span class="documents-item-icon" aria-hidden="true">${icon}</span>
+            <span class="documents-item-copy">
+              <strong title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</strong>
+              <span>${escapeHtml(itemSubtitle(item))}</span>
+            </span>
+            <span class="documents-item-action">${action}</span>
+          </button>
+          ${openTiton}
+        </div>`;
       }).join('');
     }
 
@@ -4236,6 +4319,7 @@
     if (!append) {
       state.searchMode = false;
       state.searchQuery = '';
+      state.selectedListIndex = -1;
       els.search.value = '';
       els.list.innerHTML = '<div class="documents-loading">Carregando pasta…</div>';
     } else {
@@ -4284,6 +4368,7 @@
     if (!append) {
       state.searchMode = true;
       state.searchQuery = value;
+      state.selectedListIndex = -1;
       els.list.innerHTML = '<div class="documents-loading">Pesquisando no Drive…</div>';
     } else {
       els.loadMore.disabled = true;
@@ -4340,6 +4425,7 @@
     if (state.pdfObjectUrl) URL.revokeObjectURL(state.pdfObjectUrl);
     state.pdfObjectUrl = '';
     state.pdfItem = null;
+    state.browserForegroundReason = '';
     if (els.editorRailEdit) els.editorRailEdit.hidden = true;
     state.pdfFallbackStarted = false;
     state.pdfProgressiveFailed = false;
@@ -4354,6 +4440,7 @@
     if (els.pdfPageCountLabel) els.pdfPageCountLabel.textContent = '';
     if (els.pdfZoomLabel) els.pdfZoomLabel.textContent = '100%';
     els.viewer.hidden = true;
+    syncWorkspaceLayers();
     els.viewerState.className = 'documents-viewer-state';
     els.viewerState.textContent = 'Preparando PDF…';
     scheduleLikelyPdfWarmup();
@@ -4387,6 +4474,8 @@
     state.documentAiChatHistory = [];
     renderDocumentAiAvailability();
     els.viewer.hidden = false;
+    state.browserForegroundReason = '';
+    syncWorkspaceLayers();
     els.viewerModeLabel.textContent = 'Visualização';
     els.editPdf.hidden = !canEditDocuments();
     if (els.editorRailEdit) els.editorRailEdit.hidden = !canEditDocuments();
@@ -4539,9 +4628,19 @@
   });
 
   els.list.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-index]');
+    const openIndex = Number(event.target?.dataset?.openTitonIndex);
+    if (Number.isInteger(openIndex) && openIndex >= 0) {
+      const item = state.items[openIndex];
+      if (!item?.isPdf || state.editorSession) return;
+      selectListItem(openIndex);
+      openPdf(item).catch(() => {});
+      return;
+    }
+
+    const button = event.target.closest?.('[data-index]');
     if (!button) return;
-    const item = state.items[Number(button.dataset.index)];
+    const index = Number(button.dataset.index);
+    const item = state.items[index];
     if (!item) return;
     if (item.isFolder) {
       state.stack.push({ ref: item.ref, name: item.name });
@@ -4551,9 +4650,45 @@
       return;
     }
     if (item.isPdf) {
-      if (state.editorSession) prepareMergePdf(item);
-      else openPdf(item);
+      if (state.editorSession) {
+        if (prepareMergePdf(item)) selectListItem(index);
+      } else {
+        selectListItem(index);
+      }
     }
+  });
+
+  els.list.addEventListener('dblclick', (event) => {
+    const button = event.target.closest?.('[data-index]');
+    if (!button || state.editorSession) return;
+    const index = Number(button.dataset.index);
+    const item = state.items[index];
+    if (!item?.isPdf) return;
+    event.preventDefault();
+    selectListItem(index);
+    openPdf(item).catch(() => {});
+  });
+
+  els.list.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter') return;
+    const button = event.target.closest?.('[data-index]');
+    if (!button) return;
+    const index = Number(button.dataset.index);
+    const item = state.items[index];
+    if (!item) return;
+    event.preventDefault();
+
+    if (item.isFolder) {
+      state.stack.push({ ref: item.ref, name: item.name });
+      state.searchMode = false;
+      state.searchQuery = '';
+      loadFolder();
+      return;
+    }
+    if (!item.isPdf) return;
+    selectListItem(index);
+    if (state.editorSession) prepareMergePdf(item);
+    else openPdf(item).catch(() => {});
   });
 
   els.loadMore.addEventListener('click', () => {
@@ -4562,7 +4697,12 @@
     else loadFolder({ append: true, pageToken: state.nextPageToken });
   });
 
-  els.closeViewer.addEventListener('click', () => requestClosePdf().catch(() => {}));
+  els.closeViewer.addEventListener('click', () => requestClosePdf()
+    .then((closed) => {
+      if (closed) focusSelectedListItem();
+      return closed;
+    })
+    .catch(() => false));
   els.editPdf.addEventListener('click', startEditor);
   els.editorRailEdit?.addEventListener('click', () => {
     if (state.editorSession) setEditorWorkspaceMode('organize');
@@ -4584,6 +4724,15 @@
   els.documentAiChatSend?.addEventListener('click', () => {
     askDocumentAiQuestion().catch(() => {});
   });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || state.browserForegroundReason !== 'merge') return;
+    event.preventDefault();
+    state.browserForegroundReason = '';
+    syncWorkspaceLayers();
+    setEditorStatus('Seleção na Central cancelada. O editor continua aberto.', 'info');
+    els.editorMergeBrowse?.focus?.({ preventScroll: true });
+  });
+
   els.documentAiChatQuestion?.addEventListener('keydown', (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
       event.preventDefault();
@@ -4717,6 +4866,7 @@
   els.editorObjectOpacity?.addEventListener('change', () => updateSelectedEditorObject({ opacity: Number(els.editorObjectOpacity.value || 100) / 100 }));
   els.editorObjectDelete?.addEventListener('click', deleteSelectedEditorObject);
   els.editorMerge.addEventListener('click', choosePdfToMerge);
+  els.editorMergeBrowse?.addEventListener('click', showMergeBrowserSelection);
   els.editorMergeLocal?.addEventListener('click', () => {
     if (!state.editorSession || state.editorBusy) return;
     els.editorMergeLocalInput?.click();

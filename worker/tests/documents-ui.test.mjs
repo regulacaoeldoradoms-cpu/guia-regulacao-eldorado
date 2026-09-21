@@ -141,7 +141,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260920-6/);
+  assert.match(html, /documents\.js\?v=20260920-7/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -180,7 +180,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260920-3/);
+  assert.match(html, /documents\.css\?v=20260920-4/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -200,8 +200,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260919-1/);
-  assert.match(html, /documents\.js\?v=20260920-6/);
-  assert.match(html, /documents\.css\?v=20260920-3/);
+  assert.match(html, /documents\.js\?v=20260920-7/);
+  assert.match(html, /documents\.css\?v=20260920-4/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -357,8 +357,8 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260919-1/);
-  assert.match(html, /documents\.js\?v=20260920-6/);
-  assert.match(html, /documents\.css\?v=20260920-3/);
+  assert.match(html, /documents\.js\?v=20260920-7/);
+  assert.match(html, /documents\.css\?v=20260920-4/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -500,7 +500,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260920-6/);
+  assert.match(html, /documents\.js\?v=20260920-7/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -853,7 +853,55 @@ test('ferramentas laterais respeitam hidden mesmo com display autoral', () => {
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(css, /\.documents-rail-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-editor-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(html, /documents\.css\?v=20260920-3/);
+  assert.match(html, /documents\.css\?v=20260920-4/);
+});
+
+test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro plano', () => {
+  const html = read('documentos/index.html');
+  const css = read('css/documents.css');
+  const client = read('js/documents.js');
+
+  assert.match(html, /id="documentsBrowser"/);
+  assert.match(html, /id="documentsViewer"/);
+  assert.match(css, /\.documents-workspace\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(css, /\.documents-browser,[\s\S]*\.documents-viewer\s*\{[\s\S]*grid-column:\s*1;[\s\S]*grid-row:\s*1;/);
+  assert.match(css, /\.documents-workspace\.is-viewer-open:not\(\.is-browser-foreground\)[\s\S]*pointer-events:\s*none/);
+  assert.match(client, /function syncWorkspaceLayers\(\)/);
+  assert.match(client, /els\.browser\.inert = viewerOpen && !browserForeground/);
+  const layerStart = client.indexOf('  function syncWorkspaceLayers()');
+  const layerEnd = client.indexOf('  function selectListItem(', layerStart);
+  const layerBlock = client.slice(layerStart, layerEnd);
+  assert.doesNotMatch(layerBlock, /aria-hidden/);
+  assert.match(client, /state\.browserForegroundReason = '';/);
+  assert.match(client, /function focusSelectedListItem\(\)/);
+});
+
+test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile usa Abrir no Titon', () => {
+  const html = read('documentos/index.html');
+  const css = read('css/documents.css');
+  const client = read('js/documents.js');
+
+  assert.match(client, /'Duplo clique ou Enter'/);
+  assert.match(client, /data-open-titon-index=/);
+  assert.match(client, /els\.list\.addEventListener\('dblclick'/);
+  assert.match(client, /els\.list\.addEventListener\('keydown',[\s\S]*event\.key !== 'Enter'/);
+  assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
+  assert.match(css, /\.documents-item-open-titon\s*\{[\s\S]*display:\s*none/);
+  assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
+  assert.match(html, /documents\.css\?v=20260920-4/);
+  assert.match(html, /documents\.js\?v=20260920-7/);
+});
+
+test('unir PDF continua podendo escolher outro arquivo da Central com Titon em segundo plano', () => {
+  const html = read('documentos/index.html');
+  const client = read('js/documents.js');
+
+  assert.match(html, /id="editorMergeBrowseButton"[^>]*>Escolher PDF da Central<\/button>/);
+  assert.match(client, /editorMergeBrowse:\s*document\.getElementById\('editorMergeBrowseButton'\)/);
+  assert.match(client, /function showMergeBrowserSelection\(\)/);
+  assert.match(client, /state\.browserForegroundReason = 'merge'/);
+  assert.match(client, /els\.editorMergeBrowse\?\.addEventListener\('click', showMergeBrowserSelection\)/);
+  assert.match(client, /if \(state\.browserForegroundReason === 'merge'\)[\s\S]*syncWorkspaceLayers\(\)/);
 });
 
 test('Fase 6 carrega orquestrador de background antes do cliente documental', () => {
