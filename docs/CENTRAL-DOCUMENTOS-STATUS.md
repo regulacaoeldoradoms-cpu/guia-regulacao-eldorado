@@ -3777,3 +3777,29 @@ Arquitetura: helper compartilhado `js/telemedicina-network-retry-v41.js`, consum
 Esta correção é transversal e **não altera a fase corrente da Central de Documentos**, que permanece na Fase 6 — Automação operacional, ainda aguardando homologação humana.
 
 **Próxima ação exata:** abrir PR, executar os checks focais/transversais e integrar somente se verdes; depois confirmar em produção que a Telemedicina carrega normalmente. Não é necessário provocar uma falha de rede real para aceite.
+
+
+## Telemedicina — retry conservador do dashboard V41 — INTEGRADO NA MAIN — 21/09/2026
+
+A proteção transversal foi integrada pela PR **#370**, merge `a3fc815f11b3283acaa757f1830d1cdf4be71b7e`.
+
+Contrato publicado no código:
+- somente `GET /api/telemedicina/dashboard` pode ser repetido;
+- após a tentativa inicial, existem no máximo **duas repetições**;
+- atrasos curtos: **350 ms** e **900 ms**;
+- retry somente para falhas de rede do navegador compatíveis com `Failed to fetch`, `NetworkError` ou `Load failed`;
+- respostas HTTP reais do Worker não são repetidas;
+- nenhuma operação `POST`, `PATCH` ou `DELETE` recebe retry;
+- desktop e mobile usam o helper compartilhado `js/telemedicina-network-retry-v41.js`.
+
+Evidência pré-merge do head funcional `3580d91bf03b24f52e9be6e6d9b5ec1f1b03142a`:
+- **46/46 workflow runs** concluídos com `success`;
+- branch **0 commits atrás da main**;
+- teste focal comprovou sucesso após duas falhas transitórias, ausência de retry em HTTP 503 e teto de três tentativas totais;
+- testes históricos/cache da Telemedicina foram alinhados ao novo cache-buster e voltaram a ficar verdes.
+
+Justificativa: o incidente observado se recuperou sozinho sem deploy, compatível com oscilação transitória navegador → Worker. O retry é deliberadamente limitado à leitura idempotente para reduzir impacto operacional sem mascarar falhas HTTP reais e sem risco de duplicar gravações.
+
+Esta correção **não altera a fase corrente da Central de Documentos**. A Central permanece na **Fase 6 — Automação operacional**, com a homologação humana já documentada como próxima frente.
+
+**Próxima ação exata:** uso normal de `/telemedicina/`; se `Failed to fetch` reaparecer apesar das três tentativas totais, registrar horário e contexto para investigar uma indisponibilidade mais longa. Não provocar falha de rede artificial em produção.
