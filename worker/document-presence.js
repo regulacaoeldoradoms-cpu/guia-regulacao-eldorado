@@ -149,9 +149,13 @@ export async function heartbeatDocumentPresence(env, user, input = {}) {
     .bind(documentKey, sessionId, username, displayName, mode, expiresAt)
     .run();
 
-  const rows = await env.AUTH_DB.prepare(`SELECT display_name, username, mode, expires_at
+  const rows = await env.AUTH_DB.prepare(`SELECT
+      MAX(display_name) AS display_name,
+      username,
+      CASE WHEN MAX(CASE WHEN mode = 'edit' THEN 1 ELSE 0 END) = 1 THEN 'edit' ELSE 'view' END AS mode
     FROM document_titon_presence
     WHERE document_key = ? AND username <> ? AND expires_at >= ?
+    GROUP BY username
     ORDER BY CASE mode WHEN 'edit' THEN 0 ELSE 1 END, display_name
     LIMIT 12`)
     .bind(documentKey, username, now)
