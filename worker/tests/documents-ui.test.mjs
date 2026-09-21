@@ -141,7 +141,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260921-4/);
+  assert.match(html, /documents\.js\?v=20260921-5/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -180,7 +180,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260921-4/);
+  assert.match(html, /documents\.css\?v=20260921-5/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -200,8 +200,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260919-1/);
-  assert.match(html, /documents\.js\?v=20260921-4/);
-  assert.match(html, /documents\.css\?v=20260921-4/);
+  assert.match(html, /documents\.js\?v=20260921-5/);
+  assert.match(html, /documents\.css\?v=20260921-5/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -357,8 +357,8 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260919-1/);
-  assert.match(html, /documents\.js\?v=20260921-4/);
-  assert.match(html, /documents\.css\?v=20260921-4/);
+  assert.match(html, /documents\.js\?v=20260921-5/);
+  assert.match(html, /documents\.css\?v=20260921-5/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -500,7 +500,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260921-4/);
+  assert.match(html, /documents\.js\?v=20260921-5/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -686,7 +686,11 @@ test('paleta do editor é vinculada à conta e não contém conteúdo documental
   assert.match(router, /auth_document_editor_preferences/);
   assert.match(router, /color_palette_json/);
   assert.match(router, /DOCUMENTS_EDITOR_PALETTE_INVALID/);
-  assert.doesNotMatch(router, /patient_name|cpf|cns|diagnostico|cid/i);
+  const paletteStart = router.indexOf('function normalizeEditorColorPalette(');
+  const paletteEnd = router.indexOf('function normalizeDocumentAiFieldOrder(', paletteStart);
+  assert.ok(paletteStart >= 0 && paletteEnd > paletteStart, 'bloco da paleta não localizado');
+  const paletteBlock = router.slice(paletteStart, paletteEnd);
+  assert.doesNotMatch(paletteBlock, /patient_name|cpf|cns|diagnostico|cid/i);
 });
 
 test('seletor de cor do toolbar faz preview sem poluir o histórico e consolida no change', () => {
@@ -853,7 +857,7 @@ test('ferramentas laterais respeitam hidden mesmo com display autoral', () => {
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(css, /\.documents-rail-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-editor-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(html, /documents\.css\?v=20260921-4/);
+  assert.match(html, /documents\.css\?v=20260921-5/);
 });
 
 test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro plano', () => {
@@ -888,8 +892,8 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
-  assert.match(html, /documents\.css\?v=20260921-4/);
-  assert.match(html, /documents\.js\?v=20260921-4/);
+  assert.match(html, /documents\.css\?v=20260921-5/);
+  assert.match(html, /documents\.js\?v=20260921-5/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
@@ -946,6 +950,7 @@ test('Titon renomeia o PDF real no Drive com extensão protegida e confirmação
   assert.match(html, /id="documentsViewerTitle"[^>]*tabindex="0"[^>]*role="button"/);
   assert.match(html, /id="documentsViewerRenameInput"[^>]*maxlength="296"/);
   assert.ok(html.includes('documents-viewer-rename-extension" aria-hidden="true">.pdf</span>'));
+  assert.match(html, /id="documentsViewerRenameStatus"[^>]*role="status"[^>]*aria-live="polite"/);
   assert.match(client, /function selectViewerTitleText\(\)/);
   assert.match(client, /function beginPdfRename\(\)/);
   assert.match(client, /async function commitPdfRename\(\)/);
@@ -953,12 +958,18 @@ test('Titon renomeia o PDF real no Drive com extensão protegida e confirmação
   assert.match(client, /baseVersion:\s*previous\.version/);
   assert.ok(client.includes("event.key === 'Enter'"));
   assert.ok(client.includes("event.key === 'Escape'"));
+  assert.match(client, /viewerRenameInput\?\.addEventListener\('blur',[\s\S]*commitPdfRename\(\)/);
+  assert.match(client, /Sincronizando nome com o Google Drive…/);
+  assert.match(client, /Nome alterado e sincronizado com o Google Drive\./);
+  assert.match(client, /Falha: o nome não foi alterado no Google Drive\./);
   assert.ok(router.includes("url.pathname === '/api/documents/drive/rename'"));
   assert.ok(router.includes("requireCapability(user, 'edit', origin)"));
   assert.match(drive, /export async function renameDrivePdf/);
   assert.match(drive, /method:\s*'PATCH'/);
   assert.ok(drive.includes('body: JSON.stringify({ name })'));
   assert.match(css, /#documentsViewerTitle\[hidden\][^}]*display:\s*none\s*!important/);
+  assert.match(css, /\.documents-viewer-rename-status\.success/);
+  assert.match(css, /\.documents-viewer-rename-status\.warning/);
 });
 
 test('zoom do Titon mantém porcentagem em tempo real legível sobre fundo claro', () => {

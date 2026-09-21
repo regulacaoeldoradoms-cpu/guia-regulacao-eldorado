@@ -3546,3 +3546,37 @@ Validação:
 
 **Fase atual:** Fase 6 ainda aberta para homologação operacional humana.
 **Próxima ação exata:** operador validar no navegador real que pastas e PDFs têm o mesmo comportamento de seleção no desktop; depois continuar a matriz restante da Fase 6.
+
+## Titon — ordem personalizável, cópia confirmada e renomeação com feedback do Drive — EM IMPLEMENTAÇÃO — 21/09/2026
+
+A partir do uso real gravado pelo operador, foram aprovados **somente** três refinamentos. As demais ideias avaliadas não entram neste escopo.
+
+Branch: `feat/titon-field-order-copy-rename-feedback-20260921`.
+
+Escopo aprovado:
+- permitir reorganizar a ordem dos campos copiáveis da IA documental;
+- persistir somente a sequência validada de chaves/tipos de campo no backend de preferências, por usuário institucional, sem conteúdo clínico ou identidade documental;
+- após cópia individual bem-sucedida, trocar o botão para **✓ Copiado** e destacar o campo enquanto o PDF estiver aberto;
+- exibir no cabeçalho do Titon o estado da renomeação;
+- `Enter` e clique fora confirmam a renomeação;
+- a confirmação visual de sucesso só aparece depois da resposta efetiva do endpoint de renomeação do Drive;
+- erro deixa explícito que o nome não foi alterado;
+- `Escape` continua cancelando;
+- `.pdf`, capability `edit`, gate de escrita, versionamento/conflito e PATCH real do Google Drive permanecem obrigatórios.
+
+Decisão técnica importante:
+- a renomeação **já** era persistida no Google Drive por `PATCH /api/documents/drive/rename`; o problema observado era principalmente falta de feedback visível e o fato de `blur` cancelar a edição. O novo contrato não cria uma gravação paralela: ele usa o mesmo caminho seguro existente e torna a confirmação explícita.
+- a primeira implementação de preferência local foi descartada porque a Central possui contrato explícito que proíbe `localStorage`/`sessionStorage`/IndexedDB para persistência documental. A ordem agora usa a API `/api/documents/preferences` e uma tabela D1 específica por conta, contendo somente chaves de campo validadas; nenhum valor extraído, PDF, fileId/ref, paciente ou conteúdo documental é gravado.
+- reorganização e feedback de cópia são puramente de interface; zero novas inferências e zero novas chamadas de IA.
+
+Arquivos em alteração:
+- `js/documents.js`;
+- `documentos/index.html`;
+- `css/documents.css`;
+- testes de UI;
+- documentação da Fase 6/homologação/status.
+
+**Fase atual:** Fase 6 — Automação operacional, homologação humana ainda aberta.
+
+**Próxima ação exata:** concluir testes/CI desta branch, abrir PR e integrar somente se os checks relevantes ficarem verdes; após publicação, validar os Casos 10–12 no Portal real.
+

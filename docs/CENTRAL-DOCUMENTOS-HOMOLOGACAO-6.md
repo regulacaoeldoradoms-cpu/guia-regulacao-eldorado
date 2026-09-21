@@ -247,3 +247,54 @@ Aceite:
 - páginas não são misturadas;
 - informação técnica fica fora do fluxo principal;
 - nenhuma mudança em provider/modelos/gates.
+
+## Caso adicional — ordem dos campos, cópia confirmada e nome sincronizado
+
+### Caso 10 — personalizar ordem dos campos copiáveis
+
+Procedimento:
+1. extrair um PDF;
+2. abrir **Organizar campos**;
+3. mover campos por arraste ou pelos controles de subir/descer;
+4. concluir a organização;
+5. fechar/reabrir o Titon e repetir a extração, inclusive em outra sessão autenticada da mesma conta.
+
+Aceite:
+- a ordem escolhida reaparece para a mesma conta institucional;
+- somente as chaves/tipos de campo são persistidas pelo backend de preferências;
+- nenhum valor extraído, nome de paciente, conteúdo, ref/fileId ou dado clínico é persistido pela preferência;
+- reorganizar não dispara request de IA nem altera prompt/provider/modelo.
+
+### Caso 11 — confirmação visual da cópia
+
+Procedimento:
+1. copiar individualmente dois campos;
+2. observar cada botão e cartão;
+3. copiar novamente um campo já marcado;
+4. abrir outro PDF.
+
+Aceite:
+- após sucesso, o botão mostra **✓ Copiado** e o cartão recebe destaque;
+- a marca permanece durante a sessão daquele PDF;
+- abrir outro PDF limpa as marcas;
+- falha de clipboard não marca o campo como copiado;
+- nenhuma chamada adicional de IA é executada.
+
+### Caso 12 — renomeação com confirmação real do Drive
+
+Procedimento:
+1. editar o nome do PDF;
+2. confirmar com `Enter`;
+3. repetir com outro nome e confirmar clicando fora;
+4. conferir o Google Drive;
+5. testar `Escape`.
+
+Aceite:
+- durante a gravação aparece **Sincronizando nome com o Google Drive…**;
+- o sucesso visual aparece somente depois da resposta real do Drive;
+- o nome real do arquivo no Drive é alterado tanto por `Enter` quanto por perda de foco;
+- Titon e lista recebem o nome confirmado;
+- falha mostra explicitamente que o nome não foi alterado;
+- `Escape` cancela sem escrita;
+- proteção de `.pdf`, capability `edit`, gate de escrita e verificação de versão permanecem ativas.
+

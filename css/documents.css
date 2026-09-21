@@ -286,6 +286,33 @@
   letter-spacing: 0;
   opacity: 1;
 }
+.documents-viewer-rename-status {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 5px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.9);
+  font-size: .69rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.documents-viewer-rename-status[hidden] { display: none !important; }
+.documents-viewer-rename-status.pending {
+  background: rgba(255,255,255,.15);
+  color: #fff;
+}
+.documents-viewer-rename-status.success {
+  background: #dff6ea;
+  color: #126144;
+}
+.documents-viewer-rename-status.warning {
+  background: #fff0d6;
+  color: #7c4a05;
+}
 .documents-close-viewer {
   width: 38px; height: 38px; flex: 0 0 38px;
   border: 1px solid rgba(255,255,255,.2);
@@ -2688,6 +2715,16 @@
   opacity: .5;
 }
 
+.documents-ai-field.is-copied {
+  border-color: #a9d9c5;
+  background: #eef9f4;
+}
+.documents-ai-field button.is-copied {
+  border-color: #9bcfb9;
+  background: #dff4e9;
+  color: #126144;
+}
+
 .documents-ai-extraction-actions {
   display: flex;
   gap: 7px;
@@ -2806,12 +2843,106 @@
 }
 
 .documents-ai-document-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 7px;
   margin-top: 10px;
 }
 
 .documents-ai-document-actions .portal-button {
   width: 100%;
   justify-content: center;
+}
+
+.documents-ai-order-panel {
+  margin-top: 9px;
+  padding: 9px;
+  border: 1px solid #cfdeea;
+  border-radius: 10px;
+  background: #f7fafc;
+}
+.documents-ai-order-panel[hidden] { display: none !important; }
+.documents-ai-order-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+.documents-ai-order-head strong {
+  color: #244c69;
+  font-size: .75rem;
+}
+.documents-ai-order-head button {
+  border: 0;
+  background: transparent;
+  color: #2b6fa7;
+  font: inherit;
+  font-size: .68rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.documents-ai-order-panel p {
+  margin: 6px 0 8px;
+  color: #61788b;
+  font-size: .68rem;
+  line-height: 1.35;
+}
+.documents-ai-order-list {
+  display: grid;
+  gap: 5px;
+}
+.documents-ai-order-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 7px;
+  align-items: center;
+  padding: 6px 7px;
+  border: 1px solid #dbe5ec;
+  border-radius: 8px;
+  background: #fff;
+  cursor: grab;
+}
+.documents-ai-order-row.is-dragging {
+  opacity: .55;
+  cursor: grabbing;
+}
+.documents-ai-order-handle {
+  color: #7c91a2;
+  font-size: .8rem;
+  letter-spacing: -2px;
+}
+.documents-ai-order-row strong {
+  min-width: 0;
+  color: #294b65;
+  font-size: .7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.documents-ai-order-buttons {
+  display: flex;
+  gap: 3px;
+}
+.documents-ai-order-buttons button {
+  width: 27px;
+  height: 25px;
+  border: 1px solid #cfdeea;
+  border-radius: 7px;
+  background: #fff;
+  color: #2b6fa7;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+.documents-ai-order-buttons button:disabled {
+  opacity: .35;
+  cursor: default;
+}
+.documents-ai-order-done {
+  width: 100%;
+  justify-content: center;
+  margin-top: 8px;
 }
 
 .documents-ai-routines-section summary {

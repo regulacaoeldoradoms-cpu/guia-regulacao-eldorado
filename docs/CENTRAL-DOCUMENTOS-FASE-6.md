@@ -337,3 +337,42 @@ Decisão:
 - cada campo extraído pode ser copiado individualmente, além de **Copiar esta página** e **Copiar tudo**.
 
 A mudança é exclusivamente de apresentação/uso dos dados estruturados que a V8C.2 já devolve. Não altera prompt, modelo, provider, concorrência, número de chamadas, tokens ou neurons por extração.
+
+## Refinamento operacional aprovado — ordem dos campos, confirmação de cópia e renomeação — 21/09/2026
+
+Durante a homologação com uso real, o operador aprovou **somente** três refinamentos adicionais do Titon:
+
+1. **ordem personalizável dos campos copiáveis**;
+2. **confirmação visual inequívoca após copiar um campo**;
+3. **confirmação visual da renomeação, vinculada à confirmação real do Google Drive**.
+
+### Ordem dos campos
+
+A ordem dos tipos de campo pode ser reorganizada pelo usuário e permanece vinculada à conta institucional. A persistência usa a API de preferências da Central e grava no backend somente a sequência validada de chaves dos campos reconhecidos; não usa `localStorage`, `sessionStorage` ou IndexedDB. Não guarda valores extraídos, nome do paciente, conteúdo do PDF, ref/fileId ou qualquer dado clínico.
+
+A ordenação continua respeitando a separação por página e as categorias aprovadas. A posição escolhida influencia a ordem dos campos dentro das categorias e também a posição relativa das categorias conforme o primeiro campo configurado.
+
+### Confirmação de cópia
+
+Quando a cópia individual é concluída pelo navegador:
+- o botão muda para **✓ Copiado**;
+- o cartão do campo recebe destaque visual de sucesso;
+- o estado permanece enquanto o mesmo PDF/resultados continuarem abertos;
+- nenhuma nova chamada de IA é executada.
+
+O estado é apenas efêmero da sessão do documento e não persiste valores copiados.
+
+### Renomeação confirmada no Drive
+
+A renomeação já utiliza o endpoint protegido de Drive por `PATCH`, capability `edit`, gate de escrita e verificação de versão. O refinamento desta etapa torna esse estado explícito no próprio cabeçalho do Titon:
+
+- ao confirmar, exibir **Sincronizando nome com o Google Drive…**;
+- somente após resposta positiva do backend/Drive exibir **✓ Nome alterado e sincronizado com o Google Drive**;
+- em erro, indicar que o nome **não** foi alterado no Drive;
+- conflito de conteúdo continua gerando aviso e não adota baseline insegura;
+- `Enter` confirma;
+- clicar fora do campo também confirma e executa a mesma gravação real;
+- `Escape` continua cancelando sem escrita.
+
+Nenhuma das outras sugestões avaliadas no vídeo foi aprovada para este refinamento. A Fase 6 permanece aberta até a homologação operacional real.
+

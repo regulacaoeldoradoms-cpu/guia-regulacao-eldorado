@@ -47,6 +47,14 @@ const DEFAULT_EDITOR_COLOR_PALETTE = Object.freeze([
 ]);
 const editorPreferencesSchemaReady = new WeakSet();
 const editorPreferencesSchemaPromises = new WeakMap();
+const documentAiPreferencesSchemaReady = new WeakSet();
+const documentAiPreferencesSchemaPromises = new WeakMap();
+const DEFAULT_DOCUMENT_AI_FIELD_ORDER = Object.freeze([
+  'nome_paciente', 'cns', 'cpf', 'data_nascimento', 'nome_mae', 'telefone', 'endereco', 'agente',
+  'motivo_encaminhamento', 'cid', 'descricao_cid',
+  'titulo', 'procedimento_solicitado', 'codigo_procedimento',
+  'medico', 'crm_rms'
+]);
 
 function normalizeEditorColorPalette(value, { strict = false } = {}) {
   if (!Array.isArray(value)) {
@@ -123,6 +131,103 @@ async function setEditorPreferences(env, username, input = {}) {
       updated_at = CURRENT_TIMESTAMP`)
     .bind(String(username || ''), JSON.stringify(colorPalette)).run();
   return { colorPalette };
+}
+
+function normalizeDocumentAiFieldOrder(value, { strict = false } = {}) {
+  if (!Array.isArray(value)) {
+    if (strict) throw new DriveIntegrationError('DOCUMENTS_AI_FIELD_ORDER_INVALID', 'Ordem dos campos inválida.', 400);
+    return [...DEFAULT_DOCUMENT_AI_FIELD_ORDER];
+  }
+  const allowed = new Set(DEFAULT_DOCUMENT_AI_FIELD_ORDER);
+  const seen = new Set();
+  const normalized = [];
+  for (const item of value) {
+    const key = String(item || '');
+    if (!allowed.has(key) || seen.has(key)) {
+      if (strict) throw new DriveIntegrationError('DOCUMENTS_AI_FIELD_ORDER_INVALID', 'A ordem contém campo inválido ou repetido.', 400);
+      continue;
+    }
+    seen.add(key);
+    normalized.push(key);
+  }
+  if (strict && normalized.length !== DEFAULT_DOCUMENT_AI_FIELD_ORDER.length) {
+    throw new DriveIntegrationError('DOCUMENTS_AI_FIELD_ORDER_INVALID', 'A ordem deve conter todos os tipos de campo permitidos.', 400);
+  }
+  for (const key of DEFAULT_DOCUMENT_AI_FIELD_ORDER) {
+    if (!seen.has(key)) normalized.push(key);
+  }
+  return normalized;
+}
+
+async function ensureDocumentAiPreferencesSchema(env) {
+  const binding = env.AUTH_DB;
+  if (!binding) return false;
+  if (documentAiPreferencesSchemaReady.has(binding)) return true;
+  if (documentAiPreferencesSchemaPromises.has(binding)) return documentAiPreferencesSchemaPromises.get(binding);
+
+  const operation = (async () => {
+    await binding.prepare(`CREATE TABLE IF NOT EXISTS auth_document_ai_preferences (
+      username TEXT PRIMARY KEY,
+      field_order_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`).run();
+    documentAiPreferencesSchemaReady.add(binding);
+    return true;
+  })().catch((error) => {
+    documentAiPreferencesSchemaReady.delete(binding);
+    throw error;
+  }).finally(() => {
+    documentAiPreferencesSchemaPromises.delete(binding);
+  });
+
+  documentAiPreferencesSchemaPromises.set(binding, operation);
+  return operation;
+}
+
+async function documentAiPreferencesFor(env, username) {
+  if (!(await ensureDocumentAiPreferencesSchema(env))) {
+    return { fieldOrder: [...DEFAULT_DOCUMENT_AI_FIELD_ORDER] };
+  }
+  const row = await env.AUTH_DB.prepare(
+    'SELECT field_order_json FROM auth_document_ai_preferences WHERE username = ? LIMIT 1'
+  ).bind(String(username || '')).first();
+  let fieldOrder = null;
+  try { fieldOrder = JSON.parse(String(row?.field_order_json || '')); } catch (_) {}
+  return { fieldOrder: normalizeDocumentAiFieldOrder(fieldOrder) };
+}
+
+async function setDocumentAiPreferences(env, username, input = {}) {
+  if (!(await ensureDocumentAiPreferencesSchema(env))) {
+    throw new DriveIntegrationError('DOCUMENTS_PREFERENCES_UNAVAILABLE', 'Preferências documentais indisponíveis.', 503);
+  }
+  const fieldOrder = normalizeDocumentAiFieldOrder(input.fieldOrder, { strict: true });
+  await env.AUTH_DB.prepare(`INSERT INTO auth_document_ai_preferences(username, field_order_json)
+    VALUES (?, ?)
+    ON CONFLICT(username) DO UPDATE SET
+      field_order_json = excluded.field_order_json,
+      updated_at = CURRENT_TIMESTAMP`)
+    .bind(String(username || ''), JSON.stringify(fieldOrder)).run();
+  return { fieldOrder };
+}
+
+async function documentsPreferencesFor(env, username) {
+  const [editor, documentAi] = await Promise.all([
+    editorPreferencesFor(env, username),
+    documentAiPreferencesFor(env, username)
+  ]);
+  return { ...editor, ...documentAi };
+}
+
+async function setDocumentsPreferences(env, username, input = {}) {
+  const hasPalette = Object.prototype.hasOwnProperty.call(input, 'colorPalette');
+  const hasFieldOrder = Object.prototype.hasOwnProperty.call(input, 'fieldOrder');
+  if (!hasPalette && !hasFieldOrder) {
+    throw new DriveIntegrationError('DOCUMENTS_PREFERENCES_INVALID', 'Nenhuma preferência reconhecida foi enviada.', 400);
+  }
+  if (hasPalette) await setEditorPreferences(env, username, input);
+  if (hasFieldOrder) await setDocumentAiPreferences(env, username, input);
+  return documentsPreferencesFor(env, username);
 }
 
 function headers(origin = '', allowed = true) {
@@ -256,7 +361,7 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
     if (url.pathname === '/api/documents/preferences' && request.method === 'GET') {
       const denied = requireCapability(user, 'view', origin);
       if (denied) return denied;
-      return json(await editorPreferencesFor(env, user.username), 200, origin);
+      return json(await documentsPreferencesFor(env, user.username), 200, origin);
     }
 
     if (url.pathname === '/api/documents/ai/config' && request.method === 'GET') {
@@ -376,7 +481,7 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
       const denied = requireCapability(user, 'view', origin);
       if (denied) return denied;
       const body = await safeJson(request);
-      return json(await setEditorPreferences(env, user.username, body), 200, origin);
+      return json(await setDocumentsPreferences(env, user.username, body), 200, origin);
     }
 
     const accessMatch = url.pathname.match(/^\/api\/documents\/admin\/access\/([a-z0-9._-]{3,40})$/);
