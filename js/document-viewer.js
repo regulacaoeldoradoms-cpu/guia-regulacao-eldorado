@@ -18,6 +18,8 @@
   const ORGANIZER_THUMB_WIDTH = 210;
   const MAX_CANVAS_PIXELS = 18_000_000;
   const MAX_DEVICE_SCALE = 2;
+  const OCR_TARGET_MAX_EDGE = 1900;
+  const OCR_MAX_PIXELS = 7_000_000;
 
   let modulePromise = null;
   let active = null;
@@ -256,6 +258,26 @@
     try { record?.renderTask?.cancel?.(); } catch (_) {}
   }
 
+  function setOcrPageStatus(record, state = 'idle', message = '', { autoHide = 0 } = {}) {
+    if (!record) return;
+    if (record.ocrStatusTimer) {
+      clearTimeout(record.ocrStatusTimer);
+      record.ocrStatusTimer = null;
+    }
+    record.container.dataset.ocrState = String(state || 'idle');
+    if (!record.ocrStatus) return;
+    record.ocrStatus.textContent = String(message || '');
+    record.ocrStatus.hidden = !message;
+    if (message && autoHide > 0) {
+      record.ocrStatusTimer = window.setTimeout(() => {
+        record.ocrStatusTimer = null;
+        if (!record.ocrStatus) return;
+        record.ocrStatus.hidden = true;
+        record.ocrStatus.textContent = '';
+      }, autoHide);
+    }
+  }
+
   function clearSelectableTextLayer(record) {
     if (!record) return;
     record.textLayerGeneration = Number(record.textLayerGeneration || 0) + 1;
@@ -263,16 +285,235 @@
     record.textLayerInstance = null;
     record.textLayerPromise = null;
     record.textLayer?.replaceChildren?.();
+    record.textLayer?.classList?.remove?.('is-ocr');
+    record.textLayer?.removeAttribute?.('data-main-rotation');
     record.container?.removeAttribute?.('data-selectable-text');
+  }
+
+  function ocrResultForPage(session, pageNumber) {
+    return session?.ocrResults?.get?.(Number(pageNumber)) || null;
+  }
+
+  function renderCachedOcrTextLayer(session, record, viewport) {
+    const result = ocrResultForPage(session, record?.pageNumber);
+    if (!record?.textLayer || !result || result.failed === true) return false;
+    const lines = Array.isArray(result.lines) ? result.lines : [];
+    if (!lines.length || !(result.width > 0) || !(result.height > 0)) return false;
+
+    clearSelectableTextLayer(record);
+    const layerNode = record.textLayer;
+    layerNode.classList.add('is-ocr');
+    layerNode.style.setProperty('--scale-factor', String(viewport?.scale || session.scale || 1));
+    layerNode.style.setProperty('--total-scale-factor', String(viewport?.scale || session.scale || 1));
+    layerNode.style.setProperty('--scale-round-x', '1px');
+    layerNode.style.setProperty('--scale-round-y', '1px');
+
+    const measureCanvas = document.createElement('canvas');
+    const measure = measureCanvas.getContext('2d');
+    const viewportWidth = Math.max(1, Number(viewport?.width || record.fullPageWidth || 1));
+    const viewportHeight = Math.max(1, Number(viewport?.height || record.fullPageHeight || 1));
+
+    for (const line of lines) {
+      const text = String(line?.text || '').trim();
+      if (!text) continue;
+      const x0 = clamp(Number(line.x0 || 0), 0, result.width);
+      const y0 = clamp(Number(line.y0 || 0), 0, result.height);
+      const x1 = clamp(Number(line.x1 || 0), x0, result.width);
+      const y1 = clamp(Number(line.y1 || 0), y0, result.height);
+      if (x1 <= x0 || y1 <= y0) continue;
+
+      const span = document.createElement('span');
+      span.dataset.ocrLine = 'true';
+      span.setAttribute('role', 'presentation');
+      span.textContent = `${text}\n`;
+      span.style.left = `${((x0 / result.width) * 100).toFixed(4)}%`;
+      span.style.top = `${((y0 / result.height) * 100).toFixed(4)}%`;
+
+      const fontSize = Math.max(6, ((y1 - y0) / result.height) * viewportHeight);
+      span.style.fontSize = `${fontSize.toFixed(2)}px`;
+      span.style.lineHeight = '1';
+      span.style.fontFamily = 'Arial, sans-serif';
+
+      const desiredWidth = ((x1 - x0) / result.width) * viewportWidth;
+      if (measure && desiredWidth > 0) {
+        measure.font = `${fontSize}px Arial`;
+        const measuredWidth = Math.max(1, measure.measureText(text).width);
+        const scaleX = clamp(desiredWidth / measuredWidth, 0.35, 3.5);
+        span.style.transform = `scaleX(${scaleX.toFixed(4)})`;
+      }
+      layerNode.appendChild(span);
+    }
+
+    const hasText = layerNode.querySelector('[data-ocr-line="true"]') !== null;
+    record.container.dataset.selectableText = hasText ? 'ocr' : 'false';
+    if (hasText) setOcrPageStatus(record, 'ready', 'Texto pronto para selecionar', { autoHide: 1600 });
+    return hasText;
+  }
+
+  async function renderOcrSourceCanvas(session, page) {
+    if (!page || !isCurrentSession(session)) return null;
+    const base = page.getViewport({ scale: 1 });
+    const maxEdge = Math.max(1, base.width, base.height);
+    let scale = clamp(OCR_TARGET_MAX_EDGE / maxEdge, 1, 3.2);
+    let viewport = page.getViewport({ scale });
+    const pixels = Math.max(1, viewport.width * viewport.height);
+    if (pixels > OCR_MAX_PIXELS) {
+      scale *= Math.sqrt(OCR_MAX_PIXELS / pixels);
+      viewport = page.getViewport({ scale });
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(viewport.width));
+    canvas.height = Math.max(1, Math.round(viewport.height));
+    const task = page.render({
+      canvas,
+      viewport,
+      background: '#ffffff',
+      intent: 'display'
+    });
+    try {
+      await task.promise;
+      if (!isCurrentSession(session)) {
+        canvas.width = 0;
+        canvas.height = 0;
+        return null;
+      }
+      return canvas;
+    } catch (error) {
+      canvas.width = 0;
+      canvas.height = 0;
+      if (error?.name === 'RenderingCancelledException' || !isCurrentSession(session)) return null;
+      throw error;
+    }
+  }
+
+  function nextOcrPage(session) {
+    if (!session?.ocrPending?.size) return 0;
+    const activePage = Number(session.activePage || 0);
+    if (activePage > 0 && session.ocrPending.has(activePage)) return activePage;
+    for (const pageNumber of session.visiblePages || []) {
+      if (session.ocrPending.has(pageNumber)) return pageNumber;
+    }
+    return Number(session.ocrPending.values().next().value || 0);
+  }
+
+  async function runOcrPage(session, pageNumber) {
+    const ocr = window.PortalDocumentOcr;
+    const record = session.pages.get(pageNumber);
+    if (!ocr?.recognize || !record || !isCurrentSession(session)) {
+      if (record) setOcrPageStatus(record, 'unavailable', 'Seleção OCR indisponível', { autoHide: 2200 });
+      return false;
+    }
+
+    const page = await getPage(session, pageNumber);
+    if (!page || !isCurrentSession(session)) return false;
+
+    setOcrPageStatus(record, 'loading', 'Preparando leitura do documento…');
+    let canvas = null;
+    try {
+      canvas = await renderOcrSourceCanvas(session, page);
+      if (!canvas || !isCurrentSession(session)) return false;
+      const sourceWidth = canvas.width;
+      const sourceHeight = canvas.height;
+      const result = await ocr.recognize(canvas, {
+        onProgress: ({ progress }) => {
+          if (!isCurrentSession(session) || session.ocrRunningPage !== pageNumber) return;
+          const pct = Math.round(clamp(Number(progress || 0), 0, 1) * 100);
+          setOcrPageStatus(record, 'loading', pct > 1 ? `Lendo texto… ${pct}%` : 'Lendo texto…');
+        }
+      });
+      if (!isCurrentSession(session)) return false;
+
+      const lines = Array.isArray(result?.lines) ? result.lines : [];
+      session.ocrResults.set(pageNumber, Object.freeze({
+        width: sourceWidth,
+        height: sourceHeight,
+        lines,
+        confidence: Number(result?.confidence || 0),
+        failed: false
+      }));
+
+      if (!lines.length) {
+        record.container.dataset.selectableText = 'false';
+        setOcrPageStatus(record, 'empty', 'Nenhum texto reconhecido', { autoHide: 2200 });
+        return false;
+      }
+
+      const currentViewport = page.getViewport({ scale: session.scale || 1 });
+      renderCachedOcrTextLayer(session, record, currentViewport);
+      return true;
+    } catch (_) {
+      if (!isCurrentSession(session)) return false;
+      session.ocrResults.set(pageNumber, Object.freeze({
+        width: 0,
+        height: 0,
+        lines: [],
+        confidence: 0,
+        failed: true
+      }));
+      record.container.dataset.selectableText = 'false';
+      setOcrPageStatus(record, 'failed', 'Não foi possível reconhecer o texto', { autoHide: 2600 });
+      return false;
+    } finally {
+      if (canvas) {
+        canvas.width = 0;
+        canvas.height = 0;
+      }
+    }
+  }
+
+  function pumpOcrQueue(session) {
+    if (!isCurrentSession(session) || session.thumbnailActions || session.ocrRunningPage) return;
+    const pageNumber = nextOcrPage(session);
+    if (!(pageNumber > 0)) return;
+    session.ocrPending.delete(pageNumber);
+    session.ocrRunningPage = pageNumber;
+
+    runOcrPage(session, pageNumber)
+      .catch(() => false)
+      .finally(() => {
+        if (!isCurrentSession(session)) return;
+        if (session.ocrRunningPage === pageNumber) session.ocrRunningPage = 0;
+        pumpOcrQueue(session);
+      });
+  }
+
+  function queueOcrPage(session, pageNumber) {
+    const target = Number(pageNumber || 0);
+    const record = session?.pages?.get?.(target);
+    if (!record || !isCurrentSession(session) || !(target > 0)) return false;
+
+    const cached = ocrResultForPage(session, target);
+    if (cached) {
+      if (cached.failed || !cached.lines?.length) {
+        record.container.dataset.selectableText = 'false';
+        return false;
+      }
+      const page = record.page;
+      if (page) renderCachedOcrTextLayer(session, record, page.getViewport({ scale: session.scale || 1 }));
+      return true;
+    }
+
+    if (session.ocrRunningPage === target || session.ocrPending.has(target)) return true;
+    session.ocrPending.add(target);
+    setOcrPageStatus(record, 'queued', session.thumbnailActions ? 'Texto aguardando leitura' : 'Preparando leitura do documento…');
+    pumpOcrQueue(session);
+    return true;
   }
 
   async function renderSelectableTextLayer(session, record, page, viewport, generation) {
     if (!record?.textLayer || !page || !viewport || !isCurrentSession(session)) return false;
     if (generation !== session.generation) return false;
 
+    const cachedOcr = ocrResultForPage(session, record.pageNumber);
+    if (cachedOcr?.lines?.length) {
+      return renderCachedOcrTextLayer(session, record, viewport);
+    }
+
     const TextLayer = session.pdfjs?.TextLayer;
     if (typeof TextLayer !== 'function') {
-      record.container.dataset.selectableText = 'unsupported';
+      record.container.dataset.selectableText = 'false';
+      queueOcrPage(session, record.pageNumber);
       return false;
     }
 
@@ -314,14 +555,23 @@
 
       const hasText = Array.isArray(textLayer.textDivs)
         && textLayer.textDivs.some((node) => String(node?.textContent || '').trim());
-      record.container.dataset.selectableText = hasText ? 'true' : 'false';
-      return hasText;
+      if (hasText) {
+        record.container.dataset.selectableText = 'native';
+        session.ocrPending.delete(record.pageNumber);
+        setOcrPageStatus(record, 'native', '');
+        return true;
+      }
+
+      record.container.dataset.selectableText = 'false';
+      queueOcrPage(session, record.pageNumber);
+      return false;
     } catch (error) {
       const stale = !isCurrentSession(session)
         || generation !== session.generation
         || textGeneration !== record.textLayerGeneration;
       if (!stale && error?.name !== 'AbortException') {
-        record.container.dataset.selectableText = 'error';
+        record.container.dataset.selectableText = 'false';
+        queueOcrPage(session, record.pageNumber);
       }
       return false;
     } finally {
@@ -357,6 +607,7 @@
     if (!record?.canvas) return;
     cancelRender(record);
     clearSelectableTextLayer(record);
+    setOcrPageStatus(record, record.container?.dataset?.ocrState || 'idle', '');
     record.canvas.width = 0;
     record.canvas.height = 0;
     record.canvas.removeAttribute('style');
@@ -377,7 +628,14 @@
     session.resizeTimer = null;
     clearThumbnailDragState(session);
     clearEditorObjectUi(session);
-    for (const record of session.pages.values()) clearRenderedPage(record);
+    session.ocrPending?.clear?.();
+    session.ocrResults?.clear?.();
+    session.ocrRunningPage = 0;
+    for (const record of session.pages.values()) {
+      if (record.ocrStatusTimer) clearTimeout(record.ocrStatusTimer);
+      record.ocrStatusTimer = null;
+      clearRenderedPage(record);
+    }
     for (const record of session.thumbs.values()) {
       cancelRender(record);
       if (record.canvas) {
@@ -805,6 +1063,12 @@
     textLayer.dataset.pageNumber = String(pageNumber);
     textLayer.setAttribute('aria-label', `Texto selecionável da página ${pageNumber}`);
 
+    const ocrStatus = document.createElement('div');
+    ocrStatus.className = 'portal-pdf-ocr-status';
+    ocrStatus.setAttribute('role', 'status');
+    ocrStatus.setAttribute('aria-live', 'polite');
+    ocrStatus.hidden = true;
+
     const loading = document.createElement('div');
     loading.className = 'portal-pdf-page-loading';
     loading.textContent = 'Carregando página…';
@@ -824,7 +1088,7 @@
     cropLayer.dataset.pageNumber = String(pageNumber);
     cropLayer.setAttribute('aria-label', `Recorte da página ${pageNumber}`);
 
-    article.append(badge, canvas, textLayer, loading, drawLayer, objectLayer, cropLayer);
+    article.append(badge, canvas, textLayer, ocrStatus, loading, drawLayer, objectLayer, cropLayer);
     session.pagesRoot.appendChild(article);
 
     const record = {
@@ -835,6 +1099,8 @@
       textLayerInstance: null,
       textLayerPromise: null,
       textLayerGeneration: 0,
+      ocrStatus,
+      ocrStatusTimer: null,
       loading,
       drawLayer,
       objectLayer,
@@ -3068,6 +3334,7 @@
     if (!session.thumbnailActions) clearThumbnailDragState(session);
     session.onThumbnailAction = typeof onThumbnailAction === 'function' ? onThumbnailAction : null;
     syncThumbnailActions(session);
+    if (!session.thumbnailActions) pumpOcrQueue(session);
     return true;
   }
 
@@ -3181,6 +3448,9 @@
       document: null,
       pages: new Map(),
       thumbs: new Map(),
+      ocrResults: new Map(),
+      ocrPending: new Set(),
+      ocrRunningPage: 0,
       pageObserver: null,
       thumbObserver: null,
       activeObserver: null,
