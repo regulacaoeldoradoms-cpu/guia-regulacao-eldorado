@@ -995,7 +995,12 @@
   function refreshPdfListMetadata() {
     els.list?.querySelectorAll('[data-index]').forEach((button) => {
       const item = state.items[Number(button.dataset.index)];
+      const title = button.querySelector('.documents-item-copy > strong');
       const subtitle = button.querySelector('.documents-item-copy > span');
+      if (item?.isPdf && title) {
+        title.textContent = String(item.name || 'PDF');
+        title.title = String(item.name || 'PDF');
+      }
       if (item?.isPdf && subtitle) subtitle.textContent = itemSubtitle(item);
     });
   }
@@ -1171,6 +1176,7 @@
     if (els.editorRailEdit) els.editorRailEdit.hidden = !(canEditDocuments() && state.pdfItem);
     setEditorStatus('');
     refreshPdfListActions();
+    if (resumeAutomation && state.pdfItem) setDocumentPresenceMode('view');
     if (resumeAutomation) {
       resumeDocumentBackground();
       if (state.pdfItem) scheduleActiveDocumentPreparation(state.pdfOpenId);
@@ -1510,7 +1516,7 @@
     }
 
     state.pdfItem = next;
-    if (els.viewerTitle) els.viewerTitle.textContent = nextName;
+    renderViewerTitle(nextName);
     storeCachedPdf(next, blob).catch(() => false);
     refreshPdfListActions();
     refreshPdfListMetadata();
@@ -1969,6 +1975,7 @@
       state.editorSession = session;
       state.editorSyncRequired = canSyncDocuments();
       state.editorViewState = initialViewState;
+      setDocumentPresenceMode('edit');
       resetDriveSyncTracking({ observe: true });
       state.pendingMergeItem = null;
       state.pendingMergeFiles = [];
@@ -2001,6 +2008,7 @@
       if (!isCurrentStart()) return;
       state.editorSession = null;
       state.editorViewState = null;
+      setDocumentPresenceMode('view');
       window.PortalPdfViewer?.setThumbnailActions?.(false);
       setEditorSurfaceMode(false);
       els.viewerState.className = 'documents-viewer-state ready';
@@ -4697,6 +4705,9 @@
   }
 
   function closePdf() {
+    releaseDocumentPresence().catch(() => {});
+    cancelPdfRename({ restoreFocus: false });
+    state.titleSelected = false;
     resetDocumentBackgroundState('document_changed');
     setDocumentAiPanelOpen(false);
     state.documentAiBusy = false;
@@ -4737,6 +4748,7 @@
     if (els.pdfThumbnails) els.pdfThumbnails.replaceChildren();
     if (els.pdfPageCountLabel) els.pdfPageCountLabel.textContent = '';
     if (els.pdfZoomLabel) els.pdfZoomLabel.textContent = '100%';
+    renderViewerTitle('PDF');
     els.viewer.hidden = true;
     syncWorkspaceLayers();
     els.viewerState.className = 'documents-viewer-state';
@@ -4761,8 +4773,12 @@
     const openId = state.pdfOpenId;
     background?.cancelScope?.('list', 'foreground');
     state.pdfItem = item;
+    state.titleSelected = false;
+    state.titleEditing = false;
     state.backgroundScope = documentBackgroundScope(openId);
     rememberOpenedPdf(item);
+    renderViewerTitle(item.name || 'Documento PDF');
+    startDocumentPresence(item);
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
     state.documentAiResults = [];
@@ -4777,7 +4793,7 @@
     els.viewerModeLabel.textContent = 'Visualização';
     els.editPdf.hidden = !canEditDocuments();
     if (els.editorRailEdit) els.editorRailEdit.hidden = !canEditDocuments();
-    els.viewerTitle.textContent = item.name || 'Documento PDF';
+    renderViewerTitle(item.name || 'Documento PDF');
     els.viewerState.textContent = 'Verificando cache seguro…';
     els.viewerState.className = 'documents-viewer-state';
     state.pdfOpenedAt = performance.now();
