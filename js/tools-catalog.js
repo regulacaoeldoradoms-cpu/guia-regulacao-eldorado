@@ -117,11 +117,6 @@
         action: 'Abrir moderação', icon: ICONS.users
       });
       cards.push({
-        id: 'developer-jev', href: '/admin/jev/', title: 'Jev · Roteador de Desenvolvimento',
-        description: 'Faça a triagem de tarefas antes do Codex e reserve o Astra para quando ele realmente for necessário.',
-        action: 'Avaliar tarefa', icon: ICONS.settings, system: true
-      });
-      cards.push({
         id: 'developer-readiness', href: '/admin/configuracao/', title: 'Configuração técnica',
         description: 'Confira integrações e flags sem exibir valores sensíveis.',
         action: 'Ver diagnóstico', icon: ICONS.settings, system: true

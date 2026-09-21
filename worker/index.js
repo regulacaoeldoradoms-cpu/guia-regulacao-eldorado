@@ -9,7 +9,6 @@ import { handleSocialRoute, isSocialApi } from './social.js';
 import { handleUsageRoute, isUsageApi } from './usage-monitor-v2.js';
 import { handleCouncilRoute, isCouncilApi } from './council-access-policy.js';
 import { handleSystemReadinessRoute, isSystemReadinessApi } from './system-readiness.js';
-import { handleDeveloperJevRoute, isDeveloperJevApi } from './developer-jev.js';
 import { handlePushRoute, isPushApi } from './push-notifications.js';
 import { handleTelemedicineRoute, isTelemedicineApi } from './telemedicine-router-v2.js';
 import { handleAgendaRoute, isAgendaApi } from './agenda.js';
@@ -222,10 +221,6 @@ export default {
     if (isPushApi(url.pathname)) {
       try { return await handlePushRoute(request, env, origin, originAllowed); }
       catch (error) { return jsonError(error?.message || 'Falha no serviço de notificações.', 500, origin, originAllowed); }
-    }
-    if (isDeveloperJevApi(url.pathname)) {
-      try { return await handleDeveloperJevRoute(request, env, origin, originAllowed); }
-      catch (error) { return jsonError(error?.message || 'Falha no roteador Jev.', Number(error?.status || 500), origin, originAllowed); }
     }
     if (isSystemReadinessApi(url.pathname)) {
       try { return await handleSystemReadinessRoute(request, env, origin, originAllowed); }

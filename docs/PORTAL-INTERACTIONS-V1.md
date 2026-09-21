@@ -116,7 +116,6 @@ As preferências são gravadas no D1 pela API autenticada `/api/auth/security` e
 | `/admin/usuarios/` | criação, edição, redefinição, filtros implícitos, resultados e saída |
 | `/admin/monitoramento/` | períodos, seleção de profissional, atualização de conteúdo, chat e saída |
 | `/admin/configuracao/` | diagnóstico, carregamento, conclusão, bloqueios, erro e saída |
-| `/admin/jev/` | entrada da tarefa, triagem Jev, resultado estruturado, cópia do prompt e saída |
 | `/admin/social/` | fila, filtros, decisões de moderação, confirmações, migrações e saída |
 
 `/home/` e `/protocolo.html` continuam sendo redirecionamentos de compatibilidade, sem efeitos próprios.

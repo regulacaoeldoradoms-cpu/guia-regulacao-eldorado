@@ -19,7 +19,7 @@ const KNOWN_PAGE_PATHS = new Set([
   '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/conta/', '/medico/', '/protocolo/',
   '/recepcao/', '/telemedicina/', '/documentos/', '/cidadao/', '/conselho/',
   '/conselho/painel/', '/admin/usuarios/', '/admin/monitoramento/',
-  '/admin/configuracao/', '/admin/jev/', '/admin/social/'
+  '/admin/configuracao/', '/admin/social/'
 ]);
 
 const CORE_RESOURCES = Object.freeze([

@@ -14,7 +14,7 @@ const SAFE_ROUTES = new Set([
   '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/',
   '/conta/', '/medico/', '/protocolo/', '/recepcao/', '/telemedicina/',
   '/cidadao/', '/conselho/', '/conselho/painel/', '/admin/usuarios/',
-  '/admin/monitoramento/', '/admin/configuracao/', '/admin/jev/', '/admin/social/',
+  '/admin/monitoramento/', '/admin/configuracao/', '/admin/social/',
   '/documentos/', 'unknown'
 ]);
 

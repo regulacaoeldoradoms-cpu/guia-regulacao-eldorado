@@ -14,7 +14,7 @@
     '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/conta/', '/medico/', '/protocolo/',
     '/recepcao/', '/telemedicina/', '/documentos/', '/cidadao/', '/conselho/',
     '/conselho/painel/', '/admin/usuarios/', '/admin/monitoramento/',
-    '/admin/configuracao/', '/admin/jev/', '/admin/social/'
+    '/admin/configuracao/', '/admin/social/'
   ]);
   const warmedRoutes = new Set();
   let registrationPromise = null;
