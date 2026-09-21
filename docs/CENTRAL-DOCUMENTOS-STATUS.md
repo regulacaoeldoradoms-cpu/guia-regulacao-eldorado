@@ -3555,7 +3555,7 @@ Branch: `feat/titon-field-order-copy-rename-feedback-20260921`.
 
 Escopo aprovado:
 - permitir reorganizar a ordem dos campos copiáveis da IA documental;
-- persistir somente a sequência de chaves/tipos de campo no navegador, por usuário institucional, sem conteúdo clínico ou identidade documental;
+- persistir somente a sequência validada de chaves/tipos de campo no backend de preferências, por usuário institucional, sem conteúdo clínico ou identidade documental;
 - após cópia individual bem-sucedida, trocar o botão para **✓ Copiado** e destacar o campo enquanto o PDF estiver aberto;
 - exibir no cabeçalho do Titon o estado da renomeação;
 - `Enter` e clique fora confirmam a renomeação;
@@ -3566,7 +3566,7 @@ Escopo aprovado:
 
 Decisão técnica importante:
 - a renomeação **já** era persistida no Google Drive por `PATCH /api/documents/drive/rename`; o problema observado era principalmente falta de feedback visível e o fato de `blur` cancelar a edição. O novo contrato não cria uma gravação paralela: ele usa o mesmo caminho seguro existente e torna a confirmação explícita.
-- a preferência de ordem usa armazenamento local apenas para nomes de campos conhecidos. Não armazena valores extraídos, PDF, fileId/ref, paciente, CID ou qualquer conteúdo documental.
+- a primeira implementação de preferência local foi descartada porque a Central possui contrato explícito que proíbe `localStorage`/`sessionStorage`/IndexedDB para persistência documental. A ordem agora usa a API `/api/documents/preferences` e uma tabela D1 específica por conta, contendo somente chaves de campo validadas; nenhum valor extraído, PDF, fileId/ref, paciente ou conteúdo documental é gravado.
 - reorganização e feedback de cópia são puramente de interface; zero novas inferências e zero novas chamadas de IA.
 
 Arquivos em alteração:
