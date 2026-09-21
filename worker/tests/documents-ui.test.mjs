@@ -278,6 +278,9 @@ test('Titon cria texto selecionável local para PDF digitalizado sem enviar cont
 
   assert.match(html, /document-ocr\.js\?v=20260921-1/);
   assert.match(html, /document-viewer\.js\?v=20260921-2/);
+  assert.match(html, /script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'/);
+  assert.match(html, /worker-src 'self'/);
+  assert.doesNotMatch(html, /script-src[^"]*'unsafe-eval'/);
   assert.ok(html.indexOf('document-ocr.js') < html.indexOf('document-viewer.js'));
   assert.ok(harness.indexOf('/js/document-ocr.js') < harness.indexOf('/js/document-viewer.js'));
 
