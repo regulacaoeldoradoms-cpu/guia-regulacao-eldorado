@@ -886,7 +886,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(client, /els\.list\.addEventListener\('dblclick'/);
   assert.match(client, /els\.list\.addEventListener\('keydown',[\s\S]*event\.key !== 'Enter'/);
   assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
-  assert.match(css, /\.documents-item-open-titon\s*\{[\s\S]*display:\s*none/);
+  assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
   assert.match(html, /documents\.css\?v=20260921-4/);
   assert.match(html, /documents\.js\?v=20260921-4/);
