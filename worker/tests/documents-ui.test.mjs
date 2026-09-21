@@ -180,7 +180,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260921-7/);
+  assert.match(html, /documents\.css\?v=20260921-8/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -201,7 +201,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260921-2/);
   assert.match(html, /documents\.js\?v=20260921-5/);
-  assert.match(html, /documents\.css\?v=20260921-7/);
+  assert.match(html, /documents\.css\?v=20260921-8/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -443,7 +443,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260921-2/);
   assert.match(html, /documents\.js\?v=20260921-5/);
-  assert.match(html, /documents\.css\?v=20260921-7/);
+  assert.match(html, /documents\.css\?v=20260921-8/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -942,7 +942,7 @@ test('ferramentas laterais respeitam hidden mesmo com display autoral', () => {
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(css, /\.documents-rail-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-editor-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(html, /documents\.css\?v=20260921-7/);
+  assert.match(html, /documents\.css\?v=20260921-8/);
 });
 
 test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro plano', () => {
@@ -977,7 +977,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
-  assert.match(html, /documents\.css\?v=20260921-7/);
+  assert.match(html, /documents\.css\?v=20260921-8/);
   assert.match(html, /documents\.js\?v=20260921-5/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
@@ -1181,3 +1181,32 @@ test('Fase 6 cancela background ao fechar PDF e preempta ao editar', () => {
   assert.match(editor, /pauseDocumentBackground\('editor'\)/);
 });
 
+
+
+test('Titon oferece bloco de notas temporário sem persistência ou backend', () => {
+  const html = read('documentos/index.html');
+  const css = read('css/documents.css');
+  const client = read('js/documents.js');
+
+  assert.match(html, /id="documentNotepadButton"/);
+  assert.match(html, /id="documentsNotepadPanel"[^>]*hidden/);
+  assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"/);
+  assert.match(html, /documents\.css\?v=20260921-8/);
+  assert.match(html, /documents\.js\?v=20260921-6/);
+  assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
+  assert.match(css, /#documentNotepadText[\s\S]*resize:\s*vertical/);
+
+  const start = client.indexOf('  function setTemporaryNotepadOpen(');
+  const end = client.indexOf('  function renderDocumentAiAvailability(', start);
+  assert.ok(start >= 0 && end > start, 'Bloco funcional do rascunho temporário deve existir.');
+  const notepadBlock = client.slice(start, end);
+  assert.doesNotMatch(notepadBlock, /localStorage|sessionStorage|indexedDB|auth\.api|fetch\(|capture\(/);
+
+  const closeStart = client.indexOf('  function closePdf()');
+  const closeEnd = client.indexOf('  async function requestClosePdf()', closeStart);
+  assert.match(client.slice(closeStart, closeEnd), /resetTemporaryNotepad\(\)/);
+
+  assert.match(client, /documentNotepadText\?\.addEventListener\('keydown'/);
+  assert.match(client, /event\.key !== 'Escape'/);
+  assert.doesNotMatch(client, /documentNotepadText[\s\S]{0,500}(?:localStorage|sessionStorage|indexedDB)/);
+});
