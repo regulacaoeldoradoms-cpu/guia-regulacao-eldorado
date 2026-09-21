@@ -398,3 +398,58 @@ Privacidade e observabilidade:
 - nenhum conteúdo selecionado é enviado ao PostHog ou a outro serviço;
 - não há nova chamada de IA, OCR ou backend para copiar texto.
 
+## Refinamento operacional aprovado — OCR local para PDFs digitalizados — 21/09/2026
+
+Após a seleção nativa de texto ter sido integrada, o uso real mostrou que documentos produzidos pelo HP Smart em modo Documento podem continuar sendo **PDFs-imagem**, sem camada textual interna. Para esses arquivos, foi aprovado adicionar OCR automático ao Titon.
+
+### Arquitetura aprovada
+
+O OCR é executado **inteiramente no navegador**:
+- Tesseract.js **7.0.0** self-hosted;
+- runtime/worker/core e modelo de português ficam versionados sob `vendor/tesseract/`;
+- idioma principal: `por`;
+- engine LSTM;
+- nenhuma página/imagem é enviada a API externa para OCR;
+- nenhuma chamada adicional à IA Documental/Workers AI é feita;
+- nenhum resultado OCR é enviado ao Google Drive;
+- nenhum texto OCR é enviado à observabilidade.
+
+A camada OCR é somente uma superfície efêmera de seleção/cópia. O PDF original permanece inalterado.
+
+### Fluxo
+
+1. PDF.js tenta primeiro a camada de texto nativa.
+2. Se a página já contém texto, usa a `TextLayer` nativa e **não executa OCR**.
+3. Se não houver texto nativo, a página entra numa fila OCR local.
+4. Somente uma página é reconhecida por vez, para controlar CPU/memória.
+5. O OCR é priorizado para a página ativa/visível; páginas que saem da janela lazy antes de iniciar são retiradas da fila.
+6. O resultado é mantido somente na memória da sessão do PDF.
+7. Alterar o zoom reutiliza as coordenadas OCR já reconhecidas e remonta a camada sem reconhecer novamente a página.
+8. Ao fechar/trocar o PDF, o cache OCR do documento é descartado.
+
+### UX
+
+Enquanto não há texto selecionável, o cursor permanece normal — não deve sugerir falsamente que a página pode ser selecionada.
+
+Para páginas escaneadas:
+- aparece um aviso pequeno e transitório de preparação/leitura;
+- ao concluir, a página passa para estado **Texto pronto para selecionar**;
+- o texto reconhecido permanece invisível sobre a imagem original;
+- a seleção do navegador mostra o realce e `Ctrl+C` copia o texto;
+- se nada for reconhecido ou houver falha, o PDF continua utilizável normalmente.
+
+As ferramentas de edição que dependem de gesto sobre a página continuam tendo prioridade. Selecionar/mover, Escrever, Colar imagem, Desenhar/Borracha e Recortar desabilitam temporariamente a captura de ponteiros da camada de texto.
+
+### Dependências e segurança
+
+Assets locais fixados:
+- `tesseract.js@7.0.0`;
+- `tesseract.js-core@7.0.0`;
+- `@tesseract.js-data/por@1.0.0`.
+
+O bundle vendorizado teve os fallbacks de CDN substituídos por rotas same-origin do Portal. A CSP da Central permite `wasm-unsafe-eval` exclusivamente para executar o WebAssembly self-hosted e explicita `worker-src 'self'`; não foi adicionado `unsafe-eval`.
+
+O Tesseract foi configurado com `workerBlobURL:false` e `cacheMethod:'none'`, evitando Worker blob para esse OCR e evitando persistência da linguagem em IndexedDB. O browser ainda pode usar cache HTTP normal dos assets públicos.
+
+Nenhum conteúdo reconhecido é persistido em D1, localStorage, sessionStorage ou IndexedDB.
+
