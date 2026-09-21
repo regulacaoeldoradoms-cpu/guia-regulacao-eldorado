@@ -257,11 +257,11 @@ Procedimento:
 2. abrir **Organizar campos**;
 3. mover campos por arraste ou pelos controles de subir/descer;
 4. concluir a organização;
-5. fechar/reabrir o Titon e repetir a extração.
+5. fechar/reabrir o Titon e repetir a extração, inclusive em outra sessão autenticada da mesma conta.
 
 Aceite:
-- a ordem escolhida reaparece no mesmo navegador/usuário;
-- somente as chaves/tipos de campo são persistidas localmente;
+- a ordem escolhida reaparece para a mesma conta institucional;
+- somente as chaves/tipos de campo são persistidas pelo backend de preferências;
 - nenhum valor extraído, nome de paciente, conteúdo, ref/fileId ou dado clínico é persistido pela preferência;
 - reorganizar não dispara request de IA nem altera prompt/provider/modelo.
 
