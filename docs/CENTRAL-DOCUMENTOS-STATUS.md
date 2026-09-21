@@ -4115,3 +4115,36 @@ Alternativas descartadas:
 **Fase atual:** Fase 7C — robustez/recuperação.  
 **Próxima ação exata:** implementar confirmação estabilizada, renovar cache do cliente, validar CI/navegador/Worker e retestar o mesmo caso real.
 
+## Fase 7C — confirmação estabilizada da renomeação — INTEGRADA E PUBLICADA PARA RETESTE — 21/09/2026
+
+A segunda correção foi integrada pela PR **#381**, merge `caa979df63c37e5749eab783b135278792bb490b`.
+
+Evidência pré-merge do head funcional `f6d4eced408060343ff9f16dbc1437c8c496d517`:
+- **23/23 workflows GitHub Actions** concluídos com `success`;
+- Central de Documentos — Fases 1–6: `success`;
+- navegador/PDF.js real em Chromium: `success`;
+- bundle de staging e governança: `success`;
+- branch estava **0 commits atrás da main**.
+
+Evidência pós-merge do commit funcional:
+- **27/27 check-runs** concluídos com `success`;
+- Cloudflare Pages: `success`;
+- Workers Builds produtivo: `success`;
+- Build ID: `b81a6d79-10db-498e-b311-c299a60208ac`;
+- Worker Version produzida: `61dd44e7-3b88-4716-8bfa-146749dd2baf` — evidência histórica deste deploy, não identificador permanente;
+- `deploy` e `report-build-status`: `success`.
+
+Estado publicado:
+- continua existindo exatamente um PATCH de renomeação;
+- a confirmação pós-PATCH agora tolera apenas atraso curto de propagação do metadado, repetindo somente o GET de verificação por ID;
+- tentativas de confirmação: imediata, +120 ms, +320 ms e +700 ms;
+- sucesso exige observar exatamente o novo nome no Drive;
+- conflito de conteúdo/versão e alteração concorrente continuam bloqueados;
+- falha não-conflito passa a mostrar a mensagem real devolvida pelo backend no próprio Titon;
+- frontend publicado com `/js/documents.js?v=20260921-9`.
+
+A primeira correção (#379) estava efetivamente implantada quando o segundo teste falhou; portanto esta segunda rodada não atribui o problema a cache/deploy. Ela trata o próximo ponto conservador de confirmação do fluxo e torna qualquer falha residual autoexplicativa.
+
+**Fase atual:** Fase 7 — robustez e otimização contínua.  
+**Próxima ação exata:** operador deve executar `Ctrl+F5` e repetir união → aguardar sincronização confirmada → renomear. Se ainda falhar, copiar/enviar exatamente a nova mensagem inline, que agora corresponde à causa devolvida pelo backend, para diagnóstico sem adivinhação.
+
