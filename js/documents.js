@@ -3727,6 +3727,11 @@
   }
 
   function renderDocumentAiChat() {
+    const completed = state.documentAiScanCompleted === true;
+    if (els.documentAiChatSection) {
+      els.documentAiChatSection.hidden = !completed;
+      if (!completed) els.documentAiChatSection.open = false;
+    }
     if (els.documentAiChatSend) els.documentAiChatSend.disabled = !canChatDocumentAi();
     if (els.documentAiChatQuestion) {
       els.documentAiChatQuestion.disabled = !(state.documentAiConfig?.processingEnabled === true);
@@ -3856,8 +3861,8 @@
     if (els.documentAiDocumentStatus && !state.documentAiBusy && !els.documentAiDocumentStatus.textContent) {
       els.documentAiDocumentStatus.className = 'documents-ai-document-status';
       els.documentAiDocumentStatus.textContent = config.processingEnabled
-        ? 'Pronto para analisar todas as páginas deste PDF.'
-        : 'Extração automática bloqueada por feature gate.';
+        ? ''
+        : 'Extração bloqueada neste ambiente.';
     }
     if (els.documentAiClassify) {
       const ready = config.processingEnabled === true && config.features?.classifyPage === true;
@@ -3881,11 +3886,19 @@
     }
   }
 
+  function setDocumentAiInfoOpen(open) {
+    const next = Boolean(open && state.documentAiPanelOpen);
+    if (els.documentAiInfoPanel) els.documentAiInfoPanel.hidden = !next;
+    if (els.documentAiInfoButton) els.documentAiInfoButton.setAttribute('aria-expanded', next ? 'true' : 'false');
+    return next;
+  }
+
   function setDocumentAiPanelOpen(open) {
     const next = Boolean(open && canUseDocumentAi() && state.pdfItem);
     state.documentAiPanelOpen = next;
     if (els.documentAiPanel) els.documentAiPanel.hidden = !next;
     if (els.documentAiButton) els.documentAiButton.setAttribute('aria-pressed', next ? 'true' : 'false');
+    if (!next) setDocumentAiInfoOpen(false);
     if (next) renderDocumentAiPanel();
   }
 
