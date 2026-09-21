@@ -18,6 +18,10 @@
   const ORGANIZER_THUMB_WIDTH = 210;
   const MAX_CANVAS_PIXELS = 18_000_000;
   const MAX_DEVICE_SCALE = 2;
+  const OCR_MAX_EDGE = 2000;
+  const OCR_MAX_PIXELS = 4_500_000;
+  const OCR_READY_VISIBLE_MS = 1400;
+  const OCR_MESSAGE_VISIBLE_MS = 2600;
 
   let modulePromise = null;
   let active = null;
@@ -256,6 +260,35 @@
     try { record?.renderTask?.cancel?.(); } catch (_) {}
   }
 
+  function clearPageOcrStatus(record) {
+    if (!record) return;
+    if (record.ocrStatusTimer) clearTimeout(record.ocrStatusTimer);
+    record.ocrStatusTimer = null;
+    if (record.ocrStatus) {
+      record.ocrStatus.hidden = true;
+      record.ocrStatus.textContent = '';
+      record.ocrStatus.dataset.state = '';
+    }
+  }
+
+  function setPageOcrStatus(record, state = '', message = '', hideAfterMs = 0) {
+    if (!record?.ocrStatus) return;
+    if (record.ocrStatusTimer) clearTimeout(record.ocrStatusTimer);
+    record.ocrStatusTimer = null;
+    const text = String(message || '').trim();
+    record.ocrStatus.dataset.state = String(state || '');
+    record.ocrStatus.textContent = text;
+    record.ocrStatus.hidden = !text;
+    if (text && hideAfterMs > 0) {
+      record.ocrStatusTimer = window.setTimeout(() => {
+        record.ocrStatusTimer = null;
+        if (!record.ocrStatus) return;
+        record.ocrStatus.hidden = true;
+        record.ocrStatus.textContent = '';
+      }, hideAfterMs);
+    }
+  }
+
   function clearSelectableTextLayer(record) {
     if (!record) return;
     record.textLayerGeneration = Number(record.textLayerGeneration || 0) + 1;
@@ -266,17 +299,220 @@
     record.container?.removeAttribute?.('data-selectable-text');
   }
 
-  async function renderSelectableTextLayer(session, record, page, viewport, generation) {
-    if (!record?.textLayer || !page || !viewport || !isCurrentSession(session)) return false;
-    if (generation !== session.generation) return false;
+  function meaningfulNativeText(textLayer) {
+    if (!Array.isArray(textLayer?.textDivs)) return '';
+    return textLayer.textDivs
+      .map((node) => String(node?.textContent || '').trim())
+      .filter(Boolean)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 
-    const TextLayer = session.pdfjs?.TextLayer;
-    if (typeof TextLayer !== 'function') {
-      record.container.dataset.selectableText = 'unsupported';
+  function ocrStatusCopy(message = {}) {
+    const status = String(message?.status || '');
+    const progress = clamp(Number(message?.progress || 0), 0, 1);
+    if (status === 'recognizing text') {
+      return `Reconhecendo texto… ${Math.round(progress * 100)}%`;
+    }
+    if (status.includes('language')) return 'Preparando português para OCR…';
+    if (status.includes('core') || status.includes('initializ')) return 'Preparando OCR local…';
+    return 'Preparando texto selecionável…';
+  }
+
+  function ocrResultLines(result) {
+    return Array.isArray(result?.lines)
+      ? result.lines.filter((line) => String(line?.text || '').trim())
+      : [];
+  }
+
+  function applyOcrTextLayerViewport(session, record) {
+    const entry = cropEntryForPage(session, record.pageNumber);
+    const draft = cropDraftForPage(session, record.pageNumber);
+    const crop = String(session.cropMode || 'none') === 'crop' && draft ? null : entry?.crop;
+    applyPageCropViewport(record, crop);
+  }
+
+  function renderOcrTextLayer(session, record, result) {
+    if (!record?.textLayer || !isCurrentSession(session)) return false;
+    const lines = ocrResultLines(result);
+    if (!lines.length) {
+      clearSelectableTextLayer(record);
+      record.container.dataset.selectableText = 'false';
+      record.container.dataset.ocrState = 'empty';
+      setPageOcrStatus(record, 'empty', 'Texto não reconhecido nesta página.', OCR_MESSAGE_VISIBLE_MS);
       return false;
     }
 
     clearSelectableTextLayer(record);
+    const layerNode = record.textLayer;
+    layerNode.removeAttribute('data-main-rotation');
+    layerNode.style.removeProperty('--scale-factor');
+    layerNode.style.removeProperty('--total-scale-factor');
+    layerNode.style.removeProperty('--scale-round-x');
+    layerNode.style.removeProperty('--scale-round-y');
+    applyOcrTextLayerViewport(session, record);
+
+    const sourceWidth = Math.max(1, Number(result?.width || 0));
+    const sourceHeight = Math.max(1, Number(result?.height || 0));
+    const pageWidth = Math.max(1, Number(record.fullPageWidth || 0));
+    const pageHeight = Math.max(1, Number(record.fullPageHeight || 0));
+
+    const fragment = document.createDocumentFragment();
+    for (const line of lines) {
+      const x0 = clamp(Number(line?.x0 || 0), 0, sourceWidth);
+      const y0 = clamp(Number(line?.y0 || 0), 0, sourceHeight);
+      const x1 = clamp(Number(line?.x1 || 0), 0, sourceWidth);
+      const y1 = clamp(Number(line?.y1 || 0), 0, sourceHeight);
+      if (!(x1 > x0) || !(y1 > y0)) continue;
+
+      const element = document.createElement('div');
+      element.className = 'portal-pdf-ocr-line';
+      element.setAttribute('role', 'presentation');
+      element.dir = 'auto';
+      element.textContent = String(line.text || '').replace(/\s+/g, ' ').trim();
+      element.style.left = `${(x0 / sourceWidth) * 100}%`;
+      element.style.top = `${(y0 / sourceHeight) * 100}%`;
+      element.style.fontSize = `${Math.max(6, ((y1 - y0) / sourceHeight) * pageHeight * 0.92)}px`;
+      element.dataset.targetWidth = String(Math.max(1, ((x1 - x0) / sourceWidth) * pageWidth));
+      fragment.appendChild(element);
+    }
+    layerNode.appendChild(fragment);
+
+    for (const element of layerNode.querySelectorAll('.portal-pdf-ocr-line')) {
+      const targetWidth = Math.max(1, Number(element.dataset.targetWidth || 0));
+      const naturalWidth = Math.max(1, element.getBoundingClientRect().width);
+      const scaleX = clamp(targetWidth / naturalWidth, 0.35, 3.5);
+      element.style.setProperty('--ocr-scale-x', String(scaleX));
+      element.removeAttribute('data-target-width');
+    }
+
+    if (!layerNode.querySelector('.portal-pdf-ocr-line')) {
+      record.container.dataset.selectableText = 'false';
+      record.container.dataset.ocrState = 'empty';
+      return false;
+    }
+
+    record.container.dataset.selectableText = 'ocr';
+    record.container.dataset.ocrState = 'ready';
+    setPageOcrStatus(record, 'ready', 'Texto pronto para selecionar e copiar.', OCR_READY_VISIBLE_MS);
+    return true;
+  }
+
+  async function prepareOcrCanvas(page) {
+    const baseViewport = page.getViewport({ scale: 1 });
+    let scale = clamp(
+      OCR_MAX_EDGE / Math.max(1, baseViewport.width, baseViewport.height),
+      1,
+      MAX_SCALE
+    );
+    let viewport = page.getViewport({ scale });
+    const pixels = Math.max(1, viewport.width * viewport.height);
+    if (pixels > OCR_MAX_PIXELS) {
+      scale *= Math.sqrt(OCR_MAX_PIXELS / pixels);
+      viewport = page.getViewport({ scale });
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(viewport.width));
+    canvas.height = Math.max(1, Math.round(viewport.height));
+    await page.render({
+      canvas,
+      viewport,
+      intent: 'display',
+      background: '#ffffff'
+    }).promise;
+    return canvas;
+  }
+
+  function schedulePageOcr(session, record, page) {
+    if (!isCurrentSession(session) || !record || !page) return null;
+    const pageNumber = Number(record.pageNumber || 0);
+    if (!(pageNumber > 0)) return null;
+
+    const cached = session.ocrResults.get(pageNumber);
+    if (cached) {
+      renderOcrTextLayer(session, record, cached);
+      return Promise.resolve(cached);
+    }
+
+    const existing = session.ocrJobs.get(pageNumber);
+    if (existing) return existing;
+
+    const ocr = window.PortalDocumentOcr;
+    if (!ocr?.recognize) {
+      record.container.dataset.selectableText = 'false';
+      record.container.dataset.ocrState = 'unavailable';
+      setPageOcrStatus(record, 'warning', 'OCR local indisponível.', OCR_MESSAGE_VISIBLE_MS);
+      return null;
+    }
+
+    session.ocrUsed = true;
+    record.container.dataset.selectableText = 'false';
+    record.container.dataset.ocrState = 'pending';
+    setPageOcrStatus(record, 'pending', 'Preparando texto selecionável…');
+
+    const job = (async () => {
+      let canvas = null;
+      try {
+        canvas = await prepareOcrCanvas(page);
+        if (!isCurrentSession(session)) return null;
+        const result = await ocr.recognize(canvas, {
+          onProgress(message) {
+            if (!isCurrentSession(session)) return;
+            const current = session.pages.get(pageNumber);
+            if (!current) return;
+            current.container.dataset.ocrState = 'pending';
+            setPageOcrStatus(current, 'pending', ocrStatusCopy(message));
+          }
+        });
+        if (!result) return null;
+        session.ocrResults.set(pageNumber, result);
+        if (!isCurrentSession(session)) return result;
+        const current = session.pages.get(pageNumber);
+        if (current?.canvas?.width > 0) renderOcrTextLayer(session, current, result);
+        return result;
+      } catch (_) {
+        if (isCurrentSession(session)) {
+          const current = session.pages.get(pageNumber);
+          if (current) {
+            current.container.dataset.selectableText = 'false';
+            current.container.dataset.ocrState = 'failed';
+            setPageOcrStatus(current, 'warning', 'Não foi possível reconhecer o texto desta página.', OCR_MESSAGE_VISIBLE_MS);
+          }
+        }
+        return null;
+      } finally {
+        if (canvas) {
+          canvas.width = 0;
+          canvas.height = 0;
+        }
+        session.ocrJobs.delete(pageNumber);
+      }
+    })();
+
+    session.ocrJobs.set(pageNumber, job);
+    return job;
+  }
+
+  async function renderSelectableTextLayer(session, record, page, viewport, generation) {
+    if (!record?.textLayer || !page || !viewport || !isCurrentSession(session)) return false;
+    if (generation !== session.generation) return false;
+
+    const cachedOcr = session.ocrResults.get(record.pageNumber);
+    if (cachedOcr) return renderOcrTextLayer(session, record, cachedOcr);
+
+    const TextLayer = session.pdfjs?.TextLayer;
+    if (typeof TextLayer !== 'function') {
+      record.container.dataset.selectableText = 'false';
+      schedulePageOcr(session, record, page);
+      return false;
+    }
+
+    clearSelectableTextLayer(record);
+    record.container.dataset.selectableText = 'false';
+    record.container.dataset.ocrState = 'checking';
+    clearPageOcrStatus(record);
     const textGeneration = record.textLayerGeneration;
     const layerNode = record.textLayer;
     layerNode.style.setProperty('--scale-factor', String(viewport.scale || 1));
@@ -312,16 +548,26 @@
         || record.textLayerInstance !== textLayer
       ) return false;
 
-      const hasText = Array.isArray(textLayer.textDivs)
-        && textLayer.textDivs.some((node) => String(node?.textContent || '').trim());
-      record.container.dataset.selectableText = hasText ? 'true' : 'false';
-      return hasText;
+      const nativeText = meaningfulNativeText(textLayer);
+      const hasText = nativeText.length >= 3;
+      if (hasText) {
+        record.container.dataset.selectableText = 'true';
+        record.container.dataset.ocrState = 'native';
+        return true;
+      }
+
+      record.container.dataset.selectableText = 'false';
+      record.container.dataset.ocrState = 'needed';
+      schedulePageOcr(session, record, page);
+      return false;
     } catch (error) {
       const stale = !isCurrentSession(session)
         || generation !== session.generation
         || textGeneration !== record.textLayerGeneration;
       if (!stale && error?.name !== 'AbortException') {
-        record.container.dataset.selectableText = 'error';
+        record.container.dataset.selectableText = 'false';
+        record.container.dataset.ocrState = 'needed';
+        schedulePageOcr(session, record, page);
       }
       return false;
     } finally {
@@ -357,6 +603,7 @@
     if (!record?.canvas) return;
     cancelRender(record);
     clearSelectableTextLayer(record);
+    clearPageOcrStatus(record);
     record.canvas.width = 0;
     record.canvas.height = 0;
     record.canvas.removeAttribute('style');
@@ -375,6 +622,9 @@
     session.resizeObserver?.disconnect?.();
     if (session.resizeTimer) clearTimeout(session.resizeTimer);
     session.resizeTimer = null;
+    session.ocrJobs?.clear?.();
+    session.ocrResults?.clear?.();
+    if (session.ocrUsed) window.PortalDocumentOcr?.terminate?.().catch?.(() => {});
     clearThumbnailDragState(session);
     clearEditorObjectUi(session);
     for (const record of session.pages.values()) clearRenderedPage(record);
@@ -805,6 +1055,12 @@
     textLayer.dataset.pageNumber = String(pageNumber);
     textLayer.setAttribute('aria-label', `Texto selecionável da página ${pageNumber}`);
 
+    const ocrStatus = document.createElement('div');
+    ocrStatus.className = 'portal-pdf-ocr-status';
+    ocrStatus.setAttribute('role', 'status');
+    ocrStatus.setAttribute('aria-live', 'polite');
+    ocrStatus.hidden = true;
+
     const loading = document.createElement('div');
     loading.className = 'portal-pdf-page-loading';
     loading.textContent = 'Carregando página…';
@@ -824,7 +1080,7 @@
     cropLayer.dataset.pageNumber = String(pageNumber);
     cropLayer.setAttribute('aria-label', `Recorte da página ${pageNumber}`);
 
-    article.append(badge, canvas, textLayer, loading, drawLayer, objectLayer, cropLayer);
+    article.append(badge, canvas, textLayer, ocrStatus, loading, drawLayer, objectLayer, cropLayer);
     session.pagesRoot.appendChild(article);
 
     const record = {
@@ -835,6 +1091,8 @@
       textLayerInstance: null,
       textLayerPromise: null,
       textLayerGeneration: 0,
+      ocrStatus,
+      ocrStatusTimer: null,
       loading,
       drawLayer,
       objectLayer,
@@ -3213,6 +3471,9 @@
       objectDrag: null,
       suppressObjectClickUntil: 0,
       objectUrls: new Map(),
+      ocrResults: new Map(),
+      ocrJobs: new Map(),
+      ocrUsed: false,
       colorPalette: ['#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'],
       paletteSelectedIndex: -1,
       objectHandlers: null,
