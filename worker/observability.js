@@ -24,14 +24,14 @@ const EVENT_PROPERTIES = Object.freeze({
   portal_web_vital: new Set(['route', 'metric', 'value']),
   api_request_timing: new Set(['route', 'duration_ms', 'status_code', 'operation', 'source']),
   api_request_failed: new Set(['route', 'duration_ms', 'status_code', 'operation', 'source']),
-  drive_folder_opened: new Set(['route', 'duration_ms', 'source', 'cache_state']),
-  drive_search_completed: new Set(['route', 'duration_ms', 'source', 'result_count_bucket']),
+  drive_folder_opened: new Set(['route', 'duration_ms', 'source', 'cache_state', 'drive_token_ms', 'drive_api_ms', 'drive_map_ms']),
+  drive_search_completed: new Set(['route', 'duration_ms', 'source', 'result_count_bucket', 'drive_token_ms', 'drive_api_ms', 'drive_map_ms']),
   pdf_open_started: new Set(['route', 'source', 'size_bucket', 'cache_state']),
   pdf_first_page_visible: new Set(['route', 'duration_ms', 'source', 'size_bucket', 'cache_state']),
   pdf_ready: new Set(['route', 'duration_ms', 'source', 'size_bucket', 'cache_state']),
   pdf_edit_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket']),
   drive_sync_started: new Set(['route', 'operation', 'size_bucket']),
-  drive_sync_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket']),
+  drive_sync_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'build_ms', 'drive_start_ms', 'drive_upload_ms']),
   drive_sync_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'status_code', 'failure_kind']),
   document_ai_started: new Set(['route', 'operation', 'size_bucket', 'source']),
   document_ai_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'source']),
@@ -108,7 +108,7 @@ function sanitizeValue(key, value) {
     const route = String(value || '');
     return SAFE_ROUTES.has(route) ? route : null;
   }
-  if (key === 'duration_ms') return finiteNumber(value);
+  if (key === 'duration_ms' || key === 'drive_token_ms' || key === 'drive_api_ms' || key === 'drive_map_ms' || key === 'build_ms' || key === 'drive_start_ms' || key === 'drive_upload_ms') return finiteNumber(value);
   if (key === 'value') return finiteNumber(value, 1000000);
   if (key === 'status_code') {
     const status = Number(value);

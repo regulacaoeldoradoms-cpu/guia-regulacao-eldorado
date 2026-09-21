@@ -275,6 +275,67 @@ test('Fase 6 aceita somente telemetria técnica de background', () => {
   }), null);
 });
 
+test('Fase 7E aceita decomposição técnica do Drive sem consulta, nome ou identificador', () => {
+  const search = sanitizeObservabilityEvent({
+    event: 'drive_search_completed',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 4100,
+      source: 'drive',
+      result_count_bucket: '1-5',
+      drive_token_ms: 120,
+      drive_api_ms: 3300,
+      drive_map_ms: 540,
+      viewport_class: 'desktop'
+    }
+  });
+  assert.ok(search);
+  assert.equal(search.properties.drive_api_ms, 3300);
+
+  const sync = sanitizeObservabilityEvent({
+    event: 'drive_sync_completed',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 11323,
+      operation: 'replace_pdf',
+      size_bucket: 'small',
+      build_ms: 480,
+      drive_start_ms: 3500,
+      drive_upload_ms: 7200,
+      viewport_class: 'desktop'
+    }
+  });
+  assert.ok(sync);
+  assert.equal(sync.properties.drive_upload_ms, 7200);
+
+  assert.equal(sanitizeObservabilityEvent({
+    event: 'drive_search_completed',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 4100,
+      source: 'drive',
+      result_count_bucket: '1-5',
+      drive_api_ms: 3300,
+      search_query: 'nome sensivel'
+    }
+  }), null);
+
+  assert.equal(sanitizeObservabilityEvent({
+    event: 'drive_sync_completed',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 11323,
+      operation: 'replace_pdf',
+      size_bucket: 'small',
+      build_ms: 700000
+    }
+  }), null);
+});
+
 test('Fase 7A aceita viewport coarse sem identificador de dispositivo', () => {
   const clean = sanitizeObservabilityEvent({
     event: 'pdf_ready',
