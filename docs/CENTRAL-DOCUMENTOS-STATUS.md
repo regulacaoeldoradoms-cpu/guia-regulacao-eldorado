@@ -3714,3 +3714,51 @@ Infra de teste/bundle também foi atualizada:
 
 **Próxima ação exata:** concluir CI da implementação OCR; integrar somente com os checks relevantes verdes; depois homologar no Portal autenticado com um PDF real do HP Smart e registrar o resultado.
 
+## Titon — OCR local para scans do HP Smart — INTEGRADO NA MAIN — 21/09/2026
+
+A implementação foi integrada pela PR **#368**, merge `f4f443f502c5351048eeae4833b7b1d2fffdf090`.
+
+Validação do head funcional final `4313897e6688c6513ed39bcb3ed1ce9e13d85ae0`:
+- **25/25 workflows GitHub Actions** concluídos com `success`;
+- Central de Documentos — Fases 1–6: `success`;
+- bundle de staging: `success`;
+- governança: `success`;
+- navegador/PDF.js real em Chromium: `success`;
+- suíte do navegador executou **80 casos**, com **76 aprovados e 4 skips esperados**;
+- caso OCR real em desktop: `success` em **1,7 s** sobre PDF sintético composto somente por imagem;
+- o caso OCR comprovou criação de camada selecionável e **zero tráfego HTTP(S) para host externo**;
+- o caso pesado foi deliberadamente pulado no projeto mobile; os demais testes mobile continuaram verdes;
+- branch ficou **0 commits atrás da main** antes do merge e foi integrada usando `expected_head_sha`, sem bypass de proteção.
+
+Resultado integrado:
+- PDF com texto nativo continua usando a `TextLayer` do PDF.js imediatamente e não executa OCR;
+- PDF-imagem/scan sem texto entra automaticamente em OCR local;
+- Tesseract.js 7.0.0, core 7.0.0 e modelo português estão self-hosted sob `vendor/tesseract/`;
+- fallbacks de CDN dos bundles vendorizados foram removidos/substituídos por rotas same-origin;
+- OCR é serial e lazy por página, priorizando página ativa/visível;
+- resultado OCR fica somente na memória da sessão e é reutilizado ao mudar o zoom;
+- fechar/trocar PDF descarta fila/cache OCR;
+- cursor de texto aparece somente quando há texto selecionável real (`native` ou `ocr`);
+- status transitório informa preparação/leitura e **Texto pronto para selecionar**;
+- seleção e `Ctrl+C` usam o comportamento nativo do navegador;
+- OCR não altera o PDF, não grava no Google Drive e não chama IA Documental;
+- nenhuma imagem ou texto reconhecido é enviado a backend, serviço OCR externo ou PostHog;
+- `workerBlobURL:false` e `cacheMethod:'none'` evitam Worker blob e persistência do modelo em IndexedDB;
+- CSP da Central permite somente WebAssembly local por `wasm-unsafe-eval` e Worker same-origin; `unsafe-eval` não foi habilitado;
+- ferramentas de edição continuam tendo prioridade sobre os gestos da página;
+- falha de OCR é fail-soft: o PDF continua visualizável/editável.
+
+Cache-busters integrados:
+- `/js/document-ocr.js?v=20260921-1`;
+- `/js/document-viewer.js?v=20260921-2`;
+- `/css/documents.css?v=20260921-7`.
+
+Evidência de publicação externa:
+- a integração na `main` está comprovada;
+- a rota pública do Portal não pôde ser consultada pelo navegador externo desta sessão, portanto não foi inventada confirmação de propagação do deploy;
+- a validação final de produção será feita pelo operador autenticado após `Ctrl+F5`.
+
+**Fase atual:** Fase 6 — Automação operacional, ainda aberta para homologação humana.
+
+**Próxima ação exata:** operador deve atualizar a Central com `Ctrl+F5`, abrir um PDF real digitalizado pelo HP Smart, aguardar **Texto pronto para selecionar**, selecionar/copyar trechos e confirmar alinhamento/qualidade; em seguida alterar o zoom e repetir. Se aprovado, registrar o aceite do Caso 14 e continuar a matriz restante da Fase 6.
+
