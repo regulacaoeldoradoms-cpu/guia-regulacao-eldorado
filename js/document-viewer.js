@@ -439,8 +439,10 @@
         return false;
       }
 
-      const currentViewport = page.getViewport({ scale: session.scale || 1 });
-      renderCachedOcrTextLayer(session, record, currentViewport);
+      if (record.canvas.width > 0 && record.container.classList.contains('rendered')) {
+        const currentViewport = page.getViewport({ scale: session.scale || 1 });
+        renderCachedOcrTextLayer(session, record, currentViewport);
+      }
       return true;
     } catch (_) {
       if (!isCurrentSession(session)) return false;
@@ -3193,6 +3195,7 @@
             });
           } else {
             session.visiblePages.delete(pageNumber);
+            if (session.ocrRunningPage !== pageNumber) session.ocrPending?.delete?.(pageNumber);
             const record = session.pages.get(pageNumber);
             if (record && record.canvas.width > 0) clearRenderedPage(record);
           }
