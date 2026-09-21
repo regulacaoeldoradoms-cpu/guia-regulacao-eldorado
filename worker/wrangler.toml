@@ -25,6 +25,7 @@ CLOUDFLARE_AI_TOTAL_TIMEOUT_MS = "30000"
 # Usa o mesmo binding Workers AI; não envia segredos e não controla automaticamente a sessão do Codex.
 DEVELOPER_JEV_ENABLED = "true"
 DEVELOPER_JEV_MODEL = "typesafe/jev"
+DEVELOPER_JEV_GATEWAY_ID = "default"
 AUTH_ENFORCE_AI = "true"
 # A exigência de e-mail verificado fica desligada durante a migração.
 # Ativar somente depois que o fluxo de confirmação estiver funcionando em produção controlada.

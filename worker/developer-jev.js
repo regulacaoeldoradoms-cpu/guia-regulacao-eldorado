@@ -4,6 +4,7 @@ import { validatePortalSession } from './auth-management-flex.js';
 
 const ROUTE = '/api/admin/jev/evaluate';
 const DEFAULT_MODEL = 'typesafe/jev';
+const DEFAULT_GATEWAY_ID = 'default';
 const MAX_TASK_CHARS = 12000;
 
 function json(body, status, origin, allowed = true) {
@@ -64,6 +65,61 @@ function testLabel(scope) {
   return 'Focal';
 }
 
+function classifyJevProviderError(error) {
+  const raw = String(error?.message || error || '').slice(0, 500);
+  const normalized = raw.toLowerCase();
+
+  if (
+    normalized.includes('credit')
+    || normalized.includes('billing')
+    || normalized.includes('unified billing')
+  ) {
+    return {
+      code: 'JEV_BILLING_REQUIRED',
+      status: 503,
+      message: 'O Jev está conectado, mas a Cloudflare exige créditos no AI Gateway para modelos de terceiros.'
+    };
+  }
+
+  if (
+    normalized.includes('gateway')
+    || normalized.includes('cf-aig')
+  ) {
+    return {
+      code: 'JEV_GATEWAY_REQUIRED',
+      status: 503,
+      message: 'O Jev precisa do AI Gateway da Cloudflare. A integração foi configurada para usar o gateway padrão; confira se ele está disponível na conta.'
+    };
+  }
+
+  if (
+    normalized.includes('403')
+    || normalized.includes('5018')
+    || normalized.includes('3041')
+    || normalized.includes('5035')
+  ) {
+    return {
+      code: 'JEV_ACCOUNT_ACCESS_REQUIRED',
+      status: 503,
+      message: 'A conta Cloudflare ainda não está autorizada a executar o Jev. Confira acesso ao modelo e faturamento do AI Gateway.'
+    };
+  }
+
+  if (normalized.includes('429') || normalized.includes('3040') || normalized.includes('3036')) {
+    return {
+      code: 'JEV_CAPACITY_OR_LIMIT',
+      status: 503,
+      message: 'O Jev está temporariamente sem capacidade ou a cota da Cloudflare foi atingida. Tente novamente em instantes.'
+    };
+  }
+
+  return {
+    code: error?.code || 'JEV_EVALUATION_FAILED',
+    status: Number(error?.status || 503),
+    message: 'Jev não conseguiu avaliar esta tarefa agora.'
+  };
+}
+
 function buildPreparedPrompt(task, routing) {
   return [
     'ROTEAMENTO JEV — PORTAL DA REGULAÇÃO',
@@ -99,6 +155,7 @@ export async function evaluateDeveloperTask(env, task) {
   }
 
   const model = String(env.DEVELOPER_JEV_MODEL || DEFAULT_MODEL).trim() || DEFAULT_MODEL;
+  const gatewayId = String(env.DEVELOPER_JEV_GATEWAY_ID || DEFAULT_GATEWAY_ID).trim() || DEFAULT_GATEWAY_ID;
   const response = await env.AI.run(model, {
     state: {
       task,
@@ -183,6 +240,8 @@ export async function evaluateDeveloperTask(env, task) {
         }
       }
     }
+  }, {
+    gateway: { id: gatewayId }
   });
 
   const answers = response?.answers || {};
@@ -265,14 +324,17 @@ export async function handleDeveloperJevRoute(request, env, origin, originAllowe
     }));
     return json({ ...result, generatedAt: new Date().toISOString() }, 200, origin);
   } catch (error) {
+    const providerError = classifyJevProviderError(error);
     console.error(JSON.stringify({
       event: 'developer_jev_failed',
       elapsedMs: Date.now() - startedAt,
-      code: error?.code || 'JEV_EVALUATION_FAILED'
+      code: providerError.code,
+      providerStatus: Number(error?.status || 0),
+      providerMessage: String(error?.message || '').slice(0, 240)
     }));
     return json({
-      error: 'Jev não conseguiu avaliar esta tarefa agora.',
-      code: error?.code || 'JEV_EVALUATION_FAILED'
-    }, Number(error?.status || 503), origin);
+      error: providerError.message,
+      code: providerError.code
+    }, providerError.status, origin);
   }
 }
