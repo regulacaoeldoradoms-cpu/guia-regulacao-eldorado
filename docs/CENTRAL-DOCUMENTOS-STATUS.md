@@ -3096,10 +3096,10 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Justificativas | PostHog comprovou latência real de ~15–26 s e a inspeção encontrou uma leitura remota duplicada em série, sem ganho de segurança |
 | Alternativas descartadas | remover confirmação final, preservação de revisão ou verificação de conflito: descartadas por risco de integridade; aumentar chunk sem medir estágio: adiado |
 | Ações externas concluídas | PostHog reconciliado em **Regulação de saúde / Default project (602473)**; nenhuma mudança de OAuth, segredo ou permissão |
-| Pendências e bloqueios | aguardar publicação estática do merge; depois colher sync real pós-publicação. `failure_kind`/text_mode ainda acumulam amostra |
+| Pendências e bloqueios | publicação estática do merge concluída; falta colher sync real pós-publicação. `failure_kind`/text_mode ainda acumulam amostra |
 | Riscos conhecidos | a otimização elimina uma chamada serial, mas outras etapas obrigatórias do Drive podem continuar dominando a latência |
 | Métricas / observabilidade | pré-otimização: último small V2 **15.677 ms**; small V1 p95 **18.719 ms**; small V2 p95 **17.403 ms**; medium V2 p95 **25.654 ms** |
-| Próxima ação exata | confirmar publicação de `documents.js?v=20260921-11`; operador faz um sync normal após Ctrl+F5; comparar nova amostra V2. Se continuar lento, decompor geração local, start/preflight, upload e confirmação antes de nova otimização |
+| Próxima ação exata | operador faz um **Ctrl+F5 uma vez**, realiza um sync normal e então comparar a nova amostra V2. Se continuar lento, decompor geração local, start/preflight, upload e confirmação antes de nova otimização |
 | Arquivos e fontes principais | Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; `js/documents.js`; `worker/document-drive.js`; PR #386; PostHog 602473 |
 
 ## Histórico recuperável
@@ -4295,9 +4295,11 @@ Validação da PR:
 
 Estado pós-merge observado antes de encerrar este registro:
 - workflows funcionais da `main`: verdes;
-- GitHub Pages `build`: sucesso;
+- GitHub Pages `build` e `deploy`: **sucesso**;
 - `report-build-status`: sucesso;
-- deploy do GitHub Pages ainda em andamento;
-- não declarar ganho de desempenho antes de tráfego real com o frontend `20260921-11`.
+- Cloudflare Pages: sucesso;
+- 26/27 checks do merge concluíram com sucesso; o único vermelho foi Workers Builds tentando criar Worker Preview indisponível, sem mudança de Worker nesta PR e sem impedir a publicação estática;
+- o frontend `documents.js?v=20260921-11` está publicado;
+- não declarar ganho de desempenho antes de tráfego real com essa versão.
 
-**Próxima ação exata:** confirmar a publicação estática, executar um sync real e medir o novo `drive_sync_completed` V2. Se a latência continuar alta, instrumentar tempos por estágio antes de alterar outra proteção.
+**Próxima ação exata:** executar **Ctrl+F5 uma vez**, fazer um sync real e medir o novo `drive_sync_completed` V2. Se a latência continuar alta, instrumentar tempos por estágio antes de alterar outra proteção.
