@@ -6,7 +6,7 @@
   const WORKER_URL = '/portal-sw.js';
   const WORKER_SCOPE = '/';
   const PWA_CLIENT_URL = '/js/portal-pwa.js?v=20260911-1';
-  const OBSERVABILITY_CLIENT_URL = '/js/portal-observability.js?v=20260921-1';
+  const OBSERVABILITY_CLIENT_URL = '/js/portal-observability.js?v=20260921-2';
   const CORE_ROUTES = Object.freeze(['/', '/ferramentas/', '/seguranca/', '/configuracoes/', '/conquistas/']);
   const SOCIAL_ROUTES = Object.freeze(['/amigos/', '/notificacoes/', '/perfil/']);
   const KNOWN_ROUTES = new Set([
