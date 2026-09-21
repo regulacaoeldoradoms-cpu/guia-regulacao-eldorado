@@ -4168,3 +4168,42 @@ Conclusão:
 **Fase atual:** Fase 7 — robustez e otimização contínua.  
 **Próxima ação exata:** retomar a subfase 7A de baseline/observabilidade e tratar novos incidentes somente se surgirem em uso real.
 
+## Fase 7A — baseline real coletada; cobertura analítica em implementação — 21/09/2026
+
+Fonte: projeto PostHog **Regulação de saúde / Default project (602473)**, já reconciliado.
+
+Documento novo: `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`.
+
+Principais achados reais:
+- `pdf_ready` com cache hit: 129 eventos, 64,2%, p95 ~544 ms;
+- `pdf_ready` cache miss: 72 eventos, 35,8%, p95 ~9.918 ms;
+- últimas 24 h: hit p95 ~515 ms; miss p95 ~16.034 ms;
+- primeira página visível 24 h: p95 ~7.113 ms;
+- pasta Drive 24 h: p95 ~5.040 ms;
+- pesquisa Drive 24 h: p95 ~5.880 ms;
+- IA documental: 29 started / 29 completed observados; p95 histórico ~31.930 ms; nenhum evento `document_ai_failed` observado até a coleta;
+- Drive sync: 48 completed / 26 failed no histórico; 26/26 falhas com HTTP 409;
+- `warm_pdf/cancelled`: p95 ~18.853 ms;
+- somente 3 amostras `large` e zero `very_large`;
+- 0/491 eventos centrais tinham device/browser: mobile vs desktop era impossível;
+- não havia evento para comparar texto nativo vs OCR.
+
+Interpretação:
+- cache miss / Drive é o gargalo de abertura mais claro;
+- a taxa bruta de falha de sync não pode virar SLO enquanto HTTP 409 não for classificado entre conflito legítimo e falha recuperável;
+- a IA possui cauda longa, mas amostra por tamanho ainda é pequena;
+- SLOs finais não serão inventados antes de fechar essas lacunas.
+
+Implementação 7A na branch `feat/central-docs-phase7a-observability-baseline-20260921`:
+- `viewport_class` coarse: somente `mobile|desktop`, derivado do layout, sem User-Agent/resolução/modelo;
+- `failure_kind` coarse para sync/IA;
+- `document_text_layer_ready` e `document_text_layer_failed` para medir nativo/OCR local;
+- telemetria de texto continua sem conteúdo, página, coordenadas ou confiança;
+- `portal_observability_version` sobe para 2.
+
+Bloqueio analítico externo:
+- conector PostHog atual não possui `data_catalog:read`, portanto a baseline é não canônica e não foi comparada a métrica governada.
+
+**Fase atual:** Fase 7A — inventário/baseline real.  
+**Próxima ação exata:** CI/PR da instrumentação; se verde, integrar/publicar e aguardar amostra real suficiente para recalcular por viewport/text_mode/failure_kind. Só depois abrir 7B/SLOs.
+
