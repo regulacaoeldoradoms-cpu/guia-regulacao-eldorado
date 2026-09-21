@@ -3672,3 +3672,45 @@ Limitação de evidência pós-merge: o navegador de pesquisa externo não conse
 
 **Próxima ação exata:** atualizar a Central com `Ctrl+F5`, abrir um PDF textual real, selecionar uma palavra/linha/parágrafo e copiar com `Ctrl+C`; repetir após mudar o zoom e depois confirmar que as ferramentas do editor continuam recebendo seus gestos. Em seguida abrir um PDF escaneado para confirmar que ele permanece visualizável sem seleção textual.
 
+## Titon — OCR local para scans do HP Smart — EM IMPLEMENTAÇÃO — 21/09/2026
+
+Descoberta operacional: os PDFs digitalizados pelo HP Smart usados pelo setor são, em muitos casos, PDFs-imagem. A `TextLayer` nativa integrada anteriormente deixa o cursor preparado, mas não existe texto PDF para selecionar.
+
+Decisão aprovada pelo operador: o Titon deve reconhecer automaticamente essas páginas e criar uma camada invisível selecionável.
+
+Branch: `feat/titon-ocr-scanned-pdf-20260921`.
+
+Arquitetura implementada na branch:
+- novo `js/document-ocr.js`, responsável por OCR local no navegador;
+- Tesseract.js 7.0.0 + tesseract.js-core 7.0.0 + modelo português `por` 1.0.0 vendorizados em `vendor/tesseract/`;
+- vendorização inicial foi feita por workflow temporário de branch; após materializar os arquivos, o workflow foi **removido** e não fará parte da solução final;
+- os fallbacks internos de jsDelivr dos bundles Tesseract foram substituídos por rotas same-origin, evitando saída acidental para CDN;
+- `workerBlobURL:false`;
+- `cacheMethod:'none'`;
+- CSP da Central: `wasm-unsafe-eval` + `worker-src 'self'`, sem `unsafe-eval`;
+- OCR só entra quando a TextLayer nativa está vazia;
+- fila serial, priorizando página ativa/visível;
+- páginas offscreen ainda não iniciadas são retiradas da fila;
+- raster OCR limitado a ~1900 px no maior lado e teto de pixels para controlar memória;
+- resultado reduzido a linhas + caixas é guardado somente em memória na sessão;
+- zoom reutiliza o resultado OCR sem nova inferência;
+- fechar/trocar PDF limpa cache/fila OCR;
+- nenhuma imagem ou texto OCR é enviado a backend, IA, Drive ou PostHog.
+
+UX:
+- cursor de texto só aparece quando `data-selectable-text` é `native` ou `ocr`;
+- scans mostram status transitório **Preparando leitura / Lendo texto / Texto pronto para selecionar**;
+- seleção/Ctrl+C usa o comportamento nativo do navegador;
+- editor continua dono dos gestos enquanto ferramentas interativas estão ativas;
+- falha ou ausência de texto reconhecido não bloqueia o visualizador.
+
+Infra de teste/bundle também foi atualizada:
+- staging e homologação copiam `document-ocr.js` + `vendor/tesseract/`;
+- headers de staging permitem WASM local;
+- workflow de navegador valida assets OCR e ausência de CDN;
+- novo teste Playwright gera um PDF sintético **somente-imagem**, executa OCR real no Chromium, seleciona texto, testa zoom e verifica zero tráfego externo.
+
+**Fase atual:** Fase 6 — Automação operacional, ainda aberta.
+
+**Próxima ação exata:** concluir CI da implementação OCR; integrar somente com os checks relevantes verdes; depois homologar no Portal autenticado com um PDF real do HP Smart e registrar o resultado.
+
