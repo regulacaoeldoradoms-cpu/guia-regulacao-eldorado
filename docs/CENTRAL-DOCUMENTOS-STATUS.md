@@ -3085,16 +3085,22 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | **Fase 7 — Robustez e otimização contínua — ATIVA** |
-| Último resultado real | Fase 6 encerrada por aceite explícito do responsável operacional em 21/09/2026; OCR local já tinha aceite real e os refinamentos do Titon estão integrados/publicados |
-| Baseline funcional | Central/Titon com PDF.js, editor, Drive controlado, V8C.2, cache/prefetch, TextLayer, OCR local e bloco temporário móvel/redimensionável |
-| Critério Fase 6 | Aceito pelo responsável após uso real; não inventar percentual retroativo de economia de tempo |
-| Limitação de medição | Não há série final antes/depois persistida suficiente para percentual único da Fase 6; Fase 7 deve criar baselines e SLOs reais |
-| Produção | Escrita continua controlada pelo Drive/gates; IA normal disponível conforme capabilities; background antecipatório continua fail-closed |
-| PostHog | Conector disponível nesta sessão não aponta para o projeto analítico do Portal; não usar seus dados como baseline da Central |
-| Próxima ação exata | auditar eventos/propriedades técnicos allowlisted no código, mapear lacunas para p75/p95/p99, cache hit/miss, falhas Drive, PDFs grandes, mobile/desktop e IA; depois conectar ao projeto PostHog correto e definir SLOs |
-| Meta | Fase 7: SLOs baseados em dados reais, falhas recuperáveis e observabilidade estável |
-| Fontes | Guia Mestre V1.1; FASE-7; STATUS; FASE-6/HOMOLOGACAO-6; main atual; observability frontend/backend; PDF.js/cache/Drive/IA |
+| Fase atual | **Fase 7 — Robustez e otimização contínua** |
+| Subfase / objetivo atual | **7A observabilidade + primeira otimização 7E do sync Google Drive** |
+| Última ação concluída | Uso real e PostHog confirmaram sync lento; código revelou preflight duplicado; branch de otimização removeu somente a chamada redundante do frontend |
+| Branch atual | `perf/central-docs-drive-sync-fastpath-20260921` |
+| PR atual | ainda não aberta neste ponto do registro |
+| Último commit relevante | branch contém remoção do preflight duplicado, cache-buster `documents.js?v=20260921-11`, regressão e documentação |
+| Checks e testes | aguardando CI da branch; main anterior permanece 27/27 verde |
+| Decisões tomadas | `/sync/start` continua sendo o preflight autoritativo; nenhuma checagem de conflito, revisão, MD5, head revision ou confirmação do Drive foi removida |
+| Justificativas | o cliente fazia `/sync/preflight` e em seguida `/sync/start`, mas `startDriveSync()` já executa `driveSyncPreflightState()`; isso duplicava uma leitura serial do Google Drive |
+| Alternativas descartadas | remover confirmação final, remover preservação de revisão ou afrouxar conflito: não adotadas por risco de integridade |
+| Ações externas concluídas | PostHog no projeto correto `Regulação de saúde / Default project (602473)`; nenhuma alteração OAuth/segredo |
+| Pendências e bloqueios | medir ganho real somente após publicar; `failure_kind`/text_mode ainda acumulam amostra |
+| Riscos conhecidos | ganho pode ser parcial porque ainda existem chamadas obrigatórias de preservação, sessão resumable, upload e confirmação |
+| Métricas / observabilidade | pré-otimização: último small V2 15.677 ms; small V1 p95 18.719 ms; small V2 p95 17.403 ms; medium V2 p95 25.654 ms |
+| Próxima ação exata | abrir PR, validar checks, integrar se verde, publicar e comparar novas amostras V2; se a cauda persistir, decompor tempo por etapa antes da próxima otimização |
+| Arquivos e fontes principais | Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; `js/documents.js`; `worker/document-drive.js`; PostHog 602473 |
 
 ## Histórico recuperável
 
@@ -4233,3 +4239,32 @@ Baseline de 7 dias atualizada:
 
 **Próxima ação exata:** acumular tráfego após recarga real do frontend instrumentado e repetir a coleta até existirem amostras não legadas de viewport/failure_kind/text_mode. Em paralelo, usar o painel criado para observar regressões. Só então fechar 7A e abrir 7B.
 
+
+
+## Fase 7E — primeira otimização do sync Drive por evidência real — 21/09/2026
+
+Nova observação operacional: a sincronização do Titon com o Google Drive continua lenta.
+
+PostHog confirmou a percepção:
+- último `replace_pdf` small V2: **15.677 ms**;
+- small V1 nas últimas 24 h: n=26, p95 **18.719 ms**;
+- small V2: n=2, p95 **17.403 ms**;
+- medium V2: n=4, p95 **25.654 ms**.
+
+Diagnóstico:
+- o frontend executava um `/sync/preflight` completo;
+- imediatamente depois executava `/sync/start`;
+- o Worker, dentro de `startDriveSync()`, já executa `driveSyncPreflightState()` antes de preservar revisão e iniciar upload;
+- havia portanto uma validação remota duplicada, serial, sem ganho de segurança.
+
+Correção isolada:
+- branch `perf/central-docs-drive-sync-fastpath-20260921`;
+- remover o preflight HTTP redundante do frontend;
+- manter o preflight autoritativo dentro de `/sync/start`;
+- preservar revision keepForever, resumable upload, confirmação final e todas as verificações de versão/head/MD5/tamanho;
+- cache-buster `documents.js?v=20260921-11`;
+- teste passa a exigir ausência do preflight duplicado no cliente e presença/ordem do preflight no Worker.
+
+Não declarar percentual de melhora antes do pós-deploy. A mudança elimina uma chamada serial Google Drive por sincronização; o ganho real será medido no PostHog.
+
+**Próxima ação exata:** abrir PR, validar CI, integrar se verde e comparar a nova amostra V2 com a baseline pré-otimização. Se ainda houver cauda alta, instrumentar/decompor geração local, start/preflight, upload e confirmação antes de mexer na confirmação ou na preservação de revisão.
