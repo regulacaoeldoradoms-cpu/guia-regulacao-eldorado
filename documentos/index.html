@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260921-1">
+  <link rel="stylesheet" href="/css/documents.css?v=20260921-2">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -127,40 +127,43 @@
               <div class="documents-ai-panel-head">
                 <div>
                   <span>Titon · IA documental</span>
-                  <strong>Extrair dados do PDF</strong>
+                  <strong>Dados do PDF</strong>
                 </div>
-                <button class="documents-ai-close" id="documentsAiCloseButton" type="button" aria-label="Fechar IA documental">×</button>
+                <div class="documents-ai-panel-head-actions">
+                  <button class="documents-ai-info-button" id="documentsAiInfoButton" type="button" aria-label="Informações sobre a IA documental" aria-expanded="false" aria-controls="documentsAiInfoPanel">i</button>
+                  <button class="documents-ai-close" id="documentsAiCloseButton" type="button" aria-label="Fechar IA documental">×</button>
+                </div>
               </div>
               <div class="documents-ai-panel-body">
-                <p id="documentsAiDescription">O Titon percorre o PDF, identifica as páginas autorizadas e extrai os campos sem misturar informações entre páginas.</p>
-                <div class="documents-ai-safety" id="documentsAiSafety" role="note">
-                  Cada página é processada isoladamente. Campos ausentes retornam NÃO CONSTA e campos presentes porém ilegíveis retornam ILEGÍVEL.
-                </div>
+                <aside class="documents-ai-info-panel" id="documentsAiInfoPanel" hidden>
+                  <p id="documentsAiDescription">O Titon percorre o PDF, identifica as páginas autorizadas e extrai os campos sem misturar informações entre páginas.</p>
+                  <div class="documents-ai-safety" id="documentsAiSafety" role="note">
+                    Cada página é processada isoladamente. Campos ausentes retornam NÃO CONSTA e campos presentes porém ilegíveis retornam ILEGÍVEL.
+                  </div>
+                  <details class="documents-ai-routines-section">
+                    <summary id="documentsAiRoutinesTitle">Detalhes técnicos</summary>
+                    <div class="documents-ai-routines" id="documentsAiRoutines"></div>
+                  </details>
+                </aside>
 
-                <section class="documents-ai-batch" aria-labelledby="documentsAiBatchTitle">
-                  <strong id="documentsAiBatchTitle">Extração automática</strong>
-                  <p>Um único clique analisa todas as páginas do PDF. Páginas não autorizadas são ignoradas; cada página médica válida gera um bloco separado.</p>
+                <section class="documents-ai-batch" aria-label="Extrair dados do PDF">
                   <button class="portal-button primary documents-ai-run-button" id="documentsAiExtractDocumentButton" type="button" disabled>Extrair dados do PDF</button>
                   <div class="documents-ai-document-status" id="documentsAiDocumentStatus" aria-live="polite"></div>
                   <div class="documents-ai-document-results" id="documentsAiDocumentResults" hidden></div>
                   <div class="documents-ai-document-actions" id="documentsAiDocumentActions" hidden>
-                    <button class="portal-button secondary" id="documentsAiCopyAllButton" type="button">Copiar dados</button>
+                    <button class="portal-button secondary" id="documentsAiCopyAllButton" type="button">Copiar tudo</button>
                   </div>
                 </section>
 
-                <section class="documents-ai-chat" aria-labelledby="documentsAiChatTitle">
-                  <strong id="documentsAiChatTitle">Perguntar sobre os dados extraídos</strong>
-                  <p>Opcional. As respostas usam somente os blocos já extraídos e preservam as páginas de origem.</p>
-                  <label class="sr-only" for="documentsAiChatQuestion">Pergunta documental</label>
-                  <textarea id="documentsAiChatQuestion" maxlength="1200" rows="3" placeholder="Ex.: Qual procedimento solicitado consta no documento?"></textarea>
-                  <button class="portal-button secondary" id="documentsAiChatSendButton" type="button" disabled>Perguntar</button>
-                  <div class="documents-ai-chat-status" id="documentsAiChatStatus" aria-live="polite"></div>
-                  <div class="documents-ai-chat-messages" id="documentsAiChatMessages" aria-live="polite"></div>
-                </section>
-
-                <details class="documents-ai-routines-section">
-                  <summary id="documentsAiRoutinesTitle">Rotinas técnicas</summary>
-                  <div class="documents-ai-routines" id="documentsAiRoutines"></div>
+                <details class="documents-ai-chat" id="documentsAiChatSection" hidden>
+                  <summary id="documentsAiChatTitle">Perguntar sobre os dados extraídos</summary>
+                  <div class="documents-ai-chat-body">
+                    <label class="sr-only" for="documentsAiChatQuestion">Pergunta documental</label>
+                    <textarea id="documentsAiChatQuestion" maxlength="1200" rows="3" placeholder="Ex.: Qual procedimento solicitado consta no documento?"></textarea>
+                    <button class="portal-button secondary" id="documentsAiChatSendButton" type="button" disabled>Perguntar</button>
+                    <div class="documents-ai-chat-status" id="documentsAiChatStatus" aria-live="polite"></div>
+                    <div class="documents-ai-chat-messages" id="documentsAiChatMessages" aria-live="polite"></div>
+                  </div>
                 </details>
               </div>
             </aside>
@@ -308,6 +311,6 @@
   <script src="/js/document-background.js?v=20260920-1"></script>
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-viewer.js?v=20260919-1"></script>
-  <script src="/js/documents.js?v=20260921-1"></script>
+  <script src="/js/documents.js?v=20260921-2"></script>
 </body>
 </html>
