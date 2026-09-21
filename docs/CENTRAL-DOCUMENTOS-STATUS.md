@@ -4054,3 +4054,37 @@ Alternativas descartadas:
 
 **Próxima ação exata:** implementar a reconciliação conservadora, validar CI completo, integrar somente com checks verdes e publicar para reteste do fluxo união → sync → renomeação.
 
+## Fase 7C — renomeação após sincronização do PDF editado — CORRIGIDA E INTEGRADA — 21/09/2026
+
+A correção foi integrada pela PR **#379**, merge `be313d764c48ec309b9dc6085ad7752b4fca4454`.
+
+Evidência pré-merge do head funcional `34318dadad7a481d7ac68512c1f1200fa292a51b`:
+- **23/23 workflows GitHub Actions** concluídos com `success`;
+- Central de Documentos — Fases 1–6: `success`;
+- navegador/PDF.js real em Chromium: `success`;
+- bundle de staging e governança: `success`;
+- branch estava **0 commits atrás da main** antes do merge.
+
+Correção integrada:
+- `commitPdfRename()` envia `baseName` junto de `baseVersion`;
+- `renameDrivePdf()` continua bloqueando qualquer divergência por padrão;
+- somente quando existe uma referência confirmada do último upload, do mesmo usuário, com mesmo head revision, MD5, tamanho, escopo e prova não expirada, uma versão técnica posterior pode ser reconciliada;
+- a reconciliação também exige que o nome atual no Drive continue exatamente igual ao `baseName`, portanto uma renomeação concorrente real não é sobrescrita;
+- mudança concorrente real de conteúdo continua bloqueada por `DRIVE_VERSION_CONFLICT`;
+- o feedback inline agora diferencia conflito real de falha genérica;
+- cache-buster publicado no código: `/js/documents.js?v=20260921-8`.
+
+Causa raiz:
+- o Drive pode avançar o campo técnico `version` após o upload já confirmado sem trocar o conteúdo binário;
+- o sync já possuía reconciliação segura para esse fenômeno;
+- a renomeação ainda comparava a versão de forma absoluta e gerava falso conflito imediatamente depois de união + upload.
+
+A proteção de concorrência **não foi afrouxada**: a correção reaproveita a prova criptograficamente selada do próprio fluxo de sincronização e adiciona a validação nominal do arquivo.
+
+Limitação de publicação:
+- a rota pública autenticada não pôde ser consultada pelo navegador externo desta sessão;
+- portanto não foi inventada confirmação de propagação do deploy pós-merge.
+
+**Fase atual:** Fase 7 — robustez e otimização contínua.  
+**Próxima ação exata:** após o deploy da `main`, executar `Ctrl+F5` e repetir o caso real: unir PDF → aguardar **Sincronizado com o Google Drive** → alterar o nome → confirmar com Enter ou clique fora. O nome deve ser alterado no Drive sem exigir reabertura. Se existir mudança concorrente real, o conflito deve continuar bloqueado.
+
