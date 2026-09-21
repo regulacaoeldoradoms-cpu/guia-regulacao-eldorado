@@ -3369,13 +3369,16 @@
       return true;
     } catch (error) {
       const conflict = error?.code === 'DRIVE_VERSION_CONFLICT';
+      const failureMessage = String(
+        error?.message || 'Não foi possível renomear o PDF no Google Drive.'
+      );
       setPdfRenameFeedback(
         conflict
           ? 'Conflito: o arquivo mudou no Google Drive. Reabra antes de renomear.'
-          : 'Falha: o nome não foi alterado no Google Drive.',
+          : `Falha: ${failureMessage}`,
         'warning'
       );
-      showStatus(error?.message || 'Não foi possível renomear o PDF no Google Drive.', 'warning');
+      showStatus(failureMessage, 'warning');
       if (
         state.editorSession
         && currentEditorRevision() !== state.driveSyncLastConfirmedRevision
