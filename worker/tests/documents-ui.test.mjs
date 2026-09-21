@@ -141,7 +141,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260921-6/);
+  assert.match(html, /documents\.js\?v=20260921-7/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -180,7 +180,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260921-8/);
+  assert.match(html, /documents\.css\?v=20260921-9/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -200,8 +200,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260921-2/);
-  assert.match(html, /documents\.js\?v=20260921-6/);
-  assert.match(html, /documents\.css\?v=20260921-8/);
+  assert.match(html, /documents\.js\?v=20260921-7/);
+  assert.match(html, /documents\.css\?v=20260921-9/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -442,8 +442,8 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260921-2/);
-  assert.match(html, /documents\.js\?v=20260921-6/);
-  assert.match(html, /documents\.css\?v=20260921-8/);
+  assert.match(html, /documents\.js\?v=20260921-7/);
+  assert.match(html, /documents\.css\?v=20260921-9/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -585,7 +585,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260921-6/);
+  assert.match(html, /documents\.js\?v=20260921-7/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -942,7 +942,7 @@ test('ferramentas laterais respeitam hidden mesmo com display autoral', () => {
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(css, /\.documents-rail-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-editor-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(html, /documents\.css\?v=20260921-8/);
+  assert.match(html, /documents\.css\?v=20260921-9/);
 });
 
 test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro plano', () => {
@@ -977,8 +977,8 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
-  assert.match(html, /documents\.css\?v=20260921-8/);
-  assert.match(html, /documents\.js\?v=20260921-6/);
+  assert.match(html, /documents\.css\?v=20260921-9/);
+  assert.match(html, /documents\.js\?v=20260921-7/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
@@ -1183,29 +1183,49 @@ test('Fase 6 cancela background ao fechar PDF e preempta ao editar', () => {
 
 
 
-test('Titon oferece bloco de notas temporário sem persistência ou backend', () => {
+test('Titon oferece bloco de notas temporário móvel e redimensionável sem persistência', () => {
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
   const client = read('js/documents.js');
 
   assert.match(html, /id="documentNotepadButton"/);
   assert.match(html, /id="documentsNotepadPanel"[^>]*hidden/);
+  assert.match(html, /id="documentsNotepadHead"/);
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
-  assert.match(html, /documents\.css\?v=20260921-8/);
-  assert.match(html, /documents\.js\?v=20260921-6/);
-  assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(css, /#documentNotepadText[\s\S]*resize:\s*vertical/);
+  assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
+  assert.match(html, /documents\.css\?v=20260921-9/);
+  assert.match(html, /documents\.js\?v=20260921-7/);
 
-  const start = client.indexOf('  function setTemporaryNotepadOpen(');
+  assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
+  assert.match(css, /\.documents-notepad-head[\s\S]*cursor:\s*grab/);
+  assert.match(css, /#documentNotepadText[\s\S]*resize:\s*none/);
+  assert.match(css, /\.documents-notepad-resize-handle\.is-n,[\s\S]*cursor:\s*ns-resize/);
+  assert.match(css, /\.documents-notepad-resize-handle\.is-e,[\s\S]*cursor:\s*ew-resize/);
+  assert.match(css, /\.documents-notepad-resize-handle\.is-ne[\s\S]*cursor:\s*nesw-resize/);
+  assert.match(css, /\.documents-notepad-resize-handle\.is-nw[\s\S]*cursor:\s*nwse-resize/);
+
+  const start = client.indexOf('  function clampNotepadValue(');
   const end = client.indexOf('  function renderDocumentAiAvailability(', start);
   assert.ok(start >= 0 && end > start, 'Bloco funcional do rascunho temporário deve existir.');
   const notepadBlock = client.slice(start, end);
+  assert.match(notepadBlock, /function temporaryNotepadBounds\(/);
+  assert.match(notepadBlock, /function visibleTemporaryNotepadPageRect\(/);
+  assert.match(notepadBlock, /function defaultTemporaryNotepadGeometry\(/);
+  assert.match(notepadBlock, /leftGap = Math\.max\(0, page\.left - bounds\.left\)/);
+  assert.match(notepadBlock, /rightGap = Math\.max\(0, bounds\.right - page\.right\)/);
+  assert.match(notepadBlock, /function startTemporaryNotepadPointer\(/);
+  assert.match(notepadBlock, /direction\.includes\('e'\)/);
+  assert.match(notepadBlock, /direction\.includes\('w'\)/);
+  assert.match(notepadBlock, /direction\.includes\('s'\)/);
+  assert.match(notepadBlock, /direction\.includes\('n'\)/);
   assert.doesNotMatch(notepadBlock, /localStorage|sessionStorage|indexedDB|auth\.api|fetch\(|capture\(/);
 
   const closeStart = client.indexOf('  function closePdf()');
   const closeEnd = client.indexOf('  async function requestClosePdf()', closeStart);
   assert.match(client.slice(closeStart, closeEnd), /resetTemporaryNotepad\(\)/);
 
+  assert.match(client, /documentNotepadHead\?\.addEventListener\('pointerdown'/);
+  assert.match(client, /documentNotepadResizeHandles/);
   assert.match(client, /documentNotepadText\?\.addEventListener\('keydown'/);
   assert.match(client, /event\.key !== 'Escape'/);
   assert.doesNotMatch(client, /documentNotepadText[\s\S]{0,500}(?:localStorage|sessionStorage|indexedDB)/);
