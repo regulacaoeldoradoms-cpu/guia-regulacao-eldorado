@@ -906,7 +906,10 @@ test('pastas seguem seleção por clique e abertura por duplo clique ou Enter', 
 
   const clickBlock = client.slice(clickStart, dblStart);
   assert.match(clickBlock, /if \(item\.isFolder\)\s*\{\s*selectListItem\(index\);\s*return;/s);
-  assert.doesNotMatch(clickBlock, /if \(item\.isFolder\)[\s\S]*state\.stack\.push/s);
+  const rowClickStart = clickBlock.indexOf("    const button = event.target.closest?.('[data-index]')");
+  assert.ok(rowClickStart >= 0, 'handler do clique simples da linha ausente');
+  const rowClickBlock = clickBlock.slice(rowClickStart);
+  assert.doesNotMatch(rowClickBlock, /if \(item\.isFolder\)[\s\S]*state\.stack\.push/s);
 
   const dblBlock = client.slice(dblStart, keyStart);
   assert.match(dblBlock, /if \(item\.isFolder\)[\s\S]*state\.stack\.push\(\{ ref: item\.ref, name: item\.name \}\)[\s\S]*loadFolder\(\)/);
