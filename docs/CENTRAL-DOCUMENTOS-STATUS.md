@@ -3522,3 +3522,27 @@ Nenhuma alteração em Google Drive, pesquisa, breadcrumbs, Titon, IA, permissõ
 Branch: `feat/central-docs-folder-double-click-20260921`.
 
 **Próxima ação exata:** validar CI/PR; se verde, publicar e confirmar no navegador real que pasta/PDF têm o mesmo comportamento de seleção no desktop. A Fase 6 continua aberta.
+
+
+## Navegação da lista — pastas com a mesma lógica dos PDFs — INTEGRADO E PUBLICADO — 21/09/2026
+
+Ajuste integrado pela PR **#359**, merge `d92ae6f5caf57ec2108071f6ba2c02deb6134a2d`.
+
+Resultado publicado:
+- desktop: clique simples em **pasta ou PDF** apenas seleciona/destaca;
+- duplo clique abre pasta ou PDF;
+- `Enter` permanece como atalho de teclado para abrir o item selecionado;
+- pasta não abre mais no primeiro clique;
+- texto lateral **Abrir pasta** removido no desktop;
+- mobile/touch mantém ação explícita **Abrir pasta**, assim como **Abrir no Titon** para PDF.
+
+Validação:
+- conjunto final do PR com **23/23 workflows GitHub Actions** verdes;
+- workflow de navegador teve uma falha transitória não relacionada em um teste de merge do editor e passou no rerun sem mudança funcional adicional;
+- Cloudflare Pages da branch: `success`;
+- pós-merge em `main`: **27/27 check-runs** `success`;
+- Workers Builds produtivo: `success`;
+- nenhuma alteração em Drive, busca, breadcrumbs, Titon, IA, permissões ou cache.
+
+**Fase atual:** Fase 6 ainda aberta para homologação operacional humana.
+**Próxima ação exata:** operador validar no navegador real que pastas e PDFs têm o mesmo comportamento de seleção no desktop; depois continuar a matriz restante da Fase 6.
