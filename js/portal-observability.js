@@ -12,7 +12,7 @@
     '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/',
     '/conta/', '/medico/', '/protocolo/', '/recepcao/', '/telemedicina/',
     '/cidadao/', '/conselho/', '/conselho/painel/', '/admin/usuarios/',
-    '/admin/monitoramento/', '/admin/configuracao/', '/admin/social/',
+    '/admin/monitoramento/', '/admin/configuracao/', '/admin/jev/', '/admin/social/',
     '/documentos/', 'unknown'
   ]);
 
