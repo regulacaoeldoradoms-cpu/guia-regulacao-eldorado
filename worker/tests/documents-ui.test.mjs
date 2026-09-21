@@ -180,7 +180,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260921-5/);
+  assert.match(html, /documents\.css\?v=20260921-6/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -199,9 +199,9 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260919-1/);
+  assert.match(html, /document-viewer\.js\?v=20260921-1/);
   assert.match(html, /documents\.js\?v=20260921-5/);
-  assert.match(html, /documents\.css\?v=20260921-5/);
+  assert.match(html, /documents\.css\?v=20260921-6/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -240,6 +240,27 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /pdf_first_page_visible/);
   assert.match(client, /pdfReadyEmitted/);
+});
+
+test('Titon permite selecionar e copiar texto nativo do PDF sem interferir nas ferramentas do editor', () => {
+  const viewer = read('js/document-viewer.js');
+  const css = read('css/documents.css');
+
+  assert.match(viewer, /className = 'portal-pdf-text-layer'/);
+  assert.match(viewer, /session\.pdfjs\?\.TextLayer/);
+  assert.match(viewer, /page\.streamTextContent\(\{ includeMarkedContent: true, disableNormalization: false \}\)/);
+  assert.match(viewer, /new TextLayer\(\{[\s\S]*textContentSource,[\s\S]*container: layerNode,[\s\S]*viewport/);
+  assert.match(viewer, /--total-scale-factor/);
+  assert.match(viewer, /renderSelectableTextLayer\(session, record, page, viewport, generation\)/);
+  assert.match(viewer, /clearSelectableTextLayer\(record\)/);
+  assert.match(viewer, /\[record\.canvas, record\.textLayer, record\.drawLayer, record\.objectLayer\]/);
+
+  assert.match(css, /\.portal-pdf-text-layer\s*\{[\s\S]*user-select:\s*text;[\s\S]*pointer-events:\s*auto;/);
+  assert.match(css, /\.portal-pdf-text-layer ::selection/);
+  assert.match(css, /data-object-mode="write"[\s\S]*\.portal-pdf-text-layer/);
+  assert.match(css, /data-draw-mode="draw"[\s\S]*\.portal-pdf-text-layer/);
+  assert.match(css, /data-crop-mode="crop"[\s\S]*\.portal-pdf-text-layer/);
+  assert.match(css, /pointer-events:\s*none;[\s\S]*user-select:\s*none;/);
 });
 
 test('observadores entram somente depois da primeira renderização do PDF.js', () => {
@@ -356,9 +377,9 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260919-1/);
+  assert.match(html, /document-viewer\.js\?v=20260921-1/);
   assert.match(html, /documents\.js\?v=20260921-5/);
-  assert.match(html, /documents\.css\?v=20260921-5/);
+  assert.match(html, /documents\.css\?v=20260921-6/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -857,7 +878,7 @@ test('ferramentas laterais respeitam hidden mesmo com display autoral', () => {
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(css, /\.documents-rail-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-editor-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(html, /documents\.css\?v=20260921-5/);
+  assert.match(html, /documents\.css\?v=20260921-6/);
 });
 
 test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro plano', () => {
@@ -892,7 +913,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
-  assert.match(html, /documents\.css\?v=20260921-5/);
+  assert.match(html, /documents\.css\?v=20260921-6/);
   assert.match(html, /documents\.js\?v=20260921-5/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
