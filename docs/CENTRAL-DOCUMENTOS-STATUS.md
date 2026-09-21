@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7A observabilidade + primeira otimização 7E do sync Google Drive** |
-| Última ação concluída | Uso real e PostHog confirmaram sync lento; código revelou preflight duplicado; branch de otimização removeu somente a chamada redundante do frontend |
-| Branch atual | `perf/central-docs-drive-sync-fastpath-20260921` |
-| PR atual | ainda não aberta neste ponto do registro |
-| Último commit relevante | branch contém remoção do preflight duplicado, cache-buster `documents.js?v=20260921-11`, regressão e documentação |
-| Checks e testes | aguardando CI da branch; main anterior permanece 27/27 verde |
-| Decisões tomadas | `/sync/start` continua sendo o preflight autoritativo; nenhuma checagem de conflito, revisão, MD5, head revision ou confirmação do Drive foi removida |
-| Justificativas | o cliente fazia `/sync/preflight` e em seguida `/sync/start`, mas `startDriveSync()` já executa `driveSyncPreflightState()`; isso duplicava uma leitura serial do Google Drive |
-| Alternativas descartadas | remover confirmação final, remover preservação de revisão ou afrouxar conflito: não adotadas por risco de integridade |
-| Ações externas concluídas | PostHog no projeto correto `Regulação de saúde / Default project (602473)`; nenhuma alteração OAuth/segredo |
-| Pendências e bloqueios | medir ganho real somente após publicar; `failure_kind`/text_mode ainda acumulam amostra |
-| Riscos conhecidos | ganho pode ser parcial porque ainda existem chamadas obrigatórias de preservação, sessão resumable, upload e confirmação |
-| Métricas / observabilidade | pré-otimização: último small V2 15.677 ms; small V1 p95 18.719 ms; small V2 p95 17.403 ms; medium V2 p95 25.654 ms |
-| Próxima ação exata | abrir PR, validar checks, integrar se verde, publicar e comparar novas amostras V2; se a cauda persistir, decompor tempo por etapa antes da próxima otimização |
-| Arquivos e fontes principais | Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; `js/documents.js`; `worker/document-drive.js`; PostHog 602473 |
+| Subfase / objetivo atual | **7A observabilidade + 7E otimização guiada por evidência do sync Google Drive** |
+| Última ação concluída | PR **#386** integrada na `main`: removido apenas o preflight HTTP duplicado do frontend; o preflight autoritativo permanece dentro de `/sync/start` |
+| Branch atual | nenhuma branch funcional pendente; `docs/central-docs-sync-fastpath-status-20260921` contém somente este registro de handoff |
+| PR atual | PR funcional **#386 mesclada**; PR documental **#387** registra exclusivamente o handoff pós-merge |
+| Último commit relevante | merge funcional `f0aa1ab62778d09c85ee82ff31df3f714bc27635` |
+| Checks e testes | PR funcional: **24 checks funcionais verdes**; branch-only Workers Preview falhou por preview indisponível, sem relação com o código. Pós-merge: checks funcionais verdes; deploy GitHub Pages ainda em andamento no último ponto observado |
+| Decisões tomadas | `/sync/start` continua fazendo `driveSyncPreflightState()` antes de preservar revisão/iniciar upload; confirmação final, headRevisionId, MD5, tamanho, versão, resumable upload e conflito permanecem obrigatórios |
+| Justificativas | PostHog comprovou latência real de ~15–26 s e a inspeção encontrou uma leitura remota duplicada em série, sem ganho de segurança |
+| Alternativas descartadas | remover confirmação final, preservação de revisão ou verificação de conflito: descartadas por risco de integridade; aumentar chunk sem medir estágio: adiado |
+| Ações externas concluídas | PostHog reconciliado em **Regulação de saúde / Default project (602473)**; nenhuma mudança de OAuth, segredo ou permissão |
+| Pendências e bloqueios | publicação estática do merge concluída; falta colher sync real pós-publicação. `failure_kind`/text_mode ainda acumulam amostra |
+| Riscos conhecidos | a otimização elimina uma chamada serial, mas outras etapas obrigatórias do Drive podem continuar dominando a latência |
+| Métricas / observabilidade | pré-otimização: último small V2 **15.677 ms**; small V1 p95 **18.719 ms**; small V2 p95 **17.403 ms**; medium V2 p95 **25.654 ms** |
+| Próxima ação exata | operador faz um **Ctrl+F5 uma vez**, realiza um sync normal e então comparar a nova amostra V2. Se continuar lento, decompor geração local, start/preflight, upload e confirmação antes de nova otimização |
+| Arquivos e fontes principais | Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; `js/documents.js`; `worker/document-drive.js`; PR #386; PostHog 602473 |
 
 ## Histórico recuperável
 
@@ -4268,3 +4268,38 @@ Correção isolada:
 Não declarar percentual de melhora antes do pós-deploy. A mudança elimina uma chamada serial Google Drive por sincronização; o ganho real será medido no PostHog.
 
 **Próxima ação exata:** abrir PR, validar CI, integrar se verde e comparar a nova amostra V2 com a baseline pré-otimização. Se ainda houver cauda alta, instrumentar/decompor geração local, start/preflight, upload e confirmação antes de mexer na confirmação ou na preservação de revisão.
+
+
+## Fase 7E — sync Drive: primeira otimização integrada — 21/09/2026
+
+A PR **#386** foi mesclada na `main` pelo commit **`f0aa1ab62778d09c85ee82ff31df3f714bc27635`**.
+
+Evidência que motivou a mudança:
+- `replace_pdf` small V2 mais recente antes da otimização: **15.677 ms**;
+- small V1 p95: **18.719 ms**;
+- small V2 p95: **17.403 ms**;
+- medium V2 p95: **25.654 ms**.
+
+Mudança integrada:
+- removida a chamada frontend separada `/api/documents/drive/sync/preflight`;
+- `/api/documents/drive/sync/start` continua executando `driveSyncPreflightState()` no Worker antes de qualquer upload;
+- preservação de revisão `keepForever`, upload resumable, checagem de conflito e confirmação final por versão/headRevisionId/MD5/tamanho foram preservadas;
+- frontend versionado como `/js/documents.js?v=20260921-11`;
+- testes de fechamento/logout foram atualizados para o fluxo real de duas chamadas cliente (`start` + `upload`) e CI exige que o preflight permaneça no Worker.
+
+Validação da PR:
+- **24 checks funcionais verdes** no head final;
+- PDF.js real em Chromium: sucesso;
+- governança e Central: sucesso;
+- o único check vermelho da branch foi o Workers Builds tentando criar Worker Preview não habilitado para branch não produtiva; não houve mudança no Worker nesta otimização e o erro não representa regressão funcional.
+
+Estado pós-merge observado antes de encerrar este registro:
+- workflows funcionais da `main`: verdes;
+- GitHub Pages `build` e `deploy`: **sucesso**;
+- `report-build-status`: sucesso;
+- Cloudflare Pages: sucesso;
+- 26/27 checks do merge concluíram com sucesso; o único vermelho foi Workers Builds tentando criar Worker Preview indisponível, sem mudança de Worker nesta PR e sem impedir a publicação estática;
+- o frontend `documents.js?v=20260921-11` está publicado;
+- não declarar ganho de desempenho antes de tráfego real com essa versão.
+
+**Próxima ação exata:** executar **Ctrl+F5 uma vez**, fazer um sync real e medir o novo `drive_sync_completed` V2. Se a latência continuar alta, instrumentar tempos por estágio antes de alterar outra proteção.
