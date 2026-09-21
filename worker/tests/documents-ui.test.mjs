@@ -1190,7 +1190,7 @@ test('Titon oferece bloco de notas temporário sem persistência ou backend', ()
 
   assert.match(html, /id="documentNotepadButton"/);
   assert.match(html, /id="documentsNotepadPanel"[^>]*hidden/);
-  assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"/);
+  assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.match(html, /documents\.css\?v=20260921-8/);
   assert.match(html, /documents\.js\?v=20260921-6/);
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
