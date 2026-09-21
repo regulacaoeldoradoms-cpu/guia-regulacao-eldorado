@@ -24,10 +24,12 @@ on:
       - 'js/document-background.js'
       - 'js/documents.js'
       - 'js/document-editor.js'
+      - 'js/document-ocr.js'
       - 'js/document-viewer.js'
       - 'vendor/pdfjs/**'
       - 'vendor/pdfjs-legacy/**'
       - 'vendor/pdf-lib/**'
+      - 'vendor/tesseract/**'
       - 'worker/index.js'
       - 'worker/wrangler.toml'
       - '.github/workflows/validate-central-documents-staging-bundle.yml'
@@ -68,8 +70,13 @@ jobs:
           test -s dist-staging/assets/Drive_falha.png
           test -s dist-staging/js/document-background.js
           test -s dist-staging/js/document-editor.js
+          test -s dist-staging/js/document-ocr.js
           test -s dist-staging/js/document-viewer.js
           test -s dist-staging/vendor/pdf-lib/pdf-lib.min.js
+          test -s dist-staging/vendor/tesseract/tesseract.min.js
+          test -s dist-staging/vendor/tesseract/worker.min.js
+          test -s dist-staging/vendor/tesseract/core/tesseract-core-lstm.wasm.js
+          test -s dist-staging/vendor/tesseract/lang/por.traineddata.gz
           test -s dist-staging/vendor/pdfjs-legacy/pdf.min.mjs
           test -s dist-staging/vendor/pdfjs-legacy/pdf.worker.min.mjs
           test -s dist-staging/homologacao/documentos/index.html
@@ -77,10 +84,13 @@ jobs:
           test -s dist-staging/homologacao/js/auth-config.js
           test -s dist-staging/homologacao/js/documents.js
           test -s dist-staging/homologacao/js/document-background.js
+          test -s dist-staging/homologacao/js/document-ocr.js
           test -s dist-staging/homologacao/js/portal-observability.js
           test -s dist-staging/homologacao/css/documents.css
           test -s dist-staging/homologacao/assets/Drive_pendente.png
           test -s dist-staging/homologacao/vendor/pdfjs-legacy/pdf.min.mjs
+          test -s dist-staging/homologacao/vendor/tesseract/tesseract.min.js
+          test -s dist-staging/homologacao/vendor/tesseract/lang/por.traineddata.gz
           test -s dist-staging/homologacao-5e/index.html
           test -s dist-staging/homologacao-5e/phase5e.js
           test -s dist-staging/homologacao-5e/phase5e.css
@@ -104,6 +114,9 @@ jobs:
           ! grep -R -F --exclude-dir=homologacao --exclude-dir=homologacao-5e "regulacaoeldoradoms.com.br/api/" dist-staging
           ! grep -R -F --exclude-dir=homologacao --exclude-dir=homologacao-5e "/api/documents/" dist-staging
           ! grep -R -F "cdn.jsdelivr.net" dist-staging
+          grep -q "wasm-unsafe-eval" dist-staging/_headers
+          grep -q "/vendor/tesseract/worker.min.js" dist-staging/js/document-ocr.js
+          grep -q "/homologacao/vendor/tesseract/worker.min.js" dist-staging/homologacao/js/document-ocr.js
           ! grep -R -E "GOOGLE_DRIVE_OAUTH_CLIENT_SECRET|DRIVE_TOKEN_ENCRYPTION_KEY|AUTH_SESSION_SECRET" dist-staging
 
       - name: Construir staging com alias preview que contém o hostname de produção

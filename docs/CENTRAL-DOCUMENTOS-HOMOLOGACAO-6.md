@@ -320,3 +320,41 @@ Aceite:
 - documento sem texto nativo continua visualizável normalmente, apenas sem seleção textual;
 - copiar não dispara Drive, IA, OCR, telemetria de conteúdo ou persistência documental.
 
+## Caso adicional — OCR local de PDF digitalizado
+
+### Caso 14 — documento HP Smart / PDF-imagem
+
+Procedimento:
+1. abrir um PDF real digitalizado pelo HP Smart que não permita seleção nativa;
+2. observar que antes do reconhecimento o cursor não simula texto selecionável;
+3. aguardar o aviso transitório de leitura;
+4. selecionar nome/linha/trecho do documento e copiar com `Ctrl+C`;
+5. colar em um campo de teste e comparar visualmente com a imagem original;
+6. aumentar/diminuir zoom e copiar novamente;
+7. trocar de página e confirmar que OCR ocorre sob demanda, sem processar o documento inteiro de uma vez;
+8. retornar a uma página já reconhecida e confirmar reutilização sem nova espera completa;
+9. testar Escrever, Selecionar/mover, Desenhar/Borracha e Recortar;
+10. abrir um PDF que já possua texto nativo.
+
+Aceite:
+- PDF-imagem passa a ter texto selecionável após OCR local;
+- o conteúdo visual do PDF não é modificado;
+- PDF com texto nativo não executa OCR;
+- zoom reutiliza o resultado em memória e mantém alinhamento aceitável da seleção;
+- ferramentas do editor mantêm prioridade sobre os gestos da página;
+- falha OCR não impede visualizar/editar o PDF;
+- OCR é serializado e lazy por página;
+- fechar/trocar documento descarta os resultados OCR daquele documento;
+- nenhum request com imagem/texto documental é feito a serviço OCR externo;
+- nenhum conteúdo OCR vai para PostHog/observabilidade;
+- nenhum OCR é gravado no Drive automaticamente.
+
+### Evidência sintética automatizada
+
+O laboratório de navegador cria um PDF de uma página contendo **apenas uma imagem** com texto fictício, sem camada textual PDF. O teste Chromium deve comprovar:
+- estado final `data-selectable-text="ocr"`;
+- linhas OCR materializadas;
+- seleção DOM devolvendo texto;
+- manutenção após zoom;
+- zero request HTTP(S) para host externo durante o caso.
+

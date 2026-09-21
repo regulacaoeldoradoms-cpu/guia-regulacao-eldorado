@@ -558,6 +558,44 @@
     });
   }
 
+  async function syntheticScannedPdfBlob() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 1600;
+    const context = canvas.getContext('2d', { alpha: false });
+    if (!context) throw new Error('Canvas OCR sintético indisponível.');
+
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#101820';
+    context.textAlign = 'left';
+    context.font = 'bold 62px Arial';
+    context.fillText('DOCUMENTO DIGITALIZADO', 110, 230);
+    context.font = '54px Arial';
+    context.fillText('TESTE OCR TITON', 110, 390);
+    context.fillText('PROTOCOLO 12345', 110, 510);
+    context.font = '42px Arial';
+    context.fillText('TEXTO FICTICIO PARA SELECAO', 110, 680);
+    context.strokeStyle = '#1c2730';
+    context.lineWidth = 4;
+    context.strokeRect(70, 120, 1060, 700);
+
+    const image = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error('Scan sintético não pôde ser gerado.')),
+        'image/png'
+      );
+    });
+
+    const source = await editor.createSession(fixture.blob(), { label: 'Base temporária OCR' });
+    const insertAt = editor.pageCount(source);
+    await editor.addImagePage(source, image, { label: 'Documento digitalizado', insertAt });
+    while (editor.pageCount(source) > 1) {
+      if (!editor.removePage(source, 0)) throw new Error('Não foi possível preparar o scan sintético.');
+    }
+    return editor.buildBlob(source);
+  }
+
   async function normalizeLocalImage(blob) {
     if (!(blob instanceof Blob) || !String(blob.type || '').startsWith('image/')) {
       throw new Error('Selecione uma imagem válida.');
@@ -1397,10 +1435,19 @@
     }
     root.dataset.editorMode = 'readonly';
     root.dataset.operationState = 'ready';
-    const source = new URLSearchParams(location.search).get('source') === 'url'
-      ? '/testing/central-docs/_fixture.pdf'
-      : state.originalBlob;
-    root.dataset.sourceMode = typeof source === 'string' ? 'url' : 'blob';
+    const sourceMode = new URLSearchParams(location.search).get('source');
+    let source;
+    if (sourceMode === 'url') {
+      source = '/testing/central-docs/_fixture.pdf';
+      root.dataset.sourceMode = 'url';
+    } else if (sourceMode === 'scan') {
+      source = await syntheticScannedPdfBlob();
+      state.originalBlob = source;
+      root.dataset.sourceMode = 'scan';
+    } else {
+      source = state.originalBlob;
+      root.dataset.sourceMode = 'blob';
+    }
     await openViewer(source);
   });
 })();
