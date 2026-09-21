@@ -376,3 +376,25 @@ A renomeação já utiliza o endpoint protegido de Drive por `PATCH`, capability
 
 Nenhuma das outras sugestões avaliadas no vídeo foi aprovada para este refinamento. A Fase 6 permanece aberta até a homologação operacional real.
 
+## Refinamento operacional aprovado — seleção de texto nativo do PDF — 21/09/2026
+
+Durante a homologação da Fase 6, foi aprovado permitir que o usuário selecione com o mouse e copie texto diretamente da página exibida pelo Titon, como em visualizadores PDF convencionais.
+
+Contrato:
+- o visualizador continua usando o PDF.js self-hosted e o canvas atual para a imagem da página;
+- sobre o canvas, o Titon passa a usar a `TextLayer` do próprio PDF.js para documentos que contenham texto nativo;
+- arrastar o mouse seleciona texto; duplo clique pode selecionar palavra conforme o comportamento nativo do navegador; `Ctrl+C`/copiar usa a seleção do navegador;
+- nenhuma seleção/cópia altera o PDF ou gera escrita no Google Drive;
+- a camada acompanha zoom, rotação nativa da página e recorte aplicado pelo Titon;
+- a camada é carregada de forma lazy junto das páginas visíveis e é descartada quando a página é descarregada, preservando a arquitetura de desempenho;
+- quando uma ferramenta de edição precisa dos gestos da página — Selecionar/mover, Escrever, Colar imagem, Desenhar/Borracha ou Recortar — a camada de seleção deixa de receber ponteiros temporariamente para não disputar interação;
+- ao sair dessas ferramentas, a seleção volta a ficar disponível.
+
+Limitação deliberada:
+- PDFs compostos apenas por imagem/escaneamento, sem texto interno, não ganham texto selecionável por esta mudança. OCR não faz parte deste refinamento e não deve ser ativado implicitamente.
+
+Privacidade e observabilidade:
+- o texto selecionado permanece somente no navegador/clipboard do usuário;
+- nenhum conteúdo selecionado é enviado ao PostHog ou a outro serviço;
+- não há nova chamada de IA, OCR ou backend para copiar texto.
+
