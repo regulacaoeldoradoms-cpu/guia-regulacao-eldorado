@@ -234,3 +234,24 @@ O catálogo governado de métricas do PostHog não está acessível pela conexã
 
 **Próxima ação:** publicar a cobertura 7A, acumular amostra real e repetir os percentis por viewport/text_mode/failure_kind antes de definir SLOs.
 
+## 7A — painel técnico consolidado — 21/09/2026
+
+O dashboard existente **Portal Regulação — Observabilidade Técnica** foi ampliado com uma seção específica da Central de Documentos, evitando duplicação de painéis.
+
+Cobertura adicionada:
+- PDF pronto por cache;
+- sincronização Drive e `failure_kind`;
+- IA por tamanho;
+- background prepared/cancelled;
+- viewport + cache;
+- texto selecionável nativo/OCR.
+
+Os dois últimos dependem da instrumentação publicada na PR #384 e ainda aguardam amostra real suficiente.
+
+A 7A permanece **aberta**. Critério para avançar a 7B:
+- observar amostra não legada de `viewport_class`;
+- observar `failure_kind` em falhas novas do Drive/IA;
+- observar `document_text_layer_ready` ou `document_text_layer_failed`;
+- recalcular percentis com essas dimensões;
+- somente então propor SLOs iniciais.
+
