@@ -34,6 +34,32 @@
     descricao_cid: 'Descrição do CID'
   });
 
+  const DOCUMENT_AI_FIELD_GROUPS = Object.freeze([
+    Object.freeze({
+      id: 'paciente',
+      label: 'Paciente',
+      fields: Object.freeze([
+        'nome_paciente', 'cpf', 'cns', 'data_nascimento',
+        'nome_mae', 'telefone', 'endereco', 'agente'
+      ])
+    }),
+    Object.freeze({
+      id: 'encaminhamento',
+      label: 'Encaminhamento',
+      fields: Object.freeze(['motivo_encaminhamento', 'cid', 'descricao_cid'])
+    }),
+    Object.freeze({
+      id: 'solicitacao',
+      label: 'Solicitação',
+      fields: Object.freeze(['titulo', 'procedimento_solicitado', 'codigo_procedimento'])
+    }),
+    Object.freeze({
+      id: 'profissional',
+      label: 'Profissional',
+      fields: Object.freeze(['medico', 'crm_rms'])
+    })
+  ]);
+
   const DRIVE_AUTO_SYNC_IDLE_MS = 1000;
   const DRIVE_SYNC_SUCCESS_VISIBLE_MS = 1000;
   const DRIVE_SYNC_REVISION_POLL_MS = 200;
@@ -174,6 +200,8 @@
     editorRailEdit: document.getElementById('editorRailEditButton'),
     documentAiButton: document.getElementById('documentAiButton'),
     documentAiPanel: document.getElementById('documentsAiPanel'),
+    documentAiInfoButton: document.getElementById('documentsAiInfoButton'),
+    documentAiInfoPanel: document.getElementById('documentsAiInfoPanel'),
     documentAiClose: document.getElementById('documentsAiCloseButton'),
     documentAiDescription: document.getElementById('documentsAiDescription'),
     documentAiSafety: document.getElementById('documentsAiSafety'),
@@ -191,6 +219,7 @@
     documentAiDocumentResults: document.getElementById('documentsAiDocumentResults'),
     documentAiDocumentActions: document.getElementById('documentsAiDocumentActions'),
     documentAiCopyAll: document.getElementById('documentsAiCopyAllButton'),
+    documentAiChatSection: document.getElementById('documentsAiChatSection'),
     documentAiChatQuestion: document.getElementById('documentsAiChatQuestion'),
     documentAiChatSend: document.getElementById('documentsAiChatSendButton'),
     documentAiChatStatus: document.getElementById('documentsAiChatStatus'),
