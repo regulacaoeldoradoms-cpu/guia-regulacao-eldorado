@@ -5153,6 +5153,9 @@
   els.documentAiButton?.addEventListener('click', () => {
     setDocumentAiPanelOpen(!state.documentAiPanelOpen);
   });
+  els.documentAiInfoButton?.addEventListener('click', () => {
+    setDocumentAiInfoOpen(els.documentAiInfoButton.getAttribute('aria-expanded') !== 'true');
+  });
   els.documentAiClose?.addEventListener('click', () => setDocumentAiPanelOpen(false));
   els.documentAiExtractDocument?.addEventListener('click', () => {
     extractWholeDocumentAi().catch(() => {});
@@ -5193,17 +5196,37 @@
       if (pageNumber > 0) window.PortalPdfViewer?.scrollToPage?.(pageNumber);
       return;
     }
-    const copy = event.target.closest?.('[data-ai-copy-result-index]');
+
+    const fieldCopy = event.target.closest?.('[data-ai-copy-document-field]');
+    if (fieldCopy) {
+      const pageNumber = Number(fieldCopy.dataset.aiCopyDocumentPage || 0);
+      const key = String(fieldCopy.dataset.aiCopyDocumentField || '');
+      const extraction = state.documentAiResults.find((item) => Number(item?.pageNumber || 0) === pageNumber);
+      const field = extraction?.fields?.[key];
+      if (!field) return;
+      copyDocumentAiText(documentAiFieldDisplay(field)).then((ok) => {
+        if (!els.documentAiDocumentStatus) return;
+        els.documentAiDocumentStatus.className = ok
+          ? 'documents-ai-document-status success'
+          : 'documents-ai-document-status warning';
+        els.documentAiDocumentStatus.textContent = ok
+          ? `${DOCUMENT_AI_FIELD_LABELS[key] || 'Campo'} copiado.`
+          : 'Não foi possível copiar o campo.';
+      }).catch(() => {});
+      return;
+    }
+
+    const copy = event.target.closest?.('[data-ai-copy-result-page]');
     if (copy) {
-      const index = Number(copy.dataset.aiCopyResultIndex);
-      const extraction = Number.isInteger(index) ? state.documentAiResults[index] : null;
+      const pageNumber = Number(copy.dataset.aiCopyResultPage || 0);
+      const extraction = state.documentAiResults.find((item) => Number(item?.pageNumber || 0) === pageNumber);
       if (!extraction) return;
       copyDocumentAiText(documentAiFormattedBlock(extraction)).then((ok) => {
         if (!els.documentAiDocumentStatus) return;
         els.documentAiDocumentStatus.className = ok
           ? 'documents-ai-document-status success'
           : 'documents-ai-document-status warning';
-        els.documentAiDocumentStatus.textContent = ok ? 'Bloco copiado.' : 'Não foi possível copiar o bloco.';
+        els.documentAiDocumentStatus.textContent = ok ? 'Página copiada.' : 'Não foi possível copiar a página.';
       }).catch(() => {});
     }
   });
