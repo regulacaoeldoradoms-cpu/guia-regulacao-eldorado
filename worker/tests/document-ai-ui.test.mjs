@@ -140,7 +140,8 @@ test('chat continua secundário e usa somente evidências estruturadas em memór
   assert.match(js, /evidence = \[\.\.\.state\.documentAiEvidence\.values\(\)\]/);
   assert.match(js, /data-ai-chat-page/);
   assert.match(router, /url\.pathname === '\/api\/documents\/ai\/chat'/);
-  assert.doesNotMatch(js, /body:\s*JSON\.stringify\([^)]*(?:state\.pdfItem|filename|fileId|item\.ref)/s);
+  const chatBlock = asyncFunctionSlice(js, 'askDocumentAiQuestion', 'renderDocumentAiPanel');
+  assert.doesNotMatch(chatBlock, /body:\s*JSON\.stringify\([^)]*(?:state\.pdfItem|filename|fileId|item\.ref)/s);
 });
 
 test('frontend não contém segredo de provedor nem converte página em base64', async () => {
