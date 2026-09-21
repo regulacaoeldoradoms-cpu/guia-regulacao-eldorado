@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260921-7">
+  <link rel="stylesheet" href="/css/documents.css?v=20260921-8">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -123,7 +123,25 @@
                 <span aria-hidden="true">✦</span>
                 <span class="sr-only">IA documental</span>
               </button>
+              <button class="documents-rail-tool documents-notepad-rail-tool" id="documentNotepadButton" type="button" title="Bloco de notas" aria-label="Abrir bloco de notas temporário" aria-pressed="false" aria-controls="documentsNotepadPanel">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M6 3.5h9.5L19 7v13.5H6z"></path>
+                  <path d="M15.5 3.5V7H19"></path>
+                  <path d="M9 11h7M9 14.5h7M9 18h5"></path>
+                </svg>
+                <span class="sr-only">Bloco de notas</span>
+              </button>
             </nav>
+            <aside class="documents-notepad-panel" id="documentsNotepadPanel" hidden aria-label="Bloco de notas temporário">
+              <div class="documents-notepad-head">
+                <div>
+                  <span>Rascunho temporário</span>
+                  <strong>Bloco de notas</strong>
+                </div>
+                <button class="documents-notepad-close" id="documentNotepadCloseButton" type="button" aria-label="Fechar bloco de notas">×</button>
+              </div>
+              <textarea id="documentNotepadText" maxlength="8000" spellcheck="true" autocomplete="off" aria-label="Rascunho temporário" placeholder="Escreva aqui enquanto tenta identificar o que está escrito…"></textarea>
+            </aside>
             <aside class="documents-ai-panel" id="documentsAiPanel" hidden aria-label="Titon · IA documental">
               <div class="documents-ai-panel-head">
                 <div>
@@ -323,6 +341,6 @@
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-ocr.js?v=20260921-1"></script>
   <script src="/js/document-viewer.js?v=20260921-2"></script>
-  <script src="/js/documents.js?v=20260921-5"></script>
+  <script src="/js/documents.js?v=20260921-6"></script>
 </body>
 </html>
