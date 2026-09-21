@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260920-3">
+  <link rel="stylesheet" href="/css/documents.css?v=20260920-4">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -58,7 +58,7 @@
       </section>
 
       <section class="documents-workspace" id="documentsWorkspace" hidden>
-        <div class="documents-browser">
+        <div class="documents-browser" id="documentsBrowser">
           <div class="documents-browser-toolbar">
             <form class="documents-search-form" id="documentsSearchForm" role="search">
               <label class="sr-only" for="documentsSearch">Pesquisar no Google Drive</label>
@@ -231,8 +231,11 @@
                   <strong>Unir documentos</strong>
                   <button class="documents-editor-panel-close documents-art-button documents-art-close" id="editorMergeCancelButton" type="button" aria-label="Fechar painel de união"></button>
                 </div>
-                <p id="editorMergeSelection">Escolha outro PDF na lista da Central ou adicione um arquivo do dispositivo.</p>
-                <button class="portal-button documents-editor-local-import" id="editorMergeLocalButton" type="button">Adicionar PDF ou imagem</button>
+                <p id="editorMergeSelection">Escolha outro PDF da Central ou adicione um arquivo do dispositivo.</p>
+                <div class="documents-editor-merge-source-actions">
+                  <button class="portal-button secondary" id="editorMergeBrowseButton" type="button">Escolher PDF da Central</button>
+                  <button class="portal-button documents-editor-local-import" id="editorMergeLocalButton" type="button">Adicionar PDF ou imagem</button>
+                </div>
                 <input id="editorMergeLocalInput" type="file" accept=".pdf,application/pdf,image/*" multiple hidden>
                 <div class="documents-editor-merge-preview" id="editorMergePreview" hidden aria-live="polite"></div>
                 <label class="documents-editor-field">
@@ -294,6 +297,6 @@
   <script src="/js/document-background.js?v=20260920-1"></script>
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-viewer.js?v=20260919-1"></script>
-  <script src="/js/documents.js?v=20260920-6"></script>
+  <script src="/js/documents.js?v=20260920-7"></script>
 </body>
 </html>
