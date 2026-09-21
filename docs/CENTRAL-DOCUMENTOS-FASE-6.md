@@ -472,3 +472,18 @@ Contrato:
 - nenhum texto do rascunho entra em IA ou PostHog.
 
 O recurso é deliberadamente auxiliar e não modifica o documento. Ele complementa OCR/TextLayer sem transformar hipóteses manuais em dado documental oficial.
+
+
+## Refinamento do bloco de notas — posicionamento, movimento e redimensionamento — 21/09/2026
+
+Após a primeira publicação do rascunho temporário, o operador confirmou sua presença no Titon e definiu o refinamento de ergonomia:
+
+- na primeira abertura por PDF, o Titon mede a área de rolagem e a página PDF mais visível;
+- escolhe a maior margem escura lateral disponível e dimensiona o bloco para permanecer nela quando houver largura suficiente;
+- a janela pode ser movida por arraste do cabeçalho;
+- pode ser redimensionada por qualquer uma das quatro bordas ou dos quatro cantos;
+- movimento/redimensionamento ficam limitados à superfície do visualizador, evitando perder a janela fora da tela;
+- a geometria ajustada permanece somente enquanto o mesmo PDF está aberto;
+- trocar/fechar o PDF limpa geometria e texto, sem persistência local ou remota.
+
+O campo de texto continua independente dos gestos da janela: selecionar, digitar, `Ctrl+A` e `Ctrl+C` não iniciam movimento.

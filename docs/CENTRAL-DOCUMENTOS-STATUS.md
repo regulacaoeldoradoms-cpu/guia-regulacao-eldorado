@@ -3878,3 +3878,29 @@ O **Caso 14 — OCR local em PDF-imagem** também foi registrado como **aprovado
 **Fase atual:** Fase 6 — Automação operacional, ainda aberta para homologação humana dos casos restantes.
 
 **Próxima ação exata:** no Portal real, executar `Ctrl+F5`, abrir um PDF no Titon, clicar no novo botão de bloco de notas, digitar um rascunho, testar `Ctrl+A` + `Ctrl+C`, fechar/reabrir somente a janelinha e confirmar que o texto permanece; depois fechar/trocar o PDF e confirmar que o rascunho foi apagado.
+
+
+## Titon — bloco de notas móvel e redimensionável — EM IMPLEMENTAÇÃO — 21/09/2026
+
+O bloco temporário já foi confirmado visualmente pelo operador no Portal real. Novo refinamento solicitado a partir do uso real: o bloco não deve nascer cobrindo a folha; deve aproveitar as margens escuras do visualizador e permitir reposicionamento livre.
+
+Branch: `feat/titon-notepad-move-resize-20260921`.
+
+Escopo:
+- posicionamento/tamanho inicial calculados pela maior margem escura lateral da página visível;
+- mover por clique + arraste do cabeçalho;
+- redimensionar pelas 4 bordas e pelos 4 cantos;
+- contenção dentro da área de páginas do PDF;
+- posição/tamanho manual preservados ao fechar/reabrir só a janelinha;
+- geometria e texto continuam zerados ao fechar/trocar o PDF;
+- zero persistência, backend, Drive, IA ou observabilidade.
+
+Decisão técnica:
+- foram descartados `resize: both` e o redimensionador nativo do navegador, porque só oferecem um canto e não atendem às oito direções pedidas;
+- a implementação usa Pointer Events e oito zonas transparentes de redimensionamento;
+- o cabeçalho é a alça de movimento para não disputar gestos com o `textarea`;
+- o padrão usa a geometria real de `#pdfPageScroll` e da `.portal-pdf-page` mais visível, em vez de coordenadas fixas dependentes do monitor.
+
+**Fase atual:** Fase 6 — Automação operacional, homologação humana ainda aberta.
+
+**Próxima ação exata:** validar sintaxe/CI da branch, integrar se verde e então testar no Portal real posição inicial, arraste do cabeçalho e as oito direções de redimensionamento.

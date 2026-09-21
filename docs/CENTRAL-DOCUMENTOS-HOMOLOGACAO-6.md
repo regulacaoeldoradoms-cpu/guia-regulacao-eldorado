@@ -384,3 +384,24 @@ Aceite:
 - ao fechar/trocar o PDF, o rascunho é apagado;
 - nada é gravado em D1, localStorage, sessionStorage, IndexedDB, Google Drive ou backend;
 - nenhum conteúdo do rascunho entra em IA ou observabilidade.
+
+
+### Caso 15B — posição padrão nas margens, mover e redimensionar
+
+Procedimento:
+1. abrir um PDF no Titon e abrir o bloco de notas;
+2. confirmar que a posição/tamanho inicial usa preferencialmente a maior margem escura lateral disponível e não cobre a página quando há espaço suficiente;
+3. arrastar o cabeçalho para mover a janela dentro da área do visualizador;
+4. redimensionar separadamente pelas bordas superior, inferior, esquerda e direita;
+5. redimensionar pelos quatro cantos;
+6. fechar/reabrir somente o bloco e conferir que a geometria manual permanece no mesmo PDF;
+7. trocar de PDF e abrir novamente o bloco.
+
+Aceite:
+- o padrão é calculado pela geometria real da página visível e da área escura do PDF;
+- mover ocorre por clique + arraste no cabeçalho, sem impedir digitação no campo;
+- as quatro bordas e os quatro cantos respondem a arraste;
+- a janela permanece contida na superfície rolável do PDF;
+- fechar/reabrir a janelinha preserva posição/tamanho manual no mesmo PDF;
+- trocar/fechar o PDF volta ao posicionamento padrão e continua apagando o texto;
+- nenhum dado de posição, tamanho ou conteúdo é persistido fora da memória da sessão.

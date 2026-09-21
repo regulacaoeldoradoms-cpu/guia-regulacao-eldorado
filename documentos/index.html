@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260921-8">
+  <link rel="stylesheet" href="/css/documents.css?v=20260921-9">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -133,7 +133,7 @@
               </button>
             </nav>
             <aside class="documents-notepad-panel" id="documentsNotepadPanel" hidden aria-label="Bloco de notas temporário">
-              <div class="documents-notepad-head">
+              <div class="documents-notepad-head" id="documentsNotepadHead">
                 <div>
                   <span>Rascunho temporário</span>
                   <strong>Bloco de notas</strong>
@@ -141,6 +141,14 @@
                 <button class="documents-notepad-close" id="documentNotepadCloseButton" type="button" aria-label="Fechar bloco de notas">×</button>
               </div>
               <textarea id="documentNotepadText" maxlength="8000" spellcheck="false" autocomplete="off" aria-label="Rascunho temporário" placeholder="Escreva aqui enquanto tenta identificar o que está escrito…"></textarea>
+              <span class="documents-notepad-resize-handle is-n" data-notepad-resize="n" aria-hidden="true"></span>
+              <span class="documents-notepad-resize-handle is-s" data-notepad-resize="s" aria-hidden="true"></span>
+              <span class="documents-notepad-resize-handle is-e" data-notepad-resize="e" aria-hidden="true"></span>
+              <span class="documents-notepad-resize-handle is-w" data-notepad-resize="w" aria-hidden="true"></span>
+              <span class="documents-notepad-resize-handle is-ne" data-notepad-resize="ne" aria-hidden="true"></span>
+              <span class="documents-notepad-resize-handle is-nw" data-notepad-resize="nw" aria-hidden="true"></span>
+              <span class="documents-notepad-resize-handle is-se" data-notepad-resize="se" aria-hidden="true"></span>
+              <span class="documents-notepad-resize-handle is-sw" data-notepad-resize="sw" aria-hidden="true"></span>
             </aside>
             <aside class="documents-ai-panel" id="documentsAiPanel" hidden aria-label="Titon · IA documental">
               <div class="documents-ai-panel-head">
@@ -341,6 +349,6 @@
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-ocr.js?v=20260921-1"></script>
   <script src="/js/document-viewer.js?v=20260921-2"></script>
-  <script src="/js/documents.js?v=20260921-6"></script>
+  <script src="/js/documents.js?v=20260921-7"></script>
 </body>
 </html>
