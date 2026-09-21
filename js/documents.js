@@ -1011,7 +1011,7 @@
       if (!item?.isPdf || !action) return;
       action.textContent = state.editorSession
         ? (editorContainsItem(item) ? 'Já no editor' : 'Selecionar para unir')
-        : 'Duplo clique ou Enter';
+        : '';
       button.disabled = Boolean(state.editorSession && state.editorBusy);
       const openTiton = button.parentElement?.querySelector?.('[data-open-titon-index]');
       if (openTiton) {
@@ -4679,7 +4679,7 @@
         const action = item.isFolder
           ? 'Abrir pasta'
           : item.isPdf
-            ? (state.editorSession ? (editorHasItem ? 'Já no editor' : 'Selecionar para unir') : 'Duplo clique ou Enter')
+            ? (state.editorSession ? (editorHasItem ? 'Já no editor' : 'Selecionar para unir') : '')
             : 'Não suportado nesta fase';
         const icon = item.isFolder ? '▰' : item.isPdf ? 'PDF' : '•';
         const openTiton = item.isPdf

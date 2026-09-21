@@ -3457,3 +3457,24 @@ Estado publicado:
 **Fase atual:** Fase 6 ainda aberta para homologação operacional humana.
 
 **Próxima ação exata:** o operador deve atualizar a Central com Ctrl+F5, abrir a IA em um PDF real, confirmar o painel compacto, extrair e validar a organização/cópia individual. Esse aceite entra na matriz restante da Fase 6.
+
+
+## Lista de PDFs — limpeza visual e vermelho Ferrari — EM IMPLEMENTAÇÃO — 21/09/2026
+
+Ajuste visual solicitado durante a homologação da Fase 6.
+
+Escopo:
+- remover da lista o texto auxiliar **“Duplo clique ou Enter”**;
+- manter exatamente os mesmos atalhos de abertura por duplo clique e `Enter`;
+- preservar o botão **Abrir no Titon** em mobile/touch;
+- trocar o visual azul do selo **PDF** para vermelho Ferrari `#ff2800`, com fundo vermelho muito claro para contraste;
+- trocar o marcador vertical do item selecionado para o mesmo vermelho Ferrari;
+- harmonizar o fundo do item selecionado com um tom vermelho muito claro;
+- ocultar a coluna de ação quando estiver vazia;
+- ações temporárias do fluxo **Unir PDF** — “Já no editor” e “Selecionar para unir” — permanecem quando necessárias.
+
+Nenhuma alteração em Drive, Titon, IA, permissões, presença simultânea ou regra de abertura.
+
+Branch: `feat/central-docs-list-ferrari-red-20260921`.
+
+**Próxima ação exata:** validar CI/PR; se verde, integrar/publicar e colher aceite visual na Central real. A Fase 6 continua aberta.
