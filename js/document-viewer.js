@@ -256,6 +256,80 @@
     try { record?.renderTask?.cancel?.(); } catch (_) {}
   }
 
+  function clearSelectableTextLayer(record) {
+    if (!record) return;
+    record.textLayerGeneration = Number(record.textLayerGeneration || 0) + 1;
+    try { record.textLayerInstance?.cancel?.(); } catch (_) {}
+    record.textLayerInstance = null;
+    record.textLayerPromise = null;
+    record.textLayer?.replaceChildren?.();
+    record.container?.removeAttribute?.('data-selectable-text');
+  }
+
+  async function renderSelectableTextLayer(session, record, page, viewport, generation) {
+    if (!record?.textLayer || !page || !viewport || !isCurrentSession(session)) return false;
+    if (generation !== session.generation) return false;
+
+    const TextLayer = session.pdfjs?.TextLayer;
+    if (typeof TextLayer !== 'function') {
+      record.container.dataset.selectableText = 'unsupported';
+      return false;
+    }
+
+    clearSelectableTextLayer(record);
+    const textGeneration = record.textLayerGeneration;
+    const layerNode = record.textLayer;
+    layerNode.style.setProperty('--total-scale-factor', String(viewport.scale || 1));
+    layerNode.style.setProperty('--scale-round-x', '1px');
+    layerNode.style.setProperty('--scale-round-y', '1px');
+
+    try {
+      const textContentSource = typeof page.streamTextContent === 'function'
+        ? page.streamTextContent({ includeMarkedContent: true, disableNormalization: false })
+        : await page.getTextContent({ includeMarkedContent: true, disableNormalization: false });
+
+      if (
+        !isCurrentSession(session)
+        || generation !== session.generation
+        || textGeneration !== record.textLayerGeneration
+      ) return false;
+
+      const textLayer = new TextLayer({
+        textContentSource,
+        container: layerNode,
+        viewport
+      });
+      record.textLayerInstance = textLayer;
+      const promise = textLayer.render();
+      record.textLayerPromise = promise;
+      await promise;
+
+      if (
+        !isCurrentSession(session)
+        || generation !== session.generation
+        || textGeneration !== record.textLayerGeneration
+        || record.textLayerInstance !== textLayer
+      ) return false;
+
+      const hasText = Array.isArray(textLayer.textDivs)
+        && textLayer.textDivs.some((node) => String(node?.textContent || '').trim());
+      record.container.dataset.selectableText = hasText ? 'true' : 'false';
+      return hasText;
+    } catch (error) {
+      const stale = !isCurrentSession(session)
+        || generation !== session.generation
+        || textGeneration !== record.textLayerGeneration;
+      if (!stale && error?.name !== 'AbortException') {
+        record.container.dataset.selectableText = 'error';
+      }
+      return false;
+    } finally {
+      if (textGeneration === record.textLayerGeneration) {
+        record.textLayerPromise = null;
+      }
+    }
+  }
+
   function safelyDestroy(resource) {
     try {
       const result = resource?.destroy?.();
@@ -281,6 +355,7 @@
   function clearRenderedPage(record) {
     if (!record?.canvas) return;
     cancelRender(record);
+    clearSelectableTextLayer(record);
     record.canvas.width = 0;
     record.canvas.height = 0;
     record.canvas.removeAttribute('style');
@@ -724,6 +799,11 @@
     canvas.className = 'portal-pdf-page-canvas';
     canvas.setAttribute('aria-hidden', 'true');
 
+    const textLayer = document.createElement('div');
+    textLayer.className = 'portal-pdf-text-layer';
+    textLayer.dataset.pageNumber = String(pageNumber);
+    textLayer.setAttribute('aria-label', `Texto selecionável da página ${pageNumber}`);
+
     const loading = document.createElement('div');
     loading.className = 'portal-pdf-page-loading';
     loading.textContent = 'Carregando página…';
@@ -743,13 +823,17 @@
     cropLayer.dataset.pageNumber = String(pageNumber);
     cropLayer.setAttribute('aria-label', `Recorte da página ${pageNumber}`);
 
-    article.append(badge, canvas, loading, drawLayer, objectLayer, cropLayer);
+    article.append(badge, canvas, textLayer, loading, drawLayer, objectLayer, cropLayer);
     session.pagesRoot.appendChild(article);
 
     const record = {
       pageNumber,
       container: article,
       canvas,
+      textLayer,
+      textLayerInstance: null,
+      textLayerPromise: null,
+      textLayerGeneration: 0,
       loading,
       drawLayer,
       objectLayer,
@@ -881,7 +965,7 @@
   }
 
   function applyPageCropViewport(record, crop) {
-    if (!record?.container || !record.canvas || !record.objectLayer || !record.drawLayer) return;
+    if (!record?.container || !record.canvas || !record.textLayer || !record.objectLayer || !record.drawLayer) return;
     const fullWidth = Math.max(1, Number(record.fullPageWidth || 0));
     const fullHeight = Math.max(1, Number(record.fullPageHeight || 0));
     const rect = normalizeCropRect(crop);
@@ -910,6 +994,7 @@
         record.container.style.aspectRatio = `${fullWidth} / ${fullHeight}`;
       }
       resetContent(record.canvas, { canvas: true });
+      resetContent(record.textLayer);
       resetContent(record.drawLayer);
       resetContent(record.objectLayer);
       return;
@@ -924,7 +1009,7 @@
     const width = 100 / rect.width;
     const height = 100 / rect.height;
 
-    for (const element of [record.canvas, record.drawLayer, record.objectLayer]) {
+    for (const element of [record.canvas, record.textLayer, record.drawLayer, record.objectLayer]) {
       element.style.position = 'absolute';
       element.style.inset = 'auto';
       element.style.left = `${left}%`;
@@ -2725,6 +2810,7 @@
     record.renderGeneration = generation;
     record.loading.hidden = true;
     record.container.classList.add('rendered');
+    renderSelectableTextLayer(session, record, page, viewport, generation).catch(() => {});
     if (session.editorObjects?.length) refreshEditorObjectGeometryForPage(session, pageNumber);
     // Rendering/lazy-loading a page must not replace an active crop frame while
     // the user is touching or dragging one of its handles. setEditorCrops()
@@ -3073,6 +3159,7 @@
     const session = {
       invocation,
       openGeneration: invocationGeneration,
+      pdfjs,
       root,
       scrollRoot,
       pagesRoot,
