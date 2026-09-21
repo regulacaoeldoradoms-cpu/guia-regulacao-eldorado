@@ -8,7 +8,7 @@ const DRIVE_FOLDER_MIME = 'application/vnd.google-apps.folder';
 const DRIVE_SHORTCUT_MIME = 'application/vnd.google-apps.shortcut';
 const PDF_MIME = 'application/pdf';
 const DRIVE_SYNC_OPERATIONS = new Set(['replace_pdf', 'save_copy']);
-const DRIVE_SYNC_FILE_FIELDS = 'id,mimeType,size,modifiedTime,version,md5Checksum,headRevisionId,parents,capabilities(canDownload,canEdit,canModifyContent)';
+const DRIVE_SYNC_FILE_FIELDS = 'id,name,mimeType,size,modifiedTime,version,md5Checksum,headRevisionId,parents,capabilities(canDownload,canEdit,canModifyContent)';
 const DRIVE_SYNC_SESSION_TTL_SECONDS = 6 * 24 * 60 * 60;
 const DRIVE_SYNC_CHUNK_BYTES = 4 * 1024 * 1024;
 const DRIVE_SYNC_MAX_CHUNK_BYTES = 8 * 1024 * 1024;
@@ -529,6 +529,14 @@ export async function openDriveFileRef(env, ref) {
   return { id: file.id, mime: file.mime };
 }
 
+export async function drivePresenceKey(env, ref) {
+  const file = await openDriveFileRef(env, ref);
+  if (file.mime !== PDF_MIME) {
+    throw new DriveIntegrationError('DRIVE_PDF_REQUIRED', 'Somente arquivos PDF podem registrar presença no Titon.', 415);
+  }
+  return stableDriveCacheKey(env, file.id);
+}
+
 function normalizedDriveItem(file, ref, cacheKey, effectiveMime, shortcut = false) {
   return {
     ref,
@@ -735,6 +743,7 @@ async function currentDrivePdfMetadata(env, ref, openedFile = null) {
 
   return {
     id: String(metadata.id),
+    name: safeName(metadata.name || ''),
     mimeType: PDF_MIME,
     size: Number.isFinite(Number(metadata.size)) ? Number(metadata.size) : null,
     modifiedTime: String(metadata.modifiedTime || ''),
@@ -805,6 +814,119 @@ async function driveSyncPreflightState(env, input = {}, username = '') {
 
 export async function preflightDriveSync(env, input = {}, username = '') {
   return (await driveSyncPreflightState(env, input, username)).publicResult;
+}
+
+function normalizeDrivePdfName(value) {
+  let name = safeName(value).trim();
+  if (!name) {
+    throw new DriveIntegrationError('DRIVE_RENAME_NAME_REQUIRED', 'Informe o novo nome do PDF.', 400);
+  }
+  name = name.replace(/\.pdf$/i, '').trim();
+  if (!name) {
+    throw new DriveIntegrationError('DRIVE_RENAME_NAME_REQUIRED', 'O nome do PDF não pode ficar vazio.', 400);
+  }
+  name = safeName(name).trim().slice(0, 296) + '.pdf';
+  return name;
+}
+
+export async function renameDrivePdf(env, input = {}, username = '') {
+  requireDriveSyncWriteEnabled(env);
+  const ref = String(input.ref || '').trim();
+  if (!ref) {
+    throw new DriveIntegrationError('DRIVE_FILE_REF_INVALID', 'Referência de arquivo ausente.', 400);
+  }
+  const baseVersion = normalizeDriveVersion(input.baseVersion, { required: true });
+  const name = normalizeDrivePdfName(input.name);
+  const file = await openDriveFileRefPayload(env, ref);
+  const before = await currentDrivePdfMetadata(env, ref, file);
+
+  if (!before.canEdit) {
+    throw new DriveIntegrationError(
+      'DRIVE_FILE_NOT_EDITABLE',
+      'A conta institucional não possui permissão para renomear este arquivo.',
+      403
+    );
+  }
+  if (before.version !== baseVersion) {
+    throw new DriveIntegrationError(
+      'DRIVE_VERSION_CONFLICT',
+      'O arquivo foi alterado no Google Drive antes da renomeação. Reabra o documento e tente novamente.',
+      409
+    );
+  }
+
+  if (before.name === name) {
+    const [sameRef, cacheKey] = await Promise.all([
+      sealDriveFileRef(env, before.id, PDF_MIME),
+      stableDriveCacheKey(env, before.id)
+    ]);
+    return {
+      renamed: false,
+      name,
+      currentVersion: before.version,
+      modifiedTime: before.modifiedTime,
+      size: before.size,
+      ref: sameRef,
+      cacheKey,
+      contentConflict: false
+    };
+  }
+
+  const url = new URL(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(before.id)}`);
+  url.searchParams.set('supportsAllDrives', 'true');
+  url.searchParams.set('fields', DRIVE_SYNC_FILE_FIELDS);
+  const response = await driveFetch(env, url.toString(), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+    body: JSON.stringify({ name })
+  });
+  if (!response.ok) throwDriveResponse(response);
+
+  const payload = await response.json().catch(() => ({}));
+  if (!payload?.id || payload.mimeType !== PDF_MIME || safeName(payload.name || '') !== name) {
+    throw new DriveIntegrationError(
+      'DRIVE_RENAME_CONFIRMATION_INVALID',
+      'O Google Drive não confirmou a renomeação do PDF.',
+      502
+    );
+  }
+
+  const nextRef = await sealDriveFileRef(env, String(payload.id), PDF_MIME);
+  const after = await currentDrivePdfMetadata(env, nextRef);
+  if (after.name !== name) {
+    throw new DriveIntegrationError(
+      'DRIVE_RENAME_CONFIRMATION_INVALID',
+      'O Google Drive não manteve o novo nome confirmado.',
+      502
+    );
+  }
+
+  const contentConflict = Boolean(
+    before.headRevisionId && after.headRevisionId && before.headRevisionId !== after.headRevisionId
+  ) || Boolean(
+    before.md5Checksum && after.md5Checksum
+    && before.md5Checksum.toLowerCase() !== after.md5Checksum.toLowerCase()
+  ) || Boolean(
+    Number.isSafeInteger(before.size) && Number.isSafeInteger(after.size) && before.size !== after.size
+  );
+
+  const [confirmedRef, cacheKey] = await Promise.all([
+    contentConflict
+      ? sealDriveFileRef(env, after.id, PDF_MIME)
+      : sealConfirmedDriveFileRef(env, after, username),
+    stableDriveCacheKey(env, after.id)
+  ]);
+
+  return {
+    renamed: true,
+    name,
+    currentVersion: after.version,
+    modifiedTime: after.modifiedTime,
+    size: after.size,
+    ref: confirmedRef,
+    cacheKey,
+    contentConflict
+  };
 }
 
 function driveSyncWriteEnabled(env) {
