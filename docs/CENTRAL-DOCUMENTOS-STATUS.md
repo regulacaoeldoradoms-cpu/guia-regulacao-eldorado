@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — reduzir latência de lista/pesquisa e decompor o sync Google Drive** |
-| Última ação concluída | PostHog confirmou lista ~4–4,6 s, pesquisa ~4–7,1 s e sync ainda ~11–20 s; branch implementou fast-path e nova decomposição técnica |
-| Branch atual | `perf/central-docs-drive-navigation-fastpath-20260921` |
-| PR atual | ainda não aberta neste ponto do registro |
-| Último commit relevante | branch contém fast-path do Worker/frontend, observabilidade por etapa, cache-busters, testes e documentação |
-| Checks e testes | ainda precisam rodar no CI da branch; main anterior permanece o estado produtivo até merge |
-| Decisões tomadas | primeira página 40 itens; sem `orderBy` remoto redundante; mapeamento concorrente limitado; reutilização de chaves criptográficas; `cacheKey` somente para PDF; snapshot de pasta somente em memória para resposta visual imediata; pesquisa remota continua autoritativa |
-| Justificativas | a latência também ocorre em pesquisas com apenas 1–5 resultados; o código fazia trabalho local serial após a Files API e repetia ordenação/derivação criptográfica desnecessária |
-| Alternativas descartadas | persistir índice/nome de arquivos no navegador ou PostHog: descartado por privacidade/consistência; remover validações/refs seladas: descartado por segurança |
-| Ações externas concluídas | PostHog confirmado em **Regulação de saúde / Default project (602473)**; nenhuma mudança OAuth, segredo ou permissão |
-| Pendências e bloqueios | validar CI/navegador, integrar/publicar, depois colher novas métricas `drive_token_ms`, `drive_api_ms`, `drive_map_ms`, `build_ms`, `drive_start_ms`, `drive_upload_ms` |
-| Riscos conhecidos | snapshot local pode mostrar resultado de pasta já carregada por poucos segundos enquanto a pesquisa autoritativa atualiza; não é persistido e o remoto sempre substitui |
-| Métricas / observabilidade | V2 desktop: pasta p95 **4.542 ms**; pesquisa p95 **7.072 ms**; sync p95 **20.130 ms**; sync small recentes pós-#386 **11.323 ms** e **13.855 ms** |
-| Próxima ação exata | abrir PR, validar CI completo, integrar/publicar se verde; depois Ctrl+F5 uma vez e uso normal de pasta/pesquisa/sync para localizar a etapa dominante pelos novos tempos |
-| Arquivos e fontes principais | Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; `js/documents.js`; `worker/document-drive.js`; observability frontend/backend; PostHog 602473 |
+| Subfase / objetivo atual | **7E — validar em uso real o fast-path de lista/pesquisa e localizar a etapa dominante do sync Drive** |
+| Última ação concluída | PR **#388** mesclada e publicada; fast-path de navegação + decomposição técnica do Drive estão na `main` |
+| Branch atual | `docs/central-docs-drive-navigation-status-20260921` somente para reconciliar este handoff pós-merge |
+| PR atual | PR funcional **#388 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional `e5d8e5cb4dc4e45a2ccfe06e8b96482fd77654a8` |
+| Checks e testes | **29/29 checks pós-merge verdes**; Workers Builds produtivo `success`; GitHub Pages/Cloudflare Pages e navegador também verdes |
+| Decisões tomadas | primeira página 40 itens; sem `orderBy` remoto redundante; mapeamento concorrente limitado; reutilização AES/HMAC; cacheKey só para PDF; snapshot de pasta somente em memória; remoto continua autoritativo |
+| Justificativas | PostHog comprovou pasta p95 ~4,54 s, pesquisa p95 ~7,07 s e sync p95 ~20,13 s; havia trabalho local serial e redundante após a Files API |
+| Alternativas descartadas | índice persistente de nomes/lista no navegador ou PostHog: descartado por privacidade/consistência; remover refs seladas, conflito ou confirmação real: descartado por integridade |
+| Ações externas concluídas | Worker produtivo atualizado pelo build `72df236a-42a1-4614-8eff-5a976b2ba81d`, versão histórica `c0971049-86e4-45a9-a46d-f8bf47b3484a`; PostHog segue no projeto 602473 |
+| Pendências e bloqueios | falta somente tráfego real pós-publicação para medir `drive_token_ms`, `drive_api_ms`, `drive_map_ms`, `build_ms`, `drive_start_ms`, `drive_upload_ms` |
+| Riscos conhecidos | snapshot local pode mostrar rapidamente o estado já carregado enquanto o remoto atualiza; ele não persiste e não substitui a resposta autoritativa |
+| Métricas / observabilidade | baseline pré-fast-path: pasta p95 **4.542 ms**; pesquisa p95 **7.072 ms**; sync p95 **20.130 ms**; small recentes pós-#386 **11.323 ms** e **13.855 ms** |
+| Próxima ação exata | operador executa **Ctrl+F5 uma vez** e usa normalmente lista/pesquisa/sync; depois consultar PostHog para medir o ganho e a etapa dominante sem nova alteração por hipótese |
+| Arquivos e fontes principais | Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; `js/documents.js`; `worker/document-drive.js`; observability frontend/backend; PR #388; PostHog 602473 |
 
 ## Histórico recuperável
 
@@ -4342,3 +4342,34 @@ Privacidade:
 - referências continuam seladas.
 
 **Próxima ação exata:** CI + PR + publicação. Após isso, medir uma operação real para decidir se o restante da demora está no token OAuth, Files API, selagem local, geração do PDF, início seguro ou upload/confirmação.
+
+
+## Fase 7E — fast-path de lista/pesquisa Drive integrado e publicado — 21/09/2026
+
+A PR **#388 — Fase 7E: acelerar lista e pesquisa do Google Drive** foi integrada na `main` pelo merge **`e5d8e5cb4dc4e45a2ccfe06e8b96482fd77654a8`**.
+
+Validação:
+- PR: todos os checks funcionais concluíram com sucesso; o preview de Worker de branch continuou indisponível por configuração externa já conhecida;
+- pós-merge da `main`: **29/29 checks verdes**;
+- Workers Builds produtivo: **success**;
+- Build ID: `72df236a-42a1-4614-8eff-5a976b2ba81d`;
+- Worker Version histórica: `c0971049-86e4-45a9-a46d-f8bf47b3484a`;
+- GitHub Pages/Cloudflare Pages: sucesso;
+- testes reais de navegador, incluindo PDF.js e abertura pós-login: sucesso.
+
+Estado publicado:
+- `documents.js?v=20260921-12`;
+- `portal-performance.js?v=20260921-2`;
+- `portal-observability.js?v=20260921-2`;
+- primeira página lista/pesquisa reduzida para 40 itens;
+- `orderBy` redundante removido da Files API;
+- mapeamento/selagem paralelo com concorrência limitada;
+- derivação de chaves criptográficas reaproveitada por isolate;
+- `cacheKey` somente para PDF;
+- snapshot da pasta somente em memória e pesquisa local provisória imediata;
+- resposta remota do Drive continua autoritativa;
+- nova decomposição técnica de latência ativa.
+
+Nenhum ganho percentual é declarado ainda. A próxima evidência deve vir de uso real depois da publicação.
+
+**Próxima ação exata:** Ctrl+F5 uma vez, usar normalmente a lista/pesquisa e realizar sincronização quando houver edição. Em seguida comparar a nova amostra com a baseline e usar as métricas por estágio para decidir se há nova otimização necessária.
