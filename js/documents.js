@@ -67,6 +67,11 @@
   const DRIVE_SYNC_SUCCESS_VISIBLE_MS = 1000;
   const DRIVE_SYNC_REVISION_POLL_MS = 200;
   const DOCUMENT_PRESENCE_HEARTBEAT_MS = 25_000;
+  const NOTEPAD_MIN_WIDTH = 120;
+  const NOTEPAD_MIN_HEIGHT = 120;
+  const NOTEPAD_DEFAULT_MAX_WIDTH = 320;
+  const NOTEPAD_DEFAULT_MAX_HEIGHT = 340;
+  const NOTEPAD_MARGIN = 10;
 
   if (user.mustChangePassword) {
     location.replace('/seguranca/?primeiro-acesso=1');
@@ -79,6 +84,10 @@
     documentAiConfig: null,
     documentAiPanelOpen: false,
     temporaryNotepadOpen: false,
+    temporaryNotepadGeometry: null,
+    temporaryNotepadUserAdjusted: false,
+    temporaryNotepadPointer: null,
+    temporaryNotepadReflowFrame: 0,
     documentAiBusy: false,
     documentAiClassification: null,
     documentAiExtraction: null,
@@ -212,8 +221,10 @@
     documentAiButton: document.getElementById('documentAiButton'),
     documentNotepadButton: document.getElementById('documentNotepadButton'),
     documentNotepadPanel: document.getElementById('documentsNotepadPanel'),
+    documentNotepadHead: document.getElementById('documentsNotepadHead'),
     documentNotepadClose: document.getElementById('documentNotepadCloseButton'),
     documentNotepadText: document.getElementById('documentNotepadText'),
+    documentNotepadResizeHandles: [...document.querySelectorAll('[data-notepad-resize]')],
     documentAiPanel: document.getElementById('documentsAiPanel'),
     documentAiInfoButton: document.getElementById('documentsAiInfoButton'),
     documentAiInfoPanel: document.getElementById('documentsAiInfoPanel'),
@@ -4067,19 +4078,277 @@
     if (next) renderDocumentAiPanel();
   }
 
+  function clampNotepadValue(value, min, max) {
+    if (max < min) return min;
+    return Math.min(max, Math.max(min, Number(value) || 0));
+  }
+
+  function temporaryNotepadBounds() {
+    const host = els.customViewer;
+    const scroll = els.pdfPageScroll;
+    if (!host || !scroll || host.hidden || scroll.clientWidth <= 0 || scroll.clientHeight <= 0) return null;
+    const hostRect = host.getBoundingClientRect();
+    const scrollRect = scroll.getBoundingClientRect();
+    const left = scrollRect.left - hostRect.left;
+    const top = scrollRect.top - hostRect.top;
+    return {
+      left,
+      top,
+      right: left + scrollRect.width,
+      bottom: top + scrollRect.height,
+      width: scrollRect.width,
+      height: scrollRect.height
+    };
+  }
+
+  function visibleTemporaryNotepadPageRect() {
+    const host = els.customViewer;
+    const scroll = els.pdfPageScroll;
+    if (!host || !scroll || !els.pdfPages) return null;
+    const hostRect = host.getBoundingClientRect();
+    const scrollRect = scroll.getBoundingClientRect();
+    const pages = [...els.pdfPages.querySelectorAll('.portal-pdf-page')];
+    let best = null;
+    let bestArea = 0;
+
+    for (const page of pages) {
+      const rect = page.getBoundingClientRect();
+      const width = Math.max(0, Math.min(rect.right, scrollRect.right) - Math.max(rect.left, scrollRect.left));
+      const height = Math.max(0, Math.min(rect.bottom, scrollRect.bottom) - Math.max(rect.top, scrollRect.top));
+      const area = width * height;
+      if (area <= bestArea) continue;
+      bestArea = area;
+      best = {
+        left: rect.left - hostRect.left,
+        top: rect.top - hostRect.top,
+        right: rect.right - hostRect.left,
+        bottom: rect.bottom - hostRect.top,
+        width: rect.width,
+        height: rect.height
+      };
+    }
+
+    return best;
+  }
+
+  function constrainTemporaryNotepadGeometry(geometry) {
+    const bounds = temporaryNotepadBounds();
+    if (!bounds || !geometry) return geometry || null;
+    const minWidth = Math.min(NOTEPAD_MIN_WIDTH, bounds.width);
+    const minHeight = Math.min(NOTEPAD_MIN_HEIGHT, bounds.height);
+    const width = clampNotepadValue(geometry.width, minWidth, bounds.width);
+    const height = clampNotepadValue(geometry.height, minHeight, bounds.height);
+    return {
+      left: clampNotepadValue(geometry.left, bounds.left, bounds.right - width),
+      top: clampNotepadValue(geometry.top, bounds.top, bounds.bottom - height),
+      width,
+      height
+    };
+  }
+
+  function defaultTemporaryNotepadGeometry() {
+    const bounds = temporaryNotepadBounds();
+    if (!bounds) return null;
+    const page = visibleTemporaryNotepadPageRect();
+    const margin = Math.min(NOTEPAD_MARGIN, Math.max(4, bounds.width / 20));
+    const availableHeight = Math.max(NOTEPAD_MIN_HEIGHT, bounds.height - (margin * 2));
+    const height = Math.min(NOTEPAD_DEFAULT_MAX_HEIGHT, availableHeight);
+
+    let width = Math.min(
+      NOTEPAD_DEFAULT_MAX_WIDTH,
+      Math.max(NOTEPAD_MIN_WIDTH, Math.round(bounds.width * .28))
+    );
+    let left = bounds.left + margin;
+
+    if (page) {
+      const leftGap = Math.max(0, page.left - bounds.left);
+      const rightGap = Math.max(0, bounds.right - page.right);
+      const useRight = rightGap > leftGap;
+      const gutterWidth = (useRight ? rightGap : leftGap) - (margin * 2);
+
+      if (gutterWidth >= Math.min(NOTEPAD_MIN_WIDTH, bounds.width)) {
+        width = Math.min(NOTEPAD_DEFAULT_MAX_WIDTH, gutterWidth);
+        left = useRight
+          ? bounds.right - margin - width
+          : bounds.left + margin;
+      } else {
+        left = useRight
+          ? bounds.right - margin - width
+          : bounds.left + margin;
+      }
+    }
+
+    return constrainTemporaryNotepadGeometry({
+      left,
+      top: bounds.top + margin,
+      width,
+      height
+    });
+  }
+
+  function currentTemporaryNotepadGeometry() {
+    const panel = els.documentNotepadPanel;
+    const host = els.customViewer;
+    if (!panel || !host || panel.hidden) return state.temporaryNotepadGeometry;
+    const panelRect = panel.getBoundingClientRect();
+    const hostRect = host.getBoundingClientRect();
+    return {
+      left: panelRect.left - hostRect.left,
+      top: panelRect.top - hostRect.top,
+      width: panelRect.width,
+      height: panelRect.height
+    };
+  }
+
+  function applyTemporaryNotepadGeometry(geometry) {
+    const panel = els.documentNotepadPanel;
+    const next = constrainTemporaryNotepadGeometry(geometry);
+    if (!panel || !next) return null;
+    panel.style.left = `${Math.round(next.left)}px`;
+    panel.style.top = `${Math.round(next.top)}px`;
+    panel.style.width = `${Math.round(next.width)}px`;
+    panel.style.height = `${Math.round(next.height)}px`;
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+    state.temporaryNotepadGeometry = next;
+    return next;
+  }
+
+  function reflowTemporaryNotepad({ defaultPlacement = false } = {}) {
+    if (!state.temporaryNotepadOpen || !els.documentNotepadPanel || els.documentNotepadPanel.hidden) return;
+    const useDefault = defaultPlacement || !state.temporaryNotepadGeometry || !state.temporaryNotepadUserAdjusted;
+    const geometry = useDefault
+      ? defaultTemporaryNotepadGeometry()
+      : constrainTemporaryNotepadGeometry(state.temporaryNotepadGeometry);
+    if (geometry) applyTemporaryNotepadGeometry(geometry);
+  }
+
+  function queueTemporaryNotepadReflow({ defaultPlacement = false } = {}) {
+    if (!state.temporaryNotepadOpen) return;
+    if (state.temporaryNotepadReflowFrame) cancelAnimationFrame(state.temporaryNotepadReflowFrame);
+    state.temporaryNotepadReflowFrame = requestAnimationFrame(() => {
+      state.temporaryNotepadReflowFrame = 0;
+      reflowTemporaryNotepad({ defaultPlacement });
+    });
+  }
+
+  function handleTemporaryNotepadPointerMove(event) {
+    const pointer = state.temporaryNotepadPointer;
+    if (!pointer || event.pointerId !== pointer.pointerId) return;
+    const dx = event.clientX - pointer.startX;
+    const dy = event.clientY - pointer.startY;
+    const start = pointer.startGeometry;
+    const bounds = pointer.bounds;
+
+    if (pointer.mode === 'move') {
+      applyTemporaryNotepadGeometry({
+        left: clampNotepadValue(start.left + dx, bounds.left, bounds.right - start.width),
+        top: clampNotepadValue(start.top + dy, bounds.top, bounds.bottom - start.height),
+        width: start.width,
+        height: start.height
+      });
+      event.preventDefault();
+      return;
+    }
+
+    let left = start.left;
+    let top = start.top;
+    let right = start.left + start.width;
+    let bottom = start.top + start.height;
+    const minWidth = Math.min(NOTEPAD_MIN_WIDTH, bounds.width);
+    const minHeight = Math.min(NOTEPAD_MIN_HEIGHT, bounds.height);
+    const direction = pointer.direction;
+
+    if (direction.includes('e')) {
+      right = clampNotepadValue(right + dx, left + minWidth, bounds.right);
+    }
+    if (direction.includes('w')) {
+      left = clampNotepadValue(left + dx, bounds.left, right - minWidth);
+    }
+    if (direction.includes('s')) {
+      bottom = clampNotepadValue(bottom + dy, top + minHeight, bounds.bottom);
+    }
+    if (direction.includes('n')) {
+      top = clampNotepadValue(top + dy, bounds.top, bottom - minHeight);
+    }
+
+    applyTemporaryNotepadGeometry({
+      left,
+      top,
+      width: right - left,
+      height: bottom - top
+    });
+    event.preventDefault();
+  }
+
+  function finishTemporaryNotepadPointer(event = null, { markAdjusted = true } = {}) {
+    const pointer = state.temporaryNotepadPointer;
+    if (!pointer) return;
+    if (event?.pointerId != null && event.pointerId !== pointer.pointerId) return;
+    try { pointer.target?.releasePointerCapture?.(pointer.pointerId); } catch (_) {}
+    window.removeEventListener('pointermove', handleTemporaryNotepadPointerMove, true);
+    window.removeEventListener('pointerup', finishTemporaryNotepadPointer, true);
+    window.removeEventListener('pointercancel', finishTemporaryNotepadPointer, true);
+    document.body?.classList.remove('documents-notepad-pointer-active');
+    els.documentNotepadPanel?.removeAttribute('data-notepad-interaction');
+    state.temporaryNotepadPointer = null;
+    if (markAdjusted) {
+      state.temporaryNotepadUserAdjusted = true;
+      state.temporaryNotepadGeometry = currentTemporaryNotepadGeometry();
+    }
+  }
+
+  function startTemporaryNotepadPointer(event, mode, direction = '') {
+    if (event.button !== 0 || !state.temporaryNotepadOpen) return;
+    const bounds = temporaryNotepadBounds();
+    const startGeometry = currentTemporaryNotepadGeometry();
+    if (!bounds || !startGeometry) return;
+    event.preventDefault();
+    event.stopPropagation();
+    state.temporaryNotepadPointer = {
+      pointerId: event.pointerId,
+      target: event.currentTarget,
+      mode,
+      direction,
+      startX: event.clientX,
+      startY: event.clientY,
+      startGeometry,
+      bounds
+    };
+    try { event.currentTarget?.setPointerCapture?.(event.pointerId); } catch (_) {}
+    if (els.documentNotepadPanel) els.documentNotepadPanel.dataset.notepadInteraction = mode;
+    document.body?.classList.add('documents-notepad-pointer-active');
+    window.addEventListener('pointermove', handleTemporaryNotepadPointerMove, true);
+    window.addEventListener('pointerup', finishTemporaryNotepadPointer, true);
+    window.addEventListener('pointercancel', finishTemporaryNotepadPointer, true);
+  }
+
   function setTemporaryNotepadOpen(open, { focus = true } = {}) {
     const next = Boolean(open && state.pdfItem);
     state.temporaryNotepadOpen = next;
     if (els.documentNotepadPanel) els.documentNotepadPanel.hidden = !next;
     if (els.documentNotepadButton) els.documentNotepadButton.setAttribute('aria-pressed', next ? 'true' : 'false');
-    if (next && focus) {
-      requestAnimationFrame(() => els.documentNotepadText?.focus?.({ preventScroll: true }));
+    if (next) {
+      requestAnimationFrame(() => {
+        reflowTemporaryNotepad({ defaultPlacement: !state.temporaryNotepadUserAdjusted });
+        if (focus) els.documentNotepadText?.focus?.({ preventScroll: true });
+      });
     }
     return next;
   }
 
   function resetTemporaryNotepad() {
+    finishTemporaryNotepadPointer(null, { markAdjusted: false });
+    if (state.temporaryNotepadReflowFrame) cancelAnimationFrame(state.temporaryNotepadReflowFrame);
+    state.temporaryNotepadReflowFrame = 0;
     setTemporaryNotepadOpen(false, { focus: false });
+    state.temporaryNotepadGeometry = null;
+    state.temporaryNotepadUserAdjusted = false;
+    if (els.documentNotepadPanel) {
+      for (const property of ['left', 'top', 'width', 'height', 'right', 'bottom']) {
+        els.documentNotepadPanel.style.removeProperty(property);
+      }
+    }
     if (els.documentNotepadText) els.documentNotepadText.value = '';
   }
 
@@ -5381,6 +5650,23 @@
     setTemporaryNotepadOpen(false, { focus: false });
     els.documentNotepadButton?.focus?.({ preventScroll: true });
   });
+  els.documentNotepadHead?.addEventListener('pointerdown', (event) => {
+    if (event.target.closest?.('button')) return;
+    startTemporaryNotepadPointer(event, 'move');
+  });
+  for (const handle of els.documentNotepadResizeHandles || []) {
+    handle.addEventListener('pointerdown', (event) => {
+      startTemporaryNotepadPointer(event, 'resize', String(handle.dataset.notepadResize || ''));
+    });
+  }
+  window.addEventListener('resize', () => {
+    queueTemporaryNotepadReflow({ defaultPlacement: !state.temporaryNotepadUserAdjusted });
+  });
+  for (const zoomControl of [els.pdfZoomOut, els.pdfZoomReset, els.pdfZoomIn, els.pdfFitWidth]) {
+    zoomControl?.addEventListener('click', () => {
+      queueTemporaryNotepadReflow({ defaultPlacement: !state.temporaryNotepadUserAdjusted });
+    });
+  }
   els.documentAiInfoButton?.addEventListener('click', () => {
     setDocumentAiInfoOpen(els.documentAiInfoButton.getAttribute('aria-expanded') !== 'true');
   });
