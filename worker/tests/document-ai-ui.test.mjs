@@ -33,6 +33,8 @@ test('painel Titon inicia oculto e produção mantém IA normal ativa com backgr
   assert.match(html, /id="documentsAiExtractDocumentButton"[^>]*disabled/);
   assert.match(html, /id="documentsAiDocumentResults"[^>]*hidden/);
   assert.match(html, /id="documentsAiCopyAllButton"[^>]*>Copiar tudo<\/button>/);
+  assert.match(html, /id="documentsAiOrderFieldsButton"[^>]*>Organizar campos<\/button>/);
+  assert.match(html, /id="documentsAiFieldOrderPanel"[^>]*hidden/);
   assert.match(html, /id="documentsAiChatSection"[^>]*hidden/);
   assert.doesNotMatch(html, />Extração automática</);
   assert.doesNotMatch(html, /id="documentsAiClassifyButton"/);
@@ -118,7 +120,10 @@ test('resultado Titon segue o formato operacional e mantém cada página separad
   assert.match(js, /documentAiAllResultsBlock/);
   assert.match(html, /Copiar tudo/);
   assert.match(html, /Ver página|documentsAiDocumentResults/);
-  assert.doesNotMatch(js, /localStorage\.(?:setItem|getItem).*documentAi/i);
+  assert.match(js, /TITON_FIELD_ORDER_STORAGE_PREFIX/);
+  assert.match(js, /localStorage\.getItem\(titonFieldOrderStorageKey\(\)\)/);
+  assert.match(js, /localStorage\.setItem\(titonFieldOrderStorageKey\(\), JSON\.stringify\(state\.documentAiFieldOrder\)\)/);
+  assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*(?:documentAiResults|documentAiExtraction|documentAiEvidence|pdfItem)/i);
   assert.doesNotMatch(js, /sessionStorage\.(?:setItem|getItem).*documentAi/i);
   assert.doesNotMatch(js, /indexedDB.*documentAi/i);
 });
@@ -149,6 +154,35 @@ test('painel IA fica minimalista e organização/cópia não dispara nova infer�
   const eventBlock = js.slice(eventStart, eventEnd);
   assert.doesNotMatch(eventBlock, /fetch\(|api\(/);
   assert.match(eventBlock, /copyDocumentAiText\(documentAiFieldDisplay\(field\)\)/);
+  assert.match(eventBlock, /state\.documentAiCopiedFields\.add\(documentAiCopyToken\(pageNumber, key\)\)/);
+  assert.match(eventBlock, /fieldCopy\.textContent = '✓ Copiado'/);
+});
+
+test('ordem dos campos é personalizável sem persistir dados extraídos', async () => {
+  const [html, js, css] = await Promise.all([
+    read('documentos/index.html'),
+    read('js/documents.js'),
+    read('css/documents.css')
+  ]);
+
+  assert.match(html, /id="documentsAiOrderFieldsButton"/);
+  assert.match(html, /id="documentsAiFieldOrderList"/);
+  assert.match(html, /id="documentsAiFieldOrderResetButton"/);
+  assert.match(html, /id="documentsAiFieldOrderDoneButton"/);
+  assert.match(js, /function normalizeTitonFieldOrder\(/);
+  assert.match(js, /function moveTitonFieldBefore\(/);
+  assert.match(js, /function shiftTitonField\(/);
+  assert.match(js, /draggable="true" data-ai-order-field=/);
+  assert.match(js, /persistTitonFieldOrder\(\)/);
+  assert.match(css, /\.documents-ai-order-row/);
+  assert.match(css, /\.documents-ai-field\.is-copied/);
+
+  const orderStart = js.indexOf('  function normalizeTitonFieldOrder(');
+  const orderEnd = js.indexOf('  function documentAiResultGroups(', orderStart);
+  assert.ok(orderStart >= 0 && orderEnd > orderStart, 'bloco de ordenação ausente');
+  const orderBlock = js.slice(orderStart, orderEnd);
+  assert.doesNotMatch(orderBlock, /fetch\(|api\(/);
+  assert.doesNotMatch(orderBlock, /documentAiResults|documentAiExtraction|documentAiEvidence/);
 });
 
 test('falha intermediária descarta resultado parcial para não simular documento completo', async () => {
