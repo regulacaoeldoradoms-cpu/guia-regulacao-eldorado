@@ -551,6 +551,7 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
       const result = await renameDrivePdf(env, {
         ref: String(body.ref || ''),
         baseVersion: String(body.baseVersion || ''),
+        baseName: String(body.baseName || ''),
         name: String(body.name || '')
       }, user.username);
       return json(result, 200, origin);

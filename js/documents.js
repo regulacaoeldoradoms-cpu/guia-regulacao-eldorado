@@ -3336,6 +3336,7 @@
         body: JSON.stringify({
           ref: previous.ref,
           baseVersion: previous.version,
+          baseName: oldName,
           name: nextName
         })
       });
@@ -3367,7 +3368,13 @@
       heartbeatDocumentPresence().catch(() => {});
       return true;
     } catch (error) {
-      setPdfRenameFeedback('Falha: o nome não foi alterado no Google Drive.', 'warning');
+      const conflict = error?.code === 'DRIVE_VERSION_CONFLICT';
+      setPdfRenameFeedback(
+        conflict
+          ? 'Conflito: o arquivo mudou no Google Drive. Reabra antes de renomear.'
+          : 'Falha: o nome não foi alterado no Google Drive.',
+        'warning'
+      );
       showStatus(error?.message || 'Não foi possível renomear o PDF no Google Drive.', 'warning');
       if (
         state.editorSession

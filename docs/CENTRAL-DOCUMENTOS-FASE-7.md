@@ -145,3 +145,35 @@ A seleção ativa do projeto no conector é contexto de sessão do PostHog; se u
 4. coletar baseline p75/p95/p99 e cache hit/miss;
 5. definir os primeiros SLOs a partir dos dados reais;
 6. abrir correções de gargalo apenas depois dessa baseline.
+
+## 7C — correção de falso conflito na renomeação após upload confirmado — 21/09/2026
+
+Incidente real: após unir PDFs e concluir `replace_pdf` com confirmação do Google Drive, a renomeação imediata podia falhar com conflito de versão.
+
+Causa:
+- o Drive usa `version` para mudanças de conteúdo **e** metadados;
+- o upload seguro já gera uma prova efêmera selada do conteúdo confirmado;
+- o preflight de sincronização já reutilizava essa prova para tolerar somente incremento técnico posterior de `version` com conteúdo idêntico;
+- a renomeação não reutilizava essa regra e exigia igualdade absoluta da versão.
+
+Contrato da correção:
+- o cliente envia o nome-base atual e a versão-base;
+- se a versão ainda for igual, fluxo normal;
+- se a versão avançou, a renomeação só pode prosseguir quando:
+  1. a referência contém prova confirmada válida do último upload do mesmo usuário;
+  2. arquivo e escopo continuam iguais;
+  3. head revision, MD5 e tamanho continuam iguais;
+  4. a versão atual é posterior à versão confirmada;
+  5. o nome atual no Drive ainda é exatamente o nome-base enviado pelo cliente.
+- qualquer mudança real de conteúdo ou renomeação concorrente continua retornando `DRIVE_VERSION_CONFLICT`.
+
+A regra evita dois extremos inseguros:
+- falso conflito por estabilização técnica do Drive;
+- sobrescrita silenciosa de renomeação concorrente.
+
+Aceite de regressão:
+- união → sincronização confirmada → renomeação deve funcionar sem reabrir o PDF;
+- mudança concorrente real de nome continua bloqueada;
+- mudança concorrente real de conteúdo continua bloqueada;
+- sucesso só aparece após PATCH confirmado pelo Google Drive.
+
