@@ -121,6 +121,12 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
     && cloudflareAi.timeoutMs <= 20000
     && cloudflareAi.totalTimeoutMs >= cloudflareAi.timeoutMs
     && cloudflareAi.totalTimeoutMs <= 40000;
+  const developerJev = {
+    binding: cloudflareAi.binding,
+    enabled: enabled(env.DEVELOPER_JEV_ENABLED),
+    model: String(env.DEVELOPER_JEV_MODEL || 'typesafe/jev').trim()
+  };
+  const developerJevReady = developerJev.binding && developerJev.enabled && developerJev.model === 'typesafe/jev';
 
   const checks = [
     {
@@ -191,6 +197,15 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
         : 'Configure o binding AI, dois modelos e limites de tempo seguros para a contingência Cloudflare.'
     },
     {
+      id: 'developer-jev',
+      label: 'Jev · roteador de desenvolvimento',
+      ok: developerJevReady,
+      requiredBeforeDeploy: false,
+      detail: developerJevReady
+        ? 'Jev está disponível pelo binding Workers AI e restrito ao acesso de Desenvolvedor.'
+        : 'O Portal continua operacional, mas a triagem Jev ficará indisponível até habilitar DEVELOPER_JEV_ENABLED, typesafe/jev e o binding AI.'
+    },
+    {
       id: 'legacy-migration',
       label: 'Migração de administradores legados',
       ok: !legacyMigrationEnabled,
@@ -251,12 +266,14 @@ export async function handleSystemReadinessRoute(request, env, origin, originAll
     },
     gemini,
     cloudflareAi,
+    developerJev,
     documentDrive,
     flags: {
       legacyMigrationEnabled,
       emailVerificationRequired,
       socialBackendEnabled,
-      socialHomeEnabled
+      socialHomeEnabled,
+      developerJevEnabled: developerJev.enabled
     }
   }, 200, origin);
 }
