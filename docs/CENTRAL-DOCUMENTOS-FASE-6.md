@@ -277,3 +277,49 @@ Estado após merge:
 - nenhuma escrita automática foi introduzida.
 
 A Fase 6 **não está encerrada ainda**. Falta somente a evidência operacional do critério do Guia Mestre: redução mensurável de tempo sem perda de controle do usuário.
+
+
+## Extensão operacional do Titon — renomeação real, zoom legível e presença simultânea — 21/09/2026
+
+Durante a homologação da Fase 6, o operador definiu uma regra permanente para o Titon: **qualquer alteração confirmada pelo usuário deve representar o arquivo real do Google Drive**, preservando os gates e proteções de conflito já aprovados na Fase 4. Rascunhos transitórios — digitação ainda não confirmada, área de recorte em ajuste ou gesto em andamento — continuam locais até a confirmação.
+
+### Nome do PDF
+
+O cabeçalho do Titon passa a tratar o nome como metadado editável do arquivo real:
+- um clique seleciona o nome;
+- duplo clique habilita a edição;
+- a extensão `.pdf` fica protegida e não faz parte do campo editável;
+- `Enter` confirma e grava o novo nome no Google Drive;
+- `Escape` cancela;
+- funciona tanto em visualização quanto no editor;
+- exige capability `edit`, Drive conectado e gate de escrita ativo;
+- a renomeação reconfere a `version` antes do PATCH e falha com conflito se a baseline mudou;
+- após confirmação, lista e Titon recebem nome/ref/version/metadados atualizados sem nova listagem obrigatória;
+- se o conteúdo mudar concorrentemente durante a renomeação, o cliente não adota a nova versão como baseline segura para edição e exige reabertura.
+
+### Zoom
+
+A porcentagem já existente entre os botões de menos/mais permanece a fonte única do estado de zoom do PDF.js. O ajuste desta etapa é visual: número escuro sobre fundo claro, mantendo atualização em tempo real e o clique no percentual para restaurar o zoom.
+
+### Presença simultânea
+
+Objetivo operacional: reduzir o risco de duas pessoas processarem/solicitarem a mesma especialidade ou procedimento por estarem trabalhando no mesmo documento sem saber.
+
+Contrato:
+- abrir um PDF cria presença efêmera;
+- heartbeat a cada 25 s;
+- expiração automática em 75 s;
+- estado `view` ou `edit`;
+- outro usuário no mesmo PDF gera borda laranja e aviso discreto;
+- outro usuário em edição usa destaque laranja mais forte e aviso explícito para evitar duplicidade;
+- presença **não bloqueia** o trabalho; o usuário mantém autonomia;
+- conflito real do Google Drive continua sendo a autoridade final para impedir sobrescrita silenciosa;
+- duas abas do mesmo username não são tratadas como duas pessoas distintas.
+
+Privacidade:
+- D1 armazena somente chave HMAC opaca do documento, session id efêmero, username/display name institucional, modo e expiração;
+- não armazena fileId bruto, ref opaca completa, nome do PDF ou conteúdo;
+- nenhum evento de presença é enviado ao PostHog/observabilidade analítica;
+- limpeza acontece por fechamento explícito ou TTL quando navegador/conexão termina abruptamente.
+
+A presença é uma proteção operacional adicional da Fase 6; não substitui versionamento, preflight nem proteção de conflito da Fase 4.

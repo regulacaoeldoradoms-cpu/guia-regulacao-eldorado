@@ -180,3 +180,50 @@ Na validação humana da Fase 6, confirmar:
 6. X retorna à mesma lista, pesquisa e posição de rolagem;
 7. unir outro PDF continua funcional pela ação **Escolher PDF da Central**;
 8. nenhuma nova consulta ao Drive é causada apenas pelo retorno do Titon à lista.
+
+
+## Casos adicionais — Titon conectado ao arquivo real e prevenção de duplicidade
+
+### Caso 7 — renomear o PDF real
+
+Procedimento:
+1. abrir PDF autorizado;
+2. clicar uma vez no título e confirmar seleção;
+3. dar duplo clique e editar somente o nome, com `.pdf` protegido;
+4. confirmar com `Enter`;
+5. verificar o Google Drive e a lista da Central;
+6. repetir em modo Editor PDF.
+
+Aceite:
+- o nome real no Drive muda;
+- Titon e lista refletem o novo nome sem nova pesquisa obrigatória;
+- `Escape` cancela sem escrita;
+- conta sem `edit` não renomeia;
+- conflito de versão interrompe a operação;
+- renomeação não perde alteração de conteúdo pendente do editor.
+
+### Caso 8 — zoom visível
+
+Aceite:
+- percentual entre − e + é legível em preto/escuro;
+- atualiza conforme zoom muda;
+- clicar no percentual mantém o comportamento de restaurar zoom.
+
+### Caso 9 — dois usuários no mesmo PDF
+
+Procedimento:
+1. usuário A abre um PDF;
+2. usuário B, em outra conta autenticada, abre o mesmo PDF;
+3. observar ambos os Titons;
+4. usuário A entra no editor;
+5. fechar uma das sessões e aguardar atualização.
+
+Aceite:
+- presença simultânea gera borda laranja e aviso;
+- o aviso pode identificar o outro operador autenticado;
+- quando alguém edita, o destaque/aviso aumenta de importância;
+- fechar a sessão remove a presença; encerramento abrupto expira em até 75 s;
+- nenhuma ação é bloqueada somente pela presença;
+- conflito real de Drive continua fail-closed;
+- duas abas do mesmo username não geram falso alerta de “outro usuário”;
+- nenhuma identidade documental ou conteúdo vai para observabilidade externa.

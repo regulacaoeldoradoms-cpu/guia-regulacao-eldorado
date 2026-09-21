@@ -3325,3 +3325,42 @@ Estado publicado para validação humana:
 A **Fase 6 continua formalmente aberta**. Esta publicação não substitui a homologação operacional real.
 
 **Próxima ação exata:** o operador deve validar no navegador real: largura integral da lista; seleção por clique; abertura por duplo clique e Enter; botão mobile; Titon integral; X retornando à mesma pesquisa/pasta/posição; união via **Escolher PDF da Central**; e depois concluir os demais casos da matriz operacional da Fase 6.
+
+
+## Titon — nome real no Drive, zoom legível e presença simultânea — EM IMPLEMENTAÇÃO — 21/09/2026
+
+Nova decisão operacional aprovada pelo operador durante a Fase 6.
+
+Motivação:
+- o título do PDF no Titon precisa ser editável sem separar interface e arquivo real;
+- o percentual de zoom já existia, mas estava praticamente invisível por contraste inadequado;
+- dois operadores podem abrir o mesmo encaminhamento e, sem saber um do outro, solicitar a mesma especialidade/procedimento em duplicidade.
+
+Branch: `feat/central-docs-titon-rename-presence-20260921`.
+
+Escopo implementado:
+- renomeação do arquivo real do Google Drive por `PATCH`, com capability `edit`, gate de escrita e verificação de `version`;
+- extensão `.pdf` protegida; clique seleciona, duplo clique edita, Enter confirma e Esc cancela;
+- atualização local de lista/Titon após confirmação, sem exigir relistagem;
+- percentual de zoom mantido entre −/+ e corrigido para cor escura legível;
+- presença efêmera em D1, heartbeat 25 s e TTL 75 s;
+- chave do documento derivada por HMAC, sem fileId/nome/ref em claro no registro de presença;
+- modos `view` e `edit`;
+- borda laranja para outro usuário visualizando e destaque mais forte para outro usuário editando;
+- aviso informativo, não bloqueante;
+- mesma conta/username em duas abas não gera falso alerta;
+- presença excluída da observabilidade analítica.
+
+Regra permanente confirmada: alterações **confirmadas** do Titon devem sincronizar com o arquivo real do Drive. Estados provisórios permanecem locais até confirmação. A proteção de conflito/versionamento da Fase 4 permanece obrigatória.
+
+Alternativas descartadas:
+- renomear somente a legenda local do Titon;
+- bloquear totalmente o PDF quando outro operador estiver presente;
+- enviar nome/ref/fileId do documento à telemetria para correlacionar presença.
+
+Riscos tratados:
+- metadado de nome pode incrementar `version`; a resposta confirmada atualiza a baseline do Titon;
+- se conteúdo mudar durante a renomeação, a baseline não é adotada silenciosamente;
+- fechamento abrupto pode não executar release; TTL de 75 s remove presença órfã.
+
+**Próxima ação exata:** concluir integração do cliente/testes, abrir PR, validar suíte e navegador, corrigir qualquer regressão antes de merge. Após publicação, validar com duas contas reais e concluir junto da matriz operacional da Fase 6.

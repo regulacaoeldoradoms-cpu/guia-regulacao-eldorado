@@ -28,10 +28,15 @@ import {
   listDriveFolder,
   preflightDriveSync,
   queryDriveSyncStatus,
+  renameDrivePdf,
   searchDrive,
   startDriveSync,
   uploadDriveSyncChunk
 } from './document-drive.js';
+import {
+  heartbeatDocumentPresence,
+  releaseDocumentPresence
+} from './document-presence.js';
 
 const API_PREFIX = '/api/documents/';
 const OAUTH_CALLBACK = '/api/documents/oauth/callback';
@@ -432,6 +437,46 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
         pageSize: body.pageSize
       });
       return json(result, 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/drive/rename' && request.method === 'PATCH') {
+      const denied = requireCapability(user, 'edit', origin);
+      if (denied) return denied;
+      const body = await safeJson(request);
+      const result = await renameDrivePdf(env, {
+        ref: String(body.ref || ''),
+        baseVersion: String(body.baseVersion || ''),
+        name: String(body.name || '')
+      }, user.username);
+      return json(result, 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/presence/heartbeat' && request.method === 'POST') {
+      const denied = requireCapability(user, 'view', origin);
+      if (denied) return denied;
+      const body = await safeJson(request);
+      const mode = String(body.mode || '').trim().toLowerCase();
+      if (mode === 'edit' && !hasDocumentCapability(user, 'edit')) {
+        return json({
+          error: 'Sua conta não possui permissão de edição na Central de Documentos.',
+          code: 'DOCUMENTS_ACCESS_DENIED'
+        }, 403, origin);
+      }
+      return json(await heartbeatDocumentPresence(env, user, {
+        ref: String(body.ref || ''),
+        sessionId: String(body.sessionId || ''),
+        mode
+      }), 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/presence' && request.method === 'DELETE') {
+      const denied = requireCapability(user, 'view', origin);
+      if (denied) return denied;
+      const body = await safeJson(request);
+      return json(await releaseDocumentPresence(env, user, {
+        ref: String(body.ref || ''),
+        sessionId: String(body.sessionId || '')
+      }), 200, origin);
     }
 
     if (url.pathname === '/api/documents/drive/sync/preflight' && request.method === 'POST') {
