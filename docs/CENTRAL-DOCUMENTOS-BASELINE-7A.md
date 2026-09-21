@@ -262,3 +262,28 @@ A inspeção do fluxo encontrou uma chamada redundante: o cliente executava `/sy
 A primeira otimização 7E remove apenas o preflight HTTP duplicado do cliente. O preflight autoritativo, a preservação de revisão, a sessão resumable e a confirmação final continuam no Worker.
 
 Esta seção é a **baseline pré-otimização**. O ganho será avaliado somente com amostras pós-publicação.
+
+
+## Baseline pré-fast-path de navegação Drive — 21/09/2026
+
+A observação operacional de lentidão na lista e na pesquisa foi confirmada pela telemetria V2 em desktop:
+
+| Operação | n | p50 | p75 | p95 | p99 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Abrir pasta | 6 | 3.972 ms | 4.329 ms | 4.542 ms | 4.568 ms |
+| Pesquisar no Drive | 8 | 4.428 ms | 6.787 ms | 7.072 ms | 7.114 ms |
+| Sincronizar PDF | 9 | 13.855 ms | 17.113 ms | 20.130 ms | 21.716 ms |
+
+A busca lenta não depende de uma grande lista de resultados: foram observadas pesquisas com bucket `1-5` em **4.094 ms**, **6.974 ms** e **7.124 ms**.
+
+Depois da primeira otimização do sync, os dois `replace_pdf` small mais recentes observados foram **11.323 ms** e **13.855 ms**. Isso indica melhora parcial, mas não encerra o gargalo.
+
+Esta é a baseline anterior à segunda otimização 7E. A versão seguinte passa a decompor:
+- renovação/token do Drive;
+- chamada à Files API;
+- normalização/selagem dos itens;
+- geração local do PDF;
+- início/preflight seguro do sync;
+- upload + confirmação.
+
+Nenhuma dessas métricas contém nome, consulta, arquivo, Drive ID ou conteúdo documental.
