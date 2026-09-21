@@ -348,7 +348,7 @@ Durante a homologação com uso real, o operador aprovou **somente** três refin
 
 ### Ordem dos campos
 
-A ordem dos tipos de campo pode ser reorganizada pelo usuário e permanece entre sessões no mesmo navegador. A persistência guarda apenas a sequência de chaves dos campos reconhecidos (por exemplo, `nome_paciente`, `cid`, `crm_rms`), associada localmente ao username institucional. Não guarda valores extraídos, nome do paciente, conteúdo do PDF, ref/fileId ou qualquer dado clínico.
+A ordem dos tipos de campo pode ser reorganizada pelo usuário e permanece vinculada à conta institucional. A persistência usa a API de preferências da Central e grava no backend somente a sequência validada de chaves dos campos reconhecidos; não usa `localStorage`, `sessionStorage` ou IndexedDB. Não guarda valores extraídos, nome do paciente, conteúdo do PDF, ref/fileId ou qualquer dado clínico.
 
 A ordenação continua respeitando a separação por página e as categorias aprovadas. A posição escolhida influencia a ordem dos campos dentro das categorias e também a posição relativa das categorias conforme o primeiro campo configurado.
 
