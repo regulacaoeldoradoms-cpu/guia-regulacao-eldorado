@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7A observabilidade + 7E otimização guiada por evidência do sync Google Drive** |
-| Última ação concluída | PR **#386** integrada na `main`: removido apenas o preflight HTTP duplicado do frontend; o preflight autoritativo permanece dentro de `/sync/start` |
-| Branch atual | nenhuma branch funcional pendente; `docs/central-docs-sync-fastpath-status-20260921` contém somente este registro de handoff |
-| PR atual | PR funcional **#386 mesclada**; PR documental **#387** registra exclusivamente o handoff pós-merge |
-| Último commit relevante | merge funcional `f0aa1ab62778d09c85ee82ff31df3f714bc27635` |
-| Checks e testes | PR funcional: **24 checks funcionais verdes**; branch-only Workers Preview falhou por preview indisponível, sem relação com o código. Pós-merge: checks funcionais verdes; deploy GitHub Pages ainda em andamento no último ponto observado |
-| Decisões tomadas | `/sync/start` continua fazendo `driveSyncPreflightState()` antes de preservar revisão/iniciar upload; confirmação final, headRevisionId, MD5, tamanho, versão, resumable upload e conflito permanecem obrigatórios |
-| Justificativas | PostHog comprovou latência real de ~15–26 s e a inspeção encontrou uma leitura remota duplicada em série, sem ganho de segurança |
-| Alternativas descartadas | remover confirmação final, preservação de revisão ou verificação de conflito: descartadas por risco de integridade; aumentar chunk sem medir estágio: adiado |
-| Ações externas concluídas | PostHog reconciliado em **Regulação de saúde / Default project (602473)**; nenhuma mudança de OAuth, segredo ou permissão |
-| Pendências e bloqueios | publicação estática do merge concluída; falta colher sync real pós-publicação. `failure_kind`/text_mode ainda acumulam amostra |
-| Riscos conhecidos | a otimização elimina uma chamada serial, mas outras etapas obrigatórias do Drive podem continuar dominando a latência |
-| Métricas / observabilidade | pré-otimização: último small V2 **15.677 ms**; small V1 p95 **18.719 ms**; small V2 p95 **17.403 ms**; medium V2 p95 **25.654 ms** |
-| Próxima ação exata | operador faz um **Ctrl+F5 uma vez**, realiza um sync normal e então comparar a nova amostra V2. Se continuar lento, decompor geração local, start/preflight, upload e confirmação antes de nova otimização |
-| Arquivos e fontes principais | Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; `js/documents.js`; `worker/document-drive.js`; PR #386; PostHog 602473 |
+| Subfase / objetivo atual | **7E — reduzir latência de lista/pesquisa e decompor o sync Google Drive** |
+| Última ação concluída | PostHog confirmou lista ~4–4,6 s, pesquisa ~4–7,1 s e sync ainda ~11–20 s; branch implementou fast-path e nova decomposição técnica |
+| Branch atual | `perf/central-docs-drive-navigation-fastpath-20260921` |
+| PR atual | ainda não aberta neste ponto do registro |
+| Último commit relevante | branch contém fast-path do Worker/frontend, observabilidade por etapa, cache-busters, testes e documentação |
+| Checks e testes | ainda precisam rodar no CI da branch; main anterior permanece o estado produtivo até merge |
+| Decisões tomadas | primeira página 40 itens; sem `orderBy` remoto redundante; mapeamento concorrente limitado; reutilização de chaves criptográficas; `cacheKey` somente para PDF; snapshot de pasta somente em memória para resposta visual imediata; pesquisa remota continua autoritativa |
+| Justificativas | a latência também ocorre em pesquisas com apenas 1–5 resultados; o código fazia trabalho local serial após a Files API e repetia ordenação/derivação criptográfica desnecessária |
+| Alternativas descartadas | persistir índice/nome de arquivos no navegador ou PostHog: descartado por privacidade/consistência; remover validações/refs seladas: descartado por segurança |
+| Ações externas concluídas | PostHog confirmado em **Regulação de saúde / Default project (602473)**; nenhuma mudança OAuth, segredo ou permissão |
+| Pendências e bloqueios | validar CI/navegador, integrar/publicar, depois colher novas métricas `drive_token_ms`, `drive_api_ms`, `drive_map_ms`, `build_ms`, `drive_start_ms`, `drive_upload_ms` |
+| Riscos conhecidos | snapshot local pode mostrar resultado de pasta já carregada por poucos segundos enquanto a pesquisa autoritativa atualiza; não é persistido e o remoto sempre substitui |
+| Métricas / observabilidade | V2 desktop: pasta p95 **4.542 ms**; pesquisa p95 **7.072 ms**; sync p95 **20.130 ms**; sync small recentes pós-#386 **11.323 ms** e **13.855 ms** |
+| Próxima ação exata | abrir PR, validar CI completo, integrar/publicar se verde; depois Ctrl+F5 uma vez e uso normal de pasta/pesquisa/sync para localizar a etapa dominante pelos novos tempos |
+| Arquivos e fontes principais | Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; `js/documents.js`; `worker/document-drive.js`; observability frontend/backend; PostHog 602473 |
 
 ## Histórico recuperável
 
@@ -4303,3 +4303,42 @@ Estado pós-merge observado antes de encerrar este registro:
 - não declarar ganho de desempenho antes de tráfego real com essa versão.
 
 **Próxima ação exata:** executar **Ctrl+F5 uma vez**, fazer um sync real e medir o novo `drive_sync_completed` V2. Se a latência continuar alta, instrumentar tempos por estágio antes de alterar outra proteção.
+
+
+## Fase 7E — lista/pesquisa Drive também confirmadas lentas — 21/09/2026
+
+O operador informou que, além da sincronização, a própria lista da Central e a pesquisa por nome demoram muito mais que a interface nativa do Google Drive.
+
+Evidência PostHog V2 desktop:
+- pasta: n=6, p50 **3.972 ms**, p95 **4.542 ms**;
+- pesquisa: n=8, p50 **4.428 ms**, p95 **7.072 ms**;
+- buscas com apenas 1–5 resultados chegaram a **4.094 ms**, **6.974 ms** e **7.124 ms**;
+- sync: n=9, p50 **13.855 ms**, p95 **20.130 ms**;
+- dois syncs small recentes após a PR #386: **11.323 ms** e **13.855 ms**.
+
+Diagnóstico de código:
+- primeira página solicitava 80 itens;
+- Drive recebia `orderBy=folder,name_natural` e o frontend ordenava novamente;
+- normalização dos itens era serial;
+- derivação/importação AES/HMAC era repetida por item;
+- `cacheKey` era calculado mesmo para itens que não são PDF;
+- busca sempre aguardava a chamada remota antes de mostrar qualquer correspondência.
+
+Branch criada: `perf/central-docs-drive-navigation-fastpath-20260921`.
+
+Implementação:
+- 40 itens na primeira página e 80 apenas em paginação;
+- remoção do `orderBy` remoto redundante;
+- normalização concorrente com limite 16;
+- cache de chaves criptográficas no isolate;
+- `cacheKey` somente para PDF;
+- fotografia da pasta atual somente em memória da aba, permitindo redesenho imediato e correspondência local instantânea enquanto o Drive remoto confirma;
+- resultado remoto continua substituindo a fotografia local e é autoritativo;
+- nova telemetria técnica para token/API/mapeamento e build/start/upload do sync.
+
+Privacidade:
+- nenhum nome de arquivo, termo pesquisado ou Drive ID é enviado ao PostHog;
+- nenhuma listagem/nome novo é persistido em localStorage, sessionStorage ou IndexedDB;
+- referências continuam seladas.
+
+**Próxima ação exata:** CI + PR + publicação. Após isso, medir uma operação real para decidir se o restante da demora está no token OAuth, Files API, selagem local, geração do PDF, início seguro ou upload/confirmação.
