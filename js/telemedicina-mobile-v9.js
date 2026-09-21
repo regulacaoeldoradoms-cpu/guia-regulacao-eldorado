@@ -122,7 +122,10 @@
   async function ensureDashboard(force = false) {
     if (cache.loaded && !force) return cache;
     if (cache.loading && !force) return cache.loading;
-    cache.loading = auth.api('/api/telemedicina/dashboard', { method: 'GET' }).then((payload) => {
+    const dashboardRequest = window.TelemedicineNetworkRetry?.readDashboard
+      ? window.TelemedicineNetworkRetry.readDashboard(auth)
+      : auth.api('/api/telemedicina/dashboard', { method: 'GET' });
+    cache.loading = dashboardRequest.then((payload) => {
       cache.today = payload.today || new Date().toISOString().slice(0, 10);
       cache.followups = new Map((Array.isArray(payload.followups) ? payload.followups : []).map((item) => [item.id, item]));
       cache.patients = new Map((Array.isArray(payload.patients) ? payload.patients : []).map((item) => [item.id, item]));
