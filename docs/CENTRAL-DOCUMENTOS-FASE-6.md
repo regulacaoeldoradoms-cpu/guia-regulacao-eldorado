@@ -323,3 +323,17 @@ Privacidade:
 - limpeza acontece por fechamento explícito ou TTL quando navegador/conexão termina abruptamente.
 
 A presença é uma proteção operacional adicional da Fase 6; não substitui versionamento, preflight nem proteção de conflito da Fase 4.
+
+
+## Refinamento de uso da IA documental — painel compacto e campos copiáveis — 21/09/2026
+
+Durante a homologação operacional, o operador definiu que a IA documental deve aparecer pronta para uso, sem textos explicativos ocupando a área principal.
+
+Decisão:
+- ao abrir o painel, a ação principal visível é **Extrair dados do PDF**;
+- regras de segurança, proveniência e detalhes técnicos permanecem acessíveis por um botão discreto **i**;
+- o chat documental permanece disponível, mas só aparece após uma extração concluída e fica recolhido por padrão;
+- resultados continuam separados por página e passam a ser organizados visualmente em **Paciente**, **Encaminhamento**, **Solicitação** e **Profissional**;
+- cada campo extraído pode ser copiado individualmente, além de **Copiar esta página** e **Copiar tudo**.
+
+A mudança é exclusivamente de apresentação/uso dos dados estruturados que a V8C.2 já devolve. Não altera prompt, modelo, provider, concorrência, número de chamadas, tokens ou neurons por extração.
