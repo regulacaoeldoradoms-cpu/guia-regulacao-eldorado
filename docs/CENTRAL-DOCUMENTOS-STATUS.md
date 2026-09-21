@@ -3478,3 +3478,28 @@ Nenhuma alteração em Drive, Titon, IA, permissões, presença simultânea ou r
 Branch: `feat/central-docs-list-ferrari-red-20260921`.
 
 **Próxima ação exata:** validar CI/PR; se verde, integrar/publicar e colher aceite visual na Central real. A Fase 6 continua aberta.
+
+
+## Lista de PDFs — limpeza visual e vermelho Ferrari — INTEGRADO E PUBLICADO — 21/09/2026
+
+Ajuste integrado pela PR **#357**, merge `10f87f832fd3187a372f1d65cb6af1aed391cd5e`.
+
+Resultado:
+- texto auxiliar **“Duplo clique ou Enter”** removido da lista;
+- duplo clique e `Enter` continuam funcionando normalmente;
+- botão **Abrir no Titon** permanece no mobile/touch;
+- selo **PDF** passou para vermelho Ferrari `#ff2800`, com fundo vermelho muito claro;
+- marcador vertical do item selecionado usa o mesmo vermelho Ferrari;
+- fundo selecionado foi harmonizado com tom vermelho muito claro;
+- coluna de ação fica oculta quando vazia;
+- ações **Já no editor** e **Selecionar para unir** continuam aparecendo quando o fluxo de união exige.
+
+Validação:
+- 23/23 workflows GitHub Actions no PR: `success`;
+- Cloudflare Pages da branch: `success`;
+- pós-merge em `main`: **27/27 check-runs** `success`;
+- Workers Builds produtivo: `success`;
+- nenhuma alteração em Drive, IA, Titon, presença simultânea, permissões ou regras de negócio.
+
+**Fase atual:** Fase 6 ainda aberta para homologação operacional humana.
+**Próxima ação exata:** operador validar visualmente a lista em produção; depois continuar a matriz restante da Fase 6.
