@@ -4023,3 +4023,34 @@ Conclusão:
 
 **Próxima ação exata:** executar a baseline 7A no projeto correto: confirmar propriedades de cada evento, calcular p75/p95/p99 para abertura/prontidão/sincronização/IA, medir cache hit/miss e taxas de falha do Drive, então propor SLOs iniciais sem conteúdo sensível.
 
+## Fase 7C — falha ao renomear após sincronização do PDF editado — DIAGNÓSTICO CONFIRMADO / EM CORREÇÃO — 21/09/2026
+
+Incidente real observado no Titon:
+- operador uniu PDFs;
+- a sincronização do conteúdo com o Google Drive foi concluída e a interface exibiu **Sincronizado com o Google Drive**;
+- em seguida, ao renomear o mesmo PDF, o Titon exibiu **Falha: o nome não foi alterado no Google Drive**.
+
+Diagnóstico no estado atual da `main`:
+- após `replace_pdf`, o backend devolve uma referência confirmada com prova efêmera do conteúdo salvo;
+- o Google Drive pode incrementar o campo técnico `version` depois do recebimento confirmado, mesmo sem trocar o head binário do PDF;
+- o fluxo de sincronização já trata esse caso com `confirmedBaselineMatches()`, aceitando somente uma versão posterior quando a referência prova: mesmo usuário, mesmo arquivo, mesmo head revision, mesmo MD5, mesmo tamanho, mesmo escopo e prova ainda válida;
+- o fluxo de **renomeação** ainda fazia comparação estrita `before.version !== baseVersion` e não reutilizava essa reconciliação;
+- por isso, logo após uma união + upload confirmado, uma atualização técnica posterior da versão do Drive pode gerar falso `DRIVE_VERSION_CONFLICT` na renomeação.
+
+Correção aprovada para a branch `fix/titon-rename-after-drive-sync-20260921`:
+- reutilizar a mesma prova confirmada de conteúdo já adotada no sync;
+- só reconciliar versão posterior na renomeação quando o **nome atual no Drive ainda é exatamente o nome-base que o usuário tinha aberto**, evitando sobrescrever uma renomeação concorrente real;
+- frontend enviará `baseName` junto de `baseVersion`;
+- se conteúdo ou nome tiverem mudado externamente, o conflito real continuará bloqueando a renomeação;
+- melhorar a mensagem inline para diferenciar conflito real de falha genérica;
+- adicionar regressão automatizada para o contrato.
+
+Alternativas descartadas:
+- remover verificação de versão: inseguro;
+- simplesmente buscar a versão mais recente e renomear: poderia sobrescrever alteração concorrente;
+- retry cego no frontend: repetiria o mesmo conflito sem provar que a divergência é apenas técnica.
+
+**Fase atual:** Fase 7 — robustez e otimização contínua. Esta correção pertence à 7C — robustez e recuperação.
+
+**Próxima ação exata:** implementar a reconciliação conservadora, validar CI completo, integrar somente com checks verdes e publicar para reteste do fluxo união → sync → renomeação.
+
