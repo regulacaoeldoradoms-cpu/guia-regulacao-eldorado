@@ -3837,3 +3837,44 @@ Alternativas descartadas:
 **Fase atual:** Fase 6 — Automação operacional, homologação humana ainda aberta.
 
 **Próxima ação exata:** validar CI e navegador; integrar somente se verde; depois o operador deve abrir um PDF real, digitar no rascunho, testar `Ctrl+A`/`Ctrl+C`, fechar/reabrir a janelinha e confirmar que trocar de PDF limpa o conteúdo.
+
+
+## Titon — bloco de notas temporário — INTEGRADO E PUBLICADO PARA VALIDAÇÃO — 21/09/2026
+
+O refinamento solicitado durante a homologação real do OCR foi integrado pela PR **#372**, merge `7fe65ed2d12f4be9ebb5a8142cefa5f24db762e3`.
+
+Evidência pré-merge do head funcional `38b06e78a370e0cf5d7ba335fab1bb5c25254b3b`:
+- **23/23 workflows GitHub Actions** concluídos com `success`;
+- Central de Documentos — Fases 1–6: sucesso;
+- navegador/PDF.js real: sucesso;
+- bundle de staging e governança: sucesso;
+- branch estava **0 commits atrás da main** antes do merge.
+
+Evidência pós-merge:
+- **27/27 check-runs** do commit final concluídos com `success`;
+- **Cloudflare Pages: success**;
+- **Workers Builds: success**;
+- build/status do deploy: success.
+
+Comportamento publicado:
+- novo botão pequeno de bloco de notas na barra lateral esquerda do Titon;
+- abre uma janela compacta de rascunho sobre o visualizador;
+- `Ctrl+A`, seleção e `Ctrl+C` permanecem nativos do campo de texto;
+- fechar e reabrir somente a janelinha preserva o texto enquanto o mesmo PDF continua aberto;
+- `Escape` fecha apenas a janelinha;
+- fechar o Titon ou trocar de PDF apaga integralmente o rascunho;
+- não existe Salvar nem autosave;
+- `spellcheck=false` foi mantido para evitar dependência de correção ortográfica do navegador;
+- o rascunho não é gravado em D1, localStorage, sessionStorage, IndexedDB, Google Drive ou backend;
+- nenhum conteúdo do rascunho é enviado à IA ou ao PostHog/observabilidade;
+- o texto nunca é incorporado ao PDF.
+
+Cache-busters publicados:
+- `/css/documents.css?v=20260921-8`;
+- `/js/documents.js?v=20260921-6`.
+
+O **Caso 14 — OCR local em PDF-imagem** também foi registrado como **aprovado em uso real** a partir da validação do operador. O manuscrito médico de baixa legibilidade permanece uma limitação natural do reconhecimento e motivou este Caso 15 separado.
+
+**Fase atual:** Fase 6 — Automação operacional, ainda aberta para homologação humana dos casos restantes.
+
+**Próxima ação exata:** no Portal real, executar `Ctrl+F5`, abrir um PDF no Titon, clicar no novo botão de bloco de notas, digitar um rascunho, testar `Ctrl+A` + `Ctrl+C`, fechar/reabrir somente a janelinha e confirmar que o texto permanece; depois fechar/trocar o PDF e confirmar que o rascunho foi apagado.
