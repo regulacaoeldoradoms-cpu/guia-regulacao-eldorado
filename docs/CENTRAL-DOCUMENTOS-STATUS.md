@@ -3263,3 +3263,34 @@ Nota de governança: o UUID da Worker Version **não deve ser tratado como ident
 A PR #349, que integrou estas correções de manutenção, concluiu o pós-merge com **27/27 checks verdes** e Workers Builds `success`. A versão gerada por esse commit foi `ca0197db-1f06-4151-87fb-5162c3747ecb`; não tratá-la como constante eterna.
 
 **Próxima ação exata:** validar no navegador real o botão/painel/extrator com conta que possua `extract`; depois concluir a matriz operacional da Fase 6.
+
+
+## UX da Central — lista integral e Titon integral — IMPLEMENTAÇÃO PARA VALIDAÇÃO — 20/09/2026
+
+Decisão aprovada pelo operador durante a Fase 6: remover a divisão permanente de tela entre lista e visualizador/editor. A mudança resolve a baixa largura disponível para nomes de arquivos sem introduzir letreiro ou animação contínua.
+
+Escopo implementado na branch `feat/central-docs-titon-fullscreen-20260920`:
+- a lista passa a ocupar a largura integral da área da Central;
+- Titon e lista usam a mesma célula de layout, com Titon em primeiro plano enquanto um PDF está aberto;
+- a lista não é desmontada, recarregada nem consultada novamente ao fechar o Titon;
+- desktop: clique simples seleciona; duplo clique abre; `Enter` abre o item selecionado;
+- mobile/touch: botão explícito **Abrir no Titon**;
+- X do Titon fecha somente o documento e devolve foco ao item selecionado;
+- browser/lista ficam `inert` enquanto Titon está em primeiro plano, evitando foco de teclado em controles invisíveis;
+- durante **Unir PDF**, o painel ganhou **Escolher PDF da Central**; a lista pode vir temporariamente ao primeiro plano sem destruir a sessão do editor e retorna ao Titon após selecionar o PDF;
+- `Escape` cancela somente esse modo temporário de seleção para união.
+
+Preservado:
+- permissões/capabilities;
+- OAuth e Drive;
+- cache criptografado;
+- autosync e regras da Fase 4;
+- IA documental V8C.2;
+- background da IA continua `false`;
+- observabilidade sem conteúdo sensível.
+
+Alternativa descartada: letreiro/marquee para nomes longos. O problema é resolvido estruturalmente oferecendo largura integral à lista.
+
+Risco principal tratado: a união de outro PDF dependia da lista lateral visível. A nova ação **Escolher PDF da Central** preserva esse fluxo sem reintroduzir a divisão permanente.
+
+**Próxima ação exata:** CI/PR desta implementação; se verde, integrar e publicar. Depois o operador fará validação visual real de largura, duplo clique, Enter, botão mobile, X com retorno ao mesmo ponto e união de PDFs. A Fase 6 continua aberta até seu aceite operacional completo.
