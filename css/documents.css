@@ -232,6 +232,7 @@
   cursor: default;
   user-select: text;
 }
+.documents-viewer-head #documentsViewerTitle[hidden] { display: none !important; }
 .documents-viewer-head #documentsViewerTitle.is-selectable { cursor: text; }
 .documents-viewer-head #documentsViewerTitle.is-selected {
   background: rgba(255,255,255,.14);
