@@ -3085,19 +3085,16 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 
 | Campo | Estado |
 | --- | --- |
-| Fase/subfase | Fase 6 — 6A–6E integradas na main; aguardando somente validação operacional real |
-| Último resultado real | Fase 5 encerrada: V8C.2 10/10 em 4,524 s; IA documental publicada; PR #349 pós-merge com 27/27 checks e Workers Builds verdes |
-| Baseline IA documental | V8C.2 — `phase5e-v8c2-semantic-json` |
-| Runtime próximo reteste | nenhum — publicação produtiva concluída |
-| Pages próximo reteste | nenhum — Fase 6 já está integrada; falta validação operacional real |
-| Provider | V8C.2: Gemma 4 principal; Qwen 3.8 fallback; Moondream configurado, mas fast vision desligado em produção; Workers AI free-only |
-| Custo | requisito permanente R$ 0; sem Gateway/prepaid/pay-as-you-go |
-| Fast vision | `DOCUMENTS_AI_FAST_VISION_ENABLED=false` em produção; não faz parte do caminho normal publicado |
-| Janela V6 | encerrada fail-closed; HTTP bloqueado confirmado; não reutilizar |
-| Produção | IA documental normal publicada; `enabled=true`, `processing=true`; background antecipatório permanece fail-closed |
-| Próxima ação exata | validar no Portal real que conta com `extract` vê/abre a IA e executa uma extração por clique; depois retomar a matriz operacional restante da Fase 6 |
-| Meta | Fase 6: reduzir tempo operacional mensuravelmente sem perda de controle do usuário |
-| Fontes | Guia Mestre V1.1; FASE-6; FASE-2; FASE-5; STATUS; js/documents.js; js/document-viewer.js; js/document-cache.js |
+| Fase/subfase | **Fase 7 — Robustez e otimização contínua — ATIVA** |
+| Último resultado real | Fase 6 encerrada por aceite explícito do responsável operacional em 21/09/2026; OCR local já tinha aceite real e os refinamentos do Titon estão integrados/publicados |
+| Baseline funcional | Central/Titon com PDF.js, editor, Drive controlado, V8C.2, cache/prefetch, TextLayer, OCR local e bloco temporário móvel/redimensionável |
+| Critério Fase 6 | Aceito pelo responsável após uso real; não inventar percentual retroativo de economia de tempo |
+| Limitação de medição | Não há série final antes/depois persistida suficiente para percentual único da Fase 6; Fase 7 deve criar baselines e SLOs reais |
+| Produção | Escrita continua controlada pelo Drive/gates; IA normal disponível conforme capabilities; background antecipatório continua fail-closed |
+| PostHog | Conector disponível nesta sessão não aponta para o projeto analítico do Portal; não usar seus dados como baseline da Central |
+| Próxima ação exata | auditar eventos/propriedades técnicos allowlisted no código, mapear lacunas para p75/p95/p99, cache hit/miss, falhas Drive, PDFs grandes, mobile/desktop e IA; depois conectar ao projeto PostHog correto e definir SLOs |
+| Meta | Fase 7: SLOs baseados em dados reais, falhas recuperáveis e observabilidade estável |
+| Fontes | Guia Mestre V1.1; FASE-7; STATUS; FASE-6/HOMOLOGACAO-6; main atual; observability frontend/backend; PDF.js/cache/Drive/IA |
 
 ## Histórico recuperável
 
@@ -3942,3 +3939,49 @@ Cache-busters publicados:
 **Fase atual:** Fase 6 — Automação operacional, ainda aberta para homologação humana dos casos restantes.
 
 **Próxima ação exata:** no Portal real, executar `Ctrl+F5`, abrir um PDF e o bloco de notas; confirmar que nasce na margem escura sem cobrir a folha quando houver espaço, mover pelo cabeçalho e testar redimensionamento pelas quatro bordas e quatro quinas. Depois fechar/reabrir só o bloco para confirmar retenção da geometria e trocar de PDF para confirmar reset.
+
+## Fase 6 — ENCERRADA E APROVADA; Fase 7 — ABERTA — 21/09/2026
+
+O responsável operacional autorizou formalmente o encerramento da Fase 6 com a declaração **“fase 6 aprovada, pode encerrar”**.
+
+### Encerramento da Fase 6
+
+Resultado:
+- 6A–6E permanecem integradas na `main`;
+- refinamentos de uso real do Titon também permanecem baseline;
+- OCR local já tinha aprovação explícita em documento real;
+- bloco de notas temporário e sua ergonomia já estavam integrados/publicados;
+- nenhuma permissão foi ampliada;
+- nenhuma nova escrita automática no Drive foi introduzida;
+- política de observabilidade sem conteúdo sensível permanece;
+- IA antecipatória permanece fail-closed.
+
+Aprovação humana final encerra a homologação operacional pendente. O projeto **não inventa** um percentual retroativo de economia de tempo: os artefatos atuais não preservam uma série quantitativa completa antes/depois. Essa limitação foi aceita como não bloqueante pelo encerramento explícito do responsável e passa a ser tratada corretamente na Fase 7, cuja finalidade é justamente criar baselines p75/p95/p99 e SLOs baseados em dados reais.
+
+Alternativa descartada:
+- manter a Fase 6 aberta indefinidamente apenas para reconstruir uma métrica histórica que não foi preservada. Isso contrariaria a regra do Guia de não usar pendências não bloqueantes como desculpa para manter a fase aberta.
+
+### Abertura da Fase 7
+
+Novo documento: `docs/CENTRAL-DOCUMENTOS-FASE-7.md`.
+
+Escopo inicial:
+- p75/p95/p99;
+- cache hit/miss;
+- falhas do Drive;
+- PDFs grandes;
+- mobile/desktop;
+- tempo de IA;
+- testes de regressão e recuperação;
+- SLOs baseados em dados reais;
+- painel técnico estável e sem dados sensíveis.
+
+Bloqueio externo identificado:
+- o conector PostHog exposto nesta sessão não corresponde ao projeto analítico do Portal; portanto ele não será usado para afirmar métricas da Central.
+
+Risco principal da abertura da Fase 7:
+- otimizar com base em amostra errada ou telemetria insuficiente. A primeira subfase é, portanto, inventário de instrumentação e baseline, não alteração de desempenho.
+
+**Fase atual:** Fase 7 — Robustez e otimização contínua.  
+**Próxima ação exata:** auditar a instrumentação técnica existente da Central no código e reconciliar com o projeto PostHog correto antes de definir SLOs ou modificar performance.
+
