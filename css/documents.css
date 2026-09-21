@@ -179,7 +179,20 @@
 .documents-item-action { color: #2b6fa7; font-size: .74rem; font-weight: 850; white-space: nowrap; }
 .documents-pagination { padding: 12px; text-align: center; border-top: 1px solid #edf2f6; }
 
-.documents-viewer { position: relative; top: auto; min-height: 640px; }
+.documents-viewer {
+  position: relative;
+  top: auto;
+  min-height: 640px;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.documents-viewer.has-shared-presence {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245,158,11,.22), 0 10px 30px rgba(20,55,90,.08);
+}
+.documents-viewer.has-shared-editor {
+  border-color: #e97816;
+  box-shadow: 0 0 0 4px rgba(233,120,22,.28), 0 10px 30px rgba(20,55,90,.08);
+}
 .documents-viewer-head {
   min-height: 64px;
   display: flex;
@@ -194,8 +207,79 @@
   min-width: 0;
   flex: 1 1 auto;
 }
-.documents-viewer-head span { display: block; opacity: .7; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
-.documents-viewer-head strong { display: block; width: 100%; max-width: 100%; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.documents-viewer-head #documentsViewerModeLabel {
+  display: block;
+  opacity: .7;
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.documents-viewer-title-shell {
+  min-width: 0;
+  margin-top: 3px;
+}
+.documents-viewer-head #documentsViewerTitle {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 7px;
+  padding: 2px 4px;
+  margin-left: -4px;
+  cursor: default;
+  user-select: text;
+}
+.documents-viewer-head #documentsViewerTitle.is-selectable { cursor: text; }
+.documents-viewer-head #documentsViewerTitle.is-selected {
+  background: rgba(255,255,255,.14);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.2);
+}
+.documents-viewer-head #documentsViewerTitle:focus-visible {
+  outline: 2px solid rgba(255,255,255,.78);
+  outline-offset: 2px;
+}
+.documents-viewer-rename {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.documents-viewer-rename[hidden] { display: none !important; }
+.documents-viewer-rename input {
+  width: min(100%, 760px);
+  min-width: 120px;
+  border: 1px solid rgba(255,255,255,.42);
+  border-radius: 8px 0 0 8px;
+  background: #fff;
+  color: #102f4d;
+  padding: 7px 9px;
+  font: inherit;
+  font-weight: 800;
+  outline: none;
+}
+.documents-viewer-rename input:focus {
+  border-color: #f5b342;
+  box-shadow: 0 0 0 2px rgba(245,179,66,.25);
+}
+.documents-viewer-rename-extension {
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  border: 1px solid rgba(255,255,255,.42);
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: #eaf2f8;
+  color: #244760;
+  padding: 0 9px;
+  font-size: .82rem;
+  font-weight: 850;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 1;
+}
 .documents-close-viewer {
   width: 38px; height: 38px; flex: 0 0 38px;
   border: 1px solid rgba(255,255,255,.2);
@@ -208,6 +292,37 @@
 .documents-viewer-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .documents-edit-trigger { border-color: rgba(255,255,255,.22); color: #fff; }
 .documents-edit-trigger:hover { background: rgba(255,255,255,.16); }
+
+.documents-presence-notice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px;
+  border-bottom: 1px solid #f4cf8b;
+  background: #fff7e8;
+  color: #8a4b06;
+  font-size: .8rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+.documents-presence-notice[hidden] { display: none !important; }
+.documents-presence-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 4px rgba(245,158,11,.16);
+}
+.documents-viewer.has-shared-editor .documents-presence-notice {
+  background: #fff1df;
+  border-bottom-color: #eda65e;
+  color: #7a3504;
+}
+.documents-viewer.has-shared-editor .documents-presence-dot {
+  background: #e97816;
+  box-shadow: 0 0 0 4px rgba(233,120,22,.2);
+}
 
 .documents-editor {
   border-bottom: 1px solid #d8e5ee;
@@ -337,6 +452,14 @@
 .documents-pdf-toolbar #pdfZoomResetButton {
   min-width: 70px;
   font-variant-numeric: tabular-nums;
+  color: #111827 !important;
+  background: #fff;
+  border-color: #cbd5e1;
+}
+.documents-pdf-toolbar #pdfZoomResetButton #pdfZoomLabel {
+  color: #111827 !important;
+  opacity: 1 !important;
+  font-weight: 800;
 }
 
 .documents-pdf-page-count {
