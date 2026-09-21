@@ -197,3 +197,14 @@ Critério de regressão:
 - uma renomeação concorrente ou mudança real continua impedindo confirmação;
 - nenhuma falha pode ser apresentada como sucesso sem GET confirmando o nome esperado.
 
+### Homologação real do incidente de renomeação
+
+Resultado em 21/09/2026: **aprovado em uso real**.
+
+O operador repetiu o fluxo união → sincronização confirmada → renomeação após a publicação da confirmação estabilizada e informou que passou a funcionar.
+
+Estado:
+- incidente encerrado;
+- sem nova alteração funcional necessária;
+- proteções de concorrência e confirmação do Google Drive permanecem obrigatórias.
+

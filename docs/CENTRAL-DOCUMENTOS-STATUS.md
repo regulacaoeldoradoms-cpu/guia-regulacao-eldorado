@@ -4148,3 +4148,23 @@ A primeira correção (#379) estava efetivamente implantada quando o segundo tes
 **Fase atual:** Fase 7 — robustez e otimização contínua.  
 **Próxima ação exata:** operador deve executar `Ctrl+F5` e repetir união → aguardar sincronização confirmada → renomear. Se ainda falhar, copiar/enviar exatamente a nova mensagem inline, que agora corresponde à causa devolvida pelo backend, para diagnóstico sem adivinhação.
 
+## Fase 7C — renomeação pós-sync — HOMOLOGADA EM USO REAL — 21/09/2026
+
+O operador repetiu o fluxo real após a publicação da PR #381 e confirmou: **“agora funcionou”**.
+
+Caso homologado:
+- unir PDFs no Titon;
+- aguardar confirmação **Sincronizado com o Google Drive**;
+- alterar o nome do documento;
+- confirmar a renomeação;
+- o erro anterior não voltou a ocorrer.
+
+Conclusão:
+- a confirmação pós-PATCH estabilizada resolveu o incidente observado;
+- a renomeação após sincronização de PDF unido fica aceita como recuperação funcional da Fase 7C;
+- proteções de conflito, versão, conteúdo e concorrência permanecem ativas;
+- não há pendência adicional deste incidente neste momento.
+
+**Fase atual:** Fase 7 — robustez e otimização contínua.  
+**Próxima ação exata:** retomar a subfase 7A de baseline/observabilidade e tratar novos incidentes somente se surgirem em uso real.
+
