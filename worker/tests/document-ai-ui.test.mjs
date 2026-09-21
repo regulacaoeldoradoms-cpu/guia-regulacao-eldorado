@@ -140,7 +140,10 @@ test('chat continua secundário e usa somente evidências estruturadas em memór
   assert.match(js, /evidence = \[\.\.\.state\.documentAiEvidence\.values\(\)\]/);
   assert.match(js, /data-ai-chat-page/);
   assert.match(router, /url\.pathname === '\/api\/documents\/ai\/chat'/);
-  const chatBlock = asyncFunctionSlice(js, 'askDocumentAiQuestion', 'renderDocumentAiPanel');
+  const chatStart = js.indexOf('  async function askDocumentAiQuestion(');
+  const chatEnd = js.indexOf('  function renderDocumentAiPanel(', chatStart);
+  assert.ok(chatStart >= 0 && chatEnd > chatStart, 'bloco de chat documental ausente');
+  const chatBlock = js.slice(chatStart, chatEnd);
   assert.doesNotMatch(chatBlock, /body:\s*JSON\.stringify\([^)]*(?:state\.pdfItem|filename|fileId|item\.ref)/s);
 });
 
