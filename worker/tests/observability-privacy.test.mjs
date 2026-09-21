@@ -275,3 +275,91 @@ test('Fase 6 aceita somente telemetria técnica de background', () => {
   }), null);
 });
 
+test('Fase 7A aceita viewport coarse sem identificador de dispositivo', () => {
+  const clean = sanitizeObservabilityEvent({
+    event: 'pdf_ready',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 520,
+      source: 'cache',
+      size_bucket: 'small',
+      cache_state: 'hit',
+      viewport_class: 'desktop'
+    }
+  });
+
+  assert.ok(clean);
+  assert.equal(clean.properties.viewport_class, 'desktop');
+  assert.equal(sanitizeObservabilityEvent({
+    event: 'pdf_ready',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 520,
+      source: 'cache',
+      size_bucket: 'small',
+      cache_state: 'hit',
+      viewport_class: 'desktop-1920x1080'
+    }
+  }), null);
+});
+
+test('Fase 7A aceita apenas categorias técnicas de falha e modo textual', () => {
+  const failedSync = sanitizeObservabilityEvent({
+    event: 'drive_sync_failed',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 3000,
+      operation: 'replace_pdf',
+      size_bucket: 'small',
+      status_code: 409,
+      failure_kind: 'conflict',
+      viewport_class: 'desktop'
+    }
+  });
+  assert.ok(failedSync);
+  assert.equal(failedSync.properties.failure_kind, 'conflict');
+
+  const textReady = sanitizeObservabilityEvent({
+    event: 'document_text_layer_ready',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 840,
+      text_mode: 'ocr',
+      source: 'local',
+      viewport_class: 'mobile'
+    }
+  });
+  assert.ok(textReady);
+  assert.equal(textReady.properties.text_mode, 'ocr');
+
+  const textFailed = sanitizeObservabilityEvent({
+    event: 'document_text_layer_failed',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 420,
+      text_mode: 'none',
+      source: 'local',
+      failure_kind: 'no_text',
+      viewport_class: 'desktop'
+    }
+  });
+  assert.ok(textFailed);
+
+  assert.equal(sanitizeObservabilityEvent({
+    event: 'document_text_layer_ready',
+    page_id: '123e4567-e89b-12d3-a456-426614174000',
+    properties: {
+      route: '/documentos/',
+      duration_ms: 840,
+      text_mode: 'ocr',
+      source: 'local',
+      extracted_text: 'conteudo proibido'
+    }
+  }), null);
+});
+
