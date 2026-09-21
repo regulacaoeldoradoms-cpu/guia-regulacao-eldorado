@@ -4344,9 +4344,9 @@
     setTemporaryNotepadOpen(false, { focus: false });
     state.temporaryNotepadGeometry = null;
     state.temporaryNotepadUserAdjusted = false;
-    if (els.documentNotepadPanel) {
+    if (els.documentNotepadPanel?.style) {
       for (const property of ['left', 'top', 'width', 'height', 'right', 'bottom']) {
-        els.documentNotepadPanel.style.removeProperty(property);
+        els.documentNotepadPanel.style.removeProperty?.(property);
       }
     }
     if (els.documentNotepadText) els.documentNotepadText.value = '';
