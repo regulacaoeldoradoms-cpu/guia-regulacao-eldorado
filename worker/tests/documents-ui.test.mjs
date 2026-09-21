@@ -1047,7 +1047,7 @@ test('Titon renomeia o PDF real no Drive com extensão protegida e confirmação
   assert.match(client, /viewerRenameInput\?\.addEventListener\('blur',[\s\S]*commitPdfRename\(\)/);
   assert.match(client, /Sincronizando nome com o Google Drive…/);
   assert.match(client, /Nome alterado e sincronizado com o Google Drive\./);
-  assert.match(client, /Falha: o nome não foi alterado no Google Drive\./);
+  assert.match(client, /Falha: \$\{failureMessage\}/);
   assert.ok(router.includes("url.pathname === '/api/documents/drive/rename'"));
   assert.ok(router.includes("requireCapability(user, 'edit', origin)"));
   assert.match(router, /baseName:\s*String\(body\.baseName \|\| ''\)/);
