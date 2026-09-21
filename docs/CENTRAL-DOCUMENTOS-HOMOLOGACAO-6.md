@@ -154,3 +154,29 @@ Pendente de conclusão da validação operacional real da Fase 6; a publicação
 ## Próxima ação
 
 Usar a Central normalmente após o merge #342 e coletar a evidência técnica da sessão. Se os critérios acima forem comprovados, registrar o aceite da Fase 6 e avançar para a Fase 7 — Robustez e otimização contínua.
+
+
+## Ajuste de UX aprovado durante a homologação — lista integral + Titon integral
+
+Antes do aceite final da Fase 6, o operador aprovou simplificar a superfície da Central:
+
+- sem PDF em primeiro plano, a lista ocupa toda a largura útil;
+- no desktop, clique simples seleciona PDF, duplo clique abre no Titon e `Enter` abre o PDF selecionado;
+- em mobile/touch, o PDF oferece ação explícita **Abrir no Titon**;
+- ao abrir, o Titon ocupa a mesma superfície integral e fica em primeiro plano;
+- a lista permanece montada e preservada em segundo plano, sem nova consulta ao Drive ao fechar;
+- o X fecha somente o Titon e devolve foco/visibilidade à lista preservada;
+- pesquisa, pasta, resultados, seleção e posição de rolagem devem permanecer intactos;
+- o fluxo **Unir PDF** preserva a seleção de outro documento: o painel oferece **Escolher PDF da Central**, traz a lista temporariamente ao primeiro plano e retorna ao Titon após a seleção.
+
+### Aceite visual adicional
+
+Na validação humana da Fase 6, confirmar:
+1. lista usa a largura integral quando o Titon está fechado;
+2. clique simples não abre PDF no desktop;
+3. duplo clique e `Enter` abrem o PDF selecionado;
+4. botão **Abrir no Titon** aparece em mobile/touch;
+5. Titon usa largura integral;
+6. X retorna à mesma lista, pesquisa e posição de rolagem;
+7. unir outro PDF continua funcional pela ação **Escolher PDF da Central**;
+8. nenhuma nova consulta ao Drive é causada apenas pelo retorno do Titon à lista.
