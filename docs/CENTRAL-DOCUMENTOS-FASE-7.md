@@ -255,3 +255,31 @@ A 7A permanece **aberta**. Critério para avançar a 7B:
 - recalcular percentis com essas dimensões;
 - somente então propor SLOs iniciais.
 
+
+
+## 7E — primeira otimização guiada por evidência do sync Drive — 21/09/2026
+
+Nova evidência de uso real confirmou que a sincronização de substituição do PDF continua lenta mesmo após a instrumentação 7A.
+
+Amostra observada no PostHog antes desta alteração:
+- último `replace_pdf` small V2: **15.677 ms**;
+- small V1, últimas 24 h: n=26, p95 **18.719 ms**;
+- small V2: n=2, p95 **17.403 ms**;
+- medium V2: n=4, p95 **25.654 ms**.
+
+Diagnóstico no código:
+- o frontend fazia `POST /api/documents/drive/sync/preflight`;
+- logo depois fazia `POST /api/documents/drive/sync/start`;
+- `startDriveSync()` já executa `driveSyncPreflightState()` antes de preservar revisão e antes de iniciar qualquer upload;
+- portanto o mesmo preflight autoritativo fazia uma leitura de metadados do Google Drive duas vezes em série.
+
+Correção na branch `perf/central-docs-drive-sync-fastpath-20260921`:
+- remover somente o preflight HTTP redundante do frontend;
+- manter o preflight obrigatório dentro de `/sync/start`;
+- manter preservação da revisão anterior, sessão resumable, confirmação do upload, checagem de versão/head/MD5/tamanho e bloqueio de conflito;
+- renovar o cache-buster do cliente para `documents.js?v=20260921-11`;
+- adicionar regressão estática exigindo que o frontend não faça o preflight separado e que `startDriveSync()` execute preflight antes de iniciar o upload.
+
+Efeito esperado: eliminar uma chamada serial Worker → Google Drive por sincronização, sem reduzir a integridade nem a detecção de conflito. **Não registrar ganho percentual antes do pós-deploy real.**
+
+Próxima ação: validar CI, integrar se verde e comparar as novas amostras V2 de `drive_sync_completed` com a baseline acima. Se a cauda continuar alta, decompor o tempo entre geração local, start/preflight, upload e confirmação antes da próxima otimização.
