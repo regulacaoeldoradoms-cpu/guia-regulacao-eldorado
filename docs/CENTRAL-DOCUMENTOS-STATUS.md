@@ -3424,3 +3424,36 @@ Escopo:
 Impacto de IA: **zero chamadas adicionais**. A categorização e as cópias usam somente o JSON estruturado já retornado pela V8C.2 no navegador; não alteram provider, prompt, tokens, neurons, modelos ou backend de inferência.
 
 **Próxima ação exata:** validar CI/PR; se verde, integrar/publicar e pedir aceite visual do operador dentro da matriz ainda aberta da Fase 6.
+
+
+## IA documental — painel compacto e resultados por categoria — INTEGRADO E PUBLICADO — 21/09/2026
+
+A implementação foi integrada pela PR **#355**, merge `e913e96843060b21d7ba8a0f3922b2fd386f428b`.
+
+Validação pré-merge do head `95b93180e258a1d4a885e472939fd46992ba3ef4`:
+- **23/23 workflows GitHub Actions** do conjunto final concluídos com `success`;
+- validação Fases 1–6: `success`;
+- navegador/PDF.js real: `success`;
+- Cloudflare Pages da branch: `success`;
+- Workers Builds da branch falhou somente ao tentar Worker Preview, recurso indisponível fora da `main`, sem bypass produtivo;
+- testes confirmam que agrupamento e cópia não executam `fetch`/API e portanto não geram nova inferência.
+
+Resultado pós-merge em `main`:
+- **27/27 check-runs** concluídos com `success`;
+- Cloudflare Pages: `success`;
+- Workers Builds produtivo: `success`;
+- Worker Version gerada por esse merge: `ce5c9377-96c1-4436-af89-2f783edcb10b` — evidência histórica, não identificador permanente.
+
+Estado publicado:
+- painel inicial da IA mostra essencialmente **Extrair dados do PDF**;
+- textos explicativos, regras de proveniência e detalhes técnicos ficam atrás do botão **i**;
+- chat fica oculto antes da extração e recolhido por padrão depois;
+- resultados permanecem separados por página;
+- campos são agrupados visualmente em Paciente, Encaminhamento, Solicitação e Profissional conforme existirem naquela página;
+- cada campo possui cópia individual do valor exibido;
+- permanecem Ver página, Copiar esta página e Copiar tudo;
+- nenhuma alteração em prompt, provider, modelo, concorrência, tokens, neurons ou gates.
+
+**Fase atual:** Fase 6 ainda aberta para homologação operacional humana.
+
+**Próxima ação exata:** o operador deve atualizar a Central com Ctrl+F5, abrir a IA em um PDF real, confirmar o painel compacto, extrair e validar a organização/cópia individual. Esse aceite entra na matriz restante da Fase 6.
