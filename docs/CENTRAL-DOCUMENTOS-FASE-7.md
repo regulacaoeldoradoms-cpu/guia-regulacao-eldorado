@@ -208,3 +208,29 @@ Estado:
 - sem nova alteração funcional necessária;
 - proteções de concorrência e confirmação do Google Drive permanecem obrigatórias.
 
+## 7A — baseline real V1 e cobertura adicional — 21/09/2026
+
+Baseline persistida em `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`.
+
+Resultado da coleta real:
+- cache de PDF já demonstra ganho forte: `pdf_ready` p95 ~544 ms em hit contra ~9,9 s em miss no histórico disponível;
+- últimas 24 h: hit 67,1% com p95 ~515 ms; miss 32,9% com p95 ~16,0 s;
+- primeira página visível nas últimas 24 h: p95 ~7,1 s;
+- pasta Drive: p95 ~5,0 s; pesquisa Drive: p95 ~5,9 s;
+- IA documental: 29 conclusões reais, p95 histórico ~31,9 s; amostra ainda curta e cauda longa;
+- Drive sync: 48 sucessos / 26 falhas no histórico, todas as falhas com HTTP 409; causa ainda não separável pelo schema antigo;
+- `warm_pdf` cancelado tem p95 ~18,9 s e merece revisão depois de distinguir contexto;
+- 3 PDFs `large` e nenhum `very_large`: amostra insuficiente para SLO específico;
+- não havia dimensão mobile/desktop;
+- não havia telemetria de tempo nativo vs OCR.
+
+Decisão:
+- não abrir 7B/SLOs ainda com dimensões críticas ausentes;
+- ampliar somente telemetria técnica coarse e allowlisted;
+- adicionar `viewport_class=mobile|desktop`, `failure_kind` coarse e eventos de resultado da camada textual `native|ocr|none`;
+- manter conteúdo, nomes, IDs, páginas, coordenadas, confiança OCR e texto completamente fora da telemetria.
+
+O catálogo governado de métricas do PostHog não está acessível pela conexão atual por ausência do escopo `data_catalog:read`. A baseline é explicitamente **não canônica** até esse acesso existir.
+
+**Próxima ação:** publicar a cobertura 7A, acumular amostra real e repetir os percentis por viewport/text_mode/failure_kind antes de definir SLOs.
+
