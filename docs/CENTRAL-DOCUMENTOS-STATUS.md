@@ -3580,3 +3580,31 @@ Arquivos em alteração:
 
 **Próxima ação exata:** concluir testes/CI desta branch, abrir PR e integrar somente se os checks relevantes ficarem verdes; após publicação, validar os Casos 10–12 no Portal real.
 
+## Titon — ordem personalizável, confirmação de cópia e renomeação sincronizada — INTEGRADO NA MAIN — 21/09/2026
+
+A PR **#361** foi integrada na `main` pelo merge `a6bfa6d9ed886102aec4ba90eb6e014fcdb121e2`.
+
+Validação do head funcional `24fc6c3e04b9af31c8428b1040750668b24835f0`:
+- **23/23 workflows GitHub Actions** do conjunto final concluídos com `success`;
+- Central de Documentos — Fases 1–6: `success`;
+- navegador/PDF.js real: `success`;
+- governança e bundle de staging: `success`;
+- PR mergeável e integrada sem bypass de proteção.
+
+Resultado integrado:
+- **Organizar campos** permite personalizar a ordem dos tipos de campo copiáveis;
+- a preferência fica vinculada à conta institucional por `/api/documents/preferences`;
+- o backend grava somente a sequência validada de chaves em `auth_document_ai_preferences`; não grava valores extraídos, PDF, ref/fileId ou conteúdo clínico;
+- a alternativa inicial em `localStorage` foi descartada durante o CI por contrariar o contrato de persistência da Central;
+- após cópia individual bem-sucedida, o botão passa para **Copiado** e o campo recebe destaque visual de sucesso durante a sessão do PDF;
+- ao renomear, o Titon mostra **Sincronizando nome com o Google Drive…** durante a gravação;
+- o sucesso **Nome alterado e sincronizado com o Google Drive.** só aparece após resposta positiva do endpoint real de renomeação;
+- erro informa explicitamente que o nome não foi alterado;
+- `Enter` e perda de foco confirmam a renomeação; `Escape` cancela;
+- renomeação continua protegida por capability `edit`, gate de escrita, `baseVersion` e `PATCH /api/documents/drive/rename`;
+- zero novas inferências ou chamadas de IA foram adicionadas.
+
+**Fase atual:** Fase 6 — Automação operacional. A implementação está integrada; falta homologação operacional humana destes três refinamentos.
+
+**Próxima ação exata:** no Portal real, atualizar com Ctrl+F5 e validar os Casos 10–12: reorganizar campos e reabrir para confirmar persistência da conta; copiar campos e conferir o estado **Copiado**; renomear uma vez com `Enter` e outra clicando fora, verificando a confirmação visual e o nome efetivo no Google Drive.
+
