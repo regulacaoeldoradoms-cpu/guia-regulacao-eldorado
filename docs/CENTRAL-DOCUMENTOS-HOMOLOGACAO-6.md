@@ -349,6 +349,10 @@ Aceite:
 - nenhum conteúdo OCR vai para PostHog/observabilidade;
 - nenhum OCR é gravado no Drive automaticamente.
 
+### Evidência real — APROVADO em 21/09/2026
+
+O operador confirmou no Portal autenticado, usando documento real digitalizado, que o OCR local está **funcionando perfeitamente** para o fluxo pretendido. A limitação restante observada é inerente a manuscritos médicos de baixa legibilidade, motivo pelo qual foi aberto o Caso 15 de rascunho manual temporário.
+
 ### Evidência sintética automatizada
 
 O laboratório de navegador cria um PDF de uma página contendo **apenas uma imagem** com texto fictício, sem camada textual PDF. O teste Chromium deve comprovar:
