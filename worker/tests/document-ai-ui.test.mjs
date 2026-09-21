@@ -151,7 +151,7 @@ test('painel IA fica minimalista e organização/cópia não dispara nova infer�
   assert.doesNotMatch(eventBlock, /fetch\(|api\(/);
   assert.match(eventBlock, /copyDocumentAiText\(documentAiFieldDisplay\(field\)\)/);
   assert.match(eventBlock, /state\.documentAiCopiedFields\.add\(documentAiCopyToken\(pageNumber, key\)\)/);
-  assert.match(eventBlock, /fieldCopy\.textContent = '✓ Copiado'/);
+  assert.match(eventBlock, /fieldCopy\.textContent = 'Copiado'/);
 });
 
 test('ordem dos campos é personalizável por conta sem persistir dados extraídos no navegador', async () => {
