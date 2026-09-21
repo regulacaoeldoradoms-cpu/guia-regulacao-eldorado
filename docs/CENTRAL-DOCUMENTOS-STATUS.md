@@ -3803,3 +3803,37 @@ Justificativa: o incidente observado se recuperou sozinho sem deploy, compatíve
 Esta correção **não altera a fase corrente da Central de Documentos**. A Central permanece na **Fase 6 — Automação operacional**, com a homologação humana já documentada como próxima frente.
 
 **Próxima ação exata:** uso normal de `/telemedicina/`; se `Failed to fetch` reaparecer apesar das três tentativas totais, registrar horário e contexto para investigar uma indisponibilidade mais longa. Não provocar falha de rede artificial em produção.
+
+
+## Titon — OCR local homologado em uso real — APROVADO — 21/09/2026
+
+O operador confirmou no Portal autenticado que o OCR local integrado pela PR #368 está funcionando perfeitamente no fluxo real. A limitação observada não é uma regressão do OCR: manuscritos médicos podem continuar semanticamente ilegíveis mesmo quando há reconhecimento parcial.
+
+Decisão: considerar o Caso 14 do OCR local aprovado em uso real e tratar a leitura manual de caligrafia como necessidade operacional separada, atendida por um rascunho efêmero que não altera nem persiste o documento.
+
+## Titon — bloco de notas temporário para manuscritos — EM IMPLEMENTAÇÃO — 21/09/2026
+
+Durante a validação real do OCR local, o operador confirmou que o reconhecimento está funcional e solicitou uma ferramenta mínima para os casos em que manuscritos médicos continuam ilegíveis para OCR.
+
+Branch: `feat/titon-temporary-notepad-20260921`.
+
+Escopo:
+- botão pequeno de bloco de notas na barra lateral esquerda do Titon;
+- janelinha compacta com campo de texto simples;
+- `Ctrl+A` e `Ctrl+C` permanecem nativos do navegador;
+- fechar/reabrir a janelinha mantém o rascunho enquanto o mesmo PDF estiver aberto;
+- fechar ou trocar o PDF apaga o rascunho;
+- `Escape` fecha a janelinha;
+- sem salvar, autosave, backend, Drive, IA ou telemetria de conteúdo.
+
+Justificativa: a ferramenta serve apenas como área de raciocínio/transcrição manual temporária quando TextLayer/OCR não conseguem resolver caligrafia. Não deve produzir uma segunda fonte de verdade nem persistir hipótese clínica.
+
+Alternativas descartadas:
+- persistência por conta;
+- anotação embutida no PDF;
+- envio do texto para IA;
+- sincronização automática do rascunho.
+
+**Fase atual:** Fase 6 — Automação operacional, homologação humana ainda aberta.
+
+**Próxima ação exata:** validar CI e navegador; integrar somente se verde; depois o operador deve abrir um PDF real, digitar no rascunho, testar `Ctrl+A`/`Ctrl+C`, fechar/reabrir a janelinha e confirmar que trocar de PDF limpa o conteúdo.

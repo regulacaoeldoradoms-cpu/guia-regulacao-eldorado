@@ -453,3 +453,22 @@ O Tesseract foi configurado com `workerBlobURL:false` e `cacheMethod:'none'`, ev
 
 Nenhum conteúdo reconhecido é persistido em D1, localStorage, sessionStorage ou IndexedDB.
 
+
+
+## Refinamento operacional aprovado — bloco de notas temporário — 21/09/2026
+
+Durante a homologação do OCR local, foi identificado um caso em que reconhecimento automático não é suficiente: manuscritos médicos de baixa legibilidade. O Titon passa a oferecer um rascunho manual simples e efêmero.
+
+Contrato:
+- botão pequeno na barra lateral do Titon;
+- abre uma janelinha compacta com `textarea`;
+- o navegador mantém `Ctrl+A`, `Ctrl+C` e seleção de texto nativos;
+- fechar a janelinha não apaga o texto do PDF atual;
+- fechar/trocar o PDF limpa o rascunho;
+- `Escape` fecha somente a janelinha;
+- não existe botão Salvar, autosave ou sincronização;
+- nenhum conteúdo é persistido em armazenamento local, D1, Drive ou backend;
+- `spellcheck=false` evita que o campo dependa de correção ortográfica do navegador;
+- nenhum texto do rascunho entra em IA ou PostHog.
+
+O recurso é deliberadamente auxiliar e não modifica o documento. Ele complementa OCR/TextLayer sem transformar hipóteses manuais em dado documental oficial.
