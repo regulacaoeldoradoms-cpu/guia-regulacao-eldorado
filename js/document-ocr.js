@@ -40,10 +40,17 @@
       script.async = true;
       script.dataset.titonOcrRuntime = 'true';
       script.addEventListener('load', () => {
-        if (globalThis.Tesseract?.createWorker) resolve(globalThis.Tesseract);
-        else reject(new Error('Runtime OCR local indisponível.'));
+        if (globalThis.Tesseract?.createWorker) {
+          resolve(globalThis.Tesseract);
+        } else {
+          script.remove();
+          reject(new Error('Runtime OCR local indisponível.'));
+        }
       }, { once: true });
-      script.addEventListener('error', () => reject(new Error('Runtime OCR local indisponível.')), { once: true });
+      script.addEventListener('error', () => {
+        script.remove();
+        reject(new Error('Runtime OCR local indisponível.'));
+      }, { once: true });
       document.head.appendChild(script);
     }).catch((error) => {
       scriptPromise = null;
