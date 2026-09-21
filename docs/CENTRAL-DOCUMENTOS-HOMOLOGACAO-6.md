@@ -358,3 +358,25 @@ O laboratório de navegador cria um PDF de uma página contendo **apenas uma ima
 - manutenção após zoom;
 - zero request HTTP(S) para host externo durante o caso.
 
+
+
+## Caso adicional — bloco de notas temporário do Titon
+
+### Caso 15 — rascunho para leitura manual de manuscritos
+
+Procedimento:
+1. abrir um PDF no Titon;
+2. clicar no botão pequeno de bloco de notas na barra lateral;
+3. digitar livremente hipóteses de leitura de um trecho manuscrito;
+4. usar `Ctrl+A` e `Ctrl+C` dentro do campo;
+5. fechar e reabrir somente a janelinha do bloco de notas;
+6. fechar o PDF e abrir outro documento.
+
+Aceite:
+- o bloco abre sem alterar, editar ou sincronizar o PDF;
+- o texto permanece enquanto a janelinha é fechada/reaberta no mesmo PDF;
+- `Ctrl+A` e `Ctrl+C` funcionam como comportamento nativo do campo de texto;
+- `Escape` fecha somente a janelinha;
+- ao fechar/trocar o PDF, o rascunho é apagado;
+- nada é gravado em D1, localStorage, sessionStorage, IndexedDB, Google Drive ou backend;
+- nenhum conteúdo do rascunho entra em IA ou observabilidade.
