@@ -60,6 +60,11 @@
     })
   ]);
 
+  const DEFAULT_DOCUMENT_AI_FIELD_ORDER = Object.freeze(
+    DOCUMENT_AI_FIELD_GROUPS.flatMap((group) => [...group.fields])
+  );
+  const TITON_FIELD_ORDER_STORAGE_PREFIX = 'portal:titon:field-order:v1:';
+
   const DRIVE_AUTO_SYNC_IDLE_MS = 1000;
   const DRIVE_SYNC_SUCCESS_VISIBLE_MS = 1000;
   const DRIVE_SYNC_REVISION_POLL_MS = 200;
@@ -83,6 +88,10 @@
     documentAiIgnoredPages: 0,
     documentAiEvidence: new Map(),
     documentAiChatHistory: [],
+    documentAiFieldOrder: [...DEFAULT_DOCUMENT_AI_FIELD_ORDER],
+    documentAiCopiedFields: new Set(),
+    documentAiOrderPanelOpen: false,
+    documentAiDraggedField: '',
     stack: [],
     items: [],
     nextPageToken: '',
@@ -182,6 +191,7 @@
     viewerTitle: document.getElementById('documentsViewerTitle'),
     viewerRenameControl: document.getElementById('documentsViewerRenameControl'),
     viewerRenameInput: document.getElementById('documentsViewerRenameInput'),
+    viewerRenameStatus: document.getElementById('documentsViewerRenameStatus'),
     presenceNotice: document.getElementById('documentsPresenceNotice'),
     presenceText: document.getElementById('documentsPresenceText'),
     viewerState: document.getElementById('documentsViewerState'),
@@ -218,6 +228,11 @@
     documentAiDocumentStatus: document.getElementById('documentsAiDocumentStatus'),
     documentAiDocumentResults: document.getElementById('documentsAiDocumentResults'),
     documentAiDocumentActions: document.getElementById('documentsAiDocumentActions'),
+    documentAiOrderFields: document.getElementById('documentsAiOrderFieldsButton'),
+    documentAiFieldOrderPanel: document.getElementById('documentsAiFieldOrderPanel'),
+    documentAiFieldOrderList: document.getElementById('documentsAiFieldOrderList'),
+    documentAiFieldOrderReset: document.getElementById('documentsAiFieldOrderResetButton'),
+    documentAiFieldOrderDone: document.getElementById('documentsAiFieldOrderDoneButton'),
     documentAiCopyAll: document.getElementById('documentsAiCopyAllButton'),
     documentAiChatSection: document.getElementById('documentsAiChatSection'),
     documentAiChatQuestion: document.getElementById('documentsAiChatQuestion'),
@@ -3162,6 +3177,15 @@
     return String(value || '').replace(/\.pdf$/i, '').trim();
   }
 
+  function setPdfRenameFeedback(message = '', tone = '') {
+    if (!els.viewerRenameStatus) return;
+    const value = String(message || '');
+    els.viewerRenameStatus.textContent = value;
+    els.viewerRenameStatus.hidden = !value;
+    els.viewerRenameStatus.className = 'documents-viewer-rename-status'
+      + (tone ? ` ${tone}` : '');
+  }
+
   function renderViewerTitle(name = state.pdfItem?.name || 'PDF') {
     const display = String(name || 'PDF');
     if (els.viewerTitle) {
@@ -3212,6 +3236,7 @@
 
     state.titleSelected = false;
     state.titleEditing = true;
+    setPdfRenameFeedback('');
     const base = pdfBaseName(state.pdfItem.name || state.pdfItem.label || '');
     if (els.viewerTitle) els.viewerTitle.hidden = true;
     if (els.viewerRenameControl) els.viewerRenameControl.hidden = false;
@@ -3285,6 +3310,7 @@
 
     state.renameBusy = true;
     if (els.viewerRenameInput) els.viewerRenameInput.disabled = true;
+    setPdfRenameFeedback('Sincronizando nome com o Google Drive…', 'pending');
     clearDriveSyncTimer();
 
     try {
@@ -3306,11 +3332,13 @@
       renderViewerTitle(applied.next.name);
 
       if (applied.contentConflict) {
+        setPdfRenameFeedback('✓ Nome alterado no Drive · o conteúdo do PDF também mudou.', 'warning');
         showStatus(
           'O nome foi alterado no Drive, mas o conteúdo também mudou durante a operação. Reabra o PDF antes de continuar editando.',
           'warning'
         );
       } else {
+        setPdfRenameFeedback('✓ Nome alterado e sincronizado com o Google Drive.', 'success');
         showStatus('Nome do PDF atualizado no Google Drive.', 'success');
         if (
           state.editorSession
@@ -3322,6 +3350,7 @@
       heartbeatDocumentPresence().catch(() => {});
       return true;
     } catch (error) {
+      setPdfRenameFeedback('✕ O nome não foi alterado no Google Drive.', 'warning');
       showStatus(error?.message || 'Não foi possível renomear o PDF no Google Drive.', 'warning');
       if (
         state.editorSession
@@ -3599,19 +3628,142 @@
     return blocks.join('\n\n');
   }
 
+  function normalizeTitonFieldOrder(value) {
+    const source = Array.isArray(value) ? value : [];
+    const allowed = new Set(DEFAULT_DOCUMENT_AI_FIELD_ORDER);
+    const seen = new Set();
+    const normalized = [];
+    for (const item of source) {
+      const key = String(item || '');
+      if (!allowed.has(key) || seen.has(key)) continue;
+      seen.add(key);
+      normalized.push(key);
+    }
+    for (const key of DEFAULT_DOCUMENT_AI_FIELD_ORDER) {
+      if (!seen.has(key)) normalized.push(key);
+    }
+    return normalized;
+  }
+
+  function titonFieldOrderStorageKey() {
+    const username = String(state.user?.username || 'usuario').trim().toLowerCase();
+    return `${TITON_FIELD_ORDER_STORAGE_PREFIX}${encodeURIComponent(username)}`;
+  }
+
+  function loadTitonFieldOrder() {
+    try {
+      const raw = localStorage.getItem(titonFieldOrderStorageKey());
+      state.documentAiFieldOrder = normalizeTitonFieldOrder(raw ? JSON.parse(raw) : null);
+    } catch (_) {
+      state.documentAiFieldOrder = [...DEFAULT_DOCUMENT_AI_FIELD_ORDER];
+    }
+    return state.documentAiFieldOrder;
+  }
+
+  function persistTitonFieldOrder() {
+    state.documentAiFieldOrder = normalizeTitonFieldOrder(state.documentAiFieldOrder);
+    try {
+      localStorage.setItem(titonFieldOrderStorageKey(), JSON.stringify(state.documentAiFieldOrder));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function documentAiFieldOrderIndex(key) {
+    const index = state.documentAiFieldOrder.indexOf(String(key || ''));
+    return index >= 0 ? index : Number.MAX_SAFE_INTEGER;
+  }
+
+  function moveTitonFieldBefore(sourceKey, targetKey) {
+    const source = String(sourceKey || '');
+    const target = String(targetKey || '');
+    if (!source || !target || source === target) return false;
+    const order = [...state.documentAiFieldOrder];
+    const sourceIndex = order.indexOf(source);
+    const targetIndex = order.indexOf(target);
+    if (sourceIndex < 0 || targetIndex < 0) return false;
+    order.splice(sourceIndex, 1);
+    const nextTarget = order.indexOf(target);
+    order.splice(nextTarget, 0, source);
+    state.documentAiFieldOrder = normalizeTitonFieldOrder(order);
+    persistTitonFieldOrder();
+    renderDocumentAiFieldOrderPanel();
+    renderDocumentAiDocumentResults();
+    return true;
+  }
+
+  function shiftTitonField(key, delta) {
+    const order = [...state.documentAiFieldOrder];
+    const index = order.indexOf(String(key || ''));
+    const nextIndex = index + Number(delta || 0);
+    if (index < 0 || nextIndex < 0 || nextIndex >= order.length) return false;
+    [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
+    state.documentAiFieldOrder = normalizeTitonFieldOrder(order);
+    persistTitonFieldOrder();
+    renderDocumentAiFieldOrderPanel();
+    renderDocumentAiDocumentResults();
+    return true;
+  }
+
+  function renderDocumentAiFieldOrderPanel() {
+    const available = state.documentAiScanCompleted === true;
+    const open = Boolean(available && state.documentAiOrderPanelOpen);
+    if (els.documentAiOrderFields) {
+      els.documentAiOrderFields.disabled = !available;
+      els.documentAiOrderFields.setAttribute('aria-pressed', open ? 'true' : 'false');
+      els.documentAiOrderFields.textContent = open ? 'Fechar organização' : 'Organizar campos';
+    }
+    if (els.documentAiFieldOrderPanel) els.documentAiFieldOrderPanel.hidden = !open;
+    if (!els.documentAiFieldOrderList) return;
+    if (!open) {
+      els.documentAiFieldOrderList.replaceChildren();
+      return;
+    }
+    const order = normalizeTitonFieldOrder(state.documentAiFieldOrder);
+    els.documentAiFieldOrderList.innerHTML = order.map((key, index) => {
+      const label = DOCUMENT_AI_FIELD_LABELS[key] || key;
+      return `<div class="documents-ai-order-row" draggable="true" data-ai-order-field="${escapeHtml(key)}">
+        <span class="documents-ai-order-handle" aria-hidden="true">⋮⋮</span>
+        <strong>${escapeHtml(label)}</strong>
+        <div class="documents-ai-order-buttons">
+          <button type="button" data-ai-order-up="${escapeHtml(key)}" aria-label="Mover ${escapeHtml(label)} para cima" ${index === 0 ? 'disabled' : ''}>↑</button>
+          <button type="button" data-ai-order-down="${escapeHtml(key)}" aria-label="Mover ${escapeHtml(label)} para baixo" ${index === order.length - 1 ? 'disabled' : ''}>↓</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function setDocumentAiFieldOrderOpen(open) {
+    state.documentAiOrderPanelOpen = Boolean(open && state.documentAiScanCompleted === true);
+    renderDocumentAiFieldOrderPanel();
+    return state.documentAiOrderPanelOpen;
+  }
+
+  function documentAiCopyToken(pageNumber, key) {
+    return `${Number(pageNumber || 0)}:${String(key || '')}`;
+  }
+
   function documentAiResultGroups(extraction) {
     const fields = extraction?.fields && typeof extraction.fields === 'object'
       ? extraction.fields
       : {};
     const known = new Set();
     const groups = DOCUMENT_AI_FIELD_GROUPS.map((group) => {
-      const keys = group.fields.filter((key) => Object.prototype.hasOwnProperty.call(fields, key));
+      const keys = group.fields
+        .filter((key) => Object.prototype.hasOwnProperty.call(fields, key))
+        .sort((a, b) => documentAiFieldOrderIndex(a) - documentAiFieldOrderIndex(b));
       for (const key of keys) known.add(key);
       return { id: group.id, label: group.label, keys };
     }).filter((group) => group.keys.length > 0);
 
     const extras = Object.keys(fields).filter((key) => !known.has(key));
     if (extras.length) groups.push({ id: 'outros', label: 'Outros', keys: extras });
+    groups.sort((a, b) => {
+      const aIndex = Math.min(...a.keys.map(documentAiFieldOrderIndex));
+      const bIndex = Math.min(...b.keys.map(documentAiFieldOrderIndex));
+      return aIndex - bIndex;
+    });
     return groups;
   }
 
@@ -3638,15 +3790,17 @@
                 : field?.state === 'nao_consta'
                   ? 'is-missing'
                   : '';
-              return `<div class="documents-ai-field">
+              const copyToken = documentAiCopyToken(pageNumber, key);
+              const copied = state.documentAiCopiedFields.has(copyToken);
+              return `<div class="documents-ai-field${copied ? ' is-copied' : ''}">
                 <div class="documents-ai-field-copy">
                   <strong>${escapeHtml(label)}</strong>
                   <span class="${stateClass}">${escapeHtml(display)}</span>
                 </div>
-                <button type="button"
+                <button type="button" class="${copied ? 'is-copied' : ''}"
                   data-ai-copy-document-field="${escapeHtml(key)}"
                   data-ai-copy-document-page="${pageNumber}"
-                  aria-label="Copiar ${escapeHtml(label)}">Copiar</button>
+                  aria-label="${copied ? 'Campo copiado: ' : 'Copiar '}${escapeHtml(label)}">${copied ? '✓ Copiado' : 'Copiar'}</button>
               </div>`;
             }).join('');
 
@@ -3874,6 +4028,7 @@
     renderDocumentAiClassification();
     renderDocumentAiExtraction();
     renderDocumentAiDocumentResults();
+    renderDocumentAiFieldOrderPanel();
     renderDocumentAiChat();
     if (els.documentAiRoutines) {
       const routines = Array.isArray(config.routines) ? config.routines : [];
@@ -4158,6 +4313,8 @@
     state.documentAiScanCompleted = false;
     state.documentAiIgnoredPages = 0;
     state.documentAiResults = [];
+    state.documentAiCopiedFields.clear();
+    state.documentAiOrderPanelOpen = false;
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
     state.documentAiEvidence.clear();
@@ -4800,12 +4957,15 @@
     releaseDocumentPresence().catch(() => {});
     cancelPdfRename({ restoreFocus: false });
     state.titleSelected = false;
+    setPdfRenameFeedback('');
     resetDocumentBackgroundState('document_changed');
     setDocumentAiPanelOpen(false);
     state.documentAiBusy = false;
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
     state.documentAiResults = [];
+    state.documentAiCopiedFields.clear();
+    state.documentAiOrderPanelOpen = false;
     state.documentAiScanCompleted = false;
     state.documentAiIgnoredPages = 0;
     state.documentAiEvidence.clear();
@@ -4878,6 +5038,8 @@
     state.documentAiClassification = null;
     state.documentAiExtraction = null;
     state.documentAiResults = [];
+    state.documentAiCopiedFields.clear();
+    state.documentAiOrderPanelOpen = false;
     state.documentAiScanCompleted = false;
     state.documentAiIgnoredPages = 0;
     state.documentAiEvidence.clear();
@@ -5168,7 +5330,7 @@
     }
   });
   els.viewerRenameInput?.addEventListener('blur', () => {
-    if (state.titleEditing && !state.renameBusy) cancelPdfRename({ restoreFocus: false });
+    if (state.titleEditing && !state.renameBusy) commitPdfRename().catch(() => {});
   });
 
   els.editPdf.addEventListener('click', startEditor);
@@ -5231,6 +5393,13 @@
       const field = extraction?.fields?.[key];
       if (!field) return;
       copyDocumentAiText(documentAiFieldDisplay(field)).then((ok) => {
+        if (ok) {
+          state.documentAiCopiedFields.add(documentAiCopyToken(pageNumber, key));
+          fieldCopy.textContent = '✓ Copiado';
+          fieldCopy.classList.add('is-copied');
+          fieldCopy.closest?.('.documents-ai-field')?.classList.add('is-copied');
+          fieldCopy.setAttribute('aria-label', `Campo copiado: ${DOCUMENT_AI_FIELD_LABELS[key] || 'Campo'}`);
+        }
         if (!els.documentAiDocumentStatus) return;
         els.documentAiDocumentStatus.className = ok
           ? 'documents-ai-document-status success'
@@ -5255,6 +5424,55 @@
         els.documentAiDocumentStatus.textContent = ok ? 'Página copiada.' : 'Não foi possível copiar a página.';
       }).catch(() => {});
     }
+  });
+  els.documentAiOrderFields?.addEventListener('click', () => {
+    setDocumentAiFieldOrderOpen(!state.documentAiOrderPanelOpen);
+  });
+  els.documentAiFieldOrderReset?.addEventListener('click', () => {
+    state.documentAiFieldOrder = [...DEFAULT_DOCUMENT_AI_FIELD_ORDER];
+    persistTitonFieldOrder();
+    renderDocumentAiFieldOrderPanel();
+    renderDocumentAiDocumentResults();
+  });
+  els.documentAiFieldOrderDone?.addEventListener('click', () => {
+    setDocumentAiFieldOrderOpen(false);
+  });
+  els.documentAiFieldOrderList?.addEventListener('click', (event) => {
+    const up = event.target.closest?.('[data-ai-order-up]');
+    if (up) {
+      shiftTitonField(up.dataset.aiOrderUp, -1);
+      return;
+    }
+    const down = event.target.closest?.('[data-ai-order-down]');
+    if (down) shiftTitonField(down.dataset.aiOrderDown, 1);
+  });
+  els.documentAiFieldOrderList?.addEventListener('dragstart', (event) => {
+    const row = event.target.closest?.('[data-ai-order-field]');
+    if (!row) return;
+    state.documentAiDraggedField = String(row.dataset.aiOrderField || '');
+    row.classList.add('is-dragging');
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', state.documentAiDraggedField);
+    }
+  });
+  els.documentAiFieldOrderList?.addEventListener('dragover', (event) => {
+    if (!state.documentAiDraggedField) return;
+    const row = event.target.closest?.('[data-ai-order-field]');
+    if (!row) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+  });
+  els.documentAiFieldOrderList?.addEventListener('drop', (event) => {
+    const row = event.target.closest?.('[data-ai-order-field]');
+    if (!row || !state.documentAiDraggedField) return;
+    event.preventDefault();
+    moveTitonFieldBefore(state.documentAiDraggedField, row.dataset.aiOrderField);
+    state.documentAiDraggedField = '';
+  });
+  els.documentAiFieldOrderList?.addEventListener('dragend', (event) => {
+    event.target.closest?.('[data-ai-order-field]')?.classList.remove('is-dragging');
+    state.documentAiDraggedField = '';
   });
   els.documentAiCopyAll?.addEventListener('click', () => {
     copyDocumentAiText(documentAiAllResultsBlock()).then((ok) => {
@@ -5501,6 +5719,8 @@
       oauthState === 'connected' ? 'success' : 'warning'
     );
   }
+
+  loadTitonFieldOrder();
 
   try {
     await loadAccess();
