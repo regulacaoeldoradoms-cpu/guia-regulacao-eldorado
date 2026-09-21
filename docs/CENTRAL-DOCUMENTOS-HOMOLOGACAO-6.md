@@ -227,3 +227,23 @@ Aceite:
 - conflito real de Drive continua fail-closed;
 - duas abas do mesmo username não geram falso alerta de “outro usuário”;
 - nenhuma identidade documental ou conteúdo vai para observabilidade externa.
+
+
+## Caso adicional — painel IA compacto e resultados por categoria
+
+Procedimento:
+1. abrir PDF e painel IA;
+2. confirmar que a tela inicial mostra essencialmente **Extrair dados do PDF**;
+3. abrir o botão **i** e confirmar que as explicações continuam acessíveis;
+4. extrair o documento;
+5. conferir separação por página e categorias **Paciente**, **Encaminhamento**, **Solicitação** e **Profissional** conforme os campos existentes;
+6. copiar individualmente nome do paciente, motivo do encaminhamento, CID, médico e CRM/RMS;
+7. testar **Copiar esta página** e **Copiar tudo**;
+8. abrir o chat opcional somente após a extração.
+
+Aceite:
+- nenhum novo request de IA ocorre ao organizar ou copiar os resultados;
+- cópia individual leva somente o valor exibido do campo;
+- páginas não são misturadas;
+- informação técnica fica fora do fluxo principal;
+- nenhuma mudança em provider/modelos/gates.

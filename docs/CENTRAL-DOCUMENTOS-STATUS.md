@@ -3404,3 +3404,23 @@ Regra permanente preservada: alterações confirmadas no Titon devem refletir o 
 **Fase atual:** Fase 6 — Automação operacional, ainda não formalmente encerrada.
 
 **Próxima ação exata:** validação humana no Portal real: renomear em visualização e editor, confirmar nome no Drive, testar Enter/Escape, verificar zoom, abrir o mesmo PDF com duas contas para observar presença view/edit e então continuar/encerrar a matriz operacional da Fase 6 conforme os critérios já documentados.
+
+
+## IA documental — painel compacto e resultados por categoria — EM IMPLEMENTAÇÃO — 21/09/2026
+
+Decisão aprovada pelo operador: retirar textos explicativos do fluxo principal da IA documental e priorizar a ação operacional.
+
+Branch: `feat/central-docs-ai-compact-results-20260921`.
+
+Escopo:
+- painel inicial reduzido para **Extrair dados do PDF**;
+- botão discreto **i** abre informações de segurança/proveniência e detalhes técnicos;
+- chat fica oculto antes da extração e recolhido por padrão depois;
+- resultados organizados por página e por categorias: Paciente, Encaminhamento, Solicitação e Profissional;
+- botão **Copiar** em cada campo, copiando somente o valor exibido;
+- permanecem **Ver página**, **Copiar esta página** e **Copiar tudo**;
+- status operacional reduzido para mensagens curtas.
+
+Impacto de IA: **zero chamadas adicionais**. A categorização e as cópias usam somente o JSON estruturado já retornado pela V8C.2 no navegador; não alteram provider, prompt, tokens, neurons, modelos ou backend de inferência.
+
+**Próxima ação exata:** validar CI/PR; se verde, integrar/publicar e pedir aceite visual do operador dentro da matriz ainda aberta da Fase 6.

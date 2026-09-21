@@ -34,6 +34,32 @@
     descricao_cid: 'Descrição do CID'
   });
 
+  const DOCUMENT_AI_FIELD_GROUPS = Object.freeze([
+    Object.freeze({
+      id: 'paciente',
+      label: 'Paciente',
+      fields: Object.freeze([
+        'nome_paciente', 'cpf', 'cns', 'data_nascimento',
+        'nome_mae', 'telefone', 'endereco', 'agente'
+      ])
+    }),
+    Object.freeze({
+      id: 'encaminhamento',
+      label: 'Encaminhamento',
+      fields: Object.freeze(['motivo_encaminhamento', 'cid', 'descricao_cid'])
+    }),
+    Object.freeze({
+      id: 'solicitacao',
+      label: 'Solicitação',
+      fields: Object.freeze(['titulo', 'procedimento_solicitado', 'codigo_procedimento'])
+    }),
+    Object.freeze({
+      id: 'profissional',
+      label: 'Profissional',
+      fields: Object.freeze(['medico', 'crm_rms'])
+    })
+  ]);
+
   const DRIVE_AUTO_SYNC_IDLE_MS = 1000;
   const DRIVE_SYNC_SUCCESS_VISIBLE_MS = 1000;
   const DRIVE_SYNC_REVISION_POLL_MS = 200;
@@ -174,6 +200,8 @@
     editorRailEdit: document.getElementById('editorRailEditButton'),
     documentAiButton: document.getElementById('documentAiButton'),
     documentAiPanel: document.getElementById('documentsAiPanel'),
+    documentAiInfoButton: document.getElementById('documentsAiInfoButton'),
+    documentAiInfoPanel: document.getElementById('documentsAiInfoPanel'),
     documentAiClose: document.getElementById('documentsAiCloseButton'),
     documentAiDescription: document.getElementById('documentsAiDescription'),
     documentAiSafety: document.getElementById('documentsAiSafety'),
@@ -191,6 +219,7 @@
     documentAiDocumentResults: document.getElementById('documentsAiDocumentResults'),
     documentAiDocumentActions: document.getElementById('documentsAiDocumentActions'),
     documentAiCopyAll: document.getElementById('documentsAiCopyAllButton'),
+    documentAiChatSection: document.getElementById('documentsAiChatSection'),
     documentAiChatQuestion: document.getElementById('documentsAiChatQuestion'),
     documentAiChatSend: document.getElementById('documentsAiChatSendButton'),
     documentAiChatStatus: document.getElementById('documentsAiChatStatus'),
@@ -3570,6 +3599,22 @@
     return blocks.join('\n\n');
   }
 
+  function documentAiResultGroups(extraction) {
+    const fields = extraction?.fields && typeof extraction.fields === 'object'
+      ? extraction.fields
+      : {};
+    const known = new Set();
+    const groups = DOCUMENT_AI_FIELD_GROUPS.map((group) => {
+      const keys = group.fields.filter((key) => Object.prototype.hasOwnProperty.call(fields, key));
+      for (const key of keys) known.add(key);
+      return { id: group.id, label: group.label, keys };
+    }).filter((group) => group.keys.length > 0);
+
+    const extras = Object.keys(fields).filter((key) => !known.has(key));
+    if (extras.length) groups.push({ id: 'outros', label: 'Outros', keys: extras });
+    return groups;
+  }
+
   function renderDocumentAiDocumentResults() {
     const results = Array.isArray(state.documentAiResults)
       ? [...state.documentAiResults].sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber))
@@ -3581,30 +3626,43 @@
       if (!completed) {
         els.documentAiDocumentResults.replaceChildren();
       } else {
-        const cards = results.map((extraction, index) => {
-          const fields = Object.entries(extraction.fields || {}).map(([key, field]) => {
-            const label = DOCUMENT_AI_FIELD_LABELS[key] || key;
-            const display = documentAiFieldDisplay(field);
-            const stateClass = field?.state === 'ilegivel'
-              ? 'is-illegible'
-              : field?.state === 'nao_consta'
-                ? 'is-missing'
-                : '';
-            return `<div class="documents-ai-field">
-              <div class="documents-ai-field-copy">
-                <strong>${escapeHtml(label)}</strong>
-                <span class="${stateClass}">${escapeHtml(display)}</span>
-              </div>
-            </div>`;
+        const cards = results.map((extraction) => {
+          const pageNumber = Number(extraction.pageNumber);
+          const categories = documentAiResultGroups(extraction).map((group) => {
+            const fields = group.keys.map((key) => {
+              const field = extraction.fields?.[key];
+              const label = DOCUMENT_AI_FIELD_LABELS[key] || key;
+              const display = documentAiFieldDisplay(field);
+              const stateClass = field?.state === 'ilegivel'
+                ? 'is-illegible'
+                : field?.state === 'nao_consta'
+                  ? 'is-missing'
+                  : '';
+              return `<div class="documents-ai-field">
+                <div class="documents-ai-field-copy">
+                  <strong>${escapeHtml(label)}</strong>
+                  <span class="${stateClass}">${escapeHtml(display)}</span>
+                </div>
+                <button type="button"
+                  data-ai-copy-document-field="${escapeHtml(key)}"
+                  data-ai-copy-document-page="${pageNumber}"
+                  aria-label="Copiar ${escapeHtml(label)}">Copiar</button>
+              </div>`;
+            }).join('');
+
+            return `<section class="documents-ai-result-category" data-ai-category="${escapeHtml(group.id)}">
+              <div class="documents-ai-result-category-title">${escapeHtml(group.label)}</div>
+              <div class="documents-ai-extraction-fields">${fields}</div>
+            </section>`;
           }).join('');
 
           return `<article class="documents-ai-result-card">
             <div class="documents-ai-result-head">
               <strong>${escapeHtml(documentAiResultHeading(extraction))}</strong>
-              <button type="button" class="portal-button ghost" data-ai-source-page="${Number(extraction.pageNumber)}">Ver página</button>
+              <button type="button" class="portal-button ghost" data-ai-source-page="${pageNumber}">Ver página</button>
             </div>
-            <div class="documents-ai-extraction-fields">${fields}</div>
-            <button type="button" class="portal-button ghost documents-ai-copy-result" data-ai-copy-result-index="${index}">Copiar este bloco</button>
+            ${categories}
+            <button type="button" class="portal-button ghost documents-ai-copy-result" data-ai-copy-result-page="${pageNumber}">Copiar esta página</button>
           </article>`;
         });
 
@@ -3669,6 +3727,11 @@
   }
 
   function renderDocumentAiChat() {
+    const completed = state.documentAiScanCompleted === true;
+    if (els.documentAiChatSection) {
+      els.documentAiChatSection.hidden = !completed;
+      if (!completed) els.documentAiChatSection.open = false;
+    }
     if (els.documentAiChatSend) els.documentAiChatSend.disabled = !canChatDocumentAi();
     if (els.documentAiChatQuestion) {
       els.documentAiChatQuestion.disabled = !(state.documentAiConfig?.processingEnabled === true);
@@ -3798,8 +3861,8 @@
     if (els.documentAiDocumentStatus && !state.documentAiBusy && !els.documentAiDocumentStatus.textContent) {
       els.documentAiDocumentStatus.className = 'documents-ai-document-status';
       els.documentAiDocumentStatus.textContent = config.processingEnabled
-        ? 'Pronto para analisar todas as páginas deste PDF.'
-        : 'Extração automática bloqueada por feature gate.';
+        ? ''
+        : 'Extração bloqueada neste ambiente.';
     }
     if (els.documentAiClassify) {
       const ready = config.processingEnabled === true && config.features?.classifyPage === true;
@@ -3823,11 +3886,19 @@
     }
   }
 
+  function setDocumentAiInfoOpen(open) {
+    const next = Boolean(open && state.documentAiPanelOpen);
+    if (els.documentAiInfoPanel) els.documentAiInfoPanel.hidden = !next;
+    if (els.documentAiInfoButton) els.documentAiInfoButton.setAttribute('aria-expanded', next ? 'true' : 'false');
+    return next;
+  }
+
   function setDocumentAiPanelOpen(open) {
     const next = Boolean(open && canUseDocumentAi() && state.pdfItem);
     state.documentAiPanelOpen = next;
     if (els.documentAiPanel) els.documentAiPanel.hidden = !next;
     if (els.documentAiButton) els.documentAiButton.setAttribute('aria-pressed', next ? 'true' : 'false');
+    if (!next) setDocumentAiInfoOpen(false);
     if (next) renderDocumentAiPanel();
   }
 
@@ -4230,8 +4301,8 @@
       if (els.documentAiDocumentStatus) {
         els.documentAiDocumentStatus.className = 'documents-ai-document-status success';
         els.documentAiDocumentStatus.textContent = extractedCount
-          ? `Concluído: ${extractedCount} página(s) autorizada(s) extraída(s); ${state.documentAiIgnoredPages} página(s) ignorada(s).`
-          : `Concluído: nenhuma página autorizada encontrada; ${state.documentAiIgnoredPages} página(s) ignorada(s).`;
+          ? `Dados extraídos em ${extractedCount} página(s).`
+          : 'Nenhum dado autorizado encontrado.';
       }
       capture('document_ai_completed', {
         route: '/documentos/',
@@ -5082,6 +5153,9 @@
   els.documentAiButton?.addEventListener('click', () => {
     setDocumentAiPanelOpen(!state.documentAiPanelOpen);
   });
+  els.documentAiInfoButton?.addEventListener('click', () => {
+    setDocumentAiInfoOpen(els.documentAiInfoButton.getAttribute('aria-expanded') !== 'true');
+  });
   els.documentAiClose?.addEventListener('click', () => setDocumentAiPanelOpen(false));
   els.documentAiExtractDocument?.addEventListener('click', () => {
     extractWholeDocumentAi().catch(() => {});
@@ -5122,17 +5196,37 @@
       if (pageNumber > 0) window.PortalPdfViewer?.scrollToPage?.(pageNumber);
       return;
     }
-    const copy = event.target.closest?.('[data-ai-copy-result-index]');
+
+    const fieldCopy = event.target.closest?.('[data-ai-copy-document-field]');
+    if (fieldCopy) {
+      const pageNumber = Number(fieldCopy.dataset.aiCopyDocumentPage || 0);
+      const key = String(fieldCopy.dataset.aiCopyDocumentField || '');
+      const extraction = state.documentAiResults.find((item) => Number(item?.pageNumber || 0) === pageNumber);
+      const field = extraction?.fields?.[key];
+      if (!field) return;
+      copyDocumentAiText(documentAiFieldDisplay(field)).then((ok) => {
+        if (!els.documentAiDocumentStatus) return;
+        els.documentAiDocumentStatus.className = ok
+          ? 'documents-ai-document-status success'
+          : 'documents-ai-document-status warning';
+        els.documentAiDocumentStatus.textContent = ok
+          ? `${DOCUMENT_AI_FIELD_LABELS[key] || 'Campo'} copiado.`
+          : 'Não foi possível copiar o campo.';
+      }).catch(() => {});
+      return;
+    }
+
+    const copy = event.target.closest?.('[data-ai-copy-result-page]');
     if (copy) {
-      const index = Number(copy.dataset.aiCopyResultIndex);
-      const extraction = Number.isInteger(index) ? state.documentAiResults[index] : null;
+      const pageNumber = Number(copy.dataset.aiCopyResultPage || 0);
+      const extraction = state.documentAiResults.find((item) => Number(item?.pageNumber || 0) === pageNumber);
       if (!extraction) return;
       copyDocumentAiText(documentAiFormattedBlock(extraction)).then((ok) => {
         if (!els.documentAiDocumentStatus) return;
         els.documentAiDocumentStatus.className = ok
           ? 'documents-ai-document-status success'
           : 'documents-ai-document-status warning';
-        els.documentAiDocumentStatus.textContent = ok ? 'Bloco copiado.' : 'Não foi possível copiar o bloco.';
+        els.documentAiDocumentStatus.textContent = ok ? 'Página copiada.' : 'Não foi possível copiar a página.';
       }).catch(() => {});
     }
   });

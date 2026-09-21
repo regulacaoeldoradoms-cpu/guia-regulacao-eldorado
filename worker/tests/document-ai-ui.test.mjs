@@ -28,9 +28,13 @@ test('painel Titon inicia oculto e produção mantém IA normal ativa com backgr
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(html, /id="documentsAiPanel"[^>]*hidden/);
   assert.match(html, /Titon · IA documental/);
+  assert.match(html, /id="documentsAiInfoButton"[^>]*aria-expanded="false"/);
+  assert.match(html, /id="documentsAiInfoPanel"[^>]*hidden/);
   assert.match(html, /id="documentsAiExtractDocumentButton"[^>]*disabled/);
   assert.match(html, /id="documentsAiDocumentResults"[^>]*hidden/);
-  assert.match(html, /id="documentsAiCopyAllButton"/);
+  assert.match(html, /id="documentsAiCopyAllButton"[^>]*>Copiar tudo<\/button>/);
+  assert.match(html, /id="documentsAiChatSection"[^>]*hidden/);
+  assert.doesNotMatch(html, />Extração automática</);
   assert.doesNotMatch(html, /id="documentsAiClassifyButton"/);
   assert.doesNotMatch(html, /id="documentsAiExtractButton"/);
   assert.match(css, /\.documents-ai-panel\[hidden\]/);
@@ -103,13 +107,48 @@ test('resultado Titon segue o formato operacional e mantém cada página separad
   assert.match(js, /NENHUMA PÁGINA MÉDICA AUTORIZADA FOI ENCONTRADA/);
   assert.match(js, /Fone do paciente:/);
   assert.match(js, /data-ai-source-page/);
-  assert.match(js, /data-ai-copy-result-index/);
+  assert.match(js, /DOCUMENT_AI_FIELD_GROUPS/);
+  assert.match(js, /label: 'Paciente'/);
+  assert.match(js, /label: 'Encaminhamento'/);
+  assert.match(js, /label: 'Solicitação'/);
+  assert.match(js, /label: 'Profissional'/);
+  assert.match(js, /data-ai-copy-document-field/);
+  assert.match(js, /data-ai-copy-document-page/);
+  assert.match(js, /data-ai-copy-result-page/);
   assert.match(js, /documentAiAllResultsBlock/);
-  assert.match(html, /Copiar dados/);
+  assert.match(html, /Copiar tudo/);
   assert.match(html, /Ver página|documentsAiDocumentResults/);
   assert.doesNotMatch(js, /localStorage\.(?:setItem|getItem).*documentAi/i);
   assert.doesNotMatch(js, /sessionStorage\.(?:setItem|getItem).*documentAi/i);
   assert.doesNotMatch(js, /indexedDB.*documentAi/i);
+});
+
+test('painel IA fica minimalista e organização/cópia não dispara nova inferência', async () => {
+  const [html, js] = await Promise.all([
+    read('documentos/index.html'),
+    read('js/documents.js')
+  ]);
+
+  assert.match(html, /id="documentsAiInfoButton"/);
+  assert.match(html, /id="documentsAiInfoPanel" hidden/);
+  assert.match(html, /id="documentsAiChatSection" hidden/);
+  assert.doesNotMatch(html, /<strong id="documentsAiBatchTitle">/);
+  assert.doesNotMatch(html, /Opcional\. As respostas usam somente/);
+
+  const renderStart = js.indexOf('  function documentAiResultGroups(');
+  const renderEnd = js.indexOf('  function canExtractCurrentDocumentAiPage()', renderStart);
+  assert.ok(renderStart >= 0 && renderEnd > renderStart, 'render estruturado ausente');
+  const renderBlock = js.slice(renderStart, renderEnd);
+  assert.doesNotMatch(renderBlock, /fetch\(|api\(/);
+  assert.match(renderBlock, /DOCUMENT_AI_FIELD_GROUPS/);
+  assert.match(renderBlock, /data-ai-copy-document-field/);
+
+  const eventStart = js.indexOf("  els.documentAiDocumentResults?.addEventListener('click'");
+  const eventEnd = js.indexOf("  els.documentAiCopyAll?.addEventListener('click'", eventStart);
+  assert.ok(eventStart >= 0 && eventEnd > eventStart, 'handler de cópia individual ausente');
+  const eventBlock = js.slice(eventStart, eventEnd);
+  assert.doesNotMatch(eventBlock, /fetch\(|api\(/);
+  assert.match(eventBlock, /copyDocumentAiText\(documentAiFieldDisplay\(field\)\)/);
 });
 
 test('falha intermediária descarta resultado parcial para não simular documento completo', async () => {
