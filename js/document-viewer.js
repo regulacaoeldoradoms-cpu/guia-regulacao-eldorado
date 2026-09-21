@@ -279,6 +279,7 @@
     clearSelectableTextLayer(record);
     const textGeneration = record.textLayerGeneration;
     const layerNode = record.textLayer;
+    layerNode.style.setProperty('--scale-factor', String(viewport.scale || 1));
     layerNode.style.setProperty('--total-scale-factor', String(viewport.scale || 1));
     layerNode.style.setProperty('--scale-round-x', '1px');
     layerNode.style.setProperty('--scale-round-y', '1px');
