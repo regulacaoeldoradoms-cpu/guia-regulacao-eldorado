@@ -283,3 +283,47 @@ Correção na branch `perf/central-docs-drive-sync-fastpath-20260921`:
 Efeito esperado: eliminar uma chamada serial Worker → Google Drive por sincronização, sem reduzir a integridade nem a detecção de conflito. **Não registrar ganho percentual antes do pós-deploy real.**
 
 Próxima ação: validar CI, integrar se verde e comparar as novas amostras V2 de `drive_sync_completed` com a baseline acima. Se a cauda continuar alta, decompor o tempo entre geração local, start/preflight, upload e confirmação antes da próxima otimização.
+
+
+## 7E — segunda otimização: lista, pesquisa e decomposição do sync Drive — 21/09/2026
+
+Nova evidência de uso real mostrou que a latência percebida não estava limitada ao upload do Titon. A própria navegação documental pela API do Google Drive também apresentava atraso incompatível com a experiência esperada.
+
+Baseline V2 desktop imediatamente anterior a esta alteração:
+- `drive_folder_opened`: n=6; p50 **3.972 ms**; p95 **4.542 ms**;
+- `drive_search_completed`: n=8; p50 **4.428 ms**; p95 **7.072 ms**;
+- buscas com apenas 1–5 resultados ainda levaram aproximadamente **4,1–7,1 s**;
+- `drive_sync_completed`: n=9; p50 **13.855 ms**; p95 **20.130 ms**;
+- após a primeira otimização do sync, os dois resultados small mais recentes foram **11.323 ms** e **13.855 ms**: melhora parcial, ainda insuficiente.
+
+Diagnóstico do caminho lista/pesquisa:
+- o Worker solicitava até **80 itens** já na primeira página;
+- pedia `orderBy=folder,name_natural` ao Drive e o frontend ordenava novamente;
+- depois da resposta do Google, `mapDriveFiles()` processava os itens **serialmente**;
+- cada item repetia derivação/importação de chave criptográfica para selar a referência;
+- também era calculado `cacheKey` para pastas e tipos não-PDF, embora essa chave só seja usada pelo cache de PDF;
+- a busca sempre apagava a lista e aguardava a pesquisa remota mesmo quando o item já existia na pasta atualmente carregada.
+
+Correção na branch `perf/central-docs-drive-navigation-fastpath-20260921`:
+- primeira página de pasta/pesquisa reduzida para **40 itens**; paginação adicional continua aceitando 80;
+- removido o `orderBy` remoto redundante; a ordenação local existente continua determinística;
+- `mapDriveFiles()` passa a usar concorrência limitada a 16 itens;
+- chaves AES/HMAC derivadas no Worker são reutilizadas dentro do isolate, em vez de recalculadas por item;
+- `cacheKey` passa a ser criado somente para PDFs;
+- a última pasta carregada fica apenas **em memória da aba** e pode ser redesenhada imediatamente durante refresh;
+- ao pesquisar, nomes já presentes nessa fotografia em memória aparecem imediatamente enquanto a pesquisa autoritativa no Drive continua e substitui o resultado;
+- nenhum nome, termo de pesquisa, ID do Drive ou metadado clínico é persistido nessa fotografia ou enviado à observabilidade.
+
+Instrumentação adicionada para separar a próxima causa:
+- pasta/pesquisa: `drive_token_ms`, `drive_api_ms`, `drive_map_ms`;
+- sincronização: `build_ms`, `drive_start_ms`, `drive_upload_ms`;
+- todas são durações técnicas numéricas allowlisted; a consulta e o nome do arquivo continuam proibidos.
+
+A segurança permanece:
+- resultado remoto continua sendo a fonte autoritativa;
+- referências do Drive continuam seladas;
+- permissões/capabilities continuam no backend;
+- não há cache persistente novo de nomes/listagens;
+- sincronização continua dependendo da confirmação real do Drive.
+
+**Próxima ação exata:** validar CI e navegador, integrar/publicar se verde, executar uma recarga forte única e observar uso real. A próxima decisão de desempenho deve usar a decomposição token/API/map e build/start/upload, evitando nova otimização por hipótese.
