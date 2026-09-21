@@ -298,3 +298,25 @@ Aceite:
 - `Escape` cancela sem escrita;
 - proteção de `.pdf`, capability `edit`, gate de escrita e verificação de versão permanecem ativas.
 
+## Caso adicional — seleção e cópia de texto nativo no Titon
+
+### Caso 13 — selecionar texto diretamente no PDF
+
+Procedimento:
+1. abrir um PDF que possua texto nativo;
+2. arrastar o mouse sobre uma palavra, linha e pequeno parágrafo;
+3. copiar com `Ctrl+C` e colar em um campo de teste;
+4. alterar o zoom e repetir;
+5. entrar em **Escrever**, **Selecionar/mover**, **Desenhar** e **Recortar** e verificar que os gestos dessas ferramentas continuam funcionando;
+6. sair da ferramenta e selecionar texto novamente;
+7. abrir, separadamente, um PDF puramente escaneado/imagem.
+
+Aceite:
+- o texto nativo fica selecionável e copiável sem alterar o documento;
+- a seleção permanece alinhada ao conteúdo visual após zoom;
+- recorte confirmado mantém a camada de texto no mesmo viewport do canvas;
+- ferramentas interativas do editor não disputam o gesto com a seleção de texto;
+- voltar ao modo sem ferramenta interativa reabilita a seleção;
+- documento sem texto nativo continua visualizável normalmente, apenas sem seleção textual;
+- copiar não dispara Drive, IA, OCR, telemetria de conteúdo ou persistência documental.
+
