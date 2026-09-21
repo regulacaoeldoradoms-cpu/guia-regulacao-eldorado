@@ -3985,3 +3985,23 @@ Risco principal da abertura da Fase 7:
 **Fase atual:** Fase 7 — Robustez e otimização contínua.  
 **Próxima ação exata:** auditar a instrumentação técnica existente da Central no código e reconciliar com o projeto PostHog correto antes de definir SLOs ou modificar performance.
 
+## Transição Fase 6 → Fase 7 — INTEGRADA NA MAIN — 21/09/2026
+
+A transição documental foi integrada pela PR **#376**, merge `aa77e6593e6724dd235c9b7071fc21337c4513e0`.
+
+Evidência pré-merge do head `822d6d85ebaf3c9ebe975c0ffa405d23a45b49fd`:
+- **21/21 workflows GitHub Actions** concluídos com `success`;
+- governança da Central: `success`;
+- validação Fases 1–6: `success`;
+- nenhuma alteração funcional de código, permissões, Drive, IA ou runtime.
+
+Estado autoritativo após a integração:
+- **Fase 6: ENCERRADA E APROVADA**;
+- **Fase 7: ATIVA**;
+- documento da fase: `docs/CENTRAL-DOCUMENTOS-FASE-7.md`;
+- primeiro trabalho da Fase 7 é diagnóstico/instrumentação, não nova funcionalidade.
+
+Limitação preservada: não há percentual histórico único e confiável de economia de tempo da Fase 6; nenhum número foi inventado. O responsável aprovou o encerramento após uso real, e a Fase 7 assume a medição contínua por percentis/SLOs.
+
+**Próxima ação exata:** executar 7A — inventariar eventos/propriedades técnicos allowlisted no frontend/backend, mapear quais suportam p75/p95/p99, cache hit/miss, falhas de Drive, PDFs grandes, mobile/desktop e tempo de IA, e identificar o acesso correto ao projeto PostHog do Portal antes de definir qualquer SLO.
+
