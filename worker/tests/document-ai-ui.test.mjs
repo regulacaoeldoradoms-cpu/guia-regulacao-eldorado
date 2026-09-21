@@ -120,12 +120,8 @@ test('resultado Titon segue o formato operacional e mantém cada página separad
   assert.match(js, /documentAiAllResultsBlock/);
   assert.match(html, /Copiar tudo/);
   assert.match(html, /Ver página|documentsAiDocumentResults/);
-  assert.match(js, /TITON_FIELD_ORDER_STORAGE_PREFIX/);
-  assert.match(js, /localStorage\.getItem\(titonFieldOrderStorageKey\(\)\)/);
-  assert.match(js, /localStorage\.setItem\(titonFieldOrderStorageKey\(\), JSON\.stringify\(state\.documentAiFieldOrder\)\)/);
-  assert.doesNotMatch(js, /localStorage\.setItem\([^\n]*(?:documentAiResults|documentAiExtraction|documentAiEvidence|pdfItem)/i);
-  assert.doesNotMatch(js, /sessionStorage\.(?:setItem|getItem).*documentAi/i);
-  assert.doesNotMatch(js, /indexedDB.*documentAi/i);
+  assert.doesNotMatch(js, /localStorage|sessionStorage|indexedDB/);
+  assert.match(js, /body: JSON\.stringify\(\{ fieldOrder \}\)/);
 });
 
 test('painel IA fica minimalista e organização/cópia não dispara nova inferência', async () => {
@@ -158,11 +154,12 @@ test('painel IA fica minimalista e organização/cópia não dispara nova infer�
   assert.match(eventBlock, /fieldCopy\.textContent = '✓ Copiado'/);
 });
 
-test('ordem dos campos é personalizável sem persistir dados extraídos', async () => {
-  const [html, js, css] = await Promise.all([
+test('ordem dos campos é personalizável por conta sem persistir dados extraídos no navegador', async () => {
+  const [html, js, css, router] = await Promise.all([
     read('documentos/index.html'),
     read('js/documents.js'),
-    read('css/documents.css')
+    read('css/documents.css'),
+    read('worker/documents-router.js')
   ]);
 
   assert.match(html, /id="documentsAiOrderFieldsButton"/);
@@ -174,6 +171,10 @@ test('ordem dos campos é personalizável sem persistir dados extraídos', async
   assert.match(js, /function shiftTitonField\(/);
   assert.match(js, /draggable="true" data-ai-order-field=/);
   assert.match(js, /persistTitonFieldOrder\(\)/);
+  assert.match(js, /\/api\/documents\/preferences/);
+  assert.match(router, /auth_document_ai_preferences/);
+  assert.match(router, /field_order_json/);
+  assert.match(router, /DOCUMENTS_AI_FIELD_ORDER_INVALID/);
   assert.match(css, /\.documents-ai-order-row/);
   assert.match(css, /\.documents-ai-field\.is-copied/);
 
@@ -181,8 +182,9 @@ test('ordem dos campos é personalizável sem persistir dados extraídos', async
   const orderEnd = js.indexOf('  function documentAiResultGroups(', orderStart);
   assert.ok(orderStart >= 0 && orderEnd > orderStart, 'bloco de ordenação ausente');
   const orderBlock = js.slice(orderStart, orderEnd);
-  assert.doesNotMatch(orderBlock, /fetch\(|api\(/);
+  assert.doesNotMatch(orderBlock, /\/api\/documents\/ai\//);
   assert.doesNotMatch(orderBlock, /documentAiResults|documentAiExtraction|documentAiEvidence/);
+  assert.doesNotMatch(js, /localStorage|sessionStorage|indexedDB/);
 });
 
 test('falha intermediária descarta resultado parcial para não simular documento completo', async () => {
