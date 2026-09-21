@@ -116,6 +116,47 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /CACHE_VERSION = '20260917-2'/);
 });
 
+test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técnicas', () => {
+  const html = read('documentos/index.html');
+  const performanceClient = read('js/portal-performance.js');
+  const observability = read('js/portal-observability.js');
+  const server = read('worker/observability.js');
+  const documents = read('js/documents.js');
+  const viewer = read('js/document-viewer.js');
+
+  assert.match(html, /portal-performance\.js\?v=20260921-1/);
+  assert.match(html, /document-viewer\.js\?v=20260921-3/);
+  assert.match(html, /documents\.js\?v=20260921-10/);
+  assert.match(performanceClient, /portal-observability\.js\?v=20260921-1/);
+
+  for (const source of [observability, server]) {
+    assert.match(source, /viewport_class/);
+    assert.match(source, /text_mode/);
+    assert.match(source, /failure_kind/);
+    assert.match(source, /document_text_layer_ready/);
+    assert.match(source, /document_text_layer_failed/);
+    assert.doesNotMatch(source, /userAgent|screen\.width|deviceMemory|hardwareConcurrency|file_name|filename|fileId|patient_name|cpf|cns/i);
+  }
+
+  assert.match(observability, /width > 0 && width <= 767 \? 'mobile' : 'desktop'/);
+  assert.match(documents, /function observabilityFailureKind\(error, domain = 'generic'\)/);
+  assert.match(documents, /failure_kind:\s*observabilityFailureKind\(error, 'drive'\)/);
+  assert.match(documents, /failure_kind:\s*observabilityFailureKind\(error, 'ai'\)/);
+  assert.match(viewer, /document_text_layer_ready/);
+  assert.match(viewer, /document_text_layer_failed/);
+  assert.match(viewer, /text_mode:\s*'native'/);
+  assert.match(viewer, /text_mode:\s*'ocr'/);
+  assert.match(viewer, /failure_kind:\s*'no_text'/);
+  assert.match(viewer, /failure_kind:\s*'runtime'/);
+
+  const metricSection = viewer.slice(
+    viewer.indexOf('function captureViewerMetric'),
+    viewer.indexOf('async function loadPdfJs')
+  );
+  assert.doesNotMatch(metricSection, /pageNumber\s*:/);
+  assert.doesNotMatch(metricSection, /textContent|lines|confidence|file|name|ref/i);
+});
+
 test('observabilidade documental continua sem propriedades identificáveis', () => {
   const server = read('worker/observability.js');
   const client = read('js/portal-observability.js');
@@ -141,7 +182,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260921-9/);
+  assert.match(html, /documents\.js\?v=20260921-10/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -199,8 +240,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260921-2/);
-  assert.match(html, /documents\.js\?v=20260921-9/);
+  assert.match(html, /document-viewer\.js\?v=20260921-3/);
+  assert.match(html, /documents\.js\?v=20260921-10/);
   assert.match(html, /documents\.css\?v=20260921-9/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
@@ -277,7 +318,7 @@ test('Titon cria texto selecionável local para PDF digitalizado sem enviar cont
   const css = read('css/documents.css');
 
   assert.match(html, /document-ocr\.js\?v=20260921-1/);
-  assert.match(html, /document-viewer\.js\?v=20260921-2/);
+  assert.match(html, /document-viewer\.js\?v=20260921-3/);
   assert.match(html, /script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'/);
   assert.match(html, /worker-src 'self'/);
   assert.doesNotMatch(html, /script-src[^"]*'unsafe-eval'/);
@@ -441,8 +482,8 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260921-2/);
-  assert.match(html, /documents\.js\?v=20260921-9/);
+  assert.match(html, /document-viewer\.js\?v=20260921-3/);
+  assert.match(html, /documents\.js\?v=20260921-10/);
   assert.match(html, /documents\.css\?v=20260921-9/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -585,7 +626,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260921-9/);
+  assert.match(html, /documents\.js\?v=20260921-10/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -978,7 +1019,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
   assert.match(html, /documents\.css\?v=20260921-9/);
-  assert.match(html, /documents\.js\?v=20260921-9/);
+  assert.match(html, /documents\.js\?v=20260921-10/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
@@ -1224,7 +1265,7 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
   assert.match(html, /documents\.css\?v=20260921-9/);
-  assert.match(html, /documents\.js\?v=20260921-9/);
+  assert.match(html, /documents\.js\?v=20260921-10/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-notepad-head[\s\S]*cursor:\s*grab/);
