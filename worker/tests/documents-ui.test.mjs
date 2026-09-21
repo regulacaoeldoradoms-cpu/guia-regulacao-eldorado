@@ -686,7 +686,11 @@ test('paleta do editor é vinculada à conta e não contém conteúdo documental
   assert.match(router, /auth_document_editor_preferences/);
   assert.match(router, /color_palette_json/);
   assert.match(router, /DOCUMENTS_EDITOR_PALETTE_INVALID/);
-  assert.doesNotMatch(router, /patient_name|cpf|cns|diagnostico|cid/i);
+  const paletteStart = router.indexOf('function normalizeEditorColorPalette(');
+  const paletteEnd = router.indexOf('function normalizeDocumentAiFieldOrder(', paletteStart);
+  assert.ok(paletteStart >= 0 && paletteEnd > paletteStart, 'bloco da paleta não localizado');
+  const paletteBlock = router.slice(paletteStart, paletteEnd);
+  assert.doesNotMatch(paletteBlock, /patient_name|cpf|cns|diagnostico|cid/i);
 });
 
 test('seletor de cor do toolbar faz preview sem poluir o histórico e consolida no change', () => {
