@@ -156,7 +156,9 @@ export async function heartbeatDocumentPresence(env, user, input = {}) {
     FROM document_titon_presence
     WHERE document_key = ? AND username <> ? AND expires_at >= ?
     GROUP BY username
-    ORDER BY CASE mode WHEN 'edit' THEN 0 ELSE 1 END, display_name
+    ORDER BY
+      CASE WHEN MAX(CASE WHEN mode = 'edit' THEN 1 ELSE 0 END) = 1 THEN 0 ELSE 1 END,
+      MAX(display_name)
     LIMIT 12`)
     .bind(documentKey, username, now)
     .all();
