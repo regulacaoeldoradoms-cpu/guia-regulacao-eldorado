@@ -4197,13 +4197,9 @@
 
     if (els.browser) {
       els.browser.inert = viewerOpen && !browserForeground;
-      if (viewerOpen && !browserForeground) els.browser.setAttribute('aria-hidden', 'true');
-      else els.browser.removeAttribute('aria-hidden');
     }
     if (els.viewer) {
       els.viewer.inert = browserForeground;
-      if (browserForeground) els.viewer.setAttribute('aria-hidden', 'true');
-      else els.viewer.removeAttribute('aria-hidden');
     }
   }
 
