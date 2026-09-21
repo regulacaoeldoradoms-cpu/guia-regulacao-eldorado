@@ -63,8 +63,6 @@
   const DEFAULT_DOCUMENT_AI_FIELD_ORDER = Object.freeze(
     DOCUMENT_AI_FIELD_GROUPS.flatMap((group) => [...group.fields])
   );
-  const TITON_FIELD_ORDER_STORAGE_PREFIX = 'portal:titon:field-order:v1:';
-
   const DRIVE_AUTO_SYNC_IDLE_MS = 1000;
   const DRIVE_SYNC_SUCCESS_VISIBLE_MS = 1000;
   const DRIVE_SYNC_REVISION_POLL_MS = 200;
@@ -92,6 +90,8 @@
     documentAiCopiedFields: new Set(),
     documentAiOrderPanelOpen: false,
     documentAiDraggedField: '',
+    documentAiOrderWriteChain: Promise.resolve(),
+    documentAiOrderWriteGeneration: 0,
     stack: [],
     items: [],
     nextPageToken: '',
@@ -714,6 +714,7 @@
     try {
       const payload = await api('/api/documents/preferences', { method: 'GET' });
       state.editorColorPalette = normalizeEditorColorPalette(payload?.colorPalette);
+      state.documentAiFieldOrder = normalizeTitonFieldOrder(payload?.fieldOrder);
       return true;
     } catch (_) {
       state.editorColorPalette = [...DEFAULT_EDITOR_COLOR_PALETTE];
@@ -3332,13 +3333,13 @@
       renderViewerTitle(applied.next.name);
 
       if (applied.contentConflict) {
-        setPdfRenameFeedback('✓ Nome alterado no Drive · o conteúdo do PDF também mudou.', 'warning');
+        setPdfRenameFeedback('Nome alterado no Drive; o conteúdo do PDF também mudou.', 'warning');
         showStatus(
           'O nome foi alterado no Drive, mas o conteúdo também mudou durante a operação. Reabra o PDF antes de continuar editando.',
           'warning'
         );
       } else {
-        setPdfRenameFeedback('✓ Nome alterado e sincronizado com o Google Drive.', 'success');
+        setPdfRenameFeedback('Nome alterado e sincronizado com o Google Drive.', 'success');
         showStatus('Nome do PDF atualizado no Google Drive.', 'success');
         if (
           state.editorSession
@@ -3350,7 +3351,7 @@
       heartbeatDocumentPresence().catch(() => {});
       return true;
     } catch (error) {
-      setPdfRenameFeedback('✕ O nome não foi alterado no Google Drive.', 'warning');
+      setPdfRenameFeedback('Falha: o nome não foi alterado no Google Drive.', 'warning');
       showStatus(error?.message || 'Não foi possível renomear o PDF no Google Drive.', 'warning');
       if (
         state.editorSession
@@ -3645,29 +3646,33 @@
     return normalized;
   }
 
-  function titonFieldOrderStorageKey() {
-    const username = String(state.user?.username || 'usuario').trim().toLowerCase();
-    return `${TITON_FIELD_ORDER_STORAGE_PREFIX}${encodeURIComponent(username)}`;
-  }
-
-  function loadTitonFieldOrder() {
-    try {
-      const raw = localStorage.getItem(titonFieldOrderStorageKey());
-      state.documentAiFieldOrder = normalizeTitonFieldOrder(raw ? JSON.parse(raw) : null);
-    } catch (_) {
-      state.documentAiFieldOrder = [...DEFAULT_DOCUMENT_AI_FIELD_ORDER];
-    }
-    return state.documentAiFieldOrder;
-  }
-
   function persistTitonFieldOrder() {
-    state.documentAiFieldOrder = normalizeTitonFieldOrder(state.documentAiFieldOrder);
-    try {
-      localStorage.setItem(titonFieldOrderStorageKey(), JSON.stringify(state.documentAiFieldOrder));
-      return true;
-    } catch (_) {
-      return false;
-    }
+    const fieldOrder = normalizeTitonFieldOrder(state.documentAiFieldOrder);
+    state.documentAiFieldOrder = fieldOrder;
+    const generation = ++state.documentAiOrderWriteGeneration;
+
+    const write = async () => {
+      try {
+        const payload = await api('/api/documents/preferences', {
+          method: 'PATCH',
+          body: JSON.stringify({ fieldOrder })
+        });
+        if (generation === state.documentAiOrderWriteGeneration) {
+          state.documentAiFieldOrder = normalizeTitonFieldOrder(payload?.fieldOrder || fieldOrder);
+        }
+        return true;
+      } catch (_) {
+        if (generation === state.documentAiOrderWriteGeneration && els.documentAiDocumentStatus) {
+          els.documentAiDocumentStatus.className = 'documents-ai-document-status warning';
+          els.documentAiDocumentStatus.textContent = 'A ordem foi aplicada nesta sessão, mas não pôde ser sincronizada com sua conta.';
+        }
+        return false;
+      }
+    };
+
+    const queued = state.documentAiOrderWriteChain.then(write, write);
+    state.documentAiOrderWriteChain = queued.then(() => true, () => false);
+    return queued;
   }
 
   function documentAiFieldOrderIndex(key) {
@@ -3687,7 +3692,7 @@
     const nextTarget = order.indexOf(target);
     order.splice(nextTarget, 0, source);
     state.documentAiFieldOrder = normalizeTitonFieldOrder(order);
-    persistTitonFieldOrder();
+    persistTitonFieldOrder().catch(() => {});
     renderDocumentAiFieldOrderPanel();
     renderDocumentAiDocumentResults();
     return true;
@@ -3700,7 +3705,7 @@
     if (index < 0 || nextIndex < 0 || nextIndex >= order.length) return false;
     [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
     state.documentAiFieldOrder = normalizeTitonFieldOrder(order);
-    persistTitonFieldOrder();
+    persistTitonFieldOrder().catch(() => {});
     renderDocumentAiFieldOrderPanel();
     renderDocumentAiDocumentResults();
     return true;
@@ -3800,7 +3805,7 @@
                 <button type="button" class="${copied ? 'is-copied' : ''}"
                   data-ai-copy-document-field="${escapeHtml(key)}"
                   data-ai-copy-document-page="${pageNumber}"
-                  aria-label="${copied ? 'Campo copiado: ' : 'Copiar '}${escapeHtml(label)}">${copied ? '✓ Copiado' : 'Copiar'}</button>
+                  aria-label="${copied ? 'Campo copiado: ' : 'Copiar '}${escapeHtml(label)}">${copied ? 'Copiado' : 'Copiar'}</button>
               </div>`;
             }).join('');
 
@@ -5395,7 +5400,7 @@
       copyDocumentAiText(documentAiFieldDisplay(field)).then((ok) => {
         if (ok) {
           state.documentAiCopiedFields.add(documentAiCopyToken(pageNumber, key));
-          fieldCopy.textContent = '✓ Copiado';
+          fieldCopy.textContent = 'Copiado';
           fieldCopy.classList.add('is-copied');
           fieldCopy.closest?.('.documents-ai-field')?.classList.add('is-copied');
           fieldCopy.setAttribute('aria-label', `Campo copiado: ${DOCUMENT_AI_FIELD_LABELS[key] || 'Campo'}`);
@@ -5430,7 +5435,7 @@
   });
   els.documentAiFieldOrderReset?.addEventListener('click', () => {
     state.documentAiFieldOrder = [...DEFAULT_DOCUMENT_AI_FIELD_ORDER];
-    persistTitonFieldOrder();
+    persistTitonFieldOrder().catch(() => {});
     renderDocumentAiFieldOrderPanel();
     renderDocumentAiDocumentResults();
   });
@@ -5719,8 +5724,6 @@
       oauthState === 'connected' ? 'success' : 'warning'
     );
   }
-
-  loadTitonFieldOrder();
 
   try {
     await loadAccess();
