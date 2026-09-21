@@ -30,10 +30,12 @@
     pdf_edit_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket']),
     drive_sync_started: new Set(['route', 'operation', 'size_bucket']),
     drive_sync_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket']),
-    drive_sync_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'status_code']),
+    drive_sync_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'status_code', 'failure_kind']),
     document_ai_started: new Set(['route', 'operation', 'size_bucket', 'source']),
     document_ai_completed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'source']),
-    document_ai_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'source', 'status_code']),
+    document_ai_failed: new Set(['route', 'duration_ms', 'operation', 'size_bucket', 'source', 'status_code', 'failure_kind']),
+    document_text_layer_ready: new Set(['route', 'duration_ms', 'text_mode', 'source']),
+    document_text_layer_failed: new Set(['route', 'duration_ms', 'text_mode', 'source', 'failure_kind']),
     document_background_task: new Set(['route', 'duration_ms', 'operation', 'source', 'cache_state', 'background_state', 'cancel_reason', 'result_count_bucket'])
   });
 
@@ -47,6 +49,9 @@
     result_count_bucket: new Set(['0', '1-5', '6-20', '21-100', '100+', 'unknown']),
     background_state: new Set(['prepared', 'used', 'cancelled', 'expired', 'failed', 'skipped']),
     cancel_reason: new Set(['none', 'document_changed', 'session', 'hidden', 'foreground', 'editor', 'stale', 'unsupported', 'unknown']),
+    viewport_class: new Set(['mobile', 'desktop']),
+    text_mode: new Set(['native', 'ocr', 'none']),
+    failure_kind: new Set(['conflict', 'network', 'session', 'authorization', 'rate_limit', 'validation', 'provider', 'runtime', 'no_text', 'unsupported', 'unknown']),
     operation: new Set([
       'open_folder', 'search', 'open_pdf', 'delete_page', 'reorder_page', 'rotate_page',
       'duplicate_page', 'insert_blank_page', 'merge_pdf', 'insert_image', 'insert_image', 'save_copy', 'replace_pdf', 'extract', 'document_chat', 'warm_pdf', 'prepare_page', 'preextract_page', 'suggestion', 'request', 'unknown'
@@ -60,7 +65,9 @@
     drive_sync_completed: new Set(['route', 'duration_ms', 'operation']),
     drive_sync_failed: new Set(['route', 'operation']),
     document_ai_completed: new Set(['route', 'duration_ms', 'operation']),
-    document_ai_failed: new Set(['route', 'operation']),
+    document_ai_failed: new Set(['route', 'operation', 'failure_kind']),
+    document_text_layer_ready: new Set(['route', 'duration_ms', 'text_mode']),
+    document_text_layer_failed: new Set(['route', 'duration_ms', 'text_mode', 'failure_kind']),
     document_background_task: new Set(['route', 'duration_ms', 'operation', 'background_state'])
   });
 
@@ -108,6 +115,15 @@
     return ENUMS.connection.has(value) ? value : 'unknown';
   }
 
+  function viewportClass() {
+    try {
+      const width = Number(window.innerWidth || document.documentElement?.clientWidth || 0);
+      return width > 0 && width <= 767 ? 'mobile' : 'desktop';
+    } catch (_) {
+      return 'desktop';
+    }
+  }
+
   function finiteNumber(value, maximum = 600000) {
     const number = Number(value);
     if (!Number.isFinite(number) || number < 0 || number > maximum) return null;
@@ -150,6 +166,7 @@
     if (allowedKeys.has('route') && !Object.prototype.hasOwnProperty.call(clean, 'route')) {
       clean.route = safeRoute();
     }
+    clean.viewport_class = viewportClass();
 
     const required = REQUIRED[event];
     if (required && Array.from(required).some((key) => !Object.prototype.hasOwnProperty.call(clean, key))) return null;

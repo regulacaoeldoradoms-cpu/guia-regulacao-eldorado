@@ -76,6 +76,28 @@
     return Math.min(max, Math.max(min, value));
   }
 
+  function viewerMetricDuration(started) {
+    return Math.max(0, Math.round(performance.now() - started));
+  }
+
+  function captureViewerMetric(session, pageNumber, event, properties = {}) {
+    if (!session || !(Number(pageNumber) > 0)) return false;
+    const key = `${event}:${Number(pageNumber)}`;
+    if (session.textLayerObserved?.has?.(key)) return false;
+    session.textLayerObserved?.add?.(key);
+
+    const payload = { route: '/documentos/', ...properties };
+    const send = () => {
+      try {
+        return window.PortalObservability?.capture?.(event, payload) === true;
+      } catch (_) {
+        return false;
+      }
+    };
+    if (!send()) window.setTimeout(send, 1100);
+    return true;
+  }
+
   async function loadPdfJs() {
     if (modulePromise) return modulePromise;
     modulePromise = import(PDFJS_MODULE_URL).then((pdfjs) => {
@@ -398,10 +420,19 @@
   }
 
   async function runOcrPage(session, pageNumber) {
+    const started = performance.now();
     const ocr = window.PortalDocumentOcr;
     const record = session.pages.get(pageNumber);
     if (!ocr?.recognize || !record || !isCurrentSession(session)) {
-      if (record) setOcrPageStatus(record, 'unavailable', 'Seleção OCR indisponível', { autoHide: 2200 });
+      if (record) {
+        setOcrPageStatus(record, 'unavailable', 'Seleção OCR indisponível', { autoHide: 2200 });
+        captureViewerMetric(session, pageNumber, 'document_text_layer_failed', {
+          duration_ms: viewerMetricDuration(started),
+          text_mode: 'ocr',
+          source: 'local',
+          failure_kind: 'unsupported'
+        });
+      }
       return false;
     }
 
@@ -436,8 +467,20 @@
       if (!lines.length) {
         record.container.dataset.selectableText = 'false';
         setOcrPageStatus(record, 'empty', 'Nenhum texto reconhecido', { autoHide: 2200 });
+        captureViewerMetric(session, pageNumber, 'document_text_layer_failed', {
+          duration_ms: viewerMetricDuration(started),
+          text_mode: 'none',
+          source: 'local',
+          failure_kind: 'no_text'
+        });
         return false;
       }
+
+      captureViewerMetric(session, pageNumber, 'document_text_layer_ready', {
+        duration_ms: viewerMetricDuration(started),
+        text_mode: 'ocr',
+        source: 'local'
+      });
 
       if (record.canvas.width > 0 && record.container.classList.contains('rendered')) {
         const currentViewport = page.getViewport({ scale: session.scale || 1 });
@@ -446,6 +489,12 @@
       return true;
     } catch (_) {
       if (!isCurrentSession(session)) return false;
+      captureViewerMetric(session, pageNumber, 'document_text_layer_failed', {
+        duration_ms: viewerMetricDuration(started),
+        text_mode: 'ocr',
+        source: 'local',
+        failure_kind: 'runtime'
+      });
       session.ocrResults.set(pageNumber, Object.freeze({
         width: 0,
         height: 0,
@@ -504,6 +553,7 @@
   }
 
   async function renderSelectableTextLayer(session, record, page, viewport, generation) {
+    const started = performance.now();
     if (!record?.textLayer || !page || !viewport || !isCurrentSession(session)) return false;
     if (generation !== session.generation) return false;
 
@@ -568,6 +618,11 @@
         record.container.dataset.selectableText = 'native';
         session.ocrPending.delete(record.pageNumber);
         setOcrPageStatus(record, 'native', '');
+        captureViewerMetric(session, record.pageNumber, 'document_text_layer_ready', {
+          duration_ms: viewerMetricDuration(started),
+          text_mode: 'native',
+          source: 'local'
+        });
         return true;
       }
 
@@ -639,6 +694,7 @@
     clearEditorObjectUi(session);
     session.ocrPending?.clear?.();
     session.ocrResults?.clear?.();
+    session.textLayerObserved?.clear?.();
     session.ocrRunningPage = 0;
     for (const record of session.pages.values()) {
       if (record.ocrStatusTimer) clearTimeout(record.ocrStatusTimer);
@@ -3460,6 +3516,7 @@
       thumbs: new Map(),
       ocrResults: new Map(),
       ocrPending: new Set(),
+      textLayerObserved: new Set(),
       ocrRunningPage: 0,
       pageObserver: null,
       thumbObserver: null,
