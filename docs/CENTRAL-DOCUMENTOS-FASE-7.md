@@ -125,21 +125,23 @@ A baseline funcional ao abrir a Fase 7 inclui:
 
 A Fase 7 não deve reabrir essas decisões sem evidência de regressão.
 
-## Limitação externa conhecida ao abrir a fase
+## Acesso ao PostHog do Portal — RESOLVIDO — 21/09/2026
 
-O conector PostHog disponível nesta sessão não está apontando para o projeto analítico do Portal. Portanto, nenhum baseline do Portal será inferido ou consultado por esse conector até o acesso correto ser identificado.
+O conector foi reconciliado com a organização **Regulação de saúde** e com o projeto analítico **Default project** (project id 602473).
 
-Isso não bloqueia:
-- auditoria da instrumentação existente no repositório;
-- identificação da allowlist;
-- preparação das consultas/SLOs;
-- testes sintéticos de robustez.
+Validação:
+- o projeto selecionado contém os eventos técnicos da Central esperados pela instrumentação atual, incluindo `portal_page_ready`, `portal_web_vital`, `pdf_open_started`, `pdf_first_page_visible`, `pdf_ready`, `drive_folder_opened`, `drive_search_completed`, `pdf_edit_completed`, `drive_sync_started`, `drive_sync_completed`, `drive_sync_failed`, `document_ai_started`, `document_ai_completed` e `document_background_task`;
+- portanto, esse é o projeto correto para a baseline 7A;
+- nenhuma chave/token foi documentado ou exposto;
+- o Portal já está enviando esses eventos ao projeto, então não foi necessária alteração no Worker ou no frontend.
+
+A seleção ativa do projeto no conector é contexto de sessão do PostHog; se uma sessão futura abrir em outro projeto, deve-se selecionar novamente a organização **Regulação de saúde** e o projeto **Default project** antes de consultar métricas da Central.
 
 ## Próxima ação exata
 
 1. auditar no código todos os eventos/propriedades allowlisted da Central;
 2. mapear cada evento para as métricas exigidas pelo Guia;
-3. identificar o acesso correto ao projeto PostHog do Portal;
-4. somente então coletar baseline p75/p95/p99 e cache hit/miss;
+3. usar o projeto PostHog já reconciliado da organização **Regulação de saúde**;
+4. coletar baseline p75/p95/p99 e cache hit/miss;
 5. definir os primeiros SLOs a partir dos dados reais;
 6. abrir correções de gargalo apenas depois dessa baseline.
