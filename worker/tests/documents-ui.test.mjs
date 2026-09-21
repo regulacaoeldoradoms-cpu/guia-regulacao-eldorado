@@ -184,8 +184,8 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
-  assert.match(css, /\.documents-viewer-head strong\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*text-overflow:\s*ellipsis;/s);
-  assert.doesNotMatch(css, /\.documents-viewer-head strong\s*\{[^}]*max-width:\s*min\(54vw,\s*640px\)/s);
+  assert.match(css, /\.documents-viewer-head #documentsViewerTitle\s*\{[^}]*width:\s*100%;[^}]*max-width:\s*100%;[^}]*text-overflow:\s*ellipsis;/s);
+  assert.doesNotMatch(css, /\.documents-viewer-head #documentsViewerTitle\s*\{[^}]*max-width:\s*min\(54vw,\s*640px\)/s);
 });
 
 test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
