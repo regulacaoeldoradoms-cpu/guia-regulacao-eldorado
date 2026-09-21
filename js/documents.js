@@ -4677,7 +4677,7 @@
         ].filter(Boolean).join(' ');
         const editorHasItem = Boolean(state.editorSession && editorContainsItem(item));
         const action = item.isFolder
-          ? 'Abrir pasta'
+          ? ''
           : item.isPdf
             ? (state.editorSession ? (editorHasItem ? 'Já no editor' : 'Selecionar para unir') : '')
             : 'Não suportado nesta fase';
@@ -4685,7 +4685,11 @@
         const openTiton = item.isPdf
           ? `<button class="documents-item-open-titon" type="button" data-open-titon-index="${index}" aria-label="Abrir ${escapeHtml(item.name)} no Titon" ${state.editorSession ? 'hidden' : ''}>Abrir no Titon</button>`
           : '';
-        return `<div class="documents-item-row${item.isPdf ? ' pdf' : ''}">
+        const openFolder = item.isFolder
+          ? `<button class="documents-item-open-folder" type="button" data-open-folder-index="${index}" aria-label="Abrir pasta ${escapeHtml(item.name)}">Abrir pasta</button>`
+          : '';
+        const rowType = item.isPdf ? ' pdf' : item.isFolder ? ' folder' : '';
+        return `<div class="documents-item-row${rowType}">
           <button class="${classes}" type="button" data-index="${index}" ${supported ? '' : 'aria-disabled="true"'} ${selected ? 'aria-current="true"' : ''}>
             <span class="documents-item-icon" aria-hidden="true">${icon}</span>
             <span class="documents-item-copy">
@@ -4695,6 +4699,7 @@
             <span class="documents-item-action">${action}</span>
           </button>
           ${openTiton}
+          ${openFolder}
         </div>`;
       }).join('');
     }
@@ -5044,16 +5049,25 @@
       return;
     }
 
+    const folderIndex = Number(event.target?.dataset?.openFolderIndex);
+    if (Number.isInteger(folderIndex) && folderIndex >= 0) {
+      const item = state.items[folderIndex];
+      if (!item?.isFolder) return;
+      selectListItem(folderIndex);
+      state.stack.push({ ref: item.ref, name: item.name });
+      state.searchMode = false;
+      state.searchQuery = '';
+      loadFolder();
+      return;
+    }
+
     const button = event.target.closest?.('[data-index]');
     if (!button) return;
     const index = Number(button.dataset.index);
     const item = state.items[index];
     if (!item) return;
     if (item.isFolder) {
-      state.stack.push({ ref: item.ref, name: item.name });
-      state.searchMode = false;
-      state.searchQuery = '';
-      loadFolder();
+      selectListItem(index);
       return;
     }
     if (item.isPdf) {
@@ -5067,10 +5081,22 @@
 
   els.list.addEventListener('dblclick', (event) => {
     const button = event.target.closest?.('[data-index]');
-    if (!button || state.editorSession) return;
+    if (!button) return;
     const index = Number(button.dataset.index);
     const item = state.items[index];
-    if (!item?.isPdf) return;
+    if (!item) return;
+
+    if (item.isFolder) {
+      event.preventDefault();
+      selectListItem(index);
+      state.stack.push({ ref: item.ref, name: item.name });
+      state.searchMode = false;
+      state.searchQuery = '';
+      loadFolder();
+      return;
+    }
+
+    if (!item.isPdf || state.editorSession) return;
     event.preventDefault();
     selectListItem(index);
     openPdf(item).catch(() => {});
