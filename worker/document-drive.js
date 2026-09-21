@@ -756,6 +756,18 @@ async function currentDrivePdfMetadata(env, ref, openedFile = null) {
   };
 }
 
+async function waitForConfirmedDriveRename(env, ref, expectedName) {
+  const delays = [0, 120, 320, 700];
+  let last = null;
+  for (const delayMs of delays) {
+    if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
+    last = await currentDrivePdfMetadata(env, ref);
+    if (last.name === expectedName) return last;
+  }
+  return last;
+}
+
+
 async function driveSyncPreflightState(env, input = {}, username = '') {
   const operation = String(input.operation || '').trim();
   if (!DRIVE_SYNC_OPERATIONS.has(operation)) {
@@ -906,8 +918,8 @@ export async function renameDrivePdf(env, input = {}, username = '') {
   }
 
   const nextRef = await sealDriveFileRef(env, String(payload.id), PDF_MIME);
-  const after = await currentDrivePdfMetadata(env, nextRef);
-  if (after.name !== name) {
+  const after = await waitForConfirmedDriveRename(env, nextRef, name);
+  if (after?.name !== name) {
     throw new DriveIntegrationError(
       'DRIVE_RENAME_CONFIRMATION_INVALID',
       'O Google Drive não manteve o novo nome confirmado.',
