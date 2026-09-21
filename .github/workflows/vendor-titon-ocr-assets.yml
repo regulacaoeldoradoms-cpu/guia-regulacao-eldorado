@@ -1,0 +1,97 @@
+name: Vendor Titon OCR assets
+
+on:
+  push:
+    branches:
+      - feat/titon-ocr-scanned-pdf-20260921
+    paths:
+      - .github/workflows/vendor-titon-ocr-assets.yml
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: feat/titon-ocr-scanned-pdf-20260921
+          fetch-depth: 0
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Baixar artefatos oficiais fixados
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp="$(mktemp -d)"
+          pushd "$tmp" >/dev/null
+          npm init -y >/dev/null 2>&1
+          npm install --ignore-scripts --no-audit --no-fund \
+            tesseract.js@7.0.0 \
+            tesseract.js-core@7.0.0 \
+            @tesseract.js-data/por@1.0.0
+
+          mkdir -p "$GITHUB_WORKSPACE/vendor/tesseract/core" "$GITHUB_WORKSPACE/vendor/tesseract/lang"
+          cp node_modules/tesseract.js/dist/tesseract.min.js "$GITHUB_WORKSPACE/vendor/tesseract/tesseract.min.js"
+          cp node_modules/tesseract.js/dist/worker.min.js "$GITHUB_WORKSPACE/vendor/tesseract/worker.min.js"
+
+          for file in \
+            tesseract-core-lstm.wasm.js \
+            tesseract-core-simd-lstm.wasm.js \
+            tesseract-core-relaxedsimd-lstm.wasm.js
+          do
+            test -s "node_modules/tesseract.js-core/$file"
+            cp "node_modules/tesseract.js-core/$file" "$GITHUB_WORKSPACE/vendor/tesseract/core/$file"
+          done
+
+          por="$(find node_modules/@tesseract.js-data/por -type f -path '*/4.0.0_fast/por.traineddata.gz' -print -quit)"
+          if [ -z "$por" ]; then
+            por="$(find node_modules/@tesseract.js-data/por -type f -name 'por.traineddata.gz' -print -quit)"
+          fi
+          test -n "$por"
+          test -s "$por"
+          cp "$por" "$GITHUB_WORKSPACE/vendor/tesseract/lang/por.traineddata.gz"
+
+          if [ -f node_modules/tesseract.js/LICENSE.md ]; then
+            cp node_modules/tesseract.js/LICENSE.md "$GITHUB_WORKSPACE/vendor/tesseract/LICENSE-tesseract-js.md"
+          elif [ -f node_modules/tesseract.js/LICENSE ]; then
+            cp node_modules/tesseract.js/LICENSE "$GITHUB_WORKSPACE/vendor/tesseract/LICENSE-tesseract-js.txt"
+          fi
+          if [ -f node_modules/tesseract.js-core/LICENSE ]; then
+            cp node_modules/tesseract.js-core/LICENSE "$GITHUB_WORKSPACE/vendor/tesseract/LICENSE-tesseract-core.txt"
+          fi
+          popd >/dev/null
+          rm -rf "$tmp"
+
+          cat > vendor/tesseract/THIRD_PARTY_NOTICES.md <<'EOF'
+          # Titon OCR - third-party assets
+
+          Vendored for local-only OCR of scanned PDFs.
+
+          - Tesseract.js 7.0.0 - Apache-2.0 - https://github.com/naptha/tesseract.js
+          - tesseract.js-core 7.0.0 - Apache-2.0 - https://github.com/naptha/tesseract.js-core
+          - Portuguese trained data (@tesseract.js-data/por 1.0.0, fast model) - https://github.com/naptha/tessdata
+
+          Runtime policy: all OCR assets are served from this Portal. Patient/document images are processed inside the browser and are not sent to a third-party OCR service.
+          EOF
+
+      - name: Commitar assets no branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vendor/tesseract
+          if git diff --cached --quiet; then
+            echo "Assets já estavam versionados."
+            exit 0
+          fi
+          git commit -m "chore(titon): vendorizar runtime OCR local"
+          git push origin HEAD:feat/titon-ocr-scanned-pdf-20260921
