@@ -6,12 +6,14 @@ on:
       - 'documentos/index.html'
       - 'js/documents.js'
       - 'js/document-editor.js'
+      - 'js/document-ocr.js'
       - 'js/document-viewer.js'
       - 'css/documents.css'
       - 'scripts/build-central-docs-staging.mjs'
       - 'vendor/pdfjs/**'
       - 'vendor/pdfjs-legacy/**'
       - 'vendor/pdf-lib/**'
+      - 'vendor/tesseract/**'
       - 'testing/central-docs/**'
       - 'testing/browser/**'
       - '.github/workflows/validate-central-documents-browser.yml'
@@ -54,6 +56,29 @@ jobs:
           test -d vendor/pdfjs/standard_fonts
           test -d vendor/pdfjs/wasm
           test -d vendor/pdfjs/iccs
+
+      - name: Validar OCR local versionado
+        run: |
+          test -s vendor/tesseract/v7.0.0/tesseract.min.js
+          test -s vendor/tesseract/v7.0.0/worker.min.js
+          test -s vendor/tesseract/v7.0.0/core/tesseract-core-lstm.wasm.js
+          test -s vendor/tesseract/v7.0.0/core/tesseract-core-simd-lstm.wasm.js
+          test -s vendor/tesseract/v7.0.0/core/tesseract-core-relaxedsimd-lstm.wasm.js
+          test -s vendor/tesseract/v7.0.0/LICENSE-tesseract.js.md
+          test -s vendor/tesseract/v7.0.0/LICENSE-tesseract.js-core.txt
+          printf '%s  %s\n' '000c27d9cd0def655f77b36c72a389c0ab13793aa31cb4d7aab56d09c0afbc7e' 'vendor/tesseract/v7.0.0/tesseract.min.js' | sha256sum -c -
+          printf '%s  %s\n' '576b7df7e3393e137e51849357c9adb53fe7ac1bb69bfa06cf3d61520f182c6d' 'vendor/tesseract/v7.0.0/worker.min.js' | sha256sum -c -
+          test "$(git hash-object vendor/tesseract/v7.0.0/tesseract.min.js)" = '449da3bf07dbe1c95c92510175d554d21d8071df'
+          test "$(git hash-object vendor/tesseract/v7.0.0/worker.min.js)" = 'de4a93b57987867b5dd42d8b6a5d222644aeab88'
+          test "$(git hash-object vendor/tesseract/v7.0.0/core/tesseract-core-lstm.wasm.js)" = '57d52b25a1438b086ba0ae8c49e9105957f306b3'
+          test "$(git hash-object vendor/tesseract/v7.0.0/core/tesseract-core-simd-lstm.wasm.js)" = 'c831ffec0db84e022ec5be2cdf1d4e4ae797d593'
+          test "$(git hash-object vendor/tesseract/v7.0.0/core/tesseract-core-relaxedsimd-lstm.wasm.js)" = 'dbc88c372a923875187d611d527774f169d47561'
+          grep -q "/vendor/tesseract/v7.0.0/tesseract.min.js" js/document-ocr.js
+          grep -q "/vendor/tesseract/v7.0.0/worker.min.js" js/document-ocr.js
+          grep -q "/vendor/tesseract/v7.0.0/core" js/document-ocr.js
+          grep -q "https://cdn.jsdelivr.net/npm/@tesseract.js-data/por@1.0.0/4.0.0_best_int" js/document-ocr.js
+          grep -q "cacheMethod: 'none'" js/document-ocr.js
+          ! grep -E "cdn.jsdelivr.net/npm/(tesseract.js|tesseract.js-core)@" js/document-ocr.js
 
       - name: Executar testes de navegador
         working-directory: testing/browser
