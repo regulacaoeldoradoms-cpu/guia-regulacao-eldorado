@@ -349,9 +349,10 @@ sqliteTest('listagem e pesquisa não devolvem fileId bruto e aceitam somente ref
     assert.equal(JSON.stringify(listed).includes('raw-pdf-id-sensitive'), false);
     assert.equal(JSON.stringify(listed).includes('raw-folder-id-sensitive'), false);
     assert.ok(listed.items[0].ref.length > 30);
-    assert.match(listed.items[0].cacheKey, /^[A-Za-z0-9_-]{32}$/);
+    assert.equal(listed.items[0].isFolder, true);
+    assert.equal(listed.items[0].cacheKey, '', 'Pastas não precisam de chave de cache de PDF.');
+    assert.equal(listed.items[1].isPdf, true);
     assert.match(listed.items[1].cacheKey, /^[A-Za-z0-9_-]{32}$/);
-    assert.notEqual(listed.items[0].cacheKey, listed.items[1].cacheKey);
 
     const opened = await openDriveFileRef(env, listed.items[1].ref);
     assert.equal(opened.id, 'raw-pdf-id-sensitive');
