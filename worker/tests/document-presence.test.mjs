@@ -170,4 +170,17 @@ sqliteTest('duas abas do mesmo usuário não geram falso alerta de outro operado
 
   assert.equal(observed.otherCount, 0);
   assert.equal(observed.editingCount, 0);
+
+  const refC = await sealDriveFileRef(env, 'same-user-file-003', 'application/pdf');
+  const thirdParty = await heartbeatDocumentPresence(env, {
+    username: 'outro.usuario',
+    name: 'Outro Usuário'
+  }, {
+    ref: refC,
+    sessionId: 'presence_third_party_session_003',
+    mode: 'view'
+  });
+  assert.equal(thirdParty.otherCount, 1, 'Duas abas do mesmo operador devem aparecer como uma única pessoa.');
+  assert.equal(thirdParty.editingCount, 1, 'Se qualquer aba do operador estiver editando, o estado agregado deve ser edit.');
+  assert.deepEqual(thirdParty.others, [{ name: 'Mesmo Usuário', mode: 'edit' }]);
 });
