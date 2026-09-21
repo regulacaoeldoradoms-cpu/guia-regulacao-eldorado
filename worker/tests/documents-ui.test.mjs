@@ -126,7 +126,7 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
 
   assert.match(html, /portal-performance\.js\?v=20260921-1/);
   assert.match(html, /document-viewer\.js\?v=20260921-3/);
-  assert.match(html, /documents\.js\?v=20260921-10/);
+  assert.match(html, /documents\.js\?v=20260921-11/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-1/);
 
   for (const source of [observability, server]) {
@@ -182,7 +182,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260921-10/);
+  assert.match(html, /documents\.js\?v=20260921-11/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -241,7 +241,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260921-3/);
-  assert.match(html, /documents\.js\?v=20260921-10/);
+  assert.match(html, /documents\.js\?v=20260921-11/);
   assert.match(html, /documents\.css\?v=20260921-9/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
@@ -483,7 +483,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260921-3/);
-  assert.match(html, /documents\.js\?v=20260921-10/);
+  assert.match(html, /documents\.js\?v=20260921-11/);
   assert.match(html, /documents\.css\?v=20260921-9/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -626,7 +626,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260921-10/);
+  assert.match(html, /documents\.js\?v=20260921-11/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -675,8 +675,17 @@ test('editor PDF sincroniza automaticamente apenas após alteração e mantém f
   assert.match(client, /operation: 'replace_pdf'/);
   assert.match(client, /preserveRevision/);
   assert.match(client, /safetyRevisionPreserved/);
-  assert.match(client, /\/api\/documents\/drive\/sync\/preflight/);
+  assert.doesNotMatch(client, /\/api\/documents\/drive\/sync\/preflight/);
   assert.match(client, /\/api\/documents\/drive\/sync\/start/);
+
+  const driveWorker = read('worker/document-drive.js');
+  const startSyncSection = driveWorker.slice(
+    driveWorker.indexOf('export async function startDriveSync'),
+    driveWorker.indexOf('function nextOffsetFromRange')
+  );
+  assert.match(startSyncSection, /driveSyncPreflightState/);
+  assert.match(startSyncSection, /initiateDriveResumableUpload/);
+  assert.ok(startSyncSection.indexOf('driveSyncPreflightState') < startSyncSection.indexOf('initiateDriveResumableUpload'));
   assert.match(client, /\/api\/documents\/drive\/sync\/upload\//);
   assert.match(client, /\/api\/documents\/drive\/sync\/status\//);
   assert.match(client, /drive_sync_started/);
@@ -1019,7 +1028,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
   assert.match(html, /documents\.css\?v=20260921-9/);
-  assert.match(html, /documents\.js\?v=20260921-10/);
+  assert.match(html, /documents\.js\?v=20260921-11/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
@@ -1265,7 +1274,7 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
   assert.match(html, /documents\.css\?v=20260921-9/);
-  assert.match(html, /documents\.js\?v=20260921-10/);
+  assert.match(html, /documents\.js\?v=20260921-11/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-notepad-head[\s\S]*cursor:\s*grab/);
