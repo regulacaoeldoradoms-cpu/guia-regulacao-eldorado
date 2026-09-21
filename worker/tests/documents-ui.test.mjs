@@ -946,6 +946,7 @@ test('Titon renomeia o PDF real no Drive com extensão protegida e confirmação
   assert.match(html, /id="documentsViewerTitle"[^>]*tabindex="0"[^>]*role="button"/);
   assert.match(html, /id="documentsViewerRenameInput"[^>]*maxlength="296"/);
   assert.ok(html.includes('documents-viewer-rename-extension" aria-hidden="true">.pdf</span>'));
+  assert.match(html, /id="documentsViewerRenameStatus"[^>]*role="status"[^>]*aria-live="polite"/);
   assert.match(client, /function selectViewerTitleText\(\)/);
   assert.match(client, /function beginPdfRename\(\)/);
   assert.match(client, /async function commitPdfRename\(\)/);
@@ -953,12 +954,18 @@ test('Titon renomeia o PDF real no Drive com extensão protegida e confirmação
   assert.match(client, /baseVersion:\s*previous\.version/);
   assert.ok(client.includes("event.key === 'Enter'"));
   assert.ok(client.includes("event.key === 'Escape'"));
+  assert.match(client, /viewerRenameInput\?\.addEventListener\('blur',[\s\S]*commitPdfRename\(\)/);
+  assert.match(client, /Sincronizando nome com o Google Drive…/);
+  assert.match(client, /✓ Nome alterado e sincronizado com o Google Drive\./);
+  assert.match(client, /✕ O nome não foi alterado no Google Drive\./);
   assert.ok(router.includes("url.pathname === '/api/documents/drive/rename'"));
   assert.ok(router.includes("requireCapability(user, 'edit', origin)"));
   assert.match(drive, /export async function renameDrivePdf/);
   assert.match(drive, /method:\s*'PATCH'/);
   assert.ok(drive.includes('body: JSON.stringify({ name })'));
   assert.match(css, /#documentsViewerTitle\[hidden\][^}]*display:\s*none\s*!important/);
+  assert.match(css, /\.documents-viewer-rename-status\.success/);
+  assert.match(css, /\.documents-viewer-rename-status\.warning/);
 });
 
 test('zoom do Titon mantém porcentagem em tempo real legível sobre fundo claro', () => {
