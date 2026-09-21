@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260921-4">
+  <link rel="stylesheet" href="/css/documents.css?v=20260921-5">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -98,6 +98,7 @@
                   <input id="documentsViewerRenameInput" type="text" maxlength="296" autocomplete="off" spellcheck="false">
                   <span class="documents-viewer-rename-extension" aria-hidden="true">.pdf</span>
                 </label>
+                <span class="documents-viewer-rename-status" id="documentsViewerRenameStatus" role="status" aria-live="polite" hidden></span>
               </div>
             </div>
             <div class="documents-viewer-actions">
@@ -151,8 +152,18 @@
                   <div class="documents-ai-document-status" id="documentsAiDocumentStatus" aria-live="polite"></div>
                   <div class="documents-ai-document-results" id="documentsAiDocumentResults" hidden></div>
                   <div class="documents-ai-document-actions" id="documentsAiDocumentActions" hidden>
+                    <button class="portal-button secondary" id="documentsAiOrderFieldsButton" type="button" aria-pressed="false">Organizar campos</button>
                     <button class="portal-button secondary" id="documentsAiCopyAllButton" type="button">Copiar tudo</button>
                   </div>
+                  <section class="documents-ai-order-panel" id="documentsAiFieldOrderPanel" aria-label="Personalizar ordem dos campos" hidden>
+                    <div class="documents-ai-order-head">
+                      <strong>Ordem dos campos</strong>
+                      <button type="button" id="documentsAiFieldOrderResetButton">Restaurar padrão</button>
+                    </div>
+                    <p>Arraste os campos para a ordem desejada. Essa preferência guarda somente os tipos de campo neste navegador.</p>
+                    <div class="documents-ai-order-list" id="documentsAiFieldOrderList"></div>
+                    <button class="portal-button primary documents-ai-order-done" id="documentsAiFieldOrderDoneButton" type="button">Concluir organização</button>
+                  </section>
                 </section>
 
                 <details class="documents-ai-chat" id="documentsAiChatSection" hidden>
@@ -311,6 +322,6 @@
   <script src="/js/document-background.js?v=20260920-1"></script>
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-viewer.js?v=20260919-1"></script>
-  <script src="/js/documents.js?v=20260921-4"></script>
+  <script src="/js/documents.js?v=20260921-5"></script>
 </body>
 </html>
