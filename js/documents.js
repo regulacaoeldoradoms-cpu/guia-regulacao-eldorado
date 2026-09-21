@@ -356,7 +356,7 @@
 
     if (code.includes('VERSION_CONFLICT')) return 'conflict';
     if (code.includes('SESSION')) return 'session';
-    if (code.includes('RATE') || code.includes('QUOTA') || status === 429) return 'rate_limit';
+    if (code.includes('RATE') || code.includes('QUOTA') || code.includes('LIMIT') || status === 429) return 'rate_limit';
     if (
       code.includes('AUTH')
       || code.includes('FORBIDDEN')
@@ -380,7 +380,7 @@
       || status === 408
       || status === 503
       || status === 504
-      || status === 0
+      || (status === 0 && String(error?.name || '') === 'TypeError')
     ) return 'network';
     if (
       domain === 'ai'
@@ -4528,6 +4528,7 @@
     if (!response.ok) {
       const error = new Error(payload?.error || `Não foi possível analisar a página ${pageNumber}.`);
       error.code = String(payload?.code || '');
+      error.status = response.status;
       throw error;
     }
     return normalizeDocumentAiPagePayload(pageNumber, payload);
