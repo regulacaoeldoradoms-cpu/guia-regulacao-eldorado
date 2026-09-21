@@ -250,6 +250,7 @@ test('Titon permite selecionar e copiar texto nativo do PDF sem interferir nas f
   assert.match(viewer, /session\.pdfjs\?\.TextLayer/);
   assert.match(viewer, /page\.streamTextContent\(\{ includeMarkedContent: true, disableNormalization: false \}\)/);
   assert.match(viewer, /new TextLayer\(\{[\s\S]*textContentSource,[\s\S]*container: layerNode,[\s\S]*viewport/);
+  assert.match(viewer, /--scale-factor/);
   assert.match(viewer, /--total-scale-factor/);
   assert.match(viewer, /renderSelectableTextLayer\(session, record, page, viewport, generation\)/);
   assert.match(viewer, /clearSelectableTextLayer\(record\)/);
@@ -257,6 +258,9 @@ test('Titon permite selecionar e copiar texto nativo do PDF sem interferir nas f
 
   assert.match(css, /\.portal-pdf-text-layer\s*\{[\s\S]*user-select:\s*text;[\s\S]*pointer-events:\s*auto;/);
   assert.match(css, /\.portal-pdf-text-layer ::selection/);
+  assert.match(css, /data-main-rotation="90"/);
+  assert.match(css, /data-main-rotation="180"/);
+  assert.match(css, /data-main-rotation="270"/);
   assert.match(css, /data-object-mode="write"[\s\S]*\.portal-pdf-text-layer/);
   assert.match(css, /data-draw-mode="draw"[\s\S]*\.portal-pdf-text-layer/);
   assert.match(css, /data-crop-mode="crop"[\s\S]*\.portal-pdf-text-layer/);
