@@ -1933,6 +1933,11 @@
   }
 
   async function startEditor() {
+    if (state.renameBusy) {
+      showStatus('Aguarde a renomeação terminar antes de entrar no editor.', 'warning');
+      return;
+    }
+    if (state.titleEditing) cancelPdfRename({ restoreFocus: false });
     background?.cancelScope?.(state.backgroundScope, 'editor');
     state.backgroundPreparedImages.clear();
     state.backgroundPreparedAnalysis.clear();
@@ -3289,6 +3294,13 @@
       return true;
     } catch (error) {
       showStatus(error?.message || 'Não foi possível renomear o PDF no Google Drive.', 'warning');
+      if (
+        state.editorSession
+        && currentEditorRevision() !== state.driveSyncLastConfirmedRevision
+        && !state.driveSyncInFlight
+      ) {
+        scheduleAutomaticDriveSync(currentEditorRevision());
+      }
       return false;
     } finally {
       state.renameBusy = false;
@@ -4758,6 +4770,10 @@
 
   async function requestClosePdf() {
     const openId = state.pdfOpenId;
+    if (state.renameBusy) {
+      showStatus('Aguarde a renomeação ser confirmada pelo Google Drive antes de fechar o Titon.', 'warning');
+      return false;
+    }
     if (state.editorSession && !(await exitEditor({ restoreOriginal: false }))) return false;
     if (openId !== state.pdfOpenId || state.editorSession) return false;
     closePdf();
@@ -5273,10 +5289,15 @@
   }, true);
 
   window.addEventListener('beforeunload', (event) => {
-    if (!state.editorSession) return;
-    const hasPendingChanges = state.editorBusy || state.driveSyncInFlight
-      || currentEditorRevision() !== state.driveSyncLastConfirmedRevision
-      || state.driveSyncVisualState === 'failed';
+    const hasEditorChanges = Boolean(
+      state.editorSession && (
+        state.editorBusy
+        || state.driveSyncInFlight
+        || currentEditorRevision() !== state.driveSyncLastConfirmedRevision
+        || state.driveSyncVisualState === 'failed'
+      )
+    );
+    const hasPendingChanges = state.renameBusy || hasEditorChanges;
     if (!hasPendingChanges) return;
     event.preventDefault();
     event.returnValue = '';
