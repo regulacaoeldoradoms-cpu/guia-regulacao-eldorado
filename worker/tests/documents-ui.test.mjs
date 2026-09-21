@@ -913,20 +913,20 @@ test('Titon renomeia o PDF real no Drive com extensão protegida e confirmação
 
   assert.match(html, /id="documentsViewerTitle"[^>]*tabindex="0"[^>]*role="button"/);
   assert.match(html, /id="documentsViewerRenameInput"[^>]*maxlength="296"/);
-  assert.match(html, /documents-viewer-rename-extension[^>]*>\\.pdf<\\/span>/);
+  assert.ok(html.includes('documents-viewer-rename-extension" aria-hidden="true">.pdf</span>'));
   assert.match(client, /function selectViewerTitleText\(\)/);
   assert.match(client, /function beginPdfRename\(\)/);
   assert.match(client, /async function commitPdfRename\(\)/);
-  assert.match(client, /\\/api\\/documents\\/drive\\/rename/);
-  assert.match(client, /baseVersion:\s*previous\\.version/);
-  assert.match(client, /event\\.key === 'Enter'/);
-  assert.match(client, /event\\.key === 'Escape'/);
-  assert.match(router, /url\\.pathname === '\\/api\\/documents\\/drive\\/rename'/);
-  assert.match(router, /requireCapability\\(user, 'edit', origin\\)/);
+  assert.ok(client.includes('/api/documents/drive/rename'));
+  assert.match(client, /baseVersion:\s*previous\.version/);
+  assert.ok(client.includes("event.key === 'Enter'"));
+  assert.ok(client.includes("event.key === 'Escape'"));
+  assert.ok(router.includes("url.pathname === '/api/documents/drive/rename'"));
+  assert.ok(router.includes("requireCapability(user, 'edit', origin)"));
   assert.match(drive, /export async function renameDrivePdf/);
   assert.match(drive, /method:\s*'PATCH'/);
-  assert.match(drive, /JSON\\.stringify\\(\\{ name \\}\\)/);
-  assert.match(css, /#documentsViewerTitle\\[hidden\\][^}]*display:\\s*none\\s*!important/);
+  assert.ok(drive.includes('body: JSON.stringify({ name })'));
+  assert.match(css, /#documentsViewerTitle\[hidden\][^}]*display:\s*none\s*!important/);
 });
 
 test('zoom do Titon mantém porcentagem em tempo real legível sobre fundo claro', () => {
@@ -934,10 +934,10 @@ test('zoom do Titon mantém porcentagem em tempo real legível sobre fundo claro
   const css = read('css/documents.css');
   const viewer = read('js/document-viewer.js');
 
-  assert.match(html, /id="pdfZoomResetButton"[^>]*><span id="pdfZoomLabel">100%<\\/span>/);
-  assert.match(css, /#pdfZoomResetButton\\s*\\{[^}]*color:\\s*#111827\\s*!important;[^}]*background:\\s*#fff;/s);
-  assert.match(css, /#pdfZoomResetButton #pdfZoomLabel\\s*\\{[^}]*color:\\s*#111827\\s*!important;[^}]*opacity:\\s*1\\s*!important;/s);
-  assert.match(viewer, /zoomLabel\\.textContent = \`\$\{Math\\.round\\(session\\.scale \\* 100\\)\\}%\`/);
+  assert.ok(html.includes('<span id="pdfZoomLabel">100%</span>'));
+  assert.match(css, /#pdfZoomResetButton\s*\{[\s\S]*?color:\s*#111827\s*!important;[\s\S]*?background:\s*#fff;/);
+  assert.match(css, /#pdfZoomResetButton #pdfZoomLabel\s*\{[\s\S]*?color:\s*#111827\s*!important;[\s\S]*?opacity:\s*1\s*!important;/);
+  assert.ok(viewer.includes('zoomLabel.textContent = `${Math.round(session.scale * 100)}%`;'));
 });
 
 test('presença simultânea do Titon é efêmera, autenticada e não entra na observabilidade', () => {
@@ -948,24 +948,24 @@ test('presença simultânea do Titon é efêmera, autenticada e não entra na ob
   const presence = read('worker/document-presence.js');
 
   assert.match(html, /id="documentsPresenceNotice"[^>]*hidden/);
-  assert.match(html, /id="documentsPresenceText"/);
-  assert.match(css, /\\.documents-viewer\\.has-shared-presence/);
-  assert.match(css, /\\.documents-viewer\\.has-shared-editor/);
-  assert.match(client, /DOCUMENT_PRESENCE_HEARTBEAT_MS = 25_000/);
-  assert.match(client, /\\/api\\/documents\\/presence\\/heartbeat/);
-  assert.match(client, /\\/api\\/documents\\/presence/);
-  assert.match(client, /setDocumentPresenceMode\\('edit'\\)/);
-  assert.match(client, /setDocumentPresenceMode\\('view'\\)/);
-  assert.match(client, /Atenção para evitar uma solicitação duplicada/);
-  assert.match(router, /url\\.pathname === '\\/api\\/documents\\/presence\\/heartbeat'/);
-  assert.match(router, /mode === 'edit' && !hasDocumentCapability\\(user, 'edit'\\)/);
-  assert.match(presence, /PRESENCE_TTL_SECONDS = 75/);
-  assert.match(presence, /drivePresenceKey\\(env, ref\\)/);
-  assert.doesNotMatch(presence, /PostHog|capture\\(|fileId|filename|item\\.name/);
-  const start = client.indexOf('  function clearDocumentPresenceVisual()');
-  const end = client.indexOf('  function documentAiCapabilities()', start);
-  assert.ok(start >= 0 && end > start);
-  assert.doesNotMatch(client.slice(start, end), /capture\\(/);
+  assert.ok(html.includes('id="documentsPresenceText"'));
+  assert.ok(css.includes('.documents-viewer.has-shared-presence'));
+  assert.ok(css.includes('.documents-viewer.has-shared-editor'));
+  assert.ok(client.includes('DOCUMENT_PRESENCE_HEARTBEAT_MS = 25_000'));
+  assert.ok(client.includes('/api/documents/presence/heartbeat'));
+  assert.ok(client.includes('/api/documents/presence'));
+  assert.ok(client.includes("setDocumentPresenceMode('edit')"));
+  assert.ok(client.includes("setDocumentPresenceMode('view')"));
+  assert.ok(client.includes('Atenção para evitar uma solicitação duplicada'));
+  assert.ok(router.includes("url.pathname === '/api/documents/presence/heartbeat'"));
+  assert.ok(router.includes("mode === 'edit' && !hasDocumentCapability(user, 'edit')"));
+  assert.ok(presence.includes('PRESENCE_TTL_SECONDS = 75'));
+  assert.ok(presence.includes('drivePresenceKey(env, ref)'));
+  assert.doesNotMatch(presence, /PostHog|capture\(|fileId|filename|item\.name/);
+  const presenceStart = client.indexOf('  function clearDocumentPresenceVisual()');
+  const presenceEnd = client.indexOf('  function documentAiCapabilities()', presenceStart);
+  assert.ok(presenceStart >= 0 && presenceEnd > presenceStart);
+  assert.doesNotMatch(client.slice(presenceStart, presenceEnd), /capture\(/);
 });
 
 test('Fase 6 carrega orquestrador de background antes do cliente documental', () => {
