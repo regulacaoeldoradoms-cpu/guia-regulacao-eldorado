@@ -868,6 +868,10 @@ test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro pla
   assert.match(css, /\.documents-workspace\.is-viewer-open:not\(\.is-browser-foreground\)[\s\S]*pointer-events:\s*none/);
   assert.match(client, /function syncWorkspaceLayers\(\)/);
   assert.match(client, /els\.browser\.inert = viewerOpen && !browserForeground/);
+  const layerStart = client.indexOf('  function syncWorkspaceLayers()');
+  const layerEnd = client.indexOf('  function selectListItem(', layerStart);
+  const layerBlock = client.slice(layerStart, layerEnd);
+  assert.doesNotMatch(layerBlock, /aria-hidden/);
   assert.match(client, /state\.browserForegroundReason = '';/);
   assert.match(client, /function focusSelectedListItem\(\)/);
 });
