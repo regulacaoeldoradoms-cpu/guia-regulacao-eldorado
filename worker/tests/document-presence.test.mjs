@@ -53,6 +53,9 @@ class D1Database {
 function environment() {
   return {
     AUTH_DB: new D1Database(),
+    GOOGLE_DRIVE_OAUTH_CLIENT_ID: 'presence-test.apps.googleusercontent.com',
+    GOOGLE_DRIVE_OAUTH_CLIENT_SECRET: 'presence-client-secret-test-only',
+    GOOGLE_DRIVE_OAUTH_REDIRECT_URI: 'https://worker.test/api/documents/oauth/callback',
     DRIVE_TOKEN_ENCRYPTION_KEY: 'presence-test-encryption-key-with-enough-entropy'
   };
 }
