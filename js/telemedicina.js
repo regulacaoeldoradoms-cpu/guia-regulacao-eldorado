@@ -213,7 +213,9 @@
     if (!preserveNotice) noticeEl.hidden = true;
     listEl.innerHTML = '<div class="portal-note info">Carregando acompanhamentos...</div>';
     try {
-      const payload = await auth.api('/api/telemedicina/dashboard', { method: 'GET' });
+      const payload = window.TelemedicineNetworkRetry?.readDashboard
+        ? await window.TelemedicineNetworkRetry.readDashboard(auth)
+        : await auth.api('/api/telemedicina/dashboard', { method: 'GET' });
       state.today = payload.today || new Date().toISOString().slice(0, 10);
       state.patients = Array.isArray(payload.patients) ? payload.patients : [];
       state.followups = Array.isArray(payload.followups) ? payload.followups : [];

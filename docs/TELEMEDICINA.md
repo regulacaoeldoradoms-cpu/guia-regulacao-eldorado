@@ -351,3 +351,20 @@ Validação:
 - `worker/tests/telemedicine-rules.test.mjs`
 - `.github/workflows/validate-telemedicine.yml`
 - `.github/workflows/validate-telemedicine-edit.yml`
+
+
+## Resiliência de leitura do painel V41 — 21/09/2026
+
+Após uma ocorrência transitória em produção em que a página carregou, mas o dashboard exibiu `Failed to fetch` e voltou ao normal sem deploy, foi adotada recuperação conservadora somente para a leitura principal.
+
+Contrato V41:
+
+- somente `GET /api/telemedicina/dashboard` recebe repetição automática;
+- a tentativa inicial pode ser seguida por no máximo **duas repetições**, com esperas curtas de 350 ms e 900 ms;
+- repetição ocorre apenas quando o navegador entrega erro de rede compatível com `TypeError: Failed to fetch`, `NetworkError` ou `Load failed`;
+- respostas HTTP reais do Worker, incluindo 401, 403, 409, 429, 500 e 503, **não** são repetidas;
+- `POST`, `PATCH`, `DELETE` e qualquer gravação de consulta/situação permanecem fora deste mecanismo, evitando duplicidade de dados;
+- desktop e mobile reutilizam a mesma função de retry;
+- se as três tentativas de leitura falharem, a interface continua mostrando o erro normal já existente.
+
+A finalidade é absorver oscilações muito curtas entre navegador e Worker sem esconder falhas reais do backend e sem tornar operações de escrita não idempotentes.

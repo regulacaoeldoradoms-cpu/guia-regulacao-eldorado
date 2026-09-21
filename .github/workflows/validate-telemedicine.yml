@@ -12,6 +12,7 @@ on:
       - 'css/telemedicina-card-hierarchy-v37.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
+      - 'js/telemedicina-network-retry-v41.js'
       - 'js/telemedicina-justification-v20.js'
       - 'js/telemedicina-specialties-v17.js'
       - 'js/telemedicina-business-day.js'
@@ -31,6 +32,7 @@ on:
       - 'worker/tests/telemedicine-rules.test.mjs'
       - 'worker/tests/telemedicine-card-ui-v19.test.mjs'
       - 'worker/tests/telemedicine-justification-v20.test.mjs'
+      - 'worker/tests/telemedicine-dashboard-network-retry-v41.test.mjs'
       - 'docs/TELEMEDICINA.md'
       - 'docs/TELEMEDICINA-DESKTOP-V16.md'
       - 'docs/TELEMEDICINA-CARDS-V19.md'
@@ -51,6 +53,7 @@ on:
       - 'css/telemedicina-card-hierarchy-v37.css'
       - 'css/account-admin.css'
       - 'js/telemedicina.js'
+      - 'js/telemedicina-network-retry-v41.js'
       - 'js/telemedicina-justification-v20.js'
       - 'js/telemedicina-specialties-v17.js'
       - 'js/telemedicina-business-day.js'
@@ -70,6 +73,7 @@ on:
       - 'worker/tests/telemedicine-rules.test.mjs'
       - 'worker/tests/telemedicine-card-ui-v19.test.mjs'
       - 'worker/tests/telemedicine-justification-v20.test.mjs'
+      - 'worker/tests/telemedicine-dashboard-network-retry-v41.test.mjs'
       - 'docs/TELEMEDICINA.md'
       - 'docs/TELEMEDICINA-DESKTOP-V16.md'
       - 'docs/TELEMEDICINA-CARDS-V19.md'
@@ -100,6 +104,7 @@ jobs:
           test -f css/telemedicina-card-hierarchy-v37.css
           test -f css/account-admin.css
           test -f js/telemedicina.js
+          test -f js/telemedicina-network-retry-v41.js
           test -f js/telemedicina-justification-v20.js
           test -f js/telemedicina-specialties-v17.js
           test -f js/telemedicina-business-day.js
@@ -113,6 +118,7 @@ jobs:
           test -f worker/telemedicine-access.js
           test -f worker/telemedicine-rules.js
           node --check js/telemedicina.js
+          node --check js/telemedicina-network-retry-v41.js
           node --check js/telemedicina-justification-v20.js
           node --check js/telemedicina-specialties-v17.js
           node --check js/telemedicina-business-day.js
@@ -138,6 +144,7 @@ jobs:
           node worker/tests/telemedicine-rules.test.mjs /tmp/telemedicine-rules.mjs
           node worker/tests/telemedicine-card-ui-v19.test.mjs
           node worker/tests/telemedicine-justification-v20.test.mjs
+          node worker/tests/telemedicine-dashboard-network-retry-v41.test.mjs
       - name: Conferir autorização, interface, importação e privacidade
         shell: bash
         run: |
@@ -156,7 +163,9 @@ jobs:
           grep -q "const existingEvent = await firestoreGet" worker/telemedicine.js
           grep -q "if (!existingEvent)" worker/telemedicine.js
           grep -q "telemedicina-justification-v20.js?v=20260906-1" telemedicina/index.html
-          grep -q "telemedicina.js?v=20260914-4" telemedicina/index.html
+          grep -q "telemedicina-network-retry-v41.js?v=20260921-1" telemedicina/index.html
+          grep -q 'data-network-resilience="v41"' telemedicina/index.html
+          grep -q "telemedicina.js?v=20260921-1" telemedicina/index.html
           grep -q "telemedicina.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicine-title-mobile" telemedicina/index.html
           grep -q "Data da última consulta" telemedicina/index.html
@@ -169,7 +178,7 @@ jobs:
           grep -q "telemedicina-desktop-v16.css?v=20260903-2" telemedicina/index.html
           grep -q "telemedicina-cards-v19.css?v=20260905-4" telemedicina/index.html
           grep -q "telemedicina-mobile-v7.js?v=20260905-1" telemedicina/index.html
-          grep -q "telemedicina-mobile-v9.js?v=20260914-3" telemedicina/index.html
+          grep -q "telemedicina-mobile-v9.js?v=20260921-1" telemedicina/index.html
           grep -q "telemedicina-edit.js?v=20260914-2" telemedicina/index.html
           grep -q 'data-desktop-design="v16"' telemedicina/index.html
           grep -q 'data-mobile-readability="v15"' telemedicina/index.html
