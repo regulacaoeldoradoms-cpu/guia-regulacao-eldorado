@@ -3608,3 +3608,35 @@ Resultado integrado:
 
 **Próxima ação exata:** no Portal real, atualizar com Ctrl+F5 e validar os Casos 10–12: reorganizar campos e reabrir para confirmar persistência da conta; copiar campos e conferir o estado **Copiado**; renomear uma vez com `Enter` e outra clicando fora, verificando a confirmação visual e o nome efetivo no Google Drive.
 
+## Titon — seleção e cópia direta de texto do PDF — EM IMPLEMENTAÇÃO — 21/09/2026
+
+Refinamento solicitado durante a homologação real da Fase 6.
+
+Branch: `feat/titon-selectable-pdf-text-20260921`.
+
+Escopo:
+- adicionar uma camada `TextLayer` do PDF.js sobre cada página renderizada;
+- permitir seleção nativa do navegador e cópia com `Ctrl+C` em PDFs que contenham texto interno;
+- preservar o canvas atual como superfície visual;
+- manter texto transparente na camada, usando somente o destaque de seleção do navegador;
+- manter a camada sincronizada com zoom e com o viewport de recorte;
+- carregar/descarregar a camada junto do ciclo lazy das páginas;
+- impedir que a camada capture ponteiros enquanto ferramentas interativas de edição estiverem ativas;
+- não adicionar OCR, IA, backend ou escrita no Drive.
+
+Decisões:
+- usar a `TextLayer` já exportada pelo PDF.js self-hosted 6.3.289, em vez de criar posicionamento textual próprio;
+- documentos escaneados sem texto interno permanecem sem seleção; OCR foi explicitamente deixado fora deste escopo;
+- seleção/cópia é somente leitura e não entra na observabilidade com conteúdo.
+
+Arquivos em alteração:
+- `js/document-viewer.js`;
+- `css/documents.css`;
+- `documentos/index.html`;
+- `worker/tests/documents-ui.test.mjs`;
+- documentação/homologação/status da Fase 6.
+
+**Fase atual:** Fase 6 — Automação operacional, homologação humana ainda aberta.
+
+**Próxima ação exata:** validar sintaxe e CI da branch, integrar apenas se os checks relevantes ficarem verdes e então executar o Caso 13 em um PDF textual real e um PDF escaneado.
+
