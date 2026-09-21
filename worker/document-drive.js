@@ -22,6 +22,16 @@ let cachedAccessToken = {
   expiresAt: 0
 };
 
+let cachedFileRefKey = {
+  secret: '',
+  promise: null
+};
+
+let cachedDriveCacheHmacKey = {
+  secret: '',
+  promise: null
+};
+
 function utf8(value) {
   return new TextEncoder().encode(String(value || ''));
 }
@@ -179,16 +189,34 @@ async function deriveAesKey(secret, label) {
   return crypto.subtle.importKey('raw', digest, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
 }
 
-async function stableDriveCacheKey(env, fileId) {
+async function driveCacheHmacKey(env) {
   const { encryptionSecret } = requireOAuthConfig(env);
-  const material = await crypto.subtle.digest('SHA-256', utf8(`central-doc-cache-v1\u0000${encryptionSecret}`));
-  const key = await crypto.subtle.importKey(
-    'raw',
-    material,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
+  if (cachedDriveCacheHmacKey.secret === encryptionSecret && cachedDriveCacheHmacKey.promise) {
+    return cachedDriveCacheHmacKey.promise;
+  }
+  const promise = (async () => {
+    const material = await crypto.subtle.digest('SHA-256', utf8(`central-doc-cache-v1\u0000${encryptionSecret}`));
+    return crypto.subtle.importKey(
+      'raw',
+      material,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+  })();
+  cachedDriveCacheHmacKey = { secret: encryptionSecret, promise };
+  try {
+    return await promise;
+  } catch (error) {
+    if (cachedDriveCacheHmacKey.promise === promise) {
+      cachedDriveCacheHmacKey = { secret: '', promise: null };
+    }
+    throw error;
+  }
+}
+
+async function stableDriveCacheKey(env, fileId) {
+  const key = await driveCacheHmacKey(env);
   const signature = await crypto.subtle.sign(
     'HMAC',
     key,
@@ -438,14 +466,20 @@ async function refreshAccessToken(env, force = false) {
   return cachedAccessToken.token;
 }
 
-async function driveFetch(env, url, options = {}, retry = true) {
+async function driveFetch(env, url, options = {}, retry = true, timing = null) {
+  const tokenStarted = performance.now();
   const token = await refreshAccessToken(env);
+  if (timing) timing.tokenMs = Number(timing.tokenMs || 0) + (performance.now() - tokenStarted);
+
   const headers = new Headers(options.headers || {});
   headers.set('Authorization', `Bearer ${token}`);
+  const upstreamStarted = performance.now();
   const response = await fetch(url, { ...options, headers });
+  if (timing) timing.apiMs = Number(timing.apiMs || 0) + (performance.now() - upstreamStarted);
+
   if (response.status === 401 && retry) {
     cachedAccessToken = { token: '', expiresAt: 0 };
-    return driveFetch(env, url, options, false);
+    return driveFetch(env, url, options, false, timing);
   }
   return response;
 }
@@ -468,7 +502,17 @@ async function fileRefKey(env) {
   if (!secret) {
     throw new DriveIntegrationError('DRIVE_SECURITY_CONFIG_MISSING', 'Chave de proteção das referências do Drive não configurada.', 503);
   }
-  return deriveAesKey(secret, 'central-documents-file-ref-v1');
+  if (cachedFileRefKey.secret === secret && cachedFileRefKey.promise) {
+    return cachedFileRefKey.promise;
+  }
+  const promise = deriveAesKey(secret, 'central-documents-file-ref-v1');
+  cachedFileRefKey = { secret, promise };
+  try {
+    return await promise;
+  } catch (error) {
+    if (cachedFileRefKey.promise === promise) cachedFileRefKey = { secret: '', promise: null };
+    throw error;
+  }
 }
 
 async function sealDriveFileRefPayload(env, id, mimeType, confirmed = null) {
@@ -556,19 +600,33 @@ function normalizedDriveItem(file, ref, cacheKey, effectiveMime, shortcut = fals
 }
 
 async function mapDriveFiles(env, files) {
-  const output = [];
-  for (const file of Array.isArray(files) ? files : []) {
-    const shortcut = file.mimeType === DRIVE_SHORTCUT_MIME && file.shortcutDetails?.targetId;
-    const effectiveId = shortcut ? file.shortcutDetails.targetId : file.id;
-    const effectiveMime = shortcut ? file.shortcutDetails.targetMimeType : file.mimeType;
-    if (!effectiveId) continue;
-    const [ref, cacheKey] = await Promise.all([
-      sealDriveFileRef(env, effectiveId, effectiveMime),
-      stableDriveCacheKey(env, effectiveId)
-    ]);
-    output.push(normalizedDriveItem(file, ref, cacheKey, effectiveMime, Boolean(shortcut)));
+  const source = Array.isArray(files) ? files : [];
+  if (!source.length) return [];
+
+  const output = new Array(source.length);
+  let cursor = 0;
+  const concurrency = Math.min(16, source.length);
+
+  async function mapNext() {
+    while (cursor < source.length) {
+      const index = cursor++;
+      const file = source[index];
+      const shortcut = file.mimeType === DRIVE_SHORTCUT_MIME && file.shortcutDetails?.targetId;
+      const effectiveId = shortcut ? file.shortcutDetails.targetId : file.id;
+      const effectiveMime = shortcut ? file.shortcutDetails.targetMimeType : file.mimeType;
+      if (!effectiveId) continue;
+
+      const refPromise = sealDriveFileRef(env, effectiveId, effectiveMime);
+      const cacheKeyPromise = effectiveMime === PDF_MIME
+        ? stableDriveCacheKey(env, effectiveId)
+        : Promise.resolve('');
+      const [ref, cacheKey] = await Promise.all([refPromise, cacheKeyPromise]);
+      output[index] = normalizedDriveItem(file, ref, cacheKey, effectiveMime, Boolean(shortcut));
+    }
   }
-  return output;
+
+  await Promise.all(Array.from({ length: concurrency }, () => mapNext()));
+  return output.filter(Boolean);
 }
 
 async function parseDriveList(response, env) {
@@ -604,7 +662,7 @@ export async function driveConnectionStatus(env) {
 }
 
 export async function listDriveFolder(env, input = {}) {
-  const pageSize = clampInteger(input.pageSize, 80, 20, 100);
+  const pageSize = clampInteger(input.pageSize, 40, 20, 100);
   const pageToken = String(input.pageToken || '').trim().slice(0, 2000);
   let parentId = 'root';
 
@@ -619,15 +677,24 @@ export async function listDriveFolder(env, input = {}) {
   const url = new URL('https://www.googleapis.com/drive/v3/files');
   url.searchParams.set('q', `'${escapeDriveQueryLiteral(parentId)}' in parents and trashed = false`);
   url.searchParams.set('pageSize', String(pageSize));
-  url.searchParams.set('orderBy', 'folder,name_natural');
   url.searchParams.set('spaces', 'drive');
   url.searchParams.set('supportsAllDrives', 'true');
   url.searchParams.set('includeItemsFromAllDrives', 'true');
   url.searchParams.set('fields', 'nextPageToken,files(id,name,mimeType,size,modifiedTime,version,capabilities(canDownload,canEdit,canModifyContent),shortcutDetails(targetId,targetMimeType))');
   if (pageToken) url.searchParams.set('pageToken', pageToken);
 
-  const response = await driveFetch(env, url.toString(), { method: 'GET' });
-  return parseDriveList(response, env);
+  const timing = {};
+  const response = await driveFetch(env, url.toString(), { method: 'GET' }, true, timing);
+  const mapStarted = performance.now();
+  const result = await parseDriveList(response, env);
+  return {
+    ...result,
+    timing: {
+      tokenMs: Math.round(Number(timing.tokenMs || 0)),
+      apiMs: Math.round(Number(timing.apiMs || 0)),
+      mapMs: Math.round(performance.now() - mapStarted)
+    }
+  };
 }
 
 export async function searchDrive(env, input = {}) {
@@ -635,13 +702,12 @@ export async function searchDrive(env, input = {}) {
   if (query.length < 2) {
     throw new DriveIntegrationError('DRIVE_SEARCH_TOO_SHORT', 'Digite pelo menos dois caracteres para pesquisar.', 400);
   }
-  const pageSize = clampInteger(input.pageSize, 80, 20, 100);
+  const pageSize = clampInteger(input.pageSize, 40, 20, 100);
   const pageToken = String(input.pageToken || '').trim().slice(0, 2000);
 
   const url = new URL('https://www.googleapis.com/drive/v3/files');
   url.searchParams.set('q', `trashed = false and name contains '${escapeDriveQueryLiteral(query)}'`);
   url.searchParams.set('pageSize', String(pageSize));
-  url.searchParams.set('orderBy', 'folder,name_natural');
   url.searchParams.set('spaces', 'drive');
   url.searchParams.set('corpora', 'user');
   url.searchParams.set('supportsAllDrives', 'true');
@@ -649,8 +715,18 @@ export async function searchDrive(env, input = {}) {
   url.searchParams.set('fields', 'nextPageToken,files(id,name,mimeType,size,modifiedTime,version,capabilities(canDownload,canEdit,canModifyContent),shortcutDetails(targetId,targetMimeType))');
   if (pageToken) url.searchParams.set('pageToken', pageToken);
 
-  const response = await driveFetch(env, url.toString(), { method: 'GET' });
-  return parseDriveList(response, env);
+  const timing = {};
+  const response = await driveFetch(env, url.toString(), { method: 'GET' }, true, timing);
+  const mapStarted = performance.now();
+  const result = await parseDriveList(response, env);
+  return {
+    ...result,
+    timing: {
+      tokenMs: Math.round(Number(timing.tokenMs || 0)),
+      apiMs: Math.round(Number(timing.apiMs || 0)),
+      mapMs: Math.round(performance.now() - mapStarted)
+    }
+  };
 }
 
 function normalizeDriveVersion(value, { required = false } = {}) {
