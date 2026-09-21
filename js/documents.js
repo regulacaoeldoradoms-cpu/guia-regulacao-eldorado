@@ -4930,11 +4930,13 @@
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
+    if (state.pdfItem) heartbeatDocumentPresence().catch(() => {});
     if (state.pdfItem && !state.editorSession) scheduleActiveDocumentPreparation(state.pdfOpenId);
     else scheduleLikelyPdfWarmup();
   });
 
   window.addEventListener('portal:session-cleared', () => {
+    releaseDocumentPresence({ keepalive: true }).catch(() => {});
     state.backgroundPreparedImages.clear();
     state.backgroundPreparedAnalysis.clear();
     state.backgroundRecentPdfs = [];
@@ -5017,6 +5019,41 @@
       return closed;
     })
     .catch(() => false));
+
+  els.viewerTitle?.addEventListener('click', () => {
+    selectViewerTitleText();
+  });
+  els.viewerTitle?.addEventListener('dblclick', (event) => {
+    event.preventDefault();
+    beginPdfRename();
+  });
+  els.viewerTitle?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === 'F2') {
+      event.preventDefault();
+      beginPdfRename();
+      return;
+    }
+    if (event.key === 'Escape' && state.titleSelected) {
+      state.titleSelected = false;
+      renderViewerTitle();
+      try { window.getSelection?.()?.removeAllRanges?.(); } catch (_) {}
+    }
+  });
+  els.viewerRenameInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      commitPdfRename().catch(() => {});
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelPdfRename();
+    }
+  });
+  els.viewerRenameInput?.addEventListener('blur', () => {
+    if (state.titleEditing && !state.renameBusy) cancelPdfRename({ restoreFocus: false });
+  });
+
   els.editPdf.addEventListener('click', startEditor);
   els.editorRailEdit?.addEventListener('click', () => {
     if (state.editorSession) setEditorWorkspaceMode('organize');
@@ -5305,6 +5342,7 @@
   window.addEventListener('pagehide', () => {
     state.cachePrefetchGeneration += 1;
     if (cacheWarmTimer) clearTimeout(cacheWarmTimer);
+    releaseDocumentPresence({ keepalive: true }).catch(() => {});
     closePdf();
   }, { once: true });
 
