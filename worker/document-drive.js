@@ -836,6 +836,7 @@ export async function renameDrivePdf(env, input = {}, username = '') {
     throw new DriveIntegrationError('DRIVE_FILE_REF_INVALID', 'Referência de arquivo ausente.', 400);
   }
   const baseVersion = normalizeDriveVersion(input.baseVersion, { required: true });
+  const baseName = safeName(input.baseName || '').trim();
   const name = normalizeDrivePdfName(input.name);
   const file = await openDriveFileRefPayload(env, ref);
   const before = await currentDrivePdfMetadata(env, ref, file);
@@ -847,7 +848,20 @@ export async function renameDrivePdf(env, input = {}, username = '') {
       403
     );
   }
-  if (before.version !== baseVersion) {
+  let versionConflict = before.version !== baseVersion;
+  if (
+    versionConflict
+    && baseName
+    && before.name === baseName
+    && await confirmedBaselineMatches(env, file, before, baseVersion, username)
+  ) {
+    // Um upload recém-confirmado pode receber um incremento posterior do campo
+    // técnico "version" do Drive sem mudar o conteúdo. A prova selada pelo sync
+    // permite reconciliar somente esse caso. O nome-base também precisa continuar
+    // idêntico, para nunca sobrescrever uma renomeação concorrente real.
+    versionConflict = false;
+  }
+  if (versionConflict) {
     throw new DriveIntegrationError(
       'DRIVE_VERSION_CONFLICT',
       'O arquivo foi alterado no Google Drive antes da renomeação. Reabra o documento e tente novamente.',
