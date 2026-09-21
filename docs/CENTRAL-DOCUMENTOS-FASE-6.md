@@ -468,6 +468,7 @@ Contrato:
 - `Escape` fecha somente a janelinha;
 - não existe botão Salvar, autosave ou sincronização;
 - nenhum conteúdo é persistido em armazenamento local, D1, Drive ou backend;
+- `spellcheck=false` evita que o campo dependa de correção ortográfica do navegador;
 - nenhum texto do rascunho entra em IA ou PostHog.
 
 O recurso é deliberadamente auxiliar e não modifica o documento. Ele complementa OCR/TextLayer sem transformar hipóteses manuais em dado documental oficial.
