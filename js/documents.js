@@ -3334,9 +3334,13 @@
     els.viewer?.classList.toggle('has-shared-presence', editing.length === 0);
     if (els.presenceNotice) els.presenceNotice.hidden = false;
     if (els.presenceText) {
-      els.presenceText.textContent = editing.length
-        ? `${editingLead}${editingSuffix} está editando este PDF. Atenção para evitar uma solicitação duplicada.`
-        : `${lead}${suffix} também está visualizando este PDF.`;
+      if (editing.length) {
+        const verb = editing.length > 1 ? 'estão editando' : 'está editando';
+        els.presenceText.textContent = `${editingLead}${editingSuffix} ${verb} este PDF. Atenção para evitar uma solicitação duplicada.`;
+      } else {
+        const verb = others.length > 1 ? 'também estão visualizando' : 'também está visualizando';
+        els.presenceText.textContent = `${lead}${suffix} ${verb} este PDF.`;
+      }
     }
   }
 
