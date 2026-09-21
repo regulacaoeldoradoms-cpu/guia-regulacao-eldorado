@@ -141,7 +141,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260920-7/);
+  assert.match(html, /documents\.js\?v=20260921-1/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -180,7 +180,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260920-4/);
+  assert.match(html, /documents\.css\?v=20260921-1/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -200,8 +200,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260919-1/);
-  assert.match(html, /documents\.js\?v=20260920-7/);
-  assert.match(html, /documents\.css\?v=20260920-4/);
+  assert.match(html, /documents\.js\?v=20260921-1/);
+  assert.match(html, /documents\.css\?v=20260921-1/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -357,8 +357,8 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260919-1/);
-  assert.match(html, /documents\.js\?v=20260920-7/);
-  assert.match(html, /documents\.css\?v=20260920-4/);
+  assert.match(html, /documents\.js\?v=20260921-1/);
+  assert.match(html, /documents\.css\?v=20260921-1/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -500,7 +500,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260920-7/);
+  assert.match(html, /documents\.js\?v=20260921-1/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -853,7 +853,7 @@ test('ferramentas laterais respeitam hidden mesmo com display autoral', () => {
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(css, /\.documents-rail-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-editor-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(html, /documents\.css\?v=20260920-4/);
+  assert.match(html, /documents\.css\?v=20260921-1/);
 });
 
 test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro plano', () => {
@@ -888,8 +888,8 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
   assert.match(css, /\.documents-item-open-titon\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
-  assert.match(html, /documents\.css\?v=20260920-4/);
-  assert.match(html, /documents\.js\?v=20260920-7/);
+  assert.match(html, /documents\.css\?v=20260921-1/);
+  assert.match(html, /documents\.js\?v=20260921-1/);
 });
 
 test('unir PDF continua podendo escolher outro arquivo da Central com Titon em segundo plano', () => {
@@ -902,6 +902,70 @@ test('unir PDF continua podendo escolher outro arquivo da Central com Titon em s
   assert.match(client, /state\.browserForegroundReason = 'merge'/);
   assert.match(client, /els\.editorMergeBrowse\?\.addEventListener\('click', showMergeBrowserSelection\)/);
   assert.match(client, /if \(state\.browserForegroundReason === 'merge'\)[\s\S]*syncWorkspaceLayers\(\)/);
+});
+
+test('Titon renomeia o PDF real no Drive com extensão protegida e confirmação explícita', () => {
+  const html = read('documentos/index.html');
+  const client = read('js/documents.js');
+  const router = read('worker/documents-router.js');
+  const drive = read('worker/document-drive.js');
+  const css = read('css/documents.css');
+
+  assert.match(html, /id="documentsViewerTitle"[^>]*tabindex="0"[^>]*role="button"/);
+  assert.match(html, /id="documentsViewerRenameInput"[^>]*maxlength="296"/);
+  assert.match(html, /documents-viewer-rename-extension[^>]*>\\.pdf<\\/span>/);
+  assert.match(client, /function selectViewerTitleText\(\)/);
+  assert.match(client, /function beginPdfRename\(\)/);
+  assert.match(client, /async function commitPdfRename\(\)/);
+  assert.match(client, /\\/api\\/documents\\/drive\\/rename/);
+  assert.match(client, /baseVersion:\s*previous\\.version/);
+  assert.match(client, /event\\.key === 'Enter'/);
+  assert.match(client, /event\\.key === 'Escape'/);
+  assert.match(router, /url\\.pathname === '\\/api\\/documents\\/drive\\/rename'/);
+  assert.match(router, /requireCapability\\(user, 'edit', origin\\)/);
+  assert.match(drive, /export async function renameDrivePdf/);
+  assert.match(drive, /method:\s*'PATCH'/);
+  assert.match(drive, /JSON\\.stringify\\(\\{ name \\}\\)/);
+  assert.match(css, /#documentsViewerTitle\\[hidden\\][^}]*display:\\s*none\\s*!important/);
+});
+
+test('zoom do Titon mantém porcentagem em tempo real legível sobre fundo claro', () => {
+  const html = read('documentos/index.html');
+  const css = read('css/documents.css');
+  const viewer = read('js/document-viewer.js');
+
+  assert.match(html, /id="pdfZoomResetButton"[^>]*><span id="pdfZoomLabel">100%<\\/span>/);
+  assert.match(css, /#pdfZoomResetButton\\s*\\{[^}]*color:\\s*#111827\\s*!important;[^}]*background:\\s*#fff;/s);
+  assert.match(css, /#pdfZoomResetButton #pdfZoomLabel\\s*\\{[^}]*color:\\s*#111827\\s*!important;[^}]*opacity:\\s*1\\s*!important;/s);
+  assert.match(viewer, /zoomLabel\\.textContent = \`\$\{Math\\.round\\(session\\.scale \\* 100\\)\\}%\`/);
+});
+
+test('presença simultânea do Titon é efêmera, autenticada e não entra na observabilidade', () => {
+  const html = read('documentos/index.html');
+  const css = read('css/documents.css');
+  const client = read('js/documents.js');
+  const router = read('worker/documents-router.js');
+  const presence = read('worker/document-presence.js');
+
+  assert.match(html, /id="documentsPresenceNotice"[^>]*hidden/);
+  assert.match(html, /id="documentsPresenceText"/);
+  assert.match(css, /\\.documents-viewer\\.has-shared-presence/);
+  assert.match(css, /\\.documents-viewer\\.has-shared-editor/);
+  assert.match(client, /DOCUMENT_PRESENCE_HEARTBEAT_MS = 25_000/);
+  assert.match(client, /\\/api\\/documents\\/presence\\/heartbeat/);
+  assert.match(client, /\\/api\\/documents\\/presence/);
+  assert.match(client, /setDocumentPresenceMode\\('edit'\\)/);
+  assert.match(client, /setDocumentPresenceMode\\('view'\\)/);
+  assert.match(client, /Atenção para evitar uma solicitação duplicada/);
+  assert.match(router, /url\\.pathname === '\\/api\\/documents\\/presence\\/heartbeat'/);
+  assert.match(router, /mode === 'edit' && !hasDocumentCapability\\(user, 'edit'\\)/);
+  assert.match(presence, /PRESENCE_TTL_SECONDS = 75/);
+  assert.match(presence, /drivePresenceKey\\(env, ref\\)/);
+  assert.doesNotMatch(presence, /PostHog|capture\\(|fileId|filename|item\\.name/);
+  const start = client.indexOf('  function clearDocumentPresenceVisual()');
+  const end = client.indexOf('  function documentAiCapabilities()', start);
+  assert.ok(start >= 0 && end > start);
+  assert.doesNotMatch(client.slice(start, end), /capture\\(/);
 });
 
 test('Fase 6 carrega orquestrador de background antes do cliente documental', () => {
