@@ -988,7 +988,7 @@ async function handleNotifications(request, url, env, context, origin) {
     friend_request: 'enviou um pedido de amizade',
     friend_accepted: 'aceitou seu pedido de amizade',
     comment: 'comentou em uma publicação sua',
-    judicial_alert: '⚖️ E-mail judicial requer atenção'
+    judicial_alert: 'E-mail judicial requer atenção'
   };
   const rows = [];
   for (const raw of result.results || []) {
@@ -1001,7 +1001,7 @@ async function handleNotifications(request, url, env, context, origin) {
         }
       : null;
     const judicialText = judicial
-      ? `⚖️ Judicial · ${judicial.subject}${judicial.sender ? ` · ${judicial.sender}` : ''}`
+      ? `Judicial · ${judicial.subject}${judicial.sender ? ` · ${judicial.sender}` : ''}`
       : '';
     rows.push({
       id: Number(row.id),
