@@ -78,7 +78,7 @@ test('Push global é sincronizado em qualquer rota autenticada', () => {
 test('rotas profissionais principais carregam o controlador global de Push', () => {
   for (const filename of globalPushEntries) {
     const html = readFileSync(new URL(filename, import.meta.url), 'utf8');
-    assert.match(html, /portal-performance\.js\?v=20260922-4/, filename);
+    assert.match(html, /portal-performance\.js\?v=20260922-5/, filename);
   }
 });
 
