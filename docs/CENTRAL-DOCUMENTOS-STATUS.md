@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — reduzir lote visível da Central para 20 itens mantendo prefetch prioritário separado** |
-| Última ação concluída | implementação em branch: pasta/pesquisa/root/preload visível passam a 20 itens; backend default 20; prefetch dos PDFs prioritários segue separado em lotes internos maiores |
-| Branch atual | `perf/central-docs-page-size-20-20260922` |
-| PR atual | ainda não aberta neste ponto do registro |
-| Último commit relevante | branch contém backend, Service Worker, Central, cache-busters globais, testes e documentação da paginação 20 |
-| Checks e testes | testes versionados atualizados; CI ainda precisa rodar no PR |
-| Decisões tomadas | foreground sempre 20; “Carregar mais” +20; raiz aquecida 20; Consulta/Exames mostram só primeira página 20; prefetch de PDFs continua com metadados em lotes de 100 até 6 páginas |
-| Justificativas | operador pediu 20 por vez; reduzir lote visível diminui custo de rede/renderização sem sacrificar o cache antecipado das pastas prioritárias |
-| Alternativas descartadas | reduzir também o prefetch para 20 e multiplicar chamadas de fundo: descartado; mostrar centenas de itens aquecidos de uma vez: descartado por contrariar o objetivo de velocidade |
-| Ações externas concluídas | nenhuma permissão/OAuth/segredo alterado; observabilidade continua sem nomes, IDs ou conteúdo |
-| Pendências e bloqueios | abrir PR, validar CI/navegador, publicar se verde e medir efeito real |
-| Riscos conhecidos | mais cliques em “Carregar mais” em pastas extensas; compensado por resposta inicial menor e cache antecipado dos PDFs prioritários |
-| Métricas / observabilidade | baseline anterior permanece: raiz Drive p95 **4.555 ms**; pesquisa p95 **6.940 ms** |
-| Próxima ação exata | abrir PR, corrigir regressões se houver, mesclar/publicar se verde; depois validar lista, pesquisa, Consulta [2026] e Exames [2026] |
-| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-drive.js`; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; testes e docs Fase 7/status |
+| Subfase / objetivo atual | **7E — validar em uso real a paginação de 20 itens e o efeito combinado com preload das pastas prioritárias** |
+| Última ação concluída | PR **#394** mesclada e publicada: listagem, pesquisa e “Carregar mais” usam 20 itens por lote; backend default 20; snapshots aquecidos respeitam 20 visíveis |
+| Branch atual | `docs/central-docs-page-size-20-status-20260922` somente para reconciliar este handoff pós-merge |
+| PR atual | PR funcional **#394 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional `2d12923e4319eb17aa87916df67aaa140227e4cd` |
+| Checks e testes | branch funcional: **51 checks verdes** + único Worker Preview de branch indisponível; pós-merge da `main`: **54/54 checks verdes** |
+| Decisões tomadas | foreground sempre 20; “Carregar mais” +20; raiz aquecida 20; Consulta/Exames mostram 20; prefetch de PDFs continua desacoplado em lotes internos maiores para não multiplicar chamadas de fundo |
+| Justificativas | operador pediu explicitamente 20 por vez; menor lote reduz trabalho inicial de rede, normalização, ordenação e renderização |
+| Alternativas descartadas | reduzir também prefetch de fundo para lotes de 20: descartado por aumentar chamadas sem benefício visual; manter 40/80: descartado por não atender objetivo |
+| Ações externas concluídas | Workers Build produtivo **43a9be31-c0cb-471a-9d5b-d3b24a4cf77e**, Version ID **951f52ce-b324-4578-8eb2-9f05ca83100f**; deploys/Pages/PDF.js/vídeo concluídos |
+| Pendências e bloqueios | falta somente amostra real pós-publicação para quantificar ganho de lista/pesquisa e confirmar comportamento de 20 itens |
+| Riscos conhecidos | pastas extensas exigem mais acionamentos de “Carregar mais”; PDFs prioritários continuam pré-cacheados e mitigam abertura individual |
+| Métricas / observabilidade | baseline pré-mudança permanece: raiz Drive p95 **4.555 ms**; pesquisa p95 **6.940 ms** |
+| Próxima ação exata | usar normalmente a Central, inclusive pesquisa e “Carregar mais”; depois consultar PostHog para comparar latência e confirmar ausência de regressão |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #394; `worker/document-drive.js`; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; docs Fase 7/status; PostHog 602473 |
 
 ## Histórico recuperável
 
@@ -4497,3 +4497,27 @@ Implementação na branch `perf/central-docs-page-size-20-20260922`:
 Motivo: diminuir o tempo até a primeira lista útil sem desfazer o preload criptografado das pastas prioritárias.
 
 **Próxima ação:** validar CI completo, publicar se verde e comparar `drive_folder_opened`/`drive_search_completed` após uso real.
+
+
+## Fase 7E — paginação de 20 integrada e publicada — 22/09/2026
+
+A PR **#394 — Fase 7E: reduzir listas da Central para 20 itens por vez** foi integrada na `main` pelo merge **`2d12923e4319eb17aa87916df67aaa140227e4cd`**.
+
+Estado publicado:
+- listagem normal de pasta: **20 itens por chamada**;
+- “Carregar mais”: acrescenta **20**;
+- pesquisa: **20 resultados por chamada**;
+- backend Drive: `pageSize` default **20**;
+- raiz aquecida pós-login: **20 itens**;
+- Consulta [2026] / Exames [2026]: snapshot visível de **20 itens** com token da próxima página preservado;
+- prefetch de PDFs prioritários continua usando trilha separada de metadados (até 100 por chamada, 6 páginas), portanto a redução visual não desfez o cache antecipado;
+- listener do preload não reduz a lista caso o operador já tenha carregado mais de 20 itens.
+
+Validação técnica:
+- PR: **51 checks funcionais verdes**; único vermelho foi Worker Preview de branch;
+- pós-merge: **54/54 checks verdes**;
+- Workers Build produtivo `43a9be31-c0cb-471a-9d5b-d3b24a4cf77e` — success;
+- Worker Version `951f52ce-b324-4578-8eb2-9f05ca83100f`;
+- Cloudflare Pages, GitHub deploy, PDF.js real em Chromium e vídeo pós-login: success.
+
+**Próxima ação:** observar uso real e comparar `drive_folder_opened` e `drive_search_completed` com a baseline anterior antes de declarar ganho percentual.
