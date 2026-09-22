@@ -4788,3 +4788,55 @@ Evidência final de publicação:
 Conclusão operacional: `listDriveFolder` com `orderBy=folder,name_natural` está novamente publicado no Worker; a Home pode voltar à composição/ordem histórica antes do corte de 20 itens. Consulta [2026] e Exames [2026] permanecem aquecidas exclusivamente em segundo plano, sem promoção visual na raiz.
 
 **Próxima ação exata:** Ctrl+F5 uma vez na Central e conferir a Home. Depois abrir Consulta [2026] e Exames [2026] para confirmar que o preload continua ativo sem alterar a ordem de Meu Drive.
+
+
+## Fase 7E — comparação controlada entre IA atual e Gemini pago — 22/09/2026
+
+Decisão do operador: **não substituir nem remover a IA documental atual do Titon**. O objetivo é manter o pipeline atual de Cloudflare Workers AI em produção e adicionar o Gemini pago como **segunda opção manual**, para comparar precisão, latência e consumo antes de qualquer decisão futura.
+
+Configuração externa concluída pelo operador, sem exposição de segredos:
+- migração para **Google AI Pro**;
+- benefício do Google Developer Program Premium ativo;
+- dois créditos mensais do Google Cloud aplicados à conta de faturamento;
+- projeto **Portal da Regulacao de Saude** importado no Google AI Studio e ativado em Nível 1 / pré-pagamento;
+- chave Gemini criada no projeto correto;
+- secret **`TITON_GEMINI_API_KEY`** criado no Cloudflare Worker. O valor não foi enviado ao chat, GitHub, frontend ou documentação.
+
+Arquitetura aprovada para a comparação:
+- provider atual permanece **`cloudflare-workers-ai`**, com `DOCUMENTS_AI_FREE_ONLY=true`, Gemma principal e Qwen/Moondream conforme as regras já homologadas;
+- Gemini é provider separado **`google-gemini-api`**, nunca fallback automático da IA atual;
+- chamada Gemini ocorre **somente quando o usuário clicar em “Extrair com Gemini”**;
+- abrir PDF, OCR, preload e extração com a IA atual não geram chamadas pagas ao Gemini;
+- resultados Gemini ficam em estado separado e não substituem `documentAiResults`, `documentAiEvidence` nem o chat documental canônico;
+- interface mostra comparação campo a campo com rótulos neutros **Igual/Difere**, sem eleger automaticamente um vencedor;
+- modelo inicial aprovado para teste: **`gemini-2.5-flash`** estável; `gemini-2.5-flash-lite` fica apenas como opção allowlisted futura;
+- raciocínio do 2.5 Flash é desabilitado na extração (`thinkingBudget=0`) para reduzir latência/custo;
+- resposta Gemini usa JSON estruturado e é revalidada pelos normalizadores restritivos já existentes do Titon.
+
+Privacidade e segurança:
+- o secret é lido somente no Worker e nunca retornado pelo endpoint de configuração;
+- a página é enviada ao Gemini apenas por ação explícita de comparação;
+- não são enviados nome de arquivo, Drive ID, username, termo de busca ou outros metadados desnecessários;
+- conteúdo, imagem, prompt e resposta Gemini não entram no PostHog nem em logs;
+- somente métricas técnicas agregadas já permitidas (tempo, origem técnica, status/tokens exibidos localmente) podem ser usadas;
+- nenhum retry cego de chamada paga foi introduzido;
+- o gate de deploy passa a tratar `TITON_GEMINI_API_KEY` como binding crítico, preservando o segredo entre versões.
+
+Implementação em andamento na branch **`feat/titon-gemini-comparison-20260922`**:
+- novo provider backend `worker/document-ai-gemini.js`;
+- nova rota autenticada `POST /api/documents/ai/page/gemini`, protegida pela capability `extract`;
+- configuração pública expõe apenas disponibilidade/modelo, nunca a chave;
+- botão original passa a se identificar como **“Extrair com IA atual”** e mantém exatamente o pipeline existente;
+- novo botão **“Extrair com Gemini”**;
+- comparação por página/campo em área separada;
+- testes unitários do provider, isolamento entre providers, segredo no backend e preservação do provider atual.
+
+Alternativas descartadas:
+- substituir Gemma/Qwen pelo Gemini: descartado pelo operador;
+- executar as duas IAs automaticamente em todo PDF: descartado por custo, privacidade e necessidade de controle humano;
+- usar Gemini como fallback silencioso: descartado porque impediria comparação justa e criaria consumo pago não explícito;
+- colocar a chave no navegador: proibido por segurança.
+
+**Critério de aceite desta janela:** IA atual continua funcionando sem alteração de provider; Gemini só roda por clique próprio; os dois resultados podem ser comparados no mesmo PDF; nenhuma chave ou conteúdo documental é exposto em frontend/telemetria; CI e gate de deploy permanecem verdes.
+
+**Próxima ação exata:** concluir testes/CI da branch, abrir PR e integrar somente com todos os checks relevantes verdes. Depois executar comparação real no mesmo PDF com IA atual e Gemini e registrar precisão, latência e uso técnico antes de qualquer decisão sobre provider preferido.

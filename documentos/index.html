@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260922-2">
+  <link rel="stylesheet" href="/css/documents.css?v=20260922-3">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -174,9 +174,21 @@
                 </aside>
 
                 <section class="documents-ai-batch" aria-label="Extrair dados do PDF">
-                  <button class="portal-button primary documents-ai-run-button" id="documentsAiExtractDocumentButton" type="button" disabled>Extrair dados do PDF</button>
+                  <div class="documents-ai-provider-actions">
+                    <button class="portal-button primary documents-ai-run-button" id="documentsAiExtractDocumentButton" type="button" disabled>Extrair com IA atual</button>
+                    <button class="portal-button secondary documents-ai-run-button documents-ai-gemini-button" id="documentsAiExtractGeminiButton" type="button" disabled hidden>Extrair com Gemini</button>
+                  </div>
+                  <div class="documents-ai-provider-label">IA atual · Cloudflare Workers AI</div>
                   <div class="documents-ai-document-status" id="documentsAiDocumentStatus" aria-live="polite"></div>
                   <div class="documents-ai-document-results" id="documentsAiDocumentResults" hidden></div>
+                  <section class="documents-ai-compare" id="documentsAiCompareSection" hidden aria-label="Comparação entre IA atual e Gemini">
+                    <div class="documents-ai-compare-head">
+                      <strong>Comparação com Gemini</strong>
+                      <span id="documentsAiGeminiModel"></span>
+                    </div>
+                    <div class="documents-ai-document-status" id="documentsAiGeminiStatus" aria-live="polite"></div>
+                    <div class="documents-ai-compare-results" id="documentsAiCompareResults"></div>
+                  </section>
                   <div class="documents-ai-document-actions" id="documentsAiDocumentActions" hidden>
                     <button class="portal-button secondary" id="documentsAiOrderFieldsButton" type="button" aria-pressed="false">Organizar campos</button>
                     <button class="portal-button secondary" id="documentsAiCopyAllButton" type="button">Copiar tudo</button>
@@ -349,6 +361,6 @@
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-ocr.js?v=20260922-1"></script>
   <script src="/js/document-viewer.js?v=20260922-3"></script>
-  <script src="/js/documents.js?v=20260922-4"></script>
+  <script src="/js/documents.js?v=20260922-5"></script>
 </body>
 </html>

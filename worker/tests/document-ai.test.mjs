@@ -50,6 +50,8 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
     DOCUMENTS_AI_ENABLED: 'true',
     DOCUMENTS_AI_PROCESSING_ENABLED: 'false',
     GEMINI_API_KEY: 'segredo-nao-pode-sair',
+    TITON_GEMINI_API_KEY: 'titon-segredo-nao-pode-sair',
+    TITON_GEMINI_COMPARISON_ENABLED: 'true',
     DRIVE_TOKEN_ENCRYPTION_KEY: 'outro-segredo',
     AUTH_SESSION_SECRET: 'sessao'
   });
@@ -70,10 +72,34 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
   assert.equal(config.features.extractDocument, true);
   assert.equal(config.features.documentChat, true);
   assert.equal(config.features.backgroundPreparation, false);
+  assert.equal(config.features.geminiComparison, false);
+  assert.equal(config.providers.current.id, 'cloudflare-workers-ai');
+  assert.equal(config.providers.current.freeOnly, true);
+  assert.equal(config.providers.gemini.id, 'google-gemini-api');
+  assert.equal(config.providers.gemini.enabled, false);
   assert.equal(Array.isArray(config.routines), true);
   const serialized = JSON.stringify(config);
-  assert.doesNotMatch(serialized, /segredo-nao-pode-sair|outro-segredo|GEMINI_API_KEY|AUTH_SESSION_SECRET/);
+  assert.doesNotMatch(serialized, /segredo-nao-pode-sair|titon-segredo-nao-pode-sair|outro-segredo|GEMINI_API_KEY|TITON_GEMINI_API_KEY|AUTH_SESSION_SECRET/);
   assert.equal(config.routines.every((routine) => !('system' in routine)), true);
+});
+
+test('comparação Gemini é opcional e não altera o provider atual gratuito', () => {
+  const config = documentAiPublicConfig({
+    DOCUMENTS_AI_ENABLED: 'true',
+    DOCUMENTS_AI_PROCESSING_ENABLED: 'true',
+    DOCUMENTS_AI_FREE_ONLY: 'true',
+    TITON_GEMINI_COMPARISON_ENABLED: 'true',
+    TITON_GEMINI_MODEL: 'gemini-2.5-flash',
+    TITON_GEMINI_API_KEY: 'segredo'
+  });
+  assert.equal(config.provider, 'cloudflare-workers-ai');
+  assert.equal(config.freeOnly, true);
+  assert.equal(config.providers.current.enabled, true);
+  assert.equal(config.providers.current.freeOnly, true);
+  assert.equal(config.providers.gemini.enabled, true);
+  assert.equal(config.providers.gemini.paid, true);
+  assert.equal(config.providers.gemini.model, 'gemini-2.5-flash');
+  assert.equal(config.features.geminiComparison, true);
 });
 
 test('classificação exige uma página válida e um tipo fechado', () => {

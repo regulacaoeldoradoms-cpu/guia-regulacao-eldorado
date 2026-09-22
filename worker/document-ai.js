@@ -10,6 +10,13 @@ export const DOCUMENT_AI_PHASE = '5E';
 export const DOCUMENT_AI_VERSION = 'phase5e-v8c2-semantic-json';
 const DOCUMENT_AI_RUNTIME_READY = true;
 
+export const TITON_GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
+export const TITON_GEMINI_ALLOWED_MODELS = Object.freeze([
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite'
+]);
+const TITON_GEMINI_ALLOWED_MODEL_SET = new Set(TITON_GEMINI_ALLOWED_MODELS);
+
 export const DOCUMENT_AI_EXTRACTION_FIELDS = Object.freeze({
   comprovante_atendimento: Object.freeze([
     'nome_paciente',
@@ -61,7 +68,23 @@ export function documentAiBackgroundEnabled(env = {}) {
     && flag(env.DOCUMENTS_AI_BACKGROUND_ENABLED);
 }
 
+export function documentAiGeminiModel(env = {}) {
+  const model = String(env.TITON_GEMINI_MODEL || TITON_GEMINI_DEFAULT_MODEL).trim();
+  return TITON_GEMINI_ALLOWED_MODEL_SET.has(model) ? model : '';
+}
+
+export function documentAiGeminiComparisonEnabled(env = {}) {
+  return Boolean(
+    documentAiProcessingEnabled(env)
+    && flag(env.TITON_GEMINI_COMPARISON_ENABLED)
+    && String(env.TITON_GEMINI_API_KEY || '').trim()
+    && documentAiGeminiModel(env)
+  );
+}
+
 export function documentAiPublicConfig(env = {}) {
+  const geminiModel = documentAiGeminiModel(env);
+  const geminiComparison = documentAiGeminiComparisonEnabled(env);
   return {
     enabled: documentAiEnabled(env),
     processingEnabled: documentAiProcessingEnabled(env),
@@ -72,12 +95,28 @@ export function documentAiPublicConfig(env = {}) {
     persistence: 'none',
     provider: 'cloudflare-workers-ai',
     freeOnly: true,
+    providers: {
+      current: {
+        id: 'cloudflare-workers-ai',
+        label: 'IA atual',
+        enabled: documentAiProcessingEnabled(env),
+        freeOnly: true
+      },
+      gemini: {
+        id: 'google-gemini-api',
+        label: 'Gemini',
+        enabled: geminiComparison,
+        paid: true,
+        model: geminiModel || TITON_GEMINI_DEFAULT_MODEL
+      }
+    },
     features: {
       classifyPage: true,
       extractPage: true,
       extractDocument: true,
       documentChat: true,
-      backgroundPreparation: documentAiBackgroundEnabled(env)
+      backgroundPreparation: documentAiBackgroundEnabled(env),
+      geminiComparison
     },
     routines: documentAiRoutineMetadata()
   };

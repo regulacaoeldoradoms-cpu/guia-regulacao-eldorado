@@ -51,6 +51,10 @@ DOCUMENTS_AI_PRIMARY_MODEL = "@cf/google/gemma-4-26b-a4b-it"
 DOCUMENTS_AI_FALLBACK_MODELS = "@cf/qwen/qwen3.8-27b"
 DOCUMENTS_AI_TIMEOUT_MS = "6000"
 DOCUMENTS_AI_TOTAL_TIMEOUT_MS = "10000"
+# Comparação manual paga: mantém Workers AI como provider atual/canônico e habilita Gemini somente por ação explícita.
+TITON_GEMINI_COMPARISON_ENABLED = "true"
+TITON_GEMINI_MODEL = "gemini-2.5-flash"
+# TITON_GEMINI_API_KEY é secret do Worker; nunca versionar o valor.
 # Fase 4 concluída: escrita real liberada em produção; origem de homologação neutralizada.
 # Como keep_vars=true preserva variáveis omitidas, mantemos valor vazio para remover efetivamente o preview da configuração produtiva.
 DOCUMENTS_DRIVE_WRITE_ENABLED = "true"
