@@ -425,3 +425,12 @@ Critério de aceite:
 3. raiz/pastas aquecidas mostram no máximo 20 itens por lote;
 4. “Carregar mais” acrescenta mais 20;
 5. prefetch prioritário continua usando sua trilha separada e não despeja todos os itens na UI.
+
+
+### Publicação da paginação de 20 itens
+
+A PR **#394** foi mesclada pelo commit `2d12923e4319eb17aa87916df67aaa140227e4cd`. O pós-merge concluiu **54/54 checks verdes** e o Worker produtivo publicou a Version ID `951f52ce-b324-4578-8eb2-9f05ca83100f`.
+
+A paginação visível de 20 está ativa em produção para lista, pesquisa, raiz aquecida e pastas prioritárias. O prefetch de PDFs das pastas prioritárias permanece desacoplado da quantidade visível.
+
+O critério funcional foi atendido. O critério de desempenho continua dependente de tráfego real posterior à publicação.
