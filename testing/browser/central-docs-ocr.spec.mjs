@@ -42,40 +42,59 @@ test.describe('Central de Documentos — OCR local de PDF digitalizado', () => {
 
     const textLayer = firstPage.locator('.portal-pdf-text-layer');
     const drag = await textLayer.evaluate((layer) => {
-      const words = Array.from(layer.querySelectorAll('[data-ocr-word="true"]'));
-      const groups = new Map();
-      for (const word of words) {
-        const key = word.dataset.ocrGroup || '';
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key).push(word);
-      }
-      const candidates = Array.from(groups.entries()).find(([, items]) => items.length >= 2)
-        || Array.from(groups.entries())[0];
-      if (!candidates) return null;
-      const [groupId, items] = candidates;
-      const start = items[0];
-      const end = items[Math.min(1, items.length - 1)];
-      const a = start.getBoundingClientRect();
-      const b = end.getBoundingClientRect();
+      const layerRect = layer.getBoundingClientRect();
+      const splitX = layerRect.left + (layerRect.width * .52);
+      const lowerY = layerRect.top + (layerRect.height * .46);
+      const words = Array.from(layer.querySelectorAll('[data-ocr-word="true"]'))
+        .map((word) => ({ word, rect: word.getBoundingClientRect() }));
+
+      const right = words.filter(({ rect }) => (
+        rect.top >= lowerY
+        && ((rect.left + rect.right) / 2) > splitX
+      ));
+      const left = words.filter(({ rect }) => (
+        rect.top >= lowerY
+        && ((rect.left + rect.right) / 2) < (layerRect.left + (layerRect.width * .45))
+      ));
+      if (right.length < 3 || left.length < 1) return null;
+
+      right.sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left);
+      const startWord = right[0];
+      const minLeft = Math.min(...right.map(({ rect }) => rect.left));
+      const maxRight = Math.max(...right.map(({ rect }) => rect.right));
+      const maxBottom = Math.max(...right.map(({ rect }) => rect.bottom));
+
       return {
-        groupId,
         total: words.length,
-        start: { x: a.left + Math.max(1, a.width * .35), y: a.top + Math.max(1, a.height * .5) },
-        end: { x: b.left + Math.max(1, b.width * .65), y: b.top + Math.max(1, b.height * .5) }
+        splitX,
+        start: {
+          x: Math.max(startWord.rect.left + 1, minLeft + 1),
+          y: startWord.rect.top + Math.max(1, startWord.rect.height * .5)
+        },
+        end: {
+          x: maxRight - 1,
+          y: maxBottom - 1
+        }
       };
     });
     expect(drag).toBeTruthy();
 
     await page.mouse.move(drag.start.x, drag.start.y);
     await page.mouse.down();
-    await page.mouse.move(drag.end.x, drag.end.y, { steps: 8 });
+    await page.mouse.move(drag.end.x, drag.end.y, { steps: 12 });
     await page.mouse.up();
 
-    await expect(textLayer).toHaveAttribute('data-ocr-selection-group', drag.groupId);
+    await expect(textLayer).toHaveAttribute('data-ocr-selection-mode', 'rectangle');
     const selectedWords = textLayer.locator('[data-ocr-word="true"].ocr-custom-selected');
     const selectedCount = await selectedWords.count();
     expect(selectedCount).toBeGreaterThan(0);
     expect(selectedCount).toBeLessThan(drag.total);
+
+    const selectedGeometry = await selectedWords.evaluateAll((nodes, splitX) => nodes.map((node) => {
+      const rect = node.getBoundingClientRect();
+      return { centerX: (rect.left + rect.right) / 2, text: node.dataset.ocrText || '' };
+    }), drag.splitX);
+    expect(selectedGeometry.every(({ centerX }) => centerX > drag.splitX)).toBe(true);
 
     const selectionText = await page.evaluate(() => window.getSelection()?.toString() || '');
     expect(selectionText.trim().length).toBeGreaterThan(1);
