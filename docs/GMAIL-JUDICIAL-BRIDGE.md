@@ -47,7 +47,7 @@ O deploy seguro trata `GMAIL_BRIDGE_SECRET` como binding crítico. A versão da 
 
 Variável não sensível:
 
-`GMAIL_JUDICIAL_RECIPIENTS = "wellyton,josiane,lorrana"`
+`GMAIL_JUDICIAL_RECIPIENTS = "wellyton,josiane,lorrana.galindo"`
 
 O Worker resolve cada destinatário primeiro por `username`, depois por `public_handle` e, como fallback, pelo nome cadastrado (nome exato ou primeiro nome). O fallback só é aceito quando a melhor correspondência é única; em caso de ambiguidade, o endpoint mantém `complete:false` em vez de escolher uma conta arbitrariamente. Se qualquer destinatário não for resolvido, a mensagem não recebe `PORTAL_JUDICIAL_ENVIADO`; novas tentativas são seguras porque a persistência é idempotente.
 
@@ -102,7 +102,7 @@ Resultado esperado:
   "ok": true,
   "dryRun": true,
   "complete": true,
-  "recipients": ["wellyton", "josiane", "lorrana"],
+  "recipients": ["wellyton", "josiane", "lorrana.galindo"],
   "missingRecipients": []
 }
 ```
