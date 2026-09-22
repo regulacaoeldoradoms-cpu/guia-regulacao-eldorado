@@ -233,20 +233,19 @@ async function fetchPriorityFolderItems(endpoint, authorization, folderRef) {
 }
 
 async function warmPriorityFolders(endpoint, authorization, rootFolder) {
-  const folders = [];
-  for (const requestedName of DOCUMENTS_PRIORITY_FOLDER_NAMES) {
+  const folders = await Promise.all(DOCUMENTS_PRIORITY_FOLDER_NAMES.map(async (requestedName) => {
     const folder = await discoverPriorityFolder(endpoint, authorization, requestedName, rootFolder).catch(() => null);
-    if (!folder?.ref) continue;
+    if (!folder?.ref) return null;
     const listing = await fetchPriorityFolderItems(endpoint, authorization, folder.ref).catch(() => null);
-    if (!listing) continue;
-    folders.push(Object.freeze({
+    if (!listing) return null;
+    return Object.freeze({
       name: String(folder.name || requestedName),
       ref: String(folder.ref),
       items: Array.isArray(listing.items) ? listing.items : [],
       nextPageToken: String(listing.nextPageToken || '')
-    }));
-  }
-  return folders;
+    });
+  }));
+  return folders.filter(Boolean);
 }
 
 async function warmDocumentsStatic() {
