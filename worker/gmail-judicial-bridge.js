@@ -99,17 +99,50 @@ export function normalizeBridgePayload(body) {
   };
 }
 
+export function recipientNameTarget(value) {
+  return normalizedRecipient(value).replace(/[._-]+/g, ' ').trim();
+}
+
 async function authUserForRecipient(env, requested) {
   const normalized = normalizedRecipient(requested);
-  if (!normalized) return null;
-  return env.AUTH_DB.prepare(`SELECT username
+  const nameTarget = recipientNameTarget(requested);
+  if (!normalized || !nameTarget) return null;
+
+  const result = await env.AUTH_DB.prepare(`SELECT username,
+      CASE
+        WHEN LOWER(username) = ? THEN 0
+        WHEN LOWER(COALESCE(public_handle, '')) = ? THEN 1
+        WHEN LOWER(TRIM(COALESCE(name, ''))) = ? THEN 2
+        WHEN LOWER(TRIM(COALESCE(name, ''))) LIKE ? THEN 3
+        ELSE 9
+      END AS matchRank
     FROM auth_users
     WHERE active = 1
-      AND (LOWER(username) = ? OR LOWER(COALESCE(public_handle, '')) = ?)
-    ORDER BY CASE WHEN LOWER(username) = ? THEN 0 ELSE 1 END
-    LIMIT 1`)
-    .bind(normalized, normalized, normalized)
-    .first();
+      AND (
+        LOWER(username) = ?
+        OR LOWER(COALESCE(public_handle, '')) = ?
+        OR LOWER(TRIM(COALESCE(name, ''))) = ?
+        OR LOWER(TRIM(COALESCE(name, ''))) LIKE ?
+      )
+    ORDER BY matchRank, LOWER(username)
+    LIMIT 6`)
+    .bind(
+      normalized,
+      normalized,
+      nameTarget,
+      nameTarget + ' %',
+      normalized,
+      normalized,
+      nameTarget,
+      nameTarget + ' %'
+    )
+    .all();
+
+  const rows = result.results || [];
+  if (!rows.length) return null;
+  const bestRank = Number(rows[0].matchRank);
+  const best = rows.filter((row) => Number(row.matchRank) === bestRank);
+  return best.length === 1 ? { username: best[0].username } : null;
 }
 
 async function resolveRecipients(env) {
