@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — desempenho real da Central após paginação de 20 itens; seleção OCR retangular encerrada e aprovada** |
-| Última ação concluída | Validação real da seleção OCR 2D: **aprovada pelo usuário como perfeita** no PDF que reproduzia o defeito |
-| Branch atual | `docs/central-docs-ocr-rectangular-approved-20260922` somente para registrar este aceite |
-| PR atual | PR funcional **#402 mesclada**; PR documental deste aceite ainda a abrir |
-| Último commit relevante | funcional `477222103dbd295aa39a215aba9570d1e9c76e27` |
-| Checks e testes | Fases 1–6, Chromium com fixture de duas colunas, governança e site verdes; validação real também aprovada |
-| Decisões tomadas | manter seleção OCR por retângulo 2D; não reabrir esta frente sem regressão comprovada |
-| Justificativas | solução foi validada no documento real que antes capturava a coluna esquerda indevidamente |
-| Alternativas descartadas | intervalo linear por DOM/grupo/parágrafo já foi testado e descartado por falhar em layout de duas colunas |
-| Ações externas concluídas | publicação estática da PR #402 concluída; nenhuma nova intervenção externa necessária para OCR |
-| Pendências e bloqueios | seleção OCR: **nenhuma pendência conhecida**; resta medir latência real de lista/pesquisa após paginação de 20 itens |
-| Riscos conhecidos | bboxes OCR podem variar por documento, mas o caso crítico de duas colunas foi coberto por teste e uso real |
-| Métricas / observabilidade | OCR continua local, sem conteúdo enviado ao PostHog |
-| Próxima ação exata | **retomar medição real de `drive_folder_opened` e `drive_search_completed` após uso normal da Central** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #402; `js/document-viewer.js`; `testing/browser/central-docs-ocr.spec.mjs`; status Fase 7E |
+| Subfase / objetivo atual | **7E — restaurar ordem histórica da Home sem perder preload de Consulta/Exames** |
+| Última ação concluída | Implementação em branch: listagem Drive recupera `orderBy=folder,name_natural`; preload prioritário recebe guarda explícita para nunca repintar a raiz |
+| Branch atual | `fix/central-docs-root-order-priority-neutral-20260922` |
+| PR atual | ainda a abrir |
+| Último commit relevante | `93daae6` (testes da neutralidade da Home) |
+| Checks e testes | pendentes de CI |
+| Decisões tomadas | Consulta [2026]/Exames [2026] continuam prioritárias **somente em background**; Home segue ordem histórica; pesquisa mantém fast-path sem orderBy |
+| Justificativas | com paginação de 20, remover orderBy remoto altera quais itens entram na primeira página antes da ordenação local; isso explica a mudança visual sem depender de promoção explícita das pastas prioritárias |
+| Alternativas descartadas | remover preload; promover prioridades na Home; restaurar orderBy da pesquisa |
+| Ações externas concluídas | nenhuma nesta correção ainda |
+| Pendências e bloqueios | CI/merge/deploy + validação visual da Home |
+| Riscos conhecidos | `orderBy` pode acrescentar algum custo à listagem; impacto tende a ser menor com lote de 20 e deve ser observado nas métricas reais |
+| Métricas / observabilidade | continuar comparando `drive_folder_opened`; sem novas propriedades ou dados sensíveis |
+| Próxima ação exata | abrir PR, validar Fases 1–6/site/governança e publicar se verde; depois Ctrl+F5 e conferir Home |
+| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-drive.js`; `js/documents.js`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status Fase 7E |
 
 ## Histórico recuperável
 
@@ -4725,3 +4725,28 @@ Evidência funcional:
 Conclusão: o problema de seleção OCR ampla/involuntária está encerrado. Não continuar polindo esta frente sem nova evidência real de regressão.
 
 **Próxima ação exata:** retomar a pendência normal da Fase 7E — observar uso real da paginação de 20 itens e comparar `drive_folder_opened` / `drive_search_completed` com a baseline anterior.
+
+## Fase 7E — corrigir ordem da Home sem desfazer preload prioritário — 22/09/2026
+
+Feedback operacional: houve uma interpretação incorreta do objetivo de **Consulta [2026]** e **Exames [2026]** como pastas prioritárias. A intenção sempre foi mantê-las e seus PDFs **aquecidos em segundo plano**, sem promovê-las, injetá-las ou alterar a ordem visual de **Meu Drive**.
+
+Diagnóstico do estado real:
+- o preload prioritário já armazena `priorityFolders` separadamente do snapshot `folder` da raiz;
+- o listener do frontend já não encontra uma pasta prioritária quando `parentRef` é vazio, mas essa neutralidade estava implícita e passa a ser explicitamente protegida;
+- a mudança visual de ordem percebida na Home não veio de uma regra que promovesse Consulta/Exames pelo nome;
+- a causa técnica relevante foi a otimização da PR #388, que removeu o `orderBy=folder,name_natural` da consulta remota do Google Drive. Com paginação curta, o Drive podia entregar um primeiro lote arbitrário; o frontend ordenava apenas os 20 itens já recebidos, portanto a composição da primeira página deixou de reproduzir a ordem histórica.
+
+Correção na branch `fix/central-docs-root-order-priority-neutral-20260922`:
+- `listDriveFolder` volta a usar `orderBy=folder,name_natural`, restaurando a composição/ordem histórica antes da paginação;
+- a pesquisa mantém o fast-path sem `orderBy`, para não reintroduzir custo desnecessário onde o usuário não pediu mudança;
+- o evento `portal:documents-warm-updated` agora possui guarda explícita `if (!parentRef) return`, proibindo qualquer snapshot de pasta prioritária de substituir ou reordenar a Home;
+- Consulta [2026] e Exames [2026] continuam sendo resolvidas/aquecidas em segundo plano e seus PDFs continuam elegíveis ao cache criptografado; somente a apresentação da Home fica neutra.
+
+Alternativas descartadas:
+- remover o preload de Consulta/Exames: descartado, pois o objetivo de velocidade permanece válido;
+- ordenar manualmente Consulta/Exames no topo da Home: descartado, pois contraria a intenção do operador;
+- restaurar `orderBy` também na pesquisa: não necessário para este problema e poderia devolver parte do custo removido no fast-path.
+
+**Critério de aceite:** Meu Drive volta à ordem histórica; Consulta/Exames não recebem promoção visual por serem prioritárias; ao abrir essas pastas, o preload continua oferecendo resposta antecipada.
+
+**Próxima ação exata:** validar CI, publicar se verde e pedir somente um Ctrl+F5 + conferência visual da Home e abertura das duas pastas prioritárias.
