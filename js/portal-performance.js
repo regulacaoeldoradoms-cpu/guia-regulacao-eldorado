@@ -215,12 +215,6 @@
 
     const limits = cache.limits || {};
     const maxFileBytes = Number(limits.maxFileBytes || 0);
-    const maxTotalBytes = Number(limits.maxTotalBytes || 0);
-    const stats = await cache.stats?.(token).catch?.(() => ({ count: 0, bytes: 0 }))
-      || { count: 0, bytes: 0 };
-    let budget = maxTotalBytes > 0
-      ? Math.max(0, maxTotalBytes - Math.max(0, Number(stats.bytes || 0)))
-      : Number.POSITIVE_INFINITY;
 
     const candidates = [];
     for (const item of uniquePriorityPdfItems(payload)) {
@@ -232,8 +226,8 @@
         token
       };
       if (await cache.has(descriptor).catch(() => false)) continue;
-      if (size > budget) continue;
-      budget -= size;
+      // Pastas prioritárias têm precedência sobre PDFs antigos do cache.
+      // O próprio PortalDocumentCache aplica o teto total e elimina os menos recentes.
       candidates.push({ item, descriptor, size });
     }
 
