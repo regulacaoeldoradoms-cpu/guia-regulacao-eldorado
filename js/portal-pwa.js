@@ -362,7 +362,15 @@
       syncPush({ createIfPermitted: true });
       return;
     }
-    if (installed()) window.setTimeout(showPushPrompt, 700);
+    if ('Notification' in window && Notification.permission === 'default') {
+      window.setTimeout(showPushPrompt, 700);
+    }
+  }
+
+  function resyncPushIfActive() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    if (!window.RegulationAuth?.getCachedUser?.()) return;
+    syncPush({ createIfPermitted: true });
   }
 
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -387,11 +395,22 @@
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (event.data?.type !== 'PORTAL_PUSH_RECEIVED') return;
+      resyncPushIfActive();
+      window.PortalInteractions?.notify?.(
+        'notification',
+        'Nova notificação recebida no Portal. Abra Notificações para consultar.'
+      );
       window.dispatchEvent(new CustomEvent('portal:background-refresh', {
         detail: { source: 'push' }
       }));
     });
   }
+
+  window.addEventListener('focus', resyncPushIfActive);
+  window.addEventListener('online', resyncPushIfActive);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) resyncPushIfActive();
+  });
 
   ensurePwaHead();
 

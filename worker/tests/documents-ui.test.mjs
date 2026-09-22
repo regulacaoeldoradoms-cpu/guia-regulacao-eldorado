@@ -113,7 +113,7 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260922-3'/);
+  assert.match(source, /CACHE_VERSION = '20260922-4'/);
 });
 
 test('Fase 7E abre Consulta/Exames aquecidos e mantém refresh autoritativo', () => {
@@ -137,7 +137,7 @@ test('Fase 7E pré-carrega Central após login somente para perfil autorizado e 
   const worker = read('portal-sw.js');
   const client = read('js/documents.js');
 
-  assert.match(html, /portal-performance\.js\?v=20260922-3/);
+  assert.match(html, /portal-performance\.js\?v=20260922-4/);
   assert.match(html, /documents\.js\?v=20260922-4/);
 
   assert.match(performanceClient, /function documentsAccessAllowed\(/);
@@ -193,7 +193,7 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
   const documents = read('js/documents.js');
   const viewer = read('js/document-viewer.js');
 
-  assert.match(html, /portal-performance\.js\?v=20260922-3/);
+  assert.match(html, /portal-performance\.js\?v=20260922-4/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
   assert.match(html, /documents\.js\?v=20260922-4/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
@@ -234,7 +234,7 @@ test('Fase 7E acelera navegação do Drive sem persistir nomes e mede somente es
   const observability = read('js/portal-observability.js');
   const server = read('worker/observability.js');
 
-  assert.match(html, /portal-performance\.js\?v=20260922-3/);
+  assert.match(html, /portal-performance\.js\?v=20260922-4/);
   assert.match(html, /documents\.js\?v=20260922-4/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 

@@ -18,6 +18,19 @@ const installEntries = [
   '../../conselho/painel/index.html'
 ];
 
+const globalPushEntries = [
+  '../../index.html',
+  '../../telemedicina/index.html',
+  '../../medico/index.html',
+  '../../recepcao/index.html',
+  '../../documentos/index.html',
+  '../../ferramentas/index.html',
+  '../../notificacoes/index.html',
+  '../../perfil/index.html',
+  '../../seguranca/index.html',
+  '../../admin/usuarios/index.html'
+];
+
 test('Web Push não transporta conteúdo sensível no POST ao provedor', () => {
   assert.match(pushWorker, /method:\s*'POST'/);
   assert.match(pushWorker, /Authorization:\s*authorization/);
@@ -49,6 +62,24 @@ test('cliente PWA oferece instalação e inscrição Push autenticada', () => {
   assert.match(pwaClient, /ensureAppleTouchIcon/);
   assert.match(pwaClient, /portal-regulacao-header_192x192\.png\?v=20260911-1/);
   assert.match(pwaClient, /portal-regulacao-header_180x180\.png\?v=20260911-1/);
+});
+
+test('Push global é sincronizado em qualquer rota autenticada', () => {
+  assert.match(pwaClient, /Notification\.permission === 'default'[\s\S]{0,180}showPushPrompt/);
+  assert.match(pwaClient, /function resyncPushIfActive\(\)/);
+  assert.match(pwaClient, /window\.addEventListener\('focus', resyncPushIfActive\)/);
+  assert.match(pwaClient, /window\.addEventListener\('online', resyncPushIfActive\)/);
+  assert.match(pwaClient, /visibilitychange/);
+  assert.match(pwaClient, /PORTAL_PUSH_RECEIVED[\s\S]{0,260}Nova notificação recebida no Portal/);
+  assert.match(serviceWorker, /scope: '\/'|addEventListener\('push'/);
+  assert.match(serviceWorker, /showNotification\('Portal da Regulação de Saúde'/);
+});
+
+test('rotas profissionais principais carregam o controlador global de Push', () => {
+  for (const filename of globalPushEntries) {
+    const html = readFileSync(new URL(filename, import.meta.url), 'utf8');
+    assert.match(html, /portal-performance\.js\?v=20260922-4/, filename);
+  }
 });
 
 test('manifesto usa os ícones oficiais 192 e 512 e o Apple usa 180', () => {
