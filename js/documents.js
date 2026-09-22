@@ -5196,7 +5196,7 @@
       body: JSON.stringify({
         parentRef: '',
         pageToken: '',
-        pageSize: 40
+        pageSize: 20
       })
     });
     const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
@@ -5401,7 +5401,7 @@
         body: JSON.stringify({
           parentRef,
           pageToken,
-          pageSize: append ? 80 : 40
+          pageSize: 20
         })
       });
       const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
@@ -5472,7 +5472,7 @@
     try {
       const payload = await api('/api/documents/drive/search', {
         method: 'POST',
-        body: JSON.stringify({ query: value, pageToken, pageSize: append ? 80 : 40 })
+        body: JSON.stringify({ query: value, pageToken, pageSize: 20 })
       });
       const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
       state.items = append ? sortItems([...state.items, ...incoming]) : incoming;
@@ -6280,6 +6280,7 @@
       && !state.pdfItem
       && !state.editorSession
       && state.selectedListIndex < 0
+      && state.items.length <= 20
     );
     if (safeToRepaint) {
       state.items = incoming;
