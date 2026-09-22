@@ -23,6 +23,10 @@
 
   let modulePromise = null;
   let active = null;
+  let activeOcrSelection = null;
+  let ocrCopyProxy = null;
+  let ocrGlobalSelectionBound = false;
+  const ocrSelectionDrags = new WeakMap();
   let openGeneration = 0;
   let currentInvocation = null;
   const OPEN_CANCELLED = Symbol('portal-pdf-open-cancelled');
@@ -300,12 +304,58 @@
     }
   }
 
+  function clearNativeSelection() {
+    try { window.getSelection?.()?.removeAllRanges?.(); } catch (_) {}
+  }
+
+  function ensureOcrCopyProxy() {
+    if (ocrCopyProxy?.isConnected) return ocrCopyProxy;
+    const proxy = document.createElement('span');
+    proxy.className = 'portal-ocr-copy-proxy';
+    proxy.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(proxy);
+    ocrCopyProxy = proxy;
+    return proxy;
+  }
+
+  function commitOcrCopySelection(text) {
+    const value = String(text || '');
+    clearNativeSelection();
+    if (!value) {
+      if (ocrCopyProxy) ocrCopyProxy.textContent = '';
+      return;
+    }
+    const proxy = ensureOcrCopyProxy();
+    proxy.textContent = value;
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(proxy);
+      const selection = window.getSelection?.();
+      selection?.removeAllRanges?.();
+      selection?.addRange?.(range);
+    } catch (_) {}
+  }
+
+  function clearOcrCustomSelection(layerNode, { clearNative = true } = {}) {
+    if (!layerNode) return;
+    for (const node of layerNode.querySelectorAll('.ocr-custom-selected')) {
+      node.classList.remove('ocr-custom-selected');
+    }
+    layerNode.removeAttribute('data-ocr-selection-group');
+    layerNode.removeAttribute('data-ocr-selected-count');
+    ocrSelectionDrags.delete(layerNode);
+    if (activeOcrSelection?.layerNode === layerNode) activeOcrSelection = null;
+    if (ocrCopyProxy) ocrCopyProxy.textContent = '';
+    if (clearNative) clearNativeSelection();
+  }
+
   function clearSelectableTextLayer(record) {
     if (!record) return;
     record.textLayerGeneration = Number(record.textLayerGeneration || 0) + 1;
     try { record.textLayerInstance?.cancel?.(); } catch (_) {}
     record.textLayerInstance = null;
     record.textLayerPromise = null;
+    if (record.textLayer?.classList?.contains?.('is-ocr')) clearOcrCustomSelection(record.textLayer);
     record.textLayer?.replaceChildren?.();
     record.textLayer?.classList?.remove?.('is-ocr');
     record.textLayer?.removeAttribute?.('data-main-rotation');
@@ -317,38 +367,147 @@
     return session?.ocrResults?.get?.(Number(pageNumber)) || null;
   }
 
-  function clearOcrSelectionIsolation(layerNode) {
-    if (!layerNode) return;
-    layerNode.removeAttribute('data-ocr-selection-group');
-    for (const node of layerNode.querySelectorAll('.ocr-selection-muted')) {
-      node.classList.remove('ocr-selection-muted');
-    }
-  }
-
-  function isolateOcrSelectionGroup(layerNode, groupId) {
-    if (!layerNode) return;
+  function ocrWordsInGroup(layerNode, groupId) {
     const normalized = String(groupId || '');
-    if (!normalized) {
-      clearOcrSelectionIsolation(layerNode);
-      return;
-    }
-    layerNode.dataset.ocrSelectionGroup = normalized;
-    for (const node of layerNode.querySelectorAll('[data-ocr-word="true"]')) {
-      node.classList.toggle('ocr-selection-muted', node.dataset.ocrGroup !== normalized);
-    }
+    return Array.from(layerNode?.querySelectorAll?.('[data-ocr-word="true"]') || [])
+      .filter((node) => node.dataset.ocrGroup === normalized)
+      .sort((a, b) => Number(a.dataset.ocrOrder || 0) - Number(b.dataset.ocrOrder || 0));
   }
 
-  function ensureOcrSelectionIsolation(layerNode) {
+  function ocrSelectionText(words = []) {
+    let output = '';
+    let previousLine = '';
+    for (const word of words) {
+      const text = String(word?.dataset?.ocrText || word?.textContent || '').trim();
+      if (!text) continue;
+      const line = String(word.dataset.ocrLineIndex || '');
+      if (output) output += line && previousLine && line !== previousLine ? '\n' : ' ';
+      output += text;
+      previousLine = line;
+    }
+    return output;
+  }
+
+  function updateOcrCustomSelection(layerNode, groupId, anchorOrder, focusOrder) {
+    const words = ocrWordsInGroup(layerNode, groupId);
+    if (!words.length) return '';
+    const anchorIndex = words.findIndex((node) => Number(node.dataset.ocrOrder || 0) === Number(anchorOrder));
+    const focusIndex = words.findIndex((node) => Number(node.dataset.ocrOrder || 0) === Number(focusOrder));
+    if (anchorIndex < 0 || focusIndex < 0) return '';
+
+    const first = Math.min(anchorIndex, focusIndex);
+    const last = Math.max(anchorIndex, focusIndex);
+    const selected = new Set(words.slice(first, last + 1));
+    for (const node of layerNode.querySelectorAll('[data-ocr-word="true"]')) {
+      node.classList.toggle('ocr-custom-selected', selected.has(node));
+    }
+    const selectedWords = words.slice(first, last + 1);
+    const text = ocrSelectionText(selectedWords);
+    layerNode.dataset.ocrSelectionGroup = String(groupId || '');
+    layerNode.dataset.ocrSelectedCount = String(selectedWords.length);
+    activeOcrSelection = { layerNode, text };
+    return text;
+  }
+
+  function distanceSquaredToRect(x, y, rect) {
+    const dx = x < rect.left ? rect.left - x : x > rect.right ? x - rect.right : 0;
+    const dy = y < rect.top ? rect.top - y : y > rect.bottom ? y - rect.bottom : 0;
+    return (dx * dx) + (dy * dy);
+  }
+
+  function ocrWordAtPoint(layerNode, groupId, clientX, clientY) {
+    const hit = document.elementFromPoint?.(clientX, clientY);
+    const direct = hit instanceof Element ? hit.closest('[data-ocr-word="true"]') : null;
+    if (direct && layerNode.contains(direct) && direct.dataset.ocrGroup === groupId) return direct;
+
+    let nearest = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    for (const word of ocrWordsInGroup(layerNode, groupId)) {
+      const distance = distanceSquaredToRect(clientX, clientY, word.getBoundingClientRect());
+      if (distance < nearestDistance) {
+        nearest = word;
+        nearestDistance = distance;
+      }
+    }
+    return nearestDistance <= (160 * 160) ? nearest : null;
+  }
+
+  function bindOcrGlobalSelectionCleanup() {
+    if (ocrGlobalSelectionBound) return;
+    ocrGlobalSelectionBound = true;
+    document.addEventListener('pointerdown', (event) => {
+      const current = activeOcrSelection?.layerNode;
+      if (!current || current.contains(event.target)) return;
+      clearOcrCustomSelection(current);
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      const current = activeOcrSelection?.layerNode;
+      if (current) clearOcrCustomSelection(current);
+    });
+  }
+
+  function ensureOcrGeometricSelection(layerNode) {
     if (!layerNode || layerNode.dataset.ocrSelectionBound === 'true') return;
     layerNode.dataset.ocrSelectionBound = 'true';
+    bindOcrGlobalSelectionCleanup();
+
     layerNode.addEventListener('pointerdown', (event) => {
-      if (!layerNode.classList.contains('is-ocr')) return;
+      if (!layerNode.classList.contains('is-ocr') || event.pointerType === 'touch' || event.button !== 0) return;
       const target = event.target instanceof Element ? event.target.closest('[data-ocr-word="true"]') : null;
       if (!target || !layerNode.contains(target)) {
-        clearOcrSelectionIsolation(layerNode);
+        clearOcrCustomSelection(layerNode);
         return;
       }
-      isolateOcrSelectionGroup(layerNode, target.dataset.ocrGroup || '');
+
+      event.preventDefault();
+      clearNativeSelection();
+      if (activeOcrSelection?.layerNode && activeOcrSelection.layerNode !== layerNode) {
+        clearOcrCustomSelection(activeOcrSelection.layerNode);
+      }
+
+      const drag = {
+        pointerId: event.pointerId,
+        groupId: String(target.dataset.ocrGroup || ''),
+        anchorOrder: Number(target.dataset.ocrOrder || 0),
+        focusOrder: Number(target.dataset.ocrOrder || 0)
+      };
+      ocrSelectionDrags.set(layerNode, drag);
+      updateOcrCustomSelection(layerNode, drag.groupId, drag.anchorOrder, drag.focusOrder);
+      try { layerNode.setPointerCapture?.(event.pointerId); } catch (_) {}
+    });
+
+    layerNode.addEventListener('pointermove', (event) => {
+      const drag = ocrSelectionDrags.get(layerNode);
+      if (!drag || event.pointerId !== drag.pointerId) return;
+      event.preventDefault();
+      clearNativeSelection();
+      const focus = ocrWordAtPoint(layerNode, drag.groupId, event.clientX, event.clientY);
+      if (!focus) return;
+      const order = Number(focus.dataset.ocrOrder || 0);
+      if (!order || order === drag.focusOrder) return;
+      drag.focusOrder = order;
+      updateOcrCustomSelection(layerNode, drag.groupId, drag.anchorOrder, drag.focusOrder);
+    });
+
+    const finish = (event) => {
+      const drag = ocrSelectionDrags.get(layerNode);
+      if (!drag || (event.pointerId != null && event.pointerId !== drag.pointerId)) return;
+      if (event.type === 'pointerup') {
+        event.preventDefault();
+        const focus = ocrWordAtPoint(layerNode, drag.groupId, event.clientX, event.clientY);
+        if (focus) drag.focusOrder = Number(focus.dataset.ocrOrder || drag.focusOrder);
+      }
+      const text = updateOcrCustomSelection(layerNode, drag.groupId, drag.anchorOrder, drag.focusOrder);
+      ocrSelectionDrags.delete(layerNode);
+      try { layerNode.releasePointerCapture?.(drag.pointerId); } catch (_) {}
+      commitOcrCopySelection(text);
+    };
+
+    layerNode.addEventListener('pointerup', finish);
+    layerNode.addEventListener('pointercancel', finish);
+    layerNode.addEventListener('lostpointercapture', (event) => {
+      if (ocrSelectionDrags.has(layerNode)) finish(event);
     });
   }
 
@@ -361,7 +520,7 @@
     clearSelectableTextLayer(record);
     const layerNode = record.textLayer;
     layerNode.classList.add('is-ocr');
-    ensureOcrSelectionIsolation(layerNode);
+    ensureOcrGeometricSelection(layerNode);
     layerNode.style.setProperty('--scale-factor', String(viewport?.scale || session.scale || 1));
     layerNode.style.setProperty('--total-scale-factor', String(viewport?.scale || session.scale || 1));
     layerNode.style.setProperty('--scale-round-x', '1px');
@@ -371,6 +530,7 @@
     const measure = measureCanvas.getContext('2d');
     const viewportWidth = Math.max(1, Number(viewport?.width || record.fullPageWidth || 1));
     const viewportHeight = Math.max(1, Number(viewport?.height || record.fullPageHeight || 1));
+    let wordOrder = 0;
 
     lines.forEach((line, lineIndex) => {
       const fallbackText = String(line?.text || '').trim();
@@ -399,10 +559,11 @@
         span.dataset.ocrLine = 'true';
         span.dataset.ocrGroup = groupId;
         span.dataset.ocrLineIndex = String(lineIndex + 1);
+        span.dataset.ocrOrder = String(++wordOrder);
+        span.dataset.ocrText = text;
         span.setAttribute('role', 'presentation');
         const isLastWord = wordIndex === sourceWords.length - 1;
-        const selectableText = text + (isLastWord ? '\n' : ' ');
-        span.textContent = selectableText;
+        span.textContent = text + (isLastWord ? '\n' : ' ');
         span.style.left = `${((x0 / result.width) * 100).toFixed(4)}%`;
         span.style.top = `${((y0 / result.height) * 100).toFixed(4)}%`;
 
