@@ -6,6 +6,7 @@ import { notifyUserPush } from './push-notifications.js';
 import {
   ensureCouncilSocialProfiles,
   ensureInitialProfessionalFriendships,
+  ensureJudicialNotificationSchema,
   ensureSocialSchema,
   resolveSocialUser,
   socialMigrationStatus,
@@ -935,6 +936,9 @@ async function handleReaction(request, env, context, postId, origin) {
 async function handleNotifications(request, url, env, context, origin) {
   const gate = socialGate(context.user, context.social);
   if (!gate.allowed) return gateResponse(gate, origin);
+  if (!(await ensureJudicialNotificationSchema(env))) {
+    return json({ error: 'Banco de notificações judiciais indisponível.' }, 503, origin);
+  }
   if (request.method === 'PATCH') {
     const body = await request.json().catch(() => ({}));
     const id = Math.max(0, Number.parseInt(String(body.id || '0'), 10) || 0);
