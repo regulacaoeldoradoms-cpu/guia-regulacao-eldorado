@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — validar em uso real a seleção OCR geométrica recém-publicada** |
-| Última ação concluída | PR **#400** mesclada e publicada: OCR digitalizado não usa mais Range nativo durante arraste; seleção é calculada geometricamente por palavra/grupo e copia só o trecho escolhido |
-| Branch atual | `docs/central-docs-ocr-geometric-status-20260922` apenas para reconciliar este handoff |
-| PR atual | PR funcional **#400 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional `541c2157f013522df04e23e25b87e0af3c58c3e3` |
-| Checks e testes | PR: Fases 1–6, Chromium/PDF.js com arraste real, governança e site verdes; pós-merge: Cloudflare Pages, Workers Build, build e deploy verdes |
-| Decisões tomadas | abandonar seleção nativa apenas no OCR; manter seleção nativa em PDFs com camada de texto real; usar proxy invisível só para copiar o texto escolhido |
-| Justificativas | a tentativa anterior por `user-select:none` em spans irmãos não impedia o Chromium de formar Range entre nós absolutos pela ordem DOM |
-| Alternativas descartadas | continuar ajustando somente CSS/user-select: descartado após reprovação real; trocar também PDFs nativos para seleção customizada: desnecessário e arriscaria regressão |
-| Ações externas concluídas | Cloudflare Pages success; Workers Build `5757e6f3-c602-4a97-a3a7-d4ee6fffc9c2` success; GitHub build/deploy success |
-| Pendências e bloqueios | somente validação operacional no PDF real do usuário; medição de latência da paginação de 20 permanece pendência secundária |
-| Riscos conhecidos | Tesseract pode dividir um campo em grupos distintos; isso restringe a seleção ao grupo em vez de ampliar para a página, comportamento fail-safe |
-| Métricas / observabilidade | nenhum texto OCR enviado ao PostHog; sem novas propriedades sensíveis |
-| Próxima ação exata | **Ctrl+F5 e testar clique + arraste curto no PDF real; confirmar que só o trecho desejado fica destacado e Ctrl+C copia apenas esse trecho** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #400; `js/document-viewer.js`; `css/documents.css`; `testing/browser/central-docs-ocr.spec.mjs` |
+| Subfase / objetivo atual | **7E — validar no PDF real a seleção OCR retangular 2D** |
+| Última ação concluída | PR **#402** mesclada e publicação estática concluída; seleção OCR agora usa interseção do retângulo do mouse com caixas reais das palavras |
+| Branch atual | `docs/central-docs-ocr-rectangular-status-20260922` somente para reconciliar o handoff |
+| PR atual | PR funcional **#402 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional `477222103dbd295aa39a215aba9570d1e9c76e27` |
+| Checks e testes | PR: Fases 1–6, Chromium com fixture de duas colunas, governança e site verdes; pós-merge: build/deploy GitHub, Cloudflare Pages e governança verdes |
+| Decisões tomadas | inclusão na seleção é puramente espacial 2D; ordem OCR serve apenas para ordenar o texto já filtrado; PDFs nativos continuam com PDF.js |
+| Justificativas | usuário confirmou que a solução linear melhorou horizontalmente mas ainda invadia a coluna esquerda verticalmente; layouts tabulares exigem controle simultâneo de X e Y |
+| Alternativas descartadas | intervalo por grupo/parágrafo e intervalo por ordem das palavras: ambos falharam em documentos com colunas |
+| Ações externas concluídas | GitHub build/deploy success; Cloudflare Pages success. Workers Build externo falhou, mas PR #402 não alterou runtime Worker e nenhuma nova versão Worker é necessária para esta correção frontend |
+| Pendências e bloqueios | falta validação operacional no PDF real; latência da paginação de 20 permanece pendência secundária |
+| Riscos conhecidos | OCR pode posicionar uma palavra com bbox imprecisa; nesse caso o erro tende a ser local à palavra tocada, não a capturar toda a coluna vizinha |
+| Métricas / observabilidade | OCR continua local; nenhum texto reconhecido enviado ao PostHog |
+| Próxima ação exata | **Ctrl+F5 e selecionar verticalmente somente o parágrafo da direita no mesmo PDF; confirmar que nenhum texto da esquerda é destacado/copied** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #402; `js/document-viewer.js`; `testing/browser/central-docs-ocr.spec.mjs`; `testing/central-docs/editor-harness.js` |
 
 ## Histórico recuperável
 
@@ -4679,3 +4679,32 @@ Cache-buster candidato: `document-viewer.js?v=20260922-3`. O OCR em si permanece
 **Critério de aceite:** selecionar verticalmente um parágrafo/caixa na direita não pode incluir qualquer texto da coluna esquerda que esteja na mesma altura.
 
 **Próxima ação exata:** validar CI estrutural e o teste Chromium de duas colunas; integrar somente se verdes e então repetir no mesmo documento real mostrado pelo usuário.
+
+## Fase 7E — seleção OCR retangular integrada e publicada — 22/09/2026
+
+A PR **#402 — Fase 7E: dar controle vertical e por coluna à seleção OCR** foi integrada à `main` no merge `477222103dbd295aa39a215aba9570d1e9c76e27`.
+
+Resultado publicado:
+- seleção OCR passou de intervalo linear para filtro espacial **2D/retangular**;
+- apenas palavras cujas caixas visuais intersectam o retângulo real entre ponto inicial e posição atual do mouse são destacadas;
+- seleção deixa de depender de grupo/parágrafo/ordem DOM para decidir inclusão;
+- texto copiado é ordenado depois do filtro geométrico, portanto uma coluna vizinha fora da área arrastada não entra na seleção;
+- clique simples continua selecionando a palavra inicial;
+- seleção nativa do PDF.js permanece intacta para PDFs com texto real.
+
+Regressão adicionada:
+- o scan sintético passou a conter **duas colunas na mesma faixa vertical**;
+- o Playwright arrasta sobre a coluna direita e exige que todas as palavras selecionadas permaneçam à direita da linha divisória;
+- Fases 1–6, navegador Chromium, governança e site passaram na PR.
+
+Publicação estática pós-merge:
+- GitHub build — **success**;
+- GitHub deploy — **success**;
+- Cloudflare Pages — **success**;
+- governança — **success**.
+
+Observação de infraestrutura: o check externo `Workers Builds: yellow-wave-d0a1guia-regulacao-ia` falhou neste merge. A PR #402 não alterou qualquer arquivo de runtime do Worker; os arquivos modificados foram somente `documentos/index.html`, `js/document-viewer.js`, testes/harness e status. Portanto essa falha não bloqueou a publicação estática da correção OCR e não representa regressão causada pelo mecanismo de seleção. Não declarar nova versão de Worker para este merge.
+
+Cache-buster publicado: `document-viewer.js?v=20260922-3`.
+
+**Próxima ação exata:** executar Ctrl+F5 e repetir no documento real mostrado pelo usuário, selecionando apenas o parágrafo da coluna direita. O aceite é a coluna esquerda permanecer totalmente fora do destaque/cópia.
