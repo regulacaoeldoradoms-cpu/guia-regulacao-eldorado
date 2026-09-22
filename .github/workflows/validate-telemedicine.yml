@@ -165,7 +165,7 @@ jobs:
           grep -q "telemedicina-justification-v20.js?v=20260906-1" telemedicina/index.html
           grep -q "telemedicina-network-retry-v41.js?v=20260921-1" telemedicina/index.html
           grep -q 'data-network-resilience="v41"' telemedicina/index.html
-          grep -q "telemedicina.js?v=20260921-1" telemedicina/index.html
+          grep -q "telemedicina.js?v=20260922-1" telemedicina/index.html
           grep -q "telemedicina.css?v=20260903-1" telemedicina/index.html
           grep -q "telemedicine-title-mobile" telemedicina/index.html
           grep -q "Data da última consulta" telemedicina/index.html

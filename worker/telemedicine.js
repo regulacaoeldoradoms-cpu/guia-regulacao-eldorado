@@ -175,6 +175,21 @@ async function dashboard(env) {
   return { today, counts, patients, followups: visible };
 }
 
+async function reminderAlerts(env) {
+  const today = localToday();
+  const followups = await listAll(env, FOLLOWUPS);
+  const alerts = followups
+    .map((item) => publicFollowup(item, today))
+    .filter((item) => !item.deletedAt && item.active !== false && item.alertToday && !item.requestedAt)
+    .map((item) => ({
+      id: String(item.id || ''),
+      reminderNumber: Number(item.reminderNumber || 0) || 1
+    }))
+    .filter((item) => item.id);
+
+  return { today, count: alerts.length, alerts };
+}
+
 async function patientDetail(env, patientId) {
   const patient = await firestoreGet(env, `${PATIENTS}/${patientId}`);
   if (!patient) return null;
@@ -613,6 +628,9 @@ export async function handleTelemedicineRoute(request, env, origin, originAllowe
   try {
     if (url.pathname === '/api/telemedicina/dashboard' && request.method === 'GET') {
       return json({ ...(await dashboard(env)), actor: { username: user.username, admin: Boolean(user.telemedicineAdmin) } }, 200, origin);
+    }
+    if (url.pathname === '/api/telemedicina/alerts' && request.method === 'GET') {
+      return json(await reminderAlerts(env), 200, origin);
     }
     const patientMatch = url.pathname.match(/^\/api\/telemedicina\/patients\/([a-f0-9]{20,64})$/);
     if (patientMatch && request.method === 'GET') {

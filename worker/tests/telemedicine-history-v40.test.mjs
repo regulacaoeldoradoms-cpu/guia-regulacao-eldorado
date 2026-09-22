@@ -16,7 +16,7 @@ const docs = read('docs/TELEMEDICINA.md');
 assert.match(html, /telemedicina-history-v40\.css\?v=20260914-1/);
 assert.match(html, /telemedicina-history-v40\.js\?v=20260914-1/);
 assert.match(html, /data-history-design="v40"/);
-assert.match(html, /telemedicina\.js\?v=20260921-1/);
+assert.match(html, /telemedicina\.js\?v=20260922-1/);
 assert.match(html, /telemedicina-mobile-v9\.js\?v=20260921-1/);
 
 for (const token of ['orderedEvents', 'Mais recente', 'Linha do tempo', 'Situação atual', 'Falta registrada', 'Alta registrada', 'Solicitação registrada', 'Retorno programado', 'Situação atualizada', 'Acompanhamento encerrado', 'tm-history-rail', 'tm-history-marker']) {
