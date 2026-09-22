@@ -395,3 +395,10 @@ Limites de segurança preservados do cache existente:
 O preload dos conteúdos é uma exceção deliberada à decisão anterior de não pré-baixar PDFs, autorizada agora pelo operador especificamente para estas duas pastas. A exceção usa apenas armazenamento criptografado local e mantém o gate de permissão ao vivo antes da exibição de qualquer listagem aquecida.
 
 Critério de aceite: as duas pastas devem abrir a partir de `cache_state=hit` quando o preload estiver pronto; PDFs já presentes no cache criptografado devem abrir pelo caminho de cache existente, enquanto arquivos fora do limite continuam com fallback normal de rede.
+
+
+### Publicação das pastas prioritárias
+
+A PR **#392** foi mesclada pelo commit `41da8b235ac461cf773d15bb9be1b9c457c6d144`. O pós-merge concluiu **54/54 checks verdes** e o Worker produtivo publicou a Version ID `0391b3ee-878d-4e99-a45a-368ff462dbcb`.
+
+O comportamento está ativo em produção, mas o aceite de desempenho depende agora de dados reais: verificar `drive_folder_opened cache_state=hit` nas duas pastas e `pdf_ready cache_state=hit` para PDFs já aquecidos. Nenhum ganho percentual é declarado antes dessa amostra.
