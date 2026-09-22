@@ -743,10 +743,23 @@
   transform-origin: 0% 0%;
 }
 
-.portal-pdf-text-layer.is-ocr span[data-ocr-line="true"] {
+.portal-pdf-text-layer.is-ocr span[data-ocr-line="true"],
+.portal-pdf-text-layer.is-ocr span[data-ocr-word="true"] {
   font-kerning: none;
   letter-spacing: normal;
   word-spacing: normal;
+}
+
+.portal-pdf-text-layer.is-ocr span[data-ocr-word="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+  pointer-events: auto;
+}
+
+.portal-pdf-text-layer.is-ocr span[data-ocr-word="true"].ocr-selection-muted {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  pointer-events: none;
 }
 
 .portal-pdf-text-layer span {
