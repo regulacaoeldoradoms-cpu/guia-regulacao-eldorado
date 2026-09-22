@@ -8,7 +8,7 @@ Fluxo:
 
 1. a automação **Monitor Judicial** analisa o Gmail;
 2. quando a mensagem exige atenção, aplica a etiqueta `PORTAL_JUDICIAL_ALERTA`;
-3. um Google Apps Script da conta institucional busca mensagens com essa etiqueta e sem `PORTAL_JUDICIAL_ENVIADO`;
+3. um Google Apps Script da conta institucional busca conversas com essa etiqueta e ignora IDs de mensagens já processados;
 4. o Apps Script envia somente metadados mínimos ao Worker:
    - ID técnico da mensagem;
    - ID técnico da conversa;
@@ -17,7 +17,7 @@ Fluxo:
    - data/hora recebida;
 5. o Worker grava um alerta idempotente no D1 e cria `judicial_alert` para Wellyton, Josiane e Lorrana;
 6. o sino, o contador de não lidas, o histórico e o Web Push já existentes são reaproveitados;
-7. quando o Worker confirma entrega para todos os destinatários configurados, o Apps Script acrescenta `PORTAL_JUDICIAL_ENVIADO` à mensagem.
+7. quando o Worker confirma entrega para todos os destinatários configurados, o Apps Script registra o ID como processado e acrescenta `PORTAL_JUDICIAL_ENVIADO` à conversa para confirmação visual.
 
 O corpo e os anexos do e-mail **não são enviados para o Portal**.
 
@@ -87,7 +87,7 @@ A função:
 - executa um dry-run autenticado contra o Worker;
 - não cria notificação de teste.
 
-O primeiro uso exigirá autorização Google para Gmail, requisições externas e criação do trigger.
+O primeiro uso exigirá autorização Google para o serviço nativo GmailApp, requisições externas e criação do trigger. A ponte não usa a Gmail API avançada (`gmail.googleapis.com`) e, portanto, não exige ativar a Gmail API nem administrar o projeto Google Cloud automático do Apps Script.
 
 ## Teste
 
@@ -115,7 +115,7 @@ A sincronização normal executa:
 
 `sincronizarJudiciaisComPortal`
 
-Uma mensagem somente recebe `PORTAL_JUDICIAL_ENVIADO` depois que o Worker responder `complete:true`.
+O ID da mensagem somente é marcado como processado depois que o Worker responder `complete:true`. Para confirmação visual no Gmail, a conversa recebe `PORTAL_JUDICIAL_ENVIADO`. A idempotência definitiva também permanece no Worker/D1.
 
 Na central do Portal, o alerta mostra:
 
