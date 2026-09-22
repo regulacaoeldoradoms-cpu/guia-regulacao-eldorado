@@ -164,7 +164,7 @@ test('pastas Consulta e Exames 2026 são prioridades exatas e seus PDFs usam cac
 
 test('service worker aquece Central sem persistir payload privado e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260922-3'/);
+  assert.match(source, /CACHE_VERSION = '20260922-4'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.match(source, /PORTAL_WARM_DOCUMENTS/);
   assert.match(source, /PORTAL_DOCUMENTS_WARM_GET/);
