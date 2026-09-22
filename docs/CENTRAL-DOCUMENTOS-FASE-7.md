@@ -368,4 +368,4 @@ Critério de aceite desta rodada:
 
 A implementação descrita acima foi integrada pela PR **#390**, merge `0f569eed3e6e343fb5e82a48164c4b343134fcee`.
 
-O Worker produtivo foi publicado com sucesso (Version ID `63de9dc0-9c44-4ea8-8d96-9cf4c286a220`) e os deploys de página também concluíram. O critério funcional de código/privacidade foi atendido; o critério de desempenho continua dependente de amostra real posterior ao deploy, especialmente `drive_folder_opened cache_state=hit`.
+O Worker produtivo foi publicado com sucesso (Version ID `63de9dc0-9c44-4ea8-8d96-9cf4c286a220`) e os deploys de página também concluíram. Um check posterior de Worker Preview, provocado pela branch documental, falhou sem invalidar a publicação produtiva anterior. O critério funcional de código/privacidade foi atendido; o critério de desempenho continua dependente de amostra real posterior ao deploy, especialmente `drive_folder_opened cache_state=hit`.
