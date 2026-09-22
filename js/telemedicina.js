@@ -190,6 +190,10 @@
   }
 
   async function notifyDueItems(items) {
+    if (window.PortalPWA?.checkTelemedicineAlerts) {
+      await window.PortalPWA.checkTelemedicineAlerts({ force: true });
+      return;
+    }
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
     const due = items.filter((item) => item.alertToday && !item.requestedAt);
     if (!due.length) return;
@@ -197,8 +201,8 @@
     try {
       if (sessionStorage.getItem(key)) return;
       const body = due.length === 1
-        ? `${due[0].patientName} · ${due[0].specialty} · aviso ${due[0].reminderNumber || 1}/3`
-        : `${due.length} retornos de telemedicina precisam da sua atenção hoje.`;
+        ? 'Há 1 retorno de Telemedicina que precisa de atenção hoje.'
+        : `Há ${due.length} retornos de Telemedicina que precisam de atenção hoje.`;
       new Notification('Regulação Eldorado · Telemedicina', { body, icon: '/assets/portal-regulacao-header.png' });
       window.PortalInteractions?.notify?.(
         'notification',
@@ -730,6 +734,12 @@
 
   document.getElementById('enableNotifications').addEventListener('click', async () => {
     const button = document.getElementById('enableNotifications');
+    if (window.PortalPWA?.enablePush) {
+      const result = await window.PortalPWA.enablePush({ requestPermission: true });
+      button.textContent = result.ok ? 'Notificações ativas' : (result.reason === 'denied' ? 'Notificações bloqueadas' : 'Ativar notificações');
+      if (result.ok) await window.PortalPWA.checkTelemedicineAlerts?.({ force: true });
+      return;
+    }
     if (!('Notification' in window)) {
       button.textContent = 'Notificações não suportadas';
       button.disabled = true;
