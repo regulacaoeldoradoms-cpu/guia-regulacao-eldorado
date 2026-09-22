@@ -78,11 +78,11 @@ test('todas as entradas ativas registram cedo a camada de desempenho', () => {
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
     assert.equal(
-      (html.match(/portal-performance\.js\?v=20260922-1/g) || []).length,
+      (html.match(/portal-performance\.js\?v=20260922-2/g) || []).length,
       1,
       filename + ': bootstrap único'
     );
-    assert.match(html, /portal-performance\.js\?v=20260922-1" async/);
+    assert.match(html, /portal-performance\.js\?v=20260922-2" async/);
     if (/auth-client\.js/.test(html)) {
       assert.match(html, /rel="preconnect" href="https:\/\/yellow-wave-d0a1guia-regulacao-ia\.regulacaoeldoradoms\.workers\.dev"/);
       assert.match(html, /rel="preload" href="\/js\/auth-client\.js\?v=20260910-4" as="script"/);
@@ -127,9 +127,38 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
   }), false);
 });
 
+test('pastas Consulta e Exames 2026 são prioridades exatas e seus PDFs usam cache criptografado', () => {
+  const performanceClient = read('js/portal-performance.js');
+  const worker = read('portal-sw.js');
+  const cache = read('js/document-cache.js');
+
+  assert.match(worker, /DOCUMENTS_PRIORITY_FOLDER_NAMES = Object\.freeze\(\[[\s\S]*'consulta \[2026\]'[\s\S]*'exames \[2026\]'/);
+  assert.match(worker, /function exactPriorityFolder\(/);
+  assert.match(worker, /normalizedPriorityFolderName/);
+  assert.match(worker, /item\?\.isFolder === true/);
+  assert.match(worker, /normalizedPriorityFolderName\(item\?\.name\) === expected/);
+  assert.match(worker, /DOCUMENTS_PRIORITY_MAX_PAGES = 6/);
+  assert.match(worker, /priorityFolders:\s*\[\]/);
+  assert.match(worker, /warmPriorityFolders\(/);
+
+  assert.match(performanceClient, /ensureDocumentCacheClient/);
+  assert.match(performanceClient, /prefetchPriorityDocumentFiles/);
+  assert.match(performanceClient, /uniquePriorityPdfItems/);
+  assert.match(performanceClient, /DOCUMENTS_PRIORITY_PREFETCH_CONCURRENCY = 2/);
+  assert.match(performanceClient, /PortalDocumentCache/);
+  assert.match(performanceClient, /cache\.has\(descriptor\)/);
+  assert.match(performanceClient, /cache\.put\(\{ \.\.\.descriptor, blob \}\)/);
+  assert.match(performanceClient, /portal:documents-warm-updated/);
+
+  assert.match(cache, /AES-GCM/);
+  assert.match(cache, /MAX_TOTAL_BYTES = 256 \* 1024 \* 1024/);
+  assert.match(cache, /MAX_FILE_BYTES = 50 \* 1024 \* 1024/);
+  assert.doesNotMatch(performanceClient, /posthog|patient_name|cpf|cns/i);
+});
+
 test('service worker aquece Central sem persistir payload privado e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260922-1'/);
+  assert.match(source, /CACHE_VERSION = '20260922-2'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.match(source, /PORTAL_WARM_DOCUMENTS/);
   assert.match(source, /PORTAL_DOCUMENTS_WARM_GET/);

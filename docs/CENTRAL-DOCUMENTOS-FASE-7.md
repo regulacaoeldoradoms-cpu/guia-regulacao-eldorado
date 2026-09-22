@@ -369,3 +369,29 @@ Critério de aceite desta rodada:
 A implementação descrita acima foi integrada pela PR **#390**, merge `0f569eed3e6e343fb5e82a48164c4b343134fcee`.
 
 O Worker produtivo foi publicado com sucesso (Version ID `63de9dc0-9c44-4ea8-8d96-9cf4c286a220`) e os deploys de página também concluíram. Um check posterior de Worker Preview, provocado pela branch documental, falhou sem invalidar a publicação produtiva anterior. O critério funcional de código/privacidade foi atendido; o critério de desempenho continua dependente de amostra real posterior ao deploy, especialmente `drive_folder_opened cache_state=hit`.
+
+## 7E — pastas prioritárias Consulta [2026] e Exames [2026] — 22/09/2026
+
+Decisão operacional explícita: manter aquecidas as pastas **Consulta [2026]** e **Exames [2026]** e também pré-carregar os PDFs diretamente contidos nelas, para reduzir ao mínimo o tempo entre entrar na Central, abrir uma dessas pastas e abrir um documento.
+
+Implementação:
+- o preload pós-login procura as duas pastas por nome exato normalizado, primeiro na raiz já aquecida e, se necessário, pela busca do Drive;
+- se houver ambiguidade de nome fora da raiz, a pasta não é escolhida automaticamente;
+- para cada pasta resolvida, a listagem é carregada em páginas de até 100 itens, limitada a 6 páginas por ciclo; se houver mais itens, o token de continuação é preservado para a navegação normal;
+- o snapshot das duas pastas permanece somente em RAM do Service Worker, junto do preload privado já existente;
+- ao abrir uma pasta prioritária, a lista aquecida é mostrada imediatamente e a listagem autoritativa do Google Drive continua em segundo plano;
+- PDFs elegíveis dessas pastas são baixados em segundo plano e gravados no **cache local criptografado existente** (`AES-GCM`), identificado apenas por `cacheKey + version`;
+- o cache não grava nome do arquivo, pasta, paciente ou Drive ID;
+- cada versão nova do arquivo gera identidade diferente e substitui a anterior quando armazenada;
+- logout continua limpando o cache documental.
+
+Limites de segurança preservados do cache existente:
+- até **50 MB por PDF**;
+- até **256 MB no total**;
+- TTL de **12 horas**;
+- em conexão com economia de dados, 2G ou slow-2G, o pré-download de PDFs não roda;
+- concorrência de pré-download limitada a 2 arquivos para não saturar o computador/rede.
+
+O preload dos conteúdos é uma exceção deliberada à decisão anterior de não pré-baixar PDFs, autorizada agora pelo operador especificamente para estas duas pastas. A exceção usa apenas armazenamento criptografado local e mantém o gate de permissão ao vivo antes da exibição de qualquer listagem aquecida.
+
+Critério de aceite: as duas pastas devem abrir a partir de `cache_state=hit` quando o preload estiver pronto; PDFs já presentes no cache criptografado devem abrir pelo caminho de cache existente, enquanto arquivos fora do limite continuam com fallback normal de rede.
