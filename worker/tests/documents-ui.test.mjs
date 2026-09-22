@@ -194,7 +194,7 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
   const viewer = read('js/document-viewer.js');
 
   assert.match(html, /portal-performance\.js\?v=20260922-3/);
-  assert.match(html, /document-viewer\.js\?v=20260922-2/);
+  assert.match(html, /document-viewer\.js\?v=20260922-3/);
   assert.match(html, /documents\.js\?v=20260922-3/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
@@ -352,7 +352,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260922-2/);
+  assert.match(html, /document-viewer\.js\?v=20260922-3/);
   assert.match(html, /documents\.js\?v=20260922-3/);
   assert.match(html, /documents\.css\?v=20260922-2/);
 
@@ -430,7 +430,7 @@ test('Titon cria texto selecionável local para PDF digitalizado sem enviar cont
   const css = read('css/documents.css');
 
   assert.match(html, /document-ocr\.js\?v=20260922-1/);
-  assert.match(html, /document-viewer\.js\?v=20260922-2/);
+  assert.match(html, /document-viewer\.js\?v=20260922-3/);
   assert.match(html, /script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'/);
   assert.match(html, /worker-src 'self'/);
   assert.doesNotMatch(html, /script-src[^"]*'unsafe-eval'/);
@@ -476,8 +476,10 @@ test('Titon cria texto selecionável local para PDF digitalizado sem enviar cont
   assert.match(viewer, /span\.dataset\.ocrWord = 'true'/);
   assert.match(viewer, /span\.dataset\.ocrGroup = groupId/);
   assert.match(viewer, /ensureOcrGeometricSelection/);
-  assert.match(viewer, /ocrWordAtPoint/);
-  assert.match(viewer, /updateOcrCustomSelection/);
+  assert.match(viewer, /ocrDragRect/);
+  assert.match(viewer, /rectIntersectsOcrWord/);
+  assert.match(viewer, /updateOcrRectSelection/);
+  assert.match(viewer, /data\.ocrSelectionMode = 'rectangle'/);
   assert.match(viewer, /commitOcrCopySelection/);
   assert.match(viewer, /span\.dataset\.ocrOrder/);
   assert.match(viewer, /span\.dataset\.ocrText/);
@@ -609,7 +611,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260922-2/);
+  assert.match(html, /document-viewer\.js\?v=20260922-3/);
   assert.match(html, /documents\.js\?v=20260922-3/);
   assert.match(html, /documents\.css\?v=20260922-2/);
 
