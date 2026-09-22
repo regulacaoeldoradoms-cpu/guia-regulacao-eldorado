@@ -4,7 +4,7 @@ import { notifyUserPush } from './push-notifications.js';
 import { ensureJudicialNotificationSchema, syncSocialUser } from './social-schema.js';
 
 const BRIDGE_PATH = '/api/integrations/gmail-judicial';
-const DEFAULT_RECIPIENTS = Object.freeze(['wellyton', 'josiane', 'lorrana']);
+const DEFAULT_RECIPIENTS = Object.freeze(['wellyton', 'josiane', 'lorrana.galindo']);
 const MAX_MESSAGE_ID = 240;
 const MAX_THREAD_ID = 240;
 const MAX_SENDER = 320;
