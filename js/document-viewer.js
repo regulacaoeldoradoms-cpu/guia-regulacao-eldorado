@@ -342,6 +342,7 @@
       node.classList.remove('ocr-custom-selected');
     }
     layerNode.removeAttribute('data-ocr-selection-group');
+    layerNode.removeAttribute('data-ocr-selection-mode');
     layerNode.removeAttribute('data-ocr-selected-count');
     ocrSelectionDrags.delete(layerNode);
     if (activeOcrSelection?.layerNode === layerNode) activeOcrSelection = null;
@@ -367,17 +368,15 @@
     return session?.ocrResults?.get?.(Number(pageNumber)) || null;
   }
 
-  function ocrWordsInGroup(layerNode, groupId) {
-    const normalized = String(groupId || '');
-    return Array.from(layerNode?.querySelectorAll?.('[data-ocr-word="true"]') || [])
-      .filter((node) => node.dataset.ocrGroup === normalized)
-      .sort((a, b) => Number(a.dataset.ocrOrder || 0) - Number(b.dataset.ocrOrder || 0));
+  function ocrWords(layerNode) {
+    return Array.from(layerNode?.querySelectorAll?.('[data-ocr-word="true"]') || []);
   }
 
   function ocrSelectionText(words = []) {
+    const ordered = [...words].sort((a, b) => Number(a.dataset.ocrOrder || 0) - Number(b.dataset.ocrOrder || 0));
     let output = '';
     let previousLine = '';
-    for (const word of words) {
+    for (const word of ordered) {
       const text = String(word?.dataset?.ocrText || word?.textContent || '').trim();
       if (!text) continue;
       const line = String(word.dataset.ocrLineIndex || '');
@@ -388,48 +387,47 @@
     return output;
   }
 
-  function updateOcrCustomSelection(layerNode, groupId, anchorOrder, focusOrder) {
-    const words = ocrWordsInGroup(layerNode, groupId);
-    if (!words.length) return '';
-    const anchorIndex = words.findIndex((node) => Number(node.dataset.ocrOrder || 0) === Number(anchorOrder));
-    const focusIndex = words.findIndex((node) => Number(node.dataset.ocrOrder || 0) === Number(focusOrder));
-    if (anchorIndex < 0 || focusIndex < 0) return '';
+  function ocrDragRect(anchorX, anchorY, focusX, focusY) {
+    const left = Math.min(Number(anchorX || 0), Number(focusX || 0));
+    const right = Math.max(Number(anchorX || 0), Number(focusX || 0));
+    const top = Math.min(Number(anchorY || 0), Number(focusY || 0));
+    const bottom = Math.max(Number(anchorY || 0), Number(focusY || 0));
+    return { left, right, top, bottom };
+  }
 
-    const first = Math.min(anchorIndex, focusIndex);
-    const last = Math.max(anchorIndex, focusIndex);
-    const selected = new Set(words.slice(first, last + 1));
-    for (const node of layerNode.querySelectorAll('[data-ocr-word="true"]')) {
+  function rectIntersectsOcrWord(rect, wordRect) {
+    return wordRect.right >= rect.left
+      && wordRect.left <= rect.right
+      && wordRect.bottom >= rect.top
+      && wordRect.top <= rect.bottom;
+  }
+
+  function wordByOcrOrder(layerNode, order) {
+    const target = Number(order || 0);
+    if (!(target > 0)) return null;
+    return ocrWords(layerNode).find((node) => Number(node.dataset.ocrOrder || 0) === target) || null;
+  }
+
+  function updateOcrRectSelection(layerNode, drag) {
+    if (!layerNode || !drag) return '';
+    const rect = ocrDragRect(drag.anchorX, drag.anchorY, drag.focusX, drag.focusY);
+    let selectedWords = ocrWords(layerNode).filter((word) => rectIntersectsOcrWord(rect, word.getBoundingClientRect()));
+
+    if (!selectedWords.length) {
+      const anchorWord = wordByOcrOrder(layerNode, drag.anchorOrder);
+      if (anchorWord) selectedWords = [anchorWord];
+    }
+
+    const selected = new Set(selectedWords);
+    for (const node of ocrWords(layerNode)) {
       node.classList.toggle('ocr-custom-selected', selected.has(node));
     }
-    const selectedWords = words.slice(first, last + 1);
+
     const text = ocrSelectionText(selectedWords);
-    layerNode.dataset.ocrSelectionGroup = String(groupId || '');
+    layerNode.dataset.ocrSelectionMode = 'rectangle';
     layerNode.dataset.ocrSelectedCount = String(selectedWords.length);
     activeOcrSelection = { layerNode, text };
     return text;
-  }
-
-  function distanceSquaredToRect(x, y, rect) {
-    const dx = x < rect.left ? rect.left - x : x > rect.right ? x - rect.right : 0;
-    const dy = y < rect.top ? rect.top - y : y > rect.bottom ? y - rect.bottom : 0;
-    return (dx * dx) + (dy * dy);
-  }
-
-  function ocrWordAtPoint(layerNode, groupId, clientX, clientY) {
-    const hit = document.elementFromPoint?.(clientX, clientY);
-    const direct = hit instanceof Element ? hit.closest('[data-ocr-word="true"]') : null;
-    if (direct && layerNode.contains(direct) && direct.dataset.ocrGroup === groupId) return direct;
-
-    let nearest = null;
-    let nearestDistance = Number.POSITIVE_INFINITY;
-    for (const word of ocrWordsInGroup(layerNode, groupId)) {
-      const distance = distanceSquaredToRect(clientX, clientY, word.getBoundingClientRect());
-      if (distance < nearestDistance) {
-        nearest = word;
-        nearestDistance = distance;
-      }
-    }
-    return nearestDistance <= (160 * 160) ? nearest : null;
   }
 
   function bindOcrGlobalSelectionCleanup() {
@@ -468,12 +466,14 @@
 
       const drag = {
         pointerId: event.pointerId,
-        groupId: String(target.dataset.ocrGroup || ''),
-        anchorOrder: Number(target.dataset.ocrOrder || 0),
-        focusOrder: Number(target.dataset.ocrOrder || 0)
+        anchorX: event.clientX,
+        anchorY: event.clientY,
+        focusX: event.clientX,
+        focusY: event.clientY,
+        anchorOrder: Number(target.dataset.ocrOrder || 0)
       };
       ocrSelectionDrags.set(layerNode, drag);
-      updateOcrCustomSelection(layerNode, drag.groupId, drag.anchorOrder, drag.focusOrder);
+      updateOcrRectSelection(layerNode, drag);
       try { layerNode.setPointerCapture?.(event.pointerId); } catch (_) {}
     });
 
@@ -482,12 +482,9 @@
       if (!drag || event.pointerId !== drag.pointerId) return;
       event.preventDefault();
       clearNativeSelection();
-      const focus = ocrWordAtPoint(layerNode, drag.groupId, event.clientX, event.clientY);
-      if (!focus) return;
-      const order = Number(focus.dataset.ocrOrder || 0);
-      if (!order || order === drag.focusOrder) return;
-      drag.focusOrder = order;
-      updateOcrCustomSelection(layerNode, drag.groupId, drag.anchorOrder, drag.focusOrder);
+      drag.focusX = event.clientX;
+      drag.focusY = event.clientY;
+      updateOcrRectSelection(layerNode, drag);
     });
 
     const finish = (event) => {
@@ -495,10 +492,10 @@
       if (!drag || (event.pointerId != null && event.pointerId !== drag.pointerId)) return;
       if (event.type === 'pointerup') {
         event.preventDefault();
-        const focus = ocrWordAtPoint(layerNode, drag.groupId, event.clientX, event.clientY);
-        if (focus) drag.focusOrder = Number(focus.dataset.ocrOrder || drag.focusOrder);
+        drag.focusX = event.clientX;
+        drag.focusY = event.clientY;
       }
-      const text = updateOcrCustomSelection(layerNode, drag.groupId, drag.anchorOrder, drag.focusOrder);
+      const text = updateOcrRectSelection(layerNode, drag);
       ocrSelectionDrags.delete(layerNode);
       try { layerNode.releasePointerCapture?.(drag.pointerId); } catch (_) {}
       commitOcrCopySelection(text);
