@@ -278,6 +278,7 @@
       clearPrompt();
       try { localStorage.removeItem(PUSH_DISMISS_KEY); } catch (_) {}
       window.PortalInteractions?.notify?.('success', 'Notificações em segundo plano ativadas.');
+      startTelemedicineAlertMonitoring();
     }
     return { ok, reason: ok ? '' : 'subscription-failed' };
   }
