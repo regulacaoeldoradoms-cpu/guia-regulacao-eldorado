@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { GMAIL_JUDICIAL_BRIDGE, bridgeRecipients, isGmailJudicialBridgeApi, normalizeBridgePayload } from '../gmail-judicial-bridge.js';
+import { GMAIL_JUDICIAL_BRIDGE, bridgeRecipients, isGmailJudicialBridgeApi, normalizeBridgePayload, recipientNameTarget } from '../gmail-judicial-bridge.js';
 
 test('rota da ponte judicial e estrita', () => {
   assert.equal(isGmailJudicialBridgeApi('/api/integrations/gmail-judicial'), true);
@@ -11,6 +11,12 @@ test('rota da ponte judicial e estrita', () => {
 test('destinatarios padrao', () => {
   assert.deepEqual(bridgeRecipients(''), ['wellyton', 'josiane', 'lorrana']);
   assert.deepEqual(bridgeRecipients(' Wellyton, JOSIANE, lorrana, josiane '), ['wellyton', 'josiane', 'lorrana']);
+});
+
+test('converte identificador configurado em alvo de nome', () => {
+  assert.equal(recipientNameTarget('Lorrana'), 'lorrana');
+  assert.equal(recipientNameTarget('Wellyton.Ritter'), 'wellyton ritter');
+  assert.equal(recipientNameTarget('  Josiane-Gomes  '), 'josiane gomes');
 });
 
 test('normaliza payload sem conteudo integral do email', () => {
