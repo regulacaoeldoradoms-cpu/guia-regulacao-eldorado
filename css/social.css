@@ -377,6 +377,8 @@
 
 .social-notification { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 11px; padding: 14px 16px; border-top: 1px solid #edf2f5; }
 .social-notification.unread { background: #f1f8fc; box-shadow: inset 3px 0 var(--social-blue); }
+.social-notification.judicial.unread { background: #fffaf0; box-shadow: inset 3px 0 #b97900; }
+.social-notification.judicial .social-avatar { background: #fff3c9; color: #704b00; font-size: 1.2rem; }
 .social-notification .social-avatar { width: 44px; height: 44px; border-width: 1px; font-size: .7rem; }
 .social-notification p { margin: 0; color: #38566a; font-size: .83rem; line-height: 1.45; }
 .social-notification time { display: block; margin-top: 4px; color: var(--social-muted); font-size: .68rem; }
