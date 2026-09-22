@@ -4601,3 +4601,30 @@ Validação:
 Cache-busters publicados: `document-ocr.js?v=20260922-1`, `document-viewer.js?v=20260922-1` e `documents.css?v=20260922-1`.
 
 **Próxima ação exata:** executar Ctrl+F5 uma vez e repetir a seleção no mesmo tipo de PDF demonstrado no vídeo. O aceite operacional é conseguir marcar/copiar apenas uma palavra ou trecho de um campo sem selecionar outros campos da página.
+
+## Fase 7E — segunda correção da seleção OCR — 22/09/2026
+
+Validação operacional após a PR #398: **reprovada**. O operador confirmou que, mesmo com palavras individuais e isolamento por grupo, ao clicar e arrastar o Chromium ainda puxava a seleção para praticamente a página inteira.
+
+Diagnóstico refinado: a primeira correção ainda deixava o OCR sob a **seleção nativa do navegador** (`window.getSelection`/Range). Em uma camada formada por vários elementos absolutamente posicionados, o Chromium seleciona pela ordem do DOM entre o ponto inicial e o ponto final, e `user-select:none` aplicado aos irmãos não é uma barreira confiável para impedir que o Range atravesse conteúdo intermediário. Por isso o defeito real podia persistir mesmo com caixas por palavra.
+
+Decisão: para páginas OCR, abandonar a seleção nativa como mecanismo de arraste. Texto nativo de PDF continua usando a seleção normal do PDF.js.
+
+Implementação na branch `fix/central-docs-ocr-geometric-selection-20260922`:
+- OCR passa a usar seleção geométrica controlada somente em páginas digitalizadas;
+- `pointerdown` define a palavra inicial e o grupo/campo OCR;
+- `pointermove` identifica pela posição real do mouse a palavra mais próxima dentro do mesmo grupo e seleciona apenas o intervalo de palavras entre início e fim;
+- a seleção visual é aplicada somente às palavras realmente escolhidas (`ocr-custom-selected`);
+- a seleção nativa da página é cancelada durante o arraste, impedindo o Chromium de criar um Range que atravesse a página;
+- ao soltar, um proxy invisível e fora da página recebe somente o texto efetivamente escolhido, preservando Ctrl+C/cópia sem selecionar visualmente outros campos;
+- clique fora ou Esc limpa a seleção;
+- touch não é interceptado, preservando rolagem no mobile;
+- nenhum texto OCR é persistido, registrado ou enviado à observabilidade.
+
+A suíte de navegador foi alterada para reproduzir **arraste real do mouse**, em vez de validar apenas um Range criado programaticamente. O teste exige que a quantidade de palavras selecionadas seja menor que o total reconhecido da página e que o texto copiável também seja menor que o OCR integral.
+
+Cache-busters candidatos: `document-viewer.js?v=20260922-2` e `documents.css?v=20260922-2`. `document-ocr.js` permanece em `20260922-1` porque a extração por palavra já estava correta; o defeito restante era exclusivamente o mecanismo de seleção do visualizador.
+
+**Critério de aceite:** arrastar sobre uma palavra/trecho deve destacar somente o intervalo indicado dentro do campo e Ctrl+C deve copiar apenas esse texto; a página inteira não pode entrar no Range nativo.
+
+**Próxima ação exata:** validar CI direcionado e navegador Chromium; publicar somente se o teste de arraste real passar. Depois repetir no PDF real do operador.
