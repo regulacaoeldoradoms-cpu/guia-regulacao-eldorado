@@ -2,9 +2,10 @@
 
 import { ensureTelemedicineAccessSchema } from './telemedicine-access.js';
 
-const SOCIAL_SCHEMA_VERSION = 'social-v1-20260922-judicial-bridge';
+const SOCIAL_SCHEMA_VERSION = 'social-v1-20260906';
 const PROFESSIONAL_SEED_VERSION = 'professional-friendships-v1';
 const schemaPromises = new WeakMap();
+const judicialSchemaPromises = new WeakMap();
 
 function randomId() {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
@@ -159,19 +160,6 @@ async function createSocialSchema(env) {
   )`).run();
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_social_notifications_recipient ON social_notifications(recipient_id, read_at, id DESC)').run();
 
-  await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS portal_judicial_alerts (
-    id TEXT PRIMARY KEY,
-    gmail_message_id TEXT NOT NULL UNIQUE,
-    gmail_thread_id TEXT NOT NULL DEFAULT '',
-    sender TEXT NOT NULL DEFAULT '',
-    subject TEXT NOT NULL DEFAULT '',
-    received_at TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  )`).run();
-  await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_portal_judicial_received ON portal_judicial_alerts(received_at DESC, id)').run();
-  await env.AUTH_DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_social_notifications_judicial_unique
-    ON social_notifications(recipient_id, type, entity_type, entity_id)
-    WHERE type = 'judicial_alert'`).run();
 
   await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS social_reports (
     id TEXT PRIMARY KEY,
@@ -244,6 +232,36 @@ export async function ensureSocialSchema(env) {
     schemaPromises.set(env.AUTH_DB, operation);
   }
   return schemaPromises.get(env.AUTH_DB);
+}
+
+export async function ensureJudicialNotificationSchema(env) {
+  if (!(await ensureSocialSchema(env))) return false;
+  if (judicialSchemaPromises.has(env.AUTH_DB)) return judicialSchemaPromises.get(env.AUTH_DB);
+
+  const operation = (async () => {
+    await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS portal_judicial_alerts (
+      id TEXT PRIMARY KEY,
+      gmail_message_id TEXT NOT NULL UNIQUE,
+      gmail_thread_id TEXT NOT NULL DEFAULT '',
+      sender TEXT NOT NULL DEFAULT '',
+      subject TEXT NOT NULL DEFAULT '',
+      received_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`).run();
+    await env.AUTH_DB.prepare(
+      'CREATE INDEX IF NOT EXISTS idx_portal_judicial_received ON portal_judicial_alerts(received_at DESC, id)'
+    ).run();
+    await env.AUTH_DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_social_notifications_judicial_unique
+      ON social_notifications(recipient_id, type, entity_type, entity_id)
+      WHERE type = 'judicial_alert'`).run();
+    return true;
+  })().catch((error) => {
+    judicialSchemaPromises.delete(env.AUTH_DB);
+    throw error;
+  });
+
+  judicialSchemaPromises.set(env.AUTH_DB, operation);
+  return operation;
 }
 
 async function authRecord(env, username) {
