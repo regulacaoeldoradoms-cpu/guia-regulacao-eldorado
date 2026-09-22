@@ -29,6 +29,7 @@ const DOCUMENTS_BACKGROUND_ASSETS = Object.freeze([
 const documentStreams = new Map();
 const documentWarmSnapshots = new Map();
 const documentWarmInFlight = new Map();
+let documentWarmGeneration = 0;
 
 const KNOWN_PAGE_PATHS = new Set([
   '/', '/home/', '/login/', '/cadastro/', '/ferramentas/', '/perfil/',
@@ -192,6 +193,7 @@ async function warmDocumentsPrivate(data) {
   }
   if (documentWarmInFlight.has(key)) return documentWarmInFlight.get(key);
 
+  const generation = documentWarmGeneration;
   const operation = (async () => {
     const access = await fetchDocumentWarmJson(endpoint, '/api/documents/access', authorization);
     const capabilities = access?.capabilities || {};
@@ -238,6 +240,7 @@ async function warmDocumentsPrivate(data) {
     }
 
     await Promise.allSettled(jobs);
+    if (generation !== documentWarmGeneration) return false;
     const createdAt = Date.now();
     documentWarmSnapshots.set(key, Object.freeze({
       endpoint,
@@ -275,6 +278,7 @@ async function getDocumentsWarmPayload(data) {
 }
 
 function clearDocumentsWarm() {
+  documentWarmGeneration += 1;
   documentWarmSnapshots.clear();
   documentWarmInFlight.clear();
 }
