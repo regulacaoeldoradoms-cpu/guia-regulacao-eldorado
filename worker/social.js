@@ -979,7 +979,8 @@ async function handleNotifications(request, url, env, context, origin) {
   const labels = {
     friend_request: 'enviou um pedido de amizade',
     friend_accepted: 'aceitou seu pedido de amizade',
-    comment: 'comentou em uma publicação sua'
+    comment: 'comentou em uma publicação sua',
+    judicial_alert: '⚖️ E-mail judicial requer atenção'
   };
   const rows = [];
   for (const raw of result.results || []) {
