@@ -194,7 +194,7 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
   const viewer = read('js/document-viewer.js');
 
   assert.match(html, /portal-performance\.js\?v=20260922-3/);
-  assert.match(html, /document-viewer\.js\?v=20260921-3/);
+  assert.match(html, /document-viewer\.js\?v=20260922-1/);
   assert.match(html, /documents\.js\?v=20260922-3/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
@@ -333,7 +333,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260921-9/);
+  assert.match(html, /documents\.css\?v=20260922-1/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -429,7 +429,7 @@ test('Titon cria texto selecionável local para PDF digitalizado sem enviar cont
   const ocr = read('js/document-ocr.js');
   const css = read('css/documents.css');
 
-  assert.match(html, /document-ocr\.js\?v=20260921-1/);
+  assert.match(html, /document-ocr\.js\?v=20260922-1/);
   assert.match(html, /document-viewer\.js\?v=20260921-3/);
   assert.match(html, /script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'/);
   assert.match(html, /worker-src 'self'/);
@@ -458,6 +458,9 @@ test('Titon cria texto selecionável local para PDF digitalizado sem enviar cont
   assert.match(ocr, /cacheMethod:\s*'none'/);
   assert.match(ocr, /gzip:\s*true/);
   assert.match(ocr, /blocks:\s*true/);
+  assert.match(ocr, /function normalizeWord/);
+  assert.match(ocr, /groupId:\s*String\(groupId/);
+  assert.match(ocr, /words:\s*Object\.freeze\(words\)/);
   assert.doesNotMatch(ocr, /https?:\/\//);
   assert.doesNotMatch(ocr, /\/api\//);
   assert.doesNotMatch(ocr, /posthog|capture\(|localStorage|sessionStorage|indexedDB/i);
@@ -470,11 +473,17 @@ test('Titon cria texto selecionável local para PDF digitalizado sem enviar cont
   assert.match(viewer, /queueOcrPage\(session, record\.pageNumber\)/);
   assert.match(viewer, /record\.container\.dataset\.selectableText = 'native'/);
   assert.match(viewer, /record\.container\.dataset\.selectableText = hasText \? 'ocr' : 'false'/);
+  assert.match(viewer, /data\.ocrWord = 'true'/);
+  assert.match(viewer, /data\.ocrGroup = groupId/);
+  assert.match(viewer, /isolateOcrSelectionGroup/);
+  assert.match(viewer, /ocr-selection-muted/);
   assert.match(viewer, /session\.thumbnailActions[\s\S]*return/);
   assert.match(viewer, /if \(!session\.thumbnailActions\) pumpOcrQueue\(session\)/);
 
   assert.match(css, /\.portal-pdf-ocr-status/);
   assert.match(css, /data-selectable-text="ocr"/);
+  assert.match(css, /data-ocr-word="true"/);
+  assert.match(css, /ocr-selection-muted[\s\S]*user-select:\s*none/);
   assert.match(css, /data-object-mode="write"[\s\S]*\.portal-pdf-text-layer/);
   assert.match(css, /data-draw-mode="draw"[\s\S]*\.portal-pdf-text-layer/);
   assert.match(css, /data-crop-mode="crop"[\s\S]*\.portal-pdf-text-layer/);
