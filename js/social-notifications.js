@@ -47,7 +47,10 @@
         link.style.fontWeight = '900'; link.style.color = 'inherit';
         message.append(link, document.createTextNode(` ${item.text}.`));
       } else message.textContent = item.text;
-      const time = document.createElement('time'); time.dateTime = item.createdAt; time.textContent = social.formatDate(item.createdAt);
+      const displayedAt = judicial ? (item.judicial?.receivedAt || item.createdAt) : item.createdAt;
+      const time = document.createElement('time');
+      time.dateTime = displayedAt;
+      time.textContent = judicial ? `Recebido no Gmail: ${social.formatDate(displayedAt)}` : social.formatDate(displayedAt);
       copy.append(message, time); row.append(avatar, copy); list.appendChild(row);
     });
   }
