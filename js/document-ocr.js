@@ -131,28 +131,45 @@
     return found ? { x0, y0, x1, y1 } : null;
   }
 
-  function normalizeLine(line) {
-    const words = Array.isArray(line?.words) ? line.words : [];
-    const text = String(line?.text || words.map((word) => String(word?.text || '')).join(' ')).trim();
-    const box = bbox(line?.bbox) || bboxFromWords(words);
+  function normalizeWord(word) {
+    const text = String(word?.text || '').trim();
+    const box = bbox(word?.bbox);
+    if (!text || !box) return null;
+    return Object.freeze({
+      text,
+      confidence: number(word?.confidence, 0),
+      ...box
+    });
+  }
+
+  function normalizeLine(line, groupId = '') {
+    const rawWords = Array.isArray(line?.words) ? line.words : [];
+    const words = rawWords.map(normalizeWord).filter(Boolean);
+    const text = String(line?.text || words.map((word) => word.text).join(' ')).trim();
+    const box = bbox(line?.bbox) || bboxFromWords(rawWords);
     if (!text || !box) return null;
     return Object.freeze({
       text,
       confidence: number(line?.confidence, 0),
+      groupId: String(groupId || ''),
+      words: Object.freeze(words),
       ...box
     });
   }
 
   function linesFromBlocks(blocks = []) {
     const lines = [];
-    for (const block of Array.isArray(blocks) ? blocks : []) {
-      for (const paragraph of Array.isArray(block?.paragraphs) ? block.paragraphs : []) {
+    const sourceBlocks = Array.isArray(blocks) ? blocks : [];
+    sourceBlocks.forEach((block, blockIndex) => {
+      const paragraphs = Array.isArray(block?.paragraphs) ? block.paragraphs : [];
+      paragraphs.forEach((paragraph, paragraphIndex) => {
+        const groupId = `ocr-${blockIndex + 1}-${paragraphIndex + 1}`;
         for (const line of Array.isArray(paragraph?.lines) ? paragraph.lines : []) {
-          const normalized = normalizeLine(line);
+          const normalized = normalizeLine(line, groupId);
           if (normalized) lines.push(normalized);
         }
-      }
-    }
+      });
+    });
     return lines;
   }
 
@@ -205,7 +222,7 @@
   }, { once: true });
 
   window.PortalDocumentOcr = Object.freeze({
-    version: '7.0.0',
+    version: '7.1.0',
     language: LANGUAGE,
     preload,
     recognize,

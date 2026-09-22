@@ -4551,3 +4551,27 @@ A correção não amplia permissões: ela somente faz o backend respeitar a capa
 Esta manutenção não altera a Fase 7E da Central de Documentos.
 
 **Próxima ação exata:** a operadora afetada deve atualizar `/telemedicina/` e tentar registrar uma consulta. Se ainda houver `403`, inspecionar a linha de capacidade da conta no backend antes de revogar/reconceder acesso ou alterar outros papéis.
+
+## Fase 7E — seleção OCR granular por campo — 22/09/2026
+
+Problema observado em uso real e confirmado pelo vídeo enviado pelo operador: o OCR do Titon reconhece corretamente o texto, porém a camada selecionável é montada por linhas absolutas e o navegador pode estender a seleção por vários blocos DOM fora da região visual arrastada. O efeito prático é destacar/copiar diversos campos do formulário quando o operador precisa apenas de um trecho.
+
+Diagnóstico no código:
+- `document-ocr.js` descartava a geometria individual das palavras e preservava somente cada linha;
+- `document-viewer.js` criava um único `span` transparente por linha;
+- a seleção nativa do Chromium percorre a ordem DOM desses elementos absolutos, que nem sempre coincide com a caixa visual pretendida em formulários digitalizados.
+
+Correção na branch `fix/central-docs-ocr-granular-selection-20260922`:
+- preservar palavra + bounding box produzidos pelo Tesseract;
+- manter um identificador de grupo por parágrafo OCR, funcionando como ilha de seleção para um campo/bloco;
+- renderizar uma camada transparente por palavra, em vez de uma caixa de texto inteira por linha;
+- ao iniciar a seleção em um campo, os grupos OCR externos ficam temporariamente fora da seleção, impedindo que o arraste capture blocos distantes;
+- permitir selecionar uma palavra, parte curta ou várias palavras do mesmo campo normalmente;
+- manter fallback por linha quando um OCR não fornecer palavras;
+- nenhum texto OCR passa a ser persistido ou enviado ao PostHog/terceiros.
+
+Cache-busters candidatos: `document-ocr.js?v=20260922-1`, `document-viewer.js?v=20260922-1` e `documents.css?v=20260922-1`.
+
+**Critério de aceite:** em PDF digitalizado, o operador deve conseguir selecionar/copy apenas uma palavra ou trecho de um campo sem o destaque saltar para outros campos; zoom e OCR local continuam funcionando.
+
+**Próxima ação exata:** concluir CI e o teste Chromium dedicado; integrar somente se verdes e então repetir no mesmo tipo de PDF demonstrado no vídeo.
