@@ -4654,3 +4654,28 @@ Validação técnica:
 Cache-busters publicados: `document-viewer.js?v=20260922-2` e `documents.css?v=20260922-2`.
 
 **Próxima ação exata:** executar Ctrl+F5 e repetir no PDF real o mesmo gesto curto de clique + arraste. O aceite operacional é destacar/copiar apenas o trecho arrastado, sem seleção da página inteira.
+
+## Fase 7E — controle vertical da seleção OCR — 22/09/2026
+
+Validação operacional após a PR #400: **parcialmente aprovada**. O usuário confirmou melhora horizontal, porém ao selecionar um parágrafo na coluna direita o Titon ainda trouxe textos da coluna esquerda situados na mesma faixa vertical.
+
+Evidência real: em formulário com conteúdo em duas colunas, o arraste sobre a justificativa da direita também destacou rótulos/valores à esquerda. Isso mostrou que selecionar um intervalo pela ordem das palavras ainda não corresponde ao gesto visual em documentos tabulares.
+
+Diagnóstico refinado: a seleção geométrica anterior ainda transformava o gesto em um intervalo linear entre palavra inicial e palavra final. Em layouts com colunas, uma ordem OCR/DOM pode intercalar elementos da esquerda e da direita entre esses dois extremos.
+
+Correção na branch `fix/central-docs-ocr-rectangular-selection-20260922`:
+- a seleção OCR passa a ser **bidimensional/retangular**;
+- o ponto inicial e a posição atual do mouse formam um retângulo real na tela;
+- entram na seleção apenas palavras cujas caixas visuais intersectam esse retângulo;
+- não há mais dependência de grupo, parágrafo, coluna inferida ou intervalo pela ordem DOM para decidir o que fica destacado;
+- o texto copiado continua ordenado pelo `ocrOrder`, mas somente depois do filtro espacial 2D;
+- clique simples continua selecionando a palavra inicial;
+- a seleção nativa do Chromium continua desativada apenas para OCR; PDFs com texto nativo permanecem inalterados.
+
+Regressão dedicada: o scan sintético do navegador agora contém duas colunas na mesma faixa vertical. O teste arrasta sobre a coluna direita e exige que **100% das palavras selecionadas permaneçam à direita da linha divisória**, comprovando que a coluna esquerda não foi capturada.
+
+Cache-buster candidato: `document-viewer.js?v=20260922-3`. O OCR em si permanece em `document-ocr.js?v=20260922-1`, pois a geometria por palavra já estava correta.
+
+**Critério de aceite:** selecionar verticalmente um parágrafo/caixa na direita não pode incluir qualquer texto da coluna esquerda que esteja na mesma altura.
+
+**Próxima ação exata:** validar CI estrutural e o teste Chromium de duas colunas; integrar somente se verdes e então repetir no mesmo documento real mostrado pelo usuário.
