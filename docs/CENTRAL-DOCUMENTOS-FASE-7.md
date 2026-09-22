@@ -402,3 +402,26 @@ Critério de aceite: as duas pastas devem abrir a partir de `cache_state=hit` qu
 A PR **#392** foi mesclada pelo commit `41da8b235ac461cf773d15bb9be1b9c457c6d144`. O pós-merge concluiu **54/54 checks verdes** e o Worker produtivo publicou a Version ID `0391b3ee-878d-4e99-a45a-368ff462dbcb`.
 
 O comportamento está ativo em produção, mas o aceite de desempenho depende agora de dados reais: verificar `drive_folder_opened cache_state=hit` nas duas pastas e `pdf_ready cache_state=hit` para PDFs já aquecidos. Nenhum ganho percentual é declarado antes dessa amostra.
+
+
+## 7E — paginação visível em blocos de 20 itens — 22/09/2026
+
+Decisão operacional: reduzir a quantidade de itens carregados/exibidos por lote de **40/80 para 20**, seguindo a experiência desejada pelo operador para aproximar a navegação da Central ao comportamento percebido no Google Drive.
+
+Escopo:
+- listagem normal de pastas: **20 itens por requisição**, inclusive em “Carregar mais”;
+- pesquisa: **20 resultados por requisição**, inclusive paginação;
+- raiz aquecida após login: **20 itens visíveis**;
+- pastas prioritárias **Consulta [2026]** e **Exames [2026]**: somente os primeiros **20 itens** entram no snapshot visível e o `nextPageToken` da primeira página é preservado;
+- o pré-carregamento de PDFs das duas pastas continua amplo em segundo plano: ele usa lotes internos de até **100 metadados por chamada**, até 6 páginas, sem aumentar a quantidade mostrada na interface.
+
+Justificativa: reduzir o lote visível diminui o trabalho de rede, normalização, ordenação e renderização necessário para o primeiro paint da lista. O prefetch de PDFs foi desacoplado da paginação visual para não perder a vantagem de manter os documentos prioritários prontos.
+
+Segurança/privacidade: nenhuma alteração de permissão, OAuth, cache criptográfico ou observabilidade. O limite de 20 é apenas de apresentação/consulta foreground; PDFs prioritários continuam no cache AES-GCM já aprovado.
+
+Critério de aceite:
+1. nenhuma listagem/pesquisa foreground solicita 40 ou 80 itens;
+2. backend usa 20 como default de `pageSize`;
+3. raiz/pastas aquecidas mostram no máximo 20 itens por lote;
+4. “Carregar mais” acrescenta mais 20;
+5. prefetch prioritário continua usando sua trilha separada e não despeja todos os itens na UI.
