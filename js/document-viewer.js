@@ -309,11 +309,47 @@
     record.textLayer?.replaceChildren?.();
     record.textLayer?.classList?.remove?.('is-ocr');
     record.textLayer?.removeAttribute?.('data-main-rotation');
+    record.textLayer?.removeAttribute?.('data-ocr-selection-group');
     record.container?.removeAttribute?.('data-selectable-text');
   }
 
   function ocrResultForPage(session, pageNumber) {
     return session?.ocrResults?.get?.(Number(pageNumber)) || null;
+  }
+
+  function clearOcrSelectionIsolation(layerNode) {
+    if (!layerNode) return;
+    layerNode.removeAttribute('data-ocr-selection-group');
+    for (const node of layerNode.querySelectorAll('.ocr-selection-muted')) {
+      node.classList.remove('ocr-selection-muted');
+    }
+  }
+
+  function isolateOcrSelectionGroup(layerNode, groupId) {
+    if (!layerNode) return;
+    const normalized = String(groupId || '');
+    if (!normalized) {
+      clearOcrSelectionIsolation(layerNode);
+      return;
+    }
+    layerNode.dataset.ocrSelectionGroup = normalized;
+    for (const node of layerNode.querySelectorAll('[data-ocr-word="true"]')) {
+      node.classList.toggle('ocr-selection-muted', node.dataset.ocrGroup !== normalized);
+    }
+  }
+
+  function ensureOcrSelectionIsolation(layerNode) {
+    if (!layerNode || layerNode.dataset.ocrSelectionBound === 'true') return;
+    layerNode.dataset.ocrSelectionBound = 'true';
+    layerNode.addEventListener('pointerdown', (event) => {
+      if (!layerNode.classList.contains('is-ocr')) return;
+      const target = event.target instanceof Element ? event.target.closest('[data-ocr-word="true"]') : null;
+      if (!target || !layerNode.contains(target)) {
+        clearOcrSelectionIsolation(layerNode);
+        return;
+      }
+      isolateOcrSelectionGroup(layerNode, target.dataset.ocrGroup || '');
+    });
   }
 
   function renderCachedOcrTextLayer(session, record, viewport) {
@@ -325,6 +361,7 @@
     clearSelectableTextLayer(record);
     const layerNode = record.textLayer;
     layerNode.classList.add('is-ocr');
+    ensureOcrSelectionIsolation(layerNode);
     layerNode.style.setProperty('--scale-factor', String(viewport?.scale || session.scale || 1));
     layerNode.style.setProperty('--total-scale-factor', String(viewport?.scale || session.scale || 1));
     layerNode.style.setProperty('--scale-round-x', '1px');
@@ -335,38 +372,55 @@
     const viewportWidth = Math.max(1, Number(viewport?.width || record.fullPageWidth || 1));
     const viewportHeight = Math.max(1, Number(viewport?.height || record.fullPageHeight || 1));
 
-    for (const line of lines) {
-      const text = String(line?.text || '').trim();
-      if (!text) continue;
-      const x0 = clamp(Number(line.x0 || 0), 0, result.width);
-      const y0 = clamp(Number(line.y0 || 0), 0, result.height);
-      const x1 = clamp(Number(line.x1 || 0), x0, result.width);
-      const y1 = clamp(Number(line.y1 || 0), y0, result.height);
-      if (x1 <= x0 || y1 <= y0) continue;
+    lines.forEach((line, lineIndex) => {
+      const fallbackText = String(line?.text || '').trim();
+      const groupId = String(line?.groupId || `ocr-line-${lineIndex + 1}`);
+      const sourceWords = Array.isArray(line?.words) && line.words.length
+        ? line.words
+        : (fallbackText ? [{
+            text: fallbackText,
+            x0: line.x0,
+            y0: line.y0,
+            x1: line.x1,
+            y1: line.y1
+          }] : []);
 
-      const span = document.createElement('span');
-      span.dataset.ocrLine = 'true';
-      span.setAttribute('role', 'presentation');
-      span.textContent = `${text}\n`;
-      span.style.left = `${((x0 / result.width) * 100).toFixed(4)}%`;
-      span.style.top = `${((y0 / result.height) * 100).toFixed(4)}%`;
+      sourceWords.forEach((word, wordIndex) => {
+        const text = String(word?.text || '').trim();
+        if (!text) return;
+        const x0 = clamp(Number(word.x0 || 0), 0, result.width);
+        const y0 = clamp(Number(word.y0 || 0), 0, result.height);
+        const x1 = clamp(Number(word.x1 || 0), x0, result.width);
+        const y1 = clamp(Number(word.y1 || 0), y0, result.height);
+        if (x1 <= x0 || y1 <= y0) return;
 
-      const fontSize = Math.max(6, ((y1 - y0) / result.height) * viewportHeight);
-      span.style.fontSize = `${fontSize.toFixed(2)}px`;
-      span.style.lineHeight = '1';
-      span.style.fontFamily = 'Arial, sans-serif';
+        const span = document.createElement('span');
+        span.dataset.ocrWord = 'true';
+        span.dataset.ocrLine = 'true';
+        span.dataset.ocrGroup = groupId;
+        span.dataset.ocrLineIndex = String(lineIndex + 1);
+        span.setAttribute('role', 'presentation');
+        span.textContent = text + (wordIndex === sourceWords.length - 1 ? '\n' : ' ');
+        span.style.left = `${((x0 / result.width) * 100).toFixed(4)}%`;
+        span.style.top = `${((y0 / result.height) * 100).toFixed(4)}%`;
 
-      const desiredWidth = ((x1 - x0) / result.width) * viewportWidth;
-      if (measure && desiredWidth > 0) {
-        measure.font = `${fontSize}px Arial`;
-        const measuredWidth = Math.max(1, measure.measureText(text).width);
-        const scaleX = clamp(desiredWidth / measuredWidth, 0.35, 3.5);
-        span.style.transform = `scaleX(${scaleX.toFixed(4)})`;
-      }
-      layerNode.appendChild(span);
-    }
+        const fontSize = Math.max(6, ((y1 - y0) / result.height) * viewportHeight);
+        span.style.fontSize = `${fontSize.toFixed(2)}px`;
+        span.style.lineHeight = '1';
+        span.style.fontFamily = 'Arial, sans-serif';
 
-    const hasText = layerNode.querySelector('[data-ocr-line="true"]') !== null;
+        const desiredWidth = ((x1 - x0) / result.width) * viewportWidth;
+        if (measure && desiredWidth > 0) {
+          measure.font = `${fontSize}px Arial`;
+          const measuredWidth = Math.max(1, measure.measureText(text).width);
+          const scaleX = clamp(desiredWidth / measuredWidth, 0.35, 3.5);
+          span.style.transform = `scaleX(${scaleX.toFixed(4)})`;
+        }
+        layerNode.appendChild(span);
+      });
+    });
+
+    const hasText = layerNode.querySelector('[data-ocr-word="true"]') !== null;
     record.container.dataset.selectableText = hasText ? 'ocr' : 'false';
     if (hasText) setOcrPageStatus(record, 'ready', 'Texto pronto para selecionar', { autoHide: 1600 });
     return hasText;
