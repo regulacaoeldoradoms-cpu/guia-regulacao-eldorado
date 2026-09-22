@@ -2,7 +2,7 @@
 
 import { ensureTelemedicineAccessSchema } from './telemedicine-access.js';
 
-const SOCIAL_SCHEMA_VERSION = 'social-v1-20260906';
+const SOCIAL_SCHEMA_VERSION = 'social-v1-20260922-judicial-bridge';
 const PROFESSIONAL_SEED_VERSION = 'professional-friendships-v1';
 const schemaPromises = new WeakMap();
 
@@ -158,6 +158,20 @@ async function createSocialSchema(env) {
     read_at TEXT
   )`).run();
   await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_social_notifications_recipient ON social_notifications(recipient_id, read_at, id DESC)').run();
+
+  await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS portal_judicial_alerts (
+    id TEXT PRIMARY KEY,
+    gmail_message_id TEXT NOT NULL UNIQUE,
+    gmail_thread_id TEXT NOT NULL DEFAULT '',
+    sender TEXT NOT NULL DEFAULT '',
+    subject TEXT NOT NULL DEFAULT '',
+    received_at TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`).run();
+  await env.AUTH_DB.prepare('CREATE INDEX IF NOT EXISTS idx_portal_judicial_received ON portal_judicial_alerts(received_at DESC, id)').run();
+  await env.AUTH_DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_social_notifications_judicial_unique
+    ON social_notifications(recipient_id, type, entity_type, entity_id)
+    WHERE type = 'judicial_alert'`).run();
 
   await env.AUTH_DB.prepare(`CREATE TABLE IF NOT EXISTS social_reports (
     id TEXT PRIMARY KEY,
