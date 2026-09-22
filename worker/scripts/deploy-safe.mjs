@@ -47,7 +47,8 @@ export const CRITICAL_BINDINGS = Object.freeze([
   Object.freeze({ name: 'FIREBASE_PRIVATE_KEY', types: Object.freeze(['secret_text']) }),
   Object.freeze({ name: 'FIREBASE_STORAGE_BUCKET', types: Object.freeze(['plain_text', 'secret_text']) }),
   Object.freeze({ name: 'AUTH_SESSION_SECRET', types: Object.freeze(['secret_text', 'secret_key']) }),
-  Object.freeze({ name: 'AUTH_RATE_LIMIT_SECRET', types: Object.freeze(['secret_text', 'secret_key']) })
+  Object.freeze({ name: 'AUTH_RATE_LIMIT_SECRET', types: Object.freeze(['secret_text', 'secret_key']) }),
+  Object.freeze({ name: 'GMAIL_BRIDGE_SECRET', types: Object.freeze(['secret_text', 'secret_key']) })
 ]);
 
 export const STABLE_FIREBASE_TEXT_BINDINGS = Object.freeze([
