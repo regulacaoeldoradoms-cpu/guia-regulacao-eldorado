@@ -352,9 +352,9 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfZoomOutButton"/);
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
-  assert.match(html, /document-viewer\.js\?v=20260921-3/);
+  assert.match(html, /document-viewer\.js\?v=20260922-1/);
   assert.match(html, /documents\.js\?v=20260922-3/);
-  assert.match(html, /documents\.css\?v=20260921-9/);
+  assert.match(html, /documents\.css\?v=20260922-1/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -430,7 +430,7 @@ test('Titon cria texto selecionável local para PDF digitalizado sem enviar cont
   const css = read('css/documents.css');
 
   assert.match(html, /document-ocr\.js\?v=20260922-1/);
-  assert.match(html, /document-viewer\.js\?v=20260921-3/);
+  assert.match(html, /document-viewer\.js\?v=20260922-1/);
   assert.match(html, /script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'/);
   assert.match(html, /worker-src 'self'/);
   assert.doesNotMatch(html, /script-src[^"]*'unsafe-eval'/);
@@ -603,9 +603,9 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.match(viewerSurface, /id="pdfPageScroll"/);
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
-  assert.match(html, /document-viewer\.js\?v=20260921-3/);
+  assert.match(html, /document-viewer\.js\?v=20260922-1/);
   assert.match(html, /documents\.js\?v=20260922-3/);
-  assert.match(html, /documents\.css\?v=20260921-9/);
+  assert.match(html, /documents\.css\?v=20260922-1/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -1113,7 +1113,7 @@ test('ferramentas laterais respeitam hidden mesmo com display autoral', () => {
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(css, /\.documents-rail-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-editor-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(html, /documents\.css\?v=20260921-9/);
+  assert.match(html, /documents\.css\?v=20260922-1/);
 });
 
 test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro plano', () => {
@@ -1148,7 +1148,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
-  assert.match(html, /documents\.css\?v=20260921-9/);
+  assert.match(html, /documents\.css\?v=20260922-1/);
   assert.match(html, /documents\.js\?v=20260922-3/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
@@ -1394,7 +1394,7 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentsNotepadHead"/);
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
-  assert.match(html, /documents\.css\?v=20260921-9/);
+  assert.match(html, /documents\.css\?v=20260922-1/);
   assert.match(html, /documents\.js\?v=20260922-3/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
