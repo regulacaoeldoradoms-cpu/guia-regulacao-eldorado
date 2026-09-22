@@ -26,14 +26,20 @@
       empty.className = 'social-empty';
       empty.innerHTML = social.icons.bell;
       const title = document.createElement('h2'); title.textContent = 'Tudo em dia';
-      const text = document.createElement('p'); text.textContent = 'Novos pedidos de amizade, aceitações e comentários aparecerão aqui.';
+      const text = document.createElement('p'); text.textContent = 'Novos pedidos de amizade, aceitações, comentários e alertas judiciais aparecerão aqui.';
       empty.append(title, text); list.appendChild(empty); return;
     }
     items.forEach((item) => {
       const row = document.createElement('article');
       row.className = `social-notification${item.read ? '' : ' unread'}`;
+      const judicial = item.type === 'judicial_alert';
+      if (judicial) row.classList.add('judicial');
       const avatar = document.createElement('div'); avatar.className = 'social-avatar';
-      if (item.actor) social.mountAvatar(avatar, item.actor); else avatar.innerHTML = social.icons.bell;
+      if (item.actor) social.mountAvatar(avatar, item.actor);
+      else if (judicial) {
+        avatar.textContent = '⚖️';
+        avatar.setAttribute('aria-label', 'Alerta judicial');
+      } else avatar.innerHTML = social.icons.bell;
       const copy = document.createElement('div');
       const message = document.createElement('p');
       if (item.actor) {
