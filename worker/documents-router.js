@@ -17,6 +17,7 @@ import {
   classifyDocumentAiPage,
   chatDocumentAi
 } from './document-ai-provider.js';
+import { analyzeDocumentAiPageWithGemini } from './document-ai-gemini.js';
 import {
   DriveIntegrationError,
   cancelDriveSync,
@@ -443,6 +444,46 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
       }
 
       const result = await classifyAndExtractDocumentAiPage(env, {
+        pageNumber,
+        mimeType,
+        bytes: body
+      });
+      return json(result, 200, origin);
+    }
+
+    if (url.pathname === '/api/documents/ai/page/gemini' && request.method === 'POST') {
+      const denied = requireCapability(user, 'extract', origin);
+      if (denied) return denied;
+      if (!documentAiProcessingEnabled(env)) {
+        return json({
+          error: 'O processamento da IA documental ainda não está habilitado neste ambiente.',
+          code: 'DOCUMENT_AI_PROCESSING_DISABLED'
+        }, 503, origin);
+      }
+
+      const declared = Number(request.headers.get('Content-Length') || 0);
+      if (declared > MAX_DOCUMENT_AI_IMAGE_BYTES) {
+        throw new DocumentAiError(
+          'DOCUMENT_AI_IMAGE_TOO_LARGE',
+          'Imagem de página maior do que o limite da IA documental.',
+          413
+        );
+      }
+
+      const pageNumber = normalizeDocumentAiPageNumber(
+        request.headers.get('X-Document-Page-Number')
+      );
+      const mimeType = String(request.headers.get('Content-Type') || '');
+      const body = new Uint8Array(await request.arrayBuffer());
+      if (body.byteLength > MAX_DOCUMENT_AI_IMAGE_BYTES) {
+        throw new DocumentAiError(
+          'DOCUMENT_AI_IMAGE_TOO_LARGE',
+          'Imagem de página maior do que o limite da IA documental.',
+          413
+        );
+      }
+
+      const result = await analyzeDocumentAiPageWithGemini(env, {
         pageNumber,
         mimeType,
         bytes: body
