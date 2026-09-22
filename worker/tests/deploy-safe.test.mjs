@@ -41,6 +41,7 @@ function activeBindings() {
     { name: 'AUTH_SESSION_SECRET', type: 'secret_text' },
     { name: 'AUTH_RATE_LIMIT_SECRET', type: 'secret_text' },
     { name: 'GMAIL_BRIDGE_SECRET', type: 'secret_text' },
+    { name: 'TITON_GEMINI_API_KEY', type: 'secret_text' },
     { name: 'GEMINI_API_KEY', type: 'secret_text' },
     { name: 'GOOGLE_DRIVE_OAUTH_CLIENT_SECRET', type: 'secret_text' },
     { name: 'DRIVE_TOKEN_ENCRYPTION_KEY', type: 'secret_text' },
@@ -154,6 +155,7 @@ test('lista todos os secrets atuais para preservação dinâmica', () => {
     'GEMINI_API_KEY',
     'GMAIL_BRIDGE_SECRET',
     'GOOGLE_DRIVE_OAUTH_CLIENT_SECRET',
+    'TITON_GEMINI_API_KEY',
     'POSTHOG_PROJECT_TOKEN'
   ]);
 });
@@ -163,7 +165,7 @@ test('candidata íntegra preserva críticos, secrets e Firebase público', () =>
   const candidate = version(activeBindings().map((binding) => ({ ...binding })));
   const result = validateCandidateBindings(active, candidate);
   assert.equal(result.critical, CRITICAL_BINDINGS.length);
-  assert.equal(result.preservedSecrets, 8);
+  assert.equal(result.preservedSecrets, 9);
   assert.equal(result.authDbId, DB);
 });
 
@@ -173,7 +175,7 @@ test('Gemini não é requisito fixo do gate quando já está ausente na produç�
   const candidate = version(withoutGemini.map((binding) => ({ ...binding })));
   const result = validateCandidateBindings(active, candidate);
   assert.equal(result.critical, CRITICAL_BINDINGS.length);
-  assert.equal(result.preservedSecrets, 7);
+  assert.equal(result.preservedSecrets, 8);
 });
 
 test('se Gemini existir na produção, o gate continua bloqueando seu desaparecimento', () => {
@@ -182,6 +184,15 @@ test('se Gemini existir na produção, o gate continua bloqueando seu desapareci
   assert.throws(
     () => validateCandidateBindings(active, candidate),
     /SEGREDO_ATUAL_NAO_PRESERVADO_GEMINI_API_KEY/
+  );
+});
+
+test('Titon Gemini é requisito fixo do gate quando a comparação está versionada', () => {
+  const active = version(activeBindings());
+  const candidate = version(activeBindings().filter((binding) => binding.name !== 'TITON_GEMINI_API_KEY'));
+  assert.throws(
+    () => validateCandidateBindings(active, candidate),
+    /BINDING_CRITICO_AUSENTE_TITON_GEMINI_API_KEY/
   );
 });
 
