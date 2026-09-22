@@ -51,6 +51,17 @@ test('cliente PWA oferece instalação e inscrição Push autenticada', () => {
   assert.match(pwaClient, /portal-regulacao-header_180x180\.png\?v=20260911-1/);
 });
 
+test('Push global é sincronizado em qualquer rota autenticada', () => {
+  assert.match(pwaClient, /Notification\.permission === 'default'[\s\S]{0,180}showPushPrompt/);
+  assert.match(pwaClient, /function resyncPushIfActive\(\)/);
+  assert.match(pwaClient, /window\.addEventListener\('focus', resyncPushIfActive\)/);
+  assert.match(pwaClient, /window\.addEventListener\('online', resyncPushIfActive\)/);
+  assert.match(pwaClient, /visibilitychange/);
+  assert.match(pwaClient, /PORTAL_PUSH_RECEIVED[\s\S]{0,260}Nova notificação recebida no Portal/);
+  assert.match(serviceWorker, /scope: '\/'|addEventListener\('push'/);
+  assert.match(serviceWorker, /showNotification\('Portal da Regulação de Saúde'/);
+});
+
 test('manifesto usa os ícones oficiais 192 e 512 e o Apple usa 180', () => {
   assert.deepEqual(
     manifest.icons.map(({ src, sizes, type, purpose }) => ({ src, sizes, type, purpose })),
