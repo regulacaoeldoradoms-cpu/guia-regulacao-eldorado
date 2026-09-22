@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — validar em uso real a paginação de 20 itens e o efeito combinado com preload das pastas prioritárias** |
-| Última ação concluída | PR **#394** mesclada e publicada: listagem, pesquisa e “Carregar mais” usam 20 itens por lote; backend default 20; snapshots aquecidos respeitam 20 visíveis |
-| Branch atual | `docs/central-docs-page-size-20-status-20260922` somente para reconciliar este handoff pós-merge |
-| PR atual | PR funcional **#394 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional `2d12923e4319eb17aa87916df67aaa140227e4cd` |
-| Checks e testes | branch funcional: **51 checks verdes** + único Worker Preview de branch indisponível; pós-merge da `main`: **54/54 checks verdes** |
-| Decisões tomadas | foreground sempre 20; “Carregar mais” +20; raiz aquecida 20; Consulta/Exames mostram 20; prefetch de PDFs continua desacoplado em lotes internos maiores para não multiplicar chamadas de fundo |
-| Justificativas | operador pediu explicitamente 20 por vez; menor lote reduz trabalho inicial de rede, normalização, ordenação e renderização |
-| Alternativas descartadas | reduzir também prefetch de fundo para lotes de 20: descartado por aumentar chamadas sem benefício visual; manter 40/80: descartado por não atender objetivo |
-| Ações externas concluídas | Workers Build produtivo **43a9be31-c0cb-471a-9d5b-d3b24a4cf77e**, Version ID **951f52ce-b324-4578-8eb2-9f05ca83100f**; deploys/Pages/PDF.js/vídeo concluídos |
-| Pendências e bloqueios | falta somente amostra real pós-publicação para quantificar ganho de lista/pesquisa e confirmar comportamento de 20 itens |
-| Riscos conhecidos | pastas extensas exigem mais acionamentos de “Carregar mais”; PDFs prioritários continuam pré-cacheados e mitigam abertura individual |
-| Métricas / observabilidade | baseline pré-mudança permanece: raiz Drive p95 **4.555 ms**; pesquisa p95 **6.940 ms** |
-| Próxima ação exata | usar normalmente a Central, inclusive pesquisa e “Carregar mais”; depois consultar PostHog para comparar latência e confirmar ausência de regressão |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #394; `worker/document-drive.js`; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; docs Fase 7/status; PostHog 602473 |
+| Subfase / objetivo atual | **7E — validar em uso real a seleção OCR granular recém-publicada; medição de desempenho de lista/pesquisa continua como pendência secundária** |
+| Última ação concluída | PR **#398** mesclada e publicada: OCR passou de caixas por linha para palavras individuais agrupadas por parágrafo/campo, com isolamento do grupo iniciado pelo operador |
+| Branch atual | `docs/central-docs-ocr-granular-status-20260922` apenas para reconciliar este handoff pós-merge |
+| PR atual | PR funcional **#398 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional `e3be64838548f9d905a4955dcab1a64a042e444a` |
+| Checks e testes | PR: Fases 1–6, navegador Chromium/OCR, governança e site verdes; pós-merge: Fases 1–6, governança, site, Cloudflare Pages, GitHub Pages build/deploy e Workers Build verdes |
+| Decisões tomadas | preservar bounding boxes por palavra; agrupar seleção por parágrafo OCR; ao pointerdown isolar o grupo ativo; manter fallback por linha; continuar OCR 100% local |
+| Justificativas | vídeo real mostrou que spans absolutos por linha faziam a seleção nativa atravessar campos fora da região visual; granularidade por palavra + ilha lógica reduz esse efeito sem substituir o comportamento normal de copiar texto |
+| Alternativas descartadas | manter uma caixa por linha: reproduz o defeito; criar seleção totalmente proprietária/clipboard artificial: descartado por complexidade e por perder comportamento nativo; OCR externo: descartado por privacidade |
+| Ações externas concluídas | Cloudflare Pages success; GitHub Pages build/deploy success; Workers Build produtivo `451ac747-32de-42ef-9b17-8bb735cf38fa` success |
+| Pendências e bloqueios | falta somente validação operacional no PDF real do operador; a amostra real de latência da paginação de 20 itens continua pendente, mas não bloqueia o teste OCR |
+| Riscos conhecidos | Tesseract pode segmentar um campo em mais de um parágrafo; nesse caso a seleção ficará mais restrita, não mais ampla. O fallback por linha continua disponível |
+| Métricas / observabilidade | OCR não envia conteúdo ao PostHog; nenhuma nova propriedade sensível. Métricas de lista/pesquisa preservam baseline anterior |
+| Próxima ação exata | **Ctrl+F5 e repetir no PDF real a seleção de um trecho curto; confirmar que somente o campo/trecho desejado fica destacado e é copiado** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #398; `js/document-ocr.js`; `js/document-viewer.js`; `css/documents.css`; `testing/browser/central-docs-ocr.spec.mjs`; vídeo real do incidente |
 
 ## Histórico recuperável
 
@@ -4575,3 +4575,29 @@ Cache-busters candidatos: `document-ocr.js?v=20260922-1`, `document-viewer.js?v=
 **Critério de aceite:** em PDF digitalizado, o operador deve conseguir selecionar/copy apenas uma palavra ou trecho de um campo sem o destaque saltar para outros campos; zoom e OCR local continuam funcionando.
 
 **Próxima ação exata:** concluir CI e o teste Chromium dedicado; integrar somente se verdes e então repetir no mesmo tipo de PDF demonstrado no vídeo.
+
+## Fase 7E — seleção OCR granular integrada e publicada — 22/09/2026
+
+A PR **#398 — Fase 7E: corrigir seleção OCR granular no Titon** foi integrada à `main` no merge `e3be64838548f9d905a4955dcab1a64a042e444a`.
+
+Resultado publicado:
+- OCR local preserva bounding box por palavra, em vez de reduzir todo o conteúdo reconhecido a uma caixa por linha;
+- cada palavra é posicionada individualmente sobre o scan;
+- linhas do mesmo parágrafo OCR compartilham um grupo de seleção;
+- ao iniciar a seleção em um grupo, palavras de grupos externos são excluídas temporariamente da seleção, evitando o salto para campos distantes;
+- seleção de palavra ou trecho continua nativa do navegador e o texto copiado preserva separadores;
+- fallback por linha permanece quando o OCR não fornece palavras;
+- nenhum conteúdo OCR é persistido nem enviado ao PostHog/terceiros.
+
+Validação:
+- PR: Central Fases 1–6 — **success**;
+- PR: navegador/PDF.js real em Chromium, incluindo OCR — **success**;
+- PR: governança e site — **success**;
+- pós-merge: Central Fases 1–6, governança e site — **success**;
+- Cloudflare Pages — **success**;
+- GitHub Pages build/deploy — **success**;
+- Workers Build produtivo `451ac747-32de-42ef-9b17-8bb735cf38fa` — **success**.
+
+Cache-busters publicados: `document-ocr.js?v=20260922-1`, `document-viewer.js?v=20260922-1` e `documents.css?v=20260922-1`.
+
+**Próxima ação exata:** executar Ctrl+F5 uma vez e repetir a seleção no mesmo tipo de PDF demonstrado no vídeo. O aceite operacional é conseguir marcar/copiar apenas uma palavra ou trecho de um campo sem selecionar outros campos da página.
