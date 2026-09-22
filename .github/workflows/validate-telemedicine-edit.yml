@@ -48,7 +48,8 @@ jobs:
           set -euo pipefail
           grep -Fq "telemedicine-router-v2.js" worker/index.js
           grep -Fq "user.role === 'admin'" worker/telemedicine-router-v2.js
-          grep -Fq "user.role === 'recepcao' && await telemedicineAccessFor" worker/telemedicine-router-v2.js
+          grep -Fq "if (!(await telemedicineAccessFor(env, user.username))) return null;" worker/telemedicine-router-v2.js
+          grep -Fq "if (user.role !== 'recepcao') await ensureTelemedicineUnderlyingRole(env, user.username);" worker/telemedicine-router-v2.js
           grep -Fq "const patientNameMatch = url.pathname.match" worker/telemedicine-router-v2.js
           grep -Fq "const specialtyMatch = url.pathname.match" worker/telemedicine-router-v2.js
           grep -Fq "status: 409" worker/telemedicine-router-v2.js

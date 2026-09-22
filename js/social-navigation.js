@@ -9,7 +9,8 @@
   const extraIcons = Object.freeze({
     settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19 13.5v-3l-2-.7a7 7 0 0 0-.7-1.7l.9-1.9-2.1-2.1-1.9.9a7 7 0 0 0-1.7-.7L10.5 2h-3l-.7 2.3a7 7 0 0 0-1.7.7l-1.9-.9-2.1 2.1.9 1.9a7 7 0 0 0-.7 1.7L1 10.5v3l2.3.7a7 7 0 0 0 .7 1.7l-.9 1.9 2.1 2.1 1.9-.9a7 7 0 0 0 1.7.7l.7 2.3h3l.7-2.3a7 7 0 0 0 1.7-.7l1.9.9 2.1-2.1-.9-1.9a7 7 0 0 0 .7-1.7l2.3-.7Z" transform="translate(2.2 0) scale(.82)"/></svg>',
     trophy: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v5a4 4 0 0 1-8 0V3Z"/><path d="M8 5H4v2a4 4 0 0 0 4 4M16 5h4v2a4 4 0 0 1-4 4M12 12v5M8 21h8M9 17h6"/></svg>',
-    search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 5 5"/></svg>'
+    search: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m16 16 5 5"/></svg>',
+    judicial: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v17M7 21h10M5 7h14"/><path d="m7 7-4 7h8L7 7Zm10 0-4 7h8l-4-7Z"/></svg>'
   });
 
   function ensureExtendedNavigationStyles() {
@@ -159,7 +160,7 @@
       avatar.className = 'social-avatar';
       if (item.actor) social?.mountAvatar?.(avatar, item.actor);
       else if (judicial) {
-        avatar.textContent = '⚖️';
+        avatar.innerHTML = extraIcons.judicial;
         avatar.setAttribute('aria-label', 'Alerta judicial');
       } else avatar.innerHTML = social?.icons?.bell || '';
 
@@ -174,9 +175,12 @@
       } else {
         message.textContent = item.text || 'Nova notificação social.';
       }
+      const displayedAt = judicial ? (item.judicial?.receivedAt || item.createdAt) : item.createdAt;
       const time = document.createElement('time');
-      time.dateTime = item.createdAt || '';
-      time.textContent = social?.formatDate?.(item.createdAt) || '';
+      time.dateTime = displayedAt || '';
+      time.textContent = judicial
+        ? `Recebido no Gmail: ${social?.formatDate?.(displayedAt) || ''}`
+        : (social?.formatDate?.(displayedAt) || '');
       copy.append(message, time);
       row.append(avatar, copy);
       list.appendChild(row);

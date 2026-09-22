@@ -6,6 +6,7 @@ import { notifyUserPush } from './push-notifications.js';
 import {
   ensureCouncilSocialProfiles,
   ensureInitialProfessionalFriendships,
+  ensureJudicialNotificationSchema,
   ensureSocialSchema,
   resolveSocialUser,
   socialMigrationStatus,
@@ -935,6 +936,9 @@ async function handleReaction(request, env, context, postId, origin) {
 async function handleNotifications(request, url, env, context, origin) {
   const gate = socialGate(context.user, context.social);
   if (!gate.allowed) return gateResponse(gate, origin);
+  if (!(await ensureJudicialNotificationSchema(env))) {
+    return json({ error: 'Banco de notificações judiciais indisponível.' }, 503, origin);
+  }
   if (request.method === 'PATCH') {
     const body = await request.json().catch(() => ({}));
     const id = Math.max(0, Number.parseInt(String(body.id || '0'), 10) || 0);
@@ -955,10 +959,14 @@ async function handleNotifications(request, url, env, context, origin) {
       notification.read_at AS readAt, actor.handle, au.name, au.role,
       au.job_title AS jobTitle, au.council_role AS councilRole,
       COALESCE(au.avatar_data, '') <> '' AS avatarAvailable,
-      COALESCE(au.avatar_version, '') AS avatarVersion
+      COALESCE(au.avatar_version, '') AS avatarVersion,
+      judicial.sender AS judicialSender, judicial.subject AS judicialSubject,
+      judicial.received_at AS judicialReceivedAt
     FROM social_notifications notification
     LEFT JOIN social_users actor ON actor.social_user_id = notification.actor_id
     LEFT JOIN auth_users au ON au.username = actor.auth_username
+    LEFT JOIN portal_judicial_alerts judicial
+      ON notification.type = 'judicial_alert' AND judicial.id = notification.entity_id
     WHERE notification.recipient_id = ? AND notification.id < ?
       AND (notification.actor_id IS NULL OR NOT EXISTS (
         SELECT 1 FROM social_relationships block
@@ -980,19 +988,30 @@ async function handleNotifications(request, url, env, context, origin) {
     friend_request: 'enviou um pedido de amizade',
     friend_accepted: 'aceitou seu pedido de amizade',
     comment: 'comentou em uma publicação sua',
-    judicial_alert: '⚖️ E-mail judicial requer atenção'
+    judicial_alert: 'E-mail judicial requer atenção'
   };
   const rows = [];
   for (const raw of result.results || []) {
     const row = await decorateSocialRow(env, raw);
+    const judicial = row.type === 'judicial_alert'
+      ? {
+          sender: String(row.judicialSender || ''),
+          subject: String(row.judicialSubject || '') || '(sem assunto)',
+          receivedAt: row.judicialReceivedAt || row.createdAt
+        }
+      : null;
+    const judicialText = judicial
+      ? `Judicial · ${judicial.subject}${judicial.sender ? ` · ${judicial.sender}` : ''}`
+      : '';
     rows.push({
       id: Number(row.id),
       type: row.type,
-      text: labels[row.type] || 'há uma nova atualização social',
+      text: judicialText || labels[row.type] || 'há uma nova atualização social',
       actor: row.handle ? publicSummary(row) : null,
       entityType: row.entityType,
       entityId: row.entityId,
       createdAt: row.createdAt,
+      judicial,
       read: Boolean(row.readAt)
     });
   }

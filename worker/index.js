@@ -13,6 +13,7 @@ import { handlePushRoute, isPushApi } from './push-notifications.js';
 import { handleTelemedicineRoute, isTelemedicineApi } from './telemedicine-router-v2.js';
 import { handleAgendaRoute, isAgendaApi } from './agenda.js';
 import { handleDocumentsRoute, isDocumentsApi, isDocumentsOAuthCallback } from './documents-router.js';
+import { handleGmailJudicialBridge, isGmailJudicialBridgeApi } from './gmail-judicial-bridge.js';
 import { enforceDeveloperSeparation } from './role-migration.js';
 import {
   handleCitizenIdentityRoute,
@@ -183,6 +184,14 @@ export default {
     }
 
     await enforceDeveloperSeparation(env);
+
+    if (isGmailJudicialBridgeApi(url.pathname)) {
+      try { return await handleGmailJudicialBridge(request, env, ctx); }
+      catch (error) {
+        console.error(JSON.stringify({ event: 'gmail_judicial_bridge_failed', kind: error?.name || 'Error' }));
+        return jsonError('Falha temporária na ponte judicial do Gmail.', 500, origin, originAllowed, 'GMAIL_JUDICIAL_BRIDGE_FAILED');
+      }
+    }
 
     if (isDocumentsOAuthCallback(url.pathname)) {
       try { return await handleDocumentsRoute(request, env, origin, originAllowed); }

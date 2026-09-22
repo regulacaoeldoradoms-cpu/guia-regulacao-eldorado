@@ -40,6 +40,7 @@ function activeBindings() {
     { name: 'FIREBASE_STORAGE_BUCKET', type: 'plain_text', text: 'portal-projeto.firebasestorage.app' },
     { name: 'AUTH_SESSION_SECRET', type: 'secret_text' },
     { name: 'AUTH_RATE_LIMIT_SECRET', type: 'secret_text' },
+    { name: 'GMAIL_BRIDGE_SECRET', type: 'secret_text' },
     { name: 'GEMINI_API_KEY', type: 'secret_text' },
     { name: 'GOOGLE_DRIVE_OAUTH_CLIENT_SECRET', type: 'secret_text' },
     { name: 'DRIVE_TOKEN_ENCRYPTION_KEY', type: 'secret_text' },
@@ -151,6 +152,7 @@ test('lista todos os secrets atuais para preservação dinâmica', () => {
     'DRIVE_TOKEN_ENCRYPTION_KEY',
     'FIREBASE_PRIVATE_KEY',
     'GEMINI_API_KEY',
+    'GMAIL_BRIDGE_SECRET',
     'GOOGLE_DRIVE_OAUTH_CLIENT_SECRET',
     'POSTHOG_PROJECT_TOKEN'
   ]);
@@ -161,7 +163,7 @@ test('candidata íntegra preserva críticos, secrets e Firebase público', () =>
   const candidate = version(activeBindings().map((binding) => ({ ...binding })));
   const result = validateCandidateBindings(active, candidate);
   assert.equal(result.critical, CRITICAL_BINDINGS.length);
-  assert.equal(result.preservedSecrets, 7);
+  assert.equal(result.preservedSecrets, 8);
   assert.equal(result.authDbId, DB);
 });
 
@@ -171,7 +173,7 @@ test('Gemini não é requisito fixo do gate quando já está ausente na produç�
   const candidate = version(withoutGemini.map((binding) => ({ ...binding })));
   const result = validateCandidateBindings(active, candidate);
   assert.equal(result.critical, CRITICAL_BINDINGS.length);
-  assert.equal(result.preservedSecrets, 6);
+  assert.equal(result.preservedSecrets, 7);
 });
 
 test('se Gemini existir na produção, o gate continua bloqueando seu desaparecimento', () => {
