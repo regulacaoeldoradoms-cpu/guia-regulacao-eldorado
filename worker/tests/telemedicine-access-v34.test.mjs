@@ -54,3 +54,12 @@ test('backend continua exigindo autorização de servidor em todas as rotas Tele
     assert.match(source, /Acesso exclusivo da Telemedicina ou do Desenvolvedor/);
   }
 });
+
+test('rotas usam a capacidade explícita como fonte de verdade e autocorrigem papel-base divergente', () => {
+  for (const path of ['worker/telemedicine.js', 'worker/telemedicine-router-v2.js', 'worker/agenda.js']) {
+    const source = read(path);
+    assert.match(source, /if \(!\(await telemedicineAccessFor\(env, user\.username\)\)\) return null/);
+    assert.match(source, /user\.role !== 'recepcao'\) await ensureTelemedicineUnderlyingRole\(env, user\.username\)/);
+    assert.doesNotMatch(source, /user\.role === 'recepcao' && await telemedicineAccessFor/);
+  }
+});
