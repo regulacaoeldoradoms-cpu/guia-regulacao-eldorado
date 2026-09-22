@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — validar no PDF real a seleção OCR retangular 2D** |
-| Última ação concluída | PR **#402** mesclada e publicação estática concluída; seleção OCR agora usa interseção do retângulo do mouse com caixas reais das palavras |
-| Branch atual | `docs/central-docs-ocr-rectangular-status-20260922` somente para reconciliar o handoff |
-| PR atual | PR funcional **#402 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional `477222103dbd295aa39a215aba9570d1e9c76e27` |
-| Checks e testes | PR: Fases 1–6, Chromium com fixture de duas colunas, governança e site verdes; pós-merge: build/deploy GitHub, Cloudflare Pages e governança verdes |
-| Decisões tomadas | inclusão na seleção é puramente espacial 2D; ordem OCR serve apenas para ordenar o texto já filtrado; PDFs nativos continuam com PDF.js |
-| Justificativas | usuário confirmou que a solução linear melhorou horizontalmente mas ainda invadia a coluna esquerda verticalmente; layouts tabulares exigem controle simultâneo de X e Y |
-| Alternativas descartadas | intervalo por grupo/parágrafo e intervalo por ordem das palavras: ambos falharam em documentos com colunas |
-| Ações externas concluídas | GitHub build/deploy success; Cloudflare Pages success. Workers Build externo falhou, mas PR #402 não alterou runtime Worker e nenhuma nova versão Worker é necessária para esta correção frontend |
-| Pendências e bloqueios | falta validação operacional no PDF real; latência da paginação de 20 permanece pendência secundária |
-| Riscos conhecidos | OCR pode posicionar uma palavra com bbox imprecisa; nesse caso o erro tende a ser local à palavra tocada, não a capturar toda a coluna vizinha |
-| Métricas / observabilidade | OCR continua local; nenhum texto reconhecido enviado ao PostHog |
-| Próxima ação exata | **Ctrl+F5 e selecionar verticalmente somente o parágrafo da direita no mesmo PDF; confirmar que nenhum texto da esquerda é destacado/copied** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #402; `js/document-viewer.js`; `testing/browser/central-docs-ocr.spec.mjs`; `testing/central-docs/editor-harness.js` |
+| Subfase / objetivo atual | **7E — desempenho real da Central após paginação de 20 itens; seleção OCR retangular encerrada e aprovada** |
+| Última ação concluída | Validação real da seleção OCR 2D: **aprovada pelo usuário como perfeita** no PDF que reproduzia o defeito |
+| Branch atual | `docs/central-docs-ocr-rectangular-approved-20260922` somente para registrar este aceite |
+| PR atual | PR funcional **#402 mesclada**; PR documental deste aceite ainda a abrir |
+| Último commit relevante | funcional `477222103dbd295aa39a215aba9570d1e9c76e27` |
+| Checks e testes | Fases 1–6, Chromium com fixture de duas colunas, governança e site verdes; validação real também aprovada |
+| Decisões tomadas | manter seleção OCR por retângulo 2D; não reabrir esta frente sem regressão comprovada |
+| Justificativas | solução foi validada no documento real que antes capturava a coluna esquerda indevidamente |
+| Alternativas descartadas | intervalo linear por DOM/grupo/parágrafo já foi testado e descartado por falhar em layout de duas colunas |
+| Ações externas concluídas | publicação estática da PR #402 concluída; nenhuma nova intervenção externa necessária para OCR |
+| Pendências e bloqueios | seleção OCR: **nenhuma pendência conhecida**; resta medir latência real de lista/pesquisa após paginação de 20 itens |
+| Riscos conhecidos | bboxes OCR podem variar por documento, mas o caso crítico de duas colunas foi coberto por teste e uso real |
+| Métricas / observabilidade | OCR continua local, sem conteúdo enviado ao PostHog |
+| Próxima ação exata | **retomar medição real de `drive_folder_opened` e `drive_search_completed` após uso normal da Central** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #402; `js/document-viewer.js`; `testing/browser/central-docs-ocr.spec.mjs`; status Fase 7E |
 
 ## Histórico recuperável
 
@@ -4708,3 +4708,20 @@ Observação de infraestrutura: o check externo `Workers Builds: yellow-wave-d0a
 Cache-buster publicado: `document-viewer.js?v=20260922-3`.
 
 **Próxima ação exata:** executar Ctrl+F5 e repetir no documento real mostrado pelo usuário, selecionando apenas o parágrafo da coluna direita. O aceite é a coluna esquerda permanecer totalmente fora do destaque/cópia.
+
+## Fase 7E — seleção OCR retangular aprovada em uso real — 22/09/2026
+
+Validação operacional do usuário: **APROVADA**.
+
+Após a publicação da PR #402, o usuário repetiu no PDF real o caso que anteriormente falhava em formulário com conteúdo lado a lado e confirmou que o comportamento está **perfeito**.
+
+Evidência funcional:
+- controle horizontal preservado;
+- controle vertical corrigido;
+- seleção restrita à área 2D realmente arrastada;
+- textos da coluna esquerda deixam de ser incluídos ao selecionar apenas o bloco da direita;
+- cópia passa a refletir somente o trecho efetivamente selecionado.
+
+Conclusão: o problema de seleção OCR ampla/involuntária está encerrado. Não continuar polindo esta frente sem nova evidência real de regressão.
+
+**Próxima ação exata:** retomar a pendência normal da Fase 7E — observar uso real da paginação de 20 itens e comparar `drive_folder_opened` / `drive_search_completed` com a baseline anterior.
