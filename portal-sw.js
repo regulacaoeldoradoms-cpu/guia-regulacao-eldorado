@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260922-2';
+const CACHE_VERSION = '20260922-3';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -14,8 +14,9 @@ const DOCUMENT_WORKER_ORIGINS = new Set([
 ]);
 const DOCUMENTS_WARM_TTL_MS = 90 * 1000;
 const DOCUMENTS_WARM_REFRESH_MS = 30 * 1000;
-const DOCUMENTS_WARM_PAGE_SIZE = 40;
-const DOCUMENTS_PRIORITY_PAGE_SIZE = 100;
+const DOCUMENTS_WARM_PAGE_SIZE = 20;
+const DOCUMENTS_PRIORITY_VISIBLE_PAGE_SIZE = 20;
+const DOCUMENTS_PRIORITY_PREFETCH_PAGE_SIZE = 100;
 const DOCUMENTS_PRIORITY_MAX_PAGES = 6;
 const DOCUMENTS_PRIORITY_FOLDER_NAMES = Object.freeze([
   'consulta [2026]',
@@ -54,7 +55,7 @@ const CORE_RESOURCES = Object.freeze([
   '/css/social.css?v=20260911-1',
   '/css/portal-pwa.css?v=20260910-2',
   '/js/auth-config.js?v=20260815-1',
-  '/js/portal-performance.js?v=20260922-2',
+  '/js/portal-performance.js?v=20260922-3',
   '/js/portal-observability.js?v=20260921-2',
   '/js/portal-pwa.js?v=20260911-1',
   '/js/auth-client.js?v=20260910-4',
@@ -200,14 +201,24 @@ async function discoverPriorityFolder(endpoint, authorization, requestedName, ro
     body: JSON.stringify({
       query: requestedName,
       pageToken: '',
-      pageSize: DOCUMENTS_PRIORITY_PAGE_SIZE
+      pageSize: DOCUMENTS_PRIORITY_PREFETCH_PAGE_SIZE
     })
   });
   return exactPriorityFolder(searched?.items, requestedName);
 }
 
 async function fetchPriorityFolderItems(endpoint, authorization, folderRef) {
-  const items = [];
+  const firstPage = await fetchDocumentWarmJson(endpoint, '/api/documents/drive/list', authorization, {
+    method: 'POST',
+    body: JSON.stringify({
+      parentRef: folderRef,
+      pageToken: '',
+      pageSize: DOCUMENTS_PRIORITY_VISIBLE_PAGE_SIZE
+    })
+  });
+  if (!firstPage || !Array.isArray(firstPage.items)) return null;
+
+  const prefetchItems = [];
   let pageToken = '';
   let pages = 0;
 
@@ -217,18 +228,19 @@ async function fetchPriorityFolderItems(endpoint, authorization, folderRef) {
       body: JSON.stringify({
         parentRef: folderRef,
         pageToken,
-        pageSize: DOCUMENTS_PRIORITY_PAGE_SIZE
+        pageSize: DOCUMENTS_PRIORITY_PREFETCH_PAGE_SIZE
       })
     });
     if (!payload || !Array.isArray(payload.items)) break;
-    items.push(...payload.items);
+    prefetchItems.push(...payload.items);
     pageToken = String(payload.nextPageToken || '');
     pages += 1;
   } while (pageToken && pages < DOCUMENTS_PRIORITY_MAX_PAGES);
 
   return {
-    items,
-    nextPageToken: pageToken
+    items: firstPage.items,
+    nextPageToken: String(firstPage.nextPageToken || ''),
+    prefetchItems
   };
 }
 
@@ -242,7 +254,8 @@ async function warmPriorityFolders(endpoint, authorization, rootFolder) {
       name: String(folder.name || requestedName),
       ref: String(folder.ref),
       items: Array.isArray(listing.items) ? listing.items : [],
-      nextPageToken: String(listing.nextPageToken || '')
+      nextPageToken: String(listing.nextPageToken || ''),
+      prefetchItems: Array.isArray(listing.prefetchItems) ? listing.prefetchItems : []
     });
   }));
   return folders.filter(Boolean);

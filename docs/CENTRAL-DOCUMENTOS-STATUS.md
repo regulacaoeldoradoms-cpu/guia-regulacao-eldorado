@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — validar em uso real Consulta [2026] e Exames [2026] aquecidas, inclusive PDFs elegíveis** |
-| Última ação concluída | PR **#392** mesclada e publicada: as duas pastas prioritárias passam a ser descobertas/aquecidas e seus PDFs elegíveis são pré-carregados no cache criptografado |
-| Branch atual | `docs/central-docs-priority-folders-status-20260922` somente para reconciliar este handoff pós-merge |
-| PR atual | PR funcional **#392 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional `41da8b235ac461cf773d15bb9be1b9c457c6d144` |
-| Checks e testes | PR funcional: **51 checks verdes**; branch-only Workers Build falhou como preview externo. Pós-merge da `main`: **54/54 checks verdes**, incluindo PDF.js, vídeo, Pages/deploy e Workers Build produtivo |
-| Decisões tomadas | nomes exatos normalizados; raiz preferida; ambiguidade global não é escolhida; até 6×100 itens/pasta por ciclo; snapshots privados só em RAM; PDFs no cache AES-GCM; arquivos prioritários têm precedência sobre PDFs antigos do cache via poda LRU existente |
-| Justificativas | operador definiu Consulta [2026] e Exames [2026] como pastas de uso contínuo e solicitou também os arquivos internos carregados em segundo plano |
-| Alternativas descartadas | PDF em claro no Cache Storage; cache ilimitado; escolher pasta ambígua; download em Save-Data/2G; remover live gate de acesso |
-| Ações externas concluídas | Workers Build produtivo **f6f2a266-0a4c-45b3-9dc4-b6c5388c45fa**, Version ID **0391b3ee-878d-4e99-a45a-368ff462dbcb**; deploys estáticos concluídos |
-| Pendências e bloqueios | falta somente validação com dados reais: confirmar que as duas pastas foram resolvidas no Drive e observar abertura instantânea/cache-hit dos PDFs |
-| Riscos conhecidos | PDF >50 MB usa fallback; cache total continua 256 MB; se o conjunto prioritário exceder o teto, a poda LRU mantém os itens mais recentes; nomes duplicados fora da raiz não são escolhidos automaticamente |
-| Métricas / observabilidade | baseline anterior: raiz Drive p95 **4.555 ms**; pesquisa p95 **6.940 ms**; aceite novo deve observar `drive_folder_opened cache_state=hit` e `pdf_ready cache_state=hit` |
-| Próxima ação exata | fazer login, aguardar o preload, abrir **Consulta [2026]** e **Exames [2026]** e abrir PDFs; depois consultar PostHog para validar hits e eventuais gargalos residuais |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #392; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; `js/document-cache.js`; docs Fase 7/status; PostHog 602473 |
+| Subfase / objetivo atual | **7E — reduzir lote visível da Central para 20 itens mantendo prefetch prioritário separado** |
+| Última ação concluída | implementação em branch: pasta/pesquisa/root/preload visível passam a 20 itens; backend default 20; prefetch dos PDFs prioritários segue separado em lotes internos maiores |
+| Branch atual | `perf/central-docs-page-size-20-20260922` |
+| PR atual | ainda não aberta neste ponto do registro |
+| Último commit relevante | branch contém backend, Service Worker, Central, cache-busters globais, testes e documentação da paginação 20 |
+| Checks e testes | testes versionados atualizados; CI ainda precisa rodar no PR |
+| Decisões tomadas | foreground sempre 20; “Carregar mais” +20; raiz aquecida 20; Consulta/Exames mostram só primeira página 20; prefetch de PDFs continua com metadados em lotes de 100 até 6 páginas |
+| Justificativas | operador pediu 20 por vez; reduzir lote visível diminui custo de rede/renderização sem sacrificar o cache antecipado das pastas prioritárias |
+| Alternativas descartadas | reduzir também o prefetch para 20 e multiplicar chamadas de fundo: descartado; mostrar centenas de itens aquecidos de uma vez: descartado por contrariar o objetivo de velocidade |
+| Ações externas concluídas | nenhuma permissão/OAuth/segredo alterado; observabilidade continua sem nomes, IDs ou conteúdo |
+| Pendências e bloqueios | abrir PR, validar CI/navegador, publicar se verde e medir efeito real |
+| Riscos conhecidos | mais cliques em “Carregar mais” em pastas extensas; compensado por resposta inicial menor e cache antecipado dos PDFs prioritários |
+| Métricas / observabilidade | baseline anterior permanece: raiz Drive p95 **4.555 ms**; pesquisa p95 **6.940 ms** |
+| Próxima ação exata | abrir PR, corrigir regressões se houver, mesclar/publicar se verde; depois validar lista, pesquisa, Consulta [2026] e Exames [2026] |
+| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-drive.js`; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; testes e docs Fase 7/status |
 
 ## Histórico recuperável
 
@@ -4479,3 +4479,21 @@ Validação técnica:
 - PDF.js real em Chromium, vídeo pós-login, Pages e deploy: success.
 
 **Próxima ação exata:** validar em uso real as duas pastas e PDFs. Se alguma pasta não for aquecida, primeiro verificar ambiguidade/localização real no Drive antes de alterar a lógica.
+
+
+## Fase 7E — lote visível reduzido para 20 itens — 22/09/2026
+
+Pedido do operador: reduzir o carregamento da lista de **40/80 para 20 itens por vez**.
+
+Implementação na branch `perf/central-docs-page-size-20-20260922`:
+- `worker/document-drive.js`: default de `pageSize` passou de 40 para **20** em listagem e pesquisa;
+- `js/documents.js`: primeira página e “Carregar mais” usam **20** em pastas e pesquisa;
+- refresh da raiz usa **20**;
+- `portal-sw.js`: raiz aquecida usa **20**;
+- Consulta [2026]/Exames [2026]: snapshot visível usa **20**, mas o prefetch de arquivos continua desacoplado, com uma coleta interna de metadados em lotes de 100, até 6 páginas;
+- `js/portal-performance.js`: prefetch dos PDFs usa `prefetchItems`, não os 20 itens visíveis;
+- listener de atualização não reduz novamente a lista caso o usuário já tenha carregado mais de 20 itens.
+
+Motivo: diminuir o tempo até a primeira lista útil sem desfazer o preload criptografado das pastas prioritárias.
+
+**Próxima ação:** validar CI completo, publicar se verde e comparar `drive_folder_opened`/`drive_search_completed` após uso real.

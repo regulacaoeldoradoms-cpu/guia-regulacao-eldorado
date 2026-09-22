@@ -78,11 +78,11 @@ test('todas as entradas ativas registram cedo a camada de desempenho', () => {
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
     assert.equal(
-      (html.match(/portal-performance\.js\?v=20260922-2/g) || []).length,
+      (html.match(/portal-performance\.js\?v=20260922-3/g) || []).length,
       1,
       filename + ': bootstrap único'
     );
-    assert.match(html, /portal-performance\.js\?v=20260922-2" async/);
+    assert.match(html, /portal-performance\.js\?v=20260922-3" async/);
     if (/auth-client\.js/.test(html)) {
       assert.match(html, /rel="preconnect" href="https:\/\/yellow-wave-d0a1guia-regulacao-ia\.regulacaoeldoradoms\.workers\.dev"/);
       assert.match(html, /rel="preload" href="\/js\/auth-client\.js\?v=20260910-4" as="script"/);
@@ -137,7 +137,13 @@ test('pastas Consulta e Exames 2026 são prioridades exatas e seus PDFs usam cac
   assert.match(worker, /normalizedPriorityFolderName/);
   assert.match(worker, /item\?\.isFolder === true/);
   assert.match(worker, /normalizedPriorityFolderName\(item\?\.name\) === expected/);
+  assert.match(worker, /DOCUMENTS_WARM_PAGE_SIZE = 20/);
+  assert.match(worker, /DOCUMENTS_PRIORITY_VISIBLE_PAGE_SIZE = 20/);
+  assert.match(worker, /DOCUMENTS_PRIORITY_PREFETCH_PAGE_SIZE = 100/);
   assert.match(worker, /DOCUMENTS_PRIORITY_MAX_PAGES = 6/);
+  assert.match(worker, /items: firstPage\.items/);
+  assert.match(worker, /prefetchItems/);
+  assert.match(performanceClient, /folder\?\.prefetchItems/);
   assert.match(worker, /priorityFolders:\s*\[\]/);
   assert.match(worker, /warmPriorityFolders\(/);
 
@@ -158,7 +164,7 @@ test('pastas Consulta e Exames 2026 são prioridades exatas e seus PDFs usam cac
 
 test('service worker aquece Central sem persistir payload privado e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260922-2'/);
+  assert.match(source, /CACHE_VERSION = '20260922-3'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.match(source, /PORTAL_WARM_DOCUMENTS/);
   assert.match(source, /PORTAL_DOCUMENTS_WARM_GET/);

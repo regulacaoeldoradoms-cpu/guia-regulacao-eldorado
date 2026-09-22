@@ -662,7 +662,7 @@ export async function driveConnectionStatus(env) {
 }
 
 export async function listDriveFolder(env, input = {}) {
-  const pageSize = clampInteger(input.pageSize, 40, 20, 100);
+  const pageSize = clampInteger(input.pageSize, 20, 20, 100);
   const pageToken = String(input.pageToken || '').trim().slice(0, 2000);
   let parentId = 'root';
 
@@ -702,7 +702,7 @@ export async function searchDrive(env, input = {}) {
   if (query.length < 2) {
     throw new DriveIntegrationError('DRIVE_SEARCH_TOO_SHORT', 'Digite pelo menos dois caracteres para pesquisar.', 400);
   }
-  const pageSize = clampInteger(input.pageSize, 40, 20, 100);
+  const pageSize = clampInteger(input.pageSize, 20, 20, 100);
   const pageToken = String(input.pageToken || '').trim().slice(0, 2000);
 
   const url = new URL('https://www.googleapis.com/drive/v3/files');

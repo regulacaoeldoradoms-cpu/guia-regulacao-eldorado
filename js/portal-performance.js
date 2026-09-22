@@ -182,7 +182,10 @@
     const seen = new Set();
     const items = [];
     for (const folder of Array.isArray(payload?.priorityFolders) ? payload.priorityFolders : []) {
-      for (const item of Array.isArray(folder?.items) ? folder.items : []) {
+      const source = Array.isArray(folder?.prefetchItems) && folder.prefetchItems.length
+        ? folder.prefetchItems
+        : folder?.items;
+      for (const item of Array.isArray(source) ? source : []) {
         if (!item?.isPdf || !item?.ref || !item?.cacheKey || !item?.version) continue;
         const identity = String(item.cacheKey) + ':' + String(item.version);
         if (seen.has(identity)) continue;
