@@ -362,3 +362,10 @@ Critério de aceite desta rodada:
 5. dados privados do preload não são persistidos em armazenamento do navegador;
 6. fallback antigo continua funcional se o preload não estiver disponível;
 7. medir `drive_folder_opened cache_state=hit` após publicação antes de declarar ganho percentual.
+
+
+### Publicação do preload pós-login
+
+A implementação descrita acima foi integrada pela PR **#390**, merge `0f569eed3e6e343fb5e82a48164c4b343134fcee`.
+
+O Worker produtivo foi publicado com sucesso (Version ID `63de9dc0-9c44-4ea8-8d96-9cf4c286a220`) e os deploys de página também concluíram. Um check posterior de Worker Preview, provocado pela branch documental, falhou sem invalidar a publicação produtiva anterior. O critério funcional de código/privacidade foi atendido; o critério de desempenho continua dependente de amostra real posterior ao deploy, especialmente `drive_folder_opened cache_state=hit`.
