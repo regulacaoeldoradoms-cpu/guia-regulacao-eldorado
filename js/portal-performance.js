@@ -196,7 +196,13 @@
   }
 
   async function prefetchPriorityDocumentFiles(payload) {
-    if (!payload || !priorityDocumentPrefetchAllowed()) return false;
+    if (!payload) return false;
+
+    try {
+      window.dispatchEvent(new CustomEvent('portal:documents-warm-updated', { detail: payload }));
+    } catch (_) {}
+
+    if (!priorityDocumentPrefetchAllowed()) return false;
     const user = window.RegulationAuth?.getCachedUser?.() || null;
     if (!documentsAccessAllowed(user) || user?.documentCapabilities?.view !== true) return false;
 
@@ -206,10 +212,6 @@
 
     const cache = await ensureDocumentCacheClient();
     if (!cache?.supported?.() || !cache?.has || !cache?.put) return false;
-
-    try {
-      window.dispatchEvent(new CustomEvent('portal:documents-warm-updated', { detail: payload }));
-    } catch (_) {}
 
     const limits = cache.limits || {};
     const maxFileBytes = Number(limits.maxFileBytes || 0);
