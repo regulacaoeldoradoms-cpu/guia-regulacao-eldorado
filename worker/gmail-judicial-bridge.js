@@ -72,7 +72,8 @@ export function bridgeRecipients(value) {
   const items = (source ? source.split(',') : DEFAULT_RECIPIENTS)
     .map(normalizedRecipient)
     .filter(Boolean);
-  return [...new Set(items)].slice(0, 12);
+  const unique = [...new Set(items)].slice(0, 12);
+  return unique.length ? unique : [...DEFAULT_RECIPIENTS];
 }
 
 export function normalizeBridgePayload(body) {
