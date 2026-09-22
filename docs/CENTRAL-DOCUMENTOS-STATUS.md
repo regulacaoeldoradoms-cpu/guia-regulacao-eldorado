@@ -4750,3 +4750,26 @@ Alternativas descartadas:
 **Critério de aceite:** Meu Drive volta à ordem histórica; Consulta/Exames não recebem promoção visual por serem prioritárias; ao abrir essas pastas, o preload continua oferecendo resposta antecipada.
 
 **Próxima ação exata:** validar CI, publicar se verde e pedir somente um Ctrl+F5 + conferência visual da Home e abertura das duas pastas prioritárias.
+
+## Fase 7E — correção da ordem da Home integrada — 22/09/2026
+
+A PR **#406 — Fase 7E: restaurar ordem da Home sem promover pastas prioritárias** foi integrada à `main` no merge `36c6b8383cb11f232021db823b8a7c46547fce8e`.
+
+Estado confirmado:
+- Consulta [2026] e Exames [2026] continuam prioridades **somente de preload em segundo plano**;
+- o frontend possui guarda explícita para que `priorityFolders` nunca substitua/reordene a raiz `Meu Drive`;
+- `listDriveFolder` recuperou `orderBy=folder,name_natural`, que existia antes do fast-path e define a composição estável da página antes do corte em 20 itens;
+- pesquisa continua sem `orderBy`, preservando a otimização de busca;
+- a paginação visual continua em 20 itens.
+
+Validação da PR:
+- teste estrutural específico da Fase 7E/Drive: **success**;
+- navegador/PDF.js real em Chromium: **success**;
+- site e governança: **success**;
+- o workflow agregado Fases 1–6 ficou vermelho por regressões concorrentes da camada social já presentes na `main` naquele momento; os testes da Central executados dentro da mesma suíte ficaram verdes.
+
+Publicação estática do merge #406: build e deploy GitHub — **success**. O Workers Build do merge falhou antes de confirmar a nova versão do backend. Portanto, a proteção frontend já está versionada, mas a restauração remota de `orderBy` só deve ser declarada produtiva depois de um Workers Build verde.
+
+Após #406, a PR concorrente #404 atualizou a camada social e suas validações. Este registro documental também serve para provocar nova execução normal dos pipelines na `main`, sem alterar código funcional.
+
+**Próxima ação exata:** confirmar o novo Workers Build. Se verde, validar Home com Ctrl+F5 e abrir Consulta/Exames para confirmar preload. Se vermelho, diagnosticar o bloqueio do gate sem reduzir segurança nem remover requisitos de secrets.
