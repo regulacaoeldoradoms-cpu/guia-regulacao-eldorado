@@ -110,6 +110,7 @@
     searchMode: false,
     loading: false,
     folderSnapshot: null,
+    warmedDocumentPayload: null,
     selectedListIndex: -1,
     browserForegroundReason: '',
     pdfObjectUrl: '',
@@ -5123,6 +5124,35 @@
     return Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
   }
 
+  function warmedPriorityFolder(parentRef, payload = state.warmedDocumentPayload) {
+    const ref = String(parentRef || '');
+    const ageMs = Number(payload?.ageMs || 0);
+    if (
+      !ref
+      || !Number.isFinite(ageMs)
+      || ageMs < 0
+      || ageMs > 90 * 1000
+    ) return null;
+
+    const folder = (Array.isArray(payload?.priorityFolders) ? payload.priorityFolders : [])
+      .find((entry) => String(entry?.ref || '') === ref);
+    return folder && Array.isArray(folder.items) ? folder : null;
+  }
+
+  function applyWarmedFolderSnapshot(folder, parentRef) {
+    if (!folder || !Array.isArray(folder.items)) return false;
+    const incoming = sortItems(folder.items);
+    state.items = incoming;
+    state.nextPageToken = String(folder.nextPageToken || '');
+    state.folderSnapshot = {
+      parentRef: String(parentRef || ''),
+      items: incoming.slice(),
+      nextPageToken: state.nextPageToken
+    };
+    renderItems();
+    return true;
+  }
+
   function warmedRootFolder(payload) {
     const ageMs = Number(payload?.ageMs || 0);
     const folder = payload?.folder;
@@ -5330,14 +5360,24 @@
     state.loading = true;
     const started = performance.now();
     const parentRef = currentParentRef();
+    let warmedHit = false;
 
     if (!append) {
       state.searchMode = false;
       state.searchQuery = '';
       state.selectedListIndex = -1;
       els.search.value = '';
+      const priority = warmedPriorityFolder(parentRef);
       const snapshot = state.folderSnapshot;
-      if (snapshot && snapshot.parentRef === parentRef && Array.isArray(snapshot.items)) {
+      if (priority && applyWarmedFolderSnapshot(priority, parentRef)) {
+        warmedHit = true;
+        capture('drive_folder_opened', {
+          route: '/documentos/',
+          duration_ms: duration(started),
+          source: 'cache',
+          cache_state: 'hit'
+        });
+      } else if (snapshot && snapshot.parentRef === parentRef && Array.isArray(snapshot.items)) {
         state.items = snapshot.items.slice();
         state.nextPageToken = String(snapshot.nextPageToken || '');
         renderItems();
@@ -5366,15 +5406,17 @@
         nextPageToken: state.nextPageToken
       };
       renderItems();
-      capture('drive_folder_opened', {
-        route: '/documentos/',
-        duration_ms: duration(started),
-        source: 'drive',
-        cache_state: 'miss',
-        drive_token_ms: driveTimingValue(payload, 'tokenMs'),
-        drive_api_ms: driveTimingValue(payload, 'apiMs'),
-        drive_map_ms: driveTimingValue(payload, 'mapMs')
-      });
+      if (!warmedHit) {
+        capture('drive_folder_opened', {
+          route: '/documentos/',
+          duration_ms: duration(started),
+          source: 'drive',
+          cache_state: 'miss',
+          drive_token_ms: driveTimingValue(payload, 'tokenMs'),
+          drive_api_ms: driveTimingValue(payload, 'apiMs'),
+          drive_map_ms: driveTimingValue(payload, 'mapMs')
+        });
+      }
     } catch (error) {
       if (!append && !state.items.length) {
         els.list.innerHTML = '<div class="documents-empty">Não foi possível carregar esta pasta.</div>';
@@ -6209,6 +6251,12 @@
     event.stopPropagation();
   }, true);
 
+  window.addEventListener('portal:documents-warm-updated', (event) => {
+    const payload = event.detail;
+    if (!payload || typeof payload !== 'object') return;
+    state.warmedDocumentPayload = payload;
+  });
+
   navigator.serviceWorker?.addEventListener('message', (event) => {
     if (event.data?.type !== 'PORTAL_DOCUMENT_STREAM_FAILED') return;
     if (!state.pdfStreamId || event.data.viewId !== state.pdfStreamId || !state.pdfItem) return;
@@ -6251,6 +6299,7 @@
     const warmedPromise = backgroundWarmPayloadPromise();
     await loadAccess();
     const warmed = await warmedPromise;
+    state.warmedDocumentPayload = warmed || null;
 
     if (state.access?.capabilities?.view || state.access?.capabilities?.manage) {
       await Promise.all([
