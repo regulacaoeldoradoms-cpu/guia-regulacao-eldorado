@@ -11,6 +11,8 @@ const portalChat = readFileSync(new URL('../../js/portal-chat.js', import.meta.u
 const councilWorker = readFileSync(new URL('../council.js', import.meta.url), 'utf8');
 const councilPolicy = readFileSync(new URL('../council-access-policy.js', import.meta.url), 'utf8');
 const workerIndex = readFileSync(new URL('../index.js', import.meta.url), 'utf8');
+const telemedicineWorker = readFileSync(new URL('../telemedicine.js', import.meta.url), 'utf8');
+const telemedicineClient = readFileSync(new URL('../../js/telemedicina.js', import.meta.url), 'utf8');
 const installEntries = [
   '../../cidadao/index.html',
   '../../recepcao/index.html',
@@ -80,6 +82,26 @@ test('rotas profissionais principais carregam o controlador global de Push', () 
     const html = readFileSync(new URL(filename, import.meta.url), 'utf8');
     assert.match(html, /portal-performance\.js\?v=20260922-5/, filename);
   }
+});
+
+test('avisos de Telemedicina são globais, deduplicados e sem dado assistencial no Push', () => {
+  assert.match(telemedicineWorker, /\/api\/telemedicina\/alerts/);
+  assert.match(telemedicineWorker, /async function reminderAlerts\(env\)/);
+  assert.match(pwaClient, /TELEMEDICINE_ALERT_INTERVAL_MS = 5 \* 60 \* 1000/);
+  assert.match(pwaClient, /\/api\/telemedicina\/alerts/);
+  assert.match(pwaClient, /portal-telemedicine-reminders/);
+  assert.match(pwaClient, /regulacao\.portal\.telemedicine\.alerts\.v1/);
+  assert.match(pwaClient, /showNotification\('Telemedicina · Aviso de retorno'/);
+  assert.match(pwaClient, /data: \{ url: '\/telemedicina\/' \}/);
+  assert.doesNotMatch(pwaClient, /patientName|patient_name|nome do paciente/i);
+  assert.match(telemedicineClient, /PortalPWA\?\.checkTelemedicineAlerts/);
+  assert.match(telemedicineClient, /PortalPWA\?\.enablePush/);
+});
+
+test('clique no aviso de Telemedicina navega para a rota do alerta', () => {
+  assert.match(serviceWorker, /event\.notification\?\.data\?\.url/);
+  assert.match(serviceWorker, /portalWindow\.navigate\(target\.toString\(\)\)/);
+  assert.match(serviceWorker, /target\.origin === self\.location\.origin/);
 });
 
 test('manifesto usa os ícones oficiais 192 e 512 e o Apple usa 180', () => {
