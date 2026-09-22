@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — validar em uso real a seleção OCR granular recém-publicada; medição de desempenho de lista/pesquisa continua como pendência secundária** |
-| Última ação concluída | PR **#398** mesclada e publicada: OCR passou de caixas por linha para palavras individuais agrupadas por parágrafo/campo, com isolamento do grupo iniciado pelo operador |
-| Branch atual | `docs/central-docs-ocr-granular-status-20260922` apenas para reconciliar este handoff pós-merge |
-| PR atual | PR funcional **#398 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional `e3be64838548f9d905a4955dcab1a64a042e444a` |
-| Checks e testes | PR: Fases 1–6, navegador Chromium/OCR, governança e site verdes; pós-merge: Fases 1–6, governança, site, Cloudflare Pages, GitHub Pages build/deploy e Workers Build verdes |
-| Decisões tomadas | preservar bounding boxes por palavra; agrupar seleção por parágrafo OCR; ao pointerdown isolar o grupo ativo; manter fallback por linha; continuar OCR 100% local |
-| Justificativas | vídeo real mostrou que spans absolutos por linha faziam a seleção nativa atravessar campos fora da região visual; granularidade por palavra + ilha lógica reduz esse efeito sem substituir o comportamento normal de copiar texto |
-| Alternativas descartadas | manter uma caixa por linha: reproduz o defeito; criar seleção totalmente proprietária/clipboard artificial: descartado por complexidade e por perder comportamento nativo; OCR externo: descartado por privacidade |
-| Ações externas concluídas | Cloudflare Pages success; GitHub Pages build/deploy success; Workers Build produtivo `451ac747-32de-42ef-9b17-8bb735cf38fa` success |
-| Pendências e bloqueios | falta somente validação operacional no PDF real do operador; a amostra real de latência da paginação de 20 itens continua pendente, mas não bloqueia o teste OCR |
-| Riscos conhecidos | Tesseract pode segmentar um campo em mais de um parágrafo; nesse caso a seleção ficará mais restrita, não mais ampla. O fallback por linha continua disponível |
-| Métricas / observabilidade | OCR não envia conteúdo ao PostHog; nenhuma nova propriedade sensível. Métricas de lista/pesquisa preservam baseline anterior |
-| Próxima ação exata | **Ctrl+F5 e repetir no PDF real a seleção de um trecho curto; confirmar que somente o campo/trecho desejado fica destacado e é copiado** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #398; `js/document-ocr.js`; `js/document-viewer.js`; `css/documents.css`; `testing/browser/central-docs-ocr.spec.mjs`; vídeo real do incidente |
+| Subfase / objetivo atual | **7E — validar em uso real a seleção OCR geométrica recém-publicada** |
+| Última ação concluída | PR **#400** mesclada e publicada: OCR digitalizado não usa mais Range nativo durante arraste; seleção é calculada geometricamente por palavra/grupo e copia só o trecho escolhido |
+| Branch atual | `docs/central-docs-ocr-geometric-status-20260922` apenas para reconciliar este handoff |
+| PR atual | PR funcional **#400 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional `541c2157f013522df04e23e25b87e0af3c58c3e3` |
+| Checks e testes | PR: Fases 1–6, Chromium/PDF.js com arraste real, governança e site verdes; pós-merge: Cloudflare Pages, Workers Build, build e deploy verdes |
+| Decisões tomadas | abandonar seleção nativa apenas no OCR; manter seleção nativa em PDFs com camada de texto real; usar proxy invisível só para copiar o texto escolhido |
+| Justificativas | a tentativa anterior por `user-select:none` em spans irmãos não impedia o Chromium de formar Range entre nós absolutos pela ordem DOM |
+| Alternativas descartadas | continuar ajustando somente CSS/user-select: descartado após reprovação real; trocar também PDFs nativos para seleção customizada: desnecessário e arriscaria regressão |
+| Ações externas concluídas | Cloudflare Pages success; Workers Build `5757e6f3-c602-4a97-a3a7-d4ee6fffc9c2` success; GitHub build/deploy success |
+| Pendências e bloqueios | somente validação operacional no PDF real do usuário; medição de latência da paginação de 20 permanece pendência secundária |
+| Riscos conhecidos | Tesseract pode dividir um campo em grupos distintos; isso restringe a seleção ao grupo em vez de ampliar para a página, comportamento fail-safe |
+| Métricas / observabilidade | nenhum texto OCR enviado ao PostHog; sem novas propriedades sensíveis |
+| Próxima ação exata | **Ctrl+F5 e testar clique + arraste curto no PDF real; confirmar que só o trecho desejado fica destacado e Ctrl+C copia apenas esse trecho** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #400; `js/document-viewer.js`; `css/documents.css`; `testing/browser/central-docs-ocr.spec.mjs` |
 
 ## Histórico recuperável
 
@@ -4628,3 +4628,29 @@ Cache-busters candidatos: `document-viewer.js?v=20260922-2` e `documents.css?v=2
 **Critério de aceite:** arrastar sobre uma palavra/trecho deve destacar somente o intervalo indicado dentro do campo e Ctrl+C deve copiar apenas esse texto; a página inteira não pode entrar no Range nativo.
 
 **Próxima ação exata:** validar CI direcionado e navegador Chromium; publicar somente se o teste de arraste real passar. Depois repetir no PDF real do operador.
+
+## Fase 7E — seleção OCR geométrica integrada e publicada — 22/09/2026
+
+A validação real posterior à PR #398 mostrou que a correção anterior ainda era insuficiente: o Chromium continuava podendo formar um Range nativo atravessando grande parte da página. A PR **#400 — Fase 7E: impedir seleção da página inteira no OCR** substituiu a seleção nativa por uma seleção geométrica controlada somente para OCR.
+
+Merge funcional: `541c2157f013522df04e23e25b87e0af3c58c3e3`.
+
+Comportamento publicado:
+- `pointerdown` fixa palavra e grupo inicial;
+- `pointermove` acompanha a palavra real sob o cursor dentro do mesmo grupo OCR;
+- somente o intervalo realmente arrastado recebe destaque visual;
+- o Range nativo do Chromium é limpo durante o gesto;
+- ao soltar, um proxy invisível recebe exclusivamente o texto selecionado para preservar Ctrl+C/cópia;
+- PDFs com texto nativo continuam usando a seleção normal do PDF.js;
+- clique fora ou Esc limpa a seleção OCR;
+- nenhum conteúdo OCR é persistido ou enviado à observabilidade.
+
+Validação técnica:
+- PR: Central Fases 1–6 — **success**;
+- PR: navegador/PDF.js real em Chromium — **success**, agora com arraste real de mouse e asserção de que a seleção não engloba o OCR inteiro;
+- PR: governança e site — **success**;
+- pós-merge: Cloudflare Pages, Workers Build produtivo `5757e6f3-c602-4a97-a3a7-d4ee6fffc9c2`, build e deploy — **success**.
+
+Cache-busters publicados: `document-viewer.js?v=20260922-2` e `documents.css?v=20260922-2`.
+
+**Próxima ação exata:** executar Ctrl+F5 e repetir no PDF real o mesmo gesto curto de clique + arraste. O aceite operacional é destacar/copiar apenas o trecho arrastado, sem seleção da página inteira.
