@@ -144,7 +144,7 @@
       const title = document.createElement('strong');
       title.textContent = 'Nenhuma notificação no momento';
       const text = document.createElement('span');
-      text.textContent = 'Novos pedidos, aceitações e comentários aparecerão aqui.';
+      text.textContent = 'Novos pedidos, aceitações, comentários e alertas judiciais aparecerão aqui.';
       empty.append(icon, title, text);
       list.appendChild(empty);
       return;
@@ -153,10 +153,15 @@
     visible.forEach((item) => {
       const row = document.createElement('article');
       row.className = `social-notification social-notification-panel-item${item.read ? '' : ' unread'}`;
+      const judicial = item.type === 'judicial_alert';
+      if (judicial) row.classList.add('judicial');
       const avatar = document.createElement('div');
       avatar.className = 'social-avatar';
       if (item.actor) social?.mountAvatar?.(avatar, item.actor);
-      else avatar.innerHTML = social?.icons?.bell || '';
+      else if (judicial) {
+        avatar.textContent = '⚖️';
+        avatar.setAttribute('aria-label', 'Alerta judicial');
+      } else avatar.innerHTML = social?.icons?.bell || '';
 
       const copy = document.createElement('div');
       const message = document.createElement('p');
@@ -245,7 +250,7 @@
     const title = document.createElement('h2');
     title.textContent = 'Notificações';
     const subtitle = document.createElement('p');
-    subtitle.textContent = 'Pedidos, aceitações e comentários recentes.';
+    subtitle.textContent = 'Pedidos, aceitações, comentários e alertas judiciais recentes.';
     titleWrap.append(title, subtitle);
     const markRead = document.createElement('button');
     markRead.type = 'button';
