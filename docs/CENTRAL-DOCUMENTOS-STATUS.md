@@ -3091,7 +3091,7 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Branch atual | `docs/central-docs-login-preload-status-20260922` somente para reconciliar este handoff pós-merge |
 | PR atual | PR funcional **#390 mesclada**; PR documental deste handoff ainda a abrir |
 | Último commit relevante | merge funcional `0f569eed3e6e343fb5e82a48164c4b343134fcee` |
-| Checks e testes | branch funcional: **51 checks verdes** + somente Worker Preview de branch indisponível; pós-merge: **53 checks verdes**, 0 falhas, deploy/Pages/Workers/PDF.js verdes; apenas teste de vídeo pós-login ainda em andamento no último ponto observado e não pertence à Central |
+| Checks e testes | branch funcional: **51 checks verdes** + somente Worker Preview de branch indisponível; pós-merge: **53 checks verdes** incluindo deploy, Pages, PDF.js e vídeo; o Workers Build produtivo concluiu com sucesso e gerou versão. Depois, a criação desta branch documental disparou novo check de Worker Preview sobre o mesmo SHA, que falhou como ocorre nas branches sem acesso a Preview; isso não reverteu a versão produtiva já publicada |
 | Decisões tomadas | preload só para view/manage; snapshot privado somente em RAM do Service Worker por 90 s; refresh ~30 s; `/access` ao vivo antes de exibir lista aquecida; refresh autoritativo após primeiro paint; nenhum PDF pré-baixado |
 | Justificativas | a rota pública já era aquecida, mas a primeira tela útil ainda gastava segundos em acesso, preferências, IA e raiz do Drive |
 | Alternativas descartadas | persistir nomes/listagens privadas no navegador: descartado; pré-baixar PDFs: descartado por privacidade/custo; confiar só no snapshot sem live gate: descartado por risco de permissão revogada |
@@ -4415,7 +4415,7 @@ Publicação confirmada:
 - Cloudflare Pages: **success**;
 - GitHub build/deploy: **success**;
 - PDF.js real em Chromium: **success**;
-- pós-merge no último ponto observado: 53 checks verdes, 0 falhas; somente o teste de vídeo pós-login, não relacionado à Central, ainda estava em andamento.
+- pós-merge: 53 checks verdes, incluindo vídeo, PDF.js, Pages e deploy. O Workers Build produtivo concluiu antes com sucesso e gerou Version ID `63de9dc0-9c44-4ea8-8d96-9cf4c286a220`. Após a criação da branch documental de handoff, um novo check de Worker Preview foi anexado ao mesmo SHA e falhou; ele não representa rollback nem falha da versão produtiva já criada.
 
 Comportamento produtivo:
 1. após login, contas com Central autorizada disparam aquecimento da rota e dos motores públicos;
