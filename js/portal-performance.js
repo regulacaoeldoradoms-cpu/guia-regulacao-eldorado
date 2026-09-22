@@ -263,7 +263,7 @@
   function schedulePriorityDocumentFilesWarm() {
     if (priorityDocumentsWarmPromise) return priorityDocumentsWarmPromise;
     priorityDocumentsWarmPromise = (async () => {
-      const payload = await getDocumentWarmPayload({ timeoutMs: 3000 });
+      const payload = await getDocumentWarmPayload({ timeoutMs: 12000 });
       if (!payload) return false;
       return prefetchPriorityDocumentFiles(payload);
     })().finally(() => {
@@ -359,7 +359,7 @@
     const worker = activeWorker(registration);
     if (!worker) return null;
 
-    const timeoutMs = Math.max(200, Math.min(3000, Number(options.timeoutMs || DOCUMENTS_WARM_GET_TIMEOUT_MS)));
+    const timeoutMs = Math.max(200, Math.min(15000, Number(options.timeoutMs || DOCUMENTS_WARM_GET_TIMEOUT_MS)));
     return new Promise((resolve) => {
       const channel = new MessageChannel();
       let settled = false;
