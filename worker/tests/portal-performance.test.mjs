@@ -78,11 +78,11 @@ test('todas as entradas ativas registram cedo a camada de desempenho', () => {
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
     assert.equal(
-      (html.match(/portal-performance\.js\?v=20260911-1/g) || []).length,
+      (html.match(/portal-performance\.js\?v=20260922-1/g) || []).length,
       1,
       filename + ': bootstrap único'
     );
-    assert.match(html, /portal-performance\.js\?v=20260911-1" async/);
+    assert.match(html, /portal-performance\.js\?v=20260922-1" async/);
     if (/auth-client\.js/.test(html)) {
       assert.match(html, /rel="preconnect" href="https:\/\/yellow-wave-d0a1guia-regulacao-ia\.regulacaoeldoradoms\.workers\.dev"/);
       assert.match(html, /rel="preload" href="\/js\/auth-client\.js\?v=20260910-4" as="script"/);
@@ -109,12 +109,38 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
   assert.equal(api.__test.portalRoute('/api/social/feed'), '');
   navigator.connection = { saveData: true, effectiveType: '4g' };
   assert.equal(api.__test.connectionIsConstrained(), true);
+  assert.equal(api.__test.documentsAccessAllowed({
+    documentCapabilities: { view: true },
+    mustChangePassword: false,
+    emailVerificationRequired: false
+  }), true);
+  assert.equal(api.__test.documentsAccessAllowed({
+    documentCapabilities: { view: true },
+    mustChangePassword: true
+  }), false);
+  assert.equal(api.__test.documentsAccessAllowed({
+    documentCapabilities: { manage: true },
+    emailVerificationRequired: true
+  }), false);
+  assert.equal(api.__test.documentsAccessAllowed({
+    documentCapabilities: { view: false, manage: false }
+  }), false);
 });
 
-test('service worker armazena somente superfície pública e atualiza sem bloquear', () => {
+test('service worker aquece Central sem persistir payload privado e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260917-2'/);
+  assert.match(source, /CACHE_VERSION = '20260922-1'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
+  assert.match(source, /PORTAL_WARM_DOCUMENTS/);
+  assert.match(source, /PORTAL_DOCUMENTS_WARM_GET/);
+  assert.match(source, /PORTAL_DOCUMENTS_WARM_CLEAR/);
+  assert.match(source, /const documentWarmSnapshots = new Map\(\)/);
+  assert.match(source, /let documentWarmGeneration = 0/);
+  assert.match(source, /documentWarmGeneration \+= 1/);
+  assert.match(source, /generation !== documentWarmGeneration/);
+  assert.match(source, /crypto\.subtle\.digest/);
+  assert.match(source, /cache:\s*'no-store'/);
+  assert.doesNotMatch(source, /localStorage|sessionStorage|indexedDB/);
   assert.ok(source.includes("'/documentos/'"));
   assert.ok(read('js/portal-performance.js').includes("'/documentos/'"));
   assert.match(source, /portal-observability\.js\?v=20260921-2/);
