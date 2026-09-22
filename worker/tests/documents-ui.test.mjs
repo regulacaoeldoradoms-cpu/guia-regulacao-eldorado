@@ -479,7 +479,7 @@ test('Titon cria texto selecionável local para PDF digitalizado sem enviar cont
   assert.match(viewer, /ocrDragRect/);
   assert.match(viewer, /rectIntersectsOcrWord/);
   assert.match(viewer, /updateOcrRectSelection/);
-  assert.match(viewer, /data\.ocrSelectionMode = 'rectangle'/);
+  assert.match(viewer, /layerNode\.dataset\.ocrSelectionMode = 'rectangle'/);
   assert.match(viewer, /commitOcrCopySelection/);
   assert.match(viewer, /span\.dataset\.ocrOrder/);
   assert.match(viewer, /span\.dataset\.ocrText/);
