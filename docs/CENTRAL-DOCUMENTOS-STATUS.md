@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — restaurar ordem histórica da Home sem perder preload de Consulta/Exames** |
-| Última ação concluída | Implementação em branch: listagem Drive recupera `orderBy=folder,name_natural`; preload prioritário recebe guarda explícita para nunca repintar a raiz |
-| Branch atual | `fix/central-docs-root-order-priority-neutral-20260922` |
-| PR atual | ainda a abrir |
-| Último commit relevante | `93daae6` (testes da neutralidade da Home) |
-| Checks e testes | pendentes de CI |
-| Decisões tomadas | Consulta [2026]/Exames [2026] continuam prioritárias **somente em background**; Home segue ordem histórica; pesquisa mantém fast-path sem orderBy |
-| Justificativas | com paginação de 20, remover orderBy remoto altera quais itens entram na primeira página antes da ordenação local; isso explica a mudança visual sem depender de promoção explícita das pastas prioritárias |
-| Alternativas descartadas | remover preload; promover prioridades na Home; restaurar orderBy da pesquisa |
-| Ações externas concluídas | nenhuma nesta correção ainda |
-| Pendências e bloqueios | CI/merge/deploy + validação visual da Home |
-| Riscos conhecidos | `orderBy` pode acrescentar algum custo à listagem; impacto tende a ser menor com lote de 20 e deve ser observado nas métricas reais |
-| Métricas / observabilidade | continuar comparando `drive_folder_opened`; sem novas propriedades ou dados sensíveis |
-| Próxima ação exata | abrir PR, validar Fases 1–6/site/governança e publicar se verde; depois Ctrl+F5 e conferir Home |
-| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-drive.js`; `js/documents.js`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status Fase 7E |
+| Subfase / objetivo atual | **7E — validar em uso real a Home restaurada e medir latência da paginação de 20** |
+| Última ação concluída | PR #406 publicada também no Worker: Home recupera ordem histórica; Consulta/Exames continuam apenas como preload de background |
+| Branch atual | `docs/central-docs-root-order-published-20260922` apenas para registrar publicação final |
+| PR atual | PR funcional #406 mesclada; PR #407 documental mesclada; PR documental final deste handoff ainda a abrir |
+| Último commit relevante | funcional `36c6b838`; reconciliação `7fd0ac98` |
+| Checks e testes | Workers Build `7cbc3b05-87ab-41bb-b87c-3762a2969328` success; GitHub build/deploy success; governança e validações gerais verdes |
+| Decisões tomadas | prioridades Consulta/Exames são exclusivamente de background; Home usa `folder,name_natural`; pesquisa permanece no fast-path sem `orderBy`; foreground continua em 20 itens |
+| Justificativas | paginação de 20 precisa de ordem remota estável antes do corte; ordenar só os 20 recebidos não preserva a composição histórica |
+| Alternativas descartadas | promover prioridades na Home; remover preload; carregar raiz inteira no frontend apenas para ordenar |
+| Ações externas concluídas | Worker produtivo publicado com sucesso pelo gate seguro |
+| Pendências e bloqueios | falta validação visual real e coleta de nova amostra de latência |
+| Riscos conhecidos | `orderBy` remoto pode adicionar algum custo; medir `drive_folder_opened` antes de nova otimização |
+| Métricas / observabilidade | manter baseline anterior para comparação; sem novas propriedades sensíveis |
+| Próxima ação exata | **Ctrl+F5, conferir ordem da Home e depois abrir Consulta/Exames; em seguida observar métricas reais** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #406; `worker/document-drive.js`; `js/documents.js`; `documentos/index.html`; status Fase 7E |
 
 ## Histórico recuperável
 
@@ -4773,3 +4773,18 @@ Publicação estática do merge #406: build e deploy GitHub — **success**. O W
 Após #406, a PR concorrente #404 atualizou a camada social e suas validações. Este registro documental também serve para provocar nova execução normal dos pipelines na `main`, sem alterar código funcional.
 
 **Próxima ação exata:** confirmar o novo Workers Build. Se verde, validar Home com Ctrl+F5 e abrir Consulta/Exames para confirmar preload. Se vermelho, diagnosticar o bloqueio do gate sem reduzir segurança nem remover requisitos de secrets.
+
+## Fase 7E — ordem histórica da Home publicada — 22/09/2026
+
+A reconciliação pós-merge da PR #406 foi concluída.
+
+Evidência final de publicação:
+- PR funcional #406 integrada em `36c6b8383cb11f232021db823b8a7c46547fce8e`;
+- PR documental #407 integrada em `7fd0ac98c499c3419814d61296b2c78ec9b64b9c`;
+- Workers Build produtivo `7cbc3b05-87ab-41bb-b87c-3762a2969328` — **success**;
+- GitHub build/deploy — **success**;
+- governança e validações sociais/gerais do novo `main` — **success**.
+
+Conclusão operacional: `listDriveFolder` com `orderBy=folder,name_natural` está novamente publicado no Worker; a Home pode voltar à composição/ordem histórica antes do corte de 20 itens. Consulta [2026] e Exames [2026] permanecem aquecidas exclusivamente em segundo plano, sem promoção visual na raiz.
+
+**Próxima ação exata:** Ctrl+F5 uma vez na Central e conferir a Home. Depois abrir Consulta [2026] e Exames [2026] para confirmar que o preload continua ativo sem alterar a ordem de Meu Drive.
