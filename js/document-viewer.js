@@ -400,7 +400,9 @@
         span.dataset.ocrGroup = groupId;
         span.dataset.ocrLineIndex = String(lineIndex + 1);
         span.setAttribute('role', 'presentation');
-        span.textContent = text + (wordIndex === sourceWords.length - 1 ? '\n' : ' ');
+        const isLastWord = wordIndex === sourceWords.length - 1;
+        const selectableText = text + (isLastWord ? '\n' : ' ');
+        span.textContent = selectableText;
         span.style.left = `${((x0 / result.width) * 100).toFixed(4)}%`;
         span.style.top = `${((y0 / result.height) * 100).toFixed(4)}%`;
 
@@ -412,7 +414,7 @@
         const desiredWidth = ((x1 - x0) / result.width) * viewportWidth;
         if (measure && desiredWidth > 0) {
           measure.font = `${fontSize}px Arial`;
-          const measuredWidth = Math.max(1, measure.measureText(text).width);
+          const measuredWidth = Math.max(1, measure.measureText(text + (isLastWord ? '' : ' ')).width);
           const scaleX = clamp(desiredWidth / measuredWidth, 0.35, 3.5);
           span.style.transform = `scaleX(${scaleX.toFixed(4)})`;
         }
