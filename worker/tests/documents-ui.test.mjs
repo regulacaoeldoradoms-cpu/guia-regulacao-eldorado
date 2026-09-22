@@ -138,7 +138,7 @@ test('Fase 7E pré-carrega Central após login somente para perfil autorizado e 
   const client = read('js/documents.js');
 
   assert.match(html, /portal-performance\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260922-3/);
+  assert.match(html, /documents\.js\?v=20260922-4/);
 
   assert.match(performanceClient, /function documentsAccessAllowed\(/);
   assert.match(performanceClient, /PORTAL_WARM_DOCUMENTS/);
@@ -195,7 +195,7 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
 
   assert.match(html, /portal-performance\.js\?v=20260922-3/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260922-3/);
+  assert.match(html, /documents\.js\?v=20260922-4/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   for (const source of [observability, server]) {
@@ -235,7 +235,7 @@ test('Fase 7E acelera navegação do Drive sem persistir nomes e mede somente es
   const server = read('worker/observability.js');
 
   assert.match(html, /portal-performance\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260922-3/);
+  assert.match(html, /documents\.js\?v=20260922-4/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   assert.match(client, /folderSnapshot:\s*null/);
@@ -256,7 +256,17 @@ test('Fase 7E acelera navegação do Drive sem persistir nomes e mede somente es
   assert.match(drive, /cachedFileRefKey/);
   assert.match(drive, /cachedDriveCacheHmacKey/);
   assert.match(drive, /effectiveMime === PDF_MIME[\s\S]*stableDriveCacheKey/);
-  assert.doesNotMatch(drive, /searchParams\.set\('orderBy', 'folder,name_natural'\)/);
+  const listBlock = drive.slice(
+    drive.indexOf('export async function listDriveFolder'),
+    drive.indexOf('export async function searchDrive')
+  );
+  const searchBlock = drive.slice(
+    drive.indexOf('export async function searchDrive'),
+    drive.indexOf('function normalizeDriveVersion')
+  );
+  assert.match(listBlock, /searchParams\.set\('orderBy', 'folder,name_natural'\)/);
+  assert.doesNotMatch(searchBlock, /searchParams\.set\('orderBy', 'folder,name_natural'\)/);
+  assert.match(client, /const parentRef = currentParentRef\(\);[\s\S]*if \(!parentRef\) return;[\s\S]*warmedPriorityFolder\(parentRef, payload\)/);
 
   for (const source of [observability, server]) {
     for (const metric of [
@@ -294,7 +304,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260922-3/);
+  assert.match(html, /documents\.js\?v=20260922-4/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -353,7 +363,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260922-3/);
+  assert.match(html, /documents\.js\?v=20260922-4/);
   assert.match(html, /documents\.css\?v=20260922-2/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
@@ -612,7 +622,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260922-3/);
+  assert.match(html, /documents\.js\?v=20260922-4/);
   assert.match(html, /documents\.css\?v=20260922-2/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -755,7 +765,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260922-3/);
+  assert.match(html, /documents\.js\?v=20260922-4/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -1157,7 +1167,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
   assert.match(html, /documents\.css\?v=20260922-2/);
-  assert.match(html, /documents\.js\?v=20260922-3/);
+  assert.match(html, /documents\.js\?v=20260922-4/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
@@ -1403,7 +1413,7 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
   assert.match(html, /documents\.css\?v=20260922-2/);
-  assert.match(html, /documents\.js\?v=20260922-3/);
+  assert.match(html, /documents\.js\?v=20260922-4/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-notepad-head[\s\S]*cursor:\s*grab/);

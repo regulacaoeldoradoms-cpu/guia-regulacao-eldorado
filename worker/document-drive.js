@@ -677,6 +677,10 @@ export async function listDriveFolder(env, input = {}) {
   const url = new URL('https://www.googleapis.com/drive/v3/files');
   url.searchParams.set('q', `'${escapeDriveQueryLiteral(parentId)}' in parents and trashed = false`);
   url.searchParams.set('pageSize', String(pageSize));
+  // A ordem visual da navegação deve permanecer igual ao comportamento
+  // histórico da Central. O preload de pastas prioritárias é apenas de fundo
+  // e não pode alterar quais itens entram primeiro na paginação da pasta.
+  url.searchParams.set('orderBy', 'folder,name_natural');
   url.searchParams.set('spaces', 'drive');
   url.searchParams.set('supportsAllDrives', 'true');
   url.searchParams.set('includeItemsFromAllDrives', 'true');
