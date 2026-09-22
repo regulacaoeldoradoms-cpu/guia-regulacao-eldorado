@@ -5,7 +5,7 @@
 
   const WORKER_URL = '/portal-sw.js';
   const WORKER_SCOPE = '/';
-  const PWA_CLIENT_URL = '/js/portal-pwa.js?v=20260922-2';
+  const PWA_CLIENT_URL = '/js/portal-pwa.js?v=20260922-3';
   const OBSERVABILITY_CLIENT_URL = '/js/portal-observability.js?v=20260921-2';
   const DOCUMENTS_ROUTE = '/documentos/';
   const DOCUMENT_CACHE_CLIENT_URL = '/js/document-cache.js?v=20260912-1';
