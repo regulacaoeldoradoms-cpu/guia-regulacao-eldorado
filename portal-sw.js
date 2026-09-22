@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260922-1';
+const CACHE_VERSION = '20260922-2';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -15,6 +15,12 @@ const DOCUMENT_WORKER_ORIGINS = new Set([
 const DOCUMENTS_WARM_TTL_MS = 90 * 1000;
 const DOCUMENTS_WARM_REFRESH_MS = 30 * 1000;
 const DOCUMENTS_WARM_PAGE_SIZE = 40;
+const DOCUMENTS_PRIORITY_PAGE_SIZE = 100;
+const DOCUMENTS_PRIORITY_MAX_PAGES = 6;
+const DOCUMENTS_PRIORITY_FOLDER_NAMES = Object.freeze([
+  'consulta [2026]',
+  'exames [2026]'
+]);
 const DOCUMENTS_BACKGROUND_ASSETS = Object.freeze([
   '/vendor/pdfjs-legacy/pdf.min.mjs',
   '/vendor/pdfjs-legacy/pdf.worker.min.mjs',
@@ -48,7 +54,7 @@ const CORE_RESOURCES = Object.freeze([
   '/css/social.css?v=20260911-1',
   '/css/portal-pwa.css?v=20260910-2',
   '/js/auth-config.js?v=20260815-1',
-  '/js/portal-performance.js?v=20260922-1',
+  '/js/portal-performance.js?v=20260922-2',
   '/js/portal-observability.js?v=20260921-2',
   '/js/portal-pwa.js?v=20260911-1',
   '/js/auth-client.js?v=20260910-4',
@@ -166,6 +172,83 @@ async function fetchDocumentWarmJson(endpoint, pathname, authorization, options 
   return response.json().catch(() => null);
 }
 
+
+function normalizedPriorityFolderName(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLocaleLowerCase('pt-BR');
+}
+
+function exactPriorityFolder(items, requestedName) {
+  const expected = normalizedPriorityFolderName(requestedName);
+  const matches = (Array.isArray(items) ? items : []).filter((item) => (
+    item?.isFolder === true
+    && item?.ref
+    && normalizedPriorityFolderName(item?.name) === expected
+  ));
+  return matches.length === 1 ? matches[0] : null;
+}
+
+async function discoverPriorityFolder(endpoint, authorization, requestedName, rootFolder = null) {
+  const rootMatch = exactPriorityFolder(rootFolder?.items, requestedName);
+  if (rootMatch) return rootMatch;
+
+  const searched = await fetchDocumentWarmJson(endpoint, '/api/documents/drive/search', authorization, {
+    method: 'POST',
+    body: JSON.stringify({
+      query: requestedName,
+      pageToken: '',
+      pageSize: DOCUMENTS_PRIORITY_PAGE_SIZE
+    })
+  });
+  return exactPriorityFolder(searched?.items, requestedName);
+}
+
+async function fetchPriorityFolderItems(endpoint, authorization, folderRef) {
+  const items = [];
+  let pageToken = '';
+  let pages = 0;
+
+  do {
+    const payload = await fetchDocumentWarmJson(endpoint, '/api/documents/drive/list', authorization, {
+      method: 'POST',
+      body: JSON.stringify({
+        parentRef: folderRef,
+        pageToken,
+        pageSize: DOCUMENTS_PRIORITY_PAGE_SIZE
+      })
+    });
+    if (!payload || !Array.isArray(payload.items)) break;
+    items.push(...payload.items);
+    pageToken = String(payload.nextPageToken || '');
+    pages += 1;
+  } while (pageToken && pages < DOCUMENTS_PRIORITY_MAX_PAGES);
+
+  return {
+    items,
+    nextPageToken: pageToken
+  };
+}
+
+async function warmPriorityFolders(endpoint, authorization, rootFolder) {
+  const folders = [];
+  for (const requestedName of DOCUMENTS_PRIORITY_FOLDER_NAMES) {
+    const folder = await discoverPriorityFolder(endpoint, authorization, requestedName, rootFolder).catch(() => null);
+    if (!folder?.ref) continue;
+    const listing = await fetchPriorityFolderItems(endpoint, authorization, folder.ref).catch(() => null);
+    if (!listing) continue;
+    folders.push(Object.freeze({
+      name: String(folder.name || requestedName),
+      ref: String(folder.ref),
+      items: Array.isArray(listing.items) ? listing.items : [],
+      nextPageToken: String(listing.nextPageToken || '')
+    }));
+  }
+  return folders;
+}
+
 async function warmDocumentsStatic() {
   await Promise.allSettled([
     warmPage('/documentos/'),
@@ -207,7 +290,8 @@ async function warmDocumentsPrivate(data) {
       access,
       preferences: null,
       aiConfig: null,
-      folder: null
+      folder: null,
+      priorityFolders: []
     };
 
     jobs.push(
@@ -240,6 +324,16 @@ async function warmDocumentsPrivate(data) {
     }
 
     await Promise.allSettled(jobs);
+    if (generation !== documentWarmGeneration) return false;
+
+    if (capabilities.view === true && access?.drive?.connected === true) {
+      result.priorityFolders = await warmPriorityFolders(
+        endpoint,
+        authorization,
+        result.folder
+      ).catch(() => []);
+    }
+
     if (generation !== documentWarmGeneration) return false;
     const createdAt = Date.now();
     documentWarmSnapshots.set(key, Object.freeze({
