@@ -10,6 +10,7 @@
   let cacheWarmTimer = null;
   const user = await auth.requireRole([]);
   if (!user) return;
+  const centralStartupStarted = performance.now();
 
   const DEFAULT_EDITOR_COLOR_PALETTE = Object.freeze([
     '#000000', '#ffffff', '#e53935', '#1565c0', '#2e7d32', '#f9a825'
@@ -764,11 +765,13 @@
     return colors.length ? colors : [...DEFAULT_EDITOR_COLOR_PALETTE];
   }
 
-  async function loadEditorPreferences() {
+  async function loadEditorPreferences(warmed = null) {
     const caps = state.access?.capabilities || state.user?.documentCapabilities || {};
     if (caps.view !== true && caps.manage !== true) return false;
     try {
-      const payload = await api('/api/documents/preferences', { method: 'GET' });
+      const payload = warmed && typeof warmed === 'object'
+        ? warmed
+        : await api('/api/documents/preferences', { method: 'GET' });
       state.editorColorPalette = normalizeEditorColorPalette(payload?.colorPalette);
       state.documentAiFieldOrder = normalizeTitonFieldOrder(payload?.fieldOrder);
       return true;
@@ -4418,11 +4421,13 @@
     if (!available && state.documentAiPanelOpen) setDocumentAiPanelOpen(false);
   }
 
-  async function loadDocumentAiConfig() {
+  async function loadDocumentAiConfig(warmed = null) {
     state.documentAiConfig = null;
     if (documentAiCapabilities().extract !== true) return;
     try {
-      const payload = await api('/api/documents/ai/config', { method: 'GET' });
+      const payload = warmed && typeof warmed === 'object'
+        ? warmed
+        : await api('/api/documents/ai/config', { method: 'GET' });
       state.documentAiConfig = payload?.ai || null;
       if (state.pdfItem) scheduleActiveDocumentPreparation(state.pdfOpenId);
     } catch (_) {
@@ -5027,8 +5032,18 @@
   async function loadAccess() {
     state.access = await api('/api/documents/access', { method: 'GET' });
     state.user = auth.getCachedUser() || state.user;
-    await loadDocumentAiConfig();
     renderAccessState();
+  }
+
+  function backgroundWarmPayloadPromise() {
+    try {
+      const getter = window.PortalPerformance?.getDocumentWarmPayload;
+      return typeof getter === 'function'
+        ? Promise.resolve(getter({ timeoutMs: 1400 })).catch(() => null)
+        : Promise.resolve(null);
+    } catch (_) {
+      return Promise.resolve(null);
+    }
   }
 
   function renderAccessState() {
@@ -5106,6 +5121,76 @@
   function driveTimingValue(payload, key) {
     const value = Number(payload?.timing?.[key] || 0);
     return Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
+  }
+
+  function warmedRootFolder(payload) {
+    const ageMs = Number(payload?.ageMs || 0);
+    const folder = payload?.folder;
+    const caps = state.access?.capabilities || {};
+    const drive = state.access?.drive || {};
+    if (
+      caps.view !== true
+      || drive.connected !== true
+      || !folder
+      || !Array.isArray(folder.items)
+      || !Number.isFinite(ageMs)
+      || ageMs < 0
+      || ageMs > 90 * 1000
+    ) return false;
+
+    const incoming = sortItems(folder.items);
+    state.stack = [];
+    state.searchMode = false;
+    state.searchQuery = '';
+    state.selectedListIndex = -1;
+    state.items = incoming;
+    state.nextPageToken = String(folder.nextPageToken || '');
+    state.folderSnapshot = {
+      parentRef: '',
+      items: incoming.slice(),
+      nextPageToken: state.nextPageToken
+    };
+    renderItems();
+    capture('drive_folder_opened', {
+      route: '/documentos/',
+      duration_ms: duration(centralStartupStarted),
+      source: 'cache',
+      cache_state: 'hit'
+    });
+    return true;
+  }
+
+  async function refreshWarmedRootFolderInBackground() {
+    const payload = await api('/api/documents/drive/list', {
+      method: 'POST',
+      body: JSON.stringify({
+        parentRef: '',
+        pageToken: '',
+        pageSize: 40
+      })
+    });
+    const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
+    const nextPageToken = String(payload?.nextPageToken || '');
+    state.folderSnapshot = {
+      parentRef: '',
+      items: incoming.slice(),
+      nextPageToken
+    };
+
+    const safeToRepaint = (
+      state.stack.length === 0
+      && !state.searchMode
+      && state.selectedListIndex < 0
+      && !state.pdfItem
+      && !state.editorSession
+      && !state.loading
+    );
+    if (safeToRepaint) {
+      state.items = incoming;
+      state.nextPageToken = nextPageToken;
+      renderItems();
+    }
+    return true;
   }
 
   function currentParentRef() {
@@ -6163,9 +6248,24 @@
   }
 
   try {
+    const warmedPromise = backgroundWarmPayloadPromise();
     await loadAccess();
-    if (state.access?.capabilities?.view || state.access?.capabilities?.manage) await loadEditorPreferences();
-    if (state.access?.capabilities?.view && state.access?.drive?.connected) await loadFolder();
+    const warmed = await warmedPromise;
+
+    if (state.access?.capabilities?.view || state.access?.capabilities?.manage) {
+      await Promise.all([
+        loadEditorPreferences(warmed?.preferences || null),
+        loadDocumentAiConfig(warmed?.aiConfig || null)
+      ]);
+    }
+
+    if (state.access?.capabilities?.view && state.access?.drive?.connected) {
+      if (warmedRootFolder(warmed)) {
+        refreshWarmedRootFolderInBackground().catch(() => {});
+      } else {
+        await loadFolder();
+      }
+    }
   } catch (error) {
     showStatus(error.message || 'Não foi possível iniciar a Central de Documentos.', 'warning');
     els.badge.textContent = 'Central indisponível';

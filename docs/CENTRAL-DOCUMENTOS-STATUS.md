@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — validar em uso real o fast-path de lista/pesquisa e localizar a etapa dominante do sync Drive** |
-| Última ação concluída | PR **#388** mesclada e publicada; fast-path de navegação + decomposição técnica do Drive estão na `main` |
-| Branch atual | `docs/central-docs-drive-navigation-status-20260921` somente para reconciliar este handoff pós-merge |
-| PR atual | PR funcional **#388 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional `e5d8e5cb4dc4e45a2ccfe06e8b96482fd77654a8` |
-| Checks e testes | **29/29 checks pós-merge verdes**; Workers Builds produtivo `success`; GitHub Pages/Cloudflare Pages e navegador também verdes |
-| Decisões tomadas | primeira página 40 itens; sem `orderBy` remoto redundante; mapeamento concorrente limitado; reutilização AES/HMAC; cacheKey só para PDF; snapshot de pasta somente em memória; remoto continua autoritativo |
-| Justificativas | PostHog comprovou pasta p95 ~4,54 s, pesquisa p95 ~7,07 s e sync p95 ~20,13 s; havia trabalho local serial e redundante após a Files API |
-| Alternativas descartadas | índice persistente de nomes/lista no navegador ou PostHog: descartado por privacidade/consistência; remover refs seladas, conflito ou confirmação real: descartado por integridade |
-| Ações externas concluídas | Worker produtivo atualizado pelo build `72df236a-42a1-4614-8eff-5a976b2ba81d`, versão histórica `c0971049-86e4-45a9-a46d-f8bf47b3484a`; PostHog segue no projeto 602473 |
-| Pendências e bloqueios | falta somente tráfego real pós-publicação para medir `drive_token_ms`, `drive_api_ms`, `drive_map_ms`, `build_ms`, `drive_start_ms`, `drive_upload_ms` |
-| Riscos conhecidos | snapshot local pode mostrar rapidamente o estado já carregado enquanto o remoto atualiza; ele não persiste e não substitui a resposta autoritativa |
-| Métricas / observabilidade | baseline pré-fast-path: pasta p95 **4.542 ms**; pesquisa p95 **7.072 ms**; sync p95 **20.130 ms**; small recentes pós-#386 **11.323 ms** e **13.855 ms** |
-| Próxima ação exata | operador executa **Ctrl+F5 uma vez** e usa normalmente lista/pesquisa/sync; depois consultar PostHog para medir o ganho e a etapa dominante sem nova alteração por hipótese |
-| Arquivos e fontes principais | Guia Mestre V1.1; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; `js/documents.js`; `worker/document-drive.js`; observability frontend/backend; PR #388; PostHog 602473 |
+| Subfase / objetivo atual | **7E — preload da Central de Documentos imediatamente após login autorizado** |
+| Última ação concluída | branch implementou preload público + privado efêmero, consumo seguro na primeira abertura, invalidação em logout e baseline pré-mudança |
+| Branch atual | `perf/central-docs-login-background-preload-20260922` |
+| PR atual | ainda não aberta neste ponto do registro |
+| Último commit relevante | branch contém Service Worker, `portal-performance.js`, `documents.js`, cache-busters globais, testes e documentação do preload |
+| Checks e testes | testes locais/versionados preparados; CI ainda precisa rodar no PR |
+| Decisões tomadas | preload só para view/manage; dados privados apenas RAM do Service Worker por 90 s; refresh ~30 s; live `/access` obrigatório antes de exibir lista aquecida; refresh autoritativo do Drive depois do primeiro paint |
+| Justificativas | a rota pública já era aquecida, mas a Central ainda gastava ~3–5 s em startup/lista porque acesso, preferências, IA e raiz do Drive só eram buscados ao entrar |
+| Alternativas descartadas | persistir nomes/listagem em localStorage/sessionStorage/IndexedDB/Cache Storage: descartado por privacidade e consistência; pré-baixar PDFs: descartado por sensibilidade e custo |
+| Ações externas concluídas | PostHog 602473 consultado; baseline de 24 h registrada; nenhuma nova permissão, OAuth ou segredo |
+| Pendências e bloqueios | concluir testes/CI, abrir PR, integrar/publicar se verde e colher tráfego real pós-publicação |
+| Riscos conhecidos | snapshot privado pode ficar alguns segundos atrás do Drive; por isso TTL curto, live permission gate e refresh autoritativo sem bloquear a UI |
+| Métricas / observabilidade | pré-preload: `portal_page_ready /documentos/` p95 **3.429 ms**; pasta p95 **4.555 ms**; pesquisa p95 **6.940 ms** |
+| Próxima ação exata | finalizar testes/versionamento, abrir PR, validar CI completo; após publicação medir `drive_folder_opened cache_state=hit` versus miss |
+| Arquivos e fontes principais | Guia Mestre V1.1; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; PostHog 602473 |
 
 ## Histórico recuperável
 
@@ -4373,3 +4373,33 @@ Estado publicado:
 Nenhum ganho percentual é declarado ainda. A próxima evidência deve vir de uso real depois da publicação.
 
 **Próxima ação exata:** Ctrl+F5 uma vez, usar normalmente a lista/pesquisa e realizar sincronização quando houver edição. Em seguida comparar a nova amostra com a baseline e usar as métricas por estágio para decidir se há nova otimização necessária.
+
+
+## Fase 7E — preload da Central após login autorizado — 22/09/2026
+
+Solicitação aprovada: contas com a função Central de Documentos devem preparar a ferramenta em segundo plano assim que o login for concluído.
+
+Constatação: o aquecimento existente do Portal já antecipava a página pública `/documentos/` e seus recursos referenciados, mas não executava as chamadas autenticadas necessárias para a primeira tela útil. A entrada ainda precisava consultar acesso, preferências, configuração da IA e raiz do Drive.
+
+Implementação na branch `perf/central-docs-login-background-preload-20260922`:
+- `portal-performance.js` dispara o preload no evento de sessão e no fluxo já existente de `warmForUser`, somente para `documentCapabilities.view/manage`;
+- o Service Worker aquece a interface e recursos estáticos do Titon/PDF.js/OCR;
+- acesso, preferências, IA e primeira página da raiz do Drive são obtidos com a sessão atual e mantidos exclusivamente em memória;
+- snapshot privado: TTL 90 s, refresh ~30 s, chave SHA-256 derivada do Authorization, sem token bruto no snapshot;
+- `PORTAL_DOCUMENTS_WARM_CLEAR` limpa os mapas; geração incremental impede corrida de uma requisição antiga repovoar o snapshot após logout;
+- ao entrar em `/documentos/`, a Central consulta `/api/documents/access` ao vivo antes de aceitar qualquer fotografia aquecida;
+- depois do paint imediato da raiz aquecida, uma listagem autoritativa é buscada em segundo plano e só repinta se o usuário ainda estiver na raiz sem interação concorrente;
+- se preload falhar/expirar, o fluxo anterior continua sendo o fallback normal.
+
+Privacidade e escopo:
+- nenhum PDF é pré-baixado automaticamente;
+- nomes/listagens privadas não entram em Cache Storage, localStorage, sessionStorage ou IndexedDB;
+- nenhum conteúdo/identidade documental vai ao PostHog;
+- não houve ampliação de permissão.
+
+Baseline imediatamente anterior:
+- página Central p95 ~**3,43 s**;
+- raiz Drive p95 ~**4,55 s**;
+- pesquisa p95 ~**6,94 s**.
+
+**Próxima ação:** validar a branch em CI/navegador, publicar somente se verde e medir o primeiro acesso real com `cache_state=hit`.

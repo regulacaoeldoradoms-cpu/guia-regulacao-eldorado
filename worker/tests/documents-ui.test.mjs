@@ -113,7 +113,61 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260917-2'/);
+  assert.match(source, /CACHE_VERSION = '20260922-1'/);
+});
+
+test('Fase 7E pré-carrega Central após login somente para perfil autorizado e mantém permissão ao vivo como gate', () => {
+  const html = read('documentos/index.html');
+  const performanceClient = read('js/portal-performance.js');
+  const worker = read('portal-sw.js');
+  const client = read('js/documents.js');
+
+  assert.match(html, /portal-performance\.js\?v=20260922-1/);
+  assert.match(html, /documents\.js\?v=20260922-1/);
+
+  assert.match(performanceClient, /function documentsAccessAllowed\(/);
+  assert.match(performanceClient, /PORTAL_WARM_DOCUMENTS/);
+  assert.match(performanceClient, /PORTAL_DOCUMENTS_WARM_GET/);
+  assert.match(performanceClient, /PORTAL_DOCUMENTS_WARM_CLEAR/);
+  assert.match(performanceClient, /DOCUMENTS_WARM_REFRESH_MS = 30 \* 1000/);
+  assert.match(performanceClient, /documentCapabilities/);
+  assert.match(performanceClient, /mustChangePassword/);
+  assert.match(performanceClient, /emailVerificationRequired/);
+
+  assert.match(worker, /DOCUMENTS_WARM_TTL_MS = 90 \* 1000/);
+  assert.match(worker, /const documentWarmSnapshots = new Map\(\)/);
+  assert.match(worker, /const documentWarmInFlight = new Map\(\)/);
+  assert.match(worker, /let documentWarmGeneration = 0/);
+  assert.match(worker, /documentWarmSessionKey/);
+  assert.match(worker, /crypto\.subtle\.digest/);
+  assert.match(worker, /fetchDocumentWarmJson/);
+  assert.match(worker, /'\/api\/documents\/access'/);
+  assert.match(worker, /'\/api\/documents\/preferences'/);
+  assert.match(worker, /'\/api\/documents\/ai\/config'/);
+  assert.match(worker, /'\/api\/documents\/drive\/list'/);
+  assert.match(worker, /cache:\s*'no-store'/);
+  assert.match(worker, /generation !== documentWarmGeneration/);
+  assert.match(worker, /documentWarmGeneration \+= 1/);
+  assert.doesNotMatch(worker, /localStorage|sessionStorage|indexedDB/);
+
+  const startup = client.slice(
+    client.lastIndexOf('  try {'),
+    client.lastIndexOf('})();')
+  );
+  assert.match(startup, /const warmedPromise = backgroundWarmPayloadPromise\(\)/);
+  assert.match(startup, /await loadAccess\(\)/);
+  assert.match(startup, /const warmed = await warmedPromise/);
+  assert.match(startup, /warmedRootFolder\(warmed\)/);
+  assert.match(startup, /refreshWarmedRootFolderInBackground\(\)/);
+  assert.ok(
+    startup.indexOf('await loadAccess()') < startup.indexOf('warmedRootFolder(warmed)'),
+    'A permissão atual do backend deve ser confirmada antes de exibir a lista aquecida.'
+  );
+
+  assert.match(client, /ageMs > 90 \* 1000/);
+  assert.match(client, /source:\s*'cache'/);
+  assert.match(client, /cache_state:\s*'hit'/);
+  assert.doesNotMatch(client, /capture\([^\n]*(?:item\.name|item\.ref|searchQuery)/);
 });
 
 test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técnicas', () => {
@@ -124,9 +178,9 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
   const documents = read('js/documents.js');
   const viewer = read('js/document-viewer.js');
 
-  assert.match(html, /portal-performance\.js\?v=20260921-2/);
+  assert.match(html, /portal-performance\.js\?v=20260922-1/);
   assert.match(html, /document-viewer\.js\?v=20260921-3/);
-  assert.match(html, /documents\.js\?v=20260921-12/);
+  assert.match(html, /documents\.js\?v=20260922-1/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   for (const source of [observability, server]) {
@@ -165,8 +219,8 @@ test('Fase 7E acelera navegação do Drive sem persistir nomes e mede somente es
   const observability = read('js/portal-observability.js');
   const server = read('worker/observability.js');
 
-  assert.match(html, /portal-performance\.js\?v=20260921-2/);
-  assert.match(html, /documents\.js\?v=20260921-12/);
+  assert.match(html, /portal-performance\.js\?v=20260922-1/);
+  assert.match(html, /documents\.js\?v=20260922-1/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   assert.match(client, /folderSnapshot:\s*null/);
@@ -223,7 +277,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260921-12/);
+  assert.match(html, /documents\.js\?v=20260922-1/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -282,7 +336,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260921-3/);
-  assert.match(html, /documents\.js\?v=20260921-12/);
+  assert.match(html, /documents\.js\?v=20260922-1/);
   assert.match(html, /documents\.css\?v=20260921-9/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
@@ -524,7 +578,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260921-3/);
-  assert.match(html, /documents\.js\?v=20260921-12/);
+  assert.match(html, /documents\.js\?v=20260922-1/);
   assert.match(html, /documents\.css\?v=20260921-9/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -667,7 +721,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260921-12/);
+  assert.match(html, /documents\.js\?v=20260922-1/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -1069,7 +1123,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
   assert.match(html, /documents\.css\?v=20260921-9/);
-  assert.match(html, /documents\.js\?v=20260921-12/);
+  assert.match(html, /documents\.js\?v=20260922-1/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
@@ -1315,7 +1369,7 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
   assert.match(html, /documents\.css\?v=20260921-9/);
-  assert.match(html, /documents\.js\?v=20260921-12/);
+  assert.match(html, /documents\.js\?v=20260922-1/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-notepad-head[\s\S]*cursor:\s*grab/);

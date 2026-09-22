@@ -7,6 +7,9 @@
   const WORKER_SCOPE = '/';
   const PWA_CLIENT_URL = '/js/portal-pwa.js?v=20260911-1';
   const OBSERVABILITY_CLIENT_URL = '/js/portal-observability.js?v=20260921-2';
+  const DOCUMENTS_ROUTE = '/documentos/';
+  const DOCUMENTS_WARM_REFRESH_MS = 30 * 1000;
+  const DOCUMENTS_WARM_GET_TIMEOUT_MS = 1400;
   const CORE_ROUTES = Object.freeze(['/', '/ferramentas/', '/seguranca/', '/configuracoes/', '/conquistas/']);
   const SOCIAL_ROUTES = Object.freeze(['/amigos/', '/notificacoes/', '/perfil/']);
   const KNOWN_ROUTES = new Set([
@@ -21,6 +24,7 @@
   let observer = null;
   let pwaClientStarted = false;
   let observabilityClientStarted = false;
+  let documentsWarmTimer = null;
 
   function ensurePwaClient() {
     if (window.PortalPWA || pwaClientStarted || document.querySelector?.('script[data-portal-pwa]')) return;
@@ -126,6 +130,122 @@
     return new Promise((resolve) => idle(() => postWarm(routes).then(resolve), Number(options.delay || 900)));
   }
 
+  function documentsAccessAllowed(user) {
+    const capabilities = user?.documentCapabilities || {};
+    return Boolean(
+      user
+      && !user.mustChangePassword
+      && !user.emailVerificationRequired
+      && (capabilities.view === true || capabilities.manage === true)
+    );
+  }
+
+  function documentsEndpoint() {
+    try {
+      return String(window.REGULATION_AUTH_CONFIG?.endpoint || '').replace(/\/$/, '');
+    } catch (_) {
+      return '';
+    }
+  }
+
+  function documentsAuthorization() {
+    const token = String(window.RegulationAuth?.getToken?.() || '');
+    return token ? `Bearer ${token}` : '';
+  }
+
+  function activeWorker(registration) {
+    return navigator.serviceWorker.controller
+      || registration?.active
+      || registration?.waiting
+      || registration?.installing
+      || null;
+  }
+
+  function clearDocumentsWarmTimer() {
+    if (documentsWarmTimer) window.clearTimeout(documentsWarmTimer);
+    documentsWarmTimer = null;
+  }
+
+  function scheduleDocumentsWarmRefresh() {
+    clearDocumentsWarmTimer();
+    documentsWarmTimer = window.setTimeout(() => {
+      documentsWarmTimer = null;
+      const user = window.RegulationAuth?.getCachedUser?.() || null;
+      if (!documentsAccessAllowed(user)) return;
+      warmDocumentsForUser(user, { scheduleRefresh: true }).catch(() => {});
+    }, DOCUMENTS_WARM_REFRESH_MS);
+  }
+
+  async function warmDocumentsForUser(user, options = {}) {
+    if (!documentsAccessAllowed(user)) {
+      clearDocumentsWarmTimer();
+      return false;
+    }
+
+    warmRoutes([DOCUMENTS_ROUTE], { immediate: true, force: true }).catch(() => {});
+    const endpoint = documentsEndpoint();
+    const authorization = documentsAuthorization();
+    if (!endpoint || !authorization) return false;
+
+    const registration = await register();
+    const worker = activeWorker(registration);
+    if (!worker) return false;
+
+    worker.postMessage({
+      type: 'PORTAL_WARM_DOCUMENTS',
+      endpoint,
+      authorization
+    });
+
+    if (options.scheduleRefresh !== false) scheduleDocumentsWarmRefresh();
+    return true;
+  }
+
+  async function getDocumentWarmPayload(options = {}) {
+    const user = window.RegulationAuth?.getCachedUser?.() || null;
+    if (!documentsAccessAllowed(user) || typeof MessageChannel !== 'function') return null;
+
+    const endpoint = documentsEndpoint();
+    const authorization = documentsAuthorization();
+    if (!endpoint || !authorization) return null;
+
+    const registration = await register();
+    const worker = activeWorker(registration);
+    if (!worker) return null;
+
+    const timeoutMs = Math.max(200, Math.min(3000, Number(options.timeoutMs || DOCUMENTS_WARM_GET_TIMEOUT_MS)));
+    return new Promise((resolve) => {
+      const channel = new MessageChannel();
+      let settled = false;
+      const finish = (payload) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        try { channel.port1.close(); } catch (_) {}
+        resolve(payload || null);
+      };
+      const timer = window.setTimeout(() => finish(null), timeoutMs);
+      channel.port1.onmessage = (event) => finish(event.data?.ok === true ? event.data.payload : null);
+      try {
+        worker.postMessage({
+          type: 'PORTAL_DOCUMENTS_WARM_GET',
+          endpoint,
+          authorization
+        }, [channel.port2]);
+      } catch (_) {
+        finish(null);
+      }
+    });
+  }
+
+  function clearDocumentsWarm() {
+    clearDocumentsWarmTimer();
+    register().then((registration) => {
+      const worker = activeWorker(registration);
+      worker?.postMessage?.({ type: 'PORTAL_DOCUMENTS_WARM_CLEAR' });
+    }).catch(() => {});
+  }
+
   function routesForUser(user) {
     const routes = [...CORE_ROUTES];
     if (!user) return routes;
@@ -147,6 +267,11 @@
     const first = Array.from(new Set([current, '/', '/ferramentas/'].filter(Boolean)));
     const rest = all.filter((route) => !first.includes(route));
     warmRoutes(first, { immediate: true, force: true });
+    if (documentsAccessAllowed(user)) {
+      warmDocumentsForUser(user, { scheduleRefresh: true }).catch(() => {});
+    } else {
+      clearDocumentsWarmTimer();
+    }
     return warmRoutes(rest, {
       immediate: options.immediate === true,
       force: false,
@@ -204,16 +329,19 @@
 
   window.addEventListener('portal:session-cleared', () => {
     warmedRoutes.clear();
+    clearDocumentsWarm();
   });
 
   window.PortalPerformance = Object.freeze({
     register,
     routesForUser,
     warmForUser,
+    warmDocumentsForUser,
+    getDocumentWarmPayload,
     warmRoute(value) {
       return warmRoutes([value], { immediate: true, force: true });
     },
-    __test: Object.freeze({ portalRoute, connectionIsConstrained })
+    __test: Object.freeze({ portalRoute, connectionIsConstrained, documentsAccessAllowed })
   });
 
   ensurePwaClient();

@@ -287,3 +287,17 @@ Esta é a baseline anterior à segunda otimização 7E. A versão seguinte passa
 - upload + confirmação.
 
 Nenhuma dessas métricas contém nome, consulta, arquivo, Drive ID ou conteúdo documental.
+
+## Baseline antes do preload pós-login — 22/09/2026
+
+Janela de 24 h imediatamente anterior à implementação do preload autorizado:
+
+| Evento | n | p50 | p75 | p95 | p99 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `portal_page_ready` em `/documentos/` | 23 | 1.216 ms | 3.085 ms | 3.429 ms | 3.905 ms |
+| `drive_folder_opened` | 45 | 3.923 ms | 4.321 ms | 4.555 ms | 4.897 ms |
+| `drive_search_completed` | 45 | 4.157 ms | 4.569 ms | 6.940 ms | 8.741 ms |
+
+Esta baseline é o ponto de comparação para o preload iniciado após login. O aceite será baseado em tráfego real posterior, distinguindo `drive_folder_opened cache_state=hit` do fallback `miss`. Não há meta percentual pré-declarada.
+
+Os novos tempos internos do fast-path anterior (`drive_token_ms`, `drive_api_ms`, `drive_map_ms`) ainda não apareceram na taxonomia da amostra mais recente; por isso não são usados como evidência nesta decisão.
