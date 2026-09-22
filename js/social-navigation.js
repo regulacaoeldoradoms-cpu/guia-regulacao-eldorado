@@ -174,9 +174,12 @@
       } else {
         message.textContent = item.text || 'Nova notificação social.';
       }
+      const displayedAt = judicial ? (item.judicial?.receivedAt || item.createdAt) : item.createdAt;
       const time = document.createElement('time');
-      time.dateTime = item.createdAt || '';
-      time.textContent = social?.formatDate?.(item.createdAt) || '';
+      time.dateTime = displayedAt || '';
+      time.textContent = judicial
+        ? `Recebido no Gmail: ${social?.formatDate?.(displayedAt) || ''}`
+        : (social?.formatDate?.(displayedAt) || '');
       copy.append(message, time);
       row.append(avatar, copy);
       list.appendChild(row);
