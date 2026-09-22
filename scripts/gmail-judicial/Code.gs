@@ -4,17 +4,20 @@ const PONTE_JUDICIAL = Object.freeze({
   endpoint: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/integrations/gmail-judicial',
   labelAlerta: 'PORTAL_JUDICIAL_ALERTA',
   labelEnviado: 'PORTAL_JUDICIAL_ENVIADO',
+  propertyEnviados: 'PORTAL_JUDICIAL_SENT_IDS_V1',
   maxPorExecucao: 30,
+  maxIdsPersistidos: 300,
   handler: 'sincronizarJudiciaisComPortal'
 });
 
 function garantirEtiquetas_() {
-  if (!GmailApp.getUserLabelByName(PONTE_JUDICIAL.labelAlerta)) {
-    GmailApp.createLabel(PONTE_JUDICIAL.labelAlerta);
-  }
-  if (!GmailApp.getUserLabelByName(PONTE_JUDICIAL.labelEnviado)) {
-    GmailApp.createLabel(PONTE_JUDICIAL.labelEnviado);
-  }
+  let alerta = GmailApp.getUserLabelByName(PONTE_JUDICIAL.labelAlerta);
+  if (!alerta) alerta = GmailApp.createLabel(PONTE_JUDICIAL.labelAlerta);
+
+  let enviado = GmailApp.getUserLabelByName(PONTE_JUDICIAL.labelEnviado);
+  if (!enviado) enviado = GmailApp.createLabel(PONTE_JUDICIAL.labelEnviado);
+
+  return { alerta: alerta, enviado: enviado };
 }
 
 function propriedadeObrigatoria_(nome) {
@@ -23,58 +26,58 @@ function propriedadeObrigatoria_(nome) {
   return valor;
 }
 
-function gmailApi_(caminho, opcoes) {
-  const url = 'https://gmail.googleapis.com/gmail/v1/users/me' + caminho;
-  const base = opcoes || {};
-  const headers = Object.assign({}, base.headers || {}, {
-    Authorization: 'Bearer ' + ScriptApp.getOAuthToken()
-  });
-  const resposta = UrlFetchApp.fetch(url, Object.assign({}, base, {
-    headers: headers,
-    muteHttpExceptions: true
-  }));
-  const codigo = resposta.getResponseCode();
-  const texto = resposta.getContentText() || '';
-  if (codigo < 200 || codigo >= 300) {
-    throw new Error('Gmail API HTTP ' + codigo + ': ' + texto.slice(0, 500));
+function idsEnviados_() {
+  const raw = String(
+    PropertiesService.getScriptProperties().getProperty(PONTE_JUDICIAL.propertyEnviados) || '[]'
+  );
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(String).filter(Boolean).slice(0, PONTE_JUDICIAL.maxIdsPersistidos);
+  } catch (_) {
+    return [];
   }
-  return texto ? JSON.parse(texto) : {};
 }
 
-function labelsPorNome_() {
-  const payload = gmailApi_('/labels', { method: 'get' });
-  const mapa = {};
-  (payload.labels || []).forEach(function(label) {
-    mapa[String(label.name || '')] = String(label.id || '');
-  });
-  return mapa;
-}
-
-function cabecalho_(mensagem, nome) {
-  const headers = (((mensagem || {}).payload || {}).headers || []);
-  const alvo = String(nome || '').toLowerCase();
-  const encontrado = headers.find(function(item) {
-    return String(item.name || '').toLowerCase() === alvo;
-  });
-  return encontrado ? String(encontrado.value || '').trim() : '';
+function salvarIdsEnviados_(ids) {
+  const normalizados = Array.from(new Set((ids || []).map(String).filter(Boolean)))
+    .slice(0, PONTE_JUDICIAL.maxIdsPersistidos);
+  PropertiesService.getScriptProperties().setProperty(
+    PONTE_JUDICIAL.propertyEnviados,
+    JSON.stringify(normalizados)
+  );
 }
 
 function listarMensagensPendentes_() {
-  const query = 'label:' + PONTE_JUDICIAL.labelAlerta + ' -label:' + PONTE_JUDICIAL.labelEnviado;
-  const payload = gmailApi_(
-    '/messages?q=' + encodeURIComponent(query) + '&maxResults=' + PONTE_JUDICIAL.maxPorExecucao,
-    { method: 'get' }
-  );
-  return payload.messages || [];
-}
+  const processados = new Set(idsEnviados_());
+  const query = 'label:' + PONTE_JUDICIAL.labelAlerta;
+  const threads = GmailApp.search(query, 0, PONTE_JUDICIAL.maxPorExecucao);
+  const pendentes = [];
 
-function lerMetadadosMensagem_(messageId) {
-  const path = '/messages/' + encodeURIComponent(messageId)
-    + '?format=metadata'
-    + '&metadataHeaders=' + encodeURIComponent('From')
-    + '&metadataHeaders=' + encodeURIComponent('Subject')
-    + '&metadataHeaders=' + encodeURIComponent('Date');
-  return gmailApi_(path, { method: 'get' });
+  threads.forEach(function(thread) {
+    const mensagens = thread.getMessages();
+    if (!mensagens.length) return;
+
+    // O monitor aplica a etiqueta quando detecta o alerta; para conversas,
+    // processamos a mensagem mais recente e usamos o ID dela para idempotência.
+    const mensagem = mensagens[mensagens.length - 1];
+    const messageId = String(mensagem.getId() || '');
+    if (!messageId || processados.has(messageId)) return;
+
+    pendentes.push({
+      messageId: messageId,
+      threadId: String(thread.getId() || ''),
+      sender: String(mensagem.getFrom() || '').trim(),
+      subject: String(mensagem.getSubject() || '').trim() || '(sem assunto)',
+      receivedAt: mensagem.getDate().toISOString(),
+      thread: thread
+    });
+  });
+
+  return {
+    pendentes: pendentes,
+    processados: Array.from(processados)
+  };
 }
 
 function enviarAoPortal_(payload) {
@@ -100,14 +103,6 @@ function enviarAoPortal_(payload) {
     throw new Error('Portal HTTP ' + codigo + ': ' + (json.error || texto.slice(0, 500)));
   }
   return json;
-}
-
-function marcarComoEnviado_(messageId, sentLabelId) {
-  gmailApi_('/messages/' + encodeURIComponent(messageId) + '/modify', {
-    method: 'post',
-    contentType: 'application/json',
-    payload: JSON.stringify({ addLabelIds: [sentLabelId] })
-  });
 }
 
 function instalarPonteJudicial() {
@@ -139,52 +134,58 @@ function testarPonteJudicial() {
 }
 
 function sincronizarJudiciaisComPortal() {
-  garantirEtiquetas_();
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) {
+    const ocupado = { encontrados: 0, enviados: 0, incompletos: 0, falhas: 0, ocupado: true };
+    Logger.log(JSON.stringify(ocupado));
+    return ocupado;
+  }
 
-  const labels = labelsPorNome_();
-  const sentLabelId = labels[PONTE_JUDICIAL.labelEnviado];
-  if (!sentLabelId) throw new Error('Etiqueta de controle nao encontrada no Gmail.');
+  try {
+    const etiquetas = garantirEtiquetas_();
+    const fila = listarMensagensPendentes_();
+    const pendentes = fila.pendentes;
+    const ids = fila.processados.slice();
 
-  const pendentes = listarMensagensPendentes_();
-  let enviados = 0;
-  let incompletos = 0;
-  let falhas = 0;
+    let enviados = 0;
+    let incompletos = 0;
+    let falhas = 0;
 
-  pendentes.forEach(function(item) {
-    try {
-      const mensagem = lerMetadadosMensagem_(item.id);
-      const internalDate = Number(mensagem.internalDate || 0);
-      const receivedAt = Number.isFinite(internalDate) && internalDate > 0
-        ? new Date(internalDate).toISOString()
-        : new Date().toISOString();
+    pendentes.forEach(function(item) {
+      try {
+        const resultado = enviarAoPortal_({
+          messageId: item.messageId,
+          threadId: item.threadId,
+          sender: item.sender,
+          subject: item.subject,
+          receivedAt: item.receivedAt
+        });
 
-      const resultado = enviarAoPortal_({
-        messageId: String(mensagem.id || item.id),
-        threadId: String(mensagem.threadId || ''),
-        sender: cabecalho_(mensagem, 'From'),
-        subject: cabecalho_(mensagem, 'Subject') || '(sem assunto)',
-        receivedAt: receivedAt
-      });
-
-      if (resultado.complete === true) {
-        marcarComoEnviado_(item.id, sentLabelId);
-        enviados += 1;
-      } else {
-        incompletos += 1;
-        console.warn('Ponte incompleta para ' + item.id + ': ' + JSON.stringify(resultado));
+        if (resultado.complete === true) {
+          etiquetas.enviado.addToThread(item.thread);
+          ids.unshift(item.messageId);
+          enviados += 1;
+        } else {
+          incompletos += 1;
+          console.warn('Ponte incompleta para ' + item.messageId + ': ' + JSON.stringify(resultado));
+        }
+      } catch (error) {
+        falhas += 1;
+        console.error('Falha na ponte judicial para ' + item.messageId + ': ' + error.message);
       }
-    } catch (error) {
-      falhas += 1;
-      console.error('Falha na ponte judicial para ' + item.id + ': ' + error.message);
-    }
-  });
+    });
 
-  const resumo = {
-    encontrados: pendentes.length,
-    enviados: enviados,
-    incompletos: incompletos,
-    falhas: falhas
-  };
-  Logger.log(JSON.stringify(resumo));
-  return resumo;
+    if (enviados > 0) salvarIdsEnviados_(ids);
+
+    const resumo = {
+      encontrados: pendentes.length,
+      enviados: enviados,
+      incompletos: incompletos,
+      falhas: falhas
+    };
+    Logger.log(JSON.stringify(resumo));
+    return resumo;
+  } finally {
+    lock.releaseLock();
+  }
 }
