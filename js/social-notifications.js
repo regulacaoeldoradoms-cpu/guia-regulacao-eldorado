@@ -3,6 +3,7 @@
 (async () => {
   const auth = window.RegulationAuth;
   const social = window.PortalSocial;
+  const judicialIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v17M7 21h10M5 7h14"/><path d="m7 7-4 7h8L7 7Zm10 0-4 7h8l-4-7Z"/></svg>';
   const user = await auth.requireRole([]);
   if (!user) return;
   if (user.mustChangePassword) { location.replace('/seguranca/?primeiro-acesso=1'); return; }
@@ -37,7 +38,7 @@
       const avatar = document.createElement('div'); avatar.className = 'social-avatar';
       if (item.actor) social.mountAvatar(avatar, item.actor);
       else if (judicial) {
-        avatar.textContent = '⚖️';
+        avatar.innerHTML = judicialIcon;
         avatar.setAttribute('aria-label', 'Alerta judicial');
       } else avatar.innerHTML = social.icons.bell;
       const copy = document.createElement('div');
