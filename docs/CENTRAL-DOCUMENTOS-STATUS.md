@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — manter Consulta [2026] e Exames [2026] aquecidas, inclusive PDFs elegíveis** |
-| Última ação concluída | implementação funcional concluída na branch: descoberta exata das duas pastas, snapshot em RAM, abertura imediata e pré-download criptografado dos PDFs |
-| Branch atual | `perf/central-docs-priority-folders-20260922` |
-| PR atual | ainda não aberta neste ponto do registro |
-| Último commit relevante | branch contém Service Worker, PortalPerformance, Central, cache-busters, testes e documentação da prioridade |
-| Checks e testes | testes versionados atualizados; CI ainda precisa rodar no PR |
-| Decisões tomadas | nomes exatos normalizados; raiz preferida; ambiguidade global não é escolhida; até 6 páginas × 100 itens por ciclo; PDFs em cache AES-GCM existente; 50 MB/arquivo, 256 MB total, TTL 12h, concorrência 2 |
-| Justificativas | operador declarou essas duas pastas como uso prioritário e solicitou também os arquivos internos carregados; o cache criptografado já existe e invalida por versão/sessão |
-| Alternativas descartadas | PDF em claro no Cache Storage; cache ilimitado; escolher pasta ambígua; pré-download em Save-Data/2G |
-| Ações externas concluídas | nenhuma permissão/OAuth/segredo alterado; PostHog continua sem nomes, IDs ou conteúdo documental |
-| Pendências e bloqueios | abrir PR, validar CI/navegador, publicar se verde e observar hits reais |
-| Riscos conhecidos | se o conjunto elegível ultrapassar 256 MB ou houver PDF >50 MB, o excedente usa fallback normal; se existirem nomes duplicados fora da raiz, o preload não escolhe automaticamente |
-| Métricas / observabilidade | baseline anterior permanece: raiz Drive p95 **4.555 ms**; pesquisa p95 **6.940 ms**; novo aceite deve observar `cache_state=hit` e abertura PDF via cache |
-| Próxima ação exata | abrir PR, corrigir qualquer regressão funcional, mesclar/publicar se verde; depois testar as duas pastas e PDFs reais |
-| Arquivos e fontes principais | Guia Mestre V1.1; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; `js/document-cache.js`; docs Fase 7/status; PR a criar |
+| Subfase / objetivo atual | **7E — validar em uso real Consulta [2026] e Exames [2026] aquecidas, inclusive PDFs elegíveis** |
+| Última ação concluída | PR **#392** mesclada e publicada: as duas pastas prioritárias passam a ser descobertas/aquecidas e seus PDFs elegíveis são pré-carregados no cache criptografado |
+| Branch atual | `docs/central-docs-priority-folders-status-20260922` somente para reconciliar este handoff pós-merge |
+| PR atual | PR funcional **#392 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional `41da8b235ac461cf773d15bb9be1b9c457c6d144` |
+| Checks e testes | PR funcional: **51 checks verdes**; branch-only Workers Build falhou como preview externo. Pós-merge da `main`: **54/54 checks verdes**, incluindo PDF.js, vídeo, Pages/deploy e Workers Build produtivo |
+| Decisões tomadas | nomes exatos normalizados; raiz preferida; ambiguidade global não é escolhida; até 6×100 itens/pasta por ciclo; snapshots privados só em RAM; PDFs no cache AES-GCM; arquivos prioritários têm precedência sobre PDFs antigos do cache via poda LRU existente |
+| Justificativas | operador definiu Consulta [2026] e Exames [2026] como pastas de uso contínuo e solicitou também os arquivos internos carregados em segundo plano |
+| Alternativas descartadas | PDF em claro no Cache Storage; cache ilimitado; escolher pasta ambígua; download em Save-Data/2G; remover live gate de acesso |
+| Ações externas concluídas | Workers Build produtivo **f6f2a266-0a4c-45b3-9dc4-b6c5388c45fa**, Version ID **0391b3ee-878d-4e99-a45a-368ff462dbcb**; deploys estáticos concluídos |
+| Pendências e bloqueios | falta somente validação com dados reais: confirmar que as duas pastas foram resolvidas no Drive e observar abertura instantânea/cache-hit dos PDFs |
+| Riscos conhecidos | PDF >50 MB usa fallback; cache total continua 256 MB; se o conjunto prioritário exceder o teto, a poda LRU mantém os itens mais recentes; nomes duplicados fora da raiz não são escolhidos automaticamente |
+| Métricas / observabilidade | baseline anterior: raiz Drive p95 **4.555 ms**; pesquisa p95 **6.940 ms**; aceite novo deve observar `drive_folder_opened cache_state=hit` e `pdf_ready cache_state=hit` |
+| Próxima ação exata | fazer login, aguardar o preload, abrir **Consulta [2026]** e **Exames [2026]** e abrir PDFs; depois consultar PostHog para validar hits e eventuais gargalos residuais |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #392; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; `js/document-cache.js`; docs Fase 7/status; PostHog 602473 |
 
 ## Histórico recuperável
 
@@ -4453,3 +4453,29 @@ Alternativas descartadas:
 - escolher automaticamente uma pasta quando houver mais de uma correspondência exata fora da raiz: descartado por risco de aquecer pasta errada.
 
 Próxima ação: concluir CI/PR, publicar se verde e validar em uso real se as duas pastas aparecem imediatamente e os PDFs elegíveis passam a abrir pelo cache.
+
+
+## Fase 7E — pastas prioritárias integradas e publicadas — 22/09/2026
+
+A PR **#392 — Fase 7E: manter Consulta e Exames 2026 aquecidas** foi integrada na `main` pelo merge **`41da8b235ac461cf773d15bb9be1b9c457c6d144`**.
+
+Resultado publicado:
+- **Consulta [2026]** e **Exames [2026]** são resolvidas por nome exato normalizado;
+- a raiz é preferida; uma busca global só é aceita quando existe uma única correspondência exata;
+- as listagens ficam no snapshot privado em RAM do Service Worker e são renovadas no ciclo do preload;
+- ao entrar numa pasta prioritária, a Central usa o snapshot aquecido sem esperar nova chamada serial;
+- o refresh continua vindo do preload autoritativo do Drive;
+- PDFs diretamente contidos nas duas pastas são baixados em segundo plano, com concorrência 2, e armazenados pelo `PortalDocumentCache` em AES-GCM;
+- cache: 50 MB por arquivo, 256 MB total, TTL 12 h, limpeza por sessão/logout;
+- PDFs prioritários têm precedência: o cache existente aplica poda LRU aos itens mais antigos quando necessário;
+- Save-Data, 2G e slow-2G continuam bloqueando pré-download;
+- nenhum nome/Drive ID/conteúdo documental é enviado ao PostHog.
+
+Validação técnica:
+- PR: 51 checks funcionais verdes; único vermelho foi o check externo de Worker da branch;
+- pós-merge: **54/54 checks verdes**;
+- Workers Build produtivo `f6f2a266-0a4c-45b3-9dc4-b6c5388c45fa` — success;
+- Worker Version `0391b3ee-878d-4e99-a45a-368ff462dbcb`;
+- PDF.js real em Chromium, vídeo pós-login, Pages e deploy: success.
+
+**Próxima ação exata:** validar em uso real as duas pastas e PDFs. Se alguma pasta não for aquecida, primeiro verificar ambiguidade/localização real no Drive antes de alterar a lógica.
