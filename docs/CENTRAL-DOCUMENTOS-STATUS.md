@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — medir em uso real o preload pós-login da Central** |
-| Última ação concluída | PR **#390** mesclada e publicada: Central passa a ser preparada em segundo plano imediatamente após login de conta autorizada |
-| Branch atual | `docs/central-docs-login-preload-status-20260922` somente para reconciliar este handoff pós-merge |
-| PR atual | PR funcional **#390 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional `0f569eed3e6e343fb5e82a48164c4b343134fcee` |
-| Checks e testes | branch funcional: **51 checks verdes** + somente Worker Preview de branch indisponível; pós-merge: **53 checks verdes** incluindo deploy, Pages, PDF.js e vídeo; o Workers Build produtivo concluiu com sucesso e gerou versão. Depois, a criação desta branch documental disparou novo check de Worker Preview sobre o mesmo SHA, que falhou como ocorre nas branches sem acesso a Preview; isso não reverteu a versão produtiva já publicada |
-| Decisões tomadas | preload só para view/manage; snapshot privado somente em RAM do Service Worker por 90 s; refresh ~30 s; `/access` ao vivo antes de exibir lista aquecida; refresh autoritativo após primeiro paint; nenhum PDF pré-baixado |
-| Justificativas | a rota pública já era aquecida, mas a primeira tela útil ainda gastava segundos em acesso, preferências, IA e raiz do Drive |
-| Alternativas descartadas | persistir nomes/listagens privadas no navegador: descartado; pré-baixar PDFs: descartado por privacidade/custo; confiar só no snapshot sem live gate: descartado por risco de permissão revogada |
-| Ações externas concluídas | Workers Build produtivo **b62961a3-7533-4bab-a701-4865dbd679b8** com Version ID **63de9dc0-9c44-4ea8-8d96-9cf4c286a220**; Cloudflare Pages e GitHub deploy concluídos |
-| Pendências e bloqueios | falta somente amostra real pós-publicação para comparar `drive_folder_opened cache_state=hit` com a baseline e ajustar se necessário |
-| Riscos conhecidos | a raiz aquecida pode estar alguns segundos atrás do Drive; TTL curto + live permission gate + refresh autoritativo limitam esse risco |
-| Métricas / observabilidade | baseline pré-preload: `portal_page_ready /documentos/` p95 **3.429 ms**; raiz Drive p95 **4.555 ms**; pesquisa p95 **6.940 ms** |
-| Próxima ação exata | operador faz login normalmente, permanece alguns segundos no Portal e abre a Central; depois consultar PostHog para medir primeiro acesso aquecido e decidir se há gargalo residual |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #390; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; PostHog 602473 |
+| Subfase / objetivo atual | **7E — manter Consulta [2026] e Exames [2026] aquecidas, inclusive PDFs elegíveis** |
+| Última ação concluída | implementação funcional concluída na branch: descoberta exata das duas pastas, snapshot em RAM, abertura imediata e pré-download criptografado dos PDFs |
+| Branch atual | `perf/central-docs-priority-folders-20260922` |
+| PR atual | ainda não aberta neste ponto do registro |
+| Último commit relevante | branch contém Service Worker, PortalPerformance, Central, cache-busters, testes e documentação da prioridade |
+| Checks e testes | testes versionados atualizados; CI ainda precisa rodar no PR |
+| Decisões tomadas | nomes exatos normalizados; raiz preferida; ambiguidade global não é escolhida; até 6 páginas × 100 itens por ciclo; PDFs em cache AES-GCM existente; 50 MB/arquivo, 256 MB total, TTL 12h, concorrência 2 |
+| Justificativas | operador declarou essas duas pastas como uso prioritário e solicitou também os arquivos internos carregados; o cache criptografado já existe e invalida por versão/sessão |
+| Alternativas descartadas | PDF em claro no Cache Storage; cache ilimitado; escolher pasta ambígua; pré-download em Save-Data/2G |
+| Ações externas concluídas | nenhuma permissão/OAuth/segredo alterado; PostHog continua sem nomes, IDs ou conteúdo documental |
+| Pendências e bloqueios | abrir PR, validar CI/navegador, publicar se verde e observar hits reais |
+| Riscos conhecidos | se o conjunto elegível ultrapassar 256 MB ou houver PDF >50 MB, o excedente usa fallback normal; se existirem nomes duplicados fora da raiz, o preload não escolhe automaticamente |
+| Métricas / observabilidade | baseline anterior permanece: raiz Drive p95 **4.555 ms**; pesquisa p95 **6.940 ms**; novo aceite deve observar `cache_state=hit` e abertura PDF via cache |
+| Próxima ação exata | abrir PR, corrigir qualquer regressão funcional, mesclar/publicar se verde; depois testar as duas pastas e PDFs reais |
+| Arquivos e fontes principais | Guia Mestre V1.1; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; `js/document-cache.js`; docs Fase 7/status; PR a criar |
 
 ## Histórico recuperável
 
