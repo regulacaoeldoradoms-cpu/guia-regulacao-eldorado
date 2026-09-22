@@ -8,8 +8,10 @@
   const PWA_CLIENT_URL = '/js/portal-pwa.js?v=20260911-1';
   const OBSERVABILITY_CLIENT_URL = '/js/portal-observability.js?v=20260921-2';
   const DOCUMENTS_ROUTE = '/documentos/';
+  const DOCUMENT_CACHE_CLIENT_URL = '/js/document-cache.js?v=20260912-1';
   const DOCUMENTS_WARM_REFRESH_MS = 30 * 1000;
   const DOCUMENTS_WARM_GET_TIMEOUT_MS = 1400;
+  const DOCUMENTS_PRIORITY_PREFETCH_CONCURRENCY = 2;
   const CORE_ROUTES = Object.freeze(['/', '/ferramentas/', '/seguranca/', '/configuracoes/', '/conquistas/']);
   const SOCIAL_ROUTES = Object.freeze(['/amigos/', '/notificacoes/', '/perfil/']);
   const KNOWN_ROUTES = new Set([
@@ -25,6 +27,8 @@
   let pwaClientStarted = false;
   let observabilityClientStarted = false;
   let documentsWarmTimer = null;
+  let documentCacheClientPromise = null;
+  let priorityDocumentsWarmPromise = null;
 
   function ensurePwaClient() {
     if (window.PortalPWA || pwaClientStarted || document.querySelector?.('script[data-portal-pwa]')) return;
@@ -130,6 +134,142 @@
     return new Promise((resolve) => idle(() => postWarm(routes).then(resolve), Number(options.delay || 900)));
   }
 
+  function ensureDocumentCacheClient() {
+    if (window.PortalDocumentCache) return Promise.resolve(window.PortalDocumentCache);
+    if (documentCacheClientPromise) return documentCacheClientPromise;
+    documentCacheClientPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector?.('script[data-portal-document-cache]');
+      if (existing) {
+        existing.addEventListener('load', () => resolve(window.PortalDocumentCache || null), { once: true });
+        existing.addEventListener('error', () => reject(new Error('Cache documental indisponível.')), { once: true });
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = DOCUMENT_CACHE_CLIENT_URL;
+      script.async = true;
+      script.dataset.portalDocumentCache = 'true';
+      script.addEventListener('load', () => resolve(window.PortalDocumentCache || null), { once: true });
+      script.addEventListener('error', () => {
+        script.remove();
+        reject(new Error('Cache documental indisponível.'));
+      }, { once: true });
+      document.head.appendChild(script);
+    }).catch(() => {
+      documentCacheClientPromise = null;
+      return null;
+    });
+    return documentCacheClientPromise;
+  }
+
+  function priorityDocumentPrefetchAllowed() {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (connection?.saveData) return false;
+    return !['slow-2g', '2g'].includes(String(connection?.effectiveType || ''));
+  }
+
+  async function mapWithConcurrency(values, limit, operation) {
+    const queue = values.slice();
+    const workers = Array.from({ length: Math.min(Math.max(1, limit), queue.length) }, async () => {
+      while (queue.length) {
+        const value = queue.shift();
+        try { await operation(value); } catch (_) {}
+      }
+    });
+    await Promise.all(workers);
+  }
+
+  function uniquePriorityPdfItems(payload) {
+    const seen = new Set();
+    const items = [];
+    for (const folder of Array.isArray(payload?.priorityFolders) ? payload.priorityFolders : []) {
+      for (const item of Array.isArray(folder?.items) ? folder.items : []) {
+        if (!item?.isPdf || !item?.ref || !item?.cacheKey || !item?.version) continue;
+        const identity = String(item.cacheKey) + ':' + String(item.version);
+        if (seen.has(identity)) continue;
+        seen.add(identity);
+        items.push(item);
+      }
+    }
+    return items.sort((a, b) => (
+      String(b?.modifiedTime || '').localeCompare(String(a?.modifiedTime || ''))
+    ));
+  }
+
+  async function prefetchPriorityDocumentFiles(payload) {
+    if (!payload || !priorityDocumentPrefetchAllowed()) return false;
+    const user = window.RegulationAuth?.getCachedUser?.() || null;
+    if (!documentsAccessAllowed(user) || user?.documentCapabilities?.view !== true) return false;
+
+    const token = String(window.RegulationAuth?.getToken?.() || '');
+    const endpoint = documentsEndpoint();
+    if (!token || !endpoint) return false;
+
+    const cache = await ensureDocumentCacheClient();
+    if (!cache?.supported?.() || !cache?.has || !cache?.put) return false;
+
+    try {
+      window.dispatchEvent(new CustomEvent('portal:documents-warm-updated', { detail: payload }));
+    } catch (_) {}
+
+    const limits = cache.limits || {};
+    const maxFileBytes = Number(limits.maxFileBytes || 0);
+    const maxTotalBytes = Number(limits.maxTotalBytes || 0);
+    const stats = await cache.stats?.(token).catch?.(() => ({ count: 0, bytes: 0 }))
+      || { count: 0, bytes: 0 };
+    let budget = maxTotalBytes > 0
+      ? Math.max(0, maxTotalBytes - Math.max(0, Number(stats.bytes || 0)))
+      : Number.POSITIVE_INFINITY;
+
+    const candidates = [];
+    for (const item of uniquePriorityPdfItems(payload)) {
+      const size = Number(item?.size || 0);
+      if (!(size > 0) || (maxFileBytes > 0 && size > maxFileBytes)) continue;
+      const descriptor = {
+        cacheKey: String(item.cacheKey),
+        version: String(item.version),
+        token
+      };
+      if (await cache.has(descriptor).catch(() => false)) continue;
+      if (size > budget) continue;
+      budget -= size;
+      candidates.push({ item, descriptor, size });
+    }
+
+    await mapWithConcurrency(
+      candidates,
+      DOCUMENTS_PRIORITY_PREFETCH_CONCURRENCY,
+      async ({ item, descriptor }) => {
+        const response = await fetch(
+          endpoint + '/api/documents/drive/content/' + encodeURIComponent(String(item.ref)),
+          {
+            method: 'GET',
+            headers: { Authorization: 'Bearer ' + token },
+            cache: 'no-store',
+            credentials: 'omit'
+          }
+        );
+        if (!response.ok) return false;
+        const blob = await response.blob();
+        if (!(blob instanceof Blob) || !(blob.size > 0)) return false;
+        if (maxFileBytes > 0 && blob.size > maxFileBytes) return false;
+        return cache.put({ ...descriptor, blob });
+      }
+    );
+    return true;
+  }
+
+  function schedulePriorityDocumentFilesWarm() {
+    if (priorityDocumentsWarmPromise) return priorityDocumentsWarmPromise;
+    priorityDocumentsWarmPromise = (async () => {
+      const payload = await getDocumentWarmPayload({ timeoutMs: 3000 });
+      if (!payload) return false;
+      return prefetchPriorityDocumentFiles(payload);
+    })().finally(() => {
+      priorityDocumentsWarmPromise = null;
+    });
+    return priorityDocumentsWarmPromise;
+  }
+
   function documentsAccessAllowed(user) {
     const capabilities = user?.documentCapabilities || {};
     return Boolean(
@@ -197,6 +337,10 @@
       authorization
     });
 
+    window.setTimeout(() => {
+      schedulePriorityDocumentFilesWarm().catch(() => {});
+    }, 120);
+
     if (options.scheduleRefresh !== false) scheduleDocumentsWarmRefresh();
     return true;
   }
@@ -240,6 +384,7 @@
 
   function clearDocumentsWarm() {
     clearDocumentsWarmTimer();
+    priorityDocumentsWarmPromise = null;
     register().then((registration) => {
       const worker = activeWorker(registration);
       worker?.postMessage?.({ type: 'PORTAL_DOCUMENTS_WARM_CLEAR' });
@@ -338,6 +483,7 @@
     warmForUser,
     warmDocumentsForUser,
     getDocumentWarmPayload,
+    prefetchPriorityDocumentFiles,
     warmRoute(value) {
       return warmRoutes([value], { immediate: true, force: true });
     },
