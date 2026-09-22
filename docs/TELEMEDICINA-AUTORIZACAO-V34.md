@@ -66,3 +66,20 @@ A checagem que permanece em cada chamada protegida deve ser pequena: validar a s
 - `worker/role-migration.js`: reconciliação de registros históricos e recuperação conservadora de marcador legado explícito;
 - `worker/tests/telemedicine-access-v34.test.mjs`: regressões da V34/V34.1;
 - `.github/workflows/validate-telemedicine-access-v34.yml`: validação automatizada dedicada.
+
+## Complemento V34.2 — autorização resiliente a divergência criada durante isolate aquecido
+
+Decisão registrada em 22/09/2026 após recorrência de `403` ao registrar teleconsulta para uma conta que já possuía a capacidade de Telemedicina concedida.
+
+A causa estrutural era a autorização das rotas exigir simultaneamente duas condições: capacidade ativa em `auth_telemedicine_access` e papel-base já igual a `recepcao`. Isso contrariava a própria regra V34 de que a capacidade explícita é a fonte de verdade e permitia uma janela de falha quando o papel-base divergisse depois que a reconciliação única do isolate já tivesse rodado.
+
+Regra V34.2:
+
+1. Desenvolvedor continua autorizado diretamente.
+2. Para demais usuários, a rota protegida valida a sessão e consulta obrigatoriamente `auth_telemedicine_access`.
+3. Capacidade ausente ou revogada continua retornando acesso negado.
+4. Capacidade ativa autoriza a função lógica, independentemente de uma divergência transitória do papel-base.
+5. Se o papel-base estiver diferente de `recepcao`, a própria rota executa `ensureTelemedicineUnderlyingRole` antes de prosseguir, autocorrigindo o D1.
+6. A mesma regra é aplicada ao backend principal da Telemedicina, ao roteador V2 e à Agenda espelhada.
+
+Não há concessão por nome, cargo textual, frontend ou sessão antiga. A fonte de verdade continua sendo exclusivamente a capacidade server-side.

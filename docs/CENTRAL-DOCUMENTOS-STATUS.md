@@ -4521,3 +4521,15 @@ Validação técnica:
 - Cloudflare Pages, GitHub deploy, PDF.js real em Chromium e vídeo pós-login: success.
 
 **Próxima ação:** observar uso real e comparar `drive_folder_opened` e `drive_search_completed` com a baseline anterior antes de declarar ganho percentual.
+
+## Mudança transversal — Telemedicina V34.2 — 22/09/2026
+
+Incidente relatado: uma conta com acesso previamente concedido à Telemedicina recebeu novamente `403 — Acesso exclusivo da Telemedicina ou do Desenvolvedor` ao tentar registrar consulta.
+
+Diagnóstico no código: `auth_telemedicine_access` é a fonte de verdade prevista pela V34, porém `worker/telemedicine.js`, `worker/telemedicine-router-v2.js` e `worker/agenda.js` ainda exigiam também `user.role === 'recepcao'`. Como a reconciliação global de papel-base roda uma vez por isolate, uma divergência criada depois dessa passagem podia bloquear temporariamente uma conta explicitamente autorizada.
+
+Correção isolada na branch `fix/telemedicina-capability-source-truth-20260922`: as três rotas continuam validando sessão e capacidade server-side; capacidade ausente/revogada continua negada; capacidade ativa passa a autorizar e, se o papel-base estiver divergente, a própria requisição autocorrige para `recepcao`. Desenvolvedor permanece com acesso administrativo. Teste de regressão impede reintroduzir a dupla condição frágil.
+
+Esta manutenção é transversal e não altera a Fase 7E da Central de Documentos.
+
+**Próxima ação exata:** abrir PR, exigir os checks de Telemedicina/Agenda e, se verdes, integrar e confirmar o deploy produtivo antes de pedir novo teste à operadora.
