@@ -6264,6 +6264,9 @@
     state.warmedDocumentPayload = payload;
 
     const parentRef = currentParentRef();
+    // Consulta [2026] e Exames [2026] são prioridades apenas de preload.
+    // Nunca usar o aquecimento delas para substituir/reordenar a Home (Meu Drive).
+    if (!parentRef) return;
     const priority = warmedPriorityFolder(parentRef, payload);
     if (!priority) return;
 
