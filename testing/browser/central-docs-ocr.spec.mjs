@@ -32,16 +32,21 @@ test.describe('Central de Documentos — OCR local de PDF digitalizado', () => {
     await expect(firstPage).toHaveAttribute('data-selectable-text', 'ocr', { timeout: 60_000 });
     await expect(firstPage).toHaveAttribute('data-ocr-state', 'ready');
 
-    const ocrLines = firstPage.locator('.portal-pdf-text-layer [data-ocr-line="true"]');
-    await expect(ocrLines.first()).toBeAttached();
-    expect(await ocrLines.count()).toBeGreaterThan(0);
+    const ocrWords = firstPage.locator('.portal-pdf-text-layer [data-ocr-word="true"]');
+    await expect(ocrWords.first()).toBeAttached();
+    expect(await ocrWords.count()).toBeGreaterThan(1);
 
-    const recognizedText = (await ocrLines.allTextContents()).join(' ');
+    const recognizedText = (await ocrWords.allTextContents()).join(' ');
     expect(recognizedText).toMatch(/OCR/i);
     expect(recognizedText).toMatch(/TITON/i);
 
+    const firstWordGroup = await ocrWords.first().getAttribute('data-ocr-group');
+    expect(firstWordGroup).toBeTruthy();
+    await ocrWords.first().dispatchEvent('pointerdown', { bubbles: true, pointerId: 1, pointerType: 'mouse' });
+    await expect(firstPage.locator('.portal-pdf-text-layer')).toHaveAttribute('data-ocr-selection-group', firstWordGroup);
+
     const selectionText = await firstPage.locator('.portal-pdf-text-layer').evaluate((layer) => {
-      const target = layer.querySelector('[data-ocr-line="true"]');
+      const target = layer.querySelector('[data-ocr-word="true"]');
       if (!target) return '';
       const range = document.createRange();
       range.selectNodeContents(target);
@@ -50,7 +55,8 @@ test.describe('Central de Documentos — OCR local de PDF digitalizado', () => {
       selection.addRange(range);
       return selection.toString();
     });
-    expect(selectionText.trim().length).toBeGreaterThan(3);
+    expect(selectionText.trim().length).toBeGreaterThan(1);
+    expect(selectionText.trim().split(/\s+/).length).toBeLessThanOrEqual(2);
 
     await expect(firstPage.locator('.portal-pdf-text-layer')).toHaveCSS('cursor', 'text');
 
@@ -58,7 +64,7 @@ test.describe('Central de Documentos — OCR local de PDF digitalizado', () => {
     await page.locator('#zoomIn').click();
     await expect(page.locator('#zoomReset')).not.toHaveText(zoomBefore);
     await expect(firstPage).toHaveAttribute('data-selectable-text', 'ocr', { timeout: 10_000 });
-    await expect(firstPage.locator('.portal-pdf-text-layer [data-ocr-line="true"]').first()).toBeAttached();
+    await expect(firstPage.locator('.portal-pdf-text-layer [data-ocr-word="true"]').first()).toBeAttached();
 
     expect(externalRequests).toEqual([]);
     expect(consoleErrors).toEqual([]);
