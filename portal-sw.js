@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260917-2';
+const CACHE_VERSION = '20260922-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -12,7 +12,23 @@ const DOCUMENT_STREAM_TTL_MS = 20000;
 const DOCUMENT_WORKER_ORIGINS = new Set([
   'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev'
 ]);
+const DOCUMENTS_WARM_TTL_MS = 90 * 1000;
+const DOCUMENTS_WARM_REFRESH_MS = 30 * 1000;
+const DOCUMENTS_WARM_PAGE_SIZE = 40;
+const DOCUMENTS_BACKGROUND_ASSETS = Object.freeze([
+  '/vendor/pdfjs-legacy/pdf.min.mjs',
+  '/vendor/pdfjs-legacy/pdf.worker.min.mjs',
+  '/vendor/pdf-lib/pdf-lib.min.js',
+  '/vendor/tesseract/tesseract.min.js?v=7.0.0',
+  '/vendor/tesseract/worker.min.js?v=7.0.0',
+  '/vendor/tesseract/core/tesseract-core-lstm.wasm.js',
+  '/vendor/tesseract/core/tesseract-core-simd-lstm.wasm.js',
+  '/vendor/tesseract/core/tesseract-core-relaxedsimd-lstm.wasm.js',
+  '/vendor/tesseract/lang/por.traineddata.gz'
+]);
 const documentStreams = new Map();
+const documentWarmSnapshots = new Map();
+const documentWarmInFlight = new Map();
 
 const KNOWN_PAGE_PATHS = new Set([
   '/', '/home/', '/login/', '/cadastro/', '/ferramentas/', '/perfil/',
@@ -31,7 +47,7 @@ const CORE_RESOURCES = Object.freeze([
   '/css/social.css?v=20260911-1',
   '/css/portal-pwa.css?v=20260910-2',
   '/js/auth-config.js?v=20260815-1',
-  '/js/portal-performance.js?v=20260921-2',
+  '/js/portal-performance.js?v=20260922-1',
   '/js/portal-observability.js?v=20260921-2',
   '/js/portal-pwa.js?v=20260911-1',
   '/js/auth-client.js?v=20260910-4',
@@ -111,6 +127,156 @@ function normalizedDocumentEndpoint(value) {
   } catch (_) {
     return '';
   }
+}
+
+
+function cleanDocumentWarmSnapshots(now = Date.now()) {
+  for (const [key, entry] of documentWarmSnapshots.entries()) {
+    if (!entry || Number(entry.expiresAt || 0) <= now) documentWarmSnapshots.delete(key);
+  }
+}
+
+async function documentWarmSessionKey(authorization) {
+  const value = String(authorization || '');
+  if (!validAuthorization(value)) return '';
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode('portal-documents-warm-v1\u0000' + value)
+  );
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('').slice(0, 48);
+}
+
+async function fetchDocumentWarmJson(endpoint, pathname, authorization, options = {}) {
+  const headers = new Headers(options.headers || {});
+  headers.set('Authorization', authorization);
+  if (options.body !== undefined && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+  const response = await fetch(endpoint + pathname, {
+    method: options.method || 'GET',
+    mode: 'cors',
+    credentials: 'omit',
+    cache: 'no-store',
+    redirect: 'error',
+    headers,
+    ...(options.body !== undefined ? { body: options.body } : {})
+  });
+  if (!response.ok) return null;
+  return response.json().catch(() => null);
+}
+
+async function warmDocumentsStatic() {
+  await Promise.allSettled([
+    warmPage('/documentos/'),
+    mapLimited(DOCUMENTS_BACKGROUND_ASSETS, 2, (asset) => warmAsset(asset, false))
+  ]);
+}
+
+async function warmDocumentsPrivate(data) {
+  cleanDocumentWarmSnapshots();
+  const authorization = String(data?.authorization || '');
+  const endpoint = normalizedDocumentEndpoint(data?.endpoint);
+  if (!endpoint || !validAuthorization(authorization)) return false;
+
+  const key = await documentWarmSessionKey(authorization);
+  if (!key) return false;
+
+  const existing = documentWarmSnapshots.get(key);
+  const now = Date.now();
+  if (
+    existing
+    && existing.endpoint === endpoint
+    && now - Number(existing.createdAt || 0) < DOCUMENTS_WARM_REFRESH_MS
+  ) {
+    return true;
+  }
+  if (documentWarmInFlight.has(key)) return documentWarmInFlight.get(key);
+
+  const operation = (async () => {
+    const access = await fetchDocumentWarmJson(endpoint, '/api/documents/access', authorization);
+    const capabilities = access?.capabilities || {};
+    if (!access || (capabilities.view !== true && capabilities.manage !== true)) {
+      documentWarmSnapshots.delete(key);
+      return false;
+    }
+
+    const jobs = [];
+    const result = {
+      access,
+      preferences: null,
+      aiConfig: null,
+      folder: null
+    };
+
+    jobs.push(
+      fetchDocumentWarmJson(endpoint, '/api/documents/preferences', authorization)
+        .then((payload) => { result.preferences = payload; })
+        .catch(() => {})
+    );
+
+    if (capabilities.extract === true) {
+      jobs.push(
+        fetchDocumentWarmJson(endpoint, '/api/documents/ai/config', authorization)
+          .then((payload) => { result.aiConfig = payload; })
+          .catch(() => {})
+      );
+    }
+
+    if (capabilities.view === true && access?.drive?.connected === true) {
+      jobs.push(
+        fetchDocumentWarmJson(endpoint, '/api/documents/drive/list', authorization, {
+          method: 'POST',
+          body: JSON.stringify({
+            parentRef: '',
+            pageToken: '',
+            pageSize: DOCUMENTS_WARM_PAGE_SIZE
+          })
+        })
+          .then((payload) => { result.folder = payload; })
+          .catch(() => {})
+      );
+    }
+
+    await Promise.allSettled(jobs);
+    const createdAt = Date.now();
+    documentWarmSnapshots.set(key, Object.freeze({
+      endpoint,
+      createdAt,
+      expiresAt: createdAt + DOCUMENTS_WARM_TTL_MS,
+      payload: Object.freeze(result)
+    }));
+    return true;
+  })().finally(() => {
+    documentWarmInFlight.delete(key);
+  });
+
+  documentWarmInFlight.set(key, operation);
+  return operation;
+}
+
+async function getDocumentsWarmPayload(data) {
+  cleanDocumentWarmSnapshots();
+  const authorization = String(data?.authorization || '');
+  const endpoint = normalizedDocumentEndpoint(data?.endpoint);
+  if (!endpoint || !validAuthorization(authorization)) return null;
+  const key = await documentWarmSessionKey(authorization);
+  if (!key) return null;
+
+  const pending = documentWarmInFlight.get(key);
+  if (pending) await pending.catch(() => false);
+
+  const entry = documentWarmSnapshots.get(key);
+  if (!entry || entry.endpoint !== endpoint || entry.expiresAt <= Date.now()) return null;
+  return {
+    createdAt: entry.createdAt,
+    ageMs: Math.max(0, Date.now() - entry.createdAt),
+    ...entry.payload
+  };
+}
+
+function clearDocumentsWarm() {
+  documentWarmSnapshots.clear();
+  documentWarmInFlight.clear();
 }
 
 function registerDocumentStream(data) {
@@ -226,8 +392,8 @@ function isPrivateRequest(request, url) {
 function isStaticAsset(url) {
   if (url.origin !== self.location.origin) return false;
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/cdn-cgi/')) return false;
-  return /^\/(?:css|js|assets|data)\//.test(url.pathname)
-    || /\.(?:css|js|mjs|png|jpe?g|webp|svg|ico|woff2?|ttf|wav|webmanifest)$/i.test(url.pathname);
+  return /^\/(?:css|js|assets|data|vendor)\//.test(url.pathname)
+    || /\.(?:css|js|mjs|wasm|gz|png|jpe?g|webp|svg|ico|woff2?|ttf|wav|webmanifest)$/i.test(url.pathname);
 }
 
 function responseCanBeCached(response) {
@@ -468,6 +634,34 @@ self.addEventListener('message', (event) => {
 
   if (event.data?.type === 'PORTAL_DOCUMENT_STREAM_RELEASE') {
     if (sameOriginClient(event)) releaseDocumentStream(event.data?.viewId);
+    return;
+  }
+
+  if (event.data?.type === 'PORTAL_WARM_DOCUMENTS') {
+    if (!sameOriginClient(event)) return;
+    event.waitUntil(Promise.allSettled([
+      warmDocumentsStatic(),
+      warmDocumentsPrivate(event.data)
+    ]));
+    return;
+  }
+
+  if (event.data?.type === 'PORTAL_DOCUMENTS_WARM_GET') {
+    const port = event.ports?.[0];
+    if (!port || !sameOriginClient(event)) {
+      port?.postMessage?.({ ok: false, payload: null });
+      return;
+    }
+    event.waitUntil(
+      getDocumentsWarmPayload(event.data)
+        .then((payload) => port.postMessage({ ok: Boolean(payload), payload }))
+        .catch(() => port.postMessage({ ok: false, payload: null }))
+    );
+    return;
+  }
+
+  if (event.data?.type === 'PORTAL_DOCUMENTS_WARM_CLEAR') {
+    if (sameOriginClient(event)) clearDocumentsWarm();
     return;
   }
 
