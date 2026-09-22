@@ -11,7 +11,7 @@ import {
   firestoreReplace
 } from './firebase-gateway.js';
 import { firestoreAtomicCommit } from './firestore-atomic-v29.js';
-import { telemedicineAccessFor } from './telemedicine-access.js';
+import { telemedicineAccessFor, ensureTelemedicineUnderlyingRole } from './telemedicine-access.js';
 import {
   clean,
   normalizeText,
@@ -124,10 +124,9 @@ async function authorizedUser(request, env) {
   const user = await validatePortalSession(request, env, []);
   if (!user) return null;
   if (user.role === 'admin') return { ...user, telemedicineAdmin: true };
-  if (user.role === 'recepcao' && await telemedicineAccessFor(env, user.username)) {
-    return { ...user, telemedicineAdmin: false };
-  }
-  return null;
+  if (!(await telemedicineAccessFor(env, user.username))) return null;
+  if (user.role !== 'recepcao') await ensureTelemedicineUnderlyingRole(env, user.username);
+  return { ...user, role: 'recepcao', telemedicineAdmin: false };
 }
 
 function withoutId(document) {
