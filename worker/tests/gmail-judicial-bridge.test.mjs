@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 import { GMAIL_JUDICIAL_BRIDGE, bridgeRecipients, isGmailJudicialBridgeApi, normalizeBridgePayload, recipientNameTarget } from '../gmail-judicial-bridge.js';
 
@@ -38,4 +39,15 @@ test('dry run e validacao', () => {
   assert.equal(normalizeBridgePayload({ receivedAt: '2026-09-22T13:00:00Z' }).error, 'MESSAGE_ID_REQUIRED');
   assert.equal(normalizeBridgePayload({ messageId: 'x', receivedAt: 'invalida' }).error, 'RECEIVED_AT_INVALID');
   assert.equal(GMAIL_JUDICIAL_BRIDGE.minimumSecretLength, 32);
+});
+
+
+test('Apps Script usa GmailApp nativo sem depender da Gmail API avancada', () => {
+  const source = fs.readFileSync(new URL('../../scripts/gmail-judicial/Code.gs', import.meta.url), 'utf8');
+  assert.match(source, /GmailApp\.search/);
+  assert.match(source, /GmailApp\.getUserLabelByName/);
+  assert.match(source, /LockService\.getScriptLock/);
+  assert.match(source, /PORTAL_JUDICIAL_SENT_IDS_V1/);
+  assert.doesNotMatch(source, /gmail\.googleapis\.com/);
+  assert.doesNotMatch(source, /ScriptApp\.getOAuthToken/);
 });
