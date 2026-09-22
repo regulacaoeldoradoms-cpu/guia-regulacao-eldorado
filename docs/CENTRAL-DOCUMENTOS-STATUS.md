@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — validar em uso real a Home restaurada e medir latência da paginação de 20** |
-| Última ação concluída | PR #406 publicada também no Worker: Home recupera ordem histórica; Consulta/Exames continuam apenas como preload de background |
-| Branch atual | `docs/central-docs-root-order-published-20260922` apenas para registrar publicação final |
-| PR atual | PR funcional #406 mesclada; PR #407 documental mesclada; PR documental final deste handoff ainda a abrir |
-| Último commit relevante | funcional `36c6b838`; reconciliação `7fd0ac98` |
-| Checks e testes | Workers Build `7cbc3b05-87ab-41bb-b87c-3762a2969328` success; GitHub build/deploy success; governança e validações gerais verdes |
-| Decisões tomadas | prioridades Consulta/Exames são exclusivamente de background; Home usa `folder,name_natural`; pesquisa permanece no fast-path sem `orderBy`; foreground continua em 20 itens |
-| Justificativas | paginação de 20 precisa de ordem remota estável antes do corte; ordenar só os 20 recebidos não preserva a composição histórica |
-| Alternativas descartadas | promover prioridades na Home; remover preload; carregar raiz inteira no frontend apenas para ordenar |
-| Ações externas concluídas | Worker produtivo publicado com sucesso pelo gate seguro |
-| Pendências e bloqueios | falta validação visual real e coleta de nova amostra de latência |
-| Riscos conhecidos | `orderBy` remoto pode adicionar algum custo; medir `drive_folder_opened` antes de nova otimização |
-| Métricas / observabilidade | manter baseline anterior para comparação; sem novas propriedades sensíveis |
-| Próxima ação exata | **Ctrl+F5, conferir ordem da Home e depois abrir Consulta/Exames; em seguida observar métricas reais** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #406; `worker/document-drive.js`; `js/documents.js`; `documentos/index.html`; status Fase 7E |
+| Subfase / objetivo atual | **7E — homologar em uso real a comparação manual IA atual × Gemini pago** |
+| Última ação concluída | PR **#414** mesclada e publicada; Gemini foi adicionado como segundo provider manual sem substituir a IA atual |
+| Branch atual | `docs/titon-gemini-comparison-published-20260922` somente para reconciliar o handoff pós-publicação |
+| PR atual | funcional **#414 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional `64e7febceec81c9ec456b0181245e52ff6a41eae` |
+| Checks e testes | Fases 1–6, Chromium/PDF.js, gate seguro, site, governança, Cloudflare Pages, GitHub build/deploy e Workers Build produtivo verdes |
+| Decisões tomadas | IA atual Cloudflare continua canônica/gratuita; Gemini 2.5 Flash é comparação paga manual; resultados e evidências são isolados; sem fallback ou execução automática |
+| Justificativas | operador quer comparar precisão antes de qualquer substituição; chamada manual evita custo implícito e mantém controle sobre envio de página ao Gemini |
+| Alternativas descartadas | substituir provider atual; rodar as duas IAs automaticamente; fallback silencioso; chave Gemini no navegador |
+| Ações externas concluídas | Google AI Pro ativo; créditos Developer Program aplicados; projeto Cloud pago/pré-pago; secret `TITON_GEMINI_API_KEY` criado; Worker produtivo build `7181d753-8875-421b-a471-12cc64fbfca3` success |
+| Pendências e bloqueios | falta somente inferência real no Titon para verificar contrato da API, precisão, latência e tokens/custo reais |
+| Riscos conhecidos | API externa pode responder com erro de quota/schema/rede; chamada não é repetida automaticamente; nenhum resultado parcial substitui a IA atual |
+| Métricas / observabilidade | conteúdo permanece fora do PostHog; UI mostra somente modelo, tempo e tokens técnicos do Gemini; eventos técnicos usam source `gemini` |
+| Próxima ação exata | **Ctrl+F5; no mesmo PDF executar IA atual e Gemini; comparar campos/tempo/tokens e relatar qualquer erro literal exibido** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #414; `worker/document-ai-gemini.js`; `worker/document-ai.js`; `worker/documents-router.js`; `js/documents.js`; `documentos/index.html`; `css/documents.css`; status Fase 7E |
 
 ## Histórico recuperável
 
@@ -4840,3 +4840,48 @@ Alternativas descartadas:
 **Critério de aceite desta janela:** IA atual continua funcionando sem alteração de provider; Gemini só roda por clique próprio; os dois resultados podem ser comparados no mesmo PDF; nenhuma chave ou conteúdo documental é exposto em frontend/telemetria; CI e gate de deploy permanecem verdes.
 
 **Próxima ação exata:** concluir testes/CI da branch, abrir PR e integrar somente com todos os checks relevantes verdes. Depois executar comparação real no mesmo PDF com IA atual e Gemini e registrar precisão, latência e uso técnico antes de qualquer decisão sobre provider preferido.
+
+## Fase 7E — comparação Gemini integrada e publicada — 22/09/2026
+
+A PR **#414 — Fase 7E: adicionar Gemini como IA comparativa no Titon** foi integrada à `main` no merge **`64e7febceec81c9ec456b0181245e52ff6a41eae`**.
+
+Resultado publicado:
+- a IA atual do Titon **não foi removida nem substituída**;
+- `cloudflare-workers-ai` continua como provider canônico, com `DOCUMENTS_AI_FREE_ONLY=true`;
+- novo botão **Extrair com IA atual** executa o mesmo pipeline já homologado;
+- novo botão **Extrair com Gemini** chama exclusivamente a rota `POST /api/documents/ai/page/gemini`;
+- Gemini é manual, independente e nunca é fallback silencioso;
+- resultados Gemini ficam separados dos resultados/evidências da IA atual;
+- interface compara os dois resultados campo a campo e por página com estados neutros **Igual/Difere**;
+- modelo inicial: `gemini-2.5-flash`, com `thinkingBudget=0`, temperatura 0 e saída JSON estruturada;
+- o backend aplica novamente os normalizadores restritivos do Titon depois da resposta Gemini;
+- nenhuma chamada Gemini é feita por preload, abertura de PDF, OCR, chat ou extração da IA atual.
+
+Segurança e privacidade:
+- `TITON_GEMINI_API_KEY` permanece somente como secret do Cloudflare Worker;
+- o valor não foi versionado, retornado ao frontend nem registrado na documentação;
+- o gate seguro agora exige esse secret como binding crítico;
+- a chamada envia somente a imagem da página e as instruções/schema necessários;
+- filename, Drive ID, usuário e termo de busca não são enviados;
+- imagem, prompt e resposta Gemini não entram em PostHog/logs;
+- não existe retry automático de chamada paga.
+
+Validação:
+- testes unitários do provider Gemini — **success**;
+- validação explícita de que o provider atual continua `cloudflare-workers-ai` e gratuito — **success**;
+- teste de segredo ausente/modelo não aprovado com fail-closed — **success**;
+- Central Fases 1–6 — **success**;
+- navegador/PDF.js real em Chromium — **success**;
+- gate de deploy seguro — **success**;
+- site e governança — **success**;
+- Cloudflare Pages — **success**;
+- GitHub build/deploy — **success**;
+- Workers Build produtivo **`7181d753-8875-421b-a471-12cc64fbfca3`** — **success**.
+- O check de Workers Build na branch da PR ficou vermelho no ambiente de PR; a publicação em `main` passou integralmente pelo gate seguro e confirmou o build produtivo acima.
+
+Limite da evidência atual:
+- a integração está publicada e validada estruturalmente com respostas Gemini simuladas nos testes;
+- ainda **não foi executada uma inferência real autenticada contra a API Gemini em produção**, porque o secret nunca é exposto às ferramentas de CI/chat;
+- portanto precisão, latência e consumo reais ainda precisam ser medidos pelo operador no Titon.
+
+**Próxima ação exata:** executar Ctrl+F5 na Central, abrir um PDF conhecido e rodar primeiro **Extrair com IA atual** e depois **Extrair com Gemini**. Registrar se o Gemini conclui, tempo/tokens apresentados e diferenças campo a campo. Não escolher provider preferido nem automatizar Gemini antes dessa comparação real.
