@@ -327,3 +327,38 @@ A segurança permanece:
 - sincronização continua dependendo da confirmação real do Drive.
 
 **Próxima ação exata:** validar CI e navegador, integrar/publicar se verde, executar uma recarga forte única e observar uso real. A próxima decisão de desempenho deve usar a decomposição token/API/map e build/start/upload, evitando nova otimização por hipótese.
+
+## 7E — preload autorizado da Central logo após login — 22/09/2026
+
+Pedido operacional: para contas que possuem a função Central de Documentos, preparar a ferramenta em segundo plano imediatamente após a autenticação, de modo que o primeiro acesso não precise repetir toda a inicialização.
+
+Evidência anterior ao preload:
+- `portal_page_ready /documentos/`: n=23, p50 **1.216 ms**, p75 **3.085 ms**, p95 **3.429 ms**, p99 **3.905 ms**;
+- `drive_folder_opened`: n=45, p50 **3.923 ms**, p75 **4.321 ms**, p95 **4.555 ms**, p99 **4.897 ms**;
+- `drive_search_completed`: n=45, p50 **4.157 ms**, p75 **4.569 ms**, p95 **6.940 ms**, p99 **8.741 ms**.
+
+Diagnóstico:
+- o Portal já aquecia a rota pública `/documentos/` depois do login;
+- porém acesso documental, preferências, configuração da IA e primeira listagem do Drive continuavam sendo buscados somente ao entrar na Central;
+- PDF.js e OCR também podiam ser carregados somente depois da navegação.
+
+Arquitetura escolhida:
+- somente contas cuja sessão já indica `documentCapabilities.view` ou `manage`, sem bloqueio de primeiro acesso/verificação, disparam o preload;
+- o Service Worker aquece a página e recursos públicos do Titon, PDF.js, PDF-lib e runtime OCR;
+- as respostas privadas de `/access`, preferências, configuração de IA e raiz do Drive ficam **somente em RAM do Service Worker**, com TTL de 90 s e renovação em torno de 30 s;
+- o token bruto não é persistido: a chave da fotografia privada é um digest SHA-256 da autorização e o payload não vai para Cache Storage, localStorage, sessionStorage ou IndexedDB;
+- logout/invalidação de sessão incrementa uma geração e impede que uma operação antiga republique o snapshot depois da limpeza;
+- ao abrir a Central, `/api/documents/access` continua sendo consultado ao vivo **antes** de qualquer lista aquecida ser apresentada;
+- somente após a permissão atual ser confirmada a lista em memória pode ser exibida; em seguida ocorre refresh autoritativo do Drive em segundo plano;
+- nenhuma tentativa é feita de pré-baixar PDFs dos pacientes: “pronto” significa interface, motores e dados iniciais da raiz preparados, não conteúdo documental indiscriminado.
+
+A decisão preserva menor privilégio e invalidação de permissões, enquanto antecipa o custo seguro de inicialização. Nenhum nome, ID, termo de pesquisa ou conteúdo é enviado ao PostHog.
+
+Critério de aceite desta rodada:
+1. usuário sem Central não dispara preload privado;
+2. usuário autorizado dispara preload após login sem bloquear a navegação;
+3. primeira abertura confirma permissão ao vivo antes de usar snapshot;
+4. logout impede reaparecimento de snapshot concluído tardiamente;
+5. dados privados do preload não são persistidos em armazenamento do navegador;
+6. fallback antigo continua funcional se o preload não estiver disponível;
+7. medir `drive_folder_opened cache_state=hit` após publicação antes de declarar ganho percentual.
