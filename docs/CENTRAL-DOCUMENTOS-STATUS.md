@@ -4430,3 +4430,26 @@ Comportamento produtivo:
 Escopo deliberadamente não incluído: baixar PDFs dos pacientes ou persistir nomes/listas privadas. A ferramenta fica “pré-pronta” no sentido de interface, motores e dados iniciais seguros, sem antecipar conteúdo documental sensível.
 
 **Próxima ação:** colher amostra real de `drive_folder_opened` com `cache_state=hit` e comparar com a baseline anterior antes de declarar ganho percentual.
+
+## Fase 7E — prioridade para Consulta [2026] e Exames [2026] — 22/09/2026
+
+O operador definiu duas pastas de uso prioritário: **Consulta [2026]** e **Exames [2026]**, solicitando que suas listas e os PDFs internos permaneçam carregados em segundo plano.
+
+Branch: `perf/central-docs-priority-folders-20260922`.
+
+Decisão:
+- resolver as pastas por nome exato normalizado;
+- aquecer as listagens no Service Worker;
+- consumir a listagem aquecida imediatamente ao entrar na pasta;
+- manter refresh autoritativo do Drive;
+- pré-carregar os PDFs dessas pastas usando o cache criptografado já aprovado;
+- preservar limites de 50 MB/arquivo, 256 MB total, 12 h de TTL e limpeza no logout;
+- concorrência limitada a 2 e bloqueio em Save-Data/2G;
+- não persistir nomes/IDs/listagens no cache documental; somente bytes cifrados + chave opaca/versão.
+
+Alternativas descartadas:
+- Cache Storage ou Service Worker com PDF em claro: descartado por privacidade;
+- cache ilimitado de todos os arquivos: descartado por risco de quota e saturação;
+- escolher automaticamente uma pasta quando houver mais de uma correspondência exata fora da raiz: descartado por risco de aquecer pasta errada.
+
+Próxima ação: concluir CI/PR, publicar se verde e validar em uso real se as duas pastas aparecem imediatamente e os PDFs elegíveis passam a abrir pelo cache.
