@@ -40,23 +40,46 @@ test.describe('Central de Documentos — OCR local de PDF digitalizado', () => {
     expect(recognizedText).toMatch(/OCR/i);
     expect(recognizedText).toMatch(/TITON/i);
 
-    const firstWordGroup = await ocrWords.first().getAttribute('data-ocr-group');
-    expect(firstWordGroup).toBeTruthy();
-    await ocrWords.first().dispatchEvent('pointerdown', { bubbles: true, pointerId: 1, pointerType: 'mouse' });
-    await expect(firstPage.locator('.portal-pdf-text-layer')).toHaveAttribute('data-ocr-selection-group', firstWordGroup);
-
-    const selectionText = await firstPage.locator('.portal-pdf-text-layer').evaluate((layer) => {
-      const target = layer.querySelector('[data-ocr-word="true"]');
-      if (!target) return '';
-      const range = document.createRange();
-      range.selectNodeContents(target);
-      const selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-      return selection.toString();
+    const textLayer = firstPage.locator('.portal-pdf-text-layer');
+    const drag = await textLayer.evaluate((layer) => {
+      const words = Array.from(layer.querySelectorAll('[data-ocr-word="true"]'));
+      const groups = new Map();
+      for (const word of words) {
+        const key = word.dataset.ocrGroup || '';
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(word);
+      }
+      const candidates = Array.from(groups.entries()).find(([, items]) => items.length >= 2)
+        || Array.from(groups.entries())[0];
+      if (!candidates) return null;
+      const [groupId, items] = candidates;
+      const start = items[0];
+      const end = items[Math.min(1, items.length - 1)];
+      const a = start.getBoundingClientRect();
+      const b = end.getBoundingClientRect();
+      return {
+        groupId,
+        total: words.length,
+        start: { x: a.left + Math.max(1, a.width * .35), y: a.top + Math.max(1, a.height * .5) },
+        end: { x: b.left + Math.max(1, b.width * .65), y: b.top + Math.max(1, b.height * .5) }
+      };
     });
+    expect(drag).toBeTruthy();
+
+    await page.mouse.move(drag.start.x, drag.start.y);
+    await page.mouse.down();
+    await page.mouse.move(drag.end.x, drag.end.y, { steps: 8 });
+    await page.mouse.up();
+
+    await expect(textLayer).toHaveAttribute('data-ocr-selection-group', drag.groupId);
+    const selectedWords = textLayer.locator('[data-ocr-word="true"].ocr-custom-selected');
+    const selectedCount = await selectedWords.count();
+    expect(selectedCount).toBeGreaterThan(0);
+    expect(selectedCount).toBeLessThan(drag.total);
+
+    const selectionText = await page.evaluate(() => window.getSelection()?.toString() || '');
     expect(selectionText.trim().length).toBeGreaterThan(1);
-    expect(selectionText.trim().split(/\s+/).length).toBeLessThanOrEqual(2);
+    expect(selectionText.trim().length).toBeLessThan(recognizedText.trim().length);
 
     await expect(firstPage.locator('.portal-pdf-text-layer')).toHaveCSS('cursor', 'text');
 
