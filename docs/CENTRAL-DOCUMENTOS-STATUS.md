@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — preload da Central de Documentos imediatamente após login autorizado** |
-| Última ação concluída | branch implementou preload público + privado efêmero, consumo seguro na primeira abertura, invalidação em logout e baseline pré-mudança |
-| Branch atual | `perf/central-docs-login-background-preload-20260922` |
-| PR atual | ainda não aberta neste ponto do registro |
-| Último commit relevante | branch contém Service Worker, `portal-performance.js`, `documents.js`, cache-busters globais, testes e documentação do preload |
-| Checks e testes | testes locais/versionados preparados; CI ainda precisa rodar no PR |
-| Decisões tomadas | preload só para view/manage; dados privados apenas RAM do Service Worker por 90 s; refresh ~30 s; live `/access` obrigatório antes de exibir lista aquecida; refresh autoritativo do Drive depois do primeiro paint |
-| Justificativas | a rota pública já era aquecida, mas a Central ainda gastava ~3–5 s em startup/lista porque acesso, preferências, IA e raiz do Drive só eram buscados ao entrar |
-| Alternativas descartadas | persistir nomes/listagem em localStorage/sessionStorage/IndexedDB/Cache Storage: descartado por privacidade e consistência; pré-baixar PDFs: descartado por sensibilidade e custo |
-| Ações externas concluídas | PostHog 602473 consultado; baseline de 24 h registrada; nenhuma nova permissão, OAuth ou segredo |
-| Pendências e bloqueios | concluir testes/CI, abrir PR, integrar/publicar se verde e colher tráfego real pós-publicação |
-| Riscos conhecidos | snapshot privado pode ficar alguns segundos atrás do Drive; por isso TTL curto, live permission gate e refresh autoritativo sem bloquear a UI |
-| Métricas / observabilidade | pré-preload: `portal_page_ready /documentos/` p95 **3.429 ms**; pasta p95 **4.555 ms**; pesquisa p95 **6.940 ms** |
-| Próxima ação exata | finalizar testes/versionamento, abrir PR, validar CI completo; após publicação medir `drive_folder_opened cache_state=hit` versus miss |
-| Arquivos e fontes principais | Guia Mestre V1.1; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; PostHog 602473 |
+| Subfase / objetivo atual | **7E — medir em uso real o preload pós-login da Central** |
+| Última ação concluída | PR **#390** mesclada e publicada: Central passa a ser preparada em segundo plano imediatamente após login de conta autorizada |
+| Branch atual | `docs/central-docs-login-preload-status-20260922` somente para reconciliar este handoff pós-merge |
+| PR atual | PR funcional **#390 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional `0f569eed3e6e343fb5e82a48164c4b343134fcee` |
+| Checks e testes | branch funcional: **51 checks verdes** + somente Worker Preview de branch indisponível; pós-merge: **53 checks verdes**, 0 falhas, deploy/Pages/Workers/PDF.js verdes; apenas teste de vídeo pós-login ainda em andamento no último ponto observado e não pertence à Central |
+| Decisões tomadas | preload só para view/manage; snapshot privado somente em RAM do Service Worker por 90 s; refresh ~30 s; `/access` ao vivo antes de exibir lista aquecida; refresh autoritativo após primeiro paint; nenhum PDF pré-baixado |
+| Justificativas | a rota pública já era aquecida, mas a primeira tela útil ainda gastava segundos em acesso, preferências, IA e raiz do Drive |
+| Alternativas descartadas | persistir nomes/listagens privadas no navegador: descartado; pré-baixar PDFs: descartado por privacidade/custo; confiar só no snapshot sem live gate: descartado por risco de permissão revogada |
+| Ações externas concluídas | Workers Build produtivo **b62961a3-7533-4bab-a701-4865dbd679b8** com Version ID **63de9dc0-9c44-4ea8-8d96-9cf4c286a220**; Cloudflare Pages e GitHub deploy concluídos |
+| Pendências e bloqueios | falta somente amostra real pós-publicação para comparar `drive_folder_opened cache_state=hit` com a baseline e ajustar se necessário |
+| Riscos conhecidos | a raiz aquecida pode estar alguns segundos atrás do Drive; TTL curto + live permission gate + refresh autoritativo limitam esse risco |
+| Métricas / observabilidade | baseline pré-preload: `portal_page_ready /documentos/` p95 **3.429 ms**; raiz Drive p95 **4.555 ms**; pesquisa p95 **6.940 ms** |
+| Próxima ação exata | operador faz login normalmente, permanece alguns segundos no Portal e abre a Central; depois consultar PostHog para medir primeiro acesso aquecido e decidir se há gargalo residual |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #390; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; `docs/CENTRAL-DOCUMENTOS-BASELINE-7A.md`; PostHog 602473 |
 
 ## Histórico recuperável
 
@@ -4403,3 +4403,30 @@ Baseline imediatamente anterior:
 - pesquisa p95 ~**6,94 s**.
 
 **Próxima ação:** validar a branch em CI/navegador, publicar somente se verde e medir o primeiro acesso real com `cache_state=hit`.
+
+
+## Fase 7E — preload pós-login integrado e publicado — 22/09/2026
+
+A PR **#390 — Fase 7E: pré-carregar Central após login autorizado** foi integrada na `main` pelo merge **`0f569eed3e6e343fb5e82a48164c4b343134fcee`**.
+
+Publicação confirmada:
+- Workers Build produtivo: `b62961a3-7533-4bab-a701-4865dbd679b8` — **success**;
+- Worker Version: `63de9dc0-9c44-4ea8-8d96-9cf4c286a220`;
+- Cloudflare Pages: **success**;
+- GitHub build/deploy: **success**;
+- PDF.js real em Chromium: **success**;
+- pós-merge no último ponto observado: 53 checks verdes, 0 falhas; somente o teste de vídeo pós-login, não relacionado à Central, ainda estava em andamento.
+
+Comportamento produtivo:
+1. após login, contas com Central autorizada disparam aquecimento da rota e dos motores públicos;
+2. o Service Worker consulta acesso/preferências/IA/raiz Drive em segundo plano e mantém a resposta privada só em memória por até 90 s;
+3. a sessão renova o snapshot aproximadamente a cada 30 s enquanto houver página compatível ativa;
+4. ao abrir a Central, o backend confirma a permissão atual ao vivo;
+5. somente então a raiz aquecida pode aparecer imediatamente;
+6. uma listagem real do Drive atualiza o estado em segundo plano sem travar a interface;
+7. logout invalida a geração do preload para impedir repovoamento tardio;
+8. ausência/expiração do preload cai no fluxo tradicional sem perda funcional.
+
+Escopo deliberadamente não incluído: baixar PDFs dos pacientes ou persistir nomes/listas privadas. A ferramenta fica “pré-pronta” no sentido de interface, motores e dados iniciais seguros, sem antecipar conteúdo documental sensível.
+
+**Próxima ação:** colher amostra real de `drive_folder_opened` com `cache_state=hit` e comparar com a baseline anterior antes de declarar ganho percentual.
