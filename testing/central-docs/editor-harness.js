@@ -576,9 +576,20 @@
     context.fillText('PROTOCOLO 12345', 110, 510);
     context.font = '42px Arial';
     context.fillText('TEXTO FICTICIO PARA SELECAO', 110, 680);
+
+    context.font = 'bold 34px Arial';
+    context.fillText('CID10 Q676', 110, 860);
+    context.fillText('OBSERVACOES', 110, 930);
+
+    context.fillText('JUSTIFICATIVA DO PROCEDIMENTO', 650, 820);
+    context.font = '32px Arial';
+    context.fillText('PACIENTE COM ALTERACOES', 650, 875);
+    context.fillText('CAIXA TORACICA E DISPNEIA', 650, 925);
+    context.fillText('SOLICITO EXAME PARA AVALIACAO', 650, 975);
+
     context.strokeStyle = '#1c2730';
     context.lineWidth = 4;
-    context.strokeRect(70, 120, 1060, 700);
+    context.strokeRect(70, 120, 1060, 930);
 
     const image = await new Promise((resolve, reject) => {
       canvas.toBlob(
