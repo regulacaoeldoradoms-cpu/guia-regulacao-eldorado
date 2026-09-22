@@ -9,8 +9,8 @@ test('rota da ponte judicial e estrita', () => {
 });
 
 test('destinatarios padrao', () => {
-  assert.deepEqual(bridgeRecipients(''), ['wellyton', 'josiane', 'lorrana']);
-  assert.deepEqual(bridgeRecipients(' Wellyton, JOSIANE, lorrana, josiane '), ['wellyton', 'josiane', 'lorrana']);
+  assert.deepEqual(bridgeRecipients(''), ['wellyton', 'josiane', 'lorrana.galindo']);
+  assert.deepEqual(bridgeRecipients(' Wellyton, JOSIANE, lorrana.galindo, josiane '), ['wellyton', 'josiane', 'lorrana.galindo']);
 });
 
 test('converte identificador configurado em alvo de nome', () => {
