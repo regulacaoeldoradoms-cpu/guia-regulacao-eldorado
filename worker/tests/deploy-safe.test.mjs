@@ -155,8 +155,8 @@ test('lista todos os secrets atuais para preservação dinâmica', () => {
     'GEMINI_API_KEY',
     'GMAIL_BRIDGE_SECRET',
     'GOOGLE_DRIVE_OAUTH_CLIENT_SECRET',
-    'TITON_GEMINI_API_KEY',
-    'POSTHOG_PROJECT_TOKEN'
+    'POSTHOG_PROJECT_TOKEN',
+    'TITON_GEMINI_API_KEY'
   ]);
 });
 
