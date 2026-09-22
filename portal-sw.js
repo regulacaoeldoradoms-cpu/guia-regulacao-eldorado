@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260922-4';
+const CACHE_VERSION = '20260922-5';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -55,9 +55,9 @@ const CORE_RESOURCES = Object.freeze([
   '/css/social.css?v=20260922-2',
   '/css/portal-pwa.css?v=20260910-2',
   '/js/auth-config.js?v=20260815-1',
-  '/js/portal-performance.js?v=20260922-4',
+  '/js/portal-performance.js?v=20260922-5',
   '/js/portal-observability.js?v=20260921-2',
-  '/js/portal-pwa.js?v=20260922-2',
+  '/js/portal-pwa.js?v=20260922-3',
   '/js/auth-client.js?v=20260910-4',
   '/js/tools-catalog.js?v=20260911-3',
   '/js/document-cache.js?v=20260912-1',
@@ -819,7 +819,17 @@ self.addEventListener('notificationclick', (event) => {
 
     if (portalWindow) {
       await portalWindow.focus();
-      if (chatUser) portalWindow.postMessage({ type: 'OPEN_PORTAL_CHAT', chatUser });
+      if (chatUser) {
+        portalWindow.postMessage({ type: 'OPEN_PORTAL_CHAT', chatUser });
+      } else if (fallbackUrl && typeof portalWindow.navigate === 'function') {
+        try {
+          const current = new URL(portalWindow.url);
+          const target = new URL(fallbackUrl, self.location.origin);
+          if (target.origin === self.location.origin && current.pathname !== target.pathname) {
+            await portalWindow.navigate(target.toString());
+          }
+        } catch (_) {}
+      }
       return;
     }
 
