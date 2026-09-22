@@ -5389,6 +5389,13 @@
     }
 
     try {
+      if (warmedHit && !append) {
+        try {
+          window.PortalPerformance?.warmDocumentsForUser?.(state.user, { scheduleRefresh: true })?.catch?.(() => {});
+        } catch (_) {}
+        return true;
+      }
+
       const payload = await api('/api/documents/drive/list', {
         method: 'POST',
         body: JSON.stringify({
@@ -6255,6 +6262,30 @@
     const payload = event.detail;
     if (!payload || typeof payload !== 'object') return;
     state.warmedDocumentPayload = payload;
+
+    const parentRef = currentParentRef();
+    const priority = warmedPriorityFolder(parentRef, payload);
+    if (!priority) return;
+
+    const incoming = sortItems(priority.items);
+    state.folderSnapshot = {
+      parentRef,
+      items: incoming.slice(),
+      nextPageToken: String(priority.nextPageToken || '')
+    };
+
+    const safeToRepaint = (
+      !state.searchMode
+      && !state.loading
+      && !state.pdfItem
+      && !state.editorSession
+      && state.selectedListIndex < 0
+    );
+    if (safeToRepaint) {
+      state.items = incoming;
+      state.nextPageToken = String(priority.nextPageToken || '');
+      renderItems();
+    }
   });
 
   navigator.serviceWorker?.addEventListener('message', (event) => {
