@@ -4533,3 +4533,21 @@ Correção isolada na branch `fix/telemedicina-capability-source-truth-20260922`
 Esta manutenção é transversal e não altera a Fase 7E da Central de Documentos.
 
 **Próxima ação exata:** abrir PR, exigir os checks de Telemedicina/Agenda e, se verdes, integrar e confirmar o deploy produtivo antes de pedir novo teste à operadora.
+
+## Mudança transversal — Telemedicina V34.2 integrada e publicada — 22/09/2026
+
+A PR **#396 — fix: impedir 403 indevido para Técnico em Telemedicina autorizado** foi integrada à `main` no merge `65948b12195a62560f896579afa6665aed5a99d8`.
+
+Correção efetiva: as rotas de Telemedicina principal, roteador V2 e Agenda continuam exigindo sessão válida e capacidade explícita em `auth_telemedicine_access`; a dupla dependência frágil de `user.role === 'recepcao'` foi removida. Quando a capacidade está ativa e o papel-base diverge, a própria requisição normaliza o papel para `recepcao`. Capacidade ausente ou revogada continua negada.
+
+Validação relevante:
+- PR: `Validar Telemedicina`, `Validar Telemedicina Acesso V34`, `Validar Agenda DigSaúde V1` e `Validar site` — **success**;
+- pós-merge: `Validar Telemedicina`, `Validar Telemedicina Acesso V34` e `Validar Agenda DigSaúde V1` — **success**;
+- Cloudflare Pages — **success**;
+- Workers Build produtivo `cf8b32cc-b387-4314-8610-cd245ff79092` — **success**.
+
+A correção não amplia permissões: ela somente faz o backend respeitar a capacidade server-side já concedida como fonte de verdade, conforme a V34/V34.2.
+
+Esta manutenção não altera a Fase 7E da Central de Documentos.
+
+**Próxima ação exata:** a operadora afetada deve atualizar `/telemedicina/` e tentar registrar uma consulta. Se ainda houver `403`, inspecionar a linha de capacidade da conta no backend antes de revogar/reconceder acesso ou alterar outros papéis.
