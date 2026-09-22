@@ -67,7 +67,7 @@ const CORE_RESOURCES = Object.freeze([
   '/js/login-opening.js?v=20260918-1',
   '/js/login.js?v=20260917-3',
   '/vendor/pdf-lib/pdf-lib.min.js',
-  '/js/social-navigation.js?v=20260911-2',
+  '/js/social-navigation.js?v=20260922-2',
   '/js/portal-chat.js?v=20260911-3',
   '/assets/portal-regulacao-icon.webp?v=20260909-1',
   '/assets/portal-regulacao-header.png?v=20260910-1',
