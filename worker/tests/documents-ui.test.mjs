@@ -473,8 +473,8 @@ test('Titon cria texto selecionável local para PDF digitalizado sem enviar cont
   assert.match(viewer, /queueOcrPage\(session, record\.pageNumber\)/);
   assert.match(viewer, /record\.container\.dataset\.selectableText = 'native'/);
   assert.match(viewer, /record\.container\.dataset\.selectableText = hasText \? 'ocr' : 'false'/);
-  assert.match(viewer, /data\.ocrWord = 'true'/);
-  assert.match(viewer, /data\.ocrGroup = groupId/);
+  assert.match(viewer, /span\.dataset\.ocrWord = 'true'/);
+  assert.match(viewer, /span\.dataset\.ocrGroup = groupId/);
   assert.match(viewer, /isolateOcrSelectionGroup/);
   assert.match(viewer, /ocr-selection-muted/);
   assert.match(viewer, /session\.thumbnailActions[\s\S]*return/);
