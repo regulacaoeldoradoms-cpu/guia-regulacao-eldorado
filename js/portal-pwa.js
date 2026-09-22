@@ -10,10 +10,16 @@
   const INSTALL_DISMISS_KEY = 'regulacao.portal.pwa.install.dismissedAt';
   const PUSH_DISMISS_KEY = 'regulacao.portal.pwa.push.dismissedAt';
   const DISMISS_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+  const TELEMEDICINE_ALERT_INTERVAL_MS = 5 * 60 * 1000;
+  const TELEMEDICINE_ALERT_STORAGE_PREFIX = 'regulacao.portal.telemedicine.alerts.v1';
 
   let deferredInstallPrompt = null;
   let pushActive = false;
   let syncPromise = null;
+  let telemedicineAlertCheckPromise = null;
+  let telemedicineAlertTimer = 0;
+  let telemedicineAlertsUnavailable = false;
+  let lastTelemedicineAlertCheckAt = 0;
 
   function addHeadLink(selector, attributes) {
     if (document.querySelector(selector)) return;
@@ -357,9 +363,116 @@
     });
   }
 
+  function telemedicineAlertStorageKey(user) {
+    return `${TELEMEDICINE_ALERT_STORAGE_PREFIX}:${String(user?.username || 'anonymous').toLowerCase()}`;
+  }
+
+  function readTelemedicineAlertState(user) {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(telemedicineAlertStorageKey(user)) || '{}');
+      return {
+        day: String(parsed.day || ''),
+        keys: Array.isArray(parsed.keys) ? parsed.keys.map(String).slice(-160) : []
+      };
+    } catch (_) {
+      return { day: '', keys: [] };
+    }
+  }
+
+  function writeTelemedicineAlertState(user, day, keys) {
+    try {
+      localStorage.setItem(
+        telemedicineAlertStorageKey(user),
+        JSON.stringify({ day: String(day || ''), keys: Array.from(new Set(keys.map(String))).slice(-160) })
+      );
+    } catch (_) {}
+  }
+
+  async function displayTelemedicineAlert(count, today) {
+    const registration = await serviceWorkerRegistration().catch(() => null);
+    if (!registration?.showNotification) return false;
+    const amount = Math.max(1, Number(count || 1));
+    await registration.showNotification('Telemedicina · Aviso de retorno', {
+      body: amount === 1
+        ? 'Há 1 retorno de Telemedicina que precisa de atenção hoje.'
+        : `Há ${amount} retornos de Telemedicina que precisam de atenção hoje.`,
+      icon: APP_ICON_URL,
+      badge: APP_ICON_URL,
+      tag: `telemedicine-reminders-${today || 'today'}`,
+      renotify: true,
+      data: { url: '/telemedicina/' }
+    });
+    window.PortalInteractions?.notify?.(
+      'notification',
+      amount === 1
+        ? 'Há um retorno de Telemedicina para solicitar hoje.'
+        : `Há ${amount} retornos de Telemedicina para solicitar hoje.`
+    );
+    return true;
+  }
+
+  async function runTelemedicineAlertCheck({ force = false } = {}) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+    const user = window.RegulationAuth?.getCachedUser?.() || null;
+    if (!user || telemedicineAlertsUnavailable) return false;
+
+    const now = Date.now();
+    if (!force && now - lastTelemedicineAlertCheckAt < TELEMEDICINE_ALERT_INTERVAL_MS) return false;
+    lastTelemedicineAlertCheckAt = now;
+
+    let payload;
+    try {
+      payload = await api('/api/telemedicina/alerts', { method: 'GET' });
+    } catch (error) {
+      if (Number(error?.status || 0) === 403) telemedicineAlertsUnavailable = true;
+      return false;
+    }
+
+    const today = String(payload?.today || '');
+    const alerts = Array.isArray(payload?.alerts) ? payload.alerts : [];
+    const saved = readTelemedicineAlertState(user);
+    const seen = new Set(saved.day === today ? saved.keys : []);
+    const currentKeys = alerts.map((item) => `${String(item?.id || '')}:${Number(item?.reminderNumber || 1)}`).filter((key) => !key.startsWith(':'));
+    const unseen = currentKeys.filter((key) => !seen.has(key));
+    if (!unseen.length) return false;
+
+    unseen.forEach((key) => seen.add(key));
+    writeTelemedicineAlertState(user, today, [...seen]);
+    return displayTelemedicineAlert(unseen.length, today);
+  }
+
+  async function checkTelemedicineAlerts(options = {}) {
+    if (telemedicineAlertCheckPromise) return telemedicineAlertCheckPromise;
+    const execute = () => runTelemedicineAlertCheck(options);
+    const operation = navigator.locks?.request
+      ? navigator.locks.request('portal-telemedicine-reminders', { ifAvailable: true }, (lock) => lock ? execute() : false)
+      : execute();
+
+    telemedicineAlertCheckPromise = Promise.resolve(operation)
+      .catch(() => false)
+      .finally(() => { telemedicineAlertCheckPromise = null; });
+    return telemedicineAlertCheckPromise;
+  }
+
+  function startTelemedicineAlertMonitoring() {
+    if (telemedicineAlertTimer || telemedicineAlertsUnavailable) return;
+    checkTelemedicineAlerts({ force: true });
+    telemedicineAlertTimer = window.setInterval(() => {
+      checkTelemedicineAlerts().catch(() => false);
+    }, TELEMEDICINE_ALERT_INTERVAL_MS);
+  }
+
+  function stopTelemedicineAlertMonitoring() {
+    if (telemedicineAlertTimer) window.clearInterval(telemedicineAlertTimer);
+    telemedicineAlertTimer = 0;
+    telemedicineAlertsUnavailable = false;
+    lastTelemedicineAlertCheckAt = 0;
+  }
+
   function afterSessionReady() {
+    telemedicineAlertsUnavailable = false;
     if ('Notification' in window && Notification.permission === 'granted') {
-      syncPush({ createIfPermitted: true });
+      syncPush({ createIfPermitted: true }).finally(startTelemedicineAlertMonitoring);
       return;
     }
     if ('Notification' in window && Notification.permission === 'default') {
@@ -370,7 +483,10 @@
   function resyncPushIfActive() {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
     if (!window.RegulationAuth?.getCachedUser?.()) return;
-    syncPush({ createIfPermitted: true });
+    syncPush({ createIfPermitted: true }).finally(() => {
+      startTelemedicineAlertMonitoring();
+      checkTelemedicineAlerts().catch(() => false);
+    });
   }
 
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -389,6 +505,7 @@
   window.addEventListener('portal:session-ready', afterSessionReady);
   window.addEventListener('portal:session-cleared', () => {
     pushActive = false;
+    stopTelemedicineAlertMonitoring();
     clearPrompt();
   });
 
@@ -418,6 +535,7 @@
     install: installApp,
     enablePush,
     syncPush,
+    checkTelemedicineAlerts,
     detachCurrentSubscription,
     isInstalled: installed,
     hasActivePush: () => pushActive,
