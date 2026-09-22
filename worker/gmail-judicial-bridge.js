@@ -1,7 +1,7 @@
 'use strict';
 
 import { notifyUserPush } from './push-notifications.js';
-import { ensureSocialSchema, syncSocialUser } from './social-schema.js';
+import { ensureJudicialNotificationSchema, syncSocialUser } from './social-schema.js';
 
 const BRIDGE_PATH = '/api/integrations/gmail-judicial';
 const DEFAULT_RECIPIENTS = Object.freeze(['wellyton', 'josiane', 'lorrana']);
@@ -181,7 +181,7 @@ export async function handleGmailJudicialBridge(request, env, executionContext =
     return json({ error: 'Credencial da ponte inválida.', code: 'GMAIL_BRIDGE_UNAUTHORIZED' }, 401);
   }
 
-  if (!(await ensureSocialSchema(env))) {
+  if (!(await ensureJudicialNotificationSchema(env))) {
     return json({ error: 'Banco social indisponível.', code: 'SOCIAL_DATABASE_UNAVAILABLE' }, 503);
   }
 
