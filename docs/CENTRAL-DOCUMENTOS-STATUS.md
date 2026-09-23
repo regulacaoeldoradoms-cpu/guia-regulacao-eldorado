@@ -5599,3 +5599,22 @@ Validação do head funcional `d21f307a6b50b5516dd1e6f3a4253f5b34b08f4c`:
 - testes de backend cobrem filtro de pasta opaca, tipo PDF, proprietário, fullText, nome, estrela, lixeira, período, compartilhamento e e-mail inválido.
 
 **Próxima ação exata:** homologar em produção após Ctrl+F5 e registrar qualquer diferença de comportamento em relação ao Drive web.
+
+
+## Mudança transversal — ícones próprios da Agenda e Central de Documentos — 23/09/2026
+
+Pedido operacional: substituir os SVGs genéricos usados nos cards **Agenda** e **Central de Documentos** pelos PNGs próprios já adicionados pelo operador em `assets/AGENDA.png` e `assets/CENTRAL_DOCUMENTOS.png`.
+
+Estado de origem confirmado na `main`: os dois assets foram adicionados diretamente pelo operador no commit `70c41db804a63bf101e29358ecb540cbd6ba6bf7`. Esta mudança não altera a Fase 7E nem reabre escopo funcional da Central; é um refinamento visual transversal do catálogo compartilhado de ferramentas.
+
+Implementação na branch `feat/tool-card-custom-icons-20260923`:
+- card **Agenda** passa a usar `/assets/AGENDA.png?v=20260923-1`;
+- card **Central de Documentos** passa a usar `/assets/CENTRAL_DOCUMENTOS.png?v=20260923-1`;
+- os SVGs genéricos `calendar` e `documents` deixam de ser usados no catálogo;
+- Home e página Ferramentas recebem novo cache-buster de `tools-catalog.js`;
+- o Service Worker passa a referenciar a mesma versão nova do catálogo, sem pré-carregar os PNGs para perfis que não exibem esses cards;
+- teste de regressão verifica os dois assets versionados.
+
+Segurança/privacidade: somente apresentação visual. Sem mudança em permissões, autenticação, Drive, Agenda, IA, dados clínicos, PostHog ou APIs.
+
+**Próxima ação exata:** abrir PR, executar CI; integrar somente se os checks permanecerem verdes e então homologar visualmente os dois cards na Home/Ferramentas.
