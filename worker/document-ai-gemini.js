@@ -86,40 +86,33 @@ function exactFieldsSchema(pageType) {
 
 export function titonGeminiResponseJsonSchema() {
   return {
-    oneOf: [
-      {
-        type: 'object',
-        properties: {
-          pageType: { type: 'string', enum: ['comprovante_atendimento'] },
-          fields: exactFieldsSchema('comprovante_atendimento')
-        },
-        required: ['pageType', 'fields'],
-        additionalProperties: false
+    type: 'object',
+    properties: {
+      pageType: {
+        type: 'string',
+        enum: ['comprovante_atendimento', 'pagina_medica_autorizada', 'outro']
       },
-      {
-        type: 'object',
-        properties: {
-          pageType: { type: 'string', enum: ['pagina_medica_autorizada'] },
-          fields: exactFieldsSchema('pagina_medica_autorizada')
-        },
-        required: ['pageType', 'fields'],
-        additionalProperties: false
-      },
-      {
-        type: 'object',
-        properties: {
-          pageType: { type: 'string', enum: ['outro'] },
-          fields: {
+      fields: {
+        anyOf: [
+          exactFieldsSchema('comprovante_atendimento'),
+          exactFieldsSchema('pagina_medica_autorizada'),
+          {
             type: 'object',
             properties: {},
             additionalProperties: false
           }
-        },
-        required: ['pageType', 'fields'],
-        additionalProperties: false
+        ]
       }
-    ]
+    },
+    required: ['pageType', 'fields'],
+    additionalProperties: false
   };
+}
+
+function geminiThinkingConfig(model) {
+  return String(model || '') === 'gemini-3.8-flash'
+    ? { thinkingLevel: 'low' }
+    : { thinkingLevel: 'minimal' };
 }
 
 function requireGemini(env = {}) {
@@ -223,6 +216,13 @@ function providerError(status, payload) {
       503
     );
   }
+  if (code === 404) {
+    return new DocumentAiError(
+      'DOCUMENT_AI_GEMINI_MODEL_UNAVAILABLE',
+      'O modelo Gemini configurado não está disponível para este projeto.',
+      503
+    );
+  }
   if (code === 400) {
     return new DocumentAiError(
       'DOCUMENT_AI_GEMINI_REQUEST_INVALID',
@@ -314,15 +314,14 @@ export async function analyzeDocumentAiPageWithGemini(env, input = {}, options =
       ]
     }],
     generationConfig: {
-      temperature: 0,
-      topP: 0.1,
-      seed: 1,
       maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS,
-      thinkingConfig: {
-        thinkingBudget: 0
-      },
-      responseMimeType: 'application/json',
-      responseJsonSchema: titonGeminiResponseJsonSchema()
+      thinkingConfig: geminiThinkingConfig(model),
+      responseFormat: {
+        text: {
+          mimeType: 'application/json',
+          schema: titonGeminiResponseJsonSchema()
+        }
+      }
     }
   };
 
