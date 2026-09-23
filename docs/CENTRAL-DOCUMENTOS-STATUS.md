@@ -3151,17 +3151,17 @@ Branch: `fix/central-list-rename-write-check-20260923`. Próximo passo: abrir PR
 | Subfase / objetivo atual | **7G.1 — corrigir rename antes de abrir e refletir acesso real na lista** |
 | Última ação concluída | causa frontend confirmada; `canWriteDocument(item)` implementado; rename da lista deixa de depender de `state.pdfItem`; chip de acesso tornado dinâmico |
 | Branch atual | `fix/central-list-rename-write-check-20260923` |
-| PR atual | **ainda não aberta** |
+| PR atual | **#449 aberta** — “Central: corrigir renomeação antes de abrir o PDF” |
 | Último commit relevante | `c72a957f` — testes do rename pré-abertura e chip; commits anteriores `8ee00969` / `166e978e` |
 | Checks e testes | contratos atualizados; CI ainda precisa rodar na PR |
 | Decisões tomadas | acesso integral da #448 permanece; rename pré-abertura valida o item da lista; “Somente leitura” só aparece se `writeEnabled=false` |
 | Justificativas | separa corretamente “pode escrever este item?” de “há PDF aberto sincronizável?” e elimina mensagem falsa de falta de permissão |
 | Alternativas descartadas | abrir o PDF silenciosamente só para satisfazer `canSyncDocuments`; remover validação de gate; liberar rename sem versão/base |
 | Ações externas concluídas | #448 mesclada; 24/24 workflows GitHub pós-merge verdes, mas Workers Builds externo final vermelho — deploy backend ainda não comprovado |
-| Pendências e bloqueios | abrir PR → CI → merge → exigir Workers Builds success e publicação estática success → homologação real |
+| Pendências e bloqueios | CI da PR #449 → merge → exigir Workers Builds success e publicação estática success → homologação real |
 | Riscos conhecidos | se o Worker seguro continuar falhando, a política integral backend da #448 pode ainda não estar ativa; não contornar o gate de deploy |
 | Métricas / observabilidade | nenhuma telemetria nova; nomes/ref/conteúdo permanecem fora do PostHog |
-| Próxima ação exata | **abrir PR desta correção; com CI verde, mesclar e verificar o check externo Workers Builds + Pages; somente depois pedir Ctrl+F5 e reteste do rename pré-abertura** |
+| Próxima ação exata | **exigir CI verde na PR #449; depois mesclar e verificar o check externo Workers Builds + Pages; somente então pedir Ctrl+F5 e reteste do rename pré-abertura** |
 | Arquivos e fontes principais | Guia Mestre V1.1; merge #448 `9bd56707`; `js/documents.js`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
 
 ## Histórico recuperável
