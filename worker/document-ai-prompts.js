@@ -82,7 +82,7 @@ REGRAS OBRIGATÓRIAS:
 11. Responda somente JSON compatível com o schema solicitado e não adicione campos.
 
 REGRAS DO COMPROVANTE/CONTROLE/DADOS:
-- Extraia somente desta página: nome do paciente, CPF, CNS, data de nascimento, nome da mãe, telefone/fone, endereço e agente.
+- Extraia somente desta página: nome do paciente, CNS, CPF, data de nascimento, telefone/fone, nome da mãe, endereço e agente.
 - Não use laudo, receituário, encaminhamento, solicitação, guia ou pedido médico para preencher esses campos.
 - Exceção de normalização autorizada: o CNS será normalizado pelo sistema para sequência numérica contínua sem espaços.
 - Exceção de normalização autorizada: a data de nascimento será normalizada pelo sistema para dd/mm/aaaa quando a leitura for inequívoca.
@@ -91,12 +91,13 @@ REGRAS DA PÁGINA MÉDICA AUTORIZADA:
 - O campo titulo deve usar primeiro o valor de um campo explicitamente rotulado "Título", se houver; caso contrário, use o título/cabeçalho visível que autorizou a página.
 - O motivo_encaminhamento deve transcrever EXATA E INTEGRALMENTE o campo "Motivo do encaminhamento", "Justificativa do procedimento" ou "Informações para solicitação do atendimento", quando houver.
 - Não resuma, reorganize, corrija ou interprete o motivo.
-- medico, crm_rms, procedimento_solicitado, codigo_procedimento, cid e descricao_cid devem vir somente desta mesma página.
+- medico, crm_rms, procedimento_solicitado, codigo_procedimento, especialidade, cid e descricao_cid devem vir somente desta mesma página.
+- especialidade deve ser transcrita somente quando houver rótulo explícito como "Especialidade", "Especialidade solicitada" ou "Especialidade médica"; nunca deduza a especialidade pelo procedimento, CID, título ou motivo.
 - Se receituário ou laudo não trouxer motivo, use nao_consta.
 - Se CRM/RMS, procedimento, código, CID ou descrição não estiverem visíveis, use nao_consta.
 - Se o campo estiver presente mas não puder ser lido com segurança, use ilegivel.
 `,
-  'v2'
+  'v3'
 );
 
 export const PROMPT_ANALISE_REGULACAO_V1 = routine(
@@ -166,12 +167,13 @@ COMPROVANTE / CONTROLE / DADOS:
 - não normalize CNS ou data por conta própria; o backend aplica apenas as normalizações explicitamente autorizadas.
 
 PÁGINA MÉDICA AUTORIZADA:
-- retorne SOMENTE: titulo, motivo_encaminhamento, medico, crm_rms, procedimento_solicitado, codigo_procedimento, cid, descricao_cid;
+- retorne SOMENTE: medico, crm_rms, cid, codigo_procedimento, especialidade, motivo_encaminhamento, titulo, procedimento_solicitado, descricao_cid;
 - titulo: use primeiro um campo explicitamente rotulado "Título", se houver; senão use o título/cabeçalho visível que autorizou a página;
 - motivo_encaminhamento: transcreva EXATA E INTEGRALMENTE "Motivo do encaminhamento", "Justificativa do procedimento" ou "Informações para solicitação do atendimento", quando houver;
+- especialidade: transcreva somente valor explicitamente rotulado "Especialidade", "Especialidade solicitada" ou "Especialidade médica"; não deduza a especialidade por procedimento, CID, título, motivo ou conhecimento externo;
 - não resuma, reorganize, corrija ou interprete o motivo;
 - se receituário ou laudo não trouxer motivo, use nao_consta;
-- se CRM/RMS, procedimento, código, CID ou descrição não existirem na página, use nao_consta;
+- se CRM/RMS, procedimento, código, especialidade, CID ou descrição não existirem na página, use nao_consta;
 - se o rótulo existir mas o valor estiver borrado/rasurado/coberto/cortado ou incerto, use ilegivel;
 - a existência de uma descrição de CID NÃO autoriza reconstruir um CID ilegível;
 - um valor legível de descricao_cid deve ser transcrito literalmente mesmo quando o CID estiver ilegível.
@@ -180,7 +182,7 @@ Responda SOMENTE JSON:
 {"pageType":"...","fields":{...}}
 Não inclua pageNumber. A proveniência é definida pelo backend.
 `,
-  'v4'
+  'v5'
 );
 
 
@@ -196,8 +198,8 @@ const PROMPT_ANALISE_REGULACAO_COMPACTA_SYSTEM = PROMPT_ANALISE_REGULACAO_V1.sys
     '- Quando s=e, o segundo item deve conter o valor literal. Quando s=n ou s=i, o segundo item deve ser "".',
     '- Se t=c, v deve ter EXATAMENTE as chaves: np,cp,cn,dn,nm,te,en,ag.',
     '- Mapeamento t=c: np=nome_paciente, cp=cpf, cn=cns, dn=data_nascimento, nm=nome_mae, te=telefone, en=endereco, ag=agente.',
-    '- Se t=m, v deve ter EXATAMENTE as chaves: ti,mo,me,cr,ps,pc,ci,dc.',
-    '- Mapeamento t=m: ti=titulo, mo=motivo_encaminhamento, me=medico, cr=crm_rms, ps=procedimento_solicitado, pc=codigo_procedimento, ci=cid, dc=descricao_cid.',
+    '- Se t=m, v deve ter EXATAMENTE as chaves: ti,mo,me,cr,ps,pc,es,ci,dc.',
+    '- Mapeamento t=m: ti=titulo, mo=motivo_encaminhamento, me=medico, cr=crm_rms, ps=procedimento_solicitado, pc=codigo_procedimento, es=especialidade, ci=cid, dc=descricao_cid.',
     '- Para ti, se existir campo explicitamente rotulado "Título", use exatamente o valor desse campo; use o cabeçalho da página somente se não existir rótulo "Título".',
     '- Não use posição do vetor para deduzir o significado de um campo; cada chave curta acima possui significado fixo.',
     '- Não use as chaves pageType, fields, state, value ou pageNumber na resposta compacta.',
@@ -209,7 +211,7 @@ export const PROMPT_ANALISE_REGULACAO_COMPACTA_V1 = routine(
   'PROMPT_ANALISE_REGULACAO_COMPACTA_V1',
   'Classificar e extrair uma única página em uma inferência com transporte interno compacto semântico e contrato público preservado.',
   PROMPT_ANALISE_REGULACAO_COMPACTA_SYSTEM,
-  'v4'
+  'v5'
 );
 
 export const PROMPT_DOCUMENT_CHAT_V1 = routine(
