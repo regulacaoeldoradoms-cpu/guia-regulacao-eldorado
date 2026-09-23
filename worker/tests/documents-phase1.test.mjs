@@ -1103,8 +1103,12 @@ sqliteTest('IA documental 5C exige extract e produção bloqueia classificação
   assert.equal(enabledPayload.ai.processingEnabled, false);
   assert.equal(enabledPayload.ai.pageIsolation, true);
   assert.equal(enabledPayload.ai.provenanceRequired, true);
-  assert.equal(enabledPayload.ai.features.classifyPage, true);
-  assert.equal(enabledPayload.ai.features.extractPage, true);
+  assert.equal(enabledPayload.ai.features.classifyPage, false);
+  assert.equal(enabledPayload.ai.features.extractPage, false);
+  assert.equal(enabledPayload.ai.features.extractDocument, false);
+  assert.equal(enabledPayload.ai.features.documentChat, false);
+  assert.equal(enabledPayload.ai.features.geminiComparison, false);
+  assert.equal(enabledPayload.ai.provider, 'google-gemini-api');
 
   const blockedProcessing = await handleDocumentsRoute(
     documentRequest('/api/documents/ai/page/classify', user.token, { method: 'POST', body: { ignored: true } }),
@@ -1123,6 +1127,15 @@ sqliteTest('IA documental 5C exige extract e produção bloqueia classificação
   );
   assert.equal(blockedExtraction.status, 503);
   assert.equal((await blockedExtraction.json()).code, 'DOCUMENT_AI_PROCESSING_DISABLED');
+
+  const blockedGemini = await handleDocumentsRoute(
+    documentRequest('/api/documents/ai/page/gemini', user.token, { method: 'POST', body: { ignored: true } }),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(blockedGemini.status, 503);
+  assert.equal((await blockedGemini.json()).code, 'DOCUMENT_AI_PROCESSING_DISABLED');
 
   const blockedChat = await handleDocumentsRoute(
     documentRequest('/api/documents/ai/chat', user.token, {
