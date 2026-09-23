@@ -96,8 +96,8 @@ test('Gemini é provider comparativo separado e preserva proveniência da págin
   assert.equal(request.options.method, 'POST');
 
   const body = JSON.parse(request.options.body);
-  assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, 'minimal');
-  assert.equal(body.generationConfig.responseFormat.text.mimeType, 'application/json');
+  assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, 'MINIMAL');
+  assert.equal(body.generationConfig.responseFormat.text.mimeType, 'APPLICATION_JSON');
   assert.ok(body.generationConfig.responseFormat.text.schema);
   assert.equal(body.generationConfig.temperature, undefined);
   assert.equal(body.generationConfig.topP, undefined);
@@ -145,6 +145,22 @@ test('Gemini falha fechado sem secret ou com modelo não aprovado', async () => 
     }),
     /comparação com Gemini não está habilitada|modelo Gemini/i
   );
+});
+
+test('Gemini usa enums REST válidos no GenerateContent atual', async () => {
+  let request = null;
+  await analyzeDocumentAiPageWithGemini(env(), {
+    pageNumber: 1,
+    mimeType: 'image/png',
+    bytes: new Uint8Array([1, 2, 3])
+  }, {
+    fetcher: async (_url, options) => {
+      request = JSON.parse(options.body);
+      return geminiResponse({ pageType: 'outro', fields: {} });
+    }
+  });
+  assert.equal(request.generationConfig.thinkingConfig.thinkingLevel, 'MINIMAL');
+  assert.equal(request.generationConfig.responseFormat.text.mimeType, 'APPLICATION_JSON');
 });
 
 test('Gemini informa indisponibilidade de modelo em vez de erro genérico', async () => {
