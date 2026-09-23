@@ -109,6 +109,38 @@ test('Central usa somente Worker para Drive e delega persistência documental ao
   assert.match(client, /cache:\s*'no-store'/);
 });
 
+test('entrada da Central prioriza documentos e mantém somente ações administrativas essenciais', () => {
+  const html = read('documentos/index.html');
+  const css = read('css/documents.css');
+  const client = read('js/documents.js');
+
+  assert.doesNotMatch(html, /portal-hero|documents-hero/);
+  assert.doesNotMatch(html, /Google Drive institucional dentro do Portal/);
+  assert.doesNotMatch(html, /Configuração institucional/);
+  assert.doesNotMatch(html, /Disponível somente para quem administra a Central/);
+  assert.doesNotMatch(html, /Navegue por pastas, pesquise no acervo/);
+
+  assert.match(html, /id="documentsSetup"[^>]*hidden/);
+  assert.match(html, /id="connectDriveButton"[^>]*>Conectar Google Drive<\/button>/);
+  assert.match(html, /id="manageDocumentsAccessLink"[^>]*>Gerenciar cargos e acessos<\/a>/);
+  assert.match(html, /id="disconnectDriveButton"[^>]*>Desconectar Drive<\/button>/);
+  assert.match(html, /id="driveConnectionBadge"[^>]*class="documents-drive-status sr-only"/);
+  assert.match(html, /id="driveSetupMessage"[^>]*class="sr-only"/);
+
+  const workspaceIndex = html.indexOf('id="documentsWorkspace"');
+  const searchIndex = html.indexOf('id="documentsSearch"');
+  assert.ok(workspaceIndex >= 0 && searchIndex > workspaceIndex, 'A lista/pesquisa deve ser a superfície operacional principal.');
+
+  assert.match(css, /\.documents-main\s*\{[\s\S]*?margin-top:\s*12px;/);
+  assert.match(css, /\.documents-setup\s*\{[\s\S]*?margin:\s*0 0 8px;/);
+  assert.match(css, /\.documents-workspace\s*\{[\s\S]*?margin-top:\s*0;/);
+  assert.doesNotMatch(css, /\.documents-hero\s*\{/);
+
+  assert.match(client, /documents-drive-status sr-only connected/);
+  assert.match(client, /documents-drive-status sr-only pending/);
+  assert.match(client, /els\.setupMessage\.className = 'sr-only'/);
+});
+
 test('gestão de acesso sai da Central e usa função adicional acumulável em Usuários e acessos', () => {
   const documentsHtml = read('documentos/index.html');
   const documentsClient = read('js/documents.js');
@@ -169,7 +201,7 @@ test('Fase 7E pré-carrega Central após login somente para perfil autorizado e 
   const client = read('js/documents.js');
 
   assert.match(html, /portal-performance\.js\?v=20260922-5/);
-  assert.match(html, /documents\.js\?v=20260923-3/);
+  assert.match(html, /documents\.js\?v=20260923-4/);
 
   assert.match(performanceClient, /function documentsAccessAllowed\(/);
   assert.match(performanceClient, /PORTAL_WARM_DOCUMENTS/);
@@ -226,7 +258,7 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
 
   assert.match(html, /portal-performance\.js\?v=20260922-5/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-3/);
+  assert.match(html, /documents\.js\?v=20260923-4/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   for (const source of [observability, server]) {
@@ -266,7 +298,7 @@ test('Fase 7E acelera navegação do Drive sem persistir nomes e mede somente es
   const server = read('worker/observability.js');
 
   assert.match(html, /portal-performance\.js\?v=20260922-5/);
-  assert.match(html, /documents\.js\?v=20260923-3/);
+  assert.match(html, /documents\.js\?v=20260923-4/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   assert.match(client, /folderSnapshot:\s*null/);
@@ -363,7 +395,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260923-3/);
+  assert.match(html, /documents\.js\?v=20260923-4/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -402,7 +434,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260922-3/);
+  assert.match(html, /documents\.css\?v=20260923-1/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -422,8 +454,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-3/);
-  assert.match(html, /documents\.css\?v=20260922-3/);
+  assert.match(html, /documents\.js\?v=20260923-4/);
+  assert.match(html, /documents\.css\?v=20260923-1/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -681,8 +713,8 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-3/);
-  assert.match(html, /documents\.css\?v=20260922-3/);
+  assert.match(html, /documents\.js\?v=20260923-4/);
+  assert.match(html, /documents\.css\?v=20260923-1/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -824,7 +856,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260923-3/);
+  assert.match(html, /documents\.js\?v=20260923-4/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -1190,7 +1222,7 @@ test('ferramentas laterais respeitam hidden mesmo com display autoral', () => {
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(css, /\.documents-rail-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-editor-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(html, /documents\.css\?v=20260922-3/);
+  assert.match(html, /documents\.css\?v=20260923-1/);
 });
 
 test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro plano', () => {
@@ -1225,8 +1257,8 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
-  assert.match(html, /documents\.css\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-3/);
+  assert.match(html, /documents\.css\?v=20260923-1/);
+  assert.match(html, /documents\.js\?v=20260923-4/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
@@ -1484,8 +1516,8 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentsNotepadHead"/);
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
-  assert.match(html, /documents\.css\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-3/);
+  assert.match(html, /documents\.css\?v=20260923-1/);
+  assert.match(html, /documents\.js\?v=20260923-4/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-notepad-head[\s\S]*cursor:\s*grab/);
