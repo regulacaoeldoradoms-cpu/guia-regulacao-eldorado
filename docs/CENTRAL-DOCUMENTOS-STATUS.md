@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **Mudança transversal autorizada — infraestrutura global claro/escuro; controle em Configurações** |
-| Última ação concluída | arquitetura e implementação global preparadas na branch `feat/portal-light-dark-theme-20260923`, incluindo persistência por conta, CSS escuro e cobertura das rotas ativas |
-| Branch atual | `feat/portal-light-dark-theme-20260923` |
-| PR atual | **nenhum ainda**; próxima ação é abrir PR |
-| Último commit relevante | branch baseada na `main` `415cf8dc70935f276cef3eac6a35d0c6a9e2b074`; commits da mudança ainda não mesclados |
-| Checks e testes | testes e workflows foram atualizados; CI completo ainda não executado na branch |
-| Decisões tomadas | claro permanece default; tema é global e separado das microinterações; preferência sincroniza por conta; PDF/impressão permanecem claros |
-| Justificativas | uma camada global evita tema divergente por módulo e permite Telemedicina escura sem reativar animações/sons |
-| Alternativas descartadas | duplicar CSS dark por módulo; depender de `prefers-color-scheme`; atrelar tema apenas a `PortalInteractions`; recolorir PDFs/impressão |
-| Ações externas concluídas | nenhuma; migração D1 é compatível via `ensureColumn` existente |
-| Pendências e bloqueios | abrir PR, executar CI, corrigir regressões se houver e homologar visualmente os módulos em produção |
-| Riscos conhecidos | quantidade elevada de CSS legado hardcoded exige homologação visual ampla; modo claro deve permanecer sem alteração; áreas semânticas precisam preservar contraste |
-| Métricas / observabilidade | nenhuma telemetria nova e nenhum dado sensível; preferência de tema não é enviada ao PostHog |
-| Próxima ação exata | **abrir PR → CI completo → corrigir qualquer regressão → merge se verde → homologação visual claro/escuro em desktop/mobile** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `docs/PORTAL-APARENCIA-V1.md`; `js/portal-theme.js`; `js/portal-interactions.js`; `css/portal-interactions.css`; `configuracoes/index.html`; `worker/auth-management-v2.js`; `worker/tests/portal-interactions.test.mjs` |
+| Subfase / objetivo atual | **Mudança transversal claro/escuro integrada; falta homologação visual humana dos módulos** |
+| Última ação concluída | PR **#444** mesclada à `main`; infraestrutura global de aparência e controle em Configurações publicados |
+| Branch atual | `docs/portal-theme-published-20260923` somente para reconciliar status pós-merge |
+| PR atual | funcional **#444 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`5ff0a028a673a886109b96f1d6fae80c41484a8f`** |
+| Checks e testes | PR final **53/53 success**; pós-merge **52/52 success**, incluindo abertura pós-login e Pages build/deployment |
+| Decisões tomadas | claro é padrão; escuro é camada global; preferência sincroniza por conta; tema é independente das microinterações; PDF/impressão continuam claros |
+| Justificativas | uma camada global evita divergência entre módulos e preserva Telemedicina sem sons/animações globais |
+| Alternativas descartadas | CSS dark duplicado por módulo; depender apenas de `prefers-color-scheme`; recolorir PDF/impressão; permitir script novo fora da allowlist pós-login |
+| Ações externas concluídas | nenhuma configuração manual necessária; frontend publicado pelo Pages; migração de coluna é compatível via `ensureColumn` |
+| Pendências e bloqueios | homologação visual humana claro/escuro em desktop/mobile; refinamentos futuros devem ser por evidência visual específica |
+| Riscos conhecidos | CSS legado possui cores hardcoded; a camada global cobre as superfícies principais, mas diferenças pontuais podem aparecer na homologação real |
+| Métricas / observabilidade | nenhuma telemetria nova; tema não é enviado ao PostHog e não contém dados sensíveis |
+| Próxima ação exata | **Configurações → Aparência → Modo escuro → navegar Home/Ferramentas/Central/Telemedicina/Agenda/Guia/Recepção → retornar ao claro e relatar qualquer contraste incorreto** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #444; merge `5ff0a028`; `docs/PORTAL-APARENCIA-V1.md`; `js/portal-theme.js`; `js/portal-interactions.js`; `css/portal-interactions.css`; `configuracoes/index.html`; `worker/auth-management-v2.js` |
 
 ## Histórico recuperável
 
@@ -5758,3 +5758,34 @@ Correção no head `5240c26f01279baad88332206947b391d3680008`:
 Impacto de segurança: nenhum afrouxamento da política. A Home continua aceitando somente scripts locais explicitamente allowlisted; apenas o novo bootstrap oficial de aparência foi adicionado.
 
 **Próxima ação exata:** aguardar a matriz CI do novo head, confirmar o navegador pós-login verde e integrar a PR #444 somente com a matriz completa aprovada.
+
+
+## Mudança transversal — modo claro/escuro global integrado à main — 23/09/2026
+
+A PR **#444 — Portal: preparar modo claro e escuro global** foi integrada à `main` no merge **`5ff0a028a673a886109b96f1d6fae80c41484a8f`**.
+
+Resultado versionado:
+- novo bootstrap `js/portal-theme.js`, aplicado antes da pintura nas rotas visuais ativas;
+- novo card **Aparência** em **Configurações**, com **Modo claro** e **Modo escuro**;
+- modo claro continua sendo o padrão e preserva a aparência anterior;
+- escolha é aplicada imediatamente, mantida entre módulos e abas e sincronizada por conta quando o backend está disponível;
+- backend persiste `interfaceTheme` como `light|dark` em `auth_users.interface_theme`;
+- tema foi desacoplado das microinterações, permitindo Telemedicina em modo escuro sem reativar sons/animações globais;
+- camada escura central cobre Home, Ferramentas, Perfil, Amigos, Notificações, Login/Cadastro, Guia Médico/Protocolos, Recepção, Telemedicina, Agenda/ponte, Central/Titon, Cidadão, Conselho, Segurança, Configurações, Conquistas e Administração;
+- PDFs renderizados e impressão permanecem claros;
+- imagens/logos não são recoloridos artificialmente;
+- nenhuma propriedade de tema é enviada ao PostHog.
+
+Descoberta/correção durante a CI:
+- a primeira matriz teve **52/53 workflows verdes**;
+- o único vermelho foi a abertura pós-login porque a Home preparada rejeitava o novo `portal-theme.js` por ele ainda não estar na allowlist de `login-home-transition.js`;
+- a falha foi reproduzida em rerun e diagnosticada via artefato Playwright;
+- o bootstrap foi adicionado explicitamente a `SCRIPT_GLOBALS`, mantendo a política fail-closed de scripts autorizados;
+- o teste de contrato e o gatilho do workflow passaram a cobrir `portal-theme.js`.
+
+Validação final:
+- head funcional `b1d18fddb2bf92959c626524ac1bd2461d6c0060`: **53/53 workflows GitHub Actions success**;
+- pós-merge `5ff0a028`: **52/52 runs success**, incluindo abertura pós-login e **pages build and deployment**;
+- documento de arquitetura: `docs/PORTAL-APARENCIA-V1.md`.
+
+**Próxima ação exata:** homologar visualmente em produção: Configurações → Aparência → Modo escuro; navegar pelos módulos principais em desktop/mobile e depois retornar ao Modo claro, registrando somente diferenças visuais reais que precisem de refinamento.
