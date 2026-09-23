@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — implementar Pesquisa avançada do Drive com filtros suportados pela API** |
-| Última ação concluída | modal, estado do cliente e query builder seguro foram implementados na branch; filtros avançados podem ser combinados com nome+conteúdo e Só título |
-| Branch atual | `feat/titon-advanced-drive-search-20260923` |
-| PR atual | ainda não aberta; abrir após revisão do diff |
-| Último commit relevante | base `c41faf67d1f4b8efa79ddbef25f5d69f64bd7c4b`; HTML/CSS/cliente/Worker/router/testes/docs alterados nesta branch |
-| Checks e testes | CI ainda pendente; testes adicionados para tipo, proprietário, fullText, nome, local/pasta opaca, estrela, lixeira, datas, compartilhamento e e-mail inválido |
-| Decisões tomadas | reproduzir somente filtros que `files.list q` suporta fielmente; não simular criptografia ou aprovações; localização oferece qualquer lugar, pasta atual e compartilhados comigo |
-| Justificativas | Drive API suporta name/fullText/mimeType/modifiedTime/trashed/starred/parents/owners/readers/writers/sharedWithMe; aprovações são recurso separado por arquivo e não servem como filtro direto de files.list |
-| Alternativas descartadas | varrer candidatos com approvals.list; filtro falso de criptografia; enviar query `q` arbitrária do browser; construir picker recursivo pesado nesta unidade |
-| Ações externas concluídas | nenhuma API ou scope adicional necessário para os filtros implementados |
-| Pendências e bloqueios | abrir PR, validar CI, corrigir regressões, mesclar/publicar e homologar combinações de filtros em produção |
-| Riscos conhecidos | Pasta atual é escopo direto da pasta, não busca recursiva de toda a subárvore; tipos não suportados pelo Titon podem aparecer como itens não abríveis |
-| Métricas / observabilidade | termos, e-mails e filtros não entram no PostHog; permanecem apenas duração e bucket de resultados |
-| Próxima ação exata | **abrir PR → CI verde → merge/publicação → testar modal com Tipo=PDF, Pasta atual, período e Compartilhado com; validar também Redefinir e paginação** |
-| Arquivos e fontes principais | Guia Mestre V1.1; docs Drive query terms/search; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/document-drive.js`; `worker/documents-router.js`; testes Phase1/UI |
+| Subfase / objetivo atual | **7E — Pesquisa avançada integrada à Central; falta homologação funcional em produção** |
+| Última ação concluída | PR **#438** mesclada à `main`; pesquisa avançada está versionada e combinável com busca nome+conteúdo e “Só título” |
+| Branch atual | `docs/titon-advanced-search-published-20260923` somente para reconciliar status |
+| PR atual | funcional **#438 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`8bfc671419f709831e1c550b0ce77a7118804475`** |
+| Checks e testes | head final da #438: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
+| Decisões tomadas | filtros suportados: tipo, proprietário, palavras, nome, local/pasta atual, compartilhados comigo, estrela, lixeira, data e compartilhado com; criptografia/aprovações não são simuladas |
+| Justificativas | filtros escolhidos correspondem a termos oficiais de `files.list q`; aprovações são recurso por arquivo e criptografia não é termo de busca direto |
+| Alternativas descartadas | fan-out de `approvals.list`; query arbitrária do navegador; picker recursivo pesado; filtros falsos/incompletos |
+| Ações externas concluídas | nenhuma API ou scope adicional necessário |
+| Pendências e bloqueios | confirmar deploy produtivo e testar combinações reais no modal após Ctrl+F5 |
+| Riscos conhecidos | “Pasta atual” pesquisa filhos diretos daquela pasta, não uma subárvore recursiva; tipos fora do escopo do Titon podem aparecer sem abertura no editor |
+| Métricas / observabilidade | termos, e-mails e valores dos filtros permanecem fora do PostHog; somente duração/buckets técnicos |
+| Próxima ação exata | **Ctrl+F5 → abrir Pesquisa avançada → testar Tipo=PDF + período + Pasta atual; testar Redefinir, Compartilhados comigo e paginação** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #438; merge `8bfc6714`; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/document-drive.js`; `worker/documents-router.js` |
 
 ## Histórico recuperável
 
@@ -5566,3 +5566,36 @@ Não implementados deliberadamente nesta unidade:
 Cache-busters planejados: `documents.css?v=20260923-4` e `documents.js?v=20260923-8`.
 
 **Próxima ação exata:** abrir PR e executar a matriz CI completa antes de integrar.
+
+
+## Fase 7E — Pesquisa avançada integrada à main — 23/09/2026
+
+A PR **#438 — Fase 7E: adicionar Pesquisa avançada à Central** foi integrada à `main` no merge **`8bfc671419f709831e1c550b0ce77a7118804475`**.
+
+Resultado versionado:
+- botão **Pesquisa avançada** ao lado de **Só título**;
+- modal responsivo e acessível;
+- filtros de Tipo, Proprietário, Com as palavras, Nome do item, Local, Com estrela, Na lixeira, Data da modificação e Compartilhado com;
+- Local oferece Em qualquer lugar, Pasta atual e Compartilhados comigo;
+- períodos: hoje, 7/30/90 dias, este ano e personalizado;
+- busca pode rodar sem texto quando existir filtro real;
+- modo normal, Só título e filtros avançados podem ser combinados;
+- refresh/paginação preservam filtros da pesquisa ativa;
+- sair da pesquisa para uma pasta limpa filtros avançados para evitar restrições invisíveis;
+- query Google é montada exclusivamente no Worker a partir de campos estruturados;
+- refs de pasta continuam opacas no navegador;
+- cache-busters: `documents.css?v=20260923-4` e `documents.js?v=20260923-8`.
+
+Filtros do Drive web não copiados de forma enganosa:
+- Criptografado: não há termo equivalente em `files.list q`;
+- Aprovações/assinaturas: recurso `approvals` é consultado por arquivo e não funciona como termo direto de `files.list`;
+- Mais locais: nesta unidade foi substituído por Pasta atual, sem picker recursivo.
+
+Validação do head funcional `d21f307a6b50b5516dd1e6f3a4253f5b34b08f4c`:
+- **23/23 workflows GitHub Actions: success**;
+- Central Fases 1–6: success;
+- navegador/PDF.js real: success;
+- bundle/site/governança: success;
+- testes de backend cobrem filtro de pasta opaca, tipo PDF, proprietário, fullText, nome, estrela, lixeira, período, compartilhamento e e-mail inválido.
+
+**Próxima ação exata:** homologar em produção após Ctrl+F5 e registrar qualquer diferença de comportamento em relação ao Drive web.
