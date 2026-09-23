@@ -550,6 +550,7 @@ const COMPACT_FIELD_KEYS = Object.freeze({
     cr: 'crm_rms',
     ps: 'procedimento_solicitado',
     pc: 'codigo_procedimento',
+    es: 'especialidade',
     ci: 'cid',
     dc: 'descricao_cid'
   })
@@ -711,8 +712,9 @@ function fastIntegratedAnalysisQuestion() {
     'Se t=o, responda exatamente {"t":"o","v":{}}.',
     'Cada campo em v deve ser [s,v], com s=e encontrado, s=n nao_consta, s=i ilegivel; n/i exigem valor "".',
     'Se t=c, use EXATAMENTE np,cp,cn,dn,nm,te,en,ag para nome_paciente, cpf, cns, data_nascimento, nome_mae, telefone, endereco, agente.',
-    'Se t=m, use EXATAMENTE ti,mo,me,cr,ps,pc,ci,dc para titulo, motivo_encaminhamento, medico, crm_rms, procedimento_solicitado, codigo_procedimento, cid, descricao_cid.',
+    'Se t=m, use EXATAMENTE ti,mo,me,cr,ps,pc,es,ci,dc para titulo, motivo_encaminhamento, medico, crm_rms, procedimento_solicitado, codigo_procedimento, especialidade, cid, descricao_cid.',
     'Para ti, prefira sempre o valor do campo explicitamente rotulado Título; só use cabeçalho quando esse rótulo não existir.',
+    'Para es, use somente rótulo explícito de Especialidade/Especialidade solicitada/Especialidade médica; nunca infira pela clínica, procedimento ou CID.',
     'Use t=c somente se o TÍTULO PRINCIPAL da folha for COMPROVANTE DE ATENDIMENTO, CONTROLE DE ATENDIMENTO ou DADOS; DADOS em seção interna não autoriza comprovante.',
     'Use t=m se o título principal for GUIA DE ENCAMINHAMENTO, ENCAMINHAMENTO, ENCAMINHAMENTOS, RECEITA SIMPLES, LAUDO MÉDICO, LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE, LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL, LAUDO PARA SOLICITAÇÃO / AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL, RECEITUÁRIO MÉDICO, SOLICITAÇÃO DE EXAMES, SOLICITAÇÃO DE AGENDAMENTO ou SOLICITAÇÃO DE AGENDAMENTO RETORNO.',
     'Se o título principal for médico, mantenha t=m mesmo que a folha também contenha identificação ou dados cadastrais do paciente.',
