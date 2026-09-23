@@ -3199,42 +3199,55 @@ Esse Workers Builds bem-sucedido **substitui como evidência operacional** a ten
 
 **Pendência:** somente homologação humana em produção. O teste deve confirmar que, após Ctrl+F5, o chip mostra **Acesso completo**, o segundo clique simples no nome permite editar antes de abrir o PDF, Enter/clique fora sincronizam e o duplo clique rápido continua abrindo o Titon.
 
-## Fase 7G.2 — ações rápidas de Salvar/Imprimir na lista — EM PR — 23/09/2026
+## Fase 7G.2 — ações rápidas de Salvar/Imprimir na lista — PUBLICADA / AGUARDANDO HOMOLOGAÇÃO HUMANA — 23/09/2026
 
-Solicitação operacional: salvar ou imprimir qualquer PDF diretamente da lista, sem abrir o Titon.
+A PR **#455** foi mesclada em `main` pelo commit **`24c8bc03`**.
 
-**UX implementada:** em desktop, cada PDF recebe dois botões quadrados no canto direito que aparecem somente no **hover** da linha; foco por teclado também os revela. As ações são **Salvar PDF** e **Imprimir**. Pastas/não-PDF não recebem esses botões e em mobile/touch eles ficam ocultos para preservar a lista compacta.
+**Comportamento publicado:**
+- em desktop, passar o mouse sobre uma linha de PDF revela dois botões quadrados no canto direito: **Salvar PDF** e **Imprimir**;
+- foco por teclado também revela as ações, preservando acessibilidade;
+- **Salvar** obtém o PDF pelo mesmo fluxo autorizado/cacheado da Central e inicia download local com o nome do arquivo;
+- **Imprimir** prepara o PDF em iframe interno e abre a caixa nativa de impressão, sem nova aba;
+- nenhuma das duas ações abre o Titon ou altera `state.pdfItem`;
+- pastas e arquivos não-PDF não recebem as ações;
+- em mobile/touch os botões de hover permanecem ocultos para preservar o layout existente;
+- clique simples para selecionar, segundo clique simples no nome para renomear e duplo clique rápido para abrir o Titon permanecem intactos.
 
-**Implementação:** download reutiliza `editablePdfBlob(item)` + `localViewedPdfName(item)`; impressão reutiliza `ensurePrintFrame()` + `renderPdfBlobForPrint()`, sem nova aba. Nenhuma ação chama `openPdf()`, cria sessão do Titon, escreve no Drive ou adiciona endpoint/capability/telemetria.
+**Validação:** head final reconciliado da PR #455 (`16ffd34f`) concluiu **23/23 workflows GitHub Actions com sucesso**, incluindo `Validar Central de Documentos — navegador` em Chromium/PDF.js real. A falha inicial no harness `documents-close-guard` foi corrigida restringindo o handler das ações rápidas aos elementos que realmente possuem `dataset.listSaveIndex` / `dataset.listPrintIndex`.
 
-A primeira CI detectou interferência apenas com o harness legado `documents-close-guard`: o stub de `closest()` devolvia a linha para qualquer seletor. O handler foi endurecido para aceitar somente candidatos com `dataset.listSaveIndex` ou `dataset.listPrintIndex`. Depois disso, o head funcional obteve **23/23 workflows GitHub Actions success**, incluindo navegador real.
+**Publicação pós-merge `24c8bc03`:**
+- GitHub Actions: **23/23 success**;
+- GitHub Pages `deploy`: **success**;
+- Cloudflare Pages: **success**;
+- Workers Builds: **success**;
+- Worker Version observada no check de publicação: `781eab47-6ed5-4215-803c-a49b1369897c`.
 
-**Check externo:** Cloudflare Pages preview publicou com sucesso. O Workers Builds da branch terminou em failure, mas esta unidade não modifica qualquer arquivo do runtime/configuração do Worker; portanto não foi tratado como regressão funcional desta mudança exclusivamente estática. Não declarar nova Worker Version por esta unidade.
+A mudança em si continua sendo frontend e não depende de nova lógica de Worker; a evidência do Workers Builds é registrada apenas como confirmação de que a cadeia completa de publicação não ficou quebrada.
 
-**Concorrência reconciliada:** durante a execução, a `main` recebeu a PR #456 e depois a documentação #457 do modo escuro geral. A feature foi preservada sobre o código pós-#456 e este merge de reconciliação usa o status mais recente pós-#457. Backup reversível: `backup/central-list-quick-save-print-pre-darkmode-20260923`.
+**Privacidade/segurança:** nenhum endpoint, capability, escrita no Drive ou evento de observabilidade novo foi criado. Nomes de arquivo, conteúdo do PDF e referências do Drive continuam fora do PostHog.
 
-PR **#455** / branch `feat/central-list-quick-save-print-20260923`. Cache-busters da Central: `documents.css?v=20260923-7` e `documents.js?v=20260923-12`.
+**Pendência:** homologação humana em produção, incluindo modo escuro e nomes longos. O aceite operacional é hover revelar exatamente os dois botões, Salvar iniciar download e Imprimir abrir a caixa de impressão, ambos sem abrir o Titon.
 
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.2 — ações rápidas Salvar/Imprimir no hover da lista; PR #455 reconciliada com main pós-#457** |
-| Última ação concluída | funcionalidade implementada/testada e branch reconciliada com a documentação mais recente do modo escuro geral |
-| Branch atual | `feat/central-list-quick-save-print-20260923` |
-| PR atual | **#455 aberta** — “Central: salvar e imprimir PDF direto da lista” |
-| Último commit funcional relevante | `204ac613`; merge de reconciliação posterior preserva o status da main |
-| Checks e testes | head funcional: **23/23 GitHub Actions success**, inclusive navegador real; Cloudflare Pages preview success; Workers Builds externo de branch failure sem mudança de Worker |
-| Decisões tomadas | hover desktop/foco teclado; dois botões quadrados; Salvar/Imprimir sem abrir Titon; mobile/touch preservado |
-| Justificativas | reduz cliques e reutiliza pipelines já homologados de download e impressão sem ampliar backend |
-| Alternativas descartadas | abrir Titon silenciosamente; impressão em nova aba; botões sempre visíveis |
-| Ações externas concluídas | Cloudflare Pages preview publicado; nenhum deploy de Worker requerido por esta unidade |
-| Pendências e bloqueios | CI do head reconciliado → merge → publicação estática → homologação humana |
-| Riscos conhecidos | validar posição com nomes longos/tema escuro; impressão depende da caixa nativa do navegador |
-| Métricas / observabilidade | nenhuma telemetria nova; nomes/conteúdo continuam fora do PostHog |
-| Próxima ação exata | **confirmar CI do head reconciliado da #455; se verde, mesclar e validar em produção: hover → Salvar/Imprimir sem abrir Titon** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #455; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
+| Subfase / objetivo atual | **7G.2 publicada; aguardando homologação humana das ações rápidas da lista** |
+| Última ação concluída | PR **#455** mesclada em `24c8bc03`; GitHub Actions, Pages e Workers Builds concluíram com sucesso |
+| Branch atual | `docs/central-list-quick-save-print-published-20260923` (somente registro pós-publicação) |
+| PR atual | #455 **mesclada**; PR documental pós-publicação a abrir |
+| Último commit funcional relevante | `24c8bc03edd825d9793ca82879b4232634d09518` |
+| Checks e testes | PR #455 **23/23 success**; pós-merge **23/23 GitHub Actions success**; GitHub Pages, Cloudflare Pages e Workers Builds **success** |
+| Decisões tomadas | hover desktop/foco teclado; Salvar/Imprimir quadrados; nenhuma abertura do Titon; mobile/touch preservado |
+| Justificativas | reduz cliques em operações frequentes reutilizando download/impressão já homologados, sem ampliar backend |
+| Alternativas descartadas | abrir Titon silenciosamente; imprimir em nova aba; botões sempre visíveis |
+| Ações externas concluídas | publicação completa confirmada; Worker check reportou versão `781eab47-6ed5-4215-803c-a49b1369897c` |
+| Pendências e bloqueios | **somente homologação humana em produção da 7G.2**; homologações visuais/operacionais anteriores da Fase 7 permanecem independentes |
+| Riscos conhecidos | confirmar ergonomia com nomes longos e modo escuro; impressão continua sujeita ao diálogo nativo do navegador |
+| Métricas / observabilidade | nenhuma telemetria nova; nomes, referências e conteúdo documental continuam proibidos |
+| Próxima ação exata | **Ctrl+F5 em /documentos/ → passar o mouse sobre um PDF → testar Salvar → testar Imprimir → confirmar que nenhum deles abre Titon e que duplo clique ainda abre normalmente** |
+| Arquivos e fontes principais | Guia Mestre V1.1; merge #455 `24c8bc03`; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
 
 ## Histórico recuperável
 
