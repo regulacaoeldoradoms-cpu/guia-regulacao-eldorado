@@ -119,6 +119,7 @@
     nextPageToken: '',
     searchQuery: '',
     searchMode: false,
+    searchTitleOnly: false,
     loading: false,
     folderSnapshot: null,
     warmedDocumentPayload: null,
@@ -207,6 +208,7 @@
     browser: document.getElementById('documentsBrowser'),
     searchForm: document.getElementById('documentsSearchForm'),
     search: document.getElementById('documentsSearch'),
+    searchTitleOnly: document.getElementById('documentsSearchTitleOnly'),
     refreshFolder: document.getElementById('refreshFolderButton'),
     breadcrumbs: document.getElementById('documentsBreadcrumbs'),
     list: document.getElementById('documentsList'),
@@ -5710,7 +5712,7 @@
     }
   }
 
-  async function search(query, { append = false, pageToken = '' } = {}) {
+  async function search(query, { append = false, pageToken = '', titleOnly = state.searchTitleOnly } = {}) {
     const value = String(query || '').trim();
     if (value.length < 2) {
       if (!value) return loadFolder();
@@ -5725,6 +5727,8 @@
     if (!append) {
       state.searchMode = true;
       state.searchQuery = value;
+      state.searchTitleOnly = titleOnly === true;
+      if (els.searchTitleOnly) els.searchTitleOnly.checked = state.searchTitleOnly;
       state.selectedListIndex = -1;
 
       const snapshot = state.folderSnapshot;
@@ -5747,7 +5751,12 @@
     try {
       const payload = await api('/api/documents/drive/search', {
         method: 'POST',
-        body: JSON.stringify({ query: value, pageToken, pageSize: 20 })
+        body: JSON.stringify({
+          query: value,
+          pageToken,
+          pageSize: 20,
+          titleOnly: state.searchTitleOnly
+        })
       });
       const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
       state.items = append ? sortItems([...state.items, ...incoming]) : incoming;
@@ -6005,11 +6014,20 @@
 
   els.searchForm.addEventListener('submit', (event) => {
     event.preventDefault();
-    search(els.search.value);
+    search(els.search.value, {
+      titleOnly: els.searchTitleOnly?.checked === true
+    });
+  });
+
+  els.searchTitleOnly?.addEventListener('change', () => {
+    state.searchTitleOnly = els.searchTitleOnly.checked === true;
+    if (state.searchMode && state.searchQuery) {
+      search(state.searchQuery, { titleOnly: state.searchTitleOnly });
+    }
   });
 
   els.refreshFolder.addEventListener('click', () => {
-    if (state.searchMode) search(state.searchQuery);
+    if (state.searchMode) search(state.searchQuery, { titleOnly: state.searchTitleOnly });
     else loadFolder();
   });
 
@@ -6128,7 +6146,11 @@
 
   els.loadMore.addEventListener('click', () => {
     if (!state.nextPageToken) return;
-    if (state.searchMode) search(state.searchQuery, { append: true, pageToken: state.nextPageToken });
+    if (state.searchMode) search(state.searchQuery, {
+      append: true,
+      pageToken: state.nextPageToken,
+      titleOnly: state.searchTitleOnly
+    });
     else loadFolder({ append: true, pageToken: state.nextPageToken });
   });
 
