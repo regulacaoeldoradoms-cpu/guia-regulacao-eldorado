@@ -60,7 +60,7 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
   assert.equal(config.phase, DOCUMENT_AI_PHASE);
   assert.equal(config.version, DOCUMENT_AI_VERSION);
   assert.equal(config.phase, '5E');
-  assert.equal(config.version, 'phase5e-v8c2-semantic-json');
+  assert.equal(config.version, 'phase5e-v8c3-specialty-order');
   assert.equal(config.enabled, true);
   assert.equal(config.processingEnabled, false);
   assert.equal(config.pageIsolation, true);
@@ -105,6 +105,13 @@ test('Gemini é o provider canônico e o legado permanece desabilitado', () => {
   assert.equal(config.features.extractDocument, true);
   assert.equal(config.features.documentChat, false);
   assert.equal(config.features.geminiComparison, false);
+});
+
+test('schema médico inclui especialidade na ordem operacional sem remover campos complementares', () => {
+  assert.deepEqual(DOCUMENT_AI_EXTRACTION_FIELDS.pagina_medica_autorizada, [
+    'medico', 'crm_rms', 'cid', 'codigo_procedimento', 'especialidade',
+    'motivo_encaminhamento', 'titulo', 'procedimento_solicitado', 'descricao_cid'
+  ]);
 });
 
 test('classificação exige uma página válida e um tipo fechado', () => {
