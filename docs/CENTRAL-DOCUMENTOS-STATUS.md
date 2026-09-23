@@ -3324,16 +3324,16 @@ Os botões autorais `.documents-art-button` foram explicitamente excluídos para
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
 | Subfase / objetivo atual | **7H publicada tecnicamente; homologação humana da ordem da IA + Especialidade pendente** |
-| Última ação concluída | PR **#463** mesclada em `29741b9914fff08f962630864373900bfd865dd1`; GitHub Pages publicado com sucesso |
-| Branch atual | `docs/titon-ai-field-order-published-20260923` (registro pós-publicação) |
-| PR atual | PR funcional #463 **mesclada**; PR documental deste registro a abrir |
-| Último commit relevante | `29741b9914fff08f962630864373900bfd865dd1` |
-| Checks e testes | PR #463 **24/24 sem falhas**; pós-merge `main` **22/22 workflows de push success**; GitHub Pages run **35895563616 success** |
-| Decisões tomadas | sequência solicitada vira padrão; `especialidade` integra o schema; campos complementares são preservados depois; resultados continuam separados por página |
-| Justificativas | atender o fluxo operacional sem apagar informação já suportada e sem quebrar proveniência por página |
+| Última ação concluída | implementação da PR **#463** mesclada em `29741b9914fff08f962630864373900bfd865dd1`; publicação GitHub Pages validada; registro pós-publicação consolidado pela PR **#464** |
+| Branch atual | **nenhuma** |
+| PR atual | **nenhum** |
+| Último commit relevante | funcional `29741b9914fff08f962630864373900bfd865dd1`; registro pós-publicação `016dfa51e703beab5edbaf91bb375c4966356d63` |
+| Checks e testes | PR #463 **24/24 sem falhas**; pós-merge funcional **22/22 workflows de push success**; GitHub Pages run **35895563616 success**; PR documental #464 **21/21 sem falhas** |
+| Decisões tomadas | sequência solicitada é o padrão; `especialidade` integra o schema e só aceita rótulo explícito; campos complementares permanecem depois; proveniência continua por página |
+| Justificativas | atender o fluxo operacional sem apagar informação já suportada e sem misturar informações de páginas diferentes |
 | Alternativas descartadas | consolidar páginas diferentes para forçar uma lista única; inferir especialidade por CID/procedimento; remover Título/Procedimento solicitado/Descrição do CID |
 | Ações externas concluídas | publicação GitHub Pages do merge funcional confirmada |
-| Pendências e bloqueios | **homologação humana de uma extração real autorizada**; homologação visual separada da 7G.4 também continua pendente |
+| Pendências e bloqueios | **homologação humana de uma extração real autorizada**; a homologação visual separada da 7G.4 também continua pendente |
 | Riscos conhecidos | PDFs sem rótulo explícito de especialidade devem retornar NÃO CONSTA; conferir em documento real sem permitir inferência |
 | Métricas / observabilidade | nenhuma telemetria nova; dados extraídos continuam fora do PostHog |
 | Próxima ação exata | **Ctrl+F5 em /documentos/ → abrir PDF real autorizado → Extrair dados do PDF → conferir ordem/rótulos e Especialidade; validar NÃO CONSTA/ILEGÍVEL** |
