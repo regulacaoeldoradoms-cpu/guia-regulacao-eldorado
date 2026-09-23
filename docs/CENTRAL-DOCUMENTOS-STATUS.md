@@ -3243,6 +3243,8 @@ A correção é local à Central, não altera o tema global nem o modo claro e n
 
 Teste de regressão adicionado em `worker/tests/documents-ui.test.mjs` para garantir que os três backgrounds autorais continuem explícitos no modo escuro.
 
+**Validação da PR #459:** 23/23 workflows GitHub Actions concluíram com sucesso, inclusive Chromium/PDF.js real; Cloudflare Pages preview publicou com sucesso. O check externo Workers Builds falhou na branch, mas esta unidade altera apenas CSS/HTML de cache-buster/testes/status e não modifica runtime/configuração do Worker; por isso a falha não é atribuída à correção visual e não bloqueia o merge desta unidade estática.
+
 Branch: `fix/titon-dark-toolbar-art-buttons-20260923`. Próximo passo: abrir PR, rodar CI integral e mesclar somente se verde.
 
 ## Handoff para o próximo chat
@@ -3253,17 +3255,17 @@ Branch: `fix/titon-dark-toolbar-art-buttons-20260923`. Próximo passo: abrir PR,
 | Subfase / objetivo atual | **7G.3 — corrigir botões autorais do Titon no modo escuro** |
 | Última ação concluída | causa CSS confirmada; override específico implementado para Ajustar largura/Salvar/Imprimir; cache-buster e regressão atualizados |
 | Branch atual | `fix/titon-dark-toolbar-art-buttons-20260923` |
-| PR atual | **ainda não aberta** |
+| PR atual | **#459 aberta** — “Titon: corrigir botões autorais no modo escuro” |
 | Último commit relevante | `a5f2e5a0` — teste de regressão; `2cab8244` contém a correção CSS |
-| Checks e testes | regressão adicionada; CI ainda precisa rodar na PR |
+| Checks e testes | **23/23 GitHub Actions success**, incluindo navegador real; Cloudflare Pages preview **success**; Workers Builds de branch **failure** sem mudança de Worker |
 | Decisões tomadas | corrigir localmente em `documents.css`, preservando o tema global e o modo claro |
 | Justificativas | o bug é colisão de CSS entre `.portal-button.secondary` e backgrounds autorais; override local minimiza blast radius |
 | Alternativas descartadas | alterar o tema global; trocar classes HTML; converter assets em JS/inline SVG; modificar modo claro |
 | Ações externas concluídas | nenhuma |
-| Pendências e bloqueios | abrir PR → CI → merge → publicação → homologação visual |
+| Pendências e bloqueios | merge da #459 → confirmar publicação estática em main → homologação visual |
 | Riscos conhecidos | conferir os três botões em hover/foco no modo escuro; demais ferramentas não usam essa combinação de classes |
 | Métricas / observabilidade | nenhuma telemetria nova |
-| Próxima ação exata | **abrir PR da 7G.3, exigir CI verde e depois validar em produção que Ajustar largura, Salvar e Imprimir reaparecem no modo escuro** |
+| Próxima ação exata | **mesclar a #459 (23/23 workflows funcionais verdes; Pages preview verde), confirmar publicação estática da main e validar em produção Ajustar largura/Salvar/Imprimir no modo escuro** |
 | Arquivos e fontes principais | Guia Mestre V1.1; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
 
 ## Histórico recuperável
