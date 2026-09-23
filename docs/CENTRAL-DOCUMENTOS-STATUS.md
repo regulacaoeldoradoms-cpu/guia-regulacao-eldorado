@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — entrada da Central priorizando documentos integrada; falta validação visual em produção** |
-| Última ação concluída | PR **#426** mesclada à `main`; hero/textos introdutórios e card de configuração foram removidos, restando apenas ações administrativas essenciais acima da lista |
-| Branch atual | `docs/titon-documents-first-published-20260923` somente para reconciliar status |
-| PR atual | funcional **#426 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`1f5c2ffc29102d3dcbecd068540b0d14b095ea1b`** |
-| Checks e testes | head final da #426: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
-| Decisões tomadas | primeira superfície operacional passa a ser pesquisa/lista de documentos; somente Conectar/Desconectar Drive e Gerenciar cargos e acessos permanecem visíveis para quem administra; mensagens institucionais ficam somente acessíveis via aria-live |
-| Justificativas | o conteúdo introdutório obrigava rolagem antes do acervo e não agrega valor no uso recorrente |
-| Alternativas descartadas | hero menor; card recolhível; mover ações administrativas para dentro do workspace, pois isso impediria conectar o Drive quando desconectado |
-| Ações externas concluídas | nenhuma configuração externa necessária |
-| Pendências e bloqueios | falta apenas Ctrl+F5 e confirmação visual de que pesquisa/lista aparecem imediatamente após o cabeçalho |
-| Riscos conhecidos | mensagens reais de erro/acesso continuam visíveis e podem ocupar espaço quando necessárias; comportamento intencional |
-| Métricas / observabilidade | sem mudança em telemetria, Drive, permissões, IA, OCR ou dados |
-| Próxima ação exata | **Ctrl+F5 na Central e confirmar visualmente que documentos/pesquisa estão na primeira dobra e que a faixa administrativa ficou compacta** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #426; merge `1f5c2ffc`; `documentos/index.html`; `css/documents.css`; `js/documents.js`; testes UI |
+| Subfase / objetivo atual | **7E — simplificar preload da Central para somente a raiz do Drive** |
+| Última ação concluída | código da branch removeu preload especial de Consulta [2026]/Exames [2026], pré-download de PDFs dessas pastas e aumentou a reutilização do warmup raiz em andamento |
+| Branch atual | `perf/titon-root-preload-only-20260923` |
+| PR atual | ainda não aberta; abrir após validação estrutural da branch |
+| Último commit relevante | base `a8cc6c0db4d315d037af39b96ba882884fc58dc9`; implementação, testes e documentação nesta branch |
+| Checks e testes | CI ainda pendente; testes atualizados para exigir ausência de prioridades por nome, snapshot raiz antecipado e timeout de 6 s |
+| Decisões tomadas | Consulta [2026] e Exames [2026] deixam de ter qualquer tratamento especial; nenhum PDF é mais pré-baixado por pertencer a essas pastas; raiz de 20 itens é a única listagem antecipada |
+| Justificativas | o preload anterior fazia trabalho secundário pesado antes de entregar o snapshot e o cliente desistia após 1,4 s, podendo iniciar outra leitura da raiz; a baseline real já mostrava Drive em vários segundos |
+| Alternativas descartadas | manter as duas pastas com prefetch menor; ampliar o timeout sem remover trabalho secundário; aumentar pageSize acima de 20 |
+| Ações externas concluídas | nenhuma configuração/secret novo necessário |
+| Pendências e bloqueios | executar CI, corrigir regressões, abrir PR, integrar/publicar; depois medir uso real e confirmar redução da latência percebida |
+| Riscos conhecidos | se a própria Files API levar mais de 6 s em um caso extremo, o fallback direto ainda pode ocorrer; a próxima decisão deve usar telemetria pós-publicação |
+| Métricas / observabilidade | continuam `drive_folder_opened` com cache hit/miss e tempos token/API/map; sem conteúdo, nomes ou IDs |
+| Próxima ação exata | **rodar checks da branch; se verdes, abrir/mesclar PR; depois Ctrl+F5 e comparar tempo de entrada da Central e eventos hit/miss** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; testes performance/UI |
 
 ## Histórico recuperável
 
@@ -5279,3 +5279,37 @@ Critério de aceite operacional restante:
 - usuários comuns devem ir direto ao acervo.
 
 **Próxima ação exata:** validar visualmente a Central em produção após Ctrl+F5. Se a lista estiver imediatamente acessível, registrar homologação desta unidade da 7E.
+
+## Fase 7E — remoção das pastas prioritárias e preload raiz-only — 23/09/2026
+
+Decisão humana atual: **não carregar antecipadamente Consulta [2026] nem Exames [2026] e não pré-baixar PDFs dessas pastas**.
+
+Diagnóstico que antecedeu a mudança:
+- o preload pós-login primeiro obtinha acesso, preferências, configuração da IA e raiz;
+- depois ainda descobria/listava Consulta [2026] e Exames [2026];
+- cada pasta fazia primeira página de 20 e prefetch adicional em até 6 páginas de 100 itens;
+- o cliente da Central esperava só 1,4 s pelo snapshot; se o Service Worker ainda estivesse nesse trabalho, podia abandonar o warmup e iniciar nova leitura da raiz;
+- esse desenho aumentava trabalho de rede/CPU e atrasava o objetivo principal: mostrar os documentos da raiz rapidamente.
+
+Implementação nesta branch:
+- removidos nomes e constantes de pastas prioritárias do Service Worker;
+- removida descoberta/busca/listagem especial dessas pastas;
+- removido `priorityFolders` do snapshot;
+- removido pré-download automático de PDFs e carregamento antecipado de `PortalDocumentCache` para esse fim;
+- warmup privado mantém somente access, preferences, aiConfig (quando permitido) e raiz com 20 itens;
+- snapshot da raiz é publicado assim que a raiz fica pronta, sem esperar obrigatoriamente todos os metadados secundários;
+- `getDocumentsWarmPayload()` devolve snapshot já disponível antes de aguardar a operação em andamento;
+- Central passa a aguardar o warmup por até 6 s em vez de 1,4 s, buscando reutilizar a requisição iniciada no login em vez de duplicá-la;
+- navegação normal de qualquer pasta continua com lotes de 20;
+- fallback direto continua intacto.
+
+Segurança/privacidade preservadas:
+- snapshot continua só em RAM do Service Worker, TTL 90 s;
+- permissão atual continua sendo consultada ao vivo antes de exibir a raiz aquecida;
+- token bruto não é persistido;
+- nenhum conteúdo documental ou identificador entra na observabilidade;
+- cache criptografado de PDFs permanece para uso normal, apenas sem prefetch por pasta.
+
+Critério de aceite desta unidade: CI verde; ausência de runtime especial por nome; abertura da Central reutiliza raiz aquecida quando pronta; nenhuma requisição automática de conteúdo PDF por Consulta/Exames; fallback normal preservado.
+
+**Próxima ação exata:** executar CI e integrar somente se todos os checks críticos permanecerem verdes; após deploy, validar em produção e medir `drive_folder_opened` hit/miss.
