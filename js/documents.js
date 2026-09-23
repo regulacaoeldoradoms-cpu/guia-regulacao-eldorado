@@ -99,6 +99,7 @@
     documentAiGeminiModel: '',
     documentAiGeminiUsage: null,
     documentAiGeminiDurationMs: 0,
+    documentAiGeminiLastError: '',
     documentAiBusyProvider: '',
     documentAiScanCompleted: false,
     documentAiIgnoredPages: 0,
@@ -3957,9 +3958,10 @@
     const currentCompleted = state.documentAiScanCompleted === true;
     const geminiCompleted = state.documentAiGeminiScanCompleted === true;
     const geminiRunning = state.documentAiBusy === true && state.documentAiBusyProvider === 'gemini';
+    const geminiFailed = Boolean(String(state.documentAiGeminiLastError || '').trim());
     const visible = Boolean(
       state.documentAiConfig?.features?.geminiComparison === true
-      && (geminiCompleted || geminiRunning)
+      && (geminiCompleted || geminiRunning || geminiFailed)
     );
 
     if (els.documentAiCompareSection) els.documentAiCompareSection.hidden = !visible;
@@ -3991,8 +3993,9 @@
       .sort((a, b) => a - b);
 
     if (!pages.length) {
-      els.documentAiCompareResults.innerHTML =
-        '<div class="documents-ai-compare-empty">O Gemini não encontrou nenhuma página autorizada neste PDF.</div>';
+      els.documentAiCompareResults.innerHTML = geminiFailed
+        ? '<div class="documents-ai-compare-empty">A extração com Gemini não foi concluída. O erro acima foi mantido para diagnóstico.</div>'
+        : '<div class="documents-ai-compare-empty">O Gemini não encontrou nenhuma página autorizada neste PDF.</div>';
       return;
     }
 
@@ -5054,6 +5057,7 @@
     state.documentAiGeminiScanCompleted = false;
     state.documentAiGeminiIgnoredPages = 0;
     state.documentAiGeminiResults = [];
+    state.documentAiGeminiLastError = '';
     state.documentAiGeminiUsage = {
       promptTokens: 0,
       completionTokens: 0,
@@ -5130,6 +5134,7 @@
 
       state.documentAiGeminiResults.sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber));
       state.documentAiGeminiScanCompleted = true;
+      state.documentAiGeminiLastError = '';
       state.documentAiGeminiDurationMs = duration(started);
 
       const extractedCount = state.documentAiGeminiResults.length;
@@ -5158,9 +5163,11 @@
       state.documentAiGeminiResults = [];
       state.documentAiGeminiScanCompleted = false;
       state.documentAiGeminiDurationMs = duration(started);
+      state.documentAiGeminiLastError =
+        String(error?.message || 'A comparação com Gemini foi interrompida.').trim();
       if (els.documentAiGeminiStatus) {
         els.documentAiGeminiStatus.className = 'documents-ai-document-status warning';
-        els.documentAiGeminiStatus.textContent = error?.message || 'A comparação com Gemini foi interrompida.';
+        els.documentAiGeminiStatus.textContent = state.documentAiGeminiLastError;
       }
       const statusCode = Number(error?.status || 0);
       capture('document_ai_failed', {
@@ -5836,6 +5843,7 @@
     state.documentAiGeminiModel = '';
     state.documentAiGeminiUsage = null;
     state.documentAiGeminiDurationMs = 0;
+    state.documentAiGeminiLastError = '';
     state.documentAiCopiedFields.clear();
     state.documentAiOrderPanelOpen = false;
     state.documentAiScanCompleted = false;
