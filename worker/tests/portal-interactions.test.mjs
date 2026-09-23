@@ -89,7 +89,7 @@ test('todas as rotas ativas carregam uma única camada central versionada', () =
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
     assert.equal((html.match(/portal-theme\.js\?v=20260923-1/g) || []).length, 1, `${filename}: bootstrap de tema`);
-    assert.equal((html.match(/portal-interactions\.css\?v=20260923-1/g) || []).length, 1, `${filename}: CSS central`);
+    assert.equal((html.match(/portal-interactions\.css\?v=20260923-2/g) || []).length, 1, `${filename}: CSS central`);
     assert.equal((html.match(/portal-interactions\.js\?v=20260923-2/g) || []).length, 1, `${filename}: JS central`);
   }
 });
@@ -197,6 +197,30 @@ test('modo claro e escuro são globais, sincronizáveis e controlados em Configu
 
   await api.setPreferences({ theme: 'dark' });
   assert.equal(api.getPreferences().theme, 'dark');
+});
+
+test('modo escuro cobre as superfícies legadas homologadas visualmente', () => {
+  const css = read('css/portal-interactions.css');
+
+  for (const pattern of [
+    /\.social-profile-module/,
+    /\.social-module-order label/,
+    /\.account-level-panel/,
+    /body\.telemedicine-page \.telemedicine-today/,
+    /body\.telemedicine-page \.telemedicine-stat\.urgent/,
+    /\.reception-list button/,
+    /\.medical-hero/,
+    /\.official-protocol-heading/,
+    /\.practical-ai-card/,
+    /\.final-clinical-check/,
+    /\.ai-chat/
+  ]) {
+    assert.match(css, pattern);
+  }
+
+  for (const filename of ACTIVE_ROUTES) {
+    assert.match(read(filename), /portal-interactions\.css\?v=20260923-2/, `${filename}: tema global atualizado`);
+  }
 });
 
 test('CSS central preserva foco, movimento reduzido, contraste forçado e transição progressiva', () => {

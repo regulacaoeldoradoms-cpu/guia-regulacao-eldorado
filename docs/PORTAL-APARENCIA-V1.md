@@ -102,3 +102,23 @@ A correção permanece restrita à apresentação e usa `html[data-portal-theme=
 - avisos, cartões de notificação e scrollbars.
 
 O modo claro não é alterado. Nenhuma regra de chat, contato, amizade, cargo, mensagem, push ou observabilidade muda. O CSS do chat é versionado em `portal-chat.css?v=20260923-1` nas rotas que montam o chat e no carregador do Guia Médico.
+
+## Refinamento transversal do modo escuro — 23/09/2026
+
+A homologação humana do chat interno em modo escuro foi **aprovada**. Na mesma revisão visual, foram identificadas superfícies legadas que ainda preservavam fundos claros em **Perfil**, **Telemedicina**, **Conquistas**, **Recepção** e **Guia Médico**, incluindo o assistente de pré-regulação.
+
+A correção permanece estritamente visual e segue a arquitetura já aprovada:
+
+- o modo claro continua sendo o baseline e não é reescrito;
+- o modo escuro continua condicionado exclusivamente a `html[data-portal-theme="dark"]`;
+- as exceções foram consolidadas em `css/portal-interactions.css`, em vez de recolorir componentes por JavaScript;
+- superfícies, bordas, textos secundários, estados selecionados, inputs e cartões legados passam a reutilizar os tokens escuros centrais;
+- a Telemedicina recebe seletores escuros com especificidade suficiente para prevalecer sobre as camadas visuais V12/V16 sem alterar sua lógica funcional;
+- o Guia Médico preserva as cores semânticas de protocolo, alertas e identidade do assistente, mas elimina painéis brancos residuais;
+- impressão continua clara porque a cobertura complementar é restrita a `@media screen`;
+- nenhuma permissão, regra de negócio, endpoint, dado clínico ou telemetria foi alterado.
+
+Para invalidar CSS antigo em cache, as rotas visuais passam a carregar `portal-interactions.css?v=20260923-2`.
+
+Aceite visual desta unidade: após publicação, validar em modo escuro `/perfil/`, `/telemedicina/`, `/conquistas/`, `/recepcao/` e `/medico/`, preservando o comportamento do modo claro.
+

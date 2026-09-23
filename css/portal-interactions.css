@@ -1432,3 +1432,561 @@ html[data-portal-interactions="v1"] .ai-chat:not([hidden]) {
     border-top-color: #294456 !important;
   }
 }
+
+/* Modo escuro — cobertura geral após homologação visual de 23/09/2026.
+   Mantém o modo claro como baseline e corrige somente superfícies legadas que
+   ainda traziam fundos claros em Perfil, Conquistas, Recepção, Telemedicina e
+   Guia Médico/assistente. Regras restritas a screen para preservar impressão. */
+@media screen {
+  /* Perfil social e editor de módulos. */
+  html[data-portal-theme="dark"] :where(
+    .social-profile-module,
+    .social-module-order label
+  ) {
+    background: var(--portal-theme-surface) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+
+  html[data-portal-theme="dark"] .social-profile-module p,
+  html[data-portal-theme="dark"] .social-module-order-row {
+    color: var(--portal-theme-muted) !important;
+  }
+
+  html[data-portal-theme="dark"] .social-chip {
+    background: #183247 !important;
+    color: #c4dfef !important;
+    border-color: #355469 !important;
+  }
+
+  html[data-portal-theme="dark"] .social-profile-actions .social-button.secondary,
+  html[data-portal-theme="dark"] .social-module-order-row .social-button.secondary {
+    background: #142b3b !important;
+    color: #dcebf5 !important;
+    border-color: #355469 !important;
+  }
+
+  html[data-portal-theme="dark"] .social-profile-actions .social-button.secondary:hover,
+  html[data-portal-theme="dark"] .social-module-order-row .social-button.secondary:hover {
+    background: #1b3a50 !important;
+    border-color: #4d7691 !important;
+  }
+
+  /* Conquistas e evolução Bronze/Prata/Ouro. */
+  html[data-portal-theme="dark"] .account-level-panel {
+    background: linear-gradient(135deg, #102332 0%, #0b1a27 100%) !important;
+    border-color: var(--portal-theme-border) !important;
+    color: var(--portal-theme-text) !important;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, .28) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .account-level-head,
+    .account-level-track,
+    .account-level-next,
+    .account-level-unlocks,
+    .account-achievement
+  ) {
+    background: var(--portal-theme-surface) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+
+  html[data-portal-theme="dark"] .account-level-track {
+    background: #0d1f2d !important;
+  }
+
+  html[data-portal-theme="dark"] .account-level-track::before {
+    background: #3a5366 !important;
+  }
+
+  html[data-portal-theme="dark"] .account-level-medal {
+    background: #183044 !important;
+    border-color: #4f6e83 !important;
+    color: #e7f1f7 !important;
+    box-shadow: 0 0 0 5px #0d1f2d !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .account-level-head p,
+    .account-level-step span,
+    .account-level-next p,
+    .account-level-unlocks p,
+    .account-level-unlock,
+    .account-achievement span,
+    .account-level-footnote
+  ) {
+    color: var(--portal-theme-muted) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .account-level-step strong,
+    .account-level-next h3,
+    .account-level-unlocks h3,
+    .account-achievement strong
+  ) {
+    color: var(--portal-theme-text) !important;
+  }
+
+  html[data-portal-theme="dark"] .account-level-current {
+    background: #182a38 !important;
+    border-color: #3c5668 !important;
+    color: #dbe9f2 !important;
+  }
+  html[data-portal-theme="dark"] .account-level-current.bronze {
+    background: #34261d !important;
+    border-color: #6f5038 !important;
+    color: #f0c49d !important;
+  }
+  html[data-portal-theme="dark"] .account-level-current.prata {
+    background: #222d36 !important;
+    border-color: #506272 !important;
+    color: #d5e0e8 !important;
+  }
+  html[data-portal-theme="dark"] .account-level-current.ouro {
+    background: #342f16 !important;
+    border-color: #6b5f28 !important;
+    color: #f0dd83 !important;
+  }
+
+  html[data-portal-theme="dark"] .account-level-step.locked {
+    opacity: .74;
+  }
+
+  /* Recepção: lista lateral de especialidades/exames. */
+  html[data-portal-theme="dark"] .reception-list button {
+    background: var(--portal-theme-surface) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+    box-shadow: none !important;
+  }
+
+  html[data-portal-theme="dark"] .reception-list button:hover,
+  html[data-portal-theme="dark"] .reception-list button.active,
+  html[data-portal-theme="dark"] .reception-list button:focus-visible {
+    background: var(--portal-theme-selected) !important;
+    border-color: #4d88ad !important;
+  }
+
+  html[data-portal-theme="dark"] .reception-list span {
+    color: var(--portal-theme-muted) !important;
+  }
+
+  /* Guia Médico: hero, etapas, protocolo, aplicação prática e conferência final. */
+  html[data-portal-theme="dark"] :where(
+    .hero,
+    .medical-hero,
+    .hero-step,
+    .overview-card,
+    .clinical-section,
+    .check-item,
+    .metadata-item,
+    .general-intro-card,
+    .official-protocol-heading,
+    .practical-ai-card,
+    .final-clinical-check,
+    .learning-note
+  ) {
+    background: var(--portal-theme-surface) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .20) !important;
+  }
+
+  html[data-portal-theme="dark"] .hero,
+  html[data-portal-theme="dark"] .medical-hero {
+    background:
+      radial-gradient(circle at 100% 0%, rgba(39, 197, 212, .09), transparent 24rem),
+      linear-gradient(135deg, #102332 0%, #0b1a27 100%) !important;
+    border-left-color: #27c5d4 !important;
+  }
+
+  html[data-portal-theme="dark"] .hero::after {
+    border-color: rgba(104, 183, 255, .10) !important;
+    box-shadow:
+      0 0 0 35px rgba(39, 197, 212, .025),
+      0 0 0 70px rgba(104, 183, 255, .018) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .hero-step,
+    .check-item,
+    .metadata-item,
+    .general-intro-card
+  ) {
+    background: #142a3a !important;
+    box-shadow: none !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .hero-step,
+    .overview-value,
+    .metadata-value,
+    .general-intro-card strong,
+    .official-protocol-title h3,
+    .practical-ai-copy strong
+  ) {
+    color: var(--portal-theme-text) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .field-help,
+    .section-intro,
+    .metadata-label,
+    .general-intro-card span,
+    .official-protocol-heading > p,
+    .practical-ai-copy p,
+    .learning-note
+  ) {
+    color: var(--portal-theme-muted) !important;
+  }
+
+  html[data-portal-theme="dark"] .official-protocol-heading {
+    background: linear-gradient(135deg, #13293a, #0f2231) !important;
+    border-left-color: #68b7ff !important;
+  }
+
+  html[data-portal-theme="dark"] .official-protocol-title small,
+  html[data-portal-theme="dark"] .practical-ai-copy small {
+    color: #75c9d2 !important;
+  }
+
+  html[data-portal-theme="dark"] .official-protocol-nav a,
+  html[data-portal-theme="dark"] .practical-ai-actions button {
+    background: #142b3b !important;
+    color: #cfe6f5 !important;
+    border-color: #355469 !important;
+  }
+
+  html[data-portal-theme="dark"] .official-protocol-nav a:hover,
+  html[data-portal-theme="dark"] .practical-ai-actions button:hover {
+    background: #1b3a50 !important;
+    border-color: #4d7691 !important;
+  }
+
+  html[data-portal-theme="dark"] .practical-ai-card {
+    background: linear-gradient(115deg, #18233a, #122b3b 55%, #12312e) !important;
+    border-color: #3f506f !important;
+  }
+
+  html[data-portal-theme="dark"] .final-clinical-check {
+    background: #0f2231 !important;
+  }
+
+  html[data-portal-theme="dark"] .final-clinical-check::before {
+    background: #1a3142 !important;
+    color: #b7c9d6 !important;
+  }
+
+  html[data-portal-theme="dark"] .clinical-alert {
+    background: #352816 !important;
+    color: #f2d58a !important;
+    border-color: #65501f !important;
+    border-left-color: #a97d25 !important;
+  }
+
+  html[data-portal-theme="dark"] .clinical-alert :where(h3, li) {
+    color: #f2d58a !important;
+  }
+
+  /* Assistente de pré-regulação/Gemini: tema escuro real sem perder identidade. */
+  html[data-portal-theme="dark"] .ai-launcher {
+    background: rgba(16, 35, 50, .98) !important;
+    color: #e5eef5 !important;
+    border-color: #355469 !important;
+    box-shadow: 0 16px 38px rgba(0, 0, 0, .34) !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-launcher:hover {
+    background: #173247 !important;
+    color: #fff !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-gemini-launcher-logo {
+    background: #102332 !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-chat {
+    background: #0b1a27 !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+    box-shadow: 0 26px 70px rgba(0, 0, 0, .44) !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-chat-header {
+    background:
+      radial-gradient(circle at 12% 15%, rgba(249, 171, 0, .09), transparent 31%),
+      radial-gradient(circle at 90% 12%, rgba(155, 114, 203, .14), transparent 34%),
+      linear-gradient(135deg, #13293a 0%, #18243a 56%, #211d38 100%) !important;
+    color: var(--portal-theme-text) !important;
+    border-bottom-color: var(--portal-theme-border) !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-chat-title h2 {
+    color: #edf5fa !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .ai-chat-title p,
+    .ai-provider-status,
+    .ai-provider-label,
+    .ai-suggestions-label,
+    .ai-form-footer,
+    .ai-input-label
+  ) {
+    color: var(--portal-theme-muted) !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-close {
+    background: #193246 !important;
+    color: #dcebf5 !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-close:hover {
+    background: #21445e !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-privacy-note {
+    background: #352816 !important;
+    color: #f2d58a !important;
+    border-bottom-color: #65501f !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-mode,
+  html[data-portal-theme="dark"] .ai-mode.ai-protocol-seal {
+    background: #173247 !important;
+    color: #b9dff6 !important;
+    border-color: #285978 !important;
+    box-shadow: none !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-messages {
+    background:
+      radial-gradient(circle at 100% 0, rgba(155, 114, 203, .05), transparent 34%),
+      linear-gradient(180deg, #081722, #0b1a27) !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-message.assistant {
+    background: #142a3a !important;
+    color: var(--portal-theme-text) !important;
+    border-color: #29485e !important;
+    border-left-color: #5f93bf !important;
+    box-shadow: 0 7px 18px rgba(0, 0, 0, .18) !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-message.loading {
+    color: var(--portal-theme-muted) !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-suggestion {
+    background: #112a3e !important;
+    color: #c9e6fa !important;
+    border-color: #315b78 !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-suggestion:hover {
+    background: #173b55 !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-form {
+    background: #0f2231 !important;
+    border-top-color: var(--portal-theme-border) !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-input {
+    background: var(--portal-theme-input) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: #355469 !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-input::placeholder {
+    color: #7890a2 !important;
+  }
+
+  html[data-portal-theme="dark"] .ai-message-rich h3,
+  html[data-portal-theme="dark"] .ai-message-rich strong {
+    color: #c9e6fa !important;
+  }
+
+  /* Telemedicina: regras com especificidade maior que os estilos legados V12/V16. */
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-today {
+    background: linear-gradient(145deg, #12313a 0%, #102a36 100%) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: #396270 !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .22) !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-today :where(span,strong,small) {
+    color: inherit !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-stat {
+    background: var(--portal-theme-surface) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .18) !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-stat.urgent {
+    background: linear-gradient(145deg, #342b16, #282313) !important;
+    border-color: #65501f !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-stat.danger {
+    background: linear-gradient(145deg, #351c24, #2a1820) !important;
+    border-color: #6e3542 !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-stat.waiting {
+    background: linear-gradient(145deg, #12312e, #102725) !important;
+    border-color: #285c4b !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-stat.review {
+    background: linear-gradient(145deg, #182735, #13212e) !important;
+    border-color: #3a5366 !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-stat :where(span,strong,small) {
+    color: inherit !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-workspace {
+    background: linear-gradient(180deg, #0d1f2d 0%, #091822 100%) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .24) !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-toolbar {
+    background: #102332 !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+    box-shadow: none !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page :where(
+    .telemedicine-search-wrap .portal-search,
+    .telemedicine-toolbar-actions select
+  ) {
+    background: var(--portal-theme-input) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: #355469 !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-search-wrap label {
+    color: #c7d8e4 !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-view-switch {
+    background: #0d2231 !important;
+    border-color: #315069 !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-view-switch button {
+    background: transparent !important;
+    color: #b8cbd8 !important;
+    border-color: transparent !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-view-switch button:hover {
+    background: #142f42 !important;
+    color: #e5eef5 !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-view-switch button[aria-pressed="true"] {
+    background: var(--portal-theme-selected) !important;
+    color: #eef7fc !important;
+    border-color: #4d88ad !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .20) !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-filter-summary {
+    color: var(--portal-theme-muted) !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-list {
+    background: transparent !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-row {
+    background: linear-gradient(180deg, #102332, #0d1f2d) !important;
+    color: var(--portal-theme-text) !important;
+    box-shadow: 0 7px 20px rgba(0, 0, 0, .20) !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-row > :where(
+    .telemedicine-patient,
+    .telemedicine-specialty-block,
+    .telemedicine-date-block,
+    .telemedicine-actions
+  ) {
+    background: #142a3a !important;
+    color: var(--portal-theme-text) !important;
+    border-color: #315069 !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page :where(
+    .telemedicine-patient > button[data-action="patient"],
+    .telemedicine-specialty-block strong,
+    .telemedicine-date-block strong
+  ) {
+    color: var(--portal-theme-text) !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page :where(
+    .telemedicine-patient small,
+    .telemedicine-specialty-block small,
+    .telemedicine-date-block small
+  ) {
+    color: var(--portal-theme-muted) !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-actions .portal-button.secondary {
+    background: #142b3b !important;
+    color: #dcebf5 !important;
+    border-color: #355469 !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-actions .portal-button.secondary:hover {
+    background: #1b3a50 !important;
+    border-color: #4d7691 !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-empty {
+    background: #102332 !important;
+    color: var(--portal-theme-muted) !important;
+    border-color: #355469 !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page :where(
+    .telemedicine-modal,
+    .telemedicine-form-grid,
+    .telemedicine-followup-fields,
+    .telemedicine-current,
+    .telemedicine-timeline
+  ) {
+    background: var(--portal-theme-surface) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .portal-modal-header {
+    background: #142a3a !important;
+    color: var(--portal-theme-text) !important;
+    border-bottom-color: var(--portal-theme-border) !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-current-grid div {
+    background: #0f2231 !important;
+    color: var(--portal-theme-text) !important;
+    border-color: #315069 !important;
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-form-grid :where(input,select,textarea) {
+    background: var(--portal-theme-input) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: #355469 !important;
+  }
+}
+

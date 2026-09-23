@@ -32,7 +32,7 @@ test('rotas sociais usam assets locais versionados e permanecem não indexáveis
   for (const filename of socialPages) {
     const html = read(filename);
     assert.match(html, /portal-theme\.js\?v=20260923-1/);
-    assert.match(html, /portal-interactions\.css\?v=20260923-1/);
+    assert.match(html, /portal-interactions\.css\?v=20260923-2/);
     assert.match(html, /portal-interactions\.js\?v=20260923-2/);
     assert.match(html, /social\.css\?v=20260922-2/);
     assert.match(html, /social-notification-panel\.css\?v=20260910-1/);
