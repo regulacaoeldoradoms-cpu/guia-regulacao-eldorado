@@ -482,3 +482,40 @@ Critérios de aceite:
 7. CI/navegador/governança permanecerem verdes.
 
 **Próxima ação:** publicar, fazer Ctrl+F5, medir novamente `drive_folder_opened` em `cache_state=hit|miss` e confirmar em uso real se a entrada da Central deixou de disparar trabalho secundário das duas pastas.
+
+
+## 7E — pesquisa por nome + conteúdo indexado do Google Drive — 23/09/2026
+
+A busca da Central deixa de consultar somente o nome do arquivo e passa a reutilizar o índice de texto do próprio Google Drive.
+
+Decisão:
+- manter uma única chamada ao endpoint oficial `Drive API v3 files.list`;
+- preservar a pesquisa atual por `name contains`;
+- acrescentar `fullText contains` na mesma consulta, combinando os dois caminhos com `or`;
+- para consulta comum com várias palavras, exigir todos os termos no `fullText` para reduzir ruído;
+- quando o usuário envolver a consulta inteira em aspas duplas, enviar busca de frase exata ao `fullText`;
+- manter paginação de 20 resultados e a mesma política de referências opacas;
+- não baixar PDFs, não rodar OCR próprio e não chamar Gemini para localizar arquivos.
+
+O `fullText` é um índice mantido pelo Google Drive e inclui nome, descrição, texto indexável, conteúdo e metadados pesquisáveis. Para tipos reconhecidos pelo Drive, como PDFs e imagens com texto, o Google pode indexar o conteúdo automaticamente. Portanto, esta melhoria não exige ativar outra API Google.
+
+APIs/serviços discutidos anteriormente e ainda não necessários para esta função:
+- **Drive Activity API**: histórico/auditoria de ações, não busca de conteúdo;
+- **Drive Labels API**: rótulos estruturados, não OCR/full text;
+- **Drive MCP**: integração de agente, não requisito para a busca do Portal;
+- **Workspace Marketplace SDK**: distribuição/integração de app, não índice de conteúdo.
+
+Limitações deliberadas:
+- a Central consulta o índice que o Google já construiu; não cria índice clínico próprio;
+- conteúdo que o Google não conseguiu indexar não será encontrado por `fullText`;
+- resultados continuam sujeitos à semântica de token/frase da Drive API;
+- termos de pesquisa continuam fora da observabilidade.
+
+Critérios de aceite:
+1. termo presente apenas no nome continua localizando o arquivo;
+2. termo presente apenas no conteúdo indexado também localiza;
+3. busca com duas palavras gera cláusulas `fullText` combinadas por `and`;
+4. busca entre aspas usa frase exata;
+5. nenhuma segunda API, download em massa, OCR ou Gemini é acionado;
+6. IDs brutos do Drive continuam fora da resposta;
+7. CI e navegador permanecem verdes.
