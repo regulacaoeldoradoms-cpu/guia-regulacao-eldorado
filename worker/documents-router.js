@@ -141,10 +141,14 @@ const MIN_VIEWER_ZOOM_SCALE = 0.45;
 const MAX_VIEWER_ZOOM_SCALE = 3;
 
 function normalizeViewerZoomScale(value, { strict = false } = {}) {
+  if (value == null || value === '') {
+    if (strict) throw new DriveIntegrationError('DOCUMENTS_VIEWER_ZOOM_INVALID', 'Zoom do visualizador inválido.', 400);
+    return null;
+  }
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
     if (strict) throw new DriveIntegrationError('DOCUMENTS_VIEWER_ZOOM_INVALID', 'Zoom do visualizador inválido.', 400);
-    return DEFAULT_VIEWER_ZOOM_SCALE;
+    return null;
   }
   if (strict && (numeric < MIN_VIEWER_ZOOM_SCALE || numeric > MAX_VIEWER_ZOOM_SCALE)) {
     throw new DriveIntegrationError('DOCUMENTS_VIEWER_ZOOM_INVALID', 'O zoom deve ficar entre 45% e 300%.', 400);
@@ -181,7 +185,7 @@ async function ensureViewerPreferencesSchema(env) {
 
 async function viewerPreferencesFor(env, username) {
   if (!(await ensureViewerPreferencesSchema(env))) {
-    return { viewerZoomScale: DEFAULT_VIEWER_ZOOM_SCALE };
+    return { viewerZoomScale: null };
   }
   const row = await env.AUTH_DB.prepare(
     'SELECT zoom_scale FROM auth_document_viewer_preferences WHERE username = ? LIMIT 1'
