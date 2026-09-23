@@ -65,9 +65,9 @@
               <label>Cargos/funções adicionais (acumuláveis)</label>
               <label style="display:flex;gap:9px;align-items:center;padding:9px 0">
                 <input id="newAdditionalRoleDocuments" type="checkbox" value="documentos">
-                Regulador(a) — acesso à Central de Documentos e leitura do Google Drive institucional
+                Regulador(a) — acesso operacional completo à Central de Documentos
               </label>
-              <div class="password-meter">Essas funções são somadas ao perfil principal. A pessoa pode, por exemplo, continuar Médico(a) e também acumular a função Regulador(a).</div>
+              <div class="password-meter">Essas funções são somadas ao perfil principal. Regulador(a) concede acesso operacional completo à Central; a pessoa pode, por exemplo, continuar Médico(a) e também usar todas as funções documentais.</div>
             </div>
             <div class="portal-field"><label for="newPassword">Senha inicial</label><input id="newPassword" type="password" required minlength="8" maxlength="160" autocomplete="new-password"></div>
             <div class="portal-field"><label>&nbsp;</label><label style="display:flex;gap:9px;align-items:center;padding:13px 0"><input id="newMustChange" type="checkbox" checked> Exigir troca de senha no primeiro acesso</label></div>
@@ -95,17 +95,9 @@
           <label>Cargos/funções adicionais (acumuláveis)</label>
           <label style="display:flex;gap:9px;align-items:center;padding:9px 0">
             <input id="editAdditionalRoleDocuments" type="checkbox" value="documentos">
-            Regulador(a) — acesso à Central de Documentos e leitura do Google Drive institucional
+            Regulador(a) — acesso operacional completo à Central de Documentos
           </label>
-          <label style="display:flex;gap:9px;align-items:center;padding:9px 0 4px 24px">
-            <input id="editDocumentAiPermission" type="checkbox">
-            Permitir IA documental — classificação, extração e perguntas com proveniência por página
-          </label>
-          <label style="display:flex;gap:9px;align-items:center;padding:9px 0 4px 24px">
-            <input id="editDocumentPdfPermission" type="checkbox">
-            Permitir editor de PDF — inclui sincronização segura com o Drive quando habilitada no ambiente
-          </label>
-          <div class="password-meter">IA documental e edição são permissões separadas. Ambas exigem que a conta mantenha a função Regulador(a).</div>
+          <div class="password-meter">A função Regulador(a) libera leitura, IA documental, edição, renomeação e sincronização segura com o Drive. A administração de usuários e da conexão institucional continua restrita ao Desenvolvedor.</div>
         </div>
         <div class="portal-field full"><label style="display:flex;gap:9px;align-items:center"><input id="editActive" type="checkbox"> Acesso ativo</label></div>
         <div class="full account-actions"><button class="portal-button primary" type="submit">Salvar alterações</button><button class="portal-button secondary" type="button" data-close-modal="editUserModal">Cancelar</button></div>
@@ -130,7 +122,7 @@
   <script src="/js/auth-client.js?v=20260910-4"></script>
   <script src="/js/portal-interactions.js?v=20260923-2"></script>
   <script src="/js/credential-input.js?v=20260812-1"></script>
-  <script src="/js/admin-users.js?v=20260918-1"></script>
+  <script src="/js/admin-users.js?v=20260923-1"></script>
   <script src="/js/admin-council-role-options.js?v=20260823-1544"></script>
   <script src="/js/portal-chat.js?v=20260911-3"></script>
   <script src="/js/portal-chat-switch-optimizer.js?v=20260812-1"></script>
