@@ -6654,7 +6654,7 @@
       return;
     }
 
-    const renameTarget = event.target.closest?.('[data-list-rename-index]');
+    const renameTarget = event.target?.dataset?.listRenameIndex !== undefined ? event.target : null;
     if (renameTarget) {
       const index = Number(renameTarget.dataset.listRenameIndex);
       const item = state.items[index];
