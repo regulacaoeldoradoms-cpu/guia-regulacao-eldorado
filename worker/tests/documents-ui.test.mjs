@@ -34,10 +34,11 @@ test('Titon aplica o último zoom manual da conta aos próximos PDFs', () => {
   const router = read('worker/documents-router.js');
 
   assert.match(client, /DEFAULT_VIEWER_ZOOM_SCALE = 1\.14/);
-  assert.match(client, /viewerZoomScale: DEFAULT_VIEWER_ZOOM_SCALE/);
+  assert.match(client, /viewerZoomScale: null/);
   assert.match(client, /viewerZoomWriteChain:\s*Promise\.resolve\(\)/);
   assert.match(client, /state\.viewerZoomScale = normalizeViewerZoomScale\(payload\?\.viewerZoomScale\)/);
   assert.match(client, /JSON\.stringify\(\{ viewerZoomScale: normalized \}\)/);
+  assert.match(client, /return Number\.isFinite\(scale\)[\s\S]*fitMode: false[\s\S]*: null/);
   assert.match(client, /initialViewState: accountViewerInitialViewState\(\)/);
   assert.match(client, /applyManualViewerZoom\('zoomOut'\)/);
   assert.match(client, /applyManualViewerZoom\('resetZoom'\)/);
