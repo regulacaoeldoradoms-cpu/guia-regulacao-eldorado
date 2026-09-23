@@ -1179,6 +1179,13 @@
       if (preferences.soundsEnabled && !preferences.muted) soundManager.unlock();
     }, { capture: true, signal });
     window.addEventListener('storage', (event) => {
+      if (event.key === ACTIVE_THEME_KEY) {
+        const theme = activeThemeFromStorage();
+        preferences = normalizePreferences({ ...preferences, theme }, preferences);
+        applyTheme(theme, { storeActive: false });
+        renderPreferenceControls();
+        return;
+      }
       if (event.key !== storageKey()) return;
       preferences = loadStoredPreferences();
       preferences.theme = normalizeTheme(preferences.theme, activeThemeFromStorage());
