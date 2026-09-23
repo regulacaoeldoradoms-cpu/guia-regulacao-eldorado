@@ -99,7 +99,8 @@ Eventos técnicos permitidos nesta fase:
 
 A rota `/documentos/`:
 - aparece no catálogo somente quando há `view` ou `manage`;
-- mostra configuração institucional para quem administra;
+- mantém para quem administra somente os controles institucionais essenciais de **Conectar/Desconectar Drive** e **Gerenciar cargos e acessos**, em faixa compacta;
+- a apresentação introdutória e o card textual de configuração foram removidos na Fase 7E para que a lista de documentos seja a primeira superfície operacional visível;
 - não exibe mais a lista completa de usuários, evitando ocupar grande parte da tela operacional;
 - direciona a gestão de acesso para `/admin/usuarios/`;
 - em **Usuários e acessos**, o Desenvolvedor pode acumular a função **Regulador(a)** com o perfil principal;
