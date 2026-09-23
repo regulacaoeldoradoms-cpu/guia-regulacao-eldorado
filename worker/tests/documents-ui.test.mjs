@@ -323,8 +323,8 @@ test('pesquisa da Central usa nome + conteúdo por padrão e permite filtro Só 
   assert.match(drive, /fullText contains/);
   assert.match(drive, /const titleOnly = input\.titleOnly === true/);
   assert.match(drive, /const fullTextClause = titleOnly \? '' : driveFullTextSearchClause\(query\)/);
-  assert.match(drive, /const searchClause = fullTextClause/);
-  assert.match(drive, /nameClause} or \(\$\{fullTextClause\}\)/);
+  assert.match(drive, /async function buildDriveSearchQuery\(/);
+  assert.match(drive, /clauses\.push\(fullTextClause/);
   assert.match(drive, /split\(\/\\s\+\/u\)/);
   assert.match(drive, /slice\(0, 10\)/);
   assert.doesNotMatch(drive, /contentHints\.indexableText\s*=/);
