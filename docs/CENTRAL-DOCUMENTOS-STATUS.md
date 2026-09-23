@@ -3178,26 +3178,40 @@ Esse Workers Builds bem-sucedido **substitui como evidência operacional** a ten
 
 **Pendência:** somente homologação humana em produção. O teste deve confirmar que, após Ctrl+F5, o chip mostra **Acesso completo**, o segundo clique simples no nome permite editar antes de abrir o PDF, Enter/clique fora sincronizam e o duplo clique rápido continua abrindo o Titon.
 
+## Fase 7G.2 — ações rápidas de Salvar/Imprimir na lista — EM PR — 23/09/2026
+
+Solicitação operacional: salvar ou imprimir qualquer PDF diretamente da lista, sem abrir o Titon.
+
+**UX:** em desktop, cada PDF recebe dois botões quadrados no canto direito que aparecem somente no **hover** da linha; foco por teclado também os revela. As ações são **Salvar PDF** e **Imprimir**. Pastas/não-PDF não recebem esses botões e em mobile/touch eles ficam ocultos para preservar a lista compacta.
+
+**Implementação:** download usa `editablePdfBlob(item)` + `localViewedPdfName(item)`; impressão usa `ensurePrintFrame()` + `renderPdfBlobForPrint()`, sem nova aba. Nenhuma ação chama `openPdf()` ou cria sessão do Titon. Não há endpoint, capability, escrita no Drive ou telemetria nova.
+
+Uma primeira CI detectou interferência apenas no harness legado `documents-close-guard`: o stub de `closest()` devolvia a linha para qualquer seletor. O handler foi endurecido para aceitar candidato somente quando o `dataset.listSaveIndex/listPrintIndex` realmente existe. A rodada seguinte deixou os jobs funcionais verdes.
+
+**Concorrência reconciliada:** enquanto a PR #455 rodava, a `main` avançou 31 commits com a PR #456 de cobertura geral do modo escuro, incluindo `documentos/index.html` e o status. Antes de continuar, foi criado backup reversível `backup/central-list-quick-save-print-pre-darkmode-20260923`; a branch foi reposicionada sobre `3a528eb5` e a mudança reaplicada preservando integralmente o cache-buster/tema global mais recente.
+
+PR **#455** / branch `feat/central-list-quick-save-print-20260923`. Cache-busters da Central: `documents.css?v=20260923-7` e `documents.js?v=20260923-12`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **Refinamento transversal do modo escuro em PR; 7G.1 da Central permanece pendente separadamente** |
-| Última ação concluída | Chat escuro **aprovado em homologação humana**; cobertura geral implementada e PR **#456** aberta |
-| Branch atual | `fix/portal-dark-mode-general-polish-20260923` |
-| PR atual | **#456 aberta — UI: concluir cobertura geral do modo escuro** |
-| Último commit relevante | head funcional `4772410d`; base `main` `097f92f9` |
-| Checks e testes | regressão de dark mode adicionada; **CI da #456 em andamento** |
-| Decisões tomadas | centralizar correções no CSS global; preservar modo claro; Telemedicina usa overrides escuros de maior especificidade; impressão permanece clara |
-| Justificativas | os resíduos claros vinham de CSS legado/específico dos módulos; correção central reduz blast radius funcional e evita JS de recoloração |
-| Alternativas descartadas | recolorir via JavaScript; alterar CSS claro original de cada módulo; mudar backend/permissões; reabrir fases anteriores |
-| Ações externas concluídas | nenhuma configuração externa necessária |
-| Pendências e bloqueios | aguardar CI/merge/publicação da #456 e homologação visual das cinco rotas; depois retomar 7G.1 |
-| Riscos conhecidos | alguma superfície muito específica fora dos prints pode ainda exigir ajuste visual; nenhuma lógica funcional foi modificada |
-| Métricas / observabilidade | nenhuma telemetria nova; conteúdo clínico e identidade continuam fora do PostHog |
-| Próxima ação exata | **validar CI da #456 → mesclar se integralmente verde → confirmar Pages → Ctrl+F5 e conferir /perfil/, /telemedicina/, /conquistas/, /recepcao/ e /medico/** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #456; `css/portal-interactions.css`; `worker/tests/portal-interactions.test.mjs`; `docs/PORTAL-APARENCIA-V1.md`; este status |
+| Subfase / objetivo atual | **7G.2 — ações rápidas Salvar/Imprimir no hover da lista; PR #455 reconciliada com main pós-#456** |
+| Última ação concluída | branch da #455 reposicionada sobre `main` `3a528eb5` e implementação reaplicada sem perder a cobertura global de modo escuro |
+| Branch atual | `feat/central-list-quick-save-print-20260923` |
+| PR atual | **#455 aberta** — “Central: salvar e imprimir PDF direto da lista” |
+| Último commit relevante | replay funcional sobre `3a528eb5`; commits posteriores registram o status |
+| Checks e testes | rodada anterior: navegador e jobs funcionais verdes após correção do harness; nova CI do head reconciliado deve ser confirmada |
+| Decisões tomadas | hover desktop/foco teclado; dois botões quadrados; Salvar/Imprimir sem abrir Titon; mobile/touch preservado |
+| Justificativas | reduz cliques e reutiliza pipelines já homologados de download e impressão sem ampliar backend |
+| Alternativas descartadas | abrir Titon silenciosamente; impressão em nova aba; botões sempre visíveis |
+| Ações externas concluídas | nenhuma; mudança é frontend; modo escuro global #456 foi preservado |
+| Pendências e bloqueios | CI final da #455 → merge → publicação → homologação humana |
+| Riscos conhecidos | validar posição com nomes longos e tema escuro; impressão depende da caixa nativa do navegador |
+| Métricas / observabilidade | nenhuma telemetria nova; nomes/conteúdo continuam fora do PostHog |
+| Próxima ação exata | **conferir CI do novo head da #455; se verde, mesclar e validar em produção: hover → Salvar/Imprimir sem abrir Titon** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #455; `main` `3a528eb5`; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
 
 ## Histórico recuperável
 
