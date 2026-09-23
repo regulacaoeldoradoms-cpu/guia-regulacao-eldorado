@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — adicionar ordenação cronológica reversível à lista/pesquisa da Central** |
-| Última ação concluída | implementação e testes de regressão preparados na branch `feat/titon-chronological-order-20260923` |
-| Branch atual | `feat/titon-chronological-order-20260923` |
-| PR atual | **nenhum ainda**; próxima ação é abrir PR |
-| Último commit relevante | branch baseada na `main` `c2f02ad167b38986ec70cdfa9d94e9f5e0bb2e96`, com commits desta unidade ainda não mesclados |
-| Checks e testes | testes adicionados; CI completo ainda não executado nesta unidade |
-| Decisões tomadas | ordenação cronológica é feita no backend antes da paginação; original preserva ordem histórica; estado não é persistido |
-| Justificativas | ordenar apenas os 20 itens no navegador daria uma cronologia falsa/incompleta em listas maiores |
-| Alternativas descartadas | sort somente client-side; aceitar `orderBy` arbitrário vindo do navegador; sobrescrever snapshot original com páginas cronológicas |
-| Ações externas concluídas | nenhuma |
-| Pendências e bloqueios | abrir PR, aguardar CI e homologar visualmente/funcionalmente em produção |
-| Riscos conhecidos | itens sem `modifiedTime` ficam ao final da ordenação; PNGs/IA/Drive write não são afetados |
-| Métricas / observabilidade | nenhuma propriedade nova; termos, nomes e conteúdo continuam fora do PostHog |
-| Próxima ação exata | **abrir PR → CI completo → merge se verde → Ctrl+F5 → testar Mais recentes, Mais antigos e Redefinir ordem** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/document-drive.js`; `worker/documents-router.js`; `worker/tests/documents-ui.test.mjs` |
+| Subfase / objetivo atual | **7E — ordenação cronológica integrada; aguardando homologação humana em produção** |
+| Última ação concluída | PR **#442** mesclada à `main`; ordem por modificação recente/antiga + Redefinir ordem publicada no código |
+| Branch atual | `docs/titon-chronological-order-published-20260923` somente para reconciliar status pós-merge |
+| PR atual | funcional **#442 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`5921b97b2d3f07d6e7416850decd5da2afe85b90`** |
+| Checks e testes | PR final **23/23 success**; pós-merge **23/23 success**, incluindo navegador e Pages build/deployment |
+| Decisões tomadas | ordenação é aplicada no backend antes da paginação; modos são `original`, `modified_desc`, `modified_asc`; estado não persiste |
+| Justificativas | garante cronologia correta em conjuntos maiores que 20 itens e preserva exatamente o modo histórico ao redefinir |
+| Alternativas descartadas | ordenar somente os itens carregados no navegador; permitir `orderBy` arbitrário; reutilizar snapshot alfabético como resultado cronológico |
+| Ações externas concluídas | nenhuma configuração externa necessária; GitHub Pages pós-merge concluiu com success |
+| Pendências e bloqueios | apenas homologação humana em produção dos dois sentidos cronológicos e do retorno à ordem original |
+| Riscos conhecidos | itens sem `modifiedTime` ficam ao final; houve uma falha intermitente de teste móvel do editor na primeira CI, eliminada ao rerodar o mesmo job sem mudança de código |
+| Métricas / observabilidade | nenhuma propriedade nova; nomes de arquivos, consultas e conteúdo continuam fora do PostHog |
+| Próxima ação exata | **Ctrl+F5 em /documentos/ → pesquisar → Ordem cronológica → conferir Mais recentes ↓ → clicar de novo → conferir Mais antigos ↑ → Redefinir ordem** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #442; merge `5921b97b`; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/document-drive.js`; `worker/documents-router.js` |
 
 ## Histórico recuperável
 
@@ -5668,3 +5668,35 @@ Decisão técnica: a ordenação é aplicada também no backend antes da pagina�
 Cache-busters planejados: `documents.css?v=20260923-5` e `documents.js?v=20260923-9`.
 
 **Próxima ação exata:** abrir PR, executar CI completo e integrar somente se todos os checks críticos permanecerem verdes; depois homologar em produção com uma pesquisa conhecida e comparar os dois sentidos cronológicos + Redefinir ordem.
+
+
+## Fase 7E — ordenação cronológica integrada à main — 23/09/2026
+
+A PR **#442 — Fase 7E: adicionar ordem cronológica à Central** foi integrada à `main` no merge **`5921b97b2d3f07d6e7416850decd5da2afe85b90`**.
+
+Resultado versionado:
+- novo botão **Ordem cronológica** ao lado de Só título/Pesquisa avançada;
+- primeiro clique ativa **Mais recentes ↓** (`modified_desc`);
+- clique seguinte alterna para **Mais antigos ↑** (`modified_asc`) e vice-versa;
+- botão separado **Redefinir ordem** volta ao comportamento `original`;
+- funciona em pasta normal, pesquisa por nome/conteúdo, Só título, Pesquisa avançada e **Carregar mais**;
+- a Drive API recebe o `orderBy` antes da paginação, portanto a ordem vale para o conjunto global e não apenas para os 20 itens já carregados;
+- modo original preserva `folder,name_natural` em pastas e ausência de `orderBy` em pesquisa;
+- backend aceita somente o enum allowlisted `original|modified_desc|modified_asc`;
+- snapshots aquecidos continuam exclusivos da ordem original;
+- ordenação não é persistida na conta e nenhuma nova propriedade é enviada à observabilidade;
+- cache-busters finais: `documents.css?v=20260923-5` e `documents.js?v=20260923-9`.
+
+Validação da PR:
+- primeira execução: **22/23 workflows verdes**; somente o workflow de navegador falhou em um teste móvel antigo do editor (redo por teclado), sem relação com a lista/ordenação;
+- o mesmo job foi reexecutado **sem alteração de código** e passou integralmente, confirmando falha intermitente do teste;
+- estado final da PR: **23/23 workflows GitHub Actions success**, zero falhas.
+
+Validação pós-merge do commit `5921b97b`:
+- **23/23 runs concluídos com success**;
+- Fases 1–6: success;
+- Central de Documentos — navegador: success;
+- site/governança/bundle: success;
+- **pages build and deployment: success**.
+
+**Próxima ação exata:** homologar visualmente em produção após Ctrl+F5: pesquisar um conjunto conhecido, ativar Mais recentes ↓, inverter para Mais antigos ↑, usar Redefinir ordem e confirmar que o comportamento original retorna.
