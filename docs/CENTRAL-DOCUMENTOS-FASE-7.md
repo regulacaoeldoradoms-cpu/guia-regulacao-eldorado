@@ -543,3 +543,47 @@ Critérios de aceite:
 5. paginação e refresh preservam o filtro;
 6. nenhuma nova API é necessária;
 7. CI/navegador/governança verdes.
+
+
+## 7E — pesquisa avançada semelhante ao Google Drive — 23/09/2026
+
+Pedido operacional: incorporar à Central uma janela de **Pesquisa avançada** inspirada no Google Drive, preservando somente filtros que a Drive API consegue aplicar de forma fiel e eficiente.
+
+Filtros implementados:
+- **Tipo**: qualquer, PDF, pasta, imagem, Documento Google, Planilha Google, Apresentação Google ou vídeo;
+- **Proprietário**: qualquer pessoa, eu ou outro e-mail;
+- **Com as palavras**: texto obrigatório no índice `fullText`;
+- **Nome do item**: trecho obrigatório do nome;
+- **Local**: em qualquer lugar, pasta atual ou Compartilhados comigo;
+- **Com estrela**;
+- **Na lixeira**;
+- **Data da modificação**: hoje, últimos 7/30/90 dias, este ano ou intervalo personalizado;
+- **Compartilhado com**: e-mail presente como leitor, escritor ou proprietário;
+- o filtro rápido **Só título** permanece disponível abaixo da barra e pode ser combinado com os filtros avançados.
+
+Arquitetura:
+- todos os filtros são enviados como campos estruturados; o cliente nunca envia uma string `q` arbitrária;
+- o Worker valida tipo, e-mails, datas, localização e referência opaca da pasta;
+- a consulta final é montada somente no Worker;
+- `Pasta atual` usa a referência opaca já existente e o Worker a abre apenas para obter o ID da pasta na chamada Google; nenhum ID bruto volta ao navegador;
+- paginação de 20 resultados, referências opacas e observabilidade sem termos pesquisados permanecem;
+- busca avançada pode ser executada sem texto desde que exista pelo menos um filtro real;
+- ao sair da pesquisa para navegar em uma pasta, os filtros avançados são limpos para evitar restrições invisíveis;
+- durante pesquisa ativa, Atualizar e Carregar mais preservam todos os filtros.
+
+Filtros do Google Drive **não simulados**:
+- **Criptografado**: não é termo de consulta suportado por `files.list q`;
+- **Aprovações/assinaturas eletrônicas**: a Drive API expõe aprovações por recurso separado e por arquivo, não como termo de pesquisa em `files.list`. Fazer isso de forma ingênua exigiria N chamadas após listar candidatos, piorando muito a latência;
+- seleção arbitrária de “Mais locais...” não foi clonada; a Central oferece **Pasta atual**, que é fiel ao modelo de segurança por referência opaca e cobre pesquisa contextual sem introduzir um picker recursivo pesado.
+
+Essa limitação é intencional: a UI só oferece filtros que o backend consegue cumprir sem falso resultado, varredura massiva ou custo oculto.
+
+Critérios de aceite:
+1. abrir/fechar modal sem abandonar a Central;
+2. aplicar qualquer filtro suportado com consulta vazia;
+3. combinar filtros com busca padrão e com Só título;
+4. proprietário/e-mail inválido falha fechado;
+5. Pasta atual nunca expõe fileId ao cliente;
+6. paginação e refresh preservam filtros ativos;
+7. criptografia/aprovações aparecem somente como nota de indisponibilidade, não como controles enganosos;
+8. CI, navegador e governança verdes.

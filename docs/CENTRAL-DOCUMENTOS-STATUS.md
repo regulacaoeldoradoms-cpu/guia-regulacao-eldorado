@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — filtro “Só título” integrado à pesquisa; falta homologação visual/funcional em produção** |
-| Última ação concluída | PR **#436** mesclada à `main`; pesquisa ampla continua padrão e o filtro “Só título” restringe a consulta ao nome |
-| Branch atual | `docs/titon-search-title-only-published-20260923` somente para reconciliar status |
-| PR atual | funcional **#436 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`5a557ed5056eb06fe48986d8fc4a098aee7061e4`** |
-| Checks e testes | head final da #436: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
-| Decisões tomadas | padrão = nome + conteúdo; “Só título” = apenas `name contains`; alternância refaz a pesquisa ativa; refresh/paginação preservam o modo; filtro não é persistido na conta |
-| Justificativas | aproxima a UX do Google Drive original e permite alternar entre busca ampla e precisa por filename |
-| Alternativas descartadas | transformar Só título em padrão; criar endpoint separado; persistir escolha sem solicitação |
-| Ações externas concluídas | nenhuma nova API/configuração necessária |
-| Pendências e bloqueios | confirmar deploy produtivo e testar a mesma consulta com filtro desligado e ligado |
-| Riscos conhecidos | alternar o filtro dispara nova chamada ao Drive; comportamento intencional |
-| Métricas / observabilidade | termo e estado do filtro continuam fora do PostHog; somente métricas técnicas existentes |
-| Próxima ação exata | **Ctrl+F5 → pesquisar um termo com Só título desligado → ativar Só título → confirmar que resultados passam a considerar somente nomes** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #436; merge `5a557ed5`; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/document-drive.js`; `worker/documents-router.js` |
+| Subfase / objetivo atual | **7E — implementar Pesquisa avançada do Drive com filtros suportados pela API** |
+| Última ação concluída | modal, estado do cliente e query builder seguro foram implementados na branch; filtros avançados podem ser combinados com nome+conteúdo e Só título |
+| Branch atual | `feat/titon-advanced-drive-search-20260923` |
+| PR atual | ainda não aberta; abrir após revisão do diff |
+| Último commit relevante | base `c41faf67d1f4b8efa79ddbef25f5d69f64bd7c4b`; HTML/CSS/cliente/Worker/router/testes/docs alterados nesta branch |
+| Checks e testes | CI ainda pendente; testes adicionados para tipo, proprietário, fullText, nome, local/pasta opaca, estrela, lixeira, datas, compartilhamento e e-mail inválido |
+| Decisões tomadas | reproduzir somente filtros que `files.list q` suporta fielmente; não simular criptografia ou aprovações; localização oferece qualquer lugar, pasta atual e compartilhados comigo |
+| Justificativas | Drive API suporta name/fullText/mimeType/modifiedTime/trashed/starred/parents/owners/readers/writers/sharedWithMe; aprovações são recurso separado por arquivo e não servem como filtro direto de files.list |
+| Alternativas descartadas | varrer candidatos com approvals.list; filtro falso de criptografia; enviar query `q` arbitrária do browser; construir picker recursivo pesado nesta unidade |
+| Ações externas concluídas | nenhuma API ou scope adicional necessário para os filtros implementados |
+| Pendências e bloqueios | abrir PR, validar CI, corrigir regressões, mesclar/publicar e homologar combinações de filtros em produção |
+| Riscos conhecidos | Pasta atual é escopo direto da pasta, não busca recursiva de toda a subárvore; tipos não suportados pelo Titon podem aparecer como itens não abríveis |
+| Métricas / observabilidade | termos, e-mails e filtros não entram no PostHog; permanecem apenas duração e bucket de resultados |
+| Próxima ação exata | **abrir PR → CI verde → merge/publicação → testar modal com Tipo=PDF, Pasta atual, período e Compartilhado com; validar também Redefinir e paginação** |
+| Arquivos e fontes principais | Guia Mestre V1.1; docs Drive query terms/search; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/document-drive.js`; `worker/documents-router.js`; testes Phase1/UI |
 
 ## Histórico recuperável
 
@@ -5548,3 +5548,21 @@ Validação do head funcional `f9ae471b936f5e9cd6feb32ead071298b536ee1b`:
 - testes confirmam que `titleOnly=true` gera query sem `fullText contains`, enquanto o padrão preserva pesquisa de conteúdo.
 
 **Próxima ação exata:** homologar em produção comparando a mesma pesquisa com Só título desligado e ligado.
+
+
+## Fase 7E — pesquisa avançada preparada — 23/09/2026
+
+A branch `feat/titon-advanced-drive-search-20260923` amplia a pesquisa já integrada (nome + conteúdo + Só título) com um modal inspirado na Pesquisa avançada do Google Drive.
+
+Controles implementados: Tipo, Proprietário, Com as palavras, Nome do item, Local, Com estrela, Na lixeira, Data da modificação e Compartilhado com.
+
+O backend usa exclusivamente campos estruturados e monta `q` no Worker. A pasta atual é enviada ao servidor como referência opaca; o ID Google só é recuperado dentro do Worker. E-mails e datas são validados antes da chamada externa.
+
+Não implementados deliberadamente nesta unidade:
+- `Criptografado`: ausente dos termos de consulta oficiais de arquivos;
+- aprovações/assinaturas eletrônicas: `approvals.list` existe, mas é por fileId e não um filtro de `files.list`; aplicar após a busca criaria fan-out de chamadas e latência elevada;
+- picker “Mais locais...”: substituído por Pasta atual, evitando navegar/baixar uma árvore inteira apenas para escolher o local.
+
+Cache-busters planejados: `documents.css?v=20260923-4` e `documents.js?v=20260923-8`.
+
+**Próxima ação exata:** abrir PR e executar a matriz CI completa antes de integrar.

@@ -129,6 +129,180 @@ export class DriveIntegrationError extends Error {
   }
 }
 
+function normalizedDriveSearchEmail(value, label) {
+  const email = String(value || '').trim().toLowerCase().slice(0, 254);
+  if (!email) return '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email)) {
+    throw new DriveIntegrationError(
+      'DRIVE_SEARCH_EMAIL_INVALID',
+      `${label} deve ser um endereço de e-mail válido.`,
+      400
+    );
+  }
+  return email;
+}
+
+function normalizedDriveSearchInstant(value, label) {
+  const text = String(value || '').trim().slice(0, 40);
+  if (!text) return '';
+  const timestamp = Date.parse(text);
+  if (!Number.isFinite(timestamp)) {
+    throw new DriveIntegrationError(
+      'DRIVE_SEARCH_DATE_INVALID',
+      `${label} possui uma data inválida.`,
+      400
+    );
+  }
+  return new Date(timestamp).toISOString();
+}
+
+function driveSearchTypeClause(value) {
+  const type = String(value || 'any').trim().toLowerCase();
+  const exact = {
+    pdf: PDF_MIME,
+    folder: DRIVE_FOLDER_MIME,
+    document: 'application/vnd.google-apps.document',
+    spreadsheet: 'application/vnd.google-apps.spreadsheet',
+    presentation: 'application/vnd.google-apps.presentation'
+  };
+  if (exact[type]) return `mimeType = '${exact[type]}'`;
+  if (type === 'image') return "mimeType contains 'image/'";
+  if (type === 'video') return "mimeType contains 'video/'";
+  return '';
+}
+
+async function buildDriveSearchQuery(env, input = {}) {
+  const query = String(input.query || '').trim().slice(0, 120);
+  if (query && query.length < 2) {
+    throw new DriveIntegrationError('DRIVE_SEARCH_TOO_SHORT', 'Digite pelo menos dois caracteres para pesquisar.', 400);
+  }
+
+  const titleOnly = input.titleOnly === true;
+  const source = input.filters && typeof input.filters === 'object' ? input.filters : {};
+  const filters = {
+    type: String(source.type || 'any').trim().toLowerCase().slice(0, 24),
+    owner: String(source.owner || 'any').trim().toLowerCase().slice(0, 16),
+    ownerEmail: String(source.ownerEmail || '').trim().slice(0, 254),
+    words: String(source.words || '').trim().slice(0, 120),
+    itemName: String(source.itemName || '').trim().slice(0, 120),
+    location: String(source.location || 'any').trim().toLowerCase().slice(0, 16),
+    parentRef: String(source.parentRef || '').trim().slice(0, 1200),
+    starred: source.starred === true,
+    trashed: source.trashed === true,
+    modifiedAfter: String(source.modifiedAfter || '').trim().slice(0, 40),
+    modifiedBefore: String(source.modifiedBefore || '').trim().slice(0, 40),
+    sharedWith: String(source.sharedWith || '').trim().slice(0, 254)
+  };
+
+  const clauses = [];
+  let explicitCriteria = false;
+
+  if (query) {
+    const nameClause = `name contains '${escapeDriveQueryLiteral(query)}'`;
+    const fullTextClause = titleOnly ? '' : driveFullTextSearchClause(query);
+    clauses.push(fullTextClause ? `(${nameClause} or (${fullTextClause}))` : nameClause);
+    explicitCriteria = true;
+  }
+
+  if (filters.words) {
+    const wordsClause = driveFullTextSearchClause(filters.words);
+    if (wordsClause) {
+      clauses.push(`(${wordsClause})`);
+      explicitCriteria = true;
+    }
+  }
+
+  if (filters.itemName) {
+    clauses.push(`name contains '${escapeDriveQueryLiteral(filters.itemName)}'`);
+    explicitCriteria = true;
+  }
+
+  const typeClause = driveSearchTypeClause(filters.type);
+  if (typeClause) {
+    clauses.push(typeClause);
+    explicitCriteria = true;
+  }
+
+  if (filters.owner === 'me') {
+    clauses.push("'me' in owners");
+    explicitCriteria = true;
+  } else if (filters.owner === 'email') {
+    const ownerEmail = normalizedDriveSearchEmail(filters.ownerEmail, 'O proprietário');
+    if (!ownerEmail) {
+      throw new DriveIntegrationError(
+        'DRIVE_SEARCH_OWNER_REQUIRED',
+        'Informe o e-mail do proprietário.',
+        400
+      );
+    }
+    clauses.push(`'${escapeDriveQueryLiteral(ownerEmail)}' in owners`);
+    explicitCriteria = true;
+  }
+
+  if (filters.location === 'shared') {
+    clauses.push('sharedWithMe = true');
+    explicitCriteria = true;
+  } else if (filters.location === 'current') {
+    if (filters.parentRef) {
+      const parent = await openDriveFileRef(env, filters.parentRef);
+      if (parent.mime !== DRIVE_FOLDER_MIME) {
+        throw new DriveIntegrationError(
+          'DRIVE_SEARCH_PARENT_INVALID',
+          'O local selecionado para pesquisa não é uma pasta válida.',
+          400
+        );
+      }
+      clauses.push(`'${escapeDriveQueryLiteral(parent.id)}' in parents`);
+    } else {
+      clauses.push("'root' in parents");
+    }
+    explicitCriteria = true;
+  }
+
+  if (filters.starred) {
+    clauses.push('starred = true');
+    explicitCriteria = true;
+  }
+
+  const modifiedAfter = normalizedDriveSearchInstant(filters.modifiedAfter, 'A data inicial');
+  const modifiedBefore = normalizedDriveSearchInstant(filters.modifiedBefore, 'A data final');
+  if (modifiedAfter && modifiedBefore && Date.parse(modifiedAfter) > Date.parse(modifiedBefore)) {
+    throw new DriveIntegrationError(
+      'DRIVE_SEARCH_DATE_RANGE_INVALID',
+      'A data inicial não pode ser posterior à data final.',
+      400
+    );
+  }
+  if (modifiedAfter) {
+    clauses.push(`modifiedTime >= '${modifiedAfter}'`);
+    explicitCriteria = true;
+  }
+  if (modifiedBefore) {
+    clauses.push(`modifiedTime <= '${modifiedBefore}'`);
+    explicitCriteria = true;
+  }
+
+  if (filters.sharedWith) {
+    const sharedEmail = normalizedDriveSearchEmail(filters.sharedWith, 'O campo Compartilhado com');
+    clauses.push(
+      `('${escapeDriveQueryLiteral(sharedEmail)}' in readers or '${escapeDriveQueryLiteral(sharedEmail)}' in writers or '${escapeDriveQueryLiteral(sharedEmail)}' in owners)`
+    );
+    explicitCriteria = true;
+  }
+
+  if (filters.trashed) explicitCriteria = true;
+  if (!explicitCriteria) {
+    throw new DriveIntegrationError(
+      'DRIVE_SEARCH_TOO_SHORT',
+      'Digite pelo menos dois caracteres ou selecione um filtro de pesquisa.',
+      400
+    );
+  }
+
+  clauses.unshift(`trashed = ${filters.trashed ? 'true' : 'false'}`);
+  return clauses.join(' and ');
+}
+
 export function driveOAuthConfiguration(env) {
   const clientId = String(env.GOOGLE_DRIVE_OAUTH_CLIENT_ID || '').trim();
   const clientSecret = String(env.GOOGLE_DRIVE_OAUTH_CLIENT_SECRET || '').trim();
@@ -725,21 +899,12 @@ export async function listDriveFolder(env, input = {}) {
 }
 
 export async function searchDrive(env, input = {}) {
-  const query = String(input.query || '').trim().slice(0, 120);
-  if (query.length < 2) {
-    throw new DriveIntegrationError('DRIVE_SEARCH_TOO_SHORT', 'Digite pelo menos dois caracteres para pesquisar.', 400);
-  }
   const pageSize = clampInteger(input.pageSize, 20, 20, 100);
   const pageToken = String(input.pageToken || '').trim().slice(0, 2000);
-  const titleOnly = input.titleOnly === true;
+  const searchQuery = await buildDriveSearchQuery(env, input);
 
   const url = new URL('https://www.googleapis.com/drive/v3/files');
-  const nameClause = `name contains '${escapeDriveQueryLiteral(query)}'`;
-  const fullTextClause = titleOnly ? '' : driveFullTextSearchClause(query);
-  const searchClause = fullTextClause
-    ? `(${nameClause} or (${fullTextClause}))`
-    : nameClause;
-  url.searchParams.set('q', `trashed = false and ${searchClause}`);
+  url.searchParams.set('q', searchQuery);
   url.searchParams.set('pageSize', String(pageSize));
   url.searchParams.set('spaces', 'drive');
   url.searchParams.set('corpora', 'user');

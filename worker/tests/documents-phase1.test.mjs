@@ -456,6 +456,57 @@ sqliteTest('listagem e pesquisa não devolvem fileId bruto e aceitam somente ref
     const titleOnlyQuery = new URL(titleOnlyCall.url).searchParams.get('q');
     assert.match(titleOnlyQuery, /^trashed = false and name contains 'URGENCIA'$/);
     assert.doesNotMatch(titleOnlyQuery, /fullText contains/);
+
+    const beforeAdvanced = calls.length;
+    await searchDrive(env, {
+      query: '',
+      filters: {
+        type: 'pdf',
+        owner: 'me',
+        words: '"DOR LOMBAR"',
+        itemName: 'SOLICITAR',
+        location: 'current',
+        parentRef: listed.items[0].ref,
+        starred: true,
+        trashed: false,
+        modifiedAfter: '2026-09-01T00:00:00.000Z',
+        modifiedBefore: '2026-09-30T23:59:59.999Z',
+        sharedWith: 'equipe@example.com'
+      }
+    });
+    const advancedCall = calls.slice(beforeAdvanced).find((call) => call.url.includes('/drive/v3/files'));
+    assert.ok(advancedCall);
+    const advancedQuery = new URL(advancedCall.url).searchParams.get('q');
+    assert.match(advancedQuery, /trashed = false/);
+    assert.match(advancedQuery, /mimeType = 'application\/pdf'/);
+    assert.match(advancedQuery, /'me' in owners/);
+    assert.match(advancedQuery, /fullText contains '"DOR LOMBAR"'/);
+    assert.match(advancedQuery, /name contains 'SOLICITAR'/);
+    assert.match(advancedQuery, /'raw-folder-id-sensitive' in parents/);
+    assert.match(advancedQuery, /starred = true/);
+    assert.match(advancedQuery, /modifiedTime >= '2026-09-01T00:00:00\.000Z'/);
+    assert.match(advancedQuery, /modifiedTime <= '2026-09-30T23:59:59\.999Z'/);
+    assert.match(advancedQuery, /'equipe@example\.com' in readers/);
+    assert.match(advancedQuery, /'equipe@example\.com' in writers/);
+    assert.match(advancedQuery, /'equipe@example\.com' in owners/);
+
+    const beforeShared = calls.length;
+    await searchDrive(env, {
+      query: '',
+      filters: { location: 'shared', trashed: true }
+    });
+    const sharedCall = calls.slice(beforeShared).find((call) => call.url.includes('/drive/v3/files'));
+    const sharedQuery = new URL(sharedCall.url).searchParams.get('q');
+    assert.match(sharedQuery, /trashed = true/);
+    assert.match(sharedQuery, /sharedWithMe = true/);
+
+    await assert.rejects(
+      () => searchDrive(env, {
+        query: '',
+        filters: { owner: 'email', ownerEmail: 'email-invalido' }
+      }),
+      (error) => error?.code === 'DRIVE_SEARCH_EMAIL_INVALID'
+    );
   } finally {
     globalThis.fetch = originalFetch;
   }

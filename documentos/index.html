@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260923-3">
+  <link rel="stylesheet" href="/css/documents.css?v=20260923-4">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -58,10 +58,117 @@
                   <input id="documentsSearchTitleOnly" type="checkbox">
                   <span>Só título</span>
                 </label>
+                <button class="documents-advanced-search-trigger" id="documentsAdvancedSearchButton" type="button" aria-haspopup="dialog" aria-controls="documentsAdvancedSearchDialog">
+                  Pesquisa avançada
+                </button>
               </div>
             </form>
             <button class="portal-button secondary" id="refreshFolderButton" type="button">Atualizar pasta</button>
           </div>
+
+          <dialog class="documents-advanced-search-dialog" id="documentsAdvancedSearchDialog" aria-labelledby="documentsAdvancedSearchTitle">
+            <form class="documents-advanced-search-form" id="documentsAdvancedSearchForm">
+              <div class="documents-advanced-search-head">
+                <strong id="documentsAdvancedSearchTitle">Pesquisa avançada</strong>
+                <button class="documents-advanced-search-close" id="documentsAdvancedSearchCloseButton" type="button" aria-label="Fechar pesquisa avançada">×</button>
+              </div>
+
+              <div class="documents-advanced-search-grid">
+                <label class="documents-advanced-search-field">
+                  <span>Tipo</span>
+                  <select id="documentsAdvancedType">
+                    <option value="any">Qualquer tipo</option>
+                    <option value="pdf">PDF</option>
+                    <option value="folder">Pasta</option>
+                    <option value="image">Imagem</option>
+                    <option value="document">Documento Google</option>
+                    <option value="spreadsheet">Planilha Google</option>
+                    <option value="presentation">Apresentação Google</option>
+                    <option value="video">Vídeo</option>
+                  </select>
+                </label>
+
+                <label class="documents-advanced-search-field">
+                  <span>Proprietário</span>
+                  <select id="documentsAdvancedOwner">
+                    <option value="any">Qualquer pessoa</option>
+                    <option value="me">Eu</option>
+                    <option value="email">Outro e-mail</option>
+                  </select>
+                </label>
+
+                <label class="documents-advanced-search-field documents-advanced-search-field--wide" id="documentsAdvancedOwnerEmailField" hidden>
+                  <span>E-mail do proprietário</span>
+                  <input id="documentsAdvancedOwnerEmail" type="email" maxlength="254" autocomplete="off" placeholder="nome@exemplo.com">
+                </label>
+
+                <label class="documents-advanced-search-field documents-advanced-search-field--wide">
+                  <span>Com as palavras</span>
+                  <input id="documentsAdvancedWords" type="text" maxlength="120" autocomplete="off" placeholder="Texto que deve existir no conteúdo">
+                </label>
+
+                <label class="documents-advanced-search-field documents-advanced-search-field--wide">
+                  <span>Nome do item</span>
+                  <input id="documentsAdvancedItemName" type="text" maxlength="120" autocomplete="off" placeholder="Trecho do nome do arquivo">
+                </label>
+
+                <label class="documents-advanced-search-field">
+                  <span>Local</span>
+                  <select id="documentsAdvancedLocation">
+                    <option value="any">Em qualquer lugar</option>
+                    <option value="current">Pasta atual</option>
+                    <option value="shared">Compartilhados comigo</option>
+                  </select>
+                </label>
+
+                <div class="documents-advanced-search-field">
+                  <span>Marcadores</span>
+                  <div class="documents-advanced-search-checks">
+                    <label><input id="documentsAdvancedStarred" type="checkbox"> Com estrela</label>
+                    <label><input id="documentsAdvancedTrashed" type="checkbox"> Na lixeira</label>
+                  </div>
+                </div>
+
+                <label class="documents-advanced-search-field">
+                  <span>Data da modificação</span>
+                  <select id="documentsAdvancedModified">
+                    <option value="any">Qualquer período</option>
+                    <option value="today">Hoje</option>
+                    <option value="7d">Últimos 7 dias</option>
+                    <option value="30d">Últimos 30 dias</option>
+                    <option value="90d">Últimos 90 dias</option>
+                    <option value="year">Este ano</option>
+                    <option value="custom">Período personalizado</option>
+                  </select>
+                </label>
+
+                <div class="documents-advanced-search-date-range documents-advanced-search-field--wide" id="documentsAdvancedDateRange" hidden>
+                  <label class="documents-advanced-search-field">
+                    <span>De</span>
+                    <input id="documentsAdvancedModifiedFrom" type="date">
+                  </label>
+                  <label class="documents-advanced-search-field">
+                    <span>Até</span>
+                    <input id="documentsAdvancedModifiedTo" type="date">
+                  </label>
+                </div>
+
+                <label class="documents-advanced-search-field documents-advanced-search-field--wide">
+                  <span>Compartilhado com</span>
+                  <input id="documentsAdvancedSharedWith" type="email" maxlength="254" autocomplete="off" placeholder="nome@exemplo.com">
+                </label>
+              </div>
+
+              <div class="documents-advanced-search-note">
+                A pesquisa usa os filtros oficiais da Drive API. Criptografia e fluxos de aprovação não possuem filtro direto na consulta de arquivos e não são simulados aqui.
+              </div>
+
+              <div class="documents-advanced-search-actions">
+                <button class="portal-button ghost" id="documentsAdvancedResetButton" type="button">Redefinir</button>
+                <button class="portal-button primary" id="documentsAdvancedApplyButton" type="submit">Pesquisar</button>
+              </div>
+            </form>
+          </dialog>
 
           <nav class="documents-breadcrumbs" id="documentsBreadcrumbs" aria-label="Localização no Google Drive"></nav>
 
@@ -349,6 +456,6 @@
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-ocr.js?v=20260922-1"></script>
   <script src="/js/document-viewer.js?v=20260922-3"></script>
-  <script src="/js/documents.js?v=20260923-7"></script>
+  <script src="/js/documents.js?v=20260923-8"></script>
 </body>
 </html>

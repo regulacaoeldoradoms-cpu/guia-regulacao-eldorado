@@ -120,6 +120,7 @@
     searchQuery: '',
     searchMode: false,
     searchTitleOnly: false,
+    searchFilters: null,
     loading: false,
     folderSnapshot: null,
     warmedDocumentPayload: null,
@@ -209,6 +210,25 @@
     searchForm: document.getElementById('documentsSearchForm'),
     search: document.getElementById('documentsSearch'),
     searchTitleOnly: document.getElementById('documentsSearchTitleOnly'),
+    advancedSearchButton: document.getElementById('documentsAdvancedSearchButton'),
+    advancedSearchDialog: document.getElementById('documentsAdvancedSearchDialog'),
+    advancedSearchForm: document.getElementById('documentsAdvancedSearchForm'),
+    advancedSearchClose: document.getElementById('documentsAdvancedSearchCloseButton'),
+    advancedSearchReset: document.getElementById('documentsAdvancedResetButton'),
+    advancedType: document.getElementById('documentsAdvancedType'),
+    advancedOwner: document.getElementById('documentsAdvancedOwner'),
+    advancedOwnerEmailField: document.getElementById('documentsAdvancedOwnerEmailField'),
+    advancedOwnerEmail: document.getElementById('documentsAdvancedOwnerEmail'),
+    advancedWords: document.getElementById('documentsAdvancedWords'),
+    advancedItemName: document.getElementById('documentsAdvancedItemName'),
+    advancedLocation: document.getElementById('documentsAdvancedLocation'),
+    advancedStarred: document.getElementById('documentsAdvancedStarred'),
+    advancedTrashed: document.getElementById('documentsAdvancedTrashed'),
+    advancedModified: document.getElementById('documentsAdvancedModified'),
+    advancedDateRange: document.getElementById('documentsAdvancedDateRange'),
+    advancedModifiedFrom: document.getElementById('documentsAdvancedModifiedFrom'),
+    advancedModifiedTo: document.getElementById('documentsAdvancedModifiedTo'),
+    advancedSharedWith: document.getElementById('documentsAdvancedSharedWith'),
     refreshFolder: document.getElementById('refreshFolderButton'),
     breadcrumbs: document.getElementById('documentsBreadcrumbs'),
     list: document.getElementById('documentsList'),
@@ -5444,6 +5464,201 @@
       .toLocaleLowerCase('pt-BR');
   }
 
+  function defaultAdvancedSearchFilters() {
+    return {
+      type: 'any',
+      owner: 'any',
+      ownerEmail: '',
+      words: '',
+      itemName: '',
+      location: 'any',
+      parentRef: '',
+      starred: false,
+      trashed: false,
+      modifiedPreset: 'any',
+      modifiedFrom: '',
+      modifiedTo: '',
+      modifiedAfter: '',
+      modifiedBefore: '',
+      sharedWith: ''
+    };
+  }
+
+  function normalizeAdvancedSearchFilters(value = {}) {
+    const source = value && typeof value === 'object' ? value : {};
+    const type = ['any', 'pdf', 'folder', 'image', 'document', 'spreadsheet', 'presentation', 'video']
+      .includes(String(source.type || '')) ? String(source.type) : 'any';
+    const owner = ['any', 'me', 'email'].includes(String(source.owner || ''))
+      ? String(source.owner) : 'any';
+    const location = ['any', 'current', 'shared'].includes(String(source.location || ''))
+      ? String(source.location) : 'any';
+    return {
+      type,
+      owner,
+      ownerEmail: String(source.ownerEmail || '').trim().slice(0, 254),
+      words: String(source.words || '').trim().slice(0, 120),
+      itemName: String(source.itemName || '').trim().slice(0, 120),
+      location,
+      parentRef: location === 'current' ? String(source.parentRef || '').trim().slice(0, 1200) : '',
+      starred: source.starred === true,
+      trashed: source.trashed === true,
+      modifiedPreset: ['any', 'today', '7d', '30d', '90d', 'year', 'custom'].includes(String(source.modifiedPreset || ''))
+        ? String(source.modifiedPreset) : 'any',
+      modifiedFrom: String(source.modifiedFrom || '').trim().slice(0, 10),
+      modifiedTo: String(source.modifiedTo || '').trim().slice(0, 10),
+      modifiedAfter: String(source.modifiedAfter || '').trim().slice(0, 40),
+      modifiedBefore: String(source.modifiedBefore || '').trim().slice(0, 40),
+      sharedWith: String(source.sharedWith || '').trim().slice(0, 254)
+    };
+  }
+
+  function advancedSearchHasCriteria(value = state.searchFilters) {
+    const filters = normalizeAdvancedSearchFilters(value || {});
+    return Boolean(
+      filters.type !== 'any'
+      || filters.owner !== 'any'
+      || filters.words
+      || filters.itemName
+      || filters.location !== 'any'
+      || filters.starred
+      || filters.trashed
+      || filters.modifiedAfter
+      || filters.modifiedBefore
+      || filters.sharedWith
+    );
+  }
+
+  function currentFolderLabel() {
+    return state.stack.length
+      ? String(state.stack[state.stack.length - 1]?.name || 'Pasta atual')
+      : 'Meu Drive (raiz)';
+  }
+
+  function localDateBoundary(value, endOfDay = false) {
+    const text = String(value || '').trim();
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return '';
+    const date = new Date(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3]),
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0
+    );
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+  }
+
+  function advancedModifiedRange(preset, fromValue = '', toValue = '') {
+    const choice = String(preset || 'any');
+    if (choice === 'custom') {
+      return {
+        modifiedAfter: localDateBoundary(fromValue, false),
+        modifiedBefore: localDateBoundary(toValue, true)
+      };
+    }
+    if (choice === 'any') return { modifiedAfter: '', modifiedBefore: '' };
+
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (choice === '7d') start.setDate(start.getDate() - 6);
+    else if (choice === '30d') start.setDate(start.getDate() - 29);
+    else if (choice === '90d') start.setDate(start.getDate() - 89);
+    else if (choice === 'year') {
+      start.setMonth(0, 1);
+      start.setHours(0, 0, 0, 0);
+    }
+    return { modifiedAfter: start.toISOString(), modifiedBefore: '' };
+  }
+
+  function syncAdvancedSearchConditionalFields() {
+    if (els.advancedOwnerEmailField) {
+      els.advancedOwnerEmailField.hidden = els.advancedOwner?.value !== 'email';
+    }
+    if (els.advancedDateRange) {
+      els.advancedDateRange.hidden = els.advancedModified?.value !== 'custom';
+    }
+  }
+
+  function syncAdvancedSearchButton() {
+    const active = advancedSearchHasCriteria();
+    els.advancedSearchButton?.classList.toggle('active', active);
+    els.advancedSearchButton?.setAttribute('aria-pressed', active ? 'true' : 'false');
+  }
+
+  function syncAdvancedSearchForm(value = state.searchFilters) {
+    const filters = normalizeAdvancedSearchFilters(value || defaultAdvancedSearchFilters());
+    if (els.advancedType) els.advancedType.value = filters.type;
+    if (els.advancedOwner) els.advancedOwner.value = filters.owner;
+    if (els.advancedOwnerEmail) els.advancedOwnerEmail.value = filters.ownerEmail;
+    if (els.advancedWords) els.advancedWords.value = filters.words;
+    if (els.advancedItemName) els.advancedItemName.value = filters.itemName;
+    if (els.advancedLocation) {
+      els.advancedLocation.value = filters.location;
+      const currentOption = els.advancedLocation.querySelector('option[value="current"]');
+      if (currentOption) currentOption.textContent = `Pasta atual — ${currentFolderLabel()}`;
+    }
+    if (els.advancedStarred) els.advancedStarred.checked = filters.starred;
+    if (els.advancedTrashed) els.advancedTrashed.checked = filters.trashed;
+    if (els.advancedSharedWith) els.advancedSharedWith.value = filters.sharedWith;
+
+    if (els.advancedModified) els.advancedModified.value = filters.modifiedPreset;
+    if (els.advancedModifiedFrom) els.advancedModifiedFrom.value = filters.modifiedFrom;
+    if (els.advancedModifiedTo) els.advancedModifiedTo.value = filters.modifiedTo;
+    syncAdvancedSearchConditionalFields();
+    syncAdvancedSearchButton();
+  }
+
+  function readAdvancedSearchFilters() {
+    const range = advancedModifiedRange(
+      els.advancedModified?.value,
+      els.advancedModifiedFrom?.value,
+      els.advancedModifiedTo?.value
+    );
+    return normalizeAdvancedSearchFilters({
+      type: els.advancedType?.value,
+      owner: els.advancedOwner?.value,
+      ownerEmail: els.advancedOwnerEmail?.value,
+      words: els.advancedWords?.value,
+      itemName: els.advancedItemName?.value,
+      location: els.advancedLocation?.value,
+      parentRef: els.advancedLocation?.value === 'current' ? currentParentRef() : '',
+      starred: els.advancedStarred?.checked === true,
+      trashed: els.advancedTrashed?.checked === true,
+      modifiedPreset: els.advancedModified?.value,
+      modifiedFrom: els.advancedModifiedFrom?.value,
+      modifiedTo: els.advancedModifiedTo?.value,
+      modifiedAfter: range.modifiedAfter,
+      modifiedBefore: range.modifiedBefore,
+      sharedWith: els.advancedSharedWith?.value
+    });
+  }
+
+  function openAdvancedSearch() {
+    syncAdvancedSearchForm(state.searchFilters || defaultAdvancedSearchFilters());
+    const dialog = els.advancedSearchDialog;
+    if (!dialog) return false;
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+    els.advancedType?.focus?.({ preventScroll: true });
+    return true;
+  }
+
+  function closeAdvancedSearch() {
+    const dialog = els.advancedSearchDialog;
+    if (!dialog) return false;
+    if (typeof dialog.close === 'function' && dialog.open) dialog.close();
+    else dialog.removeAttribute('open');
+    els.advancedSearchButton?.focus?.({ preventScroll: true });
+    return true;
+  }
+
+  function resetAdvancedSearchForm() {
+    syncAdvancedSearchForm(defaultAdvancedSearchFilters());
+    return true;
+  }
+
   function driveTimingValue(payload, key) {
     const value = Number(payload?.timing?.[key] || 0);
     return Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
@@ -5468,6 +5683,8 @@
     state.stack = [];
     state.searchMode = false;
     state.searchQuery = '';
+    state.searchFilters = defaultAdvancedSearchFilters();
+    syncAdvancedSearchButton();
     state.selectedListIndex = -1;
     state.items = incoming;
     state.nextPageToken = String(folder.nextPageToken || '');
@@ -5597,7 +5814,7 @@
     renderBreadcrumbs();
     if (state.selectedListIndex >= state.items.length) state.selectedListIndex = -1;
     els.listTitle.textContent = state.searchMode
-      ? `Pesquisa: ${state.searchQuery}`
+      ? (state.searchQuery ? `Pesquisa: ${state.searchQuery}` : 'Pesquisa avançada')
       : (state.stack.length ? state.stack[state.stack.length - 1].name : 'Meu Drive');
     els.listCount.textContent = `${state.items.length} item(ns) carregado(s)`;
 
@@ -5660,6 +5877,8 @@
     if (!append) {
       state.searchMode = false;
       state.searchQuery = '';
+      state.searchFilters = defaultAdvancedSearchFilters();
+      syncAdvancedSearchButton();
       state.selectedListIndex = -1;
       els.search.value = '';
       const snapshot = state.folderSnapshot;
@@ -5712,14 +5931,23 @@
     }
   }
 
-  async function search(query, { append = false, pageToken = '', titleOnly = state.searchTitleOnly } = {}) {
+  async function search(query, {
+    append = false,
+    pageToken = '',
+    titleOnly = state.searchTitleOnly,
+    filters = state.searchFilters
+  } = {}) {
     const value = String(query || '').trim();
-    if (value.length < 2) {
-      if (!value) return loadFolder();
+    const normalizedFilters = normalizeAdvancedSearchFilters(filters || defaultAdvancedSearchFilters());
+    const hasAdvanced = advancedSearchHasCriteria(normalizedFilters);
+
+    if (value && value.length < 2) {
       showStatus('Digite pelo menos dois caracteres para pesquisar.', 'warning');
       return;
     }
+    if (!value && !hasAdvanced) return loadFolder();
     if (state.loading) return;
+
     background?.cancelScope?.('list', 'stale');
     state.loading = true;
     const started = performance.now();
@@ -5728,12 +5956,20 @@
       state.searchMode = true;
       state.searchQuery = value;
       state.searchTitleOnly = titleOnly === true;
+      state.searchFilters = normalizedFilters;
       if (els.searchTitleOnly) els.searchTitleOnly.checked = state.searchTitleOnly;
+      syncAdvancedSearchButton();
       state.selectedListIndex = -1;
 
       const snapshot = state.folderSnapshot;
       const needle = normalizedSearchText(value);
-      const localMatches = snapshot && snapshot.parentRef === currentParentRef()
+      const canUseLocalNamePreview = Boolean(
+        value
+        && !hasAdvanced
+        && snapshot
+        && snapshot.parentRef === currentParentRef()
+      );
+      const localMatches = canUseLocalNamePreview
         ? snapshot.items.filter((item) => normalizedSearchText(item?.name).includes(needle))
         : [];
 
@@ -5755,7 +5991,8 @@
           query: value,
           pageToken,
           pageSize: 20,
-          titleOnly: state.searchTitleOnly
+          titleOnly: state.searchTitleOnly,
+          filters: state.searchFilters
         })
       });
       const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
@@ -6015,20 +6252,54 @@
   els.searchForm.addEventListener('submit', (event) => {
     event.preventDefault();
     search(els.search.value, {
-      titleOnly: els.searchTitleOnly?.checked === true
+      titleOnly: els.searchTitleOnly?.checked === true,
+      filters: state.searchFilters
     });
   });
 
   els.searchTitleOnly?.addEventListener('change', () => {
     state.searchTitleOnly = els.searchTitleOnly.checked === true;
-    if (state.searchMode && state.searchQuery) {
-      search(state.searchQuery, { titleOnly: state.searchTitleOnly });
+    if (state.searchMode && (state.searchQuery || advancedSearchHasCriteria())) {
+      search(state.searchQuery, {
+        titleOnly: state.searchTitleOnly,
+        filters: state.searchFilters
+      });
     }
   });
 
+  els.advancedSearchButton?.addEventListener('click', () => {
+    openAdvancedSearch();
+  });
+  els.advancedSearchClose?.addEventListener('click', () => {
+    closeAdvancedSearch();
+  });
+  els.advancedSearchReset?.addEventListener('click', () => {
+    resetAdvancedSearchForm();
+  });
+  els.advancedOwner?.addEventListener('change', syncAdvancedSearchConditionalFields);
+  els.advancedModified?.addEventListener('change', syncAdvancedSearchConditionalFields);
+  els.advancedSearchForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const filters = readAdvancedSearchFilters();
+    state.searchFilters = filters;
+    syncAdvancedSearchButton();
+    closeAdvancedSearch();
+    search(els.search.value, {
+      titleOnly: els.searchTitleOnly?.checked === true,
+      filters
+    });
+  });
+  els.advancedSearchDialog?.addEventListener('click', (event) => {
+    if (event.target === els.advancedSearchDialog) closeAdvancedSearch();
+  });
+
   els.refreshFolder.addEventListener('click', () => {
-    if (state.searchMode) search(state.searchQuery, { titleOnly: state.searchTitleOnly });
-    else loadFolder();
+    if (state.searchMode) {
+      search(state.searchQuery, {
+        titleOnly: state.searchTitleOnly,
+        filters: state.searchFilters
+      });
+    } else loadFolder();
   });
 
   els.breadcrumbs.addEventListener('click', (event) => {
@@ -6149,7 +6420,8 @@
     if (state.searchMode) search(state.searchQuery, {
       append: true,
       pageToken: state.nextPageToken,
-      titleOnly: state.searchTitleOnly
+      titleOnly: state.searchTitleOnly,
+      filters: state.searchFilters
     });
     else loadFolder({ append: true, pageToken: state.nextPageToken });
   });

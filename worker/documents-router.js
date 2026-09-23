@@ -655,11 +655,26 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
       const denied = requireCapability(user, 'view', origin);
       if (denied) return denied;
       const body = await safeJson(request);
+      const filters = body.filters && typeof body.filters === 'object' ? body.filters : {};
       const result = await searchDrive(env, {
         query: String(body.query || ''),
         pageToken: String(body.pageToken || ''),
         pageSize: body.pageSize,
-        titleOnly: body.titleOnly === true
+        titleOnly: body.titleOnly === true,
+        filters: {
+          type: String(filters.type || ''),
+          owner: String(filters.owner || ''),
+          ownerEmail: String(filters.ownerEmail || ''),
+          words: String(filters.words || ''),
+          itemName: String(filters.itemName || ''),
+          location: String(filters.location || ''),
+          parentRef: String(filters.parentRef || ''),
+          starred: filters.starred === true,
+          trashed: filters.trashed === true,
+          modifiedAfter: String(filters.modifiedAfter || ''),
+          modifiedBefore: String(filters.modifiedBefore || ''),
+          sharedWith: String(filters.sharedWith || '')
+        }
       });
       return json(result, 200, origin);
     }
