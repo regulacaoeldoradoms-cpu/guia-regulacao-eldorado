@@ -166,7 +166,7 @@
     editorDrawWidth: 4,
     editorPaletteWriteChain: Promise.resolve(),
     editorPaletteWriteGeneration: 0,
-    viewerZoomScale: DEFAULT_VIEWER_ZOOM_SCALE,
+    viewerZoomScale: null,
     viewerZoomWriteChain: Promise.resolve(),
     viewerZoomWriteGeneration: 0,
     pendingMergeItem: null,
@@ -773,23 +773,19 @@
     }
   }
 
-  function normalizeViewerZoomScale(value, fallback = DEFAULT_VIEWER_ZOOM_SCALE) {
+  function normalizeViewerZoomScale(value, fallback = null) {
+    if (value == null || value === '') return fallback;
     const numeric = Number(value);
-    const fallbackNumeric = Number(fallback);
-    const safeFallback = Number.isFinite(fallbackNumeric)
-      ? Math.min(MAX_VIEWER_ZOOM_SCALE, Math.max(MIN_VIEWER_ZOOM_SCALE, fallbackNumeric))
-      : DEFAULT_VIEWER_ZOOM_SCALE;
-    if (!Number.isFinite(numeric)) return Math.round(safeFallback * 100) / 100;
+    if (!Number.isFinite(numeric)) return fallback;
     const clamped = Math.min(MAX_VIEWER_ZOOM_SCALE, Math.max(MIN_VIEWER_ZOOM_SCALE, numeric));
     return Math.round(clamped * 100) / 100;
   }
 
   function accountViewerInitialViewState() {
-    return {
-      activePage: 1,
-      scale: normalizeViewerZoomScale(state.viewerZoomScale),
-      fitMode: false
-    };
+    const scale = normalizeViewerZoomScale(state.viewerZoomScale);
+    return Number.isFinite(scale)
+      ? { activePage: 1, scale, fitMode: false }
+      : null;
   }
 
   function normalizeEditorColorPalette(value) {
@@ -817,7 +813,7 @@
       return true;
     } catch (_) {
       state.editorColorPalette = [...DEFAULT_EDITOR_COLOR_PALETTE];
-      state.viewerZoomScale = DEFAULT_VIEWER_ZOOM_SCALE;
+      state.viewerZoomScale = null;
       return false;
     }
   }
