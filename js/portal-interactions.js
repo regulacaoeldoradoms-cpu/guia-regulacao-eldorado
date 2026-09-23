@@ -426,11 +426,12 @@
   }
 
   function loadStoredPreferences(userKey = currentUserKey) {
+    const fallback = { ...DEFAULT_PREFERENCES, theme: activeThemeFromStorage() };
     try {
       const parsed = JSON.parse(localStorage.getItem(storageKey(userKey)) || '{}');
-      return normalizePreferences(parsed);
+      return normalizePreferences(parsed, fallback);
     } catch (_) {
-      return { ...DEFAULT_PREFERENCES };
+      return fallback;
     }
   }
 
