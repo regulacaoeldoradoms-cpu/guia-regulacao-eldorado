@@ -176,22 +176,23 @@ test('service worker fornece stream PDF efêmero sem persistir bytes no Cache St
   assert.match(source, /headers\.set\('Range', range\)/);
   assert.match(source, /Authorization: entry\.authorization/);
   assert.match(source, /'Cache-Control': 'no-store'/);
-  assert.match(source, /CACHE_VERSION = '20260922-5'/);
+  assert.match(source, /CACHE_VERSION = '20260923-1'/);
 });
 
-test('Fase 7E abre Consulta/Exames aquecidos e mantém refresh autoritativo', () => {
+test('Fase 7E mantém somente a raiz aquecida e pastas comuns seguem refresh autoritativo', () => {
   const client = read('js/documents.js');
+  const worker = read('portal-sw.js');
+  const performanceClient = read('js/portal-performance.js');
 
   assert.match(client, /warmedDocumentPayload:\s*null/);
-  assert.match(client, /function warmedPriorityFolder\(/);
-  assert.match(client, /function applyWarmedFolderSnapshot\(/);
-  assert.match(client, /portal:documents-warm-updated/);
-  assert.match(client, /const priority = warmedPriorityFolder\(parentRef\)/);
+  assert.match(client, /function warmedRootFolder\(/);
+  assert.match(client, /refreshWarmedRootFolderInBackground\(\)/);
   assert.match(client, /source:\s*'cache'/);
   assert.match(client, /cache_state:\s*'hit'/);
-  assert.match(client, /if \(!warmedHit\)[\s\S]*drive_folder_opened/);
   assert.match(client, /await api\('\/api\/documents\/drive\/list'/);
-  assert.match(client, /state\.items\.length <= 20/);
+  assert.doesNotMatch(client, /warmedPriorityFolder|applyWarmedFolderSnapshot|portal:documents-warm-updated/);
+  assert.doesNotMatch(worker, /Consulta \[2026\]|Exames \[2026\]|priorityFolders|warmPriorityFolders/i);
+  assert.doesNotMatch(performanceClient, /prefetchPriorityDocumentFiles|schedulePriorityDocumentFilesWarm|PortalDocumentCache/);
 });
 
 test('Fase 7E pré-carrega somente a raiz após login e evita duplicar a chamada enquanto o warmup termina', () => {
