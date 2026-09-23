@@ -13,7 +13,7 @@ function env(overrides = {}) {
     DOCUMENTS_AI_PROCESSING_ENABLED: 'true',
     DOCUMENTS_AI_FREE_ONLY: 'true',
     TITON_GEMINI_COMPARISON_ENABLED: 'true',
-    TITON_GEMINI_MODEL: 'gemini-2.5-flash',
+    TITON_GEMINI_MODEL: 'gemini-3.5-flash-lite',
     TITON_GEMINI_API_KEY: 'secret-test-only',
     ...overrides
   };
@@ -59,15 +59,23 @@ function geminiResponse(value, usage = {}) {
   });
 }
 
-test('schema Gemini mantém três tipos de página e campos estritos', () => {
+test('schema Gemini usa subset suportado e mantém três formatos de fields estritos', () => {
   const schema = titonGeminiResponseJsonSchema();
-  assert.equal(Array.isArray(schema.oneOf), true);
-  assert.equal(schema.oneOf.length, 3);
-  for (const variant of schema.oneOf) {
-    assert.equal(variant.additionalProperties, false);
-    assert.deepEqual(variant.required, ['pageType', 'fields']);
-    assert.equal(variant.properties.fields.additionalProperties, false);
-  }
+  assert.equal(schema.type, 'object');
+  assert.equal(schema.additionalProperties, false);
+  assert.deepEqual(schema.required, ['pageType', 'fields']);
+  assert.deepEqual(schema.properties.pageType.enum, [
+    'comprovante_atendimento',
+    'pagina_medica_autorizada',
+    'outro'
+  ]);
+  assert.equal(Array.isArray(schema.properties.fields.anyOf), true);
+  assert.equal(schema.properties.fields.anyOf.length, 3);
+  assert.equal(
+    schema.properties.fields.anyOf.every((variant) => variant.additionalProperties === false),
+    true
+  );
+  assert.equal(Object.prototype.hasOwnProperty.call(schema, 'oneOf'), false);
 });
 
 test('Gemini é provider comparativo separado e preserva proveniência da página', async () => {
@@ -83,14 +91,17 @@ test('Gemini é provider comparativo separado e preserva proveniência da págin
     }
   });
 
-  assert.match(request.url, /gemini-2\.5-flash:generateContent$/);
+  assert.match(request.url, /gemini-3\.5-flash-lite:generateContent$/);
   assert.equal(request.options.headers['x-goog-api-key'], 'secret-test-only');
   assert.equal(request.options.method, 'POST');
 
   const body = JSON.parse(request.options.body);
-  assert.equal(body.generationConfig.responseMimeType, 'application/json');
-  assert.equal(body.generationConfig.thinkingConfig.thinkingBudget, 0);
-  assert.ok(body.generationConfig.responseJsonSchema);
+  assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, 'minimal');
+  assert.equal(body.generationConfig.responseFormat.text.mimeType, 'application/json');
+  assert.ok(body.generationConfig.responseFormat.text.schema);
+  assert.equal(body.generationConfig.temperature, undefined);
+  assert.equal(body.generationConfig.topP, undefined);
+  assert.equal(body.generationConfig.seed, undefined);
   assert.equal(body.contents[0].parts[0].inlineData.mimeType, 'image/png');
   assert.doesNotMatch(request.options.body, /fileName|driveId|username|patient_name/i);
 
@@ -99,7 +110,7 @@ test('Gemini é provider comparativo separado e preserva proveniência da págin
   assert.equal(result.extraction.pageNumber, 2);
   assert.equal(result.extraction.fields.cid.value, 'R52');
   assert.equal(result.provider.kind, 'google-gemini-api');
-  assert.equal(result.provider.model, 'gemini-2.5-flash');
+  assert.equal(result.provider.model, 'gemini-3.5-flash-lite');
   assert.equal(result.provider.usage.totalTokens, 820);
   assert.equal(result.routine.id, 'PROMPT_ANALISE_REGULACAO_V1');
 });
@@ -136,7 +147,26 @@ test('Gemini falha fechado sem secret ou com modelo não aprovado', async () => 
   );
 });
 
+test('Gemini informa indisponibilidade de modelo em vez de erro genérico', async () => {
+  await assert.rejects(
+    () => analyzeDocumentAiPageWithGemini(env(), {
+      pageNumber: 1,
+      mimeType: 'image/png',
+      bytes: new Uint8Array([1, 2])
+    }, {
+      fetcher: async () => new Response(JSON.stringify({
+        error: { status: 'NOT_FOUND', message: 'model not found' }
+      }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }),
+    (error) => error?.code === 'DOCUMENT_AI_GEMINI_MODEL_UNAVAILABLE'
+      && /não está disponível para este projeto/i.test(error?.message || '')
+  );
+});
+
 test('configuração comparativa usa modelo estável aprovado', () => {
-  assert.equal(TITON_GEMINI_COMPARISON.defaultModel, 'gemini-2.5-flash');
+  assert.equal(TITON_GEMINI_COMPARISON.defaultModel, 'gemini-3.5-flash-lite');
   assert.equal(TITON_GEMINI_COMPARISON.timeoutMs, 25_000);
 });
