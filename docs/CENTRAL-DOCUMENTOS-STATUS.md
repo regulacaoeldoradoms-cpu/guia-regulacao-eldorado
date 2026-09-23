@@ -3276,6 +3276,8 @@ A barra lateral interna do Titon (`.documents-rail-tool`) recebe o mesmo contras
 
 Cache-buster: `documents.css?v=20260923-9`. Teste de regressão em `worker/tests/documents-ui.test.mjs`.
 
+**Validação da PR #461:** 23/23 workflows GitHub Actions concluíram com sucesso, incluindo Chromium/PDF.js real; Cloudflare Pages preview publicou com sucesso. O Workers Builds externo falhou na branch, porém esta unidade altera somente CSS/HTML de cache-buster/teste/status e não modifica runtime/configuração do Worker; a falha não é atribuída à correção visual.
+
 Branch: `fix/titon-dark-editor-tool-contrast-20260923`. Próximo passo: abrir PR, executar CI integral e mesclar somente se verde.
 
 ## Handoff para o próximo chat
@@ -3286,17 +3288,17 @@ Branch: `fix/titon-dark-editor-tool-contrast-20260923`. Próximo passo: abrir PR
 | Subfase / objetivo atual | **7G.4 — aumentar contraste das ferramentas internas do editor no modo escuro** |
 | Última ação concluída | CSS, cache-buster e regressão implementados para ferramentas genéricas do editor/rail |
 | Branch atual | `fix/titon-dark-editor-tool-contrast-20260923` |
-| PR atual | **ainda não aberta** |
+| PR atual | **#461 aberta** — “Titon: aumentar contraste das ferramentas internas no modo escuro” |
 | Último commit relevante | `cd2d2fb5` — teste; `79abb9e7` contém a correção CSS |
-| Checks e testes | regressão adicionada; CI ainda precisa rodar na PR |
+| Checks e testes | **23/23 GitHub Actions success**, incluindo navegador real; Cloudflare Pages preview **success**; Workers Builds de branch **failure** sem mudança de Worker |
 | Decisões tomadas | placa azul-clara somente nos controles genéricos; botões autorais ficam fora; modo claro inalterado |
 | Justificativas | os ícones legados são azul-escuros e perdem contraste sobre o navy do editor; fundo claro resolve sem alterar assets |
 | Alternativas descartadas | inverter/filtros globais nos PNGs; recolorir assets; clarear toda a toolbar; mexer no tema global |
 | Ações externas concluídas | nenhuma |
-| Pendências e bloqueios | abrir PR → CI → merge → publicação → homologação visual |
+| Pendências e bloqueios | merge da #461 → confirmar publicação estática em main → homologação visual |
 | Riscos conhecidos | confirmar contraste de estados disabled/active e que assets autorais continuam intactos |
 | Métricas / observabilidade | nenhuma telemetria nova |
-| Próxima ação exata | **abrir PR da 7G.4, exigir CI verde e depois validar no modo escuro as ferramentas internas do editor e da barra lateral** |
+| Próxima ação exata | **mesclar a #461 (23/23 workflows funcionais verdes; Pages preview verde), confirmar publicação estática da main e validar o novo contraste no modo escuro** |
 | Arquivos e fontes principais | Guia Mestre V1.1; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
 
 ## Histórico recuperável
