@@ -3258,48 +3258,54 @@ A alteração funcional é somente CSS/cache-buster/teste/status; a evidência d
 
 **Pendência:** homologação visual humana em produção. O aceite é os três botões exibirem novamente seus desenhos no modo escuro, mantendo hover/foco e sem regressão do modo claro.
 
-## Fase 7G.4 — contraste das ferramentas internas do editor no modo escuro — EM BRANCH — 23/09/2026
+## Fase 7G.4 — contraste das ferramentas internas do editor no modo escuro — PUBLICADA / AGUARDANDO HOMOLOGAÇÃO HUMANA — 23/09/2026
 
-Após a 7G.3 restaurar os botões autorais do topo, a homologação visual identificou outro ponto: as ferramentas internas do editor (desfazer/refazer, unir, inserir página, imagem, recorte, seleção, escrita, colagem de imagem, desenho e ferramentas da barra lateral) continuavam usando ícones azul-escuros sobre o fundo navy do modo escuro, com contraste insuficiente.
+A PR **#461** foi mesclada em `main` pelo commit **`a6f056de`**.
 
-**Decisão visual:** no modo escuro, apenas as ferramentas genéricas do editor recebem uma placa azul-clara de alto contraste:
+**Problema corrigido:** as ferramentas internas do editor PDF e da barra lateral usavam ícones/textos azul-escuros sobre o fundo navy do modo escuro, com contraste insuficiente.
+
+**Correção publicada:** somente no modo escuro, as ferramentas genéricas recebem placa azul-clara:
 - fundo `#d8e9f4`;
 - borda `#78a9c4`;
 - ícone/texto `#0b4568`;
-- hover/foco ainda mais claro (`#f1f8fc`);
+- hover/foco `#f1f8fc`;
 - estado ativo `#b9dff2`;
-- desabilitado permanece distinguível com `opacity: .5`.
+- disabled com `opacity: .5`.
 
-Os botões autorais `.documents-art-button` (grade, Drive, Salvar, Imprimir, Fechar etc.) foram **explicitamente excluídos** desse recolorimento para preservar seus assets já corrigidos na 7G.3. O modo claro também permanece inalterado.
+Os botões autorais `.documents-art-button` foram explicitamente excluídos para preservar Grade, Drive, Salvar, Imprimir e Fechar, já corrigidos na 7G.3. O modo claro permanece inalterado. Cache-buster publicado: `documents.css?v=20260923-9`.
 
-A barra lateral interna do Titon (`.documents-rail-tool`) recebe o mesmo contraste para evitar ícones azul-escuros sobre fundo navy.
+**Validação:**
+- PR #461: **23/23 GitHub Actions success**, incluindo Chromium/PDF.js real;
+- Cloudflare Pages preview: **success**;
+- pós-merge `a6f056de`: **23/23 GitHub Actions success**;
+- GitHub Pages `deploy`: **success**;
+- Cloudflare Pages: **success**;
+- Workers Builds pós-merge: **failure**, porém esta unidade não altera runtime/configuração do Worker; a publicação estática da correção foi confirmada por Pages.
 
-Cache-buster: `documents.css?v=20260923-9`. Teste de regressão em `worker/tests/documents-ui.test.mjs`.
+**Privacidade/segurança:** nenhuma alteração em JavaScript, API, Drive, IA, permissões ou observabilidade.
 
-**Validação da PR #461:** 23/23 workflows GitHub Actions concluíram com sucesso, incluindo Chromium/PDF.js real; Cloudflare Pages preview publicou com sucesso. O Workers Builds externo falhou na branch, porém esta unidade altera somente CSS/HTML de cache-buster/teste/status e não modifica runtime/configuração do Worker; a falha não é atribuída à correção visual.
-
-Branch: `fix/titon-dark-editor-tool-contrast-20260923`. Próximo passo: abrir PR, executar CI integral e mesclar somente se verde.
+**Pendência:** homologação visual humana em produção. O aceite é as ferramentas internas do editor/rail ficarem claramente legíveis no tema escuro sem alterar os botões autorais.
 
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.4 — aumentar contraste das ferramentas internas do editor no modo escuro** |
-| Última ação concluída | CSS, cache-buster e regressão implementados para ferramentas genéricas do editor/rail |
-| Branch atual | `fix/titon-dark-editor-tool-contrast-20260923` |
-| PR atual | **#461 aberta** — “Titon: aumentar contraste das ferramentas internas no modo escuro” |
-| Último commit relevante | `cd2d2fb5` — teste; `79abb9e7` contém a correção CSS |
-| Checks e testes | **23/23 GitHub Actions success**, incluindo navegador real; Cloudflare Pages preview **success**; Workers Builds de branch **failure** sem mudança de Worker |
-| Decisões tomadas | placa azul-clara somente nos controles genéricos; botões autorais ficam fora; modo claro inalterado |
-| Justificativas | os ícones legados são azul-escuros e perdem contraste sobre o navy do editor; fundo claro resolve sem alterar assets |
-| Alternativas descartadas | inverter/filtros globais nos PNGs; recolorir assets; clarear toda a toolbar; mexer no tema global |
-| Ações externas concluídas | nenhuma |
-| Pendências e bloqueios | merge da #461 → confirmar publicação estática em main → homologação visual |
-| Riscos conhecidos | confirmar contraste de estados disabled/active e que assets autorais continuam intactos |
+| Subfase / objetivo atual | **7G.4 publicada; aguardando homologação visual do contraste das ferramentas internas do editor** |
+| Última ação concluída | PR **#461** mesclada em `a6f056de`; publicação estática confirmada |
+| Branch atual | `docs/titon-dark-editor-tool-contrast-published-20260923` (somente registro pós-publicação) |
+| PR atual | #461 **mesclada**; PR documental deste registro a abrir |
+| Último commit funcional relevante | `a6f056de954f98307ab1de0ff85d49681d353a2f` |
+| Checks e testes | PR #461 **23/23 success**; pós-merge **23/23 GitHub Actions success**; GitHub Pages e Cloudflare Pages **success** |
+| Decisões tomadas | placa azul-clara nos controles genéricos; botões autorais excluídos; modo claro preservado |
+| Justificativas | aumenta contraste sem alterar assets, lógica ou tema global |
+| Alternativas descartadas | inverter/recolorir PNGs; clarear toda a toolbar; modificar o tema global |
+| Ações externas concluídas | publicação estática confirmada; Workers Builds falhou sem alteração de Worker |
+| Pendências e bloqueios | **somente homologação visual humana em produção da 7G.4** |
+| Riscos conhecidos | confirmar disabled/active/hover e preservação dos botões autorais |
 | Métricas / observabilidade | nenhuma telemetria nova |
-| Próxima ação exata | **mesclar a #461 (23/23 workflows funcionais verdes; Pages preview verde), confirmar publicação estática da main e validar o novo contraste no modo escuro** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
+| Próxima ação exata | **Ctrl+F5 em /documentos/ → modo escuro → abrir editor PDF → conferir toolbar e barra lateral; validar que ferramentas genéricas contrastam e Grade/Drive/Salvar/Imprimir/Fechar permanecem intactos** |
+| Arquivos e fontes principais | Guia Mestre V1.1; merge #461 `a6f056de`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
 
 ## Histórico recuperável
 
