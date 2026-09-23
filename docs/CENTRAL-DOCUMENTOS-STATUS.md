@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — persistir o último zoom manual do Titon por conta** |
-| Última ação concluída | implementação preparada na branch: zoom manual (+, − e reset) passa a ser preferência da conta e vira o zoom inicial dos próximos PDFs |
-| Branch atual | `feat/titon-account-zoom-preference-20260923` |
-| PR atual | ainda não aberto; abrir após registrar a decisão e iniciar CI |
-| Último commit relevante | branch criada da `main` `d425024e708a66f075fd691ad0919359261f39e2`; implementação e testes em andamento |
-| Checks e testes | CI da branch ainda pendente; testes novos cobrem isolamento por conta, valor inválido, aplicação no próximo PDF e ausência de persistência via localStorage |
-| Decisões tomadas | preferência vinculada ao username no D1; primeiro uso mantém o fallback histórico de 114%; somente zoom percentual manual é salvo; “Ajustar largura” não sobrescreve a preferência |
-| Justificativas | fit-width depende do tamanho da janela/PDF e não representa um percentual estável; a conta deve carregar a mesma escolha manual em outra sessão/dispositivo |
-| Alternativas descartadas | localStorage por navegador; guardar zoom por PDF; salvar “Ajustar largura” como percentual; substituir o default 114% antes da primeira escolha |
-| Ações externas concluídas | nenhuma configuração externa ou secret novo necessário |
-| Pendências e bloqueios | validar CI, integrar/publicar e testar com duas contas/valores diferentes |
-| Riscos conhecidos | preferência extrema válida (45%–300%) será reaplicada em qualquer dispositivo da mesma conta; usuário pode redefinir a qualquer momento |
-| Métricas / observabilidade | preferência contém apenas número de escala; nenhum dado de PDF, paciente, filename ou Drive ID é persistido junto |
-| Próxima ação exata | **abrir PR, exigir checks verdes, mesclar/publicar; depois definir zoom em uma conta, abrir outro PDF e confirmar persistência; validar outra conta isolada** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `js/documents.js`; `worker/documents-router.js`; `documentos/index.html`; testes Fases 1–6/UI |
+| Subfase / objetivo atual | **7E — preferência de zoom do Titon por conta integrada; falta homologação operacional** |
+| Última ação concluída | PR **#424** mesclada à `main`; zoom percentual manual agora é persistido por username e reaplicado aos próximos PDFs |
+| Branch atual | `docs/titon-account-zoom-published-20260923` somente para reconciliar publicação/status |
+| PR atual | funcional **#424 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`a83d4b61f0e6af9d1813bb114fc40941a96eeacd`** |
+| Checks e testes | head final da #424: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
+| Decisões tomadas | zoom `−`, `+` e reset percentual salvam a conta; `Ajustar largura` não sobrescreve o percentual; sem escolha manual o viewer mantém o fallback histórico de 114% |
+| Justificativas | fit-width é dependente do viewport/PDF e não representa uma preferência percentual estável; a escolha deve acompanhar a conta, não o navegador |
+| Alternativas descartadas | localStorage/sessionStorage/IndexedDB; preferência por arquivo; transformar fit-width em percentual persistente |
+| Ações externas concluídas | nenhuma credencial, secret ou configuração externa necessária |
+| Pendências e bloqueios | falta confirmar deploy produtivo do merge #424 e validar com uma conta real; idealmente confirmar isolamento com uma segunda conta |
+| Riscos conhecidos | percentuais extremos válidos (45%–300%) acompanham a mesma conta também em outro dispositivo até nova escolha manual |
+| Métricas / observabilidade | D1 persiste apenas username + número de escala; nenhum dado documental, filename, página ou Drive ID |
+| Próxima ação exata | **Ctrl+F5; definir um zoom manual (ex.: 144%); fechar/abrir outro PDF e confirmar 144%; recarregar a Central e repetir; opcionalmente validar outra conta** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #424; merge `a83d4b61`; `js/documents.js`; `worker/documents-router.js`; `documentos/index.html`; testes documentais |
 
 ## Histórico recuperável
 
@@ -5173,3 +5173,45 @@ Critérios de aceite:
 7. valores fora de 45%–300% falham fechado no backend.
 
 **Próxima ação exata:** executar CI da branch, integrar somente com checks verdes e validar o fluxo real com duas contas.
+
+
+## Fase 7E — preferência de zoom por conta integrada à main — 23/09/2026
+
+A PR **#424 — Fase 7E: lembrar zoom do Titon por conta** foi integrada à `main` no merge **`a83d4b61f0e6af9d1813bb114fc40941a96eeacd`**.
+
+Resultado versionado:
+- nova tabela técnica D1 `auth_document_viewer_preferences`, indexada por `username`;
+- guarda somente `zoom_scale`, limitado a 45%–300%;
+- conta sem escolha gravada continua usando o comportamento histórico do viewer: fallback 114%, com ajuste de segurança à largura disponível;
+- após uma escolha manual, os próximos PDFs recebem esse percentual como `initialViewState`;
+- botões **−**, **+** e reset percentual gravam a preferência;
+- **Ajustar largura** permanece temporário/dinâmico e não altera a preferência percentual;
+- writes são serializados para que cliques rápidos não deixem uma gravação antiga vencer a escolha mais nova;
+- reload/nova sessão recupera a preferência pelo endpoint autenticado `/api/documents/preferences`;
+- preload existente da Central já traz a preferência antes da navegação ficar pronta;
+- nenhuma preferência de zoom é armazenada em `localStorage`, `sessionStorage` ou IndexedDB;
+- cache-buster do cliente avançou para **`documents.js?v=20260923-3`**.
+
+Validação do head funcional `9bb05a994609ee163f573d30fc91e9757ba22bfe`:
+- **23/23 workflows GitHub Actions: success**;
+- Central de Documentos — Fases 1–6: **success**;
+- navegador/PDF.js real em Chromium: **success**;
+- bundle de staging: **success**;
+- site e governança: **success**;
+- demais workflows disparados para o head: **success**.
+
+Testes adicionados:
+- ausência de preferência não cria gravação implícita e preserva fallback do viewer;
+- gravação/releitura do percentual;
+- isolamento entre usernames;
+- rejeição backend de escala fora de 45%–300%;
+- aplicação da preferência no próximo PDF;
+- `Ajustar largura` não chama persistência;
+- frontend não usa armazenamento local do navegador para esta escolha.
+
+Limite da evidência atual:
+- código e CI estão concluídos;
+- o conector GitHub desta sessão não comprova por si só o Workers Build de push pós-merge;
+- a homologação final exige um teste real após o deploy de produção.
+
+**Próxima ação exata:** Ctrl+F5 na Central; selecionar um percentual manual reconhecível (por exemplo 144%), abrir outro PDF e confirmar que ele inicia no mesmo percentual. Recarregar a página e repetir para provar persistência da conta.
