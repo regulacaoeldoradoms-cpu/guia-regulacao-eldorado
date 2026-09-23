@@ -3,13 +3,15 @@
 (() => {
   if (window.PortalInteractions) return;
 
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
   const STORAGE_PREFIX = 'regulacao.portal.interactions.v1';
+  const ACTIVE_THEME_KEY = 'regulacao.portal.theme.active.v1';
   const SOUND_BASE = '/assets/sounds/';
   const DEFAULT_PREFERENCES = Object.freeze({
     soundsEnabled: false,
     volume: 0.32,
-    muted: false
+    muted: false,
+    theme: 'light'
   });
 
   const TOKENS = Object.freeze({
@@ -278,7 +280,7 @@
         ['#interfaceSoundsMute', 'state-change', '#interfaceSoundsCard'],
         ['#portalLogout', 'navigation-exit']
       ],
-      change: [['#interfaceSoundsEnabled,#interfaceSoundVolume,#acceptFriendRequests,#socialProfileVisibility,#socialDefaultAudience', 'selection']]
+      change: [['#interfaceThemeLight,#interfaceThemeDark,#interfaceSoundsEnabled,#interfaceSoundVolume,#acceptFriendRequests,#socialProfileVisibility,#socialDefaultAudience', 'selection']]
     },
     {
       path: /^\/conquistas\/?$/,
@@ -370,6 +372,34 @@
     return clamp(parsed > 1 ? parsed / 100 : parsed, 0, 1);
   }
 
+  function normalizeTheme(value, fallback = DEFAULT_PREFERENCES.theme) {
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized === 'dark' || normalized === 'light' ? normalized : fallback;
+  }
+
+  function storeActiveTheme(value) {
+    const theme = normalizeTheme(value);
+    try { localStorage.setItem(ACTIVE_THEME_KEY, theme); }
+    catch (_) {}
+    return theme;
+  }
+
+  function activeThemeFromStorage() {
+    try { return normalizeTheme(localStorage.getItem(ACTIVE_THEME_KEY) || 'light'); }
+    catch (_) { return 'light'; }
+  }
+
+  function applyTheme(value, { storeActive = true } = {}) {
+    const theme = normalizeTheme(value);
+    document.documentElement.dataset.portalTheme = theme;
+    document.documentElement.style.colorScheme = theme;
+    if (document.body) document.body.dataset.portalTheme = theme;
+    const meta = document.querySelector?.('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#081a29' : '#0d3157');
+    if (storeActive) storeActiveTheme(theme);
+    return theme;
+  }
+
   function normalizePreferences(input = {}, fallback = DEFAULT_PREFERENCES) {
     const enabledValue = Object.prototype.hasOwnProperty.call(input, 'soundsEnabled')
       ? input.soundsEnabled
@@ -380,10 +410,14 @@
     const mutedValue = Object.prototype.hasOwnProperty.call(input, 'muted')
       ? input.muted
       : input.interfaceSoundsMuted;
+    const themeValue = Object.prototype.hasOwnProperty.call(input, 'theme')
+      ? input.theme
+      : input.interfaceTheme;
     return {
       soundsEnabled: booleanValue(enabledValue, fallback.soundsEnabled),
       volume: normalizeVolume(volumeValue, fallback.volume),
-      muted: booleanValue(mutedValue, fallback.muted)
+      muted: booleanValue(mutedValue, fallback.muted),
+      theme: normalizeTheme(themeValue, fallback.theme)
     };
   }
 
@@ -409,7 +443,8 @@
     return {
       interfaceSoundsEnabled: preferences.soundsEnabled,
       interfaceSoundVolume: Math.round(preferences.volume * 100),
-      interfaceSoundsMuted: preferences.muted
+      interfaceSoundsMuted: preferences.muted,
+      interfaceTheme: preferences.theme
     };
   }
 
@@ -417,7 +452,8 @@
     return Boolean(value && (
       Object.prototype.hasOwnProperty.call(value, 'interfaceSoundsEnabled') ||
       Object.prototype.hasOwnProperty.call(value, 'interfaceSoundVolume') ||
-      Object.prototype.hasOwnProperty.call(value, 'interfaceSoundsMuted')
+      Object.prototype.hasOwnProperty.call(value, 'interfaceSoundsMuted') ||
+      Object.prototype.hasOwnProperty.call(value, 'interfaceTheme')
     ));
   }
 
@@ -431,6 +467,8 @@
     if (nextKey === currentUserKey) return;
     currentUserKey = nextKey;
     preferences = loadStoredPreferences(currentUserKey);
+    preferences.theme = normalizeTheme(preferences.theme, activeThemeFromStorage());
+    applyTheme(preferences.theme);
     soundManager.update();
     syncSoundStateAttribute();
     renderPreferenceControls();
@@ -879,6 +917,7 @@
   function applyPreferences(next, options = {}) {
     preferences = normalizePreferences({ ...preferences, ...next }, preferences);
     saveStoredPreferences();
+    applyTheme(preferences.theme);
     soundManager.update();
     renderPreferenceControls();
     syncSoundStateAttribute();
@@ -901,6 +940,15 @@
   }
 
   function renderPreferenceControls() {
+    const themeLight = document.getElementById('interfaceThemeLight');
+    const themeDark = document.getElementById('interfaceThemeDark');
+    const themeStatus = document.getElementById('interfaceThemeStatus');
+    if (themeLight) themeLight.checked = preferences.theme === 'light';
+    if (themeDark) themeDark.checked = preferences.theme === 'dark';
+    if (themeStatus && !themeStatus.textContent) {
+      themeStatus.textContent = preferences.theme === 'dark' ? 'Modo escuro ativo.' : 'Modo claro ativo.';
+      themeStatus.className = 'account-status visible info';
+    }
     const enabled = document.getElementById('interfaceSoundsEnabled');
     const volume = document.getElementById('interfaceSoundVolume');
     const output = document.getElementById('interfaceSoundVolumeValue');
@@ -925,6 +973,39 @@
       quick.classList.toggle('is-muted', preferences.muted);
       quick.innerHTML = preferences.muted ? INLINE_ICONS.muted : INLINE_ICONS.sound;
     }
+  }
+
+  function bindThemePanel() {
+    const light = document.getElementById('interfaceThemeLight');
+    const dark = document.getElementById('interfaceThemeDark');
+    const status = document.getElementById('interfaceThemeStatus');
+    if (!light || !dark) return;
+    light.closest('[data-portal-theme-settings]')?.setAttribute('data-portal-interaction-ignore', '');
+
+    const commit = async (theme, source) => {
+      try {
+        await applyPreferences({ theme }, { persist: true });
+        if (status) {
+          status.textContent = theme === 'dark'
+            ? 'Modo escuro ativado e sincronizado com sua conta.'
+            : 'Modo claro ativado e sincronizado com sua conta.';
+          status.className = 'account-status visible success';
+        }
+        emit('selection', { source, force: true });
+      } catch (_) {
+        if (status) {
+          status.textContent = 'A aparência foi aplicada neste dispositivo, mas não pôde ser sincronizada com a conta.';
+          status.className = 'account-status visible error';
+        }
+      }
+    };
+
+    light.addEventListener('change', () => {
+      if (light.checked) commit('light', light);
+    });
+    dark.addEventListener('change', () => {
+      if (dark.checked) commit('dark', dark);
+    });
   }
 
   function bindPreferencePanel() {
@@ -1008,6 +1089,7 @@
     if (hasRemotePreferences(refreshed)) {
       preferences = normalizePreferences(refreshed, preferences);
       saveStoredPreferences();
+      applyTheme(preferences.theme);
       soundManager.update();
       syncSoundStateAttribute();
       renderPreferenceControls();
@@ -1018,6 +1100,7 @@
       if (!hasRemotePreferences(security)) return;
       preferences = normalizePreferences(security, preferences);
       saveStoredPreferences();
+      applyTheme(preferences.theme);
       soundManager.update();
       syncSoundStateAttribute();
       renderPreferenceControls();
@@ -1057,8 +1140,11 @@
     started = true;
     document.documentElement.dataset.portalInteractions = 'v1';
     preferences = loadStoredPreferences();
+    preferences.theme = normalizeTheme(preferences.theme, activeThemeFromStorage());
+    applyTheme(preferences.theme);
     syncSoundStateAttribute();
     mountUtilityUi();
+    bindThemePanel();
     bindPreferencePanel();
     startObserver();
     document.addEventListener('click', handleClick, { capture: true, signal });
@@ -1077,6 +1163,8 @@
     window.addEventListener('storage', (event) => {
       if (event.key !== storageKey()) return;
       preferences = loadStoredPreferences();
+      preferences.theme = normalizeTheme(preferences.theme, activeThemeFromStorage());
+      applyTheme(preferences.theme);
       soundManager.update();
       syncSoundStateAttribute();
       renderPreferenceControls();
@@ -1109,6 +1197,7 @@
     destroy,
     __test: Object.freeze({
       normalizePreferences,
+      normalizeTheme,
       classifyStatus,
       semanticClassName,
       feedbackTypes: FEEDBACK_TYPES,
@@ -1116,6 +1205,8 @@
       defaultPreferences: DEFAULT_PREFERENCES
     })
   });
+
+  applyTheme(activeThemeFromStorage());
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
