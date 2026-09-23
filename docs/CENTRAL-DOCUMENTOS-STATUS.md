@@ -3228,26 +3228,45 @@ A mudança em si continua sendo frontend e não depende de nova lógica de Worke
 
 **Pendência:** homologação humana em produção, incluindo modo escuro e nomes longos. O aceite operacional é hover revelar exatamente os dois botões, Salvar iniciar download e Imprimir abrir a caixa de impressão, ambos sem abrir o Titon.
 
+## Fase 7G.3 — botões autorais do Titon no modo escuro — EM BRANCH — 23/09/2026
+
+Durante a homologação visual em produção, o operador identificou que os botões **Ajustar largura**, **Salvar PDF** e **Imprimir PDF** no topo do visualizador apareciam como retângulos vazios no modo escuro.
+
+**Diagnóstico confirmado:** a camada global de tema escuro aplica `background: #142b3b !important` a `.portal-button.secondary`. Como `background` é shorthand, ela também redefine `background-image`, `background-repeat`, `background-position` e `background-size`. Esses três controles usam justamente imagens autorais como background e também possuem a classe `secondary`; o shorthand global ocultava os assets. Zoom -/+ não sofria o mesmo problema porque usa `ghost`.
+
+**Correção isolada:** em `css/documents.css`, seletores específicos do Titon no modo escuro restauram o background completo dos três controles:
+- `ajustar-largura.svg`;
+- `salvar-pdf.svg`;
+- `imprimir-normal.svg`.
+
+A correção é local à Central, não altera o tema global nem o modo claro e não mexe em JavaScript, backend, permissões, Drive, IA ou observabilidade. Cache-buster da Central: `documents.css?v=20260923-8`.
+
+Teste de regressão adicionado em `worker/tests/documents-ui.test.mjs` para garantir que os três backgrounds autorais continuem explícitos no modo escuro.
+
+**Validação da PR #459:** 23/23 workflows GitHub Actions concluíram com sucesso, inclusive Chromium/PDF.js real; Cloudflare Pages preview publicou com sucesso. O check externo Workers Builds falhou na branch, mas esta unidade altera apenas CSS/HTML de cache-buster/testes/status e não modifica runtime/configuração do Worker; por isso a falha não é atribuída à correção visual e não bloqueia o merge desta unidade estática.
+
+Branch: `fix/titon-dark-toolbar-art-buttons-20260923`. Próximo passo: abrir PR, rodar CI integral e mesclar somente se verde.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.2 publicada; aguardando homologação humana das ações rápidas da lista** |
-| Última ação concluída | PR **#455** mesclada em `24c8bc03`; GitHub Actions, Pages e Workers Builds concluíram com sucesso |
-| Branch atual | `docs/central-list-quick-save-print-published-20260923` (somente registro pós-publicação) |
-| PR atual | #455 **mesclada**; PR documental pós-publicação a abrir |
-| Último commit funcional relevante | `24c8bc03edd825d9793ca82879b4232634d09518` |
-| Checks e testes | PR #455 **23/23 success**; pós-merge **23/23 GitHub Actions success**; GitHub Pages, Cloudflare Pages e Workers Builds **success** |
-| Decisões tomadas | hover desktop/foco teclado; Salvar/Imprimir quadrados; nenhuma abertura do Titon; mobile/touch preservado |
-| Justificativas | reduz cliques em operações frequentes reutilizando download/impressão já homologados, sem ampliar backend |
-| Alternativas descartadas | abrir Titon silenciosamente; imprimir em nova aba; botões sempre visíveis |
-| Ações externas concluídas | publicação completa confirmada; Worker check reportou versão `781eab47-6ed5-4215-803c-a49b1369897c` |
-| Pendências e bloqueios | **somente homologação humana em produção da 7G.2**; homologações visuais/operacionais anteriores da Fase 7 permanecem independentes |
-| Riscos conhecidos | confirmar ergonomia com nomes longos e modo escuro; impressão continua sujeita ao diálogo nativo do navegador |
-| Métricas / observabilidade | nenhuma telemetria nova; nomes, referências e conteúdo documental continuam proibidos |
-| Próxima ação exata | **Ctrl+F5 em /documentos/ → passar o mouse sobre um PDF → testar Salvar → testar Imprimir → confirmar que nenhum deles abre Titon e que duplo clique ainda abre normalmente** |
-| Arquivos e fontes principais | Guia Mestre V1.1; merge #455 `24c8bc03`; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
+| Subfase / objetivo atual | **7G.3 — corrigir botões autorais do Titon no modo escuro** |
+| Última ação concluída | causa CSS confirmada; override específico implementado para Ajustar largura/Salvar/Imprimir; cache-buster e regressão atualizados |
+| Branch atual | `fix/titon-dark-toolbar-art-buttons-20260923` |
+| PR atual | **#459 aberta** — “Titon: corrigir botões autorais no modo escuro” |
+| Último commit relevante | `a5f2e5a0` — teste de regressão; `2cab8244` contém a correção CSS |
+| Checks e testes | **23/23 GitHub Actions success**, incluindo navegador real; Cloudflare Pages preview **success**; Workers Builds de branch **failure** sem mudança de Worker |
+| Decisões tomadas | corrigir localmente em `documents.css`, preservando o tema global e o modo claro |
+| Justificativas | o bug é colisão de CSS entre `.portal-button.secondary` e backgrounds autorais; override local minimiza blast radius |
+| Alternativas descartadas | alterar o tema global; trocar classes HTML; converter assets em JS/inline SVG; modificar modo claro |
+| Ações externas concluídas | nenhuma |
+| Pendências e bloqueios | merge da #459 → confirmar publicação estática em main → homologação visual |
+| Riscos conhecidos | conferir os três botões em hover/foco no modo escuro; demais ferramentas não usam essa combinação de classes |
+| Métricas / observabilidade | nenhuma telemetria nova |
+| Próxima ação exata | **mesclar a #459 (23/23 workflows funcionais verdes; Pages preview verde), confirmar publicação estática da main e validar em produção Ajustar largura/Salvar/Imprimir no modo escuro** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
 
 ## Histórico recuperável
 
