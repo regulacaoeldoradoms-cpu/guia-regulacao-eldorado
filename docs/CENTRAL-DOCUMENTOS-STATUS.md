@@ -3081,26 +3081,46 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 
 **Próxima ação exata:** validar CI/preview da correção, integrar se verde e repetir somente o caso visual em produção: com IA documental desabilitada, o botão IA não deve aparecer. A homologação operacional restante da Fase 6 continua conforme `CENTRAL-DOCUMENTOS-HOMOLOGACAO-6.md`.
 
+## Fase 7F — renomeação inline de PDF na lista — EM PR — 23/09/2026
+
+A solicitação desta unidade é permitir alterar o nome do PDF diretamente na lista da Central, antes de abrir o Titon, sem perder o comportamento já aprovado de abertura por duplo clique.
+
+**Decisão funcional:** manter a interação no padrão de explorador de arquivos. O primeiro clique continua selecionando. Quando o PDF já está selecionado, um **segundo clique simples no nome**, separado do primeiro, abre a edição inline; um **duplo clique rápido** continua abrindo o documento. A entrada inline protege a extensão `.pdf`; **Enter** ou saída do campo confirmam e **Esc** cancela.
+
+**Decisão técnica:** reutilizar integralmente o fluxo já existente de renomeação segura do Drive, `PATCH /api/documents/drive/rename`, com `baseVersion` e `baseName`. Não foi criado endpoint, permissão, segredo ou telemetria nova. A confirmação definitiva continua dependendo da resposta real do Google Drive e conflitos de versão continuam fail-closed.
+
+Implementação isolada na branch `feat/titon-inline-list-rename-20260923`, PR **#445**:
+- `js/documents.js`: estado/controle da edição inline, distinção entre segundo clique simples e duplo clique, confirmação por Enter/focusout e atualização segura do item em memória;
+- `css/documents.css`: campo de edição sobreposto à linha sem aninhar um input dentro do botão da linha;
+- `documentos/index.html`: cache-busters `documents.css?v=20260923-6` e `documents.js?v=20260923-10`;
+- `worker/tests/documents-ui.test.mjs`: regressão dedicada para preservar duplo clique de abertura e contrato da renomeação.
+
+**Alternativas descartadas:** usar duplo clique para renomear (conflitaria com a abertura do Titon); colocar `input` dentro do botão da linha (estrutura interativa inválida e pior para acessibilidade); criar nova rota de rename (duplicaria segurança já validada).
+
+**Riscos conhecidos:** o reconhecimento do segundo clique usa uma pequena janela de 260 ms para dar prioridade ao duplo clique real; esse comportamento deve ser validado no navegador. Conflitos externos continuam cobertos pelo backend existente. A homologação humana da ordenação cronológica da **7E** continua pendente e não foi reaberta nem alterada por esta unidade.
+
+**Estado atual:** PR #445 aberta; CI ainda deve ser confirmada após o commit de status. Não mesclar enquanto os checks relevantes não estiverem verdes. A PR transversal **#444** (modo claro/escuro) permanece independente e não deve ser incorporada nesta branch.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — ordenação cronológica integrada; aguardando homologação humana em produção** |
-| Última ação concluída | PR **#442** mesclada à `main`; ordem por modificação recente/antiga + Redefinir ordem publicada no código |
-| Branch atual | `docs/titon-chronological-order-published-20260923` somente para reconciliar status pós-merge |
-| PR atual | funcional **#442 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`5921b97b2d3f07d6e7416850decd5da2afe85b90`** |
-| Checks e testes | PR final **23/23 success**; pós-merge **23/23 success**, incluindo navegador e Pages build/deployment |
-| Decisões tomadas | ordenação é aplicada no backend antes da paginação; modos são `original`, `modified_desc`, `modified_asc`; estado não persiste |
-| Justificativas | garante cronologia correta em conjuntos maiores que 20 itens e preserva exatamente o modo histórico ao redefinir |
-| Alternativas descartadas | ordenar somente os itens carregados no navegador; permitir `orderBy` arbitrário; reutilizar snapshot alfabético como resultado cronológico |
-| Ações externas concluídas | nenhuma configuração externa necessária; GitHub Pages pós-merge concluiu com success |
-| Pendências e bloqueios | apenas homologação humana em produção dos dois sentidos cronológicos e do retorno à ordem original |
-| Riscos conhecidos | itens sem `modifiedTime` ficam ao final; houve uma falha intermitente de teste móvel do editor na primeira CI, eliminada ao rerodar o mesmo job sem mudança de código |
-| Métricas / observabilidade | nenhuma propriedade nova; nomes de arquivos, consultas e conteúdo continuam fora do PostHog |
-| Próxima ação exata | **Ctrl+F5 em /documentos/ → pesquisar → Ordem cronológica → conferir Mais recentes ↓ → clicar de novo → conferir Mais antigos ↑ → Redefinir ordem** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #442; merge `5921b97b`; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/document-drive.js`; `worker/documents-router.js` |
+| Subfase / objetivo atual | **7F — renomeação inline de PDF na lista; PR #445 aguardando CI** |
+| Última ação concluída | Implementação da edição inline concluída em branch isolada; PR **#445** aberta contra `main` |
+| Branch atual | `feat/titon-inline-list-rename-20260923` |
+| PR atual | **#445 aberta** — “Central: renomear PDF direto na lista” |
+| Último commit relevante | código/testes em **`29f637180f71cdb6595fc38c0b5c9942dbf0f34a`**; este status adicionará commit posterior |
+| Checks e testes | regressão estática adicionada; CI da PR deve ser conferida após esta atualização |
+| Decisões tomadas | segundo clique **simples** no nome já selecionado entra em edição; duplo clique rápido continua abrindo; Enter/focusout confirmam; Esc cancela; `.pdf` protegida; mesmo endpoint seguro de rename |
+| Justificativas | preserva o gesto de abertura já aprovado e reutiliza detecção de conflito/confirmação real do Drive, sem ampliar superfície de segurança |
+| Alternativas descartadas | duplo clique para renomear; input dentro do botão da linha; novo endpoint de renomeação |
+| Ações externas concluídas | nenhuma; sem OAuth, segredo, Cloudflare ou Drive manual |
+| Pendências e bloqueios | validar CI da #445 e interação real no navegador; homologação humana da ordenação 7E ainda pendente; PR #444 é paralela e independente |
+| Riscos conhecidos | janela de 260 ms entre segundo clique simples e duplo clique precisa de validação de UX; conflito externo permanece fail-closed |
+| Métricas / observabilidade | nenhuma propriedade nova; nome de arquivo e conteúdo seguem fora do PostHog |
+| Próxima ação exata | **conferir todos os checks da PR #445; se verdes, validar em navegador: 1 clique seleciona → segundo clique simples no nome edita → Enter e clique fora sincronizam → duplo clique rápido ainda abre o Titon** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #445; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; endpoint existente em `worker/document-drive.js` |
 
 ## Histórico recuperável
 
