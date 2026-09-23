@@ -714,7 +714,7 @@ function fastIntegratedAnalysisQuestion() {
     'Se t=m, use EXATAMENTE ti,mo,me,cr,ps,pc,ci,dc para titulo, motivo_encaminhamento, medico, crm_rms, procedimento_solicitado, codigo_procedimento, cid, descricao_cid.',
     'Para ti, prefira sempre o valor do campo explicitamente rotulado Título; só use cabeçalho quando esse rótulo não existir.',
     'Use t=c somente se o TÍTULO PRINCIPAL da folha for COMPROVANTE DE ATENDIMENTO, CONTROLE DE ATENDIMENTO ou DADOS; DADOS em seção interna não autoriza comprovante.',
-    'Use t=m se o título principal for GUIA DE ENCAMINHAMENTO, ENCAMINHAMENTO, ENCAMINHAMENTOS, RECEITA SIMPLES, LAUDO MÉDICO, LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL, LAUDO PARA SOLICITAÇÃO / AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL, RECEITUÁRIO MÉDICO, SOLICITAÇÃO DE EXAMES, SOLICITAÇÃO DE AGENDAMENTO ou SOLICITAÇÃO DE AGENDAMENTO RETORNO.',
+    'Use t=m se o título principal for GUIA DE ENCAMINHAMENTO, ENCAMINHAMENTO, ENCAMINHAMENTOS, RECEITA SIMPLES, LAUDO MÉDICO, LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE, LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL, LAUDO PARA SOLICITAÇÃO / AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL, RECEITUÁRIO MÉDICO, SOLICITAÇÃO DE EXAMES, SOLICITAÇÃO DE AGENDAMENTO ou SOLICITAÇÃO DE AGENDAMENTO RETORNO.',
     'Se o título principal for médico, mantenha t=m mesmo que a folha também contenha identificação ou dados cadastrais do paciente.',
     'Nunca invente, corrija ou reconstrua CID, código, CRM, nomes ou outros valores. Preserve o texto visível literalmente.'
   ].join('\n');

@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — preload da Central simplificado para somente a raiz; falta validação real pós-deploy** |
-| Última ação concluída | PR **#428** mesclada à `main`; removidos preload especial de Consulta [2026]/Exames [2026], pré-download de PDFs dessas pastas e espera curta de 1,4 s |
-| Branch atual | `docs/titon-root-preload-only-published-20260923` somente para reconciliar status/handoff |
-| PR atual | funcional **#428 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`1a2a1e3da617abfb4bce02f7bf0f221c9a214a97`** |
-| Checks e testes | head final da #428: **50/50 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, abertura pós-login, site, bundle e governança |
-| Decisões tomadas | somente a raiz de 20 itens é antecipada; nenhuma pasta possui prioridade por nome; nenhum PDF é pré-baixado por pasta; snapshot raiz pode ser publicado assim que pronto; Central espera warmup por até 6 s antes do fallback |
-| Justificativas | o desenho anterior fazia trabalho secundário pesado e podia desperdiçar a leitura iniciada no login ao desistir após 1,4 s e iniciar outra chamada |
-| Alternativas descartadas | manter Consulta/Exames com prefetch reduzido; aumentar pageSize; apenas ampliar timeout sem remover o trabalho especial |
-| Ações externas concluídas | nenhuma configuração externa ou secret novo necessário |
-| Pendências e bloqueios | o conector desta sessão não confirma o Workers Build pós-merge; falta Ctrl+F5 e teste real de entrada da Central, seguido de comparação de telemetria hit/miss |
-| Riscos conhecidos | em caso extremo com Files API acima de 6 s, o fallback direto ainda pode ocorrer; decidir próximos ajustes somente com amostra pós-publicação |
-| Métricas / observabilidade | `drive_folder_opened` com `cache_state`, `drive_token_ms`, `drive_api_ms`, `drive_map_ms`; sem nomes, IDs ou conteúdo documental |
-| Próxima ação exata | **confirmar produção após Ctrl+F5; observar se a raiz aparece mais rápido; depois revisar `drive_folder_opened` hit/miss antes de nova otimização** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #428; merge `1a2a1e3d`; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; Fase 7; testes performance/UI |
+| Subfase / objetivo atual | **7E — corrigir falso negativo do Gemini para laudo médico de alta complexidade** |
+| Última ação concluída | diagnóstico confirmado no PDF real: a página 1 tem título principal `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE`, ausente da allowlist médica v3; correção e testes preparados na branch |
+| Branch atual | `fix/titon-high-complexity-medical-page-20260923` |
+| PR atual | ainda não aberta; abrir após registrar decisão e validar diff |
+| Último commit relevante | branch criada da `main` `3aad3835170eccaf0eaa0195cd9d01ab937bfb2d`; prompt/documentação/testes em atualização |
+| Checks e testes | CI ainda pendente; regressões adicionadas para o título novo no prompt geral e no `systemInstruction` realmente enviado ao Gemini |
+| Decisões tomadas | autorizar explicitamente `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE` como `pagina_medica_autorizada`; manter allowlist fechada e precedência do título principal |
+| Justificativas | o documento é um formulário médico institucional com procedimento solicitado, diagnóstico/CID, anamnese, justificativa, profissional solicitante e assinatura; o falso negativo decorreu da lista de títulos incompleta, não de falha visual do Gemini |
+| Alternativas descartadas | classificar genericamente qualquer página com CID/procedimento como médica; heurística aberta baseada em conteúdo clínico; segunda inferência/OCR só para classificar |
+| Ações externas concluídas | nenhuma nova chave/configuração necessária |
+| Pendências e bloqueios | abrir PR, exigir CI verde, mesclar/publicar e retestar o mesmo tipo de formulário em produção |
+| Riscos conhecidos | outros formulários médicos com cabeçalhos ainda não catalogados podem gerar falso negativo até inclusão explícita; isso é preferível a abrir classificação clínica ampla sem governança |
+| Métricas / observabilidade | nenhum dado do paciente foi registrado no repositório/status; apenas o título genérico do formulário e a regra técnica |
+| Próxima ação exata | **abrir PR, validar todos os checks, mesclar se verde e retestar um PDF com o cabeçalho `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE`** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PDF real fornecido nesta conversa; `worker/document-ai-prompts.js`; `worker/document-ai-gemini.js`; `worker/document-ai-provider.js`; docs Fase 5/5E; testes de prompts/Gemini |
 
 ## Histórico recuperável
 
@@ -5348,3 +5348,34 @@ Limite da evidência atual:
 - a melhora de latência não deve ser declarada numericamente antes de tráfego real pós-publicação.
 
 **Próxima ação exata:** Ctrl+F5 na Central, observar a abertura da raiz e depois revisar a nova amostra de `drive_folder_opened` por `cache_state` e tempos internos.
+
+## Fase 7E — falso negativo em LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE — 23/09/2026
+
+Incidente real: o Titon extraiu corretamente a página de comprovante, mas informou que não havia página médica autorizada em um PDF de duas páginas cuja primeira folha é um formulário institucional intitulado **LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE**.
+
+Diagnóstico:
+- a página 1 possui título médico principal explícito;
+- a mesma folha contém identificação do paciente, procedimento solicitado, descrição do diagnóstico, CID, resumo da anamnese/exame físico, justificativa do procedimento, profissional solicitante, assinatura/carimbo e blocos de autorização;
+- `PROMPT_ANALISE_REGULACAO_V1` v3 aceitava `LAUDO MÉDICO` e `LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL`, mas não o título de alta complexidade;
+- como a política é deliberadamente fail-closed por allowlist de cabeçalho, o Gemini classificou a página como `outro` em vez de `pagina_medica_autorizada`.
+
+Causa confirmada: **lacuna de governança na allowlist de títulos**, não falha de visão do Gemini.
+
+Correção na branch `fix/titon-high-complexity-medical-page-20260923`:
+- adiciona `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE` às listas médicas de classificação e análise integrada;
+- reforça que esse formulário permanece médico mesmo contendo identificação, procedimento, diagnóstico/CID, anamnese, justificativa e autorização na mesma folha;
+- mantém a precedência do título principal sobre seções internas;
+- mantém `DADOS` restrito ao título principal de comprovante, evitando falso positivo cadastral;
+- versões de classificação/análise/compacto sobem de v3 para **v4**;
+- prompt compacto do provider legado recebe a mesma categoria, apenas para coerência/rollback;
+- Fase 5 e matriz de homologação 5E são atualizadas;
+- testes verificam que a regra chega ao `systemInstruction` real do Gemini.
+
+Alternativas descartadas:
+- considerar qualquer página com CID, médico ou procedimento como médica: aumentaria falsos positivos e quebraria a política restritiva;
+- usar o nome do arquivo como sinal: filename não deve governar classificação clínica/documental;
+- inferência extra apenas para decidir o tipo: custo/latência sem necessidade diante de título explícito.
+
+Critério de aceite: uma folha com o cabeçalho `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE` deve ser `pagina_medica_autorizada`; o comprovante da outra página continua sendo `comprovante_atendimento`; campos seguem isolados por página e valores ausentes/ilegíveis continuam `nao_consta`/`ilegivel`.
+
+**Próxima ação exata:** CI → merge/publicação → Ctrl+F5 → reprocessar o PDF do mesmo tipo e confirmar o bloco médico.
