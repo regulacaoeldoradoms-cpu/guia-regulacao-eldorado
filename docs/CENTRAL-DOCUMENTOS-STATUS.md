@@ -3122,26 +3122,47 @@ Em **Usuários e acessos**, foram removidos os checkboxes independentes “Permi
 
 Branch: `fix/central-full-operational-access-20260923`. Próximo passo: abrir PR, executar CI completo, mesclar somente se verde e confirmar o deploy do Worker antes da homologação real.
 
+## Fase 7G.1 — correção do rename pré-abertura + estado visual de acesso — EM BRANCH — 23/09/2026
+
+Após a PR **#448** unificar a política para que quem possui acesso à Central receba `view + extract + edit`, uma segunda causa foi confirmada no frontend da renomeação inline da 7F.
+
+**Causa exata do aviso mostrado na lista:** `beginListPdfRename()` e `commitListPdfRename()` chamavam `canSyncDocuments()`. Esse helper foi criado para o PDF **já aberto** e exige `state.pdfItem`. Na lista, por definição, `state.pdfItem` ainda é `null`; portanto a renomeação pré-abertura podia ser bloqueada mesmo com a capability `edit` correta. A mensagem “Sua conta não possui permissão...” era, nesse caso, enganosa.
+
+**Correção:** foi criado `canWriteDocument(item)`, que valida a capability de edição, conexão Drive, gate de escrita e os metadados do **item recebido**. `canSyncDocuments()` continua existindo como especialização para o PDF aberto (`state.pdfItem`). O rename da lista usa agora `canWriteDocument(item)` ao entrar em edição e `canWriteDocument(previous)` ao confirmar, sem depender de um PDF aberto.
+
+**Estado visual:** o chip fixo “Somente leitura” era legado da Fase 1 e aparecia mesmo quando a produção permitia escrita. Ele passa a ser dinâmico:
+- `Acesso completo` quando a conta tem acesso e o gate de escrita do Drive está ativo;
+- `Somente leitura` apenas quando o ambiente realmente estiver com escrita desabilitada;
+- oculto quando a Central não está operacionalmente disponível.
+
+Frontend renovado para `documents.js?v=20260923-11`.
+
+**Relação com a PR #448:** a política integral continua válida e necessária por decisão do operador. A PR #448 foi mesclada em `9bd56707` e teve **22/22 checks da PR verdes**. No push da `main`, 24/24 workflows GitHub Actions concluíram com sucesso, porém o check externo final do **Workers Builds** terminou em failure; portanto o deploy produtivo do novo runtime Worker ainda não deve ser considerado comprovado. A próxima publicação da `main` deve repetir o gate seguro do Worker e só a evidência final de sucesso autoriza declarar a política backend ativa em produção.
+
+**Privacidade/segurança:** nenhuma permissão administrativa `manage` é ampliada; o helper continua exigindo `edit`, conexão, `writeEnabled`, referência opaca e versão do item. Não há novo endpoint, dado clínico ou telemetria.
+
+Branch: `fix/central-list-rename-write-check-20260923`. Próximo passo: abrir PR, exigir CI verde, mesclar e conferir simultaneamente publicação estática e Workers Builds antes da homologação humana.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G — acesso operacional integral da Central; implementação pronta em branch** |
-| Última ação concluída | policy/code/UI/testes atualizados para que `view` implique `extract + edit`; permissões parciais removidas de Usuários e acessos |
-| Branch atual | `fix/central-full-operational-access-20260923` |
-| PR atual | **#448 aberta** — “Central: acesso operacional integral para quem já tem acesso” |
-| Último commit relevante | alterações funcionais iniciadas em `0655ec51`; commits posteriores atualizam UI, testes, CI e arquitetura |
-| Checks e testes | testes unitários/contratos atualizados; CI completa ainda precisa rodar na PR |
-| Decisões tomadas | Regulador(a)/`view` = acesso operacional completo; `manage` continua separado para administração |
-| Justificativas | elimina o estado incoerente em que a conta entra na Central mas não pode renomear/editar/usar IA; aplica a regra a usuários atuais e futuros sem migração manual |
-| Alternativas descartadas | liberar apenas uma conta; migrar usuários individualmente; manter IA/editor como permissões independentes |
-| Ações externas concluídas | nenhuma; não houve alteração manual em D1, OAuth, Cloudflare ou Drive |
-| Pendências e bloqueios | CI da PR #448 → merge → confirmar deploy do Worker → Ctrl+F5 e homologar rename/editor/IA |
-| Riscos conhecidos | mudança amplia `extract/edit` apenas para quem já possui `view`; administração `manage` não muda; scripts históricos 5E continuam existindo, mas a resolução runtime atual prevalece |
-| Métricas / observabilidade | nenhuma propriedade nova; política de não enviar nomes/IDs/conteúdo ao PostHog preservada |
-| Próxima ação exata | **exigir CI verde na PR #448 e só então mesclar; após deploy do Worker, validar que o chip “Somente leitura” deixa de representar restrição operacional para uma conta com acesso à Central** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-access.js`; `worker/additional-roles.js`; `js/admin-users.js`; `admin/usuarios/index.html`; testes de Fase 1/UI; arquitetura/status |
+| Subfase / objetivo atual | **7G.1 — corrigir rename antes de abrir e refletir acesso real na lista** |
+| Última ação concluída | causa frontend confirmada; `canWriteDocument(item)` implementado; rename da lista deixa de depender de `state.pdfItem`; chip de acesso tornado dinâmico |
+| Branch atual | `fix/central-list-rename-write-check-20260923` |
+| PR atual | **#449 aberta** — “Central: corrigir renomeação antes de abrir o PDF” |
+| Último commit relevante | `c72a957f` — testes do rename pré-abertura e chip; commits anteriores `8ee00969` / `166e978e` |
+| Checks e testes | contratos atualizados; CI ainda precisa rodar na PR |
+| Decisões tomadas | acesso integral da #448 permanece; rename pré-abertura valida o item da lista; “Somente leitura” só aparece se `writeEnabled=false` |
+| Justificativas | separa corretamente “pode escrever este item?” de “há PDF aberto sincronizável?” e elimina mensagem falsa de falta de permissão |
+| Alternativas descartadas | abrir o PDF silenciosamente só para satisfazer `canSyncDocuments`; remover validação de gate; liberar rename sem versão/base |
+| Ações externas concluídas | #448 mesclada; 24/24 workflows GitHub pós-merge verdes, mas Workers Builds externo final vermelho — deploy backend ainda não comprovado |
+| Pendências e bloqueios | CI da PR #449 → merge → exigir Workers Builds success e publicação estática success → homologação real |
+| Riscos conhecidos | se o Worker seguro continuar falhando, a política integral backend da #448 pode ainda não estar ativa; não contornar o gate de deploy |
+| Métricas / observabilidade | nenhuma telemetria nova; nomes/ref/conteúdo permanecem fora do PostHog |
+| Próxima ação exata | **exigir CI verde na PR #449; depois mesclar e verificar o check externo Workers Builds + Pages; somente então pedir Ctrl+F5 e reteste do rename pré-abertura** |
+| Arquivos e fontes principais | Guia Mestre V1.1; merge #448 `9bd56707`; `js/documents.js`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
 
 ## Histórico recuperável
 
