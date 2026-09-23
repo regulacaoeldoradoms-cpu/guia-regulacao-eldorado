@@ -126,6 +126,8 @@
     folderSnapshot: null,
     warmedDocumentPayload: null,
     selectedListIndex: -1,
+    listRenameRef: '',
+    listRenameBusy: false,
     browserForegroundReason: '',
     pdfObjectUrl: '',
     pdfOpenedAt: 0,
@@ -369,6 +371,9 @@
 
   els.userName.textContent = user.name || user.username || 'Usuário';
   els.userRole.textContent = window.PortalTools?.roleLabels?.[user.role] || user.role || '';
+
+  let pendingListRenameTimer = 0;
+  let pendingListRenameRef = '';
 
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>'"]/g, (char) => ({
@@ -3489,6 +3494,201 @@
     return String(value || '').replace(/\.pdf$/i, '').trim();
   }
 
+
+  function clearPendingListRename() {
+    if (pendingListRenameTimer) window.clearTimeout(pendingListRenameTimer);
+    pendingListRenameTimer = 0;
+    pendingListRenameRef = '';
+  }
+
+  function activeListRenameInput() {
+    return els.list?.querySelector?.('.documents-list-rename-input') || null;
+  }
+
+  function cancelListPdfRename({ restoreFocus = true } = {}) {
+    clearPendingListRename();
+    const ref = state.listRenameRef;
+    state.listRenameRef = '';
+    state.listRenameBusy = false;
+    renderItems();
+    if (restoreFocus) {
+      requestAnimationFrame(() => {
+        const index = state.items.findIndex((item) => String(item?.ref || '') === ref);
+        if (index < 0) return;
+        state.selectedListIndex = index;
+        selectListItem(index, { focus: true });
+      });
+    }
+    return true;
+  }
+
+  function beginListPdfRename(index) {
+    clearPendingListRename();
+    const item = state.items[Number(index)];
+    if (!item?.isPdf || !item?.ref || state.editorSession || state.pdfItem) return false;
+    if (!canSyncDocuments()) {
+      showStatus('Sua conta não possui permissão para renomear este PDF no Google Drive.', 'warning');
+      return false;
+    }
+    if (state.listRenameBusy || state.renameBusy || state.driveSyncInFlight || state.editorBusy) {
+      showStatus('Aguarde a operação atual terminar antes de renomear o PDF.', 'warning');
+      return false;
+    }
+
+    state.selectedListIndex = Number(index);
+    state.listRenameRef = String(item.ref);
+    renderItems();
+    requestAnimationFrame(() => {
+      if (state.listRenameRef !== String(item.ref)) return;
+      const input = activeListRenameInput();
+      input?.focus?.({ preventScroll: true });
+      input?.select?.();
+    });
+    return true;
+  }
+
+  function scheduleListPdfRename(index) {
+    clearPendingListRename();
+    const item = state.items[Number(index)];
+    if (!item?.isPdf || !item?.ref || state.editorSession || state.pdfItem || state.listRenameRef) return false;
+
+    pendingListRenameRef = String(item.ref);
+    pendingListRenameTimer = window.setTimeout(() => {
+      pendingListRenameTimer = 0;
+      const ref = pendingListRenameRef;
+      pendingListRenameRef = '';
+      const currentIndex = state.items.findIndex((entry) => String(entry?.ref || '') === ref);
+      if (currentIndex < 0 || state.selectedListIndex !== currentIndex) return;
+      beginListPdfRename(currentIndex);
+    }, 260);
+    return true;
+  }
+
+  function applyRenamedListResult(previous, result) {
+    const previousRef = String(previous?.ref || '');
+    const previousCacheKey = String(previous?.cacheKey || '');
+    const nextName = String(result?.name || previous?.name || 'PDF');
+    const next = {
+      ...previous,
+      ref: String(result?.ref || previous?.ref || ''),
+      cacheKey: String(result?.cacheKey || previous?.cacheKey || ''),
+      version: String(result?.currentVersion || previous?.version || ''),
+      modifiedTime: String(result?.modifiedTime || previous?.modifiedTime || ''),
+      size: Number.isFinite(Number(result?.size)) ? Number(result.size) : previous?.size,
+      name: nextName,
+      label: nextName
+    };
+    const matches = (item) => (
+      (previousRef && item?.ref === previousRef)
+      || (previousCacheKey && item?.cacheKey === previousCacheKey)
+    );
+
+    state.items = sortItems(state.items.map((item) => matches(item) ? { ...item, ...next } : item), state.listSortOrder);
+    if (state.folderSnapshot && Array.isArray(state.folderSnapshot.items)) {
+      state.folderSnapshot = {
+        ...state.folderSnapshot,
+        items: sortItems(
+          state.folderSnapshot.items.map((item) => matches(item) ? { ...item, ...next } : item),
+          'original'
+        )
+      };
+    }
+    if (Array.isArray(state.backgroundRecentPdfs)) {
+      state.backgroundRecentPdfs = state.backgroundRecentPdfs.map((item) => matches(item) ? { ...item, ...next } : item);
+    }
+    state.selectedListIndex = state.items.findIndex((item) => (
+      (next.ref && item?.ref === next.ref)
+      || (next.cacheKey && item?.cacheKey === next.cacheKey)
+    ));
+    return {
+      next,
+      contentConflict: result?.contentConflict === true
+    };
+  }
+
+  async function commitListPdfRename() {
+    if (!state.listRenameRef || state.listRenameBusy) return false;
+    const ref = state.listRenameRef;
+    const previous = state.items.find((item) => String(item?.ref || '') === ref);
+    if (!previous?.isPdf) {
+      cancelListPdfRename({ restoreFocus: false });
+      return false;
+    }
+
+    const input = activeListRenameInput();
+    const base = String(input?.value || '').trim().replace(/\.pdf$/i, '').trim();
+    if (!base) {
+      showStatus('O nome do PDF não pode ficar vazio.', 'warning');
+      input?.focus?.({ preventScroll: true });
+      return false;
+    }
+    if (!canSyncDocuments()) {
+      cancelListPdfRename({ restoreFocus: false });
+      showStatus('A sincronização com Google Drive não está disponível para renomear este PDF.', 'warning');
+      return false;
+    }
+
+    const oldName = String(previous.name || '');
+    const nextName = base + '.pdf';
+    if (nextName === oldName) {
+      cancelListPdfRename();
+      return true;
+    }
+
+    state.listRenameBusy = true;
+    if (input) {
+      input.disabled = true;
+      input.setAttribute('aria-busy', 'true');
+    }
+    showStatus('Sincronizando nome com o Google Drive…', 'info');
+
+    try {
+      const result = await api('/api/documents/drive/rename', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          ref: previous.ref,
+          baseVersion: previous.version,
+          baseName: oldName,
+          name: nextName
+        })
+      });
+
+      if (state.listRenameRef !== ref) return false;
+      const applied = applyRenamedListResult(previous, result);
+      state.listRenameRef = '';
+      renderItems();
+      if (applied.contentConflict) {
+        showStatus(
+          'Nome alterado no Google Drive. O conteúdo do PDF também mudou durante a operação; abra o arquivo novamente antes de editar.',
+          'warning'
+        );
+      } else {
+        showStatus('Nome do PDF atualizado e sincronizado com o Google Drive.', 'success');
+      }
+      return true;
+    } catch (error) {
+      const conflict = error?.code === 'DRIVE_VERSION_CONFLICT';
+      const failureMessage = String(
+        error?.message || 'Não foi possível renomear o PDF no Google Drive.'
+      );
+      showStatus(
+        conflict
+          ? 'Conflito: o arquivo mudou no Google Drive. Atualize a lista antes de renomear.'
+          : failureMessage,
+        'warning'
+      );
+      return false;
+    } finally {
+      state.listRenameBusy = false;
+      const active = activeListRenameInput();
+      if (state.listRenameRef === ref && active) {
+        active.disabled = false;
+        active.removeAttribute('aria-busy');
+        active.focus?.({ preventScroll: true });
+      }
+    }
+  }
+
   function setPdfRenameFeedback(message = '', tone = '') {
     if (!els.viewerRenameStatus) return;
     const value = String(message || '');
@@ -5883,6 +6083,10 @@
   function renderItems() {
     renderBreadcrumbs();
     if (state.selectedListIndex >= state.items.length) state.selectedListIndex = -1;
+    if (state.listRenameRef && !state.items.some((item) => String(item?.ref || '') === state.listRenameRef)) {
+      state.listRenameRef = '';
+      state.listRenameBusy = false;
+    }
     els.listTitle.textContent = state.searchMode
       ? (state.searchQuery ? `Pesquisa: ${state.searchQuery}` : 'Pesquisa avançada')
       : (state.stack.length ? state.stack[state.stack.length - 1].name : 'Meu Drive');
@@ -5896,11 +6100,13 @@
       els.list.innerHTML = state.items.map((item, index) => {
         const supported = item.isFolder || item.isPdf;
         const selected = index === state.selectedListIndex;
+        const renaming = item.isPdf && String(item.ref || '') === state.listRenameRef;
         const classes = [
           'documents-item',
           item.isFolder ? 'folder' : '',
           item.isPdf ? 'pdf' : '',
           selected ? 'selected' : '',
+          renaming ? 'renaming' : '',
           supported ? '' : 'unsupported'
         ].filter(Boolean).join(' ');
         const editorHasItem = Boolean(state.editorSession && editorContainsItem(item));
@@ -5911,23 +6117,31 @@
             : 'Não suportado nesta fase';
         const icon = item.isFolder ? '▰' : item.isPdf ? 'PDF' : '•';
         const openTiton = item.isPdf
-          ? `<button class="documents-item-open-titon" type="button" data-open-titon-index="${index}" aria-label="Abrir ${escapeHtml(item.name)} no Titon" ${state.editorSession ? 'hidden' : ''}>Abrir no Titon</button>`
+          ? `<button class="documents-item-open-titon" type="button" data-open-titon-index="${index}" aria-label="Abrir ${escapeHtml(item.name)} no Titon" ${state.editorSession || renaming ? 'hidden' : ''}>Abrir no Titon</button>`
           : '';
         const openFolder = item.isFolder
           ? `<button class="documents-item-open-folder" type="button" data-open-folder-index="${index}" aria-label="Abrir pasta ${escapeHtml(item.name)}">Abrir pasta</button>`
+          : '';
+        const renameControl = renaming
+          ? `<label class="documents-list-rename">
+              <span class="sr-only">Novo nome do PDF</span>
+              <input class="documents-list-rename-input" type="text" maxlength="296" autocomplete="off" spellcheck="false" value="${escapeHtml(pdfBaseName(item.name))}">
+              <span class="documents-list-rename-extension" aria-hidden="true">.pdf</span>
+            </label>`
           : '';
         const rowType = item.isPdf ? ' pdf' : item.isFolder ? ' folder' : '';
         return `<div class="documents-item-row${rowType}">
           <button class="${classes}" type="button" data-index="${index}" ${supported ? '' : 'aria-disabled="true"'} ${selected ? 'aria-current="true"' : ''}>
             <span class="documents-item-icon" aria-hidden="true">${icon}</span>
             <span class="documents-item-copy">
-              <strong title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</strong>
+              <strong class="documents-item-name"${item.isPdf ? ` data-list-rename-index="${index}"` : ''} title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</strong>
               <span>${escapeHtml(itemSubtitle(item))}</span>
             </span>
             <span class="documents-item-action">${action}</span>
           </button>
           ${openTiton}
           ${openFolder}
+          ${renameControl}
         </div>`;
       }).join('');
     }
@@ -6417,8 +6631,11 @@
   });
 
   els.list.addEventListener('click', (event) => {
+    if (event.target.closest?.('.documents-list-rename')) return;
+
     const openIndex = Number(event.target?.dataset?.openTitonIndex);
     if (Number.isInteger(openIndex) && openIndex >= 0) {
+      clearPendingListRename();
       const item = state.items[openIndex];
       if (!item?.isPdf || state.editorSession) return;
       selectListItem(openIndex);
@@ -6428,6 +6645,7 @@
 
     const folderIndex = Number(event.target?.dataset?.openFolderIndex);
     if (Number.isInteger(folderIndex) && folderIndex >= 0) {
+      clearPendingListRename();
       const item = state.items[folderIndex];
       if (!item?.isFolder) return;
       selectListItem(folderIndex);
@@ -6438,6 +6656,19 @@
       return;
     }
 
+    const renameTarget = event.target.closest?.('[data-list-rename-index]');
+    if (renameTarget) {
+      const index = Number(renameTarget.dataset.listRenameIndex);
+      const item = state.items[index];
+      if (!item?.isPdf || state.editorSession) return;
+      const wasSelected = state.selectedListIndex === index;
+      selectListItem(index);
+      if (wasSelected) scheduleListPdfRename(index);
+      else clearPendingListRename();
+      return;
+    }
+
+    clearPendingListRename();
     const button = event.target.closest?.('[data-index]');
     if (!button) return;
     const index = Number(button.dataset.index);
@@ -6457,6 +6688,8 @@
   });
 
   els.list.addEventListener('dblclick', (event) => {
+    if (event.target.closest?.('.documents-list-rename')) return;
+    clearPendingListRename();
     const button = event.target.closest?.('[data-index]');
     if (!button) return;
     const index = Number(button.dataset.index);
@@ -6483,6 +6716,7 @@
     if (event.key !== 'Enter') return;
     const button = event.target.closest?.('[data-index]');
     if (!button) return;
+    clearPendingListRename();
     const index = Number(button.dataset.index);
     const item = state.items[index];
     if (!item) return;
@@ -6499,6 +6733,25 @@
     selectListItem(index);
     if (state.editorSession) prepareMergePdf(item);
     else openPdf(item).catch(() => {});
+  });
+
+  els.list.addEventListener('keydown', (event) => {
+    const input = event.target.closest?.('.documents-list-rename-input');
+    if (!input) return;
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      commitListPdfRename().catch(() => {});
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelListPdfRename();
+    }
+  });
+
+  els.list.addEventListener('focusout', (event) => {
+    if (!event.target.matches?.('.documents-list-rename-input')) return;
+    if (state.listRenameRef && !state.listRenameBusy) commitListPdfRename().catch(() => {});
   });
 
   els.loadMore.addEventListener('click', () => {
