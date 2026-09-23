@@ -142,7 +142,10 @@ jobs:
           grep -q "function getPageCount" js/document-viewer.js
           grep -q 'id="documentsAiExtractDocumentButton"' documentos/index.html
           grep -q "extractWholeDocumentAi" js/documents.js
-          grep -q "const concurrency = Math.min(5, pageCount)" js/documents.js
+          grep -q "const concurrency = Math.min(3, pageCount)" js/documents.js
+          grep -q "/api/documents/ai/page/gemini" js/documents.js
+          grep -q 'TITON_GEMINI_ENABLED = "true"' worker/wrangler.toml
+          grep -q 'TITON_GEMINI_COMPARISON_ENABLED = "false"' worker/wrangler.toml
           grep -q "maxEdge: 1800" js/documents.js
           grep -q "mimeType: 'image/png'" js/documents.js
           grep -q "quality: 0.92" js/documents.js

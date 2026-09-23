@@ -5,7 +5,7 @@ import {
   DocumentAiError,
   DOCUMENT_AI_EXTRACTION_FIELDS,
   TITON_GEMINI_DEFAULT_MODEL,
-  documentAiGeminiComparisonEnabled,
+  documentAiGeminiEnabled,
   documentAiGeminiModel,
   documentAiProcessingEnabled,
   normalizeDocumentAiClassification,
@@ -123,10 +123,10 @@ function requireGemini(env = {}) {
       503
     );
   }
-  if (!documentAiGeminiComparisonEnabled(env)) {
+  if (!documentAiGeminiEnabled(env)) {
     throw new DocumentAiError(
-      'DOCUMENT_AI_GEMINI_COMPARISON_DISABLED',
-      'A comparação com Gemini não está habilitada neste ambiente.',
+      'DOCUMENT_AI_GEMINI_DISABLED',
+      'O Gemini não está habilitado como IA documental neste ambiente.',
       503
     );
   }

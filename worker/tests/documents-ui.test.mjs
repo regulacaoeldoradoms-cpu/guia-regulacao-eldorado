@@ -138,7 +138,7 @@ test('Fase 7E pré-carrega Central após login somente para perfil autorizado e 
   const client = read('js/documents.js');
 
   assert.match(html, /portal-performance\.js\?v=20260922-5/);
-  assert.match(html, /documents\.js\?v=20260923-1/);
+  assert.match(html, /documents\.js\?v=20260923-2/);
 
   assert.match(performanceClient, /function documentsAccessAllowed\(/);
   assert.match(performanceClient, /PORTAL_WARM_DOCUMENTS/);
@@ -195,7 +195,7 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
 
   assert.match(html, /portal-performance\.js\?v=20260922-5/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-1/);
+  assert.match(html, /documents\.js\?v=20260923-2/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   for (const source of [observability, server]) {
@@ -235,7 +235,7 @@ test('Fase 7E acelera navegação do Drive sem persistir nomes e mede somente es
   const server = read('worker/observability.js');
 
   assert.match(html, /portal-performance\.js\?v=20260922-5/);
-  assert.match(html, /documents\.js\?v=20260923-1/);
+  assert.match(html, /documents\.js\?v=20260923-2/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   assert.match(client, /folderSnapshot:\s*null/);
@@ -279,7 +279,7 @@ test('Fase 7E acelera navegação do Drive sem persistir nomes e mede somente es
   }
 });
 
-test('Gemini comparativo do Titon preserva provider atual e nunca expõe o secret no frontend', () => {
+test('Gemini canônico do Titon é único no painel e nunca expõe o secret no frontend', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
   const router = read('worker/documents-router.js');
@@ -287,16 +287,20 @@ test('Gemini comparativo do Titon preserva provider atual e nunca expõe o secre
   const gemini = read('worker/document-ai-gemini.js');
 
   assert.match(html, /documentsAiExtractDocumentButton/);
-  assert.match(html, /documentsAiExtractGeminiButton/);
-  assert.match(html, /documentsAiCompareSection/);
-  assert.match(client, /\/api\/documents\/ai\/page\/extract/);
+  assert.match(html, /Extrair dados do PDF/);
+  assert.doesNotMatch(html, /documentsAiExtractGeminiButton|documentsAiCompareSection|Extrair com IA atual|Extrair com Gemini/);
   assert.match(client, /\/api\/documents\/ai\/page\/gemini/);
-  assert.match(client, /documentAiGeminiResults/);
-  assert.match(client, /documentAiGeminiLastError/);
-  assert.match(client, /renderDocumentAiComparison/);
+  const primaryStart = client.indexOf('  async function extractWholeDocumentAi()');
+  const primaryEnd = client.indexOf('  async function extractWholeDocumentAiGemini()', primaryStart);
+  const primary = client.slice(primaryStart, primaryEnd);
+  assert.match(primary, /requestGeminiDocumentAiPage\(pageNumber, blob\)/);
+  assert.doesNotMatch(primary, /requestDocumentAiPage\(pageNumber, blob\)/);
+  assert.match(primary, /state\.documentAiResults\.push\(normalized\)/);
+  assert.match(primary, /state\.documentAiEvidence\.set\(pageNumber, normalized\)/);
   assert.match(router, /analyzeDocumentAiPageWithGemini/);
-  assert.match(ai, /provider: 'cloudflare-workers-ai'/);
-  assert.match(ai, /freeOnly: true/);
+  assert.match(ai, /provider: 'google-gemini-api'/);
+  assert.match(ai, /canonical: true/);
+  assert.match(ai, /documentChat: false/);
   assert.match(gemini, /env\.TITON_GEMINI_API_KEY/);
   assert.match(gemini, /x-goog-api-key/);
   assert.doesNotMatch(html, /TITON_GEMINI_API_KEY|AIza[0-9A-Za-z_-]+/);
@@ -328,7 +332,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260923-1/);
+  assert.match(html, /documents\.js\?v=20260923-2/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -387,7 +391,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-1/);
+  assert.match(html, /documents\.js\?v=20260923-2/);
   assert.match(html, /documents\.css\?v=20260922-3/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
@@ -646,7 +650,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-1/);
+  assert.match(html, /documents\.js\?v=20260923-2/);
   assert.match(html, /documents\.css\?v=20260922-3/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
@@ -789,7 +793,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260923-1/);
+  assert.match(html, /documents\.js\?v=20260923-2/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -1191,7 +1195,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
   assert.match(html, /documents\.css\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-1/);
+  assert.match(html, /documents\.js\?v=20260923-2/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
@@ -1373,21 +1377,29 @@ test('6B prepara somente recursos efêmeros e reaproveita miniaturas lazy', () =
   assert.match(client, /Math\.min\(2, pageCount\)/);
 });
 
-test('6C só antecipa IA com capability e gates corretos e reutiliza resultado na ação humana', () => {
+test('6C mantém preparação local, mas não antecipa inferência paga do Gemini', () => {
   const client = read('js/documents.js');
-  const readiness = client.slice(
-    client.indexOf('  function documentAiBackgroundReady()'),
-    client.indexOf('  async function prepareDocumentAiPageBlob')
+  const ai = read('worker/document-ai.js');
+  const preparation = client.slice(
+    client.indexOf('  function scheduleActiveDocumentPreparation('),
+    client.indexOf('  async function extractWholeDocumentAi()', client.indexOf('  function scheduleActiveDocumentPreparation('))
   );
-  assert.match(readiness, /processingEnabled === true/);
-  assert.match(readiness, /features\?\.extractDocument === true/);
-  assert.match(readiness, /features\?\.backgroundPreparation === true/);
-  assert.match(readiness, /documentAiCapabilities\(\)\.extract === true/);
-  assert.match(client, /backgroundPreparedAnalysis\.get\(pageNumber\)/);
-  assert.match(client, /background\?\.join\?\.\(\`preextract:/);
-  assert.match(client, /cancelQueuedScope\?\.\(state\.backgroundScope, 'foreground'\)/);
-  assert.match(client, /background_state/);
-  assert.doesNotMatch(readiness, /drive\/sync|replace_pdf|save_copy/);
+  const primary = client.slice(
+    client.indexOf('  async function extractWholeDocumentAi()'),
+    client.indexOf('  async function extractWholeDocumentAiGemini()')
+  );
+
+  assert.match(ai, /backgroundPreparation: false/);
+  assert.match(preparation, /prewarmThumbnails/);
+  assert.match(preparation, /prepareDocumentAiPageBlob/);
+  assert.doesNotMatch(preparation, /schedulePreparedPageAnalysis\(/);
+  assert.doesNotMatch(preparation, /requestGeminiDocumentAiPage\(/);
+  assert.doesNotMatch(preparation, /requestDocumentAiPage\(/);
+  assert.match(primary, /requestGeminiDocumentAiPage\(pageNumber, blob\)/);
+  assert.doesNotMatch(primary, /backgroundPreparedAnalysis\.get\(pageNumber\)/);
+  assert.doesNotMatch(primary, /background\?\.join\?\.\(\`preextract:/);
+  assert.match(primary, /cancelQueuedScope\?\.\(state\.backgroundScope, 'foreground'\)/);
+  assert.doesNotMatch(preparation, /drive\/sync|replace_pdf|save_copy/);
 });
 
 test('6D aquece próximos PDFs apenas por sinais operacionais não clínicos', () => {
@@ -1401,16 +1413,21 @@ test('6D aquece próximos PDFs apenas por sinais operacionais não clínicos', (
   assert.doesNotMatch(block, /cid|diagnostico|nome_paciente|cpf|cns|texto extraído|extraction\.fields/i);
 });
 
-test('6E sugestões permanecem informativas e nenhuma escrita é automática', () => {
+test('6E automação continua não destrutiva e não dispara Gemini sem clique humano', () => {
   const client = read('js/documents.js');
-  assert.match(client, /Titon preparou .*página\(s\).*segundo plano/);
-  assert.match(client, /operation: 'suggestion'/);
-  assert.match(client, /state: 'used'/);
   const backgroundSection = client.slice(
-    client.indexOf('  function schedulePreparedPageAnalysis'),
-    client.indexOf('  async function extractWholeDocumentAi')
+    client.indexOf('  function scheduleActiveDocumentPreparation('),
+    client.indexOf('  async function extractWholeDocumentAi()')
   );
+  const clickSection = client.slice(
+    client.indexOf("els.documentAiExtractDocument?.addEventListener('click'"),
+    client.indexOf("els.documentAiClassify?.addEventListener('click'")
+  );
+
+  assert.doesNotMatch(backgroundSection, /requestGeminiDocumentAiPage\(/);
+  assert.doesNotMatch(backgroundSection, /\/api\/documents\/ai\/page\/gemini/);
   assert.doesNotMatch(backgroundSection, /replace_pdf|save_copy|drive\/sync|delete_page/);
+  assert.match(clickSection, /extractWholeDocumentAi\(\)/);
 });
 
 test('Fase 6 cancela background ao fechar PDF e preempta ao editar', () => {
@@ -1437,7 +1454,7 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
   assert.match(html, /documents\.css\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-1/);
+  assert.match(html, /documents\.js\?v=20260923-2/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-notepad-head[\s\S]*cursor:\s*grab/);

@@ -73,18 +73,25 @@ export function documentAiGeminiModel(env = {}) {
   return TITON_GEMINI_ALLOWED_MODEL_SET.has(model) ? model : '';
 }
 
-export function documentAiGeminiComparisonEnabled(env = {}) {
+export function documentAiGeminiEnabled(env = {}) {
   return Boolean(
     documentAiProcessingEnabled(env)
-    && flag(env.TITON_GEMINI_COMPARISON_ENABLED)
+    && flag(env.TITON_GEMINI_ENABLED)
     && String(env.TITON_GEMINI_API_KEY || '').trim()
     && documentAiGeminiModel(env)
   );
 }
 
+export function documentAiGeminiComparisonEnabled(env = {}) {
+  return Boolean(
+    documentAiGeminiEnabled(env)
+    && flag(env.TITON_GEMINI_COMPARISON_ENABLED)
+  );
+}
+
 export function documentAiPublicConfig(env = {}) {
   const geminiModel = documentAiGeminiModel(env);
-  const geminiComparison = documentAiGeminiComparisonEnabled(env);
+  const geminiEnabled = documentAiGeminiEnabled(env);
   return {
     enabled: documentAiEnabled(env),
     processingEnabled: documentAiProcessingEnabled(env),
@@ -93,30 +100,31 @@ export function documentAiPublicConfig(env = {}) {
     pageIsolation: true,
     provenanceRequired: true,
     persistence: 'none',
-    provider: 'cloudflare-workers-ai',
-    freeOnly: true,
+    provider: 'google-gemini-api',
+    freeOnly: false,
     providers: {
-      current: {
-        id: 'cloudflare-workers-ai',
-        label: 'IA atual',
-        enabled: documentAiProcessingEnabled(env),
-        freeOnly: true
-      },
       gemini: {
         id: 'google-gemini-api',
-        label: 'Gemini',
-        enabled: geminiComparison,
+        label: 'Gemini 3.5 Flash-Lite',
+        enabled: geminiEnabled,
+        canonical: true,
         paid: true,
         model: geminiModel || TITON_GEMINI_DEFAULT_MODEL
+      },
+      legacy: {
+        id: 'cloudflare-workers-ai',
+        label: 'Workers AI (rollback)',
+        enabled: false,
+        freeOnly: true
       }
     },
     features: {
-      classifyPage: true,
-      extractPage: true,
-      extractDocument: true,
-      documentChat: true,
-      backgroundPreparation: documentAiBackgroundEnabled(env),
-      geminiComparison
+      classifyPage: false,
+      extractPage: false,
+      extractDocument: geminiEnabled,
+      documentChat: false,
+      backgroundPreparation: false,
+      geminiComparison: false
     },
     routines: documentAiRoutineMetadata()
   };

@@ -4194,33 +4194,29 @@
     const config = state.documentAiConfig || {};
     if (els.documentAiDescription) {
       els.documentAiDescription.textContent = config.processingEnabled
-        ? 'Um clique percorre o PDF inteiro. Cada página é classificada e extraída isoladamente; páginas não autorizadas são ignoradas.'
-        : 'A IA documental do Titon está preparada, mas o processamento permanece bloqueado até a homologação controlada.';
+        ? 'Um clique percorre o PDF inteiro com Gemini 3.5 Flash-Lite. Cada página é classificada e extraída isoladamente; páginas não autorizadas são ignoradas.'
+        : 'A IA documental do Titon está preparada, mas o processamento permanece bloqueado neste ambiente.';
     }
     if (els.documentAiSafety) {
       els.documentAiSafety.textContent = config.processingEnabled
         ? 'Sem mistura entre páginas: NÃO CONSTA para campo ausente, ILEGÍVEL para campo presente sem leitura segura; CNS e data recebem apenas as normalizações autorizadas.'
-        : 'O processamento permanece desabilitado até a homologação controlada da Fase 5E.';
+        : 'O processamento permanece desabilitado neste ambiente.';
     }
     if (els.documentAiExtractDocument) {
       const ready = config.processingEnabled === true
         && config.features?.extractDocument === true
+        && config.providers?.gemini?.enabled === true
         && Number(window.PortalPdfViewer?.getPageCount?.() || 0) > 0;
       els.documentAiExtractDocument.disabled = !ready || state.documentAiBusy || !state.pdfItem;
-      els.documentAiExtractDocument.textContent = state.documentAiBusy && state.documentAiBusyProvider !== 'gemini'
-        ? 'Extraindo com IA atual…'
-        : 'Extrair com IA atual';
+      els.documentAiExtractDocument.textContent = state.documentAiBusy
+        ? 'Extraindo dados…'
+        : 'Extrair dados do PDF';
     }
     if (els.documentAiExtractGemini) {
-      const geminiReady = config.processingEnabled === true
-        && config.features?.geminiComparison === true
-        && Number(window.PortalPdfViewer?.getPageCount?.() || 0) > 0;
-      els.documentAiExtractGemini.hidden = config.features?.geminiComparison !== true;
-      els.documentAiExtractGemini.disabled = !geminiReady || state.documentAiBusy || !state.pdfItem;
-      els.documentAiExtractGemini.textContent = state.documentAiBusy && state.documentAiBusyProvider === 'gemini'
-        ? 'Extraindo com Gemini…'
-        : 'Extrair com Gemini';
+      els.documentAiExtractGemini.hidden = true;
+      els.documentAiExtractGemini.disabled = true;
     }
+    if (els.documentAiCompareSection) els.documentAiCompareSection.hidden = true;
     if (els.documentAiDocumentStatus && !state.documentAiBusy && !els.documentAiDocumentStatus.textContent) {
       els.documentAiDocumentStatus.className = 'documents-ai-document-status';
       els.documentAiDocumentStatus.textContent = config.processingEnabled
@@ -4237,7 +4233,6 @@
     renderDocumentAiClassification();
     renderDocumentAiExtraction();
     renderDocumentAiDocumentResults();
-    renderDocumentAiComparison();
     renderDocumentAiFieldOrderPanel();
     renderDocumentAiChat();
     if (els.documentAiRoutines) {
@@ -4789,7 +4784,6 @@
             || !(result.value instanceof Blob)
           ) return;
           state.backgroundPreparedImages.set(pageNumber, result.value);
-          schedulePreparedPageAnalysis(pageNumber, result.value, openId);
         }
       });
     }
@@ -4804,6 +4798,7 @@
       && state.pdfItem
       && state.documentAiConfig?.processingEnabled === true
       && state.documentAiConfig?.features?.extractDocument === true
+      && state.documentAiConfig?.providers?.gemini?.enabled === true
       && typeof exporter === 'function'
       && Number.isInteger(pageCount)
       && pageCount > 0
@@ -4813,7 +4808,7 @@
       if (els.documentAiDocumentStatus) {
         els.documentAiDocumentStatus.className = 'documents-ai-document-status warning';
         els.documentAiDocumentStatus.textContent = pageCount > 0
-          ? 'A extração automática ainda não está habilitada neste ambiente.'
+          ? 'O Gemini ainda não está habilitado para extração neste ambiente.'
           : 'Aguarde o PDF terminar de carregar antes de extrair os dados.';
       }
       return false;
@@ -4822,13 +4817,13 @@
     const openId = state.pdfOpenId;
     const item = state.pdfItem;
     const started = performance.now();
-    const concurrency = Math.min(5, pageCount);
+    const concurrency = Math.min(3, pageCount);
 
     pauseDocumentBackground('foreground');
     background?.cancelQueuedScope?.(state.backgroundScope, 'foreground');
     setAutomationStatus('');
     state.documentAiBusy = true;
-    state.documentAiBusyProvider = 'current';
+    state.documentAiBusyProvider = 'gemini';
     state.documentAiScanCompleted = false;
     state.documentAiIgnoredPages = 0;
     state.documentAiResults = [];
@@ -4838,6 +4833,16 @@
     state.documentAiExtraction = null;
     state.documentAiEvidence.clear();
     state.documentAiChatHistory = [];
+    state.documentAiGeminiUsage = {
+      promptTokens: 0,
+      completionTokens: 0,
+      thinkingTokens: 0,
+      totalTokens: 0
+    };
+    state.documentAiGeminiDurationMs = 0;
+    state.documentAiGeminiModel = String(
+      state.documentAiConfig?.providers?.gemini?.model || 'gemini-3.5-flash-lite'
+    );
     if (els.documentAiChatMessages) els.documentAiChatMessages.replaceChildren();
     if (els.documentAiChatQuestion) els.documentAiChatQuestion.value = '';
     if (els.documentAiDocumentStatus) {
@@ -4845,11 +4850,12 @@
       els.documentAiDocumentStatus.textContent = `Preparando análise de ${pageCount} página(s)…`;
     }
     renderDocumentAiPanel();
+
     capture('document_ai_started', {
       route: '/documentos/',
       operation: 'extract',
       size_bucket: sizeBucket(state.pdfItem?.size),
-      source: 'cloudflare'
+      source: 'gemini'
     });
 
     let nextPage = 1;
@@ -4861,71 +4867,16 @@
         throw new Error('O documento mudou durante a extração. Abra o PDF novamente e tente outra vez.');
       }
 
-      let analyzed = state.backgroundPreparedAnalysis.get(pageNumber) || null;
-      if (analyzed) {
-        state.backgroundPreparedAnalysis.delete(pageNumber);
-        captureBackgroundTask({}, {
-          operation: 'preextract_page',
-          state: 'used',
-          source: 'local',
-          cacheState: 'hit',
-          count: 1
-        });
-      }
-
-      if (!analyzed) {
-        const joinedAnalysis = await background?.join?.(`preextract:${openId}:${pageNumber}`);
-        if (
-          joinedAnalysis?.state === 'prepared'
-          && openId === state.pdfOpenId
-          && joinedAnalysis.value
-        ) {
-          analyzed = joinedAnalysis.value;
-          state.backgroundPreparedAnalysis.delete(pageNumber);
-          captureBackgroundTask(joinedAnalysis, {
-            operation: 'preextract_page',
-            state: 'used',
-            source: 'local',
-            cacheState: 'hit',
-            count: 1
-          });
+      const blob = await prepareDocumentAiPageBlob(pageNumber);
+      const analyzed = await requestGeminiDocumentAiPage(pageNumber, blob);
+      const provider = analyzed.provider || {};
+      if (provider.model) state.documentAiGeminiModel = String(provider.model);
+      const usage = provider.usage || {};
+      for (const key of ['promptTokens', 'completionTokens', 'thinkingTokens', 'totalTokens']) {
+        const value = Number(usage[key] || 0);
+        if (Number.isFinite(value) && value > 0) {
+          state.documentAiGeminiUsage[key] += Math.round(value);
         }
-      }
-
-      if (!analyzed) {
-        let blob = state.backgroundPreparedImages.get(pageNumber) || null;
-        if (blob) {
-          state.backgroundPreparedImages.delete(pageNumber);
-          captureBackgroundTask({}, {
-            operation: 'prepare_page',
-            state: 'used',
-            source: 'local',
-            cacheState: 'hit',
-            count: 1
-          });
-        }
-
-        if (!blob) {
-          const joinedPrepare = await background?.join?.(`prepare:${openId}:${pageNumber}`);
-          if (
-            joinedPrepare?.state === 'prepared'
-            && openId === state.pdfOpenId
-            && joinedPrepare.value instanceof Blob
-          ) {
-            blob = joinedPrepare.value;
-            state.backgroundPreparedImages.delete(pageNumber);
-            captureBackgroundTask(joinedPrepare, {
-              operation: 'prepare_page',
-              state: 'used',
-              source: 'local',
-              cacheState: 'hit',
-              count: 1
-            });
-          }
-        }
-
-        if (!blob) blob = await prepareDocumentAiPageBlob(pageNumber);
-        analyzed = await requestDocumentAiPage(pageNumber, blob);
       }
 
       if (analyzed.pageType === 'outro') {
@@ -4943,7 +4894,6 @@
         const pageNumber = nextPage;
         nextPage += 1;
         if (pageNumber > pageCount) return;
-
         try {
           await analyzePage(pageNumber);
           completed += 1;
@@ -4972,183 +4922,20 @@
           }
         : null;
       state.documentAiScanCompleted = true;
+      state.documentAiGeminiDurationMs = duration(started);
 
       const extractedCount = state.documentAiResults.length;
+      const totalTokens = Number(state.documentAiGeminiUsage?.totalTokens || 0);
+      const technical = [
+        state.documentAiGeminiModel,
+        `${(state.documentAiGeminiDurationMs / 1000).toFixed(1)} s`,
+        totalTokens > 0 ? `${totalTokens} tokens` : ''
+      ].filter(Boolean).join(' · ');
       if (els.documentAiDocumentStatus) {
         els.documentAiDocumentStatus.className = 'documents-ai-document-status success';
         els.documentAiDocumentStatus.textContent = extractedCount
-          ? `Dados extraídos em ${extractedCount} página(s).`
-          : 'Nenhum dado autorizado encontrado.';
-      }
-      capture('document_ai_completed', {
-        route: '/documentos/',
-        duration_ms: duration(started),
-        operation: 'extract',
-        size_bucket: sizeBucket(state.pdfItem?.size),
-        source: 'cloudflare'
-      });
-      return true;
-    } catch (error) {
-      state.documentAiResults = [];
-      state.documentAiEvidence.clear();
-      state.documentAiExtraction = null;
-      state.documentAiClassification = null;
-      state.documentAiScanCompleted = false;
-      if (els.documentAiDocumentStatus) {
-        els.documentAiDocumentStatus.className = 'documents-ai-document-status warning';
-        els.documentAiDocumentStatus.textContent = error?.code === 'DOCUMENT_AI_FREE_LIMIT_REACHED'
-          ? 'Limite gratuito diário da IA atingido. A extração volta após a renovação da franquia.'
-          : (error?.message || 'A extração do documento foi interrompida.');
-      }
-      const statusCode = Number(error?.status || 0);
-      capture('document_ai_failed', {
-        route: '/documentos/',
-        duration_ms: duration(started),
-        operation: 'extract',
-        size_bucket: sizeBucket(state.pdfItem?.size),
-        source: 'cloudflare',
-        failure_kind: observabilityFailureKind(error, 'ai'),
-        ...(Number.isInteger(statusCode) && statusCode >= 100 && statusCode <= 599
-          ? { status_code: statusCode }
-          : {})
-      });
-      return false;
-    } finally {
-      state.documentAiBusy = false;
-      state.documentAiBusyProvider = '';
-      background?.cancelScope?.(state.backgroundScope, 'foreground');
-      resumeDocumentBackground();
-      renderDocumentAiPanel();
-    }
-  }
-
-  async function extractWholeDocumentAiGemini() {
-    const viewer = window.PortalPdfViewer;
-    const exporter = viewer?.exportPageImage;
-    const pageCount = Number(viewer?.getPageCount?.() || 0);
-    const ready = Boolean(
-      !state.documentAiBusy
-      && state.pdfItem
-      && state.documentAiConfig?.processingEnabled === true
-      && state.documentAiConfig?.features?.geminiComparison === true
-      && typeof exporter === 'function'
-      && Number.isInteger(pageCount)
-      && pageCount > 0
-    );
-
-    if (!ready) {
-      if (els.documentAiGeminiStatus) {
-        els.documentAiGeminiStatus.className = 'documents-ai-document-status warning';
-        els.documentAiGeminiStatus.textContent =
-          'A comparação com Gemini ainda não está habilitada neste ambiente.';
-      }
-      return false;
-    }
-
-    const openId = state.pdfOpenId;
-    const item = state.pdfItem;
-    const started = performance.now();
-    const concurrency = Math.min(3, pageCount);
-
-    pauseDocumentBackground('foreground');
-    background?.cancelQueuedScope?.(state.backgroundScope, 'foreground');
-    state.documentAiBusy = true;
-    state.documentAiBusyProvider = 'gemini';
-    state.documentAiGeminiScanCompleted = false;
-    state.documentAiGeminiIgnoredPages = 0;
-    state.documentAiGeminiResults = [];
-    state.documentAiGeminiLastError = '';
-    state.documentAiGeminiUsage = {
-      promptTokens: 0,
-      completionTokens: 0,
-      thinkingTokens: 0,
-      totalTokens: 0
-    };
-    state.documentAiGeminiDurationMs = 0;
-    state.documentAiGeminiModel = String(
-      state.documentAiConfig?.providers?.gemini?.model || ''
-    );
-
-    if (els.documentAiGeminiStatus) {
-      els.documentAiGeminiStatus.className = 'documents-ai-document-status';
-      els.documentAiGeminiStatus.textContent = `Gemini: preparando ${pageCount} página(s)…`;
-    }
-    renderDocumentAiPanel();
-
-    capture('document_ai_started', {
-      route: '/documentos/',
-      operation: 'extract',
-      size_bucket: sizeBucket(state.pdfItem?.size),
-      source: 'gemini'
-    });
-
-    let nextPage = 1;
-    let completed = 0;
-    let failure = null;
-
-    const analyzePage = async (pageNumber) => {
-      if (openId !== state.pdfOpenId || item !== state.pdfItem) {
-        throw new Error('O documento mudou durante a comparação. Abra o PDF novamente e tente outra vez.');
-      }
-
-      const blob = await prepareDocumentAiPageBlob(pageNumber);
-      const analyzed = await requestGeminiDocumentAiPage(pageNumber, blob);
-      const provider = analyzed.provider || {};
-      if (provider.model) state.documentAiGeminiModel = String(provider.model);
-      const usage = provider.usage || {};
-      for (const key of ['promptTokens', 'completionTokens', 'thinkingTokens', 'totalTokens']) {
-        const value = Number(usage[key] || 0);
-        if (Number.isFinite(value) && value > 0) state.documentAiGeminiUsage[key] += Math.round(value);
-      }
-
-      if (analyzed.pageType === 'outro') {
-        state.documentAiGeminiIgnoredPages += 1;
-        return;
-      }
-      state.documentAiGeminiResults.push(analyzed.extraction);
-    };
-
-    const worker = async () => {
-      while (!failure) {
-        const pageNumber = nextPage;
-        nextPage += 1;
-        if (pageNumber > pageCount) return;
-        try {
-          await analyzePage(pageNumber);
-          completed += 1;
-          if (els.documentAiGeminiStatus) {
-            els.documentAiGeminiStatus.className = 'documents-ai-document-status';
-            els.documentAiGeminiStatus.textContent =
-              `Gemini: ${completed} de ${pageCount} página(s) concluída(s).`;
-          }
-        } catch (error) {
-          failure = error;
-          return;
-        }
-      }
-    };
-
-    try {
-      await Promise.all(Array.from({ length: concurrency }, () => worker()));
-      if (failure) throw failure;
-
-      state.documentAiGeminiResults.sort((a, b) => Number(a.pageNumber) - Number(b.pageNumber));
-      state.documentAiGeminiScanCompleted = true;
-      state.documentAiGeminiLastError = '';
-      state.documentAiGeminiDurationMs = duration(started);
-
-      const extractedCount = state.documentAiGeminiResults.length;
-      const totalTokens = Number(state.documentAiGeminiUsage?.totalTokens || 0);
-      if (els.documentAiGeminiStatus) {
-        els.documentAiGeminiStatus.className = 'documents-ai-document-status success';
-        const technical = [
-          state.documentAiGeminiModel,
-          `${(state.documentAiGeminiDurationMs / 1000).toFixed(1)} s`,
-          totalTokens > 0 ? `${totalTokens} tokens` : ''
-        ].filter(Boolean).join(' · ');
-        els.documentAiGeminiStatus.textContent = extractedCount
-          ? `Gemini concluiu ${extractedCount} página(s).${technical ? ' ' + technical : ''}`
-          : `Gemini não encontrou páginas autorizadas.${technical ? ' ' + technical : ''}`;
+          ? `Dados extraídos em ${extractedCount} página(s).${technical ? ' ' + technical : ''}`
+          : `Nenhum dado autorizado encontrado.${technical ? ' ' + technical : ''}`;
       }
 
       capture('document_ai_completed', {
@@ -5160,14 +4947,16 @@
       });
       return true;
     } catch (error) {
-      state.documentAiGeminiResults = [];
-      state.documentAiGeminiScanCompleted = false;
+      state.documentAiResults = [];
+      state.documentAiEvidence.clear();
+      state.documentAiExtraction = null;
+      state.documentAiClassification = null;
+      state.documentAiScanCompleted = false;
       state.documentAiGeminiDurationMs = duration(started);
-      state.documentAiGeminiLastError =
-        String(error?.message || 'A comparação com Gemini foi interrompida.').trim();
-      if (els.documentAiGeminiStatus) {
-        els.documentAiGeminiStatus.className = 'documents-ai-document-status warning';
-        els.documentAiGeminiStatus.textContent = state.documentAiGeminiLastError;
+      if (els.documentAiDocumentStatus) {
+        els.documentAiDocumentStatus.className = 'documents-ai-document-status warning';
+        els.documentAiDocumentStatus.textContent =
+          String(error?.message || 'A extração com Gemini foi interrompida.').trim();
       }
       const statusCode = Number(error?.status || 0);
       capture('document_ai_failed', {
@@ -5185,9 +4974,14 @@
     } finally {
       state.documentAiBusy = false;
       state.documentAiBusyProvider = '';
+      background?.cancelScope?.(state.backgroundScope, 'foreground');
       resumeDocumentBackground();
       renderDocumentAiPanel();
     }
+  }
+
+  async function extractWholeDocumentAiGemini() {
+    return extractWholeDocumentAi();
   }
 
   async function classifyActiveDocumentPage() {

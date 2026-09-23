@@ -42,17 +42,18 @@ DOCUMENTS_PORTAL_RETURN_URL = "https://regulacaoeldoradoms.com.br/documentos/"
 DOCUMENTS_AI_ENABLED = "true"
 DOCUMENTS_AI_PROCESSING_ENABLED = "true"
 DOCUMENTS_AI_BACKGROUND_ENABLED = "false"
-# Titon: IA documental sem API paga. Apenas modelos Cloudflare-hosted aprovados no Free Tier.
+# Provider legado Workers AI permanece fail-closed para rollback técnico; não é usado pelo fluxo normal do Titon.
 DOCUMENTS_AI_FREE_ONLY = "true"
-# Fast path V7 permanece desligado em produção até homologação real de latência/precisão.
+# Fast path legado permanece desligado; o Titon não faz fallback automático para Workers AI.
 DOCUMENTS_AI_FAST_VISION_ENABLED = "false"
 DOCUMENTS_AI_FAST_VISION_MODEL = "@cf/moondream/moondream3.1-9B-A2B"
 DOCUMENTS_AI_PRIMARY_MODEL = "@cf/google/gemma-4-26b-a4b-it"
 DOCUMENTS_AI_FALLBACK_MODELS = "@cf/qwen/qwen3.8-27b"
 DOCUMENTS_AI_TIMEOUT_MS = "6000"
 DOCUMENTS_AI_TOTAL_TIMEOUT_MS = "10000"
-# Comparação manual paga: mantém Workers AI como provider atual/canônico e habilita Gemini somente por ação explícita.
-TITON_GEMINI_COMPARISON_ENABLED = "true"
+# Gemini 3.5 Flash-Lite é o provider canônico da extração documental do Titon.
+TITON_GEMINI_ENABLED = "true"
+TITON_GEMINI_COMPARISON_ENABLED = "false"
 TITON_GEMINI_MODEL = "gemini-3.5-flash-lite"
 # TITON_GEMINI_API_KEY é secret do Worker; nunca versionar o valor.
 # Fase 4 concluída: escrita real liberada em produção; origem de homologação neutralizada.

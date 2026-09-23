@@ -45,11 +45,11 @@ O gate exige atualmente:
 - `FIREBASE_STORAGE_BUCKET`;
 - `AUTH_SESSION_SECRET`;
 - `AUTH_RATE_LIMIT_SECRET`;
-- `TITON_GEMINI_API_KEY` como secret da comparação manual Gemini do Titon.
+- `TITON_GEMINI_API_KEY` como secret do provider canônico Gemini do Titon.
 
 Além da lista fixa, todos os bindings `secret_text` ou `secret_key` presentes na versão produtiva são preservados dinamicamente. Assim, secrets adicionados no futuro também não podem desaparecer silenciosamente.
 
-`GEMINI_API_KEY` legado não é um requisito fixo do gate. Se ele existir na produção, continua preservado obrigatoriamente pela regra dinâmica de secrets. Já `TITON_GEMINI_API_KEY` é requisito fixo enquanto a comparação Gemini do Titon estiver versionada e habilitada: ela é uma integração separada, não substitui o provider Cloudflare Workers AI atual e seu valor nunca é versionado ou impresso.
+`GEMINI_API_KEY` legado não é um requisito fixo do gate. Se ele existir na produção, continua preservado obrigatoriamente pela regra dinâmica de secrets. Já `TITON_GEMINI_API_KEY` é requisito fixo enquanto o Gemini for o provider documental canônico do Titon. O valor nunca é versionado ou impresso. O código legado de Workers AI pode permanecer disponível apenas para rollback técnico, mas não é acionado pelo fluxo normal, por fallback automático nem por preextração.
 
 `FIREBASE_WEB_API_KEY` não é requisito do gate da Agenda porque a rota Firestore da Agenda não depende dela. Se esse recurso voltar a ser necessário como requisito global, a decisão deve ser documentada e testada antes de incluí-lo como bloqueador fixo.
 
