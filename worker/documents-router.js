@@ -646,7 +646,8 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
       const result = await listDriveFolder(env, {
         parentRef: String(body.parentRef || ''),
         pageToken: String(body.pageToken || ''),
-        pageSize: body.pageSize
+        pageSize: body.pageSize,
+        sortOrder: String(body.sortOrder || '')
       });
       return json(result, 200, origin);
     }
@@ -660,6 +661,7 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
         query: String(body.query || ''),
         pageToken: String(body.pageToken || ''),
         pageSize: body.pageSize,
+        sortOrder: String(body.sortOrder || ''),
         titleOnly: body.titleOnly === true,
         filters: {
           type: String(filters.type || ''),
