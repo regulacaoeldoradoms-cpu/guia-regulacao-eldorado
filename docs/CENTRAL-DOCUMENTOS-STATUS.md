@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — corrigir falso negativo do Gemini para laudo médico de alta complexidade** |
-| Última ação concluída | diagnóstico confirmado no PDF real: a página 1 tem título principal `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE`, ausente da allowlist médica v3; correção e testes preparados na branch |
-| Branch atual | `fix/titon-high-complexity-medical-page-20260923` |
-| PR atual | ainda não aberta; abrir após registrar decisão e validar diff |
-| Último commit relevante | branch criada da `main` `3aad3835170eccaf0eaa0195cd9d01ab937bfb2d`; prompt/documentação/testes em atualização |
-| Checks e testes | CI ainda pendente; regressões adicionadas para o título novo no prompt geral e no `systemInstruction` realmente enviado ao Gemini |
-| Decisões tomadas | autorizar explicitamente `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE` como `pagina_medica_autorizada`; manter allowlist fechada e precedência do título principal |
-| Justificativas | o documento é um formulário médico institucional com procedimento solicitado, diagnóstico/CID, anamnese, justificativa, profissional solicitante e assinatura; o falso negativo decorreu da lista de títulos incompleta, não de falha visual do Gemini |
-| Alternativas descartadas | classificar genericamente qualquer página com CID/procedimento como médica; heurística aberta baseada em conteúdo clínico; segunda inferência/OCR só para classificar |
+| Subfase / objetivo atual | **7E — correção do laudo médico de alta complexidade integrada; falta reteste real em produção** |
+| Última ação concluída | PR **#430** mesclada à `main`; `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE` agora é página médica autorizada no Gemini canônico |
+| Branch atual | `docs/titon-high-complexity-fix-published-20260923` apenas para reconciliar status |
+| PR atual | funcional **#430 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`6bd6da462d99d56f5f89b24e871bd5872f980b8f`** |
+| Checks e testes | head da #430: **21/21 workflows GitHub Actions success**, incluindo Central Fases 1–6, site e governança |
+| Decisões tomadas | allowlist médica inclui o novo título; título principal continua prevalecendo sobre seções cadastrais; classificação permanece fail-closed |
+| Justificativas | PDF real mostrou formulário médico institucional explícito que não constava na allowlist v3; causa foi lacuna do prompt, não falha de visão |
+| Alternativas descartadas | heurística aberta por CID/procedimento; uso de filename; OCR/inferência extra apenas para decidir o tipo |
 | Ações externas concluídas | nenhuma nova chave/configuração necessária |
-| Pendências e bloqueios | abrir PR, exigir CI verde, mesclar/publicar e retestar o mesmo tipo de formulário em produção |
-| Riscos conhecidos | outros formulários médicos com cabeçalhos ainda não catalogados podem gerar falso negativo até inclusão explícita; isso é preferível a abrir classificação clínica ampla sem governança |
-| Métricas / observabilidade | nenhum dado do paciente foi registrado no repositório/status; apenas o título genérico do formulário e a regra técnica |
-| Próxima ação exata | **abrir PR, validar todos os checks, mesclar se verde e retestar um PDF com o cabeçalho `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE`** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PDF real fornecido nesta conversa; `worker/document-ai-prompts.js`; `worker/document-ai-gemini.js`; `worker/document-ai-provider.js`; docs Fase 5/5E; testes de prompts/Gemini |
+| Pendências e bloqueios | confirmar publicação produtiva e retestar o mesmo tipo de PDF após Ctrl+F5 |
+| Riscos conhecidos | novos modelos de formulário com títulos ainda não catalogados podem exigir inclusão explícita futura |
+| Métricas / observabilidade | nenhum dado do paciente foi persistido; apenas o título genérico do formulário foi documentado |
+| Próxima ação exata | **Ctrl+F5 → abrir um PDF com esse cabeçalho → Extrair dados do PDF → confirmar que a página 1 aparece como página médica autorizada** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #430; merge `6bd6da46`; `worker/document-ai-prompts.js`; `worker/document-ai-provider.js`; testes Gemini/prompts |
 
 ## Histórico recuperável
 
@@ -5379,3 +5379,25 @@ Alternativas descartadas:
 Critério de aceite: uma folha com o cabeçalho `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE` deve ser `pagina_medica_autorizada`; o comprovante da outra página continua sendo `comprovante_atendimento`; campos seguem isolados por página e valores ausentes/ilegíveis continuam `nao_consta`/`ilegivel`.
 
 **Próxima ação exata:** CI → merge/publicação → Ctrl+F5 → reprocessar o PDF do mesmo tipo e confirmar o bloco médico.
+
+
+## Fase 7E — laudo médico de alta complexidade integrado — 23/09/2026
+
+A PR **#430 — Fase 7E: reconhecer laudo médico de alta complexidade** foi integrada à `main` no merge **`6bd6da462d99d56f5f89b24e871bd5872f980b8f`**.
+
+Resultado:
+- `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE` é explicitamente `pagina_medica_autorizada`;
+- classificação/análise/compacto sobem para **v4**;
+- o Gemini recebe a nova regra no `systemInstruction`;
+- o provider legado recebe a mesma categoria apenas para coerência de rollback;
+- páginas com identificação, procedimento, diagnóstico/CID, anamnese, justificativa e autorização continuam médicas quando esse for o título principal;
+- o comprovante da segunda folha continua independente como `comprovante_atendimento`;
+- isolamento por página, literalidade, `nao_consta` e `ilegivel` permanecem.
+
+Validação do head funcional `dec37efd73375ae2d3f37296e7d7aeb705e3ff3c`:
+- **21/21 workflows GitHub Actions: success**;
+- Central de Documentos — Fases 1–6: success;
+- site e governança: success;
+- testes confirmam o novo título no prompt e no systemInstruction real do Gemini.
+
+**Próxima ação exata:** retestar em produção o PDF do mesmo tipo após Ctrl+F5. Só então registrar homologação real.
