@@ -3159,20 +3159,20 @@ Esse Workers Builds bem-sucedido **substitui como evidência operacional** a ten
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
 | Subfase / objetivo atual | **7G.1 publicada; aguardando homologação humana do acesso integral e rename pré-abertura** |
-| Última ação concluída | PR **#449** mesclada em `764e0764`; frontend + política backend publicados com Workers Builds e Pages verdes |
-| Branch atual | `docs/central-full-access-rename-published-20260923` (somente registro pós-publicação) |
-| PR atual | #448 **mesclada** (política integral); #449 **mesclada** (rename pré-abertura/chip); PR documental deste handoff ainda a abrir |
-| Último commit relevante | `764e0764a91c223fd52658e5bd1f1a9733d68f25` |
-| Checks e testes | PR #449 **23/23 success**; pós-merge **23/23 GitHub Actions success**; Workers Builds, GitHub Pages e Cloudflare Pages **success** |
+| Última ação concluída | PRs funcionais **#448/#449** e registro pós-publicação **#450** integrados à `main`; backend e frontend publicados |
+| Branch atual | **nenhuma frente funcional aberta** |
+| PR atual | **nenhum PR funcional aberto**; #448, #449 e #450 mesclados |
+| Último commit funcional relevante | `764e0764a91c223fd52658e5bd1f1a9733d68f25` — correção do rename pré-abertura; registro documental pós-publicação em `4b7ed62f` |
+| Checks e testes | #449 **23/23 success**; pós-merge funcional **23/23 GitHub Actions success**; Workers Builds, GitHub Pages e Cloudflare Pages **success**; #450 **21/21 success** antes do merge |
 | Decisões tomadas | acesso Central = `view + extract + edit`; `manage` separado; rename da lista usa `canWriteDocument(item)`; chip reflete `writeEnabled` real |
-| Justificativas | elimina tanto a autorização parcial quanto a falsa dependência de PDF aberto que bloqueava a renomeação da lista |
-| Alternativas descartadas | liberar usuário isoladamente; abrir PDF silenciosamente para renomear; retirar gates de escrita/versão; manter chip fixo de somente leitura |
-| Ações externas concluídas | Worker Version `25c48aad-de81-4904-8013-3542b3c7e3a9` publicada pelo gate seguro; Pages publicadas |
-| Pendências e bloqueios | **somente homologação humana em produção**; ordenação cronológica 7E continua com homologação própria pendente |
-| Riscos conhecidos | confirmar visualmente cache/browser após publicação; conflitos reais de Drive continuam fail-closed |
-| Métricas / observabilidade | nenhuma telemetria nova; conteúdo/identificadores documentais permanecem proibidos |
+| Justificativas | corrige tanto o modelo parcial de autorização quanto a falsa dependência de um PDF já aberto para renomear na lista |
+| Alternativas descartadas | liberar conta isolada; abrir PDF silenciosamente; remover gates de escrita/versão; manter chip fixo de somente leitura |
+| Ações externas concluídas | Worker Version `25c48aad-de81-4904-8013-3542b3c7e3a9` publicada pelo gate seguro no merge funcional; Pages publicadas |
+| Pendências e bloqueios | **somente homologação humana em produção**; ordenação cronológica 7E mantém sua homologação separada |
+| Riscos conhecidos | confirmar cache/browser após Ctrl+F5; conflitos reais de Drive permanecem fail-closed |
+| Métricas / observabilidade | nenhuma telemetria nova; conteúdo e identificadores documentais permanecem proibidos |
 | Próxima ação exata | **Ctrl+F5 em /documentos/ → confirmar “Acesso completo” → selecionar PDF → segundo clique simples no nome → renomear com Enter → repetir com clique fora → confirmar alteração no Drive → conferir duplo clique rápido abrindo Titon** |
-| Arquivos e fontes principais | Guia Mestre V1.1; merges #448 `9bd56707` e #449 `764e0764`; `worker/document-access.js`; `js/documents.js`; `documentos/index.html`; testes/UI |
+| Arquivos e fontes principais | Guia Mestre V1.1; merges #448 `9bd56707`, #449 `764e0764`, #450 `4b7ed62f`; `worker/document-access.js`; `js/documents.js`; `documentos/index.html` |
 
 ## Histórico recuperável
 
