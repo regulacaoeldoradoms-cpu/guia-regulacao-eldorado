@@ -16,6 +16,7 @@ jobs:
 
       - name: Validar sintaxe da camada e integrações
         run: |
+          node --check js/portal-theme.js
           node --check js/portal-interactions.js
           node --check js/portal-chat.js
           node --check js/ai-assistant.js
