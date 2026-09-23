@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — validar em produção a correção do falso negativo de página médica no Gemini** |
-| Última ação concluída | PR **#422** mesclada na `main`; prompt v3 agora reconhece `LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL` como página médica |
-| Branch atual | `docs/titon-apac-fix-published-20260923` somente para reconciliar status |
-| PR atual | funcional **#422 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`7b220f2527f76f3c714d6c3aa831070712d7cb19`** |
-| Checks e testes | head da #422: **21/21 workflows GitHub Actions success**, incluindo Fases 1–6, site e governança |
-| Decisões tomadas | título médico principal prevalece sobre rótulos internos `DADOS`/identificação; laudo ambulatorial explicitamente autorizado; allowlist continua fechada |
-| Justificativas | o falso negativo veio da lista de títulos incompleta, não de falha de leitura do Gemini |
-| Alternativas descartadas | classificar qualquer folha com CID/procedimento como médica; heurística clínica aberta; OCR/inferência extra só para classificar |
-| Ações externas concluídas | nenhuma nova credencial/configuração necessária |
-| Pendências e bloqueios | falta apenas confirmar publicação produtiva e retestar um PDF do mesmo tipo após Ctrl+F5 |
-| Riscos conhecidos | outros formulários com títulos ainda não catalogados podem exigir inclusão explícita futura |
-| Métricas / observabilidade | nenhum conteúdo clínico foi registrado; apenas o padrão genérico do título |
-| Próxima ação exata | **Ctrl+F5 na Central, abrir um PDF com esse laudo e clicar “Extrair dados do PDF”; confirmar que surge bloco de página médica autorizada** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #422; merge `7b220f25`; `worker/document-ai-prompts.js`; `worker/document-ai-gemini.js`; status Fase 7E |
+| Subfase / objetivo atual | **7E — persistir o último zoom manual do Titon por conta** |
+| Última ação concluída | implementação preparada na branch: zoom manual (+, − e reset) passa a ser preferência da conta e vira o zoom inicial dos próximos PDFs |
+| Branch atual | `feat/titon-account-zoom-preference-20260923` |
+| PR atual | ainda não aberto; abrir após registrar a decisão e iniciar CI |
+| Último commit relevante | branch criada da `main` `d425024e708a66f075fd691ad0919359261f39e2`; implementação e testes em andamento |
+| Checks e testes | CI da branch ainda pendente; testes novos cobrem isolamento por conta, valor inválido, aplicação no próximo PDF e ausência de persistência via localStorage |
+| Decisões tomadas | preferência vinculada ao username no D1; primeiro uso mantém o fallback histórico de 114%; somente zoom percentual manual é salvo; “Ajustar largura” não sobrescreve a preferência |
+| Justificativas | fit-width depende do tamanho da janela/PDF e não representa um percentual estável; a conta deve carregar a mesma escolha manual em outra sessão/dispositivo |
+| Alternativas descartadas | localStorage por navegador; guardar zoom por PDF; salvar “Ajustar largura” como percentual; substituir o default 114% antes da primeira escolha |
+| Ações externas concluídas | nenhuma configuração externa ou secret novo necessário |
+| Pendências e bloqueios | validar CI, integrar/publicar e testar com duas contas/valores diferentes |
+| Riscos conhecidos | preferência extrema válida (45%–300%) será reaplicada em qualquer dispositivo da mesma conta; usuário pode redefinir a qualquer momento |
+| Métricas / observabilidade | preferência contém apenas número de escala; nenhum dado de PDF, paciente, filename ou Drive ID é persistido junto |
+| Próxima ação exata | **abrir PR, exigir checks verdes, mesclar/publicar; depois definir zoom em uma conta, abrir outro PDF e confirmar persistência; validar outra conta isolada** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `js/documents.js`; `worker/documents-router.js`; `documentos/index.html`; testes Fases 1–6/UI |
 
 ## Histórico recuperável
 
@@ -5138,3 +5138,38 @@ Estado versionado:
 - Gemini canônico continua sem fallback automático e sem preextração paga.
 
 **Próxima ação exata:** retestar em produção o mesmo tipo de formulário após Ctrl+F5. Só após a confirmação operacional declarar esta correção homologada.
+
+
+## Fase 7E — preferência de zoom do Titon vinculada à conta — 23/09/2026
+
+Pedido operacional: o último **zoom percentual definido manualmente** no visualizador deve se tornar automaticamente o padrão dos PDFs seguintes e deve ser lembrado pelo Portal por pessoa/conta.
+
+Arquitetura adotada:
+- nova preferência técnica por usuário em D1: `auth_document_viewer_preferences`;
+- armazena somente `username` e `zoom_scale`, sem qualquer referência a PDF ou conteúdo;
+- faixa aceita preserva a capacidade real do visualizador: **45% a 300%**;
+- contas sem escolha manual gravada continuam usando o comportamento histórico do PDF.js/Titon: **114% como fallback inicial**, limitado pela largura quando necessário;
+- após uma escolha manual, o próximo PDF abre com esse percentual exato;
+- botões **−**, **+** e o botão percentual/reset são considerados escolha manual e sincronizam a conta;
+- **Ajustar largura** continua dinâmico para o viewport atual e **não altera** o percentual salvo;
+- gravações rápidas são serializadas para impedir que uma resposta antiga sobrescreva a última escolha;
+- falha de sincronização não impede o zoom da sessão; o Portal informa que a preferência não pôde ser salva;
+- a preferência é carregada junto das preferências documentais já aquecidas no login, antes da listagem ficar disponível.
+
+Privacidade e escopo:
+- não usar `localStorage`, `sessionStorage` ou IndexedDB para essa preferência;
+- não persistir nome do arquivo, ID do Drive, página ativa ou qualquer dado clínico;
+- preferência é isolada por username no backend;
+- zoom do editor continua preservando o estado visual vivo durante rebuilds, sem criar gravações adicionais;
+- nenhuma mudança em Google Drive, Gemini, OCR, permissões ou telemetria.
+
+Critérios de aceite:
+1. conta sem preferência abre com o fallback histórico de 114%;
+2. usuário altera manualmente para, por exemplo, 144%;
+3. fecha e abre outro PDF: inicia em 144%;
+4. recarrega/loga novamente: continua em 144%;
+5. outra conta permanece com sua própria escolha/default;
+6. “Ajustar largura” não muda o valor persistido;
+7. valores fora de 45%–300% falham fechado no backend.
+
+**Próxima ação exata:** executar CI da branch, integrar somente com checks verdes e validar o fluxo real com duas contas.

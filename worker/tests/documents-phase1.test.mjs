@@ -207,6 +207,70 @@ sqliteTest('paleta do editor é preferência por conta, editável e não contém
   assert.equal(String(row.color_palette_json).includes('Texto'), false);
 });
 
+sqliteTest('zoom do visualizador é preferência por conta e não cria preferência antes da escolha manual', async () => {
+  const env = environment();
+  const first = await register(env, 'documentos.zoom.um', '127.0.0.93');
+  const second = await register(env, 'documentos.zoom.dois', '127.0.0.94');
+
+  await setDocumentCapabilities(env, 'documentos.zoom.um', { view: true }, 'admin');
+  await setDocumentCapabilities(env, 'documentos.zoom.dois', { view: true }, 'admin');
+
+  const initial = await handleDocumentsRoute(
+    documentRequest('/api/documents/preferences', first.token),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(initial.status, 200);
+  assert.equal((await initial.json()).viewerZoomScale, null);
+
+  const saved = await handleDocumentsRoute(
+    documentRequest('/api/documents/preferences', first.token, {
+      method: 'PATCH',
+      body: { viewerZoomScale: 1.44 }
+    }),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(saved.status, 200);
+  assert.equal((await saved.json()).viewerZoomScale, 1.44);
+
+  const reloaded = await handleDocumentsRoute(
+    documentRequest('/api/documents/preferences', first.token),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal((await reloaded.json()).viewerZoomScale, 1.44);
+
+  const isolated = await handleDocumentsRoute(
+    documentRequest('/api/documents/preferences', second.token),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal((await isolated.json()).viewerZoomScale, null);
+
+  const invalid = await handleDocumentsRoute(
+    documentRequest('/api/documents/preferences', first.token, {
+      method: 'PATCH',
+      body: { viewerZoomScale: 4.5 }
+    }),
+    env,
+    'https://regulacaoeldoradoms.com.br',
+    true
+  );
+  assert.equal(invalid.status, 400);
+  assert.equal((await invalid.json()).code, 'DOCUMENTS_VIEWER_ZOOM_INVALID');
+
+  const row = await env.AUTH_DB.prepare(
+    'SELECT username, zoom_scale FROM auth_document_viewer_preferences WHERE username = ?'
+  ).bind('documentos.zoom.um').first();
+  assert.equal(row.username, 'documentos.zoom.um');
+  assert.equal(Number(row.zoom_scale), 1.44);
+});
+
 sqliteTest('cargo adicional Central de Documentos acumula com o perfil principal e concede leitura', async () => {
   const env = environment();
   await register(env, 'documentos.acumulado', '127.0.0.87');
