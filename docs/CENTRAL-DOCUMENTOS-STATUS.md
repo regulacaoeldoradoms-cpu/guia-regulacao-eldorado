@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — adicionar filtro “Só título” à pesquisa nome + conteúdo** |
-| Última ação concluída | implementação preparada na branch: filtro abaixo da busca alterna entre pesquisa ampla e apenas nome do arquivo |
-| Branch atual | `feat/titon-search-title-only-20260923` |
-| PR atual | ainda não aberta; abrir após revisão do diff |
-| Último commit relevante | base `18ef6ed64f7dc3af2a64714e64320e16fb85cfeb`; UI, cliente, router, Drive e testes atualizados |
-| Checks e testes | CI ainda pendente; testes novos verificam `titleOnly=true` sem `fullText`, modo padrão amplo e persistência durante paginação |
-| Decisões tomadas | padrão permanece nome + conteúdo; “Só título” é opt-in; troca do filtro refaz a pesquisa ativa; filtro não é persistido na conta |
-| Justificativas | usuário precisa alternar entre busca ampla e uma consulta precisa pelo nome, como no Google Drive original |
-| Alternativas descartadas | transformar “Só título” em padrão; criar endpoint separado; persistir preferência por conta sem solicitação |
-| Ações externas concluídas | nenhuma API/configuração externa necessária |
-| Pendências e bloqueios | abrir PR, validar CI, mesclar/publicar e testar em produção |
-| Riscos conhecidos | ao alternar o filtro durante uma busca, uma nova chamada ao Drive é feita; comportamento intencional e explícito |
-| Métricas / observabilidade | termo de busca e estado do filtro não são enviados ao PostHog; somente métricas técnicas existentes |
-| Próxima ação exata | **abrir PR → checks verdes → merge/publicação → Ctrl+F5 e comparar a mesma consulta com Só título desligado/ligado** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/documents-router.js`; `worker/document-drive.js`; testes Phase1/UI |
+| Subfase / objetivo atual | **7E — filtro “Só título” integrado à pesquisa; falta homologação visual/funcional em produção** |
+| Última ação concluída | PR **#436** mesclada à `main`; pesquisa ampla continua padrão e o filtro “Só título” restringe a consulta ao nome |
+| Branch atual | `docs/titon-search-title-only-published-20260923` somente para reconciliar status |
+| PR atual | funcional **#436 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`5a557ed5056eb06fe48986d8fc4a098aee7061e4`** |
+| Checks e testes | head final da #436: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
+| Decisões tomadas | padrão = nome + conteúdo; “Só título” = apenas `name contains`; alternância refaz a pesquisa ativa; refresh/paginação preservam o modo; filtro não é persistido na conta |
+| Justificativas | aproxima a UX do Google Drive original e permite alternar entre busca ampla e precisa por filename |
+| Alternativas descartadas | transformar Só título em padrão; criar endpoint separado; persistir escolha sem solicitação |
+| Ações externas concluídas | nenhuma nova API/configuração necessária |
+| Pendências e bloqueios | confirmar deploy produtivo e testar a mesma consulta com filtro desligado e ligado |
+| Riscos conhecidos | alternar o filtro dispara nova chamada ao Drive; comportamento intencional |
+| Métricas / observabilidade | termo e estado do filtro continuam fora do PostHog; somente métricas técnicas existentes |
+| Próxima ação exata | **Ctrl+F5 → pesquisar um termo com Só título desligado → ativar Só título → confirmar que resultados passam a considerar somente nomes** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #436; merge `5a557ed5`; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/document-drive.js`; `worker/documents-router.js` |
 
 ## Histórico recuperável
 
@@ -5523,3 +5523,28 @@ Implementação na branch `feat/titon-search-title-only-20260923`:
 Privacidade e segurança preservadas: nenhuma persistência do filtro, nenhum termo em telemetria, nenhuma mudança em OAuth, Drive write, Gemini ou OCR.
 
 **Próxima ação exata:** CI e integração; depois validar a mesma palavra em modo amplo e em Só título.
+
+
+## Fase 7E — filtro Só título integrado à main — 23/09/2026
+
+A PR **#436 — Fase 7E: adicionar filtro Só título à pesquisa do Drive** foi integrada à `main` no merge **`5a557ed5056eb06fe48986d8fc4a098aee7061e4`**.
+
+Resultado versionado:
+- filtro **Só título** logo abaixo da barra de pesquisa;
+- desmarcado por padrão;
+- modo padrão continua `name contains OR fullText contains`;
+- marcado, o Worker elimina `fullText` e envia somente `name contains`;
+- alternar o filtro durante uma busca ativa refaz a mesma consulta imediatamente;
+- botão Atualizar pasta e paginação mantêm o modo escolhido;
+- backend aceita somente `titleOnly === true`, evitando valores ambíguos;
+- nenhuma preferência de conta foi criada;
+- cache-busters: `documents.css?v=20260923-3` e `documents.js?v=20260923-7`.
+
+Validação do head funcional `f9ae471b936f5e9cd6feb32ead071298b536ee1b`:
+- **23/23 workflows GitHub Actions: success**;
+- Central de Documentos — Fases 1–6: success;
+- Central de Documentos — navegador/PDF.js real: success;
+- bundle/site/governança: success;
+- testes confirmam que `titleOnly=true` gera query sem `fullText contains`, enquanto o padrão preserva pesquisa de conteúdo.
+
+**Próxima ação exata:** homologar em produção comparando a mesma pesquisa com Só título desligado e ligado.
