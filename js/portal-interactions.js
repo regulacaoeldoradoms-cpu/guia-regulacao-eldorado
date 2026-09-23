@@ -226,6 +226,23 @@
       ]
     },
     {
+      path: /^\/agenda\/?$/,
+      click: [
+        ['[data-agenda-scope]', 'filter', '#agendaList'],
+        ['.agenda-card', 'selection', '#agendaList'],
+        ['#portalLogout,a[href="/"]', 'navigation-exit']
+      ],
+      change: [
+        ['#agendaOrder,#includeInactive', 'filter', '#agendaList']
+      ]
+    },
+    {
+      path: /^\/agenda\/sync\/?$/,
+      click: [
+        ['#syncBridgeAgendaLink', 'navigation-enter']
+      ]
+    },
+    {
       path: /^\/cidadao\/?$/,
       click: [
         ['#openNewManifestation', 'open'],
