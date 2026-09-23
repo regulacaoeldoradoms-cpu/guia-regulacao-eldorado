@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — preferência de zoom do Titon por conta integrada; falta homologação operacional** |
-| Última ação concluída | PR **#424** mesclada à `main`; zoom percentual manual agora é persistido por username e reaplicado aos próximos PDFs |
-| Branch atual | `docs/titon-account-zoom-published-20260923` somente para reconciliar publicação/status |
-| PR atual | funcional **#424 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`a83d4b61f0e6af9d1813bb114fc40941a96eeacd`** |
-| Checks e testes | head final da #424: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
-| Decisões tomadas | zoom `−`, `+` e reset percentual salvam a conta; `Ajustar largura` não sobrescreve o percentual; sem escolha manual o viewer mantém o fallback histórico de 114% |
-| Justificativas | fit-width é dependente do viewport/PDF e não representa uma preferência percentual estável; a escolha deve acompanhar a conta, não o navegador |
-| Alternativas descartadas | localStorage/sessionStorage/IndexedDB; preferência por arquivo; transformar fit-width em percentual persistente |
-| Ações externas concluídas | nenhuma credencial, secret ou configuração externa necessária |
-| Pendências e bloqueios | falta confirmar deploy produtivo do merge #424 e validar com uma conta real; idealmente confirmar isolamento com uma segunda conta |
-| Riscos conhecidos | percentuais extremos válidos (45%–300%) acompanham a mesma conta também em outro dispositivo até nova escolha manual |
-| Métricas / observabilidade | D1 persiste apenas username + número de escala; nenhum dado documental, filename, página ou Drive ID |
-| Próxima ação exata | **Ctrl+F5; definir um zoom manual (ex.: 144%); fechar/abrir outro PDF e confirmar 144%; recarregar a Central e repetir; opcionalmente validar outra conta** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #424; merge `a83d4b61`; `js/documents.js`; `worker/documents-router.js`; `documentos/index.html`; testes documentais |
+| Subfase / objetivo atual | **7E — tornar a lista de documentos a primeira superfície visível da Central** |
+| Última ação concluída | layout operacional compactado na branch: hero e card textual de configuração removidos; somente ações administrativas essenciais permanecem acima da lista |
+| Branch atual | `feat/titon-documents-first-layout-20260923` |
+| PR atual | ainda não aberto; abrir após CI inicial da branch |
+| Último commit relevante | base da branch `306ac6cc722b249ec18f8772075ef167ea38409e`; ajustes de layout/testes/documentação em andamento |
+| Checks e testes | CI da branch ainda pendente; regressão nova garante ausência do hero/textos, presença dos 3 controles essenciais e workspace sem margem introdutória |
+| Decisões tomadas | remover todo texto introdutório da tela operacional; ocultar visualmente status/mensagens institucionais mantendo-os acessíveis; conservar Conectar/Desconectar Drive e Gerenciar cargos e acessos apenas para quem administra |
+| Justificativas | o bloco introdutório consumia a primeira dobra e obrigava rolagem antes de chegar aos documentos, contrariando o uso recorrente da Central |
+| Alternativas descartadas | manter hero reduzido; deixar card de configuração recolhível; mover ações para dentro do workspace, pois isso impediria conexão quando o Drive estivesse desconectado |
+| Ações externas concluídas | nenhuma configuração externa necessária |
+| Pendências e bloqueios | executar CI, integrar/publicar e confirmar visualmente que a pesquisa/lista aparece imediatamente após o cabeçalho do Portal |
+| Riscos conhecidos | quando houver erro real de acesso/conexão, o status global continuará visível e pode ocupar espaço; isso é intencional para não esconder bloqueios operacionais |
+| Métricas / observabilidade | sem mudança em telemetria, Drive, permissões ou dados; alteração somente de layout/apresentação |
+| Próxima ação exata | **abrir PR, exigir checks verdes, mesclar/publicar; depois Ctrl+F5 e confirmar que documentos/pesquisa aparecem na primeira dobra, mantendo apenas os botões administrativos necessários** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `docs/CENTRAL-DOCUMENTOS-FASE-1.md`; testes UI |
 
 ## Histórico recuperável
 
@@ -5215,3 +5215,35 @@ Limite da evidência atual:
 - a homologação final exige um teste real após o deploy de produção.
 
 **Próxima ação exata:** Ctrl+F5 na Central; selecionar um percentual manual reconhecível (por exemplo 144%), abrir outro PDF e confirmar que ele inicia no mesmo percentual. Recarregar a página e repetir para provar persistência da conta.
+
+
+## Fase 7E — Central abre diretamente na superfície de documentos — 23/09/2026
+
+Pedido operacional: remover da entrada da Central o conteúdo introdutório que ocupava grande parte da primeira dobra e exigia rolagem antes da lista de arquivos.
+
+Escopo aprovado:
+- remover o hero com `Central de Documentos`, `Google Drive institucional dentro do Portal` e o parágrafo explicativo;
+- remover o cabeçalho/card textual `Configuração institucional` e a nota visual de estado da conexão;
+- manter somente os controles realmente necessários para administração:
+  - **Conectar Google Drive** quando aplicável;
+  - **Desconectar Drive** quando conectado;
+  - **Gerenciar cargos e acessos** para administrador;
+- esses controles ficam em uma faixa compacta sem card, título ou texto explicativo;
+- status de conexão e mensagem institucional continuam no DOM como conteúdo somente para acessibilidade, sem ocupar a tela;
+- erros/avisos operacionais reais continuam podendo aparecer em `documentsGlobalStatus`;
+- workspace passa a ter margem superior zero e o `main` reduz o afastamento do cabeçalho;
+- mobile mantém os botões administrativos responsivos, sem restaurar o bloco introdutório;
+- cache-busters: `documents.css?v=20260923-1` e `documents.js?v=20260923-4`.
+
+Decisão de arquitetura: os botões de conexão não foram movidos para dentro do browser/lista. Quando o Drive está desconectado, o workspace é corretamente bloqueado; se o botão `Conectar` estivesse dentro dele, o administrador poderia perder o caminho de reconexão. A faixa externa compacta preserva esse caminho sem sacrificar a primeira dobra.
+
+Critérios de aceite:
+1. não existe hero ou card textual introdutório em `/documentos/`;
+2. busca/lista é a primeira superfície operacional principal;
+3. administrador conectado vê somente **Gerenciar cargos e acessos** + **Desconectar Drive** acima da lista;
+4. administrador desconectado e configurado continua podendo usar **Conectar Google Drive**;
+5. usuário comum não recebe faixa administrativa vazia;
+6. avisos reais de erro permanecem visíveis;
+7. desktop e mobile continuam responsivos.
+
+**Próxima ação exata:** validar CI, integrar somente se verde e confirmar em produção que a primeira dobra mostra imediatamente a pesquisa/lista de documentos.
