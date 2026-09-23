@@ -61,7 +61,7 @@ test('botão único percorre o PDF pelo Gemini e envia somente uma página por c
     read('js/document-viewer.js')
   ]);
   const prepare = asyncFunctionSlice(js, 'prepareDocumentAiPageBlob', 'requestDocumentAiPage');
-  const geminiRequest = asyncFunctionSlice(js, 'requestGeminiDocumentAiPage', 'schedulePreparedPageAnalysis');
+  const geminiRequest = asyncFunctionSlice(js, 'requestGeminiDocumentAiPage', 'extractWholeDocumentAi');
   const extract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'extractWholeDocumentAiGemini');
 
   assert.match(extract, /getPageCount\?\.\(\)/);
@@ -98,7 +98,7 @@ test('Gemini substitui a comparação e é a única extração visível do Titon
     read('worker/documents-router.js'),
     read('worker/document-ai.js')
   ]);
-  const geminiRequest = asyncFunctionSlice(js, 'requestGeminiDocumentAiPage', 'schedulePreparedPageAnalysis');
+  const geminiRequest = asyncFunctionSlice(js, 'requestGeminiDocumentAiPage', 'extractWholeDocumentAi');
   const primaryExtract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'extractWholeDocumentAiGemini');
 
   assert.match(html, /Extrair dados do PDF/);
