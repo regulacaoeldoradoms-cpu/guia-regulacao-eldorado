@@ -408,6 +408,9 @@
 
   function applyTheme(value, { storeActive = true } = {}) {
     const theme = normalizeTheme(value);
+    if (window.PortalTheme?.apply) {
+      return window.PortalTheme.apply(theme, { persist: storeActive });
+    }
     document.documentElement.dataset.portalTheme = theme;
     document.documentElement.style.colorScheme = theme;
     if (document.body) document.body.dataset.portalTheme = theme;
