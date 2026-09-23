@@ -207,7 +207,7 @@ sqliteTest('paleta do editor é preferência por conta, editável e não contém
   assert.equal(String(row.color_palette_json).includes('Texto'), false);
 });
 
-sqliteTest('zoom do visualizador é preferência por conta e mantém 114% como padrão inicial', async () => {
+sqliteTest('zoom do visualizador é preferência por conta e não cria preferência antes da escolha manual', async () => {
   const env = environment();
   const first = await register(env, 'documentos.zoom.um', '127.0.0.93');
   const second = await register(env, 'documentos.zoom.dois', '127.0.0.94');
@@ -222,7 +222,7 @@ sqliteTest('zoom do visualizador é preferência por conta e mantém 114% como p
     true
   );
   assert.equal(initial.status, 200);
-  assert.equal((await initial.json()).viewerZoomScale, 1.14);
+  assert.equal((await initial.json()).viewerZoomScale, null);
 
   const saved = await handleDocumentsRoute(
     documentRequest('/api/documents/preferences', first.token, {
@@ -250,7 +250,7 @@ sqliteTest('zoom do visualizador é preferência por conta e mantém 114% como p
     'https://regulacaoeldoradoms.com.br',
     true
   );
-  assert.equal((await isolated.json()).viewerZoomScale, 1.14);
+  assert.equal((await isolated.json()).viewerZoomScale, null);
 
   const invalid = await handleDocumentsRoute(
     documentRequest('/api/documents/preferences', first.token, {
