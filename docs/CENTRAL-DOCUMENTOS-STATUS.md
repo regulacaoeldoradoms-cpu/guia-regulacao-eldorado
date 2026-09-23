@@ -28,9 +28,12 @@ Validação:
 - CI final da PR: **24/24 workflows concluídos sem falhas**, incluindo **Validar Central de Documentos — navegador**;
 - o primeiro ciclo revelou contratos obsoletos de versão em testes compartilhados e no workflow da Central; foram atualizados para os prompts `v3/v5/v5` e versão `phase5e-v8c3-specialty-order`, sem alterar o requisito funcional;
 - pós-merge da `main`: **22/22 workflows de push concluídos com success**, incluindo Central de Documentos Fases 1–6, governança e site;
-- GitHub Pages build/deploy run **35895563616**: **success**, para o merge `29741b99`.
+- GitHub Pages build/deploy run **35895563616**: **success**, para o merge `29741b99`;
+- o primeiro e o segundo Workers Builds pós-merge funcional falharam sem promover versão; o gate seguro permaneceu fail-closed;
+- no head posterior `ca6714e062649de41bf70f43fe062ed316121091`, que contém integralmente a implementação da #463, **Workers Builds concluiu com success** (build `64027adc-c613-47a2-80cf-2c83b70e533e`) e publicou a versão **`6214244a-b6b4-4dd9-8e3e-74fe2e1466e0`** do Worker institucional;
+- Cloudflare Pages no mesmo head `ca6714e`: **success**.
 
-Estado: **implementação, merge e publicação estática concluídos**. Resta a homologação humana de uma extração real autorizada no Titon. A pendência visual separada da 7G.4 continua válida e não foi absorvida por esta unidade.
+Estado: **implementação, merge, frontend e Worker institucional publicados tecnicamente**. Resta a homologação humana de uma extração real autorizada no Titon. A pendência visual separada da 7G.4 continua válida e não foi absorvida por esta unidade.
 
 **Próxima ação exata:** em `/documentos/`, executar Ctrl+F5, abrir um PDF real autorizado no Titon, acionar a extração e conferir a ordem/rótulos; validar especialmente que **Especialidade** só seja preenchida quando estiver explicitamente indicada na própria página e que **NÃO CONSTA/ILEGÍVEL** continuem corretos.
 
@@ -3324,20 +3327,20 @@ Os botões autorais `.documents-art-button` foram explicitamente excluídos para
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
 | Subfase / objetivo atual | **7H publicada tecnicamente; homologação humana da ordem da IA + Especialidade pendente** |
-| Última ação concluída | implementação da PR **#463** mesclada em `29741b9914fff08f962630864373900bfd865dd1`; publicação GitHub Pages validada; registro pós-publicação consolidado pela PR **#464** |
+| Última ação concluída | implementação #463 integrada; frontend publicado; Worker institucional publicado com sucesso no head `ca6714e`, versão `6214244a-b6b4-4dd9-8e3e-74fe2e1466e0` |
 | Branch atual | **nenhuma** |
 | PR atual | **nenhum** |
-| Último commit relevante | funcional `29741b9914fff08f962630864373900bfd865dd1`; registro pós-publicação `016dfa51e703beab5edbaf91bb375c4966356d63` |
-| Checks e testes | PR #463 **24/24 sem falhas**; pós-merge funcional **22/22 workflows de push success**; GitHub Pages run **35895563616 success**; PR documental #464 **21/21 sem falhas** |
+| Último commit relevante | funcional `29741b9914fff08f962630864373900bfd865dd1`; head que publicou o Worker `ca6714e062649de41bf70f43fe062ed316121091` |
+| Checks e testes | PR #463 **24/24 sem falhas**; pós-merge funcional **22/22 workflows de push success**; GitHub Pages run **35895563616 success**; Workers Builds build **64027adc-c613-47a2-80cf-2c83b70e533e success** |
 | Decisões tomadas | sequência solicitada é o padrão; `especialidade` integra o schema e só aceita rótulo explícito; campos complementares permanecem depois; proveniência continua por página |
 | Justificativas | atender o fluxo operacional sem apagar informação já suportada e sem misturar informações de páginas diferentes |
 | Alternativas descartadas | consolidar páginas diferentes para forçar uma lista única; inferir especialidade por CID/procedimento; remover Título/Procedimento solicitado/Descrição do CID |
-| Ações externas concluídas | publicação GitHub Pages do merge funcional confirmada |
+| Ações externas concluídas | GitHub Pages e Cloudflare Worker publicados; Worker version `6214244a-b6b4-4dd9-8e3e-74fe2e1466e0` |
 | Pendências e bloqueios | **homologação humana de uma extração real autorizada**; a homologação visual separada da 7G.4 também continua pendente |
 | Riscos conhecidos | PDFs sem rótulo explícito de especialidade devem retornar NÃO CONSTA; conferir em documento real sem permitir inferência |
 | Métricas / observabilidade | nenhuma telemetria nova; dados extraídos continuam fora do PostHog |
 | Próxima ação exata | **Ctrl+F5 em /documentos/ → abrir PDF real autorizado → Extrair dados do PDF → conferir ordem/rótulos e Especialidade; validar NÃO CONSTA/ILEGÍVEL** |
-| Arquivos e fontes principais | Guia Mestre V1.1; merge #463 `29741b99`; `js/documents.js`; `worker/document-ai*.js`; `worker/documents-router.js`; testes IA/UI; status |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #463; merge `29741b99`; Worker head `ca6714e`; `js/documents.js`; `worker/document-ai*.js`; `worker/documents-router.js`; testes IA/UI; status |
 
 ## Histórico recuperável
 
