@@ -27,6 +27,20 @@ test('Agenda aparece somente para Telemedicina e Desenvolvedor', () => {
   assert.ok(!ids({ role: 'cidadao' }).includes('agenda'));
 });
 
+test('Agenda e Central de Documentos usam os ícones próprios do catálogo', () => {
+  const tools = toolsCatalog();
+  const cards = tools.cardsFor({
+    role: 'admin',
+    emailVerified: true,
+    documentCapabilities: { view: true, manage: true }
+  });
+  const agenda = cards.find((card) => card.id === 'agenda');
+  const documents = cards.find((card) => card.id === 'central-documents');
+
+  assert.match(agenda?.icon || '', /\/assets\/AGENDA\.png\?v=20260923-1/);
+  assert.match(documents?.icon || '', /\/assets\/CENTRAL_DOCUMENTOS\.png\?v=20260923-1/);
+});
+
 test('backend da Agenda exige sessão e capacidade Telemedicina', () => {
   const source = read('worker/agenda.js');
   assert.match(source, /validatePortalSession/);
