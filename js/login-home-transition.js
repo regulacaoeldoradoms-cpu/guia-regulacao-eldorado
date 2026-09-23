@@ -8,6 +8,7 @@
     ['/js/portal-performance.js', 'PortalPerformance'],
     ['/js/auth-config.js', 'REGULATION_AUTH_CONFIG'],
     ['/js/auth-client.js', 'RegulationAuth'],
+    ['/js/portal-theme.js', 'PortalTheme'],
     ['/js/portal-interactions.js', 'PortalInteractions'],
     ['/js/tools-catalog.js', 'PortalTools'],
     ['/js/social-api.js', 'PortalSocial'],
