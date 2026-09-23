@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — ampliar pesquisa do Drive para nome + conteúdo indexado** |
-| Última ação concluída | implementação preparada: endpoint de pesquisa combina `name contains` com `fullText contains` da própria Drive API; UI informa busca por nome ou conteúdo |
-| Branch atual | `feat/titon-drive-fulltext-search-20260923` |
-| PR atual | ainda não aberta; abrir após validação do diff |
-| Último commit relevante | base `578397fead8159a80f2af8497592b58192dbeee8`; Worker, UI, testes e documentação atualizados nesta branch |
-| Checks e testes | CI ainda pendente; testes novos cobrem múltiplos termos, frase entre aspas e preservação de referências opacas |
-| Decisões tomadas | usar o índice `fullText` do Google Drive na mesma API já habilitada; nenhuma nova API Google, OCR ou Gemini para busca |
-| Justificativas | o Drive já indexa conteúdo pesquisável de PDFs/imagens reconhecidos; usar esse índice evita baixar/ler todos os arquivos no Portal e aproxima o comportamento do Drive original |
-| Alternativas descartadas | criar índice próprio no D1; varrer PDFs com OCR/Gemini a cada pesquisa; ativar Activity/Labels/MCP/Marketplace para uma função que a Drive API já oferece |
-| Ações externas concluídas | nenhuma API adicional precisa ser ativada |
-| Pendências e bloqueios | abrir PR, exigir CI verde, integrar/publicar e testar termo que exista somente dentro de um PDF |
-| Riscos conhecidos | arquivos cujo conteúdo não tenha sido indexado pelo Google não aparecerão; ranking não é idêntico à interface Drive; busca multi-termo segue semântica da Drive API |
-| Métricas / observabilidade | termos continuam não enviados ao PostHog; permanecem somente tempos técnicos e contagem em buckets |
-| Próxima ação exata | **abrir PR → CI verde → merge/publicação → Ctrl+F5 → pesquisar uma palavra que exista no conteúdo mas não no nome do PDF** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-drive.js`; `documentos/index.html`; testes Phase1/UI; documentação oficial Drive fullText |
+| Subfase / objetivo atual | **7E — pesquisa por nome + conteúdo indexado integrada; falta homologação real em produção** |
+| Última ação concluída | PR **#434** mesclada à `main`; pesquisa usa `name contains` + `fullText contains` da própria Drive API |
+| Branch atual | `docs/titon-fulltext-search-published-20260923` somente para reconciliar status |
+| PR atual | funcional **#434 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`92c1650286b444161eea6520a92eee744234358b`** |
+| Checks e testes | head final da #434: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
+| Decisões tomadas | usar índice `fullText` nativo do Drive na mesma Files API; nome continua no OR; múltiplos termos no conteúdo usam AND; consulta entre aspas usa frase exata |
+| Justificativas | Google Drive já indexa conteúdo de PDFs, imagens com texto e tipos reconhecidos; isso aproxima o comportamento do Drive original sem baixar/varrer todos os arquivos |
+| Alternativas descartadas | índice próprio D1; OCR/Gemini em massa a cada pesquisa; ativar Drive Activity/Labels/MCP/Marketplace para uma função já coberta pela Drive API |
+| Ações externas concluídas | nenhuma API adicional do Google precisa ser ativada |
+| Pendências e bloqueios | confirmar deploy produtivo e testar termo presente dentro do PDF mas ausente do nome |
+| Riscos conhecidos | arquivos não indexados pelo Google continuam não localizáveis via fullText; ranking não é idêntico ao Drive web |
+| Métricas / observabilidade | termo pesquisado permanece fora do PostHog; somente tempos técnicos/buckets |
+| Próxima ação exata | **Ctrl+F5 → pesquisar uma palavra/frase que exista somente dentro de um PDF → confirmar resultado; depois comparar latência com busca por nome** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #434; merge `92c16502`; `worker/document-drive.js`; `documentos/index.html`; testes Phase1/UI; docs Fase 7 |
 
 ## Histórico recuperável
 
@@ -5473,3 +5473,33 @@ Não há nova dependência externa: **Google Drive API v3 já fornece `fullText`
 Privacidade: a consulta já era enviada ao Google Drive para pesquisa por nome; agora é usada também pelo índice textual do próprio Drive. O Portal não baixa todos os PDFs, não grava índice local e não envia a consulta ao Gemini/PostHog.
 
 **Próxima ação exata:** validar CI e publicar; depois testar em produção com um termo existente somente dentro de um PDF.
+
+
+## Fase 7E — pesquisa fullText integrada à main — 23/09/2026
+
+A PR **#434 — Fase 7E: pesquisar nome e conteúdo indexado do Google Drive** foi integrada à `main` no merge **`92c1650286b444161eea6520a92eee744234358b`**.
+
+Resultado:
+- `searchDrive()` deixou de usar apenas `name contains`;
+- a consulta passa a combinar nome e conteúdo indexado pelo Google Drive em uma única chamada `files.list`;
+- conteúdo usa `fullText contains`, sem baixar o arquivo;
+- consultas comuns com várias palavras geram cláusulas `fullText` unidas por `and`;
+- consultas inteiras entre aspas duplas são tratadas como frase exata;
+- paginação continua em 20 resultados;
+- UI informa “Pesquisar por nome ou conteúdo no Drive”;
+- referências opacas, `corpora=user`, suporte a Drive compartilhado e observabilidade sanitizada permanecem.
+
+Validação do head funcional `71aab8fde2043ec1e6d032aeff2113687746bfc1`:
+- **23/23 workflows GitHub Actions: success**;
+- Central Fases 1–6: success;
+- navegador/PDF.js real: success;
+- bundle/site/governança: success;
+- testes confirmam busca multi-termo, frase exata e ausência de fileId bruto na resposta.
+
+Revisão da decisão antiga sobre APIs Google:
+- **Drive Activity API** continua útil apenas para histórico/auditoria futura;
+- **Drive Labels API** continua opcional para metadados estruturados;
+- **Drive MCP** e **Workspace Marketplace SDK** não são necessários para a pesquisa textual da Central;
+- para esta necessidade específica, a decisão de não ativar APIs adicionais continua correta porque a **Drive API v3 já expõe o índice `fullText`**.
+
+**Próxima ação exata:** retestar em produção com conteúdo que não aparece no nome do arquivo e registrar homologação.
