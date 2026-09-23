@@ -5737,3 +5737,24 @@ Privacidade/segurança:
 Documentação de arquitetura: `docs/PORTAL-APARENCIA-V1.md` e complemento em `docs/PORTAL-INTERACTIONS-V1.md`.
 
 **Próxima ação exata:** abrir PR e executar a matriz CI completa. Só integrar se os testes de rotas, autenticação, Telemedicina, Central/staging e regressão global permanecerem verdes; depois homologar visualmente claro/escuro em produção.
+
+
+## Mudança transversal — tema claro/escuro global — correção do bootstrap pós-login — 23/09/2026
+
+Durante a primeira matriz CI da PR **#444**, 52/53 workflows ficaram verdes. O único workflow vermelho foi **Validar abertura pós-login — navegador**, e a repetição do mesmo job reproduziu a falha em 4 cenários da Home real.
+
+Diagnóstico concluído com o artefato Playwright:
+- a Home terminava sendo carregada somente depois do vídeo, em vez de ser preparada durante os 10 segundos;
+- o documento da Home já continha o novo `/js/portal-theme.js`;
+- `js/login-home-transition.js` possui uma allowlist explícita de scripts autorizados para o handoff da Home;
+- o novo bootstrap de tema ainda não estava nessa allowlist;
+- portanto `assetUrl(..., 'script')` rejeitava a Home preparada com `home_asset_not_allowed`, e o login caía corretamente no fallback de navegação após a abertura.
+
+Correção no head `5240c26f01279baad88332206947b391d3680008`:
+- `/js/portal-theme.js` foi incluído em `SCRIPT_GLOBALS` com o global esperado `PortalTheme`;
+- o teste de contrato pós-login agora exige explicitamente essa allowlist;
+- o workflow de navegador passa a ser disparado também quando `js/portal-theme.js` mudar, evitando regressão silenciosa futura.
+
+Impacto de segurança: nenhum afrouxamento da política. A Home continua aceitando somente scripts locais explicitamente allowlisted; apenas o novo bootstrap oficial de aparência foi adicionado.
+
+**Próxima ação exata:** aguardar a matriz CI do novo head, confirmar o navegador pós-login verde e integrar a PR #444 somente com a matriz completa aprovada.
