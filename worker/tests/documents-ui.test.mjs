@@ -714,10 +714,10 @@ test('visualizador fora da edição mostra Salvar PDF e Imprimir ao lado de Ajus
 
   const saveStart = client.indexOf('  async function saveViewedPdfLocal()');
   const printStart = client.indexOf('  async function printViewedPdfLocal()');
-  const editorPrintStart = client.indexOf('  async function printEditedPdfLocal()');
-  const viewerActions = client.slice(saveStart, editorPrintStart);
+  const viewerActionsEnd = client.indexOf('  async function finalPdfBlobForSession(', printStart);
+  const viewerActions = client.slice(saveStart, viewerActionsEnd);
   assert.doesNotMatch(viewerActions, /drive\/sync|replace_pdf|save_copy|syncEditedPdfToDrive/);
-  assert.ok(saveStart >= 0 && printStart > saveStart);
+  assert.ok(saveStart >= 0 && printStart > saveStart && viewerActionsEnd > printStart);
 });
 
 test('editor usa os controles da mesma superfície PDF.js sem lista textual paralela', () => {
