@@ -202,7 +202,7 @@ test('Fase 7E pré-carrega somente a raiz após login e evita duplicar a chamada
   const client = read('js/documents.js');
 
   assert.match(html, /portal-performance\.js\?v=20260923-1/);
-  assert.match(html, /documents\.js\?v=20260923-9/);
+  assert.match(html, /documents\.js\?v=20260923-10/);
 
   assert.match(performanceClient, /function documentsAccessAllowed\(/);
   assert.match(performanceClient, /PORTAL_WARM_DOCUMENTS/);
@@ -267,7 +267,7 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
 
   assert.match(html, /portal-performance\.js\?v=20260923-1/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-9/);
+  assert.match(html, /documents\.js\?v=20260923-10/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   for (const source of [observability, server]) {
@@ -423,7 +423,7 @@ test('Fase 7E acelera navegação do Drive com raiz aquecida e sem preload de pa
   const server = read('worker/observability.js');
 
   assert.match(html, /portal-performance\.js\?v=20260923-1/);
-  assert.match(html, /documents\.js\?v=20260923-9/);
+  assert.match(html, /documents\.js\?v=20260923-10/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   assert.match(client, /folderSnapshot:\s*null/);
@@ -522,7 +522,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260923-9/);
+  assert.match(html, /documents\.js\?v=20260923-10/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -561,7 +561,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260923-5/);
+  assert.match(html, /documents\.css\?v=20260923-6/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -581,8 +581,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-9/);
-  assert.match(html, /documents\.css\?v=20260923-5/);
+  assert.match(html, /documents\.js\?v=20260923-10/);
+  assert.match(html, /documents\.css\?v=20260923-6/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -876,8 +876,8 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-9/);
-  assert.match(html, /documents\.css\?v=20260923-5/);
+  assert.match(html, /documents\.js\?v=20260923-10/);
+  assert.match(html, /documents\.css\?v=20260923-6/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -1019,7 +1019,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260923-9/);
+  assert.match(html, /documents\.js\?v=20260923-10/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -1385,7 +1385,7 @@ test('ferramentas laterais respeitam hidden mesmo com display autoral', () => {
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(css, /\.documents-rail-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-editor-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(html, /documents\.css\?v=20260923-5/);
+  assert.match(html, /documents\.css\?v=20260923-6/);
 });
 
 test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro plano', () => {
@@ -1420,11 +1420,39 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
-  assert.match(html, /documents\.css\?v=20260923-5/);
-  assert.match(html, /documents\.js\?v=20260923-9/);
+  assert.match(html, /documents\.css\?v=20260923-6/);
+  assert.match(html, /documents\.js\?v=20260923-10/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
+});
+
+test('lista renomeia PDF por segundo clique lento no nome sem substituir duplo clique de abertura', () => {
+  const client = read('js/documents.js');
+  const css = read('css/documents.css');
+
+  assert.match(client, /data-list-rename-index=/);
+  assert.match(client, /function scheduleListPdfRename\(index\)/);
+  assert.match(client, /pendingListRenameTimer = window\.setTimeout\([\s\S]*beginListPdfRename\(currentIndex\)/);
+  assert.match(client, /function beginListPdfRename\(index\)/);
+  assert.match(client, /async function commitListPdfRename\(\)/);
+  assert.match(client, /class="documents-list-rename-input"[^>]*maxlength="296"/);
+  assert.ok(client.includes('documents-list-rename-extension'));
+  assert.match(client, /commitListPdfRename\(\)\.catch\(\(\) => \{\}\)/);
+  assert.match(client, /els\.list\.addEventListener\('focusout',[\s\S]*commitListPdfRename\(\)/);
+  assert.match(client, /baseVersion:\s*previous\.version/);
+  assert.match(client, /baseName:\s*oldName/);
+
+  const dblStart = client.indexOf("  els.list.addEventListener('dblclick'");
+  const keyStart = client.indexOf("  els.list.addEventListener('keydown'", dblStart);
+  const dblBlock = client.slice(dblStart, keyStart);
+  assert.match(dblBlock, /clearPendingListRename\(\)/);
+  assert.match(dblBlock, /openPdf\(item\)/);
+
+  assert.match(css, /\.documents-item-row\s*\{[\s\S]*position:\s*relative/);
+  assert.match(css, /\.documents-list-rename\s*\{[\s\S]*position:\s*absolute/);
+  assert.match(css, /\.documents-list-rename input:focus/);
+  assert.match(css, /\.documents-list-rename-extension/);
 });
 
 test('pastas seguem seleção por clique e abertura por duplo clique ou Enter', () => {
@@ -1679,8 +1707,8 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentsNotepadHead"/);
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
-  assert.match(html, /documents\.css\?v=20260923-5/);
-  assert.match(html, /documents\.js\?v=20260923-9/);
+  assert.match(html, /documents\.css\?v=20260923-6/);
+  assert.match(html, /documents\.js\?v=20260923-10/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-notepad-head[\s\S]*cursor:\s*grab/);
