@@ -347,6 +347,7 @@
 .documents-empty { padding: 38px 20px; text-align: center; color: var(--portal-muted); line-height: 1.6; }
 .documents-item-row {
   width: 100%;
+  position: relative;
   border-bottom: 1px solid #edf2f6;
   background: #fff;
 }
@@ -411,7 +412,59 @@
 .documents-item.folder .documents-item-icon { background: #fff4d8; color: #a96e00; }
 .documents-item-copy { min-width: 0; }
 .documents-item-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .87rem; color: #153854; }
+.documents-item-copy strong.documents-item-name { cursor: default; }
+.documents-item.pdf.selected:not(.renaming) .documents-item-name { cursor: text; }
+.documents-item.renaming {
+  background: #fff8f6;
+}
+.documents-item.renaming .documents-item-copy strong { visibility: hidden; }
 .documents-item-copy span { display: block; margin-top: 3px; color: var(--portal-muted); font-size: .74rem; }
+.documents-list-rename {
+  position: absolute;
+  z-index: 3;
+  left: 65px;
+  right: 15px;
+  top: 8px;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+}
+.documents-list-rename input {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  box-sizing: border-box;
+  border: 1px solid #8db8d5;
+  border-radius: 8px 0 0 8px;
+  background: #fff;
+  color: #153854;
+  padding: 6px 9px;
+  font: inherit;
+  font-size: .87rem;
+  font-weight: 800;
+  outline: none;
+}
+.documents-list-rename input:focus {
+  border-color: #2478b8;
+  box-shadow: 0 0 0 3px rgba(36,120,184,.14);
+}
+.documents-list-rename input:disabled {
+  opacity: .72;
+  cursor: progress;
+}
+.documents-list-rename-extension {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  border: 1px solid #8db8d5;
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+  background: #eef5fa;
+  color: #315f7c;
+  padding: 0 9px;
+  font-size: .8rem;
+  font-weight: 850;
+}
 .documents-item-action { color: #2b6fa7; font-size: .74rem; font-weight: 850; white-space: nowrap; }
 .documents-item-action:empty { display: none; }
 .documents-pagination { padding: 12px; text-align: center; border-top: 1px solid #edf2f6; }
