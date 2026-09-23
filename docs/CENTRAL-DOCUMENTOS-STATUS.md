@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — tornar a lista de documentos a primeira superfície visível da Central** |
-| Última ação concluída | layout operacional compactado na branch: hero e card textual de configuração removidos; somente ações administrativas essenciais permanecem acima da lista |
-| Branch atual | `feat/titon-documents-first-layout-20260923` |
-| PR atual | ainda não aberto; abrir após CI inicial da branch |
-| Último commit relevante | base da branch `306ac6cc722b249ec18f8772075ef167ea38409e`; ajustes de layout/testes/documentação em andamento |
-| Checks e testes | CI da branch ainda pendente; regressão nova garante ausência do hero/textos, presença dos 3 controles essenciais e workspace sem margem introdutória |
-| Decisões tomadas | remover todo texto introdutório da tela operacional; ocultar visualmente status/mensagens institucionais mantendo-os acessíveis; conservar Conectar/Desconectar Drive e Gerenciar cargos e acessos apenas para quem administra |
-| Justificativas | o bloco introdutório consumia a primeira dobra e obrigava rolagem antes de chegar aos documentos, contrariando o uso recorrente da Central |
-| Alternativas descartadas | manter hero reduzido; deixar card de configuração recolhível; mover ações para dentro do workspace, pois isso impediria conexão quando o Drive estivesse desconectado |
+| Subfase / objetivo atual | **7E — entrada da Central priorizando documentos integrada; falta validação visual em produção** |
+| Última ação concluída | PR **#426** mesclada à `main`; hero/textos introdutórios e card de configuração foram removidos, restando apenas ações administrativas essenciais acima da lista |
+| Branch atual | `docs/titon-documents-first-published-20260923` somente para reconciliar status |
+| PR atual | funcional **#426 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`1f5c2ffc29102d3dcbecd068540b0d14b095ea1b`** |
+| Checks e testes | head final da #426: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
+| Decisões tomadas | primeira superfície operacional passa a ser pesquisa/lista de documentos; somente Conectar/Desconectar Drive e Gerenciar cargos e acessos permanecem visíveis para quem administra; mensagens institucionais ficam somente acessíveis via aria-live |
+| Justificativas | o conteúdo introdutório obrigava rolagem antes do acervo e não agrega valor no uso recorrente |
+| Alternativas descartadas | hero menor; card recolhível; mover ações administrativas para dentro do workspace, pois isso impediria conectar o Drive quando desconectado |
 | Ações externas concluídas | nenhuma configuração externa necessária |
-| Pendências e bloqueios | executar CI, integrar/publicar e confirmar visualmente que a pesquisa/lista aparece imediatamente após o cabeçalho do Portal |
-| Riscos conhecidos | quando houver erro real de acesso/conexão, o status global continuará visível e pode ocupar espaço; isso é intencional para não esconder bloqueios operacionais |
-| Métricas / observabilidade | sem mudança em telemetria, Drive, permissões ou dados; alteração somente de layout/apresentação |
-| Próxima ação exata | **abrir PR, exigir checks verdes, mesclar/publicar; depois Ctrl+F5 e confirmar que documentos/pesquisa aparecem na primeira dobra, mantendo apenas os botões administrativos necessários** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `docs/CENTRAL-DOCUMENTOS-FASE-1.md`; testes UI |
+| Pendências e bloqueios | falta apenas Ctrl+F5 e confirmação visual de que pesquisa/lista aparecem imediatamente após o cabeçalho |
+| Riscos conhecidos | mensagens reais de erro/acesso continuam visíveis e podem ocupar espaço quando necessárias; comportamento intencional |
+| Métricas / observabilidade | sem mudança em telemetria, Drive, permissões, IA, OCR ou dados |
+| Próxima ação exata | **Ctrl+F5 na Central e confirmar visualmente que documentos/pesquisa estão na primeira dobra e que a faixa administrativa ficou compacta** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #426; merge `1f5c2ffc`; `documentos/index.html`; `css/documents.css`; `js/documents.js`; testes UI |
 
 ## Histórico recuperável
 
@@ -5247,3 +5247,35 @@ Critérios de aceite:
 7. desktop e mobile continuam responsivos.
 
 **Próxima ação exata:** validar CI, integrar somente se verde e confirmar em produção que a primeira dobra mostra imediatamente a pesquisa/lista de documentos.
+
+
+## Fase 7E — entrada da Central simplificada e integrada — 23/09/2026
+
+A PR **#426 — Fase 7E: abrir Central diretamente nos documentos** foi integrada à `main` no merge **`1f5c2ffc29102d3dcbecd068540b0d14b095ea1b`**.
+
+Resultado versionado:
+- removido o hero “Google Drive institucional dentro do Portal” e seu texto explicativo;
+- removido o card visual “Configuração institucional” e a mensagem textual da conexão;
+- permanecem visíveis somente as ações administrativas essenciais, conforme capability/estado:
+  - **Conectar Google Drive**;
+  - **Desconectar Drive**;
+  - **Gerenciar cargos e acessos**;
+- o estado técnico do Drive e a mensagem de configuração continuam no DOM apenas como conteúdo acessível `sr-only`/aria-live, sem ocupar espaço visual;
+- erros e bloqueios reais continuam aparecendo em `documentsGlobalStatus`;
+- o workspace perdeu a margem introdutória e passa a começar imediatamente abaixo da faixa administrativa compacta;
+- para contas sem capability de gestão, a faixa administrativa fica totalmente oculta e a pesquisa/lista aparece diretamente após o cabeçalho do Portal.
+
+Validação do head funcional `e50a177a06fe14bc2ff48315754f03cf0cc3d4b6`:
+- **23/23 workflows GitHub Actions: success**;
+- Central de Documentos — Fases 1–6: **success**;
+- navegador/PDF.js real em Chromium: **success**;
+- bundle de staging: **success**;
+- site e governança: **success**;
+- demais workflows disparados para o head: **success**.
+
+Critério de aceite operacional restante:
+- em produção, após Ctrl+F5, a primeira dobra deve mostrar pesquisa/pastas/documentos sem exigir rolagem para atravessar textos institucionais;
+- administradores devem ver somente a pequena faixa de controles indispensáveis;
+- usuários comuns devem ir direto ao acervo.
+
+**Próxima ação exata:** validar visualmente a Central em produção após Ctrl+F5. Se a lista estiver imediatamente acessível, registrar homologação desta unidade da 7E.
