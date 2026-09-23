@@ -3153,26 +3153,54 @@ Esse Workers Builds bem-sucedido **substitui como evidência operacional** a ten
 
 **Pendência:** somente homologação humana em produção. O teste deve confirmar que, após Ctrl+F5, o chip mostra **Acesso completo**, o segundo clique simples no nome permite editar antes de abrir o PDF, Enter/clique fora sincronizam e o duplo clique rápido continua abrindo o Titon.
 
+## Fase 7G.2 — ações rápidas de Salvar/Imprimir na lista — EM PR — 23/09/2026
+
+Solicitação operacional: permitir salvar ou imprimir qualquer PDF diretamente da lista da Central, sem precisar abrir o Titon.
+
+**Decisão de UX:** em desktop, cada linha de PDF recebe dois botões quadrados no canto direito, visíveis somente no **hover** da linha; foco por teclado também revela os botões por acessibilidade. As ações são:
+- **Salvar PDF** — download local do arquivo original;
+- **Imprimir** — abre a caixa de impressão usando iframe interno, sem nova aba.
+
+Pastas e arquivos não-PDF não recebem as ações. Em mobile/touch, os botões de hover ficam ocultos para preservar a composição compacta existente.
+
+**Decisão técnica:** reutilizar os caminhos já homologados da própria Central:
+- leitura/cache via `editablePdfBlob(item)`;
+- nome local via `localViewedPdfName(item)`;
+- impressão via `ensurePrintFrame()` + `renderPdfBlobForPrint()`.
+
+As ações rápidas não chamam `openPdf()`, não criam sessão do Titon, não escrevem no Drive e não introduzem endpoint, capability ou evento PostHog novo. Clique simples, renomeação por segundo clique e duplo clique de abertura permanecem separados.
+
+PR **#455** / branch `feat/central-list-quick-save-print-20260923`.
+Cache-busters: `documents.css?v=20260923-7` e `documents.js?v=20260923-12`.
+
+**Critérios de aceite desta unidade:**
+1. hover de PDF mostra exatamente os dois botões quadrados;
+2. Salvar baixa o PDF sem abrir o Titon;
+3. Imprimir abre a impressão sem abrir o Titon/nova aba;
+4. ações não aparecem em pastas/não-PDF;
+5. interações existentes da lista não regressam;
+6. CI completo verde antes do merge.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.1 continua aguardando homologação humana; refinamento transversal do chat escuro está publicado e aguarda apenas confirmação visual** |
-| Última ação concluída | PR **#453** mesclada à `main`, reconciliando o handoff após a PR funcional **#452** |
-| Branch atual | nenhuma branch funcional pendente para o chat; `main` contém o código publicado |
-| PR atual | **#452 mesclada** (funcional) e **#453 mesclada** (status/handoff) |
-| Último commit relevante | `main` **`1252cf8e27e66a4fbbba00a8c2f50a45c8b29563`**; merge funcional do chat `77e50f016762bd1cf6cce5a808c9088879d38091` |
-| Checks e testes | #452 **23/23 success**; pós-merge Pages, abertura pós-login e workflow próprio do chat: **success** |
-| Decisões tomadas | refinamento escuro permanece no CSS próprio do chat; modo claro não muda; sem alteração de estrutura, backend ou regras de negócio |
-| Justificativas | as superfícies claras residuais estavam hardcoded em `portal-chat.css`; corrigir localmente reduz blast radius |
-| Alternativas descartadas | recolorir via JS; alterar mensagens/contatos; rebustar toda a camada global; mexer no backend |
-| Ações externas concluídas | GitHub Pages publicou o merge #452 com success |
-| Pendências e bloqueios | somente confirmação visual humana do chat em produção; depois retomar a homologação 7G.1 da Central |
-| Riscos conhecidos | podem restar apenas diferenças visuais específicas de algum tamanho de tela não homologado; funcionalidade do chat não foi alterada |
-| Métricas / observabilidade | nenhuma telemetria nova; mensagens, contatos e conteúdo continuam fora do tema/observabilidade |
-| Próxima ação exata | **Ctrl+F5 na Home → Modo escuro → abrir Chat interno → conferir lista, busca e conversa; aprovado isso, voltar à homologação 7G.1 em /documentos/** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #452; PR #453; `css/portal-chat.css`; `docs/PORTAL-APARENCIA-V1.md`; `worker/tests/social-ui.test.mjs`; `.github/workflows/validate-portal-chat.yml` |
+| Subfase / objetivo atual | **7G.2 — ações rápidas Salvar/Imprimir no hover da lista; PR #455 em validação** |
+| Última ação concluída | implementação, CSS, cache-busters e teste de regressão adicionados; PR #455 aberta |
+| Branch atual | `feat/central-list-quick-save-print-20260923` |
+| PR atual | **#455 aberta** — “Central: salvar e imprimir PDF direto da lista” |
+| Último commit relevante | `735a022d` — regressão das ações rápidas; commits anteriores implementam JS/CSS/assets |
+| Checks e testes | teste estático dedicado adicionado; CI da PR ainda deve ser confirmada |
+| Decisões tomadas | hover desktop + foco teclado; Salvar/Imprimir quadrados; sem abrir Titon; mobile/touch mantém layout atual |
+| Justificativas | reduz cliques no trabalho repetitivo e reutiliza pipelines já homologados de leitura/download/impressão |
+| Alternativas descartadas | abrir o Titon silenciosamente; nova aba para impressão; botão sempre visível poluindo todas as linhas |
+| Ações externas concluídas | nenhuma; sem alteração de Worker/Drive/OAuth/segredos |
+| Pendências e bloqueios | CI da #455 → merge se verde → publicação → homologação visual/funcional |
+| Riscos conhecidos | validar posicionamento com nomes longos e modo escuro; impressão continua dependente da caixa nativa do navegador |
+| Métricas / observabilidade | nenhuma telemetria nova; conteúdo e nomes de arquivos continuam fora do PostHog |
+| Próxima ação exata | **conferir CI da #455; se verde, mesclar e validar em produção: hover → Salvar e Imprimir sem abrir Titon** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #455; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
 
 ## Histórico recuperável
 
