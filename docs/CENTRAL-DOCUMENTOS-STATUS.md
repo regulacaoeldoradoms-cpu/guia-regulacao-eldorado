@@ -3081,26 +3081,47 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 
 **Próxima ação exata:** validar CI/preview da correção, integrar se verde e repetir somente o caso visual em produção: com IA documental desabilitada, o botão IA não deve aparecer. A homologação operacional restante da Fase 6 continua conforme `CENTRAL-DOCUMENTOS-HOMOLOGACAO-6.md`.
 
+## Fase 7F — renomeação inline de PDF na lista — EM PR — 23/09/2026
+
+A unidade 7F permite alterar o nome do PDF diretamente na lista da Central, antes de abrir o Titon.
+
+**Interação aprovada para implementação:** primeiro clique seleciona; quando o PDF já está selecionado, um **segundo clique simples no nome** inicia edição inline; um **duplo clique rápido** continua abrindo o Titon. **Enter** ou saída do campo confirmam, **Esc** cancela e a extensão `.pdf` permanece protegida.
+
+**Arquitetura:** a interface reutiliza `PATCH /api/documents/drive/rename`, com `baseVersion` e `baseName`; não há nova rota, capability, segredo ou telemetria. A confirmação final e o bloqueio de conflito continuam no backend/Google Drive.
+
+**Implementação — PR #445 / branch `feat/titon-inline-list-rename-20260923`:**
+- `js/documents.js`: segundo clique simples temporizado (260 ms) sem capturar o duplo clique; edição/commit/cancelamento inline;
+- `css/documents.css`: editor sobreposto à linha sem input aninhado no botão;
+- `documentos/index.html`: preserva o tema global publicado e usa `documents.css?v=20260923-6` / `documents.js?v=20260923-10`;
+- `worker/tests/documents-ui.test.mjs`: regressão dedicada para rename vs abertura.
+
+**CI e diagnóstico:** uma primeira rodada revelou que o stub legado de `Element.closest` em `documents-close-guard.test.mjs` interceptava qualquer seletor. A detecção do clique no nome foi alterada para `dataset.listRenameIndex`. Depois da correção e da primeira reconciliação com a main, **23/23 workflows ficaram verdes**, incluindo o navegador real.
+
+**Continuidade concorrente:** enquanto a #445 estava em validação, a PR #444 e depois a PR #446 foram mescladas em `main` (tema global e respectivo status). A #445 foi novamente reposicionada sobre `main` `d93c69e9`, com backup reversível `backup/titon-inline-list-rename-pre-status446-20260923`, preservando integralmente a aparência publicada. Como o último avanço da main alterou somente o status, a implementação funcional permanece a mesma; a CI deve ser reconfirmada no novo head antes do merge.
+
+**Alternativas descartadas:** duplo clique para renomear; input dentro do botão da linha; endpoint novo.  
+**Riscos:** timing visual de 260 ms precisa de homologação humana; conflitos de Drive permanecem fail-closed. A homologação da ordenação cronológica 7E continua separada.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **Mudança transversal claro/escuro integrada; falta homologação visual humana dos módulos** |
-| Última ação concluída | PR **#444** mesclada à `main`; infraestrutura global de aparência e controle em Configurações publicados |
-| Branch atual | `docs/portal-theme-published-20260923` somente para reconciliar status pós-merge |
-| PR atual | funcional **#444 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`5ff0a028a673a886109b96f1d6fae80c41484a8f`** |
-| Checks e testes | PR final **53/53 success**; pós-merge **52/52 success**, incluindo abertura pós-login e Pages build/deployment |
-| Decisões tomadas | claro é padrão; escuro é camada global; preferência sincroniza por conta; tema é independente das microinterações; PDF/impressão continuam claros |
-| Justificativas | uma camada global evita divergência entre módulos e preserva Telemedicina sem sons/animações globais |
-| Alternativas descartadas | CSS dark duplicado por módulo; depender apenas de `prefers-color-scheme`; recolorir PDF/impressão; permitir script novo fora da allowlist pós-login |
-| Ações externas concluídas | nenhuma configuração manual necessária; frontend publicado pelo Pages; migração de coluna é compatível via `ensureColumn` |
-| Pendências e bloqueios | homologação visual humana claro/escuro em desktop/mobile; refinamentos futuros devem ser por evidência visual específica |
-| Riscos conhecidos | CSS legado possui cores hardcoded; a camada global cobre as superfícies principais, mas diferenças pontuais podem aparecer na homologação real |
-| Métricas / observabilidade | nenhuma telemetria nova; tema não é enviado ao PostHog e não contém dados sensíveis |
-| Próxima ação exata | **Configurações → Aparência → Modo escuro → navegar Home/Ferramentas/Central/Telemedicina/Agenda/Guia/Recepção → retornar ao claro e relatar qualquer contraste incorreto** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #444; merge `5ff0a028`; `docs/PORTAL-APARENCIA-V1.md`; `js/portal-theme.js`; `js/portal-interactions.js`; `css/portal-interactions.css`; `configuracoes/index.html`; `worker/auth-management-v2.js` |
+| Subfase / objetivo atual | **7F — renomeação inline na lista; PR #445 sincronizada com a main pós-#446, aguardando CI final** |
+| Última ação concluída | branch da #445 reposicionada sobre `main` **`d93c69e9`** após a publicação/registro do tema; código 7F reaplicado sem perder mudanças concorrentes |
+| Branch atual | `feat/titon-inline-list-rename-20260923` |
+| PR atual | **#445 aberta** — “Central: renomear PDF direto na lista” |
+| Último commit relevante | replay funcional sobre `d93c69e9`; este arquivo de status é o commit posterior de handoff |
+| Checks e testes | implementação já obteve **23/23 verdes** antes do último avanço documental da main; nova rodada do head sincronizado deve ser confirmada antes do merge |
+| Decisões tomadas | segundo clique simples no nome edita; duplo clique rápido abre; Enter/focusout confirmam; Esc cancela; `.pdf` protegida; endpoint seguro existente |
+| Justificativas | preserva gesto de abertura e contrato de conflito/confirmação real do Drive, sem ampliar segurança/telemetria |
+| Alternativas descartadas | duplo clique para rename; input aninhado no botão; nova rota |
+| Ações externas concluídas | PR #444 e #446 já mescladas; nenhuma ação OAuth/Drive/Cloudflare necessária |
+| Pendências e bloqueios | CI do novo head; depois merge da #445 e homologação real; ordenação 7E ainda aguarda homologação humana |
+| Riscos conhecidos | janela de 260 ms precisa de validação de UX; conflito externo continua bloqueado pelo backend |
+| Métricas / observabilidade | nenhum evento/propriedade nova; nomes de arquivos e conteúdo continuam fora do PostHog |
+| Próxima ação exata | **conferir 23 checks da #445; se todos verdes, mesclar e validar em produção: 1 clique seleciona → segundo clique simples no nome edita → Enter/clique fora sincroniza → duplo clique rápido abre o Titon** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #445; `main` `d93c69e9`; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
 
 ## Histórico recuperável
 
