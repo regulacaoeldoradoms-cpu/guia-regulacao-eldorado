@@ -59,7 +59,7 @@
       cards.push({
         id: 'agenda', href: '/agenda/', title: 'Agenda',
         description: 'Acompanhe os agendamentos do DigSaúde com novos registros e alterações destacados para cada técnico.',
-        action: 'Abrir Agenda', icon: ICONS.calendar
+        action: 'Abrir Agenda', icon: image('/assets/AGENDA.png?v=20260923-1', '')
       });
     }
     if (user?.documentCapabilities?.view || user?.documentCapabilities?.manage) {
@@ -69,7 +69,7 @@
           ? 'Navegue pelo Google Drive institucional e abra PDFs autorizados sem sair do Portal.'
           : 'Configure a conexão institucional e os acessos da Central de Documentos.',
         action: user?.documentCapabilities?.view ? 'Abrir documentos' : 'Configurar Central',
-        icon: ICONS.documents
+        icon: image('/assets/CENTRAL_DOCUMENTOS.png?v=20260923-1', '')
       });
     }
     if (authorized(user, ['medico', 'coordenacao', 'admin'])) {
