@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — disponibilizar Salvar PDF e Imprimir também no modo visualização** |
-| Última ação concluída | implementação preparada na branch: dois botões foram adicionados imediatamente à direita de “Ajustar largura”, reutilizando o mesmo visual do editor |
-| Branch atual | `feat/titon-viewer-save-print-20260923` |
-| PR atual | ainda não aberta; abrir após registro e validação da branch |
-| Último commit relevante | base `d0bbc9e76c169a3975ac69230ba0455abe39d084`; alterações em HTML, cliente, CSS e testes |
-| Checks e testes | CI ainda pendente; regressão adicionada para posição dos botões, download local, impressão sem nova aba e ausência de escrita no Drive |
-| Decisões tomadas | no modo visualização, “Salvar PDF” baixa o PDF atual exatamente como está; “Imprimir” usa a mesma impressão PDF.js em iframe oculto; ao entrar no editor esses botões da barra principal somem e permanecem os controles do editor |
-| Justificativas | salvar/imprimir não exigem edição e são ações de leitura/local; exigir entrada no editor adicionava etapa desnecessária |
-| Alternativas descartadas | entrar automaticamente no editor para salvar/imprimir; usar visualizador nativo/nova aba; gravar qualquer alteração no Drive ao salvar localmente |
-| Ações externas concluídas | nenhuma configuração/secret necessário |
-| Pendências e bloqueios | abrir PR, validar CI, integrar/publicar e confirmar visualmente em produção |
-| Riscos conhecidos | ao salvar/imprimir um PDF aberto via stream progressivo, pode ser necessário baixar o PDF completo antes da ação; o cache local existente reduz repetições |
-| Métricas / observabilidade | nenhuma nova telemetria com conteúdo; ações são locais e não alteram o Drive |
-| Próxima ação exata | **abrir PR, exigir checks verdes, mesclar/publicar; depois Ctrl+F5 e validar Salvar PDF/Imprimir no modo visualização** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `documentos/index.html`; `js/documents.js`; `css/documents.css`; testes UI |
+| Subfase / objetivo atual | **7E — Salvar PDF e Imprimir disponíveis no modo visualização; falta homologação visual em produção** |
+| Última ação concluída | PR **#432** mesclada à `main`; os botões Salvar PDF e Imprimir aparecem à direita de Ajustar largura fora da edição |
+| Branch atual | `docs/titon-viewer-save-print-published-20260923` somente para reconciliar status |
+| PR atual | funcional **#432 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`e29fe0b8c5c5790e56ad61aa38295ebf0f0269ff`** |
+| Checks e testes | head final da #432: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
+| Decisões tomadas | modo visualização pode salvar cópia local e imprimir sem entrar no editor; ações não escrevem no Drive; os controles externos somem durante edição e reaparecem ao sair |
+| Justificativas | salvar/imprimir são operações locais de leitura e não dependem de edição; exigir entrada no editor adicionava etapa desnecessária |
+| Alternativas descartadas | abrir editor automaticamente; usar nova aba/visualizador nativo; sincronizar com Drive ao salvar local |
+| Ações externas concluídas | nenhuma configuração externa necessária |
+| Pendências e bloqueios | confirmar publicação produtiva e validar visualmente os dois botões após Ctrl+F5 |
+| Riscos conhecidos | em PDF ainda não baixado por completo, Salvar/Imprimir pode precisar obter o blob completo antes da ação; cache local reduz repetições |
+| Métricas / observabilidade | nenhuma nova telemetria com conteúdo; ações permanecem locais |
+| Próxima ação exata | **Ctrl+F5 → abrir um PDF sem entrar no editor → testar Salvar PDF e Imprimir ao lado de Ajustar largura** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #432; merge `e29fe0b8`; `documentos/index.html`; `js/documents.js`; `css/documents.css`; testes UI |
 
 ## Histórico recuperável
 
@@ -5427,3 +5427,29 @@ Critérios de aceite:
 6. CI e navegador permanecem verdes.
 
 **Próxima ação:** validar PR/CI, integrar se verde e homologar visualmente em produção.
+
+
+## Fase 7E — Salvar PDF e Imprimir integrados ao visualizador — 23/09/2026
+
+A PR **#432 — Fase 7E: mostrar Salvar PDF e Imprimir no visualizador** foi integrada à `main` no merge **`e29fe0b8c5c5790e56ad61aa38295ebf0f0269ff`**.
+
+Resultado versionado:
+- novos botões **Salvar PDF** e **Imprimir** na barra principal, imediatamente após **Ajustar largura**;
+- mesmos assets visuais aprovados do editor;
+- Salvar PDF baixa o documento atual localmente com seu nome-base, sem sufixo de edição;
+- Imprimir usa PDF.js e iframe oculto, sem `window.open` e sem abrir nova aba;
+- nenhuma dessas ações chama `drive/sync`, `replace_pdf`, `save_copy` ou qualquer escrita no Google Drive;
+- quando o editor é ativado, os controles externos são ocultados e os controles próprios do editor permanecem;
+- ao sair do editor, Salvar/Imprimir reaparecem;
+- troca/fechamento de PDF invalida ações locais antigas;
+- barra principal ganhou overflow horizontal seguro para telas estreitas;
+- cache-busters: `documents.css?v=20260923-2` e `documents.js?v=20260923-6`.
+
+Validação do head funcional `f13356deefc89ecf3ad59af95c7e223fcdb436a4`:
+- **23/23 workflows GitHub Actions: success**;
+- Central de Documentos — Fases 1–6: success;
+- Central de Documentos — navegador/PDF.js real: success;
+- bundle/site/governança: success;
+- regressão específica confirma posição, download local, impressão PDF.js e ausência de escrita no Drive.
+
+**Próxima ação exata:** homologar visualmente em produção após Ctrl+F5.
