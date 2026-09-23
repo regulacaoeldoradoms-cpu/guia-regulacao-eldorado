@@ -17,9 +17,9 @@ test('prompts da Fase 5 são artefatos separados e versionados', () => {
   assert.equal(ids.size, 6);
   assert.equal([...ids].every((id) => /_V1$/.test(id)), true);
   assert.equal(PROMPT_CLASSIFICACAO_PAGINAS_V1.version, 'v4');
-  assert.equal(PROMPT_EXTRACAO_REGULACAO_V1.version, 'v2');
-  assert.equal(PROMPT_ANALISE_REGULACAO_V1.version, 'v4');
-  assert.equal(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.version, 'v4');
+  assert.equal(PROMPT_EXTRACAO_REGULACAO_V1.version, 'v3');
+  assert.equal(PROMPT_ANALISE_REGULACAO_V1.version, 'v5');
+  assert.equal(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.version, 'v5');
   assert.equal(PROMPT_DOCUMENT_CHAT_V1.version, 'v1');
   assert.equal(PROMPT_VALIDACAO_V1.version, 'v1');
 });
@@ -70,9 +70,11 @@ test('análise integrada combina tipo e campos sem pedir pageNumber ao modelo', 
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /título\/cabeçalho PRINCIPAL/i);
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /DADOS.*seção interna.*NÃO transforma/is);
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /mesma folha contenha dados cadastrais do paciente/i);
+  assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /especialidade/i);
+  assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /não deduza a especialidade/i);
 });
 
-test('V8C.2 mantém as regras e usa compacto semântico por chaves curtas', () => {
+test('V8C.3 mantém as regras e usa compacto semântico por chaves curtas', () => {
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /exatamente UMA página/i);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /DADO NÃO CONFIÁVEL/i);
   assert.match(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.system, /FORMATO INTERNO COMPACTO SEMÂNTICO/);

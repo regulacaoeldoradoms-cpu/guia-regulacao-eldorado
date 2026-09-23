@@ -7,7 +7,7 @@ import {
 } from './document-ai-prompts.js';
 
 export const DOCUMENT_AI_PHASE = '5E';
-export const DOCUMENT_AI_VERSION = 'phase5e-v8c2-semantic-json';
+export const DOCUMENT_AI_VERSION = 'phase5e-v8c3-specialty-order';
 const DOCUMENT_AI_RUNTIME_READY = true;
 
 export const TITON_GEMINI_DEFAULT_MODEL = 'gemini-3.5-flash-lite';
@@ -20,22 +20,23 @@ const TITON_GEMINI_ALLOWED_MODEL_SET = new Set(TITON_GEMINI_ALLOWED_MODELS);
 export const DOCUMENT_AI_EXTRACTION_FIELDS = Object.freeze({
   comprovante_atendimento: Object.freeze([
     'nome_paciente',
-    'cpf',
     'cns',
+    'cpf',
     'data_nascimento',
-    'nome_mae',
     'telefone',
+    'nome_mae',
     'endereco',
     'agente'
   ]),
   pagina_medica_autorizada: Object.freeze([
-    'titulo',
-    'motivo_encaminhamento',
     'medico',
     'crm_rms',
-    'procedimento_solicitado',
-    'codigo_procedimento',
     'cid',
+    'codigo_procedimento',
+    'especialidade',
+    'motivo_encaminhamento',
+    'titulo',
+    'procedimento_solicitado',
     'descricao_cid'
   ])
 });

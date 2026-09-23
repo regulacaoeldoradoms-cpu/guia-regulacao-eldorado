@@ -143,6 +143,7 @@ Cada página válida gera bloco próprio com proveniência, incluindo quando dis
 - CRM/RMS;
 - procedimento solicitado;
 - código do procedimento;
+- especialidade;
 - CID;
 - descrição do CID.
 
@@ -587,3 +588,8 @@ Decisão:
 - produção continua com gates da IA documental desligados até a estratégia específica de publicação/ativação ser conduzida de forma controlada; o encerramento da Fase 5 não autoriza mudança silenciosa de gate.
 
 Próxima fase autorizada pelo Guia Mestre: **Fase 6 — Automação operacional**.
+
+
+### Refinamento versionado posterior — 23/09/2026
+
+Sem reabrir a Fase 5, o protocolo de extração recebeu o campo `especialidade` em versão posterior. A leitura é restritiva: somente rótulo explícito de especialidade na própria página médica pode preencher o campo; procedimento, CID, título e motivo não autorizam inferência. A apresentação operacional passa a priorizar a ordem aprovada no Titon, preservando os campos complementares já existentes e a proveniência por página.

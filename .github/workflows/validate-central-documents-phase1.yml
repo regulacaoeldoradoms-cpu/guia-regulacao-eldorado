@@ -151,7 +151,7 @@ jobs:
           grep -q "quality: 0.92" js/documents.js
           grep -q "PROMPT_ANALISE_REGULACAO_V1" worker/document-ai-prompts.js
           grep -q "PROMPT_ANALISE_REGULACAO_COMPACTA_V1" worker/document-ai-prompts.js
-          grep -q "phase5e-v8c2-semantic-json" worker/document-ai.js
+          grep -q "phase5e-v8c3-specialty-order" worker/document-ai.js
           grep -q "CONTROLE DE ATENDIMENTO" worker/document-ai-prompts.js
           grep -q "RECEITA SIMPLES" worker/document-ai-prompts.js
           grep -q "PROMPT_CLASSIFICACAO_PAGINAS_V1" worker/document-ai-prompts.js

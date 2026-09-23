@@ -2,6 +2,27 @@
 
 Última atualização: 23/09/2026.
 
+## Fase 7H — ordem operacional da IA documental + Especialidade — EM PR — 23/09/2026
+
+Pedido aprovado: os dados extraídos no Titon devem priorizar a sequência operacional **Nome do paciente → CNS → CPF → Data de nascimento → Telefone → Nome da mãe → Endereço → Nome do(a) médico(a) → CRM / RMS → Agente → CID → Código do procedimento → Especialidade → Motivo do encaminhamento**.
+
+Diagnóstico: a `main` já possuía ordem personalizável por conta, porém o padrão não correspondia à sequência solicitada e o schema médico ainda não possuía `especialidade`. A unidade foi implementada em `feat/titon-ai-field-order-20260923`, preservando a publicação já concluída da 7G.4.
+
+Implementação:
+- ordem canônica de frontend e backend alinhada à sequência aprovada;
+- rótulos visíveis **Telefone**, **Nome do(a) médico(a)** e **CRM / RMS**;
+- novo campo `especialidade` no schema médico, Gemini e fallback Workers AI;
+- `especialidade` é literal-only: exige rótulo explícito na mesma página e não pode ser inferida por procedimento, CID, título ou motivo;
+- prompts versionados: extração `v3`, análise `v5`, transporte compacto `v5`; versão técnica `phase5e-v8c3-specialty-order`;
+- preferências antigas de 16 campos migram para o novo shape de 17 campos sem SQL destrutivo;
+- **Título**, **Procedimento solicitado** e **Descrição do CID** continuam como campos complementares depois da sequência solicitada;
+- resultados permanecem separados por página; proveniência não é misturada;
+- nenhuma telemetria com conteúdo clínico foi adicionada.
+
+PR: **#463 — Titon: ordenar dados da IA e incluir Especialidade**.
+
+**Próxima ação exata:** concluir CI da #463; corrigir qualquer regressão; integrar somente com os contratos de IA, privacidade, Central e navegador verdes; depois homologar uma extração real no Titon.
+
 ## Refinamento transversal do modo escuro — PUBLICADO; HOMOLOGAÇÃO VISUAL PENDENTE — 23/09/2026
 
 A PR funcional **#456 — UI: concluir cobertura geral do modo escuro** foi mesclada na `main` pelo commit **`3a528eb5116fa86ec0e52a2b09d2e7f1988fb743`**.
@@ -3291,21 +3312,21 @@ Os botões autorais `.documents-art-button` foram explicitamente excluídos para
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.4 publicada; aguardando homologação visual do contraste das ferramentas internas do editor** |
-| Última ação concluída | PR **#461** mesclada em `a6f056de`; publicação estática confirmada |
-| Branch atual | `docs/titon-dark-editor-tool-contrast-published-20260923` (somente registro pós-publicação) |
-| PR atual | #461 **mesclada**; PR documental deste registro a abrir |
-| Último commit funcional relevante | `a6f056de954f98307ab1de0ff85d49681d353a2f` |
-| Checks e testes | PR #461 **23/23 success**; pós-merge **23/23 GitHub Actions success**; GitHub Pages e Cloudflare Pages **success** |
-| Decisões tomadas | placa azul-clara nos controles genéricos; botões autorais excluídos; modo claro preservado |
-| Justificativas | aumenta contraste sem alterar assets, lógica ou tema global |
-| Alternativas descartadas | inverter/recolorir PNGs; clarear toda a toolbar; modificar o tema global |
-| Ações externas concluídas | publicação estática confirmada; Workers Builds falhou sem alteração de Worker |
-| Pendências e bloqueios | **somente homologação visual humana em produção da 7G.4** |
-| Riscos conhecidos | confirmar disabled/active/hover e preservação dos botões autorais |
-| Métricas / observabilidade | nenhuma telemetria nova |
-| Próxima ação exata | **Ctrl+F5 em /documentos/ → modo escuro → abrir editor PDF → conferir toolbar e barra lateral; validar que ferramentas genéricas contrastam e Grade/Drive/Salvar/Imprimir/Fechar permanecem intactos** |
-| Arquivos e fontes principais | Guia Mestre V1.1; merge #461 `a6f056de`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
+| Subfase / objetivo atual | **7H — ordem operacional da IA documental + campo Especialidade** |
+| Última ação concluída | PR #463 aberta com schema, UI, prompts, fallback, preferências, testes e documentação atualizados |
+| Branch atual | `feat/titon-ai-field-order-20260923` |
+| PR atual | **#463 aberta** — “Titon: ordenar dados da IA e incluir Especialidade” |
+| Último commit relevante | merge de sincronização com `main` a criar após este registro |
+| Checks e testes | CI da PR pendente |
+| Decisões tomadas | sequência solicitada vira padrão; `especialidade` entra no schema; campos complementares existentes são preservados depois; proveniência continua por página |
+| Justificativas | atender o fluxo operacional sem apagar informação já suportada nem quebrar isolamento/proveniência da IA documental |
+| Alternativas descartadas | consolidar campos de páginas diferentes; inferir especialidade por CID/procedimento; remover Título/Procedimento solicitado/Descrição do CID |
+| Ações externas concluídas | nenhuma |
+| Pendências e bloqueios | CI completo, merge/publicação e homologação humana de uma extração real |
+| Riscos conhecidos | coerência do novo schema entre Gemini, fallback, preferências e UI; coberta por versão nova e regressões |
+| Métricas / observabilidade | nenhuma telemetria nova; dados extraídos continuam fora do PostHog |
+| Próxima ação exata | **acompanhar CI da #463; corrigir falhas; integrar apenas se verde e então homologar ordem/rótulos/Especialidade no Titon** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #463; `js/documents.js`; `worker/document-ai*.js`; `worker/documents-router.js`; testes IA/UI; status |
 
 ## Histórico recuperável
 

@@ -18,20 +18,21 @@
 
   const DOCUMENT_AI_FIELD_LABELS = Object.freeze({
     nome_paciente: 'Nome do paciente',
-    cpf: 'CPF',
     cns: 'CNS',
+    cpf: 'CPF',
     data_nascimento: 'Data de nascimento',
+    telefone: 'Telefone',
     nome_mae: 'Nome da mãe',
-    telefone: 'Fone do paciente',
     endereco: 'Endereço',
+    medico: 'Nome do(a) médico(a)',
+    crm_rms: 'CRM / RMS',
     agente: 'Agente',
-    titulo: 'Título',
-    motivo_encaminhamento: 'Motivo do encaminhamento',
-    medico: 'Médico',
-    crm_rms: 'CRM/RMS',
-    procedimento_solicitado: 'Procedimento solicitado',
-    codigo_procedimento: 'Código do procedimento',
     cid: 'CID',
+    codigo_procedimento: 'Código do procedimento',
+    especialidade: 'Especialidade',
+    motivo_encaminhamento: 'Motivo do encaminhamento',
+    titulo: 'Título',
+    procedimento_solicitado: 'Procedimento solicitado',
     descricao_cid: 'Descrição do CID'
   });
 
@@ -40,25 +41,37 @@
       id: 'paciente',
       label: 'Paciente',
       fields: Object.freeze([
-        'nome_paciente', 'cpf', 'cns', 'data_nascimento',
-        'nome_mae', 'telefone', 'endereco', 'agente'
+        'nome_paciente', 'cns', 'cpf', 'data_nascimento',
+        'telefone', 'nome_mae', 'endereco'
       ])
-    }),
-    Object.freeze({
-      id: 'encaminhamento',
-      label: 'Encaminhamento',
-      fields: Object.freeze(['motivo_encaminhamento', 'cid', 'descricao_cid'])
-    }),
-    Object.freeze({
-      id: 'solicitacao',
-      label: 'Solicitação',
-      fields: Object.freeze(['titulo', 'procedimento_solicitado', 'codigo_procedimento'])
     }),
     Object.freeze({
       id: 'profissional',
       label: 'Profissional',
       fields: Object.freeze(['medico', 'crm_rms'])
+    }),
+    Object.freeze({
+      id: 'atendimento',
+      label: 'Atendimento',
+      fields: Object.freeze(['agente'])
+    }),
+    Object.freeze({
+      id: 'encaminhamento',
+      label: 'Encaminhamento',
+      fields: Object.freeze(['cid', 'codigo_procedimento', 'especialidade', 'motivo_encaminhamento'])
+    }),
+    Object.freeze({
+      id: 'complementares',
+      label: 'Complementares',
+      fields: Object.freeze(['titulo', 'procedimento_solicitado', 'descricao_cid'])
     })
+  ]);
+
+  const LEGACY_DOCUMENT_AI_FIELD_ORDER = Object.freeze([
+    'nome_paciente', 'cns', 'cpf', 'data_nascimento', 'nome_mae', 'telefone', 'endereco', 'agente',
+    'motivo_encaminhamento', 'cid', 'descricao_cid',
+    'titulo', 'procedimento_solicitado', 'codigo_procedimento',
+    'medico', 'crm_rms'
   ]);
 
   const DEFAULT_DOCUMENT_AI_FIELD_ORDER = Object.freeze(
@@ -4179,11 +4192,11 @@
       return [
         `[DADOS DO COMPROVANTE DE ATENDIMENTO - Página ${pageNumber}]`,
         `Nome do paciente: ${value('nome_paciente')}`,
-        `CPF: ${value('cpf')}`,
         `CNS: ${value('cns')}`,
+        `CPF: ${value('cpf')}`,
         `Data de nascimento: ${value('data_nascimento')}`,
+        `Telefone: ${value('telefone')}`,
         `Nome da mãe: ${value('nome_mae')}`,
-        `Fone do paciente: ${value('telefone')}`,
         `Endereço: ${value('endereco')}`,
         `Agente: ${value('agente')}`
       ].join('\n');
@@ -4192,12 +4205,14 @@
     const title = value('titulo');
     return [
       `[DADOS DA PÁGINA MÉDICA AUTORIZADA - Página ${pageNumber} - Título encontrado: ${title}]`,
-      `Motivo do encaminhamento: ${value('motivo_encaminhamento')}`,
       `Nome do(a) médico(a): ${value('medico')}`,
-      `CRM ou RMS: ${value('crm_rms')}`,
-      `Procedimento solicitado: ${value('procedimento_solicitado')}`,
-      `Código do procedimento: ${value('codigo_procedimento')}`,
+      `CRM / RMS: ${value('crm_rms')}`,
       `CID: ${value('cid')}`,
+      `Código do procedimento: ${value('codigo_procedimento')}`,
+      `Especialidade: ${value('especialidade')}`,
+      `Motivo do encaminhamento: ${value('motivo_encaminhamento')}`,
+      `Título: ${value('titulo')}`,
+      `Procedimento solicitado: ${value('procedimento_solicitado')}`,
       `Descrição do CID: ${value('descricao_cid')}`
     ].join('\n');
   }
@@ -4236,6 +4251,10 @@
       seen.add(key);
       normalized.push(key);
     }
+    const isLegacyShape = normalized.length === LEGACY_DOCUMENT_AI_FIELD_ORDER.length
+      && !seen.has('especialidade')
+      && LEGACY_DOCUMENT_AI_FIELD_ORDER.every((key) => seen.has(key));
+    if (isLegacyShape) return [...DEFAULT_DOCUMENT_AI_FIELD_ORDER];
     for (const key of DEFAULT_DOCUMENT_AI_FIELD_ORDER) {
       if (!seen.has(key)) normalized.push(key);
     }

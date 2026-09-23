@@ -81,6 +81,7 @@
         ['CRM/RMS', 'CRM/MS 00001'],
         ['Procedimento solicitado', 'PROCEDIMENTO ALFA'],
         ['Código do procedimento', '000001'],
+        ['Especialidade', 'CARDIOLOGIA SINTÉTICA'],
         ['CID', 'Z99.9'],
         ['Descrição do CID', 'DESCRIÇÃO SINTÉTICA ALFA']
       ],
@@ -91,6 +92,7 @@
         crm_rms: ['encontrado', 'CRM/MS 00001'],
         procedimento_solicitado: ['encontrado', 'PROCEDIMENTO ALFA'],
         codigo_procedimento: ['encontrado', '000001'],
+        especialidade: ['encontrado', 'CARDIOLOGIA SINTÉTICA'],
         cid: ['encontrado', 'Z99.9'],
         descricao_cid: ['encontrado', 'DESCRIÇÃO SINTÉTICA ALFA']
       }
@@ -121,6 +123,7 @@
         ['CRM/RMS', 'CRM/MS 00002'],
         ['Procedimento solicitado', 'PROCEDIMENTO BETA'],
         ['Código do procedimento', '000002'],
+        ['Especialidade', 'NEUROLOGIA SINTÉTICA'],
         ['CID', 'A00.0'],
         ['Descrição do CID', 'DESCRIÇÃO SINTÉTICA BETA']
       ],
@@ -131,6 +134,7 @@
         crm_rms: ['encontrado', 'CRM/MS 00002'],
         procedimento_solicitado: ['encontrado', 'PROCEDIMENTO BETA'],
         codigo_procedimento: ['encontrado', '000002'],
+        especialidade: ['encontrado', 'NEUROLOGIA SINTÉTICA'],
         cid: ['encontrado', 'A00.0'],
         descricao_cid: ['encontrado', 'DESCRIÇÃO SINTÉTICA BETA']
       }
@@ -157,6 +161,7 @@
         crm_rms: ['encontrado', 'CRM/MS 00003'],
         procedimento_solicitado: ['encontrado', 'PROCEDIMENTO GAMA'],
         codigo_procedimento: ['nao_consta', ''],
+        especialidade: ['nao_consta', ''],
         cid: ['encontrado', 'B00.0'],
         descricao_cid: ['encontrado', 'DESCRIÇÃO SINTÉTICA GAMA']
       }
@@ -174,6 +179,7 @@
         ['CRM/RMS', 'CRM/MS 00004'],
         ['Procedimento solicitado', 'PROCEDIMENTO DELTA'],
         ['Código do procedimento', '000004'],
+        ['Especialidade', 'ORTOPEDIA SINTÉTICA'],
         ['Descrição do CID', 'DESCRIÇÃO TAMBÉM NÃO DEVE SER INFERIDA']
       ],
       blurredField: ['CID', 'C12.3'],
@@ -184,6 +190,7 @@
         crm_rms: ['encontrado', 'CRM/MS 00004'],
         procedimento_solicitado: ['encontrado', 'PROCEDIMENTO DELTA'],
         codigo_procedimento: ['encontrado', '000004'],
+        especialidade: ['encontrado', 'ORTOPEDIA SINTÉTICA'],
         cid: ['ilegivel', ''],
         descricao_cid: ['encontrado', 'DESCRIÇÃO TAMBÉM NÃO DEVE SER INFERIDA']
       }

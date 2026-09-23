@@ -143,13 +143,17 @@ test('resultado Titon segue o formato operacional e mantém cada página separad
   assert.match(js, /\[DADOS DA PÁGINA MÉDICA AUTORIZADA - Página \$\{pageNumber\} - Título encontrado:/);
   assert.match(js, /PÁGINA "COMPROVANTE DE ATENDIMENTO" NÃO ENCONTRADA/);
   assert.match(js, /NENHUMA PÁGINA MÉDICA AUTORIZADA FOI ENCONTRADA/);
-  assert.match(js, /Fone do paciente:/);
+  assert.match(js, /Telefone:/);
   assert.match(js, /data-ai-source-page/);
   assert.match(js, /DOCUMENT_AI_FIELD_GROUPS/);
   assert.match(js, /label: 'Paciente'/);
-  assert.match(js, /label: 'Encaminhamento'/);
-  assert.match(js, /label: 'Solicitação'/);
   assert.match(js, /label: 'Profissional'/);
+  assert.match(js, /label: 'Atendimento'/);
+  assert.match(js, /label: 'Encaminhamento'/);
+  assert.match(js, /label: 'Complementares'/);
+  assert.match(js, /especialidade: 'Especialidade'/);
+  assert.match(js, /medico: 'Nome do\(a\) médico\(a\)'/);
+  assert.match(js, /crm_rms: 'CRM \/ RMS'/);
   assert.match(js, /data-ai-copy-document-field/);
   assert.match(js, /data-ai-copy-document-page/);
   assert.match(js, /data-ai-copy-result-page/);
@@ -188,6 +192,33 @@ test('painel IA fica minimalista e organização/cópia não dispara nova infer�
   assert.match(eventBlock, /copyDocumentAiText\(documentAiFieldDisplay\(field\)\)/);
   assert.match(eventBlock, /state\.documentAiCopiedFields\.add\(documentAiCopyToken\(pageNumber, key\)\)/);
   assert.match(eventBlock, /fieldCopy\.textContent = 'Copiado'/);
+});
+
+test('ordem padrão da IA segue a sequência operacional aprovada e migra preferências antigas', async () => {
+  const [js, router] = await Promise.all([
+    read('js/documents.js'),
+    read('worker/documents-router.js')
+  ]);
+  const expected = [
+    'nome_paciente', 'cns', 'cpf', 'data_nascimento', 'telefone', 'nome_mae', 'endereco',
+    'medico', 'crm_rms', 'agente', 'cid', 'codigo_procedimento', 'especialidade', 'motivo_encaminhamento',
+    'titulo', 'procedimento_solicitado', 'descricao_cid'
+  ];
+  const groupStart = js.indexOf('const DOCUMENT_AI_FIELD_GROUPS');
+  const groupEnd = js.indexOf('const LEGACY_DOCUMENT_AI_FIELD_ORDER', groupStart);
+  assert.ok(groupStart >= 0 && groupEnd > groupStart);
+  const clientOrder = js.slice(groupStart, groupEnd);
+  let cursor = -1;
+  for (const key of expected) {
+    const next = clientOrder.indexOf("'" + key + "'", cursor + 1);
+    assert.ok(next > cursor, 'campo fora da ordem padrão: ' + key);
+    cursor = next;
+  }
+  assert.match(js, /LEGACY_DOCUMENT_AI_FIELD_ORDER/);
+  assert.match(js, /isLegacyShape/);
+  assert.match(router, /LEGACY_DOCUMENT_AI_FIELD_ORDER/);
+  assert.match(router, /especialidade/);
+  assert.match(router, /isLegacyShape/);
 });
 
 test('ordem dos campos é personalizável por conta sem persistir dados extraídos no navegador', async () => {

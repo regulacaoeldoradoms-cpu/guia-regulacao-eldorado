@@ -52,11 +52,16 @@ const viewerPreferencesSchemaReady = new WeakSet();
 const viewerPreferencesSchemaPromises = new WeakMap();
 const documentAiPreferencesSchemaReady = new WeakSet();
 const documentAiPreferencesSchemaPromises = new WeakMap();
-const DEFAULT_DOCUMENT_AI_FIELD_ORDER = Object.freeze([
+const LEGACY_DOCUMENT_AI_FIELD_ORDER = Object.freeze([
   'nome_paciente', 'cns', 'cpf', 'data_nascimento', 'nome_mae', 'telefone', 'endereco', 'agente',
   'motivo_encaminhamento', 'cid', 'descricao_cid',
   'titulo', 'procedimento_solicitado', 'codigo_procedimento',
   'medico', 'crm_rms'
+]);
+const DEFAULT_DOCUMENT_AI_FIELD_ORDER = Object.freeze([
+  'nome_paciente', 'cns', 'cpf', 'data_nascimento', 'telefone', 'nome_mae', 'endereco',
+  'medico', 'crm_rms', 'agente', 'cid', 'codigo_procedimento', 'especialidade', 'motivo_encaminhamento',
+  'titulo', 'procedimento_solicitado', 'descricao_cid'
 ]);
 
 function normalizeEditorColorPalette(value, { strict = false } = {}) {
@@ -226,6 +231,11 @@ function normalizeDocumentAiFieldOrder(value, { strict = false } = {}) {
     seen.add(key);
     normalized.push(key);
   }
+  const isLegacyShape = normalized.length === LEGACY_DOCUMENT_AI_FIELD_ORDER.length
+    && !seen.has('especialidade')
+    && LEGACY_DOCUMENT_AI_FIELD_ORDER.every((key) => seen.has(key));
+  if (isLegacyShape) return [...DEFAULT_DOCUMENT_AI_FIELD_ORDER];
+
   if (strict && normalized.length !== DEFAULT_DOCUMENT_AI_FIELD_ORDER.length) {
     throw new DriveIntegrationError('DOCUMENTS_AI_FIELD_ORDER_INVALID', 'A ordem deve conter todos os tipos de campo permitidos.', 400);
   }

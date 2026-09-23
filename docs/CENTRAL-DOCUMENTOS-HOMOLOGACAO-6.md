@@ -236,8 +236,8 @@ Procedimento:
 2. confirmar que a tela inicial mostra essencialmente **Extrair dados do PDF**;
 3. abrir o botão **i** e confirmar que as explicações continuam acessíveis;
 4. extrair o documento;
-5. conferir separação por página e categorias **Paciente**, **Encaminhamento**, **Solicitação** e **Profissional** conforme os campos existentes;
-6. copiar individualmente nome do paciente, motivo do encaminhamento, CID, médico e CRM/RMS;
+5. conferir separação por página e categorias **Paciente**, **Profissional**, **Atendimento**, **Encaminhamento** e **Complementares** conforme os campos existentes;
+6. copiar individualmente nome do paciente, CNS, CPF, telefone, médico, CRM/RMS, CID, código do procedimento, especialidade e motivo do encaminhamento;
 7. testar **Copiar esta página** e **Copiar tudo**;
 8. abrir o chat opcional somente após a extração.
 
