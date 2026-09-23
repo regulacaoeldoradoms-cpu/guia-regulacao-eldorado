@@ -134,6 +134,14 @@ test('Gemini é comparação manual e não substitui a IA atual nem o chat canô
   assert.match(js, /Sem IA atual/);
 });
 
+test('provider Gemini envia enums REST em caixa alta', async () => {
+  const provider = await read('worker/document-ai-gemini.js');
+  assert.match(provider, /thinkingLevel: 'MINIMAL'/);
+  assert.match(provider, /thinkingLevel: 'LOW'/);
+  assert.match(provider, /mimeType: 'APPLICATION_JSON'/);
+  assert.doesNotMatch(provider, /thinkingLevel: 'minimal'|thinkingLevel: 'low'|mimeType: 'application\/json'/);
+});
+
 test('falha do Gemini permanece visível após o carregamento encerrar', async () => {
   const js = await read('js/documents.js');
   const renderStart = js.indexOf('  function renderDocumentAiComparison()');
