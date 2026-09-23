@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — correção do laudo médico de alta complexidade integrada; falta reteste real em produção** |
-| Última ação concluída | PR **#430** mesclada à `main`; `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE` agora é página médica autorizada no Gemini canônico |
-| Branch atual | `docs/titon-high-complexity-fix-published-20260923` apenas para reconciliar status |
-| PR atual | funcional **#430 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`6bd6da462d99d56f5f89b24e871bd5872f980b8f`** |
-| Checks e testes | head da #430: **21/21 workflows GitHub Actions success**, incluindo Central Fases 1–6, site e governança |
-| Decisões tomadas | allowlist médica inclui o novo título; título principal continua prevalecendo sobre seções cadastrais; classificação permanece fail-closed |
-| Justificativas | PDF real mostrou formulário médico institucional explícito que não constava na allowlist v3; causa foi lacuna do prompt, não falha de visão |
-| Alternativas descartadas | heurística aberta por CID/procedimento; uso de filename; OCR/inferência extra apenas para decidir o tipo |
-| Ações externas concluídas | nenhuma nova chave/configuração necessária |
-| Pendências e bloqueios | confirmar publicação produtiva e retestar o mesmo tipo de PDF após Ctrl+F5 |
-| Riscos conhecidos | novos modelos de formulário com títulos ainda não catalogados podem exigir inclusão explícita futura |
-| Métricas / observabilidade | nenhum dado do paciente foi persistido; apenas o título genérico do formulário foi documentado |
-| Próxima ação exata | **Ctrl+F5 → abrir um PDF com esse cabeçalho → Extrair dados do PDF → confirmar que a página 1 aparece como página médica autorizada** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #430; merge `6bd6da46`; `worker/document-ai-prompts.js`; `worker/document-ai-provider.js`; testes Gemini/prompts |
+| Subfase / objetivo atual | **7E — disponibilizar Salvar PDF e Imprimir também no modo visualização** |
+| Última ação concluída | implementação preparada na branch: dois botões foram adicionados imediatamente à direita de “Ajustar largura”, reutilizando o mesmo visual do editor |
+| Branch atual | `feat/titon-viewer-save-print-20260923` |
+| PR atual | ainda não aberta; abrir após registro e validação da branch |
+| Último commit relevante | base `d0bbc9e76c169a3975ac69230ba0455abe39d084`; alterações em HTML, cliente, CSS e testes |
+| Checks e testes | CI ainda pendente; regressão adicionada para posição dos botões, download local, impressão sem nova aba e ausência de escrita no Drive |
+| Decisões tomadas | no modo visualização, “Salvar PDF” baixa o PDF atual exatamente como está; “Imprimir” usa a mesma impressão PDF.js em iframe oculto; ao entrar no editor esses botões da barra principal somem e permanecem os controles do editor |
+| Justificativas | salvar/imprimir não exigem edição e são ações de leitura/local; exigir entrada no editor adicionava etapa desnecessária |
+| Alternativas descartadas | entrar automaticamente no editor para salvar/imprimir; usar visualizador nativo/nova aba; gravar qualquer alteração no Drive ao salvar localmente |
+| Ações externas concluídas | nenhuma configuração/secret necessário |
+| Pendências e bloqueios | abrir PR, validar CI, integrar/publicar e confirmar visualmente em produção |
+| Riscos conhecidos | ao salvar/imprimir um PDF aberto via stream progressivo, pode ser necessário baixar o PDF completo antes da ação; o cache local existente reduz repetições |
+| Métricas / observabilidade | nenhuma nova telemetria com conteúdo; ações são locais e não alteram o Drive |
+| Próxima ação exata | **abrir PR, exigir checks verdes, mesclar/publicar; depois Ctrl+F5 e validar Salvar PDF/Imprimir no modo visualização** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `documentos/index.html`; `js/documents.js`; `css/documents.css`; testes UI |
 
 ## Histórico recuperável
 
@@ -5401,3 +5401,29 @@ Validação do head funcional `dec37efd73375ae2d3f37296e7d7aeb705e3ff3c`:
 - testes confirmam o novo título no prompt e no systemInstruction real do Gemini.
 
 **Próxima ação exata:** retestar em produção o PDF do mesmo tipo após Ctrl+F5. Só então registrar homologação real.
+
+
+## Fase 7E — Salvar PDF e Imprimir disponíveis fora da edição — 23/09/2026
+
+Pedido operacional: as ações **Salvar PDF** e **Imprimir**, antes disponíveis apenas dentro do editor, devem permanecer acessíveis durante a visualização normal do Titon e ficar imediatamente à direita de **Ajustar largura**.
+
+Implementação:
+- novos controles `pdfSaveButton` e `pdfPrintButton` na barra principal do PDF;
+- reutilização dos assets oficiais `salvar-pdf.svg` e `imprimir-normal.svg`;
+- **Salvar PDF** obtém o PDF atual pelo cache criptografado existente ou pela leitura autorizada do Drive e baixa uma cópia local com o nome do documento, sem sufixo `-editado`;
+- **Imprimir** obtém o PDF atual e usa o mesmo pipeline PDF.js + iframe oculto já aprovado no editor, sem abrir nova aba;
+- nenhuma dessas ações escreve no Google Drive;
+- durante edição, os dois controles da barra de visualização ficam ocultos para não duplicar os botões do editor;
+- ao sair do editor, eles reaparecem automaticamente;
+- ações obsoletas são invalidadas ao trocar/fechar o PDF para evitar download/impressão do documento anterior;
+- a barra do PDF passa a aceitar rolagem horizontal em larguras pequenas, preservando os controles sem quebrar layout.
+
+Critérios de aceite:
+1. fora da edição, a ordem visual é: zoom −, percentual, zoom +, Ajustar largura, Salvar PDF, Imprimir;
+2. Salvar PDF baixa apenas localmente e não chama sync/replace/save-copy;
+3. Imprimir usa o mesmo caminho PDF.js sem `window.open`;
+4. dentro do editor, os novos controles externos ficam ocultos;
+5. ao sair da edição, voltam a aparecer;
+6. CI e navegador permanecem verdes.
+
+**Próxima ação:** validar PR/CI, integrar se verde e homologar visualmente em produção.

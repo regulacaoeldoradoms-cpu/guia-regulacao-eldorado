@@ -482,11 +482,18 @@
   position: sticky;
   top: 0;
   z-index: 6;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .documents-pdf-toolbar .portal-button {
   min-height: 36px;
   padding: 7px 11px;
+  flex: 0 0 auto;
+}
+
+.documents-viewer-local-action[hidden] {
+  display: none !important;
 }
 
 .documents-pdf-toolbar #pdfZoomResetButton {

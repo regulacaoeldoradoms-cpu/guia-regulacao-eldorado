@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260923-1">
+  <link rel="stylesheet" href="/css/documents.css?v=20260923-2">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -199,6 +199,8 @@
               <button class="portal-button ghost" id="pdfZoomResetButton" type="button" aria-label="Restaurar zoom"><span id="pdfZoomLabel">100%</span></button>
               <button id="pdfZoomInButton" class="portal-button ghost documents-art-button documents-art-zoom-plus" type="button" aria-label="Aumentar zoom"></button>
               <button id="pdfFitWidthButton" class="portal-button secondary documents-art-button documents-art-fit-width" type="button" aria-label="Ajustar largura"></button>
+              <button id="pdfSaveButton" class="portal-button secondary documents-art-button documents-art-export documents-viewer-local-action" type="button" title="Salvar PDF no dispositivo" aria-label="Salvar PDF no dispositivo"></button>
+              <button id="pdfPrintButton" class="portal-button secondary documents-art-button documents-art-print documents-viewer-local-action" type="button" title="Imprimir PDF" aria-label="Imprimir PDF"></button>
               <span class="documents-pdf-page-count" id="pdfPageCountLabel"></span>
             </div>
             <div class="documents-editor" id="documentsEditor" hidden aria-label="Controles de edição local do PDF">
@@ -339,6 +341,6 @@
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-ocr.js?v=20260922-1"></script>
   <script src="/js/document-viewer.js?v=20260922-3"></script>
-  <script src="/js/documents.js?v=20260923-5"></script>
+  <script src="/js/documents.js?v=20260923-6"></script>
 </body>
 </html>
