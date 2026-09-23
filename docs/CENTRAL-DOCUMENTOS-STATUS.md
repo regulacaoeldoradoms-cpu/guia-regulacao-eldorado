@@ -3081,26 +3081,47 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 
 **Próxima ação exata:** validar CI/preview da correção, integrar se verde e repetir somente o caso visual em produção: com IA documental desabilitada, o botão IA não deve aparecer. A homologação operacional restante da Fase 6 continua conforme `CENTRAL-DOCUMENTOS-HOMOLOGACAO-6.md`.
 
+## Fase 7F — renomeação inline de PDF na lista — EM PR — 23/09/2026
+
+Esta unidade adiciona alteração do nome do PDF diretamente na lista da Central, antes de abrir o Titon, preservando o gesto já aprovado de abertura.
+
+**Decisão funcional:** o primeiro clique continua selecionando. Quando o PDF já está selecionado, um **segundo clique simples no nome**, separado do primeiro, abre a edição inline; um **duplo clique rápido** continua abrindo o documento. A extensão `.pdf` fica protegida; **Enter** ou saída do campo confirmam e **Esc** cancela.
+
+**Decisão técnica:** reutilizar `PATCH /api/documents/drive/rename` com `baseVersion` e `baseName`; nenhuma rota, permissão, segredo ou telemetria nova. O backend existente continua responsável pela detecção de conflito e confirmação real do Google Drive.
+
+Implementação isolada na branch `feat/titon-inline-list-rename-20260923`, PR **#445**:
+- `js/documents.js`: edição inline, distinção segundo clique simples/duplo clique, Enter/focusout e atualização segura do item;
+- `css/documents.css`: campo sobreposto à linha, sem input aninhado dentro do botão;
+- `documentos/index.html`: preserva o bootstrap de tema recém-integrado pela PR #444 e usa `documents.css?v=20260923-6` / `documents.js?v=20260923-10`;
+- `worker/tests/documents-ui.test.mjs`: regressão dedicada.
+
+**Reconciliação de continuidade:** durante a execução a PR transversal **#444** foi mesclada em `main` pelo commit `5ff0a028`. A branch da #445 estava baseada no estado anterior; antes de continuar foi criada a cópia reversível `backup/titon-inline-list-rename-pre-theme-20260923`, a branch funcional foi reposicionada sobre `5ff0a028` e a mudança foi reaplicada preservando o tema global. Não há código da #444 descartado.
+
+**Falha de CI investigada:** a primeira execução da #445 expôs uma incompatibilidade do novo handler com o stub antigo de `Element.closest` no teste `documents-close-guard.test.mjs`. O clique no nome passou a ser detectado diretamente por `dataset.listRenameIndex`, sem interceptar o clique da linha. O fluxo real e a regressão histórica ficam preservados; a nova CI deve comprovar o fechamento.
+
+**Alternativas descartadas:** duplo clique para renomear; input dentro do botão; endpoint novo de rename.  
+**Riscos:** janela de 260 ms usada somente para distinguir o segundo clique simples do duplo clique precisa de validação visual. Conflito externo segue fail-closed. A homologação humana da ordenação **7E** continua pendente e independente.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **Mudança transversal autorizada — infraestrutura global claro/escuro; controle em Configurações** |
-| Última ação concluída | arquitetura e implementação global preparadas na branch `feat/portal-light-dark-theme-20260923`, incluindo persistência por conta, CSS escuro e cobertura das rotas ativas |
-| Branch atual | `feat/portal-light-dark-theme-20260923` |
-| PR atual | **nenhum ainda**; próxima ação é abrir PR |
-| Último commit relevante | branch baseada na `main` `415cf8dc70935f276cef3eac6a35d0c6a9e2b074`; commits da mudança ainda não mesclados |
-| Checks e testes | testes e workflows foram atualizados; CI completo ainda não executado na branch |
-| Decisões tomadas | claro permanece default; tema é global e separado das microinterações; preferência sincroniza por conta; PDF/impressão permanecem claros |
-| Justificativas | uma camada global evita tema divergente por módulo e permite Telemedicina escura sem reativar animações/sons |
-| Alternativas descartadas | duplicar CSS dark por módulo; depender de `prefers-color-scheme`; atrelar tema apenas a `PortalInteractions`; recolorir PDFs/impressão |
-| Ações externas concluídas | nenhuma; migração D1 é compatível via `ensureColumn` existente |
-| Pendências e bloqueios | abrir PR, executar CI, corrigir regressões se houver e homologar visualmente os módulos em produção |
-| Riscos conhecidos | quantidade elevada de CSS legado hardcoded exige homologação visual ampla; modo claro deve permanecer sem alteração; áreas semânticas precisam preservar contraste |
-| Métricas / observabilidade | nenhuma telemetria nova e nenhum dado sensível; preferência de tema não é enviada ao PostHog |
-| Próxima ação exata | **abrir PR → CI completo → corrigir qualquer regressão → merge se verde → homologação visual claro/escuro em desktop/mobile** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `docs/PORTAL-APARENCIA-V1.md`; `js/portal-theme.js`; `js/portal-interactions.js`; `css/portal-interactions.css`; `configuracoes/index.html`; `worker/auth-management-v2.js`; `worker/tests/portal-interactions.test.mjs` |
+| Subfase / objetivo atual | **7F — renomeação inline na lista; PR #445 rebaseada sobre a main pós-#444 e aguardando CI final** |
+| Última ação concluída | PR #445 reconciliada com `main` **`5ff0a028`**, preservando o modo claro/escuro recém-mesclado |
+| Branch atual | `feat/titon-inline-list-rename-20260923` |
+| PR atual | **#445 aberta** — “Central: renomear PDF direto na lista” |
+| Último commit relevante | replay funcional sobre `5ff0a028`; este status é o commit de handoff posterior |
+| Checks e testes | primeira CI diagnosticou regressão de harness em `documents-close-guard`; correção aplicada; nova rodada deve ser conferida integralmente |
+| Decisões tomadas | segundo clique simples no nome já selecionado edita; duplo clique rápido abre; Enter/focusout confirmam; Esc cancela; `.pdf` protegida; endpoint seguro existente reutilizado |
+| Justificativas | preserva gesto de abertura e contrato de conflito/confirmação do Drive, sem ampliar superfície de segurança |
+| Alternativas descartadas | duplo clique para rename; input dentro do botão; nova rota de rename |
+| Ações externas concluídas | PR #444 já mesclada em `main`; nenhuma nova ação OAuth/Drive/Cloudflare necessária |
+| Pendências e bloqueios | CI final da #445; homologação real da interação; homologação cronológica 7E ainda pendente |
+| Riscos conhecidos | timing visual do segundo clique (260 ms); conflitos externos continuam bloqueados pelo backend |
+| Métricas / observabilidade | nenhuma propriedade nova; nomes de arquivos e conteúdo seguem fora do PostHog |
+| Próxima ação exata | **conferir 23 checks da #445; se verdes, mesclar e validar em produção: 1 clique seleciona → segundo clique simples no nome edita → Enter/clique fora sincroniza → duplo clique rápido abre Titon** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #445; merge #444 `5ff0a028`; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
 
 ## Histórico recuperável
 
