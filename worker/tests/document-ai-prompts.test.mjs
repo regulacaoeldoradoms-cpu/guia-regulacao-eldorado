@@ -16,10 +16,10 @@ test('prompts da Fase 5 são artefatos separados e versionados', () => {
   const ids = new Set(DOCUMENT_AI_ROUTINES.map((routine) => routine.id));
   assert.equal(ids.size, 6);
   assert.equal([...ids].every((id) => /_V1$/.test(id)), true);
-  assert.equal(PROMPT_CLASSIFICACAO_PAGINAS_V1.version, 'v3');
+  assert.equal(PROMPT_CLASSIFICACAO_PAGINAS_V1.version, 'v4');
   assert.equal(PROMPT_EXTRACAO_REGULACAO_V1.version, 'v2');
-  assert.equal(PROMPT_ANALISE_REGULACAO_V1.version, 'v3');
-  assert.equal(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.version, 'v3');
+  assert.equal(PROMPT_ANALISE_REGULACAO_V1.version, 'v4');
+  assert.equal(PROMPT_ANALISE_REGULACAO_COMPACTA_V1.version, 'v4');
   assert.equal(PROMPT_DOCUMENT_CHAT_V1.version, 'v1');
   assert.equal(PROMPT_VALIDACAO_V1.version, 'v1');
 });
@@ -34,6 +34,7 @@ test('classificação e extração impõem isolamento de uma página e títulos 
     'GUIA DE ENCAMINHAMENTO',
     'RECEITA SIMPLES',
     'LAUDO MÉDICO',
+    'LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE',
     'LAUDO PARA SOLICITAÇÃO\\/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL',
     'RECEITUÁRIO MÉDICO',
     'SOLICITAÇÃO DE EXAMES',
@@ -64,6 +65,8 @@ test('análise integrada combina tipo e campos sem pedir pageNumber ao modelo', 
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /caractere por caractere/i);
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /NÃO DEVE SER INFERIDA/);
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /LAUDO PARA SOLICITAÇÃO\/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL/);
+  assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE/);
+  assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /diagnóstico\/CID, resumo da anamnese, justificativa e blocos de autorização/i);
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /título\/cabeçalho PRINCIPAL/i);
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /DADOS.*seção interna.*NÃO transforma/is);
   assert.match(PROMPT_ANALISE_REGULACAO_V1.system, /mesma folha contenha dados cadastrais do paciente/i);
