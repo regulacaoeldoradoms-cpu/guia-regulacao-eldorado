@@ -88,6 +88,7 @@ function interactionRuntime() {
 test('todas as rotas ativas carregam uma única camada central versionada', () => {
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
+    assert.equal((html.match(/portal-theme\.js\?v=20260923-1/g) || []).length, 1, `${filename}: bootstrap de tema`);
     assert.equal((html.match(/portal-interactions\.css\?v=20260923-1/g) || []).length, 1, `${filename}: CSS central`);
     assert.equal((html.match(/portal-interactions\.js\?v=20260923-2/g) || []).length, 1, `${filename}: JS central`);
   }
@@ -156,6 +157,19 @@ test('identidade sonora é original, curta, mono e leve', () => {
     assert.ok(duration <= 0.26, `${filename}: duração ${duration.toFixed(3)}s`);
     assert.ok(wav.length < 12000, `${filename}: ${wav.length} bytes`);
   }
+});
+
+test('bootstrap de tema é independente das microinterações e cobre a Telemedicina', () => {
+  const source = read('js/portal-theme.js');
+  const telemedicine = read('telemedicina/index.html');
+  const viewport = read('js/telemedicina-viewport-v22.js');
+
+  assert.match(source, /regulacao\.portal\.theme\.active\.v1/);
+  assert.match(source, /document\.documentElement\.dataset\.portalTheme/);
+  assert.match(source, /window\.PortalTheme = Object\.freeze/);
+  assert.match(source, /RegulationAuth\?\.getCachedUser/);
+  assert.match(telemedicine, /portal-theme\.js\?v=20260923-1/);
+  assert.match(viewport, /disabled-telemedicina-v23/);
 });
 
 test('modo claro e escuro são globais, sincronizáveis e controlados em Configurações', async () => {
