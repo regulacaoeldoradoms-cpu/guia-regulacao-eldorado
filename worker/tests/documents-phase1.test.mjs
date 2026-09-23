@@ -422,14 +422,32 @@ sqliteTest('listagem e pesquisa não devolvem fileId bruto e aceitam somente ref
     assert.equal(opened.id, 'raw-pdf-id-sensitive');
     assert.equal(opened.mime, 'application/pdf');
 
-    const searched = await searchDrive(env, { query: 'DOCUMENTO' });
+    const searched = await searchDrive(env, { query: 'DOCUMENTO INTERNO' });
     assert.equal(searched.items.length, 2);
     assert.equal(JSON.stringify(searched).includes('raw-pdf-id-sensitive'), false);
     assert.equal(searched.items[0].cacheKey, listed.items[0].cacheKey);
     assert.equal(searched.items[1].cacheKey, listed.items[1].cacheKey);
 
-    const searchCall = calls.find((call) => call.url.includes('/drive/v3/files') && call.url.includes('name+contains'));
+    const searchCall = calls.find((call) => {
+      if (!call.url.includes('/drive/v3/files')) return false;
+      const driveUrl = new URL(call.url);
+      return String(driveUrl.searchParams.get('q') || '').includes('fullText contains');
+    });
     assert.ok(searchCall);
+    const searchQuery = new URL(searchCall.url).searchParams.get('q');
+    assert.match(searchQuery, /name contains 'DOCUMENTO INTERNO'/);
+    assert.match(searchQuery, /fullText contains 'DOCUMENTO'/);
+    assert.match(searchQuery, /fullText contains 'INTERNO'/);
+    assert.match(searchQuery, /fullText contains 'DOCUMENTO'[\s\S]*and[\s\S]*fullText contains 'INTERNO'/);
+    assert.match(searchQuery, /^trashed = false and \(/);
+
+    await searchDrive(env, { query: '"DOR JOELHO"' });
+    const phraseCall = [...calls].reverse().find((call) => {
+      if (!call.url.includes('/drive/v3/files')) return false;
+      return String(new URL(call.url).searchParams.get('q') || '').includes('fullText contains');
+    });
+    const phraseQuery = new URL(phraseCall.url).searchParams.get('q');
+    assert.match(phraseQuery, /fullText contains '"DOR JOELHO"'/);
   } finally {
     globalThis.fetch = originalFetch;
   }
