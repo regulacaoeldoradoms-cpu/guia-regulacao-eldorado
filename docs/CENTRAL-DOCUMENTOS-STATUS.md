@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — Gemini 3.5 Flash-Lite promovido a provider documental canônico; confirmar publicação produtiva e homologação final** |
-| Última ação concluída | PR **#420** integrada à `main`; fluxo normal do Titon agora é Gemini único, sem comparação/fallback Workers AI |
-| Branch atual | `docs/titon-gemini-primary-published-20260923` somente para reconciliar status/handoff |
-| PR atual | funcional **#420 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`1955d58e404402cc4cffa085ec9122358573efb9`** |
-| Checks e testes | head final da #420: **25/25 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, gate de deploy seguro, bundle, site e governança |
-| Decisões tomadas | Gemini 3.5 Flash-Lite é a única IA visível/canônica; botão único; sem fallback automático; sem preextração paga automática; Workers AI fica somente como rollback técnico inativo |
-| Justificativas | testes reais do operador mostraram melhor fidelidade percebida e velocidade satisfatória, com consumo compatível com o orçamento |
-| Alternativas descartadas | manter duas IAs; eleger Workers AI como fallback silencioso; preextração paga; remover de imediato todo código legado e perder rollback |
-| Ações externas concluídas | projeto Google correto em Tier 1; `TITON_GEMINI_API_KEY` já configurada como secret; nenhuma nova chave é necessária |
-| Pendências e bloqueios | o conector GitHub desta sessão não expõe os runs de push/Workers Build pós-merge; falta comprovar a versão produtiva e fazer um teste real após Ctrl+F5 |
-| Riscos conhecidos | Gemini apresentou alta fidelidade nos testes, mas continua sendo modelo generativo; schema fechado, proveniência por página, NÃO CONSTA/ILEGÍVEL e normalização restritiva permanecem |
-| Métricas / observabilidade | conteúdo clínico, imagem, prompt e resposta continuam fora de PostHog/logs; somente métricas técnicas permitidas |
-| Próxima ação exata | **confirmar o deploy produtivo do merge #420; depois Ctrl+F5 e validar um PDF conhecido pelo botão único “Extrair dados do PDF”** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #420; merge `1955d58e`; `worker/document-ai.js`; `worker/document-ai-gemini.js`; `js/documents.js`; `documentos/index.html`; `worker/wrangler.toml` |
+| Subfase / objetivo atual | **7E — corrigir falso negativo de classificação médica no Gemini canônico** |
+| Última ação concluída | diagnóstico confirmado no prompt: o título real `LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL` não constava na allowlist de página médica |
+| Branch atual | `fix/titon-apac-medical-page-20260923` |
+| PR atual | ainda não aberto; abrir após registrar a correção e validar CI |
+| Último commit relevante | correções de prompt, documentação e testes nesta branch; base `3165cecaa9d89016c5fd77df4a79eef0f23de196` |
+| Checks e testes | CI da branch ainda pendente; testes adicionados para garantir que o systemInstruction Gemini contém o novo título e regra de precedência |
+| Decisões tomadas | autorizar explicitamente o laudo de solicitação/autorização de procedimento ambulatorial como `pagina_medica_autorizada`; título principal prevalece sobre rótulos internos `DADOS`/identificação |
+| Justificativas | o PDF real exibia claramente um laudo médico/solicitação ambulatorial, mas a lista fechada aceitava apenas `LAUDO MÉDICO` e outros títulos antigos; a restrição gerou falso negativo, não falha de visão do Gemini |
+| Alternativas descartadas | ampliar genericamente qualquer folha com CID/procedimento para médica; usar dados clínicos como heurística; segunda inferência automática; remover a allowlist restritiva |
+| Ações externas concluídas | nenhuma nova configuração externa necessária; Gemini 3.5 Flash-Lite e secret permanecem como antes |
+| Pendências e bloqueios | validar CI, integrar/publicar, depois repetir o mesmo tipo de PDF e confirmar bloco médico |
+| Riscos conhecidos | classificação continua deliberadamente fechada; novos tipos de formulário desconhecidos ainda podem exigir inclusão explícita |
+| Métricas / observabilidade | nenhuma informação clínica do PDF foi registrada; somente o padrão genérico do título foi documentado |
+| Próxima ação exata | **abrir PR desta correção, exigir checks verdes, mesclar/publicar e retestar PDF com esse título** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-ai-prompts.js`; `worker/document-ai-gemini.js`; `worker/document-ai-provider.js`; docs Fase 5/5E; testes de prompts/Gemini |
 
 ## Histórico recuperável
 
@@ -5080,3 +5080,38 @@ Limite da evidência neste momento:
 - por isso a publicação efetiva do Worker não deve ser declarada confirmada sem evidência adicional ou teste operacional.
 
 **Próxima ação exata:** confirmar que o deploy de produção contém o merge #420. Em seguida executar Ctrl+F5 na Central, abrir um PDF conhecido e usar o botão único **Extrair dados do PDF**. Se o resultado Gemini aparecer normalmente, registrar a homologação produtiva e encerrar esta unidade da 7E.
+
+
+## Fase 7E — falso negativo em laudo para procedimento ambulatorial — 23/09/2026
+
+Evidência operacional real após a promoção do Gemini 3.5 Flash-Lite a provider canônico: um PDF que contém uma folha cujo cabeçalho principal é **`LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL`** foi exibido pelo Titon sem bloco de página médica autorizada.
+
+Diagnóstico no código:
+- o Gemini recebe `PROMPT_ANALISE_REGULACAO_V1.system`;
+- a classificação usa allowlist fechada por título/cabeçalho;
+- a lista incluía `LAUDO MÉDICO`, encaminhamentos, receitas e solicitações específicas, mas **não incluía** o título institucional acima;
+- a mesma folha contém seções de identificação/dados cadastrais, portanto também era necessário reforçar que rótulos internos como `DADOS` não devem sobrepor o título médico principal.
+
+Causa confirmada: **lacuna de governança/classificação no prompt**, não incapacidade de leitura do Gemini. A regra estava restritiva demais para um formulário médico real usado no fluxo.
+
+Correção na branch `fix/titon-apac-medical-page-20260923`:
+- adiciona como página médica autorizada:
+  - `LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL`;
+  - variação com espaços ao redor da barra;
+- define precedência explícita do título/cabeçalho principal sobre rótulos internos;
+- `DADOS` dentro de seção de identificação/cadastro não autoriza `comprovante_atendimento`;
+- se o título principal for médico, a presença de dados cadastrais na mesma folha não altera `pagina_medica_autorizada`;
+- prompt de classificação sobe para versão `v3`;
+- prompt integrado Gemini sobe para `v3`;
+- prompt compacto de rollback sobe para `v3`;
+- documentação da Fase 5 e homologação 5E atualizadas;
+- testes impedem regressão e conferem que a instrução enviada ao Gemini contém a nova categoria e a regra de precedência.
+
+Alternativas descartadas:
+- classificar como médica qualquer página que contenha CID, procedimento ou médico: ampliaria falso positivo e reduziria a barreira de segurança;
+- inferência adicional/OCR apenas para decidir o tipo: custo e latência desnecessários;
+- tornar a classificação semanticamente aberta: perderia a política restritiva já aprovada.
+
+**Critério de aceite:** o formulário com esse cabeçalho deve gerar bloco de página médica autorizada, preservando literalidade e isolamento; folhas não autorizadas continuam `outro`; se houver `DADOS` apenas como seção interna de uma folha médica, o título médico principal prevalece.
+
+**Próxima ação exata:** validar CI, integrar/publicar e retestar um PDF do mesmo tipo.
