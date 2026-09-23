@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — Salvar PDF e Imprimir disponíveis no modo visualização; falta homologação visual em produção** |
-| Última ação concluída | PR **#432** mesclada à `main`; os botões Salvar PDF e Imprimir aparecem à direita de Ajustar largura fora da edição |
-| Branch atual | `docs/titon-viewer-save-print-published-20260923` somente para reconciliar status |
-| PR atual | funcional **#432 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`e29fe0b8c5c5790e56ad61aa38295ebf0f0269ff`** |
-| Checks e testes | head final da #432: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
-| Decisões tomadas | modo visualização pode salvar cópia local e imprimir sem entrar no editor; ações não escrevem no Drive; os controles externos somem durante edição e reaparecem ao sair |
-| Justificativas | salvar/imprimir são operações locais de leitura e não dependem de edição; exigir entrada no editor adicionava etapa desnecessária |
-| Alternativas descartadas | abrir editor automaticamente; usar nova aba/visualizador nativo; sincronizar com Drive ao salvar local |
-| Ações externas concluídas | nenhuma configuração externa necessária |
-| Pendências e bloqueios | confirmar publicação produtiva e validar visualmente os dois botões após Ctrl+F5 |
-| Riscos conhecidos | em PDF ainda não baixado por completo, Salvar/Imprimir pode precisar obter o blob completo antes da ação; cache local reduz repetições |
-| Métricas / observabilidade | nenhuma nova telemetria com conteúdo; ações permanecem locais |
-| Próxima ação exata | **Ctrl+F5 → abrir um PDF sem entrar no editor → testar Salvar PDF e Imprimir ao lado de Ajustar largura** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #432; merge `e29fe0b8`; `documentos/index.html`; `js/documents.js`; `css/documents.css`; testes UI |
+| Subfase / objetivo atual | **7E — ampliar pesquisa do Drive para nome + conteúdo indexado** |
+| Última ação concluída | implementação preparada: endpoint de pesquisa combina `name contains` com `fullText contains` da própria Drive API; UI informa busca por nome ou conteúdo |
+| Branch atual | `feat/titon-drive-fulltext-search-20260923` |
+| PR atual | ainda não aberta; abrir após validação do diff |
+| Último commit relevante | base `578397fead8159a80f2af8497592b58192dbeee8`; Worker, UI, testes e documentação atualizados nesta branch |
+| Checks e testes | CI ainda pendente; testes novos cobrem múltiplos termos, frase entre aspas e preservação de referências opacas |
+| Decisões tomadas | usar o índice `fullText` do Google Drive na mesma API já habilitada; nenhuma nova API Google, OCR ou Gemini para busca |
+| Justificativas | o Drive já indexa conteúdo pesquisável de PDFs/imagens reconhecidos; usar esse índice evita baixar/ler todos os arquivos no Portal e aproxima o comportamento do Drive original |
+| Alternativas descartadas | criar índice próprio no D1; varrer PDFs com OCR/Gemini a cada pesquisa; ativar Activity/Labels/MCP/Marketplace para uma função que a Drive API já oferece |
+| Ações externas concluídas | nenhuma API adicional precisa ser ativada |
+| Pendências e bloqueios | abrir PR, exigir CI verde, integrar/publicar e testar termo que exista somente dentro de um PDF |
+| Riscos conhecidos | arquivos cujo conteúdo não tenha sido indexado pelo Google não aparecerão; ranking não é idêntico à interface Drive; busca multi-termo segue semântica da Drive API |
+| Métricas / observabilidade | termos continuam não enviados ao PostHog; permanecem somente tempos técnicos e contagem em buckets |
+| Próxima ação exata | **abrir PR → CI verde → merge/publicação → Ctrl+F5 → pesquisar uma palavra que exista no conteúdo mas não no nome do PDF** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-drive.js`; `documentos/index.html`; testes Phase1/UI; documentação oficial Drive fullText |
 
 ## Histórico recuperável
 
@@ -5453,3 +5453,23 @@ Validação do head funcional `f13356deefc89ecf3ad59af95c7e223fcdb436a4`:
 - regressão específica confirma posição, download local, impressão PDF.js e ausência de escrita no Drive.
 
 **Próxima ação exata:** homologar visualmente em produção após Ctrl+F5.
+
+
+## Fase 7E — pesquisa de conteúdo via fullText da Drive API — 23/09/2026
+
+Diagnóstico do código atual: `searchDrive()` usava exclusivamente `name contains '<consulta>'`, portanto a Central não tinha como aproveitar o mesmo índice textual que o Google Drive usa para encontrar conteúdo interno.
+
+Mudança preparada:
+- uma única chamada `files.list` passa a usar `trashed = false and (name contains ... or fullText contains ...)`;
+- para múltiplas palavras, o conteúdo exige todos os termos (`and`) para reduzir resultados irrelevantes;
+- consulta inteira entre aspas é tratada como frase exata no `fullText`;
+- nome continua no `or`, preservando o comportamento existente;
+- paginação continua em 20;
+- `corpora=user`, `spaces=drive`, suporte a drives compartilhados e referências opacas permanecem;
+- UI passa a mostrar “Pesquisar por nome ou conteúdo no Drive”.
+
+Não há nova dependência externa: **Google Drive API v3 já fornece `fullText`**. Drive Activity API, Drive Labels API, Drive MCP e Workspace Marketplace SDK continuam sem relação direta com esta necessidade.
+
+Privacidade: a consulta já era enviada ao Google Drive para pesquisa por nome; agora é usada também pelo índice textual do próprio Drive. O Portal não baixa todos os PDFs, não grava índice local e não envia a consulta ao Gemini/PostHog.
+
+**Próxima ação exata:** validar CI e publicar; depois testar em produção com um termo existente somente dentro de um PDF.

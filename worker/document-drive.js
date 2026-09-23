@@ -97,6 +97,29 @@ function escapeDriveQueryLiteral(value) {
   return String(value || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
+function driveFullTextSearchClause(value) {
+  const query = String(value || '').trim();
+  if (!query) return '';
+
+  const exactPhrase = query.length >= 2 && query.startsWith('"') && query.endsWith('"');
+  if (exactPhrase) {
+    const phrase = query.slice(1, -1).trim();
+    if (!phrase) return '';
+    return `fullText contains '${escapeDriveQueryLiteral(`"${phrase}"`)}'`;
+  }
+
+  const terms = query
+    .split(/\s+/u)
+    .map((term) => term.trim())
+    .filter(Boolean)
+    .slice(0, 10);
+
+  if (!terms.length) return '';
+  return terms
+    .map((term) => `fullText contains '${escapeDriveQueryLiteral(term)}'`)
+    .join(' and ');
+}
+
 export class DriveIntegrationError extends Error {
   constructor(code, message, status = 500) {
     super(message);
@@ -710,7 +733,12 @@ export async function searchDrive(env, input = {}) {
   const pageToken = String(input.pageToken || '').trim().slice(0, 2000);
 
   const url = new URL('https://www.googleapis.com/drive/v3/files');
-  url.searchParams.set('q', `trashed = false and name contains '${escapeDriveQueryLiteral(query)}'`);
+  const nameClause = `name contains '${escapeDriveQueryLiteral(query)}'`;
+  const fullTextClause = driveFullTextSearchClause(query);
+  const searchClause = fullTextClause
+    ? `(${nameClause} or (${fullTextClause}))`
+    : nameClause;
+  url.searchParams.set('q', `trashed = false and ${searchClause}`);
   url.searchParams.set('pageSize', String(pageSize));
   url.searchParams.set('spaces', 'drive');
   url.searchParams.set('corpora', 'user');
