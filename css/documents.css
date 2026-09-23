@@ -1,34 +1,35 @@
-.documents-main { width: min(1500px, calc(100% - 32px)); }
-.documents-hero { min-height: 190px; }
-.documents-hero-state {
-  flex: 0 0 auto;
-  padding: 10px 14px;
-  border-radius: 999px;
-  background: #edf4fa;
-  border: 1px solid #cfdeeb;
-  color: #47657f;
-  font-size: .82rem;
-  font-weight: 850;
-  position: relative;
-  z-index: 1;
+.documents-main {
+  width: min(1500px, calc(100% - 32px));
+  margin-top: 12px;
 }
-.documents-hero-state.connected { color: #176049; background: #eaf8f2; border-color: #bee7d6; }
-.documents-hero-state.pending { color: #775a16; background: #fff8e5; border-color: #edd99c; }
-.documents-global-status { margin-top: 16px; }
+.documents-global-status { margin: 0 0 8px; }
 .documents-global-status:empty { display: none; }
 .documents-global-status .portal-note { box-shadow: 0 5px 18px rgba(20,55,90,.05); }
 
-.documents-setup .portal-section-heading > div { min-width: 0; }
-.documents-setup .portal-section-heading p {
-  margin: 4px 0 0;
-  color: var(--portal-muted);
-  font-size: .84rem;
+.documents-setup {
+  min-height: 0;
+  margin: 0 0 8px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
-.documents-setup-body { padding: 20px 22px 24px; }
-.documents-setup-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.documents-setup[hidden] { display: none !important; }
+.documents-setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+}
+.documents-setup-actions .portal-button {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: .78rem;
+}
+.documents-drive-status { position: absolute !important; }
 
 .documents-workspace {
-  margin-top: 24px;
+  margin-top: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   position: relative;
@@ -435,7 +436,10 @@
   }
 }
 @media (max-width: 720px) {
-  .documents-main { width: min(100% - 18px, 1500px); margin-top: 18px; }
+  .documents-main { width: min(100% - 18px, 1500px); margin-top: 8px; }
+  .documents-setup { margin-bottom: 6px; }
+  .documents-setup-actions { width: 100%; }
+  .documents-setup-actions .portal-button { flex: 1 1 auto; justify-content: center; }
   .documents-tools-link { display: none; }
   .documents-browser-toolbar { flex-direction: column; }
   .documents-search-form { width: 100%; }
@@ -446,8 +450,7 @@
 }
 @media (max-width: 480px) {
   .documents-search-form { flex-direction: column; }
-  .documents-hero { padding: 22px 18px; }
-  .documents-hero h2 { font-size: 1.65rem; }
+  .documents-setup-actions { gap: 6px; }
 }
 
 
