@@ -2,6 +2,31 @@
 
 Última atualização: 23/09/2026.
 
+## Refinamento transversal do modo escuro — EM PR — 23/09/2026
+
+A homologação humana do refinamento do **chat interno em modo escuro foi aprovada**: o operador confirmou que “o chat ficou ótimo”. Na mesma homologação, prints reais revelaram superfícies claras residuais em **Perfil, Telemedicina, Conquistas, Recepção e Guia Médico**, inclusive no assistente de pré-regulação.
+
+Foi criada a branch `fix/portal-dark-mode-general-polish-20260923` diretamente da `main` `097f92f9f5b273d8f35a25599bee8d7a8708b652` e aberta a PR **#456 — UI: concluir cobertura geral do modo escuro**.
+
+Implementação:
+- a correção permanece centralizada em `css/portal-interactions.css`, sem recoloração por JavaScript;
+- Perfil: cards do perfil, editor de módulos, chips e botões secundários;
+- Conquistas: painel Bronze/Prata/Ouro, trilha, medalhas, blocos explicativos e textos auxiliares;
+- Recepção: lista lateral de especialidades/exames, hover e seleção;
+- Guia Médico: hero, etapas, protocolo oficial, aplicação prática, checklist, alertas e assistente Gemini/pré-regulação;
+- Telemedicina: Data operacional, quatro indicadores, workspace, toolbar, filtros, alternância Lista/Grade, cards, subblocos, modais e formulários;
+- seletores da Telemedicina ganharam especificidade suficiente para prevalecer sobre as camadas visuais V12/V16 sem alterar lógica funcional;
+- impressão continua clara porque a cobertura complementar está em `@media screen`;
+- o modo claro permanece inalterado;
+- cache-buster global renovado para `portal-interactions.css?v=20260923-2` nas rotas visuais.
+
+Segurança e escopo: **nenhum backend, permissão, autenticação, conteúdo clínico, regra de negócio ou telemetria foi alterado**. A correção é exclusivamente visual e transversal à Fase 7. O head funcional antes desta atualização documental é `4772410d`.
+
+Validação automatizada: regressão adicionada em `worker/tests/portal-interactions.test.mjs` para exigir cobertura das superfícies homologadas e o novo cache-buster. CI da PR #456 ainda deve concluir antes de merge.
+
+Próxima ação: aguardar todos os checks da PR #456; corrigir qualquer regressão se houver; com CI integralmente verde, mesclar e confirmar publicação. Depois, homologar visualmente em produção `/perfil/`, `/telemedicina/`, `/conquistas/`, `/recepcao/` e `/medico/`. A homologação 7G.1 da Central permanece separada e deve ser retomada após esta unidade transversal.
+
+
 ## Publicação do novo vídeo de abertura — CONCLUÍDA — 18/09/2026
 
 A mudança transversal foi encerrada com sucesso. A PR **#212** integrou o novo MP4 à `main` no merge `9b409e4c59470c4b37ab9d5e3d1a8a16ed735e82`; a PR **#213** corrigiu exclusivamente o verificador público e foi mesclada em `87b88c0e7e37df1c56a25933f2f27aad2795e35c`.
@@ -3158,21 +3183,21 @@ Esse Workers Builds bem-sucedido **substitui como evidência operacional** a ten
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.1 continua aguardando homologação humana; refinamento transversal do chat escuro está publicado e aguarda apenas confirmação visual** |
-| Última ação concluída | PR **#453** mesclada à `main`, reconciliando o handoff após a PR funcional **#452** |
-| Branch atual | nenhuma branch funcional pendente para o chat; `main` contém o código publicado |
-| PR atual | **#452 mesclada** (funcional) e **#453 mesclada** (status/handoff) |
-| Último commit relevante | `main` **`1252cf8e27e66a4fbbba00a8c2f50a45c8b29563`**; merge funcional do chat `77e50f016762bd1cf6cce5a808c9088879d38091` |
-| Checks e testes | #452 **23/23 success**; pós-merge Pages, abertura pós-login e workflow próprio do chat: **success** |
-| Decisões tomadas | refinamento escuro permanece no CSS próprio do chat; modo claro não muda; sem alteração de estrutura, backend ou regras de negócio |
-| Justificativas | as superfícies claras residuais estavam hardcoded em `portal-chat.css`; corrigir localmente reduz blast radius |
-| Alternativas descartadas | recolorir via JS; alterar mensagens/contatos; rebustar toda a camada global; mexer no backend |
-| Ações externas concluídas | GitHub Pages publicou o merge #452 com success |
-| Pendências e bloqueios | somente confirmação visual humana do chat em produção; depois retomar a homologação 7G.1 da Central |
-| Riscos conhecidos | podem restar apenas diferenças visuais específicas de algum tamanho de tela não homologado; funcionalidade do chat não foi alterada |
-| Métricas / observabilidade | nenhuma telemetria nova; mensagens, contatos e conteúdo continuam fora do tema/observabilidade |
-| Próxima ação exata | **Ctrl+F5 na Home → Modo escuro → abrir Chat interno → conferir lista, busca e conversa; aprovado isso, voltar à homologação 7G.1 em /documentos/** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #452; PR #453; `css/portal-chat.css`; `docs/PORTAL-APARENCIA-V1.md`; `worker/tests/social-ui.test.mjs`; `.github/workflows/validate-portal-chat.yml` |
+| Subfase / objetivo atual | **Refinamento transversal do modo escuro em PR; 7G.1 da Central permanece pendente separadamente** |
+| Última ação concluída | Chat escuro **aprovado em homologação humana**; cobertura geral implementada e PR **#456** aberta |
+| Branch atual | `fix/portal-dark-mode-general-polish-20260923` |
+| PR atual | **#456 aberta — UI: concluir cobertura geral do modo escuro** |
+| Último commit relevante | head funcional `4772410d`; base `main` `097f92f9` |
+| Checks e testes | regressão de dark mode adicionada; **CI da #456 em andamento** |
+| Decisões tomadas | centralizar correções no CSS global; preservar modo claro; Telemedicina usa overrides escuros de maior especificidade; impressão permanece clara |
+| Justificativas | os resíduos claros vinham de CSS legado/específico dos módulos; correção central reduz blast radius funcional e evita JS de recoloração |
+| Alternativas descartadas | recolorir via JavaScript; alterar CSS claro original de cada módulo; mudar backend/permissões; reabrir fases anteriores |
+| Ações externas concluídas | nenhuma configuração externa necessária |
+| Pendências e bloqueios | aguardar CI/merge/publicação da #456 e homologação visual das cinco rotas; depois retomar 7G.1 |
+| Riscos conhecidos | alguma superfície muito específica fora dos prints pode ainda exigir ajuste visual; nenhuma lógica funcional foi modificada |
+| Métricas / observabilidade | nenhuma telemetria nova; conteúdo clínico e identidade continuam fora do PostHog |
+| Próxima ação exata | **validar CI da #456 → mesclar se integralmente verde → confirmar Pages → Ctrl+F5 e conferir /perfil/, /telemedicina/, /conquistas/, /recepcao/ e /medico/** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #456; `css/portal-interactions.css`; `worker/tests/portal-interactions.test.mjs`; `docs/PORTAL-APARENCIA-V1.md`; este status |
 
 ## Histórico recuperável
 
