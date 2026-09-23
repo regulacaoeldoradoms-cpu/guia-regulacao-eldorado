@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — simplificar preload da Central para somente a raiz do Drive** |
-| Última ação concluída | código da branch removeu preload especial de Consulta [2026]/Exames [2026], pré-download de PDFs dessas pastas e aumentou a reutilização do warmup raiz em andamento |
-| Branch atual | `perf/titon-root-preload-only-20260923` |
-| PR atual | ainda não aberta; abrir após validação estrutural da branch |
-| Último commit relevante | base `a8cc6c0db4d315d037af39b96ba882884fc58dc9`; implementação, testes e documentação nesta branch |
-| Checks e testes | CI ainda pendente; testes atualizados para exigir ausência de prioridades por nome, snapshot raiz antecipado e timeout de 6 s |
-| Decisões tomadas | Consulta [2026] e Exames [2026] deixam de ter qualquer tratamento especial; nenhum PDF é mais pré-baixado por pertencer a essas pastas; raiz de 20 itens é a única listagem antecipada |
-| Justificativas | o preload anterior fazia trabalho secundário pesado antes de entregar o snapshot e o cliente desistia após 1,4 s, podendo iniciar outra leitura da raiz; a baseline real já mostrava Drive em vários segundos |
-| Alternativas descartadas | manter as duas pastas com prefetch menor; ampliar o timeout sem remover trabalho secundário; aumentar pageSize acima de 20 |
-| Ações externas concluídas | nenhuma configuração/secret novo necessário |
-| Pendências e bloqueios | executar CI, corrigir regressões, abrir PR, integrar/publicar; depois medir uso real e confirmar redução da latência percebida |
-| Riscos conhecidos | se a própria Files API levar mais de 6 s em um caso extremo, o fallback direto ainda pode ocorrer; a próxima decisão deve usar telemetria pós-publicação |
-| Métricas / observabilidade | continuam `drive_folder_opened` com cache hit/miss e tempos token/API/map; sem conteúdo, nomes ou IDs |
-| Próxima ação exata | **rodar checks da branch; se verdes, abrir/mesclar PR; depois Ctrl+F5 e comparar tempo de entrada da Central e eventos hit/miss** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; `docs/CENTRAL-DOCUMENTOS-FASE-7.md`; testes performance/UI |
+| Subfase / objetivo atual | **7E — preload da Central simplificado para somente a raiz; falta validação real pós-deploy** |
+| Última ação concluída | PR **#428** mesclada à `main`; removidos preload especial de Consulta [2026]/Exames [2026], pré-download de PDFs dessas pastas e espera curta de 1,4 s |
+| Branch atual | `docs/titon-root-preload-only-published-20260923` somente para reconciliar status/handoff |
+| PR atual | funcional **#428 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`1a2a1e3da617abfb4bce02f7bf0f221c9a214a97`** |
+| Checks e testes | head final da #428: **50/50 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, abertura pós-login, site, bundle e governança |
+| Decisões tomadas | somente a raiz de 20 itens é antecipada; nenhuma pasta possui prioridade por nome; nenhum PDF é pré-baixado por pasta; snapshot raiz pode ser publicado assim que pronto; Central espera warmup por até 6 s antes do fallback |
+| Justificativas | o desenho anterior fazia trabalho secundário pesado e podia desperdiçar a leitura iniciada no login ao desistir após 1,4 s e iniciar outra chamada |
+| Alternativas descartadas | manter Consulta/Exames com prefetch reduzido; aumentar pageSize; apenas ampliar timeout sem remover o trabalho especial |
+| Ações externas concluídas | nenhuma configuração externa ou secret novo necessário |
+| Pendências e bloqueios | o conector desta sessão não confirma o Workers Build pós-merge; falta Ctrl+F5 e teste real de entrada da Central, seguido de comparação de telemetria hit/miss |
+| Riscos conhecidos | em caso extremo com Files API acima de 6 s, o fallback direto ainda pode ocorrer; decidir próximos ajustes somente com amostra pós-publicação |
+| Métricas / observabilidade | `drive_folder_opened` com `cache_state`, `drive_token_ms`, `drive_api_ms`, `drive_map_ms`; sem nomes, IDs ou conteúdo documental |
+| Próxima ação exata | **confirmar produção após Ctrl+F5; observar se a raiz aparece mais rápido; depois revisar `drive_folder_opened` hit/miss antes de nova otimização** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #428; merge `1a2a1e3d`; `portal-sw.js`; `js/portal-performance.js`; `js/documents.js`; Fase 7; testes performance/UI |
 
 ## Histórico recuperável
 
@@ -5313,3 +5313,38 @@ Segurança/privacidade preservadas:
 Critério de aceite desta unidade: CI verde; ausência de runtime especial por nome; abertura da Central reutiliza raiz aquecida quando pronta; nenhuma requisição automática de conteúdo PDF por Consulta/Exames; fallback normal preservado.
 
 **Próxima ação exata:** executar CI e integrar somente se todos os checks críticos permanecerem verdes; após deploy, validar em produção e medir `drive_folder_opened` hit/miss.
+
+## Fase 7E — preload raiz-only integrado à main — 23/09/2026
+
+A PR **#428 — Fase 7E: simplificar preload da Central para somente a raiz** foi integrada à `main` no merge **`1a2a1e3da617abfb4bce02f7bf0f221c9a214a97`**.
+
+Resultado final versionado:
+- removidas as constantes e rotinas `DOCUMENTS_PRIORITY_*`;
+- removida qualquer descoberta/listagem especial de Consulta [2026] ou Exames [2026];
+- removido `priorityFolders` do snapshot privado;
+- removido pré-download automático de PDFs dessas pastas;
+- removido carregamento antecipado de `PortalDocumentCache` exclusivamente para esse prefetch;
+- preload pós-login mantém access, preferences, aiConfig quando permitido e **20 itens da raiz**;
+- a raiz pode ser publicada em RAM assim que estiver pronta, antes de tarefas secundárias terminarem;
+- `getDocumentsWarmPayload()` devolve snapshot já publicado antes de esperar operação em andamento;
+- timeout de obtenção do warmup na Central passou de **1,4 s para 6 s**;
+- `documents.js` não contém mais `warmedPriorityFolder`, `applyWarmedFolderSnapshot` nem listener `portal:documents-warm-updated`;
+- qualquer pasta, inclusive Consulta [2026] e Exames [2026], volta ao fluxo normal de listagem de 20 itens;
+- cache criptografado de PDFs permanece disponível no uso normal, sem prioridade por pasta.
+
+Validação do head final `a0b461f0e9fc588ea3116f32b0924eb146ff56a8`:
+- **50/50 workflows GitHub Actions: success**;
+- Central de Documentos — Fases 1–6: **success**;
+- Central de Documentos — navegador/PDF.js real: **success**;
+- abertura pós-login — navegador: **success**;
+- bundle de staging: **success**;
+- site/governança e regressões do restante do Portal: **success**.
+
+Durante a validação foram reconciliados cache-busters globais de `portal-performance.js` para `v=20260923-1` e a versão do Service Worker para `CACHE_VERSION=20260923-1`, garantindo que o cliente novo seja carregado nas entradas do Portal.
+
+Limite da evidência atual:
+- código e CI estão concluídos e integrados;
+- o conector GitHub usado nesta sessão não expõe prova suficiente do Workers Build de push pós-merge;
+- a melhora de latência não deve ser declarada numericamente antes de tráfego real pós-publicação.
+
+**Próxima ação exata:** Ctrl+F5 na Central, observar a abertura da raiz e depois revisar a nova amostra de `drive_folder_opened` por `cache_state` e tempos internos.
