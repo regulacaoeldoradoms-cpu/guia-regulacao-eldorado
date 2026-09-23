@@ -595,3 +595,679 @@ html[data-portal-interactions="v1"] .ai-chat:not([hidden]) {
     border: 1px solid CanvasText;
   }
 }
+
+
+/* Aparência global: escolha claro/escuro em Configurações. */
+.interface-theme-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 760px;
+  margin-top: 16px;
+}
+.interface-theme-option {
+  position: relative;
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 14px;
+  min-height: 104px;
+  padding: 14px;
+  border: 1px solid #d4e1ea;
+  border-radius: 16px;
+  background: #f8fbfd;
+  cursor: pointer;
+  transition:
+    border-color var(--portal-motion-standard) ease,
+    background-color var(--portal-motion-standard) ease,
+    box-shadow var(--portal-motion-standard) ease,
+    transform var(--portal-motion-fast) ease;
+}
+.interface-theme-option:hover {
+  border-color: #9fc5dd;
+  transform: translateY(-1px);
+}
+.interface-theme-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.interface-theme-option:has(input:checked) {
+  border-color: #2482bd;
+  box-shadow: 0 0 0 3px rgba(36, 130, 189, .12);
+  background: #f2f9fd;
+}
+.interface-theme-option:has(input:focus-visible) {
+  outline: 3px solid var(--portal-feedback-focus);
+  outline-offset: 3px;
+}
+.interface-theme-preview {
+  width: 86px;
+  height: 64px;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  grid-template-rows: 16px 1fr;
+  gap: 5px;
+  padding: 7px;
+  border-radius: 11px;
+  border: 1px solid rgba(74, 112, 139, .28);
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.16);
+}
+.interface-theme-preview i {
+  display: block;
+  border-radius: 4px;
+}
+.interface-theme-preview i:first-child { grid-column: 1 / -1; }
+.interface-theme-preview i:nth-child(2) { grid-row: 2; }
+.interface-theme-preview i:nth-child(3) { grid-row: 2; }
+.interface-theme-preview.is-light { background: #eef5fa; }
+.interface-theme-preview.is-light i:first-child { background: #1769ac; }
+.interface-theme-preview.is-light i:nth-child(2) { background: #d7e5ef; }
+.interface-theme-preview.is-light i:nth-child(3) { background: #fff; }
+.interface-theme-preview.is-dark { background: #091722; border-color: #355166; }
+.interface-theme-preview.is-dark i:first-child { background: #1769ac; }
+.interface-theme-preview.is-dark i:nth-child(2) { background: #183247; }
+.interface-theme-preview.is-dark i:nth-child(3) { background: #102535; }
+.interface-theme-copy strong {
+  display: block;
+  color: #183b57;
+  font-size: .94rem;
+}
+.interface-theme-copy small {
+  display: block;
+  margin-top: 5px;
+  color: #687f90;
+  line-height: 1.45;
+}
+.interface-theme-check {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #a9bdcb;
+  border-radius: 50%;
+}
+.interface-theme-option:has(input:checked) .interface-theme-check {
+  border: 6px solid #1675ad;
+}
+
+@media (max-width: 650px) {
+  .interface-theme-settings { grid-template-columns: 1fr; }
+  .interface-theme-option { grid-template-columns: 78px minmax(0, 1fr) 22px; }
+  .interface-theme-preview { width: 78px; }
+}
+
+@media screen {
+  html[data-portal-theme="dark"] {
+    color-scheme: dark;
+    --portal-navy: #d7ebfa;
+    --portal-blue: #58a9ff;
+    --portal-cyan: #27c5d4;
+    --portal-green: #39c995;
+    --portal-bg: #07131e;
+    --portal-border: #294456;
+    --portal-text: #e5eef5;
+    --portal-muted: #9fb2c1;
+    --portal-shadow: 0 18px 44px rgba(0, 0, 0, .34);
+    --portal-theme-bg: #07131e;
+    --portal-theme-bg-soft: #0b1a27;
+    --portal-theme-surface: #102332;
+    --portal-theme-surface-2: #142a3a;
+    --portal-theme-surface-3: #193246;
+    --portal-theme-border: #2a465a;
+    --portal-theme-text: #e5eef5;
+    --portal-theme-muted: #9fb2c1;
+    --portal-theme-accent: #68b7ff;
+    --portal-theme-input: #0c1e2c;
+    --portal-theme-hover: #173247;
+    --portal-theme-selected: #183e59;
+  }
+
+  html[data-portal-theme="dark"] body {
+    background: var(--portal-theme-bg) !important;
+    color: var(--portal-theme-text) !important;
+  }
+
+  html[data-portal-theme="dark"] body.portal-page {
+    background:
+      radial-gradient(circle at 12% -10%, rgba(28, 112, 171, .18), transparent 32%),
+      linear-gradient(180deg, #07131e 0, #0a1824 45%, #07131e 100%) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(h1,h2,h3,h4,h5,h6,strong,b,label,legend,summary) {
+    color: var(--portal-theme-text);
+  }
+
+  html[data-portal-theme="dark"] :where(p,small,.portal-muted,.field-help,.section-intro,.user-meta,.result-count) {
+    color: var(--portal-theme-muted);
+  }
+
+  html[data-portal-theme="dark"] a:not(.portal-button):not(.button):not(.social-button) {
+    color: #82c4ff;
+  }
+
+  html[data-portal-theme="dark"] .portal-topbar {
+    background: linear-gradient(115deg, #061d34, #0a3e72 64%, #07547d) !important;
+    border-bottom-color: #1594a4 !important;
+    box-shadow: 0 8px 28px rgba(0,0,0,.34) !important;
+  }
+
+  html[data-portal-theme="dark"] .portal-topbar :where(h1,p,strong,span,a),
+  html[data-portal-theme="dark"] .site-header :where(h1,p,strong,span,a),
+  html[data-portal-theme="dark"] .login-visual :where(h1,p,strong,span,a) {
+    color: #f4f9fc !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .portal-hero,
+    .portal-section,
+    .hub-card,
+    .login-card,
+    .account-card,
+    .account-section-hero,
+    .account-section-summary,
+    .social-card,
+    .social-dialog,
+    .social-global-user-search-results,
+    .documents-browser,
+    .documents-viewer,
+    .documents-advanced-search-dialog,
+    .documents-editor-panel,
+    .agenda-hero,
+    .agenda-stat,
+    .agenda-card,
+    .agenda-help,
+    .agenda-sync-bridge .portal-section,
+    .telemedicine-hero,
+    .telemedicine-stat,
+    .telemedicine-row,
+    .telemedicine-current,
+    .telemedicine-event,
+    .telemedicine-preview,
+    .telemedicine-modal,
+    .portal-modal,
+    .reception-sidebar,
+    .reception-detail,
+    .reception-group,
+    .reception-item,
+    .reception-summary,
+    .overview-card,
+    .clinical-section,
+    .general-intro-card,
+    .model-box,
+    .protocol-card,
+    .detail-panel,
+    .sidebar,
+    .panel,
+    .status-card,
+    .flow-box,
+    .content-block,
+    .citizen-action,
+    .citizen-card,
+    .manifestation-item,
+    .notification,
+    .citizen-modal-panel,
+    .manifestation-type-card,
+    .privacy-option,
+    .selected-file,
+    .attachment-link,
+    .council-metric,
+    .council-box,
+    .usage-stat,
+    .usage-doctors-panel,
+    .usage-detail-panel,
+    .usage-doctor,
+    .achievement-card,
+    .readiness-card,
+    .user-row
+  ) {
+    background: var(--portal-theme-surface) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,.22);
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .hub-card,
+    .social-card,
+    .portal-section,
+    .documents-browser,
+    .documents-viewer,
+    .account-card
+  ) {
+    background-image: none !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .portal-section-heading,
+    .social-section-heading,
+    .social-post-header,
+    .citizen-card-head,
+    .citizen-modal-head,
+    .documents-browser-toolbar,
+    .documents-list-heading,
+    .documents-viewer-head,
+    .documents-advanced-search-head,
+    .documents-editor-banner,
+    .documents-editor-toolbar,
+    .agenda-toolbar,
+    .usage-panel-heading,
+    .usage-history-toolbar,
+    .portal-modal-header,
+    .manifestation-form-footer,
+    .form-section,
+    .council-toolbar
+  ) {
+    background: var(--portal-theme-surface-2) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    select,
+    textarea,
+    .portal-search,
+    .social-input,
+    .social-select,
+    .social-textarea,
+    .reception-status,
+    .council-toolbar input,
+    .council-toolbar select,
+    .documents-viewer-rename input
+  ) {
+    background: var(--portal-theme-input) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: #355469 !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    textarea,
+    .portal-search,
+    .social-input,
+    .social-textarea
+  )::placeholder {
+    color: #7890a2 !important;
+    opacity: 1;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .portal-button.secondary,
+    .button.secondary,
+    .social-button.secondary,
+    .documents-search-title-only,
+    .documents-advanced-search-trigger,
+    .documents-order-trigger,
+    .documents-order-reset,
+    .documents-crumb,
+    .documents-close-viewer,
+    .portal-modal-close,
+    .citizen-modal-close,
+    .social-icon-button,
+    .social-page-button,
+    .usage-period-tabs button,
+    .agenda-stat
+  ) {
+    background: #142b3b !important;
+    color: #dcebf5 !important;
+    border-color: #355469 !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .portal-button.secondary,
+    .button.secondary,
+    .social-button.secondary,
+    .documents-advanced-search-trigger,
+    .documents-order-trigger,
+    .documents-order-reset:not(:disabled),
+    .documents-crumb,
+    .social-page-button,
+    .usage-period-tabs button
+  ):hover {
+    background: #1b3a50 !important;
+    border-color: #4d7691 !important;
+  }
+
+  html[data-portal-theme="dark"] .portal-button.danger {
+    background: #3b1b22 !important;
+    color: #ffb8c1 !important;
+    border-color: #65303b !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .portal-hero h2,
+    .portal-section-heading h2,
+    .portal-section-heading h3,
+    .hub-card h3,
+    .account-section-hero h1,
+    .account-card h2,
+    .social-card h1,
+    .social-card h2,
+    .social-card h3,
+    .citizen-card-head h2,
+    .citizen-modal-head h2,
+    .form-section-head h3,
+    .detail-title,
+    .detail-section-title,
+    .council-metric strong,
+    .council-box h3,
+    .reception-title,
+    .reception-group h3,
+    .medical-hero h1,
+    .detail-title,
+    .site-header h1
+  ) {
+    color: var(--portal-theme-text) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .hub-card p,
+    .portal-hero p,
+    .account-section-hero p,
+    .account-card > p,
+    .account-section-summary span,
+    .settings-section-note,
+    .social-handle,
+    .social-post-meta,
+    .social-comment,
+    .social-empty,
+    .citizen-action > span,
+    .manifestation-item small,
+    .notification small,
+    .form-section-head p,
+    .field-footer,
+    .privacy-option small,
+    .manifestation-type-card small,
+    .council-metric span,
+    .council-table small,
+    .usage-panel-heading p,
+    .usage-history-note,
+    .agenda-meta,
+    .agenda-help-body,
+    .telemedicine-filter-summary,
+    .overview-label,
+    .field-help
+  ) {
+    color: var(--portal-theme-muted) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .social-person-row,
+    .social-notification,
+    .social-comment-bubble,
+    .social-post,
+    .documents-item-row,
+    .documents-item,
+    .agenda-list,
+    .telemedicine-list,
+    .council-table th,
+    .council-table td,
+    .usage-history-table th,
+    .usage-history-table td,
+    .user-row
+  ) {
+    border-color: var(--portal-theme-border) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .documents-item,
+    .manifestation-item,
+    .notification,
+    .social-person-row,
+    .social-notification,
+    .usage-doctor,
+    .council-table tbody tr
+  ):hover {
+    background: var(--portal-theme-hover) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .documents-item.selected,
+    .usage-doctor.active,
+    .social-tab.active,
+    .social-page-button.active,
+    .agenda-stat.is-active
+  ) {
+    background: var(--portal-theme-selected) !important;
+    border-color: #4d88ad !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-item-row {
+    background: var(--portal-theme-surface) !important;
+    border-bottom-color: #203a4d !important;
+  }
+  html[data-portal-theme="dark"] .documents-item-row.pdf:has(.documents-item.selected),
+  html[data-portal-theme="dark"] .documents-item-row.folder:has(.documents-item.selected) {
+    background: #132f43 !important;
+  }
+  html[data-portal-theme="dark"] .documents-item-copy strong {
+    color: #dcebf5 !important;
+  }
+  html[data-portal-theme="dark"] .documents-item-copy span {
+    color: #91a8b8 !important;
+  }
+  html[data-portal-theme="dark"] .documents-item-icon {
+    background: #1b3547 !important;
+    border-color: #36556b !important;
+  }
+  html[data-portal-theme="dark"] .documents-pdf-thumbnails,
+  html[data-portal-theme="dark"] .documents-pdf-toolbar,
+  html[data-portal-theme="dark"] .documents-editor-side-rail,
+  html[data-portal-theme="dark"] .documents-pdf-scroll,
+  html[data-portal-theme="dark"] .documents-custom-viewer {
+    background: #081722 !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+  html[data-portal-theme="dark"] .portal-pdf-thumb-wrap,
+  html[data-portal-theme="dark"] .portal-pdf-thumb-actions,
+  html[data-portal-theme="dark"] .documents-sync-option,
+  html[data-portal-theme="dark"] .documents-editor-field {
+    background: #102637 !important;
+    border-color: #2e4b60 !important;
+    color: var(--portal-theme-text) !important;
+  }
+  html[data-portal-theme="dark"] .portal-pdf-page {
+    background: #fff !important;
+    color-scheme: light;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .social-global-nav,
+    .social-mobile-nav,
+    .social-side-links,
+    .social-global-user-search-box,
+    .social-global-user-search-results,
+    .portal-chat-panel,
+    .portal-chat-header,
+    .portal-chat-composer
+  ) {
+    background: #0f2231 !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+  html[data-portal-theme="dark"] .social-nav-link,
+  html[data-portal-theme="dark"] .social-mobile-nav-link {
+    color: #b7cad7 !important;
+  }
+  html[data-portal-theme="dark"] .social-nav-link.active,
+  html[data-portal-theme="dark"] .social-mobile-nav-link.active {
+    color: #7fc5ff !important;
+    background: #15364d !important;
+  }
+  html[data-portal-theme="dark"] .social-mini-cover,
+  html[data-portal-theme="dark"] .social-profile-cover {
+    filter: saturate(.82) brightness(.78);
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .telemedicine-toolbar,
+    .telemedicine-current-grid,
+    .telemedicine-date-block,
+    .telemedicine-specialty-block,
+    .telemedicine-form-grid,
+    .telemedicine-followup-fields,
+    .reception-controls,
+    .reception-items,
+    .clinical-overview,
+    .content-grid
+  ) {
+    background: transparent !important;
+    color: var(--portal-theme-text) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .telemedicine-row,
+    .agenda-card,
+    .reception-item,
+    .protocol-card,
+    .manifestation-type-card,
+    .privacy-option
+  ):hover {
+    background: #173247 !important;
+  }
+
+  html[data-portal-theme="dark"] .agenda-card.is-read {
+    border-color: #356a60 !important;
+  }
+  html[data-portal-theme="dark"] .agenda-card.is-unread {
+    background: #102d40 !important;
+    border-color: #3181ae !important;
+  }
+  html[data-portal-theme="dark"] .agenda-card.is-inactive {
+    opacity: .72;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .portal-note.info,
+    .account-status.info,
+    .login-status.info,
+    .privacy-summary,
+    .documents-presence-notice
+  ) {
+    background: #112f43 !important;
+    color: #b9dff6 !important;
+    border-color: #285978 !important;
+  }
+  html[data-portal-theme="dark"] :where(
+    .portal-note.warning,
+    .account-status.warning,
+    .form-alert,
+    .internal-note,
+    .reception-scope-note
+  ) {
+    background: #362b12 !important;
+    color: #f2d58a !important;
+    border-color: #65501f !important;
+  }
+  html[data-portal-theme="dark"] :where(
+    .portal-note.success,
+    .account-status.success,
+    .status-chip.concluida
+  ) {
+    background: #123329 !important;
+    color: #9be0c4 !important;
+    border-color: #285c4b !important;
+  }
+  html[data-portal-theme="dark"] :where(
+    .account-status.error,
+    .login-status.error,
+    .portal-note.error
+  ) {
+    background: #3a1c24 !important;
+    color: #ffb7c0 !important;
+    border-color: #6e3542 !important;
+  }
+
+  html[data-portal-theme="dark"] .interface-theme-option {
+    background: #102332;
+    border-color: #2a465a;
+  }
+  html[data-portal-theme="dark"] .interface-theme-option:hover,
+  html[data-portal-theme="dark"] .interface-theme-option:has(input:checked) {
+    background: #163247;
+    border-color: #4f85a7;
+  }
+  html[data-portal-theme="dark"] .interface-theme-copy strong,
+  html[data-portal-theme="dark"] .interface-sound-toggle strong,
+  html[data-portal-theme="dark"] .interface-sound-volume strong {
+    color: var(--portal-theme-text);
+  }
+  html[data-portal-theme="dark"] .interface-theme-copy small,
+  html[data-portal-theme="dark"] .interface-sound-toggle small,
+  html[data-portal-theme="dark"] .interface-sound-volume small {
+    color: var(--portal-theme-muted);
+  }
+  html[data-portal-theme="dark"] .interface-sound-toggle {
+    background: #102332;
+    border-color: #2a465a;
+  }
+  html[data-portal-theme="dark"] .interface-sound-volume output {
+    color: #8ecbff;
+  }
+  html[data-portal-theme="dark"] .portal-sound-quick-toggle {
+    color: #c8e5f7;
+    background: rgba(13, 32, 46, .96);
+    border-color: #355469;
+    box-shadow: 0 8px 24px rgba(0,0,0,.32);
+  }
+  html[data-portal-theme="dark"] .portal-sound-quick-toggle.is-muted {
+    color: #ffbac2;
+    background: rgba(55, 27, 34, .96);
+    border-color: #6a3944;
+  }
+
+  html[data-portal-theme="dark"] .login-panel {
+    background: #07131e !important;
+  }
+  html[data-portal-theme="dark"] .login-card {
+    background: #102332 !important;
+  }
+
+  html[data-portal-theme="dark"] .site-header {
+    background: #0b1e2c !important;
+    border-color: #294456 !important;
+  }
+  html[data-portal-theme="dark"] :where(.top-nav,.sidebar-heading,.detail-header,.action-bar,.status-strip) {
+    border-color: #294456 !important;
+  }
+  html[data-portal-theme="dark"] :where(.protocol-card.active,.protocol-card[aria-current="true"]) {
+    background: #183e59 !important;
+    border-color: #4d88ad !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .council-table,
+    .usage-history-table
+  ) {
+    color: var(--portal-theme-text) !important;
+  }
+  html[data-portal-theme="dark"] :where(
+    .council-table tbody tr:hover,
+    .usage-history-table tbody tr:hover
+  ) {
+    background: #173247 !important;
+  }
+
+  html[data-portal-theme="dark"] ::selection {
+    background: #2b78a8;
+    color: #fff;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    hr,
+    .timeline,
+    .portal-section-heading,
+    .social-card,
+    .account-card
+  ) {
+    border-color: var(--portal-theme-border) !important;
+  }
+}
+
+@media print {
+  html[data-portal-theme="dark"] {
+    color-scheme: light;
+  }
+}
