@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260923-2">
+  <link rel="stylesheet" href="/css/documents.css?v=20260923-3">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -48,9 +48,17 @@
         <div class="documents-browser" id="documentsBrowser">
           <div class="documents-browser-toolbar">
             <form class="documents-search-form" id="documentsSearchForm" role="search">
-              <label class="sr-only" for="documentsSearch">Pesquisar por nome ou conteúdo no Google Drive</label>
-              <input id="documentsSearch" class="portal-search" type="search" autocomplete="off" maxlength="120" placeholder="Pesquisar por nome ou conteúdo no Drive">
-              <button class="portal-button primary" type="submit">Pesquisar</button>
+              <div class="documents-search-row">
+                <label class="sr-only" for="documentsSearch">Pesquisar por nome ou conteúdo no Google Drive</label>
+                <input id="documentsSearch" class="portal-search" type="search" autocomplete="off" maxlength="120" placeholder="Pesquisar por nome ou conteúdo no Drive">
+                <button class="portal-button primary" type="submit">Pesquisar</button>
+              </div>
+              <div class="documents-search-options" aria-label="Filtros da pesquisa">
+                <label class="documents-search-title-only" for="documentsSearchTitleOnly">
+                  <input id="documentsSearchTitleOnly" type="checkbox">
+                  <span>Só título</span>
+                </label>
+              </div>
             </form>
             <button class="portal-button secondary" id="refreshFolderButton" type="button">Atualizar pasta</button>
           </div>
@@ -341,6 +349,6 @@
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-ocr.js?v=20260922-1"></script>
   <script src="/js/document-viewer.js?v=20260922-3"></script>
-  <script src="/js/documents.js?v=20260923-6"></script>
+  <script src="/js/documents.js?v=20260923-7"></script>
 </body>
 </html>

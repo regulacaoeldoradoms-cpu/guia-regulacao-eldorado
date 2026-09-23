@@ -202,7 +202,7 @@ test('Fase 7E pré-carrega somente a raiz após login e evita duplicar a chamada
   const client = read('js/documents.js');
 
   assert.match(html, /portal-performance\.js\?v=20260923-1/);
-  assert.match(html, /documents\.js\?v=20260923-6/);
+  assert.match(html, /documents\.js\?v=20260923-7/);
 
   assert.match(performanceClient, /function documentsAccessAllowed\(/);
   assert.match(performanceClient, /PORTAL_WARM_DOCUMENTS/);
@@ -267,7 +267,7 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
 
   assert.match(html, /portal-performance\.js\?v=20260923-1/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-6/);
+  assert.match(html, /documents\.js\?v=20260923-7/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   for (const source of [observability, server]) {
@@ -298,14 +298,31 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
   assert.doesNotMatch(metricSection, /textContent|lines|confidence|file|name|ref/i);
 });
 
-test('pesquisa da Central usa nome e fullText indexado do Google Drive', () => {
+test('pesquisa da Central usa nome + conteúdo por padrão e permite filtro Só título', () => {
   const html = read('documentos/index.html');
+  const client = read('js/documents.js');
   const drive = read('worker/document-drive.js');
+  const router = read('worker/documents-router.js');
+  const css = read('css/documents.css');
 
   assert.match(html, /Pesquisar por nome ou conteúdo no Drive/);
+  assert.match(html, /id="documentsSearchTitleOnly"[^>]*type="checkbox"/);
+  assert.match(html, />Só título<\/span>/);
+  assert.match(css, /\.documents-search-options/);
+  assert.match(css, /\.documents-search-title-only/);
+
+  assert.match(client, /searchTitleOnly:\s*false/);
+  assert.match(client, /searchTitleOnly:\s*document\.getElementById\('documentsSearchTitleOnly'\)/);
+  assert.match(client, /titleOnly:\s*els\.searchTitleOnly\?\.checked === true/);
+  assert.match(client, /titleOnly:\s*state\.searchTitleOnly/);
+  assert.match(client, /els\.searchTitleOnly\?\.addEventListener\('change'/);
+
+  assert.match(router, /titleOnly:\s*body\.titleOnly === true/);
   assert.match(drive, /function driveFullTextSearchClause\(/);
   assert.match(drive, /name contains/);
   assert.match(drive, /fullText contains/);
+  assert.match(drive, /const titleOnly = input\.titleOnly === true/);
+  assert.match(drive, /const fullTextClause = titleOnly \? '' : driveFullTextSearchClause\(query\)/);
   assert.match(drive, /const searchClause = fullTextClause/);
   assert.match(drive, /nameClause} or \(\$\{fullTextClause\}\)/);
   assert.match(drive, /split\(\/\\s\+\/u\)/);
@@ -322,7 +339,7 @@ test('Fase 7E acelera navegação do Drive com raiz aquecida e sem preload de pa
   const server = read('worker/observability.js');
 
   assert.match(html, /portal-performance\.js\?v=20260923-1/);
-  assert.match(html, /documents\.js\?v=20260923-6/);
+  assert.match(html, /documents\.js\?v=20260923-7/);
   assert.match(performanceClient, /portal-observability\.js\?v=20260921-2/);
 
   assert.match(client, /folderSnapshot:\s*null/);
@@ -419,7 +436,7 @@ test('modo progressivo prioriza primeira página e mantém fallback Blob', () =>
   const client = read('js/documents.js');
   const worker = read('portal-sw.js');
 
-  assert.match(html, /documents\.js\?v=20260923-6/);
+  assert.match(html, /documents\.js\?v=20260923-7/);
   assert.match(client, /registerProgressiveStream/);
   assert.match(client, /PORTAL_DOCUMENT_STREAM_REGISTER/);
   assert.match(client, /setInterval\(refreshProgressiveStream, 5000\)/);
@@ -458,7 +475,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260923-2/);
+  assert.match(html, /documents\.css\?v=20260923-3/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -478,8 +495,8 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.match(html, /id="pdfFitWidthButton"/);
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-6/);
-  assert.match(html, /documents\.css\?v=20260923-2/);
+  assert.match(html, /documents\.js\?v=20260923-7/);
+  assert.match(html, /documents\.css\?v=20260923-3/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -773,8 +790,8 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(html, /id="documentsEditorPages"/);
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
-  assert.match(html, /documents\.js\?v=20260923-6/);
-  assert.match(html, /documents\.css\?v=20260923-2/);
+  assert.match(html, /documents\.js\?v=20260923-7/);
+  assert.match(html, /documents\.css\?v=20260923-3/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -916,7 +933,7 @@ test('editor diferencia imagem como nova página de Colar imagem sobre página',
   assert.match(html, /id="editorSelectButton"/);
   assert.match(html, /id="editorObjectToolbar"/);
   assert.match(html, /document-editor\.js\?v=20260916-2/);
-  assert.match(html, /documents\.js\?v=20260923-6/);
+  assert.match(html, /documents\.js\?v=20260923-7/);
   assert.match(client, /handleEditorPaste/);
   assert.match(client, /addImageBlobToEditor/);
   assert.match(client, /addOverlayImageFile/);
@@ -1282,7 +1299,7 @@ test('ferramentas laterais respeitam hidden mesmo com display autoral', () => {
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(css, /\.documents-rail-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-editor-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(html, /documents\.css\?v=20260923-2/);
+  assert.match(html, /documents\.css\?v=20260923-3/);
 });
 
 test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro plano', () => {
@@ -1317,8 +1334,8 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
-  assert.match(html, /documents\.css\?v=20260923-2/);
-  assert.match(html, /documents\.js\?v=20260923-6/);
+  assert.match(html, /documents\.css\?v=20260923-3/);
+  assert.match(html, /documents\.js\?v=20260923-7/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
@@ -1576,8 +1593,8 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentsNotepadHead"/);
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
-  assert.match(html, /documents\.css\?v=20260923-2/);
-  assert.match(html, /documents\.js\?v=20260923-6/);
+  assert.match(html, /documents\.css\?v=20260923-3/);
+  assert.match(html, /documents\.js\?v=20260923-7/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-notepad-head[\s\S]*cursor:\s*grab/);

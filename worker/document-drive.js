@@ -731,10 +731,11 @@ export async function searchDrive(env, input = {}) {
   }
   const pageSize = clampInteger(input.pageSize, 20, 20, 100);
   const pageToken = String(input.pageToken || '').trim().slice(0, 2000);
+  const titleOnly = input.titleOnly === true;
 
   const url = new URL('https://www.googleapis.com/drive/v3/files');
   const nameClause = `name contains '${escapeDriveQueryLiteral(query)}'`;
-  const fullTextClause = driveFullTextSearchClause(query);
+  const fullTextClause = titleOnly ? '' : driveFullTextSearchClause(query);
   const searchClause = fullTextClause
     ? `(${nameClause} or (${fullTextClause}))`
     : nameClause;

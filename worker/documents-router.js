@@ -658,7 +658,8 @@ export async function handleDocumentsRoute(request, env, origin, originAllowed =
       const result = await searchDrive(env, {
         query: String(body.query || ''),
         pageToken: String(body.pageToken || ''),
-        pageSize: body.pageSize
+        pageSize: body.pageSize,
+        titleOnly: body.titleOnly === true
       });
       return json(result, 200, origin);
     }

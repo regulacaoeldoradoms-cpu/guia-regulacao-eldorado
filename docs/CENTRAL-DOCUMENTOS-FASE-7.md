@@ -519,3 +519,27 @@ Critérios de aceite:
 5. nenhuma segunda API, download em massa, OCR ou Gemini é acionado;
 6. IDs brutos do Drive continuam fora da resposta;
 7. CI e navegador permanecem verdes.
+
+
+## 7E — filtro “Só título” na pesquisa — 23/09/2026
+
+Após a ativação da pesquisa por `fullText`, a busca padrão da Central passa a continuar ampla: **nome do arquivo OU conteúdo indexado**. Foi solicitado um controle equivalente ao filtro “Só título” do Google Drive para permitir restringir uma pesquisa ao nome do arquivo quando necessário.
+
+Decisão:
+- checkbox/pílula **Só título** imediatamente abaixo da barra de pesquisa;
+- desmarcado por padrão;
+- desmarcado: usa `name contains` + `fullText contains`;
+- marcado: envia `titleOnly=true` e o Worker usa somente `name contains`;
+- ao alternar o filtro durante uma pesquisa ativa, a mesma consulta é refeita automaticamente;
+- “Atualizar pasta” e “Carregar mais” preservam o modo escolhido durante aquela pesquisa;
+- o filtro é de sessão/UI, sem persistência em conta, porque não foi solicitado como preferência permanente;
+- nenhuma mudança em scopes OAuth, Drive write, índice do Google ou observabilidade.
+
+Critérios de aceite:
+1. filtro aparece abaixo da barra;
+2. padrão continua nome + conteúdo;
+3. marcado, a query enviada ao Google não contém `fullText contains`;
+4. desmarcado, fullText continua ativo;
+5. paginação e refresh preservam o filtro;
+6. nenhuma nova API é necessária;
+7. CI/navegador/governança verdes.

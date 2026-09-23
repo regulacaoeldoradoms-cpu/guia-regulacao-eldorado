@@ -448,6 +448,14 @@ sqliteTest('listagem e pesquisa não devolvem fileId bruto e aceitam somente ref
     });
     const phraseQuery = new URL(phraseCall.url).searchParams.get('q');
     assert.match(phraseQuery, /fullText contains '"DOR JOELHO"'/);
+
+    const beforeTitleOnly = calls.length;
+    await searchDrive(env, { query: 'URGENCIA', titleOnly: true });
+    const titleOnlyCall = calls.slice(beforeTitleOnly).find((call) => call.url.includes('/drive/v3/files'));
+    assert.ok(titleOnlyCall);
+    const titleOnlyQuery = new URL(titleOnlyCall.url).searchParams.get('q');
+    assert.match(titleOnlyQuery, /^trashed = false and name contains 'URGENCIA'$/);
+    assert.doesNotMatch(titleOnlyQuery, /fullText contains/);
   } finally {
     globalThis.fetch = originalFetch;
   }
