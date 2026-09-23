@@ -5683,6 +5683,8 @@
     state.stack = [];
     state.searchMode = false;
     state.searchQuery = '';
+    state.searchFilters = defaultAdvancedSearchFilters();
+    syncAdvancedSearchButton();
     state.selectedListIndex = -1;
     state.items = incoming;
     state.nextPageToken = String(folder.nextPageToken || '');
@@ -5812,7 +5814,7 @@
     renderBreadcrumbs();
     if (state.selectedListIndex >= state.items.length) state.selectedListIndex = -1;
     els.listTitle.textContent = state.searchMode
-      ? `Pesquisa: ${state.searchQuery}`
+      ? (state.searchQuery ? `Pesquisa: ${state.searchQuery}` : 'Pesquisa avançada')
       : (state.stack.length ? state.stack[state.stack.length - 1].name : 'Meu Drive');
     els.listCount.textContent = `${state.items.length} item(ns) carregado(s)`;
 
@@ -5875,6 +5877,8 @@
     if (!append) {
       state.searchMode = false;
       state.searchQuery = '';
+      state.searchFilters = defaultAdvancedSearchFilters();
+      syncAdvancedSearchButton();
       state.selectedListIndex = -1;
       els.search.value = '';
       const snapshot = state.folderSnapshot;
@@ -5927,14 +5931,23 @@
     }
   }
 
-  async function search(query, { append = false, pageToken = '', titleOnly = state.searchTitleOnly } = {}) {
+  async function search(query, {
+    append = false,
+    pageToken = '',
+    titleOnly = state.searchTitleOnly,
+    filters = state.searchFilters
+  } = {}) {
     const value = String(query || '').trim();
-    if (value.length < 2) {
-      if (!value) return loadFolder();
+    const normalizedFilters = normalizeAdvancedSearchFilters(filters || defaultAdvancedSearchFilters());
+    const hasAdvanced = advancedSearchHasCriteria(normalizedFilters);
+
+    if (value && value.length < 2) {
       showStatus('Digite pelo menos dois caracteres para pesquisar.', 'warning');
       return;
     }
+    if (!value && !hasAdvanced) return loadFolder();
     if (state.loading) return;
+
     background?.cancelScope?.('list', 'stale');
     state.loading = true;
     const started = performance.now();
@@ -5943,12 +5956,20 @@
       state.searchMode = true;
       state.searchQuery = value;
       state.searchTitleOnly = titleOnly === true;
+      state.searchFilters = normalizedFilters;
       if (els.searchTitleOnly) els.searchTitleOnly.checked = state.searchTitleOnly;
+      syncAdvancedSearchButton();
       state.selectedListIndex = -1;
 
       const snapshot = state.folderSnapshot;
       const needle = normalizedSearchText(value);
-      const localMatches = snapshot && snapshot.parentRef === currentParentRef()
+      const canUseLocalNamePreview = Boolean(
+        value
+        && !hasAdvanced
+        && snapshot
+        && snapshot.parentRef === currentParentRef()
+      );
+      const localMatches = canUseLocalNamePreview
         ? snapshot.items.filter((item) => normalizedSearchText(item?.name).includes(needle))
         : [];
 
@@ -5970,7 +5991,8 @@
           query: value,
           pageToken,
           pageSize: 20,
-          titleOnly: state.searchTitleOnly
+          titleOnly: state.searchTitleOnly,
+          filters: state.searchFilters
         })
       });
       const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
