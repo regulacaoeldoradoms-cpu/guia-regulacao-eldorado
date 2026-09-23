@@ -1271,3 +1271,164 @@ html[data-portal-interactions="v1"] .ai-chat:not([hidden]) {
     color-scheme: light;
   }
 }
+
+
+/* Cobertura complementar dos módulos legados no modo escuro. */
+@media screen {
+  html[data-portal-theme="dark"] :where(
+    .public-council,
+    .public-type,
+    .readiness-item,
+    .general-rule,
+    .notice,
+    .alert,
+    .clinical-alert,
+    .check-item,
+    .metadata-item,
+    .sources,
+    .model-text,
+    .social-post,
+    .social-comment-bubble,
+    .social-person-row,
+    .social-notification,
+    .file-drop,
+    .selected-file,
+    .thread-message,
+    .documents-advanced-search-note,
+    .documents-sync-panel,
+    .documents-editor-panel,
+    .usage-history-table-wrap,
+    .site-footer
+  ) {
+    background: var(--portal-theme-surface) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .public-council,
+    .citizen-modal-content,
+    .documents-list,
+    .usage-main,
+    .agenda-main,
+    .telemedicine-main,
+    .reception-layout,
+    .clinical-overview
+  ) {
+    background-color: var(--portal-theme-bg) !important;
+  }
+
+  html[data-portal-theme="dark"] .public-council {
+    background-image:
+      radial-gradient(circle at 15% 0, rgba(27, 111, 169, .18), transparent 32%),
+      linear-gradient(180deg, #07131e, #0a1824 60%, #07131e) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .readiness-secret,
+    .status-chip,
+    .privacy-chip,
+    .reception-badge,
+    .telemedicine-status,
+    .telemedicine-capacity-chip,
+    .agenda-status-chip,
+    .agenda-capacity-chip,
+    .social-professional-badge,
+    .user-badge
+  ) {
+    border-color: #385469 !important;
+  }
+
+  html[data-portal-theme="dark"] .readiness-secret {
+    background: #183044 !important;
+    color: #b9d8ee !important;
+  }
+  html[data-portal-theme="dark"] .readiness-summary.ready {
+    background: #123329 !important;
+    border-color: #285c4b !important;
+    color: #9be0c4 !important;
+  }
+  html[data-portal-theme="dark"] .readiness-summary.pending {
+    background: #362b12 !important;
+    border-color: #65501f !important;
+    color: #f2d58a !important;
+  }
+
+  html[data-portal-theme="dark"] .form-alert--neutral {
+    background: #132837 !important;
+    border-color: #2b485b !important;
+    color: #b2c5d3 !important;
+  }
+  html[data-portal-theme="dark"] .privacy-summary {
+    background: #112f43 !important;
+  }
+  html[data-portal-theme="dark"] .thread-message {
+    background: #162b3a !important;
+  }
+  html[data-portal-theme="dark"] .thread-message.council {
+    background: #173a53 !important;
+  }
+
+  html[data-portal-theme="dark"] .reception-status[data-state="ok"] {
+    background: #123329 !important;
+    color: #9be0c4 !important;
+    border-color: #285c4b !important;
+  }
+  html[data-portal-theme="dark"] .reception-status[data-state="missing"] {
+    background: #3a1c24 !important;
+    color: #ffb7c0 !important;
+    border-color: #6e3542 !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .telemedicine-status.solicitar,
+    .telemedicine-status.em-aguardo,
+    .telemedicine-status.sem-programacao,
+    .telemedicine-status.solicitado,
+    .status-chip.recebida,
+    .status-chip.em_analise,
+    .status-chip.encaminhada,
+    .status-chip.aguardando_retorno,
+    .status-chip.aguardando_cidadao
+  ) {
+    background: #26331b !important;
+    color: #e6d68a !important;
+  }
+  html[data-portal-theme="dark"] :where(
+    .telemedicine-status.concluido,
+    .status-chip.concluida,
+    .privacy-chip.identified
+  ) {
+    background: #123329 !important;
+    color: #9be0c4 !important;
+  }
+  html[data-portal-theme="dark"] :where(
+    .telemedicine-status.atrasado,
+    .agenda-capacity-chip.is-critical
+  ) {
+    background: #3a1c24 !important;
+    color: #ffb7c0 !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-advanced-search-note {
+    background: #0d2231 !important;
+    color: #9fb5c5 !important;
+    border-color: #29485e !important;
+  }
+  html[data-portal-theme="dark"] :where(.documents-loading,.documents-empty,.agenda-empty,.telemedicine-empty,.reception-empty,.usage-empty-state) {
+    color: var(--portal-theme-muted) !important;
+  }
+
+  html[data-portal-theme="dark"] :where(
+    .portal-modal,
+    .citizen-modal-panel,
+    .social-dialog,
+    .documents-advanced-search-dialog
+  ) {
+    color-scheme: dark;
+  }
+
+  html[data-portal-theme="dark"] .site-footer {
+    border-top-color: #294456 !important;
+  }
+}
