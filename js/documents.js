@@ -5241,13 +5241,13 @@
 
     if (drive.connected) {
       els.badge.textContent = 'Drive conectado';
-      els.badge.className = 'documents-hero-state connected';
+      els.badge.className = 'documents-drive-status sr-only connected';
     } else if (drive.configured) {
       els.badge.textContent = 'Drive aguardando conexão';
-      els.badge.className = 'documents-hero-state pending';
+      els.badge.className = 'documents-drive-status sr-only pending';
     } else {
       els.badge.textContent = 'Integração aguardando configuração';
-      els.badge.className = 'documents-hero-state pending';
+      els.badge.className = 'documents-drive-status sr-only pending';
     }
 
     if (canManage) {
@@ -5257,16 +5257,16 @@
       els.connect.disabled = !drive.configured;
       if (!drive.configured) {
         els.setupMessage.textContent = 'O código da Central está preparado, mas as credenciais OAuth do Google ainda precisam ser configuradas no ambiente seguro da Cloudflare.';
-        els.setupMessage.className = 'portal-note warning';
+        els.setupMessage.className = 'sr-only';
       } else if (!drive.connected) {
         els.setupMessage.textContent = 'A integração está configurada. Autorize uma vez a conta institucional para liberar a navegação do Drive.';
-        els.setupMessage.className = 'portal-note info';
+        els.setupMessage.className = 'sr-only';
       } else if (!canView) {
         els.setupMessage.textContent = 'O Drive está conectado. O acesso de leitura é concedido pela função adicional Central de Documentos em Usuários e acessos.';
-        els.setupMessage.className = 'portal-note info';
+        els.setupMessage.className = 'sr-only';
       } else {
         els.setupMessage.textContent = 'Conexão institucional ativa. Os acessos são administrados em Usuários e acessos por funções acumuláveis.';
-        els.setupMessage.className = 'portal-note success';
+        els.setupMessage.className = 'sr-only';
       }
     }
 
@@ -6554,6 +6554,6 @@
   } catch (error) {
     showStatus(error.message || 'Não foi possível iniciar a Central de Documentos.', 'warning');
     els.badge.textContent = 'Central indisponível';
-    els.badge.className = 'documents-hero-state pending';
+    els.badge.className = 'documents-drive-status sr-only pending';
   }
 })();
