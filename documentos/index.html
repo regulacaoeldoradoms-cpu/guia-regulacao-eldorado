@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/profile-account-link.css?v=20260814-1">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260906-2">
-  <link rel="stylesheet" href="/css/documents.css?v=20260922-3">
+  <link rel="stylesheet" href="/css/documents.css?v=20260923-1">
 </head>
 <body class="portal-page documents-page">
   <div class="portal-shell">
@@ -32,28 +32,15 @@
     </header>
 
     <main class="portal-main documents-main">
-      <section class="portal-hero documents-hero">
-        <div class="portal-hero-copy">
-          <span class="portal-eyebrow">Central de Documentos</span>
-          <h2>Google Drive institucional dentro do Portal.</h2>
-          <p>Navegue por pastas, pesquise no acervo e abra PDFs autorizados com carregamento progressivo e cache local criptografado. Quando autorizado, o editor trabalha localmente; o envio ao Google Drive só ocorre por uma ação explícita de sincronização, quando essa função estiver habilitada.</p>
-        </div>
-        <div class="documents-hero-state" id="driveConnectionBadge" aria-live="polite">Verificando conexão…</div>
-      </section>
-
+      <div id="driveConnectionBadge" class="documents-drive-status sr-only" aria-live="polite">Verificando conexão…</div>
       <div id="documentsGlobalStatus" class="documents-global-status" aria-live="polite"></div>
 
-      <section class="portal-section documents-setup" id="documentsSetup" hidden>
-        <div class="portal-section-heading">
-          <div><h2>Configuração institucional</h2><p>Disponível somente para quem administra a Central.</p></div>
-        </div>
-        <div class="documents-setup-body">
-          <div id="driveSetupMessage" class="portal-note info"></div>
-          <div class="documents-setup-actions">
-            <button class="portal-button primary" id="connectDriveButton" type="button" hidden>Conectar Google Drive</button>
-            <a class="portal-button secondary" id="manageDocumentsAccessLink" href="/admin/usuarios/" hidden>Gerenciar cargos e acessos</a>
-            <button class="portal-button danger" id="disconnectDriveButton" type="button" hidden>Desconectar Drive</button>
-          </div>
+      <section class="documents-setup" id="documentsSetup" aria-label="Administração da Central de Documentos" hidden>
+        <div id="driveSetupMessage" class="sr-only" role="status" aria-live="polite"></div>
+        <div class="documents-setup-actions">
+          <button class="portal-button primary" id="connectDriveButton" type="button" hidden>Conectar Google Drive</button>
+          <a class="portal-button secondary" id="manageDocumentsAccessLink" href="/admin/usuarios/" hidden>Gerenciar cargos e acessos</a>
+          <button class="portal-button danger" id="disconnectDriveButton" type="button" hidden>Desconectar Drive</button>
         </div>
       </section>
 
@@ -352,6 +339,6 @@
   <script src="/js/document-editor.js?v=20260916-2"></script>
   <script src="/js/document-ocr.js?v=20260922-1"></script>
   <script src="/js/document-viewer.js?v=20260922-3"></script>
-  <script src="/js/documents.js?v=20260923-3"></script>
+  <script src="/js/documents.js?v=20260923-4"></script>
 </body>
 </html>
