@@ -736,11 +736,11 @@ html[data-portal-interactions="v1"] .ai-chat:not([hidden]) {
   }
 
   html[data-portal-theme="dark"] :where(h1,h2,h3,h4,h5,h6,strong,b,label,legend,summary) {
-    color: var(--portal-theme-text);
+    color: var(--portal-theme-text) !important;
   }
 
   html[data-portal-theme="dark"] :where(p,small,.portal-muted,.field-help,.section-intro,.user-meta,.result-count) {
-    color: var(--portal-theme-muted);
+    color: var(--portal-theme-muted) !important;
   }
 
   html[data-portal-theme="dark"] a:not(.portal-button):not(.button):not(.social-button) {
