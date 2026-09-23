@@ -1536,6 +1536,24 @@ html[data-portal-theme="dark"] .documents-item-quick-action:focus-visible {
   filter: brightness(1.12) saturate(1.06);
 }
 
+/* O tema escuro global usa "background" nos botões secondary.
+   Como shorthand, isso também zera background-image/repeat/position/size.
+   Estes três controles do visualizador são imagens autorais; restaurar o
+   background completo evita os retângulos vazios observados no Titon. */
+@media screen {
+  html[data-portal-theme="dark"] .documents-pdf-toolbar .documents-art-fit-width {
+    background: transparent url('/assets/editor-pdf-buttons/ajustar-largura.svg?v=20260916-2') center / 100% 100% no-repeat !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-pdf-toolbar .documents-art-export {
+    background: transparent url('/assets/editor-pdf-buttons/salvar-pdf.svg?v=20260916-2') center / 100% 100% no-repeat !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-pdf-toolbar .documents-art-print {
+    background: transparent url('/assets/editor-pdf-buttons/imprimir-normal.svg?v=20260916-2') center / 100% 100% no-repeat !important;
+  }
+}
+
 .documents-art-close {
   width: 38px !important;
   min-width: 38px !important;
