@@ -370,7 +370,9 @@ A implementação descrita acima foi integrada pela PR **#390**, merge `0f569eed
 
 O Worker produtivo foi publicado com sucesso (Version ID `63de9dc0-9c44-4ea8-8d96-9cf4c286a220`) e os deploys de página também concluíram. Um check posterior de Worker Preview, provocado pela branch documental, falhou sem invalidar a publicação produtiva anterior. O critério funcional de código/privacidade foi atendido; o critério de desempenho continua dependente de amostra real posterior ao deploy, especialmente `drive_folder_opened cache_state=hit`.
 
-## 7E — pastas prioritárias Consulta [2026] e Exames [2026] — 22/09/2026
+## 7E — pastas prioritárias Consulta [2026] e Exames [2026] — 22/09/2026 — **SUPERSEDIDA EM 23/09/2026**
+
+> Esta decisão permanece apenas como histórico. O preload especial dessas duas pastas e de seus PDFs foi removido em 23/09/2026 por decisão operacional, para priorizar a raiz do Drive e reduzir trabalho concorrente durante a entrada na Central.
 
 Decisão operacional explícita: manter aquecidas as pastas **Consulta [2026]** e **Exames [2026]** e também pré-carregar os PDFs diretamente contidos nelas, para reduzir ao mínimo o tempo entre entrar na Central, abrir uma dessas pastas e abrir um documento.
 
@@ -434,3 +436,49 @@ A PR **#394** foi mesclada pelo commit `2d12923e4319eb17aa87916df67aaa140227e4cd
 A paginação visível de 20 está ativa em produção para lista, pesquisa, raiz aquecida e pastas prioritárias. O prefetch de PDFs das pastas prioritárias permanece desacoplado da quantidade visível.
 
 O critério funcional foi atendido. O critério de desempenho continua dependente de tráfego real posterior à publicação.
+
+## 7E — preload simplificado: somente raiz do Drive — 23/09/2026
+
+Decisão operacional atual: **remover completamente o tratamento especial das pastas Consulta [2026] e Exames [2026]**. Elas voltam a seguir o mesmo fluxo de qualquer outra pasta e nenhum PDF dessas pastas é pré-baixado por privilégio de nome.
+
+Evidência que motivou a mudança:
+- a baseline real já mostrava navegação/listagem Drive na faixa de vários segundos;
+- o preload pós-login fazia a raiz e, antes de considerar o snapshot privado concluído, ainda descobria/listava as duas pastas prioritárias;
+- para cada pasta prioritária havia uma primeira listagem visível e um prefetch amplo em lotes de até 100 itens, até 6 páginas;
+- o cliente da Central aguardava o snapshot por apenas 1,4 s; se o warmup ainda estivesse ocupado, desistia e iniciava nova leitura autoritativa da raiz, desperdiçando o trabalho já em andamento.
+
+Correção:
+- Service Worker deixa de procurar nomes especiais;
+- removidos `DOCUMENTS_PRIORITY_*`, descoberta das pastas e `priorityFolders`;
+- removido o pré-download automático de PDFs dessas pastas;
+- removido o carregamento antecipado do cliente de cache documental exclusivamente para esse prefetch;
+- warmup privado passa a conter somente:
+  - acesso/capabilities;
+  - preferências;
+  - configuração pública da IA quando autorizada;
+  - **primeiros 20 itens da raiz do Drive**;
+- assim que a raiz fica disponível, o Service Worker já pode publicar o snapshot em RAM, mesmo que uma preferência/configuração secundária ainda esteja terminando;
+- `getDocumentsWarmPayload()` usa imediatamente um snapshot já publicado antes de aguardar qualquer operação em andamento;
+- na Central, a janela de espera do warmup sobe de **1,4 s para 6 s**, alinhada à cauda observada da listagem e destinada a reutilizar a requisição que já começou no login em vez de abandoná-la cedo e iniciar outra;
+- se não houver warmup em andamento/snapshot, o fallback normal continua consultando o Drive diretamente;
+- navegação dentro de qualquer pasta continua em lotes de 20 e sem cache especial de listagem.
+
+O cache criptografado de PDFs continua existindo para PDFs efetivamente abertos/uso normal, mas não recebe mais pré-download por nome de pasta.
+
+Privacidade e segurança preservadas:
+- snapshot privado continua somente em RAM do Service Worker;
+- token bruto não é persistido;
+- permissão ao vivo continua sendo confirmada antes de mostrar a lista aquecida;
+- nenhum nome, termo de busca, Drive ID ou conteúdo vai para PostHog;
+- nenhuma mudança em OAuth, capabilities, sincronização, Gemini ou OCR.
+
+Critérios de aceite:
+1. não existir no runtime qualquer referência funcional a Consulta [2026]/Exames [2026] como prioridade;
+2. nenhum PDF ser pré-baixado automaticamente por estar nessas pastas;
+3. preload privado fazer somente uma listagem de raiz de 20 itens;
+4. Central reutilizar o warmup em andamento por até 6 s antes do fallback, evitando o padrão anterior de 1,4 s + nova chamada;
+5. snapshot da raiz poder ser publicado antes do encerramento de tarefas secundárias;
+6. fallback direto continuar funcional quando o preload não existir;
+7. CI/navegador/governança permanecerem verdes.
+
+**Próxima ação:** publicar, fazer Ctrl+F5, medir novamente `drive_folder_opened` em `cache_state=hit|miss` e confirmar em uso real se a entrada da Central deixou de disparar trabalho secundário das duas pastas.
