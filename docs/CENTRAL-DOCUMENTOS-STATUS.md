@@ -3158,21 +3158,21 @@ Esse Workers Builds bem-sucedido **substitui como evidência operacional** a ten
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.1 publicada; aguardando homologação humana do acesso integral e rename pré-abertura** |
-| Última ação concluída | PRs funcionais **#448/#449** e registro pós-publicação **#450** integrados à `main`; backend e frontend publicados |
-| Branch atual | **nenhuma frente funcional aberta** |
-| PR atual | **nenhum PR funcional aberto**; #448, #449 e #450 mesclados |
-| Último commit funcional relevante | `764e0764a91c223fd52658e5bd1f1a9733d68f25` — correção do rename pré-abertura; registro documental pós-publicação em `4b7ed62f` |
-| Checks e testes | #449 **23/23 success**; pós-merge funcional **23/23 GitHub Actions success**; Workers Builds, GitHub Pages e Cloudflare Pages **success**; #450 **21/21 success** antes do merge |
-| Decisões tomadas | acesso Central = `view + extract + edit`; `manage` separado; rename da lista usa `canWriteDocument(item)`; chip reflete `writeEnabled` real |
-| Justificativas | corrige tanto o modelo parcial de autorização quanto a falsa dependência de um PDF já aberto para renomear na lista |
-| Alternativas descartadas | liberar conta isolada; abrir PDF silenciosamente; remover gates de escrita/versão; manter chip fixo de somente leitura |
-| Ações externas concluídas | Worker Version `25c48aad-de81-4904-8013-3542b3c7e3a9` publicada pelo gate seguro no merge funcional; Pages publicadas |
-| Pendências e bloqueios | **somente homologação humana em produção**; ordenação cronológica 7E mantém sua homologação separada |
-| Riscos conhecidos | confirmar cache/browser após Ctrl+F5; conflitos reais de Drive permanecem fail-closed |
-| Métricas / observabilidade | nenhuma telemetria nova; conteúdo e identificadores documentais permanecem proibidos |
-| Próxima ação exata | **Ctrl+F5 em /documentos/ → confirmar “Acesso completo” → selecionar PDF → segundo clique simples no nome → renomear com Enter → repetir com clique fora → confirmar alteração no Drive → conferir duplo clique rápido abrindo Titon** |
-| Arquivos e fontes principais | Guia Mestre V1.1; merges #448 `9bd56707`, #449 `764e0764`, #450 `4b7ed62f`; `worker/document-access.js`; `js/documents.js`; `documentos/index.html` |
+| Subfase / objetivo atual | **7G.1 continua aguardando homologação humana; refinamento transversal do chat escuro foi integrado e aguarda confirmação visual** |
+| Última ação concluída | PR **#452** mesclada à `main`; modo escuro completo do Chat interno publicado |
+| Branch atual | `docs/portal-chat-dark-published-20260923` somente para reconciliar status pós-merge |
+| PR atual | funcional **#452 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`77e50f016762bd1cf6cce5a808c9088879d38091`** |
+| Checks e testes | #452 **23/23 success**; Pages e abertura pós-login pós-merge **success**; workflow próprio do chat verde |
+| Decisões tomadas | refinamento escuro fica no CSS próprio do chat; claro não muda; cache-buster do chat sobe sem rebustar toda a camada global |
+| Justificativas | a falha estava nas superfícies hardcoded internas de `portal-chat.css`; corrigir localmente reduz blast radius e mantém a arquitetura global |
+| Alternativas descartadas | recolorir via JS; rebustar todas as rotas do CSS global; alterar estrutura/funcionalidade do chat |
+| Ações externas concluídas | GitHub Pages publicou o merge #452 com success |
+| Pendências e bloqueios | confirmar visualmente o chat em produção; depois retomar a homologação humana 7G.1 da Central |
+| Riscos conhecidos | apenas diferenças visuais residuais específicas podem aparecer em telas/tamanhos não vistos; regras de negócio não foram tocadas |
+| Métricas / observabilidade | nenhuma telemetria nova; mensagens, contatos e conteúdo do chat continuam fora do tema/observabilidade |
+| Próxima ação exata | **Ctrl+F5 na Home → Modo escuro → abrir Chat interno → conferir lista, busca e conversa; aprovado isso, voltar à homologação 7G.1 em /documentos/** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #452; merge `77e50f01`; `css/portal-chat.css`; `docs/PORTAL-APARENCIA-V1.md`; `worker/tests/social-ui.test.mjs`; `.github/workflows/validate-portal-chat.yml` |
 
 ## Histórico recuperável
 
@@ -5884,3 +5884,24 @@ Decisão arquitetural: o refinamento fica em `css/portal-chat.css` porque a lacu
 Segurança/privacidade: somente CSS e cache-buster. Nenhuma alteração em mensagens, contatos, amizade, cargos, push, backend, permissões ou PostHog.
 
 **Próxima ação exata:** abrir PR, executar CI completo e integrar somente se verde; depois Ctrl+F5 na Home em modo escuro e validar lista de contatos, pesquisa e conversa.
+
+
+## Mudança transversal — modo escuro do chat interno integrado à main — 23/09/2026
+
+A PR **#452 — UI: completar modo escuro do chat interno** foi integrada à `main` no merge **`77e50f016762bd1cf6cce5a808c9088879d38091`**.
+
+Resultado final:
+- o modo escuro do chat agora cobre painel, cabeçalho, corpo, lista de contatos, busca, avatares, presença, conversa, balões enviados/recebidos, horários, compositor, campo de mensagem, botão Enviar, avisos, cartões de notificação e scrollbars;
+- o modo claro permanece inalterado;
+- `portal-chat.css?v=20260923-1` foi aplicado nas rotas estáticas que montam o chat e no carregador do Guia Médico;
+- regressão automatizada exige os seletores do modo escuro e a versão nova do asset;
+- nenhuma regra funcional de mensagem, contato, amizade, cargo, push, backend, permissão ou observabilidade foi alterada.
+
+Validação:
+- head funcional da PR: **23/23 workflows GitHub Actions success**;
+- após o merge, **pages build and deployment: success**;
+- abertura pós-login — navegador: **success**;
+- o workflow próprio de chat e as demais validações críticas também concluíram com success;
+- no momento do registro, um wrapper não relacionado (`Validar complemento prático 6`) ainda aparecia como `in_progress` na API do run, embora seu único job já estivesse `completed/success`; isso não bloqueia a correção do chat.
+
+**Próxima ação exata:** Ctrl+F5 na Home com Modo escuro ativo → abrir Chat interno → confirmar busca, lista de usuários e conversa totalmente escuras; se aprovado, retomar a homologação humana pendente da 7G.1 na Central de Documentos.
