@@ -6723,7 +6723,8 @@
   });
 
   els.list.addEventListener('click', (event) => {
-    const saveButton = event.target.closest?.('[data-list-save-index]');
+    const saveCandidate = event.target.closest?.('[data-list-save-index]');
+    const saveButton = saveCandidate?.dataset?.listSaveIndex !== undefined ? saveCandidate : null;
     if (saveButton) {
       event.preventDefault();
       clearPendingListRename();
@@ -6734,7 +6735,8 @@
       return;
     }
 
-    const printButton = event.target.closest?.('[data-list-print-index]');
+    const printCandidate = event.target.closest?.('[data-list-print-index]');
+    const printButton = printCandidate?.dataset?.listPrintIndex !== undefined ? printCandidate : null;
     if (printButton) {
       event.preventDefault();
       clearPendingListRename();
