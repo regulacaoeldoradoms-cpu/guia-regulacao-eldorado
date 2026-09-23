@@ -3130,17 +3130,17 @@ Branch: `fix/central-full-operational-access-20260923`. Próximo passo: abrir PR
 | Subfase / objetivo atual | **7G — acesso operacional integral da Central; implementação pronta em branch** |
 | Última ação concluída | policy/code/UI/testes atualizados para que `view` implique `extract + edit`; permissões parciais removidas de Usuários e acessos |
 | Branch atual | `fix/central-full-operational-access-20260923` |
-| PR atual | **ainda não aberta** |
+| PR atual | **#448 aberta** — “Central: acesso operacional integral para quem já tem acesso” |
 | Último commit relevante | alterações funcionais iniciadas em `0655ec51`; commits posteriores atualizam UI, testes, CI e arquitetura |
 | Checks e testes | testes unitários/contratos atualizados; CI completa ainda precisa rodar na PR |
 | Decisões tomadas | Regulador(a)/`view` = acesso operacional completo; `manage` continua separado para administração |
 | Justificativas | elimina o estado incoerente em que a conta entra na Central mas não pode renomear/editar/usar IA; aplica a regra a usuários atuais e futuros sem migração manual |
 | Alternativas descartadas | liberar apenas uma conta; migrar usuários individualmente; manter IA/editor como permissões independentes |
 | Ações externas concluídas | nenhuma; não houve alteração manual em D1, OAuth, Cloudflare ou Drive |
-| Pendências e bloqueios | abrir PR → CI → merge → confirmar deploy do Worker → Ctrl+F5 e homologar rename/editor/IA |
+| Pendências e bloqueios | CI da PR #448 → merge → confirmar deploy do Worker → Ctrl+F5 e homologar rename/editor/IA |
 | Riscos conhecidos | mudança amplia `extract/edit` apenas para quem já possui `view`; administração `manage` não muda; scripts históricos 5E continuam existindo, mas a resolução runtime atual prevalece |
 | Métricas / observabilidade | nenhuma propriedade nova; política de não enviar nomes/IDs/conteúdo ao PostHog preservada |
-| Próxima ação exata | **abrir PR da 7G, exigir CI verde e só então mesclar; após deploy do Worker, validar que o chip “Somente leitura” deixa de representar restrição operacional para uma conta com acesso à Central** |
+| Próxima ação exata | **exigir CI verde na PR #448 e só então mesclar; após deploy do Worker, validar que o chip “Somente leitura” deixa de representar restrição operacional para uma conta com acesso à Central** |
 | Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-access.js`; `worker/additional-roles.js`; `js/admin-users.js`; `admin/usuarios/index.html`; testes de Fase 1/UI; arquitetura/status |
 
 ## Histórico recuperável
