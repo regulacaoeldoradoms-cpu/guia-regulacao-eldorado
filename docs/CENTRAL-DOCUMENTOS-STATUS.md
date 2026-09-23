@@ -3081,47 +3081,47 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 
 **Próxima ação exata:** validar CI/preview da correção, integrar se verde e repetir somente o caso visual em produção: com IA documental desabilitada, o botão IA não deve aparecer. A homologação operacional restante da Fase 6 continua conforme `CENTRAL-DOCUMENTOS-HOMOLOGACAO-6.md`.
 
-## Fase 7F — renomeação inline de PDF na lista — EM PR — 23/09/2026
+## Fase 7F — renomeação inline de PDF na lista — PUBLICADA / AGUARDANDO HOMOLOGAÇÃO HUMANA — 23/09/2026
 
-A unidade 7F permite alterar o nome do PDF diretamente na lista da Central, antes de abrir o Titon.
+A PR **#445** foi mesclada em `main` pelo commit **`8d15b165`** após a branch ser reconciliada com as mudanças concorrentes do modo claro/escuro e do respectivo status.
 
-**Interação aprovada para implementação:** primeiro clique seleciona; quando o PDF já está selecionado, um **segundo clique simples no nome** inicia edição inline; um **duplo clique rápido** continua abrindo o Titon. **Enter** ou saída do campo confirmam, **Esc** cancela e a extensão `.pdf` permanece protegida.
+**Resultado funcional publicado:**
+- primeiro clique em um PDF continua apenas selecionando a linha;
+- com o PDF já selecionado, um **segundo clique simples no nome** abre a edição inline;
+- um **duplo clique rápido** continua abrindo o Titon;
+- **Enter** ou saída do campo confirmam e sincronizam;
+- **Esc** cancela;
+- `.pdf` permanece protegida;
+- a sincronização reutiliza `PATCH /api/documents/drive/rename` com `baseVersion` e `baseName`, mantendo detecção de conflito e confirmação real do Drive.
 
-**Arquitetura:** a interface reutiliza `PATCH /api/documents/drive/rename`, com `baseVersion` e `baseName`; não há nova rota, capability, segredo ou telemetria. A confirmação final e o bloqueio de conflito continuam no backend/Google Drive.
+**Validação automática:** head final da PR #445 (`3584db89`) concluiu **23/23 workflows com sucesso**, incluindo `Validar Central de Documentos — Fases 1–6`, governança e `Validar Central de Documentos — navegador` com Chromium/PDF.js real. Nenhuma regressão conhecida ficou aberta antes do merge.
 
-**Implementação — PR #445 / branch `feat/titon-inline-list-rename-20260923`:**
-- `js/documents.js`: segundo clique simples temporizado (260 ms) sem capturar o duplo clique; edição/commit/cancelamento inline;
-- `css/documents.css`: editor sobreposto à linha sem input aninhado no botão;
-- `documentos/index.html`: preserva o tema global publicado e usa `documents.css?v=20260923-6` / `documents.js?v=20260923-10`;
-- `worker/tests/documents-ui.test.mjs`: regressão dedicada para rename vs abertura.
+**Diagnóstico resolvido durante a implementação:** a primeira rodada de CI revelou interferência com o stub legado de `Element.closest` no teste `documents-close-guard.test.mjs`; a detecção de clique no nome foi restringida a `dataset.listRenameIndex`, preservando o handler normal da linha. A correção passou na matriz completa.
 
-**CI e diagnóstico:** uma primeira rodada revelou que o stub legado de `Element.closest` em `documents-close-guard.test.mjs` interceptava qualquer seletor. A detecção do clique no nome foi alterada para `dataset.listRenameIndex`. Depois da correção e da primeira reconciliação com a main, **23/23 workflows ficaram verdes**, incluindo o navegador real.
+**Reconciliações concorrentes:** a PR #444 (tema global) e a PR #446 (status pós-publicação do tema) avançaram `main` durante o trabalho. A #445 foi reaplicada sobre ambas sem descartar mudanças; dois backups reversíveis foram mantidos para auditoria: `backup/titon-inline-list-rename-pre-theme-20260923` e `backup/titon-inline-list-rename-pre-status446-20260923`.
 
-**Continuidade concorrente:** enquanto a #445 estava em validação, a PR #444 e depois a PR #446 foram mescladas em `main` (tema global e respectivo status). A #445 foi novamente reposicionada sobre `main` `d93c69e9`, com backup reversível `backup/titon-inline-list-rename-pre-status446-20260923`, preservando integralmente a aparência publicada. Como o último avanço da main alterou somente o status, a implementação funcional permanece a mesma; a CI deve ser reconfirmada no novo head antes do merge.
-
-**Alternativas descartadas:** duplo clique para renomear; input dentro do botão da linha; endpoint novo.  
-**Riscos:** timing visual de 260 ms precisa de homologação humana; conflitos de Drive permanecem fail-closed. A homologação da ordenação cronológica 7E continua separada.
+**Pendência não bloqueante:** falta apenas homologação humana em produção do gesto e da sincronização visual. A ordenação cronológica da 7E continua com sua homologação humana separada.
 
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7F — renomeação inline na lista; PR #445 sincronizada com a main pós-#446, aguardando CI final** |
-| Última ação concluída | branch da #445 reposicionada sobre `main` **`d93c69e9`** após a publicação/registro do tema; código 7F reaplicado sem perder mudanças concorrentes |
-| Branch atual | `feat/titon-inline-list-rename-20260923` |
-| PR atual | **#445 aberta** — “Central: renomear PDF direto na lista” |
-| Último commit relevante | replay funcional sobre `d93c69e9`; este arquivo de status é o commit posterior de handoff |
-| Checks e testes | implementação já obteve **23/23 verdes** antes do último avanço documental da main; nova rodada do head sincronizado deve ser confirmada antes do merge |
-| Decisões tomadas | segundo clique simples no nome edita; duplo clique rápido abre; Enter/focusout confirmam; Esc cancela; `.pdf` protegida; endpoint seguro existente |
-| Justificativas | preserva gesto de abertura e contrato de conflito/confirmação real do Drive, sem ampliar segurança/telemetria |
-| Alternativas descartadas | duplo clique para rename; input aninhado no botão; nova rota |
-| Ações externas concluídas | PR #444 e #446 já mescladas; nenhuma ação OAuth/Drive/Cloudflare necessária |
-| Pendências e bloqueios | CI do novo head; depois merge da #445 e homologação real; ordenação 7E ainda aguarda homologação humana |
-| Riscos conhecidos | janela de 260 ms precisa de validação de UX; conflito externo continua bloqueado pelo backend |
-| Métricas / observabilidade | nenhum evento/propriedade nova; nomes de arquivos e conteúdo continuam fora do PostHog |
-| Próxima ação exata | **conferir 23 checks da #445; se todos verdes, mesclar e validar em produção: 1 clique seleciona → segundo clique simples no nome edita → Enter/clique fora sincroniza → duplo clique rápido abre o Titon** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #445; `main` `d93c69e9`; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
+| Subfase / objetivo atual | **7F publicada; aguardando homologação humana da renomeação inline na lista** |
+| Última ação concluída | PR **#445** mesclada em `main` no commit **`8d15b165`** após **23/23 checks verdes** |
+| Branch atual | `docs/titon-inline-list-rename-published-20260923` (somente registro pós-merge) |
+| PR atual | PR funcional #445 **mesclada**; PR documental pós-merge deve ser aberta/mesclada |
+| Último commit relevante | `8d15b165` — “Merge PR #445: renomear PDF direto na lista” |
+| Checks e testes | **23/23 success** no head final `3584db89`, incluindo navegador real |
+| Decisões tomadas | segundo clique simples no nome já selecionado edita; duplo clique rápido abre; Enter/focusout confirmam; Esc cancela; `.pdf` protegida; endpoint seguro existente |
+| Justificativas | preserva o gesto de abertura e o contrato de conflito/confirmação do Drive sem criar nova superfície de segurança |
+| Alternativas descartadas | duplo clique para rename; input aninhado no botão; nova rota de rename |
+| Ações externas concluídas | nenhuma necessária; tema global e status concorrentes foram preservados |
+| Pendências e bloqueios | **homologação humana em produção da 7F**; homologação humana da ordenação 7E continua pendente |
+| Riscos conhecidos | validar sensação do intervalo de 260 ms e confirmar visualmente que clique fora sincroniza; conflitos de Drive permanecem fail-closed |
+| Métricas / observabilidade | nenhuma telemetria nova; nomes de arquivo/conteúdo continuam fora do PostHog |
+| Próxima ação exata | **na produção, Ctrl+F5 em /documentos/ → 1 clique em PDF → segundo clique simples no nome → alterar → Enter; repetir com clique fora; confirmar no Drive; depois validar que duplo clique rápido ainda abre o Titon** |
+| Arquivos e fontes principais | Guia Mestre V1.1; merge #445 `8d15b165`; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
 
 ## Histórico recuperável
 
