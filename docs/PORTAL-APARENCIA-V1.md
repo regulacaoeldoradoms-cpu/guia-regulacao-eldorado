@@ -86,3 +86,19 @@ A aparência não contém conteúdo sensível. A preferência `light|dark` não 
 9. PDF e impressão permanecem claros.
 10. Todas as rotas ativas carregam o bootstrap versionado.
 11. Testes e workflows existentes permanecem verdes.
+
+
+## Refinamento pós-homologação — chat interno
+
+A homologação visual em produção identificou uma lacuna no chat interno: o contêiner principal já recebia o tema escuro global, porém superfícies internas ainda herdavam cores claras hardcoded de `css/portal-chat.css`.
+
+A correção permanece restrita à apresentação e usa `html[data-portal-theme="dark"]` no CSS próprio do chat para cobrir:
+- corpo e lista de contatos;
+- área e campo de pesquisa;
+- estados hover/foco dos contatos;
+- avatares, textos secundários e presença online;
+- conversa, balões recebidos/enviados e horários;
+- compositor, campo de mensagem e botão Enviar;
+- avisos, cartões de notificação e scrollbars.
+
+O modo claro não é alterado. Nenhuma regra de chat, contato, amizade, cargo, mensagem, push ou observabilidade muda. O CSS do chat é versionado em `portal-chat.css?v=20260923-1` nas rotas que montam o chat e no carregador do Guia Médico.

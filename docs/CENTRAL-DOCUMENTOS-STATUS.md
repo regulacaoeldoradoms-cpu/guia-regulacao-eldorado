@@ -5861,3 +5861,26 @@ Validação final:
 - documento de arquitetura: `docs/PORTAL-APARENCIA-V1.md`.
 
 **Próxima ação exata:** homologar visualmente em produção: Configurações → Aparência → Modo escuro; navegar pelos módulos principais em desktop/mobile e depois retornar ao Modo claro, registrando somente diferenças visuais reais que precisem de refinamento.
+
+
+## Mudança transversal — completar modo escuro do chat interno — 23/09/2026
+
+Homologação humana do modo escuro revelou que a janela do **Chat interno** ainda apresentava superfícies claras na lista de usuários e campos, apesar de o painel externo já receber a camada escura global.
+
+Diagnóstico:
+- `css/portal-chat.css` mantém cores claras hardcoded para `.portal-chat-body`, `.portal-chat-search-wrap`, `.portal-chat-list`, contatos, conversa, balões e compositor;
+- a camada global de aparência cobria somente `.portal-chat-panel`, `.portal-chat-header` e uma classe inexistente `.portal-chat-composer`, enquanto o componente real usa `.portal-chat-compose`;
+- por isso a captura de produção mostrava painel externo escuro, mas lista de contatos e busca ainda claras.
+
+Implementação na branch `fix/portal-chat-dark-theme-20260923`:
+- adiciona overrides de tema escuro diretamente no CSS próprio do chat, condicionados a `html[data-portal-theme="dark"]`;
+- cobre painel, header, corpo, busca, contatos, avatares, presença, conversa, balões enviados/recebidos, horários, compositor, campo de mensagem, botão Enviar, avisos, notificações e scrollbars;
+- modo claro permanece sem alteração;
+- atualiza o cache-buster para `portal-chat.css?v=20260923-1` em todas as rotas estáticas que montam o chat e no carregador `js/medical-portal-nav.js`;
+- amplia regressão automatizada e workflow do chat para exigir os seletores escuros e a nova versão do asset.
+
+Decisão arquitetural: o refinamento fica em `css/portal-chat.css` porque a lacuna está nas superfícies internas específicas do componente; isso evita rebustar a folha global de aparência em rotas que não possuem chat, mantendo a arquitetura global intacta e o escopo mínimo.
+
+Segurança/privacidade: somente CSS e cache-buster. Nenhuma alteração em mensagens, contatos, amizade, cargos, push, backend, permissões ou PostHog.
+
+**Próxima ação exata:** abrir PR, executar CI completo e integrar somente se verde; depois Ctrl+F5 na Home em modo escuro e validar lista de contatos, pesquisa e conversa.

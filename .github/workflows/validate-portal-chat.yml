@@ -26,6 +26,13 @@ jobs:
       - name: Conferir integração profissional
         run: |
           test -f css/portal-chat.css
+          grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-body' css/portal-chat.css
+          grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-contact:hover' css/portal-chat.css
+          grep -q 'html\[data-portal-theme="dark"\] \.portal-chat-message.mine' css/portal-chat.css
+          grep -q "portal-chat.css?v=20260923-1" index.html
+          grep -q "portal-chat.css?v=20260923-1" recepcao/index.html
+          grep -q "portal-chat.css?v=20260923-1" admin/usuarios/index.html
+          grep -q "portal-chat.css?v=20260923-1" js/medical-portal-nav.js
           test -f portal-sw.js
           test -f js/portal-chat-switch-optimizer.js
           grep -q "portal-chat-v2.js" worker/index.js
