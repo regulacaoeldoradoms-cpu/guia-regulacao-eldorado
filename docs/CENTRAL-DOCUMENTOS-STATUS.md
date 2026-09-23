@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — homologar em uso real a comparação manual IA atual × Gemini pago** |
-| Última ação concluída | PR **#414** mesclada e publicada; Gemini foi adicionado como segundo provider manual sem substituir a IA atual |
-| Branch atual | `docs/titon-gemini-comparison-published-20260922` somente para reconciliar o handoff pós-publicação |
-| PR atual | funcional **#414 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional `64e7febceec81c9ec456b0181245e52ff6a41eae` |
-| Checks e testes | Fases 1–6, Chromium/PDF.js, gate seguro, site, governança, Cloudflare Pages, GitHub build/deploy e Workers Build produtivo verdes |
-| Decisões tomadas | IA atual Cloudflare continua canônica/gratuita; Gemini 2.5 Flash é comparação paga manual; resultados e evidências são isolados; sem fallback ou execução automática |
-| Justificativas | operador quer comparar precisão antes de qualquer substituição; chamada manual evita custo implícito e mantém controle sobre envio de página ao Gemini |
-| Alternativas descartadas | substituir provider atual; rodar as duas IAs automaticamente; fallback silencioso; chave Gemini no navegador |
-| Ações externas concluídas | Google AI Pro ativo; créditos Developer Program aplicados; projeto Cloud pago/pré-pago; secret `TITON_GEMINI_API_KEY` criado; Worker produtivo build `7181d753-8875-421b-a471-12cc64fbfca3` success |
-| Pendências e bloqueios | falta somente inferência real no Titon para verificar contrato da API, precisão, latência e tokens/custo reais |
-| Riscos conhecidos | API externa pode responder com erro de quota/schema/rede; chamada não é repetida automaticamente; nenhum resultado parcial substitui a IA atual |
-| Métricas / observabilidade | conteúdo permanece fora do PostHog; UI mostra somente modelo, tempo e tokens técnicos do Gemini; eventos técnicos usam source `gemini` |
-| Próxima ação exata | **Ctrl+F5; no mesmo PDF executar IA atual e Gemini; comparar campos/tempo/tokens e relatar qualquer erro literal exibido** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #414; `worker/document-ai-gemini.js`; `worker/document-ai.js`; `worker/documents-router.js`; `js/documents.js`; `documentos/index.html`; `css/documents.css`; status Fase 7E |
+| Subfase / objetivo atual | **7E — corrigir primeira homologação real do Gemini comparativo** |
+| Última ação concluída | Diagnóstico: falha Gemini era escondida pelo renderer; provider inicial também estava em modelo/contrato REST desatualizado para projeto novo. Correção preparada em branch |
+| Branch atual | `fix/titon-gemini-empty-result-20260923` |
+| PR atual | ainda a abrir |
+| Último commit relevante | cliente `545a3643` + provider `566c4b83` + testes em andamento |
+| Checks e testes | ainda pendentes de CI desta correção |
+| Decisões tomadas | manter IA atual intacta; Gemini migra para `gemini-3.5-flash-lite`; erro Gemini sempre deve permanecer visível; sem retry pago automático |
+| Justificativas | usuário observou loading seguido de vazio; código confirmava erro escondido; Google passou a limitar 2.5 para projetos novos e recomenda modelos atuais |
+| Alternativas descartadas | substituir IA atual; retry automático pago; esconder erro técnico; continuar preso a 2.5 em projeto novo |
+| Ações externas concluídas | secret e billing já estavam configurados; nenhuma nova ação externa necessária antes do deploy |
+| Pendências e bloqueios | CI/merge/deploy e novo teste real no mesmo PDF |
+| Riscos conhecidos | ainda não há resposta real da API após a correção; se houver erro, desta vez ele ficará visível para diagnóstico |
+| Métricas / observabilidade | conteúdo continua fora da telemetria; somente métricas técnicas coarse permanecem |
+| Próxima ação exata | **abrir PR, publicar se verde e pedir Ctrl+F5 + Extrair com Gemini no mesmo PDF** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #414; `worker/document-ai-gemini.js`; `worker/document-ai.js`; `js/documents.js`; `documentos/index.html`; status Fase 7E |
 
 ## Histórico recuperável
 
@@ -4885,3 +4885,41 @@ Limite da evidência atual:
 - portanto precisão, latência e consumo reais ainda precisam ser medidos pelo operador no Titon.
 
 **Próxima ação exata:** executar Ctrl+F5 na Central, abrir um PDF conhecido e rodar primeiro **Extrair com IA atual** e depois **Extrair com Gemini**. Registrar se o Gemini conclui, tempo/tokens apresentados e diferenças campo a campo. Não escolher provider preferido nem automatizar Gemini antes dessa comparação real.
+
+## Fase 7E — corrigir Gemini que carrega e some sem resultado — 23/09/2026
+
+Feedback operacional após a publicação da PR #414: ao clicar em **Extrair com Gemini**, o Titon entrou em estado de carregamento e, ao terminar, não exibiu resultado nem mensagem de erro.
+
+Diagnóstico no estado real da `main`:
+1. **Defeito confirmado de UI:** no `catch` da extração Gemini a mensagem de erro era escrita em `documentsAiGeminiStatus`, porém o `finally` chamava `renderDocumentAiPanel()`. O renderer da comparação só mantinha a seção visível quando Gemini estava **executando** ou quando a extração havia **concluído com sucesso**. Como uma falha deixava `documentAiGeminiScanCompleted=false` e `documentAiBusy=false`, a própria seção que continha o erro era imediatamente escondida. Isso explica exatamente o comportamento “carregou e não mostrou nada”.
+2. **Risco de compatibilidade do provider identificado:** a integração inicial usava `gemini-2.5-flash`. A documentação oficial atual do Google informa que projetos novos têm acesso limitado à série 2.5 e recomenda modelos atuais para novos projetos.
+3. **Contrato REST desatualizado:** o provider usava `responseMimeType + responseJsonSchema`, `thinkingBudget` e um schema de topo com `oneOf`. A documentação atual de `generateContent` para Gemini 3.x usa `generationConfig.responseFormat.text.mimeType/schema`, `thinkingLevel` e documenta `anyOf` no subset de JSON Schema.
+
+Correção na branch `fix/titon-gemini-empty-result-20260923`:
+- Gemini comparativo migra para **`gemini-3.5-flash-lite`**, modelo GA atual orientado a baixa latência, baixo custo e análise/extração documental;
+- `gemini-3.8-flash` permanece allowlisted para eventual comparação futura, com nível de pensamento `low`;
+- 3.5 Flash-Lite usa `thinkingLevel=minimal`;
+- request estruturado passa para `responseFormat.text.mimeType = application/json` + `schema`;
+- schema deixa `oneOf` e passa a objeto fechado com `fields.anyOf`, continuando revalidado pelo schema restritivo do backend;
+- parâmetros de amostragem antigos (`temperature`, `topP`, `seed`) são removidos do Gemini 3.x;
+- HTTP 404 do provider vira erro explícito `DOCUMENT_AI_GEMINI_MODEL_UNAVAILABLE`;
+- frontend mantém `documentAiGeminiLastError` em memória da sessão;
+- a seção de comparação permanece visível quando houver erro, mesmo depois de o loading terminar;
+- uma nova tentativa limpa o erro anterior;
+- ao fechar o PDF, o erro também é descartado;
+- cache-buster do cliente avança para `documents.js?v=20260923-1`.
+
+A IA atual do Titon continua **inalterada** e canônica:
+- `cloudflare-workers-ai` permanece provider principal;
+- `DOCUMENTS_AI_FREE_ONLY=true` permanece;
+- Gemini continua somente por clique explícito e nunca como fallback automático;
+- nenhum resultado Gemini substitui `documentAiResults` ou `documentAiEvidence`.
+
+Privacidade/observabilidade permanecem:
+- secret `TITON_GEMINI_API_KEY` continua somente no Worker;
+- nenhuma imagem, prompt, resposta, nome, Drive ID ou conteúdo é enviado ao PostHog/log;
+- não foi adicionado retry automático de chamada paga.
+
+**Critério de aceite:** ao clicar em **Extrair com Gemini**, a execução deve terminar em uma destas duas formas visíveis: (a) resultado/comparação, ou (b) mensagem de erro persistente e legível. Nunca pode voltar silenciosamente ao estado inicial.
+
+**Próxima ação exata:** validar testes/CI, publicar se verdes e repetir no mesmo PDF real. Se houver falha do provider, a mensagem agora ficará visível e permitirá diagnóstico direto sem expor a chave.

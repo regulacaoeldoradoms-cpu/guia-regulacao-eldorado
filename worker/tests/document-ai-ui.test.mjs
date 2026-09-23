@@ -53,7 +53,7 @@ test('painel Titon inicia oculto e produção mantém IA normal ativa com backgr
   assert.match(wrangler, /DOCUMENTS_AI_FREE_ONLY = "true"/);
   assert.match(wrangler, /DOCUMENTS_AI_FAST_VISION_ENABLED = "false"/);
   assert.match(wrangler, /TITON_GEMINI_COMPARISON_ENABLED = "true"/);
-  assert.match(wrangler, /TITON_GEMINI_MODEL = "gemini-2\.5-flash"/);
+  assert.match(wrangler, /TITON_GEMINI_MODEL = "gemini-3\.5-flash-lite"/);
   assert.doesNotMatch(wrangler, /TITON_GEMINI_API_KEY\s*=\s*["']/);
   assert.match(wrangler, /@cf\/moondream\/moondream3\.1-9B-A2B/);
   assert.match(wrangler, /@cf\/google\/gemma-4-26b-a4b-it/);
@@ -132,6 +132,23 @@ test('Gemini é comparação manual e não substitui a IA atual nem o chat canô
   assert.match(ai, /geminiComparison/);
   assert.match(js, /function renderDocumentAiComparison/);
   assert.match(js, /Sem IA atual/);
+});
+
+test('falha do Gemini permanece visível após o carregamento encerrar', async () => {
+  const js = await read('js/documents.js');
+  const renderStart = js.indexOf('  function renderDocumentAiComparison()');
+  const renderEnd = js.indexOf('  function canExtractCurrentDocumentAiPage()', renderStart);
+  assert.ok(renderStart >= 0 && renderEnd > renderStart, 'renderer comparativo ausente');
+  const render = js.slice(renderStart, renderEnd);
+
+  assert.match(render, /const geminiFailed = Boolean\(String\(state\.documentAiGeminiLastError/);
+  assert.match(render, /geminiCompleted \|\| geminiRunning \|\| geminiFailed/);
+  assert.match(render, /A extração com Gemini não foi concluída\. O erro acima foi mantido para diagnóstico\./);
+
+  const extract = asyncFunctionSlice(js, 'extractWholeDocumentAiGemini', 'classifyActiveDocumentPage');
+  assert.match(extract, /state\.documentAiGeminiLastError = ''/);
+  assert.match(extract, /state\.documentAiGeminiLastError =\s*String\(error\?\.message/);
+  assert.match(extract, /els\.documentAiGeminiStatus\.textContent = state\.documentAiGeminiLastError/);
 });
 
 test('resultado Titon segue o formato operacional e mantém cada página separada', async () => {
