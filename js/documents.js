@@ -5475,6 +5475,9 @@
       parentRef: '',
       starred: false,
       trashed: false,
+      modifiedPreset: 'any',
+      modifiedFrom: '',
+      modifiedTo: '',
       modifiedAfter: '',
       modifiedBefore: '',
       sharedWith: ''
@@ -5499,6 +5502,10 @@
       parentRef: location === 'current' ? String(source.parentRef || '').trim().slice(0, 1200) : '',
       starred: source.starred === true,
       trashed: source.trashed === true,
+      modifiedPreset: ['any', 'today', '7d', '30d', '90d', 'year', 'custom'].includes(String(source.modifiedPreset || ''))
+        ? String(source.modifiedPreset) : 'any',
+      modifiedFrom: String(source.modifiedFrom || '').trim().slice(0, 10),
+      modifiedTo: String(source.modifiedTo || '').trim().slice(0, 10),
       modifiedAfter: String(source.modifiedAfter || '').trim().slice(0, 40),
       modifiedBefore: String(source.modifiedBefore || '').trim().slice(0, 40),
       sharedWith: String(source.sharedWith || '').trim().slice(0, 254)
@@ -5596,15 +5603,9 @@
     if (els.advancedTrashed) els.advancedTrashed.checked = filters.trashed;
     if (els.advancedSharedWith) els.advancedSharedWith.value = filters.sharedWith;
 
-    if (els.advancedModified) {
-      let preset = 'any';
-      const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      if (filters.modifiedAfter === todayStart && !filters.modifiedBefore) preset = 'today';
-      els.advancedModified.value = preset;
-    }
-    if (els.advancedModifiedFrom) els.advancedModifiedFrom.value = '';
-    if (els.advancedModifiedTo) els.advancedModifiedTo.value = '';
+    if (els.advancedModified) els.advancedModified.value = filters.modifiedPreset;
+    if (els.advancedModifiedFrom) els.advancedModifiedFrom.value = filters.modifiedFrom;
+    if (els.advancedModifiedTo) els.advancedModifiedTo.value = filters.modifiedTo;
     syncAdvancedSearchConditionalFields();
     syncAdvancedSearchButton();
   }
@@ -5625,6 +5626,9 @@
       parentRef: els.advancedLocation?.value === 'current' ? currentParentRef() : '',
       starred: els.advancedStarred?.checked === true,
       trashed: els.advancedTrashed?.checked === true,
+      modifiedPreset: els.advancedModified?.value,
+      modifiedFrom: els.advancedModifiedFrom?.value,
+      modifiedTo: els.advancedModifiedTo?.value,
       modifiedAfter: range.modifiedAfter,
       modifiedBefore: range.modifiedBefore,
       sharedWith: els.advancedSharedWith?.value
