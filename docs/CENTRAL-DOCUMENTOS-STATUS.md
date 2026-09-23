@@ -3258,26 +3258,46 @@ A alteração funcional é somente CSS/cache-buster/teste/status; a evidência d
 
 **Pendência:** homologação visual humana em produção. O aceite é os três botões exibirem novamente seus desenhos no modo escuro, mantendo hover/foco e sem regressão do modo claro.
 
+## Fase 7G.4 — contraste das ferramentas internas do editor no modo escuro — EM BRANCH — 23/09/2026
+
+Após a 7G.3 restaurar os botões autorais do topo, a homologação visual identificou outro ponto: as ferramentas internas do editor (desfazer/refazer, unir, inserir página, imagem, recorte, seleção, escrita, colagem de imagem, desenho e ferramentas da barra lateral) continuavam usando ícones azul-escuros sobre o fundo navy do modo escuro, com contraste insuficiente.
+
+**Decisão visual:** no modo escuro, apenas as ferramentas genéricas do editor recebem uma placa azul-clara de alto contraste:
+- fundo `#d8e9f4`;
+- borda `#78a9c4`;
+- ícone/texto `#0b4568`;
+- hover/foco ainda mais claro (`#f1f8fc`);
+- estado ativo `#b9dff2`;
+- desabilitado permanece distinguível com `opacity: .5`.
+
+Os botões autorais `.documents-art-button` (grade, Drive, Salvar, Imprimir, Fechar etc.) foram **explicitamente excluídos** desse recolorimento para preservar seus assets já corrigidos na 7G.3. O modo claro também permanece inalterado.
+
+A barra lateral interna do Titon (`.documents-rail-tool`) recebe o mesmo contraste para evitar ícones azul-escuros sobre fundo navy.
+
+Cache-buster: `documents.css?v=20260923-9`. Teste de regressão em `worker/tests/documents-ui.test.mjs`.
+
+Branch: `fix/titon-dark-editor-tool-contrast-20260923`. Próximo passo: abrir PR, executar CI integral e mesclar somente se verde.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.3 publicada; aguardando homologação visual dos três botões do Titon no modo escuro** |
-| Última ação concluída | PR **#459** mesclada em `2c5ff85a`; Pages e Workers Builds publicados com sucesso |
-| Branch atual | `docs/titon-dark-toolbar-buttons-published-20260923` (somente registro pós-publicação) |
-| PR atual | #459 **mesclada**; PR documental deste registro a abrir |
-| Último commit funcional relevante | `2c5ff85a9fbb690d34cac883d16588e74eee6f7b` |
-| Checks e testes | PR #459 **23/23 success**; pós-merge **23/23 GitHub Actions success**; GitHub Pages, Cloudflare Pages e Workers Builds **success** |
-| Decisões tomadas | override local no Titon restaura backgrounds autorais; tema global e modo claro não mudam |
-| Justificativas | bug causado por shorthand `background` do tema escuro sobre botões `secondary`; correção local minimiza blast radius |
-| Alternativas descartadas | alterar o tema global; trocar classes HTML; reescrever assets via JS/inline SVG |
-| Ações externas concluídas | publicação completa confirmada; Worker check reportou versão `cd6db6de-1c06-4edf-9e9b-7aee1461266d` |
-| Pendências e bloqueios | **somente homologação visual humana em produção da 7G.3** |
-| Riscos conhecidos | conferir hover/foco nos três controles e ausência de regressão no modo claro |
+| Subfase / objetivo atual | **7G.4 — aumentar contraste das ferramentas internas do editor no modo escuro** |
+| Última ação concluída | CSS, cache-buster e regressão implementados para ferramentas genéricas do editor/rail |
+| Branch atual | `fix/titon-dark-editor-tool-contrast-20260923` |
+| PR atual | **ainda não aberta** |
+| Último commit relevante | `cd2d2fb5` — teste; `79abb9e7` contém a correção CSS |
+| Checks e testes | regressão adicionada; CI ainda precisa rodar na PR |
+| Decisões tomadas | placa azul-clara somente nos controles genéricos; botões autorais ficam fora; modo claro inalterado |
+| Justificativas | os ícones legados são azul-escuros e perdem contraste sobre o navy do editor; fundo claro resolve sem alterar assets |
+| Alternativas descartadas | inverter/filtros globais nos PNGs; recolorir assets; clarear toda a toolbar; mexer no tema global |
+| Ações externas concluídas | nenhuma |
+| Pendências e bloqueios | abrir PR → CI → merge → publicação → homologação visual |
+| Riscos conhecidos | confirmar contraste de estados disabled/active e que assets autorais continuam intactos |
 | Métricas / observabilidade | nenhuma telemetria nova |
-| Próxima ação exata | **Ctrl+F5 em /documentos/ com modo escuro → abrir PDF → conferir Ajustar largura, Salvar PDF e Imprimir PDF; validar também hover e clique** |
-| Arquivos e fontes principais | Guia Mestre V1.1; merge #459 `2c5ff85a`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
+| Próxima ação exata | **abrir PR da 7G.4, exigir CI verde e depois validar no modo escuro as ferramentas internas do editor e da barra lateral** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
 
 ## Histórico recuperável
 
