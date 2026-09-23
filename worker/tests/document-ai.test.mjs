@@ -89,7 +89,7 @@ test('comparação Gemini é opcional e não altera o provider atual gratuito', 
     DOCUMENTS_AI_PROCESSING_ENABLED: 'true',
     DOCUMENTS_AI_FREE_ONLY: 'true',
     TITON_GEMINI_COMPARISON_ENABLED: 'true',
-    TITON_GEMINI_MODEL: 'gemini-2.5-flash',
+    TITON_GEMINI_MODEL: 'gemini-3.5-flash-lite',
     TITON_GEMINI_API_KEY: 'segredo'
   });
   assert.equal(config.provider, 'cloudflare-workers-ai');
@@ -98,7 +98,7 @@ test('comparação Gemini é opcional e não altera o provider atual gratuito', 
   assert.equal(config.providers.current.freeOnly, true);
   assert.equal(config.providers.gemini.enabled, true);
   assert.equal(config.providers.gemini.paid, true);
-  assert.equal(config.providers.gemini.model, 'gemini-2.5-flash');
+  assert.equal(config.providers.gemini.model, 'gemini-3.5-flash-lite');
   assert.equal(config.features.geminiComparison, true);
 });
 
