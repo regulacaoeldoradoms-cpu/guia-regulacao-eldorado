@@ -5464,6 +5464,197 @@
       .toLocaleLowerCase('pt-BR');
   }
 
+  function defaultAdvancedSearchFilters() {
+    return {
+      type: 'any',
+      owner: 'any',
+      ownerEmail: '',
+      words: '',
+      itemName: '',
+      location: 'any',
+      parentRef: '',
+      starred: false,
+      trashed: false,
+      modifiedAfter: '',
+      modifiedBefore: '',
+      sharedWith: ''
+    };
+  }
+
+  function normalizeAdvancedSearchFilters(value = {}) {
+    const source = value && typeof value === 'object' ? value : {};
+    const type = ['any', 'pdf', 'folder', 'image', 'document', 'spreadsheet', 'presentation', 'video']
+      .includes(String(source.type || '')) ? String(source.type) : 'any';
+    const owner = ['any', 'me', 'email'].includes(String(source.owner || ''))
+      ? String(source.owner) : 'any';
+    const location = ['any', 'current', 'shared'].includes(String(source.location || ''))
+      ? String(source.location) : 'any';
+    return {
+      type,
+      owner,
+      ownerEmail: String(source.ownerEmail || '').trim().slice(0, 254),
+      words: String(source.words || '').trim().slice(0, 120),
+      itemName: String(source.itemName || '').trim().slice(0, 120),
+      location,
+      parentRef: location === 'current' ? String(source.parentRef || '').trim().slice(0, 1200) : '',
+      starred: source.starred === true,
+      trashed: source.trashed === true,
+      modifiedAfter: String(source.modifiedAfter || '').trim().slice(0, 40),
+      modifiedBefore: String(source.modifiedBefore || '').trim().slice(0, 40),
+      sharedWith: String(source.sharedWith || '').trim().slice(0, 254)
+    };
+  }
+
+  function advancedSearchHasCriteria(value = state.searchFilters) {
+    const filters = normalizeAdvancedSearchFilters(value || {});
+    return Boolean(
+      filters.type !== 'any'
+      || filters.owner !== 'any'
+      || filters.words
+      || filters.itemName
+      || filters.location !== 'any'
+      || filters.starred
+      || filters.trashed
+      || filters.modifiedAfter
+      || filters.modifiedBefore
+      || filters.sharedWith
+    );
+  }
+
+  function currentFolderLabel() {
+    return state.stack.length
+      ? String(state.stack[state.stack.length - 1]?.name || 'Pasta atual')
+      : 'Meu Drive (raiz)';
+  }
+
+  function localDateBoundary(value, endOfDay = false) {
+    const text = String(value || '').trim();
+    const match = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return '';
+    const date = new Date(
+      Number(match[1]),
+      Number(match[2]) - 1,
+      Number(match[3]),
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0
+    );
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+  }
+
+  function advancedModifiedRange(preset, fromValue = '', toValue = '') {
+    const choice = String(preset || 'any');
+    if (choice === 'custom') {
+      return {
+        modifiedAfter: localDateBoundary(fromValue, false),
+        modifiedBefore: localDateBoundary(toValue, true)
+      };
+    }
+    if (choice === 'any') return { modifiedAfter: '', modifiedBefore: '' };
+
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (choice === '7d') start.setDate(start.getDate() - 6);
+    else if (choice === '30d') start.setDate(start.getDate() - 29);
+    else if (choice === '90d') start.setDate(start.getDate() - 89);
+    else if (choice === 'year') {
+      start.setMonth(0, 1);
+      start.setHours(0, 0, 0, 0);
+    }
+    return { modifiedAfter: start.toISOString(), modifiedBefore: '' };
+  }
+
+  function syncAdvancedSearchConditionalFields() {
+    if (els.advancedOwnerEmailField) {
+      els.advancedOwnerEmailField.hidden = els.advancedOwner?.value !== 'email';
+    }
+    if (els.advancedDateRange) {
+      els.advancedDateRange.hidden = els.advancedModified?.value !== 'custom';
+    }
+  }
+
+  function syncAdvancedSearchButton() {
+    const active = advancedSearchHasCriteria();
+    els.advancedSearchButton?.classList.toggle('active', active);
+    els.advancedSearchButton?.setAttribute('aria-pressed', active ? 'true' : 'false');
+  }
+
+  function syncAdvancedSearchForm(value = state.searchFilters) {
+    const filters = normalizeAdvancedSearchFilters(value || defaultAdvancedSearchFilters());
+    if (els.advancedType) els.advancedType.value = filters.type;
+    if (els.advancedOwner) els.advancedOwner.value = filters.owner;
+    if (els.advancedOwnerEmail) els.advancedOwnerEmail.value = filters.ownerEmail;
+    if (els.advancedWords) els.advancedWords.value = filters.words;
+    if (els.advancedItemName) els.advancedItemName.value = filters.itemName;
+    if (els.advancedLocation) {
+      els.advancedLocation.value = filters.location;
+      const currentOption = els.advancedLocation.querySelector('option[value="current"]');
+      if (currentOption) currentOption.textContent = `Pasta atual — ${currentFolderLabel()}`;
+    }
+    if (els.advancedStarred) els.advancedStarred.checked = filters.starred;
+    if (els.advancedTrashed) els.advancedTrashed.checked = filters.trashed;
+    if (els.advancedSharedWith) els.advancedSharedWith.value = filters.sharedWith;
+
+    if (els.advancedModified) {
+      let preset = 'any';
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      if (filters.modifiedAfter === todayStart && !filters.modifiedBefore) preset = 'today';
+      els.advancedModified.value = preset;
+    }
+    if (els.advancedModifiedFrom) els.advancedModifiedFrom.value = '';
+    if (els.advancedModifiedTo) els.advancedModifiedTo.value = '';
+    syncAdvancedSearchConditionalFields();
+    syncAdvancedSearchButton();
+  }
+
+  function readAdvancedSearchFilters() {
+    const range = advancedModifiedRange(
+      els.advancedModified?.value,
+      els.advancedModifiedFrom?.value,
+      els.advancedModifiedTo?.value
+    );
+    return normalizeAdvancedSearchFilters({
+      type: els.advancedType?.value,
+      owner: els.advancedOwner?.value,
+      ownerEmail: els.advancedOwnerEmail?.value,
+      words: els.advancedWords?.value,
+      itemName: els.advancedItemName?.value,
+      location: els.advancedLocation?.value,
+      parentRef: els.advancedLocation?.value === 'current' ? currentParentRef() : '',
+      starred: els.advancedStarred?.checked === true,
+      trashed: els.advancedTrashed?.checked === true,
+      modifiedAfter: range.modifiedAfter,
+      modifiedBefore: range.modifiedBefore,
+      sharedWith: els.advancedSharedWith?.value
+    });
+  }
+
+  function openAdvancedSearch() {
+    syncAdvancedSearchForm(state.searchFilters || defaultAdvancedSearchFilters());
+    const dialog = els.advancedSearchDialog;
+    if (!dialog) return false;
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+    els.advancedType?.focus?.({ preventScroll: true });
+    return true;
+  }
+
+  function closeAdvancedSearch() {
+    const dialog = els.advancedSearchDialog;
+    if (!dialog) return false;
+    if (typeof dialog.close === 'function' && dialog.open) dialog.close();
+    else dialog.removeAttribute('open');
+    els.advancedSearchButton?.focus?.({ preventScroll: true });
+    return true;
+  }
+
+  function resetAdvancedSearchForm() {
+    syncAdvancedSearchForm(defaultAdvancedSearchFilters());
+    return true;
+  }
+
   function driveTimingValue(payload, key) {
     const value = Number(payload?.timing?.[key] || 0);
     return Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
