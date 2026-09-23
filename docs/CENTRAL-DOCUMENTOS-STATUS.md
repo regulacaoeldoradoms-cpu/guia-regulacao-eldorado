@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — corrigir falso negativo de classificação médica no Gemini canônico** |
-| Última ação concluída | diagnóstico confirmado no prompt: o título real `LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL` não constava na allowlist de página médica |
-| Branch atual | `fix/titon-apac-medical-page-20260923` |
-| PR atual | ainda não aberto; abrir após registrar a correção e validar CI |
-| Último commit relevante | correções de prompt, documentação e testes nesta branch; base `3165cecaa9d89016c5fd77df4a79eef0f23de196` |
-| Checks e testes | CI da branch ainda pendente; testes adicionados para garantir que o systemInstruction Gemini contém o novo título e regra de precedência |
-| Decisões tomadas | autorizar explicitamente o laudo de solicitação/autorização de procedimento ambulatorial como `pagina_medica_autorizada`; título principal prevalece sobre rótulos internos `DADOS`/identificação |
-| Justificativas | o PDF real exibia claramente um laudo médico/solicitação ambulatorial, mas a lista fechada aceitava apenas `LAUDO MÉDICO` e outros títulos antigos; a restrição gerou falso negativo, não falha de visão do Gemini |
-| Alternativas descartadas | ampliar genericamente qualquer folha com CID/procedimento para médica; usar dados clínicos como heurística; segunda inferência automática; remover a allowlist restritiva |
-| Ações externas concluídas | nenhuma nova configuração externa necessária; Gemini 3.5 Flash-Lite e secret permanecem como antes |
-| Pendências e bloqueios | validar CI, integrar/publicar, depois repetir o mesmo tipo de PDF e confirmar bloco médico |
-| Riscos conhecidos | classificação continua deliberadamente fechada; novos tipos de formulário desconhecidos ainda podem exigir inclusão explícita |
-| Métricas / observabilidade | nenhuma informação clínica do PDF foi registrada; somente o padrão genérico do título foi documentado |
-| Próxima ação exata | **abrir PR desta correção, exigir checks verdes, mesclar/publicar e retestar PDF com esse título** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-ai-prompts.js`; `worker/document-ai-gemini.js`; `worker/document-ai-provider.js`; docs Fase 5/5E; testes de prompts/Gemini |
+| Subfase / objetivo atual | **7E — validar em produção a correção do falso negativo de página médica no Gemini** |
+| Última ação concluída | PR **#422** mesclada na `main`; prompt v3 agora reconhece `LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL` como página médica |
+| Branch atual | `docs/titon-apac-fix-published-20260923` somente para reconciliar status |
+| PR atual | funcional **#422 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`7b220f2527f76f3c714d6c3aa831070712d7cb19`** |
+| Checks e testes | head da #422: **21/21 workflows GitHub Actions success**, incluindo Fases 1–6, site e governança |
+| Decisões tomadas | título médico principal prevalece sobre rótulos internos `DADOS`/identificação; laudo ambulatorial explicitamente autorizado; allowlist continua fechada |
+| Justificativas | o falso negativo veio da lista de títulos incompleta, não de falha de leitura do Gemini |
+| Alternativas descartadas | classificar qualquer folha com CID/procedimento como médica; heurística clínica aberta; OCR/inferência extra só para classificar |
+| Ações externas concluídas | nenhuma nova credencial/configuração necessária |
+| Pendências e bloqueios | falta apenas confirmar publicação produtiva e retestar um PDF do mesmo tipo após Ctrl+F5 |
+| Riscos conhecidos | outros formulários com títulos ainda não catalogados podem exigir inclusão explícita futura |
+| Métricas / observabilidade | nenhum conteúdo clínico foi registrado; apenas o padrão genérico do título |
+| Próxima ação exata | **Ctrl+F5 na Central, abrir um PDF com esse laudo e clicar “Extrair dados do PDF”; confirmar que surge bloco de página médica autorizada** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #422; merge `7b220f25`; `worker/document-ai-prompts.js`; `worker/document-ai-gemini.js`; status Fase 7E |
 
 ## Histórico recuperável
 
@@ -5115,3 +5115,26 @@ Alternativas descartadas:
 **Critério de aceite:** o formulário com esse cabeçalho deve gerar bloco de página médica autorizada, preservando literalidade e isolamento; folhas não autorizadas continuam `outro`; se houver `DADOS` apenas como seção interna de uma folha médica, o título médico principal prevalece.
 
 **Próxima ação exata:** validar CI, integrar/publicar e retestar um PDF do mesmo tipo.
+
+
+## Fase 7E — correção do laudo ambulatorial integrada — 23/09/2026
+
+A PR **#422 — Fase 7E: reconhecer laudo ambulatorial como página médica** foi integrada à `main` no merge **`7b220f2527f76f3c714d6c3aa831070712d7cb19`**.
+
+Validação do head funcional `5029808717b76f2446dadfc3a3b7731a5c48da1a`:
+- **21/21 workflows GitHub Actions: success**;
+- Central de Documentos — Fases 1–6: **success**;
+- site: **success**;
+- governança: **success**;
+- demais workflows disparados para o head: **success**.
+
+Estado versionado:
+- `PROMPT_CLASSIFICACAO_PAGINAS_V1` em **v3**;
+- `PROMPT_ANALISE_REGULACAO_V1` em **v3**;
+- `PROMPT_ANALISE_REGULACAO_COMPACTA_V1` em **v3**;
+- `LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL` e variação com espaços ao redor da barra são páginas médicas autorizadas;
+- o título/cabeçalho principal tem precedência sobre rótulos internos;
+- `DADOS` em identificação/cadastro não transforma uma folha médica em comprovante;
+- Gemini canônico continua sem fallback automático e sem preextração paga.
+
+**Próxima ação exata:** retestar em produção o mesmo tipo de formulário após Ctrl+F5. Só após a confirmação operacional declarar esta correção homologada.
