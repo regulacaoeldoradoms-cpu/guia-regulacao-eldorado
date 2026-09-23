@@ -1377,21 +1377,29 @@ test('6B prepara somente recursos efêmeros e reaproveita miniaturas lazy', () =
   assert.match(client, /Math\.min\(2, pageCount\)/);
 });
 
-test('6C só antecipa IA com capability e gates corretos e reutiliza resultado na ação humana', () => {
+test('6C mantém preparação local, mas não antecipa inferência paga do Gemini', () => {
   const client = read('js/documents.js');
-  const readiness = client.slice(
-    client.indexOf('  function documentAiBackgroundReady()'),
-    client.indexOf('  async function prepareDocumentAiPageBlob')
+  const ai = read('worker/document-ai.js');
+  const preparation = client.slice(
+    client.indexOf('  function scheduleActiveDocumentPreparation('),
+    client.indexOf('  async function extractWholeDocumentAi()', client.indexOf('  function scheduleActiveDocumentPreparation('))
   );
-  assert.match(readiness, /processingEnabled === true/);
-  assert.match(readiness, /features\?\.extractDocument === true/);
-  assert.match(readiness, /features\?\.backgroundPreparation === true/);
-  assert.match(readiness, /documentAiCapabilities\(\)\.extract === true/);
-  assert.match(client, /backgroundPreparedAnalysis\.get\(pageNumber\)/);
-  assert.match(client, /background\?\.join\?\.\(\`preextract:/);
-  assert.match(client, /cancelQueuedScope\?\.\(state\.backgroundScope, 'foreground'\)/);
-  assert.match(client, /background_state/);
-  assert.doesNotMatch(readiness, /drive\/sync|replace_pdf|save_copy/);
+  const primary = client.slice(
+    client.indexOf('  async function extractWholeDocumentAi()'),
+    client.indexOf('  async function extractWholeDocumentAiGemini()')
+  );
+
+  assert.match(ai, /backgroundPreparation: false/);
+  assert.match(preparation, /prewarmThumbnails/);
+  assert.match(preparation, /prepareDocumentAiPageBlob/);
+  assert.doesNotMatch(preparation, /schedulePreparedPageAnalysis\(/);
+  assert.doesNotMatch(preparation, /requestGeminiDocumentAiPage\(/);
+  assert.doesNotMatch(preparation, /requestDocumentAiPage\(/);
+  assert.match(primary, /requestGeminiDocumentAiPage\(pageNumber, blob\)/);
+  assert.doesNotMatch(primary, /backgroundPreparedAnalysis\.get\(pageNumber\)/);
+  assert.doesNotMatch(primary, /background\?\.join\?\.\(\`preextract:/);
+  assert.match(primary, /cancelQueuedScope\?\.\(state\.backgroundScope, 'foreground'\)/);
+  assert.doesNotMatch(preparation, /drive\/sync|replace_pdf|save_copy/);
 });
 
 test('6D aquece próximos PDFs apenas por sinais operacionais não clínicos', () => {
@@ -1405,16 +1413,21 @@ test('6D aquece próximos PDFs apenas por sinais operacionais não clínicos', (
   assert.doesNotMatch(block, /cid|diagnostico|nome_paciente|cpf|cns|texto extraído|extraction\.fields/i);
 });
 
-test('6E sugestões permanecem informativas e nenhuma escrita é automática', () => {
+test('6E automação continua não destrutiva e não dispara Gemini sem clique humano', () => {
   const client = read('js/documents.js');
-  assert.match(client, /Titon preparou .*página\(s\).*segundo plano/);
-  assert.match(client, /operation: 'suggestion'/);
-  assert.match(client, /state: 'used'/);
   const backgroundSection = client.slice(
-    client.indexOf('  function schedulePreparedPageAnalysis'),
-    client.indexOf('  async function extractWholeDocumentAi')
+    client.indexOf('  function scheduleActiveDocumentPreparation('),
+    client.indexOf('  async function extractWholeDocumentAi()')
   );
+  const clickSection = client.slice(
+    client.indexOf("els.documentAiExtractDocument?.addEventListener('click'"),
+    client.indexOf("els.documentAiClassify?.addEventListener('click'")
+  );
+
+  assert.doesNotMatch(backgroundSection, /requestGeminiDocumentAiPage\(/);
+  assert.doesNotMatch(backgroundSection, /\/api\/documents\/ai\/page\/gemini/);
   assert.doesNotMatch(backgroundSection, /replace_pdf|save_copy|drive\/sync|delete_page/);
+  assert.match(clickSection, /extractWholeDocumentAi\(\)/);
 });
 
 test('Fase 6 cancela background ao fechar PDF e preempta ao editar', () => {
