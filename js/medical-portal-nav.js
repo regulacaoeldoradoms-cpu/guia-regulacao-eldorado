@@ -37,7 +37,7 @@
     if (!document.querySelector('link[data-portal-chat-style]')) {
       const style = document.createElement('link');
       style.rel = 'stylesheet';
-      style.href = '/css/portal-chat.css?v=20260814-1';
+      style.href = '/css/portal-chat.css?v=20260923-1';
       style.dataset.portalChatStyle = 'true';
       document.head.appendChild(style);
     }
