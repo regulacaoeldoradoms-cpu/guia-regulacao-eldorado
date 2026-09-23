@@ -196,7 +196,7 @@ O laboratório gera canvases no navegador; não carrega PDF clínico ou arquivo 
 
 Comprovante autorizado: `COMPROVANTE DE ATENDIMENTO`, `CONTROLE DE ATENDIMENTO` ou `DADOS`.
 
-Páginas médicas autorizadas: `GUIA DE ENCAMINHAMENTO`, `ENCAMINHAMENTO(S)`, `RECEITA SIMPLES`, `LAUDO MÉDICO`, `LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL` (incluindo espaços ao redor da barra), `RECEITUÁRIO MÉDICO`, `SOLICITAÇÃO DE EXAMES`, `SOLICITAÇÃO DE AGENDAMENTO` e `SOLICITAÇÃO DE AGENDAMENTO RETORNO`. O título principal da folha prevalece sobre rótulos internos como `DADOS`/`IDENTIFICAÇÃO`.
+Páginas médicas autorizadas: `GUIA DE ENCAMINHAMENTO`, `ENCAMINHAMENTO(S)`, `RECEITA SIMPLES`, `LAUDO MÉDICO`, `LAUDO MÉDICO PARA PROCEDIMENTO DE ALTA COMPLEXIDADE`, `LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL` (incluindo espaços ao redor da barra), `RECEITUÁRIO MÉDICO`, `SOLICITAÇÃO DE EXAMES`, `SOLICITAÇÃO DE AGENDAMENTO` e `SOLICITAÇÃO DE AGENDAMENTO RETORNO`. O título principal da folha prevalece sobre rótulos internos como `DADOS`/`IDENTIFICAÇÃO`.
 
 O reteste também deve preservar as duas únicas normalizações de saída explicitamente autorizadas:
 - CNS sem espaços, apenas sequência numérica contínua;
