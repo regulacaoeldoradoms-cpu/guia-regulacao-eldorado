@@ -1214,21 +1214,11 @@ sqliteTest('Fase 4B salvar como novo inicia create resumable no mesmo parent e p
 });
 
 
-sqliteTest('IA documental 5C exige extract e produção bloqueia classificação/extração antes de ler a página', async () => {
+sqliteTest('IA documental acompanha o acesso integral e produção bloqueia processamento antes de ler a página', async () => {
   const env = environment();
   const user = await register(env, 'documentos.ia', '127.0.0.93');
   await setDocumentCapabilities(env, 'documentos.ia', { view: true }, 'admin');
 
-  const denied = await handleDocumentsRoute(
-    documentRequest('/api/documents/ai/config', user.token),
-    env,
-    'https://regulacaoeldoradoms.com.br',
-    true
-  );
-  assert.equal(denied.status, 403);
-  assert.equal((await denied.json()).code, 'DOCUMENTS_ACCESS_DENIED');
-
-  await setDocumentCapabilities(env, 'documentos.ia', { extract: true }, 'admin');
   const disabled = await handleDocumentsRoute(
     documentRequest('/api/documents/ai/config', user.token),
     env,
