@@ -1427,6 +1427,34 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(css, /\.documents-item-action:empty\s*\{[^}]*display:\s*none;/s);
 });
 
+test('lista renomeia PDF por segundo clique lento no nome sem substituir duplo clique de abertura', () => {
+  const client = read('js/documents.js');
+  const css = read('css/documents.css');
+
+  assert.match(client, /data-list-rename-index=/);
+  assert.match(client, /function scheduleListPdfRename\(index\)/);
+  assert.match(client, /pendingListRenameTimer = window\.setTimeout\([\s\S]*beginListPdfRename\(currentIndex\)/);
+  assert.match(client, /function beginListPdfRename\(index\)/);
+  assert.match(client, /async function commitListPdfRename\(\)/);
+  assert.match(client, /class="documents-list-rename-input"[^>]*maxlength="296"/);
+  assert.ok(client.includes('documents-list-rename-extension'));
+  assert.match(client, /commitListPdfRename\(\)\.catch\(\(\) => \{\}\)/);
+  assert.match(client, /els\.list\.addEventListener\('focusout',[\s\S]*commitListPdfRename\(\)/);
+  assert.match(client, /baseVersion:\s*previous\.version/);
+  assert.match(client, /baseName:\s*oldName/);
+
+  const dblStart = client.indexOf("  els.list.addEventListener('dblclick'");
+  const keyStart = client.indexOf("  els.list.addEventListener('keydown'", dblStart);
+  const dblBlock = client.slice(dblStart, keyStart);
+  assert.match(dblBlock, /clearPendingListRename\(\)/);
+  assert.match(dblBlock, /openPdf\(item\)/);
+
+  assert.match(css, /\.documents-item-row\s*\{[\s\S]*position:\s*relative/);
+  assert.match(css, /\.documents-list-rename\s*\{[\s\S]*position:\s*absolute/);
+  assert.match(css, /\.documents-list-rename input:focus/);
+  assert.match(css, /\.documents-list-rename-extension/);
+});
+
 test('pastas seguem seleção por clique e abertura por duplo clique ou Enter', () => {
   const client = read('js/documents.js');
   const css = read('css/documents.css');
