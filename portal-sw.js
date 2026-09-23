@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_VERSION = '20260922-5';
+const CACHE_VERSION = '20260923-1';
 const STATIC_CACHE = `portal-static-${CACHE_VERSION}`;
 const PAGE_CACHE = `portal-pages-${CACHE_VERSION}`;
 const PORTAL_CACHE_PREFIXES = ['portal-static-', 'portal-pages-'];
@@ -15,13 +15,6 @@ const DOCUMENT_WORKER_ORIGINS = new Set([
 const DOCUMENTS_WARM_TTL_MS = 90 * 1000;
 const DOCUMENTS_WARM_REFRESH_MS = 30 * 1000;
 const DOCUMENTS_WARM_PAGE_SIZE = 20;
-const DOCUMENTS_PRIORITY_VISIBLE_PAGE_SIZE = 20;
-const DOCUMENTS_PRIORITY_PREFETCH_PAGE_SIZE = 100;
-const DOCUMENTS_PRIORITY_MAX_PAGES = 6;
-const DOCUMENTS_PRIORITY_FOLDER_NAMES = Object.freeze([
-  'consulta [2026]',
-  'exames [2026]'
-]);
 const DOCUMENTS_BACKGROUND_ASSETS = Object.freeze([
   '/vendor/pdfjs-legacy/pdf.min.mjs',
   '/vendor/pdfjs-legacy/pdf.worker.min.mjs',
@@ -55,7 +48,7 @@ const CORE_RESOURCES = Object.freeze([
   '/css/social.css?v=20260922-2',
   '/css/portal-pwa.css?v=20260910-2',
   '/js/auth-config.js?v=20260815-1',
-  '/js/portal-performance.js?v=20260922-5',
+  '/js/portal-performance.js?v=20260923-1',
   '/js/portal-observability.js?v=20260921-2',
   '/js/portal-pwa.js?v=20260922-3',
   '/js/auth-client.js?v=20260910-4',
@@ -174,98 +167,29 @@ async function fetchDocumentWarmJson(endpoint, pathname, authorization, options 
 }
 
 
-function normalizedPriorityFolderName(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLocaleLowerCase('pt-BR');
-}
-
-function exactPriorityFolder(items, requestedName) {
-  const expected = normalizedPriorityFolderName(requestedName);
-  const matches = (Array.isArray(items) ? items : []).filter((item) => (
-    item?.isFolder === true
-    && item?.ref
-    && normalizedPriorityFolderName(item?.name) === expected
-  ));
-  return matches.length === 1 ? matches[0] : null;
-}
-
-async function discoverPriorityFolder(endpoint, authorization, requestedName, rootFolder = null) {
-  const rootMatch = exactPriorityFolder(rootFolder?.items, requestedName);
-  if (rootMatch) return rootMatch;
-
-  const searched = await fetchDocumentWarmJson(endpoint, '/api/documents/drive/search', authorization, {
-    method: 'POST',
-    body: JSON.stringify({
-      query: requestedName,
-      pageToken: '',
-      pageSize: DOCUMENTS_PRIORITY_PREFETCH_PAGE_SIZE
-    })
-  });
-  return exactPriorityFolder(searched?.items, requestedName);
-}
-
-async function fetchPriorityFolderItems(endpoint, authorization, folderRef) {
-  const firstPage = await fetchDocumentWarmJson(endpoint, '/api/documents/drive/list', authorization, {
-    method: 'POST',
-    body: JSON.stringify({
-      parentRef: folderRef,
-      pageToken: '',
-      pageSize: DOCUMENTS_PRIORITY_VISIBLE_PAGE_SIZE
-    })
-  });
-  if (!firstPage || !Array.isArray(firstPage.items)) return null;
-
-  const prefetchItems = [];
-  let pageToken = '';
-  let pages = 0;
-
-  do {
-    const payload = await fetchDocumentWarmJson(endpoint, '/api/documents/drive/list', authorization, {
-      method: 'POST',
-      body: JSON.stringify({
-        parentRef: folderRef,
-        pageToken,
-        pageSize: DOCUMENTS_PRIORITY_PREFETCH_PAGE_SIZE
-      })
-    });
-    if (!payload || !Array.isArray(payload.items)) break;
-    prefetchItems.push(...payload.items);
-    pageToken = String(payload.nextPageToken || '');
-    pages += 1;
-  } while (pageToken && pages < DOCUMENTS_PRIORITY_MAX_PAGES);
-
-  return {
-    items: firstPage.items,
-    nextPageToken: String(firstPage.nextPageToken || ''),
-    prefetchItems
-  };
-}
-
-async function warmPriorityFolders(endpoint, authorization, rootFolder) {
-  const folders = await Promise.all(DOCUMENTS_PRIORITY_FOLDER_NAMES.map(async (requestedName) => {
-    const folder = await discoverPriorityFolder(endpoint, authorization, requestedName, rootFolder).catch(() => null);
-    if (!folder?.ref) return null;
-    const listing = await fetchPriorityFolderItems(endpoint, authorization, folder.ref).catch(() => null);
-    if (!listing) return null;
-    return Object.freeze({
-      name: String(folder.name || requestedName),
-      ref: String(folder.ref),
-      items: Array.isArray(listing.items) ? listing.items : [],
-      nextPageToken: String(listing.nextPageToken || ''),
-      prefetchItems: Array.isArray(listing.prefetchItems) ? listing.prefetchItems : []
-    });
-  }));
-  return folders.filter(Boolean);
-}
-
 async function warmDocumentsStatic() {
   await Promise.allSettled([
     warmPage('/documentos/'),
     mapLimited(DOCUMENTS_BACKGROUND_ASSETS, 2, (asset) => warmAsset(asset, false))
   ]);
+}
+
+function publishDocumentWarmSnapshot(key, endpoint, generation, result) {
+  if (generation !== documentWarmGeneration) return false;
+  const createdAt = Date.now();
+  const payload = Object.freeze({
+    access: result?.access || null,
+    preferences: result?.preferences || null,
+    aiConfig: result?.aiConfig || null,
+    folder: result?.folder || null
+  });
+  documentWarmSnapshots.set(key, Object.freeze({
+    endpoint,
+    createdAt,
+    expiresAt: createdAt + DOCUMENTS_WARM_TTL_MS,
+    payload
+  }));
+  return true;
 }
 
 async function warmDocumentsPrivate(data) {
@@ -297,25 +221,34 @@ async function warmDocumentsPrivate(data) {
       return false;
     }
 
-    const jobs = [];
     const result = {
       access,
       preferences: null,
       aiConfig: null,
-      folder: null,
-      priorityFolders: []
+      folder: null
+    };
+    const publishIfRootReady = () => {
+      if (result.folder && Array.isArray(result.folder.items)) {
+        publishDocumentWarmSnapshot(key, endpoint, generation, result);
+      }
     };
 
-    jobs.push(
+    const jobs = [
       fetchDocumentWarmJson(endpoint, '/api/documents/preferences', authorization)
-        .then((payload) => { result.preferences = payload; })
+        .then((payload) => {
+          result.preferences = payload;
+          publishIfRootReady();
+        })
         .catch(() => {})
-    );
+    ];
 
     if (capabilities.extract === true) {
       jobs.push(
         fetchDocumentWarmJson(endpoint, '/api/documents/ai/config', authorization)
-          .then((payload) => { result.aiConfig = payload; })
+          .then((payload) => {
+            result.aiConfig = payload;
+            publishIfRootReady();
+          })
           .catch(() => {})
       );
     }
@@ -330,30 +263,17 @@ async function warmDocumentsPrivate(data) {
             pageSize: DOCUMENTS_WARM_PAGE_SIZE
           })
         })
-          .then((payload) => { result.folder = payload; })
+          .then((payload) => {
+            result.folder = payload;
+            publishIfRootReady();
+          })
           .catch(() => {})
       );
     }
 
     await Promise.allSettled(jobs);
     if (generation !== documentWarmGeneration) return false;
-
-    if (capabilities.view === true && access?.drive?.connected === true) {
-      result.priorityFolders = await warmPriorityFolders(
-        endpoint,
-        authorization,
-        result.folder
-      ).catch(() => []);
-    }
-
-    if (generation !== documentWarmGeneration) return false;
-    const createdAt = Date.now();
-    documentWarmSnapshots.set(key, Object.freeze({
-      endpoint,
-      createdAt,
-      expiresAt: createdAt + DOCUMENTS_WARM_TTL_MS,
-      payload: Object.freeze(result)
-    }));
+    publishDocumentWarmSnapshot(key, endpoint, generation, result);
     return true;
   })().finally(() => {
     documentWarmInFlight.delete(key);
@@ -371,16 +291,22 @@ async function getDocumentsWarmPayload(data) {
   const key = await documentWarmSessionKey(authorization);
   if (!key) return null;
 
+  const usableEntry = () => {
+    const entry = documentWarmSnapshots.get(key);
+    if (!entry || entry.endpoint !== endpoint || entry.expiresAt <= Date.now()) return null;
+    return {
+      createdAt: entry.createdAt,
+      ageMs: Math.max(0, Date.now() - entry.createdAt),
+      ...entry.payload
+    };
+  };
+
+  const ready = usableEntry();
+  if (ready) return ready;
+
   const pending = documentWarmInFlight.get(key);
   if (pending) await pending.catch(() => false);
-
-  const entry = documentWarmSnapshots.get(key);
-  if (!entry || entry.endpoint !== endpoint || entry.expiresAt <= Date.now()) return null;
-  return {
-    createdAt: entry.createdAt,
-    ageMs: Math.max(0, Date.now() - entry.createdAt),
-    ...entry.payload
-  };
+  return usableEntry();
 }
 
 function clearDocumentsWarm() {
