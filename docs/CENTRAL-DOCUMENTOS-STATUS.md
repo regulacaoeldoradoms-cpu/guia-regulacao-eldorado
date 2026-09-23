@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — corrigir primeira homologação real do Gemini comparativo** |
-| Última ação concluída | Diagnóstico: falha Gemini era escondida pelo renderer; provider inicial também estava em modelo/contrato REST desatualizado para projeto novo. Correção preparada em branch |
-| Branch atual | `fix/titon-gemini-empty-result-20260923` |
-| PR atual | ainda a abrir |
-| Último commit relevante | cliente `545a3643` + provider `566c4b83` + testes em andamento |
-| Checks e testes | ainda pendentes de CI desta correção |
-| Decisões tomadas | manter IA atual intacta; Gemini migra para `gemini-3.5-flash-lite`; erro Gemini sempre deve permanecer visível; sem retry pago automático |
-| Justificativas | usuário observou loading seguido de vazio; código confirmava erro escondido; Google passou a limitar 2.5 para projetos novos e recomenda modelos atuais |
-| Alternativas descartadas | substituir IA atual; retry automático pago; esconder erro técnico; continuar preso a 2.5 em projeto novo |
-| Ações externas concluídas | secret e billing já estavam configurados; nenhuma nova ação externa necessária antes do deploy |
-| Pendências e bloqueios | CI/merge/deploy e novo teste real no mesmo PDF |
-| Riscos conhecidos | ainda não há resposta real da API após a correção; se houver erro, desta vez ele ficará visível para diagnóstico |
-| Métricas / observabilidade | conteúdo continua fora da telemetria; somente métricas técnicas coarse permanecem |
-| Próxima ação exata | **abrir PR, publicar se verde e pedir Ctrl+F5 + Extrair com Gemini no mesmo PDF** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #414; `worker/document-ai-gemini.js`; `worker/document-ai.js`; `js/documents.js`; `documentos/index.html`; status Fase 7E |
+| Subfase / objetivo atual | **7E — homologar novamente Gemini comparativo após correção da primeira falha real** |
+| Última ação concluída | PR **#416** mesclada e publicada; erro Gemini não some mais e provider migrou para 3.5 Flash-Lite/contrato REST atual |
+| Branch atual | `docs/titon-gemini-empty-result-published-20260923` somente para reconciliar publicação |
+| PR atual | funcional #416 mesclada; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional `32ff226a82affd9b838b7151ac2efe8074806f1e` |
+| Checks e testes | Fases 1–6 verdes; Chromium 76 passed/4 skipped; safe deploy, site, governança, Pages, GitHub build/deploy e Workers Build produtivo verdes |
+| Decisões tomadas | IA atual preservada; Gemini 3.5 Flash-Lite manual; erro persistente; sem retry pago automático; contrato `responseFormat.text.schema` |
+| Justificativas | primeira chamada real terminava sem feedback; UI escondia o catch; 2.5 tem acesso limitado em projetos novos e integração usava formato REST antigo |
+| Alternativas descartadas | substituir IA atual; continuar em 2.5; esconder falha; retries pagos automáticos |
+| Ações externas concluídas | Worker produtivo build `18ec1340-55b0-4ecd-bab8-0ede2f81c94b` success; secret/billing permanecem configurados |
+| Pendências e bloqueios | falta somente nova chamada real do operador para validar resposta da API e comparar precisão/tempo/tokens |
+| Riscos conhecidos | provider externo pode ainda responder erro específico; desta vez o erro ficará visível e diagnosticável |
+| Métricas / observabilidade | nenhum conteúdo sensível é logado; apenas métricas técnicas coarse |
+| Próxima ação exata | **Ctrl+F5; mesmo PDF; clicar Extrair com Gemini; confirmar resultado ou enviar apenas a mensagem de erro visível** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #416; `worker/document-ai-gemini.js`; `worker/document-ai.js`; `js/documents.js`; `documentos/index.html`; status Fase 7E |
 
 ## Histórico recuperável
 
@@ -4923,3 +4923,30 @@ Privacidade/observabilidade permanecem:
 **Critério de aceite:** ao clicar em **Extrair com Gemini**, a execução deve terminar em uma destas duas formas visíveis: (a) resultado/comparação, ou (b) mensagem de erro persistente e legível. Nunca pode voltar silenciosamente ao estado inicial.
 
 **Próxima ação exata:** validar testes/CI, publicar se verdes e repetir no mesmo PDF real. Se houver falha do provider, a mensagem agora ficará visível e permitirá diagnóstico direto sem expor a chave.
+
+## Fase 7E — correção Gemini publicada — 23/09/2026
+
+A PR **#416 — Fase 7E: corrigir extração Gemini que terminava sem resultado** foi integrada à `main` no merge **`32ff226a82affd9b838b7151ac2efe8074806f1e`**.
+
+Publicação confirmada:
+- Central Fases 1–6 — **success**;
+- navegador/PDF.js real em Chromium — **76 passed / 4 skipped**;
+- gate de deploy seguro — **success**;
+- site e governança — **success**;
+- Cloudflare Pages — **success**;
+- GitHub build/deploy — **success**;
+- Workers Build produtivo **`18ec1340-55b0-4ecd-bab8-0ede2f81c94b`** — **success**.
+
+Estado funcional publicado:
+- Gemini comparativo agora usa **`gemini-3.5-flash-lite`**;
+- request REST foi alinhado ao contrato atual de `generateContent` para Gemini 3.x;
+- erro do Gemini permanece visível depois do loading e não pode mais desaparecer silenciosamente;
+- HTTP 404 de modelo possui mensagem específica;
+- nova tentativa limpa erro antigo;
+- a IA atual Cloudflare permanece intacta, canônica e independente;
+- Gemini continua somente por clique explícito, sem fallback ou retry pago automático;
+- cache-buster ativo: **`documents.js?v=20260923-1`**.
+
+Observação: a causa exata da primeira falha no provider não pôde ser recuperada porque a própria UI antiga escondia o erro e conteúdo do provider não é logado por política. A falha de UX foi comprovada no código. A atualização de modelo/contrato elimina os riscos de compatibilidade identificados, mas a confirmação final depende de uma nova chamada real autenticada.
+
+**Próxima ação exata:** Ctrl+F5, abrir o mesmo PDF e clicar em **Extrair com Gemini**. O resultado esperado é comparação visível; se ainda houver falha, copiar somente a mensagem de erro exibida na própria janela, nunca a chave.
