@@ -4973,3 +4973,33 @@ A IA atual permanece inalterada e independente. Não houve mudança de segredo, 
 **Critério de aceite:** a próxima chamada real não deve retornar o mesmo 400 de estrutura. Se houver outro 400, a UI deve indicar a categoria técnica sanitizada; se a API aceitar, o Gemini deve retornar JSON estruturado e a comparação aparecer.
 
 **Próxima ação exata:** validar CI, integrar/publicar e repetir no mesmo PDF com Ctrl+F5 + **Extrair com Gemini**.
+
+## Fase 7E — correção dos enums REST Gemini publicada — 23/09/2026
+
+A PR **#418 — Fase 7E: corrigir contrato REST do Gemini** foi integrada à `main` no merge **`61de522beabe6eb6d344907a5ede763c55f52a8e`**.
+
+Evidência operacional que levou à correção:
+- após a PR #416, o erro deixou de desaparecer e passou a mostrar **“O Gemini recusou a estrutura da solicitação.”**;
+- isso confirmou falha HTTP 400 na estrutura do request, não ausência de feedback.
+
+Causa confirmada na documentação oficial do Google para REST `generateContent`:
+- `thinkingConfig.thinkingLevel` é enum REST com valores `MINIMAL`, `LOW`, `MEDIUM`, `HIGH`;
+- `responseFormat.text.mimeType` é enum REST e usa `APPLICATION_JSON`;
+- o cliente enviava os aliases minúsculos `minimal` e `application/json`, adequados a camadas SDK/exemplos humanizados, mas não ao enum canônico do corpo REST bruto.
+
+Correção publicada:
+- `gemini-3.5-flash-lite` continua como modelo comparativo;
+- `thinkingLevel='MINIMAL'`;
+- eventual `gemini-3.8-flash` usa `thinkingLevel='LOW'`;
+- `responseFormat.text.mimeType='APPLICATION_JSON'`;
+- erro HTTP 400 continua sanitizado, podendo indicar apenas a categoria técnica (`thinkingLevel`, formato de resposta ou schema) sem expor payload ou conteúdo do documento;
+- IA atual Cloudflare permanece canônica, independente e inalterada.
+
+Validação:
+- Central Fases 1–6 — **success**;
+- site/governança — **success**;
+- Cloudflare Pages — **success**;
+- GitHub build/deploy — **success**;
+- Workers Build produtivo **`33a85383-5856-4648-930e-a06d1b241005`** — **success**.
+
+**Próxima ação exata:** Ctrl+F5, abrir o mesmo PDF e clicar **Extrair com Gemini**. Esperado: o HTTP 400 anterior não se repetir; se surgir outro erro, registrar somente a mensagem sanitizada exibida no painel.
