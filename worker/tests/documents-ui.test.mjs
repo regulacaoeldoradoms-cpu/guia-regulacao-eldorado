@@ -562,7 +562,7 @@ test('cabeçalho do visualizador preserva ações e trunca somente o título do 
   const html = read('documentos/index.html');
   const css = read('css/documents.css');
 
-  assert.match(html, /documents\.css\?v=20260923-8/);
+  assert.match(html, /documents\.css\?v=20260923-9/);
   assert.match(html, /id="editPdfButton"[^>]*>Editar PDF<\/button>/);
   assert.match(css, /\.documents-viewer-head > div:first-child\s*\{[^}]*min-width:\s*0;[^}]*flex:\s*1 1 auto;/s);
   assert.match(css, /\.documents-viewer-actions\s*\{[^}]*flex:\s*0 0 auto;/s);
@@ -583,7 +583,7 @@ test('visualizador próprio usa PDF.js self-hosted sem fallback nativo', () => {
   assert.doesNotMatch(html, /documentsPdfFrame|<(?:iframe|embed|object)\b|frame-src/i);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
   assert.match(html, /documents\.js\?v=20260923-12/);
-  assert.match(html, /documents\.css\?v=20260923-8/);
+  assert.match(html, /documents\.css\?v=20260923-9/);
 
   assert.match(viewer, /PDFJS_VERSION = '6\.3\.289'/);
   assert.match(viewer, /\/vendor\/pdfjs-legacy\/pdf\.min\.mjs/);
@@ -803,6 +803,18 @@ test('kit visual do editor usa assets individuais self-hosted e preserva acessib
   assert.match(css, /portal-pdf-crop-action--cancel/);
 });
 
+test('modo escuro dá contraste alto às ferramentas genéricas do editor sem recolorir botões autorais', () => {
+  const css = read('css/documents.css');
+  const html = read('documentos/index.html');
+
+  assert.match(css, /html\[data-portal-theme="dark"\] \.documents-editor-toolbar--compact \.documents-editor-tool:not\(\.documents-art-button\),[\s\S]*background-color:\s*#d8e9f4\s*!important;[\s\S]*border-color:\s*#78a9c4\s*!important;[\s\S]*color:\s*#0b4568\s*!important/);
+  assert.match(css, /html\[data-portal-theme="dark"\] \.documents-editor-side-rail \.documents-rail-tool[\s\S]*background-color:\s*#d8e9f4\s*!important/);
+  assert.match(css, /\.documents-editor-tool:not\(\.documents-art-button\):hover:not\(:disabled\)[\s\S]*background-color:\s*#f1f8fc\s*!important/);
+  assert.match(css, /\.documents-editor-tool:not\(\.documents-art-button\)\.active[\s\S]*background-color:\s*#b9dff2\s*!important/);
+  assert.match(css, /\.documents-editor-tool:not\(\.documents-art-button\):disabled[\s\S]*opacity:\s*\.5/);
+  assert.match(html, /documents\.css\?v=20260923-9/);
+});
+
 test('modo escuro preserva as imagens autorais de Ajustar largura, Salvar e Imprimir', () => {
   const css = read('css/documents.css');
   const html = read('documentos/index.html');
@@ -810,7 +822,7 @@ test('modo escuro preserva as imagens autorais de Ajustar largura, Salvar e Impr
   assert.match(css, /html\[data-portal-theme="dark"\] \.documents-pdf-toolbar \.documents-art-fit-width\s*\{[\s\S]*background:\s*transparent url\('\/assets\/editor-pdf-buttons\/ajustar-largura\.svg\?v=20260916-2'\) center \/ 100% 100% no-repeat !important/);
   assert.match(css, /html\[data-portal-theme="dark"\] \.documents-pdf-toolbar \.documents-art-export\s*\{[\s\S]*background:\s*transparent url\('\/assets\/editor-pdf-buttons\/salvar-pdf\.svg\?v=20260916-2'\) center \/ 100% 100% no-repeat !important/);
   assert.match(css, /html\[data-portal-theme="dark"\] \.documents-pdf-toolbar \.documents-art-print\s*\{[\s\S]*background:\s*transparent url\('\/assets\/editor-pdf-buttons\/imprimir-normal\.svg\?v=20260916-2'\) center \/ 100% 100% no-repeat !important/);
-  assert.match(html, /documents\.css\?v=20260923-8/);
+  assert.match(html, /documents\.css\?v=20260923-9/);
 });
 
 test('visualizador fora da edição mostra Salvar PDF e Imprimir ao lado de Ajustar largura', () => {
@@ -888,7 +900,7 @@ test('editor usa os controles da mesma superfície PDF.js sem lista textual para
   assert.doesNotMatch(client, /documentsEditorPages|data-editor-index|renderEditorPages/);
   assert.match(html, /document-viewer\.js\?v=20260922-3/);
   assert.match(html, /documents\.js\?v=20260923-12/);
-  assert.match(html, /documents\.css\?v=20260923-8/);
+  assert.match(html, /documents\.css\?v=20260923-9/);
 
   assert.match(client, /async function openEditorWithPortalViewer/);
   assert.match(client, /viewer\.getViewState(?:\?\.)?\(\)/);
@@ -1400,7 +1412,7 @@ test('ferramentas laterais respeitam hidden mesmo com display autoral', () => {
   assert.match(html, /id="documentAiButton"[^>]*hidden/);
   assert.match(css, /\.documents-rail-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
   assert.match(css, /\.documents-editor-tool\[hidden\][\s\S]*display:\s*none\s*!important/);
-  assert.match(html, /documents\.css\?v=20260923-8/);
+  assert.match(html, /documents\.css\?v=20260923-9/);
 });
 
 test('lista ocupa toda a Central e Titon usa a mesma superfície em primeiro plano', () => {
@@ -1435,7 +1447,7 @@ test('desktop seleciona com clique e abre PDF por duplo clique ou Enter; mobile 
   assert.match(client, /selectListItem\(index\);[\s\S]*openPdf\(item\)/);
   assert.match(css, /\.documents-item-open-titon,\s*\n\.documents-item-open-folder\s*\{[\s\S]*display:\s*none/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-open-titon[\s\S]*display:\s*inline-flex/);
-  assert.match(html, /documents\.css\?v=20260923-8/);
+  assert.match(html, /documents\.css\?v=20260923-9/);
   assert.match(html, /documents\.js\?v=20260923-12/);
   assert.match(css, /\.documents-item\.selected\s*\{[^}]*background:\s*#fff3f0;[^}]*box-shadow:\s*inset 3px 0 0 #ff2800;/s);
   assert.match(css, /\.documents-item-icon\s*\{[^}]*background:\s*#fff0ed;[^}]*color:\s*#ff2800;/s);
@@ -1465,7 +1477,7 @@ test('lista oferece salvar e imprimir PDF diretamente no hover sem abrir o Titon
   assert.match(css, /\.documents-item-row\.pdf:hover \.documents-item-quick-actions,[\s\S]*opacity:\s*1;[\s\S]*pointer-events:\s*auto/);
   assert.match(css, /\.documents-item-quick-action\s*\{[\s\S]*width:\s*34px;[\s\S]*height:\s*34px/);
   assert.match(css, /@media \(max-width: 900px\), \(hover: none\) and \(pointer: coarse\)[\s\S]*\.documents-item-quick-actions\s*\{\s*display:\s*none/);
-  assert.match(html, /documents\.css\?v=20260923-8/);
+  assert.match(html, /documents\.css\?v=20260923-9/);
   assert.match(html, /documents\.js\?v=20260923-12/);
 });
 
@@ -1753,7 +1765,7 @@ test('Titon oferece bloco de notas temporário móvel e redimensionável sem per
   assert.match(html, /id="documentsNotepadHead"/);
   assert.match(html, /id="documentNotepadText"[^>]*maxlength="8000"[^>]*spellcheck="false"/);
   assert.equal((html.match(/data-notepad-resize="/g) || []).length, 8);
-  assert.match(html, /documents\.css\?v=20260923-8/);
+  assert.match(html, /documents\.css\?v=20260923-9/);
   assert.match(html, /documents\.js\?v=20260923-12/);
 
   assert.match(css, /\.documents-notepad-panel\[hidden\][\s\S]*display:\s*none\s*!important/);
