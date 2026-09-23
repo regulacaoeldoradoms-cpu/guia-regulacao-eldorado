@@ -6631,8 +6631,6 @@
   });
 
   els.list.addEventListener('click', (event) => {
-    if (event.target.closest?.('.documents-list-rename')) return;
-
     const openIndex = Number(event.target?.dataset?.openTitonIndex);
     if (Number.isInteger(openIndex) && openIndex >= 0) {
       clearPendingListRename();
@@ -6688,7 +6686,6 @@
   });
 
   els.list.addEventListener('dblclick', (event) => {
-    if (event.target.closest?.('.documents-list-rename')) return;
     clearPendingListRename();
     const button = event.target.closest?.('[data-index]');
     if (!button) return;
