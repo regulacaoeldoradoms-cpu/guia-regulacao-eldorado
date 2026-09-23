@@ -12,7 +12,8 @@ function env(overrides = {}) {
     DOCUMENTS_AI_ENABLED: 'true',
     DOCUMENTS_AI_PROCESSING_ENABLED: 'true',
     DOCUMENTS_AI_FREE_ONLY: 'true',
-    TITON_GEMINI_COMPARISON_ENABLED: 'true',
+    TITON_GEMINI_ENABLED: 'true',
+    TITON_GEMINI_COMPARISON_ENABLED: 'false',
     TITON_GEMINI_MODEL: 'gemini-3.5-flash-lite',
     TITON_GEMINI_API_KEY: 'secret-test-only',
     ...overrides
@@ -78,7 +79,7 @@ test('schema Gemini usa subset suportado e mantém três formatos de fields estr
   assert.equal(Object.prototype.hasOwnProperty.call(schema, 'oneOf'), false);
 });
 
-test('Gemini é provider comparativo separado e preserva proveniência da página', async () => {
+test('Gemini canônico preserva proveniência da página', async () => {
   let request = null;
   const result = await analyzeDocumentAiPageWithGemini(env(), {
     pageNumber: 2,
@@ -134,7 +135,7 @@ test('Gemini falha fechado sem secret ou com modelo não aprovado', async () => 
       mimeType: 'image/png',
       bytes: new Uint8Array([1])
     }),
-    /comparação com Gemini não está habilitada|credencial/i
+    /Gemini não está habilitado|credencial/i
   );
 
   await assert.rejects(
@@ -143,7 +144,7 @@ test('Gemini falha fechado sem secret ou com modelo não aprovado', async () => 
       mimeType: 'image/png',
       bytes: new Uint8Array([1])
     }),
-    /comparação com Gemini não está habilitada|modelo Gemini/i
+    /Gemini não está habilitado|modelo Gemini/i
   );
 });
 
@@ -182,7 +183,7 @@ test('Gemini informa indisponibilidade de modelo em vez de erro genérico', asyn
   );
 });
 
-test('configuração comparativa usa modelo estável aprovado', () => {
+test('configuração Gemini usa modelo estável aprovado', () => {
   assert.equal(TITON_GEMINI_COMPARISON.defaultModel, 'gemini-3.5-flash-lite');
   assert.equal(TITON_GEMINI_COMPARISON.timeoutMs, 25_000);
 });
