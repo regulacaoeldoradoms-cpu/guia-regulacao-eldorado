@@ -171,7 +171,8 @@ jobs:
           grep -q "https://www.googleapis.com/auth/drive" worker/document-drive.js
           grep -q "Cache-Control.*no-store" worker/documents-router.js
           grep -q "URL.revokeObjectURL" js/documents.js
-          grep -q "Somente leitura" documentos/index.html
+          grep -q 'id="documentsAccessChip"' documentos/index.html
+          grep -q "'Acesso completo' : 'Somente leitura'" js/documents.js
           grep -q "Gerenciar cargos e acessos" documentos/index.html
           grep -q "Cargos/funções adicionais (acumuláveis)" admin/usuarios/index.html
           ! grep -q "Acessos à Central" documentos/index.html
