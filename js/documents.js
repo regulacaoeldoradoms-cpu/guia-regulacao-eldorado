@@ -5223,7 +5223,7 @@
     try {
       const getter = window.PortalPerformance?.getDocumentWarmPayload;
       return typeof getter === 'function'
-        ? Promise.resolve(getter({ timeoutMs: 1400 })).catch(() => null)
+        ? Promise.resolve(getter({ timeoutMs: 6000 })).catch(() => null)
         : Promise.resolve(null);
     } catch (_) {
       return Promise.resolve(null);
@@ -5305,35 +5305,6 @@
   function driveTimingValue(payload, key) {
     const value = Number(payload?.timing?.[key] || 0);
     return Number.isFinite(value) && value >= 0 ? Math.round(value) : 0;
-  }
-
-  function warmedPriorityFolder(parentRef, payload = state.warmedDocumentPayload) {
-    const ref = String(parentRef || '');
-    const ageMs = Number(payload?.ageMs || 0);
-    if (
-      !ref
-      || !Number.isFinite(ageMs)
-      || ageMs < 0
-      || ageMs > 90 * 1000
-    ) return null;
-
-    const folder = (Array.isArray(payload?.priorityFolders) ? payload.priorityFolders : [])
-      .find((entry) => String(entry?.ref || '') === ref);
-    return folder && Array.isArray(folder.items) ? folder : null;
-  }
-
-  function applyWarmedFolderSnapshot(folder, parentRef) {
-    if (!folder || !Array.isArray(folder.items)) return false;
-    const incoming = sortItems(folder.items);
-    state.items = incoming;
-    state.nextPageToken = String(folder.nextPageToken || '');
-    state.folderSnapshot = {
-      parentRef: String(parentRef || ''),
-      items: incoming.slice(),
-      nextPageToken: state.nextPageToken
-    };
-    renderItems();
-    return true;
   }
 
   function warmedRootFolder(payload) {
@@ -5543,24 +5514,14 @@
     state.loading = true;
     const started = performance.now();
     const parentRef = currentParentRef();
-    let warmedHit = false;
 
     if (!append) {
       state.searchMode = false;
       state.searchQuery = '';
       state.selectedListIndex = -1;
       els.search.value = '';
-      const priority = warmedPriorityFolder(parentRef);
       const snapshot = state.folderSnapshot;
-      if (priority && applyWarmedFolderSnapshot(priority, parentRef)) {
-        warmedHit = true;
-        capture('drive_folder_opened', {
-          route: '/documentos/',
-          duration_ms: duration(started),
-          source: 'cache',
-          cache_state: 'hit'
-        });
-      } else if (snapshot && snapshot.parentRef === parentRef && Array.isArray(snapshot.items)) {
+      if (snapshot && snapshot.parentRef === parentRef && Array.isArray(snapshot.items)) {
         state.items = snapshot.items.slice();
         state.nextPageToken = String(snapshot.nextPageToken || '');
         renderItems();
@@ -5572,13 +5533,6 @@
     }
 
     try {
-      if (warmedHit && !append) {
-        try {
-          window.PortalPerformance?.warmDocumentsForUser?.(state.user, { scheduleRefresh: true })?.catch?.(() => {});
-        } catch (_) {}
-        return true;
-      }
-
       const payload = await api('/api/documents/drive/list', {
         method: 'POST',
         body: JSON.stringify({
@@ -5596,17 +5550,15 @@
         nextPageToken: state.nextPageToken
       };
       renderItems();
-      if (!warmedHit) {
-        capture('drive_folder_opened', {
-          route: '/documentos/',
-          duration_ms: duration(started),
-          source: 'drive',
-          cache_state: 'miss',
-          drive_token_ms: driveTimingValue(payload, 'tokenMs'),
-          drive_api_ms: driveTimingValue(payload, 'apiMs'),
-          drive_map_ms: driveTimingValue(payload, 'mapMs')
-        });
-      }
+      capture('drive_folder_opened', {
+        route: '/documentos/',
+        duration_ms: duration(started),
+        source: 'drive',
+        cache_state: 'miss',
+        drive_token_ms: driveTimingValue(payload, 'tokenMs'),
+        drive_api_ms: driveTimingValue(payload, 'apiMs'),
+        drive_map_ms: driveTimingValue(payload, 'mapMs')
+      });
     } catch (error) {
       if (!append && !state.items.length) {
         els.list.innerHTML = '<div class="documents-empty">Não foi possível carregar esta pasta.</div>';
@@ -6458,40 +6410,6 @@
     event.preventDefault();
     event.stopPropagation();
   }, true);
-
-  window.addEventListener('portal:documents-warm-updated', (event) => {
-    const payload = event.detail;
-    if (!payload || typeof payload !== 'object') return;
-    state.warmedDocumentPayload = payload;
-
-    const parentRef = currentParentRef();
-    // Consulta [2026] e Exames [2026] são prioridades apenas de preload.
-    // Nunca usar o aquecimento delas para substituir/reordenar a Home (Meu Drive).
-    if (!parentRef) return;
-    const priority = warmedPriorityFolder(parentRef, payload);
-    if (!priority) return;
-
-    const incoming = sortItems(priority.items);
-    state.folderSnapshot = {
-      parentRef,
-      items: incoming.slice(),
-      nextPageToken: String(priority.nextPageToken || '')
-    };
-
-    const safeToRepaint = (
-      !state.searchMode
-      && !state.loading
-      && !state.pdfItem
-      && !state.editorSession
-      && state.selectedListIndex < 0
-      && state.items.length <= 20
-    );
-    if (safeToRepaint) {
-      state.items = incoming;
-      state.nextPageToken = String(priority.nextPageToken || '');
-      renderItems();
-    }
-  });
 
   navigator.serviceWorker?.addEventListener('message', (event) => {
     if (event.data?.type !== 'PORTAL_DOCUMENT_STREAM_FAILED') return;
