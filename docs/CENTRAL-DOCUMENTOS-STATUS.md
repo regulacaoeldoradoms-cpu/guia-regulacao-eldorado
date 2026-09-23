@@ -3228,45 +3228,56 @@ A mudança em si continua sendo frontend e não depende de nova lógica de Worke
 
 **Pendência:** homologação humana em produção, incluindo modo escuro e nomes longos. O aceite operacional é hover revelar exatamente os dois botões, Salvar iniciar download e Imprimir abrir a caixa de impressão, ambos sem abrir o Titon.
 
-## Fase 7G.3 — botões autorais do Titon no modo escuro — EM BRANCH — 23/09/2026
+## Fase 7G.3 — botões autorais do Titon no modo escuro — PUBLICADA / AGUARDANDO HOMOLOGAÇÃO HUMANA — 23/09/2026
 
-Durante a homologação visual em produção, o operador identificou que os botões **Ajustar largura**, **Salvar PDF** e **Imprimir PDF** no topo do visualizador apareciam como retângulos vazios no modo escuro.
+A PR **#459** foi mesclada em `main` pelo commit **`2c5ff85a`**.
 
-**Diagnóstico confirmado:** a camada global de tema escuro aplica `background: #142b3b !important` a `.portal-button.secondary`. Como `background` é shorthand, ela também redefine `background-image`, `background-repeat`, `background-position` e `background-size`. Esses três controles usam justamente imagens autorais como background e também possuem a classe `secondary`; o shorthand global ocultava os assets. Zoom -/+ não sofria o mesmo problema porque usa `ghost`.
+**Problema corrigido:** no modo escuro, os controles **Ajustar largura**, **Salvar PDF** e **Imprimir PDF** do topo do visualizador apareciam como retângulos vazios.
 
-**Correção isolada:** em `css/documents.css`, seletores específicos do Titon no modo escuro restauram o background completo dos três controles:
+**Causa confirmada:** o tema global escuro aplica `background: #142b3b !important` aos botões `.portal-button.secondary`. Como `background` é shorthand, ele apagava também a imagem, posição, repetição e tamanho dos backgrounds autorais desses três controles. Zoom -/+ não era afetado porque usa a variante `ghost`.
+
+**Correção publicada:** `css/documents.css` restaura, somente no Titon + modo escuro, o background completo de:
 - `ajustar-largura.svg`;
 - `salvar-pdf.svg`;
 - `imprimir-normal.svg`.
 
-A correção é local à Central, não altera o tema global nem o modo claro e não mexe em JavaScript, backend, permissões, Drive, IA ou observabilidade. Cache-buster da Central: `documents.css?v=20260923-8`.
+O tema global e o modo claro permanecem inalterados. Cache-buster publicado: `documents.css?v=20260923-8`.
 
-Teste de regressão adicionado em `worker/tests/documents-ui.test.mjs` para garantir que os três backgrounds autorais continuem explícitos no modo escuro.
+**Validação:**
+- PR #459: **23/23 GitHub Actions success**, incluindo Chromium/PDF.js real;
+- Cloudflare Pages preview: **success**;
+- pós-merge `2c5ff85a`: **23/23 GitHub Actions success**;
+- GitHub Pages `deploy`: **success**;
+- Cloudflare Pages: **success**;
+- Workers Builds: **success**;
+- Worker Version observada na cadeia de publicação: `cd6db6de-1c06-4edf-9e9b-7aee1461266d`.
 
-**Validação da PR #459:** 23/23 workflows GitHub Actions concluíram com sucesso, inclusive Chromium/PDF.js real; Cloudflare Pages preview publicou com sucesso. O check externo Workers Builds falhou na branch, mas esta unidade altera apenas CSS/HTML de cache-buster/testes/status e não modifica runtime/configuração do Worker; por isso a falha não é atribuída à correção visual e não bloqueia o merge desta unidade estática.
+A alteração funcional é somente CSS/cache-buster/teste/status; a evidência do Worker é registrada apenas para comprovar que a cadeia geral de publicação ficou íntegra.
 
-Branch: `fix/titon-dark-toolbar-art-buttons-20260923`. Próximo passo: abrir PR, rodar CI integral e mesclar somente se verde.
+**Privacidade/segurança:** nenhuma alteração em JavaScript, API, Drive, IA, permissões ou observabilidade.
+
+**Pendência:** homologação visual humana em produção. O aceite é os três botões exibirem novamente seus desenhos no modo escuro, mantendo hover/foco e sem regressão do modo claro.
 
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.3 — corrigir botões autorais do Titon no modo escuro** |
-| Última ação concluída | causa CSS confirmada; override específico implementado para Ajustar largura/Salvar/Imprimir; cache-buster e regressão atualizados |
-| Branch atual | `fix/titon-dark-toolbar-art-buttons-20260923` |
-| PR atual | **#459 aberta** — “Titon: corrigir botões autorais no modo escuro” |
-| Último commit relevante | `a5f2e5a0` — teste de regressão; `2cab8244` contém a correção CSS |
-| Checks e testes | **23/23 GitHub Actions success**, incluindo navegador real; Cloudflare Pages preview **success**; Workers Builds de branch **failure** sem mudança de Worker |
-| Decisões tomadas | corrigir localmente em `documents.css`, preservando o tema global e o modo claro |
-| Justificativas | o bug é colisão de CSS entre `.portal-button.secondary` e backgrounds autorais; override local minimiza blast radius |
-| Alternativas descartadas | alterar o tema global; trocar classes HTML; converter assets em JS/inline SVG; modificar modo claro |
-| Ações externas concluídas | nenhuma |
-| Pendências e bloqueios | merge da #459 → confirmar publicação estática em main → homologação visual |
-| Riscos conhecidos | conferir os três botões em hover/foco no modo escuro; demais ferramentas não usam essa combinação de classes |
+| Subfase / objetivo atual | **7G.3 publicada; aguardando homologação visual dos três botões do Titon no modo escuro** |
+| Última ação concluída | PR **#459** mesclada em `2c5ff85a`; Pages e Workers Builds publicados com sucesso |
+| Branch atual | `docs/titon-dark-toolbar-buttons-published-20260923` (somente registro pós-publicação) |
+| PR atual | #459 **mesclada**; PR documental deste registro a abrir |
+| Último commit funcional relevante | `2c5ff85a9fbb690d34cac883d16588e74eee6f7b` |
+| Checks e testes | PR #459 **23/23 success**; pós-merge **23/23 GitHub Actions success**; GitHub Pages, Cloudflare Pages e Workers Builds **success** |
+| Decisões tomadas | override local no Titon restaura backgrounds autorais; tema global e modo claro não mudam |
+| Justificativas | bug causado por shorthand `background` do tema escuro sobre botões `secondary`; correção local minimiza blast radius |
+| Alternativas descartadas | alterar o tema global; trocar classes HTML; reescrever assets via JS/inline SVG |
+| Ações externas concluídas | publicação completa confirmada; Worker check reportou versão `cd6db6de-1c06-4edf-9e9b-7aee1461266d` |
+| Pendências e bloqueios | **somente homologação visual humana em produção da 7G.3** |
+| Riscos conhecidos | conferir hover/foco nos três controles e ausência de regressão no modo claro |
 | Métricas / observabilidade | nenhuma telemetria nova |
-| Próxima ação exata | **mesclar a #459 (23/23 workflows funcionais verdes; Pages preview verde), confirmar publicação estática da main e validar em produção Ajustar largura/Salvar/Imprimir no modo escuro** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
+| Próxima ação exata | **Ctrl+F5 em /documentos/ com modo escuro → abrir PDF → conferir Ajustar largura, Salvar PDF e Imprimir PDF; validar também hover e clique** |
+| Arquivos e fontes principais | Guia Mestre V1.1; merge #459 `2c5ff85a`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
 
 ## Histórico recuperável
 
