@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — homologar novamente Gemini comparativo após correção da primeira falha real** |
-| Última ação concluída | PR **#416** mesclada e publicada; erro Gemini não some mais e provider migrou para 3.5 Flash-Lite/contrato REST atual |
-| Branch atual | `docs/titon-gemini-empty-result-published-20260923` somente para reconciliar publicação |
-| PR atual | funcional #416 mesclada; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional `32ff226a82affd9b838b7151ac2efe8074806f1e` |
-| Checks e testes | Fases 1–6 verdes; Chromium 76 passed/4 skipped; safe deploy, site, governança, Pages, GitHub build/deploy e Workers Build produtivo verdes |
-| Decisões tomadas | IA atual preservada; Gemini 3.5 Flash-Lite manual; erro persistente; sem retry pago automático; contrato `responseFormat.text.schema` |
-| Justificativas | primeira chamada real terminava sem feedback; UI escondia o catch; 2.5 tem acesso limitado em projetos novos e integração usava formato REST antigo |
-| Alternativas descartadas | substituir IA atual; continuar em 2.5; esconder falha; retries pagos automáticos |
-| Ações externas concluídas | Worker produtivo build `18ec1340-55b0-4ecd-bab8-0ede2f81c94b` success; secret/billing permanecem configurados |
-| Pendências e bloqueios | falta somente nova chamada real do operador para validar resposta da API e comparar precisão/tempo/tokens |
-| Riscos conhecidos | provider externo pode ainda responder erro específico; desta vez o erro ficará visível e diagnosticável |
-| Métricas / observabilidade | nenhum conteúdo sensível é logado; apenas métricas técnicas coarse |
-| Próxima ação exata | **Ctrl+F5; mesmo PDF; clicar Extrair com Gemini; confirmar resultado ou enviar apenas a mensagem de erro visível** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #416; `worker/document-ai-gemini.js`; `worker/document-ai.js`; `js/documents.js`; `documentos/index.html`; status Fase 7E |
+| Subfase / objetivo atual | **7E — promover Gemini 3.5 Flash-Lite de comparação para provider documental canônico do Titon** |
+| Última ação concluída | Testes operacionais reais confirmaram velocidade satisfatória e melhor fidelidade percebida; branch de promoção criada e código ajustado para fluxo único Gemini |
+| Branch atual | `feat/titon-gemini-primary-20260923` |
+| PR atual | ainda não aberto; abrir após validação estrutural da branch |
+| Último commit relevante | branch iniciada da main `1fa42a50e2427de268e318284bf9f898eeb65144`; commits da promoção Gemini em andamento |
+| Checks e testes | testes locais/CI da nova branch ainda pendentes; suíte anterior da PR #418 estava verde e Worker produtivo `33a85383-5856-4648-930e-a06d1b241005` publicado |
+| Decisões tomadas | Gemini 3.5 Flash-Lite passa a ser a única IA de extração visível/canônica; comparação e botão Workers AI removidos; chat documental legado desabilitado; sem fallback automático; código Workers AI mantido apenas para rollback técnico |
+| Justificativas | operador validou múltiplos PDFs reais com resultado mais fiel e latência satisfatória; consumo observado foi ~5–5,5 mil tokens em 2 páginas, ~7 mil em 3 páginas e 29.175 em 12 páginas, compatível com o orçamento previsto |
+| Alternativas descartadas | manter duas IAs lado a lado; fallback automático para Workers AI; excluir imediatamente todo código legado e perder rollback; preextração paga automática |
+| Ações externas concluídas | `TITON_GEMINI_API_KEY` já existe como secret do Worker; projeto Google correto está em Tier 1; nenhuma nova credencial é necessária |
+| Pendências e bloqueios | validar testes/CI, abrir PR, integrar somente se verde e confirmar deploy seguro; depois realizar teste final em produção |
+| Riscos conhecidos | nenhum modelo generativo deve ser tratado como incapaz de errar; por isso permanecem schema fechado, proveniência por página, NÃO CONSTA/ILEGÍVEL e normalização restritiva |
+| Métricas / observabilidade | conteúdo clínico, imagem, prompt e resposta continuam fora de PostHog/logs; somente métricas técnicas permitidas |
+| Próxima ação exata | **executar validações da branch; corrigir regressões; abrir PR; mesclar somente com checks verdes; confirmar Worker publicado e testar um PDF real** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-ai.js`; `worker/document-ai-gemini.js`; `js/documents.js`; `documentos/index.html`; `worker/wrangler.toml`; testes documentais |
 
 ## Histórico recuperável
 
@@ -5003,3 +5003,40 @@ Validação:
 - Workers Build produtivo **`33a85383-5856-4648-930e-a06d1b241005`** — **success**.
 
 **Próxima ação exata:** Ctrl+F5, abrir o mesmo PDF e clicar **Extrair com Gemini**. Esperado: o HTTP 400 anterior não se repetir; se surgir outro erro, registrar somente a mensagem sanitizada exibida no painel.
+
+
+## Fase 7E — Gemini 3.5 Flash-Lite escolhido como provider único do Titon — 23/09/2026
+
+Decisão operacional do usuário após homologação real: **manter somente o Gemini 3.5 Flash-Lite como IA de extração documental visível no Titon**. Nos testes realizados, o operador considerou a velocidade satisfatória e os resultados mais fiéis que o provider anterior. Essa decisão não transforma a avaliação empírica em garantia absoluta de ausência de erro: as barreiras restritivas do Titon permanecem obrigatórias.
+
+Evidências operacionais informadas nesta janela:
+- PDF de 2 páginas: aproximadamente **5.000–5.500 tokens**;
+- PDF de 3 páginas: aproximadamente **7.000 tokens**;
+- PDF de 12 páginas: **29.175 tokens**;
+- a maioria dos PDFs do fluxo real possui aproximadamente 2 páginas;
+- projeto Google correto confirmado em **Tier 1**, com limites operacionais muito acima do volume esperado.
+
+Arquitetura aprovada:
+- `gemini-3.5-flash-lite` passa de provider comparativo para **provider canônico**;
+- painel volta a ter um único botão **Extrair dados do PDF**;
+- resultado Gemini alimenta diretamente `documentAiResults`, `documentAiEvidence` e os recursos de copiar/ordenar;
+- comparação IA atual × Gemini é removida da interface;
+- chat documental antigo fica desabilitado para que o fluxo normal não use Workers AI;
+- nenhum fallback automático para Workers AI;
+- nenhuma preextração paga automática;
+- Workers AI permanece somente como código de rollback técnico, sem botão, sem provider canônico e sem execução normal;
+- `TITON_GEMINI_API_KEY` continua exclusivamente no Worker;
+- schema fechado, proveniência por página, estados NÃO CONSTA/ILEGÍVEL e normalizadores restritivos permanecem.
+
+Implementação iniciada na branch `feat/titon-gemini-primary-20260923`:
+- `TITON_GEMINI_ENABLED=true`;
+- `TITON_GEMINI_COMPARISON_ENABLED=false`;
+- configuração pública passa a declarar `google-gemini-api` como provider;
+- botão primário usa exclusivamente `/api/documents/ai/page/gemini`;
+- concorrência mantida em 3 páginas, já considerada satisfatória nos testes reais;
+- tokens/modelo/tempo continuam disponíveis apenas como feedback técnico local da execução;
+- cache-buster do cliente avança para `documents.js?v=20260923-2`.
+
+**Critério de aceite:** em produção deve existir apenas um fluxo visível de extração, usando Gemini 3.5 Flash-Lite; nenhum clique normal deve chamar `/page/extract` do provider legado; resultados continuam separados por página e sujeitos às mesmas validações restritivas; ausência de secret/modelo deve falhar fechado; CI e deploy seguro devem permanecer verdes.
+
+**Próxima ação exata:** concluir testes da branch, abrir PR e integrar somente com checks verdes. Após publicação, Ctrl+F5 e validar um PDF conhecido pelo botão único **Extrair dados do PDF**.
