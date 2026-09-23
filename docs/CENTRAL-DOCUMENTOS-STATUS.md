@@ -3158,21 +3158,21 @@ Esse Workers Builds bem-sucedido **substitui como evidência operacional** a ten
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.1 continua aguardando homologação humana; refinamento transversal do chat escuro foi integrado e aguarda confirmação visual** |
-| Última ação concluída | PR **#452** mesclada à `main`; modo escuro completo do Chat interno publicado |
-| Branch atual | `docs/portal-chat-dark-published-20260923` somente para reconciliar status pós-merge |
-| PR atual | funcional **#452 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`77e50f016762bd1cf6cce5a808c9088879d38091`** |
-| Checks e testes | #452 **23/23 success**; Pages e abertura pós-login pós-merge **success**; workflow próprio do chat verde |
-| Decisões tomadas | refinamento escuro fica no CSS próprio do chat; claro não muda; cache-buster do chat sobe sem rebustar toda a camada global |
-| Justificativas | a falha estava nas superfícies hardcoded internas de `portal-chat.css`; corrigir localmente reduz blast radius e mantém a arquitetura global |
-| Alternativas descartadas | recolorir via JS; rebustar todas as rotas do CSS global; alterar estrutura/funcionalidade do chat |
+| Subfase / objetivo atual | **7G.1 continua aguardando homologação humana; refinamento transversal do chat escuro está publicado e aguarda apenas confirmação visual** |
+| Última ação concluída | PR **#453** mesclada à `main`, reconciliando o handoff após a PR funcional **#452** |
+| Branch atual | nenhuma branch funcional pendente para o chat; `main` contém o código publicado |
+| PR atual | **#452 mesclada** (funcional) e **#453 mesclada** (status/handoff) |
+| Último commit relevante | `main` **`1252cf8e27e66a4fbbba00a8c2f50a45c8b29563`**; merge funcional do chat `77e50f016762bd1cf6cce5a808c9088879d38091` |
+| Checks e testes | #452 **23/23 success**; pós-merge Pages, abertura pós-login e workflow próprio do chat: **success** |
+| Decisões tomadas | refinamento escuro permanece no CSS próprio do chat; modo claro não muda; sem alteração de estrutura, backend ou regras de negócio |
+| Justificativas | as superfícies claras residuais estavam hardcoded em `portal-chat.css`; corrigir localmente reduz blast radius |
+| Alternativas descartadas | recolorir via JS; alterar mensagens/contatos; rebustar toda a camada global; mexer no backend |
 | Ações externas concluídas | GitHub Pages publicou o merge #452 com success |
-| Pendências e bloqueios | confirmar visualmente o chat em produção; depois retomar a homologação humana 7G.1 da Central |
-| Riscos conhecidos | apenas diferenças visuais residuais específicas podem aparecer em telas/tamanhos não vistos; regras de negócio não foram tocadas |
-| Métricas / observabilidade | nenhuma telemetria nova; mensagens, contatos e conteúdo do chat continuam fora do tema/observabilidade |
+| Pendências e bloqueios | somente confirmação visual humana do chat em produção; depois retomar a homologação 7G.1 da Central |
+| Riscos conhecidos | podem restar apenas diferenças visuais específicas de algum tamanho de tela não homologado; funcionalidade do chat não foi alterada |
+| Métricas / observabilidade | nenhuma telemetria nova; mensagens, contatos e conteúdo continuam fora do tema/observabilidade |
 | Próxima ação exata | **Ctrl+F5 na Home → Modo escuro → abrir Chat interno → conferir lista, busca e conversa; aprovado isso, voltar à homologação 7G.1 em /documentos/** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #452; merge `77e50f01`; `css/portal-chat.css`; `docs/PORTAL-APARENCIA-V1.md`; `worker/tests/social-ui.test.mjs`; `.github/workflows/validate-portal-chat.yml` |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #452; PR #453; `css/portal-chat.css`; `docs/PORTAL-APARENCIA-V1.md`; `worker/tests/social-ui.test.mjs`; `.github/workflows/validate-portal-chat.yml` |
 
 ## Histórico recuperável
 
