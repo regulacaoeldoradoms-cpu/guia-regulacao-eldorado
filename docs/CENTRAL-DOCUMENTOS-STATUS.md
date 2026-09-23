@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — pesquisa por nome + conteúdo indexado integrada; falta homologação real em produção** |
-| Última ação concluída | PR **#434** mesclada à `main`; pesquisa usa `name contains` + `fullText contains` da própria Drive API |
-| Branch atual | `docs/titon-fulltext-search-published-20260923` somente para reconciliar status |
-| PR atual | funcional **#434 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`92c1650286b444161eea6520a92eee744234358b`** |
-| Checks e testes | head final da #434: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
-| Decisões tomadas | usar índice `fullText` nativo do Drive na mesma Files API; nome continua no OR; múltiplos termos no conteúdo usam AND; consulta entre aspas usa frase exata |
-| Justificativas | Google Drive já indexa conteúdo de PDFs, imagens com texto e tipos reconhecidos; isso aproxima o comportamento do Drive original sem baixar/varrer todos os arquivos |
-| Alternativas descartadas | índice próprio D1; OCR/Gemini em massa a cada pesquisa; ativar Drive Activity/Labels/MCP/Marketplace para uma função já coberta pela Drive API |
-| Ações externas concluídas | nenhuma API adicional do Google precisa ser ativada |
-| Pendências e bloqueios | confirmar deploy produtivo e testar termo presente dentro do PDF mas ausente do nome |
-| Riscos conhecidos | arquivos não indexados pelo Google continuam não localizáveis via fullText; ranking não é idêntico ao Drive web |
-| Métricas / observabilidade | termo pesquisado permanece fora do PostHog; somente tempos técnicos/buckets |
-| Próxima ação exata | **Ctrl+F5 → pesquisar uma palavra/frase que exista somente dentro de um PDF → confirmar resultado; depois comparar latência com busca por nome** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #434; merge `92c16502`; `worker/document-drive.js`; `documentos/index.html`; testes Phase1/UI; docs Fase 7 |
+| Subfase / objetivo atual | **7E — adicionar filtro “Só título” à pesquisa nome + conteúdo** |
+| Última ação concluída | implementação preparada na branch: filtro abaixo da busca alterna entre pesquisa ampla e apenas nome do arquivo |
+| Branch atual | `feat/titon-search-title-only-20260923` |
+| PR atual | ainda não aberta; abrir após revisão do diff |
+| Último commit relevante | base `18ef6ed64f7dc3af2a64714e64320e16fb85cfeb`; UI, cliente, router, Drive e testes atualizados |
+| Checks e testes | CI ainda pendente; testes novos verificam `titleOnly=true` sem `fullText`, modo padrão amplo e persistência durante paginação |
+| Decisões tomadas | padrão permanece nome + conteúdo; “Só título” é opt-in; troca do filtro refaz a pesquisa ativa; filtro não é persistido na conta |
+| Justificativas | usuário precisa alternar entre busca ampla e uma consulta precisa pelo nome, como no Google Drive original |
+| Alternativas descartadas | transformar “Só título” em padrão; criar endpoint separado; persistir preferência por conta sem solicitação |
+| Ações externas concluídas | nenhuma API/configuração externa necessária |
+| Pendências e bloqueios | abrir PR, validar CI, mesclar/publicar e testar em produção |
+| Riscos conhecidos | ao alternar o filtro durante uma busca, uma nova chamada ao Drive é feita; comportamento intencional e explícito |
+| Métricas / observabilidade | termo de busca e estado do filtro não são enviados ao PostHog; somente métricas técnicas existentes |
+| Próxima ação exata | **abrir PR → checks verdes → merge/publicação → Ctrl+F5 e comparar a mesma consulta com Só título desligado/ligado** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/documents-router.js`; `worker/document-drive.js`; testes Phase1/UI |
 
 ## Histórico recuperável
 
@@ -5503,3 +5503,23 @@ Revisão da decisão antiga sobre APIs Google:
 - para esta necessidade específica, a decisão de não ativar APIs adicionais continua correta porque a **Drive API v3 já expõe o índice `fullText`**.
 
 **Próxima ação exata:** retestar em produção com conteúdo que não aparece no nome do arquivo e registrar homologação.
+
+
+## Fase 7E — filtro Só título preparado — 23/09/2026
+
+Pedido operacional: manter a pesquisa ampla por nome + conteúdo como padrão, mas oferecer um filtro visual **Só título**, equivalente ao usado no Google Drive, para restringir a consulta apenas ao nome do arquivo.
+
+Implementação na branch `feat/titon-search-title-only-20260923`:
+- filtro checkbox/pílula abaixo da barra de pesquisa;
+- estado inicial `searchTitleOnly=false`;
+- cliente envia `titleOnly` no mesmo endpoint `/api/documents/drive/search`;
+- router sanitiza com `body.titleOnly === true`;
+- Worker usa `fullText` apenas quando `titleOnly` é falso;
+- marcado, a query fica somente `trashed = false and name contains ...`;
+- alternar o filtro com busca ativa refaz imediatamente a mesma consulta;
+- refresh e paginação preservam o modo;
+- cache-busters avançam para `documents.css?v=20260923-3` e `documents.js?v=20260923-7`.
+
+Privacidade e segurança preservadas: nenhuma persistência do filtro, nenhum termo em telemetria, nenhuma mudança em OAuth, Drive write, Gemini ou OCR.
+
+**Próxima ação exata:** CI e integração; depois validar a mesma palavra em modo amplo e em Só título.
