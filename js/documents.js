@@ -73,6 +73,9 @@
   const NOTEPAD_DEFAULT_MAX_WIDTH = 320;
   const NOTEPAD_DEFAULT_MAX_HEIGHT = 340;
   const NOTEPAD_MARGIN = 10;
+  const DEFAULT_VIEWER_ZOOM_SCALE = 1.14;
+  const MIN_VIEWER_ZOOM_SCALE = 0.45;
+  const MAX_VIEWER_ZOOM_SCALE = 3;
 
   if (user.mustChangePassword) {
     location.replace('/seguranca/?primeiro-acesso=1');
@@ -163,6 +166,9 @@
     editorDrawWidth: 4,
     editorPaletteWriteChain: Promise.resolve(),
     editorPaletteWriteGeneration: 0,
+    viewerZoomScale: DEFAULT_VIEWER_ZOOM_SCALE,
+    viewerZoomWriteChain: Promise.resolve(),
+    viewerZoomWriteGeneration: 0,
     pendingMergeItem: null,
     pendingMergeFiles: [],
     mergePreviewUrls: [],
@@ -767,6 +773,25 @@
     }
   }
 
+  function normalizeViewerZoomScale(value, fallback = DEFAULT_VIEWER_ZOOM_SCALE) {
+    const numeric = Number(value);
+    const fallbackNumeric = Number(fallback);
+    const safeFallback = Number.isFinite(fallbackNumeric)
+      ? Math.min(MAX_VIEWER_ZOOM_SCALE, Math.max(MIN_VIEWER_ZOOM_SCALE, fallbackNumeric))
+      : DEFAULT_VIEWER_ZOOM_SCALE;
+    if (!Number.isFinite(numeric)) return Math.round(safeFallback * 100) / 100;
+    const clamped = Math.min(MAX_VIEWER_ZOOM_SCALE, Math.max(MIN_VIEWER_ZOOM_SCALE, numeric));
+    return Math.round(clamped * 100) / 100;
+  }
+
+  function accountViewerInitialViewState() {
+    return {
+      activePage: 1,
+      scale: normalizeViewerZoomScale(state.viewerZoomScale),
+      fitMode: false
+    };
+  }
+
   function normalizeEditorColorPalette(value) {
     const source = Array.isArray(value) ? value : [];
     const colors = [];
@@ -787,12 +812,53 @@
         ? warmed
         : await api('/api/documents/preferences', { method: 'GET' });
       state.editorColorPalette = normalizeEditorColorPalette(payload?.colorPalette);
+      state.viewerZoomScale = normalizeViewerZoomScale(payload?.viewerZoomScale);
       state.documentAiFieldOrder = normalizeTitonFieldOrder(payload?.fieldOrder);
       return true;
     } catch (_) {
       state.editorColorPalette = [...DEFAULT_EDITOR_COLOR_PALETTE];
+      state.viewerZoomScale = DEFAULT_VIEWER_ZOOM_SCALE;
       return false;
     }
+  }
+
+  function persistViewerZoomScale(scale) {
+    const normalized = normalizeViewerZoomScale(scale, state.viewerZoomScale);
+    state.viewerZoomScale = normalized;
+    const generation = ++state.viewerZoomWriteGeneration;
+
+    const write = async () => {
+      try {
+        await api('/api/documents/preferences', {
+          method: 'PATCH',
+          body: JSON.stringify({ viewerZoomScale: normalized })
+        });
+        return true;
+      } catch (error) {
+        if (generation === state.viewerZoomWriteGeneration) {
+          showStatus(
+            error?.message || 'O zoom foi aplicado nesta sessão, mas não pôde ser salvo na sua conta.',
+            'warning'
+          );
+        }
+        return false;
+      }
+    };
+
+    const queued = state.viewerZoomWriteChain.then(write, write);
+    state.viewerZoomWriteChain = queued.then(() => true, () => false);
+    return queued;
+  }
+
+  async function applyManualViewerZoom(action) {
+    const viewer = window.PortalPdfViewer;
+    const method = viewer?.[action];
+    if (typeof method !== 'function') return false;
+    await method.call(viewer);
+    const viewState = viewer.getViewState?.();
+    if (!viewState || viewState.fitMode === true) return false;
+    persistViewerZoomScale(viewState.scale);
+    return true;
   }
 
   function persistEditorColorPalette(colors) {
@@ -3154,6 +3220,7 @@
         thumbnailsRoot: els.pdfThumbnails,
         zoomLabel: els.pdfZoomLabel,
         pageCountLabel: els.pdfPageCountLabel,
+        initialViewState: accountViewerInitialViewState(),
         onFirstPageVisible: () => {
           if (openId !== state.pdfOpenId) return;
           recordFirstPageVisible(openId, bucket, cacheState, sourceLabel);
@@ -6334,9 +6401,10 @@
   });
   els.editorMergeApply?.addEventListener('click', () => applyPendingMerge().catch(() => {}));
   els.editorMergeCancel?.addEventListener('click', cancelPendingMerge);
-  els.pdfZoomOut?.addEventListener('click', () => window.PortalPdfViewer?.zoomOut?.());
-  els.pdfZoomReset?.addEventListener('click', () => window.PortalPdfViewer?.resetZoom?.());
-  els.pdfZoomIn?.addEventListener('click', () => window.PortalPdfViewer?.zoomIn?.());
+  els.pdfZoomOut?.addEventListener('click', () => applyManualViewerZoom('zoomOut').catch(() => {}));
+  els.pdfZoomReset?.addEventListener('click', () => applyManualViewerZoom('resetZoom').catch(() => {}));
+  els.pdfZoomIn?.addEventListener('click', () => applyManualViewerZoom('zoomIn').catch(() => {}));
+  // Ajustar largura é dinâmico para o PDF/viewport atual e não substitui a preferência percentual da conta.
   els.pdfFitWidth?.addEventListener('click', () => window.PortalPdfViewer?.fitWidth?.());
 
   document.addEventListener('paste', (event) => {
