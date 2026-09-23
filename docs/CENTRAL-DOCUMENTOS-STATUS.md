@@ -3207,7 +3207,7 @@ Esse Workers Builds bem-sucedido **substitui como evidência operacional** a ten
 | Subfase / objetivo atual | **Refinamento transversal do modo escuro publicado; aguardando homologação visual humana. 7G.1 da Central permanece pendente separadamente** |
 | Última ação concluída | PR funcional **#456 mesclada** em `3a528eb5`; pós-merge **50/50 workflows success**, inclusive Pages |
 | Branch atual | `docs/dark-mode-general-published-20260923` apenas para reconciliar status/handoff |
-| PR atual | funcional **#456 mesclada**; PR documental desta reconciliação ainda a abrir |
+| PR atual | funcional **#456 mesclada**; documental **#457 aberta** para reconciliar status/handoff |
 | Último commit relevante | `main` `3a528eb5116fa86ec0e52a2b09d2e7f1988fb743`; head funcional da PR `a2d71349` |
 | Checks e testes | #456: **50/50 success** após correção de contrato obsoleto; pós-merge da main: **50/50 success**, Pages run 35885862244 e abertura pós-login run 35885865345 verdes |
 | Decisões tomadas | cobertura escura centralizada; modo claro preservado; impressão clara preservada; Telemedicina usa overrides de maior especificidade sem mudar lógica |
