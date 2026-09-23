@@ -111,8 +111,8 @@ export function titonGeminiResponseJsonSchema() {
 
 function geminiThinkingConfig(model) {
   return String(model || '') === 'gemini-3.8-flash'
-    ? { thinkingLevel: 'low' }
-    : { thinkingLevel: 'minimal' };
+    ? { thinkingLevel: 'LOW' }
+    : { thinkingLevel: 'MINIMAL' };
 }
 
 function requireGemini(env = {}) {
@@ -224,9 +224,17 @@ function providerError(status, payload) {
     );
   }
   if (code === 400) {
+    const providerMessage = String(payload?.error?.message || '');
+    const detail = /thinkingLevel/i.test(providerMessage)
+      ? ' (nível de raciocínio)'
+      : /mimeType|responseFormat/i.test(providerMessage)
+        ? ' (formato de resposta)'
+        : /schema/i.test(providerMessage)
+          ? ' (schema estruturado)'
+          : '';
     return new DocumentAiError(
       'DOCUMENT_AI_GEMINI_REQUEST_INVALID',
-      'O Gemini recusou a estrutura da solicitação.',
+      `O Gemini recusou a estrutura da solicitação${detail}.`,
       502
     );
   }
@@ -318,7 +326,7 @@ export async function analyzeDocumentAiPageWithGemini(env, input = {}, options =
       thinkingConfig: geminiThinkingConfig(model),
       responseFormat: {
         text: {
-          mimeType: 'application/json',
+          mimeType: 'APPLICATION_JSON',
           schema: titonGeminiResponseJsonSchema()
         }
       }

@@ -4950,3 +4950,26 @@ Estado funcional publicado:
 Observação: a causa exata da primeira falha no provider não pôde ser recuperada porque a própria UI antiga escondia o erro e conteúdo do provider não é logado por política. A falha de UX foi comprovada no código. A atualização de modelo/contrato elimina os riscos de compatibilidade identificados, mas a confirmação final depende de uma nova chamada real autenticada.
 
 **Próxima ação exata:** Ctrl+F5, abrir o mesmo PDF e clicar em **Extrair com Gemini**. O resultado esperado é comparação visível; se ainda houver falha, copiar somente a mensagem de erro exibida na própria janela, nunca a chave.
+
+## Fase 7E — erro Gemini 400 por enums REST — 23/09/2026
+
+Nova evidência operacional após a PR #416: o erro agora permaneceu visível e mostrou **“O Gemini recusou a estrutura da solicitação.”**. Isso confirma que billing, secret, autenticação da rota e renderização do erro avançaram até a chamada do provider; a falha atual é um HTTP 400 de contrato da requisição.
+
+Revisão contra a documentação oficial atual do Google para `generateContent` identificou o erro preciso:
+- `GenerationConfig.thinkingConfig.thinkingLevel` é um **enum protobuf REST** com valores `MINIMAL`, `LOW`, `MEDIUM`, `HIGH`;
+- `GenerationConfig.responseFormat.text.mimeType` também é enum REST, e o valor JSON documentado para saída estruturada é `APPLICATION_JSON`;
+- o código publicado enviava os aliases humanizados em minúsculas: `minimal` e `application/json`;
+- esses valores são usados naturalmente nos SDKs e exemplos de alto nível, mas no corpo REST bruto do endpoint `v1beta/models/...:generateContent` o contrato exposto pelo Google espera os enums canônicos.
+
+Correção na branch **`fix/titon-gemini-rest-enums-20260923`**:
+- `thinkingLevel: 'MINIMAL'` para `gemini-3.5-flash-lite`;
+- `thinkingLevel: 'LOW'` para eventual `gemini-3.8-flash`;
+- `responseFormat.text.mimeType: 'APPLICATION_JSON'`;
+- mensagem de HTTP 400 continua sanitizada e agora identifica apenas a categoria técnica quando o Google citar `thinkingLevel`, `responseFormat/mimeType` ou `schema`, sem devolver payload, conteúdo do documento ou chave;
+- testes passam a bloquear regressão para aliases minúsculos no REST.
+
+A IA atual permanece inalterada e independente. Não houve mudança de segredo, permissões, Drive, OCR, PostHog ou provider canônico.
+
+**Critério de aceite:** a próxima chamada real não deve retornar o mesmo 400 de estrutura. Se houver outro 400, a UI deve indicar a categoria técnica sanitizada; se a API aceitar, o Gemini deve retornar JSON estruturado e a comparação aparecer.
+
+**Próxima ação exata:** validar CI, integrar/publicar e repetir no mesmo PDF com Ctrl+F5 + **Extrair com Gemini**.
