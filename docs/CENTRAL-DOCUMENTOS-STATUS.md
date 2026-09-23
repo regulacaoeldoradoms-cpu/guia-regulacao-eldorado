@@ -2,6 +2,27 @@
 
 Última atualização: 23/09/2026.
 
+## Refinamento transversal do modo escuro — PUBLICADO; HOMOLOGAÇÃO VISUAL PENDENTE — 23/09/2026
+
+A PR funcional **#456 — UI: concluir cobertura geral do modo escuro** foi mesclada na `main` pelo commit **`3a528eb5116fa86ec0e52a2b09d2e7f1988fb743`**.
+
+A implementação preservou o escopo definido: somente apresentação do modo escuro, centralizada em `css/portal-interactions.css`, com cache-buster `portal-interactions.css?v=20260923-2`. Não houve mudança de backend, autenticação, permissões, regras clínicas/operacionais, conteúdo do chat ou observabilidade.
+
+Durante o primeiro CI da PR, dois workflows falharam pelo **mesmo contrato de teste obsoleto**, não por regressão funcional: `worker/tests/social-ui.test.mjs` ainda exigia `portal-interactions.css?v=20260923-1`. O contrato foi alinhado ao novo cache-buster no commit `a2d7134937759f36a43b36d86cd1289808ea6329`. Depois disso, a PR concluiu **50/50 workflows com success**, sem falhas.
+
+Após o merge, o push da `main` também concluiu **50/50 workflows com success**, incluindo:
+- `pages build and deployment`, run **35885862244**: success;
+- `Validar abertura pós-login — navegador`, run **35885865345**: success;
+- `Validar interações do Portal V1`: success;
+- `Validar Camada Social V1`: success;
+- `Validar pré-regulação conversacional`: success;
+- validações de Telemedicina, Recepção, Central de Documentos e demais rotas afetadas: success.
+
+Estado: código e publicação técnica estão concluídos. Resta somente a **homologação visual humana em produção** das superfícies mostradas nos prints: `/perfil/`, `/telemedicina/`, `/conquistas/`, `/recepcao/` e `/medico/`. O chat interno já foi aprovado antes desta unidade.
+
+Próxima ação exata: no modo escuro, executar Ctrl+F5 e revisar as cinco rotas acima. Se aprovadas, registrar a homologação e retomar a pendência separada **7G.1 da Central de Documentos em `/documentos/`**.
+
+
 ## Refinamento transversal do modo escuro — EM PR — 23/09/2026
 
 A homologação humana do refinamento do **chat interno em modo escuro foi aprovada**: o operador confirmou que “o chat ficou ótimo”. Na mesma homologação, prints reais revelaram superfícies claras residuais em **Perfil, Telemedicina, Conquistas, Recepção e Guia Médico**, inclusive no assistente de pré-regulação.
@@ -3183,21 +3204,21 @@ Esse Workers Builds bem-sucedido **substitui como evidência operacional** a ten
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **Refinamento transversal do modo escuro em PR; 7G.1 da Central permanece pendente separadamente** |
-| Última ação concluída | Chat escuro **aprovado em homologação humana**; cobertura geral implementada e PR **#456** aberta |
-| Branch atual | `fix/portal-dark-mode-general-polish-20260923` |
-| PR atual | **#456 aberta — UI: concluir cobertura geral do modo escuro** |
-| Último commit relevante | head funcional `4772410d`; base `main` `097f92f9` |
-| Checks e testes | regressão de dark mode adicionada; **CI da #456 em andamento** |
-| Decisões tomadas | centralizar correções no CSS global; preservar modo claro; Telemedicina usa overrides escuros de maior especificidade; impressão permanece clara |
-| Justificativas | os resíduos claros vinham de CSS legado/específico dos módulos; correção central reduz blast radius funcional e evita JS de recoloração |
-| Alternativas descartadas | recolorir via JavaScript; alterar CSS claro original de cada módulo; mudar backend/permissões; reabrir fases anteriores |
-| Ações externas concluídas | nenhuma configuração externa necessária |
-| Pendências e bloqueios | aguardar CI/merge/publicação da #456 e homologação visual das cinco rotas; depois retomar 7G.1 |
-| Riscos conhecidos | alguma superfície muito específica fora dos prints pode ainda exigir ajuste visual; nenhuma lógica funcional foi modificada |
-| Métricas / observabilidade | nenhuma telemetria nova; conteúdo clínico e identidade continuam fora do PostHog |
-| Próxima ação exata | **validar CI da #456 → mesclar se integralmente verde → confirmar Pages → Ctrl+F5 e conferir /perfil/, /telemedicina/, /conquistas/, /recepcao/ e /medico/** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #456; `css/portal-interactions.css`; `worker/tests/portal-interactions.test.mjs`; `docs/PORTAL-APARENCIA-V1.md`; este status |
+| Subfase / objetivo atual | **Refinamento transversal do modo escuro publicado; aguardando homologação visual humana. 7G.1 da Central permanece pendente separadamente** |
+| Última ação concluída | PR funcional **#456 mesclada** em `3a528eb5`; pós-merge **50/50 workflows success**, inclusive Pages |
+| Branch atual | `docs/dark-mode-general-published-20260923` apenas para reconciliar status/handoff |
+| PR atual | funcional **#456 mesclada**; PR documental desta reconciliação ainda a abrir |
+| Último commit relevante | `main` `3a528eb5116fa86ec0e52a2b09d2e7f1988fb743`; head funcional da PR `a2d71349` |
+| Checks e testes | #456: **50/50 success** após correção de contrato obsoleto; pós-merge da main: **50/50 success**, Pages run 35885862244 e abertura pós-login run 35885865345 verdes |
+| Decisões tomadas | cobertura escura centralizada; modo claro preservado; impressão clara preservada; Telemedicina usa overrides de maior especificidade sem mudar lógica |
+| Justificativas | resíduos claros eram regras CSS legadas/específicas; camada global escura reduz blast radius e mantém comportamento funcional intacto |
+| Alternativas descartadas | recoloração via JavaScript; alteração do baseline claro; mudanças em backend/permissões; reabertura de fases anteriores |
+| Ações externas concluídas | GitHub Pages publicou o merge com success |
+| Pendências e bloqueios | somente homologação visual humana das cinco rotas; depois retomar 7G.1 |
+| Riscos conhecidos | pode restar superfície visual muito específica fora dos prints; CI não detecta percepção visual completa, por isso a inspeção humana permanece necessária |
+| Métricas / observabilidade | nenhuma telemetria nova; nenhum conteúdo sensível enviado ao PostHog |
+| Próxima ação exata | **Ctrl+F5 em modo escuro e conferir /perfil/, /telemedicina/, /conquistas/, /recepcao/ e /medico/; aprovado isso, registrar e retomar 7G.1 em /documentos/** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #456; commit `3a528eb5`; `css/portal-interactions.css`; `docs/PORTAL-APARENCIA-V1.md`; este status |
 
 ## Histórico recuperável
 
