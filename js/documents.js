@@ -239,6 +239,7 @@
     list: document.getElementById('documentsList'),
     listTitle: document.getElementById('documentsListTitle'),
     listCount: document.getElementById('documentsListCount'),
+    accessChip: document.getElementById('documentsAccessChip'),
     pagination: document.getElementById('documentsPagination'),
     loadMore: document.getElementById('loadMoreButton'),
     viewer: document.getElementById('documentsViewer'),
@@ -734,13 +735,16 @@
     return caps.edit === true;
   }
 
-  function canSyncDocuments() {
+  function canWriteDocument(item) {
     const drive = state.access?.drive || {};
-    const item = state.pdfItem;
     return canEditDocuments()
       && drive.connected === true
       && drive.writeEnabled === true
       && Boolean(item?.isPdf && item?.ref && item?.version);
+  }
+
+  function canSyncDocuments() {
+    return canWriteDocument(state.pdfItem);
   }
 
   function itemCacheIdentity(item) {
@@ -3526,8 +3530,8 @@
     clearPendingListRename();
     const item = state.items[Number(index)];
     if (!item?.isPdf || !item?.ref || state.editorSession || state.pdfItem) return false;
-    if (!canSyncDocuments()) {
-      showStatus('Sua conta não possui permissão para renomear este PDF no Google Drive.', 'warning');
+    if (!canWriteDocument(item)) {
+      showStatus('A renomeação no Google Drive não está disponível neste momento.', 'warning');
       return false;
     }
     if (state.listRenameBusy || state.renameBusy || state.driveSyncInFlight || state.editorBusy) {
@@ -3622,7 +3626,7 @@
       input?.focus?.({ preventScroll: true });
       return false;
     }
-    if (!canSyncDocuments()) {
+    if (!canWriteDocument(previous)) {
       cancelListPdfRename({ restoreFocus: false });
       showStatus('A sincronização com Google Drive não está disponível para renomear este PDF.', 'warning');
       return false;
@@ -5603,6 +5607,12 @@
 
     els.setup.hidden = !canManage;
     els.workspace.hidden = !(canView && drive.connected);
+
+    if (els.accessChip) {
+      const showAccessChip = canView && drive.connected;
+      els.accessChip.hidden = !showAccessChip;
+      els.accessChip.textContent = drive.writeEnabled === true ? 'Acesso completo' : 'Somente leitura';
+    }
 
     if (drive.connected) {
       els.badge.textContent = 'Drive conectado';
