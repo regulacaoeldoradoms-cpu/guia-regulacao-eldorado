@@ -2,26 +2,37 @@
 
 Última atualização: 23/09/2026.
 
-## Fase 7H — ordem operacional da IA documental + Especialidade — EM PR — 23/09/2026
+## Fase 7H — ordem operacional da IA documental + Especialidade — PUBLICADA TECNICAMENTE; HOMOLOGAÇÃO HUMANA PENDENTE — 23/09/2026
 
 Pedido aprovado: os dados extraídos no Titon devem priorizar a sequência operacional **Nome do paciente → CNS → CPF → Data de nascimento → Telefone → Nome da mãe → Endereço → Nome do(a) médico(a) → CRM / RMS → Agente → CID → Código do procedimento → Especialidade → Motivo do encaminhamento**.
 
-Diagnóstico: a `main` já possuía ordem personalizável por conta, porém o padrão não correspondia à sequência solicitada e o schema médico ainda não possuía `especialidade`. A unidade foi implementada em `feat/titon-ai-field-order-20260923`, preservando a publicação já concluída da 7G.4.
+Diagnóstico: a `main` já possuía ordem personalizável por conta, porém o padrão não correspondia à sequência solicitada e o schema médico ainda não possuía `especialidade`. A unidade foi implementada na branch `feat/titon-ai-field-order-20260923`, sem reabrir fases encerradas e preservando a publicação anterior da 7G.4.
 
-Implementação:
+Implementação publicada:
 - ordem canônica de frontend e backend alinhada à sequência aprovada;
 - rótulos visíveis **Telefone**, **Nome do(a) médico(a)** e **CRM / RMS**;
 - novo campo `especialidade` no schema médico, Gemini e fallback Workers AI;
 - `especialidade` é literal-only: exige rótulo explícito na mesma página e não pode ser inferida por procedimento, CID, título ou motivo;
 - prompts versionados: extração `v3`, análise `v5`, transporte compacto `v5`; versão técnica `phase5e-v8c3-specialty-order`;
 - preferências antigas de 16 campos migram para o novo shape de 17 campos sem SQL destrutivo;
-- **Título**, **Procedimento solicitado** e **Descrição do CID** continuam como campos complementares depois da sequência solicitada;
-- resultados permanecem separados por página; proveniência não é misturada;
-- nenhuma telemetria com conteúdo clínico foi adicionada.
+- **Título**, **Procedimento solicitado** e **Descrição do CID** permanecem como campos complementares depois da sequência solicitada, evitando perda de informação já suportada;
+- resultados continuam separados por página, preservando proveniência; não houve consolidação artificial entre páginas;
+- nenhuma telemetria com conteúdo clínico ou identificadores documentais foi adicionada.
 
-PR: **#463 — Titon: ordenar dados da IA e incluir Especialidade**.
+Integração:
+- PR funcional **#463 — “Titon: ordenar dados da IA e incluir Especialidade”**;
+- head final da PR: `c6622a1013e23652910129359a171cefcb7d3d30`;
+- merge na `main`: **`29741b9914fff08f962630864373900bfd865dd1`**.
 
-**Próxima ação exata:** concluir CI da #463; corrigir qualquer regressão; integrar somente com os contratos de IA, privacidade, Central e navegador verdes; depois homologar uma extração real no Titon.
+Validação:
+- CI final da PR: **24/24 workflows concluídos sem falhas**, incluindo **Validar Central de Documentos — navegador**;
+- o primeiro ciclo revelou contratos obsoletos de versão em testes compartilhados e no workflow da Central; foram atualizados para os prompts `v3/v5/v5` e versão `phase5e-v8c3-specialty-order`, sem alterar o requisito funcional;
+- pós-merge da `main`: **22/22 workflows de push concluídos com success**, incluindo Central de Documentos Fases 1–6, governança e site;
+- GitHub Pages build/deploy run **35895563616**: **success**, para o merge `29741b99`.
+
+Estado: **implementação, merge e publicação estática concluídos**. Resta a homologação humana de uma extração real autorizada no Titon. A pendência visual separada da 7G.4 continua válida e não foi absorvida por esta unidade.
+
+**Próxima ação exata:** em `/documentos/`, executar Ctrl+F5, abrir um PDF real autorizado no Titon, acionar a extração e conferir a ordem/rótulos; validar especialmente que **Especialidade** só seja preenchida quando estiver explicitamente indicada na própria página e que **NÃO CONSTA/ILEGÍVEL** continuem corretos.
 
 ## Refinamento transversal do modo escuro — PUBLICADO; HOMOLOGAÇÃO VISUAL PENDENTE — 23/09/2026
 
@@ -3312,21 +3323,21 @@ Os botões autorais `.documents-art-button` foram explicitamente excluídos para
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7H — ordem operacional da IA documental + campo Especialidade** |
-| Última ação concluída | PR #463 aberta com schema, UI, prompts, fallback, preferências, testes e documentação atualizados |
-| Branch atual | `feat/titon-ai-field-order-20260923` |
-| PR atual | **#463 aberta** — “Titon: ordenar dados da IA e incluir Especialidade” |
-| Último commit relevante | merge de sincronização com `main` a criar após este registro |
-| Checks e testes | CI da PR pendente |
-| Decisões tomadas | sequência solicitada vira padrão; `especialidade` entra no schema; campos complementares existentes são preservados depois; proveniência continua por página |
-| Justificativas | atender o fluxo operacional sem apagar informação já suportada nem quebrar isolamento/proveniência da IA documental |
-| Alternativas descartadas | consolidar campos de páginas diferentes; inferir especialidade por CID/procedimento; remover Título/Procedimento solicitado/Descrição do CID |
-| Ações externas concluídas | nenhuma |
-| Pendências e bloqueios | CI completo, merge/publicação e homologação humana de uma extração real |
-| Riscos conhecidos | coerência do novo schema entre Gemini, fallback, preferências e UI; coberta por versão nova e regressões |
+| Subfase / objetivo atual | **7H publicada tecnicamente; homologação humana da ordem da IA + Especialidade pendente** |
+| Última ação concluída | PR **#463** mesclada em `29741b9914fff08f962630864373900bfd865dd1`; GitHub Pages publicado com sucesso |
+| Branch atual | `docs/titon-ai-field-order-published-20260923` (registro pós-publicação) |
+| PR atual | PR funcional #463 **mesclada**; PR documental deste registro a abrir |
+| Último commit relevante | `29741b9914fff08f962630864373900bfd865dd1` |
+| Checks e testes | PR #463 **24/24 sem falhas**; pós-merge `main` **22/22 workflows de push success**; GitHub Pages run **35895563616 success** |
+| Decisões tomadas | sequência solicitada vira padrão; `especialidade` integra o schema; campos complementares são preservados depois; resultados continuam separados por página |
+| Justificativas | atender o fluxo operacional sem apagar informação já suportada e sem quebrar proveniência por página |
+| Alternativas descartadas | consolidar páginas diferentes para forçar uma lista única; inferir especialidade por CID/procedimento; remover Título/Procedimento solicitado/Descrição do CID |
+| Ações externas concluídas | publicação GitHub Pages do merge funcional confirmada |
+| Pendências e bloqueios | **homologação humana de uma extração real autorizada**; homologação visual separada da 7G.4 também continua pendente |
+| Riscos conhecidos | PDFs sem rótulo explícito de especialidade devem retornar NÃO CONSTA; conferir em documento real sem permitir inferência |
 | Métricas / observabilidade | nenhuma telemetria nova; dados extraídos continuam fora do PostHog |
-| Próxima ação exata | **acompanhar CI da #463; corrigir falhas; integrar apenas se verde e então homologar ordem/rótulos/Especialidade no Titon** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #463; `js/documents.js`; `worker/document-ai*.js`; `worker/documents-router.js`; testes IA/UI; status |
+| Próxima ação exata | **Ctrl+F5 em /documentos/ → abrir PDF real autorizado → Extrair dados do PDF → conferir ordem/rótulos e Especialidade; validar NÃO CONSTA/ILEGÍVEL** |
+| Arquivos e fontes principais | Guia Mestre V1.1; merge #463 `29741b99`; `js/documents.js`; `worker/document-ai*.js`; `worker/documents-router.js`; testes IA/UI; status |
 
 ## Histórico recuperável
 
