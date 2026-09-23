@@ -151,7 +151,7 @@ test('gestão de acesso sai da Central e usa função adicional acumulável em U
   assert.doesNotMatch(documentsClient, /documentsAccessList|loadAccessAdmin|saveAccountAccess/);
   assert.match(documentsHtml, /Gerenciar cargos e acessos/);
   assert.match(adminHtml, /Cargos\/funções adicionais \(acumuláveis\)/);
-  assert.match(adminHtml, /Regulador\(a\) — acesso à Central de Documentos/);
+  assert.match(adminHtml, /Regulador\(a\) — acesso operacional completo à Central de Documentos/);
   assert.match(adminClient, /additionalRoles/);
   assert.match(adminClient, /medico: 'Médico\(a\)'/);
   assert.match(adminClient, /documentos: 'Regulador\(a\)'/);
