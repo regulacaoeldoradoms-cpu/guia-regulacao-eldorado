@@ -104,6 +104,10 @@ test('Gemini canônico preserva proveniência da página', async () => {
   assert.equal(body.generationConfig.topP, undefined);
   assert.equal(body.generationConfig.seed, undefined);
   assert.equal(body.contents[0].parts[0].inlineData.mimeType, 'image/png');
+  const systemInstruction = body.systemInstruction.parts[0].text;
+  assert.match(systemInstruction, /LAUDO PARA SOLICITAÇÃO\/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL/);
+  assert.match(systemInstruction, /título\/cabeçalho PRINCIPAL/i);
+  assert.match(systemInstruction, /DADOS.*seção interna.*NÃO transforma/is);
   assert.doesNotMatch(request.options.body, /fileName|driveId|username|patient_name/i);
 
   assert.equal(result.classification.pageNumber, 2);

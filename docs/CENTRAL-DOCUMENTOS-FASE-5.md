@@ -126,10 +126,13 @@ São autorizadas páginas cujo título/cabeçalho/nome visível identifique clar
 - ENCAMINHAMENTO / ENCAMINHAMENTOS;
 - RECEITA SIMPLES;
 - LAUDO MÉDICO;
+- LAUDO PARA SOLICITAÇÃO/AUTORIZAÇÃO DE PROCEDIMENTO AMBULATORIAL, incluindo a variação com espaços ao redor da barra;
 - RECEITUÁRIO MÉDICO;
 - SOLICITAÇÃO DE EXAMES;
 - SOLICITAÇÃO DE AGENDAMENTO;
 - SOLICITAÇÃO DE AGENDAMENTO RETORNO.
+
+Regra de precedência: a classificação usa o **título/cabeçalho principal da folha**. Rótulos internos como "DADOS", "IDENTIFICAÇÃO" ou equivalentes não convertem uma página médica em comprovante. Se uma folha de laudo/solicitação médica também trouxer dados cadastrais do paciente, o título médico principal prevalece.
 
 Cada página válida gera bloco próprio com proveniência, incluindo quando disponível:
 
