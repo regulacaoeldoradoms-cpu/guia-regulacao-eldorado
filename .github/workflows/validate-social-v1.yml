@@ -40,7 +40,7 @@ jobs:
             grep -q 'name="robots" content="noindex,nofollow"' "$file"
             grep -q 'social.css?v=20260922-2' "$file"
             grep -q 'social-api.js?v=20260910-4' "$file"
-            grep -q 'portal-interactions.js?v=20260910-2' "$file"
+            grep -q 'portal-interactions.js?v=20260923-2' "$file"
           done
 
       - name: Conferir arquitetura, flags e rollback
