@@ -12,8 +12,8 @@ Implementação publicada:
 - ordem canônica de frontend e backend alinhada à sequência aprovada;
 - rótulos visíveis **Telefone**, **Nome do(a) médico(a)** e **CRM / RMS**;
 - novo campo `especialidade` no schema médico, Gemini e fallback Workers AI;
-- `especialidade` é literal-only: exige rótulo explícito na mesma página e não pode ser inferida por procedimento, CID, título ou motivo;
-- prompts versionados: extração `v3`, análise `v5`, transporte compacto `v5`; versão técnica `phase5e-v8c3-specialty-order`;
+- correção operacional posterior: `especialidade` usa primeiro rótulo explícito e, na ausência dele, pode ser definida pelo campo **Solicitação** da própria página quando o valor solicitado for o nome da especialidade/serviço especializado (ex.: Cirurgia Geral, Cirurgia Vascular, Ortopedia); procedimento/exame, CID, diagnóstico, motivo, sintomas e título não podem ser convertidos em especialidade;
+- prompts versionados após a correção da solicitação: extração `v4`, análise `v6`, transporte compacto `v6`; versão técnica `phase5e-v8c4-specialty-from-request`;
 - preferências antigas de 16 campos migram para o novo shape de 17 campos sem SQL destrutivo;
 - **Título**, **Procedimento solicitado** e **Descrição do CID** permanecem como campos complementares depois da sequência solicitada, evitando perda de informação já suportada;
 - resultados continuam separados por página, preservando proveniência; não houve consolidação artificial entre páginas;
@@ -32,6 +32,20 @@ Validação:
 - o primeiro e o segundo Workers Builds pós-merge funcional falharam sem promover versão; o gate seguro permaneceu fail-closed;
 - no head posterior `ca6714e062649de41bf70f43fe062ed316121091`, que contém integralmente a implementação da #463, **Workers Builds concluiu com success** (build `64027adc-c613-47a2-80cf-2c83b70e533e`) e publicou a versão **`6214244a-b6b4-4dd9-8e3e-74fe2e1466e0`** do Worker institucional;
 - Cloudflare Pages no mesmo head `ca6714e`: **success**.
+
+### Correção 7H.1 — especialidade volta a ser definida pela solicitação — 23/09/2026
+
+Feedback de homologação: a regra `literal-only` introduzida na 7H ficou mais restritiva do que o comportamento operacional esperado. Historicamente, quando o documento traz **Solicitação: Cirurgia Geral**, **Solicitação: Cirurgia Vascular**, **Solicitação: Ortopedia** ou equivalente, esse próprio pedido define a especialidade mesmo sem um campo separado rotulado "Especialidade".
+
+Correção preparada na branch `fix/titon-specialty-from-request-20260923`:
+- prioridade 1: rótulo explícito de especialidade;
+- prioridade 2: campo de solicitação da mesma página quando seu valor for o próprio nome da especialidade/serviço;
+- procedimento ou exame concreto não vira especialidade;
+- CID, diagnóstico, motivo, sintomas, título ou conhecimento externo continuam proibidos como fonte;
+- matriz sintética passa a validar `Solicitação: CIRURGIA VASCULAR` → `especialidade=CIRURGIA VASCULAR`;
+- fixture com apenas `Procedimento solicitado: PROCEDIMENTO GAMA` continua exigindo `especialidade=nao_consta`.
+
+Versões desta correção: extração `v4`, análise `v6`, compacto `v6`, runtime `phase5e-v8c4-specialty-from-request`.
 
 Estado: **implementação, merge, frontend e Worker institucional publicados tecnicamente**. Resta a homologação humana de uma extração real autorizada no Titon. A pendência visual separada da 7G.4 continua válida e não foi absorvida por esta unidade.
 
@@ -3326,21 +3340,21 @@ Os botões autorais `.documents-art-button` foram explicitamente excluídos para
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7H publicada tecnicamente; homologação humana da ordem da IA + Especialidade pendente** |
-| Última ação concluída | implementação #463 integrada; frontend publicado; Worker institucional publicado com sucesso no head `ca6714e`, versão `6214244a-b6b4-4dd9-8e3e-74fe2e1466e0` |
-| Branch atual | **nenhuma** |
-| PR atual | **nenhum** |
-| Último commit relevante | funcional `29741b9914fff08f962630864373900bfd865dd1`; head que publicou o Worker `ca6714e062649de41bf70f43fe062ed316121091` |
-| Checks e testes | PR #463 **24/24 sem falhas**; pós-merge funcional **22/22 workflows de push success**; GitHub Pages run **35895563616 success**; Workers Builds build **64027adc-c613-47a2-80cf-2c83b70e533e success** |
-| Decisões tomadas | sequência solicitada é o padrão; `especialidade` integra o schema e só aceita rótulo explícito; campos complementares permanecem depois; proveniência continua por página |
-| Justificativas | atender o fluxo operacional sem apagar informação já suportada e sem misturar informações de páginas diferentes |
-| Alternativas descartadas | consolidar páginas diferentes para forçar uma lista única; inferir especialidade por CID/procedimento; remover Título/Procedimento solicitado/Descrição do CID |
-| Ações externas concluídas | GitHub Pages e Cloudflare Worker publicados; Worker version `6214244a-b6b4-4dd9-8e3e-74fe2e1466e0` |
-| Pendências e bloqueios | **homologação humana de uma extração real autorizada**; a homologação visual separada da 7G.4 também continua pendente |
-| Riscos conhecidos | PDFs sem rótulo explícito de especialidade devem retornar NÃO CONSTA; conferir em documento real sem permitir inferência |
-| Métricas / observabilidade | nenhuma telemetria nova; dados extraídos continuam fora do PostHog |
-| Próxima ação exata | **Ctrl+F5 em /documentos/ → abrir PDF real autorizado → Extrair dados do PDF → conferir ordem/rótulos e Especialidade; validar NÃO CONSTA/ILEGÍVEL** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #463; merge `29741b99`; Worker head `ca6714e`; `js/documents.js`; `worker/document-ai*.js`; `worker/documents-router.js`; testes IA/UI; status |
+| Subfase / objetivo atual | **7H.1 — corrigir Especialidade para voltar a ser definida pela Solicitação** |
+| Última ação concluída | prompts/runtime/testes sintéticos/documentação preparados na branch; PR e CI ainda pendentes |
+| Branch atual | `fix/titon-specialty-from-request-20260923` |
+| PR atual | **nenhum ainda neste registro** |
+| Último commit relevante | commit funcional desta branch a confirmar após abertura da PR |
+| Checks e testes | pendentes |
+| Decisões tomadas | Solicitação pode definir Especialidade quando seu valor é a própria especialidade; procedimento/exame e pistas clínicas não podem ser convertidos em especialidade |
+| Justificativas | restaura o comportamento operacional anterior informado na homologação sem reintroduzir inferência clínica livre |
+| Alternativas descartadas | exigir sempre rótulo separado "Especialidade"; copiar qualquer procedimento solicitado para especialidade; inferir por CID/diagnóstico |
+| Ações externas concluídas | nenhuma |
+| Pendências e bloqueios | CI, merge, publicação do Worker e homologação humana |
+| Riscos conhecidos | distinguir corretamente solicitação de especialidade versus pedido de exame/procedimento concreto |
+| Métricas / observabilidade | nenhuma telemetria nova |
+| Próxima ação exata | **abrir PR, executar CI integral, integrar se verde e confirmar Workers Builds; depois testar documento com Solicitação de especialidade** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-ai-prompts.js`; `worker/document-ai-provider.js`; matriz 5E; status |
 
 ## Histórico recuperável
 

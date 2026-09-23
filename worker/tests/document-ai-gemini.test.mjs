@@ -114,6 +114,11 @@ test('Gemini canônico preserva proveniência da página', async () => {
   assert.match(systemInstruction, /diagnóstico\/CID, resumo da anamnese, justificativa e blocos de autorização/i);
   assert.match(systemInstruction, /título\/cabeçalho PRINCIPAL/i);
   assert.match(systemInstruction, /DADOS.*seção interna.*NÃO transforma/is);
+  assert.match(systemInstruction, /Solicitação de agendamento/i);
+  assert.match(systemInstruction, /Cirurgia Geral/i);
+  assert.match(systemInstruction, /Cirurgia Vascular/i);
+  assert.match(systemInstruction, /Ortopedia/i);
+  assert.match(systemInstruction, /não converta nomes de procedimento\/exame em especialidade/i);
   assert.doesNotMatch(request.options.body, /fileName|driveId|username|patient_name/i);
 
   assert.equal(result.classification.pageNumber, 2);
