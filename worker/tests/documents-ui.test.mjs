@@ -151,7 +151,7 @@ test('gestão de acesso sai da Central e usa função adicional acumulável em U
   assert.doesNotMatch(documentsClient, /documentsAccessList|loadAccessAdmin|saveAccountAccess/);
   assert.match(documentsHtml, /Gerenciar cargos e acessos/);
   assert.match(adminHtml, /Cargos\/funções adicionais \(acumuláveis\)/);
-  assert.match(adminHtml, /Regulador\(a\) — acesso à Central de Documentos/);
+  assert.match(adminHtml, /Regulador\(a\) — acesso operacional completo à Central de Documentos/);
   assert.match(adminClient, /additionalRoles/);
   assert.match(adminClient, /medico: 'Médico\(a\)'/);
   assert.match(adminClient, /documentos: 'Regulador\(a\)'/);
@@ -1154,25 +1154,29 @@ test('Fase 4C mantém telemetria de sincronização estritamente técnica e suce
 });
 
 
-test('permissões de IA documental e edição são explícitas e não são herdadas automaticamente de Regulador(a)', () => {
+test('Regulador(a) concede acesso operacional integral à Central sem permissões parciais', () => {
   const html = read('admin/usuarios/index.html');
   const client = read('js/admin-users.js');
+  const access = read('worker/document-access.js');
+  const roles = read('worker/additional-roles.js');
 
-  assert.match(html, /editDocumentAiPermission/);
-  assert.match(html, /Permitir IA documental/);
-  assert.match(html, /proveniência por página/);
-  assert.match(html, /editDocumentPdfPermission/);
-  assert.match(html, /Permitir editor de PDF/);
-  assert.match(html, /inclui sincronização segura com o Drive quando habilitada no ambiente/);
-  assert.match(client, /documentCapabilities\?\.extract/);
-  assert.match(client, /documentCapabilities\?\.edit/);
-  assert.match(client, /\/api\/documents\/admin\/access\//);
-  assert.match(client, /extract: regulatorEnabled === true && allowExtract === true/);
-  assert.match(client, /edit: regulatorEnabled === true && allowEdit === true/);
-  assert.match(client, /editAdditionalRoleDocuments\.checked/);
-  assert.doesNotMatch(client, /additionalRoles.*edit:\s*true/);
+  assert.doesNotMatch(html, /editDocumentAiPermission/);
+  assert.doesNotMatch(html, /editDocumentPdfPermission/);
+  assert.doesNotMatch(html, /IA documental e edição são permissões separadas/);
+  assert.match(html, /Regulador\(a\) — acesso operacional completo à Central de Documentos/);
+  assert.match(html, /libera leitura, IA documental, edição, renomeação e sincronização segura com o Drive/);
+
+  assert.match(client, /const operationalAccess = regulatorEnabled === true/);
+  assert.match(client, /view:\s*operationalAccess/);
+  assert.match(client, /extract:\s*operationalAccess/);
+  assert.match(client, /edit:\s*operationalAccess/);
+  assert.doesNotMatch(client, /editDocumentAiPermission|editDocumentPdfPermission/);
+
+  assert.match(access, /extract:\s*view/);
+  assert.match(access, /edit:\s*view/);
+  assert.match(access, /requestedOperationalAccess/);
+  assert.match(roles, /Acesso operacional completo à Central de Documentos/);
 });
-
 
 test('rebuild do editor prioriza o estado vivo atual antes do snapshot salvo', () => {
   const client = read('js/documents.js');

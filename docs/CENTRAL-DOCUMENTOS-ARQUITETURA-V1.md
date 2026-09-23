@@ -134,22 +134,24 @@ Access tokens são de curta duração e ficam apenas em memória de execução d
 
 As permissões documentais serão capacidades independentes do cargo principal do Portal.
 
-Capabilities propostas:
+Capabilities efetivas:
 
-- `documents_view`: listar, pesquisar e abrir documentos permitidos;
-- `documents_extract`: usar extração/IA documental quando a Fase 5 existir;
-- `documents_edit`: editar PDFs localmente e iniciar salvamento;
-- `documents_manage`: administrar acesso à Central e operações administrativas do módulo.
+- `documents_view`: acesso operacional à Central; listar, pesquisar e abrir documentos permitidos;
+- `documents_extract`: IA documental; desde a Fase 7G acompanha automaticamente `documents_view`;
+- `documents_edit`: editor, renomeação e sincronização; desde a Fase 7G acompanha automaticamente `documents_view`;
+- `documents_manage`: administração de usuários/conexão institucional; permanece separada.
 
-Princípios:
-- padrão = nenhuma capability;
+Princípios atuais:
+- padrão = nenhum acesso documental;
 - cargo profissional por si só não concede acesso documental;
-- somente autoridade administrativa definida no backend concede capabilities;
+- a função adicional `documentos` (**Regulador(a)**) ou uma autorização legada equivalente de `view` concede o conjunto operacional completo `view + extract + edit`;
+- não há mais combinação parcial de “somente leitura”, “IA sem edição” ou “edição sem IA” para quem já possui acesso à Central;
+- `manage` continua separado e não é herdado por Regulador(a);
 - amizade, Conselho, Camada Social e outras permissões não concedem acesso documental;
 - toda rota `/api/documents/*` revalida sessão + capability no Worker;
 - esconder botão no frontend nunca substitui autorização de backend.
 
-Persistência prevista em D1 com tabela separada de capabilities por usuário, sem nomes de pacientes, nomes de arquivos ou metadados clínicos.
+A tabela D1 de capabilities permanece por compatibilidade/auditoria. As colunas históricas `can_extract` e `can_edit` são normalizadas junto com `can_view`; nenhum nome de paciente, nome de arquivo ou metadado clínico é armazenado nessa autorização.
 
 ## 7. Endpoints previstos por fase
 
@@ -377,9 +379,9 @@ A Fase 3 adiciona manipulação binária somente no navegador. A fonte continua 
 
 Arquitetura:
 - `documents_view`/função Regulador(a) continua necessária para listar e abrir;
-- capability fina `edit` é necessária para mostrar/iniciar o editor;
-- `edit` não é concedida automaticamente junto com Regulador(a);
-- o Desenvolvedor administra `edit` por usuário em **Usuários e acessos**;
+- a separação histórica de `edit` da Fase 3 foi **superseded na Fase 7G (23/09/2026)**;
+- no estado atual, qualquer conta com acesso operacional à Central recebe também `edit` e `extract`;
+- o Desenvolvedor administra apenas a concessão/remoção da função Regulador(a), enquanto `manage` permanece separado;
 - biblioteca `pdf-lib 1.17.1` é carregada somente quando o editor é iniciado, com versão fixa, SRI, `crossorigin=anonymous` e `no-referrer`;
 - a sessão do editor mantém fontes PDF e um plano ordenado de referências de páginas;
 - excluir/reordenar/mesclar alteram o plano e registram snapshots para undo/redo;

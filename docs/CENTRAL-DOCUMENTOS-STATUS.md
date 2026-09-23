@@ -3102,26 +3102,46 @@ A PR **#445** foi mesclada em `main` pelo commit **`8d15b165`** após a branch s
 
 **Pendência não bloqueante:** falta apenas homologação humana em produção do gesto e da sincronização visual. A ordenação cronológica da 7E continua com sua homologação humana separada.
 
+## Fase 7G — acesso operacional integral da Central — IMPLEMENTADA EM BRANCH — 23/09/2026
+
+Durante a homologação humana da renomeação inline 7F, a produção exibiu **“Sua conta não possui permissão para renomear este PDF no Google Drive.”** embora a conta já tivesse acesso à Central. O diagnóstico confirmou que o modelo antigo ainda separava `view`, `extract` e `edit`: a função Regulador(a) podia liberar a Central em modo de leitura enquanto IA e edição permaneciam desabilitadas.
+
+**Decisão funcional aprovada pelo operador:** quem possui acesso à Central de Documentos deve possuir **acesso operacional completo às funcionalidades documentais**. Portanto:
+- `view=true` implica automaticamente `extract=true` e `edit=true`;
+- a função adicional `documentos` (**Regulador(a)**) concede leitura, IA documental, editor, renomeação e sincronização segura com o Drive;
+- permissões parciais de “somente leitura”, “IA separada” ou “editor separado” deixam de existir para contas que já têm acesso à Central;
+- `manage` **permanece separado**, pois corresponde à administração de usuários/conexão institucional e não ao uso operacional dos documentos.
+
+**Implementação técnica:** `worker/document-access.js` passa a derivar `extract` e `edit` diretamente de `view`. `setDocumentCapabilities()` também normaliza qualquer concessão operacional para `can_view=1, can_extract=1, can_edit=1`. As colunas D1 antigas permanecem por compatibilidade/auditoria, mas não restringem mais uma conta que já tenha `view`. Isso torna a correção efetiva para usuários existentes **sem migração destrutiva de banco**.
+
+Em **Usuários e acessos**, foram removidos os checkboxes independentes “Permitir IA documental” e “Permitir editor de PDF”. O único controle operacional passa a ser a função Regulador(a), descrita explicitamente como acesso operacional completo. Remover Regulador(a) continua limpando o acesso legado por meio do mesmo PATCH administrativo.
+
+**Segurança preservada:** nenhuma capability `manage` é ampliada; toda rota continua revalidando sessão e capability no Worker; não houve mudança de OAuth, segredo, Drive institucional, conteúdo documental ou PostHog. Nomes de arquivos e dados clínicos continuam proibidos na observabilidade.
+
+**Alternativas descartadas:** conceder `edit` apenas à conta que encontrou o erro; migrar manualmente usuários um a um; manter três checkboxes separados. Essas opções preservariam o risco de novas contas entrarem em “somente leitura” contra a regra de produto aprovada.
+
+Branch: `fix/central-full-operational-access-20260923`. Próximo passo: abrir PR, executar CI completo, mesclar somente se verde e confirmar o deploy do Worker antes da homologação real.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7F publicada; aguardando homologação humana da renomeação inline na lista** |
-| Última ação concluída | PR **#445** mesclada em `main` no commit **`8d15b165`** após **23/23 checks verdes** |
-| Branch atual | `docs/titon-inline-list-rename-published-20260923` (somente registro pós-merge) |
-| PR atual | PR funcional #445 **mesclada**; PR documental pós-merge deve ser aberta/mesclada |
-| Último commit relevante | `8d15b165` — “Merge PR #445: renomear PDF direto na lista” |
-| Checks e testes | **23/23 success** no head final `3584db89`, incluindo navegador real |
-| Decisões tomadas | segundo clique simples no nome já selecionado edita; duplo clique rápido abre; Enter/focusout confirmam; Esc cancela; `.pdf` protegida; endpoint seguro existente |
-| Justificativas | preserva o gesto de abertura e o contrato de conflito/confirmação do Drive sem criar nova superfície de segurança |
-| Alternativas descartadas | duplo clique para rename; input aninhado no botão; nova rota de rename |
-| Ações externas concluídas | nenhuma necessária; tema global e status concorrentes foram preservados |
-| Pendências e bloqueios | **homologação humana em produção da 7F**; homologação humana da ordenação 7E continua pendente |
-| Riscos conhecidos | validar sensação do intervalo de 260 ms e confirmar visualmente que clique fora sincroniza; conflitos de Drive permanecem fail-closed |
-| Métricas / observabilidade | nenhuma telemetria nova; nomes de arquivo/conteúdo continuam fora do PostHog |
-| Próxima ação exata | **na produção, Ctrl+F5 em /documentos/ → 1 clique em PDF → segundo clique simples no nome → alterar → Enter; repetir com clique fora; confirmar no Drive; depois validar que duplo clique rápido ainda abre o Titon** |
-| Arquivos e fontes principais | Guia Mestre V1.1; merge #445 `8d15b165`; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
+| Subfase / objetivo atual | **7G — acesso operacional integral da Central; implementação pronta em branch** |
+| Última ação concluída | policy/code/UI/testes atualizados para que `view` implique `extract + edit`; permissões parciais removidas de Usuários e acessos |
+| Branch atual | `fix/central-full-operational-access-20260923` |
+| PR atual | **#448 aberta** — “Central: acesso operacional integral para quem já tem acesso” |
+| Último commit relevante | alterações funcionais iniciadas em `0655ec51`; commits posteriores atualizam UI, testes, CI e arquitetura |
+| Checks e testes | testes unitários/contratos atualizados; CI completa ainda precisa rodar na PR |
+| Decisões tomadas | Regulador(a)/`view` = acesso operacional completo; `manage` continua separado para administração |
+| Justificativas | elimina o estado incoerente em que a conta entra na Central mas não pode renomear/editar/usar IA; aplica a regra a usuários atuais e futuros sem migração manual |
+| Alternativas descartadas | liberar apenas uma conta; migrar usuários individualmente; manter IA/editor como permissões independentes |
+| Ações externas concluídas | nenhuma; não houve alteração manual em D1, OAuth, Cloudflare ou Drive |
+| Pendências e bloqueios | CI da PR #448 → merge → confirmar deploy do Worker → Ctrl+F5 e homologar rename/editor/IA |
+| Riscos conhecidos | mudança amplia `extract/edit` apenas para quem já possui `view`; administração `manage` não muda; scripts históricos 5E continuam existindo, mas a resolução runtime atual prevalece |
+| Métricas / observabilidade | nenhuma propriedade nova; política de não enviar nomes/IDs/conteúdo ao PostHog preservada |
+| Próxima ação exata | **exigir CI verde na PR #448 e só então mesclar; após deploy do Worker, validar que o chip “Somente leitura” deixa de representar restrição operacional para uma conta com acesso à Central** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `worker/document-access.js`; `worker/additional-roles.js`; `js/admin-users.js`; `admin/usuarios/index.html`; testes de Fase 1/UI; arquitetura/status |
 
 ## Histórico recuperável
 

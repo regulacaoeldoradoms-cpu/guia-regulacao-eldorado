@@ -211,8 +211,11 @@ jobs:
           ! grep -R -F "cdn.jsdelivr.net" documentos/index.html js/document-editor.js
           grep -q "sha512-z8IYLHO8bTgFqj+yrPyIJnzBDf7DDhWwiEsk4sY+Oe6J2M+WQequeGS7qioI5vT6rXgVRb4K1UVQC5ER7MKzKQ==" js/document-editor.js
           grep -qi "sincronizadas automaticamente" documentos/index.html
-          grep -q "editDocumentAiPermission" admin/usuarios/index.html
-          grep -q "editDocumentPdfPermission" admin/usuarios/index.html
+          grep -q "acesso operacional completo à Central de Documentos" admin/usuarios/index.html
+          grep -q "extract: view" worker/document-access.js
+          grep -q "edit: view" worker/document-access.js
+          ! grep -q "editDocumentAiPermission" admin/usuarios/index.html
+          ! grep -q "editDocumentPdfPermission" admin/usuarios/index.html
           grep -q "pdf_edit_completed" js/documents.js
           grep -q "drive_sync_started" js/documents.js
           grep -q "drive_sync_completed" js/documents.js

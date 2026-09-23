@@ -22,7 +22,7 @@ Arquitetura revisada em 09/09/2026.
 - `/recepcao/`: Conferência da Recepção.
 - `/telemedicina/`: acompanhamento longitudinal de teleconsultas, retornos e lembretes operacionais.
 - `/agenda/`: espelho operacional somente leitura dos agendamentos do DigSaúde para Telemedicina/Desenvolvedor; sincronização sem credenciais do sistema estadual.
-- `/documentos/`: Central de Documentos; navegação Google Drive e PDFs conforme função adicional/capabilities documentais independentes do perfil principal.
+- `/documentos/`: Central de Documentos; a função adicional **Regulador(a)** concede o acesso operacional completo ao módulo (leitura, IA documental, edição, renomeação e sincronização), independente do perfil principal.
 - `/admin/usuarios/`: gestão de usuários conforme hierarquia.
 - `/admin/monitoramento/`: monitoramento disponível para Coordenação e Desenvolvedor.
 - `/admin/configuracao/`: diagnóstico técnico exclusivo do Desenvolvedor.
@@ -163,9 +163,9 @@ O perfil primário não deve ser confundido com a função no Conselho nem com o
 O Portal passa a suportar funções adicionais que se somam ao perfil primário sem substituí-lo. A persistência usa `auth_user_additional_roles`, e o Worker compõe `effectiveRoles` a partir do perfil principal + funções adicionais autorizadas.
 
 Função adicional inicial:
-- `documentos` — **Regulador(a)**: concede acesso de leitura à Central de Documentos na rota `/documentos/`. Edição não é herdada automaticamente: a capability documental `edit` é concedida separadamente pelo Desenvolvedor.
+- `documentos` — **Regulador(a)**: concede acesso operacional completo à Central de Documentos na rota `/documentos/`, incluindo leitura, IA documental, editor, renomeação e sincronização segura com o Google Drive institucional. Não existem mais permissões parciais separadas de `extract` e `edit` para quem já possui acesso à Central.
 
-Exemplo: uma conta pode permanecer `medico` (**Médico(a)**) e acumular `documentos` (**Regulador(a)**). A gestão é feita em `/admin/usuarios/` pelo Desenvolvedor. Funções adicionais nunca são concedidas por simples ocultação/exibição no frontend; o backend revalida a autorização.
+Exemplo: uma conta pode permanecer `medico` (**Médico(a)**) e acumular `documentos` (**Regulador(a)**). A gestão é feita em `/admin/usuarios/` pelo Desenvolvedor. Funções adicionais nunca são concedidas por simples ocultação/exibição no frontend; o backend revalida a autorização. A capability administrativa `manage` continua separada e restrita às contas autorizadas a administrar usuários/conexão institucional.
 
 ### Implementação do perfil de Telemedicina
 

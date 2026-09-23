@@ -22,8 +22,11 @@ function flags(row = null, role = '', additionalRoles = []) {
   const view = Number(row?.can_view || 0) === 1 || additionalRoles.includes('documentos');
   return Object.freeze({
     view,
-    extract: view && Number(row?.can_extract || 0) === 1,
-    edit: view && Number(row?.can_edit || 0) === 1,
+    // Desde a Fase 7G, acesso à Central é operacionalmente integral:
+    // quem pode visualizar também pode usar IA e editar/sincronizar.
+    // As colunas can_extract/can_edit permanecem apenas por compatibilidade histórica.
+    extract: view,
+    edit: view,
     manage: role === 'admin' || Number(row?.can_manage || 0) === 1
   });
 }
@@ -89,13 +92,11 @@ export async function documentCapabilitiesForUsername(env, username) {
 }
 
 function normalizeInput(input = {}) {
-  const edit = input.edit === true;
-  const extract = input.extract === true;
-  const view = input.view === true || edit || extract;
+  const requestedOperationalAccess = input.view === true || input.edit === true || input.extract === true;
   return {
-    view,
-    extract: view && extract,
-    edit: view && edit,
+    view: requestedOperationalAccess,
+    extract: requestedOperationalAccess,
+    edit: requestedOperationalAccess,
     manage: input.manage === true
   };
 }
