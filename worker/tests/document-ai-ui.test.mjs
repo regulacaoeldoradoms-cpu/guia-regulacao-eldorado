@@ -16,7 +16,7 @@ function asyncFunctionSlice(source, name, nextName) {
   return source.slice(start, end);
 }
 
-test('painel Titon inicia oculto e produção mantém IA normal ativa com background desligado', async () => {
+test('painel Titon inicia oculto e produção mantém somente Gemini no fluxo normal', async () => {
   const [html, js, css, router, wrangler] = await Promise.all([
     read('documentos/index.html'),
     read('js/documents.js'),
@@ -30,9 +30,9 @@ test('painel Titon inicia oculto e produção mantém IA normal ativa com backgr
   assert.match(html, /Titon · IA documental/);
   assert.match(html, /id="documentsAiInfoButton"[^>]*aria-expanded="false"/);
   assert.match(html, /id="documentsAiInfoPanel"[^>]*hidden/);
-  assert.match(html, /id="documentsAiExtractDocumentButton"[^>]*disabled[^>]*>Extrair com IA atual<\/button>/);
-  assert.match(html, /id="documentsAiExtractGeminiButton"[^>]*disabled[^>]*hidden[^>]*>Extrair com Gemini<\/button>/);
-  assert.match(html, /id="documentsAiCompareSection"[^>]*hidden/);
+  assert.match(html, /id="documentsAiExtractDocumentButton"[^>]*disabled[^>]*>Extrair dados do PDF<\/button>/);
+  assert.doesNotMatch(html, /documentsAiExtractGeminiButton|documentsAiCompareSection|Extrair com IA atual|Extrair com Gemini/);
+  assert.match(html, /Gemini 3\.5 Flash-Lite/);
   assert.match(html, /id="documentsAiDocumentResults"[^>]*hidden/);
   assert.match(html, /id="documentsAiCopyAllButton"[^>]*>Copiar tudo<\/button>/);
   assert.match(html, /id="documentsAiOrderFieldsButton"[^>]*>Organizar campos<\/button>/);
@@ -44,94 +44,76 @@ test('painel Titon inicia oculto e produção mantém IA normal ativa com backgr
   assert.match(css, /\.documents-ai-panel\[hidden\]/);
   assert.match(css, /\.documents-ai-batch/);
   assert.match(js, /\/api\/documents\/ai\/config/);
-  assert.match(js, /documentAiCapabilities\(\)\.extract === true/);
-  assert.match(js, /state\.documentAiConfig\?\.enabled === true/);
+  assert.match(js, /\/api\/documents\/ai\/page\/gemini/);
   assert.match(router, /requireCapability\(user, 'extract', origin\)/);
   assert.match(wrangler, /DOCUMENTS_AI_ENABLED = "true"/);
   assert.match(wrangler, /DOCUMENTS_AI_PROCESSING_ENABLED = "true"/);
   assert.match(wrangler, /DOCUMENTS_AI_BACKGROUND_ENABLED = "false"/);
-  assert.match(wrangler, /DOCUMENTS_AI_FREE_ONLY = "true"/);
-  assert.match(wrangler, /DOCUMENTS_AI_FAST_VISION_ENABLED = "false"/);
-  assert.match(wrangler, /TITON_GEMINI_COMPARISON_ENABLED = "true"/);
+  assert.match(wrangler, /TITON_GEMINI_ENABLED = "true"/);
+  assert.match(wrangler, /TITON_GEMINI_COMPARISON_ENABLED = "false"/);
   assert.match(wrangler, /TITON_GEMINI_MODEL = "gemini-3\.5-flash-lite"/);
   assert.doesNotMatch(wrangler, /TITON_GEMINI_API_KEY\s*=\s*["']/);
-  assert.match(wrangler, /@cf\/moondream\/moondream3\.1-9B-A2B/);
-  assert.match(wrangler, /@cf\/google\/gemma-4-26b-a4b-it/);
-  assert.match(wrangler, /@cf\/qwen\/qwen3\.8-27b/);
 });
 
-test('botão único percorre o PDF e envia somente uma página por chamada', async () => {
+test('botão único percorre o PDF pelo Gemini e envia somente uma página por chamada', async () => {
   const [js, viewer] = await Promise.all([
     read('js/documents.js'),
     read('js/document-viewer.js')
   ]);
   const prepare = asyncFunctionSlice(js, 'prepareDocumentAiPageBlob', 'requestDocumentAiPage');
-  const request = asyncFunctionSlice(js, 'requestDocumentAiPage', 'requestGeminiDocumentAiPage');
+  const geminiRequest = asyncFunctionSlice(js, 'requestGeminiDocumentAiPage', 'schedulePreparedPageAnalysis');
   const extract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'extractWholeDocumentAiGemini');
 
   assert.match(extract, /getPageCount\?\.\(\)/);
-  assert.match(extract, /const concurrency = Math\.min\(5, pageCount\)/);
+  assert.match(extract, /const concurrency = Math\.min\(3, pageCount\)/);
   assert.match(extract, /Promise\.all\(Array\.from\(\{ length: concurrency \}/);
   assert.match(extract, /prepareDocumentAiPageBlob\(pageNumber\)/);
-  assert.match(extract, /requestDocumentAiPage\(pageNumber, blob\)/);
+  assert.match(extract, /requestGeminiDocumentAiPage\(pageNumber, blob\)/);
+  assert.doesNotMatch(extract, /requestDocumentAiPage\(pageNumber, blob\)/);
   assert.match(prepare, /await exporter\(pageNumber/);
   assert.match(prepare, /maxEdge: 1800/);
   assert.match(prepare, /mimeType: 'image\/png'/);
   assert.match(prepare, /cropWhitespace: true/);
   assert.match(prepare, /blob\.size > 2\.8 \* 1024 \* 1024/);
-  assert.match(prepare, /mimeType: 'image\/jpeg'/);
-  assert.match(prepare, /quality: 0\.92/);
-  assert.match(request, /\/api\/documents\/ai\/page\/extract/);
-  assert.match(request, /'X-Document-Page-Number': String\(pageNumber\)/);
-  assert.match(request, /body: blob/);
-  assert.match(request, /credentials: 'omit'/);
+  assert.match(geminiRequest, /\/api\/documents\/ai\/page\/gemini/);
+  assert.match(geminiRequest, /'X-Document-Page-Number': String\(pageNumber\)/);
+  assert.match(geminiRequest, /body: blob/);
+  assert.match(geminiRequest, /credentials: 'omit'/);
   assert.match(extract, /if \(analyzed\.pageType === 'outro'\)/);
   assert.match(extract, /state\.documentAiEvidence\.set\(pageNumber, normalized\)/);
-  assert.doesNotMatch(extract, /DOCUMENT_AI_PAGE_NOT_AUTHORIZED/);
-  assert.doesNotMatch(extract, /state\.pdfItem\.(?:name|ref)|fileId|filename|searchQuery|page_text|inlineData/);
+  assert.match(extract, /source: 'gemini'/);
+  assert.doesNotMatch(extract, /source: 'cloudflare'/);
+  assert.doesNotMatch(extract, /state\.pdfItem\.(?:name|ref)|fileId|filename|searchQuery|page_text/);
 
   assert.match(viewer, /async function exportPageImage\(pageNumber/);
   assert.match(viewer, /function getPageCount\(\)/);
   assert.match(viewer, /session\.document\?\.numPages/);
   assert.match(viewer, /getPageCount,/);
-  assert.match(viewer, /async function pageTextSafetyBounds\(page, viewport\)/);
-  assert.match(viewer, /function meaningfulContentBounds\(canvas/);
-  assert.match(viewer, /minimumDarkFraction/);
-  assert.match(viewer, /cropWhitespace === true/);
-  assert.match(viewer, /pageTextSafetyBounds\(page, viewport\)/);
-  assert.match(viewer, /outputCanvas\.toBlob/);
 });
 
-test('Gemini é comparação manual e não substitui a IA atual nem o chat canônico', async () => {
+test('Gemini substitui a comparação e é a única extração visível do Titon', async () => {
   const [html, js, router, ai] = await Promise.all([
     read('documentos/index.html'),
     read('js/documents.js'),
     read('worker/documents-router.js'),
     read('worker/document-ai.js')
   ]);
-  const geminiRequest = asyncFunctionSlice(js, 'requestGeminiDocumentAiPage', 'extractWholeDocumentAi');
-  const geminiExtract = asyncFunctionSlice(js, 'extractWholeDocumentAiGemini', 'classifyActiveDocumentPage');
-  const currentExtract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'extractWholeDocumentAiGemini');
+  const geminiRequest = asyncFunctionSlice(js, 'requestGeminiDocumentAiPage', 'schedulePreparedPageAnalysis');
+  const primaryExtract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'extractWholeDocumentAiGemini');
 
-  assert.match(html, /Extrair com IA atual/);
-  assert.match(html, /Extrair com Gemini/);
-  assert.match(js, /\/api\/documents\/ai\/page\/gemini/);
+  assert.match(html, /Extrair dados do PDF/);
+  assert.doesNotMatch(html, /Extrair com IA atual|Extrair com Gemini|documentsAiCompareSection/);
+  assert.match(geminiRequest, /\/api\/documents\/ai\/page\/gemini/);
   assert.match(geminiRequest, /'X-Document-Page-Number': String\(pageNumber\)/);
-  assert.match(geminiRequest, /credentials: 'omit'/);
-  assert.match(geminiExtract, /const concurrency = Math\.min\(3, pageCount\)/);
-  assert.match(geminiExtract, /state\.documentAiGeminiResults/);
-  assert.match(geminiExtract, /source: 'gemini'/);
-  assert.doesNotMatch(geminiExtract, /state\.documentAiEvidence\.set/);
-  assert.doesNotMatch(geminiExtract, /state\.documentAiResults\s*=/);
-  assert.match(currentExtract, /requestDocumentAiPage\(pageNumber, blob\)/);
-  assert.match(currentExtract, /state\.documentAiEvidence\.set\(pageNumber, normalized\)/);
-  assert.doesNotMatch(currentExtract, /page\/gemini/);
+  assert.match(primaryExtract, /requestGeminiDocumentAiPage\(pageNumber, blob\)/);
+  assert.match(primaryExtract, /state\.documentAiResults\.push\(normalized\)/);
+  assert.match(primaryExtract, /state\.documentAiEvidence\.set\(pageNumber, normalized\)/);
+  assert.match(primaryExtract, /source: 'gemini'/);
+  assert.doesNotMatch(primaryExtract, /requestDocumentAiPage\(/);
   assert.match(router, /\/api\/documents\/ai\/page\/gemini/);
-  assert.match(ai, /provider: 'cloudflare-workers-ai'/);
-  assert.match(ai, /freeOnly: true/);
-  assert.match(ai, /geminiComparison/);
-  assert.match(js, /function renderDocumentAiComparison/);
-  assert.match(js, /Sem IA atual/);
+  assert.match(ai, /provider: 'google-gemini-api'/);
+  assert.match(ai, /documentChat: false/);
+  assert.match(ai, /geminiComparison: false/);
 });
 
 test('provider Gemini envia enums REST em caixa alta', async () => {
@@ -142,21 +124,13 @@ test('provider Gemini envia enums REST em caixa alta', async () => {
   assert.doesNotMatch(provider, /thinkingLevel: 'minimal'|thinkingLevel: 'low'|mimeType: 'application\/json'/);
 });
 
-test('falha do Gemini permanece visível após o carregamento encerrar', async () => {
+test('falha do Gemini permanece visível no status principal após o carregamento', async () => {
   const js = await read('js/documents.js');
-  const renderStart = js.indexOf('  function renderDocumentAiComparison()');
-  const renderEnd = js.indexOf('  function canExtractCurrentDocumentAiPage()', renderStart);
-  assert.ok(renderStart >= 0 && renderEnd > renderStart, 'renderer comparativo ausente');
-  const render = js.slice(renderStart, renderEnd);
-
-  assert.match(render, /const geminiFailed = Boolean\(String\(state\.documentAiGeminiLastError/);
-  assert.match(render, /geminiCompleted \|\| geminiRunning \|\| geminiFailed/);
-  assert.match(render, /A extração com Gemini não foi concluída\. O erro acima foi mantido para diagnóstico\./);
-
-  const extract = asyncFunctionSlice(js, 'extractWholeDocumentAiGemini', 'classifyActiveDocumentPage');
-  assert.match(extract, /state\.documentAiGeminiLastError = ''/);
-  assert.match(extract, /state\.documentAiGeminiLastError =\s*String\(error\?\.message/);
-  assert.match(extract, /els\.documentAiGeminiStatus\.textContent = state\.documentAiGeminiLastError/);
+  const extract = asyncFunctionSlice(js, 'extractWholeDocumentAi', 'extractWholeDocumentAiGemini');
+  assert.match(extract, /els\.documentAiDocumentStatus\.className = 'documents-ai-document-status warning'/);
+  assert.match(extract, /A extração com Gemini foi interrompida/);
+  assert.match(extract, /source: 'gemini'/);
+  assert.doesNotMatch(extract, /source: 'cloudflare'/);
 });
 
 test('resultado Titon segue o formato operacional e mantém cada página separada', async () => {
