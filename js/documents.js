@@ -6252,20 +6252,54 @@
   els.searchForm.addEventListener('submit', (event) => {
     event.preventDefault();
     search(els.search.value, {
-      titleOnly: els.searchTitleOnly?.checked === true
+      titleOnly: els.searchTitleOnly?.checked === true,
+      filters: state.searchFilters
     });
   });
 
   els.searchTitleOnly?.addEventListener('change', () => {
     state.searchTitleOnly = els.searchTitleOnly.checked === true;
-    if (state.searchMode && state.searchQuery) {
-      search(state.searchQuery, { titleOnly: state.searchTitleOnly });
+    if (state.searchMode && (state.searchQuery || advancedSearchHasCriteria())) {
+      search(state.searchQuery, {
+        titleOnly: state.searchTitleOnly,
+        filters: state.searchFilters
+      });
     }
   });
 
+  els.advancedSearchButton?.addEventListener('click', () => {
+    openAdvancedSearch();
+  });
+  els.advancedSearchClose?.addEventListener('click', () => {
+    closeAdvancedSearch();
+  });
+  els.advancedSearchReset?.addEventListener('click', () => {
+    resetAdvancedSearchForm();
+  });
+  els.advancedOwner?.addEventListener('change', syncAdvancedSearchConditionalFields);
+  els.advancedModified?.addEventListener('change', syncAdvancedSearchConditionalFields);
+  els.advancedSearchForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const filters = readAdvancedSearchFilters();
+    state.searchFilters = filters;
+    syncAdvancedSearchButton();
+    closeAdvancedSearch();
+    search(els.search.value, {
+      titleOnly: els.searchTitleOnly?.checked === true,
+      filters
+    });
+  });
+  els.advancedSearchDialog?.addEventListener('click', (event) => {
+    if (event.target === els.advancedSearchDialog) closeAdvancedSearch();
+  });
+
   els.refreshFolder.addEventListener('click', () => {
-    if (state.searchMode) search(state.searchQuery, { titleOnly: state.searchTitleOnly });
-    else loadFolder();
+    if (state.searchMode) {
+      search(state.searchQuery, {
+        titleOnly: state.searchTitleOnly,
+        filters: state.searchFilters
+      });
+    } else loadFolder();
   });
 
   els.breadcrumbs.addEventListener('click', (event) => {
@@ -6386,7 +6420,8 @@
     if (state.searchMode) search(state.searchQuery, {
       append: true,
       pageToken: state.nextPageToken,
-      titleOnly: state.searchTitleOnly
+      titleOnly: state.searchTitleOnly,
+      filters: state.searchFilters
     });
     else loadFolder({ append: true, pageToken: state.nextPageToken });
   });
