@@ -2,27 +2,26 @@
 
 Última atualização: 23/09/2026.
 
-## Fase 7H — ordem operacional da IA documental + Especialidade — IMPLEMENTADA EM BRANCH — 23/09/2026
+## Fase 7H — ordem operacional da IA documental + Especialidade — EM PR — 23/09/2026
 
 Pedido aprovado: os dados extraídos no Titon devem priorizar a sequência operacional **Nome do paciente → CNS → CPF → Data de nascimento → Telefone → Nome da mãe → Endereço → Nome do(a) médico(a) → CRM / RMS → Agente → CID → Código do procedimento → Especialidade → Motivo do encaminhamento**.
 
-Diagnóstico do estado real: a `main` já possuía ordem personalizável por conta, porém a ordem padrão e os agrupamentos não correspondiam a essa sequência; o schema médico também não possuía `especialidade`. A branch desta unidade foi criada da `main` já após o merge da PR #461, no commit base `a6f056de954f98307ab1de0ff85d49681d353a2f`.
+Diagnóstico: a `main` já possuía ordem personalizável por conta, porém o padrão não correspondia à sequência solicitada e o schema médico ainda não possuía `especialidade`. A unidade foi implementada em `feat/titon-ai-field-order-20260923`, preservando a publicação já concluída da 7G.4.
 
 Implementação:
-- ordem canônica do frontend e do backend alinhada à sequência aprovada;
-- rótulos visíveis passam a usar **Telefone**, **Nome do(a) médico(a)** e **CRM / RMS**;
-- novo campo `especialidade` incorporado ao schema médico, Gemini e fallback Workers AI;
-- especialidade é **literal-only**: só pode ser preenchida quando houver rótulo explícito na mesma página; é proibido inferir pelo procedimento, CID, título ou motivo;
-- prompts versionados: extração `v3`, análise `v5` e transporte compacto `v5`;
-- versão técnica da IA: `phase5e-v8c3-specialty-order`;
-- preferências antigas de 16 campos são reconhecidas e migradas uma única vez para a nova ordem canônica de 17 campos, sem SQL destrutivo;
-- os campos existentes **Título**, **Procedimento solicitado** e **Descrição do CID** foram preservados como complementares depois da sequência solicitada, evitando perda de informação;
-- os resultados continuam separados por página, sem consolidação ou mistura de proveniência;
-- nenhum conteúdo extraído, nome, CNS, CPF, CID ou outro dado clínico foi adicionado à observabilidade.
+- ordem canônica de frontend e backend alinhada à sequência aprovada;
+- rótulos visíveis **Telefone**, **Nome do(a) médico(a)** e **CRM / RMS**;
+- novo campo `especialidade` no schema médico, Gemini e fallback Workers AI;
+- `especialidade` é literal-only: exige rótulo explícito na mesma página e não pode ser inferida por procedimento, CID, título ou motivo;
+- prompts versionados: extração `v3`, análise `v5`, transporte compacto `v5`; versão técnica `phase5e-v8c3-specialty-order`;
+- preferências antigas de 16 campos migram para o novo shape de 17 campos sem SQL destrutivo;
+- **Título**, **Procedimento solicitado** e **Descrição do CID** continuam como campos complementares depois da sequência solicitada;
+- resultados permanecem separados por página; proveniência não é misturada;
+- nenhuma telemetria com conteúdo clínico foi adicionada.
 
-Branch: `feat/titon-ai-field-order-20260923`. Último commit funcional antes deste registro: `76d9bb7018b507239b84297210597451fce9afbc`.
+PR: **#463 — Titon: ordenar dados da IA e incluir Especialidade**.
 
-**Próxima ação exata:** abrir PR, executar CI completo e integrar somente se os contratos de IA, privacidade, Central e navegador permanecerem verdes; depois homologar uma extração real no Titon conferindo ordem, rótulos e Especialidade.
+**Próxima ação exata:** concluir CI da #463; corrigir qualquer regressão; integrar somente com os contratos de IA, privacidade, Central e navegador verdes; depois homologar uma extração real no Titon.
 
 ## Refinamento transversal do modo escuro — PUBLICADO; HOMOLOGAÇÃO VISUAL PENDENTE — 23/09/2026
 
@@ -3280,27 +3279,33 @@ A alteração funcional é somente CSS/cache-buster/teste/status; a evidência d
 
 **Pendência:** homologação visual humana em produção. O aceite é os três botões exibirem novamente seus desenhos no modo escuro, mantendo hover/foco e sem regressão do modo claro.
 
-## Fase 7G.4 — contraste das ferramentas internas do editor no modo escuro — EM BRANCH — 23/09/2026
+## Fase 7G.4 — contraste das ferramentas internas do editor no modo escuro — PUBLICADA / AGUARDANDO HOMOLOGAÇÃO HUMANA — 23/09/2026
 
-Após a 7G.3 restaurar os botões autorais do topo, a homologação visual identificou outro ponto: as ferramentas internas do editor (desfazer/refazer, unir, inserir página, imagem, recorte, seleção, escrita, colagem de imagem, desenho e ferramentas da barra lateral) continuavam usando ícones azul-escuros sobre o fundo navy do modo escuro, com contraste insuficiente.
+A PR **#461** foi mesclada em `main` pelo commit **`a6f056de`**.
 
-**Decisão visual:** no modo escuro, apenas as ferramentas genéricas do editor recebem uma placa azul-clara de alto contraste:
+**Problema corrigido:** as ferramentas internas do editor PDF e da barra lateral usavam ícones/textos azul-escuros sobre o fundo navy do modo escuro, com contraste insuficiente.
+
+**Correção publicada:** somente no modo escuro, as ferramentas genéricas recebem placa azul-clara:
 - fundo `#d8e9f4`;
 - borda `#78a9c4`;
 - ícone/texto `#0b4568`;
-- hover/foco ainda mais claro (`#f1f8fc`);
+- hover/foco `#f1f8fc`;
 - estado ativo `#b9dff2`;
-- desabilitado permanece distinguível com `opacity: .5`.
+- disabled com `opacity: .5`.
 
-Os botões autorais `.documents-art-button` (grade, Drive, Salvar, Imprimir, Fechar etc.) foram **explicitamente excluídos** desse recolorimento para preservar seus assets já corrigidos na 7G.3. O modo claro também permanece inalterado.
+Os botões autorais `.documents-art-button` foram explicitamente excluídos para preservar Grade, Drive, Salvar, Imprimir e Fechar, já corrigidos na 7G.3. O modo claro permanece inalterado. Cache-buster publicado: `documents.css?v=20260923-9`.
 
-A barra lateral interna do Titon (`.documents-rail-tool`) recebe o mesmo contraste para evitar ícones azul-escuros sobre fundo navy.
+**Validação:**
+- PR #461: **23/23 GitHub Actions success**, incluindo Chromium/PDF.js real;
+- Cloudflare Pages preview: **success**;
+- pós-merge `a6f056de`: **23/23 GitHub Actions success**;
+- GitHub Pages `deploy`: **success**;
+- Cloudflare Pages: **success**;
+- Workers Builds pós-merge: **failure**, porém esta unidade não altera runtime/configuração do Worker; a publicação estática da correção foi confirmada por Pages.
 
-Cache-buster: `documents.css?v=20260923-9`. Teste de regressão em `worker/tests/documents-ui.test.mjs`.
+**Privacidade/segurança:** nenhuma alteração em JavaScript, API, Drive, IA, permissões ou observabilidade.
 
-**Validação da PR #461:** 23/23 workflows GitHub Actions concluíram com sucesso, incluindo Chromium/PDF.js real; Cloudflare Pages preview publicou com sucesso. O Workers Builds externo falhou na branch, porém esta unidade altera somente CSS/HTML de cache-buster/teste/status e não modifica runtime/configuração do Worker; a falha não é atribuída à correção visual.
-
-Branch: `fix/titon-dark-editor-tool-contrast-20260923`. Próximo passo: abrir PR, executar CI integral e mesclar somente se verde.
+**Pendência:** homologação visual humana em produção. O aceite é as ferramentas internas do editor/rail ficarem claramente legíveis no tema escuro sem alterar os botões autorais.
 
 ## Handoff para o próximo chat
 
@@ -3308,20 +3313,20 @@ Branch: `fix/titon-dark-editor-tool-contrast-20260923`. Próximo passo: abrir PR
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
 | Subfase / objetivo atual | **7H — ordem operacional da IA documental + campo Especialidade** |
-| Última ação concluída | implementação funcional, testes de regressão e documentação preparados na branch a partir da main pós-#461 |
+| Última ação concluída | PR #463 aberta com schema, UI, prompts, fallback, preferências, testes e documentação atualizados |
 | Branch atual | `feat/titon-ai-field-order-20260923` |
-| PR atual | **nenhum ainda neste registro** |
-| Último commit relevante | `76d9bb7018b507239b84297210597451fce9afbc` antes deste registro |
-| Checks e testes | CI ainda não executada no PR; regressões específicas foram atualizadas no código |
+| PR atual | **#463 aberta** — “Titon: ordenar dados da IA e incluir Especialidade” |
+| Último commit relevante | merge de sincronização com `main` a criar após este registro |
+| Checks e testes | CI da PR pendente |
 | Decisões tomadas | sequência solicitada vira padrão; `especialidade` entra no schema; campos complementares existentes são preservados depois; proveniência continua por página |
 | Justificativas | atender o fluxo operacional sem apagar informação já suportada nem quebrar isolamento/proveniência da IA documental |
 | Alternativas descartadas | consolidar campos de páginas diferentes; inferir especialidade por CID/procedimento; remover Título/Procedimento solicitado/Descrição do CID |
 | Ações externas concluídas | nenhuma |
-| Pendências e bloqueios | abrir PR, CI completo, merge/publicação e homologação humana de uma extração real |
-| Riscos conhecidos | mudança do schema médico exige coerência entre Gemini, fallback, preferências e testes; mitigado por versão nova e migração do shape legado |
+| Pendências e bloqueios | CI completo, merge/publicação e homologação humana de uma extração real |
+| Riscos conhecidos | coerência do novo schema entre Gemini, fallback, preferências e UI; coberta por versão nova e regressões |
 | Métricas / observabilidade | nenhuma telemetria nova; dados extraídos continuam fora do PostHog |
-| Próxima ação exata | **abrir PR, validar CI; só então integrar e homologar ordem/rótulos/Especialidade no Titon** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `js/documents.js`; `worker/document-ai*.js`; `worker/documents-router.js`; testes da IA/UI; status |
+| Próxima ação exata | **acompanhar CI da #463; corrigir falhas; integrar apenas se verde e então homologar ordem/rótulos/Especialidade no Titon** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #463; `js/documents.js`; `worker/document-ai*.js`; `worker/documents-router.js`; testes IA/UI; status |
 
 ## Histórico recuperável
 
