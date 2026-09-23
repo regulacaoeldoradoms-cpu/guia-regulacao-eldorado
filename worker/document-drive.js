@@ -858,9 +858,22 @@ export async function driveConnectionStatus(env) {
   };
 }
 
+function normalizeDriveListSortOrder(value) {
+  const order = String(value || 'original');
+  return ['original', 'modified_desc', 'modified_asc'].includes(order) ? order : 'original';
+}
+
+function driveListOrderBy(value, { search = false } = {}) {
+  const order = normalizeDriveListSortOrder(value);
+  if (order === 'modified_desc') return 'modifiedTime desc,name_natural';
+  if (order === 'modified_asc') return 'modifiedTime,name_natural';
+  return search ? '' : 'folder,name_natural';
+}
+
 export async function listDriveFolder(env, input = {}) {
   const pageSize = clampInteger(input.pageSize, 20, 20, 100);
   const pageToken = String(input.pageToken || '').trim().slice(0, 2000);
+  const orderBy = driveListOrderBy(input.sortOrder);
   let parentId = 'root';
 
   if (input.parentRef) {
@@ -874,10 +887,9 @@ export async function listDriveFolder(env, input = {}) {
   const url = new URL('https://www.googleapis.com/drive/v3/files');
   url.searchParams.set('q', `'${escapeDriveQueryLiteral(parentId)}' in parents and trashed = false`);
   url.searchParams.set('pageSize', String(pageSize));
-  // A ordem visual da navegação deve permanecer igual ao comportamento
-  // histórico da Central. O preload de pastas prioritárias é apenas de fundo
-  // e não pode alterar quais itens entram primeiro na paginação da pasta.
-  url.searchParams.set('orderBy', 'folder,name_natural');
+  // Sem filtro explícito, preserva exatamente a ordem histórica da Central.
+  // A ordenação cronológica usa apenas valores allowlisted no backend.
+  url.searchParams.set('orderBy', orderBy);
   url.searchParams.set('spaces', 'drive');
   url.searchParams.set('supportsAllDrives', 'true');
   url.searchParams.set('includeItemsFromAllDrives', 'true');
@@ -901,11 +913,13 @@ export async function listDriveFolder(env, input = {}) {
 export async function searchDrive(env, input = {}) {
   const pageSize = clampInteger(input.pageSize, 20, 20, 100);
   const pageToken = String(input.pageToken || '').trim().slice(0, 2000);
+  const orderBy = driveListOrderBy(input.sortOrder, { search: true });
   const searchQuery = await buildDriveSearchQuery(env, input);
 
   const url = new URL('https://www.googleapis.com/drive/v3/files');
   url.searchParams.set('q', searchQuery);
   url.searchParams.set('pageSize', String(pageSize));
+  if (orderBy) url.searchParams.set('orderBy', orderBy);
   url.searchParams.set('spaces', 'drive');
   url.searchParams.set('corpora', 'user');
   url.searchParams.set('supportsAllDrives', 'true');

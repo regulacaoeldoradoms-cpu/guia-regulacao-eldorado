@@ -121,6 +121,7 @@
     searchMode: false,
     searchTitleOnly: false,
     searchFilters: null,
+    listSortOrder: 'original',
     loading: false,
     folderSnapshot: null,
     warmedDocumentPayload: null,
@@ -211,6 +212,8 @@
     search: document.getElementById('documentsSearch'),
     searchTitleOnly: document.getElementById('documentsSearchTitleOnly'),
     advancedSearchButton: document.getElementById('documentsAdvancedSearchButton'),
+    chronologicalOrder: document.getElementById('documentsChronologicalOrderButton'),
+    resetOrder: document.getElementById('documentsResetOrderButton'),
     advancedSearchDialog: document.getElementById('documentsAdvancedSearchDialog'),
     advancedSearchForm: document.getElementById('documentsAdvancedSearchForm'),
     advancedSearchClose: document.getElementById('documentsAdvancedSearchCloseButton'),
@@ -5450,11 +5453,75 @@
     }
   }
 
-  function sortItems(items) {
+  function normalizeListSortOrder(value) {
+    const order = String(value || 'original');
+    return ['original', 'modified_desc', 'modified_asc'].includes(order) ? order : 'original';
+  }
+
+  function compareItemNames(a, b) {
+    return String(a?.name || '').localeCompare(String(b?.name || ''), 'pt-BR', { numeric: true, sensitivity: 'base' });
+  }
+
+  function sortItems(items, order = state.listSortOrder) {
+    const mode = normalizeListSortOrder(order);
     return [...items].sort((a, b) => {
+      if (mode !== 'original') {
+        const aTime = Date.parse(String(a?.modifiedTime || ''));
+        const bTime = Date.parse(String(b?.modifiedTime || ''));
+        const aHasTime = Number.isFinite(aTime);
+        const bHasTime = Number.isFinite(bTime);
+        if (aHasTime !== bHasTime) return aHasTime ? -1 : 1;
+        if (aHasTime && bHasTime && aTime !== bTime) {
+          return mode === 'modified_asc' ? aTime - bTime : bTime - aTime;
+        }
+      }
       if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1;
-      return String(a.name || '').localeCompare(String(b.name || ''), 'pt-BR', { numeric: true, sensitivity: 'base' });
+      return compareItemNames(a, b);
     });
+  }
+
+  function syncListSortControls() {
+    const mode = normalizeListSortOrder(state.listSortOrder);
+    state.listSortOrder = mode;
+    if (els.chronologicalOrder) {
+      const active = mode !== 'original';
+      els.chronologicalOrder.classList.toggle('active', active);
+      els.chronologicalOrder.setAttribute('aria-pressed', active ? 'true' : 'false');
+      els.chronologicalOrder.textContent = mode === 'modified_desc'
+        ? 'Mais recentes ↓'
+        : mode === 'modified_asc'
+          ? 'Mais antigos ↑'
+          : 'Ordem cronológica';
+      els.chronologicalOrder.title = mode === 'modified_desc'
+        ? 'Modificados do mais recente ao mais antigo. Clique para inverter.'
+        : mode === 'modified_asc'
+          ? 'Modificados do mais antigo ao mais recente. Clique para inverter.'
+          : 'Ordenar pela data de modificação';
+    }
+    if (els.resetOrder) els.resetOrder.disabled = mode === 'original';
+  }
+
+  function reloadCurrentListingForSort() {
+    if (state.searchMode) {
+      return search(state.searchQuery, {
+        titleOnly: state.searchTitleOnly,
+        filters: state.searchFilters
+      });
+    }
+    return loadFolder();
+  }
+
+  function setListSortOrder(value) {
+    const next = normalizeListSortOrder(value);
+    if (state.loading || next === state.listSortOrder) {
+      syncListSortControls();
+      return false;
+    }
+    state.listSortOrder = next;
+    state.selectedListIndex = -1;
+    syncListSortControls();
+    void reloadCurrentListingForSort();
+    return true;
   }
 
   function normalizedSearchText(value) {
@@ -5679,7 +5746,8 @@
       || ageMs > 90 * 1000
     ) return false;
 
-    const incoming = sortItems(folder.items);
+    if (state.listSortOrder !== 'original') return false;
+    const incoming = sortItems(folder.items, 'original');
     state.stack = [];
     state.searchMode = false;
     state.searchQuery = '';
@@ -5709,10 +5777,11 @@
       body: JSON.stringify({
         parentRef: '',
         pageToken: '',
-        pageSize: 20
+        pageSize: 20,
+        sortOrder: 'original'
       })
     });
-    const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
+    const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : [], 'original');
     const nextPageToken = String(payload?.nextPageToken || '');
     state.folderSnapshot = {
       parentRef: '',
@@ -5722,6 +5791,7 @@
 
     const safeToRepaint = (
       state.stack.length === 0
+      && state.listSortOrder === 'original'
       && !state.searchMode
       && state.selectedListIndex < 0
       && !state.pdfItem
@@ -5882,7 +5952,7 @@
       state.selectedListIndex = -1;
       els.search.value = '';
       const snapshot = state.folderSnapshot;
-      if (snapshot && snapshot.parentRef === parentRef && Array.isArray(snapshot.items)) {
+      if (state.listSortOrder === 'original' && snapshot && snapshot.parentRef === parentRef && Array.isArray(snapshot.items)) {
         state.items = snapshot.items.slice();
         state.nextPageToken = String(snapshot.nextPageToken || '');
         renderItems();
@@ -5899,17 +5969,20 @@
         body: JSON.stringify({
           parentRef,
           pageToken,
-          pageSize: 20
+          pageSize: 20,
+          sortOrder: state.listSortOrder
         })
       });
-      const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
-      state.items = append ? sortItems([...state.items, ...incoming]) : incoming;
+      const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : [], state.listSortOrder);
+      state.items = append ? sortItems([...state.items, ...incoming], state.listSortOrder) : incoming;
       state.nextPageToken = String(payload?.nextPageToken || '');
-      state.folderSnapshot = {
-        parentRef,
-        items: state.items.slice(),
-        nextPageToken: state.nextPageToken
-      };
+      if (state.listSortOrder === 'original') {
+        state.folderSnapshot = {
+          parentRef,
+          items: state.items.slice(),
+          nextPageToken: state.nextPageToken
+        };
+      }
       renderItems();
       capture('drive_folder_opened', {
         route: '/documentos/',
@@ -5966,6 +6039,7 @@
       const canUseLocalNamePreview = Boolean(
         value
         && !hasAdvanced
+        && state.listSortOrder === 'original'
         && snapshot
         && snapshot.parentRef === currentParentRef()
       );
@@ -5974,7 +6048,7 @@
         : [];
 
       if (localMatches.length) {
-        state.items = sortItems(localMatches);
+        state.items = sortItems(localMatches, state.listSortOrder);
         state.nextPageToken = '';
         renderItems();
       } else {
@@ -5991,12 +6065,13 @@
           query: value,
           pageToken,
           pageSize: 20,
+          sortOrder: state.listSortOrder,
           titleOnly: state.searchTitleOnly,
           filters: state.searchFilters
         })
       });
-      const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : []);
-      state.items = append ? sortItems([...state.items, ...incoming]) : incoming;
+      const incoming = sortItems(Array.isArray(payload?.items) ? payload.items : [], state.listSortOrder);
+      state.items = append ? sortItems([...state.items, ...incoming], state.listSortOrder) : incoming;
       state.nextPageToken = String(payload?.nextPageToken || '');
       renderItems();
       capture('drive_search_completed', {
@@ -6249,6 +6324,8 @@
     }
   });
 
+  syncListSortControls();
+
   els.searchForm.addEventListener('submit', (event) => {
     event.preventDefault();
     search(els.search.value, {
@@ -6265,6 +6342,15 @@
         filters: state.searchFilters
       });
     }
+  });
+
+  els.chronologicalOrder?.addEventListener('click', () => {
+    const next = state.listSortOrder === 'modified_desc' ? 'modified_asc' : 'modified_desc';
+    setListSortOrder(next);
+  });
+
+  els.resetOrder?.addEventListener('click', () => {
+    setListSortOrder('original');
   });
 
   els.advancedSearchButton?.addEventListener('click', () => {
