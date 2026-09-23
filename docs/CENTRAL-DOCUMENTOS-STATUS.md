@@ -1,6 +1,6 @@
 # Central de Documentos — Status
 
-Última atualização: 20/09/2026.
+Última atualização: 23/09/2026.
 
 ## Publicação do novo vídeo de abertura — CONCLUÍDA — 18/09/2026
 
@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — Pesquisa avançada integrada à Central; falta homologação funcional em produção** |
-| Última ação concluída | PR **#438** mesclada à `main`; pesquisa avançada está versionada e combinável com busca nome+conteúdo e “Só título” |
-| Branch atual | `docs/titon-advanced-search-published-20260923` somente para reconciliar status |
-| PR atual | funcional **#438 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`8bfc671419f709831e1c550b0ce77a7118804475`** |
-| Checks e testes | head final da #438: **23/23 workflows GitHub Actions success**, incluindo Fases 1–6, navegador/PDF.js real, site, bundle e governança |
-| Decisões tomadas | filtros suportados: tipo, proprietário, palavras, nome, local/pasta atual, compartilhados comigo, estrela, lixeira, data e compartilhado com; criptografia/aprovações não são simuladas |
-| Justificativas | filtros escolhidos correspondem a termos oficiais de `files.list q`; aprovações são recurso por arquivo e criptografia não é termo de busca direto |
-| Alternativas descartadas | fan-out de `approvals.list`; query arbitrária do navegador; picker recursivo pesado; filtros falsos/incompletos |
-| Ações externas concluídas | nenhuma API ou scope adicional necessário |
-| Pendências e bloqueios | confirmar deploy produtivo e testar combinações reais no modal após Ctrl+F5 |
-| Riscos conhecidos | “Pasta atual” pesquisa filhos diretos daquela pasta, não uma subárvore recursiva; tipos fora do escopo do Titon podem aparecer sem abertura no editor |
-| Métricas / observabilidade | termos, e-mails e valores dos filtros permanecem fora do PostHog; somente duração/buckets técnicos |
-| Próxima ação exata | **Ctrl+F5 → abrir Pesquisa avançada → testar Tipo=PDF + período + Pasta atual; testar Redefinir, Compartilhados comigo e paginação** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #438; merge `8bfc6714`; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/document-drive.js`; `worker/documents-router.js` |
+| Subfase / objetivo atual | **7E — robustez/UX da Central; Pesquisa avançada integrada e refinamentos visuais do catálogo publicados** |
+| Última ação concluída | PR **#440** mesclada à `main`; cards Agenda e Central de Documentos agora usam os PNGs próprios adicionados pelo operador |
+| Branch atual | `docs/tool-card-icons-published-20260923` somente para reconciliar status pós-merge |
+| PR atual | funcional **#440 mesclada**; PR documental deste handoff ainda a abrir |
+| Último commit relevante | merge funcional **`985a109bb416546f4e7b2764dc40356f55e9e0db`** |
+| Checks e testes | head final `ff03bdb0`: **26/26 workflows GitHub Actions success**; teste de regressão confirma `AGENDA.png` e `CENTRAL_DOCUMENTOS.png` no catálogo |
+| Decisões tomadas | substituir apenas os SVGs genéricos dos cards; manter os PNGs como assets decorativos lazy-loaded e não ampliar preload global |
+| Justificativas | preserva a estética própria aprovada pelo operador sem aumentar download antecipado para perfis que não exibem esses módulos |
+| Alternativas descartadas | manter os ícones lineares improvisados; pré-carregar os PNGs de ~1,6 MB cada no Service Worker para todos os perfis |
+| Ações externas concluídas | operador adicionou `assets/AGENDA.png` e `assets/CENTRAL_DOCUMENTOS.png` na `main` no commit `70c41db` |
+| Pendências e bloqueios | somente homologação visual dos dois cards após atualização do cliente; Pesquisa avançada da 7E continua disponível para reteste funcional quando necessário |
+| Riscos conhecidos | PNGs são maiores que os SVGs antigos, porém carregam apenas quando os cards correspondentes são renderizados |
+| Métricas / observabilidade | nenhuma telemetria nova; sem nomes de arquivos, pacientes ou conteúdo documental no PostHog |
+| Próxima ação exata | **Ctrl+F5 em Ferramentas/Home → confirmar os novos ícones de Agenda e Central de Documentos; depois retomar qualquer homologação funcional pendente da 7E** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #440; merge `985a109b`; `js/tools-catalog.js`; `assets/AGENDA.png`; `assets/CENTRAL_DOCUMENTOS.png`; `index.html`; `ferramentas/index.html` |
 
 ## Histórico recuperável
 
@@ -5618,3 +5618,24 @@ Implementação na branch `feat/tool-card-custom-icons-20260923`:
 Segurança/privacidade: somente apresentação visual. Sem mudança em permissões, autenticação, Drive, Agenda, IA, dados clínicos, PostHog ou APIs.
 
 **Próxima ação exata:** abrir PR, executar CI; integrar somente se os checks permanecerem verdes e então homologar visualmente os dois cards na Home/Ferramentas.
+
+
+## Mudança transversal — ícones próprios publicados — 23/09/2026
+
+A PR **#440 — UI: usar ícones próprios na Agenda e Central de Documentos** foi integrada à `main` no merge **`985a109bb416546f4e7b2764dc40356f55e9e0db`**.
+
+Resultado final:
+- **Agenda** usa `/assets/AGENDA.png?v=20260923-1`;
+- **Central de Documentos** usa `/assets/CENTRAL_DOCUMENTOS.png?v=20260923-1`;
+- Home e Ferramentas carregam `tools-catalog.js?v=20260923-1`;
+- Service Worker foi alinhado à mesma versão do catálogo;
+- os SVGs genéricos `calendar` e `documents` deixaram de ser usados nesses cards;
+- os PNGs continuam lazy-loaded, evitando pré-download global dos dois arquivos de aproximadamente 1,6 MB cada.
+
+Validação:
+- primeira rodada de CI no head `13cfeff5` revelou somente uma asserção histórica de teste que ainda exigia `tools-catalog.js?v=20260916-1`;
+- a expectativa foi reconciliada em `ff03bdb098e0d18c900b307668a8306c56950d54`;
+- rodada final: **26/26 workflows GitHub Actions success**, zero falhas;
+- mudança não altera autenticação, permissões, Drive, Agenda, IA, APIs ou observabilidade.
+
+**Próxima ação exata:** Ctrl+F5 em Home/Ferramentas e confirmar visualmente os dois novos ícones em produção.
