@@ -20,6 +20,8 @@ const ACTIVE_ROUTES = [
   'protocolo/index.html',
   'recepcao/index.html',
   'telemedicina/index.html',
+  'agenda/index.html',
+  'agenda/sync/index.html',
   'cidadao/index.html',
   'conselho/index.html',
   'conselho/painel/index.html',
@@ -43,9 +45,9 @@ function interactionRuntime() {
   const localValues = new Map();
   const document = {
     readyState: 'loading',
-    body: {},
+    body: { dataset: {} },
     visibilityState: 'visible',
-    documentElement: { dataset: {} },
+    documentElement: { dataset: {}, style: {} },
     activeElement: null,
     addEventListener() {},
     dispatchEvent() {},
@@ -86,18 +88,19 @@ function interactionRuntime() {
 test('todas as rotas ativas carregam uma única camada central versionada', () => {
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
-    assert.equal((html.match(/portal-interactions\.css\?v=20260906-2/g) || []).length, 1, `${filename}: CSS central`);
-    assert.equal((html.match(/portal-interactions\.js\?v=20260910-2/g) || []).length, 1, `${filename}: JS central`);
+    assert.equal((html.match(/portal-theme\.js\?v=20260923-1/g) || []).length, 1, `${filename}: bootstrap de tema`);
+    assert.equal((html.match(/portal-interactions\.css\?v=20260923-1/g) || []).length, 1, `${filename}: CSS central`);
+    assert.equal((html.match(/portal-interactions\.js\?v=20260923-2/g) || []).length, 1, `${filename}: JS central`);
   }
 });
 
 test('API normaliza preferências e mantém sons desligados por padrão', async () => {
   const api = interactionRuntime();
-  assert.equal(api.version, '1.0.0');
-  assert.deepEqual({ ...api.__test.defaultPreferences }, { soundsEnabled: false, volume: 0.32, muted: false });
+  assert.equal(api.version, '1.1.0');
+  assert.deepEqual({ ...api.__test.defaultPreferences }, { soundsEnabled: false, volume: 0.32, muted: false, theme: 'light' });
   assert.deepEqual(
-    { ...api.__test.normalizePreferences({ interfaceSoundsEnabled: 1, interfaceSoundVolume: 78, interfaceSoundsMuted: 0 }) },
-    { soundsEnabled: true, volume: 0.78, muted: false }
+    { ...api.__test.normalizePreferences({ interfaceSoundsEnabled: 1, interfaceSoundVolume: 78, interfaceSoundsMuted: 0, interfaceTheme: 'dark' }) },
+    { soundsEnabled: true, volume: 0.78, muted: false, theme: 'dark' }
   );
   assert.equal(api.sounds.play('success'), false, 'som desligado não reproduz');
   await api.setPreferences({ soundsEnabled: true, volume: 0, muted: false });
@@ -156,6 +159,46 @@ test('identidade sonora é original, curta, mono e leve', () => {
   }
 });
 
+test('bootstrap de tema é independente das microinterações e cobre a Telemedicina', () => {
+  const source = read('js/portal-theme.js');
+  const telemedicine = read('telemedicina/index.html');
+  const viewport = read('js/telemedicina-viewport-v22.js');
+
+  assert.match(source, /regulacao\.portal\.theme\.active\.v1/);
+  assert.match(source, /document\.documentElement\.dataset\.portalTheme/);
+  assert.match(source, /window\.PortalTheme = Object\.freeze/);
+  assert.match(source, /RegulationAuth\?\.getCachedUser/);
+  assert.match(telemedicine, /portal-theme\.js\?v=20260923-1/);
+  assert.match(viewport, /disabled-telemedicina-v23/);
+});
+
+test('modo claro e escuro são globais, sincronizáveis e controlados em Configurações', async () => {
+  const api = interactionRuntime();
+  const source = read('js/portal-interactions.js');
+  const css = read('css/portal-interactions.css');
+  const settings = read('configuracoes/index.html');
+
+  assert.equal(api.__test.normalizeTheme('dark'), 'dark');
+  assert.equal(api.__test.normalizeTheme('light'), 'light');
+  assert.equal(api.__test.normalizeTheme('desconhecido'), 'light');
+  assert.match(source, /ACTIVE_THEME_KEY = 'regulacao\.portal\.theme\.active\.v1'/);
+  assert.match(source, /document\.documentElement\.dataset\.portalTheme = theme/);
+  assert.match(source, /interfaceTheme: preferences\.theme/);
+  assert.match(source, /id="interfaceThemeLight"|interfaceThemeLight/);
+  assert.match(css, /html\[data-portal-theme="dark"\]/);
+  assert.match(css, /color-scheme:\s*dark/);
+  assert.match(css, /\.interface-theme-settings/);
+  assert.match(settings, /id="interfaceAppearanceCard"/);
+  assert.match(settings, /id="interfaceThemeLight"/);
+  assert.match(settings, /id="interfaceThemeDark"/);
+  assert.match(settings, /Modo claro/);
+  assert.match(settings, /Modo escuro/);
+  assert.match(settings, /portal-interactions\.js\?v=20260923-2/);
+
+  await api.setPreferences({ theme: 'dark' });
+  assert.equal(api.getPreferences().theme, 'dark');
+});
+
 test('CSS central preserva foco, movimento reduzido, contraste forçado e transição progressiva', () => {
   const css = read('css/portal-interactions.css');
   assert.match(css, /:focus-visible/);
@@ -185,10 +228,13 @@ test('preferências persistem no backend sem mudar permissões', () => {
   assert.match(backend, /interface_sounds_enabled[^\n]+DEFAULT 0/);
   assert.match(backend, /interface_sound_volume[^\n]+DEFAULT 32/);
   assert.match(backend, /interface_sounds_muted[^\n]+DEFAULT 0/);
+  assert.match(backend, /interface_theme[^\n]+DEFAULT 'light'/);
+  assert.match(backend, /theme !== 'light' && theme !== 'dark'/);
   assert.match(backend, /volume < 0 \|\| volume > 100/);
   assert.match(client, /interfaceSoundsEnabled/);
   assert.match(client, /interfaceSoundVolume/);
   assert.match(client, /interfaceSoundsMuted/);
+  assert.match(client, /interfaceTheme/);
 });
 
 test('interfaces ativas não usam emojis como pictogramas', () => {

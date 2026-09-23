@@ -238,6 +238,7 @@ export async function ensureAuthSchema(env) {
   await ensureColumn(env, 'interface_sounds_enabled', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn(env, 'interface_sound_volume', 'INTEGER NOT NULL DEFAULT 32');
   await ensureColumn(env, 'interface_sounds_muted', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn(env, 'interface_theme', "TEXT NOT NULL DEFAULT 'light'");
   await ensureColumn(env, 'self_registered', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn(env, 'avatar_data', "TEXT NOT NULL DEFAULT ''");
   const avatarVersionAdded = await ensureColumn(env, 'avatar_version', "TEXT NOT NULL DEFAULT ''");
@@ -273,6 +274,7 @@ function mapDbUser(row) {
     interfaceSoundsEnabled: Number(row.interface_sounds_enabled) === 1,
     interfaceSoundVolume: Math.min(100, Math.max(0, Number(row.interface_sound_volume ?? 32))),
     interfaceSoundsMuted: Number(row.interface_sounds_muted) === 1,
+    interfaceTheme: String(row.interface_theme || 'light') === 'dark' ? 'dark' : 'light',
     selfRegistered: Number(row.self_registered) === 1,
     active: Number(row.active) === 1,
     mustChangePassword: Number(row.must_change_password) === 1,
@@ -301,6 +303,7 @@ function publicUser(user, options = {}) {
     interfaceSoundsEnabled: Boolean(user.interfaceSoundsEnabled),
     interfaceSoundVolume: Math.min(100, Math.max(0, Number(user.interfaceSoundVolume ?? 32))),
     interfaceSoundsMuted: Boolean(user.interfaceSoundsMuted),
+    interfaceTheme: user.interfaceTheme === 'dark' ? 'dark' : 'light',
     selfRegistered: Boolean(user.selfRegistered)
   };
   if (options.includeEmail) result.email = user.email || '';
@@ -332,6 +335,7 @@ function configuredUsers(env) {
     interfaceSoundsEnabled: Boolean(item.interfaceSoundsEnabled),
     interfaceSoundVolume: Math.min(100, Math.max(0, Number(item.interfaceSoundVolume ?? 32))),
     interfaceSoundsMuted: Boolean(item.interfaceSoundsMuted),
+    interfaceTheme: item.interfaceTheme === 'dark' ? 'dark' : 'light',
     selfRegistered: false,
     sessionVersion: 1,
     source: 'bootstrap'
@@ -513,6 +517,7 @@ async function securityGet(request, env, origin) {
       interfaceSoundsEnabled: Boolean(user.interfaceSoundsEnabled),
       interfaceSoundVolume: Math.min(100, Math.max(0, Number(user.interfaceSoundVolume ?? 32))),
       interfaceSoundsMuted: Boolean(user.interfaceSoundsMuted),
+      interfaceTheme: user.interfaceTheme === 'dark' ? 'dark' : 'light',
       firebaseReady: firebaseConfigured(env)
     }
   }, 200, origin);
@@ -547,6 +552,15 @@ async function securityPatch(request, env, origin) {
   if (Object.prototype.hasOwnProperty.call(body, 'interfaceSoundsMuted')) {
     updates.push('interface_sounds_muted = ?');
     values.push(body.interfaceSoundsMuted ? 1 : 0);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, 'interfaceTheme')) {
+    const theme = String(body.interfaceTheme || '').trim().toLowerCase();
+    if (theme !== 'light' && theme !== 'dark') {
+      return json({ error: 'A aparência da interface deve ser clara ou escura.' }, 400, origin);
+    }
+    updates.push('interface_theme = ?');
+    values.push(theme);
   }
 
   if (Object.prototype.hasOwnProperty.call(body, 'email')) {

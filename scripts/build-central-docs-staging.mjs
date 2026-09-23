@@ -170,6 +170,7 @@ const homologationCopies = [
   ['js/auth-client.js', 'js/auth-client.js', true],
   ['js/login.js', 'js/login.js', true],
   ['js/tools-catalog.js', 'js/tools-catalog.js', true],
+  ['js/portal-theme.js', 'js/portal-theme.js', true],
   ['js/portal-interactions.js', 'js/portal-interactions.js', true],
   ['js/portal-observability.js', 'js/portal-observability.js', true],
   ['js/document-cache.js', 'js/document-cache.js', true],

@@ -15,7 +15,7 @@
       let destination = '/perfil/';
       if (params.has('primeiro-acesso') || params.has('verificar-email') || params.has('email-verificado') || hash === 'seguranca') {
         destination = '/seguranca/';
-      } else if (hash === 'interfaceSoundsCard' || hash === 'socialPreferencesCard') {
+      } else if (hash === 'interfaceAppearanceCard' || hash === 'interfaceSoundsCard' || hash === 'socialPreferencesCard') {
         destination = `/configuracoes/${hash ? `#${hash}` : ''}`;
       } else if (hash === 'accountLevelPanel') {
         destination = '/conquistas/';

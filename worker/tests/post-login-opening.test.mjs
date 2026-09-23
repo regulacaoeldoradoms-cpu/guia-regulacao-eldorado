@@ -134,6 +134,7 @@ test('bootstrap é restrito à Home local e não cria iframe ou executa script a
   const source = read('js/login-home-transition.js');
   assert.match(source, /url.origin !== location.origin/);
   assert.match(source, /SCRIPT_GLOBALS.has/);
+  assert.match(source, /\['\/js\/portal-theme\.js', 'PortalTheme'\]/);
   assert.match(source, /portalHomeBootstrap !== '1'/);
   assert.match(source, /window.PortalHomeReady/);
   assert.doesNotMatch(source, /eval\(|new Function|document.write|createElement\('iframe'\)/);

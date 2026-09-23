@@ -32,7 +32,7 @@
       const config = await social.getConfig();
       if (!config.backendEnabled || !config.available) {
         setSocialEnabled(false);
-        show('As preferências sociais estão temporariamente indisponíveis. As configurações de som continuam funcionando normalmente.', 'error');
+        show('As preferências sociais estão temporariamente indisponíveis. Aparência e sons da interface continuam funcionando normalmente.', 'error');
         return;
       }
       const payload = await auth.api('/api/social/me');

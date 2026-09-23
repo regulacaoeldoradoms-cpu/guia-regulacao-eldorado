@@ -286,6 +286,7 @@
         interfaceSoundsEnabled: Boolean(security.interfaceSoundsEnabled),
         interfaceSoundVolume: Math.min(100, Math.max(0, Number(security.interfaceSoundVolume ?? current.interfaceSoundVolume ?? 32))),
         interfaceSoundsMuted: Boolean(security.interfaceSoundsMuted),
+        interfaceTheme: security.interfaceTheme === 'dark' ? 'dark' : 'light',
         accountLevel: level
       };
       saveSession(getToken(), user, persistentSession());
