@@ -122,7 +122,7 @@ function syncChunkRequest(path, token, bytes, start, end, total) {
   });
 }
 
-sqliteTest('capabilities documentais são independentes do cargo e edit/extract implicam view', async () => {
+sqliteTest('acesso operacional da Central é integral: view implica extract e edit', async () => {
   const env = environment();
   await register(env, 'documentos.um', '127.0.0.81');
   await register(env, 'documentos.dois', '127.0.0.82');
@@ -131,12 +131,20 @@ sqliteTest('capabilities documentais são independentes do cargo e edit/extract 
   assert.deepEqual(empty, { view: false, extract: false, edit: false, manage: false });
 
   const granted = await setDocumentCapabilities(env, 'documentos.um', {
-    view: false,
-    extract: true,
-    edit: true,
+    view: true,
+    extract: false,
+    edit: false,
     manage: false
   }, 'admin');
   assert.deepEqual(granted, { view: true, extract: true, edit: true, manage: false });
+
+  const stored = await env.AUTH_DB.prepare(
+    'SELECT can_view, can_extract, can_edit FROM auth_document_access WHERE username = ?'
+  ).bind('documentos.um').first();
+  assert.deepEqual(
+    { view: stored.can_view, extract: stored.can_extract, edit: stored.can_edit },
+    { view: 1, extract: 1, edit: 1 }
+  );
 
   const untouched = await documentCapabilitiesFor(env, { username: 'documentos.dois', role: 'cidadao' });
   assert.deepEqual(untouched, { view: false, extract: false, edit: false, manage: false });
@@ -271,7 +279,7 @@ sqliteTest('zoom do visualizador é preferência por conta e não cria preferên
   assert.equal(Number(row.zoom_scale), 1.44);
 });
 
-sqliteTest('cargo adicional Central de Documentos acumula com o perfil principal e concede leitura', async () => {
+sqliteTest('cargo adicional Central de Documentos acumula com o perfil principal e concede acesso operacional integral', async () => {
   const env = environment();
   await register(env, 'documentos.acumulado', '127.0.0.87');
 
@@ -289,8 +297,8 @@ sqliteTest('cargo adicional Central de Documentos acumula com o perfil principal
 
   const capabilities = await documentCapabilitiesFor(env, decorated);
   assert.equal(capabilities.view, true);
-  assert.equal(capabilities.extract, false);
-  assert.equal(capabilities.edit, false);
+  assert.equal(capabilities.extract, true);
+  assert.equal(capabilities.edit, true);
   assert.equal(capabilities.manage, false);
 
   await setAdditionalRoles(env, 'documentos.acumulado', [], 'admin');
