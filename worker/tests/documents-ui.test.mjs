@@ -298,6 +298,21 @@ test('Fase 7A mede viewport, tipo de texto e falhas somente por categorias técn
   assert.doesNotMatch(metricSection, /textContent|lines|confidence|file|name|ref/i);
 });
 
+test('pesquisa da Central usa nome e fullText indexado do Google Drive', () => {
+  const html = read('documentos/index.html');
+  const drive = read('worker/document-drive.js');
+
+  assert.match(html, /Pesquisar por nome ou conteúdo no Drive/);
+  assert.match(drive, /function driveFullTextSearchClause\(/);
+  assert.match(drive, /name contains/);
+  assert.match(drive, /fullText contains/);
+  assert.match(drive, /const searchClause = fullTextClause/);
+  assert.match(drive, /nameClause} or \(\$\{fullTextClause\}\)/);
+  assert.match(drive, /split\(\/\\s\+\/u\)/);
+  assert.match(drive, /slice\(0, 10\)/);
+  assert.doesNotMatch(drive, /contentHints\.indexableText\s*=/);
+});
+
 test('Fase 7E acelera navegação do Drive com raiz aquecida e sem preload de pastas especiais', () => {
   const html = read('documentos/index.html');
   const client = read('js/documents.js');
