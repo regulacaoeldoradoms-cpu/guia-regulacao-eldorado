@@ -127,44 +127,29 @@ test('pré-carregamento deriva ferramentas da matriz existente e recusa rotas ex
   }), false);
 });
 
-test('pastas Consulta e Exames 2026 são prioridades exatas e seus PDFs usam cache criptografado', () => {
+test('preload da Central aquece somente a raiz e não antecipa pastas ou PDFs específicos', () => {
   const performanceClient = read('js/portal-performance.js');
   const worker = read('portal-sw.js');
-  const cache = read('js/document-cache.js');
 
-  assert.match(worker, /DOCUMENTS_PRIORITY_FOLDER_NAMES = Object\.freeze\(\[[\s\S]*'consulta \[2026\]'[\s\S]*'exames \[2026\]'/);
-  assert.match(worker, /function exactPriorityFolder\(/);
-  assert.match(worker, /normalizedPriorityFolderName/);
-  assert.match(worker, /item\?\.isFolder === true/);
-  assert.match(worker, /normalizedPriorityFolderName\(item\?\.name\) === expected/);
   assert.match(worker, /DOCUMENTS_WARM_PAGE_SIZE = 20/);
-  assert.match(worker, /DOCUMENTS_PRIORITY_VISIBLE_PAGE_SIZE = 20/);
-  assert.match(worker, /DOCUMENTS_PRIORITY_PREFETCH_PAGE_SIZE = 100/);
-  assert.match(worker, /DOCUMENTS_PRIORITY_MAX_PAGES = 6/);
-  assert.match(worker, /items: firstPage\.items/);
-  assert.match(worker, /prefetchItems/);
-  assert.match(performanceClient, /folder\?\.prefetchItems/);
-  assert.match(worker, /priorityFolders:\s*\[\]/);
-  assert.match(worker, /warmPriorityFolders\(/);
+  assert.match(worker, /publishDocumentWarmSnapshot/);
+  assert.match(worker, /result\.folder = payload/);
+  assert.match(worker, /publishIfRootReady\(\)/);
+  assert.match(worker, /const ready = usableEntry\(\);\s*if \(ready\) return ready/);
+  assert.doesNotMatch(worker, /DOCUMENTS_PRIORITY_FOLDER_NAMES|DOCUMENTS_PRIORITY_VISIBLE_PAGE_SIZE|DOCUMENTS_PRIORITY_PREFETCH_PAGE_SIZE|DOCUMENTS_PRIORITY_MAX_PAGES/);
+  assert.doesNotMatch(worker, /consulta \[2026\]|exames \[2026\]/i);
+  assert.doesNotMatch(worker, /warmPriorityFolders|fetchPriorityFolderItems|discoverPriorityFolder|priorityFolders/);
 
-  assert.match(performanceClient, /ensureDocumentCacheClient/);
-  assert.match(performanceClient, /prefetchPriorityDocumentFiles/);
-  assert.match(performanceClient, /uniquePriorityPdfItems/);
-  assert.match(performanceClient, /DOCUMENTS_PRIORITY_PREFETCH_CONCURRENCY = 2/);
-  assert.match(performanceClient, /PortalDocumentCache/);
-  assert.match(performanceClient, /cache\.has\(descriptor\)/);
-  assert.match(performanceClient, /cache\.put\(\{ \.\.\.descriptor, blob \}\)/);
-  assert.match(performanceClient, /portal:documents-warm-updated/);
-
-  assert.match(cache, /AES-GCM/);
-  assert.match(cache, /MAX_TOTAL_BYTES = 256 \* 1024 \* 1024/);
-  assert.match(cache, /MAX_FILE_BYTES = 50 \* 1024 \* 1024/);
-  assert.doesNotMatch(performanceClient, /posthog|patient_name|cpf|cns/i);
+  assert.match(performanceClient, /DOCUMENTS_WARM_GET_TIMEOUT_MS = 6000/);
+  assert.doesNotMatch(performanceClient, /prefetchPriorityDocumentFiles|schedulePriorityDocumentFilesWarm|uniquePriorityPdfItems|priorityDocumentsWarmPromise/);
+  assert.doesNotMatch(performanceClient, /DOCUMENTS_PRIORITY_PREFETCH_CONCURRENCY|PortalDocumentCache/);
+  assert.doesNotMatch(performanceClient, /\/api\/documents\/drive\/content\//);
+  assert.doesNotMatch(performanceClient, /portal:documents-warm-updated/);
 });
 
 test('service worker aquece Central sem persistir payload privado e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260922-5'/);
+  assert.match(source, /CACHE_VERSION = '20260923-1'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.match(source, /PORTAL_WARM_DOCUMENTS/);
   assert.match(source, /PORTAL_DOCUMENTS_WARM_GET/);
