@@ -3122,47 +3122,57 @@ Em **Usuários e acessos**, foram removidos os checkboxes independentes “Permi
 
 Branch: `fix/central-full-operational-access-20260923`. Próximo passo: abrir PR, executar CI completo, mesclar somente se verde e confirmar o deploy do Worker antes da homologação real.
 
-## Fase 7G.1 — correção do rename pré-abertura + estado visual de acesso — EM BRANCH — 23/09/2026
+## Fase 7G.1 — rename pré-abertura + acesso operacional integral — PUBLICADA / AGUARDANDO HOMOLOGAÇÃO HUMANA — 23/09/2026
 
-Após a PR **#448** unificar a política para que quem possui acesso à Central receba `view + extract + edit`, uma segunda causa foi confirmada no frontend da renomeação inline da 7F.
+A correção foi concluída em duas camadas porque o aviso observado pelo operador tinha **dois problemas independentes**:
 
-**Causa exata do aviso mostrado na lista:** `beginListPdfRename()` e `commitListPdfRename()` chamavam `canSyncDocuments()`. Esse helper foi criado para o PDF **já aberto** e exige `state.pdfItem`. Na lista, por definição, `state.pdfItem` ainda é `null`; portanto a renomeação pré-abertura podia ser bloqueada mesmo com a capability `edit` correta. A mensagem “Sua conta não possui permissão...” era, nesse caso, enganosa.
+1. **Política de acesso antiga:** a Central permitia `view=true` com `extract/edit=false`. A PR **#448**, mesclada em `9bd56707`, alterou o contrato para que acesso operacional à Central implique `view + extract + edit`, mantendo somente `manage` separado para administração.
+2. **Bug específico do rename antes de abrir:** `beginListPdfRename()` e `commitListPdfRename()` chamavam `canSyncDocuments()`, helper que exige `state.pdfItem` e, portanto, somente funciona quando o PDF já está aberto. Na lista, `state.pdfItem` é intencionalmente `null`. A PR **#449**, mesclada em `764e0764`, introduziu `canWriteDocument(item)` e passou a validar diretamente o PDF selecionado na lista.
 
-**Correção:** foi criado `canWriteDocument(item)`, que valida a capability de edição, conexão Drive, gate de escrita e os metadados do **item recebido**. `canSyncDocuments()` continua existindo como especialização para o PDF aberto (`state.pdfItem`). O rename da lista usa agora `canWriteDocument(item)` ao entrar em edição e `canWriteDocument(previous)` ao confirmar, sem depender de um PDF aberto.
+**Comportamento final:**
+- uma conta com acesso à Central recebe leitura, IA documental, editor, renomeação e sincronização segura;
+- o rename da lista pode começar e ser confirmado **antes de abrir o PDF**, sem depender de `state.pdfItem`;
+- `canWriteDocument(item)` continua exigindo capability de edição, Drive conectado, `writeEnabled=true`, referência opaca do arquivo e versão conhecida;
+- `canSyncDocuments()` permanece como especialização do PDF já aberto;
+- o chip fixo legado “Somente leitura” foi substituído por estado real: **Acesso completo** quando escrita está habilitada e **Somente leitura** somente se o gate de escrita estiver realmente desligado;
+- frontend publicado como `documents.js?v=20260923-11`.
 
-**Estado visual:** o chip fixo “Somente leitura” era legado da Fase 1 e aparecia mesmo quando a produção permitia escrita. Ele passa a ser dinâmico:
-- `Acesso completo` quando a conta tem acesso e o gate de escrita do Drive está ativo;
-- `Somente leitura` apenas quando o ambiente realmente estiver com escrita desabilitada;
-- oculto quando a Central não está operacionalmente disponível.
+**Validação da PR #449:** **23/23 workflows success**, zero falhas no head final `f2368748`, incluindo Fases 1–6, governança e navegador real. Uma rodada intermediária falhou apenas porque o workflow ainda procurava literalmente o antigo texto estático “Somente leitura”; o contrato de CI foi atualizado para o chip dinâmico e a matriz seguinte ficou integralmente verde.
 
-Frontend renovado para `documents.js?v=20260923-11`.
+**Publicação pós-merge `764e0764`:**
+- GitHub Actions: **23/23 success**;
+- GitHub Pages `deploy`: **success**;
+- Cloudflare Pages: **success**;
+- Workers Builds produtivo: **success**;
+- Build ID: `c3189a0e-8252-4b88-9402-488d7f4b9b62`;
+- Worker Version: `25c48aad-de81-4904-8013-3542b3c7e3a9`.
 
-**Relação com a PR #448:** a política integral continua válida e necessária por decisão do operador. A PR #448 foi mesclada em `9bd56707` e teve **22/22 checks da PR verdes**. No push da `main`, 24/24 workflows GitHub Actions concluíram com sucesso, porém o check externo final do **Workers Builds** terminou em failure; portanto o deploy produtivo do novo runtime Worker ainda não deve ser considerado comprovado. A próxima publicação da `main` deve repetir o gate seguro do Worker e só a evidência final de sucesso autoriza declarar a política backend ativa em produção.
+Esse Workers Builds bem-sucedido **substitui como evidência operacional** a tentativa anterior da PR #448 cujo check externo final ficou vermelho. A versão Worker publicada após #449 já contém a política integral introduzida por #448.
 
-**Privacidade/segurança:** nenhuma permissão administrativa `manage` é ampliada; o helper continua exigindo `edit`, conexão, `writeEnabled`, referência opaca e versão do item. Não há novo endpoint, dado clínico ou telemetria.
+**Privacidade e segurança preservadas:** `manage` não foi ampliado; não houve migração destrutiva de D1, novo endpoint, mudança de OAuth ou inclusão de dados documentais em observabilidade. Nomes de arquivos, refs, IDs e conteúdo continuam fora do PostHog.
 
-Branch: `fix/central-list-rename-write-check-20260923`. Próximo passo: abrir PR, exigir CI verde, mesclar e conferir simultaneamente publicação estática e Workers Builds antes da homologação humana.
+**Pendência:** somente homologação humana em produção. O teste deve confirmar que, após Ctrl+F5, o chip mostra **Acesso completo**, o segundo clique simples no nome permite editar antes de abrir o PDF, Enter/clique fora sincronizam e o duplo clique rápido continua abrindo o Titon.
 
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.1 — corrigir rename antes de abrir e refletir acesso real na lista** |
-| Última ação concluída | causa frontend confirmada; `canWriteDocument(item)` implementado; rename da lista deixa de depender de `state.pdfItem`; chip de acesso tornado dinâmico |
-| Branch atual | `fix/central-list-rename-write-check-20260923` |
-| PR atual | **#449 aberta** — “Central: corrigir renomeação antes de abrir o PDF” |
-| Último commit relevante | `c72a957f` — testes do rename pré-abertura e chip; commits anteriores `8ee00969` / `166e978e` |
-| Checks e testes | contratos atualizados; CI ainda precisa rodar na PR |
-| Decisões tomadas | acesso integral da #448 permanece; rename pré-abertura valida o item da lista; “Somente leitura” só aparece se `writeEnabled=false` |
-| Justificativas | separa corretamente “pode escrever este item?” de “há PDF aberto sincronizável?” e elimina mensagem falsa de falta de permissão |
-| Alternativas descartadas | abrir o PDF silenciosamente só para satisfazer `canSyncDocuments`; remover validação de gate; liberar rename sem versão/base |
-| Ações externas concluídas | #448 mesclada; 24/24 workflows GitHub pós-merge verdes, mas Workers Builds externo final vermelho — deploy backend ainda não comprovado |
-| Pendências e bloqueios | CI da PR #449 → merge → exigir Workers Builds success e publicação estática success → homologação real |
-| Riscos conhecidos | se o Worker seguro continuar falhando, a política integral backend da #448 pode ainda não estar ativa; não contornar o gate de deploy |
-| Métricas / observabilidade | nenhuma telemetria nova; nomes/ref/conteúdo permanecem fora do PostHog |
-| Próxima ação exata | **exigir CI verde na PR #449; depois mesclar e verificar o check externo Workers Builds + Pages; somente então pedir Ctrl+F5 e reteste do rename pré-abertura** |
-| Arquivos e fontes principais | Guia Mestre V1.1; merge #448 `9bd56707`; `js/documents.js`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
+| Subfase / objetivo atual | **7G.1 publicada; aguardando homologação humana do acesso integral e rename pré-abertura** |
+| Última ação concluída | PR **#449** mesclada em `764e0764`; frontend + política backend publicados com Workers Builds e Pages verdes |
+| Branch atual | `docs/central-full-access-rename-published-20260923` (somente registro pós-publicação) |
+| PR atual | #448 **mesclada** (política integral); #449 **mesclada** (rename pré-abertura/chip); PR documental deste handoff ainda a abrir |
+| Último commit relevante | `764e0764a91c223fd52658e5bd1f1a9733d68f25` |
+| Checks e testes | PR #449 **23/23 success**; pós-merge **23/23 GitHub Actions success**; Workers Builds, GitHub Pages e Cloudflare Pages **success** |
+| Decisões tomadas | acesso Central = `view + extract + edit`; `manage` separado; rename da lista usa `canWriteDocument(item)`; chip reflete `writeEnabled` real |
+| Justificativas | elimina tanto a autorização parcial quanto a falsa dependência de PDF aberto que bloqueava a renomeação da lista |
+| Alternativas descartadas | liberar usuário isoladamente; abrir PDF silenciosamente para renomear; retirar gates de escrita/versão; manter chip fixo de somente leitura |
+| Ações externas concluídas | Worker Version `25c48aad-de81-4904-8013-3542b3c7e3a9` publicada pelo gate seguro; Pages publicadas |
+| Pendências e bloqueios | **somente homologação humana em produção**; ordenação cronológica 7E continua com homologação própria pendente |
+| Riscos conhecidos | confirmar visualmente cache/browser após publicação; conflitos reais de Drive continuam fail-closed |
+| Métricas / observabilidade | nenhuma telemetria nova; conteúdo/identificadores documentais permanecem proibidos |
+| Próxima ação exata | **Ctrl+F5 em /documentos/ → confirmar “Acesso completo” → selecionar PDF → segundo clique simples no nome → renomear com Enter → repetir com clique fora → confirmar alteração no Drive → conferir duplo clique rápido abrindo Titon** |
+| Arquivos e fontes principais | Guia Mestre V1.1; merges #448 `9bd56707` e #449 `764e0764`; `worker/document-access.js`; `js/documents.js`; `documentos/index.html`; testes/UI |
 
 ## Histórico recuperável
 
