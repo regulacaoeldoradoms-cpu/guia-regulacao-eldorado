@@ -34,6 +34,7 @@ function medicalPayload() {
       crm_rms: field('CRM 1234', 'encontrado'),
       procedimento_solicitado: field('', 'nao_consta'),
       codigo_procedimento: field('', 'nao_consta'),
+      especialidade: field('CARDIOLOGIA', 'encontrado'),
       cid: field('R52', 'encontrado'),
       descricao_cid: field('', 'nao_consta')
     }
@@ -77,6 +78,9 @@ test('schema Gemini usa subset suportado e mantém três formatos de fields estr
     true
   );
   assert.equal(Object.prototype.hasOwnProperty.call(schema, 'oneOf'), false);
+  const medical = schema.properties.fields.anyOf.find((variant) => variant.properties?.especialidade);
+  assert.ok(medical, 'schema médico deve conter especialidade');
+  assert.ok(medical.required.includes('especialidade'));
 });
 
 test('Gemini canônico preserva proveniência da página', async () => {
@@ -114,6 +118,7 @@ test('Gemini canônico preserva proveniência da página', async () => {
 
   assert.equal(result.classification.pageNumber, 2);
   assert.equal(result.classification.pageType, 'pagina_medica_autorizada');
+  assert.equal(result.extraction.fields.especialidade.value, 'CARDIOLOGIA');
   assert.equal(result.extraction.pageNumber, 2);
   assert.equal(result.extraction.fields.cid.value, 'R52');
   assert.equal(result.provider.kind, 'google-gemini-api');
