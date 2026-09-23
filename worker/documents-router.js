@@ -48,6 +48,8 @@ const DEFAULT_EDITOR_COLOR_PALETTE = Object.freeze([
 ]);
 const editorPreferencesSchemaReady = new WeakSet();
 const editorPreferencesSchemaPromises = new WeakMap();
+const viewerPreferencesSchemaReady = new WeakSet();
+const viewerPreferencesSchemaPromises = new WeakMap();
 const documentAiPreferencesSchemaReady = new WeakSet();
 const documentAiPreferencesSchemaPromises = new WeakMap();
 const DEFAULT_DOCUMENT_AI_FIELD_ORDER = Object.freeze([
@@ -134,6 +136,75 @@ async function setEditorPreferences(env, username, input = {}) {
   return { colorPalette };
 }
 
+const DEFAULT_VIEWER_ZOOM_SCALE = 1.14;
+const MIN_VIEWER_ZOOM_SCALE = 0.45;
+const MAX_VIEWER_ZOOM_SCALE = 3;
+
+function normalizeViewerZoomScale(value, { strict = false } = {}) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    if (strict) throw new DriveIntegrationError('DOCUMENTS_VIEWER_ZOOM_INVALID', 'Zoom do visualizador inválido.', 400);
+    return DEFAULT_VIEWER_ZOOM_SCALE;
+  }
+  if (strict && (numeric < MIN_VIEWER_ZOOM_SCALE || numeric > MAX_VIEWER_ZOOM_SCALE)) {
+    throw new DriveIntegrationError('DOCUMENTS_VIEWER_ZOOM_INVALID', 'O zoom deve ficar entre 45% e 300%.', 400);
+  }
+  const clamped = Math.min(MAX_VIEWER_ZOOM_SCALE, Math.max(MIN_VIEWER_ZOOM_SCALE, numeric));
+  return Math.round(clamped * 100) / 100;
+}
+
+async function ensureViewerPreferencesSchema(env) {
+  const binding = env.AUTH_DB;
+  if (!binding) return false;
+  if (viewerPreferencesSchemaReady.has(binding)) return true;
+  if (viewerPreferencesSchemaPromises.has(binding)) return viewerPreferencesSchemaPromises.get(binding);
+
+  const operation = (async () => {
+    await binding.prepare(`CREATE TABLE IF NOT EXISTS auth_document_viewer_preferences (
+      username TEXT PRIMARY KEY,
+      zoom_scale REAL NOT NULL DEFAULT 1.14,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`).run();
+    viewerPreferencesSchemaReady.add(binding);
+    return true;
+  })().catch((error) => {
+    viewerPreferencesSchemaReady.delete(binding);
+    throw error;
+  }).finally(() => {
+    viewerPreferencesSchemaPromises.delete(binding);
+  });
+
+  viewerPreferencesSchemaPromises.set(binding, operation);
+  return operation;
+}
+
+async function viewerPreferencesFor(env, username) {
+  if (!(await ensureViewerPreferencesSchema(env))) {
+    return { viewerZoomScale: DEFAULT_VIEWER_ZOOM_SCALE };
+  }
+  const row = await env.AUTH_DB.prepare(
+    'SELECT zoom_scale FROM auth_document_viewer_preferences WHERE username = ? LIMIT 1'
+  ).bind(String(username || '')).first();
+  return {
+    viewerZoomScale: normalizeViewerZoomScale(row?.zoom_scale)
+  };
+}
+
+async function setViewerPreferences(env, username, input = {}) {
+  if (!(await ensureViewerPreferencesSchema(env))) {
+    throw new DriveIntegrationError('DOCUMENTS_PREFERENCES_UNAVAILABLE', 'Preferências do visualizador indisponíveis.', 503);
+  }
+  const viewerZoomScale = normalizeViewerZoomScale(input.viewerZoomScale, { strict: true });
+  await env.AUTH_DB.prepare(`INSERT INTO auth_document_viewer_preferences(username, zoom_scale)
+    VALUES (?, ?)
+    ON CONFLICT(username) DO UPDATE SET
+      zoom_scale = excluded.zoom_scale,
+      updated_at = CURRENT_TIMESTAMP`)
+    .bind(String(username || ''), viewerZoomScale).run();
+  return { viewerZoomScale };
+}
+
 function normalizeDocumentAiFieldOrder(value, { strict = false } = {}) {
   if (!Array.isArray(value)) {
     if (strict) throw new DriveIntegrationError('DOCUMENTS_AI_FIELD_ORDER_INVALID', 'Ordem dos campos inválida.', 400);
@@ -213,20 +284,23 @@ async function setDocumentAiPreferences(env, username, input = {}) {
 }
 
 async function documentsPreferencesFor(env, username) {
-  const [editor, documentAi] = await Promise.all([
+  const [editor, viewer, documentAi] = await Promise.all([
     editorPreferencesFor(env, username),
+    viewerPreferencesFor(env, username),
     documentAiPreferencesFor(env, username)
   ]);
-  return { ...editor, ...documentAi };
+  return { ...editor, ...viewer, ...documentAi };
 }
 
 async function setDocumentsPreferences(env, username, input = {}) {
   const hasPalette = Object.prototype.hasOwnProperty.call(input, 'colorPalette');
+  const hasViewerZoom = Object.prototype.hasOwnProperty.call(input, 'viewerZoomScale');
   const hasFieldOrder = Object.prototype.hasOwnProperty.call(input, 'fieldOrder');
-  if (!hasPalette && !hasFieldOrder) {
+  if (!hasPalette && !hasViewerZoom && !hasFieldOrder) {
     throw new DriveIntegrationError('DOCUMENTS_PREFERENCES_INVALID', 'Nenhuma preferência reconhecida foi enviada.', 400);
   }
   if (hasPalette) await setEditorPreferences(env, username, input);
+  if (hasViewerZoom) await setViewerPreferences(env, username, input);
   if (hasFieldOrder) await setDocumentAiPreferences(env, username, input);
   return documentsPreferencesFor(env, username);
 }
