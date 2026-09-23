@@ -15,13 +15,12 @@ A Central usa autorização composta:
 
 - **perfil principal** continua sendo único (Desenvolvedor, Coordenação, Médico(a), Recepção, Telemedicina ou Cidadão);
 - **funções adicionais acumuláveis** podem ser somadas ao perfil principal;
-- a primeira função adicional criada é `documentos` (**Regulador(a)**), que libera a Central de Documentos;
-- `view`: leitura da Central e PDFs, concedida pela função adicional `documentos` ou por regra legada de compatibilidade;
-- `extract`: reservada para Fase 5;
-- `edit`: reservada para Fase 3/4;
-- `manage`: administração da conexão institucional.
+- a função adicional `documentos` (**Regulador(a)**) libera a Central de Documentos;
+- `view`: representa o acesso operacional à Central, concedido por Regulador(a) ou por regra legada de compatibilidade;
+- `extract` e `edit`: desde a decisão da Fase 7G (23/09/2026), acompanham automaticamente `view`; quem tem acesso à Central tem acesso às funcionalidades operacionais completas, inclusive IA, editor, renomeação e sincronização;
+- `manage`: permanece separado para administração de usuários/conexão institucional.
 
-A tabela `auth_user_additional_roles` guarda funções acumuláveis. A tabela `auth_document_access` permanece para capabilities documentais finas e compatibilidade. O Desenvolvedor recebe `manage` implicitamente, mas leitura documental continua sendo uma autorização independente.
+A tabela `auth_user_additional_roles` guarda funções acumuláveis. A tabela `auth_document_access` permanece por compatibilidade e auditoria; as colunas históricas `can_extract` e `can_edit` são normalizadas junto com `can_view` e não representam mais permissões parciais. O Desenvolvedor recebe `manage` implicitamente, mas isso não substitui a autorização operacional documental.
 
 Exemplo: uma conta pode ser **Médico(a) + Regulador(a)** sem perder o perfil Médico(a).
 
