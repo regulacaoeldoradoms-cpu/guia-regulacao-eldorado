@@ -3086,21 +3086,21 @@ Correção em `fix/central-docs-phase6-hidden-rail-tools`:
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7E — robustez/UX da Central; Pesquisa avançada integrada e refinamentos visuais do catálogo publicados** |
-| Última ação concluída | PR **#440** mesclada à `main`; cards Agenda e Central de Documentos agora usam os PNGs próprios adicionados pelo operador |
-| Branch atual | `docs/tool-card-icons-published-20260923` somente para reconciliar status pós-merge |
-| PR atual | funcional **#440 mesclada**; PR documental deste handoff ainda a abrir |
-| Último commit relevante | merge funcional **`985a109bb416546f4e7b2764dc40356f55e9e0db`** |
-| Checks e testes | head final `ff03bdb0`: **26/26 workflows GitHub Actions success**; teste de regressão confirma `AGENDA.png` e `CENTRAL_DOCUMENTOS.png` no catálogo |
-| Decisões tomadas | substituir apenas os SVGs genéricos dos cards; manter os PNGs como assets decorativos lazy-loaded e não ampliar preload global |
-| Justificativas | preserva a estética própria aprovada pelo operador sem aumentar download antecipado para perfis que não exibem esses módulos |
-| Alternativas descartadas | manter os ícones lineares improvisados; pré-carregar os PNGs de ~1,6 MB cada no Service Worker para todos os perfis |
-| Ações externas concluídas | operador adicionou `assets/AGENDA.png` e `assets/CENTRAL_DOCUMENTOS.png` na `main` no commit `70c41db` |
-| Pendências e bloqueios | somente homologação visual dos dois cards após atualização do cliente; Pesquisa avançada da 7E continua disponível para reteste funcional quando necessário |
-| Riscos conhecidos | PNGs são maiores que os SVGs antigos, porém carregam apenas quando os cards correspondentes são renderizados |
-| Métricas / observabilidade | nenhuma telemetria nova; sem nomes de arquivos, pacientes ou conteúdo documental no PostHog |
-| Próxima ação exata | **Ctrl+F5 em Ferramentas/Home → confirmar os novos ícones de Agenda e Central de Documentos; depois retomar qualquer homologação funcional pendente da 7E** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #440; merge `985a109b`; `js/tools-catalog.js`; `assets/AGENDA.png`; `assets/CENTRAL_DOCUMENTOS.png`; `index.html`; `ferramentas/index.html` |
+| Subfase / objetivo atual | **7E — adicionar ordenação cronológica reversível à lista/pesquisa da Central** |
+| Última ação concluída | implementação e testes de regressão preparados na branch `feat/titon-chronological-order-20260923` |
+| Branch atual | `feat/titon-chronological-order-20260923` |
+| PR atual | **nenhum ainda**; próxima ação é abrir PR |
+| Último commit relevante | branch baseada na `main` `c2f02ad167b38986ec70cdfa9d94e9f5e0bb2e96`, com commits desta unidade ainda não mesclados |
+| Checks e testes | testes adicionados; CI completo ainda não executado nesta unidade |
+| Decisões tomadas | ordenação cronológica é feita no backend antes da paginação; original preserva ordem histórica; estado não é persistido |
+| Justificativas | ordenar apenas os 20 itens no navegador daria uma cronologia falsa/incompleta em listas maiores |
+| Alternativas descartadas | sort somente client-side; aceitar `orderBy` arbitrário vindo do navegador; sobrescrever snapshot original com páginas cronológicas |
+| Ações externas concluídas | nenhuma |
+| Pendências e bloqueios | abrir PR, aguardar CI e homologar visualmente/funcionalmente em produção |
+| Riscos conhecidos | itens sem `modifiedTime` ficam ao final da ordenação; PNGs/IA/Drive write não são afetados |
+| Métricas / observabilidade | nenhuma propriedade nova; termos, nomes e conteúdo continuam fora do PostHog |
+| Próxima ação exata | **abrir PR → CI completo → merge se verde → Ctrl+F5 → testar Mais recentes, Mais antigos e Redefinir ordem** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `documentos/index.html`; `css/documents.css`; `js/documents.js`; `worker/document-drive.js`; `worker/documents-router.js`; `worker/tests/documents-ui.test.mjs` |
 
 ## Histórico recuperável
 
@@ -5639,3 +5639,32 @@ Validação:
 - mudança não altera autenticação, permissões, Drive, Agenda, IA, APIs ou observabilidade.
 
 **Próxima ação exata:** Ctrl+F5 em Home/Ferramentas e confirmar visualmente os dois novos ícones em produção.
+
+
+## Fase 7E — ordenação cronológica da lista e pesquisa — 23/09/2026
+
+Pedido operacional: adicionar na barra da Central um controle para alternar a ordem pela data de modificação entre **mais recentes → mais antigos** e **mais antigos → mais recentes**, com um botão separado para **Redefinir ordem** e voltar ao comportamento histórico.
+
+Diagnóstico do estado anterior:
+- a navegação de pasta usava a ordem histórica `folder,name_natural`;
+- a pesquisa não enviava `orderBy` à Drive API e o cliente reorganizava os itens carregados por pasta/nome;
+- ordenar apenas os 20 itens já carregados no navegador seria incorreto com paginação, pois não garantiria que os itens realmente mais recentes/antigos do resultado completo fossem trazidos primeiro.
+
+Implementação na branch `feat/titon-chronological-order-20260923`:
+- adiciona **Ordem cronológica** e **Redefinir ordem** ao lado dos filtros de pesquisa;
+- primeiro clique ativa `modified_desc` (**Mais recentes ↓**);
+- novo clique alterna para `modified_asc` (**Mais antigos ↑**) e vice-versa;
+- **Redefinir ordem** restaura `original`;
+- a escolha vale tanto para a pasta atual quanto para resultados de pesquisa, inclusive Pesquisa avançada e paginação;
+- o Worker recebe apenas um enum controlado (`original`, `modified_desc`, `modified_asc`) e converte internamente para `orderBy` oficial da Drive API;
+- `original` preserva exatamente o comportamento anterior: pasta em `folder,name_natural` e pesquisa sem `orderBy`;
+- a ordenação cronológica usa `modifiedTime desc,name_natural` ou `modifiedTime,name_natural`;
+- snapshots de pasta/raiz aquecida só são reaproveitados para a ordem original, evitando exibir 20 itens de uma página alfabética como se fossem o topo cronológico global;
+- nenhuma preferência é persistida na conta: ao recarregar a página, a Central começa novamente na ordem original;
+- nenhum valor de ordenação ou conteúdo documental é adicionado ao PostHog.
+
+Decisão técnica: a ordenação é aplicada também no backend antes da paginação, e o cliente apenas mantém a mesma ordem nos itens já recebidos. Foi descartada a opção de ordenar somente no navegador porque produziria resultados cronológicos incompletos quando houver mais de 20 itens.
+
+Cache-busters planejados: `documents.css?v=20260923-5` e `documents.js?v=20260923-9`.
+
+**Próxima ação exata:** abrir PR, executar CI completo e integrar somente se todos os checks críticos permanecerem verdes; depois homologar em produção com uma pesquisa conhecida e comparar os dois sentidos cronológicos + Redefinir ordem.
