@@ -3199,26 +3199,42 @@ Esse Workers Builds bem-sucedido **substitui como evidência operacional** a ten
 
 **Pendência:** somente homologação humana em produção. O teste deve confirmar que, após Ctrl+F5, o chip mostra **Acesso completo**, o segundo clique simples no nome permite editar antes de abrir o PDF, Enter/clique fora sincronizam e o duplo clique rápido continua abrindo o Titon.
 
+## Fase 7G.2 — ações rápidas de Salvar/Imprimir na lista — EM PR — 23/09/2026
+
+Solicitação operacional: salvar ou imprimir qualquer PDF diretamente da lista, sem abrir o Titon.
+
+**UX implementada:** em desktop, cada PDF recebe dois botões quadrados no canto direito que aparecem somente no **hover** da linha; foco por teclado também os revela. As ações são **Salvar PDF** e **Imprimir**. Pastas/não-PDF não recebem esses botões e em mobile/touch eles ficam ocultos para preservar a lista compacta.
+
+**Implementação:** download reutiliza `editablePdfBlob(item)` + `localViewedPdfName(item)`; impressão reutiliza `ensurePrintFrame()` + `renderPdfBlobForPrint()`, sem nova aba. Nenhuma ação chama `openPdf()`, cria sessão do Titon, escreve no Drive ou adiciona endpoint/capability/telemetria.
+
+A primeira CI detectou interferência apenas com o harness legado `documents-close-guard`: o stub de `closest()` devolvia a linha para qualquer seletor. O handler foi endurecido para aceitar somente candidatos com `dataset.listSaveIndex` ou `dataset.listPrintIndex`. Depois disso, o head funcional obteve **23/23 workflows GitHub Actions success**, incluindo navegador real.
+
+**Check externo:** Cloudflare Pages preview publicou com sucesso. O Workers Builds da branch terminou em failure, mas esta unidade não modifica qualquer arquivo do runtime/configuração do Worker; portanto não foi tratado como regressão funcional desta mudança exclusivamente estática. Não declarar nova Worker Version por esta unidade.
+
+**Concorrência reconciliada:** durante a execução, a `main` recebeu a PR #456 e depois a documentação #457 do modo escuro geral. A feature foi preservada sobre o código pós-#456 e este merge de reconciliação usa o status mais recente pós-#457. Backup reversível: `backup/central-list-quick-save-print-pre-darkmode-20260923`.
+
+PR **#455** / branch `feat/central-list-quick-save-print-20260923`. Cache-busters da Central: `documents.css?v=20260923-7` e `documents.js?v=20260923-12`.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **Refinamento transversal do modo escuro publicado; aguardando homologação visual humana. 7G.1 da Central permanece pendente separadamente** |
-| Última ação concluída | PR funcional **#456 mesclada** em `3a528eb5`; pós-merge **50/50 workflows success**, inclusive Pages |
-| Branch atual | nenhuma branch funcional pendente; a reconciliação documental foi preparada em `docs/dark-mode-general-published-20260923` |
-| PR atual | funcional **#456 mesclada**; reconciliação documental desta conclusão: **#457** |
-| Último commit relevante | `main` `3a528eb5116fa86ec0e52a2b09d2e7f1988fb743`; head funcional da PR `a2d71349` |
-| Checks e testes | #456: **50/50 success** após correção de contrato obsoleto; pós-merge da main: **50/50 success**, Pages run 35885862244 e abertura pós-login run 35885865345 verdes |
-| Decisões tomadas | cobertura escura centralizada; modo claro preservado; impressão clara preservada; Telemedicina usa overrides de maior especificidade sem mudar lógica |
-| Justificativas | resíduos claros eram regras CSS legadas/específicas; camada global escura reduz blast radius e mantém comportamento funcional intacto |
-| Alternativas descartadas | recoloração via JavaScript; alteração do baseline claro; mudanças em backend/permissões; reabertura de fases anteriores |
-| Ações externas concluídas | GitHub Pages publicou o merge com success |
-| Pendências e bloqueios | somente homologação visual humana das cinco rotas; depois retomar 7G.1 |
-| Riscos conhecidos | pode restar superfície visual muito específica fora dos prints; CI não detecta percepção visual completa, por isso a inspeção humana permanece necessária |
-| Métricas / observabilidade | nenhuma telemetria nova; nenhum conteúdo sensível enviado ao PostHog |
-| Próxima ação exata | **Ctrl+F5 em modo escuro e conferir /perfil/, /telemedicina/, /conquistas/, /recepcao/ e /medico/; aprovado isso, registrar e retomar 7G.1 em /documentos/** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #456; commit `3a528eb5`; `css/portal-interactions.css`; `docs/PORTAL-APARENCIA-V1.md`; este status |
+| Subfase / objetivo atual | **7G.2 — ações rápidas Salvar/Imprimir no hover da lista; PR #455 reconciliada com main pós-#457** |
+| Última ação concluída | funcionalidade implementada/testada e branch reconciliada com a documentação mais recente do modo escuro geral |
+| Branch atual | `feat/central-list-quick-save-print-20260923` |
+| PR atual | **#455 aberta** — “Central: salvar e imprimir PDF direto da lista” |
+| Último commit funcional relevante | `204ac613`; merge de reconciliação posterior preserva o status da main |
+| Checks e testes | head funcional: **23/23 GitHub Actions success**, inclusive navegador real; Cloudflare Pages preview success; Workers Builds externo de branch failure sem mudança de Worker |
+| Decisões tomadas | hover desktop/foco teclado; dois botões quadrados; Salvar/Imprimir sem abrir Titon; mobile/touch preservado |
+| Justificativas | reduz cliques e reutiliza pipelines já homologados de download e impressão sem ampliar backend |
+| Alternativas descartadas | abrir Titon silenciosamente; impressão em nova aba; botões sempre visíveis |
+| Ações externas concluídas | Cloudflare Pages preview publicado; nenhum deploy de Worker requerido por esta unidade |
+| Pendências e bloqueios | CI do head reconciliado → merge → publicação estática → homologação humana |
+| Riscos conhecidos | validar posição com nomes longos/tema escuro; impressão depende da caixa nativa do navegador |
+| Métricas / observabilidade | nenhuma telemetria nova; nomes/conteúdo continuam fora do PostHog |
+| Próxima ação exata | **confirmar CI do head reconciliado da #455; se verde, mesclar e validar em produção: hover → Salvar/Imprimir sem abrir Titon** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #455; `js/documents.js`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs` |
 
 ## Histórico recuperável
 

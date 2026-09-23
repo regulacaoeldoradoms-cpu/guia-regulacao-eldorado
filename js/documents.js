@@ -1592,6 +1592,77 @@
     }
   }
 
+  function setListQuickActionBusy(button, busy) {
+    if (!button) return;
+    button.disabled = busy === true;
+    button.classList.toggle('is-busy', busy === true);
+    if (busy) button.setAttribute('aria-busy', 'true');
+    else button.removeAttribute('aria-busy');
+  }
+
+  async function saveListPdfLocal(item, button) {
+    if (!item?.isPdf || state.editorSession) return false;
+    let url = '';
+    setListQuickActionBusy(button, true);
+    try {
+      const blob = await editablePdfBlob(item);
+      if (!(blob instanceof Blob)) throw new Error('Não foi possível preparar este PDF.');
+      url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = localViewedPdfName(item);
+      link.rel = 'noopener';
+      link.hidden = true;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      }, 5000);
+      url = '';
+      return true;
+    } catch (error) {
+      showStatus(error?.message || 'Não foi possível salvar este PDF.', 'warning');
+      return false;
+    } finally {
+      if (url) {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      }
+      setListQuickActionBusy(button, false);
+    }
+  }
+
+  async function printListPdfLocal(item, button) {
+    if (!item?.isPdf || state.editorSession) return false;
+    setListQuickActionBusy(button, true);
+    try {
+      const blob = await editablePdfBlob(item);
+      if (!(blob instanceof Blob)) throw new Error('Não foi possível preparar este PDF.');
+
+      const frame = ensurePrintFrame();
+      await renderPdfBlobForPrint(blob, frame);
+      const printWindow = frame.contentWindow;
+      if (!printWindow) throw new Error('Não foi possível abrir a caixa de impressão.');
+
+      let cleaned = false;
+      const cleanupPrintFrame = () => {
+        if (cleaned) return;
+        cleaned = true;
+        try { frame.remove(); } catch (_) {}
+      };
+      printWindow.addEventListener?.('afterprint', cleanupPrintFrame, { once: true });
+      window.setTimeout(cleanupPrintFrame, 60000);
+      printWindow.focus();
+      printWindow.print();
+      return true;
+    } catch (error) {
+      showStatus(error?.message || 'Não foi possível imprimir este PDF.', 'warning');
+      return false;
+    } finally {
+      setListQuickActionBusy(button, false);
+    }
+  }
+
   async function finalPdfBlobForSession(session) {
     const editor = window.PortalPdfEditor;
     if (!session || typeof editor?.buildFlattenedBlob !== 'function') return null;
@@ -6132,6 +6203,16 @@
         const openFolder = item.isFolder
           ? `<button class="documents-item-open-folder" type="button" data-open-folder-index="${index}" aria-label="Abrir pasta ${escapeHtml(item.name)}">Abrir pasta</button>`
           : '';
+        const quickActions = item.isPdf && !state.editorSession && !renaming
+          ? `<div class="documents-item-quick-actions" aria-label="Ações rápidas do PDF">
+              <button class="documents-item-quick-action documents-item-quick-save" type="button" data-list-save-index="${index}" title="Salvar PDF" aria-label="Salvar ${escapeHtml(item.name)} no dispositivo">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14"/></svg>
+              </button>
+              <button class="documents-item-quick-action documents-item-quick-print" type="button" data-list-print-index="${index}" title="Imprimir" aria-label="Imprimir ${escapeHtml(item.name)}">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V4h10v4M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M7 14h10v6H7z"/></svg>
+              </button>
+            </div>`
+          : '';
         const renameControl = renaming
           ? `<label class="documents-list-rename">
               <span class="sr-only">Novo nome do PDF</span>
@@ -6151,6 +6232,7 @@
           </button>
           ${openTiton}
           ${openFolder}
+          ${quickActions}
           ${renameControl}
         </div>`;
       }).join('');
@@ -6641,6 +6723,30 @@
   });
 
   els.list.addEventListener('click', (event) => {
+    const saveCandidate = event.target.closest?.('[data-list-save-index]');
+    const saveButton = saveCandidate?.dataset?.listSaveIndex !== undefined ? saveCandidate : null;
+    if (saveButton) {
+      event.preventDefault();
+      clearPendingListRename();
+      const index = Number(saveButton.dataset.listSaveIndex);
+      const item = state.items[index];
+      if (!item?.isPdf || state.editorSession) return;
+      saveListPdfLocal(item, saveButton).catch(() => {});
+      return;
+    }
+
+    const printCandidate = event.target.closest?.('[data-list-print-index]');
+    const printButton = printCandidate?.dataset?.listPrintIndex !== undefined ? printCandidate : null;
+    if (printButton) {
+      event.preventDefault();
+      clearPendingListRename();
+      const index = Number(printButton.dataset.listPrintIndex);
+      const item = state.items[index];
+      if (!item?.isPdf || state.editorSession) return;
+      printListPdfLocal(item, printButton).catch(() => {});
+      return;
+    }
+
     const openIndex = Number(event.target?.dataset?.openTitonIndex);
     if (Number.isInteger(openIndex) && openIndex >= 0) {
       clearPendingListRename();
