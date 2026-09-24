@@ -149,7 +149,7 @@ test('preload da Central aquece somente a raiz e não antecipa pastas ou PDFs es
 
 test('service worker aquece Central sem persistir payload privado e atualiza sem bloquear', () => {
   const source = read('portal-sw.js');
-  assert.match(source, /CACHE_VERSION = '20260924-1'/);
+  assert.match(source, /CACHE_VERSION = '20260923-1'/);
   assert.match(source, /PORTAL_WARM_ROUTES/);
   assert.match(source, /PORTAL_WARM_DOCUMENTS/);
   assert.match(source, /PORTAL_DOCUMENTS_WARM_GET/);
