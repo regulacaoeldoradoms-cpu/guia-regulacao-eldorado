@@ -1606,6 +1606,15 @@ html[data-portal-theme="dark"] .documents-item-quick-action:focus-visible {
   flex-basis: 38px;
 }
 
+/* No tema escuro, a regra global de .documents-close-viewer usa o shorthand
+   background e apaga o fechar.svg. Restaurar o asset com especificidade maior
+   mantém o X visível sem alterar o modo claro nem os demais botões autorais. */
+@media screen {
+  html[data-portal-theme="dark"] .documents-viewer-head .documents-close-viewer.documents-art-close {
+    background: transparent url('/assets/editor-pdf-buttons/fechar.svg?v=20260916-2') center / 100% 100% no-repeat !important;
+  }
+}
+
 .documents-editor-panel-close.documents-art-close {
   width: 38px !important;
   min-width: 38px !important;
