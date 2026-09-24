@@ -32,36 +32,47 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
   const changed=git(['diff','--name-only',baseCommit,'--','*.css','*.js','*.html']).split(/\r?\n/).filter(Boolean);
   const original=new Map(changed.map(file=>{const key=`${baseCommit}:${file}`;if(!baselineSources.has(key))baselineSources.set(key,git(['show',key]));return[file,baselineSources.get(key)];}));
   const working=new Map(await Promise.all(changed.map(async file=>[file,await readFile(path.join(root,file),'utf8')])));
-  const load=async()=>{
+  const load=async(targetPage)=>{
     const errors=[];
     const captureError=error=>errors.push(error.message);
-    page.on('pageerror',captureError);
+    targetPage.on('pageerror',captureError);
     // Reset before BOTH navigations. Open real controls on screen first: print
     // intentionally hides their launchers, but an already-open view can print.
-    await page.emulateMedia({media:'screen'});
-    // A pointer left by the first preparation can hover a different card after
-    // the second navigation/scroll. Both phases compare the same resting state.
-    await page.mouse.move(-100,-100);
-    await page.goto(route,{waitUntil:'load'});
-    await page.evaluate(theme=>window.PortalTheme?.apply(theme),theme);
-    await prepare(page);
+    await targetPage.emulateMedia({media:'screen'});
+    await targetPage.mouse.move(-100,-100);
+    await targetPage.goto(route,{waitUntil:'load'});
+    await targetPage.evaluate(theme=>window.PortalTheme?.apply(theme),theme);
+    await prepare(targetPage);
     // Auth hydration during preparation may reapply the synthetic account's
     // stored theme. Select the requested theme after the real view is ready.
-    await page.evaluate(theme=>window.PortalTheme?.apply(theme),theme);
-    await page.emulateMedia({media});
-    await page.mouse.move(-100,-100);
-    await page.evaluate(()=>document.fonts.ready);
-    await page.waitForTimeout(700);
+    await targetPage.evaluate(theme=>window.PortalTheme?.apply(theme),theme);
+    await targetPage.emulateMedia({media});
+    // Capture each source from the same deterministic resting state. This does
+    // not relax pixel acceptance: it removes scroll restoration, focus/hover
+    // residue and live CSS motion that are unrelated to the source comparison.
+    await targetPage.addStyleTag({content:'html{scroll-behavior:auto!important}*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}'});
+    await targetPage.evaluate(async()=>{
+      window.scrollTo(0,0);
+      for(const el of document.querySelectorAll('*')){
+        if(el.scrollTop)el.scrollTop=0;
+        if(el.scrollLeft)el.scrollLeft=0;
+      }
+      if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
+      await document.fonts.ready;
+    });
+    await targetPage.mouse.move(-100,-100);
+    await targetPage.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await targetPage.waitForTimeout(350);
     // Full-page capture itself can settle native font metrics/compositor layers.
     // The Linux artifact proved identical admin PNGs with different pre-capture
     // monospace metrics. Require independent stability inside EACH source phase,
     // never choose a frame based on whether it resembles the other source.
-    const firstReport=await inspectSurfaces(page);
+    const firstReport=await inspectSurfaces(targetPage);
     const captures=[];
     let report=firstReport,screenshot,previousScreenshot,previousSnapshot;
     for(let attempt=1;attempt<=5;attempt++){
-      screenshot=await page.screenshot({fullPage:true,animations:'disabled',caret:'hide'});
-      report=await inspectSurfaces(page);
+      screenshot=await targetPage.screenshot({fullPage:true,animations:'disabled',caret:'hide'});
+      report=await inspectSurfaces(targetPage);
       const snapshot=JSON.stringify(report.snapshot);
       const pngStable=previousScreenshot?.equals(screenshot)||false;
       const snapshotStable=previousSnapshot===snapshot;
@@ -75,9 +86,10 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
         throw new Error(`Unstable ${route} ${theme}/${media} capture: ${JSON.stringify(captures)}`);
       }
       previousScreenshot=screenshot;previousSnapshot=snapshot;
-      await page.waitForTimeout(150);
+      await targetPage.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+      await targetPage.waitForTimeout(200);
     }
-    page.off('pageerror',captureError);
+    targetPage.off('pageerror',captureError);
     if(report.theme!==theme||report.media!==media)throw new Error(`Capture mode changed: expected ${theme}/${media}, got ${report.theme}/${report.media}`);
     const captureStability={theme:report.theme,media:report.media,captures,initialSnapshotChanged:JSON.stringify(firstReport.snapshot)!==JSON.stringify(report.snapshot)};
     return {report,screenshot,errors,captureStability,hash:createHash('sha256').update(screenshot).digest('hex')};
@@ -94,8 +106,18 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     return request.fulfill({contentType,body:assets.get(name)});
   };
   await context.route(pattern,handler);
-  let current,baseline;
-  try { current=await load();assets=original;baseline=await load(); } finally { await context.unroute(pattern,handler); }
+  let current,baseline,baselinePage;
+  try {
+    current=await load(page);
+    assets=original;
+    // A fresh page prevents same-URL scroll restoration and compositor/font
+    // caches from the current source leaking into the baseline source.
+    baselinePage=await context.newPage();
+    baseline=await load(baselinePage);
+  } finally {
+    if(baselinePage)await baselinePage.close().catch(()=>{});
+    await context.unroute(pattern,handler);
+  }
   if(changed.includes('css/portal-interactions.css')&&(!fulfilledCurrent.has('css/portal-interactions.css')||!fulfilledBase.has('css/portal-interactions.css')))throw new Error('Changed global theme stylesheet was not served from both current and base source maps');
   for(const [label,report]of[['current',current.report],['base',baseline.report]])if(new Set(report.snapshot.map(item=>item.selector)).size!==report.snapshot.length)throw new Error(`Non-unique snapshot selectors invalidate ${label} comparison`);
   const baselineMap=new Map(baseline.report.snapshot.map(item=>[item.selector,item]));
