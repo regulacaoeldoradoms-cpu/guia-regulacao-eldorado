@@ -131,6 +131,7 @@ test.describe('Central de Documentos — superfície única do editor', () => {
 
   test('assets visuais dos botões carregam no navegador', async ({ page, request }) => {
     const finishMonitoring = monitorPage(page);
+    await page.clock.install({ time: new Date('2026-09-24T12:00:00Z') });
     await openLab(page);
     await enterEditor(page);
 
@@ -203,12 +204,24 @@ test.describe('Central de Documentos — superfície única do editor', () => {
     await page.evaluate(() => window.CentralDocsEditorHarness.setSyncStateForTest('normal'));
     await expect(page.locator('#editorSync')).toHaveAttribute('title', 'Forçar sincronização com Google Drive');
 
+    // O autosync do laboratório usa timers locais, sem resposta de rede. Pause
+    // antes da ação para que o polling do CI não pule os 900 ms de "syncing".
+    // Avance os intervalos reais do harness sem ampliar timeouts ou forçar estados.
+    await page.clock.pauseAt(new Date('2026-09-24T13:00:00Z'));
     // Este cenário valida o estado visual do autosync; o clique forçado evita
     // flutuação de hit-test entre o botão de ação da miniatura e o canvas no desktop.
     await page.locator('.portal-pdf-thumb-wrap').first().locator('[data-thumbnail-action="rotate-right"]').click({ force: true });
-    await expect(page.locator('#editorSync')).toHaveAttribute('data-sync-state', 'pending');
+    // PDF.js needs animation frames while rebuilding after the real rotation.
+    // Advance only short frame intervals until the harness schedules autosync.
+    await expect.poll(async () => {
+      await page.clock.runFor(50);
+      return page.locator('#editorSync').getAttribute('data-sync-state');
+    }).toBe('pending');
+    await page.clock.runFor(1000);
     await expect(page.locator('#editorSync')).toHaveAttribute('data-sync-state', 'syncing', { timeout: 3500 });
+    await page.clock.runFor(900);
     await expect(page.locator('#editorSync')).toHaveAttribute('data-sync-state', 'success', { timeout: 3500 });
+    await page.clock.runFor(1000);
     await expect(page.locator('#editorSync')).toHaveAttribute('data-sync-state', 'normal', { timeout: 3500 });
 
     await page.locator('#editorSync').click();
