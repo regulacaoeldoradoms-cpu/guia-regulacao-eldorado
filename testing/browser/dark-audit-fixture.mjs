@@ -18,6 +18,15 @@ export async function installAuditFixture(context, { theme='dark', authenticated
   const user = { ...auditUser, interfaceTheme:theme, ...userOverrides };
   const security={email:user.email,emailVerified:user.emailVerified,firebaseReady:true,interfaceTheme:theme,interfaceSoundsEnabled:false,interfaceSoundsMuted:false,interfaceSoundVolume:32};
   await context.addInitScript(({ user, theme, authenticated }) => {
+    // Freeze wall-clock time so relative labels and date-derived UI are exactly
+    // the same in current/base loads. Timers still run normally; only Date is fixed.
+    const fixedNow = Date.parse('2026-09-24T16:00:00Z');
+    const NativeDate = Date;
+    class AuditDate extends NativeDate {
+      constructor(...args) { super(...(args.length ? args : [fixedNow])); }
+      static now() { return fixedNow; }
+    }
+    Object.defineProperty(window, 'Date', { configurable:true, writable:true, value:AuditDate });
     localStorage.setItem('regulacao.portal.theme.active.v1', theme);
     if (authenticated) {
       sessionStorage.setItem('regulacao.portal.session', 'synthetic-audit-token-no-backend');
