@@ -33,7 +33,7 @@ Validação:
 - no head posterior `ca6714e062649de41bf70f43fe062ed316121091`, que contém integralmente a implementação da #463, **Workers Builds concluiu com success** (build `64027adc-c613-47a2-80cf-2c83b70e533e`) e publicou a versão **`6214244a-b6b4-4dd9-8e3e-74fe2e1466e0`** do Worker institucional;
 - Cloudflare Pages no mesmo head `ca6714e`: **success**.
 
-### 7H.1 — especialidade pela Solicitação — REPROVADA NA HOMOLOGAÇÃO; ROLLBACK EM ANDAMENTO — 24/09/2026
+### 7H.1 — especialidade pela Solicitação — REPROVADA E REVERTIDA — 24/09/2026
 
 A alteração publicada pela PR #467 foi reprovada na homologação humana. O comportamento que permitia usar **Solicitação** como fallback para **Especialidade** produziu resultado operacional insatisfatório e deve ser removido.
 
@@ -46,7 +46,17 @@ Decisão aprovada:
 
 Alternativa descartada: tentar ajustar a heurística da Solicitação. Motivo: a solicitação humana é de **voltar ao comportamento anterior**, não de fazer nova calibração nessa abordagem.
 
-Rollback preparado na branch `revert/titon-specialty-request-20260924`, restaurando os arquivos funcionais ao estado da `main` imediatamente anterior à PR #467 (`2fe0b47a598198e985bf268b6935e632709e5319`), preservando este registro histórico no status.
+Rollback concluído e publicado:
+- PR **#469 — Reverter Especialidade definida pela Solicitação**;
+- merge na `main`: **`d844f48ca0428610cc648caca7324a693e17cba8`**;
+- PR: **23/23 workflows GitHub Actions concluídos sem falhas**;
+- pós-merge: **23/23 workflows concluídos sem falhas**;
+- Cloudflare Pages: **success**;
+- Workers Builds: **success**, build `96c3f6d0-dc56-42e0-8096-d216f94aa80c`;
+- Worker Version publicada: **`ba070e11-8f7d-4958-8eb7-8995387b73a3`**;
+- comportamento funcional restaurado ao baseline anterior à PR #467 (`2fe0b47a598198e985bf268b6935e632709e5319`).
+
+Estado: **rollback técnico encerrado e publicado**. A tentativa 7H.1 passa a constar apenas como histórico rejeitado; não deve ser reintroduzida sem novo pedido explícito.
 
 
 Estado: **implementação, merge, frontend e Worker institucional publicados tecnicamente**. Resta a homologação humana de uma extração real autorizada no Titon. A pendência visual separada da 7G.4 continua válida e não foi absorvida por esta unidade.
@@ -3342,21 +3352,21 @@ Os botões autorais `.documents-art-button` foram explicitamente excluídos para
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **rollback da 7H.1: remover Especialidade definida pela Solicitação** |
-| Última ação concluída | arquivos funcionais restaurados na branch ao estado anterior à PR #467; status atualizado |
-| Branch atual | `revert/titon-specialty-request-20260924` |
-| PR atual | **a abrir** |
-| Último commit relevante | baseline funcional de restauração: `2fe0b47a598198e985bf268b6935e632709e5319` |
-| Checks e testes | ainda pendentes nesta branch |
-| Decisões tomadas | voltar ao contrato anterior: Especialidade somente por rótulo explícito na própria página |
-| Justificativas | homologação humana reprovou a regra de Solicitação como fallback e pediu retorno ao comportamento anterior |
-| Alternativas descartadas | recalibrar a heurística da Solicitação; manter parte da 7H.1 |
-| Ações externas concluídas | nenhuma nesta reversão |
-| Pendências e bloqueios | abrir PR, validar CI, mesclar e confirmar publicação do Worker |
-| Riscos conhecidos | garantir que o rollback não remova o campo Especialidade nem a ordem operacional da 7H; somente a fonte alternativa por Solicitação deve desaparecer |
+| Subfase / objetivo atual | **7H retomada no comportamento anterior; 7H.1 rejeitada e revertida** |
+| Última ação concluída | rollback da PR #467 integrado e publicado pela PR #469 |
+| Branch atual | **nenhuma** |
+| PR atual | **nenhum** |
+| Último commit relevante | rollback funcional `d844f48ca0428610cc648caca7324a693e17cba8` |
+| Checks e testes | PR #469 **23/23 sem falhas**; pós-merge **23/23 sem falhas** |
+| Decisões tomadas | Especialidade volta a aceitar somente rótulo explícito na própria página; Solicitação não é mais fonte alternativa |
+| Justificativas | homologação humana reprovou a 7H.1 e pediu retorno ao comportamento anterior |
+| Alternativas descartadas | recalibrar heurística da Solicitação; manter parte da 7H.1 |
+| Ações externas concluídas | Cloudflare Pages success; Workers Builds build `96c3f6d0-dc56-42e0-8096-d216f94aa80c` success; Worker Version `ba070e11-8f7d-4958-8eb7-8995387b73a3` |
+| Pendências e bloqueios | homologação humana normal da 7H e pendências visuais anteriores continuam separadas |
+| Riscos conhecidos | não reintroduzir a regra rejeitada da Solicitação sem pedido explícito; preservar o campo Especialidade e a ordem operacional |
 | Métricas / observabilidade | nenhuma telemetria nova; conteúdo clínico continua fora do PostHog |
-| Próxima ação exata | **abrir PR do rollback → exigir CI verde → mesclar → confirmar Workers Builds success → registrar publicação** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PRs #467/#468; baseline `2fe0b47`; `worker/document-ai*.js`; matriz 5E; status |
+| Próxima ação exata | **Ctrl+F5 em /documentos/ e confirmar que a extração voltou ao comportamento anterior; depois continuar as pendências já registradas da Fase 7** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PRs #467/#468/#469; baseline `2fe0b47`; merge `d844f48`; `worker/document-ai*.js`; status |
 
 ## Histórico recuperável
 
