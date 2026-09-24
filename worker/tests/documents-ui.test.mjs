@@ -819,7 +819,7 @@ test('modo escuro preserva o X de fechar no cabeçalho do visualizador Titon', (
   const css = read('css/documents.css');
   const html = read('documentos/index.html');
 
-  assert.match(html, /id="closeViewerButton"[^>]*documents-close-viewer[^>]*documents-art-close[^>]*aria-label="Fechar visualização"/);
+  assert.match(html, /<button class="documents-close-viewer documents-art-button documents-art-close" id="closeViewerButton"[^>]*aria-label="Fechar visualização"/);
   assert.match(css, /html\[data-portal-theme="dark"\] \.documents-viewer-head \.documents-close-viewer\.documents-art-close\s*\{[\s\S]*background:\s*transparent url\('\/assets\/editor-pdf-buttons\/fechar\.svg\?v=20260916-2'\) center \/ 100% 100% no-repeat !important/);
   assert.match(html, /documents\.css\?v=20260924-1/);
 });
