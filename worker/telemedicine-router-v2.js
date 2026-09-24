@@ -178,7 +178,8 @@ async function recordConsultationAtomic(env, user, input = {}) {
   const inputResolution = clean(input.resolution, 2500);
   const inputNotes = clean(input.notes, 1500);
   const absenceReason = absence ? inputNotes : '';
-  const notes = discharged ? '' : inputNotes;
+  const withdrawn = normalizeText(inputResolution) === 'PACIENTE DESISTIU DO TRATAMENTO';
+  const notes = discharged && !withdrawn ? '' : inputNotes;
   const needsReturn = hasExplicitMode ? !discharged : (discharged ? false : input.needsReturn !== false);
   const explicitDueInput = followupMode === 'scheduled' ? clean(input.returnDueDate, 10) : '';
   const explicitDue = dateValid(explicitDueInput) ? normalizeReturnDueDate(explicitDueInput) : '';
