@@ -3481,8 +3481,8 @@ A unidade é exclusivamente visual; a evidência do Worker é registrada apenas 
 | Subfase / objetivo atual | **7G.6 publicada; aguardando homologação visual humana do Titon escuro transparente** |
 | Última ação concluída | PR funcional **#476** mesclada na `main`; pós-merge, GitHub Pages, Cloudflare Pages e Workers Builds confirmados com success |
 | Branch atual | `docs/titon-dark-transparent-lineart-published-20260924` — apenas registro pós-publicação |
-| PR atual | **PR documental ainda a abrir** |
-| Último commit funcional relevante | merge `2802ae45fbec29624cc6f3ba01c3ac0ad25ba6e9` |
+| PR atual | **#477 — Docs: registrar publicação do Titon transparente no modo escuro — aberta** |
+| Último commit funcional relevante | merge `2802ae45fbec29624cc6f3ba01c3ac0ad25ba6e9`; registro pós-publicação consolidado na PR #477 |
 | Checks e testes | #476 **23/23 success**; pós-merge **23/23 push success**; GitHub Pages, Cloudflare Pages e Workers Builds **success** |
 | Decisões tomadas | dark mode: controles de navegação/ferramentas transparentes com line-art branca; Salvar/Imprimir azuis e estados do Drive preservados; modo claro inalterado |
 | Justificativas | SVGs autorais possuem placa própria; variantes dark sem placa evitam recolorir o fundo e preservam o desenho leve solicitado |
