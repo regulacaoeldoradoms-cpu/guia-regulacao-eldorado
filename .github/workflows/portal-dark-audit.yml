@@ -67,11 +67,32 @@ jobs:
             node summarize-dark-audit.mjs test-results-dark-audit/results.json
           fi
 
-      - name: Publicar evidências sintéticas
+      - name: Publicar resumo da auditoria
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: portal-dark-audit-${{ github.run_id }}-${{ github.run_attempt }}
-          path: testing/browser/test-results-dark-audit/
+          name: portal-dark-audit-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: testing/browser/test-results-dark-audit/results.summary.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Publicar relatórios sintéticos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-dark-audit-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            testing/browser/test-results-dark-audit/
+            !testing/browser/test-results-dark-audit/**/*.png
+            !testing/browser/test-results-dark-audit/results.summary.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Publicar capturas sintéticas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-dark-audit-images-${{ github.run_id }}-${{ github.run_attempt }}
+          path: testing/browser/test-results-dark-audit/**/*.png
           if-no-files-found: warn
           retention-days: 7

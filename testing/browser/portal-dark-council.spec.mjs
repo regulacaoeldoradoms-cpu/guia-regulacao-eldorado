@@ -192,11 +192,13 @@ test('Conselho: detalhe, status, nota, carta e exclusão cancelada',async({page,
   await finishNetwork(info,network,{council:true});
 });
 
-for(const citizen of [true,false])test(`${citizen?'Cidadão':'Conselho'}: light e impressão preservados contra main`,async({page,context},info)=>{
+for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],['dark','print']])test(`${citizen?'Cidadão':'Conselho'}: ${theme}/${media} preservado contra main`,async({page,context},info)=>{
   test.setTimeout(90_000);
-  const {network}=await setup(context,{citizen,theme:'light'});
+  // Auth/storage/preferences must agree with the requested theme from startup.
+  // Separate test contexts prevent a light account fixture from rehydrating a
+  // light theme halfway through the dark-to-print comparison.
+  const {network}=await setup(context,{citizen,theme});
   const route=citizen?'/cidadao/':'/conselho/painel/';
-  for(const [theme,media]of [['light','screen'],['dark','print']]){
     const result=await compareAgainstBase({page,context,info,route,theme,media,prepare:async page=>{
       await openDetail(page,citizen);
       await page.evaluate(()=>document.fonts.ready);
@@ -205,6 +207,5 @@ for(const citizen of [true,false])test(`${citizen?'Cidadão':'Conselho'}: light 
     expect(result.differences,`${theme}/${media} computed styles must remain identical to main`).toEqual([]);
     expect(result.pixelComparison.accepted,`${theme}/${media}: screenshots must match within the documented absolute raster bound (at most two pixels, one channel level)`).toBe(true);
     expect(result.newErrors).toEqual([]);
-  }
   await finishNetwork(info,network,{council:!citizen});
 });

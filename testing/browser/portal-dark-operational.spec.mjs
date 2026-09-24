@@ -139,7 +139,9 @@ test('Agenda: capacidade, busca, filtros, vazio e erro sintético',async({page,c
 
 for(const route of ['/telemedicina/','/medico/','/recepcao/','/agenda/'])for(const [theme,media] of [['light','screen'],['dark','print']]){
   test(`operational preserve ${theme} ${media} ${route}`,async({page,context,isMobile},info)=>{
-    test.setTimeout(90000);const network=await installAuditFixture(context,{theme});
+    // Preserve the full medical catalogue (>90M mobile pixels), including the
+    // open panel, through both independently stabilized source captures.
+    test.setTimeout(route==='/medico/'?180_000:90_000);const network=await installAuditFixture(context,{theme});
     const prepare=async p=>{
       if(route==='/telemedicina/')await p.locator('#openConsultation').click();
       if(route==='/medico/')await openPreRegulation(p,isMobile);

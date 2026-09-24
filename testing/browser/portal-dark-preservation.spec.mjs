@@ -28,6 +28,9 @@ async function sampleCouncilReflection(page,info){
 // Explicit opt-in: these are actual base-commit comparisons, never a rebaseline.
 if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRoutes.filter(route=>!aliasDestinations[route])) {
   for(const [theme,media] of [['light','screen'],['dark','print']])test(`preserve ${theme} ${media} ${route}`,async({page,context},info)=>{
+    // The complete mobile catalogue exceeds 90 million physical pixels. Keep
+    // it intact and allow the bounded, repeated full-page captures to finish.
+    if(route==='/medico/')test.setTimeout(180_000);
     const network=await installAuditFixture(context,{theme,authenticated:!['/login/','/cadastro/'].includes(route)});
     const prepare=route==='/conselho/painel/'?page=>sampleCouncilReflection(page,info):undefined;
     const comparison=await compareAgainstBase({page,context,info,route,theme,media,prepare});

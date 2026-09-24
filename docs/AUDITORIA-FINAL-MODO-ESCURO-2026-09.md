@@ -62,6 +62,12 @@ O reflexo animado preexistente do distintivo do Conselho é comparado na mesma f
 
 Na Recepção, dois inicializadores legados usam frases diferentes para o resumo vazio. A comparação aguarda a seção clínica e aciona o botão real “Desmarcar tudo”, verificando resumo e ausência de marcações nas duas versões. Não há substituição arbitrária de texto ou remoção de verificações de geometria. O catálogo e todos os fluxos dinâmicos rejeitam endpoints não modelados e erros JavaScript novos; os dois erros herdados autorizados são limitados à mensagem e à rota exatas.
 
+A primeira matriz Linux foi usada como diagnóstico, não como aceite: registrou métricas nativas transitórias antes da captura e um hover herdado entre navegações. O comparador agora neutraliza o ponteiro e exige duas capturas consecutivas idênticas de cada origem, com estilos estáveis, antes da comparação entre versões. Os hashes de cada tentativa são preservados; cinco tentativas sem estabilidade falham. A tolerância de dois pixels/um nível de canal permanece inalterada.
+
+O catálogo completo do Guia Médico móvel gera capturas com mais de 90 milhões de pixels físicos. Dois casos locais excederam o tempo anterior, já com comparação final idêntica. Somente essa rota recebeu orçamento de 180 segundos para concluir as capturas por software; o catálogo integral, o limite de tentativas e as asserções foram preservados.
+
+Repetições do mesmo código também demonstraram variação do desfoque pelo renderizador, com todas as propriedades CSS e retângulos iguais. O ambiente Chromium usa rasterização por software com `--disable-gpu --disable-skia-runtime-opts`, mantendo os filtros, conteúdo e CSS reais. Outra falha de fixture repunha o tema claro no detalhe do Conselho/Cidadão: os cenários foram separados por tema, e o comparador passa a verificar o tema e a mídia efetivamente capturados. Resultados desses cenários sem essa confirmação não são usados como aceite da impressão a partir do tema escuro. A matriz consolidada contém 210 testes e 120 comparações contra a base.
+
 **Resultados finais:** aguardando consolidação das execuções estritas. Não interpretar este marcador como gate aprovado.
 
 Execução e CI: `testing/browser/DARK_AUDIT.md` e `.github/workflows/portal-dark-audit.yml`. As evidências por rota/estado, rede e comparação ficam em `test-results-*`, ignorados pelo Git; o workflow publica artefatos sintéticos por sete dias.

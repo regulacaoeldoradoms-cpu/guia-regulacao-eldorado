@@ -39,16 +39,42 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     // Reset before BOTH navigations. Open real controls on screen first: print
     // intentionally hides their launchers, but an already-open view can print.
     await page.emulateMedia({media:'screen'});
+    // A pointer left by the first preparation can hover a different card after
+    // the second navigation/scroll. Both phases compare the same resting state.
+    await page.mouse.move(-100,-100);
     await page.goto(route,{waitUntil:'load'});
     await page.evaluate(theme=>window.PortalTheme?.apply(theme),theme);
     await prepare(page);
+    // Auth hydration during preparation may reapply the synthetic account's
+    // stored theme. Select the requested theme after the real view is ready.
+    await page.evaluate(theme=>window.PortalTheme?.apply(theme),theme);
     await page.emulateMedia({media});
+    await page.mouse.move(-100,-100);
     await page.evaluate(()=>document.fonts.ready);
     await page.waitForTimeout(700);
-    const report=await inspectSurfaces(page);
-    const screenshot=await page.screenshot({fullPage:true,animations:'disabled',caret:'hide'});
+    // Full-page capture itself can settle native font metrics/compositor layers.
+    // The Linux artifact proved identical admin PNGs with different pre-capture
+    // monospace metrics. Require independent stability inside EACH source phase,
+    // never choose a frame based on whether it resembles the other source.
+    const firstReport=await inspectSurfaces(page);
+    const captures=[];
+    let report=firstReport,screenshot,previousScreenshot,previousSnapshot;
+    for(let attempt=1;attempt<=5;attempt++){
+      screenshot=await page.screenshot({fullPage:true,animations:'disabled',caret:'hide'});
+      report=await inspectSurfaces(page);
+      const snapshot=JSON.stringify(report.snapshot);
+      const pngStable=previousScreenshot?.equals(screenshot)||false;
+      const snapshotStable=previousSnapshot===snapshot;
+      captures.push({attempt,sha256:createHash('sha256').update(screenshot).digest('hex'),pngStable,snapshotStable});
+      if(pngStable&&snapshotStable)break;
+      if(attempt===5)throw new Error(`Unstable ${route} ${theme}/${media} capture: ${JSON.stringify(captures)}`);
+      previousScreenshot=screenshot;previousSnapshot=snapshot;
+      await page.waitForTimeout(150);
+    }
     page.off('pageerror',captureError);
-    return {report,screenshot,errors,hash:createHash('sha256').update(screenshot).digest('hex')};
+    if(report.theme!==theme||report.media!==media)throw new Error(`Capture mode changed: expected ${theme}/${media}, got ${report.theme}/${report.media}`);
+    const captureStability={theme:report.theme,media:report.media,captures,initialSnapshotChanged:JSON.stringify(firstReport.snapshot)!==JSON.stringify(report.snapshot)};
+    return {report,screenshot,errors,captureStability,hash:createHash('sha256').update(screenshot).digest('hex')};
   };
   const pattern='http://127.0.0.1:4176/**';
   let assets=working;
@@ -75,7 +101,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
   for(const [selector,before] of baselineMap)differences.push({selector,before,after:null});
   const pixelComparison=comparePngPixels(current.screenshot,baseline.screenshot);
   const sourceEvidence=(files,sources)=>[...files].sort().map(file=>({path:file,sha256:createHash('sha256').update(sources.get(file)).digest('hex')}));
-  const report={route,theme,media,preparationMedia:'screen',diffScope:'repository-root',baseCommit,changed,productChanges:changed.filter(file=>!file.startsWith('testing/')),servedCurrentFiles:sourceEvidence(fulfilledCurrent,working),servedBaseFiles:sourceEvidence(fulfilledBase,original),hashCurrent:current.hash,hashBase:baseline.hash,screenshotsIdentical:current.hash===baseline.hash,pixelComparison,differences,errorsCurrent:current.errors,errorsBase:baseline.errors,newErrors:current.errors.filter(error=>!baseline.errors.includes(error))};
+  const report={route,theme,media,preparationMedia:'screen',diffScope:'repository-root',baseCommit,changed,productChanges:changed.filter(file=>!file.startsWith('testing/')),servedCurrentFiles:sourceEvidence(fulfilledCurrent,working),servedBaseFiles:sourceEvidence(fulfilledBase,original),hashCurrent:current.hash,hashBase:baseline.hash,screenshotsIdentical:current.hash===baseline.hash,pixelComparison,differences,captureStability:{current:current.captureStability,base:baseline.captureStability},errorsCurrent:current.errors,errorsBase:baseline.errors,newErrors:current.errors.filter(error=>!baseline.errors.includes(error))};
   const name=`${theme}-${media}-base-comparison`;
   await info.attach(`${name}.json`,{body:Buffer.from(JSON.stringify(report,null,2)),contentType:'application/json'});
   await writeFile(info.outputPath(`${name}.json`),JSON.stringify(report,null,2));
