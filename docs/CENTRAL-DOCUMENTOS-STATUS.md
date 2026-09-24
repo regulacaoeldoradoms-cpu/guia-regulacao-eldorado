@@ -3,7 +3,7 @@
 Última atualização: 24/09/2026.
 
 
-## Mudança transversal — Telemedicina V42: motivo opcional da desistência — PR #471 EM VALIDAÇÃO — 24/09/2026
+## Mudança transversal — Telemedicina V42: motivo opcional da desistência — CI APROVADO; PR #471 PRONTA PARA MERGE — 24/09/2026
 
 Pedido operacional: em `/telemedicina/`, ao registrar uma consulta com o resultado **Desistiu**, deve existir uma caixa de texto para registrar o **motivo da desistência**, com preenchimento opcional.
 
@@ -36,7 +36,11 @@ Alternativa descartada: criar um novo campo/coleção exclusivo `withdrawalReaso
 
 Head funcional antes deste registro documental: `37ba16504f29f754ebf9921a0226609fefc9455f`.
 
-PR aberta: **#471 — Telemedicina: registrar motivo opcional da desistência V42**.\n\n**Próxima ação exata:** concluir CI da PR #471 → corrigir qualquer regressão → integrar somente com checks verdes → confirmar publicação → homologar em produção uma desistência **sem motivo** e outra **com motivo**, conferindo o histórico em desktop e mobile.
+PR aberta: **#471 — Telemedicina: registrar motivo opcional da desistência V42**.
+
+No head `17c7d57cc50953252f6cc72ae154881aaea6e21a`, a matriz da PR concluiu **48/48 workflows GitHub Actions com success**, incluindo o novo **Validar Telemedicina Motivo da Desistência V42**, V24/V25/V26, salvamento atômico V29, formulário, mobile, histórico, acesso, site e governança.
+
+**Próxima ação exata:** integrar a PR #471 → confirmar os checks/deploy pós-merge → homologar em produção uma desistência **sem motivo** e outra **com motivo**, conferindo o histórico em desktop e mobile.
 
 ## Fase 7H — ordem operacional da IA documental + Especialidade — PUBLICADA TECNICAMENTE; HOMOLOGAÇÃO HUMANA PENDENTE — 23/09/2026
 
@@ -3392,16 +3396,16 @@ Os botões autorais `.documents-art-button` foram explicitamente excluídos para
 | Última ação concluída | implementação funcional, teste V42, workflow e documentação preparados em branch |
 | Branch atual | `feat/telemedicina-motivo-desistencia-v42-20260924` |
 | PR atual | **#471 — aberta, em validação** |
-| Último commit relevante | head funcional antes do status: `37ba16504f29f754ebf9921a0226609fefc9455f` |
-| Checks e testes | novos contratos preparados; CI da PR #471 em andamento |
+| Último commit relevante | head validado da PR: `17c7d57cc50953252f6cc72ae154881aaea6e21a` |
+| Checks e testes | head `17c7d57c`: **48/48 workflows success**, zero falhas; workflow V42 incluído |
 | Decisões tomadas | reaproveitar `notes`; campo opcional; preservar motivo somente na desistência; exibir como **Motivo:** no histórico |
 | Justificativas | evita migração/schema novo e corrige os dois pontos que apagavam o texto — adaptador V25 e salvamento atômico V29 |
 | Alternativas descartadas | criar coleção/campo persistente novo `withdrawalReason`; tornar o motivo obrigatório |
 | Ações externas concluídas | nenhuma necessária; nenhum segredo, OAuth ou permissão alterado |
-| Pendências e bloqueios | concluir CI da PR #471, integrar/publicar e homologar com/sem motivo em desktop/mobile |
+| Pendências e bloqueios | integrar/publicar a PR #471 e homologar com/sem motivo em desktop/mobile |
 | Riscos conhecidos | regressão no contrato de encerramento se uma alta normal passasse a preservar observação; teste V42 exige que somente a desistência receba a exceção |
 | Métricas / observabilidade | nenhuma telemetria nova; motivo de desistência permanece fora do PostHog |
-| Próxima ação exata | **concluir CI da PR #471 → exigir verde → mesclar → confirmar publicação → homologar duas desistências (vazia e preenchida) e o histórico** |
+| Próxima ação exata | **mesclar PR #471 → confirmar checks/deploy pós-merge → homologar duas desistências (vazia e preenchida) e o histórico** |
 | Arquivos e fontes principais | Guia Mestre V1.1; `js/telemedicina-absence-v24.js`; `worker/telemedicine-router-v2.js`; `worker/telemedicine.js`; teste/workflow V42; `docs/TELEMEDICINA-MOTIVO-DESISTENCIA-V42.md`; status |
 
 ## Histórico recuperável
