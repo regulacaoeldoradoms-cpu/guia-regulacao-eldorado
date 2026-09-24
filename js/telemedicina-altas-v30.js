@@ -16,7 +16,7 @@
 
   function isNonDischargeClosure(followup) {
     const resolution = normalize(followup?.resolution);
-    return /\\bDESISTIU\\b|\\bDESISTENCIA\\b|ABANDONO DO TRATAMENTO|ABANDONO DE ACOMPANHAMENTO|ENCAMINHAD[AO].*PRESENCIAL/.test(resolution);
+    return /\bDESISTIU\b|\bDESISTENCIA\b|ABANDONO DO TRATAMENTO|ABANDONO DE ACOMPANHAMENTO|ENCAMINHAD[AO].*PRESENCIAL/.test(resolution);
   }
 
   function isDischargeAchievement(followup) {
