@@ -18,6 +18,9 @@ export async function installAuditFixture(context, { theme='dark', authenticated
   const user = { ...auditUser, interfaceTheme:theme, ...userOverrides };
   const security={email:user.email,emailVerified:user.emailVerified,firebaseReady:true,interfaceTheme:theme,interfaceSoundsEnabled:false,interfaceSoundsMuted:false,interfaceSoundVolume:32};
   await context.addInitScript(({ user, theme, authenticated }) => {
+    // A comparison page is born as about:blank; Web Storage there has an opaque
+    // origin. Wait for the actual loopback product document before touching it.
+    if (location.origin !== 'http://127.0.0.1:4176') return;
     // Freeze wall-clock time so relative labels and date-derived UI are exactly
     // the same in current/base loads. Timers still run normally; only Date is fixed.
     const fixedNow = Date.parse('2026-09-24T16:00:00Z');
