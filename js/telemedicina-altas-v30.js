@@ -7,10 +7,10 @@
   function normalize(value) {
     return String(value || '')
       .normalize('NFD')
-      .replace(/[\\u0300-\\u036f]/g, '')
+      .replace(/[\u0300-\u036f]/g, '')
       .toUpperCase()
       .replace(/[^A-Z0-9]+/g, ' ')
-      .replace(/\\s+/g, ' ')
+      .replace(/\s+/g, ' ')
       .trim();
   }
 
@@ -23,7 +23,7 @@
     if (!followup || isNonDischargeClosure(followup)) return false;
     const mode = String(followup.followupMode || '').trim().toLowerCase();
     const resolution = normalize(followup.resolution);
-    return followup.discharged === true || mode === 'discharge' || /\\bALTA\\b/.test(resolution);
+    return followup.discharged === true || mode === 'discharge' || /\bALTA\b/.test(resolution);
   }
 
   function installDischargeResponseVisibility() {
