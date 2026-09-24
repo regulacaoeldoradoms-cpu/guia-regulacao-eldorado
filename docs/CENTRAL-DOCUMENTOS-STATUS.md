@@ -3,6 +3,44 @@
 Última atualização: 24/09/2026.
 
 
+## Fase 7G.6 — line-art branca com fundo transparente no Titon escuro — EM PR — 24/09/2026
+
+Pedido aprovado na homologação visual: remover as placas claras dos controles do Titon no modo escuro e manter o **fundo transparente**, convertendo a line-art escura dos ícones para **branco**. O objetivo é preservar o aspecto leve dos controles sobre o fundo navy, sem alterar o modo claro.
+
+Diagnóstico técnico:
+- a 7G.4 havia usado placas azul-claras para garantir contraste dos ícones legados;
+- os SVGs autorais de Zoom, Grade, Ajustar largura e Fechar incluem dentro do próprio arquivo um retângulo claro/gradiente; aplicar `filter: brightness(0) invert(1)` ao botão inteiro também recoloriria essa placa, produzindo um bloco escuro em vez de um ícone branco flutuante;
+- os ícones PNG das ferramentas genéricas são tratados separadamente e podem ser neutralizados para branco por CSS mantendo o botão transparente;
+- Salvar PDF e Imprimir possuem hierarquia visual própria em azul e não devem ser descaracterizados; os estados do Drive também permanecem com sua semântica visual.
+
+Implementação na branch `fix/titon-dark-transparent-lineart-v1-20260924`, criada da `main` `16ecada6e766a23964e18251ff34932be412e46a`:
+- controles genéricos do editor e rail lateral: `background-color: transparent`, borda normal transparente, texto/SVG branco;
+- hover/foco/ativo preservam fundo transparente e usam apenas borda/glow discreto para feedback;
+- PNGs legados das ferramentas recebem `filter: brightness(0) invert(1)`;
+- criadas versões line-art sem placa para `zoom-menos`, `zoom-mais`, `ajustar-largura`, `grade` e `fechar`;
+- o indicador percentual de zoom também fica transparente no modo escuro;
+- **Salvar PDF** e **Imprimir** continuam azuis;
+- estados do Google Drive permanecem inalterados;
+- modo claro permanece com os assets anteriores;
+- cache-buster de `documents.css` atualizado para `20260924-2`.
+
+Validação preparada:
+- `worker/tests/documents-ui.test.mjs` atualizado para rejeitar a antiga placa `#d8e9f4`, exigir fundo transparente, line-art branca, novos assets dark, X branco e preservação de Salvar/Imprimir;
+- PR funcional **#476 — Titon: line-art branca com fundo transparente no modo escuro** aberta;
+- head no momento deste registro: `8a3cdbf0b214a70d0d38ed0bba5503cb7f1f9589`;
+- CI ainda precisa concluir antes de merge.
+
+Privacidade/segurança: mudança exclusivamente visual. Nenhum JavaScript funcional, Worker, Google Drive, IA, permissão, dado clínico ou telemetria foi alterado.
+
+Alternativas descartadas:
+- **filtrar os SVGs autorais inteiros**: descartado porque os arquivos incluem a própria placa clara e o filtro recoloriria também o fundo;
+- **editar os assets compartilhados do modo claro**: descartado para evitar regressão visual no tema claro;
+- **manter as placas claras da 7G.4**: descartado após reprovação visual humana.
+
+**Próxima ação exata:** aguardar os checks da PR #476; corrigir qualquer falha real; com CI integralmente verde, mesclar e confirmar publicação. Depois, em produção, executar Ctrl+F5 em `/documentos/` no modo escuro e homologar visualmente Zoom −/+, Ajustar largura, percentual de zoom, Grade, ferramentas do editor, rail lateral e X, confirmando fundo transparente e line-art branca; em seguida conferir o modo claro.
+
+
+
 ## Mudança transversal — Telemedicina V42: motivo opcional da desistência — INTEGRADA À MAIN; HOMOLOGAÇÃO HUMANA PENDENTE — 24/09/2026
 
 Pedido operacional: em `/telemedicina/`, ao registrar uma consulta com o resultado **Desistiu**, deve existir uma caixa de texto para registrar o **motivo da desistência**, com preenchimento opcional.
@@ -3434,21 +3472,21 @@ A unidade é exclusivamente visual; a evidência do Worker é registrada apenas 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.5 publicada; aguardando homologação visual do X/Fechar do Titon no modo escuro** |
-| Última ação concluída | PR funcional **#473** e registro pós-publicação **#474** mesclados na `main` |
-| Branch atual | **nenhuma frente funcional aberta para 7G.5** |
-| PR atual | **nenhum PR aberto para 7G.5**; #473 e #474 mesclados |
-| Último commit funcional relevante | `dcdaae5502187193b1ff489b2f6c517991595378`; registro documental consolidado em `837b5d2a` |
-| Checks e testes | #473 **23/23 success**; pós-merge funcional **23/23 GitHub Actions success**; GitHub Pages, Cloudflare Pages e Workers Builds **success**; #474 **21/21 success** antes do merge |
-| Decisões tomadas | restaurar somente o `fechar.svg` do cabeçalho do visualizador no dark mode; modo claro e X internos preservados |
-| Justificativas | shorthand `background` do tema global apagava o asset; override local corrige com blast radius mínimo |
-| Alternativas descartadas | mudar tema global; reescrever HTML; converter asset para inline SVG |
-| Ações externas concluídas | publicação completa confirmada; Worker check reportou versão `550c3239-1d13-4eba-901f-01490ee0e0ba` |
-| Pendências e bloqueios | **somente homologação visual humana da 7G.5**; Telemedicina V42 mantém homologação humana separada |
-| Riscos conhecidos | conferir hover/foco/clique no X e ausência de regressão no modo claro |
+| Subfase / objetivo atual | **7G.6 — line-art branca com fundo transparente no Titon escuro; PR #476 em validação** |
+| Última ação concluída | Implementação visual preparada, regressões atualizadas e PR funcional **#476** aberta |
+| Branch atual | `fix/titon-dark-transparent-lineart-v1-20260924` |
+| PR atual | **#476 — Titon: line-art branca com fundo transparente no modo escuro — aberta** |
+| Último commit relevante | head atual `8a3cdbf0b214a70d0d38ed0bba5503cb7f1f9589` |
+| Checks e testes | regressões de `worker/tests/documents-ui.test.mjs` atualizadas; **CI da PR #476 pendente** |
+| Decisões tomadas | no dark mode, botões de navegação/ferramentas ficam transparentes e a line-art fica branca; Salvar/Imprimir azuis e estados do Drive são preservados; modo claro não muda |
+| Justificativas | SVGs autorais contêm placa própria, portanto filtro global no botão recoloriria também o fundo; variantes dark sem placa isolam a line-art com menor blast radius |
+| Alternativas descartadas | filtro no SVG completo; editar assets compartilhados do modo claro; manter placas claras da 7G.4 |
+| Ações externas concluídas | nenhuma configuração externa necessária |
+| Pendências e bloqueios | concluir CI da #476, mesclar/publicar se verde e realizar homologação visual humana em produção |
+| Riscos conhecidos | conferir visualmente se os PNGs legados ficam brancos sem artefatos e se feedback de hover/foco/ativo continua claro; confirmar ausência de regressão no modo claro |
 | Métricas / observabilidade | nenhuma telemetria nova |
-| Próxima ação exata | **Ctrl+F5 em /documentos/ no modo escuro → abrir PDF → confirmar X no cabeçalho → passar mouse/focar/clicar → verificar retorno à lista; depois conferir modo claro** |
-| Arquivos e fontes principais | Guia Mestre V1.1; merges #473 `dcdaae55` e #474 `837b5d2a`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
+| Próxima ação exata | **verificar checks da PR #476 → corrigir se necessário → mesclar/publicar se verde → Ctrl+F5 em /documentos/ e homologar dark + light** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #476; `css/documents.css`; `documentos/index.html`; `assets/editor-pdf-buttons/*-dark.svg`; `worker/tests/documents-ui.test.mjs`; status |
 
 ## Histórico recuperável
 
