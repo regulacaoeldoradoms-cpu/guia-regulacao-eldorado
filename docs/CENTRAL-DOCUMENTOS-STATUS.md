@@ -53,7 +53,9 @@ Verificação pós-merge disponível neste chat:
 - `get_commit_combined_status` também não retornou statuses externos nesse momento;
 - portanto, **não registrar deploy produtivo como confirmado apenas por inferência**. Essa limitação de visibilidade não indica falha de deploy; apenas mantém a homologação/publicação como evidência pendente.
 
-**Próxima ação exata:** concluir este registro documental → em produção, Ctrl+F5 em `/telemedicina/` → registrar uma desistência **sem motivo** e outra **com motivo** → abrir o histórico e confirmar **Motivo:** somente no segundo caso; repetir o fluxo mobile quando possível.
+Registro documental pós-merge: PR **#472 — Status: registrar merge da Telemedicina V42**. No primeiro head documental `1757bfe8b5558ad306605bcfc39f9b6f0489b6d9`, **21/21 workflows de PR concluíram com success**.
+
+**Próxima ação exata:** integrar a PR #472; após isso, em produção, Ctrl+F5 em `/telemedicina/` → registrar uma desistência **sem motivo** e outra **com motivo** → abrir o histórico e confirmar **Motivo:** somente no segundo caso; repetir o fluxo mobile quando possível.
 
 ## Fase 7H — ordem operacional da IA documental + Especialidade — PUBLICADA TECNICAMENTE; HOMOLOGAÇÃO HUMANA PENDENTE — 23/09/2026
 
@@ -3408,17 +3410,17 @@ Os botões autorais `.documents-art-button` foram explicitamente excluídos para
 | Subfase / objetivo atual | **mudança transversal Telemedicina V42 — motivo opcional da desistência integrada; homologação humana pendente** |
 | Última ação concluída | PR #471 mesclada na `main` com o motivo opcional preservado no histórico |
 | Branch atual | `docs/telemedicina-v42-merge-status-20260924` |
-| PR atual | **a abrir — somente registro pós-merge** |
+| PR atual | **#472 — registro pós-merge; integrar após CI verde** |
 | Último commit relevante | merge funcional `0a06421b8f33487bc3e947fce585bc6a2a865bea` |
-| Checks e testes | head final da PR #471 `4ce349c5`: **48/48 workflows success**, zero falhas; workflow V42 success |
+| Checks e testes | PR #471 head final `4ce349c5`: **48/48 success**; PR documental #472 head inicial `1757bfe8`: **21/21 success** |
 | Decisões tomadas | reaproveitar `notes`; campo opcional; preservar motivo somente na desistência; exibir como **Motivo:** no histórico |
 | Justificativas | evita migração/schema novo e corrige os dois pontos que apagavam o texto — adaptador V25 e salvamento atômico V29 |
 | Alternativas descartadas | criar coleção/campo persistente novo `withdrawalReason`; tornar o motivo obrigatório |
 | Ações externas concluídas | merge #471 concluído; nenhum segredo, OAuth ou permissão alterado |
-| Pendências e bloqueios | registrar pós-merge em PR documental; homologar produção desktop/mobile com uma desistência vazia e outra preenchida; push/deploy pós-merge não ficou visível pelo conector atual |
+| Pendências e bloqueios | integrar a PR documental #472; homologar produção desktop/mobile com uma desistência vazia e outra preenchida; push/deploy pós-merge não ficou visível pelo conector atual |
 | Riscos conhecidos | não reintroduzir limpeza do `notes` na desistência; alta normal deve continuar limpando observação; conteúdo do motivo nunca deve ir ao PostHog |
 | Métricas / observabilidade | nenhuma telemetria nova; motivo de desistência permanece fora do PostHog |
-| Próxima ação exata | **mesclar o registro pós-merge → Ctrl+F5 em /telemedicina/ → testar Desistiu sem/com motivo → conferir o histórico e depois o mobile** |
+| Próxima ação exata | **após integrar #472: Ctrl+F5 em /telemedicina/ → testar Desistiu sem/com motivo → conferir o histórico e depois o mobile** |
 | Arquivos e fontes principais | Guia Mestre V1.1; PR #471; merge `0a06421b`; `js/telemedicina-absence-v24.js`; `worker/telemedicine-router-v2.js`; `worker/telemedicine.js`; teste/workflow V42; `docs/TELEMEDICINA-MOTIVO-DESISTENCIA-V42.md`; status |
 
 ## Histórico recuperável
