@@ -60,7 +60,7 @@ test('configuração pública não expõe segredos nem conteúdo', () => {
   assert.equal(config.phase, DOCUMENT_AI_PHASE);
   assert.equal(config.version, DOCUMENT_AI_VERSION);
   assert.equal(config.phase, '5E');
-  assert.equal(config.version, 'phase5e-v8c4-specialty-from-request');
+  assert.equal(config.version, 'phase5e-v8c3-specialty-order');
   assert.equal(config.enabled, true);
   assert.equal(config.processingEnabled, false);
   assert.equal(config.pageIsolation, true);
