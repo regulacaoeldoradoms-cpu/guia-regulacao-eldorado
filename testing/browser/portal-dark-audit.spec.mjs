@@ -3,6 +3,7 @@ import { installAuditFixture } from './dark-audit-fixture.mjs';
 import { inspectSurfaces } from './dark-audit-surfaces.mjs';
 import { writeFile } from 'node:fs/promises';
 import { selectedAuditRoutes, aliasDestinations } from './dark-audit-routes.mjs';
+import { finishAuditNetwork } from './dark-audit-network.mjs';
 for (const route of selectedAuditRoutes) {
   test(`computed surfaces ${route}`, async ({ page, context }, info) => {
     const network=await installAuditFixture(context,{authenticated:!['/login/','/cadastro/'].includes(route)});
@@ -21,11 +22,9 @@ for (const route of selectedAuditRoutes) {
       await info.attach(`${theme}-${media}.json`,{body:Buffer.from(JSON.stringify(report,null,2)),contentType:'application/json'});
       await page.screenshot({path:info.outputPath(`${theme}-${media}.png`),fullPage:true,animations:'disabled',caret:'hide'});
     }
-    await info.attach('network-coverage.json',{body:Buffer.from(JSON.stringify(network,null,2)),contentType:'application/json'});
-    await writeFile(info.outputPath('network-coverage.json'),JSON.stringify(network,null,2));
+    await finishAuditNetwork(info,network,{route:expectedRoute});
     // The report-only mode is explicit for baseline collection. Acceptance is strict.
     if(process.env.DARK_AUDIT_REPORT_ONLY!=='1') {
-      expect(network.unexpected,'Unknown synthetic API endpoints invalidate route coverage').toEqual([]);
       expect(reports[0].bright, 'Bright application surfaces: inspect dark-screen.json for selectors and matching CSS sources').toEqual([]);
     }
   });

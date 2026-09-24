@@ -29,9 +29,10 @@ Total: **24 rotas de interface + 3 aliases** (`/home/`, `/conta/`, `/protocolo.h
 | Detalhe, conversa, anexos e exclusão do Conselho | Gradientes claros em `council-detail-desktop-v2.css`, imports de chat/ícones e diálogo de exclusão; parte da interface só nasce após abrir o detalhe. | Tokens locais para superfícies, textos e bordas; semântica de resposta, nota, elogio e exclusão preservada. |
 | Titon e painéis auxiliares | `documents.css`, carregado após o tema global, tinha superfícies próprias de busca, IA, notas, desenho e propriedades. Zoom/contador/ícones usavam cores locais escuras. | Tokens locais de interface, conservando o fallback claro e as regras homologadas da 7G.6. Texto, papel, canvas e cor do conteúdo não recebem inversão. |
 | Histórico de Telemedicina V40 | Tokens claros e regras locais tardias; regra global alcançava indiscriminadamente os `div` dos cards semânticos. | Tokens de histórico/eventos e exclusão dos dois containers V40 na regra global genérica. Cores semânticas dos eventos preservadas. |
-| Formulários e cards de Telemedicina | Gradientes herdados dos modos retorno/condição/falta, notas e exclusão; variáveis locais V19 e painéis inline móveis sem definição escura. | Valores do tema no escopo dessas superfícies, bordas escuras e cores distintas para atenção, erro e conclusão. |
+| Formulários e cards de Telemedicina | Gradientes herdados dos modos retorno/condição/falta, notas e exclusão; variáveis locais V19 e painéis inline móveis sem definição escura; textos de especialidade, legendas e campos com cores escuras fixas. | Valores do tema no escopo dessas superfícies, bordas escuras e cores distintas para atenção, erro e conclusão. Especialidade e títulos ficam legíveis, preservando o texto marrom dos cards dourados. |
 | Social, conta, Agenda e administração | Chips, popovers, skeleton, botões ativos, badges, tabelas e cabeçalhos não cobertos; CSS móvel ou estilo injetado após a carga vencia seletores genéricos. | Cobertura na camada global do tema, com seletores de componente. `!important` adicional apenas onde necessário para vencer declarações legadas já importantes. |
 | Subprotocolos do Guia Médico | `site.css` atribuía `var(--white)` a `details`, exibidos apenas em determinadas anatomias de protocolo. | Superfície e borda do tema no componente de protocolo oficial. |
+| Checklist da Recepção | Cabeçalhos, chips e marcações mantinham fundos claros com texto herdado inadequado no tema escuro. | Superfícies e texto do tema, preservando o verde semântico da marcação e a impressão clara. |
 
 As alterações de cor preservam dimensões, ordem, conteúdo e comportamento. O cache bust dos CSS e dos imports entrega as novas folhas; as asserções estáticas correspondentes continuam verificando as versões e os fallbacks exatos.
 
@@ -43,7 +44,7 @@ Allowlist executável e justificada em `testing/browser/dark-audit-surfaces.mjs`
 - Imagens, logos, vídeos, conteúdo externo e documentos gerados para impressão conservam suas cores.
 - A miniatura explícita do tema claro representa a aparência que a pessoa pode selecionar.
 - Capas configuráveis de perfil são arte decorativa; o filtro escuro preexistente permanece.
-- O botão **Altas** e seu reflexo dourado são deliberados, conforme `docs/TELEMEDICINA-SALVAMENTO-ATOMICO-E-ALTAS-V29.md`.
+- O botão **Altas**, seu reflexo e o card de alta dourado são deliberados, conforme as versões V28/V29. A exceção cobre apenas os seletores e zonas douradas documentados; textos mantêm contraste marrom e o histórico inline conserva a superfície dourada original.
 - Pequenos glifos mascarados em `currentColor`, indicador de presença e puxador do switch têm exceções limitadas por seletor, pseudo-elemento e área. O fundo dos respectivos controles continua auditado.
 - Titon: controles transparentes, line-art branca, feedback discreto; Salvar PDF/Imprimir azuis; cinco estados Drive distintos. São invariantes verificadas no navegador, não uma dispensa geral do detector.
 
@@ -55,6 +56,12 @@ O detector examina `getComputedStyle()` do DOM visível e de `::before`/`::after
 
 O comparador carrega os arquivos alterados da `main` pelo SHA em um segundo carregamento do mesmo estado sintético. Compara estilos, geometria e screenshots; também distingue erros JavaScript já presentes na base de erros novos. Não atualiza imagens douradas. Os logs mantêm explicitamente qualquer diferença tolerada de rasterização mínima.
 
+Os relatórios aceitos exigem `diffScope: repository-root`, SHA da base e hashes dos arquivos realmente servidos em cada fase. As primeiras execuções do comparador, que usavam pathspecs relativos à pasta de testes e retornavam `changed: []`, foram invalidadas como prova de preservação. A correção congela mapas distintos de arquivos atuais/base e exige que o CSS global alterado seja servido nas duas fases.
+
+O reflexo animado preexistente do distintivo do Conselho é comparado na mesma fase visível (70% de 4,8 s) nas duas cargas, mantendo as verificações do pseudo-elemento. No Guia Médico móvel, a ação visível dentro do protocolo abre a pré-regulação, pois o launcher fixo pode ficar fora do viewport visual preexistente. Nenhuma dessas adaptações modifica o produto ou a tolerância de pixels.
+
+Na Recepção, dois inicializadores legados usam frases diferentes para o resumo vazio. A comparação aguarda a seção clínica e aciona o botão real “Desmarcar tudo”, verificando resumo e ausência de marcações nas duas versões. Não há substituição arbitrária de texto ou remoção de verificações de geometria. O catálogo e todos os fluxos dinâmicos rejeitam endpoints não modelados e erros JavaScript novos; os dois erros herdados autorizados são limitados à mensagem e à rota exatas.
+
 **Resultados finais:** aguardando consolidação das execuções estritas. Não interpretar este marcador como gate aprovado.
 
 Execução e CI: `testing/browser/DARK_AUDIT.md` e `.github/workflows/portal-dark-audit.yml`. As evidências por rota/estado, rede e comparação ficam em `test-results-*`, ignorados pelo Git; o workflow publica artefatos sintéticos por sete dias.
@@ -64,5 +71,7 @@ Execução e CI: `testing/browser/DARK_AUDIT.md` e `.github/workflows/portal-dar
 A cobertura usa Chromium e emulação de viewport, sem aparelho físico, WebKit/Firefox ou leitura de popup nativo do sistema. O detector não interpreta pixels de imagens, conteúdo PDF, shadow DOM ou todos os gradientes como um renderizador. Estados combinatórios futuros e funções novas exigem novos cenários. Mocks validam apresentação e navegação; não atestam serviços, integrações ou publicação.
 
 Há erros de mutação de propriedades congeladas de `RegulationAuth` já presentes na `main` em alguns fluxos legados; são registrados e comparados com a base, sem modificar autenticação nesta PR visual.
+
+A Telemedicina móvel já apresentava sobreposição dos rótulos quando o card possui cinco ações; retângulos, fonte e interceptação de toque foram iguais na base e na branch. O painel de solicitação é auditado por foco e Enter reais. No Guia Médico móvel, o catálogo longo e o launcher fixo também exigem ativação por teclado em parte do percurso. Esses testes comprovam os estados visuais resultantes; não homologam o toque desses controles nem corrigem o layout legado.
 
 Após gates verdes, revisar e homologar visualmente a PR. Só então considerar encerrada a frente de desenvolvimento do modo escuro. Reabrir por regressão comprovada ou nova funcionalidade; manter a regressão transversal como proteção.

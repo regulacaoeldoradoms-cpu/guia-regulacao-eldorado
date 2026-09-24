@@ -2130,9 +2130,16 @@ html[data-portal-interactions="v1"] .ai-chat:not([hidden]) {
     border-color: var(--portal-theme-border);
   }
 
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-row:not(.is-discharge-achievement) .telemedicine-specialty-block strong {
+    color: var(--portal-theme-text) !important;
+  }
+
   html[data-portal-theme="dark"] body.telemedicine-page[data-followup-cards="v19"] :is(.telemedicine-reminder-chip, .telemedicine-reminder-empty) {
     background: var(--portal-theme-surface-2);
     color: var(--portal-theme-text);
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page[data-followup-cards="v19"] .telemedicine-row[data-status="solicitar"]:not(.is-discharge-achievement) .telemedicine-reminder-number {
+    color: #0a0a05;
   }
   html[data-portal-theme="dark"] body.telemedicine-page[data-followup-cards="v19"] .telemedicine-status.solicitar {
     background: #362b12 !important;
@@ -2372,6 +2379,18 @@ html[data-portal-interactions="v1"] .ai-chat:not([hidden]) {
     background: var(--portal-theme-surface-2);
     border-color: var(--portal-theme-border);
     color: var(--portal-theme-text);
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page .tm-inline-consult-form [data-tm-conditional-field] {
+    background: #362b12 !important;
+    border-color: #65501f !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page .tm-inline-consult-form [data-tm-absence-field] {
+    background: #321c25 !important;
+    border-color: #754452 !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page #tmInlineConsultation .telemedicine-outcome-picker legend,
+  html[data-portal-theme="dark"] body.telemedicine-page .tm-condition-ready-title {
+    color: var(--portal-theme-text) !important;
   }
   html[data-portal-theme="dark"] :is(#consultationModal, #outcomeEditModal) :is(#consultScheduledFields, #outcomeEditScheduled, .tm-outcome-edit-note),
   html[data-portal-theme="dark"] body.telemedicine-page .tm-condition-ready-toggle {
