@@ -81,7 +81,7 @@
         ['CRM/RMS', 'CRM/MS 00001'],
         ['Procedimento solicitado', 'PROCEDIMENTO ALFA'],
         ['Código do procedimento', '000001'],
-        ['Solicitação', 'CIRURGIA VASCULAR'],
+        ['Especialidade', 'CARDIOLOGIA SINTÉTICA'],
         ['CID', 'Z99.9'],
         ['Descrição do CID', 'DESCRIÇÃO SINTÉTICA ALFA']
       ],
@@ -92,7 +92,7 @@
         crm_rms: ['encontrado', 'CRM/MS 00001'],
         procedimento_solicitado: ['encontrado', 'PROCEDIMENTO ALFA'],
         codigo_procedimento: ['encontrado', '000001'],
-        especialidade: ['encontrado', 'CIRURGIA VASCULAR'],
+        especialidade: ['encontrado', 'CARDIOLOGIA SINTÉTICA'],
         cid: ['encontrado', 'Z99.9'],
         descricao_cid: ['encontrado', 'DESCRIÇÃO SINTÉTICA ALFA']
       }
