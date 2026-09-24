@@ -6,7 +6,7 @@
 body.mobile-citizen-mode{
   min-height:100dvh;
   overflow-x:hidden;
-  background:linear-gradient(180deg,#eaf2f6 0%,#f5f9fb 55%,#edf4f7 100%) !important;
+  background:linear-gradient(180deg,var(--citizen-ui-green, #eaf2f6) 0%,var(--citizen-ui-surface, #f5f9fb) 55%,var(--citizen-ui-surface, #edf4f7) 100%) !important;
 }
 
 body.mobile-citizen-mode .portal-shell{
@@ -155,7 +155,7 @@ body.mobile-citizen-mode .portal-hero p{
   margin:0 !important;
   font-size:clamp(21px,2.9vw,28px) !important;
   line-height:1.55 !important;
-  color:#4d6a7e !important;
+  color:var(--citizen-ui-text, #4d6a7e) !important;
 }
 
 body.mobile-citizen-mode .citizen-hero-status{
@@ -631,5 +631,28 @@ body.mobile-citizen-mode .thread-message{
   body.mobile-citizen-mode .citizen-card-head .portal-button{
     font-size:16px !important;
     padding:9px 11px !important;
+  }
+}
+
+/* Tokens somente de tela escura. Cada regra mantém seu literal claro como fallback. */
+@media screen {
+  html[data-portal-theme="dark"] body.mobile-citizen-mode {
+    --citizen-ui-green: #153a31;
+    --citizen-ui-surface: #102332;
+    --citizen-ui-text: #e5eef5;
+    --citizen-ui-blue: #16384d;
+    --citizen-ui-line: #2a465a;
+    --citizen-ui-green-line: #326453;
+    --citizen-ui-purple-line: #574879;
+    --citizen-ui-muted: #9fb2c1;
+    --citizen-ui-danger: #421f2d;
+    --citizen-ui-warning: #382d18;
+    --citizen-ui-purple: #2b2440;
+    --citizen-ui-danger-line: #744151;
+    --citizen-ui-warning-line: #6d5427;
+    --citizen-ui-danger-text: #ffb9c5;
+    --citizen-ui-warning-text: #f3d892;
+    --citizen-ui-green-text: #9ce2c5;
+    --citizen-ui-rim: rgba(159,178,193,.12);
   }
 }

@@ -89,7 +89,7 @@ test('todas as rotas ativas carregam uma única camada central versionada', () =
   for (const filename of ACTIVE_ROUTES) {
     const html = read(filename);
     assert.equal((html.match(/portal-theme\.js\?v=20260923-1/g) || []).length, 1, `${filename}: bootstrap de tema`);
-    assert.equal((html.match(/portal-interactions\.css\?v=20260923-2/g) || []).length, 1, `${filename}: CSS central`);
+    assert.equal((html.match(/portal-interactions\.css\?v=20260924-dark-final-1/g) || []).length, 1, `${filename}: CSS central`);
     assert.equal((html.match(/portal-interactions\.js\?v=20260923-2/g) || []).length, 1, `${filename}: JS central`);
   }
 });
@@ -219,7 +219,7 @@ test('modo escuro cobre as superfícies legadas homologadas visualmente', () => 
   }
 
   for (const filename of ACTIVE_ROUTES) {
-    assert.match(read(filename), /portal-interactions\.css\?v=20260923-2/, `${filename}: tema global atualizado`);
+    assert.match(read(filename), /portal-interactions\.css\?v=20260924-dark-final-1/, `${filename}: tema global atualizado`);
   }
 });
 

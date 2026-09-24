@@ -47,8 +47,8 @@ body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[d
 body.mobile-council-mode #councilDetailModal #messageThread.thread::before{
   content:"Conversa protegida" !important;
   padding-left:43px !important;
-  background-color:rgba(255,255,255,.9) !important;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23446779' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M7.5 10V7.7a4.5 4.5 0 0 1 9 0V10M6 10h12v10H6zM12 14v2.4'/%3E%3C/svg%3E") !important;
+  background-color:var(--cd5-header, rgba(255,255,255,.9)) !important;
+  background-image:var(--council-lock-icon, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23446779' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M7.5 10V7.7a4.5 4.5 0 0 1 9 0V10M6 10h12v10H6zM12 14v2.4'/%3E%3C/svg%3E")) !important;
   background-repeat:no-repeat !important;
   background-position:13px center !important;
   background-size:21px 21px !important;
@@ -61,4 +61,10 @@ body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[d
 body.mobile-council-mode #councilDetailModal .council-mobile-detail-nav button[data-council-scroll="historySection"]::after{
   content:none !important;
   display:none !important;
+}
+
+@media screen {
+  html[data-portal-theme="dark"] body.mobile-council-mode #councilDetailModal {
+    --council-lock-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='%23b8d9ed' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' d='M7.5 10V7.7a4.5 4.5 0 0 1 9 0V10M6 10h12v10H6zM12 14v2.4'/%3E%3C/svg%3E");
+  }
 }

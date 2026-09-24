@@ -2,6 +2,20 @@
 
 Última atualização: 24/09/2026.
 
+## Auditoria transversal final do modo escuro — VALIDAÇÃO FINAL E PR ISOLADA — 24/09/2026
+
+Base: `main` em `1157e28020a90461de0dd0fdb6939f0e9881dfa6`. Branch própria: `fix/portal-dark-final-audit-20260924`. A homologação da 7G.6 abaixo continua encerrada e preservada.
+
+**Decisão:** corrigir os resíduos de interface na origem dos módulos e na camada global do tema, sem redesign ou alteração de JavaScript de produto. A descoberta automática encontrou 24 rotas + 3 aliases. O registro de causas, cobertura, exceções, testes e limites está em [AUDITORIA-FINAL-MODO-ESCURO-2026-09.md](AUDITORIA-FINAL-MODO-ESCURO-2026-09.md).
+
+**Evidências em consolidação:** 54/54 verificações estritas das rotas desktop/mobile; Worker 458/458; Central 76 aprovados/4 skips preexistentes, sem retentativas. Os fluxos adicionais exercitam modais, formulários, painéis internos, erros, vazios, foco/hover/ativo/disabled e pseudo-elementos. As comparações claro/impressão estão sendo repetidas com o comparador corrigido para carregar os arquivos de produto da raiz do repositório; resultados anteriores com `changed: []` foram invalidados como prova de preservação.
+
+**Invariantes:** Titon transparente e line-art branca; Salvar PDF/Imprimir azuis; cinco estados Drive distintos; papel PDF branco; dourado deliberado de Altas preservado. Tokens novos dos módulos usam os literais anteriores como fallback; os valores escuros ficam em `@media screen` e no seletor do tema.
+
+**Riscos e limites:** Chromium e Pixel 7 emulado; detector heurístico complementado por inspeção visual; mocks não comprovam integrações ou serviços. Erros JavaScript legados são medidos contra a base, sem alterar autenticação. Tudo usa sessão e dados sintéticos, rede externa bloqueada e nenhuma escrita de produção.
+
+**Próximo passo:** concluir gates da PR e homologação visual humana. Nenhum merge ou deploy foi realizado. Após essa homologação, encerrar a frente de desenvolvimento do modo escuro e reabrir somente por regressão comprovada ou funcionalidade nova.
+
 
 ## Fase 7G.6 — line-art branca com fundo transparente no Titon escuro — HOMOLOGADA E ENCERRADA — 24/09/2026
 

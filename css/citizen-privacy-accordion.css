@@ -1,4 +1,4 @@
-@import url('/css/citizen-detail-mobile-v4.css?v=20260906-1');
+@import url('/css/citizen-detail-mobile-v4.css?v=20260924-dark-final-1');
 
 /* Informações compactas de privacidade — desktop e mobile.
    Três botões semânticos abrem o conteúdo somente quando solicitado. */
@@ -241,10 +241,10 @@ body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-but
   align-items:center;
   justify-content:center;
   gap:10px;
-  border:2px solid #bdd2de;
+  border:2px solid var(--citizen-ui-line, #bdd2de);
   border-radius:16px;
-  background:#fff;
-  color:#174f78;
+  background:var(--citizen-ui-surface, #fff);
+  color:var(--citizen-ui-accent, #174f78);
   font:inherit;
   text-align:left;
   cursor:pointer;
@@ -259,14 +259,14 @@ body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-but
   outline-offset:2px;
 }
 body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-button--camera{
-  border-color:#9fcfd0;
-  background:#f1fbfb;
-  color:#176b70;
+  border-color:var(--citizen-ui-green-line, #9fcfd0);
+  background:var(--citizen-ui-green, #f1fbfb);
+  color:var(--citizen-ui-green-text, #176b70);
 }
 body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-button--device{
-  border-color:#b9d1df;
-  background:#f7fbfd;
-  color:#174f78;
+  border-color:var(--citizen-ui-line, #b9d1df);
+  background:var(--citizen-ui-surface, #f7fbfd);
+  color:var(--citizen-ui-accent, #174f78);
 }
 body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-icon{
   width:42px;
@@ -275,7 +275,7 @@ body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-ico
   display:grid;
   place-items:center;
   border-radius:12px;
-  background:rgba(255,255,255,.84);
+  background:var(--citizen-ui-surface, rgba(255,255,255,.84));
 }
 body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-icon svg,
 body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection-icon svg{
@@ -296,7 +296,7 @@ body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-but
 body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-source-button small{
   display:block;
   margin-top:4px;
-  color:#688092;
+  color:var(--citizen-ui-muted, #688092);
   font-size:clamp(14px,3.6vw,17px);
   line-height:1.25;
 }
@@ -313,10 +313,10 @@ body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection{
   align-items:center;
   justify-content:space-between;
   gap:10px;
-  border:2px solid #b9d8c8;
+  border:2px solid var(--citizen-ui-green-line, #b9d8c8);
   border-radius:15px;
-  background:#f4fbf6;
-  color:#244c3c;
+  background:var(--citizen-ui-green, #f4fbf6);
+  color:var(--citizen-ui-green-text, #244c3c);
 }
 body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection-copy{
   min-width:0;
@@ -331,13 +331,13 @@ body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection-
   display:grid;
   place-items:center;
   border-radius:11px;
-  background:#e4f3e9;
-  color:#2f6d50;
+  background:var(--citizen-ui-green, #e4f3e9);
+  color:var(--citizen-ui-green-text, #2f6d50);
 }
 body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection-copy strong{
   display:block;
   max-width:100%;
-  color:#264a3b;
+  color:var(--citizen-ui-green-text, #264a3b);
   font-size:clamp(17px,4.3vw,21px);
   line-height:1.2;
   font-weight:900;
@@ -346,7 +346,7 @@ body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection-
 body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-selection-copy small{
   display:block;
   margin-top:4px;
-  color:#5f796e;
+  color:var(--citizen-ui-muted, #5f796e);
   font-size:clamp(14px,3.6vw,17px);
   line-height:1.25;
 }
@@ -354,10 +354,10 @@ body.mobile-citizen-mode #manifestationDetailModal .detail-attachment-remove{
   min-height:46px;
   padding:8px 11px;
   flex:0 0 auto;
-  border:1px solid #debfc2;
+  border:1px solid var(--citizen-ui-danger-line, #debfc2);
   border-radius:11px;
-  background:#fff7f7;
-  color:#9b3d45;
+  background:var(--citizen-ui-danger, #fff7f7);
+  color:var(--citizen-ui-danger-text, #9b3d45);
   font:inherit;
   font-size:16px;
   font-weight:850;

@@ -1977,7 +1977,7 @@ html[data-portal-interactions="v1"] .ai-chat:not([hidden]) {
     border-bottom-color: var(--portal-theme-border) !important;
   }
 
-  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-current-grid div {
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-current-grid div:not(.tm-history-current-card):not(.tm-history-current-card-top) {
     background: #0f2231 !important;
     color: var(--portal-theme-text) !important;
     border-color: #315069 !important;
@@ -1987,6 +1987,514 @@ html[data-portal-interactions="v1"] .ai-chat:not([hidden]) {
     background: var(--portal-theme-input) !important;
     color: var(--portal-theme-text) !important;
     border-color: #355469 !important;
+  }
+}
+
+/* Auditoria transversal: complementos do chrome, somente em tela escura.
+   Tokens locais vencem a cascata legada sem modificar regras de layout. */
+@media screen {
+  html[data-portal-theme="dark"] body {
+    --social-ink: #e5eef5;
+    --social-muted: #9fb2c1;
+    --social-line: #2a465a;
+    --social-card: #102332;
+  }
+
+  html[data-portal-theme="dark"] .social-notification-panel,
+  html[data-portal-theme="dark"] .social-notification-panel-footer a,
+  html[data-portal-theme="dark"] .social-report-target,
+  html[data-portal-theme="dark"] .citizen-card-body,
+  html[data-portal-theme="dark"] .council-delete-toolbar {
+    background: var(--portal-theme-surface);
+    color: var(--portal-theme-text);
+    border-color: var(--portal-theme-border);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, .22);
+  }
+  html[data-portal-theme="dark"] .social-notification-panel-heading,
+  html[data-portal-theme="dark"] .social-notification-panel-footer {
+    background: var(--portal-theme-surface-2);
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] .social-notification-panel-read,
+  html[data-portal-theme="dark"] .social-notification-trigger[aria-expanded="true"],
+  html[data-portal-theme="dark"] .social-global-user-search-result:hover,
+  html[data-portal-theme="dark"] .agenda-card-actions :is(a, button),
+  html[data-portal-theme="dark"] .agenda-stat-icon,
+  html[data-portal-theme="dark"] .agenda-sync-state,
+  html[data-portal-theme="dark"] .agenda-status-chip {
+    background: var(--portal-theme-surface-2);
+    color: #c9e6fa;
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] .social-notification-panel-read:hover,
+  html[data-portal-theme="dark"] .social-notification-panel-footer a:hover,
+  html[data-portal-theme="dark"] .agenda-card-actions :is(a, button):hover {
+    background: var(--portal-theme-hover);
+    border-color: #4d7691;
+  }
+  html[data-portal-theme="dark"] .social-skeleton {
+    background: var(--portal-theme-surface-2);
+  }
+  html[data-portal-theme="dark"] .social-skeleton::after {
+    background: linear-gradient(90deg, transparent, rgba(159, 178, 193, .12), transparent);
+  }
+  html[data-portal-theme="dark"] :is(.social-status.info, .agenda-status) {
+    background: #112f43;
+    color: #b9dff6;
+    border-color: #285978;
+  }
+  html[data-portal-theme="dark"] :is(.social-status.success, .social-notification-panel-status.success, .agenda-status.success) {
+    background: #123329;
+    color: #9be0c4;
+    border-color: #285c4b;
+  }
+  html[data-portal-theme="dark"] :is(.social-status.error, .social-notification-panel-status.error, .agenda-status.error, .social-button.danger, .agenda-capacity-alert) {
+    background: #3a1c24;
+    color: #ffb7c0;
+    border-color: #6e3542;
+  }
+  html[data-portal-theme="dark"] .agenda-capacity-chip.is-full {
+    background: #362b12;
+    color: #f2d58a;
+    border-color: #65501f;
+  }
+  html[data-portal-theme="dark"] .agenda-card mark {
+    background: #5b461a;
+    color: #ffe6a2;
+  }
+  html[data-portal-theme="dark"] .privacy-chip.confidential {
+    background: #2c2442;
+    color: #d8c6ff;
+    border-color: #5c497c;
+  }
+
+  /* Estes estilos são inseridos por JS após a folha global. A especificidade
+     inclui o escopo original; !important só enfrenta declarações já importantes. */
+  html[data-portal-theme="dark"] body.mobile-login-mode .login-panel {
+    background: var(--portal-theme-bg) !important;
+  }
+  html[data-portal-theme="dark"] body.mobile-login-mode .login-status.error {
+    background: #3a1c24 !important;
+    color: #ffb7c0 !important;
+    border-color: #6e3542 !important;
+    box-shadow: 0 7px 18px rgba(0, 0, 0, .2) !important;
+  }
+  html[data-portal-theme="dark"] body.mobile-login-mode .login-status.info {
+    background: #112f43 !important;
+    color: #b9dff6 !important;
+    border-color: #285978 !important;
+  }
+  html[data-portal-theme="dark"] body.first-access-mode {
+    background: var(--portal-theme-bg) !important;
+  }
+  html[data-portal-theme="dark"] body.first-access-mode .first-access-input-shell input {
+    background: var(--portal-theme-input) !important;
+    color: var(--portal-theme-text);
+    border-color: #355469 !important;
+  }
+  html[data-portal-theme="dark"] body.first-access-mode :is(.first-access-password-card, .first-access-password-toggle, .first-access-password-check) {
+    background: var(--portal-theme-surface-2);
+    color: var(--portal-theme-text);
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] body.first-access-mode #firstAccessNotice {
+    background: #112f43;
+    color: #b9dff6;
+    border-color: #285978;
+  }
+  html[data-portal-theme="dark"] #praiseRecipientDialog :is(.praise-dialog, .cancel, .praise-suggestion) {
+    background: var(--portal-theme-surface);
+    color: var(--portal-theme-text);
+    border-color: var(--portal-theme-border);
+  }
+
+  /* V19 define tokens no próprio card; redefini-los aqui alcança lista, grade,
+     estados e seus subblocos, inclusive regras antigas com !important. */
+  html[data-portal-theme="dark"] body.telemedicine-page[data-followup-cards="v19"] .telemedicine-row:not(.is-discharge-achievement) {
+    --tm-card-zone: #142a3a;
+    --tm-card-zone-strong: #193246;
+    --tm-card-border: #355469;
+    --tm-card-title: #e5eef5;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page[data-followup-cards="v19"] .telemedicine-filter-summary {
+    background: var(--portal-theme-surface) !important;
+    color: var(--portal-theme-muted) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page[data-card-hierarchy="v37"] .telemedicine-row:not(.is-discharge-achievement) :is(.telemedicine-zone-label, .telemedicine-reminders-label, .telemedicine-patient > small, .telemedicine-specialty-block small) {
+    color: var(--portal-theme-muted) !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page[data-card-hierarchy="v37"] .telemedicine-row:not(.is-discharge-achievement) .telemedicine-date-block > strong {
+    background: var(--portal-theme-surface);
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border);
+  }
+
+  html[data-portal-theme="dark"] body.telemedicine-page[data-followup-cards="v19"] :is(.telemedicine-reminder-chip, .telemedicine-reminder-empty) {
+    background: var(--portal-theme-surface-2);
+    color: var(--portal-theme-text);
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page[data-followup-cards="v19"] .telemedicine-status.solicitar {
+    background: #362b12 !important;
+    color: #f2d58a !important;
+    border-color: #65501f !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page[data-followup-cards="v19"] :is(.telemedicine-status.atrasado, .telemedicine-alert-marker) {
+    background: #3a1c24 !important;
+    color: #ffb7c0 !important;
+    border-color: #6e3542 !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page[data-followup-cards="v19"] :is(.telemedicine-status.em-aguardo, .telemedicine-status.concluido):not(.is-achievement-status) {
+    background: #123329 !important;
+    color: #9be0c4 !important;
+    border-color: #285c4b !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page[data-followup-cards="v19"] :is(.telemedicine-status.solicitado, .telemedicine-status.sem-programacao) {
+    background: #112f43 !important;
+    color: #b9dff6 !important;
+    border-color: #285978 !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page .portal-modal-close {
+    background-color: var(--portal-theme-surface-2) !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page .portal-modal-close:is(:hover, :focus-visible) {
+    background-color: var(--portal-theme-hover) !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page #telemedicineSearch {
+    background: var(--portal-theme-input) !important;
+    color: var(--portal-theme-text) !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page.tm-inline-mobile-v9 :is(
+    .tm-inline-panel, .tm-inline-consultation, .tm-inline-form, .tm-inline-preview,
+    .tm-inline-panel-head, .tm-inline-close, [data-tm-scheduled-field], [data-tm-active-field],
+    .tm-inline-current, .tm-inline-event
+  ) {
+    background: var(--portal-theme-surface) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+    box-shadow: none !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-choice {
+    background: linear-gradient(145deg, var(--portal-theme-surface), var(--portal-theme-surface-2));
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-choice:has(input:checked) {
+    background: var(--portal-theme-selected);
+    border-color: #68b7ff;
+    box-shadow: 0 0 0 2px rgba(104, 183, 255, .2);
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page.tm-inline-mobile-v9 :is(
+    .telemedicine-choice strong, .tm-inline-panel-head strong, .tm-inline-form > label
+  ) {
+    color: var(--portal-theme-text) !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page.tm-inline-mobile-v9 :is(
+    .telemedicine-choice small, .tm-inline-panel-head span, .tm-inline-form label small
+  ) {
+    color: var(--portal-theme-muted) !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page :is(#consultScheduledFields, .telemedicine-notes-field) {
+    background: var(--portal-theme-surface-2) !important;
+    border-color: var(--portal-theme-border);
+  }
+
+  html[data-portal-theme="dark"] :is(.public-card, .public-type-icon, .hub-card-icon, .hub-status, .achievement-icon, .achievement-state, .user-badge, .social-professional-badge, .documents-access-chip) {
+    background: var(--portal-theme-surface-2);
+    color: #c9e6fa;
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] :is(.public-warning, .user-badge.bootstrap, .level-mini-badge.ouro) {
+    background: #362b12;
+    color: #f2d58a;
+    border-color: #65501f;
+  }
+  html[data-portal-theme="dark"] .level-mini-badge.bronze {
+    background: #34291d;
+    color: #ecc29c;
+    border-color: #715535;
+  }
+  html[data-portal-theme="dark"] .level-mini-badge.prata {
+    background: #243340;
+    color: #c9dbe8;
+    border-color: #546d80;
+  }
+  html[data-portal-theme="dark"] .privacy-chip {
+    background: #2c2442;
+    color: #d8c6ff;
+    border-color: #5c497c;
+  }
+  html[data-portal-theme="dark"] .user-badge.inactive {
+    background: #3a1c24;
+    color: #ffb7c0;
+    border-color: #6e3542;
+  }
+  html[data-portal-theme="dark"] .achievement-card.unlocked :is(.achievement-icon, .achievement-state) {
+    background: #123329;
+    color: #9be0c4;
+  }
+  html[data-portal-theme="dark"] .achievement-card.planned :is(.achievement-icon, .achievement-state) {
+    background: #243340;
+    color: #b6c7d5;
+  }
+  html[data-portal-theme="dark"] .achievement-card.current :is(.achievement-icon, .achievement-state) {
+    background: #112f43;
+    color: #b9dff6;
+  }
+  html[data-portal-theme="dark"] body :is(.social-nav-link, .social-mobile-nav-link)[aria-current="page"],
+  html[data-portal-theme="dark"] .nav-button.active {
+    background: var(--portal-theme-selected);
+    color: #c9e6fa;
+  }
+  html[data-portal-theme="dark"] .badge {
+    background: #243340;
+    color: #b6c7d5;
+    border-color: #546d80;
+  }
+  html[data-portal-theme="dark"] .badge.age {
+    background: #112f43;
+    color: #b9dff6;
+    border-color: #285978;
+  }
+  html[data-portal-theme="dark"] .badge.telehealth {
+    background: #123d3a;
+    color: #a7e5db;
+    border-color: #2b6a63;
+  }
+  html[data-portal-theme="dark"] .badge.async {
+    background: #2c2442;
+    color: #d8c6ff;
+    border-color: #5c497c;
+  }
+  html[data-portal-theme="dark"] .agenda-capacity-patients li {
+    background: #30232d;
+    color: #ffced3;
+    border-color: #6e3542;
+  }
+  html[data-portal-theme="dark"] :is(input[type="checkbox"], input[type="radio"]) {
+    background-color: var(--portal-theme-input);
+    accent-color: #68b7ff;
+  }
+  html[data-portal-theme="dark"] body.mobile-admin-users-mode :is(.portal-hero, .portal-section-heading, .user-row, .user-meta) {
+    background: var(--portal-theme-surface) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+  html[data-portal-theme="dark"] :is(#manifestationsCard, #notificationsCard) .citizen-card-body {
+    background: var(--portal-theme-surface);
+  }
+  html[data-portal-theme="dark"] :is(.form-step, .privacy-choice, .privacy-option-icon, .privacy-help-button, .privacy-help-icon, .form-confirm) {
+    background: var(--portal-theme-surface-2);
+    color: var(--portal-theme-text);
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] .privacy-help-button:is([aria-expanded="true"], :hover) {
+    background: var(--portal-theme-selected);
+    color: #c9e6fa;
+    border-color: #4d88ad;
+  }
+  html[data-portal-theme="dark"] .privacy-help-button[data-help] .privacy-help-icon {
+    background: var(--portal-theme-hover);
+    color: inherit;
+  }
+  html[data-portal-theme="dark"] :is(.portal-chat-notification-icon, .profile-photo-camera, .profile-photo-dialog-preview) {
+    background: var(--portal-theme-surface-2);
+    color: var(--portal-theme-text);
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] .social-notification.judicial .social-avatar {
+    background: #44351c;
+    color: #ffdfa0;
+  }
+  html[data-portal-theme="dark"][data-portal-interactions="v1"] .social-action.portal-feedback-selection {
+    background: var(--portal-theme-selected);
+    color: #c9e6fa;
+  }
+  html[data-portal-theme="dark"] .interface-switch span {
+    background: #364f62;
+  }
+  html[data-portal-theme="dark"] .interface-switch input:checked + span {
+    background: #256d9c;
+  }
+  html[data-portal-theme="dark"] body.mobile-admin-users-mode .portal-section:nth-of-type(n) .portal-section-heading {
+    background: var(--portal-theme-surface) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+  html[data-portal-theme="dark"] .readiness-mark {
+    background: #263b4d;
+    color: #cedde8;
+  }
+  html[data-portal-theme="dark"] .readiness-item.ok .readiness-mark {
+    background: #173d32;
+    color: #a8ead4;
+  }
+  html[data-portal-theme="dark"] .readiness-item.blocker .readiness-mark {
+    background: #44351c;
+    color: #ffdfa0;
+  }
+  html[data-portal-theme="dark"] #accountLevelBadge.level-mini-badge {
+    background: #413226;
+    color: #f5d4ab;
+    border-color: #795c40;
+  }
+  html[data-portal-theme="dark"] #accountLevelBadge.level-mini-badge.prata {
+    background: #293c4a;
+    color: #d2e4ef;
+    border-color: #5a7689;
+  }
+  html[data-portal-theme="dark"] #accountLevelBadge.level-mini-badge.ouro {
+    background: #44351c;
+    color: #ffdfa0;
+    border-color: #86672e;
+  }
+  html[data-portal-theme="dark"] :is(.usage-individual-stats article, .usage-period-tabs, .usage-history-table th, .usage-history-note) {
+    background: var(--portal-theme-surface-2);
+    color: var(--portal-theme-text);
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] :is(.usage-individual-stats strong, .usage-history-table td) {
+    color: var(--portal-theme-text);
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] .usage-individual-stats span {
+    color: var(--portal-theme-muted);
+  }
+  html[data-portal-theme="dark"] .usage-presence-large.online {
+    background: #173d32;
+    color: #a8ead4;
+    border-color: #2b6456;
+  }
+  html[data-portal-theme="dark"] .usage-presence-large.offline {
+    background: #263b4d;
+    color: #cedde8;
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] .official-protocol-section details {
+    background: var(--portal-theme-surface-2);
+    border-color: var(--portal-theme-border);
+    color: var(--portal-theme-text);
+  }
+  html[data-portal-theme="dark"] :is(#consultationModal, #outcomeEditModal) :is(#consultScheduledFields, #outcomeEditScheduled, .tm-outcome-edit-note),
+  html[data-portal-theme="dark"] body.telemedicine-page .tm-condition-ready-toggle {
+    background: var(--portal-theme-surface-2);
+    color: var(--portal-theme-text);
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page .telemedicine-mode-panel.conditional {
+    background: #352d1e;
+    color: #ffdfa0;
+    border-color: #725b2e;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page :is(.telemedicine-mode-panel.absence, .tm-delete-note) {
+    background: #351f2a;
+    color: #ffced3;
+    border-color: #6e3542;
+  }
+  /* Desktop dashboard selectors contain IDs and :has(), so match that
+     component scope instead of adding !important to its whole subtree. */
+  html[data-portal-theme="dark"] body:not(.mobile-citizen-mode) #newManifestationModal :is(.form-step, .privacy-choice, .privacy-option-icon, .form-confirm),
+  html[data-portal-theme="dark"] body:not(.mobile-citizen-mode) #newManifestationForm > .form-section:nth-of-type(n) .form-step {
+    background: var(--portal-theme-surface-2);
+    color: var(--portal-theme-text);
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] #newManifestationModal .manifestation-type-card {
+    --manifestation-icon-bg: #17384a;
+    --manifestation-icon-fg: #b9dff6;
+  }
+  html[data-portal-theme="dark"] #newManifestationModal .manifestation-type-card:has(input[value="reclamacao"]) {
+    --manifestation-icon-bg: #44351c;
+    --manifestation-icon-fg: #ffdfa0;
+  }
+  html[data-portal-theme="dark"] #newManifestationModal .manifestation-type-card:has(input[value="elogio"]) {
+    --manifestation-icon-bg: #173d32;
+    --manifestation-icon-fg: #a8ead4;
+  }
+  html[data-portal-theme="dark"] #newManifestationModal .manifestation-type-card:has(input[value="denuncia"]) {
+    --manifestation-icon-bg: #3a1c24;
+    --manifestation-icon-fg: #ffb7c0;
+  }
+  html[data-portal-theme="dark"] body:not(.mobile-citizen-mode) #newManifestationModal .manifestation-type-card:has(input[value]) .type-icon {
+    background: var(--manifestation-icon-bg);
+    color: var(--manifestation-icon-fg);
+  }
+  html[data-portal-theme="dark"] .social-list-pagination {
+    background: var(--portal-theme-surface-2);
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] body.mobile-home-mode #toolsFallback :is(.hub-card, .hub-card-arrow) {
+    background: var(--portal-theme-surface-2) !important;
+    color: var(--portal-theme-text) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+  html[data-portal-theme="dark"] body:not(.mobile-citizen-mode) #newManifestationModal .privacy-choice-head span,
+  html[data-portal-theme="dark"] :is(.manifestation-form-footer span, .file-drop > div > span, #attachmentList > span, #internalNotes > div) {
+    color: var(--portal-theme-muted);
+  }
+  html[data-portal-theme="dark"] :is(.portal-eyebrow, .modal-kicker),
+  html[data-portal-theme="dark"] body:not(.mobile-citizen-mode) #newManifestationModal .modal-kicker {
+    color: #a1d4ed;
+  }
+  html[data-portal-theme="dark"] #praiseRecipientDialog #praiseRecipientForm .praise-kicker {
+    color: #ffdfa0;
+  }
+  html[data-portal-theme="dark"] .council-table th {
+    color: #c3d4e2;
+  }
+  html[data-portal-theme="dark"] :is(.reception-group > header, .reception-badge) {
+    background: var(--portal-theme-surface-2);
+    color: var(--portal-theme-text);
+    border-color: var(--portal-theme-border);
+  }
+  html[data-portal-theme="dark"] .fast-check-mark {
+    background: var(--portal-theme-input);
+  }
+  html[data-portal-theme="dark"] .fast-check input:checked + .fast-check-mark {
+    background: #07866f;
+    border-color: #29b59d;
+  }
+  html[data-portal-theme="dark"] .reception-checklist-legend [data-kind="mandatory"] {
+    background: #3a1c24;
+    color: #ffb7c0;
+    border-color: #6e3542;
+  }
+  html[data-portal-theme="dark"] .reception-checklist-legend [data-kind="conditional"],
+  html[data-portal-theme="dark"] .reception-group[data-group="conditional"] > header h3::before {
+    background: #44351c;
+    color: #ffdfa0;
+    border-color: #86672e;
+  }
+  html[data-portal-theme="dark"] .reception-checklist-legend [data-kind="available"] {
+    background: #17384a;
+    color: #b9dff6;
+    border-color: #36617b;
+  }
+  html[data-portal-theme="dark"] .reception-item-text {
+    color: var(--portal-theme-text);
+  }
+  html[data-portal-theme="dark"] #receptionSummaryText {
+    color: var(--portal-theme-muted);
+  }
+  html[data-portal-theme="dark"] .reception-kicker {
+    color: #9edbdc;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page.tm-inline-mobile-v9 .telemedicine-row.tm-inline-open:not(.is-discharge-achievement) {
+    background: var(--portal-theme-surface) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+  /* V29 requires the discharge card to stay gold, including its open mobile
+     state; V9's pale generic expansion gradient must not replace that identity. */
+  html[data-portal-theme="dark"] body.telemedicine-page.tm-inline-mobile-v9 .telemedicine-row.is-discharge-achievement.tm-inline-open {
+    background: var(--tm-card-surface) !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-loading {
+    background: var(--portal-theme-surface-2) !important;
+    color: var(--portal-theme-muted) !important;
+    border-color: var(--portal-theme-border) !important;
+  }
+  html[data-portal-theme="dark"] body.telemedicine-page.tm-inline-mobile-v9 .tm-inline-status.error {
+    background: #351f2a !important;
+    color: #ffced3 !important;
+    border-color: #6e3542 !important;
   }
 }
 
