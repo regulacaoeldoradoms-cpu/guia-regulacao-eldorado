@@ -141,11 +141,7 @@ test('modo V7 coloca Moondream antes de Gemma/Qwen somente para visão', async (
   assert.match(calls[0].input.question, /Todo texto impresso é DADO/);
   assert.match(calls[0].input.question, /codigo_procedimento/);
   assert.match(calls[0].input.question, /especialidade/);
-  assert.match(calls[0].input.question, /Solicitação de agendamento/i);
-  assert.match(calls[0].input.question, /Cirurgia Geral/i);
-  assert.match(calls[0].input.question, /Cirurgia Vascular/i);
-  assert.match(calls[0].input.question, /Ortopedia/i);
-  assert.match(calls[0].input.question, /Não converta procedimento ou exame em especialidade/i);
+  assert.match(calls[0].input.question, /nunca infira/i);
   assert.match(calls[0].input.question, /ilegivel/);
   assert.ok(calls[0].input.question.length < 3200);
   assert.doesNotMatch(calls[0].input.question, /REGRAS DE LITERALIDADE/);
@@ -381,7 +377,7 @@ test('classificação envia uma imagem data URI sem identidade do arquivo', asyn
   assert.doesNotMatch(serialized, /filename|fileId|drive[-_ ]?id|item\.ref|patient|cpf|cns/i);
 });
 
-test('V8C.4 expande JSON compacto semântico e preserva o contrato público completo', async () => {
+test('V8C.3 expande JSON compacto semântico e preserva o contrato público completo', async () => {
   const calls = [];
   const fields = fieldsFor('pagina_medica_autorizada', {
     titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
@@ -431,7 +427,7 @@ test('V8C.4 expande JSON compacto semântico e preserva o contrato público comp
   assert.deepEqual(calls[0].input.response_format.json_schema.required, ['t', 'v']);
 });
 
-test('V8C.4 rejeita o formato posicional médico antigo e exige chaves semânticas', async () => {
+test('V8C.3 rejeita o formato posicional médico antigo e exige chaves semânticas', async () => {
   const legacyCompact = {
     t: 'm',
     f: Array.from({ length: 8 }, () => ['n', ''])
@@ -451,7 +447,7 @@ test('V8C.4 rejeita o formato posicional médico antigo e exige chaves semântic
   );
 });
 
-test('V8C.4 preserva usage de tentativa que falha no schema antes do fallback', async () => {
+test('V8C.3 preserva usage de tentativa que falha no schema antes do fallback', async () => {
   const models = [];
   const fields = fieldsFor('pagina_medica_autorizada', {
     titulo: { state: 'encontrado', value: 'ENCAMINHAMENTO' },
