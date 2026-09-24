@@ -59,9 +59,9 @@ assert.equal(isDischargeAchievement({ source: 'manual', active: false, resolutio
 assert.equal(deriveFollowupStatus({ source: 'legacy', active: true, resolution: 'RETORNO COM 60 DIAS', notes: 'Regulação reagiu com 🏆' }, '2026-09-09'), 'CONCLUÍDO');
 
 const altasClient = fs.readFileSync(new URL('../../js/telemedicina-altas-v30.js', import.meta.url), 'utf8');
-assert.match(altasClient, /function isNonDischargeClosure\\(followup\\)/);
-assert.match(altasClient, /function isDischargeAchievement\\(followup\\)/);
+assert.match(altasClient, /function isNonDischargeClosure\(followup\)/);
+assert.match(altasClient, /function isDischargeAchievement\(followup\)/);
 assert.match(altasClient, /ABANDONO DE ACOMPANHAMENTO/);
-assert.match(altasClient, /isDischargeAchievement\\(followup\\).*followup\\.status === COMPLETED_STATUS/s);
+assert.match(altasClient, /isDischargeAchievement\(followup\).*followup\.status === COMPLETED_STATUS/s);
 
 console.log('Telemedicina Outcomes V25 + Altas históricas V32: OK');
