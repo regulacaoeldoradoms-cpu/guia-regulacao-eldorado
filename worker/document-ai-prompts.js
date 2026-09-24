@@ -92,15 +92,12 @@ REGRAS DA PÁGINA MÉDICA AUTORIZADA:
 - O motivo_encaminhamento deve transcrever EXATA E INTEGRALMENTE o campo "Motivo do encaminhamento", "Justificativa do procedimento" ou "Informações para solicitação do atendimento", quando houver.
 - Não resuma, reorganize, corrija ou interprete o motivo.
 - medico, crm_rms, procedimento_solicitado, codigo_procedimento, especialidade, cid e descricao_cid devem vir somente desta mesma página.
-- especialidade: use primeiro um valor explicitamente rotulado "Especialidade", "Especialidade solicitada" ou "Especialidade médica".
-- se não houver esse rótulo, a especialidade TAMBÉM pode ser definida pelo campo de solicitação da própria página ("Solicitação", "Solicitação de agendamento", "Solicitação médica" ou "Serviço solicitado") quando o valor solicitado for ele próprio o nome da especialidade/serviço especializado, por exemplo "Cirurgia Geral", "Cirurgia Vascular" ou "Ortopedia"; preserve literalmente o valor visível.
-- usar a solicitação dessa forma NÃO é inferência clínica: a fonte continua sendo o pedido explícito do documento.
-- não transforme um procedimento/exame em especialidade e não deduza especialidade por CID, diagnóstico, motivo, sintomas, título ou conhecimento externo; se a solicitação trouxer somente um procedimento/exame e não houver especialidade visível, use nao_consta.
+- especialidade deve ser transcrita somente quando houver rótulo explícito como "Especialidade", "Especialidade solicitada" ou "Especialidade médica"; nunca deduza a especialidade pelo procedimento, CID, título ou motivo.
 - Se receituário ou laudo não trouxer motivo, use nao_consta.
 - Se CRM/RMS, procedimento, código, CID ou descrição não estiverem visíveis, use nao_consta.
 - Se o campo estiver presente mas não puder ser lido com segurança, use ilegivel.
 `,
-  'v4'
+  'v3'
 );
 
 export const PROMPT_ANALISE_REGULACAO_V1 = routine(
@@ -173,9 +170,7 @@ PÁGINA MÉDICA AUTORIZADA:
 - retorne SOMENTE: medico, crm_rms, cid, codigo_procedimento, especialidade, motivo_encaminhamento, titulo, procedimento_solicitado, descricao_cid;
 - titulo: use primeiro um campo explicitamente rotulado "Título", se houver; senão use o título/cabeçalho visível que autorizou a página;
 - motivo_encaminhamento: transcreva EXATA E INTEGRALMENTE "Motivo do encaminhamento", "Justificativa do procedimento" ou "Informações para solicitação do atendimento", quando houver;
-- especialidade: use primeiro valor explicitamente rotulado "Especialidade", "Especialidade solicitada" ou "Especialidade médica";
-- se esse rótulo não existir, use o valor de "Solicitação", "Solicitação de agendamento", "Solicitação médica" ou "Serviço solicitado" quando o próprio valor for claramente a especialidade/serviço solicitado, como "Cirurgia Geral", "Cirurgia Vascular" ou "Ortopedia"; transcreva literalmente esse valor;
-- não converta nomes de procedimento/exame em especialidade e não deduza especialidade por CID, diagnóstico, motivo, sintomas, título ou conhecimento externo;
+- especialidade: transcreva somente valor explicitamente rotulado "Especialidade", "Especialidade solicitada" ou "Especialidade médica"; não deduza a especialidade por procedimento, CID, título, motivo ou conhecimento externo;
 - não resuma, reorganize, corrija ou interprete o motivo;
 - se receituário ou laudo não trouxer motivo, use nao_consta;
 - se CRM/RMS, procedimento, código, especialidade, CID ou descrição não existirem na página, use nao_consta;
@@ -187,7 +182,7 @@ Responda SOMENTE JSON:
 {"pageType":"...","fields":{...}}
 Não inclua pageNumber. A proveniência é definida pelo backend.
 `,
-  'v6'
+  'v5'
 );
 
 
@@ -216,7 +211,7 @@ export const PROMPT_ANALISE_REGULACAO_COMPACTA_V1 = routine(
   'PROMPT_ANALISE_REGULACAO_COMPACTA_V1',
   'Classificar e extrair uma única página em uma inferência com transporte interno compacto semântico e contrato público preservado.',
   PROMPT_ANALISE_REGULACAO_COMPACTA_SYSTEM,
-  'v6'
+  'v5'
 );
 
 export const PROMPT_DOCUMENT_CHAT_V1 = routine(
