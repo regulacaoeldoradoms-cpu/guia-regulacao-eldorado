@@ -3435,20 +3435,20 @@ A unidade é exclusivamente visual; a evidência do Worker é registrada apenas 
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
 | Subfase / objetivo atual | **7G.5 publicada; aguardando homologação visual do X/Fechar do Titon no modo escuro** |
-| Última ação concluída | PR **#473** mesclada em `dcdaae55`; GitHub Actions, Pages e Workers Builds concluíram com sucesso |
-| Branch atual | `docs/titon-dark-close-published-20260924` (somente registro pós-publicação) |
-| PR atual | #473 **mesclada**; PR documental deste registro a abrir |
-| Último commit funcional relevante | `dcdaae5502187193b1ff489b2f6c517991595378` |
-| Checks e testes | PR #473 **23/23 success**; pós-merge **23/23 GitHub Actions success**; GitHub Pages, Cloudflare Pages e Workers Builds **success** |
+| Última ação concluída | PR funcional **#473** e registro pós-publicação **#474** mesclados na `main` |
+| Branch atual | **nenhuma frente funcional aberta para 7G.5** |
+| PR atual | **nenhum PR aberto para 7G.5**; #473 e #474 mesclados |
+| Último commit funcional relevante | `dcdaae5502187193b1ff489b2f6c517991595378`; registro documental consolidado em `837b5d2a` |
+| Checks e testes | #473 **23/23 success**; pós-merge funcional **23/23 GitHub Actions success**; GitHub Pages, Cloudflare Pages e Workers Builds **success**; #474 **21/21 success** antes do merge |
 | Decisões tomadas | restaurar somente o `fechar.svg` do cabeçalho do visualizador no dark mode; modo claro e X internos preservados |
 | Justificativas | shorthand `background` do tema global apagava o asset; override local corrige com blast radius mínimo |
 | Alternativas descartadas | mudar tema global; reescrever HTML; converter asset para inline SVG |
 | Ações externas concluídas | publicação completa confirmada; Worker check reportou versão `550c3239-1d13-4eba-901f-01490ee0e0ba` |
-| Pendências e bloqueios | **homologação visual humana da 7G.5**; Telemedicina V42 mantém sua homologação humana separada |
+| Pendências e bloqueios | **somente homologação visual humana da 7G.5**; Telemedicina V42 mantém homologação humana separada |
 | Riscos conhecidos | conferir hover/foco/clique no X e ausência de regressão no modo claro |
 | Métricas / observabilidade | nenhuma telemetria nova |
 | Próxima ação exata | **Ctrl+F5 em /documentos/ no modo escuro → abrir PDF → confirmar X no cabeçalho → passar mouse/focar/clicar → verificar retorno à lista; depois conferir modo claro** |
-| Arquivos e fontes principais | Guia Mestre V1.1; merge #473 `dcdaae55`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
+| Arquivos e fontes principais | Guia Mestre V1.1; merges #473 `dcdaae55` e #474 `837b5d2a`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
 
 ## Histórico recuperável
 
