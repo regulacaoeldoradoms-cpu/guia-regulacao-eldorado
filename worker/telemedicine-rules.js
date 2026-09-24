@@ -153,7 +153,7 @@ export function reminderMetaFor(followup, today) {
 
 function isNonDischargeClosureResolution(value) {
   const resolution = normalizeText(value);
-  return /\\bDESISTIU\\b|\\bDESISTENCIA\\b|ABANDONO DO TRATAMENTO|ABANDONO DE ACOMPANHAMENTO|ENCAMINHAD[AO].*PRESENCIAL/.test(resolution);
+  return /\bDESISTIU\b|\bDESISTENCIA\b|ABANDONO DO TRATAMENTO|ABANDONO DE ACOMPANHAMENTO|ENCAMINHAD[AO].*PRESENCIAL/.test(resolution);
 }
 
 export function isDischargeAchievement(followup) {
