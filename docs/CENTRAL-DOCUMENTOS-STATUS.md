@@ -3402,42 +3402,53 @@ Os botões autorais `.documents-art-button` foram explicitamente excluídos para
 
 **Pendência:** homologação visual humana em produção. O aceite é as ferramentas internas do editor/rail ficarem claramente legíveis no tema escuro sem alterar os botões autorais.
 
-## Fase 7G.5 — restaurar X do visualizador Titon no modo escuro — EM BRANCH — 24/09/2026
+## Fase 7G.5 — restaurar X do visualizador Titon no modo escuro — PUBLICADA / AGUARDANDO HOMOLOGAÇÃO HUMANA — 24/09/2026
 
-Durante a homologação visual do Titon, foi confirmado que o botão **X / Fechar visualização** do cabeçalho desaparecia no modo escuro.
+A PR **#473** foi mesclada em `main` pelo commit **`dcdaae55`**.
 
-**Diagnóstico:** o botão usa `documents-close-viewer documents-art-button documents-art-close`. O tema global escuro aplica `background` diretamente a `.documents-close-viewer`; como `background` é shorthand, essa regra apaga o `background-image` de `fechar.svg`, mesmo que `.documents-art-close` tenha o asset declarado.
+**Problema corrigido:** o botão **X / Fechar visualização** do cabeçalho do Titon desaparecia no modo escuro.
 
-**Correção:** `css/documents.css` passa a restaurar explicitamente `fechar.svg` somente para `.documents-viewer-head .documents-close-viewer.documents-art-close` no modo escuro, com especificidade maior que a regra global. O modo claro e os botões de fechar internos do editor não são alterados.
+**Causa confirmada:** o botão usa `documents-close-viewer documents-art-button documents-art-close`. A regra global do tema escuro aplica o shorthand `background` a `.documents-close-viewer`, apagando também o `background-image` de `fechar.svg`.
 
-**Cache:** `documents.css?v=20260924-1`.
+**Correção publicada:** `css/documents.css` restaura explicitamente `fechar.svg` apenas para `.documents-viewer-head .documents-close-viewer.documents-art-close` no modo escuro, com especificidade superior à regra global. O modo claro e os botões X internos do editor não foram alterados.
 
-**Regressão:** teste dedicado em `worker/tests/documents-ui.test.mjs` exige o X no HTML, o override escuro do `fechar.svg` e o novo cache-buster.
+**Cache publicado:** `documents.css?v=20260924-1`.
 
-**Escopo:** correção exclusivamente visual. Não altera JavaScript, Worker, Drive, IA, permissões ou observabilidade.
+**Validação:**
+- head final da PR #473 (`c960626a`): **23/23 GitHub Actions success**, incluindo Chromium/PDF.js real;
+- Cloudflare Pages preview da PR: **success**;
+- pós-merge `dcdaae55`: **23/23 GitHub Actions success**;
+- GitHub Pages `deploy`: **success**;
+- Cloudflare Pages: **success**;
+- Workers Builds: **success**;
+- Worker Version observada na cadeia geral de publicação: `550c3239-1d13-4eba-901f-01490ee0e0ba`.
 
-Branch: `fix/titon-dark-close-button-20260924`. A homologação humana pendente da Telemedicina V42 continua separada e não é reaberta por esta correção da Central.
+A unidade é exclusivamente visual; a evidência do Worker é registrada apenas para demonstrar integridade da cadeia de publicação.
+
+**Privacidade/segurança:** nenhuma alteração em JavaScript, API, Drive, IA, permissões ou observabilidade.
+
+**Pendência:** homologação visual humana em produção: confirmar que o X reaparece no modo escuro, responde a hover/foco/clique e que o modo claro continua intacto. A homologação humana da Telemedicina V42 permanece separada e pendente.
 
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.5 — restaurar X/Fechar do visualizador Titon no modo escuro** |
-| Última ação concluída | causa CSS confirmada; override do `fechar.svg`, cache-buster e teste de regressão preparados |
-| Branch atual | `fix/titon-dark-close-button-20260924` |
-| PR atual | **ainda não aberta** |
-| Último commit relevante | será o commit funcional desta branch |
-| Checks e testes | regressão adicionada; CI ainda precisa rodar na PR |
-| Decisões tomadas | corrigir apenas o X do cabeçalho do visualizador, sem recolorir/alterar os X internos que já funcionam |
-| Justificativas | o shorthand `background` do tema global apaga o asset do botão específico `.documents-close-viewer`; override local minimiza blast radius |
-| Alternativas descartadas | alterar o tema global; trocar o HTML do botão; converter `fechar.svg` em conteúdo inline |
-| Ações externas concluídas | nenhuma |
-| Pendências e bloqueios | abrir PR → CI → merge → publicação → homologação visual em produção; Telemedicina V42 mantém homologação humana separada |
-| Riscos conhecidos | confirmar X normal/hover/foco no modo escuro e ausência de regressão no modo claro |
+| Subfase / objetivo atual | **7G.5 publicada; aguardando homologação visual do X/Fechar do Titon no modo escuro** |
+| Última ação concluída | PR **#473** mesclada em `dcdaae55`; GitHub Actions, Pages e Workers Builds concluíram com sucesso |
+| Branch atual | `docs/titon-dark-close-published-20260924` (somente registro pós-publicação) |
+| PR atual | #473 **mesclada**; PR documental deste registro a abrir |
+| Último commit funcional relevante | `dcdaae5502187193b1ff489b2f6c517991595378` |
+| Checks e testes | PR #473 **23/23 success**; pós-merge **23/23 GitHub Actions success**; GitHub Pages, Cloudflare Pages e Workers Builds **success** |
+| Decisões tomadas | restaurar somente o `fechar.svg` do cabeçalho do visualizador no dark mode; modo claro e X internos preservados |
+| Justificativas | shorthand `background` do tema global apagava o asset; override local corrige com blast radius mínimo |
+| Alternativas descartadas | mudar tema global; reescrever HTML; converter asset para inline SVG |
+| Ações externas concluídas | publicação completa confirmada; Worker check reportou versão `550c3239-1d13-4eba-901f-01490ee0e0ba` |
+| Pendências e bloqueios | **homologação visual humana da 7G.5**; Telemedicina V42 mantém sua homologação humana separada |
+| Riscos conhecidos | conferir hover/foco/clique no X e ausência de regressão no modo claro |
 | Métricas / observabilidade | nenhuma telemetria nova |
-| Próxima ação exata | **abrir PR da 7G.5, exigir CI verde, mesclar e validar em produção o X do visualizador no modo escuro** |
-| Arquivos e fontes principais | Guia Mestre V1.1; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
+| Próxima ação exata | **Ctrl+F5 em /documentos/ no modo escuro → abrir PDF → confirmar X no cabeçalho → passar mouse/focar/clicar → verificar retorno à lista; depois conferir modo claro** |
+| Arquivos e fontes principais | Guia Mestre V1.1; merge #473 `dcdaae55`; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
 
 ## Histórico recuperável
 
