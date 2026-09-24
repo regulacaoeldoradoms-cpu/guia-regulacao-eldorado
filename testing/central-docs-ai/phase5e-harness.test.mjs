@@ -73,8 +73,7 @@ test('matriz 5E valida os oito campos cadastrais e os nove campos médicos autor
   assert.match(js, /data_nascimento: \['encontrado', '01\/01\/2000'\]/);
   assert.match(js, /agente: \['encontrado', 'AGENTE SINTÉTICO A'\]/);
   assert.match(js, /codigo_procedimento: \['encontrado', '000001'\]/);
-  assert.match(js, /\['Solicitação', 'CIRURGIA VASCULAR'\]/);
-  assert.match(js, /especialidade: \['encontrado', 'CIRURGIA VASCULAR'\]/);
+  assert.match(js, /especialidade: \['encontrado', 'CARDIOLOGIA SINTÉTICA'\]/);
   assert.match(js, /especialidade: \['nao_consta', ''\]/);
   assert.match(js, /descricao_cid: \['encontrado', 'DESCRIÇÃO SINTÉTICA BETA'\]/);
   assert.match(js, /codigo_procedimento: \['nao_consta', ''\]/);

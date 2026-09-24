@@ -7,7 +7,7 @@ import {
 } from './document-ai-prompts.js';
 
 export const DOCUMENT_AI_PHASE = '5E';
-export const DOCUMENT_AI_VERSION = 'phase5e-v8c4-specialty-from-request';
+export const DOCUMENT_AI_VERSION = 'phase5e-v8c3-specialty-order';
 const DOCUMENT_AI_RUNTIME_READY = true;
 
 export const TITON_GEMINI_DEFAULT_MODEL = 'gemini-3.5-flash-lite';
