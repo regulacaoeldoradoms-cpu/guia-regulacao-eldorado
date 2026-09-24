@@ -3402,26 +3402,42 @@ Os botões autorais `.documents-art-button` foram explicitamente excluídos para
 
 **Pendência:** homologação visual humana em produção. O aceite é as ferramentas internas do editor/rail ficarem claramente legíveis no tema escuro sem alterar os botões autorais.
 
+## Fase 7G.5 — restaurar X do visualizador Titon no modo escuro — EM BRANCH — 24/09/2026
+
+Durante a homologação visual do Titon, foi confirmado que o botão **X / Fechar visualização** do cabeçalho desaparecia no modo escuro.
+
+**Diagnóstico:** o botão usa `documents-close-viewer documents-art-button documents-art-close`. O tema global escuro aplica `background` diretamente a `.documents-close-viewer`; como `background` é shorthand, essa regra apaga o `background-image` de `fechar.svg`, mesmo que `.documents-art-close` tenha o asset declarado.
+
+**Correção:** `css/documents.css` passa a restaurar explicitamente `fechar.svg` somente para `.documents-viewer-head .documents-close-viewer.documents-art-close` no modo escuro, com especificidade maior que a regra global. O modo claro e os botões de fechar internos do editor não são alterados.
+
+**Cache:** `documents.css?v=20260924-1`.
+
+**Regressão:** teste dedicado em `worker/tests/documents-ui.test.mjs` exige o X no HTML, o override escuro do `fechar.svg` e o novo cache-buster.
+
+**Escopo:** correção exclusivamente visual. Não altera JavaScript, Worker, Drive, IA, permissões ou observabilidade.
+
+Branch: `fix/titon-dark-close-button-20260924`. A homologação humana pendente da Telemedicina V42 continua separada e não é reaberta por esta correção da Central.
+
 ## Handoff para o próximo chat
 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **mudança transversal Telemedicina V42 — motivo opcional da desistência integrada; homologação humana pendente** |
-| Última ação concluída | PR #471 mesclada na `main` com o motivo opcional preservado no histórico |
-| Branch atual | `docs/telemedicina-v42-merge-status-20260924` |
-| PR atual | **#472 — registro pós-merge; integrar após CI verde** |
-| Último commit relevante | merge funcional `0a06421b8f33487bc3e947fce585bc6a2a865bea` |
-| Checks e testes | PR #471 head final `4ce349c5`: **48/48 success**; PR documental #472 head inicial `1757bfe8`: **21/21 success** |
-| Decisões tomadas | reaproveitar `notes`; campo opcional; preservar motivo somente na desistência; exibir como **Motivo:** no histórico |
-| Justificativas | evita migração/schema novo e corrige os dois pontos que apagavam o texto — adaptador V25 e salvamento atômico V29 |
-| Alternativas descartadas | criar coleção/campo persistente novo `withdrawalReason`; tornar o motivo obrigatório |
-| Ações externas concluídas | merge #471 concluído; nenhum segredo, OAuth ou permissão alterado |
-| Pendências e bloqueios | integrar a PR documental #472; homologar produção desktop/mobile com uma desistência vazia e outra preenchida; push/deploy pós-merge não ficou visível pelo conector atual |
-| Riscos conhecidos | não reintroduzir limpeza do `notes` na desistência; alta normal deve continuar limpando observação; conteúdo do motivo nunca deve ir ao PostHog |
-| Métricas / observabilidade | nenhuma telemetria nova; motivo de desistência permanece fora do PostHog |
-| Próxima ação exata | **após integrar #472: Ctrl+F5 em /telemedicina/ → testar Desistiu sem/com motivo → conferir o histórico e depois o mobile** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #471; merge `0a06421b`; `js/telemedicina-absence-v24.js`; `worker/telemedicine-router-v2.js`; `worker/telemedicine.js`; teste/workflow V42; `docs/TELEMEDICINA-MOTIVO-DESISTENCIA-V42.md`; status |
+| Subfase / objetivo atual | **7G.5 — restaurar X/Fechar do visualizador Titon no modo escuro** |
+| Última ação concluída | causa CSS confirmada; override do `fechar.svg`, cache-buster e teste de regressão preparados |
+| Branch atual | `fix/titon-dark-close-button-20260924` |
+| PR atual | **ainda não aberta** |
+| Último commit relevante | será o commit funcional desta branch |
+| Checks e testes | regressão adicionada; CI ainda precisa rodar na PR |
+| Decisões tomadas | corrigir apenas o X do cabeçalho do visualizador, sem recolorir/alterar os X internos que já funcionam |
+| Justificativas | o shorthand `background` do tema global apaga o asset do botão específico `.documents-close-viewer`; override local minimiza blast radius |
+| Alternativas descartadas | alterar o tema global; trocar o HTML do botão; converter `fechar.svg` em conteúdo inline |
+| Ações externas concluídas | nenhuma |
+| Pendências e bloqueios | abrir PR → CI → merge → publicação → homologação visual em produção; Telemedicina V42 mantém homologação humana separada |
+| Riscos conhecidos | confirmar X normal/hover/foco no modo escuro e ausência de regressão no modo claro |
+| Métricas / observabilidade | nenhuma telemetria nova |
+| Próxima ação exata | **abrir PR da 7G.5, exigir CI verde, mesclar e validar em produção o X do visualizador no modo escuro** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `css/documents.css`; `documentos/index.html`; `worker/tests/documents-ui.test.mjs`; status |
 
 ## Histórico recuperável
 
