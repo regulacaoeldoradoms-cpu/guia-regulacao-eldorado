@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 const { PNG }=createRequire(import.meta.url)('playwright-core/lib/utilsBundle');
 const baselineSources=new Map();
+const AUDIT_RESET_PATH='/__portal_dark_audit_reset__.css';
+const AUDIT_RESET_CSS='html{scroll-behavior:auto!important}*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}';
 
 // Chromium rasterization can change one channel by one unit at a rounded edge.
 // This bound is absolute (not a percentage) and never relaxes computed/layout checks.
@@ -50,18 +52,23 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     // Capture each source from the same deterministic resting state. This does
     // not relax pixel acceptance: it removes scroll restoration, focus/hover
     // residue and live CSS motion that are unrelated to the source comparison.
-    await targetPage.addStyleTag({content:'html{scroll-behavior:auto!important}*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}'});
-    await targetPage.evaluate(async()=>{
-      window.scrollTo(0,0);
-      for(const el of document.querySelectorAll('*')){
-        if(el.scrollTop)el.scrollTop=0;
-        if(el.scrollLeft)el.scrollLeft=0;
-      }
-      if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
-      await document.fonts.ready;
-    });
-    await targetPage.mouse.move(-100,-100);
-    await targetPage.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    // Strict CSP pages must stay strict during the audit. Load the synthetic
+    // stabilization CSS from the same origin instead of injecting inline CSS.
+    await targetPage.addStyleTag({url:AUDIT_RESET_PATH});
+    const resetRestingState=async()=>{
+      await targetPage.evaluate(async()=>{
+        if(document.activeElement instanceof HTMLElement)document.activeElement.blur();
+        window.scrollTo(0,0);
+        for(const el of document.querySelectorAll('*')){
+          if(el.scrollTop)el.scrollTop=0;
+          if(el.scrollLeft)el.scrollLeft=0;
+        }
+        await document.fonts.ready;
+      });
+      await targetPage.mouse.move(-100,-100);
+      await targetPage.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    };
+    await resetRestingState();
     await targetPage.waitForTimeout(350);
     // Full-page capture itself can settle native font metrics/compositor layers.
     // The Linux artifact proved identical admin PNGs with different pre-capture
@@ -71,7 +78,11 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     const captures=[];
     let report=firstReport,screenshot,previousScreenshot,previousSnapshot;
     for(let attempt=1;attempt<=5;attempt++){
+      // Chromium full-page capture can leave very tall mobile documents at an
+      // internal scroll offset. Normalize on both sides of every PNG capture.
+      await resetRestingState();
       screenshot=await targetPage.screenshot({fullPage:true,animations:'disabled',caret:'hide'});
+      await resetRestingState();
       report=await inspectSurfaces(targetPage);
       const snapshot=JSON.stringify(report.snapshot);
       const pngStable=previousScreenshot?.equals(screenshot)||false;
@@ -99,6 +110,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
   const fulfilledCurrent=new Set(),fulfilledBase=new Set();
   const handler=async request=>{
     const pathname=decodeURIComponent(new URL(request.request().url()).pathname);
+    if(pathname===AUDIT_RESET_PATH)return request.fulfill({contentType:'text/css',body:AUDIT_RESET_CSS});
     const name=pathname==='/'?'index.html':pathname.replace(/^\//,'').replace(/\/$/,'/index.html');
     if(!assets.has(name))return request.fallback();
     (assets===working?fulfilledCurrent:fulfilledBase).add(name);
