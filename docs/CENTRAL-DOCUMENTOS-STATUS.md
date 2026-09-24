@@ -3,7 +3,7 @@
 Última atualização: 24/09/2026.
 
 
-## Fase 7G.6 — line-art branca com fundo transparente no Titon escuro — PUBLICADA / AGUARDANDO HOMOLOGAÇÃO HUMANA — 24/09/2026
+## Fase 7G.6 — line-art branca com fundo transparente no Titon escuro — HOMOLOGADA E ENCERRADA — 24/09/2026
 
 Pedido aprovado na homologação visual: remover as placas claras dos controles do Titon no modo escuro e manter o **fundo transparente**, convertendo a line-art escura dos ícones para **branco**. O objetivo é preservar o aspecto leve dos controles sobre o fundo navy, sem alterar o modo claro.
 
@@ -43,9 +43,9 @@ Alternativas descartadas:
 - **editar os assets compartilhados do modo claro**: descartado para evitar regressão visual no tema claro;
 - **manter as placas claras da 7G.4**: descartado após reprovação visual humana.
 
-Estado: implementação e publicação técnica concluídas. Resta somente a **homologação visual humana**.
+Estado: implementação, publicação técnica e **homologação visual humana concluídas**. O operador aprovou o resultado em produção como “ótimo, perfeito”; a 7G.6 está encerrada.
 
-**Próxima ação exata:** em produção, executar Ctrl+F5 em `/documentos/` no modo escuro, abrir um PDF e conferir Zoom −/+, percentual de zoom, Ajustar largura, Grade, ferramentas do editor, rail lateral e X. O aceite é: fundo normal transparente, line-art branca e feedback de hover/foco/ativo visível sem placa clara. Depois conferir rapidamente o modo claro.
+Próxima frente possível, ainda não iniciada: uma **auditoria final transversal do modo escuro** em todas as rotas/superfícies do Portal para localizar resíduos claros herdados de CSS antigo e encerrar definitivamente essa frente visual. Essa auditoria deve ocorrer em branch/PR isolada, sem alterar backend, permissões, dados, regras de negócio ou observabilidade, e só deve ser iniciada após autorização explícita.
 
 ## Mudança transversal — Telemedicina V42: motivo opcional da desistência — INTEGRADA À MAIN; HOMOLOGAÇÃO HUMANA PENDENTE — 24/09/2026
 
@@ -3478,21 +3478,21 @@ A unidade é exclusivamente visual; a evidência do Worker é registrada apenas 
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.6 publicada; aguardando homologação visual humana do Titon escuro transparente** |
-| Última ação concluída | PR funcional **#476** e registro pós-publicação **#477** mesclados; publicação técnica confirmada |
-| Branch atual | **nenhuma frente funcional aberta para 7G.6** |
-| PR atual | **nenhum PR aberto para 7G.6**; #476 e #477 mesclados |
-| Último commit funcional relevante | funcional `2802ae45fbec29624cc6f3ba01c3ac0ad25ba6e9`; registro documental consolidado no merge `292dc8d403e27d416b73a77ff320e86cdf3520b1` |
-| Checks e testes | #476 **23/23 success**; pós-merge funcional **23/23 push success**; GitHub Pages, Cloudflare Pages e Workers Builds **success**; #477 **21/21 success** antes do merge |
-| Decisões tomadas | dark mode: controles de navegação/ferramentas transparentes com line-art branca; Salvar/Imprimir azuis e estados do Drive preservados; modo claro inalterado |
-| Justificativas | SVGs autorais possuem placa própria; variantes dark sem placa evitam recolorir o fundo e preservam o desenho leve solicitado |
-| Alternativas descartadas | filtro no SVG completo; editar assets compartilhados do modo claro; manter placas claras da 7G.4 |
-| Ações externas concluídas | publicação técnica confirmada pelos checks de Pages/Workers |
-| Pendências e bloqueios | **somente homologação visual humana da 7G.6**; nenhuma pendência técnica conhecida |
-| Riscos conhecidos | observar artefatos nos PNGs filtrados, legibilidade de hover/foco/ativo e ausência de regressão no modo claro |
+| Subfase / objetivo atual | **7G.6 homologada e encerrada; sem frente funcional aberta neste momento** |
+| Última ação concluída | Homologação visual humana aprovada em produção: line-art branca + fundo transparente no Titon escuro |
+| Branch atual | **nenhuma frente funcional aberta**; branch documental apenas para registrar a homologação |
+| PR atual | **nenhum PR funcional aberto** |
+| Último commit funcional relevante | funcional `2802ae45fbec29624cc6f3ba01c3ac0ad25ba6e9`; handoff anterior em `4b4a5167` |
+| Checks e testes | #476 **23/23 success**; pós-merge funcional **23/23 push success**; GitHub Pages, Cloudflare Pages e Workers Builds **success** |
+| Decisões tomadas | 7G.6 aprovada e encerrada; fundo transparente + line-art branca passa a ser o baseline visual do Titon no dark mode |
+| Justificativas | resultado visual aprovado em produção; nenhuma regressão técnica conhecida |
+| Alternativas descartadas | reabrir a 7G.6 sem evidência de regressão |
+| Ações externas concluídas | homologação humana em produção |
+| Pendências e bloqueios | nenhuma pendência da 7G.6 |
+| Riscos conhecidos | resíduos claros podem ainda existir em outras superfícies do Portal fora do Titon; tratar somente em auditoria transversal separada |
 | Métricas / observabilidade | nenhuma telemetria nova |
-| Próxima ação exata | **Ctrl+F5 em /documentos/ → modo escuro → abrir PDF → validar controles transparentes/line-art branca → conferir modo claro** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #476; merge `2802ae45`; `css/documents.css`; `documentos/index.html`; `assets/editor-pdf-buttons/*-dark.svg`; `worker/tests/documents-ui.test.mjs`; status |
+| Próxima ação exata | **aguardar decisão sobre iniciar uma auditoria final transversal do modo escuro em branch/PR separada** |
+| Arquivos e fontes principais | Guia Mestre V1.1; PR #476; merge `2802ae45`; `css/documents.css`; `css/portal-interactions.css`; status |
 
 ## Histórico recuperável
 
