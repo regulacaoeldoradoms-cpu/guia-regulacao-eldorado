@@ -39,6 +39,21 @@
     target.className = className;
   }
 
+  function configureWithdrawalNotes(container, label, textarea, withdrawn) {
+    if (!container || !label || !textarea) return;
+    setLabelText(label, withdrawn ? 'Motivo da desistência' : 'Observação operacional');
+    textarea.placeholder = withdrawn ? 'Informe o motivo, se desejar' : 'Opcional';
+
+    let hint = container.querySelector('[data-tm-withdrawal-help]');
+    if (!hint) {
+      hint = document.createElement('small');
+      hint.dataset.tmWithdrawalHelp = '';
+      hint.textContent = 'Opcional. Este motivo ficará registrado no histórico.';
+      container.appendChild(hint);
+    }
+    hint.hidden = !withdrawn;
+  }
+
   function safeJsonBody(options) {
     if (!options || typeof options.body !== 'string') return null;
     try { return JSON.parse(options.body); } catch (_) { return null; }
@@ -62,8 +77,7 @@
               returnDays: 0,
               returnDueDate: '',
               conditionType: '',
-              conditionDetail: '',
-              notes: ''
+              conditionDetail: ''
             });
           } else if (mode === IN_PERSON_MODE) {
             Object.assign(body, {
@@ -142,6 +156,7 @@
     if (!form) return;
     const mode = desktopMode(form);
     const absence = mode === ABSENCE_MODE;
+    const withdrawn = mode === WITHDRAWN_MODE;
     const conditional = mode === 'conditional';
     const closed = isClosedMode(mode);
     const fields = document.getElementById('consultFollowupFields');
@@ -150,6 +165,8 @@
     const absencePanel = document.getElementById('consultAbsenceFields');
     const reason = document.getElementById('consultAbsenceReason');
     const notesField = form.querySelector('.telemedicine-notes-field');
+    const notesInput = document.getElementById('consultNotes');
+    const notesLabel = notesField?.querySelector('label');
     const preview = document.getElementById('consultPreview');
     const dateLabel = form.querySelector('label[for="consultDate"]');
     const detailInput = document.getElementById('consultConditionDetail');
@@ -163,13 +180,14 @@
     if (reason) reason.required = absence;
 
     if (fields) {
-      const hideAll = closed && !absence;
+      const hideAll = closed && !absence && !withdrawn;
       fields.hidden = hideAll;
       fields.setAttribute('aria-hidden', hideAll ? 'true' : 'false');
     }
     if (scheduled) scheduled.hidden = mode !== 'scheduled';
     if (conditionalPanel) conditionalPanel.hidden = !conditional;
-    if (notesField) notesField.hidden = closed || absence;
+    if (notesField) notesField.hidden = (closed && !withdrawn) || absence;
+    configureWithdrawalNotes(notesField, notesLabel, notesInput, withdrawn);
     if (preview) preview.hidden = closed || absence;
 
     if (!conditional) setReadyState(readyButton, detailInput, false);
@@ -186,10 +204,9 @@
     if (closed) {
       const returnDays = document.getElementById('consultReturnDays');
       const returnDate = document.getElementById('consultReturnDate');
-      const notes = document.getElementById('consultNotes');
       if (returnDays) returnDays.value = '';
       if (returnDate) returnDate.value = '';
-      if (notes) notes.value = '';
+      if (!withdrawn && notesInput) notesInput.value = '';
       setReadyState(readyButton, detailInput, false);
       return;
     }
@@ -310,10 +327,13 @@
     if (!form) return;
     const mode = mobileMode(form);
     const absence = mode === ABSENCE_MODE;
+    const withdrawn = mode === WITHDRAWN_MODE;
     const conditional = mode === 'conditional';
     const closed = isClosedMode(mode);
     const absenceField = form.querySelector('[data-tm-absence-field]');
     const absenceReason = form.elements.absenceReason;
+    const notesField = form.elements.notes?.closest('label');
+    const notesInput = form.elements.notes;
     const dateLabel = form.elements.consultationDate?.closest('label');
     const detailInput = form.elements.conditionDetail;
     const readyButton = form.querySelector('.tm-condition-ready-toggle');
@@ -334,8 +354,10 @@
       field.hidden = !conditional;
       field.setAttribute('aria-hidden', conditional ? 'false' : 'true');
     });
+    configureWithdrawalNotes(notesField, notesField, notesInput, withdrawn);
     form.querySelectorAll('[data-tm-active-field]').forEach((field) => {
-      const hide = closed || absence;
+      const keepWithdrawalReason = withdrawn && field === notesField;
+      const hide = absence || (closed && !keepWithdrawalReason);
       field.hidden = hide;
       field.setAttribute('aria-hidden', hide ? 'true' : 'false');
     });
@@ -517,6 +539,8 @@
         if (detailLabel && detailLabel.textContent !== 'Justificativa:') detailLabel.textContent = 'Justificativa:';
       } else if (resolution === WITHDRAWN_RESOLUTION) {
         if (title && title.textContent !== 'Desistência registrada') title.textContent = 'Desistência registrada';
+        const detailLabel = paragraphs[1]?.querySelector('strong');
+        if (detailLabel && detailLabel.textContent !== 'Motivo:') detailLabel.textContent = 'Motivo:';
       } else if (resolution === IN_PERSON_RESOLUTION) {
         if (title && title.textContent !== 'Encaminhado para presencial') title.textContent = 'Encaminhado para presencial';
       } else if (/\bRETORNO APOS\b.*\bJA REALIZADO\b/.test(resolution)) {

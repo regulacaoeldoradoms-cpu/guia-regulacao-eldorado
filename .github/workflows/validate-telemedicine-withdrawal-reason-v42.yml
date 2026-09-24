@@ -1,0 +1,42 @@
+name: Validar Telemedicina Motivo da Desistência V42
+
+on:
+  pull_request:
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-absence-v24.js'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-mobile-v9.js'
+      - 'worker/telemedicine.js'
+      - 'worker/telemedicine-router-v2.js'
+      - 'worker/tests/telemedicine-withdrawal-reason-v42.test.mjs'
+      - 'docs/TELEMEDICINA-MOTIVO-DESISTENCIA-V42.md'
+      - '.github/workflows/validate-telemedicine-withdrawal-reason-v42.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'telemedicina/index.html'
+      - 'js/telemedicina-absence-v24.js'
+      - 'js/telemedicina.js'
+      - 'js/telemedicina-mobile-v9.js'
+      - 'worker/telemedicine.js'
+      - 'worker/telemedicine-router-v2.js'
+      - 'worker/tests/telemedicine-withdrawal-reason-v42.test.mjs'
+      - 'docs/TELEMEDICINA-MOTIVO-DESISTENCIA-V42.md'
+      - '.github/workflows/validate-telemedicine-withdrawal-reason-v42.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Conferir sintaxe
+        run: |
+          node --check js/telemedicina-absence-v24.js
+          node --input-type=module --check < worker/telemedicine.js
+          node --input-type=module --check < worker/telemedicine-router-v2.js
+      - name: Conferir contrato V42
+        run: node worker/tests/telemedicine-withdrawal-reason-v42.test.mjs

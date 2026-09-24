@@ -41,5 +41,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -q 'telemedicina-absence-v24.js?v=20260908-2' telemedicina/index.html
+          grep -q 'telemedicina-absence-v24.js?v=20260924-1' telemedicina/index.html
           grep -q 'data-outcomes-record="v25"' telemedicina/index.html

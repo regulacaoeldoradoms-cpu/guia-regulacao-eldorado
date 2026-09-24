@@ -2,6 +2,46 @@
 
 Última atualização: 24/09/2026.
 
+
+## Mudança transversal — Telemedicina V42: motivo opcional da desistência — CI APROVADO; PR #471 PRONTA PARA MERGE — 24/09/2026
+
+Pedido operacional: em `/telemedicina/`, ao registrar uma consulta com o resultado **Desistiu**, deve existir uma caixa de texto para registrar o **motivo da desistência**, com preenchimento opcional.
+
+Diagnóstico do estado real:
+- a camada V25 já possuía o desfecho **Desistiu**, com conduta canônica `PACIENTE DESISTIU DO TRATAMENTO`;
+- desktop e mobile já enviavam o campo genérico `notes`, porém a interface o ocultava nos desfechos encerrados;
+- o adaptador V25 apagava `notes` ao converter a desistência para o contrato de encerramento;
+- o salvamento atômico V29 também limpava `notes` sempre que `discharged=true`, portanto apenas mostrar um textarea não seria suficiente para realmente preservar o motivo.
+
+Implementação preparada na branch `feat/telemedicina-motivo-desistencia-v42-20260924` a partir da `main` `601ad4d2b367307aa868d82e1ff8a1f92e6bb398`:
+- ao selecionar **Desistiu**, o campo de observação é reaproveitado e apresentado como **Motivo da desistência**;
+- o campo permanece **opcional** no desktop e no fluxo mobile;
+- o texto informado é preservado no campo funcional já existente `notes`, sem migração, nova coleção ou alteração destrutiva;
+- o adaptador V25 deixa de zerar `notes` somente na desistência;
+- os dois caminhos de backend — legado e salvamento atômico V29 — preservam `notes` quando a resolução é a desistência canônica, mantendo a limpeza normal para **Alta do episódio**;
+- no histórico longitudinal, a observação da desistência passa a ser apresentada como **Motivo:**;
+- retorno, alertas e lembretes continuam desabilitados para desistência;
+- cache-buster de `telemedicina-absence-v24.js` atualizado para `20260924-1` e marcador `data-withdrawal-reason="v42"` adicionado;
+- contratos antigos de CI que fixavam o cache-buster anterior foram alinhados sem alterar as regras V24/V25/V26.
+
+Validação preparada:
+- novo teste de regressão `worker/tests/telemedicine-withdrawal-reason-v42.test.mjs`;
+- novo workflow `Validar Telemedicina Motivo da Desistência V42`;
+- o teste cobre desktop, mobile, adaptador V25, Worker legado, Worker atômico, histórico e versionamento do asset;
+- os workflows antigos V24/V25/V26 continuarão sendo executados porque os arquivos compartilhados foram alterados.
+
+Privacidade/observabilidade: o motivo pode conter informação clínica/operacional e permanece somente no armazenamento funcional autorizado da Telemedicina. **Nenhum conteúdo do motivo é enviado ao PostHog** e nenhuma permissão foi ampliada.
+
+Alternativa descartada: criar um novo campo/coleção exclusivo `withdrawalReason`. Motivo: o histórico já possui `notes` para texto contextual; reutilizá-lo reduz risco de migração e mantém compatibilidade, desde que a interface e o histórico deem semântica explícita de **Motivo**.
+
+Head funcional antes deste registro documental: `37ba16504f29f754ebf9921a0226609fefc9455f`.
+
+PR aberta: **#471 — Telemedicina: registrar motivo opcional da desistência V42**.
+
+No head `17c7d57cc50953252f6cc72ae154881aaea6e21a`, a matriz da PR concluiu **48/48 workflows GitHub Actions com success**, incluindo o novo **Validar Telemedicina Motivo da Desistência V42**, V24/V25/V26, salvamento atômico V29, formulário, mobile, histórico, acesso, site e governança.
+
+**Próxima ação exata:** integrar a PR #471 → confirmar os checks/deploy pós-merge → homologar em produção uma desistência **sem motivo** e outra **com motivo**, conferindo o histórico em desktop e mobile.
+
 ## Fase 7H — ordem operacional da IA documental + Especialidade — PUBLICADA TECNICAMENTE; HOMOLOGAÇÃO HUMANA PENDENTE — 23/09/2026
 
 Pedido aprovado: os dados extraídos no Titon devem priorizar a sequência operacional **Nome do paciente → CNS → CPF → Data de nascimento → Telefone → Nome da mãe → Endereço → Nome do(a) médico(a) → CRM / RMS → Agente → CID → Código do procedimento → Especialidade → Motivo do encaminhamento**.
@@ -3352,21 +3392,21 @@ Os botões autorais `.documents-art-button` foram explicitamente excluídos para
 | Campo | Estado |
 | --- | --- |
 | Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7H retomada no comportamento anterior; 7H.1 rejeitada e revertida** |
-| Última ação concluída | rollback da PR #467 integrado e publicado pela PR #469 |
-| Branch atual | **nenhuma** |
-| PR atual | **nenhum** |
-| Último commit relevante | rollback funcional `d844f48ca0428610cc648caca7324a693e17cba8` |
-| Checks e testes | PR #469 **23/23 sem falhas**; pós-merge **23/23 sem falhas** |
-| Decisões tomadas | Especialidade volta a aceitar somente rótulo explícito na própria página; Solicitação não é mais fonte alternativa |
-| Justificativas | homologação humana reprovou a 7H.1 e pediu retorno ao comportamento anterior |
-| Alternativas descartadas | recalibrar heurística da Solicitação; manter parte da 7H.1 |
-| Ações externas concluídas | Cloudflare Pages success; Workers Builds build `96c3f6d0-dc56-42e0-8096-d216f94aa80c` success; Worker Version `ba070e11-8f7d-4958-8eb7-8995387b73a3` |
-| Pendências e bloqueios | homologação humana normal da 7H e pendências visuais anteriores continuam separadas |
-| Riscos conhecidos | não reintroduzir a regra rejeitada da Solicitação sem pedido explícito; preservar o campo Especialidade e a ordem operacional |
-| Métricas / observabilidade | nenhuma telemetria nova; conteúdo clínico continua fora do PostHog |
-| Próxima ação exata | **Ctrl+F5 em /documentos/ e confirmar que a extração voltou ao comportamento anterior; depois continuar as pendências já registradas da Fase 7** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PRs #467/#468/#469; baseline `2fe0b47`; merge `d844f48`; `worker/document-ai*.js`; status |
+| Subfase / objetivo atual | **mudança transversal Telemedicina V42 — motivo opcional da desistência** |
+| Última ação concluída | implementação funcional, teste V42, workflow e documentação preparados em branch |
+| Branch atual | `feat/telemedicina-motivo-desistencia-v42-20260924` |
+| PR atual | **#471 — aberta, em validação** |
+| Último commit relevante | head validado da PR: `17c7d57cc50953252f6cc72ae154881aaea6e21a` |
+| Checks e testes | head `17c7d57c`: **48/48 workflows success**, zero falhas; workflow V42 incluído |
+| Decisões tomadas | reaproveitar `notes`; campo opcional; preservar motivo somente na desistência; exibir como **Motivo:** no histórico |
+| Justificativas | evita migração/schema novo e corrige os dois pontos que apagavam o texto — adaptador V25 e salvamento atômico V29 |
+| Alternativas descartadas | criar coleção/campo persistente novo `withdrawalReason`; tornar o motivo obrigatório |
+| Ações externas concluídas | nenhuma necessária; nenhum segredo, OAuth ou permissão alterado |
+| Pendências e bloqueios | integrar/publicar a PR #471 e homologar com/sem motivo em desktop/mobile |
+| Riscos conhecidos | regressão no contrato de encerramento se uma alta normal passasse a preservar observação; teste V42 exige que somente a desistência receba a exceção |
+| Métricas / observabilidade | nenhuma telemetria nova; motivo de desistência permanece fora do PostHog |
+| Próxima ação exata | **mesclar PR #471 → confirmar checks/deploy pós-merge → homologar duas desistências (vazia e preenchida) e o histórico** |
+| Arquivos e fontes principais | Guia Mestre V1.1; `js/telemedicina-absence-v24.js`; `worker/telemedicine-router-v2.js`; `worker/telemedicine.js`; teste/workflow V42; `docs/TELEMEDICINA-MOTIVO-DESISTENCIA-V42.md`; status |
 
 ## Histórico recuperável
 
