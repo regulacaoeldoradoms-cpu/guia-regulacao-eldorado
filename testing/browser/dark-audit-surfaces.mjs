@@ -123,12 +123,17 @@ export async function inspectSurfaces(page) {
       if (!visible(el)) continue;
       const rect=el.getBoundingClientRect(), name=selector(el);
       if(rect.width<2||rect.height<2) continue;
+      // Keep the exact viewport rect as well as the original rounded dimensions.
+      // Scroll/position changes must remain observable rather than normalized away.
+      const actualRect={x:rect.x,y:rect.y,top:rect.top,right:rect.right,bottom:rect.bottom,left:rect.left,width:rect.width,height:rect.height};
       const base=getComputedStyle(el);
-      snapshot.push({selector:name,tag:el.localName,background:base.backgroundColor,backgroundImage:base.backgroundImage,color:base.color,border:base.borderColor,shadow:base.boxShadow,opacity:base.opacity,filter:base.filter,display:base.display,font:base.fontFamily,fontSize:base.fontSize,width:Math.round(rect.width*100)/100,height:Math.round(rect.height*100)/100});
+      snapshot.push({selector:name,tag:el.localName,background:base.backgroundColor,backgroundImage:base.backgroundImage,color:base.color,border:base.borderColor,shadow:base.boxShadow,opacity:base.opacity,filter:base.filter,display:base.display,font:base.fontFamily,fontSize:base.fontSize,width:Math.round(rect.width*100)/100,height:Math.round(rect.height*100)/100,rect:actualRect,borderRadius:base.borderRadius,transform:base.transform,backdropFilter:base.backdropFilter});
       for (const pseudo of ['', '::before','::after']) {
         const style=pseudo?getComputedStyle(el,pseudo):base;
         if (pseudo && (style.content==='none'||style.content==='normal'||style.display==='none'||Number(style.opacity)===0)) continue;
-        if(pseudo)snapshot.push({selector:name+pseudo,tag:el.localName,pseudo,background:style.backgroundColor,backgroundImage:style.backgroundImage,color:style.color,border:style.borderColor,shadow:style.boxShadow,opacity:style.opacity,filter:style.filter,display:style.display,font:style.fontFamily,fontSize:style.fontSize,width:style.width,height:style.height,maskImage:style.maskImage,content:style.content});
+        // Pseudo-elements have no DOMRect API: retain their computed dimensions
+        // and explicitly label this rect as belonging to the originating element.
+        if(pseudo)snapshot.push({selector:name+pseudo,tag:el.localName,pseudo,background:style.backgroundColor,backgroundImage:style.backgroundImage,color:style.color,border:style.borderColor,shadow:style.boxShadow,opacity:style.opacity,filter:style.filter,display:style.display,font:style.fontFamily,fontSize:style.fontSize,width:style.width,height:style.height,maskImage:style.maskImage,content:style.content,ownerRect:actualRect,borderRadius:style.borderRadius,transform:style.transform,backdropFilter:style.backdropFilter});
         const background=rgba(style.backgroundColor);
         const gradientColors=(style.backgroundImage.match(/rgba?\([^)]+\)/g)||[]).map(rgba).filter(Boolean);
         const colors=background?[background,...gradientColors]:gradientColors;

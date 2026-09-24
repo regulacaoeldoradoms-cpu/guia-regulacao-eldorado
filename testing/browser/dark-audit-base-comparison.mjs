@@ -67,7 +67,13 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
       const snapshotStable=previousSnapshot===snapshot;
       captures.push({attempt,sha256:createHash('sha256').update(screenshot).digest('hex'),pngStable,snapshotStable});
       if(pngStable&&snapshotStable)break;
-      if(attempt===5)throw new Error(`Unstable ${route} ${theme}/${media} capture: ${JSON.stringify(captures)}`);
+      if(attempt===5){
+        const label=`unstable-${assets===working?'current':'base'}-${theme}-${media}`;
+        await info.attach(`${label}-previous.png`,{body:previousScreenshot,contentType:'image/png'});
+        await info.attach(`${label}-last.png`,{body:screenshot,contentType:'image/png'});
+        await info.attach(`${label}.json`,{body:Buffer.from(JSON.stringify({route,theme,media,captures,previousSnapshot:JSON.parse(previousSnapshot),lastSnapshot:report.snapshot},null,2)),contentType:'application/json'});
+        throw new Error(`Unstable ${route} ${theme}/${media} capture: ${JSON.stringify(captures)}`);
+      }
       previousScreenshot=screenshot;previousSnapshot=snapshot;
       await page.waitForTimeout(150);
     }
