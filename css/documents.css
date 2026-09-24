@@ -1399,40 +1399,51 @@ html[data-portal-theme="dark"] .documents-item-quick-action:focus-visible {
   opacity: .42;
 }
 
-/* Contraste do editor no tema escuro.
-   As ferramentas legadas usam ícones azul-escuros/transparentes; sobre o fundo
-   navy do editor elas perdiam contraste. Aplicamos uma placa azul-clara apenas
-   aos controles genéricos, preservando os botões autorais (.documents-art-button). */
+/* Titon no tema escuro — controles transparentes com line-art clara.
+   O fundo dos botões permanece transparente; o contraste vem do próprio ícone.
+   Ícones PNG legados são neutralizados para branco por filtro, enquanto texto/SVG
+   seguem currentColor. Salvar/Imprimir e estados do Drive mantêm identidade própria. */
 @media screen {
   html[data-portal-theme="dark"] .documents-editor-toolbar--compact .documents-editor-tool:not(.documents-art-button),
   html[data-portal-theme="dark"] .documents-editor-side-rail .documents-rail-tool {
-    background-color: #d8e9f4 !important;
-    border-color: #78a9c4 !important;
-    color: #0b4568 !important;
-    box-shadow: 0 1px 0 rgba(255,255,255,.72), 0 2px 7px rgba(0,0,0,.18);
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: #f5fbff !important;
+    box-shadow: none !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-editor-toolbar--compact .documents-tool-icon {
+    filter: brightness(0) invert(1);
+  }
+
+  html[data-portal-theme="dark"] .documents-editor-side-rail .documents-rail-tool svg {
+    fill: none;
+    stroke: currentColor;
   }
 
   html[data-portal-theme="dark"] .documents-editor-toolbar--compact .documents-editor-tool:not(.documents-art-button):hover:not(:disabled),
   html[data-portal-theme="dark"] .documents-editor-toolbar--compact .documents-editor-tool:not(.documents-art-button):focus-visible,
   html[data-portal-theme="dark"] .documents-editor-side-rail .documents-rail-tool:hover:not(:disabled),
   html[data-portal-theme="dark"] .documents-editor-side-rail .documents-rail-tool:focus-visible {
-    background-color: #f1f8fc !important;
-    border-color: #70afd2 !important;
-    color: #063b59 !important;
-    outline: 2px solid rgba(112,175,210,.34);
+    background-color: transparent !important;
+    border-color: rgba(255,255,255,.32) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset !important;
+    outline: 2px solid rgba(255,255,255,.14);
     outline-offset: 2px;
   }
 
   html[data-portal-theme="dark"] .documents-editor-toolbar--compact .documents-editor-tool:not(.documents-art-button).active,
   html[data-portal-theme="dark"] .documents-editor-side-rail .documents-rail-tool.active {
-    background-color: #b9dff2 !important;
-    border-color: #4c94bb !important;
-    color: #063b59 !important;
+    background-color: transparent !important;
+    border-color: rgba(125,211,252,.78) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 1px rgba(125,211,252,.18) inset, 0 0 10px rgba(56,189,248,.14) !important;
   }
 
   html[data-portal-theme="dark"] .documents-editor-toolbar--compact .documents-editor-tool:not(.documents-art-button):disabled,
   html[data-portal-theme="dark"] .documents-editor-side-rail .documents-rail-tool:disabled {
-    opacity: .5;
+    opacity: .46;
   }
 }
 
@@ -1573,13 +1584,52 @@ html[data-portal-theme="dark"] .documents-item-quick-action:focus-visible {
   filter: brightness(1.12) saturate(1.06);
 }
 
-/* O tema escuro global usa "background" nos botões secondary.
-   Como shorthand, isso também zera background-image/repeat/position/size.
-   Estes três controles do visualizador são imagens autorais; restaurar o
-   background completo evita os retângulos vazios observados no Titon. */
+/* Tema escuro: os controles de navegação usam versões line-art sem placa.
+   Salvar PDF e Imprimir continuam azuis porque são ações primárias do documento. */
 @media screen {
+  html[data-portal-theme="dark"] .documents-pdf-toolbar .documents-art-zoom-minus {
+    background: transparent url('/assets/editor-pdf-buttons/zoom-menos-dark.svg?v=20260924-1') center / 30px 30px no-repeat !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-pdf-toolbar .documents-art-zoom-plus {
+    background: transparent url('/assets/editor-pdf-buttons/zoom-mais-dark.svg?v=20260924-1') center / 30px 30px no-repeat !important;
+  }
+
   html[data-portal-theme="dark"] .documents-pdf-toolbar .documents-art-fit-width {
-    background: transparent url('/assets/editor-pdf-buttons/ajustar-largura.svg?v=20260916-2') center / 100% 100% no-repeat !important;
+    background: transparent url('/assets/editor-pdf-buttons/ajustar-largura-dark.svg?v=20260924-1') center / 100% 100% no-repeat !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-pdf-toolbar #pdfZoomResetButton {
+    background: transparent !important;
+    border-color: rgba(255,255,255,.18) !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-pdf-toolbar #pdfZoomResetButton:hover,
+  html[data-portal-theme="dark"] .documents-pdf-toolbar #pdfZoomResetButton:focus-visible {
+    background: transparent !important;
+    border-color: rgba(255,255,255,.34) !important;
+    color: #ffffff !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-editor-toolbar--compact .documents-art-grid {
+    background: transparent url('/assets/editor-pdf-buttons/grade-dark.svg?v=20260924-1') center / 30px 30px no-repeat !important;
+    border: 1px solid transparent !important;
+    box-shadow: none !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-editor-toolbar--compact .documents-art-grid:hover:not(:disabled),
+  html[data-portal-theme="dark"] .documents-editor-toolbar--compact .documents-art-grid:focus-visible {
+    background: transparent url('/assets/editor-pdf-buttons/grade-dark.svg?v=20260924-1') center / 30px 30px no-repeat !important;
+    border-color: rgba(255,255,255,.32) !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-editor-toolbar--compact .documents-art-grid.active,
+  html[data-portal-theme="dark"] .documents-editor-toolbar--compact .documents-art-grid[aria-pressed="true"] {
+    background: transparent url('/assets/editor-pdf-buttons/grade-dark.svg?v=20260924-1') center / 30px 30px no-repeat !important;
+    border-color: rgba(125,211,252,.78) !important;
+    box-shadow: 0 0 0 1px rgba(125,211,252,.18) inset, 0 0 10px rgba(56,189,248,.14) !important;
   }
 
   html[data-portal-theme="dark"] .documents-pdf-toolbar .documents-art-export {
@@ -1606,12 +1656,25 @@ html[data-portal-theme="dark"] .documents-item-quick-action:focus-visible {
   flex-basis: 38px;
 }
 
-/* No tema escuro, a regra global de .documents-close-viewer usa o shorthand
-   background e apaga o fechar.svg. Restaurar o asset com especificidade maior
-   mantém o X visível sem alterar o modo claro nem os demais botões autorais. */
+/* No tema escuro, o X passa a usar somente line-art branca sobre fundo transparente.
+   O override específico do cabeçalho continua necessário porque o tema global usa
+   shorthand background em .documents-close-viewer. */
 @media screen {
+  html[data-portal-theme="dark"] .documents-art-close {
+    background-image: url('/assets/editor-pdf-buttons/fechar-dark.svg?v=20260924-1') !important;
+    background-color: transparent !important;
+    background-size: 30px 30px !important;
+  }
+
   html[data-portal-theme="dark"] .documents-viewer-head .documents-close-viewer.documents-art-close {
-    background: transparent url('/assets/editor-pdf-buttons/fechar.svg?v=20260916-2') center / 100% 100% no-repeat !important;
+    background: transparent url('/assets/editor-pdf-buttons/fechar-dark.svg?v=20260924-1') center / 30px 30px no-repeat !important;
+    border: 1px solid transparent !important;
+  }
+
+  html[data-portal-theme="dark"] .documents-viewer-head .documents-close-viewer.documents-art-close:hover,
+  html[data-portal-theme="dark"] .documents-viewer-head .documents-close-viewer.documents-art-close:focus-visible {
+    background: transparent url('/assets/editor-pdf-buttons/fechar-dark.svg?v=20260924-1') center / 30px 30px no-repeat !important;
+    border-color: rgba(255,255,255,.32) !important;
   }
 }
 
