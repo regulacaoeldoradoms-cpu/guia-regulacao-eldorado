@@ -116,6 +116,31 @@ Exemplos:
 
 XP nunca substitui taxa de acertos, retenção ou cobertura.
 
+### 6.1 Integração com a área Conquistas do Portal
+
+A Missão Bancária deve integrar suas medalhas reais à rota já existente `/conquistas/`, em vez de criar um catálogo paralelo.
+
+Regras:
+- Bronze, Prata e Ouro continuam exclusivos da **segurança da conta** e não são níveis de estudo;
+- conquistas de estudo formam categoria própria, por exemplo **Missão Bancária**;
+- a categoria e seus dados pessoais de estudo aparecem inicialmente apenas para `wellyton`;
+- desbloqueio deve ser baseado em evento persistido e verificável pelo backend;
+- nunca desbloquear conquista apenas por ação visual do frontend;
+- conquistas devem premiar marcos de aprendizagem, constância e prática, não simples abertura de páginas;
+- a mesma conquista não pode conceder XP repetidamente;
+- correções de conteúdo não podem remover silenciosamente uma conquista já legitimamente obtida.
+
+Exemplos de marcos:
+- **Primeira missão** — concluir a primeira missão real;
+- **Primeiras 100** — responder 100 questões;
+- **Ritmo de estudo** — atingir uma meta de constância definida sem exigir comportamento compulsivo;
+- **SFN dominado** — superar o chefe de SFN com critério de domínio;
+- **Mundo concluído** — completar um mundo pedagógico;
+- **1.000 questões** — atingir mil questões respondidas;
+- **Simulado competitivo** — alcançar critério de desempenho definido em simulado completo.
+
+O catálogo definitivo e os thresholds devem ser calibrados durante o uso real.
+
 ## 7. Modo foco
 
 Sessões de estudo devem poder abrir em modo foco:
