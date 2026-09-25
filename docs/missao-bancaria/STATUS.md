@@ -52,7 +52,7 @@ Registro:
 `17-FASE-1-IMPLEMENTACAO-V1.md`
 
 Estado:
-**primeira fatia vertical implementada em branch; CI e homologação humana pendentes.**
+**V1 incorporada à `main` pela PR #490, merge `22257bca768cfc440578e0b8e11da62f15abc08f`; homologação humana ainda pendente.**
 
 Conteúdo inicial:
 - SFN;
@@ -62,3 +62,24 @@ Conteúdo inicial:
 - 12 questões autorais.
 
 A Fase 1 permanece aberta.
+
+
+## Expansão SFN V1.1
+
+Branch:
+`feat/missao-bancaria-fase1-expansao-sfn`
+
+Documento:
+`18-EXPANSAO-SFN-V1.1.md`
+
+Estado:
+**em desenvolvimento; não incorporada à main.**
+
+Adições:
+- CVM;
+- operadores do SFN;
+- escopo fixo de 9 missões para o Mundo 1;
+- progresso pessoal calculado sobre o escopo fixo, evitando regressão visual ao publicar novas missões.
+
+Finalidade:
+provar a expansão incremental sem perda de progresso antes do encerramento da Fase 1.
