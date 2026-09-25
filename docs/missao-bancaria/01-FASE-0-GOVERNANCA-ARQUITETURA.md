@@ -11,14 +11,22 @@ Definir como o módulo entra no Portal sem interferir em módulos institucionais
 - modelo de dados separado;
 - inventário de arquivos novos e arquivos existentes que poderão ser tocados;
 - regra de observabilidade sem conteúdo de estudo sensível;
-- plano de rollback.
+- plano de rollback;
+- estratégia de IDs estáveis para conteúdos;
+- versionamento de conteúdo sem perda de progresso;
+- separação entre conteúdo planejado, disponível e progresso pessoal;
+- arquitetura que permita publicar novas missões sem migrações destrutivas.
 
 ### Regras
 - backend é a autoridade de acesso;
 - frontend apenas reflete autorização;
 - não reutilizar tabelas clínicas;
 - não armazenar dados de pacientes;
-- nenhuma alteração deve quebrar login, Ferramentas, Telemedicina, Documentos, Conselho ou Camada Social.
+- nenhuma alteração deve quebrar login, Ferramentas, Telemedicina, Documentos, Conselho ou Camada Social;
+- progresso do usuário não pode depender da posição visual de uma aula;
+- cada tópico/missão deve ter ID estável;
+- nova publicação de conteúdo não pode zerar, diluir ou reclassificar silenciosamente conquistas anteriores;
+- a arquitetura deve permitir uso real desde a primeira entrega jogável.
 
 ### Modelo lógico mínimo
 Entidades previstas:
@@ -29,9 +37,27 @@ Entidades previstas:
 - study_attempts;
 - study_reviews;
 - study_xp_events;
-- study_achievements.
+- study_achievements;
+- study_content_releases ou mecanismo equivalente de versionamento/publicação.
 
 O desenho final pode mudar, mas a separação de domínio deve permanecer.
 
+### Identidade e versionamento de conteúdo
+
+Requisitos:
+- IDs semânticos e estáveis;
+- versão do conteúdo separada do ID lógico;
+- progresso vinculado ao ID lógico, não ao número da aula ou posição na lista;
+- capacidade de acrescentar missões sem recalcular indevidamente o que já foi concluído;
+- alterações substanciais que exijam nova aprendizagem devem ser explicitamente versionadas e tratadas como revisão, nunca como apagamento silencioso.
+
+### Métricas de disponibilidade
+
+O modelo deve conseguir representar separadamente:
+- percentual da campanha planejada já publicado;
+- percentual concluído do conteúdo publicado;
+- cobertura do edital;
+- domínio real.
+
 ### Critério de aceite
-Fase 0 é aprovada quando existe um plano técnico revisado, sem código produtivo obrigatório, com autorização claramente testável e nenhuma dependência de dados institucionais.
+Fase 0 é aprovada quando existe um plano técnico revisado, sem código produtivo obrigatório, com autorização claramente testável, nenhuma dependência de dados institucionais e estratégia comprovável para preservar progresso durante a expansão incremental da campanha.
