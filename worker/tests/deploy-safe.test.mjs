@@ -341,3 +341,12 @@ test('Worker Previews exige Wrangler 4.135.0 ou superior', () => {
   const minimum = 4 * 1000000 + 135 * 1000;
   assert.ok(current >= minimum, SAFE_DEPLOY.wranglerVersion);
 });
+
+
+test('wrangler declara Previews Base vazio sem herdar produção', () => {
+  const toml = fs.readFileSync(new URL('../wrangler.toml', import.meta.url), 'utf8');
+  assert.match(toml, /^previews\s*=\s*\{\s*\}\s*$/m);
+  assert.match(toml, /preview_urls\s*=\s*false/);
+  assert.doesNotMatch(toml, /\[previews\.vars\]/);
+  assert.doesNotMatch(toml, /\[\[previews\.d1_databases\]\]/);
+});
