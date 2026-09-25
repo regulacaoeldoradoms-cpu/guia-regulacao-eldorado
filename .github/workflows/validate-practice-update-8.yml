@@ -26,7 +26,7 @@ jobs:
       - name: Conferir carregamento e cache
         run: |
           grep -q 'referral-practice-update-20260908.js?v=20260908-2' medico/index.html
-          grep -q 'reception.css?v=20260908-1' recepcao/index.html
+          grep -q 'reception.css?v=20260925-1' recepcao/index.html
           grep -q 'reception-substance-guidance.js?v=20260908-5' recepcao/index.html
 
       - name: Conferir matriz condicional e regra de substâncias

@@ -1,0 +1,54 @@
+name: Validar contraste escuro da Recepção
+
+on:
+  pull_request:
+    paths:
+      - 'recepcao/**'
+      - 'css/reception*.css'
+      - 'css/portal-interactions.css'
+      - 'js/reception*.js'
+      - 'testing/browser/reception-dark-contrast.mjs'
+      - '.github/workflows/validate-reception-dark.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'recepcao/**'
+      - 'css/reception*.css'
+      - 'css/portal-interactions.css'
+      - 'js/reception*.js'
+      - 'testing/browser/reception-dark-contrast.mjs'
+      - '.github/workflows/validate-reception-dark.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  reception-contrast:
+    name: Recepção — contraste, checklist e preservação claro/impressão
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      RECEPTION_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Instalar dependências fixadas e Chromium
+        working-directory: testing/browser
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Validar interface real com protocolo sintético em memória
+        run: node testing/browser/reception-dark-contrast.mjs
+      - name: Guardar evidência sintética
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reception-dark-contrast-${{ github.run_id }}
+          path: testing/browser/test-results-reception-contrast/
+          retention-days: 7
+          if-no-files-found: warn
