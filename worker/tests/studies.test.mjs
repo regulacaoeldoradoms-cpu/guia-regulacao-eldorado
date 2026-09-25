@@ -7,7 +7,7 @@ import {
   STUDY_SOURCES,
   questionById
 } from '../studies-content/manifest.js';
-import { isStudiesApi } from '../studies.js';
+import { isStudiesApi, studyUsernameAllowed } from '../studies.js';
 
 test('conteudo SFN v1 tem ids unicos e respostas validas', () => {
   const missionIds = new Set();
@@ -44,4 +44,12 @@ test('namespace de API e isolado', () => {
   assert.equal(isStudiesApi('/api/studies/attempts'), true);
   assert.equal(isStudiesApi('/api/telemedicina/foo'), false);
   assert.equal(isStudiesApi('/api/study/bootstrap'), false);
+});
+
+test('gate aceita somente a identidade normalizada de Wellyton', () => {
+  assert.equal(studyUsernameAllowed('wellyton'), true);
+  assert.equal(studyUsernameAllowed(' WELLYTON '), true);
+  assert.equal(studyUsernameAllowed('wel lyton'), false);
+  assert.equal(studyUsernameAllowed('josiane'), false);
+  assert.equal(studyUsernameAllowed(''), false);
 });
