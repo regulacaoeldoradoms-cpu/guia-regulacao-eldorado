@@ -16,6 +16,7 @@ A primeira versão real não usará aula demonstrativa fictícia: começará com
 2. [11-INSTRUCAO-DE-CONTINUIDADE.md](11-INSTRUCAO-DE-CONTINUIDADE.md)
 3. documento da fase ativa
 4. [12-FONTES-E-CONTEUDO.md](12-FONTES-E-CONTEUDO.md)
+5. [14-INTEGRACAO-CONQUISTAS.md](14-INTEGRACAO-CONQUISTAS.md)
 
 ## Arquivo para anexar como fonte
 Use [13-FONTE-MESTRA-PARA-ANEXAR.md](13-FONTE-MESTRA-PARA-ANEXAR.md) quando uma nova sessão precisar de um único arquivo de contexto.
