@@ -19,11 +19,15 @@ Use este arquivo como instrução curta para qualquer nova conversa, agente ou s
 - preservar cobertura e domínio como métricas separadas;
 - gamificação não pode esconder desempenho;
 - cada entrega deve funcionar antes de ampliar escopo;
+- preferir fatias verticais utilizáveis em vez de grandes entregas incompletas;
+- desde a primeira versão jogável, conteúdo apresentado ao Wellyton deve ser real e estudável;
+- publicar novas missões sem apagar ou diluir progresso anterior;
+- manter separados "conteúdo disponível" e "progresso no conteúdo disponível";
 - registrar alteração de escopo no Dossiê ou no documento da fase.
 
 ## Instrução sugerida para nova sessão
 
-> Continue o projeto Missão Bancária a partir da documentação versionada no repositório. Leia integralmente o Dossiê Mestre, a Instrução de Continuidade e o documento da fase ativa antes de alterar código. Preserve decisões aprovadas, verifique o estado real da branch/main e trabalhe apenas no escopo da fase atual. Não antecipe fases sem necessidade. Ao concluir, registre implementação, testes, pendências e o que depende de homologação humana.
+> Continue o projeto Missão Bancária a partir da documentação versionada no repositório. Leia integralmente o Dossiê Mestre, a Instrução de Continuidade e o documento da fase ativa antes de alterar código. Preserve decisões aprovadas, verifique o estado real da branch/main e trabalhe apenas no escopo da fase atual. Priorize uma fatia vertical que Wellyton possa estudar assim que estiver estável. Não use conteúdo fictício na experiência real. Preserve progresso ao publicar novos conteúdos. Não antecipe fases sem necessidade. Ao concluir, registre implementação, testes, pendências e o que depende de homologação humana.
 
 ## Regra de conflito
 Em caso de divergência:
