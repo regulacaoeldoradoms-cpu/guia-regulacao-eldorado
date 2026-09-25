@@ -2,7 +2,7 @@
 ## Motor pedagógico
 
 ### Objetivo
-Transformar o MVP em uma plataforma capaz de ensinar de forma consistente.
+Transformar o MVP já utilizável em uma plataforma capaz de ensinar de forma consistente, refinando o método com base no uso real de Wellyton enquanto novas missões continuam sendo publicadas.
 
 ### Unidade pedagógica padrão
 Cada missão deve suportar:
@@ -27,6 +27,20 @@ Cada missão deve suportar:
 - revisão;
 - consolidado.
 
+### Publicação incremental
+
+O motor deve permitir publicar uma missão nova sem alterar código específico da aula e sem interromper o estudo das missões anteriores.
+
+Requisitos:
+- ID lógico estável por conteúdo;
+- versão do texto/material;
+- publicação independente;
+- possibilidade de corrigir conteúdo;
+- preservação de tentativas, domínio, XP e revisões;
+- indicador de conteúdo novo disponível.
+
+Mudanças editoriais simples não devem exigir refazer uma missão. Mudanças conceituais relevantes podem gerar revisão recomendada, com registro explícito.
+
 ### Métricas
 - taxa de acerto;
 - tentativas;
@@ -44,4 +58,4 @@ A plataforma deve mostrar:
 - qual conceito revisar.
 
 ### Critério de aceite
-Um mesmo motor consegue publicar três missões de formatos diferentes sem código específico por aula.
+Um mesmo motor consegue publicar três missões de formatos diferentes sem código específico por aula, adicionar uma quarta missão posteriormente e preservar integralmente o progresso das três anteriores.
