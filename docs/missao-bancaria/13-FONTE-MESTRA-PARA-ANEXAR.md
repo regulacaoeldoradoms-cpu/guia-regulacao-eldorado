@@ -27,6 +27,9 @@ Objetivo de UX: transformar estudo em uma campanha de progressão visível, base
 12. A primeira versão jogável deve conter conteúdo real; material fictício fica restrito a testes.
 13. Novos conteúdos não podem apagar ou diluir progresso anterior.
 14. "Conteúdo disponível" e "progresso no conteúdo disponível" são métricas separadas.
+15. Medalhas de estudo devem aparecer na área existente `/conquistas/`, sem criar catálogo paralelo.
+16. Bronze/Prata/Ouro continuam representando segurança da conta, não desempenho acadêmico.
+17. Toda conquista de estudo exige regra persistida, verificável e idempotente.
 
 ## Experiência central
 Dashboard:
@@ -61,6 +64,13 @@ Modo foco:
 - anterior/próximo;
 - marcar dúvida;
 - sem distrações sociais.
+
+Conquistas:
+- categoria própria "Missão Bancária" dentro de `/conquistas/`;
+- exemplos: Primeira missão, 100 questões, chefe de SFN, mundo concluído, 1.000 questões e marco de simulado;
+- inicialmente visíveis somente para Wellyton;
+- desbloqueio pelo backend;
+- nunca confundir com os níveis Bronze/Prata/Ouro da conta.
 
 ## Progressão
 Cobertura:
