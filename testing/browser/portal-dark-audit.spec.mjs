@@ -6,7 +6,7 @@ import { selectedAuditRoutes, aliasDestinations } from './dark-audit-routes.mjs'
 import { finishAuditNetwork } from './dark-audit-network.mjs';
 for (const route of selectedAuditRoutes) {
   test(`computed surfaces ${route}`, async ({ page, context }, info) => {
-    const network=await installAuditFixture(context,{authenticated:!['/login/','/cadastro/'].includes(route)});
+    const network=await installAuditFixture(context,{authenticated:!['/login/','/cadastro/'].includes(route),userOverrides:route==='/estudos/'?{username:'wellyton',name:'Pessoa Fictícia Auditoria'}:{}});
     const response=await page.goto(route,{waitUntil:'load'});
     expect(response.status()).toBe(200);
     await page.waitForTimeout(700);
