@@ -4,20 +4,19 @@ Atualizado em: 25/09/2026
 
 ## Estado
 
-**Fase ativa: Fase 0 — Governança, isolamento e arquitetura.**
+**Fase ativa: Fase 1 — Motor MVP + primeiro recorte real de Sistema Financeiro Nacional.**
 
 A documentação-base foi incorporada à `main` pela PR #488 no commit:
 `abb7d7e5f7b747abab62f4df4ed8a2cb636b92ec`.
 
-## Trabalho atual
+## Fase 0
 
-Plano técnico da Fase 0 elaborado na branch:
-`docs/missao-bancaria-fase0-arquitetura`
+**APROVADA E ENCERRADA em 25/09/2026 por aceite explícito de Wellyton.**
 
-Documento:
+Plano técnico aprovado:
 `15-FASE-0-PLANO-TECNICO.md`
 
-## Decisões técnicas propostas para homologação
+## Decisões técnicas homologadas
 
 - frontend em `/estudos/`;
 - APIs em `/api/studies/*`;
@@ -32,13 +31,13 @@ Documento:
 - sem telemetria pedagógica externa;
 - rollback sem apagar tabelas/progresso.
 
-## Pendência humana
+## Fase 1
 
-A Fase 0 **não está encerrada**.
+**AUTORIZADA E ABERTA.**
 
-Falta homologação explícita de Wellyton sobre o plano técnico V1.
-
-Depois do aceite:
-- registrar encerramento da Fase 0;
-- abrir Fase 1;
-- construir a primeira fatia jogável com conteúdo real de SFN.
+Próximo trabalho:
+- reler integralmente `02-FASE-1-MOTOR-MVP.md`;
+- conferir novamente o estado real do código após o merge desta documentação;
+- congelar as fontes oficiais do primeiro recorte de SFN;
+- implementar a primeira fatia vertical jogável em branch própria;
+- não publicar em produção sem testes e homologação previstos.
