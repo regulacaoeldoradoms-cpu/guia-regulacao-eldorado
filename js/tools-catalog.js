@@ -9,7 +9,8 @@
     chart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9M10 19V5M16 19v-7M22 19V3"/><path d="M2 19h22"/></svg>',
     settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="4"/></svg>',
     documents: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5h6l2-2h9v13a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/><path d="M7 11h10M7 14.5h7"/></svg>',
-    calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="2"/><path d="M7.5 3v5M16.5 3v5M3.5 10h17M8 14h3M13 14h3M8 17h3"/></svg>'
+    calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="2"/><path d="M7.5 3v5M16.5 3v5M3.5 10h17M8 14h3M13 14h3M8 17h3"/></svg>',
+    study: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H11v17H7.5A3.5 3.5 0 0 0 4 22V5.5Z"/><path d="M20 5.5A3.5 3.5 0 0 0 16.5 2H13v17h3.5A3.5 3.5 0 0 1 20 22V5.5Z"/></svg>'
   });
 
   const roleLabels = Object.freeze({
@@ -32,6 +33,13 @@
 
   function cardsFor(user) {
     const cards = [];
+    if (!user?.preview && String(user?.username || '').toLowerCase() === 'wellyton') {
+      cards.push({
+        id: 'mission-bank', href: '/estudos/', title: 'Missão Bancária',
+        description: 'Campanha pessoal de estudos para CAIXA e Banco do Brasil, com progresso, XP, questões e revisões.',
+        action: 'Continuar campanha', icon: ICONS.study
+      });
+    }
     if (!user?.preview && ['medico', 'recepcao', 'coordenacao', 'telemedicina', 'admin'].includes(user?.role) && !user.emailVerified) {
       cards.push({
         id: 'email-security', href: '/seguranca/', title: 'Confirme seu e-mail de segurança',
