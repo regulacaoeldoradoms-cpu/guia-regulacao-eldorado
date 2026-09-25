@@ -4,6 +4,10 @@ compatibility_date = "2026-08-25"
 workers_dev = true
 # Produção não depende de Worker Preview URLs; homologações optam explicitamente quando necessário.
 preview_urls = false
+# Worker Previews (Wrangler >= 4.135): base deliberadamente vazio.
+# Branches não herdam vars, secrets nem bindings de produção.
+# Isso permite o preview de código sem expor AUTH_DB, Firebase ou dados institucionais.
+previews = { }
 keep_vars = true
 
 [observability]
