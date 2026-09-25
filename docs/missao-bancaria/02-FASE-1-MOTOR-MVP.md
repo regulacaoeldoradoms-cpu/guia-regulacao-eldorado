@@ -17,7 +17,8 @@ A Fase 1 não precisa entregar o curso inteiro. Ela precisa entregar um ciclo pe
 - próximo passo recomendado;
 - modo foco;
 - API protegida;
-- tratamento de carregamento, vazio, erro e acesso negado.
+- tratamento de carregamento, vazio, erro e acesso negado;
+- primeira conquista real de estudo integrada à página `/conquistas/`.
 
 ### Dashboard mínimo
 - progresso geral;
@@ -75,4 +76,6 @@ Wellyton consegue:
 7. confirmar que outra conta não acessa o módulo;
 8. estudar pelo menos uma missão real ponta a ponta;
 9. receber uma nova missão publicada sem perder o progresso anterior;
-10. enxergar separadamente "campanha disponível" e "meu progresso".
+10. enxergar separadamente "campanha disponível" e "meu progresso";
+11. ao concluir a primeira missão real, receber a conquista **Primeira missão** uma única vez;
+12. abrir `/conquistas/` e ver a medalha obtida sem alterar Bronze/Prata/Ouro da conta.
