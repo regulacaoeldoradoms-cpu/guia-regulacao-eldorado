@@ -78,3 +78,19 @@ Correção em andamento:
 `fix/worker-cloudflare-preview-compat`
 
 A Fase 1 permanece aberta; nenhum progresso de estudo foi perdido.
+
+
+## Recuperação do deploy seguro do Worker
+
+O frontend da Missão Bancária está publicado, porém a API de produção continuou retornando `Rota não encontrada`.
+
+Diagnóstico adicional:
+- o Worker conectado ao GitHub ainda usa o modelo legado de previews do Cloudflare;
+- esse modelo pode deixar versões mais novas sem tráfego;
+- o gate produtivo rejeita por padrão qualquer versão mais nova que não seja produção/candidata conhecida;
+- isso pode impedir a `main` de publicar `/api/studies/*` mesmo com todos os testes do código aprovados.
+
+Correção em andamento:
+`fix/worker-safe-deploy-equivalent-version`
+
+Regra: versão não produtiva só é ignorada se **todos** os bindings forem equivalentes à produção. Nenhuma versão desconhecida é promovida.
