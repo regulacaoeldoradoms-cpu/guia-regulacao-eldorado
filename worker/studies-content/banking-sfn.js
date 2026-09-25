@@ -11,7 +11,7 @@ export const STUDY_SOURCES = Object.freeze([
   Object.freeze({
     id: 'edital.caixa.2024-nm',
     label: 'CAIXA — Edital nº 01/2024/NM',
-    url: 'https://concursos.cesgranrio.org.br/media/gpoweb-prd-hibrido3/eventos/11/conteudos/e2cd1feb-9c9b-46c8-8e7d-f66f2850d83c.pdf',
+    url: 'https://www.caixa.gov.br/Downloads/concurso-publico-editais/EDITAL_N_01_2024_NM_DE_22_DE_FEVEREIRO_DE_2024_.pdf',
     checkedAt: '2026-09-25',
     kind: 'edital'
   }),
