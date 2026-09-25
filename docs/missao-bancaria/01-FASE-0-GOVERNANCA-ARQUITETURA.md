@@ -15,7 +15,9 @@ Definir como o módulo entra no Portal sem interferir em módulos institucionais
 - estratégia de IDs estáveis para conteúdos;
 - versionamento de conteúdo sem perda de progresso;
 - separação entre conteúdo planejado, disponível e progresso pessoal;
-- arquitetura que permita publicar novas missões sem migrações destrutivas.
+- arquitetura que permita publicar novas missões sem migrações destrutivas;
+- integração prevista com a rota existente `/conquistas/`;
+- separação explícita entre nível de segurança da conta e conquistas de estudo.
 
 ### Regras
 - backend é a autoridade de acesso;
@@ -38,7 +40,8 @@ Entidades previstas:
 - study_reviews;
 - study_xp_events;
 - study_achievements;
-- study_content_releases ou mecanismo equivalente de versionamento/publicação.
+- study_content_releases ou mecanismo equivalente de versionamento/publicação;
+- study_achievements com regra idempotente de desbloqueio e timestamp de conquista.
 
 O desenho final pode mudar, mas a separação de domínio deve permanecer.
 
@@ -58,6 +61,18 @@ O modelo deve conseguir representar separadamente:
 - percentual concluído do conteúdo publicado;
 - cobertura do edital;
 - domínio real.
+
+### Integração com Conquistas
+
+A arquitetura deve permitir que `/conquistas/` consulte somente um resumo de medalhas da Missão Bancária sem expor conteúdo detalhado de estudo a outras contas.
+
+Requisitos:
+- backend valida `username === 'wellyton'` para dados de estudo;
+- conquistas de estudo possuem ID estável, por exemplo `study.first_mission`;
+- desbloqueio é idempotente;
+- cada conquista guarda data de obtenção e regra/versão que a concedeu;
+- Bronze/Prata/Ouro existentes não podem ser alterados pela Missão Bancária;
+- a ausência do módulo de estudos não pode quebrar a página geral de Conquistas.
 
 ### Critério de aceite
 Fase 0 é aprovada quando existe um plano técnico revisado, sem código produtivo obrigatório, com autorização claramente testável, nenhuma dependência de dados institucionais e estratégia comprovável para preservar progresso durante a expansão incremental da campanha.
