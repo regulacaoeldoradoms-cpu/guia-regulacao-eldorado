@@ -307,6 +307,17 @@
       ]
     },
     {
+      path: /^\/estudos\/?$/,
+      click: [
+        ['#continueStudy', 'primary', '#missionGrid'],
+        ['.study-mission', 'selection', '#studyFocus'],
+        ['[data-answer-question]', 'state-change', '#questionList'],
+        ['#markDoubt', 'state-change', '#focusStatus'],
+        ['#completeMission', 'task-complete', '#focusStatus'],
+        ['#leaveFocus,#portalLogout', 'navigation-exit']
+      ]
+    },
+    {
       path: /^\/admin\/usuarios\/?$/,
       click: [
         ['[data-action="edit"]', 'open'],
