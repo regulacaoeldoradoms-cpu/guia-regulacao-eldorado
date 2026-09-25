@@ -78,6 +78,8 @@ O gate separado de PDF.js revelou um teste que perdia a janela de 900 ms do esta
 
 O snapshot foi fortalecido com o retângulo completo do viewport, sem arredondamento, raios de borda, transformações e `backdrop-filter`. Os campos e as dimensões anteriores permanecem. Nos pseudo-elementos, o retângulo é explicitamente o do elemento de origem, junto das dimensões computed próprias. Nenhuma tolerância ou exceção foi ampliada.
 
+A quinta matriz estrita, já com relógio/scroll/foco isolados e raster de texto controlado, voltou a demonstrar o limite do gate de bytes de PNG: **198/210** testes passaram, com **zero superfícies claras inesperadas**, **zero endpoints desconhecidos** e 108 comparações de preservação concluídas dentro da tolerância; as 12 falhas restantes ocorreram antes da comparação current-vs-base porque o próprio Chromium Linux alternou hashes de PNG entre capturas consecutivas com **snapshot computed/layout idêntico**. Isso caracteriza não-determinismo do rasterizador, não diferença de CSS/DOM. O harness passa a tratar repetibilidade de PNG como gate somente quando ambas as fontes conseguem produzir raster estável; caso contrário, preservação continua exigindo snapshot computed/layout exatamente igual, ausência de erros novos e registra os PNGs/hashes como evidência diagnóstica. A tolerância current-vs-base de 2 pixels/1 nível de canal não é ampliada quando o raster é estável.
+
 **Resultados finais:** aguardando consolidação das execuções estritas. Não interpretar este marcador como gate aprovado.
 
 Execução e CI: `testing/browser/DARK_AUDIT.md` e `.github/workflows/portal-dark-audit.yml`. As evidências por rota/estado, rede e comparação ficam em `test-results-*`, ignorados pelo Git; o workflow publica artefatos sintéticos por sete dias.
