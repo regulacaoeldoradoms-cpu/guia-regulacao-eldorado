@@ -62,3 +62,19 @@ Conteúdo inicial:
 - 12 questões autorais.
 
 A Fase 1 permanece aberta.
+
+
+## Diagnóstico de publicação do Worker — 25/09/2026
+
+Na primeira homologação real de `/estudos/`, o frontend foi publicado, mas a API respondeu **"Rota não encontrada"**.
+
+Evidência:
+- `/estudos/` carregou a interface da V1;
+- `main` contém `worker/studies.js` e o roteamento `isStudiesApi`;
+- comentários automáticos do Cloudflare nas PRs #490/#491 mostraram **Build: Failed** para o Worker;
+- o projeto ainda fixava Wrangler `4.133.0`, abaixo do mínimo `4.135.0` exigido pelo mecanismo atual de Worker Previews.
+
+Correção em andamento:
+`fix/worker-cloudflare-preview-compat`
+
+A Fase 1 permanece aberta; nenhum progresso de estudo foi perdido.
