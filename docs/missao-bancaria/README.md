@@ -1,0 +1,28 @@
+# Missão Bancária
+
+Documentação de planejamento do módulo privado de estudos da conta `wellyton`.
+
+## Estado atual
+**Fase ativa: Fase 0 — Governança e arquitetura.**  
+Ainda não há autorização implícita para publicar código em produção.
+
+## Ordem de leitura
+1. [00-DOSSIE-MESTRE.md](00-DOSSIE-MESTRE.md)
+2. [11-INSTRUCAO-DE-CONTINUIDADE.md](11-INSTRUCAO-DE-CONTINUIDADE.md)
+3. documento da fase ativa
+4. [12-FONTES-E-CONTEUDO.md](12-FONTES-E-CONTEUDO.md)
+
+## Arquivo para anexar como fonte
+Use [13-FONTE-MESTRA-PARA-ANEXAR.md](13-FONTE-MESTRA-PARA-ANEXAR.md) quando uma nova sessão precisar de um único arquivo de contexto.
+
+## Fases
+- Fase 0 — Governança e arquitetura
+- Fase 1 — Motor MVP
+- Fase 2 — Motor pedagógico
+- Fase 3 — Conhecimentos Bancários
+- Fase 4 — Português + Matemática Financeira
+- Fase 5 — Atendimento/Vendas + TI/Digital
+- Fase 6 — Ética/Compliance + Estatística + Inglês
+- Fase 7 — Revisão adaptativa
+- Fase 8 — Simulados e redação
+- Fase 9 — Otimização e manutenção
