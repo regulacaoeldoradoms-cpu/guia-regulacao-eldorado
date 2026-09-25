@@ -89,6 +89,14 @@ export async function installAuditFixture(context, { theme='dark', authenticated
     else if (url.pathname === '/api/council/all' || url.pathname === '/api/council/my') data = { manifestations:[] };
     else if (url.pathname === '/api/admin/usage') data = { doctors:[{username:'synthetic.doctor',name:'PROFISSIONAL FICTÍCIO',jobTitle:'Perfil fictício',active:true,online:true,lastSeen:'2026-09-24T12:00:00Z',history:[{usageDate:'2026-09-24',guideVisits:2,visits:2,firstSeen:'2026-09-24T10:00:00Z',lastSeen:'2026-09-24T12:00:00Z'}]}] };
     else if(url.pathname==='/api/admin/readiness')data={readyForControlledDeploy:false,blockers:['synthetic'],generatedAt:'2026-09-24T12:00:00Z',checks:[{label:'Teste pronto',detail:'Estado sintético pronto',ok:true},{label:'Teste pendente',detail:'Estado sintético pendente',ok:false,requiredBeforeDeploy:true},{label:'Teste informativo',detail:'Estado sintético informativo',ok:false,requiredBeforeDeploy:false}]};
+    else if (url.pathname === '/api/studies/bootstrap') data = {
+      user:{ username:user.username, name:user.name },
+      contentRelease:'audit-synthetic-v1',
+      metrics:{xp:0,level:1,levelTitle:'Recruta',nextLevelXp:150,hoursSeconds:0,questions:0,correctQuestions:0,accuracy:0,reviewsDue:0,publishedMissions:1,plannedMissions:4,campaignAvailability:25,completedPublished:0,availableProgress:0},
+      progress:{},
+      missions:[{id:'banking.sfn.audit',topicId:'banking.sfn.audit',contentVersion:1,order:1,title:'Missão fictícia de auditoria',shortTitle:'Auditoria',estimatedMinutes:5,xp:50,objective:'Conteúdo exclusivamente sintético para auditoria visual.',sections:[{heading:'Seção sintética',body:'Texto fictício usado somente para testar superfícies, contraste e responsividade.'}],recall:['Pergunta fictícia para auditoria.'],sources:[],questions:[{id:'q.audit.01',prompt:'Questão fictícia de interface?',options:['Alternativa A','Alternativa B']}]}]
+    };
+    else if (url.pathname === '/api/studies/achievements') data = { achievements:[] };
     else if (url.pathname==='/api/achievements') data = { achievements:[], unlocked:[], summary:{} };
     else {
       unexpected.push({ method:request.method(), path:url.pathname, host:url.hostname });

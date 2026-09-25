@@ -57,8 +57,17 @@ test('Ferramentas mantém uma única matriz de autorização compartilhada', () 
   assert.ok(ids({ role: 'admin', emailVerified: true }).includes('social-moderation'));
 
   for (const filename of ['index.html', 'ferramentas/index.html']) {
-    assert.match(read(filename), /tools-catalog\.js\?v=20260923-1/);
+    assert.match(read(filename), /tools-catalog\.js\?v=20260925-study-1/);
   }
+});
+
+test('Missão Bancária aparece somente para Wellyton', () => {
+  const catalog = toolsRuntime();
+  const ids = (user) => Array.from(catalog.cardsFor(user), (card) => card.id);
+  assert.ok(ids({ username:'wellyton', role:'recepcao', emailVerified:true }).includes('mission-bank'));
+  assert.ok(ids({ username:'WELLYTON', role:'recepcao', emailVerified:true }).includes('mission-bank'));
+  assert.ok(!ids({ username:'josiane', role:'recepcao', emailVerified:true }).includes('mission-bank'));
+  assert.ok(!ids({ username:'wellyton', role:'recepcao', emailVerified:true, preview:true }).includes('mission-bank'));
 });
 
 test('Home social ativa mantém fallback independente, nova navegação e Perfil sem Conta duplicada', () => {

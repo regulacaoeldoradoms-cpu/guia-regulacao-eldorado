@@ -41,3 +41,24 @@ Próximo trabalho:
 - congelar as fontes oficiais do primeiro recorte de SFN;
 - implementar a primeira fatia vertical jogável em branch própria;
 - não publicar em produção sem testes e homologação previstos.
+
+
+## Implementação Fase 1 — V1
+
+Branch:
+`feat/missao-bancaria-fase1-mvp`
+
+Registro:
+`17-FASE-1-IMPLEMENTACAO-V1.md`
+
+Estado:
+**primeira fatia vertical implementada em branch; CI e homologação humana pendentes.**
+
+Conteúdo inicial:
+- SFN;
+- CMN;
+- Banco Central;
+- Copom;
+- 12 questões autorais.
+
+A Fase 1 permanece aberta.

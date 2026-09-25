@@ -14,7 +14,7 @@
   const SOCIAL_ROUTES = Object.freeze(['/amigos/', '/notificacoes/', '/perfil/']);
   const KNOWN_ROUTES = new Set([
     '/', '/home/', '/login/', '/cadastro/', '/ferramentas/', '/perfil/',
-    '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/conta/', '/medico/', '/protocolo/',
+    '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/conta/', '/estudos/', '/medico/', '/protocolo/',
     '/recepcao/', '/telemedicina/', '/documentos/', '/cidadao/', '/conselho/',
     '/conselho/painel/', '/admin/usuarios/', '/admin/monitoramento/',
     '/admin/configuracao/', '/admin/social/'

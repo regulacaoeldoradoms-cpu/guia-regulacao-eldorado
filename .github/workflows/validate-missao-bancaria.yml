@@ -1,0 +1,66 @@
+name: Validar Missao Bancaria
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-studies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Validar Worker e testes
+        working-directory: worker
+        run: |
+          npm run check
+          npm test
+
+      - name: Validar frontend da Missao Bancaria
+        run: |
+          set -euo pipefail
+          node --check js/studies.js
+          node --check js/tools-catalog.js
+          node --check js/achievements.js
+          test -f estudos/index.html
+          test -f css/studies.css
+          test -f js/studies.js
+          test -f worker/studies.js
+          test -f worker/studies-content/manifest.js
+          test -f worker/studies-content/banking-sfn.js
+          grep -q "id: 'mission-bank'" js/tools-catalog.js
+          grep -q "wellyton" js/tools-catalog.js
+          grep -q "ALLOWED_USERNAME = 'wellyton'" worker/studies.js
+          grep -q "isStudiesApi" worker/index.js
+          grep -q "handleStudiesRoute" worker/index.js
+          grep -q 'studyAchievementsSection' conquistas/index.html
+          grep -q '/api/studies/achievements' js/achievements.js
+          grep -q 'Content-Security-Policy' estudos/index.html
+
+      - name: Validar isolamento assistencial
+        run: |
+          set -euo pipefail
+          if grep -Eqi '\b(CNS|CPF|prontu[aá]rio|paciente|patient|diagn[oó]stico|encaminhamento|CORE)\b' worker/studies.js worker/studies-content/*.js js/studies.js estudos/index.html; then
+            echo 'A Missao Bancaria contem termo assistencial proibido no dominio de estudos.' >&2
+            exit 1
+          fi
+          if grep -Eqi 'firebase|firestore|google_drive|document_drive|telemedicina' worker/studies.js worker/studies-content/*.js; then
+            echo 'A Missao Bancaria nao pode depender de dominios institucionais.' >&2
+            exit 1
+          fi
+
+      - name: Validar documentacao e fontes
+        run: |
+          set -euo pipefail
+          grep -q 'Fase ativa: Fase 1' docs/missao-bancaria/STATUS.md
+          test -f docs/missao-bancaria/16-FONTES-SFN-V1.md
+          grep -q 'Banco do Brasil' docs/missao-bancaria/16-FONTES-SFN-V1.md
+          grep -q 'CAIXA' docs/missao-bancaria/16-FONTES-SFN-V1.md
+          grep -q 'Banco Central do Brasil' docs/missao-bancaria/16-FONTES-SFN-V1.md

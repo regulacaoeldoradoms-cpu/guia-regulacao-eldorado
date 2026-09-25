@@ -33,8 +33,12 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
   const git=(args)=>execFileSync('git',['-c','core.safecrlf=false',...args],{cwd:root,encoding:'utf8',maxBuffer:20*1024*1024}).trimEnd();
   const baseCommit=git(['rev-parse','--verify',`${base}^{commit}`]);
   const changed=git(['diff','--name-only',baseCommit,'--','*.css','*.js','*.html']).split(/\r?\n/).filter(Boolean);
-  const original=new Map(changed.map(file=>{const key=`${baseCommit}:${file}`;if(!baselineSources.has(key))baselineSources.set(key,git(['show',key]));return[file,baselineSources.get(key)];}));
-  const working=new Map(await Promise.all(changed.map(async file=>[file,await readFile(path.join(root,file),'utf8')])));
+  const comparableChanged=changed.filter(file=>{
+    try { git(['cat-file','-e',`${baseCommit}:${file}`]); return true; }
+    catch (_) { return false; }
+  });
+  const original=new Map(comparableChanged.map(file=>{const key=`${baseCommit}:${file}`;if(!baselineSources.has(key))baselineSources.set(key,git(['show',key]));return[file,baselineSources.get(key)];}));
+  const working=new Map(await Promise.all(comparableChanged.map(async file=>[file,await readFile(path.join(root,file),'utf8')])));
   const load=async(targetPage)=>{
     const errors=[];
     const captureError=error=>errors.push(error.message);
@@ -179,7 +183,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
   pixelComparison.gateAccepted=pixelComparison.gateApplicable?(pixelComparison.accepted||lowAmplitudeRaster||sparseRaster):true;
   pixelComparison.diagnosticOnly=!pixelComparison.gateApplicable||lowAmplitudeRaster||sparseRaster;
   const sourceEvidence=(files,sources)=>[...files].sort().map(file=>({path:file,sha256:createHash('sha256').update(sources.get(file)).digest('hex')}));
-  const report={route,theme,media,preparationMedia:'screen',diffScope:'repository-root',baseCommit,changed,productChanges:changed.filter(file=>!file.startsWith('testing/')),servedCurrentFiles:sourceEvidence(fulfilledCurrent,working),servedBaseFiles:sourceEvidence(fulfilledBase,original),hashCurrent:current.hash,hashBase:baseline.hash,screenshotsIdentical:current.hash===baseline.hash,pixelComparison,differences,captureStability:{current:current.captureStability,base:baseline.captureStability},errorsCurrent:current.errors,errorsBase:baseline.errors,newErrors:current.errors.filter(error=>!baseline.errors.includes(error))};
+  const report={route,theme,media,preparationMedia:'screen',diffScope:'repository-root',baseCommit,changed,comparableChanged,newFilesWithoutBase:changed.filter(file=>!comparableChanged.includes(file)),productChanges:changed.filter(file=>!file.startsWith('testing/')),servedCurrentFiles:sourceEvidence(fulfilledCurrent,working),servedBaseFiles:sourceEvidence(fulfilledBase,original),hashCurrent:current.hash,hashBase:baseline.hash,screenshotsIdentical:current.hash===baseline.hash,pixelComparison,differences,captureStability:{current:current.captureStability,base:baseline.captureStability},errorsCurrent:current.errors,errorsBase:baseline.errors,newErrors:current.errors.filter(error=>!baseline.errors.includes(error))};
   const name=`${theme}-${media}-base-comparison`;
   await info.attach(`${name}.json`,{body:Buffer.from(JSON.stringify(report,null,2)),contentType:'application/json'});
   await writeFile(info.outputPath(`${name}.json`),JSON.stringify(report,null,2));

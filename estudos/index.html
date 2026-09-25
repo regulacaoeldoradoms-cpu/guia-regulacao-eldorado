@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="/js/portal-performance.js?v=20260923-1" async></script>
+  <link rel="preconnect" href="https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev" crossorigin>
+  <link rel="preload" href="/js/auth-client.js?v=20260910-4" as="script">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0d3157">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <title>Missão Bancária | Portal da Regulação</title>
+  <link rel="icon" href="/assets/portal-regulacao-header_512x512.png?v=20260911-1" type="image/png">
+  <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
+  <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
+  <link rel="stylesheet" href="/css/studies.css?v=20260925-1">
+  <script src="/js/portal-theme.js?v=20260923-1"></script>
+</head>
+<body class="portal-page study-page">
+  <div class="portal-shell">
+    <header class="portal-topbar study-topbar">
+      <div class="portal-topbar-inner">
+        <a class="portal-brand portal-brand--portal-identity" href="/ferramentas/" style="color:inherit;text-decoration:none">
+          <img class="portal-symbol" src="/assets/portal-regulacao-header_512x512.png?v=20260911-1" alt="Símbolo do Portal">
+          <div class="portal-brand-copy"><h1>Missão Bancária</h1><p>Campanha de estudos · CAIXA + Banco do Brasil</p></div>
+        </a>
+        <div class="portal-user">
+          <div class="portal-user-meta"><strong id="portalUserName">Carregando...</strong><span id="portalUserRole"></span></div>
+          <button class="portal-button ghost" id="portalLogout" type="button">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="study-main" id="studyDashboard">
+      <section class="study-hero">
+        <div>
+          <span class="study-eyebrow">Campanha pessoal</span>
+          <h1 id="studyGreeting">Preparando sua próxima missão...</h1>
+          <p>Leia, recupere da memória, responda e avance. Seu progresso fica salvo na conta.</p>
+        </div>
+        <button class="study-primary" id="continueStudy" type="button" disabled>Continuar campanha</button>
+      </section>
+
+      <section class="study-metrics" aria-label="Seu progresso">
+        <article><span>Nível</span><strong id="metricLevel">—</strong><small id="metricLevelTitle">—</small></article>
+        <article><span>XP</span><strong id="metricXp">0</strong><small id="metricNextXp">Iniciando</small></article>
+        <article><span>Questões</span><strong id="metricQuestions">0</strong><small id="metricAccuracy">0% de acertos</small></article>
+        <article><span>Horas líquidas</span><strong id="metricHours">0h00</strong><small id="metricReviews">0 revisões pendentes</small></article>
+      </section>
+
+      <section class="study-progress-panel">
+        <div class="study-progress-row">
+          <div><strong>Campanha disponível</strong><span id="availabilityLabel">—</span></div>
+          <div class="study-progress-track"><span id="availabilityBar"></span></div>
+        </div>
+        <div class="study-progress-row">
+          <div><strong>Seu progresso no conteúdo disponível</strong><span id="personalProgressLabel">—</span></div>
+          <div class="study-progress-track"><span id="personalProgressBar"></span></div>
+        </div>
+      </section>
+
+      <section class="study-world">
+        <header>
+          <div><span class="study-eyebrow">Mundo 1</span><h2>Sistema Financeiro Nacional</h2></div>
+          <p>Primeiro recorte real da campanha.</p>
+        </header>
+        <div class="study-mission-grid" id="missionGrid"></div>
+      </section>
+
+      <div class="study-status" id="studyStatus" role="status" aria-live="polite"></div>
+    </main>
+
+    <section class="study-focus" id="studyFocus" hidden aria-labelledby="focusTitle">
+      <header class="study-focus-header">
+        <div><span class="study-eyebrow">Modo foco</span><h1 id="focusTitle">Missão</h1></div>
+        <div class="study-focus-actions"><span id="studyTimer">00:00</span><button type="button" id="markDoubt">Marcar dúvida</button><button type="button" id="leaveFocus">Sair</button></div>
+      </header>
+      <div class="study-focus-progress"><span id="focusProgress"></span></div>
+      <article class="study-lesson">
+        <p class="study-objective" id="focusObjective"></p>
+        <div id="lessonSections"></div>
+        <section class="study-recall"><h2>Recordação ativa</h2><p>Antes de seguir, responda mentalmente sem voltar ao texto.</p><div id="recallList"></div></section>
+        <section class="study-quiz"><h2>Minibatalha</h2><div id="questionList"></div></section>
+        <section class="study-sources"><h2>Fontes oficiais desta missão</h2><div id="sourceList"></div></section>
+        <button class="study-primary study-complete" id="completeMission" type="button" disabled>Concluir missão</button>
+        <div class="study-status" id="focusStatus" role="status" aria-live="polite"></div>
+      </article>
+    </section>
+
+    <div class="study-achievement-toast" id="achievementToast" hidden role="status" aria-live="polite"></div>
+  </div>
+
+  <script src="/js/auth-config.js?v=20260815-1"></script>
+  <script src="/js/auth-client.js?v=20260910-4"></script>
+  <script src="/js/portal-interactions.js?v=20260923-2"></script>
+  <script src="/js/tools-catalog.js?v=20260925-study-1"></script>
+  <script src="/js/studies.js?v=20260925-1"></script>
+</body>
+</html>

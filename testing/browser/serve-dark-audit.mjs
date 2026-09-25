@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const types = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.mjs':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8', '.json':'application/json', '.webmanifest':'application/manifest+json', '.png':'image/png', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.svg':'image/svg+xml', '.webp':'image/webp', '.gif':'image/gif', '.woff2':'font/woff2', '.woff':'font/woff', '.ttf':'font/ttf', '.mp4':'video/mp4', '.wav':'audio/wav', '.pdf':'application/pdf', '.wasm':'application/wasm' };
-const pages = /^\/(?:|(?:admin\/(?:usuarios|social|monitoramento|configuracao)|agenda(?:\/sync)?|amigos|cadastro|cidadao|configuracoes|conquistas|conselho(?:\/painel)?|conta|documentos|ferramentas|home|login|medico|notificacoes|perfil|protocolo|recepcao|seguranca|telemedicina)\/?(?:index\.html)?)$/;
+const pages = /^\/(?:|(?:admin\/(?:usuarios|social|monitoramento|configuracao)|agenda(?:\/sync)?|amigos|cadastro|cidadao|configuracoes|conquistas|conselho(?:\/painel)?|conta|documentos|estudos|ferramentas|home|login|medico|notificacoes|perfil|protocolo|recepcao|seguranca|telemedicina)\/?(?:index\.html)?)$/;
 http.createServer(async (request, response) => {
   try {
     if (!['GET', 'HEAD'].includes(request.method)) throw new Error('read_only');

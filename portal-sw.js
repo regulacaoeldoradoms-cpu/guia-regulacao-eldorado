@@ -33,7 +33,7 @@ let documentWarmGeneration = 0;
 
 const KNOWN_PAGE_PATHS = new Set([
   '/', '/home/', '/login/', '/cadastro/', '/ferramentas/', '/perfil/',
-  '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/conta/', '/medico/', '/protocolo/',
+  '/amigos/', '/notificacoes/', '/seguranca/', '/configuracoes/', '/conquistas/', '/conta/', '/estudos/', '/medico/', '/protocolo/',
   '/recepcao/', '/telemedicina/', '/documentos/', '/cidadao/', '/conselho/',
   '/conselho/painel/', '/admin/usuarios/', '/admin/monitoramento/',
   '/admin/configuracao/', '/admin/social/'
@@ -53,7 +53,7 @@ const CORE_RESOURCES = Object.freeze([
   '/js/portal-pwa.js?v=20260922-3',
   '/js/auth-client.js?v=20260910-4',
   '/js/portal-theme.js?v=20260923-1',
-  '/js/tools-catalog.js?v=20260923-1',
+  '/js/tools-catalog.js?v=20260925-study-1',
   '/js/document-cache.js?v=20260912-1',
   '/js/document-editor.js?v=20260916-2',
   '/js/login-home-transition.js?v=20260917-3',
