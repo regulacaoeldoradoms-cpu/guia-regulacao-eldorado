@@ -23,6 +23,10 @@ Objetivo de UX: transformar estudo em uma campanha de progressão visível, base
 8. Não avançar de fase sem implementação, teste e aceite quando aplicável.
 9. Preservar decisões humanas mais recentes.
 10. Novas sessões devem ler esta fonte e os documentos da fase ativa antes de alterar código.
+11. Wellyton deve poder estudar enquanto a plataforma é construída.
+12. A primeira versão jogável deve conter conteúdo real; material fictício fica restrito a testes.
+13. Novos conteúdos não podem apagar ou diluir progresso anterior.
+14. "Conteúdo disponível" e "progresso no conteúdo disponível" são métricas separadas.
 
 ## Experiência central
 Dashboard:
@@ -68,6 +72,13 @@ Cobertura:
 Domínio:
 - calculado por desempenho recente, revisões e retenção.
 
+Disponibilidade:
+- campanha planejada;
+- conteúdo já publicado;
+- progresso pessoal dentro do conteúdo publicado.
+
+A expansão da campanha não pode fazer a barra pessoal "andar para trás".
+
 ## Fases
 
 ### Fase 0 — Governança e arquitetura
@@ -76,17 +87,17 @@ Definir rota `/estudos/`, API `/api/studies/*`, autorização `wellyton`, modelo
 Aceite: plano técnico revisado e isolamento demonstrável.
 
 ### Fase 1 — Motor MVP
-Criar acesso privado, dashboard, persistência, XP, níveis, cronômetro, mapa de campanha, próxima missão e modo foco.
+Criar acesso privado, dashboard, persistência, XP, níveis, cronômetro, mapa de campanha, próxima missão e modo foco. A primeira versão jogável já contém um pequeno recorte real de Conhecimentos Bancários.
 
-Aceite: iniciar missão, concluir, sair, voltar e encontrar progresso preservado; outra conta deve falhar.
+Aceite: iniciar missão real, concluir, sair, voltar e encontrar progresso preservado; outra conta deve falhar; uma nova missão pode ser publicada sem apagar progresso anterior.
 
 ### Fase 2 — Motor pedagógico
-Criar formato reutilizável de aula/missão com leitura, recordação, questões, feedback, domínio e revisão.
+Criar formato reutilizável de aula/missão com leitura, recordação, questões, feedback, domínio e revisão, permitindo publicação incremental.
 
-Aceite: pelo menos três missões diferentes publicadas pelo mesmo motor sem código específico por aula.
+Aceite: pelo menos três missões diferentes publicadas pelo mesmo motor sem código específico por aula e uma expansão posterior preservando o histórico anterior.
 
 ### Fase 3 — Mundo 1: Conhecimentos Bancários
-Primeiro mundo completo. Usar edital oficial vigente como escopo. Criar trilha, questões, revisões, chefe temático e diagnóstico por subtema.
+Expandir em blocos o conteúdo bancário iniciado anteriormente até completar o primeiro mundo. Usar edital oficial vigente como escopo. Criar trilha, questões, revisões, chefe temático e diagnóstico por subtema. Cada bloco pronto pode ser liberado imediatamente para estudo.
 
 Aceite: estudo ponta a ponta com lacunas claramente identificadas.
 
@@ -120,6 +131,14 @@ Desempenho, UX, mobile, acessibilidade, atualização de edital, versionamento e
 
 Aceite: adotar novo edital sem zerar progresso válido.
 
+## Estratégia de entrega contínua
+
+A construção oficial é:
+
+> construir pequeno ciclo completo → Wellyton estuda → observar → ajustar → publicar mais conteúdo.
+
+Conteúdos usam IDs lógicos estáveis, como `banking.sfn.cmn`, para que mudanças de ordem, novas aulas ou revisões editoriais não apaguem histórico.
+
 ## Fontes
 Hierarquia:
 1. edital oficial;
@@ -133,7 +152,7 @@ Cada snapshot de edital deve guardar órgão, cargo, banca, data, fonte, discipl
 
 ## Instrução operacional para nova sessão
 
-> Continue o projeto Missão Bancária a partir da documentação versionada no repositório. Antes de alterar código, leia o Dossiê Mestre, a Instrução de Continuidade e o documento da fase ativa. Confira o estado real da main/branch e preserve decisões aprovadas. Trabalhe somente no escopo da fase atual, sem antecipar fases desnecessariamente. Não misture dados de estudo com dados institucionais. Ao concluir uma entrega, registre implementação, testes, pendências e o que depende de homologação humana.
+> Continue o projeto Missão Bancária a partir da documentação versionada no repositório. Antes de alterar código, leia o Dossiê Mestre, a Instrução de Continuidade e o documento da fase ativa. Confira o estado real da main/branch e preserve decisões aprovadas. Trabalhe somente no escopo da fase atual, mas priorize uma fatia vertical utilizável que Wellyton possa estudar assim que estiver estável. Não use conteúdo fictício na experiência real e preserve integralmente o progresso ao publicar novas missões. Não misture dados de estudo com dados institucionais. Ao concluir uma entrega, registre implementação, testes, pendências e o que depende de homologação humana.
 
 ## Hierarquia em caso de conflito
 1. instrução humana explícita mais recente;
