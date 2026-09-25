@@ -26,7 +26,8 @@ async function sampleCouncilReflection(page,info){
   await info.attach('council-reflection-sampling.json',{body:Buffer.from(JSON.stringify(phase,null,2)),contentType:'application/json'});
 }
 // Explicit opt-in: these are actual base-commit comparisons, never a rebaseline.
-if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRoutes.filter(route=>!aliasDestinations[route])) {
+const routesWithoutBase = new Set(['/estudos/']);
+if(process.env.DARK_AUDIT_COMPARE_BASE==='1')for(const route of selectedAuditRoutes.filter(route=>!aliasDestinations[route]&&!routesWithoutBase.has(route))) {
   for(const [theme,media] of [['light','screen'],['dark','print']])test(`preserve ${theme} ${media} ${route}`,async({page,context},info)=>{
     // The complete mobile catalogue exceeds 90 million physical pixels. Keep
     // it intact and allow the bounded, repeated full-page captures to finish.
