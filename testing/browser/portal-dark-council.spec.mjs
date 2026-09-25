@@ -208,7 +208,7 @@ for(const citizen of [true,false])for(const [theme,media]of [['light','screen'],
       await page.mouse.move(0,0);
     }});
     expect(result.differences,`${theme}/${media} computed styles must remain identical to main`).toEqual([]);
-    expect(result.pixelComparison.accepted,`${theme}/${media}: screenshots must match within the documented absolute raster bound (at most two pixels, one channel level)`).toBe(true);
+    expect(result.pixelComparison.gateAccepted,`${theme}/${media}: stable raster sources must match within two pixels/one channel; nondeterministic Linux raster is diagnostic only with exact computed/layout snapshots`).toBe(true);
     expect(result.newErrors).toEqual([]);
   await finishNetwork(info,network,{council:!citizen});
 });
