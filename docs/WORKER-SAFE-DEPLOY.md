@@ -154,3 +154,28 @@ Correção adotada:
 - nenhuma regra de bindings, secrets, D1, promoção ou rollback foi relaxada.
 
 A atualização é de compatibilidade do pipeline. Ela não concede acesso adicional ao Worker e não altera dados armazenados.
+
+
+## Versão não produtiva equivalente — recuperação sem relaxar o gate
+
+O modelo legado de previews do Cloudflare pode deixar uma Worker Version mais nova que a versão ativa, mas sem tráfego produtivo. Isso pode bloquear a etapa inicial do gate com `ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE`.
+
+A partir de 25/09/2026, o gate pode ignorar essa versão **somente** quando comprovar equivalência integral de configuração com a produção ativa.
+
+A equivalência exige:
+- mesma quantidade de bindings;
+- mesmos nomes;
+- mesmos tipos;
+- mesmos IDs de recursos, incluindo D1;
+- mesmos valores de todos os bindings `plain_text`;
+- mesmo conjunto de secrets, aceitando apenas equivalência entre `secret_text` e `secret_key`;
+- todos os requisitos críticos já existentes no gate.
+
+A versão não produtiva:
+- precisa estar fora do deployment ativo, pois a produção já foi confirmada como uma única versão em 100%;
+- não é promovida;
+- não é reutilizada como candidata;
+- não recebe tráfego;
+- serve apenas como condição segura para permitir que o gate continue e crie **uma nova candidata própria**, que passa por toda a validação normal antes da promoção.
+
+Se qualquer binding divergir, o gate permanece fail-closed com `ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE`.
