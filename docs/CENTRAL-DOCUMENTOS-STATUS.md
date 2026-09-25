@@ -2,7 +2,30 @@
 
 Última atualização: 25/09/2026.
 
-## Ajuste pós-homologação — texto dos blocos do Guia Médico — EM VALIDAÇÃO — 25/09/2026
+## Publicação do reparo de contraste #484 — 25/09/2026
+
+**IMPLEMENTADO E PUBLICADO PELO GITHUB PAGES; REVISÃO HUMANA E RESULTADO DA AUDITORIA INTEGRAL AINDA PENDENTES.** O operador reiterou a implementação (“então implemente ué”), mantendo a revisão diretamente no site já autorizada. A Fase 7 permanece ativa; nenhuma fase encerrada foi reiniciada.
+
+- PR [#484](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/pull/484): merged às **17:36:00 UTC**. Head conferido `29b7ffc72aec03d00bd3ce5dec31832bbe7bc1b4`; base anterior `54c1e74dd5724879b492924cbbe93f90d75234cc`.
+- Merge real: **`1085ab80587a565056b262a23ab8903df9988ef2`**, integrado com verificação do SHA esperado. `0f58bf62ad6e3984e1b06c658b28a2cfb9c860c7` era somente o merge sintético.
+- [GitHub Pages run 36168144829](https://github.com/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/actions/runs/36168144829): build, report-build-status e deploy **success**. Job `deploy` **108181078769**, concluído às **17:37:45 UTC**, deployment `6666571287`, ambiente `github-pages`, associado ao merge `1085ab8`.
+- O CSS publicado é `medical.css?v=20260925-1`: texto, listas e marcadores dos seis blocos brancos em dark/screen, incluindo a mensagem vazia. Títulos, avisos, modo claro e impressão ficam fora da regra. Sem novo código de produto nesta retomada.
+
+**Base da decisão técnica de liberação:** prova focal local 8/8 já registrada, revisão do patch restrito e **23 workflows GitHub Actions concluídos com success**. O workflow transversal **Auditar modo escuro do Portal**, run **36167184456**, job **108177679089**, ainda estava em execução quando o merge foi realizado e na conferência deste registro. A liberação ocorreu antes do resultado integral; não deve ser descrita como aprovação de todos os checks ou do novo spec completo. A prova local é reduzida e não comprova backend. Nenhum teste, workflow, proteção ou gate foi desativado, cancelado ou relaxado. Essa decisão pontual não cria dispensa permanente de validação.
+
+A revisão automática Codex não ocorreu por limite informado pelo bot; não constitui aprovação. O build separado do Worker no candidato, **`10cb15fe-2a46-4a93-9819-772cf0a8236f`**, também reportou failure, conforme comentário da #484. A causa não foi obtida. Não há alteração de Worker ou JavaScript funcional no patch; isso permite distinguir a publicação estática, mas não comprova a saúde operacional do backend. A pendência histórica `d8be41f4` e o diagnóstico dos builds continuam abertos. Não contornar o deploy seguro.
+
+A tentativa de leitura HTTP de `/medico/` pela ferramenta web voltou a não acessar a URL. A publicação foi confirmada pelo deploy GitHub Pages, não por navegação autenticada ou inspeção visual do domínio. Essa limitação não é evidência de indisponibilidade global. O laboratório Cloudflare não foi usado como prova de publicação do Portal.
+
+Alternativa descartada nesta retomada: encerrar novamente apenas com uma PR aberta e transferir outra confirmação de implementação ao operador. A autorização já existia; a correção pontual foi integrada sem modificar seu código. O risco residual de a auditoria ampla encontrar regressão permanece explícito.
+
+**Reversão específica:** partir da main atual e preparar `git revert -m 1 1085ab80587a565056b262a23ab8903df9988ef2` em branch/PR somente se houver regressão atribuível à #484. Não reverter toda a #480, não resetar/forçar a main e não alterar dados. O comando não foi executado.
+
+**Próxima ação exata:** consultar o resultado final do run `36167184456` já iniciado, sem reiniciá-lo. Se falhar, examinar a causa e corrigir ou reverter o ajuste conforme a regressão; se aprovar, registrar a evidência. Receber a revisão visual dos seis blocos em `/medico/`; não declarar homologação humana antecipadamente. Conferir a integração da atualização documental da branch `docs/medical-dark-contrast-release-20260925`. As demais pendências abaixo continuam preservadas.
+
+## Ajuste pós-homologação — texto dos blocos do Guia Médico — registro inicial de validação — 25/09/2026
+
+Este registro preserva o diagnóstico e a preparação anteriores ao merge. Para o estado operacional atual, prevalecem a seção de publicação acima e o handoff ao final.
 
 Pedido aprovado: tornar branco o texto abaixo dos títulos em **Critérios para encaminhar**, **Informações clínicas obrigatórias**, **Exames obrigatórios para solicitar**, **Exames obrigatórios conforme o caso**, **Exames e documentos recomendados quando disponíveis** e **Elementos que auxiliam a priorização**, somente no modo escuro de `/medico/`.
 
@@ -106,18 +129,18 @@ As decisões recentes de IA canônica, execução antecipatória, busca e pré-c
 | Campo | Estado persistente |
 |---|---|
 | Fase atual | Fase 7 — Robustez e otimização contínua; Fase 0 e Fases 1–6 não reiniciadas; 7G.6 encerrada. |
-| Subfase / objetivo atual | Reparo de contraste dos seis blocos clínicos de `/medico/`, encontrado na revisão produtiva da #480. |
-| Última ação concluída | Diagnóstico da cascata real, override CSS restrito, cache-buster e spec Chromium preparados; prova focal local 8/8 e sintaxe Node aprovadas. |
-| Branch atual | `fix/medical-dark-content-contrast-20260925`, baseada em `54c1e74dd5724879b492924cbbe93f90d75234cc`. |
-| PR atual | Abrir/conferir a PR desta branch; #480 e #483 já merged. #481 é separada e não foi tocada. |
-| Último commit relevante | Base `54c1e74d`; integração funcional anterior #480 `76648e3`; localizar o head da branch para os checks deste reparo. |
-| Checks e testes | Prova focal reduzida local 8/8 e sintaxe do spec aprovadas. CI da rota completa e auditoria existente pendentes, não substituídos pela prova local. |
-| Decisões tomadas | Texto, listas, marcadores e mensagem vazia brancos somente nos blocos clínicos do Guia Médico em dark/screen; preservar títulos, alertas, claro e print. |
-| Justificativas | `.content-block ul` mantinha cor slate-700 explícita; o fundo dark do pai não substitui essa cor. Pseudo-exemplo anterior não usava os seletores reais. |
-| Alternativas descartadas | Seletor branco global; alterar variáveis claras; recolorir por JavaScript; mudar protocolos; reverter toda a #480. |
-| Ações externas concluídas | #480 e #483 integradas anteriormente; nenhuma credencial, dado, configuração externa ou permissão mudou neste reparo. |
-| Pendências e bloqueios | CI/merge/deploy do reparo, homologação humana posterior; log do Worker Build histórico d8be41f4 segue pendência separada. |
-| Riscos conhecidos | Evitar branco na impressão ou em alertas; CI sintético não comprova backend nem navegador físico. Não afirmar publicação sem deploy. |
+| Subfase / objetivo atual | Contraste dos seis blocos de `/medico/` implementado e publicado; auditoria integral e revisão humana pendentes. |
+| Última ação concluída | Merge #484 `1085ab8` e deploy GitHub Pages success do mesmo commit, run `36168144829`, job `108181078769`. |
+| Branch atual | Funcional `fix/medical-dark-content-contrast-20260925` já integrada; registro em `docs/medical-dark-contrast-release-20260925`. |
+| PR atual | #484 merged; conferir a PR documental desta branch antes de duplicar. #480 e #483 merged; #481 separada e intocada. |
+| Último commit relevante | Head funcional `29b7ffc`; merge real `1085ab80587a565056b262a23ab8903df9988ef2`; baseline `54c1e74d`. |
+| Checks e testes | Prova focal reduzida 8/8 registrada; 23 workflows Actions success antes do merge; auditoria `36167184456` em execução na conferência. Pages do merge success. Worker separado com failure. |
+| Decisões tomadas | Publicar o reparo visual reversível após autorização reiterada e validação focal, mantendo auditoria transversal pendente e ativa; não declarar aprovação integral nem homologação humana. |
+| Justificativas | Patch restrito de cor corrige contraste real; liberação pontual não exige nova implementação ou confirmação já concedida. Resultado amplo continua sendo pendência explícita. |
+| Alternativas descartadas | Reabrir implementação pronta; seletor branco global; alterar variáveis claras; mudar protocolos; reverter toda a #480; desativar testes ou proteção. |
+| Ações externas concluídas | #484 integrada com SHA esperado e publicada pelo GitHub Pages. Nenhuma credencial, dado, configuração externa ou permissão mudou. |
+| Pendências e bloqueios | Resultado final do run `36167184456`; revisão visual do operador; diagnóstico autorizado dos Worker Builds históricos `d8be41f4` e `10cb15fe`; integração documental. |
+| Riscos conhecidos | Auditoria ampla ainda pode apontar regressão; fonte do Worker failure desconhecida; deploy estático não prova backend nem navegador físico; HTTP independente indisponível nesta sessão. |
 | Métricas / observabilidade | Nenhuma telemetria nova; dados dos testes exclusivamente sintéticos. |
-| Próxima ação exata | Conferir PR/checks da branch, corrigir falhas reais se houver, integrar após validação, confirmar Pages do Portal e solicitar conferência dos textos em `/medico/`. |
-| Arquivos e fontes principais | `css/medical.css`; `medico/index.html`; `js/medical-app.js`; `css/site.css`; `testing/browser/portal-dark-medical-contrast.spec.mjs`; este status; Guia Mestre 1.1; `PORTAL-APARENCIA-V1.md`; histórico preservado. |
+| Próxima ação exata | Ler resultado do run `36167184456` já iniciado, sem repetir matriz; registrar sucesso ou tratar falha. Conferir PR documental e receber revisão em `/medico/`. Reverter somente #484 se necessário. |
+| Arquivos e fontes principais | `css/medical.css`; `medico/index.html`; `testing/browser/portal-dark-medical-contrast.spec.mjs`; este status; Guia Mestre 1.1; `PORTAL-APARENCIA-V1.md`; PR #484; runs `36167184456` e `36168144829`; histórico preservado. |
