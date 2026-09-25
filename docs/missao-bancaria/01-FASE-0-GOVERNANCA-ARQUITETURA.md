@@ -1,6 +1,9 @@
 # MISSÃO BANCÁRIA — FASE 0
 ## Governança, isolamento e arquitetura
 
+**Estado:** **APROVADA E ENCERRADA em 25/09/2026 por aceite explícito de Wellyton.**  
+**Plano técnico:** [15-FASE-0-PLANO-TECNICO.md](15-FASE-0-PLANO-TECNICO.md)
+
 ### Objetivo
 Definir como o módulo entra no Portal sem interferir em módulos institucionais.
 
@@ -40,8 +43,9 @@ Entidades previstas:
 - study_reviews;
 - study_xp_events;
 - study_achievements;
-- study_content_releases ou mecanismo equivalente de versionamento/publicação;
-- study_achievements com regra idempotente de desbloqueio e timestamp de conquista.
+- study_content_releases ou mecanismo equivalente de versionamento/publicação.
+
+A entidade `study_achievements` deve possuir regra idempotente de desbloqueio e timestamp de conquista.
 
 O desenho final pode mudar, mas a separação de domínio deve permanecer.
 
@@ -76,3 +80,20 @@ Requisitos:
 
 ### Critério de aceite
 Fase 0 é aprovada quando existe um plano técnico revisado, sem código produtivo obrigatório, com autorização claramente testável, nenhuma dependência de dados institucionais e estratégia comprovável para preservar progresso durante a expansão incremental da campanha.
+
+### Aceite humano
+**APROVADO em 25/09/2026.**
+
+Decisões homologadas:
+- `/estudos/`;
+- `/api/studies/*`;
+- gate exclusivo de `wellyton`;
+- `AUTH_DB` com tabelas isoladas `study_*`;
+- conteúdo versionado no repositório;
+- IDs estáveis;
+- progresso/XP/conquistas idempotentes;
+- integração não destrutiva com `/conquistas/`;
+- sem telemetria pedagógica externa;
+- rollback sem apagar progresso.
+
+**Próxima fase autorizada:** Fase 1 — Motor MVP + primeiro recorte real de Sistema Financeiro Nacional.
