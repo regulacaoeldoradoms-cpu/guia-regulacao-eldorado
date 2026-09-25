@@ -28,6 +28,7 @@ const ACTIVE_ROUTES = [
   'seguranca/index.html',
   'configuracoes/index.html',
   'conquistas/index.html',
+  'estudos/index.html',
   'admin/usuarios/index.html',
   'admin/monitoramento/index.html',
   'admin/configuracao/index.html',
