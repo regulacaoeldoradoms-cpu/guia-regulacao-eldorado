@@ -23,6 +23,8 @@ Use este arquivo como instrução curta para qualquer nova conversa, agente ou s
 - desde a primeira versão jogável, conteúdo apresentado ao Wellyton deve ser real e estudável;
 - publicar novas missões sem apagar ou diluir progresso anterior;
 - manter separados "conteúdo disponível" e "progresso no conteúdo disponível";
+- integrar medalhas de estudo à área `/conquistas/`, sem misturá-las com Bronze/Prata/Ouro da segurança;
+- conquistas só podem ser liberadas por critérios persistidos e verificáveis;
 - registrar alteração de escopo no Dossiê ou no documento da fase.
 
 ## Instrução sugerida para nova sessão
