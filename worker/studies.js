@@ -247,7 +247,9 @@ async function metrics(env, username, progress) {
     plannedMissions: planned,
     campaignAvailability: Math.round((published / planned) * 1000) / 10,
     completedPublished,
-    availableProgress: published ? Math.round((completedPublished / published) * 1000) / 10 : 0
+    availableCompletion: published ? Math.round((completedPublished / published) * 1000) / 10 : 0,
+    campaignProgress: Math.round((completedPublished / planned) * 1000) / 10,
+    availableProgress: Math.round((completedPublished / planned) * 1000) / 10
   };
 }
 
@@ -271,7 +273,7 @@ async function handleBootstrap(env, user, origin) {
   const progress = await progressMap(env, user.username);
   return json({
     user,
-    contentRelease: 'sfn-v1',
+    contentRelease: 'sfn-v1.1',
     metrics: await metrics(env, user.username, progress),
     progress,
     missions: PUBLISHED_MISSIONS.map(publicMission),
