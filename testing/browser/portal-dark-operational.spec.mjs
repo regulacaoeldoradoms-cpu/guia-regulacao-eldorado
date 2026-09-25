@@ -149,6 +149,6 @@ for(const route of ['/telemedicina/','/medico/','/recepcao/','/agenda/'])for(con
     };
     const comparison=await compareAgainstBase({page,context,info,route,theme,media,prepare});
     expect(network.unexpected).toEqual([]);expect(comparison.newErrors).toEqual([]);
-    expect(comparison.differences).toEqual([]);expect(comparison.pixelComparison.withinTolerance).toBe(true);
+    expect(comparison.differences).toEqual([]);expect(comparison.pixelComparison.gateAccepted).toBe(true);
   });
 }
