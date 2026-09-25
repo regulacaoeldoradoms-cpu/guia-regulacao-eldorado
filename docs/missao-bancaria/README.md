@@ -6,6 +6,11 @@ Documentação de planejamento do módulo privado de estudos da conta `wellyton`
 **Fase ativa: Fase 0 — Governança e arquitetura.**  
 Ainda não há autorização implícita para publicar código em produção.
 
+## Modelo de entrega
+O projeto será desenvolvido em **fatias verticais jogáveis**. Assim que um pequeno conjunto estiver tecnicamente estável e pedagogicamente válido, ele pode ser disponibilizado para Wellyton estudar, sem esperar a conclusão do curso inteiro.
+
+A primeira versão real não usará aula demonstrativa fictícia: começará com conteúdo verdadeiro de Conhecimentos Bancários. A expansão posterior deve preservar XP, domínio, revisões, tentativas e conclusões já registradas.
+
 ## Ordem de leitura
 1. [00-DOSSIE-MESTRE.md](00-DOSSIE-MESTRE.md)
 2. [11-INSTRUCAO-DE-CONTINUIDADE.md](11-INSTRUCAO-DE-CONTINUIDADE.md)
