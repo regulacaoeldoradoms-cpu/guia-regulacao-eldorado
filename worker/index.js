@@ -12,6 +12,7 @@ import { handleSystemReadinessRoute, isSystemReadinessApi } from './system-readi
 import { handlePushRoute, isPushApi } from './push-notifications.js';
 import { handleTelemedicineRoute, isTelemedicineApi } from './telemedicine-router-v2.js';
 import { handleAgendaRoute, isAgendaApi } from './agenda.js';
+import { handleStudiesRoute, isStudiesApi } from './studies.js';
 import { handleDocumentsRoute, isDocumentsApi, isDocumentsOAuthCallback } from './documents-router.js';
 import { handleGmailJudicialBridge, isGmailJudicialBridgeApi } from './gmail-judicial-bridge.js';
 import { enforceDeveloperSeparation } from './role-migration.js';
@@ -238,6 +239,10 @@ export default {
     if (isAgendaApi(url.pathname)) {
       try { return await handleAgendaRoute(request, env, origin, originAllowed); }
       catch (error) { return jsonError(error?.message || 'Falha na Agenda.', Number(error?.status || 500), origin, originAllowed); }
+    }
+    if (isStudiesApi(url.pathname)) {
+      try { return await handleStudiesRoute(request, env, origin, originAllowed); }
+      catch (error) { return jsonError(error?.message || 'Falha temporária na Missão Bancária.', Number(error?.status || 500), origin, originAllowed, 'STUDIES_TEMPORARILY_UNAVAILABLE'); }
     }
     if (isTelemedicineApi(url.pathname)) {
       try { return await handleTelemedicineRoute(request, env, origin, originAllowed); }
