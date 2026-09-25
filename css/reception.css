@@ -91,3 +91,33 @@
 @media (max-width: 580px) {
   .portal-topbar .portal-brand::before { width: 46px; height: 46px; flex-basis: 46px; }
 }
+
+/* Recepção: contraste do checklist, apenas em tela escura. */
+@media screen {
+  html[data-portal-theme="dark"] #receptionDetail .reception-group > header {
+    background: var(--portal-theme-surface-2, #142a3a) !important;
+    border-color: var(--portal-theme-border, #2a465a) !important;
+  }
+
+  html[data-portal-theme="dark"] #receptionDetail :is(
+    .reception-group > header h3,
+    .reception-group > header p,
+    .reception-item-text,
+    .reception-item-text small,
+    #receptionSummaryTitle,
+    #receptionSummaryText
+  ) {
+    color: #fff !important;
+  }
+
+  /* A borda global não deve apagar a identificação semântica dos itens. */
+  html[data-portal-theme="dark"] #receptionDetail .reception-item[data-type="mandatory"] {
+    border-left-color: #e88c98 !important;
+  }
+  html[data-portal-theme="dark"] #receptionDetail .reception-item[data-type="conditional"] {
+    border-left-color: #d5ad63 !important;
+  }
+  html[data-portal-theme="dark"] #receptionDetail .reception-item[data-type="available"] {
+    border-left-color: #89afc5 !important;
+  }
+}
