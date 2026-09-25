@@ -17,6 +17,7 @@ import {
   authDbDatabaseId,
   currentSecretBindingNames,
   validateCandidateBindings,
+  validateEquivalentNonProductionBindings,
   injectAuthDbDatabaseId,
   injectRequiredSecrets,
   classifyAgendaProbe,
@@ -129,6 +130,8 @@ test('fonte do gate diferencia candidata produtiva de preview isolado conhecido'
   assert.match(source, /previewIsoladoAnterior/);
   assert.match(source, /RECONHECIDO_SEM_TRAFEGO_PRODUTIVO/);
   assert.match(source, /isKnownIsolatedPreviewVersion/);
+  assert.match(source, /validateEquivalentNonProductionBindings/);
+  assert.match(source, /versaoNaoProdutivaEquivalente/);
   assert.match(source, /ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE/);
 });
 
@@ -167,6 +170,44 @@ test('candidata íntegra preserva críticos, secrets e Firebase público', () =>
   assert.equal(result.critical, CRITICAL_BINDINGS.length);
   assert.equal(result.preservedSecrets, 9);
   assert.equal(result.authDbId, DB);
+});
+
+test('versão não produtiva equivalente pode ser ignorada sem relaxar bindings', () => {
+  const active = version(activeBindings());
+  const other = version(activeBindings().map((binding) => ({ ...binding })));
+  const result = validateEquivalentNonProductionBindings(active, other);
+  assert.equal(result.bindings, activeBindings().length);
+});
+
+test('versão não produtiva com qualquer valor público divergente continua bloqueada', () => {
+  const active = version(activeBindings());
+  const changed = activeBindings().map((binding) => (
+    binding.name === 'ALLOWED_ORIGINS'
+      ? { ...binding, text: 'https://origem-divergente.test' }
+      : { ...binding }
+  ));
+  assert.throws(
+    () => validateEquivalentNonProductionBindings(active, version(changed)),
+    /VERSAO_NAO_PRODUTIVA_BINDING_DIVERGENTE_ALLOWED_ORIGINS/
+  );
+});
+
+test('versão não produtiva com binding extra ou ausente continua bloqueada', () => {
+  const active = version(activeBindings());
+  assert.throws(
+    () => validateEquivalentNonProductionBindings(
+      active,
+      version([...activeBindings(), { name:'EXTRA_BINDING', type:'plain_text', text:'x' }])
+    ),
+    /VERSAO_NAO_PRODUTIVA_BINDINGS_DIVERGENTES/
+  );
+  assert.throws(
+    () => validateEquivalentNonProductionBindings(
+      active,
+      version(activeBindings().filter((binding) => binding.name !== 'POSTHOG_PROJECT_TOKEN'))
+    ),
+    /SEGREDO_ATUAL_NAO_PRESERVADO_POSTHOG_PROJECT_TOKEN/
+  );
 });
 
 test('Gemini não é requisito fixo do gate quando já está ausente na produção', () => {

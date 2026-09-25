@@ -289,6 +289,40 @@ function sameSecretType(actualType, expectedType) {
   return actualType === expectedType;
 }
 
+function stableJsonValue(value) {
+  if (Array.isArray(value)) return value.map(stableJsonValue);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.keys(value).sort().map((key) => [key, stableJsonValue(value[key])])
+  );
+}
+
+function comparableBinding(binding) {
+  const item = { ...(binding || {}) };
+  if (item.type === 'secret_text' || item.type === 'secret_key') {
+    return { name: item.name, type: 'secret' };
+  }
+  return stableJsonValue(item);
+}
+
+export function validateEquivalentNonProductionBindings(activeVersion, otherVersion) {
+  validateCandidateBindings(activeVersion, otherVersion);
+  const active = bindingMap(activeVersion);
+  const other = bindingMap(otherVersion);
+  must(active.size === other.size, 'VERSAO_NAO_PRODUTIVA_BINDINGS_DIVERGENTES');
+
+  for (const [name, expected] of active) {
+    const actual = other.get(name);
+    must(actual, 'VERSAO_NAO_PRODUTIVA_BINDING_AUSENTE_' + name);
+    must(
+      JSON.stringify(comparableBinding(expected)) === JSON.stringify(comparableBinding(actual)),
+      'VERSAO_NAO_PRODUTIVA_BINDING_DIVERGENTE_' + name
+    );
+  }
+
+  return { bindings: active.size };
+}
+
 export function validateCandidateBindings(activeVersion, candidateVersion) {
   const active = bindingMap(activeVersion);
   const candidate = bindingMap(candidateVersion);
@@ -535,7 +569,14 @@ export async function safeDeploy({ workerRoot = process.cwd(), fetcher = fetch }
         safeLine('previewIsoladoAnterior', 'RECONHECIDO_SEM_TRAFEGO_PRODUTIVO');
         safeLine('versaoPreviewIsoladoAnterior', latestBefore.id);
       } else {
-        throw new SafeDeployError('ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE');
+        try {
+          const equivalent = validateEquivalentNonProductionBindings(activeView, latestView);
+          safeLine('versaoNaoProdutivaEquivalente', 'RECONHECIDA_SEM_TRAFEGO_PRODUTIVO');
+          safeLine('versaoNaoProdutivaEquivalenteId', latestBefore.id);
+          safeLine('bindingsEquivalentes', equivalent.bindings);
+        } catch {
+          throw new SafeDeployError('ULTIMA_VERSAO_NAO_E_A_PRODUCAO_PARE_E_REVISE');
+        }
       }
     }
 
