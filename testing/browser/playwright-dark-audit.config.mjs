@@ -15,7 +15,7 @@ export default defineConfig({
     // Repeated identical source/DOM produced different blur pixels with GPU and
     // optimized Skia paths. Software rasterization retains real CSS/filters and
     // exact comparisons; independent capture stability is still required.
-    launchOptions: { args: ['--disable-gpu', '--disable-skia-runtime-opts', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-pings', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost'] }
+    launchOptions: { args: ['--disable-gpu', '--disable-skia-runtime-opts', '--disable-lcd-text', '--font-render-hinting=none', '--disable-font-subpixel-positioning', '--disable-background-networking', '--disable-component-update', '--disable-sync', '--no-pings', '--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE 127.0.0.1, EXCLUDE localhost'] }
   },
   projects: [
     { name:'dark-desktop', use:{ ...devices['Desktop Chrome'], ...browserChannel, viewport:{ width:1440, height:1000 } } },
