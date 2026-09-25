@@ -333,3 +333,11 @@ test('produção desativa Preview URLs para o gate seguro', () => {
   assert.match(wrangler, /^preview_urls\s*=\s*false\s*$/m);
   assert.match(wrangler, /^workers_dev\s*=\s*true\s*$/m);
 });
+
+
+test('Worker Previews exige Wrangler 4.135.0 ou superior', () => {
+  const parts = String(SAFE_DEPLOY.wranglerVersion).split('.').map(Number);
+  const current = parts[0] * 1000000 + parts[1] * 1000 + parts[2];
+  const minimum = 4 * 1000000 + 135 * 1000;
+  assert.ok(current >= minimum, SAFE_DEPLOY.wranglerVersion);
+});

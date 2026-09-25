@@ -117,7 +117,7 @@ No último caso, novos deploys devem ser interrompidos até conferência manual.
 - `worker/scripts/deploy-safe.mjs`: gate produtivo;
 - `worker/tests/deploy-safe.test.mjs`: testes de regressão;
 - `.github/workflows/validate-worker-safe-deploy.yml`: protege o próprio gate;
-- `worker/package.json`: `deploy` e `deploy:safe` apontam para o gate; `wrangler` fica fixado exatamente em `4.133.0` para que Workers Builds e validações usem a mesma versão.
+- `worker/package.json`: `deploy` e `deploy:safe` apontam para o gate; `wrangler` fica fixado exatamente em `4.135.0` para que Workers Builds e validações usem a mesma versão.
 - o gate executa diretamente `node_modules/wrangler/bin/wrangler.js` com o `node` corrente; não chama `npx` em subprocesso. Isso evita diferenças de resolução/execução do wrapper no ambiente do Workers Builds;
 - candidatas criadas pelo gate usam a mensagem `Portal: candidato validado pelo gate de deploy seguro` e a tag `portal-safe-deploy`; a mensagem também mantém compatibilidade com candidatas órfãs criadas antes da introdução da tag.
 
@@ -139,3 +139,18 @@ Não alterar os Runtime variables and secrets para ativar o gate.
 - a configuração temporária de leitura é criada fora do repositório; a configuração efêmera usada pelo Wrangler para upload fica temporariamente dentro de `/worker` para que `main = "index.js"` continue sendo resolvido corretamente, e é apagada no `finally`;
 - o gate trabalha somente com nomes/tipos dos secrets e com valores `plain_text` que a própria API de versão já expõe;
 - a verificação pós-deploy da Agenda é anônima e não acessa dados de pacientes.
+
+
+## Compatibilidade com Worker Previews — 25/09/2026
+
+A integração GitHub → Cloudflare passou a usar o mecanismo atual de **Worker Previews** para branches não produtivas.
+
+A documentação oficial da Cloudflare exige Wrangler **4.135.0 ou superior** para esse fluxo. O repositório ainda estava fixado em `4.133.0`, e os builds do Worker associados às branches da Missão Bancária passaram a aparecer como `Build: Failed`, enquanto o Cloudflare Pages publicava normalmente o frontend.
+
+Correção adotada:
+- `worker/package.json`: Wrangler `4.135.0`;
+- `worker/scripts/deploy-safe.mjs`: versão esperada `4.135.0`;
+- produção continua usando `npm run deploy:safe`;
+- nenhuma regra de bindings, secrets, D1, promoção ou rollback foi relaxada.
+
+A atualização é de compatibilidade do pipeline. Ela não concede acesso adicional ao Worker e não altera dados armazenados.

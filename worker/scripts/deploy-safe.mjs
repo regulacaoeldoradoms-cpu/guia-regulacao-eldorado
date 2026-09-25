@@ -23,7 +23,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 export const SAFE_DEPLOY = Object.freeze({
   account: '467be828c364ccf084240c34bb609b42',
   worker: 'yellow-wave-d0a1guia-regulacao-ia',
-  wranglerVersion: '4.133.0',
+  wranglerVersion: '4.135.0',
   agendaApi: 'https://yellow-wave-d0a1guia-regulacao-ia.regulacaoeldoradoms.workers.dev/api/agenda',
   candidateMessage: 'Portal: candidato validado pelo gate de deploy seguro',
   candidateTag: 'portal-safe-deploy',
