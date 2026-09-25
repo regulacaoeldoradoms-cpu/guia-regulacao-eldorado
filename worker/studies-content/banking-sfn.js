@@ -42,6 +42,34 @@ export const STUDY_SOURCES = Object.freeze([
     url: 'https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?numero=61&tipo=Resolu%C3%A7%C3%A3o+BCB',
     checkedAt: '2026-09-25',
     kind: 'norma-oficial'
+  }),
+  Object.freeze({
+    id: 'cvm.papel',
+    label: 'CVM — Qual o papel da CVM?',
+    url: 'https://www.gov.br/cvm/pt-br/acesso-a-informacao-cvm/perguntas-frequentes-da-cvm/teste-assunto/teste-combo-assunto',
+    checkedAt: '2026-09-25',
+    kind: 'conteudo-oficial'
+  }),
+  Object.freeze({
+    id: 'cvm.competencia',
+    label: 'CVM — Mandato Legal',
+    url: 'https://www.gov.br/cvm/pt-br/acesso-a-informacao-cvm/institucional/competencia',
+    checkedAt: '2026-09-25',
+    kind: 'conteudo-oficial'
+  }),
+  Object.freeze({
+    id: 'bcb.supervisionadas',
+    label: 'Banco Central — Instituições que o BC supervisiona',
+    url: 'https://www.bcb.gov.br/meubc/faqs/s/banco-central',
+    checkedAt: '2026-09-25',
+    kind: 'conteudo-oficial'
+  }),
+  Object.freeze({
+    id: 'cmn.bancos.5060',
+    label: 'CMN — Resolução nº 5.060/2023, versão vigente',
+    url: 'https://www.bcb.gov.br/estabilidadefinanceira/exibenormativo?numero=5060&tipo=Resolu%C3%A7%C3%A3o+CMN',
+    checkedAt: '2026-09-25',
+    kind: 'norma-oficial'
   })
 ]);
 
@@ -188,19 +216,88 @@ export const PUBLISHED_MISSIONS = Object.freeze([
       q('q.copom.02', 'banking.sfn.copom', 'Qual decisão é competência do Copom?', ['Definir a meta para a Taxa Selic', 'Fixar o salário mínimo', 'Aprovar o orçamento da União', 'Conceder crédito diretamente ao consumidor'], 0, 'A definição da meta para a Taxa Selic é competência central do Copom.'),
       q('q.copom.03', 'banking.sfn.copom', 'Segundo a regulamentação vigente usada nesta versão, quem compõe o Copom?', ['Ministros da Fazenda e Planejamento', 'Presidente e Diretores do Banco Central', 'Presidentes dos bancos públicos', 'Diretores da CVM e da Susep'], 1, 'A Resolução BCB nº 61 estabelece Presidente e Diretores do Banco Central como membros do Copom.')
     ])
+  }),
+  Object.freeze({
+    id: 'banking.sfn.cvm',
+    topicId: 'banking.sfn.cvm',
+    contentVersion: 1,
+    order: 5,
+    title: 'CVM: quem fiscaliza o mercado de capitais',
+    shortTitle: 'CVM',
+    estimatedMinutes: 22,
+    xp: 110,
+    sourceIds: Object.freeze(['edital.bb.2022-001', 'edital.caixa.2024-nm', 'cvm.papel', 'cvm.competencia']),
+    objective: 'Distinguir a atuação da CVM da atuação do Banco Central e reconhecer o mercado que cada supervisor acompanha.',
+    sections: Object.freeze([
+      Object.freeze({
+        heading: 'O território da CVM',
+        body: 'A Comissão de Valores Mobiliários regula e fiscaliza o mercado de valores mobiliários, também chamado de mercado de capitais. É nesse ambiente que empresas e outros emissores captam recursos diretamente de investidores por meio de instrumentos financeiros.'
+      }),
+      Object.freeze({
+        heading: 'Quem aparece sob sua supervisão',
+        body: 'A esfera de competência da CVM envolve, entre outros participantes, companhias abertas, fundos de investimento, securitizadoras, corretoras de valores mobiliários e ofertas públicas no mercado de capitais. A CVM também atua na proteção dos investidores e na repressão a fraudes e manipulações de mercado.'
+      }),
+      Object.freeze({
+        heading: 'CVM não é Banco Central',
+        body: 'Uma forma eficiente de resolver questões é observar o objeto supervisionado. Conta corrente, poupança e produtos bancários tradicionais apontam para a esfera do Banco Central. Valores mobiliários, companhias abertas, fundos e ofertas públicas apontam para a CVM. Há situações de competências que se relacionam, mas a prova costuma explorar essa divisão funcional.'
+      })
+    ]),
+    recall: Object.freeze([
+      'Qual mercado é regulado e fiscalizado pela CVM?',
+      'Que indício em uma questão ajuda a escolher CVM em vez de Banco Central?'
+    ]),
+    questions: Object.freeze([
+      q('q.cvm.01', 'banking.sfn.cvm', 'A CVM está diretamente associada à regulação e fiscalização de qual mercado?', ['Mercado de valores mobiliários', 'Mercado de trabalho', 'Mercado de bens de consumo', 'Sistema tributário municipal'], 0, 'A CVM regula e fiscaliza o mercado de valores mobiliários, também conhecido como mercado de capitais.'),
+      q('q.cvm.02', 'banking.sfn.cvm', 'Qual participante está tipicamente dentro da esfera de competência da CVM?', ['Companhia aberta', 'Cartório de registro civil', 'Secretaria do Tesouro municipal', 'Instituto de previdência social'], 0, 'Companhias abertas, fundos, securitizadoras e agentes do mercado de valores mobiliários estão entre os participantes supervisionados pela CVM.'),
+      q('q.cvm.03', 'banking.sfn.cvm', 'Uma questão trata de oferta pública de valores mobiliários e proteção do investidor contra manipulação de mercado. Qual supervisor é o mais diretamente relacionado?', ['Banco Central', 'CVM', 'CMN', 'Banco comercial'], 1, 'Ofertas públicas e integridade do mercado de valores mobiliários estão no núcleo de atuação da CVM.')
+    ])
+  }),
+  Object.freeze({
+    id: 'banking.sfn.operadores',
+    topicId: 'banking.sfn.operadores',
+    contentVersion: 1,
+    order: 6,
+    title: 'Operadores: quem faz o sistema funcionar',
+    shortTitle: 'Operadores do SFN',
+    estimatedMinutes: 24,
+    xp: 110,
+    sourceIds: Object.freeze(['edital.bb.2022-001', 'edital.caixa.2024-nm', 'bcb.sfn', 'bcb.supervisionadas', 'cmn.bancos.5060']),
+    objective: 'Reconhecer instituições operadoras e diferenciar bancos comerciais, bancos múltiplos, cooperativas e outros participantes supervisionados.',
+    sections: Object.freeze([
+      Object.freeze({
+        heading: 'Da norma para a operação',
+        body: 'Operadores são instituições que executam as atividades-fim do sistema. É nesse grupo que aparecem bancos, cooperativas de crédito, financeiras, corretoras, administradoras de consórcio, instituições de pagamento e outros participantes autorizados ou supervisionados, conforme o segmento.'
+      }),
+      Object.freeze({
+        heading: 'Banco comercial e banco múltiplo',
+        body: 'O banco comercial realiza intermediação financeira e tem na captação de depósitos à vista uma atividade típica. O banco múltiplo reúne operações de diferentes carteiras sob uma mesma instituição; pela regulamentação vigente, precisa possuir ao menos duas carteiras, sendo uma delas comercial ou de investimento.'
+      }),
+      Object.freeze({
+        heading: 'A pergunta de prova',
+        body: 'Se a instituição capta, empresta, recebe depósitos, presta serviços financeiros ou executa operações no mercado, ela está no campo operacional. Isso a diferencia de um órgão como o CMN, que formula diretrizes, e de um supervisor, que fiscaliza e regula dentro de sua competência.'
+      }),
+      Object.freeze({
+        heading: 'Não confunda operador com supervisor',
+        body: 'O Banco Central supervisiona diversos tipos de instituições, como bancos, cooperativas de crédito, financeiras, instituições de pagamento e administradoras de consórcio. A instituição supervisionada continua sendo operadora; o fato de seguir regras do BC não a transforma em órgão supervisor.'
+      })
+    ]),
+    recall: Object.freeze([
+      'Qual característica ajuda a reconhecer um operador do SFN?',
+      'Qual é a exigência básica de carteiras para um banco múltiplo segundo a regulamentação vigente?'
+    ]),
+    questions: Object.freeze([
+      q('q.oper.01', 'banking.sfn.operadores', 'Qual alternativa apresenta um participante tipicamente operacional do SFN?', ['CMN', 'Banco comercial', 'Copom', 'Conselho normativo'], 1, 'Bancos comerciais executam atividades financeiras e são operadores; CMN e Copom exercem funções institucionais diferentes.'),
+      q('q.oper.02', 'banking.sfn.operadores', 'Qual atividade é típica do banco comercial?', ['Captação de depósitos à vista', 'Definição da meta Selic', 'Formulação da política da moeda e do crédito', 'Fiscalização de companhias abertas'], 0, 'A captação de depósitos à vista é atividade típica dos bancos comerciais.'),
+      q('q.oper.03', 'banking.sfn.operadores', 'Segundo a regulamentação vigente, um banco múltiplo deve possuir:', ['Uma única carteira obrigatoriamente comercial', 'Ao menos duas carteiras, sendo uma comercial ou de investimento', 'Apenas carteiras de seguros e previdência', 'Somente carteira de desenvolvimento, mesmo se privado'], 1, 'O banco múltiplo deve possuir no mínimo duas carteiras, sendo uma delas comercial ou de investimento.')
+    ])
   })
 ]);
 
 export const PLANNED_MISSIONS = Object.freeze([
   ...PUBLISHED_MISSIONS.map((mission) => Object.freeze({ id: mission.id, status: 'published' })),
-  Object.freeze({ id: 'banking.sfn.cvm', status: 'planned' }),
-  Object.freeze({ id: 'banking.sfn.operadores', status: 'planned' }),
-  Object.freeze({ id: 'banking.mercados.introducao', status: 'planned' }),
-  Object.freeze({ id: 'banking.produtos.introducao', status: 'planned' }),
-  Object.freeze({ id: 'portuguese.interpretacao', status: 'planned' }),
-  Object.freeze({ id: 'math_finance.porcentagem', status: 'planned' }),
-  Object.freeze({ id: 'sales.atendimento', status: 'planned' }),
-  Object.freeze({ id: 'digital.fundamentos', status: 'planned' })
+  Object.freeze({ id: 'banking.sfn.seguros-previdencia', status: 'planned' }),
+  Object.freeze({ id: 'banking.sfn.pagamentos-consorcios', status: 'planned' }),
+  Object.freeze({ id: 'banking.sfn.boss', status: 'planned' })
 ]);
 
 export function missionById(id) {
