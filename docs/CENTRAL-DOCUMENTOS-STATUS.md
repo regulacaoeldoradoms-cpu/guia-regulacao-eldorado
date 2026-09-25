@@ -2,6 +2,34 @@
 
 Última atualização: 25/09/2026.
 
+## Ajuste pós-homologação — texto dos blocos do Guia Médico — EM VALIDAÇÃO — 25/09/2026
+
+Pedido aprovado: tornar branco o texto abaixo dos títulos em **Critérios para encaminhar**, **Informações clínicas obrigatórias**, **Exames obrigatórios para solicitar**, **Exames obrigatórios conforme o caso**, **Exames e documentos recomendados quando disponíveis** e **Elementos que auxiliam a priorização**, somente no modo escuro de `/medico/`.
+
+Estado recuperado: `main` em `54c1e74dd5724879b492924cbbe93f90d75234cc`, com #480 e #483 integradas. A PR aberta #481 é uma frente distinta de Telemedicina e não foi alterada. A Fase 7 permanece ativa; este é um reparo visual concreto encontrado na revisão em produção, não uma reabertura da 7G.6.
+
+Diagnóstico confirmado no código:
+- os seis blocos são gerados por `blockHtml()` / `renderProtocol()` em `js/medical-app.js`, com classe real `.content-block`;
+- `css/site.css` define `.content-block ul { color: var(--slate-700); }`, mantendo a lista escura mesmo quando o contêiner recebe o fundo dark;
+- `p.empty` recebe a cor secundária global; também precisa do branco solicitado;
+- o seletor real de tema é `html[data-portal-theme="dark"]`, não o `data-theme` ilustrativo sugerido na resposta anterior;
+- a auditoria anterior bloqueava superfícies claras, mas relatava baixo contraste textual apenas para revisão manual. Por isso seu sucesso não substituía esta homologação humana.
+
+Implementação na branch `fix/medical-dark-content-contrast-20260925`:
+- sobrescrita pequena em `css/medical.css`, condicionada a `@media screen`, tema dark, `body[data-role-view="medico"]`, `#detailPanel` e `.content-block:not(.alert)`;
+- listas, itens, marcadores e parágrafos desses blocos recebem `#fff`, inclusive **Não informado ou não aplicável.**;
+- títulos, fundos, bordas, alerta clínico e demais módulos não são recoloridos;
+- modo claro e impressão permanecem fora da regra;
+- `/medico/` passa a carregar `medical.css?v=20260925-1` para invalidar a folha antiga sem rebustar o tema global;
+- regressão `testing/browser/portal-dark-medical-contrast.spec.mjs` usa a rota e o renderer reais com conteúdo sintético e APIs interceptadas, cobrindo os seis blocos preenchidos/vazios, marcadores, títulos/alerta e preservação claro/print em desktop e mobile;
+- nenhum workflow, gate, permissão, dado, protocolo clínico, IA, Drive ou telemetria foi alterado.
+
+Validação já executada antes deste commit: sintaxe Node do novo spec aprovada; prova focal de cascata em Chromium local com **8/8 cenários** (1440/412 px; dark, light, print e outro perfil) aprovada. Essa prova usa um fixture reduzido com as regras CSS relevantes e **não é apresentada como teste integral da rota ou backend**. A regressão integral da rota e os checks da PR ainda precisam concluir no CI existente; a auditoria completa não foi desativada nem marcada como aprovada por antecipação.
+
+Alternativas descartadas: tornar todo o Portal branco com seletor global; mudar variáveis claras compartilhadas; alterar conteúdo clínico; reverter toda a #480 por uma lacuna pontual de contraste. A correção usa o CSS próprio do componente, preservando o mecanismo global de tema e evitando alterações desnecessárias em outras rotas.
+
+**Próxima ação exata:** abrir/conferir a PR desta branch, avaliar checks e a regressão Chromium, corrigir eventual falha e integrar somente após validação pertinente. Confirmar o deploy estático antes de pedir nova revisão em `/medico/`. Até essa evidência, não declarar o ajuste publicado. Reversão desta unidade, se necessária, deve desfazer somente sua PR, preservando #480 e demais mudanças. A homologação global dark e a pendência separada de Worker abaixo não são encerradas por este reparo.
+
 ## Estado atual e histórico preservado
 
 **Fase 7 — Robustez e otimização contínua.** A Fase 0 e as Fases 1–6 não são reiniciadas. A 7G.6 permanece homologada e encerrada. A auditoria transversal de modo escuro da **PR #480 foi integrada à main**, com publicação estática confirmada pelo GitHub Pages e **homologação visual humana pendente em produção**, por decisão explícita do operador.
@@ -78,18 +106,18 @@ As decisões recentes de IA canônica, execução antecipatória, busca e pré-c
 | Campo | Estado persistente |
 |---|---|
 | Fase atual | Fase 7 — Robustez e otimização contínua; Fase 0 e Fases 1–6 não reiniciadas; 7G.6 encerrada. |
-| Subfase / objetivo atual | Auditoria transversal dark #480 integrada; revisão visual em produção autorizada, ainda pendente. |
-| Última ação concluída | Merge `76648e3` e deploy GitHub Pages success do mesmo commit; decisão, limites e reversão registrados neste arquivo. |
-| Branch atual | Funcional `fix/portal-dark-final-audit-20260924` já integrada; registro documental em `docs/dark-audit-production-handoff-20260925`. |
-| PR atual | #480 merged; consultar a PR documental desta branch antes de criar duplicata e confirmar seu merge. |
-| Último commit relevante | Head validado `d1c6392`; merge `76648e373c7f9e5d51ce6ad6f1c20aecfd0a41b2`; baseline anterior `5f632d7`. |
-| Checks e testes | Pré-merge 54/54, auditoria 210/210. Pós-merge: Pages deploy success; Worker Build failure sem causa disponível no check. Não confundir conjuntos. |
-| Decisões tomadas | Publicar versão tecnicamente validada e revisar no site; outro preview não é pré-requisito. Histórico integral preservado em arquivo separado. |
-| Justificativas | Autorização explícita após identificação do link errado; mudança visual reversível; estado atual legível com histórico recuperável. |
-| Alternativas descartadas | Manter bloqueio de preview após autorização; abrir gates/segredos para avaliar aparência; resetar main; perder histórico ao resumir status. |
-| Ações externas concluídas | Merge #480 e deploy estático GitHub Pages. Nenhuma configuração externa, segredo, OAuth, permissão ou dado foi alterado pelo assistente nesta unidade. |
-| Pendências e bloqueios | Revisão visual humana; log do Worker Build d8be41f4 por acesso autorizado; conferência HTTP do domínio quando possível; verificar integração da PR documental. |
-| Riscos conhecidos | Diferenças fora do Chromium emulado; CI sintético não prova serviços reais; falha separada de build ainda não diagnosticada; âncoras antigas devem consultar o histórico. |
-| Métricas / observabilidade | Métricas sintéticas acima, nenhuma coleta clínica nem alteração do PostHog. |
-| Próxima ação exata | Conferir integração documental; recuperar log Worker sem contornar proteção; receber revisão do operador no Portal. Com aprovação, registrar encerramento da frente; com defeito, corrigir ou reverter especificamente #480 via PR. |
-| Arquivos e fontes principais | Este status e histórico ao lado; Guia Mestre 1.1; Dossiê Mestre e deltas pertinentes; `AUDITORIA-FINAL-MODO-ESCURO-2026-09.md`; `testing/browser/DARK_AUDIT.md`; PR #480; runs 36156810522 e 36164321273; check 108169352943. |
+| Subfase / objetivo atual | Reparo de contraste dos seis blocos clínicos de `/medico/`, encontrado na revisão produtiva da #480. |
+| Última ação concluída | Diagnóstico da cascata real, override CSS restrito, cache-buster e spec Chromium preparados; prova focal local 8/8 e sintaxe Node aprovadas. |
+| Branch atual | `fix/medical-dark-content-contrast-20260925`, baseada em `54c1e74dd5724879b492924cbbe93f90d75234cc`. |
+| PR atual | Abrir/conferir a PR desta branch; #480 e #483 já merged. #481 é separada e não foi tocada. |
+| Último commit relevante | Base `54c1e74d`; integração funcional anterior #480 `76648e3`; localizar o head da branch para os checks deste reparo. |
+| Checks e testes | Prova focal reduzida local 8/8 e sintaxe do spec aprovadas. CI da rota completa e auditoria existente pendentes, não substituídos pela prova local. |
+| Decisões tomadas | Texto, listas, marcadores e mensagem vazia brancos somente nos blocos clínicos do Guia Médico em dark/screen; preservar títulos, alertas, claro e print. |
+| Justificativas | `.content-block ul` mantinha cor slate-700 explícita; o fundo dark do pai não substitui essa cor. Pseudo-exemplo anterior não usava os seletores reais. |
+| Alternativas descartadas | Seletor branco global; alterar variáveis claras; recolorir por JavaScript; mudar protocolos; reverter toda a #480. |
+| Ações externas concluídas | #480 e #483 integradas anteriormente; nenhuma credencial, dado, configuração externa ou permissão mudou neste reparo. |
+| Pendências e bloqueios | CI/merge/deploy do reparo, homologação humana posterior; log do Worker Build histórico d8be41f4 segue pendência separada. |
+| Riscos conhecidos | Evitar branco na impressão ou em alertas; CI sintético não comprova backend nem navegador físico. Não afirmar publicação sem deploy. |
+| Métricas / observabilidade | Nenhuma telemetria nova; dados dos testes exclusivamente sintéticos. |
+| Próxima ação exata | Conferir PR/checks da branch, corrigir falhas reais se houver, integrar após validação, confirmar Pages do Portal e solicitar conferência dos textos em `/medico/`. |
+| Arquivos e fontes principais | `css/medical.css`; `medico/index.html`; `js/medical-app.js`; `css/site.css`; `testing/browser/portal-dark-medical-contrast.spec.mjs`; este status; Guia Mestre 1.1; `PORTAL-APARENCIA-V1.md`; histórico preservado. |
