@@ -18,7 +18,7 @@ Uso: primeiro recorte real da Fase 1.
 - Cargo: Técnico Bancário Novo.
 - Edital: nº 01/2024/NM, de 22/02/2024, com alterações incorporadas.
 - Banca: Fundação Cesgranrio.
-- Fonte oficial disponibilizada pela banca: https://concursos.cesgranrio.org.br/media/gpoweb-prd-hibrido3/eventos/11/conteudos/e2cd1feb-9c9b-46c8-8e7d-f66f2850d83c.pdf
+- Fonte oficial CAIXA: https://www.caixa.gov.br/Downloads/concurso-publico-editais/EDITAL_N_01_2024_NM_DE_22_DE_FEVEREIRO_DE_2024_.pdf
 - Prova objetiva: 60 questões; Conhecimentos Bancários = 15 questões.
 - Conteúdo relevante: Sistema Financeiro Nacional, estrutura, órgãos normativos e instituições supervisoras, executoras e operadoras.
 
