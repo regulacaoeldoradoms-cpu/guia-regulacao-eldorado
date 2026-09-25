@@ -13,7 +13,7 @@ const desktop = read('js/telemedicina.js');
 const mobile = read('js/telemedicina-mobile-v9.js');
 const docs = read('docs/TELEMEDICINA.md');
 
-assert.match(html, /telemedicina-history-v40\.css\?v=20260914-1/);
+assert.match(html, /telemedicina-history-v40\.css\?v=20260924-dark-final-1/);
 assert.match(html, /telemedicina-history-v40\.js\?v=20260914-1/);
 assert.match(html, /data-history-design="v40"/);
 assert.match(html, /telemedicina\.js\?v=20260922-1/);

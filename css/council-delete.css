@@ -4,9 +4,9 @@
   gap:14px;
   padding:12px 16px;
   margin:0 0 2px;
-  border-top:1px solid #e0e8ef;
-  border-bottom:1px solid #e0e8ef;
-  background:#f8fafc;
+  border-top:1px solid var(--council-delete-line, #e0e8ef);
+  border-bottom:1px solid var(--council-delete-line, #e0e8ef);
+  background:var(--council-delete-raised, #f8fafc);
 }
 .council-select-all{
   display:inline-flex;
@@ -14,7 +14,7 @@
   gap:9px;
   font-size:.86rem;
   font-weight:800;
-  color:#294a62;
+  color:var(--council-delete-text, #294a62);
   cursor:pointer;
   user-select:none;
 }
@@ -26,7 +26,7 @@
   cursor:pointer;
 }
 .council-selected-count{
-  color:#697f90;
+  color:var(--council-delete-muted, #697f90);
   font-size:.82rem;
   font-weight:700;
 }
@@ -102,7 +102,7 @@
   color:#fff;
   box-shadow:0 5px 14px rgba(180,35,45,.28);
 }
-.council-table tr.is-selected-for-delete td{background:#fff8f8}
+.council-table tr.is-selected-for-delete td{background:var(--council-delete-danger, #fff8f8)}
 .council-table tr.is-selected-for-delete td:first-child{box-shadow:inset 4px 0 #b4232d}
 
 .council-delete-dialog-backdrop{
@@ -122,11 +122,11 @@
 .council-delete-dialog{
   width:min(500px,100%);
   padding:28px;
-  border:1px solid #e6c7ca;
+  border:1px solid var(--council-delete-danger-line, #e6c7ca);
   border-radius:18px;
-  background:#fff;
+  background:var(--council-delete-surface, #fff);
   box-shadow:0 24px 70px rgba(18,39,55,.28);
-  color:#17364f;
+  color:var(--council-delete-text, #17364f);
   transform:translateY(8px) scale(.985);
   transition:transform .16s ease;
 }
@@ -138,21 +138,21 @@
   place-items:center;
   margin:0 auto 16px;
   border-radius:50%;
-  background:#fff0f1;
-  color:#b4232d;
+  background:var(--council-delete-danger, #fff0f1);
+  color:var(--council-delete-danger-text, #b4232d);
 }
 .council-delete-danger svg{width:31px;height:31px}
 .council-delete-dialog h2{
   margin:0 0 10px;
   text-align:center;
   font-size:1.35rem;
-  color:#7e1720;
+  color:var(--council-delete-danger-text, #7e1720);
 }
 .council-delete-dialog>p{
   margin:0 auto 16px;
   max-width:410px;
   text-align:center;
-  color:#526b7d;
+  color:var(--council-delete-muted, #526b7d);
   font-size:.96rem;
   line-height:1.55;
 }
@@ -165,18 +165,18 @@
 }
 .council-delete-protocols span{
   padding:6px 9px;
-  border:1px solid #e2e9ef;
+  border:1px solid var(--council-delete-line, #e2e9ef);
   border-radius:999px;
-  background:#f6f8fa;
-  color:#294a62;
+  background:var(--council-delete-raised, #f6f8fa);
+  color:var(--council-delete-text, #294a62);
   font-size:.78rem;
   font-weight:800;
 }
 .council-delete-audit{
   padding:11px 13px;
   border-radius:10px;
-  background:#f5f7f9;
-  color:#617787;
+  background:var(--council-delete-raised, #f5f7f9);
+  color:var(--council-delete-muted, #617787);
   font-size:.79rem;
   line-height:1.45;
   text-align:center;
@@ -196,9 +196,9 @@
   cursor:pointer;
 }
 .council-delete-cancel{
-  border:1px solid #cbd8e1;
-  background:#fff;
-  color:#27465d;
+  border:1px solid var(--council-delete-line, #cbd8e1);
+  background:var(--council-delete-surface, #fff);
+  color:var(--council-delete-text, #27465d);
 }
 .council-delete-confirm{
   display:inline-flex;
@@ -258,4 +258,18 @@
   .council-delete-dialog-actions{grid-template-columns:1fr}
   .council-delete-cancel,.council-delete-confirm{min-height:56px;font-size:1rem}
   .council-delete-toast{right:12px;bottom:12px;left:12px;max-width:none;text-align:center;font-size:1rem}
+}
+
+/* Screen-only theme tokens keep every light/print value in its original declaration. */
+@media screen{
+  html[data-portal-theme="dark"] body{
+    --council-delete-line:var(--portal-theme-border, #2a465a);
+    --council-delete-raised:#142a3a;
+    --council-delete-text:var(--portal-theme-text, #e5eef5);
+    --council-delete-muted:var(--portal-theme-muted, #9fb2c1);
+    --council-delete-danger:#421f2d;
+    --council-delete-danger-line:#744151;
+    --council-delete-surface:var(--portal-theme-surface, #102332);
+    --council-delete-danger-text:#ffb9c5;
+  }
 }

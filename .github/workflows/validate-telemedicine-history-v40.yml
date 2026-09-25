@@ -48,7 +48,7 @@ jobs:
         run: |
           set -euo pipefail
           grep -Fq 'data-history-design="v40"' telemedicina/index.html
-          grep -Fq 'telemedicina-history-v40.css?v=20260914-1' telemedicina/index.html
+          grep -Fq 'telemedicina-history-v40.css?v=20260924-dark-final-1' telemedicina/index.html
           grep -Fq 'telemedicina-history-v40.js?v=20260914-1' telemedicina/index.html
           grep -Fq 'Histórico longitudinal visual V40' docs/TELEMEDICINA.md
           if grep -R -n -E '\b(CNS|CPF)\b' js/telemedicina-history-v40.js css/telemedicina-history-v40.css worker/tests/telemedicine-history-v40.test.mjs; then

@@ -25,3 +25,4 @@ Thumbs.db
 dist-staging/
 testing/browser/playwright-report/
 testing/browser/test-results/
+testing/browser/test-results-*/

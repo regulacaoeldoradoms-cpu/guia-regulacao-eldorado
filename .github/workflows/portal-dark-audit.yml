@@ -1,0 +1,98 @@
+name: Auditar modo escuro do Portal
+
+on:
+  pull_request:
+    paths:
+      - '**/*.html'
+      - 'css/**'
+      - 'js/**'
+      - 'assets/**'
+      - 'vendor/**'
+      - 'data/**'
+      - 'portal.webmanifest'
+      - 'testing/browser/**'
+      - 'testing/central-docs/fixture.js'
+      - '.github/workflows/portal-dark-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portal-dark-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-browser-audit:
+    name: Chromium — interfaces sintéticas e preservação light/print
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      DARK_AUDIT_COMPARE_BASE: '1'
+      DARK_AUDIT_BASE: origin/main
+      DARK_AUDIT_REPORT_ONLY: '0'
+      DARK_AUDIT_REUSE_LOCAL: '0'
+      DARK_AUDIT_OUTPUT_DIR: test-results-dark-audit
+
+    steps:
+      - name: Checkout com histórico da comparação
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Confirmar baseline local
+        run: git rev-parse --verify 'origin/main^{commit}'
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependências e Chromium
+        working-directory: testing/browser
+        run: |
+          npm install --no-package-lock --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Executar toda a auditoria sintética
+        working-directory: testing/browser
+        run: npx playwright test --config playwright-dark-audit.config.mjs
+
+      - name: Resumir resultados disponíveis
+        if: always()
+        working-directory: testing/browser
+        run: |
+          if [ -f test-results-dark-audit/results.json ]; then
+            node summarize-dark-audit.mjs test-results-dark-audit/results.json
+          fi
+
+      - name: Publicar resumo da auditoria
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-dark-audit-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: testing/browser/test-results-dark-audit/results.summary.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Publicar relatórios sintéticos
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-dark-audit-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            testing/browser/test-results-dark-audit/
+            !testing/browser/test-results-dark-audit/**/*.png
+            !testing/browser/test-results-dark-audit/results.summary.json
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Publicar capturas sintéticas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-dark-audit-images-${{ github.run_id }}-${{ github.run_attempt }}
+          path: testing/browser/test-results-dark-audit/**/*.png
+          if-no-files-found: warn
+          retention-days: 7

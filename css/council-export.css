@@ -13,23 +13,23 @@
   gap:8px;
   min-height:46px;
   padding:10px 15px;
-  border:1px solid #c8d9e4;
+  border:1px solid var(--council-export-line, #c8d9e4);
   border-radius:13px;
-  background:linear-gradient(180deg,#f8fbfd 0%,#edf5f9 100%);
-  color:#234d68;
+  background:linear-gradient(180deg,var(--council-export-surface, #f8fbfd) 0%,var(--council-export-surface, #edf5f9) 100%);
+  color:var(--council-export-text, #234d68);
   font-weight:850;
   cursor:pointer;
   box-shadow:0 5px 13px rgba(24,68,96,.07);
 }
-.council-export-button:hover{border-color:#8eb5c9;background:#eef8fc;}
+.council-export-button:hover{border-color:var(--council-export-line, #8eb5c9);background:var(--council-export-hover, #eef8fc);}
 .council-export-button.is-praise{
-  border-color:#d7bd70;
-  background:linear-gradient(180deg,#fff9df 0%,#fff2bf 100%);
-  color:#6b5011;
+  border-color:var(--council-export-gold-line, #d7bd70);
+  background:linear-gradient(180deg,var(--council-export-gold, #fff9df) 0%,var(--council-export-gold, #fff2bf) 100%);
+  color:var(--council-export-gold-text, #6b5011);
   box-shadow:0 6px 15px rgba(158,116,20,.12);
 }
 .council-export-button.is-praise::before{content:"";width:18px;height:18px;flex:0 0 18px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m12 3 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8L12 3Z' fill='black'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m12 3 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4-3.9-3.8 5.4-.8L12 3Z' fill='black'/%3E%3C/svg%3E") center/contain no-repeat;}
-.council-export-hint{font-size:.82rem;color:#718696;line-height:1.4;}
+.council-export-hint{font-size:.82rem;color:var(--council-export-muted, #718696);line-height:1.4;}
 
 body.mobile-council-mode .council-export-actions{
   margin:14px 0 6px !important;
@@ -48,5 +48,19 @@ body.mobile-council-mode .council-export-button{
 body.mobile-council-mode .council-export-hint{
   font-size:16px !important;
   line-height:1.45 !important;
-  color:#6b8293 !important;
+  color:var(--council-export-muted, #6b8293) !important;
+}
+
+/* Institutional export stays blue; recognition keeps its gold identity. */
+@media screen {
+  html[data-portal-theme="dark"] .council-export-actions {
+    --council-export-surface:#142a3a;
+    --council-export-hover:#193246;
+    --council-export-line:#2a465a;
+    --council-export-text:#b8d9ed;
+    --council-export-muted:#9fb2c1;
+    --council-export-gold:#382d18;
+    --council-export-gold-line:#6d5427;
+    --council-export-gold-text:#f3d892;
+  }
 }
