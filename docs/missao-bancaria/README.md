@@ -3,8 +3,8 @@
 Documentação de planejamento do módulo privado de estudos da conta `wellyton`.
 
 ## Estado atual
-**Fase ativa: Fase 0 — Governança e arquitetura.**  
-**Estado:** plano técnico V1 elaborado; homologação humana pendente.  
+**Fase ativa: Fase 1 — Motor MVP + primeiro recorte real de SFN.**  
+**Fase 0:** aprovada e encerrada em 25/09/2026.  
 Ainda não há autorização implícita para publicar código em produção.
 
 ## Modelo de entrega
@@ -20,8 +20,8 @@ A primeira versão real não usará aula demonstrativa fictícia: começará com
 5. [12-FONTES-E-CONTEUDO.md](12-FONTES-E-CONTEUDO.md)
 6. [14-INTEGRACAO-CONQUISTAS.md](14-INTEGRACAO-CONQUISTAS.md)
 
-## Fase 0 em andamento
-Plano técnico atual: [15-FASE-0-PLANO-TECNICO.md](15-FASE-0-PLANO-TECNICO.md)
+## Fase 0 encerrada
+Plano técnico aprovado: [15-FASE-0-PLANO-TECNICO.md](15-FASE-0-PLANO-TECNICO.md)
 
 ## Arquivo para anexar como fonte
 Use [13-FONTE-MESTRA-PARA-ANEXAR.md](13-FONTE-MESTRA-PARA-ANEXAR.md) quando uma nova sessão precisar de um único arquivo de contexto.
