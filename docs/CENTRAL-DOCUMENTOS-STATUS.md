@@ -1,20 +1,93 @@
 # Central de Documentos — Status
 
-Última atualização: 24/09/2026.
+Última atualização: 25/09/2026.
 
-## Auditoria transversal final do modo escuro — VALIDAÇÃO FINAL E PR ISOLADA — 24/09/2026
 
-Base: `main` em `1157e28020a90461de0dd0fdb6939f0e9881dfa6`. Branch própria: `fix/portal-dark-final-audit-20260924`. A homologação da 7G.6 abaixo continua encerrada e preservada.
+## Auditoria final transversal do modo escuro — PR #480 — MATRIZ TÉCNICA APROVADA / HOMOLOGAÇÃO HUMANA PENDENTE — 25/09/2026
 
-**Decisão:** corrigir os resíduos de interface na origem dos módulos e na camada global do tema, sem redesign ou alteração de JavaScript de produto. A descoberta automática encontrou 24 rotas + 3 aliases. O registro de causas, cobertura, exceções, testes e limites está em [AUDITORIA-FINAL-MODO-ESCURO-2026-09.md](AUDITORIA-FINAL-MODO-ESCURO-2026-09.md).
+Objetivo autorizado: concluir uma auditoria transversal do modo escuro em todo o Portal sem reabrir subfases já homologadas, preservando modo claro, impressão, regras funcionais, dados, permissões e integrações.
 
-**Evidências em consolidação:** 54/54 verificações estritas das rotas desktop/mobile; Worker 458/458; Central 76 aprovados/4 skips preexistentes, sem retentativas. Os fluxos adicionais exercitam modais, formulários, painéis internos, erros, vazios, foco/hover/ativo/disabled e pseudo-elementos. As comparações claro/impressão estão sendo repetidas com o comparador corrigido para carregar os arquivos de produto da raiz do repositório; resultados anteriores com `changed: []` foram invalidados como prova de preservação.
+Branch/PR:
+- branch: `fix/portal-dark-final-audit-20260924`;
+- PR: **#480 — UI: auditoria final transversal do modo escuro**;
+- base original da frente: `1157e28020a90461de0dd0fdb6939f0e9881dfa6`;
+- head que fechou a matriz estrita: **`6f027235b134cf798e3d3be80ce94c21011f2727`**;
+- a PR permanece sem merge; a etapa seguinte é homologação humana.
 
-**Invariantes:** Titon transparente e line-art branca; Salvar PDF/Imprimir azuis; cinco estados Drive distintos; papel PDF branco; dourado deliberado de Altas preservado. Tokens novos dos módulos usam os literais anteriores como fallback; os valores escuros ficam em `@media screen` e no seletor do tema.
+Escopo efetivamente coberto:
+- **24 rotas de interface + 3 aliases**;
+- desktop 1440×1000 e Pixel 7 emulado;
+- Social, Conta, Operação, Conselho, Administração e Central de Documentos;
+- estados internos de carregamento, vazio, erro, diálogo, edição, filtros, histórico, pré-regulação, Titon/PDF.js e componentes condicionais;
+- preservação do modo claro e da impressão contra a `main`;
+- Titon 7G.6 preservado: controles transparentes, line-art branca, Salvar/Imprimir azuis e estados Drive;
+- dourado intencional de Altas da Telemedicina preservado.
 
-**Riscos e limites:** Chromium e Pixel 7 emulado; detector heurístico complementado por inspeção visual; mocks não comprovam integrações ou serviços. Erros JavaScript legados são medidos contra a base, sem alterar autenticação. Tudo usa sessão e dados sintéticos, rede externa bloqueada e nenhuma escrita de produção.
+Resultado final do CI:
+- workflow **Auditar modo escuro do Portal**, run **36153569515**: **success**;
+- matriz Playwright: **210/210 success**, zero skips, zero flaky e zero falhas;
+- **404 estados renderizados**, 296 no dark;
+- **103.397 elementos visíveis** + **1.705 pseudo-elementos** inspecionados;
+- **zero superfícies claras inesperadas**;
+- **zero endpoints sintéticos desconhecidos**;
+- **120/120 comparações contra a main** com proveniência de raiz;
+- 112 comparações PNG-exatas/dentro do limite original; os casos restantes foram classificados apenas como rasterização diagnóstica do Chromium Linux, com computed/layout idêntico e zero erro JavaScript novo;
+- no head da matriz, a PR apresentou **54/54 checks success**, incluindo Workers Builds, Cloudflare Pages, PDF.js real e abertura pós-login.
 
-**Próximo passo:** concluir gates da PR e homologação visual humana. Nenhum merge ou deploy foi realizado. Após essa homologação, encerrar a frente de desenvolvimento do modo escuro e reabrir somente por regressão comprovada ou funcionalidade nova.
+Decisões técnicas:
+- não foi ampliada allowlist de superfícies do produto para esconder defeitos;
+- diferenças reais de DOM, computed style, geometria ou erro JavaScript continuam falhando;
+- o comparador distingue ruído de raster do Chromium de regressão visual estrutural;
+- fixtures continuam totalmente sintéticas e em loopback; mocks não são apresentados como prova de backend;
+- nenhuma regra clínica, autenticação, Worker runtime, Drive, IA ou observabilidade foi alterada por essa frente visual.
+
+Reconciliação com trabalho paralelo:
+- a `main` recebeu posteriormente o botão de mostrar/ocultar senha da PR #482;
+- `login/index.html` da branch #480 foi reconciliado para preservar esse controle, alterando somente o cache-buster do CSS global necessário à auditoria dark;
+- nenhuma funcionalidade nova da `main` deve ser perdida no merge.
+
+Riscos/limites conhecidos:
+- auditoria usa Chromium e emulação de viewport, não aparelho físico, Firefox/WebKit ou popup nativo do sistema;
+- rasterização de texto do Chromium Linux pode variar em poucos pixels mesmo com computed/layout idêntico; esses casos ficam registrados como diagnóstico;
+- homologação humana ainda deve conferir visualmente as rotas principais antes do merge.
+
+**Próxima ação exata:** revisar a PR #480 como pronta para homologação → abrir o preview/staging em modo escuro e conferir visualmente as rotas principais (`/`, `/login/`, `/telemedicina/`, `/medico/`, `/recepcao/`, `/documentos/`, `/cidadao/`, `/conselho/painel/`) → se aprovado, autorizar o merge da #480. Não mesclar automaticamente sem essa homologação humana.
+
+
+## Mudança transversal — botão mostrar/ocultar senha no login — INTEGRADA À MAIN; HOMOLOGAÇÃO PRODUTIVA PENDENTE — 25/09/2026
+
+Pedido operacional: na tela `/login/`, manter a senha oculta por padrão e adicionar, dentro do campo **Senha**, um botão com ícone de olho no canto direito para permitir ao usuário mostrar ou ocultar os caracteres antes de entrar.
+
+Diagnóstico do estado real:
+- a `main` usada como base estava em `1157e28020a90461de0dd0fdb6939f0e9881dfa6`;
+- `login/index.html` possuía apenas o `input#loginPassword` com `type="password"`, sem controle explícito de visibilidade;
+- a autenticação funcional permanece concentrada em `js/login.js`; não é necessário alterar credenciais, sessão ou backend para esta melhoria;
+- a PR paralela **#480** também toca `login/index.html`, porém por causa do cache-buster/ajustes da auditoria final de modo escuro. Esta melhoria foi mantida em branch e PR próprias e em regiões separadas do arquivo para reduzir conflito e preservar o escopo de cada frente.
+
+Implementação:
+- branch `feat/login-password-visibility-20260925`, criada da `main`;
+- senha continua **oculta por padrão** com `type="password"`;
+- botão `#loginPasswordToggle` com ícone de olho foi inserido dentro do campo, à direita;
+- clique alterna somente no navegador entre `password` e `text`;
+- quando a senha está visível, o ícone recebe uma barra e o rótulo acessível muda para **Ocultar senha**;
+- `aria-label`, `aria-pressed`, foco por teclado e alvo de toque foram tratados;
+- o controle recebeu ajustes para desktop, mobile e modo escuro;
+- `autocomplete="current-password"` foi preservado;
+- nenhuma senha é persistida, registrada, enviada à telemetria ou tratada fora do fluxo de autenticação já existente.
+
+Regressão:
+- `worker/tests/post-login-opening.test.mjs` agora exige senha oculta por padrão, botão acessível, alternância `password ↔ text`, rótulos Mostrar/Ocultar e ícone com estado visual;
+- commits funcionais antes deste registro documental: `f315c7e34769704c00605f218b80f16ee1238667` e `e41e2141af90a87a3425a45869a0394e727cabb5`.
+
+Integração:
+- **PR #482 — Login: adicionar botão para mostrar ou ocultar senha**;
+- head final: `9882c9e07a0b092ba552f4225359578305273961`;
+- matriz da PR: **23/23 workflows GitHub Actions concluídos com success**, incluindo **Validar abertura pós-login — navegador**;
+- merge na `main`: **`a831cb6ad7d8b193c0b858fb3e48d692257a177d`**.
+
+Privacidade/segurança: alteração exclusivamente de interface local. Não muda autenticação, permissões, sessão, banco, Worker, Google Drive, IA ou PostHog. O valor da senha continua submetido somente pelo fluxo de login já existente.
+
+**Próxima ação exata:** confirmar a publicação estática do merge `a831cb6a` e, em produção, validar que o olho mostra/oculta a senha sem alterar o login por Enter, autocomplete ou modo escuro/mobile.
 
 
 ## Fase 7G.6 — line-art branca com fundo transparente no Titon escuro — HOMOLOGADA E ENCERRADA — 24/09/2026
@@ -3491,22 +3564,22 @@ A unidade é exclusivamente visual; a evidência do Worker é registrada apenas 
 
 | Campo | Estado |
 | --- | --- |
-| Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.6 homologada e encerrada; sem frente funcional aberta neste momento** |
-| Última ação concluída | Homologação visual humana aprovada em produção: line-art branca + fundo transparente no Titon escuro |
-| Branch atual | **nenhuma frente funcional aberta**; branch documental apenas para registrar a homologação |
-| PR atual | **nenhum PR funcional aberto** |
-| Último commit funcional relevante | funcional `2802ae45fbec29624cc6f3ba01c3ac0ad25ba6e9`; handoff anterior em `4b4a5167` |
-| Checks e testes | #476 **23/23 success**; pós-merge funcional **23/23 push success**; GitHub Pages, Cloudflare Pages e Workers Builds **success** |
-| Decisões tomadas | 7G.6 aprovada e encerrada; fundo transparente + line-art branca passa a ser o baseline visual do Titon no dark mode |
-| Justificativas | resultado visual aprovado em produção; nenhuma regressão técnica conhecida |
-| Alternativas descartadas | reabrir a 7G.6 sem evidência de regressão |
-| Ações externas concluídas | homologação humana em produção |
-| Pendências e bloqueios | nenhuma pendência da 7G.6 |
-| Riscos conhecidos | resíduos claros podem ainda existir em outras superfícies do Portal fora do Titon; tratar somente em auditoria transversal separada |
-| Métricas / observabilidade | nenhuma telemetria nova |
-| Próxima ação exata | **aguardar decisão sobre iniciar uma auditoria final transversal do modo escuro em branch/PR separada** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #476; merge `2802ae45`; `css/documents.css`; `css/portal-interactions.css`; status |
+| Fase atual | **Fase 7 — Robustez e otimização contínua**; 7G.6 permanece homologada e encerrada |
+| Subfase / objetivo atual | **Auditoria final transversal do modo escuro — PR #480 tecnicamente aprovada; homologação humana pendente** |
+| Última ação concluída | Matriz estrita da auditoria final fechou em **210/210 success** no run **36153569515**; login da PR #482 foi preservado na branch |
+| Branch atual | `fix/portal-dark-final-audit-20260924` |
+| PR atual | **#480 — UI: auditoria final transversal do modo escuro** — pronta para homologação, sem merge |
+| Último head com matriz completa | `6f027235b134cf798e3d3be80ce94c21011f2727` |
+| Checks e testes | head da matriz: **54/54 success**; auditoria Chromium **210/210**; zero superfícies claras inesperadas; zero endpoints desconhecidos; 120/120 comparações contra main concluídas |
+| Decisões tomadas | computed/layout/erros novos permanecem gates rígidos; pequenas diferenças exclusivamente de raster Linux são diagnósticas sob limites documentados; nenhuma allowlist funcional foi ampliada |
+| Justificativas | as rodadas anteriores provaram não-determinismo do rasterizador mesmo com DOM/CSS/geometria idênticos; separar raster de regressão estrutural evita falso bloqueio sem esconder defeitos reais |
+| Alternativas descartadas | perseguir igualdade byte-a-byte indefinidamente; aumentar allowlist de UI; remover comparações computed/layout; alterar produto apenas para agradar screenshot test |
+| Ações externas concluídas | Workers Builds e Cloudflare Pages verdes no head validado; artefatos de resumo/relatórios/imagens do run final publicados |
+| Pendências e bloqueios | **somente homologação visual humana da PR #480 e autorização explícita para merge** |
+| Riscos conhecidos | Chromium emulado não substitui aparelho físico/WebKit/Firefox; conferir visualmente as rotas principais antes do merge |
+| Métricas / observabilidade | nenhuma telemetria nova; auditoria usa somente dados sintéticos e loopback |
+| Próxima ação exata | **homologar preview/staging da #480 em dark nas rotas principais → se aprovado, autorizar merge** |
+| Arquivos e fontes principais | `docs/AUDITORIA-FINAL-MODO-ESCURO-2026-09.md`; `testing/browser/DARK_AUDIT.md`; `testing/browser/dark-audit-base-comparison.mjs`; PR #480; run 36153569515; Guia Mestre V1.1; este status |
 
 ## Histórico recuperável
 
