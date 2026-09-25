@@ -28,6 +28,10 @@ function normalizeUsername(value) {
     .slice(0, 40);
 }
 
+export function studyUsernameAllowed(value) {
+  return normalizeUsername(value) === ALLOWED_USERNAME;
+}
+
 function headers(origin, allowed = true) {
   const value = {
     'Content-Type': 'application/json; charset=utf-8',
@@ -149,7 +153,7 @@ async function requireStudyUser(request, env, origin, originAllowed) {
   if (!originAllowed) return { response: json({ error: 'Origem não autorizada.' }, 403, origin, false) };
   const user = await validatePortalSession(request, env, []);
   if (!user) return { response: json({ error: 'Sessão inválida ou expirada.' }, 401, origin, true) };
-  if (normalizeUsername(user.username) !== ALLOWED_USERNAME) {
+  if (!studyUsernameAllowed(user.username)) {
     return { response: json({ error: 'Esta experiência está disponível somente para a conta autorizada.' }, 403, origin, true) };
   }
   await ensureStudySchema(env);
