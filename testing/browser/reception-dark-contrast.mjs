@@ -56,6 +56,18 @@ async function printDocument(page) {
   return page.evaluate(() => window.syntheticPrintHtml);
 }
 async function snapshot(page) {
+  // A click leaves hover/focus and a finite button transition in flight.
+  // Let the real animation finish; retain exact geometry/style comparison.
+  await page.mouse.move(0, 0);
+  await page.evaluate(async () => {
+    document.activeElement?.blur();
+    await new Promise(requestAnimationFrame);
+    const panel = document.getElementById('receptionDetail');
+    await Promise.all(panel.getAnimations({subtree:true})
+      .filter(animation => Number.isFinite(animation.effect.getComputedTiming().endTime))
+      .map(animation => animation.finished.catch(() => {})));
+    await new Promise(requestAnimationFrame);
+  });
   return page.locator('#receptionDetail').evaluate(el => [...el.querySelectorAll('*')].map(node => {
     const style = getComputedStyle(node), rect = node.getBoundingClientRect();
     return [node.tagName,node.className,style.color,style.backgroundColor,style.borderColor,style.display,rect.width,rect.height];
