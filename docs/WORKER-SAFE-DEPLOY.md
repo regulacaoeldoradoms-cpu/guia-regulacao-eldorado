@@ -154,3 +154,24 @@ Correção adotada:
 - nenhuma regra de bindings, secrets, D1, promoção ou rollback foi relaxada.
 
 A atualização é de compatibilidade do pipeline. Ela não concede acesso adicional ao Worker e não altera dados armazenados.
+
+
+### Previews Base vazio e isolado
+
+Após a atualização para Wrangler 4.135.0, Worker Previews também exige um bloco `previews` no arquivo de configuração.
+
+O Portal declara:
+
+`previews = { }`
+
+Esse bloco é **intencionalmente vazio**. Ele serve apenas para permitir a criação técnica do ambiente de branch sem herdar configurações produtivas.
+
+Não são copiados para Preview:
+- `AUTH_DB`;
+- bindings Firebase;
+- secrets;
+- chaves Gemini;
+- Gmail bridge;
+- variáveis institucionais.
+
+Assim, o preview de branch não possui acesso aos dados reais da produção. A produção continua usando exclusivamente a configuração de topo e o gate `npm run deploy:safe`.
