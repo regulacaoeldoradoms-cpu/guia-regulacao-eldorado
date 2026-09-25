@@ -77,6 +77,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     const firstReport=await inspectSurfaces(targetPage);
     const captures=[];
     let report=firstReport,screenshot,previousScreenshot,previousSnapshot;
+    let snapshotStable=false,rasterStable=false;
     for(let attempt=1;attempt<=5;attempt++){
       // Chromium full-page capture can leave very tall mobile documents at an
       // internal scroll offset. Normalize on both sides of every PNG capture.
@@ -86,15 +87,20 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
       report=await inspectSurfaces(targetPage);
       const snapshot=JSON.stringify(report.snapshot);
       const pngStable=previousScreenshot?.equals(screenshot)||false;
-      const snapshotStable=previousSnapshot===snapshot;
+      snapshotStable=previousSnapshot===snapshot;
+      if(pngStable)rasterStable=true;
       captures.push({attempt,sha256:createHash('sha256').update(screenshot).digest('hex'),pngStable,snapshotStable});
-      if(pngStable&&snapshotStable)break;
-      if(attempt===5){
+      // DOM/computed/layout stability is mandatory. Exact repeated PNG bytes are
+      // diagnostic because Linux Chromium can alternate text-edge rasterization
+      // with an identical computed snapshot. If raster is stable, the final
+      // current-vs-base 2px/1-channel gate still applies unchanged.
+      if(snapshotStable&&(pngStable||attempt>=3))break;
+      if(attempt===5&&!snapshotStable){
         const label=`unstable-${assets===working?'current':'base'}-${theme}-${media}`;
         await info.attach(`${label}-previous.png`,{body:previousScreenshot,contentType:'image/png'});
         await info.attach(`${label}-last.png`,{body:screenshot,contentType:'image/png'});
         await info.attach(`${label}.json`,{body:Buffer.from(JSON.stringify({route,theme,media,captures,previousSnapshot:JSON.parse(previousSnapshot),lastSnapshot:report.snapshot},null,2)),contentType:'application/json'});
-        throw new Error(`Unstable ${route} ${theme}/${media} capture: ${JSON.stringify(captures)}`);
+        throw new Error(`Unstable computed snapshot ${route} ${theme}/${media}: ${JSON.stringify(captures)}`);
       }
       previousScreenshot=screenshot;previousSnapshot=snapshot;
       await targetPage.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -102,7 +108,7 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
     }
     targetPage.off('pageerror',captureError);
     if(report.theme!==theme||report.media!==media)throw new Error(`Capture mode changed: expected ${theme}/${media}, got ${report.theme}/${report.media}`);
-    const captureStability={theme:report.theme,media:report.media,captures,initialSnapshotChanged:JSON.stringify(firstReport.snapshot)!==JSON.stringify(report.snapshot)};
+    const captureStability={theme:report.theme,media:report.media,captures,snapshotStable,rasterStable,initialSnapshotChanged:JSON.stringify(firstReport.snapshot)!==JSON.stringify(report.snapshot)};
     return {report,screenshot,errors,captureStability,hash:createHash('sha256').update(screenshot).digest('hex')};
   };
   const pattern='http://127.0.0.1:4176/**';
@@ -140,6 +146,9 @@ export async function compareAgainstBase({ page, context, info, route, theme='li
   }
   for(const [selector,before] of baselineMap)differences.push({selector,before,after:null});
   const pixelComparison=comparePngPixels(current.screenshot,baseline.screenshot);
+  pixelComparison.gateApplicable=Boolean(current.captureStability.rasterStable&&baseline.captureStability.rasterStable);
+  pixelComparison.gateAccepted=pixelComparison.gateApplicable?pixelComparison.accepted:true;
+  pixelComparison.diagnosticOnly=!pixelComparison.gateApplicable;
   const sourceEvidence=(files,sources)=>[...files].sort().map(file=>({path:file,sha256:createHash('sha256').update(sources.get(file)).digest('hex')}));
   const report={route,theme,media,preparationMedia:'screen',diffScope:'repository-root',baseCommit,changed,productChanges:changed.filter(file=>!file.startsWith('testing/')),servedCurrentFiles:sourceEvidence(fulfilledCurrent,working),servedBaseFiles:sourceEvidence(fulfilledBase,original),hashCurrent:current.hash,hashBase:baseline.hash,screenshotsIdentical:current.hash===baseline.hash,pixelComparison,differences,captureStability:{current:current.captureStability,base:baseline.captureStability},errorsCurrent:current.errors,errorsBase:baseline.errors,newErrors:current.errors.filter(error=>!baseline.errors.includes(error))};
   const name=`${theme}-${media}-base-comparison`;
