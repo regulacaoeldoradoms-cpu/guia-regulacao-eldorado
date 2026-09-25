@@ -2,6 +2,26 @@
 
 Última atualização: 25/09/2026.
 
+## Recepção — correção de contraste #486 — 25/09/2026
+
+**IMPLEMENTADA E PUBLICADA PELO GITHUB PAGES; REVISÃO VISUAL HUMANA PENDENTE.** Pedido explícito do operador: corrigir e implementar as superfícies claras e o texto ilegível de `/recepcao/` no modo escuro. Fase 7, sem reabrir fases encerradas. Base `2a67acd503ff42e3cd3496088615528e3e4eda37`; head funcional `8841708815ec4753a81d3db56061a5c802d8fecc`; PR #486; merge `a039c08497c4b1eb92e23a11ae72461a658847cf`. GitHub Pages do merge: run `36171385857`, job `108191891604`, success. A publicação não foi confundida com o laboratório PDF.js.
+
+Escopo concluído: cabeçalhos dos quatro grupos escuros; títulos, descrições, itens e resumo brancos; bordas semânticas de obrigatório/condicional/complementar preservadas. Regra limitada a `@media screen`, tema dark e `#receptionDetail`. Modo claro, impressão, conteúdo dos protocolos e JavaScript de produto não foram alterados; nenhum dado, permissão, segredo, IA, Drive ou observabilidade mudou. #481 segue separada.
+
+Diagnóstico: `reception.css` continha cores claras/azuis locais; a main já possuía cobertura global para parte das superfícies, ausente na captura do operador. Cache é hipótese, não causa comprovada no navegador real. O reparo reforça o escopo local e renova `reception.css?v=20260925-1`. O tema global, sem mudança de conteúdo, mantém a versão canônica `v=20260924-dark-final-1` e recebe `refresh=recepcao-20260925` somente nessa rota. O pin do CSS local no check de orientações condicionais foi atualizado; nenhuma asserção foi retirada.
+
+**Aceite focado:** 6/6 cenários Chromium locais e CI focal `36171225634` / job `108190955414` aprovados. Larguras 1440/412; quatro grupos, texto branco, cabeçalhos/caixas escuros, legendas distintas com contraste >=4,5:1, marcar/desmarcar, troca de condição, comparação exata de estilos/layout claro e print com CSS anterior e identidade do documento de impressão gerado. HTML, CSS e cinco renderers reais foram montados em memória com protocolo sintético, autenticação simulada, popup de impressão capturado e rede bloqueada. Não é homologação de backend, dispositivo físico ou navegação autenticada. Capturas sintéticas desktop/mobile foram inspecionadas.
+
+A primeira execução focal `36170771944` passou o contraste, mas capturou a transição de um botão antes de terminar (diferença de altura de 0,000122px). O teste agora limpa hover/foco e aguarda animações finitas reais, mantendo comparação exata, sem arredondamento ou relaxamento. A nova query inicialmente trocava a versão global; isso violou o check de versão única. Corrigiu-se a URL para separar versão canônica e renovação de cache, preservando o teste existente. A validação local de interações passou 13/13.
+
+**Pendência ampla reconciliada:** o run anterior da #484 `36167184456` terminou com **210/214 aprovados e 4 falhas**, não está mais pendente de execução. Três falhas foram na troca manual de dataset para light do spec médico; reconciliação da preferência de conta é hipótese a investigar. Uma falha social recebeu aviso de notificações bloqueadas em vez do erro sintético de envio. As 120 comparações contra baseline passaram. Não marcar o conjunto como aprovado nem suprimir testes. A auditoria transversal desta PR, `36171225531`, foi deixada sob o workflow existente, sem aguardar sua matriz inteira para liberar o reparo validado especificamente. Seu resultado final deve ser consultado; não há aprovação antecipada. Os builds Worker históricos continuam sem causa diagnosticada.
+
+Alternativas descartadas: recolorir todo o Portal, mudar a paleta clara, recolorir por JavaScript, relaxar comparações, desativar a auditoria, pedir outra autorização já concedida ou reverter toda a #480. A liberação é pontual, amparada na validação específica e na revisão produtiva autorizada; não cria dispensa permanente de testes.
+
+Reversão, somente se necessária: branch da main atual e `git revert -m 1 a039c08497c4b1eb92e23a11ae72461a658847cf` por PR, preservando os demais trabalhos; não executada. Próximo passo: receber revisão da Recepção no site, consultar a auditoria ampla já iniciada e tratar suas falhas em frente separada, além do diagnóstico autorizado do Worker. Confirmar a integração documental de `docs/reception-dark-release-20260925` antes de criar duplicata.
+
+Os registros abaixo preservam o estado conhecido em suas respectivas execuções; esta seção e o handoff prevalecem para o estado atual.
+
 ## Publicação do reparo de contraste #484 — 25/09/2026
 
 **IMPLEMENTADO E PUBLICADO PELO GITHUB PAGES; REVISÃO HUMANA E RESULTADO DA AUDITORIA INTEGRAL AINDA PENDENTES.** O operador reiterou a implementação (“então implemente ué”), mantendo a revisão diretamente no site já autorizada. A Fase 7 permanece ativa; nenhuma fase encerrada foi reiniciada.
@@ -128,19 +148,19 @@ As decisões recentes de IA canônica, execução antecipatória, busca e pré-c
 
 | Campo | Estado persistente |
 |---|---|
-| Fase atual | Fase 7 — Robustez e otimização contínua; Fase 0 e Fases 1–6 não reiniciadas; 7G.6 encerrada. |
-| Subfase / objetivo atual | Contraste dos seis blocos de `/medico/` implementado e publicado; auditoria integral e revisão humana pendentes. |
-| Última ação concluída | Merge #484 `1085ab8` e deploy GitHub Pages success do mesmo commit, run `36168144829`, job `108181078769`. |
-| Branch atual | Funcional `fix/medical-dark-content-contrast-20260925` já integrada; registro em `docs/medical-dark-contrast-release-20260925`. |
-| PR atual | #484 merged; conferir a PR documental desta branch antes de duplicar. #480 e #483 merged; #481 separada e intocada. |
-| Último commit relevante | Head funcional `29b7ffc`; merge real `1085ab80587a565056b262a23ab8903df9988ef2`; baseline `54c1e74d`. |
-| Checks e testes | Prova focal reduzida 8/8 registrada; 23 workflows Actions success antes do merge; auditoria `36167184456` em execução na conferência. Pages do merge success. Worker separado com failure. |
-| Decisões tomadas | Publicar o reparo visual reversível após autorização reiterada e validação focal, mantendo auditoria transversal pendente e ativa; não declarar aprovação integral nem homologação humana. |
-| Justificativas | Patch restrito de cor corrige contraste real; liberação pontual não exige nova implementação ou confirmação já concedida. Resultado amplo continua sendo pendência explícita. |
-| Alternativas descartadas | Reabrir implementação pronta; seletor branco global; alterar variáveis claras; mudar protocolos; reverter toda a #480; desativar testes ou proteção. |
-| Ações externas concluídas | #484 integrada com SHA esperado e publicada pelo GitHub Pages. Nenhuma credencial, dado, configuração externa ou permissão mudou. |
-| Pendências e bloqueios | Resultado final do run `36167184456`; revisão visual do operador; diagnóstico autorizado dos Worker Builds históricos `d8be41f4` e `10cb15fe`; integração documental. |
-| Riscos conhecidos | Auditoria ampla ainda pode apontar regressão; fonte do Worker failure desconhecida; deploy estático não prova backend nem navegador físico; HTTP independente indisponível nesta sessão. |
-| Métricas / observabilidade | Nenhuma telemetria nova; dados dos testes exclusivamente sintéticos. |
-| Próxima ação exata | Ler resultado do run `36167184456` já iniciado, sem repetir matriz; registrar sucesso ou tratar falha. Conferir PR documental e receber revisão em `/medico/`. Reverter somente #484 se necessário. |
-| Arquivos e fontes principais | `css/medical.css`; `medico/index.html`; `testing/browser/portal-dark-medical-contrast.spec.mjs`; este status; Guia Mestre 1.1; `PORTAL-APARENCIA-V1.md`; PR #484; runs `36167184456` e `36168144829`; histórico preservado. |
+| Fase atual | Fase 7 — Robustez e otimização contínua; Fases 0–6 e 7G.6 não reiniciadas. |
+| Subfase / objetivo atual | Reparo de contraste da Recepção #486 publicado; revisão humana pendente. |
+| Última ação concluída | Merge `a039c08497c4b1eb92e23a11ae72461a658847cf` e GitHub Pages success: run `36171385857`, job `108191891604`. |
+| Branch atual | `fix/reception-dark-contrast-20260925` integrada; registro em `docs/reception-dark-release-20260925`. |
+| PR atual | #486 merged; conferir integração documental desta branch. #480, #483, #484 e #485 integradas; #481 intocada. |
+| Último commit relevante | Head `8841708`; merge `a039c08497c4b1eb92e23a11ae72461a658847cf`; base anterior `2a67acd`. |
+| Checks e testes | Recepção focal 6/6 local e CI `36171225634` aprovado; interações local 13/13. Auditoria anterior #484: 210/214, quatro falhas. Consultar run amplo `36171225531`; não declarar aprovação integral. |
+| Decisões tomadas | Texto branco e cabeçalhos escuros apenas na Recepção dark/screen; preservar claro, impressão e cores semânticas; publicar após aceite focado autorizado. |
+| Justificativas | Defeito visual reportado em produção; cascata local e atualização de cache sem alterar conteúdo funcional. |
+| Alternativas descartadas | Branco global; mudar protocolos; desativar testes; relaxar comparação; reverter todo o tema; nova confirmação de implementação. |
+| Ações externas concluídas | #486 mesclada e publicada no Pages. Sem mudança de dados, permissões, OAuth, segredos ou configuração externa. |
+| Pendências e bloqueios | Revisão visual humana; resultado amplo `36171225531`; diagnóstico das quatro falhas anteriores e dos Worker Builds; confirmar integração documental. |
+| Riscos conhecidos | Teste sintético não valida serviços reais; cache do navegador do operador não foi inspecionado; falhas amplas não suprimidas; domínio não homologado por navegação autenticada nesta sessão. |
+| Métricas / observabilidade | Evidência sintética apenas; nenhuma telemetria clínica. |
+| Próxima ação exata | Conferir revisão de `/recepcao/` e run amplo existente, sem repetir matriz já encerrada; investigar falhas separadas; reverter somente #486 se houver regressão atribuível. |
+| Arquivos e fontes principais | `css/reception.css`; `recepcao/index.html`; `testing/browser/reception-dark-contrast.mjs`; workflow `validate-reception-dark.yml`; este status/histórico; PR #486; Guia Mestre 1.1; `PORTAL-APARENCIA-V1.md`. |
