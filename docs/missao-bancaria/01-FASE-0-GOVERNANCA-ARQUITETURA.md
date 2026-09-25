@@ -1,6 +1,9 @@
 # MISSÃO BANCÁRIA — FASE 0
 ## Governança, isolamento e arquitetura
 
+**Estado:** em andamento; plano técnico V1 elaborado e aguardando homologação humana.  
+**Plano técnico:** [15-FASE-0-PLANO-TECNICO.md](15-FASE-0-PLANO-TECNICO.md)
+
 ### Objetivo
 Definir como o módulo entra no Portal sem interferir em módulos institucionais.
 
@@ -40,8 +43,9 @@ Entidades previstas:
 - study_reviews;
 - study_xp_events;
 - study_achievements;
-- study_content_releases ou mecanismo equivalente de versionamento/publicação;
-- study_achievements com regra idempotente de desbloqueio e timestamp de conquista.
+- study_content_releases ou mecanismo equivalente de versionamento/publicação.
+
+A entidade `study_achievements` deve possuir regra idempotente de desbloqueio e timestamp de conquista.
 
 O desenho final pode mudar, mas a separação de domínio deve permanecer.
 
