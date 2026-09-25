@@ -1,6 +1,40 @@
 # Central de Documentos — Status
 
-Última atualização: 24/09/2026.
+Última atualização: 25/09/2026.
+
+
+## Mudança transversal — botão mostrar/ocultar senha no login — EM PR — 25/09/2026
+
+Pedido operacional: na tela `/login/`, manter a senha oculta por padrão e adicionar, dentro do campo **Senha**, um botão com ícone de olho no canto direito para permitir ao usuário mostrar ou ocultar os caracteres antes de entrar.
+
+Diagnóstico do estado real:
+- a `main` usada como base estava em `1157e28020a90461de0dd0fdb6939f0e9881dfa6`;
+- `login/index.html` possuía apenas o `input#loginPassword` com `type="password"`, sem controle explícito de visibilidade;
+- a autenticação funcional permanece concentrada em `js/login.js`; não é necessário alterar credenciais, sessão ou backend para esta melhoria;
+- a PR paralela **#480** também toca `login/index.html`, porém por causa do cache-buster/ajustes da auditoria final de modo escuro. Esta melhoria foi mantida em branch e PR próprias e em regiões separadas do arquivo para reduzir conflito e preservar o escopo de cada frente.
+
+Implementação:
+- branch `feat/login-password-visibility-20260925`, criada da `main`;
+- senha continua **oculta por padrão** com `type="password"`;
+- botão `#loginPasswordToggle` com ícone de olho foi inserido dentro do campo, à direita;
+- clique alterna somente no navegador entre `password` e `text`;
+- quando a senha está visível, o ícone recebe uma barra e o rótulo acessível muda para **Ocultar senha**;
+- `aria-label`, `aria-pressed`, foco por teclado e alvo de toque foram tratados;
+- o controle recebeu ajustes para desktop, mobile e modo escuro;
+- `autocomplete="current-password"` foi preservado;
+- nenhuma senha é persistida, registrada, enviada à telemetria ou tratada fora do fluxo de autenticação já existente.
+
+Regressão:
+- `worker/tests/post-login-opening.test.mjs` agora exige senha oculta por padrão, botão acessível, alternância `password ↔ text`, rótulos Mostrar/Ocultar e ícone com estado visual;
+- commits funcionais antes deste registro documental: `f315c7e34769704c00605f218b80f16ee1238667` e `e41e2141af90a87a3425a45869a0394e727cabb5`.
+
+PR:
+- **#482 — Login: adicionar botão para mostrar ou ocultar senha**;
+- CI ainda pendente neste ponto do registro.
+
+Privacidade/segurança: alteração exclusivamente de interface local. Não muda autenticação, permissões, sessão, banco, Worker, Google Drive, IA ou PostHog. O valor da senha continua submetido somente pelo fluxo de login já existente.
+
+**Próxima ação exata:** acompanhar a matriz CI da PR #482; se os checks relevantes ficarem verdes, integrar na `main`, confirmar publicação e validar em produção que o olho mostra/oculta a senha sem alterar o login por Enter, autocomplete ou modo escuro/mobile.
 
 
 ## Fase 7G.6 — line-art branca com fundo transparente no Titon escuro — HOMOLOGADA E ENCERRADA — 24/09/2026
@@ -3477,22 +3511,22 @@ A unidade é exclusivamente visual; a evidência do Worker é registrada apenas 
 
 | Campo | Estado |
 | --- | --- |
-| Fase atual | **Fase 7 — Robustez e otimização contínua** |
-| Subfase / objetivo atual | **7G.6 homologada e encerrada; sem frente funcional aberta neste momento** |
-| Última ação concluída | Homologação visual humana aprovada em produção: line-art branca + fundo transparente no Titon escuro |
-| Branch atual | **nenhuma frente funcional aberta**; branch documental apenas para registrar a homologação |
-| PR atual | **nenhum PR funcional aberto** |
-| Último commit funcional relevante | funcional `2802ae45fbec29624cc6f3ba01c3ac0ad25ba6e9`; handoff anterior em `4b4a5167` |
-| Checks e testes | #476 **23/23 success**; pós-merge funcional **23/23 push success**; GitHub Pages, Cloudflare Pages e Workers Builds **success** |
-| Decisões tomadas | 7G.6 aprovada e encerrada; fundo transparente + line-art branca passa a ser o baseline visual do Titon no dark mode |
-| Justificativas | resultado visual aprovado em produção; nenhuma regressão técnica conhecida |
-| Alternativas descartadas | reabrir a 7G.6 sem evidência de regressão |
-| Ações externas concluídas | homologação humana em produção |
-| Pendências e bloqueios | nenhuma pendência da 7G.6 |
-| Riscos conhecidos | resíduos claros podem ainda existir em outras superfícies do Portal fora do Titon; tratar somente em auditoria transversal separada |
+| Fase atual | **Fase 7 — Robustez e otimização contínua**; a 7G.6 da Central permanece homologada e encerrada |
+| Subfase / objetivo atual | Mudança transversal isolada: botão de **mostrar/ocultar senha** em `/login/` |
+| Última ação concluída | Implementação e regressão adicionadas; PR funcional **#482** aberta |
+| Branch atual | `feat/login-password-visibility-20260925` |
+| PR atual | **#482 — Login: adicionar botão para mostrar ou ocultar senha** — aberta |
+| Último commit funcional relevante | `e41e2141af90a87a3425a45869a0394e727cabb5` antes deste registro documental |
+| Checks e testes | contrato automatizado adicionado em `worker/tests/post-login-opening.test.mjs`; matriz CI da PR #482 ainda pendente |
+| Decisões tomadas | senha segue oculta por padrão; controle explícito com olho alterna apenas `password/text`; acessibilidade e mobile/dark mode preservados |
+| Justificativas | melhora de usabilidade sem alterar o mecanismo de autenticação nem persistir a senha; escopo mínimo e reversível |
+| Alternativas descartadas | depender apenas do controle nativo eventual do navegador, por não ser consistente entre browsers/plataformas; absorver a mudança na PR #480, por misturar escopos |
+| Ações externas concluídas | nenhuma |
+| Pendências e bloqueios | concluir CI, merge/publicação e homologação visual; PRs paralelas #480 e #481 continuam independentes |
+| Riscos conhecidos | possível conflito textual futuro com a PR #480 por ambas tocarem `login/index.html`, embora em regiões distintas; nenhuma regressão de segurança conhecida |
 | Métricas / observabilidade | nenhuma telemetria nova |
-| Próxima ação exata | **aguardar decisão sobre iniciar uma auditoria final transversal do modo escuro em branch/PR separada** |
-| Arquivos e fontes principais | Guia Mestre V1.1; PR #476; merge `2802ae45`; `css/documents.css`; `css/portal-interactions.css`; status |
+| Próxima ação exata | verificar CI da **#482**; com checks verdes, mesclar; depois Ctrl+F5 em `/login/` e validar olho, Enter, autocomplete, desktop/mobile e modo escuro |
+| Arquivos e fontes principais | `login/index.html`; `worker/tests/post-login-opening.test.mjs`; PR #482; PR #480 para eventual reconciliação; Guia Mestre V1.1; este status |
 
 ## Histórico recuperável
 

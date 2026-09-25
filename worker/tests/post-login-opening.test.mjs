@@ -140,3 +140,12 @@ test('bootstrap é restrito à Home local e não cria iframe ou executa script a
   assert.doesNotMatch(source, /eval\(|new Function|document.write|createElement\('iframe'\)/);
   assert.match(read('js/home.js'), /window.PortalHomeReady = \(async/);
 });
+
+
+test('login mantém senha oculta por padrão e oferece botão acessível para mostrar ou ocultar', () => {
+  assert.match(loginIndex, /id="loginPassword"[^>]*type="password"[^>]*autocomplete="current-password"/);
+  assert.match(loginIndex, /id="loginPasswordToggle"[^>]*type="button"[^>]*aria-label="Mostrar senha"[^>]*aria-pressed="false"/);
+  assert.match(loginIndex, /input\.type = input\.type === 'password' \? 'text' : 'password'/);
+  assert.match(loginIndex, /visible \? 'Ocultar senha' : 'Mostrar senha'/);
+  assert.match(loginIndex, /login-password-eye-slash/);
+});

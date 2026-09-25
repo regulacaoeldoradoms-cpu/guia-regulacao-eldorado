@@ -42,6 +42,76 @@
       filter:drop-shadow(0 10px 22px rgba(0,0,0,.18));
     }
 
+    .login-password-control{
+      position:relative;
+    }
+    .login-password-control #loginPassword{
+      width:100%;
+      padding-right:56px;
+    }
+    .login-password-toggle{
+      position:absolute;
+      top:50%;
+      right:8px;
+      transform:translateY(-50%);
+      width:40px;
+      height:40px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:0;
+      border:0;
+      border-radius:10px;
+      background:transparent;
+      color:#516b82;
+      cursor:pointer;
+      touch-action:manipulation;
+    }
+    .login-password-toggle:hover{
+      background:rgba(36,142,229,.10);
+      color:#174f7b;
+    }
+    .login-password-toggle:focus-visible{
+      outline:2px solid #2494e8;
+      outline-offset:2px;
+    }
+    .login-password-toggle svg{
+      width:22px;
+      height:22px;
+      fill:none;
+      stroke:currentColor;
+      stroke-width:1.9;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      pointer-events:none;
+    }
+    .login-password-eye-slash{
+      display:none;
+    }
+    .login-password-toggle[aria-pressed="true"] .login-password-eye-slash{
+      display:block;
+    }
+    html[data-portal-theme="dark"] .login-password-toggle{
+      color:#d5e6f3;
+    }
+    html[data-portal-theme="dark"] .login-password-toggle:hover{
+      background:rgba(125,190,239,.12);
+      color:#fff;
+    }
+    body.mobile-login-mode .login-password-control #loginPassword{
+      padding-right:clamp(74px,9.2vw,96px) !important;
+    }
+    body.mobile-login-mode .login-password-toggle{
+      right:clamp(10px,1.5vw,16px);
+      width:clamp(52px,6.8vw,72px);
+      height:clamp(52px,6.8vw,72px);
+      border-radius:clamp(12px,1.7vw,18px);
+    }
+    body.mobile-login-mode .login-password-toggle svg{
+      width:clamp(27px,3.6vw,38px);
+      height:clamp(27px,3.6vw,38px);
+    }
+
     /* DESKTOP: mantido como já estava. */
     @media(min-width:861px){
       body.login-page{
@@ -413,7 +483,16 @@
         </div>
         <div class="portal-field">
           <label for="loginPassword">Senha</label>
-          <input id="loginPassword" name="password" type="password" autocomplete="current-password" required maxlength="160">
+          <div class="login-password-control">
+            <input id="loginPassword" name="password" type="password" autocomplete="current-password" required maxlength="160">
+            <button class="login-password-toggle" id="loginPasswordToggle" type="button" aria-label="Mostrar senha" aria-pressed="false" title="Mostrar senha">
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"></path>
+                <circle cx="12" cy="12" r="2.8"></circle>
+                <path class="login-password-eye-slash" d="M4.2 4.2 19.8 19.8"></path>
+              </svg>
+            </button>
+          </div>
         </div>
         <label style="display:flex;gap:9px;align-items:center;font-size:.84rem;color:#516b82;margin:4px 0 16px">
           <input id="loginRemember" type="checkbox"> Manter acesso neste computador
@@ -455,6 +534,33 @@
       }, { passive:true });
 
       syncIntro();
+    })();
+  </script>
+  <script>
+    (() => {
+      const input = document.getElementById('loginPassword');
+      const toggle = document.getElementById('loginPasswordToggle');
+      if (!input || !toggle) return;
+
+      const syncPasswordToggle = () => {
+        const visible = input.type === 'text';
+        const action = visible ? 'Ocultar senha' : 'Mostrar senha';
+        toggle.setAttribute('aria-pressed', visible ? 'true' : 'false');
+        toggle.setAttribute('aria-label', action);
+        toggle.setAttribute('title', action);
+      };
+
+      toggle.addEventListener('click', () => {
+        input.type = input.type === 'password' ? 'text' : 'password';
+        syncPasswordToggle();
+        try {
+          input.focus({ preventScroll:true });
+        } catch (_) {
+          input.focus();
+        }
+      });
+
+      syncPasswordToggle();
     })();
   </script>
   <script src="/js/auth-config.js?v=20260815-1"></script>
