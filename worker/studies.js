@@ -112,7 +112,8 @@ async function ensureStudySchema(env) {
         cycle INTEGER NOT NULL,
         due_at TEXT NOT NULL,
         completed_at TEXT,
-        status TEXT NOT NULL DEFAULT 'pending'
+        status TEXT NOT NULL DEFAULT 'pending',
+        UNIQUE(username, topic_id, cycle)
       )`,
       `CREATE TABLE IF NOT EXISTS study_xp_events (
         event_id TEXT PRIMARY KEY,
@@ -349,10 +350,7 @@ async function scheduleReviews(env, username, topicId) {
     { cycle: 3, modifier: '+30 days' }
   ];
   for (const item of cycles) {
-    const existing = await env.AUTH_DB.prepare(`SELECT review_id FROM study_reviews
-      WHERE username=? AND topic_id=? AND cycle=? LIMIT 1`).bind(username, topicId, item.cycle).first();
-    if (existing) continue;
-    await env.AUTH_DB.prepare(`INSERT INTO study_reviews(
+    await env.AUTH_DB.prepare(`INSERT OR IGNORE INTO study_reviews(
       review_id, username, topic_id, cycle, due_at
     ) VALUES (?, ?, ?, ?, datetime('now', ?))`).bind(
       crypto.randomUUID(), username, topicId, item.cycle, item.modifier
