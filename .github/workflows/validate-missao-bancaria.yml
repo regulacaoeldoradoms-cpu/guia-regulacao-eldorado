@@ -39,7 +39,7 @@ jobs:
           grep -q "wellyton" js/tools-catalog.js
           grep -q "ALLOWED_USERNAME = 'wellyton'" worker/studies.js
           grep -q "isStudiesApi" worker/index.js
-          grep -q "/api/studies/" worker/index.js
+          grep -q "handleStudiesRoute" worker/index.js
           grep -q 'studyAchievementsSection' conquistas/index.html
           grep -q '/api/studies/achievements' js/achievements.js
           grep -q 'Content-Security-Policy' estudos/index.html
