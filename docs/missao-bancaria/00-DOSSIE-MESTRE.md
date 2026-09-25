@@ -70,6 +70,22 @@ Calculado por desempenho recente, revisões e retenção.
 
 Nunca confundir "100% do edital visto" com "100% dominado".
 
+### Disponibilidade da campanha x progresso pessoal
+
+A expansão do produto não pode reduzir artificialmente a percepção de avanço do usuário.
+
+O sistema deve separar:
+- **conteúdo planejado**: tudo o que está previsto para a campanha;
+- **conteúdo disponível**: o que já foi publicado e pode ser estudado;
+- **progresso no conteúdo disponível**: quanto Wellyton concluiu do que já pode estudar;
+- **cobertura total planejada**: quanto da campanha completa já está implementado.
+
+Exemplo:
+- campanha planejada disponível: 34%;
+- progresso de Wellyton no conteúdo já disponível: 71%.
+
+Adicionar novas aulas nunca apaga conclusões anteriores nem transforma um tópico consolidado em "não estudado".
+
 ## 5. Indicadores centrais
 
 O dashboard deve poder exibir:
@@ -141,19 +157,49 @@ Detalhamento em `12-FONTES-E-CONTEUDO.md`.
 
 ## 10. Estratégia de construção
 
-Não produzir todo o curso em uma única entrega.
+Não produzir todo o curso em uma única entrega e não esperar o curso inteiro ficar pronto para começar o estudo.
 
-Ordem obrigatória:
+A estratégia oficial é **desenvolvimento vertical, incremental e utilizável**:
+
+> construir um pequeno ciclo completo → publicar conteúdo real → Wellyton estuda → observar uso → corrigir o método → ampliar a campanha.
+
+A primeira versão jogável já deve possuir conteúdo **real, fundamentado e pedagogicamente utilizável**. Conteúdo fictício pode existir apenas em testes automatizados ou ambientes técnicos; não deve ser apresentado ao usuário como material de estudo.
+
+Ordem macro:
 - Fase 0 — governança e arquitetura;
-- Fase 1 — motor MVP;
-- Fase 2 — motor pedagógico;
-- Fase 3 — primeiro mundo completo: Conhecimentos Bancários;
+- Fase 1 — motor MVP + primeiro recorte real de estudo;
+- Fase 2 — motor pedagógico reutilizável, refinado com uso real;
+- Fase 3 — expansão até completar o primeiro mundo: Conhecimentos Bancários;
 - Fase 4 — Português + Matemática Financeira;
 - Fase 5 — Atendimento/Vendas + TI/Digital;
 - Fase 6 — Ética/Compliance + Estatística + Inglês;
 - Fase 7 — revisão adaptativa e caderno de erros;
 - Fase 8 — simulados e redação;
 - Fase 9 — otimização e manutenção de conteúdo.
+
+### 10.1 Entregas jogáveis
+
+Uma fase pode receber várias entregas utilizáveis antes de ser formalmente encerrada.
+
+Exemplo:
+1. fundação + primeiras missões reais de Sistema Financeiro Nacional;
+2. expansão de SFN + primeiro chefe;
+3. Produtos Bancários;
+4. Português;
+5. Matemática Financeira;
+6. demais mundos.
+
+Wellyton deve poder estudar cada recorte assim que ele atingir qualidade pedagógica e técnica suficiente, sem aguardar a conclusão das fases posteriores.
+
+### 10.2 Preservação de progresso
+
+Conteúdos devem possuir identificadores estáveis, independentes de posição na interface, por exemplo:
+- `banking.sfn.introducao`;
+- `banking.sfn.cmn`;
+- `banking.sfn.bacen`;
+- `banking.sfn.copom`.
+
+Atualizar texto, acrescentar exemplos ou publicar novas missões não deve apagar XP, histórico, domínio, revisões ou conclusão de conteúdo já estudado.
 
 Cada fase possui documento próprio e critério de aceite.
 
@@ -167,6 +213,8 @@ Uma fase só pode ser considerada concluída após:
 5. aceite explícito antes da próxima fase.
 
 Não antecipar fases se isso aumentar risco de retrabalho.
+
+Essa regra não impede **entregas incrementais dentro da fase ativa**. Sempre que um recorte estiver tecnicamente estável, pedagogicamente válido e não depender de uma fase futura, ele pode ser disponibilizado para estudo antes do encerramento formal da fase.
 
 ## 12. Regra de continuidade entre conversas/agentes
 
@@ -196,3 +244,5 @@ A ferramenta deve responder continuamente à pergunta:
 > "Qual é a menor próxima ação que faz Wellyton avançar de forma mensurável rumo a uma prova bancária?"
 
 Se uma funcionalidade não melhora aprendizado, constância, mensuração ou foco, ela não é prioritária.
+
+O produto deve ser construído de modo que **Wellyton estude enquanto a plataforma cresce**, e não apenas depois de sua conclusão.
