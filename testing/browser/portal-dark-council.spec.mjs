@@ -25,6 +25,9 @@ async function setup(context,{citizen=false,theme='dark',empty=false}={}){
   // authenticated:false prevents the shared init script from overwriting our explicit role fixture.
   const network=await installAuditFixture(context,{theme,authenticated:false,responses});
   await context.addInitScript(user=>{
+    // context.newPage() starts at about:blank (opaque origin). Storage is only
+    // valid after navigation to the loopback audit application.
+    if(location.origin!=='http://127.0.0.1:4176')return;
     sessionStorage.setItem('regulacao.portal.session','synthetic-audit-token-no-backend');
     sessionStorage.setItem('regulacao.portal.user',JSON.stringify(user));
     sessionStorage.setItem('regulacao.portal.user.validatedAt',String(Date.now()));
