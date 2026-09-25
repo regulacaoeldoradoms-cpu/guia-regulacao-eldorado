@@ -80,7 +80,7 @@
       const done = completed(mission);
       const unlocked = isUnlocked(index);
       const progress = data.progress[mission.topicId];
-      const label = done ? '✅ Concluída' : unlocked ? '🔓 Disponível' : '🔒 Bloqueada';
+      const label = done ? 'Concluída' : unlocked ? 'Disponível' : 'Bloqueada';
       return `<button class="study-mission ${done ? 'done' : ''}" type="button" data-mission-id="${mission.id}" ${unlocked ? '' : 'disabled'}>
         <span class="state">${label}</span>
         <h3>${mission.order}. ${mission.title}</h3>
@@ -137,7 +137,7 @@
       </article>`
     ).join('');
     $('sourceList').innerHTML = mission.sources.map((source) =>
-      `<a class="study-source" href="${source.url}" target="_blank" rel="noopener noreferrer">↗ ${source.label}</a>`
+      `<a class="study-source" href="${source.url}" target="_blank" rel="noopener noreferrer">Abrir fonte: ${source.label}</a>`
     ).join('');
 
     $('questionList').querySelectorAll('[data-answer-question]').forEach((button) => {
@@ -205,7 +205,7 @@
       const feedback = card.querySelector('[data-feedback]');
       feedback.hidden = false;
       feedback.className = `study-feedback ${result.correct ? 'correct' : 'wrong'}`;
-      feedback.textContent = `${result.correct ? '✅ Correto. ' : '❌ Ainda não. '}${result.explanation}`;
+      feedback.textContent = `${result.correct ? 'Correto. ' : 'Ainda não. '}${result.explanation}`;
       updateFocusProgress();
     } catch (error) {
       button.disabled = false;
@@ -252,7 +252,7 @@
 
   function showAchievement(item) {
     const toast = $('achievementToast');
-    toast.innerHTML = `<strong>🏆 CONQUISTA DESBLOQUEADA</strong><br><b>${item.title}</b><br><span>${item.description}</span>`;
+    toast.innerHTML = `<strong>CONQUISTA DESBLOQUEADA</strong><br><b>${item.title}</b><br><span>${item.description}</span>`;
     toast.hidden = false;
     setTimeout(() => { toast.hidden = true; }, 5000);
   }
@@ -261,7 +261,7 @@
   $('completeMission').addEventListener('click', completeMission);
   $('markDoubt').addEventListener('click', () => {
     state.doubt = !state.doubt;
-    $('markDoubt').textContent = state.doubt ? 'Dúvida marcada ✓' : 'Marcar dúvida';
+    $('markDoubt').textContent = state.doubt ? 'Dúvida marcada' : 'Marcar dúvida';
   });
 
   await load();
