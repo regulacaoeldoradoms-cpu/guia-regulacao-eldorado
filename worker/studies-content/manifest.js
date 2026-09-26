@@ -12,9 +12,11 @@ import { SEGMENTS_SOURCES, SEGMENTS_REVIEW, reviseSegmentsSections } from './sfn
 import { attachIntroApplications } from './sfn-aplicacao-v1.js';
 import { attachMonetaryApplications } from './sfn-aplicacao-cmn-bcb-v1.js';
 import { attachMarketApplications } from './sfn-aplicacao-copom-cvm-v1.js';
+import { OPERATORS_INSURANCE_SOURCES, attachOperatorsInsuranceApplications } from './sfn-aplicacao-operadores-seguros-v1.js';
 
 export const STUDY_SOURCES = Object.freeze([
-  ...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES, ...SEGMENTS_SOURCES
+  ...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES, ...SEGMENTS_SOURCES,
+  ...OPERATORS_INSURANCE_SOURCES
 ]);
 export { PLANNED_MISSIONS };
 
@@ -98,6 +100,7 @@ function teachMission(mission) {
 export const PUBLISHED_MISSIONS = Object.freeze(
   BASE_MISSIONS.map(teachMission).map(attachIntroApplications)
     .map(attachMonetaryApplications).map(attachMarketApplications)
+    .map(attachOperatorsInsuranceApplications)
 );
 
 export function missionById(id) {

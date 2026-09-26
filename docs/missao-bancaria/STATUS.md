@@ -1,70 +1,64 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 26/09/2026 — integração da aplicação introdutória e novo recorte Copom/CVM.
+Atualizado em 26/09/2026 — integração das aplicações anteriores e recorte de Operadores/Seguros.
 
 ## Estado e autorização
 
-**Fase ativa: Fase 1. Ensino por leitura antes da avaliação.**
+**Fase ativa: Fase 1. Ensino por leitura antes da avaliação.** Wellyton autorizou continuidade, desenvolvimento e integração tecnicamente elegível sem acesso imediato nem nova confirmação por etapa. Isso não equivale a homologação humana de compreensão. Seguir documentos 24 e 26: dividir o trabalho quando necessário, nunca omitir ensino.
 
-Wellyton reiterou autorização para desenvolvimento, implementação e integrações necessárias sem acesso imediato ou novas confirmações por pequena etapa. Não confundir autorização com evidência de compreensão ou retenção. Seguir `24-CONTRATO-PEDAGOGICO-GLOBAL.md` e `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`: dividir a produção, não reduzir o ensino.
+Repositório oficial: `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`.
 
-## Fonte oficial e limites
+## Decisões preservadas
 
-Repositório `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`. `/estudos/` e `/api/studies/*`, conta `wellyton` autorizada pelo backend, nenhum cargo novo. Conteúdo no GitHub; progresso em `study_*` no D1 `AUTH_DB`. Sem dados assistenciais, segredos ou telemetria pedagógica externa. Preservar IDs, questões, respostas, XP, conquistas e dados. Bronze/Prata/Ouro continuam níveis de segurança da conta. Rollback não apaga progresso.
+`/estudos/` e `/api/studies/*`; `wellyton` autorizado no backend; nenhum cargo novo. Conteúdo no GitHub, progresso em `study_*` no D1 `AUTH_DB`. Não misturar dados assistenciais, segredos ou telemetria pedagógica externa. Preservar IDs, questões, respostas, XP e conquistas; Bronze/Prata/Ouro permanecem segurança da conta. Rollback sem apagar dados.
 
 ## Entregas incorporadas
 
-- #488 documentação; Fase 0 aprovada em 25/09/2026, plano `15-FASE-0-PLANO-TECNICO.md`.
-- #490 motor: `22257bca768cfc440578e0b8e11da62f15abc08f`.
-- #495 expansão/revisões: `97cc6ab382d624841da46d6d9a9ff7f26a1a18ca`.
-- #498 primeiro bloco/Chefe: `20487883c948dffbeb4b6849baa3c39e9c577d9f`.
-- #499 retomada/Conquistas: `c5ebf3a0bb93bf303851835446ec32ff5decb0cd`.
-- #500 sequência: `ac9128c7e807be8eff0ee5bc1579f792aa249a3d`.
-- #501 ensino completo do recorte: `f6ae4c598156656e2c630372d6e2122259ffb1c2`.
-- #502 leitor por partes: `517c42a7511c2c72d01c242690fd32257b237ec3`.
-- **#503 aplicação introdutória: `c6c6dbfdd1e069053767bbec70ce2ce03b592dc3`, incorporada nesta rodada.**
+- #488: documentação; Fase 0 aprovada em 25/09/2026, plano `15-FASE-0-PLANO-TECNICO.md`.
+- #490: motor, `22257bca768cfc440578e0b8e11da62f15abc08f`.
+- #495: expansão/revisões, `97cc6ab382d624841da46d6d9a9ff7f26a1a18ca`.
+- #498: bloco inicial/Chefe, `20487883c948dffbeb4b6849baa3c39e9c577d9f`.
+- #499: retomada/Conquistas, `c5ebf3a0bb93bf303851835446ec32ff5decb0cd`.
+- #500: sequência, `ac9128c7e807be8eff0ee5bc1579f792aa249a3d`.
+- #501: ensino desenvolvido, `f6ae4c598156656e2c630372d6e2122259ffb1c2`.
+- #502: leitor por partes, `517c42a7511c2c72d01c242690fd32257b237ec3`.
+- #503: aplicação introdutória, `c6c6dbfdd1e069053767bbec70ce2ce03b592dc3`.
+- **#504: CMN/Banco Central, `7a302b6f98fbde9b3ff5bc1aeca01bb8dad63378`, incorporada nesta rodada.**
+- **#505: Copom/CVM, `6040f0372997ca60bbf11502a94bd68e0cbad919`, incorporada nesta rodada.**
 
-Nove missões/38 questões são apenas o primeiro bloco de SFN, não curso, edital ou toda a disciplina. Oito aulas têm conceitos, siglas, exemplos resolvidos e consulta; o Chefe possui preparação cumulativa. Não trocar ensino por novas questões.
+Nove missões/38 questões são apenas o primeiro bloco de SFN, não o curso ou edital completo. Oito aulas têm ensino, vocabulário e exemplos; o Chefe tem preparação cumulativa. A aplicação complementa o ensino, não o substitui.
 
-## Aplicação introdutória — #503
+## Integrações verificadas nesta rodada
 
-Documento 31. Head `08f9b07f0e3cbc16a1eb40dc4c14195d73222f69`: todas as 24 execuções de GitHub Actions consultadas retornaram sucesso, incluindo auditoria geral `36258637192`. A PR foi marcada pronta e incorporada com o head exato validado, sem alterar testes ou tolerâncias.
+#504: as 24 execuções de GitHub Actions do head `5f3f2ba44f6acce2c29f3d081e944be519003a9e` foram consultadas com sucesso, incluindo auditoria geral `36259684505`.
 
-Três casos formativos, comentários, critérios e links para reler; rascunho opcional temporário. Sem nota automática, XP, envio de rascunho ou alteração das questões pontuadas. O merge é confirmado; consultar checks do commit para resultado de build/publicação, sem presumir tráfego produtivo atualizado.
+#505: 23 execuções já estavam aprovadas e a auditoria geral `36260806103`, job `108456106407`, concluiu com sucesso antes do merge do head `d8103934b122c5c1b1f662b0cd53ea33d4388a52`. Não foram alterados head, testes, tolerâncias ou baseline para integrar.
 
-## CMN e Banco Central — #504
+Main resultante contém 15 atividades formativas em cinco aulas, com as mesmas questões pontuadas. Merge não prova sessão autenticada ou distribuição de tráfego produtivo. Registros finais de build/publicação ficam nos comentários das PRs; não inferir sucesso sem consultar.
 
-Documento 32. Branch `feat/missao-bancaria-aplicacao-cmn-bcb`, head `5f3f2ba44f6acce2c29f3d081e944be519003a9e`.
+## Rodada atual — Operadores e Seguros/Previdência
 
-Seis atividades próprias; com a introdução, nove em três aulas. Ensino integral e 38 questões preservados. A #504 foi redirecionada à main após o merge da #503. Na última consulta, 23 workflows estavam aprovados e a auditoria geral `36259684505` permanecia em execução. Não registrar merge antes da operação bem-sucedida. Os comentários finais da PR registram resultados posteriores a este STATUS.
+Documento: `34-APLICACAO-OPERADORES-SEGUROS.md`.
+Branch: `feat/missao-bancaria-aplicacao-operadores-seguros`, diretamente sobre a main após #505.
 
-## Rodada atual — Copom e CVM
+Seis casos novos: canais versus carteiras, análise do cliente versus supervisão, naturezas distintas sob o mesmo supervisor; prêmio como pagamento, aberta coletiva versus fechada, canal de oferta versus produto/supervisor.
 
-Documento `33-APLICACAO-COPOM-CVM.md`.
-Branch `feat/missao-bancaria-aplicacao-copom-cvm`, baseada no head da #504.
+O texto das aulas permanece integral e as referências de ensino precedem a prática. Nesta branch são **21 atividades opcionais em sete aulas**, além das mesmas 38 questões pontuadas. Nenhuma nota automática, XP por rascunho ou tentativa registrada pelo suplemento. A interface continua avisando que rascunhos são temporários.
 
-Seis atividades formativas:
-- Copom: meta versus contrato, sistema/taxa apurada/meta, limites da conclusão sobre efeitos imediatos.
-- CVM: destino de recursos em emissão/venda posterior, participação versus dívida, fiscalização versus lucro garantido.
+Novo módulo de conteúdo e uma fonte oficial adicional da SUSEP. Fontes anteriores preservadas; acrescentados vínculos da FAQ à aula de Seguros e do Portal do Investidor a Operadores. Sem mudança de HTML, CSS, leitor, endpoints, D1, autorização ou gate.
 
-Nesta branch: **15 atividades em cinco aulas**, além das mesmas 38 questões pontuadas. As quatro missões restantes não recebem suplemento sem planejamento próprio. Material já ensinado, textos e gabaritos preservados; comentários não introduzem silenciosamente conceitos inéditos.
+Local: sete testes Node e sintaxe aprovados. Navegador local não executado; DNS local do GitHub falhou. No CI foram preparados os testes de catálogo e cinco novos cenários, mantendo os 32 anteriores, para total de 37. **Resultados remotos, merge desta branch e publicação ainda devem ser lidos e registrados.**
 
-Nenhuma mudança de HTML, CSS, leitor, endpoint, autenticação, D1, cronômetro, pontuação ou gate. Novo módulo de conteúdo, ligação no manifesto, testes e documentação. O painel anterior já aceita o formato.
+## Fontes e limites
 
-**Local executado:** sete testes Node com fixtures passaram. Não houve navegador local nem suíte completa local; DNS de GitHub indisponível nesse ambiente. **CI preparado:** testes de catálogo real, preservação dos casos anteriores e 32 cenários de navegador (27 anteriores + 5 novos). Consultar o resultado depois do push; não presumir CI/merge/publicação nesta versão do documento.
+Aberto nesta sessão: Portal do Investidor, explicação histórica BCB, Lei 12.865, LC 109, SUSEP institucional/FAQ e PREVIC. Uso restrito aos conceitos. A página histórica continua rotulada como tal; a abertura direta da Resolução 5.060 depende de JavaScript, sem alegação de nova conferência integral. Esta ampliação não altera a regra de carteiras nem requisitos normativos de autorização.
 
-Fontes primárias abertas nesta sessão: LC 179, leis 6.385/6.404 e páginas institucionais/educacionais da CVM. BCB Selic/Copom: conteúdo indexado consultado, abertura direta dependente de JavaScript; não alegar leitura integral nem atualizar carimbo de fonte sem conferência.
+## Próximas ações
 
-## Próxima ação autorizada
+Concluir validação e integração da nova entrega; registrar resultados reais de publicação separadamente. Depois preparar aplicação de Pagamentos/Consórcios e revisão cumulativa apoiada em ensino existente. Não exigir acesso imediato nem criar novos mundos para compensar lacunas de ensino.
 
-Concluir as validações de #504 e desta nova entrega; integrar apenas versões elegíveis e registrar separadamente os builds. Depois preparar aplicação de Operadores e Seguros/Previdência em recortes pequenos, com leitura anterior e critérios explícitos. Não solicitar acesso imediato do usuário.
+## Pendências mantidas
 
-## Histórico e pendências preservadas
+Recorde da sequência limitado aos 500 eventos recentes; cronômetro/interrupções; isolamento/retomada de rodadas; comprovação real de persistência; retenção e clareza no uso humano. Não resolvidas pelos novos exercícios. Rascunho temporário não é progresso salvo.
 
-A #502 teve sucesso nos checks do merge: Workers Builds `108452897413`, versão informada `ad2d0848-9624-4ff5-934b-b1b74cabb81f`; Cloudflare Pages `108452795618`; GitHub Pages `108452819050`. Esses registros não comprovam publicação dos commits posteriores nem 100% do tráfego do Worker.
-
-Falhas históricas do preview Worker em branches não foram convertidas em sucesso. Não mudar gates para escondê-las. O erro inicial “Rota não encontrada” motivou #492/#494; #493 ficou sem merge; #491/#496/#497 foram substituídas.
-
-Continuam pendentes: recorde histórico além de 500 eventos, cronômetro/interrupções, isolamento/retomada de rodadas, comprovação real de persistência e retenção pedagógica. Rascunho de autoavaliação não é progresso salvo e seu limite é avisado na interface.
-
-Fase 1 sem homologação humana de aprendizagem. Testes sintéticos e autorização para avançar não substituem observação do uso real.
+Falhas históricas de preview de Worker em branches não foram escondidas ou tratadas como sucesso. Erro inicial “Rota não encontrada” motivou #492/#494; #493 sem merge; #491/#496/#497 substituídas. Não reintroduzir alternativas abandonadas nem relaxar gates. A Fase 1 continua sem homologação humana final.
