@@ -79,3 +79,19 @@ Wellyton consegue:
 10. enxergar separadamente "campanha disponível" e "meu progresso";
 11. ao concluir a primeira missão real, receber a conquista **Primeira missão** uma única vez;
 12. abrir `/conquistas/` e ver a medalha obtida sem alterar Bronze/Prata/Ouro da conta.
+
+### Bloqueio pedagógico identificado em 26/09/2026
+
+Wellyton relatou que os textos eram insuficientes para aprender e que não conhecia as siglas. Não há aceite pedagógico da fase. Priorizar a correção do ensino, não a abertura de novos mundos.
+
+Antes de pedir conclusão de missão, a aula deve apresentar nomes por extenso, termos essenciais, exemplos cotidianos e exemplos resolvidos. Um resumo de conceitos ou um link para uma fonte oficial não substitui o ensino.
+
+Aplicar o padrão atualizado em `12-FONTES-E-CONTEUDO.md`. Primeira correção: `23-FASE-1-ENSINO-DO-ZERO.md`. As demais aulas não se tornam homologadas por herdar a mesma interface.
+
+### Produção menor por rodada — orientação complementar de 26/09/2026
+
+Wellyton autorizou dividir ainda mais o trabalho quando necessário. Não há obrigação de concluir uma aula, matéria ou fase inteira em um prompt. Seguir `24-CONTRATO-PEDAGOGICO-GLOBAL.md` e `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`.
+
+Prioridade: explicação desenvolvida e exemplos resolvidos, revisão pedagógica, questões para verificar compreensão e aplicação, depois integração de uma unidade estudável. Não usar a correção das questões como primeiro ensino do conceito. O tamanho da entrega se ajusta à qualidade necessária.
+
+Aulas já redigidas na PR #501 continuam sujeitas a revisão por unidade. A autorização de subdividir não é aceite final da Fase 1 nem certificação das aulas existentes. Preservar o histórico e registrar claramente o próximo trecho a desenvolver ou revisar.

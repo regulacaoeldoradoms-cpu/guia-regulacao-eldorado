@@ -1,129 +1,67 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em: 26/09/2026, após a retomada da PR #500.
+Atualizado em 26/09/2026 — revisão pedagógica e conferência pontual na PR #501.
 
-## Estado oficial
+## Estado e autorização atual
 
-**Fase ativa: Fase 1 — Motor MVP + primeiro recorte real de Sistema Financeiro Nacional.**
+**Fase ativa: Fase 1. Ensino por leitura antes da prática é a prioridade.**
 
-**Entregas abaixo incorporadas à `main`; Fase 1 NÃO encerrada.** A homologação humana continua pendente. Merge, publicação do frontend, build do Worker, versão efetivamente servida e uso autenticado são verificações distintas.
+Wellyton autorizou o avanço, revisões, testes e integrações necessárias sem aguardar seu acesso imediato ao portal. Registro: `28-REVISAO-SEGMENTOS-E-AUTORIZACAO.md`. Avaliação humana de compreensão continua pendente; não alegar que já ocorreu.
 
-A documentação-base entrou pela PR #488. A Fase 0 foi **aprovada e encerrada em 25/09/2026 por aceite explícito de Wellyton**; plano: `15-FASE-0-PLANO-TECNICO.md`.
+Todo conteúdo segue `24-CONTRATO-PEDAGOGICO-GLOBAL.md` e `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`. Dividir a produção quando necessário, sem reduzir ou omitir ensino.
 
-Este STATUS prevalece sobre rótulos históricos como “em branch” nos registros anteriores, sem alterar as decisões aprovadas.
+## Base incorporada antes da PR #501
 
-## Decisões preservadas
+- #488: documentação-base; Fase 0 aprovada em 25/09/2026; plano `15-FASE-0-PLANO-TECNICO.md`.
+- #490 motor inicial: `22257bca768cfc440578e0b8e11da62f15abc08f`.
+- #495 expansão/revisões: `97cc6ab382d624841da46d6d9a9ff7f26a1a18ca`.
+- #498 bloco de nove missões/Chefe: `20487883c948dffbeb4b6849baa3c39e9c577d9f`.
+- #499 retomada/Conquistas: `c5ebf3a0bb93bf303851835446ec32ff5decb0cd`.
+- #500 sequência: `ac9128c7e807be8eff0ee5bc1579f792aa249a3d`.
 
-- `/estudos/` e `/api/studies/*`, acesso inicial exclusivo de `wellyton`, validado no backend;
-- nenhum cargo profissional novo nem uso de dados assistenciais;
-- D1 `AUTH_DB` somente com tabelas `study_*` para o domínio de estudos;
-- conteúdo versionado no GitHub, progresso pessoal no D1 e IDs estáveis;
-- preservação de tentativas, conclusões, XP, revisões e conquistas;
-- integração com `/conquistas/`, sem alterar Bronze/Prata/Ouro da segurança;
-- nenhuma telemetria pedagógica externa;
-- rollback sem apagar tabelas ou progresso;
-- ensino por leitura e questões; entregas incrementais utilizáveis.
+9/9 refere-se somente ao primeiro bloco de SFN, não a curso ou edital completo.
 
-## Entregas incorporadas
+## Regras preservadas
 
-### V1 — PR #490
+Acesso exclusivo de `wellyton` no backend; `/estudos/` e `/api/studies/*`; nenhum novo cargo; conteúdo no GitHub e progresso em tabelas `study_*` no D1 `AUTH_DB`. IDs, perguntas, respostas, XP e conquistas preservados. Bronze/Prata/Ouro separados do estudo. Nenhuma telemetria pedagógica externa. Rollback sem apagar dados.
 
-Commit: `22257bca768cfc440578e0b8e11da62f15abc08f`.
+## PR #501 — conteúdo de ensino
 
-SFN, CMN, Banco Central e Copom; 12 questões autorais. Dashboard, XP, níveis, sessões, modo foco, cronômetro, tentativas persistidas, agendamento de revisões e conquista `study.first_mission`.
+Branch: `fix/missao-bancaria-ensino-do-zero`.
+Main observada: `5e82869b8ae52e26392bf5ff139caa7674f23f90`.
 
-Registro: `17-FASE-1-IMPLEMENTACAO-V1.md`.
+Oito aulas com conceitos, vocabulário, exemplos resolvidos e consulta; preparação cumulativa do Chefe; 38 questões mapeadas ao ensino correspondente.
 
-### Expansão e revisões — PR #495
+- Documento 27: lote A, 13 trechos revisados em Introdução, CMN, Banco Central e Copom.
+- Documento 28: 25 trechos revisados em CVM, Operadores, Seguros/Previdência, Pagamentos/Consórcios e Chefe; novas fontes legais primárias e testes de aplicação real ao catálogo.
+- Documento 29: conferência pontual das carteiras por cotejo de texto normativo reproduzido, explicação institucional e alterações indexadas no BCB. Não alegar acesso direto integral à página do BCB, que continua dependendo de JavaScript.
 
-Commit: `97cc6ab382d624841da46d6d9a9ff7f26a1a18ca`.
+Todas as nove missões possuem passagem editorial identificada. Nenhuma avaliação humana foi inventada; nenhum novo mundo, pergunta ou recompensa foi criado nesta rodada.
 
-CVM e operadores do SFN, com seis questões adicionais. Mundo 1 fixado em nove missões; disponibilidade, progresso conquistado e conclusão do conteúdo liberado separados.
+## Precisão e decisão de publicação
 
-Revisões de 1/7/30 dias aparecem quando vencem. **Revisar agora** reutiliza o modo foco; conclusão exige prática após o vencimento e concede +20 XP por evento idempotente.
+Leis 6.385, 6.404, 12.865 e 11.795, LC 109 e páginas SUSEP/PREVIC foram abertas para os trechos utilizados; a LC 179 foi consultada no lote A.
 
-Registros: `18-EXPANSAO-SFN-V1.1.md` e `19-FASE-1-REVISAO-ESPACADA-V1.md`.
+A pendência anterior sobre carteiras foi delimitada e conferida por cotejo, conforme documento 29. O texto do art. 4º foi lido em reprodução jurídica externa e comparado à explicação institucional; as alterações indexadas pelo BCB nos arts. 6º e 7º foram confrontadas com a reprodução. O repositório externo não foi rotulado como fonte oficial. Não houve alteração de gabarito nem introdução de regras de capital ou de autorização completa.
 
-### Primeiro bloco de SFN — PR #498
+Com a conferência dos pontos cobrados concluída, a PR está apta à etapa de CI/integração, sem depender de novo aceite por parágrafo. Isso não afirma que já houve merge ou publicação: registrar os resultados reais após cada operação.
 
-Commit: `20487883c948dffbeb4b6849baa3c39e9c577d9f`.
+## Testes confirmados
 
-Adicionadas seguros/previdência/capitalização, pagamentos/Pix/consórcios e Chefe do SFN. Total implementado: **9 missões e 38 questões autorais**.
+Head de código `0de24d0526d0773069c5614555b170220d2cf9bb`:
+- `Validar Missao Bancaria`, run `36253087141`, job `108434668235`: completed/success.
+- Nesse job passaram Worker/testes, validação de frontend, isolamento e documentação/fontes.
 
-O Chefe possui 12 questões, nota mínima de 75%, 220 XP uma única vez e conquista `study.sfn.boss` — **SFN dominado**. A implementação usa a sessão ativa e a última resposta de cada questão desde o início da sessão.
+Os registros 29 e este STATUS são ajustes documentais posteriores. Consultar CI do head final antes de incorporar; não presumir resultado das execuções ainda não lidas.
 
-**9/9 refere-se apenas a este primeiro bloco de SFN: não significa edital inteiro, curso completo ou toda a disciplina Conhecimentos Bancários.**
+## Histórico e limites técnicos
 
-Registro: `20-FECHAMENTO-MUNDO1-SFN.md`.
+Incidente inicial: frontend publicado antes do Worker, erro “Rota não encontrada”. Correções #492/#494, commit `90cc6d8e16039bb7ed1482bec3f75feadb860816`. #493 sem merge; #491/#496/#497 substituídas.
 
-### Retomada parcial e Conquistas — PR #499
+No merge #500 houve 24 execuções de CI bem-sucedidas; checks históricos `108407207253`, `108407233680`, `108407276388`; versão informada `b110fd9f-3cdf-4047-93a5-a147e9dcde47`. Não são evidência da publicação desta PR.
 
-Commit: `c5ebf3a0bb93bf303851835446ec32ff5decb0cd`.
+Continuam pendentes: recorde histórico além de 500 eventos; cronômetro/interrupções; isolamento e retomada de rodadas; persistência real. Não foram resolvidos por revisão editorial.
 
-Aulas normais reconhecem IDs de questões respondidas anteriormente, permitindo continuar ou responder novamente. Bootstrap sem gabarito. Revisões e Chefe não reaproveitam respostas históricas na interface. Corrigido o SVG dos estados sem medalhas/indisponível em Conquistas.
+## Avaliação posterior
 
-Registro: `21-FASE-1-RETOMADA-PARCIAL.md`.
-
-### Sequência de estudo — PR #500
-
-**Incorporada nesta retomada em 26/09/2026.**
-
-Commit: `ac9128c7e807be8eff0ee5bc1579f792aa249a3d`.
-
-Head validado: `916963a53bf852d262c81ac73db97847121e80cc`.
-
-Cartão com sequência atual e melhor sequência calculada. Dias agrupados em `America/Campo_Grande`; múltiplas atividades contam uma vez; estudo de ontem mantém a sequência ativa durante o dia atual. Contam questões, sessões encerradas com pelo menos 60 segundos ou eventos pedagógicos persistidos. Abrir a página sem atividade não conta. A sequência não concede XP, altera domínio ou remove conquistas.
-
-Registro: `22-FASE-1-SEQUENCIA-ESTUDO-V1.md`.
-
-## Validações desta retomada
-
-Antes do merge da PR #500, **as 24 execuções de GitHub Actions retornaram `completed / success`**, incluindo:
-- Missão Bancária: `36228357581`;
-- site: `36228357641`;
-- interações: `36228357712`;
-- Camada Social: `36228357595`;
-- auditoria visual: `36228357657`;
-- autenticação, demais módulos e testes de navegador da Central.
-
-A auditoria visual pendente terminou com sucesso. Nenhum teste ou gate foi desabilitado nesta retomada. O merge usou exatamente o head validado; os registros posteriores alteram apenas documentação.
-
-## Publicação — evidência mais recente
-
-Os check-runs do merge `ac9128c7e807be8eff0ee5bc1579f792aa249a3d` confirmaram:
-
-- **Cloudflare Pages: success**, check `108407207253`, concluído às 12:48:47 UTC; publicação `6eb5c59e-2e6c-43ea-8784-2e8d00699a9e`;
-- **GitHub Pages: deploy success**, job/check `108407233680`, workflow `36243087052`, concluído às 12:49:11 UTC;
-- **Workers Builds: success**, check `108407276388`, concluído às 12:49:15 UTC; build `10a4ae63-68ab-44e4-ae9f-4e05f12a8fc5`, versão informada `b110fd9f-3cdf-4047-93a5-a147e9dcde47`.
-
-Fonte verificável:
-`https://api.github.com/repos/regulacaoeldoradoms-cpu/guia-regulacao-eldorado/commits/ac9128c7e807be8eff0ee5bc1579f792aa249a3d/check-runs`
-
-O preview do Worker no head anterior da PR havia falhado. Isso **não deve ser confundido com o build bem-sucedido da main após o merge**. O resumo do check do Worker informa URLs de preview; sozinho, não certifica qual versão está servindo 100% do tráfego produtivo.
-
-A tentativa de HTTP no ambiente de execução falhou na resolução DNS local, sem provar indisponibilidade do portal. **Uso autenticado, persistência real e tráfego produtivo não foram verificados diretamente nesta sessão.** Nenhuma credencial ou configuração produtiva foi alterada.
-
-## Histórico do incidente inicial
-
-O frontend de `/estudos/` chegou antes do Worker e a API respondeu “Rota não encontrada”. Correções anteriores: PR #492, compatibilidade do Wrangler; PR #494, tratamento fail-closed de versão não produtiva equivalente. Commit: `90cc6d8e16039bb7ed1482bec3f75feadb860816`.
-
-PR #493 (`previews = { }`) fechada sem merge. As PRs #491, #496 e #497 foram substituídas e não devem ser reincorporadas.
-
-## Limitações e próximos ajustes técnicos
-
-A sequência V1 consulta os **500 eventos recentes**. O valor “Melhor” não é ainda um recorde histórico irrestrito: períodos antigos podem sair dessa janela. Priorizar agregação/persistência por dia antes de declarar essa métrica histórica definitiva, sem apagar registros existentes.
-
-O tempo usa o mecanismo atual de sessões; validar interrupções e retorno no celular. Testes técnicos não substituem comprovação de retenção pedagógica.
-
-## Homologação humana pendente
-
-Wellyton já abriu a interface e autorizou a continuidade, mas ainda falta confirmação explícita de:
-
-1. Conclusão de missão real.
-2. Saída, recarga e retorno com progresso, respostas e XP preservados.
-3. Conquista visível em `/conquistas/`, sem duplicação.
-4. Novas missões sem perda de histórico.
-5. Revisão real concluída quando vencer.
-6. Aprovação/reprovação do Chefe e sequência funcionando no cotidiano.
-
-Próximo passo: **validar esses fluxos e corrigir lacunas da Fase 1 antes de solicitar seu aceite final**. Não iniciar formalmente a Fase 2 nem declarar curso completo sem registro de aprovação.
+Não solicitar acesso imediato. Quando Wellyton estudar: avaliar clareza, aplicação do que leu, progresso após sair/voltar, conquistas sem duplicação, revisões e Chefe. Não declarar esses resultados em sua ausência. A autorização de continuidade permite avançar nas entregas planejadas; não autoriza omitir pendências ou afirmar aprovação pedagógica inexistente.
