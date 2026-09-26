@@ -7,14 +7,18 @@ import { missionById } from '../../worker/studies-content/manifest.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const origin = 'http://127.0.0.1:8777';
 
-async function setup(page, theme = 'light', missingContent = false) {
-  const original = missionById('banking.sfn.introducao');
-  const mission = structuredClone({
+function publicFixture(missionId) {
+  const original = missionById(missionId);
+  return structuredClone({
     ...original,
     // Mesmo contrato público: não enviar gabaritos da prova para o navegador.
     questions: original.questions.map(({ id, prompt, options }) => ({ id, prompt, options })),
     sources: []
   });
+}
+
+async function setup(page, theme = 'light', missingContent = false, missionId = 'banking.sfn.introducao') {
+  const mission = publicFixture(missionId);
   if (missingContent) for (const section of mission.sections) delete section.applicationTasks;
   const payload = {
     user: { username: 'wellyton', name: 'Estudante sintético' }, missions: [mission], progress: {},
@@ -126,6 +130,63 @@ test('rascunhos são temporários e não viram texto executável', async ({ page
   await page.locator('#continueStudy').click();
   await page.locator('#studyPracticeButton').click();
   await expect(page.locator('#studyApplicationDraft0')).toHaveValue('');
+  expect(errors).toEqual([]);
+  expect(unexpected).toEqual([]);
+});
+
+for (const [missionId, sectionId, part, questionId] of [
+  ['banking.sfn.cmn', 'composicao', 5, 'q.cmn.01'],
+  ['banking.sfn.bacen', 'politicas', 4, 'q.bc.01']
+]) {
+  for (const theme of ['light', 'dark']) {
+    test(`aplicação de ${missionId} reutiliza o leitor sem pontuar o rascunho ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      const { errors, unexpected } = await setup(page, theme, false, missionId);
+      const calls = await page.evaluate(() => window.__studyCalls.length);
+      await expect(page.locator('#studyPracticePanel')).toBeHidden();
+      await page.locator('#studyPracticeButton').click();
+      await expect(page.locator('.study-application-task')).toHaveCount(3);
+      const activity = page.locator('.study-application-task').nth(1);
+      const draft = page.locator('#studyApplicationDraft1');
+      await draft.fill('EXPLICACAO_PRIVADA_APENAS_NO_DOM');
+      const scored = page.locator(`[data-question-id="${questionId}"]`);
+      await scored.locator('input').first().check();
+      await expect(activity.locator('details')).not.toHaveAttribute('open', '');
+      await activity.locator('summary').click();
+      await expect(activity.locator('li')).toHaveCount(3);
+      await activity.locator(`[data-read-section="${sectionId}"]`).click();
+      await expect(page.locator('#studySectionSelect')).toHaveValue(String(part - 1));
+      await expect(page.locator('#studyPracticePanel')).toBeHidden();
+      await page.locator('#studyPracticeButton').click();
+      await expect(draft).toHaveValue('EXPLICACAO_PRIVADA_APENAS_NO_DOM');
+      await expect(scored.locator('input').first()).toBeChecked();
+      await expect(page.locator('#studyPracticeProgress')).toHaveAttribute('aria-valuenow', '0');
+      await expect(page.locator('#completeMission')).toBeDisabled();
+      expect(await page.evaluate(() => window.__studyCalls.length)).toBe(calls);
+      expect(await page.evaluate(() => JSON.stringify(window.__studyCalls))).not.toContain('EXPLICACAO_PRIVADA');
+      for (let index = 0; index < 3; index++) await page.locator('#studyFontLarger').click();
+      expect(await page.locator('#studyFocusBody').evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+      expect(errors).toEqual([]);
+      expect(unexpected).toEqual([]);
+    });
+  }
+}
+
+test('trocar de CMN para Banco Central não mistura casos nem rascunhos', async ({ page }) => {
+  const { errors, unexpected } = await setup(page, 'light', false, 'banking.sfn.cmn');
+  await page.locator('#studyPracticeButton').click();
+  await page.locator('#studyApplicationDraft0').fill('RASCUNHO_DA_AULA_ANTERIOR');
+  const next = publicFixture('banking.sfn.bacen');
+  await page.evaluate((mission) => { window.__payload.missions = [mission]; }, next);
+  await page.locator('#leaveFocus').click();
+  await expect(page.locator('#studyDashboard')).toBeVisible();
+  await page.locator('#continueStudy').click();
+  await page.locator('#studyPracticeButton').click();
+  await expect(page.locator('[data-application-id^="apply.cmn."]')).toHaveCount(0);
+  await expect(page.locator('[data-application-id^="apply.bcb."]')).toHaveCount(3);
+  await expect(page.locator('#studyApplicationDraft0')).toHaveValue('');
+  await expect(page.locator('#studyPracticeProgress')).toHaveAttribute('aria-valuenow', '0');
+  expect(await page.evaluate(() => JSON.stringify(window.__studyCalls))).not.toContain('RASCUNHO_DA_AULA_ANTERIOR');
   expect(errors).toEqual([]);
   expect(unexpected).toEqual([]);
 });
