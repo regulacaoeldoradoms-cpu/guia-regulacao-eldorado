@@ -1,77 +1,56 @@
 # MISSÃO BANCÁRIA — FONTES E CONTEÚDO
 
+## Regra global obrigatória
+
+Ler `24-CONTRATO-PEDAGOGICO-GLOBAL.md`. A exigência de material de ensino antes das questões vale para TODAS as matérias, fases, missões, revisões e versões atuais ou futuras. Não é uma correção isolada da primeira aula.
+
 ## Objetivo
-Definir como o conteúdo pedagógico será criado e atualizado.
+
+Produzir ensino por leitura dentro do site, seguido de exemplos resolvidos, prática, feedback e revisão. O aluno não precisa conhecer siglas ou termos técnicos antes de começar; a própria aula deve ensiná-los.
 
 ## Hierarquia de fontes
-1. edital oficial vigente;
-2. comunicados oficiais da banca/órgão;
-3. legislação e normas oficiais;
-4. documentos institucionais oficiais;
-5. provas anteriores oficiais/publicadas;
-6. fontes secundárias apenas para apoio e conferência.
 
-## Snapshot de edital
-Cada ciclo de conteúdo deve registrar:
-- órgão;
-- cargo;
-- banca;
-- data do edital;
-- URL/fonte;
-- data de conferência;
-- lista de disciplinas;
-- pesos/quantidades quando oficiais.
+1. Edital oficial adotado e versionado.
+2. Comunicados oficiais da banca/órgão.
+3. Legislação e normas oficiais.
+4. Documentos institucionais oficiais.
+5. Provas anteriores oficiais/publicadas.
+6. Fontes secundárias apenas para apoio e conferência.
+
+Registrar órgão, cargo, banca, data do edital, URL, data real da conferência, disciplinas e pesos oficiais. Não chamar um edital antigo de novo ou vigente sem verificação. Não carimbar como conferida uma página que só retornou erro ou dependência de JavaScript.
 
 ## Escrita pedagógica
-O texto didático deve ser original.
-É permitido resumir fatos e normas, mas não copiar material de curso pago.
 
-### Padrão obrigatório para quem começa do zero — 26/09/2026
+Texto original, sem copiar cursos pagos. Cada unidade explica o que é, para que serve, como funciona e com o que não deve ser confundido. Apresentar termos e siglas antes de cobrá-los. Usar pré-requisitos explícitos, exemplos cotidianos identificados e resolução passo a passo. Resumo e glossário são apoios depois da explicação, não substitutos.
 
-O usuário relatou que as aulas pareciam resumos e que não sabia o significado das siglas. Esse feedback NÃO é aceite pedagógico da Fase 1.
+A fonte oficial fundamenta a aula, mas não obriga o iniciante a sair do portal para aprender o básico. Nenhum vídeo, apostila comprada ou resposta gerada por IA é requisito de compreensão.
 
-- Não presumir conhecimentos bancários prévios.
-- Apresentar nome por extenso, sigla e função em linguagem comum, antes de cobrar o termo.
-- Explicar também vocabulário como crédito, juros, intermediação, diretriz, norma, operador e supervisor. Apenas expandir siglas não basta.
-- Começar por uma situação cotidiana, explicar o conceito e mostrar um exemplo resolvido antes da prática independente.
-- Cada conceito necessário à questão deve estar ensinado na própria aula ou em pré-requisito explicitamente indicado e disponível.
-- A fonte oficial é referência para conferir fatos, não substituto da aula. Não obrigar o iniciante a abrir legislação para entender a explicação básica.
-- Aula e resumo têm funções diferentes. O resumo fica depois da explicação, não no lugar dela.
-- Usar blocos curtos e progressivos, sem encurtar a ponto de omitir o raciocínio. Quantidade de parágrafos e testes verdes não certificam qualidade pedagógica.
-- Identificar exemplos inventados e limites das analogias. Evitar simplificações falsas, como dizer que supervisores nunca editam normas.
-- Manter consulta de siglas/vocabulário e respostas comentadas. Não chamar acertos em três itens de domínio consolidado.
-- Só multiplicar o novo formato após avaliação de compreensão pelo usuário. Priorizar a revisão do ensino existente, não novas medalhas ou mundos.
+## Questões e vínculo com o ensino
 
-Registro da primeira correção: `23-FASE-1-ENSINO-DO-ZERO.md`.
+Preferir questões autorais e recordação ativa. Registrar, para cada questão, aula e trecho que ensinam o conhecimento cobrado. Em questões oficiais, registrar prova/ano/banca e respeitar limites de reprodução.
 
-## Questões
-Preferir:
-- questões autorais;
-- itens de recordação ativa;
-- exercícios derivados dos objetivos do edital.
-
-Quando usar questão oficial, registrar prova/ano/banca e respeitar limites de reprodução aplicáveis.
+Não basta incluir na aula a frase que entrega a alternativa: ensinar também o conceito e o raciocínio. Uma questão sem material correspondente não está pronta para publicação. Revisões e simulados não introduzem assunto novo sem aula anterior disponível.
 
 ## Atualização
-Conteúdo sujeito a mudança deve conter marcador de atualização.
 
-Exemplos:
-- legislação;
-- produtos bancários;
-- normas regulatórias;
-- segurança digital;
-- estrutura institucional.
+Versionar regras sujeitas a mudanças: legislação, produtos, regulação, segurança e estrutura institucional. Manter IDs lógicos e progresso ao corrigir textos. Não remover conquistas ou zerar tentativas por revisão editorial.
 
-## Qualidade
-Antes de publicar um módulo:
-1. conferir aderência ao edital;
-2. revisar precisão;
-3. testar clareza para quem não conhece o assunto;
-4. validar respostas das questões e localizar no texto o ensino que as sustenta;
-5. verificar explicações;
-6. registrar fonte;
-7. marcar conteúdo complementar;
-8. confirmar que siglas e termos novos foram apresentados antes do uso.
+## Controle de qualidade
 
-## Regra principal
-O sistema deve ensinar **o que aumenta a probabilidade de responder corretamente à prova**, sem transformar o curso em mera memorização cega de alternativas.
+Antes de publicar qualquer unidade:
+1. Conferir escopo e precisão das fontes.
+2. Verificar se todos os termos essenciais foram explicados.
+3. Conferir exemplos e cálculos, com hipóteses claras.
+4. Resolver as questões e localizar o ensino de cada uma.
+5. Validar respostas comentadas e referências.
+6. Executar testes do catálogo, renderização e preservação do progresso.
+7. Registrar o que foi redigido, revisado, testado, publicado e homologado separadamente.
+8. Observar a compreensão no uso real e corrigir lacunas antes de escalar.
+
+Testes de estrutura não certificam clareza, validade de norma ou aprendizagem. Não usar tamanho mínimo de texto como prova de qualidade.
+
+## Revisão de setembro de 2026
+
+A PR #501 deixou de tratar apenas a introdução: passou a incluir material desenvolvido para as oito aulas do bloco atual e preparação do Chefe, com rastreio das 38 questões. Registros: `23-FASE-1-ENSINO-DO-ZERO.md`, `24-CONTRATO-PEDAGOGICO-GLOBAL.md` e `25-REVISAO-PEDAGOGICA-TODO-SFN.md`.
+
+As demais disciplinas planejadas ainda não foram produzidas integralmente. Sua criação está sujeita ao mesmo contrato desde o primeiro conteúdo.
