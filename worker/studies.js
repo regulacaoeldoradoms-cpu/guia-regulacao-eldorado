@@ -175,6 +175,8 @@ function publicMission(mission) {
     shortTitle: mission.shortTitle,
     estimatedMinutes: mission.estimatedMinutes,
     xp: mission.xp,
+    kind: mission.kind || 'lesson',
+    passScore: Number(mission.passScore || 0),
     objective: mission.objective,
     sections: mission.sections,
     recall: mission.recall,
@@ -265,7 +267,8 @@ async function achievementRows(env, username) {
   const result = await env.AUTH_DB.prepare(`SELECT achievement_id, rule_version, unlocked_at, source_ref
     FROM study_achievements WHERE username=? ORDER BY unlocked_at`).bind(username).all();
   const catalog = {
-    'study.first_mission': { title: 'Primeira missão', description: 'Concluiu a primeira missão real da Missão Bancária.' }
+    'study.first_mission': { title: 'Primeira missão', description: 'Concluiu a primeira missão real da Missão Bancária.' },
+    'study.sfn.boss': { title: 'SFN dominado', description: 'Venceu o Chefe do Sistema Financeiro Nacional com o desempenho mínimo exigido.' }
   };
   return (result.results || []).map((row) => ({
     id: row.achievement_id,
@@ -301,7 +304,7 @@ async function handleBootstrap(env, user, origin) {
   const progress = await progressMap(env, user.username);
   return json({
     user,
-    contentRelease: 'sfn-v1.1',
+    contentRelease: 'sfn-v1.2',
     metrics: await metrics(env, user.username, progress),
     progress,
     reviews: await dueReviewRows(env, user.username),
@@ -389,40 +392,111 @@ async function scheduleReviews(env, username, topicId) {
   }
 }
 
+async function bossRunScore(env, username, mission) {
+  const session = await env.AUTH_DB.prepare(`SELECT started_at
+    FROM study_sessions
+    WHERE username=? AND mission_id=? AND status='active'
+    ORDER BY started_at DESC LIMIT 1`).bind(username, mission.id).first();
+
+  if (!session?.started_at) return null;
+
+  const result = await env.AUTH_DB.prepare(`SELECT attempt.question_id, attempt.correct
+    FROM study_attempts AS attempt
+    JOIN (
+      SELECT question_id, MAX(rowid) AS last_rowid
+      FROM study_attempts
+      WHERE username=? AND topic_id=? AND attempted_at >= ?
+      GROUP BY question_id
+    ) AS latest ON latest.last_rowid = attempt.rowid`)
+    .bind(username, mission.topicId, session.started_at).all();
+
+  const rows = result.results || [];
+  const correct = rows.reduce((sum, row) => sum + (Number(row.correct || 0) ? 1 : 0), 0);
+  const score = mission.questions.length
+    ? Math.round((correct / mission.questions.length) * 1000) / 10
+    : 0;
+
+  return { answered: rows.length, correct, score, startedAt: session.started_at };
+}
+
 async function handleComplete(pathname, env, user, origin) {
   const match = pathname.match(/^\/api\/studies\/missions\/([^/]+)\/complete$/);
   const mission = match ? missionById(decodeURIComponent(match[1])) : null;
   if (!mission) return json({ error: 'Missão não encontrada.' }, 404, origin);
 
-  const answered = await env.AUTH_DB.prepare(`SELECT COUNT(DISTINCT question_id) AS total
-    FROM study_attempts WHERE username=? AND topic_id=?`).bind(user.username, mission.topicId).first();
-  if (Number(answered?.total || 0) < mission.questions.length) {
-    return json({ error: 'Responda todas as questões da missão antes de concluí-la.' }, 409, origin);
+  let bossResult = null;
+  if (mission.kind === 'boss') {
+    bossResult = await bossRunScore(env, user.username, mission);
+    if (!bossResult || bossResult.answered < mission.questions.length) {
+      return json({ error: 'Responda toda a rodada do Chefe antes de concluir.' }, 409, origin);
+    }
+    const required = Number(mission.passScore || 0);
+    if (bossResult.score < required) {
+      return json({
+        error: `Chefe não vencido: ${bossResult.score}% de acertos. É necessário atingir pelo menos ${required}%.`,
+        completed: false,
+        passed: false,
+        score: bossResult.score,
+        passScore: required
+      }, 422, origin);
+    }
+  } else {
+    const answered = await env.AUTH_DB.prepare(`SELECT COUNT(DISTINCT question_id) AS total
+      FROM study_attempts WHERE username=? AND topic_id=?`).bind(user.username, mission.topicId).first();
+    if (Number(answered?.total || 0) < mission.questions.length) {
+      return json({ error: 'Responda todas as questões da missão antes de concluí-la.' }, 409, origin);
+    }
   }
 
   await env.AUTH_DB.prepare(`INSERT INTO study_topic_progress(
       username, topic_id, coverage_state, mastery_score, content_version_seen, started_at, completed_at
-    ) VALUES (?, ?, 3, 0, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ) VALUES (?, ?, 3, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     ON CONFLICT(username, topic_id) DO UPDATE SET
       coverage_state=3,
+      mastery_score=CASE WHEN excluded.mastery_score > 0 THEN excluded.mastery_score ELSE study_topic_progress.mastery_score END,
       content_version_seen=MAX(study_topic_progress.content_version_seen,excluded.content_version_seen),
       started_at=COALESCE(study_topic_progress.started_at,CURRENT_TIMESTAMP),
       completed_at=COALESCE(study_topic_progress.completed_at,CURRENT_TIMESTAMP),
-      updated_at=CURRENT_TIMESTAMP`).bind(user.username, mission.topicId, mission.contentVersion).run();
+      updated_at=CURRENT_TIMESTAMP`).bind(
+        user.username,
+        mission.topicId,
+        bossResult?.score || 0,
+        mission.contentVersion
+      ).run();
 
   const xpGranted = await grantXp(env, user.username, 'mission_complete', mission.id, mission.xp);
-  const achievementGranted = await grantAchievement(env, user.username, 'study.first_mission', mission.id);
+  const newAchievements = [];
+
+  const firstMissionGranted = await grantAchievement(env, user.username, 'study.first_mission', mission.id);
+  if (firstMissionGranted) {
+    newAchievements.push({
+      id: 'study.first_mission',
+      title: 'Primeira missão',
+      description: 'Você concluiu sua primeira missão real.'
+    });
+  }
+
+  if (mission.kind === 'boss') {
+    const bossAchievementGranted = await grantAchievement(env, user.username, 'study.sfn.boss', mission.id);
+    if (bossAchievementGranted) {
+      newAchievements.push({
+        id: 'study.sfn.boss',
+        title: 'SFN dominado',
+        description: 'Você venceu o Chefe do Sistema Financeiro Nacional.'
+      });
+    }
+  }
+
   await scheduleReviews(env, user.username, mission.topicId);
 
   const progress = await progressMap(env, user.username);
   return json({
     completed: true,
+    passed: mission.kind === 'boss' ? true : undefined,
+    score: bossResult?.score,
+    passScore: Number(mission.passScore || 0) || undefined,
     xpGranted: xpGranted ? mission.xp : 0,
-    newAchievements: achievementGranted ? [{
-      id: 'study.first_mission',
-      title: 'Primeira missão',
-      description: 'Você concluiu sua primeira missão real.'
-    }] : [],
+    newAchievements,
     metrics: await metrics(env, user.username, progress)
   }, 200, origin);
 }
