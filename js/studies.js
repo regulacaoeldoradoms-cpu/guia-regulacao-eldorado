@@ -79,6 +79,9 @@
     $('metricAccuracy').textContent = `${m.accuracy}% de acertos`;
     $('metricHours').textContent = formatHours(m.hoursSeconds);
     $('metricReviews').textContent = `${m.reviewsDue} revisões pendentes`;
+    const streak = m.streak || { current:0, best:0, lastStudyDay:'' };
+    $('metricStreak').textContent = `${streak.current} ${streak.current === 1 ? 'dia' : 'dias'}`;
+    $('metricBestStreak').textContent = `Melhor: ${streak.best} ${streak.best === 1 ? 'dia' : 'dias'}`;
     $('availabilityLabel').textContent = `${m.publishedMissions}/${m.plannedMissions} missões · ${m.campaignAvailability}%`;
     $('personalProgressLabel').textContent = `${m.completedPublished}/${m.plannedMissions} da campanha · ${m.campaignProgress}% · ${m.availableCompletion}% do conteúdo liberado`;
     setBar('availabilityBar', m.campaignAvailability);
