@@ -11,6 +11,7 @@ import { FUNDAMENTALS_SOURCES, FUNDAMENTALS_REVIEW, reviseFundamentalsSections }
 import { SEGMENTS_SOURCES, SEGMENTS_REVIEW, reviseSegmentsSections } from './sfn-segmentos-revisados.js';
 import { attachIntroApplications } from './sfn-aplicacao-v1.js';
 import { attachMonetaryApplications } from './sfn-aplicacao-cmn-bcb-v1.js';
+import { attachMarketApplications } from './sfn-aplicacao-copom-cvm-v1.js';
 
 export const STUDY_SOURCES = Object.freeze([
   ...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES, ...SEGMENTS_SOURCES
@@ -95,7 +96,8 @@ function teachMission(mission) {
 }
 
 export const PUBLISHED_MISSIONS = Object.freeze(
-  BASE_MISSIONS.map(teachMission).map(attachIntroApplications).map(attachMonetaryApplications)
+  BASE_MISSIONS.map(teachMission).map(attachIntroApplications)
+    .map(attachMonetaryApplications).map(attachMarketApplications)
 );
 
 export function missionById(id) {

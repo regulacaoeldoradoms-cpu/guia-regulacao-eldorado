@@ -136,7 +136,9 @@ test('rascunhos são temporários e não viram texto executável', async ({ page
 
 for (const [missionId, sectionId, part, questionId] of [
   ['banking.sfn.cmn', 'composicao', 5, 'q.cmn.01'],
-  ['banking.sfn.bacen', 'politicas', 4, 'q.bc.01']
+  ['banking.sfn.bacen', 'politicas', 4, 'q.bc.01'],
+  ['banking.sfn.copom', 'selic', 3, 'q.copom.01'],
+  ['banking.sfn.cvm', 'acoes', 2, 'q.cvm.01']
 ]) {
   for (const theme of ['light', 'dark']) {
     test(`aplicação de ${missionId} reutiliza o leitor sem pontuar o rascunho ${theme}`, async ({ page }) => {
@@ -187,6 +189,27 @@ test('trocar de CMN para Banco Central não mistura casos nem rascunhos', async 
   await expect(page.locator('#studyApplicationDraft0')).toHaveValue('');
   await expect(page.locator('#studyPracticeProgress')).toHaveAttribute('aria-valuenow', '0');
   expect(await page.evaluate(() => JSON.stringify(window.__studyCalls))).not.toContain('RASCUNHO_DA_AULA_ANTERIOR');
+  expect(errors).toEqual([]);
+  expect(unexpected).toEqual([]);
+});
+
+test('trocar de Copom para CVM não mistura casos nem rascunhos', async ({ page }) => {
+  const { errors, unexpected } = await setup(page, 'dark', false, 'banking.sfn.copom');
+  await page.locator('#studyPracticeButton').click();
+  await page.locator('#studyApplicationDraft0').fill('RASCUNHO_PRIVADO_COPOM');
+  await page.locator('.study-application-task').first().locator('summary').click();
+  const next = publicFixture('banking.sfn.cvm');
+  await page.evaluate((mission) => { window.__payload.missions = [mission]; }, next);
+  await page.locator('#leaveFocus').click();
+  await expect(page.locator('#studyDashboard')).toBeVisible();
+  await page.locator('#continueStudy').click();
+  await page.locator('#studyPracticeButton').click();
+  await expect(page.locator('[data-application-id^="apply.copom."]')).toHaveCount(0);
+  await expect(page.locator('[data-application-id^="apply.cvm."]')).toHaveCount(3);
+  await expect(page.locator('#studyApplicationDraft0')).toHaveValue('');
+  await expect(page.locator('.study-application-task').first().locator('details')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#studyPracticeProgress')).toHaveAttribute('aria-valuenow', '0');
+  expect(await page.evaluate(() => JSON.stringify(window.__studyCalls))).not.toContain('RASCUNHO_PRIVADO_COPOM');
   expect(errors).toEqual([]);
   expect(unexpected).toEqual([]);
 });
