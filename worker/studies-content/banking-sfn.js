@@ -304,6 +304,10 @@ export function missionById(id) {
   return PUBLISHED_MISSIONS.find((mission) => mission.id === String(id || '')) || null;
 }
 
+export function missionByTopicId(topicId) {
+  return PUBLISHED_MISSIONS.find((mission) => mission.topicId === String(topicId || '')) || null;
+}
+
 export function questionById(id) {
   for (const mission of PUBLISHED_MISSIONS) {
     const question = mission.questions.find((item) => item.id === String(id || ''));
