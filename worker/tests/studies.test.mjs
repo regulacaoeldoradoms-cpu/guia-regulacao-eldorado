@@ -7,7 +7,7 @@ import {
   STUDY_SOURCES,
   questionById
 } from '../studies-content/manifest.js';
-import { isStudiesApi, studyUsernameAllowed } from '../studies.js';
+import { computeCampaignProgress, isStudiesApi, studyUsernameAllowed } from '../studies.js';
 
 test('conteudo SFN v1.1 tem ids unicos e respostas validas', () => {
   const missionIds = new Set();
@@ -65,4 +65,24 @@ test('planejamento do Mundo 1 permanece fixo durante a expansao', () => {
   assert.ok(plannedIds.includes('banking.sfn.seguros-previdencia'));
   assert.ok(plannedIds.includes('banking.sfn.pagamentos-consorcios'));
   assert.ok(plannedIds.includes('banking.sfn.boss'));
+});
+
+
+test('publicar novas missões não reduz o progresso conquistado', () => {
+  const progress = {
+    'banking.sfn': { coverageState: 3 },
+    'banking.sfn.cmn': { coverageState: 3 }
+  };
+  const initialPublished = PUBLISHED_MISSIONS.slice(0, 4);
+  const expandedPublished = PUBLISHED_MISSIONS.slice(0, 6);
+
+  const before = computeCampaignProgress(progress, initialPublished, PLANNED_MISSIONS);
+  const after = computeCampaignProgress(progress, expandedPublished, PLANNED_MISSIONS);
+
+  assert.equal(before.campaignProgress, after.campaignProgress);
+  assert.equal(before.campaignProgress, 22.2);
+  assert.equal(before.availableCompletion, 50);
+  assert.equal(after.availableCompletion, 33.3);
+  assert.equal(before.campaignAvailability, 44.4);
+  assert.equal(after.campaignAvailability, 66.7);
 });
