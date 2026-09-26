@@ -100,11 +100,13 @@ test('topicId resolve exatamente uma missão publicada', () => {
 test('revisão espaçada exige prática nova e XP idempotente', () => {
   const source = fs.readFileSync(new URL('../studies.js', import.meta.url), 'utf8');
   assert.match(source, /handleCompleteReview/);
-  assert.match(source, /attempted_at >= \?/);
-  assert.match(source, /review_complete/);
+  const rounds = fs.readFileSync(new URL('../study-rounds.js', import.meta.url), 'utf8');
+  assert.match(source, /commitReviewReward/);
+  assert.match(rounds, /review_complete/);
   assert.match(source, /INSERT OR IGNORE INTO study_xp_events/);
-  assert.match(source, /Esta revisão já foi concluída/);
-  assert.match(source, /Responda todas as questões novamente antes de concluir a revisão/);
+  assert.match(rounds, /Esta revisão já foi concluída/);
+  assert.match(rounds, /Responda todas as questões novamente antes de concluir a revisão/);
+  assert.doesNotMatch(source, /attempted_at >= \?/);
 });
 
 
@@ -119,10 +121,12 @@ test('Chefe do SFN exige 75% em 12 questões cumulativas', () => {
 
 test('backend do Chefe usa a rodada atual e só premia após aprovação', () => {
   const source = fs.readFileSync(new URL('../studies.js', import.meta.url), 'utf8');
-  assert.match(source, /bossRunScore/);
-  assert.match(source, /status='active'/);
-  assert.match(source, /attempted_at >= \?/);
-  assert.match(source, /MAX\(rowid\)/);
+  const rounds = fs.readFileSync(new URL('../study-rounds.js', import.meta.url), 'utf8');
+  assert.match(source, /evaluateStudyRound/);
+  assert.match(source, /body\.sessionId/);
+  assert.match(rounds, /study_round_answers/);
+  assert.match(rounds, /status='active'/);
+  assert.doesNotMatch(source, /bossRunScore|attempted_at >= \?|MAX\(rowid\)/);
   assert.match(source, /Chefe não vencido/);
   assert.match(source, /study\.sfn\.boss/);
   assert.match(source, /SFN dominado/);
