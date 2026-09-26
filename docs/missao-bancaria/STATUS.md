@@ -114,3 +114,28 @@ Entregue:
 - ciclos já agendados em 1/7/30 dias.
 
 A Fase 1 continua aberta.
+
+
+## Fechamento do Mundo 1 — SFN
+
+Branch empilhada:
+`feat/missao-bancaria-fase1-fechar-mundo1-sfn`
+
+Documento:
+`20-FECHAMENTO-MUNDO1-SFN.md`
+
+Estado:
+**implementado; aguardando a incorporação da PR #495 e validação própria.**
+
+Entregue:
+- Missão 7 — Seguros, previdência e capitalização;
+- Missão 8 — Pagamentos, Pix e consórcios;
+- Missão 9 — Chefe do SFN;
+- 20 novas questões autorais (4 + 4 + 12);
+- 9/9 missões do Mundo 1 publicáveis;
+- Chefe com nota mínima de 75%;
+- pontuação restrita à rodada atual;
+- conquista `study.sfn.boss` — SFN dominado;
+- fontes oficiais SUSEP, PREVIC e Banco Central registradas.
+
+A Fase 1 permanece **ABERTA** até homologação humana.
