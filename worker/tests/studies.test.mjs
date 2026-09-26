@@ -99,7 +99,7 @@ test('topicId resolve exatamente uma missão publicada', () => {
 
 test('revisão espaçada exige prática nova e XP idempotente', () => {
   const source = fs.readFileSync(new URL('../studies.js', import.meta.url), 'utf8');
-  assert.match(source, /\/api\/studies\/reviews/);
+  assert.match(source, /handleCompleteReview/);
   assert.match(source, /attempted_at >= \?/);
   assert.match(source, /review_complete/);
   assert.match(source, /INSERT OR IGNORE INTO study_xp_events/);
