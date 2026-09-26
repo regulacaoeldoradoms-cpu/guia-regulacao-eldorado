@@ -4,6 +4,28 @@
   const COMPLETED_STATUS = 'CONCLUÍDO';
   const MOBILE_ALERTS_QUERY = '(max-width: 860px), (pointer: coarse) and (max-device-width: 900px)';
 
+  function normalize(value) {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function isNonDischargeClosure(followup) {
+    const resolution = normalize(followup?.resolution);
+    return /\bDESISTIU\b|\bDESISTENCIA\b|ABANDONO DO TRATAMENTO|ABANDONO DE ACOMPANHAMENTO|ENCAMINHAD[AO].*PRESENCIAL/.test(resolution);
+  }
+
+  function isDischargeAchievement(followup) {
+    if (!followup || isNonDischargeClosure(followup)) return false;
+    const mode = String(followup.followupMode || '').trim().toLowerCase();
+    const resolution = normalize(followup.resolution);
+    return followup.discharged === true || mode === 'discharge' || /\bALTA\b/.test(resolution);
+  }
+
   function installDischargeResponseVisibility() {
     const auth = window.RegulationAuth;
     if (!auth || auth.__telemedicineDischargeVisibilityV30 === true) return;
@@ -13,7 +35,7 @@
       const method = String(options.method || 'GET').toUpperCase();
       if (path === '/api/telemedicina/consultations' && method === 'POST') {
         const followup = payload?.followup;
-        if (followup?.discharged === true && followup.status === COMPLETED_STATUS && followup.active === false) {
+        if (isDischargeAchievement(followup) && followup.status === COMPLETED_STATUS && followup.active === false) {
           payload.followup = { ...followup, active: true };
         }
       }
