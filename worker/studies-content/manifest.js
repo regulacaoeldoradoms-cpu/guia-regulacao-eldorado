@@ -8,8 +8,11 @@ import {
 import { INTRODUCTION_SOURCES, INTRODUCTION_V2 } from './sfn-introducao-v2.js';
 import { SFN_LESSONS_V2 } from './sfn-aulas-v2.js';
 import { FUNDAMENTALS_SOURCES, FUNDAMENTALS_REVIEW, reviseFundamentalsSections } from './sfn-fundamentos-revisados.js';
+import { SEGMENTS_SOURCES, SEGMENTS_REVIEW, reviseSegmentsSections } from './sfn-segmentos-revisados.js';
 
-export const STUDY_SOURCES = Object.freeze([...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES]);
+export const STUDY_SOURCES = Object.freeze([
+  ...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES, ...SEGMENTS_SOURCES
+]);
 export { PLANNED_MISSIONS };
 
 const INTRO_IDS = Object.freeze([
@@ -49,11 +52,13 @@ function introductionSections() {
 function teachMission(mission) {
   const introduction = mission.id === 'banking.sfn.introducao';
   const patch = introduction ? INTRODUCTION_V2 : SFN_LESSONS_V2[mission.id];
-  // Futuras missões sem material não recebem conformidade artificial.
-  // A validação do catálogo no CI deve recusá-las até que haja ensino real.
+  // Ausência de ensino não recebe conformidade artificial. Os testes de catálogo
+  // recusam a unidade sem causar uma exceção no carregamento da produção.
   if (!patch) return mission;
   const initialSections = introduction ? introductionSections() : patch.sections;
-  const sections = reviseFundamentalsSections(mission.id, initialSections);
+  const sections = reviseSegmentsSections(
+    mission.id, reviseFundamentalsSections(mission.id, initialSections)
+  );
   const sectionMap = introduction ? INTRO_QUESTION_SECTIONS : patch.questionSections;
   const questionCoverage = {};
   for (const [questionId, sectionIds] of Object.entries(sectionMap)) {
@@ -67,8 +72,11 @@ function teachMission(mission) {
   const sourceIds = Object.freeze([...new Set([
     ...(patch.sourceIds || mission.sourceIds),
     ...(mission.id === 'banking.sfn.cmn' ? ['fazenda.cmn.apresentacao'] : []),
-    ...(FUNDAMENTALS_REVIEW[mission.id]?.sourceIds || [])
+    ...(FUNDAMENTALS_REVIEW[mission.id]?.sourceIds || []),
+    ...(SEGMENTS_REVIEW[mission.id]?.sourceIds || [])
   ])]);
+  const editorialPass = FUNDAMENTALS_REVIEW[mission.id] ? 'fundamentos-r1'
+    : SEGMENTS_REVIEW[mission.id] ? 'segmentos-r1' : 'draft-v2';
   return Object.freeze({
     ...mission,
     ...(introduction ? INTRODUCTION_V2 : {}),
@@ -78,7 +86,7 @@ function teachMission(mission) {
     teaching: Object.freeze({
       contractVersion: 1,
       questionCoverage: Object.freeze(questionCoverage),
-      editorialPass: FUNDAMENTALS_REVIEW[mission.id] ? 'fundamentos-r1' : 'draft-v2',
+      editorialPass,
       reviewStatus: 'human-review-pending'
     })
   });
@@ -103,8 +111,6 @@ export function sourceMap() {
   return new Map(STUDY_SOURCES.map((source) => [source.id, source]));
 }
 
-// Validação editorial usada nos testes, não como exceção no boot da produção.
-// Existência/ligação de material é verificável; clareza exige revisão humana.
 export function validateTeachingCatalog(missions = PUBLISHED_MISSIONS) {
   const errors = [];
   const catalog = new Map(missions.map((mission) => [mission.id, mission]));

@@ -1,69 +1,66 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 26/09/2026 — revisão pedagógica em andamento na PR #501.
+Atualizado em 26/09/2026 — revisão dos segmentos na PR #501.
 
-## Estado oficial
+## Estado e autorização atual
 
-**Fase ativa: Fase 1. Sem aceite pedagógico final.**
+**Fase ativa: Fase 1. Ensino por leitura é a prioridade.**
 
-A prioridade é material de ensino por leitura antes da avaliação. Todas as disciplinas e versões seguem `24-CONTRATO-PEDAGOGICO-GLOBAL.md` e `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`. Se o recorte ficar grande, dividir a produção; não reduzir o ensino.
+Wellyton autorizou o avanço, revisões, testes e integrações necessárias sem aguardar seu acesso imediato ao portal. A autorização é registrada em `28-REVISAO-SEGMENTOS-E-AUTORIZACAO.md`. **Avaliação humana de compreensão continua pendente; não alegar que já ocorreu.**
 
-## Base aprovada e já incorporada antes da PR #501
+Todo conteúdo segue `24-CONTRATO-PEDAGOGICO-GLOBAL.md` e `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`. Dividir a produção quando necessário, sem publicar apenas perguntas ou reduzir o ensino para caber em uma rodada.
 
-- PR #488: documentação-base.
-- Fase 0 aprovada por Wellyton em 25/09/2026; plano `15-FASE-0-PLANO-TECNICO.md`.
-- PR #490: primeiro motor; commit `22257bca768cfc440578e0b8e11da62f15abc08f`.
-- PR #495: CVM/Operadores e revisões; commit `97cc6ab382d624841da46d6d9a9ff7f26a1a18ca`.
-- PR #498: bloco inicial com nove missões/38 questões e Chefe; commit `20487883c948dffbeb4b6849baa3c39e9c577d9f`.
-- PR #499: retomada parcial e correção de Conquistas; commit `c5ebf3a0bb93bf303851835446ec32ff5decb0cd`.
-- PR #500: sequência de estudo; commit `ac9128c7e807be8eff0ee5bc1579f792aa249a3d`.
+## Base já incorporada antes da PR #501
 
-**9/9 é o primeiro bloco de SFN, não o edital, o curso ou toda a matéria Conhecimentos Bancários.** Testes técnicos e número de questões não certificam qualidade de ensino.
+- PR #488: documentação-base; Fase 0 aprovada por Wellyton em 25/09/2026.
+- Plano arquitetural: `15-FASE-0-PLANO-TECNICO.md`.
+- #490 motor inicial: `22257bca768cfc440578e0b8e11da62f15abc08f`.
+- #495 expansão/revisões: `97cc6ab382d624841da46d6d9a9ff7f26a1a18ca`.
+- #498 bloco de nove missões e Chefe: `20487883c948dffbeb4b6849baa3c39e9c577d9f`.
+- #499 retomada parcial/Conquistas: `c5ebf3a0bb93bf303851835446ec32ff5decb0cd`.
+- #500 sequência: `ac9128c7e807be8eff0ee5bc1579f792aa249a3d`.
 
-## Decisões preservadas
+9/9 significa somente o primeiro bloco de SFN. Não é o curso ou o edital completo.
 
-`/estudos/`, `/api/studies/*`, conta `wellyton` validada no backend, sem cargo novo. Conteúdo no GitHub, progresso no D1 `AUTH_DB` em tabelas `study_*`. IDs estáveis, sem zerar tentativas/XP/conquistas. Medalhas em `/conquistas/`, separadas dos níveis de segurança Bronze/Prata/Ouro. Nenhuma telemetria pedagógica externa. Rollback sem apagar dados.
+## Regras preservadas
 
-## Bloqueio pedagógico relatado por Wellyton
+Acesso exclusivo de `wellyton` no backend; `/estudos/` e `/api/studies/*`; nenhum novo cargo; conteúdo no GitHub; progresso em tabelas `study_*` no D1 `AUTH_DB`. IDs, perguntas, respostas, XP e conquistas preservados. Bronze/Prata/Ouro continuam separados do estudo. Nenhuma telemetria pedagógica externa. Rollback sem apagar dados.
 
-A primeira aula foi aberta, mas o usuário não compreendia siglas e termos. Os textos eram insuficientes para quem começa do zero. A orientação seguinte tornou obrigatórios ensino, exemplos e consulta antes das questões em TODO conteúdo. Foi autorizado dividir a autoria em mais rodadas, sem aprovações burocráticas por parágrafo.
-
-A captura da interface não equivale à homologação de aprendizado, persistência ou conquista. A Fase 1 permanece aberta.
-
-## PR #501 — trabalho ainda não incorporado
+## PR #501 — ensino antes da prática
 
 Branch: `fix/missao-bancaria-ensino-do-zero`.
-Base desta rodada: head `c76ebeb2a3f0aea0fa52902ea941365f8f60eda2`, sobre main `5e82869b8ae52e26392bf5ff139caa7674f23f90`.
+Base desta rodada: `ddd15a2a5dc9834b525b87068c17dd9f830677da`; main observada: `5e82869b8ae52e26392bf5ff139caa7674f23f90`.
 
-Já redigidos na PR: oito aulas e preparação do Chefe, com vocabulário, explicações, exemplos resolvidos e rastreio das 38 questões. Documentos 23–26 registram a evolução e o contrato global. Isso não significa revisão final concluída nem publicação confirmada.
+Já redigidos: oito aulas com conceitos, vocabulário, exemplos resolvidos e consulta; uma preparação cumulativa do Chefe; 38 questões mapeadas ao ensino correspondente.
 
-### Rodada atual: lote A de revisão dos fundamentos
+### Revisão dos fundamentos — lote A
 
-Documento: `27-REVISAO-FUNDAMENTOS-LOTE-A.md`.
+Documento `27-REVISAO-FUNDAMENTOS-LOTE-A.md`.
+13 trechos revisados em Introdução, CMN, Banco Central e Copom. Preserva-se o resultado dessa revisão.
 
-- Introdução: intermediação, risco de crédito, dinheiro reservado fora do banco e limites dos macetes de verbo.
-- CMN: diretrizes gerais versus contrato e relação com um Banco Central autônomo.
-- Banco Central: autarquia, autonomia, estabilidade de preços e condução da política monetária.
-- Copom: vocabulário da Selic, taxa apurada/meta e diferença de juros contratuais.
+### Revisão dos segmentos — rodada atual
 
-**13 trechos revisados em quatro aulas já existentes.** Nenhuma questão ou recompensa nova. IDs, gabaritos, dados e pontuação preservados.
+Documento `28-REVISAO-SEGMENTOS-E-AUTORIZACAO.md`.
+25 trechos revisados em CVM, Operadores, Seguros/Previdência, Pagamentos/Consórcios e preparação do Chefe. Novas fontes legais primárias e testes de integração editorial. Nenhuma nova questão ou recompensa; nenhum dado real alterado.
 
-Fontes consultadas: Lei Complementar nº 179/2021 no Planalto, CMN no Ministério da Fazenda e estrutura do SFN no Portal do Investidor. Texto oficial indexado da Resolução BCB nº 61/2021 recuperado, com limitação da abertura direta documentada. A conferência integral da Resolução CMN nº 5.060/2023 segue pendente para o lote de Operadores.
+Todas as nove missões possuem passagem editorial identificada, mas a homologação permanece pendente. Essa marca não é certificado automático de precisão normativa ou aprendizagem.
 
-Novo teste verifica que a revisão chega ao catálogo servido e mantém o histórico contratual do conteúdo. CI do novo head deve ser consultado após o push; não há resultado presumido neste documento. Não houve merge ou deploy nesta rodada.
+## Precisão e publicação
 
-## Próxima ação
+Leis 6.385, 6.404, 12.865 e 11.795, LC 109 e páginas institucionais SUSEP/PREVIC foram abertas para os trechos utilizados. No lote A foi consultada a LC 179.
 
-Revisar CVM e Operadores com resolução da fonte primária da norma de carteiras. Depois revisar Seguros/Previdência, Pagamentos/Consórcios e coerência do Chefe. Concluir a avaliação de compreensão sem reduzir tudo a memorização literal. Só então promover o material revisado, após CI e verificação separada de publicação do Worker. Não criar novos mundos para compensar o ensino insuficiente.
+**Pendência delimitada:** a regra de carteiras foi localizada na explicação institucional histórica do BCB, mas não foi obtido o texto primário consolidado da Resolução CMN 5.060. Não tratar a página histórica, minuta ou índice de publicação como consolidação vigente. A referência original foi mantida sem carimbo novo de conferência integral.
 
-## Histórico técnico e limites mantidos
+Próximo passo técnico: concluir essa conferência ou separar formalmente o recorte ainda pendente antes de promover publicação definitiva; consultar CI do novo head e verificar separadamente o resultado de build/produção. Não presumir resultado de CI no momento de escrever este status.
 
-Incidente inicial: frontend abriu antes do backend e houve “Rota não encontrada”. Correções anteriores: PR #492 (Wrangler), PR #494 (gate fail-closed); commit `90cc6d8e16039bb7ed1482bec3f75feadb860816`. PR #493 foi fechada sem merge; #491/#496/#497 foram substituídas.
+## Histórico de publicação e limites técnicos
 
-Na retomada da PR #500, 24 execuções de CI foram confirmadas com sucesso. Check-runs do merge `ac9128c...`: Cloudflare Pages `108407207253`, GitHub Pages `108407233680` e Workers Builds `108407276388` bem-sucedidos; versão informada `b110fd9f-3cdf-4047-93a5-a147e9dcde47`. Isso é evidência histórica daquele merge, não da PR #501 nem de 100% do tráfego produtivo. A tentativa anterior de HTTP falhou no DNS local, sem provar indisponibilidade do portal.
+Incidente inicial: frontend publicado antes do Worker, erro “Rota não encontrada”. Correções #492/#494; commit `90cc6d8e16039bb7ed1482bec3f75feadb860816`. #493 fechada sem merge; #491/#496/#497 substituídas.
 
-Limitações técnicas ainda pendentes: sequência baseada nos 500 eventos recentes não é recorde histórico irrestrito; cronômetro/interrupções no celular, isolamento de rodadas e persistência real ainda precisam de validação específica. Não resolvidas pela revisão editorial.
+No merge #500 houve 24 execuções de CI bem-sucedidas; checks históricos Pages/Worker `108407207253`, `108407233680`, `108407276388`; versão informada `b110fd9f-3cdf-4047-93a5-a147e9dcde47`. Isso não comprova publicação desta PR. Tentativa anterior de HTTP falhou em DNS local, sem demonstrar indisponibilidade do portal.
 
-## Aceite humano pendente
+Continuam pendentes: recorde histórico da sequência além de 500 eventos; cronômetro/interrupções; isolamento e retomada de rodadas; comprovação real de persistência. Não foram resolvidos por revisão editorial.
 
-Clareza do ensino e aplicação do que foi lido; conclusão de missão; sair/voltar mantendo respostas/XP; conquista sem duplicação; expansão preservando histórico; revisão real; aprovação/reprovação do Chefe. Não encerrar a Fase 1 nem abrir formalmente a Fase 2 sem aceite explícito.
+## Avaliação humana posterior
+
+Quando o usuário voltar a estudar: clareza, aplicação do que leu, progresso após sair/voltar, conquistas sem duplicação, revisões e desafio. Não solicitar acesso imediato nem alegar esses resultados em sua ausência. O desenvolvimento autorizado prossegue dentro do escopo, preservando as pendências com transparência.

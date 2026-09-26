@@ -18,7 +18,7 @@ test('revisão dos fundamentos está aplicada no catálogo realmente servido', (
       assert.equal(mission.sections.find((section) => section.id === sectionId).body, FUNDAMENTALS_REVIEW[id].sections[sectionId]);
     }
   }
-  assert.equal(missionById('banking.sfn.cvm').teaching.editorialPass, 'draft-v2');
+  assert.equal(missionById('banking.sfn.cvm').teaching.editorialPass, 'segmentos-r1');
 });
 
 test('fonte legal nova resolve sem substituir fontes existentes', () => {
