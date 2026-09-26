@@ -79,3 +79,11 @@ Wellyton consegue:
 10. enxergar separadamente "campanha disponível" e "meu progresso";
 11. ao concluir a primeira missão real, receber a conquista **Primeira missão** uma única vez;
 12. abrir `/conquistas/` e ver a medalha obtida sem alterar Bronze/Prata/Ouro da conta.
+
+### Bloqueio pedagógico identificado em 26/09/2026
+
+Wellyton relatou que os textos eram insuficientes para aprender e que não conhecia as siglas. Não há aceite pedagógico da fase. Priorizar a correção do ensino, não a abertura de novos mundos.
+
+Antes de pedir conclusão de missão, a aula deve apresentar nomes por extenso, termos essenciais, exemplos cotidianos e exemplos resolvidos. Um resumo de conceitos ou um link para uma fonte oficial não substitui o ensino.
+
+Aplicar o padrão atualizado em `12-FONTES-E-CONTEUDO.md`. Primeira correção: `23-FASE-1-ENSINO-DO-ZERO.md`. As demais aulas não se tornam homologadas por herdar a mesma interface.
