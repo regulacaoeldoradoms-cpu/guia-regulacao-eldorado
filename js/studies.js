@@ -105,11 +105,13 @@
       const done = completed(mission);
       const unlocked = isUnlocked(index);
       const progress = data.progress[mission.topicId];
-      const label = done ? 'Concluída' : unlocked ? 'Disponível' : 'Bloqueada';
-      return `<button class="study-mission ${done ? 'done' : ''}" type="button" data-mission-id="${mission.id}" ${unlocked ? '' : 'disabled'}>
+      const boss = mission.kind === 'boss';
+      const label = done ? 'Concluída' : unlocked ? (boss ? 'Chefe disponível' : 'Disponível') : 'Bloqueada';
+      const requirement = boss && mission.passScore ? ` · mínimo ${mission.passScore}%` : '';
+      return `<button class="study-mission ${done ? 'done' : ''} ${boss ? 'boss' : ''}" type="button" data-mission-id="${mission.id}" ${unlocked ? '' : 'disabled'}>
         <span class="state">${label}</span>
         <h3>${mission.order}. ${mission.title}</h3>
-        <p>${mission.estimatedMinutes} min · +${mission.xp} XP</p>
+        <p>${mission.estimatedMinutes} min · +${mission.xp} XP${requirement}</p>
         <p>${progress ? `Domínio atual: ${Math.round(progress.masteryScore || 0)}%` : 'Ainda não iniciada'}</p>
       </button>`;
     }).join('');
@@ -143,7 +145,12 @@
   }
 
   function renderMission(mission) {
-    $('focusTitle').textContent = state.activeReview ? `Revisão · ${mission.title}` : mission.title;
+    const boss = mission.kind === 'boss';
+    $('focusTitle').textContent = state.activeReview
+      ? `Revisão · ${mission.title}`
+      : boss
+        ? `Chefe · ${mission.title}`
+        : mission.title;
     $('focusObjective').textContent = mission.objective;
     $('lessonSections').innerHTML = mission.sections.map((section) =>
       `<section class="study-section"><h2>${section.heading}</h2><p>${section.body}</p></section>`
@@ -164,7 +171,11 @@
     $('sourceList').innerHTML = mission.sources.map((source) =>
       `<a class="study-source" href="${source.url}" target="_blank" rel="noopener noreferrer">Abrir fonte: ${source.label}</a>`
     ).join('');
-    $('completeMission').textContent = state.activeReview ? 'Concluir revisão' : 'Concluir missão';
+    $('completeMission').textContent = state.activeReview
+      ? 'Concluir revisão'
+      : mission.kind === 'boss'
+        ? 'Tentar vencer o Chefe'
+        : 'Concluir missão';
 
     $('questionList').querySelectorAll('[data-answer-question]').forEach((button) => {
       button.addEventListener('click', () => answerQuestion(button.dataset.answerQuestion));
@@ -275,7 +286,9 @@
       status(
         review
           ? `Revisão concluída. +${result.xpGranted || 0} XP.`
-          : `Missão concluída. +${result.xpGranted || 0} XP.`,
+          : state.activeMission.kind === 'boss'
+            ? `Chefe vencido com ${result.score}% de acertos. +${result.xpGranted || 0} XP.`
+            : `Missão concluída. +${result.xpGranted || 0} XP.`,
         true
       );
       setTimeout(() => leaveFocus(), 900);
