@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="/css/portal.css?v=20260816-5">
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
   <link rel="stylesheet" href="/css/studies.css?v=20260926-5">
+  <link rel="stylesheet" href="/css/studies-reader.css?v=20260926-reader-1">
   <script src="/js/portal-theme.js?v=20260923-1"></script>
 </head>
 <body class="portal-page study-page">
@@ -82,19 +83,66 @@
 
     <section class="study-focus" id="studyFocus" hidden aria-labelledby="focusTitle">
       <header class="study-focus-header">
-        <div><span class="study-eyebrow">Modo foco</span><h1 id="focusTitle">Missão</h1></div>
-        <div class="study-focus-actions"><span id="studyTimer">00:00</span><button type="button" id="markDoubt">Marcar dúvida</button><button type="button" id="leaveFocus">Sair</button></div>
+        <div><span class="study-eyebrow">Modo foco</span><h1 id="focusTitle" tabindex="-1">Missão</h1></div>
+        <div class="study-focus-actions"><span id="studyTimer">00:00</span><button type="button" id="markDoubt">Marcar dúvida</button><button type="button" id="leaveFocus">Sair da aula</button></div>
       </header>
-      <div class="study-focus-progress"><span id="focusProgress"></span></div>
-      <article class="study-lesson">
-        <p class="study-objective" id="focusObjective"></p>
-        <div id="lessonSections"></div>
-        <section class="study-recall"><h2>Recordação ativa</h2><p>Antes de seguir, responda mentalmente sem voltar ao texto.</p><div id="recallList"></div></section>
-        <section class="study-quiz"><h2>Minibatalha</h2><div id="questionList"></div></section>
-        <section class="study-sources"><h2>Fontes oficiais desta missão</h2><div id="sourceList"></div></section>
-        <button class="study-primary study-complete" id="completeMission" type="button" disabled>Concluir missão</button>
-        <div class="study-status" id="focusStatus" role="status" aria-live="polite"></div>
-      </article>
+      <div class="study-focus-body" id="studyFocusBody">
+        <article class="study-lesson">
+          <!-- Sem o controlador, os dois painéis continuam em sequência linear. -->
+          <div class="study-reader-nav" id="studyReaderNav" hidden>
+            <div class="study-reader-views" role="group" aria-label="Etapa de estudo">
+              <button type="button" id="studyReadButton" aria-controls="studyLessonPanel" aria-pressed="true">1. Ler a aula</button>
+              <button type="button" id="studyPracticeButton" aria-controls="studyPracticePanel" aria-pressed="false">2. Praticar</button>
+            </div>
+            <div class="study-font-controls" role="group" aria-label="Tamanho do texto">
+              <button type="button" id="studyFontSmaller" aria-label="Diminuir o texto">A−</button>
+              <span id="studyFontLabel" aria-live="polite">Padrão</span>
+              <button type="button" id="studyFontLarger" aria-label="Aumentar o texto">A+</button>
+            </div>
+          </div>
+
+          <section id="studyLessonPanel" aria-label="Material de ensino">
+            <p class="study-objective" id="focusObjective"></p>
+            <div class="study-reader-controls" id="studyReaderControls" hidden>
+              <label for="studySectionSelect">Partes da aula</label>
+              <div class="study-reader-index">
+                <select id="studySectionSelect" aria-controls="lessonSections"></select>
+                <button type="button" id="studyShowAll" aria-controls="lessonSections" aria-pressed="false">Aula inteira</button>
+              </div>
+              <p id="studyPartLabel" class="study-reader-caption" aria-live="polite"></p>
+            </div>
+            <div id="lessonSections"></div>
+            <div class="study-reader-footer" id="studyReaderFooter" hidden>
+              <div class="study-reader-paging">
+                <button type="button" id="studyPreviousPart">Anterior</button>
+                <button type="button" id="studyNextPart">Próxima parte</button>
+              </div>
+              <p class="study-reader-caption">Navegue no seu ritmo. Mudar de parte não registra aprendizado nem concede XP.</p>
+              <button class="study-primary" id="studyStartPractice" type="button">Testar minha compreensão</button>
+            </div>
+          </section>
+
+          <section id="studyPracticePanel" aria-label="Verificação de compreensão">
+            <button class="study-reader-back" id="studyReturnLesson" type="button" hidden>Consultar a aula</button>
+            <section class="study-recall">
+              <h2 id="studyPracticeTitle" tabindex="-1">Recordação ativa</h2>
+              <p>Tente explicar com suas palavras antes de responder. A aula continua disponível para consulta.</p>
+              <div id="recallList"></div>
+            </section>
+            <section class="study-quiz">
+              <h2>Verifique o que aprendeu</h2>
+              <p class="study-reader-caption">Estas questões verificam o conteúdo estudado. Uma rodada não comprova retenção duradoura.</p>
+              <p id="studyAnsweredLabel" aria-live="polite">0 questões respondidas</p>
+              <div class="study-focus-progress" id="studyPracticeProgress" role="progressbar" aria-label="Questões respondidas" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><span id="focusProgress"></span></div>
+              <div id="questionList"></div>
+            </section>
+            <button class="study-primary study-complete" id="completeMission" type="button" disabled>Concluir missão</button>
+          </section>
+
+          <details class="study-sources"><summary>Fontes oficiais desta missão</summary><div id="sourceList"></div></details>
+          <div class="study-status" id="focusStatus" role="status" aria-live="polite"></div>
+        </article>
+      </div>
     </section>
 
     <div class="study-achievement-toast" id="achievementToast" hidden role="status" aria-live="polite"></div>
@@ -104,6 +152,7 @@
   <script src="/js/auth-client.js?v=20260910-4"></script>
   <script src="/js/portal-interactions.js?v=20260923-2"></script>
   <script src="/js/tools-catalog.js?v=20260925-study-1"></script>
-  <script src="/js/studies.js?v=20260926-5"></script>
+  <script src="/js/studies-reader.js?v=20260926-reader-1"></script>
+  <script src="/js/studies.js?v=20260926-reader-1"></script>
 </body>
 </html>

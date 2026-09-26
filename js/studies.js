@@ -21,6 +21,7 @@
   };
 
   const $ = (id) => document.getElementById(id);
+  const reader = window.StudyReader?.create($('studyFocus')) || null;
   const status = (text, focus = false) => {
     const el = $(focus ? 'focusStatus' : 'studyStatus');
     if (el) el.textContent = text || '';
@@ -115,7 +116,7 @@
         <span class="state">${label}</span>
         <h3>${mission.order}. ${mission.title}</h3>
         <p>${mission.estimatedMinutes} min · +${mission.xp} XP${requirement}</p>
-        <p>${progress ? `Domínio atual: ${Math.round(progress.masteryScore || 0)}%` : 'Ainda não iniciada'}</p>
+        <p>${progress ? `Acerto nas tentativas: ${Math.round(progress.masteryScore || 0)}%` : 'Ainda não iniciada'}</p>
       </button>`;
     }).join('');
 
@@ -149,10 +150,19 @@
   }
 
   function updateFocusProgress() {
-    const total = state.activeMission?.questions?.length || 1;
-    const answered = state.answered.size;
-    setBar('focusProgress', Math.min(100, 35 + (answered / total) * 65));
-    $('completeMission').disabled = answered < total;
+    const total = state.activeMission?.questions?.length || 0;
+    const answered = Math.min(total, state.answered.size);
+    const percent = window.StudyReader?.practiceProgress(answered, total).percent
+      ?? (total ? Math.round(answered / total * 100) : 0);
+    setBar('focusProgress', percent);
+    const progress = $('studyPracticeProgress');
+    if (progress) {
+      progress.setAttribute('aria-valuenow', String(answered));
+      progress.setAttribute('aria-valuemax', String(total));
+      progress.setAttribute('aria-valuetext', `${answered} de ${total} questões respondidas`);
+    }
+    if ($('studyAnsweredLabel')) $('studyAnsweredLabel').textContent = `${answered} de ${total} questões respondidas`;
+    $('completeMission').disabled = total === 0 || answered < total;
   }
 
   function renderMission(mission) {
@@ -163,9 +173,19 @@
         ? `Chefe · ${mission.title}`
         : mission.title;
     $('focusObjective').textContent = mission.objective;
-    $('lessonSections').innerHTML = mission.sections.map((section) =>
-      `<section class="study-section"><h2>${section.heading}</h2><p>${section.body}</p></section>`
-    ).join('');
+    // Fallback linear permanece utilizável se o módulo de navegação não carregar.
+    const reading = document.createDocumentFragment();
+    for (const section of mission.sections) {
+      const node = document.createElement('section');
+      node.className = 'study-section';
+      const heading = document.createElement('h2');
+      heading.textContent = section.heading;
+      const paragraph = document.createElement('p');
+      paragraph.textContent = section.body;
+      node.append(heading, paragraph);
+      reading.append(node);
+    }
+    $('lessonSections').replaceChildren(reading);
     $('recallList').innerHTML = mission.recall.map((item) =>
       `<div class="study-recall-item">${item}</div>`
     ).join('');
@@ -205,6 +225,7 @@
     $('questionList').querySelectorAll('[data-answer-question]').forEach((button) => {
       button.addEventListener('click', () => answerQuestion(button.dataset.answerQuestion));
     });
+    reader?.mount(mission);
     updateFocusProgress();
   }
 
@@ -227,6 +248,8 @@
     state.answered.clear();
     state.doubt = false;
     $('markDoubt').textContent = 'Marcar dúvida';
+    const topbar = document.querySelector('.study-topbar');
+    if (topbar) topbar.inert = true;
     $('studyDashboard').hidden = true;
     $('studyFocus').hidden = false;
     document.body.style.overflow = 'hidden';
@@ -294,9 +317,14 @@
     document.body.style.overflow = '';
     $('studyFocus').hidden = true;
     $('studyDashboard').hidden = false;
+    const topbar = document.querySelector('.study-topbar');
+    if (topbar) topbar.inert = false;
     state.activeMission = null;
     state.activeReview = null;
     await load();
+    const returnTarget = $('continueStudy').disabled ? $('studyGreeting') : $('continueStudy');
+    returnTarget.tabIndex = returnTarget.tabIndex < 0 ? -1 : returnTarget.tabIndex;
+    returnTarget.focus({ preventScroll: true });
   }
 
   async function completeMission() {
