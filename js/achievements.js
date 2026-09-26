@@ -29,10 +29,10 @@
       studySection.hidden = false;
       studyGrid.innerHTML = achievements.length
         ? achievements.map((item) => `<article class="achievement-card"><span class="achievement-state">Conquistada</span><div class="achievement-icon" aria-hidden="true">${trophyIcon}</div><h3>${item.title}</h3><p>${item.description}</p><small>${item.unlockedAt ? new Date(String(item.unlockedAt).replace(' ', 'T') + (String(item.unlockedAt).endsWith('Z') ? '' : 'Z')).toLocaleDateString('pt-BR') : ''}</small></article>`).join('')
-        : '<article class="achievement-card planned"><span class="achievement-state">Em campanha</span><div class="achievement-icon" aria-hidden="true">${bookIcon}</div><h3>Primeira missão</h3><p>Conclua sua primeira missão real para desbloquear a primeira medalha.</p></article>';
+        : `<article class="achievement-card planned"><span class="achievement-state">Em campanha</span><div class="achievement-icon" aria-hidden="true">${bookIcon}</div><h3>Primeira missão</h3><p>Conclua sua primeira missão real para desbloquear a primeira medalha.</p></article>`;
     } catch (_) {
       studySection.hidden = false;
-      studyGrid.innerHTML = '<article class="achievement-card planned"><span class="achievement-state">Indisponível</span><div class="achievement-icon" aria-hidden="true">${bookIcon}</div><h3>Missão Bancária</h3><p>As conquistas de estudo estão temporariamente indisponíveis. Sua progressão de segurança continua normal.</p></article>';
+      studyGrid.innerHTML = `<article class="achievement-card planned"><span class="achievement-state">Indisponível</span><div class="achievement-icon" aria-hidden="true">${bookIcon}</div><h3>Missão Bancária</h3><p>As conquistas de estudo estão temporariamente indisponíveis. Sua progressão de segurança continua normal.</p></article>`;
     }
   }
 })();

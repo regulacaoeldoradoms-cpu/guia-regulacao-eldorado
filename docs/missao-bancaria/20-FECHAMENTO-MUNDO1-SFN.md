@@ -1,13 +1,10 @@
 # MISSÃO BANCÁRIA — FECHAMENTO DO MUNDO 1 — SFN
 
 Data: 26/09/2026  
-Estado: **IMPLEMENTADO EM BRANCH EMPILHADA; HOMOLOGAÇÃO PENDENTE**
+Estado: **INCORPORADO À `main` pela PR #498; HOMOLOGAÇÃO HUMANA PENDENTE**
 
-Branch:
-`feat/missao-bancaria-fase1-fechar-mundo1-sfn`
-
-Base:
-`feat/missao-bancaria-fase1-expansao-sfn-v2`
+Implementação incorporada pela PR #498.  
+Merge commit: `20487883c948dffbeb4b6849baa3c39e9c577d9f`.
 
 ## Objetivo
 

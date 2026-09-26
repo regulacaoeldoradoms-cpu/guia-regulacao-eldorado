@@ -137,6 +137,14 @@
     }
   }
 
+  function historicalAnsweredFor(mission) {
+    if (!mission || state.activeReview || mission.kind === 'boss') return [];
+    const items = state.data?.attemptedQuestions?.[mission.topicId];
+    if (!Array.isArray(items)) return [];
+    const valid = new Set(mission.questions.map((question) => question.id));
+    return items.filter((id) => valid.has(id));
+  }
+
   function updateFocusProgress() {
     const total = state.activeMission?.questions?.length || 1;
     const answered = state.answered.size;
@@ -176,6 +184,20 @@
       : mission.kind === 'boss'
         ? 'Tentar vencer o Chefe'
         : 'Concluir missão';
+
+    for (const questionId of historicalAnsweredFor(mission)) {
+      state.answered.set(questionId, 'history');
+      const card = document.querySelector(`[data-question-id="${CSS.escape(questionId)}"]`);
+      if (!card) continue;
+      const button = card.querySelector('[data-answer-question]');
+      const feedback = card.querySelector('[data-feedback]');
+      if (button) button.textContent = 'Responder novamente';
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.className = 'study-feedback prior';
+        feedback.textContent = 'Respondida em sessão anterior. Você pode continuar ou responder novamente para revisar.';
+      }
+    }
 
     $('questionList').querySelectorAll('[data-answer-question]').forEach((button) => {
       button.addEventListener('click', () => answerQuestion(button.dataset.answerQuestion));
@@ -221,7 +243,7 @@
   }
 
   async function answerQuestion(questionId) {
-    if (state.answered.has(questionId)) return;
+    if (state.answered.has(questionId) && state.answered.get(questionId) !== 'history') return;
     const card = document.querySelector(`[data-question-id="${CSS.escape(questionId)}"]`);
     const selected = card?.querySelector('input:checked');
     if (!selected) {
@@ -240,6 +262,7 @@
       });
       state.answered.set(questionId, result.correct);
       card.querySelectorAll('input').forEach((input) => { input.disabled = true; });
+      button.textContent = 'Respondida';
       const feedback = card.querySelector('[data-feedback]');
       feedback.hidden = false;
       feedback.className = `study-feedback ${result.correct ? 'correct' : 'wrong'}`;
