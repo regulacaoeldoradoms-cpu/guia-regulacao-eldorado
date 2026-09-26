@@ -38,6 +38,14 @@
     function focusAt(target) {
       el.studyFocusBody.scrollTop = 0;
       target?.focus({ preventScroll: true });
+      // Em telas baixas, o índice/objetivo pode deixar o título fora da área visível.
+      if (target && el.studyFocusBody.contains(target)) {
+        const viewport = el.studyFocusBody.getBoundingClientRect();
+        const bounds = target.getBoundingClientRect();
+        if (bounds.top < viewport.top || bounds.bottom > viewport.bottom) {
+          target.scrollIntoView({ block: 'start', behavior: 'auto' });
+        }
+      }
     }
 
     function paintParts(moveFocus = false) {
