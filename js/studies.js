@@ -71,9 +71,9 @@
     $('metricHours').textContent = formatHours(m.hoursSeconds);
     $('metricReviews').textContent = `${m.reviewsDue} revisões pendentes`;
     $('availabilityLabel').textContent = `${m.publishedMissions}/${m.plannedMissions} missões · ${m.campaignAvailability}%`;
-    $('personalProgressLabel').textContent = `${m.completedPublished}/${m.publishedMissions} concluídas · ${m.availableProgress}%`;
+    $('personalProgressLabel').textContent = `${m.completedPublished}/${m.plannedMissions} da campanha · ${m.campaignProgress}% · ${m.availableCompletion}% do conteúdo liberado`;
     setBar('availabilityBar', m.campaignAvailability);
-    setBar('personalProgressBar', m.availableProgress);
+    setBar('personalProgressBar', m.campaignProgress);
 
     const grid = $('missionGrid');
     grid.innerHTML = data.missions.map((mission, index) => {
