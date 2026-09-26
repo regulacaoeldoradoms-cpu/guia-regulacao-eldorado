@@ -310,7 +310,6 @@
       path: /^\/estudos\/?$/,
       click: [
         ['#continueStudy', 'primary', '#missionGrid'],
-        ['#startReview', 'primary', '#reviewPanel'],
         ['.study-mission', 'selection', '#studyFocus'],
         ['[data-answer-question]', 'state-change', '#questionList'],
         ['#markDoubt', 'state-change', '#focusStatus'],
