@@ -9,7 +9,7 @@ import {
   missionByTopicId,
   questionById
 } from '../studies-content/manifest.js';
-import { computeCampaignProgress, isStudiesApi, studyUsernameAllowed } from '../studies.js';
+import { computeCampaignProgress, computeStudyStreak, isStudiesApi, studyUsernameAllowed } from '../studies.js';
 
 test('conteudo SFN v1.2 tem ids unicos e respostas validas', () => {
   const missionIds = new Set();
@@ -156,4 +156,47 @@ test('conquistas pendentes interpolam o SVG em vez de exibir placeholder literal
   const source = fs.readFileSync(new URL('../../js/achievements.js', import.meta.url), 'utf8');
   assert.match(source, /\`<article class="achievement-card planned"/);
   assert.doesNotMatch(source, /innerHTML = '<article[^']*\\\$\{bookIcon\}/);
+});
+
+
+test('sequência usa dias locais distintos e não conta atividade duplicada', () => {
+  const now = new Date('2026-09-26T12:00:00Z');
+  const result = computeStudyStreak([
+    '2026-09-26 15:00:00',
+    '2026-09-26 16:00:00',
+    '2026-09-25 15:00:00',
+    '2026-09-24 15:00:00',
+    '2026-09-22 15:00:00'
+  ], now);
+  assert.equal(result.current, 3);
+  assert.equal(result.best, 3);
+  assert.equal(result.lastStudyDay, '2026-09-26');
+});
+
+test('sequência permanece ativa quando último estudo foi ontem e zera após lacuna maior', () => {
+  const now = new Date('2026-09-26T12:00:00Z');
+  const yesterday = computeStudyStreak([
+    '2026-09-25 15:00:00',
+    '2026-09-24 15:00:00'
+  ], now);
+  assert.equal(yesterday.current, 2);
+
+  const stale = computeStudyStreak([
+    '2026-09-24 15:00:00',
+    '2026-09-23 15:00:00'
+  ], now);
+  assert.equal(stale.current, 0);
+  assert.equal(stale.best, 2);
+});
+
+test('sequência vazia é zero e não depende de simples abertura do módulo', () => {
+  assert.deepEqual(
+    computeStudyStreak([], new Date('2026-09-26T12:00:00Z')),
+    { current:0, best:0, lastStudyDay:'' }
+  );
+  const source = fs.readFileSync(new URL('../studies.js', import.meta.url), 'utf8');
+  assert.match(source, /study_attempts/);
+  assert.match(source, /duration_seconds >= 60/);
+  assert.match(source, /study_xp_events/);
+  assert.doesNotMatch(source, /page_open.*streak|streak.*page_open/i);
 });
