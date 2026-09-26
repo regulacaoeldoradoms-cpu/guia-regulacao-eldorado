@@ -50,6 +50,16 @@ Material ainda sem qualidade suficiente deve permanecer identificado como rascun
 
 A existência de material antes das questões não exige bloquear o usuário por tempo de leitura ou cliques artificiais. Ele pode consultar e estudar no seu ritmo. Não confundir a oferta de ensino com comprovação automática de leitura ou retenção.
 
+## Produção subdividida e finalidade das questões
+
+**É permitido e recomendado usar mais etapas ou prompts quando necessário para preservar a qualidade. O tamanho da entrega deve se ajustar ao ensino, não o contrário.**
+
+Seguir `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`: planejar objetivos e pré-requisitos; redigir a explicação; desenvolver exemplos resolvidos; revisar o ensino; preparar a verificação de compreensão; integrar e publicar a unidade. Uma etapa pode ocupar várias rodadas. Não há obrigação de produzir uma aula ou matéria inteira em uma única resposta.
+
+A função principal das questões é verificar o que foi compreendido e aplicado depois da leitura. Feedback e revisão ajudam a corrigir lacunas, mas o conceito não deve aparecer pela primeira vez no gabarito. Avaliar mais que reprodução literal: quando adequado, variar exemplos, dados ou situações e pedir justificativa. Uma nota isolada não certifica domínio duradouro; distinguir desempenho imediato e retenção em revisão posterior.
+
+Dividir a produção não significa adiar todo o estudo até concluir o curso. Uma unidade pequena e completa pode ser liberada enquanto a próxima é escrita. Não impor aprovações burocráticas por parágrafo; preservar os aceites de fase e registrar a próxima ação para continuidade.
+
 ## Estado da revisão atual
 
 A PR #501 foi ampliada: introdução mantida e revisão redigida para as sete outras aulas do bloco atual; o Chefe recebeu preparação cumulativa e indicação das aulas de origem. Total: oito aulas de ensino + um desafio com revisão preparatória.
@@ -59,6 +69,8 @@ O catálogo contém vínculo explícito das 38 questões aos trechos corresponde
 Esses vínculos são metadados de autoria/validação; esta entrega não afirma ter criado um novo botão de navegação por questão. O material textual usa o renderizador existente e aparece antes da prática.
 
 Nenhuma outra disciplina inteira foi produzida nesta entrega. O contrato se aplica às futuras produções desde já. A redação atual ainda exige revisão final de precisão, CI e avaliação humana de clareza; não equivale a homologação nem confirmação de publicação.
+
+A atualização do plano por etapas é somente documental: não torna as aulas já redigidas automaticamente revisadas e não altera a aplicação ou seu estado de publicação.
 
 ## Critério de aceite
 
