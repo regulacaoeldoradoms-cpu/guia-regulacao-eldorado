@@ -139,3 +139,25 @@ Entregue:
 - fontes oficiais SUSEP, PREVIC e Banco Central registradas.
 
 A Fase 1 permanece **ABERTA** até homologação humana.
+
+
+## Retomada parcial de missão
+
+Branch empilhada:
+`feat/missao-bancaria-fase1-retomar-missao`
+
+Documento:
+`21-FASE-1-RETOMADA-PARCIAL.md`
+
+Estado:
+**implementada; homologação humana pendente.**
+
+Entregue:
+- reconhecimento de questões respondidas em sessões anteriores;
+- continuação sem necessidade de refazer toda a aula;
+- opção de responder novamente;
+- nenhum gabarito no bootstrap;
+- revisões e Chefe excluídos do reaproveitamento histórico;
+- cache do cliente atualizado.
+
+A Fase 1 permanece **ABERTA**.
