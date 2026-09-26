@@ -119,3 +119,35 @@ test('fechar sessão por PATCH é idempotente e rejeita duração inválida',asy
   const r=await call('sessions/'+id,{durationSeconds:0},{method:'PATCH'});assert.equal(r.status,200);
   assert.equal((await call('sessions/'+id,{durationSeconds:0},{method:'PATCH'})).status,200);
 });
+
+test('checkpoint mantém sessão ativa, total no dashboard e não gera recompensa',async t=>{
+  const {sql,call,start,lesson}=await fixture(t);const id=await start();
+  sql.prepare("UPDATE study_sessions SET started_at=datetime('now','-120 seconds') WHERE session_id=?").run(id);
+  assert.equal((await call('bootstrap')).body.timeProtocol,1);
+  const checkpoint=await call('sessions/'+id+'/checkpoint',{durationSeconds:60});
+  assert.equal(checkpoint.status,200);assert.equal(checkpoint.body.finished,false);assert.equal(checkpoint.body.durationSeconds,60);
+  assert.equal(sql.prepare('SELECT status FROM study_sessions WHERE session_id=?').get(id).status,'active');
+  let dashboard=await call('bootstrap');assert.equal(dashboard.body.metrics.hoursSeconds,60);
+  assert.equal(dashboard.body.metrics.xp,0);assert.equal(dashboard.body.metrics.questions,0);
+  assert.equal((await call('missions/'+lesson.id+'/complete',{sessionId:id})).status,409);
+  await call('sessions/'+id,{durationSeconds:60},{method:'PATCH'});
+  dashboard=await call('bootstrap');assert.equal(dashboard.body.metrics.hoursSeconds,60);
+});
+
+test('checkpoint respeita autorização antes de inicializar o schema',async t=>{
+  const {sql,call}=await fixture(t);const path='sessions/'+crypto.randomUUID()+'/checkpoint';
+  assert.equal((await call(path,{durationSeconds:30},{identity:null})).status,401);
+  assert.equal((await call(path,{durationSeconds:30},{identity:{username:'outro'}})).status,403);
+  assert.equal((await call(path,{durationSeconds:30},{originAllowed:false})).status,403);
+  assert.equal(sql.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='table'").get().n,0);
+});
+
+test('nova rota rejeita payload inválido e não reabre sessão encerrada',async t=>{
+  const {sql,call,start}=await fixture(t);const id=await start();
+  const path='sessions/'+id+'/checkpoint';
+  for(const body of [null,[],{}, {durationSeconds:'30'}])assert.equal((await call(path,body)).status,400);
+  await call('sessions/'+id,{durationSeconds:0},{method:'PATCH'});
+  const receipt=await call(path,{durationSeconds:90});
+  assert.equal(receipt.status,200);assert.equal(receipt.body.finished,true);assert.equal(receipt.body.durationSeconds,0);
+  assert.equal(sql.prepare('SELECT COUNT(*) n FROM study_xp_events').get().n,0);
+});

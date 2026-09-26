@@ -1,0 +1,15 @@
+/* Somente o contador da Missão Bancária. A paleta vem do leitor existente. */
+.study-page .study-clock-info { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-bottom: 16px; color: var(--reader-muted); font-size: .9rem; line-height: 1.5; }
+.study-page .study-clock-info > span { overflow-wrap: anywhere; }
+.study-page .study-clock-info details { width: 100%; }
+.study-page .study-clock-info summary { min-height: 32px; cursor: pointer; padding: 4px 0; }
+.study-page .study-clock-info summary:focus-visible { outline: 3px solid var(--reader-accent); outline-offset: 3px; }
+.study-page #pauseStudy { min-height: 44px; max-width: 100%; white-space: normal; }
+.study-page #pauseStudy[aria-pressed="true"] { border: 2px solid var(--reader-accent); }
+.study-page .study-focus-actions { min-width: 0; }
+@media(max-width:760px) {
+  .study-page .study-focus-actions { gap: 6px; }
+  .study-page .study-focus-actions button { padding: 8px 10px; }
+  .study-page .study-clock-info { gap: 4px; }
+  .study-page .study-clock-info > span { width: 100%; }
+}

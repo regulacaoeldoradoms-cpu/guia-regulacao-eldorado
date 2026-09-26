@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="/css/portal-interactions.css?v=20260924-dark-final-1">
   <link rel="stylesheet" href="/css/studies.css?v=20260926-5">
   <link rel="stylesheet" href="/css/studies-reader.css?v=20260926-application-1">
+  <link rel="stylesheet" href="/css/studies-clock.css?v=20260926-clock-1">
   <script src="/js/portal-theme.js?v=20260923-1"></script>
 </head>
 <body class="portal-page study-page">
@@ -46,7 +47,7 @@
         <article><span>Nível</span><strong id="metricLevel">—</strong><small id="metricLevelTitle">—</small></article>
         <article><span>XP</span><strong id="metricXp">0</strong><small id="metricNextXp">Iniciando</small></article>
         <article><span>Questões</span><strong id="metricQuestions">0</strong><small id="metricAccuracy">0% de acertos</small></article>
-        <article><span>Horas líquidas</span><strong id="metricHours">0h00</strong><small id="metricReviews">0 revisões pendentes</small></article>
+        <article><span title="Inclui registros antigos por tempo decorrido e novos registros com pausa.">Tempo registrado</span><strong id="metricHours">0h00</strong><small id="metricReviews">0 revisões pendentes</small></article>
         <article><span>Sequência</span><strong id="metricStreak">0 dias</strong><small id="metricBestStreak">Melhor: 0 dias</small></article>
       </section>
 
@@ -84,10 +85,15 @@
     <section class="study-focus" id="studyFocus" hidden aria-labelledby="focusTitle">
       <header class="study-focus-header">
         <div><span class="study-eyebrow">Modo foco</span><h1 id="focusTitle" tabindex="-1">Missão</h1></div>
-        <div class="study-focus-actions"><span id="studyTimer">00:00</span><button type="button" id="markDoubt">Marcar dúvida</button><button type="button" id="leaveFocus">Sair da aula</button></div>
+        <div class="study-focus-actions"><span id="studyTimer" role="timer" aria-label="Tempo da sessão" aria-live="off">00:00</span><button type="button" id="pauseStudy" aria-pressed="false" disabled>Pausar tempo</button><button type="button" id="markDoubt">Marcar dúvida</button><button type="button" id="leaveFocus">Sair da aula</button></div>
       </header>
       <div class="study-focus-body" id="studyFocusBody">
         <article class="study-lesson">
+          <div class="study-clock-info">
+            <span id="studyTimerStatus">Aguardando início da sessão</span>
+            <span id="studyTimeSync"></span>
+            <details><summary>Como o tempo é contado</summary><p>Nas novas sessões, o cronômetro pausa quando a aba fica oculta ou você pausa manualmente. O tempo confirmado é salvo periodicamente; fechar o aplicativo de repente pode perder o trecho ainda não salvo. Aula visível não comprova atenção, e o total inclui registros antigos.</p></details>
+          </div>
           <!-- Sem o controlador, os dois painéis continuam em sequência linear. -->
           <div class="study-reader-nav" id="studyReaderNav" hidden>
             <div class="study-reader-views" role="group" aria-label="Etapa de estudo">
@@ -153,6 +159,7 @@
   <script src="/js/portal-interactions.js?v=20260923-2"></script>
   <script src="/js/tools-catalog.js?v=20260925-study-1"></script>
   <script src="/js/studies-reader.js?v=20260926-application-1"></script>
-  <script src="/js/studies.js?v=20260926-rounds-1"></script>
+  <script src="/js/studies-clock.js?v=20260926-clock-1"></script>
+  <script src="/js/studies.js?v=20260926-clock-1"></script>
 </body>
 </html>

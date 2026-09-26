@@ -3,7 +3,7 @@
 import { validatePortalSession } from './auth-management-flex.js';
 import {
   StudyRoundError, ensureRoundSchema, startStudyRound, recordRoundAttempt,
-  evaluateStudyRound, commitReviewReward, finishStudySession
+  evaluateStudyRound, commitReviewReward, finishStudySession, checkpointStudySession
 } from './study-rounds.js';
 import {
   STUDY_SOURCES,
@@ -322,7 +322,7 @@ async function metrics(env, username, progress) {
     env.AUTH_DB.prepare(`SELECT COUNT(*) AS total,
       COALESCE(SUM(correct),0) AS correct FROM study_attempts WHERE username=?`).bind(username).first(),
     env.AUTH_DB.prepare(`SELECT COALESCE(SUM(duration_seconds),0) AS seconds
-      FROM study_sessions WHERE username=? AND status='finished'`).bind(username).first(),
+      FROM study_sessions WHERE username=? AND status IN ('active','finished')`).bind(username).first(),
     env.AUTH_DB.prepare(`SELECT COALESCE(SUM(points),0) AS xp
       FROM study_xp_events WHERE username=?`).bind(username).first(),
     env.AUTH_DB.prepare(`SELECT COUNT(*) AS pending FROM study_reviews
@@ -408,6 +408,7 @@ async function handleBootstrap(env, user, origin) {
   return json({
     user,
     roundProtocol: 1,
+    timeProtocol: 1,
     contentRelease: 'sfn-v1.2',
     metrics: await metrics(env, user.username, progress),
     progress,
@@ -606,6 +607,14 @@ async function handleFinishSession(request, pathname, env, user, origin) {
   return json(result, 200, origin);
 }
 
+async function handleTimeCheckpoint(request, pathname, env, user, origin) {
+  const match = pathname.match(/^\/api\/studies\/sessions\/([a-f0-9-]+)\/checkpoint$/i);
+  if (!match) return json({ error: 'Sessão não encontrada.' }, 404, origin);
+  const body = await readStudyBody(request);
+  const result = await checkpointStudySession(env.AUTH_DB, user.username, match[1], body.durationSeconds);
+  return json(result, 200, origin);
+}
+
 export async function handleStudiesRoute(request, env, origin, originAllowed = true) {
   const url = new URL(request.url);
   if (request.method === 'OPTIONS') return preflight(origin, originAllowed);
@@ -626,6 +635,9 @@ export async function handleStudiesRoute(request, env, origin, originAllowed = t
     }
     if (request.method === 'POST' && url.pathname === '/api/studies/sessions') {
       return await handleStartSession(request, env, user, origin);
+    }
+    if (request.method === 'POST' && /^\/api\/studies\/sessions\/[a-f0-9-]+\/checkpoint$/i.test(url.pathname)) {
+      return await handleTimeCheckpoint(request, url.pathname, env, user, origin);
     }
     if (request.method === 'PATCH' && /^\/api\/studies\/sessions\/[a-f0-9-]+$/i.test(url.pathname)) {
       return await handleFinishSession(request, url.pathname, env, user, origin);

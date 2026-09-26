@@ -1,20 +1,20 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 26/09/2026 — rodadas explícitas e confiabilidade de sessões.
+Atualizado em 26/09/2026 — tempo visível e salvamento parcial.
 
 ## Estado e autorização
 
-**Fase ativa: Fase 1. Ensino por leitura antes da avaliação.** Wellyton autorizou continuar desenvolvimento, testes e integrações elegíveis sem acesso imediato ou aceite por pequena etapa. Não confundir autorização com homologação humana de compreensão. Seguir os documentos 24 e 26 e subdividir a produção sem cortar ensino.
+**Fase ativa: Fase 1. Ensino por leitura antes da avaliação.** Wellyton autorizou desenvolvimento, testes e integrações elegíveis sem acesso imediato nem nova confirmação por pequena etapa. Não confundir autorização com aprendizagem observada. Aplicar os documentos 24 e 26: subdividir a produção sem omitir o ensino.
 
-Repositório oficial: `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`.
+Fonte oficial: `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`.
 
 ## Decisões preservadas
 
-`/estudos/`, `/api/studies/*`, `wellyton` validado pelo backend. Conteúdo no GitHub; estado em `study_*` no D1 `AUTH_DB`. Nenhum cargo novo, informação assistencial ou telemetria pedagógica externa. Preserve IDs, textos, perguntas, gabaritos, XP e conquistas. Bronze/Prata/Ouro continuam segurança da conta. Rollback mantém dados.
+`/estudos/`, `/api/studies/*`, usuário `wellyton` autorizado no backend. Conteúdo no GitHub; progresso em `study_*` do D1 `AUTH_DB`. Nenhum novo cargo, informação assistencial, segredo ou telemetria pedagógica externa. IDs, textos, perguntas, gabaritos, XP e conquistas mantidos. Bronze/Prata/Ouro continuam segurança da conta. Rollback mantém dados.
 
 ## Entregas incorporadas
 
-- #488 documentação; Fase 0 aprovada em 25/09/2026, plano `15-FASE-0-PLANO-TECNICO.md`.
+- #488 documentação; Fase 0 aprovada em 25/09/2026; plano `15-FASE-0-PLANO-TECNICO.md`.
 - #490 motor: `22257bca768cfc440578e0b8e11da62f15abc08f`.
 - #495 expansão/revisões: `97cc6ab382d624841da46d6d9a9ff7f26a1a18ca`.
 - #498 bloco/Chefe: `20487883c948dffbeb4b6849baa3c39e9c577d9f`.
@@ -26,47 +26,50 @@ Repositório oficial: `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`.
 - #504 CMN/BCB: `7a302b6f98fbde9b3ff5bc1aeca01bb8dad63378`.
 - #505 Copom/CVM: `6040f0372997ca60bbf11502a94bd68e0cbad919`.
 - #506 Operadores/Seguros: `614991af8d01def824e85b1b71f06fbd22b01d4a`.
-- **#507 Pagamentos e revisão cumulativa: `f19b1cbb583fee9f38c79cda6538972af825ee72`, incorporada nesta retomada.**
+- #507 Pagamentos/revisão: `f19b1cbb583fee9f38c79cda6538972af825ee72`.
+- **#508 rodadas explícitas: `f391a665cd7ede05ea9d1a880e96589d89a67704`, incorporada nesta retomada.**
 
-No head da #507, `f6b66e3b22cede1ca6f60701704204db90529e81`, as 24 execuções consultadas estavam concluídas com sucesso, incluindo auditoria geral `36266983013` e navegador da Central `36266982963`. Nenhum teste, baseline ou tolerância foi relaxado. Consultar os checks do merge para publicação; não inferir tráfego efetivo do resultado de merge.
+Oito aulas, preparação do Chefe, 27 atividades formativas e 38 questões pontuadas representam apenas o primeiro bloco de SFN, não o curso/edital inteiro. O ensino e seus exemplos precedem a prática.
 
-Main resultante: oito aulas de ensino, preparação do Chefe, 27 atividades formativas opcionais e 38 questões pontuadas. Esse é somente o primeiro bloco de SFN, não o edital ou curso completo.
+## Integração da #508 confirmada
 
-## Nova entrega — vínculo de rodadas e coordenação de sessões
+As 24 execuções de GitHub Actions do head `c62c1475fd97144fe73086e64738e874ea900cba` foram consultadas com sucesso antes do merge, inclusive auditoria geral e navegador da Central. Não houve relaxamento de teste, baseline ou gate.
 
-Documento: `36-RODADAS-PERSISTENTES-E-SESSOES.md`.
-Branch: `fix/missao-bancaria-rodadas-persistentes`.
-Base: merge da #507 indicado acima.
+Checks do merge: Workers Builds `108494329133` (versão informada `a9ab8920-932f-492b-b311-4e77f9deca20`), GitHub Pages `108494187535` e Pages de staging `108494153620` bem-sucedidos. O comentário final da #508 registra os detalhes. Preview e staging não comprovam, isoladamente, qual versão atende todo o tráfego produtivo. Não foi usada sessão pessoal de Wellyton.
+
+O vínculo de rodadas já está na main. As tabelas aditivas `study_rounds` e `study_round_answers` são da #508, não da entrega de tempo abaixo.
+
+## Nova entrega — tempo visível e checkpoints
+
+Documento: `37-TEMPO-VISIVEL-E-SALVAMENTO-PARCIAL.md`.
+Branch: `feat/missao-bancaria-tempo-visivel`, sobre o merge da #508.
 
 Implementado:
-- vínculo explícito entre sessão, modo, revisão e tentativas;
-- Chefe/revisão deixam de inferir respostas apenas pelo horário;
-- mesma resposta reenviada não duplica tentativas;
-- uma resposta por questão/rodada, sem alteração depois da correção;
-- rodada finalizada preserva o resultado para recuperar falha de resposta;
-- revisão concluída e evento de XP em transação;
-- cliente ignora respostas de rede de uma missão anterior e não fecha a nova missão com temporizador antigo;
-- abertura duplicada bloqueada na mesma página, leitura disponível durante confirmação;
-- fechamento idempotente e duração limitada ao intervalo registrado no servidor.
+- contagem somente em intervalos com a aula visível e sem pausa manual;
+- pausa automática por visibilidade e botão Pausar/Retomar sem bloquear ensino ou questões;
+- descarte conservador de lacunas de amostragem maiores que cinco segundos;
+- salvamento cumulativo periódico (30 s), também tentado ao pausar, mudar visibilidade e reconectar;
+- recibo confirmado pelo servidor antes de mostrar tempo salvo;
+- checkpoint sem encerrar sessão/rodada, conceder XP ou enviar texto pessoal;
+- maior total validado preservado contra duplicações e mensagens fora de ordem;
+- fechamento não reduz tempo já gravado;
+- dashboard soma segundos confirmados de sessões abertas e encerradas, sem duplicá-los;
+- rótulo Tempo registrado, preservando o histórico misto de medições antigas e novas.
 
-**Schema aditivo:** duas tabelas novas `study_rounds` e `study_round_answers`, criadas após autorização. Nenhuma tentativa antiga é apagada ou reatribuída. Aulas normais mantêm retomada histórica; revisões/Chefe exigem prática vinculada à rodada apropriada. IDs das aulas/questões e recompensas não mudam.
+Sem migração ou nova tabela neste patch: usa `study_sessions.duration_seconds`. Não altera os arquivos de ensino, leitor, questões, gabaritos ou recompensas. O protocolo de tempo é anunciado na abertura para não enviar checkpoints a um servidor anterior que não os suporte.
 
-Nenhuma alteração nos arquivos de conteúdo, no leitor, CSS, autenticação global ou gate de deploy. O cliente passa a enviar `sessionId`; clientes antigos devem atualizar/reabrir, com mensagem explícita. Verificar implantação de frontend e Worker conjuntamente.
+## Testes e limitações
 
-## Testes e limites
+Localmente passaram **13 testes do contador, nove de SQL real e dez fluxos do roteador real**, com identidade/catálogo sintéticos. Os sete fluxos de rota anteriores foram mantidos. Sintaxe verificada. Nenhum dado produtivo foi utilizado.
 
-Executados localmente: **24 testes de serviço com SQL real em SQLite descartável e sete fluxos do roteador real com identidade/catálogo sintéticos**, todos aprovados. Conferidos hashes dos módulos testados e sintaxe. Não foi usada base produtiva nem sessão de Wellyton.
+CI preparado: nove cenários de navegador adicionais, mantendo os 55 anteriores, total previsto de 64. Usam relógio controlado, HTML/CSS reais e API simulada. **Resultado remoto, merge desta branch e publicação ainda precisam ser consultados e registrados.** Não foram executados navegador local ou teste físico em Android nesta rodada.
 
-CI preparado: os testes anteriores continuam, substituindo somente as asserções que exigiam a consulta antiga por timestamp/rowid; novos testes comportamentais cobrem essa regra. Dez cenários de navegador adicionais mantêm os 45 anteriores, total previsto de 55. **Resultado remoto, merge desta correção e publicação ainda devem ser consultados; não são presumidos por este registro.**
+Fechamento abrupto do aplicativo ou falha de rede pode perder o trecho posterior ao último checkpoint confirmado. Não há fila offline durável, restauração automática da mesma sessão após recarga ou garantia de envio em pagehide. Lacunas longas descartadas podem subcontar tempo. Visibilidade não prova atenção; janelas simultaneamente visíveis ainda não são coordenadas entre aparelhos. Todos esses limites aparecem no documento 37; o aviso principal está na interface.
 
-SQLite local com adaptador D1 testa SQL/transações, não toda a infraestrutura distribuída. Browser com API simulada não equivale a teste autenticado produtivo. Os comentários finais da PR devem registrar resultados posteriores a este arquivo.
+## Próximos recortes autorizados
 
-## Próximas tarefas autorizadas
+Concluir CI e integração elegível, verificar publicação de frontend/Worker separadamente. Depois tratar recuperação/marcador de sessão e sequência histórica além dos 500 eventos. Desbloqueio no backend e comprovação real da persistência/clareza continuam pendentes. Não exigir teste imediato do usuário nem declarar a Fase 1 homologada só por testes técnicos.
 
-Concluir CI, revisar o diff e integrar somente se elegível. Depois tratar cronômetro por visibilidade/pausa e salvamento periódico em recorte próprio. **Essa pausa ainda não foi implementada nesta rodada: a duração continua baseada em tempo decorrido no cliente**, com proteção básica no servidor. Não anunciar horas líquidas/atenção como comprovadas.
+A regra de sequência não foi alterada por checkpoints: sessões encerradas/atividade pedagógica continuam sendo consideradas conforme o mecanismo existente. Rascunhos de autoavaliação permanecem temporários e não são enviados.
 
-Também permanecem: sequência histórica além de 500 eventos; recuperação depois de fechar a página; sessões abandonadas; requisitos/desbloqueio no backend; comprovação real de persistência e aprendizagem humana. A correção de rodadas não resolve automaticamente todos esses pontos.
-
-Histórico de publicação: checks de frontend e Worker de merges anteriores foram registrados nas PRs; não equivalem a 100% do tráfego ou ao resultado dos commits mais novos. Erro inicial “Rota não encontrada” motivou #492/#494; #493 sem merge; #491/#496/#497 substituídas. Não relaxar gates nem reintroduzir alternativas abandonadas.
-
-A Fase 1 continua aberta. Não pedir acesso imediato nem inventar aprovação humana.
+Histórico de incidentes: erro inicial “Rota não encontrada” motivou #492/#494; #493 sem merge; #491/#496/#497 substituídas. Não reintroduzir versões abandonadas ou alterar gates para esconder falhas. A Fase 1 continua aberta.

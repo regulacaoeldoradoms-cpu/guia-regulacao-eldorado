@@ -29,11 +29,13 @@ jobs:
           set -euo pipefail
           node --check js/studies.js
           node --check js/studies-reader.js
+          node --check js/studies-clock.js
           node --check js/tools-catalog.js
           node --check js/achievements.js
           test -f estudos/index.html
           test -f css/studies.css
           test -f css/studies-reader.css
+          test -f css/studies-clock.css
           test -f js/studies.js
           test -f worker/studies.js
           test -f worker/studies-content/manifest.js
@@ -58,7 +60,7 @@ jobs:
       - name: Validar isolamento assistencial
         run: |
           set -euo pipefail
-          if grep -Eqi '\b(CNS|CPF|prontu[aá]rio|paciente|patient|diagn[oó]stico|encaminhamento|CORE)\b' worker/studies.js worker/study-rounds.js worker/studies-content/*.js js/studies.js js/studies-reader.js estudos/index.html; then
+          if grep -Eqi '\b(CNS|CPF|prontu[aá]rio|paciente|patient|diagn[oó]stico|encaminhamento|CORE)\b' worker/studies.js worker/study-rounds.js worker/studies-content/*.js js/studies.js js/studies-reader.js js/studies-clock.js estudos/index.html; then
             echo 'A Missao Bancaria contem termo assistencial proibido no dominio de estudos.' >&2
             exit 1
           fi
