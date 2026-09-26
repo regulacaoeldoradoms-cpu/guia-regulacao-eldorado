@@ -122,6 +122,7 @@ test('backend do Chefe usa a rodada atual e só premia após aprovação', () =>
   assert.match(source, /bossRunScore/);
   assert.match(source, /status='active'/);
   assert.match(source, /attempted_at >= \?/);
+  assert.match(source, /MAX\(rowid\)/);
   assert.match(source, /Chefe não vencido/);
   assert.match(source, /study\.sfn\.boss/);
   assert.match(source, /SFN dominado/);
