@@ -92,7 +92,7 @@ export async function installAuditFixture(context, { theme='dark', authenticated
     else if (url.pathname === '/api/studies/bootstrap') data = {
       user:{ username:user.username, name:user.name },
       contentRelease:'audit-synthetic-v1',
-      metrics:{xp:0,level:1,levelTitle:'Recruta',nextLevelXp:150,hoursSeconds:0,questions:0,correctQuestions:0,accuracy:0,reviewsDue:0,publishedMissions:1,plannedMissions:4,campaignAvailability:25,completedPublished:0,availableCompletion:0,campaignProgress:0,availableProgress:0},
+      metrics:{xp:0,level:1,levelTitle:'Recruta',nextLevelXp:150,hoursSeconds:0,questions:0,correctQuestions:0,accuracy:0,reviewsDue:0,publishedMissions:1,plannedMissions:9,campaignAvailability:11.1,completedPublished:0,availableCompletion:0,campaignProgress:0,availableProgress:0},
       progress:{},
       reviews:[],
       missions:[{id:'banking.sfn.audit',topicId:'banking.sfn.audit',contentVersion:1,order:1,title:'Missão fictícia de auditoria',shortTitle:'Auditoria',estimatedMinutes:5,xp:50,objective:'Conteúdo exclusivamente sintético para auditoria visual.',sections:[{heading:'Seção sintética',body:'Texto fictício usado somente para testar superfícies, contraste e responsividade.'}],recall:['Pergunta fictícia para auditoria.'],sources:[],questions:[{id:'q.audit.01',prompt:'Questão fictícia de interface?',options:['Alternativa A','Alternativa B']}]}]
