@@ -213,6 +213,24 @@ async function progressMap(env, username) {
   }]));
 }
 
+export function computeCampaignProgress(progress, publishedMissions = PUBLISHED_MISSIONS, plannedMissions = PLANNED_MISSIONS) {
+  const planned = Math.max(1, plannedMissions.length);
+  const published = publishedMissions.length;
+  const completedPublished = publishedMissions.filter((mission) =>
+    Number(progress?.[mission.topicId]?.coverageState || 0) >= 3
+  ).length;
+  const round = (value) => Math.round(value * 1000) / 10;
+  return {
+    publishedMissions: published,
+    plannedMissions: planned,
+    campaignAvailability: round(published / planned),
+    completedPublished,
+    availableCompletion: published ? round(completedPublished / published) : 0,
+    campaignProgress: round(completedPublished / planned),
+    availableProgress: round(completedPublished / planned)
+  };
+}
+
 async function metrics(env, username, progress) {
   const [attempts, sessions, xpRow, reviews] = await Promise.all([
     env.AUTH_DB.prepare(`SELECT COUNT(*) AS total,
@@ -226,13 +244,8 @@ async function metrics(env, username, progress) {
   ]);
   const totalQuestions = Number(attempts?.total || 0);
   const correctQuestions = Number(attempts?.correct || 0);
-  const completedPublished = PUBLISHED_MISSIONS.filter((mission) =>
-    Number(progress[mission.topicId]?.coverageState || 0) >= 3
-  ).length;
   const xp = Number(xpRow?.xp || 0);
   const level = levelForXp(xp);
-  const planned = PLANNED_MISSIONS.length || 1;
-  const published = PUBLISHED_MISSIONS.length;
   return {
     xp,
     level: level.level,
@@ -243,13 +256,7 @@ async function metrics(env, username, progress) {
     correctQuestions,
     accuracy: totalQuestions ? Math.round((correctQuestions / totalQuestions) * 1000) / 10 : 0,
     reviewsDue: Number(reviews?.pending || 0),
-    publishedMissions: published,
-    plannedMissions: planned,
-    campaignAvailability: Math.round((published / planned) * 1000) / 10,
-    completedPublished,
-    availableCompletion: published ? Math.round((completedPublished / published) * 1000) / 10 : 0,
-    campaignProgress: Math.round((completedPublished / planned) * 1000) / 10,
-    availableProgress: Math.round((completedPublished / planned) * 1000) / 10
+    ...computeCampaignProgress(progress)
   };
 }
 
