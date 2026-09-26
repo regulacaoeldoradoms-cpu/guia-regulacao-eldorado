@@ -172,3 +172,24 @@ Incluída na PR #499:
 - adiciona teste para impedir retorno do placeholder literal `${bookIcon}`.
 
 A Fase 1 permanece **ABERTA**.
+
+
+## Sequência de estudo V1
+
+Documento:
+`22-FASE-1-SEQUENCIA-ESTUDO-V1.md`
+
+Estado:
+**implementada em branch; homologação pendente.**
+
+Entregue:
+- sequência atual;
+- melhor sequência histórica;
+- dias locais em `America/Campo_Grande`;
+- atividade real por questão, sessão >= 60s ou evento pedagógico;
+- abertura simples da página não conta;
+- sequência não concede XP nem pune ausência.
+
+Com esta entrega, o dashboard mínimo documentado da Fase 1 fica tecnicamente completo.
+
+A Fase 1 permanece **ABERTA** até homologação humana.
