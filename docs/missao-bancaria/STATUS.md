@@ -1,13 +1,12 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em: 25/09/2026
+Atualizado em: 26/09/2026
 
 ## Estado
 
 **Fase ativa: Fase 1 — Motor MVP + primeiro recorte real de Sistema Financeiro Nacional.**
 
-A documentação-base foi incorporada à `main` pela PR #488 no commit:
-`abb7d7e5f7b747abab62f4df4ed8a2cb636b92ec`.
+A documentação-base foi incorporada à `main` pela PR #488.
 
 ## Fase 0
 
@@ -31,28 +30,11 @@ Plano técnico aprovado:
 - sem telemetria pedagógica externa;
 - rollback sem apagar tabelas/progresso.
 
-## Fase 1
+## Fase 1 — V1
 
-**AUTORIZADA E ABERTA.**
+Implementação inicial incorporada à `main` pela PR #490:
 
-Próximo trabalho:
-- reler integralmente `02-FASE-1-MOTOR-MVP.md`;
-- conferir novamente o estado real do código após o merge desta documentação;
-- congelar as fontes oficiais do primeiro recorte de SFN;
-- implementar a primeira fatia vertical jogável em branch própria;
-- não publicar em produção sem testes e homologação previstos.
-
-
-## Implementação Fase 1 — V1
-
-Branch:
-`feat/missao-bancaria-fase1-mvp`
-
-Registro:
-`17-FASE-1-IMPLEMENTACAO-V1.md`
-
-Estado:
-**primeira fatia vertical implementada em branch; CI e homologação humana pendentes.**
+`22257bca768cfc440578e0b8e11da62f15abc08f`
 
 Conteúdo inicial:
 - SFN;
@@ -61,36 +43,55 @@ Conteúdo inicial:
 - Copom;
 - 12 questões autorais.
 
-A Fase 1 permanece aberta.
+Recursos:
+- dashboard;
+- XP e nível;
+- horas líquidas;
+- modo foco;
+- cronômetro;
+- tentativas persistidas;
+- revisão agendada;
+- conquista `study.first_mission`;
+- integração com `/conquistas/`.
 
+## Incidente de publicação inicial
 
-## Diagnóstico de publicação do Worker — 25/09/2026
+Na primeira abertura real, o frontend de `/estudos/` foi publicado, mas o Worker ainda respondeu **"Rota não encontrada"**.
 
-Na primeira homologação real de `/estudos/`, o frontend foi publicado, mas a API respondeu **"Rota não encontrada"**.
+Correções incorporadas:
+- PR #492 — compatibilidade do Wrangler/gate com o pipeline atual;
+- PR #494 — recuperação fail-closed do deploy diante de versão não produtiva, permitindo continuidade apenas quando a configuração for integralmente equivalente à produção.
 
-Evidência:
-- `/estudos/` carregou a interface da V1;
-- `main` contém `worker/studies.js` e o roteamento `isStudiesApi`;
-- comentários automáticos do Cloudflare nas PRs #490/#491 mostraram **Build: Failed** para o Worker;
-- o projeto ainda fixava Wrangler `4.133.0`, abaixo do mínimo `4.135.0` exigido pelo mecanismo atual de Worker Previews.
+Commit da recuperação:
+`90cc6d8e16039bb7ed1482bec3f75feadb860816`
 
-Correção em andamento:
-`fix/worker-cloudflare-preview-compat`
+A PR #493 (`previews = { }`) foi fechada **sem merge**, pois não resolvia isoladamente o modelo legado de previews conectado ao Worker.
 
-A Fase 1 permanece aberta; nenhum progresso de estudo foi perdido.
+## Homologação humana
 
+Wellyton já acessou a interface real da Missão Bancária e autorizou a continuidade do desenvolvimento.
 
-## Recuperação do deploy seguro do Worker
+Ainda falta registrar, antes de encerrar a Fase 1:
+- conclusão de missão real ponta a ponta;
+- persistência confirmada após sair e voltar;
+- conquista confirmada em `/conquistas/`;
+- expansão aplicada sem perda de progresso.
 
-O frontend da Missão Bancária está publicado, porém a API de produção continuou retornando `Rota não encontrada`.
+## Expansão SFN V1.1
 
-Diagnóstico adicional:
-- o Worker conectado ao GitHub ainda usa o modelo legado de previews do Cloudflare;
-- esse modelo pode deixar versões mais novas sem tráfego;
-- o gate produtivo rejeita por padrão qualquer versão mais nova que não seja produção/candidata conhecida;
-- isso pode impedir a `main` de publicar `/api/studies/*` mesmo com todos os testes do código aprovados.
+Branch atual:
+`feat/missao-bancaria-fase1-expansao-sfn-v2`
 
-Correção em andamento:
-`fix/worker-safe-deploy-equivalent-version`
+Documento:
+`18-EXPANSAO-SFN-V1.1.md`
 
-Regra: versão não produtiva só é ignorada se **todos** os bindings forem equivalentes à produção. Nenhuma versão desconhecida é promovida.
+Escopo:
+- Missão 5 — CVM;
+- Missão 6 — Operadores do SFN;
+- 6 novas questões autorais;
+- fontes oficiais atuais;
+- Mundo 1 fixado em 9 missões;
+- progresso conquistado calculado sobre o escopo fixo;
+- teste que prova que a publicação de novas missões não reduz o progresso já conquistado.
+
+A Fase 1 permanece **ABERTA**.
