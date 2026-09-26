@@ -1,85 +1,66 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 26/09/2026 após a incorporação da PR #501.
+Atualizado em 26/09/2026 — leitura no celular e transição à prática.
 
-## Estado e autorização atual
+## Estado e autorização
 
-**Fase ativa: Fase 1. Ensino por leitura antes da prática é a prioridade.**
+**Fase ativa: Fase 1. Ensino por leitura antes das questões.**
 
-Wellyton autorizou o avanço, revisões, testes e integrações necessárias sem aguardar seu acesso imediato ao portal. Registro: `28-REVISAO-SEGMENTOS-E-AUTORIZACAO.md`. Não exigir confirmação a cada pequena etapa nem solicitar teste imediato. **Avaliação humana de compreensão continua pendente; não alegar que já ocorreu.**
+Wellyton autorizou continuar desenvolvimento, revisões, testes e integrações sem acessar imediatamente nem reconfirmar cada etapa. Sua compreensão e homologação prática continuam pendentes; não alegar que ocorreram. Preservar `24-CONTRATO-PEDAGOGICO-GLOBAL.md` e `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`: se o recorte crescer, dividir o trabalho sem reduzir o ensino.
 
-Todas as matérias e versões seguem `24-CONTRATO-PEDAGOGICO-GLOBAL.md` e `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`. Dividir a produção quando necessário, sem reduzir ou omitir ensino.
+## Fonte e decisões preservadas
 
-## Entregas incorporadas
+Repositório oficial: `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`.
 
-- #488: documentação-base; Fase 0 aprovada em 25/09/2026; plano `15-FASE-0-PLANO-TECNICO.md`.
-- #490 motor inicial: `22257bca768cfc440578e0b8e11da62f15abc08f`.
-- #495 expansão/revisões: `97cc6ab382d624841da46d6d9a9ff7f26a1a18ca`.
-- #498 bloco de nove missões/Chefe: `20487883c948dffbeb4b6849baa3c39e9c577d9f`.
-- #499 retomada/Conquistas: `c5ebf3a0bb93bf303851835446ec32ff5decb0cd`.
-- #500 sequência: `ac9128c7e807be8eff0ee5bc1579f792aa249a3d`.
-- **#501 ensino por leitura: `f6ae4c598156656e2c630372d6e2122259ffb1c2`, incorporada em 26/09/2026 às 15:53:12 UTC.** Head integrado: `1424abcc4a3301b637f3c7736eac12870a2538e1`.
+`/estudos/` e `/api/studies/*`, acesso exclusivo de `wellyton` no backend, nenhum cargo novo. Conteúdo no GitHub; dados em `study_*` no D1 `AUTH_DB`. IDs e histórico estáveis, sem zerar XP/conquistas. Bronze/Prata/Ouro permanecem segurança da conta, separados do estudo. Sem telemetria pedagógica externa; rollback não apaga dados.
 
-9/9 refere-se somente ao primeiro bloco de SFN, não ao curso ou edital completo.
+## Entregas já incorporadas antes desta rodada
 
-## Regras preservadas
+- #488: documentação; Fase 0 aprovada em 25/09/2026, plano `15-FASE-0-PLANO-TECNICO.md`.
+- #490: motor inicial, `22257bca768cfc440578e0b8e11da62f15abc08f`.
+- #495: expansão/revisões, `97cc6ab382d624841da46d6d9a9ff7f26a1a18ca`.
+- #498: primeiro bloco/Chefe, `20487883c948dffbeb4b6849baa3c39e9c577d9f`.
+- #499: retomada/Conquistas, `c5ebf3a0bb93bf303851835446ec32ff5decb0cd`.
+- #500: sequência, `ac9128c7e807be8eff0ee5bc1579f792aa249a3d`.
+- #501: ensino desenvolvido para oito aulas e preparação do Chefe, `f6ae4c598156656e2c630372d6e2122259ffb1c2`.
 
-Acesso exclusivo de `wellyton` no backend; `/estudos/` e `/api/studies/*`; nenhum novo cargo; conteúdo no GitHub e progresso em tabelas `study_*` no D1 `AUTH_DB`. IDs, perguntas, gabaritos, XP e conquistas preservados. Bronze/Prata/Ouro separados do estudo. Nenhuma telemetria pedagógica externa. Rollback sem apagar dados.
+**9/9 e 38 questões referem-se somente ao primeiro bloco de SFN, não a curso ou edital completo.** A PR #501 contém conceitos, exemplos resolvidos, vocabulário e referências das questões ao ensino. Documentos 23–29 preservam a revisão e suas limitações de fontes. Acerto em questões iniciais não é comprovação de domínio duradouro.
 
-## O que a PR #501 colocou na main
+## Publicação histórica da PR #501
 
-**Oito aulas com explicações, vocabulário, exemplos resolvidos e consulta, mais preparação cumulativa do Chefe.** As 38 questões existentes estão ligadas a trechos de ensino; os itens do Chefe também identificam aulas anteriores de origem.
+Integração confirmada na main. O comentário final da PR registra sucesso dos checks do merge: Workers Builds `108435911331` (versão informada `edbfb205-76f6-4417-bae9-8afb4e3b7161`), Cloudflare Pages `108435851677` e GitHub Pages `108435880048`. São registros do merge anterior, não certificação de 100% do tráfego produtivo nem evidência desta nova entrega. Não foi realizado acesso autenticado real por Wellyton nesta sessão.
 
-- Documentos 23–26: correção do ensino, contrato global e produção subdividida.
-- Documento 27: 13 trechos revisados em Introdução, CMN, Banco Central e Copom.
-- Documento 28: 25 trechos revisados em CVM, Operadores, Seguros/Previdência, Pagamentos/Consórcios e Chefe, com testes de aplicação real ao catálogo.
-- Documento 29: conferência pontual de carteiras e limites da evidência.
+## Rodada atual — leitor e prática
 
-Os textos usam o renderizador existente, anterior às questões. Não foi criado botão novo de navegação por questão nem alegada alteração visual. Nenhum dado pessoal foi apagado, nenhuma pergunta foi trocada e nenhuma pontuação foi recalculada nesta revisão editorial.
+Documento: `30-LEITURA-MOBILE-E-PRATICA.md`.
+Base observada: `a2ed4e74695001cfcd87ec166eb6b060dc57d060`.
+Branch planejada: `feat/missao-bancaria-leitura-mobile`.
 
-As nove missões possuem passagem editorial identificada; o estado de avaliação humana permanece `human-review-pending`. As perguntas ainda são prática inicial de reconhecimento, não avaliação completa de aplicação em situações novas e retenção duradoura.
+Implementado:
+- aula primeiro, por partes, com navegação anterior/próxima, índice e modo de texto inteiro;
+- ajuste do tamanho da letra sem cortar o material;
+- transição explícita para prática e consulta de volta à aula sem recriar questões ou sessão;
+- painel rolável adaptável ao celular, sem offsets fixos do cabeçalho;
+- barra das questões parte de zero, baseada em respostas, sem 35% fictícios por abrir a missão;
+- legenda **Acerto nas tentativas**, sem recalcular a métrica do backend;
+- fallback linear se o controlador novo não carregar;
+- nenhum conteúdo didático, questão, gabarito, D1 ou regra de acesso modificado.
 
-## Precisão e alcance da conferência
+Validações locais: 5 testes Node e 12 cenários Chromium sintéticos aprovados; capturas inspecionadas. Limites do ambiente offline e do estilo global simplificado estão no documento 30. CI adiciona 14 cenários com HTML/CSS reais do repositório e autenticação simulada. **Aguardar e registrar resultados do novo head; não presumir CI, merge ou deploy no momento deste registro.**
 
-Leis 6.385, 6.404, 12.865 e 11.795, LC 109 e páginas SUSEP/PREVIC foram abertas para os trechos utilizados; a LC 179 foi consultada no lote A.
+## Continuidade autorizada
 
-O ponto sobre carteiras foi conferido por cotejo, conforme documento 29: art. 4º em reprodução jurídica externa, explicação institucional histórica e alterações oficiais indexadas no BCB. O repositório externo não foi rotulado como fonte oficial. A limitação de acesso automatizado direto ao inteiro teor consolidado do BCB permanece registrada; não foi inventada uma leitura integral. Não se introduziram requisitos de capital ou de autorização completa de bancos.
+Concluir CI do leitor, corrigir regressões caso existam, integrar e registrar a publicação realmente verificada. Depois preparar, em recortes menores, a avaliação de compreensão e aplicação após o ensino, preservando perguntas existentes e o histórico. Não abrir novos mundos para compensar aula insuficiente e não impor teste imediato ao usuário.
 
-## CI confirmado antes do merge
+## Pendências anteriores mantidas
 
-No head final `1424abcc4a3301b637f3c7736eac12870a2538e1`, foram confirmadas **20 execuções de GitHub Actions com `completed/success`**. Entre elas:
+- Melhor sequência limitada aos 500 eventos recentes, ainda não recorde histórico irrestrito.
+- Cronômetro, interrupções e recuperação no celular.
+- Isolamento/retomada de rodadas e comprovação real de persistência.
+- Avaliação de retenção e aplicação em situações novas; nenhuma questão nova é criada nesta rodada.
 
-- Missão Bancária: `36253317841`;
-- site: `36253317951`;
-- interações do Portal: `36253317952`;
-- Camada Social: `36253317875`;
-- autenticação/PBKDF2: `36253318425`.
+A nova navegação mantém a posição durante a alternância aula/prática; não implementa marcador sincronizado de leitura após fechar a página.
 
-Os testes da Missão Bancária executam o catálogo real, verificam referências e aplicação dos textos, preservação de perguntas/recompensas e casos negativos de material ausente ou referência quebrada. Não certificam aprendizado nem substituem uso real.
+Histórico técnico: erro inicial “Rota não encontrada”, correções #492/#494 no commit `90cc6d8e16039bb7ed1482bec3f75feadb860816`; #493 fechada sem merge e #491/#496/#497 substituídas. Não reintroduzir versões abandonadas nem relaxar gates.
 
-No mesmo head da branch, Cloudflare Pages teve sucesso e o check externo de Worker falhou, sem causa detalhada em seu resumo. A falha foi registrada na PR, não ocultada ou convertida em sucesso. Nenhuma proteção de deploy foi alterada. O build da main é verificado separadamente.
-
-## Publicação após o merge — último estado consultado
-
-O merge de conteúdo `f6ae4c598156656e2c630372d6e2122259ffb1c2` disparou:
-- Workers Builds, check `108435808960`, build `cd1f7986-07c8-4031-9e60-9af37f35e7d6`: **em andamento na consulta inicial**;
-- publicação GitHub Pages, workflow `36253496028`: em andamento nessa consulta.
-
-Não tratar o merge como confirmação de tráfego produtivo atualizado. Consultar os check-runs do merge e os registros finais na conversa da PR #501. Esta atualização de STATUS é documental, posterior ao conteúdo integrado, e não presume o desfecho dos builds.
-
-## Próximas tarefas autorizadas
-
-1. Concluir verificação da publicação no Worker, sem relaxar gates ou alegar leitura autenticada não realizada.
-2. Revisar a experiência de leitura no celular com dados sintéticos e dividir blocos quando necessário, sem cortar conteúdo essencial.
-3. Preparar, em etapas menores, avaliações de compreensão/aplicação após o ensino. Preservar as perguntas existentes e seu histórico; não chamar três acertos de domínio consolidado.
-4. Corrigir as lacunas técnicas já conhecidas em entregas próprias, com testes e documentação.
-
-Não abrir novos mundos para compensar ensino insuficiente. Não declarar Fase 1 homologada pedagogicamente porque houve merge. A autorização permite continuar trabalhos planejados sem aguardar acesso imediato; não permite inventar resultado de aprendizagem.
-
-## Histórico e limites técnicos mantidos
-
-Incidente inicial: frontend chegou antes do Worker e mostrou “Rota não encontrada”. Correções #492/#494, commit `90cc6d8e16039bb7ed1482bec3f75feadb860816`. #493 sem merge; #491/#496/#497 substituídas.
-
-Continuam pendentes: recorde da sequência além de 500 eventos; cronômetro/interrupções; isolamento e retomada de rodadas; comprovação real de persistência. Nenhum desses pontos foi resolvido apenas pela revisão editorial.
-
-Quando Wellyton voltar a estudar, avaliar clareza, aplicação, retorno com progresso salvo, conquistas, revisões e Chefe. Não solicitar esse acesso agora nem alegar aprovação em sua ausência.
+Avaliação humana posterior: clareza do ensino, explicação com palavras próprias, aplicação, retorno com progresso/XP salvo, conquistas sem duplicação, revisão e Chefe. Não encerrar formalmente a Fase 1 nem declarar aprendizado comprovado só porque a interface passou nos testes.

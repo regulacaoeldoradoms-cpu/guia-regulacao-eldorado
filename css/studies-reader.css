@@ -1,0 +1,126 @@
+/* Escopo exclusivo da Missão Bancária. Nenhuma regra de outros módulos é alterada. */
+.study-page #studyDashboard[hidden],
+.study-page #studyFocus[hidden],
+.study-page #studyFocus [hidden] { display: none !important; }
+
+.study-page .study-focus {
+  --study-reading-size: 1.125rem;
+  --reader-ink: #182f43;
+  --reader-muted: #435d73;
+  --reader-surface: #fff;
+  --reader-border: #c3d1de;
+  --reader-accent: #0d3157;
+  --reader-button-ink: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--reader-ink);
+}
+.study-page .study-focus-header {
+  position: static;
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  padding-top: max(12px, env(safe-area-inset-top));
+  background: var(--reader-surface);
+}
+.study-page .study-focus-header > div { min-width: 0; }
+.study-page .study-focus-header h1 { overflow-wrap: anywhere; }
+.study-page .study-focus-actions { flex-wrap: wrap; }
+.study-page .study-focus-actions button { min-height: 44px; }
+.study-page .study-focus-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: auto;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.study-page .study-lesson {
+  box-sizing: border-box;
+  width: min(860px, calc(100% - 24px));
+  margin: 20px auto 32px;
+  padding: clamp(16px, 3vw, 28px);
+  background: var(--reader-surface);
+  color: var(--reader-ink);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.study-page .study-lesson *,
+.study-page .study-focus-header * { box-sizing: border-box; }
+.study-page .study-section p,
+.study-page .study-recall p,
+.study-page .study-recall-item,
+.study-page .study-question {
+  font-size: var(--study-reading-size);
+  line-height: 1.75;
+}
+.study-page .study-objective { font-size: 1rem; font-weight: 500; line-height: 1.5; padding: 12px; margin: 12px 0 18px; }
+.study-page .study-section { margin: 24px 0; }
+.study-page .study-section h2 { font-size: calc(var(--study-reading-size) * 1.2); line-height: 1.4; }
+.study-page .study-section h2:focus,
+.study-page #studyPracticeTitle:focus,
+.study-page #focusTitle:focus { outline-offset: 5px; }
+.study-page .study-reader-nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.study-page .study-reader-views,
+.study-page .study-font-controls,
+.study-page .study-reader-paging { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.study-page .study-reader-nav button,
+.study-page .study-reader-controls button,
+.study-page .study-reader-footer button:not(.study-primary),
+.study-page .study-reader-back {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--reader-border);
+  border-radius: 10px;
+  background: var(--reader-surface);
+  color: var(--reader-ink);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.study-page .study-reader-nav button[aria-pressed="true"],
+.study-page .study-reader-controls button[aria-pressed="true"] { background: var(--reader-accent); color: var(--reader-button-ink); border-color: var(--reader-accent); }
+.study-page .study-focus button:disabled { opacity: .5; cursor: not-allowed; }
+.study-page .study-focus :is(button, select, summary):focus-visible { outline: 3px solid var(--reader-accent); outline-offset: 3px; }
+.study-page .study-font-controls span { min-width: 6em; text-align: center; color: var(--reader-muted); font-size: .875rem; }
+.study-page .study-reader-controls label { display: block; margin-bottom: 7px; font-weight: 700; }
+.study-page .study-reader-index { display: flex; gap: 10px; align-items: stretch; }
+.study-page #studySectionSelect { flex: 1; width: 100%; min-width: 0; min-height: 44px; border: 1px solid var(--reader-border); border-radius: 10px; background: var(--reader-surface); color: var(--reader-ink); padding: 10px; font: inherit; }
+.study-page #studyShowAll { flex-shrink: 0; }
+.study-page .study-reader-caption { font-size: .95rem; line-height: 1.6; color: var(--reader-muted); }
+.study-page .study-reader-footer { border-top: 1px solid var(--reader-border); padding-top: 18px; }
+.study-page .study-reader-paging { justify-content: space-between; }
+.study-page #studyStartPractice { min-height: 48px; width: 100%; margin-top: 6px; }
+.study-page .study-reader-back { margin: 4px 0 0; }
+.study-page #studyPracticePanel .study-recall { margin-top: 18px; }
+.study-page #studyPracticePanel .study-focus-progress { position: static; height: 8px; border-radius: 999px; overflow: hidden; margin: 12px 0 18px; }
+.study-page .study-option { min-height: 44px; line-height: 1.6; }
+.study-page .study-option input { margin-top: .45em; flex-shrink: 0; }
+.study-page .study-option span { min-width: 0; }
+.study-page .study-question fieldset { min-width: 0; }
+.study-page .study-question button { min-height: 44px; }
+.study-page .study-sources summary { cursor: pointer; min-height: 44px; font-weight: 700; padding: 8px 0; }
+.study-page .study-sources a { overflow-wrap: anywhere; }
+
+html[data-portal-theme="dark"] .study-focus {
+  --reader-ink: #edf3f8;
+  --reader-muted: #bed0df;
+  --reader-surface: #12283d;
+  --reader-border: #49657d;
+  --reader-accent: #f1b55a;
+  --reader-button-ink: #182f43;
+}
+@media (max-width: 760px) {
+  .study-page .study-focus-header { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px; padding-top: max(10px, env(safe-area-inset-top)); }
+  .study-page .study-focus-header h1 { font-size: 1.05rem; line-height: 1.35; }
+  .study-page .study-focus-actions { justify-content: flex-end; }
+  .study-page #studyTimer { margin-right: auto; font-variant-numeric: tabular-nums; }
+  .study-page .study-lesson { width: calc(100% - 16px); border-radius: 16px; margin-top: 12px; }
+  .study-page .study-reader-views { width: 100%; flex-wrap: nowrap; }
+  .study-page .study-reader-views button { flex: 1; min-width: 0; }
+  .study-page .study-reader-index { flex-direction: row; }
+  .study-page .study-font-controls { width: 100%; justify-content: flex-end; }
+  .study-page .study-section { margin-top: 18px; }
+}
