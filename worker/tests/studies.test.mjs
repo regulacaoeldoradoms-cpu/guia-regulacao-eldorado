@@ -9,7 +9,7 @@ import {
 } from '../studies-content/manifest.js';
 import { isStudiesApi, studyUsernameAllowed } from '../studies.js';
 
-test('conteudo SFN v1 tem ids unicos e respostas validas', () => {
+test('conteudo SFN v1.1 tem ids unicos e respostas validas', () => {
   const missionIds = new Set();
   const questionIds = new Set();
   for (const mission of PUBLISHED_MISSIONS) {
@@ -27,12 +27,13 @@ test('conteudo SFN v1 tem ids unicos e respostas validas', () => {
       assert.equal(questionById(question.id)?.question.id, question.id);
     }
   }
-  assert.equal(PUBLISHED_MISSIONS.length, 4);
+  assert.equal(PUBLISHED_MISSIONS.length, 6);
+  assert.equal(PLANNED_MISSIONS.length, 9);
   assert.ok(PLANNED_MISSIONS.length > PUBLISHED_MISSIONS.length);
 });
 
 test('fontes do recorte sao oficiais e datadas', () => {
-  assert.ok(STUDY_SOURCES.length >= 6);
+  assert.ok(STUDY_SOURCES.length >= 10);
   for (const source of STUDY_SOURCES) {
     assert.match(source.url, /^https:\/\//);
     assert.equal(source.checkedAt, '2026-09-25');
@@ -52,4 +53,16 @@ test('gate aceita somente a identidade normalizada de Wellyton', () => {
   assert.equal(studyUsernameAllowed('wel lyton'), false);
   assert.equal(studyUsernameAllowed('josiane'), false);
   assert.equal(studyUsernameAllowed(''), false);
+});
+
+test('planejamento do Mundo 1 permanece fixo durante a expansao', () => {
+  const plannedIds = PLANNED_MISSIONS.map((item) => item.id);
+  assert.equal(new Set(plannedIds).size, plannedIds.length);
+  assert.equal(plannedIds.length, 9);
+  for (const mission of PUBLISHED_MISSIONS) {
+    assert.ok(plannedIds.includes(mission.id), mission.id);
+  }
+  assert.ok(plannedIds.includes('banking.sfn.seguros-previdencia'));
+  assert.ok(plannedIds.includes('banking.sfn.pagamentos-consorcios'));
+  assert.ok(plannedIds.includes('banking.sfn.boss'));
 });
