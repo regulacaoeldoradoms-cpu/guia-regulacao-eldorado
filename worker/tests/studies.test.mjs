@@ -127,3 +127,26 @@ test('backend do Chefe usa a rodada atual e só premia após aprovação', () =>
   assert.match(source, /study\.sfn\.boss/);
   assert.match(source, /SFN dominado/);
 });
+
+
+test('retomada de missão reutiliza só aulas normais e não vaza gabarito', () => {
+  const backend = fs.readFileSync(new URL('../studies.js', import.meta.url), 'utf8');
+  const frontend = fs.readFileSync(new URL('../../js/studies.js', import.meta.url), 'utf8');
+
+  assert.match(backend, /attemptedQuestionsMap/);
+  assert.match(backend, /GROUP BY topic_id, question_id/);
+  assert.match(backend, /attemptedQuestions: await attemptedQuestionsMap/);
+
+  assert.match(frontend, /historicalAnsweredFor/);
+  assert.match(frontend, /state\.activeReview/);
+  assert.match(frontend, /mission\.kind === 'boss'/);
+  assert.match(frontend, /Respondida em sessão anterior/);
+  assert.match(frontend, /Responder novamente/);
+
+  const bootstrapMission = backend.slice(
+    backend.indexOf('function publicMission'),
+    backend.indexOf('function levelForXp')
+  );
+  assert.doesNotMatch(bootstrapMission, /answer:/);
+  assert.doesNotMatch(bootstrapMission, /correctOption/);
+});
