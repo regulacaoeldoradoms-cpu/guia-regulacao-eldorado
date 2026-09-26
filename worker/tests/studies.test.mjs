@@ -11,7 +11,7 @@ import {
 } from '../studies-content/manifest.js';
 import { computeCampaignProgress, isStudiesApi, studyUsernameAllowed } from '../studies.js';
 
-test('conteudo SFN v1.1 tem ids unicos e respostas validas', () => {
+test('conteudo SFN v1.2 tem ids unicos e respostas validas', () => {
   const missionIds = new Set();
   const questionIds = new Set();
   for (const mission of PUBLISHED_MISSIONS) {
@@ -29,16 +29,16 @@ test('conteudo SFN v1.1 tem ids unicos e respostas validas', () => {
       assert.equal(questionById(question.id)?.question.id, question.id);
     }
   }
-  assert.equal(PUBLISHED_MISSIONS.length, 6);
+  assert.equal(PUBLISHED_MISSIONS.length, 9);
   assert.equal(PLANNED_MISSIONS.length, 9);
-  assert.ok(PLANNED_MISSIONS.length > PUBLISHED_MISSIONS.length);
+  assert.equal(PLANNED_MISSIONS.length, PUBLISHED_MISSIONS.length);
 });
 
 test('fontes do recorte sao oficiais e datadas', () => {
-  assert.ok(STUDY_SOURCES.length >= 10);
+  assert.ok(STUDY_SOURCES.length >= 18);
   for (const source of STUDY_SOURCES) {
     assert.match(source.url, /^https:\/\//);
-    assert.equal(source.checkedAt, '2026-09-25');
+    assert.ok(['2026-09-25', '2026-09-26'].includes(source.checkedAt), source.id);
   }
 });
 
@@ -105,4 +105,25 @@ test('revisão espaçada exige prática nova e XP idempotente', () => {
   assert.match(source, /INSERT OR IGNORE INTO study_xp_events/);
   assert.match(source, /Esta revisão já foi concluída/);
   assert.match(source, /Responda todas as questões novamente antes de concluir a revisão/);
+});
+
+
+test('Chefe do SFN exige 75% em 12 questões cumulativas', () => {
+  const boss = PUBLISHED_MISSIONS.find((mission) => mission.id === 'banking.sfn.boss');
+  assert.ok(boss);
+  assert.equal(boss.kind, 'boss');
+  assert.equal(boss.passScore, 75);
+  assert.equal(boss.questions.length, 12);
+  assert.ok(boss.xp > 0);
+});
+
+test('backend do Chefe usa a rodada atual e só premia após aprovação', () => {
+  const source = fs.readFileSync(new URL('../studies.js', import.meta.url), 'utf8');
+  assert.match(source, /bossRunScore/);
+  assert.match(source, /status='active'/);
+  assert.match(source, /attempted_at >= \?/);
+  assert.match(source, /MAX\(rowid\)/);
+  assert.match(source, /Chefe não vencido/);
+  assert.match(source, /study\.sfn\.boss/);
+  assert.match(source, /SFN dominado/);
 });
