@@ -6,6 +6,7 @@ import {
   PUBLISHED_MISSIONS,
   PLANNED_MISSIONS,
   missionById,
+  missionByTopicId,
   questionById,
   sourceMap
 } from './studies-content/manifest.js';
@@ -276,6 +277,26 @@ async function achievementRows(env, username) {
   }));
 }
 
+async function dueReviewRows(env, username) {
+  const result = await env.AUTH_DB.prepare(`SELECT review_id, topic_id, cycle, due_at
+    FROM study_reviews
+    WHERE username=? AND status='pending' AND due_at <= datetime('now')
+    ORDER BY due_at ASC LIMIT 10`).bind(username).all();
+
+  return (result.results || []).map((row) => {
+    const mission = missionByTopicId(row.topic_id);
+    if (!mission) return null;
+    return {
+      id: row.review_id,
+      topicId: row.topic_id,
+      cycle: Number(row.cycle || 0),
+      dueAt: row.due_at,
+      missionId: mission.id,
+      title: mission.shortTitle || mission.title
+    };
+  }).filter(Boolean);
+}
+
 async function handleBootstrap(env, user, origin) {
   const progress = await progressMap(env, user.username);
   return json({
@@ -283,6 +304,7 @@ async function handleBootstrap(env, user, origin) {
     contentRelease: 'sfn-v1.1',
     metrics: await metrics(env, user.username, progress),
     progress,
+    reviews: await dueReviewRows(env, user.username),
     missions: PUBLISHED_MISSIONS.map(publicMission),
     sources: STUDY_SOURCES
   }, 200, origin);
@@ -405,6 +427,55 @@ async function handleComplete(pathname, env, user, origin) {
   }, 200, origin);
 }
 
+async function handleCompleteReview(pathname, env, user, origin) {
+  const match = pathname.match(/^\/api\/studies\/reviews\/([a-f0-9-]+)\/complete$/i);
+  if (!match) return json({ error: 'Revisão não encontrada.' }, 404, origin);
+
+  const review = await env.AUTH_DB.prepare(`SELECT review_id, topic_id, cycle, due_at, status
+    FROM study_reviews
+    WHERE review_id=? AND username=? LIMIT 1`).bind(match[1], user.username).first();
+
+  if (!review) return json({ error: 'Revisão não encontrada.' }, 404, origin);
+  if (review.status !== 'pending') return json({ error: 'Esta revisão já foi concluída.' }, 409, origin);
+
+  const dueCheck = await env.AUTH_DB.prepare(`SELECT CASE WHEN ? <= datetime('now') THEN 1 ELSE 0 END AS due`)
+    .bind(review.due_at).first();
+  if (Number(dueCheck?.due || 0) !== 1) {
+    return json({ error: 'Esta revisão ainda não está disponível.' }, 409, origin);
+  }
+
+  const mission = missionByTopicId(review.topic_id);
+  if (!mission) return json({ error: 'Conteúdo da revisão não encontrado.' }, 404, origin);
+
+  const answered = await env.AUTH_DB.prepare(`SELECT COUNT(DISTINCT question_id) AS total
+    FROM study_attempts
+    WHERE username=? AND topic_id=? AND attempted_at >= ?`)
+    .bind(user.username, review.topic_id, review.due_at).first();
+
+  if (Number(answered?.total || 0) < mission.questions.length) {
+    return json({ error: 'Responda todas as questões novamente antes de concluir a revisão.' }, 409, origin);
+  }
+
+  const updated = await env.AUTH_DB.prepare(`UPDATE study_reviews
+    SET status='completed', completed_at=CURRENT_TIMESTAMP
+    WHERE review_id=? AND username=? AND status='pending'`)
+    .bind(review.review_id, user.username).run();
+
+  if (!Number(updated.meta?.changes || 0)) {
+    return json({ error: 'Esta revisão já foi concluída.' }, 409, origin);
+  }
+
+  const xpGranted = await grantXp(env, user.username, 'review_complete', review.review_id, 20);
+  const progress = await progressMap(env, user.username);
+
+  return json({
+    completed: true,
+    xpGranted: xpGranted ? 20 : 0,
+    metrics: await metrics(env, user.username, progress),
+    reviews: await dueReviewRows(env, user.username)
+  }, 200, origin);
+}
+
 async function handleStartSession(request, env, user, origin) {
   const body = await request.json().catch(() => ({}));
   const mission = missionById(body.missionId);
@@ -453,6 +524,9 @@ export async function handleStudiesRoute(request, env, origin, originAllowed = t
   }
   if (request.method === 'POST' && /^\/api\/studies\/missions\/[^/]+\/complete$/.test(url.pathname)) {
     return handleComplete(url.pathname, env, user, origin);
+  }
+  if (request.method === 'POST' && /^\/api\/studies\/reviews\/[a-f0-9-]+\/complete$/i.test(url.pathname)) {
+    return handleCompleteReview(url.pathname, env, user, origin);
   }
   return json({ error: 'Rota de estudos não encontrada.' }, 404, origin);
 }
