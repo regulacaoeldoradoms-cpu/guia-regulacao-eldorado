@@ -263,6 +263,24 @@ async function metrics(env, username, progress) {
   };
 }
 
+async function attemptedQuestionsMap(env, username) {
+  const result = await env.AUTH_DB.prepare(`SELECT topic_id, question_id
+    FROM study_attempts
+    WHERE username=?
+    GROUP BY topic_id, question_id
+    ORDER BY topic_id, question_id`).bind(username).all();
+
+  const map = {};
+  for (const row of result.results || []) {
+    const topicId = String(row.topic_id || '');
+    const questionId = String(row.question_id || '');
+    if (!topicId || !questionId) continue;
+    if (!map[topicId]) map[topicId] = [];
+    map[topicId].push(questionId);
+  }
+  return map;
+}
+
 async function achievementRows(env, username) {
   const result = await env.AUTH_DB.prepare(`SELECT achievement_id, rule_version, unlocked_at, source_ref
     FROM study_achievements WHERE username=? ORDER BY unlocked_at`).bind(username).all();
@@ -307,6 +325,7 @@ async function handleBootstrap(env, user, origin) {
     contentRelease: 'sfn-v1.2',
     metrics: await metrics(env, user.username, progress),
     progress,
+    attemptedQuestions: await attemptedQuestionsMap(env, user.username),
     reviews: await dueReviewRows(env, user.username),
     missions: PUBLISHED_MISSIONS.map(publicMission),
     sources: STUDY_SOURCES
