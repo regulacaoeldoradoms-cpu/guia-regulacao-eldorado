@@ -150,3 +150,10 @@ test('retomada de missão reutiliza só aulas normais e não vaza gabarito', () 
   assert.doesNotMatch(bootstrapMission, /answer:/);
   assert.doesNotMatch(bootstrapMission, /correctOption/);
 });
+
+
+test('conquistas pendentes interpolam o SVG em vez de exibir placeholder literal', () => {
+  const source = fs.readFileSync(new URL('../../js/achievements.js', import.meta.url), 'utf8');
+  assert.match(source, /\`<article class="achievement-card planned"/);
+  assert.doesNotMatch(source, /innerHTML = '<article[^']*\\\$\{bookIcon\}/);
+});
