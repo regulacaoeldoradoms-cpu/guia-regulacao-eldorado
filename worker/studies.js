@@ -400,10 +400,15 @@ async function bossRunScore(env, username, mission) {
 
   if (!session?.started_at) return null;
 
-  const result = await env.AUTH_DB.prepare(`SELECT question_id, MAX(correct) AS correct
-    FROM study_attempts
-    WHERE username=? AND topic_id=? AND attempted_at >= ?
-    GROUP BY question_id`).bind(username, mission.topicId, session.started_at).all();
+  const result = await env.AUTH_DB.prepare(`SELECT attempt.question_id, attempt.correct
+    FROM study_attempts AS attempt
+    JOIN (
+      SELECT question_id, MAX(rowid) AS last_rowid
+      FROM study_attempts
+      WHERE username=? AND topic_id=? AND attempted_at >= ?
+      GROUP BY question_id
+    ) AS latest ON latest.last_rowid = attempt.rowid`)
+    .bind(username, mission.topicId, session.started_at).all();
 
   const rows = result.results || [];
   const correct = rows.reduce((sum, row) => sum + (Number(row.correct || 0) ? 1 : 0), 0);
