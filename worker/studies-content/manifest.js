@@ -13,6 +13,7 @@ import { attachIntroApplications } from './sfn-aplicacao-v1.js';
 import { attachMonetaryApplications } from './sfn-aplicacao-cmn-bcb-v1.js';
 import { attachMarketApplications } from './sfn-aplicacao-copom-cvm-v1.js';
 import { OPERATORS_INSURANCE_SOURCES, attachOperatorsInsuranceApplications } from './sfn-aplicacao-operadores-seguros-v1.js';
+import { attachPaymentsReviewApplications } from './sfn-aplicacao-pagamentos-revisao-v1.js';
 
 export const STUDY_SOURCES = Object.freeze([
   ...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES, ...SEGMENTS_SOURCES,
@@ -100,7 +101,7 @@ function teachMission(mission) {
 export const PUBLISHED_MISSIONS = Object.freeze(
   BASE_MISSIONS.map(teachMission).map(attachIntroApplications)
     .map(attachMonetaryApplications).map(attachMarketApplications)
-    .map(attachOperatorsInsuranceApplications)
+    .map(attachOperatorsInsuranceApplications).map(attachPaymentsReviewApplications)
 );
 
 export function missionById(id) {
