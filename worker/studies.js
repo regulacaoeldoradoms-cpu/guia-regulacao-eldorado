@@ -2,6 +2,10 @@
 
 import { validatePortalSession } from './auth-management-flex.js';
 import {
+  StudyRoundError, ensureRoundSchema, startStudyRound, recordRoundAttempt,
+  evaluateStudyRound, commitReviewReward, finishStudySession
+} from './study-rounds.js';
+import {
   STUDY_SOURCES,
   PUBLISHED_MISSIONS,
   PLANNED_MISSIONS,
@@ -12,7 +16,6 @@ import {
 } from './studies-content/manifest.js';
 
 const ALLOWED_USERNAME = 'wellyton';
-const MAX_SESSION_SECONDS = 6 * 60 * 60;
 const STUDY_TIME_ZONE = 'America/Campo_Grande';
 const schemaReady = new WeakSet();
 const schemaPromises = new WeakMap();
@@ -139,6 +142,7 @@ async function ensureStudySchema(env) {
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_attempts_user_topic ON study_attempts(username, topic_id, attempted_at)').run();
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_sessions_user_finished ON study_sessions(username, finished_at)').run();
     await db.prepare('CREATE INDEX IF NOT EXISTS idx_study_reviews_user_due ON study_reviews(username, status, due_at)').run();
+    await ensureRoundSchema(db);
     schemaReady.add(db);
     return true;
   })().catch((error) => {
@@ -279,9 +283,9 @@ export function computeStudyStreak(activityTimestamps, now = new Date(), timeZon
   let current = 0;
   if (numbers.length && (numbers[0] === today || numbers[0] === today - 1)) {
     current = 1;
-    for (let index = 1; index < numbers.length; index += 1) {
+    for (let index = 1; index < numbers.length; index++) {
       if (numbers[index - 1] - numbers[index] !== 1) break;
-      current += 1;
+      current++;
     }
   }
 
@@ -403,6 +407,7 @@ async function handleBootstrap(env, user, origin) {
   const progress = await progressMap(env, user.username);
   return json({
     user,
+    roundProtocol: 1,
     contentRelease: 'sfn-v1.2',
     metrics: await metrics(env, user.username, progress),
     progress,
@@ -430,21 +435,23 @@ async function upsertPracticeProgress(env, username, mission, mastery) {
     .bind(username, mission.topicId, mastery, mission.contentVersion).run();
 }
 
+async function readStudyBody(request) {
+  const body = await request.json().catch(() => null);
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    throw new StudyRoundError('Requisição de estudo inválida.', 400);
+  }
+  return body;
+}
+
 async function handleAttempt(request, env, user, origin) {
-  const body = await request.json().catch(() => ({}));
+  const body = await readStudyBody(request);
   const found = questionById(body.questionId);
   if (!found) return json({ error: 'Questão não encontrada.' }, 404, origin);
-  const selected = Number(body.selectedOption);
-  if (!Number.isInteger(selected) || selected < 0 || selected >= found.question.options.length) {
-    return json({ error: 'Alternativa inválida.' }, 400, origin);
-  }
-  const correct = selected === found.question.answer;
-  await env.AUTH_DB.prepare(`INSERT INTO study_attempts(
-      attempt_id, username, question_id, topic_id, content_version, selected_option, correct
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)`).bind(
-      crypto.randomUUID(), user.username, found.question.id, found.mission.topicId,
-      found.mission.contentVersion, selected, correct ? 1 : 0
-    ).run();
+  const result = await recordRoundAttempt(
+    env.AUTH_DB, user.username, found.mission, found.question,
+    body.selectedOption, body.sessionId
+  );
+  const correct = result.correct;
 
   const stats = await env.AUTH_DB.prepare(`SELECT COUNT(*) AS total, COALESCE(SUM(correct),0) AS correct
     FROM study_attempts WHERE username=? AND topic_id=?`).bind(user.username, found.mission.topicId).first();
@@ -455,6 +462,7 @@ async function handleAttempt(request, env, user, origin) {
 
   return json({
     correct,
+    recorded: result.recorded,
     correctOption: found.question.answer,
     explanation: found.question.explanation,
     masteryScore: mastery
@@ -492,60 +500,21 @@ async function scheduleReviews(env, username, topicId) {
   }
 }
 
-async function bossRunScore(env, username, mission) {
-  const session = await env.AUTH_DB.prepare(`SELECT started_at
-    FROM study_sessions
-    WHERE username=? AND mission_id=? AND status='active'
-    ORDER BY started_at DESC LIMIT 1`).bind(username, mission.id).first();
-
-  if (!session?.started_at) return null;
-
-  const result = await env.AUTH_DB.prepare(`SELECT attempt.question_id, attempt.correct
-    FROM study_attempts AS attempt
-    JOIN (
-      SELECT question_id, MAX(rowid) AS last_rowid
-      FROM study_attempts
-      WHERE username=? AND topic_id=? AND attempted_at >= ?
-      GROUP BY question_id
-    ) AS latest ON latest.last_rowid = attempt.rowid`)
-    .bind(username, mission.topicId, session.started_at).all();
-
-  const rows = result.results || [];
-  const correct = rows.reduce((sum, row) => sum + (Number(row.correct || 0) ? 1 : 0), 0);
-  const score = mission.questions.length
-    ? Math.round((correct / mission.questions.length) * 1000) / 10
-    : 0;
-
-  return { answered: rows.length, correct, score, startedAt: session.started_at };
-}
-
-async function handleComplete(pathname, env, user, origin) {
+async function handleComplete(request, pathname, env, user, origin) {
   const match = pathname.match(/^\/api\/studies\/missions\/([^/]+)\/complete$/);
   const mission = match ? missionById(decodeURIComponent(match[1])) : null;
   if (!mission) return json({ error: 'Missão não encontrada.' }, 404, origin);
-
-  let bossResult = null;
-  if (mission.kind === 'boss') {
-    bossResult = await bossRunScore(env, user.username, mission);
-    if (!bossResult || bossResult.answered < mission.questions.length) {
-      return json({ error: 'Responda toda a rodada do Chefe antes de concluir.' }, 409, origin);
-    }
-    const required = Number(mission.passScore || 0);
-    if (bossResult.score < required) {
-      return json({
-        error: `Chefe não vencido: ${bossResult.score}% de acertos. É necessário atingir pelo menos ${required}%.`,
-        completed: false,
-        passed: false,
-        score: bossResult.score,
-        passScore: required
-      }, 422, origin);
-    }
-  } else {
-    const answered = await env.AUTH_DB.prepare(`SELECT COUNT(DISTINCT question_id) AS total
-      FROM study_attempts WHERE username=? AND topic_id=?`).bind(user.username, mission.topicId).first();
-    if (Number(answered?.total || 0) < mission.questions.length) {
-      return json({ error: 'Responda todas as questões da missão antes de concluí-la.' }, 409, origin);
-    }
+  const body = await readStudyBody(request);
+  const result = await evaluateStudyRound(
+    env.AUTH_DB, user.username, mission, body.sessionId,
+    mission.kind === 'boss' ? 'boss' : 'lesson'
+  );
+  const bossResult = mission.kind === 'boss' ? result : null;
+  if (bossResult && !bossResult.passed) {
+    return json({
+      error: `Chefe não vencido: ${bossResult.score}% de acertos. É necessário atingir pelo menos ${bossResult.passScore}%. Saia e reabra a missão para uma nova rodada.`,
+      completed: false, passed: false, score: bossResult.score, passScore: bossResult.passScore
+    }, 422, origin);
   }
 
   await env.AUTH_DB.prepare(`INSERT INTO study_topic_progress(
@@ -601,76 +570,40 @@ async function handleComplete(pathname, env, user, origin) {
   }, 200, origin);
 }
 
-async function handleCompleteReview(pathname, env, user, origin) {
+async function handleCompleteReview(request, pathname, env, user, origin) {
   const match = pathname.match(/^\/api\/studies\/reviews\/([a-f0-9-]+)\/complete$/i);
   if (!match) return json({ error: 'Revisão não encontrada.' }, 404, origin);
-
-  const review = await env.AUTH_DB.prepare(`SELECT review_id, topic_id, cycle, due_at, status
-    FROM study_reviews
+  const body = await readStudyBody(request);
+  const review = await env.AUTH_DB.prepare(`SELECT review_id, topic_id FROM study_reviews
     WHERE review_id=? AND username=? LIMIT 1`).bind(match[1], user.username).first();
-
   if (!review) return json({ error: 'Revisão não encontrada.' }, 404, origin);
-  if (review.status !== 'pending') return json({ error: 'Esta revisão já foi concluída.' }, 409, origin);
-
-  const dueCheck = await env.AUTH_DB.prepare(`SELECT CASE WHEN ? <= datetime('now') THEN 1 ELSE 0 END AS due`)
-    .bind(review.due_at).first();
-  if (Number(dueCheck?.due || 0) !== 1) {
-    return json({ error: 'Esta revisão ainda não está disponível.' }, 409, origin);
-  }
-
   const mission = missionByTopicId(review.topic_id);
   if (!mission) return json({ error: 'Conteúdo da revisão não encontrado.' }, 404, origin);
-
-  const answered = await env.AUTH_DB.prepare(`SELECT COUNT(DISTINCT question_id) AS total
-    FROM study_attempts
-    WHERE username=? AND topic_id=? AND attempted_at >= ?`)
-    .bind(user.username, review.topic_id, review.due_at).first();
-
-  if (Number(answered?.total || 0) < mission.questions.length) {
-    return json({ error: 'Responda todas as questões novamente antes de concluir a revisão.' }, 409, origin);
-  }
-
-  const updated = await env.AUTH_DB.prepare(`UPDATE study_reviews
-    SET status='completed', completed_at=CURRENT_TIMESTAMP
-    WHERE review_id=? AND username=? AND status='pending'`)
-    .bind(review.review_id, user.username).run();
-
-  if (!Number(updated.meta?.changes || 0)) {
-    return json({ error: 'Esta revisão já foi concluída.' }, 409, origin);
-  }
-
-  const xpGranted = await grantXp(env, user.username, 'review_complete', review.review_id, 20);
+  await evaluateStudyRound(env.AUTH_DB, user.username, mission, body.sessionId, 'review', review.review_id);
+  const xpGranted = await commitReviewReward(env.AUTH_DB, user.username, review.review_id, body.sessionId);
   const progress = await progressMap(env, user.username);
-
   return json({
     completed: true,
-    xpGranted: xpGranted ? 20 : 0,
+    xpGranted,
     metrics: await metrics(env, user.username, progress),
     reviews: await dueReviewRows(env, user.username)
   }, 200, origin);
 }
 
 async function handleStartSession(request, env, user, origin) {
-  const body = await request.json().catch(() => ({}));
+  const body = await readStudyBody(request);
   const mission = missionById(body.missionId);
   if (!mission) return json({ error: 'Missão não encontrada.' }, 404, origin);
-  const sessionId = crypto.randomUUID();
-  await env.AUTH_DB.prepare(`INSERT INTO study_sessions(session_id, username, mission_id)
-    VALUES (?, ?, ?)`).bind(sessionId, user.username, mission.id).run();
-  return json({ sessionId, started: true }, 201, origin);
+  const result = await startStudyRound(env.AUTH_DB, user.username, mission, body.reviewId ?? null);
+  return json(result, 201, origin);
 }
 
 async function handleFinishSession(request, pathname, env, user, origin) {
   const match = pathname.match(/^\/api\/studies\/sessions\/([a-f0-9-]+)$/i);
   if (!match) return json({ error: 'Sessão não encontrada.' }, 404, origin);
-  const body = await request.json().catch(() => ({}));
-  const duration = Math.min(MAX_SESSION_SECONDS, Math.max(0, Math.floor(Number(body.durationSeconds || 0))));
-  const result = await env.AUTH_DB.prepare(`UPDATE study_sessions
-    SET finished_at=CURRENT_TIMESTAMP, duration_seconds=?, status='finished'
-    WHERE session_id=? AND username=? AND status='active'`)
-    .bind(duration, match[1], user.username).run();
-  if (!Number(result.meta?.changes || 0)) return json({ error: 'Sessão já encerrada ou inexistente.' }, 409, origin);
-  return json({ finished: true, durationSeconds: duration }, 200, origin);
+  const body = await readStudyBody(request);
+  const result = await finishStudySession(env.AUTH_DB, user.username, match[1], body.durationSeconds);
+  return json(result, 200, origin);
 }
 
 export async function handleStudiesRoute(request, env, origin, originAllowed = true) {
@@ -681,26 +614,33 @@ export async function handleStudiesRoute(request, env, origin, originAllowed = t
   if (access.response) return access.response;
   const user = access.user;
 
-  if (request.method === 'GET' && url.pathname === '/api/studies/bootstrap') {
-    return handleBootstrap(env, user, origin);
+  try {
+    if (request.method === 'GET' && url.pathname === '/api/studies/bootstrap') {
+      return await handleBootstrap(env, user, origin);
+    }
+    if (request.method === 'GET' && url.pathname === '/api/studies/achievements') {
+      return await handleAchievements(env, user, origin);
+    }
+    if (request.method === 'POST' && url.pathname === '/api/studies/attempts') {
+      return await handleAttempt(request, env, user, origin);
+    }
+    if (request.method === 'POST' && url.pathname === '/api/studies/sessions') {
+      return await handleStartSession(request, env, user, origin);
+    }
+    if (request.method === 'PATCH' && /^\/api\/studies\/sessions\/[a-f0-9-]+$/i.test(url.pathname)) {
+      return await handleFinishSession(request, url.pathname, env, user, origin);
+    }
+    if (request.method === 'POST' && /^\/api\/studies\/missions\/[^/]+\/complete$/.test(url.pathname)) {
+      return await handleComplete(request, url.pathname, env, user, origin);
+    }
+    if (request.method === 'POST' && /^\/api\/studies\/reviews\/[a-f0-9-]+\/complete$/i.test(url.pathname)) {
+      return await handleCompleteReview(request, url.pathname, env, user, origin);
+    }
+    return json({ error: 'Rota de estudos não encontrada.' }, 404, origin);
+  } catch (error) {
+    if (error instanceof StudyRoundError) {
+      return json({ error: error.message, code: error.code }, error.status, origin);
+    }
+    throw error;
   }
-  if (request.method === 'GET' && url.pathname === '/api/studies/achievements') {
-    return handleAchievements(env, user, origin);
-  }
-  if (request.method === 'POST' && url.pathname === '/api/studies/attempts') {
-    return handleAttempt(request, env, user, origin);
-  }
-  if (request.method === 'POST' && url.pathname === '/api/studies/sessions') {
-    return handleStartSession(request, env, user, origin);
-  }
-  if (request.method === 'PATCH' && /^\/api\/studies\/sessions\/[a-f0-9-]+$/i.test(url.pathname)) {
-    return handleFinishSession(request, url.pathname, env, user, origin);
-  }
-  if (request.method === 'POST' && /^\/api\/studies\/missions\/[^/]+\/complete$/.test(url.pathname)) {
-    return handleComplete(url.pathname, env, user, origin);
-  }
-  if (request.method === 'POST' && /^\/api\/studies\/reviews\/[a-f0-9-]+\/complete$/i.test(url.pathname)) {
-    return handleCompleteReview(url.pathname, env, user, origin);
-  }
-  return json({ error: 'Rota de estudos não encontrada.' }, 404, origin);
 }

@@ -21,6 +21,7 @@ jobs:
         working-directory: worker
         run: |
           npm run check
+          node --check study-rounds.js
           npm test
 
       - name: Validar frontend da Missao Bancaria
@@ -46,7 +47,7 @@ jobs:
           grep -q '/api/studies/achievements' js/achievements.js
           grep -q '/api/studies/reviews/' js/studies.js
           grep -q 'handleCompleteReview' worker/studies.js
-          grep -q 'review_complete' worker/studies.js
+          grep -q 'review_complete' worker/study-rounds.js
           grep -q "study.sfn.boss" worker/studies.js
           grep -q "passScore: 75" worker/studies-content/banking-sfn.js
           grep -q "kind: 'boss'" worker/studies-content/banking-sfn.js
@@ -57,11 +58,11 @@ jobs:
       - name: Validar isolamento assistencial
         run: |
           set -euo pipefail
-          if grep -Eqi '\b(CNS|CPF|prontu[aá]rio|paciente|patient|diagn[oó]stico|encaminhamento|CORE)\b' worker/studies.js worker/studies-content/*.js js/studies.js js/studies-reader.js estudos/index.html; then
+          if grep -Eqi '\b(CNS|CPF|prontu[aá]rio|paciente|patient|diagn[oó]stico|encaminhamento|CORE)\b' worker/studies.js worker/study-rounds.js worker/studies-content/*.js js/studies.js js/studies-reader.js estudos/index.html; then
             echo 'A Missao Bancaria contem termo assistencial proibido no dominio de estudos.' >&2
             exit 1
           fi
-          if grep -Eqi 'firebase|firestore|google_drive|document_drive|telemedicina' worker/studies.js worker/studies-content/*.js; then
+          if grep -Eqi 'firebase|firestore|google_drive|document_drive|telemedicina' worker/studies.js worker/study-rounds.js worker/studies-content/*.js; then
             echo 'A Missao Bancaria nao pode depender de dominios institucionais.' >&2
             exit 1
           fi

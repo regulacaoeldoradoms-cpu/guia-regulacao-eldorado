@@ -17,7 +17,11 @@
     sessionId: '',
     sessionStartedAt: 0,
     timer: null,
-    doubt: false
+    doubt: false,
+    generation: 0,
+    leaving: false,
+    completing: false,
+    pendingAnswers: new Set()
   };
 
   const $ = (id) => document.getElementById(id);
@@ -162,7 +166,8 @@
       progress.setAttribute('aria-valuetext', `${answered} de ${total} questões respondidas`);
     }
     if ($('studyAnsweredLabel')) $('studyAnsweredLabel').textContent = `${answered} de ${total} questões respondidas`;
-    $('completeMission').disabled = total === 0 || answered < total;
+    $('completeMission').disabled = total === 0 || answered < total || !state.sessionId
+      || state.leaving || state.completing || state.pendingAnswers.size > 0;
   }
 
   function renderMission(mission) {
@@ -241,12 +246,19 @@
   }
 
   async function openMission(id, review = null) {
+    if (state.activeMission || state.leaving) return;
     const mission = state.data?.missions?.find((item) => item.id === id);
     if (!mission) return;
+    const generation = ++state.generation;
     state.activeMission = mission;
     state.activeReview = review;
+    state.sessionId = '';
+    state.sessionStartedAt = 0;
+    state.completing = false;
+    state.pendingAnswers.clear();
     state.answered.clear();
     state.doubt = false;
+    $('studyTimer').textContent = '00:00';
     $('markDoubt').textContent = 'Marcar dúvida';
     const topbar = document.querySelector('.study-topbar');
     if (topbar) topbar.inert = true;
@@ -254,21 +266,37 @@
     $('studyFocus').hidden = false;
     document.body.style.overflow = 'hidden';
     renderMission(mission);
-    status('', true);
+    status('Registrando a rodada. A leitura já está disponível.', true);
     try {
       const response = await auth.api('/api/studies/sessions', {
-        method: 'POST', body: JSON.stringify({ missionId: mission.id })
+        method: 'POST', body: JSON.stringify({ missionId: mission.id, reviewId: review?.id || null })
       });
-      state.sessionId = response.sessionId || '';
+      if (generation !== state.generation) {
+        // A abertura terminou depois de sair: encerrar somente a sessão antiga.
+        if (response.sessionId) await finishSession(response.sessionId, 0);
+        return;
+      }
+      if (!response.sessionId) throw new Error('Identificador da rodada não recebido.');
+      state.sessionId = response.sessionId;
       startTimer();
+      updateFocusProgress();
+      status('', true);
     } catch (error) {
+      if (generation !== state.generation) return;
       state.sessionId = '';
-      startTimer();
-      status('O cronômetro local está ativo, mas a sessão não foi registrada: ' + error.message, true);
+      updateFocusProgress();
+      status('A rodada não foi registrada. Você pode ler a aula; saia e reabra para responder. ' + error.message, true);
     }
   }
 
   async function answerQuestion(questionId) {
+    if (!state.sessionId || state.leaving || state.completing) {
+      status('Aguarde o registro da rodada antes de responder.', true);
+      return;
+    }
+    if (state.pendingAnswers.has(questionId)) return;
+    const sessionId = state.sessionId;
+    const generation = state.generation;
     if (state.answered.has(questionId) && state.answered.get(questionId) !== 'history') return;
     const card = document.querySelector(`[data-question-id="${CSS.escape(questionId)}"]`);
     const selected = card?.querySelector('input:checked');
@@ -281,11 +309,15 @@
     }
     const button = card.querySelector('[data-answer-question]');
     button.disabled = true;
+    card.querySelectorAll('input').forEach((input) => { input.disabled = true; });
+    state.pendingAnswers.add(questionId);
+    updateFocusProgress();
     try {
       const result = await auth.api('/api/studies/attempts', {
         method: 'POST',
-        body: JSON.stringify({ questionId, selectedOption: Number(selected.value) })
+        body: JSON.stringify({ questionId, selectedOption: Number(selected.value), sessionId })
       });
+      if (generation !== state.generation || sessionId !== state.sessionId) return;
       state.answered.set(questionId, result.correct);
       card.querySelectorAll('input').forEach((input) => { input.disabled = true; });
       button.textContent = 'Respondida';
@@ -295,25 +327,44 @@
       feedback.textContent = `${result.correct ? 'Correto. ' : 'Ainda não. '}${result.explanation}`;
       updateFocusProgress();
     } catch (error) {
+      if (generation !== state.generation || sessionId !== state.sessionId) return;
       button.disabled = false;
-      status(error.message || 'Não foi possível registrar a resposta.', true);
+      button.textContent = 'Tentar registrar novamente';
+      // A requisição pode ter sido gravada antes da perda da resposta: manter a
+      // seleção e repetir o mesmo payload, sem criar uma segunda tentativa.
+      status(error.message || 'Não foi possível confirmar a resposta. Tente registrar novamente.', true);
+    } finally {
+      if (generation === state.generation && sessionId === state.sessionId) {
+        state.pendingAnswers.delete(questionId);
+        updateFocusProgress();
+      }
     }
   }
 
-  async function finishSession() {
-    if (!state.sessionId) return;
-    const durationSeconds = Math.max(0, Math.floor((Date.now() - state.sessionStartedAt) / 1000));
-    try {
-      await auth.api(`/api/studies/sessions/${encodeURIComponent(state.sessionId)}`, {
-        method: 'PATCH', body: JSON.stringify({ durationSeconds })
-      });
-    } catch (_) {}
-    state.sessionId = '';
+  async function finishSession(sessionId, durationSeconds) {
+    if (!sessionId) return true;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        await auth.api(`/api/studies/sessions/${encodeURIComponent(sessionId)}`, {
+          method: 'PATCH', body: JSON.stringify({ durationSeconds })
+        });
+        return true;
+      } catch (_) { /* Uma repetição idempotente, com o mesmo identificador. */ }
+    }
+    return false;
   }
 
   async function leaveFocus() {
+    if (state.leaving || !state.activeMission) return;
+    state.leaving = true;
+    ++state.generation;
     clearInterval(state.timer);
-    await finishSession();
+    const sessionId = state.sessionId;
+    const durationSeconds = state.sessionStartedAt
+      ? Math.max(0, Math.floor((Date.now() - state.sessionStartedAt) / 1000)) : 0;
+    state.sessionId = '';
+    updateFocusProgress();
+    const saved = await finishSession(sessionId, durationSeconds);
     document.body.style.overflow = '';
     $('studyFocus').hidden = true;
     $('studyDashboard').hidden = false;
@@ -321,37 +372,47 @@
     if (topbar) topbar.inert = false;
     state.activeMission = null;
     state.activeReview = null;
+    state.pendingAnswers.clear();
+    state.completing = false;
     await load();
+    state.leaving = false;
+    if (!saved) status('Não foi possível confirmar o salvamento do tempo desta sessão. As respostas já registradas não foram apagadas.');
     const returnTarget = $('continueStudy').disabled ? $('studyGreeting') : $('continueStudy');
     returnTarget.tabIndex = returnTarget.tabIndex < 0 ? -1 : returnTarget.tabIndex;
     returnTarget.focus({ preventScroll: true });
   }
 
   async function completeMission() {
-    if (!state.activeMission) return;
-    $('completeMission').disabled = true;
+    if (!state.activeMission || !state.sessionId || state.completing || state.leaving || state.pendingAnswers.size) return;
+    state.completing = true;
+    const mission = state.activeMission;
+    const review = state.activeReview;
+    const sessionId = state.sessionId;
+    const generation = state.generation;
+    updateFocusProgress();
     try {
-      const review = state.activeReview;
       const endpoint = review
         ? `/api/studies/reviews/${encodeURIComponent(review.id)}/complete`
-        : `/api/studies/missions/${encodeURIComponent(state.activeMission.id)}/complete`;
-      const result = await auth.api(endpoint, { method: 'POST', body: '{}' });
+        : `/api/studies/missions/${encodeURIComponent(mission.id)}/complete`;
+      const result = await auth.api(endpoint, { method: 'POST', body: JSON.stringify({ sessionId }) });
+      if (generation !== state.generation || sessionId !== state.sessionId) return;
       if (result.newAchievements?.length) showAchievement(result.newAchievements[0]);
       status(
         review
           ? `Revisão concluída. +${result.xpGranted || 0} XP.`
-          : state.activeMission.kind === 'boss'
+          : mission.kind === 'boss'
             ? `Chefe vencido com ${result.score}% de acertos. +${result.xpGranted || 0} XP.`
             : `Missão concluída. +${result.xpGranted || 0} XP.`,
         true
       );
-      setTimeout(() => leaveFocus(), 900);
+      setTimeout(() => {
+        if (generation === state.generation && sessionId === state.sessionId) leaveFocus();
+      }, 900);
     } catch (error) {
-      $('completeMission').disabled = false;
-      status(
-        error.message || (state.activeReview ? 'Não foi possível concluir a revisão.' : 'Não foi possível concluir a missão.'),
-        true
-      );
+      if (generation !== state.generation || sessionId !== state.sessionId) return;
+      state.completing = false;
+      updateFocusProgress();
+      status(error.message || 'Não foi possível confirmar a conclusão. Tente novamente.', true);
     }
   }
 
