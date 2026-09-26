@@ -1,66 +1,74 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 26/09/2026 — leitura no celular e transição à prática.
+Atualizado em 26/09/2026 — leitor e primeiro suplemento de aplicação.
 
 ## Estado e autorização
 
 **Fase ativa: Fase 1. Ensino por leitura antes das questões.**
 
-Wellyton autorizou continuar desenvolvimento, revisões, testes e integrações sem acessar imediatamente nem reconfirmar cada etapa. Sua compreensão e homologação prática continuam pendentes; não alegar que ocorreram. Preservar `24-CONTRATO-PEDAGOGICO-GLOBAL.md` e `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`: se o recorte crescer, dividir o trabalho sem reduzir o ensino.
+Wellyton autorizou continuar desenvolvimento, revisão, testes e integrações sem acessar imediatamente nem reconfirmar cada pequena etapa. Não alegar compreensão, retenção ou homologação humana que não ocorreram. Seguir os documentos 24 e 26: subdividir a produção, sem reduzir o ensino.
 
-## Fonte e decisões preservadas
+Fonte oficial: `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`.
 
-Repositório oficial: `regulacaoeldoradoms-cpu/guia-regulacao-eldorado`.
+## Decisões preservadas
 
-`/estudos/` e `/api/studies/*`, acesso exclusivo de `wellyton` no backend, nenhum cargo novo. Conteúdo no GitHub; dados em `study_*` no D1 `AUTH_DB`. IDs e histórico estáveis, sem zerar XP/conquistas. Bronze/Prata/Ouro permanecem segurança da conta, separados do estudo. Sem telemetria pedagógica externa; rollback não apaga dados.
+`/estudos/`, `/api/studies/*`, acesso exclusivo de `wellyton` validado no backend. Conteúdo no GitHub; progresso nas tabelas `study_*` do D1 `AUTH_DB`; nenhum cargo novo, dado clínico ou telemetria pedagógica externa. IDs, perguntas, gabaritos, XP e conquistas preservados. Bronze/Prata/Ouro continuam separados como segurança da conta. Rollback não apaga dados.
 
-## Entregas já incorporadas antes desta rodada
+## Já incorporado antes das entregas atuais
 
-- #488: documentação; Fase 0 aprovada em 25/09/2026, plano `15-FASE-0-PLANO-TECNICO.md`.
+- #488: documentação; Fase 0 aprovada em 25/09/2026. Plano: `15-FASE-0-PLANO-TECNICO.md`.
 - #490: motor inicial, `22257bca768cfc440578e0b8e11da62f15abc08f`.
 - #495: expansão/revisões, `97cc6ab382d624841da46d6d9a9ff7f26a1a18ca`.
 - #498: primeiro bloco/Chefe, `20487883c948dffbeb4b6849baa3c39e9c577d9f`.
 - #499: retomada/Conquistas, `c5ebf3a0bb93bf303851835446ec32ff5decb0cd`.
 - #500: sequência, `ac9128c7e807be8eff0ee5bc1579f792aa249a3d`.
-- #501: ensino desenvolvido para oito aulas e preparação do Chefe, `f6ae4c598156656e2c630372d6e2122259ffb1c2`.
+- #501: ensino desenvolvido, `f6ae4c598156656e2c630372d6e2122259ffb1c2`.
 
-**9/9 e 38 questões referem-se somente ao primeiro bloco de SFN, não a curso ou edital completo.** A PR #501 contém conceitos, exemplos resolvidos, vocabulário e referências das questões ao ensino. Documentos 23–29 preservam a revisão e suas limitações de fontes. Acerto em questões iniciais não é comprovação de domínio duradouro.
+**9 missões e 38 questões são somente o primeiro bloco de SFN, não curso ou edital completo.** Oito aulas possuem conceitos, vocabulário, exemplos e consulta; o Chefe tem preparação cumulativa. Documentos 23–29 preservam o histórico editorial e as limitações da conferência das fontes.
 
-## Publicação histórica da PR #501
+## PR #502 — leitura no celular
 
-Integração confirmada na main. O comentário final da PR registra sucesso dos checks do merge: Workers Builds `108435911331` (versão informada `edbfb205-76f6-4417-bae9-8afb4e3b7161`), Cloudflare Pages `108435851677` e GitHub Pages `108435880048`. São registros do merge anterior, não certificação de 100% do tráfego produtivo nem evidência desta nova entrega. Não foi realizado acesso autenticado real por Wellyton nesta sessão.
-
-## Rodada atual — leitor e prática
-
+Branch: `feat/missao-bancaria-leitura-mobile`.
+Head observado: `1c902d5606429fc8700a349086b31df7aa84f6eb`.
 Documento: `30-LEITURA-MOBILE-E-PRATICA.md`.
-Base observada: `a2ed4e74695001cfcd87ec166eb6b060dc57d060`.
-Branch planejada: `feat/missao-bancaria-leitura-mobile`.
+
+Leitura por partes/inteira, índice, letras ajustáveis, painéis Ler/Praticar, consulta preservando respostas e sessão. Barra das questões começa em zero e legenda passa a indicar acerto nas tentativas, não domínio comprovado. Sem cortar conteúdo nem alterar backend/dados.
+
+O CI específico do leitor e seus 14 testes de navegador passou. Na auditoria geral, a primeira execução terminou com 215 sucessos e uma falha de comparação visual na impressão escura de `/cidadao/`. Não foi desligado nem relaxado o teste. O job foi repetido sem alteração de código: run `36254703571`, novo job `108447920775`. Na última consulta estava em execução. Conferir o resultado antes de declarar o bloqueio resolvido ou integrar a PR.
+
+O preview do Worker na branch havia falhado sem causa detalhada no resumo. Isso não deve ser chamado de sucesso nem confundido com publicação de produção. Nenhum gate foi alterado para contorná-lo.
+
+## Rodada atual — aplicação guiada V1
+
+Branch empilhada: `feat/missao-bancaria-aplicacao-guiada`.
+Base: head da PR #502 indicado acima.
+Documento: `31-APLICACAO-GUIADA-SFN-V1.md`.
 
 Implementado:
-- aula primeiro, por partes, com navegação anterior/próxima, índice e modo de texto inteiro;
-- ajuste do tamanho da letra sem cortar o material;
-- transição explícita para prática e consulta de volta à aula sem recriar questões ou sessão;
-- painel rolável adaptável ao celular, sem offsets fixos do cabeçalho;
-- barra das questões parte de zero, baseada em respostas, sem 35% fictícios por abrir a missão;
-- legenda **Acerto nas tentativas**, sem recalcular a métrica do backend;
-- fallback linear se o controlador novo não carregar;
-- nenhum conteúdo didático, questão, gabarito, D1 ou regra de acesso modificado.
+- três casos formativos na introdução: papéis, limite do macete de palavras e intermediação em contexto diferente;
+- explicação em palavras próprias, comentário revelável e critérios de autoavaliação;
+- botões para reler os trechos da mesma aula sem recriar sessão ou respostas;
+- rascunho opcional temporário, sem envio/armazenamento na conta;
+- nenhuma nota automática, XP ou conclusão decorrente desses casos;
+- suplemento versionado separado das 38 questões pontuadas;
+- textos e gabaritos existentes preservados, sem alteração de D1 ou endpoints.
 
-Validações locais: 5 testes Node e 12 cenários Chromium sintéticos aprovados; capturas inspecionadas. Limites do ambiente offline e do estilo global simplificado estão no documento 30. CI adiciona 14 cenários com HTML/CSS reais do repositório e autenticação simulada. **Aguardar e registrar resultados do novo head; não presumir CI, merge ou deploy no momento deste registro.**
+É o primeiro recorte da aplicação, não uma avaliação abrangente de todas as matérias. As demais aulas mantêm seu ensino e terão aplicação desenvolvida em etapas posteriores. A atividade opcional não substitui as questões obrigatórias de missão/revisão.
 
-## Continuidade autorizada
+Validação local efetiva: cinco testes Node e seis cenários Chromium com DOM sintético simplificado aprovados; captura inspecionada. Adicionados dois testes de catálogo real e oito cenários de navegador para o CI, mantendo os 14 anteriores. **Não presumir resultado remoto, merge ou publicação antes de consultá-los.**
 
-Concluir CI do leitor, corrigir regressões caso existam, integrar e registrar a publicação realmente verificada. Depois preparar, em recortes menores, a avaliação de compreensão e aplicação após o ensino, preservando perguntas existentes e o histórico. Não abrir novos mundos para compensar aula insuficiente e não impor teste imediato ao usuário.
+Fontes oficiais conceituais reabertas nesta rodada: estrutura do SFN no Portal do Investidor e apresentação do CMN no Ministério da Fazenda. Nenhuma taxa atual ou nova norma de contratação introduzida.
 
-## Pendências anteriores mantidas
+## Publicação histórica e limites
 
-- Melhor sequência limitada aos 500 eventos recentes, ainda não recorde histórico irrestrito.
-- Cronômetro, interrupções e recuperação no celular.
-- Isolamento/retomada de rodadas e comprovação real de persistência.
-- Avaliação de retenção e aplicação em situações novas; nenhuma questão nova é criada nesta rodada.
+A PR #501 teve checks bem-sucedidos do merge: Workers Builds `108435911331`, versão informada `edbfb205-76f6-4417-bae9-8afb4e3b7161`; Cloudflare Pages `108435851677`; GitHub Pages `108435880048`. Isso não comprova publicação das PRs atuais nem tráfego produtivo integral. Não houve acesso autenticado real do usuário nesta sessão.
 
-A nova navegação mantém a posição durante a alternância aula/prática; não implementa marcador sincronizado de leitura após fechar a página.
+Incidente inicial: frontend antes do Worker, “Rota não encontrada”; correções #492/#494, commit `90cc6d8e16039bb7ed1482bec3f75feadb860816`. #493 fechada sem merge; #491/#496/#497 substituídas. Não reintroduzir versões abandonadas.
 
-Histórico técnico: erro inicial “Rota não encontrada”, correções #492/#494 no commit `90cc6d8e16039bb7ed1482bec3f75feadb860816`; #493 fechada sem merge e #491/#496/#497 substituídas. Não reintroduzir versões abandonadas nem relaxar gates.
+## Próximas ações autorizadas
 
-Avaliação humana posterior: clareza do ensino, explicação com palavras próprias, aplicação, retorno com progresso/XP salvo, conquistas sem duplicação, revisão e Chefe. Não encerrar formalmente a Fase 1 nem declarar aprendizado comprovado só porque a interface passou nos testes.
+Concluir a leitura dos resultados da auditoria do leitor. Validar o suplemento com HTML/CSS reais e APIs sintéticas. Corrigir regressões, integrar somente versões elegíveis e registrar separadamente os builds e a publicação. Depois preparar aplicação para CMN/Banco Central, com material anterior e critérios de correção, em recortes pequenos. Não exigir teste imediato de Wellyton.
+
+Pendências técnicas anteriores mantidas: recorde de sequência limitado aos 500 eventos; cronômetro/interrupções; isolamento e retomada de rodadas; comprovação real de persistência. Os rascunhos desta nova autoavaliação não são progresso salvo: isso é informado na própria interface.
+
+Avaliação humana posterior: clareza, explicação própria, aplicação, retorno com progresso/XP salvo, conquistas, revisão e Chefe. Não encerrar a Fase 1 apenas com testes de interface nem afirmar retenção comprovada.

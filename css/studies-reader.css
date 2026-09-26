@@ -124,3 +124,15 @@ html[data-portal-theme="dark"] .study-focus {
   .study-page .study-font-controls { width: 100%; justify-content: flex-end; }
   .study-page .study-section { margin-top: 18px; }
 }
+/* Atividades formativas não reutilizam seletores de questões pontuadas. */
+.study-page .study-application-panel { margin: 28px 0; border-top: 1px solid var(--reader-border); padding-top: 20px; }
+.study-page .study-application-task { margin: 18px 0; padding: 16px; border: 1px solid var(--reader-border); border-radius: 14px; }
+.study-page .study-application-task :is(p, li, textarea) { font-size: var(--study-reading-size); line-height: 1.7; }
+.study-page .study-application-task h3 { line-height: 1.4; }
+.study-page .study-application-task label { display: block; font-weight: 700; margin: 12px 0 8px; }
+.study-page .study-application-task textarea { display: block; box-sizing: border-box; width: 100%; min-height: 7em; resize: vertical; padding: 12px; font-family: inherit; border: 1px solid var(--reader-border); border-radius: 10px; color: var(--reader-ink); background: var(--reader-surface); }
+.study-page .study-application-task textarea:focus-visible { outline: 3px solid var(--reader-accent); outline-offset: 3px; }
+.study-page .study-application-feedback { margin-top: 12px; }
+.study-page .study-application-feedback summary { cursor: pointer; padding: 12px 0; min-height: 44px; box-sizing: border-box; font-weight: 700; }
+.study-page .study-application-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.study-page .study-application-links button { max-width: 100%; text-align: left; white-space: normal; overflow-wrap: anywhere; }

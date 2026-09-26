@@ -9,6 +9,7 @@ import { INTRODUCTION_SOURCES, INTRODUCTION_V2 } from './sfn-introducao-v2.js';
 import { SFN_LESSONS_V2 } from './sfn-aulas-v2.js';
 import { FUNDAMENTALS_SOURCES, FUNDAMENTALS_REVIEW, reviseFundamentalsSections } from './sfn-fundamentos-revisados.js';
 import { SEGMENTS_SOURCES, SEGMENTS_REVIEW, reviseSegmentsSections } from './sfn-segmentos-revisados.js';
+import { attachIntroApplications } from './sfn-aplicacao-v1.js';
 
 export const STUDY_SOURCES = Object.freeze([
   ...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES, ...SEGMENTS_SOURCES
@@ -92,7 +93,7 @@ function teachMission(mission) {
   });
 }
 
-export const PUBLISHED_MISSIONS = Object.freeze(BASE_MISSIONS.map(teachMission));
+export const PUBLISHED_MISSIONS = Object.freeze(BASE_MISSIONS.map(teachMission).map(attachIntroApplications));
 
 export function missionById(id) {
   return PUBLISHED_MISSIONS.find((mission) => mission.id === String(id || '')) || null;
