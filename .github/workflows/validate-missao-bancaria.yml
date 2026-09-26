@@ -42,6 +42,9 @@ jobs:
           grep -q "handleStudiesRoute" worker/index.js
           grep -q 'studyAchievementsSection' conquistas/index.html
           grep -q '/api/studies/achievements' js/achievements.js
+          grep -q '/api/studies/reviews/' js/studies.js
+          grep -q 'handleCompleteReview' worker/studies.js
+          grep -q 'review_complete' worker/studies.js
           grep -q 'Content-Security-Policy' estudos/index.html
 
       - name: Validar isolamento assistencial

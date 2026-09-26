@@ -12,6 +12,7 @@
   const state = {
     data: null,
     activeMission: null,
+    activeReview: null,
     answered: new Map(),
     sessionId: '',
     sessionStartedAt: 0,
@@ -37,6 +38,14 @@
     const hours = Math.floor(total / 3600);
     const minutes = Math.floor((total % 3600) / 60);
     return `${hours}h${String(minutes).padStart(2, '0')}`;
+  }
+
+  function formatReviewDue(value) {
+    if (!value) return '';
+    const normalized = String(value).includes('T') ? String(value) : String(value).replace(' ', 'T') + 'Z';
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   }
 
   function setBar(id, value) {
@@ -71,9 +80,25 @@
     $('metricHours').textContent = formatHours(m.hoursSeconds);
     $('metricReviews').textContent = `${m.reviewsDue} revisões pendentes`;
     $('availabilityLabel').textContent = `${m.publishedMissions}/${m.plannedMissions} missões · ${m.campaignAvailability}%`;
-    $('personalProgressLabel').textContent = `${m.completedPublished}/${m.publishedMissions} concluídas · ${m.availableProgress}%`;
+    $('personalProgressLabel').textContent = `${m.completedPublished}/${m.plannedMissions} da campanha · ${m.campaignProgress}% · ${m.availableCompletion}% do conteúdo liberado`;
     setBar('availabilityBar', m.campaignAvailability);
-    setBar('personalProgressBar', m.availableProgress);
+    setBar('personalProgressBar', m.campaignProgress);
+
+    const review = Array.isArray(data.reviews) && data.reviews.length ? data.reviews[0] : null;
+    const reviewPanel = $('reviewPanel');
+    if (reviewPanel) {
+      reviewPanel.hidden = !review;
+      if (review) {
+        $('reviewTitle').textContent = `Revisão ${review.cycle}: ${review.title}`;
+        const due = formatReviewDue(review.dueAt);
+        $('reviewMeta').textContent = due
+          ? `Vencida desde ${due}. Refaça a minibatalha para consolidar o conteúdo.`
+          : 'Refaça a minibatalha para consolidar o conteúdo.';
+        $('startReview').onclick = () => openMission(review.missionId, review);
+      } else {
+        $('startReview').onclick = null;
+      }
+    }
 
     const grid = $('missionGrid');
     grid.innerHTML = data.missions.map((mission, index) => {
@@ -118,7 +143,7 @@
   }
 
   function renderMission(mission) {
-    $('focusTitle').textContent = mission.title;
+    $('focusTitle').textContent = state.activeReview ? `Revisão · ${mission.title}` : mission.title;
     $('focusObjective').textContent = mission.objective;
     $('lessonSections').innerHTML = mission.sections.map((section) =>
       `<section class="study-section"><h2>${section.heading}</h2><p>${section.body}</p></section>`
@@ -139,6 +164,7 @@
     $('sourceList').innerHTML = mission.sources.map((source) =>
       `<a class="study-source" href="${source.url}" target="_blank" rel="noopener noreferrer">Abrir fonte: ${source.label}</a>`
     ).join('');
+    $('completeMission').textContent = state.activeReview ? 'Concluir revisão' : 'Concluir missão';
 
     $('questionList').querySelectorAll('[data-answer-question]').forEach((button) => {
       button.addEventListener('click', () => answerQuestion(button.dataset.answerQuestion));
@@ -157,10 +183,11 @@
     state.timer = setInterval(paint, 1000);
   }
 
-  async function openMission(id) {
+  async function openMission(id, review = null) {
     const mission = state.data?.missions?.find((item) => item.id === id);
     if (!mission) return;
     state.activeMission = mission;
+    state.activeReview = review;
     state.answered.clear();
     state.doubt = false;
     $('markDoubt').textContent = 'Marcar dúvida';
@@ -231,6 +258,7 @@
     $('studyFocus').hidden = true;
     $('studyDashboard').hidden = false;
     state.activeMission = null;
+    state.activeReview = null;
     await load();
   }
 
@@ -238,15 +266,25 @@
     if (!state.activeMission) return;
     $('completeMission').disabled = true;
     try {
-      const result = await auth.api(`/api/studies/missions/${encodeURIComponent(state.activeMission.id)}/complete`, {
-        method: 'POST', body: '{}'
-      });
+      const review = state.activeReview;
+      const endpoint = review
+        ? `/api/studies/reviews/${encodeURIComponent(review.id)}/complete`
+        : `/api/studies/missions/${encodeURIComponent(state.activeMission.id)}/complete`;
+      const result = await auth.api(endpoint, { method: 'POST', body: '{}' });
       if (result.newAchievements?.length) showAchievement(result.newAchievements[0]);
-      status(`Missão concluída. +${result.xpGranted || 0} XP.`, true);
+      status(
+        review
+          ? `Revisão concluída. +${result.xpGranted || 0} XP.`
+          : `Missão concluída. +${result.xpGranted || 0} XP.`,
+        true
+      );
       setTimeout(() => leaveFocus(), 900);
     } catch (error) {
       $('completeMission').disabled = false;
-      status(error.message || 'Não foi possível concluir a missão.', true);
+      status(
+        error.message || (state.activeReview ? 'Não foi possível concluir a revisão.' : 'Não foi possível concluir a missão.'),
+        true
+      );
     }
   }
 
