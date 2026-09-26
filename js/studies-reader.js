@@ -16,6 +16,75 @@
     return { count, total: size, percent: size ? Math.round(count / size * 100) : 0 };
   }
 
+  function renderApplications(root, mission, openSection) {
+    const practice = root?.querySelector('#studyPracticePanel');
+    const quiz = practice?.querySelector('.study-quiz');
+    if (!quiz) return 0; // Compatibilidade com a página anterior.
+    const doc = root.ownerDocument;
+    const make = (tag, text, className) => {
+      const node = doc.createElement(tag);
+      if (text !== undefined) node.textContent = String(text);
+      if (className) node.className = className;
+      return node;
+    };
+    let panel = practice.querySelector('#studyApplicationPanel');
+    if (!panel) {
+      panel = make('section', undefined, 'study-application-panel');
+      panel.id = 'studyApplicationPanel';
+      panel.setAttribute('aria-labelledby', 'studyApplicationTitle');
+      practice.insertBefore(panel, quiz);
+    }
+    panel.replaceChildren();
+    const sections = Array.isArray(mission?.sections) ? mission.sections : [];
+    const items = sections.flatMap((section) => Array.isArray(section.applicationTasks) ? section.applicationTasks : [])
+      .filter((item) => typeof item?.id === 'string' && typeof item.title === 'string'
+        && typeof item.prompt === 'string' && typeof item.model === 'string'
+        && Array.isArray(item.criteria) && item.criteria.every((value) => typeof value === 'string')
+        && Array.isArray(item.sectionIds));
+    panel.hidden = items.length === 0;
+    if (!items.length) return 0;
+    const title = make('h2', 'Aplique com suas palavras');
+    title.id = 'studyApplicationTitle';
+    const notice = make('p', 'Autoavaliação opcional, sem nota ou XP. Tente explicar antes de consultar o comentário. Não há correção automática do seu texto.', 'study-reader-caption');
+    const privacy = make('p', 'Rascunho temporário: não é enviado nem salvo na conta. Recarregar a página ou abrir outra missão apaga o texto.', 'study-reader-caption');
+    privacy.id = 'studyApplicationPrivacy';
+    panel.append(title, notice, privacy);
+    items.forEach((item, position) => {
+      const card = make('article', undefined, 'study-application-task');
+      card.dataset.applicationId = item.id;
+      card.append(make('h3', `${position + 1}. ${item.title}`), make('p', item.prompt));
+      const label = make('label', 'Minha explicação (opcional)');
+      const input = make('textarea');
+      input.id = `studyApplicationDraft${position}`;
+      input.rows = 4;
+      input.maxLength = 3000;
+      input.autocomplete = 'off';
+      input.setAttribute('aria-describedby', 'studyApplicationPrivacy');
+      label.htmlFor = input.id;
+      card.append(label, input);
+      const feedback = make('details', undefined, 'study-application-feedback');
+      feedback.append(make('summary', 'Comparar com uma explicação possível'), make('p', item.model));
+      feedback.append(make('h4', 'Confira seu raciocínio'));
+      const checklist = make('ul');
+      for (const criterion of item.criteria) checklist.append(make('li', criterion));
+      feedback.append(checklist, make('p', 'Compare as ideias, não as palavras exatas. Se algum ponto faltou, releia a explicação e tente novamente.', 'study-reader-caption'));
+      card.append(feedback);
+      const links = make('div', undefined, 'study-application-links');
+      for (const sectionId of [...new Set(item.sectionIds)]) {
+        const section = sections.find((entry) => entry.id === sectionId);
+        if (!section) continue;
+        const button = make('button', `Reler: ${section.heading}`, 'study-reader-back');
+        button.type = 'button';
+        button.dataset.readSection = sectionId;
+        button.addEventListener('click', () => openSection(sectionId));
+        links.append(button);
+      }
+      card.append(links);
+      panel.append(card);
+    });
+    return items.length;
+  }
+
   function create(root) {
     if (!root) return null;
     const find = (id) => root.querySelector(`#${id}`);
@@ -76,6 +145,17 @@
       }
     }
 
+    function openSection(sectionId) {
+      if (!active || typeof sectionId !== 'string') return false;
+      const next = sections.findIndex((section) => section.id === sectionId);
+      if (next < 0) return false;
+      index = next;
+      all = false;
+      paintParts();
+      setView('lesson');
+      return true;
+    }
+
     function fontSize(step) {
       font = Math.max(0, Math.min(fontSizes.length - 1, font + step));
       root.style.setProperty('--study-reading-size', `${fontSizes[font]}rem`);
@@ -92,6 +172,8 @@
       }
       el.studyLessonPanel.hidden = false;
       el.studyPracticePanel.hidden = false;
+      // Somente dados didáticos: rascunhos nunca deixam o DOM da missão aberta.
+      renderApplications(root, mission, openSection);
       if (!active) return false;
       index = 0;
       all = false;
@@ -101,7 +183,6 @@
       sections.forEach((section, position) => {
         const node = doc.createElement('section');
         node.className = 'study-section';
-        // Texto do catálogo é exibido como texto; nunca interpretado como HTML.
         const heading = doc.createElement('h2');
         heading.textContent = String(section.heading || `Parte ${position + 1}`);
         heading.tabIndex = -1;
@@ -149,7 +230,7 @@
     });
     el.studyFontSmaller.addEventListener('click', () => fontSize(-1));
     el.studyFontLarger.addEventListener('click', () => fontSize(1));
-    return Object.freeze({ mount });
+    return Object.freeze({ mount, openSection });
   }
 
   window.StudyReader = Object.freeze({ create, partIndex, practiceProgress });
