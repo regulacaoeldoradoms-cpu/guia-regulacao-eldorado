@@ -7,8 +7,9 @@ import {
 } from './banking-sfn.js';
 import { INTRODUCTION_SOURCES, INTRODUCTION_V2 } from './sfn-introducao-v2.js';
 import { SFN_LESSONS_V2 } from './sfn-aulas-v2.js';
+import { FUNDAMENTALS_SOURCES, FUNDAMENTALS_REVIEW, reviseFundamentalsSections } from './sfn-fundamentos-revisados.js';
 
-export const STUDY_SOURCES = Object.freeze([...BASE_SOURCES, ...INTRODUCTION_SOURCES]);
+export const STUDY_SOURCES = Object.freeze([...BASE_SOURCES, ...INTRODUCTION_SOURCES, ...FUNDAMENTALS_SOURCES]);
 export { PLANNED_MISSIONS };
 
 const INTRO_IDS = Object.freeze([
@@ -51,7 +52,8 @@ function teachMission(mission) {
   // Futuras missões sem material não recebem conformidade artificial.
   // A validação do catálogo no CI deve recusá-las até que haja ensino real.
   if (!patch) return mission;
-  const sections = introduction ? introductionSections() : patch.sections;
+  const initialSections = introduction ? introductionSections() : patch.sections;
+  const sections = reviseFundamentalsSections(mission.id, initialSections);
   const sectionMap = introduction ? INTRO_QUESTION_SECTIONS : patch.questionSections;
   const questionCoverage = {};
   for (const [questionId, sectionIds] of Object.entries(sectionMap)) {
@@ -64,7 +66,8 @@ function teachMission(mission) {
   }
   const sourceIds = Object.freeze([...new Set([
     ...(patch.sourceIds || mission.sourceIds),
-    ...(mission.id === 'banking.sfn.cmn' ? ['fazenda.cmn.apresentacao'] : [])
+    ...(mission.id === 'banking.sfn.cmn' ? ['fazenda.cmn.apresentacao'] : []),
+    ...(FUNDAMENTALS_REVIEW[mission.id]?.sourceIds || [])
   ])]);
   return Object.freeze({
     ...mission,
@@ -75,6 +78,7 @@ function teachMission(mission) {
     teaching: Object.freeze({
       contractVersion: 1,
       questionCoverage: Object.freeze(questionCoverage),
+      editorialPass: FUNDAMENTALS_REVIEW[mission.id] ? 'fundamentos-r1' : 'draft-v2',
       reviewStatus: 'human-review-pending'
     })
   });

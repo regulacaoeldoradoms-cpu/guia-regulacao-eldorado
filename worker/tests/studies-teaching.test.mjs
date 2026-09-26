@@ -13,7 +13,7 @@ test('introdução explica nomes antes de cobrar siglas', () => {
   assert.match(bodies, /Conselho Monetário Nacional \(CMN\)/);
   assert.match(bodies, /Banco Central do Brasil/);
   assert.match(bodies, /BC ou BCB/);
-  assert.match(bodies, /intermediação financeira/);
+  assert.match(bodies, /intermediação financeira/i);
   assert.match(bodies, /Situação inventada/);
 });
 
@@ -114,6 +114,6 @@ test('fontes de todas as aulas são únicas e resolvíveis', () => {
   for (const source of STUDY_SOURCES) {
     const url = new URL(source.url);
     assert.equal(url.protocol, 'https:');
-    assert.ok(url.hostname === 'www.gov.br' || url.hostname.endsWith('.bcb.gov.br') || url.hostname === 'www.bb.com.br' || url.hostname === 'www.caixa.gov.br');
+    assert.ok(url.hostname === 'www.gov.br' || url.hostname.endsWith('.bcb.gov.br') || url.hostname === 'www.bb.com.br' || url.hostname === 'www.caixa.gov.br' || url.hostname === 'www.planalto.gov.br');
   }
 });
