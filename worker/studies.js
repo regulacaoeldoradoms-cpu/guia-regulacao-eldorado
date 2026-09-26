@@ -13,6 +13,7 @@ import {
 
 const ALLOWED_USERNAME = 'wellyton';
 const MAX_SESSION_SECONDS = 6 * 60 * 60;
+const STUDY_TIME_ZONE = 'America/Campo_Grande';
 const schemaReady = new WeakSet();
 const schemaPromises = new WeakMap();
 
@@ -234,8 +235,86 @@ export function computeCampaignProgress(progress, publishedMissions = PUBLISHED_
   };
 }
 
+function localDayKey(value, timeZone = STUDY_TIME_ZONE) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  const iso = text.includes('T') ? text : text.replace(' ', 'T') + 'Z';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone, year:'numeric', month:'2-digit', day:'2-digit'
+  }).formatToParts(date);
+  const get = (type) => parts.find((part) => part.type === type)?.value || '';
+  const year = get('year'), month = get('month'), day = get('day');
+  return year && month && day ? `${year}-${month}-${day}` : '';
+}
+
+function dayNumber(key) {
+  const match = String(key || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return NaN;
+  return Math.floor(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])) / 86400000);
+}
+
+export function computeStudyStreak(activityTimestamps, now = new Date(), timeZone = STUDY_TIME_ZONE) {
+  const days = [...new Set((Array.isArray(activityTimestamps) ? activityTimestamps : [])
+    .map((value) => localDayKey(value, timeZone))
+    .filter(Boolean))]
+    .sort()
+    .reverse();
+
+  const todayKey = localDayKey(now.toISOString(), timeZone);
+  const today = dayNumber(todayKey);
+  const numbers = days.map(dayNumber).filter(Number.isFinite);
+
+  let best = 0;
+  let run = 0;
+  let previous = null;
+  for (const current of numbers) {
+    if (previous === null || previous - current === 1) run += 1;
+    else run = 1;
+    if (run > best) best = run;
+    previous = current;
+  }
+
+  let current = 0;
+  if (numbers.length && (numbers[0] === today || numbers[0] === today - 1)) {
+    current = 1;
+    for (let index = 1; index < numbers.length; index += 1) {
+      if (numbers[index - 1] - numbers[index] !== 1) break;
+      current += 1;
+    }
+  }
+
+  return {
+    current,
+    best,
+    lastStudyDay: days[0] || ''
+  };
+}
+
+async function studyStreak(env, username) {
+  const result = await env.AUTH_DB.prepare(`SELECT activity_at FROM (
+      SELECT attempted_at AS activity_at
+      FROM study_attempts
+      WHERE username=?
+      UNION ALL
+      SELECT finished_at AS activity_at
+      FROM study_sessions
+      WHERE username=? AND status='finished' AND duration_seconds >= 60 AND finished_at IS NOT NULL
+      UNION ALL
+      SELECT created_at AS activity_at
+      FROM study_xp_events
+      WHERE username=?
+    )
+    WHERE activity_at IS NOT NULL
+    ORDER BY activity_at DESC
+    LIMIT 500`).bind(username, username, username).all();
+
+  return computeStudyStreak((result.results || []).map((row) => row.activity_at));
+}
+
 async function metrics(env, username, progress) {
-  const [attempts, sessions, xpRow, reviews] = await Promise.all([
+  const [attempts, sessions, xpRow, reviews, streak] = await Promise.all([
     env.AUTH_DB.prepare(`SELECT COUNT(*) AS total,
       COALESCE(SUM(correct),0) AS correct FROM study_attempts WHERE username=?`).bind(username).first(),
     env.AUTH_DB.prepare(`SELECT COALESCE(SUM(duration_seconds),0) AS seconds
@@ -243,7 +322,8 @@ async function metrics(env, username, progress) {
     env.AUTH_DB.prepare(`SELECT COALESCE(SUM(points),0) AS xp
       FROM study_xp_events WHERE username=?`).bind(username).first(),
     env.AUTH_DB.prepare(`SELECT COUNT(*) AS pending FROM study_reviews
-      WHERE username=? AND status='pending' AND due_at <= datetime('now')`).bind(username).first()
+      WHERE username=? AND status='pending' AND due_at <= datetime('now')`).bind(username).first(),
+    studyStreak(env, username)
   ]);
   const totalQuestions = Number(attempts?.total || 0);
   const correctQuestions = Number(attempts?.correct || 0);
@@ -259,6 +339,7 @@ async function metrics(env, username, progress) {
     correctQuestions,
     accuracy: totalQuestions ? Math.round((correctQuestions / totalQuestions) * 1000) / 10 : 0,
     reviewsDue: Number(reviews?.pending || 0),
+    streak,
     ...computeCampaignProgress(progress)
   };
 }
