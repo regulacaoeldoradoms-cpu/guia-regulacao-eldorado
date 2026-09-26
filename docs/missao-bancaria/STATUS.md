@@ -95,3 +95,22 @@ Escopo:
 - teste que prova que a publicação de novas missões não reduz o progresso já conquistado.
 
 A Fase 1 permanece **ABERTA**.
+
+
+## Revisão espaçada V1
+
+Documento:
+`19-FASE-1-REVISAO-ESPACADA-V1.md`
+
+Estado:
+**implementada na branch da expansão; homologação humana pendente.**
+
+Entregue:
+- revisões vencidas visíveis no dashboard;
+- reutilização do modo foco;
+- exigência de nova prática após o vencimento;
+- conclusão persistida;
+- +20 XP idempotente por revisão;
+- ciclos já agendados em 1/7/30 dias.
+
+A Fase 1 continua aberta.
