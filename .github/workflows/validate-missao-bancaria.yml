@@ -45,6 +45,9 @@ jobs:
           grep -q '/api/studies/reviews/' js/studies.js
           grep -q 'handleCompleteReview' worker/studies.js
           grep -q 'review_complete' worker/studies.js
+          grep -q "study.sfn.boss" worker/studies.js
+          grep -q "passScore: 75" worker/studies-content/banking-sfn.js
+          grep -q "kind: 'boss'" worker/studies-content/banking-sfn.js
           grep -q 'Content-Security-Policy' estudos/index.html
 
       - name: Validar isolamento assistencial
