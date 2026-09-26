@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 import {
   PUBLISHED_MISSIONS,
   PLANNED_MISSIONS,
   STUDY_SOURCES,
+  missionByTopicId,
   questionById
 } from '../studies-content/manifest.js';
 import { computeCampaignProgress, isStudiesApi, studyUsernameAllowed } from '../studies.js';
@@ -85,4 +87,22 @@ test('publicar novas missões não reduz o progresso conquistado', () => {
   assert.equal(after.availableCompletion, 33.3);
   assert.equal(before.campaignAvailability, 44.4);
   assert.equal(after.campaignAvailability, 66.7);
+});
+
+
+test('topicId resolve exatamente uma missão publicada', () => {
+  for (const mission of PUBLISHED_MISSIONS) {
+    assert.equal(missionByTopicId(mission.topicId)?.id, mission.id);
+  }
+  assert.equal(missionByTopicId('banking.sfn.inexistente'), null);
+});
+
+test('revisão espaçada exige prática nova e XP idempotente', () => {
+  const source = fs.readFileSync(new URL('../studies.js', import.meta.url), 'utf8');
+  assert.match(source, /\/api\/studies\/reviews/);
+  assert.match(source, /attempted_at >= \?/);
+  assert.match(source, /review_complete/);
+  assert.match(source, /INSERT OR IGNORE INTO study_xp_events/);
+  assert.match(source, /Esta revisão já foi concluída/);
+  assert.match(source, /Responda todas as questões novamente antes de concluir a revisão/);
 });
