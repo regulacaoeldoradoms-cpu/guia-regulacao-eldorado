@@ -118,14 +118,11 @@ A Fase 1 continua aberta.
 
 ## Fechamento do Mundo 1 — SFN
 
-Branch empilhada:
-`feat/missao-bancaria-fase1-fechar-mundo1-sfn`
-
 Documento:
 `20-FECHAMENTO-MUNDO1-SFN.md`
 
 Estado:
-**implementado; aguardando a incorporação da PR #495 e validação própria.**
+**incorporado à `main` pela PR #498, merge `20487883c948dffbeb4b6849baa3c39e9c577d9f`; homologação humana pendente.**
 
 Entregue:
 - Missão 7 — Seguros, previdência e capitalização;
@@ -143,8 +140,11 @@ A Fase 1 permanece **ABERTA** até homologação humana.
 
 ## Retomada parcial de missão
 
-Branch empilhada:
-`feat/missao-bancaria-fase1-retomar-missao`
+Branch atual:
+`feat/missao-bancaria-fase1-retomar-missao-v2`
+
+PR atual:
+**#499**
 
 Documento:
 `21-FASE-1-RETOMADA-PARCIAL.md`
@@ -159,5 +159,16 @@ Entregue:
 - nenhum gabarito no bootstrap;
 - revisões e Chefe excluídos do reaproveitamento histórico;
 - cache do cliente atualizado.
+
+A Fase 1 permanece **ABERTA**.
+
+
+## Correção de Conquistas
+
+Incluída na PR #499:
+- corrige a interpolação do SVG no estado sem medalhas;
+- atualiza o cache de `achievements.js`;
+- preserva Bronze/Prata/Ouro;
+- adiciona teste para impedir retorno do placeholder literal `${bookIcon}`.
 
 A Fase 1 permanece **ABERTA**.
