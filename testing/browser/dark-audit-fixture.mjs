@@ -92,7 +92,7 @@ export async function installAuditFixture(context, { theme='dark', authenticated
     else if (url.pathname === '/api/studies/bootstrap') data = {
       user:{ username:user.username, name:user.name },
       contentRelease:'audit-synthetic-v1',
-      metrics:{xp:0,level:1,levelTitle:'Recruta',nextLevelXp:150,hoursSeconds:0,questions:0,correctQuestions:0,accuracy:0,reviewsDue:0,publishedMissions:1,plannedMissions:9,campaignAvailability:11.1,completedPublished:0,availableCompletion:0,campaignProgress:0,availableProgress:0},
+      metrics:{xp:0,level:1,levelTitle:'Recruta',nextLevelXp:150,hoursSeconds:0,questions:0,correctQuestions:0,accuracy:0,reviewsDue:0,streak:{current:0,best:0,lastStudyDay:''},publishedMissions:1,plannedMissions:9,campaignAvailability:11.1,completedPublished:0,availableCompletion:0,campaignProgress:0,availableProgress:0},
       progress:{},
       attemptedQuestions:{},
       reviews:[],
