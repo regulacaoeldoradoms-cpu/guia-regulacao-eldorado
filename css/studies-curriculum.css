@@ -1,0 +1,25 @@
+/* Cobertura do curso-base: progresso editorial separado de XP e do bloco atual. */
+.study-page .study-course-map>header{display:flex;justify-content:space-between;align-items:flex-start;gap:18px}
+.study-page .study-course-map>header h2{margin:4px 0}
+.study-page .study-course-map>header p{margin:0;max-width:650px;color:var(--portal-muted,#607487);line-height:1.55}
+.study-page .study-readiness{padding:14px 16px;border:1px dashed var(--portal-border,#dce6ee);border-radius:14px;background:rgba(13,49,87,.04)}
+.study-page .study-readiness>div{display:flex;justify-content:space-between;gap:16px;align-items:center}
+.study-page .study-readiness span{font-weight:850}
+.study-page .study-readiness p{margin:7px 0 0;color:var(--portal-muted,#607487);line-height:1.5}
+.study-page .study-course-areas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.study-page .study-course-area{padding:12px 14px;border:1px solid var(--portal-border,#dce6ee);border-radius:13px;display:grid;gap:4px;min-width:0}
+.study-page .study-course-area strong{overflow-wrap:anywhere}
+.study-page .study-course-area span{font-size:.86rem;color:var(--portal-muted,#607487);line-height:1.4}
+.study-page .study-course-area[data-state="started"]{border-color:rgba(179,107,0,.55);background:rgba(179,107,0,.06)}
+.study-page .study-course-area[data-state="completed"]{border-color:rgba(47,140,74,.55);background:rgba(47,140,74,.07)}
+html[data-portal-theme="dark"] .study-readiness{background:rgba(214,138,31,.05);border-color:#49657d}
+html[data-portal-theme="dark"] .study-course-area{border-color:#49657d}
+html[data-portal-theme="dark"] .study-course-area[data-state="started"]{border-color:rgba(241,181,90,.58);background:rgba(241,181,90,.07)}
+html[data-portal-theme="dark"] .study-course-area[data-state="completed"]{border-color:rgba(95,190,119,.6);background:rgba(95,190,119,.08)}
+@media(max-width:900px){.study-page .study-course-areas{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){
+  .study-page .study-course-map>header{display:block}
+  .study-page .study-course-map>header p{margin-top:8px}
+  .study-page .study-course-areas{grid-template-columns:1fr}
+  .study-page .study-readiness>div{align-items:flex-start;flex-direction:column;gap:4px}
+}

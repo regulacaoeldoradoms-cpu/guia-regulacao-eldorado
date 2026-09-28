@@ -91,7 +91,7 @@ Adicionar novas aulas nunca apaga conclusões anteriores nem transforma um tópi
 O dashboard deve poder exibir:
 - cobertura do edital;
 - domínio geral;
-- horas líquidas;
+- tempo registrado;
 - número de questões;
 - percentual de acertos;
 - evolução por matéria;
@@ -134,10 +134,10 @@ Exemplos de marcos:
 - **Primeira missão** — concluir a primeira missão real;
 - **Primeiras 100** — responder 100 questões;
 - **Ritmo de estudo** — atingir uma meta de constância definida sem exigir comportamento compulsivo;
-- **SFN dominado** — superar o chefe de SFN com critério de domínio;
+- **Chefe do SFN vencido** — superar o chefe do primeiro bloco de SFN segundo o critério mínimo da rodada;
 - **Mundo concluído** — completar um mundo pedagógico;
 - **1.000 questões** — atingir mil questões respondidas;
-- **Simulado competitivo** — alcançar critério de desempenho definido em simulado completo.
+- **Marco de simulado** — alcançar critério de desempenho definido em simulado completo, sem transformar o nome da conquista em previsão de aprovação.
 
 O catálogo definitivo e os thresholds devem ser calibrados durante o uso real.
 
@@ -147,7 +147,7 @@ Sessões de estudo devem poder abrir em modo foco:
 - interface limpa;
 - sem navegação social;
 - sem distrações;
-- cronômetro opcional;
+- cronômetro opcional, com limite explícito entre tempo registrado e atenção real;
 - barra de progresso da sessão;
 - ação "marcar dúvida";
 - navegação anterior/próximo.
@@ -195,7 +195,7 @@ Ordem macro:
 - Fase 1 — motor MVP + primeiro recorte real de estudo;
 - Fase 2 — motor pedagógico reutilizável, refinado com uso real;
 - Fase 3 — expansão até completar o primeiro mundo: Conhecimentos Bancários;
-- Fase 4 — Português + Matemática Financeira;
+- Fase 4 — Português + Matemática + Matemática Financeira;
 - Fase 5 — Atendimento/Vendas + TI/Digital;
 - Fase 6 — Ética/Compliance + Estatística + Inglês;
 - Fase 7 — revisão adaptativa e caderno de erros;
@@ -211,7 +211,7 @@ Exemplo:
 2. expansão de SFN + primeiro chefe;
 3. Produtos Bancários;
 4. Português;
-5. Matemática Financeira;
+5. Matemática e Matemática Financeira;
 6. demais mundos.
 
 Wellyton deve poder estudar cada recorte assim que ele atingir qualidade pedagógica e técnica suficiente, sem aguardar a conclusão das fases posteriores.

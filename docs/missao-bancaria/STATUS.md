@@ -1,6 +1,6 @@
 # MISSÃO BANCÁRIA — STATUS
 
-Atualizado em 26/09/2026 — tempo visível e salvamento parcial.
+Atualizado em 27/09/2026 — mapa curricular e prontidão separados do XP.
 
 ## Estado e autorização
 
@@ -65,6 +65,36 @@ Localmente passaram **13 testes do contador, nove de SQL real e dez fluxos do ro
 CI preparado: nove cenários de navegador adicionais, mantendo os 55 anteriores, total previsto de 64. Usam relógio controlado, HTML/CSS reais e API simulada. **Resultado remoto, merge desta branch e publicação ainda precisam ser consultados e registrados.** Não foram executados navegador local ou teste físico em Android nesta rodada.
 
 Fechamento abrupto do aplicativo ou falha de rede pode perder o trecho posterior ao último checkpoint confirmado. Não há fila offline durável, restauração automática da mesma sessão após recarga ou garantia de envio em pagehide. Lacunas longas descartadas podem subcontar tempo. Visibilidade não prova atenção; janelas simultaneamente visíveis ainda não são coordenadas entre aparelhos. Todos esses limites aparecem no documento 37; o aviso principal está na interface.
+
+## Nova entrega empilhada — mapa curricular e prontidão
+
+Documento: `38-MAPA-CURRICULAR-E-PRONTIDAO.md`.  
+Branch: `feat/missao-bancaria-mapa-curricular`, inicialmente empilhada sobre a PR #509 para evitar conflito nos arquivos de dashboard enquanto o cronômetro é validado.
+
+Problema tratado: as mesmas nove missões eram usadas como conteúdo publicado e planejamento total do bloco, permitindo uma leitura visual de 9/9 como se o curso estivesse completo. O dashboard passa a separar explicitamente:
+- **bloco atual publicado**;
+- **cobertura curricular do curso-base**;
+- **prontidão de prova**.
+
+Mapa V1:
+- dois editais-base históricos versionados: BB 2022/001 — Agente Comercial e CAIXA 2024/NM — TBN;
+- 12 áreas de formação;
+- 43 blocos pedagógicos planejados;
+- 1 área iniciada;
+- 1 bloco atualmente com material publicado;
+- 0 áreas integralmente cobertas.
+
+Os 43 blocos são agrupamentos pedagógicos próprios, não contagem oficial de itens de edital. A distribuição oficial de questões/pontos dos dois editais-base é armazenada separadamente e validada por teste.
+
+Concluir as nove missões atuais pode concluir somente o bloco `banking.sfn-foundation`; não conclui Conhecimentos Bancários nem o curso.
+
+Os títulos de XP que podiam sugerir prontidão — “Competitivo”, “Pré-aprovação” e “Reta final” — são substituídos por nomes neutros de campanha. XP permanece motivação/participação e não probabilidade de aprovação.
+
+O dashboard passa a mostrar **Prontidão de prova: Ainda não medida**, com explicação de que essa avaliação exige cobertura, retenção e simulados representativos. Nenhum percentual de prontidão é calculado a partir de XP, horas ou leitura.
+
+Arquivos funcionais: `worker/studies-content/curriculum-v1.js`, bootstrap, dashboard e CSS exclusivo do mapa. Sem alteração de D1, aulas, questões, gabaritos, XP já conquistado, conquistas ou revisões.
+
+Testes adicionados impedem regressão para “9/9 = curso completo”, validam os totais oficiais das provas-base, os 12 eixos/43 blocos e a permanência da prontidão como não medida neste estágio. O resultado remoto desta branch ainda deve ser consultado depois do push final; não presumir merge ou publicação.
 
 ## Próximos recortes autorizados
 

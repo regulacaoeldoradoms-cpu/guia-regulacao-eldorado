@@ -5,7 +5,7 @@ Use este arquivo como instrução curta para qualquer nova conversa, agente ou s
 ## Ordem obrigatória de leitura
 1. `docs/missao-bancaria/00-DOSSIE-MESTRE.md`;
 2. este arquivo;
-3. `24-CONTRATO-PEDAGOGICO-GLOBAL.md` e `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md`;
+3. `24-CONTRATO-PEDAGOGICO-GLOBAL.md`, `26-PRODUCAO-PEDAGOGICA-EM-ETAPAS.md` e `38-MAPA-CURRICULAR-E-PRONTIDAO.md`;
 4. documento da fase ativa;
 5. `STATUS.md` e registro mais recente da entrega;
 6. código atual relacionado.
@@ -25,6 +25,9 @@ Não tratar resumos, siglas expandidas, links para normas, cartões, XP ou pergu
 - acesso inicial permanece exclusivo ao usuário `wellyton`, com autorização real no backend;
 - priorizar leitura e prática, não vídeo;
 - preservar cobertura e domínio como métricas separadas;
+- tratar `9/9` apenas como conclusão/disponibilidade do bloco atual; nunca como curso completo;
+- XP e nível são progressão do jogo, não prontidão, probabilidade de aprovação ou domínio comprovado;
+- atualizar o mapa curricular quando um novo edital for oficialmente adotado, sem chamar edital-base histórico de vigente;
 - gamificação não pode esconder desempenho nem ausência de ensino;
 - cada entrega deve funcionar antes de ampliar escopo;
 - preferir unidades pequenas e completas de ensino, não grandes conjuntos incompletos de questões;
@@ -41,7 +44,7 @@ Não tratar resumos, siglas expandidas, links para normas, cartões, XP ou pergu
 
 ## Instrução sugerida para nova sessão
 
-> Continue a Missão Bancária no repositório oficial. Leia o Dossiê Mestre, a Instrução de Continuidade, o Contrato Pedagógico Global, a Produção Pedagógica em Etapas, o documento da fase ativa e o STATUS antes de alterar código. Preserve decisões aprovadas e confira a branch/main. Toda unidade deve ensinar por leitura antes de cobrar questões. Se o trabalho for grande, subdivida a produção em mais rodadas sem resumir ou omitir ensino. As questões verificam compreensão e aplicação depois da aula. Priorize a correção do material existente antes de novos mundos ou recompensas. Preserve progresso e registre implementação, revisão pedagógica, testes, publicação realmente verificada e pendências de homologação. Não antecipe fases sem necessidade.
+> Continue a Missão Bancária no repositório oficial. Leia o Dossiê Mestre, a Instrução de Continuidade, o Contrato Pedagógico Global, a Produção Pedagógica em Etapas, o Mapa Curricular e de Prontidão, o documento da fase ativa e o STATUS antes de alterar código. Preserve decisões aprovadas e confira a branch/main. Toda unidade deve ensinar por leitura antes de cobrar questões. Se o trabalho for grande, subdivida a produção em mais rodadas sem resumir ou omitir ensino. As questões verificam compreensão e aplicação depois da aula. Priorize a correção do material existente antes de novos mundos ou recompensas. Preserve progresso e registre implementação, revisão pedagógica, testes, publicação realmente verificada e pendências de homologação. Não antecipe fases sem necessidade.
 
 ## Regra de conflito
 

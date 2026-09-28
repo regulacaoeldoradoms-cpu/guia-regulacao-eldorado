@@ -62,6 +62,44 @@
     if (el) el.style.width = `${Math.max(0, Math.min(100, Number(value || 0)))}%`;
   }
 
+  function renderCurriculum(curriculum) {
+    const panel = document.querySelector('.study-course-map');
+    if (!panel) return;
+    if (!curriculum || !Array.isArray(curriculum.areas)) {
+      panel.hidden = true;
+      return;
+    }
+    panel.hidden = false;
+    $('courseBasis').textContent = curriculum.basis || 'Mapa curricular em atualização.';
+    $('courseAvailabilityLabel').textContent = `${curriculum.publishedBlocks}/${curriculum.totalBlocks} blocos · ${curriculum.startedAreas}/${curriculum.totalAreas} áreas iniciadas`;
+    $('courseProgressLabel').textContent = `${curriculum.completedBlocks}/${curriculum.totalBlocks} blocos concluídos · ${curriculum.completedAreas}/${curriculum.totalAreas} áreas integralmente cobertas`;
+    setBar('courseAvailabilityBar', curriculum.availabilityPercent);
+    setBar('courseProgressBar', curriculum.progressPercent);
+    $('readinessLabel').textContent = curriculum.readiness?.label || 'Ainda não medida';
+    $('readinessExplanation').textContent = curriculum.readiness?.explanation
+      || 'Prontidão exige cobertura curricular, retenção e simulados representativos.';
+
+    const list = $('courseAreaList');
+    const fragment = document.createDocumentFragment();
+    for (const item of curriculum.areas) {
+      const card = document.createElement('article');
+      card.className = 'study-course-area';
+      const stateName = item.completed ? 'completed' : item.started ? 'started' : 'planned';
+      card.dataset.state = stateName;
+      const title = document.createElement('strong');
+      title.textContent = item.title;
+      const detail = document.createElement('span');
+      detail.textContent = item.completed
+        ? `${item.completedBlocks}/${item.totalBlocks} blocos · área coberta no mapa-base`
+        : item.started
+          ? `${item.publishedBlocks}/${item.totalBlocks} blocos com material · em construção`
+          : `${item.totalBlocks} blocos planejados · ainda sem material publicado`;
+      card.append(title, detail);
+      fragment.append(card);
+    }
+    list.replaceChildren(fragment);
+  }
+
   function completed(mission) {
     return Number(state.data?.progress?.[mission.topicId]?.coverageState || 0) >= 3;
   }
@@ -91,10 +129,11 @@
     const streak = m.streak || { current:0, best:0, lastStudyDay:'' };
     $('metricStreak').textContent = `${streak.current} ${streak.current === 1 ? 'dia' : 'dias'}`;
     $('metricBestStreak').textContent = `Melhor: ${streak.best} ${streak.best === 1 ? 'dia' : 'dias'}`;
-    $('availabilityLabel').textContent = `${m.publishedMissions}/${m.plannedMissions} missões · ${m.campaignAvailability}%`;
-    $('personalProgressLabel').textContent = `${m.completedPublished}/${m.plannedMissions} da campanha · ${m.campaignProgress}% · ${m.availableCompletion}% do conteúdo liberado`;
+    $('availabilityLabel').textContent = `${m.publishedMissions}/${m.plannedMissions} missões deste bloco publicadas`;
+    $('personalProgressLabel').textContent = `${m.completedPublished}/${m.publishedMissions} missões concluídas · ${m.availableCompletion}% do bloco publicado`;
     setBar('availabilityBar', m.campaignAvailability);
-    setBar('personalProgressBar', m.campaignProgress);
+    setBar('personalProgressBar', m.availableCompletion);
+    renderCurriculum(data.curriculum);
 
     const review = Array.isArray(data.reviews) && data.reviews.length ? data.reviews[0] : null;
     const reviewPanel = $('reviewPanel');

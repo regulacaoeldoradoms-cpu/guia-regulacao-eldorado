@@ -31,12 +31,20 @@ async function fixture(t) {
     sourceMap:()=>new Map()
   };
   const catalog=new vm.SyntheticModule(Object.keys(exports),function(){for(const [k,v]of Object.entries(exports))this.setExport(k,v);},{context});
+  const curriculum=new vm.SyntheticModule(['curriculumSnapshot'],function(){
+    this.setExport('curriculumSnapshot',()=>({
+      version:1,basis:'fixture',totalAreas:0,startedAreas:0,completedAreas:0,
+      totalBlocks:0,publishedBlocks:0,completedBlocks:0,availabilityPercent:0,progressPercent:0,
+      readiness:{status:'not_measured',label:'Ainda não medida',explanation:'fixture'},areas:[]
+    }));
+  },{context});
   const rounds=new vm.SourceTextModule(fs.readFileSync(new URL('../../study-rounds.js',import.meta.url),'utf8'),{context});
   await rounds.link(()=>{throw new Error('Import não esperado no serviço');});await rounds.evaluate();
   const route=new vm.SourceTextModule(fs.readFileSync(new URL('../../studies.js',import.meta.url),'utf8'),{context});
   await route.link((specifier)=>{
     if(specifier==='./auth-management-flex.js')return auth;
     if(specifier==='./studies-content/manifest.js')return catalog;
+    if(specifier==='./studies-content/curriculum-v1.js')return curriculum;
     if(specifier==='./study-rounds.js')return rounds;
     throw new Error(`Import não previsto: ${specifier}`);
   });
