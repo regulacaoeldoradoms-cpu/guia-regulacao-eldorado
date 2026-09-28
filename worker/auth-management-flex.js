@@ -256,7 +256,7 @@ async function handleAdminUsers(request, env, origin) {
       }
     }
 
-    if (actor?.role === 'admin') {
+    if (actor?.role === 'admin' && requestedRole) {
       if (requestedRole === 'cidadao') {
         await retireProfessionalSeededRelationships(env, payload.user.username);
       } else {
