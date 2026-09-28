@@ -14,6 +14,7 @@
     activeMission: null,
     activeReview: null,
     answered: new Map(),
+    resumedAnswers: new Map(),
     sessionId: '',
     doubt: false,
     generation: 0,
@@ -47,6 +48,13 @@
     const hours = Math.floor(total / 3600);
     const minutes = Math.floor((total % 3600) / 60);
     return `${hours}h${String(minutes).padStart(2, '0')}`;
+  }
+
+  function formatClock(seconds) {
+    const total = Math.max(0, Math.floor(Number(seconds || 0)));
+    const minutes = Math.floor(total / 60);
+    const remainder = total % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(remainder).padStart(2, '0')}`;
   }
 
   function formatReviewDue(value) {
@@ -144,11 +152,34 @@
     setBar('personalProgressBar', m.availableCompletion);
     renderCurriculum(data.curriculum);
 
+    const active = data.activeSession || null;
+    const resumeMission = active ? data.missions.find((mission) => mission.id === active.missionId) : null;
+    const resumePanel = $('resumePanel');
+    if (resumePanel) {
+      resumePanel.hidden = !active;
+      if (active) {
+        $('resumeTitle').textContent = active.resumable
+          ? `Retomar: ${active.title || resumeMission?.shortTitle || resumeMission?.title || 'sessão anterior'}`
+          : 'Sessão anterior precisa ser encerrada';
+        $('resumeMeta').textContent = active.resumable
+          ? `Último checkpoint confirmado: ${formatClock(active.durationSeconds)}. Você continua na mesma rodada, sem criar outra sessão.`
+          : (active.reason || 'Esta sessão não pode mais ser retomada com segurança.');
+        $('resumeSession').hidden = !active.resumable;
+        $('resumeSession').disabled = !active.resumable;
+        $('resumeSession').onclick = active.resumable ? resumeActiveSession : null;
+        $('discardSession').disabled = false;
+        $('discardSession').onclick = discardActiveSession;
+      } else {
+        $('resumeSession').onclick = null;
+        $('discardSession').onclick = null;
+      }
+    }
+
     const review = Array.isArray(data.reviews) && data.reviews.length ? data.reviews[0] : null;
     const reviewPanel = $('reviewPanel');
     if (reviewPanel) {
-      reviewPanel.hidden = !review;
-      if (review) {
+      reviewPanel.hidden = !review || Boolean(active);
+      if (review && !active) {
         $('reviewTitle').textContent = `Revisão ${review.cycle}: ${review.title}`;
         const due = formatReviewDue(review.dueAt);
         $('reviewMeta').textContent = due
@@ -163,7 +194,7 @@
     const grid = $('missionGrid');
     grid.innerHTML = data.missions.map((mission, index) => {
       const done = completed(mission);
-      const unlocked = isUnlocked(index);
+      const unlocked = !active && isUnlocked(index);
       const progress = data.progress[mission.topicId];
       const evidence = data.learningEvidence?.[mission.topicId];
       const boss = mission.kind === 'boss';
@@ -183,9 +214,17 @@
     });
 
     const next = nextMission();
-    $('continueStudy').disabled = !next;
-    $('continueStudy').textContent = next ? `Continuar: ${next.shortTitle}` : 'Conteúdo atual concluído';
-    $('continueStudy').onclick = next ? () => openMission(next.id) : null;
+    if (active) {
+      $('continueStudy').disabled = !active.resumable;
+      $('continueStudy').textContent = active.resumable
+        ? `Retomar: ${active.title || resumeMission?.shortTitle || resumeMission?.title || 'sessão'}`
+        : 'Encerre a sessão anterior';
+      $('continueStudy').onclick = active.resumable ? resumeActiveSession : null;
+    } else {
+      $('continueStudy').disabled = !next;
+      $('continueStudy').textContent = next ? `Continuar: ${next.shortTitle}` : 'Conteúdo atual concluído';
+      $('continueStudy').onclick = next ? () => openMission(next.id) : null;
+    }
   }
 
   async function load() {
@@ -281,6 +320,27 @@
       }
     }
 
+    for (const answer of state.resumedAnswers.values()) {
+      const questionId = answer.questionId;
+      const card = document.querySelector(`[data-question-id="${CSS.escape(questionId)}"]`);
+      if (!card) continue;
+      const input = card.querySelector(`input[value="${String(answer.selectedOption)}"]`);
+      if (input) input.checked = true;
+      card.querySelectorAll('input').forEach((item) => { item.disabled = true; });
+      const button = card.querySelector('[data-answer-question]');
+      if (button) {
+        button.disabled = true;
+        button.textContent = 'Respondida';
+      }
+      const feedback = card.querySelector('[data-feedback]');
+      if (feedback) {
+        feedback.hidden = false;
+        feedback.className = `study-feedback ${answer.correct ? 'correct' : 'wrong'}`;
+        feedback.textContent = `${answer.correct ? 'Correto. ' : 'Ainda não. '}${answer.explanation || ''}`;
+      }
+      state.answered.set(questionId, Boolean(answer.correct));
+    }
+
     $('questionList').querySelectorAll('[data-answer-question]').forEach((button) => {
       button.addEventListener('click', () => answerQuestion(button.dataset.answerQuestion));
     });
@@ -288,16 +348,73 @@
     updateFocusProgress();
   }
 
-  function startTimer(supportsCheckpoints) {
-    if (clock) clock.start(state.sessionId, supportsCheckpoints);
+  function startTimer(supportsCheckpoints, initialSeconds = 0) {
+    if (clock) clock.start(state.sessionId, supportsCheckpoints, initialSeconds);
     else {
       $('studyTimer').textContent = '—';
       if ($('studyTimerStatus')) $('studyTimerStatus').textContent = 'Cronômetro indisponível; atualize a página.';
     }
   }
 
+  function resumeActiveSession() {
+    if (state.activeMission || state.leaving) return;
+    const active = state.data?.activeSession;
+    if (!active?.resumable) {
+      status(active?.reason || 'Esta sessão não pode ser retomada.');
+      return;
+    }
+    const mission = state.data?.missions?.find((item) => item.id === active.missionId);
+    if (!mission) {
+      status('O conteúdo desta sessão não está disponível nesta versão.');
+      return;
+    }
+
+    ++state.generation;
+    state.activeMission = mission;
+    state.activeReview = active.review || null;
+    state.sessionId = active.sessionId;
+    state.completing = false;
+    state.pendingAnswers.clear();
+    state.answered.clear();
+    state.resumedAnswers = new Map((active.answers || []).map((answer) => [answer.questionId, answer]));
+    state.doubt = false;
+    clock?.reset();
+    $('studyTimer').textContent = formatClock(active.durationSeconds);
+    $('markDoubt').textContent = 'Marcar dúvida';
+    const topbar = document.querySelector('.study-topbar');
+    if (topbar) topbar.inert = true;
+    $('studyDashboard').hidden = true;
+    $('studyFocus').hidden = false;
+    document.body.style.overflow = 'hidden';
+    renderMission(mission);
+    startTimer(state.data?.timeProtocol === 1, active.durationSeconds);
+    status('Sessão retomada do último checkpoint confirmado.', true);
+    $('focusTitle')?.focus({ preventScroll: true });
+  }
+
+  async function discardActiveSession() {
+    const active = state.data?.activeSession;
+    if (!active || state.leaving) return;
+    $('resumeSession').disabled = true;
+    $('discardSession').disabled = true;
+    status('Encerrando a sessão anterior...');
+    const saved = await finishSession(active.sessionId, active.durationSeconds || 0);
+    if (!saved) {
+      $('resumeSession').disabled = !active.resumable;
+      $('discardSession').disabled = false;
+      status('Não foi possível encerrar a sessão anterior. Tente novamente.');
+      return;
+    }
+    await load();
+    status('Sessão anterior encerrada. O tempo já confirmado foi preservado.');
+  }
+
   async function openMission(id, review = null) {
     if (state.activeMission || state.leaving) return;
+    if (state.data?.activeSession) {
+      status('Há uma sessão anterior aberta. Retome ou encerre essa sessão antes de iniciar outra.');
+      return;
+    }
     const mission = state.data?.missions?.find((item) => item.id === id);
     if (!mission) return;
     const generation = ++state.generation;
@@ -308,6 +425,7 @@
     state.completing = false;
     state.pendingAnswers.clear();
     state.answered.clear();
+    state.resumedAnswers.clear();
     state.doubt = false;
     $('studyTimer').textContent = '00:00';
     $('markDoubt').textContent = 'Marcar dúvida';
@@ -421,6 +539,7 @@
     if (topbar) topbar.inert = false;
     state.activeMission = null;
     state.activeReview = null;
+    state.resumedAnswers.clear();
     state.pendingAnswers.clear();
     state.completing = false;
     await load();
