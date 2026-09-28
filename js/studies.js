@@ -16,6 +16,7 @@
     answered: new Map(),
     resumedAnswers: new Map(),
     sessionId: '',
+    markerProtocol: 0,
     doubt: false,
     generation: 0,
     leaving: false,
@@ -24,7 +25,10 @@
   };
 
   const $ = (id) => document.getElementById(id);
-  const reader = window.StudyReader?.create($('studyFocus')) || null;
+  let markerTimer = 0;
+  let markerPending = null;
+  let markerBusy = null;
+  const reader = window.StudyReader?.create($('studyFocus'), { onMarker: queueMarker }) || null;
   const clock = window.StudyClock?.create({
     root: $('studyFocus'),
     send: (sessionId, durationSeconds) => auth.api(`/api/studies/sessions/${encodeURIComponent(sessionId)}/checkpoint`, {
@@ -35,6 +39,60 @@
     const el = $(focus ? 'focusStatus' : 'studyStatus');
     if (el) el.textContent = text || '';
   };
+
+  function queueMarker(marker) {
+    if (!marker || !state.sessionId || state.markerProtocol !== 1 || state.leaving) return;
+    markerPending = {
+      sessionId: state.sessionId,
+      marker: {
+        view: marker.view === 'practice' ? 'practice' : 'lesson',
+        sectionId: String(marker.sectionId || ''),
+        allSections: marker.allSections === true
+      }
+    };
+    window.clearTimeout(markerTimer);
+    markerTimer = window.setTimeout(() => { void flushMarker(); }, 250);
+  }
+
+  function flushMarker() {
+    window.clearTimeout(markerTimer);
+    markerTimer = 0;
+    if (markerBusy) return markerBusy;
+    if (!markerPending) return Promise.resolve(true);
+    markerBusy = (async () => {
+      let ok = true;
+      while (markerPending) {
+        const pending = markerPending;
+        markerPending = null;
+        if (!pending.sessionId || pending.sessionId !== state.sessionId) continue;
+        try {
+          const receipt = await auth.api(
+            `/api/studies/sessions/${encodeURIComponent(pending.sessionId)}/marker`,
+            { method: 'POST', body: JSON.stringify(pending.marker) }
+          );
+          if (!receipt || receipt.markerSaved !== true || receipt.markerProtocol !== 1
+            || receipt.sessionId !== pending.sessionId) {
+            throw new Error('Confirmação de marcador inválida');
+          }
+        } catch (_) {
+          ok = false;
+          status('A posição da leitura ainda não foi confirmada. O conteúdo e as respostas continuam salvos.', true);
+          break;
+        }
+      }
+      return ok;
+    })().finally(() => {
+      markerBusy = null;
+      if (markerPending && state.sessionId) window.setTimeout(() => { void flushMarker(); }, 0);
+    });
+    return markerBusy;
+  }
+
+  function resetMarkerQueue() {
+    window.clearTimeout(markerTimer);
+    markerTimer = 0;
+    markerPending = null;
+  }
 
   $('portalUserName').textContent = user.name || user.username || 'Wellyton';
   $('portalUserRole').textContent = 'Missão Bancária';
@@ -263,7 +321,7 @@
       || state.leaving || state.completing || state.pendingAnswers.size > 0;
   }
 
-  function renderMission(mission) {
+  function renderMission(mission, marker = null) {
     const boss = mission.kind === 'boss';
     $('focusTitle').textContent = state.activeReview
       ? `Revisão · ${mission.title}`
@@ -344,7 +402,7 @@
     $('questionList').querySelectorAll('[data-answer-question]').forEach((button) => {
       button.addEventListener('click', () => answerQuestion(button.dataset.answerQuestion));
     });
-    reader?.mount(mission);
+    reader?.mount(mission, marker);
     updateFocusProgress();
   }
 
@@ -373,6 +431,8 @@
     state.activeMission = mission;
     state.activeReview = active.review || null;
     state.sessionId = active.sessionId;
+    state.markerProtocol = state.data?.markerProtocol === 1 ? 1 : 0;
+    resetMarkerQueue();
     state.completing = false;
     state.pendingAnswers.clear();
     state.answered.clear();
@@ -386,7 +446,7 @@
     $('studyDashboard').hidden = true;
     $('studyFocus').hidden = false;
     document.body.style.overflow = 'hidden';
-    renderMission(mission);
+    renderMission(mission, active.marker || null);
     startTimer(state.data?.timeProtocol === 1, active.durationSeconds);
     status('Sessão retomada do último checkpoint confirmado.', true);
     $('focusTitle')?.focus({ preventScroll: true });
@@ -421,6 +481,8 @@
     state.activeMission = mission;
     state.activeReview = review;
     state.sessionId = '';
+    state.markerProtocol = 0;
+    resetMarkerQueue();
     clock?.reset();
     state.completing = false;
     state.pendingAnswers.clear();
@@ -447,7 +509,9 @@
       }
       if (!response.sessionId) throw new Error('Identificador da rodada não recebido.');
       state.sessionId = response.sessionId;
+      state.markerProtocol = response.markerProtocol === 1 ? 1 : 0;
       startTimer(response.timeProtocol === 1);
+      if (state.markerProtocol === 1 && reader?.snapshot) queueMarker(reader.snapshot());
       updateFocusProgress();
       status('', true);
     } catch (error) {
@@ -528,8 +592,11 @@
     state.leaving = true;
     ++state.generation;
     const sessionId = state.sessionId;
+    await flushMarker();
     const durationSeconds = clock?.stop().durationSeconds || 0;
     state.sessionId = '';
+    state.markerProtocol = 0;
+    resetMarkerQueue();
     updateFocusProgress();
     const saved = await finishSession(sessionId, durationSeconds);
     document.body.style.overflow = '';
