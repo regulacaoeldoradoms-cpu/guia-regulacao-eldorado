@@ -138,7 +138,7 @@ Testes verificam histórico sem score, deduplicação por ciclo, pontuação rea
 Documento: `42-RECUPERACAO-SESSAO.md`.  
 Branch: `feat/missao-bancaria-recuperacao-sessao`, empilhada sobre a evidência de retenção.
 
-Quando existe uma rodada ainda ativa, o bootstrap passa a expor a sessão recuperável com missão, modo, revisão, último checkpoint e respostas já persistidas. O dashboard oferece **Retomar sessão** ou **Encerrar sessão**; enquanto a rodada está ativa, o backend recusa uma nova abertura com `STUDY_ACTIVE_SESSION_EXISTS`.
+Quando existe uma sessão ainda aberta, o bootstrap passa a expor seu estado com missão, modo, revisão, último checkpoint e respostas já persistidas. Rodada ainda `active` pode ser retomada; rodada que já possui resultado aparece como não recuperável e precisa ser encerrada. O dashboard oferece **Retomar sessão** quando aplicável ou **Encerrar sessão**; enquanto a sessão anterior não for resolvida, o backend recusa nova abertura com `STUDY_ACTIVE_SESSION_EXISTS`.
 
 A retomada reutiliza o mesmo `sessionId`, restaura respostas já registradas e reinicia o cronômetro a partir do último tempo confirmado. Não cria XP, conclusão ou tentativa apenas por recarregar a página. Sessão com conteúdo atualizado/incompatível não é retomada silenciosamente e pode ser encerrada preservando o que já estava salvo.
 
