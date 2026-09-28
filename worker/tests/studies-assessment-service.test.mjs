@@ -57,6 +57,16 @@ test('primeira abertura usa forma A e reabrir retoma a mesma rodada', async (t) 
   assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM study_assessment_runs').get().n, 1);
 });
 
+test('duas aberturas concorrentes convergem para uma única tentativa ativa', async (t) => {
+  const { db, sql } = await fixture(t);
+  const [a, b] = await Promise.all([
+    startAssessmentRun(db, 'wellyton', assessment),
+    startAssessmentRun(db, 'wellyton', assessment)
+  ]);
+  assert.equal(a.runId, b.runId);
+  assert.equal(sql.prepare("SELECT COUNT(*) AS n FROM study_assessment_runs WHERE status='active'").get().n, 1);
+});
+
 test('reenviar a mesma alternativa é idempotente e trocar após registro é recusado', async (t) => {
   const { db, sql } = await fixture(t);
   const run = await startAssessmentRun(db, 'wellyton', assessment);
