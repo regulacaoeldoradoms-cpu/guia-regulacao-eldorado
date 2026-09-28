@@ -1,6 +1,18 @@
 # Central de Documentos — Status
 
-Última atualização: 25/09/2026.
+Última atualização: 28/09/2026.
+
+## Barra Global do Portal — EM VALIDAÇÃO — 28/09/2026
+
+Decisão aprovada: o componente com **Início, Amigos, Ferramentas, Notificações, Perfil e Pesquisar usuários** passa a se chamar **Barra Global do Portal** e deve permanecer disponível entre módulos autenticados. O desenho reaproveita `js/social-navigation.js`; não cria um segundo menu concorrente.
+
+Implementação na branch `feat/global-portal-navigation-20260928`: `js/portal-interactions.js` carrega um bootstrap único (`js/portal-global-navigation.js`) nas superfícies que já possuem cabeçalho autenticado e logout. O bootstrap reutiliza sessão, API social, estilos e navegação existentes. A pesquisa de usuários deixa de ser exclusiva da Home e acompanha a barra desktop sempre que a Camada Social estiver disponível. Quando a Barra Global monta, atalhos legados diretos **Início/Ferramentas** dentro do cabeçalho são ocultados para evitar duplicidade; controles próprios de cada módulo permanecem.
+
+A montagem não força login em superfícies sem token, não amplia cargos/permissões e não altera dados clínicos, Drive, IA ou observabilidade. O mobile mantém os destinos principais da navegação e não recebe os atalhos secundários Segurança/Configurações/Conquistas dentro dessa barra. O Service Worker foi versionado para `20260928-1` e aquece os assets novos, reduzindo risco de cache antigo.
+
+Validação adicionada: `worker/tests/global-navigation.test.mjs` + workflow **Validar Barra Global do Portal**. A suíte social existente foi ajustada apenas no contrato que antes exigia pesquisa exclusiva da Home; asserções de segurança e demais comportamentos continuam. A auditoria transversal existente não foi desativada nem relaxada.
+
+**Próxima ação exata:** abrir PR, conferir checks pertinentes, corrigir regressão real se houver, integrar com SHA esperado e confirmar GitHub Pages. Depois revisar visualmente Agenda, Central de Documentos, Recepção, Telemedicina e Guia Médico para confirmar a mesma Barra Global. Não declarar publicação antes do deploy.
 
 ## Recepção — correção de contraste #486 — 25/09/2026
 
