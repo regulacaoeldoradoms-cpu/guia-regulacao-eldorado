@@ -85,8 +85,9 @@
     return items.length;
   }
 
-  function create(root) {
+  function create(root, options = {}) {
     if (!root) return null;
+    const onMarker = typeof options.onMarker === 'function' ? options.onMarker : null;
     const find = (id) => root.querySelector(`#${id}`);
     const names = [
       'studyReaderNav', 'studyReadButton', 'studyPracticeButton', 'studyLessonPanel',
@@ -103,6 +104,19 @@
     let active = false;
     let font = 0;
     const fontSizes = [1.125, 1.25, 1.375, 1.5];
+
+    function markerSnapshot() {
+      return {
+        view: el.studyPracticePanel.hidden ? 'lesson' : 'practice',
+        sectionId: sections[index]?.id || '',
+        allSections: all
+      };
+    }
+
+    function notifyMarker() {
+      if (!active || !onMarker) return;
+      try { onMarker(markerSnapshot()); } catch (_) {}
+    }
 
     function focusAt(target) {
       el.studyFocusBody.scrollTop = 0;
@@ -153,6 +167,7 @@
       all = false;
       paintParts();
       setView('lesson');
+      notifyMarker();
       return true;
     }
 
@@ -164,7 +179,7 @@
       el.studyFontLarger.disabled = font === fontSizes.length - 1;
     }
 
-    function mount(mission) {
+    function mount(mission, marker = null) {
       sections = Array.isArray(mission?.sections) ? mission.sections : [];
       active = sections.length > 0;
       for (const id of ['studyReaderNav', 'studyReaderControls', 'studyReaderFooter', 'studyReturnLesson']) {
@@ -175,8 +190,11 @@
       // Somente dados didáticos: rascunhos nunca deixam o DOM da missão aberta.
       renderApplications(root, mission, openSection);
       if (!active) return false;
-      index = 0;
-      all = false;
+      const restoredIndex = marker && typeof marker.sectionId === 'string'
+        ? sections.findIndex((section) => section.id === marker.sectionId)
+        : -1;
+      index = restoredIndex >= 0 ? restoredIndex : 0;
+      all = marker?.allSections === true;
       const doc = root.ownerDocument;
       const content = doc.createDocumentFragment();
       const options = doc.createDocumentFragment();
@@ -202,35 +220,39 @@
       el.studySectionSelect.replaceChildren(options);
       paintParts();
       fontSize(0);
-      setView('lesson', false);
+      setView(marker?.view === 'practice' ? 'practice' : 'lesson', false);
       focusAt(find('focusTitle'));
       return true;
     }
 
-    el.studyReadButton.addEventListener('click', () => setView('lesson'));
-    el.studyPracticeButton.addEventListener('click', () => setView('practice'));
-    el.studyStartPractice.addEventListener('click', () => setView('practice'));
-    el.studyReturnLesson.addEventListener('click', () => setView('lesson'));
+    el.studyReadButton.addEventListener('click', () => { setView('lesson'); notifyMarker(); });
+    el.studyPracticeButton.addEventListener('click', () => { setView('practice'); notifyMarker(); });
+    el.studyStartPractice.addEventListener('click', () => { setView('practice'); notifyMarker(); });
+    el.studyReturnLesson.addEventListener('click', () => { setView('lesson'); notifyMarker(); });
     el.studySectionSelect.addEventListener('change', () => {
       index = partIndex(el.studySectionSelect.value, sections.length);
       all = false;
       paintParts(true);
+      notifyMarker();
     });
     el.studyPreviousPart.addEventListener('click', () => {
       index = partIndex(index - 1, sections.length);
       paintParts(true);
+      notifyMarker();
     });
     el.studyNextPart.addEventListener('click', () => {
       index = partIndex(index + 1, sections.length);
       paintParts(true);
+      notifyMarker();
     });
     el.studyShowAll.addEventListener('click', () => {
       all = !all;
       paintParts();
+      notifyMarker();
     });
     el.studyFontSmaller.addEventListener('click', () => fontSize(-1));
     el.studyFontLarger.addEventListener('click', () => fontSize(1));
-    return Object.freeze({ mount, openSection });
+    return Object.freeze({ mount, openSection, snapshot: markerSnapshot });
   }
 
   window.StudyReader = Object.freeze({ create, partIndex, practiceProgress });
