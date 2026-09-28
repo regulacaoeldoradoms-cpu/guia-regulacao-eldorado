@@ -129,7 +129,7 @@ test('Agenda: capacidade, busca, filtros, vazio e erro sintético',async({page,c
   const network=await installAuditFixture(context);const r=recorder(page,info);
   await settle(page,'/agenda/');await expect(page.locator('.agenda-card')).toHaveCount(3);
   await r.take('agenda-capacity');
-  const search=page.locator('input[type="search"]').first();
+  const search=page.locator('#agendaSearch');
   await search.fill('FICTÍCIO');await r.take('agenda-matches');
   await search.fill('SEM RESULTADO');await r.take('agenda-empty');
   await context.route('**/api/agenda*',route=>route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'ERRO FICTÍCIO PARA TESTE'})}));
