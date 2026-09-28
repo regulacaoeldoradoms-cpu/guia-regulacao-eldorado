@@ -109,6 +109,6 @@ O navegador sintético verifica:
 
 ## Continuidade
 
-Com sessão, respostas, tempo e posição recuperáveis, o próximo débito técnico da Fase 1 é remover o limite de 500 eventos usado no cálculo da sequência histórica sem transformar a consulta em leitura ilimitada.
+Com sessão, respostas, tempo e posição recuperáveis, o débito técnico seguinte era remover o limite de 500 eventos da sequência histórica. Isso foi implementado separadamente em `44-SEQUENCIA-HISTORICA.md`, com paginação por cursor.
 
 A Fase 1 continua aberta para validação humana e aceite formal.
