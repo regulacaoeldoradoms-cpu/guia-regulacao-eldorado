@@ -102,6 +102,21 @@ test('backend bloqueia missão futura até concluir o pré-requisito',async t=>{
   assert.equal(unlocked.status,201);
 });
 
+test('fechamento revalida pré-requisito até para sessão antiga de missão futura',async t=>{
+  const {sql,call,boss}=await fixture(t);
+  await call('bootstrap');
+  const sessionId=crypto.randomUUID();
+  sql.prepare('INSERT INTO study_sessions(session_id, username, mission_id) VALUES (?, ?, ?)').run(sessionId,'wellyton',boss.id);
+  sql.prepare(`INSERT INTO study_rounds(session_id, username, mission_id, mode, review_id,
+    content_version, question_ids, pass_score) VALUES (?, ?, ?, 'boss', NULL, ?, ?, ?)`)
+    .run(sessionId,'wellyton',boss.id,boss.contentVersion,JSON.stringify(boss.questions.map(q=>q.id)),boss.passScore);
+  const blocked=await call('missions/'+boss.id+'/complete',{sessionId});
+  assert.equal(blocked.status,409);
+  assert.equal(blocked.body.code,'STUDY_PREREQUISITE_REQUIRED');
+  assert.equal(sql.prepare('SELECT status FROM study_rounds WHERE session_id=?').get(sessionId).status,'active');
+  assert.equal(sql.prepare('SELECT coverage_state FROM study_topic_progress WHERE username=? AND topic_id=?').get('wellyton',boss.topicId),undefined);
+});
+
 test('Chefe reprova uma rodada e não concede conquista nem XP indevido',async t=>{
   const {sql,call,start,answer,lesson,boss}=await fixture(t);
   const prerequisite=await start(lesson);await answer(lesson,prerequisite);

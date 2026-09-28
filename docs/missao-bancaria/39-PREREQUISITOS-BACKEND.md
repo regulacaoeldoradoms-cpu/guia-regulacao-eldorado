@@ -18,7 +18,8 @@ Antes de criar uma sessão/rodada normal:
 2. uma missão já concluída pelo mesmo usuário pode ser reaberta para consulta/prática;
 3. uma missão ainda não concluída exige `coverage_state >= 3` da missão publicada imediatamente anterior;
 4. se o pré-requisito faltar, a API responde HTTP 409 com código `STUDY_PREREQUISITE_REQUIRED`;
-5. nenhuma sessão/rodada é criada nesse caso.
+5. nenhuma sessão/rodada é criada nesse caso;
+6. o mesmo pré-requisito é revalidado no fechamento da missão, impedindo que uma sessão antiga criada antes deste gate conclua uma etapa que continua bloqueada.
 
 A mensagem informa qual missão anterior deve ser concluída.
 
@@ -35,6 +36,7 @@ Por isso, uma abertura com `reviewId` não reaplica a sequência linear das miss
 - Não cria tabela, coluna ou migração.
 - Não apaga progresso.
 - Não impede reabrir conteúdo já concluído.
+- Não confia em uma sessão antiga como prova de que o pré-requisito continua satisfeito.
 - Não altera acesso exclusivo de `wellyton`.
 - Não antecipa novos mundos.
 
@@ -52,7 +54,8 @@ O teste prova:
 1. abrir o Chefe antes do pré-requisito retorna 409 e `STUDY_PREREQUISITE_REQUIRED`;
 2. nenhuma sessão é criada pelo pedido bloqueado;
 3. a primeira missão é iniciada, respondida e concluída;
-4. depois disso, o backend aceita iniciar o Chefe.
+4. depois disso, o backend aceita iniciar o Chefe;
+5. uma sessão sintética de Chefe criada como legado antes do gate continua bloqueada no fechamento e não altera cobertura.
 
 O teste existente do Chefe foi ajustado para cumprir o pré-requisito antes de testar reprovação/aprovação. Isso evita que a própria suíte contorne a nova regra.
 
