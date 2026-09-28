@@ -2,6 +2,16 @@
 
 Última atualização: 28/09/2026.
 
+## Barra Global — correção específica da Telemedicina — EM VALIDAÇÃO — 28/09/2026
+
+Relato de produção: `/telemedicina/` não exibiu a Barra Global após #513/#515. Diagnóstico: a rota dependia exclusivamente da injeção feita por `portal-interactions.js`, mas o HTML continuava referenciando `portal-interactions.js?v=20260923-2`; portanto, cache do navegador poderia manter a versão anterior da camada comum e impedir a montagem, mesmo com os novos assets publicados.
+
+Correção na branch `fix/telemedicine-global-navigation-20260928`: `/telemedicina/` passa a carregar diretamente `portal-global-navigation.js?v=20260928-2`, mantendo `portal-interactions.js?v=20260923-2` intacto. A Barra Global continua sendo o mesmo componente compartilhado; não há segunda implementação, alteração de layout clínico ou mudança em dados/permissões.
+
+Teste focal ampliado verifica a presença única do bootstrap global e preserva o pin canônico da camada comum na Telemedicina. A primeira tentativa de renovar `portal-interactions.js` foi descartada porque rompia o contrato de versão única dos testes compartilhados e não era necessária para resolver o carregamento.
+
+**Próxima ação exata:** validar checks pertinentes, integrar com SHA conferido, confirmar GitHub Pages e pedir revisão da própria `/telemedicina/`.
+
 ## Barra Global do Portal — COBERTURA COMPLETA PUBLICADA — 28/09/2026
 
 A Barra Global do Portal está publicada tanto nos cabeçalhos padrão `.portal-topbar` quanto nas duas exceções estruturais do Portal, `/medico/` e `/protocolo/`, que usam `.site-header`.
