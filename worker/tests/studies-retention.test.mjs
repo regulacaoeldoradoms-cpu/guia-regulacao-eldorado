@@ -66,6 +66,20 @@ test('uma repetição do mesmo ciclo usa o registro mais recente sem contar duas
   assert.equal(result.latestScore, 80);
 });
 
+test('última revisão segue o horário concluído mesmo se os ciclos forem finalizados fora de ordem', () => {
+  const result = summarizeRetentionEvidence([
+    { cycle: 1, score: 90, completed_at: '2026-09-01 12:00:00' },
+    { cycle: 3, score: 85, completed_at: '2026-09-30 12:00:00' },
+    { cycle: 2, score: 70, completed_at: '2026-10-02 09:30:00' }
+  ]);
+  assert.equal(result.completedCycles, 3);
+  assert.equal(result.scoredCycles, 3);
+  assert.equal(result.latestCycle, 2);
+  assert.equal(result.latestScore, 70);
+  assert.equal(result.lastReviewAt, '2026-10-02 09:30:00');
+  assert.equal(result.status, 'schedule_observed');
+});
+
 test('frontend mostra retenção como evidência distinta de acerto nas tentativas', () => {
   const source = fs.readFileSync(new URL('../../js/studies.js', import.meta.url), 'utf8');
   assert.match(source, /Acerto nas tentativas/);
