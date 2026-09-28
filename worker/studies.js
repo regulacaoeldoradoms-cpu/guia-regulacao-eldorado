@@ -747,6 +747,17 @@ async function handleStartSession(request, env, user, origin) {
   const body = await readStudyBody(request);
   const mission = missionById(body.missionId);
   if (!mission) return json({ error: 'Missão não encontrada.' }, 404, origin);
+
+  const active = await resumableStudySession(env, user.username);
+  if (active) {
+    const activeMission = missionById(active.missionId);
+    throw new StudyRoundError(
+      `Retome a sessão em andamento — ${activeMission?.shortTitle || activeMission?.title || 'missão atual'} — antes de iniciar outra rodada.`,
+      409,
+      'STUDY_SESSION_RESUME_REQUIRED'
+    );
+  }
+
   await assertMissionPrerequisite(env, user.username, mission, body.reviewId ?? null);
   const result = await startStudyRound(env.AUTH_DB, user.username, mission, body.reviewId ?? null);
   return json(result, 201, origin);
