@@ -21,12 +21,16 @@ async function setup(page, { theme = 'light', mode = '', width = 390, autoOpen =
       publishedMissions: 1, plannedMissions: 9, campaignAvailability: 11.1, completedPublished: 0, campaignProgress: 0,
       availableCompletion: 0, streak: { current: 0, best: 0 } }
   };
-  if (mode === 'resume') payload.activeSession = {
-    sessionId: 'session-resume', missionId: mission.id, title: mission.shortTitle, mode: 'lesson',
-    reviewId: null, review: null, durationSeconds: 42, startedAt: '2026-09-26 11:58:00',
-    resumable: true, reason: '',
-    answers: [{ questionId: 'q.time.1', selectedOption: 0, correct: true, explanation: 'Resposta sintética retomada' }]
-  };
+  if (mode === 'resume') {
+    payload.markerProtocol = 1;
+    payload.activeSession = {
+      sessionId: 'session-resume', missionId: mission.id, title: mission.shortTitle, mode: 'lesson',
+      reviewId: null, review: null, durationSeconds: 42, startedAt: '2026-09-26 11:58:00',
+      resumable: true, reason: '',
+      marker: { view: 'practice', sectionId: 'ensino', allSections: false, updatedAt: '2026-09-26 11:59:00' },
+      answers: [{ questionId: 'q.time.1', selectedOption: 0, correct: true, explanation: 'Resposta sintética retomada' }]
+    };
+  }
   const errors = [], unexpected = [];
   page.on('pageerror', error => errors.push(error.message));
   const auth = `window.__calls=[];let starts=0,checkpoints=0;const payload=${JSON.stringify(payload)},mode=${JSON.stringify(mode)};
@@ -36,6 +40,7 @@ async function setup(page, { theme = 'light', mode = '', width = 390, autoOpen =
       const body=options.body?JSON.parse(options.body):null;window.__calls.push({route,method:options.method,body});
       if(route.endsWith('/bootstrap'))return structuredClone(payload);
       if(route.endsWith('/sessions'))return {sessionId:'session-'+(++starts),roundProtocol:1,...(mode==='oldServer'?{}:{timeProtocol:1})};
+      if(route.endsWith('/marker'))return {markerSaved:true,markerProtocol:1,sessionId:route.split('/').at(-2),marker:body};
       if(route.endsWith('/checkpoint')){
         checkpoints++;const id=route.split('/').at(-2);
         const receipt={checkpointed:true,timeProtocol:1,sessionId:id,durationSeconds:body.durationSeconds,finished:false};
@@ -102,6 +107,8 @@ test('sessão interrompida retoma a mesma rodada, respostas e tempo confirmado',
   await page.locator('#resumeSession').click();
   await expect(page.locator('#focusStatus')).toContainText('Sessão retomada');
   await expect(page.locator('#studyTimer')).toHaveText('00:42');
+  await expect(page.locator('#studyPracticePanel')).toBeVisible();
+  await expect(page.locator('#studyLessonPanel')).toBeHidden();
   const card = page.locator('[data-question-id="q.time.1"]');
   await expect(card.locator('input[value="0"]')).toBeChecked();
   await expect(card.locator('[data-answer-question]')).toBeDisabled();
